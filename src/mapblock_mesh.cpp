@@ -1031,6 +1031,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 */
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data):
+	clearHardwareBuffer(false),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1267,8 +1268,10 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 #endif
 
 		// Use VBO for mesh (this just would set this for ever buffer)
-		// This will lead to infinite memory usage because or irrlicht.
-		//m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
+		if(g_settings->getBool("enable_vbo")){
+			m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
+			clearHardwareBuffer = true;
+		}
 
 		/*
 			NOTE: If that is enabled, some kind of a queue to the main
@@ -1288,6 +1291,11 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 
 MapBlockMesh::~MapBlockMesh()
 {
+	if(clearHardwareBuffer)
+		for(u32 i=0; i<m_mesh->getMeshBufferCount(); i++){
+			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);
+			m_gamedef->tsrc()->getDevice()->getVideoDriver()->removeHardwareBuffer(buf);
+		}
 	m_mesh->drop();
 	m_mesh = NULL;
 }
@@ -1388,6 +1396,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 				i != m_daynight_diffs.end(); i++)
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
+			buf->setDirty(irr::scene::EBT_VERTEX);
 			video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 			for(std::map<u32, std::pair<u8, u8 > >::iterator
 					j = i->second.begin();

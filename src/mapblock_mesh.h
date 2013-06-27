@@ -108,6 +108,8 @@ public:
 			m_animation_force_timer--;
 	}
 
+	bool clearHardwareBuffer;
+
 private:
 	scene::SMesh *m_mesh;
 	IGameDef *m_gamedef;
