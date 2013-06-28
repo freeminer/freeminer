@@ -89,6 +89,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("address", "");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("client_unload_unused_data_timeout", "600");
+	//settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fov", "72");
 	settings->setDefault("view_bobbing", "true");

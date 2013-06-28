@@ -36,7 +36,23 @@ MapSector::MapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
 
 MapSector::~MapSector()
 {
-	deleteBlocks();
+	// Clear cache
+	m_block_cache = NULL;
+
+	// Delete all
+	for(std::map<s16, MapBlock*>::iterator i = m_blocks.begin();
+		i != m_blocks.end(); ++i)
+	{
+#ifndef SERVER
+		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
+		if(i->second->mesh)
+			i->second->mesh->clearHardwareBuffer = false;
+#endif
+		delete i->second;
+	}
+
+	// Clear container
+	m_blocks.clear();
 }
 
 void MapSector::deleteBlocks()
@@ -48,10 +64,6 @@ void MapSector::deleteBlocks()
 	for(std::map<s16, MapBlock*>::iterator i = m_blocks.begin();
 		i != m_blocks.end(); ++i)
 	{
-#ifndef SERVER
-		if(i->second->mesh)
-			i->second->mesh->clearHardwareBuffer = false;
-#endif
 		delete i->second;
 	}
 

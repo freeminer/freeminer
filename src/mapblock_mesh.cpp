@@ -1038,7 +1038,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	m_last_crack(-1),
 	m_crack_materials(),
 	m_last_daynight_ratio((u32) -1),
-	m_daynight_diffs()
+	m_daynight_diffs(),
+	m_usage_timer(0)
 {
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
@@ -1266,18 +1267,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 				<<"and uses "<<m_mesh->getMeshBufferCount()
 				<<" materials (meshbuffers)"<<std::endl;
 #endif
-
-		// Use VBO for mesh (this just would set this for ever buffer)
-		if(g_settings->getBool("enable_vbo")){
-			m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
-			clearHardwareBuffer = true;
-		}
-
-		/*
-			NOTE: If that is enabled, some kind of a queue to the main
-			thread should be made which would call irrlicht to delete
-			the hardware buffer and then delete the mesh
-		*/
 	}
 	
 	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;
@@ -1298,6 +1287,14 @@ MapBlockMesh::~MapBlockMesh()
 		}
 	m_mesh->drop();
 	m_mesh = NULL;
+}
+
+void MapBlockMesh::setStatic()
+{
+	if(g_settings->getBool("enable_vbo")){
+		m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
+		clearHardwareBuffer = true;
+	}
 }
 
 bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_ratio)
