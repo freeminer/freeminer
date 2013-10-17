@@ -55,6 +55,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
 	settings->setDefault("keymap_increase_viewing_range_min", "+");
 	settings->setDefault("keymap_decrease_viewing_range_min", "-");
+	settings->setDefault("keymap_playerlist", "KEY_TAB");
 	settings->setDefault("anaglyph", "false");
 	settings->setDefault("anaglyph_strength", "0.1");
 	settings->setDefault("aux1_descends", "false");

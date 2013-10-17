@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_extrabloated.h"
 #include <IGUICheckBox.h>
 #include <IGUIEditBox.h>
+#include <IGUIListBox.h>
 #include <IGUIButton.h>
 #include <IGUIStaticText.h>
 #include <IGUIFont.h>
@@ -1426,6 +1427,8 @@ void the_game(
 
 	float repeat_rightclick_timer = 0;
 
+	gui::IGUIListBox *playerlist = NULL;
+
 	/*
 		Shader constants
 	*/
@@ -1979,6 +1982,27 @@ void the_game(
 		{
 			reset_jump_timer = false;
 			jump_timer = 0.0;
+		}
+
+		if(!input->isKeyDown(getKeySetting("keymap_playerlist")) && playerlist != NULL)
+		{
+			playerlist->remove();
+			playerlist = NULL;
+		}
+		if(input->wasKeyDown(getKeySetting("keymap_playerlist")) && playerlist == NULL)
+		{
+			std::list<std::string> pll;
+			pll = client.getEnv().getPlayerNames();
+			if(show_debug)
+				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 70, screensize.X*0.61, 80+pll.size()*(text_height+2)));
+			else
+				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 50, screensize.X*0.61, 60+pll.size()*(text_height+2)));
+			while(!pll.empty())
+			{
+				playerlist->addItem(narrow_to_wide(pll.front()).c_str());
+				pll.pop_front();
+			}
+			playerlist->setSelected(-1);
 		}
 
 		// Handle QuicktuneShortcutter
@@ -3343,6 +3367,16 @@ void the_game(
 		*/
 		if (show_hud)
 			hud.drawLuaElements();
+
+
+		/*
+			Draw background for player list
+		*/
+		if (playerlist != NULL)
+		{
+			driver->draw2DRectangle(video::SColor(128,255,255,255), playerlist->getAbsolutePosition());
+			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,128,128,128));
+		}
 
 		/*
 			Draw gui
