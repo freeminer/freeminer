@@ -1052,6 +1052,21 @@ int ObjectRef::l_hud_set_hotbar_selected_image(lua_State *L)
 	return 1;
 }
 
+// set_playerlist(self, formspec)
+int ObjectRef::l_set_playerlist(lua_State *L)
+{
+    ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+
+	std::string formspec = lua_tostring(L, 2);
+	std::cout<<"set_playerlist called with '"<<formspec<<"'\n";
+
+	getServer(L)->setPlayerlist(player, formspec);
+	return 1;
+}
+
 ObjectRef::ObjectRef(ServerActiveObject *object):
 	m_object(object)
 {
@@ -1168,5 +1183,6 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, hud_set_hotbar_itemcount),
 	luamethod(ObjectRef, hud_set_hotbar_image),
 	luamethod(ObjectRef, hud_set_hotbar_selected_image),
+	luamethod(ObjectRef, set_playerlist),
 	{0,0}
 };
