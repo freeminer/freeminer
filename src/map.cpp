@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -2885,16 +2886,22 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 			<<","<<blockpos_requested.Y<<","
 			<<blockpos_requested.Z<<")"<<std::endl;*/
 			
-#if 0
+//#if 0
 	/*
 		Update weather data in blocks
 	*/
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
 	for(s16 x=blockpos_min.X-extra_borders.X;x<=blockpos_max.X+extra_borders.X; x++)
-		for(s16 z=blockpos_min.Z-extra_borders.Z;z<=blockpos_max.Z+extra_borders.Z; z++)
-			for(s16 y=blockpos_min.Y-extra_borders.Y;y<=blockpos_max.Y+extra_borders.Y; y++)
-				updateBlockHeat(senv, v3s16(x, y, z) * MAP_BLOCKSIZE, NULL);
-#endif
+	for(s16 z=blockpos_min.Z-extra_borders.Z;z<=blockpos_max.Z+extra_borders.Z; z++)
+	for(s16 y=blockpos_min.Y-extra_borders.Y;y<=blockpos_max.Y+extra_borders.Y; y++) {
+		v3s16 p(x, y, z);
+		MapBlock *block = getBlockNoCreateNoEx(p); //?
+		//block->heat_last_update     = 0;
+		//block->humidity_last_update = 0;
+		updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
+		updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block); //?
+	}
+//#endif
 
 #if 0
 	if(enable_mapgen_debug_info)
@@ -3214,6 +3221,17 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	}*/
 
 	return NULL;
+}
+
+void ServerMap::prepareBlock(MapBlock *block) {
+	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
+
+	// Calculate weather conditions
+	//block->heat_last_update     = 0;
+	//block->humidity_last_update = 0;
+	v3s16 p = block->getPos() *  MAP_BLOCKSIZE;
+	updateBlockHeat(senv, p, block);
+	updateBlockHumidity(senv, p, block);
 }
 
 s16 ServerMap::findGroundLevel(v2s16 p2d)
@@ -3965,7 +3983,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 	u32 gametime = env->getGameTime();
 	
 	if (block) {
-		if (gametime < block->weather_update_time)
+		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
 	} else {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
@@ -3973,16 +3991,16 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 
 	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	//f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
+	//		env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->heat = heat;
-		block->humidity = humidity;
+		//block->humidity = humidity;
 		if (env->m_use_weather)
-			block->weather_update_time = gametime + 10;
+			block->heat_last_update = gametime + 10;
 		else
-			block->weather_update_time = -1; //never update
+			block->heat_last_update = -1; //never update
 	}
 	return heat + myrand_range(0, 1);
 }
@@ -3992,24 +4010,24 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *bl
 	u32 gametime = env->getGameTime();
 	
 	if (block) {
-		if (gametime < block->weather_update_time)
+		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
 	} else {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	//f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
+	//		env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 			
 	if(block) {
-		block->heat = heat;
+		//block->heat = heat;
 		block->humidity = humidity;
 		if (env->m_use_weather)
-			block->weather_update_time = gametime + 10;
+			block->humidity_last_update = gametime + 10;
 		else
-			block->weather_update_time = -1; //never update
+			block->humidity_last_update = -1; //never update
 	}
 	return humidity + myrand_range(0, 1);
 }

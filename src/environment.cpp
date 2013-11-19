@@ -821,8 +821,8 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	// Activate stored objects
 	activateObjects(block, dtime_s);
 	
-	// Calculate weather conditions
-	m_map->updateBlockHeat(this, block->getPos() *  MAP_BLOCKSIZE, block);
+//	// Calculate weather conditions
+//	m_map->updateBlockHeat(this, block->getPos() *  MAP_BLOCKSIZE, block);
 
 	// Run node timers
 	std::map<v3s16, NodeTimer> elapsed_timers =

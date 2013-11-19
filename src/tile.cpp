@@ -512,28 +512,29 @@ u32 TextureSource::getTextureId(const std::string &name)
 		infostream<<"getTextureId(): Queued: name=\""<<name<<"\""<<std::endl;
 
 		// We're gonna ask the result to be put into here
-		ResultQueue<std::string, u32, u8, u8> result_queue;
+		static ResultQueue<std::string, u32, u8, u8> result_queue;
 		
 		// Throw a request in
 		m_get_texture_queue.add(name, 0, 0, &result_queue);
 		
-		infostream<<"Waiting for texture from main thread, name=\""
-				<<name<<"\""<<std::endl;
+		/*infostream<<"Waiting for texture from main thread, name=\""
+				<<name<<"\""<<std::endl;*/
 		
 		try
 		{
+			while(true) {
 			// Wait result for a second
 			GetResult<std::string, u32, u8, u8>
 					result = result_queue.pop_front(1000);
 		
-			// Check that at least something worked OK
-			assert(result.key == name);
-
+				if (result.key == name) {
 			return result.item;
+		}
+			}
 		}
 		catch(ItemNotFoundException &e)
 		{
-			infostream<<"Waiting for texture timed out."<<std::endl;
+			errorstream<<"Waiting for texture " << name << " timed out."<<std::endl;
 			return 0;
 		}
 	}
@@ -786,13 +787,7 @@ void TextureSource::processQueue()
 				<<"name=\""<<request.key<<"\""
 				<<std::endl;*/
 
-		GetResult<std::string, u32, u8, u8>
-				result;
-		result.key = request.key;
-		result.callers = request.callers;
-		result.item = getTextureIdDirect(request.key);
-
-		request.dest->push_back(result);
+		m_get_texture_queue.pushResult(request,getTextureIdDirect(request.key));
 	}
 }
 
