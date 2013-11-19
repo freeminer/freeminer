@@ -822,8 +822,7 @@ void MapgenV6::placeTreesAndJungleGrass() {
 		
 		// Amount of trees, jungle area
 		u32 tree_count = area * getTreeAmount(p2d_center);
-
-
+		
 		float humidity;
 		bool is_jungle = false;
 		if (flags & MGV6_JUNGLES) {
