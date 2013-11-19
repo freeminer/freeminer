@@ -60,6 +60,7 @@ public:
 	
 	content_t c_water_source;
 	content_t c_lava_source;
+	content_t c_ice;
 	
 	int water_level;
 

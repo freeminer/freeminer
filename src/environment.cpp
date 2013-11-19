@@ -326,6 +326,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
+	emerger->env = this;
 }
 
 ServerEnvironment::~ServerEnvironment()

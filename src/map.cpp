@@ -2002,7 +2002,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			} else {
 			*/
 				// Set node
-			setNode(p0, n0);
+			try{
+				setNode(p0, n0);
+			}
+			catch(InvalidPositionException &e)
+			{
+				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(p0)<<std::endl;
+			}
 			//}
 
 			// If node emits light, MapBlock requires lighting update

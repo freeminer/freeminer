@@ -46,6 +46,7 @@ class Decoration;
 class Ore;
 class INodeDefManager;
 class Settings;
+class ServerEnvironment;
 
 struct BlockMakeData {
 	ManualMapVoxelManipulator *vmanip;
@@ -73,6 +74,8 @@ struct BlockEmergeData {
 class IBackgroundBlockEmerger
 {
 public:
+	ServerEnvironment *env;
+
 	virtual bool enqueueBlockEmerge(u16 peer_id, v3s16 p,
 			bool allow_generate) = 0;
 	virtual ~IBackgroundBlockEmerger() {}
@@ -81,7 +84,6 @@ public:
 class EmergeManager : public IBackgroundBlockEmerger {
 public:
 	INodeDefManager *ndef;
-
 	std::map<std::string, MapgenFactory *> mglist;
 	
 	std::vector<Mapgen *> mapgen;

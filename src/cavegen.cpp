@@ -41,6 +41,7 @@ CaveV6::CaveV6(MapgenV6 *mg, PseudoRandom *ps, PseudoRandom *ps2, bool is_large_
 	this->ps2 = ps2;
 	this->c_water_source = mg->c_water_source;
 	this->c_lava_source  = mg->c_lava_source;
+	this->c_ice          = mg->c_ice;
 
 	min_tunnel_diameter = 2;
 	max_tunnel_diameter = ps->range(2, 6);
@@ -199,7 +200,6 @@ void CaveV6::makeTunnel(bool dirswitch) {
 
 void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 	MapNode airnode(CONTENT_AIR);
-	MapNode waternode(c_water_source);
 	MapNode lavanode(c_lava_source);
 	
 	v3s16 startp(orp.X, orp.Y, orp.Z);
@@ -216,6 +216,8 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 		d0 += ps->range(-1, 1);
 		d1 += ps->range(-1, 1);
 	}
+
+	MapNode waternode((mg->emerge->env->m_use_weather && mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, startp) < 0) ? c_ice : c_water_source);
 	
 	for (s16 z0 = d0; z0 <= d1; z0++) {
 		s16 si = rs / 2 - MYMAX(0, abs(z0) - rs / 7 - 1);
