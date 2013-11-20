@@ -45,7 +45,7 @@ void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
 	MapNode applenode(ndef->getId("mapgen_apple"));
 
 	PseudoRandom pr(seed);
-	s16 trunk_h = pr.range(4, 5);
+	s16 trunk_h = pr.range(4, 6);
 	v3s16 p1 = p0;
 	for(s16 ii=0; ii<trunk_h; ii++)
 	{
@@ -58,7 +58,7 @@ void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-	VoxelArea leaves_a(v3s16(-2,-1,-2), v3s16(2,2,2));
+	VoxelArea leaves_a(v3s16(-pr.range(2, 3),-pr.range(1, 2),-pr.range(2, 3)), v3s16(pr.range(2, 3),pr.range(2, 3),pr.range(2, 3)));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for(s32 i=0; i<leaves_a.getVolume(); i++)
@@ -568,7 +568,7 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-	VoxelArea leaves_a(v3s16(-3,-2,-3), v3s16(3,2,3));
+	VoxelArea leaves_a(v3s16(-pr.range(3, 4),-pr.range(2, 3),-pr.range(3, 4)), v3s16(pr.range(3, 4),pr.range(2, 3),pr.range(3, 4)));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for(s32 i=0; i<leaves_a.getVolume(); i++)

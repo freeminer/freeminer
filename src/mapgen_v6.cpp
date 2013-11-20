@@ -882,8 +882,9 @@ void MapgenV6::placeTreesAndJungleGrass() {
 			p.Y++;
 			
 			// Make a tree
-			if (y < water_level - 20) {
-				treegen::make_cavetree(*vm, p, is_jungle, ndef, myrand());
+			if (y < water_level) {
+				if (y < water_level - 20) // do not spawn trees in lakes
+					treegen::make_cavetree(*vm, p, is_jungle, ndef, myrand());
 			}
 			else if (is_jungle) {
 				treegen::make_jungletree(*vm, p, ndef, myrand());
