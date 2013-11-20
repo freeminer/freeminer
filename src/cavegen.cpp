@@ -200,7 +200,9 @@ void CaveV6::makeTunnel(bool dirswitch) {
 
 void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 	MapNode airnode(CONTENT_AIR);
+	MapNode waternode(c_water_source);
 	MapNode lavanode(c_lava_source);
+	MapNode icenode(c_ice);
 	
 	v3s16 startp(orp.X, orp.Y, orp.Z);
 	startp += of;
@@ -216,8 +218,6 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 		d0 += ps->range(-1, 1);
 		d1 += ps->range(-1, 1);
 	}
-
-	MapNode waternode((mg->emerge->env->m_use_weather && mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, startp) < 0) ? c_ice : c_water_source);
 	
 	for (s16 z0 = d0; z0 <= d1; z0++) {
 		s16 si = rs / 2 - MYMAX(0, abs(z0) - rs / 7 - 1);
@@ -239,14 +239,16 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 
 				u32 i = vm->m_area.index(p);
 
+				s16 heat = mg->emerge->env->m_use_weather ? mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, startp) : 0;
+				MapNode water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? icenode : waternode;
 				if (large_cave) {
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
 					int full_ymax = node_max.Y + MAP_BLOCKSIZE;
 
 					if (flooded && full_ymin < water_level && full_ymax > water_level) {
-						vm->m_data[i] = (p.Y <= water_level) ? waternode : airnode;
+						vm->m_data[i] = (p.Y <= water_level) ? water_or_ice : airnode;
 					} else if (flooded && full_ymax < water_level) {
-						vm->m_data[i] = (p.Y < startp.Y - 2) ? (flooded_water ? waternode : lavanode) : airnode;
+						vm->m_data[i] = (p.Y < startp.Y - 2) ? (flooded_water ? water_or_ice : lavanode) : airnode;
 					} else {
 						vm->m_data[i] = airnode;
 					}
