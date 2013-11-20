@@ -58,7 +58,8 @@ void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-	VoxelArea leaves_a(v3s16(-pr.range(2, 3),-pr.range(1, 2),-pr.range(2, 3)), v3s16(pr.range(2, 3),pr.range(2, 3),pr.range(2, 3)));
+	s16 size = pr.range(2, 3);
+	VoxelArea leaves_a(v3s16(-size,-pr.range(2, 3),-size), v3s16(size,pr.range(2, 3),size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for(s32 i=0; i<leaves_a.getVolume(); i++)
@@ -568,7 +569,8 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-	VoxelArea leaves_a(v3s16(-pr.range(3, 4),-pr.range(2, 3),-pr.range(3, 4)), v3s16(pr.range(3, 4),pr.range(2, 3),pr.range(3, 4)));
+	s16 size = pr.range(2, 4);
+	VoxelArea leaves_a(v3s16(-size,-pr.range(2, 4),-size), v3s16(size, pr.range(2, 4), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for(s32 i=0; i<leaves_a.getVolume(); i++)
