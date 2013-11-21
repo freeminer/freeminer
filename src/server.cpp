@@ -1023,6 +1023,8 @@ void Server::start(unsigned short port)
 	<<"      \\/        \\/     \\/          \\/     \\/        "<<std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
+			<<"\" mapgen=\""<<m_emerge->params->mg_name
+			<<"\" version=\""<<minetest_version_hash
 			<<"\" listening on port "<<port<<"."<<std::endl;
 }
 
