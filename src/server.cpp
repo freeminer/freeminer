@@ -5488,17 +5488,20 @@ void dedicated_server_loop(Server &server, bool &kill)
 
 	IntervalLimiter m_profiler_interval;
 
+	float steplen = g_settings->getFloat("dedicated_server_step");
 	for(;;)
 	{
-		float steplen = g_settings->getFloat("dedicated_server_step");
 		// This is kind of a hack but can be done like this
 		// because server.step() is very light
 		{
 			ScopeProfiler sp(g_profiler, "dedicated server sleep");
 			sleep_ms((int)(steplen*1000.0));
 		}
+		try {
 		server.step(steplen);
-
+		} catch (...){
+			errorstream<<"Fatal error"<<std::endl;
+		}
 		if(server.getShutdownRequested() || kill)
 		{
 			infostream<<"Dedicated server quitting"<<std::endl;
