@@ -1109,7 +1109,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	/*
 		Convert MeshCollector to SMesh
 	*/
-	bool enable_shaders     = g_settings->getBool("enable_shaders");
+	bool enable_shaders = g_settings->getBool("enable_shaders");
 	bool enable_bumpmapping = g_settings->getBool("enable_bumpmapping");
 
 	video::E_MATERIAL_TYPE  shadermat1, shadermat2, shadermat3, bumpmaps1, bumpmaps2;
@@ -1353,7 +1353,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		// Figure out current frame
 		int frameoffset = m_animation_frame_offsets[i->first];
 		int frame = (int)(time * 1000 / tile.animation_frame_length_ms
-				+ frameoffset) % tile.animation_frame_count;
+				+ frameoffset) % (tile.animation_frame_count ? tile.animation_frame_count : 1);
 		// If frame doesn't change, skip
 		if(frame == m_animation_frames[i->first])
 			continue;

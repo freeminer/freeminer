@@ -11,7 +11,10 @@ minetest.register_globalstep(function(dtime)
 		table.insert(minetest.timers, timer)
 	end
 	minetest.timers_to_add = {}
+	local i = 0
 	for index, timer in ipairs(minetest.timers) do
+		i = i + 1
+		if i > 100 then return end
 		timer.time = timer.time - dtime
 		if timer.time <= 0 then
 			timer.func(unpack(timer.args or {}))
@@ -54,8 +57,8 @@ function minetest.get_connected_players()
 	local temp_table = {}
 	for index, value in pairs(player_list) do
 		if value:is_player_connected() then
-			table.insert(temp_table, value)
-		end
+		table.insert(temp_table, value)
+	end
 	end
 	return temp_table
 end

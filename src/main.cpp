@@ -1754,12 +1754,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			// Break out of menu-game loop to shut down cleanly
-			if(device->run() == false || kill == true) {
-				if(g_settings_path != "") {
+			if(g_settings_path != "")
 					g_settings->updateConfigFile(
 						g_settings_path.c_str());
-				}
+
+			// Break out of menu-game loop to shut down cleanly
+			if(device->run() == false || kill == true) {
 				break;
 			}
 

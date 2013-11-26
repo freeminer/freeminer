@@ -274,13 +274,16 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 
 CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 				v3s16 node_min, bool is_large_cave) {
+	this->mg = mg;
 	this->vm = mg->vm;
+	this->ndef = mg->ndef;
 	this->water_level = mg->water_level;
 	this->large_cave = is_large_cave;
 	this->ps  = ps;
 	this->ps2 = ps2;
 	this->c_water_source = mg->c_water_source;
 	this->c_lava_source  = mg->c_lava_source;
+	this->c_ice          = mg->c_ice;
 
 	min_tunnel_diameter = 2;
 	max_tunnel_diameter = ps->range(2,6);
@@ -288,17 +291,18 @@ CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 	flooded = large_cave && ps->range(0,4);
 	if (large_cave) {
 		part_max_length_rs = ps->range(2,4);
-		float scale = farscale(0.2, node_min.X, node_min.Y, node_min.Z);
-		if (node_min.Y < -100 && !ps->range(0, scale * 30)) { //huge
-			flooded = !ps->range(0, 3);
-			tunnel_routepoints = ps->range(5, 30);
+		float scale = farscale(0.4, node_min.X, node_min.Y, node_min.Z);
+		if (node_min.Y < -100 && !ps->range(0, scale * 14)) { //huge
+			flooded = !ps->range(0, 10);
+			tunnel_routepoints = ps->range(10, 50);
 			min_tunnel_diameter = 30;
-			max_tunnel_diameter = ps->range(40, ps->range(80, 150));
+			max_tunnel_diameter = ps->range(40, ps->range(50, 80));
 		} else {
 			tunnel_routepoints = ps->range(5, ps->range(15,30));
 			min_tunnel_diameter = 5;
 			max_tunnel_diameter = ps->range(7, ps->range(8,24));
 		}
+		flooded_water = !ps->range(0, 2);
 	} else {
 		part_max_length_rs = ps->range(2,9);
 		tunnel_routepoints = ps->range(10, ps->range(15,30));
