@@ -1,0 +1,402 @@
+# This file is read by default from:
+# ../minetest.conf
+# ../../minetest.conf
+# Any other path can be chosen by passing the path as a parameter
+# to the program, eg. "minetest.exe --config ../minetest.conf.example"
+#
+# By default, all the settings are commented and not functional.
+# Uncomment settings by removing the preceding #.
+#
+# Further documentation:
+# http://wiki.minetest.net/
+#
+# NOTE: This file might not be up-to-date, refer to the
+#       defaultsettings.cpp file for an up-to-date list:
+# https://github.com/minetest/minetest/blob/master/src/defaultsettings.cpp
+#
+# A vim command to convert most of defaultsettings.cpp to conf file format:
+# :'<,'>s/\tsettings->setDefault("\([^"]*\)", "\([^"]*\)");.*/#\1 = \2/g
+# Note: Some of the settings are implemented in Lua
+
+#
+# Client and server
+#
+
+# Network port (UDP)
+#port = 
+# Name of player; on a server this is the main admin
+#name = 
+
+#
+# Client stuff
+#
+
+# Key mappings
+# See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#keymap_forward = KEY_KEY_W
+#keymap_backward = KEY_KEY_S
+#keymap_left = KEY_KEY_A
+#keymap_right = KEY_KEY_D
+#keymap_jump = KEY_SPACE
+#keymap_sneak = KEY_LSHIFT
+#keymap_inventory = KEY_KEY_I
+# Go down ladder / go down in fly mode / go fast in fast mode
+#keymap_special1 = KEY_KEY_E
+#keymap_chat = KEY_KEY_T
+#keymap_cmd = /
+#keyman_console = KEY_F10
+#keymap_rangeselect = KEY_KEY_R
+#keymap_freemove = KEY_KEY_K
+#keymap_fastmove = KEY_KEY_J
+#keymap_screenshot = KEY_F12
+# If true, keymap_special1 instead of keymap_sneak is used for climbing down and descending
+#aux1_descends = false
+# Doubletaping the jump key toogles fly mode
+#doubletap_jump = false
+# If false aux1 is used to fly fast
+#always_fly_fast = true
+# Some (temporary) keys for debugging
+#keymap_print_debug_stacks = KEY_KEY_P
+#keymap_quicktune_prev = KEY_HOME
+#keymap_quicktune_next = KEY_END
+#keymap_quicktune_dec = KEY_NEXT
+#keymap_quicktune_inc = KEY_PRIOR
+
+# Minimum FPS
+# The amount of rendered stuff is dynamically set according to this
+#wanted_fps = 30
+# If FPS would go higher than this, limit it by sleeping
+# (to not waste CPU power for no benefit)
+#fps_max = 60
+# The allowed adjustment range for the automatic rendering range adjustment
+#viewing_range_nodes_max = 160
+#viewing_range_nodes_min = 35
+# Initial window size
+#screenW = 800
+#screenH = 600
+#fullscreen = false
+#fullscreen_bpp = 24
+# Experimental option, might cause visible spaces between blocks
+# when set to higher number than 0
+#fsaa = 0
+#vsync = false
+#fov = 72
+# Address to connect to (#blank = start local server)
+#address = 
+# Enable random user input, for testing
+#random_input = false
+# Timeout for client to remove unused map data from memory
+#client_unload_unused_data_timeout = 600
+# Whether to fog out the end of the visible area
+#enable_fog = true
+# Enable a bit lower water surface; disable for speed (not quite optimized)
+#new_style_water = false
+# Constant volume liquids
+#liquid_finite = false
+# Max liquids processed per step
+#liquid_loop_max = 10000
+# Update liquids every .. recommend for finite: 0.2
+#liquid_update = 1.0
+# Relax flowing blocks to source if level near max and N nearby
+#  source blocks, more realistic, but not true constant.
+#  values: 0,1,2,3,4 : 0 - disable, 1 - most aggresive
+#  (for finite liquids)
+#liquid_relax = 2
+# Optimization: faster cave flood (and not true constant)
+#  (for finite liquids)
+#liquid_fast_flood = 1
+# Underground water and lava springs, its infnity sources if liquid_finite enabled
+#underground_springs = 1
+# Enable weather (cold-hot, water freeze-melt). use only with liquid_finite=1
+#weather = false
+# Enable nice leaves; disable for speed
+#new_style_leaves = true
+# Enable smooth lighting with simple ambient occlusion;
+# disable for speed or for different looks.
+#smooth_lighting = true
+# Path to texture directory. All textures are first searched from here.
+#texture_path = 
+# Video back-end.
+# Possible values: null, software, burningsvideo, direct3d8, direct3d9, opengl
+#video_driver = opengl
+# Unobstructed movement without physics, downwards key is keymap_special1
+#free_move = false
+# Continuous forward movement (for testing)
+#continuous_forward = false
+# Fast movement (keymap_special1)
+#fast_move = false
+# Invert mouse
+#invert_mouse = false
+# Enable/disable clouds
+#enable_clouds = true
+#cloud_height = 120
+#enable_3d_clouds = true
+# Use a cloud animation for the main menu background
+#menu_clouds = true
+# Path for screenshots
+#screenshot_path = .
+# Amount of view bobbing (0 = no view bobbing, 1.0 = normal, 2.0 = double)
+#view_bobbing_amount = 1.0
+# Amount of fall bobbing (0 = no fall bobbing, 1.0 = normal, 2.0 = double)
+#fall_bobbing_amount = 0.0
+# Anaglyph stereo
+#anaglyph = false
+#anaglyph_strength = 0.1
+# In-game chat console background color (R,G,B)
+#console_color = (0,0,0)
+# In-game chat console background alpha (opaqueness, between 0 and 255)
+#console_alpha = 200
+# Selection box border color (R,G,B)
+#selectionbox_color = (0,0,0)
+# Crosshair color (R,G,B)
+#crosshair_color = (255,255,255)
+# Cross alpha (opaqueness, between 0 and 255)
+#crosshair_alpha = 255
+# Sensitivity multiplier
+#mouse_sensitivity = 0.2
+# Sound settings
+#enable_sound = true
+#sound_volume = 0.7
+# Whether node texture animations should be desynchronized per MapBlock
+#desynchronize_mapblock_texture_animation = true
+# Texture filtering settings
+#mip_map = false
+#anisotropic_filter = false
+#bilinear_filter = false
+#trilinear_filter = false
+# Set to true to pre-generate all item visuals
+#preload_item_visuals = true
+# Set to true to enable shaders. Disable them if video_driver = direct3d9/8.
+#enable_shaders = true
+# Set to true to enable textures bumpmapping. Requires shaders enabled.
+#enable_bumpmapping = false
+# The time in seconds it takes between repeated
+# right clicks when holding the right mouse button
+#repeat_rightclick_time = 0.25
+
+# will only work for servers which use remote_media setting
+# and only for clients compiled with cURL
+#media_fetch_threads = 8
+
+# Url to the server list displayed in the Multiplayer Tab
+#serverlist_url = servers.minetest.net
+# File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab
+#serverlist_file = favoriteservers.txt
+
+# Whether freetype fonts are used, requires freetype support to be compiled in
+#freetype = true
+# Path to TrueTypeFont or bitmap
+#font_path = fonts/liberationsans.ttf
+#font_size = 13
+#mono_font_path = fonts/liberationmono.ttf
+#mono_font_size = 13
+
+# This font will be used for certain languages
+#fallback_font_path = fonts/DroidSansFallbackFull.ttf
+#fallback_font_size = 13
+
+#
+# Server stuff
+#
+
+# Name of server
+#server_name = Minetest server
+# Description of server
+#server_description = mine here
+# Domain name of server
+#server_address = game.minetest.net
+# Homepage of server
+#server_url = http://minetest.net
+# Automaticaly report to masterserver
+#server_announce = 0
+# Announce to this masterserver. if you want to announce your ipv6 address - use  serverlist_url = v6.servers.minetest.net
+#serverlist_url = servers.minetest.net
+# Default game (default when creating a new world)
+#default_game = minetest
+# World directory (everything in the world is stored here)
+#map-dir = /custom/world
+# Message of the Day
+#motd = Welcome to this awesome Minetest server!
+# Maximum number of players connected simultaneously
+#max_users = 15
+# Set to true to disallow old clients from connecting
+#strict_protocol_version_checking = false
+# Set to true to enable creative mode (unlimited inventory)
+#creative_mode = false
+# Enable players getting damage and dying
+#enable_damage = false
+# Despawn all non-peaceful mobs
+#only_peaceful_mobs = false
+# A chosen map seed for a new map, leave empty for random
+#fixed_map_seed =
+# Gives some stuff to players at the beginning
+#give_initial_stuff = false
+# New users need to input this password
+#default_password = 
+# Available privileges: interact, shout, teleport, settime, privs, ...
+# See /privs in game for a full list on your server and mod configuration.
+#default_privs = interact, shout
+# Whether players are shown to clients without any range limit
+#unlimited_player_transfer_distance = true
+# Whether to enable players killing each other
+#enable_pvp = true
+# If this is set, players will always (re)spawn at the given position
+#static_spawnpoint = 0, 10, 0
+# If true, new players cannot join with an empty password
+#disallow_empty_password = false
+# If true, disable cheat prevention in multiplayer
+#disable_anticheat = false
+# If true, actions are recorded for rollback
+#enable_rollback_recording = false
+
+# Profiler data print interval. #0 = disable.
+#profiler_print_interval = 0
+#enable_mapgen_debug_info = false
+# from how far client knows about objects
+#active_object_send_range_blocks = 3
+# how large area of blocks are subject to the active block stuff (active = objects are loaded and ABMs run)
+#active_block_range = 2
+# how many blocks are flying in the wire simultaneously per client
+#max_simultaneous_block_sends_per_client = 2
+# how many blocks are flying in the wire simultaneously per server
+#max_simultaneous_block_sends_server_total = 8
+# From how far blocks are sent to clients (value * 16 nodes)
+#max_block_send_distance = 10
+# From how far blocks are generated for clients (value * 16 nodes)
+#max_block_generate_distance = 6
+# Number of extra blocks that can be loaded by /clearobjects at once
+# This is a trade-off between sqlite transaction overhead and
+# memory consumption (4096=100MB, as a rule of thumb)
+#max_clearobjects_extra_loaded_blocks = 4096
+# Interval of sending time of day to clients
+#time_send_interval = 5
+# Length of day/night cycle. 72=20min, 360=4min, 1=24hour, 0=day/night/whatever stays unchanged
+#time_speed = 72
+# Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
+#year_days = 30
+#server_unload_unused_data_timeout = 29
+# Maximum number of statically stored objects in a block
+#max_objects_per_block = 49
+# Interval of saving important changes in the world
+#server_map_save_interval = 5.3
+# http://www.sqlite.org/pragma.html#pragma_synchronous only numeric values: 0 1 2
+#sqlite_synchronous = 2
+# To reduce lag, block transfers are slowed down when a player is building something.
+# This determines how long they are slowed down after placing or removing a node.
+#full_block_send_enable_min_time_from_building = 2.0
+# Length of a server tick and the interval at which objects are generally updated over network
+#dedicated_server_step = 0.1
+# Can be set to true to disable shutting down on invalid world data
+#ignore_world_load_errors = false
+# Congestion control parameters
+# time in seconds, rate in ~500B packets
+#congestion_control_aim_rtt = 0.2
+#congestion_control_max_rate = 400
+#congestion_control_min_rate = 10
+# Specifies URL from which client fetches media instead of using UDP
+# $filename should be accessible from $remote_media$filename via cURL
+# (obviously, remote_media should end with a slash)
+# Files that are not present would be fetched the usual way
+#remote_media =
+# Level of logging to be written to debug.txt.
+# 0 = none, 1 = errors and debug, 2 = action, 3 = info, 4 = verbose
+#debug_log_level = 2
+# Maximum number of blocks that can be queued for loading.
+#emergequeue_limit_total = 256
+# Maximum number of blocks to be queued that are to be loaded from file.
+# Leave blank for an appropriate amount to be chosen automatically.
+#emergequeue_limit_diskonly =
+# Maximum number of blocks to be queued that are to be generated.
+# Leave blank for an appropriate amount to be chosen automatically.
+#emergequeue_limit_generate = 
+# Number of emerge threads to use.  Make this field blank, or increase this number, to use multiple threads.
+# On multiprocessor systems, this will improve mapgen speed greatly, at the cost of slightly buggy caves.
+#num_emerge_threads = 1
+
+#
+# Physics stuff
+#
+
+#movement_acceleration_default = 3
+#movement_acceleration_air = 2
+#movement_acceleration_fast = 10
+#movement_speed_walk = 4
+#movement_speed_crouch = 1.35
+#movement_speed_fast = 20
+#movement_speed_climb = 2
+#movement_speed_jump = 6.5
+#movement_speed_descend = 6
+#movement_liquid_fluidity = 1
+#movement_liquid_fluidity_smooth = 0.5
+#movement_liquid_sink = 10
+#movement_gravity = 9.81
+
+#
+# Mapgen stuff
+#
+
+# Name of map generator to be used.  Currently supported: v6, indev, singlenode, math
+#mg_name = v6
+# Water level of map.
+#water_level = 1
+# Size of chunks to be generated.
+#chunksize = 5
+# Map generation attributes.  Currently supported: trees, caves, flat, v6_biome_blend, v6_jungles, dungeons, nolight
+#mg_flags = trees, caves, v6_biome_blend
+# How large deserts and beaches are
+#mgv6_freq_desert = 0.45
+#mgv6_freq_beach = 0.15
+# Perlin noise attributes for different map generation parameters
+# Offset, scale, spread factor, seed offset, number of octaves, persistence
+#mgv6_np_terrain_base = -4, 20, (250, 250, 250), 82341, 5, 0.6
+#mgv6_np_terrain_higher = 20, 16, (500, 500, 500), 85039, 5, 0.6
+#mgv6_np_steepness = 0.85, 0.5, (125, 125, 125), -932, 5, 0.7
+#mgv6_np_height_select = 0.5, 1, (250, 250, 250), 4213, 5, 0.69
+#mgv6_np_mud = 4, 2, (200, 200, 200), 91013, 3, 0.55
+#mgv6_np_beach = 0, 1, (250, 250, 250), 59420, 3, 0.50
+#mgv6_np_biome = 0, 1, (250, 250, 250), 9130, 3, 0.50
+#mgv6_np_cave = 6, 6, (250, 250, 250), 34329, 3, 0.50
+#mgv6_np_humidity = 0.5, 0.5, (500, 500, 500), 72384, 4, 0.66
+#mgv6_np_trees = 0, 1, (125, 125, 125), 2, 4, 0.66
+#mgv6_np_apple_trees = 0, 1, (100, 100, 100), 342902, 3, 0.45
+
+#mgv7_np_terrain = 10, 12, (350, 350, 350), 82341, 5, 0.6
+#mgv7_np_bgroup = 0.5, 0.3125, (350, 350, 350), 5923, 2, 0.6
+#mgv7_np_heat = 25, 50, (500, 500, 500), 35293, 1, 0
+#mgv7_np_humidity = 50, 31.25, (750, 750, 750), 12094, 2, 0.6
+
+# Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
+#mgindev_np_terrain_base   = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
+#mgindev_np_terrain_higher = 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
+#mgindev_np_steepness      = 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
+#mgindev_np_mud            = 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
+#mgindev_np_float_islands1 = 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
+#mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
+#mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
+#mgindev_np_biome          = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
+
+# Float islands starts from height, 0 to disable
+#mgindev_float_islands = 500
+
+# Math mapgen generator: sphere, mandelbox, mengersponge      dont forget to lower water_level = -30000
+#mgmath_generator = mandelbox
+
+# Enable/disable IPv6
+#enable_ipv6 = true
+# Enable/disable running an IPv6 server.  An IPv6 server may be restricted
+# to IPv6 clients, depending on system configuration.
+#ipv6_server = false
+
+#main_menu_script =
+#main_menu_game_mgr = 0
+#main_menu_mod_mgr = 1
+#modstore_download_url = https://forum.minetest.net/media/
+#modstore_listmods_url = https://forum.minetest.net/mmdb/mods/
+#modstore_details_url  = https://forum.minetest.net/mmdb/mod/*/
+
+# Makes DirectX work with LuaJIT. Disable if it causes troubles.
+#high_precision_fpu = true
+
+# Override language. When no value is provided (default) system language is used.
+# Check "locale" directory for the list of available translations.
+#language =
