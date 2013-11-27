@@ -2182,6 +2182,18 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
 	}
+	else if(command == TOCLIENT_SET_PLAYERLIST)
+	{
+		std::string datastring((char *)&data[2], datasize - 2);
+		std::istringstream is(datastring, std::ios_base::binary);
+
+		std::string formspec = deSerializeString(is);
+
+		ClientEvent event;
+		event.type = CE_SET_PLAYERLIST;
+		event.set_playerlist.formspec = new std::string(formspec);
+		m_client_event_queue.push_back(event);
+	}
 	else
 	{
 		infostream<<"Client: Ignoring unknown command "

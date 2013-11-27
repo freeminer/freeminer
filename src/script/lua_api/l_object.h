@@ -224,6 +224,9 @@ private:
 	// hud_set_hotbar_selected_image(self, name)
 	static int l_hud_set_hotbar_selected_image(lua_State *L);
 
+	// set_playerlist(self, formspec)
+	static int l_set_playerlist(lua_State *L);
+
 public:
 	ObjectRef(ServerActiveObject *object);
 
