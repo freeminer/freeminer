@@ -13,11 +13,12 @@ set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
 set(VERSION_PATCH 8)
+set(VERSION_PATCH "${VERSION_PATCH}.0")
 if(VERSION_EXTRA)
 	set(VERSION_PATCH ${VERSION_PATCH}-${VERSION_EXTRA})
 else()
 	# Comment the following line during release
-	set(VERSION_PATCH ${VERSION_PATCH}-dev)
+	set(VERSION_PATCH ${VERSION_PATCH}-free)
 endif()
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
