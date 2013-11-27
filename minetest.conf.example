@@ -107,8 +107,6 @@
 # Optimization: faster cave flood (and not true constant)
 #  (for finite liquids)
 #liquid_fast_flood = 1
-# Underground water and lava springs, its infnity sources if liquid_finite enabled
-#underground_springs = 1
 # Enable weather (cold-hot, water freeze-melt). use only with liquid_finite=1
 #weather = false
 # Enable nice leaves; disable for speed
