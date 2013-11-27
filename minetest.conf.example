@@ -173,6 +173,9 @@
 # The time in seconds it takes between repeated
 # right clicks when holding the right mouse button
 #repeat_rightclick_time = 0.25
+# Increases performance on modern GPUs a lot
+# it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
+#enable_vbo = false
 
 # will only work for servers which use remote_media setting
 # and only for clients compiled with cURL

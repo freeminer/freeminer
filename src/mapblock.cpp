@@ -1011,6 +1011,19 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 }
 
+void MapBlock::incrementUsageTimer(float dtime)
+{
+	m_usage_timer += dtime;
+#ifndef SERVER
+	if(mesh){
+		if(mesh->getUsageTimer() > 10)
+			mesh->setStatic();
+		else
+			mesh->incrementUsageTimer(dtime);
+	}
+#endif
+}
+
 /*
 	Get a quick string to describe what a block actually contains
 */

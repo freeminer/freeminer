@@ -21,6 +21,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h"
 #include "mapblock.h"
 #include "serialization.h"
+#ifndef SERVER
+#include "mapblock_mesh.h"
+#endif
 
 MapSector::MapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
 		differs_from_disk(false),
@@ -33,7 +36,23 @@ MapSector::MapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
 
 MapSector::~MapSector()
 {
-	deleteBlocks();
+	// Clear cache
+	m_block_cache = NULL;
+
+	// Delete all
+	for(std::map<s16, MapBlock*>::iterator i = m_blocks.begin();
+		i != m_blocks.end(); ++i)
+	{
+#ifndef SERVER
+		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
+		if(i->second->mesh)
+			i->second->mesh->clearHardwareBuffer = false;
+#endif
+		delete i->second;
+	}
+
+	// Clear container
+	m_blocks.clear();
 }
 
 void MapSector::deleteBlocks()

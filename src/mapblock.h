@@ -417,14 +417,11 @@ public:
 	{
 		m_usage_timer = 0;
 	}
-	void incrementUsageTimer(float dtime)
-	{
-		m_usage_timer += dtime;
-	}
 	u32 getUsageTimer()
 	{
 		return m_usage_timer;
 	}
+	void incrementUsageTimer(float dtime);
 
 	/*
 		See m_refcount

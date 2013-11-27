@@ -1031,13 +1031,15 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 */
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data):
+	clearHardwareBuffer(false),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_crack_materials(),
 	m_last_daynight_ratio((u32) -1),
-	m_daynight_diffs()
+	m_daynight_diffs(),
+	m_usage_timer(0)
 {
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
@@ -1269,16 +1271,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 				<<"and uses "<<m_mesh->getMeshBufferCount()
 				<<" materials (meshbuffers)"<<std::endl;
 #endif
-
-		// Use VBO for mesh (this just would set this for ever buffer)
-		// This will lead to infinite memory usage because or irrlicht.
-		//m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
-
-		/*
-			NOTE: If that is enabled, some kind of a queue to the main
-			thread should be made which would call irrlicht to delete
-			the hardware buffer and then delete the mesh
-		*/
 	}
 	
 	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;
@@ -1292,8 +1284,21 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 
 MapBlockMesh::~MapBlockMesh()
 {
+	if(clearHardwareBuffer)
+		for(u32 i=0; i<m_mesh->getMeshBufferCount(); i++){
+			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);
+			m_gamedef->tsrc()->getDevice()->getVideoDriver()->removeHardwareBuffer(buf);
+		}
 	m_mesh->drop();
 	m_mesh = NULL;
+}
+
+void MapBlockMesh::setStatic()
+{
+	if(g_settings->getBool("enable_vbo")){
+		m_mesh->setHardwareMappingHint(scene::EHM_STATIC);
+		clearHardwareBuffer = true;
+	}
 }
 
 bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_ratio)
@@ -1392,6 +1397,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 				i != m_daynight_diffs.end(); i++)
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
+			buf->setDirty(irr::scene::EBT_VERTEX);
 			video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 			for(std::map<u32, std::pair<u8, u8 > >::iterator
 					j = i->second.begin();

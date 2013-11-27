@@ -21,6 +21,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "map.h"
 #include "mapsector.h"
 #include "mapblock.h"
+/*#ifndef SERVER
+	#include "mapblock_mesh.h"
+#endif*/
 #include "main.h"
 #include "filesys.h"
 #include "voxel.h"
@@ -1500,6 +1503,17 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 			{
 				all_blocks_deleted = false;
 				block_count_all++;
+
+/*#ifndef SERVER
+				if(block->refGet() == 0 && block->getUsageTimer() >
+						g_settings->getFloat("unload_unused_meshes_timeout"))
+				{
+					if(block->mesh){
+						delete block->mesh;
+						block->mesh = NULL;
+					}
+				}
+#endif*/
 			}
 		}
 

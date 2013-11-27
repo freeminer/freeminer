@@ -90,6 +90,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("random_input", "false");
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("client_unload_unused_data_timeout", "600");
+	//settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fov", "72");
 	settings->setDefault("view_bobbing", "true");
@@ -121,6 +122,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
+	settings->setDefault("enable_vbo", "false");
 
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");

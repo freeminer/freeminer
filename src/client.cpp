@@ -758,7 +758,6 @@ void Client::step(float dtime)
 				// Delete the old mesh
 				if(block->mesh != NULL)
 				{
-					// TODO: Remove hardware buffers of meshbuffers of block->mesh
 					delete block->mesh;
 					block->mesh = NULL;
 				}

@@ -108,6 +108,20 @@ public:
 			m_animation_force_timer--;
 	}
 
+
+	u32 getUsageTimer()
+	{
+		return m_usage_timer;
+	}
+	void incrementUsageTimer(float dtime)
+	{
+		m_usage_timer += dtime;
+	}
+
+	void setStatic();
+
+	bool clearHardwareBuffer;
+
 private:
 	scene::SMesh *m_mesh;
 	IGameDef *m_gamedef;
@@ -133,6 +147,8 @@ private:
 	u32 m_last_daynight_ratio;
 	// For each meshbuffer, maps vertex indices to (day,night) pairs
 	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
+
+	u32 m_usage_timer;
 };
 
 
