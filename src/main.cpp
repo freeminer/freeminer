@@ -34,7 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef SERVER // Dedicated server isn't linked with Irrlicht
 	#pragma comment(lib, "Irrlicht.lib")
 	// This would get rid of the console window
-	//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
+	#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
 	#pragma comment(lib, "zlibwapi.lib")
 	#pragma comment(lib, "Shell32.lib")
