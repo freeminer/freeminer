@@ -379,14 +379,14 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	bool fly_allowed = m_gamedef->checkLocalPrivilege("fly");
 	bool fast_allowed = m_gamedef->checkLocalPrivilege("fast");
 
-	bool free_move = fly_allowed && g_settings->getBool("free_move");
+	free_move = fly_allowed && g_settings->getBool("free_move");
 	bool fast_move = fast_allowed && g_settings->getBool("fast_move");
 	// When aux1_descends is enabled the fast key is used to go down, so fast isn't possible
 	bool fast_climb = fast_move && control.aux1 && !g_settings->getBool("aux1_descends");
 	bool continuous_forward = g_settings->getBool("continuous_forward");
 
 	// Whether superspeed mode is used or not
-	bool superspeed = false;
+	superspeed = false;
 	
 	if(g_settings->getBool("always_fly_fast") && free_move && fast_move)
 		superspeed = true;

@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -273,6 +274,9 @@ public:
 	float hurt_tilt_strength;
 
 	bool zoom;
+	bool  superspeed;
+	bool  free_move;
+	float movement_fov;
 
 	u16 peer_id;
 

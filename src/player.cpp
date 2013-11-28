@@ -39,6 +39,9 @@ Player::Player(IGameDef *gamedef):
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
 	zoom(false),
+	superspeed(false),
+	free_move(false),
+	movement_fov(0),
 	peer_id(PEER_ID_INEXISTENT),
 	keyPressed(0),
 // protected
