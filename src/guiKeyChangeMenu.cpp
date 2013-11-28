@@ -55,6 +55,7 @@ enum
 	GUI_ID_KEY_INVENTORY_BUTTON,
 	GUI_ID_KEY_DUMP_BUTTON,
 	GUI_ID_KEY_RANGE_BUTTON,
+	GUI_ID_KEY_ZOOM_BUTTON,
 	// other
 	GUI_ID_CB_AUX1_DESCENDS,
 	GUI_ID_CB_DOUBLETAP_JUMP,
@@ -394,6 +395,7 @@ void GUIKeyChangeMenu::init_keys()
 	this->add_key(GUI_ID_KEY_JUMP_BUTTON,      wgettext("Jump"),          "keymap_jump");
 	this->add_key(GUI_ID_KEY_SNEAK_BUTTON,     wgettext("Sneak"),         "keymap_sneak");
 	this->add_key(GUI_ID_KEY_DROP_BUTTON,      wgettext("Drop"),          "keymap_drop");
+	this->add_key(GUI_ID_KEY_ZOOM_BUTTON,      wgettext("Zoom"),          "keymap_zoom");
 	this->add_key(GUI_ID_KEY_INVENTORY_BUTTON, wgettext("Inventory"),     "keymap_inventory");
 	this->add_key(GUI_ID_KEY_CHAT_BUTTON,      wgettext("Chat"),          "keymap_chat");
 	this->add_key(GUI_ID_KEY_CMD_BUTTON,       wgettext("Command"),       "keymap_cmd");

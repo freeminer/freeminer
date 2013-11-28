@@ -38,6 +38,7 @@ Player::Player(IGameDef *gamedef):
 	hp(PLAYER_MAX_HP),
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
+	zoom(false),
 	peer_id(PEER_ID_INEXISTENT),
 	keyPressed(0),
 // protected

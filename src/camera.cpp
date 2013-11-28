@@ -354,10 +354,15 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	// *100.0 helps in large map coordinates
 	m_cameranode->setTarget(m_camera_position + 100 * m_camera_direction);
 
-	// Get FOV setting
-	f32 fov_degrees = g_settings->getFloat("fov");
-	fov_degrees = MYMAX(fov_degrees, 10.0);
-	fov_degrees = MYMIN(fov_degrees, 170.0);
+	// Get FOV
+	f32 fov_degrees;
+	if (player->zoom) {
+		fov_degrees = g_settings->getFloat("zoom_fov");
+	} else {
+		fov_degrees = g_settings->getFloat("fov");
+		fov_degrees = MYMAX(fov_degrees, 10.0);
+		fov_degrees = MYMIN(fov_degrees, 170.0);
+	}
 
 	// FOV and aspect ratio
 	m_aspect = (f32)screensize.X / (f32) screensize.Y;
