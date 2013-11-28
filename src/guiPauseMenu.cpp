@@ -98,9 +98,9 @@ void GUIPauseMenu::regenerateGui(v2u32 screensize)
 		Calculate new sizes and positions
 	*/
 	core::rect<s32> rect(
-			screensize.X/2 - 580/2,
+			screensize.X/2 - 280/2,
 			screensize.Y/2 - 300/2,
-			screensize.X/2 + 580/2,
+			screensize.X/2 + 280/2,
 			screensize.Y/2 + 300/2
 	);
 	
@@ -162,43 +162,6 @@ void GUIPauseMenu::regenerateGui(v2u32 screensize)
 		Environment->addButton(rect, this, 257,
 			text);
 		delete[] text;
-	}
-
-	{
-		core::rect<s32> rect(0, 0, 180, 240);
-		rect = rect + v2s32(size.X/2 + 90, size.Y/2-rect.getHeight()/2);
-		wchar_t* text = wgettext("Default Controls:\n"
-				"- WASD: move\n"
-				"- Space: jump/climb\n"
-				"- Shift: sneak/go down\n"
-				"- Q: drop item\n"
-				"- I: inventory\n"
-				"- Mouse: turn/look\n"
-				"- Mouse left: dig/punch\n"
-				"- Mouse right: place/use\n"
-				"- Mouse wheel: select item\n"
-				"- T: chat\n"
-				);
-		Environment->addStaticText(text, rect, false, true, this, 258);
-		delete[] text;
-
-	}
-	{
-		core::rect<s32> rect(0, 0, 180, 220);
-		rect = rect + v2s32(size.X/2 - 90 - rect.getWidth(), size.Y/2-rect.getHeight()/2);
-	
-		v2u32 max_texture_size;
-		{
-			video::IVideoDriver* driver = Environment->getVideoDriver();
-			max_texture_size = driver->getMaxTextureSize();
-		}
-
-		std::ostringstream os;
-		os<<"Minetest\n";
-		os<<minetest_build_info<<"\n";
-		os<<"path_user = "<<wrap_rows(porting::path_user, 20)<<"\n";
-	
-		Environment->addStaticText(narrow_to_wide(os.str()).c_str(), rect, false, true, this, 259);
 	}
 }
 

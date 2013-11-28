@@ -275,8 +275,8 @@ void GUIEngine::run()
 		else
 			drawBackground(driver);
 
-		drawHeader(driver);
-		drawFooter(driver);
+		//drawHeader(driver);
+		//drawFooter(driver);
 
 		m_device->getGUIEnvironment()->drawAll();
 

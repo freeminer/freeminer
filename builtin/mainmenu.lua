@@ -146,18 +146,26 @@ end
 
 --------------------------------------------------------------------------------
 function update_menu()
-
 	local formspec
-	
+
 	-- handle errors
 	if gamedata.errormessage ~= nil then
 		formspec = "size[12,5.2]" ..
 			"field[1,2;10,2;;ERROR: " ..
-			gamedata.errormessage .. 
+			gamedata.errormessage ..
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
-		formspec = tabbuilder.gettab()
+		formspec = "size[15.5,11.625]" .. "image[-0.35,-0.675;" .. menu.defaulttexturedir .. "menu.png]"
+		formspec = formspec .. "background[-50,-50;100,100;" .. menu.defaulttexturedir .. "background.png]"
+
+		formspec = formspec .. "image[-0.35," .. 1.8 + tabbuilder.last_tab_index .. ";" .. menu.defaulttexturedir .. "selected.png]"
+
+		for i, x in ipairs({"Singleplayer", "Client", "Server", "Settings", "Texture Packs", "Games", "Mods", "Credits"}) do
+			formspec = formspec .. "label[0.35," .. 2 + i .. ";" .. x .. "]"
+			formspec = formspec .. "image_button[-0.4," .. 1.85 + i .. ";6.7,1;" .. menu.defaulttexturedir .. "blank.png;maintab_" .. i .. ";;true;false]"
+		end
+		formspec = formspec .. tabbuilder.gettab()
 	end
 
 	engine.update_formspec(formspec)
@@ -294,21 +302,21 @@ function tabbuilder.dialog_create_world()
 	mglist = mglist:sub(1, -2)
 
 	local retval = 
-		"label[2,0;" .. fgettext("World name") .. "]"..
-		"field[4.5,0.4;6,0.5;te_world_name;;]" ..
+		"label[6.5,0;" .. fgettext("World name") .. "]"..
+		"field[9,0.4;6,0.5;te_world_name;;]" ..
 
-		"label[2,1;" .. fgettext("Seed") .. "]"..
-		"field[4.5,1.4;6,0.5;te_seed;;".. current_seed .. "]" ..
+		"label[6.5,1;" .. fgettext("Seed") .. "]"..
+		"field[9,1.4;6,0.5;te_seed;;".. current_seed .. "]" ..
 
-		"label[2,2;" .. fgettext("Mapgen") .. "]"..
-		"dropdown[4.2,2;6.3;dd_mapgen;" .. mglist .. ";" .. selindex .. "]" ..
+		"label[6.5,2;" .. fgettext("Mapgen") .. "]"..
+		"dropdown[8.7,2;6.3;dd_mapgen;" .. mglist .. ";" .. selindex .. "]" ..
 
-		"label[2,3;" .. fgettext("Game") .. "]"..
-		"textlist[4.2,3;5.8,2.3;games;" .. gamemgr.gamelist() ..
+		"label[6.5,3;" .. fgettext("Game") .. "]"..
+		"textlist[8.7,3;5.8,2.3;games;" .. gamemgr.gamelist() ..
 		";" .. menu.last_game .. ";true]" ..
 
-		"button[5,5.5;2.6,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
-		"button[7.5,5.5;2.8,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
+		"button[9.5,5.5;2.6,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
+		"button[12,5.5;2.8,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
 
 	return retval
 end
@@ -324,18 +332,17 @@ end
 --------------------------------------------------------------------------------
 
 function tabbuilder.gettab()
-	local tsize = tabbuilder.tabsizes[tabbuilder.current_tab] or {width=12, height=5.2}
-	local retval = "size[" .. tsize.width .. "," .. tsize.height .. "]"
+	local retval = ""
 
-	if tabbuilder.show_buttons then
-		retval = retval .. tabbuilder.tab_header()
-	end
+	--if tabbuilder.show_buttons then
+	--	retval = retval .. tabbuilder.tab_header()
+	--end
 
 	local buildfunc = tabbuilder.tabfuncs[tabbuilder.current_tab]
 	if buildfunc ~= nil then
 		retval = retval .. buildfunc()
 	end
-	
+
 	retval = retval .. modmgr.gettab(tabbuilder.current_tab)
 	retval = retval .. gamemgr.gettab(tabbuilder.current_tab)
 	retval = retval .. modstore.gettab(tabbuilder.current_tab)
@@ -788,12 +795,19 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.handle_tab_buttons(fields)
+	local index = nil
+	local match = "maintab_"
+	for idx, _ in pairs(fields) do
+		if idx:sub(1, #match) == match then
+			index = tonumber(idx:sub(#match + 1, #match + 1))
+			break
+		end
+	end
 
-	if fields["main_tab"] then
-		local index = tonumber(fields["main_tab"])
+	if index then
 		tabbuilder.last_tab_index = index
 		tabbuilder.current_tab = tabbuilder.current_buttons[index].name
-		
+
 		engine.setting_set("main_menu_tab",tabbuilder.current_tab)
 	end
 	
@@ -813,42 +827,42 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
-
 	local retval =
-		"vertlabel[0,-0.25;".. fgettext("CLIENT") .. "]" ..
-		"label[1,-0.25;".. fgettext("Favorites:") .. "]"..
-		"label[1,4.25;".. fgettext("Address/Port") .. "]"..
-		"label[9,2.75;".. fgettext("Name/Password") .. "]" ..
-		"field[1.25,5.25;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
-		"field[6.75,5.25;2.25,0.5;te_port;;" ..engine.setting_get("port") .."]" ..
-		"checkbox[1,3.6;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
+		"label[6.5,-0.25;".. fgettext("Servers") .. "]"..
+		"label[6.5,6.5;".. fgettext("Address") .. "]"..
+		"field[6.75,7.5;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
+		"label[11.95,6.5;".. fgettext("Port") .. "]"..
+		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("port") .."]" ..
+		"checkbox[10,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
-		
+
 	if not engine.setting_getbool("public_serverlist") then
-		retval = retval .. 
-		"button[6.45,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
+		retval = retval ..
+			"button[12,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
 	end
-	
+
 	retval = retval ..
-		"button[9,4.95;2.5,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[9.3,3.75;2.5,0.5;te_name;;" ..engine.setting_get("name") .."]" ..
-		"pwdfield[9.3,4.5;2.5,0.5;te_pwd;]" ..
-		"textarea[9.3,0.25;2.5,2.75;;"
-	if menu.fav_selected ~= nil and 
+		"button[11.75,10;2.5,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
+		"label[6.5,7.8;".. fgettext("Name") .. "]" ..
+		"field[6.75,8.8;4,0.5;te_name;;" ..engine.setting_get("name") .."]" ..
+		"label[10.55,7.8;".. fgettext("Password") .. "]" ..
+		"pwdfield[10.8,8.8;3.7,0.5;te_pwd;]" ..
+		"textarea[6.75,3.8;6,2.75;;"
+	if menu.fav_selected ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
-		retval = retval .. 
+		retval = retval ..
 			engine.formspec_escape(menu.favorites[menu.fav_selected].description,true)
 	end
-	
-	retval = retval .. 
+
+	retval = retval ..
 		";]" ..
-		"textlist[1,0.35;7.5,3.35;favourites;"
+		"textlist[6.5,0.35;7.5,3.35;favourites;"
 
 	local render_details = engine.setting_getbool("public_serverlist")
 
 	if #menu.favorites > 0 then
 		retval = retval .. menu.render_favorite(menu.favorites[1],render_details)
-		
+
 		for i=2,#menu.favorites,1 do
 			retval = retval .. "," .. menu.render_favorite(menu.favorites[i],render_details)
 		end
@@ -929,25 +943,23 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_singleplayer()
-	
 	local index = filterlist.get_current_index(worldlist,
 				tonumber(engine.setting_get("mainmenu_last_selected_world"))
 				)
 
-	return	"button[4,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[6.5,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[9.2,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-			"button[8.5,4.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
-			"label[4,-0.25;".. fgettext("Select World:") .. "]"..
-			"vertlabel[0,-0.25;".. fgettext("SINGLE PLAYER") .. "]" ..
-			"checkbox[0.5,0.25;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+	return	"button[6.5,5;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
+			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]" ..
+			"button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
+			"label[6.5,0;".. fgettext("Select World:") .. "]"..
+			"checkbox[6.5,4.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 			dump(engine.setting_getbool("creative_mode")) .. "]"..
-			"checkbox[0.5,0.7;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+			"checkbox[9.5,4.1;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
 			dump(engine.setting_getbool("enable_damage")) .. "]"..
-			"textlist[4,0.25;7.5,3.7;sp_worlds;" ..
+			"textlist[6.5,0.5;8.8,3.7;sp_worlds;" ..
 			menu.render_world_list() ..
-			";" .. index .. "]" ..
-			menubar.formspec
+			menubar.formspec ..
+			";" .. index .. "]"
 end
 
 --------------------------------------------------------------------------------
@@ -1123,7 +1135,7 @@ end
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 engine.button_handler = function(fields)
-	--print("Buttonhandler: tab: " .. tabbuilder.current_tab .. " fields: " .. dump(fields))
+	print("Buttonhandler: tab: " .. tabbuilder.current_tab .. " fields: " .. dump(fields))
 	
 	if fields["btn_error_confirm"] then
 		gamedata.errormessage = nil
@@ -1201,11 +1213,11 @@ function menu.update_gametype(reset)
 
 	if reset or game == nil then
 		mm_texture.reset()
-		engine.set_topleft_text("")
+		--engine.set_topleft_text("")
 		filterlist.set_filtercriteria(worldlist,nil)
 	else
 		mm_texture.update(tabbuilder.current_tab,game)
-		engine.set_topleft_text(game.name)
+		--engine.set_topleft_text(game.name)
 		filterlist.set_filtercriteria(worldlist,game.id)
 	end
 end
