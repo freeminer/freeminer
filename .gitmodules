@@ -1,0 +1,3 @@
+[submodule "games/default"]
+	path = games/default
+	url = https://github.com/freeminer/default.git
