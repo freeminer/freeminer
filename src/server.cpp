@@ -5510,6 +5510,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 
 	IntervalLimiter m_profiler_interval;
 
+	int errors = 0;
 	float steplen = g_settings->getFloat("dedicated_server_step");
 	for(;;)
 	{
@@ -5522,7 +5523,8 @@ void dedicated_server_loop(Server &server, bool &kill)
 		try {
 		server.step(steplen);
 		} catch (...){
-			errorstream<<"Fatal error"<<std::endl;
+			if (!errors++ || !(errors % 100))
+				errorstream<<"Fatal error "<<errors<<std::endl;
 		}
 		if(server.getShutdownRequested() || kill)
 		{
