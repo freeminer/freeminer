@@ -2855,7 +2855,10 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 				y<=blockpos_max.Y+extra_borders.Y; y++)
 		{
 			v3s16 p(x, y, z);
-			getBlockNoCreateNoEx(p)->setLightingExpired(false);
+			MapBlock *block = getBlockNoCreateNoEx(p);
+			if (block == NULL)
+				continue;
+			block->setLightingExpired(false);
 		}
 
 #if 0
@@ -2871,6 +2874,8 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 			i != changed_blocks.end(); ++i)
 	{
 		MapBlock *block = i->second;
+		if (block == NULL)
+			continue;
 		assert(block);
 		/*
 			Update day/night difference cache of the MapBlocks
@@ -2892,6 +2897,8 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 	{
 		v3s16 p(x, y, z);
 		MapBlock *block = getBlockNoCreateNoEx(p);
+		if (block == NULL)
+			continue;
 		assert(block);
 		block->setGenerated(true);
 	}
@@ -2906,7 +2913,6 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 			<<","<<blockpos_requested.Y<<","
 			<<blockpos_requested.Z<<")"<<std::endl;*/
 			
-//#if 0
 	/*
 		Update weather data in blocks
 	*/
@@ -2915,13 +2921,12 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 	for(s16 z=blockpos_min.Z-extra_borders.Z;z<=blockpos_max.Z+extra_borders.Z; z++)
 	for(s16 y=blockpos_min.Y-extra_borders.Y;y<=blockpos_max.Y+extra_borders.Y; y++) {
 		v3s16 p(x, y, z);
-		MapBlock *block = getBlockNoCreateNoEx(p); //?
-		//block->heat_last_update     = 0;
-		//block->humidity_last_update = 0;
+		MapBlock *block = getBlockNoCreateNoEx(p);
+		if (block == NULL)
+			continue;
 		updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
-		updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block); //?
+		updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block);
 	}
-//#endif
 
 #if 0
 	if(enable_mapgen_debug_info)
