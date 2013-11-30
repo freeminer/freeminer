@@ -5,6 +5,8 @@
 -- before loading and running any mods.
 --
 
+freeminer = minetest
+
 -- Initialize some very basic things
 print = minetest.debug
 math.randomseed(os.time())
