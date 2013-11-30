@@ -1013,18 +1013,10 @@ void Server::start(unsigned short port)
 	m_thread->setRun(true);
 	m_thread->Start();
 
-	// ASCII art for the win!
-	actionstream
-	<<"        .__               __                   __   "<<std::endl
-	<<"  _____ |__| ____   _____/  |_  ____   _______/  |_ "<<std::endl
-	<<" /     \\|  |/    \\_/ __ \\   __\\/ __ \\ /  ___/\\   __\\"<<std::endl
-	<<"|  Y Y  \\  |   |  \\  ___/|  | \\  ___/ \\___ \\  |  |  "<<std::endl
-	<<"|__|_|  /__|___|  /\\___  >__|  \\___  >____  > |__|  "<<std::endl
-	<<"      \\/        \\/     \\/          \\/     \\/        "<<std::endl;
+	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
 			<<"\" mapgen=\""<<m_emerge->params->mg_name
-			<<"\" version=\""<<minetest_version_hash
 			<<"\" listening on port "<<port<<"."<<std::endl;
 }
 

@@ -270,7 +270,6 @@ BlockMen:
 erlehmann:
   misc/minetest-icon-24x24.png
   misc/minetest-icon.ico
-  misc/minetest-icon.svg
   textures/base/pack/logo.png
 
 License of Minetest source code

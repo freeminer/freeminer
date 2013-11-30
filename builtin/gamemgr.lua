@@ -213,9 +213,8 @@ function gamemgr.tab()
 	end
 	
 	local retval = 
-		"vertlabel[0,-0.25;" .. fgettext("GAMES") .. "]" ..
-		"label[1,-0.25;" .. fgettext("Games") .. ":]" ..
-		"textlist[1,0.25;4.5,4.4;gamelist;" ..
+		"label[6.5,-0.25;" .. fgettext("Games") .. ":]" ..
+		"textlist[6.5,0.25;8,4.4;gamelist;" ..
 		gamemgr.gamelist() ..
 		";" .. gamemgr.selected_game .. "]"
 	
@@ -225,17 +224,17 @@ function gamemgr.tab()
 		if current_game.menuicon_path ~= nil and
 			current_game.menuicon_path ~= "" then
 			retval = retval .. 
-				"image[5.8,-0.25;2,2;" ..
+				"image[6.5,5.5;2,2;" ..
 				engine.formspec_escape(current_game.menuicon_path) .. "]"
 		end
 		
 		retval = retval ..
-			"field[8,-0.25;6,2;;" .. current_game.name .. ";]"..
-			"label[6,1.4;" .. fgettext("Mods:") .."]" ..
-			"button[9.7,1.5;2,0.2;btn_game_mgr_edit_game;" .. fgettext("edit game") .. "]" ..
-			"textlist[6,2;5.5,3.3;game_mgr_modlist;"
+			"field[9,5.5;6,2;;" .. current_game.name .. ";]"..
+			"label[6.5,7.2;" .. fgettext("Mods:") .."]" ..
+			"button[6.5,11.4;3.2,0.2;btn_game_mgr_edit_game;" .. fgettext("edit game") .. "]" ..
+			"textlist[6.5,7.7;8,3.3;game_mgr_modlist;"
 			.. gamemgr.get_game_modlist(current_game) ..";0]" ..
-			"button[1,4.75;3.2,0.5;btn_game_mgr_new_game;" .. fgettext("new game") .. "]"
+			"button[6.5,4.9;3.2,0.5;btn_game_mgr_new_game;" .. fgettext("new game") .. "]"
 	end
 	return retval
 end
