@@ -236,6 +236,8 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 												"mapgen_dirt");
 	b->nname_water  = getstringfield_default(L, index, "node_water",
 												"mapgen_water_source");
+	b->nname_ice  = getstringfield_default(L, index, "node_ice",
+												"mapgen_ice");
 	b->nname_dust   = getstringfield_default(L, index, "node_dust",
 												"air");
 	b->nname_dust_water = getstringfield_default(L, index, "node_dust_water",
@@ -252,6 +254,7 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 	b->c_top        = CONTENT_IGNORE;
 	b->c_filler     = CONTENT_IGNORE;
 	b->c_water      = CONTENT_IGNORE;
+	b->c_ice        = CONTENT_IGNORE;
 	b->c_dust       = CONTENT_IGNORE;
 	b->c_dust_water = CONTENT_IGNORE;
 	

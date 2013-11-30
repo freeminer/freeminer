@@ -48,12 +48,14 @@ public:
 	std::string nname_top;
 	std::string nname_filler;
 	std::string nname_water;
+	std::string nname_ice;
 	std::string nname_dust;
 	std::string nname_dust_water;
 
 	content_t c_top;
 	content_t c_filler;
 	content_t c_water;
+	content_t c_ice;
 	content_t c_dust;
 	content_t c_dust_water;
 	

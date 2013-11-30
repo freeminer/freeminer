@@ -137,6 +137,9 @@ void BiomeDefManager::resolveNodeNames(INodeDefManager *ndef) {
 				<< b->nname_water << "' not defined" << std::endl;
 			b->c_water = CONTENT_AIR;
 		}
+		b->c_ice = ndef->getId(b->nname_ice);
+		if (b->c_ice == CONTENT_IGNORE)
+			b->c_ice = b->c_water;
 		
 		b->c_dust = ndef->getId(b->nname_dust);
 		if (b->c_dust == CONTENT_IGNORE) {

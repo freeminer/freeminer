@@ -180,7 +180,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	c_sand            = ndef->getId("mapgen_sand");
 	c_water_source    = ndef->getId("mapgen_water_source");
 	c_lava_source     = ndef->getId("mapgen_lava_source");
-	c_ice             = ndef->getId("default:ice");
+	c_ice             = ndef->getId("mapgen_ice");
 	if (c_ice == CONTENT_IGNORE)
 		c_ice = CONTENT_AIR;
 	
@@ -388,6 +388,7 @@ int MapgenV7::generateBaseTerrain() {
 	MapNode n_air(CONTENT_AIR);
 	MapNode n_stone(c_stone);
 	MapNode n_water(c_water_source);
+	MapNode n_ice(c_ice);
 	
 	int stone_surface_max_y = -MAP_GENERATION_LIMIT;
 	v3s16 em = vm->m_area.getExtent();
@@ -410,7 +411,10 @@ int MapgenV7::generateBaseTerrain() {
 				if (y <= surface_y)
 					vm->m_data[i] = n_stone;
 				else if (y <= water_level)
-					vm->m_data[i] = n_water;
+				{
+					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water;
+				}
 				else
 					vm->m_data[i] = n_air;
 			}
@@ -447,6 +451,7 @@ void MapgenV7::generateMountainTerrain() {
 
 void MapgenV7::generateRidgeTerrain() {
 	MapNode n_water(c_water_source);
+	MapNode n_ice(c_ice);
 	MapNode n_air(CONTENT_AIR);
 	u32 index = 0;
 	
@@ -480,7 +485,10 @@ void MapgenV7::generateRidgeTerrain() {
 			if (y < ridge_heightmap[j])
 				ridge_heightmap[j] = y - 1; 
 
-			vm->m_data[vi] = (y > water_level) ? n_air : n_water;
+			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+			MapNode n_water_or_ice = (heat < 0 && y > water_level + heat/4) ? n_ice : n_water;
+
+			vm->m_data[vi] = (y > water_level) ? n_air : n_water_or_ice;
 		}
 	}
 }
@@ -547,7 +555,8 @@ void MapgenV7::generateBiomes() {
 			} else if (c == c_water_source) {
 				have_air = true;
 				nplaced = 0;
-				vm->m_data[i] = MapNode(biome->c_water);
+				s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+				vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
 			} else if (c == CONTENT_AIR) {
 				have_air = true;
 				nplaced = 0;
