@@ -2357,7 +2357,7 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 	return ret;
 }
 
-NodeMetadata* Map::getNodeMetadata(v3s16 p)
+NodeMetadata *Map::getNodeMetadata(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
@@ -2367,8 +2367,7 @@ NodeMetadata* Map::getNodeMetadata(v3s16 p)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::getNodeMetadata(): Block not found"
 				<<std::endl;
 		return NULL;
@@ -2377,7 +2376,7 @@ NodeMetadata* Map::getNodeMetadata(v3s16 p)
 	return meta;
 }
 
-void Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
+bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
@@ -2387,13 +2386,13 @@ void Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::setNodeMetadata(): Block not found"
 				<<std::endl;
-		return;
+		return false;
 	}
 	block->m_node_metadata.set(p_rel, meta);
+	return true;
 }
 
 void Map::removeNodeMetadata(v3s16 p)
@@ -2420,8 +2419,7 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::getNodeTimer(): Block not found"
 				<<std::endl;
 		return NodeTimer();
@@ -2440,8 +2438,7 @@ void Map::setNodeTimer(v3s16 p, NodeTimer t)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::setNodeTimer(): Block not found"
 				<<std::endl;
 		return;

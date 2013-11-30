@@ -497,8 +497,7 @@ void MapNode::deSerialize(u8 *source, u8 version)
 		param0 = readU16(source+0);
 		param1 = readU8(source+2);
 		param2 = readU8(source+3);
-	}
-	else{
+	}else{
 		param0 = readU8(source+0);
 		param1 = readU8(source+1);
 		param2 = readU8(source+2);
