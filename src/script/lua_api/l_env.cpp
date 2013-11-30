@@ -121,6 +121,22 @@ int ModApiEnvMod::l_remove_node(lua_State *L)
 	return 1;
 }
 
+// minetest.swap_node(pos, node)
+// pos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_swap_node(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	INodeDefManager *ndef = env->getGameDef()->ndef();
+	// parameters
+	v3s16 pos = read_v3s16(L, 1);
+	MapNode n = readnode(L, 2, ndef);
+	// Do it
+	bool succeeded = env->swapNode(pos, n);
+	lua_pushboolean(L, succeeded);
+	return 1;
+}
+
 // minetest.get_node(pos)
 // pos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_get_node(lua_State *L)
@@ -433,28 +449,20 @@ int ModApiEnvMod::l_get_player_by_name(lua_State *L)
 // minetest.get_objects_inside_radius(pos, radius)
 int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 {
-	// Get the table insert function
-	lua_getglobal(L, "table");
-	lua_getfield(L, -1, "insert");
-	int table_insert = lua_gettop(L);
-
 	GET_ENV_PTR;
 
 	// Do it
 	v3f pos = checkFloatPos(L, 1);
 	float radius = luaL_checknumber(L, 2) * BS;
 	std::set<u16> ids = env->getObjectsInsideRadius(pos, radius);
-	lua_newtable(L);
-	int table = lua_gettop(L);
-	for(std::set<u16>::const_iterator
-			i = ids.begin(); i != ids.end(); i++){
-		ServerActiveObject *obj = env->getActiveObject(*i);
+	ScriptApiBase *script = getScriptApiBase(L);
+	lua_createtable(L, ids.size(), 0);
+	std::set<u16>::const_iterator iter = ids.begin();
+	for(u32 i = 0; iter != ids.end(); iter++) {
+		ServerActiveObject *obj = env->getActiveObject(*iter);
 		// Insert object reference into table
-		lua_pushvalue(L, table_insert);
-		lua_pushvalue(L, table);
-		getScriptApiBase(L)->objectrefGetOrCreate(obj);
-		if(lua_pcall(L, 2, 0, 0))
-			script_error(L);
+		script->objectrefGetOrCreate(obj);
+		lua_rawseti(L, -2, ++i);
 	}
 	return 1;
 }
@@ -564,25 +572,16 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 		ndef->getIds(lua_tostring(L, 3), filter);
 	}
 
-	// Get the table insert function
-	lua_getglobal(L, "table");
-	lua_getfield(L, -1, "insert");
-	int table_insert = lua_gettop(L);
-
 	lua_newtable(L);
-	int table = lua_gettop(L);
-	for(s16 x=minp.X; x<=maxp.X; x++)
-	for(s16 y=minp.Y; y<=maxp.Y; y++)
-	for(s16 z=minp.Z; z<=maxp.Z; z++)
-	{
-		v3s16 p(x,y,z);
+	u64 i = 0;
+	for(s16 x = minp.X; x <= maxp.X; x++)
+	for(s16 y = minp.Y; y <= maxp.Y; y++)
+	for(s16 z = minp.Z; z <= maxp.Z; z++) {
+		v3s16 p(x, y, z);
 		content_t c = env->getMap().getNodeNoEx(p).getContent();
-		if(filter.count(c) != 0){
-			lua_pushvalue(L, table_insert);
-			lua_pushvalue(L, table);
+		if(filter.count(c) != 0) {
 			push_v3s16(L, p);
-			if(lua_pcall(L, 2, 0, 0))
-				script_error(L);
+			lua_rawseti(L, -2, ++i);
 		}
 	}
 	return 1;
@@ -822,6 +821,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
 	API_FCT(set_node);
 	API_FCT(add_node);
+	API_FCT(swap_node);
 	API_FCT(add_item);
 	API_FCT(remove_node);
 	API_FCT(get_node);
