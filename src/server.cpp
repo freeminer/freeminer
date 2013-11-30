@@ -1253,7 +1253,7 @@ void Server::AsyncRunStep()
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		// ? JMutexAutoLock lock(m_env_mutex);
+		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
 		for(std::map<u16, RemoteClient*>::iterator
