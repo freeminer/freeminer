@@ -79,8 +79,6 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_sector_cache(NULL)
 {
-	/*m_sector_mutex.Init();
-	assert(m_sector_mutex.IsInitialized());*/
 }
 
 Map::~Map()
@@ -1710,7 +1708,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		u16 total_level = 0;
 		//u16 level_max = 0;
 		// surrounding flowing liquid nodes
-		NodeNeighbor neighbors[7]; 
+		NodeNeighbor neighbors[7];
 		// current level of every block
 		s8 liquid_levels[7] = {-1, -1, -1, -1, -1, -1, -1};
 		 // target levels

@@ -61,7 +61,6 @@ class Settings
 public:
 	Settings()
 	{
-		m_mutex.Init();
 	}
 
 	void writeLines(std::ostream &os)
@@ -78,7 +77,7 @@ public:
 		}
 	}
   
-	// return all keys used 
+	// return all keys used
 	std::vector<std::string> getNames(){
 		std::vector<std::string> names;
 		for(std::map<std::string, std::string>::iterator
@@ -87,7 +86,7 @@ public:
 		{
 			names.push_back(i->first);
 		}
-		return names;  
+		return names;
 	}
 
 	// remove a setting
