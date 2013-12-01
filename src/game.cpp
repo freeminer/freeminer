@@ -1428,9 +1428,7 @@ void the_game(
 
 	float repeat_rightclick_timer = 0;
 
-	gui::IGUIListBox *playerlist_l = NULL;
-	GUIFormSpecMenu *playerlist_f = NULL;
-	std::string playerlist_formspec = "";
+	gui::IGUIListBox *playerlist = NULL;
 
 	/*
 		Shader constants
@@ -1997,52 +1995,25 @@ void the_game(
 			jump_timer = 0.0;
 		}
 
-		if(!input->isKeyDown(getKeySetting("keymap_playerlist")))
+		if(!input->isKeyDown(getKeySetting("keymap_playerlist")) && playerlist != NULL)
 		{
-			if(playerlist_l != NULL)
-			{
-				playerlist_l->remove();
-				playerlist_l = NULL;
-			}
-			if(playerlist_f != NULL)
-			{
-				delete playerlist_f;
-				playerlist_f = NULL;
-			}
+			playerlist->remove();
+			playerlist = NULL;
 		}
-		if(input->wasKeyDown(getKeySetting("keymap_playerlist")))
+		if(input->wasKeyDown(getKeySetting("keymap_playerlist")) && playerlist == NULL)
 		{
-			core::rect<s32> drawrect;
-			if(playerlist_l == NULL || playerlist_f == NULL)
+			std::list<std::string> pll;
+			pll = client.getEnv().getPlayerNames();
+			if(show_debug)
+				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 70, screensize.X*0.61, 80+pll.size()*(text_height+2)));
+			else
+				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 50, screensize.X*0.61, 60+pll.size()*(text_height+2)));
+			while(!pll.empty())
 			{
-				if(show_debug)
-					drawrect = core::rect<s32>(
-						screensize.X*0.39, 70, screensize.X*0.61, 80+client.getEnv().getPlayerNames().size()*(text_height+2));
-				else
-					drawrect = core::rect<s32>(
-						screensize.X*0.39, 50, screensize.X*0.61, 60+client.getEnv().getPlayerNames().size()*(text_height+2));
+				playerlist->addItem(narrow_to_wide(pll.front()).c_str());
+				pll.pop_front();
 			}
-			if(playerlist_formspec == "" && playerlist_l == NULL)
-			{
-				std::list<std::string> pll;
-				pll = client.getEnv().getPlayerNames();
-				playerlist_l = guienv->addListBox(drawrect);
-				while(!pll.empty())
-				{
-					playerlist_l->addItem(narrow_to_wide(pll.front()).c_str());
-					pll.pop_front();
-				}
-				playerlist_l->setSelected(-1);
-			}
-			else if(playerlist_formspec != "" && playerlist_f == NULL)
-			{
-				playerlist_f = new GUIFormSpecMenu(device, guiroot, -1,
-					&g_menumgr, &client, gamedef, tsrc);
-				playerlist_f->setFormSource(new FormspecFormSource(playerlist_formspec, &current_formspec));
-				playerlist_f->allowClose(false);
-				playerlist_f->lockSize(true, v2u32(drawrect.getWidth(), drawrect.getHeight()));
-
-			}
+			playerlist->setSelected(-1);
 		}
 
 		// Handle QuicktuneShortcutter
@@ -2480,11 +2451,6 @@ void the_game(
 					
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
-				}
-				else if (event.type == CE_SET_PLAYERLIST)
-				{
-					playerlist_formspec = *event.set_playerlist.formspec;
-					delete event.set_playerlist.formspec;
 				}
 			}
 		}
@@ -3423,10 +3389,10 @@ void the_game(
 		/*
 			Draw background for player list
 		*/
-		if (playerlist_l != NULL)
+		if (playerlist != NULL)
 		{
-			driver->draw2DRectangle(video::SColor(128,255,255,255), playerlist_l->getAbsolutePosition());
-			driver->draw2DRectangleOutline(playerlist_l->getAbsolutePosition(), video::SColor(255,128,128,128));
+			driver->draw2DRectangle(video::SColor(128,255,255,255), playerlist->getAbsolutePosition());
+			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,128,128,128));
 		}
 
 		/*
