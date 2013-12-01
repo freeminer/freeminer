@@ -3391,8 +3391,8 @@ void the_game(
 		*/
 		if (playerlist != NULL)
 		{
-			driver->draw2DRectangle(video::SColor(128,255,255,255), playerlist->getAbsolutePosition());
-			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,128,128,128));
+			driver->draw2DRectangle(video::SColor(128,0,0,0), playerlist->getAbsolutePosition());
+			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,0,0,0));
 		}
 
 		/*
