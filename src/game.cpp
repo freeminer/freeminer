@@ -2006,7 +2006,7 @@ void the_game(
 			}
 			if(playerlist_f != NULL)
 			{
-				playerlist_f->remove();
+				delete playerlist_f;
 				playerlist_f = NULL;
 			}
 		}
@@ -2036,13 +2036,12 @@ void the_game(
 			}
 			else if(playerlist_formspec != "" && playerlist_f == NULL)
 			{
-			    FormspecFormSource *ffs;
-			    playerlist_l = guienv->addListBox(drawrect);
-				playerlist_f = new GUIFormSpecMenu(device, playerlist_l, -1,
+				playerlist_f = new GUIFormSpecMenu(device, guiroot, -1,
 					&g_menumgr, &client, gamedef, tsrc);
-				playerlist_f->setFormSource(new FormspecFormSource(playerlist_formspec, &ffs));
+				playerlist_f->setFormSource(new FormspecFormSource(playerlist_formspec, &current_formspec));
 				playerlist_f->allowClose(false);
 				playerlist_f->lockSize(true, v2u32(drawrect.getWidth(), drawrect.getHeight()));
+
 			}
 		}
 
