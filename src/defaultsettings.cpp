@@ -307,6 +307,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
+	settings->setDefault("default_game", "default");
+	settings->setDefault("serverlist_url", "servers.freeminer.org");
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
