@@ -928,10 +928,10 @@ void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
 	{
-		MapBlock *block = i->second;
-		if(!block)
-			continue;
-		if(block->isDummy())
+		MapBlock *block = getBlockNoCreateNoEx(i->first);
+		//can contain already deleted block from Map::timerUpdate -> MapSector::deleteBlock
+		//MapBlock *block = i->second;
+		if(block == NULL || block->isDummy())
 			continue;
 		block->expireDayNightDiff();
 	}
