@@ -505,13 +505,6 @@ enum ToClientCommand
 		u16 command
 		u16 breath
 	*/
-
-	TOCLIENT_SET_PLAYERLIST = 0x4f,
-	/*
-		u16 command
-		u16 len
-		u8[len] formspec
-	*/
 };
 
 enum ToServerCommand
