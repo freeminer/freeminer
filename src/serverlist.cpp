@@ -247,8 +247,8 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1);
 		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
 		res = curl_easy_perform(curl);
-		if (res != CURLE_OK)
-			errorstream<<"Serverlist at url "<<g_settings->get("serverlist_url")<<" error ("<<curl_easy_strerror(res)<<")"<<std::endl;
+		if (res != CURLE_OK && res != CURLE_OPERATION_TIMEDOUT)
+			errorstream<<"Serverlist at url "<<g_settings->get("serverlist_url")<<" error ["<<res<<"] ("<<curl_easy_strerror(res)<<")"<<std::endl;
 		curl_easy_cleanup(curl);
 	}
 
