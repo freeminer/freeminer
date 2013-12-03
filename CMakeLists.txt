@@ -168,9 +168,9 @@ install(FILES "doc/mapformat.txt" DESTINATION "${DOCDIR}")
 install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX)
-	install(FILES "doc/minetest.6" "doc/minetestserver.6" DESTINATION "${MANDIR}/man6")
-	install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/freeminer-icon.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
+	install(FILES "doc/freeminer.6" "doc/freeminerserver.6" DESTINATION "${MANDIR}/man6")
+	#TODO install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")	install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
+	#TODO install(FILES "misc/freeminer-icon.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
 endif()
 
 #
@@ -193,10 +193,10 @@ if(WIN32)
 	# For some reason these aren't copied otherwise
 	# NOTE: For some reason now it seems to work without these
 	#if(BUILD_CLIENT)
-	#	install(FILES bin/minetest.exe DESTINATION bin)
+	#	install(FILES bin/freeminer.exe DESTINATION bin)
 	#endif()
 	#if(BUILD_SERVER)
-	#	install(FILES bin/minetestserver.exe DESTINATION bin)
+	#	install(FILES bin/freeminerserver.exe DESTINATION bin)
 	#endif()
 
 	set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_STRING}-win32")
@@ -204,7 +204,7 @@ if(WIN32)
 	set(CPACK_GENERATOR ZIP)
 
 	# This might be needed for some installer
-	#set(CPACK_PACKAGE_EXECUTABLES bin/minetest.exe "Minetest" bin/minetestserver.exe "Minetest Server")
+	#set(CPACK_PACKAGE_EXECUTABLES bin/freeminer.exe "Freeminer" bin/freeminerserver.exe "Freeminer Server")
 elseif(APPLE)
 	# TODO
 	# see http://cmake.org/Wiki/CMake:CPackPackageGenerators#Bundle_.28OSX_only.29
