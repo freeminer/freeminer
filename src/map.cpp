@@ -1461,9 +1461,19 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 	u32 block_count_all = 0;
 
 	beginSave();
+	u32 n = 0, calls = 0, 
+		end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
 	{
+		if (n++ < m_sectors_last_update)
+			continue;
+		else
+			m_sectors_last_update = 0;
+		++calls;
+
+
 		MapSector *sector = si->second;
 
 		bool all_blocks_deleted = true;
@@ -1521,7 +1531,15 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 		{
 			sector_deletion_queue.push_back(si->first);
 		}
+
+		if (porting::getTimeMs() > end_ms) {
+			m_sectors_last_update = n;
+			break;
+		}
+
 	}
+	if (!calls)
+		m_sectors_last_update = 0;
 	endSave();
 
 	// Finally delete the empty sectors
