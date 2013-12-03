@@ -317,6 +317,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
+	settings->setDefault("enable_bumpmapping", "true");
+	settings->setDefault("enable_parallax_occlusion", "true");
+	settings->setDefault("enable_waving_water", "true");
+	settings->setDefault("enable_waving_leaves", "true");
+	settings->setDefault("enable_waving_plants", "true");
+
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif

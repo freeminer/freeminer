@@ -690,6 +690,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_finite_liquid"] then
 		engine.setting_set("liquid_finite", fields["cb_finite_liquid"])
 	end
+	if fields["cb_weather"] then
+		engine.setting_set("weather", fields["cb_weather"])
+	end
 	if fields["cb_bumpmapping"] then
 		engine.setting_set("enable_bumpmapping", fields["cb_bumpmapping"])
 	end
@@ -968,6 +971,8 @@ function tabbuilder.tab_settings()
 					.. dump(engine.setting_getbool("enable_particles"))	.. "]"..
 			"checkbox[6.5,5.5;cb_finite_liquid;".. fgettext("Finite Liquid") .. ";"
 					.. dump(engine.setting_getbool("liquid_finite")) .. "]"..
+			"checkbox[11.5,5.5;cb_weather;".. fgettext("Weather") .. ";"
+					.. dump(engine.setting_getbool("weather")) .. "]"..
 
 			"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 
