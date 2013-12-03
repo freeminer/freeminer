@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Freeminer
+GenericName=Freeminer
+Comment=Multiplayer infinite-world block sandbox
+Exec=freeminer
+Icon=freeminer-icon
+Terminal=false
+Type=Application
+Categories=Game;
+StartupNotify=false
+
