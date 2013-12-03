@@ -969,27 +969,20 @@ function tabbuilder.tab_settings()
 			"checkbox[6.5,5.5;cb_finite_liquid;".. fgettext("Finite Liquid") .. ";"
 					.. dump(engine.setting_getbool("liquid_finite")) .. "]"..
 
-			"button[6.5,8;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+			"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 
 	if engine.setting_getbool("enable_shaders") then
 		tab_string = tab_string ..
-				"checkbox[8,0.5;cb_bumpmapping;".. fgettext("Bumpmapping") .. ";"
+				"checkbox[6.5,6;cb_bumpmapping;".. fgettext("Bumpmapping") .. ";"
 						.. dump(engine.setting_getbool("enable_bumpmapping")) .. "]"..
-				"checkbox[8,1.0;cb_parallax;".. fgettext("Parallax Occlusion") .. ";"
+				"checkbox[6.5,6.5;cb_parallax;".. fgettext("Parallax Occlusion") .. ";"
 						.. dump(engine.setting_getbool("enable_parallax_occlusion")) .. "]"..
-				"checkbox[8,1.5;cb_waving_water;".. fgettext("Waving Water") .. ";"
+				"checkbox[6.5,7;cb_waving_water;".. fgettext("Waving Water") .. ";"
 						.. dump(engine.setting_getbool("enable_waving_water")) .. "]"..
-				"checkbox[8,2.0;cb_waving_leaves;".. fgettext("Waving Leaves") .. ";"
+				"checkbox[6.5,7.5;cb_waving_leaves;".. fgettext("Waving Leaves") .. ";"
 						.. dump(engine.setting_getbool("enable_waving_leaves")) .. "]"..
-				"checkbox[8,2.5;cb_waving_plants;".. fgettext("Waving Plants") .. ";"
+				"checkbox[6.5,8;cb_waving_plants;".. fgettext("Waving Plants") .. ";"
 						.. dump(engine.setting_getbool("enable_waving_plants")) .. "]"
-	else
-		tab_string = tab_string ..
-				"textlist[8.33,0.7;4,1;;#888888" .. fgettext("Bumpmapping") .. ";0;true]" ..
-				"textlist[8.33,1.2;4,1;;#888888" .. fgettext("Parallax Occlusion") .. ";0;true]" ..
-				"textlist[8.33,1.7;4,1;;#888888" .. fgettext("Waving Water") .. ";0;true]" ..
-				"textlist[8.33,2.2;4,1;;#888888" .. fgettext("Waving Leaves") .. ";0;true]" ..
-				"textlist[8.33,2.7;4,1;;#888888" .. fgettext("Waving Plants") .. ";0;true]"
 	end
 
 	return tab_string
