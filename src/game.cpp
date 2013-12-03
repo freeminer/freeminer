@@ -1380,7 +1380,7 @@ void the_game(
 
 	// First line of debug text
 	gui::IGUIStaticText *guitext = guienv->addStaticText(
-			L"Minetest",
+			L"Freeminer",
 			core::rect<s32>(5, 5, 795, 5+text_height),
 			false, false);
 	// Second line of debug text
@@ -3068,7 +3068,7 @@ void the_game(
 			
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
-				<<"Minetest "<<minetest_version_hash
+				<<"Freeminer "<<minetest_version_hash
 				<<" (R: range_all="<<draw_control.range_all<<")"
 				<<std::setprecision(0)
 				<<" drawtime = "<<drawtime_avg
@@ -3085,7 +3085,7 @@ void the_game(
 		else if(show_hud || show_chat)
 		{
 			std::ostringstream os(std::ios_base::binary);
-			os<<"Minetest "<<minetest_version_hash;
+			os<<"Freeminer "<<minetest_version_hash;
 			guitext->setText(narrow_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
@@ -3490,7 +3490,7 @@ void the_game(
 
 		if (lastFPS != fps)
 		{
-			core::stringw str = L"Minetest [";
+			core::stringw str = L"Freeminer [";
 			str += driver->getName();
 			str += "] FPS=";
 			str += fps;

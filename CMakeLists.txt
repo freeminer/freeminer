@@ -5,7 +5,7 @@ if(${CMAKE_VERSION} STREQUAL "2.8.2")
 endif(${CMAKE_VERSION} STREQUAL "2.8.2")
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(minetest)
+project(freeminer)
 
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
@@ -169,8 +169,8 @@ install(FILES "minetest.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX)
 	install(FILES "doc/minetest.6" "doc/minetestserver.6" DESTINATION "${MANDIR}/man6")
-	install(FILES "misc/minetest.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/minetest-icon.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
+	install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
+	install(FILES "misc/freeminer-icon.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
 endif()
 
 #

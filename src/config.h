@@ -6,7 +6,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define PROJECT_NAME "Minetest"
+#define PROJECT_NAME "Freeminer"
 #define RUN_IN_PLACE 0
 #define USE_GETTEXT 0
 #define USE_SOUND 0
