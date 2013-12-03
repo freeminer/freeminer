@@ -165,7 +165,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/fonts" DESTINATION "${SHAREDIR}")
 #install(FILES "README.txt" DESTINATION "${DOCDIR}")
 install(FILES "doc/lua_api.txt" DESTINATION "${DOCDIR}")
 install(FILES "doc/mapformat.txt" DESTINATION "${DOCDIR}")
-install(FILES "minetest.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
+install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX)
 	install(FILES "doc/minetest.6" "doc/minetestserver.6" DESTINATION "${MANDIR}/man6")
