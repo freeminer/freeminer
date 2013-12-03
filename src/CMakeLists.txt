@@ -1,4 +1,4 @@
-project(minetest)
+project(freeminer)
 cmake_minimum_required( VERSION 2.6 )
 
 # Set some random things default to not being visible in the GUI

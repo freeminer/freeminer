@@ -173,7 +173,6 @@ void set_default_settings(Settings *settings)
 	// Server stuff
 	// "map-dir" doesn't exist by default.
 	settings->setDefault("port", "30000");
-	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
 	settings->setDefault("strict_protocol_version_checking", "false");

@@ -158,7 +158,7 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 	//create topleft header
 	core::rect<s32> rect(0, 0, 500, 40);
 	rect += v2s32(4, 0);
-	std::string t = std::string("Minetest ") + minetest_version_hash;
+	std::string t = std::string("Freeminer ") + minetest_version_hash;
 
 	m_irr_toplefttext =
 		m_device->getGUIEnvironment()->addStaticText(narrow_to_wide(t).c_str(),
@@ -275,8 +275,8 @@ void GUIEngine::run()
 		else
 			drawBackground(driver);
 
-		drawHeader(driver);
-		drawFooter(driver);
+		//drawHeader(driver);
+		//drawFooter(driver);
 
 		m_device->getGUIEnvironment()->drawAll();
 
@@ -556,7 +556,7 @@ bool GUIEngine::downloadFile(std::string url,std::string target) {
 
 /******************************************************************************/
 void GUIEngine::setTopleftText(std::string append) {
-	std::string toset = std::string("Minetest ") + minetest_version_hash;
+	std::string toset = std::string("Freeminer ") + minetest_version_hash;
 
 	if (append != "") {
 		toset += " / ";

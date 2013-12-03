@@ -838,9 +838,9 @@ int main(int argc, char *argv[])
 	if(cmd_args.getFlag("version"))
 	{
 #ifdef SERVER
-		dstream<<"minetestserver "<<minetest_version_hash<<std::endl;
+		dstream<<"freeminerserver "<<minetest_version_hash<<std::endl;
 #else
-		dstream<<"Minetest "<<minetest_version_hash<<std::endl;
+		dstream<<"Freeminer "<<minetest_version_hash<<std::endl;
 		dstream<<"Using Irrlicht "<<IRRLICHT_SDK_VERSION<<std::endl;
 #endif
 		dstream<<"Build info: "<<minetest_build_info<<std::endl;
@@ -941,15 +941,15 @@ int main(int argc, char *argv[])
 	{
 		std::vector<std::string> filenames;
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + "minetest.conf");
+				DIR_DELIM + "freeminer.conf");
 		// Legacy configuration file location
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + "minetest.conf");
+				DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
 #if RUN_IN_PLACE
 		// Try also from a lower level (to aid having the same configuration
 		// for many RUN_IN_PLACE installs)
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "minetest.conf");
+				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
 #endif
 
 		for(u32 i=0; i<filenames.size(); i++)
@@ -1182,7 +1182,7 @@ int main(int argc, char *argv[])
 				gamespec = commanded_gamespec;
 				infostream<<"Using commanded gameid ["<<gamespec.id<<"]"<<std::endl;
 			}
-			// Otherwise we will be using "minetest"
+			// Otherwise we will be using "default"
 			else{
 				gamespec = findSubgame(g_settings->get("default_game"));
 				infostream<<"Using default gameid ["<<gamespec.id<<"]"<<std::endl;
@@ -1553,7 +1553,7 @@ int main(int argc, char *argv[])
 	{
 		// Set the window caption
 		wchar_t* text = wgettext("Main Menu");
-		device->setWindowCaption((std::wstring(L"Minetest [")+text+L"]").c_str());
+		device->setWindowCaption((std::wstring(L"Freeminer [")+text+L"]").c_str());
 		delete[] text;
 
 		// This is used for catching disconnects
