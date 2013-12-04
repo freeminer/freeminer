@@ -644,7 +644,8 @@ Special groups
 - soil: saplings will grow on nodes in this group
 - connect_to_raillike: makes nodes of raillike drawtype connect to
                        other group members with same drawtype
-- slippery: Players and items will slide on the node.
+- slippery: Players and items will slide on the node. 
+   values 0-100: 0 = not slide, 90 = good for ice, 100 = not stop, >100 = acceleration
 
 Known damage and digging time defining groups
 ----------------------------------------------
