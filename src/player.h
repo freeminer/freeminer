@@ -110,7 +110,7 @@ public:
 		m_speed = speed;
 	}
 	
-	void accelerateHorizontal(v3f target_speed, f32 max_increase, bool slippery=false);
+	void accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery=0);
 	void accelerateVertical(v3f target_speed, f32 max_increase);
 
 	v3f getPosition()

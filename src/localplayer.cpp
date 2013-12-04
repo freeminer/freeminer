@@ -592,7 +592,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 	Map *map = &env->getMap();
 	v3s16 p = floatToInt(getPosition() - v3f(0,BS/2,0), BS);
-	bool slippery = false;
+	float slippery = 0;
 	try {
 		slippery = itemgroup_get(nodemgr->get(map->getNode(p)).groups, "slippery");
 	}
