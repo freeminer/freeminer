@@ -1,4 +1,6 @@
-feeeminer (0.4.8.0) unstable; urgency=low
+freeminer (0.4.8.0) unstable; urgency=low
+  * freeminer initial
+ -- p <p@p>  Thu, 28 Nov 2013 23:20:35 +0100
 
 minetest (0.4.8+repack2-1) unstable; urgency=low
 
