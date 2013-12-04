@@ -867,7 +867,7 @@ function tabbuilder.tab_multiplayer()
 		"label[6.5,6.5;".. fgettext("Address") .. "]"..
 		"field[6.75,7.5;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
 		"label[11.95,6.5;".. fgettext("Port") .. "]"..
-		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("port") .."]" ..
+		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("remote_port") .."]" ..
 		"checkbox[10,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
 
