@@ -27,6 +27,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "debug.h"
 #include "gettime.h"
 
+#ifdef _IRR_ANDROID_PLATFORM_
+	#include <android/log.h>
+	#define APPNAME "Freeminer"
+#endif
+
 std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
 JMutex                            log_threadnamemutex;
@@ -136,7 +141,11 @@ public:
 
 	void printbuf()
 	{
+#ifndef _IRR_ANDROID_PLATFORM_
 		log_printline(m_lev, m_buf);
+#else
+		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, m_buf.c_str());
+#endif
 	}
 
 	void bufchar(char c)

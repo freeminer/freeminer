@@ -168,6 +168,7 @@ int getNumberOfProcessors() {
 }
 
 
+#ifndef _IRR_ANDROID_PLATFORM_
 bool threadBindToProcessor(threadid_t tid, int pnumber) {
 #if defined(_WIN32)
 
@@ -220,7 +221,7 @@ bool threadBindToProcessor(threadid_t tid, int pnumber) {
 
 #endif
 }
-
+#endif
 
 bool threadSetPriority(threadid_t tid, int prio) {
 #if defined(_WIN32)
@@ -418,6 +419,9 @@ void initializePaths()
 	*/
 	#elif defined(linux)
 
+	infostream << "getting exe path" << std::endl;
+	dstream << "dstream" << std::endl;
+
 	// Get path to executable
 	std::string bindir = "";
 	{
@@ -427,6 +431,9 @@ void initializePaths()
 		pathRemoveFile(buf, '/');
 		bindir = buf;
 	}
+
+	infostream << "done" << std::endl;
+	dstream << "dstream" << std::endl;
 
 	// Find share directory from these.
 	// It is identified by containing the subdirectory "builtin".
@@ -455,7 +462,16 @@ void initializePaths()
 		break;
 	}
 
+	infostream << "something something " PROJECT_NAME << std::endl;
+
+#ifndef _IRR_ANDROID_PLATFORM_
 	path_user = std::string(getenv("HOME")) + "/." + PROJECT_NAME;
+#else
+	path_user = std::string("/sdcard/freeminer/");
+	path_share = std::string("/sdcard/freeminer/");
+#endif
+
+	infostream << path_user << std::endl;
 
 	/*
 		OS X

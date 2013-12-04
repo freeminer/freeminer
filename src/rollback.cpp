@@ -1006,7 +1006,7 @@ public:
 		time_t first_time = cur_time - (100 - min_nearness);
 		RollbackAction likely_suspect;
 		float likely_suspect_nearness = 0;
-		for (std::list<RollbackAction>::const_reverse_iterator
+		for (std::list<RollbackAction>::reverse_iterator
 		     i = m_action_latest_buffer.rbegin();
 		     i != m_action_latest_buffer.rend(); i++) {
 			if (i->unix_time < first_time) {

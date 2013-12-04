@@ -101,7 +101,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("texture_path", "");
 	settings->setDefault("shader_path", "");
+#ifndef _IRR_ANDROID_PLATFORM_
 	settings->setDefault("video_driver", "opengl");
+#else
+	settings->setDefault("video_driver", "ogles2");
+#endif
 	settings->setDefault("free_move", "false");
 	settings->setDefault("noclip", "false");
 	settings->setDefault("continuous_forward", "false");

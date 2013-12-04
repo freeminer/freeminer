@@ -134,7 +134,11 @@ int JThread::Kill()
 		runningmutex.Unlock();
 		return ERR_JTHREAD_NOTRUNNING;
 	}
+#ifdef _IRR_ANDROID_PLATFORM_
+	pthread_kill(threadid, SIGKILL);
+#else
 	pthread_cancel(threadid);
+#endif
 	if (started) {
 		runningmutex.Unlock();
 		int pthread_join_retval = pthread_join(threadid,&status);
