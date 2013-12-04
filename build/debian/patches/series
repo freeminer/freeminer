@@ -4,5 +4,4 @@ i18n.patch
 # jthread-changed.patch
 useless-depends.patch
 dynamic-link.patch
-# debianization.patch
 mapper.patch
