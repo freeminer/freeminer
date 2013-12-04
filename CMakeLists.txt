@@ -170,7 +170,7 @@ install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 if(UNIX)
 	install(FILES "doc/freeminer.6" "doc/freeminerserver.6" DESTINATION "${MANDIR}/man6")
 	install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/freeminer-icon.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
+	install(FILES "misc/freeminer.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
 endif()
 
 #

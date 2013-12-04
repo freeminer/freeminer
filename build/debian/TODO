@@ -1,0 +1,2 @@
+- The server should be automatically started using an init.d script
+- Ideally, the server configuration should be through a /etc/default/minetest-server file

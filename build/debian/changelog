@@ -1,0 +1,201 @@
+feeeminer (0.4.8.0) unstable; urgency=low
+
+minetest (0.4.8+repack2-1) unstable; urgency=low
+
+  * New upstream release (closes: #730554).
+    - Upstream changes to their embeeded jthread library become
+      intractable with our system-wide version. So switch to their
+      version, even if it's a bad habit to embeed other libraries.
+    - Refresh our patches (no big change beside of jthread).
+  * Suggests the existing mod packages: moreblocks, moreores, pipeworks.
+
+ -- Martin Quinson <mquinson@debian.org>  Thu, 28 Nov 2013 23:20:35 +0100
+
+minetest (0.4.7+repack-3) unstable; urgency=low
+
+  * d/p/desktop-file-fix-icon: fix the icon name in minetest.desktop
+    (Closes: #713808)
+
+ -- Martin Quinson <mquinson@debian.org>  Sun, 18 Aug 2013 02:34:11 +0200
+
+minetest (0.4.7+repack-2) unstable; urgency=low
+
+  * Fix the package description (the game is LGPL, not GPL)
+
+ -- Martin Quinson <mquinson@debian.org>  Fri, 21 Jun 2013 01:54:04 +0200
+
+minetest (0.4.7+repack-1) unstable; urgency=low
+
+  * New upstream release (LP: #1191519)
+    - all mods but 'minetest_game' mods were dropped upstream. 
+      We still need to repack to integrate the remaining mod, though.
+  * Refresh our patches accordingly
+  * Build-depend on luajit as it is now the used library for lua
+  * d/control: bump standard version to 3.9.4 (no change needed)
+
+ -- Martin Quinson <mquinson@debian.org>  Fri, 21 Jun 2013 01:13:36 +0200
+
+minetest (0.4.6+repack-6) unstable; urgency=low
+
+  * Reupload to unstable so that it gets rebuilt against irrlicht 1.8. 
+    We could have asked a binNMU to the release team for the transition, 
+    but minetest is the only package build-depending on irrlicht.
+
+ -- Martin Quinson <mquinson@debian.org>  Mon, 06 May 2013 11:36:12 +0200
+
+minetest (0.4.6+repack-5) unstable; urgency=low
+
+  * include minetest-mapper into the minetest-data package
+  * don't install in-package fonts, but use system-wide ones
+  * Actually install the upstream changelog -- oops
+
+ -- Martin Quinson <mquinson@debian.org>  Wed, 01 May 2013 18:59:48 +0200
+
+minetest (0.4.6+repack-4) unstable; urgency=low
+
+  * Team upload.
+
+  [Matthew Bekkema]
+  * Fix build on big endian architectures.
+  
+  [Martin Quinson]
+  * minetest Suggests minetest-server (Closes: #674121)
+  * Conflicts with unofficial minetestc55 (LP: #1162551)
+
+ -- Martin Quinson <mquinson@debian.org>  Fri, 19 Apr 2013 10:06:45 +0200
+
+minetest (0.4.6+repack-3) unstable; urgency=low
+
+  * Team upload.
+
+  [Matthew Bekkema]
+  * Fix build on kfreebsd, and hopefully on sparc
+  * Further source repacking to remove unused embeedded libraries from
+    tarball.
+    
+  [Martin Quinson]
+  * d/control: update upstream's URL
+
+ -- Martin Quinson <mquinson@debian.org>  Thu, 18 Apr 2013 09:41:54 +0200
+
+minetest (0.4.6+repack-2) unstable; urgency=low
+
+  * Add an upstream changelog found online
+  * Ease the upgrade from previous minetest versions -- sorry.
+
+ -- Martin Quinson <mquinson@debian.org>  Wed, 17 Apr 2013 22:09:29 +0200
+
+minetest (0.4.6+repack-1) unstable; urgency=low
+
+  * Team upload.
+  * New upstream release (Closes: #677517) (LP: #1045322)
+    - Player cannot spawn within the rock now (Closes: #693264)
+    - Builds with irrlicht 1.8 (Closes: #693277)
+  * Repack upstream tarball to re-include the elements that were
+    separated "to keep the git repository reasonably sized"
+
+  [Matthew Bekkema]
+  * Update existing patches.
+  * Use upstream manpages and drop Debian ones.
+  * d/rules: various fixes:
+    - update the way to get new tarballs
+    - copy the icons from the right location
+  * d/p/event.patch: new patch to make it compile despite upstream
+    editing their included jmutex.h while we use the system-wide one.
+  * Be more picky about what should get installed in minetest-common
+    to avoid conflicts with minetest.
+  * d/copyright: various fixes
+    - fix a lintian warning about a duplicated entry
+    - upstream switched to LGPL v2 for most files
+    - add some missing files
+  * d/p/useless-depends.patch: drop useless dependencies reported
+    during build by dpkg-shlibdeps
+  * d/control: adapt build-deps to drop these dependencies
+  
+  [Martin Quinson]
+  * d/control: Add myself to the uploaders.
+  * d/control: rename the minetest-common pkg to minetest-data, as an
+    external source package should/will provide minetest.
+  * build with cURL, gettext and freetype
+  * d/p/i18n: search for translations in the default path
+  * Use system-wide fonts, to avoid a warning about not found fonts
+  * Use /usr/share/games/minetest instead of /usr/share/minetest
+  * Use upstream desktop file and drop Debian one.
+
+ -- Martin Quinson <mquinson@debian.org>  Sun, 14 Apr 2013 20:58:27 +0200
+
+minetest (0.3.1+dfsg-4) unstable; urgency=low
+
+  * add a breaks minetest << 0.3.1+dfsg-3 to appropriately handle upgrades
+    after the package split (closes: #670208)
+
+ -- Michael Gilbert <mgilbert@debian.org>  Wed, 25 Apr 2012 16:04:01 -0400
+
+minetest (0.3.1+dfsg-3) unstable; urgency=low
+
+  * use debhelper 9 and simplify build hardening
+  * update my email address
+  * bump standards to 3.9.3
+  * build-depend on libpng-dev instead of libpng12-dev (closes: #662432)
+  * fix gcc 4.7 build failure (closes: #667280)
+  * split the server into its own package (closes: #668004)
+  * move binaries to /usr/games in install files
+
+ -- Michael Gilbert <mgilbert@debian.org>  Sat, 21 Apr 2012 15:52:14 -0400
+
+minetest (0.3.1+dfsg-2) unstable; urgency=low
+
+  * Fix freedesktop menu "Type" entry.
+  * Use "uscan --force-download" in get-orig-source rule.
+  * Update homepage location in watch file.
+  * Add missing libsqlite3-dev build-dep
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Tue, 29 Nov 2011 18:42:07 -0500
+
+minetest (0.3.1+dfsg-1) unstable; urgency=low
+
+  * Update homepage.
+  * Build against jthread 1.3.1.
+  * Implement get-orig-source to generate dfsg-free upstream tarball.
+  * Build using dfsg-free tarball.
+  * Install freedesktop menu and icons.
+  * Fix watch file for dfsg name.
+  * Install to /usr/games.
+  * Add a debug package.
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Sat, 26 Nov 2011 22:27:53 -0500
+
+minetest (0.3.1-1) unstable; urgency=low
+
+  * New upstream release:
+    - Refresh patches.
+  * Dynamically link to irrlicht.
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Sat, 26 Nov 2011 20:08:08 -0500
+
+minetest (0.2.20110922.3-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Disable DM-Upload-Allowed.
+  * Add some more copyright info.
+  * Remove embedded sqlite code copy.
+  * Enable all build-hardening flags.
+  * Use system jthread library.
+  * Fix dep5 url format.
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Mon, 21 Nov 2011 00:42:06 -0500
+
+minetest (0.2.20110731.3-2) UNRELEASED; urgency=low
+
+  * Update watch file.
+  * Add permanent manpages.
+  * Support parallel builds.
+  * Remove vcs files in clean rule.
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Fri, 28 Oct 2011 19:46:35 -0400
+
+minetest (0.2.20110731.3-1) UNRELEASED; urgency=low
+
+  * Initial release (Closes: #636293).
+
+ -- Michael Gilbert <michael.s.gilbert@gmail.com>  Mon, 12 Sep 2011 23:43:55 -0400

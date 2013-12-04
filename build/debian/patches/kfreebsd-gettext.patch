@@ -1,0 +1,15 @@
+Description: Fix the build on kFreeBSD as it uses glibc
+Author: Matthew Bekkema <mat8913ftw@gmail.com>
+
+--- a/cmake/Modules/FindGettextLib.cmake
++++ b/cmake/Modules/FindGettextLib.cmake
+@@ -49,8 +49,8 @@
+ 		ENDIF()
+ 	ELSE(WIN32)
+ 		# *BSD variants require special linkage as they don't use glibc
++		# DEBIAN CHANGE: kFreeBSD still uses glibc
+ 		IF(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
+-			SET(GETTEXT_LIBRARY "intl")
+ 		ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
+ 		SET(GETTEXT_FOUND TRUE)
+ 	ENDIF(WIN32)

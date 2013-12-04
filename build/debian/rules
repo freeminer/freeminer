@@ -1,0 +1,119 @@
+#!/usr/bin/make -f
+
+# upstream version
+version=$(shell uscan --report-status | head -2 | tail -1 | cut -d' ' -f7 | cut -d, -f1)
+tmpdir:=$(shell mktemp -d)
+wrkdir:=$(shell pwd)
+
+# parallel building
+parallel=$(shell echo $$DEB_BUILD_OPTIONS | grep parallel > /dev/null && echo -j$$(test -f /proc/cpuinfo && cat /proc/cpuinfo | (grep ^processor || echo 1) | wc -l))
+
+# build-hardening flags
+export DEB_BUILD_MAINT_OPTIONS="hardening=+all"
+
+# file names
+sources=$(shell find . -name *.cpp)
+headers=$(shell find . -name *.h)
+dfsgremovals=Makefile.bak \
+	     .gitattributes \
+	     .hg_archival \
+	     .hg_archival.txt \
+	     .hgignore \
+	     .hgtags \
+	     fontlucida.png \
+	     sqlite \
+	     json \
+	     lua
+#	     jthread # upstream patched that lib, which seem dead upstream itself, so use freeminer's version even if I don't like it.
+cleanremovals= bin \
+	       CMakeFiles \
+	       src/CMakeFiles \
+	       CMakeCache.txt \
+	       CPackConfig.cmake \
+	       CPackSourceConfig.cmake \
+	       Makefile \
+	       cmake_install.cmake \
+	       src/Makefile \
+	       src/cmake_config.h \
+	       src/cmake_install.cmake \
+	       locale \
+	       install_manifest.txt \
+	       freeminer.xpm \
+	       freeminer.svg \
+	       freeminer.png \
+	       src/cguittfont/CMakeFiles/ \
+	       src/cguittfont/Makefile \
+	       src/cguittfont/cmake_install.cmake \
+	       src/cguittfont/libcguittfont.a
+
+override_dh_clean:
+	dh_clean --exclude old/Makefile.old
+	
+override_dh_auto_clean:
+	dh_clean --exclude old/Makefile.old
+	rm -rf ${cleanremovals}
+
+override_dh_auto_configure:
+	CFLAGS="${CFLAGS}" \
+	    LDFLAGS="${LDFLAGS}" \
+	    CXXFLAGS="${CXXFLAGS} ${CPPFLAGS}" \
+	    cmake -DRUN_IN_PLACE=0 \
+	          -DENABLE_GETTEXT=1 \
+		  -DENABLE_FREETYPE=1 \
+		  -DFREETYPE_INCLUDE_DIRS=/usr/include/freetype2 \
+		  -DFREETYPE_INCLUDE_DIR_ft2build=/usr/include \
+		  -DCUSTOM_LOCALEDIR=/usr/share/locale \
+		  -DCUSTOM_SHAREDIR=/usr/share/games/freeminer \
+		  -DCMAKE_INSTALL_PREFIX=/usr .
+
+override_dh_auto_build:
+	make VERBOSE=1 ${parallel}
+	
+override_dh_install:
+	dh_install --list-missing -X.gitignore
+	for bpkg in freeminer freeminer-data freeminer-dbg freeminer-server ; do \
+	  mkdir -p debian/$${bpkg}/usr/share/doc/$${bpkg} ; \
+	  cp debian/changelog.upstream debian/$${bpkg}/usr/share/doc/$${bpkg}/changelog ; \
+	done
+	# copy the logo
+	mkdir -p debian/freeminer/usr/share/icons/hicolor/24x24/apps/
+	cp misc/freeminer-24x24.png debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.png
+	convert debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.png \
+	        debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.xpm
+	mkdir -p debian/freeminer/usr/share/icons/hicolor/scalable/apps/
+	cp misc/freeminer.svg       debian/freeminer/usr/share/icons/hicolor/scalable/apps/freeminer.svg
+	# take care of the fonts we need
+	mkdir -p debian/freeminer-data/usr/share/games/freeminer/fonts/
+	ln -s /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf \
+	      debian/freeminer-data/usr/share/games/freeminer/fonts/liberationmono.ttf
+	ln -s /usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf \
+	      debian/freeminer-data/usr/share/games/freeminer/fonts/liberationsans.ttf
+	# Install the mapper script
+	mkdir -p debian/freeminer-data/usr/games
+	cp util/minetestmapper.py debian/freeminer-data/usr/games/minetest-mapper
+	cp util/colors.txt        debian/freeminer-data/usr/share/games/freeminer/minetestmapper-colors.txt
+
+override_dh_strip:
+	dh_strip --dbg-package=freeminer-dbg
+
+get-orig-source:
+	rm -f ${wrkdir}/../freeminer_${version}+repack.orig.tar.gz
+	uscan --verbose --force-download && mv ../${version}.tar.gz ${tmpdir} || true
+	set +ex; cd ${tmpdir} && \
+	    tar xf ${version}.tar.gz && rm -f ${version}.tar.gz && \
+	    cd freeminer-${version}/games && \
+	    for game in default ; do \
+	       wget --no-verbose https://github.com/freeminer/$${game}/archive/${version}.tar.gz -O - | tar xfz - ; \
+	       mv $${game}-${version} $${game} ; \
+	       done && \
+	    cd .. ; \
+	    for file in ${dfsgremovals}; do \
+	        find . -name $$file -execdir rm -rf {} \; 2>/dev/null || true; \
+		done && \
+	    tar cf ${wrkdir}/../freeminer_${version}+repack.orig.tar * ; \
+	    gzip --best ${wrkdir}/../freeminer_${version}+repack.orig.tar
+	rm -rf ${tmpdir}
+	@echo "successfully created new tarball: ${wrkdir}/../freeminer_${version}+repack.orig.tar.gz"
+
+%:
+	dh ${@} 

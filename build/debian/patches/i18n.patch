@@ -1,0 +1,24 @@
+Description: Search for translation in the default path
+Author: Martin Quinson
+Forwarded: upstream won't take it as they install to non-standard paths
+
+---
+ src/main.cpp |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: b/src/main.cpp
+===================================================================
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -1003,9 +1003,9 @@
+ 		run_tests();
+ 	}
+ #ifdef _MSC_VER
+-	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),g_settings->get("language"),argc,argv);
++	init_gettext("/usr/share/locale",g_settings->get("language"),argc,argv);
+ #else
+-	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),g_settings->get("language"));
++	init_gettext("/usr/share/locale",g_settings->get("language"));
+ #endif
+ 
+ 	/*

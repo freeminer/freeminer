@@ -1,0 +1,11 @@
+usr/share/doc/freeminer/mapformat.txt usr/share/doc/freeminer-data
+usr/share/doc/freeminer/lua_api.txt   usr/share/doc/freeminer-data
+usr/share/doc/freeminer/README.txt    usr/share/doc/freeminer-data
+usr/share/doc/freeminer/freeminer.conf.example usr/share/doc/freeminer-data
+
+usr/share/games/freeminer/builtin/*   usr/share/games/freeminer/builtin
+usr/share/games/freeminer/textures/*  usr/share/games/freeminer/textures
+usr/share/games/freeminer/games/*     usr/share/games/freeminer/games
+usr/share/games/freeminer/client/*    usr/share/games/freeminer/client
+usr/share/locale/*                   usr/share/locale
+

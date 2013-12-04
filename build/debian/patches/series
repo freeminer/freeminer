@@ -1,0 +1,10 @@
+# desktop-file-fix-icon
+powerpc.patch
+kfreebsd-gettext.patch
+i18n.patch
+# jthread-changed.patch
+useless-depends.patch
+dynamic-link.patch
+# debianization.patch
+# gcc47.patch
+mapper.patch

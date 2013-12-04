@@ -2,4 +2,4 @@
 #include <commctrl.h>
 #include <richedit.h>
 LANGUAGE 0, SUBLANG_NEUTRAL
-130        ICON         "minetest-icon.ico"
+130        ICON         "freeminer.ico"

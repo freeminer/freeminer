@@ -1,0 +1,73 @@
+Description: Adapt to upstream modification of jmutex.h
+ Upstream modified their dependency jthread, in a way that we cannot
+ fix when using a system-wide jthread.
+ 
+ SO THIS PATCH IS DISABLED FOR NOW
+ 
+ mutex so we need to re-add these things another way.
+ Two changes so far:
+ .
+  - They added a class "Event" to their jmutex.h, so we add it to event.h
+    instead.
+  - They added a method IsSameThread()
+ 
+Author: Matthew Bekkema <mat8913ftw@gmail.com>
+Date:   Sun Mar 24 19:15:54 2013 +1100
+    
+
+---
+ src/emerge.h |    1 +
+ src/event.h  |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+Index: b/src/emerge.h
+===================================================================
+--- a/src/emerge.h
++++ b/src/emerge.h
+@@ -24,6 +24,7 @@
+ #include "irr_v3d.h"
+ #include "util/container.h"
+ #include "map.h" // for ManualMapVoxelManipulator
++#include "event.h"
+ 
+ #define MGPARAMS_SET_MGNAME      1
+ #define MGPARAMS_SET_SEED        2
+Index: b/src/event.h
+===================================================================
+--- a/src/event.h
++++ b/src/event.h
+@@ -19,6 +19,7 @@
+ 
+ #ifndef EVENT_HEADER
+ #define EVENT_HEADER
++#include <semaphore.h>
+ 
+ class MtEvent
+ {
+@@ -68,5 +69,26 @@
+ 	virtual void dereg(MtEventReceiver *r, const char *type) = 0;
+ };
+ 
++class Event {
++	sem_t sem;
++
++public:
++	Event() {
++		sem_init(&sem, 0, 0);
++	}
++
++	~Event() {
++		sem_destroy(&sem);
++	}
++
++	void wait() {
++		sem_wait(&sem);
++	}
++
++	void signal() {
++		sem_post(&sem);
++	}
++};
++
+ #endif
+ 

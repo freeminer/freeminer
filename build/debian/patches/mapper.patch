@@ -1,0 +1,17 @@
+--- a/util/minetestmapper.py
++++ b/util/minetestmapper.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python2
++#! /usr/bin/python
+ # -*- coding: utf-8 -*-
+ 
+ # This program is free software. It comes without any warranty, to
+@@ -203,7 +203,7 @@
+ # Load color information for the blocks.
+ colors = {}
+ try:
+-    f = file("colors.txt")
++    f = file("/usr/share/games/minetest/minetestmapper-colors.txt")
+ except IOError:
+     f = file(os.path.join(os.path.dirname(__file__), "colors.txt"))
+ for line in f:

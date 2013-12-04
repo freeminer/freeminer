@@ -1,0 +1,70 @@
+Description: Changes the static linking of external libraries to dynamic link
+Author: Matthew Bekkema <mat8913ftw@gmail.com>
+
+---
+ cmake/Modules/FindJson.cmake |   24 +++++++++++-------------
+ src/CMakeLists.txt           |    4 ----
+ 2 files changed, 11 insertions(+), 17 deletions(-)
+
+Index: b/src/CMakeLists.txt
+===================================================================
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -189,7 +189,6 @@
+ 	message (STATUS "LuaJIT not found, using bundled Lua.")
+ 	set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lua/src")
+ 	set(LUA_LIBRARY "lua")
+-	add_subdirectory(lua)
+ endif(LUA_LIBRARY AND LUA_INCLUDE_DIR)
+ 
+ mark_as_advanced(LUA_LIBRARY)
+@@ -631,7 +629,6 @@
+ 
+ if (SQLITE3_FOUND)
+ else (SQLITE3_FOUND)
+-	add_subdirectory(sqlite)
+ endif (SQLITE3_FOUND)
+ 
+ if (BUILD_CLIENT AND USE_FREETYPE)
+@@ -640,7 +637,6 @@
+ 
+ if (JSON_FOUND)
+ else (JSON_FOUND)
+-	add_subdirectory(json)
+ endif (JSON_FOUND)
+ 
+ #end
+Index: b/cmake/Modules/FindJson.cmake
+===================================================================
+--- a/cmake/Modules/FindJson.cmake
++++ b/cmake/Modules/FindJson.cmake
+@@ -1,18 +1,16 @@
+ # Look for json, use our own if not found
+ 
+-#FIND_PATH(JSON_INCLUDE_DIR json.h)
++FIND_PATH(JSON_INCLUDE_DIR json/json.h /usr/include/jsoncpp)
+ 
+-#FIND_LIBRARY(JSON_LIBRARY NAMES jsoncpp)
++FIND_LIBRARY(JSON_LIBRARY NAMES jsoncpp)
+ 
+-#IF(JSON_LIBRARY AND JSON_INCLUDE_DIR)
+-#	SET( JSON_FOUND TRUE )
+-#ENDIF(JSON_LIBRARY AND JSON_INCLUDE_DIR)
++IF(JSON_LIBRARY AND JSON_INCLUDE_DIR)
++	SET( JSON_FOUND TRUE )
++ENDIF(JSON_LIBRARY AND JSON_INCLUDE_DIR)
+ 
+-#IF(JSON_FOUND)
+-#	MESSAGE(STATUS "Found system jsoncpp header file in ${JSON_INCLUDE_DIR}")
+-#	MESSAGE(STATUS "Found system jsoncpp library ${JSON_LIBRARY}")
+-#ELSE(JSON_FOUND)
+-	SET(JSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/json)
+-	SET(JSON_LIBRARY jsoncpp)
+-	MESSAGE(STATUS "Using project jsoncpp library")
+-#ENDIF(JSON_FOUND)
++IF(JSON_FOUND)
++	MESSAGE(STATUS "Found system jsoncpp header file in ${JSON_INCLUDE_DIR}")
++	MESSAGE(STATUS "Found system jsoncpp library ${JSON_LIBRARY}")
++ELSE(JSON_FOUND)
++	MESSAGE(FAIL "Cannot find system-wide jsoncpp library")
++ENDIF(JSON_FOUND)

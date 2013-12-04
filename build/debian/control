@@ -1,0 +1,87 @@
+Source: freeminer
+Section: games
+Priority: extra
+Maintainer: Debian Games Team <pkg-games-devel@lists.alioth.debian.org>
+Uploaders:
+ Michael Gilbert <mgilbert@debian.org>,
+ Martin Quinson <mquinson@debian.org>	 
+Build-Depends:
+ debhelper (>= 9),
+ cmake,
+ gettext,
+ imagemagick,
+ libcurl4-gnutls-dev,
+ libfreetype6-dev,
+ libirrlicht-dev (>= 1.7.0),
+ libluajit-5.1-dev,
+ zlib1g-dev,
+ libsqlite3-dev,
+ libogg-dev,
+ libvorbis-dev,
+ libopenal-dev,
+ libjsoncpp-dev,
+Standards-Version: 3.9.4
+Homepage: http://freeminer.org/
+Vcs-Git: git://git.debian.org/git/pkg-games/freeminer-v04x.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-games/freeminer-v04x.git
+
+Package: freeminer
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ freeminer-data (= ${source:Version}),
+Suggests:
+ freeminer-server,
+ freeminer-mod-moreblocks,
+ freeminer-mod-moreores,
+ freeminer-mod-pipeworks,
+Description: Multiplayer infinite-world block sandbox
+ freeminer is a minecraft-inspired game written from scratch and licensed
+ under the LGPL (version 2.1 or later). It supports both survival and creative
+ modes along with multiplayer support, dynamic lighting, and an "infinite" map
+ generator.
+
+Package: freeminer-dbg
+Architecture: any
+Section: debug
+Depends:
+ ${misc:Depends},
+ freeminer (= ${binary:Version}),
+ freeminer-server (= ${binary:Version}),
+Description: Multiplayer infinite-world block sandbox (debugging symbols)
+ Freeminer is a minecraft-inspired game written from scratch and licensed
+ under the LGPL (version 2.1 or later). It supports both survival and creative
+ modes along with multiplayer support, dynamic lighting, and an "infinite" map
+ generator.
+ .
+ These are the debugging symbols in case something goes wrong.
+
+Package: freeminer-server
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ freeminer-data (= ${source:Version}),
+Description: Multiplayer infinite-world block sandbox (server)
+ Freeminer is a minecraft-inspired game written from scratch and licensed
+ under the LGPL (version 2.1 or later). It supports both survival and creative
+ modes along with multiplayer support, dynamic lighting, and an "infinite" map
+ generator.
+ .
+ This is the freeminer server package.
+
+Package: freeminer-data
+Architecture: all
+Depends:
+ ${misc:Depends},
+ fonts-liberation,
+ python, python-imaging,
+Description: Multiplayer infinite-world block sandbox (data files)
+ Freeminer is a minecraft-inspired game written from scratch and licensed
+ under the LGPL (version 2.1 or later). It supports both survival and creative
+ modes along with multiplayer support, dynamic lighting, and an "infinite" map
+ generator.
+ .
+ These are the files used by both client and server packages, such as
+ the textures and other graphical files and the standard mods.

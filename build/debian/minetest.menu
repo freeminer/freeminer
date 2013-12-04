@@ -1,0 +1,7 @@
+?package(freeminer):\
+        needs="x11" \
+        section="Games/Adventure" \
+        command="/usr/games/freeminer" \
+        title="Freeminer" \
+        icon="/usr/share/icons/hicolor/24x24/apps/freeminer.xpm" \
+        longtitle="Multiplayer infinite-world block sandbox"

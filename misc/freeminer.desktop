@@ -3,9 +3,8 @@ Name=Freeminer
 GenericName=Freeminer
 Comment=Multiplayer infinite-world block sandbox
 Exec=freeminer
-Icon=freeminer-icon
+Icon=freeminer
 Terminal=false
 Type=Application
 Categories=Game;
 StartupNotify=false
-
