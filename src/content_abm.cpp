@@ -213,7 +213,7 @@ class MeltHot : public ActiveBlockModifier {
 			return s;
 		}
 		virtual u32 getNeighborsRange()
-		{ return 2; }
+		{ return 3; }
 		virtual float getTriggerInterval()
 		{ return 3.0; }
 		virtual u32 getTriggerChance()
