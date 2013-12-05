@@ -2167,7 +2167,8 @@ Node definition (register_node)
     liquid_alternative_source = "", -- Source version of flowing liquid
     liquid_viscosity = 0, -- Higher viscosity = slower flow (max. 7)
     liquid_renewable = true, -- Can new liquid source be created by placing two or more sources nearby?
-    freezemelt = "", -- water for snow/ice, ice/snow for water
+    freeze = "", -- ice/snow for water
+    melt = "", -- water for snow/ice
     leveled = 0, -- Block contain level in param2. value - default level, used for snow.
     ^ Dont forget use "leveled" type nodebox.
     ^ Special sense for liquids with paramtype2="leveled" and source :

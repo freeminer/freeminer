@@ -1799,11 +1799,11 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					if (liquid_kind_flowing == CONTENT_IGNORE)
 						liquid_kind_flowing = liquid_kind;
 					if (melt_kind == CONTENT_IGNORE)
-						melt_kind = nodemgr->getId(nodemgr->get(nb.n).freezemelt);
+						melt_kind = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind_flowing == CONTENT_IGNORE)
 						melt_kind_flowing = 
 							nodemgr->getId(
-							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).freezemelt)
+							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).melt)
 									).liquid_alternative_flowing);
 					if (melt_kind_flowing == CONTENT_IGNORE)
 						melt_kind_flowing = melt_kind;
@@ -1824,10 +1824,10 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					if (liquid_kind == CONTENT_IGNORE)
 						liquid_kind = liquid_kind_flowing;
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.n).freezemelt);
+						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = nodemgr->getId(nodemgr->get(nodemgr->getId(
-							nodemgr->get(nb.n).freezemelt)).liquid_alternative_source);
+							nodemgr->get(nb.n).melt)).liquid_alternative_source);
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = melt_kind_flowing;
 					if (nb.n.getContent() == liquid_kind_flowing) {

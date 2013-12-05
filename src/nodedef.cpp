@@ -218,7 +218,8 @@ void ContentFeatures::reset()
 	liquid_alternative_source = "";
 	liquid_viscosity = 0;
 	liquid_renewable = true;
-	freezemelt = "";
+	freeze = "";
+	melt = "";
 	drowning = 0;
 	light_source = 0;
 	damage_per_second = 0;
