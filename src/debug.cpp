@@ -99,7 +99,7 @@ public:
 	}
 	std::streamsize xsputn(const char *s, std::streamsize n)
 	{
-		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, s);
+		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "%s", s);
 		for(int i=0; i<DEBUGSTREAM_COUNT; i++)
 		{
 			if(g_debugstreams[i] == stderr && m_disable_stderr)

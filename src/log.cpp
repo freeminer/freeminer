@@ -144,7 +144,7 @@ public:
 #ifndef _IRR_ANDROID_PLATFORM_
 		log_printline(m_lev, m_buf);
 #else
-		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, m_buf.c_str());
+		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "%s", m_buf.c_str());
 #endif
 	}
 

@@ -1,6 +1,8 @@
 LOCAL_PATH := $(call my-dir)/..
 IRRLICHT_LIBRARY_PATH := ../irrlicht/
 
+LOCAL_ADDRESS_SANITIZER:=true
+
 # copy Irrlicht data to assets
 $(shell mkdir -p $(LOCAL_PATH)/assets)
 $(shell mkdir -p $(LOCAL_PATH)/assets/media)
@@ -29,6 +31,9 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -pipe -fno-exceptions -fno-rtti -fstric
 #else
 #LOCAL_CFLAGS += -fexpensive-optimizations -O3
 #endif
+
+LOCAL_CFLAGS += -fsanitize=address
+LOCAL_LDFLAGS += -fsanitize=address
 
 ifeq ($(TARGET_ARCH_ABI),x86)
 LOCAL_CFLAGS += -fno-stack-protector
