@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string.h>
 #include <errno.h>
 #include <fstream>
+#include <sys/time.h>
 #include "log.h"
 
 namespace fs
