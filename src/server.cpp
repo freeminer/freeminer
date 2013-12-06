@@ -5501,7 +5501,13 @@ void dedicated_server_loop(Server &server, bool &kill)
 		}
 		try {
 		server.step(steplen);
-		} catch (...){
+		}
+		//TODO: more errors here
+		catch(LuaError &e) {
+			if (!errors++ || !(errors % 100))
+				errorstream<<"Fatal lua error n="<<errors<< " : "<<e.what()<<std::endl;
+		}
+		catch (...){
 			if (!errors++ || !(errors % 100))
 				errorstream<<"Fatal error "<<errors<<std::endl;
 		}
