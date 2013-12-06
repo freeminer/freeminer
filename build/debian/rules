@@ -23,7 +23,10 @@ dfsgremovals=Makefile.bak \
 	     fontlucida.png \
 	     sqlite \
 	     json \
-	     lua
+	     lua \
+	     build \
+	     old \
+	     master
 #	     jthread # upstream patched that lib, which seem dead upstream itself, so use freeminer's version even if I don't like it.
 cleanremovals= bin \
 	       CMakeFiles \
