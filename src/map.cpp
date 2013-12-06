@@ -3283,8 +3283,8 @@ void ServerMap::prepareBlock(MapBlock *block) {
 }
 
 /**
-		Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
-*/
+ * Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
+ */
 s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
 {
 	
@@ -3318,15 +3318,16 @@ s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
 		}
 
 		MapNode node = getNodeNoEx(probePosition);
-		if(node.getContent() != CONTENT_IGNORE && node.getContent() != CONTENT_AIR)
+		if (node.getContent() != CONTENT_IGNORE &&
+		    node.getContent() != CONTENT_AIR) {
 			break;
+		}
 	}
 
 	// Could not determine the ground. Use map generator noise functions.
 	if(probePosition.Y == minSearchHeight) {
 		level = referenceHeight; 
-	}
-	else {
+	} else {
 		level = probePosition.Y;
 	}
 
