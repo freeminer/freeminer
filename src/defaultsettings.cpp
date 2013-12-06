@@ -104,7 +104,7 @@ void set_default_settings(Settings *settings)
 #ifndef _IRR_ANDROID_PLATFORM_
 	settings->setDefault("video_driver", "opengl");
 #else
-	settings->setDefault("video_driver", "ogles2");
+	settings->setDefault("video_driver", "ogles1");
 #endif
 	settings->setDefault("free_move", "false");
 	settings->setDefault("noclip", "false");
@@ -145,7 +145,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("water_wave_speed", "5.0");
 	settings->setDefault("enable_waving_leaves", "false");
 	settings->setDefault("enable_waving_plants", "false");
+#ifndef ANDROID
 	settings->setDefault("enable_shaders", "true");
+#else
+	settings->setDefault("enable_shaders", "false");
+#endif
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("enable_movement_fov", "true");
@@ -308,7 +312,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("language", "");
 
 	// freeminer user-friendly defaults
+	#ifndef ANDROID
 	settings->setDefault("enable_vbo", "true");
+	#endif
 	settings->setDefault("viewing_range_nodes_max", "1000");
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");

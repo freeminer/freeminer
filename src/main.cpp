@@ -407,11 +407,17 @@ public:
 	}
 	virtual v2s32 getMousePos()
 	{
+#ifndef ANDROID
 		return m_device->getCursorControl()->getPosition();
+#else
+		return v2s32(0, 0);
+#endif
 	}
 	virtual void setMousePos(s32 x, s32 y)
 	{
+#ifndef ANDROID
 		m_device->getCursorControl()->setPosition(x, y);
+#endif
 	}
 
 	virtual bool getLeftState()
@@ -1899,6 +1905,6 @@ void android_main(android_app *app) {
 	app_dummy();
 	app_global = app;
 	char *argv[] = {"freeminer"};
-	main(1, argv);
+	main(sizeof(argv) / sizeof(argv[0]), argv);
 }
 #endif
