@@ -1055,8 +1055,8 @@ function tabbuilder.tab_texture_packs()
 	return	retval ..
 			menu.render_texture_pack_list(list) ..
 			";" .. index .. "]" ..
-			"image[0.65,0.25;4.0,3.7;"..engine.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[1.0,3.25;3.7,1.5;;"..engine.formspec_escape(infotext or "")..";]"
+			"image[6.5,4.5;4.0,3.7;"..engine.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[6.75,7.5;7.5,5;;"..engine.formspec_escape(infotext or "")..";]"
 end
 
 --------------------------------------------------------------------------------
