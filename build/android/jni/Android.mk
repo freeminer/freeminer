@@ -24,7 +24,7 @@ LOCAL_MODULE := Freeminer
 
 LOCAL_CPP_FEATURES += exceptions
 
-LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -pipe -fno-exceptions -fno-rtti -fstrict-aliasing -g -O0
+LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -DANDROID -pipe -fno-exceptions -fno-rtti -fstrict-aliasing -g -O0
 
 #ifndef NDEBUG
 #LOCAL_CFLAGS += -g -D_DEBUG
@@ -32,8 +32,8 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -pipe -fno-exceptions -fno-rtti -fstric
 #LOCAL_CFLAGS += -fexpensive-optimizations -O3
 #endif
 
-LOCAL_CFLAGS += -fsanitize=address
-LOCAL_LDFLAGS += -fsanitize=address
+# LOCAL_CFLAGS += -fsanitize=address
+# LOCAL_LDFLAGS += -fsanitize=address
 
 ifeq ($(TARGET_ARCH_ABI),x86)
 LOCAL_CFLAGS += -fno-stack-protector

@@ -1839,7 +1839,11 @@ void GUIFormSpecMenu::drawMenu()
 		}
 	}
 
+	#ifndef ANDROID
 	m_pointer = m_device->getCursorControl()->getPosition();
+	#else
+	m_pointer = v2s32(0, 0);
+	#endif
 
 	updateSelectedItem();
 

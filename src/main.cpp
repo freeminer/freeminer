@@ -313,6 +313,12 @@ public:
 			}
 		}
 
+		#ifdef ANDROID
+		if (event.EventType == irr::EET_MULTI_TOUCH_EVENT) {
+			infostream << "multi touch input!" << std::endl;
+		}
+		#endif
+
 		return false;
 	}
 
@@ -755,7 +761,9 @@ android_app *app_global;
 
 int main(int argc, char *argv[])
 {
-	__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "The value of 1 + 1 is %d", 1+1);
+	// well android lags anyway so no one will notice anything
+	// (this is actually needed to give GDB time to attach before everything crashes)
+	sleep(5);
 	int retval = 0;
 
 	/*
@@ -821,8 +829,6 @@ int main(int argc, char *argv[])
 			_("Disable main menu"))));
 #endif
 
-	__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "FIRST");
-
 	Settings cmd_args;
 
 	bool ret = cmd_args.parseCommandLine(argc, argv, allowed_options);
@@ -849,8 +855,6 @@ int main(int argc, char *argv[])
 
 		return cmd_args.getFlag("help") ? 0 : 1;
 	}
-
-	__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "SECOND");
 
 	if(cmd_args.getFlag("version"))
 	{
@@ -1621,7 +1625,9 @@ int main(int argc, char *argv[])
 				first_loop = false;
 
 				// Cursor can be non-visible when coming from the game
+				#ifndef ANDROID
 				device->getCursorControl()->setVisible(true);
+				#endif
 				// Some stuff are left to scene manager when coming from the game
 				// (map at least?)
 				smgr->clear();
