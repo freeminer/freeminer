@@ -14,7 +14,7 @@
 		android:label="Freeminer"
 		android:launchMode="singleTask"
 		android:configChanges="orientation|keyboardHidden"
-		android:screenOrientation="portrait"
+		android:screenOrientation="landscape"
 		android:clearTaskOnLaunch="true">
 		<meta-data android:name="android.app.lib_name" android:value="Freeminer" />
 		<intent-filter>

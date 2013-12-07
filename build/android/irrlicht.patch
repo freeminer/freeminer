@@ -1,0 +1,55 @@
+Index: source/Irrlicht/Android/CIrrDeviceAndroid.cpp
+===================================================================
+--- source/Irrlicht/Android/CIrrDeviceAndroid.cpp	(revision 4618)
++++ source/Irrlicht/Android/CIrrDeviceAndroid.cpp	(working copy)
+@@ -302,6 +302,29 @@
+ 
+ 			Device->postEventFromUser(Event);
+ 
++			if (PointerCount > 0) {
++				SEvent MouseEvent = {};
++				MouseEvent.EventType = EET_MOUSE_INPUT_EVENT;
++				MouseEvent.MouseInput.X = Event.MultiTouchInput.X[0];
++				MouseEvent.MouseInput.Y = Event.MultiTouchInput.Y[0];
++
++				switch (EventAction) {
++				case AMOTION_EVENT_ACTION_DOWN:
++					MouseEvent.MouseInput.Event = EMIE_LMOUSE_PRESSED_DOWN;
++					MouseEvent.MouseInput.ButtonStates = EMBSM_LEFT;
++					break;
++				case AMOTION_EVENT_ACTION_MOVE:
++					MouseEvent.MouseInput.Event = EMIE_MOUSE_MOVED;
++					MouseEvent.MouseInput.ButtonStates = EMBSM_LEFT;
++					break;
++				case AMOTION_EVENT_ACTION_UP:
++					MouseEvent.MouseInput.Event = EMIE_LMOUSE_LEFT_UP;
++					break;
++				}
++
++				Device->postEventFromUser(MouseEvent);
++			}
++
+ 			Status = 1;
+ 		}
+ 	}
+Index: source/Irrlicht/os.cpp
+===================================================================
+--- source/Irrlicht/os.cpp	(revision 4618)
++++ source/Irrlicht/os.cpp	(working copy)
+@@ -143,6 +143,7 @@
+ // ----------------------------------------------------------------
+ 
+ #include <android/log.h>
++#include <sys/time.h>
+ 
+ namespace irr
+ {
+@@ -225,6 +226,8 @@
+ 
+ #endif // end linux / android / windows
+ 
++#include <time.h>
++
+ namespace os
+ {
+ 	// The platform independent implementation of the printer

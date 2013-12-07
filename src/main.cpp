@@ -40,7 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#pragma comment(lib, "Shell32.lib")
 #endif
 
-#ifdef _IRR_ANDROID_PLATFORM_
+#ifdef ANDROID
 	#include <android_native_app_glue.h>
 	#include <android/log.h>
 
@@ -316,6 +316,8 @@ public:
 		#ifdef ANDROID
 		if (event.EventType == irr::EET_MULTI_TOUCH_EVENT) {
 			infostream << "multi touch input!" << std::endl;
+			mouse_pos = v2s32(event.MultiTouchInput.X[0], event.MultiTouchInput.Y[0]);
+			infostream << mouse_pos.X << " " << mouse_pos.Y << std::endl;
 		}
 		#endif
 
@@ -376,6 +378,8 @@ public:
 
 	s32 mouse_wheel;
 
+	v2s32 mouse_pos;
+
 private:
 	IrrlichtDevice *m_device;
 
@@ -410,13 +414,15 @@ public:
 #ifndef ANDROID
 		return m_device->getCursorControl()->getPosition();
 #else
-		return v2s32(0, 0);
+		return m_receiver->mouse_pos;
 #endif
 	}
 	virtual void setMousePos(s32 x, s32 y)
 	{
 #ifndef ANDROID
 		m_device->getCursorControl()->setPosition(x, y);
+#else
+		m_receiver->mouse_pos = v2s32(x, y);
 #endif
 	}
 
@@ -761,7 +767,7 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 }
 
 
-#ifdef _IRR_ANDROID_PLATFORM_
+#ifdef ANDROID
 android_app *app_global;
 #endif
 
@@ -1452,7 +1458,7 @@ int main(int argc, char *argv[])
 	params.EventReceiver = &receiver;
 	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 
-#ifdef _IRR_ANDROID_PLATFORM_
+#ifdef ANDROID
 	params.PrivateData = app_global;
 #endif
 
@@ -1900,11 +1906,11 @@ int main(int argc, char *argv[])
 }
 
 
-#ifdef _IRR_ANDROID_PLATFORM_
+#ifdef ANDROID
 void android_main(android_app *app) {
 	app_dummy();
 	app_global = app;
-	char *argv[] = {"freeminer"};
+	char *argv[] = {"freeminer"/*, "--worldname", "test", "--go", "--random-input"*/};
 	main(sizeof(argv) / sizeof(argv[0]), argv);
 }
 #endif

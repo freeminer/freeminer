@@ -3,16 +3,6 @@ IRRLICHT_LIBRARY_PATH := ../irrlicht/
 
 LOCAL_ADDRESS_SANITIZER:=true
 
-# copy Irrlicht data to assets
-$(shell mkdir -p $(LOCAL_PATH)/assets)
-$(shell mkdir -p $(LOCAL_PATH)/assets/media)
-$(shell mkdir -p $(LOCAL_PATH)/assets/media/Shaders)
-$(shell mkdir -p $(LOCAL_PATH)/src)
-$(shell cp $(IRRLICHT_LIBRARY_PATH)/media/Shaders/*.* $(LOCAL_PATH)/assets/media/Shaders/)
-$(shell cp $(IRRLICHT_LIBRARY_PATH)/media/irrlichtlogo3.png $(LOCAL_PATH)/assets/media/)
-$(shell cp $(IRRLICHT_LIBRARY_PATH)/media/sydney.md2 $(LOCAL_PATH)/assets/media/)
-$(shell cp $(IRRLICHT_LIBRARY_PATH)/media/sydney.bmp $(LOCAL_PATH)/assets/media/)
-
 include $(CLEAR_VARS)
 LOCAL_MODULE := Irrlicht
 LOCAL_SRC_FILES := $(IRRLICHT_LIBRARY_PATH)/lib/Android/libIrrlicht.a
@@ -24,7 +14,7 @@ LOCAL_MODULE := Freeminer
 
 LOCAL_CPP_FEATURES += exceptions
 
-LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -DANDROID -pipe -fno-exceptions -fno-rtti -fstrict-aliasing -g -O0
+LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -DANDROID -pipe -fstrict-aliasing -g -O0
 
 #ifndef NDEBUG
 #LOCAL_CFLAGS += -g -D_DEBUG
@@ -39,24 +29,24 @@ ifeq ($(TARGET_ARCH_ABI),x86)
 LOCAL_CFLAGS += -fno-stack-protector
 endif
 
-LOCAL_C_INCLUDES := ${IRRLICHT_LIBRARY_PATH}/include src src/sqlite src/script src/lua/src src/json
+LOCAL_C_INCLUDES := ${IRRLICHT_LIBRARY_PATH}/include jni/src jni/src/sqlite jni/src/script jni/src/lua/src jni/src/json
 
-LOCAL_SRC_FILES := src/ban.cpp src/base64.cpp src/biome.cpp src/camera.cpp src/cavegen.cpp src/chat.cpp src/client.cpp src/clientmap.cpp src/clientobject.cpp src/clouds.cpp src/collision.cpp src/connection.cpp src/content_abm.cpp src/content_cao.cpp src/content_cso.cpp src/content_mapblock.cpp src/content_mapnode.cpp src/content_nodemeta.cpp src/content_sao.cpp src/convert_json.cpp src/craftdef.cpp src/database-dummy.cpp src/database-leveldb.cpp src/database-sqlite3.cpp src/database.cpp src/debug.cpp src/defaultsettings.cpp src/dungeongen.cpp src/emerge.cpp src/environment.cpp src/filecache.cpp src/filesys.cpp src/game.cpp src/genericobject.cpp src/gettext.cpp src/guiChatConsole.cpp src/guiDeathScreen.cpp src/guiEngine.cpp src/guiFileSelectMenu.cpp src/guiFormSpecMenu.cpp src/guiKeyChangeMenu.cpp src/guiMessageMenu.cpp src/guiPasswordChange.cpp src/guiPauseMenu.cpp src/guiTextInputMenu.cpp src/guiVolumeChange.cpp src/hud.cpp src/intlGUIEditBox.cpp src/inventory.cpp src/inventorymanager.cpp src/itemdef.cpp src/keycode.cpp src/light.cpp src/localplayer.cpp src/log.cpp src/main.cpp src/map.cpp src/mapblock.cpp src/mapblock_mesh.cpp src/mapgen.cpp src/mapgen_indev.cpp src/mapgen_math.cpp src/mapgen_singlenode.cpp src/mapgen_v6.cpp src/mapgen_v7.cpp src/mapnode.cpp src/mapsector.cpp src/mesh.cpp src/mods.cpp src/nameidmapping.cpp src/nodedef.cpp src/nodemetadata.cpp src/nodetimer.cpp src/noise.cpp src/object_properties.cpp src/particles.cpp src/pathfinder.cpp src/player.cpp src/porting.cpp src/quicktune.cpp src/rollback.cpp src/rollback_interface.cpp src/serialization.cpp src/server.cpp src/serverlist.cpp src/serverobject.cpp src/sha1.cpp src/shader.cpp src/sky.cpp src/socket.cpp src/sound.cpp src/staticobject.cpp src/subgame.cpp src/test.cpp src/tile.cpp src/tool.cpp src/treegen.cpp src/version.cpp src/voxel.cpp src/voxelalgorithms.cpp src/util/directiontables.cpp src/util/numeric.cpp src/util/pointedthing.cpp src/util/serialize.cpp src/util/string.cpp src/util/timetaker.cpp
+LOCAL_SRC_FILES := jni/src/ban.cpp jni/src/base64.cpp jni/src/biome.cpp jni/src/camera.cpp jni/src/cavegen.cpp jni/src/chat.cpp jni/src/client.cpp jni/src/clientmap.cpp jni/src/clientobject.cpp jni/src/clouds.cpp jni/src/collision.cpp jni/src/connection.cpp jni/src/content_abm.cpp jni/src/content_cao.cpp jni/src/content_cso.cpp jni/src/content_mapblock.cpp jni/src/content_mapnode.cpp jni/src/content_nodemeta.cpp jni/src/content_sao.cpp jni/src/convert_json.cpp jni/src/craftdef.cpp jni/src/database-dummy.cpp jni/src/database-leveldb.cpp jni/src/database-sqlite3.cpp jni/src/database.cpp jni/src/debug.cpp jni/src/defaultsettings.cpp jni/src/dungeongen.cpp jni/src/emerge.cpp jni/src/environment.cpp jni/src/filecache.cpp jni/src/filesys.cpp jni/src/game.cpp jni/src/genericobject.cpp jni/src/gettext.cpp jni/src/guiChatConsole.cpp jni/src/guiDeathScreen.cpp jni/src/guiEngine.cpp jni/src/guiFileSelectMenu.cpp jni/src/guiFormSpecMenu.cpp jni/src/guiKeyChangeMenu.cpp jni/src/guiMessageMenu.cpp jni/src/guiPasswordChange.cpp jni/src/guiPauseMenu.cpp jni/src/guiTextInputMenu.cpp jni/src/guiVolumeChange.cpp jni/src/hud.cpp jni/src/intlGUIEditBox.cpp jni/src/inventory.cpp jni/src/inventorymanager.cpp jni/src/itemdef.cpp jni/src/keycode.cpp jni/src/light.cpp jni/src/localplayer.cpp jni/src/log.cpp jni/src/main.cpp jni/src/map.cpp jni/src/mapblock.cpp jni/src/mapblock_mesh.cpp jni/src/mapgen.cpp jni/src/mapgen_indev.cpp jni/src/mapgen_math.cpp jni/src/mapgen_singlenode.cpp jni/src/mapgen_v6.cpp jni/src/mapgen_v7.cpp jni/src/mapnode.cpp jni/src/mapsector.cpp jni/src/mesh.cpp jni/src/mods.cpp jni/src/nameidmapping.cpp jni/src/nodedef.cpp jni/src/nodemetadata.cpp jni/src/nodetimer.cpp jni/src/noise.cpp jni/src/object_properties.cpp jni/src/particles.cpp jni/src/pathfinder.cpp jni/src/player.cpp jni/src/porting.cpp jni/src/quicktune.cpp jni/src/rollback.cpp jni/src/rollback_interface.cpp jni/src/serialization.cpp jni/src/server.cpp jni/src/serverlist.cpp jni/src/serverobject.cpp jni/src/sha1.cpp jni/src/shader.cpp jni/src/sky.cpp jni/src/socket.cpp jni/src/sound.cpp jni/src/staticobject.cpp jni/src/subgame.cpp jni/src/test.cpp jni/src/tile.cpp jni/src/tool.cpp jni/src/treegen.cpp jni/src/version.cpp jni/src/voxel.cpp jni/src/voxelalgorithms.cpp jni/src/util/directiontables.cpp jni/src/util/numeric.cpp jni/src/util/pointedthing.cpp jni/src/util/serialize.cpp jni/src/util/string.cpp jni/src/util/timetaker.cpp
 
 # lua api
-LOCAL_SRC_FILES := $(LOCAL_SRC_FILES) src/script/common/c_content.cpp src/script/common/c_converter.cpp src/script/common/c_internal.cpp src/script/common/c_types.cpp src/script/cpp_api/s_base.cpp src/script/cpp_api/s_entity.cpp src/script/cpp_api/s_env.cpp src/script/cpp_api/s_inventory.cpp src/script/cpp_api/s_item.cpp src/script/cpp_api/s_mainmenu.cpp src/script/cpp_api/s_node.cpp src/script/cpp_api/s_nodemeta.cpp src/script/cpp_api/s_player.cpp src/script/cpp_api/s_server.cpp src/script/lua_api/l_async_events.cpp src/script/lua_api/l_base.cpp src/script/lua_api/l_craft.cpp src/script/lua_api/l_env.cpp src/script/lua_api/l_inventory.cpp src/script/lua_api/l_item.cpp src/script/lua_api/l_mainmenu.cpp src/script/lua_api/l_mapgen.cpp src/script/lua_api/l_nodemeta.cpp src/script/lua_api/l_nodetimer.cpp src/script/lua_api/l_noise.cpp src/script/lua_api/l_object.cpp src/script/lua_api/l_particles.cpp src/script/lua_api/l_rollback.cpp src/script/lua_api/l_server.cpp src/script/lua_api/l_settings.cpp src/script/lua_api/l_util.cpp src/script/lua_api/l_vmanip.cpp src/script/scripting_game.cpp src/script/scripting_mainmenu.cpp src/script/lua_api/marshall.c
+LOCAL_SRC_FILES += jni/src/script/common/c_content.cpp jni/src/script/common/c_converter.cpp jni/src/script/common/c_internal.cpp jni/src/script/common/c_types.cpp jni/src/script/cpp_api/s_base.cpp jni/src/script/cpp_api/s_entity.cpp jni/src/script/cpp_api/s_env.cpp jni/src/script/cpp_api/s_inventory.cpp jni/src/script/cpp_api/s_item.cpp jni/src/script/cpp_api/s_mainmenu.cpp jni/src/script/cpp_api/s_node.cpp jni/src/script/cpp_api/s_nodemeta.cpp jni/src/script/cpp_api/s_player.cpp jni/src/script/cpp_api/s_server.cpp jni/src/script/lua_api/l_async_events.cpp jni/src/script/lua_api/l_base.cpp jni/src/script/lua_api/l_craft.cpp jni/src/script/lua_api/l_env.cpp jni/src/script/lua_api/l_inventory.cpp jni/src/script/lua_api/l_item.cpp jni/src/script/lua_api/l_mainmenu.cpp jni/src/script/lua_api/l_mapgen.cpp jni/src/script/lua_api/l_nodemeta.cpp jni/src/script/lua_api/l_nodetimer.cpp jni/src/script/lua_api/l_noise.cpp jni/src/script/lua_api/l_object.cpp jni/src/script/lua_api/l_particles.cpp jni/src/script/lua_api/l_rollback.cpp jni/src/script/lua_api/l_server.cpp jni/src/script/lua_api/l_settings.cpp jni/src/script/lua_api/l_util.cpp jni/src/script/lua_api/l_vmanip.cpp jni/src/script/scripting_game.cpp jni/src/script/scripting_mainmenu.cpp jni/src/script/lua_api/marshall.c
 
 # lua
-LOCAL_SRC_FILES := $(LOCAL_SRC_FILES) src/lua/src/lapi.c src/lua/src/lauxlib.c src/lua/src/lbaselib.c src/lua/src/lcode.c src/lua/src/ldblib.c src/lua/src/ldebug.c src/lua/src/ldo.c src/lua/src/ldump.c src/lua/src/lfunc.c src/lua/src/lgc.c src/lua/src/linit.c src/lua/src/liolib.c src/lua/src/llex.c src/lua/src/lmathlib.c src/lua/src/lmem.c src/lua/src/loadlib.c src/lua/src/lobject.c src/lua/src/lopcodes.c src/lua/src/loslib.c src/lua/src/lparser.c src/lua/src/lstate.c src/lua/src/lstring.c src/lua/src/lstrlib.c src/lua/src/ltable.c src/lua/src/ltablib.c src/lua/src/ltm.c src/lua/src/lundump.c src/lua/src/lvm.c src/lua/src/lzio.c src/lua/src/print.c
+LOCAL_SRC_FILES += jni/src/lua/src/lapi.c jni/src/lua/src/lauxlib.c jni/src/lua/src/lbaselib.c jni/src/lua/src/lcode.c jni/src/lua/src/ldblib.c jni/src/lua/src/ldebug.c jni/src/lua/src/ldo.c jni/src/lua/src/ldump.c jni/src/lua/src/lfunc.c jni/src/lua/src/lgc.c jni/src/lua/src/linit.c jni/src/lua/src/liolib.c jni/src/lua/src/llex.c jni/src/lua/src/lmathlib.c jni/src/lua/src/lmem.c jni/src/lua/src/loadlib.c jni/src/lua/src/lobject.c jni/src/lua/src/lopcodes.c jni/src/lua/src/loslib.c jni/src/lua/src/lparser.c jni/src/lua/src/lstate.c jni/src/lua/src/lstring.c jni/src/lua/src/lstrlib.c jni/src/lua/src/ltable.c jni/src/lua/src/ltablib.c jni/src/lua/src/ltm.c jni/src/lua/src/lundump.c jni/src/lua/src/lvm.c jni/src/lua/src/lzio.c jni/src/lua/src/print.c
 
 # sqlite
-LOCAL_SRC_FILES := $(LOCAL_SRC_FILES) src/sqlite/sqlite3.c
+LOCAL_SRC_FILES += jni/src/sqlite/sqlite3.c
 
 # jthread
-LOCAL_SRC_FILES := $(LOCAL_SRC_FILES) src/jthread/pthread/jevent.cpp src/jthread/pthread/jmutex.cpp src/jthread/pthread/jsemaphore.cpp src/jthread/pthread/jthread.cpp
+LOCAL_SRC_FILES += jni/src/jthread/pthread/jevent.cpp jni/src/jthread/pthread/jmutex.cpp jni/src/jthread/pthread/jsemaphore.cpp jni/src/jthread/pthread/jthread.cpp
 
 # json
-LOCAL_SRC_FILES := $(LOCAL_SRC_FILES) src/json/jsoncpp.cpp
+LOCAL_SRC_FILES += jni/src/json/jsoncpp.cpp
 
 LOCAL_LDLIBS := -lEGL -llog -lGLESv1_CM -lGLESv2 -lz -landroid
 
