@@ -137,6 +137,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 				if (!allow) {
 				 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
 				 if (c == CONTENT_AIR || c == CONTENT_IGNORE)
+				    if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE)
 					return; // do not freeze when falling
 				 if (c != c_self && c != CONTENT_IGNORE) allow = 1;
 				 if (!allow) {
@@ -157,7 +158,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 				 }
 				}
 				if (allow) {
-					n.freezeMelt(ndef);
+					n.freezeMelt(ndef, -1);
 					map->addNodeWithEvent(p, n);
 				}
 			}
@@ -191,7 +192,12 @@ class MeltWeather : public ActiveBlockModifier {
 			int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 			if (heat >= melt+1 && (heat >= melt+40 ||
 				((myrand_range(heat, melt+40)) >= (c == CONTENT_AIR ? melt+10 : melt+20)))) {
-				n.freezeMelt(ndef);
+				if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE) {
+					 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
+					 if (c == CONTENT_AIR || c == CONTENT_IGNORE)
+						return; // do not melt when falling (dirt->dirt_with_grass on air)
+				}
+				n.freezeMelt(ndef, +1);
 				map->addNodeWithEvent(p, n);
 				//env->getScriptIface()->node_falling_update(p); //enable after making FAST nodeupdate
 			}
@@ -213,7 +219,7 @@ class MeltHot : public ActiveBlockModifier {
 			return s;
 		}
 		virtual u32 getNeighborsRange()
-		{ return 2; }
+		{ return 3; }
 		virtual float getTriggerInterval()
 		{ return 3.0; }
 		virtual u32 getTriggerChance()
@@ -225,7 +231,7 @@ class MeltHot : public ActiveBlockModifier {
 			int hot = ((ItemGroupList) ndef->get(neighbor).groups)["hot"];
 			int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 			if (hot > melt) {
-				n.freezeMelt(ndef);
+				n.freezeMelt(ndef, +1);
 				map->addNodeWithEvent(p, n);
 				env->getScriptIface()->node_falling_update(p);
 			}
@@ -258,7 +264,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 			int cold = ((ItemGroupList) ndef->get(neighbor).groups)["cold"];
 			int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
 			if (cold < freeze) {
-				n.freezeMelt(ndef);
+				n.freezeMelt(ndef, -1);
 				map->addNodeWithEvent(p, n);
 			}
 		}

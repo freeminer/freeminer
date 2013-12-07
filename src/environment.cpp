@@ -318,6 +318,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
 	m_active_block_abm_last(0),
+	m_active_block_abm_dtime(0),
 	m_active_block_timer_last(0),
 	m_blocks_added_last(0),
 	m_game_time(0),
@@ -743,7 +744,6 @@ public:
 			{
 				if(myrand() % i->chance != 0)
 					continue;
-
 				// Check neighbors
 				MapNode neighbor;
 				if(!i->required_neighbors.empty())
@@ -1167,7 +1167,7 @@ void ServerEnvironment::step(float dtime)
 		*/
 
 		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = blocks_added.begin();
 				i != blocks_added.end(); ++i)
@@ -1211,7 +1211,7 @@ void ServerEnvironment::step(float dtime)
 		float dtime = 1.0;
 
 		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1266,15 +1266,16 @@ void ServerEnvironment::step(float dtime)
 			m_active_block_timer_last = 0;
 	}
 	
+	m_active_block_abm_dtime += dtime;
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval))
 	{
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
-		u32 max_time_ms = 1000 * g_settings->getFloat("dedicated_server_step");
+		u32 max_time_ms = 1000 * m_recommended_send_interval;
 		
 		// Initialize handling of ActiveBlockModifiers
-		ABMHandler abmhandler(m_abms, abm_interval, this, true);
+		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 
 		u32 n = 0, calls = 0;
 		for(std::set<v3s16>::iterator
@@ -1317,6 +1318,8 @@ void ServerEnvironment::step(float dtime)
 					<<time_ms<<"ms (longer than "
 					<<max_time_ms<<"ms)"<<std::endl;
 		}
+		if (!m_active_block_abm_last)
+			m_active_block_abm_dtime = 0;
 	}
 	
 	/*
@@ -1346,7 +1349,7 @@ void ServerEnvironment::step(float dtime)
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
 		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)

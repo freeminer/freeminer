@@ -159,9 +159,9 @@ function update_menu()
 	else
 		formspec = "size[15.5,11.625]"
 		if tabbuilder.show_buttons then
-			formspec = formspec .. "image[-0.35,-0.675;" .. menu.defaulttexturedir .. "menu.png]"
+			formspec = formspec .. "image[-0.35,-0.675;" .. engine.formspec_escape(menu.defaulttexturedir .. "menu.png") .. "]"
 		end
-		formspec = formspec .. "background[-50,-50;100,100;" .. menu.defaulttexturedir .. "background.png]"
+		formspec = formspec .. "background[-50,-50;100,100;" .. engine.formspec_escape(menu.defaulttexturedir .. "background.png") .. "]"
 		formspec = formspec .. tabbuilder.gettab()
 	end
 
@@ -819,11 +819,11 @@ function tabbuilder.tab_header()
 		tabbuilder.last_tab_index = 1
 	end
 
-	local formspec = "image[-0.35," .. 1.8 + tabbuilder.last_tab_index .. ";" .. menu.defaulttexturedir .. "selected.png]"
+	local formspec = "image[-0.35," .. 1.8 + tabbuilder.last_tab_index .. ";" .. engine.formspec_escape(menu.defaulttexturedir .. "selected.png") .. "]"
 
 	for i = 1, #tabbuilder.current_buttons do
 		formspec = formspec .. "label[0.35," .. 2 + i .. ";" .. tabbuilder.current_buttons[i].caption .. "]"
-		formspec = formspec .. "image_button[-0.4," .. 1.85 + i .. ";6.7,1;" .. menu.defaulttexturedir .. "blank.png;maintab_" .. i .. ";;true;false]"
+		formspec = formspec .. "image_button[-0.4," .. 1.85 + i .. ";6.7,1;" .. engine.formspec_escape(menu.defaulttexturedir .. "blank.png") .. ";maintab_" .. i .. ";;true;false]"
 	end
 	return formspec
 end
@@ -867,7 +867,7 @@ function tabbuilder.tab_multiplayer()
 		"label[6.5,6.5;".. fgettext("Address") .. "]"..
 		"field[6.75,7.5;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
 		"label[11.95,6.5;".. fgettext("Port") .. "]"..
-		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("port") .."]" ..
+		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("remote_port") .."]" ..
 		"checkbox[10,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
 
@@ -1055,8 +1055,8 @@ function tabbuilder.tab_texture_packs()
 	return	retval ..
 			menu.render_texture_pack_list(list) ..
 			";" .. index .. "]" ..
-			"image[0.65,0.25;4.0,3.7;"..engine.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[1.0,3.25;3.7,1.5;;"..engine.formspec_escape(infotext or "")..";]"
+			"image[6.5,4.5;4.0,3.7;"..engine.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[6.75,7.5;7.5,5;;"..engine.formspec_escape(infotext or "")..";]"
 end
 
 --------------------------------------------------------------------------------

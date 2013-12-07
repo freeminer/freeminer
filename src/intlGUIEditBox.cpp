@@ -41,6 +41,7 @@
 //#include "irrlicht/os.cpp"
 #include "porting.h"
 //#include "Keycodes.h"
+#include "log.h"
 
 /*
 	todo:
@@ -270,7 +271,7 @@ bool intlGUIEditBox::OnEvent(const SEvent& event)
 			break;
 		case EET_KEY_INPUT_EVENT:
         {
-#if defined(linux)
+#if (defined(linux) || defined(__linux) || defined(__FreeBSD__))
             // ################################################################
 			// ValkaTR:
             // This part is the difference from the original intlGUIEditBox

@@ -24,6 +24,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string.h>
 #include <errno.h>
 #include <fstream>
+#if defined(__FreeBSD__)
+#include <sys/time.h>
+#endif
 #include "log.h"
 
 namespace fs

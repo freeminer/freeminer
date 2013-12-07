@@ -34,9 +34,8 @@ sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-d
 ```
 Download source code:
 ```
-git clone https://github.com/freeminer/freeminer.git
+git clone --recursive https://github.com/freeminer/freeminer.git
 cd freeminer
-git submodule update --init --recursive
 ```
 Build it:
 ```

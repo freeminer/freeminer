@@ -225,7 +225,8 @@ struct ContentFeatures
 	// Is liquid renewable (new liquid source will be created between 2 existing)
 	bool liquid_renewable;
 	// Ice for water, water for ice
-	std::string freezemelt;
+	std::string freeze;
+	std::string melt;
 	// Number of flowing liquids surrounding source
 	u8 drowning;
 	// Amount of light the node emits

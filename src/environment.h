@@ -377,6 +377,7 @@ private:
 	//loop breakers
 	u32 m_active_objects_last;
 	u32 m_active_block_abm_last;
+	float m_active_block_abm_dtime;
 	u32 m_active_block_timer_last;
 	u32 m_blocks_added_last;
 	// Time from the beginning of the game in seconds.

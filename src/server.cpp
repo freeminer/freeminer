@@ -2303,8 +2303,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		}
 
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
-				<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
-				<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
+															<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
+															<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
+
 	}
 	else if(command == TOSERVER_GOTBLOCKS)
 	{
@@ -5500,7 +5501,13 @@ void dedicated_server_loop(Server &server, bool &kill)
 		}
 		try {
 		server.step(steplen);
-		} catch (...){
+		}
+		//TODO: more errors here
+		catch(LuaError &e) {
+			if (!errors++ || !(errors % 100))
+				errorstream<<"Fatal lua error n="<<errors<< " : "<<e.what()<<std::endl;
+		}
+		catch (...){
 			if (!errors++ || !(errors % 100))
 				errorstream<<"Fatal error "<<errors<<std::endl;
 		}

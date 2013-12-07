@@ -1799,11 +1799,11 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					if (liquid_kind_flowing == CONTENT_IGNORE)
 						liquid_kind_flowing = liquid_kind;
 					if (melt_kind == CONTENT_IGNORE)
-						melt_kind = nodemgr->getId(nodemgr->get(nb.n).freezemelt);
+						melt_kind = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind_flowing == CONTENT_IGNORE)
 						melt_kind_flowing = 
 							nodemgr->getId(
-							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).freezemelt)
+							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).melt)
 									).liquid_alternative_flowing);
 					if (melt_kind_flowing == CONTENT_IGNORE)
 						melt_kind_flowing = melt_kind;
@@ -1824,10 +1824,10 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					if (liquid_kind == CONTENT_IGNORE)
 						liquid_kind = liquid_kind_flowing;
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.n).freezemelt);
+						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = nodemgr->getId(nodemgr->get(nodemgr->getId(
-							nodemgr->get(nb.n).freezemelt)).liquid_alternative_source);
+							nodemgr->get(nb.n).melt)).liquid_alternative_source);
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = melt_kind_flowing;
 					if (nb.n.getContent() == liquid_kind_flowing) {
@@ -3283,8 +3283,8 @@ void ServerMap::prepareBlock(MapBlock *block) {
 }
 
 /**
-		Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
-*/
+ * Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
+ */
 s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
 {
 	
@@ -3318,15 +3318,16 @@ s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
 		}
 
 		MapNode node = getNodeNoEx(probePosition);
-		if(node.getContent() != CONTENT_IGNORE && node.getContent() != CONTENT_AIR)
+		if (node.getContent() != CONTENT_IGNORE &&
+		    node.getContent() != CONTENT_AIR) {
 			break;
+		}
 	}
 
 	// Could not determine the ground. Use map generator noise functions.
 	if(probePosition.Y == minSearchHeight) {
 		level = referenceHeight; 
-	}
-	else {
+	} else {
 		level = probePosition.Y;
 	}
 

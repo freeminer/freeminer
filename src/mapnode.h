@@ -232,7 +232,7 @@ struct MapNode
 	u8 getLevel(INodeDefManager *nodemgr) const;
 	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1);
 	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1);
-	void freezeMelt(INodeDefManager *nodemgr);
+	void freezeMelt(INodeDefManager *nodemgr, int direction = 0);
 
 	/*
 		Serialization functions
