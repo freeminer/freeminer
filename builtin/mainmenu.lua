@@ -863,26 +863,21 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
 	local retval =
-		"label[6.5,-0.25;".. fgettext("Servers") .. "]"..
-		"label[6.5,6.5;".. fgettext("Address") .. "]"..
-		"field[6.75,7.5;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
-		"label[11.95,6.5;".. fgettext("Port") .. "]"..
-		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("remote_port") .."]" ..
-		"checkbox[10,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
+		"field[6.75,0.5;5.5,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .. "]" ..
+		"field[12.2,0.5;2.25,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
+		"checkbox[6.5,2;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
 
 	if not engine.setting_getbool("public_serverlist") then
 		retval = retval ..
-			"button[12,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
+			"button[12,2.2;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
 	end
 
 	retval = retval ..
 		"button[11.75,10;2.5,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"label[6.5,7.8;".. fgettext("Name") .. "]" ..
-		"field[6.75,8.8;4,0.5;te_name;;" ..engine.setting_get("name") .."]" ..
-		"label[10.55,7.8;".. fgettext("Password") .. "]" ..
-		"pwdfield[10.8,8.8;3.7,0.5;te_pwd;]" ..
-		"textarea[6.75,3.8;6,2.75;;"
+		"field[6.75,1.5;4,0.5;te_name;" .. fgettext("Name") .. ";" ..engine.setting_get("name") .."]" ..
+		"pwdfield[10.8,1.5;3.7,0.5;te_pwd;" .. fgettext("Password") .. "]" ..
+		"textarea[6.75,6.5;6,2.75;;"
 	if menu.fav_selected ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
 		retval = retval ..
@@ -891,7 +886,7 @@ function tabbuilder.tab_multiplayer()
 
 	retval = retval ..
 		";]" ..
-		"textlist[6.5,0.35;7.5,3.35;favourites;"
+		"textlist[6.5,2.75;7.5,3.35;favourites;"
 
 	local render_details = engine.setting_getbool("public_serverlist")
 
