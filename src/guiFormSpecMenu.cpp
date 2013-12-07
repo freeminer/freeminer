@@ -2253,7 +2253,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 	if(event.EventType==EET_KEY_INPUT_EVENT)
 	{
 		KeyPress kp(event.KeyInput);
-		if (kp == EscapeKey || kp == getKeySetting("keymap_inventory")
+		if (kp == EscapeKey || kp == CancelKey || kp == getKeySetting("keymap_inventory")
 				|| event.KeyInput.Key==KEY_RETURN)
 		{
 			gui::IGUIElement *focused = Environment->getFocus();
@@ -2301,7 +2301,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	{
 		KeyPress kp(event.KeyInput);
 		if (event.KeyInput.PressedDown && (kp == EscapeKey ||
-			kp == getKeySetting("keymap_inventory")))
+			kp == getKeySetting("keymap_inventory") || kp == CancelKey))
 		{
 			if (m_allowclose) {
 				acceptInput(true);

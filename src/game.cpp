@@ -1163,7 +1163,7 @@ void the_game(
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(input->wasKeyDown(EscapeKey)){
+			if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)){
 				connect_aborted = true;
 				infostream<<"Connect aborted [Escape]"<<std::endl;
 				break;
@@ -1258,7 +1258,7 @@ void the_game(
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(input->wasKeyDown(EscapeKey)){
+			if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)){
 				content_aborted = true;
 				infostream<<"Connect aborted [Escape]"<<std::endl;
 				break;
@@ -1793,7 +1793,7 @@ void the_game(
 			menu->setTextDest(new TextDestPlayerInventory(&client));
 			menu->drop();
 		}
-		else if(input->wasKeyDown(EscapeKey))
+		else if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey))
 		{
 			infostream<<"the_game: "
 					<<"Launching pause menu"<<std::endl;
@@ -2162,8 +2162,8 @@ void the_game(
 		{
 			if(!random_input)
 			{
-				// Mac OSX gets upset if this is set every frame
 #ifndef ANDROID
+				// Mac OSX gets upset if this is set every frame
 				if(device->getCursorControl()->isVisible())
 					device->getCursorControl()->setVisible(false);
 #endif
@@ -2202,9 +2202,11 @@ void the_game(
 			input->setMousePos(displaycenter.X, displaycenter.Y);
 		}
 		else{
+#ifndef ANDROID
 			// Mac OSX gets upset if this is set every frame
 			if(device->getCursorControl()->isVisible() == false)
 				device->getCursorControl()->setVisible(true);
+#endif
 
 			//infostream<<"window inactive"<<std::endl;
 			first_loop_after_window_activation = true;

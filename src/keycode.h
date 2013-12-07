@@ -57,6 +57,7 @@ protected:
 };
 
 extern const KeyPress EscapeKey;
+extern const KeyPress CancelKey;
 extern const KeyPress NumberKey[10];
 
 // Key configuration getter
