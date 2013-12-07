@@ -2279,6 +2279,19 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			return true;
 		}
 	}
+
+	#ifdef ANDROID
+	// display software keyboard when clicking edit boxes
+	if (event.EventType == EET_MOUSE_INPUT_EVENT
+			&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+		gui::IGUIElement *hovered =
+			Environment->getRootGUIElement()->getElementFromPoint(
+				core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+		if (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+			porting::displayKeyboard(true, app_global, jnienv);
+	}
+	#endif
+
 	return false;
 }
 
@@ -2615,12 +2628,6 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	}
 	if(event.EventType==EET_GUI_EVENT)
 	{
-		#ifdef ANDROID
-		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUSED
-				&& event.GUIEvent.Element->getType() == gui::EGUIET_EDIT_BOX) {
-			porting::displayKeyboard(true, app_global, jnienv);
-		}
-		#endif
 
 		if(event.GUIEvent.EventType==gui::EGET_TAB_CHANGED
 						&& isVisible())
