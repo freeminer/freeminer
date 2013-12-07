@@ -28,9 +28,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "jthread/jmutex.h"
 #include "jthread/jmutexautolock.h"
 
+#ifdef ANDROID
 #include <android/log.h>
-
 #define APPNAME "Freeminer"
+#endif
 
 /*
 	Debug output
@@ -99,7 +100,9 @@ public:
 	}
 	std::streamsize xsputn(const char *s, std::streamsize n)
 	{
+#ifdef ANDROID
 		__android_log_print(ANDROID_LOG_VERBOSE, APPNAME, "%s", s);
+#endif
 		for(int i=0; i<DEBUGSTREAM_COUNT; i++)
 		{
 			if(g_debugstreams[i] == stderr && m_disable_stderr)

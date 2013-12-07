@@ -45,6 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
+#include "porting.h"
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -60,6 +61,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 			return;															\
 	}
 
+#ifdef ANDROID
+#include <android_native_app_glue.h>
+extern android_app *app_global;
+extern JNIEnv *jnienv;
+#endif
 
 /*
 	GUIFormSpecMenu
@@ -2609,6 +2615,12 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	}
 	if(event.EventType==EET_GUI_EVENT)
 	{
+		#ifdef ANDROID
+		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUSED
+				&& event.GUIEvent.Element->getType() == gui::EGUIET_EDIT_BOX) {
+			porting::displayKeyboard(true, app_global, jnienv);
+		}
+		#endif
 
 		if(event.GUIEvent.EventType==gui::EGET_TAB_CHANGED
 						&& isVisible())

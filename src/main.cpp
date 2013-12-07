@@ -769,6 +769,7 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 
 #ifdef ANDROID
 android_app *app_global;
+JNIEnv *jnienv;
 #endif
 
 int main(int argc, char *argv[])
@@ -1460,6 +1461,14 @@ int main(int argc, char *argv[])
 
 #ifdef ANDROID
 	params.PrivateData = app_global;
+
+	jnienv = NULL;
+    JavaVM *jvm = app_global->activity->vm;
+    JavaVMAttachArgs lJavaVMAttachArgs;
+    lJavaVMAttachArgs.version = JNI_VERSION_1_6;
+    lJavaVMAttachArgs.name = "NativeThread";
+    lJavaVMAttachArgs.group = NULL;
+    jvm->AttachCurrentThread(&jnienv, &lJavaVMAttachArgs);
 #endif
 
 	device = createDeviceEx(params);
@@ -1870,6 +1879,10 @@ int main(int argc, char *argv[])
 		In the end, delete the Irrlicht device.
 	*/
 	device->drop();
+
+#ifdef ANDROID
+	jvm->DetachCurrentThread();
+#endif
 
 #if USE_FREETYPE
 	if (use_freetype)

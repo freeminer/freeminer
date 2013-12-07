@@ -97,6 +97,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define PADDING(x, y) ((ALIGNOF(y) - ((uintptr_t)(x) & (ALIGNOF(y) - 1))) & (ALIGNOF(y) - 1))
 
+#ifdef ANDROID
+	#include <jni.h>
+	#include <android_native_app_glue.h>
+#endif
+
 namespace porting
 {
 
@@ -241,6 +246,9 @@ inline u32 getTime(TimePrecision prec)
 	return 0;
 }
 
+#ifdef ANDROID
+void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
+#endif
 
 } // namespace porting
 
