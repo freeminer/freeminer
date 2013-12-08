@@ -251,6 +251,8 @@ public:
 	      probably to InputHandler and the_game
 */
 
+static v2u32 screensize;
+
 class MyEventReceiver : public IEventReceiver
 {
 public:
@@ -318,6 +320,24 @@ public:
 			infostream << "multi touch input!" << std::endl;
 			mouse_pos = v2s32(event.MultiTouchInput.X[0], event.MultiTouchInput.Y[0]);
 			infostream << mouse_pos.X << " " << mouse_pos.Y << std::endl;
+		}
+
+		if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
+			if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+				if (event.MouseInput.Y > 2 * screensize.Y / 3) {
+					if (event.MouseInput.X < screensize.X / 3) {
+						keyIsDown.set(getKeySetting("keymap_forward"));
+						keyWasDown.set(getKeySetting("keymap_forward"));
+					} else if (event.MouseInput.X > 2 * screensize.X / 3) {
+						keyIsDown.set(getKeySetting("keymap_jump"));
+						keyWasDown.set(getKeySetting("keymap_jump"));
+					}
+				}
+			}
+			if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
+				keyIsDown.unset(getKeySetting("keymap_forward"));
+				keyIsDown.unset(getKeySetting("keymap_jump"));
+			}
 		}
 		#endif
 
@@ -1472,6 +1492,9 @@ int main(int argc, char *argv[])
 #endif
 
 	device = createDeviceEx(params);
+
+	screensize = device->getVideoDriver()->getScreenSize();
+
 
 	if (device == 0)
 		return 1; // could not create selected driver.
