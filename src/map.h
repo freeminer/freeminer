@@ -368,7 +368,7 @@ protected:
 	std::set<MapEventReceiver*> m_event_receivers;
 
 	std::map<v2s16, MapSector*> m_sectors;
-	s32 m_sectors_last_update;
+	u32 m_sectors_last_update;
 
 	// Be sure to set this to NULL when the cached sector is deleted
 	MapSector *m_sector_cache;
@@ -513,6 +513,9 @@ public:
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
+
+	std::map<v3s16, s16> m_heat_cache;
+	std::map<v3s16, s16> m_humidity_cache;
 
 private:
 	// Seed used for all kinds of randomness in generation

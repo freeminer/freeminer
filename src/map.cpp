@@ -4038,7 +4038,9 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 {
 	u32 gametime = env->getGameTime();
 	
-	if (block) {
+	if (m_heat_cache.count(getNodeBlockPos(p))){
+		return m_heat_cache[getNodeBlockPos(p)] + myrand_range(0, 1);
+	} if (block) {
 		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
 	} else {
@@ -4047,12 +4049,10 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 
 	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
-	//f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
-	//		env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
+	m_heat_cache[getNodeBlockPos(p)] = heat;
 	if(block) {
 		block->heat = heat;
-		//block->humidity = humidity;
 		if (env->m_use_weather)
 			block->heat_last_update = gametime + 10;
 		else
@@ -4064,21 +4064,21 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block)
 {
 	u32 gametime = env->getGameTime();
-	
-	if (block) {
+
+	if (m_humidity_cache.count(getNodeBlockPos(p))){
+		return m_humidity_cache[getNodeBlockPos(p)] + myrand_range(0, 1);
+	} else if (block) {
 		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
 	} else {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
 
-	//f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
-	//		env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
-			
+
+	m_humidity_cache[getNodeBlockPos(p)] = humidity;
 	if(block) {
-		//block->heat = heat;
 		block->humidity = humidity;
 		if (env->m_use_weather)
 			block->humidity_last_update = gametime + 10;
