@@ -4037,7 +4037,7 @@ void ServerMap::PrintInfo(std::ostream &out)
 s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 {
 	u32 gametime = env->getGameTime();
-	
+
 	if (m_heat_cache.count(getNodeBlockPos(p))){
 		return m_heat_cache[getNodeBlockPos(p)] + myrand_range(0, 1);
 	} if (block) {
@@ -4050,7 +4050,11 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
-	m_heat_cache[getNodeBlockPos(p)] = heat;
+	{
+		JMutexAutoLock lock(m_block_heat_mutex);
+		m_heat_cache[getNodeBlockPos(p)] = heat;
+	}
+
 	if(block) {
 		block->heat = heat;
 		if (env->m_use_weather)
@@ -4077,7 +4081,11 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *bl
 	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
-	m_humidity_cache[getNodeBlockPos(p)] = humidity;
+	{
+		JMutexAutoLock lock(m_block_humidity_mutex);
+		m_humidity_cache[getNodeBlockPos(p)] = humidity;
+	}
+
 	if(block) {
 		block->humidity = humidity;
 		if (env->m_use_weather)

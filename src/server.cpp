@@ -1285,9 +1285,14 @@ void Server::AsyncRunStep()
 				client->PrintInfo(infostream);
 				m_clients_names.push_back(player->getName());
 			}
-
-			m_env->getServerMap().m_heat_cache.clear(); //not very good place to clear
-			m_env->getServerMap().m_humidity_cache.clear();
+			{ //not very good place to clear
+				JMutexAutoLock lock(m_env->getServerMap().m_block_heat_mutex);
+				m_env->getServerMap().m_heat_cache.clear();
+			}
+			{
+				JMutexAutoLock lock(m_env->getServerMap().m_block_humidity_mutex);
+				m_env->getServerMap().m_humidity_cache.clear();
+			}
 		}
 	}
 

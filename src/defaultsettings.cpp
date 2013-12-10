@@ -323,7 +323,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_water", "true");
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
-	settings->setDefault("num_emerge_threads", "8");
+	settings->setDefault("num_emerge_threads", "4");
 	settings->setDefault("max_objects_per_block", "200");
 
 #ifndef _WIN32
