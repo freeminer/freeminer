@@ -1445,6 +1445,14 @@ void the_game(
 
 	gui::IGUIListBox *playerlist = NULL;
 
+	video::SColor console_bg;
+	bool console_color_set = !g_settings->get("console_color").empty();
+	if(console_color_set)
+	{
+		v3f console_color = g_settings->getV3F("console_color");
+		console_bg = video::SColor(g_settings->getU16("console_alpha"), console_color.X, console_color.Y, console_color.Z);
+	}
+
 	/*
 		Shader constants
 	*/
@@ -2026,10 +2034,7 @@ void the_game(
 		{
 			std::list<std::string> pll;
 			pll = client.getEnv().getPlayerNames();
-			if(show_debug)
-				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 70, screensize.X*0.61, 80+pll.size()*(text_height+2)));
-			else
-				playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, 50, screensize.X*0.61, 60+pll.size()*(text_height+2)));
+			playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, screensize.Y*0.5-(pll.size()*(text_height+4)/2), screensize.X*0.61, screensize.Y*0.5+(pll.size()*(text_height+4)/2)));
 			while(!pll.empty())
 			{
 				playerlist->addItem(narrow_to_wide(pll.front()).c_str());
@@ -3415,8 +3420,8 @@ void the_game(
 		*/
 		if (playerlist != NULL)
 		{
-			driver->draw2DRectangle(video::SColor(128,0,0,0), playerlist->getAbsolutePosition());
-			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,0,0,0));
+			driver->draw2DRectangle(console_bg, playerlist->getAbsolutePosition());
+			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,128,128,128));
 		}
 
 		/*
