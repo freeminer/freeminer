@@ -9,6 +9,8 @@ uniform vec3 eyePosition;
 varying vec3 vPosition;
 varying vec3 eyeVec;
 
+uniform float wieldLight;
+
 #ifdef ENABLE_PARALLAX_OCCLUSION
 varying vec3 tsEyeVec;
 #endif
@@ -56,7 +58,8 @@ void main (void)
 
 	float alpha = texture2D(baseTexture, uv).a;
 	vec4 col = vec4(color.r, color.g, color.b, alpha);
-	col *= gl_Color;
+	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
+	col *= min(gl_Color+vec4(light), 1.0);
 	col = col * col; // SRGB -> Linear
 	col *= 1.8;
 	col.r = 1.0 - exp(1.0 - col.r) / e;
