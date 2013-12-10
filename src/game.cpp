@@ -839,7 +839,7 @@ public:
 		}
 		irr::f32 wieldLight = 0;
 		if (g_settings->getBool("disable_wieldlight") == false)
-			wieldLight = (irr::f32)m_client->idef()->get(playeritem.name).wield_light;
+			wieldLight = (irr::f32)((ItemGroupList)m_client->idef()->get(playeritem.name).groups)["wield_light"];
 		services->setPixelShaderConstant("wieldLight", &wieldLight, 1);
 	}
 };

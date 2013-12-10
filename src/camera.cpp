@@ -625,7 +625,7 @@ void Camera::wield(const ItemStack &item, u16 playeritem)
 		else
 			m_wield_change_timer = 0.125;
 	}
-	m_wieldlight_add = idef->get(itemname).wield_light*200/14;
+	m_wieldlight_add = ((ItemGroupList)idef->get(itemname).groups)["wield_light"]*200/14;
 }
 
 void Camera::drawWieldedTool()
