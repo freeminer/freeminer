@@ -954,6 +954,8 @@ void the_game(
 		wchar_t* text = wgettext("Loading...");
 		draw_load_screen(text, device, font,0,0);
 		delete[] text;
+		core::stringw str = L"Freeminer [Connecting]";
+		device->setWindowCaption(str.c_str());
 	}
 	
 	// Create texture source
@@ -1476,6 +1478,13 @@ void the_game(
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+
+	{
+		core::stringw str = L"Freeminer [";
+		str += driver->getName();
+		str += "]";
+		device->setWindowCaption(str.c_str());
+	}
 
 	for(;;)
 	{
@@ -3039,6 +3048,8 @@ void the_game(
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range
+				<<std::setprecision(0)
+				<<", FPS = "<<(1.0/dtime_avg1)
 				<<std::setprecision(3)
 				<<", RTT = "<<client.getRTT();
 			guitext->setText(narrow_to_wide(os.str()).c_str());
@@ -3446,6 +3457,7 @@ void the_game(
 			End of drawing
 		*/
 
+#if 0 //do not flood WM, if needed - maybe update every 1+ seconds
 		static s16 lastFPS = 0;
 		//u16 fps = driver->getFPS();
 		u16 fps = (1.0/dtime_avg1);
@@ -3460,6 +3472,7 @@ void the_game(
 			device->setWindowCaption(str.c_str());
 			lastFPS = fps;
 		}
+#endif
 
 		/*
 			Log times and stuff for visualization
