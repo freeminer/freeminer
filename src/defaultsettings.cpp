@@ -337,6 +337,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenH", "0");
 
 	settings->setDefault("mouse_sensitivity", "0.01");
+
+	settings->setDefault("viewing_range_nodes_max", "64");
 #endif
 }
 
