@@ -264,8 +264,8 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	}
 	if (params["generator"].asString() == "hypercomplex") {
 		par.formula = hypercomplex;
-		par.doubles.N = params.get("iterations", 20).asInt();
-		scale = params.get("scale", 0.0001).asDouble();
+		par.doubles.N = params.get("iterations", 5).asInt();
+		scale = params.get("scale", 0.00008).asDouble();
 		//invert = 1;
 		invert = params.get("invert", 1).asBool();
 		if(!center.getLength()) center = v3f(0, -10001, 0); //(double)50 / max_r;
