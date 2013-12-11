@@ -3596,8 +3596,8 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 	writeF1000(os, expirationtime);
 	writeF1000(os, size);
 	writeU8(os,  collisiondetection);
-	writeU8(os, vertical);
 	os<<serializeLongString(texture);
+	writeU8(os, vertical); //maybe only if format > 26
 
 	// Make data buffer
 	std::string s = os.str();
@@ -3649,9 +3649,9 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 	writeF1000(os, minsize);
 	writeF1000(os, maxsize);
 	writeU8(os,  collisiondetection);
-	writeU8(os, vertical);
 	os<<serializeLongString(texture);
 	writeU32(os, id);
+	writeU8(os, vertical); //maybe only if format > 26
 
 	// Make data buffer
 	std::string s = os.str();
