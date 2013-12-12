@@ -1537,7 +1537,7 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 			sector_deletion_queue.push_back(si->first);
 		}
 
-		if (porting::getTimeMs() > end_ms) {
+		if (!save_before_unloading && porting::getTimeMs() > end_ms) {
 			m_sectors_last_update = n;
 			break;
 		}
