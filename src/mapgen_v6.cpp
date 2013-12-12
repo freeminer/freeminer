@@ -652,7 +652,7 @@ void MapgenV6::addMud() {
 
 void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 	// 340ms @cs=8
-	TimeTaker timer1("flow mud");
+	//TimeTaker timer1("flow mud");
 
 	// Iterate a few times
 	for(s16 k = 0; k < 3; k++) {

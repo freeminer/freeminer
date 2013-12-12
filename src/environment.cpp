@@ -1314,7 +1314,7 @@ void ServerEnvironment::step(float dtime)
 		u32 time_ms = timer.stop(true);
 		if(time_ms > max_time_ms){
 			infostream<<"WARNING: active block modifiers ("
-					<<calls<<"/"<<m_active_blocks.m_list.size()<<") took "
+					<<calls<<"/"<<m_active_blocks.m_list.size()<<" <"<<m_active_block_abm_last<<") took "
 					<<time_ms<<"ms (longer than "
 					<<max_time_ms<<"ms)"<<std::endl;
 		}

@@ -825,6 +825,7 @@ private:
 	std::vector<u32> m_particlespawner_ids;
 
 	std::map<v3s16, MapBlock*> m_modified_blocks;
+	std::map<v3s16, MapBlock*> m_lighting_modified_blocks;
 };
 
 /*

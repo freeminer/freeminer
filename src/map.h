@@ -303,8 +303,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	s32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks);
-	s32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks);
+	s32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
+	s32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
 
 	/*
 		Node metadata
@@ -348,7 +348,7 @@ public:
 		Variables
 	*/
 
-	void transforming_liquid_add(v3s16 p);
+	void transforming_liquid_push_back(v3s16 & p);
 	s32 transforming_liquid_size();
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
@@ -376,6 +376,8 @@ protected:
 
 	// Queued transforming water nodes
 	UniqueQueue<v3s16> m_transforming_liquid;
+	JMutex m_transforming_liquid_mutex;
+	JMutex m_update_lighting_mutex;
 };
 
 /*

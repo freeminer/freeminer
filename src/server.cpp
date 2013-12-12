@@ -1222,12 +1222,12 @@ void Server::AsyncRunStep()
 		if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
 			m_liquid_transform_timer = 0;
 
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_modified_blocks) > 0)
+		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks) > 0)
 			m_liquid_transform_timer = m_liquid_transform_interval*0.8;
 	}
 
@@ -1242,7 +1242,9 @@ void Server::AsyncRunStep()
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		JMutexAutoLock lock(m_env_mutex);
+		m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks);
+
+		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
 		for(std::map<u16, RemoteClient*>::iterator

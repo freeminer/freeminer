@@ -56,7 +56,7 @@ class LiquidFlowABM : public ActiveBlockModifier {
 			ServerMap *map = &env->getServerMap();
 			if (map->transforming_liquid_size() > 500)
 				return;
-			map->transforming_liquid_add(p);
+			map->transforming_liquid_push_back(p);
 		}
 };
 
@@ -95,7 +95,7 @@ class LiquidDropABM : public ActiveBlockModifier {
 			    && map->getNodeNoEx(p - v3s16(0,  0, -1)).getContent() != CONTENT_AIR  // front
 			   )
 				return;
-			map->transforming_liquid_add(p);
+			map->transforming_liquid_push_back(p);
 		}
 };
 

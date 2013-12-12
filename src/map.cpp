@@ -698,13 +698,16 @@ void Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
+	JMutexAutoLock lock2(m_update_lighting_mutex);
+
 	{
 	//TimeTaker t("first stuff");
 
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
 		i != a_blocks.end(); ++i)
 	{
-		MapBlock *block = i->second;
+		MapBlock *block = getBlockNoCreateNoEx(i->first);
+		//MapBlock *block = i->second;
 
 		if(!block || block->isDummy())
 			continue;
@@ -921,6 +924,8 @@ void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 	updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks);
 	updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks);
 
+	JMutexAutoLock lock2(m_update_lighting_mutex);
+
 	/*
 		Update information about whether day and night light differ
 	*/
@@ -1129,7 +1134,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		MapNode n2 = getNode(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
-			m_transforming_liquid.push_back(p2);
+			transforming_liquid_push_back(p2);
 		}
 
 		}catch(InvalidPositionException &e)
@@ -1321,7 +1326,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		MapNode n2 = getNode(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
-			m_transforming_liquid.push_back(p2);
+			transforming_liquid_push_back(p2);
 		}
 
 		}catch(InvalidPositionException &e)
@@ -1657,8 +1662,9 @@ struct NodeNeighbor {
 	bool i; //infinity
 };
 
-void Map::transforming_liquid_add(v3s16 p) {
-        m_transforming_liquid.push_back(p);
+void Map::transforming_liquid_push_back(v3s16 & p) {
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	m_transforming_liquid.push_back(p);
 }
 
 s32 Map::transforming_liquid_size() {
@@ -1690,7 +1696,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
+s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1708,7 +1714,6 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 	UniqueQueue<v3s16> must_reflow, must_reflow_second;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
-	std::map<v3s16, MapBlock*> lighting_modified_blocks;
 	u16 loop_rand = myrand();
 
 	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
@@ -1722,7 +1727,11 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3s16 p0 = m_transforming_liquid.pop_front();
+		v3s16 p0;
+		{
+			JMutexAutoLock lock(m_transforming_liquid_mutex);
+			p0 = m_transforming_liquid.pop_front();
+		}
 		u16 total_level = 0;
 		//u16 level_max = 0;
 		// surrounding flowing liquid nodes
@@ -2070,27 +2079,31 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		<<" reflow="<<must_reflow.size()
 		<<" queue="<< m_transforming_liquid.size()<< " per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;*/
 
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
+
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
 	while (must_reflow_second.size() > 0)
 		m_transforming_liquid.push_back(must_reflow_second.pop_front());
-	updateLighting(lighting_modified_blocks, modified_blocks);
+	//updateLighting(lighting_modified_blocks, modified_blocks);
 
 	return ret;
 }
 
 #define WATER_DROP_BOOST 4
 
-s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
+s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 
 	if (g_settings->getBool("liquid_finite"))
-		return Map::transformLiquidsFinite(modified_blocks);
+		return Map::transformLiquidsFinite(modified_blocks, lighting_modified_blocks);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("transformLiquids()");
+
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
@@ -2102,7 +2115,7 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 	UniqueQueue<v3s16> must_reflow;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
-	std::map<v3s16, MapBlock*> lighting_modified_blocks;
+	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
 
 	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
@@ -2370,7 +2383,7 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
-	updateLighting(lighting_modified_blocks, modified_blocks);
+	//updateLighting(lighting_modified_blocks, modified_blocks);
 
 	return ret;
 }
@@ -2829,10 +2842,13 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 	/*
 		Copy transforming liquid information
 	*/
+	{
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
 	while(data->transforming_liquid.size() > 0)
 	{
 		v3s16 p = data->transforming_liquid.pop_front();
 		m_transforming_liquid.push_back(p);
+	}
 	}
 
 	/*
