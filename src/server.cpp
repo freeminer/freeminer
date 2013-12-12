@@ -1328,6 +1328,7 @@ void Server::AsyncRunStep()
 		// Radius inside which objects are active
 		s16 radius = g_settings->getS16("active_object_send_range_blocks");
 		radius *= MAP_BLOCKSIZE;
+		s16 radius_deactivate = radius*3;
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();
@@ -1353,7 +1354,7 @@ void Server::AsyncRunStep()
 
 			std::set<u16> removed_objects;
 			std::set<u16> added_objects;
-			m_env->getRemovedActiveObjects(pos, radius,
+			m_env->getRemovedActiveObjects(pos, radius_deactivate,
 					client->m_known_objects, removed_objects);
 			m_env->getAddedActiveObjects(pos, radius,
 					client->m_known_objects, added_objects);
