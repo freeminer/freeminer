@@ -1198,6 +1198,8 @@ void ServerEnvironment::step(float dtime)
 		}
 		if (!calls)
 			m_blocks_added_last = 0;
+		if (!m_blocks_added_last)
+			m_blocks_added.clear();
 	}
 
 	/*
