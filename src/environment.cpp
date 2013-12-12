@@ -1134,9 +1134,8 @@ void ServerEnvironment::step(float dtime)
 		*/
 		const s16 active_block_range = g_settings->getS16("active_block_range");
 		std::set<v3s16> blocks_removed;
-		std::set<v3s16> blocks_added;
 		m_active_blocks.update(players_blockpos, active_block_range,
-				blocks_removed, blocks_added);
+				blocks_removed, m_blocks_added);
 
 		/*
 			Handle removed blocks
@@ -1169,8 +1168,8 @@ void ServerEnvironment::step(float dtime)
 		u32 n = 0, calls = 0, 
 			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
-				i = blocks_added.begin();
-				i != blocks_added.end(); ++i)
+				i = m_blocks_added.begin();
+				i != m_blocks_added.end(); ++i)
 		{
 			if (n++ < m_blocks_added_last)
 				continue;

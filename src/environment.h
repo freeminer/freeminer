@@ -379,6 +379,7 @@ private:
 	u32 m_active_block_abm_last;
 	float m_active_block_abm_dtime;
 	u32 m_active_block_timer_last;
+	std::set<v3s16> m_blocks_added;
 	u32 m_blocks_added_last;
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
