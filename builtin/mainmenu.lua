@@ -120,6 +120,30 @@ os.tempfolder = function()
 end
 
 --------------------------------------------------------------------------------
+function text2textlist(xpos,ypos,width,height,tl_name,textlen,text,transparency)
+	local textlines = engine.splittext(text,textlen)
+	
+	local retval = "textlist[" .. xpos .. "," .. ypos .. ";"
+								.. width .. "," .. height .. ";"
+								.. tl_name .. ";"
+	
+	for i=1, #textlines, 1 do
+		textlines[i] = textlines[i]:gsub("\r","")
+		retval = retval .. engine.formspec_escape(textlines[i]) .. ","
+	end
+	
+	retval = retval .. ";0;"
+	
+	if transparency then
+		retval = retval .. "true"
+	end
+	
+	retval = retval .. "]"
+
+	return retval
+end
+
+--------------------------------------------------------------------------------
 function init_globals()
 	--init gamedata
 	gamedata.worldindex = 0

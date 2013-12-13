@@ -359,7 +359,7 @@ ServerMap & ServerEnvironment::getServerMap()
 	return *m_map;
 }
 
-bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize)
+bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
 {
 	float distance = pos1.getDistanceFrom(pos2);
 
@@ -377,6 +377,9 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize)
 		MapNode n = getMap().getNodeNoEx(pos);
 
 		if(n.param0 != CONTENT_AIR) {
+			if (p) {
+				*p = pos;
+			}
 			return false;
 		}
 	}
