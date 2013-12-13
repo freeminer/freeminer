@@ -702,3 +702,15 @@ minetest.register_chatcommand("msg", {
 		end
 	end,
 })
+
+minetest.register_chatcommand("die", {
+	params = "",
+	description = "Kills yourself.",
+	func = function(name, param)
+		local player = minetest.get_player_by_name(name)
+		if not player then
+			return
+		end
+		player:set_hp(0)
+	end,
+})
