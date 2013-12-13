@@ -1046,7 +1046,7 @@ void ServerEnvironment::clearAllObjects()
 			<<" in "<<num_blocks_cleared<<" blocks"<<std::endl;
 }
 
-void ServerEnvironment::step(float dtime)
+void ServerEnvironment::step(float dtime, float uptime)
 {
 	DSTACK(__FUNCTION_NAME);
 	
@@ -1370,7 +1370,10 @@ void ServerEnvironment::step(float dtime)
 			if(obj->m_removed || obj->m_pending_deactivation)
 				continue;
 			// Step object
-			obj->step(dtime, send_recommended);
+			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
+				obj->m_uptime_last = uptime - dtime;
+			obj->step(uptime - obj->m_uptime_last, send_recommended);
+			obj->m_uptime_last = uptime;
 			// Read messages from object
 			while(!obj->m_messages_out.empty())
 			{
@@ -2202,7 +2205,7 @@ LocalPlayer * ClientEnvironment::getLocalPlayer()
 	return NULL;
 }
 
-void ClientEnvironment::step(float dtime)
+void ClientEnvironment::step(float dtime, float uptime)
 {
 	DSTACK(__FUNCTION_NAME);
 

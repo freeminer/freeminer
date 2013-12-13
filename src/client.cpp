@@ -666,7 +666,7 @@ void Client::step(float dtime)
 
 		//TimeTaker envtimer("env step", m_device);
 		// Step environment
-		m_env.step(dtime);
+		m_env.step(dtime, 0);
 		
 		/*
 			Get events

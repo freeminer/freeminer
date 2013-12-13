@@ -30,6 +30,7 @@ ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	m_static_exists(false),
 	m_static_block(1337,1337,1337),
 	m_env(env),
+	m_uptime_last(0),
 	m_base_position(pos)
 {
 }

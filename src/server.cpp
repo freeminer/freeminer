@@ -1147,7 +1147,7 @@ void Server::AsyncRunStep()
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
 		ScopeProfiler sp2(g_profiler, "SEnv step avg", SPT_AVG);
-		m_env->step(dtime);
+		m_env->step(dtime, m_uptime.get());
 	}
 
 	const float map_timer_and_unload_dtime = 2.92;
