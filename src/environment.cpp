@@ -1212,7 +1212,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 	{
 		ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
 		
-		float dtime = 1.0;
+		//float dtime = 1.0;
 
 		u32 n = 0, calls = 0, 
 			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
@@ -1247,8 +1247,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 						"Timestamp older than 60s (step)");
 
 			// Run node timers
+			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications
+				block->m_node_timers.m_uptime_last = uptime - dtime;
 			std::map<v3s16, NodeTimer> elapsed_timers =
-				block->m_node_timers.step((float)dtime);
+				block->m_node_timers.step(uptime - block->m_node_timers.m_uptime_last);
+			block->m_node_timers.m_uptime_last = uptime;
 			if(!elapsed_timers.empty()){
 				MapNode n;
 				for(std::map<v3s16, NodeTimer>::iterator

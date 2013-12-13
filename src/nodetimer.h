@@ -54,7 +54,9 @@ public:
 class NodeTimerList
 {
 public:
-	NodeTimerList() {}
+	NodeTimerList():
+		m_uptime_last(0)
+	{}
 	~NodeTimerList() {}
 	
 	void serialize(std::ostream &os, u8 map_format_version) const;
@@ -82,6 +84,7 @@ public:
 
 	// A step in time. Returns map of elapsed timers.
 	std::map<v3s16, NodeTimer> step(float dtime);
+	float m_uptime_last;
 
 private:
 	std::map<v3s16, NodeTimer> m_data;
