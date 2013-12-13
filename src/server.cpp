@@ -5516,13 +5516,13 @@ void dedicated_server_loop(Server &server, bool &kill)
 		server.step(steplen);
 		}
 		//TODO: more errors here
-		catch(LuaError &e) {
-			if (!errors++ || !(errors % 100))
-				errorstream<<"Fatal lua error n="<<errors<< " : "<<e.what()<<std::endl;
+		catch(std::exception &e) {
+			if (!errors++ || !(errors % (int)(60/steplen)))
+				errorstream<<"Fatal error n="<<errors<< " : "<<e.what()<<std::endl;
 		}
 		catch (...){
-			if (!errors++ || !(errors % 100))
-				errorstream<<"Fatal error "<<errors<<std::endl;
+			if (!errors++ || !(errors % (int)(60/steplen)))
+				errorstream<<"Fatal error unknown "<<errors<<std::endl;
 		}
 		if(server.getShutdownRequested() || kill)
 		{
