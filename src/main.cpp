@@ -77,16 +77,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "subgame.h"
 #include "quicktune.h"
 #include "serverlist.h"
+#include "httpfetch.h"
 #include "guiEngine.h"
 #include "mapsector.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-
-#if USE_CURL
-#include "curl/curl.h"
 #endif
 
 /*
@@ -996,10 +993,8 @@ int main(int argc, char *argv[])
 	srand(time(0));
 	mysrand(time(0));
 
-#if USE_CURL
-	CURLcode res = curl_global_init(CURL_GLOBAL_DEFAULT);
-	assert(res == CURLE_OK);
-#endif
+	// Initialize HTTP fetcher
+	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
 	/*
 		Run unit tests
@@ -1857,6 +1852,9 @@ int main(int argc, char *argv[])
 			dstream<<names[i]<<" = "<<val.getString()<<std::endl;
 		}
 	}
+
+	// Stop httpfetch thread (if started)
+	httpfetch_cleanup();
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
 
