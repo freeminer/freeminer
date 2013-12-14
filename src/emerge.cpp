@@ -91,11 +91,11 @@ public:
 
 EmergeManager::EmergeManager(IGameDef *gamedef) {
 	//register built-in mapgens
-	registerMapgen("v6", new MapgenFactoryV6());
-	registerMapgen("v7", new MapgenFactoryV7());
-	registerMapgen("indev", new MapgenFactoryIndev());
+	registerMapgen("v6",         new MapgenFactoryV6());
+	registerMapgen("v7",         new MapgenFactoryV7());
+	registerMapgen("indev",      new MapgenFactoryIndev());
 	registerMapgen("singlenode", new MapgenFactorySinglenode());
-	registerMapgen("math", new MapgenFactoryMath());
+	registerMapgen("math",       new MapgenFactoryMath());
 
 	this->ndef     = gamedef->getNodeDefManager();
 	this->biomedef = new BiomeDefManager();
@@ -105,8 +105,9 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	this->luaoverride_params_modified = 0;
 	this->luaoverride_flagmask        = 0;
 
-	mapgen_debug_info = g_settings->getBool("enable_mapgen_debug_info");
+	this->gennotify = 0;
 
+	mapgen_debug_info = g_settings->getBool("enable_mapgen_debug_info");
 
 	int nthreads;
 	if (g_settings->get("num_emerge_threads").empty()) {
@@ -553,9 +554,11 @@ void *EmergeThread::Thread() {
 					MapEditEventAreaIgnorer
 						ign(&m_server->m_ignore_map_edit_events_area,
 						VoxelArea(minp, maxp));
-					{  // takes about 90ms with -O1 on an e3-1230v2
+					try {  // takes about 90ms with -O1 on an e3-1230v2
 						m_server->getScriptIface()->environment_OnGenerated(
 								minp, maxp, emerge->getBlockSeed(minp));
+					} catch(LuaError &e) {
+						m_server->setAsyncFatalError(e.what());
 					}
 
 					EMERGE_DBG_OUT("ended up with: " << analyze_block(block));
