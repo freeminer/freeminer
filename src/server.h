@@ -232,6 +232,7 @@ public:
 		m_nearest_unsent_reset_timer = 0.0;
 		m_nothing_to_send_counter = 0;
 		m_nothing_to_send_pause_timer = 0;
+		wanted_range = 9 * MAP_BLOCKSIZE;
 	}
 	~RemoteClient()
 	{
@@ -287,6 +288,7 @@ public:
 		Value is dummy.
 	*/
 	std::set<u16> m_known_objects;
+	s16 wanted_range;
 
 private:
 	/*

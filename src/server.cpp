@@ -277,6 +277,11 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	s16 d_max = g_settings->getS16("max_block_send_distance");
 	s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
 
+	if (wanted_range) {
+		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
+		if (wanted_blocks < d_max)
+			d_max = wanted_blocks;
+	}
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 2;
 	if(d_max > d_start + max_d_increment_at_time)
@@ -2341,10 +2346,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			[2] u8 count
 			[3] v3s16 pos_0
 			[3+6] v3s16 pos_1
+			[9] wanted range
 			...
 		*/
 
 		u16 count = data[2];
+		RemoteClient *client = getClient(peer_id);
 		for(u16 i=0; i<count; i++)
 		{
 			if((s16)datasize < 2+1+(i+1)*6)
@@ -2353,9 +2360,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			v3s16 p = readV3S16(&data[2+1+i*6]);
 			/*infostream<<"Server: GOTBLOCKS ("
 					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-			RemoteClient *client = getClient(peer_id);
 			client->GotBlock(p);
 		}
+		if((s16)datasize > 2+1+(count)*6) // only freeminer client
+			client->wanted_range = readU16(&data[2+1+(count*6)]);
 	}
 	else if(command == TOSERVER_DELETEDBLOCKS)
 	{

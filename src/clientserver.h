@@ -551,6 +551,7 @@ enum ToServerCommand
 		[2] u8 count
 		[3] v3s16 pos_0
 		[3+6] v3s16 pos_1
+		[9] u16 wanted range
 		...
 	*/
 

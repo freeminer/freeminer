@@ -732,13 +732,15 @@ void Client::step(float dtime)
 					[2] u8 count
 					[3] v3s16 pos_0
 					[3+6] v3s16 pos_1
+					[3+6*i] u16 vrange
 					...
 				*/
-				u32 replysize = 2+1+6;
+				u32 replysize = 2+1+6+2;
 				SharedBuffer<u8> reply(replysize);
 				writeU16(&reply[0], TOSERVER_GOTBLOCKS);
 				reply[2] = 1;
 				writeV3S16(&reply[3], r.p);
+				writeU16(&reply[2+1+(6*reply[2])], (int)m_env.getClientMap().getControl().wanted_range);
 				// Send as reliable
 				m_con.Send(PEER_ID_SERVER, 1, reply, true);
 			}
