@@ -13,7 +13,13 @@
 #define USE_CURL 0
 #define USE_FREETYPE 0
 #define STATIC_SHAREDIR ""
+
+#ifdef ANDROID
+// android builds will use leveldb by default because for some reason sqlite doesn't work very well
+#define USE_LEVELDB 1
+#else
 #define USE_LEVELDB 0
+#endif
 
 #ifdef USE_CMAKE_CONFIG_H
 	#include "cmake_config.h"
