@@ -131,6 +131,7 @@ struct BufferedPacket
 	float time; // Seconds from buffering the packet or re-sending
 	float totaltime; // Seconds from buffering the packet
 	Address address; // Sender or destination
+	int sends;
 };
 
 // This adds the base headers to the data and makes a packet out of it
@@ -588,7 +589,7 @@ private:
 			SharedBuffer<u8> data, bool reliable);
 	void rawSendAsPacket(u16 peer_id, u8 channelnum,
 			SharedBuffer<u8> data, bool reliable);
-	void rawSend(const BufferedPacket &packet);
+	void rawSend(BufferedPacket &packet);
 	Peer* getPeer(u16 peer_id);
 	Peer* getPeerNoEx(u16 peer_id);
 	std::list<Peer*> getPeers();

@@ -45,6 +45,7 @@ BufferedPacket makePacket(Address &address, u8 *data, u32 datasize,
 	u32 packet_size = datasize + BASE_HEADER_SIZE;
 	BufferedPacket p(packet_size);
 	p.address = address;
+	p.sends = 0;
 
 	writeU32(&p.data[0], protocol_id);
 	writeU16(&p.data[4], sender_peer_id);
@@ -668,6 +669,7 @@ void Connection::send(float dtime)
 		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 5){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
+			
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
 					packet.data, packet.reliable);
 			peer->m_num_sent++;
@@ -979,6 +981,9 @@ void Connection::runTimeouts(float dtime)
 						<<"from_peer_id="<<peer_id
 						<<", channel="<<((int)channel&0xff)
 						<<", seqnum="<<seqnum
+						<<", tries="<<j->sends
+						<<", restimeout="<<peer->resend_timeout
+						<<", avg_rtt="<<peer->avg_rtt
 						<<std::endl;
 
 				rawSend(*j);
@@ -1171,7 +1176,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 	}
 }
 
-void Connection::rawSend(const BufferedPacket &packet)
+void Connection::rawSend(BufferedPacket &packet)
 {
 	try{
 		m_socket.Send(packet.address, *packet.data, packet.data.getSize());
@@ -1179,6 +1184,7 @@ void Connection::rawSend(const BufferedPacket &packet)
 		derr_con<<"Connection::rawSend(): SendFailedException: "
 				<<packet.address.serializeString()<<std::endl;
 	}
+	++packet.sends;
 }
 
 Peer* Connection::getPeer(u16 peer_id)
