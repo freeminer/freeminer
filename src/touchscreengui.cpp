@@ -22,8 +22,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "keycode.h"
 #include "settings.h"
+#include "gettime.h"
 
 #include <iostream>
+#include <algorithm>
 
 #include <ISceneCollisionManager.h>
 
@@ -43,13 +45,26 @@ TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device):
 	m_device(device),
 	m_guienv(device->getGUIEnvironment()),
 	m_camera_yaw(0.0),
-	m_camera_pitch(0.0)
+	m_camera_pitch(0.0),
+	m_down(false),
+	m_down_pointer_id(0),
+	m_down_since(0),
+	m_digging(false),
+	m_rightclick(false),
+	m_player_item_changed(false),
+	m_player_item(0),
+	m_hud_start_y(100000)
 {
-	v2u32 screensize = m_device->getVideoDriver()->getScreenSize();
-	u32 control_pad_size = (2 * screensize.Y) / 3;
-	u32 button_size = control_pad_size / 3;
+	m_screensize = m_device->getVideoDriver()->getScreenSize();
+}
 
-	m_control_pad_rect = rect<s32>(0, screensize.Y - 3 * button_size, 3 * button_size, screensize.Y);
+void TouchScreenGUI::init() {
+	u32 control_pad_size = (2 * m_screensize.Y) / 3;
+	u32 button_size = control_pad_size / 3;
+	m_down = false;
+	m_digging = false;
+
+	m_control_pad_rect = rect<s32>(0, m_screensize.Y - 3 * button_size, 3 * button_size, m_screensize.Y);
 
 	/*
 	draw control pad
@@ -62,8 +77,8 @@ TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device):
 	for (int y = 0; y < 3; ++y)
 		for (int x = 0; x < 3; ++x, ++number) {
 			rect<s32> button_rect(
-					x * button_size, screensize.Y - button_size * (3 - y),
-					(x + 1) * button_size, screensize.Y - button_size * (2 - y)
+					x * button_size, m_screensize.Y - button_size * (3 - y),
+					(x + 1) * button_size, m_screensize.Y - button_size * (2 - y)
 			);
 			u32 id = 0;
 			std::wstring caption;
@@ -96,19 +111,27 @@ TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device):
 
 TouchScreenGUI::~TouchScreenGUI() {}
 
-void TouchScreenGUI::OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *keyWasDown) {
+void TouchScreenGUI::OnEvent(const SEvent &event) {
 	if (event.EventType == EET_MULTI_TOUCH_EVENT) {
-		keyIsDown->unset(getKeySetting("keymap_forward"));
-		keyIsDown->unset(getKeySetting("keymap_backward"));
-		keyIsDown->unset(getKeySetting("keymap_left"));
-		keyIsDown->unset(getKeySetting("keymap_right"));
-		keyIsDown->unset(getKeySetting("keymap_jump"));
+		//leftclicked = false;
+		//leftreleased = false;
+		keyIsDown.unset(getKeySetting("keymap_forward"));
+		keyIsDown.unset(getKeySetting("keymap_backward"));
+		keyIsDown.unset(getKeySetting("keymap_left"));
+		keyIsDown.unset(getKeySetting("keymap_right"));
+		keyIsDown.unset(getKeySetting("keymap_jump"));
 
-		for (int i = 0; i < NUMBER_OF_MULTI_TOUCHES; ++i) {
-			if (!event.MultiTouchInput.Touched[i])
-				continue;
+		bool main_pointer_still_here = false;
+
+		for (int i = 0; i < event.MultiTouchInput.PointerCount; ++i) {
 			s32 x = event.MultiTouchInput.X[i];
 			s32 y = event.MultiTouchInput.Y[i];
+			if (event.MultiTouchInput.ID[i] == m_down_pointer_id)
+				m_down_to = v2s32(x, y);
+			if (!event.MultiTouchInput.Touched[i])
+				continue;
+			if (event.MultiTouchInput.ID[i] == m_down_pointer_id)
+				main_pointer_still_here = true;
 			IGUIElement *element;
 			if ((element = m_guienv->getRootGUIElement()->getElementFromPoint(v2s32(x, y)))) {
 				std::string key = "";
@@ -131,8 +154,8 @@ void TouchScreenGUI::OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *k
 				}
 
 				if (key != "") {
-					keyIsDown->set(getKeySetting(("keymap_" + key).c_str()));
-					keyWasDown->set(getKeySetting(("keymap_" + key).c_str()));
+					keyIsDown.set(getKeySetting(("keymap_" + key).c_str()));
+					keyWasDown.set(getKeySetting(("keymap_" + key).c_str()));
 				}
 			}
 
@@ -149,7 +172,74 @@ void TouchScreenGUI::OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *k
 
 				// update shootline
 				m_shootline = m_device->getSceneManager()->getSceneCollisionManager()->getRayFromScreenCoordinates(v2s32(x, y));
+
+				if (!m_down) {
+					m_down = true;
+					m_down_pointer_id = event.MultiTouchInput.ID[i];
+					m_down_since = getTimeMs();
+					m_down_from = v2s32(x, y);
+					m_down_to = m_down_from;
+				}
 			}
+
+			// check if hud item is pressed
+			for (int j = 0; j < m_hud_rects.size(); ++j)
+				if (m_hud_rects[j].isPointInside(v2s32(x, y))) {
+					m_player_item = j;
+					m_player_item_changed = true;
+					break;
+				}
+		}
+
+		if (!main_pointer_still_here) {
+			// TODO: tweak this
+			// perhaps this should only right click when not digging?
+			if (m_down_to.Y < m_hud_start_y && m_down && m_down_from.getDistanceFromSQ(m_down_to) < 400)
+				m_rightclick = true;
+			m_down = false;
+			m_digging = false;
 		}
 	}
+}
+
+bool TouchScreenGUI::isKeyDown(const KeyPress &keyCode) {
+	return keyIsDown[keyCode];
+}
+
+bool TouchScreenGUI::wasKeyDown(const KeyPress &keyCode) {
+	bool b = keyWasDown[keyCode];
+	if (b)
+		keyWasDown.unset(keyCode);
+	return b;
+}
+
+bool TouchScreenGUI::getLeftState() {
+	return m_digging;
+}
+
+void TouchScreenGUI::step(float dtime) {
+	if (m_down) {
+		u32 dtime = getTimeMs() - m_down_since;
+		if (dtime > 300)
+			m_digging = true;
+	}
+}
+
+void TouchScreenGUI::resetHud() {
+	m_hud_rects.clear();
+	m_hud_start_y = 100000;
+}
+
+void TouchScreenGUI::registerHudItem(int index, const rect<s32> &rect) {
+	m_hud_start_y = std::min((int)m_hud_start_y, rect.UpperLeftCorner.Y);
+	m_hud_rects.push_back(rect);
+}
+
+u16 TouchScreenGUI::getPlayerItem() {
+	m_player_item_changed = false;
+	return m_player_item;
+}
+
+s32 TouchScreenGUI::getHotbarImageSize() {
+	return m_screensize.Y / 10;
 }

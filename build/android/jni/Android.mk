@@ -21,14 +21,11 @@ LOCAL_CPP_FEATURES += exceptions
 
 LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -DANDROID -pipe -fstrict-aliasing
 
-LOCAL_CFLAGS += -g -O0
-# LOCAL_CFLAGS += -fexpensive-optimizations -O3
-
-#ifndef NDEBUG
-#LOCAL_CFLAGS += -g -D_DEBUG
-#else
-#LOCAL_CFLAGS += -fexpensive-optimizations -O3
-#endif
+ifndef NDEBUG
+LOCAL_CFLAGS += -g -D_DEBUG
+else
+LOCAL_CFLAGS += -fexpensive-optimizations -O3
+endif
 
 # LOCAL_CFLAGS += -fsanitize=address
 # LOCAL_LDFLAGS += -fsanitize=address

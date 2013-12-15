@@ -29,8 +29,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inventory.h"
 #include "tile.h"
 #include "localplayer.h"
+#include "touchscreengui.h"
 
 #include <IGUIStaticText.h>
+
+
+extern TouchScreenGUI *touchscreengui;
 
 
 Hud::Hud(video::IVideoDriver *driver, gui::IGUIEnvironment* guienv,
@@ -47,6 +51,9 @@ Hud::Hud(video::IVideoDriver *driver, gui::IGUIEnvironment* guienv,
 	screensize       = v2u32(0, 0);
 	displaycenter    = v2s32(0, 0);
 	hotbar_imagesize = 48;
+
+	if (touchscreengui)
+		hotbar_imagesize = touchscreengui->getHotbarImageSize();
 	
 	tsrc = gamedef->getTextureSource();
 	
@@ -76,6 +83,9 @@ Hud::Hud(video::IVideoDriver *driver, gui::IGUIEnvironment* guienv,
 void Hud::drawItem(v2s32 upperleftpos, s32 imgsize, s32 itemcount,
 		InventoryList *mainlist, u16 selectitem, u16 direction)
 {
+	if (touchscreengui)
+		touchscreengui->resetHud();
+
 	s32 padding = imgsize / 12;
 	s32 height  = imgsize + padding * 2;
 	s32 width   = itemcount * (imgsize + padding * 2);
@@ -214,6 +224,9 @@ void Hud::drawItem(v2s32 upperleftpos, s32 imgsize, s32 itemcount,
 		if (!use_hotbar_image)
 			driver->draw2DRectangle(bgcolor2, rect, NULL);
 		drawItemStack(driver, font, item, rect, NULL, gamedef);
+
+		if (touchscreengui)
+			touchscreengui->registerHudItem(i, rect);
 	}
 }
 
@@ -390,6 +403,9 @@ void Hud::resizeHotbar() {
 		hotbar_imagesize = 48;
 	else
 		hotbar_imagesize = 64;
+
+	if (touchscreengui)
+		hotbar_imagesize = touchscreengui->getHotbarImageSize();
 }
 
 void drawItemStack(video::IVideoDriver *driver,

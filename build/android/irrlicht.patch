@@ -2,15 +2,29 @@ Index: include/IEventReceiver.h
 ===================================================================
 --- include/IEventReceiver.h	(revision 4618)
 +++ include/IEventReceiver.h	(working copy)
-@@ -389,6 +389,7 @@
+@@ -382,6 +382,7 @@
+         //! Reset variables.
+ 		void clear()
+ 		{
++			PointerCount = 0;
+ 			for (u16 i = 0; i < NUMBER_OF_MULTI_TOUCHES; ++i)
+             {
+ 				Touched[i] = 0;
+@@ -389,9 +390,12 @@
  				Y[i] = 0;
  				PrevX[i] = 0;
  				PrevY[i] = 0;
 +				ID[i] = 0;
  			}
  		}
+-        
++		// Number of pointers
++        u8 PointerCount;
++
+         // Status of simple touch.
+         u8 Touched[NUMBER_OF_MULTI_TOUCHES];
          
-@@ -406,6 +407,8 @@
+@@ -406,6 +410,8 @@
          
          // Previous Y position of simple touch.
  		s32 PrevY[NUMBER_OF_MULTI_TOUCHES];
@@ -58,9 +72,11 @@ Index: source/Irrlicht/Android/CIrrDeviceAndroid.cpp
  			Event.MultiTouchInput.Event = EMTIE_LEFT_UP;
  			break;
  		default:
-@@ -288,24 +293,292 @@
+@@ -287,25 +292,294 @@
+ 		{
  			Event.EventType = EET_MULTI_TOUCH_EVENT;
  			Event.MultiTouchInput.clear();
++			Event.MultiTouchInput.PointerCount = PointerCount;
  
 +			core::map<s32, irr::core::vector2d<s32> > *newMotionData = new core::map<s32, irr::core::vector2d<s32> >;
 +
@@ -381,12 +397,16 @@ Index: source/Irrlicht/Android/jni/Android.mk
 ===================================================================
 --- source/Irrlicht/Android/jni/Android.mk	(revision 4618)
 +++ source/Irrlicht/Android/jni/Android.mk	(working copy)
-@@ -9,18 +9,15 @@
- LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -Wall -pipe -fno-exceptions -fno-rtti -fstrict-aliasing
+@@ -6,21 +6,18 @@
+ LOCAL_MODULE := Irrlicht
+ IRRLICHT_LIB_NAME := lib$(LOCAL_MODULE).a
+ 
+-LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -Wall -pipe -fno-exceptions -fno-rtti -fstrict-aliasing
++LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -Wall -pipe -fno-exceptions -fno-rtti -fstrict-aliasing -DNO_IRR_COMPILE_WITH_ZIP_ENCRYPTION_
  
  ifndef NDEBUG
 -LOCAL_CFLAGS += -g -D_DEBUG
-+LOCAL_CFLAGS += -g -O0 -D_DEBUG -DNO_IRR_COMPILE_WITH_ZIP_ENCRYPTION_
++LOCAL_CFLAGS += -g -O0 -D_DEBUG
  else
  LOCAL_CFLAGS += -fexpensive-optimizations -O3
  endif

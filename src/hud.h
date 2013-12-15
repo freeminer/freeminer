@@ -42,8 +42,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define HUD_PARAM_HOTBAR_IMAGE 2
 #define HUD_PARAM_HOTBAR_SELECTED_IMAGE 3
 
+#ifndef ANDROID
 #define HUD_HOTBAR_ITEMCOUNT_DEFAULT 8
 #define HUD_HOTBAR_ITEMCOUNT_MAX     23
+#else
+#define HUD_HOTBAR_ITEMCOUNT_DEFAULT 6
+#define HUD_HOTBAR_ITEMCOUNT_MAX 6
+#endif
 
 enum HudElementType {
 	HUD_ELEM_IMAGE     = 0,
