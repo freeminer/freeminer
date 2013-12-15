@@ -264,8 +264,14 @@ void LocalPlayer::move(f32 dtime, ClientEnvironment *env, f32 pos_max_d,
 				if(nodemgr->get(map->getNode(p)).walkable == false)
 					continue;
 				// And the node above it has to be nonwalkable
-				if(nodemgr->get(map->getNode(p+v3s16(0,1,0))).walkable == true)
+				if(nodemgr->get(map->getNode(p+v3s16(0,1,0))).walkable == true) {
+					if (g_settings->getBool("touchscreen")) {
+						// try to jump over the obstacle
+						control.jump = true;
+						applyControl(dtime, env);
+					}
 					continue;
+				}
 				if (!physics_override_sneak_glitch) {
 					if (nodemgr->get(map->getNode(p+v3s16(0,2,0))).walkable)
 						continue;

@@ -369,6 +369,7 @@ set(minetest_SRCS
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	convert_json.cpp
+	touchscreengui.cpp
 	${minetest_SCRIPT_SRCS}
 )
 

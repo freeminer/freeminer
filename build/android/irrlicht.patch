@@ -1,8 +1,101 @@
+Index: include/IEventReceiver.h
+===================================================================
+--- include/IEventReceiver.h	(revision 4618)
++++ include/IEventReceiver.h	(working copy)
+@@ -389,6 +389,7 @@
+ 				Y[i] = 0;
+ 				PrevX[i] = 0;
+ 				PrevY[i] = 0;
++				ID[i] = 0;
+ 			}
+ 		}
+         
+@@ -406,6 +407,8 @@
+         
+         // Previous Y position of simple touch.
+ 		s32 PrevY[NUMBER_OF_MULTI_TOUCHES];
++
++		s32 ID[NUMBER_OF_MULTI_TOUCHES];
+         
+ 		//! Type of multi touch event
+ 		EMULTI_TOUCH_INPUT_EVENT Event;
 Index: source/Irrlicht/Android/CIrrDeviceAndroid.cpp
 ===================================================================
 --- source/Irrlicht/Android/CIrrDeviceAndroid.cpp	(revision 4618)
 +++ source/Irrlicht/Android/CIrrDeviceAndroid.cpp	(working copy)
-@@ -302,6 +302,29 @@
+@@ -37,6 +37,7 @@
+ #ifdef _DEBUG
+ 	setDebugName("CIrrDeviceAndroid");
+ #endif
++	previousMotionData = new core::map<s32, irr::core::vector2d<s32> >;
+ 
+ 	// Get the interface to the native Android activity.
+ 	Android = (android_app*)(param.PrivateData);
+@@ -260,7 +261,9 @@
+ 	{
+ 		SEvent Event;
+ 		s32 PointerCount = AMotionEvent_getPointerCount(androidEvent);
+-		s32 EventAction = AMotionEvent_getAction(androidEvent);
++		s32 AndroidEventAction = AMotionEvent_getAction(androidEvent);
++		s32 EventAction =  AndroidEventAction & AMOTION_EVENT_ACTION_MASK;
++		s32 ChangedPointerID = (AndroidEventAction & AMOTION_EVENT_ACTION_POINTER_INDEX_MASK) >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
+ 
+ 		bool MultiTouchEvent = true;
+ 		bool Touched = false;
+@@ -268,6 +271,7 @@
+ 		switch (EventAction)
+ 		{
+ 		case AMOTION_EVENT_ACTION_DOWN:
++		case AMOTION_EVENT_ACTION_POINTER_DOWN:
+ 			Event.MultiTouchInput.Event = EMTIE_PRESSED_DOWN;
+ 			Touched = true;
+ 			break;
+@@ -276,6 +280,7 @@
+ 			Touched = true;
+ 			break;
+ 		case AMOTION_EVENT_ACTION_UP:
++		case AMOTION_EVENT_ACTION_POINTER_UP:
+ 			Event.MultiTouchInput.Event = EMTIE_LEFT_UP;
+ 			break;
+ 		default:
+@@ -288,24 +293,292 @@
+ 			Event.EventType = EET_MULTI_TOUCH_EVENT;
+ 			Event.MultiTouchInput.clear();
+ 
++			core::map<s32, irr::core::vector2d<s32> > *newMotionData = new core::map<s32, irr::core::vector2d<s32> >;
++
+ 			for (s32 i = 0; i < PointerCount; ++i)
+ 			{
+ 				if (i >= NUMBER_OF_MULTI_TOUCHES)
+ 					break;
+ 
+-				Event.MultiTouchInput.PrevX[i] = 0; // TODO
+-				Event.MultiTouchInput.PrevY[i] = 0; // TODO
+-				Event.MultiTouchInput.X[i] = AMotionEvent_getX(androidEvent, i);
+-				Event.MultiTouchInput.Y[i] = AMotionEvent_getY(androidEvent, i);
+-				Event.MultiTouchInput.Touched[i] = Touched;
++				s32 x = AMotionEvent_getX(androidEvent, i);
++				s32 y = AMotionEvent_getY(androidEvent, i);
++				Event.MultiTouchInput.X[i] = x;
++				Event.MultiTouchInput.Y[i] = y;
++
++				s32 id = AMotionEvent_getPointerId(androidEvent, i);
++				Event.MultiTouchInput.ID[i] = id;
++
++				core::map<s32, irr::core::vector2d<s32> >::Node *previousMotion;
++				if ((previousMotion = Device->previousMotionData->find(id))) {
++					Event.MultiTouchInput.PrevX[i] = previousMotion->getValue().X;
++					Event.MultiTouchInput.PrevY[i] = previousMotion->getValue().Y;
++				} else {
++					Event.MultiTouchInput.PrevX[i] = x;
++					Event.MultiTouchInput.PrevY[i] = y;
++				}
++
++				if ((Event.MultiTouchInput.Touched[i] = Touched || (ChangedPointerID != id)))
++					(*newMotionData)[id] = core::vector2d<s32>(x, y);
+ 			}
++			delete Device->previousMotionData;
++			Device->previousMotionData = newMotionData;
  
  			Device->postEventFromUser(Event);
  
@@ -32,6 +125,296 @@ Index: source/Irrlicht/Android/CIrrDeviceAndroid.cpp
  			Status = 1;
  		}
  	}
+ 
++	if( AInputEvent_getType( androidEvent ) == AINPUT_EVENT_TYPE_KEY )
++	{
++		SEvent irrEvent;
++		irrEvent.EventType = EET_KEY_INPUT_EVENT;
++		s32 action = AKeyEvent_getAction(androidEvent);
++		s32 meta = AKeyEvent_getMetaState(androidEvent);
++		irrEvent.KeyInput.Char = 0;
++		irrEvent.KeyInput.Control = false;//TODO: Control
++		irrEvent.KeyInput.Shift = (meta & AMETA_SHIFT_ON)!=0;
++		irrEvent.KeyInput.PressedDown = (action==AKEY_EVENT_ACTION_DOWN);//AKEY_EVENT_ACTION_UP
++		s32 key = AKeyEvent_getKeyCode(androidEvent);
++/*TODO:
++	AKEYCODE_UNKNOWN		 = 0,
++	AKEYCODE_SOFT_LEFT	   = 1,
++	AKEYCODE_SOFT_RIGHT	  = 2,
++	AKEYCODE_CALL			= 5,
++	AKEYCODE_ENDCALL		 = 6,
++	AKEYCODE_DPAD_CENTER	 = 23,
++	AKEYCODE_VOLUME_UP	   = 24,
++	AKEYCODE_VOLUME_DOWN	 = 25,
++	AKEYCODE_POWER		   = 26,
++	AKEYCODE_CAMERA		  = 27,
++	AKEYCODE_CLEAR		   = 28,
++	AKEYCODE_SYM			 = 63,
++	AKEYCODE_EXPLORER		= 64,
++	AKEYCODE_ENVELOPE		= 65,
++	AKEYCODE_HEADSETHOOK	 = 79,
++	AKEYCODE_FOCUS		   = 80,   // *Camera* focus
++	AKEYCODE_NOTIFICATION	= 83,
++	AKEYCODE_SEARCH		  = 84,
++	AKEYCODE_MEDIA_STOP	  = 86,
++	AKEYCODE_MEDIA_NEXT	  = 87,
++	AKEYCODE_MEDIA_PREVIOUS  = 88,
++	AKEYCODE_MEDIA_REWIND	= 89,
++	AKEYCODE_MEDIA_FAST_FORWARD = 90,
++	AKEYCODE_MUTE			= 91,
++	AKEYCODE_PICTSYMBOLS	 = 94,
++	AKEYCODE_SWITCH_CHARSET  = 95,
++	AKEYCODE_BUTTON_A		= 96,
++	AKEYCODE_BUTTON_B		= 97,
++	AKEYCODE_BUTTON_C		= 98,
++	AKEYCODE_BUTTON_X		= 99,
++	AKEYCODE_BUTTON_Y		= 100,
++	AKEYCODE_BUTTON_Z		= 101,
++	AKEYCODE_BUTTON_L1	   = 102,
++	AKEYCODE_BUTTON_R1	   = 103,
++	AKEYCODE_BUTTON_L2	   = 104,
++	AKEYCODE_BUTTON_R2	   = 105,
++	AKEYCODE_BUTTON_THUMBL   = 106,
++	AKEYCODE_BUTTON_THUMBR   = 107,
++	AKEYCODE_BUTTON_START	= 108,
++	AKEYCODE_BUTTON_SELECT   = 109,
++	AKEYCODE_BUTTON_MODE	 = 110,
++	AKEYCODE_NUM			 = 78,
++*/
++		if(key==AKEYCODE_HOME){
++			irrEvent.KeyInput.Key = KEY_HOME;
++		}else if(key==AKEYCODE_BACK){//the back button will not exit the app anymore, KEY_CANCEL makes sense to me
++			irrEvent.KeyInput.Key = KEY_CANCEL;//KEY_BACK;
++		}else if(key>=AKEYCODE_0 && key<=AKEYCODE_9){
++			irrEvent.KeyInput.Key = (EKEY_CODE)(key-AKEYCODE_0+KEY_KEY_0);
++			if(!irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = (wchar_t)(key-AKEYCODE_0)+L'0';
++			}else{
++				if(key == AKEYCODE_2){
++					irrEvent.KeyInput.Char = L'@';
++				}else if(key == AKEYCODE_1){
++					irrEvent.KeyInput.Char = L'!';
++				}else if(key == AKEYCODE_3){
++					irrEvent.KeyInput.Char = L'#';
++				}else if(key == AKEYCODE_4){
++					irrEvent.KeyInput.Char = L'$';
++				}else if(key == AKEYCODE_5){
++					irrEvent.KeyInput.Char = L'%';
++				}else if(key == AKEYCODE_6){
++					irrEvent.KeyInput.Char = L'^';
++				}else if(key == AKEYCODE_7){
++					irrEvent.KeyInput.Char = L'&';
++				}else if(key == AKEYCODE_8){
++					irrEvent.KeyInput.Char = L'*';
++				}else if(key == AKEYCODE_9){
++					irrEvent.KeyInput.Char = L'(';
++				}else if(key == AKEYCODE_0){
++					irrEvent.KeyInput.Char = L')';
++				}
++			}
++		}else if(key==AKEYCODE_STAR){
++			irrEvent.KeyInput.Key = KEY_KEY_8 ;//US Keyboard
++			irrEvent.KeyInput.Char = L'*';
++		}else if(key==AKEYCODE_POUND){
++			irrEvent.KeyInput.Key = KEY_KEY_3;//British Keyboard
++			irrEvent.KeyInput.Char = L'£';
++		}else if(key==AKEYCODE_DPAD_UP){
++			irrEvent.KeyInput.Key = KEY_UP;
++		}else if(key==AKEYCODE_DPAD_DOWN){
++			irrEvent.KeyInput.Key = KEY_DOWN;
++		}else if(key==AKEYCODE_DPAD_LEFT){
++			irrEvent.KeyInput.Key = KEY_LEFT;
++		}else if(key==AKEYCODE_DPAD_RIGHT){
++			irrEvent.KeyInput.Key = KEY_RIGHT;
++		}else if(key>=AKEYCODE_A && key<=AKEYCODE_Z){
++			irrEvent.KeyInput.Key = (EKEY_CODE)(key-AKEYCODE_A+KEY_KEY_A);
++			if(!irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = (wchar_t)(key-AKEYCODE_A)+L'a';
++			}else{
++				irrEvent.KeyInput.Char = (wchar_t)(key-AKEYCODE_A)+L'A';
++			}
++		}else if(key==AKEYCODE_COMMA){
++			irrEvent.KeyInput.Key = KEY_COMMA;
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'<';
++			}else{
++				irrEvent.KeyInput.Char = L',';
++			}
++		}else if(key==AKEYCODE_PERIOD){
++			irrEvent.KeyInput.Key = KEY_PERIOD;
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'>';
++			}else{
++				irrEvent.KeyInput.Char = L'.';
++			}
++		}else if(key==AKEYCODE_ALT_LEFT){
++			irrEvent.KeyInput.Key = KEY_LMENU;
++		}else if(key==AKEYCODE_ALT_RIGHT){
++			irrEvent.KeyInput.Key = KEY_RMENU;
++		}else if(key==AKEYCODE_SHIFT_LEFT){
++			irrEvent.KeyInput.Key = KEY_LSHIFT;
++		}else if(key==AKEYCODE_SHIFT_RIGHT){
++			irrEvent.KeyInput.Key = KEY_RSHIFT;
++		}else if(key==AKEYCODE_TAB){
++			irrEvent.KeyInput.Key = KEY_TAB;
++			irrEvent.KeyInput.Char = L'\t';
++		}else if(key==AKEYCODE_SPACE){
++			irrEvent.KeyInput.Key = KEY_SPACE;
++			irrEvent.KeyInput.Char = L' ';
++		}else if(key==AKEYCODE_ENTER){
++			irrEvent.KeyInput.Key = KEY_RETURN;
++			irrEvent.KeyInput.Char = L'\n';
++		}else if(key==AKEYCODE_DEL){
++			irrEvent.KeyInput.Key = KEY_BACK;
++		}else if(key==AKEYCODE_MINUS){
++			irrEvent.KeyInput.Key = KEY_MINUS;
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'_';
++			}else{
++				irrEvent.KeyInput.Char = L'-';
++			}
++		}else if(key==AKEYCODE_EQUALS){
++			irrEvent.KeyInput.Key = KEY_PLUS;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'+';
++			}else{
++				irrEvent.KeyInput.Char = L'=';
++			}
++		}else if(key==AKEYCODE_LEFT_BRACKET){
++			irrEvent.KeyInput.Key = KEY_OEM_4;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'{';
++			}else{
++				irrEvent.KeyInput.Char = L'[';
++			}
++		}else if(key==AKEYCODE_RIGHT_BRACKET){
++			irrEvent.KeyInput.Key = KEY_OEM_6;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'}';
++			}else{
++				irrEvent.KeyInput.Char = L']';
++			}
++		}else if(key==AKEYCODE_BACKSLASH){
++			irrEvent.KeyInput.Key = KEY_OEM_5;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'|';
++			}else{
++				irrEvent.KeyInput.Char = L'\\';
++			}
++		}else if(key==AKEYCODE_SEMICOLON){
++			irrEvent.KeyInput.Key = KEY_OEM_1;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L':';
++			}else{
++				irrEvent.KeyInput.Char = L';';
++			}
++		}else if(key==AKEYCODE_APOSTROPHE){
++			irrEvent.KeyInput.Key = KEY_OEM_7;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'\"';
++			}else{
++				irrEvent.KeyInput.Char = L'\'';
++			}
++		}else if(key==AKEYCODE_SLASH){
++			irrEvent.KeyInput.Key = KEY_OEM_2;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'?';
++			}else{
++				irrEvent.KeyInput.Char = L'/';
++			}
++		}else if(key==AKEYCODE_AT){
++			irrEvent.KeyInput.Key = KEY_KEY_2;//US Keyboard
++			irrEvent.KeyInput.Char = L'@';
++		}else if(key==AKEYCODE_PLUS){
++			irrEvent.KeyInput.Key = KEY_PLUS;
++			irrEvent.KeyInput.Char = L'+';
++		}else if(key==AKEYCODE_MENU){//Menubutton of the unhidable toolbar
++			irrEvent.KeyInput.Key = KEY_MENU;
++		}else if(key==AKEYCODE_MEDIA_PLAY_PAUSE){
++			irrEvent.KeyInput.Key = KEY_PLAY;//hmmm
++		}else if(key==AKEYCODE_PAGE_UP){
++			irrEvent.KeyInput.Key = KEY_PRIOR;
++		}else if(key==AKEYCODE_PAGE_DOWN){
++			irrEvent.KeyInput.Key = KEY_NEXT;
++		}else if(key==AKEYCODE_GRAVE){
++			irrEvent.KeyInput.Key = KEY_OEM_3;//US Keyboard
++			if(irrEvent.KeyInput.Shift){
++				irrEvent.KeyInput.Char = L'~';
++			}else{
++				irrEvent.KeyInput.Char = L'`';
++			}
++		}else{
++			//__android_log_print(ANDROID_LOG_ERROR, "Unhandled Key", "Code: %i Shift: %i\n", key, (int)irrEvent.KeyInput.Shift);
++			return 0;
++		}
++ 
++		//__android_log_print(ANDROID_LOG_ERROR, "Key", "Code: %i Shift: %i\n", key, (int)irrEvent.KeyInput.Shift);
++		Device->postEventFromUser(irrEvent);
++		return 1;
++	}
++
+ 	return Status;
+ }
+ 
+Index: source/Irrlicht/Android/CIrrDeviceAndroid.h
+===================================================================
+--- source/Irrlicht/Android/CIrrDeviceAndroid.h	(revision 4618)
++++ source/Irrlicht/Android/CIrrDeviceAndroid.h	(working copy)
+@@ -13,6 +13,7 @@
+ #include "IrrlichtDevice.h"
+ #include "IImagePresenter.h"
+ #include "ICursorControl.h"
++#include "irrMap.h"
+ 
+ #include <android/sensor.h>
+ #include <android_native_app_glue.h>
+@@ -75,6 +76,8 @@
+ 		bool Paused;
+ 
+ 		video::SExposedVideoData ExposedVideoData;
++
++		core::map<s32, irr::core::vector2d<s32> > *previousMotionData;
+ 	};
+ 
+ } // end namespace irr
+Index: source/Irrlicht/Android/jni/Android.mk
+===================================================================
+--- source/Irrlicht/Android/jni/Android.mk	(revision 4618)
++++ source/Irrlicht/Android/jni/Android.mk	(working copy)
+@@ -9,18 +9,15 @@
+ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -Wall -pipe -fno-exceptions -fno-rtti -fstrict-aliasing
+ 
+ ifndef NDEBUG
+-LOCAL_CFLAGS += -g -D_DEBUG
++LOCAL_CFLAGS += -g -O0 -D_DEBUG -DNO_IRR_COMPILE_WITH_ZIP_ENCRYPTION_
+ else
+ LOCAL_CFLAGS += -fexpensive-optimizations -O3
+ endif
+ 
+ LOCAL_C_INCLUDES := ../../../include
+ 
+-LOCAL_SRC_FILES := \
+-					Android/CIrrDeviceAndroid.cpp \
+-					Android/CAndroidAssetReader.cpp \
+-					Android/CAndroidAssetFileArchive.cpp \
+-					aesGladman/aescrypt.cpp \
++
++#					aesGladman/aescrypt.cpp \
+ 					aesGladman/aeskey.cpp \
+ 					aesGladman/aestab.cpp \
+ 					aesGladman/fileenc.cpp \
+@@ -29,6 +26,11 @@
+ 					aesGladman/pwd2key.cpp \
+ 					aesGladman/sha1.cpp \
+ 					aesGladman/sha2.cpp \
++
++LOCAL_SRC_FILES := \
++					Android/CIrrDeviceAndroid.cpp \
++					Android/CAndroidAssetReader.cpp \
++					Android/CAndroidAssetFileArchive.cpp \
+ 					C3DSMeshFileLoader.cpp \
+ 					CAnimatedMeshHalfLife.cpp \
+ 					CAnimatedMeshMD2.cpp \
 Index: source/Irrlicht/os.cpp
 ===================================================================
 --- source/Irrlicht/os.cpp	(revision 4618)

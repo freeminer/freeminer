@@ -70,6 +70,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iomanip>
 #include <list>
 #include "util/directiontables.h"
+#include "touchscreengui.h"
+
+TouchScreenGUI *touchscreengui;
 
 /*
 	Text input system
@@ -1424,6 +1427,8 @@ void the_game(
 	guitext_profiler->setBackgroundColor(video::SColor(120,0,0,0));
 	guitext_profiler->setVisible(false);
 	guitext_profiler->setWordWrap(true);
+
+	touchscreengui = new TouchScreenGUI(device);
 	
 	/*
 		Some statistics are collected in these
@@ -2174,30 +2179,22 @@ void the_game(
 				first_loop_after_window_activation = false;
 			}
 			else{
-				s32 dx = input->getMousePos().X - displaycenter.X;
-				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse)
-					dy = -dy;
-				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
-				
-				/*const float keyspeed = 500;
-				if(input->isKeyDown(irr::KEY_UP))
-					dy -= dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_DOWN))
-					dy += dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_LEFT))
-					dx -= dtime * keyspeed;
-				if(input->isKeyDown(irr::KEY_RIGHT))
-					dx += dtime * keyspeed;*/
-				
-				float d = g_settings->getFloat("mouse_sensitivity");
-				d = rangelim(d, 0.01, 100.0);
-				camera_yaw -= dx*d;
-				camera_pitch += dy*d;
+				if (touchscreengui) {
+					camera_yaw = touchscreengui->getYaw();
+					camera_pitch = touchscreengui->getPitch();
+				} else {
+					s32 dx = input->getMousePos().X - displaycenter.X;
+					s32 dy = input->getMousePos().Y - displaycenter.Y;
+					if(invert_mouse)
+						dy = -dy;
+
+					float d = g_settings->getFloat("mouse_sensitivity");
+					d = rangelim(d, 0.01, 100.0);
+					camera_yaw -= dx*d;
+					camera_pitch += dy*d;
+				}
 				if(camera_pitch < -89.5) camera_pitch = -89.5;
 				if(camera_pitch > 89.5) camera_pitch = 89.5;
-				
-				turn_amount = v2f(dx, dy).getLength() * d;
 			}
 			input->setMousePos(displaycenter.X, displaycenter.Y);
 		}
@@ -3573,6 +3570,8 @@ void the_game(
 	delete shsrc;
 	delete nodedef;
 	delete itemdef;
+
+	delete touchscreengui;
 
 	//extended resource accounting
 	infostream << "Irrlicht resources after cleanup:" << std::endl;

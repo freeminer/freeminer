@@ -303,6 +303,8 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("language", "");
 
+	settings->setDefault("touchscreen", "0");
+
 	// freeminer user-friendly defaults
 	settings->setDefault("enable_vbo", "true");
 	settings->setDefault("viewing_range_nodes_max", "1000");
@@ -336,9 +338,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
 
-	settings->setDefault("mouse_sensitivity", "0.01");
+	settings->setDefault("mouse_sensitivity", "0.2");
 
 	settings->setDefault("viewing_range_nodes_max", "64");
+
+	settings->setDefault("touchscreen", "1");
 #endif
 }
 
