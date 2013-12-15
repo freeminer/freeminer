@@ -162,7 +162,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	invert = params.get("invert", 0).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	scale = params.get("scale", (double)1 / size).asDouble(); //(double)1 / size;
-	if(!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asFloat(), params["center"]["y"].asFloat(), params["center"]["z"].asFloat()); //v3f(5, -size - 5, 5);
+	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asFloat(), params["center"]["y"].asFloat(), params["center"]["z"].asFloat()); //v3f(5, -size - 5, 5);
 	iterations = params.get("iterations", 10).asInt(); //10;
 	distance = params.get("distance", scale).asDouble(); // = 1/size;
 
@@ -264,11 +264,11 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	}
 	if (params["generator"].asString() == "hypercomplex") {
 		par.formula = hypercomplex;
-		par.doubles.N = params.get("iterations", 5).asInt();
+		par.doubles.N = params.get("iterations", 20).asInt();
 		scale = params.get("scale", 0.00008).asDouble();
 		//invert = 1;
 		invert = params.get("invert", 1).asBool();
-		if(!center.getLength()) center = v3f(0, -10001, 0); //(double)50 / max_r;
+		if(!center.getLength()) center = v3f(0, -10730, 0); //(double)50 / max_r;
 	}
 	//no par.formula = trig_DE; par.doubles.N = 5;  scale = (double)10; invert=1;
 
