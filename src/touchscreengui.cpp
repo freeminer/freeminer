@@ -25,6 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <iostream>
 
+#include <ISceneCollisionManager.h>
+
 using namespace irr::core;
 
 extern Settings *g_settings;
@@ -134,9 +136,9 @@ void TouchScreenGUI::OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *k
 				}
 			}
 
-			// update camera_yaw and camera_pitch
 			// perhaps this actually should track a pointer and store its MultiTouchInput.ID[i] somehow
 			if (!m_control_pad_rect.isPointInside(v2s32(x, y))) {
+				// update camera_yaw and camera_pitch
 				s32 dx = x - event.MultiTouchInput.PrevX[i];
 				s32 dy = y - event.MultiTouchInput.PrevY[i];
 
@@ -144,6 +146,9 @@ void TouchScreenGUI::OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *k
 
 				m_camera_yaw -= dx * d;
 				m_camera_pitch += dy * d;
+
+				// update shootline
+				m_shootline = m_device->getSceneManager()->getSceneCollisionManager()->getRayFromScreenCoordinates(v2s32(x, y));
 			}
 		}
 	}

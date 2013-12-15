@@ -36,6 +36,7 @@ public:
 	void OnEvent(const SEvent &event, KeyList *keyIsDown, KeyList *keyWasDown);
 	double getYaw() { return m_camera_yaw; }
 	double getPitch() { return m_camera_pitch; }
+	line3d<f32> getShootline() { return m_shootline; }
 private:
 	IrrlichtDevice *m_device;
 	IGUIEnvironment *m_guienv;
@@ -43,5 +44,6 @@ private:
 	rect<s32> m_control_pad_rect;
 	double m_camera_yaw;
 	double m_camera_pitch;
+	line3d<f32> m_shootline;
 };
 #endif
