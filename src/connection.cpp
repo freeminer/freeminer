@@ -669,7 +669,6 @@ void Connection::send(float dtime)
 		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 5){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
-			
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
 					packet.data, packet.reliable);
 			peer->m_num_sent++;
@@ -982,7 +981,6 @@ void Connection::runTimeouts(float dtime)
 						<<", channel="<<((int)channel&0xff)
 						<<", seqnum="<<seqnum
 						<<", tries="<<j->sends
-						<<", restimeout="<<peer->resend_timeout
 						<<", avg_rtt="<<peer->avg_rtt
 						<<std::endl;
 
