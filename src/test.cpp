@@ -1513,7 +1513,7 @@ struct TestSocket: public TestBase
 {
 	void Run()
 	{
-		const int port = 30003;
+		const int port = g_settings->getU16("port") + 987 + myrand_range(42,123);
 
 		// IPv6 socket test
 		{
