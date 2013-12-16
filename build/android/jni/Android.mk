@@ -1,11 +1,10 @@
 LOCAL_PATH := $(call my-dir)/..
-IRRLICHT_LIBRARY_PATH := ../irrlicht/
 
 LOCAL_ADDRESS_SANITIZER:=true
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := Irrlicht
-LOCAL_SRC_FILES := $(IRRLICHT_LIBRARY_PATH)/lib/Android/libIrrlicht.a
+LOCAL_SRC_FILES := deps/irrlicht/lib/Android/libIrrlicht.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -34,7 +33,7 @@ ifeq ($(TARGET_ARCH_ABI),x86)
 LOCAL_CFLAGS += -fno-stack-protector
 endif
 
-LOCAL_C_INCLUDES := ${IRRLICHT_LIBRARY_PATH}/include jni/src jni/src/sqlite jni/src/script jni/src/lua/src jni/src/json deps/leveldb/include
+LOCAL_C_INCLUDES := jni/src jni/src/sqlite jni/src/script jni/src/lua/src jni/src/json deps/leveldb/include deps/irrlicht/include
 
 LOCAL_SRC_FILES := jni/src/ban.cpp jni/src/base64.cpp jni/src/biome.cpp jni/src/camera.cpp jni/src/cavegen.cpp jni/src/chat.cpp jni/src/client.cpp jni/src/clientmap.cpp jni/src/clientobject.cpp jni/src/clouds.cpp jni/src/collision.cpp jni/src/connection.cpp jni/src/content_abm.cpp jni/src/content_cao.cpp jni/src/content_cso.cpp jni/src/content_mapblock.cpp jni/src/content_mapnode.cpp jni/src/content_nodemeta.cpp jni/src/content_sao.cpp jni/src/convert_json.cpp jni/src/craftdef.cpp jni/src/database-dummy.cpp jni/src/database-leveldb.cpp jni/src/database-sqlite3.cpp jni/src/database.cpp jni/src/debug.cpp jni/src/defaultsettings.cpp jni/src/dungeongen.cpp jni/src/emerge.cpp jni/src/environment.cpp jni/src/filecache.cpp jni/src/filesys.cpp jni/src/game.cpp jni/src/genericobject.cpp jni/src/gettext.cpp jni/src/guiChatConsole.cpp jni/src/guiDeathScreen.cpp jni/src/guiEngine.cpp jni/src/guiFileSelectMenu.cpp jni/src/guiFormSpecMenu.cpp jni/src/guiKeyChangeMenu.cpp jni/src/guiMessageMenu.cpp jni/src/guiPasswordChange.cpp jni/src/guiPauseMenu.cpp jni/src/guiTextInputMenu.cpp jni/src/guiVolumeChange.cpp jni/src/hud.cpp jni/src/intlGUIEditBox.cpp jni/src/inventory.cpp jni/src/inventorymanager.cpp jni/src/itemdef.cpp jni/src/keycode.cpp jni/src/light.cpp jni/src/localplayer.cpp jni/src/log.cpp jni/src/main.cpp jni/src/map.cpp jni/src/mapblock.cpp jni/src/mapblock_mesh.cpp jni/src/mapgen.cpp jni/src/mapgen_indev.cpp jni/src/mapgen_math.cpp jni/src/mapgen_singlenode.cpp jni/src/mapgen_v6.cpp jni/src/mapgen_v7.cpp jni/src/mapnode.cpp jni/src/mapsector.cpp jni/src/mesh.cpp jni/src/mods.cpp jni/src/nameidmapping.cpp jni/src/nodedef.cpp jni/src/nodemetadata.cpp jni/src/nodetimer.cpp jni/src/noise.cpp jni/src/object_properties.cpp jni/src/particles.cpp jni/src/pathfinder.cpp jni/src/player.cpp jni/src/porting.cpp jni/src/quicktune.cpp jni/src/rollback.cpp jni/src/rollback_interface.cpp jni/src/serialization.cpp jni/src/server.cpp jni/src/serverlist.cpp jni/src/serverobject.cpp jni/src/sha1.cpp jni/src/shader.cpp jni/src/sky.cpp jni/src/socket.cpp jni/src/sound.cpp jni/src/staticobject.cpp jni/src/subgame.cpp jni/src/test.cpp jni/src/tile.cpp jni/src/tool.cpp jni/src/treegen.cpp jni/src/version.cpp jni/src/voxel.cpp jni/src/voxelalgorithms.cpp jni/src/util/directiontables.cpp jni/src/util/numeric.cpp jni/src/util/pointedthing.cpp jni/src/util/serialize.cpp jni/src/util/string.cpp jni/src/util/timetaker.cpp jni/src/touchscreengui.cpp
 
