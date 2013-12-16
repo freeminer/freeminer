@@ -262,6 +262,9 @@ public:
 	// This is the one method that we have to implement
 	virtual bool OnEvent(const SEvent& event)
 	{
+		if (touchscreengui)
+			touchscreengui->OnEvent(event);
+
 		/*
 			React to nothing here if a menu is active
 		*/
@@ -269,9 +272,6 @@ public:
 		{
 			return g_menumgr.preprocessEvent(event);
 		}
-
-		if (touchscreengui)
-			touchscreengui->OnEvent(event);
 
 		// Remember whether each key is down or up
 		if(event.EventType == irr::EET_KEY_INPUT_EVENT)

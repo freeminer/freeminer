@@ -34,11 +34,14 @@ using namespace irr::core;
 extern Settings *g_settings;
 
 enum {
-	forward_id = 50, // change to random number when shit breaks
+	first_element_id = 50, // change to random number when shit breaks
+	forward_id = first_element_id,
 	backward_id,
 	left_id,
 	right_id,
-	jump_id
+	jump_id,
+	inventory_id,
+	after_last_element_id
 };
 
 TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device):
@@ -53,7 +56,8 @@ TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device):
 	m_rightclick(false),
 	m_player_item_changed(false),
 	m_player_item(0),
-	m_hud_start_y(100000)
+	m_hud_start_y(100000),
+	m_visible(false)
 {
 	m_screensize = m_device->getVideoDriver()->getScreenSize();
 }
@@ -63,6 +67,7 @@ void TouchScreenGUI::init() {
 	u32 button_size = control_pad_size / 3;
 	m_down = false;
 	m_digging = false;
+	m_visible = true;
 
 	m_control_pad_rect = rect<s32>(0, m_screensize.Y - 3 * button_size, 3 * button_size, m_screensize.Y);
 
@@ -107,6 +112,8 @@ void TouchScreenGUI::init() {
 			if (id)
 				m_guienv->addButton(button_rect, 0, id, caption.c_str());
 		}
+
+	m_guienv->addButton(rect<s32>(0, 0, 50, 50), 0, inventory_id, L"inv");
 }
 
 TouchScreenGUI::~TouchScreenGUI() {}
@@ -121,6 +128,16 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 		keyIsDown.unset(getKeySetting("keymap_right"));
 		keyIsDown.unset(getKeySetting("keymap_jump"));
 
+		if (event.MultiTouchInput.Event == EMTIE_LEFT_UP) {
+			u32 time = getTimeMs();
+			if (time - m_previous_click_time <= 300) {
+				// double click
+				m_double_click = true;
+			} else {
+				m_previous_click_time = time;
+			}
+		}
+
 		bool main_pointer_still_here = false;
 
 		for (int i = 0; i < event.MultiTouchInput.PointerCount; ++i) {
@@ -132,6 +149,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 				continue;
 			if (event.MultiTouchInput.ID[i] == m_down_pointer_id)
 				main_pointer_still_here = true;
+			bool ignore_click = !m_visible;
 			IGUIElement *element;
 			if ((element = m_guienv->getRootGUIElement()->getElementFromPoint(v2s32(x, y)))) {
 				std::string key = "";
@@ -151,16 +169,21 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 				case jump_id:
 					key = "jump";
 					break;
+				case inventory_id:
+					key = "inventory";
+					break;
 				}
 
-				if (key != "") {
+				if (key != "" && m_visible) {
 					keyIsDown.set(getKeySetting(("keymap_" + key).c_str()));
 					keyWasDown.set(getKeySetting(("keymap_" + key).c_str()));
+
+					ignore_click = true;
 				}
 			}
 
 			// perhaps this actually should track a pointer and store its MultiTouchInput.ID[i] somehow
-			if (!m_control_pad_rect.isPointInside(v2s32(x, y))) {
+			if (!ignore_click) {
 				// update camera_yaw and camera_pitch
 				s32 dx = x - event.MultiTouchInput.PrevX[i];
 				s32 dy = y - event.MultiTouchInput.PrevY[i];
@@ -194,7 +217,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 		if (!main_pointer_still_here) {
 			// TODO: tweak this
 			// perhaps this should only right click when not digging?
-			if (m_down_to.Y < m_hud_start_y && m_down && m_down_from.getDistanceFromSQ(m_down_to) < 400)
+			if (m_down_to.Y < m_hud_start_y && m_down && !m_digging && m_down_from.getDistanceFromSQ(m_down_to) < 400)
 				m_rightclick = true;
 			m_down = false;
 			m_digging = false;
@@ -242,4 +265,35 @@ u16 TouchScreenGUI::getPlayerItem() {
 
 s32 TouchScreenGUI::getHotbarImageSize() {
 	return m_screensize.Y / 10;
+}
+
+void TouchScreenGUI::Toggle(bool visible) {
+	m_visible = visible;
+	for (int i = first_element_id; i < after_last_element_id; ++i) {
+		IGUIElement *e = m_guienv->getRootGUIElement()->getElementFromId(i);
+		if (e)
+			e->setVisible(visible);
+	}
+}
+
+void TouchScreenGUI::Hide() {
+	Toggle(false);
+}
+
+void TouchScreenGUI::Show() {
+	Toggle(true);
+}
+
+bool TouchScreenGUI::isSingleClick() {
+	bool r = m_previous_click_time && (getTimeMs() - m_previous_click_time > 300);
+	return r;
+}
+
+bool TouchScreenGUI::isDoubleClick() {
+	return m_double_click;
+}
+
+void TouchScreenGUI::resetClicks() {
+	m_double_click = false;
+	m_previous_click_time = 0;
 }

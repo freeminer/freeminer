@@ -44,7 +44,7 @@ public:
 
 	bool isKeyDown(const KeyPress &keyCode);
 	bool wasKeyDown(const KeyPress &keyCode);
-	v2s32 getMousePos() { return v2s32(0, 0); }
+	v2s32 getMousePos() { return m_down_to; }
 	void setMousePos(s32 x, s32 y) {}
 	bool getLeftState();
 	bool getRightState() { return m_rightclick; }
@@ -63,6 +63,13 @@ public:
 	bool hasPlayerItemChanged() { return m_player_item_changed; }
 	u16 getPlayerItem();
 	s32 getHotbarImageSize();
+	void Toggle(bool visible);
+	void Hide();
+	void Show();
+
+	bool isSingleClick();
+	bool isDoubleClick();
+	void resetClicks();
 private:
 	IrrlichtDevice *m_device;
 	IGUIEnvironment *m_guienv;
@@ -91,5 +98,9 @@ private:
 	v2u32 m_screensize;
 
 	u32 m_hud_start_y;
+	bool m_visible; // is the gui visible
+
+	bool m_double_click;
+	int m_previous_click_time;
 };
 #endif

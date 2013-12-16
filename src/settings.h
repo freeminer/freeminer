@@ -575,7 +575,7 @@ public:
 	u32 getFlagStr(std::string name, FlagDesc *flagdesc)
 	{
 		std::string val = get(name);
-		return (isdigit(val[0])) ? stoi(val) : readFlagString(val, flagdesc);
+		return (std::isdigit(val[0])) ? stoi(val) : readFlagString(val, flagdesc);
 	}
 
 	bool getStruct(std::string name, std::string format, void *out, size_t olen)

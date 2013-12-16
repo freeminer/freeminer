@@ -7,6 +7,10 @@ if [ -z "$ANDROID_NDK" ]; then
 	exit 1
 fi
 
+if [ -z "$NDEBUG" ]; then
+	NDEBUG=1
+fi
+
 pushd `dirname $0` > /dev/null
 ROOT=`pwd`
 popd > /dev/null
@@ -33,11 +37,11 @@ $ROOT/scripts/build_leveldb.sh || exit 1
 
 echo ">> Building Irrlicht"
 cd $ROOT/deps/irrlicht/source/Irrlicht/Android/
-$ANDROID_NDK/ndk-build NDEBUG=1 -j8 || exit 1
+$ANDROID_NDK/ndk-build NDEBUG=$NDEBUG -j8 || exit 1
 
 echo ">> Building Freeminer"
 cd $ROOT
-$ANDROID_NDK/ndk-build NDEBUG=1 -j8 || exit 1
+$ANDROID_NDK/ndk-build NDEBUG=$NDEBUG -j8 || exit 1
 ant debug || exit 1
 
 echo "++ Success!"
