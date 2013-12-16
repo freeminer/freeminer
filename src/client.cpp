@@ -51,15 +51,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/pointedthing.h"
 #include "version.h"
 
-#if USE_CURL
-#include <curl/curl.h>
-#endif
-
-static std::string getMediaCacheDir()
-{
-	return porting::path_user + DIR_DELIM + "cache" + DIR_DELIM + "media";
-}
-
 /*
 	QueuedMeshUpdate
 */
@@ -177,7 +168,7 @@ void * MeshUpdateThread::Thread()
 	
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		/*// Wait for output queue to flush.
 		// Allow 2 in queue, this makes less frametime jitter.
@@ -302,9 +293,8 @@ Client::~Client()
 		m_con.Disconnect();
 	}
 
-	m_mesh_update_thread.setRun(false);
-	while(m_mesh_update_thread.IsRunning())
-		sleep_ms(100);
+	m_mesh_update_thread.Stop();
+	m_mesh_update_thread.Wait();
 	while(!m_mesh_update_thread.m_queue_out.empty()) {
 		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_front();
 		delete r.mesh;
