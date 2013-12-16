@@ -310,14 +310,14 @@ bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 	return false;
 }
 
-std::list<BufferedPacket> ReliablePacketBuffer::getTimedOuts(float timeout)
+std::list<BufferedPacket*> ReliablePacketBuffer::getTimedOuts(float timeout)
 {
-	std::list<BufferedPacket> timed_outs;
+	std::list<BufferedPacket*> timed_outs;
 	for(std::list<BufferedPacket>::iterator i = m_list.begin();
 		i != m_list.end(); ++i)
 	{
 		if(i->time >= timeout)
-			timed_outs.push_back(*i);
+			timed_outs.push_back(&(*i));
 	}
 	return timed_outs;
 }
@@ -935,7 +935,7 @@ void Connection::runTimeouts(float dtime)
 		float resend_timeout = peer->resend_timeout;
 		for(u16 i=0; i<CHANNEL_COUNT; i++)
 		{
-			std::list<BufferedPacket> timed_outs;
+			std::list<BufferedPacket*> timed_outs;
 			
 			Channel *channel = &peer->channels[i];
 
@@ -966,9 +966,10 @@ void Connection::runTimeouts(float dtime)
 
 			channel->outgoing_reliables.resetTimedOuts(resend_timeout);
 
-			for(std::list<BufferedPacket>::iterator j = timed_outs.begin();
-				j != timed_outs.end(); ++j)
+			for(std::list<BufferedPacket*>::iterator jp = timed_outs.begin();
+				jp != timed_outs.end(); ++j)
 			{
+				BufferedPacket* j = *jp;
 				u16 peer_id = readPeerId(*(j->data));
 				u8 channel = readChannel(*(j->data));
 				u16 seqnum = readU16(&(j->data[BASE_HEADER_SIZE+1]));
@@ -982,6 +983,9 @@ void Connection::runTimeouts(float dtime)
 						<<", seqnum="<<seqnum
 						<<", tries="<<j->sends
 						<<", avg_rtt="<<peer->avg_rtt
+						<<", dtime="<<dtime
+						<<", ttime="<<j->totaltime
+						<<", time="<<j->time
 						<<std::endl;
 
 				rawSend(*j);

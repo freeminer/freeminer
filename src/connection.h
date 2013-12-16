@@ -288,7 +288,7 @@ public:
 	void incrementTimeouts(float dtime);
 	void resetTimedOuts(float timeout);
 	bool anyTotaltimeReached(float timeout);
-	std::list<BufferedPacket> getTimedOuts(float timeout);
+	std::list<BufferedPacket*> getTimedOuts(float timeout);
 
 private:
 	std::list<BufferedPacket> m_list;
