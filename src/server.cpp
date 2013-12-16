@@ -73,14 +73,14 @@ public:
 	{}
 };
 
-class ServerThread : public SimpleThread
+class ServerThread : public JThread
 {
 	Server *m_server;
 
 public:
 
 	ServerThread(Server *server):
-		SimpleThread(),
+		JThread(),
 		m_server(server)
 	{
 	}
@@ -100,7 +100,7 @@ void * ServerThread::Thread()
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
@@ -1006,14 +1006,13 @@ void Server::start(unsigned short port)
 	infostream<<"Starting server on port "<<port<<"..."<<std::endl;
 
 	// Stop thread if already running
-	m_thread->stop();
+	m_thread->Stop();
 
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
 	m_con.Serve(port);
 
 	// Start thread
-	m_thread->setRun(true);
 	m_thread->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
@@ -1030,9 +1029,9 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
-	m_thread->setRun(false);
+	m_thread->Stop();
 	//m_emergethread.setRun(false);
-	m_thread->stop();
+	m_thread->Wait();
 	//m_emergethread.stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
@@ -1727,7 +1726,7 @@ void Server::AsyncRunStep()
 		{
 			counter = 0.0;
 
-			m_emerge->triggerAllThreads();
+			m_emerge->startAllThreads();
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
