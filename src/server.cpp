@@ -5562,7 +5562,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 		*/
 		float profiler_print_interval =
 				g_settings->getFloat("profiler_print_interval");
-		if(profiler_print_interval != 0)
+		if(server.getClients().size() && profiler_print_interval != 0)
 		{
 			if(m_profiler_interval.step(steplen, profiler_print_interval))
 			{

@@ -492,6 +492,7 @@ public:
 	bool hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount);
 	void hudSetHotbarImage(Player *player, std::string name);
 	void hudSetHotbarSelectedImage(Player *player, std::string name);
+	std::map<u16, RemoteClient*> & getClients() { return m_clients; };
 
 private:
 
