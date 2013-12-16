@@ -188,6 +188,17 @@ std::string serializeJson(std::vector<ServerListSpec> serverlist)
 
 
 #if USE_CURL
+//DELETE AFTER CURL FIX: ===
+#include <curl/curl.h>
+
+static size_t ServerAnnounceCallback(void *contents, size_t size, size_t nmemb, void *userp)
+{
+    //((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+// ===end
+
+
 void sendAnnounce(std::string action, const std::vector<std::string> & clients_names, double uptime, u32 game_time, std::string gameid, std::vector<ModSpec> mods) {
 	Json::Value server;
 	if (action.size())
@@ -229,6 +240,28 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 	}
 
 	Json::StyledWriter writer;
+
+// DELETE AFTER FIX:
+       CURL *curl;
+       curl = curl_easy_init();
+       if (curl)
+       {
+               CURLcode res;
+               curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+               curl_easy_setopt(curl, CURLOPT_URL, (g_settings->get("serverlist_url")+std::string("/announce?json=")+curl_easy_escape(curl, writer.write( server ).c_str(), 0)).c_str());
+               curl_easy_setopt(curl, CURLOPT_USERAGENT, (std::string("Minetest ")+minetest_version_hash).c_str());
+               curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ServerList::ServerAnnounceCallback);
+               //curl_easy_setopt(curl, CURLOPT_WRITEDATA, &liststring);
+               curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1);
+               curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
+               res = curl_easy_perform(curl);
+               if (res != CURLE_OK && res != CURLE_OPERATION_TIMEDOUT)
+                       errorstream<<"Serverlist at url "<<g_settings->get("serverlist_url")<<" error ("<<curl_easy_strerror(res)<<")"<<std::endl;
+               curl_easy_cleanup(curl);
+       }
+
+
+/* wait for fix
 	HTTPFetchRequest fetchrequest;
 	fetchrequest.url = g_settings->get("serverlist_url")
 		+ std::string("/announce?json=")
@@ -237,6 +270,7 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 	fetchrequest.caller = HTTPFETCH_DISCARD;
 	fetchrequest.timeout = g_settings->getS32("curl_timeout");
 	httpfetch_async(fetchrequest);
+*/
 }
 #endif
 
