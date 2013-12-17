@@ -288,10 +288,15 @@ public:
 	void incrementTimeouts(float dtime);
 	void resetTimedOuts(float timeout);
 	bool anyTotaltimeReached(float timeout);
-	std::list<BufferedPacket*> getTimedOuts(float timeout);
+/*
+	std::list<BufferedPacket> getTimedOuts(float timeout);
+*/
+	std::list<BufferedPacket> m_list;
 
 private:
+/*
 	std::list<BufferedPacket> m_list;
+*/
 	u16 m_list_size;
 };
 

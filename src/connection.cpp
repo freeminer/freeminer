@@ -289,6 +289,7 @@ void ReliablePacketBuffer::incrementTimeouts(float dtime)
 	}
 }
 
+/*
 void ReliablePacketBuffer::resetTimedOuts(float timeout)
 {
 	for(std::list<BufferedPacket>::iterator i = m_list.begin();
@@ -298,6 +299,7 @@ void ReliablePacketBuffer::resetTimedOuts(float timeout)
 			i->time = 0.0;
 	}
 }
+*/
 
 bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 {
@@ -310,6 +312,7 @@ bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 	return false;
 }
 
+/*
 std::list<BufferedPacket*> ReliablePacketBuffer::getTimedOuts(float timeout)
 {
 	std::list<BufferedPacket*> timed_outs;
@@ -321,6 +324,7 @@ std::list<BufferedPacket*> ReliablePacketBuffer::getTimedOuts(float timeout)
 	}
 	return timed_outs;
 }
+*/
 
 /*
 	IncomingSplitBuffer
@@ -461,7 +465,7 @@ Peer::Peer(u16 a_id, Address a_address):
 	id(a_id),
 	timeout_counter(0.0),
 	ping_timer(0.0),
-	resend_timeout(0.5),
+	resend_timeout(1),
 	avg_rtt(-1.0),
 	has_sent_with_id(false),
 	m_sendtime_accu(0),
@@ -666,7 +670,7 @@ void Connection::send(float dtime)
 		Peer *peer = getPeerNoEx(packet.peer_id);
 		if(!peer)
 			continue;
-		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 5){
+		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 500){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
@@ -961,25 +965,43 @@ void Connection::runTimeouts(float dtime)
 
 			// Re-send timed out outgoing reliables
 			
+/*
 			timed_outs = channel->
 					outgoing_reliables.getTimedOuts(resend_timeout);
 
 			channel->outgoing_reliables.resetTimedOuts(resend_timeout);
-
 			for(std::list<BufferedPacket*>::iterator jp = timed_outs.begin();
-				jp != timed_outs.end(); ++j)
+				jp != timed_outs.end(); ++jp)
+*/
+			for(std::list<BufferedPacket>::iterator j = channel->outgoing_reliables.m_list.begin();
+				j != channel->outgoing_reliables.m_list.end(); ++j)
 			{
-				BufferedPacket* j = *jp;
+				//BufferedPacket* j = *jp;
+				if(j->time < resend_timeout)
+					continue;
 				u16 peer_id = readPeerId(*(j->data));
-				u8 channel = readChannel(*(j->data));
+				u8 channeln = readChannel(*(j->data));
 				u16 seqnum = readU16(&(j->data[BASE_HEADER_SIZE+1]));
+/*
+				if (j->sends > 10) {
+errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum="<<seqnum<<" sends="<<j->sends<<std::endl;
+					try {
+						channel->outgoing_reliables.popSeqnum(seqnum);
+					}
+					catch(NotFoundException &e){
+						PrintInfo(derr_con);
+						derr_con<<"WARNING: throwed packet not in outgoing queue" <<std::endl;
+					}
+					continue;
+				}
+*/
 
 				PrintInfo(derr_con);
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
 				j->address.print(&derr_con);
 				derr_con<<"(t/o="<<resend_timeout<<"): "
 						<<"from_peer_id="<<peer_id
-						<<", channel="<<((int)channel&0xff)
+						<<", channel="<<((int)channeln&0xff)
 						<<", seqnum="<<seqnum
 						<<", tries="<<j->sends
 						<<", avg_rtt="<<peer->avg_rtt
@@ -989,6 +1011,9 @@ void Connection::runTimeouts(float dtime)
 						<<std::endl;
 
 				rawSend(*j);
+
+				if(j->time >= resend_timeout)
+					j->time = 0.0;
 
 				// Enlarge avg_rtt and resend_timeout:
 				// The rtt will be at least the timeout.
