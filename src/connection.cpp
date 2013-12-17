@@ -320,7 +320,7 @@ std::list<BufferedPacket> ReliablePacketBuffer::getTimedOuts(float timeout)
 		i != m_list.end(); ++i)
 	{
 		if(i->time >= timeout)
-			timed_outs.push_back(&(*i));
+			timed_outs.push_back(*i);
 	}
 	return timed_outs;
 }
