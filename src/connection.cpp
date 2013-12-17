@@ -670,7 +670,7 @@ void Connection::send(float dtime)
 		Peer *peer = getPeerNoEx(packet.peer_id);
 		if(!peer)
 			continue;
-		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 500){
+		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 3000){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
