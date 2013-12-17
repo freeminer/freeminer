@@ -1648,13 +1648,17 @@ void Server::AsyncRunStep()
 			}
 			else if(event->type == MEET_BLOCK_NODE_METADATA_CHANGED)
 			{
+/*
 				infostream<<"Server: MEET_BLOCK_NODE_METADATA_CHANGED"<<std::endl;
+*/
 				prof.add("MEET_BLOCK_NODE_METADATA_CHANGED", 1);
 				setBlockNotSent(event->p);
 			}
 			else if(event->type == MEET_OTHER)
 			{
+/*
 				infostream<<"Server: MEET_OTHER"<<std::endl;
+*/
 				prof.add("MEET_OTHER", 1);
 				for(std::set<v3s16>::iterator
 						i = event->modified_blocks.begin();
