@@ -313,9 +313,9 @@ bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 }
 
 /*
-std::list<BufferedPacket*> ReliablePacketBuffer::getTimedOuts(float timeout)
+std::list<BufferedPacket> ReliablePacketBuffer::getTimedOuts(float timeout)
 {
-	std::list<BufferedPacket*> timed_outs;
+	std::list<BufferedPacket> timed_outs;
 	for(std::list<BufferedPacket>::iterator i = m_list.begin();
 		i != m_list.end(); ++i)
 	{
@@ -939,7 +939,9 @@ void Connection::runTimeouts(float dtime)
 		float resend_timeout = peer->resend_timeout;
 		for(u16 i=0; i<CHANNEL_COUNT; i++)
 		{
-			std::list<BufferedPacket*> timed_outs;
+/*
+			std::list<BufferedPacket> timed_outs;
+*/
 			
 			Channel *channel = &peer->channels[i];
 
@@ -970,8 +972,8 @@ void Connection::runTimeouts(float dtime)
 					outgoing_reliables.getTimedOuts(resend_timeout);
 
 			channel->outgoing_reliables.resetTimedOuts(resend_timeout);
-			for(std::list<BufferedPacket*>::iterator jp = timed_outs.begin();
-				jp != timed_outs.end(); ++jp)
+			for(std::list<BufferedPacket>::iterator j = timed_outs.begin();
+				j != timed_outs.end(); ++j)
 */
 			for(std::list<BufferedPacket>::iterator j = channel->outgoing_reliables.m_list.begin();
 				j != channel->outgoing_reliables.m_list.end(); ++j)

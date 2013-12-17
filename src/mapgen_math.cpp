@@ -195,6 +195,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 		*/
 
 		//mandelbox
+		iterations = params.get("iterations", 15).asInt();
 		invert = params.get("invert", 1).asBool();
 		size = params.get("size", 1000).asDouble();
 		distance = params.get("size", 0.01).asDouble();
