@@ -1663,11 +1663,11 @@ struct TestConnection: public TestBase
 		Handler hand_client("client");
 		
 		infostream<<"** Creating server Connection"<<std::endl;
-		con::Connection server(proto_id, 1000, 5.0, false, &hand_server);
+		con::Connection server(proto_id, 512, 5.0, false, &hand_server);
 		server.Serve(30001);
 		
 		infostream<<"** Creating client Connection"<<std::endl;
-		con::Connection client(proto_id, 1000, 5.0, false, &hand_client);
+		con::Connection client(proto_id, 512, 5.0, false, &hand_client);
 		
 		UASSERT(hand_server.count == 0);
 		UASSERT(hand_client.count == 0);
