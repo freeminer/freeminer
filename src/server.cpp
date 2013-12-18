@@ -1598,6 +1598,7 @@ void Server::AsyncRunStep()
 		Send queued-for-sending map edit events.
 	*/
 	{
+		ScopeProfiler sp(g_profiler, "Server: Map events process");
 		// We will be accessing the environment and the connection
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
@@ -1710,10 +1711,10 @@ void Server::AsyncRunStep()
 		}
 
 		if(event_count >= 5){
-			infostream<<"Server: MapEditEvents:"<<std::endl;
+			infostream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){
-			verbosestream<<"Server: MapEditEvents:"<<std::endl;
+			verbosestream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
 
