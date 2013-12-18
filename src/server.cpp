@@ -1058,6 +1058,7 @@ void Server::AsyncRunStep()
 {
 	DSTACK(__FUNCTION_NAME);
 
+	TimeTaker timer_step("Server step");
 	g_profiler->add("Server::AsyncRunStep (num)", 1);
 
 	float dtime;

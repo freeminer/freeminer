@@ -1073,6 +1073,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		m_game_time_fraction_counter -= (float)inc_i;
 	}
 	
+	TimeTaker timer_step("Environment step");
 	/*
 		Handle players
 	*/
@@ -1642,10 +1643,12 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 			
 	m_active_objects[object->getId()] = object;
   
+/*
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"Added id="<<object->getId()<<"; there are now "
 			<<m_active_objects.size()<<" active objects."
 			<<std::endl;
+*/
 	
 	// Register reference in scripting api (must be done before post-init)
 	m_script->addObjectReference(object);
