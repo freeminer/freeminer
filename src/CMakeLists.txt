@@ -241,6 +241,8 @@ add_subdirectory(jthread)
 add_subdirectory(script)
 add_subdirectory(util)
 
+add_subdirectory(enet)
+
 set(common_SRCS
 	version.cpp
 	rollback_interface.cpp
@@ -403,6 +405,7 @@ include_directories(
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
+	${PROJECT_SOURCE_DIR}/enet/include
 )
 
 if(USE_FREETYPE)
@@ -438,6 +441,7 @@ if(BUILD_CLIENT)
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${OPENGLES2_LIBRARIES}
+		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
@@ -469,6 +473,7 @@ if(BUILD_SERVER)
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
 		${LUA_LIBRARY}
+		enet
 		${PLATFORM_LIBS}
 	)
 	if (USE_LEVELDB)

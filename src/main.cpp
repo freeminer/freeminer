@@ -86,6 +86,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database-leveldb.h"
 #endif
 
+#include "enet/enet.h"
+
 /*
 	Settings.
 	These are loaded from the config file.
@@ -741,6 +743,12 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 int main(int argc, char *argv[])
 {
 	int retval = 0;
+
+	if (enet_initialize() != 0) {
+		std::cerr << "enet failed to initialize\n";
+		return EXIT_FAILURE;
+	}
+	atexit(enet_deinitialize);
 
 	/*
 		Initialization

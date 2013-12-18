@@ -32,6 +32,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 #include <map>
 
+#include "enet/enet.h"
+
 namespace con
 {
 
@@ -624,7 +626,8 @@ private:
 	u32 m_protocol_id;
 	u32 m_max_packet_size;
 	float m_timeout;
-	UDPSocket m_socket;
+	ENetHost *m_enet_host;
+	ENetPeer *m_peer;
 	u16 m_peer_id;
 	
 	std::map<u16, Peer*> m_peers;

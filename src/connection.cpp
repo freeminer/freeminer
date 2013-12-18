@@ -531,13 +531,13 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
-	m_socket(ipv6),
+//	m_socket(ipv6),
 	m_peer_id(0),
 	m_bc_peerhandler(NULL),
 	m_bc_receive_timeout(0),
 	m_indentation(0)
 {
-	m_socket.setTimeoutMs(5);
+//	m_socket.setTimeoutMs(5);
 
 	Start();
 }
@@ -547,13 +547,13 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
-	m_socket(ipv6),
+//	m_socket(ipv6),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(0),
 	m_indentation(0)
 {
-	m_socket.setTimeoutMs(5);
+//	m_socket.setTimeoutMs(5);
 
 	Start();
 }
@@ -578,14 +578,53 @@ void * Connection::Thread()
 	ThreadStarted();
 	log_register_thread("Connection");
 
-	dout_con<<"Connection thread started"<<std::endl;
-	
+	std::cout<<"Connection thread started"<<std::endl;
+
 	u32 curtime = porting::getTimeMs();
 	u32 lasttime = curtime;
 
+	ENetEvent event;
 	while(!StopRequested())
 	{
-		BEGIN_DEBUG_EXCEPTION_HANDLER
+		while(!m_command_queue.empty()){
+			ConnectionCommand c = m_command_queue.pop_front();
+			processCommand(c);
+		}
+		if (!m_enet_host)
+			continue;
+		/* Wait up to 1000 milliseconds for an event. */
+		while (enet_host_service(m_enet_host, & event, 1000) > 0)
+		{
+			switch (event.type)
+			{
+			case ENET_EVENT_TYPE_CONNECT:
+				printf ("A new client connected from %x:%u.\n", 
+						event.peer -> address.host,
+						event.peer -> address.port);
+				/* Store any relevant client information here. */
+				// event.peer -> data = "Client information";
+				break;
+			case ENET_EVENT_TYPE_RECEIVE:
+				printf ("A packet of length %u containing %s was received from %s on channel %u.\n",
+						event.packet -> dataLength,
+						event.packet -> data,
+						event.peer -> data,
+						event.channelID);
+				/* Clean up the packet now that we're done using it. */
+				enet_packet_destroy (event.packet);
+				
+				break;
+			   
+			case ENET_EVENT_TYPE_DISCONNECT:
+				printf ("%s disconected.\n", event.peer -> data);
+				/* Reset the peer's client information. */
+				event.peer -> data = NULL;
+			}
+		}
+
+/*		BEGIN_DEBUG_EXCEPTION_HANDLER
+	
+		
 		
 		lasttime = curtime;
 		curtime = porting::getTimeMs();
@@ -597,16 +636,13 @@ void * Connection::Thread()
 		
 		runTimeouts(dtime);
 
-		while(!m_command_queue.empty()){
-			ConnectionCommand c = m_command_queue.pop_front();
-			processCommand(c);
-		}
 
 		send(dtime);
 
 		receive();
 		
 		END_DEBUG_EXCEPTION_HANDLER(derr_con);
+*/		
 	}
 
 	return NULL;
@@ -698,6 +734,7 @@ void Connection::send(float dtime)
 // Receive packets from the network and buffers and create ConnectionEvents
 void Connection::receive()
 {
+	/*
 	u32 datasize = m_max_packet_size * 2;  // Double it just to be safe
 	// TODO: We can not know how many layers of header there are.
 	// For now, just assume there are no other than the base headers.
@@ -709,7 +746,7 @@ void Connection::receive()
 	for(u32 loop_i=0; loop_i<1000; loop_i++) // Limit in case of DoS
 	{
 	try{
-		/* Check if some buffer has relevant data */
+		/ Check if some buffer has relevant data /
 		{
 			u16 peer_id;
 			SharedBuffer<u8> resultdata;
@@ -749,13 +786,6 @@ void Connection::receive()
 
 		if(peer_id == PEER_ID_INEXISTENT)
 		{
-			/*
-				Somebody is trying to send stuff to us with no peer id.
-				
-				Check if the same address and port was added to our peer
-				list before.
-				Allow only entries that have has_sent_with_id==false.
-			*/
 
 			std::map<u16, Peer*>::iterator j;
 			j = m_peers.begin();
@@ -768,10 +798,8 @@ void Connection::receive()
 					break;
 			}
 			
-			/*
 				If no peer was found with the same address and port,
 				we shall assume it is a new peer and create an entry.
-			*/
 			if(j == m_peers.end())
 			{
 				// Pass on to adding the peer
@@ -787,18 +815,14 @@ void Connection::receive()
 			}
 		}
 		
-		/*
 			The peer was not found in our lists. Add it.
-		*/
 		if(peer_id == PEER_ID_INEXISTENT)
 		{
 			// Somebody wants to make a new connection
 
 			// Get a unique peer id (2 or higher)
 			u16 peer_id_new = 2;
-			/*
 				Find an unused peer id
-			*/
 			bool out_of_ids = false;
 			for(;;)
 			{
@@ -897,6 +921,7 @@ void Connection::receive()
 	catch(ProcessedSilentlyException &e){
 	}
 	} // for
+	*/
 }
 
 void Connection::runTimeouts(float dtime)
@@ -1054,9 +1079,22 @@ nextpeer:
 	}
 }
 
+// host
 void Connection::serve(u16 port)
 {
-	dout_con<<getDesc()<<" serving at port "<<port<<std::endl;
+	ENetAddress *address = new ENetAddress;
+	address->host = ENET_HOST_ANY;
+	address->port = 30000;
+
+	std::cout << "creating enet host" << std::endl;
+	m_enet_host = enet_host_create(address, 32, 2, 0, 0);
+
+	if (m_enet_host == NULL) {
+		puts("Server creation failed.");
+		assert(0);
+	}
+
+	/*dout_con<<getDesc()<<" serving at port "<<port<<std::endl;
 	try{
 		m_socket.Bind(port);
 		m_peer_id = PEER_ID_SERVER;
@@ -1066,14 +1104,36 @@ void Connection::serve(u16 port)
 		ConnectionEvent ce;
 		ce.bindFailed();
 		putEvent(ce);
-	}
+	}*/
 }
 
-void Connection::connect(Address address)
+// peer
+void Connection::connect(Address addr)
 {
-	dout_con<<getDesc()<<" connecting to "<<address.serializeString()
-			<<":"<<address.getPort()<<std::endl;
+	//dout_con<<getDesc()<<" connecting to "<<address.serializeString()
+	//		<<":"<<address.getPort()<<std::endl;
 
+	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
+	ENetAddress *address = new ENetAddress;
+	enet_address_set_host(address, "localhost");
+	address->port = 30000;
+	m_peer = enet_host_connect(m_enet_host, address, 1, 0);
+
+	ENetEvent event;
+	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
+		event.type == ENET_EVENT_TYPE_CONNECT) {
+		puts ("Connection to some.server.net:1234 succeeded.");
+	}
+	else {
+		/* Either the 5 seconds are up or a disconnect event was */
+		/* received. Reset the peer in the event the 5 seconds   */
+		/* had run out without any significant event.            */
+		enet_peer_reset(m_peer);
+		puts("Connection to some.server.net:1234 failed.");
+		assert(0);
+	}
+
+	/*
 	std::map<u16, Peer*>::iterator node = m_peers.find(PEER_ID_SERVER);
 	if(node != m_peers.end()){
 		throw ConnectionException("Already connected to a server");
@@ -1093,6 +1153,7 @@ void Connection::connect(Address address)
 	m_peer_id = PEER_ID_INEXISTENT;
 	SharedBuffer<u8> data(0);
 	Send(PEER_ID_SERVER, 0, data, true);
+	*/
 }
 
 void Connection::disconnect()
@@ -1207,13 +1268,13 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 
 void Connection::rawSend(BufferedPacket &packet)
 {
-	try{
+	/*try{
 		m_socket.Send(packet.address, *packet.data, packet.data.getSize());
 	} catch(SendFailedException &e){
 		derr_con<<"Connection::rawSend(): SendFailedException: "
 				<<packet.address.serializeString()<<std::endl;
 	}
-	++packet.sends;
+	++packet.sends;*/
 }
 
 Peer* Connection::getPeer(u16 peer_id)
@@ -1735,7 +1796,8 @@ void Connection::PrintInfo()
 
 std::string Connection::getDesc()
 {
-	return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
+	return "";
+	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
 
 } // namespace

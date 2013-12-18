@@ -1015,6 +1015,7 @@ void Server::start(unsigned short port)
 	// Start thread
 	m_thread->Start();
 
+	actionstream << "blah" << std::endl;
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
