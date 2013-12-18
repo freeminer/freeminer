@@ -77,8 +77,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_dout(dout),
 	m_gamedef(gamedef),
+	m_sectors_update_last(0),
+	m_sectors_save_last(0),
 	m_sector_cache(NULL)
 {
+	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 }
 
 Map::~Map()
@@ -675,9 +678,9 @@ s16 Map::propagateSunlight(v3s16 start,
 	return y + 1;
 }
 
-void Map::updateLighting(enum LightBank bank,
+int Map::updateLighting(enum LightBank bank,
 		std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks)
+		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -701,11 +704,22 @@ void Map::updateLighting(enum LightBank bank,
 	JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	{
-	//TimeTaker t("first stuff");
+	TimeTaker t("updateLighting: first stuff");
 
+		u32 n = 0, calls = 0, 
+			end_ms = porting::getTimeMs() + 1000 * updateLighting_last[bank];
+
+	if(!breakable)
+		updateLighting_last[bank] = 0;
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
 		i != a_blocks.end(); ++i)
 	{
+			if (n++ < updateLighting_last[bank])
+				continue;
+			else
+				updateLighting_last[bank] = 0;
+			++calls;
+
 		MapBlock *block = getBlockNoCreateNoEx(i->first);
 		//MapBlock *block = i->second;
 
@@ -803,7 +817,13 @@ void Map::updateLighting(enum LightBank bank,
 			}
 
 		}
-	}
+		if (porting::getTimeMs() > end_ms) {
+			updateLighting_last[bank] = n;
+			break;
+		}
+		if (!calls)
+			updateLighting_last[bank] = 0;
+		}
 
 	}
 
@@ -828,7 +848,7 @@ void Map::updateLighting(enum LightBank bank,
 
 #if 1
 	{
-		//TimeTaker timer("unspreadLight");
+		TimeTaker timer("updateLighting: unspreadLight");
 		unspreadLight(bank, unlight_from, light_sources, modified_blocks);
 	}
 
@@ -840,7 +860,7 @@ void Map::updateLighting(enum LightBank bank,
 	}*/
 
 	{
-		//TimeTaker timer("spreadLight");
+		TimeTaker timer("updateLighting: spreadLight");
 		spreadLight(bank, light_sources, modified_blocks);
 	}
 
@@ -914,16 +934,28 @@ void Map::updateLighting(enum LightBank bank,
 		emerge_time = 0;*/
 	}
 #endif
-
+	return updateLighting_last[bank];
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks)
+int Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
+		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
-	updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks);
-	updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks);
+	int ret = 0;
+{
+TimeTaker timer("updateLighting(LIGHTBANK_DAY)");
 
+	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks);
+}
+{
+TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
+	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks);
+}
+
+	if (breakable && ret)
+		return ret;
+
+TimeTaker timer("updateLighting expireDayNightDiff");
 	JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
@@ -940,6 +972,7 @@ void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 			continue;
 		block->expireDayNightDiff();
 	}
+	return ret;
 }
 
 /*
@@ -1452,7 +1485,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 /*
 	Updates usage timers
 */
-void Map::timerUpdate(float dtime, float unload_timeout,
+u32 Map::timerUpdate(float uptime, float unload_timeout,
 		std::list<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1472,10 +1505,10 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
 	{
-		if (n++ < m_sectors_last_update)
+		if (n++ < m_sectors_update_last)
 			continue;
 		else
-			m_sectors_last_update = 0;
+			m_sectors_update_last = 0;
 		++calls;
 
 
@@ -1491,7 +1524,10 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 		{
 			MapBlock *block = (*i);
 
-			block->incrementUsageTimer(dtime);
+			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
+				block->m_uptime_timer_last = uptime - 0.1;
+			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
+			block->m_uptime_timer_last = uptime;
 
 			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
 			{
@@ -1538,17 +1574,20 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 		}
 
 		if (porting::getTimeMs() > end_ms) {
-			m_sectors_last_update = n;
+			m_sectors_update_last = n;
 			break;
 		}
 
 	}
 	if (!calls)
-		m_sectors_last_update = 0;
+		m_sectors_update_last = 0;
 	endSave();
 
 	// Finally delete the empty sectors
+{TimeTaker timer("deleteSectors()");
+
 	deleteSectors(sector_deletion_queue);
+}
 
 	if(deleted_blocks_count != 0)
 	{
@@ -1565,6 +1604,7 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 			modprofiler.print(infostream);
 		}
 	}
+	return m_sectors_update_last;
 }
 
 void Map::unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks)
@@ -3438,13 +3478,13 @@ std::string ServerMap::getBlockFilename(v3s16 p)
 	return cc;
 }
 
-void ServerMap::save(ModifiedState save_level)
+s32 ServerMap::save(ModifiedState save_level, bool breakable)
 {
 	DSTACK(__FUNCTION_NAME);
 	if(m_map_saving_enabled == false)
 	{
 		infostream<<"WARNING: Not saving map, saving disabled."<<std::endl;
-		return;
+		return 0;
 	}
 
 	if(save_level == MOD_STATE_CLEAN)
@@ -3465,10 +3505,18 @@ void ServerMap::save(ModifiedState save_level)
 
 	// Don't do anything with sqlite unless something is really saved
 	bool save_started = false;
-
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	if (!breakable)
+		m_sectors_save_last = 0;
 	for(std::map<v2s16, MapSector*>::iterator i = m_sectors.begin();
 		i != m_sectors.end(); ++i)
 	{
+			if (n++ < m_sectors_save_last)
+				continue;
+			else
+				m_sectors_save_last = 0;
+			++calls;
+
 		ServerMapSector *sector = (ServerMapSector*)i->second;
 		assert(sector->getId() == MAPSECTOR_SERVER);
 
@@ -3507,7 +3555,14 @@ void ServerMap::save(ModifiedState save_level)
 						<<std::endl;*/
 			}
 		}
+		if (breakable && porting::getTimeMs() > end_ms) {
+				m_sectors_save_last = n;
+				break;
+		}
 	}
+	if (!calls)
+		m_sectors_save_last = 0;
+
 	if(save_started)
 		endSave();
 
@@ -3526,6 +3581,7 @@ void ServerMap::save(ModifiedState save_level)
 		infostream<<"Blocks modified by: "<<std::endl;
 		modprofiler.print(infostream);
 	}
+	return m_sectors_save_last;
 }
 
 void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)

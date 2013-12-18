@@ -1162,15 +1162,16 @@ void Server::AsyncRunStep()
 		m_env->step(dtime, m_uptime.get());
 	}
 
-	const float map_timer_and_unload_dtime = 2.92;
+	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
 		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
 		JMutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
-				g_settings->getFloat("server_unload_unused_data_timeout"));
+		if(m_env->getMap().timerUpdate(m_uptime.get(),
+				g_settings->getFloat("server_unload_unused_data_timeout")))
+					m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 	}
 
 	/*
@@ -1258,7 +1259,8 @@ void Server::AsyncRunStep()
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks);
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1))
+			goto no_send;
 
 		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
@@ -1276,7 +1278,9 @@ void Server::AsyncRunStep()
 			}
 		}
 		m_modified_blocks.clear();
+
 	}
+	no_send:
 
 	// Periodically print some info
 	{
@@ -1771,15 +1775,27 @@ void Server::AsyncRunStep()
 			if(m_banmanager->isModified())
 				m_banmanager->save();
 
-			// Save changed parts of map
-			m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
+//{TimeTaker timer_step("Server step: Save map: map");
 
+			// Save changed parts of map
+			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
+				// partial save, will continue on next step
+				counter = g_settings->getFloat("server_map_save_interval");
+				goto save_break;
+			}
+//}
+
+{TimeTaker timer_step("Server step: Save map: players");
 			// Save players
 			m_env->serializePlayers(m_path_world);
+}
 
+{TimeTaker timer_step("Server step: Save map: meta");
 			// Save environment metadata
 			m_env->saveMeta(m_path_world);
+}
 		}
+		save_break:;
 	}
 }
 

@@ -515,7 +515,7 @@ public:
 	s16 humidity;
 	u32 heat_last_update;
 	u32 humidity_last_update;
-
+	float m_uptime_timer_last;
 private:
 	/*
 		Private member variables

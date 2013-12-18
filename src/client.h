@@ -511,6 +511,7 @@ private:
 	// Detached inventories
 	// key = name
 	std::map<std::string, Inventory*> m_detached_inventories;
+	double m_uptime;
 };
 
 #endif // !CLIENT_HEADER
