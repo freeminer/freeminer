@@ -107,8 +107,9 @@ void ScriptApiEntity::luaentity_Remove(u16 id)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
+/*
 	verbosestream<<"scriptapi_luaentity_rm: id="<<id<<std::endl;
-
+*/
 	// Get minetest.luaentities table
 	lua_getglobal(L, "minetest");
 	lua_getfield(L, -1, "luaentities");
