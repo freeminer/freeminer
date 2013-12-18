@@ -678,7 +678,7 @@ s16 Map::propagateSunlight(v3s16 start,
 	return y + 1;
 }
 
-int Map::updateLighting(enum LightBank bank,
+u32 Map::updateLighting(enum LightBank bank,
 		std::map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
@@ -695,7 +695,9 @@ int Map::updateLighting(enum LightBank bank,
 
 	std::map<v3s16, MapBlock*> blocks_to_update;
 
+/*
 	std::set<v3s16> light_sources;
+*/
 
 	std::map<v3s16, u8> unlight_from;
 
@@ -726,6 +728,7 @@ int Map::updateLighting(enum LightBank bank,
 		if(!block || block->isDummy())
 			continue;
 
+		std::set<v3s16> light_sources;
 		for(;;)
 		{
 			// Don't bother with dummy blocks.
@@ -817,6 +820,7 @@ int Map::updateLighting(enum LightBank bank,
 			}
 
 		}
+/* breaked loop try
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
@@ -824,9 +828,8 @@ int Map::updateLighting(enum LightBank bank,
 		if (!calls)
 			updateLighting_last[bank] = 0;
 		}
-
 	}
-
+*/
 	/*
 		Enable this to disable proper lighting for speeding up map
 		generation for testing or whatever
@@ -871,6 +874,16 @@ int Map::updateLighting(enum LightBank bank,
 		infostream<<"spreadLight modified "<<diff<<std::endl;
 	}*/
 #endif
+
+// breaked loop try to here
+		if (porting::getTimeMs() > end_ms) {
+			updateLighting_last[bank] = n;
+			break;
+		}
+		if (!calls)
+			updateLighting_last[bank] = 0;
+		}
+	}
 
 #if 0
 	{
@@ -938,7 +951,7 @@ int Map::updateLighting(enum LightBank bank,
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-int Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
+u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
 	int ret = 0;

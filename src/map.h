@@ -229,14 +229,14 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
-	int updateLighting(enum LightBank bank,
+	u32 updateLighting(enum LightBank bank,
 			std::map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
 
-	int updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
+	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
 
-	int updateLighting_last[2];
+	u32 updateLighting_last[2];
 
 	/*
 		These handle lighting but not faces.
