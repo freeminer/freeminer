@@ -597,9 +597,7 @@ private:
 	void rawSendAsPacket(u16 peer_id, u8 channelnum,
 			SharedBuffer<u8> data, bool reliable);
 	void rawSend(BufferedPacket &packet);
-	Peer* getPeer(u16 peer_id);
-	Peer* getPeerNoEx(u16 peer_id);
-	std::list<Peer*> getPeers();
+	ENetPeer* getPeer(u16 peer_id);
 	bool getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst);
 	// Returns next data from a buffer if possible
 	// If found, returns true; if not, false.
@@ -630,7 +628,7 @@ private:
 	ENetPeer *m_peer;
 	u16 m_peer_id;
 	
-	std::map<u16, Peer*> m_peers;
+	std::map<u16, ENetPeer*> m_peers;
 	JMutex m_peers_mutex;
 
 	// Backwards compatibility

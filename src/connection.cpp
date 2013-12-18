@@ -535,7 +535,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_peer_id(0),
 	m_bc_peerhandler(NULL),
 	m_bc_receive_timeout(0),
-	m_indentation(0)
+	m_indentation(0),
+	m_enet_host(0)
 {
 //	m_socket.setTimeoutMs(5);
 
@@ -551,7 +552,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(0),
-	m_indentation(0)
+	m_indentation(0),
+	m_enet_host(0)
 {
 //	m_socket.setTimeoutMs(5);
 
@@ -563,12 +565,12 @@ Connection::~Connection()
 {
 	Stop();
 	// Delete peers
-	for(std::map<u16, Peer*>::iterator
+	/*for(std::map<u16, Peer*>::iterator
 			j = m_peers.begin();
 			j != m_peers.end(); ++j)
 	{
 		delete j->second;
-	}
+	}*/
 }
 
 /* Internal stuff */
@@ -583,44 +585,14 @@ void * Connection::Thread()
 	u32 curtime = porting::getTimeMs();
 	u32 lasttime = curtime;
 
-	ENetEvent event;
 	while(!StopRequested())
 	{
 		while(!m_command_queue.empty()){
 			ConnectionCommand c = m_command_queue.pop_front();
 			processCommand(c);
 		}
-		if (!m_enet_host)
-			continue;
-		/* Wait up to 1000 milliseconds for an event. */
-		while (enet_host_service(m_enet_host, & event, 1000) > 0)
-		{
-			switch (event.type)
-			{
-			case ENET_EVENT_TYPE_CONNECT:
-				printf ("A new client connected from %x:%u.\n", 
-						event.peer -> address.host,
-						event.peer -> address.port);
-				/* Store any relevant client information here. */
-				// event.peer -> data = "Client information";
-				break;
-			case ENET_EVENT_TYPE_RECEIVE:
-				printf ("A packet of length %u containing %s was received from %s on channel %u.\n",
-						event.packet -> dataLength,
-						event.packet -> data,
-						event.peer -> data,
-						event.channelID);
-				/* Clean up the packet now that we're done using it. */
-				enet_packet_destroy (event.packet);
-				
-				break;
-			   
-			case ENET_EVENT_TYPE_DISCONNECT:
-				printf ("%s disconected.\n", event.peer -> data);
-				/* Reset the peer's client information. */
-				event.peer -> data = NULL;
-			}
-		}
+
+		receive();
 
 /*		BEGIN_DEBUG_EXCEPTION_HANDLER
 	
@@ -690,6 +662,7 @@ void Connection::processCommand(ConnectionCommand &c)
 
 void Connection::send(float dtime)
 {
+/*
 	for(std::map<u16, Peer*>::iterator
 			j = m_peers.begin();
 			j != m_peers.end(); ++j)
@@ -729,11 +702,60 @@ void Connection::send(float dtime)
 		if(peer->m_sendtime_accu > 10. / peer->m_max_packets_per_second)
 			peer->m_sendtime_accu = 10. / peer->m_max_packets_per_second;
 	}
+*/
 }
 
 // Receive packets from the network and buffers and create ConnectionEvents
 void Connection::receive()
 {
+	if (!m_enet_host)
+		return;
+	ENetEvent event;
+	while (enet_host_service(m_enet_host, & event, 0) > 0)
+	{
+		switch (event.type)
+		{
+		case ENET_EVENT_TYPE_CONNECT:
+			printf ("A new client connected from %x:%u.\n",
+					event.peer -> address.host,
+					event.peer -> address.port);
+			{
+				JMutexAutoLock peerlock(m_peers_mutex);
+				u16 peer_id = PEER_ID_SERVER + 1;
+				if (m_peers.size() > 0)
+					peer_id = m_peers.rbegin()->first + 1;
+				m_peers[peer_id] = event.peer;
+
+				event.peer->data = new u16;
+				*((u16*)event.peer->data) = peer_id;
+			}
+			break;
+		case ENET_EVENT_TYPE_RECEIVE:
+			printf ("A packet of length %u containing %s was received from %s on channel %u.\n",
+					event.packet -> dataLength,
+					event.packet -> data,
+					event.peer -> data,
+					event.channelID);
+			std::cout << event.packet->dataLength << std::endl;
+			std::cout << event.packet->data << std::endl;
+
+			{
+				ConnectionEvent e;
+				SharedBuffer<u8> resultdata(event.packet->data, event.packet->dataLength);
+				e.dataReceived(*(u16*)event.peer->data, resultdata);
+				putEvent(e);
+			}
+
+			/* Clean up the packet now that we're done using it. */
+			enet_packet_destroy (event.packet);
+			break;
+		case ENET_EVENT_TYPE_DISCONNECT:
+			printf ("%s disconected.\n", event.peer -> data);
+			/* Reset the peer's client information. */
+			delete event.peer->data;
+			break;
+		}
+	}
 	/*
 	u32 datasize = m_max_packet_size * 2;  // Double it just to be safe
 	// TODO: We can not know how many layers of header there are.
@@ -926,7 +948,7 @@ void Connection::receive()
 
 void Connection::runTimeouts(float dtime)
 {
-	float congestion_control_aim_rtt
+	/*float congestion_control_aim_rtt
 			= g_settings->getFloat("congestion_control_aim_rtt");
 	float congestion_control_max_rate
 			= g_settings->getFloat("congestion_control_max_rate");
@@ -944,9 +966,9 @@ void Connection::runTimeouts(float dtime)
 		peer->congestion_control_max_rate = congestion_control_max_rate;
 		peer->congestion_control_min_rate = congestion_control_min_rate;
 		
-		/*
+		
 			Check peer timeout
-		*/
+		
 		peer->timeout_counter += dtime;
 		if(peer->timeout_counter > m_timeout)
 		{
@@ -964,9 +986,9 @@ void Connection::runTimeouts(float dtime)
 		float resend_timeout = peer->resend_timeout;
 		for(u16 i=0; i<CHANNEL_COUNT; i++)
 		{
-/*
-			std::list<BufferedPacket> timed_outs;
-*/
+
+//			std::list<BufferedPacket> timed_outs;
+
 			
 			Channel *channel = &peer->channels[i];
 
@@ -992,14 +1014,12 @@ void Connection::runTimeouts(float dtime)
 
 			// Re-send timed out outgoing reliables
 			
-/*
 			timed_outs = channel->
 					outgoing_reliables.getTimedOuts(resend_timeout);
 
 			channel->outgoing_reliables.resetTimedOuts(resend_timeout);
 			for(std::list<BufferedPacket>::iterator j = timed_outs.begin();
 				j != timed_outs.end(); ++j)
-*/
 			for(std::list<BufferedPacket>::iterator j = channel->outgoing_reliables.m_list.begin();
 				j != channel->outgoing_reliables.m_list.end(); ++j)
 			{
@@ -1009,7 +1029,6 @@ void Connection::runTimeouts(float dtime)
 				u16 peer_id = readPeerId(*(j->data));
 				u8 channeln = readChannel(*(j->data));
 				u16 seqnum = readU16(&(j->data[BASE_HEADER_SIZE+1]));
-/*
 				if (j->sends > 10) {
 errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum="<<seqnum<<" sends="<<j->sends<<std::endl;
 					try {
@@ -1021,7 +1040,6 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 					}
 					continue;
 				}
-*/
 
 				PrintInfo(derr_con);
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
@@ -1050,9 +1068,7 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 			}
 		}
 		
-		/*
 			Send pings
-		*/
 		peer->ping_timer += dtime;
 		if(peer->ping_timer >= 5.0)
 		{
@@ -1077,6 +1093,7 @@ nextpeer:
 		derr_con<<"RunTimeouts(): Removing peer "<<(*i)<<std::endl;
 		deletePeer(*i, true);
 	}
+*/
 }
 
 // host
@@ -1117,7 +1134,12 @@ void Connection::connect(Address addr)
 	ENetAddress *address = new ENetAddress;
 	enet_address_set_host(address, "localhost");
 	address->port = 30000;
-	m_peer = enet_host_connect(m_enet_host, address, 1, 0);
+	ENetPeer *peer = enet_host_connect(m_enet_host, address, 1, 0);
+
+	{
+		JMutexAutoLock peerlock(m_peers_mutex);
+		m_peers[PEER_ID_SERVER] = peer;
+	}
 
 	ENetEvent event;
 	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
@@ -1158,7 +1180,7 @@ void Connection::connect(Address addr)
 
 void Connection::disconnect()
 {
-	dout_con<<getDesc()<<" disconnecting"<<std::endl;
+/*	dout_con<<getDesc()<<" disconnecting"<<std::endl;
 
 	// Create and send DISCO packet
 	SharedBuffer<u8> data(2);
@@ -1171,17 +1193,17 @@ void Connection::disconnect()
 	{
 		Peer *peer = j->second;
 		rawSendAsPacket(peer->id, 0, data, false);
-	}
+	}*/
 }
 
 void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
-	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
+	/*for(std::map<u16, Peer*>::iterator j = m_peers.begin();
 		j != m_peers.end(); ++j)
 	{
 		Peer *peer = j->second;
 		send(peer->id, channelnum, data, reliable);
-	}
+	}*/
 }
 
 void Connection::send(u16 peer_id, u8 channelnum,
@@ -1190,9 +1212,13 @@ void Connection::send(u16 peer_id, u8 channelnum,
 	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
 
 	assert(channelnum < CHANNEL_COUNT);
-	
-	Peer *peer = getPeerNoEx(peer_id);
-	if(peer == NULL)
+
+	ENetPacket *packet = enet_packet_create(*data, data.getSize(), ENET_PACKET_FLAG_RELIABLE);
+
+	ENetPeer *peer = getPeer(peer_id);
+	enet_peer_send(peer, 0, packet);
+
+	/*if(peer == NULL)
 		return;
 	Channel *channel = &(peer->channels[channelnum]);
 
@@ -1210,7 +1236,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> original = *i;
 		
 		sendAsPacket(peer_id, channelnum, original, reliable);
-	}
+	}*/
 }
 
 void Connection::sendAsPacket(u16 peer_id, u8 channelnum,
@@ -1223,7 +1249,7 @@ void Connection::sendAsPacket(u16 peer_id, u8 channelnum,
 void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
-	Peer *peer = getPeerNoEx(peer_id);
+	/*Peer *peer = getPeer(peer_id);
 	if(!peer)
 		return;
 	Channel *channel = &(peer->channels[channelnum]);
@@ -1263,7 +1289,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 
 		// Send the packet
 		rawSend(p);
-	}
+	}*/
 }
 
 void Connection::rawSend(BufferedPacket &packet)
@@ -1277,49 +1303,19 @@ void Connection::rawSend(BufferedPacket &packet)
 	++packet.sends;*/
 }
 
-Peer* Connection::getPeer(u16 peer_id)
+ENetPeer* Connection::getPeer(u16 peer_id)
 {
-	std::map<u16, Peer*>::iterator node = m_peers.find(peer_id);
+	std::map<u16, ENetPeer*>::iterator node = m_peers.find(peer_id);
 
-	if(node == m_peers.end()){
-		throw PeerNotFoundException("GetPeer: Peer not found (possible timeout)");
-	}
-
-	// Error checking
-	assert(node->second->id == peer_id);
-
-	return node->second;
-}
-
-Peer* Connection::getPeerNoEx(u16 peer_id)
-{
-	std::map<u16, Peer*>::iterator node = m_peers.find(peer_id);
-
-	if(node == m_peers.end()){
+	if(node == m_peers.end())
 		return NULL;
-	}
-
-	// Error checking
-	assert(node->second->id == peer_id);
 
 	return node->second;
-}
-
-std::list<Peer*> Connection::getPeers()
-{
-	std::list<Peer*> list;
-	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
-		j != m_peers.end(); ++j)
-	{
-		Peer *peer = j->second;
-		list.push_back(peer);
-	}
-	return list;
 }
 
 bool Connection::getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst)
 {
-	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
+/*	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
 		j != m_peers.end(); ++j)
 	{
 		Peer *peer = j->second;
@@ -1335,6 +1331,7 @@ bool Connection::getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst)
 		}
 	}
 	return false;
+*/
 }
 
 bool Connection::checkIncomingBuffers(Channel *channel, u16 &peer_id,
@@ -1388,7 +1385,7 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 		SharedBuffer<u8> packetdata, u16 peer_id,
 		u8 channelnum, bool reliable)
 {
-	IndentationRaiser iraiser(&(m_indentation));
+	/*IndentationRaiser iraiser(&(m_indentation));
 
 	if(packetdata.getSize() < 1)
 		throw InvalidIncomingDataException("packetdata.getSize() < 1");
@@ -1427,10 +1424,10 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 				//PrintInfo(dout_con);
 				//dout_con<<"RTT = "<<rtt<<std::endl;
 
-				/*dout_con<<"OUTGOING: ";
+				dout_con<<"OUTGOING: ";
 				PrintInfo();
 				channel->outgoing_reliables.print();
-				dout_con<<std::endl;*/
+				dout_con<<std::endl;
 			}
 			catch(NotFoundException &e){
 				PrintInfo(derr_con);
@@ -1570,9 +1567,9 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 		//if(seqnum_higher(seqnum, channel->next_incoming_seqnum))
 		if(is_future_packet)
 		{
-			/*PrintInfo();
+			PrintInfo();
 			dout_con<<"Buffering reliable packet (seqnum="
-					<<seqnum<<")"<<std::endl;*/
+					<<seqnum<<")"<<std::endl;
 			
 			// This one comes later, buffer it.
 			// Actually we have to make a packet to buffer one.
@@ -1586,10 +1583,10 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 			try{
 				channel->incoming_reliables.insert(packet);
 				
-				/*PrintInfo();
+				PrintInfo();
 				dout_con<<"INCOMING: ";
 				channel->incoming_reliables.print();
-				dout_con<<std::endl;*/
+				dout_con<<std::endl;
 			}
 			catch(AlreadyExistsException &e)
 			{
@@ -1624,11 +1621,12 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 	// above conditionals.
 	assert(0);
 	throw BaseException("Error in Channel::ProcessPacket()");
+	*/
 }
 
 bool Connection::deletePeer(u16 peer_id, bool timeout)
 {
-	if(m_peers.find(peer_id) == m_peers.end())
+	/*if(m_peers.find(peer_id) == m_peers.end())
 		return false;
 	
 	Peer *peer = m_peers[peer_id];
@@ -1640,7 +1638,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout)
 
 	delete m_peers[peer_id];
 	m_peers.erase(peer_id);
-	return true;
+	return true;*/
 }
 
 /* Interface */
@@ -1691,14 +1689,14 @@ bool Connection::Connected()
 
 	if(m_peers.size() != 1)
 		return false;
-		
-	std::map<u16, Peer*>::iterator node = m_peers.find(PEER_ID_SERVER);
+
+	std::map<u16, ENetPeer*>::iterator node = m_peers.find(PEER_ID_SERVER);
 	if(node == m_peers.end())
 		return false;
-	
+
 	if(m_peer_id == PEER_ID_INEXISTENT)
 		return false;
-	
+
 	return true;
 }
 
@@ -1767,14 +1765,14 @@ void Connection::RunTimeouts(float dtime)
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
-	return getPeer(peer_id)->address;
+	//JMutexAutoLock peerlock(m_peers_mutex);
+	//return getPeer(peer_id)->address;
 }
 
 float Connection::GetPeerAvgRTT(u16 peer_id)
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
-	return getPeer(peer_id)->avg_rtt;
+	//JMutexAutoLock peerlock(m_peers_mutex);
+	//return getPeer(peer_id)->avg_rtt;
 }
 
 void Connection::DeletePeer(u16 peer_id)
