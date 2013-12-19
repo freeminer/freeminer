@@ -363,7 +363,7 @@ void Connection::serve(u16 port)
 {
 	ENetAddress *address = new ENetAddress;
 	address->host = ENET_HOST_ANY;
-	address->port = 30000;
+	address->port = port;
 
 	std::cout << "creating enet host" << std::endl;
 	m_enet_host = enet_host_create(address, 32, 2, 0, 0);
@@ -398,7 +398,7 @@ void Connection::connect(Address addr)
 	ENetAddress *address = new ENetAddress;
 	address->host = addr.getAddress().sin_addr.s_addr;
 	//enet_address_set_host(address, addr.serializeString().c_str());
-	enet_address_set_host(address, "localhost");
+	// enet_address_set_host(address, "localhost");
 	address->port = addr.getPort();
 	ENetPeer *peer = enet_host_connect(m_enet_host, address, 1, 0);
 	peer->data = new u16;
