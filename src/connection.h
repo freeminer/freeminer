@@ -474,11 +474,11 @@ struct ConnectionEvent
 		peer_id = peer_id_;
 		data = data_;
 	}
-	void peerAdded(u16 peer_id_, Address address_)
+	void peerAdded(u16 peer_id_)
 	{
 		type = CONNEVENT_PEER_ADDED;
 		peer_id = peer_id_;
-		address = address_;
+		// address = address_;
 	}
 	void peerRemoved(u16 peer_id_, bool timeout_, Address address_)
 	{

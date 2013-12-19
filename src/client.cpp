@@ -489,6 +489,7 @@ void Client::step(float dtime)
 
 	if(connected == false)
 	{
+		actionstream << "connected is still false" << std::endl;
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
 		if(counter <= 0.0)

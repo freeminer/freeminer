@@ -1812,6 +1812,7 @@ u16 Server::Receive()
 
 void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 {
+	actionstream << "called ProcessData with datasize " << datasize << " and peer_id " << peer_id << std::endl;
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
 	JMutexAutoLock envlock(m_env_mutex);
@@ -1819,8 +1820,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 
-	std::string addr_s;
-	try{
+	std::string addr_s = "127.0.0.1";
+	/*try{
 		Address address = m_con.GetPeerAddress(peer_id);
 		addr_s = address.serializeString();
 
@@ -1842,9 +1843,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		infostream<<"Server::ProcessData(): Cancelling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;
-	}
+	}*/
+
+	actionstream << "still working" << std::endl;
 
 	u8 peer_ser_ver = getClient(peer_id)->serialization_version;
+
+	actionstream << peer_ser_ver << std::endl;
 
 	try
 	{

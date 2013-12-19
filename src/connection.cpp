@@ -723,11 +723,17 @@ void Connection::receive()
 				JMutexAutoLock peerlock(m_peers_mutex);
 				u16 peer_id = PEER_ID_SERVER + 1;
 				if (m_peers.size() > 0)
+					// TODO: fix this shit
 					peer_id = m_peers.rbegin()->first + 1;
 				m_peers[peer_id] = event.peer;
 
 				event.peer->data = new u16;
 				*((u16*)event.peer->data) = peer_id;
+
+				// Create peer addition event
+				ConnectionEvent e;
+				e.peerAdded(peer_id);
+				putEvent(e);
 			}
 			break;
 		case ENET_EVENT_TYPE_RECEIVE:
@@ -867,14 +873,6 @@ void Connection::receive()
 			dout_con<<"Receive(): Got a packet with peer_id=PEER_ID_INEXISTENT,"
 					" giving peer_id="<<peer_id_new<<std::endl;
 
-			// Create a peer
-			Peer *peer = new Peer(peer_id_new, sender);
-			m_peers[peer->id] = peer;
-			
-			// Create peer addition event
-			ConnectionEvent e;
-			e.peerAdded(peer_id_new, sender);
-			putEvent(e);
 			
 			// Create CONTROL packet to tell the peer id to the new peer.
 			SharedBuffer<u8> reply(4);
@@ -1135,6 +1133,8 @@ void Connection::connect(Address addr)
 	enet_address_set_host(address, "localhost");
 	address->port = 30000;
 	ENetPeer *peer = enet_host_connect(m_enet_host, address, 1, 0);
+	peer->data = new u16;
+	*((u16*)peer->data) = PEER_ID_SERVER;
 
 	{
 		JMutexAutoLock peerlock(m_peers_mutex);
@@ -1143,8 +1143,13 @@ void Connection::connect(Address addr)
 
 	ENetEvent event;
 	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
-		event.type == ENET_EVENT_TYPE_CONNECT) {
+			event.type == ENET_EVENT_TYPE_CONNECT) {
 		puts ("Connection to some.server.net:1234 succeeded.");
+
+		// Create event
+		ConnectionEvent e;
+		e.peerAdded(PEER_ID_SERVER);
+		putEvent(e);
 	}
 	else {
 		/* Either the 5 seconds are up or a disconnect event was */
@@ -1161,13 +1166,6 @@ void Connection::connect(Address addr)
 		throw ConnectionException("Already connected to a server");
 	}
 
-	Peer *peer = new Peer(PEER_ID_SERVER, address);
-	m_peers[peer->id] = peer;
-
-	// Create event
-	ConnectionEvent e;
-	e.peerAdded(peer->id, peer->address);
-	putEvent(e);
 	
 	m_socket.Bind(0);
 	
@@ -1693,6 +1691,13 @@ bool Connection::Connected()
 	std::map<u16, ENetPeer*>::iterator node = m_peers.find(PEER_ID_SERVER);
 	if(node == m_peers.end())
 		return false;
+
+
+	actionstream << "my peer id: " << m_peer_id << std::endl;
+
+	// TODO: why do we even need to know our peer id?
+	if (!m_peer_id)
+		m_peer_id = 2;
 
 	if(m_peer_id == PEER_ID_INEXISTENT)
 		return false;
