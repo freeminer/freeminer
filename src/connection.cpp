@@ -469,7 +469,7 @@ Peer::Peer(u16 a_id, Address a_address):
 	avg_rtt(-1.0),
 	has_sent_with_id(false),
 	m_sendtime_accu(0),
-	m_max_packets_per_second(10),
+	m_max_packets_per_second(50),
 	m_num_sent(0),
 	m_max_num_sent(0),
 	congestion_control_aim_rtt(0.2),
