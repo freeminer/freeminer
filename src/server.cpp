@@ -1058,6 +1058,7 @@ void Server::AsyncRunStep()
 {
 	DSTACK(__FUNCTION_NAME);
 
+	TimeTaker timer_step("Server step");
 	g_profiler->add("Server::AsyncRunStep (num)", 1);
 
 	float dtime;
@@ -1067,6 +1068,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
 		SendBlocks(dtime);
 	}
@@ -1080,6 +1082,7 @@ void Server::AsyncRunStep()
 	//infostream<<"Server::AsyncRunStep(): dtime="<<dtime<<std::endl;
 
 	{
+		TimeTaker timer_step("Server step: SendBlocks");
 		JMutexAutoLock lock1(m_step_dtime_mutex);
 		m_step_dtime -= dtime;
 	}
@@ -1092,6 +1095,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: Process connection's timeouts");
 		// Process connection's timeouts
 		JMutexAutoLock lock2(m_con_mutex);
 		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
@@ -1099,6 +1103,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: handlePeerChanges");
 		// This has to be called so that the client list gets synced
 		// with the peer list of the connection
 		handlePeerChanges();
@@ -1108,6 +1113,7 @@ void Server::AsyncRunStep()
 		Update time of day and overall game time
 	*/
 	{
+		TimeTaker timer_step("Server step: pdate time of day and overall game time");
 		JMutexAutoLock envlock(m_env_mutex);
 
 		m_env->setTimeOfDaySpeed(g_settings->getFloat("time_speed"));
@@ -1138,6 +1144,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: m_env->step");
 		JMutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
@@ -1155,14 +1162,16 @@ void Server::AsyncRunStep()
 		m_env->step(dtime, m_uptime.get());
 	}
 
-	const float map_timer_and_unload_dtime = 2.92;
+	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
+		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
 		JMutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
-				g_settings->getFloat("server_unload_unused_data_timeout"));
+		if(m_env->getMap().timerUpdate(m_uptime.get(),
+				g_settings->getFloat("server_unload_unused_data_timeout")))
+					m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 	}
 
 	/*
@@ -1173,6 +1182,7 @@ void Server::AsyncRunStep()
 		Handle players
 	*/
 	{
+		TimeTaker timer_step("Server step: Handle players");
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
@@ -1223,6 +1233,7 @@ void Server::AsyncRunStep()
 	m_liquid_transform_timer += dtime;
 	if(m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
+		TimeTaker timer_step("Server step: liquid transform");
 		m_liquid_transform_timer -= m_liquid_transform_interval;
 		if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
 			m_liquid_transform_timer = 0;
@@ -1243,11 +1254,13 @@ void Server::AsyncRunStep()
 	m_liquid_send_timer += dtime;
 	if(m_liquid_send_timer >= m_liquid_send_interval)
 	{
+		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
 		m_liquid_send_timer -= m_liquid_send_interval;
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks);
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1))
+			goto no_send;
 
 		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
@@ -1265,7 +1278,9 @@ void Server::AsyncRunStep()
 			}
 		}
 		m_modified_blocks.clear();
+
 	}
+	no_send:
 
 	// Periodically print some info
 	{
@@ -1274,6 +1289,7 @@ void Server::AsyncRunStep()
 		if(counter >= 30.0)
 		{
 			counter = 0.0;
+		TimeTaker timer_step("Server step: Periodically print some info");
 
 			JMutexAutoLock lock2(m_con_mutex);
 			m_clients_names.clear();
@@ -1324,6 +1340,7 @@ void Server::AsyncRunStep()
 		Check added and deleted active objects
 	*/
 	{
+		TimeTaker timer_step("Server step: Check added and deleted active objects");
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
@@ -1481,6 +1498,7 @@ void Server::AsyncRunStep()
 		Send object messages
 	*/
 	{
+		TimeTaker timer_step("Server step: Send object messages");
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
 
@@ -1598,6 +1616,8 @@ void Server::AsyncRunStep()
 		Send queued-for-sending map edit events.
 	*/
 	{
+		TimeTaker timer_step("Server step: Send queued-for-sending map edit events.");
+		ScopeProfiler sp(g_profiler, "Server: Map events process");
 		// We will be accessing the environment and the connection
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
@@ -1710,10 +1730,10 @@ void Server::AsyncRunStep()
 		}
 
 		if(event_count >= 5){
-			infostream<<"Server: MapEditEvents:"<<std::endl;
+			infostream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){
-			verbosestream<<"Server: MapEditEvents:"<<std::endl;
+			verbosestream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
 
@@ -1724,6 +1744,7 @@ void Server::AsyncRunStep()
 		bysy state sometimes)
 	*/
 	{
+		TimeTaker timer_step("Server step: Trigger emergethread");
 		float &counter = m_emergethread_trigger_timer;
 		counter += dtime;
 		if(counter >= 2.0)
@@ -1745,6 +1766,7 @@ void Server::AsyncRunStep()
 		if(counter >= g_settings->getFloat("server_map_save_interval"))
 		{
 			counter = 0.0;
+		TimeTaker timer_step("Server step: Save map, players and auth stuff");
 			JMutexAutoLock lock(m_env_mutex);
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
@@ -1753,15 +1775,27 @@ void Server::AsyncRunStep()
 			if(m_banmanager->isModified())
 				m_banmanager->save();
 
-			// Save changed parts of map
-			m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
+//{TimeTaker timer_step("Server step: Save map: map");
 
+			// Save changed parts of map
+			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
+				// partial save, will continue on next step
+				counter = g_settings->getFloat("server_map_save_interval");
+				goto save_break;
+			}
+//}
+
+{TimeTaker timer_step("Server step: Save map: players");
 			// Save players
 			m_env->serializePlayers(m_path_world);
+}
 
+{TimeTaker timer_step("Server step: Save map: meta");
 			// Save environment metadata
 			m_env->saveMeta(m_path_world);
+}
 		}
+		save_break:;
 	}
 }
 
