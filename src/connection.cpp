@@ -473,7 +473,7 @@ Peer::Peer(u16 a_id, Address a_address):
 	m_num_sent(0),
 	m_max_num_sent(0),
 	congestion_control_aim_rtt(0.2),
-	congestion_control_max_rate(1000),
+	congestion_control_max_rate(2000),
 	congestion_control_min_rate(10)
 {
 }
@@ -670,7 +670,7 @@ void Connection::send(float dtime)
 		Peer *peer = getPeerNoEx(packet.peer_id);
 		if(!peer)
 			continue;
-		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 3000){
+		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 1000){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
