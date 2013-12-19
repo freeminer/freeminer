@@ -1007,6 +1007,7 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 						<<", seqnum="<<seqnum
 						<<", tries="<<j->sends
 						<<", avg_rtt="<<peer->avg_rtt
+						<<", pps="<<peer->m_max_packets_per_second
 						<<", dtime="<<dtime
 						<<", ttime="<<j->totaltime
 						<<", time="<<j->time
