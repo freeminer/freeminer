@@ -4229,7 +4229,7 @@ void Server::setBlockNotSent(v3s16 p)
 	}
 }
 
-void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version)
+void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -4280,7 +4280,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	/*
 		Send packet
 	*/
-	m_con.Send(peer_id, 1, reply, true);
+	m_con.Send(peer_id, 1, reply, reliable);
 }
 
 void Server::SendBlocks(float dtime)
@@ -4343,7 +4343,7 @@ void Server::SendBlocks(float dtime)
 		if(client->denied)
 			continue;
 
-		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version);
+		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, q.priority<2);
 
 		client->SentBlock(q.pos);
 	}
