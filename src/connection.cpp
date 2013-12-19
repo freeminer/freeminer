@@ -469,7 +469,7 @@ Peer::Peer(u16 a_id, Address a_address):
 	avg_rtt(-1.0),
 	has_sent_with_id(false),
 	m_sendtime_accu(0),
-	m_max_packets_per_second(50),
+	m_max_packets_per_second(20),
 	m_num_sent(0),
 	m_max_num_sent(0),
 	congestion_control_aim_rtt(0.2),
@@ -491,7 +491,7 @@ void Peer::reportRTT(float rtt)
 			if(m_max_packets_per_second < congestion_control_max_rate)
 				m_max_packets_per_second *= 1.02;
 		} else {
-			m_max_packets_per_second *= 0.8;
+			m_max_packets_per_second *= 0.5;
 			if(m_max_packets_per_second < congestion_control_min_rate)
 				m_max_packets_per_second = congestion_control_min_rate;
 		}
