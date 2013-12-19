@@ -1009,13 +1009,11 @@ void Server::start(unsigned short port)
 	m_thread->Stop();
 
 	// Initialize connection
-	m_con.SetTimeoutMs(30);
 	m_con.Serve(port);
 
 	// Start thread
 	m_thread->Start();
 
-	actionstream << "blah" << std::endl;
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
@@ -1090,13 +1088,6 @@ void Server::AsyncRunStep()
 	*/
 	{
 		m_uptime.set(m_uptime.get() + dtime);
-	}
-
-	{
-		// Process connection's timeouts
-		JMutexAutoLock lock2(m_con_mutex);
-		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
-		m_con.RunTimeouts(dtime);
 	}
 
 	{
@@ -3361,28 +3352,28 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 	}
 }
 
-void Server::peerAdded(con::Peer *peer)
+void Server::peerAdded(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	verbosestream<<"Server::peerAdded(): peer->id="
-			<<peer->id<<std::endl;
+			<<peer_id<<std::endl;
 
 	PeerChange c;
 	c.type = PEER_ADDED;
-	c.peer_id = peer->id;
+	c.peer_id = peer_id;
 	c.timeout = false;
 	m_peer_change_queue.push_back(c);
 }
 
-void Server::deletingPeer(con::Peer *peer, bool timeout)
+void Server::deletingPeer(u16 peer_id, bool timeout)
 {
 	DSTACK(__FUNCTION_NAME);
 	verbosestream<<"Server::deletingPeer(): peer->id="
-			<<peer->id<<", timeout="<<timeout<<std::endl;
+			<<peer_id<<", timeout="<<timeout<<std::endl;
 
 	PeerChange c;
 	c.type = PEER_REMOVED;
-	c.peer_id = peer->id;
+	c.peer_id = peer_id;
 	c.timeout = timeout;
 	m_peer_change_queue.push_back(c);
 }

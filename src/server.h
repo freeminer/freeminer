@@ -499,8 +499,8 @@ private:
 	// con::PeerHandler implementation.
 	// These queue stuff to be processed by handlePeerChanges().
 	// As of now, these create and remove clients and players.
-	void peerAdded(con::Peer *peer);
-	void deletingPeer(con::Peer *peer, bool timeout);
+	void peerAdded(u16 peer_id);
+	void deletingPeer(u16 peer_id, bool timeout);
 
 	/*
 		Static send methods

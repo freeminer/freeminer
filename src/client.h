@@ -409,8 +409,6 @@ public:
 
 	void afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font);
 
-	float getRTT(void);
-
 	// IGameDef interface
 	virtual IItemDefManager* getItemDefManager();
 	virtual INodeDefManager* getNodeDefManager();
@@ -434,8 +432,8 @@ public:
 private:
 
 	// Virtual methods from con::PeerHandler
-	void peerAdded(con::Peer *peer);
-	void deletingPeer(con::Peer *peer, bool timeout);
+	void peerAdded(u16 peer_id);
+	void deletingPeer(u16 peer_id, bool timeout);
 	
 	void ReceiveAll();
 	void Receive();

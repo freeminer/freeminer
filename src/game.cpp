@@ -3067,9 +3067,7 @@ void the_game(
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range
 				<<std::setprecision(0)
-				<<", FPS = "<<(1.0/dtime_avg1)
-				<<std::setprecision(3)
-				<<", RTT = "<<client.getRTT();
+				<<", FPS = "<<(1.0/dtime_avg1);
 			guitext->setText(narrow_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
