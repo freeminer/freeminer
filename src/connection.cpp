@@ -465,15 +465,15 @@ Peer::Peer(u16 a_id, Address a_address):
 	id(a_id),
 	timeout_counter(0.0),
 	ping_timer(0.0),
-	resend_timeout(1),
+	resend_timeout(2),
 	avg_rtt(-1.0),
 	has_sent_with_id(false),
 	m_sendtime_accu(0),
-	m_max_packets_per_second(20),
+	m_max_packets_per_second(10),
 	m_num_sent(0),
 	m_max_num_sent(0),
 	congestion_control_aim_rtt(0.2),
-	congestion_control_max_rate(2000),
+	congestion_control_max_rate(400),
 	congestion_control_min_rate(10)
 {
 }

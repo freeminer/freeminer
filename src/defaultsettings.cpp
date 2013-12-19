@@ -333,6 +333,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_objects_per_block", "300");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("congestion_control_max_rate", "2000");
+	settings->setDefault("congestion_control_min_rate", "3");
 	settings->setDefault("sqlite_synchronous", "1");
 
 #ifndef _WIN32
