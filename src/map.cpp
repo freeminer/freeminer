@@ -695,9 +695,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	std::map<v3s16, MapBlock*> blocks_to_update;
 
-/*
 	std::set<v3s16> light_sources;
-*/
 
 	std::map<v3s16, u8> unlight_from;
 
@@ -708,9 +706,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	{
 	TimeTaker t("updateLighting: first stuff");
 
-		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * updateLighting_last[bank];
-
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 	if(!breakable)
 		updateLighting_last[bank] = 0;
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
@@ -728,7 +724,6 @@ u32 Map::updateLighting(enum LightBank bank,
 		if(!block || block->isDummy())
 			continue;
 
-		std::set<v3s16> light_sources;
 		for(;;)
 		{
 			// Don't bother with dummy blocks.
@@ -820,16 +815,14 @@ u32 Map::updateLighting(enum LightBank bank,
 			}
 
 		}
-/* breaked loop try
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
 		}
-		if (!calls)
-			updateLighting_last[bank] = 0;
-		}
 	}
-*/
+	if (!calls)
+		updateLighting_last[bank] = 0;
+	}
 	/*
 		Enable this to disable proper lighting for speeding up map
 		generation for testing or whatever
@@ -874,16 +867,6 @@ u32 Map::updateLighting(enum LightBank bank,
 		infostream<<"spreadLight modified "<<diff<<std::endl;
 	}*/
 #endif
-
-// breaked loop try to here
-		if (porting::getTimeMs() > end_ms) {
-			updateLighting_last[bank] = n;
-			break;
-		}
-		if (!calls)
-			updateLighting_last[bank] = 0;
-		}
-	}
 
 #if 0
 	{
@@ -958,11 +941,11 @@ u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 {
 TimeTaker timer("updateLighting(LIGHTBANK_DAY)");
 
-	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks);
+	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks, breakable);
 }
 {
 TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
-	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks);
+	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks, breakable);
 }
 
 	if (breakable && ret)
@@ -1512,8 +1495,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	u32 block_count_all = 0;
 
 	beginSave();
-	u32 n = 0, calls = 0, 
-		end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
