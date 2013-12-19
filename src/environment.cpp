@@ -2135,8 +2135,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		objects_to_remove.push_back(id);
 	}
 
-	if(m_active_objects.size())
-		verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from"<<m_active_objects.size()<<std::endl;
+	//if(m_active_objects.size()) verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from="<<m_active_objects.size()<<std::endl;
 
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();

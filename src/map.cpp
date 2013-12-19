@@ -1494,7 +1494,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
+/*
 	beginSave();
+*/
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
@@ -1505,7 +1507,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		else
 			m_sectors_update_last = 0;
 		++calls;
-
 
 		MapSector *sector = si->second;
 
@@ -1533,7 +1534,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 						&& save_before_unloading)
 				{
 					modprofiler.add(block->getModifiedReason(), 1);
+					beginSave();
 					saveBlock(block);
+					endSave();
 					saved_blocks_count++;
 				}
 
@@ -1576,7 +1579,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	}
 	if (!calls)
 		m_sectors_update_last = 0;
+/*
 	endSave();
+*/
 
 	// Finally delete the empty sectors
 {TimeTaker timer("deleteSectors()");
