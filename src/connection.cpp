@@ -81,6 +81,8 @@ void * Connection::Thread()
 		}
 
 		receive();
+
+		sleep_ms(10);
 	}
 
 	return NULL;
