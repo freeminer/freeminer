@@ -245,7 +245,7 @@ Client::Client(
 		device->getSceneManager(),
 		tsrc, this, device
 	),
-	m_con(PROTOCOL_ID, 1000, CONNECTION_TIMEOUT, ipv6, this),
+	m_con(PROTOCOL_ID, 512, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
@@ -343,6 +343,7 @@ void Client::step(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
 	
+	m_uptime += dtime;
 	// Limit a bit
 	if(dtime > 2.0)
 		dtime = 2.0;
@@ -528,14 +529,16 @@ void Client::step(float dtime)
 	/*
 		Run Map's timers and unload unused data
 	*/
-	const float map_timer_and_unload_dtime = 5.25;
+	const float map_timer_and_unload_dtime = 10.25;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
 		ScopeProfiler sp(g_profiler, "Client: map timer and unload");
 		std::list<v3s16> deleted_blocks;
-		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
+		
+		if(m_env.getMap().timerUpdate(m_uptime,
 				g_settings->getFloat("client_unload_unused_data_timeout"),
-				&deleted_blocks);
+				&deleted_blocks))
+				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 				
 		/*if(deleted_blocks.size() > 0)
 			infostream<<"Client: Unloaded "<<deleted_blocks.size()

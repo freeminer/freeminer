@@ -1232,6 +1232,12 @@ void the_game(
 				break;
 			}
 			// Break conditions
+			if(client.accessDenied()){
+				error_message = L"Access denied. Reason: "
+						+client.accessDeniedReason();
+				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				break;
+			}
 			if(!client.connectedAndInitialized()){
 				error_message = L"Client disconnected";
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
@@ -3537,14 +3543,12 @@ void the_game(
 				L" running a different version of Minetest.";
 		errorstream<<wide_to_narrow(error_message)<<std::endl;
 	}
-	catch(ServerError &e)
-	{
+	catch(ServerError &e) {
 		error_message = narrow_to_wide(e.what());
-		errorstream<<wide_to_narrow(error_message)<<std::endl;
+		errorstream << "ServerError: " << e.what() << std::endl;
 	}
-	catch(ModError &e)
-	{
-		errorstream<<e.what()<<std::endl;
+	catch(ModError &e) {
+		errorstream << "ModError: " << e.what() << std::endl;
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 

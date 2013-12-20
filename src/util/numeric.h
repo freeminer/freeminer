@@ -304,6 +304,9 @@ public:
 			m_accumulator = 0;
 		return true;
 	}
+	void run_next(float wanted_interval) {
+		m_accumulator = wanted_interval;
+	}
 protected:
 	float m_accumulator;
 };

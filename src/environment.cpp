@@ -1073,6 +1073,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		m_game_time_fraction_counter -= (float)inc_i;
 	}
 	
+	TimeTaker timer_step("Environment step");
 	/*
 		Handle players
 	*/
@@ -1168,8 +1169,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			Handle added blocks
 		*/
 
-		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_blocks_added.begin();
 				i != m_blocks_added.end(); ++i)
@@ -1214,8 +1214,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		
 		//float dtime = 1.0;
 
-		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1355,8 +1354,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			send_recommended = true;
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
-		u32 n = 0, calls = 0, 
-			end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1642,10 +1640,12 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 			
 	m_active_objects[object->getId()] = object;
   
+/*
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"Added id="<<object->getId()<<"; there are now "
 			<<m_active_objects.size()<<" active objects."
 			<<std::endl;
+*/
 	
 	// Register reference in scripting api (must be done before post-init)
 	m_script->addObjectReference(object);
@@ -1909,6 +1909,8 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 */
 void ServerEnvironment::deactivateFarObjects(bool force_delete)
 {
+	ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
+
 	std::list<u16> objects_to_remove;
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
@@ -1976,9 +1978,11 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		if(!force_delete && m_active_blocks.contains(blockpos_o))
 			continue;
 
+/*
 		verbosestream<<"ServerEnvironment::deactivateFarObjects(): "
 				<<"deactivating object id="<<id<<" on inactive block "
 				<<PP(blockpos_o)<<std::endl;
+*/
 
 		// If known by some client, don't immediately delete.
 		bool pending_delete = (obj->m_known_by_count > 0 && !force_delete);
@@ -2113,9 +2117,11 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			continue;
 		}
 		
+/*
 		verbosestream<<"ServerEnvironment::deactivateFarObjects(): "
 				<<"object id="<<id<<" is not known by clients"
 				<<"; deleting"<<std::endl;
+*/
 
 		// Tell the object about removal
 		obj->removingFromEnvironment();
@@ -2128,6 +2134,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
+
+	//if(m_active_objects.size()) verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from="<<m_active_objects.size()<<std::endl;
 
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();

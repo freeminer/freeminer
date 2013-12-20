@@ -229,12 +229,14 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
-	void updateLighting(enum LightBank bank,
+	u32 updateLighting(enum LightBank bank,
 			std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks);
+			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
 
-	void updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks);
+	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
+			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
+
+	u32 updateLighting_last[2];
 
 	/*
 		These handle lighting but not faces.
@@ -266,7 +268,7 @@ public:
 	virtual void beginSave() {return;};
 	virtual void endSave() {return;};
 
-	virtual void save(ModifiedState save_level){assert(0);};
+	virtual s32 save(ModifiedState save_level, bool breakable){assert(0);};
 
 	// Server implements this.
 	// Client leaves it as no-op.
@@ -276,7 +278,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	void timerUpdate(float dtime, float unload_timeout,
+	u32 timerUpdate(float uptime, float unload_timeout,
 			std::list<v3s16> *unloaded_blocks=NULL);
 
 	/*
@@ -368,7 +370,8 @@ protected:
 	std::set<MapEventReceiver*> m_event_receivers;
 
 	std::map<v2s16, MapSector*> m_sectors;
-	u32 m_sectors_last_update;
+	u32 m_sectors_update_last;
+	u32 m_sectors_save_last;
 
 	// Be sure to set this to NULL when the cached sector is deleted
 	MapSector *m_sector_cache;
@@ -462,7 +465,7 @@ public:
 	void beginSave();
 	void endSave();
 
-	void save(ModifiedState save_level);
+	s32 save(ModifiedState save_level, bool breakable = 0);
 	void listAllLoadableBlocks(std::list<v3s16> &dst);
 	void listAllLoadedBlocks(std::list<v3s16> &dst);
 	// Saves map seed and possibly other stuff

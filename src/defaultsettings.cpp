@@ -317,7 +317,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("liquid_finite", "true");
 	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
-	settings->setDefault("server_map_save_interval", "60");
+	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "20");
 	settings->setDefault("public_serverlist", "1");
@@ -330,8 +330,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
 	settings->setDefault("num_emerge_threads", "4");
-	settings->setDefault("max_objects_per_block", "200");
+	settings->setDefault("max_objects_per_block", "300");
 	settings->setDefault("preload_item_visuals", "false");
+	settings->setDefault("congestion_control_max_rate", "2000");
+	settings->setDefault("sqlite_synchronous", "1");
 
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)

@@ -47,6 +47,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		humidity(0),
 		heat_last_update(0),
 		humidity_last_update(0),
+		m_uptime_timer_last(0),
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
