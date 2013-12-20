@@ -186,23 +186,11 @@ void Connection::serve(u16 port)
 	address->port = port;
 
 	std::cout << "creating enet host" << std::endl;
-	m_enet_host = enet_host_create(address, 32, 2, 0, 0);
+	m_enet_host = enet_host_create(address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
 		puts("Server creation failed.");
 		assert(0);
 	}
-
-	/*dout_con<<getDesc()<<" serving at port "<<port<<std::endl;
-	try{
-		m_socket.Bind(port);
-		m_peer_id = PEER_ID_SERVER;
-	}
-	catch(SocketException &e){
-		// Create event
-		ConnectionEvent ce;
-		ce.bindFailed();
-		putEvent(ce);
-	}*/
 }
 
 // peer
@@ -219,7 +207,7 @@ void Connection::connect(Address addr)
 	// TODO: ipv6
 	address->host = addr.getAddress().sin_addr.s_addr;
 	address->port = addr.getPort();
-	ENetPeer *peer = enet_host_connect(m_enet_host, address, 1, 0);
+	ENetPeer *peer = enet_host_connect(m_enet_host, address, CHANNEL_COUNT, 0);
 	peer->data = new u16;
 	*((u16*)peer->data) = PEER_ID_SERVER;
 
@@ -272,7 +260,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 	ENetPacket *packet = enet_packet_create(*data, data.getSize(), reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
 
 	ENetPeer *peer = getPeer(peer_id);
-	enet_peer_send(peer, 0, packet);
+	enet_peer_send(peer, channelnum, packet);
 }
 
 ENetPeer* Connection::getPeer(u16 peer_id)
@@ -350,9 +338,6 @@ void Connection::Connect(Address address)
 bool Connection::Connected()
 {
 	JMutexAutoLock peerlock(m_peers_mutex);
-
-	if(m_peers.size() != 1)
-		return false;
 
 	std::map<u16, ENetPeer*>::iterator node = m_peers.find(PEER_ID_SERVER);
 	if(node == m_peers.end())
