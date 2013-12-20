@@ -81,8 +81,6 @@ void * Connection::Thread()
 		}
 
 		receive();
-
-		sleep_ms(10);
 	}
 
 	return NULL;
@@ -134,7 +132,7 @@ void Connection::receive()
 	if (!m_enet_host)
 		return;
 	ENetEvent event;
-	while (enet_host_service(m_enet_host, & event, 0) > 0)
+	if (enet_host_service(m_enet_host, & event, 10) > 0)
 	{
 		switch (event.type)
 		{

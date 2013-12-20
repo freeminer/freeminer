@@ -137,8 +137,6 @@ void * ServerThread::Thread()
 		{
 			m_server->setAsyncFatalError(e.what());
 		}
-
-		sleep_ms(10);
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
