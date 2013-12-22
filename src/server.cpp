@@ -112,7 +112,7 @@ void * ServerThread::Thread()
 
 			//infostream<<"Running m_server->Receive()"<<std::endl;
 
-			// Loop used only when 100% cpu load or on old slow hardware. 
+			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 			for (u16 i = 0; i < 1000; ++i)
@@ -1094,6 +1094,8 @@ void Server::AsyncRunStep()
 		m_uptime.set(m_uptime.get() + dtime);
 	}
 
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+
 	{
 		TimeTaker timer_step("Server step: Process connection's timeouts");
 		// Process connection's timeouts
@@ -1623,7 +1625,7 @@ void Server::AsyncRunStep()
 		JMutexAutoLock conlock(m_con_mutex);
 
 		// Don't send too many at a time
-		//u32 count = 0;
+		u32 count = 0;
 
 		// Single change sending is disabled if queue size is not small
 		bool disable_single_change_sending = false;
@@ -1635,6 +1637,7 @@ void Server::AsyncRunStep()
 		// We'll log the amount of each
 		Profiler prof;
 
+		u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
@@ -1723,17 +1726,19 @@ void Server::AsyncRunStep()
 
 			delete event;
 
+			++count;
 			/*// Don't send too many at a time
-			count++;
 			if(count >= 1 && m_unsent_map_edit_queue.size() < 100)
 				break;*/
+			if (porting::getTimeMs() > end_ms)
+				break;
 		}
 
 		if(event_count >= 5){
-			infostream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
+			infostream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){
-			verbosestream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
+			verbosestream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
 
