@@ -1246,7 +1246,7 @@ void Server::AsyncRunStep()
 
 		// not all liquid was processed per step, forcing on next step
 		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks) > 0)
-			m_liquid_transform_timer = m_liquid_transform_interval*0.8;
+			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
 		/*
@@ -1309,14 +1309,6 @@ void Server::AsyncRunStep()
 				infostream<<"* "<<player->getName()<<"\t";
 				client->PrintInfo(infostream);
 				m_clients_names.push_back(player->getName());
-			}
-			{ //not very good place to clear
-				JMutexAutoLock lock(m_env->getServerMap().m_block_heat_mutex);
-				m_env->getServerMap().m_heat_cache.clear();
-			}
-			{
-				JMutexAutoLock lock(m_env->getServerMap().m_block_humidity_mutex);
-				m_env->getServerMap().m_humidity_cache.clear();
 			}
 		}
 	}
