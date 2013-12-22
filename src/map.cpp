@@ -1584,19 +1584,21 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 */
 
 	// Finally delete the empty sectors
-{TimeTaker timer("deleteSectors()");
 
 	deleteSectors(sector_deletion_queue);
-}
 
 	if(deleted_blocks_count != 0)
 	{
+		if (m_sectors_update_last)
+			infostream<<"ServerMap: timerUpdate(): Sectors processed:"<<calls<<"/"<<m_sectors.size()<<" to "<<m_sectors_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
 		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
+/*
 		infostream<<", "<<block_count_all<<" blocks in memory";
+*/
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
