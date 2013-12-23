@@ -25,15 +25,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 TimeTaker::TimeTaker(const char *name, u32 *result, TimePrecision prec)
 {
+#ifndef NDEBUG
 	m_name = name;
 	m_result = result;
 	m_running = true;
 	m_precision = prec;
 	m_time1 = getTime(prec);
+#endif
 }
 
 u32 TimeTaker::stop(bool quiet)
 {
+#ifndef NDEBUG
 	if(m_running)
 	{
 		u32 time2 = getTime(m_precision);
@@ -50,13 +53,18 @@ u32 TimeTaker::stop(bool quiet)
 		m_running = false;
 		return dtime;
 	}
+#endif
 	return 0;
 }
 
 u32 TimeTaker::getTimerTime()
 {
+#ifndef NDEBUG
 	u32 time2 = getTime(m_precision);
 	u32 dtime = time2 - m_time1;
 	return dtime;
+#else
+	return 0;
+#endif
 }
 

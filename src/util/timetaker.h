@@ -35,7 +35,9 @@ public:
 
 	~TimeTaker()
 	{
+#ifndef NDEBUG
 		stop();
+#endif
 	}
 
 	u32 stop(bool quiet=false);

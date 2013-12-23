@@ -1276,12 +1276,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 	{
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
-		u32 max_time_ms = 1000 * m_recommended_send_interval;
 		
 		// Initialize handling of ActiveBlockModifiers
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 
-		u32 n = 0, calls = 0;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1307,7 +1306,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			/* Handle ActiveBlockModifiers */
 			abmhandler.apply(block);
 
-			if (timer.getTimerTime() > max_time_ms) {
+			if (porting::getTimeMs() > end_ms) {
 				m_active_block_abm_last = n;
 				break;
 			}
@@ -1316,11 +1315,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 			m_active_block_abm_last = 0;
 
 		u32 time_ms = timer.stop(true);
-		if(time_ms > max_time_ms){
+		if(m_active_block_abm_last){
 			infostream<<"WARNING: active block modifiers ("
-					<<calls<<"/"<<m_active_blocks.m_list.size()<<" <"<<m_active_block_abm_last<<") took "
-					<<time_ms<<"ms (longer than "
-					<<max_time_ms<<"ms)"<<std::endl;
+					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
+					<<time_ms<<"ms "
+					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
 			m_active_block_abm_dtime = 0;
