@@ -46,6 +46,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 Environment::Environment():
+	m_player_by_id(),
 	m_time_of_day(9000),
 	m_time_of_day_f(9000./24000),
 	m_time_of_day_speed(0),
@@ -59,6 +60,7 @@ Environment::~Environment()
 	for(std::list<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i)
 	{
+		m_player_by_id[(*i)->peer_id] = NULL;
 		delete (*i);
 	}
 }
@@ -78,11 +80,13 @@ void Environment::addPlayer(Player *player)
 	assert(getPlayer(player->getName()) == NULL);
 	// Add.
 	m_players.push_back(player);
+	m_player_by_id[player->peer_id] = player;
 }
 
 void Environment::removePlayer(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
+	m_player_by_id[peer_id] = NULL;
 re_search:
 	for(std::list<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i)
@@ -101,12 +105,16 @@ re_search:
 
 Player * Environment::getPlayer(u16 peer_id)
 {
+	if (m_player_by_id[peer_id])
+		return m_player_by_id[peer_id];
 	for(std::list<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i)
 	{
 		Player *player = *i;
-		if(player->peer_id == peer_id)
+		if(player->peer_id == peer_id) {
+			m_player_by_id[peer_id] = player;
 			return player;
+		}
 	}
 	return NULL;
 }

@@ -35,6 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "enet/enet.h"
 
 #define CHANNEL_COUNT 3
+#define PEER_ID_CAPACITY (1 << (8 * sizeof(u16)))
 
 namespace con
 {

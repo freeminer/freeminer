@@ -38,6 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
+#include "connection.h"
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -103,6 +104,9 @@ public:
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
+	// this array should only be used in combination with m_players
+	// because false negatives are possible (minetest changes players' peer_id)
+	Player *m_player_by_id[PEER_ID_CAPACITY];
 	// Time of day in milli-hours (0-23999); determines day and night
 	u32 m_time_of_day;
 	// Time of day in 0...1
