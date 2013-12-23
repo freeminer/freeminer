@@ -371,6 +371,8 @@ set(minetest_SRCS
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	convert_json.cpp
+	FMStaticText.cpp
+	FMColoredString.cpp
 	${minetest_SCRIPT_SRCS}
 )
 

@@ -334,10 +334,11 @@ void GUIChatConsole::drawText()
 			s32 x = (fragment.column + 1) * m_fontsize.X;
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
-			m_font->draw(
+			irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(m_font);
+			tmp->draw(
 				fragment.text.c_str(),
 				destrect,
-				video::SColor(255, 255, 255, 255),
+				fragment.text.getColors(),
 				false,
 				false,
 				&AbsoluteClippingRect);

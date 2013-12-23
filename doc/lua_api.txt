@@ -1260,6 +1260,11 @@ minetest.chat_send_all(text)
 minetest.chat_send_player(name, text, prepend)
 ^ prepend: optional, if it is set to false "Server -!- " will not be prepended to the message
 
+freeminer.colorize(color, text)
+^ color is a six characters string, this will reset color to white after the text
+freeminer.color(color)
+^ will output color escape sequence
+
 Environment access:
 
 minetest.set_node(pos, node)
