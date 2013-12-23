@@ -109,6 +109,8 @@ std::string urldecode(std::string str)
 }
 
 u32 readFlagString(std::string str, FlagDesc *flagdesc) {
+	if (str.length() == 0)
+		return 0;
 	u32 result = 0;
 	char *s = &str[0];
 	char *flagstr, *strpos = NULL;
