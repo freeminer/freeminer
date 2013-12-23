@@ -413,7 +413,7 @@ int MapgenV7::generateBaseTerrain() {
 					vm->m_data[i] = n_stone;
 				else if (y <= water_level)
 				{
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water;
 				}
 				else
@@ -486,7 +486,7 @@ void MapgenV7::generateRidgeTerrain() {
 			if (y < ridge_heightmap[j])
 				ridge_heightmap[j] = y - 1; 
 
-			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
 			MapNode n_water_or_ice = (heat < 0 && y > water_level + heat/4) ? n_ice : n_water;
 
 			vm->m_data[vi] = (y > water_level) ? n_air : n_water_or_ice;
@@ -556,7 +556,7 @@ void MapgenV7::generateBiomes() {
 			} else if (c == c_water_source) {
 				have_air = true;
 				nplaced = 0;
-				s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+				s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
 				vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
 			} else if (c == CONTENT_AIR) {
 				have_air = true;

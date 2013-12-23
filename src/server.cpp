@@ -112,7 +112,7 @@ void * ServerThread::Thread()
 
 			//infostream<<"Running m_server->Receive()"<<std::endl;
 
-			// Loop used only when 100% cpu load or on old slow hardware. 
+			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 			for (u16 i = 0; i < 1000; ++i)
@@ -1093,6 +1093,8 @@ void Server::AsyncRunStep()
 		m_uptime.set(m_uptime.get() + dtime);
 	}
 
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+
 	{
 		// This has to be called so that the client list gets synced
 		// with the peer list of the connection
@@ -1234,7 +1236,7 @@ void Server::AsyncRunStep()
 
 		// not all liquid was processed per step, forcing on next step
 		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks) > 0)
-			m_liquid_transform_timer = m_liquid_transform_interval*0.8;
+			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
 		/*
@@ -1297,14 +1299,6 @@ void Server::AsyncRunStep()
 				infostream<<"* "<<player->getName()<<"\t";
 				client->PrintInfo(infostream);
 				m_clients_names.push_back(player->getName());
-			}
-			{ //not very good place to clear
-				JMutexAutoLock lock(m_env->getServerMap().m_block_heat_mutex);
-				m_env->getServerMap().m_heat_cache.clear();
-			}
-			{
-				JMutexAutoLock lock(m_env->getServerMap().m_block_humidity_mutex);
-				m_env->getServerMap().m_humidity_cache.clear();
 			}
 		}
 	}
@@ -1613,7 +1607,7 @@ void Server::AsyncRunStep()
 		JMutexAutoLock conlock(m_con_mutex);
 
 		// Don't send too many at a time
-		//u32 count = 0;
+		u32 count = 0;
 
 		// Single change sending is disabled if queue size is not small
 		bool disable_single_change_sending = false;
@@ -1625,6 +1619,7 @@ void Server::AsyncRunStep()
 		// We'll log the amount of each
 		Profiler prof;
 
+		u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
@@ -1713,17 +1708,19 @@ void Server::AsyncRunStep()
 
 			delete event;
 
+			++count;
 			/*// Don't send too many at a time
-			count++;
 			if(count >= 1 && m_unsent_map_edit_queue.size() < 100)
 				break;*/
+			if (porting::getTimeMs() > end_ms)
+				break;
 		}
 
 		if(event_count >= 5){
-			infostream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
+			infostream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){
-			verbosestream<<"Server: MapEditEvents count="<<event_count<<" :"<<std::endl;
+			verbosestream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
 
@@ -4219,7 +4216,7 @@ void Server::setBlockNotSent(v3s16 p)
 	}
 }
 
-void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version)
+void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -4270,7 +4267,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	/*
 		Send packet
 	*/
-	m_con.Send(peer_id, 1, reply, true);
+	m_con.Send(peer_id, 1, reply, reliable);
 }
 
 void Server::SendBlocks(float dtime)
@@ -4333,7 +4330,8 @@ void Server::SendBlocks(float dtime)
 		if(client->denied)
 			continue;
 
-		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version);
+		// maybe sometimes blocks will not load (must wait 1+ minute), but reduce network load
+		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, q.priority<=4);
 
 		client->SentBlock(q.pos);
 	}

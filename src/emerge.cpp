@@ -587,6 +587,10 @@ void *EmergeThread::Thread() {
 				client->SetBlocksNotSent(modified_blocks, 1);
 			}
 		}
+		if (mapgen->heat_cache.size() > 1000) {
+			mapgen->heat_cache.clear();
+			mapgen->humidity_cache.clear();
+		}
 	}
 	catch (VersionMismatchException &e) {
 		std::ostringstream err;

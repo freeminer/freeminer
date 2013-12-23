@@ -511,19 +511,14 @@ public:
 	// Parameters fed to the Mapgen
 	MapgenParams *m_mgparams;
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-
-	std::map<v3s16, s16> m_heat_cache;
-	std::map<v3s16, s16> m_humidity_cache;
-	JMutex m_block_heat_mutex;
-	JMutex m_block_humidity_mutex;
 
 private:
 	// Seed used for all kinds of randomness in generation
