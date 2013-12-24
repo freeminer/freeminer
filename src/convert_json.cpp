@@ -27,7 +27,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "main.h" // for g_settings
 #include "settings.h"
+/*
 #include "version.h"
+*/
 #include "httpfetch.h"
 
 Json::Value                 fetchJsonValue(const std::string url,
@@ -37,7 +39,9 @@ Json::Value                 fetchJsonValue(const std::string url,
 	HTTPFetchRequest fetchrequest;
 	HTTPFetchResult fetchresult;
 	fetchrequest.url = url;
+/*
 	fetchrequest.useragent = std::string("Minetest ")+minetest_version_hash;
+*/
 	fetchrequest.timeout = g_settings->getS32("curl_timeout");
 	fetchrequest.caller = HTTPFETCH_SYNC;
 

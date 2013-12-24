@@ -233,7 +233,9 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 	fetchrequest.url = g_settings->get("serverlist_url")
 		+ std::string("/announce?json=")
 		+ urlencode(writer.write(server));
+/*
 	fetchrequest.useragent = std::string("Minetest ")+minetest_version_hash;
+*/
 	fetchrequest.caller = HTTPFETCH_DISCARD;
 	fetchrequest.timeout = g_settings->getS32("curl_timeout");
 	httpfetch_async(fetchrequest);

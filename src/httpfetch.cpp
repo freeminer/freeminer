@@ -31,6 +31,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "util/container.h"
 #include "util/thread.h"
+#include "version.h"
+#include <sys/utsname.h>
 
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
@@ -209,7 +211,13 @@ struct HTTPFetchOngoing
 
 			if (request.useragent != "")
 				curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
-
+			else {
+				std::string useragent = std::string("Minetest ") + minetest_version_hash;
+				struct utsname osinfo;
+				uname(&osinfo);
+				useragent += std::string(" (") + osinfo.sysname + "; " + osinfo.release + "; " + osinfo.machine + ")";
+				curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
+			}
 			// Set up a write callback that writes to the
 			// ostringstream ongoing->oss, unless the data
 			// is to be discarded
