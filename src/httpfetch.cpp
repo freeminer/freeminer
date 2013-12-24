@@ -32,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/container.h"
 #include "util/thread.h"
 #include "version.h"
-#include <sys/utsname.h>
 
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
@@ -105,6 +104,9 @@ bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetchresult)
 
 #if USE_CURL
 #include <curl/curl.h>
+#ifndef _MSC_VER
+#include <sys/utsname.h>
+#endif
 
 /*
 	USE_CURL is on: use cURL based httpfetch implementation
@@ -213,9 +215,13 @@ struct HTTPFetchOngoing
 				curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 			else {
 				std::string useragent = std::string("Minetest ") + minetest_version_hash;
+#ifdef _MSC_VER
+				useragent += "Windows";
+#else
 				struct utsname osinfo;
 				uname(&osinfo);
 				useragent += std::string(" (") + osinfo.sysname + "; " + osinfo.release + "; " + osinfo.machine + ")";
+#endif
 				curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
 			}
 			// Set up a write callback that writes to the
