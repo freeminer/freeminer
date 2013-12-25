@@ -33,6 +33,7 @@ struct MapgenMathParams : public MapgenV7Params {
 
 #ifdef FRACTAL_H_
 	sFractal par;
+	enumCalculationMode mode;
 #endif
 
 	bool readParams(Settings * settings);

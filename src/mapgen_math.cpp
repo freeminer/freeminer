@@ -219,32 +219,186 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 
 #ifdef FRACTAL_H_
 	sFractal & par = mg_params->par;
+	par.minN = params.get("minN", 1).asInt();
 
-	par.doubles.N = iterations;
+	par.limits_enabled  = params.get("limits_enabled", 0).asBool();
+	par.iterThresh  = params.get("iterThresh", 0).asBool();
+	par.analitycDE  = params.get("analitycDE", 0).asBool();
+	par.juliaMode  = params.get("juliaMode", 0).asBool();
+	par.tgladFoldingMode  = params.get("tgladFoldingMode", 0).asBool();
+	par.sphericalFoldingMode  = params.get("sphericalFoldingMode", 0).asBool();
+	par.interiorMode  = params.get("interiorMode", 0).asBool();
+	par.hybridCyclic  = params.get("hybridCyclic", 0).asBool();
+	par.linearDEmode  = params.get("linearDEmode", 0).asBool();
+	par.constantDEThreshold  = params.get("constantDEThreshold", 0).asBool();
 
-	par.doubles.power = params.get("power", 9.0).asDouble();
+	par.frameNo = params.get("frameNo", 1).asInt();
+	par.itersOut = params.get("itersOut", 1).asInt();
+	par.fakeLightsMinIter = params.get("fakeLightsMinIter", 1).asInt();
+
+	par.doubles.N = params.get("N", iterations).asDouble();
+	par.doubles.amin = params.get("amin", 1).asDouble();
+	par.doubles.amax = params.get("amax", 1).asDouble();
+	par.doubles.bmin = params.get("bmin", 1).asDouble();
+	par.doubles.bmax = params.get("bmax", 1).asDouble();
+	par.doubles.cmin = params.get("cmin", 1).asDouble();
+	par.doubles.cmax = params.get("cmax", 1).asDouble();
+	par.doubles.constantFactor = params.get("constantFactor", 1.0).asDouble();
+	par.doubles.FoldingIntPowZfactor = params.get("FoldingIntPowZfactor", 1).asDouble();
+	par.doubles.FoldingIntPowFoldFactor = params.get("FoldingIntPowFoldFactor", 1).asDouble();
 	par.doubles.foldingSphericalFixed = params.get("foldingSphericalFixed", 1.0).asDouble();
 	par.doubles.foldingSphericalMin = params.get("foldingSphericalMin", 0.5).asDouble();
-	//no par.formula = smoothMandelbox; par.doubles.N = 40; invert = 0;//no
-	par.mandelbox.doubles.scale = params.get("mscale", 1).asDouble();
-	par.mandelbox.doubles.sharpness = params.get("sharpness", 2).asDouble();
-	par.mandelbox.doubles.foldingLimit = params.get("foldingLimit", 1.0).asDouble();
-	par.mandelbox.doubles.foldingValue = params.get("foldingValue", 2).asDouble();
+	par.doubles.detailSize = params.get("detailSize", 1).asDouble();
+	par.doubles.power = params.get("power", 9.0).asDouble();
+	par.doubles.cadd = params.get("cadd", 1).asDouble();
+	// cvector par.doubles.julia = params.get("julia", 1).asDouble();
+
+	par.mandelbox.doubles.colorFactorX = params.get("mandelbox.colorFactorX", 1).asDouble();
+	par.mandelbox.doubles.colorFactorY = params.get("mandelbox.colorFactorY", 1).asDouble();
+	par.mandelbox.doubles.colorFactorZ = params.get("mandelbox.colorFactorZ", 1).asDouble();
+	par.mandelbox.doubles.colorFactorR = params.get("mandelbox.colorFactorR", 1).asDouble();
+	par.mandelbox.doubles.colorFactorSp1 = params.get("mandelbox.colorFactorSp1", 1).asDouble();
+	par.mandelbox.doubles.colorFactorSp2 = params.get("mandelbox.colorFactorSp2", 1).asDouble();
+	par.mandelbox.doubles.scale = params.get("mandelbox.scale", 1).asDouble();
+	par.mandelbox.doubles.foldingLimit = params.get("mandelbox.foldingLimit", 1.0).asDouble();
+	par.mandelbox.doubles.foldingValue = params.get("mandelbox.foldingValue", 2).asDouble();
+	par.mandelbox.doubles.sharpness = params.get("mandelbox.sharpness", 2).asDouble();
+	par.mandelbox.doubles.solid = params.get("mandelbox.solid", 1).asDouble();
+	par.mandelbox.doubles.melt = params.get("mandelbox.melt", 1).asDouble();
+	par.mandelbox.rotationsEnabled  = params.get("mandelbox.rotationsEnabled", 0).asBool();
+	par.mandelbox.doubles.vary4D.fold = params.get("mandelbox.fold", 1).asDouble();
+	par.mandelbox.doubles.vary4D.minR = params.get("mandelbox.minR", 0.5).asDouble();
+	par.mandelbox.doubles.vary4D.scaleVary =  params.get("mandelbox.scaleVary", 0.1).asDouble();
+	par.mandelbox.doubles.vary4D.wadd = params.get("mandelbox.wadd", 0).asDouble();
+	par.mandelbox.doubles.vary4D.rPower = params.get("mandelbox.rPower", 1).asDouble();
+	//par.formulaSequence = params.get("formulaSequence", 1).asDouble();
+	//vector3 par.IFS.doubles.offset = params.get("IFS.doubles.offset", 1).asDouble();
+	par.IFS.doubles.rotationGamma = params.get("IFS.rotationGamma", 1).asDouble();
+	par.IFS.doubles.rotationAlfa = params.get("IFS.rotationAlfa", 1).asDouble();
+	par.IFS.doubles.rotationBeta = params.get("IFS.rotationBeta", 1).asDouble();
+	par.IFS.doubles.scale = params.get("IFS.scale", 1).asDouble();
+	par.IFS.foldingMode = params.get("IFS.foldingMode", 0).asBool();
+	par.IFS.absX = params.get("IFS.absX", 0).asBool();
+	par.IFS.absY = params.get("IFS.absY", 0).asBool();
+	par.IFS.absZ = params.get("IFS.absZ", 0).asBool();
+	par.IFS.mengerSpongeMode = params.get("IFS.mengerSpongeMode", 0).asBool();
+	par.IFS.foldingCount = params.get("IFS.foldingCount", 1).asInt();
+
+	if (params["mode"].asString() == "")
+		mg_params->mode = normal;
+	if (params["mode"].asString() == "normal")
+		mg_params->mode = normal;
+	if (params["mode"].asString() == "colouring")
+		mg_params->mode = colouring;
+	if (params["mode"].asString() == "fake_AO")
+		mg_params->mode = fake_AO;
+	if (params["mode"].asString() == "deltaDE1")
+		mg_params->mode = deltaDE1;
+	if (params["mode"].asString() == "deltaDE2")
+		mg_params->mode = deltaDE2;
+	if (params["mode"].asString() == "orbitTrap")
+		mg_params->mode = orbitTrap;
+
+	if (params["genFoldBox.type"].asString() == "foldTet")
+		par.genFoldBox.type = foldTet;
+	if (params["genFoldBox.type"].asString() == "foldCube")
+		par.genFoldBox.type = foldCube;
+	if (params["genFoldBox.type"].asString() == "foldOct")
+		par.genFoldBox.type = foldOct;
+	if (params["genFoldBox.type"].asString() == "foldDodeca")
+		par.genFoldBox.type = foldDodeca;
+	if (params["genFoldBox.type"].asString() == "foldOctCube")
+		par.genFoldBox.type = foldOctCube;
+	if (params["genFoldBox.type"].asString() == "foldIcosa")
+		par.genFoldBox.type = foldIcosa;
+	if (params["genFoldBox.type"].asString() == "foldBox6")
+		par.genFoldBox.type = foldBox6;
+	if (params["genFoldBox.type"].asString() == "foldBox5")
+		par.genFoldBox.type = foldBox5;
+
+	if (params["generator"].asString() == "none")
+		par.formula = none;
+	if (params["generator"].asString() == "trig_DE")
+		par.formula = trig_DE;
+	if (params["generator"].asString() == "trig_optim")
+		par.formula = trig_optim;
+	if (params["generator"].asString() == "fast_trig")
+		par.formula = fast_trig;
+	if (params["generator"].asString() == "hypercomplex")
+		par.formula = hypercomplex;
+	if (params["generator"].asString() == "quaternion")
+		par.formula = quaternion;
+	if (params["generator"].asString() == "minus_fast_trig")
+		par.formula = minus_fast_trig;
+	if (params["generator"].asString() == "menger_sponge")
+		par.formula = menger_sponge;
+	if (params["generator"].asString() == "tglad")
+		par.formula = tglad;
+	if (params["generator"].asString() == "kaleidoscopic")
+		par.formula = kaleidoscopic;
+	if (params["generator"].asString() == "xenodreambuie")
+		par.formula = xenodreambuie;
+	if (params["generator"].asString() == "hybrid")
+		par.formula = hybrid;
+	if (params["generator"].asString() == "mandelbulb2")
+		par.formula = mandelbulb2;
+	if (params["generator"].asString() == "mandelbulb3")
+		par.formula = mandelbulb3;
+	if (params["generator"].asString() == "mandelbulb4")
+		par.formula = mandelbulb4;
+	if (params["generator"].asString() == "foldingIntPow2")
+		par.formula = foldingIntPow2;
+	if (params["generator"].asString() == "smoothMandelbox")
+		par.formula = smoothMandelbox;
+	if (params["generator"].asString() == "mandelboxVaryScale4D")
+		par.formula = mandelboxVaryScale4D;
+	if (params["generator"].asString() == "aexion")
+		par.formula = aexion;
+	if (params["generator"].asString() == "benesi")
+		par.formula = benesi;
+	if (params["generator"].asString() == "bristorbrot")
+		par.formula = bristorbrot;
+	if (params["generator"].asString() == "invertX")
+		par.formula = invertX;
+	if (params["generator"].asString() == "invertY")
+		par.formula = invertY;
+	if (params["generator"].asString() == "invertZ")
+		par.formula = invertZ;
+	if (params["generator"].asString() == "invertR")
+		par.formula = invertR;
+	if (params["generator"].asString() == "sphericalFold")
+		par.formula = sphericalFold;
+	if (params["generator"].asString() == "powXYZ")
+		par.formula = powXYZ;
+	if (params["generator"].asString() == "scaleX")
+		par.formula = scaleX;
+	if (params["generator"].asString() == "scaleY")
+		par.formula = scaleY;
+	if (params["generator"].asString() == "scaleZ")
+		par.formula = scaleZ;
+	if (params["generator"].asString() == "offsetX")
+		par.formula = offsetX;
+	if (params["generator"].asString() == "offsetY")
+		par.formula = offsetY;
+	if (params["generator"].asString() == "offsetZ")
+		par.formula = offsetZ;
+	if (params["generator"].asString() == "angleMultiplyX")
+		par.formula = angleMultiplyX;
+	if (params["generator"].asString() == "angleMultiplyY")
+		par.formula = angleMultiplyY;
+	if (params["generator"].asString() == "angleMultiplyZ")
+		par.formula = angleMultiplyZ;
+	if (params["generator"].asString() == "generalizedFoldBox")
+		par.formula = generalizedFoldBox;
 
 	if (params["generator"].asString() == "mandelboxVaryScale4D") {
-		par.formula = mandelboxVaryScale4D; par.doubles.N = params.get("iterations", 50).asInt();
+		par.doubles.N = params.get("iterations", 50).asInt();
 		scale = params.get("scale", 1).asDouble();
 		invert = params.get("invert", 1).asBool(); //ok
-		par.mandelbox.doubles.vary4D.scaleVary =  params.get("scaleVary", 0.1).asDouble();
-		par.mandelbox.doubles.vary4D.fold = params.get("fold", 1).asDouble();
-		par.mandelbox.doubles.vary4D.rPower = params.get("rPower", 1).asDouble();
-		par.mandelbox.doubles.vary4D.minR = params.get("minR", 0.5).asDouble();
-		par.mandelbox.doubles.vary4D.wadd = params.get("wadd", 0).asDouble();
 	}
-	par.doubles.constantFactor = params.get("constantFactor", 1.0).asDouble();
 
 	if (params["generator"].asString() == "menger_sponge") {
-		par.formula = menger_sponge;
+		//par.formula = menger_sponge;
 		//par.doubles.N = 10;
 		//invert = 0;
 		invert = params.get("invert", 0).asBool();
@@ -255,7 +409,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 
 	//double tresh = 1.5;
 	if (params["generator"].asString() == "mandelbulb2") {
-		par.formula = mandelbulb2;
+		//par.formula = mandelbulb2;
 		//par.doubles.N = 10;
 		scale  = params.get("scale", (double)1 / size).asDouble();
 		//invert = 1;
@@ -264,13 +418,14 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 		if(!center.getLength()) center = v3f(5, -size - 5, 0); //ok
 	}
 	if (params["generator"].asString() == "hypercomplex") {
-		par.formula = hypercomplex;
+		//par.formula = hypercomplex;
 		par.doubles.N = params.get("iterations", 20).asInt();
 		scale = params.get("scale", 0.00008).asDouble();
 		//invert = 1;
 		invert = params.get("invert", 1).asBool();
 		if(!center.getLength()) center = v3f(0, -10730, 0); //(double)50 / max_r;
 	}
+	//no par.formula = smoothMandelbox; par.doubles.N = 40; invert = 0;//no
 	//no par.formula = trig_DE; par.doubles.N = 5;  scale = (double)10; invert=1;
 
 	//no par.formula = trig_optim; scale = (double)10;  par.doubles.N = 4;
@@ -284,7 +439,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	par.doubles.cadd = params.get("cadd", -1.3).asDouble();
 	//par.formula = aexion; // ok but center
 	if (params["generator"].asString() == "benesi") {
-		par.formula = benesi;
+		//par.formula = benesi;
 		//par.doubles.N = 10;
 		if(!center.getLength()) center = v3f(0, 0, 0);
 //		invert = 0; //ok
@@ -292,7 +447,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 
 	}
 	if (params["generator"].asString() == "bristorbrot") {
-		par.formula = bristorbrot; //ok
+		//par.formula = bristorbrot; //ok
 		invert = params.get("invert", 1).asBool();
 	}
 #endif
@@ -333,14 +488,14 @@ int MapgenMath::generateTerrain() {
 #ifdef FRACTAL_H_
 	v3f vec0(node_min.X, node_min.Y, node_min.Z);
 	vec0 = (vec0 - center) * scale ;
-/*
-	errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
-	            << " N=" << Compute<normal>(CVector3(vec0.X, vec0.Y, vec0.Z), mg_params->par)
-	            //<<" F="<< Compute<fake_AO>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
-	            //<<" L="<<node_min.getLength()<< " -="<<node_min.getLength() - Compute<normal>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
-	            << " Sc=" << scale << " internal=" << internal
-	            << std::endl;
-*/
+	/*
+		errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
+		            << " N=" << Compute<normal>(CVector3(vec0.X, vec0.Y, vec0.Z), mg_params->par)
+		            //<<" F="<< Compute<fake_AO>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
+		            //<<" L="<<node_min.getLength()<< " -="<<node_min.getLength() - Compute<normal>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
+		            << " Sc=" << scale << " internal=" << internal
+		            << std::endl;
+	*/
 #endif
 
 	double d = 0;
@@ -397,7 +552,8 @@ int MapgenMath::generateTerrain() {
 				v3f vec(x, y, z);
 				vec = (vec - center) * scale ;
 				//double d = Compute<fake_AO>(CVector3(x,y,z), par);
-				double d = Compute<normal>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+				//double d = Compute<normal>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+				double d = Compute < mg_params->mode > (CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
 				//if (d>0)
 				// errorstream << " d=" << d  <<" v="<< vec.getLength()<< " -="<< vec.getLength() - d <<" yad="
 				//<< Compute<normal>(CVector3(x,y,z), par)
