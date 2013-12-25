@@ -1,33 +1,22 @@
-/********************************************************
- /                   MANDELBULBER                        *
- /                                                       *
- / author: Krzysztof Marczak                             *
- / contact: buddhi1980@gmail.com                         *
- / licence: GNU GPL                                      *
+/*********************************************************
+ /                   MANDELBULBER
+ / fractal iteration functions and distance estimation
+ /
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
  ********************************************************/
-
-/*
- * fractal.cpp
- *
- *  Created on: 2010-01-23
- *      Author: krzysztof
- */
 
 //#include "Render3D.h"
 //#include "interface.h"
 //#include "primitives.h"
-#include <stdlib.h>
 
 #include "fractal.h"
 #include "algebra.cpp"
-/**
- * Compute the fractal at the point, in one of the various modes
- *
- * Mode: normal: Returns distance
- *		 fake_ao: Returns minimum radius
- *		 colouring: Returns colour index
- *		 delta_DE1, delta_DE2: Returns radius
- */
+
+#include <stdlib.h>
 
 unsigned int MixNumbers(double a, double b, double c)
 {
@@ -43,6 +32,14 @@ int Noise(int seed)
 	return abs((x * (x * x * 15731 + 789221) + 1376312589) & 0x7fffffff);
 }
 
+/**
+ * Compute the fractal at the point, in one of the various modes
+ *
+ * Mode: normal: Returns distance
+ *		 fake_ao: Returns minimum radius
+ *		 colouring: Returns colour index
+ *		 delta_DE1, delta_DE2: Returns radius
+ */
 
 template<int Mode>
 double Compute(CVector3 z, const sFractal &par, int *iter_count)
@@ -70,7 +67,7 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 	double tglad_factor1 = fR2 / mR2;
 
 	double tgladDE = 1.0;
-
+	double orbitTrapTotal = 0.0;
 	double scale = par.mandelbox.doubles.scale;
 
 	enumFractalFormula actualFormula = par.formula;
@@ -1109,6 +1106,8 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 				break;
 			case none:
 				break;
+			case ocl_custom:
+				break;
 		}
 
 		//************************** iteration terminate conditions *****************
@@ -1127,10 +1126,10 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 		{
 			CVector3 delta = z - par.doubles.fakeLightsOrbitTrap;
 			distance = delta.Length();
-			if (L >= par.fakeLightsMinIter && L <= par.fakeLightsMaxIter && distance < min) min = distance;
+			if (L >= par.fakeLightsMinIter && L <= par.fakeLightsMaxIter) orbitTrapTotal += (1.0f/(distance*distance));
 			if (distance > 1000)
 			{
-				distance = min;
+				distance = orbitTrapTotal;
 				break;
 			}
 		}
@@ -1177,7 +1176,7 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 					distance = z.Length();
 					if (distance > 1e15)
 					{
-						distance = (L - log(log(r) / log((double)N)) / log(p))/100.0;
+						distance = (L - log(log(r) / log(N)) / log(p))/100.0;
 						break;
 					}
 				}
@@ -1196,7 +1195,6 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 	}
 
 	//************ return values *****************
-
 /*
 	N_counter += L + 1;
 	Loop_counter++;
@@ -1257,52 +1255,20 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 	double distance;
 	params.objectOut = objFractal;
 
+	double limitBoxDist = 0.0;
+
 	if (params.limits_enabled)
 	{
-		bool limit = false;
-		double distance_a = 0;
-		double distance_b = 0;
-		double distance_c = 0;
+		double distance_a = MAX(point.x - params.doubles.amax, -(point.x - params.doubles.amin));
+		double distance_b = MAX(point.y - params.doubles.bmax, -(point.y - params.doubles.bmin));
+		double distance_c = MAX(point.z - params.doubles.cmax, -(point.z - params.doubles.cmin));
+		limitBoxDist = dMax(distance_a, distance_b, distance_c);
 
-		if (point.x < params.doubles.amin - params.doubles.detailSize)
-		{
-			distance_a = fabs(params.doubles.amin - point.x);
-			limit = true;
-		}
-		if (point.x > params.doubles.amax + params.doubles.detailSize)
-		{
-			distance_a = fabs(params.doubles.amax - point.x);
-			limit = true;
-		}
-
-		if (point.y < params.doubles.bmin - params.doubles.detailSize)
-		{
-			distance_a = fabs(params.doubles.bmin - point.y);
-			limit = true;
-		}
-		if (point.y > params.doubles.bmax + params.doubles.detailSize)
-		{
-			distance_b = fabs(params.doubles.bmax - point.y);
-			limit = true;
-		}
-
-		if (point.z < params.doubles.cmin - params.doubles.detailSize)
-		{
-			distance_c = fabs(params.doubles.cmin - point.z);
-			limit = true;
-		}
-		if (point.z > params.doubles.cmax + params.doubles.detailSize)
-		{
-			distance_c = fabs(params.doubles.cmax - point.z);
-			limit = true;
-		}
-
-		if (limit)
+		if(limitBoxDist > params.doubles.detailSize)
 		{
 			if (max_iter != NULL)
-				*max_iter = false;
-			distance = dMax(distance_a, distance_b, distance_c);
-			return distance;
+					*max_iter = false;
+			return limitBoxDist;
 		}
 	}
 
@@ -1317,10 +1283,11 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 				else *max_iter = false;
 			}
 			params.itersOut = L;
+			if (distance < 0) distance = 0;
 
 			if (L < params.minN && distance < params.doubles.detailSize) distance = params.doubles.detailSize;
 
-			if (params.interiorMode)
+			if (params.interiorMode && !params.normalCalculationMode)
 			{
 				if (distance < 0.5 * params.doubles.detailSize || L == (int)params.doubles.N)
 				{
@@ -1328,7 +1295,16 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 					if (max_iter != NULL) *max_iter = false;
 				}
 			}
-			if (params.iterThresh)
+			else if(params.interiorMode && params.normalCalculationMode)
+			{
+				if (distance < 0.9 * params.doubles.detailSize)
+				{
+					distance = params.doubles.detailSize - distance;
+					if (max_iter != NULL) *max_iter = false;
+				}
+			}
+
+			if (params.iterThresh && L < (int)params.doubles.N)
 			{
 				if(distance < params.doubles.detailSize)
 				{
@@ -1373,6 +1349,8 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 				distance = 0.5 * r * log(r) / dr;
 			}
 
+			if (distance < 0) distance = 0;
+
 			if (retval == (int)params.doubles.N)
 			{
 				if (max_iter != NULL) *max_iter = true;
@@ -1382,16 +1360,24 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 
 			if (L < params.minN && distance < params.doubles.detailSize) distance = params.doubles.detailSize;
 
-			if (params.interiorMode)
+			if (params.interiorMode && !params.normalCalculationMode)
 			{
-				if (distance < 0.5 * params.doubles.detailSize || retval == 256)
+				if (distance < 0.5 * params.doubles.detailSize || L == (int)params.doubles.N)
 				{
 					distance = params.doubles.detailSize;
 					if (max_iter != NULL) *max_iter = false;
 				}
 			}
+			else if(params.interiorMode && params.normalCalculationMode)
+			{
+				if (distance < 0.9 * params.doubles.detailSize)
+				{
+					distance = params.doubles.detailSize - distance;
+					if (max_iter != NULL) *max_iter = false;
+				}
+			}
 
-			if (params.iterThresh)
+			if (params.iterThresh && retval < (int)params.doubles.N)
 			{
 				if(distance < params.doubles.detailSize)
 				{
@@ -1457,36 +1443,13 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 		distance = (waterDistance < distance) ? waterDistance : distance;
 	}
 
-	if (distance < 0) distance = 0;
-	if (max_iter != NULL)
+
+	if (params.limits_enabled)
 	{
-
-		if (*max_iter)
+		if (limitBoxDist < params.doubles.detailSize)
 		{
-			if (params.limits_enabled)
-			{
-				double distance_a1 = fabs(params.doubles.amin - point.x);
-				double distance_a2 = fabs(params.doubles.amax - point.x);
-				double distance_b1 = fabs(params.doubles.bmin - point.y);
-				double distance_b2 = fabs(params.doubles.bmax - point.y);
-				double distance_c1 = fabs(params.doubles.cmin - point.z);
-				double distance_c2 = fabs(params.doubles.cmax - point.z);
-				double min1 = dMin(distance_a1, distance_b1, distance_c1);
-				double min2 = dMin(distance_a2, distance_b2, distance_c2);
-				double min = MIN(min1, min2);
-				if(min < params.doubles.detailSize)
-				{
-					distance = min;
-				}
-			}
-			else
-			{
-				//distance = params.doubles.detailSize * 0.5;
-				distance = 0.0;
-			}
+			distance = MAX(distance, limitBoxDist);
 		}
-
-
 	}
 	return distance;
 }

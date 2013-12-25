@@ -1,9 +1,13 @@
-/*
- * common_math.h
- *
- *  Created on: 2010-01-23
- *      Author: krzysztof marczak
- */
+/*********************************************************
+ /                   MANDELBULBER
+ / some functions for different calculations
+ /
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
+ ********************************************************/
 
 #ifndef COMMON_MATH_H_
 #define COMMON_MATH_H_
@@ -48,5 +52,6 @@ void QuickSortZBuffer(sSortZ *dane, int l, int p);
 CVector3 Projection3D(CVector3 point, CVector3 vp, CRotationMatrix mRot, enumPerspectiveType perspectiveType, double fov, double zoom);
 inline double SmoothConditionAGreaterB(double a, double b, double sharpness) {return 1.0 / (1.0 + exp(sharpness * (b - a)));}
 inline double SmoothConditionALessB(double a, double b, double sharpness) {return 1.0 / (1.0 + exp(sharpness * (a - b)));}
+CVector3 InvProjection3D(CVector3 point, CVector3 vp, CRotationMatrix mRotInv, enumPerspectiveType perspectiveType, double fov, double zoom, double imgWidth, double imgHeight);
 
 #endif /* COMMON_MATH_H_ */
