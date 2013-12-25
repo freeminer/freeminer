@@ -653,12 +653,16 @@ class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::map<content_t, std::list<ActiveABM> > m_aabms;
+	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
+	std::list<std::list<ActiveABM>*> m_aabms_list;
+	bool m_aabms_empty;
 public:
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers):
-		m_env(env)
+		m_env(env),
+		m_aabms(),
+		m_aabms_empty(true)
 	{
 		if(dtime_s < 0.001)
 			return;
@@ -711,21 +715,24 @@ public:
 						k != ids.end(); k++)
 				{
 					content_t c = *k;
-					std::map<content_t, std::list<ActiveABM> >::iterator j;
-					j = m_aabms.find(c);
-					if(j == m_aabms.end()){
-						std::list<ActiveABM> aabmlist;
-						m_aabms[c] = aabmlist;
-						j = m_aabms.find(c);
+					if (!m_aabms[c]) {
+						m_aabms[c] = new std::list<ActiveABM>;
+						m_aabms_list.push_back(m_aabms[c]);
 					}
-					j->second.push_back(aabm);
+					m_aabms[c]->push_back(aabm);
+					m_aabms_empty = false;
 				}
 			}
 		}
 	}
+	~ABMHandler() {
+		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
+				i != m_aabms_list.end(); ++i)
+			delete *i;
+	}
 	void apply(MapBlock *block)
 	{
-		if(m_aabms.empty())
+		if (m_aabms_empty) // whoa, when is it empty?
 			return;
 
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
@@ -741,13 +748,11 @@ public:
 			content_t c = n.getContent();
 			v3s16 p = p0 + block->getPosRelative();
 
-			std::map<content_t, std::list<ActiveABM> >::iterator j;
-			j = m_aabms.find(c);
-			if(j == m_aabms.end())
+			if (!m_aabms[c])
 				continue;
 
 			for(std::list<ActiveABM>::iterator
-					i = j->second.begin(); i != j->second.end(); i++)
+					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); i++)
 			{
 				if(myrand() % i->chance != 0)
 					continue;
