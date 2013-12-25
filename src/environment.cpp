@@ -42,6 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "map.h"
 #include "emerge.h"
 #include "util/serialize.h"
+#include "fmbitset.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -639,10 +640,13 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 
 struct ActiveABM
 {
+	ActiveABM():
+		required_neighbors(CONTENT_ID_CAPACITY)
+	{}
 	ActiveBlockModifier *abm;
 	int chance;
 	int neighbors_range;
-	std::bitset<CONTENT_ID_CAPACITY> required_neighbors;
+	FMBitset required_neighbors;
 };
 
 class ABMHandler
@@ -761,7 +765,7 @@ public:
 							continue;
 						MapNode n = map->getNodeNoEx(p1);
 						content_t c = n.getContent();
-						if(i->required_neighbors[c]){
+						if(i->required_neighbors.get(c)){
 							neighbor = n;
 							goto neighbor_found;
 						}
