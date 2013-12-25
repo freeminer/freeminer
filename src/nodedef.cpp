@@ -498,11 +498,11 @@ public:
 		}
 		//printf("getIds: %dus\n", t.stop());
 	}
-	virtual void getIds(const std::string &name, std::bitset<CONTENT_ID_CAPACITY> &result) const {
+	virtual void getIds(const std::string &name, FMBitset &result) const {
 		if(name.substr(0,6) != "group:"){
 			content_t id = CONTENT_IGNORE;
 			if(getId(name, id))
-				result[id] = 1;
+				result.set(id, true);
 			return;
 		}
 		std::string group = name.substr(6);
@@ -516,7 +516,7 @@ public:
 		for (GroupItems::const_iterator j = items.begin();
 			j != items.end(); ++j) {
 			if ((*j).second != 0)
-				result[(*j).first] = 1;
+				result.set((*j).first, true);
 		}
 	}
 	virtual const ContentFeatures& get(const std::string &name) const

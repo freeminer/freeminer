@@ -1,9 +1,14 @@
-/*
- * algebra.cpp
- *
- *  Created on: 2010-02-28
- *      Author: krzysztof
- */
+/*********************************************************
+ /                   MANDELBULBER
+ / Vector and matrix algebra
+ / Functions for CMatrix33 and CRotationMatrix classes
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
+ ********************************************************/
+
 #include "algebra.hpp"
 
 /***************** class CMatrix33 ***********************/

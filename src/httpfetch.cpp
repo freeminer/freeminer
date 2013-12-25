@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "socket.h" // for select()
+#include "porting.h" // for sleep_ms()
 #include "httpfetch.h"
 #include <iostream>
 #include <sstream>
@@ -31,6 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "util/container.h"
 #include "util/thread.h"
+#include "version.h"
 
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
@@ -103,6 +105,9 @@ bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetchresult)
 
 #if USE_CURL
 #include <curl/curl.h>
+#ifndef _MSC_VER
+#include <sys/utsname.h>
+#endif
 
 /*
 	USE_CURL is on: use cURL based httpfetch implementation
@@ -209,7 +214,17 @@ struct HTTPFetchOngoing
 
 			if (request.useragent != "")
 				curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
-
+			else {
+				std::string useragent = std::string("Minetest ") + minetest_version_hash;
+#ifdef _MSC_VER
+				useragent += "Windows";
+#else
+				struct utsname osinfo;
+				uname(&osinfo);
+				useragent += std::string(" (") + osinfo.sysname + "; " + osinfo.release + "; " + osinfo.machine + ")";
+#endif
+				curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
+			}
 			// Set up a write callback that writes to the
 			// ostringstream ongoing->oss, unless the data
 			// is to be discarded
@@ -520,19 +535,26 @@ protected:
 			select_timeout = timeout;
 
 		if (select_timeout > 0) {
-			select_tv.tv_sec = select_timeout / 1000;
-			select_tv.tv_usec = (select_timeout % 1000) * 1000;
-			int retval = select(max_fd + 1, &read_fd_set,
-					&write_fd_set, &exc_fd_set,
-					&select_tv);
-			if (retval == -1) {
-				#ifdef _WIN32
-				errorstream<<"select returned error code "
-					<<WSAGetLastError()<<std::endl;
-				#else
-				errorstream<<"select returned error code "
-					<<errno<<std::endl;
-				#endif
+			// in Winsock it is forbidden to pass three empty
+			// fd_sets to select(), so in that case use sleep_ms
+			if (max_fd == -1) {
+				select_tv.tv_sec = select_timeout / 1000;
+				select_tv.tv_usec = (select_timeout % 1000) * 1000;
+				int retval = select(max_fd + 1, &read_fd_set,
+						&write_fd_set, &exc_fd_set,
+						&select_tv);
+				if (retval == -1) {
+					#ifdef _WIN32
+					errorstream<<"select returned error code "
+						<<WSAGetLastError()<<std::endl;
+					#else
+					errorstream<<"select returned error code "
+						<<errno<<std::endl;
+					#endif
+				}
+			}
+			else {
+				sleep_ms(select_timeout);
 			}
 		}
 	}

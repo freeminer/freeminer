@@ -1,9 +1,12 @@
-/********************************************************
- /                   3D math                             *
- /                                                       *
- / author: Krzysztof Marczak                             *
- / contact: buddhi1980@gmail.com                         *
- / licence: GNU GPL                                      *
+/*********************************************************
+ /                   MANDELBULBER
+ / Vector and matrix algebra
+ / Defenitions of vector and matrix classes
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
  ********************************************************/
 
 #ifndef ALGEBRA_H_

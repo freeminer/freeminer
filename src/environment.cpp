@@ -42,6 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "map.h"
 #include "emerge.h"
 #include "util/serialize.h"
+#include "fmbitset.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -647,22 +648,29 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 
 struct ActiveABM
 {
+	ActiveABM():
+		required_neighbors(CONTENT_ID_CAPACITY)
+	{}
 	ActiveBlockModifier *abm;
 	int chance;
 	int neighbors_range;
-	std::bitset<CONTENT_ID_CAPACITY> required_neighbors;
+	FMBitset required_neighbors;
 };
 
 class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::map<content_t, std::list<ActiveABM> > m_aabms;
+	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
+	std::list<std::list<ActiveABM>*> m_aabms_list;
+	bool m_aabms_empty;
 public:
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers):
-		m_env(env)
+		m_env(env),
+		m_aabms(),
+		m_aabms_empty(true)
 	{
 		if(dtime_s < 0.001)
 			return;
@@ -715,21 +723,24 @@ public:
 						k != ids.end(); k++)
 				{
 					content_t c = *k;
-					std::map<content_t, std::list<ActiveABM> >::iterator j;
-					j = m_aabms.find(c);
-					if(j == m_aabms.end()){
-						std::list<ActiveABM> aabmlist;
-						m_aabms[c] = aabmlist;
-						j = m_aabms.find(c);
+					if (!m_aabms[c]) {
+						m_aabms[c] = new std::list<ActiveABM>;
+						m_aabms_list.push_back(m_aabms[c]);
 					}
-					j->second.push_back(aabm);
+					m_aabms[c]->push_back(aabm);
+					m_aabms_empty = false;
 				}
 			}
 		}
 	}
+	~ABMHandler() {
+		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
+				i != m_aabms_list.end(); ++i)
+			delete *i;
+	}
 	void apply(MapBlock *block)
 	{
-		if(m_aabms.empty())
+		if (m_aabms_empty) // whoa, when is it empty?
 			return;
 
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
@@ -745,13 +756,11 @@ public:
 			content_t c = n.getContent();
 			v3s16 p = p0 + block->getPosRelative();
 
-			std::map<content_t, std::list<ActiveABM> >::iterator j;
-			j = m_aabms.find(c);
-			if(j == m_aabms.end())
+			if (!m_aabms[c])
 				continue;
 
 			for(std::list<ActiveABM>::iterator
-					i = j->second.begin(); i != j->second.end(); i++)
+					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); i++)
 			{
 				if(myrand() % i->chance != 0)
 					continue;
@@ -769,7 +778,7 @@ public:
 							continue;
 						MapNode n = map->getNodeNoEx(p1);
 						content_t c = n.getContent();
-						if(i->required_neighbors[c]){
+						if(i->required_neighbors.get(c)){
 							neighbor = n;
 							goto neighbor_found;
 						}
@@ -1284,12 +1293,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 	{
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
-		u32 max_time_ms = 1000 * m_recommended_send_interval;
 		
 		// Initialize handling of ActiveBlockModifiers
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 
-		u32 n = 0, calls = 0;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1315,7 +1323,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			/* Handle ActiveBlockModifiers */
 			abmhandler.apply(block);
 
-			if (timer.getTimerTime() > max_time_ms) {
+			if (porting::getTimeMs() > end_ms) {
 				m_active_block_abm_last = n;
 				break;
 			}
@@ -1324,11 +1332,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 			m_active_block_abm_last = 0;
 
 		u32 time_ms = timer.stop(true);
-		if(time_ms > max_time_ms){
+		if(m_active_block_abm_last){
 			infostream<<"WARNING: active block modifiers ("
-					<<calls<<"/"<<m_active_blocks.m_list.size()<<" <"<<m_active_block_abm_last<<") took "
-					<<time_ms<<"ms (longer than "
-					<<max_time_ms<<"ms)"<<std::endl;
+					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
+					<<time_ms<<"ms "
+					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
 			m_active_block_abm_dtime = 0;

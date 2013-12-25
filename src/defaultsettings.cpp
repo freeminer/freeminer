@@ -329,7 +329,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_water", "true");
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
-	settings->setDefault("num_emerge_threads", "4");
+	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
 	settings->setDefault("max_objects_per_block", "300");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("congestion_control_max_rate", "2000");

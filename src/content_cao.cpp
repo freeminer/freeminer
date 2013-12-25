@@ -864,7 +864,9 @@ public:
 		//video::IVideoDriver* driver = smgr->getVideoDriver();
 
 		if(m_prop.visual == "sprite"){
+/*
 			infostream<<"GenericCAO::addToScene(): single_sprite"<<std::endl;
+*/
 			m_spritenode = smgr->addBillboardSceneNode(
 					NULL, v2f(1, 1), v3f(0,0,0), -1);
 			m_spritenode->setMaterialTexture(0,

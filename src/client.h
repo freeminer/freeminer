@@ -258,6 +258,7 @@ public:
 				i = m_packets.begin();
 				i != m_packets.end(); ++i)
 		{
+			if (i->second)
 			o<<"cmd "<<i->first
 					<<" count "<<i->second
 					<<std::endl;

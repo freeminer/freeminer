@@ -312,6 +312,7 @@ set(common_SRCS
 	convert_json.cpp
 	gettext.cpp
 	httpfetch.cpp
+	fmbitset.cpp
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}

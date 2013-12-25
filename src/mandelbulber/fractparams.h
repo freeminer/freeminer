@@ -1,9 +1,13 @@
-/*
- * fractparams.h
- *
- *  Created on: 2010-05-03
- *      Author: krzysztof
- */
+/*********************************************************
+ /                   MANDELBULBER
+ / definition of structures for image and effect
+ / parameters
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
+ ********************************************************/
 
 #ifndef FRACTPARAMS_H_
 #define FRACTPARAMS_H_
@@ -30,10 +34,7 @@ struct sParamRenderD
 	double auxLightMaxDist;
 	double auxLightDistributionRadius;
 	double auxLightVisibility;
-	double auxLightPre1intensity;
-	double auxLightPre2intensity;
-	double auxLightPre3intensity;
-	double auxLightPre4intensity;
+	double auxLightPreIntensity[4];
 	double stereoEyeDistance;
 	double viewDistanceMin;
 	double viewDistanceMax;
@@ -60,10 +61,7 @@ struct sParamRenderD
 //	sImageAdjustments imageAdjustments;
 
 	CVector3 vp; //view point
-	CVector3 auxLightPre1;
-	CVector3 auxLightPre2;
-	CVector3 auxLightPre3;
-	CVector3 auxLightPre4;
+	CVector3 auxLightPre[4];
 	CVector3 auxLightRandomCenter;
 };
 
@@ -104,10 +102,7 @@ struct sParamRender
 	bool animMode; //animation mode
 	bool SSAOEnabled;
 	bool DOFEnabled;
-	bool auxLightPre1Enabled;
-	bool auxLightPre2Enabled;
-	bool auxLightPre3Enabled;
-	bool auxLightPre4Enabled;
+	bool auxLightPreEnabled[4];
 	bool volumetricLightEnabled[5];
 	bool penetratingLights;
 	bool stereoEnabled;
@@ -120,10 +115,7 @@ struct sParamRender
 	sRGB background_color1; //background colour
 	sRGB background_color2;
 	sRGB background_color3;
-	sRGB auxLightPre1Colour;
-	sRGB auxLightPre2Colour;
-	sRGB auxLightPre3Colour;
-	sRGB auxLightPre4Colour;
+	sRGB auxLightPreColour[4];
 	sRGB fogColour1;
 	sRGB fogColour2;
 	sRGB fogColour3;

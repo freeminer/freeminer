@@ -1,6 +1,5 @@
 /*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2013 xyz, Ilya Zhuravlev <whatever@xyz.is>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -17,40 +16,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef UTIL_TIMETAKER_HEADER
-#define UTIL_TIMETAKER_HEADER
+#ifndef FMBITSET_HEADER
+#define FMBITSET_HEADER
 
-#include "../irrlichttypes.h"
-#include "../gettime.h"
+#include <cstdlib>
+#include <vector>
 
-/*
-	TimeTaker
-*/
+class FMBitset {
+	public:
+		FMBitset(size_t capacity);
+		size_t count();
+		void set(size_t index, bool value);
+		bool get(size_t index);
 
-class TimeTaker
-{
-public:
-	TimeTaker(const char *name, u32 *result=NULL,
-		TimePrecision=PRECISION_MILLI);
-
-	~TimeTaker()
-	{
-#ifndef NDEBUG
-		stop();
-#endif
-	}
-
-	u32 stop(bool quiet=false);
-
-	u32 getTimerTime();
-
-private:
-	const char *m_name;
-	u32 m_time1;
-	bool m_running;
-	TimePrecision m_precision;
-	u32 *m_result;
+	private:
+		std::vector<char> m_bits;
+		size_t m_count;
 };
 
-#endif
 
+#endif

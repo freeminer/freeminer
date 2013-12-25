@@ -1,9 +1,13 @@
-/*
- * fractal.h
- *
- *  Created on: 2010-01-23
- *      Author: krzysztof marczak
- */
+/*********************************************************
+ /                   MANDELBULBER
+ / definition of structures for fractal parameters
+ /
+ /
+ / author: Krzysztof Marczak
+ / contact: buddhi1980@gmail.com
+ / licence: GNU GPL v3.0
+ /
+ ********************************************************/
 
 #ifndef FRACTAL_H_
 #define FRACTAL_H_
@@ -12,6 +16,7 @@
 #include "common_math.h"
 //#include "fractparams.h"
 #include <stddef.h>
+#include <string>
 
 const int IFS_VECTOR_COUNT = 9;
 const int HYBRID_COUNT = 5;
@@ -55,7 +60,8 @@ enum enumFractalFormula
 	angleMultiplyX = 34,
 	angleMultiplyY = 35,
 	angleMultiplyZ = 36,
-	generalizedFoldBox = 37
+	generalizedFoldBox = 37,
+	ocl_custom = 38
 };
 
 enum enumCalculationMode
@@ -84,6 +90,13 @@ enum enumObjectType
 	objSphereInv = 4,
 	objBox = 5,
 	objBoxInv = 6
+};
+
+enum enumOCLDEMode
+{
+	calculated = 0,
+	deltaDE = 1,
+	noDE = 2
 };
 
 struct sFractalIFSD
@@ -225,6 +238,9 @@ struct sFractalD
 	double power;		 //power of fractal formula
 	double cadd;
 	double hybridPower[HYBRID_COUNT];
+#ifdef CLSUPPORT
+	double customParameters[15];
+#endif
 	CVector3 julia; // Julia constant
 	CVector3 fakeLightsOrbitTrap;
 	sFractalPrimitivesD primitives;
@@ -247,6 +263,8 @@ struct sFractal
 	bool hybridCyclic;
 	bool linearDEmode;
 	bool constantDEThreshold;
+	bool useCustomOCLFormula;
+	bool normalCalculationMode;
 
 	enumFractalFormula formula;
 
@@ -255,6 +273,8 @@ struct sFractal
 
 	std::vector<enumFractalFormula> formulaSequence;
 	std::vector<double> hybridPowerSequence;
+	char customOCLFormulaName[100];
+	enumOCLDEMode customOCLFormulaDEMode;
 
 	sFractalIFS IFS;
 	sFractalMandelbox mandelbox;
@@ -271,7 +291,6 @@ struct sFractal
 };
 
 template <int Mode> double Compute(CVector3 z, const sFractal &par, int *iter_count = NULL);
-//double CalculateDistance(CVector3 point, sFractal &par, bool *max_iter = NULL);
-
+double CalculateDistance(CVector3 point, sFractal &par, bool *max_iter = NULL);
 
 #endif /* FRACTAL_H_ */

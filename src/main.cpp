@@ -717,12 +717,14 @@ void SpeedTests()
 			}
 		}
 		// Do at least 10ms
-		while(timer.getTimerTime() < 10);
+		while(timer.getTimerTime() < 10 && n < 100000);
 
 		u32 dtime = timer.stop();
+		if (dtime) { // dirty hack, TimeTaker is disabled for release
 		u32 per_ms = n / dtime;
 		infostream<<"Done. "<<dtime<<"ms, "
 				<<per_ms<<"/ms"<<std::endl;
+		}
 	}
 }
 
