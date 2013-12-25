@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <map>
 #include <list>
+#include <bitset>
 #include "mapnode.h"
 #ifndef SERVER
 #include "tile.h"
@@ -294,6 +295,7 @@ public:
 	// Allows "group:name" in addition to regular node names
 	virtual void getIds(const std::string &name, std::set<content_t> &result)
 			const=0;
+	virtual void getIds(const std::string &name, std::bitset<CONTENT_ID_CAPACITY> &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
 	
 	virtual void serialize(std::ostream &os, u16 protocol_version)=0;

@@ -642,7 +642,7 @@ struct ActiveABM
 	ActiveBlockModifier *abm;
 	int chance;
 	int neighbors_range;
-	std::set<content_t> required_neighbors;
+	std::bitset<CONTENT_ID_CAPACITY> required_neighbors;
 };
 
 class ABMHandler
@@ -749,7 +749,7 @@ public:
 					continue;
 				// Check neighbors
 				MapNode neighbor;
-				if(!i->required_neighbors.empty())
+				if(i->required_neighbors.count() > 0)
 				{
 					v3s16 p1;
 					int neighbors_range = i->neighbors_range;
@@ -761,9 +761,7 @@ public:
 							continue;
 						MapNode n = map->getNodeNoEx(p1);
 						content_t c = n.getContent();
-						std::set<content_t>::const_iterator k;
-						k = i->required_neighbors.find(c);
-						if(k != i->required_neighbors.end()){
+						if(i->required_neighbors[c]){
 							neighbor = n;
 							goto neighbor_found;
 						}

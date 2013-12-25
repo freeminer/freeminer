@@ -37,6 +37,8 @@ class INodeDefManager;
 */
 typedef u16 content_t;
 
+#define CONTENT_ID_CAPACITY (1 << (8 * sizeof(content_t)))
+
 /*
 	The maximum node ID that can be registered by mods. This must
 	be significantly lower than the maximum content_t value, so that
