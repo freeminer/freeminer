@@ -498,27 +498,6 @@ public:
 		}
 		//printf("getIds: %dus\n", t.stop());
 	}
-	virtual void getIds(const std::string &name, std::bitset<CONTENT_ID_CAPACITY> &result) const {
-		if(name.substr(0,6) != "group:"){
-			content_t id = CONTENT_IGNORE;
-			if(getId(name, id))
-				result[id] = 1;
-			return;
-		}
-		std::string group = name.substr(6);
-
-		std::map<std::string, GroupItems>::const_iterator
-			i = m_group_to_items.find(group);
-		if (i == m_group_to_items.end())
-			return;
-
-		const GroupItems &items = i->second;
-		for (GroupItems::const_iterator j = items.begin();
-			j != items.end(); ++j) {
-			if ((*j).second != 0)
-				result[(*j).first] = 1;
-		}
-	}
 	virtual const ContentFeatures& get(const std::string &name) const
 	{
 		content_t id = CONTENT_UNKNOWN;
