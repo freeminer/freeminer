@@ -38,6 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
+#include "fmbitset.h"
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -178,6 +179,33 @@ public:
 private:
 };
 
+struct ActiveABM
+{
+	ActiveABM():
+		required_neighbors(CONTENT_ID_CAPACITY)
+	{}
+	ActiveBlockModifier *abm;
+	int chance;
+	int neighbors_range;
+	FMBitset required_neighbors;
+};
+
+class ABMHandler
+{
+private:
+	ServerEnvironment *m_env;
+	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
+	std::list<std::list<ActiveABM>*> m_aabms_list;
+	bool m_aabms_empty;
+public:
+	ABMHandler(std::list<ABMWithState> &abms,
+			float dtime_s, ServerEnvironment *env,
+			bool use_timers);
+	~ABMHandler();
+	void apply(MapBlock *block);
+
+};
+
 /*
 	The server-side environment.
 
@@ -308,6 +336,7 @@ public:
 	
 	// is weather active in this environment?
 	bool m_use_weather;
+	ABMHandler * m_abmhandler;
 
 private:
 

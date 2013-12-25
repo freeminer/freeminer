@@ -390,6 +390,8 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 		par.formula = angleMultiplyZ;
 	if (params["generator"].asString() == "generalizedFoldBox")
 		par.formula = generalizedFoldBox;
+	if (params["generator"].asString() == "ocl_custom")
+		par.formula = ocl_custom;
 
 	if (params["generator"].asString() == "mandelboxVaryScale4D") {
 		par.doubles.N = params.get("iterations", 50).asInt();

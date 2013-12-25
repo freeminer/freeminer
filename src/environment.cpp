@@ -311,6 +311,7 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 ServerEnvironment::ServerEnvironment(ServerMap *map,
 		GameScripting *scriptIface,
 		IGameDef *gamedef, IBackgroundBlockEmerger *emerger):
+	m_abmhandler(NULL),
 	m_map(map),
 	m_script(scriptIface),
 	m_gamedef(gamedef),
@@ -638,6 +639,7 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 }
 
+/* now in .h
 struct ActiveABM
 {
 	ActiveABM():
@@ -648,7 +650,9 @@ struct ActiveABM
 	int neighbors_range;
 	FMBitset required_neighbors;
 };
+*/
 
+/*
 class ABMHandler
 {
 private:
@@ -657,6 +661,9 @@ private:
 	std::list<std::list<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:
+*/
+
+	ABMHandler::
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers):
@@ -725,18 +732,18 @@ public:
 			}
 		}
 	}
+	ABMHandler::
 	~ABMHandler() {
 		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
 				i != m_aabms_list.end(); ++i)
 			delete *i;
 	}
-	void apply(MapBlock *block)
+	void ABMHandler::apply(MapBlock *block)
 	{
 		if (m_aabms_empty) // whoa, when is it empty?
 			return;
 
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
-
 		ServerMap *map = &m_env->getServerMap();
 
 		v3s16 p0;
@@ -809,7 +816,9 @@ neighbor_found:
 			}
 		}
 	}
+/*
 };
+*/
 
 void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 {
@@ -1287,8 +1296,14 @@ void ServerEnvironment::step(float dtime, float uptime)
 		TimeTaker timer("modify in active blocks");
 		
 		// Initialize handling of ActiveBlockModifiers
+		if (!m_active_block_abm_last || !m_abmhandler) {
+			if (m_abmhandler)
+				delete m_abmhandler;
+			m_abmhandler = new ABMHandler(m_abms, m_active_block_abm_dtime, this, true);
+		}
+/*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
-
+*/
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
@@ -1313,7 +1328,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			block->setTimestampNoChangedFlag(m_game_time);
 
 			/* Handle ActiveBlockModifiers */
-			abmhandler.apply(block);
+			m_abmhandler->apply(block);
 
 			if (porting::getTimeMs() > end_ms) {
 				m_active_block_abm_last = n;
@@ -1324,7 +1339,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			m_active_block_abm_last = 0;
 
 		u32 time_ms = timer.stop(true);
-		if(m_active_block_abm_last){
+		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
 					<<time_ms<<"ms "
