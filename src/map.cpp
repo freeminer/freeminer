@@ -2129,6 +2129,8 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		m_transforming_liquid.push_back(must_reflow_second.pop_front());
 	//updateLighting(lighting_modified_blocks, modified_blocks);
 
+	g_profiler->add("Server: liquids processed", loopcount);
+
 	return ret;
 }
 
@@ -2426,6 +2428,8 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
 	//updateLighting(lighting_modified_blocks, modified_blocks);
+
+	g_profiler->add("Server: liquids processed", loopcount);
 
 	return ret;
 }
