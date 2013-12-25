@@ -159,7 +159,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 				}
 				if (allow) {
 					n.freezeMelt(ndef, -1);
-					map->addNodeWithEvent(p, n);
+					map->setNode(p, n);
 				}
 			}
 		}
@@ -198,7 +198,7 @@ class MeltWeather : public ActiveBlockModifier {
 						return; // do not melt when falling (dirt->dirt_with_grass on air)
 				}
 				n.freezeMelt(ndef, +1);
-				map->addNodeWithEvent(p, n);
+				map->setNode(p, n);
 				//env->getScriptIface()->node_falling_update(p); //enable after making FAST nodeupdate
 			}
 		}
@@ -232,7 +232,7 @@ class MeltHot : public ActiveBlockModifier {
 			int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 			if (hot > melt) {
 				n.freezeMelt(ndef, +1);
-				map->addNodeWithEvent(p, n);
+				map->setNode(p, n);
 				env->getScriptIface()->node_falling_update(p);
 			}
 		}
@@ -265,7 +265,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 			int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
 			if (cold < freeze) {
 				n.freezeMelt(ndef, -1);
-				map->addNodeWithEvent(p, n);
+				map->setNode(p, n);
 			}
 		}
 };
