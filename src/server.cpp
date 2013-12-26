@@ -5568,7 +5568,9 @@ void dedicated_server_loop(Server &server, bool &kill)
 		// This is kind of a hack but can be done like this
 		// because server.step() is very light
 		{
+/*
 			ScopeProfiler sp(g_profiler, "dedicated server sleep");
+*/
 			sleep_ms((int)(steplen*1000.0));
 		}
 		try {
