@@ -162,7 +162,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	invert = params.get("invert", 0).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	scale = params.get("scale", (double)1 / size).asDouble(); //(double)1 / size;
-	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asFloat(), params["center"]["y"].asFloat(), params["center"]["z"].asFloat()); //v3f(5, -size - 5, 5);
+	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
 	iterations = params.get("iterations", 10).asInt(); //10;
 	distance = params.get("distance", scale).asDouble(); // = 1/size;
 
@@ -219,7 +219,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 
 #ifdef FRACTAL_H_
 	sFractal & par = mg_params->par;
-	par.minN = params.get("minN", 1).asInt();
+	//par.minN = params.get("minN", 1).asInt();
 
 	par.limits_enabled  = params.get("limits_enabled", 0).asBool();
 	par.iterThresh  = params.get("iterThresh", 0).asBool();
@@ -237,13 +237,15 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	par.fakeLightsMinIter = params.get("fakeLightsMinIter", 1).asInt();
 
 	par.doubles.N = params.get("N", iterations).asDouble();
-	par.doubles.amin = params.get("amin", 1).asDouble();
-	par.doubles.amax = params.get("amax", 1).asDouble();
-	par.doubles.bmin = params.get("bmin", 1).asDouble();
-	par.doubles.bmax = params.get("bmax", 1).asDouble();
-	par.doubles.cmin = params.get("cmin", 1).asDouble();
-	par.doubles.cmax = params.get("cmax", 1).asDouble();
-	par.doubles.constantFactor = params.get("constantFactor", 1.0).asDouble();
+/*
+	par.doubles.amin = params.get("amin", -10).asDouble();
+	par.doubles.amax = params.get("amax", 10).asDouble();
+	par.doubles.bmin = params.get("bmin", -10).asDouble();
+	par.doubles.bmax = params.get("bmax", 10).asDouble();
+	par.doubles.cmin = params.get("cmin", -10).asDouble();
+	par.doubles.cmax = params.get("cmax", 10).asDouble();
+*/
+	par.doubles.constantFactor = params.get("fractal_constant_factor", 1.0).asDouble();
 	par.doubles.FoldingIntPowZfactor = params.get("FoldingIntPowZfactor", 1).asDouble();
 	par.doubles.FoldingIntPowFoldFactor = params.get("FoldingIntPowFoldFactor", 1).asDouble();
 	par.doubles.foldingSphericalFixed = params.get("foldingSphericalFixed", 1.0).asDouble();
@@ -251,7 +253,9 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	par.doubles.detailSize = params.get("detailSize", 1).asDouble();
 	par.doubles.power = params.get("power", 9.0).asDouble();
 	par.doubles.cadd = params.get("cadd", 1).asDouble();
-	// cvector par.doubles.julia = params.get("julia", 1).asDouble();
+	par.doubles.julia.x = params.get("julia_a", 0).asDouble();
+	par.doubles.julia.y = params.get("julia_b", 0).asDouble();
+	par.doubles.julia.z = params.get("julia_c", 0).asDouble();
 
 	par.mandelbox.doubles.colorFactorX = params.get("mandelbox.colorFactorX", 1).asDouble();
 	par.mandelbox.doubles.colorFactorY = params.get("mandelbox.colorFactorY", 1).asDouble();
@@ -259,7 +263,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	par.mandelbox.doubles.colorFactorR = params.get("mandelbox.colorFactorR", 1).asDouble();
 	par.mandelbox.doubles.colorFactorSp1 = params.get("mandelbox.colorFactorSp1", 1).asDouble();
 	par.mandelbox.doubles.colorFactorSp2 = params.get("mandelbox.colorFactorSp2", 1).asDouble();
-	par.mandelbox.doubles.scale = params.get("mandelbox.scale", 1).asDouble();
+	par.mandelbox.doubles.scale = params.get("mandelbox.scale", 2).asDouble();
 	par.mandelbox.doubles.foldingLimit = params.get("mandelbox.foldingLimit", 1.0).asDouble();
 	par.mandelbox.doubles.foldingValue = params.get("mandelbox.foldingValue", 2).asDouble();
 	par.mandelbox.doubles.sharpness = params.get("mandelbox.sharpness", 2).asDouble();
@@ -438,7 +442,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	//par.formula = xenodreambuie;  par.juliaMode = 1; par.doubles.julia.x = -1; par.doubles.power = 2.0; center=v3f(-size/2,-size/2-5,5); //ok
 
 	//no par.formula = mandelboxVaryScale4D;
-	par.doubles.cadd = params.get("cadd", -1.3).asDouble();
+	//par.doubles.cadd = params.get("cadd", -1.3).asDouble();
 	//par.formula = aexion; // ok but center
 	if (params["generator"].asString() == "benesi") {
 		//par.formula = benesi;
