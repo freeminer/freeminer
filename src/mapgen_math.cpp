@@ -307,21 +307,21 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	if (params["mode"].asString() == "orbitTrap")
 		mg_params->mode = orbitTrap;
 
-	if (params["genFoldBox.type"].asString() == "foldTet")
+	if (params["mandelbox_fold_mode"].asString() == "foldTet")
 		par.genFoldBox.type = foldTet;
-	if (params["genFoldBox.type"].asString() == "foldCube")
+	if (params["mandelbox_fold_mode"].asString() == "foldCube")
 		par.genFoldBox.type = foldCube;
-	if (params["genFoldBox.type"].asString() == "foldOct")
+	if (params["mandelbox_fold_mode"].asString() == "foldOct")
 		par.genFoldBox.type = foldOct;
-	if (params["genFoldBox.type"].asString() == "foldDodeca")
+	if (params["mandelbox_fold_mode"].asString() == "foldDodeca")
 		par.genFoldBox.type = foldDodeca;
-	if (params["genFoldBox.type"].asString() == "foldOctCube")
+	if (params["mandelbox_fold_mode"].asString() == "foldOctCube")
 		par.genFoldBox.type = foldOctCube;
-	if (params["genFoldBox.type"].asString() == "foldIcosa")
+	if (params["mandelbox_fold_mode"].asString() == "foldIcosa")
 		par.genFoldBox.type = foldIcosa;
-	if (params["genFoldBox.type"].asString() == "foldBox6")
+	if (params["mandelbox_fold_mode"].asString() == "foldBox6")
 		par.genFoldBox.type = foldBox6;
-	if (params["genFoldBox.type"].asString() == "foldBox5")
+	if (params["mandelbox_fold_mode"].asString() == "foldBox5")
 		par.genFoldBox.type = foldBox5;
 
 	if (params["generator"].asString() == "none")
