@@ -59,6 +59,5 @@ u32 TimeTaker::getTimerTime()
 	u32 dtime = time2 - m_time1;
 	return dtime;
 	return 0;
-#endif
 }
 
