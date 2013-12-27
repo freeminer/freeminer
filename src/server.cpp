@@ -4340,8 +4340,8 @@ void Server::SendBlocks(float dtime)
 		if(client->denied)
 			continue;
 
-		// maybe sometimes blocks will not load (must wait 1+ minute), but reduce network load
-		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, q.priority<=4);
+		// maybe sometimes blocks will not load (must wait 1+ minute), but reduce network load: q.priority<=4
+		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, 1);
 
 		client->SentBlock(q.pos);
 	}
