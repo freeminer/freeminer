@@ -170,7 +170,10 @@ endif()
 
 find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
-if(BUILD_CLIENT)
+
+OPTION(ENABLE_GLES "Enable GLES (ARM, android. special irrlicht version needed!)" OFF)
+
+if(BUILD_CLIENT AND ENABLE_GLES)
 	find_package(OpenGLES2)
 endif()
 
