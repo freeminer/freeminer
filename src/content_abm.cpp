@@ -48,13 +48,13 @@ class LiquidFlowABM : public ActiveBlockModifier {
 			return contents;
 		}
 		virtual float getTriggerInterval()
-		{ return 10.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 500)
+			if (map->transforming_liquid_size() > 1000)
 				return;
 			map->transforming_liquid_push_back(p);
 		}
@@ -80,13 +80,13 @@ class LiquidDropABM : public ActiveBlockModifier {
 			return neighbors;
 		}
 		virtual float getTriggerInterval()
-		{ return 20.0; }
+		{ return 20; }
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 500)
+			if (map->transforming_liquid_size() > 1000)
 				return;
 			if (   map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent() != CONTENT_AIR  // below
 			    && map->getNodeNoEx(p - v3s16(1,  0, 0 )).getContent() != CONTENT_AIR  // right
@@ -114,9 +114,9 @@ class LiquidFreeze : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
-		{ return 20; }
+		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
@@ -180,9 +180,9 @@ class MeltWeather : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
-		{ return 20; }
+		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
@@ -252,7 +252,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 			return s;
 		}
 		virtual u32 getNeighborsRange()
-		{ return 1; }
+		{ return 2; }
 		virtual float getTriggerInterval()
 		{ return 3.0; }
 		virtual u32 getTriggerChance()
