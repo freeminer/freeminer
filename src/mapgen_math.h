@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_v7.h"
 #include "json/json.h"
 
-#ifdef USE_MANDELBULBER
+#if USE_MANDELBULBER
 #include "util/mathconstants.h"
 //#include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.h"
@@ -37,7 +37,7 @@ struct MapgenMathParams : public MapgenV7Params {
 
 	Json::Value params;
 
-#ifdef USE_MANDELBULBER
+#if USE_MANDELBULBER
 	sFractal par;
 	enumCalculationMode mode;
 #endif
