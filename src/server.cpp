@@ -5020,7 +5020,7 @@ void Server::notifyPlayer(const char *name, const std::wstring msg, const bool p
 	if(!player)
 		return;
 	if (prepend)
-		SendChatMessage(player->peer_id, std::wstring(L"Server -!- ")+msg);
+		SendChatMessage(player->peer_id, std::wstring(L"\vaaaaaaServer: \vffffff")+msg);
 	else
 		SendChatMessage(player->peer_id, msg);
 }

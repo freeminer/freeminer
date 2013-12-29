@@ -71,6 +71,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
+#include "FMStaticText.h"
 
 /*
 	Text input system
@@ -1391,11 +1392,16 @@ void the_game(
 	float statustext_time = 0;
 	
 	// Chat text
-	gui::IGUIStaticText *guitext_chat = guienv->addStaticText(
+/*	gui::IGUIStaticText *guitext_chat = guienv->addStaticText(
 			L"",
 			core::rect<s32>(0,0,0,0),
 			//false, false); // Disable word wrap as of now
-			false, true);
+			false, true);*/
+
+	gui::FMStaticText *guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
+	guitext_chat->setWordWrap(true);
+	guitext_chat->drop();
+
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend.clearRecentChat();
 	// Chat backend and console
