@@ -225,6 +225,10 @@ if(ENABLE_LEVELDB)
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
+
+set(USE_MANDELBULBER 0)
+find_package(Mandelbulber)
+
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
 	"${PROJECT_BINARY_DIR}/cmake_config.h"

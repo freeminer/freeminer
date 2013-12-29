@@ -32,8 +32,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "biome.h"
 
 // can use ported lib from http://mandelbulber.googlecode.com/svn/trunk/src
-//#include "mandelbulber/fractal.h"
-#ifdef FRACTAL_H_
+#ifdef USE_MANDELBULBER
+#include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.cpp"
 #endif
 
@@ -187,7 +187,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	}
 
 
-#ifdef FRACTAL_H_
+#ifdef USE_MANDELBULBER
 	sFractal & par = mg_params->par;
 	//par.minN = params.get("minN", 1).asInt();
 
@@ -426,7 +426,7 @@ int MapgenMath::generateTerrain() {
 	//errorstream << Json::StyledWriter().write( mg_params->params ).c_str()<< std::endl;
 	//errorstream << " iterations="<<iterations<< " scale="<<scale <<" invert="<<invert<< std::endl;
 
-#ifdef FRACTAL_H_
+#ifdef USE_MANDELBULBER
 	v3f vec0(node_min.X, node_min.Y, node_min.Z);
 	vec0 = (vec0 - center) * scale;
 	/*
@@ -447,7 +447,7 @@ int MapgenMath::generateTerrain() {
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
 
-#ifdef FRACTAL_H_
+#ifdef USE_MANDELBULBER
 				if (!internal)
 					d = Compute<normal>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
 #endif
