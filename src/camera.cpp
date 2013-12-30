@@ -359,10 +359,12 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	f32 fov_degrees;
 	if (player->zoom) {
 		fov_degrees = g_settings->getFloat("zoom_fov");
+		m_wieldnode->setVisible(false);
 	} else {
 		fov_degrees = g_settings->getFloat("fov");
 		fov_degrees = MYMAX(fov_degrees, 10.0);
 		fov_degrees = MYMIN(fov_degrees, 170.0);
+		m_wieldnode->setVisible(true);
 	}
 
 	// Greater FOV if running
