@@ -269,7 +269,11 @@ void FMStaticText::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT ve
 }
 
 
+#if IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR <= 7
+const video::SColor& FMStaticText::getOverrideColor() const
+#else
 video::SColor FMStaticText::getOverrideColor() const
+#endif
 {
 	return OverrideColor;
 }
