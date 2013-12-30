@@ -629,6 +629,8 @@ void CGUITTFont::draw(const core::stringw& text, const core::rect<s32>& position
 		++iter;
 		++current_color;
 	}
+	if (applied_colors.empty())
+		applied_colors.push_back(irr::video::SColor(255, 255, 255, 255));
 
 	// Draw now.
 	update_glyph_pages();
