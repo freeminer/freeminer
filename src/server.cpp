@@ -4230,6 +4230,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 {
 	DSTACK(__FUNCTION_NAME);
 
+	g_profiler->add("Connection: blocks", 1);
+
 	v3s16 p = block->getPos();
 
 #if 0

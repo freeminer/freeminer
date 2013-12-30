@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/string.h"
 #include "settings.h"
+#include "profiler.h"
 
 namespace con
 {
@@ -937,6 +938,7 @@ void Connection::runTimeouts(float dtime)
 		}
 
 		float resend_timeout = peer->resend_timeout;
+		int resends = 0;
 		for(u16 i=0; i<CHANNEL_COUNT; i++)
 		{
 /*
@@ -998,6 +1000,7 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 				}
 */
 
+				g_profiler->add("Connection: reliable resends", 1);
 				PrintInfo(derr_con);
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
 				j->address.print(&derr_con);
@@ -1022,9 +1025,14 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 				// The rtt will be at least the timeout.
 				// NOTE: This won't affect the timeout of the next
 				// checked channel because it was cached.
+				++resends;
+/*
 				peer->reportRTT(resend_timeout);
+*/
 			}
 		}
+		if (resends)
+			peer->reportRTT(resend_timeout);
 		
 		/*
 			Send pings
@@ -1168,6 +1176,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		return;
 	Channel *channel = &(peer->channels[channelnum]);
 
+	g_profiler->add("Connection: packets", 1);
 	if(reliable)
 	{
 		u16 seqnum = channel->next_outgoing_seqnum;
