@@ -379,7 +379,6 @@ set(minetest_SRCS
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	convert_json.cpp
-	FMStaticText.cpp
 	FMColoredString.cpp
 	${minetest_SCRIPT_SRCS}
 )
@@ -388,6 +387,7 @@ if(USE_FREETYPE)
 	set(minetest_SRCS
 		${minetest_SRCS}
 		intlGUIEditBox.cpp
+		FMStaticText.cpp
 	)
 endif(USE_FREETYPE)
 
