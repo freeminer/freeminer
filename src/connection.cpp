@@ -893,6 +893,7 @@ void Connection::receive()
 			continue;
 		}catch(ProcessedSilentlyException &e){
 		}
+		g_profiler->add("Connection: packets recd", 1);
 	}catch(InvalidIncomingDataException &e){
 	}
 	catch(ProcessedSilentlyException &e){
@@ -1176,7 +1177,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		return;
 	Channel *channel = &(peer->channels[channelnum]);
 
-	g_profiler->add("Connection: packets", 1);
+	g_profiler->add("Connection: packets sent", 1);
 	if(reliable)
 	{
 		u16 seqnum = channel->next_outgoing_seqnum;
