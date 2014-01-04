@@ -114,9 +114,9 @@ class LiquidFreeze : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10; }
+		{ return 5; }
 		virtual u32 getTriggerChance()
-		{ return 10; }
+		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
@@ -180,9 +180,9 @@ class MeltWeather : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10; }
+		{ return 5; }
 		virtual u32 getTriggerChance()
-		{ return 10; }
+		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
@@ -276,7 +276,6 @@ void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef) {
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
 		env->addActiveBlockModifier(new MeltHot(env, nodedef));
 		env->addActiveBlockModifier(new LiquidFreezeCold(env, nodedef));
-		//env->addActiveBlockModifier(new LiquidMeltAround(env, nodedef));
 		if (env->m_use_weather) {
 			env->addActiveBlockModifier(new LiquidFreeze(env, nodedef));
 			env->addActiveBlockModifier(new MeltWeather(env, nodedef));
