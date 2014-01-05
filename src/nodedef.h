@@ -269,13 +269,15 @@ struct ContentFeatures
 		if(!isLiquid() || !f.isLiquid()) return false;
 		return (liquid_alternative_flowing == f.liquid_alternative_flowing);
 	}
-	u8 getMaxLevel() const{
+	u8 getMaxLevel(bool compress = 0) const{
 		if(param_type_2 == CPT2_LEVELED && liquid_type == LIQUID_FLOWING && leveled)
-			return leveled;
+			return(compress ? LEVELED_MAX : leveled);
 		if(leveled || param_type_2 == CPT2_LEVELED)
 			return LEVELED_MAX;
 		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
 			return LIQUID_LEVEL_SOURCE;
+//		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING || liquid_type == LIQUID_SOURCE) //remove liquid_type
+//			return(compress ? LEVELED_MAX : LIQUID_LEVEL_SOURCE);
 		return 0;
 	}
 

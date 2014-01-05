@@ -329,10 +329,13 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 
 	v3s16 pos = read_v3s16(L, 1);
 	u8 level = 1;
+	bool compress = 0;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
+	if(lua_isnumber(L, 3))
+		compress = lua_tonumber(L, 3);
 	MapNode n = env->getMap().getNodeNoEx(pos);
-	lua_pushnumber(L, n.addLevel(env->getGameDef()->ndef(), level));
+	lua_pushnumber(L, n.addLevel(env->getGameDef()->ndef(), level, compress));
 	env->setNode(pos, n);
 	return 1;
 }

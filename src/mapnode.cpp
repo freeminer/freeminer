@@ -365,9 +365,9 @@ std::vector<aabb3f> MapNode::getSelectionBoxes(INodeDefManager *nodemgr) const
 	return transformNodeBox(*this, f.selection_box, nodemgr);
 }
 
-u8 MapNode::getMaxLevel(INodeDefManager *nodemgr) const
+u8 MapNode::getMaxLevel(INodeDefManager *nodemgr, bool compress) const
 {
-	return nodemgr->get(*this).getMaxLevel();
+	return nodemgr->get(*this).getMaxLevel(compress);
 }
 
 u8 MapNode::getLevel(INodeDefManager *nodemgr) const
@@ -394,7 +394,7 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 	return 0;
 }
 
-u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
+u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 {
 	u8 rest = 0;
 	if (level < 1) {
@@ -403,9 +403,11 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
 	}
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.param_type_2 == CPT2_LEVELED) {
-		if (level > f.getMaxLevel()) {
-			rest = level - f.getMaxLevel();
-			level = f.getMaxLevel();
+if(compress)
+errorstream<<" 1maxlevel="<<(int)f.getMaxLevel(compress)<<" c="<<compress<<std::endl;
+		if (level > f.getMaxLevel(compress)) {
+			rest = level - f.getMaxLevel(compress);
+			level = f.getMaxLevel(compress);
 		}
 		if (level == f.getMaxLevel() && !f.liquid_alternative_source.empty()) {
 			setContent(nodemgr->getId(f.liquid_alternative_source));
@@ -426,12 +428,12 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
 	return rest;
 }
 
-u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add)
+u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add, bool compress)
 {
 	s8 level = getLevel(nodemgr);
 	if (add == 0) level = 1;
 	level += add;
-	return setLevel(nodemgr, level);
+	return setLevel(nodemgr, level, compress);
 }
 
 void MapNode::freezeMelt(INodeDefManager *ndef, int direction) {

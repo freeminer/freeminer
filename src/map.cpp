@@ -1933,10 +1933,10 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 
 		// fill top block if can
 		if (neighbors[D_TOP].l) {
-			liquid_levels_want[D_TOP] = total_level > level_max ?
-				level_max : total_level;
+			liquid_levels_want[D_TOP] = total_level > level_max ? level_max : total_level;
 			total_level -= liquid_levels_want[D_TOP];
 		}
+		// if (total_level>0) {  try to compress }
 
 		for (u16 ii = 0; ii < 7; ii++) // infinity and cave flood optimization
 			if (    neighbors[ii].i			||
@@ -2011,7 +2011,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			}
 
 			n0.setContent(liquid_kind_flowing);
-			n0.setLevel(nodemgr, new_node_level);
+			n0.setLevel(nodemgr, new_node_level, 1);
 			/* rollback will stop your server if enabled with liquid_finite
 			// Find out whether there is a suspect for this action
 			std::string suspect;
