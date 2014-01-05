@@ -1702,6 +1702,7 @@ struct NodeNeighbor {
 	v3s16 p;
 	bool l; //can liquid
 	bool i; //infinity
+	int weight;
 };
 
 void Map::transforming_liquid_push_back(v3s16 & p) {
@@ -1726,7 +1727,7 @@ const v3s16 liquid_flow_dirs[7] =
 };
 
 // when looking around we must first check self node for correct type definitions
-const s8 liquid_explore_map[7] = {1,0,2,3,4,5,6};
+const s8 liquid_explore_map[7] = {1,0,6,2,3,4,5};
 const s8 liquid_random_map[4][7] = {
 	{0,1,2,3,4,5,6},
 	{0,1,4,3,5,2,6},
@@ -1762,6 +1763,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 	while (m_transforming_liquid.size() > 0)
 	{
+		NEXT_LIQUID:;
 		// This should be done here so that it is done when continue is used
 		if (loopcount >= initial_size || porting::getTimeMs() > end_ms)
 			break;
@@ -1793,6 +1795,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		 */
 		for (u8 e = 0; e < 7; e++) {
 			u8 i = liquid_explore_map[e];
+			NodeNeighbor & nb = neighbors[i];
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
 				case D_TOP:
@@ -1802,14 +1805,12 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 					nt = NEIGHBOR_LOWER;
 					break;
 			}
-			v3s16 npos = p0 + liquid_flow_dirs[i];
-
-			neighbors[i].n = getNodeNoEx(npos);
+			neighbors[i].p = p0 + liquid_flow_dirs[i];
+			neighbors[i].n = getNodeNoEx(neighbors[i].p);
 			neighbors[i].t = nt;
-			neighbors[i].p = npos;
 			neighbors[i].l = 0;
 			neighbors[i].i = 0;
-			NodeNeighbor & nb = neighbors[i];
+			neighbors[i].weight = 0;
 
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
@@ -1888,6 +1889,31 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 					break;
 			}
 
+			// only self, top, bottom swap
+			if (nodemgr->get(nb.n.getContent()).liquid_type && e <= 2) {
+				try{
+					nb.weight = ((ItemGroupList) nodemgr->get(nb.n).groups)["weight"];
+					if (e == 1 && neighbors[D_BOTTOM].weight && neighbors[D_SELF].weight > neighbors[D_BOTTOM].weight) {
+						setNode(neighbors[D_SELF].p, neighbors[D_BOTTOM].n);
+						setNode(neighbors[D_BOTTOM].p, neighbors[D_SELF].n);
+						must_reflow_second.push_back(neighbors[D_SELF].p);
+						must_reflow_second.push_back(neighbors[D_BOTTOM].p);
+						goto NEXT_LIQUID;
+					}
+					if (e == 2 && neighbors[D_SELF].weight && neighbors[D_TOP].weight > neighbors[D_SELF].weight) {
+						setNode(neighbors[D_SELF].p, neighbors[D_TOP].n);
+						setNode(neighbors[D_TOP].p, neighbors[D_SELF].n);
+						must_reflow_second.push_back(neighbors[D_SELF].p);
+						must_reflow_second.push_back(neighbors[D_TOP].p);
+						goto NEXT_LIQUID;
+					}
+				}
+				catch(InvalidPositionException &e) {
+					infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
+					goto NEXT_LIQUID;
+				}
+			}
+			
 			if (nb.l && nb.t == NEIGHBOR_SAME_LEVEL)
 				++can_liquid_same_level;
 			if (liquid_levels[i] > 0)
@@ -2017,8 +2043,8 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
 			if (liquid_levels_want[i] < 0 || !neighbors[i].l) 
 				continue;
-			MapNode & n0 = neighbors[i].n;
-			p0 = neighbors[i].p;
+			//MapNode & n0 = neighbors[i].n;
+			//p0 = neighbors[i].p;
 			/*
 				decide on the type (and possibly level) of the current node
 			*/
@@ -2048,7 +2074,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				for (u16 ir = D_SELF + 1; ir < D_TOP; ++ir) { // only same level
 					u16 ii = liquid_random_map[(loopcount+loop_rand+4)%4][ir];
 					if (neighbors[ii].l)
-						must_reflow_second.push_back(p0 + liquid_flow_dirs[ii]);
+						must_reflow_second.push_back(neighbors[i].p + liquid_flow_dirs[ii]);
 				}
 			}
 
@@ -2061,8 +2087,8 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				continue;
 			}
 
-			n0.setContent(liquid_kind_flowing);
-			n0.setLevel(nodemgr, new_node_level);
+			neighbors[i].n.setContent(liquid_kind_flowing);
+			neighbors[i].n.setLevel(nodemgr, new_node_level);
 			/* rollback will stop your server if enabled with liquid_finite
 			// Find out whether there is a suspect for this action
 			std::string suspect;
@@ -2086,18 +2112,18 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			*/
 				// Set node
 			try{
-				setNode(p0, n0);
+				setNode(neighbors[i].p, neighbors[i].n);
 			}
 			catch(InvalidPositionException &e)
 			{
-				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(p0)<<std::endl;
+				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
 			}
 			//}
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			if (new_node_level <= 0 || nodemgr->get(n0).light_source) { 
-				v3s16 blockpos = getNodeBlockPos(p0);
+			if (new_node_level <= 0 || nodemgr->get(neighbors[i].n).light_source) { 
+				v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
 				MapBlock *block = getBlockNoCreateNoEx(blockpos);
 				if(block != NULL) {
 					modified_blocks[blockpos] = block;
