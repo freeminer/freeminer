@@ -116,7 +116,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 		nthreads * 5 + 1 :
 		g_settings->getU16("emergequeue_limit_diskonly");
 	qlimit_generate = g_settings->get("emergequeue_limit_generate").empty() ?
-		nthreads + 1 :
+		nthreads * 7 :
 		g_settings->getU16("emergequeue_limit_generate");
 
 	for (int i = 0; i != nthreads; i++)
