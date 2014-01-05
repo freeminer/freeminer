@@ -1825,10 +1825,9 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 							!(loopcount % 2)) {
 						u8 melt_max_level = nb.n.getMaxLevel(nodemgr);
 						u8 my_max_level = MapNode(liquid_kind_flowing).getMaxLevel(nodemgr);
-						liquid_levels[i] = 
-							(float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
+						liquid_levels[i] = (float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
 						if (liquid_levels[i])
-						nb.l = 1;
+							nb.l = 1;
 					}
 					else if (	melt_kind != CONTENT_IGNORE &&
 							nb.n.getContent() == melt_kind &&
@@ -1836,7 +1835,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 							!(loopcount % 8)) {
 						liquid_levels[i] = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 						if (liquid_levels[i])
-						nb.l = 1;
+							nb.l = 1;
 					}
 					// todo: for erosion add something here..
 					break;
@@ -1853,7 +1852,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = 
+						melt_kind_flowing =
 							nodemgr->getId(
 							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).melt)
 									).liquid_alternative_flowing);
@@ -1944,12 +1943,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		}
 
 		//relax up
-		if (nodemgr->get(liquid_kind).liquid_renewable && relax && ((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
+		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+			relax &&
+			((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
 			level_max > 1 &&
 			liquid_levels[D_TOP] == 0 &&
 			liquid_levels[D_BOTTOM] == level_max &&
-			total_level >= level_max * can_liquid_same_level -
-			(can_liquid_same_level - relax) &&
+			total_level >= level_max * can_liquid_same_level - (can_liquid_same_level - relax) &&
 			can_liquid_same_level >= relax + 1) {
 			total_level = level_max * can_liquid_same_level;
 		}
@@ -1971,9 +1971,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		total_level -= want_level * can_liquid_same_level;
 
 		//relax down
-		if (nodemgr->get(liquid_kind).liquid_renewable && relax && p0.Y == water_level + 1 && liquid_levels[D_TOP] == 0 &&
+		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+			relax &&
+			p0.Y == water_level + 1 &&
+			liquid_levels[D_TOP] == 0 &&
 			level_max > 1 &&
-			liquid_levels[D_BOTTOM] == level_max && want_level == 0 &&
+			liquid_levels[D_BOTTOM] == level_max &&
+			want_level == 0 &&
 			total_level <= (can_liquid_same_level - relax) &&
 			can_liquid_same_level >= relax + 1) {
 			total_level = 0;
@@ -2041,7 +2045,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 		for (u16 r = 0; r < 7; r++) {
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
-			if (liquid_levels_want[i] < 0 || !neighbors[i].l) 
+			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
 				continue;
 			//MapNode & n0 = neighbors[i].n;
 			//p0 = neighbors[i].p;
@@ -2122,14 +2126,12 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			if (new_node_level <= 0 || nodemgr->get(neighbors[i].n).light_source) { 
-				v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
-				MapBlock *block = getBlockNoCreateNoEx(blockpos);
-				if(block != NULL) {
-					modified_blocks[blockpos] = block;
-					//if(nodemgr->get(n0).light_source != 0) // better ro update always
+			v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
+			MapBlock *block = getBlockNoCreateNoEx(blockpos);
+			if(block != NULL) {
+				modified_blocks[blockpos] = block;
+				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better ro update always
 					lighting_modified_blocks[block->getPos()] = block;
-				}
 			}
 			must_reflow.push_back(neighbors[i].p);
 		}
@@ -2413,7 +2415,13 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map
 			m_gamedef->rollback()->reportAction(action);
 		} else {
 			// Set node
-			setNode(p0, n0);
+			try{
+				setNode(p0, n0);
+			}
+			catch(InvalidPositionException &e)
+			{
+				infostream<<"transformLiquids: setNode() failed:"<<PP(p0)<<":"<<e.what()<<std::endl;
+			}
 		}
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);

@@ -1076,8 +1076,10 @@ void Server::AsyncRunStep()
 	if(dtime < 0.001)
 		return;
 
+/*
 	g_profiler->add("Server::AsyncRunStep with dtime (num)", 1);
-
+*/
+	ScopeProfiler sp(g_profiler, "Server::AsyncRunStep, avg", SPT_AVG);
 	//infostream<<"Server steps "<<dtime<<std::endl;
 	//infostream<<"Server::AsyncRunStep(): dtime="<<dtime<<std::endl;
 
