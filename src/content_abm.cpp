@@ -240,7 +240,6 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 
 void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef) {
 	if (g_settings->getBool("liquid_finite")) {
-		//env->addActiveBlockModifier(new LiquidFlowABM(env, nodedef));
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
 		env->addActiveBlockModifier(new MeltHot(env, nodedef));
 		env->addActiveBlockModifier(new LiquidFreezeCold(env, nodedef));
