@@ -32,34 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-class LiquidFlowABM : public ActiveBlockModifier {
-	private:
-		std::set<std::string> contents;
-
-	public:
-		LiquidFlowABM(ServerEnvironment *env, INodeDefManager *nodemgr) {
-			contents.insert("group:liquid_flow");
-			std::set<content_t> liquids; // todo: remove, make all via group:liquid_flow
-			nodemgr->getIds("group:liquid", liquids);
-			for(std::set<content_t>::const_iterator k = liquids.begin(); k != liquids.end(); k++)
-				contents.insert(nodemgr->get(*k).liquid_alternative_flowing);
-		}
-		virtual std::set<std::string> getTriggerContents() {
-			return contents;
-		}
-		virtual float getTriggerInterval()
-		{ return 10; }
-		virtual u32 getTriggerChance()
-		{ return 10; }
-		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
-			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 1000)
-				return;
-			map->transforming_liquid_push_back(p);
-		}
-};
-
 class LiquidDropABM : public ActiveBlockModifier {
 	private:
 		std::set<std::string> contents;
@@ -67,10 +39,6 @@ class LiquidDropABM : public ActiveBlockModifier {
 	public:
 		LiquidDropABM(ServerEnvironment *env, INodeDefManager *nodemgr) {
 			contents.insert("group:liquid_drop");
-			std::set<content_t> liquids; // todo: remove, make all via group:liquid_drop
-			nodemgr->getIds("group:liquid", liquids);
-			for(std::set<content_t>::const_iterator k = liquids.begin(); k != liquids.end(); k++)
-				contents.insert(nodemgr->get(*k).liquid_alternative_source);
 		}
 		virtual std::set<std::string> getTriggerContents()
 		{ return contents; }
@@ -80,13 +48,13 @@ class LiquidDropABM : public ActiveBlockModifier {
 			return neighbors;
 		}
 		virtual float getTriggerInterval()
-		{ return 20; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
 			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 1000)
+			if (map->transforming_liquid_size() > map->m_liquid_step_flow)
 				return;
 			if (   map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent() != CONTENT_AIR  // below
 			    && map->getNodeNoEx(p - v3s16(1,  0, 0 )).getContent() != CONTENT_AIR  // right
@@ -272,7 +240,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 
 void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef) {
 	if (g_settings->getBool("liquid_finite")) {
-		env->addActiveBlockModifier(new LiquidFlowABM(env, nodedef));
+		//env->addActiveBlockModifier(new LiquidFlowABM(env, nodedef));
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
 		env->addActiveBlockModifier(new MeltHot(env, nodedef));
 		env->addActiveBlockModifier(new LiquidFreezeCold(env, nodedef));

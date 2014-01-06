@@ -75,6 +75,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 Map::Map(std::ostream &dout, IGameDef *gamedef):
+	m_liquid_step_flow(1000),
 	m_dout(dout),
 	m_gamedef(gamedef),
 	m_sectors_update_last(0),
@@ -1710,7 +1711,7 @@ void Map::transforming_liquid_push_back(v3s16 & p) {
 	m_transforming_liquid.push_back(p);
 }
 
-s32 Map::transforming_liquid_size() {
+u32 Map::transforming_liquid_size() {
         return m_transforming_liquid.size();
 }
 
@@ -1739,7 +1740,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
+u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -2142,12 +2143,18 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		}*/
 	}
 
-	s32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
-
-	/*if (loopcount)
+	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
+	if (ret || loopcount > m_liquid_step_flow)
+		m_liquid_step_flow += (m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount/10;
+	/*
+	if (loopcount)
 		infostream<<"Map::transformLiquidsFinite(): loopcount="<<loopcount
+		<<" avgflow="<<m_liquid_step_flow
 		<<" reflow="<<must_reflow.size()
-		<<" queue="<< m_transforming_liquid.size()<< " per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;*/
+		<<" queue="<< m_transforming_liquid.size()
+		<<" per="<< porting::getTimeMs() - (end_ms - 1000 * g_settings->getFloat("dedicated_server_step"))
+		<<" ret="<<ret<<std::endl;
+	*/
 
 	JMutexAutoLock lock(m_transforming_liquid_mutex);
 
@@ -2164,7 +2171,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 #define WATER_DROP_BOOST 4
 
-s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
+u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 
 	if (g_settings->getBool("liquid_finite"))
@@ -2455,7 +2462,7 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map
 		}
 	}
 
-	s32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
+	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 

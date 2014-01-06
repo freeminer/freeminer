@@ -305,9 +305,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	s32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
-	s32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
-
+	u32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
+	u32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -351,7 +350,8 @@ public:
 	*/
 
 	void transforming_liquid_push_back(v3s16 & p);
-	s32 transforming_liquid_size();
+	u32 transforming_liquid_size();
+	u32 m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
