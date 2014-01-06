@@ -449,3 +449,8 @@
 # Override language. When no value is provided (default) system language is used.
 # Check "locale" directory for the list of available translations.
 #language =
+
+# Start profiler when the server starts. Profiler is only available when LuaJIT is used.
+# Use /profiler_start to start the profiler manually and /profiler_stop to stop it.
+# The log name profile.txt will only be generated when you manually execute /profiler_stop
+#profiler_autostart = false

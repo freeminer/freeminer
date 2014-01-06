@@ -494,3 +494,7 @@ void initializePaths()
 
 } //namespace porting
 
+
+extern "C" unsigned int get_time_us() {
+	return porting::getTimeUs();
+}
