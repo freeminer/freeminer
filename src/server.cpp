@@ -230,10 +230,11 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 			<<m_nearest_unsent_reset_timer<<std::endl;*/
 
 	// Reset periodically to workaround for some bugs or stuff
-	if(m_nearest_unsent_reset_timer > 60.0)
+	if(m_nearest_unsent_reset_timer > 120.0)
 	{
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
+		m_nearest_unsent_nearest = 0;
 		//infostream<<"Resetting m_nearest_unsent_d for "
 		//		<<server->getPlayerName(peer_id)<<std::endl;
 	}
@@ -283,7 +284,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 			d_max = wanted_blocks;
 	}
 	// Don't loop very much at a time
-	s16 max_d_increment_at_time = 2;
+	s16 max_d_increment_at_time = 5;
 	if(d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 	/*if(d_max_gen > d_start+2)
@@ -303,7 +304,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	{
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
-		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<std::endl;
+		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<std::endl;
 
 		/*
 			If m_nearest_unsent_d was changed by the EmergeThread
@@ -443,7 +444,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 				FOV setting. The default of 72 degrees is fine.
 			*/
 
-			float camera_fov = (72.0*M_PI/180) * 4./3.;
+			float camera_fov = (80.0*M_PI/180) * 4./3.;
 			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, 10000*BS) == false)
 			{
 				continue;
@@ -592,7 +593,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<std::endl;
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
@@ -655,10 +656,11 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 		m_blocks_sent.erase(p);
 }
 
-void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks, bool no_d_reset)
+void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	if (!no_d_reset && blocks.size())
-	m_nearest_unsent_d = 0;
+
+	if  (blocks.size())
+		m_nearest_unsent_nearest = 1;
 
 	for(std::map<v3s16, MapBlock*>::iterator
 			i = blocks.begin();
@@ -1259,6 +1261,12 @@ void Server::AsyncRunStep()
 	m_liquid_send_timer += dtime;
 	if(m_liquid_send_timer >= m_liquid_send_interval)
 	{
+		for (std::map<u16, RemoteClient*>::iterator i = m_clients.begin(); i != m_clients.end(); ++i)
+			if (i->second->m_nearest_unsent_nearest) {
+				i->second->m_nearest_unsent_d = 0;
+				i->second->m_nearest_unsent_nearest = 0;
+			}
+
 		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
 		m_liquid_send_timer -= m_liquid_send_interval;
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
@@ -1279,7 +1287,7 @@ void Server::AsyncRunStep()
 			if(m_modified_blocks.size() > 0)
 			{
 				// Remove block from sent history
-				client->SetBlocksNotSent(m_modified_blocks);
+				client->SetBlocksNotSent(m_modified_blocks, 1);
 			}
 		}
 		m_modified_blocks.clear();
@@ -1716,7 +1724,7 @@ void Server::AsyncRunStep()
 					RemoteClient *client = getClient(peer_id);
 					if(client==NULL)
 						continue;
-					client->SetBlocksNotSent(modified_blocks2);
+					client->SetBlocksNotSent(modified_blocks2, 1);
 				}
 			}
 

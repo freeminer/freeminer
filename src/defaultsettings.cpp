@@ -322,7 +322,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("active_block_range", "5");
 	settings->setDefault("max_block_send_distance", "30");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "20");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "30");
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");

@@ -1735,7 +1735,7 @@ void the_game(
 			print_to_log = false;
 			profiler_print_interval = 5;
 		}
-		if(m_profiler_interval.step(dtime, profiler_print_interval))
+		if(m_profiler_interval.step(dtime, profiler_print_interval) && !(simple_singleplayer_mode && g_menumgr.pausesGame()))
 		{
 			if(print_to_log){
 				infostream<<"Profiler:"<<std::endl;
@@ -3081,12 +3081,16 @@ void the_game(
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
 				<<" FPS = "<<fps
+/*
 				<<" (R: range_all="<<draw_control.range_all<<")"
+*/
 				<<std::setprecision(0)
 				<<" drawtime = "<<drawtime_avg
+/*
 				<<std::setprecision(1)
 				<<", dtime_jitter = "
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
+*/
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range
 				<<std::setprecision(3)

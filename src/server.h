@@ -212,6 +212,7 @@ public:
 		definitions_sent = false;
 		denied = false;
 		m_nearest_unsent_d = 0;
+		m_nearest_unsent_nearest = 0;
 		m_nearest_unsent_reset_timer = 0.0;
 		m_nothing_to_send_counter = 0;
 		m_nothing_to_send_pause_timer = 0;
@@ -234,7 +235,7 @@ public:
 	void SentBlock(v3s16 p);
 
 	void SetBlockNotSent(v3s16 p);
-	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks, bool no_d_reset = 0);
+	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
 
 	s32 SendingCount()
 	{
@@ -285,7 +286,10 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	std::set<v3s16> m_blocks_sent;
+public:
 	s16 m_nearest_unsent_d;
+	s16 m_nearest_unsent_nearest;
+private:
 	v3s16 m_last_center;
 	float m_nearest_unsent_reset_timer;
 
