@@ -991,6 +991,7 @@ int main(int argc, char *argv[])
 
 	infostream<<"logfile    = "<<logfile<<std::endl;
 
+	time_taker_enabled = g_settings->getBool("time_taker_enabled") || g_settings->getFloat("profiler_print_interval") || loglevel >= LMT_INFO;
 	// Initialize random seed
 	srand(time(0));
 	mysrand(time(0));
