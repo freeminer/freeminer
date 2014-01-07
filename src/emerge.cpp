@@ -584,7 +584,7 @@ void *EmergeThread::Thread() {
 			RemoteClient *client = i->second;
 			if (modified_blocks.size() > 0) {
 				// Remove block from sent history
-				client->SetBlocksNotSent(modified_blocks, 1);
+				client->SetBlocksNotSent(modified_blocks);
 			}
 		}
 		if (mapgen->heat_cache.size() > 1000) {

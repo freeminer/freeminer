@@ -1287,7 +1287,7 @@ void Server::AsyncRunStep()
 			if(m_modified_blocks.size() > 0)
 			{
 				// Remove block from sent history
-				client->SetBlocksNotSent(m_modified_blocks, 1);
+				client->SetBlocksNotSent(m_modified_blocks);
 			}
 		}
 		m_modified_blocks.clear();
@@ -1724,7 +1724,7 @@ void Server::AsyncRunStep()
 					RemoteClient *client = getClient(peer_id);
 					if(client==NULL)
 						continue;
-					client->SetBlocksNotSent(modified_blocks2, 1);
+					client->SetBlocksNotSent(modified_blocks2);
 				}
 			}
 
