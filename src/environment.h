@@ -313,8 +313,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n);
-	bool removeNode(v3s16 p);
+	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0);
+	bool removeNode(v3s16 p, bool fast = 0);
 	bool swapNode(v3s16 p, const MapNode &n);
 	
 	// Find all active objects inside a radius around a point

@@ -869,7 +869,7 @@ void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
 	m_abms.push_back(ABMWithState(abm));
 }
 
-bool ServerEnvironment::setNode(v3s16 p, const MapNode &n)
+bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 	MapNode n_old = m_map->getNodeNoEx(p);
@@ -877,9 +877,19 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n)
 	if(ndef->get(n_old).has_on_destruct)
 		m_script->node_on_destruct(p, n_old);
 	// Replace node
+	
+	if (fast) {
+		try {
+			MapNode nn = n;
+			if (fast == 2)
+				nn.param1 = n_old.param1;
+			m_map->setNode(p, nn);
+		} catch(InvalidPositionException &e) { }
+	} else {
 	bool succeeded = m_map->addNodeWithEvent(p, n);
 	if(!succeeded)
 		return false;
+	}
 	// Call post-destructor
 	if(ndef->get(n_old).has_after_destruct)
 		m_script->node_after_destruct(p, n_old);
@@ -889,7 +899,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n)
 	return true;
 }
 
-bool ServerEnvironment::removeNode(v3s16 p)
+bool ServerEnvironment::removeNode(v3s16 p, bool fast)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 	MapNode n_old = m_map->getNodeNoEx(p);
@@ -898,9 +908,16 @@ bool ServerEnvironment::removeNode(v3s16 p)
 		m_script->node_on_destruct(p, n_old);
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
+	if (fast) {
+		MapNode n;
+		try {
+			m_map->setNode(p, n);
+		} catch(InvalidPositionException &e) { }
+	} else {
 	bool succeeded = m_map->removeNodeWithEvent(p);
 	if(!succeeded)
 		return false;
+	}
 	// Call post-destructor
 	if(ndef->get(n_old).has_after_destruct)
 		m_script->node_after_destruct(p, n_old);
