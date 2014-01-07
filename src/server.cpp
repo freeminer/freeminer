@@ -1508,7 +1508,7 @@ void Server::AsyncRunStep()
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
 
-		ScopeProfiler sp(g_profiler, "Server: sending object messages");
+		//ScopeProfiler sp(g_profiler, "Server: sending object messages");
 
 		// Key = object id
 		// Value = data sent by object
@@ -4301,12 +4301,12 @@ void Server::SendBlocks(float dtime)
 	JMutexAutoLock envlock(m_env_mutex);
 	JMutexAutoLock conlock(m_con_mutex);
 
-	ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
+	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
 
 	std::vector<PrioritySortedBlockTransfer> queue;
 
 	{
-		ScopeProfiler sp(g_profiler, "Server: selecting blocks for sending");
+		//ScopeProfiler sp(g_profiler, "Server: selecting blocks for sending");
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();

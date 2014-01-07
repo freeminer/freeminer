@@ -1094,7 +1094,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		Handle players
 	*/
 	{
-		ScopeProfiler sp(g_profiler, "SEnv: handle players avg", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "SEnv: handle players avg", SPT_AVG);
 		for(std::list<Player*>::iterator i = m_players.begin();
 				i != m_players.end(); ++i)
 		{
@@ -1226,7 +1226,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 	*/
 	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0))
 	{
-		ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
 		
 		//float dtime = 1.0;
 
@@ -1358,7 +1358,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		Step active objects
 	*/
 	{
-		ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
 		//TimeTaker timer("Step active objects");
 
 		g_profiler->avg("SEnv: num of objects", m_active_objects.size());
@@ -1420,7 +1420,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 	*/
 	if(m_object_management_interval.step(dtime, 0.5))
 	{
-		ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
 		/*
 			Remove objects that satisfy (m_removed && m_known_by_count==0)
 		*/
@@ -1930,7 +1930,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 */
 void ServerEnvironment::deactivateFarObjects(bool force_delete)
 {
-	ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
+	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
 	std::list<u16> objects_to_remove;
 	for(std::map<u16, ServerActiveObject*>::iterator
