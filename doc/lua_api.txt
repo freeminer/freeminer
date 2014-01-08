@@ -1267,13 +1267,15 @@ freeminer.color(color)
 
 Environment access:
 
-minetest.set_node(pos, node)
+minetest.set_node(pos, node, fast)
 minetest.add_node(pos, node): alias set_node(pos, node)
-^ Set node at position (node = {name="foo", param1=0, param2=0})
+^ Set node at position (node = {name="foo", param1=0, param2=0}, fast)
 minetest.swap_node(pos, node)
 ^ Set node at position, but don't remove metadata
-minetest.remove_node(pos)
+  if fast=1 - skip events sending androllback, if fast=2 - as fast=1 + get light from old node
+minetest.remove_node(pos, fast)
 ^ Equivalent to set_node(pos, "air")
+  if fast=1 - skip events sending androllback
 minetest.get_node(pos)
 ^ Returns {name="ignore", ...} for unloaded area
 minetest.get_node_or_nil(pos)

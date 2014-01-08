@@ -2131,7 +2131,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			MapBlock *block = getBlockNoCreateNoEx(blockpos);
 			if(block != NULL) {
 				modified_blocks[blockpos] = block;
-				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better ro update always
+				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
 					lighting_modified_blocks[block->getPos()] = block;
 			}
 			must_reflow.push_back(neighbors[i].p);
