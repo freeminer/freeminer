@@ -1105,7 +1105,7 @@ void Server::AsyncRunStep()
 		TimeTaker timer_step("Server step: Process connection's timeouts");
 		// Process connection's timeouts
 		JMutexAutoLock lock2(m_con_mutex);
-		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
+		//ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
 		m_con.RunTimeouts(dtime);
 	}
 
