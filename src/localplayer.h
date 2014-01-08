@@ -64,6 +64,9 @@ public:
 	std::string hotbar_image;
 	std::string hotbar_selected_image;
 
+	bool third_person;
+	int anim;
+
 private:
 	// This is used for determining the sneaking range
 	v3s16 m_sneak_node;
