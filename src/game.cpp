@@ -929,6 +929,7 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
+bool is_third_person = false;
 
 void the_game(
 	bool &kill,
@@ -2485,9 +2486,16 @@ void the_game(
 		LocalPlayer* player = client.getEnv().getLocalPlayer();
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
+		if(input->wasKeyDown("KEY_F7")) {//*TODO* not hardcoded key?
+			if (!is_third_person)
+				is_third_person = true;
+			else
+				is_third_person = false;
+		}
+		player->third_person = is_third_person;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
 		camera.update(player, dtime, busytime, screensize,
-				tool_reload_ratio);
+				tool_reload_ratio, is_third_person, client.getEnv());
 		camera.step(dtime);
 
 		v3f player_position = player->getPosition();
@@ -3321,7 +3329,7 @@ void the_game(
 		/*
 			Wielded tool
 		*/
-		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE))
+		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && !is_third_person)
 		{
 			// Warning: This clears the Z buffer.
 			camera.drawWieldedTool();
