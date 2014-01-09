@@ -223,7 +223,7 @@ mark_as_advanced(LUA_INCLUDE_DIR)
 
 set(USE_LEVELDB 0)
 
-OPTION(ENABLE_LEVELDB "Enable LevelDB backend")
+OPTION(ENABLE_LEVELDB "Enable LevelDB backend" ON)
 
 if(ENABLE_LEVELDB)
 	find_library(LEVELDB_LIBRARY leveldb)
