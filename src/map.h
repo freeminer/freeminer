@@ -527,7 +527,9 @@ private:
 	// Emerge manager
 	EmergeManager *m_emerge;
 
+public:
 	std::string m_savedir;
+private:
 	bool m_map_saving_enabled;
 
 #if 0

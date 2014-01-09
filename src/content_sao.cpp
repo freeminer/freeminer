@@ -1504,8 +1504,8 @@ bool PlayerSAO::checkMovementCheat()
 			player_max_speed_up = m_player->movement_speed_walk;
 		}
 		// Tolerance. With the lag pool we shouldn't need it.
-		//player_max_speed *= 2.5;
-		//player_max_speed_up *= 2.5;
+		player_max_speed *= 1.5;
+		player_max_speed_up *= 1.5;
 
 		v3f diff = (m_player->getPosition() - m_last_good_position);
 		float d_vert = diff.Y;

@@ -332,6 +332,14 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	emerger->env = this;
 }
 
+Player * ServerEnvironment::getPlayer(const char *name)
+{
+	Player *player = Environment::getPlayer(name);
+	if (player)
+		return player;
+	return deSerializePlayer(name);
+}
+
 ServerEnvironment::~ServerEnvironment()
 {
 	// Clear active block list.
@@ -456,8 +464,11 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save)
+		if(!player->peer_id && !player->need_save) {
+			delete player;
+			m_players.erase(i);
 			continue;
+		}
 
 #if WTF
 		if(saved_players.find(player) != saved_players.end())
@@ -510,13 +521,18 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 				infostream<<"Failed to write "<<player->path<<std::endl;
 				continue;
 			}
-			player->need_save = 0;
+		}
+		player->need_save = 0;
+		if (!player->peer_id) {
+			delete player;
+			m_players.erase(i);
 		}
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
 }
 
+#if WTF
 void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 {
 	std::string players_path = savedir + "/players";
@@ -595,6 +611,34 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 			addPlayer(player);
 		}
 	}
+}
+#endif
+
+Player * ServerEnvironment::deSerializePlayer(const std::string &name)
+{
+	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS)) {
+		infostream<<"Not loading player with invalid name: "<<name<<std::endl;
+		return NULL;
+	}
+	std::string path = m_map->m_savedir + "/players" + "/" + name;
+
+	infostream<<"Checking player file "<<path<<std::endl;
+	Player *player = new RemotePlayer(m_gamedef);
+	verbosestream<<"Reading player "<<name<<" from " <<path<<std::endl;
+	std::ifstream is(path.c_str(), std::ios_base::binary);
+	if(is.good() == false || is.eof()) {
+		infostream<<"Failed to read "<<path<<std::endl;
+		return NULL;
+	}
+	try {
+		player->deSerialize(is, name);
+	} catch (SerializationError e) {
+		errorstream<<e.what()<<std::endl;
+		return NULL;
+	}
+	player->path = path;
+	addPlayer(player);
+	return player;
 }
 
 void ServerEnvironment::saveMeta(const std::string &savedir)

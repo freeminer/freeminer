@@ -1003,6 +1003,7 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 
 				g_profiler->add("Connection: reliable resends", 1);
 				PrintInfo(derr_con);
+/*
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
 				j->address.print(&derr_con);
 				derr_con<<"(t/o="<<resend_timeout<<"): "
@@ -1016,6 +1017,7 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 						<<", ttime="<<j->totaltime
 						<<", time="<<j->time
 						<<std::endl;
+*/
 
 				rawSend(*j);
 
