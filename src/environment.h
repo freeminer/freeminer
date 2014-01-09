@@ -234,11 +234,16 @@ public:
 	float getSendRecommendedInterval()
 		{ return m_recommended_send_interval; }
 
+	Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
+	Player * getPlayer(const char *name);
 	/*
 		Save players
 	*/
 	void serializePlayers(const std::string &savedir);
+#if WTF
 	void deSerializePlayers(const std::string &savedir);
+#endif
+	Player * deSerializePlayer(const std::string &name);
 
 	/*
 		Save and load time of day and game timer
