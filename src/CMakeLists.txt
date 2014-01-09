@@ -178,7 +178,9 @@ if(BUILD_CLIENT AND ENABLE_GLES)
 endif()
 
 if(USE_FREETYPE)
-	if(UNIX)
+	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
+		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
+	elseif(UNIX)
 		include(FindPkgConfig)
 		if(PKG_CONFIG_FOUND)
 			pkg_check_modules(FREETYPE QUIET freetype2)
@@ -190,7 +192,7 @@ if(USE_FREETYPE)
 				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
 			endif(FREETYPE_FOUND)
 		endif(PKG_CONFIG_FOUND)
-	endif(UNIX)
+	endif()
 	if(NOT FREETYPE_FOUND)
 		find_package(Freetype REQUIRED)
 	endif(NOT FREETYPE_FOUND)
@@ -241,6 +243,7 @@ if(ENABLE_LEVELDB)
 endif(ENABLE_LEVELDB)
 
 
+option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 0)
 find_package(Mandelbulber)
 
