@@ -93,7 +93,7 @@ if(USE_SOUND)
 		)
 endif()
 
-option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" OFF)
+option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" ON)
 set(USE_FREETYPE 0)
 if(ENABLE_FREETYPE)
 	set(USE_FREETYPE 1)
