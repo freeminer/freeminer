@@ -22,7 +22,11 @@ if (CURL_FOUND AND ENABLE_CURL)
 endif(CURL_FOUND AND ENABLE_CURL)
 
 # user-visible option to enable/disable gettext usage
+if(BUILD_CLIENT)
+OPTION(ENABLE_GETTEXT "Use GetText for internationalization" 1)
+else()
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" 0)
+endif()
 
 # this is only set to 1 if gettext is enabled _and_ available
 set(USE_GETTEXT 0)
@@ -50,7 +54,11 @@ else(GETTEXT_FOUND AND ENABLE_GETTEXT)
 endif(GETTEXT_FOUND AND ENABLE_GETTEXT)
 
 # user visible option to enable/disable sound
+if(BUILD_CLIENT)
 OPTION(ENABLE_SOUND "Enable sound" ON)
+else()
+OPTION(ENABLE_SOUND "Enable sound" OFF)
+endif()
 
 # this is only set to 1 if sound is enabled _and_ available
 set(USE_SOUND 0)
@@ -93,7 +101,11 @@ if(USE_SOUND)
 		)
 endif()
 
+if(BUILD_CLIENT)
 option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" ON)
+else()
+option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" OFF)
+endif()
 set(USE_FREETYPE 0)
 if(ENABLE_FREETYPE)
 	set(USE_FREETYPE 1)
