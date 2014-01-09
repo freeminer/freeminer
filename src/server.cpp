@@ -1468,10 +1468,12 @@ void Server::AsyncRunStep()
 			// Send as reliable
 			m_con.Send(client->peer_id, 0, reply, true);
 
+/*
 			verbosestream<<"Server: Sent object remove/add: "
 					<<removed_objects.size()<<" removed, "
 					<<added_objects.size()<<" added, "
 					<<"packet size is "<<reply.getSize()<<std::endl;
+*/
 		}
 
 #if 0
@@ -2878,8 +2880,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		PointedThing pointed;
 		pointed.deSerialize(tmp_is);
 
+/*
 		verbosestream<<"TOSERVER_INTERACT: action="<<(int)action<<", item="
 				<<item_i<<", pointed="<<pointed.dump()<<std::endl;
+*/
 
 		if(player->hp == 0)
 		{
@@ -3165,9 +3169,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				if(pointed_object->m_removed)
 					return;
 
+/* android bug - too many
 				actionstream<<player->getName()<<" right-clicks object "
 						<<pointed.object_id<<": "
 						<<pointed_object->getDescription()<<std::endl;
+*/
 
 				// Do stuff
 				pointed_object->rightClick(playersao);

@@ -449,8 +449,10 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 		}
 	}
 	// create object
+/*
 	infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
 			<<state<<"\")"<<std::endl;
+*/
 	LuaEntitySAO *sao = new LuaEntitySAO(env, pos, name, state);
 	sao->m_hp = hp;
 	sao->m_velocity = velocity;

@@ -984,9 +984,11 @@ void Connection::runTimeouts(float dtime)
 				//BufferedPacket* j = *jp;
 				if(j->time < resend_timeout)
 					continue;
+/*
 				u16 peer_id = readPeerId(*(j->data));
 				u8 channeln = readChannel(*(j->data));
 				u16 seqnum = readU16(&(j->data[BASE_HEADER_SIZE+1]));
+*/
 /*
 				if (j->sends > 10) {
 errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum="<<seqnum<<" sends="<<j->sends<<std::endl;
@@ -1001,9 +1003,8 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 				}
 */
 
-				g_profiler->add("Connection: reliable resends", 1);
-				PrintInfo(derr_con);
 /*
+				PrintInfo(derr_con);
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
 				j->address.print(&derr_con);
 				derr_con<<"(t/o="<<resend_timeout<<"): "
@@ -1034,9 +1035,11 @@ errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum
 */
 			}
 		}
-		if (resends)
+		if (resends) {
 			peer->reportRTT(resend_timeout);
-		
+			g_profiler->add("Connection: reliable resends", resends);
+		}
+
 		/*
 			Send pings
 		*/

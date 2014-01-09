@@ -1919,10 +1919,12 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	// Ignore if no stored objects (to not set changed flag)
 	if(block->m_static_objects.m_stored.size() == 0)
 		return;
+/*
 	verbosestream<<"ServerEnvironment::activateObjects(): "
 			<<"activating objects of block "<<PP(block->getPos())
 			<<" ("<<block->m_static_objects.m_stored.size()
 			<<" objects)"<<std::endl;
+*/
 	bool large_amount = (block->m_static_objects.m_stored.size() > g_settings->getU16("max_objects_per_block"));
 	if(large_amount){
 		errorstream<<"suspiciously large amount of objects detected: "
@@ -1961,9 +1963,11 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 			new_stored.push_back(s_obj);
 			continue;
 		}
+/*
 		verbosestream<<"ServerEnvironment::activateObjects(): "
 				<<"activated static object pos="<<PP(s_obj.pos/BS)
 				<<" type="<<(int)s_obj.type<<std::endl;
+*/
 		// This will also add the object to the active static list
 		addActiveObjectRaw(obj, false, dtime_s);
 	}
