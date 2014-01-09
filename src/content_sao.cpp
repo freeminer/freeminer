@@ -1462,6 +1462,7 @@ void PlayerSAO::disconnected()
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
+		m_player->need_save = 1;
 	}
 }
 

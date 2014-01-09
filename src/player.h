@@ -219,6 +219,7 @@ public:
 	void serialize(std::ostream &os);
 	void deSerialize(std::istream &is, std::string playername);
 
+#if WTF
 	bool checkModified()
 	{
 		if(m_last_hp != hp || m_last_pitch != m_pitch ||
@@ -235,6 +236,7 @@ public:
 			return false;
 		}
 	}
+#endif
 
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
@@ -296,6 +298,9 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
+	std::string path;
+	bool need_save;
+
 protected:
 	IGameDef *m_gamedef;
 
@@ -307,11 +312,13 @@ protected:
 	v3f m_position;
 	core::aabbox3d<f32> m_collisionbox;
 
+#if WTF
 	f32 m_last_pitch;
 	f32 m_last_yaw;
 	v3f m_last_pos;
 	u16 m_last_hp;
 	Inventory m_last_inventory;
+#endif
 };
 
 

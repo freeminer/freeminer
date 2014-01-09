@@ -393,6 +393,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
+#if WTF
 	std::set<Player*> saved_players;
 
 	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
@@ -448,17 +449,25 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			saved_players.insert(player);
 		}
 	}
+#endif
 
 	for(std::list<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i)
 	{
 		Player *player = *i;
+
+		if(!player->peer_id && !player->need_save)
+			continue;
+
+#if WTF
 		if(saved_players.find(player) != saved_players.end())
 		{
 			/*infostream<<"Player "<<player->getName()
 					<<" was already saved."<<std::endl;*/
 			continue;
 		}
+#endif
+		if (player->path == "") {
 		std::string playername = player->getName();
 		// Don't save unnamed player
 		if(playername == "")
@@ -488,18 +497,20 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			continue;
 		}
 
+		player->path = path;
+		}
 		{
 			/*infostream<<"Saving player "<<player->getName()<<" to "
-					<<path<<std::endl;*/
+					<<player->path<<std::endl;*/
 			// Open file and serialize
 			std::ostringstream ss(std::ios_base::binary);
 			player->serialize(ss);
-			if(!fs::safeWriteToFile(path, ss.str()))
+			if(!fs::safeWriteToFile(player->path, ss.str()))
 			{
-				infostream<<"Failed to write "<<path<<std::endl;
+				infostream<<"Failed to write "<<player->path<<std::endl;
 				continue;
 			}
-			saved_players.insert(player);
+			player->need_save = 0;
 		}
 	}
 
@@ -526,12 +537,17 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 		{
 			// Open file and deserialize
 			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false)
+			if(is.good() == false || is.eof())
 			{
 				infostream<<"Failed to read "<<path<<std::endl;
 				continue;
 			}
+			try {
 			testplayer.deSerialize(is, player_files[i].name);
+			} catch (SerializationError e) {
+				errorstream<<e.what()<<std::endl;
+				continue;
+			}
 		}
 
 		if(!string_allowed(testplayer.getName(), PLAYERNAME_ALLOWED_CHARS))
@@ -560,12 +576,18 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 					<<path<<std::endl;
 			// Open file and deserialize
 			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false)
+			if(is.good() == false || is.eof())
 			{
 				infostream<<"Failed to read "<<path<<std::endl;
 				continue;
 			}
+			try {
 			player->deSerialize(is, player_files[i].name);
+			} catch (SerializationError e) {
+				errorstream<<e.what()<<std::endl;
+				continue;
+			}
+			player->path = path;
 		}
 
 		if(newplayer)
