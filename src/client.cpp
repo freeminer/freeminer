@@ -286,6 +286,20 @@ Client::Client(
 	}
 }
 
+void Client::Stop()
+{
+	//request all client managed threads to stop
+	m_mesh_update_thread.Stop();
+}
+
+bool Client::isShutdown()
+{
+
+	if (!m_mesh_update_thread.IsRunning()) return true;
+
+	return false;
+}
+
 Client::~Client()
 {
 	{
@@ -296,7 +310,7 @@ Client::~Client()
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
 	while(!m_mesh_update_thread.m_queue_out.empty()) {
-		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_front();
+		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 		delete r.mesh;
 	}
 
@@ -525,7 +539,7 @@ void Client::step(float dtime)
 			writeU16(&data[53], CLIENT_PROTOCOL_VERSION_MAX);
 
 			// Send as unreliable
-			Send(0, data, false);
+			Send(1, data, false);
 		}
 
 		// Not connected, return
@@ -586,7 +600,7 @@ void Client::step(float dtime)
 					writeV3S16(&reply[2+1+6*k], *j);
 					k++;
 				}
-				m_con.Send(PEER_ID_SERVER, 1, reply, true);
+				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 
 				if(i == deleted_blocks.end())
 					break;
@@ -696,7 +710,7 @@ void Client::step(float dtime)
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
 			num_processed_meshes++;
-			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_front();
+			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if(block)
 			{
@@ -716,8 +730,6 @@ void Client::step(float dtime)
 			}
 			if(r.ack_block_to_server)
 			{
-				//u32 got_blocks_size = 1; //remove for bulk
- //add for bulk
 				got_blocks.push_back(r.p);
 				if (got_blocks.size() >= 255)
 					break;
@@ -743,17 +755,13 @@ void Client::step(float dtime)
 				SharedBuffer<u8> reply(replysize);
 				writeU16(&reply[0], TOSERVER_GOTBLOCKS);
 				reply[2] = got_blocks_size;
-				//writeV3S16(&reply[3], r.p); //remove for bulk
-//add for bulk
 				u32 i=0;
 				while (got_blocks.size())
 					writeV3S16(&reply[3+(6*i++)], got_blocks.pop_front());
 
 				writeU16(&reply[2+1+(6*got_blocks_size)], (int)m_env.getClientMap().getControl().wanted_range);
 				// Send as reliable
-				m_con.Send(PEER_ID_SERVER, 1, reply, true);
-			
-//			}  //remove for bulk
+				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
@@ -847,7 +855,7 @@ void Client::step(float dtime)
 			std::string s = os.str();
 			SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 			// Send as reliable
-			Send(0, data, true);
+			Send(1, data, true);
 		}
 	}
 }
@@ -964,7 +972,7 @@ void Client::request_media(const std::list<std::string> &file_requests)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(1, data, true);
 	infostream<<"Client: Sending media request list to server ("
 			<<file_requests.size()<<" files)"<<std::endl;
 }
@@ -977,7 +985,7 @@ void Client::received_media()
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(1, data, true);
 	infostream<<"Client: Notifying server that we received all media"
 			<<std::endl;
 }

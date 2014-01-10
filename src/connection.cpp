@@ -599,7 +599,7 @@ void * Connection::Thread()
 		runTimeouts(dtime);
 
 		while(!m_command_queue.empty()){
-			ConnectionCommand c = m_command_queue.pop_front();
+			ConnectionCommand c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
 
@@ -1607,7 +1607,7 @@ ConnectionEvent Connection::getEvent()
 		e.type = CONNEVENT_NONE;
 		return e;
 	}
-	return m_event_queue.pop_front();
+	return m_event_queue.pop_frontNoEx();
 }
 
 ConnectionEvent Connection::waitEvent(u32 timeout_ms)

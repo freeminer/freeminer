@@ -90,15 +90,15 @@ public:
 
 void * ServerThread::Thread()
 {
-	ThreadStarted();
-
 	log_register_thread("ServerThread");
 
 	DSTACK(__FUNCTION_NAME);
-
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+	m_server->AsyncRunStep(true);
+
+	ThreadStarted();
 
 	while(!StopRequested())
 	{
@@ -1059,7 +1059,7 @@ void Server::step(float dtime)
 	}
 }
 
-void Server::AsyncRunStep()
+void Server::AsyncRunStep(bool initial_step)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -1078,7 +1078,7 @@ void Server::AsyncRunStep()
 		SendBlocks(dtime);
 	}
 
-	if(dtime < 0.001)
+	if((dtime < 0.001) && (initial_step == false))
 		return;
 
 /*
@@ -1599,7 +1599,7 @@ void Server::AsyncRunStep()
 				memcpy((char*)&reply[2], unreliable_data.c_str(),
 						unreliable_data.size());
 				// Send as unreliable
-				m_con.Send(client->peer_id, 0, reply, false);
+				m_con.Send(client->peer_id, 1, reply, false);
 			}
 
 			/*if(reliable_data.size() > 0 || unreliable_data.size() > 0)
@@ -3814,7 +3814,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 1, data, true);
 }
 
 void Server::SendHUDRemove(u16 peer_id, u32 id)
@@ -3829,7 +3829,8 @@ void Server::SendHUDRemove(u16 peer_id, u32 id)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+
+	m_con.Send(peer_id, 1, data, true);
 }
 
 void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value)
@@ -4653,7 +4654,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 				<<" size=" <<s.size()<<std::endl;
 		SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 		// Send as reliable
-		m_con.Send(peer_id, 0, data, true);
+		m_con.Send(peer_id, 2, data, true);
 	}
 }
 
