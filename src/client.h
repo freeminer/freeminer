@@ -289,6 +289,7 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			bool ipv6
+			,bool simple_singleplayer_mode
 	);
 	
 	~Client();
