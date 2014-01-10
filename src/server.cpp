@@ -689,7 +689,7 @@ Server::Server(
 	m_simple_singleplayer_mode(simple_singleplayer_mode),
 	m_async_fatal_error(""),
 	m_env(NULL),
-	m_con(PROTOCOL_ID, 512, CONNECTION_TIMEOUT,
+	m_con(PROTOCOL_ID, simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT,
 	      g_settings->getBool("enable_ipv6") && g_settings->getBool("ipv6_server"), this),
 	m_banmanager(NULL),
 	m_rollback(NULL),

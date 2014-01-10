@@ -487,7 +487,10 @@ void Peer::reportRTT(float rtt)
 	if(rtt >= 0.0){
 		if(rtt < 0.01){
 			if(m_max_packets_per_second < congestion_control_max_rate)
-				m_max_packets_per_second *= 1.05;
+				if (m_max_packets_per_second > congestion_control_max_rate/2)
+					m_max_packets_per_second *= 1.02;
+				else
+					m_max_packets_per_second *= 1.05;
 		} else if(rtt < congestion_control_aim_rtt){
 			if(m_max_packets_per_second < congestion_control_max_rate)
 				m_max_packets_per_second *= 1.02;
@@ -699,7 +702,7 @@ void Connection::send(float dtime)
 // Receive packets from the network and buffers and create ConnectionEvents
 void Connection::receive()
 {
-	u32 datasize = 65535 - BASE_HEADER_SIZE; // UDP max
+	u32 datasize = 16384 - BASE_HEADER_SIZE;
 	// TODO: We can not know how many layers of header there are.
 	// For now, just assume there are no other than the base headers.
 	u32 packet_maxsize = datasize + BASE_HEADER_SIZE;
@@ -909,6 +912,11 @@ void Connection::runTimeouts(float dtime)
 			= g_settings->getFloat("congestion_control_max_rate");
 	float congestion_control_min_rate
 			= g_settings->getFloat("congestion_control_min_rate");
+
+	if (congestion_control_max_rate*m_max_packet_size > 10000000)
+		congestion_control_max_rate = 10000000/m_max_packet_size;
+	if (m_max_packet_size > 4000 && congestion_control_min_rate == 10)
+		congestion_control_min_rate = congestion_control_max_rate / 2;
 
 	std::list<u16> timeouted_peers;
 	for(std::map<u16, Peer*>::iterator j = m_peers.begin();
@@ -1226,8 +1234,8 @@ void Connection::rawSend(BufferedPacket &packet)
 	try{
 		m_socket.Send(packet.address, *packet.data, packet.data.getSize());
 	} catch(SendFailedException &e){
-		derr_con<<"Connection::rawSend(): SendFailedException: "
-				<<packet.address.serializeString()<<std::endl;
+		derr_con<<"Connection::rawSend(): SendFailedException to="
+				<<packet.address.serializeString()<<" size="<<packet.data.getSize()<<" : "<<e.what()<<std::endl;
 	}
 	++packet.sends;
 }

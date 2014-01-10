@@ -1091,7 +1091,7 @@ void the_game(
 	*/
 	Client client(device, playername.c_str(), password, draw_control,
 		tsrc, shsrc, itemdef, nodedef, sound, &eventmgr,
-		connect_address.isIPv6());
+		connect_address.isIPv6(), simple_singleplayer_mode);
 	
 	// Client acts as our GameDef
 	IGameDef *gamedef = &client;
