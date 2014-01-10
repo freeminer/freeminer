@@ -699,7 +699,7 @@ void Connection::send(float dtime)
 // Receive packets from the network and buffers and create ConnectionEvents
 void Connection::receive()
 {
-	u32 datasize = m_max_packet_size * 2;  // Double it just to be safe
+	u32 datasize = 65535 - BASE_HEADER_SIZE; // UDP max
 	// TODO: We can not know how many layers of header there are.
 	// For now, just assume there are no other than the base headers.
 	u32 packet_maxsize = datasize + BASE_HEADER_SIZE;
