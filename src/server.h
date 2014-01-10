@@ -55,23 +55,6 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 
 
-class ServerError : public std::exception
-{
-public:
-	ServerError(const std::string &s)
-	{
-		m_s = "ServerError: ";
-		m_s += s;
-	}
-	virtual ~ServerError() throw()
-	{}
-	virtual const char * what() const throw()
-	{
-		return m_s.c_str();
-	}
-	std::string m_s;
-};
-
 /*
 	Some random functions
 */
@@ -153,15 +136,6 @@ struct PrioritySortedBlockTransfer
 	u16 peer_id;
 };
 
-struct MediaRequest
-{
-	std::string name;
-
-	MediaRequest(const std::string &name_=""):
-		name(name_)
-	{}
-};
-
 struct MediaInfo
 {
 	std::string path;
@@ -241,6 +215,7 @@ public:
 		m_nearest_unsent_reset_timer = 0.0;
 		m_nothing_to_send_counter = 0;
 		m_nothing_to_send_pause_timer = 0;
+		wanted_range = 9 * MAP_BLOCKSIZE;
 	}
 	~RemoteClient()
 	{
@@ -278,6 +253,7 @@ public:
 				<<", m_blocks_sending.size()="<<m_blocks_sending.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
 				<<", m_excess_gotblocks="<<m_excess_gotblocks
+				<<", wanted_range="<<wanted_range
 				<<std::endl;
 		m_excess_gotblocks = 0;
 	}
@@ -296,6 +272,7 @@ public:
 		Value is dummy.
 	*/
 	std::set<u16> m_known_objects;
+	s16 wanted_range;
 
 private:
 	/*
@@ -498,6 +475,7 @@ public:
 	bool hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount);
 	void hudSetHotbarImage(Player *player, std::string name);
 	void hudSetHotbarSelectedImage(Player *player, std::string name);
+	std::map<u16, RemoteClient*> & getClients() { return m_clients; };
 
 private:
 
@@ -561,7 +539,7 @@ private:
 	void setBlockNotSent(v3s16 p);
 
 	// Environment and Connection must be locked when called
-	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version);
+	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable = 1);
 
 	// Sends blocks to clients (locks env and con on its own)
 	void SendBlocks(float dtime);
@@ -569,7 +547,7 @@ private:
 	void fillMediaCache();
 	void sendMediaAnnouncement(u16 peer_id);
 	void sendRequestedMedia(u16 peer_id,
-			const std::list<MediaRequest> &tosend);
+			const std::list<std::string> &tosend);
 
 	void sendDetachedInventory(const std::string &name, u16 peer_id);
 	void sendDetachedInventoryToAll(const std::string &name);
@@ -729,6 +707,8 @@ private:
 	float m_step_dtime;
 	JMutex m_step_dtime_mutex;
 
+	float m_lag;
+
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
 
@@ -825,6 +805,7 @@ private:
 	std::vector<u32> m_particlespawner_ids;
 
 	std::map<v3s16, MapBlock*> m_modified_blocks;
+	std::map<v3s16, MapBlock*> m_lighting_modified_blocks;
 };
 
 /*

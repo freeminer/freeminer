@@ -77,16 +77,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "subgame.h"
 #include "quicktune.h"
 #include "serverlist.h"
+#include "httpfetch.h"
 #include "guiEngine.h"
 #include "mapsector.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-
-#if USE_CURL
-#include "curl/curl.h"
 #endif
 
 /*
@@ -718,12 +715,14 @@ void SpeedTests()
 			}
 		}
 		// Do at least 10ms
-		while(timer.getTimerTime() < 10);
+		while(timer.getTimerTime() < 10 && n < 100000);
 
 		u32 dtime = timer.stop();
+		if (dtime) { // dirty hack, TimeTaker is disabled for release
 		u32 per_ms = n / dtime;
 		infostream<<"Done. "<<dtime<<"ms, "
 				<<per_ms<<"/ms"<<std::endl;
+		}
 	}
 }
 
@@ -996,10 +995,8 @@ int main(int argc, char *argv[])
 	srand(time(0));
 	mysrand(time(0));
 
-#if USE_CURL
-	CURLcode res = curl_global_init(CURL_GLOBAL_DEFAULT);
-	assert(res == CURLE_OK);
-#endif
+	// Initialize HTTP fetcher
+	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
 	/*
 		Run unit tests
@@ -1481,7 +1478,9 @@ int main(int argc, char *argv[])
 			fallback = "fallback_";
 		u16 font_size = g_settings->getU16(fallback + "font_size");
 		font_path = g_settings->get(fallback + "font_path");
-		font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size);
+		u32 font_shadow = g_settings->getU16(fallback + "font_shadow");
+		u32 font_shadow_alpha = g_settings->getU16(fallback + "font_shadow_alpha");
+		font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size, true, true, font_shadow, font_shadow_alpha);
 	} else {
 		font = guienv->getFont(font_path.c_str());
 	}
@@ -1856,6 +1855,9 @@ int main(int argc, char *argv[])
 			dstream<<names[i]<<" = "<<val.getString()<<std::endl;
 		}
 	}
+
+	// Stop httpfetch thread (if started)
+	httpfetch_cleanup();
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
 

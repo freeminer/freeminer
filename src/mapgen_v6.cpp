@@ -74,6 +74,7 @@ MapgenV6::MapgenV6(int mapgenid, MapgenV6Params *params, EmergeManager *emerge) 
 	this->water_level = params->water_level;
 	this->flags   = params->flags;
 	this->csize   = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
+	this->gennotify = emerge->gennotify;
 
 	this->freq_desert = params->freq_desert;
 	this->freq_beach  = params->freq_beach;
@@ -458,22 +459,24 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 			dp.c_stair   = c_stair_cobble;
 
 			dp.diagonal_dirs = false;
-			dp.mossratio = 3.0;
-			dp.holesize  = v3s16(1, 2, 1);
-			dp.roomsize  = v3s16(0, 0, 0);
+			dp.mossratio  = 3.0;
+			dp.holesize   = v3s16(1, 2, 1);
+			dp.roomsize   = v3s16(0, 0, 0);
+			dp.notifytype = GENNOTIFY_DUNGEON;
 		} else {
 			dp.c_cobble  = c_sandbrick;
 			dp.c_moss    = c_sandbrick; // should make this 'cracked sandstone' later
 			dp.c_stair   = c_stair_sandstone;
 
 			dp.diagonal_dirs = true;
-			dp.mossratio = 0.0;
-			dp.holesize  = v3s16(2, 3, 2);
-			dp.roomsize  = v3s16(2, 5, 2);
+			dp.mossratio  = 0.0;
+			dp.holesize   = v3s16(2, 3, 2);
+			dp.roomsize   = v3s16(2, 5, 2);
+			dp.notifytype = GENNOTIFY_TEMPLE;
 		}
 
-		DungeonGen dgen(ndef, data->seed, water_level, &dp);
-		dgen.generate(vm, blockseed, full_node_min, full_node_max);
+		DungeonGen dgen(this, &dp);
+		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
 	
 	// Add top and bottom side of water to transforming_liquid queue
@@ -576,7 +579,7 @@ int MapgenV6::generateGround() {
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ? 
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z)) : 0;
+					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
 				} else {
 					vm->m_data[i] = n_air;
@@ -652,7 +655,7 @@ void MapgenV6::addMud() {
 
 void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 	// 340ms @cs=8
-	TimeTaker timer1("flow mud");
+	//TimeTaker timer1("flow mud");
 
 	// Iterate a few times
 	for(s16 k = 0; k < 3; k++) {
@@ -963,7 +966,7 @@ void MapgenV6::growGrass() {
 		MapNode *n = &vm->m_data[i];
 		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
 			if (emerge->env->m_use_weather) {
-				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z));
+				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z), NULL, &heat_cache);
 				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
 			} else
 			n->setContent(c_dirt_with_grass);

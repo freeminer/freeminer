@@ -75,10 +75,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 Map::Map(std::ostream &dout, IGameDef *gamedef):
+	m_liquid_step_flow(1000),
 	m_dout(dout),
 	m_gamedef(gamedef),
+	m_sectors_update_last(0),
+	m_sectors_save_last(0),
 	m_sector_cache(NULL)
 {
+	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 }
 
 Map::~Map()
@@ -675,9 +679,9 @@ s16 Map::propagateSunlight(v3s16 start,
 	return y + 1;
 }
 
-void Map::updateLighting(enum LightBank bank,
+u32 Map::updateLighting(enum LightBank bank,
 		std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks)
+		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -698,13 +702,25 @@ void Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
-	{
-	//TimeTaker t("first stuff");
+	JMutexAutoLock lock2(m_update_lighting_mutex);
 
+	{
+	TimeTaker t("updateLighting: first stuff");
+
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	if(!breakable)
+		updateLighting_last[bank] = 0;
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
 		i != a_blocks.end(); ++i)
 	{
-		MapBlock *block = i->second;
+			if (n++ < updateLighting_last[bank])
+				continue;
+			else
+				updateLighting_last[bank] = 0;
+			++calls;
+
+		MapBlock *block = getBlockNoCreateNoEx(i->first);
+		//MapBlock *block = i->second;
 
 		if(!block || block->isDummy())
 			continue;
@@ -800,10 +816,14 @@ void Map::updateLighting(enum LightBank bank,
 			}
 
 		}
+		if (porting::getTimeMs() > end_ms) {
+			updateLighting_last[bank] = n;
+			break;
+		}
 	}
-
+	if (!calls)
+		updateLighting_last[bank] = 0;
 	}
-
 	/*
 		Enable this to disable proper lighting for speeding up map
 		generation for testing or whatever
@@ -825,7 +845,7 @@ void Map::updateLighting(enum LightBank bank,
 
 #if 1
 	{
-		//TimeTaker timer("unspreadLight");
+		TimeTaker timer("updateLighting: unspreadLight");
 		unspreadLight(bank, unlight_from, light_sources, modified_blocks);
 	}
 
@@ -837,7 +857,7 @@ void Map::updateLighting(enum LightBank bank,
 	}*/
 
 	{
-		//TimeTaker timer("spreadLight");
+		TimeTaker timer("updateLighting: spreadLight");
 		spreadLight(bank, light_sources, modified_blocks);
 	}
 
@@ -911,15 +931,29 @@ void Map::updateLighting(enum LightBank bank,
 		emerge_time = 0;*/
 	}
 #endif
-
+	return updateLighting_last[bank];
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks)
+u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
+		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
 {
-	updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks);
-	updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks);
+	int ret = 0;
+{
+TimeTaker timer("updateLighting(LIGHTBANK_DAY)");
+
+	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks, breakable);
+}
+{
+TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
+	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks, breakable);
+}
+
+	if (breakable && ret)
+		return ret;
+
+TimeTaker timer("updateLighting expireDayNightDiff");
+	JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
 		Update information about whether day and night light differ
@@ -935,6 +969,7 @@ void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 			continue;
 		block->expireDayNightDiff();
 	}
+	return ret;
 }
 
 /*
@@ -1129,7 +1164,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		MapNode n2 = getNode(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
-			m_transforming_liquid.push_back(p2);
+			transforming_liquid_push_back(p2);
 		}
 
 		}catch(InvalidPositionException &e)
@@ -1321,7 +1356,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		MapNode n2 = getNode(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
-			m_transforming_liquid.push_back(p2);
+			transforming_liquid_push_back(p2);
 		}
 
 		}catch(InvalidPositionException &e)
@@ -1447,7 +1482,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 /*
 	Updates usage timers
 */
-void Map::timerUpdate(float dtime, float unload_timeout,
+u32 Map::timerUpdate(float uptime, float unload_timeout,
 		std::list<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1460,19 +1495,19 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
+/*
 	beginSave();
-	u32 n = 0, calls = 0, 
-		end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+*/
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
 	{
-		if (n++ < m_sectors_last_update)
+		if (n++ < m_sectors_update_last)
 			continue;
 		else
-			m_sectors_last_update = 0;
+			m_sectors_update_last = 0;
 		++calls;
-
 
 		MapSector *sector = si->second;
 
@@ -1486,7 +1521,10 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 		{
 			MapBlock *block = (*i);
 
-			block->incrementUsageTimer(dtime);
+			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
+				block->m_uptime_timer_last = uptime - 0.1;
+			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
+			block->m_uptime_timer_last = uptime;
 
 			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
 			{
@@ -1497,7 +1535,9 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 						&& save_before_unloading)
 				{
 					modprofiler.add(block->getModifiedReason(), 1);
+					beginSave();
 					saveBlock(block);
+					endSave();
 					saved_blocks_count++;
 				}
 
@@ -1533,26 +1573,33 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 		}
 
 		if (porting::getTimeMs() > end_ms) {
-			m_sectors_last_update = n;
+			m_sectors_update_last = n;
 			break;
 		}
 
 	}
 	if (!calls)
-		m_sectors_last_update = 0;
+		m_sectors_update_last = 0;
+/*
 	endSave();
+*/
 
 	// Finally delete the empty sectors
+
 	deleteSectors(sector_deletion_queue);
 
 	if(deleted_blocks_count != 0)
 	{
+		if (m_sectors_update_last)
+			infostream<<"ServerMap: timerUpdate(): Sectors processed:"<<calls<<"/"<<m_sectors.size()<<" to "<<m_sectors_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
 		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
+/*
 		infostream<<", "<<block_count_all<<" blocks in memory";
+*/
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
@@ -1560,6 +1607,7 @@ void Map::timerUpdate(float dtime, float unload_timeout,
 			modprofiler.print(infostream);
 		}
 	}
+	return m_sectors_update_last;
 }
 
 void Map::unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks)
@@ -1655,13 +1703,15 @@ struct NodeNeighbor {
 	v3s16 p;
 	bool l; //can liquid
 	bool i; //infinity
+	int weight;
 };
 
-void Map::transforming_liquid_add(v3s16 p) {
-        m_transforming_liquid.push_back(p);
+void Map::transforming_liquid_push_back(v3s16 & p) {
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	m_transforming_liquid.push_back(p);
 }
 
-s32 Map::transforming_liquid_size() {
+u32 Map::transforming_liquid_size() {
         return m_transforming_liquid.size();
 }
 
@@ -1678,7 +1728,7 @@ const v3s16 liquid_flow_dirs[7] =
 };
 
 // when looking around we must first check self node for correct type definitions
-const s8 liquid_explore_map[7] = {1,0,2,3,4,5,6};
+const s8 liquid_explore_map[7] = {1,0,6,2,3,4,5};
 const s8 liquid_random_map[4][7] = {
 	{0,1,2,3,4,5,6},
 	{0,1,4,3,5,2,6},
@@ -1690,7 +1740,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
+u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1708,13 +1758,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 	UniqueQueue<v3s16> must_reflow, must_reflow_second;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
-	std::map<v3s16, MapBlock*> lighting_modified_blocks;
 	u16 loop_rand = myrand();
 
 	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
 	while (m_transforming_liquid.size() > 0)
 	{
+		NEXT_LIQUID:;
 		// This should be done here so that it is done when continue is used
 		if (loopcount >= initial_size || porting::getTimeMs() > end_ms)
 			break;
@@ -1722,7 +1772,11 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3s16 p0 = m_transforming_liquid.pop_front();
+		v3s16 p0;
+		{
+			JMutexAutoLock lock(m_transforming_liquid_mutex);
+			p0 = m_transforming_liquid.pop_front();
+		}
 		u16 total_level = 0;
 		//u16 level_max = 0;
 		// surrounding flowing liquid nodes
@@ -1742,6 +1796,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		 */
 		for (u8 e = 0; e < 7; e++) {
 			u8 i = liquid_explore_map[e];
+			NodeNeighbor & nb = neighbors[i];
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
 				case D_TOP:
@@ -1751,14 +1806,12 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					nt = NEIGHBOR_LOWER;
 					break;
 			}
-			v3s16 npos = p0 + liquid_flow_dirs[i];
-
-			neighbors[i].n = getNodeNoEx(npos);
+			neighbors[i].p = p0 + liquid_flow_dirs[i];
+			neighbors[i].n = getNodeNoEx(neighbors[i].p);
 			neighbors[i].t = nt;
-			neighbors[i].p = npos;
 			neighbors[i].l = 0;
 			neighbors[i].i = 0;
-			NodeNeighbor & nb = neighbors[i];
+			neighbors[i].weight = 0;
 
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
@@ -1773,10 +1826,9 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 							!(loopcount % 2)) {
 						u8 melt_max_level = nb.n.getMaxLevel(nodemgr);
 						u8 my_max_level = MapNode(liquid_kind_flowing).getMaxLevel(nodemgr);
-						liquid_levels[i] = 
-							(float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
+						liquid_levels[i] = (float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
 						if (liquid_levels[i])
-						nb.l = 1;
+							nb.l = 1;
 					}
 					else if (	melt_kind != CONTENT_IGNORE &&
 							nb.n.getContent() == melt_kind &&
@@ -1784,7 +1836,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 							!(loopcount % 8)) {
 						liquid_levels[i] = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 						if (liquid_levels[i])
-						nb.l = 1;
+							nb.l = 1;
 					}
 					// todo: for erosion add something here..
 					break;
@@ -1801,7 +1853,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = nodemgr->getId(nodemgr->get(nb.n).melt);
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = 
+						melt_kind_flowing =
 							nodemgr->getId(
 							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).melt)
 									).liquid_alternative_flowing);
@@ -1837,21 +1889,46 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 					break;
 			}
 
+			// only self, top, bottom swap
+			if (nodemgr->get(nb.n.getContent()).liquid_type && e <= 2) {
+				try{
+					nb.weight = ((ItemGroupList) nodemgr->get(nb.n).groups)["weight"];
+					if (e == 1 && neighbors[D_BOTTOM].weight && neighbors[D_SELF].weight > neighbors[D_BOTTOM].weight) {
+						setNode(neighbors[D_SELF].p, neighbors[D_BOTTOM].n);
+						setNode(neighbors[D_BOTTOM].p, neighbors[D_SELF].n);
+						must_reflow_second.push_back(neighbors[D_SELF].p);
+						must_reflow_second.push_back(neighbors[D_BOTTOM].p);
+						goto NEXT_LIQUID;
+					}
+					if (e == 2 && neighbors[D_SELF].weight && neighbors[D_TOP].weight > neighbors[D_SELF].weight) {
+						setNode(neighbors[D_SELF].p, neighbors[D_TOP].n);
+						setNode(neighbors[D_TOP].p, neighbors[D_SELF].n);
+						must_reflow_second.push_back(neighbors[D_SELF].p);
+						must_reflow_second.push_back(neighbors[D_TOP].p);
+						goto NEXT_LIQUID;
+					}
+				}
+				catch(InvalidPositionException &e) {
+					infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
+					goto NEXT_LIQUID;
+				}
+			}
+			
 			if (nb.l && nb.t == NEIGHBOR_SAME_LEVEL)
 				++can_liquid_same_level;
 			if (liquid_levels[i] > 0)
 				total_level += liquid_levels[i];
 
-			/*
+			// /*
 			infostream << "get node i=" <<(int)i<<" " << PP(npos) << " c="
 			<< nb.n.getContent() <<" p0="<< (int)nb.n.param0 <<" p1="
 			<< (int)nb.n.param1 <<" p2="<< (int)nb.n.param2 << " lt="
 			<< nodemgr->get(nb.n.getContent()).liquid_type
 			//<< " lk=" << liquid_kind << " lkf=" << liquid_kind_flowing
 			<< " l="<< nb.l	<< " inf="<< nb.i << " nlevel=" << (int)liquid_levels[i]
-			<< " tlevel=" << (int)total_level << " cansame="
-			<< (int)can_liquid_same_level << " Lmax="<<(int)level_max<<std::endl;
-			*/
+			<< " totallevel=" << (int)total_level << " cansame="
+			<< (int)can_liquid_same_level << " Lmax="<<(int)nodemgr->get(liquid_kind_flowing).getMaxLevel();<<std::endl;
+			//  */
 		}
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 		//viscosity = nodemgr->get(liquid_kind).viscosity;
@@ -1867,12 +1944,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		}
 
 		//relax up
-		if (nodemgr->get(liquid_kind).liquid_renewable && relax && ((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
+		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+			relax &&
+			((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
 			level_max > 1 &&
 			liquid_levels[D_TOP] == 0 &&
 			liquid_levels[D_BOTTOM] == level_max &&
-			total_level >= level_max * can_liquid_same_level -
-			(can_liquid_same_level - relax) &&
+			total_level >= level_max * can_liquid_same_level - (can_liquid_same_level - relax) &&
 			can_liquid_same_level >= relax + 1) {
 			total_level = level_max * can_liquid_same_level;
 		}
@@ -1894,9 +1972,13 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		total_level -= want_level * can_liquid_same_level;
 
 		//relax down
-		if (nodemgr->get(liquid_kind).liquid_renewable && relax && p0.Y == water_level + 1 && liquid_levels[D_TOP] == 0 &&
+		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+			relax &&
+			p0.Y == water_level + 1 &&
+			liquid_levels[D_TOP] == 0 &&
 			level_max > 1 &&
-			liquid_levels[D_BOTTOM] == level_max && want_level == 0 &&
+			liquid_levels[D_BOTTOM] == level_max &&
+			want_level == 0 &&
 			total_level <= (can_liquid_same_level - relax) &&
 			can_liquid_same_level >= relax + 1) {
 			total_level = 0;
@@ -1951,7 +2033,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 				 liquid_levels[D_TOP] >= level_max))
 					liquid_levels_want[ii] = level_max;
 
-		/*
+		// /*
 		if (total_level > 0) //|| flowed != volume)
 			infostream <<" AFTER level=" << (int)total_level
 			//<< " flowed="<<flowed<< " volume=" << volume
@@ -1960,14 +2042,14 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			<< (int)liquid_levels_want[D_TOP]<< " topwas="
 			<< (int)liquid_levels[D_TOP]<< " bot="
 			<< (int)liquid_levels_want[D_BOTTOM]<<std::endl;
-		*/
+		// */
 
 		for (u16 r = 0; r < 7; r++) {
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
-			if (liquid_levels_want[i] < 0 || !neighbors[i].l) 
+			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
 				continue;
-			MapNode & n0 = neighbors[i].n;
-			p0 = neighbors[i].p;
+			//MapNode & n0 = neighbors[i].n;
+			//p0 = neighbors[i].p;
 			/*
 				decide on the type (and possibly level) of the current node
 			*/
@@ -1997,7 +2079,7 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 				for (u16 ir = D_SELF + 1; ir < D_TOP; ++ir) { // only same level
 					u16 ii = liquid_random_map[(loopcount+loop_rand+4)%4][ir];
 					if (neighbors[ii].l)
-						must_reflow_second.push_back(p0 + liquid_flow_dirs[ii]);
+						must_reflow_second.push_back(neighbors[i].p + liquid_flow_dirs[ii]);
 				}
 			}
 
@@ -2010,8 +2092,8 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 				continue;
 			}
 
-			n0.setContent(liquid_kind_flowing);
-			n0.setLevel(nodemgr, new_node_level, 1);
+			neighbors[i].n.setContent(liquid_kind_flowing);
+			neighbors[i].n.setLevel(nodemgr, new_node_level, 1);
 			/* rollback will stop your server if enabled with liquid_finite
 			// Find out whether there is a suspect for this action
 			std::string suspect;
@@ -2035,24 +2117,22 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			*/
 				// Set node
 			try{
-				setNode(p0, n0);
+				setNode(neighbors[i].p, neighbors[i].n);
 			}
 			catch(InvalidPositionException &e)
 			{
-				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(p0)<<std::endl;
+				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
 			}
 			//}
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			if (new_node_level <= 0 || nodemgr->get(n0).light_source) { 
-				v3s16 blockpos = getNodeBlockPos(p0);
-				MapBlock *block = getBlockNoCreateNoEx(blockpos);
-				if(block != NULL) {
-					modified_blocks[blockpos] = block;
-					//if(nodemgr->get(n0).light_source != 0) // better ro update always
+			v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
+			MapBlock *block = getBlockNoCreateNoEx(blockpos);
+			if(block != NULL) {
+				modified_blocks[blockpos] = block;
+				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better ro update always
 					lighting_modified_blocks[block->getPos()] = block;
-				}
 			}
 			must_reflow.push_back(neighbors[i].p);
 		}
@@ -2063,34 +2143,46 @@ s32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		}*/
 	}
 
-	s32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
-
-	/*if (loopcount)
+	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
+	if (ret || loopcount > m_liquid_step_flow)
+		m_liquid_step_flow += (m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount/10;
+	/*
+	if (loopcount)
 		infostream<<"Map::transformLiquidsFinite(): loopcount="<<loopcount
+		<<" avgflow="<<m_liquid_step_flow
 		<<" reflow="<<must_reflow.size()
-		<<" queue="<< m_transforming_liquid.size()<< " per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;*/
+		<<" queue="<< m_transforming_liquid.size()
+		<<" per="<< porting::getTimeMs() - (end_ms - 1000 * g_settings->getFloat("dedicated_server_step"))
+		<<" ret="<<ret<<std::endl;
+	*/
+
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
 	while (must_reflow_second.size() > 0)
 		m_transforming_liquid.push_back(must_reflow_second.pop_front());
-	updateLighting(lighting_modified_blocks, modified_blocks);
+	//updateLighting(lighting_modified_blocks, modified_blocks);
+
+	g_profiler->add("Server: liquids processed", loopcount);
 
 	return ret;
 }
 
 #define WATER_DROP_BOOST 4
 
-s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
+u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
 {
 
 	if (g_settings->getBool("liquid_finite"))
-		return Map::transformLiquidsFinite(modified_blocks);
+		return Map::transformLiquidsFinite(modified_blocks, lighting_modified_blocks);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("transformLiquids()");
+
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
@@ -2102,7 +2194,7 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 	UniqueQueue<v3s16> must_reflow;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
-	std::map<v3s16, MapBlock*> lighting_modified_blocks;
+	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
 
 	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
 
@@ -2330,7 +2422,13 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 			m_gamedef->rollback()->reportAction(action);
 		} else {
 			// Set node
-			setNode(p0, n0);
+			try{
+				setNode(p0, n0);
+			}
+			catch(InvalidPositionException &e)
+			{
+				infostream<<"transformLiquids: setNode() failed:"<<PP(p0)<<":"<<e.what()<<std::endl;
+			}
 		}
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
@@ -2364,13 +2462,15 @@ s32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 		}
 	}
 
-	s32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
+	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
-	updateLighting(lighting_modified_blocks, modified_blocks);
+	//updateLighting(lighting_modified_blocks, modified_blocks);
+
+	g_profiler->add("Server: liquids processed", loopcount);
 
 	return ret;
 }
@@ -2829,10 +2929,13 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 	/*
 		Copy transforming liquid information
 	*/
+	{
+	JMutexAutoLock lock(m_transforming_liquid_mutex);
 	while(data->transforming_liquid.size() > 0)
 	{
 		v3s16 p = data->transforming_liquid.pop_front();
 		m_transforming_liquid.push_back(p);
+	}
 	}
 
 	/*
@@ -3422,13 +3525,13 @@ std::string ServerMap::getBlockFilename(v3s16 p)
 	return cc;
 }
 
-void ServerMap::save(ModifiedState save_level)
+s32 ServerMap::save(ModifiedState save_level, bool breakable)
 {
 	DSTACK(__FUNCTION_NAME);
 	if(m_map_saving_enabled == false)
 	{
 		infostream<<"WARNING: Not saving map, saving disabled."<<std::endl;
-		return;
+		return 0;
 	}
 
 	if(save_level == MOD_STATE_CLEAN)
@@ -3449,10 +3552,18 @@ void ServerMap::save(ModifiedState save_level)
 
 	// Don't do anything with sqlite unless something is really saved
 	bool save_started = false;
-
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	if (!breakable)
+		m_sectors_save_last = 0;
 	for(std::map<v2s16, MapSector*>::iterator i = m_sectors.begin();
 		i != m_sectors.end(); ++i)
 	{
+			if (n++ < m_sectors_save_last)
+				continue;
+			else
+				m_sectors_save_last = 0;
+			++calls;
+
 		ServerMapSector *sector = (ServerMapSector*)i->second;
 		assert(sector->getId() == MAPSECTOR_SERVER);
 
@@ -3491,7 +3602,14 @@ void ServerMap::save(ModifiedState save_level)
 						<<std::endl;*/
 			}
 		}
+		if (breakable && porting::getTimeMs() > end_ms) {
+				m_sectors_save_last = n;
+				break;
+		}
 	}
+	if (!calls)
+		m_sectors_save_last = 0;
+
 	if(save_started)
 		endSave();
 
@@ -3510,6 +3628,7 @@ void ServerMap::save(ModifiedState save_level)
 		infostream<<"Blocks modified by: "<<std::endl;
 		modprofiler.print(infostream);
 	}
+	return m_sectors_save_last;
 }
 
 void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
@@ -4034,65 +4153,49 @@ void ServerMap::PrintInfo(std::ostream &out)
 	out<<"ServerMap: ";
 }
 
-s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
+s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
 	u32 gametime = env->getGameTime();
-
-	if (m_heat_cache.count(getNodeBlockPos(p))){
-		return m_heat_cache[getNodeBlockPos(p)] + myrand_range(0, 1);
-	} if (block) {
+	if (block) {
 		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
-	} else {
+	} else if (!cache) {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
+	if (cache && cache->count(getNodeBlockPos(p)))
+		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
-
-	{
-		JMutexAutoLock lock(m_block_heat_mutex);
-		m_heat_cache[getNodeBlockPos(p)] = heat;
-	}
+	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed, env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->heat = heat;
-		if (env->m_use_weather)
-			block->heat_last_update = gametime + 10;
-		else
-			block->heat_last_update = -1; //never update
+		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
+	if (cache)
+		(*cache)[getNodeBlockPos(p)] = heat;
 	return heat + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block)
+s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
 	u32 gametime = env->getGameTime();
-
-	if (m_humidity_cache.count(getNodeBlockPos(p))){
-		return m_humidity_cache[getNodeBlockPos(p)] + myrand_range(0, 1);
-	} else if (block) {
+	if (block) {
 		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
-	} else {
+	} else if (!cache) {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
+	if (cache && cache->count(getNodeBlockPos(p)))
+		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
 
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
-
-	{
-		JMutexAutoLock lock(m_block_humidity_mutex);
-		m_humidity_cache[getNodeBlockPos(p)] = humidity;
-	}
+	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed, env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->humidity = humidity;
-		if (env->m_use_weather)
-			block->humidity_last_update = gametime + 10;
-		else
-			block->humidity_last_update = -1; //never update
+		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
+	if (cache)
+		(*cache)[getNodeBlockPos(p)] = humidity;
 	return humidity + myrand_range(0, 1);
 }
 

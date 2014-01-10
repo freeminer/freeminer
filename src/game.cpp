@@ -70,6 +70,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iomanip>
 #include <list>
 #include "util/directiontables.h"
+#include "util/pointedthing.h"
+#include "FMStaticText.h"
 
 /*
 	Text input system
@@ -239,6 +241,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 	INodeDefManager *nodedef = client->getNodeDefManager();
 	ClientMap &map = client->getEnv().getClientMap();
 
+	f32 mindistance = BS * 1001;
+
 	// First try to find a pointed at active object
 	if(look_for_object)
 	{
@@ -260,16 +264,15 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 						selection_box->MaxEdge + pos));
 			}
 
+			mindistance = (selected_object->getPosition() - camera_position).getLength();
 
 			result.type = POINTEDTHING_OBJECT;
 			result.object_id = selected_object->getId();
-			return result;
 		}
 	}
 
 	// That didn't work, try to find a pointed at node
 
-	f32 mindistance = BS * 1001;
 	
 	v3s16 pos_i = floatToInt(player_position, BS);
 
@@ -1224,13 +1227,19 @@ void the_game(
 				server->step(dtime);
 			
 			// End condition
-			if(client.texturesReceived() &&
+			if(client.mediaReceived() &&
 					client.itemdefReceived() &&
 					client.nodedefReceived()){
 				got_content = true;
 				break;
 			}
 			// Break conditions
+			if(client.accessDenied()){
+				error_message = L"Access denied. Reason: "
+						+client.accessDeniedReason();
+				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				break;
+			}
 			if(!client.connectedAndInitialized()){
 				error_message = L"Client disconnected";
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
@@ -1384,11 +1393,18 @@ void the_game(
 	float statustext_time = 0;
 	
 	// Chat text
-	gui::IGUIStaticText *guitext_chat = guienv->addStaticText(
-			L"",
-			core::rect<s32>(0,0,0,0),
-			//false, false); // Disable word wrap as of now
-			false, true);
+	gui::IGUIStaticText *guitext_chat;
+	#if USE_FREETYPE
+	if (g_settings->getBool("freetype")) {
+		guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
+		guitext_chat->setWordWrap(true);
+		guitext_chat->drop();
+	} else
+	#endif
+	{
+		guitext_chat = guienv->addStaticText(L"", core::rect<s32>(0,0,0,0), false, true);
+	}
+
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend.clearRecentChat();
 	// Chat backend and console
@@ -1440,7 +1456,7 @@ void the_game(
 	bool invert_mouse = g_settings->getBool("invert_mouse");
 
 	bool respawn_menu_active = false;
-	bool update_wielded_item_trigger = false;
+	bool update_wielded_item_trigger = true;
 
 	bool show_hud = true;
 	bool show_chat = true;
@@ -1502,10 +1518,10 @@ void the_game(
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	{
-		core::stringw str = L"Freeminer [";
-		str += driver->getName();
-		str += "]";
-		device->setWindowCaption(str.c_str());
+	core::stringw str = L"Freeminer [";
+	str += driver->getName();
+	str += "]";
+	device->setWindowCaption(str.c_str());
 	}
 
 	for(;;)
@@ -1536,7 +1552,9 @@ void the_game(
 		*/
 
 		{
-			float fps_max = g_settings->getFloat("fps_max");
+			float fps_max = g_menumgr.pausesGame() ?
+					g_settings->getFloat("pause_fps_max") :
+					g_settings->getFloat("fps_max");
 			u32 frametime_min = 1000./fps_max;
 			
 			if(busytime_u32 < frametime_min)
@@ -2242,25 +2260,28 @@ void the_game(
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
 			player->keyPressed=keyPressed;
 		}
-		
-		/*
-			Run server
-		*/
 
-		if(server != NULL)
+		/*
+			Run server, client (and process environments)
+		*/
+		bool can_be_and_is_paused =
+				(simple_singleplayer_mode && g_menumgr.pausesGame());
+		if(can_be_and_is_paused)
 		{
-			//TimeTaker timer("server->step(dtime)");
-			server->step(dtime);
+			// No time passes
+			dtime = 0;
 		}
-
-		/*
-			Process environment
-		*/
-		
+		else
 		{
-			//TimeTaker timer("client.step(dtime)");
-			client.step(dtime);
-			//client.step(dtime_avg1);
+			if(server != NULL)
+			{
+				//TimeTaker timer("server->step(dtime)");
+				server->step(dtime);
+			}
+			{
+				//TimeTaker timer("client.step(dtime)");
+				client.step(dtime);
+			}
 		}
 
 		{
@@ -2355,10 +2376,6 @@ void the_game(
 					}
 					delete(event.show_formspec.formspec);
 					delete(event.show_formspec.formname);
-				}
-				else if(event.type == CE_TEXTURES_UPDATED)
-				{
-					update_wielded_item_trigger = true;
 				}
 				else if(event.type == CE_SPAWN_PARTICLE)
 				{
@@ -3057,10 +3074,13 @@ void the_game(
 			scenetime_avg = scenetime_avg * 0.95 + (float)scenetime*0.05;
 			static float endscenetime_avg = 0;
 			endscenetime_avg = endscenetime_avg * 0.95 + (float)endscenetime*0.05;*/
-			
+
+			u16 fps = (1.0/dtime_avg1);
+
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
+				<<" FPS = "<<fps
 				<<" (R: range_all="<<draw_control.range_all<<")"
 				<<std::setprecision(0)
 				<<" drawtime = "<<drawtime_avg
@@ -3069,8 +3089,6 @@ void the_game(
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range
-				<<std::setprecision(0)
-				<<", FPS = "<<(1.0/dtime_avg1)
 				<<std::setprecision(3)
 				<<", RTT = "<<client.getRTT();
 			guitext->setText(narrow_to_wide(os.str()).c_str());
@@ -3478,23 +3496,6 @@ void the_game(
 			End of drawing
 		*/
 
-#if 0 //do not flood WM, if needed - maybe update every 1+ seconds
-		static s16 lastFPS = 0;
-		//u16 fps = driver->getFPS();
-		u16 fps = (1.0/dtime_avg1);
-
-		if (lastFPS != fps)
-		{
-			core::stringw str = L"Freeminer [";
-			str += driver->getName();
-			str += "] FPS=";
-			str += fps;
-
-			device->setWindowCaption(str.c_str());
-			lastFPS = fps;
-		}
-#endif
-
 		/*
 			Log times and stuff for visualization
 		*/
@@ -3542,14 +3543,12 @@ void the_game(
 				L" running a different version of Minetest.";
 		errorstream<<wide_to_narrow(error_message)<<std::endl;
 	}
-	catch(ServerError &e)
-	{
+	catch(ServerError &e) {
 		error_message = narrow_to_wide(e.what());
-		errorstream<<wide_to_narrow(error_message)<<std::endl;
+		errorstream << "ServerError: " << e.what() << std::endl;
 	}
-	catch(ModError &e)
-	{
-		errorstream<<e.what()<<std::endl;
+	catch(ModError &e) {
+		errorstream << "ModError: " << e.what() << std::endl;
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 

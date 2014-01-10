@@ -73,14 +73,14 @@ public:
 	{}
 };
 
-class ServerThread : public SimpleThread
+class ServerThread : public JThread
 {
 	Server *m_server;
 
 public:
 
 	ServerThread(Server *server):
-		SimpleThread(),
+		JThread(),
 		m_server(server)
 	{
 	}
@@ -100,7 +100,7 @@ void * ServerThread::Thread()
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
@@ -112,7 +112,7 @@ void * ServerThread::Thread()
 
 			//infostream<<"Running m_server->Receive()"<<std::endl;
 
-			// Loop used only when 100% cpu load or on old slow hardware. 
+			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 			for (u16 i = 0; i < 1000; ++i)
@@ -277,6 +277,11 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	s16 d_max = g_settings->getS16("max_block_send_distance");
 	s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
 
+	if (wanted_range) {
+		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
+		if (wanted_blocks < d_max)
+			d_max = wanted_blocks;
+	}
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 2;
 	if(d_max > d_start + max_d_increment_at_time)
@@ -712,6 +717,7 @@ Server::Server(
 	m_savemap_timer = 0.0;
 
 	m_step_dtime = 0.0;
+	m_lag = g_settings->getFloat("dedicated_server_step");
 
 	if(path_world == "")
 		throw ServerError("Supplied empty world path");
@@ -740,6 +746,10 @@ Server::Server(
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
+	// Create world if it doesn't exist
+	if(!initializeWorld(m_path_world, m_gamespec.id))
+		throw ServerError("Failed to initialize world");
+
 	// Create ban manager
 	std::string ban_path = m_path_world+DIR_DELIM+"ipban.txt";
 	m_banmanager = new BanManager(ban_path);
@@ -747,10 +757,6 @@ Server::Server(
 	// Create rollback manager
 	std::string rollback_path = m_path_world+DIR_DELIM+"rollback.txt";
 	m_rollback = createRollbackManager(rollback_path, this);
-
-	// Create world if it doesn't exist
-	if(!initializeWorld(m_path_world, m_gamespec.id))
-		throw ServerError("Failed to initialize world");
 
 	ModConfiguration modconf(m_path_world);
 	m_mods = modconf.getMods();
@@ -860,6 +866,7 @@ Server::Server(
 	
 	// Initialize mapgens
 	m_emerge->initMapgens(mgparams);
+	servermap->setMapgenParams(m_emerge->params);
 
 	// Give environment reference to scripting api
 	m_script->initializeEnvironment(m_env);
@@ -1000,14 +1007,13 @@ void Server::start(unsigned short port)
 	infostream<<"Starting server on port "<<port<<"..."<<std::endl;
 
 	// Stop thread if already running
-	m_thread->stop();
+	m_thread->Stop();
 
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
 	m_con.Serve(port);
 
 	// Start thread
-	m_thread->setRun(true);
 	m_thread->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
@@ -1024,9 +1030,9 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
-	m_thread->setRun(false);
+	m_thread->Stop();
 	//m_emergethread.setRun(false);
-	m_thread->stop();
+	m_thread->Wait();
 	//m_emergethread.stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
@@ -1053,6 +1059,7 @@ void Server::AsyncRunStep()
 {
 	DSTACK(__FUNCTION_NAME);
 
+	TimeTaker timer_step("Server step");
 	g_profiler->add("Server::AsyncRunStep (num)", 1);
 
 	float dtime;
@@ -1062,6 +1069,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
 		SendBlocks(dtime);
 	}
@@ -1069,12 +1077,15 @@ void Server::AsyncRunStep()
 	if(dtime < 0.001)
 		return;
 
+/*
 	g_profiler->add("Server::AsyncRunStep with dtime (num)", 1);
-
+*/
+	ScopeProfiler sp(g_profiler, "Server::AsyncRunStep, avg", SPT_AVG);
 	//infostream<<"Server steps "<<dtime<<std::endl;
 	//infostream<<"Server::AsyncRunStep(): dtime="<<dtime<<std::endl;
 
 	{
+		TimeTaker timer_step("Server step: SendBlocks");
 		JMutexAutoLock lock1(m_step_dtime_mutex);
 		m_step_dtime -= dtime;
 	}
@@ -1086,7 +1097,10 @@ void Server::AsyncRunStep()
 		m_uptime.set(m_uptime.get() + dtime);
 	}
 
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+
 	{
+		TimeTaker timer_step("Server step: Process connection's timeouts");
 		// Process connection's timeouts
 		JMutexAutoLock lock2(m_con_mutex);
 		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
@@ -1094,6 +1108,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: handlePeerChanges");
 		// This has to be called so that the client list gets synced
 		// with the peer list of the connection
 		handlePeerChanges();
@@ -1103,6 +1118,7 @@ void Server::AsyncRunStep()
 		Update time of day and overall game time
 	*/
 	{
+		TimeTaker timer_step("Server step: pdate time of day and overall game time");
 		JMutexAutoLock envlock(m_env_mutex);
 
 		m_env->setTimeOfDaySpeed(g_settings->getFloat("time_speed"));
@@ -1133,6 +1149,7 @@ void Server::AsyncRunStep()
 	}
 
 	{
+		TimeTaker timer_step("Server step: m_env->step");
 		JMutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
@@ -1147,17 +1164,19 @@ void Server::AsyncRunStep()
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
 		ScopeProfiler sp2(g_profiler, "SEnv step avg", SPT_AVG);
-		m_env->step(dtime);
+		m_env->step(dtime, m_uptime.get());
 	}
 
-	const float map_timer_and_unload_dtime = 2.92;
+	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
+		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
 		JMutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
-				g_settings->getFloat("server_unload_unused_data_timeout"));
+		if(m_env->getMap().timerUpdate(m_uptime.get(),
+				g_settings->getFloat("server_unload_unused_data_timeout")))
+					m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 	}
 
 	/*
@@ -1168,6 +1187,7 @@ void Server::AsyncRunStep()
 		Handle players
 	*/
 	{
+		TimeTaker timer_step("Server step: Handle players");
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
@@ -1218,17 +1238,18 @@ void Server::AsyncRunStep()
 	m_liquid_transform_timer += dtime;
 	if(m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
+		TimeTaker timer_step("Server step: liquid transform");
 		m_liquid_transform_timer -= m_liquid_transform_interval;
 		if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
 			m_liquid_transform_timer = 0;
 
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_modified_blocks) > 0)
-			m_liquid_transform_timer = m_liquid_transform_interval*0.8;
+		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks) > 0)
+			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
 		/*
@@ -1238,11 +1259,15 @@ void Server::AsyncRunStep()
 	m_liquid_send_timer += dtime;
 	if(m_liquid_send_timer >= m_liquid_send_interval)
 	{
+		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
 		m_liquid_send_timer -= m_liquid_send_interval;
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		JMutexAutoLock lock(m_env_mutex);
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1))
+			goto no_send;
+
+		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
 		for(std::map<u16, RemoteClient*>::iterator
@@ -1258,7 +1283,9 @@ void Server::AsyncRunStep()
 			}
 		}
 		m_modified_blocks.clear();
+
 	}
+	no_send:
 
 	// Periodically print some info
 	{
@@ -1267,6 +1294,7 @@ void Server::AsyncRunStep()
 		if(counter >= 30.0)
 		{
 			counter = 0.0;
+		TimeTaker timer_step("Server step: Periodically print some info");
 
 			JMutexAutoLock lock2(m_con_mutex);
 			m_clients_names.clear();
@@ -1285,25 +1313,18 @@ void Server::AsyncRunStep()
 				client->PrintInfo(infostream);
 				m_clients_names.push_back(player->getName());
 			}
-			{ //not very good place to clear
-				JMutexAutoLock lock(m_env->getServerMap().m_block_heat_mutex);
-				m_env->getServerMap().m_heat_cache.clear();
-			}
-			{
-				JMutexAutoLock lock(m_env->getServerMap().m_block_humidity_mutex);
-				m_env->getServerMap().m_humidity_cache.clear();
-			}
 		}
 	}
 
 
+	m_lag += (m_lag > dtime ? -1 : 1) * dtime/100;
 #if USE_CURL
 	// send masterserver announce
 	{
 		float &counter = m_masterserver_timer;
 		if(!isSingleplayer() && (!counter || counter >= 300.0) && g_settings->getBool("server_announce") == true)
 		{
-			ServerList::sendAnnounce(!counter ? "start" : "update", m_clients_names, m_uptime.get(), m_env->getGameTime(), m_gamespec.id, m_mods);
+			ServerList::sendAnnounce(!counter ? "start" : "update", m_clients_names, m_uptime.get(), m_env->getGameTime(), m_lag, m_gamespec.id, m_mods);
 			counter = 0.01;
 		}
 		counter += dtime;
@@ -1317,6 +1338,7 @@ void Server::AsyncRunStep()
 		Check added and deleted active objects
 	*/
 	{
+		TimeTaker timer_step("Server step: Check added and deleted active objects");
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
@@ -1326,6 +1348,7 @@ void Server::AsyncRunStep()
 		// Radius inside which objects are active
 		s16 radius = g_settings->getS16("active_object_send_range_blocks");
 		radius *= MAP_BLOCKSIZE;
+		s16 radius_deactivate = radius*3;
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();
@@ -1351,7 +1374,7 @@ void Server::AsyncRunStep()
 
 			std::set<u16> removed_objects;
 			std::set<u16> added_objects;
-			m_env->getRemovedActiveObjects(pos, radius,
+			m_env->getRemovedActiveObjects(pos, radius_deactivate,
 					client->m_known_objects, removed_objects);
 			m_env->getAddedActiveObjects(pos, radius,
 					client->m_known_objects, added_objects);
@@ -1473,6 +1496,7 @@ void Server::AsyncRunStep()
 		Send object messages
 	*/
 	{
+		TimeTaker timer_step("Server step: Send object messages");
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
 
@@ -1590,12 +1614,14 @@ void Server::AsyncRunStep()
 		Send queued-for-sending map edit events.
 	*/
 	{
+		TimeTaker timer_step("Server step: Send queued-for-sending map edit events.");
+		ScopeProfiler sp(g_profiler, "Server: Map events process");
 		// We will be accessing the environment and the connection
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
 
 		// Don't send too many at a time
-		//u32 count = 0;
+		u32 count = 0;
 
 		// Single change sending is disabled if queue size is not small
 		bool disable_single_change_sending = false;
@@ -1607,6 +1633,7 @@ void Server::AsyncRunStep()
 		// We'll log the amount of each
 		Profiler prof;
 
+		u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
@@ -1640,13 +1667,17 @@ void Server::AsyncRunStep()
 			}
 			else if(event->type == MEET_BLOCK_NODE_METADATA_CHANGED)
 			{
+/*
 				infostream<<"Server: MEET_BLOCK_NODE_METADATA_CHANGED"<<std::endl;
+*/
 				prof.add("MEET_BLOCK_NODE_METADATA_CHANGED", 1);
 				setBlockNotSent(event->p);
 			}
 			else if(event->type == MEET_OTHER)
 			{
+/*
 				infostream<<"Server: MEET_OTHER"<<std::endl;
+*/
 				prof.add("MEET_OTHER", 1);
 				for(std::set<v3s16>::iterator
 						i = event->modified_blocks.begin();
@@ -1691,17 +1722,19 @@ void Server::AsyncRunStep()
 
 			delete event;
 
+			++count;
 			/*// Don't send too many at a time
-			count++;
 			if(count >= 1 && m_unsent_map_edit_queue.size() < 100)
 				break;*/
+			if (porting::getTimeMs() > end_ms)
+				break;
 		}
 
 		if(event_count >= 5){
-			infostream<<"Server: MapEditEvents:"<<std::endl;
+			infostream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){
-			verbosestream<<"Server: MapEditEvents:"<<std::endl;
+			verbosestream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
 
@@ -1712,13 +1745,14 @@ void Server::AsyncRunStep()
 		bysy state sometimes)
 	*/
 	{
+		TimeTaker timer_step("Server step: Trigger emergethread");
 		float &counter = m_emergethread_trigger_timer;
 		counter += dtime;
 		if(counter >= 2.0)
 		{
 			counter = 0.0;
 
-			m_emerge->triggerAllThreads();
+			m_emerge->startAllThreads();
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
@@ -1733,6 +1767,7 @@ void Server::AsyncRunStep()
 		if(counter >= g_settings->getFloat("server_map_save_interval"))
 		{
 			counter = 0.0;
+		TimeTaker timer_step("Server step: Save map, players and auth stuff");
 			JMutexAutoLock lock(m_env_mutex);
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
@@ -1741,15 +1776,27 @@ void Server::AsyncRunStep()
 			if(m_banmanager->isModified())
 				m_banmanager->save();
 
-			// Save changed parts of map
-			m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
+//{TimeTaker timer_step("Server step: Save map: map");
 
+			// Save changed parts of map
+			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
+				// partial save, will continue on next step
+				counter = g_settings->getFloat("server_map_save_interval");
+				goto save_break;
+			}
+//}
+
+{TimeTaker timer_step("Server step: Save map: players");
 			// Save players
 			m_env->serializePlayers(m_path_world);
+}
 
+{TimeTaker timer_step("Server step: Save map: meta");
 			// Save environment metadata
 			m_env->saveMeta(m_path_world);
+}
 		}
+		save_break:;
 	}
 }
 
@@ -2008,6 +2055,19 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					<<"tried to connect from "<<addr_s<<std::endl;
 			DenyAccess(peer_id, L"Name is not allowed");
 			return;
+		}
+
+		{
+			std::string reason;
+			if(m_script->on_prejoinplayer(playername, addr_s, reason))
+			{
+				actionstream<<"Server: Player with the name \""<<playername<<"\" "
+						<<"tried to connect from "<<addr_s<<" "
+						<<"but it was disallowed for the following reason: "
+						<<reason<<std::endl;
+				DenyAccess(peer_id, narrow_to_wide(reason.c_str()));
+				return;
+			}
 		}
 
 		infostream<<"Server: New connection: \""<<playername<<"\" from "
@@ -2325,10 +2385,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			[2] u8 count
 			[3] v3s16 pos_0
 			[3+6] v3s16 pos_1
+			[9] wanted range
 			...
 		*/
 
 		u16 count = data[2];
+		RemoteClient *client = getClient(peer_id);
 		for(u16 i=0; i<count; i++)
 		{
 			if((s16)datasize < 2+1+(i+1)*6)
@@ -2337,9 +2399,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			v3s16 p = readV3S16(&data[2+1+i*6]);
 			/*infostream<<"Server: GOTBLOCKS ("
 					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-			RemoteClient *client = getClient(peer_id);
 			client->GotBlock(p);
 		}
+		if((s16)datasize > 2+1+(count)*6) // only freeminer client
+			client->wanted_range = readU16(&data[2+1+(count*6)]);
 	}
 	else if(command == TOSERVER_DELETEDBLOCKS)
 	{
@@ -2758,7 +2821,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::string datastring((char*)&data[2], datasize-2);
 		std::istringstream is(datastring, std::ios_base::binary);
 
-		std::list<MediaRequest> tosend;
+		std::list<std::string> tosend;
 		u16 numfiles = readU16(is);
 
 		infostream<<"Sending "<<numfiles<<" files to "
@@ -2767,7 +2830,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		for(int i = 0; i < numfiles; i++) {
 			std::string name = deSerializeString(is);
-			tosend.push_back(MediaRequest(name));
+			tosend.push_back(name);
 			verbosestream<<"TOSERVER_REQUEST_MEDIA: requested file "
 					<<name<<std::endl;
 		}
@@ -4167,9 +4230,11 @@ void Server::setBlockNotSent(v3s16 p)
 	}
 }
 
-void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version)
+void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable)
 {
 	DSTACK(__FUNCTION_NAME);
+
+	g_profiler->add("Connection: blocks", 1);
 
 	v3s16 p = block->getPos();
 
@@ -4218,7 +4283,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	/*
 		Send packet
 	*/
-	m_con.Send(peer_id, 1, reply, true);
+	m_con.Send(peer_id, 1, reply, reliable);
 }
 
 void Server::SendBlocks(float dtime)
@@ -4281,7 +4346,8 @@ void Server::SendBlocks(float dtime)
 		if(client->denied)
 			continue;
 
-		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version);
+		// maybe sometimes blocks will not load (must wait 1+ minute), but reduce network load: q.priority<=4
+		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, 1);
 
 		client->SentBlock(q.pos);
 	}
@@ -4459,7 +4525,7 @@ struct SendableMedia
 };
 
 void Server::sendRequestedMedia(u16 peer_id,
-		const std::list<MediaRequest> &tosend)
+		const std::list<std::string> &tosend)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -4476,17 +4542,19 @@ void Server::sendRequestedMedia(u16 peer_id,
 
 	u32 file_size_bunch_total = 0;
 
-	for(std::list<MediaRequest>::const_iterator i = tosend.begin();
+	for(std::list<std::string>::const_iterator i = tosend.begin();
 			i != tosend.end(); ++i)
 	{
-		if(m_media.find(i->name) == m_media.end()){
+		const std::string &name = *i;
+
+		if(m_media.find(name) == m_media.end()){
 			errorstream<<"Server::sendRequestedMedia(): Client asked for "
-					<<"unknown file \""<<(i->name)<<"\""<<std::endl;
+					<<"unknown file \""<<(name)<<"\""<<std::endl;
 			continue;
 		}
 
 		//TODO get path + name
-		std::string tpath = m_media[(*i).name].path;
+		std::string tpath = m_media[name].path;
 
 		// Read data
 		std::ifstream fis(tpath.c_str(), std::ios_base::binary);
@@ -4512,14 +4580,14 @@ void Server::sendRequestedMedia(u16 peer_id,
 		}
 		if(bad){
 			errorstream<<"Server::sendRequestedMedia(): Failed to read \""
-					<<(*i).name<<"\""<<std::endl;
+					<<name<<"\""<<std::endl;
 			continue;
 		}
 		/*infostream<<"Server::sendRequestedMedia(): Loaded \""
 				<<tname<<"\""<<std::endl;*/
 		// Put in list
 		file_bunches[file_bunches.size()-1].push_back(
-				SendableMedia((*i).name, tpath, tmp_os.str()));
+				SendableMedia(name, tpath, tmp_os.str()));
 
 		// Start next bunch if got enough data
 		if(file_size_bunch_total >= bytes_per_bunch){
@@ -4958,7 +5026,7 @@ void Server::notifyPlayer(const char *name, const std::wstring msg, const bool p
 	if(!player)
 		return;
 	if (prepend)
-		SendChatMessage(player->peer_id, std::wstring(L"Server -!- ")+msg);
+		SendChatMessage(player->peer_id, std::wstring(L"\vaaaaaaServer: \vffffff")+msg);
 	else
 		SendChatMessage(player->peer_id, msg);
 }
@@ -5506,20 +5574,22 @@ void dedicated_server_loop(Server &server, bool &kill)
 		// This is kind of a hack but can be done like this
 		// because server.step() is very light
 		{
+/*
 			ScopeProfiler sp(g_profiler, "dedicated server sleep");
+*/
 			sleep_ms((int)(steplen*1000.0));
 		}
 		try {
 		server.step(steplen);
 		}
 		//TODO: more errors here
-		catch(LuaError &e) {
-			if (!errors++ || !(errors % 100))
-				errorstream<<"Fatal lua error n="<<errors<< " : "<<e.what()<<std::endl;
+		catch(std::exception &e) {
+			if (!errors++ || !(errors % (int)(60/steplen)))
+				errorstream<<"Fatal error n="<<errors<< " : "<<e.what()<<std::endl;
 		}
 		catch (...){
-			if (!errors++ || !(errors % 100))
-				errorstream<<"Fatal error "<<errors<<std::endl;
+			if (!errors++ || !(errors % (int)(60/steplen)))
+				errorstream<<"Fatal error unknown "<<errors<<std::endl;
 		}
 		if(server.getShutdownRequested() || kill)
 		{
@@ -5536,7 +5606,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 		*/
 		float profiler_print_interval =
 				g_settings->getFloat("profiler_print_interval");
-		if(profiler_print_interval != 0)
+		if(server.getClients().size() && profiler_print_interval != 0)
 		{
 			if(m_profiler_interval.step(steplen, profiler_print_interval))
 			{

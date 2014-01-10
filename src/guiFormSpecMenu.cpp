@@ -40,6 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "tile.h" // ITextureSource
 #include "hud.h" // drawItemStack
+#include "hex.h"
 #include "util/string.h"
 #include "util/numeric.h"
 #include "filesys.h"
@@ -842,7 +843,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element) {
 			Environment->setFocus(e);
 		}
 
-		if (label.length() > 1)
+		if (label.length() >= 1)
 		{
 			rect.UpperLeftCorner.Y -= 15;
 			rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + 15;
@@ -933,7 +934,7 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,std::vector<std::string>
 		evt.KeyInput.PressedDown = true;
 		e->OnEvent(evt);
 
-		if (label.length() > 1)
+		if (label.length() >= 1)
 		{
 			rect.UpperLeftCorner.Y -= 15;
 			rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + 15;
@@ -1025,7 +1026,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,std::vector<std::string>& p
 			e->OnEvent(evt);
 		}
 
-		if (label.length() > 1)
+		if (label.length() >= 1)
 		{
 			rect.UpperLeftCorner.Y -= 15;
 			rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + 15;
@@ -1856,7 +1857,7 @@ void GUIFormSpecMenu::drawMenu()
 	
 	v2u32 screenSize = driver->getScreenSize();
 	core::rect<s32> allbg(0, 0, screenSize.X ,	screenSize.Y);
-	if (m_bgfullscreen) 
+	if (m_bgfullscreen)
 		driver->draw2DRectangle(m_bgcolor, allbg, &allbg);
 	else
 		driver->draw2DRectangle(m_bgcolor, AbsoluteRect, &AbsoluteClippingRect);
@@ -1959,7 +1960,7 @@ void GUIFormSpecMenu::drawMenu()
 		IItemDefManager *idef = m_gamedef->idef();
 		ItemStack item;
 		item.deSerialize(spec.name, idef);
-		video::ITexture *texture = idef->getInventoryTexture(item.getDefinition(idef).name, m_gamedef);		
+		video::ITexture *texture = idef->getInventoryTexture(item.getDefinition(idef).name, m_gamedef);
 		// Image size on screen
 		core::rect<s32> imgrect(0, 0, spec.geom.X, spec.geom.Y);
 		// Image rectangle on screen
@@ -1998,7 +1999,7 @@ void GUIFormSpecMenu::drawMenu()
 		if (spec.tooltip != "")
 		{
 			core::rect<s32> rect = spec.rect;
-			if (rect.isPointInside(m_pointer)) 
+			if (rect.isPointInside(m_pointer))
 			{
 				m_tooltip_element->setVisible(true);
 				this->bringToFront(m_tooltip_element);
@@ -2168,7 +2169,7 @@ void GUIFormSpecMenu::acceptInput(bool quit=false)
 		for(u32 i=0; i<m_fields.size(); i++)
 		{
 			const FieldSpec &s = m_fields[i];
-			if(s.send) 
+			if(s.send)
 			{
 				if(s.ftype == f_Button)
 				{
@@ -2194,8 +2195,11 @@ void GUIFormSpecMenu::acceptInput(bool quit=false)
 					if ((element) && (element->getType() == gui::EGUIET_COMBO_BOX)) {
 						e = static_cast<gui::IGUIComboBox*>(element);
 					}
-					fields[wide_to_narrow(s.fname.c_str())] =
-							wide_to_narrow(e->getItem(e->getSelected()));
+					s32 selected = e->getSelected();
+					if (selected >= 0) {
+						fields[wide_to_narrow(s.fname.c_str())] =
+							wide_to_narrow(e->getItem(selected));
+					}
 				}
 				else if (s.ftype == f_TabHeader) {
 					// no dynamic cast possible due to some distributions shipped
@@ -2662,7 +2666,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			for(u32 i=0; i<m_fields.size(); i++)
 			{
 				FieldSpec &s = m_fields[i];
-				// if its a button, set the send field so 
+				// if its a button, set the send field so
 				// lua knows which button was pressed
 				if (((s.ftype == f_Button) || (s.ftype == f_CheckBox)) &&
 						(s.fid == event.GUIEvent.Caller->getID()))
@@ -2733,78 +2737,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	return Parent ? Parent->OnEvent(event) : false;
 }
 
-static inline bool hex_digit_decode(char hexdigit, unsigned char &value)
-{
-	if(hexdigit >= '0' && hexdigit <= '9')
-		value = hexdigit - '0';
-	else if(hexdigit >= 'A' && hexdigit <= 'F')
-		value = hexdigit - 'A' + 10;
-	else if(hexdigit >= 'a' && hexdigit <= 'f')
-		value = hexdigit - 'a' + 10;
-	else
-		return false;
-	return true;
-}
-
 bool GUIFormSpecMenu::parseColor(std::string &value, video::SColor &color, bool quiet)
 {
-	const char *hexpattern = NULL;
-	if (value[0] == '#') {
-		if (value.size() == 9)
-			hexpattern = "#RRGGBBAA";
-		else if (value.size() == 7)
-			hexpattern = "#RRGGBB";
-		else if (value.size() == 5)
-			hexpattern = "#RGBA";
-		else if (value.size() == 4)
-			hexpattern = "#RGB";
-	}
-
-	if (hexpattern) {
-		assert(strlen(hexpattern) == value.size());
-		video::SColor outcolor(255, 255, 255, 255);
-		for (size_t pos = 0; pos < value.size(); ++pos) {
-			// '#' in the pattern means skip that character
-			if (hexpattern[pos] == '#')
-				continue;
-
-			// Else assume hexpattern[pos] is one of 'R' 'G' 'B' 'A'
-			// Read one or two digits, depending on hexpattern
-			unsigned char c1, c2;
-			if (hexpattern[pos+1] == hexpattern[pos]) {
-				// Two digits, e.g. hexpattern == "#RRGGBB"
-				if (!hex_digit_decode(value[pos], c1) ||
-				    !hex_digit_decode(value[pos+1], c2))
-					goto fail;
-				++pos;
-			}
-			else {
-				// One digit, e.g. hexpattern == "#RGB"
-				if (!hex_digit_decode(value[pos], c1))
-					goto fail;
-				c2 = c1;
-			}
-			u32 colorpart = ((c1 & 0x0f) << 4) | (c2 & 0x0f);
-
-			// Update outcolor with newly read color part
-			if (hexpattern[pos] == 'R')
-				outcolor.setRed(colorpart);
-			else if (hexpattern[pos] == 'G')
-				outcolor.setGreen(colorpart);
-			else if (hexpattern[pos] == 'B')
-				outcolor.setBlue(colorpart);
-			else if (hexpattern[pos] == 'A')
-				outcolor.setAlpha(colorpart);
-		}
-
-		color = outcolor;
-		return true;
-	}
-
-	// Optionally, named colors could be implemented here
-
-fail:
-	if (!quiet)
+	if (!::parseColor(value, color) && !quiet) {
 		errorstream<<"Invalid color: \""<<value<<"\""<<std::endl;
-	return false;
+		return false;
+	}
+	return true;
 }

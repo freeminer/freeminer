@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cstring>
 #include <vector>
 #include <sstream>
+#include "SColor.h"
 
 struct FlagDesc {
 	const char *name;
@@ -317,11 +318,15 @@ inline std::string unescape_string(std::string &s)
 }
 
 std::string translatePassword(std::string playername, std::wstring password);
-size_t curl_write_data(char *ptr, size_t size, size_t nmemb, void *userdata);
+std::string urlencode(std::string str);
+std::string urldecode(std::string str);
 u32 readFlagString(std::string str, FlagDesc *flagdesc);
 std::string writeFlagString(u32 flags, FlagDesc *flagdesc);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
 
+bool parseColor(const std::string &value, video::SColor &color);
+std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color);
+std::wstring sanitizeChatString(const std::wstring &s);
 #endif
 

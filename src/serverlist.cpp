@@ -30,9 +30,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "json/json.h"
 #include "convert_json.h"
-#if USE_CURL
-#include <curl/curl.h>
-#endif
+#include "httpfetch.h"
+#include "util/string.h"
 
 namespace ServerList
 {
@@ -189,12 +188,7 @@ std::string serializeJson(std::vector<ServerListSpec> serverlist)
 
 
 #if USE_CURL
-static size_t ServerAnnounceCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-    //((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
-void sendAnnounce(std::string action, const std::vector<std::string> & clients_names, double uptime, u32 game_time, std::string gameid, std::vector<ModSpec> mods) {
+void sendAnnounce(std::string action, const std::vector<std::string> & clients_names, double uptime, u32 game_time, float lag, std::string gameid, std::vector<ModSpec> mods) {
 	Json::Value server;
 	if (action.size())
 		server["action"]	= action;
@@ -232,27 +226,20 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 			server["mods"].append(m->name);
 		}
 		actionstream << "announcing to " << g_settings->get("serverlist_url") << std::endl;
+	} else {
+		if (lag)
+			server["lag"]	= lag;
 	}
 
-	Json::StyledWriter writer;
-	CURL *curl;
-	curl = curl_easy_init();
-	if (curl)
-	{
-		CURLcode res;
-		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-		curl_easy_setopt(curl, CURLOPT_URL, (g_settings->get("serverlist_url")+std::string("/announce?json=")+curl_easy_escape(curl, writer.write( server ).c_str(), 0)).c_str());
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, (std::string("Minetest ")+minetest_version_hash).c_str());
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ServerList::ServerAnnounceCallback);
-		//curl_easy_setopt(curl, CURLOPT_WRITEDATA, &liststring);
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 1);
-		curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 1);
-		res = curl_easy_perform(curl);
-		if (res != CURLE_OK && res != CURLE_OPERATION_TIMEDOUT)
-			errorstream<<"Serverlist at url "<<g_settings->get("serverlist_url")<<" error ["<<res<<"] ("<<curl_easy_strerror(res)<<")"<<std::endl;
-		curl_easy_cleanup(curl);
-	}
-
+	Json::FastWriter writer;
+	HTTPFetchRequest fetchrequest;
+	fetchrequest.url = g_settings->get("serverlist_url") + std::string("/announce");
+	std::string query = std::string("json=") + urlencode(writer.write(server));
+	if (query.size() < 1000)
+		fetchrequest.url += "?" + query;
+	else
+		fetchrequest.post_fields = query;
+	httpfetch_async(fetchrequest);
 }
 #endif
 

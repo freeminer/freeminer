@@ -652,7 +652,7 @@ int ModApiEnvMod::l_clear_objects(lua_State *L)
 	return 0;
 }
 
-// minetest.line_of_sight(pos1, pos2, stepsize) -> true/false
+// minetest.line_of_sight(pos1, pos2, stepsize) -> true/false, pos
 int ModApiEnvMod::l_line_of_sight(lua_State *L) {
 	float stepsize = 1.0;
 
@@ -667,7 +667,13 @@ int ModApiEnvMod::l_line_of_sight(lua_State *L) {
 		stepsize = lua_tonumber(L, 3);
 	}
 
-	lua_pushboolean(L, env->line_of_sight(pos1,pos2,stepsize));
+	v3s16 p;
+	bool success = env->line_of_sight(pos1, pos2, stepsize, &p);
+	lua_pushboolean(L, success);
+	if (!success) {
+		push_v3s16(L, p);
+		return 2;
+	}
 	return 1;
 }
 
@@ -794,7 +800,7 @@ int ModApiEnvMod::l_transforming_liquid_add(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 p0 = read_v3s16(L, 1);
-	env->getMap().transforming_liquid_add(p0);
+	env->getMap().transforming_liquid_push_back(p0);
 	return 1;
 }
 

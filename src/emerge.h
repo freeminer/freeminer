@@ -96,6 +96,8 @@ public:
 	u16 qlimit_diskonly;
 	u16 qlimit_generate;
 
+	u32 gennotify;
+
 	MapgenParams *luaoverride_params;
 	u32 luaoverride_params_modified;
 	u32 luaoverride_flagmask;
@@ -119,7 +121,7 @@ public:
 	Mapgen *createMapgen(std::string mgname, int mgid,
 						MapgenParams *mgparams);
 	MapgenParams *createMapgenParams(std::string mgname);
-	void triggerAllThreads();
+	void startAllThreads();
 	bool enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate);
 
 	void registerMapgen(std::string name, MapgenFactory *mgfactory);

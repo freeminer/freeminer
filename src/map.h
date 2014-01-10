@@ -229,12 +229,14 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
-	void updateLighting(enum LightBank bank,
+	u32 updateLighting(enum LightBank bank,
 			std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks);
+			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
 
-	void updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks);
+	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
+			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
+
+	u32 updateLighting_last[2];
 
 	/*
 		These handle lighting but not faces.
@@ -266,7 +268,7 @@ public:
 	virtual void beginSave() {return;};
 	virtual void endSave() {return;};
 
-	virtual void save(ModifiedState save_level){assert(0);};
+	virtual s32 save(ModifiedState save_level, bool breakable){assert(0);};
 
 	// Server implements this.
 	// Client leaves it as no-op.
@@ -276,7 +278,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	void timerUpdate(float dtime, float unload_timeout,
+	u32 timerUpdate(float uptime, float unload_timeout,
 			std::list<v3s16> *unloaded_blocks=NULL);
 
 	/*
@@ -303,9 +305,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	s32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks);
-	s32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks);
-
+	u32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
+	u32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -348,8 +349,9 @@ public:
 		Variables
 	*/
 
-	void transforming_liquid_add(v3s16 p);
-	s32 transforming_liquid_size();
+	void transforming_liquid_push_back(v3s16 & p);
+	u32 transforming_liquid_size();
+	u32 m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
@@ -368,7 +370,8 @@ protected:
 	std::set<MapEventReceiver*> m_event_receivers;
 
 	std::map<v2s16, MapSector*> m_sectors;
-	u32 m_sectors_last_update;
+	u32 m_sectors_update_last;
+	u32 m_sectors_save_last;
 
 	// Be sure to set this to NULL when the cached sector is deleted
 	MapSector *m_sector_cache;
@@ -376,6 +379,8 @@ protected:
 
 	// Queued transforming water nodes
 	UniqueQueue<v3s16> m_transforming_liquid;
+	JMutex m_transforming_liquid_mutex;
+	JMutex m_update_lighting_mutex;
 };
 
 /*
@@ -460,7 +465,7 @@ public:
 	void beginSave();
 	void endSave();
 
-	void save(ModifiedState save_level);
+	s32 save(ModifiedState save_level, bool breakable = 0);
 	void listAllLoadableBlocks(std::list<v3s16> &dst);
 	void listAllLoadedBlocks(std::list<v3s16> &dst);
 	// Saves map seed and possibly other stuff
@@ -501,23 +506,19 @@ public:
 	u64 getSeed(){ return m_seed; }
 
 	MapgenParams *getMapgenParams(){ return m_mgparams; }
+	void setMapgenParams(MapgenParams *mgparams){ m_mgparams = mgparams; }
 
 	// Parameters fed to the Mapgen
 	MapgenParams *m_mgparams;
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-
-	std::map<v3s16, s16> m_heat_cache;
-	std::map<v3s16, s16> m_humidity_cache;
-	JMutex m_block_heat_mutex;
-	JMutex m_block_humidity_mutex;
 
 private:
 	// Seed used for all kinds of randomness in generation

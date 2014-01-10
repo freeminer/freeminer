@@ -171,6 +171,10 @@ struct TestUtilities: public TestBase
 		UASSERT(removeStringEnd("bc", ends) == "b");
 		UASSERT(removeStringEnd("12c", ends) == "12");
 		UASSERT(removeStringEnd("foo", ends) == "");
+		UASSERT(urlencode("\"Aardvarks lurk, OK?\"")
+				== "%22Aardvarks%20lurk%2C%20OK%3F%22");
+		UASSERT(urldecode("%22Aardvarks%20lurk%2C%20OK%3F%22")
+				== "\"Aardvarks lurk, OK?\"");
 	}
 };
 
@@ -1509,7 +1513,7 @@ struct TestSocket: public TestBase
 {
 	void Run()
 	{
-		const int port = 30003;
+		const int port = g_settings->getU16("port") + 987 + myrand_range(42,123);
 
 		// IPv6 socket test
 		{

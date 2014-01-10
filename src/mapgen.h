@@ -55,9 +55,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define DECO_PLACE_CENTER_Y 2
 #define DECO_PLACE_CENTER_Z 4
 
+#define ORE_RANGE_ACTUAL 1
+#define ORE_RANGE_MIRROR 2
+
+#define NUM_GEN_NOTIFY 6
+
+
 extern FlagDesc flagdesc_mapgen[];
 extern FlagDesc flagdesc_ore[];
 extern FlagDesc flagdesc_deco_schematic[];
+extern FlagDesc flagdesc_gennotify[];
 
 class BiomeDefManager;
 class Biome;
@@ -68,6 +75,32 @@ class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
 class Map;
+
+
+enum MapgenObject {
+	MGOBJ_VMANIP,
+	MGOBJ_HEIGHTMAP,
+	MGOBJ_BIOMEMAP,
+	MGOBJ_HEATMAP,
+	MGOBJ_HUMIDMAP,
+	MGOBJ_GENNOTIFY
+};
+
+enum GenNotify {
+	GENNOTIFY_DUNGEON,
+	GENNOTIFY_TEMPLE,
+	GENNOTIFY_CAVE_BEGIN,
+	GENNOTIFY_CAVE_END,
+	GENNOTIFY_LARGECAVE_BEGIN,
+	GENNOTIFY_LARGECAVE_END
+};
+
+enum OreType {
+	ORE_SCATTER,
+	ORE_SHEET,
+	ORE_CLAYLIKE
+};
+
 
 struct MapgenParams {
 	std::string mg_name;
@@ -102,8 +135,11 @@ public:
 	u8 *biomemap;
 	v3s16 csize;
 
+	u32 gennotify;
+	std::vector<v3s16> *gen_notifications[NUM_GEN_NOTIFY];
+
 	Mapgen();
-	virtual ~Mapgen() {}
+	virtual ~Mapgen();
 
 	s16 findGroundLevelFull(v2s16 p2d);
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
@@ -116,6 +152,9 @@ public:
 
 	virtual void makeChunk(BlockMakeData *data) {}
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
+
+	std::map<v3s16, s16> heat_cache;
+	std::map<v3s16, s16> humidity_cache;
 };
 
 struct MapgenFactory {
@@ -124,23 +163,6 @@ struct MapgenFactory {
 	virtual MapgenParams *createMapgenParams() = 0;
 	virtual ~MapgenFactory() {}
 };
-
-enum MapgenObject {
-	MGOBJ_VMANIP,
-	MGOBJ_HEIGHTMAP,
-	MGOBJ_BIOMEMAP,
-	MGOBJ_HEATMAP,
-	MGOBJ_HUMIDMAP
-};
-
-enum OreType {
-	ORE_SCATTER,
-	ORE_SHEET,
-	ORE_CLAYLIKE
-};
-
-#define ORE_RANGE_ACTUAL 1
-#define ORE_RANGE_MIRROR 2
 
 class Ore {
 public:

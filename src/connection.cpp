@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/string.h"
 #include "settings.h"
+#include "profiler.h"
 
 namespace con
 {
@@ -45,6 +46,7 @@ BufferedPacket makePacket(Address &address, u8 *data, u32 datasize,
 	u32 packet_size = datasize + BASE_HEADER_SIZE;
 	BufferedPacket p(packet_size);
 	p.address = address;
+	p.sends = 0;
 
 	writeU32(&p.data[0], protocol_id);
 	writeU16(&p.data[4], sender_peer_id);
@@ -288,6 +290,7 @@ void ReliablePacketBuffer::incrementTimeouts(float dtime)
 	}
 }
 
+/*
 void ReliablePacketBuffer::resetTimedOuts(float timeout)
 {
 	for(std::list<BufferedPacket>::iterator i = m_list.begin();
@@ -297,6 +300,7 @@ void ReliablePacketBuffer::resetTimedOuts(float timeout)
 			i->time = 0.0;
 	}
 }
+*/
 
 bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 {
@@ -309,6 +313,7 @@ bool ReliablePacketBuffer::anyTotaltimeReached(float timeout)
 	return false;
 }
 
+/*
 std::list<BufferedPacket> ReliablePacketBuffer::getTimedOuts(float timeout)
 {
 	std::list<BufferedPacket> timed_outs;
@@ -320,6 +325,7 @@ std::list<BufferedPacket> ReliablePacketBuffer::getTimedOuts(float timeout)
 	}
 	return timed_outs;
 }
+*/
 
 /*
 	IncomingSplitBuffer
@@ -460,7 +466,7 @@ Peer::Peer(u16 a_id, Address a_address):
 	id(a_id),
 	timeout_counter(0.0),
 	ping_timer(0.0),
-	resend_timeout(0.5),
+	resend_timeout(2),
 	avg_rtt(-1.0),
 	has_sent_with_id(false),
 	m_sendtime_accu(0),
@@ -481,12 +487,12 @@ void Peer::reportRTT(float rtt)
 	if(rtt >= 0.0){
 		if(rtt < 0.01){
 			if(m_max_packets_per_second < congestion_control_max_rate)
-				m_max_packets_per_second += 10;
+				m_max_packets_per_second *= 1.05;
 		} else if(rtt < congestion_control_aim_rtt){
 			if(m_max_packets_per_second < congestion_control_max_rate)
-				m_max_packets_per_second += 2;
+				m_max_packets_per_second *= 1.02;
 		} else {
-			m_max_packets_per_second *= 0.8;
+			m_max_packets_per_second *= 0.7;
 			if(m_max_packets_per_second < congestion_control_min_rate)
 				m_max_packets_per_second = congestion_control_min_rate;
 		}
@@ -556,7 +562,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 
 Connection::~Connection()
 {
-	stop();
+	Stop();
 	// Delete peers
 	for(std::map<u16, Peer*>::iterator
 			j = m_peers.begin();
@@ -578,7 +584,7 @@ void * Connection::Thread()
 	u32 curtime = porting::getTimeMs();
 	u32 lasttime = curtime;
 
-	while(getRun())
+	while(!StopRequested())
 	{
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 		
@@ -665,7 +671,7 @@ void Connection::send(float dtime)
 		Peer *peer = getPeerNoEx(packet.peer_id);
 		if(!peer)
 			continue;
-		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 5){
+		if(peer->channels[packet.channelnum].outgoing_reliables.size() >= 1000){
 			postponed_packets.push_back(packet);
 		} else if(peer->m_num_sent < peer->m_max_num_sent){
 			rawSendAsPacket(packet.peer_id, packet.channelnum,
@@ -887,6 +893,7 @@ void Connection::receive()
 			continue;
 		}catch(ProcessedSilentlyException &e){
 		}
+		g_profiler->add("Connection: packets recd", 1);
 	}catch(InvalidIncomingDataException &e){
 	}
 	catch(ProcessedSilentlyException &e){
@@ -932,9 +939,12 @@ void Connection::runTimeouts(float dtime)
 		}
 
 		float resend_timeout = peer->resend_timeout;
+		int resends = 0;
 		for(u16 i=0; i<CHANNEL_COUNT; i++)
 		{
+/*
 			std::list<BufferedPacket> timed_outs;
+*/
 			
 			Channel *channel = &peer->channels[i];
 
@@ -960,36 +970,70 @@ void Connection::runTimeouts(float dtime)
 
 			// Re-send timed out outgoing reliables
 			
+/*
 			timed_outs = channel->
 					outgoing_reliables.getTimedOuts(resend_timeout);
 
 			channel->outgoing_reliables.resetTimedOuts(resend_timeout);
-
 			for(std::list<BufferedPacket>::iterator j = timed_outs.begin();
 				j != timed_outs.end(); ++j)
+*/
+			for(std::list<BufferedPacket>::iterator j = channel->outgoing_reliables.m_list.begin();
+				j != channel->outgoing_reliables.m_list.end(); ++j)
 			{
+				//BufferedPacket* j = *jp;
+				if(j->time < resend_timeout)
+					continue;
 				u16 peer_id = readPeerId(*(j->data));
-				u8 channel = readChannel(*(j->data));
+				u8 channeln = readChannel(*(j->data));
 				u16 seqnum = readU16(&(j->data[BASE_HEADER_SIZE+1]));
+/*
+				if (j->sends > 10) {
+errorstream<<"stop resending to "<<peer_id<<" channel="<<(int)channeln<<" seqnum="<<seqnum<<" sends="<<j->sends<<std::endl;
+					try {
+						channel->outgoing_reliables.popSeqnum(seqnum);
+					}
+					catch(NotFoundException &e){
+						PrintInfo(derr_con);
+						derr_con<<"WARNING: throwed packet not in outgoing queue" <<std::endl;
+					}
+					continue;
+				}
+*/
 
+				g_profiler->add("Connection: reliable resends", 1);
 				PrintInfo(derr_con);
 				derr_con<<"RE-SENDING timed-out RELIABLE to ";
 				j->address.print(&derr_con);
 				derr_con<<"(t/o="<<resend_timeout<<"): "
 						<<"from_peer_id="<<peer_id
-						<<", channel="<<((int)channel&0xff)
+						<<", channel="<<((int)channeln&0xff)
 						<<", seqnum="<<seqnum
+						<<", tries="<<j->sends
+						<<", avg_rtt="<<peer->avg_rtt
+						<<", pps="<<peer->m_max_packets_per_second
+						<<", dtime="<<dtime
+						<<", ttime="<<j->totaltime
+						<<", time="<<j->time
 						<<std::endl;
 
 				rawSend(*j);
+
+				if(j->time >= resend_timeout)
+					j->time = 0.0;
 
 				// Enlarge avg_rtt and resend_timeout:
 				// The rtt will be at least the timeout.
 				// NOTE: This won't affect the timeout of the next
 				// checked channel because it was cached.
+				++resends;
+/*
 				peer->reportRTT(resend_timeout);
+*/
 			}
 		}
+		if (resends)
+			peer->reportRTT(resend_timeout);
 		
 		/*
 			Send pings
@@ -1133,6 +1177,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		return;
 	Channel *channel = &(peer->channels[channelnum]);
 
+	g_profiler->add("Connection: packets sent", 1);
 	if(reliable)
 	{
 		u16 seqnum = channel->next_outgoing_seqnum;
@@ -1171,7 +1216,7 @@ void Connection::rawSendAsPacket(u16 peer_id, u8 channelnum,
 	}
 }
 
-void Connection::rawSend(const BufferedPacket &packet)
+void Connection::rawSend(BufferedPacket &packet)
 {
 	try{
 		m_socket.Send(packet.address, *packet.data, packet.data.getSize());
@@ -1179,6 +1224,7 @@ void Connection::rawSend(const BufferedPacket &packet)
 		derr_con<<"Connection::rawSend(): SendFailedException: "
 				<<packet.address.serializeString()<<std::endl;
 	}
+	++packet.sends;
 }
 
 Peer* Connection::getPeer(u16 peer_id)

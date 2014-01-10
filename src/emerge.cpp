@@ -47,7 +47,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_math.h"
 
 
-class EmergeThread : public SimpleThread
+class EmergeThread : public JThread
 {
 public:
 	Server *m_server;
@@ -61,26 +61,17 @@ public:
 	std::queue<v3s16> blockqueue;
 
 	EmergeThread(Server *server, int ethreadid):
-		SimpleThread(),
+		JThread(),
 		m_server(server),
 		map(NULL),
 		emerge(NULL),
 		mapgen(NULL),
+		enable_mapgen_debug_info(false),
 		id(ethreadid)
 	{
 	}
 
 	void *Thread();
-
-	void trigger()
-	{
-		setRun(true);
-		if(IsRunning() == false)
-		{
-			Start();
-		}
-	}
-
 	bool popBlockEmerge(v3s16 *pos, u8 *flags);
 	bool getBlockOrStartGen(v3s16 p, MapBlock **b,
 			BlockMakeData *data, bool allow_generate);
@@ -91,11 +82,11 @@ public:
 
 EmergeManager::EmergeManager(IGameDef *gamedef) {
 	//register built-in mapgens
-	registerMapgen("v6", new MapgenFactoryV6());
-	registerMapgen("v7", new MapgenFactoryV7());
-	registerMapgen("indev", new MapgenFactoryIndev());
+	registerMapgen("v6",         new MapgenFactoryV6());
+	registerMapgen("v7",         new MapgenFactoryV7());
+	registerMapgen("indev",      new MapgenFactoryIndev());
 	registerMapgen("singlenode", new MapgenFactorySinglenode());
-	registerMapgen("math", new MapgenFactoryMath());
+	registerMapgen("math",       new MapgenFactoryMath());
 
 	this->ndef     = gamedef->getNodeDefManager();
 	this->biomedef = new BiomeDefManager();
@@ -105,8 +96,9 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	this->luaoverride_params_modified = 0;
 	this->luaoverride_flagmask        = 0;
 
-	mapgen_debug_info = g_settings->getBool("enable_mapgen_debug_info");
+	this->gennotify = 0;
 
+	mapgen_debug_info = g_settings->getBool("enable_mapgen_debug_info");
 
 	int nthreads;
 	if (g_settings->get("num_emerge_threads").empty()) {
@@ -124,7 +116,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 		nthreads * 5 + 1 :
 		g_settings->getU16("emergequeue_limit_diskonly");
 	qlimit_generate = g_settings->get("emergequeue_limit_generate").empty() ?
-		nthreads + 1 :
+		nthreads * 7 :
 		g_settings->getU16("emergequeue_limit_generate");
 
 	for (int i = 0; i != nthreads; i++)
@@ -136,9 +128,9 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 
 EmergeManager::~EmergeManager() {
 	for (unsigned int i = 0; i != emergethread.size(); i++) {
-		emergethread[i]->setRun(false);
+		emergethread[i]->Stop();
 		emergethread[i]->qevent.signal();
-		emergethread[i]->stop();
+		emergethread[i]->Wait();
 		delete emergethread[i];
 		delete mapgen[i];
 	}
@@ -260,9 +252,9 @@ Mapgen *EmergeManager::getCurrentMapgen() {
 }
 
 
-void EmergeManager::triggerAllThreads() {
+void EmergeManager::startAllThreads() {
 	for (unsigned int i = 0; i != emergethread.size(); i++)
-		emergethread[i]->trigger();
+		emergethread[i]->Start();
 }
 
 
@@ -498,7 +490,7 @@ void *EmergeThread::Thread() {
 	mapgen = emerge->mapgen[id];
 	enable_mapgen_debug_info = emerge->mapgen_debug_info;
 
-	while (getRun())
+	while (!StopRequested())
 	try {
 		if (!popBlockEmerge(&p, &flags)) {
 			qevent.wait();
@@ -553,9 +545,11 @@ void *EmergeThread::Thread() {
 					MapEditEventAreaIgnorer
 						ign(&m_server->m_ignore_map_edit_events_area,
 						VoxelArea(minp, maxp));
-					{  // takes about 90ms with -O1 on an e3-1230v2
+					try {  // takes about 90ms with -O1 on an e3-1230v2
 						m_server->getScriptIface()->environment_OnGenerated(
 								minp, maxp, emerge->getBlockSeed(minp));
+					} catch(LuaError &e) {
+						m_server->setAsyncFatalError(e.what());
 					}
 
 					EMERGE_DBG_OUT("ended up with: " << analyze_block(block));
@@ -592,6 +586,10 @@ void *EmergeThread::Thread() {
 				// Remove block from sent history
 				client->SetBlocksNotSent(modified_blocks, 1);
 			}
+		}
+		if (mapgen->heat_cache.size() > 1000) {
+			mapgen->heat_cache.clear();
+			mapgen->humidity_cache.clear();
 		}
 	}
 	catch (VersionMismatchException &e) {

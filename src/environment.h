@@ -38,6 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
+#include "fmbitset.h"
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -64,7 +65,7 @@ public:
 		- Step mobs
 		- Run timers of map
 	*/
-	virtual void step(f32 dtime) = 0;
+	virtual void step(f32 dtime, float uptime) = 0;
 
 	virtual Map & getMap() = 0;
 
@@ -176,6 +177,33 @@ public:
 	std::set<v3s16> m_list;
 
 private:
+};
+
+struct ActiveABM
+{
+	ActiveABM():
+		required_neighbors(CONTENT_ID_CAPACITY)
+	{}
+	ActiveBlockModifier *abm;
+	int chance;
+	int neighbors_range;
+	FMBitset required_neighbors;
+};
+
+class ABMHandler
+{
+private:
+	ServerEnvironment *m_env;
+	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
+	std::list<std::list<ActiveABM>*> m_aabms_list;
+	bool m_aabms_empty;
+public:
+	ABMHandler(std::list<ABMWithState> &abms,
+			float dtime_s, ServerEnvironment *env,
+			bool use_timers);
+	~ABMHandler();
+	void apply(MapBlock *block);
+
 };
 
 /*
@@ -296,10 +324,10 @@ public:
 	void clearAllObjects();
 	
 	// This makes stuff happen
-	void step(f32 dtime);
+	void step(f32 dtime, float uptime);
 	
 	//check if there's a line of sight between two positions
-	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0);
+	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0, v3s16 *p=NULL);
 
 	u32 getGameTime() { return m_game_time; }
 
@@ -308,6 +336,7 @@ public:
 	
 	// is weather active in this environment?
 	bool m_use_weather;
+	ABMHandler * m_abmhandler;
 
 private:
 
@@ -379,6 +408,7 @@ private:
 	u32 m_active_block_abm_last;
 	float m_active_block_abm_dtime;
 	u32 m_active_block_timer_last;
+	std::set<v3s16> m_blocks_added;
 	u32 m_blocks_added_last;
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
@@ -443,7 +473,7 @@ public:
 	IGameDef *getGameDef()
 	{ return m_gamedef; }
 
-	void step(f32 dtime);
+	void step(f32 dtime, float uptime);
 
 	virtual void addPlayer(Player *player);
 	LocalPlayer * getLocalPlayer();

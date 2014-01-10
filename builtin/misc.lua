@@ -122,3 +122,11 @@ function minetest.record_protection_violation(pos, name)
 	end
 end
 
+function freeminer.color(color)
+	assert(#color == 6, "Color must be six characters in length.")
+	return "\v" .. color
+end
+
+function freeminer.colorize(color, message)
+	return freeminer.color(color) .. message .. freeminer.color("ffffff")
+end

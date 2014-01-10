@@ -131,6 +131,7 @@ struct BufferedPacket
 	float time; // Seconds from buffering the packet or re-sending
 	float totaltime; // Seconds from buffering the packet
 	Address address; // Sender or destination
+	int sends;
 };
 
 // This adds the base headers to the data and makes a packet out of it
@@ -287,10 +288,15 @@ public:
 	void incrementTimeouts(float dtime);
 	void resetTimedOuts(float timeout);
 	bool anyTotaltimeReached(float timeout);
+/*
 	std::list<BufferedPacket> getTimedOuts(float timeout);
+*/
+	std::list<BufferedPacket> m_list;
 
 private:
+/*
 	std::list<BufferedPacket> m_list;
+*/
 	u16 m_list_size;
 };
 
@@ -450,11 +456,11 @@ struct ConnectionEvent
 			return "CONNEVENT_NONE";
 		case CONNEVENT_DATA_RECEIVED:
 			return "CONNEVENT_DATA_RECEIVED";
-		case CONNEVENT_PEER_ADDED: 
+		case CONNEVENT_PEER_ADDED:
 			return "CONNEVENT_PEER_ADDED";
-		case CONNEVENT_PEER_REMOVED: 
+		case CONNEVENT_PEER_REMOVED:
 			return "CONNEVENT_PEER_REMOVED";
-		case CONNEVENT_BIND_FAILED: 
+		case CONNEVENT_BIND_FAILED:
 			return "CONNEVENT_BIND_FAILED";
 		}
 		return "Invalid ConnectionEvent";
@@ -544,7 +550,7 @@ struct ConnectionCommand
 	}
 };
 
-class Connection: public SimpleThread
+class Connection: public JThread
 {
 public:
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
@@ -588,7 +594,7 @@ private:
 			SharedBuffer<u8> data, bool reliable);
 	void rawSendAsPacket(u16 peer_id, u8 channelnum,
 			SharedBuffer<u8> data, bool reliable);
-	void rawSend(const BufferedPacket &packet);
+	void rawSend(BufferedPacket &packet);
 	Peer* getPeer(u16 peer_id);
 	Peer* getPeerNoEx(u16 peer_id);
 	std::list<Peer*> getPeers();

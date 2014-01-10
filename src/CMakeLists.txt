@@ -170,12 +170,30 @@ endif()
 
 find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
-if(BUILD_CLIENT)
+
+option(ENABLE_GLES "Enable OpenGL ES support (ARM, android. special irrlicht version needed!)" 0)
+mark_as_advanced(ENABLE_GLES)
+if(BUILD_CLIENT AND ENABLE_GLES)
 	find_package(OpenGLES2)
 endif()
 
 if(USE_FREETYPE)
-	find_package(Freetype REQUIRED)
+	if(UNIX)
+		include(FindPkgConfig)
+		if(PKG_CONFIG_FOUND)
+			pkg_check_modules(FREETYPE QUIET freetype2)
+			if(FREETYPE_FOUND)
+				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
+				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
+				# because cmake is idiotic
+				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
+				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
+			endif(FREETYPE_FOUND)
+		endif(PKG_CONFIG_FOUND)
+	endif(UNIX)
+	if(NOT FREETYPE_FOUND)
+		find_package(Freetype REQUIRED)
+	endif(NOT FREETYPE_FOUND)
 	set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
 	set(CGUITTFONT_LIBRARY cguittfont)
 endif(USE_FREETYPE)
@@ -190,7 +208,7 @@ message (STATUS "LuaJIT library: ${LUA_LIBRARY}")
 message (STATUS "LuaJIT headers: ${LUA_INCLUDE_DIR}")
 
 set(USE_LUAJIT 0)
-if(LUA_LIBRARY AND LUA_INCLUDE_DIR) 
+if(LUA_LIBRARY AND LUA_INCLUDE_DIR)
 	message (STATUS "LuaJIT found.")
 	set(USE_LUAJIT 1)
 else(LUA_LIBRARY AND LUA_INCLUDE_DIR)
@@ -221,6 +239,10 @@ if(ENABLE_LEVELDB)
 		message(STATUS "LevelDB not found!")
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
+
+
+set(USE_MANDELBULBER 0)
+find_package(Mandelbulber)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
@@ -309,6 +331,8 @@ set(common_SRCS
 	pathfinder.cpp
 	convert_json.cpp
 	gettext.cpp
+	httpfetch.cpp
+	fmbitset.cpp
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
@@ -361,6 +385,7 @@ set(minetest_SRCS
 	guiDeathScreen.cpp
 	guiChatConsole.cpp
 	client.cpp
+	clientmedia.cpp
 	filecache.cpp
 	tile.cpp
 	shader.cpp
@@ -369,6 +394,7 @@ set(minetest_SRCS
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	convert_json.cpp
+	FMColoredString.cpp
 	${minetest_SCRIPT_SRCS}
 )
 
@@ -376,6 +402,7 @@ if(USE_FREETYPE)
 	set(minetest_SRCS
 		${minetest_SRCS}
 		intlGUIEditBox.cpp
+		FMStaticText.cpp
 	)
 endif(USE_FREETYPE)
 
@@ -446,6 +473,12 @@ if(BUILD_CLIENT)
 		)
 	endif(USE_CURL)
 	if(USE_FREETYPE)
+		if(FREETYPE_PKGCONFIG_FOUND)
+			set_target_properties(${PROJECT_NAME}
+				PROPERTIES
+				COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
+			)
+		endif(FREETYPE_PKGCONFIG_FOUND)
 		target_link_libraries(
 			${PROJECT_NAME}
 			${FREETYPE_LIBRARY}
@@ -502,7 +535,7 @@ if(MSVC)
 	# Flags for C files (sqlite)
 	# /MT = Link statically with standard library stuff
 	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-	
+
 	if(BUILD_SERVER)
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 				COMPILE_DEFINITIONS "SERVER")
@@ -510,13 +543,13 @@ if(MSVC)
 
 else()
 	# Probably GCC
-	
+
 	if(WARN_ALL)
 		set(RELEASE_WARNING_FLAGS "-Wall")
 	else()
 		set(RELEASE_WARNING_FLAGS "")
 	endif()
-	
+
 	if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 		CHECK_CXX_COMPILER_FLAG("-Wno-unused-but-set-variable" HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
 		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
@@ -534,12 +567,12 @@ else()
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -O1 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 	endif()
-	
+
 	if(BUILD_SERVER)
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 				COMPILE_DEFINITIONS "SERVER")

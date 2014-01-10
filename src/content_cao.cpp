@@ -864,7 +864,9 @@ public:
 		//video::IVideoDriver* driver = smgr->getVideoDriver();
 
 		if(m_prop.visual == "sprite"){
+/*
 			infostream<<"GenericCAO::addToScene(): single_sprite"<<std::endl;
+*/
 			m_spritenode = smgr->addBillboardSceneNode(
 					NULL, v2f(1, 1), v3f(0,0,0), -1);
 			m_spritenode->setMaterialTexture(0,
@@ -957,10 +959,11 @@ public:
 		}
 		else if(m_prop.visual == "mesh"){
 			infostream<<"GenericCAO::addToScene(): mesh"<<std::endl;
-			scene::IAnimatedMesh *mesh = smgr->getMesh(m_prop.mesh.c_str());
+			scene::IAnimatedMesh *mesh = m_gamedef->getMesh(m_prop.mesh);
 			if(mesh)
 			{
 				m_animated_meshnode = smgr->addAnimatedMeshSceneNode(mesh, NULL);
+				mesh->drop(); // The scene node took hold of it
 				m_animated_meshnode->animateJoints(); // Needed for some animations
 				m_animated_meshnode->setScale(v3f(m_prop.visual_size.X,
 						m_prop.visual_size.Y,
@@ -1649,6 +1652,8 @@ public:
 			m_acceleration = readV3F1000(is);
 			if(fabs(m_prop.automatic_rotate) < 0.001)
 				m_yaw = readF1000(is);
+			else
+				readF1000(is);
 			bool do_interpolate = readU8(is);
 			bool is_end_position = readU8(is);
 			float update_interval = readF1000(is);

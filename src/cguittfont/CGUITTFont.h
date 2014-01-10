@@ -33,6 +33,7 @@
 
 #include <irrlicht.h>
 #include <ft2build.h>
+#include <vector>
 #include FT_FREETYPE_H
 
 namespace irr
@@ -207,7 +208,7 @@ namespace gui
 			//! \param antialias set the use_monochrome (opposite to antialias) flag
 			//! \param transparency set the use_transparency flag
 			//! \return Returns a pointer to a CGUITTFont.  Will return 0 if the font failed to load.
-			static CGUITTFont* createTTFont(IGUIEnvironment *env, const io::path& filename, const u32 size, const bool antialias = true, const bool transparency = true);
+			static CGUITTFont* createTTFont(IGUIEnvironment *env, const io::path& filename, const u32 size, const bool antialias = true, const bool transparency = true, const u32 shadow = 0, const u32 shadow_alpha = 255);
 			static CGUITTFont* createTTFont(IrrlichtDevice *device, const io::path& filename, const u32 size, const bool antialias = true, const bool transparency = true);
 			static CGUITTFont* create(IGUIEnvironment *env, const io::path& filename, const u32 size, const bool antialias = true, const bool transparency = true);
 			static CGUITTFont* create(IrrlichtDevice *device, const io::path& filename, const u32 size, const bool antialias = true, const bool transparency = true);
@@ -257,6 +258,9 @@ namespace gui
 			//! Draws some text and clips it to the specified rectangle if wanted.
 			virtual void draw(const core::stringw& text, const core::rect<s32>& position,
 				video::SColor color, bool hcenter=false, bool vcenter=false,
+				const core::rect<s32>* clip=0);
+			virtual void draw(const core::stringw& text, const core::rect<s32>& position,
+				const std::vector<video::SColor>& color, bool hcenter=false, bool vcenter=false,
 				const core::rect<s32>* clip=0);
 
 			//! Returns the dimension of a character produced by this font.
@@ -369,6 +373,8 @@ namespace gui
 			s32 GlobalKerningWidth;
 			s32 GlobalKerningHeight;
 			core::ustring Invisible;
+			u32 shadow_offset;
+			u32 shadow_alpha;
 	};
 
 } // end namespace gui

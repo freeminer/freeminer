@@ -145,16 +145,27 @@ public:
 	}
 	
 	// m_modified methods
-	void raiseModified(u32 mod, const std::string &reason="unknown")
+	void raiseModified(u32 mod)
 	{
 		if(mod > m_modified){
 			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+		}
+	}
+	void raiseModified(u32 mod, const std::string &reason)
+	{
+		if(mod > m_modified){
+			m_modified = mod;
+/* maybe make via define for debug
 			m_modified_reason = reason;
 			m_modified_reason_too_long = false;
+*/
 
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD){
 				m_disk_timestamp = m_timestamp;
 			}
+/*
 		} else if(mod == m_modified){
 			if(!m_modified_reason_too_long){
 				if(m_modified_reason.size() < 40)
@@ -164,6 +175,7 @@ public:
 					m_modified_reason_too_long = true;
 				}
 			}
+*/
 		}
 	}
 	u32 getModified()
@@ -292,7 +304,7 @@ public:
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, "setNode");
+		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
 	}
 	
 	void setNode(v3s16 p, MapNode & n)
@@ -321,7 +333,7 @@ public:
 		if(data == NULL)
 			throw InvalidPositionException();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, "setNodeNoCheck");
+		raiseModified(MOD_STATE_WRITE_NEEDED /*, "setNodeNoCheck"*/);
 	}
 	
 	void setNodeNoCheck(v3s16 p, MapNode & n)
@@ -515,7 +527,7 @@ public:
 	s16 humidity;
 	u32 heat_last_update;
 	u32 humidity_last_update;
-
+	float m_uptime_timer_last;
 private:
 	/*
 		Private member variables

@@ -1,4 +1,4 @@
-Minetest Lua Modding API Reference 0.4.8
+Minetest Lua Modding API Reference 0.4.9
 ========================================
 More information at http://www.minetest.net/
 Developer Wiki: http://dev.minetest.net/
@@ -128,13 +128,6 @@ screenshot.png:
 
 description.txt:
   File containing desctiption to be shown within mainmenu.
-
-optdepends.txt:
-  An alternative way of specifying optional dependencies.
-  Like depends.txt, a single line contains a single modname.
-
-  NOTE: This file exists for compatibility purposes only and
-  support for it will be removed from the engine by the end of 2013.
 
 init.lua:
   The main Lua script. Running this script should register everything it
@@ -1189,6 +1182,9 @@ minetest.register_on_respawnplayer(func(ObjectRef))
 ^ Called when player is to be respawned
 ^ Called _before_ repositioning of player occurs
 ^ return true in func to disable regular player placement
+minetest.register_on_prejoinplayer(func(name, ip))
+^ Called before a player joins the game
+^ If it returns a string, the player is disconnected with that string as reason
 minetest.register_on_joinplayer(func(ObjectRef))
 ^ Called when a player joins the game
 minetest.register_on_leaveplayer(func(ObjectRef))
@@ -1264,6 +1260,11 @@ minetest.chat_send_all(text)
 minetest.chat_send_player(name, text, prepend)
 ^ prepend: optional, if it is set to false "Server -!- " will not be prepended to the message
 
+freeminer.colorize(color, text)
+^ color is a six characters string, this will reset color to white after the text
+freeminer.color(color)
+^ will output color escape sequence
+
 Environment access:
 
 minetest.set_node(pos, node)
@@ -1307,6 +1308,10 @@ minetest.get_perlin(seeddiff, octaves, persistence, scale)
 ^ Return world-specific perlin noise (int(worldseed)+seeddiff)
 minetest.get_voxel_manip()
 ^ Return voxel manipulator object
+minetest.set_gen_notify(flags)
+^ Set the types of on-generate notifications that should be collected
+^ flags is a comma-delimited combination of:
+^ dungeon, temple, cave_begin, cave_end, large_cave_begin, large_cave_end
 minetest.get_mapgen_object(objectname)
 ^ Return requested mapgen object if available (see Mapgen objects)
 minetest.set_mapgen_params(MapgenParams)
@@ -1319,8 +1324,9 @@ minetest.set_mapgen_params(MapgenParams)
 ^ flags and flagmask are in the same format and have the same options as 'mgflags' in minetest.conf
 minetest.clear_objects()
 ^ clear all objects in the environments
-minetest.line_of_sight(pos1,pos2,stepsize) ->true/false
-^ checkif there is a direct line of sight between pos1 and pos2
+minetest.line_of_sight(pos1, pos2, stepsize) -> true/false, pos
+^ Check if there is a direct line of sight between pos1 and pos2
+^ Returns the position of the blocking node when false
 ^ pos1 First position
 ^ pos2 Second position
 ^ stepsize smaller gives more accurate results but requires more computing
@@ -1538,7 +1544,16 @@ minetest.parse_json(string[, nullvalue]) -> something
 ^ nullvalue: returned in place of the JSON null; defaults to nil
 ^ On success returns a table, a string, a number, a boolean or nullvalue
 ^ On failure outputs an error message and returns nil
-^ Example: parse_json("[10, {\"a\":false}]") -> {[1] = 10, [2] = {a = false}}
+^ Example: parse_json("[10, {\"a\":false}]") -> {10, {a = false}}
+minetest.write_json(data[, styled]) -> string or nil and error message
+^ Convert a Lua table into a JSON string
+^ styled: Outputs in a human-readable format if this is set, defaults to false
+^ Un-serializable things like functions and userdata are saved as null.
+^ Warning: JSON is more strict than the Lua table format.
+    1. You can only use strings and positive integers of at least one as keys.
+    2. You can not mix string and integer keys.
+    This is due to the fact that Javascript has two distinct array and object values.
+^ Example: write_json({10, {a = false}}) -> "[10, {\"a\": false}]"
 minetest.serialize(table) -> string
 ^ Convert a table containing tables, strings, numbers, booleans and nils
   into string form readable by minetest.deserialize
@@ -1905,6 +1920,12 @@ the current mapgen.
 - humiditymap
     Returns an array containing the humidity values of nodes in the most recently generated chunk by the 
 current mapgen.
+
+- gennotify
+    Returns a table mapping requested generation notification types to arrays of positions at which the
+corresponding generated structures are located at within the current chunk.  To set the capture of positions
+of interest to be recorded on generate, use minetest.set_gen_notify().
+Possible fields of the table returned are:  dungeon, temple, cave_begin, cave_end, large_cave_begin, large_cave_end
 
 Registered entities
 --------------------
