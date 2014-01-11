@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -154,6 +155,14 @@ private:
 	// minetest.get_surface(basepos,yoffset,walkable_only=false)
 	static int l_get_surface(lua_State *L);
 
+	// minetest.forceload_block(blockpos)
+	// forceloads a block
+	static int l_forceload_block(lua_State *L);
+	
+	// minetest.forceload_free_block(blockpos)
+	// stops forceloading a position
+	static int l_forceload_free_block(lua_State *L);
+	
 public:
 	static void Initialize(lua_State *L, int top);
 };

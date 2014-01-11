@@ -1606,6 +1606,15 @@ minetest.rotate_node(itemstack, placer, pointed_thing)
   the creative mode setting, and checks for "sneak" to set the invert_wall
   parameter.
 
+minetest.forceload_block(pos)
+^ forceloads the position pos.
+^ returns true if area could be forceloaded
+
+minetest.forceload_free_block(pos)
+^ stops forceloading the position pos.
+
+Please note that forceloaded areas are saved when the server restarts.
+
 Global objects:
 minetest.env - EnvRef of the server environment and world.
 ^ Any function in the minetest namespace can be called using the syntax
@@ -1768,6 +1777,8 @@ methods:
 - set_stack(listname, i, stack): copy stack to index i in list
 - get_list(listname): return full list
 - set_list(listname, list): set full list (size will not change)
+- get_lists(): returns list of inventory lists
+- set_lists(lists): sets inventory lists (size will not change)
 - add_item(listname, stack): add item somewhere in list, returns leftover ItemStack
 - room_for_item(listname, stack): returns true if the stack of items
     can be fully added to the list
@@ -2235,10 +2246,12 @@ Node definition (register_node)
     on_punch = func(pos, node, puncher),
     ^ default: minetest.node_punch
     ^ By default: does nothing
-    on_rightclick = func(pos, node, clicker, itemstack),
+    on_rightclick = func(pos, node, clicker, itemstack, pointed_thing),
     ^ default: nil
     ^ if defined, itemstack will hold clicker's wielded item
-      Shall return the leftover itemstack
+    ^ Shall return the leftover itemstack
+    ^ Note: pointed_thing can be nil, if a mod calls this function
+     
     on_dig = func(pos, node, digger),
     ^ default: minetest.node_dig
     ^ By default: checks privileges, wears out tool and removes node

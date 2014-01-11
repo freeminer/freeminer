@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -823,6 +824,28 @@ int ModApiEnvMod::l_get_humidity(lua_State *L)
 	return 1;
 }
 
+// minetest.forceload_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->insert(blockpos);
+	return 0;
+}
+
+// minetest.forceload_free_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_free_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->erase(blockpos);
+	return 0;
+}
+
 void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
 	API_FCT(set_node);
@@ -861,4 +884,6 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
 	API_FCT(get_surface);
+	API_FCT(forceload_block);
+	API_FCT(forceload_free_block);
 }
