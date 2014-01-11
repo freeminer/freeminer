@@ -464,7 +464,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save) {
+		if(!player->peer_id && !player->need_save && !player->getPlayerSAO()) {
 			delete player;
 			m_players.erase(i);
 			continue;
@@ -491,6 +491,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 		*/
 		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
 			playername = "player";
+#if WTF
 		std::string path = players_path + "/" + playername;
 		bool found = false;
 		for(u32 i=0; i<1000; i++)
@@ -507,12 +508,13 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			infostream<<"Didn't find free file for player"<<std::endl;
 			continue;
 		}
+#endif
 
-		player->path = path;
+		player->path = players_path + "/" + playername;
 		}
 		{
-			/*infostream<<"Saving player "<<player->getName()<<" to "
-					<<player->path<<std::endl;*/
+			infostream<<"Saving player "<<player->getName()<<" to "
+					<<player->path<<std::endl;
 			// Open file and serialize
 			std::ostringstream ss(std::ios_base::binary);
 			player->serialize(ss);
@@ -523,10 +525,6 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			}
 		}
 		player->need_save = 0;
-		if (!player->peer_id) {
-			delete player;
-			m_players.erase(i);
-		}
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
