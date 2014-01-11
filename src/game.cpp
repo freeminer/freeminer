@@ -929,8 +929,6 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
-bool is_third_person = false;
-
 void the_game(
 	bool &kill,
 	bool random_input,
@@ -1321,6 +1319,8 @@ void the_game(
 
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
+
+	int current_camera_mode = FIRST; // start in first-perscon view
 
 	/*
 		Clouds
@@ -2128,7 +2128,7 @@ void the_game(
 			else{
 				s32 dx = input->getMousePos().X - displaycenter.X;
 				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse)
+				if(invert_mouse || player->camera_mode == THIRD_FRONT)
 					dy = -dy;
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
@@ -2486,16 +2486,21 @@ void the_game(
 		LocalPlayer* player = client.getEnv().getLocalPlayer();
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
+
 		if(input->wasKeyDown("KEY_F7")) {//*TODO* not hardcoded key?
-			if (!is_third_person)
-				is_third_person = true;
+
+			if (current_camera_mode == FIRST)
+				current_camera_mode = THIRD;
+			else if (current_camera_mode == THIRD)
+				current_camera_mode = THIRD_FRONT;
 			else
-				is_third_person = false;
+				current_camera_mode = FIRST;
+
 		}
-		player->third_person = is_third_person;
+		player->camera_mode = current_camera_mode;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
 		camera.update(player, dtime, busytime, screensize,
-				tool_reload_ratio, is_third_person, client.getEnv());
+				tool_reload_ratio, current_camera_mode, client.getEnv());
 		camera.step(dtime);
 
 		v3f player_position = player->getPosition();
@@ -2541,6 +2546,9 @@ void the_game(
 			d = 4.0;
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
+
+		if (current_camera_mode == THIRD_FRONT) // prevent pointing anything in front-view
+			shootline = core::line3d<f32>(0,0,0,0,0,0);
 
 		ClientActiveObject *selected_object = NULL;
 
@@ -3329,7 +3337,7 @@ void the_game(
 		/*
 			Wielded tool
 		*/
-		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && !is_third_person)
+		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && current_camera_mode < THIRD)
 		{
 			// Warning: This clears the Z buffer.
 			camera.drawWieldedTool();

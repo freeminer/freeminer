@@ -38,6 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/mathconstants.h"
 
 #include "nodedef.h"
+#include "game.h" //CAMERA_MODES
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
@@ -246,7 +247,7 @@ void Camera::step(f32 dtime)
 }
 
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
-		v2u32 screensize, f32 tool_reload_ratio, bool is_third_person, ClientEnvironment &c_env)
+		v2u32 screensize, f32 tool_reload_ratio, int current_camera_mode, ClientEnvironment &c_env)
 {
 	// Get player position
 	// Smooth the movement when walking up stairs
@@ -274,7 +275,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Fall bobbing animation
 	float fall_bobbing = 0;
-	if(player->camera_impact >= 1 && !is_third_person)
+	if(player->camera_impact >= 1 && current_camera_mode < THIRD)
 	{
 		if(m_view_bobbing_fall == -1) // Effect took place and has finished
 			player->camera_impact = m_view_bobbing_fall = 0;
@@ -301,7 +302,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f rel_cam_target = v3f(0,0,1);
 	v3f rel_cam_up = v3f(0,1,0);
 
-	if (m_view_bobbing_anim != 0 && !is_third_person)
+	if (m_view_bobbing_anim != 0 && current_camera_mode < THIRD)
 	{
 		f32 bobfrac = my_modf(m_view_bobbing_anim * 2);
 		f32 bobdir = (m_view_bobbing_anim < 0.5) ? 1.0 : -1.0;
@@ -350,41 +351,51 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f abs_cam_up;
 	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
 
-	// Seperate the values of camera position and direction since they are used for other things too and would cause problems
+	// Seperate camera position for calculation
 	v3f my_cp = m_camera_position;
-	v3f my_cd = m_camera_direction;
-
+	
 	// Reposition the camera for third person view
-	if (is_third_person) {
+	if (current_camera_mode > FIRST) {
 		
-		my_cp.X += m_camera_direction.X*-22;
-		my_cp.Z += m_camera_direction.Z*-22;
-		my_cp.Y += m_camera_direction.Y*-3;
-		my_cp.Y += (m_camera_direction.Y*-18);
+		if (current_camera_mode == THIRD_FRONT)
+			m_camera_direction *= (-1,1,-1);
 
-		// Don't put camera lower than player
-		if (my_cp.Y < player_position.Y)
-			my_cp.Y = player_position.Y;
+		my_cp.Y += 2;
 
-		// Prevent camera positioned inside nodes
-		for (int i = 1; i<=2;i++) {
+		// Calculate new position
+		bool abort = false;
+		for (int i = (int)BS; i <= (int)BS*2; i++) {
+			my_cp.X = m_camera_position.X + m_camera_direction.X*-i;
+			my_cp.Z = m_camera_position.Z + m_camera_direction.Z*-i;
+			if (i > 12)
+				my_cp.Y = m_camera_position.Y + (m_camera_direction.Y*-i);
+
+			// Prevent camera positioned inside nodes
 			INodeDefManager *nodemgr = m_gamedef->ndef();
 			MapNode n = c_env.getClientMap().getNodeNoEx(floatToInt(my_cp, BS));
 			const ContentFeatures& features = nodemgr->get(n);
-			if(features.name != "air") {
-				my_cp.X += m_camera_direction.X*11*i;
-				my_cp.Z += m_camera_direction.Z*11*i;
-				if(i==2)
-					my_cp = m_camera_position + v3f(m_camera_direction.X*-3,2,m_camera_direction.Z*-3);
+			if(features.walkable) {
+				my_cp.X += m_camera_direction.X*-1*(int)-BS/2;
+				my_cp.Z += m_camera_direction.Z*-1*(int)-BS/2;
+				my_cp.Y += m_camera_direction.Y*-1*(int)-BS/2;
+				abort = true;
+				break;
 			}
 		}
-	}
 
+		// If node blocks camera position don't move y to heigh
+		if (abort && my_cp.Y > player_position.Y+(int)BS*2)
+			my_cp.Y = player_position.Y+(int)BS*2;
+	}
+	
 	// Set camera node transformation
 	m_cameranode->setPosition(my_cp);
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(my_cp + 80 * my_cd);
+	m_cameranode->setTarget(my_cp + 100 * m_camera_direction);
+
+	if (current_camera_mode == THIRD_FRONT)// update the camera position in front-view mode to render blocks behind player
+		m_camera_position = my_cp;
 
 	// Get FOV setting
 	f32 fov_degrees = g_settings->getFloat("fov");
@@ -458,7 +469,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false && !is_third_person ||
+		(g_settings->getBool("free_move") == false && current_camera_mode < 1 ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation

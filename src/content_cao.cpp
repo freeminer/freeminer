@@ -41,6 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/mathconstants.h"
 #include "map.h"
 #include "main.h" // g_settings
+#include "game.h" //CAMERA_MODES
 #include <IMeshManipulator.h>
 #include <IAnimatedMeshSceneNode.h>
 #include <IBoneSceneNode.h>
@@ -1081,16 +1082,16 @@ public:
 		if(m_is_local_player) {
 			LocalPlayer *player = m_env->getLocalPlayer();
 
-			if (player->third_person) {
-				int old_anim = player->anim;
+			if (player->camera_mode > FIRST) {
+				int old_anim = player->last_animation;
 				m_is_visible = true;
-				m_position = player->getPosition() + v3f(0,10,0);
+				m_position = player->getPosition() + v3f(0,BS,0);
 				m_velocity = v3f(0,0,0);
 				m_acceleration = v3f(0,0,0);
 				pos_translator.vect_show = m_position;
 				m_yaw = player->getYaw();
-
 				PlayerControl controls = player->getPlayerControl();
+
 				bool walking = false;
 				if(controls.up || controls.down || controls.left || controls.right)
 					walking = true;
@@ -1100,22 +1101,28 @@ public:
 				if(controls.sneak && walking)
 					m_animation_speed = 15;
 
-				//if(player->hp == 0)
-					//m_animation_range = v2f(162, 166);
 				if(walking && (controls.LMB || controls.RMB)) {
 					m_animation_range = v2f(200, 219);
-					player->anim = 3;
+					player->last_animation = WD_ANIM;
 				} else if(walking) {
 					m_animation_range = v2f(168, 187);
-					player->anim = 1;
+					player->last_animation = WALK_ANIM;
 				} else if(controls.LMB || controls.RMB) {
 					m_animation_range = v2f(189, 198);
-					player->anim = 2;
-				} else {
-					m_animation_range = v2f(0, 79);
-					player->anim = 0;
+					player->last_animation = DIG_ANIM;
 				}
-				if (player->anim != old_anim)
+
+				//reset animation when no input detected
+				if (!walking && !controls.LMB && !controls.RMB) {
+					player->last_animation = NO_ANIM;
+					if (old_anim != NO_ANIM) {
+						m_animation_range = v2f(0, 79);
+						updateAnimation();
+					}
+				}
+
+				// Update local player animation instantly to prevent lags
+				if (player->last_animation != old_anim && player->last_animation != NO_ANIM)
 					updateAnimation();
 
 			} else {
@@ -1747,6 +1754,7 @@ public:
 			bool sneak = !readU8(is);
 			bool sneak_glitch = !readU8(is);
 			
+
 			if(m_is_local_player)
 			{
 				LocalPlayer *player = m_env->getLocalPlayer();
@@ -1759,12 +1767,13 @@ public:
 		}
 		else if(cmd == GENERIC_CMD_SET_ANIMATION)
 		{
-			if(!m_is_local_player) {
+			LocalPlayer *player = m_env->getLocalPlayer();
+			if(!m_is_local_player || player->last_animation == NO_ANIM) {
 				m_animation_range = readV2F1000(is);
 				m_animation_speed = readF1000(is);
 				m_animation_blend = readF1000(is);
-
-				updateAnimation();
+				if(!m_is_local_player || (m_animation_range.X != 200 && m_animation_range.X != 168 && m_animation_range.X != 189)) // *TODO* values from registered animations /walking, punching, both
+					updateAnimation();
 			}
 		}
 		else if(cmd == GENERIC_CMD_SET_BONE_POSITION)
