@@ -401,6 +401,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
+        std::list<Player*> objects_to_remove;
+
 #if WTF
 	std::set<Player*> saved_players;
 
@@ -464,9 +466,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save) {
-			delete player;
-			m_players.erase(i);
+		if(!player->peer_id && !player->need_save && !player->getPlayerSAO()) {
+		        objects_to_remove.push_back(*i);
 			continue;
 		}
 
@@ -491,6 +492,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 		*/
 		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
 			playername = "player";
+#if WTF
 		std::string path = players_path + "/" + playername;
 		bool found = false;
 		for(u32 i=0; i<1000; i++)
@@ -507,8 +509,9 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			infostream<<"Didn't find free file for player"<<std::endl;
 			continue;
 		}
+#endif
 
-		player->path = path;
+		player->path = players_path + "/" + playername;
 		}
 		{
 			/*infostream<<"Saving player "<<player->getName()<<" to "
@@ -523,10 +526,12 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			}
 		}
 		player->need_save = 0;
-		if (!player->peer_id) {
-			delete player;
-			m_players.erase(i);
-		}
+	}
+
+	// Remove references from m_active_objects
+	for(std::list<Player*>::iterator i = objects_to_remove.begin(); i != objects_to_remove.end(); ++i) {
+		delete *i;
+		m_players.erase(i);
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
@@ -1421,11 +1426,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if (!calls)
 			m_active_block_abm_last = 0;
 
-		u32 time_ms = timer.stop(true);
+		//u32 time_ms = timer.stop(true);
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
-					<<time_ms<<"ms "
+					<<porting::getTimeMs()-end_ms<<"ms "
 					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
