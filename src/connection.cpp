@@ -486,11 +486,12 @@ void Peer::reportRTT(float rtt)
 {
 	if(rtt >= 0.0){
 		if(rtt < 0.01){
-			if(m_max_packets_per_second < congestion_control_max_rate)
+			if(m_max_packets_per_second < congestion_control_max_rate) {
 				if (m_max_packets_per_second > congestion_control_max_rate/2)
 					m_max_packets_per_second *= 1.02;
 				else
 					m_max_packets_per_second *= 1.05;
+			}
 		} else if(rtt < congestion_control_aim_rtt){
 			if(m_max_packets_per_second < congestion_control_max_rate)
 				m_max_packets_per_second *= 1.02;
