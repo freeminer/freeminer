@@ -143,7 +143,7 @@ public:
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n, MapNode neighbor){};
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor){};
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate = false){};
 };
 
 struct ABMWithState
@@ -203,7 +203,7 @@ public:
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers);
 	~ABMHandler();
-	void apply(MapBlock *block);
+	void apply(MapBlock *block, bool activate = false);
 
 };
 

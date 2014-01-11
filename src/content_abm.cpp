@@ -52,7 +52,7 @@ class LiquidDropABM : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			if (map->transforming_liquid_size() > map->m_liquid_step_flow)
 				return;
@@ -86,7 +86,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 
@@ -95,7 +95,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 			content_t c = map->getNodeNoEx(p - v3s16(0,  -1, 0 )).getContent(); // top
 			//more chance to freeze if air at top
 			int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
-			if (heat <= freeze-1 && (heat <= freeze-50 || 
+			if (heat <= freeze-1 && (activate || heat <= freeze-50 || 
 				(myrand_range(freeze-50, heat) <= (c == CONTENT_AIR ? freeze-10 : freeze-40)))) {
 				content_t c_self = n.getContent();
 				// making freeze not annoying, do not freeze random blocks in center of ocean
@@ -152,13 +152,13 @@ class MeltWeather : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			float heat = map->updateBlockHeat(env, p);
 			content_t c = map->getNodeNoEx(p - v3s16(0,  -1, 0 )).getContent(); // top
 			int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
-			if (heat >= melt+1 && (heat >= melt+40 ||
+			if (heat >= melt+1 && (activate || heat >= melt+40 ||
 				((myrand_range(heat, melt+40)) >= (c == CONTENT_AIR ? melt+10 : melt+20)))) {
 				if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE) {
 					 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
@@ -193,7 +193,7 @@ class MeltHot : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 4; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			int hot = ((ItemGroupList) ndef->get(neighbor).groups)["hot"];
@@ -226,7 +226,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 4; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			int cold = ((ItemGroupList) ndef->get(neighbor).groups)["cold"];
