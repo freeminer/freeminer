@@ -27,6 +27,8 @@ class ClientEnvironment;
 
 class ClientActiveObject;
 
+enum localPlayerAnimations {NO_ANIM, WALK_ANIM, DIG_ANIM, WD_ANIM};  // no local animation, walking, digging, both
+
 class LocalPlayer : public Player
 {
 public:
@@ -60,12 +62,11 @@ public:
 	unsigned int last_keyPressed;
 
 	float camera_impact;
+	int camera_mode;
+	int last_animation;
 
 	std::string hotbar_image;
 	std::string hotbar_selected_image;
-
-	bool third_person;
-	int anim;
 
 private:
 	// This is used for determining the sneaking range
