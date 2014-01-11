@@ -1419,11 +1419,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if (!calls)
 			m_active_block_abm_last = 0;
 
-		u32 time_ms = timer.stop(true);
+		//u32 time_ms = timer.stop(true);
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
-					<<time_ms<<"ms "
+					<<end_ms-porting::getTimeMs()<<"ms "
 					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
