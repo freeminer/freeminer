@@ -401,6 +401,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
+        std::list<Player*> objects_to_remove;
+
 #if WTF
 	std::set<Player*> saved_players;
 
@@ -465,8 +467,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 		Player *player = *i;
 
 		if(!player->peer_id && !player->need_save && !player->getPlayerSAO()) {
-			delete player;
-			m_players.erase(i);
+		        objects_to_remove.push_back(*i);
 			continue;
 		}
 
@@ -513,8 +514,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 		player->path = players_path + "/" + playername;
 		}
 		{
-			infostream<<"Saving player "<<player->getName()<<" to "
-					<<player->path<<std::endl;
+			/*infostream<<"Saving player "<<player->getName()<<" to "
+					<<player->path<<std::endl;*/
 			// Open file and serialize
 			std::ostringstream ss(std::ios_base::binary);
 			player->serialize(ss);
@@ -525,6 +526,12 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			}
 		}
 		player->need_save = 0;
+	}
+
+	// Remove references from m_active_objects
+	for(std::list<Player*>::iterator i = objects_to_remove.begin(); i != objects_to_remove.end(); ++i) {
+		delete *i;
+		m_players.erase(i);
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
@@ -1423,7 +1430,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
-					<<end_ms-porting::getTimeMs()<<"ms "
+					<<porting::getTimeMs()-end_ms<<"ms "
 					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
