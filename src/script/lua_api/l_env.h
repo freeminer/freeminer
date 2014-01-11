@@ -203,7 +203,7 @@ public:
 		return m_trigger_chance;
 	}
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor);
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate);
 };
 
 #endif /* L_ENV_H_ */

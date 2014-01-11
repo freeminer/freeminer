@@ -710,7 +710,7 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 }
 
-/* now in .h
+#if WTF // now in .h
 struct ActiveABM
 {
 	ActiveABM():
@@ -721,7 +721,7 @@ struct ActiveABM
 	int neighbors_range;
 	FMBitset required_neighbors;
 };
-*/
+#endif
 
 /*
 class ABMHandler
@@ -809,7 +809,7 @@ public:
 				i != m_aabms_list.end(); ++i)
 			delete *i;
 	}
-	void ABMHandler::apply(MapBlock *block)
+	void ABMHandler::apply(MapBlock *block, bool activate)
 	{
 		if (m_aabms_empty) // whoa, when is it empty?
 			return;
@@ -883,7 +883,7 @@ neighbor_found:
 				
 				// Call trigger
 				i->abm->trigger(m_env, p, n,
-						active_object_count, active_object_count_wider, neighbor);
+						active_object_count, active_object_count_wider, neighbor, activate);
 			}
 		}
 	}
@@ -932,7 +932,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 	/* Handle ActiveBlockModifiers */
 	ABMHandler abmhandler(m_abms, dtime_s, this, false);
-	abmhandler.apply(block);
+	abmhandler.apply(block, true);
 }
 
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
