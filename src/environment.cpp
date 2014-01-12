@@ -730,7 +730,7 @@ public:
 	ABMHandler::
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
-			bool use_timers):
+			bool use_timers, bool activate = false):
 		m_env(env),
 		m_aabms(),
 		m_aabms_empty(true)
@@ -768,7 +768,7 @@ public:
 				aabm.chance = 1;
 			// Trigger neighbors
 			std::set<std::string> required_neighbors_s
-					= abm->getRequiredNeighbors();
+					= abm->getRequiredNeighbors(activate);
 			for(std::set<std::string>::iterator
 					i = required_neighbors_s.begin();
 					i != required_neighbors_s.end(); i++)
@@ -924,7 +924,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	}
 
 	/* Handle ActiveBlockModifiers */
-	ABMHandler abmhandler(m_abms, dtime_s, this, false);
+	ABMHandler abmhandler(m_abms, dtime_s, this, false, true);
 	abmhandler.apply(block, true);
 }
 
@@ -1380,7 +1380,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if (!m_active_block_abm_last || !m_abmhandler) {
 			if (m_abmhandler)
 				delete m_abmhandler;
-			m_abmhandler = new ABMHandler(m_abms, m_active_block_abm_dtime, this, true);
+			m_abmhandler = new ABMHandler(m_abms, m_active_block_abm_dtime, this, true, false);
 		}
 /*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);

@@ -186,7 +186,7 @@ public:
 	{
 		return m_trigger_contents;
 	}
-	virtual std::set<std::string> getRequiredNeighbors()
+	virtual std::set<std::string> getRequiredNeighbors(bool activate)
 	{
 		return m_required_neighbors;
 	}

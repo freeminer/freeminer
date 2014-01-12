@@ -42,7 +42,7 @@ class LiquidDropABM : public ActiveBlockModifier {
 		}
 		virtual std::set<std::string> getTriggerContents()
 		{ return contents; }
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> neighbors;
 			neighbors.insert("air");
 			return neighbors;
@@ -75,10 +75,12 @@ class LiquidFreeze : public ActiveBlockModifier {
 			s.insert("group:freeze");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
-			s.insert("air");
-			s.insert("group:melt");
+			s.insert("air"); //maybe if !activate
+			if(!activate) {
+				s.insert("group:melt");
+			}
 			return s;
 		}
 		virtual float getTriggerInterval()
@@ -100,7 +102,7 @@ class LiquidFreeze : public ActiveBlockModifier {
 				content_t c_self = n.getContent();
 				// making freeze not annoying, do not freeze random blocks in center of ocean
 				// todo: any block not water (dont freeze _source near _flowing)
-				bool allow = heat < freeze-40;
+				bool allow = activate || heat < freeze-40;
 				// todo: make for(...)
 				if (!allow) {
 				 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
@@ -141,10 +143,12 @@ class MeltWeather : public ActiveBlockModifier {
 			s.insert("group:melt");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
-			s.insert("air");
-			s.insert("group:freeze");
+			if(!activate) {
+				s.insert("air");
+				s.insert("group:freeze");
+			}
 			return s;
 		}
 		virtual float getTriggerInterval()
@@ -180,7 +184,7 @@ class MeltHot : public ActiveBlockModifier {
 			s.insert("group:melt");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
 			s.insert("group:igniter");
 			s.insert("group:hot");
@@ -214,7 +218,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 			s.insert("group:freeze");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
 			s.insert("group:cold");
 			return s;
