@@ -401,8 +401,6 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
-        std::list<Player*> objects_to_remove;
-
 #if WTF
 	std::set<Player*> saved_players;
 
@@ -467,7 +465,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 		Player *player = *i;
 
 		if(!player->peer_id && !player->need_save && !player->getPlayerSAO()) {
-		        objects_to_remove.push_back(*i);
+			delete player;
+			i = m_players.erase(i);
 			continue;
 		}
 
@@ -526,12 +525,6 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			}
 		}
 		player->need_save = 0;
-	}
-
-	// Remove references from m_active_objects
-	for(std::list<Player*>::iterator i = objects_to_remove.begin(); i != objects_to_remove.end(); ++i) {
-		delete *i;
-		m_players.erase(i);
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
