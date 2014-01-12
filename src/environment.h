@@ -130,7 +130,7 @@ public:
 	virtual std::set<std::string> getTriggerContents()=0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual std::set<std::string> getRequiredNeighbors()
+	virtual std::set<std::string> getRequiredNeighbors(bool activate)
 	{ return std::set<std::string>(); }
 	// Maximum range to neighbors
 	virtual u32 getNeighborsRange()
@@ -201,7 +201,7 @@ private:
 public:
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
-			bool use_timers);
+			bool use_timers, bool activate);
 	~ABMHandler();
 	void apply(MapBlock *block, bool activate = false);
 
