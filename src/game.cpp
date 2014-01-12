@@ -1466,7 +1466,7 @@ void the_game(
 	bool show_debug = g_settings->getBool("show_debug");
 	bool show_profiler_graph = false;
 	u32 show_profiler = 0;
-	u32 show_profiler_max = 3;  // Number of pages
+	u32 show_profiler_max = 2;  // Number of pages
 
 	float time_of_day = 0;
 	float time_of_day_smooth = 0;

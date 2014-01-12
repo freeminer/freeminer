@@ -238,6 +238,7 @@ public:
 	}
 #endif
 
+        s16 refs;
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
 	bool in_liquid;

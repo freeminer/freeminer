@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 
 Player::Player(IGameDef *gamedef):
+	refs(0),
 	touching_ground(false),
 	in_liquid(false),
 	in_liquid_stable(false),

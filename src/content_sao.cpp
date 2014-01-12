@@ -979,6 +979,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 {
 	assert(m_player);
 	assert(m_peer_id != 0);
+	++m_player->refs;
 	setBasePosition(m_player->getPosition());
 	m_inventory = &m_player->inventory;
 	m_armor_groups["fleshy"] = 100;
@@ -1005,6 +1006,7 @@ PlayerSAO::~PlayerSAO()
 {
 	if(m_inventory != &m_player->inventory)
 		delete m_inventory;
+	--m_player->refs;
 
 }
 

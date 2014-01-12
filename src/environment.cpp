@@ -464,7 +464,7 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save && !player->getPlayerSAO()) {
+		if(!player->peer_id && !player->need_save && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
 			i = m_players.erase(i);
 			continue;
