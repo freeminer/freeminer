@@ -114,7 +114,7 @@ void * ServerThread::Thread()
 
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
+			u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
 			for (u16 i = 0; i < 1000; ++i)
 				if (!m_server->Receive() || porting::getTimeMs() > end_ms)
 					break;
@@ -1191,11 +1191,11 @@ void Server::AsyncRunStep(bool initial_step)
 		Handle players
 	*/
 	{
-		TimeTaker timer_step("Server step: Handle players");
+		//TimeTaker timer_step("Server step: Handle players");
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
-		ScopeProfiler sp(g_profiler, "Server: handle players");
+		//ScopeProfiler sp(g_profiler, "Server: handle players");
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();
@@ -1263,19 +1263,21 @@ void Server::AsyncRunStep(bool initial_step)
 	m_liquid_send_timer += dtime;
 	if(m_liquid_send_timer >= m_liquid_send_interval)
 	{
-		for (std::map<u16, RemoteClient*>::iterator i = m_clients.begin(); i != m_clients.end(); ++i)
-			if (i->second->m_nearest_unsent_nearest) {
-				i->second->m_nearest_unsent_d = 0;
-				i->second->m_nearest_unsent_nearest = 0;
-			}
-
 		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
 		m_liquid_send_timer -= m_liquid_send_interval;
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1))
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1)) {
+			m_liquid_send_timer = m_liquid_send_interval;
 			goto no_send;
+		}
+
+		for (std::map<u16, RemoteClient*>::iterator i = m_clients.begin(); i != m_clients.end(); ++i)
+			if (i->second->m_nearest_unsent_nearest) {
+				i->second->m_nearest_unsent_d = 0;
+				i->second->m_nearest_unsent_nearest = 0;
+			}
 
 		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
@@ -1645,7 +1647,7 @@ void Server::AsyncRunStep(bool initial_step)
 		// We'll log the amount of each
 		Profiler prof;
 
-		u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
+		u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();

@@ -1267,7 +1267,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			Handle added blocks
 		*/
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
 		for(std::set<v3s16>::iterator
 				i = m_blocks_added.begin();
 				i != m_blocks_added.end(); ++i)
@@ -1312,7 +1312,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		
 		//float dtime = 1.0;
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1386,7 +1386,8 @@ void ServerEnvironment::step(float dtime, float uptime)
 /*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 */
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1424,7 +1425,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
-					<<porting::getTimeMs()-end_ms + 1000 * m_recommended_send_interval<<"ms "
+					<<porting::getTimeMs()-end_ms + u32(1000 * m_recommended_send_interval)<<"ms "
 					<<std::endl;
 		}
 		if (!m_active_block_abm_last)
@@ -1457,7 +1458,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			send_recommended = true;
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * m_recommended_send_interval;
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
 		for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)

@@ -707,7 +707,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	{
 	TimeTaker t("updateLighting: first stuff");
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 	if(!breakable)
 		updateLighting_last[bank] = 0;
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
@@ -1498,7 +1498,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 /*
 	beginSave();
 */
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
@@ -1760,7 +1760,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 	// List of MapBlocks that will require a lighting update (due to lava)
 	u16 loop_rand = myrand();
 
-	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 
 	while (m_transforming_liquid.size() > 0)
 	{
@@ -2196,7 +2196,7 @@ u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map
 	// List of MapBlocks that will require a lighting update (due to lava)
 	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
 
-	u32 end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 
 	while(m_transforming_liquid.size() != 0)
 	{
@@ -3473,6 +3473,7 @@ std::string ServerMap::getSectorDir(v2s16 pos, int layout)
 		default:
 			assert(false);
 	}
+	return "";
 }
 
 v2s16 ServerMap::getSectorPos(std::string dirname)
@@ -3552,7 +3553,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 
 	// Don't do anything with sqlite unless something is really saved
 	bool save_started = false;
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + 1000 * g_settings->getFloat("dedicated_server_step");
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 	if (!breakable)
 		m_sectors_save_last = 0;
 	for(std::map<v2s16, MapSector*>::iterator i = m_sectors.begin();
