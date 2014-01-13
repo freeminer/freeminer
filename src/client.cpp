@@ -1860,10 +1860,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		float size = readF1000(is);
 		bool collisiondetection = readU8(is);
 		std::string texture = deSerializeLongString(is);
-		bool vertical = 0;
-		try{ //maybe only if version > 26
+		bool vertical = false;
+		try {
 			vertical = readU8(is);
 		} catch (...) {}
+
 		ClientEvent event;
 		event.type = CE_SPAWN_PARTICLE;
 		event.spawn_particle.pos = new v3f (pos);
@@ -1899,8 +1900,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		bool collisiondetection = readU8(is);
 		std::string texture = deSerializeLongString(is);
 		u32 id = readU32(is);
-		bool vertical = 0;
-		try { //maybe only if version > 26
+		bool vertical = false;
+		try {
 			vertical = readU8(is);
 		} catch (...) {}
 
