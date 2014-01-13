@@ -2269,38 +2269,21 @@ void Client::sendPlayerPos()
 		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
 		our_peer_id = m_con.GetPeerID();
 	}
-	
+
 	// Set peer id if not set already
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
 	// Check that an existing peer_id is the same as the connection's
 	assert(myplayer->peer_id == our_peer_id);
-	
-	v3f pf = myplayer->getPosition();
-	v3s32 position(pf.X*100, pf.Y*100, pf.Z*100);
-	v3f sf = myplayer->getSpeed();
-	v3s32 speed(sf.X*100, sf.Y*100, sf.Z*100);
-	s32 pitch = myplayer->getPitch() * 100;
-	s32 yaw = myplayer->getYaw() * 100;
-	u32 keyPressed=myplayer->keyPressed;
-	/*
-		Format:
-		[0] u16 command
-		[2] v3s32 position*100
-		[2+12] v3s32 speed*100
-		[2+12+12] s32 pitch*100
-		[2+12+12+4] s32 yaw*100
-		[2+12+12+4+4] u32 keyPressed
-	*/
-	SharedBuffer<u8> data(2+12+12+4+4+4);
-	writeU16(&data[0], TOSERVER_PLAYERPOS);
-	writeV3S32(&data[2], position);
-	writeV3S32(&data[2+12], speed);
-	writeS32(&data[2+12+12], pitch);
-	writeS32(&data[2+12+12+4], yaw);
-	writeU32(&data[2+12+12+4+4], keyPressed);
+
+	MSGPACK_PACKET_INIT(TOSERVER_PLAYERPOS, 5);
+	PACK(TOSERVER_PLAYERPOS_POSITION, myplayer->getPosition());
+	PACK(TOSERVER_PLAYERPOS_SPEED, myplayer->getSpeed());
+	PACK(TOSERVER_PLAYERPOS_PITCH, myplayer->getPitch());
+	PACK(TOSERVER_PLAYERPOS_YAW, myplayer->getYaw());
+	PACK(TOSERVER_PLAYERPOS_KEY_PRESSED, myplayer->keyPressed);
 	// Send as unreliable
-	Send(0, data, false);
+	Send(0, buffer, false);
 }
 
 void Client::sendPlayerItem(u16 item)

@@ -518,6 +518,20 @@ enum {
 
 #define TOSERVER_INIT2 0x11
 
+#define TOSERVER_PLAYERPOS 0x23
+enum {
+	// v3f
+	TOSERVER_PLAYERPOS_POSITION,
+	// v3f
+	TOSERVER_PLAYERPOS_SPEED,
+	// f32
+	TOSERVER_PLAYERPOS_PITCH,
+	// f32
+	TOSERVER_PLAYERPOS_YAW,
+	// u32
+	TOSERVER_PLAYERPOS_KEY_PRESSED
+};
+
 enum ToServerCommand
 {
 	/*
@@ -542,15 +556,6 @@ enum ToServerCommand
 	TOSERVER_ADDNODE = 0x21, // Obsolete
 	TOSERVER_REMOVENODE = 0x22, // Obsolete
 
-	TOSERVER_PLAYERPOS = 0x23,
-	/*
-		[0] u16 command
-		[2] v3s32 position*100
-		[2+12] v3s32 speed*100
-		[2+12+12] s32 pitch*100
-		[2+12+12+4] s32 yaw*100
-		[2+12+12+4+4] u32 keyPressed
-	*/
 
 	TOSERVER_GOTBLOCKS = 0x24,
 	/*

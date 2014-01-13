@@ -2298,27 +2298,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	if(command == TOSERVER_PLAYERPOS)
 	{
-		if(datasize < 2+12+12+4+4)
-			return;
-
-		u32 start = 0;
-		v3s32 ps = readV3S32(&data[start+2]);
-		v3s32 ss = readV3S32(&data[start+2+12]);
-		f32 pitch = (f32)readS32(&data[2+12+12]) / 100.0;
-		f32 yaw = (f32)readS32(&data[2+12+12+4]) / 100.0;
-		u32 keyPressed = 0;
-		if(datasize >= 2+12+12+4+4+4)
-			keyPressed = (u32)readU32(&data[2+12+12+4+4]);
-		v3f position((f32)ps.X/100., (f32)ps.Y/100., (f32)ps.Z/100.);
-		v3f speed((f32)ss.X/100., (f32)ss.Y/100., (f32)ss.Z/100.);
-		pitch = wrapDegrees(pitch);
-		yaw = wrapDegrees(yaw);
-
-		player->setPosition(position);
-		player->setSpeed(speed);
-		player->setPitch(pitch);
-		player->setYaw(yaw);
-		player->keyPressed=keyPressed;
+		player->setPosition(packet[TOSERVER_PLAYERPOS_POSITION].as<v3f>());
+		player->setSpeed(packet[TOSERVER_PLAYERPOS_SPEED].as<v3f>());
+		player->setPitch(wrapDegrees(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()));
+		player->setYaw(wrapDegrees(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()));
+		u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
+		player->keyPressed = keyPressed;
 		player->control.up = (bool)(keyPressed&1);
 		player->control.down = (bool)(keyPressed&2);
 		player->control.left = (bool)(keyPressed&4);
