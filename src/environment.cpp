@@ -1424,7 +1424,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
-					<<porting::getTimeMs()-end_ms<<"ms "
+					<<porting::getTimeMs()-end_ms + 1000 * m_recommended_send_interval<<"ms "
 					<<std::endl;
 		}
 		if (!m_active_block_abm_last)

@@ -227,7 +227,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("congestion_control_min_rate", "10");
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "2");
-	settings->setDefault("time_taker_enabled", "0");
+	settings->setDefault("time_taker_enabled",
+#ifdef NDEBUG
+	"0"
+#else
+	"1"
+#endif
+	);
 	settings->setDefault("emergequeue_limit_total", "256");
 	settings->setDefault("emergequeue_limit_diskonly", "");
 	settings->setDefault("emergequeue_limit_generate", "");
