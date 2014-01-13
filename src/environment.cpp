@@ -614,7 +614,7 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 
 Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 {
-	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS)) {
+	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS) || !name.size()) {
 		infostream<<"Not loading player with invalid name: "<<name<<std::endl;
 		return NULL;
 	}
