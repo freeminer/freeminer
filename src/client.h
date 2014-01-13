@@ -35,6 +35,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "hud.h"
 #include "particles.h"
 
+#include <msgpack.hpp>
+
 struct MeshMakeData;
 class MapBlockMesh;
 class IWritableTextureSource;
@@ -318,6 +320,7 @@ public:
 	bool AsyncProcessPacket();
 	bool AsyncProcessData();
 	void Send(u16 channelnum, SharedBuffer<u8> data, bool reliable);
+	void Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable);
 
 	void interact(u8 action, const PointedThing& pointed);
 

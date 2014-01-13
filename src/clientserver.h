@@ -506,16 +506,24 @@ enum ToClientCommand
 	*/
 };
 
+#define TOSERVER_INIT 0x10
+enum {
+	// u8 SER_FMT_VER_HIGHEST_READ
+	TOSERVER_INIT_FMT,
+	TOSERVER_INIT_NAME,
+	TOSERVER_INIT_PASSWORD,
+	TOSERVER_INIT_PROTOCOL_VERSION_MIN,
+	TOSERVER_INIT_PROTOCOL_VERSION_MAX
+};
+
 #define TOSERVER_INIT2 0x11
 
 enum ToServerCommand
 {
-	TOSERVER_INIT=0x10,
 	/*
 		Sent first after connected.
 
 		[0] u16 TOSERVER_INIT
-		[2] u8 SER_FMT_VER_HIGHEST_READ
 		[3] u8[20] player_name
 		[23] u8[28] password (new in some version)
 		[51] u16 minimum supported network protocol version (added sometime)

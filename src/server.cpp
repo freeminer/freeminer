@@ -1884,14 +1884,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	if(command == TOSERVER_INIT)
 	{
-		// [0] u16 TOSERVER_INIT
-		// [2] u8 SER_FMT_VER_HIGHEST_READ
-		// [3] u8[20] player_name
-		// [23] u8[28] password <--- can be sent without this, from old versions
-
-		if(datasize < 2+1+PLAYERNAME_SIZE)
-			return;
-
 		// If net_proto_version is set, this client has already been handled
 		if(getClient(peer_id)->net_proto_version != 0){
 			verbosestream<<"Server: Ignoring multiple TOSERVER_INITs from "
@@ -1913,7 +1905,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		// First byte after command is maximum supported
 		// serialization version
-		u8 client_max = data[2];
+		u8 client_max;
+		packet[TOSERVER_INIT_FMT].convert(&client_max);
 		u8 our_max = SER_FMT_VER_HIGHEST_READ;
 		// Use the highest version supported by both
 		u8 deployed = std::min(client_max, our_max);
@@ -1943,14 +1936,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 
 		u16 min_net_proto_version = 0;
-		if(datasize >= 2+1+PLAYERNAME_SIZE+PASSWORD_SIZE+2)
-			min_net_proto_version = readU16(&data[2+1+PLAYERNAME_SIZE+PASSWORD_SIZE]);
-
-		// Use same version as minimum and maximum if maximum version field
-		// doesn't exist (backwards compatibility)
+		packet[TOSERVER_INIT_PROTOCOL_VERSION_MIN].convert(&min_net_proto_version);
 		u16 max_net_proto_version = min_net_proto_version;
-		if(datasize >= 2+1+PLAYERNAME_SIZE+PASSWORD_SIZE+2+2)
-			max_net_proto_version = readU16(&data[2+1+PLAYERNAME_SIZE+PASSWORD_SIZE+2]);
+		packet[TOSERVER_INIT_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
 
 		// Start with client's maximum version
 		u16 net_proto_version = max_net_proto_version;
@@ -2020,14 +2008,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 
 		// Get player name
-		char playername[PLAYERNAME_SIZE];
-		for(u32 i=0; i<PLAYERNAME_SIZE-1; i++)
-		{
-			playername[i] = data[3+i];
-		}
-		playername[PLAYERNAME_SIZE-1] = 0;
+		std::string playername;
+		packet[TOSERVER_INIT_NAME].convert(&playername);
 
-		if(playername[0]=='\0')
+		if(playername.empty())
 		{
 			actionstream<<"Server: Player with an empty name "
 					<<"tried to connect from "<<addr_s<<std::endl;
@@ -2035,7 +2019,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			return;
 		}
 
-		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS)==false)
+		if(string_allowed(playername.c_str(), PLAYERNAME_ALLOWED_CHARS)==false)
 		{
 			actionstream<<"Server: Player with an invalid name "
 					<<"tried to connect from "<<addr_s<<std::endl;
@@ -2043,7 +2027,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			return;
 		}
 
-		if(!isSingleplayer() && strcasecmp(playername, "singleplayer") == 0)
+		if(!isSingleplayer() && playername == "singleplayer")
 		{
 			actionstream<<"Server: Player with the name \"singleplayer\" "
 					<<"tried to connect from "<<addr_s<<std::endl;
@@ -2068,22 +2052,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				<<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
 
 		// Get password
-		char given_password[PASSWORD_SIZE];
-		if(datasize < 2+1+PLAYERNAME_SIZE+PASSWORD_SIZE)
-		{
-			// old version - assume blank password
-			given_password[0] = 0;
-		}
-		else
-		{
-			for(u32 i=0; i<PASSWORD_SIZE-1; i++)
-			{
-				given_password[i] = data[23+i];
-			}
-			given_password[PASSWORD_SIZE-1] = 0;
-		}
+		std::string given_password;
+		packet[TOSERVER_INIT_PASSWORD].convert(&given_password);
 
-		if(!base64_is_valid(given_password)){
+		if(!base64_is_valid(given_password.c_str())){
 			actionstream<<"Server: "<<playername
 					<<" supplied invalid password hash"<<std::endl;
 			DenyAccess(peer_id, L"Invalid password hash");
@@ -2113,7 +2085,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(!has_auth){
 			if(!isSingleplayer() &&
 					g_settings->getBool("disallow_empty_password") &&
-					std::string(given_password) == ""){
+					given_password == ""){
 				actionstream<<"Server: "<<playername
 						<<" supplied empty password"<<std::endl;
 				DenyAccess(peer_id, L"Empty passwords are "
@@ -2149,13 +2121,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		}
 
 		// Get player
-		PlayerSAO *playersao = emergePlayer(playername, peer_id);
+		PlayerSAO *playersao = emergePlayer(playername.c_str(), peer_id);
 
 		// If failed, cancel
 		if(playersao == NULL)
 		{
 			RemotePlayer *player =
-					static_cast<RemotePlayer*>(m_env->getPlayer(playername));
+					static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
 			if(player && player->peer_id != 0){
 				errorstream<<"Server: "<<playername<<": Failed to emerge player"
 						<<" (player allocated to an another client)"<<std::endl;

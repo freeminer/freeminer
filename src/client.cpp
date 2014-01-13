@@ -499,24 +499,15 @@ void Client::step(float dtime)
 			// [23] u8[28] password (new in some version)
 			// [51] u16 minimum supported network protocol version (added sometime)
 			// [53] u16 maximum supported network protocol version (added later than the previous one)
-			SharedBuffer<u8> data(2+1+PLAYERNAME_SIZE+PASSWORD_SIZE+2+2);
-			writeU16(&data[0], TOSERVER_INIT);
-			writeU8(&data[2], SER_FMT_VER_HIGHEST_READ);
-
-			memset((char*)&data[3], 0, PLAYERNAME_SIZE);
-			snprintf((char*)&data[3], PLAYERNAME_SIZE, "%s", myplayer->getName());
-
-			/*infostream<<"Client: sending initial password hash: \""<<m_password<<"\""
-					<<std::endl;*/
-
-			memset((char*)&data[23], 0, PASSWORD_SIZE);
-			snprintf((char*)&data[23], PASSWORD_SIZE, "%s", m_password.c_str());
-			
-			writeU16(&data[51], CLIENT_PROTOCOL_VERSION_MIN);
-			writeU16(&data[53], CLIENT_PROTOCOL_VERSION_MAX);
+			MSGPACK_PACKET_INIT(TOSERVER_INIT, 5);
+			PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
+			PACK(TOSERVER_INIT_NAME, std::string(myplayer->getName()));
+			PACK(TOSERVER_INIT_PASSWORD, m_password);
+			PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
+			PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
 
 			// Send as unreliable
-			Send(0, data, false);
+			Send(0, buffer, false);
 		}
 
 		// Not connected, return
@@ -2033,6 +2024,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
+	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
+}
+
+void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
 
