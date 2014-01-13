@@ -51,6 +51,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/pointedthing.h"
 #include "version.h"
 
+#include <msgpack.hpp>
+
 /*
 	QueuedMeshUpdate
 */
@@ -479,7 +481,6 @@ void Client::step(float dtime)
 
 	if(connected == false)
 	{
-		actionstream << "connected is still false" << std::endl;
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
 		if(counter <= 0.0)
@@ -1031,11 +1032,18 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		return;
 	}
 
-	ToClientCommand command = (ToClientCommand)readU16(&data[0]);
+	ToClientCommand command;
+
+	std::map<int, msgpack::object> packet;
+	int cmd;
+	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd))
+		command = (ToClientCommand)cmd;
+	else
+		command = (ToClientCommand)readU16(&data[0]);
 
 	//infostream<<"Client: received command="<<command<<std::endl;
 	m_packetcounter.add((u16)command);
-	
+
 	/*
 		If this check is removed, be sure to change the queue
 		system to know the ids
@@ -1054,10 +1062,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 
 	if(command == TOCLIENT_INIT)
 	{
-		if(datasize < 3)
-			return;
-
-		u8 deployed = data[2];
+		u8 deployed;
+		packet[TOCLIENT_INIT_DEPLOYED].convert(&deployed);
 
 		infostream<<"Client: TOCLIENT_INIT received with "
 				"deployed="<<((int)deployed&0xff)<<std::endl;
@@ -1068,45 +1074,31 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 					<<"unsupported ser_fmt_ver"<<std::endl;
 			return;
 		}
-		
+
 		m_server_ser_ver = deployed;
 
-		// Get player position
-		v3s16 playerpos_s16(0, BS*2+BS*20, 0);
-		if(datasize >= 2+1+6)
-			playerpos_s16 = readV3S16(&data[2+1]);
-		v3f playerpos_f = intToFloat(playerpos_s16, BS) - v3f(0, BS/2, 0);
+		v3f playerpos_f;
+		packet[TOCLIENT_INIT_POS].convert(&playerpos_f);
 
-		{ //envlock
-			//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-			
+		{
 			// Set player position
 			Player *player = m_env.getLocalPlayer();
 			assert(player != NULL);
 			player->setPosition(playerpos_f);
 		}
-		
-		if(datasize >= 2+1+6+8)
-		{
-			// Get map seed
-			m_map_seed = readU64(&data[2+1+6]);
-			infostream<<"Client: received map seed: "<<m_map_seed<<std::endl;
-		}
 
-		if(datasize >= 2+1+6+8+4)
+		packet[TOCLIENT_INIT_SEED].convert(&m_map_seed);
+		infostream<<"Client: received map seed: "<<m_map_seed<<std::endl;
+
+		packet[TOCLIENT_INIT_STEP].convert(&m_recommended_send_interval);
+		infostream<<"Client: received recommended send interval "
+				<<m_recommended_send_interval<<std::endl;
+
 		{
-			// Get map seed
-			m_recommended_send_interval = readF1000(&data[2+1+6+8]);
-			infostream<<"Client: received recommended send interval "
-					<<m_recommended_send_interval<<std::endl;
+			// Reply to server
+			MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
+			m_con.Send(PEER_ID_SERVER, 1, buffer, true);
 		}
-		
-		// Reply to server
-		u32 replysize = 2;
-		SharedBuffer<u8> reply(replysize);
-		writeU16(&reply[0], TOSERVER_INIT2);
-		// Send as reliable
-		m_con.Send(PEER_ID_SERVER, 1, reply, true);
 
 		return;
 	}

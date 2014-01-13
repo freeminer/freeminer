@@ -409,6 +409,11 @@ void Connection::Send(u16 peer_id, u8 channelnum,
 	putCommand(c);
 }
 
+void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable) {
+	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
+	Send(peer_id, channelnum, data, reliable);
+}
+
 Address Connection::GetPeerAddress(u16 peer_id)
 {
 	// lol that's not going to end well
@@ -437,6 +442,20 @@ std::string Connection::getDesc()
 {
 	return "";
 	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
+}
+
+bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command) {
+	try {
+		msgpack::unpacked msg;
+		msgpack::unpack(&msg, (char*)data, datasize);
+		msgpack::object obj = msg.get();
+		*packet = obj.as<MsgpackPacket>();
+
+		*command = (*packet)[MSGPACK_COMMAND].as<int>();
+	}
+	catch (msgpack::type_error) { return false; }
+	catch (msgpack::unpack_error) { return false; }
+	return true;
 }
 
 } // namespace

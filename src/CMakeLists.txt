@@ -6,6 +6,8 @@ mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
 mark_as_advanced(JSON_INCLUDE_DIR JSON_LIBRARY)
 
+find_package(MsgPack)
+
 option(ENABLE_CURL "Enable cURL support for fetching media" 1)
 
 if (NOT ENABLE_CURL)
@@ -405,6 +407,7 @@ include_directories(
 	${SQLITE3_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
+	${MSGPACK_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/script
 	${PROJECT_SOURCE_DIR}/enet/include
 )
@@ -442,6 +445,7 @@ if(BUILD_CLIENT)
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${OPENGLES2_LIBRARIES}
+		${MSGPACK_LIBRARIES}
 		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
@@ -474,6 +478,7 @@ if(BUILD_SERVER)
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
 		${LUA_LIBRARY}
+		${MSGPACK_LIBRARIES}
 		enet
 		${PLATFORM_LIBS}
 	)

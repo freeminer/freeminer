@@ -24,6 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <string>
 
+#include <msgpack.hpp>
+
 inline void writeU64(u8 *data, u64 i)
 {
 	data[0] = ((i>>56)&0xff);
@@ -401,5 +403,28 @@ std::string serializeJsonString(const std::string &plain);
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
 
+namespace msgpack {
+
+inline v3f& operator>> (object o, v3f& v)
+{
+	if(o.type != type::ARRAY) { throw type_error(); }
+	if(o.via.array.size != 3) { throw type_error(); }
+	o.via.array.ptr[0].convert(&v.X);
+	o.via.array.ptr[1].convert(&v.Y);
+	o.via.array.ptr[2].convert(&v.Z);
+	return v;
+}
+
+template <typename Stream>
+inline packer<Stream>& operator<< (packer<Stream>& o, const v3f& v)
+{
+	o.pack_array(3);
+	o.pack(v.X);
+	o.pack(v.Y);
+	o.pack(v.Z);
+	return o;
+}
+
+}
 #endif
 

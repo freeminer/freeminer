@@ -33,9 +33,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 
 #include "enet/enet.h"
+#include <msgpack.hpp>
 
 #define CHANNEL_COUNT 3
 #define PEER_ID_CAPACITY (1 << (8 * sizeof(u16)))
+
+#define PACK(x, y) pk.pack((int)x); pk.pack(y);
+#define MSGPACK_COMMAND -1
+#define MSGPACK_PACKET_INIT(id, x) \
+	msgpack::sbuffer buffer; \
+	msgpack::packer<msgpack::sbuffer> pk(&buffer); \
+	pk.pack_map((x)+1); \
+	PACK(MSGPACK_COMMAND, id);
+
+typedef std::map<int, msgpack::object> MsgpackPacket;
 
 namespace con
 {
@@ -280,6 +291,7 @@ public:
 	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
 	u16 GetPeerID(){ return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
@@ -322,6 +334,8 @@ private:
 	std::string getDesc();
 };
 
+
+bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command);
 } // namespace
 
 #endif

@@ -65,6 +65,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/thread.h"
 #include "defaultsettings.h"
 
+#include <msgpack.hpp>
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -1872,7 +1874,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	if(datasize < 2)
 		return;
 
-	ToServerCommand command = (ToServerCommand)readU16(&data[0]);
+	ToServerCommand command;
+	std::map<int, msgpack::object> packet;
+	int cmd;
+	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd))
+		command = (ToServerCommand)cmd;
+	else
+		command = (ToServerCommand)readU16(&data[0]);
 
 	if(command == TOSERVER_INIT)
 	{
@@ -2166,15 +2174,14 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			SharedBuffer<u8> reply(2+1+6+8+4);
-			writeU16(&reply[0], TOCLIENT_INIT);
-			writeU8(&reply[2], deployed);
-			writeV3S16(&reply[2+1], floatToInt(playersao->getPlayer()->getPosition()+v3f(0,BS/2,0), BS));
-			writeU64(&reply[2+1+6], m_env->getServerMap().getSeed());
-			writeF1000(&reply[2+1+6+8], g_settings->getFloat("dedicated_server_step"));
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 4);
+			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
+			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
+			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
+			PACK(TOCLIENT_INIT_POS, playersao->getPlayer()->getPosition()+v3f(0,BS/2,0));
 
 			// Send as reliable
-			m_con.Send(peer_id, 0, reply, true);
+			m_con.Send(peer_id, 0, buffer, true);
 		}
 
 		/*

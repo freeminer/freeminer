@@ -120,23 +120,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
 
+#define TOCLIENT_INIT 0x10
+enum {
+	// u8 deployed version
+	TOCLIENT_INIT_DEPLOYED,
+	// u64 map seed
+	TOCLIENT_INIT_SEED,
+	// float recommended send interval (server step)
+	TOCLIENT_INIT_STEP,
+	// v3f player's position
+	TOCLIENT_INIT_POS
+};
+
 enum ToClientCommand
 {
-	TOCLIENT_INIT = 0x10,
-	/*
-		Server's reply to TOSERVER_INIT.
-		Sent second after connected.
-
-		[0] u16 TOSERVER_INIT
-		[2] u8 deployed version
-		[3] v3s16 player's position + v3f(0,BS/2,0) floatToInt'd 
-		[12] u64 map seed (new as of 2011-02-27)
-		[20] f1000 recommended send interval (in seconds) (new as of 14)
-
-		NOTE: The position in here is deprecated; position is
-		      explicitly sent afterwards
-	*/
-
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
 	TOCLIENT_ADDNODE = 0x21,
 	/*
@@ -509,6 +506,8 @@ enum ToClientCommand
 	*/
 };
 
+#define TOSERVER_INIT2 0x11
+
 enum ToServerCommand
 {
 	TOSERVER_INIT=0x10,
@@ -523,7 +522,7 @@ enum ToServerCommand
 		[53] u16 maximum supported network protocol version (added later than the previous one)
 	*/
 
-	TOSERVER_INIT2 = 0x11,
+	// TOSERVER_INIT2 = 0x11,
 	/*
 		Sent as an ACK for TOCLIENT_INIT.
 		After this, the server can send data.
