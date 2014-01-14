@@ -1877,7 +1877,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	ToServerCommand command;
 	std::map<int, msgpack::object> packet;
 	int cmd;
-	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd))
+	msgpack::unpacked msg;
+	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd, &msg))
 		command = (ToServerCommand)cmd;
 	else
 		command = (ToServerCommand)readU16(&data[0]);

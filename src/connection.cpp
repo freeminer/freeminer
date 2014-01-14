@@ -444,11 +444,11 @@ std::string Connection::getDesc()
 	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
 
-bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command) {
+bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg) {
 	try {
-		msgpack::unpacked msg;
-		msgpack::unpack(&msg, (char*)data, datasize);
-		msgpack::object obj = msg.get();
+		//msgpack::unpacked msg;
+		msgpack::unpack(msg, (char*)data, datasize);
+		msgpack::object obj = msg->get();
 		*packet = obj.as<MsgpackPacket>();
 
 		*command = (*packet)[MSGPACK_COMMAND].as<int>();

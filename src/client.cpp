@@ -1027,7 +1027,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 
 	std::map<int, msgpack::object> packet;
 	int cmd;
-	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd))
+	msgpack::unpacked msg;
+	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd, &msg))
 		command = (ToClientCommand)cmd;
 	else
 		command = (ToClientCommand)readU16(&data[0]);
