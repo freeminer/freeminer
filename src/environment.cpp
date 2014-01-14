@@ -2270,6 +2270,7 @@ ClientEnvironment::ClientEnvironment(ClientMap *map, scene::ISceneManager *smgr,
 	m_texturesource(texturesource),
 	m_gamedef(gamedef),
 	m_irr(irr)
+	,m_active_objects_client_last(0)
 {
 }
 
@@ -2618,10 +2619,18 @@ void ClientEnvironment::step(float dtime, float uptime)
 	
 	g_profiler->avg("CEnv: num of objects", m_active_objects.size());
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 	for(std::map<u16, ClientActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
+
+		if (n++ < m_active_objects_client_last)
+			continue;
+		else
+			m_active_objects_client_last = 0;
+		++calls;
+
 		ClientActiveObject* obj = i->second;
 		// Step object
 		obj->step(dtime, this);
@@ -2641,7 +2650,13 @@ void ClientEnvironment::step(float dtime, float uptime)
 			}
 			obj->updateLight(light);
 		}
+		if (porting::getTimeMs() > end_ms) {
+			m_active_objects_client_last = n;
+			break;
+		}
 	}
+	if (!calls)
+		m_active_objects_client_last = 0;
 
 	/*
 		Step and handle simple objects
