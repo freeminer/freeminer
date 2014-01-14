@@ -2020,7 +2020,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			return;
 		}
 
-		if(string_allowed(playername.c_str(), PLAYERNAME_ALLOWED_CHARS)==false)
+		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS)==false)
 		{
 			actionstream<<"Server: Player with an invalid name "
 					<<"tried to connect from "<<addr_s<<std::endl;
