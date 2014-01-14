@@ -197,6 +197,10 @@
 	o.pack(v . A1);o.pack(v . A2);o.pack(v . A3);o.pack(v . A4);o.pack(v . A5);o.pack(v . A6);o.pack(v . A7);o.pack(v . A8);o.pack(v . A9);o.pack(v . A10);o.pack(v . A11);o.pack(v . A12);o.pack(v . A13);o.pack(v . A14);o.pack(v . A15);o.pack(v . A16);o.pack(v . A17);o.pack(v . A18);o.pack(v . A19);o.pack(v . A20);o.pack(v . A21);o.pack(v . A22);o.pack(v . A23);o.pack(v . A24);o.pack(v . A25);o.pack(v . A26);o.pack(v . A27);o.pack(v . A28);o.pack(v . A29);o.pack(v . A30);o.pack(v . A31);
 
 
+
+#ifndef _MSC_VER
+// sane compiler
+
 #define MSGPACK_EXTERNAL_UNPACK_(num, ...) \
 	MSGPACK_EXTERNAL_UNPACK_##num(__VA_ARGS__)
 
@@ -226,5 +230,41 @@
 		return o; \
 	} \
 	}
+
+#else
+// insane compiler
+
+#define MSGPACK_EXPAND(x) x
+
+#define MSGPACK_EXTERNAL_UNPACK_(num, ...) \
+	MSGPACK_EXTERNAL_UNPACK_##num MSGPACK_EXPAND((__VA_ARGS__))
+
+#define MSGPACK_EXTERNAL_UNPACK(num, ...) \
+	MSGPACK_EXTERNAL_UNPACK_(num, __VA_ARGS__)
+
+#define MSGPACK_EXTERNAL_PACK_(num, ...) \
+	MSGPACK_EXTERNAL_PACK_##num MSGPACK_EXPAND((__VA_ARGS__))
+
+#define MSGPACK_EXTERNAL_PACK(num, ...) \
+	MSGPACK_EXTERNAL_PACK_(num, __VA_ARGS__)
+
+#define MSGPACK_DEFINE_EXTERNAL(external, ...) \
+	namespace msgpack { \
+	inline external& operator>> (object o, external& v) \
+	{ \
+		if(o.type != type::ARRAY) { throw type_error(); } \
+		if(o.via.array.size != MSGPACK_VA_NUM_ARGS(__VA_ARGS__)) { throw type_error(); } \
+		MSGPACK_EXTERNAL_UNPACK MSGPACK_EXPAND((MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__)) \
+		return v;\
+	}\
+	template <typename Stream> \
+	inline packer<Stream>& operator<< (packer<Stream>& o, const external& v) \
+	{ \
+		o.pack_array(MSGPACK_VA_NUM_ARGS(__VA_ARGS__)); \
+		MSGPACK_EXTERNAL_PACK MSGPACK_EXPAND((MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__)) \
+		return o; \
+	} \
+	}
+#endif
 
 #endif
