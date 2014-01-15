@@ -1398,6 +1398,8 @@ void ServerEnvironment::step(float dtime, float uptime)
 				m_active_block_abm_last = 0;
 			++calls;
 
+			ScopeProfiler sp(g_profiler, "SEnv: ABM one block avg", SPT_AVG);
+
 			v3s16 p = *i;
 			
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
@@ -1421,13 +1423,14 @@ void ServerEnvironment::step(float dtime, float uptime)
 		if (!calls)
 			m_active_block_abm_last = 0;
 
-		//u32 time_ms = timer.stop(true);
+/*
 		if(m_active_block_abm_last) {
 			infostream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
 					<<porting::getTimeMs()-end_ms + u32(1000 * m_recommended_send_interval)<<"ms "
 					<<std::endl;
 		}
+*/
 		if (!m_active_block_abm_last)
 			m_active_block_abm_dtime = 0;
 	}
@@ -1435,8 +1438,11 @@ void ServerEnvironment::step(float dtime, float uptime)
 	/*
 		Step script environment (run global on_step())
 	*/
+	{
+	ScopeProfiler sp(g_profiler, "SEnv: environment_Step AVG", SPT_AVG);
+	TimeTaker timer("environment_Step");
 	m_script->environment_Step(dtime);
-
+	}
 	/*
 		Step active objects
 	*/
@@ -2616,7 +2622,8 @@ void ClientEnvironment::step(float dtime, float uptime)
 	/*
 		Step active objects and update lighting of them
 	*/
-	
+	{
+	TimeTaker timer("Client: m_active_objects");
 	g_profiler->avg("CEnv: num of objects", m_active_objects.size());
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
@@ -2658,9 +2665,12 @@ void ClientEnvironment::step(float dtime, float uptime)
 	if (!calls)
 		m_active_objects_client_last = 0;
 
+	}
 	/*
 		Step and handle simple objects
 	*/
+	TimeTaker timer("Client: m_simple_objects");
+
 	g_profiler->avg("CEnv: num of simple objects", m_simple_objects.size());
 	for(std::list<ClientSimpleObject*>::iterator
 			i = m_simple_objects.begin(); i != m_simple_objects.end();)
