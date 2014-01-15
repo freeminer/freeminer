@@ -1153,13 +1153,13 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	{
-		TimeTaker timer_step("Server step: m_env->step");
+		//TimeTaker timer_step("Server step: m_env->step");
 		JMutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
 		max_lag *= 0.9998; // Decrease slowly (about half per 5 minutes)
 		if(dtime > max_lag){
-			if(dtime > 0.1 && dtime > max_lag * 2.0)
+			if(dtime > dedicated_server_step && dtime > max_lag * 2.0)
 				infostream<<"Server: Maximum lag peaked to "<<dtime
 						<<" s"<<std::endl;
 			max_lag = dtime;
