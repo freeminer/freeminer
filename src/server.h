@@ -424,6 +424,7 @@ public:
 
 	// Creates or resets inventory
 	Inventory* createDetachedInventory(const std::string &name);
+	void deleteDetachedInventory(const std::string &name);
 
 	// Envlock and conlock should be locked when using scriptapi
 	GameScripting *getScriptIface(){ return m_script; }

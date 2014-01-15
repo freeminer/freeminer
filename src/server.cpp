@@ -5256,6 +5256,15 @@ Inventory* Server::createDetachedInventory(const std::string &name)
 	return inv;
 }
 
+void Server::deleteDetachedInventory(const std::string &name)
+{
+	if(m_detached_inventories.count(name) > 0){
+		infostream<<"Server deleting detached inventory \""<<name<<"\""<<std::endl;
+		delete m_detached_inventories[name];
+		m_detached_inventories.erase(name);
+	}
+}
+
 class BoolScopeSet
 {
 public:
