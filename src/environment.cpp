@@ -2276,7 +2276,8 @@ ClientEnvironment::ClientEnvironment(ClientMap *map, scene::ISceneManager *smgr,
 	m_texturesource(texturesource),
 	m_gamedef(gamedef),
 	m_irr(irr)
-	,m_active_objects_client_last(0)
+	,m_active_objects_client_last(0),
+	m_move_max_loop(10)
 {
 }
 
@@ -2374,6 +2375,9 @@ void ClientEnvironment::step(float dtime, float uptime)
 	// Maximum time increment is 10ms or lower
 	if(dtime_max_increment > 0.01)
 		dtime_max_increment = 0.01;
+
+	if(dtime_max_increment*m_move_max_loop < dtime)
+		dtime_max_increment = dtime/m_move_max_loop;
 	
 	// Don't allow overly huge dtime
 	if(dtime > 0.5)
@@ -2386,6 +2390,7 @@ void ClientEnvironment::step(float dtime, float uptime)
 	*/
 
 	u32 loopcount = 0;
+	u32 breaked = 0, lend_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
 	do
 	{
 		loopcount++;
@@ -2469,11 +2474,21 @@ void ClientEnvironment::step(float dtime, float uptime)
 			lplayer->move(dtime_part, this, position_max_increment,
 					&player_collisions);
 		}
+		if (porting::getTimeMs() >= lend_ms) {
+			breaked = loopcount;
+			break;
+		}
+	
 	}
 	while(dtime_downcount > 0.001);
-		
-	//std::cout<<"Looped "<<loopcount<<" times."<<std::endl;
-	
+
+	//infostream<<"loop "<<loopcount<<"/"<<m_move_max_loop<<" breaked="<<breaked<<std::endl;
+
+	if (breaked && m_move_max_loop > loopcount)
+		--m_move_max_loop;
+	if (!breaked && m_move_max_loop < 50)
+		++m_move_max_loop;
+
 	for(std::list<CollisionInfo>::iterator
 			i = player_collisions.begin();
 			i != player_collisions.end(); ++i)
@@ -2622,11 +2637,9 @@ void ClientEnvironment::step(float dtime, float uptime)
 	/*
 		Step active objects and update lighting of them
 	*/
-	{
-	TimeTaker timer("Client: m_active_objects");
 	g_profiler->avg("CEnv: num of objects", m_active_objects.size());
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
 	for(std::map<u16, ClientActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -2665,11 +2678,9 @@ void ClientEnvironment::step(float dtime, float uptime)
 	if (!calls)
 		m_active_objects_client_last = 0;
 
-	}
 	/*
 		Step and handle simple objects
 	*/
-	TimeTaker timer("Client: m_simple_objects");
 
 	g_profiler->avg("CEnv: num of simple objects", m_simple_objects.size());
 	for(std::list<ClientSimpleObject*>::iterator
