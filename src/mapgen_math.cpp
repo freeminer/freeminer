@@ -147,10 +147,17 @@ void MapgenMathParams::writeParams(Settings *settings) {
 }
 
 MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
+	ndef = emerge->ndef;
 	mg_params = params_;
-	this->flags |= MG_NOLIGHT;
-
 	Json::Value & params = mg_params->params;
+
+	if (params.get("light", 0).asBool())
+		this->flags |= MG_NOLIGHT;
+
+	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
+	n_water_source	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
+	n_stone		= MapNode(ndef, params.get("stone", "mapgen_stone").asString(), LIGHT_SUN);
+
 	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
@@ -411,8 +418,6 @@ MapgenMath::~MapgenMath() {
 
 int MapgenMath::generateTerrain() {
 
-	MapNode n_air(CONTENT_AIR, LIGHT_SUN), n_water_source(c_water_source, LIGHT_SUN);
-	MapNode n_stone(c_stone, LIGHT_SUN);
 	u32 index = 0;
 	v3s16 em = vm->m_area.getExtent();
 
