@@ -963,6 +963,7 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
+	delete m_env;
 	//shutdown all emerge threads first!
 	delete m_emerge;
 
@@ -983,7 +984,6 @@ Server::~Server()
 	}
 
 	// Delete things in the reverse order of creation
-	delete m_env;
 	delete m_rollback;
 	delete m_banmanager;
 	delete m_event;
