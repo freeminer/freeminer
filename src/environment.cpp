@@ -1796,6 +1796,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 */
 void ServerEnvironment::removeRemovedObjects()
 {
+	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
@@ -2759,8 +2760,10 @@ u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
 		delete object;
 		return 0;
 	}
+/*
 	infostream<<"ClientEnvironment::addActiveObject(): "
 			<<"added (id="<<object->getId()<<")"<<std::endl;
+*/
 	m_active_objects[object->getId()] = object;
 	object->addToScene(m_smgr, m_texturesource, m_irr);
 	{ // Update lighting immediately
@@ -2813,8 +2816,10 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 
 void ClientEnvironment::removeActiveObject(u16 id)
 {
+/*
 	verbosestream<<"ClientEnvironment::removeActiveObject(): "
 			<<"id="<<id<<std::endl;
+*/
 	ClientActiveObject* obj = getActiveObject(id);
 	if(obj == NULL)
 	{

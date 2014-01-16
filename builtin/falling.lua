@@ -48,6 +48,8 @@ minetest.register_entity("__builtin:falling_node", {
 	end,
 
 	on_step = function(self, dtime)
+		local remove_fast = 0;
+		if dtime > 0.2 then remove_fast = 1 end
 		-- Set gravity
 		self.object:setacceleration({x=0, y=-10, z=0})
 		-- Turn to actual sand when collides to ground or just move
@@ -73,7 +75,7 @@ minetest.register_entity("__builtin:falling_node", {
 			elseif bcd and bcd.buildable_to and
 					(minetest.get_node_group(self.node.name, "float") == 0 or
 					bcd.liquidtype == "none") then
-				minetest.remove_node(bcp)
+				minetest.remove_node(bcp, remove_fast)
 				return
 			end
 			local np = {x=bcp.x, y=bcp.y+1, z=bcp.z}
@@ -84,7 +86,7 @@ minetest.register_entity("__builtin:falling_node", {
 			if n2.name ~= "air" and (not minetest.registered_nodes[n2.name] or
 					minetest.registered_nodes[n2.name].liquidtype == "none") then
 				local drops = minetest.get_node_drops(n2.name, "")
-				minetest.remove_node(np)
+				minetest.remove_node(np, remove_fast)
 				-- Add dropped items
 				local _, dropped_item
 				for _, dropped_item in ipairs(drops) do
@@ -99,7 +101,7 @@ minetest.register_entity("__builtin:falling_node", {
 			-- Create node and remove entity
 			minetest.add_node(np, self.node)
 			self.object:remove()
-			nodeupdate(np)
+			nodeupdate(np, remove_fast)
 		else
 			-- Do nothing
 		end
@@ -111,9 +113,9 @@ function spawn_falling_node(p, node)
 	obj:get_luaentity():set_node(node)
 end
 
-function drop_attached_node(p)
+function drop_attached_node(p, remove_fast)
 	local nn = minetest.get_node(p).name
-	minetest.remove_node(p)
+	minetest.remove_node(p, remove_fast)
 	for _,item in ipairs(minetest.get_node_drops(nn, "")) do
 		local pos = {
 			x = p.x + math.random()/2 - 0.25,
@@ -157,7 +159,7 @@ end
 -- Some common functions
 --
 
-function nodeupdate_single(p, delay)
+function nodeupdate_single(p, delay, remove_fast)
 	n = minetest.get_node(p)
 	if minetest.get_node_group(n.name, "falling_node") ~= 0 then
 		p_bottom = {x=p.x, y=p.y-1, z=p.z}
@@ -172,22 +174,22 @@ function nodeupdate_single(p, delay)
 				minetest.after(0.1, nodeupdate_single, {x=p.x, y=p.y, z=p.z}, false)
 			else
 				n.level = minetest.env:get_node_level(p)
-				minetest.remove_node(p)
+				minetest.remove_node(p, remove_fast)
 				spawn_falling_node(p, n)
-				nodeupdate(p)
+				nodeupdate(p, remove_fast)
 			end
 		end
 	end
 	
 	if minetest.get_node_group(n.name, "attached_node") ~= 0 then
 		if not check_attached_node(p, n) then
-			drop_attached_node(p)
-			nodeupdate(p)
+			drop_attached_node(p, remove_fast)
+			nodeupdate(p, remove_fast)
 		end
 	end
 end
 
-function nodeupdate(p, delay)
+function nodeupdate(p, delay, remove_fast)
 	-- Round p to prevent falling entities to get stuck
 	p.x = math.floor(p.x+0.5)
 	p.y = math.floor(p.y+0.5)
@@ -196,7 +198,7 @@ function nodeupdate(p, delay)
 	for x = -1,1 do
 	for y = -1,1 do
 	for z = -1,1 do
-		nodeupdate_single({x=p.x+x, y=p.y+y, z=p.z+z}, delay or not (x==0 and y==0 and z==0))
+		nodeupdate_single({x=p.x+x, y=p.y+y, z=p.z+z}, delay or not (x==0 and y==0 and z==0), remove_fast)
 	end
 	end
 	end

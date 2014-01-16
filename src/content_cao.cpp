@@ -667,7 +667,9 @@ public:
 
 	void initialize(const std::string &data)
 	{
+		/*
 		infostream<<"GenericCAO: Got init data"<<std::endl;
+		*/
 		std::istringstream is(data, std::ios::binary);
 		int num_messages = 0;
 		// version
