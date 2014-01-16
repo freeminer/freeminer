@@ -542,7 +542,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 		m_time_per_range = d_busytime / d_range;
 	}
 	//dstream<<"time_per_range="<<m_time_per_range<<std::endl;
-	g_profiler->avg("time_per_range", m_time_per_range);
+	//g_profiler->avg("time_per_range", m_time_per_range);
 
 	// The minimum allowed calculated frametime-range derivative:
 	// Practically this sets the maximum speed of changing the range.

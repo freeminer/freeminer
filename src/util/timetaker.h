@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 /*
 	TimeTaker
 */
+extern bool time_taker_enabled;
 
 class TimeTaker
 {

@@ -90,15 +90,15 @@ public:
 
 void * ServerThread::Thread()
 {
-	ThreadStarted();
-
 	log_register_thread("ServerThread");
 
 	DSTACK(__FUNCTION_NAME);
-
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+	m_server->AsyncRunStep(true);
+
+	ThreadStarted();
 
 	while(!StopRequested())
 	{
@@ -114,7 +114,7 @@ void * ServerThread::Thread()
 
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
+			u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
 			for (u16 i = 0; i < 1000; ++i)
 				if (!m_server->Receive() || porting::getTimeMs() > end_ms)
 					break;
@@ -230,10 +230,11 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 			<<m_nearest_unsent_reset_timer<<std::endl;*/
 
 	// Reset periodically to workaround for some bugs or stuff
-	if(m_nearest_unsent_reset_timer > 60.0)
+	if(m_nearest_unsent_reset_timer > 120.0)
 	{
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
+		m_nearest_unsent_nearest = 0;
 		//infostream<<"Resetting m_nearest_unsent_d for "
 		//		<<server->getPlayerName(peer_id)<<std::endl;
 	}
@@ -283,7 +284,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 			d_max = wanted_blocks;
 	}
 	// Don't loop very much at a time
-	s16 max_d_increment_at_time = 2;
+	s16 max_d_increment_at_time = 5;
 	if(d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 	/*if(d_max_gen > d_start+2)
@@ -303,7 +304,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	{
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
-		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<std::endl;
+		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<std::endl;
 
 		/*
 			If m_nearest_unsent_d was changed by the EmergeThread
@@ -443,7 +444,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 				FOV setting. The default of 72 degrees is fine.
 			*/
 
-			float camera_fov = (72.0*M_PI/180) * 4./3.;
+			float camera_fov = (80.0*M_PI/180) * 4./3.;
 			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, 10000*BS) == false)
 			{
 				continue;
@@ -592,7 +593,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<std::endl;
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
@@ -655,10 +656,11 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 		m_blocks_sent.erase(p);
 }
 
-void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks, bool no_d_reset)
+void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	if (!no_d_reset && blocks.size())
-	m_nearest_unsent_d = 0;
+
+	if  (blocks.size())
+		m_nearest_unsent_nearest = 1;
 
 	for(std::map<v3s16, MapBlock*>::iterator
 			i = blocks.begin();
@@ -687,7 +689,7 @@ Server::Server(
 	m_simple_singleplayer_mode(simple_singleplayer_mode),
 	m_async_fatal_error(""),
 	m_env(NULL),
-	m_con(PROTOCOL_ID, 512, CONNECTION_TIMEOUT,
+	m_con(PROTOCOL_ID, simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT,
 	      g_settings->getBool("enable_ipv6") && g_settings->getBool("ipv6_server"), this),
 	m_banmanager(NULL),
 	m_rollback(NULL),
@@ -881,9 +883,11 @@ Server::Server(
 		m_env->loadMeta(m_path_world);
 	}
 
+#if WTF
 	// Load players
 	infostream<<"Server: Loading players"<<std::endl;
 	m_env->deSerializePlayers(m_path_world);
+#endif
 
 	/*
 		Add some test ActiveBlockModifiers to environment
@@ -959,6 +963,7 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
+	delete m_env;
 	//shutdown all emerge threads first!
 	delete m_emerge;
 
@@ -979,7 +984,6 @@ Server::~Server()
 	}
 
 	// Delete things in the reverse order of creation
-	delete m_env;
 	delete m_rollback;
 	delete m_banmanager;
 	delete m_event;
@@ -1055,7 +1059,7 @@ void Server::step(float dtime)
 	}
 }
 
-void Server::AsyncRunStep()
+void Server::AsyncRunStep(bool initial_step)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -1074,7 +1078,7 @@ void Server::AsyncRunStep()
 		SendBlocks(dtime);
 	}
 
-	if(dtime < 0.001)
+	if((dtime < 0.001) && (initial_step == false))
 		return;
 
 /*
@@ -1103,7 +1107,7 @@ void Server::AsyncRunStep()
 		TimeTaker timer_step("Server step: Process connection's timeouts");
 		// Process connection's timeouts
 		JMutexAutoLock lock2(m_con_mutex);
-		ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
+		//ScopeProfiler sp(g_profiler, "Server: connection timeout processing");
 		m_con.RunTimeouts(dtime);
 	}
 
@@ -1149,13 +1153,13 @@ void Server::AsyncRunStep()
 	}
 
 	{
-		TimeTaker timer_step("Server step: m_env->step");
+		//TimeTaker timer_step("Server step: m_env->step");
 		JMutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
 		max_lag *= 0.9998; // Decrease slowly (about half per 5 minutes)
 		if(dtime > max_lag){
-			if(dtime > 0.1 && dtime > max_lag * 2.0)
+			if(dtime > dedicated_server_step && dtime > max_lag * 2.0)
 				infostream<<"Server: Maximum lag peaked to "<<dtime
 						<<" s"<<std::endl;
 			max_lag = dtime;
@@ -1187,11 +1191,11 @@ void Server::AsyncRunStep()
 		Handle players
 	*/
 	{
-		TimeTaker timer_step("Server step: Handle players");
+		//TimeTaker timer_step("Server step: Handle players");
 		JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
 
-		ScopeProfiler sp(g_profiler, "Server: handle players");
+		//ScopeProfiler sp(g_profiler, "Server: handle players");
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();
@@ -1264,8 +1268,16 @@ void Server::AsyncRunStep()
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1))
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1)) {
+			m_liquid_send_timer = m_liquid_send_interval;
 			goto no_send;
+		}
+
+		for (std::map<u16, RemoteClient*>::iterator i = m_clients.begin(); i != m_clients.end(); ++i)
+			if (i->second->m_nearest_unsent_nearest) {
+				i->second->m_nearest_unsent_d = 0;
+				i->second->m_nearest_unsent_nearest = 0;
+			}
 
 		//JMutexAutoLock lock(m_env_mutex);
 		JMutexAutoLock lock2(m_con_mutex);
@@ -1458,10 +1470,12 @@ void Server::AsyncRunStep()
 			// Send as reliable
 			m_con.Send(client->peer_id, 0, reply, true);
 
+/*
 			verbosestream<<"Server: Sent object remove/add: "
 					<<removed_objects.size()<<" removed, "
 					<<added_objects.size()<<" added, "
 					<<"packet size is "<<reply.getSize()<<std::endl;
+*/
 		}
 
 #if 0
@@ -1500,7 +1514,7 @@ void Server::AsyncRunStep()
 		JMutexAutoLock envlock(m_env_mutex);
 		JMutexAutoLock conlock(m_con_mutex);
 
-		ScopeProfiler sp(g_profiler, "Server: sending object messages");
+		//ScopeProfiler sp(g_profiler, "Server: sending object messages");
 
 		// Key = object id
 		// Value = data sent by object
@@ -1587,7 +1601,7 @@ void Server::AsyncRunStep()
 				memcpy((char*)&reply[2], unreliable_data.c_str(),
 						unreliable_data.size());
 				// Send as unreliable
-				m_con.Send(client->peer_id, 0, reply, false);
+				m_con.Send(client->peer_id, 1, reply, false);
 			}
 
 			/*if(reliable_data.size() > 0 || unreliable_data.size() > 0)
@@ -1633,7 +1647,7 @@ void Server::AsyncRunStep()
 		// We'll log the amount of each
 		Profiler prof;
 
-		u32 end_ms = porting::getTimeMs() + 1000 * dedicated_server_step;
+		u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
@@ -2043,8 +2057,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS)==false)
 		{
-			actionstream<<"Server: Player with an invalid name "
-					<<"tried to connect from "<<addr_s<<std::endl;
+			actionstream<<"Server: Player with an invalid name ["<<playername
+					<<"] tried to connect from "<<addr_s<<std::endl;
 			DenyAccess(peer_id, L"Name contains unallowed characters");
 			return;
 		}
@@ -2868,8 +2882,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		PointedThing pointed;
 		pointed.deSerialize(tmp_is);
 
+/*
 		verbosestream<<"TOSERVER_INTERACT: action="<<(int)action<<", item="
 				<<item_i<<", pointed="<<pointed.dump()<<std::endl;
+*/
 
 		if(player->hp == 0)
 		{
@@ -3155,9 +3171,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				if(pointed_object->m_removed)
 					return;
 
+/* android bug - too many
 				actionstream<<player->getName()<<" right-clicks object "
 						<<pointed.object_id<<": "
 						<<pointed_object->getDescription()<<std::endl;
+*/
 
 				// Do stuff
 				pointed_object->rightClick(playersao);
@@ -3660,7 +3678,7 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 	writeF1000(os, size);
 	writeU8(os,  collisiondetection);
 	os<<serializeLongString(texture);
-	writeU8(os, vertical); //maybe only if format > 26
+	writeU8(os, vertical);
 
 	// Make data buffer
 	std::string s = os.str();
@@ -3714,7 +3732,7 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 	writeU8(os,  collisiondetection);
 	os<<serializeLongString(texture);
 	writeU32(os, id);
-	writeU8(os, vertical); //maybe only if format > 26
+	writeU8(os, vertical);
 
 	// Make data buffer
 	std::string s = os.str();
@@ -3798,7 +3816,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 1, data, true);
 }
 
 void Server::SendHUDRemove(u16 peer_id, u32 id)
@@ -3813,7 +3831,8 @@ void Server::SendHUDRemove(u16 peer_id, u32 id)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+
+	m_con.Send(peer_id, 1, data, true);
 }
 
 void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value)
@@ -4293,12 +4312,12 @@ void Server::SendBlocks(float dtime)
 	JMutexAutoLock envlock(m_env_mutex);
 	JMutexAutoLock conlock(m_con_mutex);
 
-	ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
+	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
 
 	std::vector<PrioritySortedBlockTransfer> queue;
 
 	{
-		ScopeProfiler sp(g_profiler, "Server: selecting blocks for sending");
+		//ScopeProfiler sp(g_profiler, "Server: selecting blocks for sending");
 
 		for(std::map<u16, RemoteClient*>::iterator
 			i = m_clients.begin();
@@ -4637,7 +4656,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 				<<" size=" <<s.size()<<std::endl;
 		SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 		// Send as reliable
-		m_con.Send(peer_id, 0, data, true);
+		m_con.Send(peer_id, 2, data, true);
 	}
 }
 
@@ -5235,6 +5254,15 @@ Inventory* Server::createDetachedInventory(const std::string &name)
 	m_detached_inventories[name] = inv;
 	sendDetachedInventoryToAll(name);
 	return inv;
+}
+
+void Server::deleteDetachedInventory(const std::string &name)
+{
+	if(m_detached_inventories.count(name) > 0){
+		infostream<<"Server deleting detached inventory \""<<name<<"\""<<std::endl;
+		delete m_detached_inventories[name];
+		m_detached_inventories.erase(name);
+	}
 }
 
 class BoolScopeSet

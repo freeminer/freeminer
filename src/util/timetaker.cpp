@@ -23,8 +23,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../log.h"
 #include <ostream>
 
+bool time_taker_enabled = 0;
+
 TimeTaker::TimeTaker(const char *name, u32 *result, TimePrecision prec)
 {
+	if (!time_taker_enabled) {
+		m_running = false;
+		return;
+	}
 	m_name = name;
 	m_result = result;
 	m_running = true;
@@ -44,7 +50,7 @@ u32 TimeTaker::stop(bool quiet)
 		}
 		else
 		{
-			if(quiet == false && dtime >= 200)
+			if(quiet == false && dtime >= 150)
 				infostream<<m_name<<" took "<<dtime<<"ms"<<std::endl;
 		}
 		m_running = false;

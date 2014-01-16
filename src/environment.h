@@ -130,7 +130,7 @@ public:
 	virtual std::set<std::string> getTriggerContents()=0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual std::set<std::string> getRequiredNeighbors()
+	virtual std::set<std::string> getRequiredNeighbors(bool activate)
 	{ return std::set<std::string>(); }
 	// Maximum range to neighbors
 	virtual u32 getNeighborsRange()
@@ -143,7 +143,7 @@ public:
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n, MapNode neighbor){};
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor){};
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate = false){};
 };
 
 struct ABMWithState
@@ -175,6 +175,7 @@ public:
 	}
 
 	std::set<v3s16> m_list;
+	std::set<v3s16> m_forceloaded_list;
 
 private:
 };
@@ -200,9 +201,9 @@ private:
 public:
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
-			bool use_timers);
+			bool use_timers, bool activate);
 	~ABMHandler();
-	void apply(MapBlock *block);
+	void apply(MapBlock *block, bool activate = false);
 
 };
 
@@ -234,11 +235,16 @@ public:
 	float getSendRecommendedInterval()
 		{ return m_recommended_send_interval; }
 
+	Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
+	Player * getPlayer(const char *name);
 	/*
 		Save players
 	*/
 	void serializePlayers(const std::string &savedir);
+#if WTF
 	void deSerializePlayers(const std::string &savedir);
+#endif
+	Player * deSerializePlayer(const std::string &name);
 
 	/*
 		Save and load time of day and game timer
@@ -313,8 +319,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n);
-	bool removeNode(v3s16 p);
+	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0);
+	bool removeNode(v3s16 p, bool fast = 0);
 	bool swapNode(v3s16 p, const MapNode &n);
 	
 	// Find all active objects inside a radius around a point
@@ -337,7 +343,9 @@ public:
 	// is weather active in this environment?
 	bool m_use_weather;
 	ABMHandler * m_abmhandler;
-
+	
+	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
+	
 private:
 
 	/*
@@ -539,6 +547,8 @@ private:
 	IGameDef *m_gamedef;
 	IrrlichtDevice *m_irr;
 	std::map<u16, ClientActiveObject*> m_active_objects;
+	u32 m_active_objects_client_last;
+	u32 m_move_max_loop;
 	std::list<ClientSimpleObject*> m_simple_objects;
 	std::list<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;

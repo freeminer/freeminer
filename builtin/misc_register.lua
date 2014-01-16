@@ -315,6 +315,24 @@ minetest.register_item(":", {
 })
 
 
+function minetest.override_item(name, redefinition)
+	if redefinition.name ~= nil then
+		error("Attempt to redefine name of "..name.." to "..dump(redefinition.name), 2)
+	end
+	if redefinition.type ~= nil then
+		error("Attempt to redefine type of "..name.." to "..dump(redefinition.type), 2)
+	end
+	local item = minetest.registered_items[name]
+	if not item then
+		error("Attempt to override non-existent item "..name, 2)
+	end
+	for k, v in pairs(redefinition) do
+		rawset(item, k, v)
+	end
+	register_item_raw(item)
+end
+
+
 function minetest.run_callbacks(callbacks, mode, ...)
 	assert(type(callbacks) == "table")
 	local cb_len = #callbacks

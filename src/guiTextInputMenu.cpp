@@ -115,7 +115,7 @@ void GUITextInputMenu::regenerateGui(v2u32 screensize)
 		#if USE_FREETYPE
 		if (g_settings->getBool("freetype")) {
 			e = (gui::IGUIElement *) new gui::intlGUIEditBox(text.c_str(), true, Environment, this, 256, rect);
-			e->drop();
+			// e->drop(); TODO: figure out what actually happens here.
 		} else {
 			e = Environment->addEditBox(text.c_str(), rect, true, this, 256);
 		}

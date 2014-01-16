@@ -315,6 +315,8 @@
 # This is a trade-off between sqlite transaction overhead and
 # memory consumption (4096=100MB, as a rule of thumb)
 #max_clearobjects_extra_loaded_blocks = 4096
+# Maximum number of forceloaded blocks
+#max_forceloaded_blocks = 16
 # Interval of sending time of day to clients
 #time_send_interval = 5
 # Length of day/night cycle. 72=20min, 360=4min, 1=24hour, 0=day/night/whatever stays unchanged
@@ -348,6 +350,8 @@
 # Level of logging to be written to debug.txt.
 # 0 = none, 1 = errors and debug, 2 = action, 3 = info, 4 = verbose
 #debug_log_level = 2
+# Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
+#time_taker_enabled = 0
 # Maximum number of blocks that can be queued for loading.
 #emergequeue_limit_total = 256
 # Maximum number of blocks to be queued that are to be loaded from file.
@@ -359,7 +363,10 @@
 # Number of emerge threads to use.  Make this field blank, or increase this number, to use multiple threads.
 # On multiprocessor systems, this will improve mapgen speed greatly, at the cost of slightly buggy caves.
 #num_emerge_threads = 1
-
+# maximum number of packets sent per send step, if you have a slow connection
+# try reducing it, but don't reduce it to a number below double of targeted
+# client number
+#max_packets_per_iteration = 1024
 #
 # Physics stuff
 #
