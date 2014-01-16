@@ -1920,14 +1920,14 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				total_level += liquid_levels[i];
 
 			// /*
-			infostream << "get node i=" <<(int)i<<" " << PP(npos) << " c="
+			infostream << "get node i=" <<(int)i<<" " << PP(nb.p) << " c="
 			<< nb.n.getContent() <<" p0="<< (int)nb.n.param0 <<" p1="
 			<< (int)nb.n.param1 <<" p2="<< (int)nb.n.param2 << " lt="
 			<< nodemgr->get(nb.n.getContent()).liquid_type
 			//<< " lk=" << liquid_kind << " lkf=" << liquid_kind_flowing
 			<< " l="<< nb.l	<< " inf="<< nb.i << " nlevel=" << (int)liquid_levels[i]
 			<< " totallevel=" << (int)total_level << " cansame="
-			<< (int)can_liquid_same_level << " Lmax="<<(int)nodemgr->get(liquid_kind_flowing).getMaxLevel();<<std::endl;
+			<< (int)can_liquid_same_level << " Lmax="<<(int)nodemgr->get(liquid_kind_flowing).getMaxLevel()<<std::endl;
 			//  */
 		}
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
