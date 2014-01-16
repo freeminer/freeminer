@@ -232,6 +232,7 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		bool ipv6
+		, bool simple_singleplayer_mode
 ):
 	m_tsrc(tsrc),
 	m_shsrc(shsrc),
@@ -288,6 +289,20 @@ Client::Client(
 	}
 }
 
+void Client::Stop()
+{
+	//request all client managed threads to stop
+	m_mesh_update_thread.Stop();
+}
+
+bool Client::isShutdown()
+{
+
+	if (!m_mesh_update_thread.IsRunning()) return true;
+
+	return false;
+}
+
 Client::~Client()
 {
 	{
@@ -298,7 +313,7 @@ Client::~Client()
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
 	while(!m_mesh_update_thread.m_queue_out.empty()) {
-		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_front();
+		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 		delete r.mesh;
 	}
 
@@ -507,7 +522,7 @@ void Client::step(float dtime)
 			PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
 
 			// Send as unreliable
-			Send(0, buffer, false);
+			Send(1, buffer, false);
 		}
 
 		// Not connected, return
@@ -568,7 +583,7 @@ void Client::step(float dtime)
 					writeV3S16(&reply[2+1+6*k], *j);
 					k++;
 				}
-				m_con.Send(PEER_ID_SERVER, 1, reply, true);
+				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 
 				if(i == deleted_blocks.end())
 					break;
@@ -662,7 +677,7 @@ void Client::step(float dtime)
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
 			num_processed_meshes++;
-			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_front();
+			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if(block)
 			{
@@ -682,8 +697,6 @@ void Client::step(float dtime)
 			}
 			if(r.ack_block_to_server)
 			{
-				//u32 got_blocks_size = 1; //remove for bulk
- //add for bulk
 				got_blocks.push_back(r.p);
 				if (got_blocks.size() >= 255)
 					break;
@@ -709,17 +722,13 @@ void Client::step(float dtime)
 				SharedBuffer<u8> reply(replysize);
 				writeU16(&reply[0], TOSERVER_GOTBLOCKS);
 				reply[2] = got_blocks_size;
-				//writeV3S16(&reply[3], r.p); //remove for bulk
-//add for bulk
 				u32 i=0;
 				while (got_blocks.size())
 					writeV3S16(&reply[3+(6*i++)], got_blocks.pop_front());
 
 				writeU16(&reply[2+1+(6*got_blocks_size)], (int)m_env.getClientMap().getControl().wanted_range);
 				// Send as reliable
-				m_con.Send(PEER_ID_SERVER, 1, reply, true);
-			
-//			}  //remove for bulk
+				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
@@ -813,7 +822,7 @@ void Client::step(float dtime)
 			std::string s = os.str();
 			SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 			// Send as reliable
-			Send(0, data, true);
+			Send(1, data, true);
 		}
 	}
 }
@@ -880,30 +889,12 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 	name = removeStringEnd(filename, model_ext);
 	if(name != "")
 	{
-		verbosestream<<"Client: Storing model into Irrlicht: "
+		verbosestream<<"Client: Storing model into memory: "
 				<<"\""<<filename<<"\""<<std::endl;
-		scene::ISceneManager *smgr = m_device->getSceneManager();
-
-		//check if mesh was already cached
-		scene::IAnimatedMesh *mesh =
-			smgr->getMeshCache()->getMeshByName(filename.c_str());
-
-		if (mesh != NULL) {
-			errorstream << "Multiple models with name: " << filename.c_str() <<
-					" found replacing previous model!" << std::endl;
-
-			smgr->getMeshCache()->removeMesh(mesh);
-			mesh = 0;
-		}
-
-		io::IFileSystem *irrfs = m_device->getFileSystem();
-		io::IReadFile *rfile = irrfs->createMemoryReadFile(
-				*data_rw, data_rw.getSize(), filename.c_str());
-		assert(rfile);
-		
-		mesh = smgr->getMesh(rfile);
-		smgr->getMeshCache()->addMesh(filename.c_str(), mesh);
-		rfile->drop();
+		if(m_mesh_data.count(filename))
+			errorstream<<"Multiple models with name \""<<filename.c_str()
+					<<"\" found; replacing previous model"<<std::endl;
+		m_mesh_data[filename] = data;
 		return true;
 	}
 
@@ -948,7 +939,7 @@ void Client::request_media(const std::list<std::string> &file_requests)
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(1, data, true);
 	infostream<<"Client: Sending media request list to server ("
 			<<file_requests.size()<<" files)"<<std::endl;
 }
@@ -961,7 +952,7 @@ void Client::received_media()
 	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(1, data, true);
 	infostream<<"Client: Notifying server that we received all media"
 			<<std::endl;
 }
@@ -1827,10 +1818,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		float size = readF1000(is);
 		bool collisiondetection = readU8(is);
 		std::string texture = deSerializeLongString(is);
-		bool vertical = 0;
-		try{ //maybe only if version > 26
+		bool vertical = false;
+		try {
 			vertical = readU8(is);
 		} catch (...) {}
+
 		ClientEvent event;
 		event.type = CE_SPAWN_PARTICLE;
 		event.spawn_particle.pos = new v3f (pos);
@@ -1866,8 +1858,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		bool collisiondetection = readU8(is);
 		std::string texture = deSerializeLongString(is);
 		u32 id = readU32(is);
-		bool vertical = 0;
-		try { //maybe only if version > 26
+		bool vertical = false;
+		try {
 			vertical = readU8(is);
 		} catch (...) {}
 
@@ -2807,5 +2799,33 @@ ISoundManager* Client::getSoundManager()
 MtEventManager* Client::getEventManager()
 {
 	return m_event;
+}
+
+scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
+{
+	std::map<std::string, std::string>::const_iterator i =
+			m_mesh_data.find(filename);
+	if(i == m_mesh_data.end()){
+		errorstream<<"Client::getMesh(): Mesh not found: \""<<filename<<"\""
+				<<std::endl;
+		return NULL;
+	}
+	const std::string &data = i->second;
+	scene::ISceneManager *smgr = m_device->getSceneManager();
+
+	// Create the mesh, remove it from cache and return it
+	// This allows unique vertex colors and other properties for each instance
+	Buffer<char> data_rw(data.c_str(), data.size()); // Const-incorrect Irrlicht
+	io::IFileSystem *irrfs = m_device->getFileSystem();
+	io::IReadFile *rfile = irrfs->createMemoryReadFile(
+			*data_rw, data_rw.getSize(), filename.c_str());
+	assert(rfile);
+	scene::IAnimatedMesh *mesh = smgr->getMesh(rfile);
+	rfile->drop();
+	// NOTE: By playing with Irrlicht refcounts, maybe we could cache a bunch
+	// of uniquely named instances and re-use them
+	mesh->grab();
+	smgr->getMeshCache()->removeMesh(mesh);
+	return mesh;
 }
 

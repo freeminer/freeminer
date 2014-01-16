@@ -20,10 +20,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef MAPGEN_MATH_HEADER
 #define MAPGEN_MATH_HEADER
 
+#include "config.h"
 #include "mapgen.h"
 #include "mapgen_v7.h"
 #include "json/json.h"
+
+#if USE_MANDELBULBER
+#include "util/mathconstants.h"
+//#include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.h"
+#endif
 
 struct MapgenMathParams : public MapgenV7Params {
 
@@ -31,7 +37,7 @@ struct MapgenMathParams : public MapgenV7Params {
 
 	Json::Value params;
 
-#ifdef FRACTAL_H_
+#if USE_MANDELBULBER
 	sFractal par;
 	enumCalculationMode mode;
 #endif
@@ -57,6 +63,9 @@ class MapgenMath : public MapgenV7 {
 		v3f center;
 		int iterations;
 		double distance;
+
+		MapNode n_air, n_water_source, n_stone;
+
 		double (*func)(double, double, double, double, int);
 };
 

@@ -71,6 +71,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
+#include "FMStaticText.h"
 
 /*
 	Text input system
@@ -240,6 +241,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 	INodeDefManager *nodedef = client->getNodeDefManager();
 	ClientMap &map = client->getEnv().getClientMap();
 
+	f32 mindistance = BS * 1001;
+
 	// First try to find a pointed at active object
 	if(look_for_object)
 	{
@@ -261,16 +264,15 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 						selection_box->MaxEdge + pos));
 			}
 
+			mindistance = (selected_object->getPosition() - camera_position).getLength();
 
 			result.type = POINTEDTHING_OBJECT;
 			result.object_id = selected_object->getId();
-			return result;
 		}
 	}
 
 	// That didn't work, try to find a pointed at node
 
-	f32 mindistance = BS * 1001;
 	
 	v3s16 pos_i = floatToInt(player_position, BS);
 
@@ -815,7 +817,7 @@ public:
 		services->setVertexShaderConstant("animationTimer", &animation_timer_f, 1);
 
 		LocalPlayer* player = m_client->getEnv().getLocalPlayer();
-		v3f eye_position = player->getEyePosition(); 
+		v3f eye_position = player->getEyePosition();
 		services->setPixelShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 		services->setVertexShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 
@@ -919,9 +921,20 @@ bool nodePlacementPrediction(Client &client,
 		// Add node to client map
 		MapNode n(id, 0, param2);
 		try{
-			// This triggers the required mesh update too
-			client.addNode(p, n);
-			return true;
+			LocalPlayer* player = client.getEnv().getLocalPlayer();
+
+			// Dont place node when player would be inside new node
+			// NOTE: This is to be eventually implemented by a mod as client-side Lua
+			if (!nodedef->get(n).walkable || 
+				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) || 
+				(nodedef->get(n).walkable &&
+				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
+				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
+
+					// This triggers the required mesh update too
+					client.addNode(p, n);
+					return true;
+				}
 		}catch(InvalidPositionException &e){
 			errorstream<<"Node placement prediction failed for "
 					<<playeritem_def.name<<" (places "
@@ -1089,7 +1102,7 @@ void the_game(
 	*/
 	Client client(device, playername.c_str(), password, draw_control,
 		tsrc, shsrc, itemdef, nodedef, sound, &eventmgr,
-		connect_address.isIPv6());
+		connect_address.isIPv6(), simple_singleplayer_mode);
 	
 	// Client acts as our GameDef
 	IGameDef *gamedef = &client;
@@ -1391,11 +1404,18 @@ void the_game(
 	float statustext_time = 0;
 	
 	// Chat text
-	gui::IGUIStaticText *guitext_chat = guienv->addStaticText(
-			L"",
-			core::rect<s32>(0,0,0,0),
-			//false, false); // Disable word wrap as of now
-			false, true);
+	gui::IGUIStaticText *guitext_chat;
+	#if USE_FREETYPE
+	if (g_settings->getBool("freetype")) {
+		guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
+		guitext_chat->setWordWrap(true);
+		guitext_chat->drop();
+	} else
+	#endif
+	{
+		guitext_chat = guienv->addStaticText(L"", core::rect<s32>(0,0,0,0), false, true);
+	}
+
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend.clearRecentChat();
 	// Chat backend and console
@@ -1457,7 +1477,7 @@ void the_game(
 	bool show_debug = g_settings->getBool("show_debug");
 	bool show_profiler_graph = false;
 	u32 show_profiler = 0;
-	u32 show_profiler_max = 3;  // Number of pages
+	u32 show_profiler_max = 2;  // Number of pages
 
 	float time_of_day = 0;
 	float time_of_day_smooth = 0;
@@ -1543,7 +1563,9 @@ void the_game(
 		*/
 
 		{
-			float fps_max = g_settings->getFloat("fps_max");
+			float fps_max = g_menumgr.pausesGame() ?
+					g_settings->getFloat("pause_fps_max") :
+					g_settings->getFloat("fps_max");
 			u32 frametime_min = 1000./fps_max;
 			
 			if(busytime_u32 < frametime_min)
@@ -1724,7 +1746,7 @@ void the_game(
 			print_to_log = false;
 			profiler_print_interval = 5;
 		}
-		if(m_profiler_interval.step(dtime, profiler_print_interval))
+		if(m_profiler_interval.step(dtime, profiler_print_interval) && !(simple_singleplayer_mode && g_menumgr.pausesGame()))
 		{
 			if(print_to_log){
 				infostream<<"Profiler:"<<std::endl;
@@ -1906,12 +1928,12 @@ void the_game(
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_screenshot")))
 		{
-			irr::video::IImage* const image = driver->createScreenShot(); 
-			if (image) { 
-				irr::c8 filename[256]; 
-				snprintf(filename, 256, "%s" DIR_DELIM "screenshot_%u.png", 
+			irr::video::IImage* const image = driver->createScreenShot();
+			if (image) {
+				irr::c8 filename[256];
+				snprintf(filename, 256, "%s" DIR_DELIM "screenshot_%u.png",
 						 g_settings->get("screenshot_path").c_str(),
-						 device->getTimer()->getRealTime()); 
+						 device->getTimer()->getRealTime());
 				if (driver->writeImageToFile(image, filename)) {
 					std::wstringstream sstr;
 					sstr<<"Saved screenshot to '"<<filename<<"'";
@@ -1921,8 +1943,8 @@ void the_game(
 				} else{
 					infostream<<"Failed to save screenshot '"<<filename<<"'"<<std::endl;
 				}
-				image->drop(); 
-			}			 
+				image->drop();
+			}
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_toggle_hud")))
 		{
@@ -2249,25 +2271,28 @@ void the_game(
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
 			player->keyPressed=keyPressed;
 		}
-		
-		/*
-			Run server
-		*/
 
-		if(server != NULL)
+		/*
+			Run server, client (and process environments)
+		*/
+		bool can_be_and_is_paused =
+				(simple_singleplayer_mode && g_menumgr.pausesGame());
+		if(can_be_and_is_paused)
 		{
-			//TimeTaker timer("server->step(dtime)");
-			server->step(dtime);
+			// No time passes
+			dtime = 0;
 		}
-
-		/*
-			Process environment
-		*/
-		
+		else
 		{
-			//TimeTaker timer("client.step(dtime)");
-			client.step(dtime);
-			//client.step(dtime_avg1);
+			if(server != NULL)
+			{
+				//TimeTaker timer("server->step(dtime)");
+				server->step(dtime);
+			}
+			{
+				//TimeTaker timer("client.step(dtime)");
+				client.step(dtime);
+			}
 		}
 
 		{
@@ -2319,7 +2344,7 @@ void the_game(
 							new MainRespawnInitiator(
 									&respawn_menu_active, &client);
 					GUIDeathScreen *menu =
-							new GUIDeathScreen(guienv, guiroot, -1, 
+							new GUIDeathScreen(guienv, guiroot, -1,
 								&g_menumgr, respawner);
 					menu->drop();
 					}
@@ -2812,7 +2837,7 @@ void the_game(
 				
 				// Sign special case, at least until formspec is properly implemented.
 				// Deprecated?
-				if(meta && meta->getString("formspec") == "hack:sign_text_input" 
+				if(meta && meta->getString("formspec") == "hack:sign_text_input"
 						&& !random_input
 						&& !input->isKeyDown(getKeySetting("keymap_sneak")))
 				{
@@ -2853,23 +2878,28 @@ void the_game(
 				// Otherwise report right click to server
 				else
 				{
-					// Report to server
-					client.interact(3, pointed);
-					camera.setDigging(1);  // right click animation
-					
+					camera.setDigging(1);  // right click animation (always shown for feedback)
+
 					// If the wielded item has node placement prediction,
 					// make that happen
 					bool placed = nodePlacementPrediction(client,
-							playeritem_def,
-							nodepos, neighbourpos);
-					
-					// Read the sound
-					if(placed)
+						playeritem_def,
+						nodepos, neighbourpos);
+
+					if(placed) {
+						// Report to server
+						client.interact(3, pointed);
+						// Read the sound
 						soundmaker.m_player_rightpunch_sound =
-								playeritem_def.sound_place;
-					else
+							playeritem_def.sound_place;
+					} else {
 						soundmaker.m_player_rightpunch_sound =
-								SimpleSoundSpec();
+							SimpleSoundSpec();
+					}
+
+					if (playeritem_def.node_placement_prediction == "" ||
+						nodedef->get(map.getNode(nodepos)).rightclickable)
+						client.interact(3, pointed); // Report to server
 				}
 			}
 		}
@@ -3067,12 +3097,16 @@ void the_game(
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
 				<<" FPS = "<<fps
+/*
 				<<" (R: range_all="<<draw_control.range_all<<")"
+*/
 				<<std::setprecision(0)
 				<<" drawtime = "<<drawtime_avg
+/*
 				<<std::setprecision(1)
 				<<", dtime_jitter = "
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
+*/
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range;
 			guitext->setText(narrow_to_wide(os.str()).c_str());
@@ -3280,7 +3314,7 @@ void the_game(
 
 				driver->getOverrideMaterial().Material.ColorMask = irr::video::ECP_RED;
 				driver->getOverrideMaterial().EnableFlags  = irr::video::EMF_COLOR_MASK;
-				driver->getOverrideMaterial().EnablePasses = irr::scene::ESNRP_SKY_BOX + 
+				driver->getOverrideMaterial().EnablePasses = irr::scene::ESNRP_SKY_BOX +
 															 irr::scene::ESNRP_SOLID +
 															 irr::scene::ESNRP_TRANSPARENT +
 															 irr::scene::ESNRP_TRANSPARENT_EFFECT +
@@ -3516,6 +3550,16 @@ void the_game(
 
 	chat_backend.addMessage(L"", L"# Disconnected.");
 	chat_backend.addMessage(L"", L"");
+
+	client.Stop();
+
+	//force answer all texture and shader jobs (TODO return empty values)
+
+	while(!client.isShutdown()) {
+		tsrc->processQueue();
+		shsrc->processQueue();
+		sleep_ms(100);
+	}
 
 	// Client scope (client is destructed before destructing *def and tsrc)
 	}while(0);

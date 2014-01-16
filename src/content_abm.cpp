@@ -32,34 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-class LiquidFlowABM : public ActiveBlockModifier {
-	private:
-		std::set<std::string> contents;
-
-	public:
-		LiquidFlowABM(ServerEnvironment *env, INodeDefManager *nodemgr) {
-			contents.insert("group:liquid_flow");
-			std::set<content_t> liquids; // todo: remove, make all via group:liquid_flow
-			nodemgr->getIds("group:liquid", liquids);
-			for(std::set<content_t>::const_iterator k = liquids.begin(); k != liquids.end(); k++)
-				contents.insert(nodemgr->get(*k).liquid_alternative_flowing);
-		}
-		virtual std::set<std::string> getTriggerContents() {
-			return contents;
-		}
-		virtual float getTriggerInterval()
-		{ return 10.0; }
-		virtual u32 getTriggerChance()
-		{ return 10; }
-		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
-			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 500)
-				return;
-			map->transforming_liquid_push_back(p);
-		}
-};
-
 class LiquidDropABM : public ActiveBlockModifier {
 	private:
 		std::set<std::string> contents;
@@ -67,26 +39,22 @@ class LiquidDropABM : public ActiveBlockModifier {
 	public:
 		LiquidDropABM(ServerEnvironment *env, INodeDefManager *nodemgr) {
 			contents.insert("group:liquid_drop");
-			std::set<content_t> liquids; // todo: remove, make all via group:liquid_drop
-			nodemgr->getIds("group:liquid", liquids);
-			for(std::set<content_t>::const_iterator k = liquids.begin(); k != liquids.end(); k++)
-				contents.insert(nodemgr->get(*k).liquid_alternative_source);
 		}
 		virtual std::set<std::string> getTriggerContents()
 		{ return contents; }
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> neighbors;
 			neighbors.insert("air");
 			return neighbors;
 		}
 		virtual float getTriggerInterval()
-		{ return 20.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
-			if (map->transforming_liquid_size() > 500)
+			if (map->transforming_liquid_size() > map->m_liquid_step_flow)
 				return;
 			if (   map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent() != CONTENT_AIR  // below
 			    && map->getNodeNoEx(p - v3s16(1,  0, 0 )).getContent() != CONTENT_AIR  // right
@@ -107,18 +75,20 @@ class LiquidFreeze : public ActiveBlockModifier {
 			s.insert("group:freeze");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
-			s.insert("air");
-			s.insert("group:melt");
+			s.insert("air"); //maybe if !activate
+			if(!activate) {
+				s.insert("group:melt");
+			}
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10.0; }
+		{ return 5; }
 		virtual u32 getTriggerChance()
-		{ return 20; }
+		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 
@@ -127,12 +97,12 @@ class LiquidFreeze : public ActiveBlockModifier {
 			content_t c = map->getNodeNoEx(p - v3s16(0,  -1, 0 )).getContent(); // top
 			//more chance to freeze if air at top
 			int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
-			if (heat <= freeze-1 && (heat <= freeze-50 || 
+			if (heat <= freeze-1 && (activate || heat <= freeze-50 || 
 				(myrand_range(freeze-50, heat) <= (c == CONTENT_AIR ? freeze-10 : freeze-40)))) {
 				content_t c_self = n.getContent();
 				// making freeze not annoying, do not freeze random blocks in center of ocean
 				// todo: any block not water (dont freeze _source near _flowing)
-				bool allow = heat < freeze-40;
+				bool allow = activate || heat < freeze-40;
 				// todo: make for(...)
 				if (!allow) {
 				 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
@@ -173,24 +143,26 @@ class MeltWeather : public ActiveBlockModifier {
 			s.insert("group:melt");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
-			s.insert("air");
-			s.insert("group:freeze");
+			if(!activate) {
+				s.insert("air");
+				s.insert("group:freeze");
+			}
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 10.0; }
+		{ return 5; }
 		virtual u32 getTriggerChance()
-		{ return 20; }
+		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			float heat = map->updateBlockHeat(env, p);
 			content_t c = map->getNodeNoEx(p - v3s16(0,  -1, 0 )).getContent(); // top
 			int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
-			if (heat >= melt+1 && (heat >= melt+40 ||
+			if (heat >= melt+1 && (activate || heat >= melt+40 ||
 				((myrand_range(heat, melt+40)) >= (c == CONTENT_AIR ? melt+10 : melt+20)))) {
 				if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE) {
 					 c = map->getNodeNoEx(p - v3s16(0,  1, 0 )).getContent(); // below
@@ -212,7 +184,7 @@ class MeltHot : public ActiveBlockModifier {
 			s.insert("group:melt");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
 			s.insert("group:igniter");
 			s.insert("group:hot");
@@ -225,7 +197,7 @@ class MeltHot : public ActiveBlockModifier {
 		virtual u32 getTriggerChance()
 		{ return 4; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			int hot = ((ItemGroupList) ndef->get(neighbor).groups)["hot"];
@@ -246,19 +218,19 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 			s.insert("group:freeze");
 			return s;
 		}
-		virtual std::set<std::string> getRequiredNeighbors() {
+		virtual std::set<std::string> getRequiredNeighbors(bool activate) {
 			std::set<std::string> s;
 			s.insert("group:cold");
 			return s;
 		}
 		virtual u32 getNeighborsRange()
-		{ return 1; }
+		{ return 2; }
 		virtual float getTriggerInterval()
 		{ return 3.0; }
 		virtual u32 getTriggerChance()
 		{ return 4; }
 		virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor) {
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
 			INodeDefManager *ndef = env->getGameDef()->ndef();
 			int cold = ((ItemGroupList) ndef->get(neighbor).groups)["cold"];
@@ -272,11 +244,9 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 
 void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef) {
 	if (g_settings->getBool("liquid_finite")) {
-		env->addActiveBlockModifier(new LiquidFlowABM(env, nodedef));
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
 		env->addActiveBlockModifier(new MeltHot(env, nodedef));
 		env->addActiveBlockModifier(new LiquidFreezeCold(env, nodedef));
-		//env->addActiveBlockModifier(new LiquidMeltAround(env, nodedef));
 		if (env->m_use_weather) {
 			env->addActiveBlockModifier(new LiquidFreeze(env, nodedef));
 			env->addActiveBlockModifier(new MeltWeather(env, nodedef));

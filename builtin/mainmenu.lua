@@ -43,15 +43,11 @@ end
 
 --------------------------------------------------------------------------------
 function menu.render_favorite(spec,render_details)
+	local e = engine.formspec_escape
 	local text = ""
 
 	if spec.name ~= nil then
-		text = text .. engine.formspec_escape(spec.name:trim())
-
---		if spec.description ~= nil and
---			engine.formspec_escape(spec.description):trim() ~= "" then
---			text = text .. " (" .. engine.formspec_escape(spec.description) .. ")"
---		end
+		text = text .. spec.name:trim()
 	else
 		if spec.address ~= nil then
 			text = text .. spec.address:trim()
@@ -63,44 +59,26 @@ function menu.render_favorite(spec,render_details)
 	end
 
 	if not render_details then
-		return text
+		return "?,/,?,0,0,0,0," .. e(text)
 	end
 
-	local details = ""
-	if spec.password == true then
-		details = details .. "*"
+	local row = ""
+	if spec.clients ~= nil and spec.clients_max ~= nil then
+		row = row .. e(spec.clients) .. ",/," .. e(spec.clients_max) .. ","
 	else
-		details = details .. "_"
+		row = row .. "?,/,?,"
 	end
 
-	if spec.creative then
-		details = details .. "C"
-	else
-		details = details .. "_"
-	end
+	-- 'X and 1 or 0' will return 1 if X is true and 0 if it's false or nil
+	row = row ..
+		(spec.password and 1 or 0) .. "," ..
+		(spec.creative and 1 or 0) .. "," ..
+		(spec.damage and 1 or 0) .. "," ..
+		(spec.pvp and 1 or 0) .. ","
 
-	if spec.damage then
-		details = details .. "D"
-	else
-		details = details .. "_"
-	end
+	row = row .. e(text)
 
-	if spec.pvp then
-		details = details .. "P"
-	else
-		details = details .. "_"
-	end
-	details = details .. " "
-
-	local playercount = ""
-
-	if spec.clients ~= nil and
-		spec.clients_max ~= nil then
-		playercount = string.format("%03d",spec.clients) .. "/" ..
-						string.format("%03d",spec.clients_max) .. " "
-	end
-
-	return playercount .. engine.formspec_escape(details) ..  text
+	return row
 end
 
 --------------------------------------------------------------------------------
@@ -176,8 +154,8 @@ function update_menu()
 	-- handle errors
 	if gamedata.errormessage ~= nil then
 		formspec = "size[12,5.2]" ..
-			"field[1,2;10,2;;ERROR: " ..
-			gamedata.errormessage ..
+			"textarea[1,2;10,2;;ERROR: " ..
+			engine.formspec_escape(gamedata.errormessage) ..
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
@@ -462,8 +440,9 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 	end
 
 	if fields["favourites"] ~= nil then
-		local event = explode_textlist_event(fields["favourites"])
-		if event.typ == "DCL" then
+		local event = engine.explode_table_event(fields["favourites"])
+		event.index = event.row
+		if event.type == "DCL" then
 			if event.index <= #menu.favorites then
 				gamedata.address = menu.favorites[event.index].address
 				gamedata.port = menu.favorites[event.index].port
@@ -487,7 +466,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 			end
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			if event.index <= #menu.favorites then
 				local address = menu.favorites[event.index].address
 				local port = menu.favorites[event.index].port
@@ -562,7 +541,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fav_idx > 0 and fav_idx <= #menu.favorites and
+		if fav_idx and fav_idx > 0 and fav_idx <= #menu.favorites and
 			menu.favorites[fav_idx].address == fields["te_address"] and
 			menu.favorites[fav_idx].port == fields["te_port"] then
 
@@ -589,12 +568,12 @@ function tabbuilder.handle_server_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["srv_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["srv_worlds"])
+		local event = engine.explode_textlist_event(fields["srv_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("srv_worlds")))
 		end
@@ -743,13 +722,13 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["sp_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["sp_worlds"])
+		local event = engine.explode_textlist_event(fields["sp_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("sp_worlds")))
 		end
@@ -819,8 +798,8 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.handle_texture_pack_buttons(fields)
 	if fields["TPs"] ~= nil then
-		local event = explode_textlist_event(fields["TPs"])
-		if event.typ == "CHG" or event.typ=="DCL" then
+		local event = engine.explode_textlist_event(fields["TPs"])
+		if event.type == "CHG" or event.type == "DCL" then
 			local index = engine.get_textlist_index("TPs")
 			engine.setting_set("mainmenu_last_selected_TP",
 				index)
@@ -887,26 +866,21 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
 	local retval =
-		"label[6.5,-0.25;".. fgettext("Servers") .. "]"..
-		"label[6.5,6.5;".. fgettext("Address") .. "]"..
-		"field[6.75,7.5;5.5,0.5;te_address;;" ..engine.setting_get("address") .."]" ..
-		"label[11.95,6.5;".. fgettext("Port") .. "]"..
-		"field[12.2,7.5;2.25,0.5;te_port;;" ..engine.setting_get("remote_port") .."]" ..
-		"checkbox[10,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
+		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .."]" ..
+		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
+		"checkbox[6.5,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
 
 	if not engine.setting_getbool("public_serverlist") then
 		retval = retval ..
-			"button[12,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
+			"button[13.25,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
 	end
 
 	retval = retval ..
-		"button[11.75,10;2.5,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"label[6.5,7.8;".. fgettext("Name") .. "]" ..
-		"field[6.75,8.8;4,0.5;te_name;;" ..engine.setting_get("name") .."]" ..
-		"label[10.55,7.8;".. fgettext("Password") .. "]" ..
-		"pwdfield[10.8,8.8;3.7,0.5;te_pwd;]" ..
-		"textarea[6.75,3.8;6,2.75;;"
+		"button[12.75,10;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
+		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..engine.setting_get("name") .."]" ..
+		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") .. "]" ..
+		"textarea[6.75,3.8;8.8,2.75;;"
 	if menu.fav_selected ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
 		retval = retval ..
@@ -914,8 +888,19 @@ function tabbuilder.tab_multiplayer()
 	end
 
 	retval = retval ..
-		";]" ..
-		"textlist[6.5,0.35;7.5,3.35;favourites;"
+		";]"
+	retval = retval .. "tablecolumns[" ..
+		"text,tooltip=Online,align=center;" ..
+		"text,align=center;" ..
+		"text,tooltip=Slots,align=center;" ..
+		"image,tooltip=Requires non-empty password,1=" .. menu.defaulttexturedir .. "server_flags_password.png;" ..
+		"image,tooltip=Creative,1=" .. menu.defaulttexturedir .. "server_flags_creative.png;" ..
+		"image,tooltip=Damage enabled,1=" .. menu.defaulttexturedir .. "server_flags_damage.png;" ..
+		"image,tooltip=PvP enabled,1=" .. menu.defaulttexturedir .. "server_flags_pvp.png;" ..
+		"text" ..
+		"]"
+	retval = retval .. "table[" ..
+		"6.5,0.35;8.8,3.35;favourites;"
 
 	local render_details = engine.setting_getbool("public_serverlist")
 

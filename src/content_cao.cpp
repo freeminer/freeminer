@@ -959,10 +959,11 @@ public:
 		}
 		else if(m_prop.visual == "mesh"){
 			infostream<<"GenericCAO::addToScene(): mesh"<<std::endl;
-			scene::IAnimatedMesh *mesh = smgr->getMesh(m_prop.mesh.c_str());
+			scene::IAnimatedMesh *mesh = m_gamedef->getMesh(m_prop.mesh);
 			if(mesh)
 			{
 				m_animated_meshnode = smgr->addAnimatedMeshSceneNode(mesh, NULL);
+				mesh->drop(); // The scene node took hold of it
 				m_animated_meshnode->animateJoints(); // Needed for some animations
 				m_animated_meshnode->setScale(v3f(m_prop.visual_size.X,
 						m_prop.visual_size.Y,
@@ -979,10 +980,14 @@ public:
 				errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
 		}
 		else if(m_prop.visual == "wielditem"){
+/*
 			infostream<<"GenericCAO::addToScene(): node"<<std::endl;
 			infostream<<"textures: "<<m_prop.textures.size()<<std::endl;
+*/
 			if(m_prop.textures.size() >= 1){
+/*
 				infostream<<"textures[0]: "<<m_prop.textures[0]<<std::endl;
+*/
 				IItemDefManager *idef = m_gamedef->idef();
 				ItemStack item(m_prop.textures[0], 1, 0, "", idef);
 				scene::IMesh *item_mesh = idef->getWieldMesh(item.getDefinition(idef).name, m_gamedef);

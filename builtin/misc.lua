@@ -67,6 +67,16 @@ function minetest.hash_node_position(pos)
 	return (pos.z+32768)*65536*65536 + (pos.y+32768)*65536 + pos.x+32768
 end
 
+function minetest.get_position_from_hash(hash)
+	local pos = {}
+	pos.x = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.y = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.z = (hash%65536) - 32768
+	return pos
+end
+
 function minetest.get_item_group(name, group)
 	if not minetest.registered_items[name] or not
 			minetest.registered_items[name].groups[group] then
@@ -122,3 +132,11 @@ function minetest.record_protection_violation(pos, name)
 	end
 end
 
+function freeminer.color(color)
+	assert(#color == 6, "Color must be six characters in length.")
+	return "\v" .. color
+end
+
+function freeminer.colorize(color, message)
+	return freeminer.color(color) .. message .. freeminer.color("ffffff")
+end

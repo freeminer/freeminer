@@ -98,7 +98,7 @@ function minetest.facedir_to_dir(facedir)
 
 					--indexed into by a table of correlating facedirs
 					[({[0]=1, 2, 3, 4, 
-						5, 4, 6, 2,
+						5, 2, 6, 4,
 						6, 2, 5, 4,
 						1, 5, 3, 6,
 						1, 6, 3, 5,
@@ -270,9 +270,21 @@ function minetest.item_place_node(itemstack, placer, pointed_thing, param2)
 
 	-- Run callback
 	if def.after_place_node then
-		-- Copy place_to because callback can modify it
+		-- Deepcopy place_to and pointed_thing because callback can modify it
 		local place_to_copy = {x=place_to.x, y=place_to.y, z=place_to.z}
-		if def.after_place_node(place_to_copy, placer, itemstack) then
+		local pointed_thing_copy = {
+			type = pointed_thing.type,
+			under = {
+				x = pointed_thing.under.x,
+				y = pointed_thing.under.y,
+				z = pointed_thing.under.z},
+			above = {
+				x = pointed_thing.above.x,
+				y = pointed_thing.above.y,
+				z = pointed_thing.above.z}
+		}
+		if def.after_place_node(place_to_copy, placer, itemstack,
+				pointed_thing_copy) then
 			take_item = false
 		end
 	end
@@ -311,7 +323,8 @@ function minetest.item_place(itemstack, placer, pointed_thing, param2)
 		local n = minetest.get_node(pointed_thing.under)
 		local nn = n.name
 		if minetest.registered_nodes[nn] and minetest.registered_nodes[nn].on_rightclick then
-			return minetest.registered_nodes[nn].on_rightclick(pointed_thing.under, n, placer, itemstack) or itemstack, false
+			return minetest.registered_nodes[nn].on_rightclick(pointed_thing.under, n,
+					placer, itemstack, pointed_thing) or itemstack, false
 		end
 	end
 

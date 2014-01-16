@@ -80,6 +80,7 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("wanted_fps", "30");
 	settings->setDefault("fps_max", "60");
+	settings->setDefault("pause_fps_max", "20");
 	// A bit more than the server will send around the player, to make fog blend well
 	settings->setDefault("viewing_range_nodes_max", "240");
 	settings->setDefault("viewing_range_nodes_min", "35");
@@ -179,6 +180,8 @@ void set_default_settings(Settings *settings)
 
 	// Server stuff
 	// "map-dir" doesn't exist by default.
+	settings->setDefault("workaround_window_size","5");
+	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
@@ -224,6 +227,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("congestion_control_min_rate", "10");
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "2");
+	settings->setDefault("time_taker_enabled",
+#ifdef NDEBUG
+	"0"
+#else
+	"1"
+#endif
+	);
 	settings->setDefault("emergequeue_limit_total", "256");
 	settings->setDefault("emergequeue_limit_diskonly", "");
 	settings->setDefault("emergequeue_limit_generate", "");
@@ -318,8 +328,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
 	settings->setDefault("server_map_save_interval", "300");
+	settings->setDefault("active_block_range", "4");
 	settings->setDefault("max_block_send_distance", "30");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "20");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "30");
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
@@ -330,7 +341,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
 	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
-	settings->setDefault("max_objects_per_block", "300");
+	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("congestion_control_max_rate", "2000");
 	settings->setDefault("sqlite_synchronous", "1");

@@ -23,20 +23,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../log.h"
 #include <ostream>
 
+bool time_taker_enabled = 0;
+
 TimeTaker::TimeTaker(const char *name, u32 *result, TimePrecision prec)
 {
-#ifndef NDEBUG
+	if (!time_taker_enabled) {
+		m_running = false;
+		return;
+	}
 	m_name = name;
 	m_result = result;
 	m_running = true;
 	m_precision = prec;
 	m_time1 = getTime(prec);
-#endif
 }
 
 u32 TimeTaker::stop(bool quiet)
 {
-#ifndef NDEBUG
 	if(m_running)
 	{
 		u32 time2 = getTime(m_precision);
@@ -47,24 +50,19 @@ u32 TimeTaker::stop(bool quiet)
 		}
 		else
 		{
-			if(quiet == false && dtime > 200)
+			if(quiet == false && dtime >= 150)
 				infostream<<m_name<<" took "<<dtime<<"ms"<<std::endl;
 		}
 		m_running = false;
 		return dtime;
 	}
-#endif
 	return 0;
 }
 
 u32 TimeTaker::getTimerTime()
 {
-#ifndef NDEBUG
 	u32 time2 = getTime(m_precision);
 	u32 dtime = time2 - m_time1;
 	return dtime;
-#else
-	return 0;
-#endif
 }
 

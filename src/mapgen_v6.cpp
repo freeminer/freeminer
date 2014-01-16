@@ -441,7 +441,8 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		addDirtGravelBlobs();
 
 		// Flow mud away from steep edges
-		flowMud(mudflow_minpos, mudflow_maxpos);
+		if (!(flags & MGV6_NOMUDFLOW))
+			flowMud(mudflow_minpos, mudflow_maxpos);
 
 	}
 	
@@ -965,11 +966,13 @@ void MapgenV6::growGrass() {
 		u32 i = vm->m_area.index(x, surface_y, z);
 		MapNode *n = &vm->m_data[i];
 		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
+		{
 			if (emerge->env->m_use_weather) {
 				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z), NULL, &heat_cache);
 				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
 			} else
 			n->setContent(c_dirt_with_grass);
+		}
 	}
 }
 

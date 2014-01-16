@@ -49,8 +49,8 @@ minetest.register_chatcommand("help", {
 	description = "Get help for commands or list privileges",
 	func = function(name, param)
 		local format_help_line = function(cmd, def)
-			local msg = "/"..cmd
-			if def.params and def.params ~= "" then msg = msg .. " " .. def.params end
+			local msg = freeminer.colorize("00ffff", "/"..cmd)
+			if def.params and def.params ~= "" then msg = msg .. " " .. freeminer.colorize("eeeeee", def.params) end
 			if def.description and def.description ~= "" then msg = msg .. ": " .. def.description end
 			return msg
 		end

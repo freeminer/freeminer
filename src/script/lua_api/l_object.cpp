@@ -43,7 +43,8 @@ struct EnumString es_HudElementType[] =
 
 struct EnumString es_HudElementStat[] =
 {
-	{HUD_STAT_POS,    "pos"},
+	{HUD_STAT_POS,    "position"},
+	{HUD_STAT_POS,    "pos"}, /* Deprecated, only for compatibility's sake */
 	{HUD_STAT_NAME,   "name"},
 	{HUD_STAT_SCALE,  "scale"},
 	{HUD_STAT_TEXT,   "text"},
@@ -945,12 +946,15 @@ int ObjectRef::l_hud_change(lua_State *L)
 		case HUD_STAT_DIR:
 			e->dir = lua_tonumber(L, 4);
 			value = &e->dir;
+			break;
 		case HUD_STAT_ALIGN:
 			e->align = read_v2f(L, 4);
 			value = &e->align;
+			break;
 		case HUD_STAT_OFFSET:
 			e->offset = read_v2f(L, 4);
 			value = &e->offset;
+			break;
 	}
 
 	getServer(L)->hudChange(player, id, stat, value);

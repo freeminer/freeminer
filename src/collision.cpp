@@ -202,7 +202,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 {
 	Map *map = &env->getMap();
 	//TimeTaker tt("collisionMoveSimple");
-    ScopeProfiler sp(g_profiler, "collisionMoveSimple avg", SPT_AVG);
+    //ScopeProfiler sp(g_profiler, "collisionMoveSimple avg", SPT_AVG);
 
 	collisionMoveResult result;
 
@@ -237,7 +237,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	std::vector<v3s16> node_positions;
 	{
 	//TimeTaker tt2("collisionMoveSimple collect boxes");
-    ScopeProfiler sp(g_profiler, "collisionMoveSimple collect boxes avg", SPT_AVG);
+    //ScopeProfiler sp(g_profiler, "collisionMoveSimple collect boxes avg", SPT_AVG);
 
 	v3s16 oldpos_i = floatToInt(pos_f, BS);
 	v3s16 newpos_i = floatToInt(pos_f + speed_f * dtime, BS);
@@ -293,7 +293,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 
 	if(collideWithObjects)
 	{
-		ScopeProfiler sp(g_profiler, "collisionMoveSimple objects avg", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "collisionMoveSimple objects avg", SPT_AVG);
 		//TimeTaker tt3("collisionMoveSimple collect object boxes");
 
 		/* add object boxes to cboxes */
@@ -379,7 +379,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	while(dtime > BS*1e-10)
 	{
 		//TimeTaker tt3("collisionMoveSimple dtime loop");
-        ScopeProfiler sp(g_profiler, "collisionMoveSimple dtime loop avg", SPT_AVG);
+        //ScopeProfiler sp(g_profiler, "collisionMoveSimple dtime loop avg", SPT_AVG);
 
 		// Avoid infinite loop
 		loopcount++;

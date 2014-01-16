@@ -24,7 +24,11 @@ if (CURL_FOUND AND ENABLE_CURL)
 endif(CURL_FOUND AND ENABLE_CURL)
 
 # user-visible option to enable/disable gettext usage
+if(BUILD_CLIENT)
+OPTION(ENABLE_GETTEXT "Use GetText for internationalization" 1)
+else()
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" 0)
+endif()
 
 # this is only set to 1 if gettext is enabled _and_ available
 set(USE_GETTEXT 0)
@@ -52,7 +56,11 @@ else(GETTEXT_FOUND AND ENABLE_GETTEXT)
 endif(GETTEXT_FOUND AND ENABLE_GETTEXT)
 
 # user visible option to enable/disable sound
+if(BUILD_CLIENT)
 OPTION(ENABLE_SOUND "Enable sound" ON)
+else()
+OPTION(ENABLE_SOUND "Enable sound" OFF)
+endif()
 
 # this is only set to 1 if sound is enabled _and_ available
 set(USE_SOUND 0)
@@ -95,7 +103,11 @@ if(USE_SOUND)
 		)
 endif()
 
+if(BUILD_CLIENT)
+option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" ON)
+else()
 option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" OFF)
+endif()
 set(USE_FREETYPE 0)
 if(ENABLE_FREETYPE)
 	set(USE_FREETYPE 1)
@@ -172,12 +184,36 @@ endif()
 
 find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
-if(BUILD_CLIENT)
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
+option(ENABLE_GLES "Enable OpenGL ES support (ARM, android. special irrlicht version needed!)" 1)
+else()
+option(ENABLE_GLES "Enable OpenGL ES support (ARM, android. special irrlicht version needed!)" 0)
+mark_as_advanced(ENABLE_GLES)
+endif()
+if(BUILD_CLIENT AND ENABLE_GLES)
 	find_package(OpenGLES2)
 endif()
 
 if(USE_FREETYPE)
-	find_package(Freetype REQUIRED)
+	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
+		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
+	elseif(UNIX)
+		include(FindPkgConfig)
+		if(PKG_CONFIG_FOUND)
+			pkg_check_modules(FREETYPE QUIET freetype2)
+			if(FREETYPE_FOUND)
+				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
+				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
+				# because cmake is idiotic
+				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
+				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
+			endif(FREETYPE_FOUND)
+		endif(PKG_CONFIG_FOUND)
+	endif()
+	if(NOT FREETYPE_FOUND)
+		find_package(Freetype REQUIRED)
+	endif(NOT FREETYPE_FOUND)
 	set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
 	set(CGUITTFONT_LIBRARY cguittfont)
 endif(USE_FREETYPE)
@@ -207,7 +243,7 @@ mark_as_advanced(LUA_INCLUDE_DIR)
 
 set(USE_LEVELDB 0)
 
-OPTION(ENABLE_LEVELDB "Enable LevelDB backend")
+OPTION(ENABLE_LEVELDB "Enable LevelDB backend" ON)
 
 if(ENABLE_LEVELDB)
 	find_library(LEVELDB_LIBRARY leveldb)
@@ -223,6 +259,11 @@ if(ENABLE_LEVELDB)
 		message(STATUS "LevelDB not found!")
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
+
+
+option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
+set(USE_MANDELBULBER 0)
+find_package(Mandelbulber)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
@@ -361,6 +402,7 @@ set(minetest_SRCS
 	guiMessageMenu.cpp
 	guiTextInputMenu.cpp
 	guiFormSpecMenu.cpp
+	guiTable.cpp
 	guiPauseMenu.cpp
 	guiPasswordChange.cpp
 	guiVolumeChange.cpp
@@ -376,6 +418,7 @@ set(minetest_SRCS
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	convert_json.cpp
+	FMColoredString.cpp
 	${minetest_SCRIPT_SRCS}
 )
 
@@ -383,6 +426,7 @@ if(USE_FREETYPE)
 	set(minetest_SRCS
 		${minetest_SRCS}
 		intlGUIEditBox.cpp
+		FMStaticText.cpp
 	)
 endif(USE_FREETYPE)
 
@@ -457,6 +501,12 @@ if(BUILD_CLIENT)
 		)
 	endif(USE_CURL)
 	if(USE_FREETYPE)
+		if(FREETYPE_PKGCONFIG_FOUND)
+			set_target_properties(${PROJECT_NAME}
+				PROPERTIES
+				COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
+			)
+		endif(FREETYPE_PKGCONFIG_FOUND)
 		target_link_libraries(
 			${PROJECT_NAME}
 			${FREETYPE_LIBRARY}
@@ -537,13 +587,19 @@ else()
 		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
 	endif()
 
+	set(OTHER_FLAGS "")
+
 	if(MINGW)
-		set(OTHER_FLAGS "-mthreads -fexceptions")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 	endif()
 
 	if(APPLE)
 		set(CMAKE_OSX_ARCHITECTURES i386 CACHE STRING "do not build for 64-bit" FORCE)
 		set(ARCH i386)
+	endif()
+
+	if(SANITIZE_ADDRESS)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")

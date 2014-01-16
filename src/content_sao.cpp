@@ -449,8 +449,10 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 		}
 	}
 	// create object
+/*
 	infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
 			<<state<<"\")"<<std::endl;
+*/
 	LuaEntitySAO *sao = new LuaEntitySAO(env, pos, name, state);
 	sao->m_hp = hp;
 	sao->m_velocity = velocity;
@@ -977,6 +979,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 {
 	assert(m_player);
 	assert(m_peer_id != 0);
+	++m_player->refs;
 	setBasePosition(m_player->getPosition());
 	m_inventory = &m_player->inventory;
 	m_armor_groups["fleshy"] = 100;
@@ -1003,6 +1006,7 @@ PlayerSAO::~PlayerSAO()
 {
 	if(m_inventory != &m_player->inventory)
 		delete m_inventory;
+	--m_player->refs;
 
 }
 
@@ -1462,6 +1466,7 @@ void PlayerSAO::disconnected()
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
+		m_player->need_save = 1;
 	}
 }
 
@@ -1503,8 +1508,8 @@ bool PlayerSAO::checkMovementCheat()
 			player_max_speed_up = m_player->movement_speed_walk;
 		}
 		// Tolerance. With the lag pool we shouldn't need it.
-		//player_max_speed *= 2.5;
-		//player_max_speed_up *= 2.5;
+		player_max_speed *= 1.5;
+		player_max_speed_up *= 1.5;
 
 		v3f diff = (m_player->getPosition() - m_last_good_position);
 		float d_vert = diff.Y;

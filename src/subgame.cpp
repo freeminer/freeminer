@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "tile.h" // getImagePath
 #endif
 #include "util/string.h"
+#include "config.h"
 
 bool getGameMinetestConfig(const std::string &game_path, Settings &conf)
 {
@@ -242,7 +243,13 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		infostream<<"Creating world.mt ("<<worldmt_path<<")"<<std::endl;
 		fs::CreateAllDirs(path);
 		std::ostringstream ss(std::ios_base::binary);
-		ss<<"gameid = "<<gameid<<"\nbackend = sqlite3\n";
+		ss<<"gameid = "<<gameid<<"\nbackend = "
+		#if USE_LEVELDB
+			"leveldb"
+		#else
+			"sqlite3"
+		#endif
+		"\n";
 		fs::safeWriteToFile(worldmt_path, ss.str());
 	}
 	return true;

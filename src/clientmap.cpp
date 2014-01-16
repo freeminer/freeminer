@@ -157,8 +157,8 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 
 void ClientMap::updateDrawList(video::IVideoDriver* driver)
 {
-	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
-	g_profiler->add("CM::updateDrawList() count", 1);
+	//ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
+	//g_profiler->add("CM::updateDrawList() count", 1);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -487,7 +487,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	*/
 
 	{
-	ScopeProfiler sp(g_profiler, prefix+"drawing blocks", SPT_AVG);
+	//ScopeProfiler sp(g_profiler, prefix+"drawing blocks", SPT_AVG);
 
 	MeshBufListList drawbufs;
 

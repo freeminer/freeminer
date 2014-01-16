@@ -30,7 +30,7 @@ It aims to make the game fun while trading off some bits of perfectionism.
 ## Compiling
 Install dependencies. Here's an example for Debian/Ubuntu:
 ```
-sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev
+sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev  libleveldb-dev libgettextpo0
 ```
 Download source code:
 ```
@@ -39,8 +39,8 @@ cd freeminer
 ```
 Build it:
 ```
-mkdir build && cd build
-cmake .. -DRUN_IN_PLACE=1 -DENABLE_FREETYPE=1
+mkdir _build && cd _build
+cmake .. -DRUN_IN_PLACE=1
 make -j4
 ```
 Play it!
