@@ -268,7 +268,7 @@ public:
 	virtual void beginSave() {return;};
 	virtual void endSave() {return;};
 
-	virtual s32 save(ModifiedState save_level, bool breakable){assert(0);};
+	virtual s32 save(ModifiedState save_level, bool breakable){assert(0); return 0;};
 
 	// Server implements this.
 	// Client leaves it as no-op.
