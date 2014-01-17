@@ -11,7 +11,7 @@ minetest.register_globalstep(function(dtime)
 		table.insert(minetest.timers, timer)
 	end
 	minetest.timers_to_add = {}
-	local end_ms = os.clock() * 1000 + 100
+	local end_ms = os.clock() * 1000 + 50
 	for index, timer in ipairs(minetest.timers) do
 		timer.time = timer.time - dtime
 		if timer.time <= 0 then

@@ -2374,8 +2374,8 @@ void ClientEnvironment::step(float dtime, float uptime)
 		dtime_max_increment = dtime/m_move_max_loop;
 	
 	// Don't allow overly huge dtime
-	if(dtime > 0.5)
-		dtime = 0.5;
+	if(dtime > 2)
+		dtime = 2;
 	
 	f32 dtime_downcount = dtime;
 

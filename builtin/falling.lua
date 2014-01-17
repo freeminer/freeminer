@@ -4,6 +4,8 @@
 -- Falling stuff
 --
 
+local remove_fast = 0
+
 minetest.register_entity("__builtin:falling_node", {
 	initial_properties = {
 		physical = true,
@@ -48,8 +50,7 @@ minetest.register_entity("__builtin:falling_node", {
 	end,
 
 	on_step = function(self, dtime)
-		local remove_fast = 0;
-		if dtime > 0.2 then remove_fast = 1 end
+		if dtime > 0.2 then remove_fast = 1 else remove_fast = 0 end
 		-- Set gravity
 		self.object:setacceleration({x=0, y=-10, z=0})
 		-- Turn to actual sand when collides to ground or just move
@@ -101,7 +102,7 @@ minetest.register_entity("__builtin:falling_node", {
 			-- Create node and remove entity
 			minetest.add_node(np, self.node)
 			self.object:remove()
-			nodeupdate(np, remove_fast)
+			nodeupdate(np)
 		else
 			-- Do nothing
 		end
@@ -113,7 +114,7 @@ function spawn_falling_node(p, node)
 	obj:get_luaentity():set_node(node)
 end
 
-function drop_attached_node(p, remove_fast)
+function drop_attached_node(p)
 	local nn = minetest.get_node(p).name
 	minetest.remove_node(p, remove_fast)
 	for _,item in ipairs(minetest.get_node_drops(nn, "")) do
@@ -159,7 +160,7 @@ end
 -- Some common functions
 --
 
-function nodeupdate_single(p, delay, remove_fast)
+function nodeupdate_single(p, delay)
 	n = minetest.get_node(p)
 	if minetest.get_node_group(n.name, "falling_node") ~= 0 then
 		p_bottom = {x=p.x, y=p.y-1, z=p.z}
@@ -176,20 +177,20 @@ function nodeupdate_single(p, delay, remove_fast)
 				n.level = minetest.env:get_node_level(p)
 				minetest.remove_node(p, remove_fast)
 				spawn_falling_node(p, n)
-				nodeupdate(p, remove_fast)
+				nodeupdate(p)
 			end
 		end
 	end
 	
 	if minetest.get_node_group(n.name, "attached_node") ~= 0 then
 		if not check_attached_node(p, n) then
-			drop_attached_node(p, remove_fast)
-			nodeupdate(p, remove_fast)
+			drop_attached_node(p)
+			nodeupdate(p)
 		end
 	end
 end
 
-function nodeupdate(p, delay, remove_fast)
+function nodeupdate(p, delay)
 	-- Round p to prevent falling entities to get stuck
 	p.x = math.floor(p.x+0.5)
 	p.y = math.floor(p.y+0.5)
@@ -198,7 +199,7 @@ function nodeupdate(p, delay, remove_fast)
 	for x = -1,1 do
 	for y = -1,1 do
 	for z = -1,1 do
-		nodeupdate_single({x=p.x+x, y=p.y+y, z=p.z+z}, delay or not (x==0 and y==0 and z==0), remove_fast)
+		nodeupdate_single({x=p.x+x, y=p.y+y, z=p.z+z}, delay or not (x==0 and y==0 and z==0))
 	end
 	end
 	end
