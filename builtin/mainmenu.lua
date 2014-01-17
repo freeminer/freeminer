@@ -865,6 +865,7 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
+	local e = engine.formspec_escape
 	local retval =
 		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .."]" ..
 		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
@@ -893,10 +894,10 @@ function tabbuilder.tab_multiplayer()
 		"text,tooltip=Online,align=center;" ..
 		"text,align=center;" ..
 		"text,tooltip=Slots,align=center;" ..
-		"image,tooltip=Requires non-empty password,1=" .. menu.defaulttexturedir .. "server_flags_password.png;" ..
-		"image,tooltip=Creative,1=" .. menu.defaulttexturedir .. "server_flags_creative.png;" ..
-		"image,tooltip=Damage enabled,1=" .. menu.defaulttexturedir .. "server_flags_damage.png;" ..
-		"image,tooltip=PvP enabled,1=" .. menu.defaulttexturedir .. "server_flags_pvp.png;" ..
+		"image,tooltip=Requires non-empty password,1=" .. e(menu.defaulttexturedir .. "server_flags_password.png") .. ";" ..
+		"image,tooltip=Creative,1=" .. e(menu.defaulttexturedir .. "server_flags_creative.png") .. ";" ..
+		"image,tooltip=Damage enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_damage.png") .. ";" ..
+		"image,tooltip=PvP enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_pvp.png") .. ";" ..
 		"text" ..
 		"]"
 	retval = retval .. "table[" ..
