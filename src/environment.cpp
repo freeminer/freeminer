@@ -1267,17 +1267,13 @@ void ServerEnvironment::step(float dtime, float uptime)
 			Handle added blocks
 		*/
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
-		for(std::set<v3s16>::iterator
-				i = m_blocks_added.begin();
+		u32 n = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		m_blocks_added_last = 0;
+		std::set<v3s16>::iterator i;
+		for(i = m_blocks_added.begin();
 				i != m_blocks_added.end(); ++i)
 		{
-			if (n++ < m_blocks_added_last)
-				continue;
-			else
-				m_blocks_added_last = 0;
-			++calls;
-
+			++n;
 			v3s16 p = *i;
 
 			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
@@ -1297,10 +1293,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 				break;
 			}
 		}
-		if (!calls)
-			m_blocks_added_last = 0;
-		if (!m_blocks_added_last)
-			m_blocks_added.clear();
+		m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
 
 	/*
