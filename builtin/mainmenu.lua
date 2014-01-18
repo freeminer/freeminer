@@ -278,7 +278,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_up"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx > 1 then
+		if oldidx ~= nil and oldidx > 1 then
 			local newidx = oldidx -1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -288,7 +288,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_down"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx < filterlist.size(worldlist) then
+		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
 			local newidx = oldidx + 1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -373,7 +373,7 @@ function tabbuilder.handle_create_world_buttons(fields)
 		local worldname = fields["te_world_name"]
 		local gameindex = engine.get_textlist_index("games")
 
-		if gameindex > 0 and
+		if gameindex ~= nil and
 			worldname ~= "" then
 
 			local message = nil
@@ -488,11 +488,13 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fields["key_up"] ~= nil and fav_idx > 1 then
-			fav_idx = fav_idx -1
-		else if fields["key_down"] and fav_idx < #menu.favorites then
-			fav_idx = fav_idx +1
-		end end
+		if fav_idx ~= nil then
+			if fields["key_up"] ~= nil and fav_idx > 1 then
+				fav_idx = fav_idx -1
+			else if fields["key_down"] and fav_idx < #menu.favorites then
+				fav_idx = fav_idx +1
+			end end
+		end
 
 		local address = menu.favorites[fav_idx].address
 		local port = menu.favorites[fav_idx].port
@@ -521,6 +523,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 	if fields["btn_delete_favorite"] ~= nil then
 		local current_favourite = engine.get_textlist_index("favourites")
+		if current_favourite == nil then return end
 		engine.delete_favorite(current_favourite)
 		menu.favorites = engine.get_favorites()
 		menu.fav_selected = nil
@@ -541,7 +544,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fav_idx and fav_idx > 0 and fav_idx <= #menu.favorites and
+		if fav_idx ~= nil and fav_idx <= #menu.favorites and
 			menu.favorites[fav_idx].address == fields["te_address"] and
 			menu.favorites[fav_idx].port == fields["te_port"] then
 
@@ -597,7 +600,7 @@ function tabbuilder.handle_server_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.playername		= fields["te_playername"]
 			gamedata.password		= fields["te_passwd"]
 			gamedata.port			= fields["te_serverport"]
@@ -619,7 +622,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -637,7 +640,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -748,7 +751,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 			gamedata.singleplayer	= true
 
@@ -766,7 +769,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -784,7 +787,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -805,7 +808,7 @@ function tabbuilder.handle_texture_pack_buttons(fields)
 				index)
 			local list = filter_texture_pack_list(engine.get_dirlist(engine.get_texturepath(), true))
 			local current_index = engine.get_textlist_index("TPs")
-			if #list >= current_index then
+			if current_index ~= nil and #list >= current_index then
 				local new_path = engine.get_texturepath()..DIR_DELIM..list[current_index]
 				if list[current_index] == "None" then new_path = "" end
 
@@ -865,6 +868,7 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
+	local e = engine.formspec_escape
 	local retval =
 		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .."]" ..
 		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
@@ -893,10 +897,10 @@ function tabbuilder.tab_multiplayer()
 		"text,tooltip=Online,align=center;" ..
 		"text,align=center;" ..
 		"text,tooltip=Slots,align=center;" ..
-		"image,tooltip=Requires non-empty password,1=" .. menu.defaulttexturedir .. "server_flags_password.png;" ..
-		"image,tooltip=Creative,1=" .. menu.defaulttexturedir .. "server_flags_creative.png;" ..
-		"image,tooltip=Damage enabled,1=" .. menu.defaulttexturedir .. "server_flags_damage.png;" ..
-		"image,tooltip=PvP enabled,1=" .. menu.defaulttexturedir .. "server_flags_pvp.png;" ..
+		"image,tooltip=Requires non-empty password,1=" .. e(menu.defaulttexturedir .. "server_flags_password.png") .. ";" ..
+		"image,tooltip=Creative,1=" .. e(menu.defaulttexturedir .. "server_flags_creative.png") .. ";" ..
+		"image,tooltip=Damage enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_damage.png") .. ";" ..
+		"image,tooltip=PvP enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_pvp.png") .. ";" ..
 		"text" ..
 		"]"
 	retval = retval .. "table[" ..

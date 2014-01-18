@@ -59,7 +59,8 @@ GUITable::GUITable(gui::IGUIEnvironment *env,
 	m_highlight_text(255, 255, 255, 255),
 	m_rowheight(1),
 	m_font(NULL),
-	m_scrollbar(NULL)
+	m_scrollbar(NULL),
+	m_scrollbar_enabled(true)
 {
 	assert(tsrc != NULL);
 
@@ -1021,11 +1022,15 @@ void GUITable::autoScroll()
 	}
 }
 
+void GUITable::setScrollBarEnabled(bool value) {
+	m_scrollbar_enabled = value;
+}
+
 void GUITable::updateScrollBar()
 {
 	s32 totalheight = m_rowheight * m_visible_rows.size();
 	s32 scrollmax = MYMAX(0, totalheight - AbsoluteRect.getHeight());
-	m_scrollbar->setVisible(scrollmax > 0);
+	m_scrollbar->setVisible(scrollmax > 0 && m_scrollbar_enabled);
 	m_scrollbar->setMax(scrollmax);
 	m_scrollbar->setSmallStep(m_rowheight);
 	m_scrollbar->setLargeStep(2 * m_rowheight);

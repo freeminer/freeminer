@@ -2152,7 +2152,7 @@ ABM (ActiveBlockModifier) definition (register_abm)
     ^ find neighbors in max range from node, do not set big values (>3) - it can eat cpu
     interval = 1.0, -- (operation interval)
     chance = 1, -- (chance of trigger is 1.0/this)
-    action = func(pos, node, active_object_count, active_object_count_wider, neighbor),
+    action = func(pos, node, active_object_count, active_object_count_wider, neighbor, activate),
 }
 
 Item definition (register_node, register_craftitem, register_tool)

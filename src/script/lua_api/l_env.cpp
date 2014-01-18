@@ -80,7 +80,8 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 	lua_pushnumber(L, active_object_count);
 	lua_pushnumber(L, active_object_count_wider);
 	pushnode(L, neighbor, env->getGameDef()->ndef());
-	if(lua_pcall(L, 5, 0, errorhandler))
+	lua_pushboolean(L, activate);
+	if(lua_pcall(L, 6, 0, errorhandler))
 		script_error(L);
 	lua_pop(L, 1); // Pop error handler
 }

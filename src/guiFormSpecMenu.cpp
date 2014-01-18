@@ -1620,7 +1620,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		// Note: parent != this so that the tooltip isn't clipped by the menu rectangle
 		m_tooltip_element = Environment->addStaticText(L"",core::rect<s32>(0,0,110,18));
 		m_tooltip_element->enableOverrideColor(true);
-		m_tooltip_element->setBackgroundColor(video::SColor(255,110,130,60));
+		m_tooltip_element->setBackgroundColor(video::SColor(255,56,121,65));
 		m_tooltip_element->setDrawBackground(true);
 		m_tooltip_element->setDrawBorder(true);
 		m_tooltip_element->setOverrideColor(video::SColor(255,255,255,255));

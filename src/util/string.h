@@ -328,5 +328,7 @@ u64 read_seed(const char *str);
 bool parseColor(const std::string &value, video::SColor &color);
 std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color);
 std::wstring sanitizeChatString(const std::wstring &s);
+bool char_icompare(char c1, char c2);
+bool string_icompare(const std::string& a, const std::string& b);
 #endif
 

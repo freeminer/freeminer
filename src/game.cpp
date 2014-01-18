@@ -72,6 +72,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "FMStaticText.h"
+#include "guiTable.h"
+#include "util/string.h"
 
 /*
 	Text input system
@@ -945,7 +947,6 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
-
 void the_game(
 	bool &kill,
 	bool random_input,
@@ -1339,6 +1340,8 @@ void the_game(
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
 
+	int current_camera_mode = FIRST; // start in first-perscon view
+
 	/*
 		Clouds
 	*/
@@ -1484,7 +1487,7 @@ void the_game(
 
 	float repeat_rightclick_timer = 0;
 
-	gui::IGUIListBox *playerlist = NULL;
+	GUITable *playerlist = NULL;
 
 	video::SColor console_bg;
 	bool console_color_set = !g_settings->get("console_color").empty();
@@ -2068,6 +2071,8 @@ void the_game(
 			jump_timer = 0.0;
 		}
 
+		if (playerlist)
+			playerlist->setSelected(-1);
 		if(!input->isKeyDown(getKeySetting("keymap_playerlist")) && playerlist != NULL)
 		{
 			playerlist->remove();
@@ -2075,15 +2080,53 @@ void the_game(
 		}
 		if(input->wasKeyDown(getKeySetting("keymap_playerlist")) && playerlist == NULL)
 		{
-			std::list<std::string> pll;
-			pll = client.getEnv().getPlayerNames();
-			playerlist = guienv->addListBox(core::rect<s32>(screensize.X*0.39, screensize.Y*0.5-(pll.size()*(text_height+4)/2), screensize.X*0.61, screensize.Y*0.5+(pll.size()*(text_height+4)/2)));
-			while(!pll.empty())
-			{
-				playerlist->addItem(narrow_to_wide(pll.front()).c_str());
-				pll.pop_front();
+			std::list<std::string> players_list = client.getEnv().getPlayerNames();
+			std::vector<std::string> players;
+			players.reserve(players_list.size());
+			std::copy(players_list.begin(), players_list.end(), std::back_inserter(players));
+			std::sort(players.begin(), players.end(), string_icompare);
+
+			u32 max_height = screensize.Y * 0.7;
+
+			u32 row_height = font->getDimension(L"A").Height + 4;
+			u32 rows = max_height / row_height;
+			u32 columns = players.size() / rows;
+			if (players.size() % rows > 0)
+				++columns;
+			u32 actual_height = row_height * rows;
+			if (rows > players.size())
+				actual_height = row_height * players.size();
+			u32 max_width = 0;
+			for (size_t i = 0; i < players.size(); ++i)
+				max_width = std::max(max_width, font->getDimension(narrow_to_wide(players[i]).c_str()).Width);
+			max_width += 15;
+			u32 actual_width = columns * max_width;
+
+			if (columns != 0) {
+				u32 x = (screensize.X - actual_width) / 2;
+				u32 y = (screensize.Y - actual_height) / 2;
+				playerlist = new GUITable(guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(x, y, x + actual_width, y + actual_height), tsrc);
+				playerlist->drop();
+				playerlist->setScrollBarEnabled(false);
+				GUITable::TableOptions table_options;
+				GUITable::TableColumns table_columns;
+				for (size_t i = 0; i < columns; ++i) {
+					GUITable::TableColumn col;
+					col.type = "text";
+					table_columns.push_back(col);
+				}
+				std::vector<std::string> players_ordered;
+				players_ordered.reserve(columns * rows);
+				for (size_t i = 0; i < rows; ++i)
+					for (size_t j = 0; j < columns; ++j) {
+						size_t index = j * rows + i;
+						if (index >= players.size())
+							players_ordered.push_back("");
+						else
+							players_ordered.push_back(players[index]);
+					}
+				playerlist->setTable(table_options, table_columns, players_ordered);
 			}
-			playerlist->setSelected(-1);
 		}
 
 		// Handle QuicktuneShortcutter
@@ -2193,7 +2236,7 @@ void the_game(
 			else{
 				s32 dx = input->getMousePos().X - displaycenter.X;
 				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse)
+				if(invert_mouse || player->camera_mode == THIRD_FRONT)
 					dy = -dy;
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
@@ -2554,9 +2597,21 @@ void the_game(
 		LocalPlayer* player = client.getEnv().getLocalPlayer();
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
+
+		if(input->wasKeyDown("KEY_F7")) {//*TODO* not hardcoded key?
+
+			if (current_camera_mode == FIRST)
+				current_camera_mode = THIRD;
+			else if (current_camera_mode == THIRD)
+				current_camera_mode = THIRD_FRONT;
+			else
+				current_camera_mode = FIRST;
+
+		}
+		player->camera_mode = current_camera_mode;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
 		camera.update(player, dtime, busytime, screensize,
-				tool_reload_ratio);
+				tool_reload_ratio, current_camera_mode, client.getEnv());
 		camera.step(dtime);
 
 		v3f player_position = player->getPosition();
@@ -2602,6 +2657,9 @@ void the_game(
 			d = 4.0;
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
+
+		if (current_camera_mode == THIRD_FRONT) // prevent pointing anything in front-view
+			shootline = core::line3d<f32>(0,0,0,0,0,0);
 
 		ClientActiveObject *selected_object = NULL;
 
@@ -3395,7 +3453,7 @@ void the_game(
 		/*
 			Wielded tool
 		*/
-		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE))
+		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && current_camera_mode < THIRD)
 		{
 			// Warning: This clears the Z buffer.
 			camera.drawWieldedTool();

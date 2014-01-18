@@ -150,6 +150,8 @@ public:
 	/* Irrlicht event handler */
 	virtual bool OnEvent(const SEvent &event);
 
+	void setScrollBarEnabled(bool value);
+
 protected:
 	enum ColumnType {
 		COLUMN_TYPE_TEXT,
@@ -209,6 +211,7 @@ protected:
 	s32 m_rowheight;
 	gui::IGUIFont *m_font;
 	gui::IGUIScrollBar *m_scrollbar;
+	bool m_scrollbar_enabled;
 
 	// Allocated strings and images
 	std::vector<core::stringw> m_strings;
