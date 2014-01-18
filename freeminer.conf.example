@@ -1,8 +1,8 @@
 # This file is read by default from:
-# ../minetest.conf
-# ../../minetest.conf
+# ../freeminer.conf
+# ../../freeminer.conf
 # Any other path can be chosen by passing the path as a parameter
-# to the program, eg. "minetest.exe --config ../minetest.conf.example"
+# to the program, eg. "freeminer.exe --config ../freeminer.conf.example"
 #
 # By default, all the settings are commented and not functional.
 # Uncomment settings by removing the preceding #.
@@ -12,7 +12,7 @@
 #
 # NOTE: This file might not be up-to-date, refer to the
 #       defaultsettings.cpp file for an up-to-date list:
-# https://github.com/minetest/minetest/blob/master/src/defaultsettings.cpp
+# https://github.com/freeminer/freeminer/blob/master/src/defaultsettings.cpp
 #
 # A vim command to convert most of defaultsettings.cpp to conf file format:
 # :'<,'>s/\tsettings->setDefault("\([^"]*\)", "\([^"]*\)");.*/#\1 = \2/g
@@ -243,23 +243,23 @@
 # Network port to listen (UDP)
 #port =
 # Name of server
-#server_name = Minetest server
+#server_name = Freeminer server
 # Description of server
 #server_description = mine here
 # Domain name of server
-#server_address = game.minetest.net
+#server_address = game.freeminer.net
 # Homepage of server
-#server_url = http://minetest.net
+#server_url = http://freeminer.org
 # Automaticaly report to masterserver
 #server_announce = 0
 # Announce to this masterserver. if you want to announce your ipv6 address - use  serverlist_url = v6.servers.minetest.net
 #serverlist_url = servers.minetest.net
 # Default game (default when creating a new world)
-#default_game = minetest
+#default_game = default
 # World directory (everything in the world is stored here)
 #map-dir = /custom/world
 # Message of the Day
-#motd = Welcome to this awesome Minetest server!
+#motd = Welcome to this awesome Freeminer server!
 # Maximum number of players connected simultaneously
 #max_users = 15
 # Set to true to disallow old clients from connecting
