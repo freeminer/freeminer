@@ -678,8 +678,11 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	for(;;)
 	{
 		if(is.eof())
+			return;
+/*
 			throw SerializationError
 					("ServerEnvironment::loadMeta(): EnvArgsEnd not found");
+*/
 		std::string line;
 		std::getline(is, line);
 		std::string trimmedline = trim(line);
