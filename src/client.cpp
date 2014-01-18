@@ -551,6 +551,7 @@ void Client::step(float dtime)
 		Do stuff if connected
 	*/
 	
+	int max_cycle_ms = 500/g_settings->getFloat("wanted_fps");
 	/*
 		Run Map's timers and unload unused data
 	*/
@@ -562,6 +563,7 @@ void Client::step(float dtime)
 		
 		if(m_env.getMap().timerUpdate(m_uptime,
 				g_settings->getFloat("client_unload_unused_data_timeout"),
+				max_cycle_ms,
 				&deleted_blocks))
 				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 				
@@ -628,7 +630,7 @@ void Client::step(float dtime)
 
 		//TimeTaker envtimer("env step", m_device);
 		// Step environment
-		m_env.step(dtime, 0);
+		m_env.step(dtime, 0, max_cycle_ms);
 		
 		/*
 			Get events

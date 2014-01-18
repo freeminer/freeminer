@@ -231,10 +231,10 @@ public:
 
 	u32 updateLighting(enum LightBank bank,
 			std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
+			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks, bool breakable = 0);
+			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
 
@@ -278,7 +278,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	u32 timerUpdate(float uptime, float unload_timeout,
+	u32 timerUpdate(float uptime, float unload_timeout, int max_cycle_ms = 100,
 			std::list<v3s16> *unloaded_blocks=NULL);
 
 	/*
@@ -305,8 +305,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
-	u32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks);
+	u32 transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock

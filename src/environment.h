@@ -65,7 +65,7 @@ public:
 		- Step mobs
 		- Run timers of map
 	*/
-	virtual void step(f32 dtime, float uptime) = 0;
+	virtual void step(f32 dtime, float uptime, int max_cycle_ms) = 0;
 
 	virtual Map & getMap() = 0;
 
@@ -330,7 +330,7 @@ public:
 	void clearAllObjects();
 	
 	// This makes stuff happen
-	void step(f32 dtime, float uptime);
+	void step(f32 dtime, float uptime, int max_cycle_ms);
 	
 	//check if there's a line of sight between two positions
 	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0, v3s16 *p=NULL);
@@ -481,7 +481,7 @@ public:
 	IGameDef *getGameDef()
 	{ return m_gamedef; }
 
-	void step(f32 dtime, float uptime);
+	void step(f32 dtime, float uptime, int max_cycle_ms);
 
 	virtual void addPlayer(Player *player);
 	LocalPlayer * getLocalPlayer();

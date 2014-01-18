@@ -1102,6 +1102,10 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
+	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
+	if (max_cycle_ms < 20)
+		max_cycle_ms = 20;
 
 	{
 		TimeTaker timer_step("Server step: Process connection's timeouts");
@@ -1168,7 +1172,7 @@ void Server::AsyncRunStep(bool initial_step)
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
 		ScopeProfiler sp2(g_profiler, "SEnv step avg", SPT_AVG);
-		m_env->step(dtime, m_uptime.get());
+		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
 	const float map_timer_and_unload_dtime = 10.92;
@@ -1179,6 +1183,7 @@ void Server::AsyncRunStep(bool initial_step)
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
 		if(m_env->getMap().timerUpdate(m_uptime.get(),
+				max_cycle_ms,
 				g_settings->getFloat("server_unload_unused_data_timeout")))
 					m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 	}
@@ -1252,7 +1257,7 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks) > 0)
+		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
@@ -1268,7 +1273,7 @@ void Server::AsyncRunStep(bool initial_step)
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, 1)) {
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, max_cycle_ms)) {
 			m_liquid_send_timer = m_liquid_send_interval;
 			goto no_send;
 		}
@@ -1647,7 +1652,7 @@ void Server::AsyncRunStep(bool initial_step)
 		// We'll log the amount of each
 		Profiler prof;
 
-		u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
+		u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
 			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
@@ -1744,7 +1749,7 @@ void Server::AsyncRunStep(bool initial_step)
 				break;
 		}
 
-		if(event_count >= 5){
+		if(event_count >= 10){
 			infostream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
 		} else if(event_count != 0){

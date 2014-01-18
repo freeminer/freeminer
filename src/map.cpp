@@ -681,7 +681,7 @@ s16 Map::propagateSunlight(v3s16 start,
 
 u32 Map::updateLighting(enum LightBank bank,
 		std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
+		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -707,8 +707,8 @@ u32 Map::updateLighting(enum LightBank bank,
 	{
 	TimeTaker t("updateLighting: first stuff");
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
-	if(!breakable)
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	if(!max_cycle_ms)
 		updateLighting_last[bank] = 0;
 	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
 		i != a_blocks.end(); ++i)
@@ -936,20 +936,20 @@ u32 Map::updateLighting(enum LightBank bank,
 }
 
 u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks, bool breakable)
+		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	int ret = 0;
 {
 TimeTaker timer("updateLighting(LIGHTBANK_DAY)");
 
-	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks, breakable);
+	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks, max_cycle_ms);
 }
 {
 TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
-	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks, breakable);
+	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks, max_cycle_ms);
 }
 
-	if (breakable && ret)
+	if (max_cycle_ms && ret)
 		return ret;
 
 TimeTaker timer("updateLighting expireDayNightDiff");
@@ -1483,6 +1483,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 	Updates usage timers
 */
 u32 Map::timerUpdate(float uptime, float unload_timeout,
+		int max_cycle_ms,
 		std::list<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1498,7 +1499,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 /*
 	beginSave();
 */
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
 		si != m_sectors.end(); ++si)
@@ -1612,7 +1613,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 void Map::unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks)
 {
-	timerUpdate(0.0, -1.0, unloaded_blocks);
+	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
 
 void Map::deleteSectors(std::list<v2s16> &list)
@@ -1740,7 +1741,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
+u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1760,7 +1761,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 	// List of MapBlocks that will require a lighting update (due to lava)
 	u16 loop_rand = myrand();
 
-	u32 end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	while (m_transforming_liquid.size() > 0)
 	{
@@ -2171,11 +2172,11 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks)
+u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_finite"))
-		return Map::transformLiquidsFinite(modified_blocks, lighting_modified_blocks);
+		return Map::transformLiquidsFinite(modified_blocks, lighting_modified_blocks, max_cycle_ms);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -2196,7 +2197,7 @@ u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map
 	// List of MapBlocks that will require a lighting update (due to lava)
 	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
 
-	u32 end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	while(m_transforming_liquid.size() != 0)
 	{

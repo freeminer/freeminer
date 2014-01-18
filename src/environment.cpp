@@ -1150,7 +1150,7 @@ void ServerEnvironment::clearAllObjects()
 			<<" in "<<num_blocks_cleared<<" blocks"<<std::endl;
 }
 
-void ServerEnvironment::step(float dtime, float uptime)
+void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 	
@@ -1270,7 +1270,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			Handle added blocks
 		*/
 
-		u32 n = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		m_blocks_added_last = 0;
 		std::set<v3s16>::iterator i;
 		for(i = m_blocks_added.begin();
@@ -1308,7 +1308,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		
 		//float dtime = 1.0;
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1382,7 +1382,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 /*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 */
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
@@ -1460,7 +1460,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			send_recommended = true;
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -2332,7 +2332,7 @@ LocalPlayer * ClientEnvironment::getLocalPlayer()
 	return NULL;
 }
 
-void ClientEnvironment::step(float dtime, float uptime)
+void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -2387,7 +2387,7 @@ void ClientEnvironment::step(float dtime, float uptime)
 	*/
 
 	u32 loopcount = 0;
-	u32 breaked = 0, lend_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
+	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
 	do
 	{
 		loopcount++;
