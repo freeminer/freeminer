@@ -152,7 +152,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
 
-	settings->setDefault("serverlist_url", "servers.minetest.net");
+	settings->setDefault("serverlist_url", "servers.freeminer.org");
 	settings->setDefault("serverlist_file", "favoriteservers.txt");
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("server_url", "");
