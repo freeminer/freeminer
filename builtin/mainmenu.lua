@@ -957,52 +957,39 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_settings()
-	local tab_string =
-			"checkbox[6.5,0;cb_fancy_trees;".. fgettext("Fancy trees") .. ";"
-					.. dump(engine.setting_getbool("new_style_leaves")) .. "]"..
-			"checkbox[6.5,0.5;cb_smooth_lighting;".. fgettext("Smooth Lighting")
-					.. ";".. dump(engine.setting_getbool("smooth_lighting")) .. "]"..
-			"checkbox[6.5,1;cb_3d_clouds;".. fgettext("3D Clouds") .. ";"
-					.. dump(engine.setting_getbool("enable_3d_clouds")) .. "]"..
-			"checkbox[6.5,1.5;cb_opaque_water;".. fgettext("Opaque Water") .. ";"
-					.. dump(engine.setting_getbool("opaque_water")) .. "]"..
-
-			"checkbox[6.5,2;cb_mipmapping;".. fgettext("Mip-Mapping") .. ";"
-					.. dump(engine.setting_getbool("mip_map")) .. "]"..
-			"checkbox[6.5,2.5;cb_anisotrophic;".. fgettext("Anisotropic Filtering") .. ";"
-					.. dump(engine.setting_getbool("anisotropic_filter")) .. "]"..
-			"checkbox[6.5,3;cb_bilinear;".. fgettext("Bi-Linear Filtering") .. ";"
-					.. dump(engine.setting_getbool("bilinear_filter")) .. "]"..
-			"checkbox[6.5,3.5;cb_trilinear;".. fgettext("Tri-Linear Filtering") .. ";"
-					.. dump(engine.setting_getbool("trilinear_filter")) .. "]"..
-
-			"checkbox[6.5,4;cb_shaders;".. fgettext("Shaders") .. ";"
-					.. dump(engine.setting_getbool("enable_shaders")) .. "]"..
-			"checkbox[6.5,4.5;cb_pre_ivis;".. fgettext("Preload item visuals") .. ";"
-					.. dump(engine.setting_getbool("preload_item_visuals"))	.. "]"..
-			"checkbox[6.5,5;cb_particles;".. fgettext("Enable Particles") .. ";"
-					.. dump(engine.setting_getbool("enable_particles"))	.. "]"..
-			"checkbox[6.5,5.5;cb_finite_liquid;".. fgettext("Finite Liquid") .. ";"
-					.. dump(engine.setting_getbool("liquid_finite")) .. "]"..
-			"checkbox[11.5,5.5;cb_weather;".. fgettext("Weather") .. ";"
-					.. dump(engine.setting_getbool("weather")) .. "]"..
-
-			"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+	local tab_string = ""
+	local pos = 0
+	local add_checkbox = function(name, config, text)
+		tab_string = tab_string ..
+			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+					.. dump(engine.setting_getbool(config)) .. "]"
+		pos = pos + 0.5
+	end
+	-- TODO: refactor this and handle_settings_buttons
+	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
+	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
+	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
+	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
+	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
+	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
+	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
+	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
+	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
+	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
+	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
+	add_checkbox("cb_finite_liquid", "liquid_finite", "Finite Liquid")
+	add_checkbox("cb_weather", "weather", "Weather")
 
 	if engine.setting_getbool("enable_shaders") then
-		tab_string = tab_string ..
-				"checkbox[6.5,6;cb_bumpmapping;".. fgettext("Bumpmapping") .. ";"
-						.. dump(engine.setting_getbool("enable_bumpmapping")) .. "]"..
-				"checkbox[6.5,6.5;cb_parallax;".. fgettext("Parallax Occlusion") .. ";"
-						.. dump(engine.setting_getbool("enable_parallax_occlusion")) .. "]"..
-				"checkbox[6.5,7;cb_waving_water;".. fgettext("Waving Water") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_water")) .. "]"..
-				"checkbox[6.5,7.5;cb_waving_leaves;".. fgettext("Waving Leaves") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_leaves")) .. "]"..
-				"checkbox[6.5,8;cb_waving_plants;".. fgettext("Waving Plants") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_plants")) .. "]"
+		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
+		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
+		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
+		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
+		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
 	end
 
+	tab_string = tab_string ..
+		"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
