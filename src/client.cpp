@@ -1516,16 +1516,13 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_PLAY_SOUND)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		s32 server_id = readS32(is);
-		std::string name = deSerializeString(is);
-		float gain = readF1000(is);
-		int type = readU8(is); // 0=local, 1=positional, 2=object
-		v3f pos = readV3F1000(is);
-		u16 object_id = readU16(is);
-		bool loop = readU8(is);
+		s32 server_id = packet[TOCLIENT_PLAY_SOUND_ID].as<s32>();
+		std::string name = packet[TOCLIENT_PLAY_SOUND_NAME].as<std::string>();
+		float gain = packet[TOCLIENT_PLAY_SOUND_GAIN].as<f32>();
+		int type = packet[TOCLIENT_PLAY_SOUND_TYPE].as<u8>(); // 0=local, 1=positional, 2=object
+		v3f pos = packet[TOCLIENT_PLAY_SOUND_POS].as<v3f>();
+		u16 object_id = packet[TOCLIENT_PLAY_SOUND_OBJECT_ID].as<u16>();
+		bool loop = packet[TOCLIENT_PLAY_SOUND_LOOP].as<bool>();
 		// Start playing
 		int client_id = -1;
 		switch(type){

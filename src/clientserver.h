@@ -220,6 +220,24 @@ enum {
 };
 typedef std::vector<std::pair<std::string, std::string> > MediaAnnounceList;
 
+#define TOCLIENT_PLAY_SOUND 0x3f
+enum {
+	// s32
+	TOCLIENT_PLAY_SOUND_ID,
+	// string
+	TOCLIENT_PLAY_SOUND_NAME,
+	// f32
+	TOCLIENT_PLAY_SOUND_GAIN,
+	// u8
+	TOCLIENT_PLAY_SOUND_TYPE,
+	// v3f
+	TOCLIENT_PLAY_SOUND_POS,
+	// u16
+	TOCLIENT_PLAY_SOUND_OBJECT_ID,
+	// bool
+	TOCLIENT_PLAY_SOUND_LOOP
+};
+
 #define TOCLIENT_PRIVILEGES 0x41
 enum {
 	// list of strings
@@ -286,19 +304,6 @@ enum ToClientCommand
 		u16 command
 		u32 length of next item
 		serialized ItemDefManager
-	*/
-
-	TOCLIENT_PLAY_SOUND = 0x3f,
-	/*
-		u16 command
-		s32 sound_id
-		u16 len
-		u8[len] sound name
-		s32 gain*1000
-		u8 type (0=local, 1=positional, 2=object)
-		s32[3] pos_nodes*10000
-		u16 object_id
-		u8 loop (bool)
 	*/
 
 	TOCLIENT_STOP_SOUND = 0x40,

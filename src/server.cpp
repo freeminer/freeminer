@@ -3933,23 +3933,19 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 			i != dst_clients.end(); i++)
 		psound.clients.insert((*i)->peer_id);
 	// Create packet
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_PLAY_SOUND);
-	writeS32(os, id);
-	os<<serializeString(spec.name);
-	writeF1000(os, spec.gain * params.gain);
-	writeU8(os, params.type);
-	writeV3F1000(os, pos);
-	writeU16(os, params.object);
-	writeU8(os, params.loop);
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_PLAY_SOUND, 7);
+	PACK(TOCLIENT_PLAY_SOUND_ID, id);
+	PACK(TOCLIENT_PLAY_SOUND_NAME, spec.name);
+	PACK(TOCLIENT_PLAY_SOUND_GAIN, spec.gain * params.gain);
+	PACK(TOCLIENT_PLAY_SOUND_TYPE, (u8)params.type);
+	PACK(TOCLIENT_PLAY_SOUND_POS, pos);
+	PACK(TOCLIENT_PLAY_SOUND_OBJECT_ID, params.object);
+	PACK(TOCLIENT_PLAY_SOUND_LOOP, params.loop);
 	// Send
 	for(std::set<RemoteClient*>::iterator i = dst_clients.begin();
 			i != dst_clients.end(); i++){
 		// Send as reliable
-		m_con.Send((*i)->peer_id, 0, data, true);
+		m_con.Send((*i)->peer_id, 0, buffer, true);
 	}
 	return id;
 }
