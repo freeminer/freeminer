@@ -109,7 +109,7 @@ int ModApiEnvMod::l_add_node(lua_State *L)
 	return l_set_node(L);
 }
 
-// minetest.remove_node(pos)
+// minetest.remove_node(pos, fast)
 // pos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_remove_node(lua_State *L)
 {
@@ -118,7 +118,7 @@ int ModApiEnvMod::l_remove_node(lua_State *L)
 	// parameters
 	v3s16 pos = read_v3s16(L, 1);
 	// Do it
-	bool succeeded = env->removeNode(pos, lua_toboolean(L, 2));
+	bool succeeded = env->removeNode(pos, lua_tonumber(L, 2));
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
