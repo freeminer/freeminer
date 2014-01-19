@@ -3866,15 +3866,11 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_INVENTORY_FORMSPEC);
-	os<<serializeLongString(player->inventory_formspec);
+	MSGPACK_PACKET_INIT(TOCLIENT_INVENTORY_FORMSPEC, 1);
+	PACK(TOCLIENT_INVENTORY_FORMSPEC_DATA, player->inventory_formspec);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 s32 Server::playSound(const SimpleSoundSpec &spec,
