@@ -3985,12 +3985,8 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 	v3f p_f = intToFloat(p, BS);
 
 	// Create packet
-	u32 replysize = 8;
-	SharedBuffer<u8> reply(replysize);
-	writeU16(&reply[0], TOCLIENT_REMOVENODE);
-	writeS16(&reply[2], p.X);
-	writeS16(&reply[4], p.Y);
-	writeS16(&reply[6], p.Z);
+	MSGPACK_PACKET_INIT(TOCLIENT_REMOVENODE, 1);
+	PACK(TOCLIENT_REMOVENODE_POS, p);
 
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
@@ -4023,7 +4019,7 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 		}
 
 		// Send as reliable
-		m_con.Send(client->peer_id, 0, reply, true);
+		m_con.Send(client->peer_id, 0, buffer, true);
 	}
 }
 

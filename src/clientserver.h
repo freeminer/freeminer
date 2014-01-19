@@ -138,6 +138,11 @@ enum {
 	TOCLIENT_INIT_POS
 };
 
+#define TOCLIENT_REMOVENODE 0x22
+enum {
+	TOCLIENT_REMOVENODE_POS
+};
+
 #define TOCLIENT_BREATH 0x4e
 enum {
 	// u16 breath
@@ -222,7 +227,6 @@ enum ToClientCommand
 		serialized mapnode
 		u8 keep_metadata // Added in protocol version 22
 	*/
-	TOCLIENT_REMOVENODE = 0x22,
 
 	TOCLIENT_INVENTORY = 0x27,
 	/*

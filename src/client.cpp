@@ -1118,15 +1118,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 
 	if(command == TOCLIENT_REMOVENODE)
 	{
-		if(datasize < 8)
-			return;
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-		
-		//TimeTaker t1("TOCLIENT_REMOVENODE");
-		
+		v3s16 p = packet[TOCLIENT_REMOVENODE_POS].as<v3s16>();
 		removeNode(p);
 	}
 	else if(command == TOCLIENT_ADDNODE)
