@@ -966,7 +966,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 	return true;
 }
 
-bool ServerEnvironment::removeNode(v3s16 p, bool fast)
+bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 	MapNode n_old = m_map->getNodeNoEx(p);
@@ -978,6 +978,8 @@ bool ServerEnvironment::removeNode(v3s16 p, bool fast)
 	if (fast) {
 		MapNode n;
 		try {
+			if (fast == 2)
+				n.param1 = n_old.param1;
 			m_map->setNode(p, n);
 		} catch(InvalidPositionException &e) { }
 	} else {

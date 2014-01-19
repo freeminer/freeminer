@@ -4,7 +4,7 @@
 -- Falling stuff
 --
 
-local remove_fast = false
+local remove_fast = 0
 
 minetest.register_entity("__builtin:falling_node", {
 	initial_properties = {
@@ -50,7 +50,7 @@ minetest.register_entity("__builtin:falling_node", {
 	end,
 
 	on_step = function(self, dtime)
-		if dtime > 0.2 then remove_fast = true else remove_fast = false end
+		if dtime > 0.2 then remove_fast = 2 else remove_fast = 0 end
 		-- Set gravity
 		self.object:setacceleration({x=0, y=-10, z=0})
 		-- Turn to actual sand when collides to ground or just move
