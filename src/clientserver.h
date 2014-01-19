@@ -256,6 +256,14 @@ enum {
 	TOCLIENT_INVENTORY_FORMSPEC_DATA
 };
 
+#define TOCLIENT_SHOW_FORMSPEC 0x44
+enum {
+	// string formspec
+	TOCLIENT_SHOW_FORMSPEC_DATA,
+	// string formname
+	TOCLIENT_SHOW_FORMSPEC_NAME
+};
+
 
 enum ToClientCommand
 {
@@ -325,15 +333,6 @@ enum ToClientCommand
 		u16 len
 		u8[len] name
 		[2] serialized inventory
-	*/
-
-	TOCLIENT_SHOW_FORMSPEC = 0x44,
-	/*
-		[0] u16 command
-		u32 len
-		u8[len] formspec
-		u16 len
-		u8[len] formname
 	*/
 
 	TOCLIENT_MOVEMENT = 0x45,

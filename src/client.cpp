@@ -1590,11 +1590,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_SHOW_FORMSPEC)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		std::string formspec = deSerializeLongString(is);
-		std::string formname = deSerializeString(is);
+		std::string formspec = packet[TOCLIENT_SHOW_FORMSPEC_DATA].as<std::string>();
+		std::string formname = packet[TOCLIENT_SHOW_FORMSPEC_NAME].as<std::string>();
 
 		ClientEvent event;
 		event.type = CE_SHOW_FORMSPEC;

@@ -3520,20 +3520,12 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string formspec,
 {
 	DSTACK(__FUNCTION_NAME);
 
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
+	MSGPACK_PACKET_INIT(TOCLIENT_SHOW_FORMSPEC, 2);
+	PACK(TOCLIENT_SHOW_FORMSPEC_DATA, formspec);
+	PACK(TOCLIENT_SHOW_FORMSPEC_NAME, formname);
 
-	// Write command
-	writeU16(buf, TOCLIENT_SHOW_FORMSPEC);
-	os.write((char*)buf, 2);
-	os<<serializeLongString(formspec);
-	os<<serializeString(formname);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 // Spawns a particle on peer with peer_id
