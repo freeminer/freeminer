@@ -244,6 +244,12 @@ enum {
 	TOCLIENT_PRIVILEGES_PRIVILEGES
 };
 
+#define TOCLIENT_STOP_SOUND 0x40
+enum {
+	// s32
+	TOCLIENT_STOP_SOUND_ID
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -304,12 +310,6 @@ enum ToClientCommand
 		u16 command
 		u32 length of next item
 		serialized ItemDefManager
-	*/
-
-	TOCLIENT_STOP_SOUND = 0x40,
-	/*
-		u16 command
-		s32 sound_id
 	*/
 
 	TOCLIENT_INVENTORY_FORMSPEC = 0x42,

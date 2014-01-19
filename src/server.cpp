@@ -3958,17 +3958,13 @@ void Server::stopSound(s32 handle)
 		return;
 	ServerPlayingSound &psound = i->second;
 	// Create packet
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_STOP_SOUND);
-	writeS32(os, handle);
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_STOP_SOUND, 1);
+	PACK(TOCLIENT_STOP_SOUND_ID, handle);
 	// Send
 	for(std::set<u16>::iterator i = psound.clients.begin();
 			i != psound.clients.end(); i++){
 		// Send as reliable
-		m_con.Send(*i, 0, data, true);
+		m_con.Send(*i, 0, buffer, true);
 	}
 	// Remove sound reference
 	m_playing_sounds.erase(i);

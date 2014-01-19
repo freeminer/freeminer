@@ -1551,10 +1551,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_STOP_SOUND)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		s32 server_id = readS32(is);
+		s32 server_id = packet[TOCLIENT_STOP_SOUND_ID].as<s32>();
 		std::map<s32, int>::iterator i =
 				m_sounds_server_to_client.find(server_id);
 		if(i != m_sounds_server_to_client.end()){
