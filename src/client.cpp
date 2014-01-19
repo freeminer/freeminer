@@ -1268,34 +1268,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_TIME_OF_DAY)
 	{
-		if(datasize < 4)
-			return;
-		
-		u16 time_of_day = readU16(&data[2]);
+		u16 time_of_day = packet[TOCLIENT_TIME_OF_DAY_TIME].as<u16>();
 		time_of_day = time_of_day % 24000;
-		//infostream<<"Client: time_of_day="<<time_of_day<<std::endl;
-		float time_speed = 0;
-		if(datasize >= 2 + 2 + 4){
-			time_speed = readF1000(&data[4]);
-		} else {
-			// Old message; try to approximate speed of time by ourselves
-			float time_of_day_f = (float)time_of_day / 24000.0;
-			float tod_diff_f = 0;
-			if(time_of_day_f < 0.2 && m_last_time_of_day_f > 0.8)
-				tod_diff_f = time_of_day_f - m_last_time_of_day_f + 1.0;
-			else
-				tod_diff_f = time_of_day_f - m_last_time_of_day_f;
-			m_last_time_of_day_f = time_of_day_f;
-			float time_diff = m_time_of_day_update_timer;
-			m_time_of_day_update_timer = 0;
-			if(m_time_of_day_set){
-				time_speed = 3600.0*24.0 * tod_diff_f / time_diff;
-				infostream<<"Client: Measured time_of_day speed (old format): "
-						<<time_speed<<" tod_diff_f="<<tod_diff_f
-						<<" time_diff="<<time_diff<<std::endl;
-			}
-		}
-		
+		f32 time_speed = packet[TOCLIENT_TIME_OF_DAY_TIME_SPEED].as<f32>();
+
 		// Update environment
 		m_env.setTimeOfDay(time_of_day);
 		m_env.setTimeOfDaySpeed(time_speed);
@@ -1457,12 +1433,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_HP)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 		u8 oldhp = player->hp;
-		u8 hp = readU8(is);
+		u8 hp = packet[TOCLIENT_HP_HP].as<u8>();
 		player->hp = hp;
 
 		if(hp < oldhp)
@@ -1476,22 +1450,16 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_BREATH)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-		u16 breath = readU16(is);
-		player->setBreath(breath) ;
+		player->setBreath(packet[TOCLIENT_BREATH_BREATH].as<u16>()) ;
 	}
 	else if(command == TOCLIENT_MOVE_PLAYER)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
 		assert(player != NULL);
-		v3f pos = readV3F1000(is);
-		f32 pitch = readF1000(is);
-		f32 yaw = readF1000(is);
+		v3f pos = packet[TOCLIENT_MOVE_PLAYER_POS].as<v3f>();
+		f32 pitch = packet[TOCLIENT_MOVE_PLAYER_PITCH].as<f32>();
+		f32 yaw = packet[TOCLIENT_MOVE_PLAYER_YAW].as<f32>();
 		player->setPosition(pos);
 		/*player->setPitch(pitch);
 		player->setYaw(yaw);*/
@@ -1518,18 +1486,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		// get damage from falling on ground
 		m_ignore_damage_timer = 3.0;
 	}
-	else if(command == TOCLIENT_PLAYERITEM)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_PLAYERITEM"<<std::endl;
-	}
 	else if(command == TOCLIENT_DEATHSCREEN)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		bool set_camera_point_target = readU8(is);
-		v3f camera_point_target = readV3F1000(is);
-		
+		bool set_camera_point_target = packet[TOCLIENT_DEATHSCREEN_SET_CAMERA].as<bool>();
+		v3f camera_point_target = packet[TOCLIENT_DEATHSCREEN_CAMERA_POINT].as<v3f>();
+
 		ClientEvent event;
 		event.type = CE_DEATHSCREEN;
 		event.deathscreen.set_camera_point_target = set_camera_point_target;
@@ -1594,54 +1555,16 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_MEDIA)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		/*
-			u16 command
-			u16 total number of file bunches
-			u16 index of this bunch
-			u32 number of files in this bunch
-			for each file {
-				u16 length of name
-				string name
-				u32 length of data
-				data
-			}
-		*/
-		int num_bunches = readU16(is);
-		int bunch_i = readU16(is);
-		u32 num_files = readU32(is);
-		infostream<<"Client: Received files: bunch "<<bunch_i<<"/"
-				<<num_bunches<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
-
-		if (num_files == 0)
-			return;
-
-		if (m_media_downloader == NULL ||
-				!m_media_downloader->isStarted()) {
-			const char *problem = m_media_downloader ?
-				"media has not been requested" :
-				"all media has been received already";
-			errorstream<<"Client: Received media but "
-				<<problem<<"! "
-				<<" bunch "<<bunch_i<<"/"<<num_bunches
-				<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
-			return;
-		}
+		MediaData media_data;
+		packet[TOCLIENT_MEDIA_MEDIA].convert(&media_data);
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
 		assert(!m_mesh_update_thread.IsRunning());
 
-		for(u32 i=0; i<num_files; i++){
-			std::string name = deSerializeString(is);
-			std::string data = deSerializeLongString(is);
+		for(size_t i = 0; i < media_data.size(); ++i)
 			m_media_downloader->conventionalTransferDone(
-					name, data, this);
-		}
+					media_data[i].first, media_data[i].second, this);
 
 		if (m_media_downloader->isDone()) {
 			delete m_media_downloader;
@@ -1751,18 +1674,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_PRIVILEGES)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		m_privileges.clear();
-		infostream<<"Client: Privileges updated: ";
-		u16 num_privileges = readU16(is);
-		for(u16 i=0; i<num_privileges; i++){
-			std::string priv = deSerializeString(is);
-			m_privileges.insert(priv);
-			infostream<<priv<<" ";
-		}
-		infostream<<std::endl;
+		packet[TOCLIENT_PRIVILEGES_PRIVILEGES].convert(&m_privileges);
 	}
 	else if(command == TOCLIENT_INVENTORY_FORMSPEC)
 	{

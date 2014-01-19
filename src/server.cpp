@@ -3429,29 +3429,20 @@ void Server::SendHP(con::Connection &con, u16 peer_id, u8 hp)
 	DSTACK(__FUNCTION_NAME);
 	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_HP);
-	writeU8(os, hp);
+	MSGPACK_PACKET_INIT(TOCLIENT_HP, 1);
+	PACK(TOCLIENT_HP_HP, hp);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendBreath(con::Connection &con, u16 peer_id, u16 breath)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
-
-	writeU16(os, TOCLIENT_BREATH);
-	writeU16(os, breath);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_BREATH, 1);
+	PACK(TOCLIENT_BREATH_BREATH, breath);
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendAccessDenied(con::Connection &con, u16 peer_id,
@@ -3474,17 +3465,13 @@ void Server::SendDeathscreen(con::Connection &con, u16 peer_id,
 		bool set_camera_point_target, v3f camera_point_target)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_DEATHSCREEN);
-	writeU8(os, set_camera_point_target);
-	writeV3F1000(os, camera_point_target);
+	MSGPACK_PACKET_INIT(TOCLIENT_DEATHSCREEN, 2);
+	PACK(TOCLIENT_DEATHSCREEN_SET_CAMERA, set_camera_point_target);
+	PACK(TOCLIENT_DEATHSCREEN_CAMERA_POINT, camera_point_target);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendItemDef(con::Connection &con, u16 peer_id,
@@ -3882,13 +3869,12 @@ void Server::SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed)
 	DSTACK(__FUNCTION_NAME);
 
 	// Make packet
-	SharedBuffer<u8> data(2+2+4);
-	writeU16(&data[0], TOCLIENT_TIME_OF_DAY);
-	writeU16(&data[2], time);
-	writeF1000(&data[4], time_speed);
+	MSGPACK_PACKET_INIT(TOCLIENT_TIME_OF_DAY, 2);
+	PACK(TOCLIENT_TIME_OF_DAY_TIME, time);
+	PACK(TOCLIENT_TIME_OF_DAY_TIME_SPEED, time_speed);
 
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendPlayerHP(u16 peer_id)
@@ -3920,28 +3906,13 @@ void Server::SendMovePlayer(u16 peer_id)
 	Player *player = m_env->getPlayer(peer_id);
 	assert(player);
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_MOVE_PLAYER);
-	writeV3F1000(os, player->getPosition());
-	writeF1000(os, player->getPitch());
-	writeF1000(os, player->getYaw());
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
+	PACK(TOCLIENT_MOVE_PLAYER_POS, player->getPosition());
+	PACK(TOCLIENT_MOVE_PLAYER_PITCH, player->getPitch());
+	PACK(TOCLIENT_MOVE_PLAYER_YAW, player->getYaw());
 
-	{
-		v3f pos = player->getPosition();
-		f32 pitch = player->getPitch();
-		f32 yaw = player->getYaw();
-		verbosestream<<"Server: Sending TOCLIENT_MOVE_PLAYER"
-				<<" pos=("<<pos.X<<","<<pos.Y<<","<<pos.Z<<")"
-				<<" pitch="<<pitch
-				<<" yaw="<<yaw
-				<<std::endl;
-	}
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendPlayerPrivileges(u16 peer_id)
@@ -3954,19 +3925,11 @@ void Server::SendPlayerPrivileges(u16 peer_id)
 	std::set<std::string> privs;
 	m_script->getAuth(player->getName(), NULL, &privs);
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_PRIVILEGES);
-	writeU16(os, privs.size());
-	for(std::set<std::string>::const_iterator i = privs.begin();
-			i != privs.end(); i++){
-		os<<serializeString(*i);
-	}
+	MSGPACK_PACKET_INIT(TOCLIENT_PRIVILEGES, 1);
+	PACK(TOCLIENT_PRIVILEGES_PRIVILEGES, privs);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendPlayerInventoryFormspec(u16 peer_id)
@@ -4512,14 +4475,8 @@ void Server::sendRequestedMedia(u16 peer_id,
 			<<"Sending files to client"<<std::endl;
 
 	/* Read files */
-
-	// Put 5kB in one bunch (this is not accurate)
-	u32 bytes_per_bunch = 5000;
-
-	std::vector< std::list<SendableMedia> > file_bunches;
-	file_bunches.push_back(std::list<SendableMedia>());
-
-	u32 file_size_bunch_total = 0;
+	// TODO: optimize
+	MediaData media_data;
 
 	for(std::list<std::string>::const_iterator i = tosend.begin();
 			i != tosend.end(); ++i)
@@ -4542,82 +4499,19 @@ void Server::sendRequestedMedia(u16 peer_id,
 					<<tpath<<"\" for reading"<<std::endl;
 			continue;
 		}
-		std::ostringstream tmp_os(std::ios_base::binary);
-		bool bad = false;
-		for(;;){
-			char buf[1024];
-			fis.read(buf, 1024);
-			std::streamsize len = fis.gcount();
-			tmp_os.write(buf, len);
-			file_size_bunch_total += len;
-			if(fis.eof())
-				break;
-			if(!fis.good()){
-				bad = true;
-				break;
-			}
-		}
-		if(bad){
-			errorstream<<"Server::sendRequestedMedia(): Failed to read \""
-					<<name<<"\""<<std::endl;
-			continue;
-		}
-		/*infostream<<"Server::sendRequestedMedia(): Loaded \""
-				<<tname<<"\""<<std::endl;*/
-		// Put in list
-		file_bunches[file_bunches.size()-1].push_back(
-				SendableMedia(name, tpath, tmp_os.str()));
-
-		// Start next bunch if got enough data
-		if(file_size_bunch_total >= bytes_per_bunch){
-			file_bunches.push_back(std::list<SendableMedia>());
-			file_size_bunch_total = 0;
-		}
-
+		std::string contents;
+		fis.seekg(0, std::ios::end);
+		contents.resize(fis.tellg());
+		fis.seekg(0, std::ios::beg);
+		fis.read(&contents[0], contents.size());
+		media_data.push_back(std::make_pair(name, contents));
 	}
 
-	/* Create and send packets */
+	MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
+	PACK(TOCLIENT_MEDIA_MEDIA, media_data);
 
-	u32 num_bunches = file_bunches.size();
-	for(u32 i=0; i<num_bunches; i++)
-	{
-		std::ostringstream os(std::ios_base::binary);
-
-		/*
-			u16 command
-			u16 total number of texture bunches
-			u16 index of this bunch
-			u32 number of files in this bunch
-			for each file {
-				u16 length of name
-				string name
-				u32 length of data
-				data
-			}
-		*/
-
-		writeU16(os, TOCLIENT_MEDIA);
-		writeU16(os, num_bunches);
-		writeU16(os, i);
-		writeU32(os, file_bunches[i].size());
-
-		for(std::list<SendableMedia>::iterator
-				j = file_bunches[i].begin();
-				j != file_bunches[i].end(); ++j){
-			os<<serializeString(j->name);
-			os<<serializeLongString(j->data);
-		}
-
-		// Make data buffer
-		std::string s = os.str();
-		verbosestream<<"Server::sendRequestedMedia(): bunch "
-				<<i<<"/"<<num_bunches
-				<<" files="<<file_bunches[i].size()
-				<<" size=" <<s.size()<<std::endl;
-		SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-		// Send as reliable
-		m_con.Send(peer_id, 2, data, true);
-	}
+	// Send as reliable
+	m_con.Send(peer_id, 2, buffer, true);
 }
 
 void Server::sendDetachedInventory(const std::string &name, u16 peer_id)

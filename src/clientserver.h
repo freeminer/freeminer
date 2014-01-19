@@ -20,6 +20,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef CLIENTSERVER_HEADER
 #define CLIENTSERVER_HEADER
 
+#include <vector>
+#include <utility>
+#include <string>
+
 /*
 	changes by PROTOCOL_VERSION:
 
@@ -132,6 +136,56 @@ enum {
 	TOCLIENT_INIT_POS
 };
 
+#define TOCLIENT_BREATH 0x4e
+enum {
+	// u16 breath
+	TOCLIENT_BREATH_BREATH
+};
+
+#define TOCLIENT_TIME_OF_DAY 0x29
+enum {
+	// u16 time (0-23999)
+	TOCLIENT_TIME_OF_DAY_TIME,
+	// f32 time_speed
+	TOCLIENT_TIME_OF_DAY_TIME_SPEED
+};
+
+#define TOCLIENT_HP 0x33
+enum {
+	TOCLIENT_HP_HP
+};
+
+#define TOCLIENT_MOVE_PLAYER 0x34
+enum {
+	// v3f player position
+	TOCLIENT_MOVE_PLAYER_POS,
+	// f32 pitch
+	TOCLIENT_MOVE_PLAYER_PITCH,
+	// f32 yaw
+	TOCLIENT_MOVE_PLAYER_YAW
+};
+
+#define TOCLIENT_DEATHSCREEN 0x37
+enum {
+	// bool set camera point target
+	TOCLIENT_DEATHSCREEN_SET_CAMERA,
+	// v3f camera point target (to point the death cause or whatever)
+	TOCLIENT_DEATHSCREEN_CAMERA_POINT
+};
+
+#define TOCLIENT_MEDIA 0x38
+enum {
+	// vector<pair<name, data>>
+	TOCLIENT_MEDIA_MEDIA
+};
+typedef std::vector<std::pair<std::string, std::string> > MediaData;
+
+#define TOCLIENT_PRIVILEGES 0x41
+enum {
+	// list of strings
+	TOCLIENT_PRIVILEGES_PRIVILEGES
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -143,67 +197,11 @@ enum ToClientCommand
 		u8 keep_metadata // Added in protocol version 22
 	*/
 	TOCLIENT_REMOVENODE = 0x22,
-	
-	TOCLIENT_PLAYERPOS = 0x23, // Obsolete
-	/*
-		[0] u16 command
-		// Followed by an arbitary number of these:
-		// Number is determined from packet length.
-		[N] u16 peer_id
-		[N+2] v3s32 position*100
-		[N+2+12] v3s32 speed*100
-		[N+2+12+12] s32 pitch*100
-		[N+2+12+12+4] s32 yaw*100
-	*/
-
-	TOCLIENT_PLAYERINFO = 0x24, // Obsolete
-	/*
-		[0] u16 command
-		// Followed by an arbitary number of these:
-		// Number is determined from packet length.
-		[N] u16 peer_id
-		[N] char[20] name
-	*/
-	
-	TOCLIENT_OPT_BLOCK_NOT_FOUND = 0x25, // Obsolete
-
-	TOCLIENT_SECTORMETA = 0x26, // Obsolete
-	/*
-		[0] u16 command
-		[2] u8 sector count
-		[3...] v2s16 pos + sector metadata
-	*/
 
 	TOCLIENT_INVENTORY = 0x27,
 	/*
 		[0] u16 command
 		[2] serialized inventory
-	*/
-	
-	TOCLIENT_OBJECTDATA = 0x28, // Obsolete
-	/*
-		Sent as unreliable.
-
-		u16 command
-		u16 number of player positions
-		for each player:
-			u16 peer_id
-			v3s32 position*100
-			v3s32 speed*100
-			s32 pitch*100
-			s32 yaw*100
-		u16 count of blocks
-		for each block:
-			v3s16 blockpos
-			block objects
-	*/
-
-	TOCLIENT_TIME_OF_DAY = 0x29,
-	/*
-		u16 command
-		u16 time (0-23999)
-		Added in a later version:
-		f1000 time_speed
 	*/
 
 	// (oops, there is some gap here)
@@ -230,7 +228,7 @@ enum ToClientCommand
 			string initialization data
 		}
 	*/
-	
+
 	TOCLIENT_ACTIVE_OBJECT_MESSAGES = 0x32,
 	/*
 		u16 command
@@ -242,20 +240,6 @@ enum ToClientCommand
 		}
 	*/
 
-	TOCLIENT_HP = 0x33,
-	/*
-		u16 command
-		u8 hp
-	*/
-
-	TOCLIENT_MOVE_PLAYER = 0x34,
-	/*
-		u16 command
-		v3f1000 player position
-		f1000 player pitch
-		f1000 player yaw
-	*/
-
 	TOCLIENT_ACCESS_DENIED = 0x35,
 	/*
 		u16 command
@@ -263,54 +247,21 @@ enum ToClientCommand
 		wstring reason
 	*/
 
-	TOCLIENT_PLAYERITEM = 0x36, // Obsolete
-	/*
-		u16 command
-		u16 count of player items
-		for all player items {
-			u16 peer id
-			u16 length of serialized item
-			string serialized item
-		}
-	*/
 
-	TOCLIENT_DEATHSCREEN = 0x37,
-	/*
-		u16 command
-		u8 bool set camera point target
-		v3f1000 camera point target (to point the death cause or whatever)
-	*/
-
-	TOCLIENT_MEDIA = 0x38,
-	/*
-		u16 command
-		u16 total number of texture bunches
-		u16 index of this bunch
-		u32 number of files in this bunch
-		for each file {
-			u16 length of name
-			string name
-			u32 length of data
-			data
-		}
-		u16 length of remote media server url (if applicable)
-		string url
-	*/
-	
 	TOCLIENT_TOOLDEF = 0x39,
 	/*
 		u16 command
 		u32 length of the next item
 		serialized ToolDefManager
 	*/
-	
+
 	TOCLIENT_NODEDEF = 0x3a,
 	/*
 		u16 command
 		u32 length of the next item
 		serialized NodeDefManager
 	*/
-	
+
 	TOCLIENT_CRAFTITEMDEF = 0x3b,
 	/*
 		u16 command
@@ -337,7 +288,7 @@ enum ToClientCommand
 		u32 length of next item
 		serialized ItemDefManager
 	*/
-	
+
 	TOCLIENT_PLAY_SOUND = 0x3f,
 	/*
 		u16 command
@@ -355,15 +306,6 @@ enum ToClientCommand
 	/*
 		u16 command
 		s32 sound_id
-	*/
-
-	TOCLIENT_PRIVILEGES = 0x41,
-	/*
-		u16 command
-		u16 number of privileges
-		for each privilege
-			u16 len
-			u8[len] privilege
 	*/
 
 	TOCLIENT_INVENTORY_FORMSPEC = 0x42,
@@ -497,12 +439,6 @@ enum ToClientCommand
 		u16 param
 		u16 len
 		u8[len] value
-	*/
-
-	TOCLIENT_BREATH = 0x4e,
-	/*
-		u16 command
-		u16 breath
 	*/
 };
 
