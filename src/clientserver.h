@@ -150,6 +150,13 @@ enum {
 	TOCLIENT_TIME_OF_DAY_TIME_SPEED
 };
 
+#define TOCLIENT_ACTIVE_OBJECT_MESSAGES 0x32
+enum {
+	// list of pair<id, message> where id is u16 and message is string
+	TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES
+};
+typedef std::vector<std::pair<unsigned int, std::string> > ActiveObjectMessages;
+
 #define TOCLIENT_HP 0x33
 enum {
 	TOCLIENT_HP_HP
@@ -185,6 +192,7 @@ enum {
 	// list of strings
 	TOCLIENT_PRIVILEGES_PRIVILEGES
 };
+
 
 enum ToClientCommand
 {
@@ -226,17 +234,6 @@ enum ToClientCommand
 			u8 type
 			u32 initialization data length
 			string initialization data
-		}
-	*/
-
-	TOCLIENT_ACTIVE_OBJECT_MESSAGES = 0x32,
-	/*
-		u16 command
-		for all objects
-		{
-			u16 id
-			u16 message length
-			string message
 		}
 	*/
 

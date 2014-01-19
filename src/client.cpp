@@ -1370,46 +1370,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ACTIVE_OBJECT_MESSAGES)
 	{
-		//if(g_settings->getBool("enable_experimental"))
-		{
-			/*
-				u16 command
-				for all objects
-				{
-					u16 id
-					u16 message length
-					string message
-				}
-			*/
-			char buf[6];
-			// Get all data except the command number
-			std::string datastring((char*)&data[2], datasize-2);
-			// Throw them in an istringstream
-			std::istringstream is(datastring, std::ios_base::binary);
-			
-			while(is.eof() == false)
-			{
-				// Read stuff
-				is.read(buf, 2);
-				u16 id = readU16((u8*)buf);
-				if(is.eof())
-					break;
-				is.read(buf, 2);
-				u16 message_size = readU16((u8*)buf);
-				std::string message;
-				message.reserve(message_size);
-				for(u16 i=0; i<message_size; i++)
-				{
-					is.read(buf, 1);
-					message.append(buf, 1);
-				}
-				// Pass on to the environment
-				{
-					//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-					m_env.processActiveObjectMessage(id, message);
-				}
-			}
-		}
+		ActiveObjectMessages messages;
+		packet[TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES].convert(&messages);
+		for (size_t i = 0; i < messages.size(); ++i)
+			m_env.processActiveObjectMessage(messages[i].first, messages[i].second);
 	}
 	else if(command == TOCLIENT_MOVEMENT)
 	{

@@ -1545,8 +1545,8 @@ void Server::AsyncRunStep(bool initial_step)
 			i != m_clients.end(); ++i)
 		{
 			RemoteClient *client = i->second;
-			std::string reliable_data;
-			std::string unreliable_data;
+			ActiveObjectMessages reliable_data;
+			ActiveObjectMessages unreliable_data;
 			// Go through all objects in message buffer
 			for(std::map<u16, std::list<ActiveObjectMessage>* >::iterator
 					j = buffered_messages.begin();
@@ -1562,20 +1562,11 @@ void Server::AsyncRunStep(bool initial_step)
 				for(std::list<ActiveObjectMessage>::iterator
 						k = list->begin(); k != list->end(); ++k)
 				{
-					// Compose the full new data with header
-					ActiveObjectMessage aom = *k;
-					std::string new_data;
-					// Add object id
-					char buf[2];
-					writeU16((u8*)&buf[0], aom.id);
-					new_data.append(buf, 2);
-					// Add data
-					new_data += serializeString(aom.datastring);
 					// Add data to buffer
-					if(aom.reliable)
-						reliable_data += new_data;
+					if(k->reliable)
+						reliable_data.push_back(make_pair(k->id, k->datastring));
 					else
-						unreliable_data += new_data;
+						unreliable_data.push_back(make_pair(k->id, k->datastring));
 				}
 			}
 			/*
@@ -1584,30 +1575,18 @@ void Server::AsyncRunStep(bool initial_step)
 			*/
 			if(reliable_data.size() > 0)
 			{
-				SharedBuffer<u8> reply(2 + reliable_data.size());
-				writeU16(&reply[0], TOCLIENT_ACTIVE_OBJECT_MESSAGES);
-				memcpy((char*)&reply[2], reliable_data.c_str(),
-						reliable_data.size());
+				MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
+				PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, reliable_data);
 				// Send as reliable
-				m_con.Send(client->peer_id, 0, reply, true);
+				m_con.Send(client->peer_id, 0, buffer, true);
 			}
 			if(unreliable_data.size() > 0)
 			{
-				SharedBuffer<u8> reply(2 + unreliable_data.size());
-				writeU16(&reply[0], TOCLIENT_ACTIVE_OBJECT_MESSAGES);
-				memcpy((char*)&reply[2], unreliable_data.c_str(),
-						unreliable_data.size());
+				MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
+				PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, unreliable_data);
 				// Send as unreliable
-				m_con.Send(client->peer_id, 1, reply, false);
+				m_con.Send(client->peer_id, 1, buffer, false);
 			}
-
-			/*if(reliable_data.size() > 0 || unreliable_data.size() > 0)
-			{
-				infostream<<"Server: Size of object message data: "
-						<<"reliable: "<<reliable_data.size()
-						<<", unreliable: "<<unreliable_data.size()
-						<<std::endl;
-			}*/
 		}
 
 		// Clear buffered_messages
