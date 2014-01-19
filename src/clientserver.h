@@ -211,6 +211,15 @@ enum {
 };
 typedef std::vector<std::pair<std::string, std::string> > MediaData;
 
+#define TOCLIENT_ANNOUNCE_MEDIA 0x3c
+enum {
+	// list of [string name, string sha1_digest]
+	TOCLIENT_ANNOUNCE_MEDIA_LIST,
+	// string, url of remote media server
+	TOCLIENT_ANNOUNCE_MEDIA_REMOTE_SERVER
+};
+typedef std::vector<std::pair<std::string, std::string> > MediaAnnounceList;
+
 #define TOCLIENT_PRIVILEGES 0x41
 enum {
 	// list of strings
@@ -270,19 +279,6 @@ enum ToClientCommand
 		u16 command
 		u32 length of the next item
 		serialized CraftiItemDefManager
-	*/
-
-	TOCLIENT_ANNOUNCE_MEDIA = 0x3c,
-
-	/*
-		u16 command
-		u32 number of files
-		for each texture {
-			u16 length of name
-			string name
-			u16 length of sha1_digest
-			string sha1_digest
-		}
 	*/
 
 	TOCLIENT_ITEMDEF = 0x3d,

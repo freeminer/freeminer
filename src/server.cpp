@@ -4330,49 +4330,18 @@ void Server::sendMediaAnnouncement(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	verbosestream<<"Server: Announcing files to id("<<peer_id<<")"
-			<<std::endl;
-
-	std::list<SendableMediaAnnouncement> file_announcements;
+	MediaAnnounceList announce_list;
 
 	for(std::map<std::string, MediaInfo>::iterator i = m_media.begin();
-			i != m_media.end(); i++){
-		// Put in list
-		file_announcements.push_back(
-				SendableMediaAnnouncement(i->first, i->second.sha1_digest));
-	}
+			i != m_media.end(); i++)
+		announce_list.push_back(std::make_pair(i->first, i->second.sha1_digest));
 
-	// Make packet
-	std::ostringstream os(std::ios_base::binary);
-
-	/*
-		u16 command
-		u32 number of files
-		for each texture {
-			u16 length of name
-			string name
-			u16 length of sha1_digest
-			string sha1_digest
-		}
-	*/
-
-	writeU16(os, TOCLIENT_ANNOUNCE_MEDIA);
-	writeU16(os, file_announcements.size());
-
-	for(std::list<SendableMediaAnnouncement>::iterator
-			j = file_announcements.begin();
-			j != file_announcements.end(); ++j){
-		os<<serializeString(j->name);
-		os<<serializeString(j->sha1_digest);
-	}
-	os<<serializeString(g_settings->get("remote_media"));
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_ANNOUNCE_MEDIA, 2);
+	PACK(TOCLIENT_ANNOUNCE_MEDIA_LIST, announce_list);
+	PACK(TOCLIENT_ANNOUNCE_MEDIA_REMOTE_SERVER, g_settings->get("remote_media"));
 
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 struct SendableMedia

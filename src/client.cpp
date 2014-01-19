@@ -1410,23 +1410,14 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ANNOUNCE_MEDIA)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		int num_files = readU16(is);
-		
-		infostream<<"Client: Received media announcement: packet size: "
-				<<datasize<<std::endl;
-
 		if (m_media_downloader == NULL ||
 				m_media_downloader->isStarted()) {
 			const char *problem = m_media_downloader ?
 				"we already saw another announcement" :
 				"all media has been received already";
 			errorstream<<"Client: Received media announcement but "
-				<<problem<<"! "
-				<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
+				<<problem<<"!"
+				<<std::endl;
 			return;
 		}
 
@@ -1434,25 +1425,18 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		// updating content definitions
 		assert(!m_mesh_update_thread.IsRunning());
 
-		for(int i=0; i<num_files; i++)
-		{
-			std::string name = deSerializeString(is);
-			std::string sha1_base64 = deSerializeString(is);
-			std::string sha1_raw = base64_decode(sha1_base64);
-			m_media_downloader->addFile(name, sha1_raw);
-		}
+		MediaAnnounceList announce_list;
+		packet[TOCLIENT_ANNOUNCE_MEDIA_LIST].convert(&announce_list);
+		for (size_t i = 0; i < announce_list.size(); ++i)
+			m_media_downloader->addFile(announce_list[i].first, base64_decode(announce_list[i].second));
 
 		std::vector<std::string> remote_media;
-		try {
-			Strfnd sf(deSerializeString(is));
-			while(!sf.atend()) {
-				std::string baseurl = trim(sf.next(","));
-				if(baseurl != "")
-					m_media_downloader->addRemoteServer(baseurl);
-			}
-		}
-		catch(SerializationError) {
-			// not supported by server or turned off
+		std::string remote_media_string = packet[TOCLIENT_ANNOUNCE_MEDIA_REMOTE_SERVER].as<std::string>();
+		Strfnd sf(remote_media_string);
+		while(!sf.atend()) {
+			std::string baseurl = trim(sf.next(","));
+			if(baseurl != "")
+				m_media_downloader->addRemoteServer(baseurl);
 		}
 
 		m_media_downloader->step(this);
