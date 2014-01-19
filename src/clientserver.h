@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <utility>
 #include <string>
+#include "irrlichttypes.h"
+#include <msgpack.hpp>
 
 /*
 	changes by PROTOCOL_VERSION:
@@ -150,6 +152,23 @@ enum {
 	TOCLIENT_TIME_OF_DAY_TIME_SPEED
 };
 
+#define TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD 0x31
+enum {
+	// list of ids
+	TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE,
+	// list of [id, type, initialization_data]
+	TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD
+};
+
+struct ActiveObjectAddData {
+	ActiveObjectAddData(u16 id_, u8 type_, std::string data_) : id(id_), type(type_), data(data_) {}
+	ActiveObjectAddData() : id(0), type(0), data("") {}
+	u16 id;
+	u8 type;
+	std::string data;
+	MSGPACK_DEFINE(id, type, data)
+};
+
 #define TOCLIENT_ACTIVE_OBJECT_MESSAGES 0x32
 enum {
 	// list of pair<id, message> where id is u16 and message is string
@@ -193,7 +212,6 @@ enum {
 	TOCLIENT_PRIVILEGES_PRIVILEGES
 };
 
-
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -219,22 +237,6 @@ enum ToClientCommand
 		u16 command
 		u16 length
 		wstring message
-	*/
-
-	TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD = 0x31,
-	/*
-		u16 command
-		u16 count of removed objects
-		for all removed objects {
-			u16 id
-		}
-		u16 count of added objects
-		for all added objects {
-			u16 id
-			u8 type
-			u32 initialization data length
-			string initialization data
-		}
 	*/
 
 	TOCLIENT_ACCESS_DENIED = 0x35,

@@ -26,9 +26,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "player.h"
 #include "object_properties.h"
 
-ServerActiveObject* createItemSAO(ServerEnvironment *env, v3f pos,
-		const std::string itemstring);
-
 /*
 	LuaEntitySAO needs some internals exposed.
 */

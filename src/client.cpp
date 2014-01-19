@@ -1311,62 +1311,15 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD)
 	{
-		//if(g_settings->getBool("enable_experimental"))
-		{
-			/*
-				u16 command
-				u16 count of removed objects
-				for all removed objects {
-					u16 id
-				}
-				u16 count of added objects
-				for all added objects {
-					u16 id
-					u8 type
-					u32 initialization data length
-					string initialization data
-				}
-			*/
+		std::vector<u16> removed_objects;
+		packet[TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE].convert(&removed_objects);
+		for (size_t i = 0; i < removed_objects.size(); ++i)
+			m_env.removeActiveObject(removed_objects[i]);
 
-			char buf[6];
-			// Get all data except the command number
-			std::string datastring((char*)&data[2], datasize-2);
-			// Throw them in an istringstream
-			std::istringstream is(datastring, std::ios_base::binary);
-
-			// Read stuff
-			
-			// Read removed objects
-			is.read(buf, 2);
-			u16 removed_count = readU16((u8*)buf);
-			for(u16 i=0; i<removed_count; i++)
-			{
-				is.read(buf, 2);
-				u16 id = readU16((u8*)buf);
-				// Remove it
-				{
-					//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-					m_env.removeActiveObject(id);
-				}
-			}
-			
-			// Read added objects
-			is.read(buf, 2);
-			u16 added_count = readU16((u8*)buf);
-			for(u16 i=0; i<added_count; i++)
-			{
-				is.read(buf, 2);
-				u16 id = readU16((u8*)buf);
-				is.read(buf, 1);
-				u8 type = readU8((u8*)buf);
-				std::string data = deSerializeLongString(is);
-				// Add it
-				{
-					//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-					m_env.addActiveObject(id, type, data);
-				}
-			}
-		}
+		std::vector<ActiveObjectAddData> added_objects;
+		packet[TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD].convert(&added_objects);
+		for (size_t i = 0; i < added_objects.size(); ++i)
+			m_env.addActiveObject(added_objects[i].id, added_objects[i].type, added_objects[i].data);
 	}
 	else if(command == TOCLIENT_ACTIVE_OBJECT_MESSAGES)
 	{

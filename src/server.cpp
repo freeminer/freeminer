@@ -1395,13 +1395,7 @@ void Server::AsyncRunStep(bool initial_step)
 				continue;
 			}
 
-			std::string data_buffer;
-
-			char buf[4];
-
 			// Handle removed objects
-			writeU16((u8*)buf, removed_objects.size());
-			data_buffer.append(buf, 2);
 			for(std::set<u16>::iterator
 					i = removed_objects.begin();
 					i != removed_objects.end(); ++i)
@@ -1410,10 +1404,6 @@ void Server::AsyncRunStep(bool initial_step)
 				u16 id = *i;
 				ServerActiveObject* obj = m_env->getActiveObject(id);
 
-				// Add to data buffer for sending
-				writeU16((u8*)buf, id);
-				data_buffer.append(buf, 2);
-
 				// Remove from known objects
 				client->m_known_objects.erase(id);
 
@@ -1421,9 +1411,9 @@ void Server::AsyncRunStep(bool initial_step)
 					obj->m_known_by_count--;
 			}
 
+			std::vector<ActiveObjectAddData> added_objects_data;
+
 			// Handle added objects
-			writeU16((u8*)buf, added_objects.size());
-			data_buffer.append(buf, 2);
 			for(std::set<u16>::iterator
 					i = added_objects.begin();
 					i != added_objects.end(); ++i)
@@ -1440,17 +1430,10 @@ void Server::AsyncRunStep(bool initial_step)
 				else
 					type = obj->getSendType();
 
-				// Add to data buffer for sending
-				writeU16((u8*)buf, id);
-				data_buffer.append(buf, 2);
-				writeU8((u8*)buf, type);
-				data_buffer.append(buf, 1);
-
+				std::string data = "";
 				if(obj)
-					data_buffer.append(serializeLongString(
-							obj->getClientInitializationData(client->net_proto_version)));
-				else
-					data_buffer.append(serializeLongString(""));
+					data = obj->getClientInitializationData(client->net_proto_version);
+				added_objects_data.push_back(ActiveObjectAddData(id, type, data));
 
 				// Add to known objects
 				client->m_known_objects.insert(id);
@@ -1459,48 +1442,13 @@ void Server::AsyncRunStep(bool initial_step)
 					obj->m_known_by_count++;
 			}
 
-			// Send packet
-			SharedBuffer<u8> reply(2 + data_buffer.size());
-			writeU16(&reply[0], TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD);
-			memcpy((char*)&reply[2], data_buffer.c_str(),
-					data_buffer.size());
+			MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);
+			PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE, removed_objects);
+			PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD, added_objects_data);
+
 			// Send as reliable
-			m_con.Send(client->peer_id, 0, reply, true);
-
-/*
-			verbosestream<<"Server: Sent object remove/add: "
-					<<removed_objects.size()<<" removed, "
-					<<added_objects.size()<<" added, "
-					<<"packet size is "<<reply.getSize()<<std::endl;
-*/
+			m_con.Send(client->peer_id, 0, buffer, true);
 		}
-
-#if 0
-		/*
-			Collect a list of all the objects known by the clients
-			and report it back to the environment.
-		*/
-
-		core::map<u16, bool> all_known_objects;
-
-		for(core::map<u16, RemoteClient*>::Iterator
-			i = m_clients.getIterator();
-			i.atEnd() == false; i++)
-		{
-			RemoteClient *client = i.getNode()->getValue();
-			// Go through all known objects of client
-			for(core::map<u16, bool>::Iterator
-					i = client->m_known_objects.getIterator();
-					i.atEnd()==false; i++)
-			{
-				u16 id = i.getNode()->getKey();
-				all_known_objects[id] = true;
-			}
-		}
-
-		m_env->setKnownActiveObjects(whatever);
-#endif
-
 	}
 
 	/*
