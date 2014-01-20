@@ -401,130 +401,41 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
-#if WTF
-	std::set<Player*> saved_players;
-
-	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
-	for(u32 i=0; i<player_files.size(); i++)
-	{
-		if(player_files[i].dir || player_files[i].name[0] == '.')
-			continue;
-		
-		// Full path to this file
-		std::string path = players_path + "/" + player_files[i].name;
-
-		//infostream<<"Checking player file "<<path<<std::endl;
-
-		// Load player to see what is its name
-		RemotePlayer testplayer(m_gamedef);
-		{
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false)
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			testplayer.deSerialize(is, player_files[i].name);
-		}
-
-		//infostream<<"Loaded test player with name "<<testplayer.getName()<<std::endl;
-		
-		// Search for the player
-		std::string playername = testplayer.getName();
-		Player *player = getPlayer(playername.c_str());
-		if(player == NULL)
-		{
-			infostream<<"Didn't find matching player, ignoring file "<<path<<std::endl;
-			continue;
-		}
-
-		//infostream<<"Found matching player, overwriting."<<std::endl;
-
-		// OK, found. Save player there.
-		if(player->checkModified())
-		{
-			// Open file and serialize
-			std::ostringstream ss(std::ios_base::binary);
-			player->serialize(ss);
-			if(!fs::safeWriteToFile(path, ss.str()))
-			{
-				infostream<<"Failed to write "<<path<<std::endl;
-				continue;
-			}
-			saved_players.insert(player);
-		} else {
-			saved_players.insert(player);
-		}
-	}
-#endif
-
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
+	std::list<Player*>::iterator i = m_players.begin();
+	while (i != m_players.end())
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save && !player->getPlayerSAO() && player->refs <= 0) {
-			delete player;
-			i = m_players.erase(i);
-			continue;
-		}
-
-#if WTF
-		if(saved_players.find(player) != saved_players.end())
-		{
-			/*infostream<<"Player "<<player->getName()
-					<<" was already saved."<<std::endl;*/
-			continue;
-		}
-#endif
 		if (player->path == "") {
-		std::string playername = player->getName();
-		// Don't save unnamed player
-		if(playername == "")
-		{
-			//infostream<<"Not saving unnamed player."<<std::endl;
-			continue;
-		}
-		/*
-			Find a sane filename
-		*/
-		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
-			playername = "player";
-#if WTF
-		std::string path = players_path + "/" + playername;
-		bool found = false;
-		for(u32 i=0; i<1000; i++)
-		{
-			if(fs::PathExists(path) == false)
+			std::string playername = player->getName();
+			if(playername == "")
 			{
-				found = true;
-				break;
+				//infostream<<"Not saving unnamed player."<<std::endl;
+				goto save_end;
 			}
-			path = players_path + "/" + playername + itos(i);
+			if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
+				playername = "player";
+			player->path = players_path + "/" + playername;
 		}
-		if(found == false)
-		{
-			infostream<<"Didn't find free file for player"<<std::endl;
-			continue;
-		}
-#endif
 
-		player->path = players_path + "/" + playername;
-		}
+		//infostream<<"Saving player "<<player->getName()<<" to "<<player->path<<std::endl;
 		{
-			/*infostream<<"Saving player "<<player->getName()<<" to "
-					<<player->path<<std::endl;*/
-			// Open file and serialize
 			std::ostringstream ss(std::ios_base::binary);
 			player->serialize(ss);
-			if(!fs::safeWriteToFile(player->path, ss.str()))
-			{
+			if(!fs::safeWriteToFile(player->path, ss.str())) {
 				infostream<<"Failed to write "<<player->path<<std::endl;
-				continue;
+				goto save_end;
 			}
 		}
 		player->need_save = 0;
+
+		save_end:
+		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
+			delete player;
+			i = m_players.erase(i);
+		} else {
+			++i;
+		}
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
