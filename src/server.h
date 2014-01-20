@@ -497,6 +497,8 @@ private:
 	static void SendNodeDef(con::Connection &con, u16 peer_id,
 			INodeDefManager *nodedef, u16 protocol_version);
 
+	static void SendAnimations(con::Connection &con, u16 peer_id);
+
 	/*
 		Non-static send methods.
 		Conlock should be always used.

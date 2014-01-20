@@ -1078,7 +1078,7 @@ public:
 
 	void step(float dtime, ClientEnvironment *env)
 	{
-		//start player animation hack
+		// Handel model of local player instantly to prevent lags
 		if(m_is_local_player) {
 			LocalPlayer *player = m_env->getLocalPlayer();
 
@@ -1102,26 +1102,26 @@ public:
 					m_animation_speed = 15;
 
 				if(walking && (controls.LMB || controls.RMB)) {
-					m_animation_range = v2f(200, 219);
+					m_animation_range = v2f(player->animation_wd_start, player->animation_wd_stop);
 					player->last_animation = WD_ANIM;
 				} else if(walking) {
-					m_animation_range = v2f(168, 187);
+					m_animation_range = v2f(player->animation_walk_start, player->animation_walk_stop);
 					player->last_animation = WALK_ANIM;
 				} else if(controls.LMB || controls.RMB) {
-					m_animation_range = v2f(189, 198);
+					m_animation_range = v2f(player->animation_dig_start, player->animation_dig_stop);
 					player->last_animation = DIG_ANIM;
 				}
 
-				//reset animation when no input detected
+				// reset animation when no input detected
 				if (!walking && !controls.LMB && !controls.RMB) {
 					player->last_animation = NO_ANIM;
 					if (old_anim != NO_ANIM) {
-						m_animation_range = v2f(0, 79);
+						m_animation_range = v2f(player->animation_default_start, player->animation_default_stop);
 						updateAnimation();
 					}
 				}
 
-				// Update local player animation instantly to prevent lags
+				// Update local player animations
 				if (player->last_animation != old_anim && player->last_animation != NO_ANIM)
 					updateAnimation();
 
@@ -1129,7 +1129,6 @@ public:
 				m_is_visible = false;
 			}
         }
-		//end player animation hack
 
 		if(m_visuals_expired && m_smgr && m_irr){
 			m_visuals_expired = false;
@@ -1772,7 +1771,12 @@ public:
 				m_animation_range = readV2F1000(is);
 				m_animation_speed = readF1000(is);
 				m_animation_blend = readF1000(is);
-				if(!m_is_local_player || (m_animation_range.X != 200 && m_animation_range.X != 168 && m_animation_range.X != 189)) // *TODO* values from registered animations /walking, punching, both
+				// update animation only if object is not player
+				// or the received animation is not registered
+				if(!m_is_local_player ||
+					(m_animation_range.X != player->animation_walk_start &&
+					m_animation_range.X != player->animation_dig_start &&
+					m_animation_range.X != player->animation_wd_start))
 					updateAnimation();
 			}
 		}
