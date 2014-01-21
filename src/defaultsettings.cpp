@@ -253,6 +253,16 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("movement_liquid_sink", "10");
 	settings->setDefault("movement_gravity", "9.81");
 
+	// player model animations (sent to client)
+	settings->setDefault("animation_default_start", "0");
+	settings->setDefault("animation_default_stop", "79");
+	settings->setDefault("animation_walk_start", "168");
+	settings->setDefault("animation_walk_stop", "187");
+	settings->setDefault("animation_dig_start", "189");
+	settings->setDefault("animation_dig_stop", "198");
+	settings->setDefault("animation_wd_start", "200");
+	settings->setDefault("animation_wd_stop", "219");
+
 	//liquid stuff
 	settings->setDefault("liquid_finite", "false");
 	settings->setDefault("liquid_update", "0.4");

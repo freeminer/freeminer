@@ -2051,6 +2051,21 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
 	}
+	else if(command == TOCLIENT_AMINATIONS)
+	{
+		std::string datastring((char*)&data[2], datasize-2);
+		std::istringstream is(datastring, std::ios_base::binary);
+		LocalPlayer *player = m_env.getLocalPlayer();
+		assert(player != NULL);
+		player->animation_default_start = readF1000(is);
+		player->animation_default_stop = readF1000(is);
+		player->animation_walk_start = readF1000(is);
+		player->animation_walk_stop = readF1000(is);
+		player->animation_dig_start = readF1000(is);
+		player->animation_dig_stop = readF1000(is);
+		player->animation_wd_start = readF1000(is);
+		player->animation_wd_stop = readF1000(is);
+	}
 	else
 	{
 		infostream<<"Client: Ignoring unknown command "

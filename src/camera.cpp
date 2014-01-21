@@ -398,6 +398,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if (current_camera_mode == THIRD_FRONT)// update the camera position in front-view mode to render blocks behind player
 		m_camera_position = my_cp;
 
+	if (current_camera_mode == THIRD_FRONT)// update the camera position in front-view mode to render blocks behind player
+		m_camera_position = my_cp;
+
 	// Get FOV
 	f32 fov_degrees;
 	if (player->zoom) {
