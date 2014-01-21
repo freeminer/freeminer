@@ -876,7 +876,7 @@ void ClientMap::renderPostFx()
 	{
 		post_effect_color = video::SColor(255, 0, 0, 0);
 	}
-	if (post_effect_color.getAlpha() != 0) // && !(player->third_person && m_camera_direction.Y < 0))
+	if (post_effect_color.getAlpha() != 0)
 	{
 		// Draw a full-screen rectangle
 		video::IVideoDriver* driver = SceneManager->getVideoDriver();
