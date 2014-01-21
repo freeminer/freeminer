@@ -1,6 +1,6 @@
 #
 # make new patch:
-# diff -EbBw --normal -u   src/mandelbulber/ ../freeminer_release/src/mandelbulber/| grep -v "Only in" > util/mandelbulber.patch
+# diff -EbBw --normal -u   src/mandelbulber/ ../mandelbulber-read-only/src | grep -v "Only in" > util/mandelbulber.patch
 #
 
 FIND_PATH(MANDELBULBER_PATH NAMES fractal.h PATHS ${PROJECT_SOURCE_DIR}/mandelbulber NO_DEFAULT_PATH)
