@@ -2033,7 +2033,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
 	}
-	else if(command == TOCLIENT_AMINATIONS)
+	else if(command == TOCLIENT_ANIMATIONS)
 	{
 		std::string datastring((char*)&data[2], datasize-2);
 		std::istringstream is(datastring, std::ios_base::binary);

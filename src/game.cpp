@@ -1321,7 +1321,7 @@ void the_game(
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
 
-	int current_camera_mode = FIRST; // start in first-perscon view
+	int current_camera_mode = CAMERA_MODE_FIRST; // start in first-person view
 
 	/*
 		Clouds
@@ -2129,7 +2129,7 @@ void the_game(
 			else{
 				s32 dx = input->getMousePos().X - displaycenter.X;
 				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse || player->camera_mode == THIRD_FRONT)
+				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
 					dy = -dy;
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
@@ -2490,12 +2490,12 @@ void the_game(
 
 		if(input->wasKeyDown(getKeySetting("keymap_camera_mode"))) {
 
-			if (current_camera_mode == FIRST)
-				current_camera_mode = THIRD;
-			else if (current_camera_mode == THIRD)
-				current_camera_mode = THIRD_FRONT;
+			if (current_camera_mode == CAMERA_MODE_FIRST)
+				current_camera_mode = CAMERA_MODE_THIRD;
+			else if (current_camera_mode == CAMERA_MODE_THIRD)
+				current_camera_mode = CAMERA_MODE_THIRD_FRONT;
 			else
-				current_camera_mode = FIRST;
+				current_camera_mode = CAMERA_MODE_FIRST;
 
 		}
 		player->camera_mode = current_camera_mode;
@@ -2549,7 +2549,7 @@ void the_game(
 				camera_position + camera_direction * BS * (d+1));
 
 		// prevent player pointing anything in front-view
-		if (current_camera_mode == THIRD_FRONT) 
+		if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
 			shootline = core::line3d<f32>(0,0,0,0,0,0);
 
 		ClientActiveObject *selected_object = NULL;
@@ -3339,7 +3339,9 @@ void the_game(
 		/*
 			Wielded tool
 		*/
-		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && current_camera_mode < THIRD)
+		if(show_hud &&
+			(player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) &&
+			current_camera_mode < CAMERA_MODE_THIRD)
 		{
 			// Warning: This clears the Z buffer.
 			camera.drawWieldedTool();
