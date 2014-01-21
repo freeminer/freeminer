@@ -2599,7 +2599,7 @@ void the_game(
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
 
-		if(input->wasKeyDown("KEY_F7")) {//*TODO* not hardcoded key?
+		if(input->wasKeyDown(getKeySetting("keymap_camera_mode"))) {
 
 			if (current_camera_mode == FIRST)
 				current_camera_mode = THIRD;
