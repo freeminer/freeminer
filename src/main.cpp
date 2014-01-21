@@ -36,7 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	// This would get rid of the console window
 	#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
-	#pragma comment(lib, "zlibwapi.lib")
+	//#pragma comment(lib, "zlibwapi.lib")
 	#pragma comment(lib, "Shell32.lib")
 #endif
 
@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	// Irrlicht 1.8 input colours
 	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255,128,128,128));
-	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255,56,121,65));
+	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255,97,173,109));
 #endif
 
 

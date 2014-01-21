@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <sstream>
 #include <iomanip>
+#include <cctype>
 
 #include "../sha1.h"
 #include "../base64.h"
@@ -281,4 +282,14 @@ std::wstring sanitizeChatString(const std::wstring &s) {
 		++i;
 	}
 	return output;
+}
+
+bool char_icompare(char c1, char c2)
+{
+	return (std::tolower(static_cast<unsigned char>(c1)) <std::tolower(static_cast<unsigned char>(c2)));
+}
+
+bool string_icompare(const std::string& a, const std::string& b)
+{
+	return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), char_icompare);
 }

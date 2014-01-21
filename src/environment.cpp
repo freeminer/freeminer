@@ -401,130 +401,41 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 	fs::CreateDir(players_path);
 
-#if WTF
-	std::set<Player*> saved_players;
-
-	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
-	for(u32 i=0; i<player_files.size(); i++)
-	{
-		if(player_files[i].dir || player_files[i].name[0] == '.')
-			continue;
-		
-		// Full path to this file
-		std::string path = players_path + "/" + player_files[i].name;
-
-		//infostream<<"Checking player file "<<path<<std::endl;
-
-		// Load player to see what is its name
-		RemotePlayer testplayer(m_gamedef);
-		{
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false)
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			testplayer.deSerialize(is, player_files[i].name);
-		}
-
-		//infostream<<"Loaded test player with name "<<testplayer.getName()<<std::endl;
-		
-		// Search for the player
-		std::string playername = testplayer.getName();
-		Player *player = getPlayer(playername.c_str());
-		if(player == NULL)
-		{
-			infostream<<"Didn't find matching player, ignoring file "<<path<<std::endl;
-			continue;
-		}
-
-		//infostream<<"Found matching player, overwriting."<<std::endl;
-
-		// OK, found. Save player there.
-		if(player->checkModified())
-		{
-			// Open file and serialize
-			std::ostringstream ss(std::ios_base::binary);
-			player->serialize(ss);
-			if(!fs::safeWriteToFile(path, ss.str()))
-			{
-				infostream<<"Failed to write "<<path<<std::endl;
-				continue;
-			}
-			saved_players.insert(player);
-		} else {
-			saved_players.insert(player);
-		}
-	}
-#endif
-
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
+	std::list<Player*>::iterator i = m_players.begin();
+	while (i != m_players.end())
 	{
 		Player *player = *i;
 
-		if(!player->peer_id && !player->need_save && !player->getPlayerSAO() && player->refs <= 0) {
-			delete player;
-			i = m_players.erase(i);
-			continue;
-		}
-
-#if WTF
-		if(saved_players.find(player) != saved_players.end())
-		{
-			/*infostream<<"Player "<<player->getName()
-					<<" was already saved."<<std::endl;*/
-			continue;
-		}
-#endif
 		if (player->path == "") {
-		std::string playername = player->getName();
-		// Don't save unnamed player
-		if(playername == "")
-		{
-			//infostream<<"Not saving unnamed player."<<std::endl;
-			continue;
-		}
-		/*
-			Find a sane filename
-		*/
-		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
-			playername = "player";
-#if WTF
-		std::string path = players_path + "/" + playername;
-		bool found = false;
-		for(u32 i=0; i<1000; i++)
-		{
-			if(fs::PathExists(path) == false)
+			std::string playername = player->getName();
+			if(playername == "")
 			{
-				found = true;
-				break;
+				//infostream<<"Not saving unnamed player."<<std::endl;
+				goto save_end;
 			}
-			path = players_path + "/" + playername + itos(i);
+			if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
+				playername = "player";
+			player->path = players_path + "/" + playername;
 		}
-		if(found == false)
-		{
-			infostream<<"Didn't find free file for player"<<std::endl;
-			continue;
-		}
-#endif
 
-		player->path = players_path + "/" + playername;
-		}
+		//infostream<<"Saving player "<<player->getName()<<" to "<<player->path<<std::endl;
 		{
-			/*infostream<<"Saving player "<<player->getName()<<" to "
-					<<player->path<<std::endl;*/
-			// Open file and serialize
 			std::ostringstream ss(std::ios_base::binary);
 			player->serialize(ss);
-			if(!fs::safeWriteToFile(player->path, ss.str()))
-			{
+			if(!fs::safeWriteToFile(player->path, ss.str())) {
 				infostream<<"Failed to write "<<player->path<<std::endl;
-				continue;
+				goto save_end;
 			}
 		}
 		player->need_save = 0;
+
+		save_end:
+		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
+			delete player;
+			i = m_players.erase(i);
+		} else {
+			++i;
+		}
 	}
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
@@ -678,8 +589,11 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	for(;;)
 	{
 		if(is.eof())
+			return;
+/*
 			throw SerializationError
 					("ServerEnvironment::loadMeta(): EnvArgsEnd not found");
+*/
 		std::string line;
 		std::getline(is, line);
 		std::string trimmedline = trim(line);
@@ -963,7 +877,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 	return true;
 }
 
-bool ServerEnvironment::removeNode(v3s16 p, bool fast)
+bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 	MapNode n_old = m_map->getNodeNoEx(p);
@@ -975,6 +889,8 @@ bool ServerEnvironment::removeNode(v3s16 p, bool fast)
 	if (fast) {
 		MapNode n;
 		try {
+			if (fast == 2)
+				n.param1 = n_old.param1;
 			m_map->setNode(p, n);
 		} catch(InvalidPositionException &e) { }
 	} else {
@@ -1147,7 +1063,7 @@ void ServerEnvironment::clearAllObjects()
 			<<" in "<<num_blocks_cleared<<" blocks"<<std::endl;
 }
 
-void ServerEnvironment::step(float dtime, float uptime)
+void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 	
@@ -1267,17 +1183,13 @@ void ServerEnvironment::step(float dtime, float uptime)
 			Handle added blocks
 		*/
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
-		for(std::set<v3s16>::iterator
-				i = m_blocks_added.begin();
+		u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+		m_blocks_added_last = 0;
+		std::set<v3s16>::iterator i;
+		for(i = m_blocks_added.begin();
 				i != m_blocks_added.end(); ++i)
 		{
-			if (n++ < m_blocks_added_last)
-				continue;
-			else
-				m_blocks_added_last = 0;
-			++calls;
-
+			++n;
 			v3s16 p = *i;
 
 			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
@@ -1297,10 +1209,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 				break;
 			}
 		}
-		if (!calls)
-			m_blocks_added_last = 0;
-		if (!m_blocks_added_last)
-			m_blocks_added.clear();
+		m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
 
 	/*
@@ -1312,7 +1221,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 		
 		//float dtime = 1.0;
 
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
@@ -1386,7 +1295,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 /*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
 */
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 		for(std::set<v3s16>::iterator
 				i = m_active_blocks.m_list.begin();
@@ -1464,7 +1373,7 @@ void ServerEnvironment::step(float dtime, float uptime)
 			send_recommended = true;
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * m_recommended_send_interval);
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1796,6 +1705,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 */
 void ServerEnvironment::removeRemovedObjects()
 {
+	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
@@ -2335,7 +2245,7 @@ LocalPlayer * ClientEnvironment::getLocalPlayer()
 	return NULL;
 }
 
-void ClientEnvironment::step(float dtime, float uptime)
+void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -2380,8 +2290,8 @@ void ClientEnvironment::step(float dtime, float uptime)
 		dtime_max_increment = dtime/m_move_max_loop;
 	
 	// Don't allow overly huge dtime
-	if(dtime > 0.5)
-		dtime = 0.5;
+	if(dtime > 2)
+		dtime = 2;
 	
 	f32 dtime_downcount = dtime;
 
@@ -2390,7 +2300,7 @@ void ClientEnvironment::step(float dtime, float uptime)
 	*/
 
 	u32 loopcount = 0;
-	u32 breaked = 0, lend_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
+	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
 	do
 	{
 		loopcount++;
@@ -2759,8 +2669,10 @@ u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
 		delete object;
 		return 0;
 	}
+/*
 	infostream<<"ClientEnvironment::addActiveObject(): "
 			<<"added (id="<<object->getId()<<")"<<std::endl;
+*/
 	m_active_objects[object->getId()] = object;
 	object->addToScene(m_smgr, m_texturesource, m_irr);
 	{ // Update lighting immediately
@@ -2813,8 +2725,10 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 
 void ClientEnvironment::removeActiveObject(u16 id)
 {
+/*
 	verbosestream<<"ClientEnvironment::removeActiveObject(): "
 			<<"id="<<id<<std::endl;
+*/
 	ClientActiveObject* obj = getActiveObject(id);
 	if(obj == NULL)
 	{

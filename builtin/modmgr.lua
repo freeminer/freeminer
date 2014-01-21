@@ -1063,7 +1063,7 @@ function modmgr.get_global_mod(idx)
 		return nil
 	end
 
-	if idx < 1 or idx > filterlist.size(modmgr.global_mods) then
+	if idx == nil or idx < 1 or idx > filterlist.size(modmgr.global_mods) then
 		return nil
 	end
 

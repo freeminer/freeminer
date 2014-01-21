@@ -683,7 +683,7 @@ void DecoSchematic::placeStructure(Map *map, v3s16 p) {
 
 	// TODO: Optimize this by using Mapgen::calcLighting() instead
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
-	map->updateLighting(lighting_modified_blocks, modified_blocks, 1);
+	map->updateLighting(lighting_modified_blocks, modified_blocks, 100);
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
@@ -789,6 +789,7 @@ bool DecoSchematic::loadSchematicFile() {
 	Version changes:
 	1 - Initial version
 	2 - Fixed messy never/always place; 0 probability is now never, 0xFF is always
+	3 - Added y-slice probabilities; this allows for variable height structures
 */
 void DecoSchematic::saveSchematicFile(INodeDefManager *ndef) {
 	std::ostringstream ss(std::ios_base::binary);

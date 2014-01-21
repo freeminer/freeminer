@@ -53,6 +53,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_update_camera", "KEY_F4");
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
+	settings->setDefault("keymap_camera_mode", "KEY_F7");
 	settings->setDefault("keymap_increase_viewing_range_min", "+");
 	settings->setDefault("keymap_decrease_viewing_range_min", "-");
 	settings->setDefault("keymap_playerlist", "KEY_TAB");
@@ -252,6 +253,16 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("movement_liquid_fluidity_smooth", "0.5");
 	settings->setDefault("movement_liquid_sink", "10");
 	settings->setDefault("movement_gravity", "9.81");
+
+	// player model animations (sent to client)
+	settings->setDefault("animation_default_start", "0");
+	settings->setDefault("animation_default_stop", "79");
+	settings->setDefault("animation_walk_start", "168");
+	settings->setDefault("animation_walk_stop", "187");
+	settings->setDefault("animation_dig_start", "189");
+	settings->setDefault("animation_dig_stop", "198");
+	settings->setDefault("animation_wd_start", "200");
+	settings->setDefault("animation_wd_stop", "219");
 
 	//liquid stuff
 	settings->setDefault("liquid_finite", "false");

@@ -551,6 +551,7 @@ void Client::step(float dtime)
 		Do stuff if connected
 	*/
 	
+	int max_cycle_ms = 500/g_settings->getFloat("wanted_fps");
 	/*
 		Run Map's timers and unload unused data
 	*/
@@ -562,6 +563,7 @@ void Client::step(float dtime)
 		
 		if(m_env.getMap().timerUpdate(m_uptime,
 				g_settings->getFloat("client_unload_unused_data_timeout"),
+				max_cycle_ms,
 				&deleted_blocks))
 				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 				
@@ -628,7 +630,7 @@ void Client::step(float dtime)
 
 		//TimeTaker envtimer("env step", m_device);
 		// Step environment
-		m_env.step(dtime, 0);
+		m_env.step(dtime, 0, max_cycle_ms);
 		
 		/*
 			Get events
@@ -2048,6 +2050,21 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		} else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
+	}
+	else if(command == TOCLIENT_AMINATIONS)
+	{
+		std::string datastring((char*)&data[2], datasize-2);
+		std::istringstream is(datastring, std::ios_base::binary);
+		LocalPlayer *player = m_env.getLocalPlayer();
+		assert(player != NULL);
+		player->animation_default_start = readF1000(is);
+		player->animation_default_stop = readF1000(is);
+		player->animation_walk_start = readF1000(is);
+		player->animation_walk_stop = readF1000(is);
+		player->animation_dig_start = readF1000(is);
+		player->animation_dig_stop = readF1000(is);
+		player->animation_wd_start = readF1000(is);
+		player->animation_wd_stop = readF1000(is);
 	}
 	else
 	{

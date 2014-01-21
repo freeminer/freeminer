@@ -313,8 +313,13 @@ void initializePaths()
 		path_user = std::string(buf) + "\\..\\..";
 	}
 	else{
+	#if STATIC_BUILD
+		path_share = std::string(buf) + "\\.";
+		path_user = std::string(buf) + "\\.";
+	#else
 		path_share = std::string(buf) + "\\..";
 		path_user = std::string(buf) + "\\..";
+	#endif
 	}
 
 	/*

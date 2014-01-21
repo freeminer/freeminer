@@ -131,8 +131,10 @@ if(WIN32)
 			CACHE PATH "Zlib include directory")
 	set(ZLIB_LIBRARIES "${PROJECT_SOURCE_DIR}/../../zlib125dll/dll32/zlibwapi.lib"
 			CACHE FILEPATH "Path to zlibwapi.lib")
-	set(ZLIB_DLL "${PROJECT_SOURCE_DIR}/../../zlib125dll/dll32/zlibwapi.dll"
-			CACHE FILEPATH "Path to zlibwapi.dll (for installation)")
+	if(NOT STATIC_BUILD)
+		set(ZLIB_DLL "${PROJECT_SOURCE_DIR}/../../zlib125dll/dll32/zlibwapi.dll"
+				CACHE FILEPATH "Path to zlibwapi.dll (for installation)")
+	endif()
 	set(IRRLICHT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../irrlicht-1.7.2"
 			CACHE PATH "irrlicht dir")
 	if(USE_FREETYPE)
@@ -486,6 +488,12 @@ if(BUILD_CLIENT)
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
+	if(STATIC_BUILD AND USE_GETTEXT)
+		target_link_libraries(
+			${PROJECT_NAME}
+			${ICONV_LIBRARY}
+		)
+	endif()
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}
@@ -545,6 +553,9 @@ if(MSVC)
 
 	# EHa enables SEH exceptions (used for catching segfaults)
 	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
+	if (STATIC_BUILD)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+	endif()
 	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
 	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
 
@@ -613,6 +624,8 @@ endif()
 # Installation
 #
 if(WIN32)
+	if(NOT STATIC_BUILD)
+
 	if(MINGWM10_DLL)
 		install(FILES ${MINGWM10_DLL} DESTINATION ${BINDIR})
 	endif()
@@ -632,9 +645,11 @@ if(WIN32)
 		if(VORBISFILE_DLL)
 			install(FILES ${VORBISFILE_DLL} DESTINATION ${BINDIR})
 		endif()
-		if(CURL_DLL)
-			install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
-		endif()
+	endif()
+	if(CURL_DLL)
+		install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
+	endif()
+
 	endif()
 endif()
 
@@ -650,14 +665,14 @@ if(BUILD_CLIENT)
 	endif()
 
 	if(WIN32)
-		if(DEFINED IRRLICHT_DLL)
+		if(DEFINED IRRLICHT_DLL AND NOT STATIC_BUILD)
 			install(FILES ${IRRLICHT_DLL} DESTINATION ${BINDIR})
 		endif()
 		if(USE_GETTEXT)
-			if(DEFINED GETTEXT_DLL)
+			if(DEFINED GETTEXT_DLL AND NOT STATIC_BUILD)
 				install(FILES ${GETTEXT_DLL} DESTINATION ${BINDIR})
 			endif()
-			if(DEFINED GETTEXT_ICONV_DLL)
+			if(DEFINED GETTEXT_ICONV_DLL AND NOT STATIC_BUILD)
 				install(FILES ${GETTEXT_ICONV_DLL} DESTINATION ${BINDIR})
 			endif()
 		endif(USE_GETTEXT)
