@@ -58,15 +58,6 @@ LocalPlayer::LocalPlayer(IGameDef *gamedef):
 	// doesn't support health points
 	hp = 0;
 
-	/*// Don't initialize animations that older servers do animations
-	animation_default_start	= 0;
-	animation_default_stop	= 79;
-	animation_walk_start	= 168;
-	animation_walk_stop		= 187;
-	animation_dig_start		= 189;
-	animation_dig_stop		= 198;
-	animation_wd_start		= 200;
-	animation_wd_stop		= 219;*/
 }
 
 LocalPlayer::~LocalPlayer()

@@ -516,8 +516,8 @@ enum ToClientCommand
 	TOCLIENT_AMINATIONS = 0x4f,
 	/*
 		u16 command
-		f1000 animation_stand_start
-		f1000 animation_stand_stop
+		f1000 animation_default_start
+		f1000 animation_default_stop
 		f1000 animation_walk_start
 		f1000 animation_walk_stop
 		f1000 animation_dig_start
