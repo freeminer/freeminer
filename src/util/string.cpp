@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <sstream>
 #include <iomanip>
+#include <cctype>
 
 #include "../sha1.h"
 #include "../base64.h"
