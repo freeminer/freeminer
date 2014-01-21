@@ -1104,8 +1104,8 @@ void Server::AsyncRunStep(bool initial_step)
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
 	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
-	if (max_cycle_ms < 20)
-		max_cycle_ms = 20;
+	if (max_cycle_ms < 40)
+		max_cycle_ms = 40;
 
 	{
 		TimeTaker timer_step("Server step: Process connection's timeouts");
