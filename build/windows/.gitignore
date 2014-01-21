@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+settings.py
+build_tmp
+deps
+install_tmp
