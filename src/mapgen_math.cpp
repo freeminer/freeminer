@@ -33,6 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 // can use ported lib from http://mandelbulber.googlecode.com/svn/trunk/src
 #if USE_MANDELBULBER
+#define MANDELBULBER_EMBEDDED
 #include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.cpp"
 #endif
