@@ -233,7 +233,7 @@ def main():
 		-DSTATIC_BUILD=1
 		-DIRRLICHT_SOURCE_DIR=..\deps\{irrlicht}\
 		-DENABLE_SOUND=1
-		-DENABLE_MANDELBULBER=0
+		-DENABLE_MANDELBULBER=1
 		-DOPENAL_INCLUDE_DIR=..\deps\{openal}\include\AL\
 		-DOPENAL_LIBRARY=..\deps\{openal}\build\Release\OpenAL32.lib
 		-DOGG_INCLUDE_DIR=..\deps\{libogg}\include\
