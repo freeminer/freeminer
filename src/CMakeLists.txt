@@ -624,6 +624,8 @@ endif()
 # Installation
 #
 if(WIN32)
+	if(NOT STATIC_BUILD)
+
 	if(MINGWM10_DLL)
 		install(FILES ${MINGWM10_DLL} DESTINATION ${BINDIR})
 	endif()
@@ -646,6 +648,8 @@ if(WIN32)
 		if(CURL_DLL)
 			install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
 		endif()
+	endif()
+
 	endif()
 endif()
 

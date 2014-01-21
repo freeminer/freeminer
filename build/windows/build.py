@@ -3,6 +3,7 @@ import urllib.request
 from zipfile import ZipFile
 import tarfile
 import shutil
+import subprocess
 
 # http://stackoverflow.com/a/377028/2606891
 def which(program):
@@ -214,6 +215,8 @@ def main():
 	os.chdir("..")
 	
 	print("=> Building Freeminer")
+	# get version
+	version = subprocess.check_output(["git", "describe"]).decode("ascii").strip()
 	# multi-process build
 	os.environ["CL"] = "/MP"
 	if os.path.exists("build_tmp"):
@@ -230,7 +233,7 @@ def main():
 		-DSTATIC_BUILD=1
 		-DIRRLICHT_SOURCE_DIR=..\deps\{irrlicht}\
 		-DENABLE_SOUND=1
-		-DENABLE_MANDELBULBER=1
+		-DENABLE_MANDELBULBER=0
 		-DOPENAL_INCLUDE_DIR=..\deps\{openal}\include\AL\
 		-DOPENAL_LIBRARY=..\deps\{openal}\build\Release\OpenAL32.lib
 		-DOGG_INCLUDE_DIR=..\deps\{libogg}\include\
@@ -257,7 +260,8 @@ def main():
 		-DLEVELDB_INCLUDE_DIR={leveldb}\include\
 		-DLEVELDB_LIBRARY={leveldb}\Release\leveldb.lib
 		-DENABLE_LEVELDB=1
-	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH).replace("\n", "")
+		-DVERSION_EXTRA={version}
+	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, version=version).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86;{boost}\lib32-msvc-10.0</AdditionalLibraryDirectories>".format(boost=BOOST_PATH))
