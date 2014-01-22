@@ -248,7 +248,8 @@ void Camera::step(f32 dtime)
 }
 
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
-		v2u32 screensize, f32 tool_reload_ratio, int current_camera_mode, ClientEnvironment &c_env)
+		v2u32 screensize, f32 tool_reload_ratio,
+		int current_camera_mode, ClientEnvironment &c_env)
 {
 	// Get player position
 	// Smooth the movement when walking up stairs
@@ -359,13 +360,13 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if (current_camera_mode > FIRST) {
 		
 		if (current_camera_mode == THIRD_FRONT)
-			m_camera_direction *= (-1,1,-1);
+			m_camera_direction *= -1;
 
 		my_cp.Y += 2;
 
 		// Calculate new position
 		bool abort = false;
-		for (int i = (int)BS; i <= (int)BS*2; i++) {
+		for (int i = BS; i <= BS*2; i++) {
 			my_cp.X = m_camera_position.X + m_camera_direction.X*-i;
 			my_cp.Z = m_camera_position.Z + m_camera_direction.Z*-i;
 			if (i > 12)
@@ -376,17 +377,17 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 			MapNode n = c_env.getClientMap().getNodeNoEx(floatToInt(my_cp, BS));
 			const ContentFeatures& features = nodemgr->get(n);
 			if(features.walkable) {
-				my_cp.X += m_camera_direction.X*-1*(int)-BS/2;
-				my_cp.Z += m_camera_direction.Z*-1*(int)-BS/2;
-				my_cp.Y += m_camera_direction.Y*-1*(int)-BS/2;
+				my_cp.X += m_camera_direction.X*-1*-BS/2;
+				my_cp.Z += m_camera_direction.Z*-1*-BS/2;
+				my_cp.Y += m_camera_direction.Y*-1*-BS/2;
 				abort = true;
 				break;
 			}
 		}
 
 		// If node blocks camera position don't move y to heigh
-		if (abort && my_cp.Y > player_position.Y+(int)BS*2)
-			my_cp.Y = player_position.Y+(int)BS*2;
+		if (abort && my_cp.Y > player_position.Y+BS*2)
+			my_cp.Y = player_position.Y+BS*2;
 	}
 	
 	// Set camera node transformation
@@ -394,6 +395,10 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
 	m_cameranode->setTarget(my_cp + 100 * m_camera_direction);
+
+	// update the camera position in front-view mode to render blocks behind player
+	if (current_camera_mode == THIRD_FRONT)
+		m_camera_position = my_cp;
 
 	if (current_camera_mode == THIRD_FRONT)// update the camera position in front-view mode to render blocks behind player
 		m_camera_position = my_cp;
@@ -481,7 +486,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false && current_camera_mode < 1 ||
+		(g_settings->getBool("free_move") == false && current_camera_mode == FIRST ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation

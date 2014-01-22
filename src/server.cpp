@@ -1105,8 +1105,8 @@ void Server::AsyncRunStep(bool initial_step)
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
 	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
-	if (max_cycle_ms < 20)
-		max_cycle_ms = 20;
+	if (max_cycle_ms < 40)
+		max_cycle_ms = 40;
 
 	{
 		// This has to be called so that the client list gets synced
@@ -2169,6 +2169,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		// Send detached inventories
 		sendDetachedInventories(peer_id);
+
+		// Send player animations (default, walk, dig, both)
+		SendAnimations(m_con, peer_id);
 
 		// Show death screen if necessary
 		if(player->hp == 0)
@@ -3450,6 +3453,28 @@ void Server::SendNodeDef(con::Connection &con, u16 peer_id,
 	std::string s = os.str();
 	verbosestream<<"Server: Sending node definitions to id("<<peer_id
 			<<"): size="<<s.size()<<std::endl;
+	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	// Send as reliable
+	con.Send(peer_id, 0, data, true);
+}
+
+void Server::SendAnimations(con::Connection &con, u16 peer_id)
+{
+	DSTACK(__FUNCTION_NAME);
+	std::ostringstream os(std::ios_base::binary);
+
+	writeU16(os, TOCLIENT_AMINATIONS);
+	writeF1000(os, g_settings->getFloat("animation_default_start"));
+	writeF1000(os, g_settings->getFloat("animation_default_stop"));
+	writeF1000(os, g_settings->getFloat("animation_walk_start"));
+	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
+	writeF1000(os, g_settings->getFloat("animation_dig_start"));
+	writeF1000(os, g_settings->getFloat("animation_dig_stop"));
+	writeF1000(os, g_settings->getFloat("animation_walk_start"));
+	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
+
+	// Make data buffer
+	std::string s = os.str();
 	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
 	con.Send(peer_id, 0, data, true);

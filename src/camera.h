@@ -109,7 +109,8 @@ public:
 	// Update the camera from the local player's position.
 	// busytime is used to adjust the viewing range.
 	void update(LocalPlayer* player, f32 frametime, f32 busytime,
-			v2u32 screensize, f32 tool_reload_ratio, int current_camera_mode, ClientEnvironment &c_env);
+			v2u32 screensize, f32 tool_reload_ratio,
+			int current_camera_mode, ClientEnvironment &c_env);
 
 	// Render distance feedback loop
 	void updateViewingRange(f32 frametime_in, f32 busytime_in);

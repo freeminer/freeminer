@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "json/json.h"
 
 #if USE_MANDELBULBER
+#define MANDELBULBER_EMBEDDED
 #include "util/mathconstants.h"
 //#include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.h"

@@ -106,9 +106,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		version, heat and humidity transfer in MapBock
 		automatic_face_movement_dir and automatic_face_movement_dir_offset
 			added to object properties
+	PROTOCOL_VERSION 23:
+		TOCLIENT_AMINATIONS
 */
 
-#define LATEST_PROTOCOL_VERSION 22
+#define LATEST_PROTOCOL_VERSION 23
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 13
@@ -442,6 +444,19 @@ enum ToClientCommand
 		u16 param
 		u16 len
 		u8[len] value
+	*/
+
+	TOCLIENT_AMINATIONS = 0x4f,
+	/*
+		u16 command
+		f1000 animation_default_start
+		f1000 animation_default_stop
+		f1000 animation_walk_start
+		f1000 animation_walk_stop
+		f1000 animation_dig_start
+		f1000 animation_dig_stop
+		f1000 animation_wd_start
+		f1000 animation_wd_stop
 	*/
 };
 

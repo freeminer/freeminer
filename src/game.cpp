@@ -947,6 +947,7 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
+
 void the_game(
 	bool &kill,
 	bool random_input,
@@ -2598,7 +2599,7 @@ void the_game(
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
 
-		if(input->wasKeyDown("KEY_F7")) {//*TODO* not hardcoded key?
+		if(input->wasKeyDown(getKeySetting("keymap_camera_mode"))) {
 
 			if (current_camera_mode == FIRST)
 				current_camera_mode = THIRD;
@@ -2610,8 +2611,8 @@ void the_game(
 		}
 		player->camera_mode = current_camera_mode;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
-		camera.update(player, dtime, busytime, screensize,
-				tool_reload_ratio, current_camera_mode, client.getEnv());
+		camera.update(player, dtime, busytime, screensize, tool_reload_ratio,
+				current_camera_mode, client.getEnv());
 		camera.step(dtime);
 
 		v3f player_position = player->getPosition();
@@ -2658,7 +2659,8 @@ void the_game(
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
 
-		if (current_camera_mode == THIRD_FRONT) // prevent pointing anything in front-view
+		// prevent player pointing anything in front-view
+		if (current_camera_mode == THIRD_FRONT) 
 			shootline = core::line3d<f32>(0,0,0,0,0,0);
 
 		ClientActiveObject *selected_object = NULL;

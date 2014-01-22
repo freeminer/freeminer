@@ -57,6 +57,7 @@ LocalPlayer::LocalPlayer(IGameDef *gamedef):
 	// Initialize hp to 0, so that no hearts will be shown if server
 	// doesn't support health points
 	hp = 0;
+
 }
 
 LocalPlayer::~LocalPlayer()

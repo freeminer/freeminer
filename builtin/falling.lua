@@ -63,7 +63,7 @@ minetest.register_entity("__builtin:falling_node", {
 				(bcd.walkable or
 				(minetest.get_node_group(self.node.name, "float") ~= 0 and
 				bcd.liquidtype ~= "none")) then
-			if bcd and bcd.leveled and
+			if bcd and bcd.leveled and bcd.leveled > 0 and
 					bcn.name == self.node.name then
 				local addlevel = self.node.level
 				if addlevel == nil or addlevel <= 0 then

@@ -16,6 +16,7 @@
 #define USE_LEVELDB 0
 #define USE_LUAJIT 0
 #define USE_MANDELBULBER 0
+#define STATIC_BUILD 0
 
 #ifdef USE_CMAKE_CONFIG_H
 	#include "cmake_config.h"
@@ -39,6 +40,8 @@
 	#define USE_LUAJIT CMAKE_USE_LUAJIT
 	#undef USE_MANDELBULBER
 	#define USE_MANDELBULBER CMAKE_USE_MANDELBULBER
+	#undef STATIC_BUILD
+	#define STATIC_BUILD CMAKE_STATIC_BUILD
 #endif
 
 #endif

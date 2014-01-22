@@ -367,6 +367,7 @@
 # try reducing it, but don't reduce it to a number below double of targeted
 # client number
 #max_packets_per_iteration = 1024
+
 #
 # Physics stuff
 #
@@ -384,6 +385,23 @@
 #movement_liquid_fluidity_smooth = 0.5
 #movement_liquid_sink = 10
 #movement_gravity = 9.81
+
+#
+# Player model animations (sent to client to be handled locally)
+#
+
+# Animation range for model when not walking, digging or doin both
+#animation_default_start = 0
+#animation_default_stop = 79
+# Animation range for model when walking
+#animation_walk_start = 168
+#animation_walk_stop = 187
+# Animation range for model when digging
+#animation_dig_start = 189
+#animation_dig_stop = 198
+# Animation range for model when walking and digging
+#animation_wd_start = 200
+#animation_wd_stop = 219
 
 #
 # Mapgen stuff
