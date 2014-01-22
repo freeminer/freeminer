@@ -4628,17 +4628,17 @@ PlayerSAO* Server::getPlayerSAO(u16 peer_id)
 std::string Server::getStatusString()
 {
 	std::ostringstream os(std::ios_base::binary);
-	os<<L"# Server: ";
+	os<<"# Server: ";
 	// Version
-	os<<L"version="<<minetest_version_simple;
+	os<<"version="<<minetest_version_simple;
 	// Uptime
-	os<<L", uptime="<<m_uptime.get();
+	os<<", uptime="<<m_uptime.get();
 	// Max lag estimate
-	os<<L", max_lag="<<m_env->getMaxLagEstimate();
+	os<<", max_lag="<<m_env->getMaxLagEstimate();
 	// Information about clients
 	std::map<u16, RemoteClient*>::iterator i;
 	bool first;
-	os<<L", clients={";
+	os<<", clients={";
 	for(i = m_clients.begin(), first = true;
 		i != m_clients.end(); ++i)
 	{
