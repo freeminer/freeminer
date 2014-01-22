@@ -198,6 +198,11 @@ if(WIN32)
 	#	install(FILES bin/freeminerserver.exe DESTINATION bin)
 	#endif()
 
+	execute_process(COMMAND git describe --always --tag --dirty
+		WORKING_DIRECTORY "${GENERATE_VERSION_SOURCE_DIR}"
+		OUTPUT_VARIABLE VERSION_GITHASH OUTPUT_STRIP_TRAILING_WHITESPACE
+		ERROR_QUIET)
+
 	if(VERSION_GITHASH)
 		set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_GITHASH}-win32")
 	else()
