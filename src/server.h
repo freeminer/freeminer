@@ -363,7 +363,7 @@ public:
 	void setInventoryModified(const InventoryLocation &loc);
 
 	// Connection must be locked when called
-	std::wstring getStatusString();
+	std::string getStatusString();
 
 	void requestShutdown(void)
 	{
@@ -391,8 +391,8 @@ public:
 	}
 
 	// Envlock and conlock should be locked when calling this
-	void notifyPlayer(const char *name, const std::wstring msg, const bool prepend);
-	void notifyPlayers(const std::wstring msg);
+	void notifyPlayer(const char *name, const std::string msg, const bool prepend);
+	void notifyPlayers(const std::string &msg);
 	void spawnParticle(const char *playername,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
@@ -517,8 +517,8 @@ private:
 
 	// Envlock and conlock should be locked when calling these
 	void SendInventory(u16 peer_id);
-	void SendChatMessage(u16 peer_id, const std::wstring &message);
-	void BroadcastChatMessage(const std::wstring &message);
+	void SendChatMessage(u16 peer_id, const std::string &message);
+	void BroadcastChatMessage(const std::string &message);
 	void SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed);
 	void SendPlayerHP(u16 peer_id);
 	void SendPlayerBreath(u16 peer_id);

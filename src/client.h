@@ -338,7 +338,7 @@ public:
 	void sendInventoryFields(const std::string &formname,
 			const std::map<std::string, std::string> &fields);
 	void sendInventoryAction(InventoryAction *a);
-	void sendChatMessage(const std::wstring &message);
+	void sendChatMessage(const std::string &message);
 	void sendChangePassword(const std::wstring oldpassword,
 			const std::wstring newpassword);
 	void sendDamage(u8 damage);
@@ -392,7 +392,7 @@ public:
 	bool checkPrivilege(const std::string &priv)
 	{ return (m_privileges.count(priv) != 0); }
 
-	bool getChatMessage(std::wstring &message);
+	bool getChatMessage(std::string &message);
 	void typeChatMessage(const std::wstring& message);
 
 	u64 getMapSeed(){ return m_map_seed; }
@@ -489,7 +489,7 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-	Queue<std::wstring> m_chat_queue;
+	Queue<std::string> m_chat_queue;
 	// The seed returned by the server in TOCLIENT_INIT is stored here
 	u64 m_map_seed;
 	std::string m_password;

@@ -1276,29 +1276,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_CHAT_MESSAGE)
 	{
-		/*
-			u16 command
-			u16 length
-			wstring message
-		*/
-		u8 buf[6];
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		// Read stuff
-		is.read((char*)buf, 2);
-		u16 len = readU16(buf);
-		
-		std::wstring message;
-		for(u16 i=0; i<len; i++)
-		{
-			is.read((char*)buf, 2);
-			message += (wchar_t)readU16(buf);
-		}
-
-		/*infostream<<"Client received chat message: "
-				<<wide_to_narrow(message)<<std::endl;*/
-		
+		std::string message = packet[TOCLIENT_CHAT_MESSAGE_DATA].as<std::string>();
 		m_chat_queue.push_back(message);
 	}
 	else if(command == TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD)
@@ -1937,32 +1915,13 @@ void Client::sendInventoryAction(InventoryAction *a)
 	Send(0, data, true);
 }
 
-void Client::sendChatMessage(const std::wstring &message)
+void Client::sendChatMessage(const std::string &message)
 {
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
-	
-	// Write command
-	writeU16(buf, TOSERVER_CHAT_MESSAGE);
-	os.write((char*)buf, 2);
-	
-	// Write length
-	writeU16(buf, message.size());
-	os.write((char*)buf, 2);
-	
-	// Write string
-	for(u32 i=0; i<message.size(); i++)
-	{
-		u16 w = message[i];
-		writeU16(buf, w);
-		os.write((char*)buf, 2);
-	}
-	
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_CHAT_MESSAGE, 1);
+	PACK(TOSERVER_CHAT_MESSAGE_DATA, message);
+
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendChangePassword(const std::wstring oldpassword,
@@ -2352,7 +2311,7 @@ u16 Client::getBreath()
 	return player->getBreath();
 }
 
-bool Client::getChatMessage(std::wstring &message)
+bool Client::getChatMessage(std::string &message)
 {
 	if(m_chat_queue.size() == 0)
 		return false;
@@ -2363,26 +2322,15 @@ bool Client::getChatMessage(std::wstring &message)
 void Client::typeChatMessage(const std::wstring &message)
 {
 	// Discard empty line
-	if(message == L"")
+	if(message.empty())
 		return;
 
 	// Send to others
-	sendChatMessage(message);
+	sendChatMessage(wide_to_utf8(message));
 
 	// Show locally
-	if (message[0] == L'/')
-	{
-		m_chat_queue.push_back(
-				(std::wstring)L"issued command: "+message);
-	}
-	else
-	{
-		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-		std::wstring name = narrow_to_wide(player->getName());
-		m_chat_queue.push_back(
-				(std::wstring)L"<"+name+L"> "+message);
-	}
+	if (message[0] == '/')
+		m_chat_queue.push_back("issued command: "+wide_to_utf8(message));
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent)

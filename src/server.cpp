@@ -910,7 +910,7 @@ Server::~Server()
 	{
 		JMutexAutoLock conlock(m_con_mutex);
 
-		std::wstring line = L"*** Server shutting down";
+		std::string line = "*** Server shutting down";
 
 		/*
 			Send the message to clients
@@ -2194,8 +2194,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		// Warnings about protocol version can be issued here
 		if(getClient(peer_id)->net_proto_version < LATEST_PROTOCOL_VERSION)
 		{
-			SendChatMessage(peer_id, L"# Server: WARNING: YOUR CLIENT'S "
-					L"VERSION MAY NOT BE FULLY COMPATIBLE WITH THIS SERVER!");
+			SendChatMessage(peer_id, "# Server: WARNING: YOUR CLIENT'S "
+					"VERSION MAY NOT BE FULLY COMPATIBLE WITH THIS SERVER!");
 		}
 
 		/*
@@ -2513,99 +2513,56 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_CHAT_MESSAGE)
 	{
-		/*
-			u16 command
-			u16 length
-			wstring message
-		*/
-		u8 buf[6];
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		// Read stuff
-		is.read((char*)buf, 2);
-		u16 len = readU16(buf);
-
-		std::wstring message;
-		for(u16 i=0; i<len; i++)
-		{
-			is.read((char*)buf, 2);
-			message += (wchar_t)readU16(buf);
-		}
+		std::string message = packet[TOSERVER_CHAT_MESSAGE_DATA].as<std::string>();
 
 		// If something goes wrong, this player is to blame
 		RollbackScopeActor rollback_scope(m_rollback,
 				std::string("player:")+player->getName());
 
 		// Get player name of this client
-		std::wstring name = narrow_to_wide(player->getName());
+		std::string name = player->getName();
 
 		// Run script hook
-		bool ate = m_script->on_chat_message(player->getName(),
-				wide_to_narrow(message));
+		bool ate = m_script->on_chat_message(player->getName(), message);
 		// If script ate the message, don't proceed
 		if(ate)
 			return;
 
 		// Line to send to players
-		std::wstring line;
-		// Whether to send to the player that sent the line
-		bool send_to_sender = false;
+		std::string line;
 		// Whether to send to other players
 		bool send_to_others = false;
 
 		// Commands are implemented in Lua, so only catch invalid
 		// commands that were not "eaten" and send an error back
-		if(message[0] == L'/')
+		if(message[0] == '/')
 		{
 			message = message.substr(1);
-			send_to_sender = true;
 			if(message.length() == 0)
-				line += L"-!- Empty command";
+				line += "-!- Empty command";
 			else
-				line += L"-!- Invalid command: " + str_split(message, L' ')[0];
+				// TODO: str_split(message, ' ')[0]
+				line += "-!- Invalid command: " + message;
 		}
 		else
 		{
 			if(checkPriv(player->getName(), "shout")){
-				line += L"<";
+				line += "<";
 				line += name;
-				line += L"> ";
+				line += "> ";
 				line += message;
 				send_to_others = true;
-			} else {
-				line += L"-!- You don't have permission to shout.";
-				send_to_sender = true;
-			}
+			} else
+				line += "-!- You don't have permission to shout.";
 		}
 
-		if(line != L"")
+		if(!line.empty())
 		{
-			if(send_to_others)
-				actionstream<<"CHAT: "<<wide_to_narrow(line)<<std::endl;
-
-			/*
-				Send the message to clients
-			*/
-			for(std::map<u16, RemoteClient*>::iterator
-				i = m_clients.begin();
-				i != m_clients.end(); ++i)
-			{
-				// Get client and check that it is valid
-				RemoteClient *client = i->second;
-				assert(client->peer_id == i->first);
-				if(client->serialization_version == SER_FMT_VER_INVALID)
-					continue;
-
-				// Filter recipient
-				bool sender_selected = (peer_id == client->peer_id);
-				if(sender_selected == true && send_to_sender == false)
-					continue;
-				if(sender_selected == false && send_to_others == false)
-					continue;
-
-				SendChatMessage(client->peer_id, line);
-			}
+			if(send_to_others) {
+				actionstream<<"CHAT: "<<line<<std::endl;
+				BroadcastChatMessage(line);
+			} else
+				SendChatMessage(peer_id, line);
 		}
 	}
 	else if(command == TOSERVER_DAMAGE)
@@ -2670,7 +2627,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(!base64_is_valid(newpwd)){
 			infostream<<"Server: "<<player->getName()<<" supplied invalid password hash"<<std::endl;
 			// Wrong old password supplied!!
-			SendChatMessage(peer_id, L"Invalid new password hash supplied. Password NOT changed.");
+			SendChatMessage(peer_id, "Invalid new password hash supplied. Password NOT changed.");
 			return;
 		}
 
@@ -2686,18 +2643,18 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		{
 			infostream<<"Server: invalid old password"<<std::endl;
 			// Wrong old password supplied!!
-			SendChatMessage(peer_id, L"Invalid old password supplied. Password NOT changed.");
+			SendChatMessage(peer_id, "Invalid old password supplied. Password NOT changed.");
 			return;
 		}
 
 		bool success = m_script->setPassword(playername, newpwd);
 		if(success){
 			actionstream<<player->getName()<<" changes password"<<std::endl;
-			SendChatMessage(peer_id, L"Password change successful.");
+			SendChatMessage(peer_id, "Password change successful.");
 		} else {
 			actionstream<<player->getName()<<" tries to change password but "
 					<<"it fails"<<std::endl;
-			SendChatMessage(peer_id, L"Password change failed or inavailable.");
+			SendChatMessage(peer_id, "Password change failed or inavailable.");
 		}
 	}
 	else if(command == TOSERVER_PLAYERITEM)
@@ -3510,34 +3467,15 @@ void Server::SendInventory(u16 peer_id)
 	m_con.Send(peer_id, 0, data, true);
 }
 
-void Server::SendChatMessage(u16 peer_id, const std::wstring &message)
+void Server::SendChatMessage(u16 peer_id, const std::string &message)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
+	MSGPACK_PACKET_INIT(TOCLIENT_CHAT_MESSAGE, 1);
+	PACK(TOCLIENT_CHAT_MESSAGE_DATA, message);
 
-	// Write command
-	writeU16(buf, TOCLIENT_CHAT_MESSAGE);
-	os.write((char*)buf, 2);
-
-	// Write length
-	writeU16(buf, message.size());
-	os.write((char*)buf, 2);
-
-	// Write string
-	for(u32 i=0; i<message.size(); i++)
-	{
-		u16 w = message[i];
-		writeU16(buf, w);
-		os.write((char*)buf, 2);
-	}
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendShowFormspecMessage(u16 peer_id, const std::string formspec,
@@ -3792,7 +3730,7 @@ void Server::SendHUDSetParam(u16 peer_id, u16 param, const std::string &value)
 	m_con.Send(peer_id, 0, data, true);
 }
 
-void Server::BroadcastChatMessage(const std::wstring &message)
+void Server::BroadcastChatMessage(const std::string &message)
 {
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
@@ -4568,16 +4506,16 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 	Player *player = m_env->getPlayer(peer_id);
 
 	// Collect information about leaving in chat
-	std::wstring message;
+	std::string message;
 	{
 		if(player != NULL && reason != CDR_DENY)
 		{
-			std::wstring name = narrow_to_wide(player->getName());
-			message += L"*** ";
+			std::string name = player->getName();
+			message += "*** ";
 			message += name;
-			message += L" left the game.";
+			message += " left the game.";
 			if(reason == CDR_TIMEOUT)
-				message += L" (timed out)";
+				message += " (timed out)";
 		}
 	}
 
@@ -4687,12 +4625,12 @@ PlayerSAO* Server::getPlayerSAO(u16 peer_id)
 	return player->getPlayerSAO();
 }
 
-std::wstring Server::getStatusString()
+std::string Server::getStatusString()
 {
-	std::wostringstream os(std::ios_base::binary);
+	std::ostringstream os(std::ios_base::binary);
 	os<<L"# Server: ";
 	// Version
-	os<<L"version="<<narrow_to_wide(minetest_version_simple);
+	os<<L"version="<<minetest_version_simple;
 	// Uptime
 	os<<L", uptime="<<m_uptime.get();
 	// Max lag estimate
@@ -4712,21 +4650,21 @@ std::wstring Server::getStatusString()
 		// Get player
 		Player *player = m_env->getPlayer(client->peer_id);
 		// Get name of player
-		std::wstring name = L"unknown";
+		std::string name = "unknown";
 		if(player != NULL)
-			name = narrow_to_wide(player->getName());
+			name = player->getName();
 		// Add name to information string
 		if(!first)
-			os<<L", ";
+			os<<", ";
 		else
 			first = false;
 		os<<name;
 	}
-	os<<L"}";
+	os<<"}";
 	if(((ServerMap*)(&m_env->getMap()))->isSavingEnabled() == false)
-		os<<std::endl<<L"# Server: "<<" WARNING: Map saving is disabled.";
+		os<<std::endl<<"# Server: "<<" WARNING: Map saving is disabled.";
 	if(g_settings->get("motd") != "")
-		os<<std::endl<<L"# Server: "<<narrow_to_wide(g_settings->get("motd"));
+		os<<std::endl<<"# Server: "<<g_settings->get("motd");
 	return os.str();
 }
 
@@ -4790,13 +4728,13 @@ std::string Server::getBanDescription(const std::string &ip_or_name)
 	return m_banmanager->getBanDescription(ip_or_name);
 }
 
-void Server::notifyPlayer(const char *name, const std::wstring msg, const bool prepend = true)
+void Server::notifyPlayer(const char *name, const std::string msg, const bool prepend = true)
 {
 	Player *player = m_env->getPlayer(name);
 	if(!player)
 		return;
 	if (prepend)
-		SendChatMessage(player->peer_id, std::wstring(L"\vaaaaaaServer: \vffffff")+msg);
+		SendChatMessage(player->peer_id, std::string("\vaaaaaaServer: \vffffff")+msg);
 	else
 		SendChatMessage(player->peer_id, msg);
 }
@@ -4882,7 +4820,7 @@ void Server::hudSetHotbarSelectedImage(Player *player, std::string name) {
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_SELECTED_IMAGE, name);
 }
 
-void Server::notifyPlayers(const std::wstring msg)
+void Server::notifyPlayers(const std::string &msg)
 {
 	BroadcastChatMessage(msg);
 }

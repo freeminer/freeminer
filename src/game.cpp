@@ -91,7 +91,7 @@ struct TextDestChat : public TextDest
 	}
 	void gotText(std::map<std::string, std::string> fields)
 	{
-		m_client->typeChatMessage(narrow_to_wide(fields["text"]));
+		assert(0);
 	}
 
 	Client *m_client;
@@ -3262,10 +3262,10 @@ void the_game(
 						chat_log_error_buf.get()));
 			}
 			// Get new messages from client
-			std::wstring message;
+			std::string message;
 			while(client.getChatMessage(message))
 			{
-				chat_backend.addUnparsedMessage(message);
+				chat_backend.addUnparsedMessage(utf8_to_wide(message));
 			}
 			// Remove old messages
 			chat_backend.step(dtime);

@@ -33,6 +33,9 @@ struct FlagDesc {
 	u32 flag;
 };
 
+std::wstring utf8_to_wide(const std::string &input);
+std::string wide_to_utf8(const std::wstring &input);
+
 std::wstring narrow_to_wide(const std::string& mbs);
 std::string wide_to_narrow(const std::wstring& wcs);
 

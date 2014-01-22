@@ -266,6 +266,11 @@ enum {
 	TOCLIENT_SHOW_FORMSPEC_NAME
 };
 
+#define TOCLIENT_CHAT_MESSAGE 0x30
+enum {
+	// string
+	TOCLIENT_CHAT_MESSAGE_DATA
+};
 
 enum ToClientCommand
 {
@@ -285,13 +290,6 @@ enum ToClientCommand
 	*/
 
 	// (oops, there is some gap here)
-
-	TOCLIENT_CHAT_MESSAGE = 0x30,
-	/*
-		u16 command
-		u16 length
-		wstring message
-	*/
 
 	TOCLIENT_ACCESS_DENIED = 0x35,
 	/*
@@ -486,6 +484,11 @@ enum {
 	TOSERVER_PLAYERPOS_KEY_PRESSED
 };
 
+#define TOSERVER_CHAT_MESSAGE 0x32
+enum {
+	TOSERVER_CHAT_MESSAGE_DATA
+};
+
 enum ToServerCommand
 {
 	/*
@@ -578,13 +581,6 @@ enum ToServerCommand
 	TOSERVER_INVENTORY_ACTION = 0x31,
 	/*
 		See InventoryAction in inventory.h
-	*/
-
-	TOSERVER_CHAT_MESSAGE = 0x32,
-	/*
-		u16 command
-		u16 length
-		wstring message
 	*/
 
 	TOSERVER_SIGNNODETEXT = 0x33, // obsolete
