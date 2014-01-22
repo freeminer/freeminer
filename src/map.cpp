@@ -2015,11 +2015,15 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		}
 
 		// fill top block if can
-		if (neighbors[D_TOP].l) {
-			liquid_levels_want[D_TOP] = total_level > level_max ? level_max : total_level;
-			total_level -= liquid_levels_want[D_TOP];
+		if (neighbors[D_TOP].l && total_level > 0) {
+			liquid_levels_want[D_TOP] = total_level; // > level_max ? level_max : total_level;
+			total_level = 0;
+			//total_level -= liquid_levels_want[D_TOP];
 		}
-		// if (total_level>0) {  try to compress }
+		if (total_level > 0) {
+			liquid_levels_want[D_SELF] += total_level;
+			total_level = 0;
+		}
 
 		for (u16 ii = 0; ii < 7; ii++) // infinity and cave flood optimization
 			if (    neighbors[ii].i			||
