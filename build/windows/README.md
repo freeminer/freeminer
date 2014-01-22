@@ -1,6 +1,8 @@
 To build Freeminer using MSVC for Windows you'll need:
-- cmake, git and svn; all should be added to your PATH
+- cmake, git, svn, ruby; bash, sed, cp, mv, rm (those come with msys git); all should be added to your PATH
 - MSVC 2010
+- Windows SDK for Windows Server 2008 and .NET Framework 3.5: http://www.microsoft.com/en-us/download/details.aspx?id=11310
+- `C:\Program Files\Microsoft Visual Studio 9.0\VC\vcpackages` or similar added to your PATH, you'll need `vcbuild` as well (to build msgpack)
 - DirectX SDK: http://www.microsoft.com/en-us/download/details.aspx?id=6812
 - Boost (for LevelDB): http://sourceforge.net/projects/boost/files/boost-binaries/1.55.0-build2/boost_1_55_0-msvc-10.0-32.exe/download
 

@@ -68,6 +68,8 @@ freetype = "freetype-2.5.2"
 luajit = "LuaJIT-2.0.2"
 gettext = "gettext-0.13.1"
 libiconv = "libiconv-1.9.1"
+MSGPACK_VERSION = "8bc827ebf5b7f26ec2b98d181bc6c5f43a12fc73"
+msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 
 def main():
 	if not os.path.exists("settings.py"):
@@ -78,12 +80,15 @@ def main():
 
 	msbuild = which("MSBuild.exe")
 	cmake = which("cmake.exe")
+	vcbuild = which("vcbuild.exe")
 	if not msbuild:
 		print("MSBuild.exe not found! Make sure you run 'Visual Studio Command Prompt', not cmd.exe")
 		return
 	if not cmake:
 		print("cmake.exe not found! Make sure you have CMake installed and added to PATH.")
-	print("Found msbuild: {}\nFound cmake: {}".format(msbuild, cmake))
+	if not vcbuild:
+		print("vcbuild.exe not found! Check README.md")
+	print("Found msbuild: {}\nFound cmake: {}\nFound vcbuild: {}".format(msbuild, cmake, vcbuild))
 	
 	if not os.path.exists("deps"):
 		print("Creating `deps` directory.")
@@ -210,7 +215,39 @@ def main():
 		os.system("nmake -f Makefile.msvc MFLAGS=-MT install")
 		
 		os.chdir("..")
-		
+
+	if not os.path.exists(msgpack):
+		print("msgpack not found, downloading")
+		download("https://github.com/msgpack/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
+		extract_zip("msgpack.zip", ".")
+		os.chdir(msgpack)
+		os.system("bash preprocess")
+		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_map.hpp"', '// #include "type/tr1/unordered_map.hpp"')
+		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_set.hpp"', '// #include "type/tr1/unordered_set.hpp"')
+		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="2"', 'RuntimeLibrary="0"')
+		fout = open(os.path.join("src", "msgpack", "version.h"), "w")
+		fout.write("""
+#ifndef MSGPACK_VERSION_H__
+#define MSGPACK_VERSION_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+const char* msgpack_version(void);
+int msgpack_version_major(void);
+int msgpack_version_minor(void);
+#define MSGPACK_VERSION "0.5.8"
+#define MSGPACK_VERSION_MAJOR 0
+#define MSGPACK_VERSION_MINOR 5
+#ifdef __cplusplus
+}
+#endif
+#endif /* msgpack/version.h */
+""") # chosen by fair dice roll
+		fout.close()
+		# use newer compiler, won't link otherwise
+		os.system("vcupgrade msgpack_vc2008.vcproj")
+		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration=Release")
+		os.chdir("..")
 	
 	os.chdir("..")
 	
@@ -261,10 +298,14 @@ def main():
 		-DLEVELDB_LIBRARY={leveldb}\Release\leveldb.lib
 		-DENABLE_LEVELDB=1
 		-DVERSION_EXTRA={version}
-	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, version=version).replace("\n", "")
+		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
+		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack.lib
+	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, version=version, msgpack=msgpack).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86;{boost}\lib32-msvc-10.0</AdditionalLibraryDirectories>".format(boost=BOOST_PATH))
+	# wtf, cmake?
+	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
 	os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration=Release")
 	os.system("MSBuild INSTALL.vcxproj /p:Configuration=Release")
 	os.system("MSBuild PACKAGE.vcxproj /p:Configuration=Release")
