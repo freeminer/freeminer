@@ -87,7 +87,7 @@ void GUIFileSelectMenu::acceptInput() {
 		std::map<std::string, std::string> fields;
 
 		if (m_accepted)
-			fields[m_formname + "_accepted"] = wide_to_narrow(m_fileOpenDialog->getFileName());
+			fields[m_formname + "_accepted"] = wide_to_utf8(m_fileOpenDialog->getFileName());
 		else
 			fields[m_formname + "_canceled"] = m_formname;
 

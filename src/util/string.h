@@ -184,7 +184,7 @@ inline s32 mystoi(const std::string &s)
 
 inline s32 mystoi(const std::wstring &s)
 {
-	return atoi(wide_to_narrow(s).c_str());
+	return atoi(wide_to_utf8(s).c_str());
 }
 
 inline float mystof(const std::string &s)
