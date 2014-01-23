@@ -1606,7 +1606,7 @@ int main(int argc, char *argv[])
 				menudata.address = address;
 				menudata.name = playername;
 				menudata.port = itos(port);
-				menudata.errormessage = wide_to_narrow(error_message);
+				menudata.errormessage = wide_to_utf8(error_message);
 				error_message = L"";
 				if(cmd_args.exists("password"))
 					menudata.password = cmd_args.get("password");
@@ -1656,7 +1656,7 @@ int main(int argc, char *argv[])
 				}
 
 				if(menudata.errormessage != ""){
-					error_message = narrow_to_wide(menudata.errormessage);
+					error_message = utf8_to_wide(menudata.errormessage);
 					continue;
 				}
 
@@ -1725,15 +1725,15 @@ int main(int argc, char *argv[])
 					if(menudata.selected_world == -1){
 						error_message = wgettext("No world selected and no address "
 								"provided. Nothing to do.");
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+						errorstream<<wide_to_utf8(error_message)<<std::endl;
 						continue;
 					}
 					// Load gamespec for required game
 					gamespec = findWorldSubgame(worldspec.path);
 					if(!gamespec.isValid() && !commanded_gamespec.isValid()){
 						error_message = wgettext("Could not find or load game \"")
-								+ narrow_to_wide(worldspec.gameid) + L"\"";
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+								+ utf8_to_wide(worldspec.gameid) + L"\"";
+						errorstream<<wide_to_utf8(error_message)<<std::endl;
 						continue;
 					}
 					if(commanded_gamespec.isValid() &&
@@ -1747,8 +1747,8 @@ int main(int argc, char *argv[])
 					if(!gamespec.isValid()){
 						error_message = wgettext("Invalid gamespec.");
 						error_message += L" (world_gameid="
-								+narrow_to_wide(worldspec.gameid)+L")";
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+								+utf8_to_wide(worldspec.gameid)+L")";
+						errorstream<<wide_to_utf8(error_message)<<std::endl;
 						continue;
 					}
 				}
@@ -1791,7 +1791,7 @@ int main(int argc, char *argv[])
 		catch(con::PeerNotFoundException &e)
 		{
 			error_message = wgettext("Connection error (timed out?)");
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
+			errorstream<<wide_to_utf8(error_message)<<std::endl;
 		}
 #ifdef NDEBUG
 		catch(std::exception &e)
@@ -1800,7 +1800,7 @@ int main(int argc, char *argv[])
 			narrow_message += e.what();
 			narrow_message += "\"";
 			errorstream<<narrow_message<<std::endl;
-			error_message = narrow_to_wide(narrow_message);
+			error_message = utf8_to_wide(narrow_message);
 		}
 #endif
 
@@ -1809,7 +1809,7 @@ int main(int argc, char *argv[])
 		{
 			if(error_message != L""){
 				verbosestream<<"error_message = "
-						<<wide_to_narrow(error_message)<<std::endl;
+						<<wide_to_utf8(error_message)<<std::endl;
 				retval = 1;
 			}
 			break;
