@@ -1000,7 +1000,7 @@ int ModApiMainMenu::l_download_file(lua_State *L)
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
 	std::wstring wtext = wstrgettext((std::string) luaL_checkstring(L, 1));
-	lua_pushstring(L, wide_to_narrow(wtext).c_str());
+	lua_pushstring(L, wide_to_utf8(wtext).c_str());
 
 	return 1;
 }
