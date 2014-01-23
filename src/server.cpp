@@ -2043,8 +2043,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 						L"disallowed. Set a password and try again.");
 				return;
 			}
-			std::wstring raw_default_password =
-				narrow_to_wide(g_settings->get("default_password"));
+			std::string raw_default_password = g_settings->get("default_password");
 			std::string initial_password =
 				translatePassword(playername, raw_default_password);
 

@@ -320,7 +320,7 @@ inline std::string unescape_string(std::string &s)
 	return res;
 }
 
-std::string translatePassword(std::string playername, std::wstring password);
+std::string translatePassword(std::string playername, std::string password);
 std::string urlencode(std::string str);
 std::string urldecode(std::string str);
 u32 readFlagString(std::string str, FlagDesc *flagdesc);

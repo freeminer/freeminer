@@ -1668,8 +1668,7 @@ int main(int argc, char *argv[])
 				else
 					playername = menudata.name;
 
-				password = translatePassword(playername, narrow_to_wide(menudata.password));
-				//infostream<<"Main: password hash: '"<<password<<"'"<<std::endl;
+				password = translatePassword(playername, menudata.password);
 
 				address = menudata.address;
 				int newport = stoi(menudata.port);
