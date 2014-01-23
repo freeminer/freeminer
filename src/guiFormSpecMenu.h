@@ -139,7 +139,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::wstring name, const std::wstring label, const std::wstring fdeflt, int id):
+		FieldSpec(const std::string name, const std::wstring label, const std::wstring fdeflt, int id):
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
@@ -150,7 +150,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 			is_exit = false;
 			tooltip="";
 		}
-		std::wstring fname;
+		std::string fname;
 		std::wstring flabel;
 		std::wstring fdefault;
 		int fid;
@@ -232,7 +232,7 @@ public:
 	bool preprocessEvent(const SEvent& event);
 	bool OnEvent(const SEvent& event);
 
-	GUITable* getTable(std::wstring tablename);
+	GUITable* getTable(const std::string &tablename);
 
 	static bool parseColor(const std::string &value,
 			video::SColor &color, bool quiet);
@@ -299,11 +299,11 @@ private:
 		v2s32 basepos;
 		int bp_set;
 		v2u32 screensize;
-		std::wstring focused_fieldname;
+		std::string focused_fieldname;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
 		// used to restore table selection/scroll/treeview state
-		std::map<std::wstring,GUITable::DynamicData> table_dyndata;
+		std::map<std::string, GUITable::DynamicData> table_dyndata;
 	} parserData;
 
 	typedef struct {

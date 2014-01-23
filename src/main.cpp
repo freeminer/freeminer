@@ -70,9 +70,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "profiler.h"
 #include "log.h"
 #include "mods.h"
-#if USE_FREETYPE
 #include "xCGUITTFont.h"
-#endif
 #include "util/string.h"
 #include "subgame.h"
 #include "quicktune.h"
@@ -1477,25 +1475,17 @@ int main(int argc, char *argv[])
 
 	guienv = device->getGUIEnvironment();
 	gui::IGUISkin* skin = guienv->getSkin();
+
 	std::string font_path = g_settings->get("font_path");
 	gui::IGUIFont *font;
-	#if USE_FREETYPE
-	bool use_freetype = g_settings->getBool("freetype");
-	if (use_freetype) {
-		std::string fallback;
-		if (is_yes(gettext("needs_fallback_font")))
-			fallback = "fallback_";
-		u16 font_size = g_settings->getU16(fallback + "font_size");
-		font_path = g_settings->get(fallback + "font_path");
-		u32 font_shadow = g_settings->getU16(fallback + "font_shadow");
-		u32 font_shadow_alpha = g_settings->getU16(fallback + "font_shadow_alpha");
-		font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size, true, true, font_shadow, font_shadow_alpha);
-	} else {
-		font = guienv->getFont(font_path.c_str());
-	}
-	#else
-	font = guienv->getFont(font_path.c_str());
-	#endif
+	std::string fallback;
+	if (is_yes(gettext("needs_fallback_font")))
+		fallback = "fallback_";
+	u16 font_size = g_settings->getU16(fallback + "font_size");
+	font_path = g_settings->get(fallback + "font_path");
+	u32 font_shadow = g_settings->getU16(fallback + "font_shadow");
+	u32 font_shadow_alpha = g_settings->getU16(fallback + "font_shadow_alpha");
+	font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size, true, true, font_shadow, font_shadow_alpha);
 	if(font)
 		skin->setFont(font);
 	else
@@ -1837,11 +1827,7 @@ int main(int argc, char *argv[])
 		In the end, delete the Irrlicht device.
 	*/
 	device->drop();
-
-#if USE_FREETYPE
-	if (use_freetype)
-		font->drop();
-#endif
+	font->drop();
 
 #endif // !SERVER
 

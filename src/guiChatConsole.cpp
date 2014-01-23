@@ -32,9 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "gettext.h"
 
-#if USE_FREETYPE
 #include "xCGUITTFont.h"
-#endif
 
 inline u32 clamp_u8(s32 value)
 {
@@ -96,18 +94,9 @@ GUIChatConsole::GUIChatConsole(
 	// load the font
 	// FIXME should a custom texture_path be searched too?
 	std::string font_name = g_settings->get("mono_font_path");
-	#if USE_FREETYPE
-	m_use_freetype = g_settings->getBool("freetype");
-	if (m_use_freetype) {
-		u16 font_size = g_settings->getU16("mono_font_size");
-		m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
-		m_font = m_freetype_font;
-	} else {
-		m_font = env->getFont(font_name.c_str());
-	}
-	#else
-	m_font = env->getFont(font_name.c_str());
-	#endif
+	u16 font_size = g_settings->getU16("mono_font_size");
+	m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
+	m_font = m_freetype_font;
 	if (m_font == NULL)
 	{
 		dstream << "Unable to load font: " << font_name << std::endl;
@@ -127,10 +116,7 @@ GUIChatConsole::GUIChatConsole(
 
 GUIChatConsole::~GUIChatConsole()
 {
-#if USE_FREETYPE
-	if (m_use_freetype)
-		m_font->drop();
-#endif
+	m_font->drop();
 }
 
 void GUIChatConsole::openConsole(f32 height)
@@ -336,24 +322,13 @@ void GUIChatConsole::drawText()
 			s32 x = (fragment.column + 1) * m_fontsize.X;
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
-			#if USE_FREETYPE // how about we get rid of this option?
-			if (m_freetype_font)
-				m_freetype_font->draw(
-					fragment.text.c_str(),
-					destrect,
-					fragment.text.getColors(),
-					false,
-					false,
-					&AbsoluteClippingRect);
-			else
-			#endif
-				m_font->draw(
-					fragment.text.c_str(),
-					destrect,
-					video::SColor(255, 255, 255, 255),
-					false,
-					false,
-					&AbsoluteClippingRect);
+			m_freetype_font->draw(
+				fragment.text.c_str(),
+				destrect,
+				fragment.text.getColors(),
+				false,
+				false,
+				&AbsoluteClippingRect);
 		}
 	}
 }

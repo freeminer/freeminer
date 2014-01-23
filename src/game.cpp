@@ -1409,16 +1409,9 @@ void the_game(
 	
 	// Chat text
 	gui::IGUIStaticText *guitext_chat;
-	#if USE_FREETYPE
-	if (g_settings->getBool("freetype")) {
-		guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
-		guitext_chat->setWordWrap(true);
-		guitext_chat->drop();
-	} else
-	#endif
-	{
-		guitext_chat = guienv->addStaticText(L"", core::rect<s32>(0,0,0,0), false, true);
-	}
+	guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
+	guitext_chat->setWordWrap(true);
+	guitext_chat->drop();
 
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend.clearRecentChat();

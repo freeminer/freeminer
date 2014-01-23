@@ -103,16 +103,6 @@ if(USE_SOUND)
 		)
 endif()
 
-if(BUILD_CLIENT)
-option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" ON)
-else()
-option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" OFF)
-endif()
-set(USE_FREETYPE 0)
-if(ENABLE_FREETYPE)
-	set(USE_FREETYPE 1)
-endif(ENABLE_FREETYPE)
-
 if(NOT MSVC)
 	set(USE_GPROF 0 CACHE BOOL "Use -pg flag for g++")
 endif()
@@ -139,14 +129,12 @@ if(WIN32)
 	endif()
 	set(IRRLICHT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../irrlicht-1.7.2"
 			CACHE PATH "irrlicht dir")
-	if(USE_FREETYPE)
-		set(FREETYPE_INCLUDE_DIR_ft2build "${PROJECT_SOURCE_DIR}/../../freetype2/include/"
-				CACHE PATH "freetype include dir")
-		set(FREETYPE_INCLUDE_DIR_freetype2 "${PROJECT_SOURCE_DIR}/../../freetype2/include/freetype"
-				CACHE PATH "freetype include dir")
-		set(FREETYPE_LIBRARY "${PROJECT_SOURCE_DIR}/../../freetype2/objs/win32/vc2005/freetype247.lib"
-				CACHE FILEPATH "Path to freetype247.lib")
-	endif(USE_FREETYPE)
+	set(FREETYPE_INCLUDE_DIR_ft2build "${PROJECT_SOURCE_DIR}/../../freetype2/include/"
+			CACHE PATH "freetype include dir")
+	set(FREETYPE_INCLUDE_DIR_freetype2 "${PROJECT_SOURCE_DIR}/../../freetype2/include/freetype"
+			CACHE PATH "freetype include dir")
+	set(FREETYPE_LIBRARY "${PROJECT_SOURCE_DIR}/../../freetype2/objs/win32/vc2005/freetype247.lib"
+			CACHE FILEPATH "Path to freetype247.lib")
 	set(MINGWM10_DLL ""
 			CACHE FILEPATH "Path to mingwm10.dll (for installation)")
 	if(ENABLE_SOUND)
@@ -197,28 +185,30 @@ if(BUILD_CLIENT AND ENABLE_GLES)
 	find_package(OpenGLES2)
 endif()
 
-if(USE_FREETYPE)
-	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
-		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
-	elseif(UNIX)
-		include(FindPkgConfig)
-		if(PKG_CONFIG_FOUND)
-			pkg_check_modules(FREETYPE QUIET freetype2)
-			if(FREETYPE_FOUND)
-				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
-				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
-				# because cmake is idiotic
-				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
-				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
-			endif(FREETYPE_FOUND)
-		endif(PKG_CONFIG_FOUND)
-	endif()
-	if(NOT FREETYPE_FOUND)
-		find_package(Freetype REQUIRED)
-	endif(NOT FREETYPE_FOUND)
-	set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
-	set(CGUITTFONT_LIBRARY cguittfont)
-endif(USE_FREETYPE)
+if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
+	#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
+elseif(UNIX)
+	include(FindPkgConfig)
+	if(PKG_CONFIG_FOUND)
+		pkg_check_modules(FREETYPE QUIET freetype2)
+		if(FREETYPE_FOUND)
+			SET(FREETYPE_PKGCONFIG_FOUND TRUE)
+			SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
+			# because cmake is idiotic
+			string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
+			string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
+		endif(FREETYPE_FOUND)
+	endif(PKG_CONFIG_FOUND)
+endif()
+if(NOT FREETYPE_FOUND)
+	find_package(Freetype REQUIRED)
+endif(NOT FREETYPE_FOUND)
+set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
+set(CGUITTFONT_LIBRARY cguittfont)
+
+if(NOT FREETYPE_FOUND)
+	message(FATAL_ERROR "FreeType was not found.")
+endif()
 
 
 find_library(LUA_LIBRARY luajit
@@ -422,15 +412,9 @@ set(minetest_SRCS
 	convert_json.cpp
 	FMColoredString.cpp
 	${minetest_SCRIPT_SRCS}
+	intlGUIEditBox.cpp
+	FMStaticText.cpp
 )
-
-if(USE_FREETYPE)
-	set(minetest_SRCS
-		${minetest_SRCS}
-		intlGUIEditBox.cpp
-		FMStaticText.cpp
-	)
-endif(USE_FREETYPE)
 
 list(SORT minetest_SRCS)
 
@@ -456,14 +440,9 @@ include_directories(
 	${MSGPACK_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/script
 	${PROJECT_SOURCE_DIR}/enet/include
+	${FREETYPE_INCLUDE_DIRS}
+	${CGUITTFONT_INCLUDE_DIR}
 )
-
-if(USE_FREETYPE)
-	include_directories(
-		${FREETYPE_INCLUDE_DIRS}
-		${CGUITTFONT_INCLUDE_DIR}
-	)
-endif(USE_FREETYPE)
 
 if(USE_CURL)
 	include_directories(
@@ -508,19 +487,17 @@ if(BUILD_CLIENT)
 			${CURL_LIBRARY}
 		)
 	endif(USE_CURL)
-	if(USE_FREETYPE)
-		if(FREETYPE_PKGCONFIG_FOUND)
-			set_target_properties(${PROJECT_NAME}
-				PROPERTIES
-				COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
-			)
-		endif(FREETYPE_PKGCONFIG_FOUND)
-		target_link_libraries(
-			${PROJECT_NAME}
-			${FREETYPE_LIBRARY}
-			${CGUITTFONT_LIBRARY}
+	if(FREETYPE_PKGCONFIG_FOUND)
+		set_target_properties(${PROJECT_NAME}
+			PROPERTIES
+			COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
 		)
-	endif(USE_FREETYPE)
+	endif(FREETYPE_PKGCONFIG_FOUND)
+	target_link_libraries(
+		${PROJECT_NAME}
+		${FREETYPE_LIBRARY}
+		${CGUITTFONT_LIBRARY}
+	)
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY})
 	endif(USE_LEVELDB)
@@ -726,9 +703,9 @@ else (SQLITE3_FOUND)
 	add_subdirectory(sqlite)
 endif (SQLITE3_FOUND)
 
-if (BUILD_CLIENT AND USE_FREETYPE)
+if (BUILD_CLIENT)
 	add_subdirectory(cguittfont)
-endif (BUILD_CLIENT AND USE_FREETYPE)
+endif()
 
 if (JSON_FOUND)
 else (JSON_FOUND)

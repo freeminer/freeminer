@@ -161,8 +161,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("server_name", "");
 	settings->setDefault("server_description", "");
 
-#if USE_FREETYPE
-	settings->setDefault("freetype", "true");
 	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "liberationsans.ttf"));
 	settings->setDefault("font_size", "13");
 	settings->setDefault("font_shadow", "1");
@@ -173,11 +171,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fallback_font_size", "13");
 	settings->setDefault("fallback_font_shadow", "1");
 	settings->setDefault("fallback_font_shadow_alpha", "128");
-#else
-	settings->setDefault("freetype", "false");
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "fontlucida.png"));
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "fontdejavusansmono.png"));
-#endif
 
 	// Server stuff
 	// "map-dir" doesn't exist by default.

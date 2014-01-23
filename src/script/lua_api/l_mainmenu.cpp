@@ -194,7 +194,7 @@ int ModApiMainMenu::l_get_table_index(lua_State *L)
 	GUIEngine* engine = getGuiEngine(L);
 	assert(engine != 0);
 
-	std::wstring tablename(narrow_to_wide(luaL_checkstring(L, 1)));
+	std::string tablename(luaL_checkstring(L, 1));
 	GUITable *table = engine->m_menu->getTable(tablename);
 	s32 selection = table ? table->getSelected() : 0;
 
