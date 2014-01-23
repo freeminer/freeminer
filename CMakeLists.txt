@@ -7,7 +7,7 @@ endif(${CMAKE_VERSION} STREQUAL "2.8.2")
 # This can be read from ${PROJECT_NAME} after project() is called
 project(freeminer)
 
-set(VERSION_EXTRA "free" CACHE STRING "Stuff to append to version string")
+set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Also remember to set PROTOCOL_VERSION in clientserver.h when releasing
 set(VERSION_MAJOR 0)
@@ -18,7 +18,7 @@ if(VERSION_EXTRA)
 	set(VERSION_PATCH ${VERSION_PATCH}-${VERSION_EXTRA})
 else()
 	# Comment the following line during release
-	set(VERSION_PATCH "${VERSION_PATCH}-free")
+	set(VERSION_PATCH "${VERSION_PATCH}-free-dev")
 endif()
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
