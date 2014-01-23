@@ -2739,12 +2739,12 @@ void the_game(
 			ClientMap &map = client.getEnv().getClientMap();
 			NodeMetadata *meta = map.getNodeMetadata(nodepos);
 			if(meta){
-				infotext = narrow_to_wide(meta->getString("infotext"));
+				infotext = utf8_to_wide(meta->getString("infotext"));
 			} else {
 				MapNode n = map.getNode(nodepos);
 				if(nodedef->get(n).tiledef[0].name == "unknown_node.png"){
 					infotext = L"Unknown node: ";
-					infotext += narrow_to_wide(nodedef->get(n).name);
+					infotext += utf8_to_wide(nodedef->get(n).name);
 				}
 			}
 			
@@ -2958,10 +2958,10 @@ void the_game(
 		}
 		else if(pointed.type == POINTEDTHING_OBJECT)
 		{
-			infotext = narrow_to_wide(selected_object->infoText());
+			infotext = utf8_to_wide(selected_object->infoText());
 
 			if(infotext == L"" && show_debug){
-				infotext = narrow_to_wide(selected_object->debugInfoText());
+				infotext = utf8_to_wide(selected_object->debugInfoText());
 			}
 
 			//if(input->getLeftClicked())
