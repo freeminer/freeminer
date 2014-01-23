@@ -26,7 +26,7 @@ GUIFileSelectMenu::GUIFileSelectMenu(gui::IGUIEnvironment* env,
 				std::string title, std::string formname) :
 GUIModalMenu(env, parent, id, menumgr)
 {
-	m_title = narrow_to_wide(title);
+	m_title = utf8_to_wide(title);
 	m_parent = parent;
 	m_formname = formname;
 	m_text_dst = 0;
