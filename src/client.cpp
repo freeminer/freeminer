@@ -305,10 +305,9 @@ bool Client::isShutdown()
 
 Client::~Client()
 {
-	{
-		//JMutexAutoLock conlock(m_con_mutex); //bulk comment-out
-		m_con.Disconnect();
-	}
+	m_con.Disconnect();
+	// crude ugly hack to give connection thread a chance to send disconnection packet
+	sleep_ms(1000);
 
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
