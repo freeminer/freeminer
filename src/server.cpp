@@ -1803,8 +1803,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					<<addr_s<<"; banned name was "
 					<<ban_name<<std::endl;
 			// This actually doesn't seem to transfer to the client
-			DenyAccess(peer_id, L"Your ip is banned. Banned name was "
-					+narrow_to_wide(ban_name));
+			DenyAccess(peer_id, std::string("Your ip is banned. Banned name was ") + ban_name);
 			m_con.DeletePeer(peer_id);
 			return;
 		}

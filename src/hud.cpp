@@ -254,7 +254,7 @@ void Hud::drawLuaElements() {
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
 				core::rect<s32> size(0, 0, e->scale.X, text_height * e->scale.Y);
-				std::wstring text = narrow_to_wide(e->text);
+				std::wstring text = utf8_to_wide(e->text);
 				core::dimension2d<u32> textsize = font->getDimension(text.c_str());
 				v2s32 offset((e->align.X - 1.0) * (textsize.Width / 2),
 				             (e->align.Y - 1.0) * (textsize.Height / 2));
@@ -461,7 +461,7 @@ void drawItemStack(video::IVideoDriver *driver,
 	{
 		// Get the item count as a string
 		std::string text = itos(item.count);
-		v2u32 dim = font->getDimension(narrow_to_wide(text).c_str());
+		v2u32 dim = font->getDimension(utf8_to_wide(text).c_str());
 		v2s32 sdim(dim.X,dim.Y);
 
 		core::rect<s32> rect2(
