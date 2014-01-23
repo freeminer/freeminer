@@ -107,12 +107,7 @@ struct TextDestNodeMetadata : public TextDest
 	// This is deprecated I guess? -celeron55
 	void gotText(std::wstring text)
 	{
-		std::string ntext = wide_to_narrow(text);
-		infostream<<"Submitting 'text' field of node at ("<<m_p.X<<","
-				<<m_p.Y<<","<<m_p.Z<<"): "<<ntext<<std::endl;
-		std::map<std::string, std::string> fields;
-		fields["text"] = ntext;
-		m_client->sendNodemetaFields(m_p, "", fields);
+		assert(0);
 	}
 	void gotText(std::map<std::string, std::string> fields)
 	{
@@ -445,7 +440,7 @@ void update_profiler_gui(gui::IGUIStaticText *guitext_profiler,
 
 		std::ostringstream os(std::ios_base::binary);
 		g_profiler->printPage(os, show_profiler, show_profiler_max);
-		std::wstring text = narrow_to_wide(os.str());
+		std::wstring text = utf8_to_wide(os.str());
 		guitext_profiler->setText(text.c_str());
 		guitext_profiler->setVisible(true);
 
@@ -568,16 +563,16 @@ public:
 			s32 texth = 15;
 			char buf[10];
 			snprintf(buf, 10, "%.3g", show_max);
-			font->draw(narrow_to_wide(buf).c_str(),
+			font->draw(utf8_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - graphh,
 					textx2, y - graphh + texth),
 					meta.color);
 			snprintf(buf, 10, "%.3g", show_min);
-			font->draw(narrow_to_wide(buf).c_str(),
+			font->draw(utf8_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - texth,
 					textx2, y),
 					meta.color);
-			font->draw(narrow_to_wide(id).c_str(),
+			font->draw(utf8_to_wide(id).c_str(),
 					core::rect<s32>(textx, y - graphh/2 - texth/2,
 					textx2, y - graphh/2 + texth/2),
 					meta.color);
@@ -1093,8 +1088,8 @@ void the_game(
 	}
 	catch(ResolveError &e)
 	{
-		error_message = L"Couldn't resolve address: " + narrow_to_wide(e.what());
-		errorstream<<wide_to_narrow(error_message)<<std::endl;
+		error_message = L"Couldn't resolve address: " + utf8_to_wide(e.what());
+		errorstream<<wide_to_utf8(error_message)<<std::endl;
 		// Break out of client scope
 		break;
 	}
@@ -1154,7 +1149,7 @@ void the_game(
 			if(client.accessDenied()){
 				error_message = L"Access denied. Reason: "
 						+client.accessDeniedReason();
-				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				errorstream<<wide_to_utf8(error_message)<<std::endl;
 				break;
 			}
 			if(input->wasKeyDown(EscapeKey)){
@@ -1206,7 +1201,7 @@ void the_game(
 	if(!could_connect){
 		if(error_message == L"" && !connect_aborted){
 			error_message = L"Connection failed";
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
+			errorstream<<wide_to_utf8(error_message)<<std::endl;
 		}
 		// Break out of client scope
 		break;
@@ -1250,12 +1245,12 @@ void the_game(
 			if(client.accessDenied()){
 				error_message = L"Access denied. Reason: "
 						+client.accessDeniedReason();
-				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				errorstream<<wide_to_utf8(error_message)<<std::endl;
 				break;
 			}
 			if(!client.connectedAndInitialized()){
 				error_message = L"Client disconnected";
-				errorstream<<wide_to_narrow(error_message)<<std::endl;
+				errorstream<<wide_to_utf8(error_message)<<std::endl;
 				break;
 			}
 			if(input->wasKeyDown(EscapeKey)){
@@ -1319,7 +1314,7 @@ void the_game(
 	if(!got_content){
 		if(error_message == L"" && !content_aborted){
 			error_message = L"Something failed";
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
+			errorstream<<wide_to_utf8(error_message)<<std::endl;
 		}
 		// Break out of client scope
 		break;
@@ -1663,7 +1658,7 @@ void the_game(
 		{
 			error_message = L"Access denied. Reason: "
 					+client.accessDeniedReason();
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
+			errorstream<<wide_to_utf8(error_message)<<std::endl;
 			break;
 		}
 
@@ -2032,7 +2027,7 @@ void the_game(
 			s16 range = g_settings->getS16("viewing_range_nodes_min");
 			s16 range_new = range + 10;
 			g_settings->set("viewing_range_nodes_min", itos(range_new));
-			statustext = narrow_to_wide(
+			statustext = utf8_to_wide(
 					"Minimum viewing range changed to "
 					+ itos(range_new));
 			statustext_time = 0;
@@ -2045,7 +2040,7 @@ void the_game(
 				range_new = range;
 			g_settings->set("viewing_range_nodes_min",
 					itos(range_new));
-			statustext = narrow_to_wide(
+			statustext = utf8_to_wide(
 					"Minimum viewing range changed to "
 					+ itos(range_new));
 			statustext_time = 0;
@@ -2092,7 +2087,7 @@ void the_game(
 				actual_height = row_height * players.size();
 			u32 max_width = 0;
 			for (size_t i = 0; i < players.size(); ++i)
-				max_width = std::max(max_width, font->getDimension(narrow_to_wide(players[i]).c_str()).Width);
+				max_width = std::max(max_width, font->getDimension(utf8_to_wide(players[i]).c_str()).Width);
 			max_width += 15;
 			u32 actual_width = columns * max_width;
 
@@ -2135,7 +2130,7 @@ void the_game(
 		{
 			std::string msg = quicktune.getMessage();
 			if(msg != ""){
-				statustext = narrow_to_wide(msg);
+				statustext = utf8_to_wide(msg);
 				statustext_time = 0;
 			}
 		}
@@ -2888,26 +2883,8 @@ void the_game(
 				repeat_rightclick_timer = 0;
 				infostream<<"Ground right-clicked"<<std::endl;
 				
-				// Sign special case, at least until formspec is properly implemented.
-				// Deprecated?
-				if(meta && meta->getString("formspec") == "hack:sign_text_input"
-						&& !random_input
-						&& !input->isKeyDown(getKeySetting("keymap_sneak")))
-				{
-					infostream<<"Launching metadata text input"<<std::endl;
-					
-					// Get a new text for it
-
-					TextDest *dest = new TextDestNodeMetadata(nodepos, &client);
-
-					std::wstring wtext = narrow_to_wide(meta->getString("text"));
-
-					(new GUITextInputMenu(guienv, guiroot, -1,
-							&g_menumgr, dest,
-							wtext))->drop();
-				}
 				// If metadata provides an inventory view, activate it
-				else if(meta && meta->getString("formspec") != "" && !random_input
+				if(meta && meta->getString("formspec") != "" && !random_input
 						&& !input->isKeyDown(getKeySetting("keymap_sneak")))
 				{
 					infostream<<"Launching custom inventory view"<<std::endl;
@@ -3162,14 +3139,14 @@ void the_game(
 */
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range;
-			guitext->setText(narrow_to_wide(os.str()).c_str());
+			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
 		else if(show_hud || show_chat)
 		{
 			std::ostringstream os(std::ios_base::binary);
 			os<<"Freeminer "<<minetest_version_hash;
-			guitext->setText(narrow_to_wide(os.str()).c_str());
+			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
 		else
@@ -3190,7 +3167,7 @@ void the_game(
 				<<"C, h="<<client.getEnv().getClientMap().getHumidity(pos_i, 1)
 				<<"%) (seed = "<<((unsigned long long)client.getMapSeed())
 				<<")";
-			guitext2->setText(narrow_to_wide(os.str()).c_str());
+			guitext2->setText(utf8_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
 		}
 		else
@@ -3251,7 +3228,7 @@ void the_game(
 			// Get new messages from error log buffer
 			while(!chat_log_error_buf.empty())
 			{
-				chat_backend.addMessage(L"", narrow_to_wide(
+				chat_backend.addMessage(L"", utf8_to_wide(
 						chat_log_error_buf.get()));
 			}
 			// Get new messages from client
@@ -3620,17 +3597,17 @@ void the_game(
 	catch(SerializationError &e)
 	{
 		error_message = L"A serialization error occurred:\n"
-				+ narrow_to_wide(e.what()) + L"\n\nThe server is probably "
+				+ utf8_to_wide(e.what()) + L"\n\nThe server is probably "
 				L" running a different version of Minetest.";
-		errorstream<<wide_to_narrow(error_message)<<std::endl;
+		errorstream<<wide_to_utf8(error_message)<<std::endl;
 	}
 	catch(ServerError &e) {
-		error_message = narrow_to_wide(e.what());
+		error_message = utf8_to_wide(e.what());
 		errorstream << "ServerError: " << e.what() << std::endl;
 	}
 	catch(ModError &e) {
 		errorstream << "ModError: " << e.what() << std::endl;
-		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
+		error_message = utf8_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 
 
