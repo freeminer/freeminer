@@ -37,7 +37,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define CHANNEL_COUNT 3
 
-#define PACK(x, y) pk.pack((int)x); pk.pack(y);
+#define PACK(x, y) {pk.pack((int)x); pk.pack(y);}
 #define MSGPACK_COMMAND -1
 #define MSGPACK_PACKET_INIT(id, x) \
 	msgpack::sbuffer buffer; \

@@ -3358,27 +3358,10 @@ void Server::SendItemDef(con::Connection &con, u16 peer_id,
 		IItemDefManager *itemdef, u16 protocol_version)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_ITEMDEF, 1);
+	PACK(TOCLIENT_ITEMDEF_DEFINITIONS, *itemdef);
 
-	/*
-		u16 command
-		u32 length of the next item
-		zlib-compressed serialized ItemDefManager
-	*/
-	writeU16(os, TOCLIENT_ITEMDEF);
-	std::ostringstream tmp_os(std::ios::binary);
-	itemdef->serialize(tmp_os, protocol_version);
-	std::ostringstream tmp_os2(std::ios::binary);
-	compressZlib(tmp_os.str(), tmp_os2);
-	os<<serializeLongString(tmp_os2.str());
-
-	// Make data buffer
-	std::string s = os.str();
-	verbosestream<<"Server: Sending item definitions to id("<<peer_id
-			<<"): size="<<s.size()<<std::endl;
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendNodeDef(con::Connection &con, u16 peer_id,

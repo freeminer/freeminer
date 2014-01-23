@@ -278,6 +278,11 @@ enum {
 	TOCLIENT_ACCESS_DENIED_REASON
 };
 
+#define TOCLIENT_ITEMDEF 0x3d
+enum {
+	TOCLIENT_ITEMDEF_DEFINITIONS
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -295,36 +300,11 @@ enum ToClientCommand
 		[2] serialized inventory
 	*/
 
-	// (oops, there is some gap here)
-
-
-
-	TOCLIENT_TOOLDEF = 0x39,
-	/*
-		u16 command
-		u32 length of the next item
-		serialized ToolDefManager
-	*/
-
 	TOCLIENT_NODEDEF = 0x3a,
 	/*
 		u16 command
 		u32 length of the next item
 		serialized NodeDefManager
-	*/
-
-	TOCLIENT_CRAFTITEMDEF = 0x3b,
-	/*
-		u16 command
-		u32 length of the next item
-		serialized CraftiItemDefManager
-	*/
-
-	TOCLIENT_ITEMDEF = 0x3d,
-	/*
-		u16 command
-		u32 length of next item
-		serialized ItemDefManager
 	*/
 
 	TOCLIENT_DETACHED_INVENTORY = 0x43,

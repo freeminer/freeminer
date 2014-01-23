@@ -1435,10 +1435,6 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			m_media_downloader = NULL;
 		}
 	}
-	else if(command == TOCLIENT_TOOLDEF)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_TOOLDEF"<<std::endl;
-	}
 	else if(command == TOCLIENT_NODEDEF)
 	{
 		infostream<<"Client: Received node definitions: packet size: "
@@ -1460,10 +1456,6 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		m_nodedef->deSerialize(tmp_is2);
 		m_nodedef_received = true;
 	}
-	else if(command == TOCLIENT_CRAFTITEMDEF)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_CRAFTITEMDEF"<<std::endl;
-	}
 	else if(command == TOCLIENT_ITEMDEF)
 	{
 		infostream<<"Client: Received item definitions: packet size: "
@@ -1473,16 +1465,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		// updating content definitions
 		assert(!m_mesh_update_thread.IsRunning());
 
-		// Decompress item definitions
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		std::istringstream tmp_is(deSerializeLongString(is), std::ios::binary);
-		std::ostringstream tmp_os;
-		decompressZlib(tmp_is, tmp_os);
-
-		// Deserialize node definitions
-		std::istringstream tmp_is2(tmp_os.str());
-		m_itemdef->deSerialize(tmp_is2);
+		packet[TOCLIENT_ITEMDEF_DEFINITIONS].convert(m_itemdef);
 		m_itemdef_received = true;
 	}
 	else if(command == TOCLIENT_PLAY_SOUND)
