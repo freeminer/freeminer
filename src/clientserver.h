@@ -272,6 +272,12 @@ enum {
 	TOCLIENT_CHAT_MESSAGE_DATA
 };
 
+#define TOCLIENT_ACCESS_DENIED 0x35
+enum {
+	// string
+	TOCLIENT_ACCESS_DENIED_REASON
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -291,12 +297,6 @@ enum ToClientCommand
 
 	// (oops, there is some gap here)
 
-	TOCLIENT_ACCESS_DENIED = 0x35,
-	/*
-		u16 command
-		u16 reason_length
-		wstring reason
-	*/
 
 
 	TOCLIENT_TOOLDEF = 0x39,

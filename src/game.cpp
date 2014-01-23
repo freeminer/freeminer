@@ -954,7 +954,7 @@ void the_game(
 	std::string password,
 	std::string address, // If "", local server is used
 	u16 port,
-	std::wstring &error_message,
+	std::string &error_message,
 	ChatBackend &chat_backend,
 	const SubgameSpec &gamespec, // Used for local game,
 	bool simple_singleplayer_mode
@@ -1088,8 +1088,8 @@ void the_game(
 	}
 	catch(ResolveError &e)
 	{
-		error_message = L"Couldn't resolve address: " + utf8_to_wide(e.what());
-		errorstream<<wide_to_utf8(error_message)<<std::endl;
+		error_message = std::string("Couldn't resolve address: ") + e.what();
+		errorstream<<error_message<<std::endl;
 		// Break out of client scope
 		break;
 	}
@@ -1147,9 +1147,9 @@ void the_game(
 			}
 			// Break conditions
 			if(client.accessDenied()){
-				error_message = L"Access denied. Reason: "
+				error_message = "Access denied. Reason: "
 						+client.accessDeniedReason();
-				errorstream<<wide_to_utf8(error_message)<<std::endl;
+				errorstream<<error_message<<std::endl;
 				break;
 			}
 			if(input->wasKeyDown(EscapeKey)){
@@ -1199,9 +1199,9 @@ void the_game(
 		Handle failure to connect
 	*/
 	if(!could_connect){
-		if(error_message == L"" && !connect_aborted){
-			error_message = L"Connection failed";
-			errorstream<<wide_to_utf8(error_message)<<std::endl;
+		if(error_message == "" && !connect_aborted){
+			error_message = "Connection failed";
+			errorstream<<error_message<<std::endl;
 		}
 		// Break out of client scope
 		break;
@@ -1243,14 +1243,14 @@ void the_game(
 			}
 			// Break conditions
 			if(client.accessDenied()){
-				error_message = L"Access denied. Reason: "
+				error_message = "Access denied. Reason: "
 						+client.accessDeniedReason();
-				errorstream<<wide_to_utf8(error_message)<<std::endl;
+				errorstream<<error_message<<std::endl;
 				break;
 			}
 			if(!client.connectedAndInitialized()){
-				error_message = L"Client disconnected";
-				errorstream<<wide_to_utf8(error_message)<<std::endl;
+				error_message = "Client disconnected";
+				errorstream<<error_message<<std::endl;
 				break;
 			}
 			if(input->wasKeyDown(EscapeKey)){
@@ -1312,9 +1312,9 @@ void the_game(
 	}
 
 	if(!got_content){
-		if(error_message == L"" && !content_aborted){
-			error_message = L"Something failed";
-			errorstream<<wide_to_utf8(error_message)<<std::endl;
+		if(error_message.empty() && !content_aborted){
+			error_message = "Something failed";
+			errorstream<<error_message<<std::endl;
 		}
 		// Break out of client scope
 		break;
@@ -1656,9 +1656,9 @@ void the_game(
 		
 		if(client.accessDenied())
 		{
-			error_message = L"Access denied. Reason: "
+			error_message = "Access denied. Reason: "
 					+client.accessDeniedReason();
-			errorstream<<wide_to_utf8(error_message)<<std::endl;
+			errorstream<<error_message<<std::endl;
 			break;
 		}
 
@@ -3596,18 +3596,18 @@ void the_game(
 	} // try-catch
 	catch(SerializationError &e)
 	{
-		error_message = L"A serialization error occurred:\n"
-				+ utf8_to_wide(e.what()) + L"\n\nThe server is probably "
-				L" running a different version of Minetest.";
-		errorstream<<wide_to_utf8(error_message)<<std::endl;
+		error_message = std::string("A serialization error occurred:\n")
+				+ e.what() + "\n\nThe server is probably "
+				" running a different version of Freeminer.";
+		errorstream<<error_message<<std::endl;
 	}
 	catch(ServerError &e) {
-		error_message = utf8_to_wide(e.what());
+		error_message = e.what();
 		errorstream << "ServerError: " << e.what() << std::endl;
 	}
 	catch(ModError &e) {
 		errorstream << "ModError: " << e.what() << std::endl;
-		error_message = utf8_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
+		error_message = e.what() + wide_to_utf8(wgettext("\nCheck debug.txt for details."));
 	}
 
 

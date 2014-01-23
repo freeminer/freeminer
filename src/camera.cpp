@@ -106,31 +106,31 @@ Camera::~Camera()
 	delete m_dummymesh;
 }
 
-bool Camera::successfullyCreated(std::wstring& error_message)
+bool Camera::successfullyCreated(std::string& error_message)
 {
 	if (m_playernode == NULL)
 	{
-		error_message = L"Failed to create the player scene node";
+		error_message = "Failed to create the player scene node";
 		return false;
 	}
 	if (m_headnode == NULL)
 	{
-		error_message = L"Failed to create the head scene node";
+		error_message = "Failed to create the head scene node";
 		return false;
 	}
 	if (m_cameranode == NULL)
 	{
-		error_message = L"Failed to create the camera scene node";
+		error_message = "Failed to create the camera scene node";
 		return false;
 	}
 	if (m_wieldmgr == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene manager";
+		error_message = "Failed to create the wielded item scene manager";
 		return false;
 	}
 	if (m_wieldnode == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene node";
+		error_message = "Failed to create the wielded item scene node";
 		return false;
 	}
 	return true;

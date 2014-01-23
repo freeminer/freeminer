@@ -1850,7 +1850,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(m_simple_singleplayer_mode && m_clients.size() > 1){
 			infostream<<"Server: Not allowing another client ("<<addr_s
 					<<") to connect in simple singleplayer mode"<<std::endl;
-			DenyAccess(peer_id, L"Running in simple singleplayer mode.");
+			DenyAccess(peer_id, "Running in simple singleplayer mode.");
 			return;
 		}
 
@@ -1874,10 +1874,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					<<addr_s<<std::endl;
 			infostream<<"Server: Cannot negotiate serialization version with "
 					<<addr_s<<std::endl;
-			DenyAccess(peer_id, std::wstring(
-					L"Your client's version is not supported.\n"
-					L"Server version is ")
-					+ narrow_to_wide(minetest_version_simple) + L"."
+			DenyAccess(peer_id, std::string(
+					"Your client's version is not supported.\n"
+					"Server version is ")
+					+ minetest_version_simple + "."
 			);
 			return;
 		}
@@ -1917,18 +1917,18 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		{
 			actionstream<<"Server: A mismatched client tried to connect from "
 					<<addr_s<<std::endl;
-			DenyAccess(peer_id, std::wstring(
-					L"Your client's version is not supported.\n"
-					L"Server version is ")
-					+ narrow_to_wide(minetest_version_simple) + L",\n"
-					+ L"server's PROTOCOL_VERSION is "
-					+ narrow_to_wide(itos(SERVER_PROTOCOL_VERSION_MIN))
-					+ L"..."
-					+ narrow_to_wide(itos(SERVER_PROTOCOL_VERSION_MAX))
-					+ L", client's PROTOCOL_VERSION is "
-					+ narrow_to_wide(itos(min_net_proto_version))
-					+ L"..."
-					+ narrow_to_wide(itos(max_net_proto_version))
+			DenyAccess(peer_id, std::string(
+					"Your client's version is not supported.\n"
+					"Server version is ")
+					+ minetest_version_simple + ",\n"
+					+ "server's PROTOCOL_VERSION is "
+					+ itos(SERVER_PROTOCOL_VERSION_MIN)
+					+ "..."
+					+ itos(SERVER_PROTOCOL_VERSION_MAX)
+					+ ", client's PROTOCOL_VERSION is "
+					+ itos(min_net_proto_version)
+					+ "..."
+					+ itos(max_net_proto_version)
 			);
 			return;
 		}
@@ -1939,16 +1939,16 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				actionstream<<"Server: A mismatched (strict) client tried to "
 						<<"connect from "<<addr_s<<std::endl;
-				DenyAccess(peer_id, std::wstring(
-						L"Your client's version is not supported.\n"
-						L"Server version is ")
-						+ narrow_to_wide(minetest_version_simple) + L",\n"
-						+ L"server's PROTOCOL_VERSION (strict) is "
-						+ narrow_to_wide(itos(LATEST_PROTOCOL_VERSION))
-						+ L", client's PROTOCOL_VERSION is "
-						+ narrow_to_wide(itos(min_net_proto_version))
-						+ L"..."
-						+ narrow_to_wide(itos(max_net_proto_version))
+				DenyAccess(peer_id, std::string(
+						"Your client's version is not supported.\n"
+						"Server version is ")
+						+ minetest_version_simple + ",\n"
+						+ "server's PROTOCOL_VERSION (strict) is "
+						+ itos(LATEST_PROTOCOL_VERSION)
+						+ ", client's PROTOCOL_VERSION is "
+						+ itos(min_net_proto_version)
+						+ "..."
+						+ itos(max_net_proto_version)
 				);
 				return;
 			}
@@ -1966,7 +1966,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		{
 			actionstream<<"Server: Player with an empty name "
 					<<"tried to connect from "<<addr_s<<std::endl;
-			DenyAccess(peer_id, L"Empty name");
+			DenyAccess(peer_id, "Empty name");
 			return;
 		}
 
@@ -1974,7 +1974,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		{
 			actionstream<<"Server: Player with an invalid name ["<<playername
 					<<"] tried to connect from "<<addr_s<<std::endl;
-			DenyAccess(peer_id, L"Name contains unallowed characters");
+			DenyAccess(peer_id, "Name contains unallowed characters");
 			return;
 		}
 
@@ -1982,7 +1982,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		{
 			actionstream<<"Server: Player with the name \"singleplayer\" "
 					<<"tried to connect from "<<addr_s<<std::endl;
-			DenyAccess(peer_id, L"Name is not allowed");
+			DenyAccess(peer_id, "Name is not allowed");
 			return;
 		}
 
@@ -1994,7 +1994,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 						<<"tried to connect from "<<addr_s<<" "
 						<<"but it was disallowed for the following reason: "
 						<<reason<<std::endl;
-				DenyAccess(peer_id, narrow_to_wide(reason.c_str()));
+				DenyAccess(peer_id, reason);
 				return;
 			}
 		}
@@ -2009,7 +2009,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(!base64_is_valid(given_password.c_str())){
 			actionstream<<"Server: "<<playername
 					<<" supplied invalid password hash"<<std::endl;
-			DenyAccess(peer_id, L"Invalid password hash");
+			DenyAccess(peer_id, "Invalid password hash");
 			return;
 		}
 
@@ -2025,7 +2025,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			actionstream<<"Server: "<<playername<<" tried to join, but there"
 					<<" are already max_users="
 					<<g_settings->getU16("max_users")<<" players."<<std::endl;
-			DenyAccess(peer_id, L"Too many users.");
+			DenyAccess(peer_id, "Too many users.");
 			return;
 		}
 
@@ -2039,8 +2039,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					given_password == ""){
 				actionstream<<"Server: "<<playername
 						<<" supplied empty password"<<std::endl;
-				DenyAccess(peer_id, L"Empty passwords are "
-						L"disallowed. Set a password and try again.");
+				DenyAccess(peer_id, "Empty passwords are "
+						"disallowed. Set a password and try again.");
 				return;
 			}
 			std::string raw_default_password = g_settings->get("default_password");
@@ -2059,14 +2059,14 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(!has_auth){
 			actionstream<<"Server: "<<playername<<" cannot be authenticated"
 					<<" (auth handler does not work?)"<<std::endl;
-			DenyAccess(peer_id, L"Not allowed to login");
+			DenyAccess(peer_id, "Not allowed to login");
 			return;
 		}
 
 		if(given_password != checkpwd){
 			actionstream<<"Server: "<<playername<<" supplied wrong password"
 					<<std::endl;
-			DenyAccess(peer_id, L"Wrong password");
+			DenyAccess(peer_id, "Wrong password");
 			return;
 		}
 
@@ -2081,13 +2081,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			if(player && player->peer_id != 0){
 				errorstream<<"Server: "<<playername<<": Failed to emerge player"
 						<<" (player allocated to an another client)"<<std::endl;
-				DenyAccess(peer_id, L"Another client is connected with this "
-						L"name. If your client closed unexpectedly, try again in "
-						L"a minute.");
+				DenyAccess(peer_id, "Another client is connected with this "
+						"name. If your client closed unexpectedly, try again in "
+						"a minute.");
 			} else {
 				errorstream<<"Server: "<<playername<<": Failed to emerge player"
 						<<std::endl;
-				DenyAccess(peer_id, L"Could not allocate player.");
+				DenyAccess(peer_id, "Could not allocate player.");
 			}
 			return;
 		}
@@ -3332,19 +3332,14 @@ void Server::SendBreath(con::Connection &con, u16 peer_id, u16 breath)
 }
 
 void Server::SendAccessDenied(con::Connection &con, u16 peer_id,
-		const std::wstring &reason)
+		const std::string &reason)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED, 1);
+	PACK(TOCLIENT_ACCESS_DENIED_REASON, reason);
 
-	writeU16(os, TOCLIENT_ACCESS_DENIED);
-	os<<serializeWideString(reason);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendDeathscreen(con::Connection &con, u16 peer_id,
@@ -4437,7 +4432,7 @@ void Server::RespawnPlayer(u16 peer_id)
 	}
 }
 
-void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
+void Server::DenyAccess(u16 peer_id, const std::string &reason)
 {
 	DSTACK(__FUNCTION_NAME);
 

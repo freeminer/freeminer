@@ -1537,7 +1537,7 @@ int main(int argc, char *argv[])
 		menu-game loop is restarted. It is then displayed before
 		the menu.
 	*/
-	std::wstring error_message = L"";
+	std::string error_message = "";
 
 	// The password entered during the menu screen,
 	std::string password;
@@ -1606,8 +1606,8 @@ int main(int argc, char *argv[])
 				menudata.address = address;
 				menudata.name = playername;
 				menudata.port = itos(port);
-				menudata.errormessage = wide_to_utf8(error_message);
-				error_message = L"";
+				menudata.errormessage = error_message;
+				error_message = "";
 				if(cmd_args.exists("password"))
 					menudata.password = cmd_args.get("password");
 
@@ -1656,7 +1656,7 @@ int main(int argc, char *argv[])
 				}
 
 				if(menudata.errormessage != ""){
-					error_message = utf8_to_wide(menudata.errormessage);
+					error_message = menudata.errormessage;
 					continue;
 				}
 
@@ -1723,17 +1723,17 @@ int main(int argc, char *argv[])
 				if(current_address == "")
 				{
 					if(menudata.selected_world == -1){
-						error_message = wgettext("No world selected and no address "
+						error_message = _("No world selected and no address "
 								"provided. Nothing to do.");
-						errorstream<<wide_to_utf8(error_message)<<std::endl;
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 					// Load gamespec for required game
 					gamespec = findWorldSubgame(worldspec.path);
 					if(!gamespec.isValid() && !commanded_gamespec.isValid()){
-						error_message = wgettext("Could not find or load game \"")
-								+ utf8_to_wide(worldspec.gameid) + L"\"";
-						errorstream<<wide_to_utf8(error_message)<<std::endl;
+						error_message = _("Could not find or load game \"")
+								+ worldspec.gameid + "\"";
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 					if(commanded_gamespec.isValid() &&
@@ -1745,10 +1745,10 @@ int main(int argc, char *argv[])
 					}
 
 					if(!gamespec.isValid()){
-						error_message = wgettext("Invalid gamespec.");
-						error_message += L" (world_gameid="
-								+utf8_to_wide(worldspec.gameid)+L")";
-						errorstream<<wide_to_utf8(error_message)<<std::endl;
+						error_message = _("Invalid gamespec.");
+						error_message += " (world_gameid="
+								+worldspec.gameid+")";
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 				}
@@ -1790,26 +1790,25 @@ int main(int argc, char *argv[])
 		} //try
 		catch(con::PeerNotFoundException &e)
 		{
-			error_message = wgettext("Connection error (timed out?)");
-			errorstream<<wide_to_utf8(error_message)<<std::endl;
+			error_message = _("Connection error (timed out?)");
+			errorstream<<error_message<<std::endl;
 		}
 #ifdef NDEBUG
 		catch(std::exception &e)
 		{
-			std::string narrow_message = "Some exception: \"";
-			narrow_message += e.what();
-			narrow_message += "\"";
-			errorstream<<narrow_message<<std::endl;
-			error_message = utf8_to_wide(narrow_message);
+			error_message = "Some exception: \"";
+			error_message += e.what();
+			error_message += "\"";
+			errorstream<<error_message<<std::endl;
 		}
 #endif
 
 		// If no main menu, show error and exit
 		if(skip_main_menu)
 		{
-			if(error_message != L""){
+			if(error_message != ""){
 				verbosestream<<"error_message = "
-						<<wide_to_utf8(error_message)<<std::endl;
+						<<error_message<<std::endl;
 				retval = 1;
 			}
 			break;

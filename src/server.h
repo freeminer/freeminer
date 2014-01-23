@@ -498,7 +498,7 @@ private:
 	static void SendHP(con::Connection &con, u16 peer_id, u8 hp);
 	static void SendBreath(con::Connection &con, u16 peer_id, u16 breath);
 	static void SendAccessDenied(con::Connection &con, u16 peer_id,
-			const std::wstring &reason);
+			const std::string &reason);
 	static void SendDeathscreen(con::Connection &con, u16 peer_id,
 			bool set_camera_point_target, v3f camera_point_target);
 	static void SendItemDef(con::Connection &con, u16 peer_id,
@@ -601,7 +601,7 @@ private:
 
 	void DiePlayer(u16 peer_id);
 	void RespawnPlayer(u16 peer_id);
-	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	void DenyAccess(u16 peer_id, const std::string &reason);
 
 	enum ClientDeletionReason {
 		CDR_LEAVE,
