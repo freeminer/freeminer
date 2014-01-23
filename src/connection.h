@@ -36,7 +36,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <msgpack.hpp>
 
 #define CHANNEL_COUNT 3
-#define PEER_ID_CAPACITY (1 << (8 * sizeof(u16)))
 
 #define PACK(x, y) pk.pack((int)x); pk.pack(y);
 #define MSGPACK_COMMAND -1
