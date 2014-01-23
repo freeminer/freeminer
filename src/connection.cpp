@@ -186,11 +186,11 @@ void Connection::serve(u16 port)
 	address->host = ENET_HOST_ANY;
 	address->port = port;
 
-	std::cout << "creating enet host" << std::endl;
 	m_enet_host = enet_host_create(address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
-		puts("Server creation failed.");
-		assert(0);
+		ConnectionEvent ce;
+		ce.bindFailed();
+		putEvent(ce);
 	}
 }
 
@@ -212,24 +212,16 @@ void Connection::connect(Address addr)
 	peer->data = new u16;
 	*((u16*)peer->data) = PEER_ID_SERVER;
 
-	m_peers[PEER_ID_SERVER] = peer;
-
 	ENetEvent event;
 	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
 			event.type == ENET_EVENT_TYPE_CONNECT) {
-		// Create event
-		ConnectionEvent e;
-		e.peerAdded(PEER_ID_SERVER);
-		putEvent(e);
-	}
-	else {
+		m_peers[PEER_ID_SERVER] = peer;
+	} else {
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
 		/* had run out without any significant event.            */
-		enet_peer_reset(m_peer);
+		enet_peer_reset(peer);
 	}
-
-	m_peer_id = PEER_ID_INEXISTENT;
 }
 
 void Connection::disconnect()
