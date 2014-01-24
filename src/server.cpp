@@ -717,7 +717,7 @@ Server::Server(
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
 	m_objectdata_timer = 0.0;
-	m_emergethread_trigger_timer = 0.0;
+	m_emergethread_trigger_timer = 5.0; // to start emerge threads instantly
 	m_savemap_timer = 0.0;
 
 	m_step_dtime = 0.0;
