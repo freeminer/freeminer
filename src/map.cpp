@@ -1920,7 +1920,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			if (liquid_levels[i] > 0)
 				total_level += liquid_levels[i];
 
-			// /*
+			/*
 			infostream << "get node i=" <<(int)i<<" " << PP(nb.p) << " c="
 			<< nb.n.getContent() <<" p0="<< (int)nb.n.param0 <<" p1="
 			<< (int)nb.n.param1 <<" p2="<< (int)nb.n.param2 << " lt="
@@ -1929,7 +1929,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			<< " l="<< nb.l	<< " inf="<< nb.i << " nlevel=" << (int)liquid_levels[i]
 			<< " totallevel=" << (int)total_level << " cansame="
 			<< (int)can_liquid_same_level << " Lmax="<<(int)nodemgr->get(liquid_kind_flowing).getMaxLevel()<<std::endl;
-			//  */
+			*/
 		}
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 		//viscosity = nodemgr->get(liquid_kind).viscosity;
@@ -2038,28 +2038,26 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				 liquid_levels[D_TOP] >= level_max))
 					liquid_levels_want[ii] = level_max;
 
-		// /*
+		/*
 		if (total_level > 0) //|| flowed != volume)
 			infostream <<" AFTER level=" << (int)total_level
 			//<< " flowed="<<flowed<< " volume=" << volume
 			<< " max="<<(int)level_max
 			<< " wantsame="<<(int)want_level<< " top="
 			<< (int)liquid_levels_want[D_TOP]<< " topwas="
-			<< (int)liquid_levels[D_TOP]<< " bot="
-			<< (int)liquid_levels_want[D_BOTTOM]<<std::endl;
-		// */
+			<< (int)liquid_levels[D_TOP]
+			<< " bot=" << (int)liquid_levels_want[D_BOTTOM] 
+			<< " botwas=" << (int)liquid_levels[D_BOTTOM]
+			<<std::endl;
+		*/
 
 		for (u16 r = 0; r < 7; r++) {
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
 			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
 				continue;
-			//MapNode & n0 = neighbors[i].n;
-			//p0 = neighbors[i].p;
-			/*
-				decide on the type (and possibly level) of the current node
-			*/
-			//content_t new_node_content;
-			s8 new_node_level = 0;
+
+			//infostream <<" set=" <<i<< " " << PP(neighbors[i].p) << " want="<<(int)liquid_levels_want[i] << " was=" <<(int) liquid_levels[i] << std::endl;
+			
 			/* disabled because brokes constant volume of lava
 			u8 viscosity = nodemgr->get(liquid_kind).liquid_viscosity;
 			if (viscosity > 1 && liquid_levels_want[i] != liquid_levels[i]) {
@@ -2074,13 +2072,11 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 					new_node_level = liquid_levels[i] + 1;
 			} else {
 			*/
-			new_node_level = liquid_levels_want[i];
-			/* } */
 
 			// last level must flow down on stairs
 			if (liquid_levels_want[i] != liquid_levels[i] &&
 				liquid_levels[D_TOP] <= 0 && (!neighbors[D_BOTTOM].l || level_max == 1) &&
-				new_node_level >= 1 && new_node_level <= 2) {
+				liquid_levels_want[i] >= 1 && liquid_levels_want[i] <= 2) {
 				for (u16 ir = D_SELF + 1; ir < D_TOP; ++ir) { // only same level
 					u16 ii = liquid_random_map[(loopcount+loop_rand+4)%4][ir];
 					if (neighbors[ii].l)
@@ -2088,47 +2084,18 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				}
 			}
 
-			/*
-				check if anything has changed.
-				if not, just continue with the next node.
-			 */
-			if (liquid_levels[i] == new_node_level)
-			{
+			if (liquid_levels[i] == liquid_levels_want[i]) {
 				continue;
 			}
 
 			neighbors[i].n.setContent(liquid_kind_flowing);
-			neighbors[i].n.setLevel(nodemgr, new_node_level, 1);
-			/* rollback will stop your server if enabled with liquid_finite
-			// Find out whether there is a suspect for this action
-			std::string suspect;
-			if(m_gamedef->rollback()){
-				suspect = m_gamedef->rollback()->getSuspect(p0, 83, 1);
-			}
+			neighbors[i].n.setLevel(nodemgr, liquid_levels_want[i], 1);
 
-			if(!suspect.empty()){
-				// Blame suspect
-				RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
-				// Get old node for rollback
-				RollbackNode rollback_oldnode(this, p0, m_gamedef);
-				// Set node
-				setNode(p0, n0);
-				// Report
-				RollbackNode rollback_newnode(this, p0, m_gamedef);
-				RollbackAction action;
-				action.setSetNode(p0, rollback_oldnode, rollback_newnode);
-				m_gamedef->rollback()->reportAction(action);
-			} else {
-			*/
-				// Set node
 			try{
 				setNode(neighbors[i].p, neighbors[i].n);
-			}
-			catch(InvalidPositionException &e)
-			{
+			} catch(InvalidPositionException &e) {
 				infostream<<"transformLiquidsFinite: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
 			}
-			//}
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed

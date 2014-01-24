@@ -403,16 +403,16 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 	}
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.param_type_2 == CPT2_LEVELED) {
-if(compress)
-errorstream<<" 1maxlevel="<<(int)f.getMaxLevel(compress)<<" c="<<compress<<std::endl;
 		if (level > f.getMaxLevel(compress)) {
 			rest = level - f.getMaxLevel(compress);
 			level = f.getMaxLevel(compress);
 		}
-		if (level == f.getMaxLevel() && !f.liquid_alternative_source.empty()) {
+		if (level >= f.getMaxLevel() && !f.liquid_alternative_source.empty()) {
 			setContent(nodemgr->getId(f.liquid_alternative_source));
-		} else {
-			setParam2(level & LEVELED_MASK);
+		}
+		setParam2(level & LEVELED_MASK);
+		if(getLevel(nodemgr)!=level) {
+			errorstream<<"AFTERSET not match want="<<level<< " res="<< getLevel(nodemgr) <<std::endl;
 		}
 	} else if (f.param_type_2 == CPT2_FLOWINGLIQUID
 		|| f.liquid_type == LIQUID_FLOWING
