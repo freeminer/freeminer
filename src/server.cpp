@@ -3368,27 +3368,12 @@ void Server::SendNodeDef(con::Connection &con, u16 peer_id,
 		INodeDefManager *nodedef, u16 protocol_version)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	/*
-		u16 command
-		u32 length of the next item
-		zlib-compressed serialized NodeDefManager
-	*/
-	writeU16(os, TOCLIENT_NODEDEF);
-	std::ostringstream tmp_os(std::ios::binary);
-	nodedef->serialize(tmp_os, protocol_version);
-	std::ostringstream tmp_os2(std::ios::binary);
-	compressZlib(tmp_os.str(), tmp_os2);
-	os<<serializeLongString(tmp_os2.str());
+	MSGPACK_PACKET_INIT(TOCLIENT_NODEDEF, 1);
+	PACK(TOCLIENT_NODEDEF_DEFINITIONS, *nodedef);
 
-	// Make data buffer
-	std::string s = os.str();
-	verbosestream<<"Server: Sending node definitions to id("<<peer_id
-			<<"): size="<<s.size()<<std::endl;
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendAnimations(con::Connection &con, u16 peer_id)

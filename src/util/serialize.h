@@ -406,5 +406,7 @@ std::string deSerializeJsonString(std::istream &is);
 
 MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
+MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 #endif
 

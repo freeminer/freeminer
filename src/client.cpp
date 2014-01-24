@@ -1444,16 +1444,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		// updating content definitions
 		assert(!m_mesh_update_thread.IsRunning());
 
-		// Decompress node definitions
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		std::istringstream tmp_is(deSerializeLongString(is), std::ios::binary);
-		std::ostringstream tmp_os;
-		decompressZlib(tmp_is, tmp_os);
-
-		// Deserialize node definitions
-		std::istringstream tmp_is2(tmp_os.str());
-		m_nodedef->deSerialize(tmp_is2);
+		packet[TOCLIENT_NODEDEF_DEFINITIONS].convert(m_nodedef);
 		m_nodedef_received = true;
 	}
 	else if(command == TOCLIENT_ITEMDEF)

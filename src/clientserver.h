@@ -278,6 +278,11 @@ enum {
 	TOCLIENT_ACCESS_DENIED_REASON
 };
 
+#define TOCLIENT_NODEDEF 0x3a
+enum {
+	TOCLIENT_NODEDEF_DEFINITIONS
+};
+
 #define TOCLIENT_ITEMDEF 0x3d
 enum {
 	TOCLIENT_ITEMDEF_DEFINITIONS
@@ -298,13 +303,6 @@ enum ToClientCommand
 	/*
 		[0] u16 command
 		[2] serialized inventory
-	*/
-
-	TOCLIENT_NODEDEF = 0x3a,
-	/*
-		u16 command
-		u32 length of the next item
-		serialized NodeDefManager
 	*/
 
 	TOCLIENT_DETACHED_INVENTORY = 0x43,
