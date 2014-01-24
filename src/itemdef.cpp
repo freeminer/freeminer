@@ -19,9 +19,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "itemdef.h"
-
-MSGPACK_ADD_ENUM(ItemType);
-
 #include "gamedef.h"
 #include "nodedef.h"
 #include "tool.h"
@@ -120,7 +117,7 @@ void ItemDefinition::reset()
 void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(tool_capabilities ? 15 : 14);
-	PACK(ITEMDEF_TYPE, type);
+	PACK(ITEMDEF_TYPE, (int)type);
 	PACK(ITEMDEF_NAME, name);
 	PACK(ITEMDEF_DESCRIPTION, description);
 	PACK(ITEMDEF_INVENTORY_IMAGE, inventory_image);
@@ -146,7 +143,9 @@ void ItemDefinition::msgpack_unpack(msgpack::object o)
 	reset();
 
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[ITEMDEF_TYPE].convert(&type);
+	int type_tmp;
+	packet[ITEMDEF_TYPE].convert(&type_tmp);
+	type = (ItemType)type_tmp;
 	packet[ITEMDEF_NAME].convert(&name);
 	packet[ITEMDEF_DESCRIPTION].convert(&description);
 	packet[ITEMDEF_INVENTORY_IMAGE].convert(&inventory_image);
