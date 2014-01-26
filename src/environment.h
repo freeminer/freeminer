@@ -51,6 +51,7 @@ class ServerMap;
 class ClientMap;
 class GameScripting;
 class Player;
+class Circuit;
 
 class Environment
 {
@@ -217,8 +218,8 @@ class ServerEnvironment : public Environment
 {
 public:
 	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-			IGameDef *gamedef,
-			IBackgroundBlockEmerger *emerger);
+	                  Circuit* circuit, IGameDef *gamedef,
+	                  IBackgroundBlockEmerger *emerger);
 	~ServerEnvironment();
 
 	Map & getMap();
@@ -389,11 +390,13 @@ private:
 	/*
 		Member variables
 	*/
-	
+
 	// The map
 	ServerMap *m_map;
 	// Lua state
 	GameScripting* m_script;
+	// Circuit manager
+	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
 	// Background block emerger (the EmergeManager, in practice)
