@@ -94,6 +94,11 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	this->biomedef = new BiomeDefManager();
 	this->params   = NULL;
 
+	// Note that accesses to this variable are not synchronized.
+	// This is because the *only* thread ever starting or stopping
+	// EmergeThreads should be the ServerThread.
+	this->threads_active = false;
+
 	this->luaoverride_params          = NULL;
 	this->luaoverride_params_modified = 0;
 	this->luaoverride_flagmask        = 0;
@@ -130,9 +135,11 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 
 EmergeManager::~EmergeManager() {
 	for (unsigned int i = 0; i != emergethread.size(); i++) {
-		emergethread[i]->Stop();
-		emergethread[i]->qevent.signal();
-		emergethread[i]->Wait();
+		if (threads_active) {
+			emergethread[i]->Stop();
+			emergethread[i]->qevent.signal();
+			emergethread[i]->Wait();
+		}
 		delete emergethread[i];
 		delete mapgen[i];
 	}
@@ -254,9 +261,32 @@ Mapgen *EmergeManager::getCurrentMapgen() {
 }
 
 
-void EmergeManager::startAllThreads() {
+void EmergeManager::startThreads() {
+	if (threads_active)
+		return;
+
 	for (unsigned int i = 0; i != emergethread.size(); i++)
 		emergethread[i]->Start();
+
+	threads_active = true;
+}
+
+
+void EmergeManager::stopThreads() {
+	if (!threads_active)
+		return;
+
+	// Request thread stop in parallel
+	for (unsigned int i = 0; i != emergethread.size(); i++) {
+		emergethread[i]->Stop();
+		emergethread[i]->qevent.signal();
+	}
+
+	// Then do the waiting for each
+	for (unsigned int i = 0; i != emergethread.size(); i++)
+		emergethread[i]->Wait();
+
+	threads_active = false;
 }
 
 
