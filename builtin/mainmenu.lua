@@ -989,7 +989,7 @@ function tabbuilder.tab_settings()
 	end
 
 	tab_string = tab_string ..
-		"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[6.5,10;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
