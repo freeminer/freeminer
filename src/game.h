@@ -124,7 +124,7 @@ public:
 
 class ChatBackend;  /* to avoid having to include chat.h */
 struct SubgameSpec;
-enum CAMERA_MODES {FIRST, THIRD, THIRD_FRONT};
+enum CameraModes {CAMERA_MODE_FIRST, CAMERA_MODE_THIRD, CAMERA_MODE_THIRD_FRONT};
 
 void the_game(
 	bool &kill,

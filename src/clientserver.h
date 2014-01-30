@@ -101,7 +101,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		automatic_face_movement_dir and automatic_face_movement_dir_offset
 			added to object properties
 	PROTOCOL_VERSION 23:
-		TOCLIENT_AMINATIONS
+		TOCLIENT_ANIMATIONS
 */
 
 #define LATEST_PROTOCOL_VERSION 23
@@ -513,7 +513,7 @@ enum ToClientCommand
 		u16 breath
 	*/
 
-	TOCLIENT_AMINATIONS = 0x4f,
+	TOCLIENT_ANIMATIONS = 0x4f,
 	/*
 		u16 command
 		f1000 animation_default_start

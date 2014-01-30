@@ -29,7 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inventory.h"
 #include "tile.h"
 #include "localplayer.h"
-#include "game.h" //CAMERA_MODES
+#include "game.h" // CameraModes
 #include "camera.h"
 
 #include <IGUIStaticText.h>
@@ -385,7 +385,8 @@ void Hud::drawHotbar(v2s32 centerlowerpos, s32 halfheartcount, u16 playeritem, s
 
 
 void Hud::drawCrosshair() {
-	if (!(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE) || player->camera_mode == THIRD_FRONT)
+	if (!(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE) ||
+		player->camera_mode == CAMERA_MODE_THIRD_FRONT)
 		return;
 		
 	if (use_crosshair_image) {

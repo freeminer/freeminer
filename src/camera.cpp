@@ -38,7 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/mathconstants.h"
 
 #include "nodedef.h"
-#include "game.h" //CAMERA_MODES
+#include "game.h" // CameraModes
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
@@ -277,7 +277,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Fall bobbing animation
 	float fall_bobbing = 0;
-	if(player->camera_impact >= 1 && current_camera_mode < THIRD)
+	if(player->camera_impact >= 1 && current_camera_mode < CAMERA_MODE_THIRD)
 	{
 		if(m_view_bobbing_fall == -1) // Effect took place and has finished
 			player->camera_impact = m_view_bobbing_fall = 0;
@@ -304,7 +304,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f rel_cam_target = v3f(0,0,1);
 	v3f rel_cam_up = v3f(0,1,0);
 
-	if (m_view_bobbing_anim != 0 && current_camera_mode < THIRD)
+	if (m_view_bobbing_anim != 0 && current_camera_mode < CAMERA_MODE_THIRD)
 	{
 		f32 bobfrac = my_modf(m_view_bobbing_anim * 2);
 		f32 bobdir = (m_view_bobbing_anim < 0.5) ? 1.0 : -1.0;
@@ -357,9 +357,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f my_cp = m_camera_position;
 	
 	// Reposition the camera for third person view
-	if (current_camera_mode > FIRST) {
+	if (current_camera_mode > CAMERA_MODE_FIRST) {
 		
-		if (current_camera_mode == THIRD_FRONT)
+		if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
 			m_camera_direction *= -1;
 
 		my_cp.Y += 2;
@@ -397,10 +397,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	m_cameranode->setTarget(my_cp + 100 * m_camera_direction);
 
 	// update the camera position in front-view mode to render blocks behind player
-	if (current_camera_mode == THIRD_FRONT)
-		m_camera_position = my_cp;
-
-	if (current_camera_mode == THIRD_FRONT)// update the camera position in front-view mode to render blocks behind player
+	if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
 		m_camera_position = my_cp;
 
 	// Get FOV
@@ -486,7 +483,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false && current_camera_mode == FIRST ||
+		(g_settings->getBool("free_move") == false && current_camera_mode == CAMERA_MODE_FIRST ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation

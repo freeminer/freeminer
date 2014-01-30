@@ -3604,7 +3604,7 @@ void Server::SendAnimations(con::Connection &con, u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_AMINATIONS);
+	writeU16(os, TOCLIENT_ANIMATIONS);
 	writeF1000(os, g_settings->getFloat("animation_default_start"));
 	writeF1000(os, g_settings->getFloat("animation_default_stop"));
 	writeF1000(os, g_settings->getFloat("animation_walk_start"));
