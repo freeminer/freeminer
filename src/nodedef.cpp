@@ -157,6 +157,8 @@ void ContentFeatures::reset()
 	has_on_construct = false;
 	has_on_destruct = false;
 	has_after_destruct = false;
+	has_on_activate = false;
+	has_on_deactivate = false;
 	/*
 		Actual data
 
@@ -205,6 +207,18 @@ void ContentFeatures::reset()
 	sound_footstep = SimpleSoundSpec();
 	sound_dig = SimpleSoundSpec("__group");
 	sound_dug = SimpleSoundSpec();
+
+	is_circuit_element = false;
+	is_wire = false;
+	is_connector = false;
+	for(int i = 0; i < 6; ++i)
+	{
+		wire_connections[i] = 0;
+	}
+	for(int i = 0; i < 64; ++i)
+	{
+		circuit_element_states[i] = 0;
+	}
 }
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
@@ -539,7 +553,7 @@ public:
 		for (ItemGroupList::const_iterator i = def.groups.begin();
 			i != def.groups.end(); ++i) {
 			std::string group_name = i->first;
-			
+
 			std::map<std::string, GroupItems>::iterator
 				j = m_group_to_items.find(group_name);
 			if (j == m_group_to_items.end()) {

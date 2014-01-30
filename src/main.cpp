@@ -701,7 +701,7 @@ void SpeedTests()
 	}
 
 	{
-		infostream<<"Around 5000/ms should do well here."<<std::endl;
+		infostream<<"Around 5000ms should do well here."<<std::endl;
 		TimeTaker timer("Testing mutex speed");
 
 		JMutex m;

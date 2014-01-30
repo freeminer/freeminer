@@ -1655,6 +1655,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		u32 dir          = readU32(is);
 		v2f align        = readV2F1000(is);
 		v2f offset       = readV2F1000(is);
+		v3f world_pos;
+		try{
+			world_pos    = readV3F1000(is);
+		}catch(SerializationError &e) {};
 
 		ClientEvent event;
 		event.type = CE_HUDADD;
@@ -1669,6 +1673,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		event.hudadd.dir    = dir;
 		event.hudadd.align  = new v2f(align);
 		event.hudadd.offset = new v2f(offset);
+		event.hudadd.world_pos = new v3f(world_pos);
 		m_client_event_queue.push_back(event);
 	}
 	else if(command == TOCLIENT_HUDRM)
@@ -1687,6 +1692,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	{
 		std::string sdata;
 		v2f v2fdata;
+		v3f v3fdata;
 		u32 intdata = 0;
 		
 		std::string datastring((char *)&data[2], datasize - 2);
@@ -1700,6 +1706,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			v2fdata = readV2F1000(is);
 		else if (stat == HUD_STAT_NAME || stat == HUD_STAT_TEXT)
 			sdata = deSerializeString(is);
+		else if (stat == HUD_STAT_WORLD_POS)
+			v3fdata = readV3F1000(is);
 		else
 			intdata = readU32(is);
 		
@@ -1708,6 +1716,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		event.hudchange.id      = id;
 		event.hudchange.stat    = (HudElementStat)stat;
 		event.hudchange.v2fdata = new v2f(v2fdata);
+		event.hudchange.v3fdata = new v3f(v3fdata);
 		event.hudchange.sdata   = new std::string(sdata);
 		event.hudchange.data    = intdata;
 		m_client_event_queue.push_back(event);
@@ -1747,7 +1756,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
 	}
-	else if(command == TOCLIENT_AMINATIONS)
+	else if(command == TOCLIENT_ANIMATIONS)
 	{
 		std::string datastring((char*)&data[2], datasize-2);
 		std::istringstream is(datastring, std::ios_base::binary);

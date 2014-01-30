@@ -53,6 +53,7 @@ class EmergeManager;
 class GameScripting;
 class ServerEnvironment;
 struct SimpleSoundSpec;
+class Circuit;
 
 
 /*
@@ -689,6 +690,8 @@ private:
 	// Scripting
 	// Envlock and conlock should be locked when using Lua
 	GameScripting *m_script;
+	
+	Circuit* m_circuit;
 
 	// Item definition manager
 	IWritableItemDefManager *m_itemdef;

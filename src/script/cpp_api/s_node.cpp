@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodedef.h"
 #include "server.h"
 #include "environment.h"
+#include "util/pointedthing.h"
 
 
 struct EnumString ScriptApiNode::es_DrawType[] =
@@ -87,7 +88,7 @@ ScriptApiNode::~ScriptApiNode() {
 }
 
 bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
-		ServerActiveObject *puncher)
+		ServerActiveObject *puncher, PointedThing pointed)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -104,7 +105,8 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
 	objectrefGetOrCreate(puncher);
-	if(lua_pcall(L, 3, 0, errorhandler))
+	pushPointedThing(pointed);
+	if(lua_pcall(L, 4, 0, errorhandler))
 		scriptError();
 	lua_pop(L, 1); // Pop error handler
 	return true;
@@ -191,6 +193,47 @@ void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
 	if(lua_pcall(L, 2, 0, errorhandler))
+		scriptError();
+	lua_pop(L, 1); // Pop error handler
+}
+
+void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	lua_pushcfunction(L, script_error_handler);
+	int errorhandler = lua_gettop(L);
+
+	INodeDefManager *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
+	{
+		return;
+	}
+	// Call function
+	push_v3s16(L, p);
+	if(lua_pcall(L, 1, 0, errorhandler))
+		scriptError();
+	lua_pop(L, 1); // Pop error handler
+}
+
+void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	lua_pushcfunction(L, script_error_handler);
+	int errorhandler = lua_gettop(L);
+
+	INodeDefManager *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
+		return;
+
+	// Call function
+	push_v3s16(L, p);
+	if(lua_pcall(L, 1, 0, errorhandler))
 		scriptError();
 	lua_pop(L, 1); // Pop error handler
 }

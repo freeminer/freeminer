@@ -45,6 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_indev.h"
 #include "mapgen_singlenode.h"
 #include "mapgen_math.h"
+#include "circuit.h"
 
 
 class EmergeThread : public JThread
@@ -52,6 +53,7 @@ class EmergeThread : public JThread
 public:
 	Server *m_server;
 	ServerMap *map;
+	Circuit* m_circuit;
 	EmergeManager *emerge;
 	Mapgen *mapgen;
 	bool enable_mapgen_debug_info;
@@ -92,6 +94,11 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	this->biomedef = new BiomeDefManager();
 	this->params   = NULL;
 
+	// Note that accesses to this variable are not synchronized.
+	// This is because the *only* thread ever starting or stopping
+	// EmergeThreads should be the ServerThread.
+	this->threads_active = false;
+
 	this->luaoverride_params          = NULL;
 	this->luaoverride_params_modified = 0;
 	this->luaoverride_flagmask        = 0;
@@ -128,9 +135,11 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 
 EmergeManager::~EmergeManager() {
 	for (unsigned int i = 0; i != emergethread.size(); i++) {
-		emergethread[i]->Stop();
-		emergethread[i]->qevent.signal();
-		emergethread[i]->Wait();
+		if (threads_active) {
+			emergethread[i]->Stop();
+			emergethread[i]->qevent.signal();
+			emergethread[i]->Wait();
+		}
 		delete emergethread[i];
 		delete mapgen[i];
 	}
@@ -252,9 +261,32 @@ Mapgen *EmergeManager::getCurrentMapgen() {
 }
 
 
-void EmergeManager::startAllThreads() {
+void EmergeManager::startThreads() {
+	if (threads_active)
+		return;
+
 	for (unsigned int i = 0; i != emergethread.size(); i++)
 		emergethread[i]->Start();
+
+	threads_active = true;
+}
+
+
+void EmergeManager::stopThreads() {
+	if (!threads_active)
+		return;
+
+	// Request thread stop in parallel
+	for (unsigned int i = 0; i != emergethread.size(); i++) {
+		emergethread[i]->Stop();
+		emergethread[i]->qevent.signal();
+	}
+
+	// Then do the waiting for each
+	for (unsigned int i = 0; i != emergethread.size(); i++)
+		emergethread[i]->Wait();
+
+	threads_active = false;
 }
 
 
@@ -458,6 +490,11 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	if (!block || block->isDummy() || !block->isGenerated()) {
 		EMERGE_DBG_OUT("not in memory, attempting to load from disk");
 		block = map->loadBlock(p);
+		if(block)
+		{
+// 			block->pushElementsToCircuit(m_circuit);
+// 			m_circuit->processElementsQueue(*map, map->getNodeDefManager());
+		}
 		if (block && block->isGenerated())
 			map->prepareBlock(block);
 	}
@@ -485,9 +522,10 @@ void *EmergeThread::Thread() {
 	v3s16 p;
 	u8 flags;
 
-	map    = (ServerMap *)&(m_server->m_env->getMap());
-	emerge = m_server->m_emerge;
-	mapgen = emerge->mapgen[id];
+	map       = (ServerMap *)&(m_server->m_env->getMap());
+	m_circuit = m_server->m_circuit;
+	emerge    = m_server->m_emerge;
+	mapgen    = emerge->mapgen[id];
 	enable_mapgen_debug_info = emerge->mapgen_debug_info;
 
 	while (!StopRequested())

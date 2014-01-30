@@ -242,14 +242,18 @@ if(ENABLE_LEVELDB)
 	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
 	message (STATUS "LevelDB library: ${LEVELDB_LIBRARY}")
 	message (STATUS "LevelDB headers: ${LEVELDB_INCLUDE_DIR}")
-	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+	find_library(SNAPPY_LIBRARY snappy)
+	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
+	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
+	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")   
+	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB 1)
 		message(STATUS "LevelDB backend enabled")
-		include_directories(${LEVELDB_INCLUDE_DIR})
-	else(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
+	else(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB 0)
 		message(STATUS "LevelDB not found!")
-	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
 
@@ -279,6 +283,9 @@ add_subdirectory(util)
 add_subdirectory(enet)
 
 set(common_SRCS
+	circuit.cpp
+	circuit_element.cpp
+	circuit_element_states.cpp
 	version.cpp
 	rollback_interface.cpp
 	rollback.cpp
@@ -499,7 +506,7 @@ if(BUILD_CLIENT)
 		${CGUITTFONT_LIBRARY}
 	)
 	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
 endif(BUILD_CLIENT)
 
@@ -518,7 +525,7 @@ if(BUILD_SERVER)
 		${PLATFORM_LIBS}
 	)
 	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
 	if(USE_CURL)
 		target_link_libraries(

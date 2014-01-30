@@ -64,6 +64,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/serialize.h"
 #include "util/thread.h"
 #include "defaultsettings.h"
+#include "circuit.h"
 
 #include <msgpack.hpp>
 
@@ -699,6 +700,7 @@ Server::Server(
 	m_enable_rollback_recording(false),
 	m_emerge(NULL),
 	m_script(NULL),
+	m_circuit(NULL),
 	m_itemdef(createItemDefManager()),
 	m_nodedef(createNodeDefManager()),
 	m_craftdef(createCraftDefManager()),
@@ -820,6 +822,8 @@ Server::Server(
 	infostream<<"Server: Initializing Lua"<<std::endl;
 
 	m_script = new GameScripting(this);
+	
+	m_circuit = new Circuit(m_script, path_world);
 
 
 	// Load and run builtin.lua
@@ -861,8 +865,8 @@ Server::Server(
 	m_nodedef->updateAliases(m_itemdef);
 
 	// Initialize Environment
-	ServerMap *servermap = new ServerMap(path_world, this, m_emerge);
-	m_env = new ServerEnvironment(servermap, m_script, this, m_emerge);
+	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
+	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this, m_emerge);
 	
 	// Run some callbacks after the MG params have been set up but before activation
 	MapgenParams *mgparams = servermap->getMapgenParams();
@@ -965,9 +969,9 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
-	delete m_env;
-	//shutdown all emerge threads first!
-	delete m_emerge;
+	// stop all emerge threads before deleting players that may have
+	// requested blocks to be emerged
+	m_emerge->stopThreads();
 
 	/*
 		Delete clients
@@ -986,12 +990,18 @@ Server::~Server()
 	}
 
 	// Delete things in the reverse order of creation
+	delete m_env;
+
+	// N.B. the EmergeManager should be deleted after the Environment since Map
+	// depends on EmergeManager to write its current params to the map meta
+	delete m_emerge;
 	delete m_rollback;
 	delete m_banmanager;
 	delete m_event;
 	delete m_itemdef;
 	delete m_nodedef;
 	delete m_craftdef;
+	delete m_circuit;
 
 	// Deinitialize scripting
 	infostream<<"Server: Deinitializing scripting"<<std::endl;
@@ -1690,7 +1700,7 @@ void Server::AsyncRunStep(bool initial_step)
 		{
 			counter = 0.0;
 
-			m_emerge->startAllThreads();
+			m_emerge->startThreads();
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
@@ -2853,7 +2863,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					m_emerge->enqueueBlockEmerge(peer_id, getNodeBlockPos(p_above), false);
 				}
 				if(n.getContent() != CONTENT_IGNORE)
-					m_script->node_on_punch(p_under, n, playersao);
+					m_script->node_on_punch(p_under, n, playersao, pointed);
 				// Cheat prevention
 				playersao->noCheatDigStart(p_under);
 			}
@@ -3381,7 +3391,7 @@ void Server::SendAnimations(con::Connection &con, u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_AMINATIONS);
+	writeU16(os, TOCLIENT_ANIMATIONS);
 	writeF1000(os, g_settings->getFloat("animation_default_start"));
 	writeF1000(os, g_settings->getFloat("animation_default_stop"));
 	writeF1000(os, g_settings->getFloat("animation_walk_start"));
@@ -3601,6 +3611,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 	writeU32(os, form->dir);
 	writeV2F1000(os, form->align);
 	writeV2F1000(os, form->offset);
+	writeV3F1000(os, form->world_pos);
 
 	// Make data buffer
 	std::string s = os.str();
@@ -3643,6 +3654,9 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 		case HUD_STAT_NAME:
 		case HUD_STAT_TEXT:
 			os << serializeString(*(std::string *)value);
+			break;
+		case HUD_STAT_WORLD_POS:
+			writeV3F1000(os, *(v3f *)value);
 			break;
 		case HUD_STAT_NUMBER:
 		case HUD_STAT_ITEM:

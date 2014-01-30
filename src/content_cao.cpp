@@ -41,7 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/mathconstants.h"
 #include "map.h"
 #include "main.h" // g_settings
-#include "game.h" //CAMERA_MODES
+#include "game.h" // CameraModes
 #include <IMeshManipulator.h>
 #include <IAnimatedMeshSceneNode.h>
 #include <IBoneSceneNode.h>
@@ -1090,7 +1090,7 @@ public:
 		if(m_is_local_player) {
 			LocalPlayer *player = m_env->getLocalPlayer();
 
-			if (player->camera_mode > FIRST) {
+			if (player->camera_mode > CAMERA_MODE_FIRST) {
 				int old_anim = player->last_animation;
 				m_is_visible = true;
 				m_position = player->getPosition() + v3f(0,BS,0);

@@ -47,6 +47,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
+#include "circuit.h"
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
@@ -78,6 +79,20 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_liquid_step_flow(1000),
 	m_dout(dout),
 	m_gamedef(gamedef),
+	m_sectors_update_last(0),
+	m_sectors_save_last(0),
+	m_sector_cache(NULL)
+{
+	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
+	m_circuit = NULL;
+}
+
+// TODO: mmerge with ^^ with curcuit=NULL
+Map::Map(std::ostream &dout, IGameDef *gamedef, Circuit* circuit):
+	m_liquid_step_flow(1000),
+	m_dout(dout),
+	m_gamedef(gamedef),
+	m_circuit(circuit),
 	m_sectors_update_last(0),
 	m_sectors_save_last(0),
 	m_sector_cache(NULL)
@@ -1581,6 +1596,10 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	}
 	if (!calls)
 		m_sectors_update_last = 0;
+
+	if(m_circuit != NULL) {
+		m_circuit->save();
+	}
 /*
 	endSave();
 */
@@ -1714,6 +1733,16 @@ void Map::transforming_liquid_push_back(v3s16 & p) {
 
 u32 Map::transforming_liquid_size() {
         return m_transforming_liquid.size();
+}
+
+Circuit* Map::getCircuit()
+{
+	return m_circuit;
+}
+
+INodeDefManager* Map::getNodeDefManager()
+{
+	return m_gamedef->ndef();
 }
 
 const v3s16 liquid_flow_dirs[7] =
@@ -2610,8 +2639,8 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 /*
 	ServerMap
 */
-ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
-	Map(dout_server, gamedef),
+ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* circuit):
+	Map(dout_server, gamedef, circuit),
 	m_seed(0),
 	m_map_metadata_changed(true)
 {
@@ -3089,7 +3118,6 @@ ServerMapSector * ServerMap::createSector(v2s16 p2d)
 	DSTACKF("%s: p2d=(%d,%d)",
 			__FUNCTION_NAME,
 			p2d.X, p2d.Y);
-
 	/*
 		Check if it exists already in memory
 	*/
@@ -3328,15 +3356,17 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	DSTACKF("%s: p=(%d,%d,%d), create_blank=%d",
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
-
 	{
 		MapBlock *block = getBlockNoCreateNoEx(p);
 		if(block && block->isDummy() == false)
+		{
 			return block;
+		}
 	}
 
 	{
 		MapBlock *block = loadBlock(p);
+		m_circuit->processElementsQueue(*this, m_gamedef->ndef());
 		if(block)
 			return block;
 	}
@@ -3940,7 +3970,6 @@ void ServerMap::saveBlock(MapBlock *block)
 void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSector *sector, bool save_after_load)
 {
 	DSTACK(__FUNCTION_NAME);
-
 	std::string fullpath = sectordir+DIR_DELIM+blockfile;
 	try{
 
@@ -3978,6 +4007,7 @@ void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSecto
 
 		// Read basic data
 		block->deSerialize(is, version, true);
+		block->pushElementsToCircuit(m_circuit);
 
 		// If it's a new block, insert it to the map
 		if(created_new)

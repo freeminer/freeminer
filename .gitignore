@@ -23,7 +23,7 @@ tags
 /world/
 
 ## Configuration/log files
-minetest.conf
+freeminer.conf
 debug.txt
 
 ## Build files

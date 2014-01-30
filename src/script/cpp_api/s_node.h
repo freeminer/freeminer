@@ -38,12 +38,14 @@ public:
 	virtual ~ScriptApiNode();
 
 	bool node_on_punch(v3s16 p, MapNode node,
-			ServerActiveObject *puncher);
+			ServerActiveObject *puncher, PointedThing pointed);
 	bool node_on_dig(v3s16 p, MapNode node,
 			ServerActiveObject *digger);
 	void node_on_construct(v3s16 p, MapNode node);
 	void node_on_destruct(v3s16 p, MapNode node);
 	void node_after_destruct(v3s16 p, MapNode node);
+	void node_on_activate(v3s16 p, MapNode node);
+	void node_on_deactivate(v3s16 p, MapNode node);
 	bool node_on_timer(v3s16 p, MapNode node, f32 dtime);
 	void node_on_receive_fields(v3s16 p,
 			const std::string &formname,

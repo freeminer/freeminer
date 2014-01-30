@@ -252,8 +252,6 @@ int msgpack_version_minor(void);
 	os.chdir("..")
 	
 	print("=> Building Freeminer")
-	# get version
-	version = subprocess.check_output(["git", "describe"]).decode("ascii").strip()
 	# multi-process build
 	os.environ["CL"] = "/MP"
 	if os.path.exists("build_tmp"):
@@ -297,10 +295,9 @@ int msgpack_version_minor(void);
 		-DLEVELDB_INCLUDE_DIR={leveldb}\include\
 		-DLEVELDB_LIBRARY={leveldb}\Release\leveldb.lib
 		-DENABLE_LEVELDB=1
-		-DVERSION_EXTRA={version}
 		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
 		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack.lib
-	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, version=version, msgpack=msgpack).replace("\n", "")
+	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, msgpack=msgpack).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86;{boost}\lib32-msvc-10.0</AdditionalLibraryDirectories>".format(boost=BOOST_PATH))

@@ -507,7 +507,13 @@ Note: Future revisions to the HUD API may be incompatible; the HUD API is still 
     - number: Number of items in the inventory to be displayed.
     - item: Position of item that is selected.
     - direction
-
+- waypoint
+	Displays distance to selected world position.
+    - name: The name of the waypoint.
+    - text: Distance suffix. Can be blank.
+    - number: An integer containing the RGB value of the color used to draw the text.
+    - world_pos: World position of the waypoint.
+    
 Representations of simple things
 --------------------------------
 Position/vector:
@@ -1216,7 +1222,7 @@ minetest.register_on_shutdown(func())
 ^ WARNING: If the server terminates abnormally (i.e. crashes), the registered
            callbacks WILL LIKELY NOT BE RUN.  Data should be saved at
            semi-frequent intervals as well as on server shutdown.
-minetest.register_on_placenode(func(pos, newnode, placer, oldnode, itemstack))
+minetest.register_on_placenode(func(pos, newnode, placer, oldnode, itemstack, pointed_thing))
 ^ Called when a node has been placed
 ^ If return true no item is taken from itemstack
 ^ Not recommended; use on_construct or after_place_node in node definition
@@ -1225,7 +1231,7 @@ minetest.register_on_dignode(func(pos, oldnode, digger))
 ^ Called when a node has been dug.
 ^ Not recommended: Use on_destruct or after_dig_node in node definition
 ^                  whenever possible
-minetest.register_on_punchnode(func(pos, node, puncher))
+minetest.register_on_punchnode(func(pos, node, puncher, pointed_thing))
 ^ Called when a node is punched
 minetest.register_on_generated(func(minp, maxp, blockseed))
 ^ Called after generating a piece of world. Modifying nodes inside the area
@@ -1526,7 +1532,7 @@ minetest.item_eat(hp_change, replace_with_item)
 ^ Eat the item. replace_with_item can be nil.
 
 Defaults for the on_punch and on_dig node definition callbacks:
-minetest.node_punch(pos, node, puncher)
+minetest.node_punch(pos, node, puncher, pointed_thing)
 ^ Calls functions registered by minetest.register_on_punchnode()
 minetest.node_dig(pos, node, digger)
 ^ Checks if node can be dug, puts item into inventory, removes node
@@ -2312,10 +2318,31 @@ Node definition (register_node)
     can_dig = function(pos,player)
     ^ returns true if node can be dug, or false if not
     ^ default: nil
+	
+	circuit_states = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	^ Each element of circuit MUST have this table
+	^ Each circuit element should be defined by a table of values on input and output.
+	^ Index of element - value on input, and value at index - value on output.
+	^ Each bit of value represents one face of the block (Looking towards Z+).
+	^ 1. Bottom face (LSB).
+	^ 2. Back face.
+	^ 3. Left face.
+	^ 4. Top face.
+	^ 5. Front face.
+	^ 6. Right face.
+	^ For example if there is 4 at index 2, then if all faces except back
+	^ face are deactivated, then there will be output signal on the left face.
+	^ Each definition table must have exactly 64 integer elements (0 <= a[i] <= 63).
+	
+	is_wire = true,
+	^ Note: if 2 blocks of wire have different ids, then signal between them WILL NOT be transmitted
     
-    on_punch = func(pos, node, puncher),
+    on_punch = func(pos, node, puncher, pointed_thing),
     ^ default: minetest.node_punch
-    ^ By default: does nothing
+    ^ By default: Calls minetest.register_on_punchnode callbacks
     on_rightclick = func(pos, node, clicker, itemstack, pointed_thing),
     ^ default: nil
     ^ if defined, itemstack will hold clicker's wielded item
@@ -2363,6 +2390,12 @@ Node definition (register_node)
     ^ intensity: 1.0 = mid range of regular TNT
     ^ If defined, called when an explosion touches the node, instead of
       removing the node
+	on_activate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from zero to non zero
+	on_deactivate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from non zero to zero
 }
 
 Recipe for register_craft: (shaped)
