@@ -1597,10 +1597,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_DELETE_PARTICLESPAWNER)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id = readU16(is);
+		u32 id = packet[TOCLIENT_DELETE_PARTICLESPAWNER_ID].as<u32>();
 
 		ClientEvent event;
 		event.type = CE_DELETE_PARTICLESPAWNER;

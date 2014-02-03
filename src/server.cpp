@@ -3553,16 +3553,11 @@ void Server::SendDeleteParticleSpawner(u16 peer_id, u32 id)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_DELETE_PARTICLESPAWNER);
+	MSGPACK_PACKET_INIT(TOCLIENT_DELETE_PARTICLESPAWNER, 1);
+	PACK(TOCLIENT_DELETE_PARTICLESPAWNER_ID, id);
 
-	writeU16(os, id);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendDeleteParticleSpawnerAll(u32 id)

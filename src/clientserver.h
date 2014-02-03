@@ -349,6 +349,10 @@ enum {
 	TOCLIENT_ADD_PARTICLESPAWNER_ID
 };
 
+#define TOCLIENT_DELETE_PARTICLESPAWNER 0x48
+enum {
+	TOCLIENT_DELETE_PARTICLESPAWNER_ID
+};
 
 enum ToClientCommand
 {
@@ -359,12 +363,6 @@ enum ToClientCommand
 		v3s16 position
 		serialized mapnode
 		u8 keep_metadata // Added in protocol version 22
-	*/
-
-	TOCLIENT_DELETE_PARTICLESPAWNER = 0x48,
-	/*
-		u16 command
-		u32 id
 	*/
 
 	TOCLIENT_HUDADD = 0x49,
