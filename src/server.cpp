@@ -2342,39 +2342,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			client->SetBlockNotSent(p);
 		}
 	}
-	else if(command == TOSERVER_CLICK_OBJECT)
-	{
-		infostream<<"Server: CLICK_OBJECT not supported anymore"<<std::endl;
-		return;
-	}
-	else if(command == TOSERVER_CLICK_ACTIVEOBJECT)
-	{
-		infostream<<"Server: CLICK_ACTIVEOBJECT not supported anymore"<<std::endl;
-		return;
-	}
-	else if(command == TOSERVER_GROUND_ACTION)
-	{
-		infostream<<"Server: GROUND_ACTION not supported anymore"<<std::endl;
-		return;
-
-	}
-	else if(command == TOSERVER_RELEASE)
-	{
-		infostream<<"Server: RELEASE not supported anymore"<<std::endl;
-		return;
-	}
-	else if(command == TOSERVER_SIGNTEXT)
-	{
-		infostream<<"Server: SIGNTEXT not supported anymore"
-				<<std::endl;
-		return;
-	}
-	else if(command == TOSERVER_SIGNNODETEXT)
-	{
-		infostream<<"Server: SIGNNODETEXT not supported anymore"
-				<<std::endl;
-		return;
-	}
 	else if(command == TOSERVER_INVENTORY_ACTION)
 	{
 		// Strip command and create a stream

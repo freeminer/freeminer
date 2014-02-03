@@ -462,29 +462,6 @@ enum {
 
 enum ToServerCommand
 {
-	/*
-		Sent first after connected.
-
-		[0] u16 TOSERVER_INIT
-		[3] u8[20] player_name
-		[23] u8[28] password (new in some version)
-		[51] u16 minimum supported network protocol version (added sometime)
-		[53] u16 maximum supported network protocol version (added later than the previous one)
-	*/
-
-	// TOSERVER_INIT2 = 0x11,
-	/*
-		Sent as an ACK for TOCLIENT_INIT.
-		After this, the server can send data.
-
-		[0] u16 TOSERVER_INIT2
-	*/
-
-	TOSERVER_GETBLOCK=0x20, // Obsolete
-	TOSERVER_ADDNODE = 0x21, // Obsolete
-	TOSERVER_REMOVENODE = 0x22, // Obsolete
-
-
 	TOSERVER_GOTBLOCKS = 0x24,
 	/*
 		[0] u16 command
@@ -504,73 +481,11 @@ enum ToServerCommand
 		...
 	*/
 
-	TOSERVER_ADDNODE_FROM_INVENTORY = 0x26, // Obsolete
-	/*
-		[0] u16 command
-		[2] v3s16 pos
-		[8] u16 i
-	*/
-
-	TOSERVER_CLICK_OBJECT = 0x27, // Obsolete
-	/*
-		length: 13
-		[0] u16 command
-		[2] u8 button (0=left, 1=right)
-		[3] v3s16 blockpos
-		[9] s16 id
-		[11] u16 item
-	*/
-
-	TOSERVER_GROUND_ACTION = 0x28, // Obsolete
-	/*
-		length: 17
-		[0] u16 command
-		[2] u8 action
-		[3] v3s16 nodepos_undersurface
-		[9] v3s16 nodepos_abovesurface
-		[15] u16 item
-		actions:
-		0: start digging (from undersurface)
-		1: place block (to abovesurface)
-		2: stop digging (all parameters ignored)
-		3: digging completed
-	*/
-	
-	TOSERVER_RELEASE = 0x29, // Obsolete
-
-	// (oops, there is some gap here)
-
-	TOSERVER_SIGNTEXT = 0x30, // Old signs, obsolete
-	/*
-		u16 command
-		v3s16 blockpos
-		s16 id
-		u16 textlen
-		textdata
-	*/
-
 	TOSERVER_INVENTORY_ACTION = 0x31,
 	/*
 		See InventoryAction in inventory.h
 	*/
 
-	TOSERVER_SIGNNODETEXT = 0x33, // obsolete
-	/*
-		u16 command
-		v3s16 p
-		u16 textlen
-		textdata
-	*/
-
-	TOSERVER_CLICK_ACTIVEOBJECT = 0x34, // Obsolete
-	/*
-		length: 7
-		[0] u16 command
-		[2] u8 button (0=left, 1=right)
-		[3] u16 id
-		[5] u16 item
-	*/
-	
 	TOSERVER_DAMAGE = 0x35,
 	/*
 		u16 command
