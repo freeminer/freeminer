@@ -300,6 +300,23 @@ enum {
 	TOCLIENT_DETACHED_INVENTORY_DATA
 };
 
+#define TOCLIENT_MOVEMENT 0x45
+// all values are floats here
+enum {
+	TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT,
+	TOCLIENT_MOVEMENT_ACCELERATION_AIR,
+	TOCLIENT_MOVEMENT_ACCELERATION_FAST,
+	TOCLIENT_MOVEMENT_SPEED_WALK,
+	TOCLIENT_MOVEMENT_SPEED_CROUCH,
+	TOCLIENT_MOVEMENT_SPEED_FAST,
+	TOCLIENT_MOVEMENT_SPEED_CLIMB,
+	TOCLIENT_MOVEMENT_SPEED_JUMP,
+	TOCLIENT_MOVEMENT_LIQUID_FLUIDITY,
+	TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH,
+	TOCLIENT_MOVEMENT_LIQUID_SINK,
+	TOCLIENT_MOVEMENT_GRAVITY
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -312,22 +329,6 @@ enum ToClientCommand
 	*/
 
 
-	TOCLIENT_MOVEMENT = 0x45,
-	/*
-		u16 command
-		f1000 movement_acceleration_default
-		f1000 movement_acceleration_air
-		f1000 movement_acceleration_fast
-		f1000 movement_speed_walk
-		f1000 movement_speed_crouch
-		f1000 movement_speed_fast
-		f1000 movement_speed_climb
-		f1000 movement_speed_jump
-		f1000 movement_liquid_fluidity
-		f1000 movement_liquid_fluidity_smooth
-		f1000 movement_liquid_sink
-		f1000 movement_gravity
-	*/
 
 	TOCLIENT_SPAWN_PARTICLE = 0x46,
 	/*

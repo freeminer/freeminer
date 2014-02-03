@@ -3296,27 +3296,24 @@ void Server::deletingPeer(u16 peer_id, bool timeout)
 void Server::SendMovement(con::Connection &con, u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_MOVEMENT);
-	writeF1000(os, g_settings->getFloat("movement_acceleration_default"));
-	writeF1000(os, g_settings->getFloat("movement_acceleration_air"));
-	writeF1000(os, g_settings->getFloat("movement_acceleration_fast"));
-	writeF1000(os, g_settings->getFloat("movement_speed_walk"));
-	writeF1000(os, g_settings->getFloat("movement_speed_crouch"));
-	writeF1000(os, g_settings->getFloat("movement_speed_fast"));
-	writeF1000(os, g_settings->getFloat("movement_speed_climb"));
-	writeF1000(os, g_settings->getFloat("movement_speed_jump"));
-	writeF1000(os, g_settings->getFloat("movement_liquid_fluidity"));
-	writeF1000(os, g_settings->getFloat("movement_liquid_fluidity_smooth"));
-	writeF1000(os, g_settings->getFloat("movement_liquid_sink"));
-	writeF1000(os, g_settings->getFloat("movement_gravity"));
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 12);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	PACK(TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT, g_settings->getFloat("movement_acceleration_default") * BS);
+	PACK(TOCLIENT_MOVEMENT_ACCELERATION_AIR, g_settings->getFloat("movement_acceleration_air") * BS);
+	PACK(TOCLIENT_MOVEMENT_ACCELERATION_FAST, g_settings->getFloat("movement_acceleration_fast") * BS);
+	PACK(TOCLIENT_MOVEMENT_SPEED_WALK, g_settings->getFloat("movement_speed_walk") * BS);
+	PACK(TOCLIENT_MOVEMENT_SPEED_CROUCH, g_settings->getFloat("movement_speed_crouch") * BS);
+	PACK(TOCLIENT_MOVEMENT_SPEED_FAST, g_settings->getFloat("movement_speed_fast") * BS);
+	PACK(TOCLIENT_MOVEMENT_SPEED_CLIMB, g_settings->getFloat("movement_speed_climb") * BS);
+	PACK(TOCLIENT_MOVEMENT_SPEED_JUMP, g_settings->getFloat("movement_speed_jump") * BS);
+	PACK(TOCLIENT_MOVEMENT_LIQUID_FLUIDITY, g_settings->getFloat("movement_liquid_fluidity") * BS);
+	PACK(TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH, g_settings->getFloat("movement_liquid_fluidity_smooth") * BS);
+	PACK(TOCLIENT_MOVEMENT_LIQUID_SINK, g_settings->getFloat("movement_liquid_sink") * BS);
+	PACK(TOCLIENT_MOVEMENT_GRAVITY, g_settings->getFloat("movement_gravity") * BS);
+
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendHP(con::Connection &con, u16 peer_id, u8 hp)

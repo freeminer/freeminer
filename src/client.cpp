@@ -1272,23 +1272,19 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_MOVEMENT)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-
-		player->movement_acceleration_default = readF1000(is) * BS;
-		player->movement_acceleration_air = readF1000(is) * BS;
-		player->movement_acceleration_fast = readF1000(is) * BS;
-		player->movement_speed_walk = readF1000(is) * BS;
-		player->movement_speed_crouch = readF1000(is) * BS;
-		player->movement_speed_fast = readF1000(is) * BS;
-		player->movement_speed_climb = readF1000(is) * BS;
-		player->movement_speed_jump = readF1000(is) * BS;
-		player->movement_liquid_fluidity = readF1000(is) * BS;
-		player->movement_liquid_fluidity_smooth = readF1000(is) * BS;
-		player->movement_liquid_sink = readF1000(is) * BS;
-		player->movement_gravity = readF1000(is) * BS;
+		packet[TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT].convert(&player->movement_acceleration_default);
+		packet[TOCLIENT_MOVEMENT_ACCELERATION_AIR].convert(&player->movement_acceleration_air);
+		packet[TOCLIENT_MOVEMENT_ACCELERATION_FAST].convert(&player->movement_acceleration_fast);
+		packet[TOCLIENT_MOVEMENT_SPEED_WALK].convert(&player->movement_speed_walk);
+		packet[TOCLIENT_MOVEMENT_SPEED_CROUCH].convert(&player->movement_speed_crouch);
+		packet[TOCLIENT_MOVEMENT_SPEED_FAST].convert(&player->movement_speed_fast);
+		packet[TOCLIENT_MOVEMENT_SPEED_CLIMB].convert(&player->movement_speed_climb);
+		packet[TOCLIENT_MOVEMENT_SPEED_JUMP].convert(&player->movement_speed_jump);
+		packet[TOCLIENT_MOVEMENT_LIQUID_FLUIDITY].convert(&player->movement_liquid_fluidity);
+		packet[TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH].convert(&player->movement_liquid_fluidity_smooth);
+		packet[TOCLIENT_MOVEMENT_LIQUID_SINK].convert(&player->movement_liquid_sink);
+		packet[TOCLIENT_MOVEMENT_GRAVITY].convert(&player->movement_gravity);
 	}
 	else if(command == TOCLIENT_HP)
 	{
