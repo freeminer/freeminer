@@ -3506,31 +3506,26 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 {
 	DSTACK(__FUNCTION_NAME);
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_ADD_PARTICLESPAWNER);
+	MSGPACK_PACKET_INIT(TOCLIENT_ADD_PARTICLESPAWNER, 16);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT, amount);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_SPAWNTIME, spawntime);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINPOS, minpos);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MAXPOS, maxpos);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINVEL, minvel);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MAXVEL, maxvel);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINACC, minacc);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MAXACC, maxacc);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINEXPTIME, minexptime);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MAXEXPTIME, maxexptime);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINSIZE, minsize);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MAXSIZE, maxsize);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_COLLISIONDETECTION, collisiondetection);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_TEXTURE, texture);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_VERTICAL, vertical);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_ID, id);
 
-	writeU16(os, amount);
-	writeF1000(os, spawntime);
-	writeV3F1000(os, minpos);
-	writeV3F1000(os, maxpos);
-	writeV3F1000(os, minvel);
-	writeV3F1000(os, maxvel);
-	writeV3F1000(os, minacc);
-	writeV3F1000(os, maxacc);
-	writeF1000(os, minexptime);
-	writeF1000(os, maxexptime);
-	writeF1000(os, minsize);
-	writeF1000(os, maxsize);
-	writeU8(os,  collisiondetection);
-	os<<serializeLongString(texture);
-	writeU32(os, id);
-	writeU8(os, vertical);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 // Adds a ParticleSpawner on all peers

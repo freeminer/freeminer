@@ -1548,28 +1548,29 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ADD_PARTICLESPAWNER)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
+		u16 amount;
+		float spawntime, minexptime, maxexptime, minsize, maxsize;
+		v3f minpos, maxpos, minvel, maxvel, minacc, maxacc;
+		bool collisiondetection, vertical;
+		u32 id;
+		std::string texture;
 
-		u16 amount = readU16(is);
-		float spawntime = readF1000(is);
-		v3f minpos = readV3F1000(is);
-		v3f maxpos = readV3F1000(is);
-		v3f minvel = readV3F1000(is);
-		v3f maxvel = readV3F1000(is);
-		v3f minacc = readV3F1000(is);
-		v3f maxacc = readV3F1000(is);
-		float minexptime = readF1000(is);
-		float maxexptime = readF1000(is);
-		float minsize = readF1000(is);
-		float maxsize = readF1000(is);
-		bool collisiondetection = readU8(is);
-		std::string texture = deSerializeLongString(is);
-		u32 id = readU32(is);
-		bool vertical = false;
-		try {
-			vertical = readU8(is);
-		} catch (...) {}
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT].convert(&amount);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_SPAWNTIME].convert(&spawntime);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MINPOS].convert(&minpos);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MAXPOS].convert(&maxpos);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MINVEL].convert(&minvel);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MAXVEL].convert(&maxvel);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MINACC].convert(&minacc);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MAXACC].convert(&maxacc);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MINEXPTIME].convert(&minexptime);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MAXEXPTIME].convert(&maxexptime);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MINSIZE].convert(&minsize);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_MAXSIZE].convert(&maxsize);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_COLLISIONDETECTION].convert(&collisiondetection);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_TEXTURE].convert(&texture);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_VERTICAL].convert(&vertical);
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_ID].convert(&id);
 
 		ClientEvent event;
 		event.type = CE_ADD_PARTICLESPAWNER;
