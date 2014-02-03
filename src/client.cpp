@@ -1522,20 +1522,14 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_SPAWN_PARTICLE)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		v3f pos = readV3F1000(is);
-		v3f vel = readV3F1000(is);
-		v3f acc = readV3F1000(is);
-		float expirationtime = readF1000(is);
-		float size = readF1000(is);
-		bool collisiondetection = readU8(is);
-		std::string texture = deSerializeLongString(is);
-		bool vertical = false;
-		try {
-			vertical = readU8(is);
-		} catch (...) {}
+		v3f pos = packet[TOCLIENT_SPAWN_PARTICLE_POS].as<v3f>();
+		v3f vel = packet[TOCLIENT_SPAWN_PARTICLE_VELOCITY].as<v3f>();
+		v3f acc = packet[TOCLIENT_SPAWN_PARTICLE_ACCELERATION].as<v3f>();
+		float expirationtime = packet[TOCLIENT_SPAWN_PARTICLE_EXPIRATIONTIME].as<float>();
+		float size = packet[TOCLIENT_SPAWN_PARTICLE_SIZE].as<float>();
+		bool collisiondetection = packet[TOCLIENT_SPAWN_PARTICLE_COLLISIONDETECTION].as<bool>();
+		std::string texture = packet[TOCLIENT_SPAWN_PARTICLE_TEXTURE].as<std::string>();
+		bool vertical = packet[TOCLIENT_SPAWN_PARTICLE_VERTICAL].as<bool>();
 
 		ClientEvent event;
 		event.type = CE_SPAWN_PARTICLE;

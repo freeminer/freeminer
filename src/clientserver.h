@@ -317,6 +317,18 @@ enum {
 	TOCLIENT_MOVEMENT_GRAVITY
 };
 
+#define TOCLIENT_SPAWN_PARTICLE 0x46
+enum {
+	TOCLIENT_SPAWN_PARTICLE_POS,
+	TOCLIENT_SPAWN_PARTICLE_VELOCITY,
+	TOCLIENT_SPAWN_PARTICLE_ACCELERATION,
+	TOCLIENT_SPAWN_PARTICLE_EXPIRATIONTIME,
+	TOCLIENT_SPAWN_PARTICLE_SIZE,
+	TOCLIENT_SPAWN_PARTICLE_COLLISIONDETECTION,
+	TOCLIENT_SPAWN_PARTICLE_VERTICAL,
+	TOCLIENT_SPAWN_PARTICLE_TEXTURE
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -326,22 +338,6 @@ enum ToClientCommand
 		v3s16 position
 		serialized mapnode
 		u8 keep_metadata // Added in protocol version 22
-	*/
-
-
-
-	TOCLIENT_SPAWN_PARTICLE = 0x46,
-	/*
-		u16 command
-		v3f1000 pos
-		v3f1000 velocity
-		v3f1000 acceleration
-		f1000 expirationtime
-		f1000 size
-		u8 bool collisiondetection
-		u8 bool vertical
-		u32 len
-		u8[len] texture
 	*/
 
 	TOCLIENT_ADD_PARTICLESPAWNER = 0x47,

@@ -3465,22 +3465,18 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 {
 	DSTACK(__FUNCTION_NAME);
 
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_SPAWN_PARTICLE);
-	writeV3F1000(os, pos);
-	writeV3F1000(os, velocity);
-	writeV3F1000(os, acceleration);
-	writeF1000(os, expirationtime);
-	writeF1000(os, size);
-	writeU8(os,  collisiondetection);
-	os<<serializeLongString(texture);
-	writeU8(os, vertical);
+	MSGPACK_PACKET_INIT(TOCLIENT_SPAWN_PARTICLE, 8);
+	PACK(TOCLIENT_SPAWN_PARTICLE_POS, pos);
+	PACK(TOCLIENT_SPAWN_PARTICLE_VELOCITY, velocity);
+	PACK(TOCLIENT_SPAWN_PARTICLE_ACCELERATION, acceleration);
+	PACK(TOCLIENT_SPAWN_PARTICLE_EXPIRATIONTIME, expirationtime);
+	PACK(TOCLIENT_SPAWN_PARTICLE_SIZE, size);
+	PACK(TOCLIENT_SPAWN_PARTICLE_COLLISIONDETECTION, collisiondetection);
+	PACK(TOCLIENT_SPAWN_PARTICLE_VERTICAL, vertical);
+	PACK(TOCLIENT_SPAWN_PARTICLE_TEXTURE, texture);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 // Spawns a particle on all peers
