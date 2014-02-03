@@ -288,6 +288,18 @@ enum {
 	TOCLIENT_ITEMDEF_DEFINITIONS
 };
 
+#define TOCLIENT_INVENTORY 0x27
+enum {
+	// string, serialized inventory
+	TOCLIENT_INVENTORY_DATA
+};
+
+#define TOCLIENT_DETACHED_INVENTORY 0x43
+enum {
+	TOCLIENT_DETACHED_INVENTORY_NAME,
+	TOCLIENT_DETACHED_INVENTORY_DATA
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -299,19 +311,6 @@ enum ToClientCommand
 		u8 keep_metadata // Added in protocol version 22
 	*/
 
-	TOCLIENT_INVENTORY = 0x27,
-	/*
-		[0] u16 command
-		[2] serialized inventory
-	*/
-
-	TOCLIENT_DETACHED_INVENTORY = 0x43,
-	/*
-		[0] u16 command
-		u16 len
-		u8[len] name
-		[2] serialized inventory
-	*/
 
 	TOCLIENT_MOVEMENT = 0x45,
 	/*

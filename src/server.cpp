@@ -3430,12 +3430,11 @@ void Server::SendInventory(u16 peer_id)
 
 	std::string s = os.str();
 
-	SharedBuffer<u8> data(s.size()+2);
-	writeU16(&data[0], TOCLIENT_INVENTORY);
-	memcpy(&data[2], s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_INVENTORY, 1);
+	PACK(TOCLIENT_INVENTORY_DATA, s);
 
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendChatMessage(u16 peer_id, const std::string &message)
@@ -4333,15 +4332,14 @@ void Server::sendDetachedInventory(const std::string &name, u16 peer_id)
 	Inventory *inv = m_detached_inventories[name];
 
 	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOCLIENT_DETACHED_INVENTORY);
-	os<<serializeString(name);
 	inv->serialize(os);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_DETACHED_INVENTORY, 2);
+	PACK(TOCLIENT_DETACHED_INVENTORY_NAME, name);
+	PACK(TOCLIENT_DETACHED_INVENTORY_DATA, os.str());
+
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::sendDetachedInventoryToAll(const std::string &name)

@@ -1217,39 +1217,18 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_INVENTORY)
 	{
-		if(datasize < 3)
-			return;
+		std::string datastring = packet[TOCLIENT_INVENTORY_DATA].as<std::string>();
+		std::istringstream is(datastring, std::ios_base::binary);
+		Player *player = m_env.getLocalPlayer();
+		assert(player != NULL);
 
-		//TimeTaker t1("Parsing TOCLIENT_INVENTORY", m_device);
+		player->inventory.deSerialize(is);
 
-		{ //envlock
-			//TimeTaker t2("mutex locking", m_device);
-			//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-			//t2.stop();
-			
-			//TimeTaker t3("istringstream init", m_device);
-			std::string datastring((char*)&data[2], datasize-2);
-			std::istringstream is(datastring, std::ios_base::binary);
-			//t3.stop();
-			
-			//TimeTaker t4("player get", m_device);
-			Player *player = m_env.getLocalPlayer();
-			assert(player != NULL);
-			//t4.stop();
+		m_inventory_updated = true;
 
-			//TimeTaker t1("inventory.deSerialize()", m_device);
-			player->inventory.deSerialize(is);
-			//t1.stop();
-
-			m_inventory_updated = true;
-
-			delete m_inventory_from_server;
-			m_inventory_from_server = new Inventory(player->inventory);
-			m_inventory_from_server_age = 0.0;
-
-			//infostream<<"Client got player inventory:"<<std::endl;
-			//player->inventory.print(infostream);
-		}
+		delete m_inventory_from_server;
+		m_inventory_from_server = new Inventory(player->inventory);
+		m_inventory_from_server_age = 0.0;
 	}
 	else if(command == TOCLIENT_TIME_OF_DAY)
 	{
@@ -1517,11 +1496,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_DETACHED_INVENTORY)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
+		std::string name = packet[TOCLIENT_DETACHED_INVENTORY_NAME].as<std::string>();
+		std::string datastring = packet[TOCLIENT_DETACHED_INVENTORY_DATA].as<std::string>();
 		std::istringstream is(datastring, std::ios_base::binary);
 
-		std::string name = deSerializeString(is);
-		
 		infostream<<"Client: Detached inventory update: \""<<name<<"\""<<std::endl;
 
 		Inventory *inv = NULL;
