@@ -1657,23 +1657,20 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		v2f v2fdata;
 		v3f v3fdata;
 		u32 intdata = 0;
-		
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
 
-		u32 id  = readU32(is);
-		u8 stat = (HudElementStat)readU8(is);
-		
+		u32 id = packet[TOCLIENT_HUDCHANGE_ID].as<u32>();
+		u8 stat = packet[TOCLIENT_HUDCHANGE_STAT].as<int>();
+
 		if (stat == HUD_STAT_POS || stat == HUD_STAT_SCALE ||
-			stat == HUD_STAT_ALIGN || stat == HUD_STAT_OFFSET)
-			v2fdata = readV2F1000(is);
+				stat == HUD_STAT_ALIGN || stat == HUD_STAT_OFFSET)
+			packet[TOCLIENT_HUDCHANGE_V2F].convert(&v2fdata);
 		else if (stat == HUD_STAT_NAME || stat == HUD_STAT_TEXT)
-			sdata = deSerializeString(is);
+			packet[TOCLIENT_HUDCHANGE_STRING].convert(&sdata);
 		else if (stat == HUD_STAT_WORLD_POS)
-			v3fdata = readV3F1000(is);
+			packet[TOCLIENT_HUDCHANGE_V3F].convert(&v3fdata);
 		else
-			intdata = readU32(is);
-		
+			packet[TOCLIENT_HUDCHANGE_U32].convert(&intdata);
+
 		ClientEvent event;
 		event.type = CE_HUDCHANGE;
 		event.hudchange.id      = id;
@@ -1697,14 +1694,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_HUD_SET_PARAM)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
 		Player *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 
-		u16 param         = readU16(is);
-		std::string value = deSerializeString(is);
+		u16 param = packet[TOCLIENT_HUD_SET_PARAM_ID].as<u16>();
+		std::string value = packet[TOCLIENT_HUD_SET_PARAM_VALUE].as<std::string>();
 
 		if(param == HUD_PARAM_HOTBAR_ITEMCOUNT && value.size() == 4){
 			s32 hotbar_itemcount = readS32((u8*) value.c_str());

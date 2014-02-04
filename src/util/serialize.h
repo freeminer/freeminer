@@ -404,6 +404,7 @@ std::string serializeJsonString(const std::string &plain);
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
 
+MSGPACK_DEFINE_EXTERNAL(v2f, X, Y);
 MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(video::SColor, color);

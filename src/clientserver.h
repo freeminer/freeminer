@@ -377,6 +377,22 @@ enum {
 	TOCLIENT_HUD_SET_FLAGS_MASK
 };
 
+#define TOCLIENT_HUD_SET_PARAM 0x4d
+enum {
+	TOCLIENT_HUD_SET_PARAM_ID,
+	TOCLIENT_HUD_SET_PARAM_VALUE
+};
+
+#define TOCLIENT_HUDCHANGE 0x4b
+enum {
+	TOCLIENT_HUDCHANGE_ID,
+	TOCLIENT_HUDCHANGE_STAT,
+	TOCLIENT_HUDCHANGE_V2F,
+	TOCLIENT_HUDCHANGE_V3F,
+	TOCLIENT_HUDCHANGE_STRING,
+	TOCLIENT_HUDCHANGE_U32
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -406,24 +422,6 @@ enum ToClientCommand
 		v2f1000 offset
 	*/
 
-	TOCLIENT_HUDCHANGE = 0x4b,
-	/*
-		u16 command
-		u32 id
-		u8 stat
-		[v2f1000 data |
-		 u32 len
-		 u8[len] data |
-		 u32 data]
-	*/
-
-	TOCLIENT_HUD_SET_PARAM = 0x4d,
-	/*
-		u16 command
-		u16 param
-		u16 len
-		u8[len] value
-	*/
 };
 
 #define TOSERVER_INIT 0x10

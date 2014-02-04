@@ -3576,39 +3576,34 @@ void Server::SendHUDRemove(u16 peer_id, u32 id)
 
 void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_HUDCHANGE, 3);
+	PACK(TOCLIENT_HUDCHANGE_ID, id);
+	PACK(TOCLIENT_HUDCHANGE_STAT, (int)stat);
 
-	// Write command
-	writeU16(os, TOCLIENT_HUDCHANGE);
-	writeU32(os, id);
-	writeU8(os, (u8)stat);
 	switch (stat) {
 		case HUD_STAT_POS:
 		case HUD_STAT_SCALE:
 		case HUD_STAT_ALIGN:
 		case HUD_STAT_OFFSET:
-			writeV2F1000(os, *(v2f *)value);
+			PACK(TOCLIENT_HUDCHANGE_V2F, *(v2f*)value);
 			break;
 		case HUD_STAT_NAME:
 		case HUD_STAT_TEXT:
-			os << serializeString(*(std::string *)value);
+			PACK(TOCLIENT_HUDCHANGE_STRING, *(std::string*)value);
 			break;
 		case HUD_STAT_WORLD_POS:
-			writeV3F1000(os, *(v3f *)value);
+			PACK(TOCLIENT_HUDCHANGE_V3F, *(v3f*)value);
 			break;
 		case HUD_STAT_NUMBER:
 		case HUD_STAT_ITEM:
 		case HUD_STAT_DIR:
 		default:
-			writeU32(os, *(u32 *)value);
+			PACK(TOCLIENT_HUDCHANGE_U32, *(u32*)value);
 			break;
 	}
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
@@ -3623,18 +3618,12 @@ void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
 
 void Server::SendHUDSetParam(u16 peer_id, u16 param, const std::string &value)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_HUD_SET_PARAM, 2);
+	PACK(TOCLIENT_HUD_SET_PARAM_ID, param);
+	PACK(TOCLIENT_HUD_SET_PARAM_VALUE, value);
 
-	// Write command
-	writeU16(os, TOCLIENT_HUD_SET_PARAM);
-	writeU16(os, param);
-	os<<serializeString(value);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::BroadcastChatMessage(const std::string &message)
