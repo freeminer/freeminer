@@ -3567,18 +3567,11 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 
 void Server::SendHUDRemove(u16 peer_id, u32 id)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_HUDRM, 1);
+	PACK(TOCLIENT_HUDRM_ID, id);
 
-	// Write command
-	writeU16(os, TOCLIENT_HUDRM);
-	writeU32(os, id);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-
-	m_con.Send(peer_id, 1, data, true);
+	m_con.Send(peer_id, 1, buffer, true);
 }
 
 void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value)

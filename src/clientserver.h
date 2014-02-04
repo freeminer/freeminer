@@ -366,6 +366,11 @@ enum {
 	TOCLIENT_ANIMATIONS_WD_STOP
 };
 
+#define TOCLIENT_HUDRM 0x4a
+enum {
+	TOCLIENT_HUDRM_ID
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -393,12 +398,6 @@ enum ToClientCommand
 		u32 dir
 		v2f1000 align
 		v2f1000 offset
-	*/
-
-	TOCLIENT_HUDRM = 0x4a,
-	/*
-		u16 command
-		u32 id
 	*/
 
 	TOCLIENT_HUDCHANGE = 0x4b,

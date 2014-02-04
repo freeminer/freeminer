@@ -1644,10 +1644,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_HUDRM)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id = readU32(is);
+		u32 id = packet[TOCLIENT_HUDRM_ID].as<u32>();
 
 		ClientEvent event;
 		event.type = CE_HUDRM;
