@@ -967,7 +967,10 @@ void the_game(
 	TextDestPlayerInventory* current_textdest = 0;
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
-	
+#ifdef ANDROID // android gets all the fancy graphics
+	smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
+#endif
+
 	// Calculate text height using the font
 	u32 text_height = font->getDimension(L"Random test string").Height;
 

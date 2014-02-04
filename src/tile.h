@@ -193,9 +193,17 @@ struct TileSpec
 	// Sets everything else except the texture in the material
 	void applyMaterialOptions(video::SMaterial &material) const
 	{
+		// EMT_TRANSPARENT_ALPHA_CHANNEL_REF doesn't seem to work on Android
+		// (that's probably because of opengles driver and stuff?
+		//  I certainly don't want to debug this, so for now workaround will only
+		//  be applied to android devices)
 		switch(material_type){
 		case TILE_MATERIAL_BASIC:
+#ifdef ANDROID
+			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+#else
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+#endif
 			break;
 		case TILE_MATERIAL_ALPHA:
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
@@ -208,9 +216,19 @@ struct TileSpec
 			break;
 		case TILE_MATERIAL_LEAVES:
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+#ifdef ANDROID
+			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+#else
+			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+#endif
 			break;
 		case TILE_MATERIAL_PLANTS:
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+#ifdef ANDROID
+			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+#else
+			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+#endif
 		break;
 		}
 		material.BackfaceCulling = (material_flags & MATERIAL_FLAG_BACKFACE_CULLING) ? true : false;

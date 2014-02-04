@@ -1212,6 +1212,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 		material.setFlag(video::EMF_BACK_FACE_CULLING, true);
 		material.setFlag(video::EMF_BILINEAR_FILTER, false);
 		material.setFlag(video::EMF_FOG_ENABLE, true);
+#ifdef ANDROID
+		material.setFlag(video::EMF_ZWRITE_ENABLE, true);
+#endif
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_OFF);
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_SIMPLE);
 		//material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
