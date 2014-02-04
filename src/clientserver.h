@@ -128,6 +128,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
 
+
+// TOCLIENT_* commands
+
 #define TOCLIENT_INIT 0x10
 enum {
 	// u8 deployed version
@@ -424,9 +427,7 @@ enum {
 	TOCLIENT_BLOCKDATA_HUMIDITY
 };
 
-enum ToClientCommand
-{
-};
+// TOSERVER_* commands
 
 #define TOSERVER_INIT 0x10
 enum {

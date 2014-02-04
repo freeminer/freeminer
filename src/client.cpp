@@ -1015,15 +1015,13 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		return;
 	}
 
-	ToClientCommand command;
-
-	std::map<int, msgpack::object> packet;
-	int cmd;
+	int command;
+	MsgpackPacket packet;
 	msgpack::unpacked msg;
-	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd, &msg))
-		command = (ToClientCommand)cmd;
-	else
-		command = (ToClientCommand)readU16(&data[0]);
+
+	if (!con::parse_msgpack_packet(data, datasize, &packet, &command, &msg))
+		// invalid packet
+		return;
 
 	//infostream<<"Client: received command="<<command<<std::endl;
 	m_packetcounter.add((u16)command);
