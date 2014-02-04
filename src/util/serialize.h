@@ -24,6 +24,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <string>
 
+#include <msgpack.hpp>
+#include "../msgpack_define_external.h"
+
 inline void writeU64(u8 *data, u64 i)
 {
 	data[0] = ((i>>56)&0xff);
@@ -401,5 +404,10 @@ std::string serializeJsonString(const std::string &plain);
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
 
+MSGPACK_DEFINE_EXTERNAL(v2f, X, Y);
+MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
+MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 #endif
 

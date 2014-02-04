@@ -30,6 +30,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "tile.h"
 #include "localplayer.h"
 #include "touchscreengui.h"
+#include "game.h" // CameraModes
+#include "camera.h"
 
 #include <IGUIStaticText.h>
 
@@ -37,10 +39,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 extern TouchScreenGUI *touchscreengui;
 
 
-Hud::Hud(video::IVideoDriver *driver, gui::IGUIEnvironment* guienv,
-		gui::IGUIFont *font, u32 text_height, IGameDef *gamedef,
+Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
+		gui::IGUIEnvironment* guienv, gui::IGUIFont *font,
+		u32 text_height, IGameDef *gamedef,
 		LocalPlayer *player, Inventory *inventory) {
 	this->driver      = driver;
+	this->smgr        = smgr;
 	this->guienv      = guienv;
 	this->font        = font;
 	this->text_height = text_height;
@@ -266,7 +270,7 @@ void Hud::drawLuaElements() {
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
 				core::rect<s32> size(0, 0, e->scale.X, text_height * e->scale.Y);
-				std::wstring text = narrow_to_wide(e->text);
+				std::wstring text = utf8_to_wide(e->text);
 				core::dimension2d<u32> textsize = font->getDimension(text.c_str());
 				v2s32 offset((e->align.X - 1.0) * (textsize.Width / 2),
 				             (e->align.Y - 1.0) * (textsize.Height / 2));
@@ -280,6 +284,33 @@ void Hud::drawLuaElements() {
 			case HUD_ELEM_INVENTORY: {
 				InventoryList *inv = inventory->getList(e->text);
 				drawItem(pos, hotbar_imagesize, e->number, inv, e->item, e->dir);
+				break; }
+			case HUD_ELEM_WAYPOINT: {
+				v3f p_pos = player->getPosition() / BS;
+				v3f w_pos = e->world_pos * BS;
+				float distance = floor(10 * p_pos.getDistanceFrom(e->world_pos)) / 10;
+				scene::ICameraSceneNode* camera = smgr->getActiveCamera();
+				core::matrix4 trans = camera->getProjectionMatrix();
+				trans *= camera->getViewMatrix();
+				f32 transformed_pos[4] = { w_pos.X, w_pos.Y, w_pos.Z, 1.0f };
+				trans.multiplyWith1x4Matrix(transformed_pos);
+				if (transformed_pos[3] < 0)
+					break;
+				f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f :
+					core::reciprocal(transformed_pos[3]);
+				pos.X = screensize.X * (0.5 * transformed_pos[0] * zDiv + 0.5);
+				pos.Y = screensize.Y * (0.5 - transformed_pos[1] * zDiv * 0.5);
+				video::SColor color(255, (e->number >> 16) & 0xFF,
+										 (e->number >> 8)  & 0xFF,
+										 (e->number >> 0)  & 0xFF);
+				core::rect<s32> size(0, 0, 200, 2 * text_height);
+				std::wstring text = narrow_to_wide(e->name);
+				font->draw(text.c_str(), size + pos, color);
+				std::ostringstream os;
+				os<<distance<<e->text;
+				text = narrow_to_wide(os.str());
+				pos.Y += text_height;
+				font->draw(text.c_str(), size + pos, color);
 				break; }
 			default:
 				infostream << "Hud::drawLuaElements: ignoring drawform " << e->type <<
@@ -367,7 +398,8 @@ void Hud::drawHotbar(v2s32 centerlowerpos, s32 halfheartcount, u16 playeritem, s
 
 
 void Hud::drawCrosshair() {
-	if (!(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE))
+	if (!(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE) ||
+		player->camera_mode == CAMERA_MODE_THIRD_FRONT)
 		return;
 		
 	if (use_crosshair_image) {
@@ -476,7 +508,7 @@ void drawItemStack(video::IVideoDriver *driver,
 	{
 		// Get the item count as a string
 		std::string text = itos(item.count);
-		v2u32 dim = font->getDimension(narrow_to_wide(text).c_str());
+		v2u32 dim = font->getDimension(utf8_to_wide(text).c_str());
 		v2s32 sdim(dim.X,dim.Y);
 
 		core::rect<s32> rect2(
@@ -493,4 +525,3 @@ void drawItemStack(video::IVideoDriver *driver,
 		font->draw(text.c_str(), rect2, color, false, false, clip);
 	}
 }
-

@@ -35,6 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 #include "util/string.h"
 #include "util/serialize.h"
+#include "circuit.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -47,6 +48,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		humidity(0),
 		heat_last_update(0),
 		humidity_last_update(0),
+		m_uptime_timer_last(0),
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
@@ -637,25 +639,11 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	}
 }
 
-void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
-{
-	if(data == NULL)
-	{
-		throw SerializationError("ERROR: Not writing dummy block.");
-	}
-
-	if(net_proto_version >= 21){
-		int version = 1;
-		writeU8(os, version);
-		writeF1000(os, heat);
-		writeF1000(os, humidity);
-	}
-}
-
 void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
+	
 	
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())<<std::endl);
 
@@ -757,21 +745,26 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 			<<": Done."<<std::endl);
 }
 
-void MapBlock::deSerializeNetworkSpecific(std::istream &is)
+void MapBlock::pushElementsToCircuit(Circuit* circuit)
 {
-	try {
-		int version = readU8(is);
-		//if(version != 1)
-		//	throw SerializationError("unsupported MapBlock version");
-		if(version >= 1) {
-			heat = readF1000(is);
-			humidity = readF1000(is);
-		}
-	}
-	catch(SerializationError &e)
+	INodeDefManager* ndef = m_gamedef->ndef();
+	v3s16 pos;
+	for(int x = 0; x < 16; ++x)
 	{
-		errorstream<<"WARNING: MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
-				<<": "<<e.what()<<std::endl;
+		for(int y = 0; y < 16; ++y)
+		{
+			for(int z = 0; z < 16; ++z)
+			{
+				MapNode tmp_node = data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
+				if(ndef->get(tmp_node).is_circuit_element)
+				{
+					pos.X = m_pos.X * MAP_BLOCKSIZE + x;
+					pos.Y = m_pos.Y * MAP_BLOCKSIZE + y;
+					pos.Z = m_pos.Z * MAP_BLOCKSIZE + z;
+					circuit->pushElementToQueue(pos);
+				}
+			}
+		}
 	}
 }
 

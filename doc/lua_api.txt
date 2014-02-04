@@ -1,4 +1,4 @@
-Minetest Lua Modding API Reference 0.4.8
+Minetest Lua Modding API Reference 0.4.9
 ========================================
 More information at http://www.minetest.net/
 Developer Wiki: http://dev.minetest.net/
@@ -128,13 +128,6 @@ screenshot.png:
 
 description.txt:
   File containing desctiption to be shown within mainmenu.
-
-optdepends.txt:
-  An alternative way of specifying optional dependencies.
-  Like depends.txt, a single line contains a single modname.
-
-  NOTE: This file exists for compatibility purposes only and
-  support for it will be removed from the engine by the end of 2013.
 
 init.lua:
   The main Lua script. Running this script should register everything it
@@ -514,7 +507,13 @@ Note: Future revisions to the HUD API may be incompatible; the HUD API is still 
     - number: Number of items in the inventory to be displayed.
     - item: Position of item that is selected.
     - direction
-
+- waypoint
+	Displays distance to selected world position.
+    - name: The name of the waypoint.
+    - text: Distance suffix. Can be blank.
+    - number: An integer containing the RGB value of the color used to draw the text.
+    - world_pos: World position of the waypoint.
+    
 Representations of simple things
 --------------------------------
 Position/vector:
@@ -1032,6 +1031,7 @@ textlist[<X>,<Y>;<W>,<H>;<name>;<listelem 1>,<listelem 2>,...,<listelem n>;<sele
 ^    if you want a listelement to start with # write ##
 ^ index to be selected within textlist
 ^ true/false draw transparent background
+^ see also minetest.explode_textlist_event (main menu: engine.explode_textlist_event)
 
 tabheader[<X>,<Y>;<name>;<caption 1>,<caption 2>,...,<caption n>;<current_tab>;<transparent>;<draw_border>]
 ^ show a tabHEADER at specific position (ignores formsize)
@@ -1063,6 +1063,57 @@ checkbox[<X>,<Y>;<name>;<label>;<selected>]
 ^ name fieldname data is transfered to lua
 ^ label to be shown left of checkbox
 ^ selected (optional) true/false
+
+table[<X>,<Y>;<W>,<H>;<name>;<cell 1>,<cell 2>,...,<cell n>;<selected idx>]
+^ show scrollable table using options defined by the previous tableoptions[]
+^ displays cells as defined by the previous tablecolumns[]
+^ x and y position the itemlist relative to the top left of the menu
+^ w and h are the size of the itemlist
+^ name fieldname sent to server on row select or doubleclick
+^ cell 1...n cell contents given in row-major order
+^ selected idx: index of row to be selected within table (first row = 1)
+^ see also minetest.explode_table_event (main menu: engine.explode_table_event)
+
+tableoptions[<opt 1>;<opt 2>;...]
+^ sets options for table[]:
+^ color=#RRGGBB
+^^ default text color (HEX-Color), defaults to #FFFFFF
+^ background=#RRGGBB
+^^ table background color (HEX-Color), defaults to #000000
+^ border=<true/false>
+^^ should the table be drawn with a border? (default true)
+^ highlight=#RRGGBB
+^^ highlight background color (HEX-Color), defaults to #466432
+^ highlight_text=#RRGGBB
+^^ highlight text color (HEX-Color), defaults to #FFFFFF
+^ opendepth=<value>
+^^ all subtrees up to depth < value are open (default value = 0)
+^^ only useful when there is a column of type "tree"
+
+tablecolumns[<type 1>,<opt 1a>,<opt 1b>,...;<type 2>,<opt 2a>,<opt 2b>;...]
+^ sets columns for table[]:
+^ types: text, image, color, indent, tree
+^^ text:   show cell contents as text
+^^ image:  cell contents are an image index, use column options to define images
+^^ color:  cell contents are a HEX-Color and define color of following cell
+^^ indent: cell contents are a number and define indentation of following cell
+^^ tree:   same as indent, but user can open and close subtrees (treeview-like)
+^ column options:
+^^    align=<value>   for "text" and "image": content alignment within cells
+^^                    available values: left (default), center, right, inline
+^^    width=<value>   for "text" and "image": minimum width in em (default 0)
+^^                    for "indent" and "tree": indent width in em (default 1.5)
+^^    padding=<value> padding left of the column, in em (default 0.5)
+^^                    exception: defaults to 0 for indent columns
+^^    tooltip=<value> tooltip text (default empty)
+^ "image" column options:
+^^    0=<value>       sets image for image index 0
+^^    1=<value>       sets image for image index 1
+^^    2=<value>       sets image for image index 2
+^^                    and so on; defined indices need not be contiguous
+^^                    empty or non-numeric cells are treated as 0
+^ "color" column options:
+^^    span=<value>    number of following columns to affect (default infinite)
 
 Note: do NOT use a element name starting with "key_" those names are reserved to
 pass key press events to formspec! 
@@ -1158,6 +1209,10 @@ minetest.register_alias(name, convert_to)
 minetest.register_craft(recipe)
 minetest.register_ore(ore definition)
 minetest.register_decoration(decoration definition)
+minetest.override_item(name, redefinition)
+^ Overrides fields of an item registered with register_node/tool/craftitem.
+^ Note: Item must already be defined, (opt)depend on the mod defining it.
+^ Example: minetest.override_item("default:mese", {light_source=LIGHT_MAX})
 
 Global callback registration functions: (Call these only at load time)
 minetest.register_globalstep(func(dtime))
@@ -1167,7 +1222,7 @@ minetest.register_on_shutdown(func())
 ^ WARNING: If the server terminates abnormally (i.e. crashes), the registered
            callbacks WILL LIKELY NOT BE RUN.  Data should be saved at
            semi-frequent intervals as well as on server shutdown.
-minetest.register_on_placenode(func(pos, newnode, placer, oldnode, itemstack))
+minetest.register_on_placenode(func(pos, newnode, placer, oldnode, itemstack, pointed_thing))
 ^ Called when a node has been placed
 ^ If return true no item is taken from itemstack
 ^ Not recommended; use on_construct or after_place_node in node definition
@@ -1176,7 +1231,7 @@ minetest.register_on_dignode(func(pos, oldnode, digger))
 ^ Called when a node has been dug.
 ^ Not recommended: Use on_destruct or after_dig_node in node definition
 ^                  whenever possible
-minetest.register_on_punchnode(func(pos, node, puncher))
+minetest.register_on_punchnode(func(pos, node, puncher, pointed_thing))
 ^ Called when a node is punched
 minetest.register_on_generated(func(minp, maxp, blockseed))
 ^ Called after generating a piece of world. Modifying nodes inside the area
@@ -1189,6 +1244,9 @@ minetest.register_on_respawnplayer(func(ObjectRef))
 ^ Called when player is to be respawned
 ^ Called _before_ repositioning of player occurs
 ^ return true in func to disable regular player placement
+minetest.register_on_prejoinplayer(func(name, ip))
+^ Called before a player joins the game
+^ If it returns a string, the player is disconnected with that string as reason
 minetest.register_on_joinplayer(func(ObjectRef))
 ^ Called when a player joins the game
 minetest.register_on_leaveplayer(func(ObjectRef))
@@ -1264,15 +1322,22 @@ minetest.chat_send_all(text)
 minetest.chat_send_player(name, text, prepend)
 ^ prepend: optional, if it is set to false "Server -!- " will not be prepended to the message
 
+freeminer.colorize(color, text)
+^ color is a six characters string, this will reset color to white after the text
+freeminer.color(color)
+^ will output color escape sequence
+
 Environment access:
 
-minetest.set_node(pos, node)
+minetest.set_node(pos, node, fast)
 minetest.add_node(pos, node): alias set_node(pos, node)
-^ Set node at position (node = {name="foo", param1=0, param2=0})
+^ Set node at position (node = {name="foo", param1=0, param2=0}, fast)
 minetest.swap_node(pos, node)
 ^ Set node at position, but don't remove metadata
-minetest.remove_node(pos)
+  if fast=1 - skip events sending androllback, if fast=2 - as fast=1 + get light from old node
+minetest.remove_node(pos, fast)
 ^ Equivalent to set_node(pos, "air")
+  if fast=1 - skip events sending androllback
 minetest.get_node(pos)
 ^ Returns {name="ignore", ...} for unloaded area
 minetest.get_node_or_nil(pos)
@@ -1307,6 +1372,10 @@ minetest.get_perlin(seeddiff, octaves, persistence, scale)
 ^ Return world-specific perlin noise (int(worldseed)+seeddiff)
 minetest.get_voxel_manip()
 ^ Return voxel manipulator object
+minetest.set_gen_notify(flags)
+^ Set the types of on-generate notifications that should be collected
+^ flags is a comma-delimited combination of:
+^ dungeon, temple, cave_begin, cave_end, large_cave_begin, large_cave_end
 minetest.get_mapgen_object(objectname)
 ^ Return requested mapgen object if available (see Mapgen objects)
 minetest.set_mapgen_params(MapgenParams)
@@ -1319,8 +1388,9 @@ minetest.set_mapgen_params(MapgenParams)
 ^ flags and flagmask are in the same format and have the same options as 'mgflags' in minetest.conf
 minetest.clear_objects()
 ^ clear all objects in the environments
-minetest.line_of_sight(pos1,pos2,stepsize) ->true/false
-^ checkif there is a direct line of sight between pos1 and pos2
+minetest.line_of_sight(pos1, pos2, stepsize) -> true/false, pos
+^ Check if there is a direct line of sight between pos1 and pos2
+^ Returns the position of the blocking node when false
 ^ pos1 First position
 ^ pos2 Second position
 ^ stepsize smaller gives more accurate results but requires more computing
@@ -1364,11 +1434,21 @@ minetest.get_inventory(location) -> InvRef
 minetest.create_detached_inventory(name, callbacks) -> InvRef
 ^ callbacks: See "Detached inventory callbacks"
 ^ Creates a detached inventory. If it already exists, it is cleared.
+
+Formspec:
 minetest.show_formspec(playername, formname, formspec)
 ^ playername: name of player to show formspec
 ^ formname: name passed to on_player_receive_fields callbacks
 ^           should follow "modname:<whatever>" naming convention
 ^ formspec: formspec to display
+minetest.formspec_escape(string) -> string
+^ escapes characters [ ] \ , ; that can not be used in formspecs
+minetest.explode_table_event(string) -> table
+^ returns e.g. {type="CHG", row=1, column=2}
+^ type: "INV" (no row selected), "CHG" (selected) or "DCL" (double-click)
+minetest.explode_textlist_event(string) -> table
+^ returns e.g. {type="CHG", index=1}
+^ type: "INV" (no row selected), "CHG" (selected) or "DCL" (double-click)
 
 Item handling:
 minetest.inventorycube(img1, img2, img3)
@@ -1452,7 +1532,7 @@ minetest.item_eat(hp_change, replace_with_item)
 ^ Eat the item. replace_with_item can be nil.
 
 Defaults for the on_punch and on_dig node definition callbacks:
-minetest.node_punch(pos, node, puncher)
+minetest.node_punch(pos, node, puncher, pointed_thing)
 ^ Calls functions registered by minetest.register_on_punchnode()
 minetest.node_dig(pos, node, digger)
 ^ Checks if node can be dug, puts item into inventory, removes node
@@ -1480,30 +1560,20 @@ minetest.ban_player(name) -> ban a player
 minetest.unban_player_or_ip(name) -> unban player or IP address
 
 Particles:
-minetest.add_particle(pos, velocity, acceleration, expirationtime,
+minetest.add_particle(particle definition)
+^ Deprecated: minetest.add_particle(pos, velocity, acceleration, expirationtime,
     size, collisiondetection, texture, playername)
-^ Spawn particle at pos with velocity and acceleration
-^ Disappears after expirationtime seconds
-^ collisiondetection: if true collides with physical objects
-^ Uses texture (string)
-^ Playername is optional, if specified spawns particle only on the player's client
 
-minetest.add_particlespawner(amount, time,
+minetest.add_particlespawner(particlespawner definition)
+^ Add a particlespawner, an object that spawns an amount of particles over time seconds
+^ Returns an id
+^ Deprecated: minetest.add_particlespawner(amount, time,
     minpos, maxpos,
     minvel, maxvel,
     minacc, maxacc,
     minexptime, maxexptime,
     minsize, maxsize,
     collisiondetection, texture, playername)
-^ Add a particlespawner, an object that spawns an amount of particles over time seconds
-^ The particle's properties are random values in between the boundings:
-^ minpos/maxpos, minvel/maxvel (velocity), minacc/maxacc (acceleration),
-^ minsize/maxsize, minexptime/maxexptime (expirationtime)
-^ collisiondetection: if true uses collisiondetection
-^ Uses texture (string)
-^ Playername is optional, if specified spawns particle only on the player's client
-^ If time is 0 has infinite lifespan and spawns the amount on a per-second base
-^ Returns and id
 
 minetest.delete_particlespawner(id, player)
 ^ Delete ParticleSpawner with id (return value from add_particlespawner)
@@ -1535,6 +1605,8 @@ Random:
 minetest.get_connected_players() -> list of ObjectRefs
 minetest.hash_node_position({x=,y=,z=}) -> 48-bit integer
 ^ Gives a unique hash number for a node position (16+16+16=48bit)
+minetest.get_position_from_hash(hash) -> postion
+^ Inverse transform of minetest.hash_node_postion
 minetest.get_item_group(name, group) -> rating
 ^ Get rating of a group of an item. (0 = not in group)
 minetest.get_node_group(name, group) -> rating
@@ -1548,7 +1620,16 @@ minetest.parse_json(string[, nullvalue]) -> something
 ^ nullvalue: returned in place of the JSON null; defaults to nil
 ^ On success returns a table, a string, a number, a boolean or nullvalue
 ^ On failure outputs an error message and returns nil
-^ Example: parse_json("[10, {\"a\":false}]") -> {[1] = 10, [2] = {a = false}}
+^ Example: parse_json("[10, {\"a\":false}]") -> {10, {a = false}}
+minetest.write_json(data[, styled]) -> string or nil and error message
+^ Convert a Lua table into a JSON string
+^ styled: Outputs in a human-readable format if this is set, defaults to false
+^ Un-serializable things like functions and userdata are saved as null.
+^ Warning: JSON is more strict than the Lua table format.
+    1. You can only use strings and positive integers of at least one as keys.
+    2. You can not mix string and integer keys.
+    This is due to the fact that Javascript has two distinct array and object values.
+^ Example: write_json({10, {a = false}}) -> "[10, {\"a\": false}]"
 minetest.serialize(table) -> string
 ^ Convert a table containing tables, strings, numbers, booleans and nils
   into string form readable by minetest.deserialize
@@ -1598,6 +1679,15 @@ minetest.rotate_node(itemstack, placer, pointed_thing)
 ^ calls rotate_and_place() with infinitestacks set according to the state of
   the creative mode setting, and checks for "sneak" to set the invert_wall
   parameter.
+
+minetest.forceload_block(pos)
+^ forceloads the position pos.
+^ returns true if area could be forceloaded
+
+minetest.forceload_free_block(pos)
+^ stops forceloading the position pos.
+
+Please note that forceloaded areas are saved when the server restarts.
 
 Global objects:
 minetest.env - EnvRef of the server environment and world.
@@ -1761,6 +1851,8 @@ methods:
 - set_stack(listname, i, stack): copy stack to index i in list
 - get_list(listname): return full list
 - set_list(listname, list): set full list (size will not change)
+- get_lists(): returns list of inventory lists
+- set_lists(lists): sets inventory lists (size will not change)
 - add_item(listname, stack): add item somewhere in list, returns leftover ItemStack
 - room_for_item(listname, stack): returns true if the stack of items
     can be fully added to the list
@@ -1853,6 +1945,8 @@ methods:
   ^ light = day + (night * 16)
 - set_light_data(light_data):  Sets the param1 (light) contents of each node in the VoxelManip
   ^ expects lighting data in the same format that get_light_data() returns
+- get_param2_data(): Gets the raw param2 data read into the VoxelManip object
+- set_param2_data(param2_data): Sets the param2 contents of each node in the VoxelManip
 - calc_lighting(p1, p2):  Calculate lighting within the VoxelManip
   ^ To be used only by a VoxelManip object from minetest.get_mapgen_object
   ^ (p1, p2) is the area in which lighting is set; defaults to the whole area if left out
@@ -1915,6 +2009,12 @@ the current mapgen.
 - humiditymap
     Returns an array containing the humidity values of nodes in the most recently generated chunk by the 
 current mapgen.
+
+- gennotify
+    Returns a table mapping requested generation notification types to arrays of positions at which the
+corresponding generated structures are located at within the current chunk.  To set the capture of positions
+of interest to be recorded on generate, use minetest.set_gen_notify().
+Possible fields of the table returned are:  dungeon, temple, cave_begin, cave_end, large_cave_begin, large_cave_end
 
 Registered entities
 --------------------
@@ -2013,7 +2113,7 @@ Object Properties
     collide_with_objects = true, -- collide with other objects if physical=true
     weight = 5,
     collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
-    visual = "cube"/"sprite"/"upright_sprite"/"mesh",
+    visual = "cube"/"sprite"/"upright_sprite"/"mesh"/"wielditem",
     visual_size = {x=1, y=1},
     mesh = "model",
     textures = {}, -- number of required textures depends on visual
@@ -2060,7 +2160,7 @@ ABM (ActiveBlockModifier) definition (register_abm)
     ^ find neighbors in max range from node, do not set big values (>3) - it can eat cpu
     interval = 1.0, -- (operation interval)
     chance = 1, -- (chance of trigger is 1.0/this)
-    action = func(pos, node, active_object_count, active_object_count_wider, neighbor),
+    action = func(pos, node, active_object_count, active_object_count_wider, neighbor, activate),
 }
 
 Item definition (register_node, register_craftitem, register_tool)
@@ -2075,6 +2175,9 @@ Item definition (register_node, register_craftitem, register_tool)
     inventory_image = "default_tool_steelaxe.png",
     wield_image = "",
     wield_scale = {x=1,y=1,z=1},
+    wield_light = 0,
+    ^ Amount of light emitted by item when wielded (requires shaders).
+    ^ This value should be the same as light_source for nodes.
     stack_max = 99,
     range = 4.0,
     liquids_pointable = false,
@@ -2202,7 +2305,7 @@ Node definition (register_node)
     ^ Node destructor; always called after removing node
     ^ default: nil
 
-    after_place_node = func(pos, placer, itemstack),
+    after_place_node = func(pos, placer, itemstack, pointed_thing),
     ^ Called after constructing node when node was placed using
       minetest.item_place_node / minetest.place_node
     ^ If return true no item is taken from itemstack
@@ -2215,14 +2318,37 @@ Node definition (register_node)
     can_dig = function(pos,player)
     ^ returns true if node can be dug, or false if not
     ^ default: nil
+	
+	circuit_states = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	^ Each element of circuit MUST have this table
+	^ Each circuit element should be defined by a table of values on input and output.
+	^ Index of element - value on input, and value at index - value on output.
+	^ Each bit of value represents one face of the block (Looking towards Z+).
+	^ 1. Bottom face (LSB).
+	^ 2. Back face.
+	^ 3. Left face.
+	^ 4. Top face.
+	^ 5. Front face.
+	^ 6. Right face.
+	^ For example if there is 4 at index 2, then if all faces except back
+	^ face are deactivated, then there will be output signal on the left face.
+	^ Each definition table must have exactly 64 integer elements (0 <= a[i] <= 63).
+	
+	is_wire = true,
+	^ Note: if 2 blocks of wire have different ids, then signal between them WILL NOT be transmitted
     
-    on_punch = func(pos, node, puncher),
+    on_punch = func(pos, node, puncher, pointed_thing),
     ^ default: minetest.node_punch
-    ^ By default: does nothing
-    on_rightclick = func(pos, node, clicker, itemstack),
+    ^ By default: Calls minetest.register_on_punchnode callbacks
+    on_rightclick = func(pos, node, clicker, itemstack, pointed_thing),
     ^ default: nil
     ^ if defined, itemstack will hold clicker's wielded item
-      Shall return the leftover itemstack
+    ^ Shall return the leftover itemstack
+    ^ Note: pointed_thing can be nil, if a mod calls this function
+     
     on_dig = func(pos, node, digger),
     ^ default: minetest.node_dig
     ^ By default: checks privileges, wears out tool and removes node
@@ -2264,6 +2390,12 @@ Node definition (register_node)
     ^ intensity: 1.0 = mid range of regular TNT
     ^ If defined, called when an explosion touches the node, instead of
       removing the node
+	on_activate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from zero to non zero
+	on_deactivate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from non zero to zero
 }
 
 Recipe for register_craft: (shaped)
@@ -2375,14 +2507,20 @@ Decoration definition (register_decoration)
     schematic = "foobar.mts",
     ^ If schematic is a string, it is the filepath relative to the current working directory of the
     ^ specified Minetest schematic file.
-    ^  - OR -, could instead be a table containing two fields, size and data:
+    ^  - OR -, could instead be a table containing two mandatory fields, size and data,
+    ^ and an optional table yslice_prob:
     schematic = {
         size = {x=4, y=6, z=4},
         data = {
             {name="cobble", param1=255, param2=0},
             {name="dirt_with_grass", param1=255, param2=0},
              ...
-        }
+        },
+        yslice_prob = {
+            {ypos=2, prob=128},
+            {ypos=5, prob=64},
+             ...
+        },
     },
     ^ See 'Schematic specifier' for details.
     replacements = {{"oldname", "convert_to"}, ...},
@@ -2441,4 +2579,51 @@ HUD Definition (hud_add, hud_get)
     ^ See "HUD Element Types"
     offset = {x=0, y=0},
     ^ See "HUD Element Types"
+}
+
+Particle definition (add_particle)
+{
+    pos = {x=0, y=0, z=0},
+    velocity = {x=0, y=0, z=0},
+    acceleration = {x=0, y=0, z=0},
+    ^ Spawn particle at pos with velocity and acceleration
+    expirationtime = 1,
+    ^ Disappears after expirationtime seconds
+    size = 1,
+    collisiondetection = false,
+    ^ collisiondetection: if true collides with physical objects
+    vertical = false,
+    ^ vertical: if true faces player using y axis only
+    texture = "image.png",
+    ^ Uses texture (string)
+    playername = "singleplayer"
+    ^ Playername is optional, if specified spawns particle only on the player's client
+}
+
+Particlespawner definition (add_particlespawner)
+{
+    amount = 1,
+    time = 1,
+    ^ If time is 0 has infinite lifespan and spawns the amount on a per-second base
+    minpos = {x=0, y=0, z=0},
+    maxpos = {x=0, y=0, z=0},
+    minvel = {x=0, y=0, z=0},
+    maxvel = {x=0, y=0, z=0},
+    minacc = {x=0, y=0, z=0},
+    maxacc = {x=0, y=0, z=0},
+    minexptime = 1,
+    maxexptime = 1,
+    minsize = 1,
+    maxsize = 1,
+    ^ The particle's properties are random values in between the boundings:
+    ^ minpos/maxpos, minvel/maxvel (velocity), minacc/maxacc (acceleration),
+    ^ minsize/maxsize, minexptime/maxexptime (expirationtime)
+    collisiondetection = false,
+    ^ collisiondetection: if true uses collisiondetection
+    vertical = false,
+    ^ vertical: if true faces player using y axis only
+    texture = "image.png",
+    ^ Uses texture (string)
+    playername = "singleplayer"
+    ^ Playername is optional, if specified spawns particle only on the player's client
 }

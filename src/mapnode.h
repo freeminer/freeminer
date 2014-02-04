@@ -26,6 +26,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "light.h"
 #include <string>
 #include <vector>
+#include <list>
+#include <msgpack.hpp>
 
 class INodeDefManager;
 
@@ -36,6 +38,8 @@ class INodeDefManager;
 	- Tile = TileSpec at some side of a node of some content type
 */
 typedef u16 content_t;
+
+#define CONTENT_ID_CAPACITY (1 << (8 * sizeof(content_t)))
 
 /*
 	The maximum node ID that can be registered by mods. This must
@@ -255,6 +259,9 @@ struct MapNode
 	static void deSerializeBulk(std::istream &is, int version,
 			MapNode *nodes, u32 nodecount,
 			u8 content_width, u8 params_width, bool compressed);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 private:
 	// Deprecated serialization methods

@@ -111,9 +111,21 @@ void CaveV6::makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height) {
 		(float)(ps->next() % ar.Z) + 0.5
 	);
 
+	int notifytype = large_cave ? GENNOTIFY_LARGECAVE_BEGIN : GENNOTIFY_CAVE_BEGIN;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
+
 	// Generate some tunnel starting from orp
 	for (u16 j = 0; j < tunnel_routepoints; j++)
 		makeTunnel(j % dswitchint == 0);
+
+	notifytype = large_cave ? GENNOTIFY_LARGECAVE_END : GENNOTIFY_CAVE_END;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
 }
 
 
@@ -242,7 +254,7 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 				if (!ndef->get(c).is_ground_content)
 					continue;
 
-				s16 heat = mg->emerge->env->m_use_weather ? mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, startp) : 0;
+				s16 heat = mg->emerge->env->m_use_weather ? mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, p, NULL, &mg->heat_cache) : 0;
 				MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
 				if (large_cave) {
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
@@ -351,9 +363,21 @@ void CaveV7::makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height) {
 		(float)(ps->next() % ar.Z) + 0.5
 	);
 
+	int notifytype = large_cave ? GENNOTIFY_LARGECAVE_BEGIN : GENNOTIFY_CAVE_BEGIN;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
+
 	// Generate some tunnel starting from orp
 	for (u16 j = 0; j < tunnel_routepoints; j++)
 		makeTunnel(j % dswitchint == 0);
+
+	notifytype = large_cave ? GENNOTIFY_LARGECAVE_END : GENNOTIFY_CAVE_END;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
 }
 
 

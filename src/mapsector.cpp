@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h"
 #include "mapblock.h"
 #include "serialization.h"
+#include "log.h"
 #ifndef SERVER
 #include "mapblock_mesh.h"
 #endif
@@ -128,7 +129,8 @@ void MapSector::insertBlock(MapBlock *block)
 
 	MapBlock *block2 = getBlockBuffered(block_y);
 	if(block2 != NULL){
-		throw AlreadyExistsException("Block already exists");
+		//throw AlreadyExistsException("Block already exists");
+		errorstream<<"Block already exists" /*<PP(block->getPos())*/ <<std::endl;
 	}
 
 	v2s16 p2d(block->getPos().X, block->getPos().Z);

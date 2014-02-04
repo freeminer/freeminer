@@ -30,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
+#include "connection.h"
 
 /*
 	NodeBox
@@ -46,67 +47,41 @@ void NodeBox::reset()
 	wall_side = aabb3f(-BS/2, -BS/2, -BS/2, -BS/2+BS/16., BS/2, BS/2);
 }
 
-void NodeBox::serialize(std::ostream &os, u16 protocol_version) const
+void NodeBox::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	int version = protocol_version >= 21 ? 2 : 1;
-	writeU8(os, version);
+	int map_size = 1;
+	if (type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+		map_size = 2;
+	else if (type == NODEBOX_WALLMOUNTED)
+		map_size = 4;
 
-	if (version == 1 && type == NODEBOX_LEVELED)
-		writeU8(os, NODEBOX_FIXED);
-	else
-		writeU8(os, type);
+	pk.pack_map(map_size);
+	PACK(NODEBOX_S_TYPE, (int)type);
 
 	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-	{
-		writeU16(os, fixed.size());
-		for(std::vector<aabb3f>::const_iterator
-				i = fixed.begin();
-				i != fixed.end(); i++)
-		{
-			writeV3F1000(os, i->MinEdge);
-			writeV3F1000(os, i->MaxEdge);
-		}
-	}
-	else if(type == NODEBOX_WALLMOUNTED)
-	{
-		writeV3F1000(os, wall_top.MinEdge);
-		writeV3F1000(os, wall_top.MaxEdge);
-		writeV3F1000(os, wall_bottom.MinEdge);
-		writeV3F1000(os, wall_bottom.MaxEdge);
-		writeV3F1000(os, wall_side.MinEdge);
-		writeV3F1000(os, wall_side.MaxEdge);
+		PACK(NODEBOX_S_FIXED, fixed)
+	else if(type == NODEBOX_WALLMOUNTED) {
+		PACK(NODEBOX_S_WALL_TOP, wall_top);
+		PACK(NODEBOX_S_WALL_BOTTOM, wall_bottom);
+		PACK(NODEBOX_S_WALL_SIDE, wall_side);
 	}
 }
 
-void NodeBox::deSerialize(std::istream &is)
+void NodeBox::msgpack_unpack(msgpack::object o)
 {
-	int version = readU8(is);
-	if(version < 1 || version > 2)
-		throw SerializationError("unsupported NodeBox version");
-
 	reset();
 
-	type = (enum NodeBoxType)readU8(is);
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+
+	int type_tmp = packet[NODEBOX_S_TYPE].as<int>();
+	type = (NodeBoxType)type_tmp;
 
 	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-	{
-		u16 fixed_count = readU16(is);
-		while(fixed_count--)
-		{
-			aabb3f box;
-			box.MinEdge = readV3F1000(is);
-			box.MaxEdge = readV3F1000(is);
-			fixed.push_back(box);
-		}
-	}
-	else if(type == NODEBOX_WALLMOUNTED)
-	{
-		wall_top.MinEdge = readV3F1000(is);
-		wall_top.MaxEdge = readV3F1000(is);
-		wall_bottom.MinEdge = readV3F1000(is);
-		wall_bottom.MaxEdge = readV3F1000(is);
-		wall_side.MinEdge = readV3F1000(is);
-		wall_side.MaxEdge = readV3F1000(is);
+		packet[NODEBOX_S_FIXED].convert(&fixed);
+	else if(type == NODEBOX_WALLMOUNTED) {
+		packet[NODEBOX_S_WALL_TOP].convert(&wall_top);
+		packet[NODEBOX_S_WALL_BOTTOM].convert(&wall_bottom);
+		packet[NODEBOX_S_WALL_SIDE].convert(&wall_side);
 	}
 }
 
@@ -114,31 +89,30 @@ void NodeBox::deSerialize(std::istream &is)
 	TileDef
 */
 
-void TileDef::serialize(std::ostream &os, u16 protocol_version) const
+void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	if(protocol_version >= 17)
-		writeU8(os, 1); 
-	else
-		writeU8(os, 0);
-	os<<serializeString(name);
-	writeU8(os, animation.type);
-	writeU16(os, animation.aspect_w);
-	writeU16(os, animation.aspect_h);
-	writeF1000(os, animation.length);
-	if(protocol_version >= 17)
-		writeU8(os, backface_culling);
+	pk.pack_map(6);
+	PACK(TILEDEF_NAME, name);
+	PACK(TILEDEF_ANIMATION_TYPE, (int)animation.type);
+	PACK(TILEDEF_ANIMATION_ASPECT_W, animation.aspect_w);
+	PACK(TILEDEF_ANIMATION_ASPECT_H, animation.aspect_h);
+	PACK(TILEDEF_ANIMATION_LENGTH, animation.length);
+	PACK(TILEDEF_BACKFACE_CULLING, backface_culling);
 }
 
-void TileDef::deSerialize(std::istream &is)
+void TileDef::msgpack_unpack(msgpack::object o)
 {
-	int version = readU8(is);
-	name = deSerializeString(is);
-	animation.type = (TileAnimationType)readU8(is);
-	animation.aspect_w = readU16(is);
-	animation.aspect_h = readU16(is);
-	animation.length = readF1000(is);
-	if(version >= 1)
-		backface_culling = readU8(is);
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	packet[TILEDEF_NAME].convert(&name);
+
+	int type_tmp;
+	packet[TILEDEF_ANIMATION_TYPE].convert(&type_tmp);
+	animation.type = (TileAnimationType)type_tmp;
+
+	packet[TILEDEF_ANIMATION_ASPECT_W].convert(&animation.aspect_w);
+	packet[TILEDEF_ANIMATION_ASPECT_H].convert(&animation.aspect_h);
+	packet[TILEDEF_ANIMATION_LENGTH].convert(&animation.length);
+	packet[TILEDEF_BACKFACE_CULLING].convert(&backface_culling);
 }
 
 /*
@@ -183,6 +157,8 @@ void ContentFeatures::reset()
 	has_on_construct = false;
 	has_on_destruct = false;
 	has_after_destruct = false;
+	has_on_activate = false;
+	has_on_deactivate = false;
 	/*
 		Actual data
 
@@ -231,138 +207,134 @@ void ContentFeatures::reset()
 	sound_footstep = SimpleSoundSpec();
 	sound_dig = SimpleSoundSpec("__group");
 	sound_dug = SimpleSoundSpec();
+
+	is_circuit_element = false;
+	is_wire = false;
+	is_connector = false;
+	for(int i = 0; i < 6; ++i)
+	{
+		wire_connections[i] = 0;
+	}
+	for(int i = 0; i < 64; ++i)
+	{
+		circuit_element_states[i] = 0;
+	}
 }
 
-void ContentFeatures::serialize(std::ostream &os, u16 protocol_version)
+void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	if(protocol_version < 14){
-		serializeOld(os, protocol_version);
-		return;
-	}
+	pk.pack_map(36);
+	PACK(CONTENTFEATURES_NAME, name);
+	PACK(CONTENTFEATURES_GROUPS, groups);
+	PACK(CONTENTFEATURES_DRAWTYPE, (int)drawtype);
+	PACK(CONTENTFEATURES_VISUAL_SCALE, visual_scale);
 
-	writeU8(os, 6); // version
-	os<<serializeString(name);
-	writeU16(os, groups.size());
-	for(ItemGroupList::const_iterator
-			i = groups.begin(); i != groups.end(); i++){
-		os<<serializeString(i->first);
-		writeS16(os, i->second);
-	}
-	writeU8(os, drawtype);
-	writeF1000(os, visual_scale);
-	writeU8(os, 6);
-	for(u32 i=0; i<6; i++)
-		tiledef[i].serialize(os, protocol_version);
-	writeU8(os, CF_SPECIAL_COUNT);
-	for(u32 i=0; i<CF_SPECIAL_COUNT; i++){
-		tiledef_special[i].serialize(os, protocol_version);
-	}
-	writeU8(os, alpha);
-	writeU8(os, post_effect_color.getAlpha());
-	writeU8(os, post_effect_color.getRed());
-	writeU8(os, post_effect_color.getGreen());
-	writeU8(os, post_effect_color.getBlue());
-	writeU8(os, param_type);
-	writeU8(os, param_type_2);
-	writeU8(os, is_ground_content);
-	writeU8(os, light_propagates);
-	writeU8(os, sunlight_propagates);
-	writeU8(os, walkable);
-	writeU8(os, pointable);
-	writeU8(os, diggable);
-	writeU8(os, climbable);
-	writeU8(os, buildable_to);
-	os<<serializeString(""); // legacy: used to be metadata_name
-	writeU8(os, liquid_type);
-	os<<serializeString(liquid_alternative_flowing);
-	os<<serializeString(liquid_alternative_source);
-	writeU8(os, liquid_viscosity);
-	writeU8(os, liquid_renewable);
-	writeU8(os, light_source);
-	writeU32(os, damage_per_second);
-	node_box.serialize(os, protocol_version);
-	selection_box.serialize(os, protocol_version);
-	writeU8(os, legacy_facedir_simple);
-	writeU8(os, legacy_wallmounted);
-	serializeSimpleSoundSpec(sound_footstep, os);
-	serializeSimpleSoundSpec(sound_dig, os);
-	serializeSimpleSoundSpec(sound_dug, os);
-	writeU8(os, rightclickable);
-	writeU8(os, drowning);
-	writeU8(os, leveled);
-	writeU8(os, 0/*liquid_range*/);
-	// Stuff below should be moved to correct place in a version that otherwise changes
-	// the protocol version
-	writeU8(os, waving);
+	pk.pack((int)CONTENTFEATURES_TILEDEF);
+	pk.pack_array(6);
+	for (size_t i = 0; i < 6; ++i)
+		pk.pack(tiledef[i]);
+
+	pk.pack((int)CONTENTFEATURES_TILEDEF_SPECIAL);
+	pk.pack_array(CF_SPECIAL_COUNT);
+	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
+		pk.pack(tiledef_special[i]);
+
+	PACK(CONTENTFEATURES_ALPHA, alpha);
+	PACK(CONTENTFEATURES_POST_EFFECT_COLOR, post_effect_color);
+	PACK(CONTENTFEATURES_PARAM_TYPE, (int)param_type);
+	PACK(CONTENTFEATURES_PARAM_TYPE_2, (int)param_type_2);
+	PACK(CONTENTFEATURES_IS_GROUND_CONTENT, is_ground_content);
+	PACK(CONTENTFEATURES_LIGHT_PROPAGATES, light_propagates);
+	PACK(CONTENTFEATURES_SUNLIGHT_PROPAGATES, sunlight_propagates);
+	PACK(CONTENTFEATURES_WALKABLE, walkable);
+	PACK(CONTENTFEATURES_POINTABLE, pointable);
+	PACK(CONTENTFEATURES_DIGGABLE, diggable);
+	PACK(CONTENTFEATURES_CLIMBABLE, climbable);
+	PACK(CONTENTFEATURES_BUILDABLE_TO, buildable_to);
+	PACK(CONTENTFEATURES_LIQUID_TYPE, (int)liquid_type);
+	PACK(CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING, liquid_alternative_flowing);
+	PACK(CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE, liquid_alternative_source);
+	PACK(CONTENTFEATURES_LIQUID_VISCOSITY, liquid_viscosity);
+	PACK(CONTENTFEATURES_LIQUID_RENEWABLE, liquid_renewable);
+	PACK(CONTENTFEATURES_LIGHT_SOURCE, light_source);
+	PACK(CONTENTFEATURES_DAMAGE_PER_SECOND, damage_per_second);
+	PACK(CONTENTFEATURES_NODE_BOX, node_box);
+	PACK(CONTENTFEATURES_SELECTION_BOX, selection_box);
+	PACK(CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE, legacy_facedir_simple);
+	PACK(CONTENTFEATURES_LEGACY_WALLMOUNTED, legacy_wallmounted);
+	PACK(CONTENTFEATURES_SOUND_FOOTSTEP, sound_footstep);
+	PACK(CONTENTFEATURES_SOUND_DIG, sound_dig);
+	PACK(CONTENTFEATURES_SOUND_DUG, sound_dug);
+	PACK(CONTENTFEATURES_RIGHTCLICKABLE, rightclickable);
+	PACK(CONTENTFEATURES_DROWNING, drowning);
+	PACK(CONTENTFEATURES_LEVELED, leveled);
+	PACK(CONTENTFEATURES_WAVING, waving);
 }
 
-void ContentFeatures::deSerialize(std::istream &is)
+void ContentFeatures::msgpack_unpack(msgpack::object o)
 {
-	int version = readU8(is);
-	if(version != 6){
-		deSerializeOld(is, version);
-		return;
-	}
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	packet[CONTENTFEATURES_NAME].convert(&name);
+	packet[CONTENTFEATURES_GROUPS].convert(&groups);
 
-	name = deSerializeString(is);
-	groups.clear();
-	u32 groups_size = readU16(is);
-	for(u32 i=0; i<groups_size; i++){
-		std::string name = deSerializeString(is);
-		int value = readS16(is);
-		groups[name] = value;
-	}
-	drawtype = (enum NodeDrawType)readU8(is);
-	visual_scale = readF1000(is);
-	if(readU8(is) != 6)
+	int drawtype_tmp;
+	packet[CONTENTFEATURES_DRAWTYPE].convert(&drawtype_tmp);
+	drawtype = (NodeDrawType)drawtype_tmp;
+
+	packet[CONTENTFEATURES_VISUAL_SCALE].convert(&visual_scale);
+
+	std::vector<TileDef> tiledef_received;
+	packet[CONTENTFEATURES_TILEDEF].convert(&tiledef_received);
+	if (tiledef_received.size() != 6)
 		throw SerializationError("unsupported tile count");
-	for(u32 i=0; i<6; i++)
-		tiledef[i].deSerialize(is);
-	if(readU8(is) != CF_SPECIAL_COUNT)
+	for(size_t i = 0; i < 6; ++i)
+		tiledef[i] = tiledef_received[i];
+
+	std::vector<TileDef> tiledef_special_received;
+	packet[CONTENTFEATURES_TILEDEF_SPECIAL].convert(&tiledef_special_received);
+	if(tiledef_special_received.size() != CF_SPECIAL_COUNT)
 		throw SerializationError("unsupported CF_SPECIAL_COUNT");
-	for(u32 i=0; i<CF_SPECIAL_COUNT; i++)
-		tiledef_special[i].deSerialize(is);
-	alpha = readU8(is);
-	post_effect_color.setAlpha(readU8(is));
-	post_effect_color.setRed(readU8(is));
-	post_effect_color.setGreen(readU8(is));
-	post_effect_color.setBlue(readU8(is));
-	param_type = (enum ContentParamType)readU8(is);
-	param_type_2 = (enum ContentParamType2)readU8(is);
-	is_ground_content = readU8(is);
-	light_propagates = readU8(is);
-	sunlight_propagates = readU8(is);
-	walkable = readU8(is);
-	pointable = readU8(is);
-	diggable = readU8(is);
-	climbable = readU8(is);
-	buildable_to = readU8(is);
-	deSerializeString(is); // legacy: used to be metadata_name
-	liquid_type = (enum LiquidType)readU8(is);
-	liquid_alternative_flowing = deSerializeString(is);
-	liquid_alternative_source = deSerializeString(is);
-	liquid_viscosity = readU8(is);
-	liquid_renewable = readU8(is);
-	light_source = readU8(is);
-	damage_per_second = readU32(is);
-	node_box.deSerialize(is);
-	selection_box.deSerialize(is);
-	legacy_facedir_simple = readU8(is);
-	legacy_wallmounted = readU8(is);
-	deSerializeSimpleSoundSpec(sound_footstep, is);
-	deSerializeSimpleSoundSpec(sound_dig, is);
-	deSerializeSimpleSoundSpec(sound_dug, is);
-	rightclickable = readU8(is);
-	drowning = readU8(is);
-	leveled = readU8(is);
-	/*liquid_range =*/ readU8(is);
-	// If you add anything here, insert it primarily inside the try-catch
-	// block to not need to increase the version.
-	try{
-		// Stuff below should be moved to correct place in a version that
-		// otherwise changes the protocol version
-	waving = readU8(is);
-	}catch(SerializationError &e) {};
+	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
+		tiledef_special[i] = tiledef_special_received[i];
+
+	packet[CONTENTFEATURES_ALPHA].convert(&alpha);
+	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(&post_effect_color);
+
+	int param_type_tmp;
+	packet[CONTENTFEATURES_PARAM_TYPE].convert(&param_type_tmp);
+	param_type = (ContentParamType)param_type_tmp;
+	packet[CONTENTFEATURES_PARAM_TYPE_2].convert(&param_type_tmp);
+	param_type_2 = (ContentParamType2)param_type_tmp;
+
+	packet[CONTENTFEATURES_IS_GROUND_CONTENT].convert(&is_ground_content);
+	packet[CONTENTFEATURES_LIGHT_PROPAGATES].convert(&light_propagates);
+	packet[CONTENTFEATURES_SUNLIGHT_PROPAGATES].convert(&sunlight_propagates);
+	packet[CONTENTFEATURES_WALKABLE].convert(&walkable);
+	packet[CONTENTFEATURES_POINTABLE].convert(&pointable);
+	packet[CONTENTFEATURES_DIGGABLE].convert(&diggable);
+	packet[CONTENTFEATURES_CLIMBABLE].convert(&climbable);
+	packet[CONTENTFEATURES_BUILDABLE_TO].convert(&buildable_to);
+
+	int liquid_type_tmp;
+	packet[CONTENTFEATURES_LIQUID_TYPE].convert(&liquid_type_tmp);
+	liquid_type = (LiquidType)liquid_type_tmp;
+
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING].convert(&liquid_alternative_flowing);
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE].convert(&liquid_alternative_source);
+	packet[CONTENTFEATURES_LIQUID_VISCOSITY].convert(&liquid_viscosity);
+	packet[CONTENTFEATURES_LIGHT_SOURCE].convert(&light_source);
+	packet[CONTENTFEATURES_DAMAGE_PER_SECOND].convert(&damage_per_second);
+	packet[CONTENTFEATURES_NODE_BOX].convert(&node_box);
+	packet[CONTENTFEATURES_SELECTION_BOX].convert(&selection_box);
+	packet[CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE].convert(&legacy_facedir_simple);
+	packet[CONTENTFEATURES_LEGACY_WALLMOUNTED].convert(&legacy_wallmounted);
+	packet[CONTENTFEATURES_SOUND_FOOTSTEP].convert(&sound_footstep);
+	packet[CONTENTFEATURES_SOUND_DIG].convert(&sound_dig);
+	packet[CONTENTFEATURES_SOUND_DUG].convert(&sound_dug);
+	packet[CONTENTFEATURES_RIGHTCLICKABLE].convert(&rightclickable);
+	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
+	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
+	packet[CONTENTFEATURES_WAVING].convert(&waving);
 }
 
 /*
@@ -498,6 +470,27 @@ public:
 		}
 		//printf("getIds: %dus\n", t.stop());
 	}
+	virtual void getIds(const std::string &name, FMBitset &result) const {
+		if(name.substr(0,6) != "group:"){
+			content_t id = CONTENT_IGNORE;
+			if(getId(name, id))
+				result.set(id, true);
+			return;
+		}
+		std::string group = name.substr(6);
+
+		std::map<std::string, GroupItems>::const_iterator
+			i = m_group_to_items.find(group);
+		if (i == m_group_to_items.end())
+			return;
+
+		const GroupItems &items = i->second;
+		for (GroupItems::const_iterator j = items.begin();
+			j != items.end(); ++j) {
+			if ((*j).second != 0)
+				result.set((*j).first, true);
+		}
+	}
 	virtual const ContentFeatures& get(const std::string &name) const
 	{
 		content_t id = CONTENT_UNKNOWN;
@@ -560,7 +553,7 @@ public:
 		for (ItemGroupList::const_iterator i = def.groups.begin();
 			i != def.groups.end(); ++i) {
 			std::string group_name = i->first;
-			
+
 			std::map<std::string, GroupItems>::iterator
 				j = m_group_to_items.find(group_name);
 			if (j == m_group_to_items.end()) {
@@ -783,50 +776,31 @@ public:
 		}
 #endif
 	}
-	void serialize(std::ostream &os, u16 protocol_version)
+	// map of content features, key = id, value = ContentFeatures
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	{
-		writeU8(os, 1); // version
-		u16 count = 0;
-		std::ostringstream os2(std::ios::binary);
-		for(u32 i=0; i<m_content_features.size(); i++)
-		{
-			if(i == CONTENT_IGNORE || i == CONTENT_AIR
-					|| i == CONTENT_UNKNOWN)
+		std::vector<std::pair<int, const ContentFeatures*> > features_to_pack;
+		for (size_t i = 0; i < m_content_features.size(); ++i) {
+			if (i == CONTENT_IGNORE || i == CONTENT_AIR || i == CONTENT_UNKNOWN || m_content_features[i].name == "")
 				continue;
-			ContentFeatures *f = &m_content_features[i];
-			if(f->name == "")
-				continue;
-			writeU16(os2, i);
-			// Wrap it in a string to allow different lengths without
-			// strict version incompatibilities
-			std::ostringstream wrapper_os(std::ios::binary);
-			f->serialize(wrapper_os, protocol_version);
-			os2<<serializeString(wrapper_os.str());
-
-			assert(count + 1 > count); // must not overflow
-			count++;
+			features_to_pack.push_back(std::make_pair(i, &m_content_features[i]));
 		}
-		writeU16(os, count);
-		os<<serializeLongString(os2.str());
+		pk.pack_map(features_to_pack.size());
+		for (size_t i = 0; i < features_to_pack.size(); ++i)
+			PACK(features_to_pack[i].first, *features_to_pack[i].second);
 	}
-	void deSerialize(std::istream &is)
+	void msgpack_unpack(msgpack::object o)
 	{
 		clear();
-		int version = readU8(is);
-		if(version != 1)
-			throw SerializationError("unsupported NodeDefinitionManager version");
-		u16 count = readU16(is);
-		std::istringstream is2(deSerializeLongString(is), std::ios::binary);
-		ContentFeatures f;
-		for(u16 n=0; n<count; n++){
-			u16 i = readU16(is2);
 
-			// Read it from the string wrapper
-			std::string wrapper = deSerializeString(is2);
-			std::istringstream wrapper_is(wrapper, std::ios::binary);
-			f.deSerialize(wrapper_is);
+		std::map<int, ContentFeatures> unpacked_features;
+		o.convert(&unpacked_features);
 
-			// Check error conditions
+		for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
+				it != unpacked_features.end(); ++it) {
+			int i = it->first;
+			ContentFeatures f = it->second;
+
 			if(i == CONTENT_IGNORE || i == CONTENT_AIR
 					|| i == CONTENT_UNKNOWN){
 				infostream<<"NodeDefManager::deSerialize(): WARNING: "
@@ -883,123 +857,3 @@ IWritableNodeDefManager* createNodeDefManager()
 {
 	return new CNodeDefManager();
 }
-
-/*
-	Serialization of old ContentFeatures formats
-*/
-
-void ContentFeatures::serializeOld(std::ostream &os, u16 protocol_version)
-{
-	if(protocol_version == 13)
-	{
-		writeU8(os, 5); // version
-		os<<serializeString(name);
-		writeU16(os, groups.size());
-		for(ItemGroupList::const_iterator
-				i = groups.begin(); i != groups.end(); i++){
-			os<<serializeString(i->first);
-			writeS16(os, i->second);
-		}
-		writeU8(os, drawtype);
-		writeF1000(os, visual_scale);
-		writeU8(os, 6);
-		for(u32 i=0; i<6; i++)
-			tiledef[i].serialize(os, protocol_version);
-		writeU8(os, CF_SPECIAL_COUNT);
-		for(u32 i=0; i<CF_SPECIAL_COUNT; i++){
-			tiledef_special[i].serialize(os, protocol_version);
-		}
-		writeU8(os, alpha);
-		writeU8(os, post_effect_color.getAlpha());
-		writeU8(os, post_effect_color.getRed());
-		writeU8(os, post_effect_color.getGreen());
-		writeU8(os, post_effect_color.getBlue());
-		writeU8(os, param_type);
-		writeU8(os, param_type_2);
-		writeU8(os, is_ground_content);
-		writeU8(os, light_propagates);
-		writeU8(os, sunlight_propagates);
-		writeU8(os, walkable);
-		writeU8(os, pointable);
-		writeU8(os, diggable);
-		writeU8(os, climbable);
-		writeU8(os, buildable_to);
-		os<<serializeString(""); // legacy: used to be metadata_name
-		writeU8(os, liquid_type);
-		os<<serializeString(liquid_alternative_flowing);
-		os<<serializeString(liquid_alternative_source);
-		writeU8(os, liquid_viscosity);
-		writeU8(os, light_source);
-		writeU32(os, damage_per_second);
-		node_box.serialize(os, protocol_version);
-		selection_box.serialize(os, protocol_version);
-		writeU8(os, legacy_facedir_simple);
-		writeU8(os, legacy_wallmounted);
-		serializeSimpleSoundSpec(sound_footstep, os);
-		serializeSimpleSoundSpec(sound_dig, os);
-		serializeSimpleSoundSpec(sound_dug, os);
-	}
-	else
-	{
-		throw SerializationError("ContentFeatures::serialize(): Unsupported version requested");
-	}
-}
-
-void ContentFeatures::deSerializeOld(std::istream &is, int version)
-{
-	if(version == 5) // In PROTOCOL_VERSION 13
-	{
-		name = deSerializeString(is);
-		groups.clear();
-		u32 groups_size = readU16(is);
-		for(u32 i=0; i<groups_size; i++){
-			std::string name = deSerializeString(is);
-			int value = readS16(is);
-			groups[name] = value;
-		}
-		drawtype = (enum NodeDrawType)readU8(is);
-		visual_scale = readF1000(is);
-		if(readU8(is) != 6)
-			throw SerializationError("unsupported tile count");
-		for(u32 i=0; i<6; i++)
-			tiledef[i].deSerialize(is);
-		if(readU8(is) != CF_SPECIAL_COUNT)
-			throw SerializationError("unsupported CF_SPECIAL_COUNT");
-		for(u32 i=0; i<CF_SPECIAL_COUNT; i++)
-			tiledef_special[i].deSerialize(is);
-		alpha = readU8(is);
-		post_effect_color.setAlpha(readU8(is));
-		post_effect_color.setRed(readU8(is));
-		post_effect_color.setGreen(readU8(is));
-		post_effect_color.setBlue(readU8(is));
-		param_type = (enum ContentParamType)readU8(is);
-		param_type_2 = (enum ContentParamType2)readU8(is);
-		is_ground_content = readU8(is);
-		light_propagates = readU8(is);
-		sunlight_propagates = readU8(is);
-		walkable = readU8(is);
-		pointable = readU8(is);
-		diggable = readU8(is);
-		climbable = readU8(is);
-		buildable_to = readU8(is);
-		deSerializeString(is); // legacy: used to be metadata_name
-		liquid_type = (enum LiquidType)readU8(is);
-		liquid_alternative_flowing = deSerializeString(is);
-		liquid_alternative_source = deSerializeString(is);
-		liquid_viscosity = readU8(is);
-		light_source = readU8(is);
-		damage_per_second = readU32(is);
-		node_box.deSerialize(is);
-		selection_box.deSerialize(is);
-		legacy_facedir_simple = readU8(is);
-		legacy_wallmounted = readU8(is);
-		deSerializeSimpleSoundSpec(sound_footstep, is);
-		deSerializeSimpleSoundSpec(sound_dig, is);
-		deSerializeSimpleSoundSpec(sound_dug, is);
-	}
-	else
-	{
-		throw SerializationError("unsupported ContentFeatures version");
-	}
-}
-

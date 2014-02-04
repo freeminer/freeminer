@@ -427,21 +427,18 @@ u32 ShaderSource::getShaderId(const std::string &name)
 		/* infostream<<"Waiting for shader from main thread, name=\""
 				<<name<<"\""<<std::endl;*/
 
-		try{
-			while(true) {
-				// Wait result for a second
-				GetResult<std::string, u32, u8, u8>
-					result = result_queue.pop_front(1000);
+		while(true) {
+			GetResult<std::string, u32, u8, u8>
+				result = result_queue.pop_frontNoEx();
 
-				if (result.key == name) {
-					return result.item;
-				}
+			if (result.key == name) {
+				return result.item;
+			}
+			else {
+				errorstream << "Got shader with invalid name: " << result.key << std::endl;
 			}
 		}
-		catch(ItemNotFoundException &e){
-			errorstream<<"Waiting for shader " << name << " timed out."<<std::endl;
-			return 0;
-		}
+
 	}
 
 	infostream<<"getShaderId(): Failed"<<std::endl;
@@ -537,6 +534,7 @@ void ShaderSource::processQueue()
 	/*
 		Fetch shaders
 	*/
+	//NOTE this is only thread safe for ONE consumer thread!
 	if(!m_get_shader_queue.empty()){
 		GetRequest<std::string, u32, u8, u8>
 				request = m_get_shader_queue.pop();
@@ -672,6 +670,51 @@ ShaderInfo generate_shader(std::string name, IrrlichtDevice *device,
 	// If no shaders are used, don't make a separate material type
 	if(vertex_program == "" && pixel_program == "" && geometry_program == "")
 		return shaderinfo;
+
+	// Create shaders header
+	std::string shaders_header = "#version 120\n";
+	
+	if (g_settings->getBool("enable_bumpmapping"))
+		shaders_header += "#define ENABLE_BUMPMAPPING\n";
+
+	if (g_settings->getBool("enable_parallax_occlusion")){
+		shaders_header += "#define ENABLE_PARALLAX_OCCLUSION\n";
+		shaders_header += "#define PARALLAX_OCCLUSION_SCALE ";
+		shaders_header += ftos(g_settings->getFloat("parallax_occlusion_scale"));
+		shaders_header += "\n";
+		shaders_header += "#define PARALLAX_OCCLUSION_BIAS ";
+		shaders_header += ftos(g_settings->getFloat("parallax_occlusion_bias"));
+		shaders_header += "\n";
+		}
+
+	if (g_settings->getBool("enable_bumpmapping") || g_settings->getBool("enable_parallax_occlusion"))
+		shaders_header += "#define USE_NORMALMAPS\n";
+
+	if (g_settings->getBool("enable_waving_water")){
+		shaders_header += "#define ENABLE_WAVING_WATER\n";
+		shaders_header += "#define WATER_WAVE_HEIGHT ";
+		shaders_header += ftos(g_settings->getFloat("water_wave_height"));
+		shaders_header += "\n";
+		shaders_header += "#define WATER_WAVE_LENGTH ";
+		shaders_header += ftos(g_settings->getFloat("water_wave_length"));
+		shaders_header += "\n";
+		shaders_header += "#define WATER_WAVE_SPEED ";
+		shaders_header += ftos(g_settings->getFloat("water_wave_speed"));
+		shaders_header += "\n";
+	}
+
+	if (g_settings->getBool("enable_waving_leaves"))
+		shaders_header += "#define ENABLE_WAVING_LEAVES\n";
+
+	if (g_settings->getBool("enable_waving_plants"))
+		shaders_header += "#define ENABLE_WAVING_PLANTS\n";
+
+	if(pixel_program != "")
+		pixel_program = shaders_header + pixel_program;
+	if(vertex_program != "")
+		vertex_program = shaders_header + vertex_program;
+	if(geometry_program != "")
+		geometry_program = shaders_header + geometry_program;
 
 	// Call addHighLevelShaderMaterial() or addShaderMaterial()
 	const c8* vertex_program_ptr = 0;

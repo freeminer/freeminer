@@ -184,17 +184,24 @@ int ModApiMainMenu::l_set_clouds(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_textlist_index(lua_State *L)
 {
+	// get_table_index accepts both tables and textlists
+	return l_get_table_index(L);
+}
+
+/******************************************************************************/
+int ModApiMainMenu::l_get_table_index(lua_State *L)
+{
 	GUIEngine* engine = getGuiEngine(L);
 	assert(engine != 0);
 
-	std::string listboxname(luaL_checkstring(L, 1));
+	std::string tablename(luaL_checkstring(L, 1));
+	GUITable *table = engine->m_menu->getTable(tablename);
+	s32 selection = table ? table->getSelected() : 0;
 
-	int selection = engine->m_menu->getListboxIndex(listboxname);
-
-	if (selection >= 0)
-		selection++;
-
-	lua_pushinteger(L, selection);
+	if (selection >= 1)
+		lua_pushinteger(L, selection);
+	else
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -334,6 +341,26 @@ int ModApiMainMenu::l_get_modstore_details(lua_State *L)
 
 			lua_pushstring(L,"download_url");
 			lua_pushstring(L,current_mod.versions[0].file.c_str());
+			lua_settable(L, top);
+
+			lua_pushstring(L,"versions");
+			lua_newtable(L);
+			int versionstop = lua_gettop(L);
+			for (unsigned int i=0;i < current_mod.versions.size(); i++) {
+				lua_pushnumber(L,i+1);
+				lua_newtable(L);
+				int current_element = lua_gettop(L);
+
+				lua_pushstring(L,"date");
+				lua_pushstring(L,current_mod.versions[i].date.c_str());
+				lua_settable(L,current_element);
+
+				lua_pushstring(L,"download_url");
+				lua_pushstring(L,current_mod.versions[i].file.c_str());
+				lua_settable(L,current_element);
+
+				lua_settable(L,versionstop);
+			}
 			lua_settable(L, top);
 
 			lua_pushstring(L,"screenshot_url");
@@ -684,6 +711,14 @@ int ModApiMainMenu::l_get_texturepath(lua_State *L)
 	return 1;
 }
 
+int ModApiMainMenu::l_get_texturepath_share(lua_State *L)
+{
+	std::string gamepath
+			= fs::RemoveRelativePathComponents(porting::path_share + DIR_DELIM + "textures");
+	lua_pushstring(L, gamepath.c_str());
+	return 1;
+}
+
 /******************************************************************************/
 int ModApiMainMenu::l_get_dirlist(lua_State *L)
 {
@@ -782,7 +817,10 @@ int ModApiMainMenu::l_extract_zip(lua_State *L)
 
 		io::IFileSystem* fs = engine->m_device->getFileSystem();
 
-		fs->addFileArchive(zipfile,true,false,io::EFAT_ZIP);
+		if (!fs->addFileArchive(zipfile,true,false,io::EFAT_ZIP)) {
+			lua_pushboolean(L,false);
+			return 1;
+		}
 
 		assert(fs->getFileArchiveCount() > 0);
 
@@ -962,7 +1000,7 @@ int ModApiMainMenu::l_download_file(lua_State *L)
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
 	std::wstring wtext = wstrgettext((std::string) luaL_checkstring(L, 1));
-	lua_pushstring(L, wide_to_narrow(wtext).c_str());
+	lua_pushstring(L, wide_to_utf8(wtext).c_str());
 
 	return 1;
 }
@@ -995,6 +1033,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(update_formspec);
 	API_FCT(set_clouds);
 	API_FCT(get_textlist_index);
+	API_FCT(get_table_index);
 	API_FCT(get_worlds);
 	API_FCT(get_games);
 	API_FCT(start);
@@ -1009,6 +1048,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_modpath);
 	API_FCT(get_gamepath);
 	API_FCT(get_texturepath);
+	API_FCT(get_texturepath_share);
 	API_FCT(get_dirlist);
 	API_FCT(create_dir);
 	API_FCT(delete_dir);
@@ -1036,6 +1076,7 @@ void ModApiMainMenu::InitializeAsync(AsyncEngine& engine)
 	ASYNC_API_FCT(get_modpath);
 	ASYNC_API_FCT(get_gamepath);
 	ASYNC_API_FCT(get_texturepath);
+	ASYNC_API_FCT(get_texturepath_share);
 	ASYNC_API_FCT(get_dirlist);
 	ASYNC_API_FCT(create_dir);
 	ASYNC_API_FCT(delete_dir);

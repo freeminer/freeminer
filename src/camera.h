@@ -27,6 +27,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include <ICameraSceneNode.h>
 
+#include "client.h"
+
 class LocalPlayer;
 struct MapDrawControl;
 class IGameDef;
@@ -99,7 +101,7 @@ public:
 	}
 
 	// Checks if the constructor was able to create the scene nodes
-	bool successfullyCreated(std::wstring& error_message);
+	bool successfullyCreated(std::string& error_message);
 
 	// Step the camera: updates the viewing range and view bobbing.
 	void step(f32 dtime);
@@ -107,7 +109,8 @@ public:
 	// Update the camera from the local player's position.
 	// busytime is used to adjust the viewing range.
 	void update(LocalPlayer* player, f32 frametime, f32 busytime,
-			v2u32 screensize, f32 tool_reload_ratio);
+			v2u32 screensize, f32 tool_reload_ratio,
+			int current_camera_mode, ClientEnvironment &c_env);
 
 	// Render distance feedback loop
 	void updateViewingRange(f32 frametime_in, f32 busytime_in);
@@ -134,6 +137,7 @@ private:
 	scene::ISceneManager* m_wieldmgr;
 	scene::IMeshSceneNode* m_wieldnode;
 	u8 m_wieldlight;
+	u8 m_wieldlight_add;
 
 	// draw control
 	MapDrawControl& m_draw_control;

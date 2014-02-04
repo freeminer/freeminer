@@ -124,6 +124,7 @@ public:
 
 class ChatBackend;  /* to avoid having to include chat.h */
 struct SubgameSpec;
+enum CameraModes {CAMERA_MODE_FIRST, CAMERA_MODE_THIRD, CAMERA_MODE_THIRD_FRONT};
 
 void the_game(
 	bool &kill,
@@ -136,7 +137,7 @@ void the_game(
 	std::string password,
 	std::string address, // If "", local server is used
 	u16 port,
-	std::wstring &error_message,
+	std::string &error_message,
 	ChatBackend &chat_backend,
 	const SubgameSpec &gamespec, // Used for local game
 	bool simple_singleplayer_mode

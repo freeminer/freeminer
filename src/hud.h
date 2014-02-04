@@ -54,7 +54,8 @@ enum HudElementType {
 	HUD_ELEM_IMAGE     = 0,
 	HUD_ELEM_TEXT      = 1,
 	HUD_ELEM_STATBAR   = 2,
-	HUD_ELEM_INVENTORY = 3
+	HUD_ELEM_INVENTORY = 3,
+	HUD_ELEM_WAYPOINT  = 4,
 };
 
 enum HudElementStat {
@@ -66,7 +67,8 @@ enum HudElementStat {
 	HUD_STAT_ITEM,
 	HUD_STAT_DIR,
 	HUD_STAT_ALIGN,
-	HUD_STAT_OFFSET
+	HUD_STAT_OFFSET,
+	HUD_STAT_WORLD_POS
 };
 
 struct HudElement {
@@ -80,6 +82,7 @@ struct HudElement {
 	u32 dir;
 	v2f align;
 	v2f offset;
+	v3f world_pos;
 };
 
 #ifndef SERVER
@@ -98,6 +101,7 @@ struct ItemStack;
 class Hud {
 public:
 	video::IVideoDriver *driver;
+	scene::ISceneManager* smgr;
 	gui::IGUIEnvironment *guienv;
 	gui::IGUIFont *font;
 	u32 text_height;
@@ -118,8 +122,9 @@ public:
 	std::string hotbar_selected_image;
 	bool use_hotbar_selected_image;
 	
-	Hud(video::IVideoDriver *driver, gui::IGUIEnvironment* guienv,
-		gui::IGUIFont *font, u32 text_height, IGameDef *gamedef,
+	Hud(video::IVideoDriver *driver,scene::ISceneManager* smgr,
+		gui::IGUIEnvironment* guienv, gui::IGUIFont *font,
+		u32 text_height, IGameDef *gamedef,
 		LocalPlayer *player, Inventory *inventory);
 	
 	void drawItem(v2s32 upperleftpos, s32 imgsize, s32 itemcount,

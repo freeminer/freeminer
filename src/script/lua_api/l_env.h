@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -154,6 +155,14 @@ private:
 	// minetest.get_surface(basepos,yoffset,walkable_only=false)
 	static int l_get_surface(lua_State *L);
 
+	// minetest.forceload_block(blockpos)
+	// forceloads a block
+	static int l_forceload_block(lua_State *L);
+	
+	// minetest.forceload_free_block(blockpos)
+	// stops forceloading a position
+	static int l_forceload_free_block(lua_State *L);
+	
 public:
 	static void Initialize(lua_State *L, int top);
 };
@@ -186,7 +195,7 @@ public:
 	{
 		return m_trigger_contents;
 	}
-	virtual std::set<std::string> getRequiredNeighbors()
+	virtual std::set<std::string> getRequiredNeighbors(bool activate)
 	{
 		return m_required_neighbors;
 	}
@@ -203,7 +212,7 @@ public:
 		return m_trigger_chance;
 	}
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor);
+			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate);
 };
 
 #endif /* L_ENV_H_ */

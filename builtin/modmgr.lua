@@ -56,10 +56,12 @@ function modmgr.extract(modfile)
 		if tempfolder ~= nil and
 			tempfolder ~= "" then
 			engine.create_dir(tempfolder)
-			engine.extract_zip(modfile.name,tempfolder)
-			return tempfolder
+			if engine.extract_zip(modfile.name,tempfolder) then
+				return tempfolder
+			end
 		end
 	end
+	return nil
 end
 
 -------------------------------------------------------------------------------
@@ -568,7 +570,7 @@ function modmgr.handle_modmgr_buttons(fields)
 		}
 
 	if fields["modlist"] ~= nil then
-		local event = explode_textlist_event(fields["modlist"])
+		local event = engine.explode_textlist_event(fields["modlist"])
 		modmgr.selected_mod = event.index
 	end
 
@@ -613,7 +615,7 @@ function modmgr.installmod(modfilename,basename)
 
 	if modpath == nil then
 		gamedata.errormessage = fgettext("Install Mod: file: \"$1\"", modfile.name) ..
-			fgettext("\nInstall Mod: unsupported filetype \"$1\"", modfile.type)
+			fgettext("\nInstall Mod: unsupported filetype \"$1\" or broken archive", modfile.type)
 		return
 	end
 
@@ -689,10 +691,10 @@ end
 --------------------------------------------------------------------------------
 function modmgr.handle_configure_world_buttons(fields)
 	if fields["world_config_modlist"] ~= nil then
-		local event = explode_textlist_event(fields["world_config_modlist"])
+		local event = engine.explode_textlist_event(fields["world_config_modlist"])
 		modmgr.world_config_selected_mod = event.index
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			modmgr.world_config_enable_mod(nil)
 		end
 	end
@@ -1061,7 +1063,7 @@ function modmgr.get_global_mod(idx)
 		return nil
 	end
 
-	if idx < 1 or idx > filterlist.size(modmgr.global_mods) then
+	if idx == nil or idx < 1 or idx > filterlist.size(modmgr.global_mods) then
 		return nil
 	end
 

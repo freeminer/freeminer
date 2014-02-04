@@ -49,8 +49,8 @@ minetest.register_chatcommand("help", {
 	description = "Get help for commands or list privileges",
 	func = function(name, param)
 		local format_help_line = function(cmd, def)
-			local msg = "/"..cmd
-			if def.params and def.params ~= "" then msg = msg .. " " .. def.params end
+			local msg = freeminer.colorize("00ffff", "/"..cmd)
+			if def.params and def.params ~= "" then msg = msg .. " " .. freeminer.colorize("eeeeee", def.params) end
 			if def.description and def.description ~= "" then msg = msg .. ": " .. def.description end
 			return msg
 		end
@@ -700,5 +700,17 @@ minetest.register_chatcommand("msg", {
 		else
 			minetest.chat_send_player(name, "Invalid usage, see /help msg")
 		end
+	end,
+})
+
+minetest.register_chatcommand("die", {
+	params = "",
+	description = "Kills yourself.",
+	func = function(name, param)
+		local player = minetest.get_player_by_name(name)
+		if not player then
+			return
+		end
+		player:set_hp(0)
 	end,
 })

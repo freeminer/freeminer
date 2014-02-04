@@ -24,7 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef SKY_HEADER
 #define SKY_HEADER
 
-#define SKY_MATERIAL_COUNT 3
+#define SKY_MATERIAL_COUNT 5
 #define SKY_STAR_COUNT 200
 
 // Skybox, rendered with zbuffer turned off, before all other nodes.
@@ -105,6 +105,7 @@ private:
 	float m_brightness;
 	float m_cloud_brightness;
 	bool m_clouds_visible;
+	bool m_directional_colored_fog;
 	video::SColorf m_bgcolor_bright_f;
 	video::SColorf m_skycolor_bright_f;
 	video::SColorf m_cloudcolor_bright_f;
@@ -115,6 +116,8 @@ private:
 	u16 m_star_indices[SKY_STAR_COUNT*4];
 	video::S3DVertex m_star_vertices[SKY_STAR_COUNT*4];
 	LocalPlayer* m_player;
+	video::ITexture* m_sun_tonemap;
+	video::ITexture* m_moon_tonemap;
 };
 
 #endif

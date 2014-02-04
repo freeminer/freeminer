@@ -53,6 +53,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_update_camera", "KEY_F4");
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
+	settings->setDefault("keymap_camera_mode", "KEY_F7");
 	settings->setDefault("keymap_increase_viewing_range_min", "+");
 	settings->setDefault("keymap_decrease_viewing_range_min", "-");
 	settings->setDefault("keymap_playerlist", "KEY_TAB");
@@ -62,6 +63,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("doubletap_jump", "false");
 	settings->setDefault("always_fly_fast", "true");
 	settings->setDefault("zoom_fov", "15");
+	settings->setDefault("directional_colored_fog", "true");
 
 	// Some (temporary) keys for debugging
 	settings->setDefault("keymap_print_debug_stacks", "KEY_KEY_P");
@@ -79,6 +81,7 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("wanted_fps", "30");
 	settings->setDefault("fps_max", "60");
+	settings->setDefault("pause_fps_max", "20");
 	// A bit more than the server will send around the player, to make fog blend well
 	settings->setDefault("viewing_range_nodes_max", "240");
 	settings->setDefault("viewing_range_nodes_min", "35");
@@ -145,10 +148,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("enable_movement_fov", "true");
+	settings->setDefault("disable_wieldlight", "false");
 
-	settings->setDefault("media_fetch_threads", "8");
+	settings->setDefault("curl_timeout", "5000");
+	settings->setDefault("curl_parallel_limit", "8");
 
-	settings->setDefault("serverlist_url", "servers.minetest.net");
+	settings->setDefault("serverlist_url", "servers.freeminer.org");
 	settings->setDefault("serverlist_file", "favoriteservers.txt");
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("server_url", "");
@@ -156,22 +161,21 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("server_name", "");
 	settings->setDefault("server_description", "");
 
-#if USE_FREETYPE
-	settings->setDefault("freetype", "true");
 	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "liberationsans.ttf"));
 	settings->setDefault("font_size", "13");
+	settings->setDefault("font_shadow", "1");
+	settings->setDefault("font_shadow_alpha", "128");
 	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "liberationmono.ttf"));
 	settings->setDefault("mono_font_size", "13");
 	settings->setDefault("fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "DroidSansFallbackFull.ttf"));
 	settings->setDefault("fallback_font_size", "13");
-#else
-	settings->setDefault("freetype", "false");
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "fontlucida.png"));
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "fontdejavusansmono.png"));
-#endif
+	settings->setDefault("fallback_font_shadow", "1");
+	settings->setDefault("fallback_font_shadow_alpha", "128");
 
 	// Server stuff
 	// "map-dir" doesn't exist by default.
+	settings->setDefault("workaround_window_size","5");
+	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
@@ -217,6 +221,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("congestion_control_min_rate", "10");
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "2");
+	settings->setDefault("time_taker_enabled",
+#ifdef NDEBUG
+	"0"
+#else
+	"1"
+#endif
+	);
 	settings->setDefault("emergequeue_limit_total", "256");
 	settings->setDefault("emergequeue_limit_diskonly", "");
 	settings->setDefault("emergequeue_limit_generate", "");
@@ -235,6 +246,16 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("movement_liquid_fluidity_smooth", "0.5");
 	settings->setDefault("movement_liquid_sink", "10");
 	settings->setDefault("movement_gravity", "9.81");
+
+	// player model animations (sent to client)
+	settings->setDefault("animation_default_start", "0");
+	settings->setDefault("animation_default_stop", "79");
+	settings->setDefault("animation_walk_start", "168");
+	settings->setDefault("animation_walk_stop", "187");
+	settings->setDefault("animation_dig_start", "189");
+	settings->setDefault("animation_dig_stop", "198");
+	settings->setDefault("animation_wd_start", "200");
+	settings->setDefault("animation_wd_stop", "219");
 
 	//liquid stuff
 	settings->setDefault("liquid_finite", "false");
@@ -268,7 +289,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("mgv7_np_terrain_alt",      "4, 25, (600, 600, 600), 5934, 5, 0.6");
 	settings->setDefault("mgv7_np_terrain_persist",  "0.6, 0.1, (500, 500, 500), 539, 3, 0.6");
 	settings->setDefault("mgv7_np_height_select",    "-0.5, 1, (250, 250, 250), 4213, 5, 0.69");
-	settings->setDefault("mgv7_np_filler_depth",     "0, 1.2, (150, 150, 150), 261, 4, 0.7");	
+	settings->setDefault("mgv7_np_filler_depth",     "0, 1.2, (150, 150, 150), 261, 4, 0.7");
 	settings->setDefault("mgv7_np_mount_height",     "100, 30, (500, 500, 500), 72449, 4, 0.6");
 	settings->setDefault("mgv7_np_ridge_uwater",     "0, 1, (500, 500, 500), 85039, 4, 0.6");
 	settings->setDefault("mgv7_np_mountain",         "0, 1, (250, 350, 250), 5333, 5, 0.68");
@@ -286,7 +307,6 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 
-	settings->setDefault("curl_timeout", "5000");
 
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");
@@ -313,8 +333,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("liquid_finite", "true");
 	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
-	settings->setDefault("server_map_save_interval", "60");
+	settings->setDefault("server_map_save_interval", "300");
+	settings->setDefault("active_block_range", "4");
 	settings->setDefault("max_block_send_distance", "30");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "30");
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
@@ -324,9 +346,14 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_water", "true");
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
+	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
+	settings->setDefault("max_objects_per_block", "100");
+	settings->setDefault("preload_item_visuals", "false");
+	settings->setDefault("congestion_control_max_rate", "2000");
+	settings->setDefault("sqlite_synchronous", "1");
 
 #ifndef _WIN32
-	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+//enet! TODO	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 
 #ifdef ANDROID

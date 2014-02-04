@@ -53,24 +53,8 @@ class EmergeManager;
 class GameScripting;
 class ServerEnvironment;
 struct SimpleSoundSpec;
+class Circuit;
 
-
-class ServerError : public std::exception
-{
-public:
-	ServerError(const std::string &s)
-	{
-		m_s = "ServerError: ";
-		m_s += s;
-	}
-	virtual ~ServerError() throw()
-	{}
-	virtual const char * what() const throw()
-	{
-		return m_s.c_str();
-	}
-	std::string m_s;
-};
 
 /*
 	Some random functions
@@ -153,15 +137,6 @@ struct PrioritySortedBlockTransfer
 	u16 peer_id;
 };
 
-struct MediaRequest
-{
-	std::string name;
-
-	MediaRequest(const std::string &name_=""):
-		name(name_)
-	{}
-};
-
 struct MediaInfo
 {
 	std::string path;
@@ -238,9 +213,11 @@ public:
 		definitions_sent = false;
 		denied = false;
 		m_nearest_unsent_d = 0;
+		m_nearest_unsent_nearest = 0;
 		m_nearest_unsent_reset_timer = 0.0;
 		m_nothing_to_send_counter = 0;
 		m_nothing_to_send_pause_timer = 0;
+		wanted_range = 9 * MAP_BLOCKSIZE;
 	}
 	~RemoteClient()
 	{
@@ -259,7 +236,7 @@ public:
 	void SentBlock(v3s16 p);
 
 	void SetBlockNotSent(v3s16 p);
-	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks, bool no_d_reset = 0);
+	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
 
 	s32 SendingCount()
 	{
@@ -278,6 +255,7 @@ public:
 				<<", m_blocks_sending.size()="<<m_blocks_sending.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
 				<<", m_excess_gotblocks="<<m_excess_gotblocks
+				<<", wanted_range="<<wanted_range
 				<<std::endl;
 		m_excess_gotblocks = 0;
 	}
@@ -296,6 +274,7 @@ public:
 		Value is dummy.
 	*/
 	std::set<u16> m_known_objects;
+	s16 wanted_range;
 
 private:
 	/*
@@ -308,7 +287,10 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	std::set<v3s16> m_blocks_sent;
+public:
 	s16 m_nearest_unsent_d;
+	s16 m_nearest_unsent_nearest;
+private:
 	v3s16 m_last_center;
 	float m_nearest_unsent_reset_timer;
 
@@ -356,7 +338,7 @@ public:
 	// Actual processing is done in an another thread.
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
-	void AsyncRunStep();
+	void AsyncRunStep(bool initial_step=false);
 	u16 Receive();
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
 
@@ -382,7 +364,7 @@ public:
 	void setInventoryModified(const InventoryLocation &loc);
 
 	// Connection must be locked when called
-	std::wstring getStatusString();
+	std::string getStatusString();
 
 	void requestShutdown(void)
 	{
@@ -410,16 +392,16 @@ public:
 	}
 
 	// Envlock and conlock should be locked when calling this
-	void notifyPlayer(const char *name, const std::wstring msg, const bool prepend);
-	void notifyPlayers(const std::wstring msg);
+	void notifyPlayer(const char *name, const std::string msg, const bool prepend);
+	void notifyPlayers(const std::string &msg);
 	void spawnParticle(const char *playername,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	void spawnParticleAll(v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	u32 addParticleSpawner(const char *playername,
 		u16 amount, float spawntime,
@@ -428,7 +410,7 @@ public:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	u32 addParticleSpawnerAll(u16 amount, float spawntime,
 		v3f minpos, v3f maxpos,
@@ -436,13 +418,14 @@ public:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	void deleteParticleSpawner(const char *playername, u32 id);
 	void deleteParticleSpawnerAll(u32 id);
 
 	// Creates or resets inventory
 	Inventory* createDetachedInventory(const std::string &name);
+	void deleteDetachedInventory(const std::string &name);
 
 	// Envlock and conlock should be locked when using scriptapi
 	GameScripting *getScriptIface(){ return m_script; }
@@ -498,14 +481,15 @@ public:
 	bool hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount);
 	void hudSetHotbarImage(Player *player, std::string name);
 	void hudSetHotbarSelectedImage(Player *player, std::string name);
+	std::map<u16, RemoteClient*> & getClients() { return m_clients; };
 
 private:
 
 	// con::PeerHandler implementation.
 	// These queue stuff to be processed by handlePeerChanges().
 	// As of now, these create and remove clients and players.
-	void peerAdded(con::Peer *peer);
-	void deletingPeer(con::Peer *peer, bool timeout);
+	void peerAdded(u16 peer_id);
+	void deletingPeer(u16 peer_id, bool timeout);
 
 	/*
 		Static send methods
@@ -515,13 +499,15 @@ private:
 	static void SendHP(con::Connection &con, u16 peer_id, u8 hp);
 	static void SendBreath(con::Connection &con, u16 peer_id, u16 breath);
 	static void SendAccessDenied(con::Connection &con, u16 peer_id,
-			const std::wstring &reason);
+			const std::string &reason);
 	static void SendDeathscreen(con::Connection &con, u16 peer_id,
 			bool set_camera_point_target, v3f camera_point_target);
 	static void SendItemDef(con::Connection &con, u16 peer_id,
 			IItemDefManager *itemdef, u16 protocol_version);
 	static void SendNodeDef(con::Connection &con, u16 peer_id,
 			INodeDefManager *nodedef, u16 protocol_version);
+
+	static void SendAnimations(con::Connection &con, u16 peer_id);
 
 	/*
 		Non-static send methods.
@@ -532,8 +518,8 @@ private:
 
 	// Envlock and conlock should be locked when calling these
 	void SendInventory(u16 peer_id);
-	void SendChatMessage(u16 peer_id, const std::wstring &message);
-	void BroadcastChatMessage(const std::wstring &message);
+	void SendChatMessage(u16 peer_id, const std::string &message);
+	void BroadcastChatMessage(const std::string &message);
 	void SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed);
 	void SendPlayerHP(u16 peer_id);
 	void SendPlayerBreath(u16 peer_id);
@@ -561,7 +547,7 @@ private:
 	void setBlockNotSent(v3s16 p);
 
 	// Environment and Connection must be locked when called
-	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version);
+	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable = 1);
 
 	// Sends blocks to clients (locks env and con on its own)
 	void SendBlocks(float dtime);
@@ -569,7 +555,7 @@ private:
 	void fillMediaCache();
 	void sendMediaAnnouncement(u16 peer_id);
 	void sendRequestedMedia(u16 peer_id,
-			const std::list<MediaRequest> &tosend);
+			const std::list<std::string> &tosend);
 
 	void sendDetachedInventory(const std::string &name, u16 peer_id);
 	void sendDetachedInventoryToAll(const std::string &name);
@@ -582,7 +568,7 @@ private:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, std::string texture, u32 id);
+		bool collisiondetection, bool vertical, std::string texture, u32 id);
 
 	// Adds a ParticleSpawner on all peers
 	void SendAddParticleSpawnerAll(u16 amount, float spawntime,
@@ -591,7 +577,7 @@ private:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, std::string texture, u32 id);
+		bool collisiondetection, bool vertical, std::string texture, u32 id);
 
 	// Deletes ParticleSpawner on a single client
 	void SendDeleteParticleSpawner(u16 peer_id, u32 id);
@@ -603,12 +589,12 @@ private:
 	void SendSpawnParticle(u16 peer_id,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	// Spawns particle on all clients
 	void SendSpawnParticleAll(v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, std::string texture);
+		bool collisiondetection, bool vertical, std::string texture);
 
 	/*
 		Something random
@@ -616,7 +602,7 @@ private:
 
 	void DiePlayer(u16 peer_id);
 	void RespawnPlayer(u16 peer_id);
-	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	void DenyAccess(u16 peer_id, const std::string &reason);
 
 	enum ClientDeletionReason {
 		CDR_LEAVE,
@@ -704,6 +690,8 @@ private:
 	// Scripting
 	// Envlock and conlock should be locked when using Lua
 	GameScripting *m_script;
+	
+	Circuit* m_circuit;
 
 	// Item definition manager
 	IWritableItemDefManager *m_itemdef;
@@ -728,6 +716,8 @@ private:
 	// step() increments and AsyncRunStep() run by m_thread reads it.
 	float m_step_dtime;
 	JMutex m_step_dtime_mutex;
+
+	float m_lag;
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
@@ -825,6 +815,7 @@ private:
 	std::vector<u32> m_particlespawner_ids;
 
 	std::map<v3s16, MapBlock*> m_modified_blocks;
+	std::map<v3s16, MapBlock*> m_lighting_modified_blocks;
 };
 
 /*

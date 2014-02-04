@@ -1,0 +1,108 @@
+diff -EbBw --normal -u ../mandelbulber-read-only/src/fractal.cpp src/mandelbulber/fractal.cpp
+--- ../mandelbulber-read-only/src/fractal.cpp	2014-01-21 16:34:55.000000000 +0400
++++ src/mandelbulber/fractal.cpp	2014-01-21 17:43:39.000000000 +0400
+@@ -9,9 +9,11 @@
+  /
+  ********************************************************/
+ 
++#ifndef MANDELBULBER_EMBEDDED
+ #include "Render3D.h"
+ #include "interface.h"
+ #include "primitives.h"
++#endif
+ #include <stdlib.h>
+ 
+ unsigned int MixNumbers(double a, double b, double c)
+@@ -1172,7 +1174,7 @@
+ 					distance = z.Length();
+ 					if (distance > 1e15)
+ 					{
+-						distance = (L - log(log(r) / log(N)) / log(p))/100.0;
++						distance = (L - log(log(r) / log((double)N)) / log(p))/100.0;
+ 						break;
+ 					}
+ 				}
+@@ -1191,6 +1193,7 @@
+ 	}
+ 
+ 	//************ return values *****************
++#ifndef MANDELBULBER_EMBEDDED
+ 	N_counter += L + 1;
+ 	Loop_counter++;
+ 
+@@ -1198,6 +1201,7 @@
+ 		histogram[L]++;
+ 	else
+ 		histogram[63]++;
++#endif
+ 
+ 	if (iter_count != NULL)
+ 		*iter_count = L;
+@@ -1240,6 +1244,7 @@
+ 	}
+ }
+ 
++#ifndef MANDELBULBER_EMBEDDED
+ //******************* Calculate distance *******************8
+ 
+ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
+@@ -1446,6 +1451,7 @@
+ 	}
+ 	return distance;
+ }
++#endif
+ 
+ // force template instantiation
+ template double Compute<normal>(CVector3, const sFractal&, int*);
+diff -EbBw --normal -u ../mandelbulber-read-only/src/fractal.h src/mandelbulber/fractal.h
+--- ../mandelbulber-read-only/src/fractal.h	2014-01-21 16:34:56.000000000 +0400
++++ src/mandelbulber/fractal.h	2014-01-21 17:43:40.000000000 +0400
+@@ -14,7 +14,9 @@
+ 
+ #include <vector>
+ #include "common_math.h"
++#ifndef MANDELBULBER_EMBEDDED
+ #include "fractparams.h"
++#endif
+ #include <stddef.h>
+ #include <string>
+ 
+diff -EbBw --normal -u ../mandelbulber-read-only/src/fractparams.h src/mandelbulber/fractparams.h
+--- ../mandelbulber-read-only/src/fractparams.h	2014-01-21 16:34:55.000000000 +0400
++++ src/mandelbulber/fractparams.h	2014-01-21 17:43:41.000000000 +0400
+@@ -13,7 +13,9 @@
+ #define FRACTPARAMS_H_
+ 
+ #include "fractal.h"
++#ifndef MANDELBULBER_EMBEDDED
+ #include "texture.hpp"
++#endif
+ 
+ struct sParamRenderD
+ {
+@@ -58,7 +60,9 @@
+ 	double primitiveInvertedSphereReflect;
+ 	double primitiveWaterReflect;
+ 
++#ifndef MANDELBULBER_EMBEDDED
+ 	sImageAdjustments imageAdjustments;
++#endif
+ 
+ 	CVector3 vp; //view point
+ 	CVector3 auxLightPre[4];
+@@ -110,6 +114,7 @@
+ 	bool quiet;
+ 	bool fishEyeCut;
+ 	bool fakeLightsEnabled;
++#ifndef MANDELBULBER_EMBEDDED
+ 	sImageSwitches imageSwitches;
+ 
+ 	sRGB background_color1; //background colour
+@@ -139,6 +144,7 @@
+ 	cTexture *backgroundTexture;
+ 	cTexture *envmapTexture;
+ 	cTexture *lightmapTexture;
++#endif
+ 	std::vector<enumFractalFormula> formulaSequence;
+ 	std::vector<double> hybridPowerSequence;
+ 

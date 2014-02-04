@@ -28,8 +28,10 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
+/*
 	verbosestream<<"scriptapi_luaentity_add: id="<<id<<" name=\""
 			<<name<<"\""<<std::endl;
+*/
 
 	// Get minetest.registered_entities[name]
 	lua_getglobal(L, "minetest");
@@ -81,7 +83,9 @@ void ScriptApiEntity::luaentity_Activate(u16 id,
 	lua_pushcfunction(L, script_error_handler);
 	int errorhandler = lua_gettop(L);
 
+/*
 	verbosestream<<"scriptapi_luaentity_activate: id="<<id<<std::endl;
+*/
 
 	// Get minetest.luaentities[id]
 	luaentity_get(L, id);
@@ -107,8 +111,9 @@ void ScriptApiEntity::luaentity_Remove(u16 id)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
+/*
 	verbosestream<<"scriptapi_luaentity_rm: id="<<id<<std::endl;
-
+*/
 	// Get minetest.luaentities table
 	lua_getglobal(L, "minetest");
 	lua_getfield(L, -1, "luaentities");

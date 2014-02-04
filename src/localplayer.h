@@ -27,6 +27,8 @@ class ClientEnvironment;
 
 class ClientActiveObject;
 
+enum localPlayerAnimations {NO_ANIM, WALK_ANIM, DIG_ANIM, WD_ANIM};  // no local animation, walking, digging, both
+
 class LocalPlayer : public Player
 {
 public:
@@ -60,6 +62,17 @@ public:
 	unsigned int last_keyPressed;
 
 	float camera_impact;
+	int camera_mode;
+	int last_animation;
+
+	f32 animation_default_start;
+	f32 animation_default_stop;
+	f32 animation_walk_start;
+	f32 animation_walk_stop;
+	f32 animation_dig_start;
+	f32 animation_dig_stop;
+	f32 animation_wd_start;
+	f32 animation_wd_stop;
 
 	std::string hotbar_image;
 	std::string hotbar_selected_image;

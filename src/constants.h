@@ -43,10 +43,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define CONNECTION_TIMEOUT 30
 
-#define RESEND_TIMEOUT_MIN 0.333
-#define RESEND_TIMEOUT_MAX 3.0
+#define RESEND_TIMEOUT_MIN 0.5
+#define RESEND_TIMEOUT_MAX 15.0
 // resend_timeout = avg_rtt * this
-#define RESEND_TIMEOUT_FACTOR 4
+#define RESEND_TIMEOUT_FACTOR 8
 
 /*
     Server

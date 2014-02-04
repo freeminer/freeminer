@@ -41,6 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/mathconstants.h"
 #include "map.h"
 #include "main.h" // g_settings
+#include "game.h" // CameraModes
 #include <IMeshManipulator.h>
 #include <IAnimatedMeshSceneNode.h>
 #include <IBoneSceneNode.h>
@@ -667,7 +668,9 @@ public:
 
 	void initialize(const std::string &data)
 	{
+		/*
 		infostream<<"GenericCAO: Got init data"<<std::endl;
+		*/
 		std::istringstream is(data, std::ios::binary);
 		int num_messages = 0;
 		// version
@@ -858,13 +861,15 @@ public:
 		
 		m_visuals_expired = false;
 
-		if(!m_prop.is_visible || m_is_local_player)
+		if(!m_prop.is_visible)
 			return;
 	
 		//video::IVideoDriver* driver = smgr->getVideoDriver();
 
 		if(m_prop.visual == "sprite"){
+/*
 			infostream<<"GenericCAO::addToScene(): single_sprite"<<std::endl;
+*/
 			m_spritenode = smgr->addBillboardSceneNode(
 					NULL, v2f(1, 1), v3f(0,0,0), -1);
 			m_spritenode->setMaterialTexture(0,
@@ -957,10 +962,11 @@ public:
 		}
 		else if(m_prop.visual == "mesh"){
 			infostream<<"GenericCAO::addToScene(): mesh"<<std::endl;
-			scene::IAnimatedMesh *mesh = smgr->getMesh(m_prop.mesh.c_str());
+			scene::IAnimatedMesh *mesh = m_gamedef->getMesh(m_prop.mesh);
 			if(mesh)
 			{
 				m_animated_meshnode = smgr->addAnimatedMeshSceneNode(mesh, NULL);
+				mesh->drop(); // The scene node took hold of it
 				m_animated_meshnode->animateJoints(); // Needed for some animations
 				m_animated_meshnode->setScale(v3f(m_prop.visual_size.X,
 						m_prop.visual_size.Y,
@@ -977,10 +983,14 @@ public:
 				errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
 		}
 		else if(m_prop.visual == "wielditem"){
+/*
 			infostream<<"GenericCAO::addToScene(): node"<<std::endl;
 			infostream<<"textures: "<<m_prop.textures.size()<<std::endl;
+*/
 			if(m_prop.textures.size() >= 1){
+/*
 				infostream<<"textures[0]: "<<m_prop.textures[0]<<std::endl;
+*/
 				IItemDefManager *idef = m_gamedef->idef();
 				ItemStack item(m_prop.textures[0], 1, 0, "", idef);
 				scene::IMesh *item_mesh = idef->getWieldMesh(item.getDefinition(idef).name, m_gamedef);
@@ -1015,7 +1025,7 @@ public:
 		if(node && m_is_player && !m_is_local_player){
 			// Add a text node for showing the name
 			gui::IGUIEnvironment* gui = irr->getGUIEnvironment();
-			std::wstring wname = narrow_to_wide(m_name);
+			std::wstring wname = utf8_to_wide(m_name);
 			m_textnode = smgr->addTextSceneNode(gui->getBuiltInFont(),
 					wname.c_str(), video::SColor(255,255,255,255), node);
 			m_textnode->setPosition(v3f(0, BS*1.1, 0));
@@ -1076,6 +1086,58 @@ public:
 
 	void step(float dtime, ClientEnvironment *env)
 	{
+		// Handel model of local player instantly to prevent lags
+		if(m_is_local_player) {
+			LocalPlayer *player = m_env->getLocalPlayer();
+
+			if (player->camera_mode > CAMERA_MODE_FIRST) {
+				int old_anim = player->last_animation;
+				m_is_visible = true;
+				m_position = player->getPosition() + v3f(0,BS,0);
+				m_velocity = v3f(0,0,0);
+				m_acceleration = v3f(0,0,0);
+				pos_translator.vect_show = m_position;
+				m_yaw = player->getYaw();
+				PlayerControl controls = player->getPlayerControl();
+
+				bool walking = false;
+				if(controls.up || controls.down || controls.left || controls.right)
+					walking = true;
+
+				m_animation_speed = 30;
+
+				if(controls.sneak && walking)
+					m_animation_speed = 15;
+
+				if(walking && (controls.LMB || controls.RMB)) {
+					m_animation_range = v2f(player->animation_wd_start, player->animation_wd_stop);
+					player->last_animation = WD_ANIM;
+				} else if(walking) {
+					m_animation_range = v2f(player->animation_walk_start, player->animation_walk_stop);
+					player->last_animation = WALK_ANIM;
+				} else if(controls.LMB || controls.RMB) {
+					m_animation_range = v2f(player->animation_dig_start, player->animation_dig_stop);
+					player->last_animation = DIG_ANIM;
+				}
+
+				// reset animation when no input detected
+				if (!walking && !controls.LMB && !controls.RMB) {
+					player->last_animation = NO_ANIM;
+					if (old_anim != NO_ANIM) {
+						m_animation_range = v2f(player->animation_default_start, player->animation_default_stop);
+						updateAnimation();
+					}
+				}
+
+				// Update local player animations
+				if (player->last_animation != old_anim && player->last_animation != NO_ANIM)
+					updateAnimation();
+
+			} else {
+				m_is_visible = false;
+			}
+        }
+
 		if(m_visuals_expired && m_smgr && m_irr){
 			m_visuals_expired = false;
 
@@ -1649,6 +1711,8 @@ public:
 			m_acceleration = readV3F1000(is);
 			if(fabs(m_prop.automatic_rotate) < 0.001)
 				m_yaw = readF1000(is);
+			else
+				readF1000(is);
 			bool do_interpolate = readU8(is);
 			bool is_end_position = readU8(is);
 			float update_interval = readF1000(is);
@@ -1697,6 +1761,7 @@ public:
 			bool sneak = !readU8(is);
 			bool sneak_glitch = !readU8(is);
 			
+
 			if(m_is_local_player)
 			{
 				LocalPlayer *player = m_env->getLocalPlayer();
@@ -1709,11 +1774,19 @@ public:
 		}
 		else if(cmd == GENERIC_CMD_SET_ANIMATION)
 		{
-			m_animation_range = readV2F1000(is);
-			m_animation_speed = readF1000(is);
-			m_animation_blend = readF1000(is);
-
-			updateAnimation();
+			LocalPlayer *player = m_env->getLocalPlayer();
+			if(!m_is_local_player || player->last_animation == NO_ANIM) {
+				m_animation_range = readV2F1000(is);
+				m_animation_speed = readF1000(is);
+				m_animation_blend = readF1000(is);
+				// update animation only if object is not player
+				// or the received animation is not registered
+				if(!m_is_local_player ||
+					(m_animation_range.X != player->animation_walk_start &&
+					m_animation_range.X != player->animation_dig_start &&
+					m_animation_range.X != player->animation_wd_start))
+					updateAnimation();
+			}
 		}
 		else if(cmd == GENERIC_CMD_SET_BONE_POSITION)
 		{

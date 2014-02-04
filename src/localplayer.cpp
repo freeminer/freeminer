@@ -50,11 +50,14 @@ LocalPlayer::LocalPlayer(IGameDef *gamedef):
 	m_old_node_below(32767,32767,32767),
 	m_old_node_below_type("air"),
 	m_need_to_get_new_sneak_node(true),
-	m_can_jump(false)
+	m_can_jump(false),
+	camera_mode(0),
+	last_animation(NO_ANIM)
 {
 	// Initialize hp to 0, so that no hearts will be shown if server
 	// doesn't support health points
 	hp = 0;
+
 }
 
 LocalPlayer::~LocalPlayer()
@@ -396,7 +399,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	// When aux1_descends is enabled the fast key is used to go down, so fast isn't possible
 	bool fast_climb = fast_move && control.aux1 && !g_settings->getBool("aux1_descends");
 	bool continuous_forward = g_settings->getBool("continuous_forward");
-
+	bool fast_pressed = false;
 	// Whether superspeed mode is used or not
 	superspeed = false;
 	
@@ -434,7 +437,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 			{
 				// If not free movement but fast is allowed, aux1 is
 				// "Turbo button"
-				if(fast_move)
+				if(fast_allowed)
 					superspeed = true;
 			}
 		}
@@ -448,9 +451,11 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 			if(!is_climbing)
 			{
 				// aux1 is "Turbo button"
-				if(fast_move)
+				if(fast_allowed)
 					superspeed = true;
 			}
+			if(fast_allowed)
+				fast_pressed = true;
 		}
 
 		if(control.sneak)
@@ -555,7 +560,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	}
 
 	// The speed of the player (Y is ignored)
-	if(superspeed || (is_climbing && fast_climb) || ((in_liquid || in_liquid_stable) && fast_climb))
+	if(superspeed || (is_climbing && fast_climb) || ((in_liquid || in_liquid_stable) && fast_climb) || fast_pressed)
 		speedH = speedH.normalize() * movement_speed_fast;
 	else if(control.sneak && !free_move && !in_liquid && !in_liquid_stable)
 		speedH = speedH.normalize() * movement_speed_crouch;

@@ -37,6 +37,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/mathconstants.h"
 
+#include "nodedef.h"
+#include "game.h" // CameraModes
+
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
 	m_smgr(smgr),
@@ -47,6 +50,7 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_wieldmgr(NULL),
 	m_wieldnode(NULL),
 	m_wieldlight(0),
+	m_wieldlight_add(0),
 
 	m_draw_control(draw_control),
 	m_gamedef(gamedef),
@@ -102,31 +106,31 @@ Camera::~Camera()
 	delete m_dummymesh;
 }
 
-bool Camera::successfullyCreated(std::wstring& error_message)
+bool Camera::successfullyCreated(std::string& error_message)
 {
 	if (m_playernode == NULL)
 	{
-		error_message = L"Failed to create the player scene node";
+		error_message = "Failed to create the player scene node";
 		return false;
 	}
 	if (m_headnode == NULL)
 	{
-		error_message = L"Failed to create the head scene node";
+		error_message = "Failed to create the head scene node";
 		return false;
 	}
 	if (m_cameranode == NULL)
 	{
-		error_message = L"Failed to create the camera scene node";
+		error_message = "Failed to create the camera scene node";
 		return false;
 	}
 	if (m_wieldmgr == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene manager";
+		error_message = "Failed to create the wielded item scene manager";
 		return false;
 	}
 	if (m_wieldnode == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene node";
+		error_message = "Failed to create the wielded item scene node";
 		return false;
 	}
 	return true;
@@ -244,7 +248,8 @@ void Camera::step(f32 dtime)
 }
 
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
-		v2u32 screensize, f32 tool_reload_ratio)
+		v2u32 screensize, f32 tool_reload_ratio,
+		int current_camera_mode, ClientEnvironment &c_env)
 {
 	// Get player position
 	// Smooth the movement when walking up stairs
@@ -272,7 +277,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Fall bobbing animation
 	float fall_bobbing = 0;
-	if(player->camera_impact >= 1)
+	if(player->camera_impact >= 1 && current_camera_mode < CAMERA_MODE_THIRD)
 	{
 		if(m_view_bobbing_fall == -1) // Effect took place and has finished
 			player->camera_impact = m_view_bobbing_fall = 0;
@@ -299,7 +304,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f rel_cam_target = v3f(0,0,1);
 	v3f rel_cam_up = v3f(0,1,0);
 
-	if (m_view_bobbing_anim != 0)
+	if (m_view_bobbing_anim != 0 && current_camera_mode < CAMERA_MODE_THIRD)
 	{
 		f32 bobfrac = my_modf(m_view_bobbing_anim * 2);
 		f32 bobdir = (m_view_bobbing_anim < 0.5) ? 1.0 : -1.0;
@@ -348,20 +353,63 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f abs_cam_up;
 	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
 
+	// Seperate camera position for calculation
+	v3f my_cp = m_camera_position;
+	
+	// Reposition the camera for third person view
+	if (current_camera_mode > CAMERA_MODE_FIRST) {
+		
+		if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
+			m_camera_direction *= -1;
+
+		my_cp.Y += 2;
+
+		// Calculate new position
+		bool abort = false;
+		for (int i = BS; i <= BS*2; i++) {
+			my_cp.X = m_camera_position.X + m_camera_direction.X*-i;
+			my_cp.Z = m_camera_position.Z + m_camera_direction.Z*-i;
+			if (i > 12)
+				my_cp.Y = m_camera_position.Y + (m_camera_direction.Y*-i);
+
+			// Prevent camera positioned inside nodes
+			INodeDefManager *nodemgr = m_gamedef->ndef();
+			MapNode n = c_env.getClientMap().getNodeNoEx(floatToInt(my_cp, BS));
+			const ContentFeatures& features = nodemgr->get(n);
+			if(features.walkable) {
+				my_cp.X += m_camera_direction.X*-1*-BS/2;
+				my_cp.Z += m_camera_direction.Z*-1*-BS/2;
+				my_cp.Y += m_camera_direction.Y*-1*-BS/2;
+				abort = true;
+				break;
+			}
+		}
+
+		// If node blocks camera position don't move y to heigh
+		if (abort && my_cp.Y > player_position.Y+BS*2)
+			my_cp.Y = player_position.Y+BS*2;
+	}
+	
 	// Set camera node transformation
-	m_cameranode->setPosition(m_camera_position);
+	m_cameranode->setPosition(my_cp);
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(m_camera_position + 100 * m_camera_direction);
+	m_cameranode->setTarget(my_cp + 100 * m_camera_direction);
+
+	// update the camera position in front-view mode to render blocks behind player
+	if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
+		m_camera_position = my_cp;
 
 	// Get FOV
 	f32 fov_degrees;
 	if (player->zoom) {
 		fov_degrees = g_settings->getFloat("zoom_fov");
+		m_wieldnode->setVisible(false);
 	} else {
 		fov_degrees = g_settings->getFloat("fov");
 		fov_degrees = MYMAX(fov_degrees, 10.0);
 		fov_degrees = MYMIN(fov_degrees, 170.0);
+		m_wieldnode->setVisible(true);
 	}
 
 	// Greater FOV if running
@@ -435,7 +483,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false ||
+		(g_settings->getBool("free_move") == false && current_camera_mode == CAMERA_MODE_FIRST ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation
@@ -539,7 +587,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 		m_time_per_range = d_busytime / d_range;
 	}
 	//dstream<<"time_per_range="<<m_time_per_range<<std::endl;
-	g_profiler->avg("time_per_range", m_time_per_range);
+	//g_profiler->avg("time_per_range", m_time_per_range);
 
 	// The minimum allowed calculated frametime-range derivative:
 	// Practically this sets the maximum speed of changing the range.
@@ -624,12 +672,20 @@ void Camera::wield(const ItemStack &item, u16 playeritem)
 		else
 			m_wield_change_timer = 0.125;
 	}
+	m_wieldlight_add = ((ItemGroupList)idef->get(itemname).groups)["wield_light"]*200/14;
 }
 
 void Camera::drawWieldedTool()
 {
 	// Set vertex colors of wield mesh according to light level
 	u8 li = m_wieldlight;
+	if (g_settings->getBool("enable_shaders"))
+	{
+		if (li+m_wieldlight_add < 200)
+			li += m_wieldlight_add;
+		else
+			li = 200;
+	}
 	video::SColor color(255,li,li,li);
 	setMeshColor(m_wieldnode->getMesh(), color);
 

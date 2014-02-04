@@ -314,6 +314,63 @@ minetest.register_item(":", {
 	groups = {not_in_creative_inventory=1},
 })
 
+
+function minetest.override_item(name, redefinition)
+	if redefinition.name ~= nil then
+		error("Attempt to redefine name of "..name.." to "..dump(redefinition.name), 2)
+	end
+	if redefinition.type ~= nil then
+		error("Attempt to redefine type of "..name.." to "..dump(redefinition.type), 2)
+	end
+	local item = minetest.registered_items[name]
+	if not item then
+		error("Attempt to override non-existent item "..name, 2)
+	end
+	for k, v in pairs(redefinition) do
+		rawset(item, k, v)
+	end
+	register_item_raw(item)
+end
+
+
+function minetest.run_callbacks(callbacks, mode, ...)
+	assert(type(callbacks) == "table")
+	local cb_len = #callbacks
+	if cb_len == 0 then
+		if mode == 2 or mode == 3 then
+			return true
+		elseif mode == 4 or mode == 5 then
+			return false
+		end
+	end
+	local ret = nil
+	for i = 1, cb_len do
+		local cb_ret = callbacks[i](...)
+
+		if mode == 0 and i == 1 then
+			ret = cb_ret
+		elseif mode == 1 and i == cb_len then
+			ret = cb_ret
+		elseif mode == 2 then
+			if not cb_ret or i == 1 then
+				ret = cb_ret
+			end
+		elseif mode == 3 then
+			if cb_ret then
+				return cb_ret
+			end
+			ret = cb_ret
+		elseif mode == 4 then
+			if (cb_ret and not ret) or i == 1 then
+				ret = cb_ret
+			end
+		elseif mode == 5 and cb_ret then
+			return cb_ret
+		end
+	end
+	return ret
+end
+
 --
 -- Callback registration
 --
@@ -341,6 +398,7 @@ minetest.registered_on_generateds, minetest.register_on_generated = make_registr
 minetest.registered_on_newplayers, minetest.register_on_newplayer = make_registration()
 minetest.registered_on_dieplayers, minetest.register_on_dieplayer = make_registration()
 minetest.registered_on_respawnplayers, minetest.register_on_respawnplayer = make_registration()
+minetest.registered_on_prejoinplayers, minetest.register_on_prejoinplayer = make_registration()
 minetest.registered_on_joinplayers, minetest.register_on_joinplayer = make_registration()
 minetest.registered_on_leaveplayers, minetest.register_on_leaveplayer = make_registration()
 minetest.registered_on_player_receive_fields, minetest.register_on_player_receive_fields = make_registration_reverse()

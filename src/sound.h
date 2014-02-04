@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <set>
+#include <msgpack.hpp>
+#include "connection.h"
 
 class OnDemandSoundFetcher
 {
@@ -30,6 +32,11 @@ public:
 	virtual void fetchSounds(const std::string &name,
 			std::set<std::string> &dst_paths,
 			std::set<std::string> &dst_datas) = 0;
+};
+
+enum {
+	SOUNDSPEC_NAME,
+	SOUNDSPEC_GAIN
 };
 
 struct SimpleSoundSpec
@@ -41,7 +48,17 @@ struct SimpleSoundSpec
 		gain(gain)
 	{}
 	bool exists() {return name != "";}
-	// Serialization intentionally left out
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
+		pk.pack_map(2);
+		PACK(SOUNDSPEC_NAME, name);
+		PACK(SOUNDSPEC_GAIN, gain);
+	}
+	void msgpack_unpack(msgpack::object o) {
+		MsgpackPacket packet = o.as<MsgpackPacket>();
+		packet[SOUNDSPEC_NAME].convert(&name);
+		packet[SOUNDSPEC_GAIN].convert(&gain);
+	}
 };
 
 class ISoundManager

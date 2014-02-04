@@ -36,7 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	// This would get rid of the console window
 	#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
-	#pragma comment(lib, "zlibwapi.lib")
+	//#pragma comment(lib, "zlibwapi.lib")
 	#pragma comment(lib, "Shell32.lib")
 #endif
 
@@ -77,13 +77,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "profiler.h"
 #include "log.h"
 #include "mods.h"
-#if USE_FREETYPE
 #include "xCGUITTFont.h"
-#endif
 #include "util/string.h"
 #include "subgame.h"
 #include "quicktune.h"
 #include "serverlist.h"
+#include "httpfetch.h"
 #include "guiEngine.h"
 #include "mapsector.h"
 
@@ -92,9 +91,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database-leveldb.h"
 #endif
 
-#if USE_CURL
-#include "curl/curl.h"
-#endif
+#include "enet/enet.h"
 
 #include "touchscreengui.h"
 
@@ -729,7 +726,7 @@ void SpeedTests()
 	}
 
 	{
-		infostream<<"Around 5000/ms should do well here."<<std::endl;
+		infostream<<"Around 5000ms should do well here."<<std::endl;
 		TimeTaker timer("Testing mutex speed");
 
 		JMutex m;
@@ -743,12 +740,14 @@ void SpeedTests()
 			}
 		}
 		// Do at least 10ms
-		while(timer.getTimerTime() < 10);
+		while(timer.getTimerTime() < 10 && n < 100000);
 
 		u32 dtime = timer.stop();
+		if (dtime) { // dirty hack, TimeTaker is disabled for release
 		u32 per_ms = n / dtime;
 		infostream<<"Done. "<<dtime<<"ms, "
 				<<per_ms<<"/ms"<<std::endl;
+		}
 	}
 }
 
@@ -778,6 +777,12 @@ int main(int argc, char *argv[])
 	// (this is actually needed to give GDB time to attach before everything crashes)
 	sleep(5);
 	int retval = 0;
+
+	if (enet_initialize() != 0) {
+		std::cerr << "enet failed to initialize\n";
+		return EXIT_FAILURE;
+	}
+	atexit(enet_deinitialize);
 
 	/*
 		Initialization
@@ -1028,14 +1033,13 @@ int main(int argc, char *argv[])
 
 	infostream<<"logfile    = "<<logfile<<std::endl;
 
+	time_taker_enabled = g_settings->getBool("time_taker_enabled") || g_settings->getFloat("profiler_print_interval") || loglevel >= LMT_INFO;
 	// Initialize random seed
 	srand(time(0));
 	mysrand(time(0));
 
-#if USE_CURL
-	CURLcode res = curl_global_init(CURL_GLOBAL_DEFAULT);
-	assert(res == CURLE_OK);
-#endif
+	// Initialize HTTP fetcher
+	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
 	/*
 		Run unit tests
@@ -1528,23 +1532,17 @@ int main(int argc, char *argv[])
 
 	guienv = device->getGUIEnvironment();
 	gui::IGUISkin* skin = guienv->getSkin();
+
 	std::string font_path = g_settings->get("font_path");
 	gui::IGUIFont *font;
-	#if USE_FREETYPE
-	bool use_freetype = g_settings->getBool("freetype");
-	if (use_freetype) {
-		std::string fallback;
-		if (is_yes(gettext("needs_fallback_font")))
-			fallback = "fallback_";
-		u16 font_size = g_settings->getU16(fallback + "font_size");
-		font_path = g_settings->get(fallback + "font_path");
-		font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size);
-	} else {
-		font = guienv->getFont(font_path.c_str());
-	}
-	#else
-	font = guienv->getFont(font_path.c_str());
-	#endif
+	std::string fallback;
+	if (is_yes(gettext("needs_fallback_font")))
+		fallback = "fallback_";
+	u16 font_size = g_settings->getU16(fallback + "font_size");
+	font_path = g_settings->get(fallback + "font_path");
+	u32 font_shadow = g_settings->getU16(fallback + "font_shadow");
+	u32 font_shadow_alpha = g_settings->getU16(fallback + "font_shadow_alpha");
+	font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size, true, true, font_shadow, font_shadow_alpha);
 	if(font)
 		skin->setFont(font);
 	else
@@ -1563,13 +1561,13 @@ int main(int argc, char *argv[])
 	//skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(0,0,0,0));
 	skin->setColor(gui::EGDC_3D_HIGH_LIGHT, video::SColor(255,0,0,0));
 	skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(255,0,0,0));
-	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255,70,100,50));
+	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255,56,121,65));
 	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255,255,255,255));
 
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	// Irrlicht 1.8 input colours
 	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255,128,128,128));
-	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255,96,134,49));
+	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255,97,173,109));
 #endif
 
 
@@ -1596,7 +1594,7 @@ int main(int argc, char *argv[])
 		menu-game loop is restarted. It is then displayed before
 		the menu.
 	*/
-	std::wstring error_message = L"";
+	std::string error_message = "";
 
 	// The password entered during the menu screen,
 	std::string password;
@@ -1667,8 +1665,8 @@ int main(int argc, char *argv[])
 				menudata.address = address;
 				menudata.name = playername;
 				menudata.port = itos(port);
-				menudata.errormessage = wide_to_narrow(error_message);
-				error_message = L"";
+				menudata.errormessage = error_message;
+				error_message = "";
 				if(cmd_args.exists("password"))
 					menudata.password = cmd_args.get("password");
 
@@ -1717,7 +1715,7 @@ int main(int argc, char *argv[])
 				}
 
 				if(menudata.errormessage != ""){
-					error_message = narrow_to_wide(menudata.errormessage);
+					error_message = menudata.errormessage;
 					continue;
 				}
 
@@ -1729,8 +1727,7 @@ int main(int argc, char *argv[])
 				else
 					playername = menudata.name;
 
-				password = translatePassword(playername, narrow_to_wide(menudata.password));
-				//infostream<<"Main: password hash: '"<<password<<"'"<<std::endl;
+				password = translatePassword(playername, menudata.password);
 
 				address = menudata.address;
 				int newport = stoi(menudata.port);
@@ -1785,17 +1782,17 @@ int main(int argc, char *argv[])
 				if(current_address == "")
 				{
 					if(menudata.selected_world == -1){
-						error_message = wgettext("No world selected and no address "
+						error_message = _("No world selected and no address "
 								"provided. Nothing to do.");
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 					// Load gamespec for required game
 					gamespec = findWorldSubgame(worldspec.path);
 					if(!gamespec.isValid() && !commanded_gamespec.isValid()){
-						error_message = wgettext("Could not find or load game \"")
-								+ narrow_to_wide(worldspec.gameid) + L"\"";
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+						error_message = _("Could not find or load game \"")
+								+ worldspec.gameid + "\"";
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 					if(commanded_gamespec.isValid() &&
@@ -1807,10 +1804,10 @@ int main(int argc, char *argv[])
 					}
 
 					if(!gamespec.isValid()){
-						error_message = wgettext("Invalid gamespec.");
-						error_message += L" (world_gameid="
-								+narrow_to_wide(worldspec.gameid)+L")";
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
+						error_message = _("Invalid gamespec.");
+						error_message += " (world_gameid="
+								+worldspec.gameid+")";
+						errorstream<<error_message<<std::endl;
 						continue;
 					}
 				}
@@ -1852,26 +1849,25 @@ int main(int argc, char *argv[])
 		} //try
 		catch(con::PeerNotFoundException &e)
 		{
-			error_message = wgettext("Connection error (timed out?)");
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
+			error_message = _("Connection error (timed out?)");
+			errorstream<<error_message<<std::endl;
 		}
 #ifdef NDEBUG
 		catch(std::exception &e)
 		{
-			std::string narrow_message = "Some exception: \"";
-			narrow_message += e.what();
-			narrow_message += "\"";
-			errorstream<<narrow_message<<std::endl;
-			error_message = narrow_to_wide(narrow_message);
+			error_message = "Some exception: \"";
+			error_message += e.what();
+			error_message += "\"";
+			errorstream<<error_message<<std::endl;
 		}
 #endif
 
 		// If no main menu, show error and exit
 		if(skip_main_menu)
 		{
-			if(error_message != L""){
+			if(error_message != ""){
 				verbosestream<<"error_message = "
-						<<wide_to_narrow(error_message)<<std::endl;
+						<<error_message<<std::endl;
 				retval = 1;
 			}
 			break;
@@ -1893,10 +1889,7 @@ int main(int argc, char *argv[])
 	jvm->DetachCurrentThread();
 #endif
 
-#if USE_FREETYPE
-	if (use_freetype)
-		font->drop();
-#endif
+	font->drop();
 
 #endif // !SERVER
 
@@ -1919,6 +1912,9 @@ int main(int argc, char *argv[])
 			dstream<<names[i]<<" = "<<val.getString()<<std::endl;
 		}
 	}
+
+	// Stop httpfetch thread (if started)
+	httpfetch_cleanup();
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
 

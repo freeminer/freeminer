@@ -27,6 +27,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <IGUIFont.h>
 
 #include "gettext.h"
+#include "util/string.h"
 
 const int ID_oldPassword = 256;
 const int ID_newPassword1 = 257;
@@ -201,7 +202,7 @@ bool GUIPasswordChange::acceptInput()
 				e->setVisible(true);
 			return false;
 		}
-		m_client->sendChangePassword(oldpass, newpass);
+		m_client->sendChangePassword(wide_to_utf8(oldpass), wide_to_utf8(newpass));
 		return true;
 }
 

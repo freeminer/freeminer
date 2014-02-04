@@ -27,12 +27,21 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <sstream>
 #include <ctype.h>
+#include "SColor.h"
 
 struct FlagDesc {
 	const char *name;
 	u32 flag;
 };
 
+// try not to convert between wide/utf8 encodings; this can result in data loss
+// try to only convert between them when you need to input/output stuff via Irrlicht
+std::wstring utf8_to_wide(const std::string &input);
+std::string wide_to_utf8(const std::wstring &input);
+
+// NEVER use those two functions unless you have a VERY GOOD reason to
+// they just convert between wide and multibyte encoding
+// multibyte encoding depends on current locale, this is no good, especially on Windows
 std::wstring narrow_to_wide(const std::string& mbs);
 std::string wide_to_narrow(const std::wstring& wcs);
 
@@ -181,7 +190,7 @@ inline s32 mystoi(const std::string &s)
 
 inline s32 mystoi(const std::wstring &s)
 {
-	return atoi(wide_to_narrow(s).c_str());
+	return atoi(wide_to_utf8(s).c_str());
 }
 
 inline float mystof(const std::string &s)
@@ -317,12 +326,18 @@ inline std::string unescape_string(std::string &s)
 	return res;
 }
 
-std::string translatePassword(std::string playername, std::wstring password);
-size_t curl_write_data(char *ptr, size_t size, size_t nmemb, void *userdata);
+std::string translatePassword(std::string playername, std::string password);
+std::string urlencode(std::string str);
+std::string urldecode(std::string str);
 u32 readFlagString(std::string str, FlagDesc *flagdesc);
 std::string writeFlagString(u32 flags, FlagDesc *flagdesc);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
 
+bool parseColor(const std::string &value, video::SColor &color);
+std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color);
+std::wstring sanitizeChatString(const std::wstring &s);
+bool char_icompare(char c1, char c2);
+bool string_icompare(const std::string& a, const std::string& b);
 #endif
 

@@ -5,7 +5,7 @@
 --
 
 function minetest.string_to_privs(str, delim)
-	assert(type(str) == "string")
+	if type(str) ~= "string" then return end
 	delim = delim or ','
 	privs = {}
 	for _, priv in pairs(string.split(str, delim)) do
@@ -43,10 +43,11 @@ local function read_auth_file()
 		if line ~= "" then
 			local name, password, privilegestring = string.match(line, "([^:]*):([^:]*):([^:]*)")
 			if not name or not password or not privilegestring then
-				error("Invalid line in auth.txt: "..dump(line))
-			end
+				print("Invalid line in auth.txt: "..dump(line))
+			else
 			local privileges = minetest.string_to_privs(privilegestring)
 			newtable[name] = {password=password, privileges=privileges}
+			end
 		end
 	end
 	io.close(file)

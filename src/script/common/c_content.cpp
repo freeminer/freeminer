@@ -62,7 +62,7 @@ ItemDefinition read_item_definition(lua_State* L,int index,
 		def.wield_scale = check_v3f(L, -1);
 	}
 	lua_pop(L, 1);
-
+	
 	def.stack_max = getintfield_default(L, index, "stack_max", def.stack_max);
 	if(def.stack_max == 0)
 		def.stack_max = 1;
@@ -261,6 +261,20 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	lua_getfield(L, index, "after_destruct");
 	if(!lua_isnil(L, -1)) f.has_after_destruct = true;
 	lua_pop(L, 1);
+	lua_getfield(L, index, "on_activate");
+	if(!lua_isnil(L, -1))
+	{
+		f.has_on_activate = true;
+		f.is_circuit_element = true;
+	}
+	lua_pop(L, 1);
+	lua_getfield(L, index, "on_deactivate");
+	if(!lua_isnil(L, -1))
+	{
+		f.has_on_deactivate = true;
+		f.is_circuit_element = true;
+	}
+	lua_pop(L, 1);
 
 	lua_getfield(L, index, "on_rightclick");
 	f.rightclickable = lua_isfunction(L, -1);
@@ -311,6 +325,60 @@ ContentFeatures read_content_features(lua_State *L, int index)
 				f.tiledef[i] = lasttile;
 				i++;
 			}
+		}
+	}
+	lua_pop(L, 1);
+	
+	/* Circuit options */
+	lua_getfield(L, index, "is_wire");
+	if(!lua_isnil(L, -1)) {
+		f.is_wire = true;
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "is_connector");
+	if(!lua_isnil(L, -1)) {
+		f.is_connector = true;
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "wire_connections");
+	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
+		f.is_wire = true;
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		int i;
+		unsigned char current_shift = 1;
+		for(i = 0; (i < 6) && (lua_next(L, table) != 0); ++i) {
+			f.wire_connections[i] = lua_tonumber(L, -1);
+			f.wire_connections[i] |= current_shift;
+			current_shift <<= 1;
+			lua_pop(L, 1);
+		}
+		if(i < 6) {
+			luaL_error(L, "Wire connectins table must have exactly 6 integer numbers.");
+		}
+	} else if(f.is_wire) {
+		// Assuming that it's a standart wire
+		for(int i = 0; i < 6; ++i)
+		{
+			f.wire_connections[i] = 0x3F;
+		}
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "circuit_states");
+	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
+		f.is_circuit_element = true;
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		int i;
+		for(i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
+			f.circuit_element_states[i] = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+		}
+		if(i < 64) {
+			luaL_error(L, "Circuit states table must have exactly 64 integer numbers.");
 		}
 	}
 	lua_pop(L, 1);
@@ -653,7 +721,7 @@ ItemStack read_item(lua_State* L, int index,Server* srv)
 	}
 	else
 	{
-		throw LuaError(L, "Expecting itemstack, itemstring, table or nil");
+		throw LuaError(NULL, "Expecting itemstack, itemstring, table or nil");
 	}
 }
 
@@ -884,7 +952,7 @@ void push_items(lua_State *L, const std::vector<ItemStack> &items)
 }
 
 /******************************************************************************/
-std::vector<ItemStack> read_items(lua_State *L, int index,Server* srv)
+std::vector<ItemStack> read_items(lua_State *L, int index, Server *srv)
 {
 	if(index < 0)
 		index = lua_gettop(L) + 1 + index;
@@ -892,10 +960,15 @@ std::vector<ItemStack> read_items(lua_State *L, int index,Server* srv)
 	std::vector<ItemStack> items;
 	luaL_checktype(L, index, LUA_TTABLE);
 	lua_pushnil(L);
-	while(lua_next(L, index) != 0){
-		// key at index -2 and value at index -1
-		items.push_back(read_item(L, -1, srv));
-		// removes value, keeps key for next iteration
+	while (lua_next(L, index)) {
+		s32 key = luaL_checkinteger(L, -2);
+		if (key < 1) {
+			throw LuaError(NULL, "Invalid inventory list index");
+		}
+		if (items.size() < (u32) key) {
+			items.resize(key);
+		}
+		items[key - 1] = read_item(L, -1, srv);
 		lua_pop(L, 1);
 	}
 	return items;
@@ -953,6 +1026,7 @@ bool read_schematic(lua_State *L, int index, DecoSchematic *dschem, Server *serv
 		MapNode *schemdata = new MapNode[numnodes];
 		int i = 0;
 		
+		// Get schematic data
 		lua_getfield(L, index, "data");
 		luaL_checktype(L, -1, LUA_TTABLE);
 		
@@ -981,15 +1055,34 @@ bool read_schematic(lua_State *L, int index, DecoSchematic *dschem, Server *serv
 			lua_pop(L, 1);
 		}
 		
-		dschem->size      = size;
-		dschem->schematic = schemdata;
-		
 		if (i != numnodes) {
 			errorstream << "read_schematic: incorrect number of "
 				"nodes provided in raw schematic data (got " << i <<
 				", expected " << numnodes << ")." << std::endl;
 			return false;
 		}
+
+		u8 *sliceprobs = new u8[size.Y];
+		for (i = 0; i != size.Y; i++)
+			sliceprobs[i] = MTSCHEM_PROB_ALWAYS;
+
+		// Get Y-slice probability values (if present)
+		lua_getfield(L, index, "yslice_prob");
+		if (lua_istable(L, -1)) {
+			lua_pushnil(L);
+			while (lua_next(L, -2)) {
+				if (getintfield(L, -1, "ypos", i) && i >= 0 && i < size.Y) {
+					sliceprobs[i] = getintfield_default(L, -1,
+						"prob", MTSCHEM_PROB_ALWAYS);
+				}
+				lua_pop(L, 1);
+			}
+		}
+
+		dschem->size        = size;
+		dschem->schematic   = schemdata;
+		dschem->slice_probs = sliceprobs;
+
 	} else if (lua_isstring(L, index)) {
 		dschem->filename = std::string(lua_tostring(L, index));
 	} else {
@@ -1081,3 +1174,55 @@ bool push_json_value(lua_State *L, const Json::Value &value, int nullindex)
 	else
 		return false;
 }
+
+// Converts Lua table --> JSON
+void read_json_value(lua_State *L, Json::Value &root, int index, u8 recursion)
+{
+	if (recursion > 16) {
+		throw SerializationError("Maximum recursion depth exceeded");
+	}
+	int type = lua_type(L, index);
+	if (type == LUA_TBOOLEAN) {
+		root = (bool) lua_toboolean(L, index);
+	} else if (type == LUA_TNUMBER) {
+		root = lua_tonumber(L, index);
+	} else if (type == LUA_TSTRING) {
+		size_t len;
+		const char *str = lua_tolstring(L, index, &len);
+		root = std::string(str, len);
+	} else if (type == LUA_TTABLE) {
+		lua_pushnil(L);
+		while (lua_next(L, index)) {
+			// Key is at -2 and value is at -1
+			Json::Value value;
+			read_json_value(L, value, lua_gettop(L), recursion + 1);
+
+			Json::ValueType roottype = root.type();
+			int keytype = lua_type(L, -1);
+			if (keytype == LUA_TNUMBER) {
+				lua_Number key = lua_tonumber(L, -1);
+				if (roottype != Json::nullValue && roottype != Json::arrayValue) {
+					throw SerializationError("Can't mix array and object values in JSON");
+				} else if (key < 1) {
+					throw SerializationError("Can't use zero-based or negative indexes in JSON");
+				} else if (floor(key) != key) {
+					throw SerializationError("Can't use indexes with a fractional part in JSON");
+				}
+				root[(Json::ArrayIndex) key - 1] = value;
+			} else if (keytype == LUA_TSTRING) {
+				if (roottype != Json::nullValue && roottype != Json::objectValue) {
+					throw SerializationError("Can't mix array and object values in JSON");
+				}
+				root[lua_tostring(L, -1)] = value;
+			} else {
+				throw SerializationError("Lua key to convert to JSON is not a string or number");
+			}
+		}
+	} else if (type == LUA_TNIL) {
+		root = Json::nullValue;
+	} else {
+		throw SerializationError("Can only store booleans, numbers, strings, objects, arrays, and null in JSON");
+	}
+	lua_pop(L, 1); // Pop value
+}
+

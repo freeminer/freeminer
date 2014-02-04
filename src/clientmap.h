@@ -138,6 +138,8 @@ public:
 		return (m_last_drawn_sectors.find(p) != m_last_drawn_sectors.end());
 	}
 	
+	MapDrawControl & getControl() { return m_control; }
+
 private:
 	Client *m_client;
 	

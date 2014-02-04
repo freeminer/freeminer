@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iostream>
 #include <map>
 #include <list>
+#include <bitset>
 #include "mapnode.h"
 #ifndef SERVER
 #include "tile.h"
@@ -32,6 +33,48 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "itemgroup.h"
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
+#include "fmbitset.h"
+
+#include <msgpack.hpp>
+
+enum {
+	CONTENTFEATURES_NAME,
+	CONTENTFEATURES_GROUPS,
+	CONTENTFEATURES_DRAWTYPE,
+	CONTENTFEATURES_VISUAL_SCALE,
+	CONTENTFEATURES_TILEDEF,
+	CONTENTFEATURES_TILEDEF_SPECIAL,
+	CONTENTFEATURES_ALPHA,
+	CONTENTFEATURES_POST_EFFECT_COLOR,
+	CONTENTFEATURES_PARAM_TYPE,
+	CONTENTFEATURES_PARAM_TYPE_2,
+	CONTENTFEATURES_IS_GROUND_CONTENT,
+	CONTENTFEATURES_LIGHT_PROPAGATES,
+	CONTENTFEATURES_SUNLIGHT_PROPAGATES,
+	CONTENTFEATURES_WALKABLE,
+	CONTENTFEATURES_POINTABLE,
+	CONTENTFEATURES_DIGGABLE,
+	CONTENTFEATURES_CLIMBABLE,
+	CONTENTFEATURES_BUILDABLE_TO,
+	CONTENTFEATURES_LIQUID_TYPE,
+	CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING,
+	CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE,
+	CONTENTFEATURES_LIQUID_VISCOSITY,
+	CONTENTFEATURES_LIQUID_RENEWABLE,
+	CONTENTFEATURES_LIGHT_SOURCE,
+	CONTENTFEATURES_DAMAGE_PER_SECOND,
+	CONTENTFEATURES_NODE_BOX,
+	CONTENTFEATURES_SELECTION_BOX,
+	CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE,
+	CONTENTFEATURES_LEGACY_WALLMOUNTED,
+	CONTENTFEATURES_SOUND_FOOTSTEP,
+	CONTENTFEATURES_SOUND_DIG,
+	CONTENTFEATURES_SOUND_DUG,
+	CONTENTFEATURES_RIGHTCLICKABLE,
+	CONTENTFEATURES_DROWNING,
+	CONTENTFEATURES_LEVELED,
+	CONTENTFEATURES_WAVING
+};
 
 class IItemDefManager;
 class ITextureSource;
@@ -75,6 +118,15 @@ enum NodeBoxType
 	NODEBOX_LEVELED, // Same as fixed, but with dynamic height from param2. for snow, ...
 };
 
+// _S_ is serialized, added to make sure collisions with NodeBoxType never happen
+enum {
+	NODEBOX_S_TYPE,
+	NODEBOX_S_FIXED,
+	NODEBOX_S_WALL_TOP,
+	NODEBOX_S_WALL_BOTTOM,
+	NODEBOX_S_WALL_SIDE
+};
+
 struct NodeBox
 {
 	enum NodeBoxType type;
@@ -90,8 +142,8 @@ struct NodeBox
 	{ reset(); }
 
 	void reset();
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 struct MapNode;
@@ -100,6 +152,14 @@ class NodeMetadata;
 /*
 	Stand-alone definition of a TileSpec (basically a server-side TileSpec)
 */
+enum {
+	TILEDEF_NAME,
+	TILEDEF_ANIMATION_TYPE,
+	TILEDEF_ANIMATION_ASPECT_W,
+	TILEDEF_ANIMATION_ASPECT_H,
+	TILEDEF_ANIMATION_LENGTH,
+	TILEDEF_BACKFACE_CULLING
+};
 enum TileAnimationType{
 	TAT_NONE=0,
 	TAT_VERTICAL_FRAMES=1,
@@ -125,8 +185,8 @@ struct TileDef
 		animation.length = 1.0;
 	}
 
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 enum NodeDrawType
@@ -172,6 +232,8 @@ struct ContentFeatures
 	bool has_on_construct;
 	bool has_on_destruct;
 	bool has_after_destruct;
+	bool has_on_activate;
+	bool has_on_deactivate;
 
 	/*
 		Actual data
@@ -241,6 +303,12 @@ struct ContentFeatures
 	bool legacy_facedir_simple;
 	// Set to true if wall_mounted used to be set to true
 	bool legacy_wallmounted;
+	
+	bool is_wire;
+	bool is_connector;
+	bool is_circuit_element;
+	unsigned char wire_connections[6];
+	unsigned char circuit_element_states[64];
 
 	// Sound properties
 	SimpleSoundSpec sound_footstep;
@@ -254,10 +322,9 @@ struct ContentFeatures
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
-	void serialize(std::ostream &os, u16 protocol_version);
-	void deSerialize(std::istream &is);
-	void serializeOld(std::ostream &os, u16 protocol_version);
-	void deSerializeOld(std::istream &is, int version);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 	/*
 		Some handy methods
@@ -294,9 +361,11 @@ public:
 	// Allows "group:name" in addition to regular node names
 	virtual void getIds(const std::string &name, std::set<content_t> &result)
 			const=0;
+	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
 	
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
 };
 
 class IWritableNodeDefManager : public INodeDefManager
@@ -334,9 +403,6 @@ public:
 		Update tile textures to latest return values of TextueSource.
 	*/
 	virtual void updateTextures(ITextureSource *tsrc)=0;
-
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
-	virtual void deSerialize(std::istream &is)=0;
 };
 
 IWritableNodeDefManager* createNodeDefManager();

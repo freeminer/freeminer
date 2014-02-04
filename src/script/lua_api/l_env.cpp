@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -44,7 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 
 void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider, MapNode neighbor)
+		u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate)
 {
 	GameScripting *scriptIface = env->getScriptIface();
 	scriptIface->realityCheck();
@@ -79,7 +80,8 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 	lua_pushnumber(L, active_object_count);
 	lua_pushnumber(L, active_object_count_wider);
 	pushnode(L, neighbor, env->getGameDef()->ndef());
-	if(lua_pcall(L, 5, 0, errorhandler))
+	lua_pushboolean(L, activate);
+	if(lua_pcall(L, 6, 0, errorhandler))
 		script_error(L);
 	lua_pop(L, 1); // Pop error handler
 }
@@ -97,7 +99,7 @@ int ModApiEnvMod::l_set_node(lua_State *L)
 	v3s16 pos = read_v3s16(L, 1);
 	MapNode n = readnode(L, 2, ndef);
 	// Do it
-	bool succeeded = env->setNode(pos, n);
+	bool succeeded = env->setNode(pos, n, lua_tonumber(L, 3));
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
@@ -107,7 +109,7 @@ int ModApiEnvMod::l_add_node(lua_State *L)
 	return l_set_node(L);
 }
 
-// minetest.remove_node(pos)
+// minetest.remove_node(pos, fast)
 // pos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_remove_node(lua_State *L)
 {
@@ -116,7 +118,7 @@ int ModApiEnvMod::l_remove_node(lua_State *L)
 	// parameters
 	v3s16 pos = read_v3s16(L, 1);
 	// Do it
-	bool succeeded = env->removeNode(pos);
+	bool succeeded = env->removeNode(pos, lua_tonumber(L, 2));
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
@@ -274,7 +276,7 @@ int ModApiEnvMod::l_punch_node(lua_State *L)
 	}
 	// Punch it with a NULL puncher (appears in Lua as a non-functional
 	// ObjectRef)
-	bool success = scriptIfaceNode->node_on_punch(pos, n, NULL);
+	bool success = scriptIfaceNode->node_on_punch(pos, n, NULL, PointedThing());
 	lua_pushboolean(L, success);
 	return 1;
 }
@@ -409,19 +411,6 @@ int ModApiEnvMod::l_add_item(lua_State *L)
 		script_error(L);
 	lua_remove(L, errorhandler); // Remove error handler
 	return 1;
-	/*lua_pushvalue(L, 1);
-	lua_pushstring(L, "__builtin:item");
-	lua_pushstring(L, item.getItemString().c_str());
-	return l_add_entity(L);*/
-	/*// Do it
-	ServerActiveObject *obj = createItemSAO(env, pos, item.getItemString());
-	int objectid = env->addActiveObject(obj);
-	// If failed to add, return nothing (reads as nil)
-	if(objectid == 0)
-		return 0;
-	// Return ObjectRef
-	objectrefGetOrCreate(L, obj);
-	return 1;*/
 }
 
 // minetest.get_player_by_name(name)
@@ -649,7 +638,7 @@ int ModApiEnvMod::l_clear_objects(lua_State *L)
 	return 0;
 }
 
-// minetest.line_of_sight(pos1, pos2, stepsize) -> true/false
+// minetest.line_of_sight(pos1, pos2, stepsize) -> true/false, pos
 int ModApiEnvMod::l_line_of_sight(lua_State *L) {
 	float stepsize = 1.0;
 
@@ -664,7 +653,13 @@ int ModApiEnvMod::l_line_of_sight(lua_State *L) {
 		stepsize = lua_tonumber(L, 3);
 	}
 
-	lua_pushboolean(L, env->line_of_sight(pos1,pos2,stepsize));
+	v3s16 p;
+	bool success = env->line_of_sight(pos1, pos2, stepsize, &p);
+	lua_pushboolean(L, success);
+	if (!success) {
+		push_v3s16(L, p);
+		return 2;
+	}
 	return 1;
 }
 
@@ -791,7 +786,7 @@ int ModApiEnvMod::l_transforming_liquid_add(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 p0 = read_v3s16(L, 1);
-	env->getMap().transforming_liquid_add(p0);
+	env->getMap().transforming_liquid_push_back(p0);
 	return 1;
 }
 
@@ -815,6 +810,28 @@ int ModApiEnvMod::l_get_humidity(lua_State *L)
 	v3s16 pos = read_v3s16(L, 1);
 	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos));
 	return 1;
+}
+
+// minetest.forceload_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->insert(blockpos);
+	return 0;
+}
+
+// minetest.forceload_free_block(blockpos)
+// blockpos = {x=num, y=num, z=num}
+int ModApiEnvMod::l_forceload_free_block(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 blockpos = read_v3s16(L, 1);
+	env->getForceloadedBlocks()->erase(blockpos);
+	return 0;
 }
 
 void ModApiEnvMod::Initialize(lua_State *L, int top)
@@ -855,4 +872,6 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
 	API_FCT(get_surface);
+	API_FCT(forceload_block);
+	API_FCT(forceload_free_block);
 }

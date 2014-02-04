@@ -97,6 +97,8 @@ private:
 
 	static int l_get_textlist_index(lua_State *L);
 
+	static int l_get_table_index(lua_State *L);
+
 	static int l_set_background(lua_State *L);
 
 	static int l_update_formspec(lua_State *L);
@@ -110,6 +112,8 @@ private:
 	static int l_get_gamepath(lua_State *L);
 	
 	static int l_get_texturepath(lua_State *L);
+
+	static int l_get_texturepath_share(lua_State *L);
 
 	static int l_get_dirlist(lua_State *L);
 

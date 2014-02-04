@@ -43,15 +43,11 @@ end
 
 --------------------------------------------------------------------------------
 function menu.render_favorite(spec,render_details)
+	local e = engine.formspec_escape
 	local text = ""
 
 	if spec.name ~= nil then
-		text = text .. engine.formspec_escape(spec.name:trim())
-
---		if spec.description ~= nil and
---			engine.formspec_escape(spec.description):trim() ~= "" then
---			text = text .. " (" .. engine.formspec_escape(spec.description) .. ")"
---		end
+		text = text .. spec.name:trim()
 	else
 		if spec.address ~= nil then
 			text = text .. spec.address:trim()
@@ -63,44 +59,26 @@ function menu.render_favorite(spec,render_details)
 	end
 
 	if not render_details then
-		return text
+		return "?,/,?,0,0,0,0," .. e(text)
 	end
 
-	local details = ""
-	if spec.password == true then
-		details = details .. "*"
+	local row = ""
+	if spec.clients ~= nil and spec.clients_max ~= nil then
+		row = row .. e(spec.clients) .. ",/," .. e(spec.clients_max) .. ","
 	else
-		details = details .. "_"
+		row = row .. "?,/,?,"
 	end
 
-	if spec.creative then
-		details = details .. "C"
-	else
-		details = details .. "_"
-	end
+	-- 'X and 1 or 0' will return 1 if X is true and 0 if it's false or nil
+	row = row ..
+		(spec.password and 1 or 0) .. "," ..
+		(spec.creative and 1 or 0) .. "," ..
+		(spec.damage and 1 or 0) .. "," ..
+		(spec.pvp and 1 or 0) .. ","
 
-	if spec.damage then
-		details = details .. "D"
-	else
-		details = details .. "_"
-	end
+	row = row .. e(text)
 
-	if spec.pvp then
-		details = details .. "P"
-	else
-		details = details .. "_"
-	end
-	details = details .. " "
-
-	local playercount = ""
-
-	if spec.clients ~= nil and
-		spec.clients_max ~= nil then
-		playercount = string.format("%03d",spec.clients) .. "/" ..
-						string.format("%03d",spec.clients_max) .. " "
-	end
-
-	return playercount .. engine.formspec_escape(details) ..  text
+	return row
 end
 
 --------------------------------------------------------------------------------
@@ -117,6 +95,30 @@ os.tempfolder = function()
 		return filetocheck:sub(0,filetocheck:len()-backstring:find(DIR_DELIM)+1) ..randname
 	end
 
+end
+
+--------------------------------------------------------------------------------
+function text2textlist(xpos,ypos,width,height,tl_name,textlen,text,transparency)
+	local textlines = engine.splittext(text,textlen)
+	
+	local retval = "textlist[" .. xpos .. "," .. ypos .. ";"
+								.. width .. "," .. height .. ";"
+								.. tl_name .. ";"
+	
+	for i=1, #textlines, 1 do
+		textlines[i] = textlines[i]:gsub("\r","")
+		retval = retval .. engine.formspec_escape(textlines[i]) .. ","
+	end
+	
+	retval = retval .. ";0;"
+	
+	if transparency then
+		retval = retval .. "true"
+	end
+	
+	retval = retval .. "]"
+
+	return retval
 end
 
 --------------------------------------------------------------------------------
@@ -152,8 +154,8 @@ function update_menu()
 	-- handle errors
 	if gamedata.errormessage ~= nil then
 		formspec = "size[12,5.2]" ..
-			"field[1,2;10,2;;ERROR: " ..
-			gamedata.errormessage ..
+			"textarea[1,2;10,2;;ERROR: " ..
+			engine.formspec_escape(gamedata.errormessage) ..
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
@@ -233,7 +235,7 @@ function menu.init()
 		menu.favorites = engine.get_favorites("local")
 	end
 
-	menu.defaulttexturedir = engine.get_texturepath() .. DIR_DELIM .. "base" ..
+	menu.defaulttexturedir = engine.get_texturepath_share() .. DIR_DELIM .. "base" ..
 					DIR_DELIM .. "pack" .. DIR_DELIM
 end
 
@@ -276,7 +278,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_up"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx > 1 then
+		if oldidx ~= nil and oldidx > 1 then
 			local newidx = oldidx -1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -286,7 +288,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 	if fields["key_down"] then
 		local oldidx = engine.get_textlist_index(textlist)
 
-		if oldidx < filterlist.size(worldlist) then
+		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
 			local newidx = oldidx + 1
 			engine.setting_set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
@@ -371,7 +373,7 @@ function tabbuilder.handle_create_world_buttons(fields)
 		local worldname = fields["te_world_name"]
 		local gameindex = engine.get_textlist_index("games")
 
-		if gameindex > 0 and
+		if gameindex ~= nil and
 			worldname ~= "" then
 
 			local message = nil
@@ -438,8 +440,9 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 	end
 
 	if fields["favourites"] ~= nil then
-		local event = explode_textlist_event(fields["favourites"])
-		if event.typ == "DCL" then
+		local event = engine.explode_table_event(fields["favourites"])
+		event.index = event.row
+		if event.type == "DCL" then
 			if event.index <= #menu.favorites then
 				gamedata.address = menu.favorites[event.index].address
 				gamedata.port = menu.favorites[event.index].port
@@ -463,7 +466,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 			end
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			if event.index <= #menu.favorites then
 				local address = menu.favorites[event.index].address
 				local port = menu.favorites[event.index].port
@@ -485,11 +488,13 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fields["key_up"] ~= nil and fav_idx > 1 then
-			fav_idx = fav_idx -1
-		else if fields["key_down"] and fav_idx < #menu.favorites then
-			fav_idx = fav_idx +1
-		end end
+		if fav_idx ~= nil then
+			if fields["key_up"] ~= nil and fav_idx > 1 then
+				fav_idx = fav_idx -1
+			else if fields["key_down"] and fav_idx < #menu.favorites then
+				fav_idx = fav_idx +1
+			end end
+		end
 
 		local address = menu.favorites[fav_idx].address
 		local port = menu.favorites[fav_idx].port
@@ -518,6 +523,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 	if fields["btn_delete_favorite"] ~= nil then
 		local current_favourite = engine.get_textlist_index("favourites")
+		if current_favourite == nil then return end
 		engine.delete_favorite(current_favourite)
 		menu.favorites = engine.get_favorites()
 		menu.fav_selected = nil
@@ -538,7 +544,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
-		if fav_idx > 0 and fav_idx <= #menu.favorites and
+		if fav_idx ~= nil and fav_idx <= #menu.favorites and
 			menu.favorites[fav_idx].address == fields["te_address"] and
 			menu.favorites[fav_idx].port == fields["te_port"] then
 
@@ -565,12 +571,12 @@ function tabbuilder.handle_server_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["srv_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["srv_worlds"])
+		local event = engine.explode_textlist_event(fields["srv_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("srv_worlds")))
 		end
@@ -594,7 +600,7 @@ function tabbuilder.handle_server_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.playername		= fields["te_playername"]
 			gamedata.password		= fields["te_passwd"]
 			gamedata.port			= fields["te_serverport"]
@@ -616,7 +622,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -634,7 +640,7 @@ function tabbuilder.handle_server_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("srv_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -719,13 +725,13 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 	local world_doubleclick = false
 
 	if fields["sp_worlds"] ~= nil then
-		local event = explode_textlist_event(fields["sp_worlds"])
+		local event = engine.explode_textlist_event(fields["sp_worlds"])
 
-		if event.typ == "DCL" then
+		if event.type == "DCL" then
 			world_doubleclick = true
 		end
 
-		if event.typ == "CHG" then
+		if event.type == "CHG" then
 			engine.setting_set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,engine.get_textlist_index("sp_worlds")))
 		end
@@ -745,7 +751,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 		world_doubleclick or
 		fields["key_enter"] then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 			gamedata.singleplayer	= true
 
@@ -763,7 +769,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_delete"] ~= nil then
 		local selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 and
+		if selected ~= nil and
 			selected <= filterlist.size(worldlist) then
 			local world = filterlist.get_list(worldlist)[selected]
 			if world ~= nil and
@@ -781,7 +787,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 
 	if fields["world_configure"] ~= nil then
 		selected = engine.get_textlist_index("sp_worlds")
-		if selected > 0 then
+		if selected ~= nil then
 			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
 			if modmgr.init_worldconfig() then
 				tabbuilder.current_tab = "dialog_configure_world"
@@ -795,14 +801,14 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.handle_texture_pack_buttons(fields)
 	if fields["TPs"] ~= nil then
-		local event = explode_textlist_event(fields["TPs"])
-		if event.typ == "CHG" or event.typ=="DCL" then
+		local event = engine.explode_textlist_event(fields["TPs"])
+		if event.type == "CHG" or event.type == "DCL" then
 			local index = engine.get_textlist_index("TPs")
 			engine.setting_set("mainmenu_last_selected_TP",
 				index)
 			local list = filter_texture_pack_list(engine.get_dirlist(engine.get_texturepath(), true))
 			local current_index = engine.get_textlist_index("TPs")
-			if #list >= current_index then
+			if current_index ~= nil and #list >= current_index then
 				local new_path = engine.get_texturepath()..DIR_DELIM..list[current_index]
 				if list[current_index] == "None" then new_path = "" end
 
@@ -862,22 +868,23 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_multiplayer()
+	local e = engine.formspec_escape
 	local retval =
-		"field[6.75,0.5;5.5,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .. "]" ..
-		"field[12.2,0.5;2.25,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
-		"checkbox[6.5,2;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
+		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..engine.setting_get("address") .."]" ..
+		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..engine.setting_get("remote_port") .."]" ..
+		"checkbox[6.5,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(engine.setting_getbool("public_serverlist")) .. "]"
 
 	if not engine.setting_getbool("public_serverlist") then
 		retval = retval ..
-			"button[12,2.2;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
+			"button[13.25,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
 	end
 
 	retval = retval ..
-		"button[11.75,10;2.5,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[6.75,1.5;4,0.5;te_name;" .. fgettext("Name") .. ";" ..engine.setting_get("name") .."]" ..
-		"pwdfield[10.8,1.5;3.7,0.5;te_pwd;" .. fgettext("Password") .. "]" ..
-		"textarea[6.75,6.5;6,2.75;;"
+		"button[12.75,10;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
+		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..engine.setting_get("name") .."]" ..
+		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") .. "]" ..
+		"textarea[6.75,3.8;8.8,2.75;;"
 	if menu.fav_selected ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
 		retval = retval ..
@@ -885,8 +892,19 @@ function tabbuilder.tab_multiplayer()
 	end
 
 	retval = retval ..
-		";]" ..
-		"textlist[6.5,2.75;7.5,3.35;favourites;"
+		";]"
+	retval = retval .. "tablecolumns[" ..
+		"text,tooltip=Online,align=center;" ..
+		"text,align=center;" ..
+		"text,tooltip=Slots,align=center;" ..
+		"image,tooltip=Requires non-empty password,1=" .. e(menu.defaulttexturedir .. "server_flags_password.png") .. ";" ..
+		"image,tooltip=Creative,1=" .. e(menu.defaulttexturedir .. "server_flags_creative.png") .. ";" ..
+		"image,tooltip=Damage enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_damage.png") .. ";" ..
+		"image,tooltip=PvP enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_pvp.png") .. ";" ..
+		"text" ..
+		"]"
+	retval = retval .. "table[" ..
+		"6.5,0.35;8.8,3.35;favourites;"
 
 	local render_details = engine.setting_getbool("public_serverlist")
 
@@ -939,52 +957,39 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_settings()
-	local tab_string =
-			"checkbox[6.5,0;cb_fancy_trees;".. fgettext("Fancy trees") .. ";"
-					.. dump(engine.setting_getbool("new_style_leaves")) .. "]"..
-			"checkbox[6.5,0.5;cb_smooth_lighting;".. fgettext("Smooth Lighting")
-					.. ";".. dump(engine.setting_getbool("smooth_lighting")) .. "]"..
-			"checkbox[6.5,1;cb_3d_clouds;".. fgettext("3D Clouds") .. ";"
-					.. dump(engine.setting_getbool("enable_3d_clouds")) .. "]"..
-			"checkbox[6.5,1.5;cb_opaque_water;".. fgettext("Opaque Water") .. ";"
-					.. dump(engine.setting_getbool("opaque_water")) .. "]"..
-
-			"checkbox[6.5,2;cb_mipmapping;".. fgettext("Mip-Mapping") .. ";"
-					.. dump(engine.setting_getbool("mip_map")) .. "]"..
-			"checkbox[6.5,2.5;cb_anisotrophic;".. fgettext("Anisotropic Filtering") .. ";"
-					.. dump(engine.setting_getbool("anisotropic_filter")) .. "]"..
-			"checkbox[6.5,3;cb_bilinear;".. fgettext("Bi-Linear Filtering") .. ";"
-					.. dump(engine.setting_getbool("bilinear_filter")) .. "]"..
-			"checkbox[6.5,3.5;cb_trilinear;".. fgettext("Tri-Linear Filtering") .. ";"
-					.. dump(engine.setting_getbool("trilinear_filter")) .. "]"..
-
-			"checkbox[6.5,4;cb_shaders;".. fgettext("Shaders") .. ";"
-					.. dump(engine.setting_getbool("enable_shaders")) .. "]"..
-			"checkbox[6.5,4.5;cb_pre_ivis;".. fgettext("Preload item visuals") .. ";"
-					.. dump(engine.setting_getbool("preload_item_visuals"))	.. "]"..
-			"checkbox[6.5,5;cb_particles;".. fgettext("Enable Particles") .. ";"
-					.. dump(engine.setting_getbool("enable_particles"))	.. "]"..
-			"checkbox[6.5,5.5;cb_finite_liquid;".. fgettext("Finite Liquid") .. ";"
-					.. dump(engine.setting_getbool("liquid_finite")) .. "]"..
-			"checkbox[11.5,5.5;cb_weather;".. fgettext("Weather") .. ";"
-					.. dump(engine.setting_getbool("weather")) .. "]"..
-
-			"button[6.5,10;2.25,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+	local tab_string = ""
+	local pos = 0
+	local add_checkbox = function(name, config, text)
+		tab_string = tab_string ..
+			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+					.. dump(engine.setting_getbool(config)) .. "]"
+		pos = pos + 0.5
+	end
+	-- TODO: refactor this and handle_settings_buttons
+	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
+	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
+	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
+	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
+	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
+	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
+	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
+	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
+	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
+	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
+	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
+	add_checkbox("cb_finite_liquid", "liquid_finite", "Finite Liquid")
+	add_checkbox("cb_weather", "weather", "Weather")
 
 	if engine.setting_getbool("enable_shaders") then
-		tab_string = tab_string ..
-				"checkbox[6.5,6;cb_bumpmapping;".. fgettext("Bumpmapping") .. ";"
-						.. dump(engine.setting_getbool("enable_bumpmapping")) .. "]"..
-				"checkbox[6.5,6.5;cb_parallax;".. fgettext("Parallax Occlusion") .. ";"
-						.. dump(engine.setting_getbool("enable_parallax_occlusion")) .. "]"..
-				"checkbox[6.5,7;cb_waving_water;".. fgettext("Waving Water") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_water")) .. "]"..
-				"checkbox[6.5,7.5;cb_waving_leaves;".. fgettext("Waving Leaves") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_leaves")) .. "]"..
-				"checkbox[6.5,8;cb_waving_plants;".. fgettext("Waving Plants") .. ";"
-						.. dump(engine.setting_getbool("enable_waving_plants")) .. "]"
+		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
+		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
+		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
+		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
+		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
 	end
 
+	tab_string = tab_string ..
+		"button[6.5,10;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
@@ -1043,8 +1048,7 @@ function tabbuilder.tab_texture_packs()
 	local no_screenshot = nil
 	if not file_exists(screenfile) then
 		screenfile = nil
-		no_screenshot = engine.get_texturepath()..DIR_DELIM..
-					"base"..DIR_DELIM.."pack"..DIR_DELIM.."no_screenshot.png"
+		no_screenshot = menu.defaulttexturedir .. "no_screenshot.png"
 	end
 
 	return	retval ..

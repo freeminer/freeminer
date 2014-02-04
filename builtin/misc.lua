@@ -11,15 +11,14 @@ minetest.register_globalstep(function(dtime)
 		table.insert(minetest.timers, timer)
 	end
 	minetest.timers_to_add = {}
-	local i = 0
+	local end_ms = os.clock() * 1000 + 50
 	for index, timer in ipairs(minetest.timers) do
-		i = i + 1
-		if i > 100 then return end
 		timer.time = timer.time - dtime
 		if timer.time <= 0 then
 			timer.func(unpack(timer.args or {}))
 			table.remove(minetest.timers,index)
 		end
+		if os.clock() * 1000 > end_ms then return end
 	end
 end)
 
@@ -65,6 +64,16 @@ end
 
 function minetest.hash_node_position(pos)
 	return (pos.z+32768)*65536*65536 + (pos.y+32768)*65536 + pos.x+32768
+end
+
+function minetest.get_position_from_hash(hash)
+	local pos = {}
+	pos.x = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.y = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.z = (hash%65536) - 32768
+	return pos
 end
 
 function minetest.get_item_group(name, group)
@@ -122,3 +131,11 @@ function minetest.record_protection_violation(pos, name)
 	end
 end
 
+function freeminer.color(color)
+	assert(#color == 6, "Color must be six characters in length.")
+	return "\v" .. color
+end
+
+function freeminer.colorize(color, message)
+	return freeminer.color(color) .. message .. freeminer.color("ffffff")
+end
