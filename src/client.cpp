@@ -1124,80 +1124,33 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_BLOCKDATA)
 	{
-		// Ignore too small packet
-		if(datasize < 8)
-			return;
-			
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-		
-		/*infostream<<"Client: Thread: BLOCKDATA for ("
-				<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-		/*infostream<<"Client: Thread: BLOCKDATA for ("
-				<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-		
-		std::string datastring((char*)&data[8], datasize-8);
-		std::istringstream istr(datastring, std::ios_base::binary);
-		
+		v3s16 p = packet[TOCLIENT_BLOCKDATA_POS].as<v3s16>();
+
+		std::istringstream istr(packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
+
 		MapSector *sector;
 		MapBlock *block;
-		
+
 		v2s16 p2d(p.X, p.Z);
 		sector = m_env.getMap().emergeSector(p2d);
-		
+
 		assert(sector->getPos() == p2d);
 
-		//TimeTaker timer("MapBlock deSerialize");
-		// 0ms
-		
 		block = sector->getBlockNoCreateNoEx(p.Y);
-		if(block)
-		{
-			/*
-				Update an existing block
-			*/
-			//infostream<<"Updating"<<std::endl;
-			block->deSerialize(istr, ser_version, false);
-			block->deSerializeNetworkSpecific(istr);
-		}
-		else
-		{
-			/*
-				Create a new block
-			*/
-			//infostream<<"Creating new"<<std::endl;
+		bool new_block = !block;
+		if (new_block)
 			block = new MapBlock(&m_env.getMap(), p, this);
-			block->deSerialize(istr, ser_version, false);
-			block->deSerializeNetworkSpecific(istr);
-			sector->insertBlock(block);
-		}
 
-#if 0
-		/*
-			Acknowledge block
-		*/
-		/*
-			[0] u16 command
-			[2] u8 count
-			[3] v3s16 pos_0
-			[3+6] v3s16 pos_1
-			...
-		*/
-		u32 replysize = 2+1+6;
-		SharedBuffer<u8> reply(replysize);
-		writeU16(&reply[0], TOSERVER_GOTBLOCKS);
-		reply[2] = 1;
-		writeV3S16(&reply[3], p);
-		// Send as reliable
-		m_con.Send(PEER_ID_SERVER, 1, reply, true);
-#endif
+		block->deSerialize(istr, ser_version, false);
+		packet[TOCLIENT_BLOCKDATA_HEAT].convert(&block->heat);
+		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&block->humidity);
+
+		if (new_block)
+			sector->insertBlock(block);
 
 		/*
 			Add it to mesh update queue and set it to be acknowledged after update.
 		*/
-		//infostream<<"Adding mesh update task for received block"<<std::endl;
 		addUpdateMeshTaskWithEdge(p, true);
 	}
 	else if(command == TOCLIENT_INVENTORY)
