@@ -215,7 +215,6 @@ struct TileSpec
 			material.MaterialType = video::EMT_SOLID;
 			break;
 		case TILE_MATERIAL_LEAVES:
-			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
 #ifdef ANDROID
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 #else
@@ -223,7 +222,6 @@ struct TileSpec
 #endif
 			break;
 		case TILE_MATERIAL_PLANTS:
-			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
 #ifdef ANDROID
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 #else
