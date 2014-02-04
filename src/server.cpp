@@ -3894,26 +3894,13 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 		}
 
 		// Create packet
-		u32 replysize = 9 + MapNode::serializedLength(client->serialization_version);
-		SharedBuffer<u8> reply(replysize);
-		writeU16(&reply[0], TOCLIENT_ADDNODE);
-		writeS16(&reply[2], p.X);
-		writeS16(&reply[4], p.Y);
-		writeS16(&reply[6], p.Z);
-		n.serialize(&reply[8], client->serialization_version);
-		u32 index = 8 + MapNode::serializedLength(client->serialization_version);
-		writeU8(&reply[index], remove_metadata ? 0 : 1);
-		
-		if (!remove_metadata) {
-			if (client->net_proto_version <= 21) {
-				// Old clients always clear metadata; fix it
-				// by sending the full block again.
-				client->SetBlockNotSent(p);
-			}
-		}
+		MSGPACK_PACKET_INIT(TOCLIENT_ADDNODE, 3);
+		PACK(TOCLIENT_ADDNODE_POS, p);
+		PACK(TOCLIENT_ADDNODE_NODE, n);
+		PACK(TOCLIENT_ADDNODE_REMOVE_METADATA, remove_metadata);
 
 		// Send as reliable
-		m_con.Send(client->peer_id, 0, reply, true);
+		m_con.Send(client->peer_id, 0, buffer, true);
 	}
 }
 

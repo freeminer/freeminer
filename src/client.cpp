@@ -1116,25 +1116,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ADDNODE)
 	{
-		if(datasize < 8 + MapNode::serializedLength(ser_version))
-			return;
+		v3s16 p = packet[TOCLIENT_ADDNODE_POS].as<v3s16>();
+		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
+		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-		
-		//TimeTaker t1("TOCLIENT_ADDNODE");
-
-		MapNode n;
-		n.deSerialize(&data[8], ser_version);
-		
-		bool remove_metadata = true;
-		u32 index = 8 + MapNode::serializedLength(ser_version);
-		if ((datasize >= index+1) && data[index]){
-			remove_metadata = false;
-		}
-		
 		addNode(p, n, remove_metadata);
 	}
 	else if(command == TOCLIENT_BLOCKDATA)

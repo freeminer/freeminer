@@ -467,6 +467,24 @@ u32 MapNode::serializedLength(u8 version)
 	else
 		return 4;
 }
+void MapNode::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+{
+	pk.pack_array(3);
+	pk.pack(param0);
+	pk.pack(param1);
+	pk.pack(param2);
+}
+void MapNode::msgpack_unpack(msgpack::object o)
+{
+	std::vector<int> data;
+	o.convert(&data);
+	if (data.size() < 3)
+		throw msgpack::type_error();
+
+	param0 = data[0];
+	param1 = data[1];
+	param2 = data[2];
+}
 void MapNode::serialize(u8 *dest, u8 version)
 {
 	if(!ser_ver_supported(version))

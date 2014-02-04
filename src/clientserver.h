@@ -409,16 +409,16 @@ enum {
 	TOCLIENT_HUDADD_WORLD_POS
 };
 
+#define TOCLIENT_ADDNODE 0x21
+enum {
+	TOCLIENT_ADDNODE_POS,
+	TOCLIENT_ADDNODE_NODE,
+	TOCLIENT_ADDNODE_REMOVE_METADATA
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
-	TOCLIENT_ADDNODE = 0x21,
-	/*
-		u16 command
-		v3s16 position
-		serialized mapnode
-		u8 keep_metadata // Added in protocol version 22
-	*/
 };
 
 #define TOSERVER_INIT 0x10
