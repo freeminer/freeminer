@@ -354,6 +354,18 @@ enum {
 	TOCLIENT_DELETE_PARTICLESPAWNER_ID
 };
 
+#define TOCLIENT_ANIMATIONS 0x4f
+enum {
+	TOCLIENT_ANIMATIONS_DEFAULT_START,
+	TOCLIENT_ANIMATIONS_DEFAULT_STOP,
+	TOCLIENT_ANIMATIONS_WALK_START,
+	TOCLIENT_ANIMATIONS_WALK_STOP,
+	TOCLIENT_ANIMATIONS_DIG_START,
+	TOCLIENT_ANIMATIONS_DIG_STOP,
+	TOCLIENT_ANIMATIONS_WD_START,
+	TOCLIENT_ANIMATIONS_WD_STOP
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -413,19 +425,6 @@ enum ToClientCommand
 		u16 param
 		u16 len
 		u8[len] value
-	*/
-
-	TOCLIENT_ANIMATIONS = 0x4f,
-	/*
-		u16 command
-		f1000 animation_default_start
-		f1000 animation_default_stop
-		f1000 animation_walk_start
-		f1000 animation_walk_stop
-		f1000 animation_dig_start
-		f1000 animation_dig_stop
-		f1000 animation_wd_start
-		f1000 animation_wd_stop
 	*/
 };
 

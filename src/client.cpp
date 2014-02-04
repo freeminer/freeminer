@@ -1724,18 +1724,15 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_ANIMATIONS)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
 		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-		player->animation_default_start = readF1000(is);
-		player->animation_default_stop = readF1000(is);
-		player->animation_walk_start = readF1000(is);
-		player->animation_walk_stop = readF1000(is);
-		player->animation_dig_start = readF1000(is);
-		player->animation_dig_stop = readF1000(is);
-		player->animation_wd_start = readF1000(is);
-		player->animation_wd_stop = readF1000(is);
+		packet[TOCLIENT_ANIMATIONS_DEFAULT_START].convert(&player->animation_default_start);
+		packet[TOCLIENT_ANIMATIONS_DEFAULT_STOP].convert(&player->animation_default_stop);
+		packet[TOCLIENT_ANIMATIONS_WALK_START].convert(&player->animation_walk_start);
+		packet[TOCLIENT_ANIMATIONS_WALK_STOP].convert(&player->animation_walk_stop);
+		packet[TOCLIENT_ANIMATIONS_DIG_START].convert(&player->animation_dig_start);
+		packet[TOCLIENT_ANIMATIONS_DIG_STOP].convert(&player->animation_dig_stop);
+		packet[TOCLIENT_ANIMATIONS_WD_START].convert(&player->animation_wd_start);
+		packet[TOCLIENT_ANIMATIONS_WD_STOP].convert(&player->animation_wd_stop);
 	}
 	else
 	{

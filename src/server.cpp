@@ -3353,23 +3353,19 @@ void Server::SendNodeDef(con::Connection &con, u16 peer_id,
 void Server::SendAnimations(con::Connection &con, u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOCLIENT_ANIMATIONS);
-	writeF1000(os, g_settings->getFloat("animation_default_start"));
-	writeF1000(os, g_settings->getFloat("animation_default_stop"));
-	writeF1000(os, g_settings->getFloat("animation_walk_start"));
-	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
-	writeF1000(os, g_settings->getFloat("animation_dig_start"));
-	writeF1000(os, g_settings->getFloat("animation_dig_stop"));
-	writeF1000(os, g_settings->getFloat("animation_walk_start"));
-	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
+	MSGPACK_PACKET_INIT(TOCLIENT_ANIMATIONS, 8);
+	PACK(TOCLIENT_ANIMATIONS_DEFAULT_START, g_settings->getFloat("animation_default_start"));
+	PACK(TOCLIENT_ANIMATIONS_DEFAULT_STOP, g_settings->getFloat("animation_default_stop"));
+	PACK(TOCLIENT_ANIMATIONS_WALK_START, g_settings->getFloat("animation_walk_start"));
+	PACK(TOCLIENT_ANIMATIONS_WALK_STOP, g_settings->getFloat("animation_walk_stop"));
+	PACK(TOCLIENT_ANIMATIONS_DIG_START, g_settings->getFloat("animation_dig_start"));
+	PACK(TOCLIENT_ANIMATIONS_DIG_STOP, g_settings->getFloat("animation_dig_stop"));
+	PACK(TOCLIENT_ANIMATIONS_WD_START, g_settings->getFloat("animation_walk_start"));
+	PACK(TOCLIENT_ANIMATIONS_WD_STOP, g_settings->getFloat("animation_walk_stop"));
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	con.Send(peer_id, 0, data, true);
+	con.Send(peer_id, 0, buffer, true);
 }
 
 /*
