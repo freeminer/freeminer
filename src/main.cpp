@@ -94,6 +94,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "enet/enet.h"
 
 #include "touchscreengui.h"
+#include <unistd.h>
 
 /*
 	Settings.
@@ -776,6 +777,7 @@ int main(int argc, char *argv[])
 	// well android lags anyway so no one will notice anything
 	// (this is actually needed to give GDB time to attach before everything crashes)
 	sleep(5);
+	chdir("/sdcard/freeminer/");
 	int retval = 0;
 
 	if (enet_initialize() != 0) {

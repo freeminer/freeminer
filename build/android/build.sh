@@ -15,17 +15,53 @@ pushd `dirname $0` > /dev/null
 ROOT=`pwd`
 popd > /dev/null
 
-mkdir -p $ROOT/deps
-cd $ROOT/deps
+echo ">> Making toolchain"
+$ROOT/scripts/make_standalone_toolchain.sh || exit 1
 
+mkdir -p $ROOT/deps
+
+cd $ROOT/deps
 if [ ! -d "leveldb" ]; then
 	echo ">> Fetching LevelDB"
 	git clone https://code.google.com/p/leveldb/ || exit 1
 fi
 
+cd $ROOT/deps
 if [ ! -d "irrlicht" ]; then
 	echo ">> Fetching Irrlicht"
 	git clone https://github.com/freeminer/irrlicht-android.git irrlicht || exit 1
+fi
+
+cd $ROOT/deps
+if [ ! -d "msgpack-c" ]; then
+	echo ">> Fetching msgpack-c"
+	git clone https://github.com/msgpack/msgpack-c.git || exit 1
+
+	echo ">> Building msgpack"
+	cd $ROOT/deps/msgpack-c
+	$ROOT/scripts/build_msgpack.sh || exit 1
+fi
+
+cd $ROOT/deps
+if [ ! -d "freetype" ]; then
+	echo ">> Downloading FreeType"
+	wget http://sourceforge.net/projects/freetype/files/freetype2/2.5.2/freetype-2.5.2.tar.bz2
+	tar xvf freetype-2.5.2.tar.bz2
+	mv freetype-2.5.2 freetype
+	echo ">> Building FreeType"
+	cd freetype
+	$ROOT/scripts/build_freetype.sh || exit 1
+fi
+
+cd $ROOT/deps
+if [ ! -d "libiconv" ]; then
+	echo ">> Downloading libiconv"
+	wget http://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.13.1.tar.gz
+	tar xvf libiconv-1.13.1.tar.gz
+	mv libiconv-1.13.1 libiconv
+	echo ">> Building libiconv"
+	cd libiconv
+	$ROOT/scripts/build_libiconv.sh || exit 1
 fi
 
 echo ">> Building LevelDB"
