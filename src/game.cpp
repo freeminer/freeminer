@@ -1776,7 +1776,8 @@ void the_game(
 
 		// Input handler step() (used by the random input generator)
 		input->step(dtime);
-		touchscreengui->step(dtime);
+		if (touchscreengui)
+			touchscreengui->step(dtime);
 
 		// Increase timer for doubleclick of "jump"
 		if(g_settings->getBool("doubletap_jump") && jump_timer <= 0.2)
@@ -2184,7 +2185,7 @@ void the_game(
 				}
 			}
 		}
-		if (touchscreengui->hasPlayerItemChanged())
+		if (touchscreengui && touchscreengui->hasPlayerItemChanged())
 			new_playeritem = touchscreengui->getPlayerItem();
 
 		// Viewing range selection

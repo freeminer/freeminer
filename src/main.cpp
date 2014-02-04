@@ -774,10 +774,13 @@ JNIEnv *jnienv;
 
 int main(int argc, char *argv[])
 {
+#ifdef ANDROID
 	// well android lags anyway so no one will notice anything
 	// (this is actually needed to give GDB time to attach before everything crashes)
 	sleep(5);
 	chdir("/sdcard/freeminer/");
+#endif
+
 	int retval = 0;
 
 	if (enet_initialize() != 0) {

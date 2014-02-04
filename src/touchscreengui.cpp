@@ -119,6 +119,7 @@ void TouchScreenGUI::init() {
 TouchScreenGUI::~TouchScreenGUI() {}
 
 void TouchScreenGUI::OnEvent(const SEvent &event) {
+#ifdef ANDROID
 	if (event.EventType == EET_MULTI_TOUCH_EVENT) {
 		//leftclicked = false;
 		//leftreleased = false;
@@ -223,6 +224,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 			m_digging = false;
 		}
 	}
+#endif
 }
 
 bool TouchScreenGUI::isKeyDown(const KeyPress &keyCode) {
