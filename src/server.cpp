@@ -3541,28 +3541,22 @@ void Server::SendDeleteParticleSpawnerAll(u32 id)
 
 void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_HUDADD, 13);
+	PACK(TOCLIENT_HUDADD_ID, id);
+	PACK(TOCLIENT_HUDADD_TYPE, (int)form->type);
+	PACK(TOCLIENT_HUDADD_POS, form->pos);
+	PACK(TOCLIENT_HUDADD_NAME, form->name);
+	PACK(TOCLIENT_HUDADD_SCALE, form->scale);
+	PACK(TOCLIENT_HUDADD_TEXT, form->text);
+	PACK(TOCLIENT_HUDADD_NUMBER, form->number);
+	PACK(TOCLIENT_HUDADD_ITEM, form->item);
+	PACK(TOCLIENT_HUDADD_DIR, form->dir);
+	PACK(TOCLIENT_HUDADD_ALIGN, form->align);
+	PACK(TOCLIENT_HUDADD_OFFSET, form->offset);
+	PACK(TOCLIENT_HUDADD_WORLD_POS, form->world_pos);
 
-	// Write command
-	writeU16(os, TOCLIENT_HUDADD);
-	writeU32(os, id);
-	writeU8(os, (u8)form->type);
-	writeV2F1000(os, form->pos);
-	os << serializeString(form->name);
-	writeV2F1000(os, form->scale);
-	os << serializeString(form->text);
-	writeU32(os, form->number);
-	writeU32(os, form->item);
-	writeU32(os, form->dir);
-	writeV2F1000(os, form->align);
-	writeV2F1000(os, form->offset);
-	writeV3F1000(os, form->world_pos);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 1, data, true);
+	m_con.Send(peer_id, 1, buffer, true);
 }
 
 void Server::SendHUDRemove(u16 peer_id, u32 id)

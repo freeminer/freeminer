@@ -393,6 +393,22 @@ enum {
 	TOCLIENT_HUDCHANGE_U32
 };
 
+#define TOCLIENT_HUDADD 0x49
+enum {
+	TOCLIENT_HUDADD_ID,
+	TOCLIENT_HUDADD_TYPE,
+	TOCLIENT_HUDADD_POS,
+	TOCLIENT_HUDADD_NAME,
+	TOCLIENT_HUDADD_SCALE,
+	TOCLIENT_HUDADD_TEXT,
+	TOCLIENT_HUDADD_NUMBER,
+	TOCLIENT_HUDADD_ITEM,
+	TOCLIENT_HUDADD_DIR,
+	TOCLIENT_HUDADD_ALIGN,
+	TOCLIENT_HUDADD_OFFSET,
+	TOCLIENT_HUDADD_WORLD_POS
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -403,25 +419,6 @@ enum ToClientCommand
 		serialized mapnode
 		u8 keep_metadata // Added in protocol version 22
 	*/
-
-	TOCLIENT_HUDADD = 0x49,
-	/*
-		u16 command
-		u32 id
-		u8 type
-		v2f1000 pos
-		u32 len
-		u8[len] name
-		v2f1000 scale
-		u32 len2
-		u8[len2] text
-		u32 number
-		u32 item
-		u32 dir
-		v2f1000 align
-		v2f1000 offset
-	*/
-
 };
 
 #define TOSERVER_INIT 0x10

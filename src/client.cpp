@@ -1610,21 +1610,24 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		std::string datastring((char *)&data[2], datasize - 2);
 		std::istringstream is(datastring, std::ios_base::binary);
 
-		u32 id           = readU32(is);
-		u8 type          = readU8(is);
-		v2f pos          = readV2F1000(is);
-		std::string name = deSerializeString(is);
-		v2f scale        = readV2F1000(is);
-		std::string text = deSerializeString(is);
-		u32 number       = readU32(is);
-		u32 item         = readU32(is);
-		u32 dir          = readU32(is);
-		v2f align        = readV2F1000(is);
-		v2f offset       = readV2F1000(is);
+		u32 id, number, item, dir;
+		u8 type;
+		v2f pos, scale, align, offset;
+		std::string name, text;
 		v3f world_pos;
-		try{
-			world_pos    = readV3F1000(is);
-		}catch(SerializationError &e) {};
+
+		packet[TOCLIENT_HUDADD_ID].convert(&id);
+		packet[TOCLIENT_HUDADD_TYPE].convert(&type);
+		packet[TOCLIENT_HUDADD_POS].convert(&pos);
+		packet[TOCLIENT_HUDADD_NAME].convert(&name);
+		packet[TOCLIENT_HUDADD_SCALE].convert(&scale);
+		packet[TOCLIENT_HUDADD_TEXT].convert(&text);
+		packet[TOCLIENT_HUDADD_NUMBER].convert(&number);
+		packet[TOCLIENT_HUDADD_ITEM].convert(&item);
+		packet[TOCLIENT_HUDADD_DIR].convert(&dir);
+		packet[TOCLIENT_HUDADD_ALIGN].convert(&align);
+		packet[TOCLIENT_HUDADD_OFFSET].convert(&offset);
+		packet[TOCLIENT_HUDADD_WORLD_POS].convert(&world_pos);
 
 		ClientEvent event;
 		event.type = CE_HUDADD;
