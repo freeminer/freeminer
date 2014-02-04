@@ -24,11 +24,8 @@ if [ ! -d "leveldb" ]; then
 fi
 
 if [ ! -d "irrlicht" ]; then
-	echo ">> Checking out Irrlicht ogl-es branch"
-	svn co http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/ irrlicht || exit 1
-	echo ">> Applying irrlicht.patch"
-	cd irrlicht
-	patch -p0 < $ROOT/irrlicht.patch || exit 1
+	echo ">> Fetching Irrlicht"
+	git clone https://github.com/freeminer/irrlicht-android.git irrlicht || exit 1
 fi
 
 echo ">> Building LevelDB"
