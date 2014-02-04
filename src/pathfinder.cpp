@@ -317,7 +317,7 @@ std::vector<v3s16> pathfinder::get_Path(ServerEnvironment* env,
 		optimized_path.push_back(source);
 
 		for (std::vector<v3s16>::iterator i = path.begin();
-					i != path.end(); i++) {
+					i != path.end(); ++i) {
 			if (!m_env->line_of_sight(
 				tov3f(getIndexElement(*startpos).pos),
 				tov3f(getIndexElement(*i).pos))) {
@@ -398,13 +398,13 @@ bool pathfinder::build_costmap()
 												<< m_limits.Z.max << ")"
 												<< std::endl;
 	m_data.resize(m_max_index_x);
-	for (int x = 0; x < m_max_index_x; x++) {
+	for (int x = 0; x < m_max_index_x; ++x) {
 		m_data[x].resize(m_max_index_z);
-		for (int z = 0; z < m_max_index_z; z++) {
+		for (int z = 0; z < m_max_index_z; ++z) {
 			m_data[x][z].resize(m_max_index_y);
 
 			int surfaces = 0;
-			for (int y = 0; y < m_max_index_y; y++) {
+			for (int y = 0; y < m_max_index_y; ++y) {
 				v3s16 ipos(x,y,z);
 
 				v3s16 realpos = getRealPos(ipos);
@@ -440,7 +440,7 @@ bool pathfinder::build_costmap()
 						continue;
 				}
 
-				surfaces++;
+				++surfaces;
 
 				m_data[x][z][y].valid  = true;
 				m_data[x][z][y].pos    = realpos;
@@ -461,7 +461,7 @@ bool pathfinder::build_costmap()
 			}
 
 			if (surfaces >= 1 ) {
-				for (int y = 0; y < m_max_index_y; y++) {
+				for (int y = 0; y < m_max_index_y; ++y) {
 					if (m_data[x][z][y].valid) {
 						m_data[x][z][y].surfaces = surfaces;
 					}
@@ -635,7 +635,7 @@ bool pathfinder::update_all_costs(	v3s16 ipos,
 	g_pos.totalcost = current_cost;
 	g_pos.sourcedir = srcdir;
 
-	level ++;
+	++level;
 
 	//check if target has been found
 	if (g_pos.target) {
@@ -653,7 +653,7 @@ bool pathfinder::update_all_costs(	v3s16 ipos,
 	directions.push_back(v3s16( 0,0, 1));
 	directions.push_back(v3s16( 0,0,-1));
 
-	for (unsigned int i=0; i < directions.size(); i++) {
+	for (unsigned int i=0; i < directions.size(); ++i) {
 		if (directions[i] != srcdir) {
 			path_cost cost = g_pos.get_cost(directions[i]);
 
@@ -735,7 +735,7 @@ v3s16 pathfinder::get_dir_heuristic(std::vector<v3s16>& directions,path_gridnode
 
 	for (std::vector<v3s16>::iterator iter = directions.begin();
 			iter != directions.end();
-			iter ++) {
+			++iter) {
 
 		v3s16 pos1 =  v3s16(srcpos.X + iter->X,0,srcpos.Z+iter->Z);
 
@@ -760,7 +760,7 @@ v3s16 pathfinder::get_dir_heuristic(std::vector<v3s16>& directions,path_gridnode
 	if (retdir != v3s16(0,0,0)) {
 		for (std::vector<v3s16>::iterator iter = directions.begin();
 					iter != directions.end();
-					iter ++) {
+					++iter) {
 			if(*iter == retdir) {
 				DEBUG_OUT("Pathfinder: removing return direction" << std::endl);
 				directions.erase(iter);
@@ -788,7 +788,7 @@ bool pathfinder::update_cost_heuristic(	v3s16 ipos,
 	g_pos.totalcost = current_cost;
 	g_pos.sourcedir = srcdir;
 
-	level ++;
+	++level;
 
 	//check if target has been found
 	if (g_pos.target) {
@@ -884,7 +884,7 @@ bool pathfinder::update_cost_heuristic(	v3s16 ipos,
 
 /******************************************************************************/
 void pathfinder::build_path(std::vector<v3s16>& path,v3s16 pos, int level) {
-	level ++;
+	++level;
 	if (level > 700) {
 		ERROR_TARGET
 		<< LVL "Pathfinder: path is too long aborting" << std::endl;
@@ -939,19 +939,19 @@ void pathfinder::print_cost(path_directions dir) {
 	std::cout << "Cost in direction: " << dir_to_name(dir) << std::endl;
 	std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
 	std::cout << std::setfill(' ');
-	for (int y = 0; y < m_max_index_y; y++) {
+	for (int y = 0; y < m_max_index_y; ++y) {
 
 		std::cout << "Level: " << y << std::endl;
 
 		std::cout << std::setw(4) << " " << "  ";
-		for (int x = 0; x < m_max_index_x; x++) {
+		for (int x = 0; x < m_max_index_x; ++x) {
 			std::cout << std::setw(4) << x;
 		}
 		std::cout << std::endl;
 
-		for (int z = 0; z < m_max_index_z; z++) {
+		for (int z = 0; z < m_max_index_z; ++z) {
 			std::cout << std::setw(4) << z <<": ";
-			for (int x = 0; x < m_max_index_x; x++) {
+			for (int x = 0; x < m_max_index_x; ++x) {
 				if (m_data[x][z][y].directions[dir].valid)
 					std::cout << std::setw(4)
 						<< m_data[x][z][y].directions[dir].value;
@@ -970,19 +970,19 @@ void pathfinder::print_ydir(path_directions dir) {
 	std::cout << "Height difference in direction: " << dir_to_name(dir) << std::endl;
 	std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
 	std::cout << std::setfill(' ');
-	for (int y = 0; y < m_max_index_y; y++) {
+	for (int y = 0; y < m_max_index_y; ++y) {
 
 		std::cout << "Level: " << y << std::endl;
 
 		std::cout << std::setw(4) << " " << "  ";
-		for (int x = 0; x < m_max_index_x; x++) {
+		for (int x = 0; x < m_max_index_x; ++x) {
 			std::cout << std::setw(4) << x;
 		}
 		std::cout << std::endl;
 
-		for (int z = 0; z < m_max_index_z; z++) {
+		for (int z = 0; z < m_max_index_z; ++z) {
 			std::cout << std::setw(4) << z <<": ";
-			for (int x = 0; x < m_max_index_x; x++) {
+			for (int x = 0; x < m_max_index_x; ++x) {
 				if (m_data[x][z][y].directions[dir].valid)
 					std::cout << std::setw(4)
 						<< m_data[x][z][y].directions[dir].direction;
@@ -1000,19 +1000,19 @@ void pathfinder::print_type() {
 	std::cout << "Type of node:" << std::endl;
 	std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
 	std::cout << std::setfill(' ');
-	for (int y = 0; y < m_max_index_y; y++) {
+	for (int y = 0; y < m_max_index_y; ++y) {
 
 		std::cout << "Level: " << y << std::endl;
 
 		std::cout << std::setw(3) << " " << "  ";
-		for (int x = 0; x < m_max_index_x; x++) {
+		for (int x = 0; x < m_max_index_x; ++x) {
 			std::cout << std::setw(3) << x;
 		}
 		std::cout << std::endl;
 
-		for (int z = 0; z < m_max_index_z; z++) {
+		for (int z = 0; z < m_max_index_z; ++z) {
 			std::cout << std::setw(3) << z <<": ";
-			for (int x = 0; x < m_max_index_x; x++) {
+			for (int x = 0; x < m_max_index_x; ++x) {
 				char toshow = m_data[x][z][y].type;
 				std::cout << std::setw(3) << toshow;
 			}
@@ -1028,19 +1028,19 @@ void pathfinder::print_pathlen() {
 	std::cout << "Pathlen:" << std::endl;
 		std::cout << std::setfill('-') << std::setw(80) << "-" << std::endl;
 		std::cout << std::setfill(' ');
-		for (int y = 0; y < m_max_index_y; y++) {
+		for (int y = 0; y < m_max_index_y; ++y) {
 
 			std::cout << "Level: " << y << std::endl;
 
 			std::cout << std::setw(3) << " " << "  ";
-			for (int x = 0; x < m_max_index_x; x++) {
+			for (int x = 0; x < m_max_index_x; ++x) {
 				std::cout << std::setw(3) << x;
 			}
 			std::cout << std::endl;
 
-			for (int z = 0; z < m_max_index_z; z++) {
+			for (int z = 0; z < m_max_index_z; ++z) {
 				std::cout << std::setw(3) << z <<": ";
-				for (int x = 0; x < m_max_index_x; x++) {
+				for (int x = 0; x < m_max_index_x; ++x) {
 					std::cout << std::setw(3) << m_data[x][z][y].totalcost;
 				}
 				std::cout << std::endl;
@@ -1075,9 +1075,9 @@ void pathfinder::print_path(std::vector<v3s16> path) {
 
 	unsigned int current = 0;
 	for (std::vector<v3s16>::iterator i = path.begin();
-			i != path.end(); i++) {
+			i != path.end(); ++i) {
 		std::cout << std::setw(3) << current << ":" << PPOS((*i)) << std::endl;
-		current++;
+		++current;
 	}
 }
 

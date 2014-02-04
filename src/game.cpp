@@ -292,9 +292,9 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 	if(xend==32767)
 		xend=32766;
 
-	for(s16 y = ystart; y <= yend; y++)
-	for(s16 z = zstart; z <= zend; z++)
-	for(s16 x = xstart; x <= xend; x++)
+	for(s16 y = ystart; y <= yend; ++y)
+	for(s16 z = zstart; z <= zend; ++z)
+	for(s16 x = xstart; x <= xend; ++x)
 	{
 		MapNode n;
 		try
@@ -315,13 +315,13 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 
 		for(std::vector<aabb3f>::const_iterator
 				i = boxes.begin();
-				i != boxes.end(); i++)
+				i != boxes.end(); ++i)
 		{
 			aabb3f box = *i;
 			box.MinEdge += npf;
 			box.MaxEdge += npf;
 
-			for(u16 j=0; j<6; j++)
+			for(u16 j=0; j<6; ++j)
 			{
 				v3s16 facedir = g_6dirs[j];
 				aabb3f facebox = box;
@@ -357,7 +357,7 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 				hilightboxes.clear();
 				for(std::vector<aabb3f>::const_iterator
 						i2 = boxes.begin();
-						i2 != boxes.end(); i2++)
+						i2 != boxes.end(); ++i2)
 				{
 					aabb3f box = *i2;
 					box.MinEdge += npf + v3f(-d,-d,-d);
@@ -494,11 +494,11 @@ public:
 	{
 		std::map<std::string, Meta> m_meta;
 		for(std::list<Piece>::const_iterator k = m_log.begin();
-				k != m_log.end(); k++)
+				k != m_log.end(); ++k)
 		{
 			const Piece &piece = *k;
 			for(Profiler::GraphValues::const_iterator i = piece.values.begin();
-					i != piece.values.end(); i++){
+					i != piece.values.end(); ++i) {
 				const std::string &id = i->first;
 				const float &value = i->second;
 				std::map<std::string, Meta>::iterator j =
@@ -526,7 +526,7 @@ public:
 				sizeof(usable_colors) / sizeof(*usable_colors);
 		u32 next_color_i = 0;
 		for(std::map<std::string, Meta>::iterator i = m_meta.begin();
-				i != m_meta.end(); i++){
+				i != m_meta.end(); ++i) {
 			Meta &meta = i->second;
 			video::SColor color(255,200,200,200);
 			if(next_color_i < usable_colors_count)
@@ -549,7 +549,7 @@ public:
 		
 		s32 meta_i = 0;
 		for(std::map<std::string, Meta>::const_iterator i = m_meta.begin();
-				i != m_meta.end(); i++){
+				i != m_meta.end(); ++i) {
 			const std::string &id = i->first;
 			const Meta &meta = i->second;
 			s32 x = x_left;
@@ -582,7 +582,7 @@ public:
 			float lastscaledvalue = 0.0;
 			bool lastscaledvalue_exists = false;
 			for(std::list<Piece>::const_iterator j = m_log.begin();
-					j != m_log.end(); j++)
+					j != m_log.end(); ++j)
 			{
 				const Piece &piece = *j;
 				float value = 0;
@@ -594,7 +594,7 @@ public:
 					value_exists = true;
 				}
 				if(!value_exists){
-					x++;
+					++x;
 					lastscaledvalue_exists = false;
 					continue;
 				}
@@ -602,7 +602,7 @@ public:
 				if(show_max != show_min)
 					scaledvalue = (value - show_min) / (show_max - show_min);
 				if(scaledvalue == 1.0 && value == 0){
-					x++;
+					++x;
 					lastscaledvalue_exists = false;
 					continue;
 				}
@@ -620,9 +620,9 @@ public:
 					driver->draw2DLine(v2s32(x, graph1y),
 							v2s32(x, graph1y - ivalue), meta.color);
 				}
-				x++;
+				++x;
 			}
-			meta_i++;
+			++meta_i;
 		}
 	}
 };
@@ -2145,21 +2145,21 @@ void the_game(
 			if(wheel < 0)
 			{
 				if(new_playeritem < max_item)
-					new_playeritem++;
+					++new_playeritem;
 				else
 					new_playeritem = 0;
 			}
 			else if(wheel > 0)
 			{
 				if(new_playeritem > 0)
-					new_playeritem--;
+					--new_playeritem;
 				else
 					new_playeritem = max_item;
 			}
 		}
 		
 		// Item selection
-		for(u16 i=0; i<10; i++)
+		for(u16 i=0; i<10; ++i)
 		{
 			const KeyPress *kp = NumberKey + (i + 1) % 10;
 			if(input->wasKeyDown(*kp))
@@ -3639,7 +3639,7 @@ void the_game(
 		<< device->getSceneManager()->getMeshCache()->getMeshCount() << std::endl;
 	infostream << "\tRemaining textures : "
 		<< driver->getTextureCount() << std::endl;
-	for (unsigned int i = 0; i < driver->getTextureCount(); i++ ) {
+	for (unsigned int i = 0; i < driver->getTextureCount(); ++i) {
 		irr::video::ITexture* texture = driver->getTextureByIndex(i);
 		infostream << "\t\t" << i << ":" << texture->getName().getPath().c_str()
 				<< std::endl;

@@ -77,7 +77,7 @@ void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string>
 	// Convert fields to lua table
 	lua_newtable(L);
 	for(std::map<std::string, std::string>::const_iterator
-		i = fields.begin(); i != fields.end(); i++){
+		i = fields.begin(); i != fields.end(); ++i) {
 		const std::string &name = i->first;
 		const std::string &value = i->second;
 		lua_pushstring(L, name.c_str());

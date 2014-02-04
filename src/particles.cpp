@@ -199,7 +199,7 @@ void Particle::updateVertices()
 	m_vertices[3] = video::S3DVertex(-m_size/2,m_size/2,0, 0,0,0,
 			c, tx0, ty0);
 
-	for(u16 i=0; i<4; i++)
+	for(u16 i=0; i<4; ++i)
 	{
 		if (m_vertical) {
 			v3f ppos = m_player->getPosition()/BS;
@@ -233,7 +233,7 @@ void allparticles_step (float dtime, ClientEnvironment &env)
 		else
 		{
 			(*i)->step(dtime, env);
-			i++;
+			++i;
 		}
 	}
 }
@@ -243,7 +243,7 @@ void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
 		const TileSpec tiles[])
 {
 	// TODO maybe depend on fps
-	for (u16 j = 0; j < 128; j++) // set the amount of particles here
+	for (u16 j = 0; j < 128; ++j) // set the amount of particles here
 	{
 		addNodeParticle(gamedef, smgr, player, env, pos, tiles);
 	}
@@ -337,7 +337,7 @@ ParticleSpawner::ParticleSpawner(IGameDef* gamedef, scene::ISceneManager *smgr, 
 	m_texture = texture;
 	m_time = 0;
 
-	for (u16 i = 0; i<=m_amount; i++)
+	for (u16 i = 0; i<=m_amount; ++i)
 	{
 		float spawntime = (float)rand()/(float)RAND_MAX*m_spawntime;
 		m_spawntimes.push_back(spawntime);
@@ -390,13 +390,13 @@ void ParticleSpawner::step(float dtime, ClientEnvironment &env)
 			}
 			else
 			{
-				i++;
+				++i;
 			}
 		}
 	}
 	else // Spawner exists for an infinity timespan, spawn on a per-second base
 	{
-		for (int i = 0; i <= m_amount; i++)
+		for (int i = 0; i <= m_amount; ++i)
 		{
 			if (rand()/(float)RAND_MAX < dtime)
 			{
@@ -444,7 +444,7 @@ void allparticlespawners_step (float dtime, ClientEnvironment &env)
 		else
 		{
 			i->second->step(dtime, env);
-			i++;
+			++i;
 		}
 	}
 }

@@ -56,7 +56,7 @@ double mandelbox(double x, double y, double z, double d, int nn = 10) {
 	double minRadius2 = 0.25;
 	double fixedRadius2 = 1;
 
-	for (int n = 0; n < nn; n++) {
+	for (int n = 0; n < nn; ++n) {
 		// Reflect
 		if (x > 1.0)
 			x = 2.0 - x;
@@ -101,7 +101,7 @@ double mengersponge(double x, double y, double z, double d, int MI = 10) {
 	double scale = 3;
 	int i = 0;
 
-	for (i = 0; i < MI && r < 9; i++) {
+	for (i = 0; i < MI && r < 9; ++i) {
 		x = fabs(x);
 		y = fabs(y);
 		z = fabs(z);
@@ -445,11 +445,11 @@ int MapgenMath::generateTerrain() {
 #endif
 
 	double d = 0;
-	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
-		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
+	for (s16 z = node_min.Z; z <= node_max.Z; ++z) {
+		for (s16 x = node_min.X; x <= node_max.X; ++x, ++index) {
 			//Biome *biome = bmgr->biomes[biomemap[index]];
 			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
+			for (s16 y = node_min.Y; y <= node_max.Y; ++y) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
 
 #if USE_MANDELBULBER

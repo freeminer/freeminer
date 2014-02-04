@@ -1008,7 +1008,7 @@ public:
 		float likely_suspect_nearness = 0;
 		for (std::list<RollbackAction>::const_reverse_iterator
 		     i = m_action_latest_buffer.rbegin();
-		     i != m_action_latest_buffer.rend(); i++) {
+		     i != m_action_latest_buffer.rend(); ++i) {
 			if (i->unix_time < first_time) {
 				break;
 			}
@@ -1047,7 +1047,7 @@ public:
 
 		for (iter  = m_action_todisk_buffer.begin();
 		     iter != m_action_todisk_buffer.end();
-		     iter++) {
+		     ++iter) {
 			if (iter->actor == "") {
 				continue;
 			}

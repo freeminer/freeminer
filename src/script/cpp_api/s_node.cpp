@@ -286,7 +286,7 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 	lua_pushstring(L, formname.c_str()); // formname
 	lua_newtable(L);                     // fields
 	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
+			i = fields.begin(); i != fields.end(); ++i) {
 		const std::string &name = i->first;
 		const std::string &value = i->second;
 		lua_pushstring(L, name.c_str());

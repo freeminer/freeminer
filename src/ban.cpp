@@ -81,7 +81,7 @@ void BanManager::save()
 
 	for(std::map<std::string, std::string>::iterator
 			i = m_ips.begin();
-			i != m_ips.end(); i++)
+			i != m_ips.end(); ++i)
 	{
 		ss << i->first << "|" << i->second << "\n";
 	}
@@ -106,7 +106,7 @@ std::string BanManager::getBanDescription(const std::string &ip_or_name)
 	std::string s = "";
 	for(std::map<std::string, std::string>::iterator
 			i = m_ips.begin();
-			i != m_ips.end(); i++)
+			i != m_ips.end(); ++i)
 	{
 		if(i->first == ip_or_name || i->second == ip_or_name
 				|| ip_or_name == "")
@@ -140,7 +140,7 @@ void BanManager::remove(const std::string &ip_or_name)
 	std::set<std::string> ips_to_delete;
 	for(std::map<std::string, std::string>::iterator
 			i = m_ips.begin();
-			i != m_ips.end(); i++)
+			i != m_ips.end(); ++i)
 	{
 		if(i->first == ip_or_name || i->second == ip_or_name)
 			ips_to_delete.insert(i->first);
@@ -148,7 +148,7 @@ void BanManager::remove(const std::string &ip_or_name)
 	// Erase them
 	for(std::set<std::string>::iterator
 			i = ips_to_delete.begin();
-			i != ips_to_delete.end(); i++)
+			i != ips_to_delete.end(); ++i)
 	{
 		m_ips.erase(*i);
 	}

@@ -312,7 +312,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			f.tiledef[i] = read_tiledef(L, -1);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
-			i++;
+			++i;
 			if(i==6){
 				lua_pop(L, 1);
 				break;
@@ -323,7 +323,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			TileDef lasttile = f.tiledef[i-1];
 			while(i < 6){
 				f.tiledef[i] = lasttile;
-				i++;
+				++i;
 			}
 		}
 	}
@@ -401,7 +401,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			f.tiledef_special[i] = read_tiledef(L, -1);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
-			i++;
+			++i;
 			if(i==CF_SPECIAL_COUNT){
 				lua_pop(L, 1);
 				break;
@@ -670,7 +670,7 @@ bool string_to_enum(const EnumString *spec, int &result,
 			result = esp->num;
 			return true;
 		}
-		esp++;
+		++esp;
 	}
 	return false;
 }
@@ -736,7 +736,7 @@ void push_tool_capabilities(lua_State *L,
 		lua_newtable(L);
 		// For each groupcap
 		for(std::map<std::string, ToolGroupCap>::const_iterator
-				i = toolcap.groupcaps.begin(); i != toolcap.groupcaps.end(); i++){
+				i = toolcap.groupcaps.begin(); i != toolcap.groupcaps.end(); ++i) {
 			// Create groupcap table
 			lua_newtable(L);
 			const std::string &name = i->first;
@@ -744,7 +744,7 @@ void push_tool_capabilities(lua_State *L,
 			// Create subtable "times"
 			lua_newtable(L);
 			for(std::map<int, float>::const_iterator
-					i = groupcap.times.begin(); i != groupcap.times.end(); i++){
+					i = groupcap.times.begin(); i != groupcap.times.end(); ++i) {
 				int rating = i->first;
 				float time = i->second;
 				lua_pushinteger(L, rating);
@@ -765,7 +765,7 @@ void push_tool_capabilities(lua_State *L,
 		lua_newtable(L);
 		// For each damage group
 		for(std::map<std::string, s16>::const_iterator
-				i = toolcap.damageGroups.begin(); i != toolcap.damageGroups.end(); i++){
+				i = toolcap.damageGroups.begin(); i != toolcap.damageGroups.end(); ++i) {
 			// Create damage group table
 			lua_pushinteger(L, i->second);
 			lua_setfield(L, -2, i->first.c_str());
@@ -782,7 +782,7 @@ void push_inventory_list(lua_State *L, Inventory *inv, const char *name)
 		return;
 	}
 	std::vector<ItemStack> items;
-	for(u32 i=0; i<invlist->getSize(); i++)
+	for(u32 i=0; i<invlist->getSize(); ++i)
 		items.push_back(invlist->getItem(i));
 	push_items(L, items);
 }
@@ -804,15 +804,15 @@ void read_inventory_list(lua_State *L, int tableindex,
 	InventoryList *invlist = inv->addList(name, listsize);
 	int index = 0;
 	for(std::vector<ItemStack>::const_iterator
-			i = items.begin(); i != items.end(); i++){
+			i = items.begin(); i != items.end(); ++i) {
 		if(forcesize != -1 && index == forcesize)
 			break;
 		invlist->changeItem(index, *i);
-		index++;
+		++index;
 	}
 	while(forcesize != -1 && index < forcesize){
 		invlist->deleteItem(index);
-		index++;
+		++index;
 	}
 }
 
@@ -945,7 +945,7 @@ void push_items(lua_State *L, const std::vector<ItemStack> &items)
 	// Create and fill table
 	lua_createtable(L, items.size(), 0);
 	std::vector<ItemStack>::const_iterator iter = items.begin();
-	for (u32 i = 0; iter != items.end(); iter++) {
+	for (u32 i = 0; iter != items.end(); ++iter) {
 		LuaItemStack::create(L, *iter);
 		lua_rawseti(L, -2, ++i);
 	}
@@ -1051,7 +1051,7 @@ bool read_schematic(lua_State *L, int index, DecoSchematic *dschem, Server *serv
 				schemdata[i] = MapNode(ndef, name, param1, param2);
 			}
 			
-			i++;
+			++i;
 			lua_pop(L, 1);
 		}
 		
@@ -1063,7 +1063,7 @@ bool read_schematic(lua_State *L, int index, DecoSchematic *dschem, Server *serv
 		}
 
 		u8 *sliceprobs = new u8[size.Y];
-		for (i = 0; i != size.Y; i++)
+		for (i = 0; i != size.Y; ++i)
 			sliceprobs[i] = MTSCHEM_PROB_ALWAYS;
 
 		// Get Y-slice probability values (if present)

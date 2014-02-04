@@ -85,14 +85,14 @@ public:
 	void skip_over(std::string chars){
 		while(p < tek.size()){
 			bool is = false;
-			for(unsigned int i=0; i<chars.size(); i++){
+			for(unsigned int i=0; i<chars.size(); ++i) {
 				if(chars[i] == tek[p]){
 					is = true;
 					break;
 				}
 			}
 			if(!is) break;
-			p++;
+			++p;
 		}
 	}
     bool atend(){

@@ -126,7 +126,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 		nthreads * 7 :
 		g_settings->getU16("emergequeue_limit_generate");
 
-	for (int i = 0; i != nthreads; i++)
+	for (int i = 0; i != nthreads; ++i)
 		emergethread.push_back(new EmergeThread((Server *)gamedef, i));
 
 	infostream << "EmergeManager: using " << nthreads << " threads" << std::endl;
@@ -134,7 +134,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 
 
 EmergeManager::~EmergeManager() {
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+	for (unsigned int i = 0; i != emergethread.size(); ++i) {
 		if (threads_active) {
 			emergethread[i]->Stop();
 			emergethread[i]->qevent.signal();
@@ -146,16 +146,16 @@ EmergeManager::~EmergeManager() {
 	emergethread.clear();
 	mapgen.clear();
 
-	for (unsigned int i = 0; i < ores.size(); i++)
+	for (unsigned int i = 0; i < ores.size(); ++i)
 		delete ores[i];
 	ores.clear();
 
-	for (unsigned int i = 0; i < decorations.size(); i++)
+	for (unsigned int i = 0; i < decorations.size(); ++i)
 		delete decorations[i];
 	decorations.clear();
 
 	for (std::map<std::string, MapgenFactory *>::iterator iter = mglist.begin();
-			iter != mglist.end(); iter ++) {
+			iter != mglist.end(); ++iter) {
 		delete iter->second;
 	}
 	mglist.clear();
@@ -174,10 +174,10 @@ void EmergeManager::initMapgens(MapgenParams *mgparams) {
 	// (at this point, the registration period is over)
 	biomedef->resolveNodeNames(ndef);
 
-	for (size_t i = 0; i != ores.size(); i++)
+	for (size_t i = 0; i != ores.size(); ++i)
 		ores[i]->resolveNodeNames(ndef);
 
-	for (size_t i = 0; i != decorations.size(); i++)
+	for (size_t i = 0; i != decorations.size(); ++i)
 		decorations[i]->resolveNodeNames(ndef);
 
 	// Apply mapgen parameter overrides from Lua
@@ -209,7 +209,7 @@ void EmergeManager::initMapgens(MapgenParams *mgparams) {
 
 	// Create the mapgens
 	this->params = mgparams;
-	for (size_t i = 0; i != emergethread.size(); i++) {
+	for (size_t i = 0; i != emergethread.size(); ++i) {
 		mg = createMapgen(params->mg_name, i, params);
 		if (!mg) {
 			infostream << "EmergeManager: Falling back to Mapgen V6" << std::endl;
@@ -252,7 +252,7 @@ MapgenParams *EmergeManager::setMapgenType(MapgenParams *mgparams,
 
 
 Mapgen *EmergeManager::getCurrentMapgen() {
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+	for (unsigned int i = 0; i != emergethread.size(); ++i) {
 		if (emergethread[i]->IsSameThread())
 			return emergethread[i]->mapgen;
 	}
@@ -265,7 +265,7 @@ void EmergeManager::startThreads() {
 	if (threads_active)
 		return;
 
-	for (unsigned int i = 0; i != emergethread.size(); i++)
+	for (unsigned int i = 0; i != emergethread.size(); ++i)
 		emergethread[i]->Start();
 
 	threads_active = true;
@@ -277,13 +277,13 @@ void EmergeManager::stopThreads() {
 		return;
 
 	// Request thread stop in parallel
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+	for (unsigned int i = 0; i != emergethread.size(); ++i) {
 		emergethread[i]->Stop();
 		emergethread[i]->qevent.signal();
 	}
 
 	// Then do the waiting for each
-	for (unsigned int i = 0; i != emergethread.size(); i++)
+	for (unsigned int i = 0; i != emergethread.size(); ++i)
 		emergethread[i]->Wait();
 
 	threads_active = false;
@@ -328,7 +328,7 @@ bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate
 
 		// insert into the EmergeThread queue with the least items
 		int lowestitems = emergethread[0]->blockqueue.size();
-		for (unsigned int i = 1; i != emergethread.size(); i++) {
+		for (unsigned int i = 1; i != emergethread.size(); ++i) {
 			int nitems = emergethread[i]->blockqueue.size();
 			if (nitems < lowestitems) {
 				idx = i;

@@ -69,7 +69,7 @@ GUIModalMenu(env, parent, id, menumgr)
 	activeKey = -1;
 	this->key_used_text = NULL;
 	init_keys();
-	for(size_t i=0; i<key_settings.size(); i++)
+	for(size_t i=0; i<key_settings.size(); ++i)
 		this->key_used.push_back(key_settings.at(i)->key);
 }
 
@@ -78,7 +78,7 @@ GUIKeyChangeMenu::~GUIKeyChangeMenu()
 	removeChildren();
 
 	for (std::vector<key_setting*>::iterator iter = key_settings.begin();
-			iter != key_settings.end(); iter ++) {
+			iter != key_settings.end(); ++iter) {
 		delete[] (*iter)->button_name;
 		delete (*iter);
 	}
@@ -90,12 +90,12 @@ void GUIKeyChangeMenu::removeChildren()
 	const core::list<gui::IGUIElement*> &children = getChildren();
 	core::list<gui::IGUIElement*> children_copy;
 	for (core::list<gui::IGUIElement*>::ConstIterator i = children.begin(); i
-		 != children.end(); i++)
+		 != children.end(); ++i)
 	{
 		children_copy.push_back(*i);
 	}
 	for (core::list<gui::IGUIElement*>::Iterator i = children_copy.begin(); i
-		 != children_copy.end(); i++)
+		 != children_copy.end(); ++i)
 	{
 		(*i)->remove();
 	}
@@ -130,7 +130,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 
 	v2s32 offset(25, 60);
 
-	for(size_t i = 0; i < key_settings.size(); i++)
+	for(size_t i = 0; i < key_settings.size(); ++i)
 	{
 		key_setting *k = key_settings.at(i);
 		{
@@ -220,7 +220,7 @@ void GUIKeyChangeMenu::drawMenu()
 
 bool GUIKeyChangeMenu::acceptInput()
 {
-	for(size_t i = 0; i < key_settings.size(); i++)
+	for(size_t i = 0; i < key_settings.size(); ++i)
 	{
 		key_setting *k = key_settings.at(i);
 		g_settings->set(k->setting_name, k->key.sym());
@@ -243,7 +243,7 @@ bool GUIKeyChangeMenu::resetMenu()
 {
 	if (activeKey >= 0)
 	{
-		for(size_t i = 0; i < key_settings.size(); i++)
+		for(size_t i = 0; i < key_settings.size(); ++i)
 		{
 			key_setting *k = key_settings.at(i);
 			if(k->id == activeKey)
@@ -296,7 +296,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 		// But go on
 		{
 			key_setting *k=NULL;
-			for(size_t i = 0; i < key_settings.size(); i++)
+			for(size_t i = 0; i < key_settings.size(); ++i)
 			{
 				if(key_settings.at(i)->id == activeKey)
 				{
@@ -348,7 +348,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 					return true;
 				default:
 					key_setting *k = NULL;
-					for(size_t i = 0; i < key_settings.size(); i++)
+					for(size_t i = 0; i < key_settings.size(); ++i)
 					{
 						if(key_settings.at(i)->id == event.GUIEvent.Caller->getID())
 						{

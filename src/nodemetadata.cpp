@@ -46,7 +46,7 @@ void NodeMetadata::serialize(std::ostream &os) const
 	int num_vars = m_stringvars.size();
 	writeU32(os, num_vars);
 	for(std::map<std::string, std::string>::const_iterator
-			i = m_stringvars.begin(); i != m_stringvars.end(); i++){
+			i = m_stringvars.begin(); i != m_stringvars.end(); ++i) {
 		os<<serializeString(i->first);
 		os<<serializeLongString(i->second);
 	}
@@ -58,7 +58,7 @@ void NodeMetadata::deSerialize(std::istream &is)
 {
 	m_stringvars.clear();
 	int num_vars = readU32(is);
-	for(int i=0; i<num_vars; i++){
+	for(int i=0; i<num_vars; ++i) {
 		std::string name = deSerializeString(is);
 		std::string var = deSerializeLongString(is);
 		m_stringvars[name] = var;
@@ -95,7 +95,7 @@ void NodeMetadataList::serialize(std::ostream &os) const
 
 	for(std::map<v3s16, NodeMetadata*>::const_iterator
 			i = m_data.begin();
-			i != m_data.end(); i++)
+			i != m_data.end(); ++i)
 	{
 		v3s16 p = i->first;
 		NodeMetadata *data = i->second;
@@ -126,7 +126,7 @@ void NodeMetadataList::deSerialize(std::istream &is, IGameDef *gamedef)
 
 	u16 count = readU16(is);
 
-	for(u16 i=0; i<count; i++)
+	for(u16 i=0; i<count; ++i)
 	{
 		u16 p16 = readU16(is);
 
@@ -185,7 +185,7 @@ void NodeMetadataList::clear()
 {
 	for(std::map<v3s16, NodeMetadata*>::iterator
 			i = m_data.begin();
-			i != m_data.end(); i++)
+			i != m_data.end(); ++i)
 	{
 		delete i->second;
 	}

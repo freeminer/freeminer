@@ -253,7 +253,7 @@ int InvRef::l_get_lists(lua_State *L)
 	std::vector<const InventoryList*> lists = inv->getLists();
 	std::vector<const InventoryList*>::iterator iter = lists.begin();
 	lua_createtable(L, 0, lists.size());
-	for (; iter != lists.end(); iter++) {
+	for (; iter != lists.end(); ++iter) {
 		const char* name = (*iter)->getName().c_str();
 		lua_pushstring(L, name);
 		push_inventory_list(L, inv, name);

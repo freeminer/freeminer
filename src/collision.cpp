@@ -177,7 +177,7 @@ bool wouldCollideWithCeiling(
 
 	for(std::vector<aabb3f>::const_iterator
 			i = staticboxes.begin();
-			i != staticboxes.end(); i++)
+			i != staticboxes.end(); ++i)
 	{
 		const aabb3f& staticbox = *i;
 		if((movingbox.MaxEdge.Y - d <= staticbox.MinEdge.Y) &&
@@ -248,9 +248,9 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	s16 max_y = MYMAX(oldpos_i.Y, newpos_i.Y) + (box_0.MaxEdge.Y / BS) + 1;
 	s16 max_z = MYMAX(oldpos_i.Z, newpos_i.Z) + (box_0.MaxEdge.Z / BS) + 1;
 
-	for(s16 x = min_x; x <= max_x; x++)
-	for(s16 y = min_y; y <= max_y; y++)
-	for(s16 z = min_z; z <= max_z; z++)
+	for(s16 x = min_x; x <= max_x; ++x)
+	for(s16 y = min_y; y <= max_y; ++y)
+	for(s16 z = min_z; z <= max_z; ++z)
 	{
 		v3s16 p(x,y,z);
 		try{
@@ -264,7 +264,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			std::vector<aabb3f> nodeboxes = n.getNodeBoxes(gamedef->ndef());
 			for(std::vector<aabb3f>::iterator
 					i = nodeboxes.begin();
-					i != nodeboxes.end(); i++)
+					i != nodeboxes.end(); ++i)
 			{
 				aabb3f box = *i;
 				box.MinEdge += v3f(x, y, z)*BS;
@@ -307,7 +307,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			f32 distance = speed_f.getLength();
 			std::vector<DistanceSortedActiveObject> clientobjects;
 			c_env->getActiveObjects(pos_f,distance * 1.5,clientobjects);
-			for (size_t i=0; i < clientobjects.size(); i++)
+			for (size_t i=0; i < clientobjects.size(); ++i)
 			{
 				if ((self == 0) || (self != clientobjects[i].obj)) {
 					objects.push_back((ActiveObject*)clientobjects[i].obj);
@@ -322,7 +322,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			{
 				f32 distance = speed_f.getLength();
 				std::set<u16> s_objects = s_env->getObjectsInsideRadius(pos_f,distance * 1.5);
-				for (std::set<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); iter++)
+				for (std::set<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); ++iter)
 				{
 					ServerActiveObject *current = s_env->getActiveObject(*iter);
 					if ((self == 0) || (self != current)) {
@@ -382,7 +382,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
         //ScopeProfiler sp(g_profiler, "collisionMoveSimple dtime loop avg", SPT_AVG);
 
 		// Avoid infinite loop
-		loopcount++;
+		++loopcount;
 		if(loopcount >= 100)
 		{
 			infostream<<"collisionMoveSimple: WARNING: Loop count exceeded, aborting to avoid infiniite loop"<<std::endl;
@@ -401,7 +401,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		/*
 			Go through every nodebox, find nearest collision
 		*/
-		for(u32 boxindex = 0; boxindex < cboxes.size(); boxindex++)
+		for(u32 boxindex = 0; boxindex < cboxes.size(); ++boxindex)
 		{
 			// Ignore if already stepped up this nodebox.
 			if(is_step_up[boxindex])
@@ -529,7 +529,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	aabb3f box = box_0;
 	box.MinEdge += pos_f;
 	box.MaxEdge += pos_f;
-	for(u32 boxindex = 0; boxindex < cboxes.size(); boxindex++)
+	for(u32 boxindex = 0; boxindex < cboxes.size(); ++boxindex)
 	{
 		const aabb3f& cbox = cboxes[boxindex];
 
@@ -592,7 +592,7 @@ collisionMoveResult collisionMovePrecise(Map *map, IGameDef *gamedef,
 	u32 loopcount = 0;
 	do
 	{
-		loopcount++;
+		++loopcount;
 
 		// Maximum time increment (for collision detection etc)
 		// time = distance / speed

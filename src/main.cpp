@@ -642,15 +642,15 @@ void SpeedTests()
 		infostream<<"The following test should take around 20ms."<<std::endl;
 		TimeTaker timer("Testing std::string speed");
 		const u32 jj = 10000;
-		for(u32 j=0; j<jj; j++)
+		for(u32 j=0; j<jj; ++j)
 		{
 			tempstring = "";
 			tempstring2 = "";
 			const u32 ii = 10;
-			for(u32 i=0; i<ii; i++){
+			for(u32 i=0; i<ii; ++i) {
 				tempstring2 += "asd";
 			}
-			for(u32 i=0; i<ii+1; i++){
+			for(u32 i=0; i<ii+1; ++i) {
 				tempstring += "asd";
 				if(tempstring == tempstring2)
 					break;
@@ -664,7 +664,7 @@ void SpeedTests()
 	{
 		TimeTaker timer("Testing floating-point conversion speed");
 		tempf = 0.001;
-		for(u32 i=0; i<4000000; i++){
+		for(u32 i=0; i<4000000; ++i) {
 			temp16 += tempf;
 			tempf += 0.001;
 		}
@@ -675,7 +675,7 @@ void SpeedTests()
 
 		tempv3f1 = v3f(1,2,3);
 		tempv3f2 = v3f(4,5,6);
-		for(u32 i=0; i<10000000; i++){
+		for(u32 i=0; i<10000000; ++i) {
 			tempf += tempv3f1.dotProduct(tempv3f2);
 			tempv3f2 += v3f(7,8,9);
 		}
@@ -687,14 +687,14 @@ void SpeedTests()
 		std::map<v2s16, f32> map1;
 		tempf = -324;
 		const s16 ii=300;
-		for(s16 y=0; y<ii; y++){
-			for(s16 x=0; x<ii; x++){
+		for(s16 y=0; y<ii; ++y) {
+			for(s16 x=0; x<ii; ++x) {
 				map1[v2s16(x,y)] =  tempf;
 				tempf += 1;
 			}
 		}
-		for(s16 y=ii-1; y>=0; y--){
-			for(s16 x=0; x<ii; x++){
+		for(s16 y=ii-1; y>=0; --y) {
+			for(s16 x=0; x<ii; ++x) {
 				tempf = map1[v2s16(x,y)];
 			}
 		}
@@ -709,7 +709,7 @@ void SpeedTests()
 		u32 i = 0;
 		do{
 			n += 10000;
-			for(; i<n; i++){
+			for(; i<n; ++i) {
 				m.Lock();
 				m.Unlock();
 			}
@@ -729,7 +729,7 @@ void SpeedTests()
 static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 		std::ostream &os)
 {
-	for(u32 i=0; i<worldspecs.size(); i++){
+	for(u32 i=0; i<worldspecs.size(); ++i) {
 		std::string name = worldspecs[i].name;
 		std::string path = worldspecs[i].path;
 		if(name.find(" ") != std::string::npos)
@@ -894,7 +894,7 @@ int main(int argc, char *argv[])
 	{
 		std::set<std::string> gameids = getAvailableGameIds();
 		for(std::set<std::string>::const_iterator i = gameids.begin();
-				i != gameids.end(); i++)
+				i != gameids.end(); ++i)
 			dstream<<(*i)<<std::endl;
 		return 0;
 	}
@@ -957,7 +957,7 @@ int main(int argc, char *argv[])
 				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
 #endif
 
-		for(u32 i=0; i<filenames.size(); i++)
+		for(u32 i=0; i<filenames.size(); ++i)
 		{
 			bool r = g_settings->readConfigFile(filenames[i].c_str());
 			if(r)
@@ -1066,7 +1066,7 @@ int main(int argc, char *argv[])
 		// Get information about available worlds
 		std::vector<WorldSpec> worldspecs = getAvailableWorlds();
 		bool found = false;
-		for(u32 i=0; i<worldspecs.size(); i++){
+		for(u32 i=0; i<worldspecs.size(); ++i) {
 			std::string name = worldspecs[i].name;
 			if(name == commanded_worldname){
 				if(commanded_world != ""){
@@ -1133,7 +1133,7 @@ int main(int argc, char *argv[])
 			// If a world name was specified, select it
 			if(commanded_worldname != ""){
 				world_path = "";
-				for(u32 i=0; i<worldspecs.size(); i++){
+				for(u32 i=0; i<worldspecs.size(); ++i) {
 					std::string name = worldspecs[i].name;
 					if(name == commanded_worldname){
 						world_path = worldspecs[i].path;
@@ -1837,7 +1837,7 @@ int main(int argc, char *argv[])
 	{
 		bool header_printed = false;
 		std::vector<std::string> names = getQuicktuneNames();
-		for(u32 i=0; i<names.size(); i++){
+		for(u32 i=0; i<names.size(); ++i) {
 			QuicktuneValue val = getQuicktuneValue(names[i]);
 			if(!val.modified)
 				continue;

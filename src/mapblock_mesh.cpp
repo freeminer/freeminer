@@ -88,7 +88,7 @@ void MeshMakeData::fill(MapBlock *block)
 		// Get map
 		Map *map = block->getParent();
 
-		for(u16 i=0; i<26; i++)
+		for(u16 i=0; i<26; ++i)
 		{
 			const v3s16 &dir = g_26dirs[i];
 			v3s16 bp = m_blockpos + dir;
@@ -115,7 +115,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 
 	// Fill in data
 	MapNode *data = new MapNode[volume];
-	for(s32 i = 0; i < volume; i++)
+	for(s32 i = 0; i < volume; ++i)
 	{
 		if(i == our_node_index)
 		{
@@ -257,7 +257,7 @@ static u8 getSmoothLight(enum LightBank bank, v3s16 p, MeshMakeData *data)
 	u16 light = 0;
 	u16 light_count = 0;
 	u8 light_source_max = 0;
-	for(u32 i=0; i<8; i++)
+	for(u32 i=0; i<8; ++i)
 	{
 		MapNode n = data->m_vmanip.getNodeNoEx(p - dirs8[i]);
 		const ContentFeatures &f = ndef->get(n);
@@ -268,11 +268,11 @@ static u8 getSmoothLight(enum LightBank bank, v3s16 p, MeshMakeData *data)
 		if(f.param_type == CPT_LIGHT && f.solidness != 2)
 		{
 			light += decode_light(n.getLight(bank, ndef));
-			light_count++;
+			++light_count;
 		}
 		else if(n.getContent() != CONTENT_IGNORE)
 		{
-			ambient_occlusion++;
+			++ambient_occlusion;
 		}
 	}
 
@@ -573,7 +573,7 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 		break;
 	}
 
-	for(u16 i=0; i<4; i++)
+	for(u16 i=0; i<4; ++i)
 	{
 		vertex_pos[i] = v3f(
 				BS/2*vertex_dirs[i].X,
@@ -582,7 +582,7 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 		);
 	}
 
-	for(u16 i=0; i<4; i++)
+	for(u16 i=0; i<4; ++i)
 	{
 		vertex_pos[i].X *= scale.X;
 		vertex_pos[i].Y *= scale.Y;
@@ -818,7 +818,7 @@ static void getTileInfo(
 	{
 		v3s16 vertex_dirs[4];
 		getNodeVertexDirs(face_dir_corrected, vertex_dirs);
-		for(u16 i=0; i<4; i++)
+		for(u16 i=0; i<4; ++i)
 		{
 			lights[i] = getSmoothLight(
 					blockpos_nodes + p_corrected,
@@ -857,7 +857,7 @@ static void updateFastFaceRow(
 			makes_face, p_corrected, face_dir_corrected,
 			lights, tile, light_source);
 
-	for(u16 j=0; j<MAP_BLOCKSIZE; j++)
+	for(u16 j=0; j<MAP_BLOCKSIZE; ++j)
 	{
 		// If tiling can be done, this is set to false in the next step
 		bool next_is_different = true;
@@ -920,7 +920,7 @@ static void updateFastFaceRow(
 				g_profiler->add("Meshgen: diff: last position", 1);*/
 		}
 
-		continuous_tiles_count++;
+		++continuous_tiles_count;
 		
 		if(next_is_different)
 		{
@@ -955,7 +955,7 @@ static void updateFastFaceRow(
 						dest);
 				
 				g_profiler->avg("Meshgen: faces drawn by tiling", 0);
-				for(int i=1; i<continuous_tiles_count; i++){
+				for(int i=1; i<continuous_tiles_count; ++i) {
 					g_profiler->avg("Meshgen: faces drawn by tiling", 1);
 				}
 			}
@@ -983,8 +983,8 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	/*
 		Go through every y,z and get top(y+) faces in rows of x+
 	*/
-	for(s16 y=0; y<MAP_BLOCKSIZE; y++){
-		for(s16 z=0; z<MAP_BLOCKSIZE; z++){
+	for(s16 y=0; y<MAP_BLOCKSIZE; ++y) {
+		for(s16 z=0; z<MAP_BLOCKSIZE; ++z) {
 			updateFastFaceRow(data,
 					v3s16(0,y,z),
 					v3s16(1,0,0), //dir
@@ -998,8 +998,8 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	/*
 		Go through every x,y and get right(x+) faces in rows of z+
 	*/
-	for(s16 x=0; x<MAP_BLOCKSIZE; x++){
-		for(s16 y=0; y<MAP_BLOCKSIZE; y++){
+	for(s16 x=0; x<MAP_BLOCKSIZE; ++x) {
+		for(s16 y=0; y<MAP_BLOCKSIZE; ++y) {
 			updateFastFaceRow(data,
 					v3s16(x,y,0),
 					v3s16(0,0,1), //dir
@@ -1013,8 +1013,8 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	/*
 		Go through every y,z and get back(z+) faces in rows of x+
 	*/
-	for(s16 z=0; z<MAP_BLOCKSIZE; z++){
-		for(s16 y=0; y<MAP_BLOCKSIZE; y++){
+	for(s16 z=0; z<MAP_BLOCKSIZE; ++z) {
+		for(s16 y=0; y<MAP_BLOCKSIZE; ++y) {
 			updateFastFaceRow(data,
 					v3s16(0,y,z),
 					v3s16(1,0,0), //dir
@@ -1072,7 +1072,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 		// (NOTE: probably outdated)
 		//TimeTaker timer2("MeshCollector building");
 
-		for(u32 i=0; i<fastfaces_new.size(); i++)
+		for(u32 i=0; i<fastfaces_new.size(); ++i)
 		{
 			FastFace &f = fastfaces_new[i];
 
@@ -1129,7 +1129,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 		shadermat5 = shdrsrc->getShader("plants_shader").material;
 	}
 
-	for(u32 i = 0; i < collector.prebuffers.size(); i++)
+	for(u32 i = 0; i < collector.prebuffers.size(); ++i)
 	{
 		PreMeshBuffer &p = collector.prebuffers[i];
 		/*dstream<<"p.vertices.size()="<<p.vertices.size()
@@ -1180,7 +1180,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 		// - Classic lighting (shaders handle this by themselves)
 		if(!enable_shaders)
 		{
-			for(u32 j = 0; j < p.vertices.size(); j++)
+			for(u32 j = 0; j < p.vertices.size(); ++j)
 			{
 				video::SColor &vc = p.vertices[j].Color;
 				// Set initial real color and store for later updates
@@ -1285,7 +1285,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 MapBlockMesh::~MapBlockMesh()
 {
 	if(clearHardwareBuffer)
-		for(u32 i=0; i<m_mesh->getMeshBufferCount(); i++){
+		for(u32 i=0; i<m_mesh->getMeshBufferCount(); ++i) {
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);
 			m_gamedef->tsrc()->getDevice()->getVideoDriver()->removeHardwareBuffer(buf);
 		}
@@ -1320,7 +1320,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	{
 		for(std::map<u32, std::string>::iterator
 				i = m_crack_materials.begin();
-				i != m_crack_materials.end(); i++)
+				i != m_crack_materials.end(); ++i)
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
 			std::string basename = i->second;
@@ -1353,7 +1353,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	// Texture animation
 	for(std::map<u32, TileSpec>::iterator
 			i = m_animation_tiles.begin();
-			i != m_animation_tiles.end(); i++)
+			i != m_animation_tiles.end(); ++i)
 	{
 		const TileSpec &tile = i->second;
 		// Figure out current frame
@@ -1398,14 +1398,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	{
 		for(std::map<u32, std::map<u32, std::pair<u8, u8> > >::iterator
 				i = m_daynight_diffs.begin();
-				i != m_daynight_diffs.end(); i++)
+				i != m_daynight_diffs.end(); ++i)
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
 			buf->setDirty(irr::scene::EBT_VERTEX);
 			video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 			for(std::map<u32, std::pair<u8, u8 > >::iterator
 					j = i->second.begin();
-					j != i->second.end(); j++)
+					j != i->second.end(); ++j)
 			{
 				u32 vertexIndex = j->first;
 				u8 day = j->second.first;
@@ -1450,7 +1450,7 @@ void MeshCollector::append(const TileSpec &tile,
 	}
 
 	PreMeshBuffer *p = NULL;
-	for(u32 i=0; i<prebuffers.size(); i++)
+	for(u32 i=0; i<prebuffers.size(); ++i)
 	{
 		PreMeshBuffer &pp = prebuffers[i];
 		if(pp.tile != tile)
@@ -1471,12 +1471,12 @@ void MeshCollector::append(const TileSpec &tile,
 	}
 
 	u32 vertex_count = p->vertices.size();
-	for(u32 i=0; i<numIndices; i++)
+	for(u32 i=0; i<numIndices; ++i)
 	{
 		u32 j = indices[i] + vertex_count;
 		p->indices.push_back(j);
 	}
-	for(u32 i=0; i<numVertices; i++)
+	for(u32 i=0; i<numVertices; ++i)
 	{
 		p->vertices.push_back(vertices[i]);
 	}

@@ -113,7 +113,7 @@ public:
 		std::list<Value> result;
 		for(typename std::map<Key, Value>::iterator
 				i = m_values.begin();
-				i != m_values.end(); ++i){
+				i != m_values.end(); ++i) {
 			result.push_back(i->second);
 		}
 		return result;
@@ -327,7 +327,7 @@ public:
 			JMutexAutoLock lock(m_mutex);
 
 			typename std::list<T>::iterator last = m_list.end();
-			last--;
+			--last;
 			T t = *last;
 			m_list.erase(last);
 			return t;
@@ -348,7 +348,7 @@ public:
 			JMutexAutoLock lock(m_mutex);
 
 			typename std::list<T>::iterator last = m_list.end();
-			last--;
+			--last;
 			T t = *last;
 			m_list.erase(last);
 			return t;
@@ -366,7 +366,7 @@ public:
 		JMutexAutoLock lock(m_mutex);
 
 		typename std::list<T>::iterator last = m_list.end();
-		last--;
+		--last;
 		T t = *last;
 		m_list.erase(last);
 		return t;

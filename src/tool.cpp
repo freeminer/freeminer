@@ -68,7 +68,7 @@ DigParams getDigParams(const ItemGroupList &groups,
 	int level = itemgroup_get(groups, "level");
 	//infostream<<"level="<<level<<std::endl;
 	for(std::map<std::string, ToolGroupCap>::const_iterator
-			i = tp->groupcaps.begin(); i != tp->groupcaps.end(); i++){
+			i = tp->groupcaps.begin(); i != tp->groupcaps.end(); ++i) {
 		const std::string &name = i->first;
 		//infostream<<"group="<<name<<std::endl;
 		const ToolGroupCap &cap = i->second;
@@ -116,7 +116,7 @@ HitParams getHitParams(const ItemGroupList &armor_groups,
 	float full_punch_interval = tp->full_punch_interval;
 
 	for(std::map<std::string, s16>::const_iterator
-			i = tp->damageGroups.begin(); i != tp->damageGroups.end(); i++){
+			i = tp->damageGroups.begin(); i != tp->damageGroups.end(); ++i) {
 		s16 armor = itemgroup_get(armor_groups, i->first);
 		damage += i->second * rangelim(time_from_last_punch * full_punch_interval, 0.0, 1.0)
 				* armor / 100.0;

@@ -51,7 +51,7 @@ static bool replace_ext(std::string &path, const char *ext)
 		return false;
 	// Find place of last dot, fail if \ or / found.
 	s32 last_dot_i = -1;
-	for(s32 i=path.size()-1; i>=0; i--)
+	for(s32 i=path.size()-1; i>=0; --i)
 	{
 		if(path[i] == '.')
 		{
@@ -187,7 +187,7 @@ class SourceImageCache
 public:
 	~SourceImageCache() {
 		for(std::map<std::string, video::IImage*>::iterator iter = m_images.begin();
-				iter != m_images.end(); iter++) {
+				iter != m_images.end(); ++iter) {
 			iter->second->drop();
 		}
 		m_images.clear();
@@ -455,7 +455,7 @@ TextureSource::~TextureSource()
 
 	for (std::vector<TextureInfo>::iterator iter =
 			m_textureinfo_cache.begin();
-			iter != m_textureinfo_cache.end(); iter++)
+			iter != m_textureinfo_cache.end(); ++iter)
 	{
 		//cleanup texture
 		if (iter->texture)
@@ -469,7 +469,7 @@ TextureSource::~TextureSource()
 
 	for (std::list<video::ITexture*>::iterator iter =
 			m_texture_trash.begin(); iter != m_texture_trash.end();
-			iter++)
+			++iter)
 	{
 		video::ITexture *t = *iter;
 
@@ -624,7 +624,7 @@ u32 TextureSource::getTextureIdDirect(const std::string &name)
 
 	// Find last meta separator in name
 	s32 last_separator_position = -1;
-	for(s32 i=name.size()-1; i>=0; i--)
+	for(s32 i=name.size()-1; i>=0; --i)
 	{
 		if(name[i] == separator)
 		{
@@ -807,7 +807,7 @@ void TextureSource::rebuildImagesAndTextures()
 	video::IVideoDriver* driver = m_device->getVideoDriver();
 
 	// Recreate textures
-	for(u32 i=0; i<m_textureinfo_cache.size(); i++){
+	for(u32 i=0; i<m_textureinfo_cache.size(); ++i) {
 		TextureInfo *ti = &m_textureinfo_cache[i];
 		video::IImage *img = generateImageFromScratch(ti->name);
 		// Create texture from resulting image
@@ -1162,8 +1162,8 @@ bool TextureSource::generateImage(std::string part_of_name, video::IImage *& bas
 			core::dimension2d<u32> dim = baseimg->getDimension();
 
 			// Set alpha to full
-			for(u32 y=0; y<dim.Height; y++)
-			for(u32 x=0; x<dim.Width; x++)
+			for(u32 y=0; y<dim.Height; ++y)
+			for(u32 x=0; x<dim.Width; ++x)
 			{
 				video::SColor c = baseimg->getPixel(x,y);
 				c.setAlpha(255);
@@ -1198,8 +1198,8 @@ bool TextureSource::generateImage(std::string part_of_name, video::IImage *& bas
 			oldbaseimg->drop();*/
 
 			// Set alpha to full
-			for(u32 y=0; y<dim.Height; y++)
-			for(u32 x=0; x<dim.Width; x++)
+			for(u32 y=0; y<dim.Height; ++y)
+			for(u32 x=0; x<dim.Width; ++x)
 			{
 				video::SColor c = baseimg->getPixel(x,y);
 				u32 r = c.getRed();
@@ -1461,8 +1461,8 @@ bool TextureSource::generateImage(std::string part_of_name, video::IImage *& bas
 static void blit_with_alpha(video::IImage *src, video::IImage *dst,
 		v2s32 src_pos, v2s32 dst_pos, v2u32 size)
 {
-	for(u32 y0=0; y0<size.Y; y0++)
-	for(u32 x0=0; x0<size.X; x0++)
+	for(u32 y0=0; y0<size.Y; ++y0)
+	for(u32 x0=0; x0<size.X; ++x0)
 	{
 		s32 src_x = src_pos.X + x0;
 		s32 src_y = src_pos.Y + y0;
@@ -1482,8 +1482,8 @@ static void blit_with_alpha(video::IImage *src, video::IImage *dst,
 static void blit_with_alpha_overlay(video::IImage *src, video::IImage *dst,
 		v2s32 src_pos, v2s32 dst_pos, v2u32 size)
 {
-	for(u32 y0=0; y0<size.Y; y0++)
-	for(u32 x0=0; x0<size.X; x0++)
+	for(u32 y0=0; y0<size.Y; ++y0)
+	for(u32 x0=0; x0<size.X; ++x0)
 	{
 		s32 src_x = src_pos.X + x0;
 		s32 src_y = src_pos.Y + y0;
@@ -1576,8 +1576,8 @@ void brighten(video::IImage *image)
 
 	core::dimension2d<u32> dim = image->getDimension();
 
-	for(u32 y=0; y<dim.Height; y++)
-	for(u32 x=0; x<dim.Width; x++)
+	for(u32 y=0; y<dim.Height; ++y)
+	for(u32 x=0; x<dim.Width; ++x)
 	{
 		video::SColor c = image->getPixel(x,y);
 		c.setRed(0.5 * 255 + 0.5 * (float)c.getRed());
@@ -1610,7 +1610,7 @@ u32 parseImageTransform(const std::string& s)
 			if(s[pos] == ('0' + i))
 			{
 				transform = i;
-				pos++;
+				++pos;
 				break;
 			}
 			else if(!(name_i.empty()) &&
@@ -1680,8 +1680,8 @@ void imageTransform(u32 transform, video::IImage *src, video::IImage *dst)
 	else if(transform == 7)    // flip y then rotate by 90 degrees ccw
 		sxn = 3, syn = 1;  //   sx = (H-1) - dy, sy = (W-1) - dx
 
-	for(u32 dy=0; dy<dstdim.Height; dy++)
-	for(u32 dx=0; dx<dstdim.Width; dx++)
+	for(u32 dy=0; dy<dstdim.Height; ++dy)
+	for(u32 dx=0; dx<dstdim.Width; ++dx)
 	{
 		u32 entries[4] = {dx, dstdim.Width-1-dx, dy, dstdim.Height-1-dy};
 		u32 sx = entries[sxn];

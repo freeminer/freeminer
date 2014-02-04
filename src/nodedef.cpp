@@ -171,9 +171,9 @@ void ContentFeatures::reset()
 	groups["dig_immediate"] = 2;
 	drawtype = NDT_NORMAL;
 	visual_scale = 1.0;
-	for(u32 i=0; i<6; i++)
+	for(u32 i=0; i<6; ++i)
 		tiledef[i] = TileDef();
-	for(u16 j=0; j<CF_SPECIAL_COUNT; j++)
+	for(u16 j=0; j<CF_SPECIAL_COUNT; ++j)
 		tiledef_special[j] = TileDef();
 	alpha = 255;
 	post_effect_color = video::SColor(0, 0, 0, 0);
@@ -578,7 +578,7 @@ public:
 		std::set<std::string> all = idef->getAll();
 		m_name_id_mapping_with_aliases.clear();
 		for(std::set<std::string>::iterator
-				i = all.begin(); i != all.end(); i++)
+				i = all.begin(); i != all.end(); ++i)
 		{
 			std::string name = *i;
 			std::string convert_to = idef->getAlias(name);
@@ -600,13 +600,13 @@ public:
 		bool new_style_leaves = g_settings->getBool("new_style_leaves");
 		bool opaque_water = g_settings->getBool("opaque_water");
 
-		for(u32 i=0; i<m_content_features.size(); i++)
+		for(u32 i=0; i<m_content_features.size(); ++i)
 		{
 			ContentFeatures *f = &m_content_features[i];
 
 			// Figure out the actual tiles to use
 			TileDef tiledef[6];
-			for(u32 j=0; j<6; j++)
+			for(u32 j=0; j<6; ++j)
 			{
 				tiledef[j] = f->tiledef[j];
 				if(tiledef[j].name == "")
@@ -664,7 +664,7 @@ public:
 				} else {
 					f->drawtype = NDT_NORMAL;
 					f->solidness = 2;
-					for(u32 i=0; i<6; i++){
+					for(u32 i=0; i<6; ++i) {
 						tiledef[i].name += std::string("^[noalpha");
 					}
 				}
@@ -690,7 +690,7 @@ public:
 				material_type = (f->alpha == 255) ? TILE_MATERIAL_LIQUID_OPAQUE : TILE_MATERIAL_LIQUID_TRANSPARENT;
 
 			// Tiles (fill in f->tiles[])
-			for(u16 j=0; j<6; j++){
+			for(u16 j=0; j<6; ++j) {
 				// Texture
 				f->tiles[j].texture = tsrc->getTexture(
 						tiledef[j].name,
@@ -732,7 +732,7 @@ public:
 				}
 			}
 			// Special tiles (fill in f->special_tiles[])
-			for(u16 j=0; j<CF_SPECIAL_COUNT; j++){
+			for(u16 j=0; j<CF_SPECIAL_COUNT; ++j) {
 				// Texture
 				f->special_tiles[j].texture = tsrc->getTexture(
 						f->tiledef_special[j].name,

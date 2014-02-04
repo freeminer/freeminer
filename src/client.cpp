@@ -84,7 +84,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 
 	for(std::vector<QueuedMeshUpdate*>::iterator
 			i = m_queue.begin();
-			i != m_queue.end(); i++)
+			i != m_queue.end(); ++i)
 	{
 		QueuedMeshUpdate *q = *i;
 		delete q;
@@ -111,7 +111,7 @@ void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_se
 	*/
 	for(std::vector<QueuedMeshUpdate*>::iterator
 			i = m_queue.begin();
-			i != m_queue.end(); i++)
+			i != m_queue.end(); ++i)
 	{
 		QueuedMeshUpdate *q = *i;
 		if(q->p == p)
@@ -144,7 +144,7 @@ QueuedMeshUpdate * MeshUpdateQueue::pop()
 	bool must_be_urgent = !m_urgents.empty();
 	for(std::vector<QueuedMeshUpdate*>::iterator
 			i = m_queue.begin();
-			i != m_queue.end(); i++)
+			i != m_queue.end(); ++i)
 	{
 		QueuedMeshUpdate *q = *i;
 		if(must_be_urgent && m_urgents.count(q->p) == 0)
@@ -323,7 +323,7 @@ Client::~Client()
 	{
 		for(std::map<std::string, Inventory*>::iterator
 				i = m_detached_inventories.begin();
-				i != m_detached_inventories.end(); i++){
+				i != m_detached_inventories.end(); ++i) {
 			delete i->second;
 		}
 	}
@@ -472,10 +472,10 @@ void Client::step(float dtime)
 						u32 k = 0;
 						for(core::list<v3s16>::Iterator
 								j = sendlist.begin();
-								j != sendlist.end(); j++)
+								j != sendlist.end(); ++j)
 						{
 							writeV3S16(&reply[2+1+6*k], *j);
-							k++;
+							++k;
 						}
 						m_con.Send(PEER_ID_SERVER, 1, reply, true);
 
@@ -486,7 +486,7 @@ void Client::step(float dtime)
 					}
 
 					sendlist.push_back(*i);
-					i++;
+					++i;
 				}
 			}
 		}
@@ -582,7 +582,7 @@ void Client::step(float dtime)
 						j != sendlist.end(); ++j)
 				{
 					writeV3S16(&reply[2+1+6*k], *j);
-					k++;
+					++k;
 				}
 				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 
@@ -677,7 +677,7 @@ void Client::step(float dtime)
 		UniqueQueue<v3s16> got_blocks;
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
-			num_processed_meshes++;
+			++num_processed_meshes;
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if(block)
@@ -776,7 +776,7 @@ void Client::step(float dtime)
 	{
 		for(std::map<int, u16>::iterator
 				i = m_sounds_to_objects.begin();
-				i != m_sounds_to_objects.end(); i++)
+				i != m_sounds_to_objects.end(); ++i)
 		{
 			int client_id = i->first;
 			u16 object_id = i->second;
@@ -803,7 +803,7 @@ void Client::step(float dtime)
 		{
 			s32 server_id = i->first;
 			int client_id = i->second;
-			i++;
+			++i;
 			if(!m_sound->soundExists(client_id)){
 				m_sounds_server_to_client.erase(server_id);
 				m_sounds_client_to_server.erase(client_id);
@@ -818,7 +818,7 @@ void Client::step(float dtime)
 			writeU16(os, TOSERVER_REMOVED_SOUNDS);
 			writeU16(os, removed_server_ids.size());
 			for(std::set<s32>::iterator i = removed_server_ids.begin();
-					i != removed_server_ids.end(); i++)
+					i != removed_server_ids.end(); ++i)
 				writeS32(os, *i);
 			std::string s = os.str();
 			SharedBuffer<u8> data((u8*)s.c_str(), s.size());
@@ -1726,7 +1726,7 @@ void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 	os<<serializeString(formname);
 	writeU16(os, fields.size());
 	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
+			i = fields.begin(); i != fields.end(); ++i) {
 		const std::string &name = i->first;
 		const std::string &value = i->second;
 		os<<serializeString(name);
@@ -1749,7 +1749,7 @@ void Client::sendInventoryFields(const std::string &formname,
 	os<<serializeString(formname);
 	writeU16(os, fields.size());
 	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
+			i = fields.begin(); i != fields.end(); ++i) {
 		const std::string &name = i->first;
 		const std::string &value = i->second;
 		os<<serializeString(name);
@@ -1810,7 +1810,7 @@ void Client::sendChangePassword(const std::string oldpassword,
 	*/
 
 	writeU16(buf, TOSERVER_PASSWORD);
-	for(u32 i=0;i<PASSWORD_SIZE-1;i++)
+	for(u32 i=0;i<PASSWORD_SIZE-1;++i)
 	{
 		buf[2+i] = i<oldpwd.length()?oldpwd[i]:0;
 		buf[30+i] = i<newpwd.length()?newpwd[i]:0;
@@ -2091,7 +2091,7 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	// After this, the closest object is the first in the array.
 	std::sort(objects.begin(), objects.end());
 
-	for(u32 i=0; i<objects.size(); i++)
+	for(u32 i=0; i<objects.size(); ++i)
 	{
 		ClientActiveObject *obj = objects[i].obj;
 		
@@ -2253,7 +2253,7 @@ void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server, bool 
 	}
 	catch(InvalidPositionException &e){}
 	// Leading edge
-	for (int i=0;i<6;i++)
+	for (int i=0;i<6;++i)
 	{
 		try{
 			v3s16 p = blockpos + g_6dirs[i];
@@ -2366,11 +2366,11 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 		size_t count = 0;
 		int percent = 0;
 		for(std::set<std::string>::const_iterator
-				i = names.begin(); i != names.end(); ++i){
+				i = names.begin(); i != names.end(); ++i) {
 			// Asking for these caches the result
 			m_itemdef->getInventoryTexture(*i, this);
 			m_itemdef->getWieldMesh(*i, this);
-			count++;
+			++count;
 			percent = count*100/size;
 			if (count%50 == 0) // only update every 50 item
 				draw_load_screen(text,device,font,0,percent);

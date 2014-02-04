@@ -312,12 +312,12 @@ void scaleMesh(scene::IMesh *mesh, v3f scale)
 	bbox.reset(0,0,0);
 
 	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
+	for(u16 j=0; j<mc; ++j)
 	{
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
+		for(u16 i=0; i<vc; ++i)
 		{
 			vertices[i].Pos *= scale;
 		}
@@ -341,12 +341,12 @@ void translateMesh(scene::IMesh *mesh, v3f vec)
 	bbox.reset(0,0,0);
 
 	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
+	for(u16 j=0; j<mc; ++j)
 	{
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
+		for(u16 i=0; i<vc; ++i)
 		{
 			vertices[i].Pos += vec;
 		}
@@ -367,12 +367,12 @@ void setMeshColor(scene::IMesh *mesh, const video::SColor &color)
 		return;
 	
 	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
+	for(u16 j=0; j<mc; ++j)
 	{
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
+		for(u16 i=0; i<vc; ++i)
 		{
 			vertices[i].Color = color;
 		}
@@ -388,12 +388,12 @@ void setMeshColorByNormalXYZ(scene::IMesh *mesh,
 		return;
 	
 	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
+	for(u16 j=0; j<mc; ++j)
 	{
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
 		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
 		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
+		for(u16 i=0; i<vc; ++i)
 		{
 			f32 x = fabs(vertices[i].Normal.X);
 			f32 y = fabs(vertices[i].Normal.Y);

@@ -268,7 +268,7 @@ void pathRemoveFile(char *path, char delim)
 {
 	// Remove filename and path delimiter
 	int i;
-	for(i = strlen(path)-1; i>=0; i--)
+	for(i = strlen(path)-1; i>=0; --i)
 	{
 		if(path[i] == delim)
 			break;
@@ -478,7 +478,7 @@ void initializePaths()
 	trylist.push_back(bindir + "/..");
 
 	for(std::list<std::string>::const_iterator i = trylist.begin();
-			i != trylist.end(); i++)
+			i != trylist.end(); ++i)
 	{
 		const std::string &trypath = *i;
 		if(!fs::PathExists(trypath) || !fs::PathExists(trypath + "/builtin")){

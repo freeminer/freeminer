@@ -78,7 +78,7 @@ SubgameSpec findSubgame(const std::string &id)
 	// Find game directory
 	std::string game_path;
 	bool user_game = true; // Game is in user's directory
-	for(u32 i=0; i<find_paths.size(); i++){
+	for(u32 i=0; i<find_paths.size(); ++i) {
 		const std::string &try_path = find_paths[i].path;
 		if(fs::PathExists(try_path)){
 			game_path = try_path;
@@ -131,9 +131,9 @@ std::set<std::string> getAvailableGameIds()
 	gamespaths.insert(porting::path_share + DIR_DELIM + "games");
 	gamespaths.insert(porting::path_user + DIR_DELIM + "games");
 	for(std::set<std::string>::const_iterator i = gamespaths.begin();
-			i != gamespaths.end(); i++){
+			i != gamespaths.end(); ++i) {
 		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(*i);
-		for(u32 j=0; j<dirlist.size(); j++){
+		for(u32 j=0; j<dirlist.size(); ++j) {
 			if(!dirlist[j].dir)
 				continue;
 			// If configuration file is not found or broken, ignore game
@@ -157,7 +157,7 @@ std::vector<SubgameSpec> getAvailableGames()
 	std::vector<SubgameSpec> specs;
 	std::set<std::string> gameids = getAvailableGameIds();
 	for(std::set<std::string>::const_iterator i = gameids.begin();
-			i != gameids.end(); i++)
+			i != gameids.end(); ++i)
 		specs.push_back(findSubgame(*i));
 	return specs;
 }
@@ -198,10 +198,10 @@ std::vector<WorldSpec> getAvailableWorlds()
 	worldspaths.insert(porting::path_user + DIR_DELIM + "worlds");
 	infostream<<"Searching worlds..."<<std::endl;
 	for(std::set<std::string>::const_iterator i = worldspaths.begin();
-			i != worldspaths.end(); i++){
+			i != worldspaths.end(); ++i) {
 		infostream<<"  In "<<(*i)<<": "<<std::endl;
 		std::vector<fs::DirListNode> dirvector = fs::GetDirListing(*i);
-		for(u32 j=0; j<dirvector.size(); j++){
+		for(u32 j=0; j<dirvector.size(); ++j) {
 			if(!dirvector[j].dir)
 				continue;
 			std::string fullpath = *i + DIR_DELIM + dirvector[j].name;

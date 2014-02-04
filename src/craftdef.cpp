@@ -74,7 +74,7 @@ static std::vector<std::string> craftGetItemNames(
 	std::vector<std::string> result;
 	for(std::vector<std::string>::const_iterator
 			i = itemstrings.begin();
-			i != itemstrings.end(); i++)
+			i != itemstrings.end(); ++i)
 	{
 		result.push_back(craftGetItemName(*i, gamedef));
 	}
@@ -88,7 +88,7 @@ static std::vector<std::string> craftGetItemNames(
 	std::vector<std::string> result;
 	for(std::vector<ItemStack>::const_iterator
 			i = items.begin();
-			i != items.end(); i++)
+			i != items.end(); ++i)
 	{
 		result.push_back(i->name);
 	}
@@ -102,7 +102,7 @@ static std::vector<ItemStack> craftGetItems(
 	std::vector<ItemStack> result;
 	for(std::vector<std::string>::const_iterator
 			i = items.begin();
-			i != items.end(); i++)
+			i != items.end(); ++i)
 	{
 		result.push_back(ItemStack(std::string(*i),(u16)1,(u16)0,"",gamedef->getItemDefManager()));
 	}
@@ -120,7 +120,7 @@ static bool craftGetBounds(const std::vector<std::string> &items, unsigned int w
 	unsigned int y = 0;
 	for(std::vector<std::string>::const_iterator
 			i = items.begin();
-			i != items.end(); i++)
+			i != items.end(); ++i)
 	{
 		if(*i != "")  // Is this an actual item?
 		{
@@ -141,11 +141,11 @@ static bool craftGetBounds(const std::vector<std::string> &items, unsigned int w
 		}
 
 		// Step coordinate
-		x++;
+		++x;
 		if(x == width)
 		{
 			x = 0;
-			y++;
+			++y;
 		}
 	}
 	return success;
@@ -156,7 +156,7 @@ static void craftDecrementInput(CraftInput &input, IGameDef *gamedef)
 {
 	for(std::vector<ItemStack>::iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(i->count != 0)
 			i->remove(1);
@@ -181,7 +181,7 @@ static void craftDecrementOrReplaceInput(CraftInput &input,
 
 	for(std::vector<ItemStack>::iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(i->count == 1)
 		{
@@ -189,7 +189,7 @@ static void craftDecrementOrReplaceInput(CraftInput &input,
 			bool found_replacement = false;
 			for(std::vector<std::pair<std::string, std::string> >::iterator
 					j = pairs.begin();
-					j != pairs.end(); j++)
+					j != pairs.end(); ++j)
 			{
 				ItemStack from_item;
 				from_item.deSerialize(j->first, gamedef->idef());
@@ -222,7 +222,7 @@ static std::string craftDumpMatrix(const std::vector<std::string> &items,
 	unsigned int x = 0;
 	for(std::vector<std::string>::const_iterator
 			i = items.begin();
-			i != items.end(); i++, x++)
+			i != items.end(); ++i, ++x)
 	{
 		if(x == width)
 		{
@@ -248,7 +248,7 @@ std::string craftDumpMatrix(const std::vector<ItemStack> &items,
 	unsigned int x = 0;
 	for(std::vector<ItemStack>::const_iterator
 			i = items.begin();
-			i != items.end(); i++, x++)
+			i != items.end(); ++i, ++x)
 	{
 		if(x == width)
 		{
@@ -299,7 +299,7 @@ std::string CraftReplacements::dump() const
 	const char *sep = "";
 	for(std::vector<std::pair<std::string, std::string> >::const_iterator
 			i = pairs.begin();
-			i != pairs.end(); i++)
+			i != pairs.end(); ++i)
 	{
 		os<<sep<<"\""<<(i->first)<<"\"=>\""<<(i->second)<<"\"";
 		sep = ",";
@@ -311,7 +311,7 @@ std::string CraftReplacements::dump() const
 void CraftReplacements::serialize(std::ostream &os) const
 {
 	writeU16(os, pairs.size());
-	for(u32 i=0; i<pairs.size(); i++)
+	for(u32 i=0; i<pairs.size(); ++i)
 	{
 		os<<serializeString(pairs[i].first);
 		os<<serializeString(pairs[i].second);
@@ -322,7 +322,7 @@ void CraftReplacements::deSerialize(std::istream &is)
 {
 	pairs.clear();
 	u32 count = readU16(is);
-	for(u32 i=0; i<count; i++)
+	for(u32 i=0; i<count; ++i)
 	{
 		std::string first = deSerializeString(is);
 		std::string second = deSerializeString(is);
@@ -426,8 +426,8 @@ bool CraftDefinitionShaped::check(const CraftInput &input, IGameDef *gamedef) co
 	// Verify that all item names in the bounding box are equal
 	unsigned int w = inp_max_x - inp_min_x + 1;
 	unsigned int h = inp_max_y - inp_min_y + 1;
-	for(unsigned int y=0; y<h; y++)
-	for(unsigned int x=0; x<w; x++)
+	for(unsigned int y=0; y<h; ++y)
+	for(unsigned int x=0; x<w; ++x)
 	{
 		unsigned int inp_x = inp_min_x + x;
 		unsigned int inp_y = inp_min_y + y;
@@ -474,7 +474,7 @@ void CraftDefinitionShaped::serializeBody(std::ostream &os) const
 	os<<serializeString(output);
 	writeU16(os, width);
 	writeU16(os, recipe.size());
-	for(u32 i=0; i<recipe.size(); i++)
+	for(u32 i=0; i<recipe.size(); ++i)
 		os<<serializeString(recipe[i]);
 	replacements.serialize(os);
 }
@@ -487,7 +487,7 @@ void CraftDefinitionShaped::deSerializeBody(std::istream &is, int version)
 	width = readU16(is);
 	recipe.clear();
 	u32 count = readU16(is);
-	for(u32 i=0; i<count; i++)
+	for(u32 i=0; i<count; ++i)
 		recipe.push_back(deSerializeString(is));
 	replacements.deSerialize(is);
 }
@@ -510,7 +510,7 @@ bool CraftDefinitionShapeless::check(const CraftInput &input, IGameDef *gamedef)
 	std::vector<std::string> input_filtered;
 	for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(i->name != "")
 			input_filtered.push_back(i->name);
@@ -533,7 +533,7 @@ bool CraftDefinitionShapeless::check(const CraftInput &input, IGameDef *gamedef)
 		// If all items match, the recipe matches
 		bool all_match = true;
 		//dstream<<"Testing recipe (output="<<output<<"):";
-		for(size_t i=0; i<recipe.size(); i++){
+		for(size_t i=0; i<recipe.size(); ++i) {
 			//dstream<<" ("<<input_filtered[i]<<" == "<<recipe_copy[i]<<")";
 			if(!inputItemMatchesRecipe(input_filtered[i], recipe_copy[i],
 					gamedef->idef())){
@@ -577,7 +577,7 @@ void CraftDefinitionShapeless::serializeBody(std::ostream &os) const
 {
 	os<<serializeString(output);
 	writeU16(os, recipe.size());
-	for(u32 i=0; i<recipe.size(); i++)
+	for(u32 i=0; i<recipe.size(); ++i)
 		os<<serializeString(recipe[i]);
 	replacements.serialize(os);
 }
@@ -589,7 +589,7 @@ void CraftDefinitionShapeless::deSerializeBody(std::istream &is, int version)
 	output = deSerializeString(is);
 	recipe.clear();
 	u32 count = readU16(is);
-	for(u32 i=0; i<count; i++)
+	for(u32 i=0; i<count; ++i)
 		recipe.push_back(deSerializeString(is));
 	replacements.deSerialize(is);
 }
@@ -641,7 +641,7 @@ bool CraftDefinitionToolRepair::check(const CraftInput &input, IGameDef *gamedef
 	ItemStack item2;
 	for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(!i->empty())
 		{
@@ -663,7 +663,7 @@ CraftOutput CraftDefinitionToolRepair::getOutput(const CraftInput &input, IGameD
 	ItemStack item2;
 	for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(!i->empty())
 		{
@@ -726,7 +726,7 @@ bool CraftDefinitionCooking::check(const CraftInput &input, IGameDef *gamedef) c
 	std::vector<std::string> input_filtered;
 	for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(i->name != "")
 			input_filtered.push_back(i->name);
@@ -807,7 +807,7 @@ bool CraftDefinitionFuel::check(const CraftInput &input, IGameDef *gamedef) cons
 	std::vector<std::string> input_filtered;
 	for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++)
+			i != input.items.end(); ++i)
 	{
 		if(i->name != "")
 			input_filtered.push_back(i->name);
@@ -888,7 +888,7 @@ public:
 		bool all_empty = true;
 		for(std::vector<ItemStack>::const_iterator
 				i = input.items.begin();
-				i != input.items.end(); i++)
+				i != input.items.end(); ++i)
 		{
 			if(!i->empty())
 			{
@@ -903,7 +903,7 @@ public:
 		// definitions can override earlier ones.
 		for(std::vector<CraftDefinition*>::const_reverse_iterator
 				i = m_craft_definitions.rbegin();
-				i != m_craft_definitions.rend(); i++)
+				i != m_craft_definitions.rend(); ++i)
 		{
 			CraftDefinition *def = *i;
 
@@ -945,7 +945,7 @@ public:
 		// definitions can override earlier ones.
 		for(std::vector<CraftDefinition*>::const_reverse_iterator
 				i = m_craft_definitions.rbegin();
-				i != m_craft_definitions.rend(); i++)
+				i != m_craft_definitions.rend(); ++i)
 		{
 			CraftDefinition *def = *i;
 
@@ -982,7 +982,7 @@ public:
 
 		for(std::vector<CraftDefinition*>::const_reverse_iterator
 				i = m_craft_definitions.rbegin();
-				i != m_craft_definitions.rend(); i++)
+				i != m_craft_definitions.rend(); ++i)
 		{
 			CraftDefinition *def = *i;
 
@@ -1014,7 +1014,7 @@ public:
 		os<<"Crafting definitions:\n";
 		for(std::vector<CraftDefinition*>::const_iterator
 				i = m_craft_definitions.begin();
-				i != m_craft_definitions.end(); i++)
+				i != m_craft_definitions.end(); ++i)
 		{
 			os<<(*i)->dump()<<"\n";
 		}
@@ -1030,7 +1030,7 @@ public:
 	{
 		for(std::vector<CraftDefinition*>::iterator
 				i = m_craft_definitions.begin();
-				i != m_craft_definitions.end(); i++){
+				i != m_craft_definitions.end(); ++i) {
 			delete *i;
 		}
 		m_craft_definitions.clear();
@@ -1042,7 +1042,7 @@ public:
 		writeU16(os, count);
 		for(std::vector<CraftDefinition*>::const_iterator
 				i = m_craft_definitions.begin();
-				i != m_craft_definitions.end(); i++){
+				i != m_craft_definitions.end(); ++i) {
 			CraftDefinition *def = *i;
 			// Serialize wrapped in a string
 			std::ostringstream tmp_os(std::ios::binary);
@@ -1059,7 +1059,7 @@ public:
 		if(version != 0) throw SerializationError(
 				"unsupported CraftDefManager version");
 		u16 count = readU16(is);
-		for(u16 i=0; i<count; i++){
+		for(u16 i=0; i<count; ++i) {
 			// Deserialize a string and grab a CraftDefinition from it
 			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
 			CraftDefinition *def = CraftDefinition::deSerialize(tmp_is);

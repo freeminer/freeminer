@@ -702,7 +702,7 @@ public:
 			return;
 		}
 
-		for(int i=0; i<num_messages; i++){
+		for(int i=0; i<num_messages; ++i) {
 			std::string message = deSerializeLongString(is);
 			processMessage(message);
 		}
@@ -794,7 +794,8 @@ public:
 	ClientActiveObject *getParent()
 	{
 		ClientActiveObject *obj = NULL;
-		for(std::vector<core::vector2d<int> >::const_iterator cii = m_env->attachment_list.begin(); cii != m_env->attachment_list.end(); cii++)
+		for(std::vector<core::vector2d<int> >::const_iterator cii = m_env->attachment_list.begin();
+		    cii != m_env->attachment_list.end(); ++cii)
 		{
 			if(cii->X == getId()){ // This ID is our child
 				if(cii->Y > 0){ // A parent ID exists for our child
@@ -815,7 +816,8 @@ public:
 		if(permanent) // Should be true when removing the object permanently and false when refreshing (eg: updating visuals)
 		{
 			// Detach this object's children
-			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin(); ii != m_env->attachment_list.end(); ii++)
+			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin();
+			    ii != m_env->attachment_list.end(); ++ii)
 			{
 				if(ii->Y == getId()) // Is a child of our object
 				{
@@ -826,7 +828,8 @@ public:
 				}
 			}
 			// Delete this object from the attachments list
-			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin(); ii != m_env->attachment_list.end(); ii++)
+			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin();
+			    ii != m_env->attachment_list.end(); ++ii)
 			{
 				if(ii->X == getId()) // Is our object
 				{
@@ -1142,7 +1145,8 @@ public:
 			m_visuals_expired = false;
 
 			// Attachments, part 1: All attached objects must be unparented first, or Irrlicht causes a segmentation fault
-			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin(); ii != m_env->attachment_list.end(); ii++)
+			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin();
+			    ii != m_env->attachment_list.end(); ++ii)
 			{
 				if(ii->Y == getId()) // This is a child of our parent
 				{
@@ -1166,7 +1170,8 @@ public:
 			addToScene(m_smgr, m_gamedef->tsrc(), m_irr);
 
 			// Attachments, part 2: Now that the parent has been refreshed, put its attachments back
-			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin(); ii != m_env->attachment_list.end(); ii++)
+			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin();
+			    ii != m_env->attachment_list.end(); ++ii)
 			{
 				if(ii->Y == getId()) // This is a child of our parent
 				{
@@ -1254,7 +1259,7 @@ public:
 		m_anim_timer += dtime;
 		if(m_anim_timer >= m_anim_framelength){
 			m_anim_timer -= m_anim_framelength;
-			m_anim_frame++;
+			++m_anim_frame;
 			if(m_anim_frame >= m_anim_num_frames)
 				m_anim_frame = 0;
 		}
@@ -1512,7 +1517,8 @@ public:
 			return;
 
 		m_animated_meshnode->setJointMode(irr::scene::EJUOR_CONTROL); // To write positions to the mesh on render
-		for(std::map<std::string, core::vector2d<v3f> >::const_iterator ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii){
+		for(std::map<std::string, core::vector2d<v3f> >::const_iterator ii = m_bone_position.begin();
+		    ii != m_bone_position.end(); ++ii){
 			std::string bone_name = (*ii).first;
 			v3f bone_pos = (*ii).second.X;
 			v3f bone_rot = (*ii).second.Y;
@@ -1800,7 +1806,8 @@ public:
 		else if(cmd == GENERIC_CMD_SET_ATTACHMENT)
 		{
 			// If an entry already exists for this object, delete it first to avoid duplicates
-			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin(); ii != m_env->attachment_list.end(); ii++)
+			for(std::vector<core::vector2d<int> >::iterator ii = m_env->attachment_list.begin();
+			    ii != m_env->attachment_list.end(); ++ii)
 			{
 				if(ii->X == getId()) // This is the ID of our object
 				{
@@ -1847,7 +1854,7 @@ public:
 		{
 			m_armor_groups.clear();
 			int armor_groups_size = readU16(is);
-			for(int i=0; i<armor_groups_size; i++){
+			for(int i=0; i<armor_groups_size; ++i) {
 				std::string name = deSerializeString(is);
 				int rating = readS16(is);
 				m_armor_groups[name] = rating;
@@ -1897,7 +1904,7 @@ public:
 		os<<"GenericCAO hp="<<m_hp<<"\n";
 		os<<"armor={";
 		for(ItemGroupList::const_iterator i = m_armor_groups.begin();
-				i != m_armor_groups.end(); i++){
+				i != m_armor_groups.end(); ++i) {
 			os<<i->first<<"="<<i->second<<", ";
 		}
 		os<<"}";

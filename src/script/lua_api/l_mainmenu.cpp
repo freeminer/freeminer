@@ -214,7 +214,7 @@ int ModApiMainMenu::l_get_worlds(lua_State *L)
 	int top = lua_gettop(L);
 	unsigned int index = 1;
 
-	for (unsigned int i = 0; i < worlds.size(); i++)
+	for (unsigned int i = 0; i < worlds.size(); ++i)
 	{
 		lua_pushnumber(L,index);
 
@@ -234,7 +234,7 @@ int ModApiMainMenu::l_get_worlds(lua_State *L)
 		lua_settable(L, top_lvl2);
 
 		lua_settable(L, top);
-		index++;
+		++index;
 	}
 	return 1;
 }
@@ -248,7 +248,7 @@ int ModApiMainMenu::l_get_games(lua_State *L)
 	int top = lua_gettop(L);
 	unsigned int index = 1;
 
-	for (unsigned int i = 0; i < games.size(); i++)
+	for (unsigned int i = 0; i < games.size(); ++i)
 	{
 		lua_pushnumber(L,index);
 		lua_newtable(L);
@@ -279,15 +279,15 @@ int ModApiMainMenu::l_get_games(lua_State *L)
 		int table2 = lua_gettop(L);
 		int internal_index=1;
 		for (std::set<std::string>::iterator iter = games[i].addon_mods_paths.begin();
-				iter != games[i].addon_mods_paths.end(); iter++) {
+				iter != games[i].addon_mods_paths.end(); ++iter) {
 			lua_pushnumber(L,internal_index);
 			lua_pushstring(L,(*iter).c_str());
 			lua_settable(L, table2);
-			internal_index++;
+			++internal_index;
 		}
 		lua_settable(L, top_lvl2);
 		lua_settable(L, top);
-		index++;
+		++index;
 	}
 	return 1;
 }
@@ -346,7 +346,7 @@ int ModApiMainMenu::l_get_modstore_details(lua_State *L)
 			lua_pushstring(L,"versions");
 			lua_newtable(L);
 			int versionstop = lua_gettop(L);
-			for (unsigned int i=0;i < current_mod.versions.size(); i++) {
+			for (unsigned int i=0;i < current_mod.versions.size(); ++i) {
 				lua_pushnumber(L,i+1);
 				lua_newtable(L);
 				int current_element = lua_gettop(L);
@@ -410,7 +410,7 @@ int ModApiMainMenu::l_get_modstore_list(lua_State *L)
 	int top = lua_gettop(L);
 	unsigned int index = 1;
 
-	for (unsigned int i = 0; i < moddata.size(); i++)
+	for (unsigned int i = 0; i < moddata.size(); ++i)
 	{
 		if (moddata[i].valid) {
 			lua_pushnumber(L,index);
@@ -431,7 +431,7 @@ int ModApiMainMenu::l_get_modstore_list(lua_State *L)
 			lua_settable(L, top_lvl2);
 
 			lua_settable(L, top);
-			index++;
+			++index;
 		}
 	}
 	return 1;
@@ -461,7 +461,7 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 	int top = lua_gettop(L);
 	unsigned int index = 1;
 
-	for (unsigned int i = 0; i < servers.size(); i++)
+	for (unsigned int i = 0; i < servers.size(); ++i)
 	{
 		lua_pushnumber(L,index);
 
@@ -553,7 +553,7 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 		}
 
 		lua_settable(L, top);
-		index++;
+		++index;
 	}
 	return 1;
 }
@@ -731,12 +731,12 @@ int ModApiMainMenu::l_get_dirlist(lua_State *L)
 	lua_newtable(L);
 	int table = lua_gettop(L);
 
-	for (unsigned int i=0;i< dirlist.size(); i++) {
+	for (unsigned int i=0;i< dirlist.size(); ++i) {
 		if ((dirlist[i].dir) || (dironly == false)) {
 			lua_pushnumber(L,index);
 			lua_pushstring(L,dirlist[i].name.c_str());
 			lua_settable(L, table);
-			index++;
+			++index;
 		}
 	}
 
@@ -834,7 +834,7 @@ int ModApiMainMenu::l_extract_zip(lua_State *L)
 
 		unsigned int number_of_files = files_in_zip->getFileCount();
 
-		for (unsigned int i=0; i < number_of_files;  i++) {
+		for (unsigned int i=0; i < number_of_files; ++i) {
 			std::string fullpath = destination;
 			fullpath += DIR_DELIM;
 			fullpath += files_in_zip->getFullFileName(i).c_str();

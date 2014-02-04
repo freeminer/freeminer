@@ -76,7 +76,7 @@ std::vector<ServerListSpec> getOnline()
 	std::vector<ServerListSpec> serverlist;
 
 	if (root.isArray()) {
-		for (unsigned int i = 0; i < root.size(); i++)
+		for (unsigned int i = 0; i < root.size(); ++i)
 		{
 			if (root[i].isObject()) {
 				serverlist.push_back(root[i]);
@@ -95,7 +95,7 @@ std::vector<ServerListSpec> getOnline()
 bool deleteEntry (ServerListSpec server)
 {
 	std::vector<ServerListSpec> serverlist = ServerList::getLocal();
-	for(unsigned i = 0; i < serverlist.size(); i++)
+	for(unsigned i = 0; i < serverlist.size(); ++i)
 	{
 		if  (serverlist[i]["address"] == server["address"]
 		&&   serverlist[i]["port"]    == server["port"])
@@ -161,7 +161,7 @@ std::vector<ServerListSpec> deSerialize(std::string liststring)
 std::string serialize(std::vector<ServerListSpec> serverlist)
 {
 	std::string liststring;
-	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); i++)
+	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); ++i)
 	{
 		liststring += "[server]\n";
 		liststring += (*i)["name"].asString() + "\n";
@@ -177,7 +177,7 @@ std::string serializeJson(std::vector<ServerListSpec> serverlist)
 {
 	Json::Value root;
 	Json::Value list(Json::arrayValue);
-	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); i++)
+	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); ++i)
 	{
 		list.append(*i);
 	}
@@ -222,7 +222,7 @@ void sendAnnounce(std::string action, const std::vector<std::string> & clients_n
 		server["mapgen"]	= g_settings->get("mg_name");
 		server["can_see_far_names"]	= g_settings->getBool("unlimited_player_transfer_distance");
 		server["mods"]		= Json::Value(Json::arrayValue);
-		for(std::vector<ModSpec>::iterator m = mods.begin(); m != mods.end(); m++) {
+		for(std::vector<ModSpec>::iterator m = mods.begin(); m != mods.end(); ++m) {
 			server["mods"].append(m->name);
 		}
 		actionstream << "announcing to " << g_settings->get("serverlist_url") << std::endl;

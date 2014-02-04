@@ -139,7 +139,7 @@ Player * Environment::getRandomConnectedPlayer()
 			Player *player = *i;
 			return player;
 		}
-		j++;
+		++j;
 	}
 	return NULL;
 }
@@ -243,9 +243,9 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_):
 void fillRadiusBlock(v3s16 p0, s16 r, std::set<v3s16> &list)
 {
 	v3s16 p;
-	for(p.X=p0.X-r; p.X<=p0.X+r; p.X++)
-	for(p.Y=p0.Y-r; p.Y<=p0.Y+r; p.Y++)
-	for(p.Z=p0.Z-r; p.Z<=p0.Z+r; p.Z++)
+	for(p.X=p0.X-r; p.X<=p0.X+r; ++p.X)
+	for(p.Y=p0.Y-r; p.Y<=p0.Y+r; ++p.Y)
+	for(p.Z=p0.Z-r; p.Z<=p0.Z+r; ++p.Z)
 	{
 		// Set in list
 		list.insert(p);
@@ -449,7 +449,7 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 	std::string players_path = savedir + "/players";
 
 	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
-	for(u32 i=0; i<player_files.size(); i++)
+	for(u32 i=0; i<player_files.size(); ++i)
 	{
 		if(player_files[i].dir)
 			continue;
@@ -687,19 +687,19 @@ public:
 					= abm->getRequiredNeighbors(activate);
 			for(std::set<std::string>::iterator
 					i = required_neighbors_s.begin();
-					i != required_neighbors_s.end(); i++)
+					i != required_neighbors_s.end(); ++i)
 			{
 				ndef->getIds(*i, aabm.required_neighbors);
 			}
 			// Trigger contents
 			std::set<std::string> contents_s = abm->getTriggerContents();
 			for(std::set<std::string>::iterator
-					i = contents_s.begin(); i != contents_s.end(); i++)
+					i = contents_s.begin(); i != contents_s.end(); ++i)
 			{
 				std::set<content_t> ids;
 				ndef->getIds(*i, ids);
 				for(std::set<content_t>::const_iterator k = ids.begin();
-						k != ids.end(); k++)
+						k != ids.end(); ++k)
 				{
 					content_t c = *k;
 					if (!m_aabms[c]) {
@@ -727,9 +727,9 @@ public:
 		ServerMap *map = &m_env->getServerMap();
 
 		v3s16 p0;
-		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
-		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
-		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
+		for(p0.X=0; p0.X<MAP_BLOCKSIZE; ++p0.X)
+		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; ++p0.Y)
+		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; ++p0.Z)
 		{
 			MapNode n = block->getNodeNoEx(p0);
 			content_t c = n.getContent();
@@ -739,7 +739,7 @@ public:
 				continue;
 
 			for(std::list<ActiveABM>::iterator
-					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); i++)
+					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); ++i)
 			{
 				if(myrand() % i->chance != 0)
 					continue;
@@ -772,9 +772,9 @@ neighbor_found:
 				// Find out how many objects this and all the neighbors contain
 				u32 active_object_count_wider = 0;
 				//u32 wider_unknown_count = 0;
-				for(s16 x=-1; x<=1; x++)
-				for(s16 y=-1; y<=1; y++)
-				for(s16 z=-1; z<=1; z++)
+				for(s16 x=-1; x<=1; ++x)
+				for(s16 y=-1; y<=1; ++y)
+				for(s16 z=-1; z<=1; ++z)
 				{
 					MapBlock *block2 = map->getBlockNoCreateNoEx(
 							block->getPos() + v3s16(x,y,z));
@@ -831,7 +831,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 		MapNode n;
 		for(std::map<v3s16, NodeTimer>::iterator
 				i = elapsed_timers.begin();
-				i != elapsed_timers.end(); i++){
+				i != elapsed_timers.end(); ++i) {
 			n = block->getNodeNoEx(i->first);
 			v3s16 p = i->first + block->getPosRelative();
 			if(m_script->node_on_timer(p,n,i->second.elapsed))
@@ -1072,9 +1072,9 @@ void ServerEnvironment::clearAllObjects()
 			block->raiseModified(MOD_STATE_WRITE_NEEDED,
 					"clearAllObjects");
 			num_objs_cleared += num_stored + num_active;
-			num_blocks_cleared++;
+			++num_blocks_cleared;
 		}
-		num_blocks_checked++;
+		++num_blocks_checked;
 
 		if(report_interval != 0 &&
 				num_blocks_checked % report_interval == 0){
@@ -1311,7 +1311,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				MapNode n;
 				for(std::map<v3s16, NodeTimer>::iterator
 						i = elapsed_timers.begin();
-						i != elapsed_timers.end(); i++){
+						i != elapsed_timers.end(); ++i) {
 					n = block->getNodeNoEx(i->first);
 					p = i->first + block->getPosRelative();
 					if(m_script->node_on_timer(p,n,i->second.elapsed))
@@ -1501,7 +1501,7 @@ u16 getFreeServerActiveObjectId(
 	u16 startid = last_used_id;
 	for(;;)
 	{
-		last_used_id ++;
+		++last_used_id;
 		if(isFreeServerActiveObjectId(last_used_id, objects))
 			return last_used_id;
 
@@ -1843,7 +1843,7 @@ void ServerEnvironment::removeRemovedObjects()
 static void print_hexdump(std::ostream &o, const std::string &data)
 {
 	const int linelength = 16;
-	for(int l=0; ; l++){
+	for(int l=0; ; ++l){
 		int i0 = linelength * l;
 		bool at_end = false;
 		int thislinelength = linelength;
@@ -1851,7 +1851,7 @@ static void print_hexdump(std::ostream &o, const std::string &data)
 			thislinelength = data.size() - i0;
 			at_end = true;
 		}
-		for(int di=0; di<linelength; di++){
+		for(int di=0; di<linelength; ++di) {
 			int i = i0 + di;
 			char buf[4];
 			if(di<thislinelength)
@@ -1861,7 +1861,7 @@ static void print_hexdump(std::ostream &o, const std::string &data)
 			o<<buf;
 		}
 		o<<" ";
-		for(int di=0; di<thislinelength; di++){
+		for(int di=0; di<thislinelength; ++di) {
 			int i = i0 + di;
 			if(data[i] >= 32)
 				o<<data[i];
@@ -2352,7 +2352,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
 	do
 	{
-		loopcount++;
+		++loopcount;
 
 		f32 dtime_part;
 		if(dtime_downcount > dtime_max_increment)
@@ -2687,7 +2687,7 @@ u16 getFreeClientActiveObjectId(
 	u16 startid = last_used_id;
 	for(;;)
 	{
-		last_used_id ++;
+		++last_used_id;
 		if(isFreeClientActiveObjectId(last_used_id, objects))
 			return last_used_id;
 

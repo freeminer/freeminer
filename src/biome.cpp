@@ -71,7 +71,7 @@ BiomeDefManager::~BiomeDefManager() {
 	//if (biomecache)
 	//	delete[] biomecache;
 	
-	for (size_t i = 0; i != biomes.size(); i++)
+	for (size_t i = 0; i != biomes.size(); ++i)
 		delete biomes[i];
 }
 
@@ -97,8 +97,8 @@ Biome *BiomeDefManager::createBiome(BiomeTerrainType btt) {
 // just a PoC, obviously needs optimization later on (precalculate this)
 void BiomeDefManager::calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map) {
 	int i = 0;
-	for (int y = 0; y != input->mapsize.Y; y++) {
-		for (int x = 0; x != input->mapsize.X; x++, i++) {
+	for (int y = 0; y != input->mapsize.Y; ++y) {
+		for (int x = 0; x != input->mapsize.X; ++x, ++i) {
 			float heat     = (input->heat_map[i] + 1) * 50;
 			float humidity = (input->humidity_map[i] + 1) * 50;
 			biomeid_map[i] = getBiome(heat, humidity, input->height_map[i])->id;
@@ -112,7 +112,7 @@ void BiomeDefManager::resolveNodeNames(INodeDefManager *ndef) {
 	
 	biome_registration_finished = true;
 	
-	for (size_t i = 0; i < biomes.size(); i++) {
+	for (size_t i = 0; i < biomes.size(); ++i) {
 		b = biomes[i];
 
 		b->c_top = ndef->getId(b->nname_top);
@@ -180,7 +180,7 @@ Biome *BiomeDefManager::getBiome(float heat, float humidity, s16 y) {
 	Biome *b, *biome_closest = NULL;
 	float dist_min = FLT_MAX;
 
-	for (size_t i = 1; i < biomes.size(); i++) {
+	for (size_t i = 1; i < biomes.size(); ++i) {
 		b = biomes[i];
 		if (y > b->height_max || y < b->height_min)
 			continue;
@@ -200,7 +200,7 @@ Biome *BiomeDefManager::getBiome(float heat, float humidity, s16 y) {
 
 
 u8 BiomeDefManager::getBiomeIdByName(const char *name) {
-	for (size_t i = 0; i != biomes.size(); i++) {
+	for (size_t i = 0; i != biomes.size(); ++i) {
 		if (!strcasecmp(name, biomes[i]->name.c_str()))
 			return i;
 	}

@@ -447,7 +447,7 @@ int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 	ScriptApiBase *script = getScriptApiBase(L);
 	lua_createtable(L, ids.size(), 0);
 	std::set<u16>::const_iterator iter = ids.begin();
-	for(u32 i = 0; iter != ids.end(); iter++) {
+	for(u32 i = 0; iter != ids.end(); ++iter) {
 		ServerActiveObject *obj = env->getActiveObject(*iter);
 		// Insert object reference into table
 		script->objectrefGetOrCreate(obj);
@@ -521,7 +521,7 @@ int ModApiEnvMod::l_find_node_near(lua_State *L)
 		ndef->getIds(lua_tostring(L, 3), filter);
 	}
 
-	for(int d=1; d<=radius; d++){
+	for(int d=1; d<=radius; ++d) {
 		std::list<v3s16> list;
 		getFacePositions(list, d);
 		for(std::list<v3s16>::iterator i = list.begin();
@@ -563,9 +563,9 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 
 	lua_newtable(L);
 	u64 i = 0;
-	for(s16 x = minp.X; x <= maxp.X; x++)
-	for(s16 y = minp.Y; y <= maxp.Y; y++)
-	for(s16 z = minp.Z; z <= maxp.Z; z++) {
+	for(s16 x = minp.X; x <= maxp.X; ++x)
+	for(s16 y = minp.Y; y <= maxp.Y; ++y)
+	for(s16 z = minp.Z; z <= maxp.Z; ++z) {
 		v3s16 p(x, y, z);
 		content_t c = env->getMap().getNodeNoEx(p).getContent();
 		if(filter.count(c) != 0) {
@@ -693,12 +693,12 @@ int ModApiEnvMod::l_find_path(lua_State *L)
 		lua_newtable(L);
 		int top = lua_gettop(L);
 		unsigned int index = 1;
-		for (std::vector<v3s16>::iterator i = path.begin(); i != path.end();i++)
+		for (std::vector<v3s16>::iterator i = path.begin(); i != path.end();++i)
 		{
 			lua_pushnumber(L,index);
 			push_v3s16(L, *i);
 			lua_settable(L, top);
-			index++;
+			++index;
 		}
 		return 1;
 	}

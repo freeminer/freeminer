@@ -128,7 +128,7 @@ void Hud::drawItem(v2s32 upperleftpos, s32 imgsize, s32 itemcount,
 			NULL, hbar_colors, true);
 	}
 
-	for (s32 i = 0; i < itemcount; i++)
+	for (s32 i = 0; i < itemcount; ++i)
 	{
 		const ItemStack &item = mainlist->getItem(i);
 
@@ -223,7 +223,7 @@ void Hud::drawItem(v2s32 upperleftpos, s32 imgsize, s32 itemcount,
 
 
 void Hud::drawLuaElements() {
-	for (size_t i = 0; i != player->hud.size(); i++) {
+	for (size_t i = 0; i != player->hud.size(); ++i) {
 		HudElement *e = player->hud[i];
 		if (!e)
 			continue;
@@ -340,7 +340,7 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s
 	steppos.X *= srcd.Width;
 	steppos.Y *= srcd.Height;
 	
-	for (s32 i = 0; i < count / 2; i++)
+	for (s32 i = 0; i < count / 2; ++i)
 	{
 		core::rect<s32> srcrect(0, 0, srcd.Width, srcd.Height);
 		core::rect<s32> dstrect(srcrect);
@@ -409,7 +409,7 @@ void Hud::drawCrosshair() {
 void Hud::drawSelectionBoxes(std::vector<aabb3f> &hilightboxes) {
 	for (std::vector<aabb3f>::const_iterator
 			i = hilightboxes.begin();
-			i != hilightboxes.end(); i++) {
+			i != hilightboxes.end(); ++i) {
 		driver->draw3DBox(*i, selectionbox_argb);
 	}
 }

@@ -388,7 +388,7 @@ ShaderSource::~ShaderSource()
 	//m_shader_callback->drop();
 
 	for (std::vector<IShaderConstantSetter*>::iterator iter = m_global_setters.begin();
-			iter != m_global_setters.end(); iter++) {
+			iter != m_global_setters.end(); ++iter) {
 		delete *iter;
 	}
 	m_global_setters.clear();
@@ -575,7 +575,7 @@ void ShaderSource::rebuildShaders()
 	*/
 
 	// Recreate shaders
-	for(u32 i=0; i<m_shaderinfo_cache.size(); i++){
+	for(u32 i=0; i<m_shaderinfo_cache.size(); ++i) {
 		ShaderInfo *info = &m_shaderinfo_cache[i];
 		if(info->name != ""){
 			*info = generate_shader(info->name, m_device,
@@ -587,7 +587,7 @@ void ShaderSource::rebuildShaders()
 void ShaderSource::onSetConstants(video::IMaterialRendererServices *services,
 		bool is_highlevel, const std::string &name)
 {
-	for(u32 i=0; i<m_global_setters.size(); i++){
+	for(u32 i=0; i<m_global_setters.size(); ++i) {
 		IShaderConstantSetter *setter = m_global_setters[i];
 		setter->onSetConstants(services, is_highlevel);
 	}
@@ -609,7 +609,7 @@ ShaderInfo generate_shader(std::string name, IrrlichtDevice *device,
 	*/
 	std::string base_material_name =
 		trim(sourcecache->getOrLoad(name, "base.txt"));
-	for(s32 i = 0; video::sBuiltInMaterialTypeNames[i] != 0; i++){
+	for(s32 i = 0; video::sBuiltInMaterialTypeNames[i] != 0; ++i) {
 		if(video::sBuiltInMaterialTypeNames[i] == base_material_name){
 			shaderinfo.material = (video::E_MATERIAL_TYPE) i;
 			break;

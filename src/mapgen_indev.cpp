@@ -71,11 +71,11 @@ float farscale(float scale, float x, float y, float z) {
 
 void NoiseIndev::transformNoiseMapFarScale(float xx, float yy, float zz) {
         int i = 0;
-        for (int z = 0; z != sz; z++) {
-                for (int y = 0; y != sy; y++) {
-                        for (int x = 0; x != sx; x++) {
+        for (int z = 0; z != sz; ++z) {
+                for (int y = 0; y != sy; ++y) {
+                        for (int x = 0; x != sx; ++x) {
                                 result[i] = result[i] * npindev->scale * farscale(npindev->farscale, xx, yy, zz) + npindev->offset;
-                                i++;
+                                ++i;
                         }
                 }
         }
@@ -264,7 +264,7 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 		bruises_count /= 3;
 	}
 	
-	for (u32 i = 0; i < caves_count + bruises_count; i++) {
+	for (u32 i = 0; i < caves_count + bruises_count; ++i) {
 		bool large_cave = (i >= caves_count);
 		CaveIndev cave(this, &ps, &ps2, node_min, large_cave);
 

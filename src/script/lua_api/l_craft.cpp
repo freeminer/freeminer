@@ -61,7 +61,7 @@ bool ModApiCraft::readCraftRecipeShaped(lua_State *L, int index,
 			recipe.push_back(lua_tostring(L, -1));
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
-			colcount++;
+			++colcount;
 		}
 		if(rowcount == 0){
 			width = colcount;
@@ -71,7 +71,7 @@ bool ModApiCraft::readCraftRecipeShaped(lua_State *L, int index,
 		}
 		// removes value, keeps key for next iteration
 		lua_pop(L, 1);
-		rowcount++;
+		++rowcount;
 	}
 	return width != 0;
 }
@@ -345,7 +345,7 @@ int ModApiCraft::l_get_craft_recipe(lua_State *L)
 		lua_newtable(L);
 		for(std::vector<ItemStack>::const_iterator
 			i = input.items.begin();
-			i != input.items.end(); i++, k++)
+			i != input.items.end(); ++i, ++k)
 		{
 			if (i->empty())
 			{
@@ -398,7 +398,7 @@ int ModApiCraft::l_get_all_craft_recipes(lua_State *L)
 
 	lua_createtable(L, recipes_list.size(), 0);
 	std::vector<CraftDefinition*>::const_iterator iter = recipes_list.begin();
-	for (u16 i = 0; iter != recipes_list.end(); iter++) {
+	for (u16 i = 0; iter != recipes_list.end(); ++iter) {
 		CraftOutput tmpout;
 		tmpout.item = "";
 		tmpout.time = 0;
@@ -410,7 +410,7 @@ int ModApiCraft::l_get_all_craft_recipes(lua_State *L)
 			lua_newtable(L);
 			lua_newtable(L); // items
 			std::vector<ItemStack>::const_iterator iter = input.items.begin();
-			for (u16 j = 1; iter != input.items.end(); iter++, j++) {
+			for (u16 j = 1; iter != input.items.end(); ++iter, ++j) {
 				if (iter->empty())
 					continue;
 				lua_pushstring(L, iter->name.c_str());

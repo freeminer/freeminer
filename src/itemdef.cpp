@@ -218,7 +218,7 @@ public:
 #endif
 		for (std::map<std::string, ItemDefinition*>::iterator iter =
 				m_item_definitions.begin(); iter != m_item_definitions.end();
-				iter ++) {
+				++iter) {
 			delete iter->second;
 		}
 		m_item_definitions.clear();
@@ -248,13 +248,13 @@ public:
 		std::set<std::string> result;
 		for(std::map<std::string, ItemDefinition*>::const_iterator
 				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); i++)
+				i != m_item_definitions.end(); ++i)
 		{
 			result.insert(i->first);
 		}
 		for(std::map<std::string, std::string>::const_iterator
 				i = m_aliases.begin();
-				i != m_aliases.end(); i++)
+				i != m_aliases.end(); ++i)
 		{
 			result.insert(i->first);
 		}
@@ -488,7 +488,7 @@ public:
 	{
 		for(std::map<std::string, ItemDefinition*>::const_iterator
 				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); i++)
+				i != m_item_definitions.end(); ++i)
 		{
 			delete i->second;
 		}

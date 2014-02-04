@@ -303,7 +303,7 @@ void RemoteClient::GetNextBlocks(Server *server, float dtime,
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
 	s16 d;
-	for(d = d_start; d <= d_max; d++)
+	for(d = d_start; d <= d_max; ++d)
 	{
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
@@ -635,7 +635,7 @@ void RemoteClient::GotBlock(v3s16 p)
 	{
 		/*infostream<<"RemoteClient::GotBlock(): Didn't find in"
 				" m_blocks_sending"<<std::endl;*/
-		m_excess_gotblocks++;
+		++m_excess_gotblocks;
 	}
 	m_blocks_sent.insert(p);
 }
@@ -838,14 +838,14 @@ Server::Server(
 	// Print 'em
 	infostream<<"Server: Loading mods: ";
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
-			i != m_mods.end(); i++){
+			i != m_mods.end(); ++i) {
 		const ModSpec &mod = *i;
 		infostream<<mod.name<<" ";
 	}
 	infostream<<std::endl;
 	// Load and run "mod" scripts
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
-			i != m_mods.end(); i++){
+			i != m_mods.end(); ++i) {
 		const ModSpec &mod = *i;
 		std::string scriptpath = mod.path + DIR_DELIM + "init.lua";
 		infostream<<"  ["<<padStringRight(mod.name, 12)<<"] [\""
@@ -1011,7 +1011,7 @@ Server::~Server()
 	{
 		for(std::map<std::string, Inventory*>::iterator
 				i = m_detached_inventories.begin();
-				i != m_detached_inventories.end(); i++){
+				i != m_detached_inventories.end(); ++i) {
 			delete i->second;
 		}
 	}
@@ -1418,7 +1418,7 @@ void Server::AsyncRunStep(bool initial_step)
 				client->m_known_objects.erase(id);
 
 				if(obj && obj->m_known_by_count > 0)
-					obj->m_known_by_count--;
+					--(obj->m_known_by_count);
 			}
 
 			std::vector<ActiveObjectAddData> added_objects_data;
@@ -1449,7 +1449,7 @@ void Server::AsyncRunStep(bool initial_step)
 				client->m_known_objects.insert(id);
 
 				if(obj)
-					obj->m_known_by_count++;
+					++(obj->m_known_by_count);
 			}
 
 			MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);
@@ -2303,7 +2303,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		u16 count = data[2];
 		RemoteClient *client = getClient(peer_id);
-		for(u16 i=0; i<count; i++)
+		for(u16 i=0; i<count; ++i)
 		{
 			if((s16)datasize < 2+1+(i+1)*6)
 				throw con::InvalidIncomingDataException
@@ -2330,7 +2330,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 
 		u16 count = data[2];
-		for(u16 i=0; i<count; i++)
+		for(u16 i=0; i<count; ++i)
 		{
 			if((s16)datasize < 2+1+(i+1)*6)
 				throw con::InvalidIncomingDataException
@@ -2579,11 +2579,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(datasize != 2+PASSWORD_SIZE*2)
 			return;
 		/*char password[PASSWORD_SIZE];
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
+		for(u32 i=0; i<PASSWORD_SIZE-1; ++i)
 			password[i] = data[2+i];
 		password[PASSWORD_SIZE-1] = 0;*/
 		std::string oldpwd;
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
+		for(u32 i=0; i<PASSWORD_SIZE-1; ++i)
 		{
 			char c = data[2+i];
 			if(c == 0)
@@ -2591,7 +2591,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			oldpwd += c;
 		}
 		std::string newpwd;
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
+		for(u32 i=0; i<PASSWORD_SIZE-1; ++i)
 		{
 			char c = data[2+PASSWORD_SIZE+i];
 			if(c == 0)
@@ -2664,7 +2664,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				<<getPlayerName(peer_id)<<std::endl;
 		verbosestream<<"TOSERVER_REQUEST_MEDIA: "<<std::endl;
 
-		for(int i = 0; i < numfiles; i++) {
+		for(int i = 0; i < numfiles; ++i) {
 			std::string name = deSerializeString(is);
 			tosend.push_back(name);
 			verbosestream<<"TOSERVER_REQUEST_MEDIA: requested file "
@@ -3059,7 +3059,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::istringstream is(datastring, std::ios_base::binary);
 
 		int num = readU16(is);
-		for(int k=0; k<num; k++){
+		for(int k=0; k<num; ++k) {
 			s32 id = readS32(is);
 			std::map<s32, ServerPlayingSound>::iterator i =
 					m_playing_sounds.find(id);
@@ -3080,7 +3080,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::string formname = deSerializeString(is);
 		int num = readU16(is);
 		std::map<std::string, std::string> fields;
-		for(int k=0; k<num; k++){
+		for(int k=0; k<num; ++k) {
 			std::string fieldname = deSerializeString(is);
 			std::string fieldvalue = deSerializeLongString(is);
 			fields[fieldname] = fieldvalue;
@@ -3111,7 +3111,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::string formname = deSerializeString(is);
 		int num = readU16(is);
 		std::map<std::string, std::string> fields;
-		for(int k=0; k<num; k++){
+		for(int k=0; k<num; ++k) {
 			std::string fieldname = deSerializeString(is);
 			std::string fieldvalue = deSerializeLongString(is);
 			fields[fieldname] = fieldvalue;
@@ -3449,7 +3449,7 @@ void Server::SendSpawnParticleAll(v3f pos, v3f velocity, v3f acceleration,
 {
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
-		i != m_clients.end(); i++)
+		i != m_clients.end(); ++i)
 	{
 		// Get client and check that it is valid
 		RemoteClient *client = i->second;
@@ -3498,7 +3498,7 @@ void Server::SendAddParticleSpawnerAll(u16 amount, float spawntime, v3f minpos, 
 {
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
-		i != m_clients.end(); i++)
+		i != m_clients.end(); ++i)
 	{
 		// Get client and check that it is valid
 		RemoteClient *client = i->second;
@@ -3527,7 +3527,7 @@ void Server::SendDeleteParticleSpawnerAll(u32 id)
 {
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
-		i != m_clients.end(); i++)
+		i != m_clients.end(); ++i)
 	{
 		// Get client and check that it is valid
 		RemoteClient *client = i->second;
@@ -3771,7 +3771,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	ServerPlayingSound &psound = m_playing_sounds[id];
 	psound.params = params;
 	for(std::set<RemoteClient*>::iterator i = dst_clients.begin();
-			i != dst_clients.end(); i++)
+			i != dst_clients.end(); ++i)
 		psound.clients.insert((*i)->peer_id);
 	// Create packet
 	MSGPACK_PACKET_INIT(TOCLIENT_PLAY_SOUND, 7);
@@ -3784,7 +3784,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	PACK(TOCLIENT_PLAY_SOUND_LOOP, params.loop);
 	// Send
 	for(std::set<RemoteClient*>::iterator i = dst_clients.begin();
-			i != dst_clients.end(); i++){
+			i != dst_clients.end(); ++i) {
 		// Send as reliable
 		m_con.Send((*i)->peer_id, 0, buffer, true);
 	}
@@ -3803,7 +3803,7 @@ void Server::stopSound(s32 handle)
 	PACK(TOCLIENT_STOP_SOUND_ID, handle);
 	// Send
 	for(std::set<u16>::iterator i = psound.clients.begin();
-			i != psound.clients.end(); i++){
+			i != psound.clients.end(); ++i) {
 		// Send as reliable
 		m_con.Send(*i, 0, buffer, true);
 	}
@@ -3975,7 +3975,7 @@ void Server::SendBlocks(float dtime)
 	// Lowest is most important.
 	std::sort(queue.begin(), queue.end());
 
-	for(u32 i=0; i<queue.size(); i++)
+	for(u32 i=0; i<queue.size(); ++i)
 	{
 		//TODO: Calculate limit dynamically
 
@@ -4013,7 +4013,7 @@ void Server::fillMediaCache()
 	// Collect all media file paths
 	std::list<std::string> paths;
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
-			i != m_mods.end(); i++){
+			i != m_mods.end(); ++i) {
 		const ModSpec &mod = *i;
 		paths.push_back(mod.path + DIR_DELIM + "textures");
 		paths.push_back(mod.path + DIR_DELIM + "sounds");
@@ -4024,11 +4024,11 @@ void Server::fillMediaCache()
 
 	// Collect media file information from paths into cache
 	for(std::list<std::string>::iterator i = paths.begin();
-			i != paths.end(); i++)
+			i != paths.end(); ++i)
 	{
 		std::string mediapath = *i;
 		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(mediapath);
-		for(u32 j=0; j<dirlist.size(); j++){
+		for(u32 j=0; j<dirlist.size(); ++j) {
 			if(dirlist[j].dir) // Ignode dirs
 				continue;
 			std::string filename = dirlist[j].name;
@@ -4119,7 +4119,7 @@ void Server::sendMediaAnnouncement(u16 peer_id)
 	MediaAnnounceList announce_list;
 
 	for(std::map<std::string, MediaInfo>::iterator i = m_media.begin();
-			i != m_media.end(); i++)
+			i != m_media.end(); ++i)
 		announce_list.push_back(std::make_pair(i->first, i->second.sha1_digest));
 
 	MSGPACK_PACKET_INIT(TOCLIENT_ANNOUNCE_MEDIA, 2);
@@ -4229,7 +4229,7 @@ void Server::sendDetachedInventories(u16 peer_id)
 
 	for(std::map<std::string, Inventory*>::iterator
 			i = m_detached_inventories.begin();
-			i != m_detached_inventories.end(); i++){
+			i != m_detached_inventories.end(); ++i) {
 		const std::string &name = i->first;
 		//Inventory *inv = i->second;
 		sendDetachedInventory(name, peer_id);
@@ -4327,7 +4327,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		ServerActiveObject* obj = m_env->getActiveObject(id);
 
 		if(obj && obj->m_known_by_count > 0)
-			obj->m_known_by_count--;
+			--(obj->m_known_by_count);
 	}
 
 	/*
@@ -4342,7 +4342,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		if(psound.clients.size() == 0)
 			m_playing_sounds.erase(i++);
 		else
-			i++;
+			++i;
 	}
 
 	Player *player = m_env->getPlayer(peer_id);
@@ -4703,7 +4703,7 @@ u32 Server::addParticleSpawner(const char *playername,
 	u32 id = 0;
 	for(;;) // look for unused particlespawner id
 	{
-		id++;
+		++id;
 		if (std::find(m_particlespawner_ids.begin(),
 				m_particlespawner_ids.end(), id)
 				== m_particlespawner_ids.end())
@@ -4732,7 +4732,7 @@ u32 Server::addParticleSpawnerAll(u16 amount, float spawntime,
 	u32 id = 0;
 	for(;;) // look for unused particlespawner id
 	{
-		id++;
+		++id;
 		if (std::find(m_particlespawner_ids.begin(),
 				m_particlespawner_ids.end(), id)
 				== m_particlespawner_ids.end())
@@ -4835,13 +4835,13 @@ bool Server::rollbackRevertActions(const std::list<RollbackAction> &actions,
 
 	for(std::list<RollbackAction>::const_iterator
 			i = actions.begin();
-			i != actions.end(); i++)
+			i != actions.end(); ++i)
 	{
 		const RollbackAction &action = *i;
-		num_tried++;
+		++num_tried;
 		bool success = action.applyRevert(map, this, this);
 		if(!success){
-			num_failed++;
+			++num_failed;
 			std::ostringstream os;
 			os<<"Revert of step ("<<num_tried<<") "<<action.toString()<<" failed";
 			infostream<<"Map::rollbackRevertActions(): "<<os.str()<<std::endl;
@@ -4922,7 +4922,7 @@ IWritableCraftDefManager* Server::getWritableCraftDefManager()
 const ModSpec* Server::getModSpec(const std::string &modname)
 {
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
-			i != m_mods.end(); i++){
+			i != m_mods.end(); ++i) {
 		const ModSpec &mod = *i;
 		if(mod.name == modname)
 			return &mod;
@@ -4931,7 +4931,7 @@ const ModSpec* Server::getModSpec(const std::string &modname)
 }
 void Server::getModNames(std::list<std::string> &modlist)
 {
-	for(std::vector<ModSpec>::iterator i = m_mods.begin(); i != m_mods.end(); i++)
+	for(std::vector<ModSpec>::iterator i = m_mods.begin(); i != m_mods.end(); ++i)
 	{
 		modlist.push_back(i->name);
 	}
@@ -4956,7 +4956,7 @@ v3f findSpawnPos(ServerMap &map)
 	s16 water_level = map.m_mgparams->water_level;
 
 	// Try to find a good place a few times
-	for(s32 i=0; i<1000; i++)
+	for(s32 i=0; i<1000; ++i)
 	{
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
@@ -4974,18 +4974,18 @@ v3f findSpawnPos(ServerMap &map)
 		nodepos = v3s16(nodepos2d.X, groundheight, nodepos2d.Y);
 		bool is_good = false;
 		s32 air_count = 0;
-		for (s32 i = 0; i < 10; i++) {
+		for (s32 i = 0; i < 10; ++i) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
 			map.emergeBlock(blockpos, true);
 			content_t c = map.getNodeNoEx(nodepos).getContent();
 			if (c == CONTENT_AIR || c == CONTENT_IGNORE) {
-				air_count++;
+				++air_count;
 				if (air_count >= 2){
 					is_good = true;
 					break;
 				}
 			}
-			nodepos.Y++;
+			++nodepos.Y;
 		}
 		if(is_good){
 			// Found a good place

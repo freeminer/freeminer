@@ -43,26 +43,26 @@ AsyncEngine::~AsyncEngine()
 {
 	/** request all threads to stop **/
 	for (std::vector<AsyncWorkerThread*>::iterator i= m_WorkerThreads.begin();
-			i != m_WorkerThreads.end();i++) {
+			i != m_WorkerThreads.end();++i) {
 		(*i)->Stop();
 	}
 
 
 	/** wakeup all threads **/
 	for (std::vector<AsyncWorkerThread*>::iterator i= m_WorkerThreads.begin();
-				i != m_WorkerThreads.end();i++) {
+				i != m_WorkerThreads.end();++i) {
 		m_JobQueueCounter.Post();
 	}
 
 	/** wait for threads to finish **/
 	for (std::vector<AsyncWorkerThread*>::iterator i= m_WorkerThreads.begin();
-			i != m_WorkerThreads.end();i++) {
+			i != m_WorkerThreads.end();++i) {
 		(*i)->Wait();
 	}
 
 	/** force kill all threads **/
 	for (std::vector<AsyncWorkerThread*>::iterator i= m_WorkerThreads.begin();
-			i != m_WorkerThreads.end();i++) {
+			i != m_WorkerThreads.end();++i) {
 		(*i)->Kill();
 		delete *i;
 	}
@@ -85,7 +85,7 @@ bool AsyncEngine::registerFunction(const char* name, lua_CFunction fct) {
 void AsyncEngine::Initialize(unsigned int numengines) {
 	m_initDone = true;
 
-	for (unsigned int i=0; i < numengines; i ++) {
+	for (unsigned int i=0; i < numengines; ++i) {
 
 		AsyncWorkerThread* toadd = new AsyncWorkerThread(this,i);
 		m_WorkerThreads.push_back(toadd);
@@ -194,7 +194,7 @@ void AsyncEngine::PushFinishedJobs(lua_State* L) {
 		lua_settable(L, top_lvl2);
 
 		lua_settable(L, top);
-		index++;
+		++index;
 	}
 
 	m_ResultQueueMutex.Unlock();
@@ -203,7 +203,7 @@ void AsyncEngine::PushFinishedJobs(lua_State* L) {
 /******************************************************************************/
 void AsyncEngine::PrepareEnvironment(lua_State* L, int top) {
 	for(std::map<std::string,lua_CFunction>::iterator i = m_FunctionList.begin();
-			i != m_FunctionList.end(); i++) {
+			i != m_FunctionList.end(); ++i) {
 
 		lua_pushstring(L,i->first.c_str());
 		lua_pushcfunction(L,i->second);

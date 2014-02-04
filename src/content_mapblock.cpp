@@ -99,55 +99,55 @@ void makeCuboid(MeshCollector *collector, const aabb3f &box,
 		video::S3DVertex(min.X,min.Y,min.Z, 0,0,-1, c, txc[20],txc[23]),
 	};
 
-	for(int i = 0; i < tilecount; i++)
+	for(int i = 0; i < tilecount; ++i)
 				{
 				switch (tiles[i].rotation)
 				{
 				case 0:
 					break;
 				case 1: //R90
-					for (int x = 0; x < 4; x++)
+					for (int x = 0; x < 4; ++x)
 						vertices[i*4+x].TCoords.rotateBy(90,irr::core::vector2df(0, 0));
 					break;
 				case 2: //R180
-					for (int x = 0; x < 4; x++)
+					for (int x = 0; x < 4; ++x)
 						vertices[i*4+x].TCoords.rotateBy(180,irr::core::vector2df(0, 0));
 					break;
 				case 3: //R270
-					for (int x = 0; x < 4; x++)
+					for (int x = 0; x < 4; ++x)
 						vertices[i*4+x].TCoords.rotateBy(270,irr::core::vector2df(0, 0));
 					break;
 				case 4: //FXR90
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.X = 1.0 - vertices[i*4+x].TCoords.X;
 						vertices[i*4+x].TCoords.rotateBy(90,irr::core::vector2df(0, 0));
 					}
 					break;
 				case 5: //FXR270
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.X = 1.0 - vertices[i*4+x].TCoords.X;
 						vertices[i*4+x].TCoords.rotateBy(270,irr::core::vector2df(0, 0));
 					}
 					break;
 				case 6: //FYR90
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.Y = 1.0 - vertices[i*4+x].TCoords.Y;
 						vertices[i*4+x].TCoords.rotateBy(90,irr::core::vector2df(0, 0));
 					}
 					break;
 				case 7: //FYR270
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.Y = 1.0 - vertices[i*4+x].TCoords.Y;
 						vertices[i*4+x].TCoords.rotateBy(270,irr::core::vector2df(0, 0));
 					}
 					break;
 				case 8: //FX
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.X = 1.0 - vertices[i*4+x].TCoords.X;
 					}
 					break;
 				case 9: //FY
-					for (int x = 0; x < 4; x++){
+					for (int x = 0; x < 4; ++x) {
 						vertices[i*4+x].TCoords.Y = 1.0 - vertices[i*4+x].TCoords.Y;
 					}
 					break;
@@ -502,7 +502,7 @@ class neighborRail {
 		video::S3DVertex(-BS/2,g*BS/2+d,BS/2, 0,0,0, c, 0,0),
 	};
 
-	for(s32 i=0; i<4; i++)
+	for(s32 i=0; i<4; ++i)
 	{
 		if(diagonalflip) {
 			//swap -x,-z with +x,+z
@@ -541,9 +541,9 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 	
 	v3s16 blockpos_nodes = data->m_blockpos*MAP_BLOCKSIZE;
 
-	for(s16 z=0; z<MAP_BLOCKSIZE; z++)
-	for(s16 y=0; y<MAP_BLOCKSIZE; y++)
-	for(s16 x=0; x<MAP_BLOCKSIZE; x++)
+	for(s16 z=0; z<MAP_BLOCKSIZE; ++z)
+	for(s16 y=0; y<MAP_BLOCKSIZE; ++y)
+	for(s16 x=0; x<MAP_BLOCKSIZE; ++x)
 	{
 		v3s16 p(x,y,z);
 
@@ -588,7 +588,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				v3s16(0,0,1),
 				v3s16(0,0,-1),
 			};
-			for(u32 i=0; i<4; i++)
+			for(u32 i=0; i<4; ++i)
 			{
 				v3s16 dir = side_dirs[i];
 
@@ -670,7 +670,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					vertices[1].Pos.Y = -0.5*BS;
 				}
 
-				for(s32 j=0; j<4; j++)
+				for(s32 j=0; j<4; ++j)
 				{
 					if(dir == v3s16(0,0,1))
 						vertices[j].Pos.rotateXZBy(0);
@@ -711,7 +711,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			};
 
 			v3f offset(p.X*BS, p.Y*BS + (-0.5+node_liquid_level)*BS, p.Z*BS);
-			for(s32 i=0; i<4; i++)
+			for(s32 i=0; i<4; ++i)
 			{
 				vertices[i].Pos += offset;
 			}
@@ -771,7 +771,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				v3s16(1,0,-1),
 				v3s16(-1,0,1),
 			};
-			for(u32 i=0; i<9; i++)
+			for(u32 i=0; i<9; ++i)
 			{
 				content_t content = CONTENT_AIR;
 				float level = -0.5 * BS;
@@ -814,13 +814,13 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				v3s16(1,0,1),
 				v3s16(0,0,1),
 			};
-			for(u32 i=0; i<4; i++)
+			for(u32 i=0; i<4; ++i)
 			{
 				v3s16 cornerdir = halfdirs[i];
 				float cornerlevel = 0;
 				u32 valid_count = 0;
 				u32 air_count = 0;
-				for(u32 j=0; j<4; j++)
+				for(u32 j=0; j<4; ++j)
 				{
 					v3s16 neighbordir = cornerdir - halfdirs[j];
 					content_t content = neighbor_contents[neighbordir];
@@ -843,11 +843,11 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					else if(content == c_flowing)
 					{
 						cornerlevel += neighbor_levels[neighbordir];
-						valid_count++;
+						++valid_count;
 					}
 					else if(content == CONTENT_AIR)
 					{
-						air_count++;
+						++air_count;
 					}
 				}
 				if(air_count >= 2)
@@ -873,7 +873,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				{2, 3},
 				{0, 1},
 			};
-			for(u32 i=0; i<4; i++)
+			for(u32 i=0; i<4; ++i)
 			{
 				v3s16 dir = side_dirs[i];
 
@@ -952,7 +952,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					vertices[1].Pos.Y = -0.5*BS;
 				}
 				
-				for(s32 j=0; j<4; j++)
+				for(s32 j=0; j<4; ++j)
 				{
 					if(dir == v3s16(0,0,1))
 						vertices[j].Pos.rotateXZBy(0);
@@ -998,7 +998,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				// calculate corner levels in exact reverse order.
 				s32 corner_resolve[4] = {3,2,1,0};
 
-				for(s32 i=0; i<4; i++)
+				for(s32 i=0; i<4; ++i)
 				{
 					//vertices[i].Pos.Y += liquid_level;
 					//vertices[i].Pos.Y += neighbor_levels[v3s16(0,0,0)];
@@ -1032,7 +1032,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				tcoord_translate.X -= floor(tcoord_translate.X);
 				tcoord_translate.Y -= floor(tcoord_translate.Y);
 
-				for(s32 i=0; i<4; i++)
+				for(s32 i=0; i<4; ++i)
 				{
 					vertices[i].TCoords.rotateBy(
 							tcoord_angle,
@@ -1064,7 +1064,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				};
 
 				v3f offset(p.X*BS, p.Y*BS + -0.5*BS, p.Z*BS);
-				for(s32 i=0; i<4; i++) {
+				for(s32 i=0; i<4; ++i) {
 					vertices[i].Pos += offset;
 				}
 
@@ -1080,7 +1080,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			u16 l = getInteriorLight(n, 1, data);
 			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
 
-			for(u32 j=0; j<6; j++)
+			for(u32 j=0; j<6; ++j)
 			{
 				// Check this neighbor
 				v3s16 n2p = blockpos_nodes + p + g_6dirs[j];
@@ -1099,25 +1099,25 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				
 				// Rotations in the g_6dirs format
 				if(j == 0) // Z+
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(0);
 				else if(j == 1) // Y+
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateYZBy(-90);
 				else if(j == 2) // X+
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(-90);
 				else if(j == 3) // Z-
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(180);
 				else if(j == 4) // Y-
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateYZBy(90);
 				else if(j == 5) // X-
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(90);
 
-				for(u16 i=0; i<4; i++){
+				for(u16 i=0; i<4; ++i){
 					vertices[i].Pos += intToFloat(p, BS);
 				}
 
@@ -1174,7 +1174,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			content_t content;
 			MapNode n2;
 			v3s16 n2p;
-			for(i=0; i<18; i++)
+			for(i=0; i<18; ++i)
 			{
 				n2p = blockpos_nodes + p + g_26dirs[i];
 				n2 = data->m_vmanip.getNodeNoEx(n2p);
@@ -1183,7 +1183,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				if (n2c == current || n2c == CONTENT_IGNORE)
 					nb[i]=1;
 			}
-			for(i=0; i<6; i++)
+			for(i=0; i<6; ++i)
 			{
 				n2p = blockpos_nodes + p + dirs[i];
 				n2 = data->m_vmanip.getNodeNoEx(n2p);
@@ -1200,7 +1200,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			f32 tx1,ty1,tz1,tx2,ty2,tz2;
 			aabb3f box;
-			for(i=0; i<12; i++)
+			for(i=0; i<12; ++i)
 			{
 				int edge_invisible;
 				if (nb[nb_triplet[i*3+2]]==1)
@@ -1228,7 +1228,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				};
 				makeCuboid(&collector, box, &tiles[0], 1, c, txc1);
 			}
-			for(i=0; i<6; i++)
+			for(i=0; i<6; ++i)
 			{
 				if (visible_faces[i]==0)
 					continue;
@@ -1303,7 +1303,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				video::S3DVertex(-s, s,0, 0,0,0, c, 0,0),
 			};
 
-			for(s32 i=0; i<4; i++)
+			for(s32 i=0; i<4; ++i)
 			{
 				if(dir == v3s16(1,0,0))
 					vertices[i].Pos.rotateXZBy(0);
@@ -1347,7 +1347,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			v3s16 dir = n.getWallMountedDir(nodedef);
 
-			for(s32 i=0; i<4; i++)
+			for(s32 i=0; i<4; ++i)
 			{
 				if(dir == v3s16(1,0,0))
 					vertices[i].Pos.rotateXZBy(0);
@@ -1379,7 +1379,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			float s = BS/2*f.visual_scale;
 
-			for(u32 j=0; j<2; j++)
+			for(u32 j=0; j<2; ++j)
 			{
 				video::S3DVertex vertices[4] =
 				{
@@ -1391,16 +1391,16 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 				if(j == 0)
 				{
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(45);
 				}
 				else if(j == 1)
 				{
-					for(u16 i=0; i<4; i++)
+					for(u16 i=0; i<4; ++i)
 						vertices[i].Pos.rotateXZBy(-45);
 				}
 
-				for(u16 i=0; i<4; i++)
+				for(u16 i=0; i<4; ++i)
 				{
 					vertices[i].Pos *= f.visual_scale;
 					vertices[i].Pos += intToFloat(p, BS);
@@ -1450,7 +1450,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			// Now a section of fence, +X, if there's a post there
 			v3s16 p2 = p;
-			p2.X++;
+			++p2.X;
 			MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 			const ContentFeatures *f2 = &nodedef->get(n2);
 			if(f2->drawtype == NDT_FENCELIKE)
@@ -1476,7 +1476,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			// Now a section of fence, +Z, if there's a post there
 			p2 = p;
-			p2.Z++;
+			++p2.Z;
 			n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 			f2 = &nodedef->get(n2);
 			if(f2->drawtype == NDT_FENCELIKE)
@@ -1524,9 +1524,9 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			std::vector<aabb3f> boxes = n.getNodeBoxes(nodedef);
 			for(std::vector<aabb3f>::iterator
 					i = boxes.begin();
-					i != boxes.end(); i++)
+					i != boxes.end(); ++i)
 			{
-			for(int j = 0; j < 6; j++)
+			for(int j = 0; j < 6; ++j)
 				{
 				// Handles facedir rotation for textures
 				tiles[j] = getNodeTile(n, p, tile_dirs[j], data);
