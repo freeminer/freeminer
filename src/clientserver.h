@@ -371,6 +371,12 @@ enum {
 	TOCLIENT_HUDRM_ID
 };
 
+#define TOCLIENT_HUD_SET_FLAGS 0x4c
+enum {
+	TOCLIENT_HUD_SET_FLAGS_FLAGS,
+	TOCLIENT_HUD_SET_FLAGS_MASK
+};
+
 enum ToClientCommand
 {
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
@@ -409,13 +415,6 @@ enum ToClientCommand
 		 u32 len
 		 u8[len] data |
 		 u32 data]
-	*/
-
-	TOCLIENT_HUD_SET_FLAGS = 0x4c,
-	/*
-		u16 command
-		u32 flags
-		u32 mask
 	*/
 
 	TOCLIENT_HUD_SET_PARAM = 0x4d,

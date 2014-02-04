@@ -3613,18 +3613,12 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 
 void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_HUD_SET_FLAGS, 2);
+	PACK(TOCLIENT_HUD_SET_FLAGS_FLAGS, flags);
+	PACK(TOCLIENT_HUD_SET_FLAGS_MASK, mask);
 
-	// Write command
-	writeU16(os, TOCLIENT_HUD_SET_FLAGS);
-	writeU32(os, flags);
-	writeU32(os, mask);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
 	// Send as reliable
-	m_con.Send(peer_id, 0, data, true);
+	m_con.Send(peer_id, 0, buffer, true);
 }
 
 void Server::SendHUDSetParam(u16 peer_id, u16 param, const std::string &value)

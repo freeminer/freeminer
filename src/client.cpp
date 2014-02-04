@@ -1686,15 +1686,12 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 	}
 	else if(command == TOCLIENT_HUD_SET_FLAGS)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
 		Player *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 
-		u32 flags = readU32(is);
-		u32 mask  = readU32(is);
-		
+		u32 flags = packet[TOCLIENT_HUD_SET_FLAGS_FLAGS].as<u32>();
+		u32 mask = packet[TOCLIENT_HUD_SET_FLAGS_MASK].as<u32>();
+
 		player->hud_flags &= ~mask;
 		player->hud_flags |= flags;
 	}
