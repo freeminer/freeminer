@@ -127,7 +127,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 		g_settings->getU16("emergequeue_limit_generate");
 
 	for (int i = 0; i != nthreads; ++i)
-		emergethread.push_back(new EmergeThread((Server *)gamedef, i));
+		emergethread.push_back(new EmergeThread(dynamic_cast<Server*>(gamedef), i));
 
 	infostream << "EmergeManager: using " << nthreads << " threads" << std::endl;
 }

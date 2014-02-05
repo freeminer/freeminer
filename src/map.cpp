@@ -3072,7 +3072,7 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 	/*
 		Update weather data in blocks
 	*/
-	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
+	ServerEnvironment *senv = &(dynamic_cast<Server*>(m_gamedef)->getEnv());
 	for(s16 x=blockpos_min.X-extra_borders.X;x<=blockpos_max.X+extra_borders.X; x++)
 	for(s16 z=blockpos_min.Z-extra_borders.Z;z<=blockpos_max.Z+extra_borders.Z; z++)
 	for(s16 y=blockpos_min.Y-extra_borders.Y;y<=blockpos_max.Y+extra_borders.Y; y++) {
@@ -3121,7 +3121,7 @@ ServerMapSector * ServerMap::createSector(v2s16 p2d)
 	/*
 		Check if it exists already in memory
 	*/
-	ServerMapSector *sector = (ServerMapSector*)getSectorNoGenerateNoEx(p2d);
+	ServerMapSector *sector = dynamic_cast<ServerMapSector*>(getSectorNoGenerateNoEx(p2d));
 	if(sector != NULL)
 		return sector;
 
@@ -3136,7 +3136,7 @@ ServerMapSector * ServerMap::createSector(v2s16 p2d)
 #if 0
 	if(loadSectorMeta(p2d) == true)
 	{
-		ServerMapSector *sector = (ServerMapSector*)getSectorNoGenerateNoEx(p2d);
+		ServerMapSector *sector = dynamic_cast<ServerMapSector*>(getSectorNoGenerateNoEx(p2d));
 		if(sector == NULL)
 		{
 			infostream<<"ServerMap::createSector(): loadSectorFull didn't make a sector"<<std::endl;
@@ -3314,7 +3314,7 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 	*/
 	ServerMapSector *sector;
 	try{
-		sector = (ServerMapSector*)createSector(p2d);
+		sector = dynamic_cast<ServerMapSector*>(createSector(p2d));
 		assert(sector->getId() == MAPSECTOR_SERVER);
 	}
 	catch(InvalidPositionException &e)
@@ -3406,7 +3406,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 }
 
 void ServerMap::prepareBlock(MapBlock *block) {
-	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
+	ServerEnvironment *senv = &(dynamic_cast<Server*>(m_gamedef)->getEnv());
 
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
@@ -3590,13 +3590,13 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	for(std::map<v2s16, MapSector*>::iterator i = m_sectors.begin();
 		i != m_sectors.end(); ++i)
 	{
-			if (n++ < m_sectors_save_last)
-				continue;
-			else
-				m_sectors_save_last = 0;
-			++calls;
+		if (n++ < m_sectors_save_last)
+			continue;
+		else
+			m_sectors_save_last = 0;
+		++calls;
 
-		ServerMapSector *sector = (ServerMapSector*)i->second;
+		ServerMapSector *sector = dynamic_cast<ServerMapSector*>(i->second);
 		assert(sector->getId() == MAPSECTOR_SERVER);
 
 		if(sector->differs_from_disk || save_level == MOD_STATE_CLEAN)
@@ -4496,7 +4496,7 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 		{
 			
 			if (load_if_inexistent) {
-				ServerMap *svrmap = (ServerMap *)m_map;
+				ServerMap *svrmap = dynamic_cast<ServerMap*>(m_map);
 				block = svrmap->emergeBlock(p, false);
 				if (block == NULL)
 					block = svrmap->createBlock(p);

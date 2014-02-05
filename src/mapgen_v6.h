@@ -168,7 +168,7 @@ public:
 
 struct MapgenFactoryV6 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenV6(mgid, (MapgenV6Params *)params, emerge);
+		return new MapgenV6(mgid, dynamic_cast<MapgenV6Params*>(params), emerge);
 	};
 	
 	MapgenParams *createMapgenParams() {

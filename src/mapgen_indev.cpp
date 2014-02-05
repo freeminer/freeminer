@@ -45,7 +45,7 @@ NoiseIndevParams nparams_indev_def_biome;
 ///////////////////////////////////////////////////////////////////////////////
 
 void NoiseIndev::init(NoiseIndevParams *np, int seed, int sx, int sy, int sz) {
-	Noise::init((NoiseParams*)np, seed, sx, sy, sz);
+	Noise::init(dynamic_cast<NoiseParams*>(np), seed, sx, sy, sz);
 	this->npindev   = np;
 }
 

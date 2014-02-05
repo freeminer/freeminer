@@ -44,7 +44,7 @@ public:
 
 struct MapgenFactorySinglenode : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenSinglenode(mgid, (MapgenSinglenodeParams *)params);
+		return new MapgenSinglenode(mgid, dynamic_cast<MapgenSinglenodeParams*>(params));
 	};
 	
 	MapgenParams *createMapgenParams() {

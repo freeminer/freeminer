@@ -363,5 +363,5 @@ bool AsyncWorkerThread::runScript(std::string script) {
 
 /******************************************************************************/
 void* AsyncWorkerThread::worker_thread_wrapper(void* thread) {
-	return ((AsyncWorkerThread*) thread)->worker_thread_main();
+	return (reinterpret_cast<AsyncWorkerThread*>(thread))->worker_thread_main();
 }

@@ -1644,9 +1644,9 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			if(hotbar_itemcount > 0 && hotbar_itemcount <= HUD_HOTBAR_ITEMCOUNT_MAX)
 				player->hud_hotbar_itemcount = hotbar_itemcount;
 		} else if (param == HUD_PARAM_HOTBAR_IMAGE) {
-			((LocalPlayer *) player)->hotbar_image = value;
+			dynamic_cast<LocalPlayer*>(player)->hotbar_image = value;
 		} else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
-			((LocalPlayer *) player)->hotbar_selected_image = value;
+			dynamic_cast<LocalPlayer*>(player)->hotbar_selected_image = value;
 		}
 	}
 	else if(command == TOCLIENT_ANIMATIONS)

@@ -2289,7 +2289,7 @@ LocalPlayer * ClientEnvironment::getLocalPlayer()
 	{
 		Player *player = *i;
 		if(player->isLocal())
-			return (LocalPlayer*)player;
+			return dynamic_cast<LocalPlayer*>(player);
 	}
 	return NULL;
 }

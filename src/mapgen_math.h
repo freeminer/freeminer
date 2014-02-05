@@ -72,7 +72,7 @@ class MapgenMath : public MapgenV7 {
 
 struct MapgenFactoryMath : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenMath(mgid, (MapgenMathParams *)params, emerge);
+		return new MapgenMath(mgid, dynamic_cast<MapgenMathParams*>(params), emerge);
 	};
 
 	MapgenParams *createMapgenParams() {

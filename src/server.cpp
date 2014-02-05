@@ -2372,7 +2372,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 		if(a->getType() == IACTION_MOVE)
 		{
-			IMoveAction *ma = (IMoveAction*)a;
+			IMoveAction *ma = dynamic_cast<IMoveAction*>(a);
 
 			ma->from_inv.applyCurrentPlayer(player->getName());
 			ma->to_inv.applyCurrentPlayer(player->getName());
@@ -2431,7 +2431,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 		else if(a->getType() == IACTION_DROP)
 		{
-			IDropAction *da = (IDropAction*)a;
+			IDropAction *da = dynamic_cast<IDropAction*>(a);
 
 			da->from_inv.applyCurrentPlayer(player->getName());
 
@@ -2461,7 +2461,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		*/
 		else if(a->getType() == IACTION_CRAFT)
 		{
-			ICraftAction *ca = (ICraftAction*)a;
+			ICraftAction *ca = dynamic_cast<ICraftAction*>(a);
 
 			ca->craft_inv.applyCurrentPlayer(player->getName());
 

@@ -133,7 +133,7 @@ public:
 
 struct MapgenFactoryV7 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenV7(mgid, (MapgenV7Params *)params, emerge);
+		return new MapgenV7(mgid, dynamic_cast<MapgenV7Params*>(params), emerge);
 	};
 	
 	MapgenParams *createMapgenParams() {
