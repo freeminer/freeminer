@@ -27,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class BaseException : public std::exception
 {
 public:
-	BaseException(const std::string s) throw() : m_s(s)
+	BaseException(const std::string& s) throw() : m_s(s)
 	{
 	}
 	~BaseException() throw() {}

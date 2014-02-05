@@ -142,8 +142,8 @@ struct MediaInfo
 	std::string path;
 	std::string sha1_digest;
 
-	MediaInfo(const std::string path_="",
-			const std::string sha1_digest_=""):
+	MediaInfo(const std::string& path_="",
+	          const std::string& sha1_digest_=""):
 		path(path_),
 		sha1_digest(sha1_digest_)
 	{
@@ -392,7 +392,7 @@ public:
 	}
 
 	// Envlock and conlock should be locked when calling this
-	void notifyPlayer(const char *name, const std::string msg, const bool prepend);
+	void notifyPlayer(const char *name, const std::string& msg, const bool prepend);
 	void notifyPlayers(const std::string &msg);
 	void spawnParticle(const char *playername,
 		v3f pos, v3f velocity, v3f acceleration,
@@ -526,7 +526,7 @@ private:
 	void SendMovePlayer(u16 peer_id);
 	void SendPlayerPrivileges(u16 peer_id);
 	void SendPlayerInventoryFormspec(u16 peer_id);
-	void SendShowFormspecMessage(u16 peer_id, const std::string formspec, const std::string formname);
+	void SendShowFormspecMessage(u16 peer_id, const std::string& formspec, const std::string& formname);
 	void SendHUDAdd(u16 peer_id, u32 id, HudElement *form);
 	void SendHUDRemove(u16 peer_id, u32 id);
 	void SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value);

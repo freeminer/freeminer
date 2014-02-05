@@ -65,7 +65,7 @@ struct ModSpec
 	bool is_modpack;
 	// if modpack:
 	std::map<std::string,ModSpec> modpack_content;
-	ModSpec(const std::string name_="", const std::string path_=""):
+	ModSpec(const std::string& name_="", const std::string& path_=""):
 		name(name_),
 		path(path_),
 		depends(),
@@ -80,7 +80,7 @@ struct ModSpec
 // Retrieves depends, optdepends, is_modpack and modpack_content
 void parseModContents(ModSpec &mod);
 
-std::map<std::string,ModSpec> getModsInPath(std::string path, bool part_of_modpack = false);
+std::map<std::string,ModSpec> getModsInPath(const std::string& path, bool part_of_modpack = false);
 
 // If failed, returned modspec has name==""
 ModSpec findCommonMod(const std::string &modname);

@@ -80,7 +80,7 @@ void parseModContents(ModSpec &spec)
 	}
 }
 
-std::map<std::string, ModSpec> getModsInPath(std::string path, bool part_of_modpack)
+std::map<std::string, ModSpec> getModsInPath(const std::string& path, bool part_of_modpack)
 {
 	// NOTE: this function works in mutual recursion with parseModContents
 

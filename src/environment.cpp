@@ -471,7 +471,7 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 			}
 			try {
 			testplayer.deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
+			} catch (SerializationError& e) {
 				errorstream<<e.what()<<std::endl;
 				continue;
 			}
@@ -509,8 +509,8 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 				continue;
 			}
 			try {
-			player->deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
+				player->deSerialize(is, player_files[i].name);
+			} catch (SerializationError& e) {
 				errorstream<<e.what()<<std::endl;
 				continue;
 			}
@@ -543,7 +543,7 @@ Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 	}
 	try {
 		player->deSerialize(is, name);
-	} catch (SerializationError e) {
+	} catch (SerializationError& e) {
 		errorstream<<e.what()<<std::endl;
 		return NULL;
 	}

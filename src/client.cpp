@@ -1790,8 +1790,8 @@ void Client::sendChatMessage(const std::string &message)
 	Send(0, buffer, true);
 }
 
-void Client::sendChangePassword(const std::string oldpassword,
-		const std::string newpassword)
+void Client::sendChangePassword(const std::string& oldpassword,
+                                const std::string& newpassword)
 {
 	Player *player = m_env.getLocalPlayer();
 	if(player == NULL)
