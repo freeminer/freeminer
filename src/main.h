@@ -22,6 +22,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <string>
 
+#ifdef ANDROID
+extern std::string g_root_path;
+#endif
+
 // Settings
 class Settings;
 extern Settings *g_settings;

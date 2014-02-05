@@ -96,6 +96,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "touchscreengui.h"
 #include <unistd.h>
 
+#ifdef ANDROID
+std::string g_root_path;
+#endif
+
 /*
 	Settings.
 	These are loaded from the config file.
@@ -770,17 +774,11 @@ static void print_worldspecs(const std::vector<WorldSpec> &worldspecs,
 #ifdef ANDROID
 android_app *app_global;
 JNIEnv *jnienv;
+JavaVM *jvm;
 #endif
 
 int main(int argc, char *argv[])
 {
-#ifdef ANDROID
-	// well android lags anyway so no one will notice anything
-	// (this is actually needed to give GDB time to attach before everything crashes)
-	sleep(5);
-	chdir("/sdcard/freeminer/");
-#endif
-
 	int retval = 0;
 
 	if (enet_initialize() != 0) {
@@ -1470,14 +1468,6 @@ int main(int argc, char *argv[])
 
 #ifdef ANDROID
 	params.PrivateData = app_global;
-
-	jnienv = NULL;
-    JavaVM *jvm = app_global->activity->vm;
-    JavaVMAttachArgs lJavaVMAttachArgs;
-    lJavaVMAttachArgs.version = JNI_VERSION_1_6;
-    lJavaVMAttachArgs.name = "NativeThread";
-    lJavaVMAttachArgs.group = NULL;
-    jvm->AttachCurrentThread(&jnienv, &lJavaVMAttachArgs);
 #endif
 
 	device = createDeviceEx(params);
@@ -1933,6 +1923,30 @@ int main(int argc, char *argv[])
 void android_main(android_app *app) {
 	app_dummy();
 	app_global = app;
+
+	jnienv = NULL;
+	jvm = app_global->activity->vm;
+	JavaVMAttachArgs lJavaVMAttachArgs;
+	lJavaVMAttachArgs.version = JNI_VERSION_1_6;
+	lJavaVMAttachArgs.name = "NativeThread";
+	lJavaVMAttachArgs.group = NULL;
+	jvm->AttachCurrentThread(&jnienv, &lJavaVMAttachArgs);
+
+	// get root path, usually /sdcard/freeminer/
+	jclass clazz = jnienv->GetObjectClass(app->activity->clazz);
+	jmethodID methodID = jnienv->GetMethodID(clazz, "getRootDir", "()Ljava/lang/String;");
+	jobject result = jnienv->CallObjectMethod(app->activity->clazz, methodID);
+
+	const char* str;
+	jboolean isCopy;
+	str = jnienv->GetStringUTFChars((jstring)result, &isCopy);
+	std::string root_path(str);
+	jnienv->ReleaseStringUTFChars((jstring)result, str);
+
+	g_root_path = root_path;
+
+	chdir(root_path.c_str());
+
 	char *argv[] = {"freeminer"/*, "--worldname", "test", "--go", "--random-input"*/};
 	main(sizeof(argv) / sizeof(argv[0]), argv);
 }

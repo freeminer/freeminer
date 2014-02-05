@@ -44,6 +44,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "util/string.h"
 #include <list>
+#include "main.h"
 
 namespace porting
 {
@@ -322,6 +323,12 @@ std::string get_sysinfo()
 
 void initializePaths()
 {
+#ifdef ANDROID
+	path_share = g_root_path + "/share";
+	path_user = g_root_path + "/user";
+	return;
+#endif
+
 #if RUN_IN_PLACE
 	/*
 		Use relative paths if RUN_IN_PLACE
@@ -504,12 +511,7 @@ void initializePaths()
 
 	infostream << "something something " PROJECT_NAME << std::endl;
 
-#ifndef _IRR_ANDROID_PLATFORM_
 	path_user = std::string(getenv("HOME")) + "/." + PROJECT_NAME;
-#else
-	path_user = std::string("/sdcard/freeminer/");
-	path_share = std::string("/sdcard/freeminer/");
-#endif
 
 	infostream << path_user << std::endl;
 
