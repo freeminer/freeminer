@@ -39,15 +39,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
 
-HTTPFetchRequest::HTTPFetchRequest()
+HTTPFetchRequest::HTTPFetchRequest() :
+	url(""),
+	caller(HTTPFETCH_DISCARD),
+	request_id(0),
+	timeout(g_settings->getS32("curl_timeout")),
+	connect_timeout(timeout * 5),
+	useragent(std::string("Minetest/") + minetest_version_hash + " (" + porting::get_sysinfo() + ")")
 {
-	url = "";
-	caller = HTTPFETCH_DISCARD;
-	request_id = 0;
-	timeout = g_settings->getS32("curl_timeout");
-	connect_timeout = timeout * 5;
-	
-	useragent = std::string("Minetest/") + minetest_version_hash + " (" + porting::get_sysinfo() + ")";
 }
 
 

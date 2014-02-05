@@ -110,12 +110,13 @@ struct MapgenParams {
 	int water_level;
 	u32 flags;
 
-	MapgenParams() {
-		mg_name     = "v6";
-		seed        = 0;
-		water_level = 1;
-		chunksize   = 5;
-		flags       = MG_TREES | MG_CAVES | MGV6_BIOME_BLEND;
+	MapgenParams() :
+		mg_name("v6"),
+		chunksize(5),
+		seed(0),
+		water_level(1),
+		flags(MG_TREES | MG_CAVES | MGV6_BIOME_BLEND)
+	{
 	}
 
 	virtual bool readParams(Settings *settings) { return true; }

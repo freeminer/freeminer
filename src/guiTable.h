@@ -74,10 +74,10 @@ public:
 		std::string name;
 		std::string value;
 
-		Option(const std::string &name_, const std::string &value_)
+		Option(const std::string &name_, const std::string &value_) :
+			name(name_),
+			value(value_)
 		{
-			name = name_;
-			value = value_;
 		}
 	};
 

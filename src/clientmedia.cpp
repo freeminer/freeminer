@@ -42,18 +42,18 @@ static std::string getMediaCacheDir()
 */
 
 ClientMediaDownloader::ClientMediaDownloader():
-	m_media_cache(getMediaCacheDir())
+	m_media_cache(getMediaCacheDir()),
+	m_initial_step_done(false),
+	m_uncached_count(0),
+	m_uncached_received_count(0),
+	m_httpfetch_caller(HTTPFETCH_DISCARD),
+	m_httpfetch_next_id(0),
+	m_httpfetch_timeout(0),
+	m_httpfetch_active(0),
+	m_httpfetch_active_limit(0),
+	m_outstanding_hash_sets(0),
+	m_name_bound("")  // works because "" is an invalid file name
 {
-	m_initial_step_done = false;
-	m_name_bound = "";  // works because "" is an invalid file name
-	m_uncached_count = 0;
-	m_uncached_received_count = 0;
-	m_httpfetch_caller = HTTPFETCH_DISCARD;
-	m_httpfetch_active = 0;
-	m_httpfetch_active_limit = 0;
-	m_httpfetch_next_id = 0;
-	m_httpfetch_timeout = 0;
-	m_outstanding_hash_sets = 0;
 }
 
 ClientMediaDownloader::~ClientMediaDownloader()

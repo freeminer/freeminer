@@ -120,15 +120,15 @@ struct TextDestNodeMetadata : public TextDest
 
 struct TextDestPlayerInventory : public TextDest
 {
-	TextDestPlayerInventory(Client *client)
+	TextDestPlayerInventory(Client *client) :
+		m_client(client),
+		m_formname("")
 	{
-		m_client = client;
-		m_formname = "";
 	}
-	TextDestPlayerInventory(Client *client, std::string formname)
+	TextDestPlayerInventory(Client *client, std::string formname) :
+		m_client(client),
+		m_formname(formname)
 	{
-		m_client = client;
-		m_formname = formname;
 	}
 	void gotText(std::map<std::string, std::string> fields)
 	{

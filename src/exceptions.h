@@ -27,9 +27,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class BaseException : public std::exception
 {
 public:
-	BaseException(const std::string s) throw()
+	BaseException(const std::string s) throw() : m_s(s)
 	{
-		m_s = s;
 	}
 	~BaseException() throw() {}
 	virtual const char * what() const throw()

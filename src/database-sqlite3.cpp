@@ -45,14 +45,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "log.h"
 
-Database_SQLite3::Database_SQLite3(ServerMap *map, std::string savedir)
+Database_SQLite3::Database_SQLite3(ServerMap *map, std::string savedir) :
+	srvmap(map),
+	m_savedir(savedir),
+	m_database(NULL),
+	m_database_read(NULL),
+	m_database_write(NULL),
+	m_database_list(NULL)
 {
-	m_database = NULL;
-	m_database_read = NULL;
-	m_database_write = NULL;
-	m_database_list = NULL;
-	m_savedir = savedir;
-	srvmap = map;
 }
 
 int Database_SQLite3::Initialized(void)

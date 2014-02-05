@@ -43,16 +43,17 @@ struct MapgenV7Params : public MapgenParams {
 	NoiseParams np_mountain;
 	NoiseParams np_ridge;
 	
-	MapgenV7Params() {
-		np_terrain_base    = nparams_v7_def_terrain_base;
-		np_terrain_alt     = nparams_v7_def_terrain_alt;
-		np_terrain_persist = nparams_v7_def_terrain_persist;
-		np_height_select   = nparams_v7_def_height_select;
-		np_filler_depth    = nparams_v7_def_filler_depth;
-		np_mount_height    = nparams_v7_def_mount_height;
-		np_ridge_uwater    = nparams_v7_def_ridge_uwater;
-		np_mountain        = nparams_v7_def_mountain;
-		np_ridge           = nparams_v7_def_ridge;
+	MapgenV7Params() :
+		np_terrain_base(nparams_v7_def_terrain_base),
+		np_terrain_alt(nparams_v7_def_terrain_alt),
+		np_terrain_persist(nparams_v7_def_terrain_persist),
+		np_height_select(nparams_v7_def_height_select),
+		np_filler_depth(nparams_v7_def_filler_depth),
+		np_mount_height(nparams_v7_def_mount_height),
+		np_ridge_uwater(nparams_v7_def_ridge_uwater),
+		np_mountain(nparams_v7_def_mountain),
+		np_ridge(nparams_v7_def_ridge)
+	{
 	}
 	
 	~MapgenV7Params() {}

@@ -24,13 +24,13 @@
 GUIFileSelectMenu::GUIFileSelectMenu(gui::IGUIEnvironment* env,
 				gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
 				std::string title, std::string formname) :
-GUIModalMenu(env, parent, id, menumgr)
+	GUIModalMenu(env, parent, id, menumgr),
+	m_title(utf8_to_wide(title)),
+	m_accepted(false),
+	m_parent(parent),
+	m_text_dst(0),
+	m_formname(formname)
 {
-	m_title = utf8_to_wide(title);
-	m_parent = parent;
-	m_formname = formname;
-	m_text_dst = 0;
-	m_accepted = false;
 }
 
 GUIFileSelectMenu::~GUIFileSelectMenu()

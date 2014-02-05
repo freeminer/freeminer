@@ -39,10 +39,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class ModError : public std::exception
 {
 public:
-	ModError(const std::string &s)
+	ModError(const std::string &s) :
+		m_s("ModError: " + s)
 	{
-		m_s = "ModError: ";
-		m_s += s;
 	}
 	virtual ~ModError() throw()
 	{}

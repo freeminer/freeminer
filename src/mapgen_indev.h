@@ -93,22 +93,22 @@ struct MapgenIndevParams : public MapgenV6Params {
 	NoiseIndevParams npindev_float_islands2;
 	NoiseIndevParams npindev_float_islands3;
 
-	MapgenIndevParams() {
-		//freq_desert       = 0.45;
-		//freq_beach        = 0.15;
-		npindev_terrain_base   = nparams_indev_def; //&nparams_indev_def_terrain_base;
-		npindev_terrain_higher = nparams_indev_def; //&nparams_indev_def_terrain_higher;
-		npindev_steepness      = nparams_indev_def; //&nparams_indev_def_steepness;
-		//np_height_select  = &nparams_v6_def_height_select;
-		//np_trees          = &nparams_v6_def_trees;
-		npindev_mud            = nparams_indev_def; //&nparams_indev_def_mud;
-		//np_beach          = &nparams_v6_def_beach;
-		npindev_biome          = nparams_indev_def; //&nparams_indev_def_biome;
-		//np_cave           = &nparams_v6_def_cave;
-		npindev_float_islands1  = nparams_indev_def; //&nparams_indev_def_float_islands;
-		npindev_float_islands2  = nparams_indev_def; //&nparams_indev_def_float_islands;
-		npindev_float_islands3  = nparams_indev_def; //&nparams_indev_def_float_islands;
-
+	MapgenIndevParams() :
+		//freq_desert(0.45),
+		//freq_beach(0.15),
+		npindev_terrain_base(nparams_indev_def), //&nparams_indev_def_terrain_base;
+		npindev_terrain_higher(nparams_indev_def), //&nparams_indev_def_terrain_higher;
+		npindev_steepness(nparams_indev_def), //&nparams_indev_def_steepness;
+		//np_height_select(&nparams_v6_def_height_select),
+		//np_trees(&nparams_v6_def_trees),
+		npindev_mud(nparams_indev_def), //&nparams_indev_def_mud;
+		//np_beach(&nparams_v6_def_beach),
+		npindev_biome(nparams_indev_def), //&nparams_indev_def_biome;
+		//np_cave(&nparams_v6_def_cave),
+		npindev_float_islands1(nparams_indev_def), //&nparams_indev_def_float_islands;
+		npindev_float_islands2(nparams_indev_def), //&nparams_indev_def_float_islands;
+		npindev_float_islands3(nparams_indev_def) //&nparams_indev_def_float_islands;
+	{
 	}
 
 	bool readParams(Settings *settings);

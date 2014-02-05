@@ -68,12 +68,13 @@ class GUIFormSpecMenu : public GUIModalMenu
 			i = -1;
 		}
 		ItemSpec(const InventoryLocation &a_inventoryloc,
-				const std::string &a_listname,
-				s32 a_i)
+		         const std::string &a_listname,
+		         s32 a_i) :
+			inventoryloc(a_inventoryloc),
+			listname(a_listname),
+			i(a_i)
+
 		{
-			inventoryloc = a_inventoryloc;
-			listname = a_listname;
-			i = a_i;
 		}
 		bool isValid() const
 		{
@@ -143,12 +144,12 @@ class GUIFormSpecMenu : public GUIModalMenu
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
-			fid(id)
+			fid(id),
+			send(false),
+			ftype(f_Unknown),
+			is_exit(false),
+			tooltip("")
 		{
-			send = false;
-			ftype = f_Unknown;
-			is_exit = false;
-			tooltip="";
 		}
 		std::string fname;
 		std::wstring flabel;
@@ -346,10 +347,10 @@ private:
 class FormspecFormSource: public IFormSource
 {
 public:
-	FormspecFormSource(std::string formspec,FormspecFormSource** game_formspec)
+	FormspecFormSource(std::string formspec,FormspecFormSource** game_formspec) :
+		m_formspec(formspec),
+		m_game_formspec(game_formspec)
 	{
-		m_formspec = formspec;
-		m_game_formspec = game_formspec;
 	}
 
 	~FormspecFormSource()

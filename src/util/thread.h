@@ -93,9 +93,9 @@ public:
 	GetRequest()
 	{
 	}
-	GetRequest(Key a_key)
+	GetRequest(Key a_key) : 
+		key(a_key)
 	{
-		key = a_key;
 	}
 	~GetRequest()
 	{

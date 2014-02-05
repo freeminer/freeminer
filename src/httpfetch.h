@@ -71,24 +71,24 @@ struct HTTPFetchResult
 	unsigned long caller;
 	unsigned long request_id;
 
-	HTTPFetchResult()
+	HTTPFetchResult() :
+		succeeded(false),
+		timeout(false),
+		response_code(0),
+		data(""),
+		caller(HTTPFETCH_DISCARD),
+		request_id(0)
 	{
-		succeeded = false;
-		timeout = false;
-		response_code = 0;
-		data = "";
-		caller = HTTPFETCH_DISCARD;
-		request_id = 0;
 	}
 
-	HTTPFetchResult(const HTTPFetchRequest &fetchrequest)
+	HTTPFetchResult(const HTTPFetchRequest &fetchrequest) :
+		succeeded(false),
+		timeout(false),
+		response_code(0),
+		data(""),
+		caller(fetchrequest.caller),
+		request_id(fetchrequest.request_id)
 	{
-		succeeded = false;
-		timeout = false;
-		response_code = 0;
-		data = "";
-		caller = fetchrequest.caller;
-		request_id = fetchrequest.request_id;
 	}
 
 };

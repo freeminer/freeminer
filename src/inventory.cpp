@@ -110,14 +110,13 @@ static std::string deSerializeJsonStringIfNeeded(std::istream &is)
 
 
 ItemStack::ItemStack(std::string name_, u16 count_,
-		u16 wear_, std::string metadata_,
-		IItemDefManager *itemdef)
+                     u16 wear_, std::string metadata_,
+                     IItemDefManager *itemdef) :
+	name(itemdef->getAlias(name_)),
+	count(count_),
+	wear(wear_),
+	metadata(metadata_)
 {
-	name = itemdef->getAlias(name_);
-	count = count_;
-	wear = wear_;
-	metadata = metadata_;
-
 	if(name.empty() || count == 0)
 		clear();
 	else if(itemdef->get(name).type == ITEM_TOOL)
@@ -427,12 +426,12 @@ ItemStack ItemStack::peekItem(u32 peekcount) const
 	Inventory
 */
 
-InventoryList::InventoryList(std::string name, u32 size, IItemDefManager *itemdef)
+InventoryList::InventoryList(std::string name, u32 size, IItemDefManager *itemdef) :
+	m_size(size),
+	m_width(0),
+	m_name(name),
+	m_itemdef(itemdef)
 {
-	m_name = name;
-	m_size = size;
-	m_width = 0;
-	m_itemdef = itemdef;
 	clearItems();
 	//m_dirty = false;
 }

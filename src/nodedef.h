@@ -175,10 +175,10 @@ struct TileDef
 		float length; // seconds
 	} animation;
 
-	TileDef()
+	TileDef() :
+		name(""),
+		backface_culling(true)
 	{
-		name = "";
-		backface_culling = true;
 		animation.type = TAT_NONE;
 		animation.aspect_w = 1;
 		animation.aspect_h = 1;
