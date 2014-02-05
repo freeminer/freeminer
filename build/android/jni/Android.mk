@@ -36,7 +36,7 @@ LOCAL_CPP_FEATURES += exceptions
 LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_ -DANDROID -pipe -fstrict-aliasing -DHAS_SOCKLEN_T
 
 ifndef NDEBUG
-LOCAL_CFLAGS += -g -D_DEBUG
+LOCAL_CFLAGS += -g -D_DEBUG -O0 -fno-omit-frame-pointer -fno-function-sections
 else
 LOCAL_CFLAGS += -fexpensive-optimizations -O3
 endif

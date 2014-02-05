@@ -1,4 +1,6 @@
-# NDK_TOOLCHAIN_VERSION := clang3.3
+NDK_TOOLCHAIN_VERSION := 4.7
+APP_OPTIM := release
+APP_ABI := armeabi-v7a
 
 APP_PLATFORM := android-10
 APP_MODULES := Freeminer
