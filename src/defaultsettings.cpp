@@ -324,6 +324,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("language", "");
 
 	settings->setDefault("touchscreen", "0");
+	settings->setDefault("autojump", "0");
 
 	// freeminer user-friendly defaults
 	settings->setDefault("enable_vbo", "true");
@@ -371,6 +372,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("viewing_range_nodes_min", "10");
 
 	settings->setDefault("touchscreen", "1");
+	settings->setDefault("autojump", "1");
 #endif
 }
 
