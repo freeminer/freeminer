@@ -7,6 +7,7 @@
 #include "leveldb/db.h"
 
 #include "circuit_element.h"
+#include "circuit_element_virtual.h"
 #include "irr_v3d.h"
 #include "map.h"
 #include "circuit_element_states.h"
@@ -28,31 +29,41 @@ public:
 	void pushElementToQueue(v3s16 pos);
 	void processElementsQueue(Map& map, INodeDefManager* ndef);
 	
+	void load();
 	void save();
-	void saveElementConnections(std::list <CircuitElement>::iterator id);
+	void saveElement(std::list <CircuitElement>::iterator element, bool save_edges);
+	void saveVirtualElement(std::list <CircuitElementVirtual>::iterator element, bool save_edges);
 	void saveCircuitElementsStates();
 	
-	bool isElementKey(std::string s);
 private:
-	std::list <CircuitElement> elements;
-	std::map <v3s16, std::list<CircuitElement>::iterator> pos_to_iterator;
-	std::map <v3s16, unsigned long> pos_to_id;
-	std::map <const unsigned char*, unsigned long> func_to_id;
-	std::vector <v3s16> elements_queue;
-	CircuitElementStates circuit_elements_states;
+	std::list <CircuitElement> m_elements;
+	std::list <CircuitElementVirtual> m_virtual_elements;
+
+	std::map <v3s16, std::list<CircuitElement>::iterator> m_pos_to_iterator;
+	std::map <const unsigned char*, unsigned long> m_func_to_id;
+
+	std::vector <v3s16> m_elements_queue;
+	CircuitElementStates m_circuit_elements_states;
 	GameScripting* m_script;
 	float m_min_update_delay;
 	float m_since_last_update;
-	unsigned long max_id;
+
+	unsigned long m_max_id;
+	unsigned long m_max_virtual_id;
 	
 	std::string m_savedir;
+
+	bool m_updating_process;
 	
 	leveldb::DB *m_database;
+	leveldb::DB *m_virtual_database;
 	
 	JMutex m_elements_mutex;
 	
+	static const unsigned long circuit_simulator_version;
 	static const char elements_states_file[];
 	static const char elements_func_file[];
 };
 
 #endif
+
