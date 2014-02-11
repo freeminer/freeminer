@@ -223,7 +223,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 			m_down = false;
 			m_digging = false;
 		}
-	} else if (event.EventType == irr::EET_KEY_INPUT_EVENT) {
+	} else if (event.EventType == irr::EET_KEY_INPUT_EVENT && m_visible) {
 		if (event.KeyInput.PressedDown) {
 			keyIsDown.set(event.KeyInput);
 			keyWasDown.set(event.KeyInput);
