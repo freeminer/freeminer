@@ -27,6 +27,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "game.h"
 
+// square distance when we consider pointer to be moved
+#define TOUCH_DISTANCE_MOVED 400
+// time (ms) in which two clicks are considered to be doubleclick
+#define TOUCH_DOUBLECLICK_MS 300
+
+
 using namespace irr;
 using namespace irr::core;
 using namespace irr::gui;

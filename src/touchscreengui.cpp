@@ -131,7 +131,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 
 		if (event.MultiTouchInput.Event == EMTIE_LEFT_UP) {
 			u32 time = getTimeMs();
-			if (time - m_previous_click_time <= 300) {
+			if (time - m_previous_click_time <= TOUCH_DOUBLECLICK_MS) {
 				// double click
 				m_double_click = true;
 			} else {
@@ -216,9 +216,7 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 		}
 
 		if (!main_pointer_still_here) {
-			// TODO: tweak this
-			// perhaps this should only right click when not digging?
-			if (m_down_to.Y < m_hud_start_y && m_down && !m_digging && m_down_from.getDistanceFromSQ(m_down_to) < 400)
+			if (m_down_to.Y < m_hud_start_y && m_down && !m_digging && m_down_from.getDistanceFromSQ(m_down_to) < TOUCH_DISTANCE_MOVED)
 				m_rightclick = true;
 			m_down = false;
 			m_digging = false;
@@ -252,7 +250,7 @@ bool TouchScreenGUI::getLeftState() {
 void TouchScreenGUI::step(float dtime) {
 	if (m_down) {
 		u32 dtime = getTimeMs() - m_down_since;
-		if (dtime > 300)
+		if (dtime > TOUCH_DOUBLECLICK_MS && m_down_from.getDistanceFromSQ(m_down_to) < TOUCH_DISTANCE_MOVED)
 			m_digging = true;
 	}
 }
