@@ -123,7 +123,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
 
 #define MAX_PACKET_SIZE 512
-#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 
 enum ToClientCommand
 {

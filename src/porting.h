@@ -48,6 +48,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include <windows.h>
 	
 	#define sleep_ms(x) Sleep(x)
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #else
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
@@ -78,6 +80,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define THREAD_PRIORITY_NORMAL       2
 	#define THREAD_PRIORITY_ABOVE_NORMAL 3
 	#define THREAD_PRIORITY_HIGHEST      4
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 #endif
 
 #ifdef _MSC_VER
