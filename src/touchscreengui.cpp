@@ -41,6 +41,7 @@ enum {
 	right_id,
 	jump_id,
 	inventory_id,
+	chat_id,
 	after_last_element_id
 };
 
@@ -114,6 +115,7 @@ void TouchScreenGUI::init() {
 		}
 
 	m_guienv->addButton(rect<s32>(0, 0, 50, 50), 0, inventory_id, L"inv");
+	m_guienv->addButton(rect<s32>(75, 0, 125, 50), 0, chat_id, L"chat");
 }
 
 TouchScreenGUI::~TouchScreenGUI() {}
@@ -172,6 +174,9 @@ void TouchScreenGUI::OnEvent(const SEvent &event) {
 					break;
 				case inventory_id:
 					key = "inventory";
+					break;
+				case chat_id:
+					key = "chat";
 					break;
 				}
 

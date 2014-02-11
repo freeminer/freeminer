@@ -22,6 +22,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "irrlichttypes_extrabloated.h"
 #include "touchscreengui.h"
+#include "porting.h"
+#include "android.h"
 
 extern TouchScreenGUI *touchscreengui;
 
@@ -130,7 +132,21 @@ public:
 
 	virtual void regenerateGui(v2u32 screensize) = 0;
 	virtual void drawMenu() = 0;
-	virtual bool preprocessEvent(const SEvent& event) { return false; };
+	virtual bool preprocessEvent(const SEvent& event) {
+		#ifdef ANDROID
+		// display software keyboard when clicking edit boxes
+		if (event.EventType == EET_MOUSE_INPUT_EVENT
+				&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+			gui::IGUIElement *hovered =
+				Environment->getRootGUIElement()->getElementFromPoint(
+					core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+			if (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+				porting::displayKeyboard(true, app_global, jnienv);
+		}
+		#endif
+
+		return false;
+	};
 	virtual bool OnEvent(const SEvent& event) { return false; };
 	virtual bool pausesGame(){ return false; } // Used for pause menu
 

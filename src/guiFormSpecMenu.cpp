@@ -63,12 +63,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 			return;															\
 	}
 
-#ifdef ANDROID
-#include <android_native_app_glue.h>
-extern android_app *app_global;
-extern JNIEnv *jnienv;
-#endif
-
 /*
 	GUIFormSpecMenu
 */
@@ -2223,6 +2217,8 @@ void GUIFormSpecMenu::acceptInput(bool quit=false)
 
 bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 {
+	GUIModalMenu::preprocessEvent(event);
+
 	// Fix Esc/Return key being eaten by checkboxen and tables
 	if(event.EventType==EET_KEY_INPUT_EVENT)
 	{
