@@ -1818,9 +1818,6 @@ void the_game(
 			menu->setFormSource(src);
 			menu->setTextDest(new TextDestPlayerInventory(&client));
 			menu->drop();
-
-			if (touchscreengui)
-				touchscreengui->Hide();
 		}
 		else if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey))
 		{

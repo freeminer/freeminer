@@ -58,6 +58,9 @@ public:
 		setVisible(true);
 		Environment->setFocus(this);
 		m_menumgr->createdMenu(this);
+
+		if (touchscreengui)
+			touchscreengui->Hide();
 	}
 	virtual ~GUIModalMenu()
 	{
