@@ -887,7 +887,9 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 	// Render scene
 	driver->beginScene(true, true, video::SColor(0,0,0,0));
 	smgr->drawAll();
+#ifndef ANDROID
 	driver->endScene();
+#endif
 	
 	g_settings->setBool("disable_wieldlight", disable_wieldlight);
 
