@@ -373,6 +373,8 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("touchscreen", "1");
 	settings->setDefault("autojump", "1");
+
+	settings->setDefault("show_debug", "true");
 #endif
 }
 
