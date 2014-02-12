@@ -2038,7 +2038,7 @@ void ConnectionReceiveThread::receive()
 	// use IPv6 minimum allowed MTU as receive buffer size as this is
 	// theoretical reliable upper boundary of a udp packet for all IPv6 enabled
 	// infrastructure
-	unsigned int packet_maxsize = 1500;
+	unsigned int packet_maxsize = 16384;
 	SharedBuffer<u8> packetdata(packet_maxsize);
 	
 	bool packet_queued = true;

@@ -327,6 +327,7 @@ void set_default_settings(Settings *settings)
 
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+	settings->setDefault("bind_address","::1"); // REMOVE ME!!! dirty fix to broken ipv6 server
 #endif
 }
 
