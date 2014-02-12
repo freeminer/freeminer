@@ -385,13 +385,6 @@ void Client::step(float dtime)
 		// 0ms
 		ReceiveAll();
 	}
-	
-	{
-		//TimeTaker timer("m_con_mutex + m_con.RunTimeouts()", m_device);
-		// 0ms
-		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
-		m_con.RunTimeouts(dtime);
-	}
 
 	/*
 		Packet counter
@@ -776,6 +769,7 @@ void Client::step(float dtime)
 	if (m_media_downloader && m_media_downloader->isStarted()) {
 		m_media_downloader->step(this);
 		if (m_media_downloader->isDone()) {
+			received_media();
 			delete m_media_downloader;
 			m_media_downloader = NULL;
 		}
@@ -1628,11 +1622,6 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		}
 
 		m_media_downloader->step(this);
-		if (m_media_downloader->isDone()) {
-			// might be done already if all media is in the cache
-			delete m_media_downloader;
-			m_media_downloader = NULL;
-		}
 	}
 	else if(command == TOCLIENT_MEDIA)
 	{
@@ -1683,11 +1672,6 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			std::string data = deSerializeLongString(is);
 			m_media_downloader->conventionalTransferDone(
 					name, data, this);
-		}
-
-		if (m_media_downloader->isDone()) {
-			delete m_media_downloader;
-			m_media_downloader = NULL;
 		}
 	}
 	else if(command == TOCLIENT_TOOLDEF)

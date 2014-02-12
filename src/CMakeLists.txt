@@ -341,6 +341,7 @@ set(common_SRCS
 	connection.cpp
 	environment.cpp
 	server.cpp
+	clientiface.cpp
 	socket.cpp
 	mapblock.cpp
 	mapsector.cpp
