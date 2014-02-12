@@ -39,10 +39,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "environment.h"
 
 FlagDesc flagdesc_mapgen_v6[] = {
-	{"v6_jungles",     MGV6_JUNGLES},
-	{"v6_biome_blend", MGV6_BIOME_BLEND},
-	{"v6_nomudflow",   MGV6_NOMUDFLOW},
-	{NULL,             0}
+	{"jungles",    MGV6_JUNGLES},
+	{"biomeblend", MGV6_BIOMEBLEND},
+	{"mudflow",    MGV6_MUDFLOW},
+	{NULL,         0}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,7 +94,7 @@ MapgenV6::~MapgenV6() {
 
 
 MapgenV6Params::MapgenV6Params() {
-	spflags     = MGV6_BIOME_BLEND;
+	spflags     = MGV6_BIOMEBLEND | MGV6_MUDFLOW;
 	freq_desert = 0.45;
 	freq_beach  = 0.15;
 
@@ -132,7 +132,7 @@ void MapgenV6Params::readParams(Settings *settings) {
 
 
 void MapgenV6Params::writeParams(Settings *settings) {
-	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6);
+	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6, (u32)-1);
 	settings->setFloat("mgv6_freq_desert", freq_desert);
 	settings->setFloat("mgv6_freq_beach",  freq_beach);
 
@@ -366,7 +366,7 @@ BiomeType MapgenV6::getBiome(int index, v2s16 p)
 	if (d > freq_desert)
 		return BT_DESERT;
 		
-	if ((spflags & MGV6_BIOME_BLEND) &&
+	if ((spflags & MGV6_BIOMEBLEND) &&
 		(d > freq_desert - 0.10) &&
 		((noise2d(p.X, p.Y, seed) + 1.0) > (freq_desert - d) * 20.0))
 		return BT_DESERT;
@@ -484,7 +484,7 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		addDirtGravelBlobs();
 
 		// Flow mud away from steep edges
-		if (!(spflags & MGV6_NOMUDFLOW))
+		if (spflags & MGV6_MUDFLOW)
 			flowMud(mudflow_minpos, mudflow_maxpos);
 
 	}
@@ -546,7 +546,7 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 	}
 
 	// Calculate lighting
-	if (!(flags & MG_NOLIGHT))
+	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3s16(1, 1, 1) * MAP_BLOCKSIZE,
 					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
 	

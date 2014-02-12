@@ -156,7 +156,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	Json::Value & params = mg_params->params;
 
 	if (params.get("light", 0).asBool())
-		this->flags |= MG_NOLIGHT;
+	this->flags &= ~MG_LIGHT;
 
 	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
 	n_water_source	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
