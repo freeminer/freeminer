@@ -2059,6 +2059,25 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		player->animation_wd_start = readF1000(is);
 		player->animation_wd_stop = readF1000(is);
 	}
+	else if(command == TOCLIENT_SET_SKY)
+	{
+		std::string datastring((char *)&data[2], datasize - 2);
+		std::istringstream is(datastring, std::ios_base::binary);
+
+		video::SColor *bgcolor = new video::SColor(readARGB8(is));
+		std::string *type = new std::string(deSerializeString(is));
+		u16 count = readU16(is);
+		std::vector<std::string> *params = new std::vector<std::string>;
+		for(size_t i=0; i<count; i++)
+			params->push_back(deSerializeString(is));
+
+		ClientEvent event;
+		event.type = CE_SET_SKY;
+		event.set_sky.bgcolor = bgcolor;
+		event.set_sky.type = type;
+		event.set_sky.params = params;
+		m_client_event_queue.push_back(event);
+	}
 	else
 	{
 		infostream<<"Client: Ignoring unknown command "

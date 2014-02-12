@@ -512,7 +512,18 @@ enum ToClientCommand
 		u16 breath
 	*/
 
-	TOCLIENT_ANIMATIONS = 0x4f,
+	TOCLIENT_SET_SKY = 0x4f,
+	/*
+		u16 command
+		u8[4] color (ARGB)
+		u8 len
+		u8[len] type
+		u16 count
+		foreach count:
+			u8 len
+			u8[len] param
+	*/
+	TOCLIENT_ANIMATIONS = 0xaf, // TODO: chenge number if mt merge it
 	/*
 		u16 command
 		f1000 animation_default_start
