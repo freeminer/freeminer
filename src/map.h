@@ -508,13 +508,8 @@ public:
 
 	bool isSavingEnabled(){ return m_map_saving_enabled; }
 
-	u64 getSeed(){ return m_seed; }
-
-	MapgenParams *getMapgenParams(){ return m_mgparams; }
-	void setMapgenParams(MapgenParams *mgparams){ m_mgparams = mgparams; }
-
-	// Parameters fed to the Mapgen
-	MapgenParams *m_mgparams;
+	u64 getSeed();
+	s16 getWaterLevel();
 
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
@@ -526,9 +521,6 @@ public:
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
 
 private:
-	// Seed used for all kinds of randomness in generation
-	u64 m_seed;
-	
 	// Emerge manager
 	EmergeManager *m_emerge;
 

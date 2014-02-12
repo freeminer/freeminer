@@ -137,18 +137,22 @@ double sphere(double x, double y, double z, double d, int ITR = 1) {
 	return v3f(x, y, z).getLength() < d;
 }
 
-bool MapgenMathParams::readParams(Settings *settings) {
+//////////////////////// Mapgen Math parameter read/write
+
+void MapgenMathParams::readParams(Settings *settings) {
 	params = settings->getJson("mg_math");
-	return true;
 }
 
 void MapgenMathParams::writeParams(Settings *settings) {
 	settings->setJson("mg_math", params);
 }
 
-MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
+///////////////////////////////////////////////////////////////////////////////
+
+MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
 	ndef = emerge->ndef;
-	mg_params = params_;
+	mg_params = (MapgenMathParams *)params_;
+
 	Json::Value & params = mg_params->params;
 
 	if (params.get("light", 0).asBool())
