@@ -4509,6 +4509,10 @@ void Server::notifyPlayer(const char *name, const std::wstring msg, const bool p
 	Player *player = m_env->getPlayer(name);
 	if(!player)
 		return;
+
+	if (player->peer_id == PEER_ID_INEXISTENT)
+		return;
+
 	if (prepend)
 		SendChatMessage(player->peer_id, std::wstring(L"\vaaaaaaServer: \vffffff")+msg);
 	else
