@@ -512,6 +512,19 @@ enum ToClientCommand
 		u16 breath
 	*/
 
+	TOCLIENT_ANIMATIONS = 0xaf, // TODO: change number if mt merge it
+	/*
+		u16 command
+		f1000 animation_default_start
+		f1000 animation_default_stop
+		f1000 animation_walk_start
+		f1000 animation_walk_stop
+		f1000 animation_dig_start
+		f1000 animation_dig_stop
+		f1000 animation_wd_start
+		f1000 animation_wd_stop
+	*/
+
 	TOCLIENT_SET_SKY = 0x4f,
 	/*
 		u16 command
@@ -523,17 +536,12 @@ enum ToClientCommand
 			u8 len
 			u8[len] param
 	*/
-	TOCLIENT_ANIMATIONS = 0xaf, // TODO: chenge number if mt merge it
+
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO = 0x50,
 	/*
 		u16 command
-		f1000 animation_default_start
-		f1000 animation_default_stop
-		f1000 animation_walk_start
-		f1000 animation_walk_stop
-		f1000 animation_dig_start
-		f1000 animation_dig_stop
-		f1000 animation_wd_start
-		f1000 animation_wd_stop
+		u8 do_override (boolean)
+		u16 day-night ratio 0...65535
 	*/
 };
 
