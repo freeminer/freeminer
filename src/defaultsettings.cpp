@@ -184,6 +184,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("workaround_window_size","5");
 	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
+	settings->setDefault("bind_address","");
+	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
 	settings->setDefault("strict_protocol_version_checking", "false");
@@ -236,8 +238,6 @@ void set_default_settings(Settings *settings)
 #endif
 	);
 	settings->setDefault("emergequeue_limit_total", "256");
-	settings->setDefault("emergequeue_limit_diskonly", "");
-	settings->setDefault("emergequeue_limit_generate", "");
 	settings->setDefault("num_emerge_threads", "1");
 	
 	// physics stuff

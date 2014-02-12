@@ -746,7 +746,7 @@ fail:
 	}
 
 	//////////// Try to get value, no exception thrown
-	bool tryGet(std::string name, std::string &val)
+	bool getNoEx(std::string name, std::string &val)
 	{
 		try {
 			val = get(name);
@@ -756,7 +756,7 @@ fail:
 		}
 	}
 
-	bool tryGetFlagStr(std::string name, u32 &val, FlagDesc *flagdesc)
+	bool getFlagStrNoEx(std::string name, u32 &val, FlagDesc *flagdesc)
 	{
 		try {
 			val = getFlagStr(name, flagdesc);
@@ -766,7 +766,7 @@ fail:
 		}
 	}
 
-	bool tryGetFloat(std::string name, float &val)
+	bool getFloatNoEx(std::string name, float &val)
 	{
 		try {
 			val = getFloat(name);
@@ -776,7 +776,7 @@ fail:
 		}
 	}
 
-	bool tryGetU16(std::string name, int &val)
+	bool getU16NoEx(std::string name, int &val)
 	{
 		try {
 			val = getU16(name);
@@ -786,7 +786,7 @@ fail:
 		}
 	}
 
-	bool tryGetU16(std::string name, u16 &val)
+	bool getU16NoEx(std::string name, u16 &val)
 	{
 		try {
 			val = getU16(name);
@@ -796,7 +796,7 @@ fail:
 		}
 	}
 
-	bool tryGetS16(std::string name, int &val)
+	bool getS16NoEx(std::string name, int &val)
 	{
 		try {
 			val = getU16(name);
@@ -806,7 +806,7 @@ fail:
 		}
 	}
 
-	bool tryGetS16(std::string name, s16 &val)
+	bool getS16NoEx(std::string name, s16 &val)
 	{
 		try {
 			val = getS16(name);
@@ -816,7 +816,7 @@ fail:
 		}
 	}
 
-	bool tryGetS32(std::string name, s32 &val)
+	bool getS32NoEx(std::string name, s32 &val)
 	{
 		try {
 			val = getS32(name);
@@ -826,7 +826,7 @@ fail:
 		}
 	}
 
-	bool tryGetV3F(std::string name, v3f &val)
+	bool getV3FNoEx(std::string name, v3f &val)
 	{
 		try {
 			val = getV3F(name);
@@ -836,7 +836,7 @@ fail:
 		}
 	}
 
-	bool tryGetV2F(std::string name, v2f &val)
+	bool getV2FNoEx(std::string name, v2f &val)
 	{
 		try {
 			val = getV2F(name);
@@ -846,7 +846,7 @@ fail:
 		}
 	}
 
-	bool tryGetU64(std::string name, u64 &val)
+	bool getU64NoEx(std::string name, u64 &val)
 	{
 		try {
 			val = getU64(name);
