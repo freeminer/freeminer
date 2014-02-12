@@ -386,9 +386,6 @@ public:
 			core::line3d<f32> shootline_on_map
 	);
 
-	// Prints a line or two of info
-	void printDebugInfo(std::ostream &os);
-
 	std::list<std::string> getConnectedPlayerNames();
 
 	float getAnimationTime();
