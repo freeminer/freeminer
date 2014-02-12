@@ -3362,7 +3362,9 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 		return block;
 	}
-	/*if(allow_generate)
+
+#if 0
+	if(allow_generate)
 	{
 		std::map<v3s16, MapBlock*> modified_blocks;
 		MapBlock *block = generateBlock(p, modified_blocks);
@@ -3385,9 +3387,19 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 			return block;
 		}
-	}*/
+	}
+#endif
 
 	return NULL;
+}
+
+MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
+{
+	MapBlock *block = getBlockNoCreateNoEx(p3d);
+	if (block == NULL)
+		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
+
+	return block;
 }
 
 void ServerMap::prepareBlock(MapBlock *block) {

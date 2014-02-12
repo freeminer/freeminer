@@ -71,18 +71,10 @@ struct BlockEmergeData {
 	u8 flags;
 };
 
-class IBackgroundBlockEmerger
-{
+class EmergeManager {
 public:
 	ServerEnvironment *env;
 
-	virtual bool enqueueBlockEmerge(u16 peer_id, v3s16 p,
-			bool allow_generate) = 0;
-	virtual ~IBackgroundBlockEmerger() {}
-};
-
-class EmergeManager : public IBackgroundBlockEmerger {
-public:
 	INodeDefManager *ndef;
 	std::map<std::string, MapgenFactory *> mglist;
 

@@ -151,7 +151,7 @@ void MapgenMathParams::writeParams(Settings *settings) {
 
 MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
 	ndef = emerge->ndef;
-	mg_params = (MapgenMathParams *)params_;
+	mg_params = (MapgenMathParams *)params_->sparams;
 
 	Json::Value & params = mg_params->params;
 
@@ -194,7 +194,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		func = &sphere;
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", 100).asDouble();
-		scale = params.get("scale", 1/size).asDouble();
+		scale = params.get("scale", 1.0/size).asDouble();
 	}
 
 

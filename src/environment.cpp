@@ -1,3 +1,4 @@
+
 /*
 Minetest
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -314,14 +315,12 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 */
 
 ServerEnvironment::ServerEnvironment(ServerMap *map,
-		GameScripting *scriptIface, Circuit* circuit,
-		IGameDef *gamedef, IBackgroundBlockEmerger *emerger):
+		GameScripting *scriptIface, Circuit* circuit, IGameDef *gamedef):
 	m_abmhandler(NULL),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
 	m_gamedef(gamedef),
-	m_emerger(emerger),
 	m_random_spawn_timer(3),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
@@ -335,7 +334,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
-	emerger->env = this;
 }
 
 Player * ServerEnvironment::getPlayer(const char *name)
@@ -1245,11 +1243,8 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			++n;
 			v3s16 p = *i;
 
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+			MapBlock *block = m_map->getBlockOrEmerge(p);
 			if(block==NULL){
-				// Block needs to be fetched first
-				m_emerger->enqueueBlockEmerge(
-						PEER_ID_INEXISTENT, p, false);
 				m_active_blocks.m_list.erase(p);
 				continue;
 			}

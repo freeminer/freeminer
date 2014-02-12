@@ -45,7 +45,6 @@ class ActiveBlockModifier;
 class ServerActiveObject;
 class ITextureSource;
 class IGameDef;
-class IBackgroundBlockEmerger;
 class Map;
 class ServerMap;
 class ClientMap;
@@ -227,8 +226,8 @@ class ServerEnvironment : public Environment
 {
 public:
 	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-	                  Circuit* circuit, IGameDef *gamedef,
-	                  IBackgroundBlockEmerger *emerger);
+			Circuit* circuit,
+			IGameDef *gamedef);
 	~ServerEnvironment();
 
 	Map & getMap();
@@ -408,8 +407,6 @@ private:
 	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
-	// Background block emerger (the EmergeManager, in practice)
-	IBackgroundBlockEmerger *m_emerger;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
