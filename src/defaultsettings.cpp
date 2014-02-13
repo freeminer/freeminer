@@ -368,13 +368,15 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("mouse_sensitivity", "0.2");
 
-	settings->setDefault("viewing_range_nodes_max", "10");
+	//auto by fps: settings->setDefault("viewing_range_nodes_max", "10");
 	settings->setDefault("viewing_range_nodes_min", "10");
 
 	settings->setDefault("touchscreen", "1");
 	settings->setDefault("autojump", "1");
 
 	settings->setDefault("show_debug", "true");
+
+	settings->setDefault("new_style_leaves", "false");
 #endif
 }
 
