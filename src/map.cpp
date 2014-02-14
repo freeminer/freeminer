@@ -47,6 +47,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
+#include "circuit.h"
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
@@ -78,6 +79,20 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_liquid_step_flow(1000),
 	m_dout(dout),
 	m_gamedef(gamedef),
+	m_sectors_update_last(0),
+	m_sectors_save_last(0),
+	m_sector_cache(NULL)
+{
+	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
+	m_circuit = NULL;
+}
+
+// TODO: mmerge with ^^ with curcuit=NULL
+Map::Map(std::ostream &dout, IGameDef *gamedef, Circuit* circuit):
+	m_liquid_step_flow(1000),
+	m_dout(dout),
+	m_gamedef(gamedef),
+	m_circuit(circuit),
 	m_sectors_update_last(0),
 	m_sectors_save_last(0),
 	m_sector_cache(NULL)
@@ -1581,6 +1596,10 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	}
 	if (!calls)
 		m_sectors_update_last = 0;
+
+	if(m_circuit != NULL) {
+		m_circuit->save();
+	}
 /*
 	endSave();
 */
@@ -1714,6 +1733,16 @@ void Map::transforming_liquid_push_back(v3s16 & p) {
 
 u32 Map::transforming_liquid_size() {
         return m_transforming_liquid.size();
+}
+
+Circuit* Map::getCircuit()
+{
+	return m_circuit;
+}
+
+INodeDefManager* Map::getNodeDefManager()
+{
+	return m_gamedef->ndef();
 }
 
 const v3s16 liquid_flow_dirs[7] =
@@ -2581,35 +2610,12 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 /*
 	ServerMap
 */
-ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
-	Map(dout_server, gamedef),
-	m_seed(0),
+ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* circuit):
+	Map(dout_server, gamedef, circuit),
+	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
 	verbosestream<<__FUNCTION_NAME<<std::endl;
-
-	m_emerge = emerge;
-	m_mgparams = m_emerge->getParamsFromSettings(g_settings);
-	if (!m_mgparams)
-		m_mgparams = new MapgenV6Params();
-
-	m_seed = m_mgparams->seed;
-
-	if (g_settings->get("fixed_map_seed").empty())
-	{
-		m_seed = (((u64)(myrand() & 0xffff) << 0)
-				| ((u64)(myrand() & 0xffff) << 16)
-				| ((u64)(myrand() & 0xffff) << 32)
-				| ((u64)(myrand() & 0xffff) << 48));
-		m_mgparams->seed = m_seed;
-	}
-
-	/*
-		Experimental and debug stuff
-	*/
-
-	{
-	}
 
 	/*
 		Try to load map; if not found, create a new one.
@@ -2672,7 +2678,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 				infostream<<"ServerMap: Successfully loaded map "
 						<<"metadata from "<<savedir
 						<<", assuming valid save directory."
-						<<" seed="<<m_seed<<"."
+						<<" seed="<< m_emerge->params.seed <<"."
 						<<std::endl;
 
 				m_map_saving_enabled = true;
@@ -2728,7 +2734,7 @@ ServerMap::~ServerMap()
 	/*
 		Close database if it was opened
 	*/
-	delete(dbase);
+	delete dbase;
 
 #if 0
 	/*
@@ -2741,8 +2747,16 @@ ServerMap::~ServerMap()
 		delete chunk;
 	}
 #endif
+}
 
-	delete m_mgparams;
+u64 ServerMap::getSeed()
+{
+	return m_emerge->params.seed;
+}
+
+s16 ServerMap::getWaterLevel()
+{
+	return m_emerge->params.water_level;
 }
 
 bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
@@ -2750,7 +2764,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	bool enable_mapgen_debug_info = m_emerge->mapgen_debug_info;
 	EMERGE_DBG_OUT("initBlockMake(): " PP(blockpos) " - " PP(blockpos));
 
-	s16 chunksize = m_mgparams->chunksize;
+	s16 chunksize = m_emerge->params.chunksize;
 	s16 coffset = -chunksize / 2;
 	v3s16 chunk_offset(coffset, coffset, coffset);
 	v3s16 blockpos_div = getContainerPos(blockpos - chunk_offset, chunksize);
@@ -2766,7 +2780,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 		blockpos_over_limit(blockpos_max + extra_borders))
 		return false;
 
-	data->seed = m_seed;
+	data->seed = m_emerge->params.seed;
 	data->blockpos_min = blockpos_min;
 	data->blockpos_max = blockpos_max;
 	data->blockpos_requested = blockpos;
@@ -3060,7 +3074,6 @@ ServerMapSector * ServerMap::createSector(v2s16 p2d)
 	DSTACKF("%s: p2d=(%d,%d)",
 			__FUNCTION_NAME,
 			p2d.X, p2d.Y);
-
 	/*
 		Check if it exists already in memory
 	*/
@@ -3299,15 +3312,17 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	DSTACKF("%s: p=(%d,%d,%d), create_blank=%d",
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
-
 	{
 		MapBlock *block = getBlockNoCreateNoEx(p);
 		if(block && block->isDummy() == false)
+		{
 			return block;
+		}
 	}
 
 	{
 		MapBlock *block = loadBlock(p);
+		m_circuit->processElementsQueue(*this, m_gamedef->ndef());
 		if(block)
 			return block;
 	}
@@ -3318,7 +3333,9 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 		return block;
 	}
-	/*if(allow_generate)
+
+#if 0
+	if(allow_generate)
 	{
 		std::map<v3s16, MapBlock*> modified_blocks;
 		MapBlock *block = generateBlock(p, modified_blocks);
@@ -3341,9 +3358,19 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 			return block;
 		}
-	}*/
+	}
+#endif
 
 	return NULL;
+}
+
+MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
+{
+	MapBlock *block = getBlockNoCreateNoEx(p3d);
+	if (block == NULL)
+		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
+
+	return block;
 }
 
 void ServerMap::prepareBlock(MapBlock *block) {
@@ -3648,7 +3675,7 @@ void ServerMap::saveMapMeta()
 
 	Settings params;
 
-	m_emerge->setParamsToSettings(&params);
+	m_emerge->saveParamsToSettings(&params);
 	params.writeLines(ss);
 
 	ss<<"[end_of_params]\n";
@@ -3694,28 +3721,10 @@ void ServerMap::loadMapMeta()
 		params.parseConfigLine(line);
 	}
 	
-	MapgenParams *mgparams;
-	try {
-		mgparams = m_emerge->getParamsFromSettings(&params);
-	} catch (SettingNotFoundException &e) {
-		infostream << "Couldn't get a setting from map_meta.txt: "
-				   << e.what() << std::endl;
-		mgparams = NULL;
-	}
-	
-	if (mgparams) {
-		if (m_mgparams)
-			delete m_mgparams;
-		m_mgparams = mgparams;
-		m_seed = mgparams->seed;
-	} else {
-		if (params.exists("seed")) {
-			m_seed = read_seed(params.get("seed").c_str());
-			m_mgparams->seed = m_seed;
-		}
-	}
+	m_emerge->loadParamsFromSettings(&params);
 
-	verbosestream<<"ServerMap::loadMapMeta(): "<<"seed="<<m_seed<<std::endl;
+	verbosestream<<"ServerMap::loadMapMeta(): seed="
+		<< m_emerge->params.seed<<std::endl;
 }
 
 void ServerMap::saveSectorMeta(ServerMapSector *sector)
@@ -3911,7 +3920,6 @@ void ServerMap::saveBlock(MapBlock *block)
 void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSector *sector, bool save_after_load)
 {
 	DSTACK(__FUNCTION_NAME);
-
 	std::string fullpath = sectordir+DIR_DELIM+blockfile;
 	try{
 
@@ -3949,6 +3957,7 @@ void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSecto
 
 		// Read basic data
 		block->deSerialize(is, version, true);
+		block->pushElementsToCircuit(m_circuit);
 
 		// If it's a new block, insert it to the map
 		if(created_new)
@@ -4138,7 +4147,8 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block,
 	if (cache && cache->count(getNodeBlockPos(p)))
 		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed, env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	f32 heat = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
+			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->heat = heat;
@@ -4161,7 +4171,8 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *bl
 	if (cache && cache->count(getNodeBlockPos(p)))
 		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
 
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed, env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
+			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->humidity = humidity;

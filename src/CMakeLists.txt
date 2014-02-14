@@ -1,6 +1,8 @@
 project(freeminer)
 cmake_minimum_required( VERSION 2.6 )
 
+INCLUDE(CheckCSourceRuns)
+
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
@@ -218,25 +220,66 @@ if(USE_FREETYPE)
 	set(CGUITTFONT_LIBRARY cguittfont)
 endif(USE_FREETYPE)
 
-
-find_library(LUA_LIBRARY luajit
-		NAMES luajit-5.1)
-find_path(LUA_INCLUDE_DIR luajit.h
-	NAMES luajit.h
-	PATH_SUFFIXES luajit-2.0)
-message (STATUS "LuaJIT library: ${LUA_LIBRARY}")
-message (STATUS "LuaJIT headers: ${LUA_INCLUDE_DIR}")
+if (NOT DISABLE_LUAJIT)
+	find_library(LUA_LIBRARY luajit
+			NAMES luajit-5.1)
+	find_path(LUA_INCLUDE_DIR luajit.h
+		NAMES luajit.h
+		PATH_SUFFIXES luajit-2.0)
+	message (STATUS "LuaJIT library: ${LUA_LIBRARY}")
+	message (STATUS "LuaJIT headers: ${LUA_INCLUDE_DIR}")
+else (NOT ${DISABLE_LUAJIT} MATCHES "1")
+	message (STATUS "LuaJIT detection disabled! (DISABLE_LUAJIT=1)")
+	set(LUA_LIBRARY "")
+	set(LUA_INCLUDE_DIR "")
+endif (NOT DISABLE_LUAJIT)
 
 set(USE_LUAJIT 0)
 if(LUA_LIBRARY AND LUA_INCLUDE_DIR)
-	message (STATUS "LuaJIT found.")
-	set(USE_LUAJIT 1)
-else(LUA_LIBRARY AND LUA_INCLUDE_DIR)
+	message (STATUS "LuaJIT found, checking for broken versions...")
+	set(BACKUP_REQUIRED_INCS CMAKE_REQUIRED_INCLUDES)
+	set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${LUA_INCLUDE_DIR}")
+	CHECK_C_SOURCE_RUNS("
+		#include <luajit.h>
+		#include <stdio.h>
+		#include <string.h>
+		
+		static char** broken_luajit_versions = (char *[]) {
+				\"LuaJIT 2.0.0-beta7\",
+				\"LuaJIT 2.0.0-beta6\",
+				\"LuaJIT 2.0.0-beta5\",
+				\"LuaJIT 2.0.0-beta4\",
+				\"LuaJIT 2.0.0-beta3\",
+				\"LuaJIT 2.0.0-beta2\",
+				\"LuaJIT 2.0.0-beta1\"
+		};
+		int main(int argc,char** argv) {
+			unsigned int i = 0;
+			for (i=0; i < sizeof(broken_luajit_versions); i++) {
+				if (strcmp(LUAJIT_VERSION,broken_luajit_versions[i]) == 0) {
+					return 1;
+				}
+			}
+			return 0;
+		}
+		"
+		VALID_LUAJIT_VERSION)
+	set(CMAKE_REQUIRED_INCLUDES BACKUP_REQUIRED_INCS)
+	if (VALID_LUAJIT_VERSION)
+		message (STATUS "LuaJIT version ok")
+		set(USE_LUAJIT 1)
+	else (VALID_LUAJIT_VERSION)
+		message (STATUS "LuaJIT versions till 2.0.0beta7 known to be broken, update to at least beta8")
+		set(USE_LUAJIT 0)
+	endif (VALID_LUAJIT_VERSION)
+endif (LUA_LIBRARY AND LUA_INCLUDE_DIR)
+
+if(NOT USE_LUAJIT)
 	message (STATUS "LuaJIT not found, using bundled Lua.")
 	set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lua/src")
 	set(LUA_LIBRARY "lua")
 	add_subdirectory(lua)
-endif(LUA_LIBRARY AND LUA_INCLUDE_DIR)
+endif(NOT USE_LUAJIT)
 
 mark_as_advanced(LUA_LIBRARY)
 mark_as_advanced(LUA_INCLUDE_DIR)
@@ -250,14 +293,18 @@ if(ENABLE_LEVELDB)
 	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
 	message (STATUS "LevelDB library: ${LEVELDB_LIBRARY}")
 	message (STATUS "LevelDB headers: ${LEVELDB_INCLUDE_DIR}")
-	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+	find_library(SNAPPY_LIBRARY snappy)
+	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
+	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
+	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")   
+	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB 1)
 		message(STATUS "LevelDB backend enabled")
-		include_directories(${LEVELDB_INCLUDE_DIR})
-	else(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
+	else(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB 0)
 		message(STATUS "LevelDB not found!")
-	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
 
@@ -285,6 +332,10 @@ add_subdirectory(script)
 add_subdirectory(util)
 
 set(common_SRCS
+	circuit.cpp
+	circuit_element.cpp
+	circuit_element_virtual.cpp
+	circuit_element_states.cpp
 	version.cpp
 	rollback_interface.cpp
 	rollback.cpp
@@ -333,6 +384,7 @@ set(common_SRCS
 	connection.cpp
 	environment.cpp
 	server.cpp
+	clientiface.cpp
 	socket.cpp
 	mapblock.cpp
 	mapsector.cpp
@@ -514,7 +566,7 @@ if(BUILD_CLIENT)
 		)
 	endif(USE_FREETYPE)
 	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
 endif(BUILD_CLIENT)
 
@@ -531,7 +583,7 @@ if(BUILD_SERVER)
 		${PLATFORM_LIBS}
 	)
 	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
 	if(USE_CURL)
 		target_link_libraries(

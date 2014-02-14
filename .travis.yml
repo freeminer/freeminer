@@ -2,7 +2,7 @@ language: cpp
 compiler:
   - gcc
 before_install:
-  - sudo apt-get install libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev
-script: cmake . && make && sudo make install
+  - sudo apt-get install libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev libleveldb-dev libsnappy-dev
+script: cmake . -DENABLE_LEVELDB=1 && make && sudo make install
 notifications:
   email: false

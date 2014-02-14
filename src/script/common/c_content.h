@@ -121,7 +121,10 @@ int                getenumfield              (lua_State *L,
 
 u32                getflagsfield             (lua_State *L, int table,
                                               const char *fieldname,
-                                              FlagDesc *flagdesc);
+                                              FlagDesc *flagdesc, u32 *flagmask);
+
+u32                read_flags_table          (lua_State *L, int table,
+                                              FlagDesc *flagdesc, u32 *flagmask);
 
 void               push_items                (lua_State *L,
                                               const std::vector<ItemStack> &items);

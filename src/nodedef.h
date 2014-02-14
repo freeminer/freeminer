@@ -174,6 +174,8 @@ struct ContentFeatures
 	bool has_on_construct;
 	bool has_on_destruct;
 	bool has_after_destruct;
+	bool has_on_activate;
+	bool has_on_deactivate;
 
 	/*
 		Actual data
@@ -243,6 +245,13 @@ struct ContentFeatures
 	bool legacy_facedir_simple;
 	// Set to true if wall_mounted used to be set to true
 	bool legacy_wallmounted;
+	
+	bool is_wire;
+	bool is_connector;
+	bool is_circuit_element;
+	unsigned char wire_connections[6];
+	unsigned char circuit_element_states[64];
+	unsigned int circuit_element_delay;
 
 	// Sound properties
 	SimpleSoundSpec sound_footstep;

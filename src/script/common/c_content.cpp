@@ -30,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "tool.h"
 #include "serverobject.h"
+#include "porting.h"
 #include "mapgen.h"
 #include "json/json.h"
 
@@ -261,6 +262,20 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	lua_getfield(L, index, "after_destruct");
 	if(!lua_isnil(L, -1)) f.has_after_destruct = true;
 	lua_pop(L, 1);
+	lua_getfield(L, index, "on_activate");
+	if(!lua_isnil(L, -1))
+	{
+		f.has_on_activate = true;
+		f.is_circuit_element = true;
+	}
+	lua_pop(L, 1);
+	lua_getfield(L, index, "on_deactivate");
+	if(!lua_isnil(L, -1))
+	{
+		f.has_on_deactivate = true;
+		f.is_circuit_element = true;
+	}
+	lua_pop(L, 1);
 
 	lua_getfield(L, index, "on_rightclick");
 	f.rightclickable = lua_isfunction(L, -1);
@@ -314,6 +329,73 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		}
 	}
 	lua_pop(L, 1);
+	
+	/* Circuit options */
+	lua_getfield(L, index, "is_wire");
+	if(!lua_isnil(L, -1)) {
+		f.is_wire = true;
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "is_connector");
+	if(!lua_isnil(L, -1)) {
+		f.is_connector = true;
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "wire_connections");
+	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
+		f.is_wire = true;
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		int i;
+		unsigned char current_shift = 1;
+		for(i = 0; (i < 6) && (lua_next(L, table) != 0); ++i) {
+			f.wire_connections[i] = lua_tonumber(L, -1);
+			f.wire_connections[i] |= current_shift;
+			current_shift <<= 1;
+			lua_pop(L, 1);
+		}
+		if(i < 6) {
+			luaL_error(L, "Wire connectins array must have exactly 6 integer numbers.");
+		}
+
+		// Convert to two-way wire (one-way may cause undefined behavior)
+		for(i = 0; i < 6; ++i) {
+			for(int j = 0; j < 6; ++j) {
+				f.wire_connections[i] |= f.wire_connections[j] & (1 << i);
+				f.wire_connections[j] |= f.wire_connections[i] & (1 << j);
+			}
+		}
+		
+	} else if(f.is_wire) {
+		// Assuming that it's a standart wire
+		for(int i = 0; i < 6; ++i) {
+			f.wire_connections[i] = 0x3F;
+		}
+	}
+	lua_pop(L, 1);
+	
+	lua_getfield(L, index, "circuit_states");
+	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
+		f.is_circuit_element = true;
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		int i;
+		for(i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
+			f.circuit_element_states[i] = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+		}
+		if(i < 64) {
+			luaL_error(L, "Circuit states table must have exactly 64 integer numbers.");
+		}
+	}
+	lua_pop(L, 1);
+
+	f.circuit_element_delay = getintfield_default(L, index, "circuit_element_delay", f.circuit_element_delay + 1) - 1;
+	if(f.circuit_element_delay > 100) {
+		luaL_error(L, "\"circuit_element_delay\" must be a positive integer number less than 101");
+	}
 
 	// special_tiles = {}
 	lua_getfield(L, index, "special_tiles");
@@ -839,12 +921,48 @@ void push_hit_params(lua_State *L,const HitParams &params)
 }
 
 /******************************************************************************/
-u32 getflagsfield(lua_State *L, int table,
-	const char *fieldname, FlagDesc *flagdesc) {
-	std::string flagstring;
+u32 getflagsfield(lua_State *L, int table, const char *fieldname,
+	FlagDesc *flagdesc, u32 *flagmask)
+{
+	u32 flags = 0;
+	
+	lua_getfield(L, table, fieldname);
 
-	flagstring = getstringfield_default(L, table, fieldname, "");
-	return readFlagString(flagstring, flagdesc);
+	if (lua_isstring(L, -1)) {
+		std::string flagstr = lua_tostring(L, -1);
+		flags = readFlagString(flagstr, flagdesc, flagmask);
+	} else if (lua_istable(L, -1)) {
+		flags = read_flags_table(L, -1, flagdesc, flagmask);
+	}
+
+	lua_pop(L, 1);
+
+	return flags;
+}
+
+u32 read_flags_table(lua_State *L, int table, FlagDesc *flagdesc, u32 *flagmask)
+{
+	u32 flags = 0, mask = 0;
+	char fnamebuf[64] = "no";
+
+	for (int i = 0; flagdesc[i].name; i++) {
+		bool result;
+
+		if (getboolfield(L, table, flagdesc[i].name, result)) {
+			mask |= flagdesc[i].flag;
+			if (result)
+				flags |= flagdesc[i].flag;
+		}
+
+		strlcpy(fnamebuf + 2, flagdesc[i].name, sizeof(fnamebuf) - 2);
+		if (getboolfield(L, table, fnamebuf, result))
+			mask |= flagdesc[i].flag;
+	}
+
+	if (flagmask)
+		*flagmask = mask;
+
+	return flags;
 }
 
 /******************************************************************************/

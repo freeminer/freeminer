@@ -48,6 +48,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include <windows.h>
 	
 	#define sleep_ms(x) Sleep(x)
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #else
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
@@ -78,6 +80,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define THREAD_PRIORITY_NORMAL       2
 	#define THREAD_PRIORITY_ABOVE_NORMAL 3
 	#define THREAD_PRIORITY_HIGHEST      4
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 #endif
 
 #ifdef _MSC_VER
@@ -87,12 +91,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define strtoll(x, y, z) _strtoi64(x, y, z)
 	#define strtoull(x, y, z) _strtoui64(x, y, z)
 	#define strcasecmp(x, y) stricmp(x, y)
+	#define strncasecmp(x, y, n) strnicmp(x, y, n)
 #else
 	#define ALIGNOF(x) __alignof__(x)
 #endif
 
 #ifdef __MINGW32__
 	#define strtok_r(x, y, z) mystrtok_r(x, y, z)
+#endif
+
+// strlcpy is missing from glibc.  thanks a lot, drepper.
+// strlcpy is also missing from AIX and HP-UX because they aim to be weird.
+// We can't simply alias strlcpy to MSVC's strcpy_s, since strcpy_s by
+// default raises an assertion error and aborts the program if the buffer is
+// too small.
+#if defined(__FreeBSD__) || defined(__NetBSD__)    || \
+	defined(__OpenBSD__) || defined(__DragonFly__) || \
+	defined(__APPLE__)   ||                           \
+	defined(__sun)       || defined(sun)           || \
+	defined(__QNX__)     || defined(__QNXNTO__)
+	#define HAVE_STRLCPY
+#endif
+
+// So we need to define our own.
+#ifndef HAVE_STRLCPY
+	#define strlcpy(d, s, n) mystrlcpy(d, s, n)
 #endif
 
 #define PADDING(x, y) ((ALIGNOF(y) - ((uintptr_t)(x) & (ALIGNOF(y) - 1))) & (ALIGNOF(y) - 1))

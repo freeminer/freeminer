@@ -38,6 +38,7 @@ struct EnumString es_HudElementType[] =
 	{HUD_ELEM_TEXT,      "text"},
 	{HUD_ELEM_STATBAR,   "statbar"},
 	{HUD_ELEM_INVENTORY, "inventory"},
+	{HUD_ELEM_WAYPOINT,  "waypoint"},
 {0, NULL},
 };
 
@@ -53,6 +54,7 @@ struct EnumString es_HudElementStat[] =
 	{HUD_STAT_DIR,    "direction"},
 	{HUD_STAT_ALIGN,  "alignment"},
 	{HUD_STAT_OFFSET, "offset"},
+	{HUD_STAT_WORLD_POS, "world_pos"},
 	{0, NULL},
 };
 
@@ -864,6 +866,10 @@ int ObjectRef::l_hud_add(lua_State *L)
 	elem->offset = lua_istable(L, -1) ? read_v2f(L, -1) : v2f();
 	lua_pop(L, 1);
 
+	lua_getfield(L, 2, "world_pos");
+	elem->world_pos = lua_istable(L, -1) ? read_v3f(L, -1) : v3f();
+	lua_pop(L, 1);
+
 	u32 id = getServer(L)->hudAdd(player, elem);
 	if (id == (u32)-1) {
 		delete elem;
@@ -955,6 +961,10 @@ int ObjectRef::l_hud_change(lua_State *L)
 			e->offset = read_v2f(L, 4);
 			value = &e->offset;
 			break;
+		case HUD_STAT_WORLD_POS:
+			e->world_pos = read_v3f(L, 4);
+			value = &e->world_pos;
+			break;
 	}
 
 	getServer(L)->hudChange(player, id, stat, value);
@@ -1004,6 +1014,9 @@ int ObjectRef::l_hud_get(lua_State *L)
 
 	lua_pushnumber(L, e->dir);
 	lua_setfield(L, -2, "dir");
+
+	push_v3f(L, e->world_pos);
+	lua_setfield(L, -2, "world_pos");
 
 	return 1;
 }
@@ -1076,6 +1089,67 @@ int ObjectRef::l_hud_set_hotbar_selected_image(lua_State *L)
 	std::string name = lua_tostring(L, 2);
 
 	getServer(L)->hudSetHotbarSelectedImage(player, name);
+	return 1;
+}
+
+// set_sky(self, bgcolor, type, list)
+int ObjectRef::l_set_sky(lua_State *L)
+{
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+
+	video::SColor bgcolor(255,255,255,255);
+	if (!lua_isnil(L, 2))
+		bgcolor = readARGB8(L, 2);
+
+	std::string type = luaL_checkstring(L, 3);
+
+	std::vector<std::string> params;
+	if (lua_istable(L, 4)) {
+		int table = lua_gettop(L);
+		lua_pushnil(L);
+		while (lua_next(L, table) != 0) {
+			// key at index -2 and value at index -1
+			if (lua_isstring(L, -1))
+				params.push_back(lua_tostring(L, -1));
+			else
+				params.push_back("");
+			// removes value, keeps key for next iteration
+			lua_pop(L, 1);
+		}
+	}
+
+	if (type == "skybox" && params.size() != 6)
+		throw LuaError(L, "skybox expects 6 textures");
+
+	if (!getServer(L)->setSky(player, bgcolor, type, params))
+		return 0;
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// override_day_night_ratio(self, brightness=0...1)
+int ObjectRef::l_override_day_night_ratio(lua_State *L)
+{
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+
+	bool do_override = false;
+	float ratio = 0.0f;
+	if (!lua_isnil(L, 2)){
+		do_override = true;
+		ratio = luaL_checknumber(L, 2);
+	}
+
+	if (!getServer(L)->overrideDayNightRatio(player, do_override, ratio))
+		return 0;
+
+	lua_pushboolean(L, true);
 	return 1;
 }
 
@@ -1196,5 +1270,7 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, hud_set_hotbar_itemcount),
 	luamethod(ObjectRef, hud_set_hotbar_image),
 	luamethod(ObjectRef, hud_set_hotbar_selected_image),
+	luamethod(ObjectRef, set_sky),
+	luamethod(ObjectRef, override_day_night_ratio),
 	{0,0}
 };

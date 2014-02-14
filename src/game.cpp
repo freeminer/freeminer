@@ -927,8 +927,8 @@ bool nodePlacementPrediction(Client &client,
 
 			// Dont place node when player would be inside new node
 			// NOTE: This is to be eventually implemented by a mod as client-side Lua
-			if (!nodedef->get(n).walkable || 
-				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) || 
+			if (!nodedef->get(n).walkable ||
+				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
 				(nodedef->get(n).walkable &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
@@ -1049,7 +1049,27 @@ void the_game(
 		infostream<<"Creating server"<<std::endl;
 		server = new Server(map_dir, gamespec,
 				simple_singleplayer_mode);
-		server->start(port);
+
+		std::string bind_str = g_settings->get("bind_address");
+		Address bind_addr(0,0,0,0, port);
+
+		if (bind_str != "")
+		{
+			try {
+				bind_addr.Resolve(bind_str.c_str());
+				address = bind_str;
+			} catch (ResolveError &e) {
+				infostream << "Resolving bind address \"" << bind_str
+						   << "\" failed: " << e.what()
+						   << " -- Listening on all addresses." << std::endl;
+
+				if (g_settings->getBool("ipv6_server")) {
+					bind_addr.setAddress((IPv6AddressBytes*) NULL);
+				}
+			}
+		}
+
+		server->start(bind_addr);
 	}
 
 	do{ // Client scope (breakable do-while(0))
@@ -1341,7 +1361,7 @@ void the_game(
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
 
-	int current_camera_mode = FIRST; // start in first-perscon view
+	int current_camera_mode = CAMERA_MODE_FIRST; // start in first-person view
 
 	/*
 		Clouds
@@ -1359,6 +1379,8 @@ void the_game(
 
 	Sky *sky = NULL;
 	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, client.getEnv().getLocalPlayer());
+
+	scene::ISceneNode* skybox = NULL;
 	
 	/*
 		A copy of the local inventory
@@ -1526,7 +1548,7 @@ void the_game(
 	/*
 		HUD object
 	*/
-	Hud hud(driver, guienv, font, text_height,
+	Hud hud(driver, smgr, guienv, font, text_height,
 			gamedef, player, &local_inventory);
 
 	bool use_weather = g_settings->getBool("weather");
@@ -1538,6 +1560,9 @@ void the_game(
 	str += "]";
 	device->setWindowCaption(str.c_str());
 	}
+
+	// Info text
+	std::wstring infotext;
 
 	for(;;)
 	{
@@ -1723,23 +1748,9 @@ void the_game(
 		
 		// Hilight boxes collected during the loop and displayed
 		std::vector<aabb3f> hilightboxes;
-		
-		// Info text
-		std::wstring infotext;
 
-		/*
-			Debug info for client
-		*/
-		{
-			static float counter = 0.0;
-			counter -= dtime;
-			if(counter < 0)
-			{
-				counter = 30.0;
-				client.printDebugInfo(infostream);
-			}
-		}
-
+		/* reset infotext */
+		infotext = L"";
 		/*
 			Profiler
 		*/
@@ -2237,7 +2248,7 @@ void the_game(
 			else{
 				s32 dx = input->getMousePos().X - displaycenter.X;
 				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse || player->camera_mode == THIRD_FRONT)
+				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
 					dy = -dy;
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
@@ -2489,6 +2500,7 @@ void the_game(
 						delete event.hudadd.text;
 						delete event.hudadd.align;
 						delete event.hudadd.offset;
+						delete event.hudadd.world_pos;
 						continue;
 					}
 					
@@ -2503,6 +2515,7 @@ void the_game(
 					e->dir    = event.hudadd.dir;
 					e->align  = *event.hudadd.align;
 					e->offset = *event.hudadd.offset;
+					e->world_pos = *event.hudadd.world_pos;
 					
 					if (id == nhudelem)
 						player->hud.push_back(e);
@@ -2515,6 +2528,7 @@ void the_game(
 					delete event.hudadd.text;
 					delete event.hudadd.align;
 					delete event.hudadd.offset;
+					delete event.hudadd.world_pos;
 				}
 				else if (event.type == CE_HUDRM)
 				{
@@ -2528,6 +2542,7 @@ void the_game(
 				{
 					u32 id = event.hudchange.id;
 					if (id >= player->hud.size() || !player->hud[id]) {
+						delete event.hudchange.v3fdata;
 						delete event.hudchange.v2fdata;
 						delete event.hudchange.sdata;
 						continue;
@@ -2562,10 +2577,54 @@ void the_game(
 						case HUD_STAT_OFFSET:
 							e->offset = *event.hudchange.v2fdata;
 							break;
+						case HUD_STAT_WORLD_POS:
+							e->world_pos = *event.hudchange.v3fdata;
+							break;
 					}
 					
+					delete event.hudchange.v3fdata;
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
+				}
+				else if (event.type == CE_SET_SKY)
+				{
+					sky->setVisible(false);
+					if(skybox){
+						skybox->drop();
+						skybox = NULL;
+					}
+					// Handle according to type
+					if(*event.set_sky.type == "regular"){
+						sky->setVisible(true);
+					}
+					else if(*event.set_sky.type == "skybox" &&
+							event.set_sky.params->size() == 6){
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+						skybox = smgr->addSkyBoxSceneNode(
+								tsrc->getTexture((*event.set_sky.params)[0]),
+								tsrc->getTexture((*event.set_sky.params)[1]),
+								tsrc->getTexture((*event.set_sky.params)[2]),
+								tsrc->getTexture((*event.set_sky.params)[3]),
+								tsrc->getTexture((*event.set_sky.params)[4]),
+								tsrc->getTexture((*event.set_sky.params)[5]));
+					}
+					// Handle everything else as plain color
+					else {
+						if(*event.set_sky.type != "plain")
+							infostream<<"Unknown sky type: "
+									<<(*event.set_sky.type)<<std::endl;
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+					}
+
+					delete event.set_sky.bgcolor;
+					delete event.set_sky.type;
+					delete event.set_sky.params;
+				}
+				else if (event.type == CE_OVERRIDE_DAY_NIGHT_RATIO)
+				{
+					bool enable = event.override_day_night_ratio.do_override;
+					u32 value = event.override_day_night_ratio.ratio_f * 1000;
+					client.getEnv().setDayNightRatioOverride(enable, value);
 				}
 			}
 		}
@@ -2601,12 +2660,12 @@ void the_game(
 
 		if(input->wasKeyDown(getKeySetting("keymap_camera_mode"))) {
 
-			if (current_camera_mode == FIRST)
-				current_camera_mode = THIRD;
-			else if (current_camera_mode == THIRD)
-				current_camera_mode = THIRD_FRONT;
+			if (current_camera_mode == CAMERA_MODE_FIRST)
+				current_camera_mode = CAMERA_MODE_THIRD;
+			else if (current_camera_mode == CAMERA_MODE_THIRD)
+				current_camera_mode = CAMERA_MODE_THIRD_FRONT;
 			else
-				current_camera_mode = FIRST;
+				current_camera_mode = CAMERA_MODE_FIRST;
 
 		}
 		player->camera_mode = current_camera_mode;
@@ -2660,7 +2719,7 @@ void the_game(
 				camera_position + camera_direction * BS * (d+1));
 
 		// prevent player pointing anything in front-view
-		if (current_camera_mode == THIRD_FRONT) 
+		if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)
 			shootline = core::line3d<f32>(0,0,0,0,0,0);
 
 		ClientActiveObject *selected_object = NULL;
@@ -3457,7 +3516,9 @@ void the_game(
 		/*
 			Wielded tool
 		*/
-		if(show_hud && (player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) && current_camera_mode < THIRD)
+		if(show_hud &&
+			(player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) &&
+			current_camera_mode < CAMERA_MODE_THIRD)
 		{
 			// Warning: This clears the Z buffer.
 			camera.drawWieldedTool();

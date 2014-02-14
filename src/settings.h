@@ -468,6 +468,7 @@ public:
 		return n->second;
 	}
 
+	//////////// Get setting
 	bool getBool(std::string name)
 	{
 		return is_yes(get(name));
@@ -572,23 +573,32 @@ public:
 		return value;
 	}
 
-	u32 getFlagStr(std::string name, FlagDesc *flagdesc)
+	u32 getFlagStr(std::string name, FlagDesc *flagdesc, u32 *flagmask)
 	{
 		std::string val = get(name);
-		return (isdigit(val[0])) ? stoi(val) : readFlagString(val, flagdesc);
+		return (isdigit(val[0])) ? stoi(val) :
+			readFlagString(val, flagdesc, flagmask);
 	}
 
+	// N.B. if getStruct() is used to read a non-POD aggregate type,
+	// the behavior is undefined.
 	bool getStruct(std::string name, std::string format, void *out, size_t olen)
 	{
 		size_t len = olen;
 		std::vector<std::string *> strs_alloced;
-		std::string *str;
-		std::string valstr = get(name);
+		std::string *str, valstr;
+		char *f, *snext;
+		size_t pos;
+
+		try {
+			valstr = get(name);
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+
 		char *s = &valstr[0];
 		char *buf = new char[len];
 		char *bufpos = buf;
-		char *f, *snext;
-		size_t pos;
 
 		char *fmtpos, *fmt = &format[0];
 		while ((f = strtok_r(fmt, ",", &fmtpos)) && s) {
@@ -738,6 +748,130 @@ fail:
 		return true;
 	}
 
+	//////////// Try to get value, no exception thrown
+	bool getNoEx(std::string name, std::string &val)
+	{
+		try {
+			val = get(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	// N.B. getFlagStrNoEx() does not set val, but merely modifies it.  Thus,
+	// val must be initialized before using getFlagStrNoEx().  The intention of
+	// this is to simplify modifying a flags field from a default value.
+	bool getFlagStrNoEx(std::string name, u32 &val, FlagDesc *flagdesc)
+	{
+		try {
+			u32 flags, flagmask;
+
+			flags = getFlagStr(name, flagdesc, &flagmask);
+
+			val &= ~flagmask;
+			val |=  flags;
+
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getFloatNoEx(std::string name, float &val)
+	{
+		try {
+			val = getFloat(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getU16NoEx(std::string name, int &val)
+	{
+		try {
+			val = getU16(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getU16NoEx(std::string name, u16 &val)
+	{
+		try {
+			val = getU16(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getS16NoEx(std::string name, int &val)
+	{
+		try {
+			val = getU16(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getS16NoEx(std::string name, s16 &val)
+	{
+		try {
+			val = getS16(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getS32NoEx(std::string name, s32 &val)
+	{
+		try {
+			val = getS32(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getV3FNoEx(std::string name, v3f &val)
+	{
+		try {
+			val = getV3F(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getV2FNoEx(std::string name, v2f &val)
+	{
+		try {
+			val = getV2F(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	bool getU64NoEx(std::string name, u64 &val)
+	{
+		try {
+			val = getU64(name);
+			return true;
+		} catch (SettingNotFoundException &e) {
+			return false;
+		}
+	}
+
+	//////////// Set setting
+
+	// N.B. if setStruct() is used to write a non-POD aggregate type,
+	// the behavior is undefined.
 	bool setStruct(std::string name, std::string format, void *value)
 	{
 		char sbuf[2048];
@@ -841,10 +975,11 @@ fail:
 		set(name, std::string(sbuf));
 		return true;
 	}
-	
-	void setFlagStr(std::string name, u32 flags, FlagDesc *flagdesc)
+
+	void setFlagStr(std::string name, u32 flags,
+		FlagDesc *flagdesc, u32 flagmask)
 	{
-		set(name, writeFlagString(flags, flagdesc));
+		set(name, writeFlagString(flags, flagdesc, flagmask));
 	}
 
 	void setBool(std::string name, bool value)

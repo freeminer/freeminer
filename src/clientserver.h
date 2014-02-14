@@ -101,7 +101,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		automatic_face_movement_dir and automatic_face_movement_dir_offset
 			added to object properties
 	PROTOCOL_VERSION 23:
-		TOCLIENT_AMINATIONS
+		TOCLIENT_ANIMATIONS
 */
 
 #define LATEST_PROTOCOL_VERSION 23
@@ -120,10 +120,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PASSWORD_SIZE 28       // Maximum password length. Allows for
                                // base64-encoded SHA-1 (27+\0).
 
-#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
+#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 #define MAX_PACKET_SIZE 512
-#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 
 enum ToClientCommand
 {
@@ -513,7 +512,7 @@ enum ToClientCommand
 		u16 breath
 	*/
 
-	TOCLIENT_AMINATIONS = 0x4f,
+	TOCLIENT_ANIMATIONS = 0xaf, // TODO: change number if mt merge it
 	/*
 		u16 command
 		f1000 animation_default_start
@@ -524,6 +523,25 @@ enum ToClientCommand
 		f1000 animation_dig_stop
 		f1000 animation_wd_start
 		f1000 animation_wd_stop
+	*/
+
+	TOCLIENT_SET_SKY = 0x4f,
+	/*
+		u16 command
+		u8[4] color (ARGB)
+		u8 len
+		u8[len] type
+		u16 count
+		foreach count:
+			u8 len
+			u8[len] param
+	*/
+
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO = 0x50,
+	/*
+		u16 command
+		u8 do_override (boolean)
+		u16 day-night ratio 0...65535
 	*/
 };
 

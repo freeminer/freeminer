@@ -45,12 +45,12 @@ class ActiveBlockModifier;
 class ServerActiveObject;
 class ITextureSource;
 class IGameDef;
-class IBackgroundBlockEmerger;
 class Map;
 class ServerMap;
 class ClientMap;
 class GameScripting;
 class Player;
+class Circuit;
 
 class Environment
 {
@@ -79,7 +79,7 @@ public:
 	std::list<Player*> getPlayers(bool ignore_disconnected);
 	
 	u32 getDayNightRatio();
-	
+
 	// 0-23999
 	virtual void setTimeOfDay(u32 time)
 	{
@@ -101,6 +101,12 @@ public:
 	float getTimeOfDaySpeed()
 	{ return m_time_of_day_speed; }
 
+	void setDayNightRatioOverride(bool enable, u32 value)
+	{
+		m_enable_day_night_ratio_override = enable;
+		m_day_night_ratio_override = value;
+	}
+
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
@@ -111,6 +117,9 @@ protected:
 	float m_time_of_day_speed;
 	// Used to buffer dtime for adding to m_time_of_day
 	float m_time_counter;
+	// Overriding the day-night ratio is useful for custom sky visuals
+	bool m_enable_day_night_ratio_override;
+	u32 m_day_night_ratio_override;
 };
 
 /*
@@ -217,8 +226,8 @@ class ServerEnvironment : public Environment
 {
 public:
 	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-			IGameDef *gamedef,
-			IBackgroundBlockEmerger *emerger);
+			Circuit* circuit,
+			IGameDef *gamedef);
 	~ServerEnvironment();
 
 	Map & getMap();
@@ -389,15 +398,15 @@ private:
 	/*
 		Member variables
 	*/
-	
+
 	// The map
 	ServerMap *m_map;
 	// Lua state
 	GameScripting* m_script;
+	// Circuit manager
+	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
-	// Background block emerger (the EmergeManager, in practice)
-	IBackgroundBlockEmerger *m_emerger;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects

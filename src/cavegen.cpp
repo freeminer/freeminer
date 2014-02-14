@@ -23,9 +23,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_v6.h"
 #include "mapgen_v7.h"
 #include "cavegen.h"
+#include "emerge.h"
+#include "environment.h"
 
-NoiseParams nparams_caveliquids =
-	{0, 1, v3f(150.0, 150.0, 150.0), 776, 3, 0.6};
+NoiseParams nparams_caveliquids(0, 1, v3f(150.0, 150.0, 150.0), 776, 3, 0.6);
 
 
 ///////////////////////////////////////////////////////////////////////////////
