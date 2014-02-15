@@ -2521,7 +2521,7 @@ void Client::typeChatMessage(const std::wstring &message)
 	}
 	
 	//Either send the message or delete the main chat queue
-	if (message.compare(L'/cls') == 0)
+	if (message.compare(L"/cls") == 0)
 	{
 		m_chat_queue = Queue<std::wstring>();
 	}
