@@ -105,6 +105,7 @@ public:
 	EmergeManager(IGameDef *gamedef);
 	~EmergeManager();
 
+	void loadMapgenParams();
 	void initMapgens();
 	Mapgen *getCurrentMapgen();
 	Mapgen *createMapgen(std::string mgname, int mgid,

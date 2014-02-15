@@ -127,15 +127,6 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 		emergethread.push_back(new EmergeThread((Server *)gamedef, i));
 
 	infostream << "EmergeManager: using " << nthreads << " threads" << std::endl;
-
-	loadParamsFromSettings(g_settings);
-
-	if (g_settings->get("fixed_map_seed").empty()) {
-		params.seed = (((u64)(myrand() & 0xffff) << 0)
-					 | ((u64)(myrand() & 0xffff) << 16)
-					 | ((u64)(myrand() & 0xffff) << 32)
-					 | ((u64)(myrand() & 0xffff) << 48));
-	}
 }
 
 
@@ -167,6 +158,18 @@ EmergeManager::~EmergeManager() {
 	mglist.clear();
 
 	delete biomedef;
+}
+
+
+void EmergeManager::loadMapgenParams() {
+	loadParamsFromSettings(g_settings);
+
+	if (g_settings->get("fixed_map_seed").empty()) {
+		params.seed = (((u64)(myrand() & 0xffff) << 0)
+					 | ((u64)(myrand() & 0xffff) << 16)
+					 | ((u64)(myrand() & 0xffff) << 32)
+					 | ((u64)(myrand() & 0xffff) << 48));
+	}
 }
 
 
