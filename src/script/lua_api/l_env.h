@@ -162,7 +162,6 @@ private:
 	// minetest.forceload_free_block(blockpos)
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
-	
 public:
 	static void Initialize(lua_State *L, int top);
 };
