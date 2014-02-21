@@ -34,7 +34,6 @@ end)
 --
 -- Chat commands
 --
-
 minetest.register_chatcommand("me", {
 	params = "<action>",
 	description = "chat action (eg. /me orders a pizza)",
