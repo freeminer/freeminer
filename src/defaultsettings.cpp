@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "settings.h"
+#include "porting.h"
 #include "filesys.h"
 #include "config.h"
 
@@ -326,8 +327,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("sqlite_synchronous", "1");
 
 #ifndef _WIN32
-	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
-	settings->setDefault("bind_address","::1"); // REMOVE ME!!! dirty fix to broken ipv6 server
+	//BROKEN settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+	//settings->setDefault("bind_address","::"); // REMOVE ME!!! dirty fix to broken ipv6 server
 #endif
 }
 

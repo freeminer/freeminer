@@ -1407,6 +1407,10 @@ minetest.set_mapgen_params(MapgenParams)
 ^ Leave field unset to leave that parameter unchanged
 ^ flags contains a comma-delimited string of flags to set, or if the prefix "no" is attached, clears instead.
 ^ flags is in the same format and has the same options as 'mg_flags' in minetest.conf
+minetest.set_noiseparam_defaults({np1=NoiseParams, np2= NoiseParams, ...})
+^ Sets the default value of a noiseparam setting
+^ Takes a table as an argument that maps one or more setting names to NoiseParams structures
+^ Possible setting names consist of any NoiseParams setting exposed through the global settings
 minetest.clear_objects()
 ^ clear all objects in the environments
 minetest.line_of_sight(pos1, pos2, stepsize) -> true/false, pos
@@ -1424,7 +1428,7 @@ minetest.find_path(pos1,pos2,searchdistance,max_jump,max_drop,algorithm)
 ^ searchdistance: number of blocks to search in each direction
 ^ max_jump: maximum height difference to consider walkable
 ^ max_drop: maximum height difference to consider droppable
-^ algorithm: A*_noprefetch(default), A*, Dijkstra
+^ Algorithm: A*
 minetest.get_surface(basepos,yoffset,walkable_only=false)
 ^ returns y-value of first surface starting at bottom or nil if no surface found
 ^ basepos position to start search
@@ -1617,11 +1621,13 @@ minetest.create_schematic(p1, p2, probability_list, filename, slice_prob_list)
    ^ If slice probability list is nil, no slice probabilities are applied.
 ^ Saves schematic in the Minetest Schematic format to filename.
 
-minetest.place_schematic(pos, schematic, rotation, replacements)
+minetest.place_schematic(pos, schematic, rotation, replacements, force_placement)
 ^ Place the schematic specified by schematic (see: Schematic specifier) at pos.
 ^ Rotation can be "0", "90", "180", "270", or "random".
 ^ If the rotation parameter is omitted, the schematic is not rotated.
 ^ replacements = {{"oldname", "convert_to"}, ...}
+^ force_placement is a boolean indicating whether nodes other than air and
+^ ignore are replaced by the schematic
 
 Random:
 minetest.get_connected_players() -> list of ObjectRefs

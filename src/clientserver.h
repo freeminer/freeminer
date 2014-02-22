@@ -525,7 +525,7 @@ enum ToClientCommand
 		f1000 animation_wd_stop
 	*/
 
-	TOCLIENT_SET_SKY = 0x4f,
+	TOCLIENT_SET_SKY = 0xae, // MUST BE 0x4f (as in MT )BUT IT BROKE OLD FM SERVERS
 	/*
 		u16 command
 		u8[4] color (ARGB)
