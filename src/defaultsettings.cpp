@@ -300,6 +300,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("language", "");
 
 	// freeminer user-friendly defaults
+	settings->setDefault("pause_fps_max", "1");
 	settings->setDefault("enable_vbo", "true");
 	settings->setDefault("viewing_range_nodes_max", "1000");
 	settings->setDefault("mg_name", "indev");
