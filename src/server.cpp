@@ -486,7 +486,8 @@ void Server::start(Address bind_addr)
 	// Start thread
 	m_thread->Start();
 
-	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m" << std::endl;
+	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m     "
+			<< porting::getNumberOfProcessors() << " cores"<< std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
 			<<"\" mapgen=\""<<m_emerge->params.mg_name
