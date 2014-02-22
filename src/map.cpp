@@ -1961,6 +1961,8 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			*/
 		}
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
+		s16 level_max_compressed = nodemgr->get(liquid_kind_flowing).getMaxLevel(1);
+		//s16 total_was = total_level; //debug
 		//viscosity = nodemgr->get(liquid_kind).viscosity;
 
 		if (liquid_kind == CONTENT_IGNORE || !neighbors[D_SELF].l || total_level <= 0)
@@ -2044,12 +2046,14 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 		}
 
 		// fill top block if can
-		if (neighbors[D_TOP].l && total_level > 0) {
-			liquid_levels_want[D_TOP] = total_level; // > level_max ? level_max : total_level;
-			total_level = 0;
-			//total_level -= liquid_levels_want[D_TOP];
+		if (neighbors[D_TOP].l) {
+			//infostream<<"compressing to top was="<<liquid_levels_want[D_TOP]<<" add="<<total_level<<std::endl;
+			liquid_levels_want[D_TOP] = total_level>level_max_compressed?level_max_compressed:total_level;
+			total_level -= liquid_levels_want[D_TOP];
 		}
-		if (total_level > 0) {
+
+		if (total_level > 0) { // very rare, compressed only
+			//infostream<<"compressing to self was="<<liquid_levels_want[D_SELF]<<" add="<<total_level<<std::endl;
 			liquid_levels_want[D_SELF] += total_level;
 			total_level = 0;
 		}
@@ -2080,6 +2084,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			<<std::endl;
 		*/
 
+		//s16 flowed = 0; // for debug
 		for (u16 r = 0; r < 7; r++) {
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
 			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
@@ -2113,6 +2118,7 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				}
 			}
 
+			//flowed += liquid_levels_want[i];
 			if (liquid_levels[i] == liquid_levels_want[i]) {
 				continue;
 			}
@@ -2137,6 +2143,8 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			}
 			must_reflow.push_back(neighbors[i].p);
 		}
+
+		//if (total_was!=flowed) infostream<<" flowed "<<flowed<<"/"<<total_was<<std::endl;
 		/* //for better relax  only same level
 		if (changed)  for (u16 ii = D_SELF + 1; ii < D_TOP; ++ii) {
 			if (!neighbors[ii].l) continue;

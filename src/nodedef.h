@@ -287,8 +287,6 @@ struct ContentFeatures
 			return LEVELED_MAX;
 		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
 			return LIQUID_LEVEL_SOURCE;
-//		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING || liquid_type == LIQUID_SOURCE) //remove liquid_type
-//			return(compress ? LEVELED_MAX : LIQUID_LEVEL_SOURCE);
 		return 0;
 	}
 

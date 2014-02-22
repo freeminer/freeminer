@@ -407,13 +407,14 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 			rest = level - f.getMaxLevel(compress);
 			level = f.getMaxLevel(compress);
 		}
-		if (level >= f.getMaxLevel() && !f.liquid_alternative_source.empty()) {
-			setContent(nodemgr->getId(f.liquid_alternative_source));
+		if (level >= f.getMaxLevel()) {
+			if (!f.liquid_alternative_source.empty())
+				setContent(nodemgr->getId(f.liquid_alternative_source));
+		} else if (!f.liquid_alternative_flowing.empty()) {
+			setContent(nodemgr->getId(f.liquid_alternative_flowing));
 		}
 		setParam2(level & LEVELED_MASK);
-		if(getLevel(nodemgr)!=level) {
-			errorstream<<"AFTERSET not match want="<<level<< " res="<< getLevel(nodemgr) <<std::endl;
-		}
+		//debug: if(getLevel(nodemgr)!=level) errorstream<<"AFTERSET not match want="<<level<< " res="<< getLevel(nodemgr) <<std::endl;
 	} else if (f.param_type_2 == CPT2_FLOWINGLIQUID
 		|| f.liquid_type == LIQUID_FLOWING
 		|| f.liquid_type == LIQUID_SOURCE) {
