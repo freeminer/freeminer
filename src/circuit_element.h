@@ -17,7 +17,7 @@
 #define FACEDIR_TO_FACE(x) (CircuitElement::facedir_to_face[(x)])
 
 class Map;
-class MapNode;
+struct MapNode;
 class INodeDefManager;
 
 enum FaceId
