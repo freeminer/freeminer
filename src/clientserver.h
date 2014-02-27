@@ -460,18 +460,14 @@ enum {
 	TOSERVER_CHAT_MESSAGE_DATA
 };
 
+#define TOSERVER_GOTBLOCKS 0x24
+enum {
+	TOSERVER_GOTBLOCKS_BLOCKS,
+	TOSERVER_GOTBLOCKS_RANGE
+};
+
 enum ToServerCommand
 {
-	TOSERVER_GOTBLOCKS = 0x24,
-	/*
-		[0] u16 command
-		[2] u8 count
-		[3] v3s16 pos_0
-		[3+6] v3s16 pos_1
-		[9] u16 wanted range
-		...
-	*/
-
 	TOSERVER_DELETEDBLOCKS = 0x25,
 	/*
 		[0] u16 command

@@ -2289,32 +2289,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_GOTBLOCKS)
 	{
-		if(datasize < 2+1)
-			return;
-
-		/*
-			[0] u16 command
-			[2] u8 count
-			[3] v3s16 pos_0
-			[3+6] v3s16 pos_1
-			[9] wanted range
-			...
-		*/
-
-		u16 count = data[2];
 		RemoteClient *client = getClient(peer_id);
-		for(u16 i=0; i<count; i++)
-		{
-			if((s16)datasize < 2+1+(i+1)*6)
-				throw con::InvalidIncomingDataException
-					("GOTBLOCKS length is too short");
-			v3s16 p = readV3S16(&data[2+1+i*6]);
-			/*infostream<<"Server: GOTBLOCKS ("
-					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-			client->GotBlock(p);
-		}
-		if((s16)datasize > 2+1+(count)*6) // only freeminer client
-			client->wanted_range = readU16(&data[2+1+(count*6)]);
+		std::vector<v3s16> got_blocks;
+		packet[TOSERVER_GOTBLOCKS_BLOCKS].convert(&got_blocks);
+		for(size_t i = 0; i < got_blocks.size(); ++i)
+			client->GotBlock(got_blocks[i]);
+		packet[TOSERVER_GOTBLOCKS_RANGE].convert(&client->wanted_range);
 	}
 	else if(command == TOSERVER_DELETEDBLOCKS)
 	{

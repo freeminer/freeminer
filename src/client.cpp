@@ -674,7 +674,7 @@ void Client::step(float dtime)
 				<<std::endl;*/
 		
 		int num_processed_meshes = 0;
-		UniqueQueue<v3s16> got_blocks;
+		std::set<v3s16> got_blocks;
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
 			num_processed_meshes++;
@@ -698,38 +698,17 @@ void Client::step(float dtime)
 			}
 			if(r.ack_block_to_server)
 			{
-				got_blocks.push_back(r.p);
+				got_blocks.insert(r.p);
 				if (got_blocks.size() >= 255)
 					break;
 			}
 		}
 		u32 got_blocks_size = got_blocks.size();
 		if (got_blocks_size) {
-
-				/*infostream<<"Client: ACK block ("<<r.p.X<<","<<r.p.Y
-						<<","<<r.p.Z<<")"<<std::endl;*/
-				/*
-					Acknowledge block
-				*/
-				/*
-					[0] u16 command
-					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
-					[3+6*i] u16 vrange
-					...
-				*/
-				u32 replysize = 2+1+(6*got_blocks_size)+2;
-				SharedBuffer<u8> reply(replysize);
-				writeU16(&reply[0], TOSERVER_GOTBLOCKS);
-				reply[2] = got_blocks_size;
-				u32 i=0;
-				while (got_blocks.size())
-					writeV3S16(&reply[3+(6*i++)], got_blocks.pop_front());
-
-				writeU16(&reply[2+1+(6*got_blocks_size)], (int)m_env.getClientMap().getControl().wanted_range);
-				// Send as reliable
-				m_con.Send(PEER_ID_SERVER, 2, reply, true);
+			MSGPACK_PACKET_INIT(TOSERVER_GOTBLOCKS, 2);
+			PACK(TOSERVER_GOTBLOCKS_BLOCKS, got_blocks);
+			PACK(TOSERVER_GOTBLOCKS_RANGE, (int)m_env.getClientMap().getControl().wanted_range);
+			m_con.Send(PEER_ID_SERVER, 2, buffer, true);
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
