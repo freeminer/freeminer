@@ -216,6 +216,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
+	int farmesh = g_settings->getS32("farmesh");
+	int farmesh_step = g_settings->getS32("farmesh_step");
+	int farmesh_max = farmesh + farmesh_step*3 + 1;
+
 	for(std::map<v2s16, MapSector*>::iterator
 			si = m_sectors.begin();
 			si != m_sectors.end(); ++si)
@@ -296,8 +300,20 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 					occlusion_culling_enabled = false;
 			}
 
+			int cam_range_blocks = getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos());
+
+
+			if (farmesh && cam_range_blocks != block->mesh->range
+				&& (cam_range_blocks <= farmesh_max || block->mesh->range <= farmesh_max)
+				&& (cam_range_blocks >= farmesh || block->mesh->range >= farmesh)
+//				&& !block->mesh->transparent
+			) {
+				m_client->addUpdateMeshTask(block->getPos(), false, true);
+			}
+
 			v3s16 cpn = block->getPos() * MAP_BLOCKSIZE;
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
+
 			float step = BS*1;
 			float stepfac = 1.1;
 			float startoff = BS*1;

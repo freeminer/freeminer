@@ -302,7 +302,7 @@ void set_default_settings(Settings *settings)
 	// freeminer user-friendly defaults
 	settings->setDefault("pause_fps_max", "1");
 	settings->setDefault("enable_vbo", "true");
-	settings->setDefault("viewing_range_nodes_max", "1000");
+	settings->setDefault("viewing_range_nodes_max", "3000");
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
 	settings->setDefault("liquid_finite", "true");
@@ -326,6 +326,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("congestion_control_max_rate", "2000");
 	settings->setDefault("sqlite_synchronous", "1");
+	settings->setDefault("farmesh", "0");
+	settings->setDefault("farmesh_step", "2");
 
 #ifndef _WIN32
 	//BROKEN settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)

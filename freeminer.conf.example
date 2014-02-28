@@ -76,6 +76,9 @@
 # The allowed adjustment range for the automatic rendering range adjustment
 #viewing_range_nodes_max = 160
 #viewing_range_nodes_min = 35
+#Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#farmesh = 0
+#farmesh_step = 2
 # Initial window size
 #screenW = 800
 #screenH = 600
