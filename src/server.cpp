@@ -4511,7 +4511,7 @@ std::string Server::getBanDescription(const std::string &ip_or_name)
 	return m_banmanager->getBanDescription(ip_or_name);
 }
 
-void Server::notifyPlayer(const char *name, const std::wstring msg, const bool prepend = true)
+void Server::notifyPlayer(const char *name, const std::wstring msg)
 {
 	Player *player = m_env->getPlayer(name);
 	if(!player)
@@ -4520,10 +4520,7 @@ void Server::notifyPlayer(const char *name, const std::wstring msg, const bool p
 	if (player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
-	if (prepend)
-		SendChatMessage(player->peer_id, std::wstring(L"\vaaaaaaServer: \vffffff")+msg);
-	else
-		SendChatMessage(player->peer_id, msg);
+	SendChatMessage(player->peer_id, std::wstring(L"\vffffff")+msg);
 }
 
 bool Server::showFormspec(const char *playername, const std::string &formspec, const std::string &formname)
