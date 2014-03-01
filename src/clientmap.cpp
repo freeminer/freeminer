@@ -35,6 +35,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
+MapDrawControl::MapDrawControl():
+		range_all(false),
+		wanted_range(50),
+		wanted_max_blocks(0),
+		wanted_min_range(0),
+		blocks_drawn(0),
+		blocks_would_have_drawn(0),
+		farthest_drawn(0)
+	{
+		farmesh = g_settings->getS32("farmesh");
+		farmesh_step = g_settings->getS32("farmesh_step");
+		farmesh_max = farmesh + farmesh_step*3 + 2;
+	}
+
 ClientMap::ClientMap(
 		Client *client,
 		IGameDef *gamedef,
@@ -216,10 +230,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
-	int farmesh = g_settings->getS32("farmesh");
-	int farmesh_step = g_settings->getS32("farmesh_step");
-	int farmesh_max = farmesh + farmesh_step*3 + 1;
-
 	for(std::map<v2s16, MapSector*>::iterator
 			si = m_sectors.begin();
 			si != m_sectors.end(); ++si)
@@ -301,13 +311,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 			}
 
 			int cam_range_blocks = getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos());
-
-
-			if (farmesh && cam_range_blocks != block->mesh->range
-				&& (cam_range_blocks <= farmesh_max || block->mesh->range <= farmesh_max)
-				&& (cam_range_blocks >= farmesh || block->mesh->range >= farmesh)
-//				&& !block->mesh->transparent
-			) {
+			if (m_control.farmesh && getFarmeshStep(m_control, cam_range_blocks) != block->mesh->step) { //&& !block->mesh->transparent
 				m_client->addUpdateMeshTask(block->getPos(), false, true);
 			}
 

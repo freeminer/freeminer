@@ -31,6 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "shader.h"
 #include "settings.h"
 #include "util/directiontables.h"
+#include "clientmap.h"
 
 float srgb_linear_multiply(float f, float m, float max)
 {
@@ -42,17 +43,28 @@ float srgb_linear_multiply(float f, float m, float max)
 	return f;
 }
 
+int getFarmeshStep(MapDrawControl& draw_control, int range) {
+	if (draw_control.farmesh) {
+		if		(range > draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
+		else if (range > draw_control.farmesh+draw_control.farmesh_step*2)	return 8;
+		else if (range > draw_control.farmesh+draw_control.farmesh_step)	return 4;
+		else if (range > draw_control.farmesh)								return 2;
+	}
+	return 1;
+};
+
 /*
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(IGameDef *gamedef):
+MeshMakeData::MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_):
 	m_vmanip(),
 	m_blockpos(-1337,-1337,-1337),
 	m_crack_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
 	m_gamedef(gamedef)
 	,range(0)
+	,draw_control(draw_control_)
 {}
 
 void MeshMakeData::fill(MapBlock *block)
@@ -1037,7 +1049,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	clearHardwareBuffer(false),
-	range(data->range),
+	step(1),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1051,15 +1063,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
 
-	int step = 1; // todo dynamic range, from FPS
-	int farmesh = g_settings->getS32("farmesh");
-	int farmesh_step = g_settings->getS32("farmesh_step");
-	if (farmesh) { // todo: make dynamic from fps
-		if		(data->range > farmesh+farmesh_step*3)	step = 16;
-		else if (data->range > farmesh+farmesh_step*2)	step = 8;
-		else if (data->range > farmesh+farmesh_step)	step = 4;
-		else if (data->range > farmesh)					step = 2;
-	}
+	step = getFarmeshStep(data->draw_control, data->range);
 
 	std::vector<FastFace> fastfaces_new;
 
@@ -1153,7 +1157,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 				<<", p.indices.size()="<<p.indices.size()
 				<<std::endl;*/
 
-		if (step <= farmesh || !farmesh) {
+		if (step <= data->draw_control.farmesh || !data->draw_control.farmesh) {
 		// Generate animation data
 		// - Cracks
 		if(p.tile.material_flags & MATERIAL_FLAG_CRACK)

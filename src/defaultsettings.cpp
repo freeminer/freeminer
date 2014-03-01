@@ -302,7 +302,7 @@ void set_default_settings(Settings *settings)
 	// freeminer user-friendly defaults
 	settings->setDefault("pause_fps_max", "1");
 	settings->setDefault("enable_vbo", "true");
-	settings->setDefault("viewing_range_nodes_max", "3000");
+	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
 	settings->setDefault("liquid_finite", "true");

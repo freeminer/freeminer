@@ -3228,6 +3228,7 @@ void the_game(
 */
 				<<std::setprecision(1)
 				<<", v_range = "<<draw_control.wanted_range
+				<<", farmesh = "<<draw_control.farmesh
 				<<std::setprecision(3)
 				<<", RTT = "<<client.getRTT();
 			guitext->setText(narrow_to_wide(os.str()).c_str());
