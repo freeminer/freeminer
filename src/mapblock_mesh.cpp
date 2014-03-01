@@ -811,7 +811,7 @@ static void getTileInfo(
 	if(equivalent)
 		tile.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
-	if(data->m_smooth_lighting == false)
+	if(data->m_smooth_lighting == false || step > 1)
 	{
 		lights[0] = lights[1] = lights[2] = lights[3] =
 				getFaceLight(n0, n1, face_dir, data);
