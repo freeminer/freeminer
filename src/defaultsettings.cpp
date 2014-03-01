@@ -315,7 +315,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
-	settings->setDefault("serverlist_url", "servers.freeminer.org");
+	//settings->setDefault("serverlist_url", "servers.freeminer.org"); // uncomment after protocol change
 	settings->setDefault("enable_bumpmapping", "true");
 	settings->setDefault("enable_parallax_occlusion", "true");
 	settings->setDefault("enable_waving_water", "true");
@@ -324,7 +324,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
 	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("preload_item_visuals", "false");
-	settings->setDefault("congestion_control_max_rate", "2000");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
