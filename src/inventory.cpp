@@ -615,13 +615,19 @@ u32 InventoryList::getFreeSlots() const
 
 const ItemStack& InventoryList::getItem(u32 i) const
 {
-	assert(i < m_size);
+	if (i >= m_size) {
+		errorstream<<"InventoryList::getItem const: Wrong item requested i="<<i<<" size="<<m_size<<std::endl;
+		return m_items[0]; // BAD
+	}
 	return m_items[i];
 }
 
 ItemStack& InventoryList::getItem(u32 i)
 {
-	assert(i < m_size);
+	if (i >= m_size) {
+		errorstream<<"InventoryList::getItem: Wrong item requested i="<<i<<" size="<<m_size<<std::endl;
+		return m_items[0]; // BAD
+	}
 	return m_items[i];
 }
 
