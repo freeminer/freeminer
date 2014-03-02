@@ -668,6 +668,13 @@ function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_opaque_water"] then
 		engine.setting_set("opaque_water", fields["cb_opaque_water"])
 	end
+	if fields["cb_farmesh"] then
+		if fields["cb_farmesh"] == "true" then
+			engine.setting_set("farmesh", 2)
+		else
+			engine.setting_set("farmesh", 0)
+		end
+	end
 
 	if fields["cb_mipmapping"] then
 		engine.setting_set("mip_map", fields["cb_mipmapping"])
@@ -988,6 +995,7 @@ function tabbuilder.tab_settings()
 	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
 	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
 	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
+	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
 	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
 	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
 	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")

@@ -1287,7 +1287,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	v3f t = v3f(0,0,0);
 	if (step>1) {
 		scaleMesh(m_mesh, v3f(step,step,step));
-		// TODO: remove this wrong numbers, find formula
+		// TODO: remove this wrong numbers, find formula   good test: fly above ocean
 		if (step == 2)	t = v3f(BS/2,		 BS/2,		BS/2);
 		if (step == 4)	t = v3f(BS*1.666,	-BS/3.0,	BS*1.666);
 		if (step == 8)	t = v3f(BS*2.666,	-BS*2.4,	BS*2.666);

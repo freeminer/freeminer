@@ -311,7 +311,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 
 			int cam_range_blocks = getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos());
 			if (m_control.farmesh && getFarmeshStep(m_control, cam_range_blocks) != block->mesh->step) { //&& !block->mesh->transparent
-				m_client->addUpdateMeshTask(block->getPos(), false, true);
+				m_client->addUpdateMeshTask(block->getPos(), false, false);
 			}
 
 			v3s16 cpn = block->getPos() * MAP_BLOCKSIZE;
