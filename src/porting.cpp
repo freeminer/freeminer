@@ -363,7 +363,7 @@ void initializePaths()
 	/*
 		Linux
 	*/
-	#elif defined(linux)
+	#elif defined(linux) || defined(__linux)
 
 	char buf[BUFSIZ];
 	memset(buf, 0, BUFSIZ);
@@ -459,7 +459,7 @@ void initializePaths()
 	/*
 		Linux
 	*/
-	#elif defined(linux)
+	#elif defined(linux) || defined(__linux)
 
 	// Get path to executable
 	std::string bindir = "";
