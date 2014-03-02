@@ -565,26 +565,11 @@ void Client::step(float dtime)
 			{
 				if(sendlist.size() == 0)
 					break;
-				/*
-					[0] u16 command
-					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
-					...
-				*/
-				u32 replysize = 2+1+6*sendlist.size();
-				SharedBuffer<u8> reply(replysize);
-				writeU16(&reply[0], TOSERVER_DELETEDBLOCKS);
-				reply[2] = sendlist.size();
-				u32 k = 0;
-				for(std::list<v3s16>::iterator
-						j = sendlist.begin();
-						j != sendlist.end(); ++j)
-				{
-					writeV3S16(&reply[2+1+6*k], *j);
-					k++;
-				}
-				m_con.Send(PEER_ID_SERVER, 2, reply, true);
+
+				MSGPACK_PACKET_INIT(TOSERVER_DELETEDBLOCKS, 1);
+				PACK(TOSERVER_DELETEDBLOCKS_DATA, sendlist);
+
+				m_con.Send(PEER_ID_SERVER, 2, buffer, true);
 
 				if(i == deleted_blocks.end())
 					break;

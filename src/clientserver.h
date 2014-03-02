@@ -466,9 +466,14 @@ enum {
 	TOSERVER_GOTBLOCKS_RANGE
 };
 
+#define TOSERVER_DELETEDBLOCKS 0x25
+enum {
+	TOSERVER_DELETEDBLOCKS_DATA
+};
+
 enum ToServerCommand
 {
-	TOSERVER_DELETEDBLOCKS = 0x25,
+
 	/*
 		[0] u16 command
 		[2] u8 count

@@ -2298,29 +2298,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_DELETEDBLOCKS)
 	{
-		if(datasize < 2+1)
-			return;
-
-		/*
-			[0] u16 command
-			[2] u8 count
-			[3] v3s16 pos_0
-			[3+6] v3s16 pos_1
-			...
-		*/
-
-		u16 count = data[2];
-		for(u16 i=0; i<count; i++)
-		{
-			if((s16)datasize < 2+1+(i+1)*6)
-				throw con::InvalidIncomingDataException
-					("DELETEDBLOCKS length is too short");
-			v3s16 p = readV3S16(&data[2+1+i*6]);
-			/*infostream<<"Server: DELETEDBLOCKS ("
-					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-			RemoteClient *client = getClient(peer_id);
-			client->SetBlockNotSent(p);
-		}
+		std::vector<v3s16> deleted_blocks;
+		packet[TOSERVER_DELETEDBLOCKS_DATA].convert(&deleted_blocks);
+		RemoteClient *client = getClient(peer_id);
+		for (auto &block : deleted_blocks)
+			client->SetBlockNotSent(block);
 	}
 	else if(command == TOSERVER_INVENTORY_ACTION)
 	{
