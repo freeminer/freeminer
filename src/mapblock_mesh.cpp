@@ -45,10 +45,10 @@ float srgb_linear_multiply(float f, float m, float max)
 
 int getFarmeshStep(MapDrawControl& draw_control, int range) {
 	if (draw_control.farmesh) {
-		if		(range > draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
-		else if (range > draw_control.farmesh+draw_control.farmesh_step*2)	return 8;
-		else if (range > draw_control.farmesh+draw_control.farmesh_step)	return 4;
-		else if (range > draw_control.farmesh)								return 2;
+		if		(range >= draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
+		else if (range >= draw_control.farmesh+draw_control.farmesh_step*2)	return 8;
+		else if (range >= draw_control.farmesh+draw_control.farmesh_step)	return 4;
+		else if (range >= draw_control.farmesh)								return 2;
 	}
 	return 1;
 };
@@ -1049,7 +1049,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	clearHardwareBuffer(false),
-	step(1),
+	step(0),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
