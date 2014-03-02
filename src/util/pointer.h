@@ -296,5 +296,21 @@ inline SharedBuffer<u8> SharedBufferFromString(const char *string)
 	return b;
 }
 
+template<class T>
+class sloppy {}; 
+
+// convert between T** and const T** 
+template<class T>
+class sloppy<T**>
+{
+    T** t;
+    public: 
+    sloppy(T** mt) : t(mt) {}
+    sloppy(const T** mt) : t(const_cast<T**>(mt)) {}
+
+    operator T** () const { return t; }
+    operator const T** () const { return const_cast<const T**>(t); }
+};
+
 #endif
 

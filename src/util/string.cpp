@@ -47,7 +47,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	size_t *outbuf_left_ptr = &outbuf_size;
 
 	while (inbuf_size > 0)
-		iconv(cd, &inbuf_ptr, inbuf_left_ptr, &outbuf_ptr, outbuf_left_ptr);
+		iconv(cd, sloppy<char**>(&inbuf_ptr), inbuf_left_ptr, &outbuf_ptr, outbuf_left_ptr);
 
 	iconv_close(cd);
 	return 0;
