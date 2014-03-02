@@ -573,22 +573,23 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 
 	f32 wanted_frametime_farmesh = 1.0 / (wanted_fps);
 	f32 wanted_frametime_change_farmesh = wanted_frametime_farmesh - frametime;
-//infostream<<" wfr="<<wanted_frametime<<" wfrc="<<wanted_frametime_change<<" wfcf="<<wanted_frametime_change_farmesh<<" wff="<<wanted_frametime_farmesh<<std::endl;
+//infostream<<" wfr="<<wanted_frametime<<" wfrc="<<wanted_frametime_change<<";  "<<" wff="<<wanted_frametime_farmesh<<"wfcf="<<wanted_frametime_change_farmesh<<std::endl;
 
-	if (fabs(wanted_frametime_change_farmesh) >= wanted_frametime_farmesh*0.33) {
-		if (farmesh) {
+	if (farmesh) {
+		if (fabs(wanted_frametime_change_farmesh) >= wanted_frametime_farmesh*0.33) {
 			if (wanted_frametime_change_farmesh > 0) {
-				++m_draw_control.farmesh;
-			}
-			else if (m_draw_control.farmesh > farmesh) {
-				--m_draw_control.farmesh;
+				m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
+			} else {
+				m_draw_control.farmesh*=0.9;
+				if (m_draw_control.farmesh < farmesh)
+					m_draw_control.farmesh = farmesh;
 			}
 		}
 	}
 
 	// If needed frametime change is small, just return
 	// This value was 0.4 for many months until 2011-10-18 by c55;
-	if (fabs(wanted_frametime_change) < wanted_frametime*0.33)
+	if (fabs(wanted_frametime_change) < wanted_frametime*0.20)
 	{
 		//dstream<<"ignoring small wanted_frametime_change"<<std::endl;
 		return;

@@ -37,7 +37,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 MapDrawControl::MapDrawControl():
 		range_all(false),
-		wanted_range(50),
+		wanted_range(500),
 		wanted_max_blocks(0),
 		wanted_min_range(0),
 		blocks_drawn(0),
@@ -46,7 +46,6 @@ MapDrawControl::MapDrawControl():
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");
-		farmesh_max = farmesh + farmesh_step*3 + 2;
 	}
 
 ClientMap::ClientMap(

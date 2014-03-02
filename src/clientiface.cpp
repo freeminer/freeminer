@@ -100,8 +100,7 @@ void RemoteClient::GetNextBlocks(
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_nearest = 0;
-		//infostream<<"Resetting m_nearest_unsent_d for "
-		//		<<server->getPlayerName(peer_id)<<std::endl;
+		//infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
 	//s16 last_nearest_unsent_d = m_nearest_unsent_d;
@@ -169,7 +168,7 @@ void RemoteClient::GetNextBlocks(
 	{
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
-		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<std::endl;
+		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
 		/*
 			If m_nearest_unsent_d was changed by the EmergeThread
@@ -328,11 +327,13 @@ void RemoteClient::GetNextBlocks(
 					Block is near ground level if night-time mesh
 					differs from day-time mesh.
 				*/
+/*
 				if(d >= 4)
 				{
 					if(block->getDayNightDiff() == false)
 						continue;
 				}
+*/
 			}
 
 			/*
@@ -425,7 +426,7 @@ void RemoteClient::SentBlock(v3s16 p)
 
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
-	m_nearest_unsent_d = 0;
+	++m_nearest_unsent_nearest;
 
 	if(m_blocks_sending.find(p) != m_blocks_sending.end())
 		m_blocks_sending.erase(p);
@@ -435,7 +436,8 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	m_nearest_unsent_d = 0;
+	if (blocks.size())
+		++m_nearest_unsent_nearest;
 
 	for(std::map<v3s16, MapBlock*>::iterator
 			i = blocks.begin();

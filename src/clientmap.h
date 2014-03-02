@@ -43,9 +43,8 @@ struct MapDrawControl
 	// Distance to the farthest block drawn
 	float farthest_drawn;
 
-	int farmesh;
+	float farmesh;
 	int farmesh_step;
-	int farmesh_max;
 };
 
 class Client;
