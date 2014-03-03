@@ -160,24 +160,6 @@ void clearTextureNameCache()
 	Stores internal information about a texture.
 */
 
-struct TextureInfo
-{
-	std::string name;
-	video::ITexture *texture;
-	video::IImage *img; // The source image
-
-	TextureInfo(
-			const std::string &name_,
-			video::ITexture *texture_=NULL,
-			video::IImage *img_=NULL
-		):
-		name(name_),
-		texture(texture_),
-		img(img_)
-	{
-	}
-};
-
 /*
 	SourceImageCache: A cache used for storing source images.
 */
@@ -341,6 +323,8 @@ public:
 	video::ITexture* getTexture(u32 id);
 
 	video::ITexture* getTexture(const std::string &name, u32 *id);
+
+	TextureInfo* getTextureInfo(u32 id);
 
 	// Returns a pointer to the irrlicht device
 	virtual IrrlichtDevice* getDevice()
@@ -768,6 +752,16 @@ video::ITexture* TextureSource::getTexture(const std::string &name, u32 *id)
 		*id = actual_id;
 	}
 	return getTexture(actual_id);
+}
+
+TextureInfo * TextureSource::getTextureInfo(u32 id)
+{
+	JMutexAutoLock lock(m_textureinfo_cache_mutex);
+
+	if(id >= m_textureinfo_cache.size())
+		return NULL;
+
+	return &m_textureinfo_cache[id];
 }
 
 void TextureSource::processQueue()

@@ -79,6 +79,33 @@ struct TextureFromMeshParams
 };
 
 /*
+	Stores internal information about a texture.
+*/
+struct TextureInfo
+{
+	std::string name;
+	video::ITexture *texture;
+	video::IImage *img; // The source image
+	video::SColor color;
+
+	TextureInfo(
+			const std::string &name_,
+			video::ITexture *texture_=NULL,
+			video::IImage *img_=NULL
+		):
+		name(name_),
+		texture(texture_),
+		img(img_)
+	{
+		if(img!=NULL){
+			color = img->getPixel(0,0); // TODO: avg here
+		} else {
+			color = video::SColor(0,0,0,0);
+		}
+	}
+};
+
+/*
 	TextureSource creates and caches textures.
 */
 
@@ -100,6 +127,7 @@ public:
 	virtual u32 getTextureIdDirect(const std::string &name)=0;
 	virtual std::string getTextureName(u32 id)=0;
 	virtual video::ITexture* getTexture(u32 id)=0;
+	virtual TextureInfo* getTextureInfo(u32 id)=0;
 	virtual video::ITexture* getTexture(
 			const std::string &name, u32 *id = NULL)=0;
 	virtual IrrlichtDevice* getDevice()=0;

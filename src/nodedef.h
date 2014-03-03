@@ -168,6 +168,8 @@ struct ContentFeatures
 	u8 solidness; // Used when choosing which face is drawn
 	u8 visual_solidness; // When solidness=0, this tells how it looks like
 	bool backface_culling;
+	video::SColor color_avg; //far mesh average color
+
 #endif
 
 	// Server-side cached callback existence for fast skipping
