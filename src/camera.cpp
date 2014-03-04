@@ -36,6 +36,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "profiler.h"
 #include "util/numeric.h"
 #include "util/mathconstants.h"
+#include "constants.h"
+
+#define CAMERA_OFFSET_STEP 200
 
 #include "nodedef.h"
 #include "game.h" // CameraModes
@@ -57,6 +60,7 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 
 	m_camera_position(0,0,0),
 	m_camera_direction(0,0,0),
+	m_camera_offset(0,0,0),
 
 	m_aspect(1.0),
 	m_fov_x(1.0),
@@ -353,8 +357,16 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f abs_cam_up;
 	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
 
+	// Update offset if too far away from the center of the map
+	m_camera_offset.X += CAMERA_OFFSET_STEP*
+			(((s16)(m_camera_position.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
+	m_camera_offset.Y += CAMERA_OFFSET_STEP*
+			(((s16)(m_camera_position.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
+	m_camera_offset.Z += CAMERA_OFFSET_STEP*
+			(((s16)(m_camera_position.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
+
 	// Seperate camera position for calculation
-	v3f my_cp = m_camera_position;
+	v3f my_cp = m_camera_position - intToFloat(m_camera_offset, BS);
 	
 	// Reposition the camera for third person view
 	if (current_camera_mode > CAMERA_MODE_FIRST) {

@@ -400,7 +400,7 @@ public:
 			MeshMakeData mesh_make_data(gamedef, map_draw_control);
 			MapNode mesh_make_node(id, param1, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
-			MapBlockMesh mapblock_mesh(&mesh_make_data);
+			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
 			scene::IMesh *node_mesh = mapblock_mesh.getMesh();
 			assert(node_mesh);
 			video::SColor c(255, 255, 255, 255);

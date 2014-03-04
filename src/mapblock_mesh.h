@@ -85,7 +85,7 @@ class MapBlockMesh
 {
 public:
 	// Builds the mesh given
-	MapBlockMesh(MeshMakeData *data);
+	MapBlockMesh(MeshMakeData *data, v3s16 camera_offset);
 	~MapBlockMesh();
 
 	// Main animation function, parameters:
@@ -111,6 +111,8 @@ public:
 		if(m_animation_force_timer > 0)
 			m_animation_force_timer--;
 	}
+	
+	void updateCameraOffset(v3s16 camera_offset);
 
 
 	u32 getUsageTimer()
@@ -155,6 +157,9 @@ private:
 	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
 
 	u32 m_usage_timer;
+	
+	// Camera offset info -> do we have to translate the mesh?
+	v3s16 m_camera_offset;
 };
 
 
