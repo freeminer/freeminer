@@ -1035,13 +1035,11 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 	os<<"path_user = "<<wrap_rows(porting::path_user, 20)<<"\n";
 
 	std::string formspec =
-		"size[11,5.5,true]"
-		"button_exit[4,1;3,0.5;btn_continue;"  + std::string(gettext("Continue"))+ "]"
-		"button[4,2;3,0.5;btn_sound;"     + std::string(gettext("Sound Volume")) + "]"
-		"button[4,3;3,0.5;btn_exit_menu;" + std::string(gettext("Exit to Menu")) + "]"
-		"button[4,4;3,0.5;btn_exit_os;"   + std::string(gettext("Exit to OS"))   + "]"
-		"textarea[7.5,0.25;3.75,6;;" + std::string(control_text) + ";]"
-		"textarea[0.4,0.25;3.5,6;;" + os.str() + ";]"
+		"size[5,5.5,true]"
+		"button_exit[1,1;3,0.5;btn_continue;"  + std::string(gettext("Continue"))+ "]"
+		"button[1,2;3,0.5;btn_sound;"     + std::string(gettext("Sound Volume")) + "]"
+		"button[1,3;3,0.5;btn_exit_menu;" + std::string(gettext("Exit to Menu")) + "]"
+		"button[1,4;3,0.5;btn_exit_os;"   + std::string(gettext("Exit to OS"))   + "]"
 		;
 
 	/* Create menu */

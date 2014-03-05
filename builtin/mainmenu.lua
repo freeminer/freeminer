@@ -347,7 +347,7 @@ end
 
 function tabbuilder.gettab()
 	local tsize = tabbuilder.tabsizes[tabbuilder.current_tab] or {width=12, height=5.2}
-	local retval = "size[" .. tsize.width .. "," .. tsize.height .. ",true]"
+	local retval = ""
 
 	if tabbuilder.show_buttons then
 		retval = retval .. tabbuilder.tab_header()
