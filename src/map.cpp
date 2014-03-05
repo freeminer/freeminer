@@ -3072,7 +3072,9 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 #endif
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos_requested);
-	assert(block);
+	if(!block) {
+		errorstream<<"finishBlockMake(): created NULL block at "<<PP(blockpos_requested)<<std::endl;
+	}
 
 	return block;
 }
