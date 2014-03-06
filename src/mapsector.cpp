@@ -105,11 +105,14 @@ MapBlock * MapSector::getBlockNoCreateNoEx(s16 y)
 
 MapBlock * MapSector::createBlankBlockNoInsert(s16 y)
 {
-	assert(getBlockBuffered(y) == NULL);
-
+	MapBlock *block = getBlockBuffered(y);
+	if (block != NULL) {
+		errorstream<<"Block already created"<<"std::endl";
+		return block;
+	}
 	v3s16 blockpos_map(m_pos.X, y, m_pos.Y);
 	
-	MapBlock *block = new MapBlock(m_parent, blockpos_map, m_gamedef);
+	block = new MapBlock(m_parent, blockpos_map, m_gamedef);
 	
 	return block;
 }
