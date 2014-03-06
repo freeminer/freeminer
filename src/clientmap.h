@@ -122,7 +122,11 @@ public:
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);
 
+
 	void renderPostFx();
+
+	// For debugging the status and position of MapBlocks
+	void renderBlockBoundaries();
 
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
