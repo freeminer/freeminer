@@ -26,11 +26,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 
 class IGameDef;
+struct MapDrawControl;
 
 /*
 	Mesh making stuff
 */
 
+int getFarmeshStep(MapDrawControl& draw_control, int range);
 
 class MapBlock;
 
@@ -41,8 +43,10 @@ struct MeshMakeData
 	v3s16 m_crack_pos_relative;
 	bool m_smooth_lighting;
 	IGameDef *m_gamedef;
+	int range;
+	MapDrawControl& draw_control;
 
-	MeshMakeData(IGameDef *gamedef);
+	MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_);
 
 	/*
 		Copy central data directly from block, and other data from
@@ -121,6 +125,8 @@ public:
 	void setStatic();
 
 	bool clearHardwareBuffer;
+
+	int step;
 
 private:
 	scene::SMesh *m_mesh;

@@ -219,6 +219,7 @@ void ContentFeatures::reset()
 	{
 		circuit_element_states[i] = 0;
 	}
+	circuit_element_delay = 0;
 }
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const

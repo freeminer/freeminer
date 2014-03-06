@@ -29,8 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 //////////////////////// Mapgen Singlenode parameter read/write
 
-bool MapgenSinglenodeParams::readParams(Settings *settings) {
-	return true;
+void MapgenSinglenodeParams::readParams(Settings *settings) {
 }
 
 
@@ -39,7 +38,7 @@ void MapgenSinglenodeParams::writeParams(Settings *settings) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MapgenSinglenode::MapgenSinglenode(int mapgenid, MapgenSinglenodeParams *params) {
+MapgenSinglenode::MapgenSinglenode(int mapgenid, MapgenParams *params) {
 	flags = params->flags;
 }
 
@@ -90,7 +89,7 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 	updateLiquid(&data->transforming_liquid, node_min, node_max);
 
 	// Calculate lighting
-	if (!(flags & MG_NOLIGHT))
+	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
 					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
 	

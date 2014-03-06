@@ -527,6 +527,8 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 
 	f32 viewing_range_max = g_settings->getS16("viewing_range_nodes_max");
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
+	// vrange+position must be smaller than 32767
+	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(abs(m_camera_position.X/BS), abs(m_camera_position.Y/BS)), abs(m_camera_position.Z/BS)));
 	
 	// Immediately apply hard limits
 	if(m_draw_control.wanted_range < viewing_range_min)
@@ -541,6 +543,9 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 		m_cameranode->setFarValue(200 * BS * 10);
 	else
 		m_cameranode->setFarValue(viewing_range_max * BS * 10);
+
+	int farmesh = g_settings->getS32("farmesh");
+	int farmesh_step = g_settings->getS32("farmesh_step");
 
 	f32 wanted_fps = g_settings->getFloat("wanted_fps");
 	wanted_fps = MYMAX(wanted_fps, 1.0);
@@ -569,9 +574,33 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
 	g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 
+	f32 wanted_frametime_farmesh = 1.0 / (wanted_fps);
+	f32 wanted_frametime_change_farmesh = wanted_frametime_farmesh - frametime;
+//infostream<<" wfr="<<wanted_frametime<<" wfrc="<<wanted_frametime_change<<";  "<<" wff="<<wanted_frametime_farmesh<<"wfcf="<<wanted_frametime_change_farmesh<<std::endl;
+
+	if (farmesh) {
+		//if (fabs(wanted_frametime_change_farmesh) >= wanted_frametime_farmesh*0.1) {
+			if (wanted_frametime_change_farmesh >= wanted_frametime_farmesh*0.4) {
+				m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
+				if (m_draw_control.farmesh >= farmesh*1.5 && m_draw_control.farmesh_step < farmesh_step)
+					++m_draw_control.farmesh_step;
+			} else if (wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.25){
+				if (m_draw_control.farmesh>10)
+					m_draw_control.farmesh*=0.8;
+				else
+					m_draw_control.farmesh-=1;
+				if (m_draw_control.farmesh < farmesh)
+					m_draw_control.farmesh = farmesh;
+				if (m_draw_control.farmesh <=farmesh && m_draw_control.farmesh_step > 1 && wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.4)
+					--m_draw_control.farmesh_step;
+			}
+		//}
+	}
+
 	// If needed frametime change is small, just return
 	// This value was 0.4 for many months until 2011-10-18 by c55;
-	if (fabs(wanted_frametime_change) < wanted_frametime*0.33)
+	//if (fabs(wanted_frametime_change) < wanted_frametime*0.33)
+	if (wanted_frametime_change > -wanted_frametime*0.33 && wanted_frametime_change < wanted_frametime*0.15)
 	{
 		//dstream<<"ignoring small wanted_frametime_change"<<std::endl;
 		return;

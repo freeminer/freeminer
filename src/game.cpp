@@ -922,8 +922,8 @@ bool nodePlacementPrediction(Client &client,
 
 			// Dont place node when player would be inside new node
 			// NOTE: This is to be eventually implemented by a mod as client-side Lua
-			if (!nodedef->get(n).walkable || 
-				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) || 
+			if (!nodedef->get(n).walkable ||
+				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
 				(nodedef->get(n).walkable &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
@@ -1044,7 +1044,27 @@ void the_game(
 		infostream<<"Creating server"<<std::endl;
 		server = new Server(map_dir, gamespec,
 				simple_singleplayer_mode);
-		server->start(port);
+
+		std::string bind_str = g_settings->get("bind_address");
+		Address bind_addr(0,0,0,0, port);
+
+		if (bind_str != "")
+		{
+			try {
+				bind_addr.Resolve(bind_str.c_str());
+				address = bind_str;
+			} catch (ResolveError &e) {
+				infostream << "Resolving bind address \"" << bind_str
+						   << "\" failed: " << e.what()
+						   << " -- Listening on all addresses." << std::endl;
+
+				if (g_settings->getBool("ipv6_server")) {
+					bind_addr.setAddress((IPv6AddressBytes*) NULL);
+				}
+			}
+		}
+
+		server->start(bind_addr);
 	}
 
 	do{ // Client scope (breakable do-while(0))
@@ -1354,6 +1374,8 @@ void the_game(
 
 	Sky *sky = NULL;
 	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, client.getEnv().getLocalPlayer());
+
+	scene::ISceneNode* skybox = NULL;
 	
 	/*
 		A copy of the local inventory
@@ -1526,6 +1548,9 @@ void the_game(
 	str += "]";
 	device->setWindowCaption(str.c_str());
 	}
+
+	// Info text
+	std::wstring infotext;
 
 	for(;;)
 	{
@@ -1711,23 +1736,9 @@ void the_game(
 		
 		// Hilight boxes collected during the loop and displayed
 		std::vector<aabb3f> hilightboxes;
-		
-		// Info text
-		std::wstring infotext;
 
-		/*
-			Debug info for client
-		*/
-		{
-			static float counter = 0.0;
-			counter -= dtime;
-			if(counter < 0)
-			{
-				counter = 30.0;
-				client.printDebugInfo(infostream);
-			}
-		}
-
+		/* reset infotext */
+		infotext = L"";
 		/*
 			Profiler
 		*/
@@ -2563,6 +2574,46 @@ void the_game(
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
 				}
+				else if (event.type == CE_SET_SKY)
+				{
+					sky->setVisible(false);
+					if(skybox){
+						skybox->drop();
+						skybox = NULL;
+					}
+					// Handle according to type
+					if(*event.set_sky.type == "regular"){
+						sky->setVisible(true);
+					}
+					else if(*event.set_sky.type == "skybox" &&
+							event.set_sky.params->size() == 6){
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+						skybox = smgr->addSkyBoxSceneNode(
+								tsrc->getTexture((*event.set_sky.params)[0]),
+								tsrc->getTexture((*event.set_sky.params)[1]),
+								tsrc->getTexture((*event.set_sky.params)[2]),
+								tsrc->getTexture((*event.set_sky.params)[3]),
+								tsrc->getTexture((*event.set_sky.params)[4]),
+								tsrc->getTexture((*event.set_sky.params)[5]));
+					}
+					// Handle everything else as plain color
+					else {
+						if(*event.set_sky.type != "plain")
+							infostream<<"Unknown sky type: "
+									<<(*event.set_sky.type)<<std::endl;
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+					}
+
+					delete event.set_sky.bgcolor;
+					delete event.set_sky.type;
+					delete event.set_sky.params;
+				}
+				else if (event.type == CE_OVERRIDE_DAY_NIGHT_RATIO)
+				{
+					bool enable = event.override_day_night_ratio.do_override;
+					u32 value = event.override_day_night_ratio.ratio_f * 1000;
+					client.getEnv().setDayNightRatioOverride(enable, value);
+				}
 			}
 		}
 		
@@ -3146,7 +3197,8 @@ void the_game(
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
 */
 				<<std::setprecision(1)
-				<<", v_range = "<<draw_control.wanted_range;
+				<<", v_range = "<<draw_control.wanted_range
+				<<", farmesh = "<<draw_control.farmesh<<":"<<draw_control.farmesh_step;
 			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}

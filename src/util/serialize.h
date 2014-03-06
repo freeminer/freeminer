@@ -409,5 +409,16 @@ MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
 MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
+
+// Creates a string containing comma delimited values of a struct whose layout is
+// described by the parameter format
+bool serializeStructToString(std::string *outstr,
+	std::string format, void *value);
+
+// Reads a comma delimited string of values into a struct whose layout is
+// decribed by the parameter format
+bool deSerializeStringToStruct(std::string valstr,
+	std::string format, void *out, size_t olen);
+
 #endif
 

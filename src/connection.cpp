@@ -241,12 +241,12 @@ void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 void Connection::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
-	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
 	{
 		JMutexAutoLock peerlock(m_peers_mutex);
 		if (m_peers.find(peer_id) == m_peers.end())
 			return;
 	}
+	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
 
 	assert(channelnum < CHANNEL_COUNT);
 
@@ -437,6 +437,13 @@ std::string Connection::getDesc()
 {
 	return "";
 	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
+}
+
+void Connection::DisconnectPeer(u16 peer_id)
+{
+	ConnectionCommand discon;
+	discon.disconnect_peer(peer_id);
+	putCommand(discon);
 }
 
 bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg) {

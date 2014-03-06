@@ -43,7 +43,8 @@ std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(co
 	return result;
 }
 
-void CircuitElementStates::rotateStatesArray(const unsigned char* input_state, unsigned char* output_state, FaceId face)
+void CircuitElementStates::rotateStatesArray(const unsigned char* input_state,
+                                             unsigned char* output_state, FaceId face) const
 {
 	int id;
 	unsigned char value;
@@ -121,7 +122,7 @@ unsigned char CircuitElementStates::rotateState(const unsigned char state, FaceI
 	return result;
 }
 
-unsigned int CircuitElementStates::getId(const unsigned char* state)
+unsigned int CircuitElementStates::getId(const unsigned char* state) const
 {
 	unsigned int result = m_states.size();
 	for(unsigned int i = 0; i < m_states.size(); ++i) {
@@ -140,9 +141,9 @@ unsigned int CircuitElementStates::getId(const unsigned char* state)
 	return result;
 }
 
-unsigned char* CircuitElementStates::getFunc(unsigned int id)
+const unsigned char* CircuitElementStates::getFunc(unsigned int id) const
 {
-	return m_states[id];
+	return (id < m_states.size()) ? m_states[id] : NULL;
 }
 
 void CircuitElementStates::serialize(std::ostream& out)

@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "environment.h"
 #include "mapgen.h"
 #include "lua_api/l_env.h"
+#include "server.h"
 
 void ScriptApiEnv::environment_OnGenerated(v3s16 minp, v3s16 maxp,
 		u32 blockseed)
@@ -50,7 +51,11 @@ void ScriptApiEnv::environment_Step(float dtime)
 	lua_getfield(L, -1, "registered_globalsteps");
 	// Call callbacks
 	lua_pushnumber(L, dtime);
-	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
+	try {
+		script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
+	} catch (LuaError &e) {
+		getServer()->setAsyncFatalError(e.what());
+	}
 }
 
 void ScriptApiEnv::environment_OnMapgenInit(MapgenParams *mgparams)
@@ -73,7 +78,8 @@ void ScriptApiEnv::environment_OnMapgenInit(MapgenParams *mgparams)
 	lua_pushinteger(L, mgparams->water_level);
 	lua_setfield(L, -2, "water_level");
 	
-	std::string flagstr = writeFlagString(mgparams->flags, flagdesc_mapgen);
+	std::string flagstr = writeFlagString(mgparams->flags,
+		flagdesc_mapgen, (u32)-1);
 	lua_pushstring(L, flagstr.c_str());
 	lua_setfield(L, -2, "flags");
 	

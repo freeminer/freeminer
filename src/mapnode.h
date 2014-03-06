@@ -232,10 +232,10 @@ struct MapNode
 	std::vector<aabb3f> getSelectionBoxes(INodeDefManager *nodemgr) const;
 
 	/* Liquid helpers */
-	u8 getMaxLevel(INodeDefManager *nodemgr) const;
+	u8 getMaxLevel(INodeDefManager *nodemgr, bool compress = 0) const;
 	u8 getLevel(INodeDefManager *nodemgr) const;
-	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1);
-	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1);
+	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1, bool compress = 0);
+	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
 	void freezeMelt(INodeDefManager *nodemgr, int direction = 0);
 
 	/*

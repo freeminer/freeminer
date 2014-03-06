@@ -309,6 +309,7 @@ struct ContentFeatures
 	bool is_circuit_element;
 	unsigned char wire_connections[6];
 	unsigned char circuit_element_states[64];
+	unsigned int circuit_element_delay;
 
 	// Sound properties
 	SimpleSoundSpec sound_footstep;
@@ -336,9 +337,9 @@ struct ContentFeatures
 		if(!isLiquid() || !f.isLiquid()) return false;
 		return (liquid_alternative_flowing == f.liquid_alternative_flowing);
 	}
-	u8 getMaxLevel() const{
+	u8 getMaxLevel(bool compress = 0) const{
 		if(param_type_2 == CPT2_LEVELED && liquid_type == LIQUID_FLOWING && leveled)
-			return leveled;
+			return(compress ? LEVELED_MAX : leveled);
 		if(leveled || param_type_2 == CPT2_LEVELED)
 			return LEVELED_MAX;
 		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type

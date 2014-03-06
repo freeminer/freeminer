@@ -3,11 +3,12 @@
 
 #include "irr_v3d.h"
 #include "mapnode.h"
-#include "circuit_element_list.h"
+#include "circuit_element_virtual.h"
 
 #include <list>
 #include <vector>
 #include <map>
+#include <deque>
 
 #define OPPOSITE_SHIFT(x) (CircuitElement::opposite_shift[(x)])
 #define OPPOSITE_FACE(x) ((((x)<<3) | ((x)>>3)) & 0x3f)
@@ -16,7 +17,7 @@
 #define FACEDIR_TO_FACE(x) (CircuitElement::facedir_to_face[(x)])
 
 class Map;
-class MapNode;
+struct MapNode;
 class INodeDefManager;
 
 enum FaceId
@@ -37,61 +38,77 @@ class GameScripting;
 struct CircuitElementContainer
 {
 	/*
-	 * shift = face to which this object is connected
+	 * iterator of CircuitElementVirtual::elements, which contains pointer to this object
 	 */
-	unsigned char shift;
+	std::list <CircuitElementVirtualContainer>::iterator list_iterator;
 	/*
-	 * iterator of CircuitElement::faces[index], which contains pointer to this object
+	 * pointer to the CircuitElementVirtual::elements, which contains pointer to this object
+	 * pointer is used instead of iterator because there is no way to check of iterator valid or not
 	 */
-	CircuitElementList::iterator list_iterator;
-	/*
-	 * pointer to the CircuitElement::faces[index], which contains pointer to this object
-	 */
-	CircuitElementList* list_pointer;
+	std::list <CircuitElementVirtual>::iterator list_pointer;
+
+	bool is_connected;
 };
 
 class CircuitElement
 {
 public:
-	CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id);
+	CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id, unsigned long id, unsigned int delay);
 	CircuitElement(const CircuitElement& element);
-	CircuitElement();
+	CircuitElement(unsigned long id);
 	~CircuitElement();
 	void addConnectedElement();
 	void update();
 	void updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef);
 	
-	void serialize(std::ostream& out, std::map<v3s16, unsigned long>& pos_to_id);
-	void serializeState(std::ostream& out, std::map<v3s16, unsigned long>& pos_to_id);
-	void deSerialize(std::istream& is, std::map<unsigned long, std::list<CircuitElement>::iterator>& id_to_pointer);
+	void serialize(std::ostream& out) const;
+	void serializeState(std::ostream& out) const;
+	void deSerialize(std::istream& is,
+	                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer);
+	void deSerializeState(std::istream& is);
 	
-	void getNeighbors(std::vector <CircuitElement*>& neighbors);
-	void setFunc(unsigned char* func);
+	void getNeighbors(std::vector <std::list <CircuitElementVirtual>::iterator>& neighbors) const;
 	
 	// First - pointer to object to which connected.
 	// Second - face id.
-	static void findConnected(std::vector <std::pair <CircuitElement*, int > >& connected,
-	                          Map& map, INodeDefManager* ndef, v3s16 pos, MapNode node,
-	                          std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator);
-	static void findConnectedWithFace(std::vector <std::pair <CircuitElement*, int > >& connected,
+	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, int > >& connected,
 	                                  Map& map, INodeDefManager* ndef, v3s16 pos, FaceId face,
-	                                  std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator);
-	CircuitElementList& getFace(int id);
+	                                  std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
+	                                  bool connected_faces[6]);
+
+	CircuitElementContainer getFace(int id) const;
+	unsigned long getFuncId() const;
+	v3s16 getPos() const;
+	unsigned long getId() const;
+
+	void connectFace(int id, std::list <CircuitElementVirtualContainer>::iterator it,
+	                 std::list <CircuitElementVirtual>::iterator pt);
+	void disconnectFace(int id);
+	void setId(unsigned long id);
+	void setInputState(unsigned char state);
+	void setFunc(const unsigned char* func, unsigned long func_id);
+	void setDelay(unsigned int delay);
+
+	inline void addState(unsigned char state)
+	{
+		m_next_input_state |= state;
+	}
 	
 	static unsigned char face_to_shift[33];
 	static unsigned char opposite_shift[6];
 	static FaceId shift_to_face[6];
 	static FaceId facedir_to_face[6];
-	friend class Circuit;
 private:
 	v3s16 m_pos;
+	unsigned long m_element_id;
 	const unsigned char* m_func;
 	unsigned long m_func_id;
 	unsigned char m_current_input_state;
 	unsigned char m_next_input_state;
 	unsigned char m_current_output_state;
 	unsigned char m_next_output_state;
-	CircuitElementList m_faces[6];
+	std::deque <unsigned char> m_states_queue;
+	CircuitElementContainer m_faces[6];
 };
 
 #endif

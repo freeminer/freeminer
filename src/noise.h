@@ -68,12 +68,28 @@ struct NoiseParams {
 	int seed;
 	int octaves;
 	float persist;
+
+	NoiseParams() {}
+
+	NoiseParams(float offset_, float scale_, v3f spread_,
+		int seed_, int octaves_, float persist_)
+	{
+		offset  = offset_;
+		scale   = scale_;
+		spread  = spread_;
+		seed    = seed_;
+		octaves = octaves_;
+		persist = persist_;
+	}
 };
 
 
 // Convenience macros for getting/setting NoiseParams in Settings
-#define getNoiseParams(x, y) getStruct((x), "f,f,v3,s32,s32,f", &(y), sizeof(y))
-#define setNoiseParams(x, y) setStruct((x), "f,f,v3,s32,s32,f", &(y))
+
+#define NOISEPARAMS_FMT_STR "f,f,v3,s32,s32,f"
+
+#define getNoiseParams(x, y) getStruct((x), NOISEPARAMS_FMT_STR, &(y), sizeof(y))
+#define setNoiseParams(x, y) setStruct((x), NOISEPARAMS_FMT_STR, &(y))
 
 class Noise {
 public:

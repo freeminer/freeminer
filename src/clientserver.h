@@ -26,6 +26,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes.h"
 #include <msgpack.hpp>
 
+#define MAX_PACKET_SIZE 512
+
 /*
 	changes by PROTOCOL_VERSION:
 
@@ -126,8 +128,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PASSWORD_SIZE 28       // Maximum password length. Allows for
                                // base64-encoded SHA-1 (27+\0).
 
-#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
-
+#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 // TOCLIENT_* commands
 
@@ -425,6 +426,19 @@ enum {
 	TOCLIENT_BLOCKDATA_DATA,
 	TOCLIENT_BLOCKDATA_HEAT,
 	TOCLIENT_BLOCKDATA_HUMIDITY
+};
+
+#define TOCLIENT_SET_SKY 0xae
+enum {
+	TOCLIENT_SET_SKY_COLOR,
+	TOCLIENT_SET_SKY_TYPE,
+	TOCLIENT_SET_SKY_PARAMS
+};
+
+#define TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO 0x50
+enum {
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO,
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_VALUE
 };
 
 // TOSERVER_* commands

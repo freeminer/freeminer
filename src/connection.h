@@ -127,6 +127,18 @@ public:
 
 class Connection;
 
+enum PeerChangeType
+{
+	PEER_ADDED,
+	PEER_REMOVED
+};
+struct PeerChange
+{
+	PeerChangeType type;
+	u16 peer_id;
+	bool timeout;
+};
+
 class PeerHandler
 {
 public:
@@ -214,6 +226,7 @@ enum ConnectionCommandType{
 	CONNCMD_SERVE,
 	CONNCMD_CONNECT,
 	CONNCMD_DISCONNECT,
+	CONNCMD_DISCONNECT_PEER,
 	CONNCMD_SEND,
 	CONNCMD_SEND_TO_ALL,
 	CONNCMD_DELETE_PEER,
@@ -266,6 +279,11 @@ struct ConnectionCommand
 		type = CONNCMD_DELETE_PEER;
 		peer_id = peer_id_;
 	}
+	void disconnect_peer(u16 peer_id_)
+	{
+		type = CONNCMD_DISCONNECT_PEER;
+		peer_id = peer_id_;
+	}
 };
 
 class Connection: public JThread
@@ -294,6 +312,7 @@ public:
 	u16 GetPeerID(){ return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
+	void DisconnectPeer(u16 peer_id);
 
 private:
 	void putEvent(ConnectionEvent &e);

@@ -273,7 +273,13 @@ function minetest.item_place_node(itemstack, placer, pointed_thing, param2)
 	end
 
 	-- Add node and update
-	minetest.add_node(place_to, newnode)
+	local olddef = minetest.registered_nodes[oldnode.name]
+	if olddef.leveled and olddef.leveled>0 and olddef.liquidtype ~= "none" and
+			(newnode.name == oldnode.name or newnode.name == olddef.liquid_alternative_flowing or newnode.name == olddef.liquid_alternative_source) then
+		minetest.add_node_level(place_to, olddef.leveled)
+	else
+		minetest.add_node(place_to, newnode)
+	end
 
 	local take_item = true
 

@@ -27,16 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 struct MapDrawControl
 {
-	MapDrawControl():
-		range_all(false),
-		wanted_range(50),
-		wanted_max_blocks(0),
-		wanted_min_range(0),
-		blocks_drawn(0),
-		blocks_would_have_drawn(0),
-		farthest_drawn(0)
-	{
-	}
+	MapDrawControl();
 	// Overrides limits by drawing everything
 	bool range_all;
 	// Wanted drawing range
@@ -51,6 +42,9 @@ struct MapDrawControl
 	u32 blocks_would_have_drawn;
 	// Distance to the farthest block drawn
 	float farthest_drawn;
+
+	float farmesh;
+	int farmesh_step;
 };
 
 class Client;

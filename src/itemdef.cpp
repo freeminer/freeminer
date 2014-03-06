@@ -27,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "tile.h"
+#include "clientmap.h"
 #endif
 #include "log.h"
 #include "main.h" // g_settings
@@ -356,7 +357,8 @@ public:
 				reenable_shaders = true;
 				g_settings->setBool("enable_shaders",false);
 			}
-			MeshMakeData mesh_make_data(gamedef);
+			MapDrawControl map_draw_control;
+			MeshMakeData mesh_make_data(gamedef, map_draw_control);
 			MapNode mesh_make_node(id, param1, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
 			MapBlockMesh mapblock_mesh(&mesh_make_data);
