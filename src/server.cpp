@@ -1772,9 +1772,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		// Send Breath
 		SendPlayerBreath(peer_id);
 
-		// Send detached inventories
-		sendDetachedInventories(peer_id);
-
 		// Send player animations (default, walk, dig, both)
 		SendAnimations(m_con, peer_id);
 
