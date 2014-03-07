@@ -45,6 +45,10 @@ struct MapDrawControl
 
 	float farmesh;
 	int farmesh_step;
+
+	float fps;
+	float fps_avg;
+	float drawtime_avg;
 };
 
 class Client;

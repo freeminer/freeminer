@@ -3291,10 +3291,16 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 		//TimeTaker guiupdatetimer("Gui updating");
 		
+		draw_control.drawtime_avg = draw_control.drawtime_avg * 0.95 + (float)drawtime*0.05;
+		draw_control.fps_avg = 1000/draw_control.drawtime_avg;
+		draw_control.fps = (1.0/dtime_avg1);
+
 		if(show_debug)
 		{
+/*
 			static float drawtime_avg = 0;
 			drawtime_avg = drawtime_avg * 0.95 + (float)drawtime*0.05;
+*/
 			/*static float beginscenetime_avg = 0;
 			beginscenetime_avg = beginscenetime_avg * 0.95 + (float)beginscenetime*0.05;
 			static float scenetime_avg = 0;
@@ -3302,17 +3308,16 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			static float endscenetime_avg = 0;
 			endscenetime_avg = endscenetime_avg * 0.95 + (float)endscenetime*0.05;*/
 
-			u16 fps = (1.0/dtime_avg1);
 
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
-				<<" FPS = "<<fps
+				<<std::setprecision(0)
+				<<" FPS = "<<draw_control.fps
 /*
 				<<" (R: range_all="<<draw_control.range_all<<")"
 */
-				<<std::setprecision(0)
-				<<" drawtime = "<<drawtime_avg
+				<<" drawtime = "<<draw_control.drawtime_avg
 /*
 				<<std::setprecision(1)
 				<<", dtime_jitter = "

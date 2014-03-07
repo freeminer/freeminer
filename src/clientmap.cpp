@@ -43,6 +43,11 @@ MapDrawControl::MapDrawControl():
 		blocks_drawn(0),
 		blocks_would_have_drawn(0),
 		farthest_drawn(0)
+		,farmesh(0)
+		,farmesh_step(1)
+		,fps(30)
+		,fps_avg(30)
+		,drawtime_avg(30)
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");

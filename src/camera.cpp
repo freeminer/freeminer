@@ -586,27 +586,29 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
 	g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 
-	f32 wanted_frametime_farmesh = 1.0 / (wanted_fps);
-	f32 wanted_frametime_change_farmesh = wanted_frametime_farmesh - frametime;
-//infostream<<" wfr="<<wanted_frametime<<" wfrc="<<wanted_frametime_change<<";  "<<" wff="<<wanted_frametime_farmesh<<"wfcf="<<wanted_frametime_change_farmesh<<std::endl;
-
 	if (farmesh) {
-		//if (fabs(wanted_frametime_change_farmesh) >= wanted_frametime_farmesh*0.1) {
-			if (wanted_frametime_change_farmesh >= wanted_frametime_farmesh*0.4) {
-				m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
-				if (m_draw_control.farmesh >= farmesh*1.5 && m_draw_control.farmesh_step < farmesh_step)
+			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.4) {
+				if (m_draw_control.wanted_range >= 500)
+					m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
+				if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step)
 					++m_draw_control.farmesh_step;
-			} else if (wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.25){
-				if (m_draw_control.farmesh>10)
-					m_draw_control.farmesh*=0.8;
+			} else if (m_draw_control.fps <= wanted_fps*0.8){
+				float farmesh_was = m_draw_control.farmesh;
+				if (m_draw_control.fps <= wanted_fps*0.6)
+					m_draw_control.farmesh = farmesh;
+				else if (m_draw_control.fps <= wanted_fps*0.7)
+					m_draw_control.farmesh *= 0.5;
+				else if (m_draw_control.farmesh>10)
+					m_draw_control.farmesh *= 0.8;
 				else
-					m_draw_control.farmesh-=1;
+					m_draw_control.farmesh -= 1;
 				if (m_draw_control.farmesh < farmesh)
 					m_draw_control.farmesh = farmesh;
-				if (m_draw_control.farmesh <=farmesh && m_draw_control.farmesh_step > 1 && wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.4)
+				if (m_draw_control.farmesh <= farmesh && m_draw_control.farmesh_step > 1 && m_draw_control.fps <= wanted_fps*0.3)
 					--m_draw_control.farmesh_step;
+				if (farmesh_was != m_draw_control.farmesh)
+					return;
 			}
-		//}
 	}
 
 	// If needed frametime change is small, just return
