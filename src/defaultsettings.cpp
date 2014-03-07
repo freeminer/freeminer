@@ -327,6 +327,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "3");
+	settings->setDefault("farmesh_wanted", "500");
 
 #ifndef _WIN32
 	//BROKEN settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
