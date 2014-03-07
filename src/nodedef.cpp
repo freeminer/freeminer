@@ -424,6 +424,9 @@ public:
 			f.diggable            = false;
 			f.buildable_to        = true;
 			f.is_ground_content   = true;
+#ifndef SERVER
+			f.color_avg = video::SColor(0,255,255,255);
+#endif
 			// Insert directly into containers
 			content_t c = CONTENT_AIR;
 			m_content_features[c] = f;
@@ -443,6 +446,9 @@ public:
 			f.diggable            = false;
 			f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 			f.is_ground_content   = true;
+#ifndef SERVER
+			f.color_avg = video::SColor(0,255,255,255);
+#endif
 			// Insert directly into containers
 			content_t c = CONTENT_IGNORE;
 			m_content_features[c] = f;
@@ -774,6 +780,7 @@ public:
 					}
 				}
 			}
+			f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
 			// Special tiles (fill in f->special_tiles[])
 			for(u16 j=0; j<CF_SPECIAL_COUNT; j++){
 				// Texture
