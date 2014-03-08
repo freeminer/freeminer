@@ -2832,6 +2832,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		{
 			infostream<<"Pointing at "<<pointed.dump()<<std::endl;
 			//dstream<<"Pointing at "<<pointed.dump()<<std::endl;
+/* node debug 
+			MapNode nu = client.getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
+			MapNode na = client.getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
+			infostream	<< "|| nu0="<<(int)nu.param0<<" nu1"<<(int)nu.param1<<" nu2"<<(int)nu.param1<<"; nam="<<nodedef->get(nu.getContent()).name
+						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<nodedef->get(na.getContent()).name
+						<<std::endl;
+*/
 		}
 
 		/*

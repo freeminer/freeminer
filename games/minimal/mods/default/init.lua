@@ -843,6 +843,17 @@ minetest.register_node("default:dirt_with_grass", {
 	}),
 })
 
+minetest.register_node("default:dirt_with_snow", {
+	description = "Dirt with Snow",
+	tiles = {"default_snow.png", "default_dirt.png", "default_dirt.png^default_snow_side.png"},
+	is_ground_content = true,
+	groups = {crumbly=3, slippery=70},
+	drop = 'default:dirt',
+	sounds = default.node_sound_dirt_defaults({
+		footstep = {name="default_snow_footstep", gain=0.25},
+	}),
+})
+
 minetest.register_node("default:dirt_with_grass_footsteps", {
 	description = "Dirt with grass and footsteps",
 	tiles ={"default_grass_footsteps.png", "default_dirt.png", "default_dirt.png^default_grass_side.png"},
@@ -1598,6 +1609,16 @@ minetest.register_node("default:apple", {
 	sounds = default.node_sound_defaults(),
 })
 
+minetest.register_node("default:ice", {
+	description = "Ice",
+	tiles = {"default_ice.png"},
+	is_ground_content = true,
+	paramtype = "light",
+	melt = "default:water_source",
+	groups = {cracky=3, melt=3, slippery=90},
+	sounds = default.node_sound_glass_defaults(),
+})
+
 
 local c_air = minetest.get_content_id("air")
 local c_ignore = minetest.get_content_id("ignore")
@@ -1793,10 +1814,12 @@ minetest.register_alias("mapgen_lava_source", "default:lava_source")
 minetest.register_alias("mapgen_cobble", "default:cobble")
 minetest.register_alias("mapgen_mossycobble", "default:mossycobble")
 minetest.register_alias("mapgen_dirt_with_grass", "default:dirt_with_grass")
+minetest.register_alias("mapgen_dirt_with_snow", "default:dirt_with_snow")
 minetest.register_alias("mapgen_junglegrass", "default:junglegrass")
 minetest.register_alias("mapgen_stone_with_coal", "default:stone_with_coal")
 minetest.register_alias("mapgen_stone_with_iron", "default:stone_with_iron")
 minetest.register_alias("mapgen_mese", "default:mese")
+minetest.register_alias("mapgen_ice", "default:ice")
 
 -- Support old code
 function default.spawn_falling_node(p, nodename)
