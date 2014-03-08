@@ -3326,7 +3326,16 @@ void the_game(
 			std::wstring message;
 			while(client.getChatMessage(message))
 			{
-				chat_backend.addUnparsedMessage(message);
+                // Catch Clear Chat Command
+                // Clears recent chat and leaves console full
+                if (message.compare(L"/cls") == 0)
+                    {
+                        chat_backend.clearRecentChat();
+                    }
+                else
+                    {
+				        chat_backend.addUnparsedMessage(message);
+                    }
 			}
 			// Remove old messages
 			chat_backend.step(dtime);
