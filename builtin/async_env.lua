@@ -3,7 +3,8 @@ engine.log("info","Initializing Asynchronous environment")
 dofile(SCRIPTDIR .. DIR_DELIM .. "misc_helpers.lua")
 
 function engine.job_processor(serialized_function, serialized_data)
-
+	return
+--[[
 	local fct = marshal.decode(serialized_function)
 	local params = marshal.decode(serialized_data)
 	local retval = marshal.encode(nil)
@@ -16,4 +17,5 @@ function engine.job_processor(serialized_function, serialized_data)
 	end
 
 	return retval,retval:len()
+]]
 end

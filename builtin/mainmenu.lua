@@ -153,13 +153,13 @@ function update_menu()
 
 	-- handle errors
 	if gamedata.errormessage ~= nil then
-		formspec = "size[12,5.2]" ..
+		formspec = "size[12,5.2,true]" ..
 			"textarea[1,2;10,2;;ERROR: " ..
 			engine.formspec_escape(gamedata.errormessage) ..
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
-		formspec = "size[15.5,11.625]"
+		formspec = "size[15.5,11.625,true]"
 		if tabbuilder.show_buttons then
 			formspec = formspec .. "image[-0.35,-0.675;" .. engine.formspec_escape(menu.defaulttexturedir .. "menu.png") .. "]"
 		end
@@ -192,12 +192,12 @@ end
 function menu.render_texture_pack_list(list)
 	local retval = ""
 
-	for i,v in ipairs(list) do
+	for i, v in ipairs(list) do
 		if retval ~= "" then
 			retval = retval ..","
 		end
 
-		retval = retval .. v
+		retval = retval .. engine.formspec_escape(v)
 	end
 
 	return retval
@@ -346,6 +346,7 @@ end
 --------------------------------------------------------------------------------
 
 function tabbuilder.gettab()
+	local tsize = tabbuilder.tabsizes[tabbuilder.current_tab] or {width=12, height=5.2}
 	local retval = ""
 
 	if tabbuilder.show_buttons then
@@ -608,6 +609,9 @@ function tabbuilder.handle_server_buttons(fields)
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 
 			engine.setting_set("port",gamedata.port)
+			if fields["te_serveraddr"] ~= nil then
+				engine.setting_set("bind_address",fields["te_serveraddr"])
+			end
 
 			menu.update_last_game(gamedata.selected_world)
 			engine.start()
@@ -664,6 +668,13 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_opaque_water"] then
 		engine.setting_set("opaque_water", fields["cb_opaque_water"])
+	end
+	if fields["cb_farmesh"] then
+		if fields["cb_farmesh"] == "true" then
+			engine.setting_set("farmesh", 2)
+		else
+			engine.setting_set("farmesh", 0)
+		end
 	end
 
 	if fields["cb_mipmapping"] then
@@ -946,8 +957,23 @@ function tabbuilder.tab_server()
 		dump(engine.setting_getbool("server_announce")) .. "]"..
 		"field[6.7,6;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
 		engine.setting_get("name") .. "]" ..
-		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]" ..
-		"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";30000]" ..
+		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
+		
+-- TODO !!!!
+	local bind_addr = engine.setting_get("bind_address")
+	if bind_addr ~= nil and bind_addr ~= "" then
+		retval = retval ..
+			"field[6.7,7;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
+			engine.setting_get("bind_address") .."]" ..
+			"field[11.2,7;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
+			engine.setting_get("port") .."]"
+	else
+		retval = retval ..
+			"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
+			engine.setting_get("port") .."]"
+	end
+	
+	retval = retval ..
 		"textlist[6.5,0.25;7.5,3.7;srv_worlds;" ..
 		menu.render_world_list() ..
 		";" .. index .. "]"
@@ -970,6 +996,7 @@ function tabbuilder.tab_settings()
 	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
 	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
 	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
+	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
 	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
 	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
 	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")

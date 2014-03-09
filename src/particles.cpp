@@ -1,20 +1,23 @@
 /*
-Minetest
+particles.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "particles.h"
@@ -66,6 +69,7 @@ Particle::Particle(
 {
 	// Misc
 	m_gamedef = gamedef;
+	m_env = &env;
 
 	// Texture
 	m_material.setFlag(video::EMF_LIGHTING, false);
@@ -95,7 +99,7 @@ Particle::Particle(
 	this->setAutomaticCulling(scene::EAC_OFF);
 
 	// Init lighting
-	updateLight(env);
+	updateLight();
 
 	// Init model
 	updateVertices();
@@ -134,7 +138,7 @@ void Particle::render()
 			scene::EPT_TRIANGLES, video::EIT_16BIT);
 }
 
-void Particle::step(float dtime, ClientEnvironment &env)
+void Particle::step(float dtime)
 {
 	m_time += dtime;
 	if (m_collisiondetection)
@@ -143,7 +147,7 @@ void Particle::step(float dtime, ClientEnvironment &env)
 		v3f p_pos = m_pos*BS;
 		v3f p_velocity = m_velocity*BS;
 		v3f p_acceleration = m_acceleration*BS;
-		collisionMoveSimple(&env, m_gamedef,
+		collisionMoveSimple(m_env, m_gamedef,
 			BS*0.5, box,
 			0, dtime,
 			p_pos, p_velocity, p_acceleration);
@@ -158,13 +162,13 @@ void Particle::step(float dtime, ClientEnvironment &env)
 	}
 
 	// Update lighting
-	updateLight(env);
+	updateLight();
 
 	// Update model
 	updateVertices();
 }
 
-void Particle::updateLight(ClientEnvironment &env)
+void Particle::updateLight()
 {
 	u8 light = 0;
 	try{
@@ -173,11 +177,11 @@ void Particle::updateLight(ClientEnvironment &env)
 			floor(m_pos.Y+0.5),
 			floor(m_pos.Z+0.5)
 		);
-		MapNode n = env.getClientMap().getNode(p);
-		light = n.getLightBlend(env.getDayNightRatio(), m_gamedef->ndef());
+		MapNode n = m_env->getClientMap().getNode(p);
+		light = n.getLightBlend(m_env->getDayNightRatio(), m_gamedef->ndef());
 	}
 	catch(InvalidPositionException &e){
-		light = blend_light(env.getDayNightRatio(), LIGHT_SUN, 0);
+		light = blend_light(m_env->getDayNightRatio(), LIGHT_SUN, 0);
 	}
 	m_light = decode_light(light);
 }
@@ -199,6 +203,7 @@ void Particle::updateVertices()
 	m_vertices[3] = video::S3DVertex(-m_size/2,m_size/2,0, 0,0,0,
 			c, tx0, ty0);
 
+	v3s16 camera_offset = m_env->getCameraOffset();
 	for(u16 i=0; i<4; i++)
 	{
 		if (m_vertical) {
@@ -209,17 +214,16 @@ void Particle::updateVertices()
 			m_vertices[i].Pos.rotateXZBy(m_player->getYaw());
 		}
 		m_box.addInternalPoint(m_vertices[i].Pos);
-		m_vertices[i].Pos += m_pos*BS;
+		m_vertices[i].Pos += m_pos*BS - intToFloat(camera_offset, BS);
 	}
 }
-
 
 /*
 	Helpers
 */
 
 
-void allparticles_step (float dtime, ClientEnvironment &env)
+void allparticles_step (float dtime)
 {
 	for(std::vector<Particle*>::iterator i = all_particles.begin();
 			i != all_particles.end();)
@@ -232,7 +236,7 @@ void allparticles_step (float dtime, ClientEnvironment &env)
 		}
 		else
 		{
-			(*i)->step(dtime, env);
+			(*i)->step(dtime);
 			i++;
 		}
 	}

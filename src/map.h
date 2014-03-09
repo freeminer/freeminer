@@ -1,20 +1,23 @@
 /*
-Minetest
+map.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef MAP_HEADER
@@ -438,6 +441,14 @@ public:
 
 	*/
 	MapBlock * emergeBlock(v3s16 p, bool create_blank=true);
+	
+	/*
+		Try to get a block.
+		If it does not exist in memory, add it to the emerge queue.
+		- Memory
+		- Emerge Queue (deferred disk or generate)
+	*/
+	MapBlock *getBlockOrEmerge(v3s16 p3d);
 
 	// Carries out any initialization necessary before block is sent
 	void prepareBlock(MapBlock *block);
@@ -508,13 +519,8 @@ public:
 
 	bool isSavingEnabled(){ return m_map_saving_enabled; }
 
-	u64 getSeed(){ return m_seed; }
-
-	MapgenParams *getMapgenParams(){ return m_mgparams; }
-	void setMapgenParams(MapgenParams *mgparams){ m_mgparams = mgparams; }
-
-	// Parameters fed to the Mapgen
-	MapgenParams *m_mgparams;
+	u64 getSeed();
+	s16 getWaterLevel();
 
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
@@ -526,9 +532,6 @@ public:
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
 
 private:
-	// Seed used for all kinds of randomness in generation
-	u64 m_seed;
-	
 	// Emerge manager
 	EmergeManager *m_emerge;
 

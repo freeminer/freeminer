@@ -1,6 +1,8 @@
 project(freeminer)
 cmake_minimum_required( VERSION 2.6 )
 
+INCLUDE(CheckCSourceRuns)
+
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
@@ -36,7 +38,7 @@ set(USE_GETTEXT 0)
 if(ENABLE_GETTEXT)
 	find_package(GettextLib)
 else()
-	MARK_AS_ADVANCED(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY GETTEXT_MSGFMT)
+	MARK_AS_ADVANCED(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY ICONV_LIBRARY GETTEXT_MSGFMT)
 endif()
 
 if(GETTEXT_FOUND AND ENABLE_GETTEXT)
@@ -210,25 +212,74 @@ if(NOT FREETYPE_FOUND)
 	message(FATAL_ERROR "FreeType was not found.")
 endif()
 
-
-find_library(LUA_LIBRARY luajit
-		NAMES luajit-5.1)
-find_path(LUA_INCLUDE_DIR luajit.h
-	NAMES luajit.h
-	PATH_SUFFIXES luajit-2.0)
-message (STATUS "LuaJIT library: ${LUA_LIBRARY}")
-message (STATUS "LuaJIT headers: ${LUA_INCLUDE_DIR}")
+if (NOT DISABLE_LUAJIT)
+	find_library(LUA_LIBRARY luajit
+			NAMES luajit-5.1)
+	find_path(LUA_INCLUDE_DIR luajit.h
+		NAMES luajit.h
+		PATH_SUFFIXES luajit-2.0)
+	message (STATUS "LuaJIT library: ${LUA_LIBRARY}")
+	message (STATUS "LuaJIT headers: ${LUA_INCLUDE_DIR}")
+else (NOT ${DISABLE_LUAJIT} MATCHES "1")
+	message (STATUS "LuaJIT detection disabled! (DISABLE_LUAJIT=1)")
+	set(LUA_LIBRARY "")
+	set(LUA_INCLUDE_DIR "")
+endif (NOT DISABLE_LUAJIT)
 
 set(USE_LUAJIT 0)
 if(LUA_LIBRARY AND LUA_INCLUDE_DIR)
-	message (STATUS "LuaJIT found.")
-	set(USE_LUAJIT 1)
-else(LUA_LIBRARY AND LUA_INCLUDE_DIR)
+	message (STATUS "LuaJIT found, checking for broken versions...")
+	if(CMAKE_CROSSCOMPILING)
+		message(WARNING "Cross-compiling enabled, assuming LuaJIT is not broken")
+		set(VALID_LUAJIT_VERSION 1)
+	else(CMAKE_CROSSCOMPILING)
+		set(BACKUP_REQUIRED_INCS CMAKE_REQUIRED_INCLUDES)
+		set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${LUA_INCLUDE_DIR}")
+		CHECK_C_SOURCE_RUNS("
+			#include <luajit.h>
+			#include <stdio.h>
+			#include <string.h>
+
+			#define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+			static char *broken_luajit_versions[] = {
+					\"LuaJIT 2.0.0-beta7\",
+					\"LuaJIT 2.0.0-beta6\",
+					\"LuaJIT 2.0.0-beta5\",
+					\"LuaJIT 2.0.0-beta4\",
+					\"LuaJIT 2.0.0-beta3\",
+					\"LuaJIT 2.0.0-beta2\",
+					\"LuaJIT 2.0.0-beta1\"
+			};
+
+			int main(int argc, char *argv[]) {
+				unsigned int i;
+				for (i = 0; i < ARRAYSIZE(broken_luajit_versions); i++) {
+					if (strcmp(LUAJIT_VERSION, broken_luajit_versions[i]) == 0) {
+						return 1;
+					}
+				}
+				return 0;
+			}
+			"
+			VALID_LUAJIT_VERSION)
+		set(CMAKE_REQUIRED_INCLUDES BACKUP_REQUIRED_INCS)
+	endif(CMAKE_CROSSCOMPILING)
+	if (VALID_LUAJIT_VERSION)
+		message (STATUS "LuaJIT version ok")
+		set(USE_LUAJIT 1)
+	else (VALID_LUAJIT_VERSION)
+		message (STATUS "LuaJIT versions till 2.0.0beta7 known to be broken, update to at least beta8")
+		set(USE_LUAJIT 0)
+	endif (VALID_LUAJIT_VERSION)
+endif (LUA_LIBRARY AND LUA_INCLUDE_DIR)
+
+if(NOT USE_LUAJIT)
 	message (STATUS "LuaJIT not found, using bundled Lua.")
 	set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lua/src")
 	set(LUA_LIBRARY "lua")
 	add_subdirectory(lua)
-endif(LUA_LIBRARY AND LUA_INCLUDE_DIR)
+endif(NOT USE_LUAJIT)
 
 mark_as_advanced(LUA_LIBRARY)
 mark_as_advanced(LUA_INCLUDE_DIR)
@@ -285,6 +336,7 @@ add_subdirectory(enet)
 set(common_SRCS
 	circuit.cpp
 	circuit_element.cpp
+	circuit_element_virtual.cpp
 	circuit_element_states.cpp
 	version.cpp
 	rollback_interface.cpp
@@ -334,6 +386,7 @@ set(common_SRCS
 	connection.cpp
 	environment.cpp
 	server.cpp
+	clientiface.cpp
 	socket.cpp
 	mapblock.cpp
 	mapsector.cpp
@@ -360,7 +413,7 @@ set(common_SRCS
 	${UTIL_SRCS}
 )
 
-# This gives us the icon
+# This gives us the icon and file version information
 if(WIN32)
 	set(WINRESOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../misc/winresource.rc)
 	if(MINGW)
@@ -371,7 +424,8 @@ if(WIN32)
 			COMMAND ${CMAKE_RC_COMPILER} -I${CMAKE_CURRENT_SOURCE_DIR}
 			-i${WINRESOURCE_FILE}
 			-o ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o
-			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+			DEPENDS ${WINRESOURCE_FILE})
 		SET(common_SRCS ${common_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o)
 	else(MINGW) # Probably MSVC
 		set(common_SRCS ${common_SRCS} ${WINRESOURCE_FILE})
@@ -398,11 +452,9 @@ set(minetest_SRCS
 	chat.cpp
 	hud.cpp
 	guiKeyChangeMenu.cpp
-	guiMessageMenu.cpp
 	guiTextInputMenu.cpp
 	guiFormSpecMenu.cpp
 	guiTable.cpp
-	guiPauseMenu.cpp
 	guiPasswordChange.cpp
 	guiVolumeChange.cpp
 	guiDeathScreen.cpp
@@ -473,6 +525,7 @@ if(BUILD_CLIENT)
 		${PNG_LIBRARIES}
 		${X11_LIBRARIES}
 		${GETTEXT_LIBRARY}
+		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
 		${SQLITE3_LIBRARY}
 		${LUA_LIBRARY}
@@ -520,6 +573,7 @@ if(BUILD_SERVER)
 		${SQLITE3_LIBRARY}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
+		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARIES}
 		enet
@@ -598,8 +652,8 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
 	endif()
 
-	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
-	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_RELEASE "-std=c++0x -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
+	set(CMAKE_CXX_FLAGS_DEBUG "-std=c++0x -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")

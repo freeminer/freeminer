@@ -9,18 +9,25 @@
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.SET_DEBUG_APP" />
-	<application android:icon="@drawable/irr_icon" android:label="Freeminer" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:debuggable="true">
-        <activity android:name="android.app.NativeActivity"
-		android:label="Freeminer"
-		android:launchMode="singleTask"
-		android:configChanges="orientation|keyboardHidden"
-		android:screenOrientation="landscape"
-		android:clearTaskOnLaunch="true">
-		<meta-data android:name="android.app.lib_name" android:value="Freeminer" />
-		<intent-filter>
-                	<action android:name="android.intent.action.MAIN" />
-                	<category android:name="android.intent.category.LAUNCHER" />
-		</intent-filter>
-	</activity>
-	</application>
+	<application android:icon="@drawable/irr_icon" android:label="Freeminer" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        <activity android:name="org.freeminer.MainActivity"
+                  android:label="Freeminer"
+                  android:launchMode="singleTask"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+				  android:keepScreenOn="true"
+                  android:clearTaskOnLaunch="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".MyNativeActivity"
+                  android:configChanges="orientation|keyboardHidden"
+                  android:screenOrientation="landscape"
+                  android:clearTaskOnLaunch="true">
+            <meta-data android:name="android.app.lib_name" android:value="Freeminer" />
+        </activity>
+        <activity android:name=".DataCopyActivity"/>
+    </application>
 </manifest>

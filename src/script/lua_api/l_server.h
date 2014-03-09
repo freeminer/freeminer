@@ -1,20 +1,23 @@
 /*
-Minetest
+script/lua_api/l_server.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef L_SERVER_H_
@@ -78,6 +81,9 @@ private:
 
 	// unban_player_or_ip()
 	static int l_unban_player_or_ip(lua_State *L);
+
+	// kick_player(name, [message]) -> success
+	static int l_kick_player(lua_State *L);
 
 	// notify_authentication_modified(name)
 	static int l_notify_authentication_modified(lua_State *L);

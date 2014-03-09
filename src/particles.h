@@ -1,20 +1,23 @@
 /*
-Minetest
+particles.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef PARTICLES_HEADER
@@ -67,19 +70,20 @@ class Particle : public scene::ISceneNode
 	virtual void OnRegisterSceneNode();
 	virtual void render();
 
-	void step(float dtime, ClientEnvironment &env);
+	void step(float dtime);
 
 	bool get_expired ()
 	{ return m_expiration < m_time; }
 
 private:
-	void updateLight(ClientEnvironment &env);
+	void updateLight();
 	void updateVertices();
 
 	video::S3DVertex m_vertices[4];
 	float m_time;
 	float m_expiration;
 
+	ClientEnvironment *m_env;
 	IGameDef *m_gamedef;
 	core::aabbox3d<f32> m_box;
 	core::aabbox3d<f32> m_collisionbox;
@@ -94,6 +98,7 @@ private:
 	u8 m_light;
 	bool m_collisiondetection;
 	bool m_vertical;
+	v3s16 m_camera_offset;
 };
 
 class ParticleSpawner
@@ -144,7 +149,7 @@ class ParticleSpawner
 	bool m_vertical;
 };
 
-void allparticles_step (float dtime, ClientEnvironment &env);
+void allparticles_step (float dtime);
 void allparticlespawners_step (float dtime, ClientEnvironment &env);
 
 void delete_particlespawner (u32 id);

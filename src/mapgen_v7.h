@@ -1,20 +1,23 @@
 /*
-Minetest
+mapgen_v7.h
 Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef MAPGEN_V7_HEADER
@@ -22,17 +25,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "mapgen.h"
 
-extern NoiseParams nparams_v7_def_terrain_base;
-extern NoiseParams nparams_v7_def_terrain_alt;
-extern NoiseParams nparams_v7_def_terrain_persist;
-extern NoiseParams nparams_v7_def_height_select;
-extern NoiseParams nparams_v7_def_filler_depth;
-extern NoiseParams nparams_v7_def_mount_height;
-extern NoiseParams nparams_v7_def_ridge_uwater;
-extern NoiseParams nparams_v7_def_mountain;
-extern NoiseParams nparams_v7_def_ridge;
+/////////////////// Mapgen V7 flags
+#define MGV7_MOUNTAINS   0x01
+#define MGV7_RIDGES      0x02
 
-struct MapgenV7Params : public MapgenParams {
+
+extern FlagDesc flagdesc_mapgen_v7[];
+
+
+struct MapgenV7Params : public MapgenSpecificParams {
+	u32 spflags;
 	NoiseParams np_terrain_base;
 	NoiseParams np_terrain_alt;
 	NoiseParams np_terrain_persist;
@@ -43,21 +45,10 @@ struct MapgenV7Params : public MapgenParams {
 	NoiseParams np_mountain;
 	NoiseParams np_ridge;
 	
-	MapgenV7Params() {
-		np_terrain_base    = nparams_v7_def_terrain_base;
-		np_terrain_alt     = nparams_v7_def_terrain_alt;
-		np_terrain_persist = nparams_v7_def_terrain_persist;
-		np_height_select   = nparams_v7_def_height_select;
-		np_filler_depth    = nparams_v7_def_filler_depth;
-		np_mount_height    = nparams_v7_def_mount_height;
-		np_ridge_uwater    = nparams_v7_def_ridge_uwater;
-		np_mountain        = nparams_v7_def_mountain;
-		np_ridge           = nparams_v7_def_ridge;
-	}
-	
+	MapgenV7Params();
 	~MapgenV7Params() {}
 	
-	bool readParams(Settings *settings);
+	void readParams(Settings *settings);
 	void writeParams(Settings *settings);
 };
 
@@ -69,6 +60,7 @@ public:
 	int ystride;
 	int zstride;
 	u32 flags;
+	u32 spflags;
 
 	u32 blockseed;
 	v3s16 node_min;
@@ -103,7 +95,7 @@ public:
 	content_t c_desert_sand;
 	content_t c_desert_stone;
 
-	MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge);
+	MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenV7();
 	
 	virtual void makeChunk(BlockMakeData *data);
@@ -132,10 +124,10 @@ public:
 
 struct MapgenFactoryV7 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenV7(mgid, (MapgenV7Params *)params, emerge);
+		return new MapgenV7(mgid, params, emerge);
 	};
 	
-	MapgenParams *createMapgenParams() {
+	MapgenSpecificParams *createMapgenParams() {
 		return new MapgenV7Params();
 	};
 };

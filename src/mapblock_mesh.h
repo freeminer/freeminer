@@ -1,20 +1,23 @@
 /*
-Minetest
+mapblock_mesh.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef MAPBLOCK_MESH_HEADER
@@ -26,11 +29,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 
 class IGameDef;
+struct MapDrawControl;
 
 /*
 	Mesh making stuff
 */
 
+int getFarmeshStep(MapDrawControl& draw_control, int range);
 
 class MapBlock;
 
@@ -41,8 +46,10 @@ struct MeshMakeData
 	v3s16 m_crack_pos_relative;
 	bool m_smooth_lighting;
 	IGameDef *m_gamedef;
+	int range;
+	MapDrawControl& draw_control;
 
-	MeshMakeData(IGameDef *gamedef);
+	MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_);
 
 	/*
 		Copy central data directly from block, and other data from
@@ -81,7 +88,7 @@ class MapBlockMesh
 {
 public:
 	// Builds the mesh given
-	MapBlockMesh(MeshMakeData *data);
+	MapBlockMesh(MeshMakeData *data, v3s16 camera_offset);
 	~MapBlockMesh();
 
 	// Main animation function, parameters:
@@ -107,6 +114,8 @@ public:
 		if(m_animation_force_timer > 0)
 			m_animation_force_timer--;
 	}
+	
+	void updateCameraOffset(v3s16 camera_offset);
 
 
 	u32 getUsageTimer()
@@ -121,6 +130,8 @@ public:
 	void setStatic();
 
 	bool clearHardwareBuffer;
+
+	int step;
 
 private:
 	scene::SMesh *m_mesh;
@@ -149,6 +160,9 @@ private:
 	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
 
 	u32 m_usage_timer;
+	
+	// Camera offset info -> do we have to translate the mesh?
+	v3s16 m_camera_offset;
 };
 
 

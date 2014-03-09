@@ -1,20 +1,23 @@
 /*
-Minetest
+script/common/c_content.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "common/c_content.h"
 #include "common/c_converter.h"
@@ -30,6 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "tool.h"
 #include "serverobject.h"
+#include "porting.h"
 #include "mapgen.h"
 #include "json/json.h"
 
@@ -356,12 +360,20 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			lua_pop(L, 1);
 		}
 		if(i < 6) {
-			luaL_error(L, "Wire connectins table must have exactly 6 integer numbers.");
+			luaL_error(L, "Wire connectins array must have exactly 6 integer numbers.");
 		}
+
+		// Convert to two-way wire (one-way may cause undefined behavior)
+		for(i = 0; i < 6; ++i) {
+			for(int j = 0; j < 6; ++j) {
+				f.wire_connections[i] |= f.wire_connections[j] & (1 << i);
+				f.wire_connections[j] |= f.wire_connections[i] & (1 << j);
+			}
+		}
+		
 	} else if(f.is_wire) {
 		// Assuming that it's a standart wire
-		for(int i = 0; i < 6; ++i)
-		{
+		for(int i = 0; i < 6; ++i) {
 			f.wire_connections[i] = 0x3F;
 		}
 	}
@@ -382,6 +394,11 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		}
 	}
 	lua_pop(L, 1);
+
+	f.circuit_element_delay = getintfield_default(L, index, "circuit_element_delay", f.circuit_element_delay + 1) - 1;
+	if(f.circuit_element_delay > 100) {
+		luaL_error(L, "\"circuit_element_delay\" must be a positive integer number less than 101");
+	}
 
 	// special_tiles = {}
 	lua_getfield(L, index, "special_tiles");
@@ -907,12 +924,57 @@ void push_hit_params(lua_State *L,const HitParams &params)
 }
 
 /******************************************************************************/
-u32 getflagsfield(lua_State *L, int table,
-	const char *fieldname, FlagDesc *flagdesc) {
-	std::string flagstring;
 
-	flagstring = getstringfield_default(L, table, fieldname, "");
-	return readFlagString(flagstring, flagdesc);
+bool getflagsfield(lua_State *L, int table, const char *fieldname,
+	FlagDesc *flagdesc, u32 *flags, u32 *flagmask)
+{
+	lua_getfield(L, table, fieldname);
+
+	bool success = read_flags(L, -1, flagdesc, flags, flagmask);
+
+	lua_pop(L, 1);
+
+	return success;
+}
+
+bool read_flags(lua_State *L, int index, FlagDesc *flagdesc,
+	u32 *flags, u32 *flagmask)
+{
+	if (lua_isstring(L, index)) {
+		std::string flagstr = lua_tostring(L, index);
+		*flags = readFlagString(flagstr, flagdesc, flagmask);
+	} else if (lua_istable(L, index)) {
+		*flags = read_flags_table(L, index, flagdesc, flagmask);
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
+u32 read_flags_table(lua_State *L, int table, FlagDesc *flagdesc, u32 *flagmask)
+{
+	u32 flags = 0, mask = 0;
+	char fnamebuf[64] = "no";
+
+	for (int i = 0; flagdesc[i].name; i++) {
+		bool result;
+
+		if (getboolfield(L, table, flagdesc[i].name, result)) {
+			mask |= flagdesc[i].flag;
+			if (result)
+				flags |= flagdesc[i].flag;
+		}
+
+		strlcpy(fnamebuf + 2, flagdesc[i].name, sizeof(fnamebuf) - 2);
+		if (getboolfield(L, table, fnamebuf, result))
+			mask |= flagdesc[i].flag;
+	}
+
+	if (flagmask)
+		*flagmask = mask;
+
+	return flags;
 }
 
 /******************************************************************************/
@@ -990,24 +1052,35 @@ void luaentity_get(lua_State *L, u16 id)
 /******************************************************************************/
 NoiseParams *read_noiseparams(lua_State *L, int index)
 {
+	NoiseParams *np = new NoiseParams;
+
+	if (!read_noiseparams_nc(L, index, np)) {
+		delete np;
+		np = NULL;
+	}
+
+	return np;
+}
+
+bool read_noiseparams_nc(lua_State *L, int index, NoiseParams *np)
+{
 	if (index < 0)
 		index = lua_gettop(L) + 1 + index;
 
 	if (!lua_istable(L, index))
-		return NULL;
+		return false;
 
-	NoiseParams *np = new NoiseParams;
+	np->offset  = getfloatfield_default(L, index, "offset",  0.0);
+	np->scale   = getfloatfield_default(L, index, "scale",   0.0);
+	np->persist = getfloatfield_default(L, index, "persist", 0.0);
+	np->seed    = getintfield_default(L,   index, "seed",    0);
+	np->octaves = getintfield_default(L,   index, "octaves", 0);
 
-	np->offset  = getfloatfield_default(L, index, "offset", 0.0);
-	np->scale   = getfloatfield_default(L, index, "scale", 0.0);
 	lua_getfield(L, index, "spread");
 	np->spread  = read_v3f(L, -1);
 	lua_pop(L, 1);
-	np->seed    = getintfield_default(L, index, "seed", 0);
-	np->octaves = getintfield_default(L, index, "octaves", 0);
-	np->persist = getfloatfield_default(L, index, "persist", 0.0);
 
-	return np;
+	return true;
 }
 
 /******************************************************************************/

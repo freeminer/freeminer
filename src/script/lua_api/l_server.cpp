@@ -1,20 +1,23 @@
 /*
-Minetest
+script/lua_api/l_server.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "lua_api/l_server.h"
@@ -52,21 +55,17 @@ int ModApiServer::l_chat_send_all(lua_State *L)
 	return 0;
 }
 
-// chat_send_player(name, text, prepend)
+// chat_send_player(name, text)
 int ModApiServer::l_chat_send_player(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char *name = luaL_checkstring(L, 1);
 	const char *text = luaL_checkstring(L, 2);
-	bool prepend = true;
-
-	if (lua_isboolean(L, 3))
-		prepend = lua_toboolean(L, 3);
 
 	// Get server from registry
 	Server *server = getServer(L);
 	// Send
-	server->notifyPlayer(name, text, prepend);
+	server->notifyPlayer(name, text);
 	return 0;
 }
 
@@ -156,6 +155,31 @@ int ModApiServer::l_ban_player(lua_State *L)
 		lua_pushboolean(L, false); // error
 		return 1;
 	}
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// kick_player(name, [reason]) -> success
+int ModApiServer::l_kick_player(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *name = luaL_checkstring(L, 1);
+	std::string message;
+	if (lua_isstring(L, 2))
+	{
+		message = std::string("Kicked: ") + lua_tostring(L, 2);
+	}
+	else
+	{
+		message = "Kicked.";
+	}
+	Player *player = getEnv(L)->getPlayer(name);
+	if (player == NULL)
+	{
+		lua_pushboolean(L, false); // No such player
+		return 1;
+	}
+	getServer(L)->DenyAccess(player->peer_id, message);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -327,6 +351,7 @@ void ModApiServer::Initialize(lua_State *L, int top)
 	API_FCT(get_ban_list);
 	API_FCT(get_ban_description);
 	API_FCT(ban_player);
+	API_FCT(kick_player);
 	API_FCT(unban_player_or_ip);
 	API_FCT(notify_authentication_modified);
 }

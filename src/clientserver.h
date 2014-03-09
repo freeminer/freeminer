@@ -1,20 +1,23 @@
 /*
-Minetest
+clientserver.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef CLIENTSERVER_HEADER
@@ -25,6 +28,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "irrlichttypes.h"
 #include <msgpack.hpp>
+
+#define MAX_PACKET_SIZE 512
 
 /*
 	changes by PROTOCOL_VERSION:
@@ -126,8 +131,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PASSWORD_SIZE 28       // Maximum password length. Allows for
                                // base64-encoded SHA-1 (27+\0).
 
-#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
-
+#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 // TOCLIENT_* commands
 
@@ -427,6 +431,19 @@ enum {
 	TOCLIENT_BLOCKDATA_HUMIDITY
 };
 
+#define TOCLIENT_SET_SKY 0xae
+enum {
+	TOCLIENT_SET_SKY_COLOR,
+	TOCLIENT_SET_SKY_TYPE,
+	TOCLIENT_SET_SKY_PARAMS
+};
+
+#define TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO 0x50
+enum {
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO,
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_VALUE
+};
+
 // TOSERVER_* commands
 
 #define TOSERVER_INIT 0x10
@@ -460,19 +477,20 @@ enum {
 	TOSERVER_CHAT_MESSAGE_DATA
 };
 
+#define TOSERVER_GOTBLOCKS 0x24
+enum {
+	TOSERVER_GOTBLOCKS_BLOCKS,
+	TOSERVER_GOTBLOCKS_RANGE
+};
+
+#define TOSERVER_DELETEDBLOCKS 0x25
+enum {
+	TOSERVER_DELETEDBLOCKS_DATA
+};
+
 enum ToServerCommand
 {
-	TOSERVER_GOTBLOCKS = 0x24,
-	/*
-		[0] u16 command
-		[2] u8 count
-		[3] v3s16 pos_0
-		[3+6] v3s16 pos_1
-		[9] u16 wanted range
-		...
-	*/
 
-	TOSERVER_DELETEDBLOCKS = 0x25,
 	/*
 		[0] u16 command
 		[2] u8 count

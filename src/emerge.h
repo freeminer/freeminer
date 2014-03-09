@@ -1,20 +1,23 @@
 /*
-Minetest
+emerge.h
 Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef EMERGE_HEADER
@@ -24,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irr_v3d.h"
 #include "util/container.h"
 #include "map.h" // for ManualMapVoxelManipulator
+#include "mapgen.h" // for MapgenParams
 
 #define MGPARAMS_SET_MGNAME      1
 #define MGPARAMS_SET_SEED        2
@@ -37,9 +41,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	infostream << "EmergeThread: " x << std::endl; }
 
 class EmergeThread;
-class Mapgen;
-struct MapgenParams;
-struct MapgenFactory;
+//class Mapgen;
+//struct MapgenFactory;
 class Biome;
 class BiomeDefManager;
 class Decoration;
@@ -71,18 +74,10 @@ struct BlockEmergeData {
 	u8 flags;
 };
 
-class IBackgroundBlockEmerger
-{
+class EmergeManager {
 public:
 	ServerEnvironment *env;
 
-	virtual bool enqueueBlockEmerge(u16 peer_id, v3s16 p,
-			bool allow_generate) = 0;
-	virtual ~IBackgroundBlockEmerger() {}
-};
-
-class EmergeManager : public IBackgroundBlockEmerger {
-public:
 	INodeDefManager *ndef;
 	std::map<std::string, MapgenFactory *> mglist;
 
@@ -92,17 +87,13 @@ public:
 	bool threads_active;
 
 	//settings
-	MapgenParams *params;
+	MapgenParams params;
 	bool mapgen_debug_info;
 	u16 qlimit_total;
 	u16 qlimit_diskonly;
 	u16 qlimit_generate;
 
 	u32 gennotify;
-
-	MapgenParams *luaoverride_params;
-	u32 luaoverride_params_modified;
-	u32 luaoverride_flagmask;
 
 	//block emerge queue data structures
 	JMutex queuemutex;
@@ -117,19 +108,19 @@ public:
 	EmergeManager(IGameDef *gamedef);
 	~EmergeManager();
 
-	void initMapgens(MapgenParams *mgparams);
-	MapgenParams *setMapgenType(MapgenParams *mgparams, std::string newname);
+	void loadMapgenParams();
+	void initMapgens();
 	Mapgen *getCurrentMapgen();
 	Mapgen *createMapgen(std::string mgname, int mgid,
 						MapgenParams *mgparams);
-	MapgenParams *createMapgenParams(std::string mgname);
+	MapgenSpecificParams *createMapgenParams(std::string mgname);
 	void startThreads();
 	void stopThreads();
 	bool enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate);
 
 	void registerMapgen(std::string name, MapgenFactory *mgfactory);
-	MapgenParams *getParamsFromSettings(Settings *settings);
-	void setParamsToSettings(Settings *settings);
+	void loadParamsFromSettings(Settings *settings);
+	void saveParamsToSettings(Settings *settings);
 
 	//mapgen helper methods
 	Biome *getBiomeAtPoint(v3s16 p);

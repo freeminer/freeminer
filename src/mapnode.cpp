@@ -1,20 +1,23 @@
 /*
-Minetest
+mapnode.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "irrlichttypes_extrabloated.h"
@@ -365,9 +368,9 @@ std::vector<aabb3f> MapNode::getSelectionBoxes(INodeDefManager *nodemgr) const
 	return transformNodeBox(*this, f.selection_box, nodemgr);
 }
 
-u8 MapNode::getMaxLevel(INodeDefManager *nodemgr) const
+u8 MapNode::getMaxLevel(INodeDefManager *nodemgr, bool compress) const
 {
-	return nodemgr->get(*this).getMaxLevel();
+	return nodemgr->get(*this).getMaxLevel(compress);
 }
 
 u8 MapNode::getLevel(INodeDefManager *nodemgr) const
@@ -394,7 +397,7 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 	return 0;
 }
 
-u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
+u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 {
 	u8 rest = 0;
 	if (level < 1) {
@@ -403,15 +406,18 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
 	}
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.param_type_2 == CPT2_LEVELED) {
-		if (level > f.getMaxLevel()) {
-			rest = level - f.getMaxLevel();
-			level = f.getMaxLevel();
+		if (level > f.getMaxLevel(compress)) {
+			rest = level - f.getMaxLevel(compress);
+			level = f.getMaxLevel(compress);
 		}
-		if (level == f.getMaxLevel() && !f.liquid_alternative_source.empty()) {
-			setContent(nodemgr->getId(f.liquid_alternative_source));
-		} else {
-			setParam2(level & LEVELED_MASK);
+		if (level >= f.getMaxLevel()) {
+			if (!f.liquid_alternative_source.empty())
+				setContent(nodemgr->getId(f.liquid_alternative_source));
+		} else if (!f.liquid_alternative_flowing.empty()) {
+			setContent(nodemgr->getId(f.liquid_alternative_flowing));
 		}
+		setParam2(level & LEVELED_MASK);
+		//debug: if(getLevel(nodemgr)!=level) errorstream<<"AFTERSET not match want="<<level<< " res="<< getLevel(nodemgr) <<std::endl;
 	} else if (f.param_type_2 == CPT2_FLOWINGLIQUID
 		|| f.liquid_type == LIQUID_FLOWING
 		|| f.liquid_type == LIQUID_SOURCE) {
@@ -426,12 +432,12 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level)
 	return rest;
 }
 
-u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add)
+u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add, bool compress)
 {
 	s8 level = getLevel(nodemgr);
 	if (add == 0) level = 1;
 	level += add;
-	return setLevel(nodemgr, level);
+	return setLevel(nodemgr, level, compress);
 }
 
 void MapNode::freezeMelt(INodeDefManager *ndef, int direction) {

@@ -1,20 +1,23 @@
 /*
-Minetest
+client.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef CLIENT_HEADER
@@ -121,6 +124,8 @@ public:
 	MutexedQueue<MeshUpdateResult> m_queue_out;
 
 	IGameDef *m_gamedef;
+	
+	v3s16 m_camera_offset;
 };
 
 enum ClientEventType
@@ -135,7 +140,9 @@ enum ClientEventType
 	CE_DELETE_PARTICLESPAWNER,
 	CE_HUDADD,
 	CE_HUDRM,
-	CE_HUDCHANGE
+	CE_HUDCHANGE,
+	CE_SET_SKY,
+	CE_OVERRIDE_DAY_NIGHT_RATIO,
 };
 
 struct ClientEvent
@@ -219,6 +226,15 @@ struct ClientEvent
 			u32 data;
 			v3f *v3fdata;
 		} hudchange;
+		struct{
+			video::SColor *bgcolor;
+			std::string *type;
+			std::vector<std::string> *params;
+		} set_sky;
+		struct{
+			bool do_override;
+			float ratio_f;
+		} override_day_night_ratio;
 	};
 };
 
@@ -378,9 +394,6 @@ public:
 			core::line3d<f32> shootline_on_map
 	);
 
-	// Prints a line or two of info
-	void printDebugInfo(std::ostream &os);
-
 	std::list<std::string> getConnectedPlayerNames();
 
 	float getAnimationTime();
@@ -403,6 +416,8 @@ public:
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
+	
+	void updateCameraOffset(v3s16 camera_offset){ m_mesh_update_thread.m_camera_offset = camera_offset; }
 
 	// Get event from queue. CE_NONE is returned if queue is empty.
 	ClientEvent getClientEvent();

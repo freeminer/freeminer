@@ -1,20 +1,23 @@
 /*
-Minetest
+clouds.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "clouds.h"
@@ -35,7 +38,8 @@ Clouds::Clouds(
 	scene::ISceneNode(parent, mgr, id),
 	m_seed(seed),
 	m_camera_pos(0,0),
-	m_time(0)
+	m_time(0),
+	m_camera_offset(0,0,0)
 {
 	m_material.setFlag(video::EMF_LIGHTING, false);
 	//m_material.setFlag(video::EMF_BACK_FACE_CULLING, false);
@@ -321,6 +325,7 @@ void Clouds::render()
 			}
 
 			v3f pos(p0.X, m_cloud_y, p0.Y);
+			pos -= intToFloat(m_camera_offset, BS);
 
 			for(u16 i=0; i<4; i++)
 				v[i].Pos += pos;

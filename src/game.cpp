@@ -1,20 +1,23 @@
 /*
-Minetest
+game.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "game.h"
@@ -29,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "IMeshCache.h"
 #include "client.h"
 #include "server.h"
-#include "guiPauseMenu.h"
 #include "guiPasswordChange.h"
 #include "guiVolumeChange.h"
 #include "guiFormSpecMenu.h"
@@ -82,24 +84,6 @@ TouchScreenGUI *touchscreengui;
 	Text input system
 */
 
-struct TextDestChat : public TextDest
-{
-	TextDestChat(Client *client)
-	{
-		m_client = client;
-	}
-	void gotText(std::wstring text)
-	{
-		m_client->typeChatMessage(text);
-	}
-	void gotText(std::map<std::string, std::string> fields)
-	{
-		assert(0);
-	}
-
-	Client *m_client;
-};
-
 struct TextDestNodeMetadata : public TextDest
 {
 	TextDestNodeMetadata(v3s16 p, Client *client)
@@ -138,12 +122,76 @@ struct TextDestPlayerInventory : public TextDest
 		m_client->sendInventoryFields(m_formname, fields);
 	}
 
-	void setFormName(std::string formname) {
+	Client *m_client;
+};
+
+struct LocalFormspecHandler : public TextDest
+{
+	LocalFormspecHandler();
+	LocalFormspecHandler(std::string formname) {
 		m_formname = formname;
 	}
 
+	LocalFormspecHandler(std::string formname,Client *client) {
+		m_formname = formname;
+		m_client = client;
+	}
+
+	void gotText(std::string message) {
+		errorstream << "LocalFormspecHandler::gotText old style message received" << std::endl;
+	}
+
+	void gotText(std::map<std::string, std::string> fields)
+	{
+		if (m_formname == "MT_PAUSE_MENU") {
+			if (fields.find("btn_sound") != fields.end()) {
+				g_gamecallback->changeVolume();
+				return;
+			}
+
+			if (fields.find("btn_exit_menu") != fields.end()) {
+				g_gamecallback->disconnect();
+				return;
+			}
+
+			if (fields.find("btn_exit_os") != fields.end()) {
+				g_gamecallback->exitToOS();
+				return;
+			}
+
+			if (fields.find("quit") != fields.end()) {
+				return;
+			}
+
+			if (fields.find("btn_continue") != fields.end()) {
+				return;
+			}
+		}
+		if (m_formname == "MT_CHAT_MENU") {
+			if ((fields.find("btn_send") != fields.end()) ||
+					(fields.find("quit") != fields.end())) {
+				if (fields.find("f_text") != fields.end()) {
+					if (m_client != 0) {
+						m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
+					}
+					else {
+						errorstream << "LocalFormspecHandler::gotText received chat message but m_client is NULL" << std::endl;
+					}
+				}
+				return;
+			}
+		}
+
+		errorstream << "LocalFormspecHandler::gotText unhandled >" << m_formname << "< event" << std::endl;
+		int i = 0;
+		for (std::map<std::string,std::string>::iterator iter = fields.begin();
+				iter != fields.end(); iter++) {
+			errorstream << "\t"<< i << ": " << iter->first << "=" << iter->second << std::endl;
+			i++;
+		}
+	}
+
 	Client *m_client;
-	std::string m_formname;
 };
 
 /* Respawn menu callback */
@@ -226,12 +274,9 @@ inline bool isPointableNode(const MapNode& n,
 	Find what the player is pointing at
 */
 PointedThing getPointedThing(Client *client, v3f player_position,
-		v3f camera_direction, v3f camera_position,
-		core::line3d<f32> shootline, f32 d,
-		bool liquids_pointable,
-		bool look_for_object,
-		std::vector<aabb3f> &hilightboxes,
-		ClientActiveObject *&selected_object)
+		v3f camera_direction, v3f camera_position, core::line3d<f32> shootline,
+		f32 d, bool liquids_pointable, bool look_for_object, v3s16 camera_offset,
+		std::vector<aabb3f> &hilightboxes, ClientActiveObject *&selected_object)
 {
 	PointedThing result;
 
@@ -260,8 +305,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 
 				v3f pos = selected_object->getPosition();
 				hilightboxes.push_back(aabb3f(
-						selection_box->MinEdge + pos,
-						selection_box->MaxEdge + pos));
+						selection_box->MinEdge + pos - intToFloat(camera_offset, BS),
+						selection_box->MaxEdge + pos - intToFloat(camera_offset, BS)));
 			}
 
 			mindistance = (selected_object->getPosition() - camera_position).getLength();
@@ -363,8 +408,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 						i2 != boxes.end(); i2++)
 				{
 					aabb3f box = *i2;
-					box.MinEdge += npf + v3f(-d,-d,-d);
-					box.MaxEdge += npf + v3f(d,d,d);
+					box.MinEdge += npf + v3f(-d,-d,-d) - intToFloat(camera_offset, BS);
+					box.MaxEdge += npf + v3f(d,d,d) - intToFloat(camera_offset, BS);
 					hilightboxes.push_back(box);
 				}
 			}
@@ -380,9 +425,8 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 	Additionally, a progressbar can be drawn when percent is set between 0 and 100.
 */
 /*gui::IGUIStaticText **/
-void draw_load_screen(const std::wstring &text,
-		IrrlichtDevice* device, gui::IGUIFont* font,
-		float dtime=0 ,int percent=0, bool clouds=true)
+void draw_load_screen(const std::wstring &text, IrrlichtDevice* device,
+		gui::IGUIFont* font, float dtime=0 ,int percent=0, bool clouds=true)
 {
 	video::IVideoDriver* driver = device->getVideoDriver();
 	v2u32 screensize = driver->getScreenSize();
@@ -431,8 +475,8 @@ void draw_load_screen(const std::wstring &text,
 /* Profiler display */
 
 void update_profiler_gui(gui::IGUIStaticText *guitext_profiler,
-		gui::IGUIFont *font, u32 text_height,
-		u32 show_profiler, u32 show_profiler_max)
+		gui::IGUIFont *font, u32 text_height, u32 show_profiler,
+		u32 show_profiler_max)
 {
 	if(show_profiler == 0)
 	{
@@ -848,8 +892,7 @@ public:
 };
 
 bool nodePlacementPrediction(Client &client,
-		const ItemDefinition &playeritem_def,
-		v3s16 nodepos, v3s16 neighbourpos)
+		const ItemDefinition &playeritem_def, v3s16 nodepos, v3s16 neighbourpos)
 {
 	std::string prediction = playeritem_def.node_placement_prediction;
 	INodeDefManager *nodedef = client.ndef();
@@ -925,8 +968,8 @@ bool nodePlacementPrediction(Client &client,
 
 			// Dont place node when player would be inside new node
 			// NOTE: This is to be eventually implemented by a mod as client-side Lua
-			if (!nodedef->get(n).walkable || 
-				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) || 
+			if (!nodedef->get(n).walkable ||
+				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
 				(nodedef->get(n).walkable &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
 				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
@@ -945,26 +988,84 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
+static void show_chat_menu(FormspecFormSource* current_formspec,
+		TextDest* current_textdest, IWritableTextureSource* tsrc,
+		IrrlichtDevice * device, Client* client, std::string text)
+{
+	std::string formspec =
+		"size[11,5.5,true]"
+		"field[3,2.35;6,0.5;f_text;;" + text + "]"
+		"button_exit[4,3;3,0.5;btn_send;"  + std::string(gettext("Proceed"))     + "]"
+		;
 
-void the_game(
-	bool &kill,
-	bool random_input,
-	InputHandler *input,
-	IrrlichtDevice *device,
-	gui::IGUIFont* font,
-	std::string map_dir,
-	std::string playername,
-	std::string password,
-	std::string address, // If "", local server is used
-	u16 port,
-	std::string &error_message,
-	ChatBackend &chat_backend,
-	const SubgameSpec &gamespec, // Used for local game,
-	bool simple_singleplayer_mode
-)
+	/* Create menu */
+	/* Note: FormspecFormSource and LocalFormspecHandler
+	 * are deleted by guiFormSpecMenu                     */
+	current_formspec = new FormspecFormSource(formspec,&current_formspec);
+	current_textdest = new LocalFormspecHandler("MT_CHAT_MENU",client);
+	GUIFormSpecMenu *menu =
+			new GUIFormSpecMenu(device, guiroot, -1,
+					&g_menumgr,
+					NULL, NULL, tsrc);
+	menu->setFormSource(current_formspec);
+	menu->setTextDest(current_textdest);
+	menu->drop();
+}
+
+/******************************************************************************/
+static void show_pause_menu(FormspecFormSource* current_formspec,
+		TextDest* current_textdest, IWritableTextureSource* tsrc,
+		IrrlichtDevice * device)
+{
+	const char* control_text = gettext("Default Controls:\n"
+			"- WASD: move\n"
+			"- Space: jump/climb\n"
+			"- Shift: sneak/go down\n"
+			"- Q: drop item\n"
+			"- I: inventory\n"
+			"- Mouse: turn/look\n"
+			"- Mouse left: dig/punch\n"
+			"- Mouse right: place/use\n"
+			"- Mouse wheel: select item\n"
+			"- T: chat\n"
+			);
+
+	std::ostringstream os;
+	os<<"Minetest\n";
+	os<<minetest_build_info<<"\n";
+	os<<"path_user = "<<wrap_rows(porting::path_user, 20)<<"\n";
+
+	std::string formspec =
+		"size[5,5.5,true]"
+		"button_exit[1,1;3,0.5;btn_continue;"  + std::string(gettext("Continue"))+ "]"
+		"button[1,2;3,0.5;btn_sound;"     + std::string(gettext("Sound Volume")) + "]"
+		"button[1,3;3,0.5;btn_exit_menu;" + std::string(gettext("Exit to Menu")) + "]"
+		"button[1,4;3,0.5;btn_exit_os;"   + std::string(gettext("Exit to OS"))   + "]"
+		;
+
+	/* Create menu */
+	/* Note: FormspecFormSource and LocalFormspecHandler  *
+	 * are deleted by guiFormSpecMenu                     */
+	current_formspec = new FormspecFormSource(formspec,&current_formspec);
+	current_textdest = new LocalFormspecHandler("MT_PAUSE_MENU");
+	GUIFormSpecMenu *menu =
+		new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr, NULL, NULL, tsrc);
+	menu->setFormSource(current_formspec);
+	menu->setTextDest(current_textdest);
+	menu->drop();
+}
+
+/******************************************************************************/
+void the_game(bool &kill, bool random_input, InputHandler *input,
+	IrrlichtDevice *device, gui::IGUIFont* font, std::string map_dir,
+	std::string playername, std::string password,
+	std::string address /* If "", local server is used */,
+	u16 port, std::string &error_message, ChatBackend &chat_backend,
+	const SubgameSpec &gamespec /* Used for local game */,
+	bool simple_singleplayer_mode)
 {
 	FormspecFormSource* current_formspec = 0;
-	TextDestPlayerInventory* current_textdest = 0;
+	TextDest* current_textdest = 0;
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
 #ifdef ANDROID // android gets all the fancy graphics
@@ -1050,7 +1151,27 @@ void the_game(
 		infostream<<"Creating server"<<std::endl;
 		server = new Server(map_dir, gamespec,
 				simple_singleplayer_mode);
-		server->start(port);
+
+		std::string bind_str = g_settings->get("bind_address");
+		Address bind_addr(0,0,0,0, port);
+
+		if (bind_str != "")
+		{
+			try {
+				bind_addr.Resolve(bind_str.c_str());
+				address = bind_str;
+			} catch (ResolveError &e) {
+				infostream << "Resolving bind address \"" << bind_str
+						   << "\" failed: " << e.what()
+						   << " -- Listening on all addresses." << std::endl;
+
+				if (g_settings->getBool("ipv6_server")) {
+					bind_addr.setAddress((IPv6AddressBytes*) NULL);
+				}
+			}
+		}
+
+		server->start(bind_addr);
 	}
 
 	do{ // Client scope (breakable do-while(0))
@@ -1360,6 +1481,8 @@ void the_game(
 
 	Sky *sky = NULL;
 	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, client.getEnv().getLocalPlayer());
+
+	scene::ISceneNode* skybox = NULL;
 	
 	/*
 		A copy of the local inventory
@@ -1536,6 +1659,9 @@ void the_game(
 	str += "]";
 	device->setWindowCaption(str.c_str());
 	}
+
+	// Info text
+	std::wstring infotext;
 
 	for(;;)
 	{
@@ -1721,23 +1847,9 @@ void the_game(
 		
 		// Hilight boxes collected during the loop and displayed
 		std::vector<aabb3f> hilightboxes;
-		
-		// Info text
-		std::wstring infotext;
 
-		/*
-			Debug info for client
-		*/
-		{
-			static float counter = 0.0;
-			counter -= dtime;
-			if(counter < 0)
-			{
-				counter = 30.0;
-				client.printDebugInfo(infostream);
-			}
-		}
-
+		/* reset infotext */
+		infotext = L"";
 		/*
 			Profiler
 		*/
@@ -1821,33 +1933,15 @@ void the_game(
 		}
 		else if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey))
 		{
-			infostream<<"the_game: "
-					<<"Launching pause menu"<<std::endl;
-			// It will delete itself by itself
-			(new GUIPauseMenu(guienv, guiroot, -1, g_gamecallback,
-					&g_menumgr, simple_singleplayer_mode))->drop();
-
-			// Move mouse cursor on top of the disconnect button
-			if(simple_singleplayer_mode)
-				input->setMousePos(displaycenter.X, displaycenter.Y+0);
-			else
-				input->setMousePos(displaycenter.X, displaycenter.Y+25);
+			show_pause_menu(current_formspec, current_textdest, tsrc, device);
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_chat")))
 		{
-			TextDest *dest = new TextDestChat(&client);
-
-			(new GUITextInputMenu(guienv, guiroot, -1,
-					&g_menumgr, dest,
-					L""))->drop();
+			show_chat_menu(current_formspec, current_textdest, tsrc, device, &client,"");
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_cmd")))
 		{
-			TextDest *dest = new TextDestChat(&client);
-
-			(new GUITextInputMenu(guienv, guiroot, -1,
-					&g_menumgr, dest,
-					L"/"))->drop();
+			show_chat_menu(current_formspec, current_textdest, tsrc, device, &client,"/");
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_console")))
 		{
@@ -2573,6 +2667,46 @@ void the_game(
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
 				}
+				else if (event.type == CE_SET_SKY)
+				{
+					sky->setVisible(false);
+					if(skybox){
+						skybox->drop();
+						skybox = NULL;
+					}
+					// Handle according to type
+					if(*event.set_sky.type == "regular"){
+						sky->setVisible(true);
+					}
+					else if(*event.set_sky.type == "skybox" &&
+							event.set_sky.params->size() == 6){
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+						skybox = smgr->addSkyBoxSceneNode(
+								tsrc->getTexture((*event.set_sky.params)[0]),
+								tsrc->getTexture((*event.set_sky.params)[1]),
+								tsrc->getTexture((*event.set_sky.params)[2]),
+								tsrc->getTexture((*event.set_sky.params)[3]),
+								tsrc->getTexture((*event.set_sky.params)[4]),
+								tsrc->getTexture((*event.set_sky.params)[5]));
+					}
+					// Handle everything else as plain color
+					else {
+						if(*event.set_sky.type != "plain")
+							infostream<<"Unknown sky type: "
+									<<(*event.set_sky.type)<<std::endl;
+						sky->setFallbackBgColor(*event.set_sky.bgcolor);
+					}
+
+					delete event.set_sky.bgcolor;
+					delete event.set_sky.type;
+					delete event.set_sky.params;
+				}
+				else if (event.type == CE_OVERRIDE_DAY_NIGHT_RATIO)
+				{
+					bool enable = event.override_day_night_ratio.do_override;
+					u32 value = event.override_day_night_ratio.ratio_f * 1000;
+					client.getEnv().setDayNightRatioOverride(enable, value);
+				}
 			}
 		}
 		
@@ -2601,6 +2735,8 @@ void the_game(
 			Update camera
 		*/
 
+		v3s16 old_camera_offset = camera.getOffset();
+
 		LocalPlayer* player = client.getEnv().getLocalPlayer();
 		float full_punch_interval = playeritem_toolcap.full_punch_interval;
 		float tool_reload_ratio = time_from_last_punch / full_punch_interval;
@@ -2626,10 +2762,19 @@ void the_game(
 		v3f camera_position = camera.getPosition();
 		v3f camera_direction = camera.getDirection();
 		f32 camera_fov = camera.getFovMax();
+		v3s16 camera_offset = camera.getOffset();
+
+		bool camera_offset_changed = (camera_offset != old_camera_offset);
 		
 		if(!disable_camera_update){
 			client.getEnv().getClientMap().updateCamera(camera_position,
-				camera_direction, camera_fov);
+				camera_direction, camera_fov, camera_offset);
+			if (camera_offset_changed){
+				client.updateCameraOffset(camera_offset);
+				client.getEnv().updateCameraOffset(camera_offset);
+				if (clouds)
+					clouds->updateCameraOffset(camera_offset);
+			}
 		}
 		
 		// Update sound listener
@@ -2678,6 +2823,7 @@ void the_game(
 				&client, player_position, camera_direction,
 				camera_position, shootline, d,
 				playeritem_def.liquids_pointable, !ldown_for_dig,
+				camera_offset,
 				// output
 				hilightboxes,
 				selected_object);
@@ -2686,6 +2832,13 @@ void the_game(
 		{
 			infostream<<"Pointing at "<<pointed.dump()<<std::endl;
 			//dstream<<"Pointing at "<<pointed.dump()<<std::endl;
+/* node debug 
+			MapNode nu = client.getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
+			MapNode na = client.getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
+			infostream	<< "|| nu0="<<(int)nu.param0<<" nu1"<<(int)nu.param1<<" nu2"<<(int)nu.param1<<"; nam="<<nodedef->get(nu.getContent()).name
+						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<nodedef->get(na.getContent()).name
+						<<std::endl;
+*/
 		}
 
 		/*
@@ -3091,7 +3244,7 @@ void the_game(
 		*/
 
 		if (!no_output) {
-		allparticles_step(dtime, client.getEnv());
+		allparticles_step(dtime);
 		allparticlespawners_step(dtime, client.getEnv());
 		}
 		
@@ -3130,10 +3283,16 @@ void the_game(
 
 		//TimeTaker guiupdatetimer("Gui updating");
 		
+		draw_control.drawtime_avg = draw_control.drawtime_avg * 0.95 + (float)drawtime*0.05;
+		draw_control.fps_avg = 1000/draw_control.drawtime_avg;
+		draw_control.fps = (1.0/dtime_avg1);
+
 		if(show_debug)
 		{
+/*
 			static float drawtime_avg = 0;
 			drawtime_avg = drawtime_avg * 0.95 + (float)drawtime*0.05;
+*/
 			/*static float beginscenetime_avg = 0;
 			beginscenetime_avg = beginscenetime_avg * 0.95 + (float)beginscenetime*0.05;
 			static float scenetime_avg = 0;
@@ -3141,24 +3300,24 @@ void the_game(
 			static float endscenetime_avg = 0;
 			endscenetime_avg = endscenetime_avg * 0.95 + (float)endscenetime*0.05;*/
 
-			u16 fps = (1.0/dtime_avg1);
 
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
-				<<" FPS = "<<fps
+				<<std::setprecision(0)
+				<<" FPS = "<<draw_control.fps
 /*
 				<<" (R: range_all="<<draw_control.range_all<<")"
 */
-				<<std::setprecision(0)
-				<<" drawtime = "<<drawtime_avg
+				<<" drawtime = "<<draw_control.drawtime_avg
 /*
 				<<std::setprecision(1)
 				<<", dtime_jitter = "
 				<<(dtime_jitter1_max_fraction * 100.0)<<" %"
 */
 				<<std::setprecision(1)
-				<<", v_range = "<<draw_control.wanted_range;
+				<<", v_range = "<<draw_control.wanted_range
+				<<", farmesh = "<<draw_control.farmesh<<":"<<draw_control.farmesh_step;
 			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
@@ -3314,7 +3473,8 @@ void the_game(
 		*/
 		update_draw_list_timer += dtime;
 		if(update_draw_list_timer >= 0.2 ||
-				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2){
+				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
+				camera_offset_changed){
 			update_draw_list_timer = 0;
 			client.getEnv().getClientMap().updateDrawList(driver);
 			update_draw_list_last_cam_dir = camera_direction;

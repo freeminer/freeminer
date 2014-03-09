@@ -1,21 +1,24 @@
 /*
-Minetest
+itemdef.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2013 Kahrl <kahrl@gmx.net>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "itemdef.h"
@@ -27,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "tile.h"
+#include "clientmap.h"
 #endif
 #include "log.h"
 #include "main.h" // g_settings
@@ -356,10 +360,11 @@ public:
 				reenable_shaders = true;
 				g_settings->setBool("enable_shaders",false);
 			}
-			MeshMakeData mesh_make_data(gamedef);
+			MapDrawControl map_draw_control;
+			MeshMakeData mesh_make_data(gamedef, map_draw_control);
 			MapNode mesh_make_node(id, param1, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
-			MapBlockMesh mapblock_mesh(&mesh_make_data);
+			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
 			scene::IMesh *node_mesh = mapblock_mesh.getMesh();
 			assert(node_mesh);
 			video::SColor c(255, 255, 255, 255);

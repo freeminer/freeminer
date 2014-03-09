@@ -1,20 +1,23 @@
 /*
-Minetest
+environment.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "environment.h"
@@ -51,7 +54,9 @@ Environment::Environment():
 	m_time_of_day(9000),
 	m_time_of_day_f(9000./24000),
 	m_time_of_day_speed(0),
-	m_time_counter(0)
+	m_time_counter(0),
+	m_enable_day_night_ratio_override(false),
+	m_day_night_ratio_override(0.0f)
 {
 }
 
@@ -192,6 +197,8 @@ std::list<Player*> Environment::getPlayers(bool ignore_disconnected)
 
 u32 Environment::getDayNightRatio()
 {
+	if(m_enable_day_night_ratio_override)
+		return m_day_night_ratio_override;
 	bool smooth = g_settings->getBool("enable_shaders");
 	return time_to_daynight_ratio(m_time_of_day_f*24000, smooth);
 }
@@ -310,14 +317,12 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 */
 
 ServerEnvironment::ServerEnvironment(ServerMap *map,
-		GameScripting *scriptIface, Circuit* circuit,
-		IGameDef *gamedef, IBackgroundBlockEmerger *emerger):
+		GameScripting *scriptIface, Circuit* circuit, IGameDef *gamedef):
 	m_abmhandler(NULL),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
 	m_gamedef(gamedef),
-	m_emerger(emerger),
 	m_random_spawn_timer(3),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
@@ -331,7 +336,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
-	emerger->env = this;
 }
 
 Player * ServerEnvironment::getPlayer(const char *name)
@@ -726,6 +730,29 @@ public:
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
 		ServerMap *map = &m_env->getServerMap();
 
+		// Find out how many objects the block contains
+		u32 active_object_count = block->m_static_objects.m_active.size();
+		// Find out how many objects this and all the neighbors contain
+		u32 active_object_count_wider = 0;
+		u32 wider_unknown_count = 0;
+		for(s16 x=-1; x<=1; x++)
+		for(s16 y=-1; y<=1; y++)
+		for(s16 z=-1; z<=1; z++)
+		{
+			MapBlock *block2 = map->getBlockNoCreateNoEx(
+					block->getPos() + v3s16(x,y,z));
+			if(block2==NULL){
+				++wider_unknown_count;
+				continue;
+			}
+			active_object_count_wider +=
+					block2->m_static_objects.m_active.size()
+					+ block2->m_static_objects.m_stored.size();
+		}
+		// Extrapolate
+		u32 wider_known_count = 3*3*3 - wider_unknown_count;
+		active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
+				
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
@@ -767,30 +794,6 @@ public:
 				}
 neighbor_found:
 
-				// Find out how many objects the block contains
-				u32 active_object_count = block->m_static_objects.m_active.size();
-				// Find out how many objects this and all the neighbors contain
-				u32 active_object_count_wider = 0;
-				//u32 wider_unknown_count = 0;
-				for(s16 x=-1; x<=1; x++)
-				for(s16 y=-1; y<=1; y++)
-				for(s16 z=-1; z<=1; z++)
-				{
-					MapBlock *block2 = map->getBlockNoCreateNoEx(
-							block->getPos() + v3s16(x,y,z));
-					if(block2==NULL){
-						//wider_unknown_count = 0;
-						continue;
-					}
-					active_object_count_wider +=
-							block2->m_static_objects.m_active.size()
-							+ block2->m_static_objects.m_stored.size();
-				}
-				// Extrapolate
-				//u32 wider_known_count = 3*3*3; // - wider_unknown_count;
-				//active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
-				
-				// Call trigger
 				i->abm->trigger(m_env, p, n,
 						active_object_count, active_object_count_wider, neighbor, activate);
 			}
@@ -802,6 +805,14 @@ neighbor_found:
 
 void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 {
+	// Reset usage timer immediately, otherwise a block that becomes active
+	// again at around the same time as it would normally be unloaded will
+	// get unloaded incorrectly. (I think this still leaves a small possibility
+	// of a race condition between this and server::AsyncRunStep, which only
+	// some kind of synchronisation will fix, but it at least reduces the window
+	// of opportunity for it to break from seconds to nanoseconds)
+	block->resetUsageTimer();
+
 	// Get time difference
 	u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
@@ -1241,11 +1252,8 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			++n;
 			v3s16 p = *i;
 
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+			MapBlock *block = m_map->getBlockOrEmerge(p);
 			if(block==NULL){
-				// Block needs to be fetched first
-				m_emerger->enqueueBlockEmerge(
-						PEER_ID_INEXISTENT, p, false);
 				m_active_blocks.m_list.erase(p);
 				continue;
 			}

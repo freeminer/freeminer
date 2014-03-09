@@ -49,7 +49,9 @@ LOCAL_CFLAGS += -fno-stack-protector
 endif
 
 LOCAL_C_INCLUDES := jni/src jni/src/sqlite jni/src/script jni/src/lua/src jni/src/json jni/src/cguittfont jni/src/enet/include \
-	deps/leveldb/include deps/irrlicht/include deps/msgpack-c/build/include deps/freetype/build/include/freetype2/ deps/libiconv/include/
+	deps/leveldb/include deps/irrlicht/include deps/freetype/build/include/freetype2/ deps/libiconv/include/
+
+LOCAL_CFLAGS += -isystemdeps/msgpack-c/build/include
 
 LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/*.cpp) $(wildcard $(LOCAL_PATH)/jni/src/util/*.cpp)
 LOCAL_SRC_FILES += jni/src/cguittfont/xCGUITTFont.cpp
@@ -79,10 +81,14 @@ LOCAL_SRC_FILES := $(filter-out %/lua.c, $(LOCAL_SRC_FILES))
 LOCAL_SRC_FILES := $(filter-out %/luac.c, $(LOCAL_SRC_FILES))
 LOCAL_SRC_FILES := $(filter-out %/win32.c, $(LOCAL_SRC_FILES))
 
+# LOCAL_SRC_FILES := 
+
 LOCAL_LDLIBS := -lEGL -llog -lGLESv1_CM -lGLESv2 -lz -landroid
 
 LOCAL_STATIC_LIBRARIES := Irrlicht LevelDB msgpack freetype libiconv android_native_app_glue
 
 include $(BUILD_SHARED_LIBRARY)
+
+$(info $(shell bash $(LOCAL_PATH)/scripts/copy_data.sh))
 
 $(call import-module,android/native_app_glue)

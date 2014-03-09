@@ -1,23 +1,27 @@
 /*
-Minetest
+defaultsettings.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "settings.h"
+#include "porting.h"
 #include "filesys.h"
 #include "config.h"
 
@@ -177,6 +181,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("workaround_window_size","5");
 	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
+	settings->setDefault("bind_address","");
+	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
 	settings->setDefault("strict_protocol_version_checking", "false");
@@ -229,8 +235,8 @@ void set_default_settings(Settings *settings)
 #endif
 	);
 	settings->setDefault("emergequeue_limit_total", "256");
-	settings->setDefault("emergequeue_limit_diskonly", "");
-	settings->setDefault("emergequeue_limit_generate", "");
+	settings->setDefault("emergequeue_limit_diskonly", "32");
+	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
 	
 	// physics stuff
@@ -269,41 +275,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("mg_name", "v6");
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
-	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend");
-	settings->setDefault("mgv6_freq_desert", "0.45");
-	settings->setDefault("mgv6_freq_beach", "0.15");
-
-	settings->setDefault("mgv6_np_terrain_base",   "-4, 20, (250, 250, 250), 82341, 5, 0.6");
-	settings->setDefault("mgv6_np_terrain_higher", "20, 16, (500, 500, 500), 85039, 5, 0.6");
-	settings->setDefault("mgv6_np_steepness",      "0.85, 0.5, (125, 125, 125), -932, 5, 0.7");
-	settings->setDefault("mgv6_np_height_select",  "0.5, 1, (250, 250, 250), 4213, 5, 0.69");
-	settings->setDefault("mgv6_np_mud",            "4, 2, (200, 200, 200), 91013, 3, 0.55");
-	settings->setDefault("mgv6_np_beach",          "0, 1, (250, 250, 250), 59420, 3, 0.50");
-	settings->setDefault("mgv6_np_biome",          "0, 1, (250, 250, 250), 9130, 3, 0.50");
-	settings->setDefault("mgv6_np_cave",           "6, 6, (250, 250, 250), 34329, 3, 0.50");
-	settings->setDefault("mgv6_np_humidity",       "0.5, 0.5, (500, 500, 500), 72384, 4, 0.66");
-	settings->setDefault("mgv6_np_trees",          "0, 1, (125, 125, 125), 2, 4, 0.66");
-	settings->setDefault("mgv6_np_apple_trees",    "0, 1, (100, 100, 100), 342902, 3, 0.45");
-
-	settings->setDefault("mgv7_np_terrain_base",     "4, 70, (300, 300, 300), 82341, 6, 0.7");
-	settings->setDefault("mgv7_np_terrain_alt",      "4, 25, (600, 600, 600), 5934, 5, 0.6");
-	settings->setDefault("mgv7_np_terrain_persist",  "0.6, 0.1, (500, 500, 500), 539, 3, 0.6");
-	settings->setDefault("mgv7_np_height_select",    "-0.5, 1, (250, 250, 250), 4213, 5, 0.69");
-	settings->setDefault("mgv7_np_filler_depth",     "0, 1.2, (150, 150, 150), 261, 4, 0.7");
-	settings->setDefault("mgv7_np_mount_height",     "100, 30, (500, 500, 500), 72449, 4, 0.6");
-	settings->setDefault("mgv7_np_ridge_uwater",     "0, 1, (500, 500, 500), 85039, 4, 0.6");
-	settings->setDefault("mgv7_np_mountain",         "0, 1, (250, 350, 250), 5333, 5, 0.68");
-	settings->setDefault("mgv7_np_ridge",            "0, 1, (100, 120, 100), 6467, 4, 0.75");
-
-	settings->setDefault("mgindev_np_terrain_base",   "-4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10");
-	settings->setDefault("mgindev_np_terrain_higher", "20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10");
-	settings->setDefault("mgindev_np_steepness",      "0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10");
-	settings->setDefault("mgindev_np_mud",            "4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1");
-	settings->setDefault("mgindev_np_float_islands1", "0,    1,   (256, 256, 256), 3683,  6, 0.6,  1,   1.5");
-	settings->setDefault("mgindev_np_float_islands2", "0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5");
-	settings->setDefault("mgindev_np_float_islands3", "0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5");
-	settings->setDefault("mgindev_np_biome",          "0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10");
-	settings->setDefault("mgindev_float_islands", "500");
+	settings->setDefault("mg_flags", "");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 
@@ -327,8 +299,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("autojump", "0");
 
 	// freeminer user-friendly defaults
+	settings->setDefault("pause_fps_max", "1");
 	settings->setDefault("enable_vbo", "true");
-	settings->setDefault("viewing_range_nodes_max", "1000");
+	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
 	settings->setDefault("liquid_finite", "true");
@@ -341,7 +314,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
-	settings->setDefault("serverlist_url", "servers.freeminer.org");
+	//settings->setDefault("serverlist_url", "servers.freeminer.org"); // uncomment after protocol change
 	settings->setDefault("enable_bumpmapping", "true");
 	settings->setDefault("enable_parallax_occlusion", "true");
 	settings->setDefault("enable_waving_water", "true");
@@ -350,8 +323,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
 	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("preload_item_visuals", "false");
-	settings->setDefault("congestion_control_max_rate", "2000");
 	settings->setDefault("sqlite_synchronous", "1");
+	settings->setDefault("farmesh", "0");
+	settings->setDefault("farmesh_step", "3");
+	settings->setDefault("farmesh_wanted", "500");
 
 #ifndef _WIN32
 //enet! TODO	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)

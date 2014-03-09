@@ -1,20 +1,23 @@
 /*
-Minetest
+environment.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef ENVIRONMENT_HEADER
@@ -46,7 +49,6 @@ class ActiveBlockModifier;
 class ServerActiveObject;
 class ITextureSource;
 class IGameDef;
-class IBackgroundBlockEmerger;
 class Map;
 class ServerMap;
 class ClientMap;
@@ -81,7 +83,7 @@ public:
 	std::list<Player*> getPlayers(bool ignore_disconnected);
 	
 	u32 getDayNightRatio();
-	
+
 	// 0-23999
 	virtual void setTimeOfDay(u32 time)
 	{
@@ -103,6 +105,12 @@ public:
 	float getTimeOfDaySpeed()
 	{ return m_time_of_day_speed; }
 
+	void setDayNightRatioOverride(bool enable, u32 value)
+	{
+		m_enable_day_night_ratio_override = enable;
+		m_day_night_ratio_override = value;
+	}
+
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
@@ -113,6 +121,9 @@ protected:
 	float m_time_of_day_speed;
 	// Used to buffer dtime for adding to m_time_of_day
 	float m_time_counter;
+	// Overriding the day-night ratio is useful for custom sky visuals
+	bool m_enable_day_night_ratio_override;
+	u32 m_day_night_ratio_override;
 };
 
 /*
@@ -219,8 +230,8 @@ class ServerEnvironment : public Environment
 {
 public:
 	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-	                  Circuit* circuit, IGameDef *gamedef,
-	                  IBackgroundBlockEmerger *emerger);
+			Circuit* circuit,
+			IGameDef *gamedef);
 	~ServerEnvironment();
 
 	Map & getMap();
@@ -400,8 +411,6 @@ private:
 	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
-	// Background block emerger (the EmergeManager, in practice)
-	IBackgroundBlockEmerger *m_emerger;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
@@ -543,6 +552,10 @@ public:
 	{ m_player_names.push_back(name); }
 	void removePlayerName(std::string name)
 	{ m_player_names.remove(name); }
+	void updateCameraOffset(v3s16 camera_offset)
+	{ m_camera_offset = camera_offset; }
+	v3s16 getCameraOffset()
+	{ return m_camera_offset; }
 	
 private:
 	ClientMap *m_map;
@@ -560,6 +573,7 @@ private:
 	IntervalLimiter m_drowning_interval;
 	IntervalLimiter m_breathing_interval;
 	std::list<std::string> m_player_names;
+	v3s16 m_camera_offset;
 };
 
 #endif

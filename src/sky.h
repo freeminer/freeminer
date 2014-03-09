@@ -1,20 +1,23 @@
 /*
-Minetest
+sky.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "irrlichttypes_extrabloated.h"
@@ -53,11 +56,21 @@ public:
 			float direct_brightness, bool sunlight_seen);
 	
 	float getBrightness(){ return m_brightness; }
-	video::SColor getBgColor(){ return m_bgcolor; }
-	video::SColor getSkyColor(){ return m_skycolor; }
+
+	video::SColor getBgColor(){
+		return m_visible ? m_bgcolor : m_fallback_bg_color;
+	}
+	video::SColor getSkyColor(){
+		return m_visible ? m_skycolor : m_fallback_bg_color;
+	}
 	
-	bool getCloudsVisible(){ return m_clouds_visible; }
+	bool getCloudsVisible(){ return m_clouds_visible && m_visible; }
 	video::SColorf getCloudColor(){ return m_cloudcolor_f; }
+
+	void setVisible(bool visible){ m_visible = visible; }
+	void setFallbackBgColor(const video::SColor &fallback_bg_color){
+		m_fallback_bg_color = fallback_bg_color;
+	}
 
 private:
 	core::aabbox3d<f32> Box;
@@ -98,6 +111,8 @@ private:
 		return result;
 	}
 
+	bool m_visible;
+	video::SColor m_fallback_bg_color; // Used when m_visible=false
 	bool m_first_update;
 	float m_time_of_day;
 	float m_time_brightness;

@@ -266,7 +266,7 @@ void TouchScreenGUI::resetHud() {
 }
 
 void TouchScreenGUI::registerHudItem(int index, const rect<s32> &rect) {
-	m_hud_start_y = std::min((int)m_hud_start_y, rect.UpperLeftCorner.Y);
+	m_hud_start_y = std::min(static_cast<int>(m_hud_start_y), rect.UpperLeftCorner.Y);
 	m_hud_rects.push_back(rect);
 }
 

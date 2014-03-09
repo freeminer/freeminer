@@ -4,6 +4,7 @@ tbl.async_jobs = {}
 
 if engine ~= nil then
 	function tbl.async_event_handler(jobid, serialized_retval)
+		--[[
 		local retval = nil
 		if serialized_retval ~= "ERROR" then
 			retval= marshal.decode(serialized_retval)
@@ -14,9 +15,10 @@ if engine ~= nil then
 		assert(type(tbl.async_jobs[jobid]) == "function")
 		tbl.async_jobs[jobid](retval)
 		tbl.async_jobs[jobid] = nil
+		]]
 	end
 else
-
+--[[
 	minetest.register_globalstep(
 		function(dtime)
 			local list = tbl.get_finished_jobs()
@@ -29,10 +31,11 @@ else
 				tbl.async_jobs[list[i].jobid] = nil
 			end
 		end)
+]]
 end
 
 function tbl.handle_async(fct, parameters, callback)
-
+--[[
 	--serialize fct
 	local serialized_fct = marshal.encode(fct)
 
@@ -54,6 +57,6 @@ function tbl.handle_async(fct, parameters, callback)
 											serialized_params:len())
 
 	tbl.async_jobs[jobid] = callback
-
+]]
 	return true
 end

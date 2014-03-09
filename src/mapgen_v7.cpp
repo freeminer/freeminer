@@ -1,20 +1,23 @@
 /*
-Minetest
+mapgen_v7.cpp
 Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -36,44 +39,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "treegen.h"
 #include "biome.h"
 #include "mapgen_v7.h"
+#include "environment.h"
 
 
-/////////////////// Mapgen V7 perlin noise default values
-NoiseParams nparams_v7_def_terrain_base =
-	{4, 70, v3f(300, 300, 300), 82341, 6, 0.7};
-NoiseParams nparams_v7_def_terrain_alt =
-	{4, 25, v3f(600, 600, 600), 5934, 5, 0.6};
-NoiseParams nparams_v7_def_terrain_persist =
-	{0.6, 0.1, v3f(500, 500, 500), 539, 3, 0.6};
-NoiseParams nparams_v7_def_height_select =
-	{-0.5, 1, v3f(250, 250, 250), 4213, 5, 0.69};
-	
-NoiseParams nparams_v7_def_filler_depth =
-	{0, 1.2, v3f(150, 150, 150), 261, 4, 0.7};
-
-NoiseParams nparams_v7_def_mount_height =
-	{100, 30, v3f(500, 500, 500), 72449, 4, 0.6};	
-NoiseParams nparams_v7_def_ridge_uwater =
-	{0, 1, v3f(500, 500, 500), 85039, 4, 0.6};
-NoiseParams nparams_v7_def_mountain =
-	{0, 1, v3f(250, 350, 250), 5333, 5, 0.68};
-NoiseParams nparams_v7_def_ridge =
-	{0, 1, v3f(100, 100, 100), 6467, 4, 0.75};
-
+FlagDesc flagdesc_mapgen_v7[] = {
+	{"mountains", MGV7_MOUNTAINS},
+	{"ridges",    MGV7_RIDGES},
+	{NULL,        0}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
-MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge) {
+MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	this->generating  = false;
 	this->id     = mapgenid;
 	this->emerge = emerge;
 	this->bmgr   = emerge->biomedef;
 
-	this->seed     = (int)params->seed;
+	this->seed        = (int)params->seed;
 	this->water_level = params->water_level;
-	this->flags    = params->flags | MGV7_MOUNTAINS | MGV7_RIDGES;
-	this->gennotify = emerge->gennotify;
+	this->flags       = params->flags;
+	this->gennotify   = emerge->gennotify;
 
 	this->csize   = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
 
@@ -86,19 +73,21 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge) 
 	this->heightmap = new s16[csize.X * csize.Z];
 	this->ridge_heightmap = new s16[csize.X * csize.Z];
 
+	MapgenV7Params *sp = (MapgenV7Params *)params->sparams;
+
 	// Terrain noise
-	noise_terrain_base    = new Noise(&params->np_terrain_base,    seed, csize.X, csize.Z);
-	noise_terrain_alt     = new Noise(&params->np_terrain_alt,     seed, csize.X, csize.Z);
-	noise_terrain_persist = new Noise(&params->np_terrain_persist, seed, csize.X, csize.Z);
-	noise_height_select   = new Noise(&params->np_height_select,   seed, csize.X, csize.Z);
-	noise_filler_depth    = new Noise(&params->np_filler_depth,    seed, csize.X, csize.Z);
-	noise_mount_height    = new Noise(&params->np_mount_height,    seed, csize.X, csize.Z);
-	noise_ridge_uwater    = new Noise(&params->np_ridge_uwater,    seed, csize.X, csize.Z);
-	
+	noise_terrain_base    = new Noise(&sp->np_terrain_base,    seed, csize.X, csize.Z);
+	noise_terrain_alt     = new Noise(&sp->np_terrain_alt,     seed, csize.X, csize.Z);
+	noise_terrain_persist = new Noise(&sp->np_terrain_persist, seed, csize.X, csize.Z);
+	noise_height_select   = new Noise(&sp->np_height_select,   seed, csize.X, csize.Z);
+	noise_filler_depth    = new Noise(&sp->np_filler_depth,    seed, csize.X, csize.Z);
+	noise_mount_height    = new Noise(&sp->np_mount_height,    seed, csize.X, csize.Z);
+	noise_ridge_uwater    = new Noise(&sp->np_ridge_uwater,    seed, csize.X, csize.Z);
+
 	// 3d terrain noise
-	noise_mountain = new Noise(&params->np_mountain, seed, csize.X, csize.Y, csize.Z);
-	noise_ridge    = new Noise(&params->np_ridge,    seed, csize.X, csize.Y, csize.Z);
-	
+	noise_mountain = new Noise(&sp->np_mountain, seed, csize.X, csize.Y, csize.Z);
+	noise_ridge    = new Noise(&sp->np_ridge,    seed, csize.X, csize.Y, csize.Z);
+
 	// Biome noise
 	noise_heat     = new Noise(bmgr->np_heat,     seed, csize.X, csize.Z);
 	noise_humidity = new Noise(bmgr->np_humidity, seed, csize.X, csize.Z);	
@@ -123,6 +112,54 @@ MapgenV7::~MapgenV7() {
 	delete[] heightmap;
 	delete[] biomemap;
 }
+
+
+MapgenV7Params::MapgenV7Params() {
+	spflags = MGV7_MOUNTAINS | MGV7_RIDGES;
+
+	np_terrain_base    = NoiseParams(4,    70,  v3f(300, 300, 300), 82341, 6, 0.7);
+	np_terrain_alt     = NoiseParams(4,    25,  v3f(600, 600, 600), 5934,  5, 0.6);
+	np_terrain_persist = NoiseParams(0.6,  0.1, v3f(500, 500, 500), 539,   3, 0.6);
+	np_height_select   = NoiseParams(-0.5, 1,   v3f(250, 250, 250), 4213,  5, 0.69);
+	np_filler_depth    = NoiseParams(0,    1.2, v3f(150, 150, 150), 261,   4, 0.7);
+	np_mount_height    = NoiseParams(100,  30,  v3f(500, 500, 500), 72449, 4, 0.6);
+	np_ridge_uwater    = NoiseParams(0,    1,   v3f(500, 500, 500), 85039, 4, 0.6);
+	np_mountain        = NoiseParams(0,    1,   v3f(250, 350, 250), 5333,  5, 0.68);
+	np_ridge           = NoiseParams(0,    1,   v3f(100, 100, 100), 6467,  4, 0.75);
+}
+
+
+void MapgenV7Params::readParams(Settings *settings) {
+	settings->getFlagStrNoEx("mgv7_spflags", spflags, flagdesc_mapgen_v7);
+
+	settings->getNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
+	settings->getNoiseParams("mgv7_np_terrain_alt",     np_terrain_alt);
+	settings->getNoiseParams("mgv7_np_terrain_persist", np_terrain_persist);
+	settings->getNoiseParams("mgv7_np_height_select",   np_height_select);
+	settings->getNoiseParams("mgv7_np_filler_depth",    np_filler_depth);
+	settings->getNoiseParams("mgv7_np_mount_height",    np_mount_height);
+	settings->getNoiseParams("mgv7_np_ridge_uwater",    np_ridge_uwater);
+	settings->getNoiseParams("mgv7_np_mountain",        np_mountain);
+	settings->getNoiseParams("mgv7_np_ridge",           np_ridge);
+}
+
+
+void MapgenV7Params::writeParams(Settings *settings) {
+	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7, (u32)-1);
+
+	settings->setNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
+	settings->setNoiseParams("mgv7_np_terrain_alt",     np_terrain_alt);
+	settings->setNoiseParams("mgv7_np_terrain_persist", np_terrain_persist);
+	settings->setNoiseParams("mgv7_np_height_select",   np_height_select);
+	settings->setNoiseParams("mgv7_np_filler_depth",    np_filler_depth);
+	settings->setNoiseParams("mgv7_np_mount_height",    np_mount_height);
+	settings->setNoiseParams("mgv7_np_ridge_uwater",    np_ridge_uwater);
+	settings->setNoiseParams("mgv7_np_mountain",        np_mountain);
+	settings->setNoiseParams("mgv7_np_ridge",           np_ridge);
+}
+
+
+///////////////////////////////////////
 
 
 int MapgenV7::getGroundLevelAtPoint(v2s16 p) {
@@ -229,7 +266,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	
 	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 	
-	if (!(flags & MG_NOLIGHT))
+	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
 					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
 	//setLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
@@ -262,13 +299,13 @@ void MapgenV7::calculateNoise() {
 	
 	noise_filler_depth->perlinMap2D(x, z);
 	
-	if (flags & MGV7_MOUNTAINS) {
+	if (spflags & MGV7_MOUNTAINS) {
 		noise_mountain->perlinMap3D(x, y, z);
 		noise_mount_height->perlinMap2D(x, z);
 		noise_mount_height->transformNoiseMap();
 	}
 
-	if (flags & MGV7_RIDGES) {
+	if (spflags & MGV7_RIDGES) {
 		noise_ridge->perlinMap3D(x, y, z);
 		noise_ridge_uwater->perlinMap2D(x, z);
 	}
@@ -375,10 +412,10 @@ void MapgenV7::carveRivers() {
 int MapgenV7::generateTerrain() {
 	int ymax = generateBaseTerrain();
 
-	if (flags & MGV7_MOUNTAINS)
+	if (spflags & MGV7_MOUNTAINS)
 		generateMountainTerrain();
 
-	if (flags & MGV7_RIDGES)
+	if (spflags & MGV7_RIDGES)
 		generateRidgeTerrain();
 		
 	return ymax;
@@ -704,14 +741,15 @@ void MapgenV7::addTopNodes() {
 #endif
 
 
-#include "mapgen_v6.h"
+NoiseParams nparams_v7_def_cave(6, 6.0, v3f(250.0, 250.0, 250.0), 34329, 3, 0.50);
+
 void MapgenV7::generateCaves(int max_stone_y) {
 	PseudoRandom ps(blockseed + 21343);
 
 	int volume_nodes = (node_max.X - node_min.X + 1) *
 					   (node_max.Y - node_min.Y + 1) *
 					   (node_max.Z - node_min.Z + 1);
-	float cave_amount = NoisePerlin2D(&nparams_v6_def_cave,
+	float cave_amount = NoisePerlin2D(&nparams_v7_def_cave,
 								node_min.X, node_min.Y, seed);
 
 	u32 caves_count = MYMAX(0.0, cave_amount) * volume_nodes / 250000;
@@ -724,5 +762,5 @@ void MapgenV7::generateCaves(int max_stone_y) {
 	for (u32 i = 0; i < bruises_count; i++) {
 		CaveV7 cave(this, &ps, true);
 		cave.makeCave(node_min, node_max, max_stone_y);
-	}	
+	}
 }

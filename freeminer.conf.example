@@ -76,6 +76,9 @@
 # The allowed adjustment range for the automatic rendering range adjustment
 #viewing_range_nodes_max = 160
 #viewing_range_nodes_min = 35
+#Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#farmesh = 0
+#farmesh_step = 2
 # Initial window size
 #screenW = 800
 #screenH = 600
@@ -241,7 +244,9 @@
 # Server stuff
 #
 # Network port to listen (UDP)
-#port =
+#port = 30000
+# Bind address
+#bind_address =
 # Name of server
 #server_name = Freeminer server
 # Description of server
@@ -355,11 +360,11 @@
 # Maximum number of blocks that can be queued for loading.
 #emergequeue_limit_total = 256
 # Maximum number of blocks to be queued that are to be loaded from file.
-# Leave blank for an appropriate amount to be chosen automatically.
-#emergequeue_limit_diskonly =
+# Set to blank for an appropriate amount to be chosen automatically.
+#emergequeue_limit_diskonly = 32
 # Maximum number of blocks to be queued that are to be generated.
-# Leave blank for an appropriate amount to be chosen automatically.
-#emergequeue_limit_generate =
+# Set to blank for an appropriate amount to be chosen automatically.
+#emergequeue_limit_generate = 32
 # Number of emerge threads to use.  Make this field blank, or increase this number, to use multiple threads.
 # On multiprocessor systems, this will improve mapgen speed greatly, at the cost of slightly buggy caves.
 #num_emerge_threads = 1
@@ -407,14 +412,18 @@
 # Mapgen stuff
 #
 
-# Name of map generator to be used.  Currently supported: v6, indev, singlenode, math
+# Name of map generator to be used.  Currently supported: v6, v7, indev, singlenode, math
 #mg_name = v6
 # Water level of map.
 #water_level = 1
 # Size of chunks to be generated.
 #chunksize = 5
-# Map generation attributes.  Currently supported: trees, caves, flat, v6_biome_blend, v6_jungles, dungeons, nolight
-#mg_flags = trees, caves, v6_biome_blend
+# Map generation attributes.  Currently supported: trees, caves, flat, dungeons, light
+# Flags that are not specified in the flag string are not modified from the default.
+# To explicitly turn off a flag, prepend "no" to the beginning, e.g. nolight.
+#mg_flags = trees, caves
+# Map generation attributes specific to Mapgen V6.  Currently supported: biomeblend, jungles, mudflow
+#mgv6_spflags = biomeblend
 # How large deserts and beaches are
 #mgv6_freq_desert = 0.45
 #mgv6_freq_beach = 0.15
@@ -432,6 +441,7 @@
 #mgv6_np_trees = 0, 1, (125, 125, 125), 2, 4, 0.66
 #mgv6_np_apple_trees = 0, 1, (100, 100, 100), 342902, 3, 0.45
 
+#mgv7_spflags = mountains, ridges
 #mgv7_np_terrain = 10, 12, (350, 350, 350), 82341, 5, 0.6
 #mgv7_np_bgroup = 0.5, 0.3125, (350, 350, 350), 5923, 2, 0.6
 #mgv7_np_heat = 25, 50, (500, 500, 500), 35293, 1, 0

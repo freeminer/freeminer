@@ -1,20 +1,23 @@
 /*
-Minetest
+util/string.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "string.h"
@@ -52,7 +55,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	size_t *outbuf_left_ptr = &outbuf_size;
 
 	while (inbuf_size > 0)
-		iconv(cd, &inbuf_ptr, inbuf_left_ptr, &outbuf_ptr, outbuf_left_ptr);
+		iconv(cd, sloppy<char**>(&inbuf_ptr), inbuf_left_ptr, &outbuf_ptr, outbuf_left_ptr);
 
 	iconv_close(cd);
 	return 0;
@@ -196,48 +199,78 @@ std::string urldecode(std::string str)
 	return oss.str();
 }
 
-u32 readFlagString(std::string str, FlagDesc *flagdesc) {
+u32 readFlagString(std::string str, FlagDesc *flagdesc, u32 *flagmask)
+{
 	if (str.length() == 0)
 		return 0;
-	u32 result = 0;
+	u32 result = 0, mask = 0;
 	char *s = &str[0];
 	char *flagstr, *strpos = NULL;
-	
+
 	while ((flagstr = strtok_r(s, ",", &strpos))) {
 		s = NULL;
-		
+
 		while (*flagstr == ' ' || *flagstr == '\t')
 			flagstr++;
-		
+
+		bool flagset = true;
+		if (!strncasecmp(flagstr, "no", 2)) {
+			flagset = false;
+			flagstr += 2;
+		}
+
 		for (int i = 0; flagdesc[i].name; i++) {
 			if (!strcasecmp(flagstr, flagdesc[i].name)) {
-				result |= flagdesc[i].flag;
+				mask |= flagdesc[i].flag;
+				if (flagset)
+					result |= flagdesc[i].flag;
 				break;
 			}
 		}
 	}
-	
+
+	if (flagmask)
+		*flagmask = mask;
+
 	return result;
 }
 
-std::string writeFlagString(u32 flags, FlagDesc *flagdesc) {
+std::string writeFlagString(u32 flags, FlagDesc *flagdesc, u32 flagmask)
+{
 	std::string result;
-	
+
 	for (int i = 0; flagdesc[i].name; i++) {
-		if (flags & flagdesc[i].flag) {
+		if (flagmask & flagdesc[i].flag) {
+			if (!(flags & flagdesc[i].flag))
+				result += "no";
+
 			result += flagdesc[i].name;
 			result += ", ";
 		}
 	}
-	
+
 	size_t len = result.length();
 	if (len >= 2)
 		result.erase(len - 2, 2);
-	
+
 	return result;
 }
 
-char *mystrtok_r(char *s, const char *sep, char **lasts) {
+size_t mystrlcpy(char *dst, const char *src, size_t size)
+{
+	size_t srclen  = strlen(src) + 1;
+	size_t copylen = MYMIN(srclen, size);
+
+	if (copylen > 0) {
+		memcpy(dst, src, copylen);
+		dst[copylen - 1] = '\0';
+	}
+
+	return srclen;
+}
+
+char *mystrtok_r(char *s, const char *sep, char **lasts)
+{
 	char *t;
 
 	if (!s)
@@ -262,7 +295,8 @@ char *mystrtok_r(char *s, const char *sep, char **lasts) {
 	return s;
 }
 
-u64 read_seed(const char *str) {
+u64 read_seed(const char *str)
+{
 	char *endptr;
 	u64 num;
 	

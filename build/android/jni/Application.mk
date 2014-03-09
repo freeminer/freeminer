@@ -1,4 +1,4 @@
-NDK_TOOLCHAIN_VERSION := 4.7
+NDK_TOOLCHAIN_VERSION := 4.6
 APP_OPTIM := release
 APP_ABI := armeabi-v7a
 

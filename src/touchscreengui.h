@@ -40,7 +40,7 @@ using namespace irr::gui;
 
 class TouchScreenGUI : public InputHandler {
 public:
-	TouchScreenGUI(IrrlichtDevice *device);
+	explicit TouchScreenGUI(IrrlichtDevice *device);
 	~TouchScreenGUI();
 	void init();
 	void OnEvent(const SEvent &event);
@@ -76,6 +76,7 @@ public:
 	bool isSingleClick();
 	bool isDoubleClick();
 	void resetClicks();
+
 private:
 	IrrlichtDevice *m_device;
 	IGUIEnvironment *m_guienv;
@@ -87,8 +88,8 @@ private:
 	bool m_down;
 	s32 m_down_pointer_id;
 	u32 m_down_since;
-	v2s32 m_down_from; // first known position
-	v2s32 m_down_to; // last known position
+	v2s32 m_down_from;  // first known position
+	v2s32 m_down_to;  // last known position
 
 	bool m_digging;
 	bool m_rightclick;
@@ -104,7 +105,7 @@ private:
 	v2u32 m_screensize;
 
 	u32 m_hud_start_y;
-	bool m_visible; // is the gui visible
+	bool m_visible;  // is the gui visible
 
 	bool m_double_click;
 	int m_previous_click_time;

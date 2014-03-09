@@ -1,20 +1,23 @@
 /*
-Minetest
+mapgen_math.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <cmath>
@@ -137,22 +140,26 @@ double sphere(double x, double y, double z, double d, int ITR = 1) {
 	return v3f(x, y, z).getLength() < d;
 }
 
-bool MapgenMathParams::readParams(Settings *settings) {
+//////////////////////// Mapgen Math parameter read/write
+
+void MapgenMathParams::readParams(Settings *settings) {
 	params = settings->getJson("mg_math");
-	return true;
 }
 
 void MapgenMathParams::writeParams(Settings *settings) {
 	settings->setJson("mg_math", params);
 }
 
-MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
+///////////////////////////////////////////////////////////////////////////////
+
+MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
 	ndef = emerge->ndef;
-	mg_params = params_;
+	mg_params = (MapgenMathParams *)params_->sparams;
+
 	Json::Value & params = mg_params->params;
 
 	if (params.get("light", 0).asBool())
-		this->flags |= MG_NOLIGHT;
+	this->flags &= ~MG_LIGHT;
 
 	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
 	n_water_source	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
@@ -190,7 +197,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 		func = &sphere;
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", 100).asDouble();
-		scale = params.get("scale", 1/size).asDouble();
+		scale = params.get("scale", 1.0/size).asDouble();
 	}
 
 
