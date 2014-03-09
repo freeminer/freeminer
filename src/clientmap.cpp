@@ -1,20 +1,23 @@
 /*
-Minetest
+clientmap.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "clientmap.h"
@@ -43,6 +46,11 @@ MapDrawControl::MapDrawControl():
 		blocks_drawn(0),
 		blocks_would_have_drawn(0),
 		farthest_drawn(0)
+		,farmesh(0)
+		,farmesh_step(1)
+		,fps(30)
+		,fps_avg(30)
+		,drawtime_avg(30)
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");
@@ -189,6 +197,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	v3f camera_position = m_camera_position;
 	v3f camera_direction = m_camera_direction;
 	f32 camera_fov = m_camera_fov;
+	v3s16 camera_offset = m_camera_offset;
 	m_camera_mutex.Unlock();
 
 	// Use a higher fov to accomodate faster camera movements.
@@ -263,6 +272,9 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				Compare block position to camera position, skip
 				if not seen on display
 			*/
+			
+			if (block->mesh != NULL)
+				block->mesh->updateCameraOffset(m_camera_offset);
 			
 			float range = 100000 * BS;
 			if(m_control.range_all == false)

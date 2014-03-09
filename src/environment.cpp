@@ -1,21 +1,23 @@
+/*
+environment.cpp
+Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
 /*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+This file is part of Freeminer.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "environment.h"
@@ -728,6 +730,29 @@ public:
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
 		ServerMap *map = &m_env->getServerMap();
 
+		// Find out how many objects the block contains
+		u32 active_object_count = block->m_static_objects.m_active.size();
+		// Find out how many objects this and all the neighbors contain
+		u32 active_object_count_wider = 0;
+		u32 wider_unknown_count = 0;
+		for(s16 x=-1; x<=1; x++)
+		for(s16 y=-1; y<=1; y++)
+		for(s16 z=-1; z<=1; z++)
+		{
+			MapBlock *block2 = map->getBlockNoCreateNoEx(
+					block->getPos() + v3s16(x,y,z));
+			if(block2==NULL){
+				++wider_unknown_count;
+				continue;
+			}
+			active_object_count_wider +=
+					block2->m_static_objects.m_active.size()
+					+ block2->m_static_objects.m_stored.size();
+		}
+		// Extrapolate
+		u32 wider_known_count = 3*3*3 - wider_unknown_count;
+		active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
+				
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
@@ -769,30 +794,6 @@ public:
 				}
 neighbor_found:
 
-				// Find out how many objects the block contains
-				u32 active_object_count = block->m_static_objects.m_active.size();
-				// Find out how many objects this and all the neighbors contain
-				u32 active_object_count_wider = 0;
-				//u32 wider_unknown_count = 0;
-				for(s16 x=-1; x<=1; x++)
-				for(s16 y=-1; y<=1; y++)
-				for(s16 z=-1; z<=1; z++)
-				{
-					MapBlock *block2 = map->getBlockNoCreateNoEx(
-							block->getPos() + v3s16(x,y,z));
-					if(block2==NULL){
-						//wider_unknown_count = 0;
-						continue;
-					}
-					active_object_count_wider +=
-							block2->m_static_objects.m_active.size()
-							+ block2->m_static_objects.m_stored.size();
-				}
-				// Extrapolate
-				//u32 wider_known_count = 3*3*3; // - wider_unknown_count;
-				//active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
-				
-				// Call trigger
 				i->abm->trigger(m_env, p, n,
 						active_object_count, active_object_count_wider, neighbor, activate);
 			}

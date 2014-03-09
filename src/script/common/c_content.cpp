@@ -1,20 +1,23 @@
 /*
-Minetest
+script/common/c_content.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "common/c_content.h"
 #include "common/c_converter.h"
@@ -921,23 +924,32 @@ void push_hit_params(lua_State *L,const HitParams &params)
 }
 
 /******************************************************************************/
-u32 getflagsfield(lua_State *L, int table, const char *fieldname,
-	FlagDesc *flagdesc, u32 *flagmask)
+
+bool getflagsfield(lua_State *L, int table, const char *fieldname,
+	FlagDesc *flagdesc, u32 *flags, u32 *flagmask)
 {
-	u32 flags = 0;
-	
 	lua_getfield(L, table, fieldname);
 
-	if (lua_isstring(L, -1)) {
-		std::string flagstr = lua_tostring(L, -1);
-		flags = readFlagString(flagstr, flagdesc, flagmask);
-	} else if (lua_istable(L, -1)) {
-		flags = read_flags_table(L, -1, flagdesc, flagmask);
-	}
+	bool success = read_flags(L, -1, flagdesc, flags, flagmask);
 
 	lua_pop(L, 1);
 
-	return flags;
+	return success;
+}
+
+bool read_flags(lua_State *L, int index, FlagDesc *flagdesc,
+	u32 *flags, u32 *flagmask)
+{
+	if (lua_isstring(L, index)) {
+		std::string flagstr = lua_tostring(L, index);
+		*flags = readFlagString(flagstr, flagdesc, flagmask);
+	} else if (lua_istable(L, index)) {
+		*flags = read_flags_table(L, index, flagdesc, flagmask);
+	} else {
+		return false;
+	}
+
+	return true;
 }
 
 u32 read_flags_table(lua_State *L, int table, FlagDesc *flagdesc, u32 *flagmask)
