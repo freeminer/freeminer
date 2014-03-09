@@ -1568,6 +1568,33 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_ANIMATIONS_WD_START].convert(&player->animation_wd_start);
 		packet[TOCLIENT_ANIMATIONS_WD_STOP].convert(&player->animation_wd_stop);
 	}
+	else if(command == TOCLIENT_SET_SKY)
+	{
+		video::SColor *bgcolor = new video::SColor(packet[TOCLIENT_SET_SKY_COLOR].as<video::SColor>());
+		std::string *type = new std::string(packet[TOCLIENT_SET_SKY_TYPE].as<std::string>());
+		std::vector<std::string> *params = new std::vector<std::string>;
+		packet[TOCLIENT_SET_SKY_PARAMS].convert(params);
+
+		ClientEvent event;
+		event.type            = CE_SET_SKY;
+		event.set_sky.bgcolor = bgcolor;
+		event.set_sky.type    = type;
+		event.set_sky.params  = params;
+		m_client_event_queue.push_back(event);
+	}
+	else if(command == TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO)
+	{
+		bool do_override;
+		float day_night_ratio_f;
+		packet[TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO].convert(&do_override);
+		packet[TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_VALUE].convert(&day_night_ratio_f);
+
+		ClientEvent event;
+		event.type                                 = CE_OVERRIDE_DAY_NIGHT_RATIO;
+		event.override_day_night_ratio.do_override = do_override;
+		event.override_day_night_ratio.ratio_f     = day_night_ratio_f;
+		m_client_event_queue.push_back(event);
+	}
 	else
 	{
 		infostream<<"Client: Ignoring unknown command "
