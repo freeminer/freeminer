@@ -316,9 +316,9 @@ if(ENABLE_LEVELDB)
 endif(ENABLE_LEVELDB)
 
 
-option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
-set(USE_MANDELBULBER 0)
-find_package(Mandelbulber)
+#option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
+set(USE_MANDELBULBER 1)
+#find_package(Mandelbulber)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
