@@ -2104,6 +2104,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 					stays_in_same_block = true;
 
 				MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+				if (!block)
+					continue;
 
 				std::map<u16, StaticObject>::iterator n =
 						block->m_static_objects.m_active.find(id);
