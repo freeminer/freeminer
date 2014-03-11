@@ -272,7 +272,7 @@ void set_default_settings(Settings *settings)
 
 	//liquid stuff
 	settings->setDefault("liquid_finite", "false");
-	settings->setDefault("liquid_update", "0.4");
+	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
