@@ -152,8 +152,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::wstring name, const std::wstring label,
-				const std::wstring fdeflt, int id) :
+		FieldSpec(const std::wstring &name, const std::wstring &label,
+		          const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),

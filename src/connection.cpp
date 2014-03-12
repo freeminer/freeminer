@@ -1173,7 +1173,7 @@ void UDPPeer::RunCommandQueues(
 					channels[i].queued_commands.push_front(c);
 				}
 			}
-			catch (ItemNotFoundException e) {
+			catch (ItemNotFoundException &e) {
 				// intentionally empty
 			}
 		}
@@ -2070,7 +2070,7 @@ void ConnectionReceiveThread::receive()
 						m_connection->putEvent(e);
 					}
 				}
-				catch(ProcessedSilentlyException e) {
+				catch(ProcessedSilentlyException &e) {
 					/* try reading again */
 				}
 			}

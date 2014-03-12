@@ -69,7 +69,7 @@ struct ModSpec
 	bool is_modpack;
 	// if modpack:
 	std::map<std::string,ModSpec> modpack_content;
-	ModSpec(const std::string name_="", const std::string path_=""):
+	ModSpec(const std::string &name_="", const std::string &path_=""):
 		name(name_),
 		path(path_),
 		depends(),
