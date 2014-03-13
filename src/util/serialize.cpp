@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "util/string.h"
 #include "../exceptions.h"
+#include "../irrlichttypes.h"
 
 #include <sstream>
 #include <iomanip>
@@ -431,7 +432,7 @@ bool serializeStructToString(std::string *outstr,
 					bufpos += PADDING(bufpos, u64);
 					nprinted = snprintf(sbuf + pos, sbuflen,
 								is_unsigned ? "%llu, " : "%lli, ",
-								(unsigned long long)*((u64 *)bufpos));
+								*((u64 *)bufpos));
 					bufpos += sizeof(u64);
 				}
 				break;
