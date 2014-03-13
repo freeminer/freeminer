@@ -1874,14 +1874,14 @@ u32 Map::transformLiquidsFinite(ServerEnvironment *env, std::map<v3s16, MapBlock
 						liquid_levels[i] = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 						if (liquid_levels[i])
 							nb.l = 1;
-					} else {
+					} /*else {
 						int drop = ((ItemGroupList) nodemgr->get(nb.n).groups)["drop_by_liquid"];
 						if (drop && !(loopcount % drop) ) {
 							liquid_levels[i] = 0;
 							nb.l = 1;
 							nb.drop = 1;
 						}
-					}
+					} */
 
 					// todo: for erosion add something here..
 					break;
@@ -2138,8 +2138,8 @@ u32 Map::transformLiquidsFinite(ServerEnvironment *env, std::map<v3s16, MapBlock
 				continue;
 			}
 
-			if (neighbors[i].drop) // && level_max > 1 && total_level >= level_max - 1
-				env->getScriptIface()->node_drop(neighbors[i].p, 2);
+//			if (neighbors[i].drop) // && level_max > 1 && total_level >= level_max - 1
+//				env->getScriptIface()->node_drop(neighbors[i].p, 2);
 
 			neighbors[i].n.setContent(liquid_kind_flowing);
 			neighbors[i].n.setLevel(nodemgr, liquid_levels_want[i], 1);

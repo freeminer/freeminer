@@ -56,7 +56,7 @@ bool* m_variable;
 #endif
 
 #define SCRIPTAPI_PRECHECKHEADER                                               \
-		JMutexAutoLock script_lock__(this->m_luastackmutex);                   \
+		JMutexAutoLock (this->m_luastackmutex);                                \
 		SCRIPTAPI_LOCK_CHECK;                                                  \
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \
