@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../exceptions.h"
 #include "../irrlichttypes.h"
 
-#include <inttypes.h>  // For PRIxN, cinttypes is C++11-only
 #include <sstream>
 #include <iomanip>
 #include <vector>
@@ -420,20 +419,20 @@ bool serializeStructToString(std::string *outstr,
 				if (width == 16) {
 					bufpos += PADDING(bufpos, u16);
 					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%" PRIu16 ", " : "%" PRIi16 ", ",
+								is_unsigned ? "%u, " : "%d, ",
 								*((u16 *)bufpos));
 					bufpos += sizeof(u16);
 				} else if (width == 32) {
 					bufpos += PADDING(bufpos, u32);
 					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%" PRIu32 ", " : "%" PRIi32 ", ",
+								is_unsigned ? "%u, " : "%d, ",
 								*((u32 *)bufpos));
 					bufpos += sizeof(u32);
 				} else if (width == 64) {
 					bufpos += PADDING(bufpos, u64);
 					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%" PRIu64 ", " : "%" PRIi64 ", ",
-								*((u64 *)bufpos));
+								is_unsigned ? "%llu, " : "%lli, ",
+								(unsigned long long)*((u64 *)bufpos));
 					bufpos += sizeof(u64);
 				}
 				break;
