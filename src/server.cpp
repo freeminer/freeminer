@@ -709,7 +709,7 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_env, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
+		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 

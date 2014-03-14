@@ -474,7 +474,10 @@ private:
 
 	// Environment
 	ServerEnvironment *m_env;
+
+public:
 	JMutex m_env_mutex;
+private:
 
 	// server connection
 	con::Connection m_con;
