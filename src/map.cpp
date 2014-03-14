@@ -830,10 +830,11 @@ u32 Map::updateLighting(enum LightBank bank,
 			}
 			catch(InvalidPositionException &e)
 			{
-				assert(0);
+				goto L_END_BLOCK;
 			}
 
 		}
+		L_END_BLOCK:;
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
