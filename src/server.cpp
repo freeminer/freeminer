@@ -1789,7 +1789,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			SendChatMessage(peer_id, getStatusString());
 		}
 
-		actionstream<<player->getName()<<" ["<<addr_s<<"] "<<"joins game. " << std::endl;
 		/*
 			Print out action
 		*/
@@ -1804,6 +1803,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				actionstream << *i << " ";
 			}
+			actionstream<<player->getName();
 
 			actionstream<<std::endl;
 		}
