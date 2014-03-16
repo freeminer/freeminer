@@ -50,8 +50,13 @@ bool ScriptApiItem::item_OnDrop(ItemStack &item,
 	pushFloatPos(L, pos);
 	if(lua_pcall(L, 3, 1, errorhandler))
 		scriptError();
-	if(!lua_isnil(L, -1))
-		item = read_item(L,-1, getServer());
+	if(!lua_isnil(L, -1)) {
+		try {
+			item = read_item(L,-1, getServer());
+		} catch (LuaError &e) {
+			throw LuaError(std::string(e.what()) + ". item=" + item.name);
+		}
+	}
 	lua_pop(L, 2);  // Pop item and error handler
 	return true;
 }
@@ -74,8 +79,13 @@ bool ScriptApiItem::item_OnPlace(ItemStack &item,
 	pushPointedThing(pointed);
 	if(lua_pcall(L, 3, 1, errorhandler))
 		scriptError();
-	if(!lua_isnil(L, -1))
-		item = read_item(L,-1, getServer());
+	if(!lua_isnil(L, -1)) {
+		try {
+			item = read_item(L,-1, getServer());
+		} catch (LuaError &e) {
+			throw LuaError(std::string(e.what()) + ". item=" + item.name);
+		}
+	}
 	lua_pop(L, 2);  // Pop item and error handler
 	return true;
 }
@@ -98,8 +108,13 @@ bool ScriptApiItem::item_OnUse(ItemStack &item,
 	pushPointedThing(pointed);
 	if(lua_pcall(L, 3, 1, errorhandler))
 		scriptError();
-	if(!lua_isnil(L, -1))
-		item = read_item(L,-1, getServer());
+	if(!lua_isnil(L, -1)) {
+		try {
+			item = read_item(L,-1, getServer());
+		} catch (LuaError &e) {
+			throw LuaError(std::string(e.what()) + ". item=" + item.name);
+		}
+	}
 	lua_pop(L, 2);  // Pop item and error handler
 	return true;
 }
@@ -126,8 +141,13 @@ bool ScriptApiItem::item_OnCraft(ItemStack &item, ServerActiveObject *user,
 	InvRef::create(L, craft_inv);
 	if(lua_pcall(L, 4, 1, errorhandler))
 		scriptError();
-	if(!lua_isnil(L, -1))
-		item = read_item(L,-1, getServer());
+	if(!lua_isnil(L, -1)) {
+		try {
+			item = read_item(L,-1, getServer());
+		} catch (LuaError &e) {
+			throw LuaError(std::string(e.what()) + ". item=" + item.name);
+		}
+	}
 	lua_pop(L, 2);  // Pop item and error handler
 	return true;
 }
@@ -154,8 +174,13 @@ bool ScriptApiItem::item_CraftPredict(ItemStack &item, ServerActiveObject *user,
 	InvRef::create(L, craft_inv);
 	if(lua_pcall(L, 4, 1, errorhandler))
 		scriptError();
-	if(!lua_isnil(L, -1))
-		item = read_item(L,-1, getServer());
+	if(!lua_isnil(L, -1)) {
+		try {
+			item = read_item(L,-1, getServer());
+		} catch (LuaError &e) {
+			throw LuaError(std::string(e.what()) + ". item=" + item.name);
+		}
+	}
 	lua_pop(L, 2);  // Pop item and error handler
 	return true;
 }

@@ -26,13 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_internal.h"
 #include "itemdef.h"
 
-LuaError::LuaError(lua_State *L, const std::string &s) :
-	ServerError(s)
-{
-	if (L) {
-		m_s += '\n' + script_get_backtrace(L);
-	}
-}
 
 struct EnumString es_ItemType[] =
 	{
