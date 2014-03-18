@@ -491,6 +491,12 @@ public:
 	
 	void pushElementsToCircuit(Circuit* circuit);
 
+#ifndef SERVER // Only on client
+	MapBlockMesh* getMesh(int step = 1);
+	void setMesh(MapBlockMesh* rmesh);
+	void delMesh();
+#endif
+
 private:
 	/*
 		Private methods
@@ -523,6 +529,7 @@ public:
 
 #ifndef SERVER // Only on client
 	MapBlockMesh *mesh;
+	MapBlockMesh  *mesh2, *mesh4, *mesh8, *mesh16;
 #endif
 	
 	NodeMetadataList m_node_metadata;

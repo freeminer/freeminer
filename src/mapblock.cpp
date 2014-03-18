@@ -74,21 +74,14 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	
 #ifndef SERVER
 	mesh = NULL;
+	mesh2 = mesh4 = mesh8 = mesh16 = NULL;
 #endif
 }
 
 MapBlock::~MapBlock()
 {
 #ifndef SERVER
-	{
-		//JMutexAutoLock lock(mesh_mutex);
-		
-		if(mesh)
-		{
-			delete mesh;
-			mesh = NULL;
-		}
-	}
+	delMesh();
 #endif
 
 	if(data)
@@ -803,6 +796,38 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 		}
 	}
 }
+
+#ifndef SERVER
+MapBlockMesh* MapBlock::getMesh(int step) {
+	if (step >= 16 && mesh16) return mesh16;
+	if (step >= 8  && mesh8)  return mesh8;
+	if (step >= 4  && mesh4)  return mesh4;
+	if (step >= 2  && mesh2)  return mesh2;
+	if (step >= 1  && mesh)   return mesh;
+	if (mesh2)  return mesh2;
+	if (mesh4)  return mesh4;
+	if (mesh8)  return mesh8;
+	if (mesh16) return mesh16;
+	return mesh;
+}
+
+void MapBlock::setMesh(MapBlockMesh* rmesh) {
+	     if (rmesh->step == 16) {if (mesh16) delete mesh16;  mesh16 = rmesh;}
+	else if (rmesh->step == 8 ) {if (mesh8)  delete mesh8;   mesh8  = rmesh;}
+	else if (rmesh->step == 4 ) {if (mesh4)  delete mesh4;   mesh4  = rmesh;}
+	else if (rmesh->step == 2 ) {if (mesh2)  delete mesh2;   mesh2  = rmesh;}
+	else                        {if (mesh)   delete mesh;    mesh   = rmesh;}
+}
+
+void MapBlock::delMesh() {
+	if (mesh16) {delete mesh16; mesh16 = NULL;}
+	if (mesh8)  {delete mesh8;  mesh8  = NULL;}
+	if (mesh4)  {delete mesh4;  mesh4  = NULL;}
+	if (mesh2)  {delete mesh2;  mesh2  = NULL;}
+	if (mesh)   {delete mesh;   mesh   = NULL;}
+}
+#endif
+
 
 /*
 	Legacy serialization

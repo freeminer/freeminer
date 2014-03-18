@@ -66,7 +66,7 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_):
 	m_crack_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
 	m_gamedef(gamedef)
-	,range(0)
+	,step(1)
 	,draw_control(draw_control_)
 {}
 
@@ -1052,7 +1052,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
-	step(0),
+	step(data->step),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1065,8 +1065,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
-
-	step = getFarmeshStep(data->draw_control, data->range);
 
 	std::vector<FastFace> fastfaces_new;
 

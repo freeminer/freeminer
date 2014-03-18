@@ -62,6 +62,7 @@ QueuedMeshUpdate::QueuedMeshUpdate():
 	p(-1337,-1337,-1337),
 	data(NULL),
 	ack_block_to_server(false)
+	,lazy(false)
 {
 }
 
@@ -95,7 +96,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 /*
 	peer_id=0 adds with nobody to send to
 */
-void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_server, bool urgent)
+void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_server, bool urgent, bool lazy)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -122,6 +123,8 @@ void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_se
 			q->data = data;
 			if(ack_block_to_server)
 				q->ack_block_to_server = true;
+			if(!lazy)
+				q->lazy = false;
 			return;
 		}
 	}
@@ -133,6 +136,7 @@ void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_se
 	q->p = p;
 	q->data = data;
 	q->ack_block_to_server = ack_block_to_server;
+	q->lazy = lazy;
 	m_queue.push_back(q);
 }
 
@@ -193,6 +197,7 @@ void * MeshUpdateThread::Thread()
 		r.p = q->p;
 		r.mesh = mesh_new;
 		r.ack_block_to_server = q->ack_block_to_server;
+		r.lazy = q->lazy;
 
 		m_queue_out.push_back(r);
 
@@ -672,15 +677,10 @@ void Client::step(float dtime)
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if(block)
 			{
-				// Delete the old mesh
-				if(block->mesh != NULL)
-				{
-					delete block->mesh;
-					block->mesh = NULL;
-				}
-
-				// Replace with the new mesh
-				block->mesh = r.mesh;
+				if (!r.lazy)
+					block->delMesh();
+				if (r.mesh)
+					block->setMesh(r.mesh);
 			} else {
 				delete r.mesh;
 			}
@@ -2523,7 +2523,7 @@ void Client::typeChatMessage(const std::wstring &message)
 	}
 }
 
-void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent)
+void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool lazy)
 {
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
 	if(b == NULL)
@@ -2542,11 +2542,11 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent)
 		data->fill(b);
 		data->setCrack(m_crack_level, m_crack_pos);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
-		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
+		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p));
 	}
 	
 	// Add task to queue
-	m_mesh_update_thread.m_queue_in.addBlock(p, data, ack_to_server, urgent);
+	m_mesh_update_thread.m_queue_in.addBlock(p, data, ack_to_server, urgent, lazy);
 }
 
 void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server, bool urgent)

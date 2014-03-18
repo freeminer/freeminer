@@ -268,13 +268,14 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 		{
 			MapBlock *block = *i;
 
+			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 			/*
 				Compare block position to camera position, skip
 				if not seen on display
 			*/
 			
-			if (block->mesh != NULL)
-				block->mesh->updateCameraOffset(m_camera_offset);
+			if (block->getMesh(mesh_step) != NULL)
+				block->getMesh(mesh_step)->updateCameraOffset(m_camera_offset);
 			
 			float range = 100000 * BS;
 			if(m_control.range_all == false)
@@ -301,7 +302,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 			{
 				//JMutexAutoLock lock(block->mesh_mutex);
 
-				if(block->mesh == NULL){
+				if(block->getMesh(mesh_step) == NULL){
 					blocks_in_range_without_mesh++;
 					continue;
 				}
@@ -321,9 +322,8 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 					occlusion_culling_enabled = false;
 			}
 
-			int cam_range_blocks = getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos());
-			if (m_control.farmesh && getFarmeshStep(m_control, cam_range_blocks) != block->mesh->step) { //&& !block->mesh->transparent
-				m_client->addUpdateMeshTask(block->getPos(), false, false);
+			if (m_control.farmesh && mesh_step != block->getMesh(mesh_step)->step) { //&& !block->mesh->transparent
+				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1);
 			}
 
 			v3s16 cpn = block->getPos() * MAP_BLOCKSIZE;
@@ -529,8 +529,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	{
 		MapBlock *block = i->second;
 
+		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 		// If the mesh of the block happened to get deleted, ignore it
-		if(block->mesh == NULL)
+		if(block->getMesh(mesh_step) == NULL)
 			continue;
 		
 		float d = 0.0;
@@ -544,7 +545,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// Mesh animation
 		{
 			//JMutexAutoLock lock(block->mesh_mutex);
-			MapBlockMesh *mapBlockMesh = block->mesh;
+			MapBlockMesh *mapBlockMesh = block->getMesh(mesh_step);
 			assert(mapBlockMesh);
 			// Pretty random but this should work somewhat nicely
 			bool faraway = d >= BS*50;
@@ -575,7 +576,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		{
 			//JMutexAutoLock lock(block->mesh_mutex);
 
-			MapBlockMesh *mapBlockMesh = block->mesh;
+			MapBlockMesh *mapBlockMesh = block->getMesh(mesh_step);
 			assert(mapBlockMesh);
 
 			scene::SMesh *mesh = mapBlockMesh->getMesh();
