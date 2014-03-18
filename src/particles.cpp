@@ -1,20 +1,23 @@
 /*
-Minetest
+particles.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "particles.h"
@@ -244,7 +247,7 @@ void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
 		const TileSpec tiles[])
 {
 	// TODO maybe depend on fps
-	for (u16 j = 0; j < 128; j++) // set the amount of particles here
+	for (u16 j = 0; j < 64; j++) // set the amount of particles here
 	{
 		addNodeParticle(gamedef, smgr, player, env, pos, tiles);
 	}

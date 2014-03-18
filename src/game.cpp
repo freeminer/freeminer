@@ -1,20 +1,23 @@
 /*
-Minetest
+game.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "game.h"
@@ -994,7 +997,7 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 	std::string formspec =
 		"size[11,5.5,true]"
 		"field[3,2.35;6,0.5;f_text;;" + text + "]"
-		"button_exit[4,3;3,0.5;btn_send;"  + std::string(gettext("Proceed"))     + "]"
+		"button_exit[4,3;3,0.5;btn_send;"  + wide_to_narrow(wstrgettext("Proceed")) + "]"
 		;
 
 	/* Create menu */
@@ -1006,6 +1009,7 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 			new GUIFormSpecMenu(device, guiroot, -1,
 					&g_menumgr,
 					NULL, NULL, tsrc);
+	menu->doPause = false;
 	menu->setFormSource(current_formspec);
 	menu->setTextDest(current_textdest);
 	menu->drop();
@@ -1016,7 +1020,8 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 		TextDest* current_textdest, IWritableTextureSource* tsrc,
 		IrrlichtDevice * device)
 {
-	const char* control_text = gettext("Default Controls:\n"
+
+	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
 			"- WASD: move\n"
 			"- Space: jump/climb\n"
 			"- Shift: sneak/go down\n"
@@ -1027,7 +1032,7 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 			"- Mouse right: place/use\n"
 			"- Mouse wheel: select item\n"
 			"- T: chat\n"
-			);
+			));
 
 	std::ostringstream os;
 	os<<"Minetest\n";
@@ -1036,10 +1041,10 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 
 	std::string formspec =
 		"size[5,5.5,true]"
-		"button_exit[1,1;3,0.5;btn_continue;"  + std::string(gettext("Continue"))+ "]"
-		"button[1,2;3,0.5;btn_sound;"     + std::string(gettext("Sound Volume")) + "]"
-		"button[1,3;3,0.5;btn_exit_menu;" + std::string(gettext("Exit to Menu")) + "]"
-		"button[1,4;3,0.5;btn_exit_os;"   + std::string(gettext("Exit to OS"))   + "]"
+		"button_exit[1,1;3,0.5;btn_continue;"  + wide_to_narrow(wstrgettext("Continue"))+ "]"
+		"button_exit[1,2;3,0.5;btn_sound;"     + wide_to_narrow(wstrgettext("Sound Volume")) + "]"
+		"button_exit[1,3;3,0.5;btn_exit_menu;" + wide_to_narrow(wstrgettext("Exit to Menu")) + "]"
+		"button_exit[1,4;3,0.5;btn_exit_os;"   + wide_to_narrow(wstrgettext("Exit to OS"))   + "]"
 		;
 
 	/* Create menu */
@@ -1049,6 +1054,7 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 	current_textdest = new LocalFormspecHandler("MT_PAUSE_MENU");
 	GUIFormSpecMenu *menu =
 		new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr, NULL, NULL, tsrc);
+	menu->doPause = true;
 	menu->setFormSource(current_formspec);
 	menu->setTextDest(current_textdest);
 	menu->drop();
@@ -1924,6 +1930,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 			PlayerInventoryFormSource *src = new PlayerInventoryFormSource(&client);
 			assert(src);
+			menu->doPause = false;
 			menu->setFormSpec(src->getForm(), inventoryloc);
 			menu->setFormSource(src);
 			menu->setTextDest(new TextDestPlayerInventory(&client));
@@ -2521,6 +2528,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 								new GUIFormSpecMenu(device, guiroot, -1,
 										&g_menumgr,
 										&client, gamedef, tsrc);
+						menu->doPause = false;
 						menu->setFormSource(current_formspec);
 						menu->setTextDest(current_textdest);
 						menu->drop();
@@ -2789,7 +2797,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		
 		// Update sound listener
-		sound->updateListener(camera.getCameraNode()->getPosition(),
+		sound->updateListener(camera.getCameraNode()->getPosition()+intToFloat(camera_offset, BS),
 				v3f(0,0,0), // velocity
 				camera.getDirection(),
 				camera.getCameraNode()->getUpVector());
@@ -2841,6 +2849,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		{
 			infostream<<"Pointing at "<<pointed.dump()<<std::endl;
 			//dstream<<"Pointing at "<<pointed.dump()<<std::endl;
+/* node debug 
+			MapNode nu = client.getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
+			MapNode na = client.getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
+			infostream	<< "|| nu0="<<(int)nu.param0<<" nu1"<<(int)nu.param1<<" nu2"<<(int)nu.param1<<"; nam="<<nodedef->get(nu.getContent()).name
+						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<nodedef->get(na.getContent()).name
+						<<std::endl;
+*/
 		}
 
 		/*
@@ -3091,6 +3106,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 						new GUIFormSpecMenu(device, guiroot, -1,
 							&g_menumgr,
 							&client, gamedef, tsrc);
+					menu->doPause = false;
 					menu->setFormSpec(meta->getString("formspec"),
 							inventoryloc);
 					menu->setFormSource(new NodeMetadataFormSource(
@@ -3303,10 +3319,16 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 		//TimeTaker guiupdatetimer("Gui updating");
 		
+		draw_control.drawtime_avg = draw_control.drawtime_avg * 0.95 + (float)drawtime*0.05;
+		draw_control.fps_avg = 1000/draw_control.drawtime_avg;
+		draw_control.fps = (1.0/dtime_avg1);
+
 		if(show_debug)
 		{
+/*
 			static float drawtime_avg = 0;
 			drawtime_avg = drawtime_avg * 0.95 + (float)drawtime*0.05;
+*/
 			/*static float beginscenetime_avg = 0;
 			beginscenetime_avg = beginscenetime_avg * 0.95 + (float)beginscenetime*0.05;
 			static float scenetime_avg = 0;
@@ -3314,17 +3336,16 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			static float endscenetime_avg = 0;
 			endscenetime_avg = endscenetime_avg * 0.95 + (float)endscenetime*0.05;*/
 
-			u16 fps = (1.0/dtime_avg1);
 
 			std::ostringstream os(std::ios_base::binary);
 			os<<std::fixed
 				<<"Freeminer "<<minetest_version_hash
-				<<" FPS = "<<fps
+				<<std::setprecision(0)
+				<<" FPS = "<<draw_control.fps
 /*
 				<<" (R: range_all="<<draw_control.range_all<<")"
 */
-				<<std::setprecision(0)
-				<<" drawtime = "<<drawtime_avg
+				<<" drawtime = "<<draw_control.drawtime_avg
 /*
 				<<std::setprecision(1)
 				<<", dtime_jitter = "
@@ -3361,7 +3382,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				<<") (yaw="<<(wrapDegrees_0_360(camera_yaw))
 				<<") (t="<<client.getEnv().getClientMap().getHeat(pos_i, 1)
 				<<"C, h="<<client.getEnv().getClientMap().getHumidity(pos_i, 1)
-				<<"%) (seed = "<<((unsigned long long)client.getMapSeed())
+				<<"%) (seed = "<<((u64)client.getMapSeed())
 				<<")";
 			guitext2->setText(narrow_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);

@@ -1,21 +1,23 @@
+/*
+environment.cpp
+Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
 /*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+This file is part of Freeminer.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "environment.h"
@@ -88,19 +90,17 @@ void Environment::addPlayer(Player *player)
 void Environment::removePlayer(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
-re_search:
+
 	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
+			i != m_players.end();)
 	{
 		Player *player = *i;
-		if(player->peer_id != peer_id)
-			continue;
-
-		delete player;
-		m_players.erase(i);
-		// See if there is an another one
-		// (shouldn't be, but just to be sure)
-		goto re_search;
+		if(player->peer_id == peer_id) {
+			delete player;
+			i = m_players.erase(i);
+		} else {
+			++i;
+		}
 	}
 }
 
@@ -714,19 +714,53 @@ public:
 			}
 		}
 	}
+
 	ABMHandler::
 	~ABMHandler() {
 		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
 				i != m_aabms_list.end(); ++i)
 			delete *i;
 	}
+
+	// Find out how many objects the given block and its neighbours contain.
+	// Returns the number of objects in the block, and also in 'wider' the
+	// number of objects in the block and all its neighbours. The latter
+	// may an estimate if any neighbours are unloaded.
+	u32 ABMHandler::countObjects(MapBlock *block, ServerMap * map, u32 &wider)
+	{
+		wider = 0;
+		u32 wider_unknown_count = 0;
+		for(s16 x=-1; x<=1; x++)
+		for(s16 y=-1; y<=1; y++)
+		for(s16 z=-1; z<=1; z++)
+		{
+			MapBlock *block2 = map->getBlockNoCreateNoEx(
+					block->getPos() + v3s16(x,y,z));
+			if(block2==NULL){
+				wider_unknown_count++;
+				continue;
+			}
+			wider += block2->m_static_objects.m_active.size()
+					+ block2->m_static_objects.m_stored.size();
+		}
+		// Extrapolate
+		u32 active_object_count = block->m_static_objects.m_active.size();
+		u32 wider_known_count = 3*3*3 - wider_unknown_count;
+		wider += wider_unknown_count * wider / wider_known_count;
+		return active_object_count;
+	}
+
 	void ABMHandler::apply(MapBlock *block, bool activate)
 	{
-		if (m_aabms_empty) // whoa, when is it empty?
+		if(m_aabms_empty)
 			return;
 
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
 		ServerMap *map = &m_env->getServerMap();
+
+		u32 active_object_count_wider;
+		u32 active_object_count = this->countObjects(block, map, active_object_count_wider);
+		m_env->m_added_objects = 0;
 
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
@@ -769,32 +803,14 @@ public:
 				}
 neighbor_found:
 
-				// Find out how many objects the block contains
-				u32 active_object_count = block->m_static_objects.m_active.size();
-				// Find out how many objects this and all the neighbors contain
-				u32 active_object_count_wider = 0;
-				//u32 wider_unknown_count = 0;
-				for(s16 x=-1; x<=1; x++)
-				for(s16 y=-1; y<=1; y++)
-				for(s16 z=-1; z<=1; z++)
-				{
-					MapBlock *block2 = map->getBlockNoCreateNoEx(
-							block->getPos() + v3s16(x,y,z));
-					if(block2==NULL){
-						//wider_unknown_count = 0;
-						continue;
-					}
-					active_object_count_wider +=
-							block2->m_static_objects.m_active.size()
-							+ block2->m_static_objects.m_stored.size();
-				}
-				// Extrapolate
-				//u32 wider_known_count = 3*3*3; // - wider_unknown_count;
-				//active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
-				
-				// Call trigger
 				i->abm->trigger(m_env, p, n,
-						active_object_count, active_object_count_wider, neighbor, activate);
+						active_object_count, active_object_count_wider + active_object_count, neighbor, activate);
+
+				// Count surrounding objects again if the abms added any
+				if(m_env->m_added_objects > 0) {
+					active_object_count = countObjects(block, map, active_object_count_wider);
+					m_env->m_added_objects = 0;
+				}
 			}
 		}
 	}
@@ -1520,6 +1536,7 @@ u16 getFreeServerActiveObjectId(
 u16 ServerEnvironment::addActiveObject(ServerActiveObject *object)
 {
 	assert(object);
+	m_added_objects++;
 	u16 id = addActiveObjectRaw(object, true, 0);
 	return id;
 }
@@ -2085,6 +2102,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 					stays_in_same_block = true;
 
 				MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+				if (!block)
+					continue;
 
 				std::map<u16, StaticObject>::iterator n =
 						block->m_static_objects.m_active.find(id);

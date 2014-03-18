@@ -159,7 +159,7 @@ function update_menu()
 			";]"..
 			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
 	else
-		formspec = "size[15.5,11.625]"
+		formspec = "size[15.5,11.625,true]"
 		if tabbuilder.show_buttons then
 			formspec = formspec .. "image[-0.35,-0.675;" .. engine.formspec_escape(menu.defaulttexturedir .. "menu.png") .. "]"
 		end

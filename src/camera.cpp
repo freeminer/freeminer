@@ -1,20 +1,23 @@
 /*
-Minetest
+camera.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "camera.h"
@@ -558,6 +561,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 
 	int farmesh = g_settings->getS32("farmesh");
 	int farmesh_step = g_settings->getS32("farmesh_step");
+	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
 
 	f32 wanted_fps = g_settings->getFloat("wanted_fps");
 	wanted_fps = MYMAX(wanted_fps, 1.0);
@@ -586,27 +590,29 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
 	g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 
-	f32 wanted_frametime_farmesh = 1.0 / (wanted_fps);
-	f32 wanted_frametime_change_farmesh = wanted_frametime_farmesh - frametime;
-//infostream<<" wfr="<<wanted_frametime<<" wfrc="<<wanted_frametime_change<<";  "<<" wff="<<wanted_frametime_farmesh<<"wfcf="<<wanted_frametime_change_farmesh<<std::endl;
-
 	if (farmesh) {
-		//if (fabs(wanted_frametime_change_farmesh) >= wanted_frametime_farmesh*0.1) {
-			if (wanted_frametime_change_farmesh >= wanted_frametime_farmesh*0.4) {
-				m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
-				if (m_draw_control.farmesh >= farmesh*1.5 && m_draw_control.farmesh_step < farmesh_step)
+			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.4) {
+				if (m_draw_control.wanted_range >= farmesh_wanted)
+					m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
+				if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step)
 					++m_draw_control.farmesh_step;
-			} else if (wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.25){
-				if (m_draw_control.farmesh>10)
-					m_draw_control.farmesh*=0.8;
+			} else if (m_draw_control.fps <= wanted_fps*0.8){
+				float farmesh_was = m_draw_control.farmesh;
+				if (m_draw_control.fps <= wanted_fps*0.6)
+					m_draw_control.farmesh = farmesh;
+				else if (m_draw_control.fps <= wanted_fps*0.7)
+					m_draw_control.farmesh *= 0.5;
+				else if (m_draw_control.farmesh>10)
+					m_draw_control.farmesh *= 0.8;
 				else
-					m_draw_control.farmesh-=1;
+					m_draw_control.farmesh -= 1;
 				if (m_draw_control.farmesh < farmesh)
 					m_draw_control.farmesh = farmesh;
-				if (m_draw_control.farmesh <=farmesh && m_draw_control.farmesh_step > 1 && wanted_frametime_change_farmesh <= -wanted_frametime_farmesh*0.4)
+				if (m_draw_control.farmesh <= farmesh && m_draw_control.farmesh_step > 1 && m_draw_control.fps <= wanted_fps*0.3)
 					--m_draw_control.farmesh_step;
+				if (farmesh_was != m_draw_control.farmesh)
+					return;
 			}
-		//}
 	}
 
 	// If needed frametime change is small, just return

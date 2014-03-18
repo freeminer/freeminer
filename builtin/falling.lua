@@ -4,6 +4,22 @@
 -- Falling stuff
 --
 
+function node_drop(np, remove_fast)
+				local n2 = minetest.get_node(np)
+				local drops = minetest.get_node_drops(n2.name, "")
+				minetest.remove_node(np, remove_fast)
+				-- Add dropped items
+				local _, dropped_item
+				for _, dropped_item in ipairs(drops) do
+					minetest.add_item(np, dropped_item)
+				end
+				-- Run script hook
+				local _, callback
+				for _, callback in ipairs(minetest.registered_on_dignodes) do
+					callback(np, n2, nil)
+				end
+end
+
 local remove_fast = 0
 
 minetest.register_entity("__builtin:falling_node", {
@@ -86,6 +102,8 @@ minetest.register_entity("__builtin:falling_node", {
 			-- it's drops
 			if n2.name ~= "air" and (not minetest.registered_nodes[n2.name] or
 					minetest.registered_nodes[n2.name].liquidtype == "none") then
+				node_drop(np, remove_fast)
+--[[
 				local drops = minetest.get_node_drops(n2.name, "")
 				minetest.remove_node(np, remove_fast)
 				-- Add dropped items
@@ -98,6 +116,7 @@ minetest.register_entity("__builtin:falling_node", {
 				for _, callback in ipairs(minetest.registered_on_dignodes) do
 					callback(np, n2, nil)
 				end
+]]--
 			end
 			-- Create node and remove entity
 			minetest.add_node(np, self.node)

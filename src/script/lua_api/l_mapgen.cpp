@@ -1,20 +1,23 @@
 /*
-Minetest
+script/lua_api/l_mapgen.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "lua_api/l_mapgen.h"
@@ -189,9 +192,10 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 		return 0;
 
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
-	ASSERT(emerge);
+	assert(emerge);
 
 	std::string flagstr;
+	u32 flags = 0, flagmask = 0;
 
 	lua_getfield(L, 1, "mgname");
 	if (lua_isstring(L, -1)) {
@@ -216,13 +220,7 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 			"see lua_api.txt" << std::endl;
 	}
 
-	lua_getfield(L, 1, "flags");
-	if (lua_isstring(L, -1)) {
-		u32 flags, flagmask;
-
-		flagstr = lua_tostring(L, -1);
-		flags   = readFlagString(flagstr, flagdesc_mapgen, &flagmask);
-
+	if (getflagsfield(L, 1, "flags", flagdesc_mapgen, &flags, &flagmask)) {
 		emerge->params.flags &= ~flagmask;
 		emerge->params.flags |= flags;
 	}
@@ -260,11 +258,13 @@ int ModApiMapgen::l_set_noiseparam_defaults(lua_State *L)
 // set_gen_notify(string)
 int ModApiMapgen::l_set_gen_notify(lua_State *L)
 {
-	if (lua_isstring(L, 1)) {
+	u32 flags = 0, flagmask = 0;
+
+	if (read_flags(L, 1, flagdesc_gennotify, &flags, &flagmask)) {
 		EmergeManager *emerge = getServer(L)->getEmergeManager();
-		emerge->gennotify = readFlagString(lua_tostring(L, 1),
-			flagdesc_gennotify, NULL);
+		emerge->gennotify = flags;
 	}
+
 	return 0;
 }
 
@@ -410,8 +410,11 @@ int ModApiMapgen::l_register_decoration(lua_State *L)
 			break; }
 		case DECO_SCHEMATIC: {
 			DecoSchematic *dschem = (DecoSchematic *)deco;
-			dschem->flags = getflagsfield(L, index, "flags",
-				flagdesc_deco_schematic, NULL);
+
+			dschem->flags = 0;
+			getflagsfield(L, index, "flags", flagdesc_deco_schematic,
+				&dschem->flags, NULL);
+
 			dschem->rotation = (Rotation)getenumfield(L, index,
 				"rotation", es_Rotation, ROTATE_0);
 
@@ -485,8 +488,10 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	ore->clust_size     = getintfield_default(L, index, "clust_size", 0);
 	ore->height_min     = getintfield_default(L, index, "height_min", 0);
 	ore->height_max     = getintfield_default(L, index, "height_max", 0);
-	ore->flags          = getflagsfield(L, index, "flags", flagdesc_ore, NULL);
 	ore->nthresh        = getfloatfield_default(L, index, "noise_threshhold", 0.);
+	ore->flags          = 0;
+	getflagsfield(L, index, "flags", flagdesc_ore, &ore->flags, NULL);
+
 	lua_getfield(L, index, "wherein");
 	if (lua_istable(L, -1)) {
 		int  i = lua_gettop(L);

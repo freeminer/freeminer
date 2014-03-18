@@ -1,20 +1,23 @@
 /*
-Minetest
+script/cpp_api/s_nodemeta.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "cpp_api/s_nodemeta.h"
@@ -61,7 +64,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowMove(v3s16 p,
 		scriptError();
 	lua_remove(L, errorhandler); // Remove error handler
 	if(!lua_isnumber(L, -1))
-		throw LuaError(NULL, "allow_metadata_inventory_move should"
+		throw LuaError("allow_metadata_inventory_move should"
 				" return a number, guilty node: " + nodename);
 	int num = luaL_checkinteger(L, -1);
 	lua_pop(L, 1); // Pop integer
@@ -100,7 +103,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowPut(v3s16 p,
 		scriptError();
 	lua_remove(L, errorhandler); // Remove error handler
 	if(!lua_isnumber(L, -1))
-		throw LuaError(NULL, "allow_metadata_inventory_put should"
+		throw LuaError("allow_metadata_inventory_put should"
 				" return a number, guilty node: " + nodename);
 	int num = luaL_checkinteger(L, -1);
 	lua_pop(L, 1); // Pop integer
@@ -139,7 +142,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowTake(v3s16 p,
 		scriptError();
 	lua_remove(L, errorhandler); // Remove error handler
 	if(!lua_isnumber(L, -1))
-		throw LuaError(NULL, "allow_metadata_inventory_take should"
+		throw LuaError("allow_metadata_inventory_take should"
 				" return a number, guilty node: " + nodename);
 	int num = luaL_checkinteger(L, -1);
 	lua_pop(L, 1); // Pop integer

@@ -1,20 +1,23 @@
 /*
-Minetest
+util/serialize.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "serialize.h"
@@ -22,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "porting.h"
 #include "util/string.h"
 #include "../exceptions.h"
+#include "../irrlichttypes.h"
 
 #include <sstream>
 #include <iomanip>
@@ -384,23 +388,20 @@ fail:
 }
 
 
-bool serializeStructToString(std::string *outstr,
+bool serializeStructToString(std::string *out,
 	std::string format, void *value)
 {
-	char sbuf[2048];
-	int sbuflen = sizeof(sbuf) - 1;
-	sbuf[sbuflen] = 0;
+	std::ostringstream os;
 	std::string str;
-	int pos = 0;
-	size_t fpos;
 	char *f;
+	size_t strpos;
 
-	char *bufpos = (char *)value;
+	char *bufpos = (char *) value;
 	char *fmtpos, *fmt = &format[0];
 	while ((f = strtok_r(fmt, ",", &fmtpos))) {
 		fmt = NULL;
 		bool is_unsigned = false;
-		int width = 0, nprinted = 0;
+		int width = 0;
 		char valtype = *f;
 
 		width = (int)strtol(f + 1, &f, 10);
@@ -414,79 +415,65 @@ bool serializeStructToString(std::string *outstr,
 			case 'i':
 				if (width == 16) {
 					bufpos += PADDING(bufpos, u16);
-					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%u, " : "%d, ",
-								*((u16 *)bufpos));
+					os << *((u16 *) bufpos);
 					bufpos += sizeof(u16);
 				} else if (width == 32) {
 					bufpos += PADDING(bufpos, u32);
-					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%u, " : "%d, ",
-								*((u32 *)bufpos));
+					os << *((u32 *) bufpos);
 					bufpos += sizeof(u32);
 				} else if (width == 64) {
 					bufpos += PADDING(bufpos, u64);
-					nprinted = snprintf(sbuf + pos, sbuflen,
-								is_unsigned ? "%llu, " : "%lli, ",
-								(unsigned long long)*((u64 *)bufpos));
+					os << *((u64 *) bufpos);
 					bufpos += sizeof(u64);
 				}
 				break;
 			case 'b':
 				bufpos += PADDING(bufpos, bool);
-				nprinted = snprintf(sbuf + pos, sbuflen, "%s, ",
-									*((bool *)bufpos) ? "true" : "false");
+				os << std::boolalpha << *((bool *) bufpos);
 				bufpos += sizeof(bool);
 				break;
 			case 'f':
 				bufpos += PADDING(bufpos, float);
-				nprinted = snprintf(sbuf + pos, sbuflen, "%f, ",
-									*((float *)bufpos));
+				os << *((float *) bufpos);
 				bufpos += sizeof(float);
 				break;
 			case 's':
 				bufpos += PADDING(bufpos, std::string *);
-				str = **((std::string **)bufpos);
+				str = **((std::string **) bufpos);
 
-				fpos = 0;
-				while ((fpos = str.find('"', fpos)) != std::string::npos) {
-					str.insert(fpos, 1, '\\');
-					fpos += 2;
+				strpos = 0;
+				while ((strpos = str.find('"', strpos)) != std::string::npos) {
+					str.insert(strpos, 1, '\\');
+					strpos += 2;
 				}
 
-				nprinted = snprintf(sbuf + pos, sbuflen, "\"%s\", ",
-									(*((std::string **)bufpos))->c_str());
+				os << str;
 				bufpos += sizeof(std::string *);
 				break;
 			case 'v':
 				if (width == 2) {
 					bufpos += PADDING(bufpos, v2f);
-					v2f *v = (v2f *)bufpos;
-					nprinted = snprintf(sbuf + pos, sbuflen,
-										"(%f, %f), ", v->X, v->Y);
+					v2f *v = (v2f *) bufpos;
+					os << '(' << v->X << ", " << v->Y << ')';
 					bufpos += sizeof(v2f);
 				} else {
 					bufpos += PADDING(bufpos, v3f);
-					v3f *v = (v3f *)bufpos;
-					nprinted = snprintf(sbuf + pos, sbuflen,
-										"(%f, %f, %f), ", v->X, v->Y, v->Z);
+					v3f *v = (v3f *) bufpos;
+					os << '(' << v->X << ", " << v->Y << ", " << v->Z << ')';
 					bufpos += sizeof(v3f);
 				}
 				break;
 			default:
 				return false;
 		}
-		if (nprinted < 0) //error, buffer too small
-			return false;
-		pos     += nprinted;
-		sbuflen -= nprinted;
+		os << ", ";
 	}
+	*out = os.str();
 
-	// this is to trim off the trailing comma
-	if (pos >= 2)
-		sbuf[pos - 2] = 0;
-
-	*outstr = sbuf;
+	// Trim off the trailing comma and space
+	if (out->size() >= 2) {
+		out->resize(out->size() - 2);
+	}
 
 	return true;
 }

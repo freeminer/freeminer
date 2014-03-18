@@ -1,20 +1,23 @@
 /*
-Minetest
+script/lua_api/l_craft.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -150,16 +153,16 @@ int ModApiCraft::l_register_craft(lua_State *L)
 	if(type == "shaped"){
 		std::string output = getstringfield_default(L, table, "output", "");
 		if(output == "")
-			throw LuaError(NULL, "Crafting definition is missing an output");
+			throw LuaError("Crafting definition is missing an output");
 
 		int width = 0;
 		std::vector<std::string> recipe;
 		lua_getfield(L, table, "recipe");
 		if(lua_isnil(L, -1))
-			throw LuaError(NULL, "Crafting definition is missing a recipe"
+			throw LuaError("Crafting definition is missing a recipe"
 					" (output=\"" + output + "\")");
 		if(!readCraftRecipeShaped(L, -1, width, recipe))
-			throw LuaError(NULL, "Invalid crafting recipe"
+			throw LuaError("Invalid crafting recipe"
 					" (output=\"" + output + "\")");
 
 		CraftReplacements replacements;
@@ -167,7 +170,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 		if(!lua_isnil(L, -1))
 		{
 			if(!readCraftReplacements(L, -1, replacements))
-				throw LuaError(NULL, "Invalid replacements"
+				throw LuaError("Invalid replacements"
 						" (output=\"" + output + "\")");
 		}
 
@@ -181,17 +184,17 @@ int ModApiCraft::l_register_craft(lua_State *L)
 	else if(type == "shapeless"){
 		std::string output = getstringfield_default(L, table, "output", "");
 		if(output == "")
-			throw LuaError(NULL, "Crafting definition (shapeless)"
+			throw LuaError("Crafting definition (shapeless)"
 					" is missing an output");
 
 		std::vector<std::string> recipe;
 		lua_getfield(L, table, "recipe");
 		if(lua_isnil(L, -1))
-			throw LuaError(NULL, "Crafting definition (shapeless)"
+			throw LuaError("Crafting definition (shapeless)"
 					" is missing a recipe"
 					" (output=\"" + output + "\")");
 		if(!readCraftRecipeShapeless(L, -1, recipe))
-			throw LuaError(NULL, "Invalid crafting recipe"
+			throw LuaError("Invalid crafting recipe"
 					" (output=\"" + output + "\")");
 
 		CraftReplacements replacements;
@@ -199,7 +202,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 		if(!lua_isnil(L, -1))
 		{
 			if(!readCraftReplacements(L, -1, replacements))
-				throw LuaError(NULL, "Invalid replacements"
+				throw LuaError("Invalid replacements"
 						" (output=\"" + output + "\")");
 		}
 
@@ -224,12 +227,12 @@ int ModApiCraft::l_register_craft(lua_State *L)
 	else if(type == "cooking"){
 		std::string output = getstringfield_default(L, table, "output", "");
 		if(output == "")
-			throw LuaError(NULL, "Crafting definition (cooking)"
+			throw LuaError("Crafting definition (cooking)"
 					" is missing an output");
 
 		std::string recipe = getstringfield_default(L, table, "recipe", "");
 		if(recipe == "")
-			throw LuaError(NULL, "Crafting definition (cooking)"
+			throw LuaError("Crafting definition (cooking)"
 					" is missing a recipe"
 					" (output=\"" + output + "\")");
 
@@ -240,7 +243,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 		if(!lua_isnil(L, -1))
 		{
 			if(!readCraftReplacements(L, -1, replacements))
-				throw LuaError(NULL, "Invalid replacements"
+				throw LuaError("Invalid replacements"
 						" (cooking output=\"" + output + "\")");
 		}
 
@@ -254,7 +257,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 	else if(type == "fuel"){
 		std::string recipe = getstringfield_default(L, table, "recipe", "");
 		if(recipe == "")
-			throw LuaError(NULL, "Crafting definition (fuel)"
+			throw LuaError("Crafting definition (fuel)"
 					" is missing a recipe");
 
 		float burntime = getfloatfield_default(L, table, "burntime", 1.0);
@@ -264,7 +267,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 		if(!lua_isnil(L, -1))
 		{
 			if(!readCraftReplacements(L, -1, replacements))
-				throw LuaError(NULL, "Invalid replacements"
+				throw LuaError("Invalid replacements"
 						" (fuel recipe=\"" + recipe + "\")");
 		}
 
@@ -274,7 +277,7 @@ int ModApiCraft::l_register_craft(lua_State *L)
 	}
 	else
 	{
-		throw LuaError(NULL, "Unknown crafting definition type: \"" + type + "\"");
+		throw LuaError("Unknown crafting definition type: \"" + type + "\"");
 	}
 
 	lua_pop(L, 1);

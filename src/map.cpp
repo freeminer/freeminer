@@ -1,21 +1,23 @@
+/*
+map.cpp
+Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
 /*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+This file is part of Freeminer.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "map.h"
@@ -48,6 +50,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database-dummy.h"
 #include "database-sqlite3.h"
 #include "circuit.h"
+#include "scripting_game.h"
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
@@ -827,10 +830,11 @@ u32 Map::updateLighting(enum LightBank bank,
 			}
 			catch(InvalidPositionException &e)
 			{
-				assert(0);
+				goto L_END_BLOCK;
 			}
 
 		}
+		L_END_BLOCK:;
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
@@ -1724,6 +1728,7 @@ struct NodeNeighbor {
 	bool l; //can liquid
 	bool i; //infinity
 	int weight;
+	int drop; //drop by liquid
 };
 
 void Map::transforming_liquid_push_back(v3s16 & p) {
@@ -1770,7 +1775,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1842,14 +1847,18 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 			neighbors[i].l = 0;
 			neighbors[i].i = 0;
 			neighbors[i].weight = 0;
+			neighbors[i].drop = 0;
+
+			if (nb.n.getContent() == CONTENT_IGNORE)
+				continue;
 
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
-					//TODO: if (nb.n.getContent() == CONTENT_AIR || nodemgr->get(nb.n).buildable_to && !nodemgr->get(nb.n).walkable) { // need lua drop api for drop torches
 					if (nb.n.getContent() == CONTENT_AIR) {
 						liquid_levels[i] = 0;
 						nb.l = 1;
 					}
+					//TODO: if (nb.n.getContent() == CONTENT_AIR || nodemgr->get(nb.n).buildable_to && !nodemgr->get(nb.n).walkable) { // need lua drop api for drop torches
 					else if (	melt_kind_flowing != CONTENT_IGNORE &&
 							nb.n.getContent() == melt_kind_flowing &&
 							nb.t != NEIGHBOR_UPPER &&
@@ -1859,15 +1868,22 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 						liquid_levels[i] = (float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
 						if (liquid_levels[i])
 							nb.l = 1;
-					}
-					else if (	melt_kind != CONTENT_IGNORE &&
+					} else if (	melt_kind != CONTENT_IGNORE &&
 							nb.n.getContent() == melt_kind &&
 							nb.t != NEIGHBOR_UPPER &&
 							!(loopcount % 8)) {
 						liquid_levels[i] = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 						if (liquid_levels[i])
 							nb.l = 1;
+					} else {
+						int drop = ((ItemGroupList) nodemgr->get(nb.n).groups)["drop_by_liquid"];
+						if (drop && !(loopcount % drop) ) {
+							liquid_levels[i] = 0;
+							nb.l = 1;
+							nb.drop = 1;
+						}
 					}
+
 					// todo: for erosion add something here..
 					break;
 				case LIQUID_SOURCE:
@@ -2123,6 +2139,11 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 				continue;
 			}
 
+			if (neighbors[i].drop) {// && level_max > 1 && total_level >= level_max - 1
+				JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
+				m_server->getEnv().getScriptIface()->node_drop(neighbors[i].p, 2);
+			}
+
 			neighbors[i].n.setContent(liquid_kind_flowing);
 			neighbors[i].n.setLevel(nodemgr, liquid_levels_want[i], 1);
 
@@ -2142,6 +2163,8 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 					lighting_modified_blocks[block->getPos()] = block;
 			}
 			must_reflow.push_back(neighbors[i].p);
+
+
 		}
 
 		//if (total_was!=flowed) infostream<<" flowed "<<flowed<<"/"<<total_was<<std::endl;
@@ -2180,11 +2203,11 @@ u32 Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks, st
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_finite"))
-		return Map::transformLiquidsFinite(modified_blocks, lighting_modified_blocks, max_cycle_ms);
+		return Map::transformLiquidsFinite(m_server, modified_blocks, lighting_modified_blocks, max_cycle_ms);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 

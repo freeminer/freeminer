@@ -1,20 +1,23 @@
 /*
-Minetest
+server.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "server.h"
@@ -706,7 +709,7 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
+		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
@@ -1325,7 +1328,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	catch(con::PeerNotFoundException &e)
 	{
-		errorstream<<"Server::ProcessData(): Cancelling: peer "
+		verbosestream<<"Server::ProcessData(): Cancelling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;
 	}
@@ -1772,9 +1775,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		// Send Breath
 		SendPlayerBreath(peer_id);
 
-		// Send detached inventories
-		sendDetachedInventories(peer_id);
-
 		// Send player animations (default, walk, dig, both)
 		SendAnimations(m_con, peer_id);
 
@@ -1789,7 +1789,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			SendChatMessage(peer_id, getStatusString());
 		}
 
-		actionstream<<player->getName()<<" ["<<addr_s<<"] "<<"joins game. " << std::endl;
 		/*
 			Print out action
 		*/
@@ -1804,6 +1803,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				actionstream << *i << " ";
 			}
+			actionstream<<player->getName();
 
 			actionstream<<std::endl;
 		}
@@ -1855,7 +1855,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	Player *player = m_env->getPlayer(peer_id);
 	if(player == NULL){
-		errorstream<<"Server::ProcessData(): Cancelling: "
+		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
 				<<std::endl;
 		return;
@@ -3172,8 +3172,8 @@ void Server::SendChatMessage(u16 peer_id, const std::wstring &message)
 	}
 }
 
-void Server::SendShowFormspecMessage(u16 peer_id, const std::string formspec,
-					const std::string formname)
+void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
+                                     const std::string &formname)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -3997,8 +3997,8 @@ struct SendableMediaAnnouncement
 	std::string name;
 	std::string sha1_digest;
 
-	SendableMediaAnnouncement(const std::string name_="",
-			const std::string sha1_digest_=""):
+	SendableMediaAnnouncement(const std::string &name_="",
+	                          const std::string &sha1_digest_=""):
 		name(name_),
 		sha1_digest(sha1_digest_)
 	{}
@@ -4059,8 +4059,8 @@ struct SendableMedia
 	std::string path;
 	std::string data;
 
-	SendableMedia(const std::string &name_="", const std::string path_="",
-			const std::string &data_=""):
+	SendableMedia(const std::string &name_="", const std::string &path_="",
+	              const std::string &data_=""):
 		name(name_),
 		path(path_),
 		data(data_)
@@ -4511,7 +4511,7 @@ std::string Server::getBanDescription(const std::string &ip_or_name)
 	return m_banmanager->getBanDescription(ip_or_name);
 }
 
-void Server::notifyPlayer(const char *name, const std::wstring msg)
+void Server::notifyPlayer(const char *name, const std::wstring &msg)
 {
 	Player *player = m_env->getPlayer(name);
 	if(!player)
@@ -4624,7 +4624,7 @@ bool Server::overrideDayNightRatio(Player *player, bool do_override,
 	return true;
 }
 
-void Server::notifyPlayers(const std::wstring msg)
+void Server::notifyPlayers(const std::wstring &msg)
 {
 	SendChatMessage(PEER_ID_INEXISTENT,msg);
 }

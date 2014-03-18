@@ -1,20 +1,23 @@
 /*
-Minetest
+server.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+*/
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+/*
+This file is part of Freeminer.
+
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef SERVER_HEADER
@@ -123,8 +126,8 @@ struct MediaInfo
 	std::string path;
 	std::string sha1_digest;
 
-	MediaInfo(const std::string path_="",
-			const std::string sha1_digest_=""):
+	MediaInfo(const std::string &path_="",
+	          const std::string &sha1_digest_=""):
 		path(path_),
 		sha1_digest(sha1_digest_)
 	{
@@ -230,8 +233,8 @@ public:
 	void unsetIpBanned(const std::string &ip_or_name);
 	std::string getBanDescription(const std::string &ip_or_name);
 
-	void notifyPlayer(const char *name, const std::wstring msg);
-	void notifyPlayers(const std::wstring msg);
+	void notifyPlayer(const char *name, const std::wstring &msg);
+	void notifyPlayers(const std::wstring &msg);
 	void spawnParticle(const char *playername,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
@@ -360,7 +363,7 @@ private:
 	void SendMovePlayer(u16 peer_id);
 	void SendPlayerPrivileges(u16 peer_id);
 	void SendPlayerInventoryFormspec(u16 peer_id);
-	void SendShowFormspecMessage(u16 peer_id, const std::string formspec, const std::string formname);
+	void SendShowFormspecMessage(u16 peer_id, const std::string &formspec, const std::string &formname);
 	void SendHUDAdd(u16 peer_id, u32 id, HudElement *form);
 	void SendHUDRemove(u16 peer_id, u32 id);
 	void SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value);
@@ -471,7 +474,10 @@ private:
 
 	// Environment
 	ServerEnvironment *m_env;
+
+public:
 	JMutex m_env_mutex;
+private:
 
 	// server connection
 	con::Connection m_con;
