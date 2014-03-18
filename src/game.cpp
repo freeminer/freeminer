@@ -3630,8 +3630,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Block boundary visualization
 		*/
-		if (show_block_boundaries) {
-			client.getEnv().getClientMap().renderBlockBoundaries();
+		if (show_block_boundaries) { // DEV only borders of any blocks
+			//client.getEnv().getClientMap().renderBlockBoundaries(server->m_modified_blocks);
+			//client.getEnv().getClientMap().renderBlockBoundaries(client.getEnv().getClientMap().m_drawlist);
 		}
 
 		

@@ -917,7 +917,7 @@ void ClientMap::renderPostFx()
 	}
 }
 
-void ClientMap::renderBlockBoundaries()
+void ClientMap::renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks)
 {
 	video::IVideoDriver* driver = SceneManager->getVideoDriver();
 	video::SMaterial mat;
@@ -925,8 +925,7 @@ void ClientMap::renderBlockBoundaries()
 	mat.ZWriteEnable = false;
 
 	core::aabbox3d<f32> bound;
-	std::map<v3s16, MapBlock*>& blocks =
-		m_drawlist;
+//	std::map<v3s16, MapBlock*>& blocks = m_drawlist;
 //		const_cast<std::map<v3s16, bool>&>(nextBlocksToRequest());
 	const v3f inset(BS/2);
 	const v3f blocksize(MAP_BLOCKSIZE);
