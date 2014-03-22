@@ -716,6 +716,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_parallax"] then
 		engine.setting_set("enable_parallax_occlusion", fields["cb_parallax"])
 	end
+	if fields["cb_generate_normalmaps"] then
+		engine.setting_set("generate_normalmaps", fields["cb_generate_normalmaps"])
+	end
 	if fields["cb_waving_water"] then
 		engine.setting_set("enable_waving_water", fields["cb_waving_water"])
 	end
@@ -1010,13 +1013,14 @@ function tabbuilder.tab_settings()
 	if engine.setting_getbool("enable_shaders") then
 		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
 		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
+		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
 		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
 		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
 		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
 	end
 
 	tab_string = tab_string ..
-		"button[6.5,10;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[6.5,11;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
