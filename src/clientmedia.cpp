@@ -183,6 +183,12 @@ void ClientMediaDownloader::initialStep(Client *client)
 		FileStatus *filestatus = it->second;
 		const std::string &sha1 = filestatus->sha1;
 
+		if (g_settings->get("video_driver") == "null") {
+			filestatus->received = true;
+			m_uncached_count--;
+			continue;
+		}
+
 		std::ostringstream tmp_os(std::ios_base::binary);
 		bool found_in_cache = m_media_cache.load(hex_encode(sha1), tmp_os);
 
