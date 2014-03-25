@@ -492,7 +492,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		if fav_idx ~= nil then
 			if fields["key_up"] ~= nil and fav_idx > 1 then
 				fav_idx = fav_idx -1
-			else if fields["key_down"] and fav_idx < #menu.favorites then
+			elseif fields["key_down"] and fav_idx < #menu.favorites then
 				fav_idx = fav_idx +1
 			end
 
