@@ -460,7 +460,7 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 	switch (m_state)
 	{
 	case Invalid:
-		assert("State update for client in invalid state" != 0);
+		//assert("State update for client in invalid state" != 0);
 		break;
 
 	case Created:
@@ -480,7 +480,8 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 
 		/* GotInit2 SetDefinitionsSent SetMediaSent */
 		default:
-			assert("Invalid client state transition!" == 0);
+			break;
+			//assert("Invalid client state transition!" == 0);
 		}
 		break;
 
@@ -506,7 +507,8 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 
 		/* Init SetDefinitionsSent SetMediaSent */
 		default:
-			assert("Invalid client state transition!" == 0);
+			break;
+			//assert("Invalid client state transition!" == 0);
 		}
 		break;
 
@@ -527,7 +529,8 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 
 		/* Init GotInit2 SetMediaSent */
 		default:
-			assert("Invalid client state transition!" == 0);
+			break;
+			//assert("Invalid client state transition!" == 0);
 		}
 		break;
 
@@ -548,7 +551,8 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 
 		/* Init GotInit2 SetDefinitionsSent */
 		default:
-			assert("Invalid client state transition!" == 0);
+			break;
+			//assert("Invalid client state transition!" == 0);
 		}
 		break;
 
@@ -565,7 +569,7 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 
 		/* Init GotInit2 SetDefinitionsSent SetMediaSent SetDenied */
 		default:
-			assert("Invalid client state transition!" == 0);
+			//assert("Invalid client state transition!" == 0);
 			break;
 		}
 		break;
