@@ -125,6 +125,8 @@ public:
 	void incrementUsageTimer(float dtime)
 	{
 		m_usage_timer += dtime;
+		if(m_usage_timer > 10)
+			setStatic();
 	}
 
 	void setStatic();

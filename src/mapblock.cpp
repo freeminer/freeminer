@@ -1067,6 +1067,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 void MapBlock::incrementUsageTimer(float dtime)
 {
 	m_usage_timer += dtime;
+/*
 #ifndef SERVER
 	if(mesh){
 		if(mesh->getUsageTimer() > 10)
@@ -1075,6 +1076,7 @@ void MapBlock::incrementUsageTimer(float dtime)
 			mesh->incrementUsageTimer(dtime);
 	}
 #endif
+*/
 }
 
 /*

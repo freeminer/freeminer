@@ -3517,7 +3517,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
-			client.getEnv().getClientMap().updateDrawList(driver);
+			client.getEnv().getClientMap().updateDrawList(driver, dtime);
 			update_draw_list_last_cam_dir = camera_direction;
 		}
 

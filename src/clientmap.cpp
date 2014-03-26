@@ -50,6 +50,7 @@ MapDrawControl::MapDrawControl():
 		,farmesh_step(1)
 		,fps(30)
 		,fps_avg(30)
+		,fps_wanted(30)
 		,drawtime_avg(30)
 	{
 		farmesh = g_settings->getS32("farmesh");
@@ -177,7 +178,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	return false;
 }
 
-void ClientMap::updateDrawList(video::IVideoDriver* driver)
+void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 {
 	//ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	//g_profiler->add("CM::updateDrawList() count", 1);
@@ -322,10 +323,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 					occlusion_culling_enabled = false;
 			}
 
-			if (m_control.farmesh && mesh_step != block->getMesh(mesh_step)->step) { //&& !block->mesh->transparent
-				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1);
-			}
-
 			v3s16 cpn = block->getPos() * MAP_BLOCKSIZE;
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
@@ -371,6 +368,12 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 					&& m_control.range_all == false
 					&& d > m_control.wanted_min_range * BS)
 				continue;
+
+			if (m_control.farmesh && mesh_step != block->getMesh(mesh_step)->step) { //&& !block->mesh->transparent
+				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1);
+			}
+
+			block->getMesh(mesh_step)->incrementUsageTimer(dtime);
 
 			// Add to set
 			block->refGrab();
@@ -547,6 +550,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			//JMutexAutoLock lock(block->mesh_mutex);
 			MapBlockMesh *mapBlockMesh = block->getMesh(mesh_step);
 			assert(mapBlockMesh);
+
+			mapBlockMesh->updateCameraOffset(m_camera_offset);
+
 			// Pretty random but this should work somewhat nicely
 			bool faraway = d >= BS*50;
 			//bool faraway = d >= m_control.wanted_range * BS;

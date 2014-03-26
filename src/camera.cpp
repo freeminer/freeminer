@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/mathconstants.h"
 #include "constants.h"
 
-#define CAMERA_OFFSET_STEP 200
+#define CAMERA_OFFSET_STEP 1000
 
 #include "nodedef.h"
 #include "game.h" // CameraModes
@@ -590,6 +590,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
 	g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 
+	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
 			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.4) {
 				if (m_draw_control.wanted_range >= farmesh_wanted)

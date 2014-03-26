@@ -333,7 +333,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("farmesh", "0");
-	settings->setDefault("farmesh_step", "3");
+	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
 
 #ifndef _WIN32
