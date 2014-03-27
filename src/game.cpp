@@ -1256,7 +1256,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	try{
 		float time_counter = 0.0;
 		input->clear();
-		float fps_max = g_settings->getFloat("fps_max");
+		float fps_max = g_settings->getFloat("pause_fps_max");
+
 		bool cloud_menu_background = g_settings->getBool("menu_clouds");
 		u32 lasttime = device->getTimer()->getTime();
 		while(device->run())
@@ -1325,6 +1326,10 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				sleep_ms(25);
 			}
 			time_counter += dtime;
+			if (time_counter > CONNECTION_TIMEOUT) {
+				reconnect = 1;
+				break;
+			}
 		}
 	}
 	catch(con::PeerNotFoundException &e)
@@ -1443,6 +1448,10 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				sleep_ms(25);
 			}
 			time_counter += dtime;
+			if (time_counter > CONNECTION_TIMEOUT) {
+				reconnect = 1;
+				break;
+			}
 		}
 	}
 
