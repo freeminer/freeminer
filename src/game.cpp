@@ -1673,6 +1673,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	int errors = 0;
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
 	{
 	core::stringw str = L"Freeminer [";
@@ -2456,7 +2458,12 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			if(server != NULL)
 			{
 				//TimeTaker timer("server->step(dtime)");
+				try {
 				server->step(dtime);
+				} catch(std::exception &e) {
+					if (!errors++ || !(errors % (int)(60/dedicated_server_step)))
+						errorstream << "Fatal error n=" << errors << " : " << e.what() << std::endl;
+				}
 			}
 			{
 				//TimeTaker timer("client.step(dtime)");
