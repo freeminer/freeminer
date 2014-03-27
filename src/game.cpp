@@ -1064,7 +1064,7 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 }
 
 /******************************************************************************/
-void the_game(bool &kill, bool random_input, InputHandler *input,
+bool the_game(bool &kill, bool random_input, InputHandler *input,
 	IrrlichtDevice *device, gui::IGUIFont* font, std::string map_dir,
 	std::string playername, std::string password,
 	std::string address /* If "", local server is used */,
@@ -1130,6 +1130,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	}
 
 	Server *server = NULL;
+
+	bool reconnect = 0;
+	bool connect_ok = 0;
 
 	try{
 	// Event manager
@@ -1463,7 +1466,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	*/
 	Camera camera(smgr, draw_control, gamedef);
 	if (!camera.successfullyCreated(error_message))
-		return;
+		return 0;
 
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
@@ -3781,6 +3784,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		Profiler::GraphValues values;
 		g_profiler->graphGet(values);
 		graph.put(values);
+
+		if (client.connectedAndInitialized()) {
+			connect_ok = 1;
+		} else if (connect_ok) {
+			reconnect = 1;
+			break;
+		}
 	}
 
 	/*
@@ -3869,6 +3879,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	infostream << "\tRemaining materials: "
 		<< driver-> getMaterialRendererCount ()
 		<< " (note: irrlicht doesn't support removing renderers)"<< std::endl;
+	return reconnect;
 }
 
 

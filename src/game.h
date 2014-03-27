@@ -129,7 +129,7 @@ class ChatBackend;  /* to avoid having to include chat.h */
 struct SubgameSpec;
 enum CameraModes {CAMERA_MODE_FIRST, CAMERA_MODE_THIRD, CAMERA_MODE_THIRD_FRONT};
 
-void the_game(
+bool the_game(
 	bool &kill,
 	bool random_input,
 	InputHandler *input,
