@@ -4105,6 +4105,8 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 
 	ret = dbase->loadBlock(blockpos);
 	if (ret) return (ret);
+	return ret;
+
 	// Not found in database, try the files
 
 	// The directory layout we're going to load from.

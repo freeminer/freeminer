@@ -319,6 +319,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("active_block_range", "4");
 	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "30");
+	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus
+	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
+	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
+	settings->setDefault("num_emerge_threads", ""); // autodetect from number of cpus
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
@@ -328,7 +332,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_water", "true");
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
-	settings->setDefault("num_emerge_threads", ""); // autodetect cpus-2
 	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("sqlite_synchronous", "1");

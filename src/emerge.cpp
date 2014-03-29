@@ -107,15 +107,26 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	// some other misc thread
 	int nthreads = 0;
 	if (!g_settings->getS16NoEx("num_emerge_threads", nthreads))
+	{}
+	if (nthreads < 1)
 		nthreads = porting::getNumberOfProcessors() - 2;
 	if (nthreads < 1)
 		nthreads = 1;
 
 	qlimit_total = g_settings->getU16("emergequeue_limit_total");
+	if (qlimit_total < 1)
+		qlimit_total = nthreads*128;
 	if (!g_settings->getU16NoEx("emergequeue_limit_diskonly", qlimit_diskonly))
-		qlimit_diskonly = nthreads * 5 + 1;
+		{}
+	if (qlimit_diskonly < 1) {
+		qlimit_diskonly = nthreads * 10;
+	}
 	if (!g_settings->getU16NoEx("emergequeue_limit_generate", qlimit_generate))
+		{}
+	if (qlimit_generate < 1) {
 		qlimit_generate = nthreads * 7;
+	}
+	//errorstream<<"==> qlimit_generate="<<qlimit_generate<<"  qlimit_diskonly="<<qlimit_diskonly<<" qlimit_total="<<qlimit_total<<std::endl;
 
 	// don't trust user input for something very important like this
 	if (qlimit_total < 1)
@@ -436,13 +447,15 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	JMutexAutoLock envlock(m_server->m_env_mutex);
 
 	// Load sector if it isn't loaded
+/*
 	if (map->getSectorNoGenerateNoEx(p2d) == NULL)
 		map->loadSectorMeta(p2d);
+*/
 
 	// Attempt to load block
 	MapBlock *block = map->getBlockNoCreateNoEx(p);
 	if (!block || block->isDummy() || !block->isGenerated()) {
-		EMERGE_DBG_OUT("not in memory, attempting to load from disk");
+		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen);
 		block = map->loadBlock(p);
 		if(block)
 		{
@@ -456,7 +469,7 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	// If could not load and allowed to generate,
 	// start generation inside this same envlock
 	if (allow_gen && (block == NULL || !block->isGenerated())) {
-		EMERGE_DBG_OUT("generating");
+		EMERGE_DBG_OUT("generating b="<<block);
 		*b = block;
 		return map->initBlockMake(data, p);
 	}
@@ -557,6 +570,8 @@ void *EmergeThread::Thread() {
 		// Add the originally fetched block to the modified list
 		if (block)
 			modified_blocks[p] = block;
+		else
+		infostream<<"nothing generated at "<<PP(p)<<std::endl;
 
 		if (modified_blocks.size() > 0) {
 			m_server->SetBlocksNotSent(modified_blocks);

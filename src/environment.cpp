@@ -317,6 +317,7 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 ServerEnvironment::ServerEnvironment(ServerMap *map,
 		GameScripting *scriptIface, Circuit* circuit, IGameDef *gamedef):
 	m_abmhandler(NULL),
+	m_game_time_start(0),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
@@ -607,6 +608,7 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 
 	try{
+		m_game_time_start =
 		m_game_time = args.getU64("game_time");
 	}catch(SettingNotFoundException &e){
 		// Getting this is crucial, otherwise timestamps are useless
@@ -1320,9 +1322,11 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			block->setTimestampNoChangedFlag(m_game_time);
 			// If time has changed much from the one on disk,
 			// set block to be saved when it is unloaded
+/*
 			if(block->getTimestamp() > block->getDiskTimestamp() + 60)
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
 						"Timestamp older than 60s (step)");
+*/
 
 			// Run node timers
 			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications

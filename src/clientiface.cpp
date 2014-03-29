@@ -39,6 +39,7 @@ void RemoteClient::GetNextBlocks(
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
+		double m_uptime,
 		std::vector<PrioritySortedBlockTransfer> &dest)
 {
 	DSTACK(__FUNCTION_NAME);
@@ -142,15 +143,16 @@ void RemoteClient::GetNextBlocks(
 	*/
 	s32 new_nearest_unsent_d = -1;
 
-	const s16 full_d_max = g_settings->getS16("max_block_send_distance");
+	s16 full_d_max = g_settings->getS16("max_block_send_distance");
+	if (wanted_range) {
+		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
+		if (wanted_blocks < full_d_max)
+			full_d_max = wanted_blocks;
+	}
+
 	s16 d_max = full_d_max;
 	s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
 
-	if (wanted_range) {
-		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
-		if (wanted_blocks < d_max)
-			d_max = wanted_blocks;
-	}
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 5;
 	if(d_max > d_start + max_d_increment_at_time)
@@ -290,8 +292,7 @@ void RemoteClient::GetNextBlocks(
 				Don't send already sent blocks
 			*/
 			{
-				if(m_blocks_sent.find(p) != m_blocks_sent.end())
-				{
+				if(m_blocks_sent.find(p) != m_blocks_sent.end() && m_blocks_sent[p] > 0 && m_blocks_sent[p] + (d <= 2 ? 1 : d*d) > m_uptime) {
 					continue;
 				}
 			}
@@ -305,6 +306,11 @@ void RemoteClient::GetNextBlocks(
 			bool block_is_invalid = false;
 			if(block != NULL)
 			{
+
+				if (m_blocks_sent[p] > 0 && m_blocks_sent[p] >= block->m_changed_timestamp) {
+					continue;
+				}
+
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
@@ -384,7 +390,12 @@ void RemoteClient::GetNextBlocks(
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<std::endl;
+	if(!num_blocks_selected && d_start == d) {
+		//new_nearest_unsent_d = 0;
+		m_nothing_to_send_pause_timer = 1.0;
+	}
+		
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
@@ -393,7 +404,7 @@ queue_full_break:
 	} else if(nearest_emergefull_d != -1){
 		new_nearest_unsent_d = nearest_emergefull_d;
 	} else {
-		if(d > g_settings->getS16("max_block_send_distance")){
+		if(d > full_d_max){
 			new_nearest_unsent_d = 0;
 			m_nothing_to_send_pause_timer = 2.0;
 		} else {
@@ -408,7 +419,7 @@ queue_full_break:
 		m_nearest_unsent_d = new_nearest_unsent_d;
 }
 
-void RemoteClient::GotBlock(v3s16 p)
+void RemoteClient::GotBlock(v3s16 p, double time)
 {
 	if(m_blocks_sending.find(p) != m_blocks_sending.end())
 		m_blocks_sending.erase(p);
@@ -416,7 +427,7 @@ void RemoteClient::GotBlock(v3s16 p)
 	{
 		m_excess_gotblocks++;
 	}
-	m_blocks_sent.insert(p);
+	m_blocks_sent[p] = time;
 }
 
 void RemoteClient::SentBlock(v3s16 p)
@@ -434,25 +445,16 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 
 	if(m_blocks_sending.find(p) != m_blocks_sending.end())
 		m_blocks_sending.erase(p);
-	if(m_blocks_sent.find(p) != m_blocks_sent.end())
-		m_blocks_sent.erase(p);
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	if (blocks.size())
-		++m_nearest_unsent_nearest;
-
 	for(std::map<v3s16, MapBlock*>::iterator
 			i = blocks.begin();
 			i != blocks.end(); ++i)
 	{
 		v3s16 p = i->first;
-
-		if(m_blocks_sending.find(p) != m_blocks_sending.end())
-			m_blocks_sending.erase(p);
-		if(m_blocks_sent.find(p) != m_blocks_sent.end())
-			m_blocks_sent.erase(p);
+		SetBlockNotSent(p);
 	}
 }
 
@@ -794,7 +796,7 @@ void ClientInterface::CreateClient(u16 peer_id)
 	if(n != m_clients.end()) return;
 
 	// Create client
-	RemoteClient *client = new RemoteClient();
+	RemoteClient *client = new RemoteClient(m_env);
 	client->peer_id = peer_id;
 	m_clients[client->peer_id] = client;
 }

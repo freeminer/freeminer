@@ -1836,7 +1836,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			v3s16 p = readV3S16(&data[2+1+i*6]);
 			/*infostream<<"Server: GOTBLOCKS ("
 					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
-			client->GotBlock(p);
+			client->GotBlock(p, m_uptime.get() + m_env->m_game_time_start);
 		}
 		if((s16)datasize > 2+1+(count)*6) // only freeminer client
 			client->wanted_range = readU16(&data[2+1+(count*6)]);
@@ -3855,7 +3855,7 @@ void Server::SendBlocks(float dtime)
 				return;
 
 			total_sending += client->SendingCount();
-			client->GetNextBlocks(m_env,m_emerge, dtime, queue);
+			client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
 		m_clients.Unlock();
 	}

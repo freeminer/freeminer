@@ -52,6 +52,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		heat_last_update(0),
 		humidity_last_update(0),
 		m_uptime_timer_last(0),
+		m_changed_timestamp(0),
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
@@ -735,8 +736,9 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		// Timestamp
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Timestamp"<<std::endl);
-		setTimestamp(readU32(is));
+		setTimestampNoChangedFlag(readU32(is));
 		m_disk_timestamp = m_timestamp;
+		m_changed_timestamp = m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? m_timestamp : 0;
 		
 		// Dynamically re-set ids based on node names
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
@@ -1078,6 +1080,34 @@ void MapBlock::incrementUsageTimer(float dtime)
 #endif
 */
 }
+
+/* here for errorstream
+	void MapBlock::setTimestamp(u32 time)
+	{
+//infostream<<"setTimestamp = "<< time <<std::endl;
+		m_timestamp = time;
+		raiseModified(MOD_STATE_WRITE_AT_UNLOAD, "setTimestamp");
+	}
+
+	void MapBlock::setTimestampNoChangedFlag(u32 time)
+	{
+//infostream<<"setTimestampNoChangedFlag = "<< time <<std::endl;
+		m_timestamp = time;
+	}
+
+	void MapBlock::raiseModified(u32 mod)
+	{
+		if(mod >= m_modified){
+			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+			if(m_modified >= MOD_STATE_WRITE_NEEDED) {
+//infostream<<"raiseModified = "<< m_changed_timestamp << "=> "<<m_timestamp<<std::endl;
+				m_changed_timestamp = m_timestamp;
+			}
+		}
+	}
+*/
 
 /*
 	Get a quick string to describe what a block actually contains
