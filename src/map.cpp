@@ -3027,8 +3027,10 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 		/*
 			Set block as modified
 		*/
+/*
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 				"finishBlockMake expireDayNightDiff");
+*/
 	}
 
 	/*
@@ -3600,11 +3602,13 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		ServerMapSector *sector = (ServerMapSector*)i->second;
 		assert(sector->getId() == MAPSECTOR_SERVER);
 
+/*
 		if(sector->differs_from_disk || save_level == MOD_STATE_CLEAN)
 		{
 			saveSectorMeta(sector);
 			sector_meta_count++;
 		}
+*/
 		std::list<MapBlock*> blocks;
 		sector->getBlocks(blocks);
 

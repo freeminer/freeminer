@@ -2856,7 +2856,7 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 
 		MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 		if(block)
-			block->raiseModified(MOD_STATE_WRITE_NEEDED);
+			block->raiseModified(MOD_STATE_WRITE_NEEDED, "inventoryModified");
 
 		setBlockNotSent(blockpos);
 	}

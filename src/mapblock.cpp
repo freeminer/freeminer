@@ -56,7 +56,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
-		m_modified(MOD_STATE_WRITE_NEEDED),
+		m_modified(MOD_STATE_CLEAN),
 		m_modified_reason("initial"),
 		m_modified_reason_too_long(false),
 		is_underground(false),
@@ -1138,7 +1138,7 @@ std::string analyze_block(MapBlock *block)
 	default:
 		desc<<"unknown getModified()="+itos(block->getModified())+", ";
 	}
-
+	desc<<" changed_timestamp="<<block->m_changed_timestamp<<", ";
 	if(block->isGenerated())
 		desc<<"is_gen [X], ";
 	else
@@ -1200,6 +1200,8 @@ std::string analyze_block(MapBlock *block)
 
 		desc<<"}, ";
 	}
+	
+	//desc<<" modifiedBy="<<block->getModifiedReason()<<"; "; // only with raiseModified(..., string)
 
 	return desc.str().substr(0, desc.str().size()-2);
 }
