@@ -139,6 +139,7 @@ public:
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
+	void SetBlockDeleted(v3s16 p);
 
 	s32 SendingCount()
 	{

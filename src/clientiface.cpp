@@ -458,6 +458,11 @@ void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 	}
 }
 
+void RemoteClient::SetBlockDeleted(v3s16 p) {
+	SetBlockNotSent(p);
+	m_blocks_sent.erase(p);
+}
+
 void RemoteClient::notifyEvent(ClientStateEvent event)
 {
 	switch (m_state)

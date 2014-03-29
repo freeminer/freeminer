@@ -1935,7 +1935,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			/*infostream<<"Server: DELETEDBLOCKS ("
 					<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
 			RemoteClient *client = getClient(peer_id);
-			client->SetBlockNotSent(p);
+			client->SetBlockDeleted(p);
 		}
 	}
 	else if(command == TOSERVER_CLICK_OBJECT)
