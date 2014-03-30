@@ -63,6 +63,7 @@ class MapgenMath : public MapgenV7 {
 
 		bool internal;
 		bool invert;
+		bool invert_yz;
 		double size;
 		double scale;
 		v3f center;

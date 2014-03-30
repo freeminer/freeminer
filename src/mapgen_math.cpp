@@ -166,6 +166,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	n_stone		= MapNode(ndef, params.get("stone", "mapgen_stone").asString(), LIGHT_SUN);
 
 	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
+	invert_yz = params.get("invert_yz", 1).asBool();
 	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
 	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
@@ -461,10 +462,10 @@ int MapgenMath::generateTerrain() {
 
 #if USE_MANDELBULBER
 				if (!internal)
-					d = Compute<normal>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+					d = Compute<normal>(CVector3(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z), mg_params->par);
 #endif
 				if (internal)
-					d = (*func)(vec.X, vec.Y, vec.Z, scale, iterations);
+					d = (*func)(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z, scale, iterations);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
 					if (vm->m_data[i].getContent() == CONTENT_IGNORE)
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
