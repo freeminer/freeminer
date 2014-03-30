@@ -43,38 +43,6 @@ minetest.register_chatcommand("me", {
 	end,
 })
 
-minetest.register_chatcommand("write", 
-{
-   params = "<name>",
-   privs = {},
-   func = function(name, param)
-	  freeminer.kv_put(param, {name = "test_name", test2 = {test1 = "1", test0 = "-1"}})
-   end
-})
-
-minetest.register_chatcommand("read", 
-{
-   params = "<name>",
-   privs = {},
-   func = function(name, param)
-	  local data = freeminer.kv_get(param)
-	  if data ~= nil then
-		 freeminer.log("action", data.name .. " " .. data.test2.test1 .. " " .. data.test2.test0)
-	  else 
-		 freeminer.log("action", "Not found!")
-	  end
-   end
-})
-
-minetest.register_chatcommand("delete", 
-{
-   params = "<name>",
-   privs = {},
-   func = function(name, param)
-	  local data = freeminer.kv_delete(param)
-   end
-})
-
 minetest.register_chatcommand("help", {
 	privs = {},
 	params = "(nothing)/all/privs/<cmd>",
