@@ -15,8 +15,8 @@ public:
 	 * second - function id in the array
 	 */
 	std::pair<const unsigned char*, unsigned long> addState(const unsigned char* state);
-	std::pair<const unsigned char*, unsigned long> addState(const unsigned char* state, unsigned char facedir);
-
+	std::pair<const unsigned char*, unsigned long> addState(const unsigned char* state, FaceId face);
+	
 	void rotateStatesArray(const unsigned char* input_state, unsigned char* output_state, FaceId face) const;
 	static unsigned char rotateState(const unsigned char state, FaceId face);
 

@@ -807,12 +807,12 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 		return false;
 	}
 
-	if(ndef->get(n).is_wire) {
+	if(ndef->get(n).is_wire || ndef->get(n).is_wire_connector) {
 		m_circuit->addWire(getMap(), ndef, p);
 	}
 	// Call circuit update
 	if(ndef->get(n).is_circuit_element) {
-		m_circuit->addElement(getMap(), ndef, p, ndef->get(n).circuit_element_states);
+		m_circuit->addElement(getMap(), ndef, p);
 	}
 
 	// Call post-destructor
@@ -845,7 +845,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 	if(!succeeded)
 		return false;
 	}
-	if(ndef->get(n_old).is_wire) {
+	if(ndef->get(n_old).is_wire || ndef->get(n_old).is_wire_connector) {
 		m_circuit->removeWire(*m_map, ndef, p, n_old);
 	}
 	if(ndef->get(n_old).is_circuit_element) {
@@ -873,7 +873,7 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 				if(ndef->get(n_old).is_wire) {
 					m_circuit->removeWire(*m_map, ndef, p, n_old);
 				}
-				m_circuit->addElement(*m_map, ndef, p, ndef->get(n_new).circuit_element_states);
+				m_circuit->addElement(*m_map, ndef, p);
 			}
 		} else {
 			if(ndef->get(n_old).is_circuit_element) {

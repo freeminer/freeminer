@@ -19,7 +19,7 @@ class Circuit {
 public:
 	Circuit(GameScripting* script, std::string savedir);
 	~Circuit();
-	void addElement(Map& map, INodeDefManager* ndef, v3s16 pos, const unsigned char* func);
+	void addElement(Map& map, INodeDefManager* ndef, v3s16 pos);
 	void removeElement(v3s16 pos);
 	void addWire(Map& map, INodeDefManager* ndef, v3s16 pos);
 	void removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& node);
@@ -27,6 +27,7 @@ public:
 	void updateElement(MapNode& node, v3s16 pos, INodeDefManager* ndef, const unsigned char* func);
 	void pushElementToQueue(v3s16 pos);
 	void processElementsQueue(Map& map, INodeDefManager* ndef);
+	std::pair <const unsigned char*, unsigned long> addState(const MapNode& node, const ContentFeatures& node_features);
 
 	void load();
 	void save();
@@ -65,4 +66,3 @@ private:
 };
 
 #endif
-

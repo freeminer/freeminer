@@ -2512,7 +2512,7 @@ Node definition (register_node)
 	is_wire = true,
 	^ Note: if 2 blocks of wire have different ids, then signal between them WILL NOT be transmitted.
 
-	is_connector = true,
+	is_wire_connector = true,
 	^ The same as is_wire, but can connect wire blocks with different ids.
 
 	wire_connections = {8, 16, 32, 1, 2, 4},

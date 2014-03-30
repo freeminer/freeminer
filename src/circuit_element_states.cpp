@@ -27,8 +27,8 @@ std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(co
 	}
 }
 
-std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state, unsigned char facedir) {
-	FaceId face = FACEDIR_TO_FACE(facedir);
+std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state, FaceId face)
+{
 	unsigned char* rotated_state = new unsigned char[m_states_num];
 	for(unsigned int i = 0; i < m_states_num; ++i) {
 		rotated_state[i] = 0;

@@ -11,8 +11,6 @@
 #include <cassert>
 #include <map>
 
-#define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
-
 unsigned char CircuitElement::face_to_shift[] = {
 	0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
 	4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
@@ -30,6 +28,27 @@ FaceId CircuitElement::shift_to_face[] = {
 FaceId CircuitElement::facedir_to_face[] = {
 	FACE_FRONT, FACE_LEFT, FACE_BACK,
 	FACE_RIGHT, FACE_BOTTOM, FACE_TOP
+};
+
+FaceId CircuitElement::wallmounted_to_face[] = {
+	FACE_TOP, FACE_BOTTOM, FACE_LEFT,
+	FACE_LEFT, FACE_FRONT, FACE_BACK
+};
+
+unsigned char CircuitElement::delta_angle_facedir_to_shift[4][6] = {
+	{0, 1, 2, 3, 4, 5},
+	{0, 2, 4, 3, 5, 1},
+	{0, 4, 5, 3, 1, 2},
+	{0, 5, 1, 3, 2, 4}
+};
+
+unsigned char CircuitElement::delta_angle_wallmounted_to_shift[6][6] = {
+	{1, 3, 2, 4, 0, 5},
+	{4, 0, 2, 1, 3, 5},
+	{0, 2, 4, 3, 5, 1},
+	{0, 5, 1, 3, 2, 4},
+	{0, 1, 2, 3, 4, 5},
+	{0, 4, 5, 3, 1, 2}
 };
 
 CircuitElement::CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id,
@@ -209,30 +228,30 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 
 	int face_id = FACE_TO_SHIFT(face);
 	connected_faces[face_id] = true;
-	current_pos.X = pos.X + directions[face_id].X;
-	current_pos.Y = pos.Y + directions[face_id].Y;
-	current_pos.Z = pos.Z + directions[face_id].Z;
+
+	current_pos = pos + directions[face_id];
 	next_node = map.getNodeNoEx(current_pos);
 	node_features = ndef->get(next_node);
-	q.push(std::make_pair(current_pos, node_features.wire_connections[FACE_TO_SHIFT(OPPOSITE_FACE(face))]));
 
-	if(ndef->get(map.getNodeNoEx(current_pos)).is_wire || ndef->get(map.getNodeNoEx(current_pos)).is_connector) {
+	if(node_features.is_wire || node_features.is_wire_connector) {
+		unsigned char first_node_acceptable_faces = getAcceptableFaces(next_node, node_features, face_id);
+		q.push(std::make_pair(current_pos, first_node_acceptable_faces));
+
 		while(!q.empty()) {
 			unsigned char acceptable_faces;
 			current_pos = q.front().first;
+			current_node = map.getNodeNoEx(current_pos);
+			current_node_features = ndef->get(current_node);
 			acceptable_faces = q.front().second;
 			q.pop();
 
 			for(int i = 0; i < 6; ++i) {
 				if(acceptable_faces & (SHIFT_TO_FACE(i))) {
-					next_pos.X = current_pos.X + directions[i].X;
-					next_pos.Y = current_pos.Y + directions[i].Y;
-					next_pos.Z = current_pos.Z + directions[i].Z;
+					next_pos = current_pos + directions[i];
 					used[current_pos] |= SHIFT_TO_FACE(i);
 					next_node = map.getNodeNoEx(next_pos);
 					node_features = ndef->get(next_node);
-					current_node = map.getNodeNoEx(current_pos);
-					current_node_features = ndef->get(current_node);
+
 					current_used_iterator = used.find(next_pos);
 
 					// If start element, mark some of it's faces
@@ -240,46 +259,55 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 						connected_faces[OPPOSITE_SHIFT(i)] = true;
 					}
 
-					if((current_used_iterator == used.end()) ||
-					        !(current_used_iterator->second & SHIFT_TO_FACE(OPPOSITE_SHIFT(i)))) {
-						if(current_node_features.is_connector || node_features.is_connector
-						        || (node_features.is_wire && (next_node.getContent() == current_node.getContent()))) {
-							if(node_features.param_type_2 == CPT2_FACEDIR) {
-								q.push(std::make_pair(next_pos, CircuitElementStates::rotateState(
-								                          node_features.wire_connections[OPPOSITE_SHIFT(i)],
-								                          FACEDIR_TO_FACE(next_node.param2))));
-							} else {
-								q.push(std::make_pair(next_pos, node_features.wire_connections[OPPOSITE_SHIFT(i)]));
-							}
-							tmp_used_iterator = used.find(next_pos);
-							if(tmp_used_iterator != used.end()) {
-								tmp_used_iterator->second |= SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							} else {
-								used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							}
-						}
+					bool is_part_of_circuit = node_features.is_wire_connector || node_features.is_circuit_element ||
+						(node_features.is_wire && (next_node.getContent() == current_node.getContent()));
+					bool not_used = (current_used_iterator == used.end()) ||
+						!(current_used_iterator->second & SHIFT_TO_FACE(OPPOSITE_SHIFT(i)));
 
+					if(is_part_of_circuit && not_used) {
 						if(node_features.is_circuit_element) {
-							tmp_used_iterator = used.find(next_pos);
-							if(tmp_used_iterator != used.end()) {
-								tmp_used_iterator->second |= SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							} else {
-								used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							}
 							connected.push_back(std::make_pair(pos_to_iterator[next_pos],
 							                                   OPPOSITE_SHIFT(i)));
+						} else {
+							unsigned char state = getAcceptableFaces(next_node, node_features, OPPOSITE_SHIFT(i));
+							q.push(std::make_pair(next_pos, state));
+						}
+
+						tmp_used_iterator = used.find(next_pos);
+						if(tmp_used_iterator != used.end()) {
+							tmp_used_iterator->second |= SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
+						} else {
+							used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
 						}
 					}
 				}
 			}
 		}
-	} else if(ndef->get(map.getNodeNoEx(current_pos)).is_circuit_element) {
+	} else if(node_features.is_circuit_element) {
 		connected.push_back(std::make_pair(pos_to_iterator[current_pos],
 		                                   FACE_TO_SHIFT(OPPOSITE_FACE(face))));
 	}
 }
 
-CircuitElementContainer CircuitElement::getFace(int id) const {
+unsigned char CircuitElement::getAcceptableFaces(const MapNode& node, const ContentFeatures& node_features, unsigned char shift)
+{
+	unsigned char result = shift;
+	if(node_features.param_type_2 == CPT2_FACEDIR) {
+		result = DELTA_ANGLE_FACEDIR_TO_SHIFT(node.param2, result);
+		result = node_features.wire_connections[result];
+		result = CircuitElementStates::rotateState(result, FACEDIR_TO_FACE(node.param2));
+	} else if(node_features.param_type_2 == CPT2_WALLMOUNTED) {
+		result = DELTA_ANGLE_WALLMOUNTED_TO_SHIFT(node.param2, result);
+		result = node_features.wire_connections[result];
+		result = CircuitElementStates::rotateState(result, WALLMOUNTED_TO_FACE(node.param2));
+	} else {
+		result = node_features.wire_connections[result];
+	}
+	return result;
+}
+
+CircuitElementContainer CircuitElement::getFace(int id) const
+{
 	return m_faces[id];
 }
 

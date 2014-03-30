@@ -41,7 +41,8 @@ Circuit::~Circuit() {
 	delete m_virtual_database;
 }
 
-void Circuit::addElement(Map& map, INodeDefManager* ndef, v3s16 pos, const unsigned char* func) {
+void Circuit::addElement(Map& map, INodeDefManager* ndef, v3s16 pos)
+{
 	JMutexAutoLock lock(m_elements_mutex);
 
 	bool already_existed[6];
@@ -49,14 +50,9 @@ void Circuit::addElement(Map& map, INodeDefManager* ndef, v3s16 pos, const unsig
 
 	std::vector <std::pair <std::list <CircuitElement>::iterator, int > > connected;
 	MapNode node = map.getNode(pos);
+	dstream << static_cast<unsigned int>(node.param2) << std::endl;
 
-	std::pair <const unsigned char*, unsigned long> node_func;
-	if(ndef->get(node).param_type_2 == CPT2_FACEDIR) {
-		// If block is rotatable, then rotate it's function.
-		node_func = m_circuit_elements_states.addState(func, node.param2);
-	} else {
-		node_func = m_circuit_elements_states.addState(func);
-	}
+	std::pair <const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
 	saveCircuitElementsStates();
 	std::list <CircuitElement>::iterator current_element_iterator =
 	    m_elements.insert(m_elements.begin(), CircuitElement(pos, node_func.first, node_func.second,
@@ -156,21 +152,27 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 
 	bool used[6][6];
 	bool connected_faces[6];
+
+	MapNode node = map.getNode(pos);
+	std::vector <std::pair <std::list <CircuitElement>::iterator, int> > connected_to_face[6];
+	for(int i = 0; i < 6; ++i) {
+		CircuitElement::findConnectedWithFace(connected_to_face[i], map, ndef, pos, SHIFT_TO_FACE(i),
+		                                      m_pos_to_iterator, connected_faces);
+	}
+
 	for(int i = 0; i < 6; ++i) {
 		for(int j = 0; j < 6; ++j) {
 			used[i][j] = false;
 		}
 	}
 
-	MapNode node = map.getNode(pos);
-
 	// For each face connect faces, that are not yet connected.
 	for(int i = 0; i < 6; ++i) {
 		all_connected.clear();
+		unsigned char acceptable_faces = CircuitElement::getAcceptableFaces(node, ndef->get(node), i);
 		for(unsigned int j = 0; j < 6; ++j) {
-			if((ndef->get(node).wire_connections[i] & (SHIFT_TO_FACE(j))) && !used[i][j]) {
-				CircuitElement::findConnectedWithFace(all_connected, map, ndef, pos, SHIFT_TO_FACE(j),
-				                                      m_pos_to_iterator, connected_faces);
+			if((acceptable_faces & (SHIFT_TO_FACE(j))) && !used[i][j]) {
+				all_connected.insert(all_connected.end(), connected_to_face[j].begin(), connected_to_face[j].end());
 				used[i][j] = true;
 				used[j][i] = true;
 			}
@@ -345,12 +347,7 @@ void Circuit::updateElement(MapNode& node, v3s16 pos, INodeDefManager* ndef, con
 	}
 
 	std::list <CircuitElement>::iterator current_element = m_pos_to_iterator[pos];
-	std::pair<const unsigned char*, unsigned long> node_func;
-	if(ndef->get(node).param_type_2 == CPT2_FACEDIR) {
-		node_func = m_circuit_elements_states.addState(func, node.param2);
-	} else {
-		node_func = m_circuit_elements_states.addState(func);
-	}
+	std::pair<const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
 	current_element->setFunc(node_func.first, node_func.second);
 	current_element->setDelay(ndef->get(node).circuit_element_delay);
 	saveCircuitElementsStates();
@@ -377,12 +374,7 @@ void Circuit::processElementsQueue(Map& map, INodeDefManager* ndef) {
 		// Filling with empty elements
 		for(unsigned int i = 0; i < m_elements_queue.size(); ++i) {
 			node = map.getNode(m_elements_queue[i]);
-			std::pair <const unsigned char*, unsigned long> node_func;
-			if(ndef->get(node).param_type_2 == CPT2_FACEDIR) {
-				node_func = m_circuit_elements_states.addState(ndef->get(node).circuit_element_states, node.param2);
-			} else {
-				node_func = m_circuit_elements_states.addState(ndef->get(node).circuit_element_states);
-			}
+			std::pair <const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
 			m_pos_to_iterator[m_elements_queue[i]] = m_elements.insert(m_elements.begin(),
 			        CircuitElement(m_elements_queue[i],
 			                       node_func.first, node_func.second,
@@ -449,6 +441,18 @@ void Circuit::processElementsQueue(Map& map, INodeDefManager* ndef) {
 
 		saveCircuitElementsStates();
 
+	}
+}
+
+std::pair <const unsigned char*, unsigned long> Circuit::addState(const MapNode& node, const ContentFeatures& node_features)
+{
+	// If node is rotatable, then rotate it's function.
+	if(node_features.param_type_2 == CPT2_FACEDIR) {
+		return m_circuit_elements_states.addState(node_features.circuit_element_states, FACEDIR_TO_FACE(node.param2));
+	} else if(node_features.param_type_2 == CPT2_WALLMOUNTED) {
+		return m_circuit_elements_states.addState(node_features.circuit_element_states, WALLMOUNTED_TO_FACE(node.param2));
+	} else {
+		return m_circuit_elements_states.addState(node_features.circuit_element_states);
 	}
 }
 
