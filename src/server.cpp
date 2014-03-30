@@ -359,7 +359,7 @@ Server::Server(
 
 	// Initialize Environment
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
-	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this);
+	m_env = new ServerEnvironment(path_world, servermap, m_script, m_circuit, this);
 	m_emerge->env = m_env;
 
 	m_clients.setEnv(m_env);

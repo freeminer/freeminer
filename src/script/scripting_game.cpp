@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_env.h"
 #include "lua_api/l_inventory.h"
 #include "lua_api/l_item.h"
+#include "lua_api/l_key_value_storage.h"
 #include "lua_api/l_mapgen.h"
 #include "lua_api/l_nodemeta.h"
 #include "lua_api/l_nodetimer.h"
@@ -84,6 +85,7 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 	ModApiEnvMod::Initialize(L, top);
 	ModApiInventory::Initialize(L, top);
 	ModApiItemMod::Initialize(L, top);
+	ModApiKeyValueStorage::Initialize(L, top);
 	ModApiMapgen::Initialize(L, top);
 	ModApiParticles::Initialize(L, top);
 	ModApiRollback::Initialize(L, top);

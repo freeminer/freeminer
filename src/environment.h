@@ -54,6 +54,7 @@ class ClientMap;
 class GameScripting;
 class Player;
 class Circuit;
+class KeyValueStorage;
 
 class Environment
 {
@@ -233,7 +234,7 @@ public:
 class ServerEnvironment : public Environment
 {
 public:
-	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
+	ServerEnvironment(const std::string &savedir, ServerMap *map, GameScripting *scriptIface,
 			Circuit* circuit,
 			IGameDef *gamedef);
 	~ServerEnvironment();
@@ -254,6 +255,8 @@ public:
 
 	Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
 	Player * getPlayer(const char *name);
+
+	KeyValueStorage *getKeyValueStorage();
 	/*
 		Save players
 	*/
@@ -409,6 +412,8 @@ private:
 		Member variables
 	*/
 
+	std::string m_savedir;
+
 	// The map
 	ServerMap *m_map;
 	// Lua state
@@ -417,6 +422,8 @@ private:
 	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
+	// Key-value storage
+	KeyValueStorage *m_key_value_storage;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
