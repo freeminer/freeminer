@@ -17,5 +17,5 @@ end
 function freeminer.kv_rename(key1, key2)
    local data = freeminer.kv_get_string(key1)
    freeminer.kv_delete(key1)
-   freeminer.kv_put_string(key2)
+   freeminer.kv_put_string(key2, data)
 end
