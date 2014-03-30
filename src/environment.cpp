@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "fmbitset.h"
 #include "circuit.h"
+#include "key_value_storage.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -314,10 +315,12 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 	ServerEnvironment
 */
 
-ServerEnvironment::ServerEnvironment(ServerMap *map,
-		GameScripting *scriptIface, Circuit* circuit, IGameDef *gamedef):
+ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
+                                     GameScripting *scriptIface, Circuit* circuit,
+                                     IGameDef *gamedef):
 	m_abmhandler(NULL),
 	m_game_time_start(0),
+	m_savedir(savedir),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
@@ -335,6 +338,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
+	m_key_value_storage = new KeyValueStorage(savedir);
 }
 
 Player * ServerEnvironment::getPlayer(const char *name)
@@ -372,6 +376,11 @@ Map & ServerEnvironment::getMap()
 ServerMap & ServerEnvironment::getServerMap()
 {
 	return *m_map;
+}
+
+KeyValueStorage *ServerEnvironment::getKeyValueStorage()
+{
+	return m_key_value_storage;
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -848,7 +857,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 	// Activate stored objects
 	activateObjects(block, dtime_s);
-	
+
 //	// Calculate weather conditions
 //	m_map->updateBlockHeat(this, block->getPos() *  MAP_BLOCKSIZE, block);
 
@@ -885,7 +894,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 	if(ndef->get(n_old).has_on_destruct)
 		m_script->node_on_destruct(p, n_old);
 	// Replace node
-	
+
 	if (fast) {
 		try {
 			MapNode nn = n;
@@ -1828,7 +1837,7 @@ void ServerEnvironment::removeRemovedObjects()
 		// invocation this will be 0, which is when removal will continue.
 		if(obj->m_known_by_count > 0)
 			continue;
-		
+
 		/*
 			Move static data from active to stored if not marked as removed
 		*/
@@ -2415,7 +2424,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				if(lplayer->in_liquid == false) {
 					speed.Y -= lplayer->movement_gravity * lplayer->physics_override_gravity * dtime_part * 2;
 					viscosity_factor = 0.96; // todo maybe depend on speed; 0.96 = ~100 nps max
-					viscosity_factor += (1.0-viscosity_factor) * 
+					viscosity_factor += (1.0-viscosity_factor) *
 						(1-(MAP_GENERATION_LIMIT - pf.Y/BS)/
 							MAP_GENERATION_LIMIT);
 				}
@@ -2467,7 +2476,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			breaked = loopcount;
 			break;
 		}
-	
+
 	}
 	while(dtime_downcount > 0.001);
 
@@ -2486,7 +2495,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		v3f speed_diff = info.new_speed - info.old_speed;
 		// Handle only fall damage
 		// (because otherwise walking against something in fast_move kills you)
-		if((speed_diff.Y < 0 || info.old_speed.Y >= 0) && 
+		if((speed_diff.Y < 0 || info.old_speed.Y >= 0) &&
 			speed_diff.getLength() <= lplayer->movement_speed_fast * 1.1) {
 			continue;
 		}
@@ -2913,5 +2922,3 @@ ClientEnvEvent ClientEnvironment::getClientEvent()
 }
 
 #endif // #ifndef SERVER
-
-
