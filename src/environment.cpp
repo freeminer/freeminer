@@ -338,7 +338,8 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
-	m_key_value_storage = new KeyValueStorage(savedir);
+	m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
+	m_players_storage = new KeyValueStorage(savedir, "players");
 }
 
 Player * ServerEnvironment::getPlayer(const char *name)
@@ -366,6 +367,8 @@ ServerEnvironment::~ServerEnvironment()
 			i = m_abms.begin(); i != m_abms.end(); ++i){
 		delete i->abm;
 	}
+	delete m_key_value_storage;
+	delete m_players_storage;
 }
 
 Map & ServerEnvironment::getMap()
@@ -420,6 +423,16 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	{
 		Player *player = *i;
 
+		std::ostringstream ss(std::ios_base::binary);
+		player->serialize(ss);
+		Json::Value player_json;
+		player_json["player_old"] = ss.str();
+
+		try {
+			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
+		} catch (...) {
+		// TODO: remove old file storage:
+
 		if (player->path == "") {
 			std::string playername = player->getName();
 			if(playername == "")
@@ -441,6 +454,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 				goto save_end;
 			}
 		}
+		}
+
 		player->need_save = 0;
 
 		save_end:
@@ -539,6 +554,27 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 
 Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 {
+	try {
+	Json::Value player_json;
+	m_players_storage->get_json(("p." + name).c_str(), player_json);
+	verbosestream<<"Reading kv player "<<name<<std::endl;
+	if (!player_json["player_old"].empty()) {
+		Player *player = new RemotePlayer(m_gamedef);
+		std::istringstream is(player_json["player_old"].asString());
+		try {
+			player->deSerialize(is, name);
+			addPlayer(player);
+			return player;
+		} catch (SerializationError e) {
+			errorstream<<e.what()<<std::endl;
+			//return NULL;
+		}
+	}
+	} catch (...)  {
+	}
+
+	//TODO: REMOVE OLD SAVE TO FILE:
+
 	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS) || !name.size()) {
 		infostream<<"Not loading player with invalid name: "<<name<<std::endl;
 		return NULL;

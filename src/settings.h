@@ -786,19 +786,19 @@ public:
 		set(name, os.str());
 	}
 
-	Json::Value getJson(std::string name)
+	Json::Value getJson(const std::string & name)
 	{
 		Json::Value root;
-		Json::Reader reader;
 		std::string value = get(name);
-		if (value.empty()) value = "{}";
-		if (!reader.parse( value, root ) ) {
-			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << reader.getFormattedErrorMessages();
+		if (value.empty())
+			value = "{}";
+		if (!json_reader.parse( value, root ) ) {
+			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
 		}
 		return root;
 	}
 
-	void setJson(std::string name, Json::Value value)
+	void setJson(const std::string & name, const Json::Value & value)
 	{
 		Json::FastWriter writer;
 		set(name, value.empty() ? "{}" : writer.write( value ));
@@ -875,6 +875,7 @@ private:
 	std::map<std::string, std::string> m_defaults;
 	// All methods that access m_settings/m_defaults directly should lock this.
 	JMutex m_mutex;
+	Json::Reader json_reader;
 };
 
 #endif

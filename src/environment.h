@@ -424,6 +424,7 @@ private:
 	IGameDef *m_gamedef;
 	// Key-value storage
 	KeyValueStorage *m_key_value_storage;
+	KeyValueStorage *m_players_storage;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects

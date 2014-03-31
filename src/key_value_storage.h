@@ -21,19 +21,23 @@
 #include <string>
 #include <leveldb/db.h>
 #include "exceptions.h"
+#include "json/json.h"
 
 class KeyValueStorage
 {
 public:
-	KeyValueStorage(const std::string &savedir) throw(KeyValueStorageException);;
+	KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException);
 	void put(const char *key, const char *data) throw(KeyValueStorageException);
+	void put_json(const char *key, const Json::Value & data);
 	void get(const char *key, std::string &data) throw(KeyValueStorageException);
+	void get_json(const char *key, Json::Value & data);
 	void del(const char *key) throw(KeyValueStorageException);
 private:
 	std::string m_savedir;
 	leveldb::DB *m_db;
 	const char *m_db_name;
+	Json::FastWriter json_writer;
+	Json::Reader json_reader;
 };
-
 
 #endif
