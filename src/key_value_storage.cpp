@@ -26,7 +26,7 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir) throw(KeyValueStora
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
-	leveldb::Status status = leveldb::DB::Open(options, savedir + DIR_DELIM +  m_db_name, &m_db);
+	leveldb::Status status = leveldb::DB::Open(options, savedir + DIR_DELIM +  m_db_name + ".db", &m_db);
 	if(!status.ok()) {
 		throw KeyValueStorageException(status.ToString());
 	}
