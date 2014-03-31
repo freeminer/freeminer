@@ -27,6 +27,7 @@ class KeyValueStorage
 {
 public:
 	KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException);
+	~KeyValueStorage();
 	void put(const char *key, const char *data) throw(KeyValueStorageException);
 	void put_json(const char *key, const Json::Value & data);
 	void get(const char *key, std::string &data) throw(KeyValueStorageException);

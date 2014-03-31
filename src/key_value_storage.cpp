@@ -34,6 +34,11 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 	}
 }
 
+KeyValueStorage::~KeyValueStorage() {
+	delete m_db;
+	m_db = NULL;
+}
+
 void KeyValueStorage::put(const char *key, const char *data) throw(KeyValueStorageException)
 {
 	leveldb::WriteOptions write_options;
