@@ -791,7 +791,7 @@ public:
 		Json::Value root;
 		std::string value = get(name);
 		if (value.empty())
-			value = "{}";
+			return root;
 		if (!json_reader.parse( value, root ) ) {
 			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
 		}
@@ -800,8 +800,7 @@ public:
 
 	void setJson(const std::string & name, const Json::Value & value)
 	{
-		Json::FastWriter writer;
-		set(name, value.empty() ? "{}" : writer.write( value ));
+		set(name, value.empty() ? "{}" : json_writer.write( value ));
 	}
 
 	void clear()
@@ -876,6 +875,7 @@ private:
 	// All methods that access m_settings/m_defaults directly should lock this.
 	JMutex m_mutex;
 	Json::Reader json_reader;
+	Json::FastWriter json_writer;
 };
 
 #endif
