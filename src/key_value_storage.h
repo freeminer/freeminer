@@ -29,9 +29,9 @@ public:
 	KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException);
 	~KeyValueStorage();
 	void put(const char *key, const char *data) throw(KeyValueStorageException);
-	void put_json(const char *key, const Json::Value & data);
+	void put_json(const char *key, const Json::Value & data) throw(KeyValueStorageException);
 	void get(const char *key, std::string &data) throw(KeyValueStorageException);
-	void get_json(const char *key, Json::Value & data);
+	void get_json(const char *key, Json::Value & data) throw(KeyValueStorageException);
 	void del(const char *key) throw(KeyValueStorageException);
 private:
 	std::string m_savedir;

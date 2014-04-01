@@ -36,7 +36,6 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 
 KeyValueStorage::~KeyValueStorage() {
 	delete m_db;
-	m_db = NULL;
 }
 
 void KeyValueStorage::put(const char *key, const char *data) throw(KeyValueStorageException)
@@ -48,7 +47,7 @@ void KeyValueStorage::put(const char *key, const char *data) throw(KeyValueStora
 	}
 }
 
-void KeyValueStorage::put_json(const char *key, const Json::Value &data)
+void KeyValueStorage::put_json(const char *key, const Json::Value &data) throw(KeyValueStorageException)
 {
 	put(key, json_writer.write(data).c_str());
 }
@@ -62,15 +61,15 @@ void KeyValueStorage::get(const char *key, std::string &data) throw(KeyValueStor
 	}
 }
 
-void KeyValueStorage::get_json(const char *key, Json::Value & data) {
-		std::string value;
-		get(key, value);
-		if (value.empty())
-			value = "{}";
-		if (!json_reader.parse( value, data ) ) {
-			//throw KeyValueStorageException(json_reader.getFormattedErrorMessages());
-			//errorstream << "Failed to parse json KV var [" << sloppy<char**>(&key) << "]='" << value << "' : " << json_reader.getFormattedErrorMessages();
-		}
+void KeyValueStorage::get_json(const char *key, Json::Value & data) throw(KeyValueStorageException) 
+{
+	std::string value;
+	get(key, value);
+	if (value.empty())
+		return;
+	if (!json_reader.parse(value, data) ) {
+		throw KeyValueStorageException(json_reader.getFormattedErrorMessages());
+	}
 }
 
 void KeyValueStorage::del(const char *key) throw(KeyValueStorageException)
@@ -81,4 +80,3 @@ void KeyValueStorage::del(const char *key) throw(KeyValueStorageException)
 		throw KeyValueStorageException(status.ToString());
 	}
 }
-
