@@ -422,13 +422,9 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	while (i != m_players.end())
 	{
 		Player *player = *i;
-
-		std::ostringstream ss(std::ios_base::binary);
-		player->serialize(ss);
-		Json::Value player_json;
-		player_json["player_old"] = ss.str();
-
 		try {
+			Json::Value player_json;
+			player_json << *player;
 			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
 		} catch (...) {
 		// TODO: remove old file storage:
@@ -558,17 +554,11 @@ Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 	Json::Value player_json;
 	m_players_storage->get_json(("p." + name).c_str(), player_json);
 	verbosestream<<"Reading kv player "<<name<<std::endl;
-	if (!player_json["player_old"].empty()) {
+	if (!player_json.empty()) {
 		Player *player = new RemotePlayer(m_gamedef);
-		std::istringstream is(player_json["player_old"].asString());
-		try {
-			player->deSerialize(is, name);
-			addPlayer(player);
-			return player;
-		} catch (SerializationError e) {
-			errorstream<<e.what()<<std::endl;
-			//return NULL;
-		}
+		player_json >> *player;
+		addPlayer(player);
+		return player;
 	}
 	} catch (...)  {
 	}

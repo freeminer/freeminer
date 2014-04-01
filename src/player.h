@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
+#include "json/json.h"
 
 #define PLAYERNAME_SIZE 20
 
@@ -307,6 +308,7 @@ public:
 protected:
 	IGameDef *m_gamedef;
 
+public:
 	char m_name[PLAYERNAME_SIZE];
 	u16 m_breath;
 	f32 m_pitch;
@@ -343,6 +345,9 @@ public:
 private:
 	PlayerSAO *m_sao;
 };
+
+Json::Value operator<<(Json::Value &json, Player &player);
+Json::Value operator>>(Json::Value &json, Player &player);
 
 #endif
 
