@@ -48,6 +48,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
+#if USE_FREETYPE
+#include "settings.h"
+#include "main.h"  // for g_settings
+#include "intlGUIEditBox.h"
+#endif
+
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -931,7 +937,14 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 	else
 	{
 		spec.send = true;
-		gui::IGUIEditBox *e = Environment->addEditBox(spec.fdefault.c_str(), rect, true, this, spec.fid);
+
+		gui::IGUIEditBox *e = nullptr;
+		#if USE_FREETYPE
+		if (g_settings->getBool("freetype"))
+			e = (gui::IGUIEditBox *) new gui::intlGUIEditBox(spec.fdefault.c_str(), true, Environment, this, spec.fid, rect);
+		#endif
+		if (!e)
+			e = Environment->addEditBox(spec.fdefault.c_str(), rect, true, this, spec.fid);
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -1019,7 +1032,14 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	else
 	{
 		spec.send = true;
-		gui::IGUIEditBox *e = Environment->addEditBox(spec.fdefault.c_str(), rect, true, this, spec.fid);
+
+		gui::IGUIEditBox *e = nullptr;
+		#if USE_FREETYPE
+		if (g_settings->getBool("freetype"))
+			e = (gui::IGUIEditBox *) new gui::intlGUIEditBox(spec.fdefault.c_str(), true, Environment, this, spec.fid, rect);
+		#endif
+		if (!e)
+			e = Environment->addEditBox(spec.fdefault.c_str(), rect, true, this, spec.fid);
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
