@@ -184,12 +184,12 @@ public:
 		return (m_yaw + 90.) * core::DEGTORAD;
 	}
 
-	void updateName(const char *name)
+	void updateName(const std::string &name)
 	{
-		snprintf(m_name, PLAYERNAME_SIZE, "%s", name);
+		m_name = name;
 	}
 
-	const char * getName() const
+	const std::string & getName() const
 	{
 		return m_name;
 	}
@@ -302,14 +302,14 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
-	std::string path;
+	std::string path; //todo: remove
 	bool need_save;
 
 protected:
 	IGameDef *m_gamedef;
 
 public:
-	char m_name[PLAYERNAME_SIZE];
+	std::string m_name;
 	u16 m_breath;
 	f32 m_pitch;
 	f32 m_yaw;

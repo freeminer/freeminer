@@ -502,7 +502,7 @@ void Client::step(float dtime)
 			writeU8(&data[2], SER_FMT_VER_HIGHEST_READ);
 
 			memset((char*)&data[3], 0, PLAYERNAME_SIZE);
-			snprintf((char*)&data[3], PLAYERNAME_SIZE, "%s", myplayer->getName());
+			snprintf((char*)&data[3], PLAYERNAME_SIZE, "%s", myplayer->getName().c_str());
 
 			/*infostream<<"Client: sending initial password hash: \""<<m_password<<"\""
 					<<std::endl;*/

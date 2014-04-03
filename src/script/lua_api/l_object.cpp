@@ -661,7 +661,7 @@ int ObjectRef::l_get_player_name(lua_State *L)
 		return 1;
 	}
 	// Do it
-	lua_pushstring(L, player->getName());
+	lua_pushstring(L, player->getName().c_str());
 	return 1;
 }
 

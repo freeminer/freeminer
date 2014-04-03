@@ -76,7 +76,7 @@ public:
 	virtual void addPlayer(Player *player);
 	void removePlayer(u16 peer_id);
 	Player * getPlayer(u16 peer_id);
-	Player * getPlayer(const char *name);
+	Player * getPlayer(const std::string &name);
 	Player * getRandomConnectedPlayer();
 	Player * getNearestConnectedPlayer(v3f pos);
 	std::list<Player*> getPlayers();
@@ -254,7 +254,7 @@ public:
 		{ return m_recommended_send_interval; }
 
 	Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
-	Player * getPlayer(const char *name);
+	Player * getPlayer(const std::string &name);
 
 	KeyValueStorage *getKeyValueStorage();
 	/*

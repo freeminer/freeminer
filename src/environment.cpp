@@ -117,13 +117,10 @@ Player * Environment::getPlayer(u16 peer_id)
 	return NULL;
 }
 
-Player * Environment::getPlayer(const char *name)
+Player * Environment::getPlayer(const std::string &name)
 {
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
-		Player *player = *i;
-		if(strcmp(player->getName(), name) == 0)
+	for(auto &player : m_players) {
+ 		if(player->getName() == name)
 			return player;
 	}
 	return NULL;
@@ -342,7 +339,7 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 	m_players_storage = new KeyValueStorage(savedir, "players");
 }
 
-Player * ServerEnvironment::getPlayer(const char *name)
+Player * ServerEnvironment::getPlayer(const std::string &name)
 {
 	Player *player = Environment::getPlayer(name);
 	if (player)

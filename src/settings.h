@@ -425,14 +425,14 @@ public:
 		return true;
 	}
 
-	void set(std::string name, std::string value)
+	void set(std::string name, const std::string &value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
 		m_settings[name] = value;
 	}
 
-	void set(std::string name, const char *value)
+	void set(const std::string &name, const char *value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
