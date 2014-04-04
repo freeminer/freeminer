@@ -156,6 +156,11 @@ struct LocalFormspecHandler : public TextDest
 				return;
 			}
 
+			if (fields.find("btn_change_password") != fields.end()) {
+				g_gamecallback->changePassword();
+				return;
+			}
+
 			if (fields.find("quit") != fields.end()) {
 				return;
 			}
@@ -862,14 +867,17 @@ public:
 		services->setPixelShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 		services->setVertexShaderConstant("eyePosition", (irr::f32*)&eye_position, 3);
 
-		// Normal map texture layer
+		// Uniform sampler layers
+		int layer0 = 0;
 		int layer1 = 1;
 		int layer2 = 2;
 		// before 1.8 there isn't a "integer interface", only float
 #if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
+		services->setPixelShaderConstant("baseTexture" , (irr::f32*)&layer0, 1);
 		services->setPixelShaderConstant("normalTexture" , (irr::f32*)&layer1, 1);
 		services->setPixelShaderConstant("useNormalmap" , (irr::f32*)&layer2, 1);
 #else
+		services->setPixelShaderConstant("baseTexture" , (irr::s32*)&layer0, 1);
 		services->setPixelShaderConstant("normalTexture" , (irr::s32*)&layer1, 1);
 		services->setPixelShaderConstant("useNormalmap" , (irr::s32*)&layer2, 1);
 #endif
@@ -992,7 +1000,7 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 	std::string formspec =
 		"size[11,5.5,true]"
 		"field[3,2.35;6,0.5;f_text;;" + text + "]"
-		"button_exit[4,3;3,0.5;btn_send;"  + std::string(gettext("Proceed"))     + "]"
+		"button_exit[4,3;3,0.5;btn_send;"  + wide_to_narrow(wstrgettext("Proceed")) + "]"
 		;
 
 	/* Create menu */
@@ -1004,6 +1012,7 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 			new GUIFormSpecMenu(device, guiroot, -1,
 					&g_menumgr,
 					NULL, NULL, tsrc);
+	menu->doPause = false;
 	menu->setFormSource(current_formspec);
 	menu->setTextDest(current_textdest);
 	menu->drop();
@@ -1012,9 +1021,10 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 /******************************************************************************/
 static void show_pause_menu(FormspecFormSource* current_formspec,
 		TextDest* current_textdest, IWritableTextureSource* tsrc,
-		IrrlichtDevice * device)
+		IrrlichtDevice * device, bool singleplayermode)
 {
-	const char* control_text = gettext("Default Controls:\n"
+
+	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
 			"- WASD: move\n"
 			"- Space: jump/climb\n"
 			"- Shift: sneak/go down\n"
@@ -1025,35 +1035,49 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 			"- Mouse right: place/use\n"
 			"- Mouse wheel: select item\n"
 			"- T: chat\n"
-			);
+			));
 
+	float ypos = singleplayermode ? 1.0 : 0.5;
 	std::ostringstream os;
-	os<<"Minetest\n";
-	os<<minetest_build_info<<"\n";
-	os<<"path_user = "<<wrap_rows(porting::path_user, 20)<<"\n";
 
-	std::string formspec =
-		"size[5,5.5,true]"
-		"button_exit[1,1;3,0.5;btn_continue;"  + std::string(gettext("Continue"))+ "]"
-		"button[1,2;3,0.5;btn_sound;"     + std::string(gettext("Sound Volume")) + "]"
-		"button[1,3;3,0.5;btn_exit_menu;" + std::string(gettext("Exit to Menu")) + "]"
-		"button[1,4;3,0.5;btn_exit_os;"   + std::string(gettext("Exit to OS"))   + "]"
-		;
+	os << "size[5,5.5,true]"
+			<< "button_exit[1," << (ypos++) << ";3,0.5;btn_continue;"
+					<< wide_to_narrow(wstrgettext("Continue"))     << "]";
+
+	if (!singleplayermode) {
+		os << "button_exit[1," << (ypos++) << ";3,0.5;btn_change_password;"
+					<< wide_to_narrow(wstrgettext("Change Password")) << "]";
+		}
+
+	os 		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_sound;"
+					<< wide_to_narrow(wstrgettext("Sound Volume")) << "]";
+	os		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_exit_menu;"
+					<< wide_to_narrow(wstrgettext("Exit to Menu")) << "]";
+	os		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_exit_os;"
+					<< wide_to_narrow(wstrgettext("Exit to OS"))   << "]";
+/*
+			<< "textarea[7.5,0.25;3.75,6;;" << control_text << ";]"
+			<< "textarea[0.4,0.25;3.5,6;;" << "Minetest\n"
+			<< minetest_build_info << "\n"
+			<< "path_user = " << wrap_rows(porting::path_user, 20)
+			<< "\n;]";
+*/
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
 	 * are deleted by guiFormSpecMenu                     */
-	current_formspec = new FormspecFormSource(formspec,&current_formspec);
+	current_formspec = new FormspecFormSource(os.str(),&current_formspec);
 	current_textdest = new LocalFormspecHandler("MT_PAUSE_MENU");
 	GUIFormSpecMenu *menu =
 		new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr, NULL, NULL, tsrc);
+	menu->doPause = true;
 	menu->setFormSource(current_formspec);
 	menu->setTextDest(current_textdest);
 	menu->drop();
 }
 
 /******************************************************************************/
-void the_game(bool &kill, bool random_input, InputHandler *input,
+bool the_game(bool &kill, bool random_input, InputHandler *input,
 	IrrlichtDevice *device, gui::IGUIFont* font, std::string map_dir,
 	std::string playername, std::string password,
 	std::string address /* If "", local server is used */,
@@ -1119,6 +1143,9 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	}
 
 	Server *server = NULL;
+
+	bool reconnect = 0;
+	bool connect_ok = 0;
 
 	try{
 	// Event manager
@@ -1242,7 +1269,8 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	try{
 		float time_counter = 0.0;
 		input->clear();
-		float fps_max = g_settings->getFloat("fps_max");
+		float fps_max = g_settings->getFloat("pause_fps_max");
+
 		bool cloud_menu_background = g_settings->getBool("menu_clouds");
 		u32 lasttime = device->getTimer()->getTime();
 		while(device->run())
@@ -1311,6 +1339,10 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				sleep_ms(25);
 			}
 			time_counter += dtime;
+			if (time_counter > CONNECTION_TIMEOUT) {
+				reconnect = 1;
+				break;
+			}
 		}
 	}
 	catch(con::PeerNotFoundException &e)
@@ -1429,6 +1461,10 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				sleep_ms(25);
 			}
 			time_counter += dtime;
+			if (time_counter > CONNECTION_TIMEOUT) {
+				reconnect = 1;
+				break;
+			}
 		}
 	}
 
@@ -1452,7 +1488,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	*/
 	Camera camera(smgr, draw_control, gamedef);
 	if (!camera.successfullyCreated(error_message))
-		return;
+		return 0;
 
 	f32 camera_yaw = 0; // "right/left"
 	f32 camera_pitch = 0; // "up/down"
@@ -1591,6 +1627,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	bool disable_camera_update = false;
 	bool show_debug = g_settings->getBool("show_debug");
 	bool show_profiler_graph = false;
+	bool show_block_boundaries = false;
 	u32 show_profiler = 0;
 	u32 show_profiler_max = 2;  // Number of pages
 
@@ -1642,6 +1679,8 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	int errors = 0;
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
 	{
 	core::stringw str = L"Freeminer [";
@@ -1914,6 +1953,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 
 			PlayerInventoryFormSource *src = new PlayerInventoryFormSource(&client);
 			assert(src);
+			menu->doPause = false;
 			menu->setFormSpec(src->getForm(), inventoryloc);
 			menu->setFormSource(src);
 			menu->setTextDest(new TextDestPlayerInventory(&client));
@@ -1921,7 +1961,8 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		else if(input->wasKeyDown(EscapeKey))
 		{
-			show_pause_menu(current_formspec, current_textdest, tsrc, device);
+			show_pause_menu(current_formspec, current_textdest, tsrc, device,
+					simple_singleplayer_mode);
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_chat")))
 		{
@@ -2059,6 +2100,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				statustext = L"Fog enabled";
 			statustext_time = 0;
 		}
+/*
 		else if(input->wasKeyDown(getKeySetting("keymap_toggle_update_camera")))
 		{
 			disable_camera_update = !disable_camera_update;
@@ -2068,6 +2110,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				statustext = L"Camera update enabled";
 			statustext_time = 0;
 		}
+*/
 		else if(input->wasKeyDown(getKeySetting("keymap_toggle_debug")))
 		{
 			// Initial / 3x toggle: Chat only
@@ -2115,6 +2158,15 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				statustext = L"Profiler hidden";
 				statustext_time = 0;
 			}
+		}
+		else if(input->wasKeyDown(getKeySetting("keymap_toggle_block_boundaries")))
+		{
+			show_block_boundaries = !show_block_boundaries;
+			if(show_block_boundaries)
+				statustext = L"Block boundaries shown";
+			else
+				statustext = L"Block boundaries hidden";
+			statustext_time = 0;
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_increase_viewing_range_min")))
 		{
@@ -2413,7 +2465,12 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 			if(server != NULL)
 			{
 				//TimeTaker timer("server->step(dtime)");
+				try {
 				server->step(dtime);
+				} catch(std::exception &e) {
+					if (!errors++ || !(errors % (int)(60/dedicated_server_step)))
+						errorstream << "Fatal error n=" << errors << " : " << e.what() << std::endl;
+				}
 			}
 			{
 				//TimeTaker timer("client.step(dtime)");
@@ -2500,6 +2557,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 								new GUIFormSpecMenu(device, guiroot, -1,
 										&g_menumgr,
 										&client, gamedef, tsrc);
+						menu->doPause = false;
 						menu->setFormSource(current_formspec);
 						menu->setTextDest(current_textdest);
 						menu->drop();
@@ -2768,7 +2826,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		
 		// Update sound listener
-		sound->updateListener(camera.getCameraNode()->getPosition(),
+		sound->updateListener(camera.getCameraNode()->getPosition()+intToFloat(camera_offset, BS),
 				v3f(0,0,0), // velocity
 				camera.getDirection(),
 				camera.getCameraNode()->getUpVector());
@@ -3059,6 +3117,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 						new GUIFormSpecMenu(device, guiroot, -1,
 							&g_menumgr,
 							&client, gamedef, tsrc);
+					menu->doPause = false;
 					menu->setFormSpec(meta->getString("formspec"),
 							inventoryloc);
 					menu->setFormSource(new NodeMetadataFormSource(
@@ -3332,7 +3391,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				<<") (yaw="<<(wrapDegrees_0_360(camera_yaw))
 				<<") (t="<<client.getEnv().getClientMap().getHeat(pos_i, 1)
 				<<"C, h="<<client.getEnv().getClientMap().getHumidity(pos_i, 1)
-				<<"%) (seed = "<<((unsigned long long)client.getMapSeed())
+				<<"%) (seed = "<<((u64)client.getMapSeed())
 				<<")";
 			guitext2->setText(utf8_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
@@ -3464,7 +3523,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
-			client.getEnv().getClientMap().updateDrawList(driver);
+			client.getEnv().getClientMap().updateDrawList(driver, dtime);
 			update_draw_list_last_cam_dir = camera_direction;
 		}
 
@@ -3577,6 +3636,14 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		
 		//timer9.stop();
 		//TimeTaker //timer10("//timer10");
+		/*
+			Block boundary visualization
+		*/
+		if (show_block_boundaries) { // DEV only borders of any blocks
+			//client.getEnv().getClientMap().renderBlockBoundaries(server->m_modified_blocks);
+			//client.getEnv().getClientMap().renderBlockBoundaries(client.getEnv().getClientMap().m_drawlist);
+		}
+
 		
 		video::SMaterial m;
 		//m.Thickness = 10;
@@ -3720,6 +3787,13 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 		Profiler::GraphValues values;
 		g_profiler->graphGet(values);
 		graph.put(values);
+
+		if (client.connectedAndInitialized()) {
+			connect_ok = 1;
+		} else if (connect_ok) {
+			reconnect = 1;
+			break;
+		}
 	}
 
 	/*
@@ -3808,6 +3882,7 @@ void the_game(bool &kill, bool random_input, InputHandler *input,
 	infostream << "\tRemaining materials: "
 		<< driver-> getMaterialRendererCount ()
 		<< " (note: irrlicht doesn't support removing renderers)"<< std::endl;
+	return reconnect;
 }
 
 

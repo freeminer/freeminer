@@ -4,6 +4,22 @@
 -- Falling stuff
 --
 
+function node_drop(np, remove_fast)
+				local n2 = minetest.get_node(np)
+				local drops = minetest.get_node_drops(n2.name, "")
+				minetest.remove_node(np, remove_fast)
+				-- Add dropped items
+				local _, dropped_item
+				for _, dropped_item in ipairs(drops) do
+					minetest.add_item(np, dropped_item)
+				end
+				-- Run script hook
+				local _, callback
+				for _, callback in ipairs(minetest.registered_on_dignodes) do
+					callback(np, n2, nil)
+				end
+end
+
 local remove_fast = 0
 
 minetest.register_entity("__builtin:falling_node", {
@@ -86,6 +102,8 @@ minetest.register_entity("__builtin:falling_node", {
 			-- it's drops
 			if n2.name ~= "air" and (not minetest.registered_nodes[n2.name] or
 					minetest.registered_nodes[n2.name].liquidtype == "none") then
+				node_drop(np, remove_fast)
+--[[
 				local drops = minetest.get_node_drops(n2.name, "")
 				minetest.remove_node(np, remove_fast)
 				-- Add dropped items
@@ -98,6 +116,7 @@ minetest.register_entity("__builtin:falling_node", {
 				for _, callback in ipairs(minetest.registered_on_dignodes) do
 					callback(np, n2, nil)
 				end
+]]--
 			end
 			-- Create node and remove entity
 			minetest.add_node(np, self.node)
@@ -168,13 +187,13 @@ function nodeupdate_single(p, delay)
 		-- Note: walkable is in the node definition, not in item groups
 		if minetest.registered_nodes[n_bottom.name] and
 				(minetest.get_node_group(n.name, "float") == 0 or minetest.registered_nodes[n_bottom.name].liquidtype == "none") and
-				(n.name ~= n_bottom.name or (minetest.registered_nodes[n_bottom.name].leveled and minetest.env:get_node_level(p_bottom) < minetest.env:get_node_max_level(p_bottom))) and
+				(n.name ~= n_bottom.name or (minetest.registered_nodes[n_bottom.name].leveled and minetest.get_node_level(p_bottom) < minetest.get_node_max_level(p_bottom))) and
 				(not minetest.registered_nodes[n_bottom.name].walkable or 
 					minetest.registered_nodes[n_bottom.name].buildable_to) then
 			if delay then
 				minetest.after(0.1, nodeupdate_single, {x=p.x, y=p.y, z=p.z}, false)
 			else
-				n.level = minetest.env:get_node_level(p)
+				n.level = minetest.get_node_level(p)
 				minetest.remove_node(p, remove_fast)
 				spawn_falling_node(p, n)
 				nodeupdate(p)

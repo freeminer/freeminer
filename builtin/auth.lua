@@ -32,6 +32,23 @@ assert(minetest.privs_to_string({a=true,b=true}) == "a,b")
 minetest.auth_file_path = minetest.get_worldpath().."/auth.txt"
 minetest.auth_table = {}
 
+local hex={}
+for i=0,255 do
+    hex[string.format("%0x",i)]=string.char(i)
+    hex[string.format("%0X",i)]=string.char(i)
+end
+
+local function uri_decode(str)
+	str = string.gsub (str, "+", " ")
+	return (str:gsub('%%(%x%x)',hex))
+end
+
+function uri_encode (str)
+	str = string.gsub (str, "([^0-9a-zA-Z_ -])", function (c) return string.format ("%%%02X", string.byte(c)) end)
+	str = string.gsub (str, " ", "+")
+	return str
+end
+
 local function read_auth_file()
 	local newtable = {}
 	local file, errmsg = io.open(minetest.auth_file_path, 'rb')
@@ -46,7 +63,7 @@ local function read_auth_file()
 				print("Invalid line in auth.txt: "..dump(line))
 			else
 			local privileges = minetest.string_to_privs(privilegestring)
-			newtable[name] = {password=password, privileges=privileges}
+			newtable[uri_decode(name)] = {password=password, privileges=privileges}
 			end
 		end
 	end
@@ -71,7 +88,7 @@ local function save_auth_file()
 	end
 	for name, stuff in pairs(minetest.auth_table) do
 		local privstring = minetest.privs_to_string(stuff.privileges)
-		file:write(name..":"..stuff.password..":"..privstring..'\n')
+		file:write(uri_encode(name)..":"..stuff.password..":"..privstring..'\n')
 	end
 	io.close(file)
 end

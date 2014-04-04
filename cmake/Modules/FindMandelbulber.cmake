@@ -1,4 +1,8 @@
 #
+# NOT USED
+#
+
+#
 # make new patch:
 # diff -EbBw --normal -u ../mandelbulber-read-only/src src/mandelbulber | grep -v "Only in" > util/mandelbulber.patch
 #

@@ -2297,6 +2297,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			kp == getKeySetting("keymap_inventory")))
 		{
 			if (m_allowclose){
+				doPause = false;
 				acceptInput(quit_mode_cancel);
 				quitMenu();
 			} else {
@@ -2678,7 +2679,6 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						(s.fid == event.GUIEvent.Caller->getID()))
 				{
 					s.send = true;
-					acceptInput();
 					if(s.is_exit){
 						if (m_allowclose) {
 							acceptInput(quit_mode_accept);
@@ -2688,6 +2688,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						}
 						return true;
 					}else{
+						acceptInput();
 						s.send = false;
 						return true;
 					}

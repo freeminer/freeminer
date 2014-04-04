@@ -152,7 +152,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::string name, const std::wstring label, const std::wstring fdeflt, int id):
+		FieldSpec(const std::string &name, const std::wstring &label,
+		          const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
@@ -244,6 +245,8 @@ public:
 	void acceptInput(FormspecQuitMode quitmode);
 	bool preprocessEvent(const SEvent& event);
 	bool OnEvent(const SEvent& event);
+	bool doPause;
+	bool pausesGame() { return doPause; }
 
 	GUITable* getTable(const std::string &tablename);
 

@@ -361,7 +361,7 @@ Server::Server(
 
 	// Initialize Environment
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
-	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this);
+	m_env = new ServerEnvironment(path_world, servermap, m_script, m_circuit, this);
 	m_emerge->env = m_env;
 
 	m_clients.setEnv(m_env);
@@ -710,7 +710,7 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
+		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 	}
 
@@ -1262,7 +1262,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	catch(con::PeerNotFoundException &e)
 	{
-		errorstream<<"Server::ProcessData(): Cancelling: peer "
+		verbosestream<<"Server::ProcessData(): Cancelling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;
 	}
@@ -1421,7 +1421,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			return;
 		}
 
-		if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS)==false)
+		if(!g_settings->getBool("enable_any_name") && string_allowed(playername, PLAYERNAME_ALLOWED_CHARS)==false)
 		{
 			actionstream<<"Server: Player with an invalid name ["<<playername
 					<<"] tried to connect from "<<addr_s<<std::endl;
@@ -1697,7 +1697,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			SendChatMessage(peer_id, getStatusString());
 		}
 
-		actionstream<<player->getName()<<" ["<<addr_s<<"] "<<"joins game. " << std::endl;
 		/*
 			Print out action
 		*/
@@ -1712,6 +1711,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				actionstream << *i << " ";
 			}
+			actionstream<<player->getName();
 
 			actionstream<<std::endl;
 		}
@@ -1726,7 +1726,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::vector<v3s16> got_blocks;
 		packet[TOSERVER_GOTBLOCKS_BLOCKS].convert(&got_blocks);
 		for(size_t i = 0; i < got_blocks.size(); ++i)
-			client->GotBlock(got_blocks[i]);
+			client->GotBlock(got_blocks[i], m_uptime.get() + m_env->m_game_time_start);
 		packet[TOSERVER_GOTBLOCKS_RANGE].convert(&client->wanted_range);
 		return;
 	}
@@ -1743,7 +1743,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	Player *player = m_env->getPlayer(peer_id);
 	if(player == NULL){
-		errorstream<<"Server::ProcessData(): Cancelling: "
+		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
 				<<std::endl;
 		return;
@@ -1784,7 +1784,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
 															<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
 															<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
-
 	}
 	else if(command == TOSERVER_DELETEDBLOCKS)
 	{
@@ -1792,7 +1791,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		packet[TOSERVER_DELETEDBLOCKS_DATA].convert(&deleted_blocks);
 		RemoteClient *client = getClient(peer_id);
 		for (auto &block : deleted_blocks)
-			client->SetBlockNotSent(block);
+			client->SetBlockDeleted(block);
 	}
 	else if(command == TOSERVER_INVENTORY_ACTION)
 	{
@@ -2640,7 +2639,7 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 
 		MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 		if(block)
-			block->raiseModified(MOD_STATE_WRITE_NEEDED);
+			block->raiseModified(MOD_STATE_WRITE_NEEDED, "inventoryModified");
 
 		setBlockNotSent(blockpos);
 	}
@@ -2878,8 +2877,8 @@ void Server::SendChatMessage(u16 peer_id, const std::string &message)
 	}
 }
 
-void Server::SendShowFormspecMessage(u16 peer_id, const std::string formspec,
-					const std::string formname)
+void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
+                                     const std::string &formname)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -3404,7 +3403,7 @@ void Server::SendBlocks(float dtime)
 				return;
 
 			total_sending += client->SendingCount();
-			client->GetNextBlocks(m_env,m_emerge, dtime, queue);
+			client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
 		m_clients.Unlock();
 	}
@@ -3546,8 +3545,8 @@ struct SendableMediaAnnouncement
 	std::string name;
 	std::string sha1_digest;
 
-	SendableMediaAnnouncement(const std::string name_="",
-			const std::string sha1_digest_=""):
+	SendableMediaAnnouncement(const std::string &name_="",
+	                          const std::string &sha1_digest_=""):
 		name(name_),
 		sha1_digest(sha1_digest_)
 	{}
@@ -3577,8 +3576,8 @@ struct SendableMedia
 	std::string path;
 	std::string data;
 
-	SendableMedia(const std::string &name_="", const std::string path_="",
-			const std::string &data_=""):
+	SendableMedia(const std::string &name_="", const std::string &path_="",
+	              const std::string &data_=""):
 		name(name_),
 		path(path_),
 		data(data_)

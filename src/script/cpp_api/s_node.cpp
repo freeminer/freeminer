@@ -330,3 +330,17 @@ void ScriptApiNode::node_falling_update_single(v3s16 p)
 	lua_pop(L, 1); // Pop error handler
 }
 
+void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	lua_pushcfunction(L, script_error_handler);
+	int errorhandler = lua_gettop(L);
+
+	lua_getglobal(L, "node_drop");
+	push_v3s16(L, p);
+	lua_pushinteger(L, fast);
+	if(lua_pcall(L, 2, 0, errorhandler))
+		scriptError();
+	lua_pop(L, 1); // Pop error handler
+}

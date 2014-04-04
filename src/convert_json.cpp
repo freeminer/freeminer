@@ -36,8 +36,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "httpfetch.h"
 #include "porting.h"
 
-Json::Value                 fetchJsonValue(const std::string url,
-													struct curl_slist *chunk) {
+Json::Value                 fetchJsonValue(const std::string &url,
+                                           struct curl_slist *chunk) {
 #if USE_CURL
 
 	HTTPFetchRequest fetchrequest;

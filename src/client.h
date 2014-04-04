@@ -57,6 +57,7 @@ struct QueuedMeshUpdate
 	v3s16 p;
 	MeshMakeData *data;
 	bool ack_block_to_server;
+	bool lazy;
 
 	QueuedMeshUpdate();
 	~QueuedMeshUpdate();
@@ -76,7 +77,7 @@ public:
 		peer_id=0 adds with nobody to send to
 	*/
 	void addBlock(v3s16 p, MeshMakeData *data,
-			bool ack_block_to_server, bool urgent);
+			bool ack_block_to_server, bool urgent, bool lazy = false);
 
 	// Returned pointer must be deleted
 	// Returns NULL if queue is empty
@@ -99,11 +100,13 @@ struct MeshUpdateResult
 	v3s16 p;
 	MapBlockMesh *mesh;
 	bool ack_block_to_server;
+	bool lazy;
 
 	MeshUpdateResult():
 		p(-1338,-1338,-1338),
 		mesh(NULL),
 		ack_block_to_server(false)
+		,lazy(false)
 	{
 	}
 };
@@ -357,8 +360,8 @@ public:
 			const std::map<std::string, std::string> &fields);
 	void sendInventoryAction(InventoryAction *a);
 	void sendChatMessage(const std::string &message);
-	void sendChangePassword(const std::string oldpassword,
-			const std::string newpassword);
+	void sendChangePassword(const std::string &oldpassword,
+							const std::string &newpassword);
 	void sendDamage(u8 damage);
 	void sendBreath(u16 breath);
 	void sendRespawn();
@@ -412,7 +415,7 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, bool lazy=false);
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);

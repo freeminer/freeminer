@@ -179,6 +179,14 @@
 # Set to true to enable textures bumpmapping. Requires shaders enabled.
 #enable_bumpmapping = false
 # Set to true enables parallax occlusion mapping. Requires shaders enabled.
+#generate_normalmaps = false
+# Set to true enables on the fly normalmap generation (Emboss effect).
+# Requires bumpmapping enabled.
+#normalmaps_strength = 0.6
+# Strength of generated normalmaps
+#normalmaps_smooth = 1
+# Defines sampling step of texture (0 - 2) 
+# Higher the value normal maps will be smoother
 #enable_parallax_occlusion = false
 # Scale of parallax occlusion effect
 #parallax_occlusion_scale = 0.08
@@ -300,6 +308,8 @@
 #cache_block_before_spawn = true
 # Defines the maximum height a player can spawn in a map, above water level
 #max_spawn_height = 50
+# Allow players with any symbols in names
+#enable_any_name = 0 # WARNING!!! SECURITY RISK WITH SOME MODULES
 
 # Profiler data print interval. #0 = disable.
 #profiler_print_interval = 0

@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
+#include "json/json.h"
 
 #define PLAYERNAME_SIZE 20
 
@@ -183,12 +184,12 @@ public:
 		return (m_yaw + 90.) * core::DEGTORAD;
 	}
 
-	void updateName(const char *name)
+	void updateName(const std::string &name)
 	{
-		snprintf(m_name, PLAYERNAME_SIZE, "%s", name);
+		m_name = name;
 	}
 
-	const char * getName() const
+	const std::string & getName() const
 	{
 		return m_name;
 	}
@@ -301,13 +302,14 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
-	std::string path;
+	std::string path; //todo: remove
 	bool need_save;
 
 protected:
 	IGameDef *m_gamedef;
 
-	char m_name[PLAYERNAME_SIZE];
+public:
+	std::string m_name;
 	u16 m_breath;
 	f32 m_pitch;
 	f32 m_yaw;
@@ -343,6 +345,9 @@ public:
 private:
 	PlayerSAO *m_sao;
 };
+
+Json::Value operator<<(Json::Value &json, Player &player);
+Json::Value operator>>(Json::Value &json, Player &player);
 
 #endif
 

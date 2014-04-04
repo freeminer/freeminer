@@ -492,18 +492,19 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		if fav_idx ~= nil then
 			if fields["key_up"] ~= nil and fav_idx > 1 then
 				fav_idx = fav_idx -1
-			else if fields["key_down"] and fav_idx < #menu.favorites then
+			elseif fields["key_down"] and fav_idx < #menu.favorites then
 				fav_idx = fav_idx +1
-			end end
-		end
+			end
 
-		local address = menu.favorites[fav_idx].address
-		local port = menu.favorites[fav_idx].port
+			local address = menu.favorites[fav_idx].address
+			local port = menu.favorites[fav_idx].port
 
-		if address ~= nil and
-			port ~= nil then
-			engine.setting_set("address",address)
-			engine.setting_set("remote_port",port)
+			if address ~= nil and
+				port ~= nil then
+				engine.setting_set("address",address)
+				engine.setting_set("remote_port",port)
+			end
+
 		end
 
 		menu.fav_selected = fav_idx
@@ -671,7 +672,7 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
-			engine.setting_set("farmesh", 2)
+			engine.setting_set("farmesh", 3)
 		else
 			engine.setting_set("farmesh", 0)
 		end
@@ -715,6 +716,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_parallax"] then
 		engine.setting_set("enable_parallax_occlusion", fields["cb_parallax"])
+	end
+	if fields["cb_generate_normalmaps"] then
+		engine.setting_set("generate_normalmaps", fields["cb_generate_normalmaps"])
 	end
 	if fields["cb_waving_water"] then
 		engine.setting_set("enable_waving_water", fields["cb_waving_water"])
@@ -1010,13 +1014,14 @@ function tabbuilder.tab_settings()
 	if engine.setting_getbool("enable_shaders") then
 		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
 		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
+		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
 		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
 		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
 		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
 	end
 
 	tab_string = tab_string ..
-		"button[6.5,10;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[6.5,11;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 

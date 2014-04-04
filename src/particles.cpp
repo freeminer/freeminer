@@ -247,7 +247,7 @@ void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
 		const TileSpec tiles[])
 {
 	// TODO maybe depend on fps
-	for (u16 j = 0; j < 128; j++) // set the amount of particles here
+	for (u16 j = 0; j < 64; j++) // set the amount of particles here
 	{
 		addNodeParticle(gamedef, smgr, player, env, pos, tiles);
 	}

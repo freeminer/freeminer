@@ -102,13 +102,16 @@ public:
 
 	s16 m_nearest_unsent_nearest;
 	s16 wanted_range;
+	
+	ServerEnvironment *m_env;
 
-	RemoteClient():
+	RemoteClient(ServerEnvironment *env):
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
 		net_proto_version(0),
 		m_nearest_unsent_nearest(0),
 		wanted_range(9 * MAP_BLOCKSIZE),
+		m_env(env),
 		m_time_from_building(9999),
 		m_pending_serialization_version(SER_FMT_VER_INVALID),
 		m_state(Created),
@@ -130,14 +133,15 @@ public:
 		dtime is used for resetting send radius at slow interval
 	*/
 	void GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, std::vector<PrioritySortedBlockTransfer> &dest);
+			float dtime, double m_uptime, std::vector<PrioritySortedBlockTransfer> &dest);
 
-	void GotBlock(v3s16 p);
+	void GotBlock(v3s16 p, double time);
 
 	void SentBlock(v3s16 p);
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
+	void SetBlockDeleted(v3s16 p);
 
 	s32 SendingCount()
 	{
@@ -156,6 +160,7 @@ public:
 				<<", m_blocks_sending.size()="<<m_blocks_sending.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
 				<<", m_excess_gotblocks="<<m_excess_gotblocks
+				<<", wanted_range="<<wanted_range
 				<<std::endl;
 		m_excess_gotblocks = 0;
 	}
@@ -204,7 +209,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	std::set<v3s16> m_blocks_sent;
+	std::map<v3s16, int> m_blocks_sent;
 
 public:
 	s16 m_nearest_unsent_d;

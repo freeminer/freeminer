@@ -55,6 +55,7 @@ class ClientMap;
 class GameScripting;
 class Player;
 class Circuit;
+class KeyValueStorage;
 
 class Environment
 {
@@ -76,7 +77,7 @@ public:
 	virtual void addPlayer(Player *player);
 	void removePlayer(u16 peer_id);
 	Player * getPlayer(u16 peer_id);
-	Player * getPlayer(const char *name);
+	Player * getPlayer(const std::string &name);
 	Player * getRandomConnectedPlayer();
 	Player * getNearestConnectedPlayer(v3f pos);
 	std::list<Player*> getPlayers();
@@ -111,6 +112,9 @@ public:
 		m_day_night_ratio_override = value;
 	}
 
+	// counter used internally when triggering ABMs
+	u32 m_added_objects;
+
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
@@ -124,6 +128,7 @@ protected:
 	// Overriding the day-night ratio is useful for custom sky visuals
 	bool m_enable_day_night_ratio_override;
 	u32 m_day_night_ratio_override;
+
 };
 
 /*
@@ -216,6 +221,7 @@ public:
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers, bool activate);
 	~ABMHandler();
+	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
 	void apply(MapBlock *block, bool activate = false);
 
 };
@@ -229,7 +235,7 @@ public:
 class ServerEnvironment : public Environment
 {
 public:
-	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
+	ServerEnvironment(const std::string &savedir, ServerMap *map, GameScripting *scriptIface,
 			Circuit* circuit,
 			IGameDef *gamedef);
 	~ServerEnvironment();
@@ -249,7 +255,9 @@ public:
 		{ return m_recommended_send_interval; }
 
 	Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
-	Player * getPlayer(const char *name);
+	Player * getPlayer(const std::string &name);
+
+	KeyValueStorage *getKeyValueStorage();
 	/*
 		Save players
 	*/
@@ -359,6 +367,8 @@ public:
 	
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
+	u32 m_game_time_start;
+
 private:
 
 	/*
@@ -403,6 +413,8 @@ private:
 		Member variables
 	*/
 
+	std::string m_savedir;
+
 	// The map
 	ServerMap *m_map;
 	// Lua state
@@ -411,6 +423,9 @@ private:
 	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
+	// Key-value storage
+	KeyValueStorage *m_key_value_storage;
+	KeyValueStorage *m_players_storage;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects

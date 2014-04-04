@@ -23,9 +23,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DATABASE_DUMMY_HEADER
 #define DATABASE_DUMMY_HEADER
 
-#include "database.h"
 #include <map>
 #include <string>
+#include "database.h"
+#include "irrlichttypes.h"
 
 class ServerMap;
 
@@ -42,6 +43,6 @@ public:
 	~Database_Dummy();
 private:
 	ServerMap *srvmap;
-	std::map<unsigned long long, std::string> m_database;
+	std::map<u64, std::string> m_database;
 };
 #endif

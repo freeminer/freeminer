@@ -226,6 +226,8 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	if(d < block_max_radius)
 		return true;
 
+	if (!camera_fov)
+		return true;
 	// Adjust camera position, for purposes of computing the angle,
 	// such that a block that has any portion visible with the
 	// current camera position will have the center visible at the

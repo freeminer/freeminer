@@ -661,7 +661,7 @@ int ObjectRef::l_get_player_name(lua_State *L)
 		return 1;
 	}
 	// Do it
-	lua_pushstring(L, player->getName());
+	lua_pushstring(L, player->getName().c_str());
 	return 1;
 }
 
@@ -1125,7 +1125,7 @@ int ObjectRef::l_set_sky(lua_State *L)
 	}
 
 	if (type == "skybox" && params.size() != 6)
-		throw LuaError(L, "skybox expects 6 textures");
+		throw LuaError("skybox expects 6 textures");
 
 	if (!getServer(L)->setSky(player, bgcolor, type, params))
 		return 0;

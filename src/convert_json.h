@@ -31,7 +31,7 @@ struct ModStoreModDetails;
 std::vector<ModStoreMod>    readModStoreList(Json::Value& modlist);
 ModStoreModDetails          readModStoreModDetails(Json::Value& details);
 
-Json::Value                 fetchJsonValue(const std::string url,
-													struct curl_slist *chunk);
+Json::Value                 fetchJsonValue(const std::string &url,
+                                           struct curl_slist *chunk);
 
 #endif

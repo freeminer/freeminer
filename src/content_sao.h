@@ -37,7 +37,7 @@ class LuaEntitySAO : public ServerActiveObject
 {
 public:
 	LuaEntitySAO(ServerEnvironment *env, v3f pos,
-			const std::string &name, const std::string &state);
+	             const std::string &name, const std::string &state);
 	~LuaEntitySAO();
 	u8 getType() const
 	{ return ACTIVEOBJECT_TYPE_LUAENTITY; }

@@ -282,3 +282,68 @@ void RemotePlayer::setPosition(const v3f &position)
 	if(m_sao)
 		m_sao->setBasePosition(position);
 }
+
+
+
+Json::Value operator<<(Json::Value &json, v3f &v) {
+	json["X"] = v.X;
+	json["Y"] = v.Y;
+	json["Z"] = v.Z;
+	return json;
+}
+
+Json::Value operator>>(Json::Value &json, v3f &v) {
+	v.X = json["X"].asFloat();
+	v.Y = json["Y"].asFloat();
+	v.Z = json["Z"].asFloat();
+	return json;
+}
+
+Json::Value operator<<(Json::Value &json, Player &player) {
+	std::ostringstream ss(std::ios_base::binary);
+	//todo
+	player.inventory.serialize(ss);
+	json["inventory_old"] = ss.str();
+
+	json["name"] = player.m_name;
+	json["pitch"] = player.m_pitch;
+	json["yaw"] = player.m_yaw;
+	json["position"] << player.m_position;
+	json["hp"] = player.hp;
+	json["breath"] = player.m_breath;
+	return json;
+}
+
+Json::Value operator>>(Json::Value &json, Player &player) {
+	player.updateName(json["name"].asCString());
+	player.setPitch(json["pitch"].asFloat());
+	player.setYaw(json["yaw"].asFloat());
+	v3f position;
+	json["position"]>>position;
+	player.setPosition(position);
+	player.hp = json["hp"].asInt();
+	player.m_breath = json["breath"].asInt();
+
+	//todo
+	std::istringstream ss(json["inventory_old"].asString());
+	auto & inventory = player.inventory;
+	inventory.deSerialize(ss);
+
+	if(inventory.getList("craftpreview") == NULL)
+	{
+		// Convert players without craftpreview
+		inventory.addList("craftpreview", 1);
+
+		bool craftresult_is_preview = true;
+		//if(args.exists("craftresult_is_preview"))
+		//	craftresult_is_preview = args.getBool("craftresult_is_preview");
+		if(craftresult_is_preview)
+		{
+			// Clear craftresult
+			inventory.getList("craftresult")->changeItem(0, ItemStack());
+		}
+	}
+
+	return json;
+}
+

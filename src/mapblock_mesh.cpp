@@ -66,7 +66,7 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_):
 	m_crack_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
 	m_gamedef(gamedef)
-	,range(0)
+	,step(1)
 	,draw_control(draw_control_)
 {}
 
@@ -1052,7 +1052,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
-	step(0),
+	step(data->step),
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1065,8 +1065,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
-
-	step = getFarmeshStep(data->draw_control, data->range);
 
 	std::vector<FastFace> fastfaces_new;
 
@@ -1247,20 +1245,25 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 			ITextureSource *tsrc = data->m_gamedef->tsrc();
 			material.setTexture(2, tsrc->getTexture("disable_img.png"));
 			if (enable_bumpmapping || enable_parallax_occlusion) {
-				std::string fname_base = tsrc->getTextureName(p.tile.texture_id);
-				std::string normal_ext = "_normal.png";
-				size_t pos = fname_base.find(".");
-				std::string fname_normal = fname_base.substr(0, pos) + normal_ext;
-
-				if (tsrc->isKnownSourceImage(fname_normal)) {
-					// look for image extension and replace it 
-					size_t i = 0;
-					while ((i = fname_base.find(".", i)) != std::string::npos) {
-						fname_base.replace(i, 4, normal_ext);
-						i += normal_ext.length();
-					}
-					material.setTexture(1, tsrc->getTexture(fname_base));
+				if (tsrc->isKnownSourceImage("override_normal.png")){
+					material.setTexture(1, tsrc->getTexture("override_normal.png"));
 					material.setTexture(2, tsrc->getTexture("enable_img.png"));
+				} else {
+					std::string fname_base = tsrc->getTextureName(p.tile.texture_id);
+					std::string normal_ext = "_normal.png";
+					size_t pos = fname_base.find(".");
+					std::string fname_normal = fname_base.substr(0, pos) + normal_ext;
+
+					if (tsrc->isKnownSourceImage(fname_normal)) {
+						// look for image extension and replace it 
+						size_t i = 0;
+						while ((i = fname_base.find(".", i)) != std::string::npos) {
+							fname_base.replace(i, 4, normal_ext);
+							i += normal_ext.length();
+						}
+						material.setTexture(1, tsrc->getTexture(fname_base));
+						material.setTexture(2, tsrc->getTexture("enable_img.png"));
+					}
 				}
 			}
 			p.tile.applyMaterialOptionsWithShaders(material,
@@ -1415,17 +1418,22 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		buf->getMaterial().setTexture(2, tsrc->getTexture("disable_img.png"));
 		if (enable_shaders && (enable_bumpmapping || enable_parallax_occlusion))
 			{
-				std::string fname_base,fname_normal;
-				fname_base = tsrc->getTextureName(tile.texture_id);
-				unsigned pos;
-				pos = fname_base.find(".");
-				fname_normal = fname_base.substr (0, pos);
-				fname_normal += "_normal.png";
-				if (tsrc->isKnownSourceImage(fname_normal)){
-					os.str("");
-					os<<fname_normal<<"^[verticalframe:"<<(int)tile.animation_frame_count<<":"<<frame;
-					buf->getMaterial().setTexture(1, tsrc->getTexture(os.str()));
+				if (tsrc->isKnownSourceImage("override_normal.png")){
+					buf->getMaterial().setTexture(1, tsrc->getTexture("override_normal.png"));
 					buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
+				} else {
+					std::string fname_base,fname_normal;
+					fname_base = tsrc->getTextureName(tile.texture_id);
+					unsigned pos;
+					pos = fname_base.find(".");
+					fname_normal = fname_base.substr (0, pos);
+					fname_normal += "_normal.png";
+					if (tsrc->isKnownSourceImage(fname_normal)){
+						os.str("");
+						os<<fname_normal<<"^[verticalframe:"<<(int)tile.animation_frame_count<<":"<<frame;
+						buf->getMaterial().setTexture(1, tsrc->getTexture(os.str()));
+						buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
+					}
 				}
 			}
 	}

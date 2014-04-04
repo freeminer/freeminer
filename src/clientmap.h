@@ -51,6 +51,7 @@ struct MapDrawControl
 
 	float fps;
 	float fps_avg;
+	float fps_wanted;
 	float drawtime_avg;
 };
 
@@ -123,13 +124,17 @@ public:
 		return m_box;
 	}
 	
-	void updateDrawList(video::IVideoDriver* driver);
+	void updateDrawList(video::IVideoDriver* driver, float dtime);
 	void renderMap(video::IVideoDriver* driver, s32 pass);
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);
 
+
 	void renderPostFx();
+
+	// For debugging the status and position of MapBlocks
+	void renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks);
 
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);

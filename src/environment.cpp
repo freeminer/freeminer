@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "fmbitset.h"
 #include "circuit.h"
+#include "key_value_storage.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -90,19 +91,17 @@ void Environment::addPlayer(Player *player)
 void Environment::removePlayer(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
-re_search:
+
 	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
+			i != m_players.end();)
 	{
 		Player *player = *i;
-		if(player->peer_id != peer_id)
-			continue;
-
-		delete player;
-		m_players.erase(i);
-		// See if there is an another one
-		// (shouldn't be, but just to be sure)
-		goto re_search;
+		if(player->peer_id == peer_id) {
+			delete player;
+			i = m_players.erase(i);
+		} else {
+			++i;
+		}
 	}
 }
 
@@ -118,13 +117,10 @@ Player * Environment::getPlayer(u16 peer_id)
 	return NULL;
 }
 
-Player * Environment::getPlayer(const char *name)
+Player * Environment::getPlayer(const std::string &name)
 {
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
-		Player *player = *i;
-		if(strcmp(player->getName(), name) == 0)
+	for(auto &player : m_players) {
+ 		if(player->getName() == name)
 			return player;
 	}
 	return NULL;
@@ -316,9 +312,12 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 	ServerEnvironment
 */
 
-ServerEnvironment::ServerEnvironment(ServerMap *map,
-		GameScripting *scriptIface, Circuit* circuit, IGameDef *gamedef):
+ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
+                                     GameScripting *scriptIface, Circuit* circuit,
+                                     IGameDef *gamedef):
 	m_abmhandler(NULL),
+	m_game_time_start(0),
+	m_savedir(savedir),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
@@ -336,9 +335,11 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
+	m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
+	m_players_storage = new KeyValueStorage(savedir, "players");
 }
 
-Player * ServerEnvironment::getPlayer(const char *name)
+Player * ServerEnvironment::getPlayer(const std::string &name)
 {
 	Player *player = Environment::getPlayer(name);
 	if (player)
@@ -363,6 +364,8 @@ ServerEnvironment::~ServerEnvironment()
 			i = m_abms.begin(); i != m_abms.end(); ++i){
 		delete i->abm;
 	}
+	delete m_key_value_storage;
+	delete m_players_storage;
 }
 
 Map & ServerEnvironment::getMap()
@@ -373,6 +376,11 @@ Map & ServerEnvironment::getMap()
 ServerMap & ServerEnvironment::getServerMap()
 {
 	return *m_map;
+}
+
+KeyValueStorage *ServerEnvironment::getKeyValueStorage()
+{
+	return m_key_value_storage;
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -411,6 +419,12 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 	while (i != m_players.end())
 	{
 		Player *player = *i;
+		try {
+			Json::Value player_json;
+			player_json << *player;
+			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
+		} catch (...) {
+		// TODO: remove old file storage:
 
 		if (player->path == "") {
 			std::string playername = player->getName();
@@ -433,6 +447,8 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 				goto save_end;
 			}
 		}
+		}
+
 		player->need_save = 0;
 
 		save_end:
@@ -531,6 +547,21 @@ void ServerEnvironment::deSerializePlayers(const std::string &savedir)
 
 Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 {
+	try {
+	Json::Value player_json;
+	m_players_storage->get_json(("p." + name).c_str(), player_json);
+	verbosestream<<"Reading kv player "<<name<<std::endl;
+	if (!player_json.empty()) {
+		Player *player = new RemotePlayer(m_gamedef);
+		player_json >> *player;
+		addPlayer(player);
+		return player;
+	}
+	} catch (...)  {
+	}
+
+	//TODO: REMOVE OLD SAVE TO FILE:
+
 	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS) || !name.size()) {
 		infostream<<"Not loading player with invalid name: "<<name<<std::endl;
 		return NULL;
@@ -609,6 +640,7 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 
 	try{
+		m_game_time_start =
 		m_game_time = args.getU64("game_time");
 	}catch(SettingNotFoundException &e){
 		// Getting this is crucial, otherwise timestamps are useless
@@ -716,24 +748,21 @@ public:
 			}
 		}
 	}
+
 	ABMHandler::
 	~ABMHandler() {
 		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
 				i != m_aabms_list.end(); ++i)
 			delete *i;
 	}
-	void ABMHandler::apply(MapBlock *block, bool activate)
+
+	// Find out how many objects the given block and its neighbours contain.
+	// Returns the number of objects in the block, and also in 'wider' the
+	// number of objects in the block and all its neighbours. The latter
+	// may an estimate if any neighbours are unloaded.
+	u32 ABMHandler::countObjects(MapBlock *block, ServerMap * map, u32 &wider)
 	{
-		if (m_aabms_empty) // whoa, when is it empty?
-			return;
-
-		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
-		ServerMap *map = &m_env->getServerMap();
-
-		// Find out how many objects the block contains
-		u32 active_object_count = block->m_static_objects.m_active.size();
-		// Find out how many objects this and all the neighbors contain
-		u32 active_object_count_wider = 0;
+		wider = 0;
 		u32 wider_unknown_count = 0;
 		for(s16 x=-1; x<=1; x++)
 		for(s16 y=-1; y<=1; y++)
@@ -742,17 +771,31 @@ public:
 			MapBlock *block2 = map->getBlockNoCreateNoEx(
 					block->getPos() + v3s16(x,y,z));
 			if(block2==NULL){
-				++wider_unknown_count;
+				wider_unknown_count++;
 				continue;
 			}
-			active_object_count_wider +=
-					block2->m_static_objects.m_active.size()
+			wider += block2->m_static_objects.m_active.size()
 					+ block2->m_static_objects.m_stored.size();
 		}
 		// Extrapolate
+		u32 active_object_count = block->m_static_objects.m_active.size();
 		u32 wider_known_count = 3*3*3 - wider_unknown_count;
-		active_object_count_wider += wider_unknown_count * active_object_count_wider / wider_known_count;
-				
+		wider += wider_unknown_count * wider / wider_known_count;
+		return active_object_count;
+	}
+
+	void ABMHandler::apply(MapBlock *block, bool activate)
+	{
+		if(m_aabms_empty)
+			return;
+
+		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
+		ServerMap *map = &m_env->getServerMap();
+
+		u32 active_object_count_wider;
+		u32 active_object_count = this->countObjects(block, map, active_object_count_wider);
+		m_env->m_added_objects = 0;
+
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
@@ -796,6 +839,12 @@ neighbor_found:
 
 				i->abm->trigger(m_env, p, n,
 						active_object_count, active_object_count_wider, neighbor, activate);
+
+				// Count surrounding objects again if the abms added any
+				if(m_env->m_added_objects > 0) {
+					active_object_count = countObjects(block, map, active_object_count_wider);
+					m_env->m_added_objects = 0;
+				}
 			}
 		}
 	}
@@ -831,7 +880,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 	// Activate stored objects
 	activateObjects(block, dtime_s);
-	
+
 //	// Calculate weather conditions
 //	m_map->updateBlockHeat(this, block->getPos() *  MAP_BLOCKSIZE, block);
 
@@ -868,7 +917,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 	if(ndef->get(n_old).has_on_destruct)
 		m_script->node_on_destruct(p, n_old);
 	// Replace node
-	
+
 	if (fast) {
 		try {
 			MapNode nn = n;
@@ -1305,9 +1354,11 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			block->setTimestampNoChangedFlag(m_game_time);
 			// If time has changed much from the one on disk,
 			// set block to be saved when it is unloaded
+/*
 			if(block->getTimestamp() > block->getDiskTimestamp() + 60)
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
 						"Timestamp older than 60s (step)");
+*/
 
 			// Run node timers
 			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications
@@ -1521,6 +1572,7 @@ u16 getFreeServerActiveObjectId(
 u16 ServerEnvironment::addActiveObject(ServerActiveObject *object)
 {
 	assert(object);
+	m_added_objects++;
 	u16 id = addActiveObjectRaw(object, true, 0);
 	return id;
 }
@@ -1808,7 +1860,7 @@ void ServerEnvironment::removeRemovedObjects()
 		// invocation this will be 0, which is when removal will continue.
 		if(obj->m_known_by_count > 0)
 			continue;
-		
+
 		/*
 			Move static data from active to stored if not marked as removed
 		*/
@@ -2086,6 +2138,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 					stays_in_same_block = true;
 
 				MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+				if (!block)
+					continue;
 
 				std::map<u16, StaticObject>::iterator n =
 						block->m_static_objects.m_active.find(id);
@@ -2393,7 +2447,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				if(lplayer->in_liquid == false) {
 					speed.Y -= lplayer->movement_gravity * lplayer->physics_override_gravity * dtime_part * 2;
 					viscosity_factor = 0.96; // todo maybe depend on speed; 0.96 = ~100 nps max
-					viscosity_factor += (1.0-viscosity_factor) * 
+					viscosity_factor += (1.0-viscosity_factor) *
 						(1-(MAP_GENERATION_LIMIT - pf.Y/BS)/
 							MAP_GENERATION_LIMIT);
 				}
@@ -2445,7 +2499,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			breaked = loopcount;
 			break;
 		}
-	
+
 	}
 	while(dtime_downcount > 0.001);
 
@@ -2464,7 +2518,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		v3f speed_diff = info.new_speed - info.old_speed;
 		// Handle only fall damage
 		// (because otherwise walking against something in fast_move kills you)
-		if((speed_diff.Y < 0 || info.old_speed.Y >= 0) && 
+		if((speed_diff.Y < 0 || info.old_speed.Y >= 0) &&
 			speed_diff.getLength() <= lplayer->movement_speed_fast * 1.1) {
 			continue;
 		}
@@ -2891,5 +2945,3 @@ ClientEnvEvent ClientEnvironment::getClientEvent()
 }
 
 #endif // #ifndef SERVER
-
-

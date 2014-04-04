@@ -1787,6 +1787,7 @@ int main(int argc, char *argv[])
 			/*
 				Run game
 			*/
+			while(!kill &&
 			the_game(
 				kill,
 				random_input,
@@ -1802,7 +1803,10 @@ int main(int argc, char *argv[])
 				chat_backend,
 				gamespec,
 				simple_singleplayer_mode
-			);
+			)){
+				smgr->clear();
+				errorstream << "Reconnecting..." << std::endl;
+			}
 			smgr->clear();
 
 		} //try

@@ -46,7 +46,7 @@ struct MeshMakeData
 	v3s16 m_crack_pos_relative;
 	bool m_smooth_lighting;
 	IGameDef *m_gamedef;
-	int range;
+	int step;
 	MapDrawControl& draw_control;
 
 	MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_);
@@ -125,6 +125,8 @@ public:
 	void incrementUsageTimer(float dtime)
 	{
 		m_usage_timer += dtime;
+		if(m_usage_timer > 10)
+			setStatic();
 	}
 
 	void setStatic();

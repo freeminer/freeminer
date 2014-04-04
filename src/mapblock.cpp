@@ -52,10 +52,11 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		heat_last_update(0),
 		humidity_last_update(0),
 		m_uptime_timer_last(0),
+		m_changed_timestamp(0),
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
-		m_modified(MOD_STATE_WRITE_NEEDED),
+		m_modified(MOD_STATE_CLEAN),
 		m_modified_reason("initial"),
 		m_modified_reason_too_long(false),
 		is_underground(false),
@@ -74,21 +75,14 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	
 #ifndef SERVER
 	mesh = NULL;
+	mesh2 = mesh4 = mesh8 = mesh16 = NULL;
 #endif
 }
 
 MapBlock::~MapBlock()
 {
 #ifndef SERVER
-	{
-		//JMutexAutoLock lock(mesh_mutex);
-		
-		if(mesh)
-		{
-			delete mesh;
-			mesh = NULL;
-		}
-	}
+	delMesh();
 #endif
 
 	if(data)
@@ -727,8 +721,9 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		// Timestamp
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Timestamp"<<std::endl);
-		setTimestamp(readU32(is));
+		setTimestampNoChangedFlag(readU32(is));
 		m_disk_timestamp = m_timestamp;
+		m_changed_timestamp = m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? m_timestamp : 0;
 		
 		// Dynamically re-set ids based on node names
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
@@ -770,6 +765,38 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 		}
 	}
 }
+
+#ifndef SERVER
+MapBlockMesh* MapBlock::getMesh(int step) {
+	if (step >= 16 && mesh16) return mesh16;
+	if (step >= 8  && mesh8)  return mesh8;
+	if (step >= 4  && mesh4)  return mesh4;
+	if (step >= 2  && mesh2)  return mesh2;
+	if (step >= 1  && mesh)   return mesh;
+	if (mesh2)  return mesh2;
+	if (mesh4)  return mesh4;
+	if (mesh8)  return mesh8;
+	if (mesh16) return mesh16;
+	return mesh;
+}
+
+void MapBlock::setMesh(MapBlockMesh* rmesh) {
+	     if (rmesh->step == 16) {if (mesh16) delete mesh16;  mesh16 = rmesh;}
+	else if (rmesh->step == 8 ) {if (mesh8)  delete mesh8;   mesh8  = rmesh;}
+	else if (rmesh->step == 4 ) {if (mesh4)  delete mesh4;   mesh4  = rmesh;}
+	else if (rmesh->step == 2 ) {if (mesh2)  delete mesh2;   mesh2  = rmesh;}
+	else                        {if (mesh)   delete mesh;    mesh   = rmesh;}
+}
+
+void MapBlock::delMesh() {
+	if (mesh16) {delete mesh16; mesh16 = NULL;}
+	if (mesh8)  {delete mesh8;  mesh8  = NULL;}
+	if (mesh4)  {delete mesh4;  mesh4  = NULL;}
+	if (mesh2)  {delete mesh2;  mesh2  = NULL;}
+	if (mesh)   {delete mesh;   mesh   = NULL;}
+}
+#endif
+
 
 /*
 	Legacy serialization
@@ -1009,6 +1036,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 void MapBlock::incrementUsageTimer(float dtime)
 {
 	m_usage_timer += dtime;
+/*
 #ifndef SERVER
 	if(mesh){
 		if(mesh->getUsageTimer() > 10)
@@ -1017,7 +1045,36 @@ void MapBlock::incrementUsageTimer(float dtime)
 			mesh->incrementUsageTimer(dtime);
 	}
 #endif
+*/
 }
+
+/* here for errorstream
+	void MapBlock::setTimestamp(u32 time)
+	{
+//infostream<<"setTimestamp = "<< time <<std::endl;
+		m_timestamp = time;
+		raiseModified(MOD_STATE_WRITE_AT_UNLOAD, "setTimestamp");
+	}
+
+	void MapBlock::setTimestampNoChangedFlag(u32 time)
+	{
+//infostream<<"setTimestampNoChangedFlag = "<< time <<std::endl;
+		m_timestamp = time;
+	}
+
+	void MapBlock::raiseModified(u32 mod)
+	{
+		if(mod >= m_modified){
+			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+			if(m_modified >= MOD_STATE_WRITE_NEEDED) {
+//infostream<<"raiseModified = "<< m_changed_timestamp << "=> "<<m_timestamp<<std::endl;
+				m_changed_timestamp = m_timestamp;
+			}
+		}
+	}
+*/
 
 /*
 	Get a quick string to describe what a block actually contains
@@ -1048,7 +1105,7 @@ std::string analyze_block(MapBlock *block)
 	default:
 		desc<<"unknown getModified()="+itos(block->getModified())+", ";
 	}
-
+	desc<<" changed_timestamp="<<block->m_changed_timestamp<<", ";
 	if(block->isGenerated())
 		desc<<"is_gen [X], ";
 	else
@@ -1110,6 +1167,8 @@ std::string analyze_block(MapBlock *block)
 
 		desc<<"}, ";
 	}
+	
+	//desc<<" modifiedBy="<<block->getModifiedReason()<<"; "; // only with raiseModified(..., string)
 
 	return desc.str().substr(0, desc.str().size()-2);
 }
