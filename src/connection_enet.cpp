@@ -68,6 +68,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 Connection::~Connection()
 {
 	Stop();
+	if(m_enet_host)
+		enet_host_destroy(m_enet_host);
 }
 
 /* Internal stuff */
