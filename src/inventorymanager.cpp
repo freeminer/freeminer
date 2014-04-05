@@ -102,8 +102,9 @@ void InventoryLocation::deSerialize(std::istream &is)
 	}
 	else
 	{
-		infostream<<"Unknown InventoryLocation type=\""<<tname<<"\""<<std::endl;
-		throw SerializationError("Unknown InventoryLocation type");
+		errorstream<<"Unknown InventoryLocation type=\""<<tname<<"\""<<std::endl;
+		type = InventoryLocation::UNDEFINED;
+		//throw SerializationError("Unknown InventoryLocation type");
 	}
 }
 
