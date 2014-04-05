@@ -819,11 +819,13 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (parts.size() == 4) {
+	if (parts.size() == 4 || parts.size() == 5) {
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
+		std::string default_val;
+		if (parts.size() == 5) default_val = parts[4];
 
 		MY_CHECKPOS("pwdfield",0);
 		MY_CHECKGEOM("pwdfield",1);
@@ -841,6 +843,10 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
+		if(m_form_src && default_val.size())
+			default_val = m_form_src->resolveText(default_val);
+
+		default_val = unescape_string(default_val);
 		label = unescape_string(label);
 
 		std::wstring wlabel = narrow_to_wide(label.c_str());
@@ -848,7 +854,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 		FieldSpec spec = FieldSpec(
 			narrow_to_wide(name.c_str()),
 			wlabel,
-			L"",
+			narrow_to_wide(default_val.c_str()),
 			258+m_fields.size()
 			);
 
