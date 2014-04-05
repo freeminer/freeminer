@@ -136,47 +136,31 @@ bool insert (ServerListSpec server)
 	return false;
 }
 
-std::vector<ServerListSpec> deSerialize(std::string liststring)
+std::vector<ServerListSpec> deSerialize(const std::string &liststring)
 {
 	std::vector<ServerListSpec> serverlist;
+	Json::Value root;
+	Json::Reader reader;
 	std::istringstream stream(liststring);
-	std::string line, tmp;
-	while (std::getline(stream, line))
+	if (!liststring.size()) {
+		return serverlist;
+	}
+	if (!reader.parse( stream, root ) )
 	{
-		std::transform(line.begin(), line.end(),line.begin(), ::toupper);
-		if (line == "[SERVER]")
-		{
-			ServerListSpec thisserver;
-			std::getline(stream, tmp);
-			thisserver["name"] = tmp;
-			std::getline(stream, tmp);
-			thisserver["address"] = tmp;
-			std::getline(stream, tmp);
-			thisserver["port"] = tmp;
-			std::getline(stream, tmp);
-			thisserver["description"] = tmp;
-			serverlist.push_back(thisserver);
+		errorstream  << "Failed to parse server list " << reader.getFormattedErrorMessages();
+		return serverlist;
+	}
+	if (root["list"].isArray())
+	    for (unsigned int i = 0; i < root["list"].size(); i++)
+	{
+		if (root["list"][i].isObject()) {
+			serverlist.push_back(root["list"][i]);
 		}
 	}
 	return serverlist;
 }
 
-std::string serialize(std::vector<ServerListSpec> serverlist)
-{
-	std::string liststring;
-	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); i++)
-	{
-		liststring += "[server]\n";
-		liststring += (*i)["name"].asString() + "\n";
-		liststring += (*i)["address"].asString() + "\n";
-		liststring += (*i)["port"].asString() + "\n";
-		liststring += (*i)["description"].asString() + "\n";
-		liststring += "\n";
-	}
-	return liststring;
-}
-
-std::string serializeJson(std::vector<ServerListSpec> serverlist)
+std::string serialize(std::vector<ServerListSpec> &serverlist)
 {
 	Json::Value root;
 	Json::Value list(Json::arrayValue);

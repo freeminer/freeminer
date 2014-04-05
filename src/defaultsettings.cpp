@@ -162,7 +162,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_parallel_limit", "8");
 
 	settings->setDefault("serverlist_url", "servers.minetest.net");
-	settings->setDefault("serverlist_file", "favoriteservers.txt");
+	settings->setDefault("serverlist_file", "favoriteservers.json");
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("server_url", "");
 	settings->setDefault("server_address", "");
