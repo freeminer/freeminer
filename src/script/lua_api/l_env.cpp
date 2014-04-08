@@ -91,7 +91,7 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 
 // Exported functions
 
-// minetest.set_node(pos, node)
+// minetest.set_node(pos, node, fast)
 // pos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_set_node(lua_State *L)
 {
