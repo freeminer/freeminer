@@ -1993,9 +1993,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_DAMAGE)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		u8 damage = readU8(is);
+		u8 damage = packet[TOSERVER_DAMAGE_VALUE].as<u8>();
 
 		if(g_settings->getBool("enable_damage"))
 		{

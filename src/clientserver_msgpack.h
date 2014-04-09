@@ -488,6 +488,11 @@ enum {
 	TOSERVER_DELETEDBLOCKS_DATA
 };
 
+#define TOSERVER_DAMAGE 0x35
+enum {
+	TOSERVER_DAMAGE_VALUE
+};
+
 enum ToServerCommand
 {
 
@@ -504,7 +509,7 @@ enum ToServerCommand
 		See InventoryAction in inventory.h
 	*/
 
-	TOSERVER_DAMAGE = 0x35,
+
 	/*
 		u16 command
 		u8 amount

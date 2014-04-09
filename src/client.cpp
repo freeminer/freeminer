@@ -2079,16 +2079,11 @@ void Client::sendChangePassword(const std::string &oldpassword,
 void Client::sendDamage(u8 damage)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOSERVER_DAMAGE, 1);
+	PACK(TOSERVER_DAMAGE_VALUE, damage);
 
-	writeU16(os, TOSERVER_DAMAGE);
-	writeU8(os, damage);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendBreath(u16 breath)
