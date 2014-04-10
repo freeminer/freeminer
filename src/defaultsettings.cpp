@@ -334,7 +334,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 
 #ifndef _WIN32
-//enet! TODO	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 }
 
