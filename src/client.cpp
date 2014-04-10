@@ -929,7 +929,7 @@ void Client::Receive()
 	ProcessData(*data, datasize, sender_peer_id);
 }
 
-#include "client_process.cpp"
+#include "client_process.h"
 #if 0
 
 /*
