@@ -343,8 +343,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("password_save", "1");
 
 #ifndef _WIN32
-	//BROKEN settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
-	//settings->setDefault("bind_address","::"); // REMOVE ME!!! dirty fix to broken ipv6 server
+	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 }
 
