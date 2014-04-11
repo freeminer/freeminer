@@ -511,6 +511,13 @@ enum {
 	TOSERVER_REMOVED_SOUNDS_IDS
 };
 
+#define TOSERVER_NODEMETA_FIELDS 0x3b
+enum {
+	TOSERVER_NODEMETA_FIELDS_POS,
+	TOSERVER_NODEMETA_FIELDS_FORMNAME,
+	TOSERVER_NODEMETA_FIELDS_DATA
+};
+
 #define TOSERVER_REQUEST_MEDIA 0x40
 enum {
 	TOSERVER_REQUEST_MEDIA_FILES
@@ -545,20 +552,6 @@ enum ToServerCommand
 		4: use item
 
 		(Obsoletes TOSERVER_GROUND_ACTION and TOSERVER_CLICK_ACTIVEOBJECT.)
-	*/
-
-	TOSERVER_NODEMETA_FIELDS = 0x3b,
-	/*
-		u16 command
-		v3s16 p
-		u16 len
-		u8[len] form name (reserved for future use)
-		u16 number of fields
-		for each field:
-			u16 len
-			u8[len] field name
-			u32 len
-			u8[len] field value
 	*/
 
 	TOSERVER_INVENTORY_FIELDS = 0x3c,

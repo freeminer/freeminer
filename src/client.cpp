@@ -1942,27 +1942,12 @@ void Client::interact(u8 action, const PointedThing& pointed)
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 		const std::map<std::string, std::string> &fields)
 {
-	std::ostringstream os(std::ios_base::binary);
-
-	writeU16(os, TOSERVER_NODEMETA_FIELDS);
-	writeV3S16(os, p);
-	os<<serializeString(formname);
-	size_t fields_size = fields.size();
-	assert(fields_size <= 0xFFFF);
-	writeU16(os, (u16) (fields_size & 0xFFFF));
-	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
-		const std::string &name = i->first;
-		const std::string &value = i->second;
-		os<<serializeString(name);
-		os<<serializeLongString(value);
-	}
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_NODEMETA_FIELDS, 3);
+	PACK(TOSERVER_NODEMETA_FIELDS_POS, p);
+	PACK(TOSERVER_NODEMETA_FIELDS_FORMNAME, formname);
+	PACK(TOSERVER_NODEMETA_FIELDS_DATA, fields);
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 	
 void Client::sendInventoryFields(const std::string &formname,

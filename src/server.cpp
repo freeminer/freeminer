@@ -2447,18 +2447,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_NODEMETA_FIELDS)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		v3s16 p = readV3S16(is);
-		std::string formname = deSerializeString(is);
-		int num = readU16(is);
+		v3s16 p = packet[TOSERVER_NODEMETA_FIELDS_POS].as<v3s16>();
+		std::string formname = packet[TOSERVER_NODEMETA_FIELDS_FORMNAME].as<std::string>();
 		std::map<std::string, std::string> fields;
-		for(int k=0; k<num; k++){
-			std::string fieldname = deSerializeString(is);
-			std::string fieldvalue = deSerializeLongString(is);
-			fields[fieldname] = fieldvalue;
-		}
+		packet[TOSERVER_NODEMETA_FIELDS_DATA].convert(&fields);
 
 		// If something goes wrong, this player is to blame
 		RollbackScopeActor rollback_scope(m_rollback,
