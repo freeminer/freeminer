@@ -432,6 +432,7 @@ function tabbuilder.handle_delete_world_buttons(fields)
 	tabbuilder.current_tab = engine.setting_get("main_menu_tab")
 end
 
+local selected_server = {}
 --------------------------------------------------------------------------------
 function tabbuilder.handle_multiplayer_buttons(fields)
 
@@ -445,12 +446,14 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		event.index = event.row
 		if event.type == "DCL" then
 			if event.index <= #menu.favorites then
+				selected_server = menu.favorites[event.index]
 				gamedata.address = menu.favorites[event.index].address
 				gamedata.port = menu.favorites[event.index].port
 				gamedata.playername		= fields["te_name"]
 				if fields["te_pwd"] ~= nil then
 					gamedata.password		= fields["te_pwd"]
 				end
+
 				gamedata.selected_world = 0
 
 				if menu.favorites ~= nil then
@@ -469,6 +472,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		if event.type == "CHG" then
 			if event.index <= #menu.favorites then
+				selected_server = menu.favorites[event.index]
 				local address = menu.favorites[event.index].address
 				local port = menu.favorites[event.index].port
 
@@ -543,6 +547,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		gamedata.password		= fields["te_pwd"]
 		gamedata.address		= fields["te_address"]
 		gamedata.port			= fields["te_port"]
+
+		if selected_server.playerpassword and gamedata.password == "" then gamedata.password = selected_server.playerpassword end
 
 		local fav_idx = engine.get_textlist_index("favourites")
 
@@ -897,8 +903,8 @@ function tabbuilder.tab_multiplayer()
 
 	retval = retval ..
 		"button[12.75,10;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..engine.setting_get("name") .."]" ..
-		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") .. "]" ..
+		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..(selected_server.playername or  engine.setting_get("name")) .."]" ..
+		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
 		"textarea[6.75,3.8;8.8,2.75;;"
 	if menu.fav_selected ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then

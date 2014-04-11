@@ -1726,6 +1726,9 @@ int main(int argc, char *argv[])
 					server["address"] = menudata.address;
 					server["port"] = menudata.port;
 					server["description"] = menudata.serverdescription;
+					server["playername"] = menudata.name;
+					if(g_settings->getBool("password_save"))
+						server["playerpassword"] = menudata.password;
 					ServerList::insert(server);
 				}
 

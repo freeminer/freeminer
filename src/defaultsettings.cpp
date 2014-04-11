@@ -162,7 +162,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_parallel_limit", "8");
 
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
-	settings->setDefault("serverlist_file", "favoriteservers.txt");
+	settings->setDefault("serverlist_file", "favoriteservers.json");
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("server_url", "");
 	settings->setDefault("server_address", "");
@@ -332,6 +332,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
+	settings->setDefault("password_save", "1");
 
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)

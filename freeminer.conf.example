@@ -248,6 +248,9 @@
 #fallback_font_shadow = 1
 #fallback_font_shadow_alpha = 128
 
+#Save password for every server in favorites (in plaintext)
+#password_save = 1
+
 #
 # Server stuff
 #
