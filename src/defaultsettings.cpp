@@ -316,6 +316,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
 	settings->setDefault("server_map_save_interval", "300");
+	settings->setDefault("ignore_world_load_errors", "true");
 	settings->setDefault("active_block_range", "4");
 	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "30");
