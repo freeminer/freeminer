@@ -511,6 +511,11 @@ enum {
 	TOSERVER_REMOVED_SOUNDS_IDS
 };
 
+#define TOSERVER_REQUEST_MEDIA 0x40
+enum {
+	TOSERVER_REQUEST_MEDIA_FILES
+};
+
 enum ToServerCommand
 {
 	TOSERVER_INVENTORY_ACTION = 0x31,
@@ -561,16 +566,6 @@ enum ToServerCommand
 			u32 len
 			u8[len] field value
 	*/
-
-	TOSERVER_REQUEST_MEDIA = 0x40,
-	/*
-		u16 command
-		u16 number of files requested
-		for each file {
-			u16 length of name
-			string name
-		}
-	 */
 
 	TOSERVER_RECEIVED_MEDIA = 0x41,
 	/*

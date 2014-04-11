@@ -851,22 +851,11 @@ void Client::deletingPeer(u16 peer_id, bool timeout)
 */
 void Client::request_media(const std::list<std::string> &file_requests)
 {
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOSERVER_REQUEST_MEDIA);
-	size_t file_requests_size = file_requests.size();
-	assert(file_requests_size <= 0xFFFF);
-	writeU16(os, (u16) (file_requests_size & 0xFFFF));
+	MSGPACK_PACKET_INIT(TOSERVER_REQUEST_MEDIA, 1);
+	PACK(TOSERVER_REQUEST_MEDIA_FILES, file_requests);
 
-	for(std::list<std::string>::const_iterator i = file_requests.begin();
-			i != file_requests.end(); ++i) {
-		os<<serializeString(*i);
-	}
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(1, data, true);
+	Send(1, buffer, true);
 	infostream<<"Client: Sending media request list to server ("
 			<<file_requests.size()<<" files)"<<std::endl;
 }

@@ -1610,22 +1610,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	/* Handle commands relate to client startup */
 	if(command == TOSERVER_REQUEST_MEDIA) {
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
 		std::list<std::string> tosend;
-		u16 numfiles = readU16(is);
-
-		infostream<<"Sending "<<numfiles<<" files to "
-				<<getPlayerName(peer_id)<<std::endl;
-		verbosestream<<"TOSERVER_REQUEST_MEDIA: "<<std::endl;
-
-		for(int i = 0; i < numfiles; i++) {
-			std::string name = deSerializeString(is);
-			tosend.push_back(name);
-			verbosestream<<"TOSERVER_REQUEST_MEDIA: requested file "
-					<<name<<std::endl;
-		}
+		packet[TOSERVER_REQUEST_MEDIA_FILES].convert(&tosend);
 
 		sendRequestedMedia(peer_id, tosend);
 		return;
