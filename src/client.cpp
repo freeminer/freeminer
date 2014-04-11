@@ -744,18 +744,10 @@ void Client::step(float dtime)
 		// Sync to server
 		if(removed_server_ids.size() != 0)
 		{
-			std::ostringstream os(std::ios_base::binary);
-			writeU16(os, TOSERVER_REMOVED_SOUNDS);
-			size_t server_ids = removed_server_ids.size();
-			assert(server_ids <= 0xFFFF);
-			writeU16(os, (u16) (server_ids & 0xFFFF));
-			for(std::set<s32>::iterator i = removed_server_ids.begin();
-					i != removed_server_ids.end(); i++)
-				writeS32(os, *i);
-			std::string s = os.str();
-			SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+			MSGPACK_PACKET_INIT(TOSERVER_REMOVED_SOUNDS, 1);
+			PACK(TOSERVER_REMOVED_SOUNDS_IDS, removed_server_ids);
 			// Send as reliable
-			Send(1, data, true);
+			Send(1, buffer, true);
 		}
 	}
 }

@@ -506,6 +506,11 @@ enum {
 
 #define TOSERVER_RESPAWN 0x38
 
+#define TOSERVER_REMOVED_SOUNDS 0x3a
+enum {
+	TOSERVER_REMOVED_SOUNDS_IDS
+};
+
 enum ToServerCommand
 {
 	TOSERVER_INVENTORY_ACTION = 0x31,
@@ -528,13 +533,6 @@ enum ToServerCommand
 		4: use item
 
 		(Obsoletes TOSERVER_GROUND_ACTION and TOSERVER_CLICK_ACTIVEOBJECT.)
-	*/
-	
-	TOSERVER_REMOVED_SOUNDS = 0x3a,
-	/*
-		u16 command
-		u16 len
-		s32[len] sound_id
 	*/
 
 	TOSERVER_NODEMETA_FIELDS = 0x3b,

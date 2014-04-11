@@ -2449,12 +2449,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_REMOVED_SOUNDS)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		int num = readU16(is);
-		for(int k=0; k<num; k++){
-			s32 id = readS32(is);
+		std::vector<s32> removed_ids;
+		packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(&removed_ids);
+		for (auto id : removed_ids) {
 			std::map<s32, ServerPlayingSound>::iterator i =
 					m_playing_sounds.find(id);
 			if(i == m_playing_sounds.end())
@@ -2462,7 +2459,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			ServerPlayingSound &psound = i->second;
 			psound.clients.erase(peer_id);
 			if(psound.clients.size() == 0)
-				m_playing_sounds.erase(i++);
+				m_playing_sounds.erase(i);
 		}
 	}
 	else if(command == TOSERVER_NODEMETA_FIELDS)
