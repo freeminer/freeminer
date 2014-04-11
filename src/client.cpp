@@ -2050,29 +2050,12 @@ void Client::sendChangePassword(const std::string &oldpassword,
 	std::string oldpwd = translatePassword(playername, oldpassword);
 	std::string newpwd = translatePassword(playername, newpassword);
 
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[2+PASSWORD_SIZE*2];
-	/*
-		[0] u16 TOSERVER_PASSWORD
-		[2] u8[28] old password
-		[30] u8[28] new password
-	*/
+	MSGPACK_PACKET_INIT(TOSERVER_CHANGE_PASSWORD, 2);
+	PACK(TOSERVER_CHANGE_PASSWORD_OLD, oldpwd);
+	PACK(TOSERVER_CHANGE_PASSWORD_NEW, newpwd);
 
-	writeU16(buf, TOSERVER_PASSWORD);
-	for(u32 i=0;i<PASSWORD_SIZE-1;i++)
-	{
-		buf[2+i] = i<oldpwd.length()?oldpwd[i]:0;
-		buf[30+i] = i<newpwd.length()?newpwd[i]:0;
-	}
-	buf[2+PASSWORD_SIZE-1] = 0;
-	buf[30+PASSWORD_SIZE-1] = 0;
-	os.write((char*)buf, 2+PASSWORD_SIZE*2);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 

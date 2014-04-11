@@ -2017,36 +2017,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		u16 breath = readU16(is);
 		playersao->setBreath(breath);
 	}
-	else if(command == TOSERVER_PASSWORD)
+	else if(command == TOSERVER_CHANGE_PASSWORD)
 	{
-		/*
-			[0] u16 TOSERVER_PASSWORD
-			[2] u8[28] old password
-			[30] u8[28] new password
-		*/
-
-		if(datasize != 2+PASSWORD_SIZE*2)
-			return;
-		/*char password[PASSWORD_SIZE];
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
-			password[i] = data[2+i];
-		password[PASSWORD_SIZE-1] = 0;*/
-		std::string oldpwd;
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
-		{
-			char c = data[2+i];
-			if(c == 0)
-				break;
-			oldpwd += c;
-		}
-		std::string newpwd;
-		for(u32 i=0; i<PASSWORD_SIZE-1; i++)
-		{
-			char c = data[2+PASSWORD_SIZE+i];
-			if(c == 0)
-				break;
-			newpwd += c;
-		}
+		std::string oldpwd, newpwd;
+		packet[TOSERVER_CHANGE_PASSWORD_OLD].convert(&oldpwd);
+		packet[TOSERVER_CHANGE_PASSWORD_NEW].convert(&newpwd);
 
 		if(!base64_is_valid(newpwd)){
 			infostream<<"Server: "<<player->getName()<<" supplied invalid password hash"<<std::endl;

@@ -493,6 +493,12 @@ enum {
 	TOSERVER_DAMAGE_VALUE
 };
 
+#define TOSERVER_CHANGE_PASSWORD 0x36
+enum {
+	TOSERVER_CHANGE_PASSWORD_OLD,
+	TOSERVER_CHANGE_PASSWORD_NEW
+};
+
 enum ToServerCommand
 {
 
@@ -507,21 +513,6 @@ enum ToServerCommand
 	TOSERVER_INVENTORY_ACTION = 0x31,
 	/*
 		See InventoryAction in inventory.h
-	*/
-
-
-	/*
-		u16 command
-		u8 amount
-	*/
-
-	TOSERVER_PASSWORD=0x36,
-	/*
-		Sent to change password.
-
-		[0] u16 TOSERVER_PASSWORD
-		[2] u8[28] old password
-		[30] u8[28] new password
 	*/
 
 	TOSERVER_PLAYERITEM=0x37,
