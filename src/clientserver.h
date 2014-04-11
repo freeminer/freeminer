@@ -516,6 +516,8 @@ enum {
 	TOSERVER_REQUEST_MEDIA_FILES
 };
 
+#define TOSERVER_RECEIVED_MEDIA 0x41
+
 enum ToServerCommand
 {
 	TOSERVER_INVENTORY_ACTION = 0x31,
@@ -565,11 +567,6 @@ enum ToServerCommand
 			u8[len] field name
 			u32 len
 			u8[len] field value
-	*/
-
-	TOSERVER_RECEIVED_MEDIA = 0x41,
-	/*
-		u16 command
 	*/
 
 	TOSERVER_BREATH = 0x42,

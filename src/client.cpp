@@ -863,12 +863,9 @@ void Client::request_media(const std::list<std::string> &file_requests)
 void Client::received_media()
 {
 	// notify server we received everything
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOSERVER_RECEIVED_MEDIA);
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_RECEIVED_MEDIA, 0);
 	// Send as reliable
-	Send(1, data, true);
+	Send(1, buffer, true);
 	infostream<<"Client: Notifying server that we received all media"
 			<<std::endl;
 }
