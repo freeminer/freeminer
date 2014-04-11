@@ -2050,15 +2050,11 @@ void Client::sendDamage(u8 damage)
 void Client::sendBreath(u16 breath)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_BREATH);
-	writeU16(os, breath);
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_BREATH, 1);
+	PACK(TOSERVER_BREATH_VALUE, breath);
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendRespawn()

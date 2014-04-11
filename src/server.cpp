@@ -1998,10 +1998,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_BREATH)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		u16 breath = readU16(is);
-		playersao->setBreath(breath);
+		playersao->setBreath(packet[TOSERVER_BREATH_VALUE].as<u16>());
 	}
 	else if(command == TOSERVER_CHANGE_PASSWORD)
 	{

@@ -518,6 +518,11 @@ enum {
 
 #define TOSERVER_RECEIVED_MEDIA 0x41
 
+#define TOSERVER_BREATH 0x42
+enum {
+	TOSERVER_BREATH_VALUE
+};
+
 enum ToServerCommand
 {
 	TOSERVER_INVENTORY_ACTION = 0x31,
@@ -567,12 +572,6 @@ enum ToServerCommand
 			u8[len] field name
 			u32 len
 			u8[len] field value
-	*/
-
-	TOSERVER_BREATH = 0x42,
-	/*
-		u16 command
-		u16 breath
 	*/
 };
 
