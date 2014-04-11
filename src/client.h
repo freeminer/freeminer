@@ -61,6 +61,12 @@ struct QueuedMeshUpdate
 	~QueuedMeshUpdate();
 };
 
+enum LocalClientState {
+	LC_Created,
+	LC_Init,
+	LC_Ready
+};
+
 /*
 	A thread-safe queue of mesh update tasks
 */
@@ -327,14 +333,7 @@ public:
 		calling this, as it is sent in the initialization.
 	*/
 	void connect(Address address);
-	/*
-		returns true when
-			m_con.Connected() == true
-			AND m_server_ser_ver != SER_FMT_VER_INVALID
-		throws con::PeerNotFoundException if connection has been deleted,
-		eg. timed out.
-	*/
-	bool connectedAndInitialized();
+
 	/*
 		Stuff that references the environment is valid only as
 		long as this is not called. (eg. Players)
@@ -362,6 +361,7 @@ public:
 	void sendDamage(u8 damage);
 	void sendBreath(u16 breath);
 	void sendRespawn();
+	void sendReady();
 
 	ClientEnvironment& getEnv()
 	{ return m_env; }
@@ -462,6 +462,8 @@ public:
 	// Send a notification that no conventional media transfer is needed
 	void received_media();
 
+	LocalClientState getState() { return m_state; }
+
 private:
 
 	// Virtual methods from con::PeerHandler
@@ -491,7 +493,9 @@ private:
 
 	MeshUpdateThread m_mesh_update_thread;
 	ClientEnvironment m_env;
+public:
 	con::Connection m_con;
+private:
 	IrrlichtDevice *m_device;
 	// Server serialization version
 	u8 m_server_ser_ver;
@@ -546,6 +550,9 @@ private:
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	std::map<std::string, std::string> m_mesh_data;
+
+	// own state
+	LocalClientState m_state;
 };
 
 #endif // !CLIENT_HEADER

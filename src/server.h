@@ -189,6 +189,7 @@ public:
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(bool initial_step=false);
 	u16 Receive();
+	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
 
 	// Environment must be locked when called
@@ -336,6 +337,10 @@ public:
 	void deletingPeer(con::Peer *peer, bool timeout);
 
 	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
+	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
+			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
+			std::string* vers_string);
 
 private:
 

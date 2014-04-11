@@ -1295,7 +1295,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				server->step(dtime);
 			
 			// End condition
-			if(client.connectedAndInitialized()){
+			if(client.getState() == LC_Init){
 				could_connect = true;
 				break;
 			}
@@ -1406,7 +1406,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(!client.connectedAndInitialized()){
+			if(client.getState() < LC_Init){
 				error_message = L"Client disconnected";
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
@@ -3819,7 +3819,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		g_profiler->graphGet(values);
 		graph.put(values);
 
-		if (client.connectedAndInitialized()) {
+		if (client.m_con.Connected()) {
 			connect_ok = 1;
 		} else if (connect_ok) {
 			reconnect = 1;
