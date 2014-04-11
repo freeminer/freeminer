@@ -104,6 +104,8 @@ void * ServerThread::Thread()
 
 	ThreadStarted();
 
+	porting::setThreadName("ServerThread");
+
 	while(!StopRequested())
 	{
 		try{
@@ -171,7 +173,8 @@ v3f ServerSoundParams::getPos(ServerEnvironment *env, bool *pos_exists) const
 Server::Server(
 		const std::string &path_world,
 		const SubgameSpec &gamespec,
-		bool simple_singleplayer_mode
+		bool simple_singleplayer_mode,
+		bool ipv6
 	):
 	m_path_world(path_world),
 	m_gamespec(gamespec),
@@ -181,7 +184,7 @@ Server::Server(
 	m_con(PROTOCOL_ID,
 			simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE,
 			CONNECTION_TIMEOUT,
-			g_settings->getBool("enable_ipv6") && g_settings->getBool("ipv6_server"),
+			ipv6,
 			this),
 	m_banmanager(NULL),
 	m_rollback(NULL),

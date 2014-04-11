@@ -9,14 +9,34 @@
 #define PROJECT_NAME "Freeminer"
 #define RUN_IN_PLACE 0
 #define USE_GETTEXT 0
-#define USE_SOUND 0
-#define USE_CURL 0
-#define USE_FREETYPE 0
-#define STATIC_SHAREDIR ""
-#define USE_LEVELDB 0
-#define USE_LUAJIT 0
-#define USE_MANDELBULBER 0
-#define STATIC_BUILD 0
+#ifndef USE_SOUND
+	#define USE_SOUND 0
+#endif
+
+#ifndef USE_CURL
+	#define USE_CURL 0
+#endif
+
+#ifndef USE_FREETYPE
+	#define USE_FREETYPE 0
+#endif
+#ifndef STATIC_SHAREDIR
+	#define STATIC_SHAREDIR ""
+#endif
+#ifndef USE_LEVELDB
+	#define USE_LEVELDB 0
+#endif
+
+#ifndef USE_LUAJIT
+	#define USE_LUAJIT 0
+#endif
+#ifndef USE_MANDELBULBER
+	#define USE_MANDELBULBER 0
+#endif
+
+#ifndef STATIC_BUILD
+	#define STATIC_BUILD 0
+#endif
 
 #ifdef USE_CMAKE_CONFIG_H
 	#include "cmake_config.h"
