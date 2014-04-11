@@ -504,25 +504,13 @@ enum {
 	TOSERVER_PLAYERITEM_VALUE
 };
 
+#define TOSERVER_RESPAWN 0x38
+
 enum ToServerCommand
 {
-
-	/*
-		[0] u16 command
-		[2] u8 count
-		[3] v3s16 pos_0
-		[3+6] v3s16 pos_1
-		...
-	*/
-
 	TOSERVER_INVENTORY_ACTION = 0x31,
 	/*
 		See InventoryAction in inventory.h
-	*/
-	
-	TOSERVER_RESPAWN=0x38,
-	/*
-		u16 TOSERVER_RESPAWN
 	*/
 
 	TOSERVER_INTERACT = 0x39,

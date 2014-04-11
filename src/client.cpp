@@ -2086,15 +2086,10 @@ void Client::sendBreath(u16 breath)
 void Client::sendRespawn()
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_RESPAWN);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_RESPAWN, 0);
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendPlayerPos()
