@@ -499,6 +499,11 @@ enum {
 	TOSERVER_CHANGE_PASSWORD_NEW
 };
 
+#define TOSERVER_PLAYERITEM 0x37
+enum {
+	TOSERVER_PLAYERITEM_VALUE
+};
+
 enum ToServerCommand
 {
 
@@ -513,14 +518,6 @@ enum ToServerCommand
 	TOSERVER_INVENTORY_ACTION = 0x31,
 	/*
 		See InventoryAction in inventory.h
-	*/
-
-	TOSERVER_PLAYERITEM=0x37,
-	/*
-		Sent to change selected item.
-
-		[0] u16 TOSERVER_PLAYERITEM
-		[2] u16 item
 	*/
 	
 	TOSERVER_RESPAWN=0x38,

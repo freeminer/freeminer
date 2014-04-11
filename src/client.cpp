@@ -2153,12 +2153,11 @@ void Client::sendPlayerItem(u16 item)
 	// Check that an existing peer_id is the same as the connection's
 	assert(myplayer->peer_id == our_peer_id);
 
-	SharedBuffer<u8> data(2+2);
-	writeU16(&data[0], TOSERVER_PLAYERITEM);
-	writeU16(&data[2], item);
+	MSGPACK_PACKET_INIT(TOSERVER_PLAYERITEM, 1);
+	PACK(TOSERVER_PLAYERITEM_VALUE, item);
 
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::removeNode(v3s16 p)

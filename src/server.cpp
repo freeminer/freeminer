@@ -2058,10 +2058,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_PLAYERITEM)
 	{
-		if (datasize < 2+2)
-			return;
-
-		u16 item = readU16(&data[2]);
+		u16 item = packet[TOSERVER_PLAYERITEM_VALUE].as<u16>();
 		playersao->setWieldIndex(item);
 	}
 	else if(command == TOSERVER_RESPAWN)
