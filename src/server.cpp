@@ -1319,7 +1319,8 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	{
 		std::vector<std::string> names = m_clients.getPlayerNames();
 
-		actionstream<<player->getName() <<" joins game. List of players: ";
+		actionstream<<player->getName() << " ["<<getPeerAddress(peer_id).serializeString()<<"] "<<
+		" joins game. List of players: ";
 
 		for (std::vector<std::string>::iterator i = names.begin();
 				i != names.end(); i++)
