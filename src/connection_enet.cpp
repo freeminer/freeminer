@@ -210,8 +210,10 @@ void Connection::connect(Address addr)
 
 	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
 	ENetAddress *address = new ENetAddress;
-	// TODO: ipv6
-	address->host = addr.getAddress6().sin6_addr;
+	if (!addr.isIPv6())
+		inet_pton (AF_INET6, ("::ffff:"+addr.serializeString()).c_str(), &address->host);
+	else
+		address->host = addr.getAddress6().sin6_addr;
 	address->port = addr.getPort();
 	ENetPeer *peer = enet_host_connect(m_enet_host, address, CHANNEL_COUNT, 0);
 	peer->data = new u16;
