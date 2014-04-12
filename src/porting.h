@@ -285,17 +285,15 @@ inline void setThreadName(const char* name) {
  * to add this feature please create a pull request.
  * "setproctitle" doesn't work for threadnames.
  */
-
 inline void setThreadName(const char* name) {
-    pthread_set_name_np(pthread_self(), name);
+	pthread_set_name_np(pthread_self(), name);
 }
 #elif defined(_WIN32)
 // threadnames are not supported on windows
-inline void setThreadName(const char* name) { }
-
+inline void setThreadName(const char* name) {}
 #else
 #warning "Unknown platform for setThreadName support, you wont have threadname support."
-inline void setThreadName(const char* name) { }
+inline void setThreadName(const char* name) {}
 #endif
 
 } // namespace porting
