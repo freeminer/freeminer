@@ -450,7 +450,7 @@ public:
 	{ assert(m_env == 0); m_env = env; }
 
 	static std::string state2Name(ClientState state) {
-		assert(state < sizeof(statenames));
+		//assert(state < sizeof(statenames));
 		return statenames[state];
 	}
 
