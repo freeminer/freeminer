@@ -46,21 +46,23 @@ function menu.render_favorite(spec,render_details)
 	local e = engine.formspec_escape
 	local text = ""
 
-	if spec.name ~= nil then
+	if spec.name ~= "" then
 		text = text .. spec.name:trim()
 	else
-		if spec.address ~= nil then
+		if spec.address ~= "" then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= nil then
+			if spec.port ~= "" then
 				text = text .. ":" .. spec.port
 			end
 		end
 	end
 
+--[[
 	if not render_details then
 		return "?,/,?,0,0,0,0," .. e(text)
 	end
+]]
 
 	local row = ""
 	if spec.clients ~= nil and spec.clients_max ~= nil then
@@ -927,7 +929,7 @@ function tabbuilder.tab_multiplayer()
 	retval = retval .. "table[" ..
 		"6.5,0.35;8.8,3.35;favourites;"
 
-	local render_details = engine.setting_getbool("public_serverlist")
+	local render_details = 1 -- engine.setting_getbool("public_serverlist")
 
 	if #menu.favorites > 0 then
 		retval = retval .. menu.render_favorite(menu.favorites[1],render_details)
