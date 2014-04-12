@@ -1364,9 +1364,6 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	// Send Breath
 	SendPlayerBreath(peer_id);
 
-	// Send player animations (default, walk, dig, both)
-	SendAnimations(m_con, peer_id);
-
 	// Show death screen if necessary
 	if(player->hp == 0)
 		SendDeathscreen(peer_id, false, v3f(0,0,0));
@@ -3195,28 +3192,6 @@ void Server::SendNodeDef(u16 peer_id,
 	m_clients.send(peer_id, 0, data, true);
 }
 
-void Server::SendAnimations(con::Connection &con, u16 peer_id)
-{
-	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
-
-	writeU16(os, TOCLIENT_ANIMATIONS);
-	writeF1000(os, g_settings->getFloat("animation_default_start"));
-	writeF1000(os, g_settings->getFloat("animation_default_stop"));
-	writeF1000(os, g_settings->getFloat("animation_walk_start"));
-	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
-	writeF1000(os, g_settings->getFloat("animation_dig_start"));
-	writeF1000(os, g_settings->getFloat("animation_dig_stop"));
-	writeF1000(os, g_settings->getFloat("animation_walk_start"));
-	writeF1000(os, g_settings->getFloat("animation_walk_stop"));
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	con.Send(peer_id, 0, data, true);
-}
-
 /*
 	Non-static send methods
 */
@@ -3623,6 +3598,38 @@ void Server::SendMovePlayer(u16 peer_id)
 	m_clients.send(peer_id, 0, data, true);
 }
 
+void Server::SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f32 animation_speed)
+{
+	std::ostringstream os(std::ios_base::binary);
+
+	writeU16(os, TOCLIENT_LOCAL_PLAYER_ANIMATIONS);
+	writeV2S32(os, animation_frames[0]);
+	writeV2S32(os, animation_frames[1]);
+	writeV2S32(os, animation_frames[2]);
+	writeV2S32(os, animation_frames[3]);
+	writeF1000(os, animation_speed);
+
+	// Make data buffer
+	std::string s = os.str();
+	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
+	// Send as reliable
+	m_clients.send(peer_id, 0, data, true);
+}
+
+void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)
+{
+	std::ostringstream os(std::ios_base::binary);
+
+	writeU16(os, TOCLIENT_EYE_OFFSET);
+	writeV3F1000(os, first);
+	writeV3F1000(os, third);
+
+	// Make data buffer
+	std::string s = os.str();
+	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
+	// Send as reliable
+	m_clients.send(peer_id, 0, data, true);
+}
 void Server::SendPlayerPrivileges(u16 peer_id)
 {
 	Player *player = m_env->getPlayer(peer_id);
@@ -4715,6 +4722,24 @@ void Server::hudSetHotbarSelectedImage(Player *player, std::string name) {
 		return;
 
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_SELECTED_IMAGE, name);
+}
+
+bool Server::setLocalPlayerAnimations(Player *player, v2s32 animation_frames[4], f32 frame_speed)
+{
+	if (!player)
+		return false;
+
+	SendLocalPlayerAnimations(player->peer_id, animation_frames, frame_speed);
+	return true;
+}
+
+bool Server::setPlayerEyeOffset(Player *player, v3f first, v3f third)
+{
+	if (!player)
+		return false;
+
+	SendEyeOffset(player->peer_id, first, third);
+	return true;
 }
 
 bool Server::setSky(Player *player, const video::SColor &bgcolor,

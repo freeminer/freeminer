@@ -46,6 +46,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "game.h" // CameraModes
 
+#include "nodedef.h"
+
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
 	m_smgr(smgr),
@@ -301,8 +303,15 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		fall_bobbing *= g_settings->getFloat("fall_bobbing_amount");
 	}
 
+	// Calculate players eye offset for different camera modes
+	v3f PlayerEyeOffset = player->getEyeOffset();
+	if (current_camera_mode == CAMERA_MODE_FIRST)
+		PlayerEyeOffset += player->eye_offset_first;
+	else
+		PlayerEyeOffset += player->eye_offset_third;
+	
 	// Set head node transformation
-	m_headnode->setPosition(player->getEyeOffset()+v3f(0,cameratilt*-player->hurt_tilt_strength+fall_bobbing,0));
+	m_headnode->setPosition(PlayerEyeOffset+v3f(0,cameratilt*-player->hurt_tilt_strength+fall_bobbing,0));
 	m_headnode->setRotation(v3f(player->getPitch(), 0, cameratilt*player->hurt_tilt_strength));
 	m_headnode->updateAbsolutePosition();
 
@@ -360,16 +369,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f abs_cam_up;
 	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
 
-	// Update offset if too far away from the center of the map
-	m_camera_offset.X += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
-	m_camera_offset.Y += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
-	m_camera_offset.Z += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
-
 	// Seperate camera position for calculation
-	v3f my_cp = m_camera_position - intToFloat(m_camera_offset, BS);
+	v3f my_cp = m_camera_position;
 	
 	// Reposition the camera for third person view
 	if (current_camera_mode > CAMERA_MODE_FIRST) {
@@ -404,12 +405,20 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		if (abort && my_cp.Y > player_position.Y+BS*2)
 			my_cp.Y = player_position.Y+BS*2;
 	}
+
+	// Update offset if too far away from the center of the map
+	m_camera_offset.X += CAMERA_OFFSET_STEP*
+			(((s16)(my_cp.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
+	m_camera_offset.Y += CAMERA_OFFSET_STEP*
+			(((s16)(my_cp.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
+	m_camera_offset.Z += CAMERA_OFFSET_STEP*
+			(((s16)(my_cp.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
 	
 	// Set camera node transformation
-	m_cameranode->setPosition(my_cp);
+	m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(my_cp + 100 * m_camera_direction);
+	m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
 
 	// update the camera position in front-view mode to render blocks behind player
 	if (current_camera_mode == CAMERA_MODE_THIRD_FRONT)

@@ -327,6 +327,9 @@ public:
 	inline Address getPeerAddress(u16 peer_id)
 			{ return m_con.GetPeerAddress(peer_id); }
 			
+	bool setLocalPlayerAnimations(Player *player, v2s32 animation_frames[4], f32 frame_speed);
+	bool setPlayerEyeOffset(Player *player, v3f first, v3f third);
+
 	bool setSky(Player *player, const video::SColor &bgcolor,
 			const std::string &type, const std::vector<std::string> &params);
 	
@@ -355,7 +358,6 @@ private:
 	void SendDeathscreen(u16 peer_id,bool set_camera_point_target, v3f camera_point_target);
 	void SendItemDef(u16 peer_id,IItemDefManager *itemdef, u16 protocol_version);
 	void SendNodeDef(u16 peer_id,INodeDefManager *nodedef, u16 protocol_version);
-	void SendAnimations(con::Connection &con, u16 peer_id);
 
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
@@ -367,6 +369,8 @@ private:
 	void SendPlayerHP(u16 peer_id);
 	void SendPlayerBreath(u16 peer_id);
 	void SendMovePlayer(u16 peer_id);
+	void SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f32 animation_speed);
+	void SendEyeOffset(u16 peer_id, v3f first, v3f third);
 	void SendPlayerPrivileges(u16 peer_id);
 	void SendPlayerInventoryFormspec(u16 peer_id);
 	void SendShowFormspecMessage(u16 peer_id, const std::string &formspec, const std::string &formname);

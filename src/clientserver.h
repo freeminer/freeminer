@@ -107,7 +107,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		add swap_node
 	PROTOCOL_VERSION 23:
 		TOSERVER_CLIENT_READY
-		TOCLIENT_ANIMATIONS
 */
 
 #define LATEST_PROTOCOL_VERSION 23
@@ -518,19 +517,6 @@ enum ToClientCommand
 		u16 breath
 	*/
 
-	TOCLIENT_ANIMATIONS = 0xaf, // TODO: change number if mt merge it
-	/*
-		u16 command
-		f1000 animation_default_start
-		f1000 animation_default_stop
-		f1000 animation_walk_start
-		f1000 animation_walk_stop
-		f1000 animation_dig_start
-		f1000 animation_dig_stop
-		f1000 animation_wd_start
-		f1000 animation_wd_stop
-	*/
-
 	TOCLIENT_SET_SKY = 0xae, // MUST BE 0x4f (as in MT )BUT IT BROKE OLD FM SERVERS
 	/*
 		u16 command
@@ -548,6 +534,23 @@ enum ToClientCommand
 		u16 command
 		u8 do_override (boolean)
 		u16 day-night ratio 0...65535
+	*/
+	
+	TOCLIENT_LOCAL_PLAYER_ANIMATIONS = 0x51,
+	/*
+		u16 command
+		v2s32 stand/idle
+		v2s32 walk
+		v2s32 dig
+		v2s32 walk+dig
+		f1000 frame_speed
+	*/
+
+	TOCLIENT_EYE_OFFSET = 0x52,
+	/*
+		u16 command
+		v3f1000 first
+		v3f1000 third
 	*/
 };
 

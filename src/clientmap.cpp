@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "profiler.h"
 #include "settings.h"
-#include "game.h" // CameraModes
+#include "camera.h" // CameraModes
 #include "util/mathconstants.h"
 #include <algorithm>
 
