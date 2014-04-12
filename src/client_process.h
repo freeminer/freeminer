@@ -88,6 +88,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
 		m_con.Send(PEER_ID_SERVER, 1, buffer, true);
 
+		m_state = LC_Init;
+
 		return;
 	}
 
