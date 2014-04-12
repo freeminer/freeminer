@@ -443,6 +443,11 @@ std::string Connection::getDesc()
 	return "";
 	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
+float Connection::getPeerStat(u16 peer_id, rtt_stat_type type)
+{
+	return 0;
+}
+
 
 void Connection::DisconnectPeer(u16 peer_id)
 {

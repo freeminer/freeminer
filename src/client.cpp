@@ -50,6 +50,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "util/serialize.h"
 #include "config.h"
+#include "cmake_config_githash.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "version.h"
@@ -177,6 +178,8 @@ void * MeshUpdateThread::Thread()
 	
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
+	porting::setThreadName("MeshUpdateThread");
+
 	while(!StopRequested())
 	{
 		QueuedMeshUpdate *q = m_queue_in.pop();
@@ -263,7 +266,8 @@ Client::Client(
 	m_last_time_of_day_f(-1),
 	m_time_of_day_update_timer(0),
 	m_recommended_send_interval(0.1),
-	m_removed_sounds_check_timer(0)
+	m_removed_sounds_check_timer(0),
+	m_state(LC_Created)
 {
 	m_packetcounter_timer = 0.0;
 	//m_delete_unused_sectors_timer = 0.0;
@@ -335,17 +339,6 @@ void Client::connect(Address address)
 	m_con.Connect(address);
 }
 
-bool Client::connectedAndInitialized()
-{
-	if(m_con.Connected() == false)
-		return false;
-	
-	if(m_server_ser_ver == SER_FMT_VER_INVALID)
-		return false;
-	
-	return true;
-}
-
 void Client::step(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
@@ -383,9 +376,6 @@ void Client::step(float dtime)
 			m_packetcounter.clear();
 		}
 	}
-	
-	// Get connection status
-	bool connected = connectedAndInitialized();
 
 #if 0
 	{
@@ -478,7 +468,7 @@ void Client::step(float dtime)
 	}
 #endif
 
-	if(connected == false)
+	if(m_state == LC_Created)
 	{
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
@@ -614,12 +604,27 @@ void Client::step(float dtime)
 	}
 
 	/*
+		Print some info
+	*/
+	{
+		float &counter = m_avg_rtt_timer;
+		counter += dtime;
+		if(counter >= 10)
+		{
+			counter = 0.0;
+			// connectedAndInitialized() is true, peer exists.
+			float avg_rtt = getRTT();
+			infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
+		}
+	}
+
+	/*
 		Send player position to server
 	*/
 	{
 		float &counter = m_playerpos_send_timer;
 		counter += dtime;
-		if(counter >= m_recommended_send_interval)
+		if((m_state == LC_Ready) && (counter >= m_recommended_send_interval))
 		{
 			counter = 0.0;
 			sendPlayerPos();
@@ -996,6 +1001,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		// Send as reliable
 		m_con.Send(PEER_ID_SERVER, 1, reply, true);
 
+		m_state = LC_Init;
+
 		return;
 	}
 
@@ -1167,7 +1174,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		m_time_of_day_set = true;
 
 		u32 dr = m_env.getDayNightRatio();
-		verbosestream<<"Client: time_of_day="<<time_of_day
+		infostream<<"Client: time_of_day="<<time_of_day
 				<<" time_speed="<<time_speed
 				<<" dr="<<dr<<std::endl;
 	}
@@ -1903,7 +1910,7 @@ void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 
 void Client::interact(u8 action, const PointedThing& pointed)
 {
-	if(connectedAndInitialized() == false){
+	if(m_state != LC_Ready){
 		infostream<<"Client::interact() "
 				"cancelled (not connected)"
 				<<std::endl;
@@ -2049,6 +2056,27 @@ void Client::sendRespawn()
 	MSGPACK_PACKET_INIT(TOSERVER_RESPAWN, 0);
 	// Send as reliable
 	Send(0, buffer, true);
+}
+
+void Client::sendReady()
+{
+	DSTACK(__FUNCTION_NAME);
+	std::ostringstream os(std::ios_base::binary);
+
+	writeU16(os, TOSERVER_CLIENT_READY);
+	writeU8(os,VERSION_MAJOR);
+	writeU8(os,VERSION_MINOR);
+	writeU8(os,VERSION_PATCH_ORIG);
+	writeU8(os,0);
+
+	writeU16(os,strlen(CMAKE_VERSION_GITHASH));
+	os.write(CMAKE_VERSION_GITHASH,strlen(CMAKE_VERSION_GITHASH));
+
+	// Make data buffer
+	std::string s = os.str();
+	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	// Send as reliable
+	Send(0, data, true);
 }
 
 void Client::sendPlayerPos()
@@ -2527,7 +2555,14 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	if (!no_output)
 		m_mesh_update_thread.Start();
 	
+	m_state = LC_Ready;
+	sendReady();
 	infostream<<"Client::afterContentReceived() done"<<std::endl;
+}
+
+float Client::getRTT(void)
+{
+	return m_con.getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
 }
 
 // IGameDef interface

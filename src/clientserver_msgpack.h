@@ -566,6 +566,16 @@ enum ToServerCommand
 			u32 len
 			u8[len] field value
 	*/
+
+	TOSERVER_CLIENT_READY = 0x43,
+	/*
+		u8 major
+		u8 minor
+		u8 patch
+		u8 reserved
+		u16 len
+		u8[len] full_version_string
+	*/
 };
 
 #endif

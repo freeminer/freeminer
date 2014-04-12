@@ -164,6 +164,16 @@ public:
 	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
 };
 
+/*mt compat*/
+typedef enum rtt_stat_type {
+	MIN_RTT,
+	MAX_RTT,
+	AVG_RTT,
+	MIN_JITTER,
+	MAX_JITTER,
+	AVG_JITTER
+} rtt_stat_type;
+
 enum ConnectionEventType{
 	CONNEVENT_NONE,
 	CONNEVENT_DATA_RECEIVED,
@@ -315,6 +325,7 @@ public:
 	u16 GetPeerID(){ return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
+	float getPeerStat(u16 peer_id, rtt_stat_type type);
 	void DisconnectPeer(u16 peer_id);
 
 private:

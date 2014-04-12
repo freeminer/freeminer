@@ -178,7 +178,8 @@ public:
 	Server(
 		const std::string &path_world,
 		const SubgameSpec &gamespec,
-		bool simple_singleplayer_mode
+		bool simple_singleplayer_mode,
+		bool ipv6
 	);
 	~Server();
 	void start(Address bind_addr);
@@ -189,6 +190,7 @@ public:
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(bool initial_step=false);
 	u16 Receive();
+	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
 
 	// Environment must be locked when called
@@ -340,7 +342,17 @@ public:
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
 
+	void DenyAccess(u16 peer_id, const std::wstring &reason);
 	void DenyAccess(u16 peer_id, const std::string &reason);
+	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
+	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
+			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
+			std::string* vers_string);
+
+private:
+
+	friend class EmergeThread;
+	friend class RemoteClient;
 
 	void SendMovement(u16 peer_id);
 	void SendHP(u16 peer_id, u8 hp);

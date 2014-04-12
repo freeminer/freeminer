@@ -1170,27 +1170,34 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		draw_load_screen(text, device, font,0,25);
 		delete[] text;
 		infostream<<"Creating server"<<std::endl;
-		server = new Server(map_dir, gamespec,
-				simple_singleplayer_mode);
 
 		std::string bind_str = g_settings->get("bind_address");
 		Address bind_addr(0,0,0,0, port);
 
-		if (bind_str != "")
-		{
-			try {
-				bind_addr.Resolve(bind_str.c_str());
-				address = bind_str;
-			} catch (ResolveError &e) {
-				infostream << "Resolving bind address \"" << bind_str
-						   << "\" failed: " << e.what()
-						   << " -- Listening on all addresses." << std::endl;
-
-				if (g_settings->getBool("ipv6_server")) {
-					bind_addr.setAddress((IPv6AddressBytes*) NULL);
-				}
-			}
+		if (g_settings->getBool("ipv6_server")) {
+			bind_addr.setAddress((IPv6AddressBytes*) NULL);
 		}
+		try {
+			bind_addr.Resolve(bind_str.c_str());
+			address = bind_str;
+		} catch (ResolveError &e) {
+			infostream << "Resolving bind address \"" << bind_str
+					   << "\" failed: " << e.what()
+					   << " -- Listening on all addresses." << std::endl;
+		}
+
+		if(bind_addr.isIPv6() && !g_settings->getBool("enable_ipv6")) {
+			error_message = "Unable to listen on " +
+				bind_addr.serializeString() +
+				" because IPv6 is disabled";
+			errorstream<<error_message<<std::endl;
+			// Break out of client scope
+			return 0;
+		}
+
+		server = new Server(map_dir, gamespec,
+				simple_singleplayer_mode,
+				bind_addr.isIPv6());
 
 		server->start(bind_addr);
 	}
@@ -1216,27 +1223,30 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		delete[] text;
 	}
 	Address connect_address(0,0,0,0, port);
-	try{
-		if(address == "")
-		{
+	try {
+		connect_address.Resolve(address.c_str());
+		if (connect_address.isZero()) { // i.e. INADDR_ANY, IN6ADDR_ANY
 			//connect_address.Resolve("localhost");
-			if(g_settings->getBool("enable_ipv6") && g_settings->getBool("ipv6_server"))
-			{
+			if (connect_address.isIPv6()) {
 				IPv6AddressBytes addr_bytes;
 				addr_bytes.bytes[15] = 1;
 				connect_address.setAddress(&addr_bytes);
-			}
-			else
-			{
+			} else {
 				connect_address.setAddress(127,0,0,1);
 			}
 		}
-		else
-			connect_address.Resolve(address.c_str());
 	}
 	catch(ResolveError &e)
 	{
 		error_message = std::string("Couldn't resolve address: ") + e.what();
+		errorstream<<error_message<<std::endl;
+		// Break out of client scope
+		break;
+	}
+	if(connect_address.isIPv6() && !g_settings->getBool("enable_ipv6")) {
+		error_message = "Unable to connect to " +
+			connect_address.serializeString() +
+			" because IPv6 is disabled";
 		errorstream<<error_message<<std::endl;
 		// Break out of client scope
 		break;
@@ -1290,7 +1300,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				server->step(dtime);
 			
 			// End condition
-			if(client.connectedAndInitialized()){
+			if(client.getState() == LC_Init){
 				could_connect = true;
 				break;
 			}
@@ -1401,7 +1411,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				errorstream<<error_message<<std::endl;
 				break;
 			}
-			if(!client.connectedAndInitialized()){
+			if(client.getState() < LC_Init){
 				error_message = "Client disconnected";
 				errorstream<<error_message<<std::endl;
 				break;
@@ -3787,7 +3797,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		g_profiler->graphGet(values);
 		graph.put(values);
 
-		if (client.connectedAndInitialized()) {
+		if (client.m_con.Connected()) {
 			connect_ok = 1;
 		} else if (connect_ok) {
 			reconnect = 1;
