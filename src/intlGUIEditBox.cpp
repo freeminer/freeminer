@@ -42,6 +42,7 @@
 #include "porting.h"
 //#include "Keycodes.h"
 #include "log.h"
+//#include "util/string.h"
 
 /*
 	todo:
@@ -317,7 +318,7 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 	s32 newMarkEnd = MarkEnd;
 
 	// control shortcut handling
-
+errorstream<<"K="<<event.KeyInput.Key<<std::endl;
 	if (event.KeyInput.Control)
 	{
 		// german backlash '\' entered with control + '?'
@@ -825,6 +826,7 @@ void intlGUIEditBox::draw()
 
 		if (Text.size())
 		{
+//errorstream<<"txt="<<wide_to_narrow(Text)<<std::endl;
 			if (!IsEnabled && !OverrideColorEnabled)
 			{
 				OverrideColorEnabled = true;
@@ -1338,6 +1340,7 @@ s32 intlGUIEditBox::getLineFromPos(s32 pos)
 
 void intlGUIEditBox::inputChar(wchar_t c)
 {
+errorstream<<"C="<<c<<std::endl;
 	if (!IsEnabled)
 		return;
 

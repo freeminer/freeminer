@@ -414,11 +414,9 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
-	return Address(0, 0, 0, 0, 0);
-	// TODO: return peer address
-	// lol that's not going to end well
-	//JMutexAutoLock peerlock(m_peers_mutex);
-	//return getPeer(peer_id)->address;
+	auto a = Address(0,0,0,0, m_enet_host->address.port);
+	a.setAddress(m_enet_host->address.host);
+	return a;
 }
 
 void Connection::DeletePeer(u16 peer_id)

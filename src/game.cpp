@@ -1228,9 +1228,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		if (connect_address.isZero()) { // i.e. INADDR_ANY, IN6ADDR_ANY
 			//connect_address.Resolve("localhost");
 			if (connect_address.isIPv6() || g_settings->getBool("ipv6_server")) {
-				IPv6AddressBytes addr_bytes;
-				addr_bytes.bytes[15] = 1;
-				connect_address.setAddress(&addr_bytes);
+				connect_address.setAddress(in6addr_loopback);
 			} else {
 				connect_address.setAddress(127,0,0,1);
 			}
