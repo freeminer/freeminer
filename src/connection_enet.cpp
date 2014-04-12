@@ -414,8 +414,11 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
-	auto a = Address(0,0,0,0, m_enet_host->address.port);
-	a.setAddress(m_enet_host->address.host);
+	auto a = Address(0, 0, 0, 0, 0);
+	if (!m_peers[peer_id])
+		return a;
+	a.setPort(m_peers[peer_id]->address.port);
+	a.setAddress(m_peers[peer_id]->address.host);
 	return a;
 }
 
