@@ -361,6 +361,7 @@ enum {
 	TOCLIENT_DELETE_PARTICLESPAWNER_ID
 };
 
+/*
 #define TOCLIENT_ANIMATIONS 0x4f
 enum {
 	TOCLIENT_ANIMATIONS_DEFAULT_START,
@@ -372,6 +373,7 @@ enum {
 	TOCLIENT_ANIMATIONS_WD_START,
 	TOCLIENT_ANIMATIONS_WD_STOP
 };
+*/
 
 #define TOCLIENT_HUDRM 0x4a
 enum {
@@ -443,6 +445,25 @@ enum {
 	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO,
 	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_VALUE
 };
+
+#define TOCLIENT_LOCAL_PLAYER_ANIMATIONS  0x51
+	/*
+		u16 command
+		v2s32 stand/idle
+		v2s32 walk
+		v2s32 dig
+		v2s32 walk+dig
+		f1000 frame_speed
+	*/
+
+#define TOCLIENT_EYE_OFFSET 0x52
+	/*
+		u16 command
+		v3f1000 first
+		v3f1000 third
+	*/
+
+
 
 // TOSERVER_* commands
 

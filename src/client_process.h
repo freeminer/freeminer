@@ -645,6 +645,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			((LocalPlayer *) player)->hotbar_selected_image = value;
 		}
 	}
+/*
 	else if(command == TOCLIENT_ANIMATIONS)
 	{
 		LocalPlayer *player = m_env.getLocalPlayer();
@@ -657,6 +658,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_ANIMATIONS_WD_START].convert(&player->animation_wd_start);
 		packet[TOCLIENT_ANIMATIONS_WD_STOP].convert(&player->animation_wd_stop);
 	}
+*/
 	else if(command == TOCLIENT_SET_SKY)
 	{
 		video::SColor *bgcolor = new video::SColor(packet[TOCLIENT_SET_SKY_COLOR].as<video::SColor>());
