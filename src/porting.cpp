@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	See comments in porting.h
 */
 
+#include "porting.h"
+
 #if defined(__APPLE__)
 	#include <mach-o/dyld.h>
 	#include "CoreFoundation/CoreFoundation.h"
@@ -40,7 +42,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <sys/utsname.h>
 #endif
 
-#include "porting.h"
 #include "config.h"
 #include "debug.h"
 #include "filesys.h"

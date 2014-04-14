@@ -27,6 +27,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PORTING_HEADER
 #define PORTING_HEADER
 
+#ifdef _WIN32
+	#ifdef _WIN32_WINNT
+		#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers 
+		// because those might include sdkddkver.h which defines _WIN32_WINNT if not already set
+#endif
+
 #include <string>
 #include "irrlichttypes.h" // u32
 #include "debug.h"
@@ -45,9 +53,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#define ALIGNOF(type) offsetof (alignment_trick<type>, member)
 
 #ifdef _WIN32
-	#ifndef _WIN32_WINNT
-		#define _WIN32_WINNT 0x0501
-	#endif
 	#include <windows.h>
 	
 	#define sleep_ms(x) Sleep(x)
