@@ -161,6 +161,10 @@ if(RUN_IN_PLACE)
 	install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/textures/texture_packs_here.txt" DESTINATION "${SHAREDIR}/textures")
 endif()
 
+# Generate config file
+execute_process(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/defaultsettingsparser.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/fonts" DESTINATION "${SHAREDIR}")
 
 install(FILES "README.md" DESTINATION "${DOCDIR}")
