@@ -61,6 +61,15 @@ int axisAlignedCollision(
 			movingbox.MaxEdge.Z - staticbox.MinEdge.Z
 	);
 
+	// These cases can (and should) be rejected immediately
+	if( (speed.X >= 0 && relbox.MinEdge.X > xsize) ||
+	    (speed.X <= 0 && relbox.MaxEdge.X < 0) ||
+	    (speed.Y >= 0 && relbox.MinEdge.Y > ysize) ||
+	    (speed.Y <= 0 && relbox.MaxEdge.Y < 0) ||
+	    (speed.Z >= 0 && relbox.MinEdge.Z > zsize) ||
+	    (speed.Z <= 0 && relbox.MaxEdge.Z < 0))
+	    	return -1;
+
 	if(speed.X > 0) // Check for collision with X- plane
 	{
 		if(relbox.MaxEdge.X <= d)
@@ -71,10 +80,6 @@ int axisAlignedCollision(
 					(relbox.MinEdge.Z + speed.Z * dtime < zsize) &&
 					(relbox.MaxEdge.Z + speed.Z * dtime > COLL_ZERO))
 				return 0;
-		}
-		else if(relbox.MinEdge.X > xsize)
-		{
-			return -1;
 		}
 	}
 	else if(speed.X < 0) // Check for collision with X+ plane
@@ -87,10 +92,6 @@ int axisAlignedCollision(
 					(relbox.MinEdge.Z + speed.Z * dtime < zsize) &&
 					(relbox.MaxEdge.Z + speed.Z * dtime > COLL_ZERO))
 				return 0;
-		}
-		else if(relbox.MaxEdge.X < 0)
-		{
-			return -1;
 		}
 	}
 
@@ -107,10 +108,6 @@ int axisAlignedCollision(
 					(relbox.MaxEdge.Z + speed.Z * dtime > COLL_ZERO))
 				return 1;
 		}
-		else if(relbox.MinEdge.Y > ysize)
-		{
-			return -1;
-		}
 	}
 	else if(speed.Y < 0) // Check for collision with Y+ plane
 	{
@@ -122,10 +119,6 @@ int axisAlignedCollision(
 					(relbox.MinEdge.Z + speed.Z * dtime < zsize) &&
 					(relbox.MaxEdge.Z + speed.Z * dtime > COLL_ZEROY))
 				return 1;
-		}
-		else if(relbox.MaxEdge.Y < 0)
-		{
-			return -1;
 		}
 	}
 
@@ -142,10 +135,6 @@ int axisAlignedCollision(
 					(relbox.MaxEdge.Y + speed.Y * dtime > COLL_ZERO))
 				return 2;
 		}
-		//else if(relbox.MinEdge.Z > zsize)
-		//{
-		//	return -1;
-		//}
 	}
 	else if(speed.Z < 0) // Check for collision with Z+ plane
 	{
@@ -158,10 +147,6 @@ int axisAlignedCollision(
 					(relbox.MaxEdge.Y + speed.Y * dtime > COLL_ZERO))
 				return 2;
 		}
-		//else if(relbox.MaxEdge.Z < 0)
-		//{
-		//	return -1;
-		//}
 	}
 
 	return -1;
