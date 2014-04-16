@@ -379,6 +379,15 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 
+
+#if !defined(SERVER) && defined(_MSC_VER)
+	#ifdef NDEBUG
+		settings->setDefault("console_enabled", "false"); //don't enable Windows console
+	#else
+		settings->setDefault("console_enabled", "true"); //enable Windows console
+	#endif
+#endif
+
 #ifdef __ANDROID__
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
@@ -430,7 +439,6 @@ void late_init_default_settings(Settings* settings)
 	settings->setDefault("mono_font_size", fontsize.str());
 	settings->setDefault("fallback_font_size", fontsize.str());
 #endif
-
 }
 
 void override_default_settings(Settings *settings, Settings *from)

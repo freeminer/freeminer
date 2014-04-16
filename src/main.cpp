@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SERVER // Dedicated server isn't linked with Irrlicht
 	#pragma comment(lib, "Irrlicht.lib")
 	// This would get rid of the console window
-	#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
+	//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 #endif
 	//#pragma comment(lib, "zlibwapi.lib")
 	#pragma comment(lib, "Shell32.lib")
@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[])
 	srand(time(0));
 	mysrand(time(0));
 
-	// Initialize HTTP fetcher
+	// Initialize HTTP fetcherg_settings
 	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
@@ -1040,6 +1040,9 @@ int main(int argc, char *argv[])
 #ifdef _MSC_VER
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
 		g_settings->get("language"), argc, argv);
+	//Remove windows console window if settings request
+	if (!g_settings->getBool("console_enabled"))
+		FreeConsole();
 #else
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
 		g_settings->get("language"));
