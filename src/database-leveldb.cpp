@@ -84,7 +84,8 @@ void Database_LevelDB::saveBlock(MapBlock *block)
 	// Write block to database
 	std::string tmp = o.str();
 
-	m_database->Put(leveldb::WriteOptions(), i64tos(getBlockAsInteger(p3d)), tmp);
+	m_database->Put(leveldb::WriteOptions(), getBlockAsString(p3d), tmp);
+	m_database->Delete(leveldb::WriteOptions(), i64tos(getBlockAsInteger(p3d))); // delete old format
 
 	// We just wrote it to the disk so clear modified flag
 	block->resetModified();
@@ -95,8 +96,12 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 	v2s16 p2d(blockpos.X, blockpos.Z);
 
 	std::string datastr;
-	leveldb::Status s = m_database->Get(leveldb::ReadOptions(),
-		i64tos(getBlockAsInteger(blockpos)), &datastr);
+
+	leveldb::Status s = m_database->Get(leveldb::ReadOptions(), getBlockAsString(blockpos), &datastr);
+
+	if (!datastr.length()) {
+
+	s = m_database->Get(leveldb::ReadOptions(), i64tos(getBlockAsInteger(blockpos)), &datastr);
 	if (datastr.length() == 0 && s.ok()) {
 		errorstream << "Blank block data in database (datastr.length() == 0) ("
 			<< blockpos.X << "," << blockpos.Y << "," << blockpos.Z << ")" << std::endl;
@@ -108,6 +113,8 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 			throw SerializationError("Blank block data in database");
 		}
 		return NULL;
+	}
+
 	}
 
 	if (s.ok()) {
@@ -177,7 +184,7 @@ void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
 	leveldb::Iterator* it = m_database->NewIterator(leveldb::ReadOptions());
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-		dst.push_back(getIntegerAsBlock(stoi64(it->key().ToString())));
+		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}
 	assert(it->status().ok());  // Check for any errors found during the scan
 	delete it;

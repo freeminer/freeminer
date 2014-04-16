@@ -154,7 +154,7 @@ MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
 
 void Database_Dummy::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
-	for(auto x : m_database)
+	for(auto &x : m_database)
 	{
 		v3s16 p = getStringAsBlock(x.first);
 		//dstream<<"block_i="<<block_i<<" p="<<PP(p)<<std::endl;

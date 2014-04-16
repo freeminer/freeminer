@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "irrlichttypes.h"
 #include <sstream>
+#include "util/string.h"
 
 static inline s16 unsigned_to_signed(u16 i, u16 max_positive)
 {
@@ -68,9 +69,7 @@ v3s16 Database::getStringAsBlock(const std::string &i) const {
 		is >> c; // ','
 		is >> pos.Z;
 	} else { // old format
-		s64 i;
-		is >> i;
-		return getIntegerAsBlock(i);
+		return getIntegerAsBlock(stoi64(i));
 	}
 	return pos;
 }
