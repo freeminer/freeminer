@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "database.h"
 #include "irrlichttypes.h"
+#include <sstream>
 
 static inline s16 unsigned_to_signed(u16 i, u16 max_positive)
 {
@@ -49,3 +50,27 @@ v3s16 Database::getIntegerAsBlock(const s64 i) const
         return pos;
 }
 
+std::string Database::getBlockAsString(const v3s16 &pos) const {
+	std::ostringstream os;
+	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
+	return os.str().c_str();
+}
+
+v3s16 Database::getStringAsBlock(const std::string &i) const {
+	std::istringstream is(i);
+	v3s16 pos;
+	char c;
+	if (i[0] == 'a') {
+		is >> c; // 'a'
+		is >> pos.X;
+		is >> c; // ','
+		is >> pos.Y;
+		is >> c; // ','
+		is >> pos.Z;
+	} else { // old format
+		s64 i;
+		is >> i;
+		return getIntegerAsBlock(i);
+	}
+	return pos;
+}
