@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 
 class Environment;
+class ClientEnvironment;
 
 class ClientActiveObject;
 
