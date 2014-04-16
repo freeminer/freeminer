@@ -2527,14 +2527,13 @@ void Client::typeChatMessage(const std::wstring &message)
 	if(message == L"")
 		return;
 
-	// Send to others
-	sendChatMessage(message);
-
 	// Show locally
 	if (message[0] == L'/')
 	{
 		m_chat_queue.push_back(
 				(std::wstring)L"issued command: "+message);
+		m_chat_queue_perm.push_back(
+						(std::wstring)L"issued command: "+message);
 	}
 	else
 	{
@@ -2543,6 +2542,18 @@ void Client::typeChatMessage(const std::wstring &message)
 		std::wstring name = narrow_to_wide(player->getName());
 		m_chat_queue.push_back(
 				(std::wstring)L"<"+name+L"> "+message);
+		m_chat_queue_perm.push_back(
+						(std::wstring)L"<"+name+L"> "+message);
+	}
+	
+	//Either send the message or delete the main chat queue
+	if (message.compare(L"/cls") == 0)
+	{
+		m_chat_queue = Queue<std::wstring>();
+	}
+	else
+	{
+		sendChatMessage(message);
 	}
 }
 

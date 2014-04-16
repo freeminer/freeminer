@@ -513,6 +513,7 @@ private:
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
 	Queue<std::wstring> m_chat_queue;
+	Queue<std::wstring> m_chat_queue_perm;
 	// The seed returned by the server in TOCLIENT_INIT is stored here
 	u64 m_map_seed;
 	std::string m_password;
