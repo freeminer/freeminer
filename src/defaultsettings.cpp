@@ -345,6 +345,15 @@ void set_default_settings(Settings *settings)
 #ifndef _WIN32
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
+#ifndef SERVER
+	#ifdef _MSC_VER
+		#ifdef NDEBUG
+			settings->setDefault("console_enabled", "false"); //don't enable Windows console
+		#else
+			settings->setDefault("console_enabled", "true"); //enable Windows console
+		#endif
+	#endif
+#endif
 }
 
 void override_default_settings(Settings *settings, Settings *from)
