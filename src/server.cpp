@@ -1375,6 +1375,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		SendChatMessage(peer_id, getStatusString());
 
 		// Send information about joining in chat
+		if (0)
 		{
 			std::wstring name = L"unknown";
 			Player *player = m_env->getPlayer(peer_id);
@@ -1403,6 +1404,8 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		{
 			actionstream << *i << " ";
 		}
+
+		actionstream<<player->getName();
 
 		actionstream<<std::endl;
 	}
