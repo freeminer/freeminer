@@ -322,7 +322,6 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 	m_script(scriptIface),
 	m_circuit(circuit),
 	m_gamedef(gamedef),
-	m_random_spawn_timer(3),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
 	m_active_block_abm_last(0),
@@ -1207,7 +1206,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				continue;
 
 			// Move
-			player->move(dtime, *m_map, 100*BS);
+			player->move(dtime, this, 100*BS);
 		}
 	}
 
@@ -2636,7 +2635,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		if(player->isLocal() == false)
 		{
 			// Move
-			player->move(dtime, *m_map, 100*BS);
+			player->move(dtime, this, 100*BS);
 
 		}
 

@@ -215,7 +215,7 @@ Ore *createOre(OreType type);
 
 
 enum DecorationType {
-	DECO_SIMPLE,
+	DECO_SIMPLE = 1,
 	DECO_SCHEMATIC,
 	DECO_LSYSTEM
 };

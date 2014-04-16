@@ -50,7 +50,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
-	m_smgr(smgr),
 	m_playernode(NULL),
 	m_headnode(NULL),
 	m_cameranode(NULL),

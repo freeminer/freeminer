@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventory.h"
 #include "constants.h" // BS
 #include "json/json.h"
+#include <list>
 
 #define PLAYERNAME_SIZE 20
 
@@ -92,6 +93,7 @@ class IGameDef;
 struct CollisionInfo;
 class PlayerSAO;
 struct HudElement;
+class Environment;
 
 class Player
 {
@@ -100,7 +102,10 @@ public:
 	Player(IGameDef *gamedef);
 	virtual ~Player() = 0;
 
-	virtual void move(f32 dtime, Map &map, f32 pos_max_d)
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
+	{}
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
+			std::list<CollisionInfo> *collision_info)
 	{}
 
 	v3f getSpeed()

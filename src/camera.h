@@ -139,8 +139,7 @@ public:
 	void drawWieldedTool();
 
 private:
-	// Scene manager and nodes
-	scene::ISceneManager* m_smgr;
+	// Nodes
 	scene::ISceneNode* m_playernode;
 	scene::ISceneNode* m_headnode;
 	scene::ICameraSceneNode* m_cameranode;
