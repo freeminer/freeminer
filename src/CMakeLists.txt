@@ -315,10 +315,28 @@ if(ENABLE_LEVELDB)
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
-
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
+
+set(USE_REDIS 0)
+
+OPTION(ENABLE_REDIS "Enable redis backend" 1)
+
+if(ENABLE_REDIS)
+	find_library(REDIS_LIBRARY hiredis)
+	find_path(REDIS_INCLUDE_DIR hiredis.h PATH_SUFFIXES hiredis)
+	message(STATUS "redis library: ${REDIS_LIBRARY}")
+	message(STATUS "redis headers: ${REDIS_INCLUDE_DIR}")
+	if(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+		set(USE_REDIS 1)
+		message(STATUS "redis backend enabled")
+		include_directories(${REDIS_INCLUDE_DIR})
+	else(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+		set(USE_REDIS 0)
+		message(STATUS "redis not found!")
+	endif(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+endif(ENABLE_REDIS)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
@@ -402,6 +420,7 @@ set(common_SRCS
 	database-dummy.cpp
 	database-leveldb.cpp
 	database-sqlite3.cpp
+	database-redis.cpp
 	player.cpp
 	test.cpp
 	sha1.cpp
@@ -576,6 +595,9 @@ if(BUILD_CLIENT)
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
+	if (USE_REDIS)
+		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
+	endif(USE_REDIS)
 endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)
@@ -593,6 +615,9 @@ if(BUILD_SERVER)
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
+	if (USE_REDIS)
+		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
+	endif(USE_REDIS)
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}server
