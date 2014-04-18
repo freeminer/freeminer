@@ -275,12 +275,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("animation_wd_stop", "219");
 
 	//liquid stuff
-	settings->setDefault("liquid_finite", "false");
+	settings->setDefault("liquid_real", "true");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
-	settings->setDefault("weather", "false");
+	settings->setDefault("weather", "true");
 
 	//mapgen stuff
 	settings->setDefault("mg_name", "v6");
@@ -312,8 +312,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
-	settings->setDefault("liquid_finite", "true");
-	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
 	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("ignore_world_load_errors", "true");

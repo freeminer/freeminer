@@ -102,10 +102,10 @@
 # Enable a bit lower water surface; disable for speed (not quite optimized)
 #new_style_water = false
 # Constant volume liquids
-#liquid_finite = false
+#liquid_real = false
 # Update liquids every .. recommend for finite: 0.2
 #liquid_update = 0.4
-# Send to client updated liquid every (increase on high loaded servers with liquid_finite)
+# Send to client updated liquid every (increase on high loaded servers with liquid_real)
 #liquid_send = 1.0
 # Relax flowing blocks to source if level near max and N nearby
 #  source blocks, more realistic, but not true constant.
@@ -115,7 +115,7 @@
 # Optimization: faster cave flood (and not true constant)
 #  (for finite liquids)
 #liquid_fast_flood = 1
-# Enable weather (cold-hot, water freeze-melt). use only with liquid_finite=1
+# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 #weather = false
 # Enable nice leaves; disable for speed
 #new_style_leaves = true
