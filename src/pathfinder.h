@@ -170,7 +170,7 @@ private:
 
 inline unsigned int PathFinder::getManhattanDistance(v3s16 pos1, v3s16 pos2)
 {
-	return fabs(pos1.X - pos2.X) + fabs(pos1.Z - pos2.Z);
+	return abs(pos1.X - pos2.X) + abs(pos1.Z - pos2.Z);
 }
 
 #endif /* PATHFINDER_H_ */

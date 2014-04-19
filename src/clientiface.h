@@ -144,6 +144,7 @@ namespace con {
 	class Connection;
 }
 
+#undef ARRAYSIZE
 #define ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 enum ClientState

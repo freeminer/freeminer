@@ -283,7 +283,7 @@ void pathRemoveFile(char *path, char delim)
 bool detectMSVCBuildDir(char *c_path)
 {
 	std::string path(c_path);
-	const char *ends[] = {"bin\\Release", "bin\\Build", NULL};
+	const char *ends[] = {"bin\\Release", "bin\\Build", "bin\\Debug", NULL};
 	return (removeStringEnd(path, ends) != "");
 }
 

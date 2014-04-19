@@ -1,6 +1,6 @@
 __pycache__
 *.pyc
 settings.py
-build_tmp
+project
 deps
 install_tmp
