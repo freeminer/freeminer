@@ -4,7 +4,7 @@
 #include <list>
 #include <vector>
 #include <map>
-#include "leveldb/db.h"
+#include <leveldb/db.h>
 
 #include "circuit_element.h"
 #include "circuit_element_virtual.h"

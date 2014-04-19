@@ -1007,11 +1007,13 @@ int main(int argc, char *argv[])
 		Run unit tests
 	*/
 
+#ifndef _MSC_VER
 	if((ENABLE_TESTS && cmd_args.getFlag("disable-unittests") == false)
 			|| cmd_args.getFlag("enable-unittests") == true)
 	{
 		run_tests();
 	}
+#endif
 #ifdef _MSC_VER
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),g_settings->get("language"),argc,argv);
 #else
