@@ -982,7 +982,7 @@ void Mapgen::updateHeightmap(v3s16 nmin, v3s16 nmax) {
 void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3s16 nmin, v3s16 nmax) {
 	bool isliquid, wasliquid, rare;
 	v3s16 em  = vm->m_area.getExtent();
-	rare = g_settings->getBool("liquid_finite");
+	rare = g_settings->getBool("liquid_real");
 	int rarecnt = 0;
 
 	for (s16 z = nmin.Z; z <= nmax.Z; z++) {
@@ -993,7 +993,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3s16 nmin, v3s16 nm
 			for (s16 y = nmax.Y; y >= nmin.Y; y--) {
 				isliquid = ndef->get(vm->m_data[i]).isLiquid();
 
-				// there was a change between liquid and nonliquid, add to queue. no need to add every with liquid_finite
+				// there was a change between liquid and nonliquid, add to queue. no need to add every with liquid_real
 				if (isliquid != wasliquid && (!rare || !(rarecnt++ % 36)))
 					trans_liquid->push_back(v3s16(x, y, z));
 
