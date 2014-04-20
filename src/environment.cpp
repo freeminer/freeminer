@@ -601,9 +601,8 @@ void ServerEnvironment::saveMeta(const std::string &savedir)
 
 	if(!fs::safeWriteToFile(path, ss.str()))
 	{
-		infostream<<"ServerEnvironment::saveMeta(): Failed to write "
+		errorstream<<"ServerEnvironment::saveMeta(): Failed to write "
 				<<path<<std::endl;
-		throw SerializationError("Couldn't save env meta");
 	}
 }
 

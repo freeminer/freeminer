@@ -344,7 +344,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	std::map<v3s16, int> m_blocks_sent;
+	std::map<v3s16, unsigned int> m_blocks_sent;
 
 public:
 	s16 m_nearest_unsent_d;
