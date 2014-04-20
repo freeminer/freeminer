@@ -1439,6 +1439,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	catch(con::PeerNotFoundException &e)
 	{
+		/*
+		 * no peer for this packet found
+		 * most common reason is peer timeout, e.g. peer didn't
+		 * respond for some time, your server was overloaded or
+		 * things like that.
+		 */
 		verbosestream<<"Server::ProcessData(): Cancelling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;

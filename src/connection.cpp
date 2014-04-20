@@ -114,10 +114,10 @@ SharedBuffer<u8> makeOriginalPacket(
 	u32 packet_size = data.getSize() + header_size;
 	SharedBuffer<u8> b(packet_size);
 
-	writeU8(&b[0], TYPE_ORIGINAL);
-
-	memcpy(&b[header_size], *data, data.getSize());
-
+	writeU8(&(b[0]), TYPE_ORIGINAL);
+	if (data.getSize() > 0) {
+		memcpy(&(b[header_size]), *data, data.getSize());
+	}
 	return b;
 }
 
@@ -1342,11 +1342,11 @@ void ConnectionSendThread::runTimeouts(float dtime)
 		*/
 		if(peer->isTimedOut(m_timeout))
 		{
-			LOG(derr_con<<m_connection->getDesc()
+			errorstream<<m_connection->getDesc()
 					<<"RunTimeouts(): Peer "<<peer->id
 					<<" has timed out."
 					<<" (source=peer->timeout_counter)"
-					<<std::endl);
+					<<std::endl;
 			// Add peer to the list
 			timeouted_peers.push_back(peer->id);
 			// Don't bother going through the buffers of this one
@@ -2271,14 +2271,14 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 	if(packetdata.getSize() < 1)
 		throw InvalidIncomingDataException("packetdata.getSize() < 1");
 
-	u8 type = readU8(&packetdata[0]);
+	u8 type = readU8(&(packetdata[0]));
 
 	if(type == TYPE_CONTROL)
 	{
 		if(packetdata.getSize() < 2)
 			throw InvalidIncomingDataException("packetdata.getSize() < 2");
 
-		u8 controltype = readU8(&packetdata[1]);
+		u8 controltype = readU8(&(packetdata[1]));
 
 		if( (controltype == CONTROLTYPE_ACK)
 				&& (peer_id <= MAX_UDP_PEERS))
@@ -2403,15 +2403,15 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 	}
 	else if(type == TYPE_ORIGINAL)
 	{
-		if(packetdata.getSize() < ORIGINAL_HEADER_SIZE)
+		if(packetdata.getSize() <= ORIGINAL_HEADER_SIZE)
 			throw InvalidIncomingDataException
-					("packetdata.getSize() < ORIGINAL_HEADER_SIZE");
+					("packetdata.getSize() <= ORIGINAL_HEADER_SIZE");
 		LOG(dout_con<<m_connection->getDesc()
 				<<"RETURNING TYPE_ORIGINAL to user"
 				<<std::endl);
 		// Get the inside packet out and return it
 		SharedBuffer<u8> payload(packetdata.getSize() - ORIGINAL_HEADER_SIZE);
-		memcpy(*payload, &packetdata[ORIGINAL_HEADER_SIZE], payload.getSize());
+		memcpy(*payload, &(packetdata[ORIGINAL_HEADER_SIZE]), payload.getSize());
 		return payload;
 	}
 	else if(type == TYPE_SPLIT)

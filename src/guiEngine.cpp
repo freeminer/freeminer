@@ -229,7 +229,8 @@ bool GUIEngine::loadMainMenuScript()
 		}
 		else {
 			infostream
-				<< "GUIEngine: execution of custom menu failed!"
+				<< "GUIEngine: execution of custom menu: \""
+				<< menuscript << "\" failed!"
 				<< std::endl
 				<< "\tfalling back to builtin menu"
 				<< std::endl;

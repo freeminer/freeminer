@@ -42,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 #include "filesys.h"
+#include <cctype>
 
 enum ValueType
 {
@@ -580,7 +581,7 @@ public:
 	u32 getFlagStr(std::string name, FlagDesc *flagdesc, u32 *flagmask)
 	{
 		std::string val = get(name);
-		return (isdigit(val[0])) ? stoi(val) :
+		return (std::isdigit(val[0])) ? stoi(val) :
 			readFlagString(val, flagdesc, flagmask);
 	}
 

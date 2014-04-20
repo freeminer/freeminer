@@ -36,7 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiVolumeChange.h"
 #include "guiFormSpecMenu.h"
 #include "guiTextInputMenu.h"
-#include "guiDeathScreen.h"
 #include "tool.h"
 #include "guiChatConsole.h"
 #include "config.h"
@@ -189,6 +188,13 @@ struct LocalFormspecHandler : public TextDest
 			}
 		}
 
+		if (m_formname == "MT_DEATH_SCREEN") {
+			if ((fields.find("btn_respawn") != fields.end())) {
+				m_client->sendRespawn();
+				return;
+			}
+		}
+
 		errorstream << "LocalFormspecHandler::gotText unhandled >" << m_formname << "< event" << std::endl;
 		int i = 0;
 		for (std::map<std::string,std::string>::iterator iter = fields.begin();
@@ -198,26 +204,6 @@ struct LocalFormspecHandler : public TextDest
 		}
 	}
 
-	Client *m_client;
-};
-
-/* Respawn menu callback */
-
-class MainRespawnInitiator: public IRespawnInitiator
-{
-public:
-	MainRespawnInitiator(bool *active, Client *client):
-		m_active(active), m_client(client)
-	{
-		*m_active = true;
-	}
-	void respawn()
-	{
-		*m_active = false;
-		m_client->sendRespawn();
-	}
-private:
-	bool *m_active;
 	Client *m_client;
 };
 
@@ -1023,6 +1009,32 @@ static void show_chat_menu(FormspecFormSource* current_formspec,
 	menu->drop();
 }
 
+static void show_deathscreen(FormspecFormSource* current_formspec,
+		TextDest* current_textdest, IWritableTextureSource* tsrc,
+		IrrlichtDevice * device, Client* client)
+{
+	std::string formspec =
+		std::string("") +
+		"size[11,5.5,true]"
+		"label[4.85,1.35;You died.]"
+		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
+		;
+
+	/* Create menu */
+	/* Note: FormspecFormSource and LocalFormspecHandler
+	 * are deleted by guiFormSpecMenu                     */
+	current_formspec = new FormspecFormSource(formspec,&current_formspec);
+	current_textdest = new LocalFormspecHandler("MT_DEATH_SCREEN",client);
+	GUIFormSpecMenu *menu =
+			new GUIFormSpecMenu(device, guiroot, -1,
+					&g_menumgr,
+					NULL, NULL, tsrc);
+	menu->doPause = false;
+	menu->setFormSource(current_formspec);
+	menu->setTextDest(current_textdest);
+	menu->drop();
+}
+
 /******************************************************************************/
 static void show_pause_menu(FormspecFormSource* current_formspec,
 		TextDest* current_textdest, IWritableTextureSource* tsrc,
@@ -1638,7 +1650,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool invert_mouse = g_settings->getBool("invert_mouse");
 
-	bool respawn_menu_active = false;
 	bool update_wielded_item_trigger = true;
 
 	bool show_hud = true;
@@ -2530,39 +2541,20 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				}
 				else if(event.type == CE_DEATHSCREEN)
 				{
-					if(respawn_menu_active)
-						continue;
-
-					/*bool set_camera_point_target =
-							event.deathscreen.set_camera_point_target;
-					v3f camera_point_target;
-					camera_point_target.X = event.deathscreen.camera_point_target_x;
-					camera_point_target.Y = event.deathscreen.camera_point_target_y;
-					camera_point_target.Z = event.deathscreen.camera_point_target_z;*/
-
 					if (g_settings->getBool("respawn_auto")) { 
-						client.sendRespawn(); 
+						client.sendRespawn();
 					} else {
-					MainRespawnInitiator *respawner =
-							new MainRespawnInitiator(
-									&respawn_menu_active, &client);
-					GUIDeathScreen *menu =
-							new GUIDeathScreen(guienv, guiroot, -1,
-								&g_menumgr, respawner);
-					menu->drop();
+					show_deathscreen(current_formspec, current_textdest,
+							tsrc, device, &client);
 					}
 
 					/* Handle visualization */
-
 					damage_flash = 0;
 
 					LocalPlayer* player = client.getEnv().getLocalPlayer();
 					player->hurt_tilt_timer = 0;
 					player->hurt_tilt_strength = 0;
 
-					/*LocalPlayer* player = client.getLocalPlayer();
-					player->setPosition(player->getPosition() + v3f(0,-BS,0));
-					camera.update(player, busytime, screensize);*/
 				}
 				else if (event.type == CE_SHOW_FORMSPEC)
 				{
