@@ -687,8 +687,14 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
 	endif()
 
-	set(CMAKE_CXX_FLAGS_RELEASE "-std=c++0x -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
-	set(CMAKE_CXX_FLAGS_DEBUG "-std=c++0x -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	if(ENABLE_CXX1Y)
+		set(STD_FLAGS "-std=c++1y")
+	else()
+		set(STD_FLAGS "-std=c++0x")
+	endif()
+
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
