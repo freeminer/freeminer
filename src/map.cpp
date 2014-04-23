@@ -531,6 +531,7 @@ void Map::spreadLight(enum LightBank bank,
 				try{
 					if(block == NULL || blockpos != blockpos_last){
 						block = getBlockNoCreate(blockpos);
+
 						blockpos_last = blockpos;
 
 						block_checked_in_modified = false;
@@ -542,6 +543,7 @@ void Map::spreadLight(enum LightBank bank,
 					continue;
 				}
 
+				auto lock = block->lock_unique();
 				// Calculate relative position in block
 				v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 				// Get node straight from the block
@@ -701,7 +703,7 @@ s16 Map::propagateSunlight(v3s16 start,
 }
 
 u32 Map::updateLighting(enum LightBank bank,
-		std::map<v3s16, MapBlock*> & a_blocks,
+		shared_map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -723,34 +725,39 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
-	JMutexAutoLock lock2(m_update_lighting_mutex);
+	//JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	{
 	TimeTaker t("updateLighting: first stuff");
 
+/*
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 	if(!max_cycle_ms)
 		updateLighting_last[bank] = 0;
-	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
-		i != a_blocks.end(); ++i)
-	{
+*/
+	for(auto & i : a_blocks) {
+/*
 			if (n++ < updateLighting_last[bank])
 				continue;
 			else
 				updateLighting_last[bank] = 0;
 			++calls;
+*/
 
-		MapBlock *block = getBlockNoCreateNoEx(i->first);
+		MapBlock *block = getBlockNoCreateNoEx(i.first);
 		//MapBlock *block = i->second;
 
 		if(!block || block->isDummy())
 			continue;
+
 
 		for(;;)
 		{
 			// Don't bother with dummy blocks.
 			if(block->isDummy())
 				break;
+
+			auto lock = block->lock_unique();
 
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
@@ -827,6 +834,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 			// Bottom sunlight is not valid; get the block and loop to it
 
+			block->unlock_ext();
 			pos.Y--;
 			try{
 				block = getBlockNoCreate(pos);
@@ -838,13 +846,18 @@ u32 Map::updateLighting(enum LightBank bank,
 
 		}
 		L_END_BLOCK:;
+/*
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
 		}
+*/
 	}
+	a_blocks.clear();
+/*
 	if (!calls)
 		updateLighting_last[bank] = 0;
+*/
 	}
 	/*
 		Enable this to disable proper lighting for speeding up map
@@ -957,7 +970,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
+u32 Map::updateLighting(shared_map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	int ret = 0;
@@ -975,7 +988,7 @@ TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
 		return ret;
 
 TimeTaker timer("updateLighting expireDayNightDiff");
-	JMutexAutoLock lock2(m_update_lighting_mutex);
+	//JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
 		Update information about whether day and night light differ
@@ -1735,7 +1748,7 @@ struct NodeNeighbor {
 };
 
 void Map::transforming_liquid_push_back(v3s16 & p) {
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 	m_transforming_liquid.push_back(p);
 }
 
@@ -1778,7 +1791,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquidsFinite(Server *m_server, shared_map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1812,7 +1825,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 		*/
 		v3s16 p0;
 		{
-			JMutexAutoLock lock(m_transforming_liquid_mutex);
+			//JMutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = m_transforming_liquid.pop_front();
 		}
 		u16 total_level = 0;
@@ -2161,9 +2174,9 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 			v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos);
 			if(block != NULL) {
-				modified_blocks[blockpos] = block;
+				modified_blocks.set(blockpos,block);
 				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
-					lighting_modified_blocks[block->getPos()] = block;
+					lighting_modified_blocks.set(block->getPos(), block);
 			}
 			must_reflow.push_back(neighbors[i].p);
 
@@ -2191,7 +2204,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 		<<" ret="<<ret<<std::endl;
 	*/
 
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
@@ -2206,7 +2219,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, shared_map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_real"))
@@ -2217,7 +2230,7 @@ u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modifie
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("transformLiquids()");
 
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
@@ -2468,7 +2481,7 @@ u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modifie
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
 		if(block != NULL) {
-			modified_blocks[blockpos] =  block;
+			modified_blocks.set(blockpos, block);
 			// If new or old node emits light, MapBlock requires lighting update
 			if(nodemgr->get(n0).light_source != 0 ||
 					nodemgr->get(n00).light_source != 0)
@@ -2955,7 +2968,7 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 		Copy transforming liquid information
 	*/
 	{
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 	while(data->transforming_liquid.size() > 0)
 	{
 		v3s16 p = data->transforming_liquid.pop_front();

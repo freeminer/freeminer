@@ -110,7 +110,7 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		try_shared_lock lock(mutex);
+		auto lock = lock_shared_int();
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 }
@@ -125,7 +125,7 @@ void MapBlock::setNodeParent(v3s16 p, MapNode & n)
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		unique_lock lock(mutex);
+		auto lock = lock_unique_int();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 	}
 }
@@ -148,7 +148,7 @@ MapNode MapBlock::getNodeParentNoEx(v3s16 p)
 		{
 			return MapNode(CONTENT_IGNORE);
 		}
-		try_shared_lock lock(mutex);
+		auto lock = lock_shared_int();
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 }
@@ -175,7 +175,7 @@ MapNode MapBlock::getNodeParentNoEx(v3s16 p)
 bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 		bool remove_light, bool *black_air_left)
 {
-	unique_lock lock(mutex);
+	auto lock = lock_unique_int();
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -431,7 +431,7 @@ void MapBlock::expireDayNightDiff()
 
 s16 MapBlock::getGroundLevel(v2s16 p2d)
 {
-	try_shared_lock lock(mutex);
+	auto lock = lock_shared_int();
 	if(isDummy())
 		return -3;
 	try
@@ -553,7 +553,7 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 
 void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 {
-	try_shared_lock lock(mutex);
+	auto lock = lock_shared_int();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 	
@@ -660,7 +660,7 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
 
 void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
-	unique_lock lock(mutex);
+	auto lock = lock_unique_int();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 	
@@ -1125,7 +1125,7 @@ std::string analyze_block(MapBlock *block)
 	if(block == NULL)
 		return "NULL";
 
-	try_shared_lock lock(block->mutex);
+	auto lock = block->lock_shared_int();
 	std::ostringstream desc;
 	
 	v3s16 p = block->getPos();

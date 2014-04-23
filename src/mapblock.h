@@ -107,6 +107,7 @@ public:
 */
 
 class MapBlock /*: public NodeContainer*/
+: public locker
 {
 public:
 	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy=false);
@@ -124,7 +125,7 @@ public:
 
 	void reallocate()
 	{
-		unique_lock lock(mutex);
+		auto lock = lock_unique_int();
 		if(data != NULL)
 			delete[] data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -299,7 +300,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		try_shared_lock lock(mutex);
+		auto lock = lock_shared_int();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -324,7 +325,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		unique_lock lock(mutex);
+		auto lock = lock_unique_int();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
 	}
@@ -342,7 +343,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		try_shared_lock lock(mutex);
+		auto lock = lock_shared_int();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -355,7 +356,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		unique_lock lock(mutex);
+		auto lock = lock_unique_int();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
 	}
@@ -564,7 +565,7 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
-	try_shared_mutex mutex;
+
 private:
 	/*
 		Private member variables

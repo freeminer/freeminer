@@ -1297,5 +1297,14 @@ void read_json_value(lua_State *L, Json::Value &root, int index, u8 recursion)
 		throw SerializationError("Can only store booleans, numbers, strings, objects, arrays, and null in JSON");
 	}
 	lua_pop(L, 1); // Pop value
+
+
+
+
+//sharedc<std::map<int>> sm;
+//shared_map<int,double> sm;
+//sm[10];
+//sm[11] = 1;
+
 }
 

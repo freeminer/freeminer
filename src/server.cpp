@@ -77,6 +77,47 @@ public:
 	{}
 };
 
+
+class LightThread : public JThread
+{
+	Server *m_server;
+// /*
+
+public:
+
+	LightThread(Server *server):
+		JThread(),
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("LightThread");
+
+		DSTACK(__FUNCTION_NAME);
+		//BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+errorstream<<"L start"<<std::endl;
+
+		porting::setThreadName("LightThread");
+		while(!StopRequested()) {
+			if (!m_server->m_lighting_modified_blocks.size()) {
+				m_server->m_lighting_modified_blocks.sem.wait();
+errorstream<<"L wait"<<std::endl;
+				continue;
+			}
+
+errorstream<<"L calc="<<m_server->m_lighting_modified_blocks.size()<<std::endl;
+			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_server->m_modified_blocks, 500)) {
+			}
+		}
+	
+	}
+// */
+};
+
+
+
 class ServerThread : public JThread
 {
 	Server *m_server;
@@ -198,6 +239,7 @@ Server::Server(
 	m_craftdef(createCraftDefManager()),
 	m_event(new EventManager()),
 	m_thread(NULL),
+	m_light(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -245,6 +287,8 @@ Server::Server(
 
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
+
+	m_light = new LightThread(this);
 
 	// Create world if it doesn't exist
 	if(!initializeWorld(m_path_world, m_gamespec.id))
@@ -444,6 +488,10 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
+	//m_light->stopThreads();
+	delete m_light;
+
+
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
 	m_emerge->stopThreads();
@@ -484,6 +532,7 @@ void Server::start(Address bind_addr)
 
 	// Stop thread if already running
 	m_thread->Stop();
+	m_light->Stop();
 
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
@@ -491,6 +540,7 @@ void Server::start(Address bind_addr)
 
 	// Start thread
 	m_thread->Start();
+	m_light->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m     "
 			<< porting::getNumberOfProcessors() << " cores"<< std::endl;
@@ -509,9 +559,11 @@ void Server::stop()
 
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->Stop();
+	m_thread->Stop();
 	//m_emergethread.setRun(false);
 	m_thread->Wait();
 	//m_emergethread.stop();
+	m_light->Stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -712,8 +764,10 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
+		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0) {
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
+			m_lighting_modified_blocks.sem.notify();
+		}
 	}
 
 		/*
@@ -728,28 +782,29 @@ void Server::AsyncRunStep(bool initial_step)
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, max_cycle_ms)) {
+/*		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, max_cycle_ms)) {
 			m_liquid_send_timer = m_liquid_send_interval;
 			goto no_send;
 		}
+*/
 
-		for (std::map<u16, RemoteClient*>::iterator i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
-			if (i->second->m_nearest_unsent_nearest) {
-				i->second->m_nearest_unsent_d = 0;
-				i->second->m_nearest_unsent_nearest = 0;
+		for (auto & i : m_clients.getClientList())
+			if (i.second->m_nearest_unsent_nearest) {
+				i.second->m_nearest_unsent_d = 0;
+				i.second->m_nearest_unsent_nearest = 0;
 			}
 
 		//JMutexAutoLock lock(m_env_mutex);
 		//JMutexAutoLock lock2(m_con_mutex);
 
-		if(m_modified_blocks.size() > 0)
-		{
-			SetBlocksNotSent(m_modified_blocks);
-		}
+//		if(m_modified_blocks.size() > 0)
+//		{
+//			SetBlocksNotSent(m_modified_blocks);
+//		}
 		m_modified_blocks.clear();
 
 	}
-	no_send:
+	//no_send:
 
 	// Periodically print some info
 	{

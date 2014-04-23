@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <vector>
+#include "util/lock.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -59,6 +60,7 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 class Circuit;
 class ServerThread;
+class LightThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -538,6 +540,7 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
+	LightThread *m_light;
 
 	/*
 		Time related stuff
@@ -625,8 +628,10 @@ private:
 	*/
 	std::vector<u32> m_particlespawner_ids;
 
-	std::map<v3s16, MapBlock*> m_modified_blocks;
-	std::map<v3s16, MapBlock*> m_lighting_modified_blocks;
+public:
+	shared_map<v3s16, MapBlock*> m_modified_blocks;
+	shared_map<v3s16, MapBlock*> m_lighting_modified_blocks;
+private:
 };
 
 /*
