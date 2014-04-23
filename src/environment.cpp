@@ -1292,13 +1292,10 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 
 		u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		m_blocks_added_last = 0;
-		std::set<v3s16>::iterator i;
-		for(i = m_blocks_added.begin();
-				i != m_blocks_added.end(); ++i)
-		{
+		for(auto i = m_blocks_added.begin(); i != m_blocks_added.end(); ++i) {
 			++n;
 			v3s16 p = *i;
-
+			i = m_blocks_added.erase(i);
 			MapBlock *block = m_map->getBlockOrEmerge(p);
 			if(block==NULL){
 				m_active_blocks.m_list.erase(p);
@@ -1313,7 +1310,6 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				break;
 			}
 		}
-		m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
 
 	/*
