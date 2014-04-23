@@ -523,8 +523,8 @@ public:
 	u64 getSeed();
 	s16 getWaterLevel();
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, std::map<v3s16, s16> *cache = NULL);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, shared_map<v3s16, s16> *cache = NULL);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, shared_map<v3s16, s16> *cache = NULL);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found

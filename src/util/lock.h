@@ -18,7 +18,7 @@ typedef std::shared_timed_mutex try_shared_mutex;
 typedef std::shared_lock try_shared_lock<try_shared_mutex>;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #else
-typedef std::recursive_timed_mutex try_shared_mutex;
+typedef std::timed_mutex try_shared_mutex;
 typedef std::unique_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #endif
@@ -145,6 +145,10 @@ public:
 		return full_type::size();
 	}
 
+	size_type count(const key_type& k) {
+		auto lock = lock_shared_int();
+		return full_type::count(k);
+	}
 /*
 	mapped_type& operator[](key_type&& k) {
 		//unique_lock lock(mtx);

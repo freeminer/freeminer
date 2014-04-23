@@ -688,8 +688,11 @@ public:
 		if(dtime_s < 0.001)
 			return;
 		INodeDefManager *ndef = env->getGameDef()->ndef();
+errorstream << " asize="<< abms.size() << std::endl;
 		for(std::list<ABMWithState>::iterator
 				i = abms.begin(); i != abms.end(); ++i){
+TimeTaker timer1("abmhandler stp");
+
 			ActiveBlockModifier *abm = i->abm;
 			float trigger_interval = abm->getTriggerInterval();
 			if(trigger_interval < 0.001)
@@ -710,6 +713,8 @@ public:
 			float chance = abm->getTriggerChance();
 			if(chance == 0)
 				chance = 1;
+TimeTaker timer2("abmhandler 2");
+
 			ActiveABM aabm;
 			aabm.abm = abm;
 			aabm.neighbors_range = abm->getNeighborsRange();
@@ -725,11 +730,14 @@ public:
 			{
 				ndef->getIds(*i, aabm.required_neighbors);
 			}
+TimeTaker timer3("abmhandler 3");
 			// Trigger contents
 			std::set<std::string> contents_s = abm->getTriggerContents();
 			for(std::set<std::string>::iterator
 					i = contents_s.begin(); i != contents_s.end(); i++)
 			{
+errorstream<< "C=" << *i  <<std::endl;
+TimeTaker timer4("abmhandler 4");
 				std::set<content_t> ids;
 				ndef->getIds(*i, ids);
 				for(std::set<content_t>::const_iterator k = ids.begin();
@@ -876,11 +884,18 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	/*infostream<<"ServerEnvironment::activateBlock(): block is "
 			<<dtime_s<<" seconds old."<<std::endl;*/
 
+{
+TimeTaker timer1("activateObjects");
+
 	// Activate stored objects
 	activateObjects(block, dtime_s);
+}
 
 //	// Calculate weather conditions
 //	m_map->updateBlockHeat(this, block->getPos() *  MAP_BLOCKSIZE, block);
+
+{
+TimeTaker timer1("Run node timers");
 
 	// Run node timers
 	std::map<v3s16, NodeTimer> elapsed_timers =
@@ -896,10 +911,18 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 				block->setNodeTimer(i->first,NodeTimer(i->second.timeout,0));
 		}
 	}
+}
 
 	/* Handle ActiveBlockModifiers */
+{
+TimeTaker timer1("abmhandler");
+
 	ABMHandler abmhandler(m_abms, dtime_s, this, false, true);
+//}
+//{
+TimeTaker timer3("abmhandler.apply");
 	abmhandler.apply(block, true);
+}
 }
 
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
@@ -1194,6 +1217,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		Handle players
 	*/
 	{
+		TimeTaker timer_step_player("player step");
 		//ScopeProfiler sp(g_profiler, "SEnv: handle players avg", SPT_AVG);
 		for(std::list<Player*>::iterator i = m_players.begin();
 				i != m_players.end(); ++i)
@@ -1212,13 +1236,18 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	/*
 	 * Update circuit
 	 */
+{
+		TimeTaker timer_s1("circuit step");
+
 	m_circuit -> update(dtime, *m_map, m_gamedef->ndef());
+}
 
 	/*
 		Manage active block list
 	*/
 	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, 2.0))
 	{
+		TimeTaker timer_s1("Manage active block list");
 		ScopeProfiler sp(g_profiler, "SEnv: manage act. block list avg /2s", SPT_AVG);
 		/*
 			Get player block positions
@@ -1237,6 +1266,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			players_blockpos.push_back(blockpos);
 		}
 		if (g_settings->getBool("enable_force_load")) {
+TimeTaker timer_s2("force load");
 			for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1259,15 +1289,22 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		*/
 		const s16 active_block_range = g_settings->getS16("active_block_range");
 		std::set<v3s16> blocks_removed;
+{
+TimeTaker timer_s2("collecting changes");
+
 		m_active_blocks.update(players_blockpos, active_block_range,
 				blocks_removed, m_blocks_added);
+}
 
 		/*
 			Handle removed blocks
 		*/
 
 		// Convert active objects that are no more in active blocks to static
+{
+TimeTaker timer_s2("deactivateFarObjects");
 		deactivateFarObjects(false);
+}
 
 		for(std::set<v3s16>::iterator
 				i = blocks_removed.begin();
@@ -1290,10 +1327,12 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			Handle added blocks
 		*/
 
+TimeTaker timer_s2("Handle added blocks");
 		u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		m_blocks_added_last = 0;
 		auto i = m_blocks_added.begin();
 		for(; i != m_blocks_added.end(); ++i) {
+TimeTaker timer_s3("Handle added block");
 			++n;
 			v3s16 p = *i;
 			MapBlock *block = m_map->getBlockOrEmerge(p);
@@ -1318,6 +1357,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0))
 	{
+		TimeTaker timer_s1("Mess around in active blocks");
 		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
 
 		//float dtime = 1.0;
@@ -1460,7 +1500,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	{
 		//ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
-		//TimeTaker timer("Step active objects");
+		TimeTaker timer("Step active objects");
 
 		g_profiler->avg("SEnv: num of objects", m_active_objects.size());
 
@@ -1521,6 +1561,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	if(m_object_management_interval.step(dtime, 0.5))
 	{
+	TimeTaker timer("Manage active objects");
 		//ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
 		/*
 			Remove objects that satisfy (m_removed && m_known_by_count==0)
