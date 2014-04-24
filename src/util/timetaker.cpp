@@ -53,7 +53,7 @@ u32 TimeTaker::stop(bool quiet)
 		}
 		else
 		{
-			if(quiet == false && dtime >= 150)
+			if(quiet == false && dtime >= 10)
 				infostream<<m_name<<" took "<<dtime<<"ms"<<std::endl;
 		}
 		m_running = false;
