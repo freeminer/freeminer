@@ -691,7 +691,7 @@ public:
 //errorstream << " asize="<< abms.size() << std::endl;
 		for(std::list<ABMWithState>::iterator
 				i = abms.begin(); i != abms.end(); ++i){
-TimeTaker timer1("abmhandler stp");
+//TimeTaker timer1("abmhandler stp");
 
 			ActiveBlockModifier *abm = i->abm;
 			float trigger_interval = abm->getTriggerInterval();
@@ -713,7 +713,7 @@ TimeTaker timer1("abmhandler stp");
 			float chance = abm->getTriggerChance();
 			if(chance == 0)
 				chance = 1;
-TimeTaker timer2("abmhandler 2");
+//TimeTaker timer2("abmhandler 2");
 
 			ActiveABM aabm;
 			aabm.abm = abm;
@@ -721,33 +721,33 @@ TimeTaker timer2("abmhandler 2");
 			aabm.chance = chance / intervals;
 			if(aabm.chance == 0)
 				aabm.chance = 1;
-TimeTaker timer21("abmhandler 2.1");
+//TimeTaker timer21("abmhandler 2.1");
 			// Trigger neighbors
 			std::set<std::string> required_neighbors_s
 					= abm->getRequiredNeighbors(activate);
-TimeTaker timer22("abmhandler 2.2");
+//TimeTaker timer22("abmhandler 2.2");
 			for(std::set<std::string>::iterator
 					i = required_neighbors_s.begin();
 					i != required_neighbors_s.end(); i++)
 			{
 				ndef->getIds(*i, aabm.required_neighbors);
 			}
-TimeTaker timer3("abmhandler 3");
+//TimeTaker timer3("abmhandler 3");
 			// Trigger contents
 			std::set<std::string> contents_s = abm->getTriggerContents();
 			for(std::set<std::string>::iterator
 					i = contents_s.begin(); i != contents_s.end(); i++)
 			{
 //verbosestream<< "C=" << *i<<" idssize="<< ids.size()  <<std::endl;
-TimeTaker timer4("abmhandler 4");
+//TimeTaker timer4("abmhandler 4");
 				std::set<content_t> ids;
 				ndef->getIds(*i, ids);
-verbosestream<< "C=" << *i<<" idssize="<< ids.size()  <<std::endl;
-TimeTaker timer5("abmhandler 5");
+//verbosestream<< "C=" << *i<<" idssize="<< ids.size()  <<std::endl;
+//TimeTaker timer5("abmhandler 5");
 				for(std::set<content_t>::const_iterator k = ids.begin();
 						k != ids.end(); k++)
 				{
-TimeTaker timer60("abmhandler 60");
+//TimeTaker timer60("abmhandler 60");
 					content_t c = *k;
 					if (!m_aabms[c]) {
 						m_aabms[c] = new std::list<ActiveABM>;

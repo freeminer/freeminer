@@ -61,6 +61,7 @@ struct SimpleSoundSpec;
 class Circuit;
 class ServerThread;
 class LightThread;
+class SendBlocksThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -402,7 +403,9 @@ private:
 	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable = 1);
 
 	// Sends blocks to clients (locks env and con on its own)
+public:
 	void SendBlocks(float dtime);
+private:
 
 	void fillMediaCache();
 	void sendMediaAnnouncement(u16 peer_id);
@@ -532,7 +535,9 @@ private:
 
 	// A buffer for time steps
 	// step() increments and AsyncRunStep() run by m_thread reads it.
+public:
 	float m_step_dtime;
+private:
 	JMutex m_step_dtime_mutex;
 
 	// current server step lag counter
@@ -541,6 +546,7 @@ private:
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
 	LightThread *m_light;
+	SendBlocksThread *m_sendblocks;
 
 	/*
 		Time related stuff

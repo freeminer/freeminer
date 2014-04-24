@@ -69,6 +69,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "defaultsettings.h"
 #include "circuit.h"
 
+#include <chrono>
+#include <thread>
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -81,8 +84,6 @@ public:
 class LightThread : public JThread
 {
 	Server *m_server;
-// /*
-
 public:
 
 	LightThread(Server *server):
@@ -97,23 +98,58 @@ public:
 		//BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
-errorstream<<"L start"<<std::endl;
+infostream<<"L start"<<std::endl;
 
 		porting::setThreadName("LightThread");
 		while(!StopRequested()) {
 			if (!m_server->m_lighting_modified_blocks.size()) {
 				m_server->m_lighting_modified_blocks.sem.wait();
-errorstream<<"L wait"<<std::endl;
+infostream<<"L wait"<<std::endl;
 				continue;
 			}
 
-errorstream<<"L calc="<<m_server->m_lighting_modified_blocks.size()<<std::endl;
+infostream<<"L calc="<<m_server->m_lighting_modified_blocks.size()<<std::endl;
 			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_server->m_modified_blocks, 500)) {
 			}
 		}
 	
+	return nullptr;
 	}
 // */
+};
+
+class SendBlocksThread : public JThread
+{
+	Server *m_server;
+public:
+
+	SendBlocksThread(Server *server):
+		JThread(),
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("SendBlocksThread");
+
+		DSTACK(__FUNCTION_NAME);
+		//BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+infostream<<"S start"<<std::endl;
+
+		porting::setThreadName("SendBlocksThread");
+		auto time = porting::getTimeMs();
+		while(!StopRequested()) {
+infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
+			m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
+			time = porting::getTimeMs();
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			
+		}
+infostream<<"S end"<<std::endl;
+
+	return nullptr;
+	}
 };
 
 
@@ -240,6 +276,7 @@ Server::Server(
 	m_event(new EventManager()),
 	m_thread(NULL),
 	m_light(nullptr),
+	m_sendblocks(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -289,6 +326,7 @@ Server::Server(
 	m_emerge = new EmergeManager(this);
 
 	m_light = new LightThread(this);
+	m_sendblocks = new SendBlocksThread(this);
 
 	// Create world if it doesn't exist
 	if(!initializeWorld(m_path_world, m_gamespec.id))
@@ -490,6 +528,7 @@ Server::~Server()
 
 	//m_light->stopThreads();
 	delete m_light;
+	delete m_sendblocks;
 
 
 	// stop all emerge threads before deleting players that may have
@@ -533,7 +572,8 @@ void Server::start(Address bind_addr)
 	// Stop thread if already running
 	m_thread->Stop();
 	m_light->Stop();
-
+	m_sendblocks->Stop();
+	
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
 	m_con.Serve(bind_addr);
@@ -541,6 +581,7 @@ void Server::start(Address bind_addr)
 	// Start thread
 	m_thread->Start();
 	m_light->Start();
+	m_sendblocks->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m     "
 			<< porting::getNumberOfProcessors() << " cores"<< std::endl;
@@ -564,6 +605,7 @@ void Server::stop()
 	m_thread->Wait();
 	//m_emergethread.stop();
 	m_light->Stop();
+	m_sendblocks->Stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -601,7 +643,7 @@ void Server::AsyncRunStep(bool initial_step)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
-		SendBlocks(dtime);
+		//SendBlocks(dtime);
 	}
 
 	if((dtime < 0.001) && (initial_step == false))
@@ -4018,8 +4060,9 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 void Server::SendBlocks(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
+	TimeTaker timer("SendBlocks inside");
 
-	JMutexAutoLock envlock(m_env_mutex);
+	//JMutexAutoLock envlock(m_env_mutex);
 	//TODO check if one big lock could be faster then multiple small ones
 
 	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
@@ -4033,7 +4076,7 @@ void Server::SendBlocks(float dtime)
 
 		std::list<u16> clients = m_clients.getClientIDs();
 
-		m_clients.Lock();
+		//m_clients.Lock();
 		for(std::list<u16>::iterator
 			i = clients.begin();
 			i != clients.end(); ++i)
@@ -4046,7 +4089,7 @@ void Server::SendBlocks(float dtime)
 			total_sending += client->SendingCount();
 			client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
-		m_clients.Unlock();
+		//m_clients.Unlock();
 	}
 
 	// Sort.
@@ -4054,7 +4097,7 @@ void Server::SendBlocks(float dtime)
 	// Lowest is most important.
 	std::sort(queue.begin(), queue.end());
 
-	m_clients.Lock();
+	//m_clients.Lock();
 	for(u32 i=0; i<queue.size(); i++)
 	{
 		//TODO: Calculate limit dynamically
@@ -4082,7 +4125,7 @@ void Server::SendBlocks(float dtime)
 		client->SentBlock(q.pos);
 		total_sending++;
 	}
-	m_clients.Unlock();
+	//m_clients.Unlock();
 }
 
 void Server::fillMediaCache()
