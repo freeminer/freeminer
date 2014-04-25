@@ -57,6 +57,11 @@ JMutex log_message_mutex;
 #undef DEBUG_CONNECTION_KBPS
 #endif
 
+#undef LOG
+#define LOG(a) a
+#undef PROFILE
+#define PROFILE(a)
+#undef DEBUG_CONNECTION_KBPS
 
 static inline float CALC_DTIME(unsigned int lasttime, unsigned int curtime) {
 	float value = ( curtime - lasttime) / 1000.0;
