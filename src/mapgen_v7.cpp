@@ -450,7 +450,7 @@ int MapgenV7::generateBaseTerrain() {
 					vm->m_data[i] = n_stone;
 				else if (y <= water_level)
 				{
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
+					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), nullptr, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water;
 				}
 				else

@@ -4185,50 +4185,52 @@ void ServerMap::PrintInfo(std::ostream &out)
 
 s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
-	u32 gametime = env->getGameTime();
+	auto bp = getNodeBlockPos(p);
+	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+		block = getBlockNoCreateNoEx(bp);
 	}
-	if (cache && cache->count(getNodeBlockPos(p)))
-		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
+	if (cache && cache->count(bp))
+		return cache->at(bp) + myrand_range(0, 1);
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
+	auto value = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
-		block->heat = heat;
+		block->heat = value;
 		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
 	if (cache)
-		(*cache)[getNodeBlockPos(p)] = heat;
-	return heat + myrand_range(0, 1);
+		(*cache)[bp] = value;
+	return value + myrand_range(0, 1);
 }
 
 s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
-	u32 gametime = env->getGameTime();
+	auto bp = getNodeBlockPos(p);
+	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+		block = getBlockNoCreateNoEx(bp);
 	}
-	if (cache && cache->count(getNodeBlockPos(p)))
-		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
+	if (cache && cache->count(bp))
+		return cache->at(bp) + myrand_range(0, 1);
 
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
+	auto value = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
-		block->humidity = humidity;
+		block->humidity = value;
 		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
 	if (cache)
-		(*cache)[getNodeBlockPos(p)] = humidity;
-	return humidity + myrand_range(0, 1);
+		(*cache)[bp] = value;
+	return value + myrand_range(0, 1);
 }
 
 int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
