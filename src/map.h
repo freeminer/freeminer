@@ -235,10 +235,10 @@ public:
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
 	u32 updateLighting(enum LightBank bank,
-			shared_map<v3s16, MapBlock*>  & a_blocks,
+			std::map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
-	u32 updateLighting(shared_map<v3s16, MapBlock*>  & a_blocks,
+	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
@@ -310,8 +310,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, shared_map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
-	u32 transformLiquidsFinite(Server *m_server, shared_map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -388,8 +388,8 @@ protected:
 
 	// Queued transforming water nodes
 	UniqueQueue<v3s16> m_transforming_liquid;
-	//JMutex m_transforming_liquid_mutex;
-	//JMutex m_update_lighting_mutex;
+	JMutex m_transforming_liquid_mutex;
+	JMutex m_update_lighting_mutex;
 };
 
 /*
@@ -523,8 +523,8 @@ public:
 	u64 getSeed();
 	s16 getWaterLevel();
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, shared_map<v3s16, s16> *cache = NULL);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL, shared_map<v3s16, s16> *cache = NULL);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = nullptr, std::map<v3s16, s16> *cache = nullptr);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = nullptr, std::map<v3s16, s16> *cache = nullptr);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
