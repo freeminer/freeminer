@@ -506,7 +506,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false && current_camera_mode == CAMERA_MODE_FIRST ||
+		(g_settings->getBool("free_move") == false ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation

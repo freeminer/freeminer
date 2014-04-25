@@ -25,6 +25,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "util/string.h"
 
+
+/****************
+ * Black magic! *
+ ****************
+ * The position hashing is very messed up.
+ * It's a lot more complicated than it looks.
+ */
+
 static inline s16 unsigned_to_signed(u16 i, u16 max_positive)
 {
 	if (i < max_positive) {
@@ -35,20 +43,33 @@ static inline s16 unsigned_to_signed(u16 i, u16 max_positive)
 }
 
 
-s64 Database::getBlockAsInteger(const v3s16 pos) const
+// Modulo of a negative number does not work consistently in C
+static inline s64 pythonmodulo(s64 i, s16 mod)
 {
-	return (((u64) pos.Z) << 24) +
-		(((u64) pos.Y) << 12) +
-		((u64) pos.X);
+	if (i >= 0) {
+		return i % mod;
+	}
+	return mod - ((-i) % mod);
 }
 
-v3s16 Database::getIntegerAsBlock(const s64 i) const
+
+s64 Database::getBlockAsInteger(const v3s16 pos) const
 {
-        v3s16 pos;
-        pos.Z = unsigned_to_signed((i >> 24) & 0xFFF, 0x1000 / 2);
-        pos.Y = unsigned_to_signed((i >> 12) & 0xFFF, 0x1000 / 2);
-        pos.X = unsigned_to_signed((i      ) & 0xFFF, 0x1000 / 2);
-        return pos;
+	return (u64) pos.Z * 0x1000000 +
+		(u64) pos.Y * 0x1000 +
+		(u64) pos.X;
+}
+
+
+v3s16 Database::getIntegerAsBlock(s64 i) const
+{
+	v3s16 pos;
+	pos.X = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	i = (i - pos.X) / 4096;
+	pos.Y = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	i = (i - pos.Y) / 4096;
+	pos.Z = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	return pos;
 }
 
 std::string Database::getBlockAsString(const v3s16 &pos) const {
