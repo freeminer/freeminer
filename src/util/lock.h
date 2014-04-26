@@ -104,10 +104,6 @@ public locker
     typedef T                                        mapped_type;
 	typedef Allocator                                allocator_type;
 	typedef typename allocator_type::size_type       size_type;
-
-    //typedef implementation-defined                   iterator;
-    //typedef implementation-defined                   const_iterator;
-
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
 
 //	mapped_type& operator[](const key_type& k) { }
