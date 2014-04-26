@@ -227,16 +227,28 @@ void Environment::stepTimeOfDay(float dtime)
 	ABMWithState
 */
 
-ABMWithState::ABMWithState(ActiveBlockModifier *abm_):
+ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	abm(abm_),
-	timer(0)
+	timer(0),
+	required_neighbors(CONTENT_ID_CAPACITY),
+	required_neighbors_activate(CONTENT_ID_CAPACITY)
 {
+	auto ndef = senv->getGameDef()->ndef();
 	// Initialize timer to random value to spread processing
 	float itv = abm->getTriggerInterval();
 	itv = MYMAX(0.001, itv); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
 	int maxval = MYMIN(0.51*itv, 60);   // +-60 seconds
 	timer = myrand_range(minval, maxval);
+
+	for(auto & i : abm->getRequiredNeighbors(0))
+		ndef->getIds(i, required_neighbors);
+
+	for(auto & i : abm->getRequiredNeighbors(1))
+		ndef->getIds(i, required_neighbors_activate);
+
+	for(auto & i : abm->getTriggerContents())
+		ndef->getIds(i, trigger_ids);
 }
 
 /*
@@ -653,30 +665,6 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 }
 
-#if WTF // now in .h
-struct ActiveABM
-{
-	ActiveABM():
-		required_neighbors(CONTENT_ID_CAPACITY)
-	{}
-	ActiveBlockModifier *abm;
-	int chance;
-	int neighbors_range;
-	FMBitset required_neighbors;
-};
-#endif
-
-/*
-class ABMHandler
-{
-private:
-	ServerEnvironment *m_env;
-	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
-	std::list<std::list<ActiveABM>*> m_aabms_list;
-	bool m_aabms_empty;
-public:
-*/
-
 	ABMHandler::
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
@@ -687,9 +675,10 @@ public:
 	{
 		if(dtime_s < 0.001)
 			return;
-		INodeDefManager *ndef = env->getGameDef()->ndef();
-		for(std::list<ABMWithState>::iterator
-				i = abms.begin(); i != abms.end(); ++i){
+
+		//INodeDefManager *ndef = env->getGameDef()->ndef();
+		for(auto & ai: abms){
+			auto i = &ai;
 			ActiveBlockModifier *abm = i->abm;
 			float trigger_interval = abm->getTriggerInterval();
 			if(trigger_interval < 0.001)
@@ -711,31 +700,15 @@ public:
 			if(chance == 0)
 				chance = 1;
 			ActiveABM aabm;
-			aabm.abm = abm;
-			aabm.neighbors_range = abm->getNeighborsRange();
+			aabm.abm = abm; //del, same as abmws
+			aabm.abmws = i;
 			aabm.chance = chance / intervals;
 			if(aabm.chance == 0)
 				aabm.chance = 1;
-			// Trigger neighbors
-			std::set<std::string> required_neighbors_s
-					= abm->getRequiredNeighbors(activate);
-			for(std::set<std::string>::iterator
-					i = required_neighbors_s.begin();
-					i != required_neighbors_s.end(); i++)
-			{
-				ndef->getIds(*i, aabm.required_neighbors);
-			}
+
 			// Trigger contents
-			std::set<std::string> contents_s = abm->getTriggerContents();
-			for(std::set<std::string>::iterator
-					i = contents_s.begin(); i != contents_s.end(); i++)
-			{
-				std::set<content_t> ids;
-				ndef->getIds(*i, ids);
-				for(std::set<content_t>::const_iterator k = ids.begin();
-						k != ids.end(); k++)
+				for (auto &c : i->trigger_ids)
 				{
-					content_t c = *k;
 					if (!m_aabms[c]) {
 						m_aabms[c] = new std::list<ActiveABM>;
 						m_aabms_list.push_back(m_aabms[c]);
@@ -743,7 +716,6 @@ public:
 					m_aabms[c]->push_back(aabm);
 					m_aabms_empty = false;
 				}
-			}
 		}
 	}
 
@@ -806,17 +778,17 @@ public:
 			if (!m_aabms[c])
 				continue;
 
-			for(std::list<ActiveABM>::iterator
-					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); i++)
-			{
+			for(auto & ir: *(m_aabms[c])) {
+				auto i = &ir;
 				if(myrand() % i->chance != 0)
 					continue;
 				// Check neighbors
 				MapNode neighbor;
-				if(i->required_neighbors.count() > 0)
+				auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
+				if(required_neighbors.count() > 0)
 				{
 					v3s16 p1;
-					int neighbors_range = i->neighbors_range;
+					int neighbors_range = i->abm->getNeighborsRange();
 					for(p1.X = p.X - neighbors_range; p1.X <= p.X + neighbors_range; ++p1.X)
 					for(p1.Y = p.Y - neighbors_range; p1.Y <= p.Y + neighbors_range; ++p1.Y)
 					for(p1.Z = p.Z - neighbors_range; p1.Z <= p.Z + neighbors_range; ++p1.Z)
@@ -825,7 +797,7 @@ public:
 							continue;
 						MapNode n = map->getNodeNoEx(p1);
 						content_t c = n.getContent();
-						if(i->required_neighbors.get(c)){
+						if(required_neighbors.get(c)){
 							neighbor = n;
 							goto neighbor_found;
 						}
@@ -904,7 +876,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
 {
-	m_abms.push_back(ABMWithState(abm));
+	m_abms.push_back(ABMWithState(abm, this));
 }
 
 bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
