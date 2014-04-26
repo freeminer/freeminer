@@ -3960,7 +3960,9 @@ void ServerMap::endSave() {
 
 void ServerMap::saveBlock(MapBlock *block)
 {
+  auto lock = block->lock_shared();
   dbase->saveBlock(block);
+  block->unlock_ext();
 }
 
 void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSector *sector, bool save_after_load)

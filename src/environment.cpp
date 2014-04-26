@@ -1426,11 +1426,15 @@ TimeTaker timer_s3("Handle added block");
 			if(block==NULL)
 				continue;
 
+			auto lock = block->lock_unique();
+
 			// Set current time as timestamp
 			block->setTimestampNoChangedFlag(m_game_time);
 
 			/* Handle ActiveBlockModifiers */
 			m_abmhandler->apply(block);
+
+			block->unlock_ext();
 
 			if (porting::getTimeMs() > end_ms) {
 				m_active_block_abm_last = n;

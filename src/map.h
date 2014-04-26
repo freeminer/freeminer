@@ -387,8 +387,10 @@ protected:
 	v2s16 m_sector_cache_p;
 
 	// Queued transforming water nodes
+public:
 	UniqueQueue<v3s16> m_transforming_liquid;
 	JMutex m_transforming_liquid_mutex;
+protected:
 	JMutex m_update_lighting_mutex;
 };
 

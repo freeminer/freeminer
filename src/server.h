@@ -60,6 +60,7 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 class Circuit;
 class ServerThread;
+class LiquidThread;
 class LightThread;
 class SendBlocksThread;
 
@@ -545,6 +546,8 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
+
+	LiquidThread *m_liquid;
 	LightThread *m_light;
 	SendBlocksThread *m_sendblocks;
 

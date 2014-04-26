@@ -14,11 +14,13 @@ typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
 #elif 0 and __cplusplus >= 201305L
 #include <shared_mutex>
-typedef std::shared_timed_mutex try_shared_mutex;
+//typedef std::shared_timed_mutex try_shared_mutex;
+typedef std::shared_mutex try_shared_mutex;
 typedef std::shared_lock try_shared_lock<try_shared_mutex>;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #else
-typedef std::timed_mutex try_shared_mutex;
+//typedef std::timed_mutex try_shared_mutex;
+typedef std::mutex try_shared_mutex;
 typedef std::unique_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #endif
@@ -52,31 +54,100 @@ public:
     }
 };
 
+
+template<class T>
+class lock_rec {
+public:
+	T & lock;
+	std::atomic_int &r;
+	//bool copy;
+	//bool locked;
+	lock_rec(T & lock_, std::atomic_int &r_):
+		lock(lock_),
+		r(r_)//,
+		//copy(0)
+		//,
+		//locked(0) 
+		{
+		if(!r) {
+			lock.lock();
+			//locked = 1;
+		}
+		++r;
+	}
+	//lock_rec(const lock_rec &lr): lock(lr.lock), r(lr.r), copy(1) {++r; }
+	~lock_rec(){
+
+		//if (!copy) {
+		//--r;
+		//if(locked) {
+		if(!--r) {
+			//lock.unlock();
+		}
+		//}
+	}
+};
+
 class locker {
 public:
 	try_shared_mutex mtx;
 	semaphore sem;
-	bool lock_ext;
+	//bool lock_ext;
+	std::atomic_int r;
 
 	locker() {
-		lock_ext = 0;
+		//lock_ext = 0;
+		r = 0;
 	}
 
+	lock_rec<unique_lock> lock_unique_int() {
+		auto lock = unique_lock(mtx, std::defer_lock);
+		return lock_rec<unique_lock> (lock, r);
+	}
+
+	lock_rec<unique_lock> lock_unique() { //del
+		auto lock = unique_lock(mtx, std::defer_lock);
+		return lock_rec<unique_lock> (lock, r);
+	}
+
+	lock_rec<try_shared_lock> lock_shared() {
+		auto lock = try_shared_lock(mtx, std::defer_lock);
+		return lock_rec<try_shared_lock> (lock, r);
+	}
+
+	lock_rec<try_shared_lock> lock_shared_int() { //del
+		auto lock = try_shared_lock(mtx, std::defer_lock);
+		return lock_rec<try_shared_lock> (lock, r);
+	}
+
+	void unlock_ext() {} //del
+
+
+/* del
 	unique_lock lock_unique() {
+		auto lock = unique_lock(mtx);
 		lock_ext = 1;
-		return unique_lock(mtx);
+		return lock;
 	}
 
 	try_shared_lock lock_shared() {
+		auto lock = try_shared_lock(mtx);
 		lock_ext = 1;
-		return try_shared_lock(mtx);
+		return lock;
 	}
 
-	unique_lock lock_unique_int() {
+	//unique_lock 
+	lock_rec<unique_lock> lock_unique_int() {
+		auto lock = unique_lock(mtx, std::defer_lock);
+		return lock_rec<unique_lock> (lock, r);
+
+//		return lock_rec<unique_lock> (unique_lock(mtx, std::defer_lock), r);
+/ *
 		auto lock = unique_lock(mtx, std::defer_lock);
 		if (!lock_ext)
 			lock.lock();
 		return lock;
+* /
 	}
 
 	try_shared_lock lock_shared_int() {
@@ -89,6 +160,7 @@ public:
 	void unlock_ext() {
 		lock_ext = 0;
 	}
+*/
 
 };
 

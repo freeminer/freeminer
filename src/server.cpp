@@ -95,7 +95,7 @@ public:
 		log_register_thread("LightThread");
 
 		DSTACK(__FUNCTION_NAME);
-		//BEGIN_DEBUG_EXCEPTION_HANDLER
+		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
 infostream<<"L start"<<std::endl;
@@ -107,12 +107,12 @@ infostream<<"L start"<<std::endl;
 infostream<<"L wait"<<std::endl;
 				continue;
 			}
-
+shared_map<v3s16, MapBlock*> m_modified_blocks;
 infostream<<"L calc="<<m_server->m_lighting_modified_blocks.size()<<std::endl;
-			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_server->m_modified_blocks, 500)) {
+			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_modified_blocks, 500)) {
 			}
 		}
-	
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 	return nullptr;
 	}
 // */
@@ -132,7 +132,7 @@ public:
 		log_register_thread("SendBlocksThread");
 
 		DSTACK(__FUNCTION_NAME);
-		//BEGIN_DEBUG_EXCEPTION_HANDLER
+		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
 infostream<<"S start"<<std::endl;
@@ -147,10 +147,55 @@ infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() 
 			
 		}
 infostream<<"S end"<<std::endl;
-
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 	return nullptr;
 	}
 };
+
+class LiquidThread : public JThread
+{
+	Server *m_server;
+public:
+
+	LiquidThread(Server *server):
+		JThread(),
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("LiquidThread");
+
+		DSTACK(__FUNCTION_NAME);
+		//BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+infostream<<"Lq start"<<std::endl;
+
+		porting::setThreadName("LiquidThread");
+		while(!StopRequested()) {
+			if (!m_server->getMap().m_transforming_liquid.size()) {
+infostream<<"Lq wait"<<std::endl;
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				continue;
+			}
+
+shared_map<v3s16, MapBlock*> m_modified_blocks;
+		auto flowed = m_server->getMap().transformLiquids(m_server, m_modified_blocks, m_server->m_lighting_modified_blocks, 500);
+infostream<<"Lq calc="<<m_server->m_lighting_modified_blocks.size()<<" flowed="<<flowed<<std::endl;
+		if ( flowed> 0) {
+			//m_liquid_transform_timer = m_liquid_transform_interval; // *0.8;
+			m_server->m_lighting_modified_blocks.sem.notify();
+		} else {
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+
+		}
+	
+	return nullptr;
+	}
+// */
+};
+
 
 
 
@@ -325,8 +370,10 @@ Server::Server(
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
+	m_liquid = new LiquidThread(this);
 	m_light = new LightThread(this);
 	m_sendblocks = new SendBlocksThread(this);
+	
 
 	// Create world if it doesn't exist
 	if(!initializeWorld(m_path_world, m_gamespec.id))
@@ -527,9 +574,9 @@ Server::~Server()
 	delete m_thread;
 
 	//m_light->stopThreads();
-	delete m_light;
 	delete m_sendblocks;
-
+	delete m_light;
+	delete m_liquid;
 
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
@@ -571,8 +618,9 @@ void Server::start(Address bind_addr)
 
 	// Stop thread if already running
 	m_thread->Stop();
-	m_light->Stop();
 	m_sendblocks->Stop();
+	m_light->Stop();
+	m_liquid->Stop();
 	
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
@@ -580,6 +628,7 @@ void Server::start(Address bind_addr)
 
 	// Start thread
 	m_thread->Start();
+	m_liquid->Start();
 	m_light->Start();
 	m_sendblocks->Start();
 
@@ -604,8 +653,9 @@ void Server::stop()
 	//m_emergethread.setRun(false);
 	m_thread->Wait();
 	//m_emergethread.stop();
-	m_light->Stop();
 	m_sendblocks->Stop();
+	m_light->Stop();
+	m_liquid->Stop();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -793,6 +843,7 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	/* Transform liquids */
+/* threaded now
 	m_liquid_transform_timer += dtime;
 	if(m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
@@ -807,10 +858,11 @@ void Server::AsyncRunStep(bool initial_step)
 
 		// not all liquid was processed per step, forcing on next step
 		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0) {
-			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
+			m_liquid_transform_timer = m_liquid_transform_interval; // *0.8;
 			m_lighting_modified_blocks.sem.notify();
 		}
 	}
+*/
 
 		/*
 			Set the modified blocks unsent for all the clients
