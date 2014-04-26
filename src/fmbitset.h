@@ -30,6 +30,7 @@ class FMBitset {
 	public:
 		FMBitset(size_t capacity);
 		size_t count();
+		size_t size(); // std compat
 		void set(size_t index, bool value);
 		bool get(size_t index);
 

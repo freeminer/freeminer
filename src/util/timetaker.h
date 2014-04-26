@@ -34,7 +34,7 @@ extern bool time_taker_enabled;
 class TimeTaker
 {
 public:
-	TimeTaker(const char *name, u32 *result=NULL,
+	TimeTaker(const std::string &name, u32 *result=NULL,
 		TimePrecision=PRECISION_MILLI);
 
 	~TimeTaker()
@@ -47,7 +47,7 @@ public:
 	u32 getTimerTime();
 
 private:
-	const char *m_name;
+	std::string m_name;
 	u32 m_time1;
 	bool m_running;
 	TimePrecision m_precision;
