@@ -1453,8 +1453,10 @@ int main(int argc, char *argv[])
 
 	device = createDeviceEx(params);
 
-	if (device == 0)
+	if (device == 0) {
 		return 1; // could not create selected driver.
+	}
+	porting::initIrrlicht(device);
 
 	/*
 		Continue initialization
