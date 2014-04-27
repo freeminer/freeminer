@@ -386,12 +386,6 @@ Server::Server(
 		m_env->loadMeta(m_path_world);
 	}
 
-#if WTF
-	// Load players
-	infostream<<"Server: Loading players"<<std::endl;
-	m_env->deSerializePlayers(m_path_world);
-#endif
-
 	/*
 		Add some test ActiveBlockModifiers to environment
 	*/

@@ -57,13 +57,6 @@ Player::Player(IGameDef *gamedef):
 	m_speed(0,0,0),
 	m_position(0,0,0),
 	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
-#if WTF
-	m_last_pitch(0),
-	m_last_yaw(0),
-	m_last_pos(0,0,0),
-	m_last_hp(PLAYER_MAX_HP),
-	m_last_inventory(gamedef->idef())
-#endif
 {
 	updateName("<not set>");
 	inventory.clear();
@@ -72,9 +65,6 @@ Player::Player(IGameDef *gamedef):
 	craft->setWidth(3);
 	inventory.addList("craftpreview", 1);
 	inventory.addList("craftresult", 1);
-#if WTF
-	m_last_inventory = inventory;
-#endif
 
 	// Can be redefined via Lua
 	inventory_formspec = "size[8,7.5]"
@@ -261,20 +251,11 @@ void Player::deSerialize(std::istream &is, std::string playername)
 			inventory.getList("craftresult")->changeItem(0, ItemStack());
 		}
 	}
-
-	// Set m_last_*
-#if WTF
-	checkModified();
-#endif
 }
 
 /*
 	RemotePlayer
 */
-
-
-
-
 
 void RemotePlayer::setPosition(const v3f &position)
 {

@@ -484,8 +484,6 @@ public:
 
 	void saveBlock(MapBlock *block);
 	MapBlock* loadBlock(v3s16 p);
-	// Database version
-	void loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool save_after_load=false);
 
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
