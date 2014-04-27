@@ -464,21 +464,13 @@ public:
 		names when saving
 	*/
 	void createDirs(std::string path);
-	// returns something like "map/sectors/xxxxxxxx"
-	std::string getSectorDir(v2s16 pos, int layout = 2);
 	// dirname: final directory name
-	v2s16 getSectorPos(std::string dirname);
-	v3s16 getBlockPos(std::string sectordir, std::string blockfile);
-	static std::string getBlockFilename(v3s16 p);
 
 	/*
 		Database functions
 	*/
 	// Verify we can read/write to the database
 	void verifyDatabase();
-
-	// Returns true if the database file does not exist
-	bool loadFromFolders();
 
 	// Call these before and after saving of blocks
 	void beginSave();
@@ -491,28 +483,8 @@ public:
 	void saveMapMeta();
 	void loadMapMeta();
 
-	/*void saveChunkMeta();
-	void loadChunkMeta();*/
-
-	// The sector mutex should be locked when calling most of these
-
-	// This only saves sector-specific data such as the heightmap
-	// (no MapBlocks)
-	// DEPRECATED? Sectors have no metadata anymore.
-	void saveSectorMeta(ServerMapSector *sector);
-	MapSector* loadSectorMeta(std::string dirname, bool save_after_load);
-	bool loadSectorMeta(v2s16 p2d);
-
-	// Full load of a sector including all blocks.
-	// returns true on success, false on failure.
-	bool loadSectorFull(v2s16 p2d);
-	// If sector is not found in memory, try to load it from disk.
-	// Returns true if sector now resides in memory
-	//bool deFlushSector(v2s16 p2d);
 
 	void saveBlock(MapBlock *block);
-	// This will generate a sector with getSector if not found.
-	void loadBlock(std::string sectordir, std::string blockfile, MapSector *sector, bool save_after_load=false);
 	MapBlock* loadBlock(v3s16 p);
 	// Database version
 	void loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool save_after_load=false);

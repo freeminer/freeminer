@@ -1984,7 +1984,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 
 	u8 peer_ser_ver = getClient(peer_id,InitDone)->serialization_version;
-	u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
+	//u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
 
 	if(peer_ser_ver == SER_FMT_VER_INVALID)
 	{
