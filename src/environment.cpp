@@ -423,8 +423,8 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 
 void ServerEnvironment::serializePlayers(const std::string &savedir)
 {
-	std::string players_path = savedir + "/players";
-	fs::CreateDir(players_path);
+	//std::string players_path = savedir + "/players";
+	//fs::CreateDir(players_path);
 
 	std::list<Player*>::iterator i = m_players.begin();
 	while (i != m_players.end())
@@ -434,35 +434,11 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			Json::Value player_json;
 			player_json << *player;
 			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
-		} catch (...) {
+		} catch (...) { }
 		// TODO: remove old file storage:
-
-		if (player->path == "") {
-			std::string playername = player->getName();
-			if(playername == "")
-			{
-				//infostream<<"Not saving unnamed player."<<std::endl;
-				goto save_end;
-			}
-			if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
-				playername = "player";
-			player->path = players_path + "/" + playername;
-		}
-
-		//infostream<<"Saving player "<<player->getName()<<" to "<<player->path<<std::endl;
-		{
-			std::ostringstream ss(std::ios_base::binary);
-			player->serialize(ss);
-			if(!fs::safeWriteToFile(player->path, ss.str())) {
-				infostream<<"Failed to write "<<player->path<<std::endl;
-				goto save_end;
-			}
-		}
-		}
 
 		player->need_save = 0;
 
-		save_end:
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
 			i = m_players.erase(i);
@@ -473,88 +449,6 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
 }
-
-#if WTF
-void ServerEnvironment::deSerializePlayers(const std::string &savedir)
-{
-	std::string players_path = savedir + "/players";
-
-	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
-	for(u32 i=0; i<player_files.size(); i++)
-	{
-		if(player_files[i].dir)
-			continue;
-
-		// Full path to this file
-		std::string path = players_path + "/" + player_files[i].name;
-
-		//infostream<<"Checking player file "<<path<<std::endl;
-
-		// Load player to see what is its name
-		RemotePlayer testplayer(m_gamedef);
-		{
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false || is.eof())
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			try {
-			testplayer.deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
-				errorstream<<e.what()<<std::endl;
-				continue;
-			}
-		}
-
-		if(!string_allowed(testplayer.getName(), PLAYERNAME_ALLOWED_CHARS))
-		{
-			infostream<<"Not loading player with invalid name: "
-					<<testplayer.getName()<<std::endl;
-		}
-
-		/*infostream<<"Loaded test player with name "<<testplayer.getName()
-				<<std::endl;*/
-
-		// Search for the player
-		std::string playername = testplayer.getName();
-		Player *player = getPlayer(playername.c_str());
-		bool newplayer = false;
-		if(player == NULL)
-		{
-			//infostream<<"Is a new player"<<std::endl;
-			player = new RemotePlayer(m_gamedef);
-			newplayer = true;
-		}
-
-		// Load player
-		{
-			verbosestream<<"Reading player "<<testplayer.getName()<<" from "
-					<<path<<std::endl;
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false || is.eof())
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			try {
-			player->deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
-				errorstream<<e.what()<<std::endl;
-				continue;
-			}
-			player->path = path;
-		}
-
-		if(newplayer)
-		{
-			addPlayer(player);
-		}
-	}
-}
-#endif
 
 Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 {
