@@ -110,6 +110,7 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	c_water_source    = ndef->getId("mapgen_water_source");
 	c_lava_source     = ndef->getId("mapgen_lava_source");
 	c_gravel          = ndef->getId("mapgen_gravel");
+	c_cobble          = ndef->getId("mapgen_cobble");
 	c_ice             = ndef->getId("default:ice");
 	c_mossycobble     = ndef->getId("mapgen_mossycobble");
 	c_sandbrick       = ndef->getId("mapgen_sandstonebrick");
