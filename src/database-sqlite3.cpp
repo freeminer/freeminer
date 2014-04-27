@@ -163,17 +163,6 @@ void Database_SQLite3::saveBlock(MapBlock *block)
 	v3s16 p3d = block->getPos();
 	
 	
-#if 0
-	v2s16 p2d(p3d.X, p3d.Z);
-	std::string sectordir = getSectorDir(p2d);
-
-	createDirs(sectordir);
-
-	std::string fullpath = sectordir+DIR_DELIM+getBlockFilename(p3d);
-	std::ofstream o(fullpath.c_str(), std::ios_base::binary);
-	if(o.good() == false)
-		throw FileNotGoodException("Cannot open block data");
-#endif
 	/*
 		[0] u8 serialization version
 		[1] data
