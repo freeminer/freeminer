@@ -1122,8 +1122,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	// Calculate text height using the font
 	u32 text_height = font->getDimension(L"Random test string").Height;
 
-	v2u32 screensize = driver->getScreenSize();
-	
 	/*
 		Draw "Loading" screen
 	*/
@@ -1574,12 +1572,12 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	// First line of debug text
 	gui::IGUIStaticText *guitext = guienv->addStaticText(
 			L"Freeminer",
-			core::rect<s32>(5, 5, 795, 5+text_height),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// Second line of debug text
 	gui::IGUIStaticText *guitext2 = guienv->addStaticText(
 			L"",
-			core::rect<s32>(5, 5+(text_height+5)*1, 795, (5+text_height)*2),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// At the middle of the screen
 	// Object infos are shown in this
@@ -1739,6 +1737,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	{
 		if(device->run() == false || kill == true)
 			break;
+
+		v2u32 screensize = driver->getScreenSize();
 
 		// Time of frame without fps limit
 		float busytime;
@@ -3390,7 +3390,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		{
 			guitext->setVisible(false);
 		}
-		
+
+		if (guitext->isVisible())
+		{
+			core::rect<s32> rect(
+				5,
+				5,
+				screensize.X,
+				5 + text_height
+			);
+			guitext->setRelativePosition(rect);
+		}
+
 		if(show_debug)
 		{
 			std::ostringstream os(std::ios_base::binary);
@@ -3406,6 +3417,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				<<")";
 			guitext2->setText(narrow_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
+
+			core::rect<s32> rect(
+				5,
+				5 + text_height,
+				screensize.X,
+				5 + (text_height * 2)
+			);
+			guitext2->setRelativePosition(rect);
 		}
 		else
 		{
