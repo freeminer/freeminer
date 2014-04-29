@@ -4,6 +4,15 @@ To build Freeminer using Visual Studio for Windows you'll need:
 - [Visual Studio 2013](http://www.visualstudio.com/downloads/download-visual-studio-vs) (if you decide to use the Express edition make sure to get Microsoft Visual Studio Express 2013 for Windows **Desktop**)
 - [DirectX SDK](http://www.microsoft.com/en-us/download/details.aspx?id=6812)
 
+You'll need to allow NuGet to restore packages, otherwise it'll output the following error:
+
+> Package restore is disabled by default. To give consent, open the Visual Studio
+Options dialog, click on Package Manager node and check 'Allow NuGet to download
+missing packages during build.' You can also give consent by setting the
+environment variable 'EnableNuGetPackageRestore' to 'true'.
+
+Tools → Options → Package Manager → [x] Allow NuGet to download missing packages
+
 To start the build, launch "Developer Command Prompt for VS2013", navigate to `freeminer\build\windows` and run `python build.py` (assuming Python is available in PATH). This script will download all dependencies, compile them, and then build Freeminer.
 
 After the build is finished you'll find a ZIP file suitable for redistribution in the `project` directory.
