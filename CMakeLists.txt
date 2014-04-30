@@ -28,11 +28,11 @@ MESSAGE(STATUS "*** Will build version ${VERSION_STRING} ***")
 
 # Configuration options
 
-if(WIN32)
+#if(WIN32)
 	set(RUN_IN_PLACE 1 CACHE BOOL "Run directly in source directory structure")
-else()
-	set(RUN_IN_PLACE 0 CACHE BOOL "Run directly in source directory structure")
-endif()
+#else()
+#	set(RUN_IN_PLACE 0 CACHE BOOL "Run directly in source directory structure")
+#endif()
 
 # RUN_IN_PLACE is exported as a #define value, ensure it's 1/0 instead of ON/OFF
 if(RUN_IN_PLACE)
