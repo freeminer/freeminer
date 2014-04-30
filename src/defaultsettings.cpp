@@ -163,6 +163,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
 
+	settings->setDefault("enable_remote_media_server", "true");
+
 	settings->setDefault("serverlist_url", "servers.minetest.net");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 	settings->setDefault("server_announce", "false");
@@ -213,6 +215,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_rollback_recording", "false");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("max_spawn_height", "50");
+#ifdef NDEBUG
+	settings->setDefault("deprecated_lua_api_handling", "legacy");
+#else
+	settings->setDefault("deprecated_lua_api_handling", "log");
+#endif
 
 	settings->setDefault("profiler_print_interval", "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");

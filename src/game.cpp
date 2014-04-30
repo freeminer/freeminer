@@ -1465,10 +1465,24 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 			else
 			{
-				wchar_t* text = wgettext("Media...");
+
+				std::stringstream message;
+				message.precision(3);
+				message << gettext("Media...");
+
+				if ( ( USE_CURL == 0) ||
+						(!g_settings->getBool("enable_remote_media_server"))) {
+					float cur = client.getCurRate();
+					std::string cur_unit = gettext(" KB/s");
+
+					if (cur > 900) {
+						cur /= 1024.0;
+						cur_unit = gettext(" MB/s");
+					}
+					message << " ( " << cur << cur_unit << " )";
+				}
 				progress = 50+client.mediaReceiveProgress()*50+0.5;
-				draw_load_screen(text, device, font, dtime, progress);
-				delete[] text;
+				draw_load_screen(narrow_to_wide(message.str().c_str()), device, font, dtime, progress);
 			}
 			
 			// On some computers framerate doesn't seem to be
