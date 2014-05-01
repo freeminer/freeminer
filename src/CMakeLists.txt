@@ -319,6 +319,13 @@ endif(ENABLE_LEVELDB)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
 
+option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " OFF)
+if(ENABLE_IPV4_DEFAULT)
+	set(USE_IPV4_DEFAULT 1)
+else()
+	set(USE_IPV4_DEFAULT 0)
+endif()
+
 set(USE_REDIS 0)
 
 OPTION(ENABLE_REDIS "Enable redis backend" 1)
