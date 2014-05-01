@@ -177,8 +177,9 @@ public locker
 	typedef Allocator                                allocator_type;
 	typedef typename allocator_type::size_type       size_type;
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
+	typedef typename full_type::const_iterator const_iterator;
+	typedef typename full_type::iterator iterator;
 
-//	mapped_type& operator[](const key_type& k) { }
 public:
 
 /*
@@ -208,6 +209,7 @@ public:
 		auto lock = lock_shared_int();
 		return full_type::empty();
 	}
+
 	size_type size()     noexcept {
 		auto lock = lock_shared_int();
 		return full_type::size();
@@ -217,27 +219,32 @@ public:
 		auto lock = lock_shared_int();
 		return full_type::count(k);
 	}
-/*
-	mapped_type& operator[](key_type&& k) {
-		//unique_lock lock(mtx);
+
+	mapped_type& operator[](const key_type& k){
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
-*/
-	typename full_type::iterator  erase(typename full_type::const_iterator position) {
+
+	mapped_type& operator[](key_type&& k) {
+		auto lock = lock_unique();
+		return full_type::operator[](k);
+	}
+
+	typename full_type::iterator  erase(const_iterator position) {
 		auto lock = lock_unique_int();
 		return full_type::erase(position);
 	}
-//    size_type erase(const key_type& k);
+
+	size_type erase(const key_type& k){
+		auto lock = lock_unique_int();
+		return full_type::erase(k);
+	}
 //    iterator  erase(const_iterator first, const_iterator last);
-    void clear() noexcept {
+	void clear() noexcept {
 		auto lock = lock_unique_int();
 		full_type::clear();
 	}
 
-
-
 };
-
 
 #endif

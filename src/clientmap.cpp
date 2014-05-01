@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
 #include "log.h"
-#include "mapsector.h"
+//#include "mapsector.h"
 #include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"
@@ -87,56 +87,6 @@ ClientMap::~ClientMap()
 		mesh = NULL;
 	}*/
 }
-
-MapSector * ClientMap::emergeSector(v2s16 p2d)
-{
-	DSTACK(__FUNCTION_NAME);
-	// Check that it doesn't exist already
-	try{
-		return getSectorNoGenerate(p2d);
-	}
-	catch(InvalidPositionException &e)
-	{
-	}
-	
-	// Create a sector
-	ClientMapSector *sector = new ClientMapSector(this, p2d, m_gamedef);
-	
-	{
-		//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-		m_sectors[p2d] = sector;
-	}
-	
-	return sector;
-}
-
-#if 0
-void ClientMap::deSerializeSector(v2s16 p2d, std::istream &is)
-{
-	DSTACK(__FUNCTION_NAME);
-	ClientMapSector *sector = NULL;
-
-	//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-	
-	core::map<v2s16, MapSector*>::Node *n = m_sectors.find(p2d);
-
-	if(n != NULL)
-	{
-		sector = (ClientMapSector*)n->getValue();
-		assert(sector->getId() == MAPSECTOR_CLIENT);
-	}
-	else
-	{
-		sector = new ClientMapSector(this, p2d);
-		{
-			//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-			m_sectors.insert(p2d, sector);
-		}
-	}
-
-	sector->deSerialize(is);
-}
-#endif
 
 void ClientMap::OnRegisterSceneNode()
 {
@@ -239,35 +189,34 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
+/*
 	for(std::map<v2s16, MapSector*>::iterator
 			si = m_sectors.begin();
 			si != m_sectors.end(); ++si)
 	{
 		MapSector *sector = si->second;
-		v2s16 sp = sector->getPos();
-		
-		if(m_control.range_all == false)
-		{
-			if(sp.X < p_blocks_min.X
-			|| sp.X > p_blocks_max.X
-			|| sp.Y < p_blocks_min.Z
-			|| sp.Y > p_blocks_max.Z)
-				continue;
-		}
 
 		std::list< MapBlock * > sectorblocks;
-		sector->getBlocks(sectorblocks);
+		this->getBlocks(sectorblocks);
+*/
 		
 		/*
 			Loop through blocks in sector
 		*/
 
-		u32 sector_blocks_drawn = 0;
+		for(auto & ir : m_blocks) {
+			MapBlock *block = ir.second;
+
+		auto bp = block->getPos();
 		
-		std::list< MapBlock * >::iterator i;
-		for(i=sectorblocks.begin(); i!=sectorblocks.end(); i++)
+		if(m_control.range_all == false)
 		{
-			MapBlock *block = *i;
+			if(bp.X < p_blocks_min.X
+			|| bp.X > p_blocks_max.X
+			|| bp.Y < p_blocks_min.Z
+			|| bp.Y > p_blocks_max.Z)
+				continue;
+		}
 
 			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 			/*
@@ -379,16 +328,13 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 			block->refGrab();
 			m_drawlist[block->getPos()] = block;
 
-			sector_blocks_drawn++;
 			blocks_drawn++;
 			if(d/BS > farthest_drawn)
 				farthest_drawn = d/BS;
 
 		} // foreach sectorblocks
 
-		if(sector_blocks_drawn != 0)
-			m_last_drawn_sectors.insert(sp);
-	}
+	//}
 
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
 	m_control.blocks_drawn = blocks_drawn;
@@ -447,14 +393,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		prefix = "CM: solid: ";
 	else
 		prefix = "CM: transparent: ";
-
-	/*
-		This is called two times per frame, reset on the non-transparent one
-	*/
-	if(pass == scene::ESNRP_SOLID)
-	{
-		m_last_drawn_sectors.clear();
-	}
 
 	bool use_trilinear_filter = g_settings->getBool("trilinear_filter");
 	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");

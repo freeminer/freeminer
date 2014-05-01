@@ -97,11 +97,6 @@ public:
 		m_camera_offset = offset;
 	}
 
-	/*
-		Forcefully get a sector from somewhere
-	*/
-	MapSector * emergeSector(v2s16 p);
-
 	//void deSerializeSector(v2s16 p2d, std::istream &is);
 
 	/*
@@ -139,12 +134,6 @@ public:
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
 	
-	// Check if sector was drawn on last render()
-	bool sectorWasDrawn(v2s16 p)
-	{
-		return (m_last_drawn_sectors.find(p) != m_last_drawn_sectors.end());
-	}
-	
 	MapDrawControl & getControl() { return m_control; }
 
 private:
@@ -161,8 +150,6 @@ private:
 	JMutex m_camera_mutex;
 
 	std::map<v3s16, MapBlock*> m_drawlist;
-	
-	std::set<v2s16> m_last_drawn_sectors;
 };
 
 #endif

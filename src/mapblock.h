@@ -661,16 +661,6 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 */
 }
 
-inline v2s16 getNodeSectorPos(v2s16 p)
-{
-	return getContainerPos(p, MAP_BLOCKSIZE);
-}
-
-inline s16 getNodeBlockY(s16 y)
-{
-	return getContainerPos(y, MAP_BLOCKSIZE);
-}
-
 /*
 	Get a quick string to describe what a block actually contains
 */

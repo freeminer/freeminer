@@ -29,7 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <hiredis.h>
 
 #include "map.h"
-#include "mapsector.h"
+//#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"

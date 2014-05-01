@@ -446,12 +446,6 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	JMutexAutoLock envlock(m_server->m_env_mutex);
 
-	// Load sector if it isn't loaded
-/*
-	if (map->getSectorNoGenerateNoEx(p2d) == NULL)
-		map->loadSectorMeta(p2d);
-*/
-
 	// Attempt to load block
 	MapBlock *block = map->getBlockNoCreateNoEx(p);
 	if (!block || block->isDummy() || !block->isGenerated()) {

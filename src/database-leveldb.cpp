@@ -32,7 +32,7 @@ LevelDB databases
 #include "leveldb/db.h"
 
 #include "map.h"
-#include "mapsector.h"
+//#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"
@@ -121,7 +121,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 		/*
 			Make sure sector is loaded
 		*/
-		MapSector *sector = srvmap->createSector(p2d);
+		//MapSector *sector = srvmap->createSector(p2d);
 
 		try {
 			std::istringstream is(datastr, std::ios_base::binary);
@@ -134,10 +134,10 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 			MapBlock *block = NULL;
 			bool created_new = false;
-			block = sector->getBlockNoCreateNoEx(blockpos.Y);
+			block = srvmap->getBlockNoCreateNoEx(blockpos);
 			if (block == NULL)
 			{
-				block = sector->createBlankBlockNoInsert(blockpos.Y);
+				block = srvmap->createBlankBlockNoInsert(blockpos);
 				created_new = true;
 			}
 
@@ -146,7 +146,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 			// If it's a new block, insert it to the map
 			if (created_new)
-				sector->insertBlock(block);
+				srvmap->insertBlock(block);
 
 			/*
 				Save blocks loaded in old format in new format

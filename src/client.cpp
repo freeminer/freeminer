@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "filesys.h"
 #include "porting.h"
-#include "mapsector.h"
+//#include "mapsector.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
 #include "settings.h"
@@ -1143,15 +1143,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		std::string datastring((char*)&data[8], datasize-8);
 		std::istringstream istr(datastring, std::ios_base::binary);
 		
-		MapSector *sector;
-		MapBlock *block;
-		
-		v2s16 p2d(p.X, p.Z);
-		sector = m_env.getMap().emergeSector(p2d);
-		
-		assert(sector->getPos() == p2d);
-		
-		block = sector->getBlockNoCreateNoEx(p.Y);
+		MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(p);
 		if(block)
 		{
 			/*
@@ -1168,7 +1160,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			block = new MapBlock(&m_env.getMap(), p, this);
 			block->deSerialize(istr, ser_version, false);
 			block->deSerializeNetworkSpecific(istr);
-			sector->insertBlock(block);
+			m_env.getMap().insertBlock(block);
 		}
 
 		/*
