@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
-#include "lua_api/l_async_events.h"
+#include "cpp_api/s_async.h"
 #include "debug.h"
 #include "log.h"
 #include "tool.h"
@@ -81,6 +81,11 @@ int ModApiUtil::l_log(lua_State *L)
 			level = LMT_ACTION;
 		else if(levelname == "verbose")
 			level = LMT_VERBOSE;
+		else if (levelname == "deprecated") {
+			log_deprecated(L,text);
+			return 0;
+		}
+
 	}
 	log_printline(level, text);
 	return 0;

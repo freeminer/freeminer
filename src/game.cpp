@@ -1122,9 +1122,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	// Calculate text height using the font
 	u32 text_height = font->getDimension(L"Random test string").Height;
 
-	v2u32 last_screensize(0,0);
-	v2u32 screensize = driver->getScreenSize();
-	
 	/*
 		Draw "Loading" screen
 	*/
@@ -1468,10 +1465,24 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 			else
 			{
-				wchar_t* text = wgettext("Media...");
+
+				std::stringstream message;
+				message.precision(3);
+				message << gettext("Media...");
+
+				if ( ( USE_CURL == 0) ||
+						(!g_settings->getBool("enable_remote_media_server"))) {
+					float cur = client.getCurRate();
+					std::string cur_unit = gettext(" KB/s");
+
+					if (cur > 900) {
+						cur /= 1024.0;
+						cur_unit = gettext(" MB/s");
+					}
+					message << " ( " << cur << cur_unit << " )";
+				}
 				progress = 50+client.mediaReceiveProgress()*50+0.5;
-				draw_load_screen(text, device, font, dtime, progress);
-				delete[] text;
+				draw_load_screen(narrow_to_wide(message.str().c_str()), device, font, dtime, progress);
 			}
 			
 			// On some computers framerate doesn't seem to be
@@ -1575,12 +1586,12 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	// First line of debug text
 	gui::IGUIStaticText *guitext = guienv->addStaticText(
 			L"Freeminer",
-			core::rect<s32>(5, 5, 795, 5+text_height),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// Second line of debug text
 	gui::IGUIStaticText *guitext2 = guienv->addStaticText(
 			L"",
-			core::rect<s32>(5, 5+(text_height+5)*1, 795, (5+text_height)*2),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// At the middle of the screen
 	// Object infos are shown in this
@@ -1740,6 +1751,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	{
 		if(device->run() == false || kill == true)
 			break;
+
+		v2u32 screensize = driver->getScreenSize();
 
 		// Time of frame without fps limit
 		float busytime;
@@ -1907,15 +1920,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Random calculations
 		*/
-		last_screensize = screensize;
-		screensize = driver->getScreenSize();
-		v2s32 displaycenter(screensize.X/2,screensize.Y/2);
-		//bool screensize_changed = screensize != last_screensize;
-
-			
-		// Update HUD values
-		hud.screensize    = screensize;
-		hud.displaycenter = displaycenter;
 		hud.resizeHotbar();
 		
 		// Hilight boxes collected during the loop and displayed
@@ -2408,10 +2412,11 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				first_loop_after_window_activation = false;
 			}
 			else{
-				s32 dx = input->getMousePos().X - displaycenter.X;
-				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
+				s32 dx = input->getMousePos().X - (driver->getScreenSize().Width/2);
+				s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height/2);
+				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT) {
 					dy = -dy;
+				}
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
 				/*const float keyspeed = 500;
@@ -2433,7 +2438,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				
 				turn_amount = v2f(dx, dy).getLength() * d;
 			}
-			input->setMousePos(displaycenter.X, displaycenter.Y);
+			input->setMousePos((driver->getScreenSize().Width/2),
+					(driver->getScreenSize().Height/2));
 		}
 		else{
 			// Mac OSX gets upset if this is set every frame
@@ -2805,7 +2811,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		player->camera_mode = current_camera_mode;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
-		camera.update(player, dtime, busytime, screensize, tool_reload_ratio,
+		camera.update(player, dtime, busytime, tool_reload_ratio,
 				current_camera_mode, client.getEnv());
 		camera.step(dtime);
 
@@ -3398,7 +3404,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		{
 			guitext->setVisible(false);
 		}
-		
+
+		if (guitext->isVisible())
+		{
+			core::rect<s32> rect(
+				5,
+				5,
+				screensize.X,
+				5 + text_height
+			);
+			guitext->setRelativePosition(rect);
+		}
+
 		if(show_debug)
 		{
 			std::ostringstream os(std::ios_base::binary);
@@ -3414,6 +3431,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				<<")";
 			guitext2->setText(narrow_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
+
+			core::rect<s32> rect(
+				5,
+				5 + text_height,
+				screensize.X,
+				5 + (text_height * 2)
+			);
+			guitext2->setRelativePosition(rect);
 		}
 		else
 		{
@@ -3719,8 +3744,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if (show_hud)
 		{
-			hud.drawHotbar(v2s32(displaycenter.X, screensize.Y),
-					client.getHP(), client.getPlayerItem(), client.getBreath());
+			hud.drawHotbar(client.getHP(), client.getPlayerItem(),
+					client.getBreath());
 		}
 
 		/*

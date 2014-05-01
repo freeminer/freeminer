@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PROFILER_HEADER
 #define PROFILER_HEADER
 
+#include <algorithm>
 #include "irrlichttypes.h"
 #include <string>
 #include "jthread/jmutex.h"

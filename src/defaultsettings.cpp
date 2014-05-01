@@ -128,11 +128,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
+	settings->setDefault("gui_scaling", "1.0");
 	settings->setDefault("mouse_sensitivity", "0.2");
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("enable_vbo", "false");
+	settings->setDefault("hud_hotbar_max_width","1.0");
 
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");
@@ -160,6 +162,8 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
+
+	settings->setDefault("enable_remote_media_server", "true");
 
 	settings->setDefault("serverlist_url", "servers.minetest.net");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
@@ -211,6 +215,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_rollback_recording", "false");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("max_spawn_height", "50");
+#ifdef NDEBUG
+	settings->setDefault("deprecated_lua_api_handling", "legacy");
+#else
+	settings->setDefault("deprecated_lua_api_handling", "log");
+#endif
 
 	settings->setDefault("profiler_print_interval", "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");
@@ -340,7 +349,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 }

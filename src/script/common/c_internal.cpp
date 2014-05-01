@@ -22,6 +22,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "common/c_internal.h"
 #include "debug.h"
+#include "log.h"
+#include "main.h"
+#include "settings.h"
 
 std::string script_get_backtrace(lua_State *L)
 {
@@ -112,4 +115,40 @@ void script_run_callbacks(lua_State *L, int nargs, RunCallbacksMode mode)
 	lua_remove(L, -2); // Remove error handler
 }
 
+void log_deprecated(lua_State *L, std::string message)
+{
+	static bool configured = false;
+	static bool dolog      = false;
+	static bool doerror    = false;
+
+	// performance optimization to not have to read and compare setting for every logline
+	if (!configured) {
+		std::string value = g_settings->get("deprecated_lua_api_handling");
+		if (value == "log") {
+			dolog = true;
+		}
+		if (value == "error") {
+			dolog = true;
+			doerror = true;
+		}
+	}
+
+	if (doerror) {
+		if (L != NULL) {
+			script_error(L);
+		} else {
+			/* As of april 2014 assert is not optimized to nop in release builds
+			 * therefore this is correct. */
+			assert("Can't do a scripterror for this deprecated message, so exit completely!");
+		}
+	}
+
+	if (dolog) {
+		/* abusing actionstream because of lack of file-only-logged loglevel */
+		actionstream << message << std::endl;
+		if (L != NULL) {
+			actionstream << script_get_backtrace(L) << std::endl;
+		}
+	}
+}
 

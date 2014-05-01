@@ -3296,7 +3296,6 @@ void ServerMap::saveBlock(MapBlock *block)
 {
   auto lock = block->lock_shared();
   dbase->saveBlock(block);
-  block->unlock_ext();
 }
 
 MapBlock* ServerMap::loadBlock(v3s16 blockpos)
