@@ -274,21 +274,6 @@ public:
 	*/
 	void unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks=NULL);
 
-	// Deletes sectors and their blocks from memory
-	// Takes cache into account
-	// If deleted sector is in sector cache, clears cache
-	void deleteSectors(std::list<v2s16> &list);
-
-#if 0
-	/*
-		Unload unused data
-		= flush changed to disk and delete from memory, if usage timer of
-		  block is more than timeout
-	*/
-	void unloadUnusedData(float timeout,
-			core::list<v3s16> *deleted_blocks=NULL);
-#endif
-
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 

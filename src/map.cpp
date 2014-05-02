@@ -1553,8 +1553,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	// Finally delete the empty sectors
 
-//	deleteSectors(sector_deletion_queue);
-
 	if(deleted_blocks_count != 0)
 	{
 		if (m_blocks_update_last)
