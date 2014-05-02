@@ -189,21 +189,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
-/*
-	for(std::map<v2s16, MapSector*>::iterator
-			si = m_sectors.begin();
-			si != m_sectors.end(); ++si)
-	{
-		MapSector *sector = si->second;
-
-		std::list< MapBlock * > sectorblocks;
-		this->getBlocks(sectorblocks);
-*/
-		
-		/*
-			Loop through blocks in sector
-		*/
-
 		for(auto & ir : m_blocks) {
 			MapBlock *block = ir.second;
 
@@ -213,8 +198,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 		{
 			if(bp.X < p_blocks_min.X
 			|| bp.X > p_blocks_max.X
-			|| bp.Y < p_blocks_min.Z
-			|| bp.Y > p_blocks_max.Z)
+			|| bp.Z > p_blocks_max.Z
+			|| bp.Z < p_blocks_min.Z
+			|| bp.Y < p_blocks_min.Y
+			|| bp.Y > p_blocks_max.Y)
 				continue;
 		}
 
