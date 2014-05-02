@@ -2016,7 +2016,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	else if(command == TOSERVER_CLIENT_READY) {
 		// clients <= protocol version 22 did not send ready message,
 		// they're already initialized
-		assert(peer_proto_ver > 22);
+		//assert(peer_proto_ver > 22);
 
 		PlayerSAO* playersao = StageTwoClientInit(peer_id);
 
