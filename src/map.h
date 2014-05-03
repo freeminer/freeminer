@@ -367,7 +367,7 @@ public:
 	UniqueQueue<v3s16> m_transforming_liquid;
 	JMutex m_transforming_liquid_mutex;
 protected:
-	JMutex m_update_lighting_mutex;
+	//JMutex m_update_lighting_mutex;
 };
 
 /*

@@ -81,6 +81,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 
 MapBlock::~MapBlock()
 {
+	auto lock = lock_unique();
 #ifndef SERVER
 	delMesh();
 #endif

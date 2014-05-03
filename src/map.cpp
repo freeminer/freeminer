@@ -669,7 +669,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
-	JMutexAutoLock lock2(m_update_lighting_mutex);
+	//JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	{
 	TimeTaker t("updateLighting: first stuff");
@@ -697,6 +697,8 @@ u32 Map::updateLighting(enum LightBank bank,
 			// Don't bother with dummy blocks.
 			if(block->isDummy())
 				break;
+
+			auto lock = block->lock_unique();
 
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
@@ -921,7 +923,7 @@ TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
 		return ret;
 
 TimeTaker timer("updateLighting expireDayNightDiff");
-	JMutexAutoLock lock2(m_update_lighting_mutex);
+	//JMutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
 		Update information about whether day and night light differ
@@ -1487,6 +1489,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		else
 			m_blocks_update_last = 0;
 		++calls;
+
+		auto lock = block->lock_unique();
 
 			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
 				block->m_uptime_timer_last = uptime - 0.1;

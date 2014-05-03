@@ -180,7 +180,7 @@ infostream<<"Lq wait"<<std::endl;
 			}
 
 shared_map<v3s16, MapBlock*> m_modified_blocks;
-		auto flowed = m_server->getMap().transformLiquids(m_server, m_modified_blocks, m_server->m_lighting_modified_blocks, 500);
+		auto flowed = m_server->getMap().transformLiquids(m_server, m_modified_blocks, m_server->m_lighting_modified_blocks, 100);
 infostream<<"Lq calc="<<m_server->m_lighting_modified_blocks.size()<<" flowed="<<flowed<<std::endl;
 		if ( flowed> 0) {
 			//m_liquid_transform_timer = m_liquid_transform_interval; // *0.8;
