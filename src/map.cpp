@@ -1560,7 +1560,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	if(deleted_blocks_count != 0)
 	{
 		if (m_blocks_update_last)
-			infostream<<"ServerMap: timerUpdate(): Sectors processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
+			infostream<<"ServerMap: timerUpdate(): Blocks processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
@@ -3132,7 +3132,6 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	u32 sector_meta_count = 0;
 	u32 block_count = 0;
 	u32 block_count_all = 0; // Number of blocks in memory
 
@@ -3193,13 +3192,12 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	/*
 		Only print if something happened or saved whole map
 	*/
-	if(save_level == MOD_STATE_CLEAN || sector_meta_count != 0
+	if(save_level == MOD_STATE_CLEAN
 			|| block_count != 0)
 	{
 		infostream<<"ServerMap: Written: "
-				<<sector_meta_count<<" sector metadata files, "
-				<<block_count<<" block files"
-				<<", "<<block_count_all<<" blocks in memory."
+				<<block_count<<"/"<<block_count_all<<" blocks from "
+				<<m_blocks.size()
 				<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Blocks modified by: "<<std::endl;
