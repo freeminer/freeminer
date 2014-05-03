@@ -5327,8 +5327,6 @@ void dedicated_server_loop(Server &server, bool &kill)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	verbosestream<<"dedicated_server_loop()"<<std::endl;
-
 	IntervalLimiter m_profiler_interval;
 
 	int errors = 0;

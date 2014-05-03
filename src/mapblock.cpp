@@ -347,6 +347,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 
 void MapBlock::copyTo(VoxelManipulator &dst)
 {
+	auto lock = lock_shared();
 	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
 	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
 	
@@ -357,6 +358,7 @@ void MapBlock::copyTo(VoxelManipulator &dst)
 
 void MapBlock::copyFrom(VoxelManipulator &dst)
 {
+	auto lock = lock_unique();
 	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
 	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
 	
