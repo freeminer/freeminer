@@ -454,6 +454,8 @@ void Map::spreadLight(enum LightBank bank,
 		if(block->isDummy())
 			continue;
 
+		auto lock = block->lock_unique();
+
 		// Calculate relative position in block
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
 
