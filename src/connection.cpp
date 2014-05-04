@@ -2956,6 +2956,7 @@ float Connection::getLocalStat(rate_stat_type type)
 	PeerHelper peer = getPeerNoEx(PEER_ID_SERVER);
 
 	if (!peer) {
+		return 0;
 		assert("Connection::getLocalStat we couldn't get our own peer? are you serious???" == 0);
 	}
 
