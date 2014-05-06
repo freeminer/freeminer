@@ -329,6 +329,23 @@ inline u32 getTime(TimePrecision prec)
 	inline void setThreadName(const char* name) {}
 #endif
 
+#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+	#define PORTING_USE_PTHREAD 1
+	#include <pthread.h>
+#endif
+	inline void setThreadPriority(int priority) {
+#if PORTING_USE_PTHREAD
+	// http://en.cppreference.com/w/cpp/thread/thread/native_handle
+		sched_param sch;
+		//int policy;
+		//pthread_getschedparam(pthread_self(), &policy, &sch);
+		sch.sched_priority = priority;
+		if(pthread_setschedparam(pthread_self(), SCHED_FIFO /*SCHED_RR*/, &sch)) {
+			//std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+		}
+#endif
+	}
+
 #ifndef SERVER
 float getDisplayDensity();
 

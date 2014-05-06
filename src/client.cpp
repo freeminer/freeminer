@@ -177,6 +177,7 @@ void * MeshUpdateThread::Thread()
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	porting::setThreadName("MeshUpdateThread");
+	porting::setThreadPriority(10);
 
 	while(!StopRequested())
 	{
