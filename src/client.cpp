@@ -189,7 +189,6 @@ void * MeshUpdateThread::Thread()
 		}
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making");
-		ScopeProfiler spa(g_profiler, "Client: Mesh making AVG", SPT_AVG);
 
 		MapBlockMesh *mesh_new = new MapBlockMesh(q->data, m_camera_offset);
 		if(mesh_new->getMesh()->getMeshBufferCount() == 0)
@@ -2456,6 +2455,7 @@ void Client::typeChatMessage(const std::wstring &message)
 
 void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool lazy)
 {
+	ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
 	if(b == NULL)
 		return;

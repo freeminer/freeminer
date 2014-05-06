@@ -101,6 +101,7 @@ public:
 infostream<<"L start"<<std::endl;
 
 		porting::setThreadName("LightThread");
+		porting::setThreadPriority(10);
 		while(!StopRequested()) {
 			if (!m_server->m_lighting_modified_blocks.size()) {
 				m_server->m_lighting_modified_blocks.sem.wait();
@@ -138,6 +139,7 @@ public:
 infostream<<"S start"<<std::endl;
 
 		porting::setThreadName("SendBlocksThread");
+		porting::setThreadPriority(15);
 		auto time = porting::getTimeMs();
 		while(!StopRequested()) {
 infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
@@ -172,6 +174,7 @@ public:
 infostream<<"Lq start"<<std::endl;
 
 		porting::setThreadName("LiquidThread");
+		porting::setThreadPriority(1);
 		while(!StopRequested()) {
 			if (!m_server->getMap().m_transforming_liquid.size()) {
 infostream<<"Lq wait"<<std::endl;
