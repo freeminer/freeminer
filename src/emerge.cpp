@@ -490,7 +490,7 @@ void *EmergeThread::Thread() {
 	enable_mapgen_debug_info = emerge->mapgen_debug_info;
 
 	porting::setThreadName(("EmergeThread" + itos(id)).c_str());
-	porting::setThreadPriority(5);
+	porting::setThreadPriority(80);
 
 	while (!StopRequested())
 	try {
