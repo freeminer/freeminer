@@ -227,6 +227,7 @@ void * ServerThread::Thread()
 	ThreadStarted();
 
 	porting::setThreadName("ServerThread");
+	porting::setThreadPriority(20);
 
 	while(!StopRequested())
 	{
