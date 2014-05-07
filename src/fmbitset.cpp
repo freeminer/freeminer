@@ -31,6 +31,10 @@ size_t FMBitset::count() {
 	return m_count;
 }
 
+size_t FMBitset::size() {
+	return count();
+}
+
 void FMBitset::set(size_t index, bool value) {
 	if (m_bits[index] != value) {
 		m_bits[index] = value;

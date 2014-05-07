@@ -28,11 +28,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_GETTEXT
 #include <libintl.h>
+#define mygettext(String) gettext(String)
 #else
-#define gettext(String) String
+#define mygettext(String) String
 #endif
 
-#define _(String) gettext(String)
+#define _(String) mygettext(String)
 #define gettext_noop(String) String
 #define N_(String) gettext_noop (String)
 
@@ -50,6 +51,10 @@ void init_gettext(const char *path,std::string configured_language,int argc, cha
 #else
 void init_gettext(const char *path,std::string configured_language);
 #endif
+
+extern std::wstring narrow_to_wide(const std::string& mbs);
+#include "util/numeric.h"
+
 
 /******************************************************************************/
 inline wchar_t* chartowchar_t(const char *str)
@@ -69,7 +74,10 @@ inline wchar_t* chartowchar_t(const char *str)
 #else
 	size_t l = strlen(str)+1;
 	nstr = new wchar_t[l];
-	mbstowcs(nstr, str, l);
+
+	std::wstring intermediate = narrow_to_wide(str);
+	memset(nstr,0,l);
+	memcpy(nstr,intermediate.c_str(),l*sizeof(wchar_t));
 #endif
 
 	return nstr;
@@ -78,7 +86,7 @@ inline wchar_t* chartowchar_t(const char *str)
 /******************************************************************************/
 inline wchar_t* wgettext(const char *str)
 {
-	return chartowchar_t(gettext(str));
+	return chartowchar_t(mygettext(str));
 }
 
 /******************************************************************************/

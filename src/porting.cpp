@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	See comments in porting.h
 */
 
+#include "porting.h"
+
 #if defined(__APPLE__)
 	#include <mach-o/dyld.h>
 	#include "CoreFoundation/CoreFoundation.h"
@@ -40,12 +42,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <sys/utsname.h>
 #endif
 
-#include "porting.h"
 #include "config.h"
 #include "debug.h"
 #include "filesys.h"
 #include "log.h"
 #include "util/string.h"
+#include "main.h"
+#include "settings.h"
 #include <list>
 
 namespace porting
@@ -193,7 +196,7 @@ bool threadBindToProcessor(threadid_t tid, int pnumber) {
 
 #elif defined(__sun) || defined(sun)
 
-	return processor_bind(P_LWPID, MAKE_LWPID_PTHREAD(tid), 
+	return processor_bind(P_LWPID, MAKE_LWPID_PTHREAD(tid),
 						pnumber, NULL) == 0;
 
 #elif defined(_AIX)
@@ -282,7 +285,7 @@ void pathRemoveFile(char *path, char delim)
 bool detectMSVCBuildDir(char *c_path)
 {
 	std::string path(c_path);
-	const char *ends[] = {"bin\\Release", "bin\\Build", NULL};
+	const char *ends[] = {"bin\\Release", "bin\\Build", "bin\\Debug", NULL};
 	return (removeStringEnd(path, ends) != "");
 }
 
@@ -477,14 +480,15 @@ void initializePaths()
 	std::string static_sharedir = STATIC_SHAREDIR;
 	if(static_sharedir != "" && static_sharedir != ".")
 		trylist.push_back(static_sharedir);
-	trylist.push_back(bindir + "/../share/" + PROJECT_NAME);
-	trylist.push_back(bindir + "/..");
+	trylist.push_back(
+			bindir + DIR_DELIM + ".." + DIR_DELIM + "share" + DIR_DELIM + PROJECT_NAME);
+	trylist.push_back(bindir + DIR_DELIM + "..");
 
 	for(std::list<std::string>::const_iterator i = trylist.begin();
 			i != trylist.end(); i++)
 	{
 		const std::string &trypath = *i;
-		if(!fs::PathExists(trypath) || !fs::PathExists(trypath + "/builtin")){
+		if(!fs::PathExists(trypath) || !fs::PathExists(trypath + DIR_DELIM + "builtin")){
 			dstream<<"WARNING: system-wide share not found at \""
 					<<trypath<<"\""<<std::endl;
 			continue;
@@ -498,42 +502,77 @@ void initializePaths()
 		break;
 	}
 
-	path_user = std::string(getenv("HOME")) + "/." + PROJECT_NAME;
+	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + PROJECT_NAME;
 
 	/*
 		OS X
 	*/
 	#elif defined(__APPLE__)
 
-    // Code based on
-    // http://stackoverflow.com/questions/516200/relative-paths-not-working-in-xcode-c
-    CFBundleRef main_bundle = CFBundleGetMainBundle();
-    CFURLRef resources_url = CFBundleCopyResourcesDirectoryURL(main_bundle);
-    char path[PATH_MAX];
-    if(CFURLGetFileSystemRepresentation(resources_url, TRUE, (UInt8 *)path, PATH_MAX))
+	// Code based on
+	// http://stackoverflow.com/questions/516200/relative-paths-not-working-in-xcode-c
+	CFBundleRef main_bundle = CFBundleGetMainBundle();
+	CFURLRef resources_url = CFBundleCopyResourcesDirectoryURL(main_bundle);
+	char path[PATH_MAX];
+	if(CFURLGetFileSystemRepresentation(resources_url, TRUE, (UInt8 *)path, PATH_MAX))
 	{
 		dstream<<"Bundle resource path: "<<path<<std::endl;
 		//chdir(path);
-		path_share = std::string(path) + "/share";
+		path_share = std::string(path) + DIR_DELIM + "share";
 	}
 	else
-    {
-        // error!
+	{
+		// error!
 		dstream<<"WARNING: Could not determine bundle resource path"<<std::endl;
-    }
-    CFRelease(resources_url);
+	}
+	CFRelease(resources_url);
 
 	path_user = std::string(getenv("HOME")) + "/Library/Application Support/" + PROJECT_NAME;
 
 	#else // FreeBSD, and probably many other POSIX-like systems.
 
 	path_share = STATIC_SHAREDIR;
-	path_user = std::string(getenv("HOME")) + "/." + PROJECT_NAME;
+	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + PROJECT_NAME;
 
 	#endif
 
 #endif // RUN_IN_PLACE
 }
+
+static irr::IrrlichtDevice* device;
+
+void initIrrlicht(irr::IrrlichtDevice * _device) {
+	device = _device;
+}
+
+#ifndef SERVER
+v2u32 getWindowSize() {
+	return device->getVideoDriver()->getScreenSize();
+}
+
+
+float getDisplayDensity() {
+	float gui_scaling = g_settings->getFloat("gui_scaling");
+	// using Y here feels like a bug, this needs to be discussed later!
+	if (getWindowSize().Y <= 800) {
+		return (2.0/3.0) * gui_scaling;
+	}
+	if (getWindowSize().Y <= 1280) {
+		return 1.0 * gui_scaling;
+	}
+
+	return (4.0/3.0) * gui_scaling;
+}
+
+v2u32 getDisplaySize() {
+	IrrlichtDevice *nulldevice = createDevice(video::EDT_NULL);
+
+	core::dimension2d<u32> deskres = nulldevice->getVideoModeList()->getDesktopResolution();
+	nulldevice -> drop();
+
+	return deskres;
+}
+#endif
 
 } //namespace porting
 

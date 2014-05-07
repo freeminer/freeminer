@@ -146,6 +146,8 @@ namespace con {
 	class Connection;
 }
 
+#define CI_ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 enum ClientState
 {
 	Invalid,
@@ -232,7 +234,6 @@ public:
 		m_nearest_unsent_d(0),
 		m_nearest_unsent_reset_timer(0.0),
 		m_excess_gotblocks(0),
-		m_nothing_to_send_counter(0),
 		m_nothing_to_send_pause_timer(0.0),
 		m_name(""),
 		m_version_major(0),
@@ -345,7 +346,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	std::map<v3s16, int> m_blocks_sent;
+	std::map<v3s16, unsigned int> m_blocks_sent;
 
 public:
 	s16 m_nearest_unsent_d;
@@ -374,7 +375,6 @@ private:
 	u32 m_excess_gotblocks;
 
 	// CPU usage optimization
-	u32 m_nothing_to_send_counter;
 	float m_nothing_to_send_pause_timer;
 
 	/*
@@ -456,7 +456,6 @@ public:
 	{ assert(m_env == 0); m_env = env; }
 
 	static std::string state2Name(ClientState state) {
-		//assert(state < sizeof(statenames));
 		return statenames[state];
 	}
 

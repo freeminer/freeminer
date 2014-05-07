@@ -307,10 +307,35 @@ if(ENABLE_LEVELDB)
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
-
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
+
+option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " OFF)
+if(ENABLE_IPV4_DEFAULT)
+	set(USE_IPV4_DEFAULT 1)
+else()
+	set(USE_IPV4_DEFAULT 0)
+endif()
+
+set(USE_REDIS 0)
+
+OPTION(ENABLE_REDIS "Enable redis backend" 1)
+
+if(ENABLE_REDIS)
+	find_library(REDIS_LIBRARY hiredis)
+	find_path(REDIS_INCLUDE_DIR hiredis.h PATH_SUFFIXES hiredis)
+	message(STATUS "redis library: ${REDIS_LIBRARY}")
+	message(STATUS "redis headers: ${REDIS_INCLUDE_DIR}")
+	if(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+		set(USE_REDIS 1)
+		message(STATUS "redis backend enabled")
+		include_directories(${REDIS_INCLUDE_DIR})
+	else(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+		set(USE_REDIS 0)
+		message(STATUS "redis not found!")
+	endif(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
+endif(ENABLE_REDIS)
 
 configure_file(
 	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
@@ -396,6 +421,7 @@ set(common_SRCS
 	database-dummy.cpp
 	database-leveldb.cpp
 	database-sqlite3.cpp
+	database-redis.cpp
 	player.cpp
 	test.cpp
 	sha1.cpp
@@ -458,7 +484,6 @@ set(minetest_SRCS
 	guiTable.cpp
 	guiPasswordChange.cpp
 	guiVolumeChange.cpp
-	guiDeathScreen.cpp
 	guiChatConsole.cpp
 	client.cpp
 	clientmedia.cpp
@@ -562,6 +587,9 @@ if(BUILD_CLIENT)
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
+	if (USE_REDIS)
+		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
+	endif(USE_REDIS)
 endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)
@@ -582,6 +610,9 @@ if(BUILD_SERVER)
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif(USE_LEVELDB)
+	if (USE_REDIS)
+		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
+	endif(USE_REDIS)
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}server
@@ -602,15 +633,17 @@ if(MSVC)
 
 	# EHa enables SEH exceptions (used for catching segfaults)
 	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
-	if (STATIC_BUILD)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-	endif()
 	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
 	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
 
 	# Debug build doesn't catch exceptions by itself
 	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
+	set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
+
+	if (STATIC_BUILD)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+	endif()
 
 	# Flags for C files (sqlite)
 	# /MT = Link statically with standard library stuff
@@ -621,6 +654,7 @@ if(MSVC)
 				COMPILE_DEFINITIONS "SERVER")
 	endif(BUILD_SERVER)
 
+	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
 else()
 	# Probably GCC
 

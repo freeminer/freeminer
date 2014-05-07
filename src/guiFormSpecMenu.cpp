@@ -50,6 +50,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettext.h"
 
 #include "intlGUIEditBox.h"
+#include "scripting_game.h"
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -73,20 +74,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
 		InventoryManager *invmgr, IGameDef *gamedef,
-		ISimpleTextureSource *tsrc) :
+		ISimpleTextureSource *tsrc, IFormSource* fsrc, TextDest* tdst,
+		GUIFormSpecMenu** ext_ptr) :
 	GUIModalMenu(dev->getGUIEnvironment(), parent, id, menumgr),
 	m_device(dev),
 	m_invmgr(invmgr),
 	m_gamedef(gamedef),
 	m_tsrc(tsrc),
-	m_form_src(NULL),
-	m_text_dst(NULL),
 	m_selected_item(NULL),
 	m_selected_amount(0),
 	m_selected_dragging(false),
 	m_tooltip_element(NULL),
 	m_allowclose(true),
-	m_lock(false)
+	m_lock(false),
+	m_form_src(fsrc),
+	m_text_dst(tdst),
+	m_ext_ptr(ext_ptr)
 {
 	current_keys_pending.key_down = false;
 	current_keys_pending.key_up = false;
@@ -100,8 +103,18 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 	removeChildren();
 
 	delete m_selected_item;
-	delete m_form_src;
-	delete m_text_dst;
+
+	if (m_form_src != NULL) {
+		delete m_form_src;
+	}
+	if (m_text_dst != NULL) {
+		delete m_text_dst;
+	}
+
+	if (m_ext_ptr != NULL) {
+		assert(*m_ext_ptr == this);
+		*m_ext_ptr = NULL;
+	}
 }
 
 void GUIFormSpecMenu::removeChildren()
@@ -1023,6 +1036,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 		if (type == "textarea")
 		{
 			e->setMultiLine(true);
+			e->setWordWrap(true);
 			e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
 		} else {
 			irr::SEvent evt;
@@ -1455,7 +1469,13 @@ void GUIFormSpecMenu::parseElement(parserData* data,std::string element)
 	std::string type = trim(parts[0]);
 	std::string description = trim(parts[1]);
 
-	if ((type == "size") || (type == "invsize")){
+	if (type == "size") {
+		parseSize(data,description);
+		return;
+	}
+
+	if (type == "invsize") {
+		log_deprecated("Deprecated formspec element \"invsize\" is used");
 		parseSize(data,description);
 		return;
 	}

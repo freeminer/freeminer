@@ -76,7 +76,7 @@ void Database_Dummy::saveBlock(MapBlock *block)
 	// Write block to database
 	std::string tmp = o.str();
 
-	m_database[getBlockAsInteger(p3d)] = tmp;
+	m_database[getBlockAsString(p3d)] = tmp;
 	// We just wrote it to the disk so clear modified flag
 	block->resetModified();
 }
@@ -85,7 +85,7 @@ MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
 {
 	v2s16 p2d(blockpos.X, blockpos.Z);
 
-        if(m_database.count(getBlockAsInteger(blockpos))) {
+        if(m_database.count(getBlockAsString(blockpos))) {
                 /*
                         Make sure sector is loaded
                 */
@@ -93,7 +93,7 @@ MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
                 /*
                         Load block
                 */
-                std::string datastr = m_database[getBlockAsInteger(blockpos)];
+                std::string datastr = m_database[getBlockAsString(blockpos)];
 //                srvmap->loadBlock(&datastr, blockpos, sector, false);
 
 		try {
@@ -154,9 +154,9 @@ MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
 
 void Database_Dummy::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
-	for(std::map<u64, std::string>::iterator x = m_database.begin(); x != m_database.end(); ++x)
+	for(auto &x : m_database)
 	{
-		v3s16 p = getIntegerAsBlock(x->first);
+		v3s16 p = getStringAsBlock(x.first);
 		//dstream<<"block_i="<<block_i<<" p="<<PP(p)<<std::endl;
 		dst.push_back(p);
 	}

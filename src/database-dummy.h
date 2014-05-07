@@ -43,6 +43,6 @@ public:
 	~Database_Dummy();
 private:
 	ServerMap *srvmap;
-	std::map<u64, std::string> m_database;
+	std::map<std::string, std::string> m_database;
 };
 #endif

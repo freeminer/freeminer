@@ -27,8 +27,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PORTING_HEADER
 #define PORTING_HEADER
 
+#ifdef _WIN32
+	#ifdef _WIN32_WINNT
+		#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers
+		// because those might include sdkddkver.h which defines _WIN32_WINNT if not already set
+#endif
+
 #include <string>
+#include "irrlicht.h"
 #include "irrlichttypes.h" // u32
+#include "irrlichttypes_extrabloated.h"
 #include "debug.h"
 #include "constants.h"
 #include "gettime.h"
@@ -45,9 +55,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#define ALIGNOF(type) offsetof (alignment_trick<type>, member)
 
 #ifdef _WIN32
-	#ifndef _WIN32_WINNT
-		#define _WIN32_WINNT 0x0501
-	#endif
 	#include <windows.h>
 	
 	#define sleep_ms(x) Sleep(x)
@@ -180,6 +187,8 @@ bool threadSetPriority(threadid_t tid, int prio);
 */
 std::string get_sysinfo();
 
+void initIrrlicht(irr::IrrlichtDevice * );
+
 /*
 	Resolution is 10-20ms.
 	Remember to check for overflows.
@@ -273,27 +282,75 @@ inline u32 getTime(TimePrecision prec)
 	return 0;
 }
 
-#if (defined(linux) || defined(__linux))
+#if defined(linux) || defined(__linux)
+	#include <sys/prctl.h>
 
-#include <sys/prctl.h>
-
-inline void setThreadName(const char* name) {
-	prctl(PR_SET_NAME,name);
-}
+	inline void setThreadName(const char *name) {
+		/* It would be cleaner to do this with pthread_setname_np,
+		 * which was added to glibc in version 2.12, but some major
+		 * distributions are still runing 2.11 and previous versions.
+		 */
+		prctl(PR_SET_NAME, name);
+	}
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-/* BSD doesn't seem to support thread names. If you know about a way 
- * to add this feature please create a pull request.
- * "setproctitle" doesn't work for threadnames.
- */
-inline void setThreadName(const char* name) {
-	pthread_set_name_np(pthread_self(), name);
-}
+	#include <pthread.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_set_name_np(pthread_self(), name);
+	}
+#elif defined(_MSC_VER)
+	typedef struct tagTHREADNAME_INFO {
+		DWORD dwType; // must be 0x1000
+		LPCSTR szName; // pointer to name (in user addr space)
+		DWORD dwThreadID; // thread ID (-1=caller thread)
+		DWORD dwFlags; // reserved for future use, must be zero
+	} THREADNAME_INFO;
+
+	inline void setThreadName(const char *name) {
+		THREADNAME_INFO info;
+		info.dwType = 0x1000;
+		info.szName = name;
+		info.dwThreadID = -1;
+		info.dwFlags = 0;
+		__try {
+			RaiseException(0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR *) &info);
+		} __except (EXCEPTION_CONTINUE_EXECUTION) {}
+	}
+#elif defined(__APPLE__)
+	#include <pthread.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_setname_np(name);
+	}
 #elif defined(_WIN32)
-// threadnames are not supported on windows
-inline void setThreadName(const char* name) {}
+	inline void setThreadName(const char* name) {}
 #else
-#warning "Unknown platform for setThreadName support, you wont have threadname support."
-inline void setThreadName(const char* name) {}
+	#warning "Unrecognized platform, thread names will not be available."
+	inline void setThreadName(const char* name) {}
+#endif
+
+#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+	#define PORTING_USE_PTHREAD 1
+	#include <pthread.h>
+#endif
+	inline void setThreadPriority(int priority) {
+#if PORTING_USE_PTHREAD
+	// http://en.cppreference.com/w/cpp/thread/thread/native_handle
+		sched_param sch;
+		//int policy;
+		//pthread_getschedparam(pthread_self(), &policy, &sch);
+		sch.sched_priority = priority;
+		if(pthread_setschedparam(pthread_self(), SCHED_FIFO /*SCHED_RR*/, &sch)) {
+			//std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+		}
+#endif
+	}
+
+#ifndef SERVER
+float getDisplayDensity();
+
+v2u32 getDisplaySize();
+v2u32 getWindowSize();
 #endif
 
 } // namespace porting

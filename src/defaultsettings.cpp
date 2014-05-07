@@ -128,11 +128,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
+	settings->setDefault("gui_scaling", "1.0");
 	settings->setDefault("mouse_sensitivity", "0.2");
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("enable_vbo", "false");
+	settings->setDefault("hud_hotbar_max_width","1.0");
 
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");
@@ -160,6 +162,8 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
+
+	settings->setDefault("enable_remote_media_server", "true");
 
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
@@ -204,6 +208,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_rollback_recording", "false");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("max_spawn_height", "50");
+#ifdef NDEBUG
+	settings->setDefault("deprecated_lua_api_handling", "legacy");
+#else
+	settings->setDefault("deprecated_lua_api_handling", "log");
+#endif
 
 	settings->setDefault("profiler_print_interval", "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");
@@ -268,12 +277,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("animation_wd_stop", "219");
 
 	//liquid stuff
-	settings->setDefault("liquid_finite", "false");
+	settings->setDefault("liquid_real", "true");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
-	settings->setDefault("weather", "false");
+	settings->setDefault("weather", "true");
 
 	//mapgen stuff
 	settings->setDefault("mg_name", "v6");
@@ -305,8 +314,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
-	settings->setDefault("liquid_finite", "true");
-	settings->setDefault("weather", "true");
 	settings->setDefault("max_users", "100");
 	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("ignore_world_load_errors", "true");
@@ -335,7 +342,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #endif
 }

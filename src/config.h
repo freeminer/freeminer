@@ -38,6 +38,10 @@
 	#define STATIC_BUILD 0
 #endif
 
+#ifndef USE_REDIS
+	#define USE_REDIS 0
+#endif
+
 #ifdef USE_CMAKE_CONFIG_H
 	#include "cmake_config.h"
 	#undef PROJECT_NAME
@@ -60,6 +64,8 @@
 	#define USE_MANDELBULBER CMAKE_USE_MANDELBULBER
 	#undef STATIC_BUILD
 	#define STATIC_BUILD CMAKE_STATIC_BUILD
+	#undef USE_REDIS
+	#define USE_REDIS CMAKE_USE_REDIS
 	#undef VERSION_MAJOR
 	#define VERSION_MAJOR CMAKE_VERSION_MAJOR
 	#undef VERSION_MINOR

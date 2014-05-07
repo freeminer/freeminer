@@ -77,7 +77,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define BS (10.0)
 
 // Dimension of a MapBlock
-#define MAP_BLOCKSIZE 16
+#define MAP_BLOCKP 4
+#define MAP_BLOCKSIZE (1<<MAP_BLOCKP)
 // This makes mesh updates too slow, as many meshes are updated during
 // the main loop (related to TempMods and day/night)
 //#define MAP_BLOCKSIZE 32

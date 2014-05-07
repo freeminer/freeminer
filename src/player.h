@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventory.h"
 #include "constants.h" // BS
 #include "json/json.h"
+#include <list>
 
 #define PLAYERNAME_SIZE 20
 
@@ -92,6 +93,7 @@ class IGameDef;
 struct CollisionInfo;
 class PlayerSAO;
 struct HudElement;
+class Environment;
 
 class Player
 {
@@ -100,7 +102,10 @@ public:
 	Player(IGameDef *gamedef);
 	virtual ~Player() = 0;
 
-	virtual void move(f32 dtime, Map &map, f32 pos_max_d)
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
+	{}
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
+			std::list<CollisionInfo> *collision_info)
 	{}
 
 	v3f getSpeed()
@@ -222,26 +227,7 @@ public:
 	void serialize(std::ostream &os);
 	void deSerialize(std::istream &is, std::string playername);
 
-#if WTF
-	bool checkModified()
-	{
-		if(m_last_hp != hp || m_last_pitch != m_pitch ||
-				m_last_pos != m_position || m_last_yaw != m_yaw ||
-				!(inventory == m_last_inventory))
-		{
-			m_last_hp = hp;
-			m_last_pitch = m_pitch;
-			m_last_pos = m_position;
-			m_last_yaw = m_yaw;
-			m_last_inventory = inventory;
-			return true;
-		} else {
-			return false;
-		}
-	}
-#endif
-
-        s16 refs;
+	s16 refs;
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
 	bool in_liquid;
@@ -319,14 +305,6 @@ public:
 	v3f m_speed;
 	v3f m_position;
 	core::aabbox3d<f32> m_collisionbox;
-
-#if WTF
-	f32 m_last_pitch;
-	f32 m_last_yaw;
-	v3f m_last_pos;
-	u16 m_last_hp;
-	Inventory m_last_inventory;
-#endif
 };
 
 

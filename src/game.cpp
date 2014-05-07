@@ -36,7 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiVolumeChange.h"
 #include "guiFormSpecMenu.h"
 #include "guiTextInputMenu.h"
-#include "guiDeathScreen.h"
 #include "tool.h"
 #include "guiChatConsole.h"
 #include "config.h"
@@ -125,16 +124,19 @@ struct TextDestPlayerInventory : public TextDest
 struct LocalFormspecHandler : public TextDest
 {
 	LocalFormspecHandler();
-	LocalFormspecHandler(std::string formname) {
+	LocalFormspecHandler(std::string formname) :
+		m_client(0)
+	{
 		m_formname = formname;
 	}
 
-	LocalFormspecHandler(std::string formname,Client *client) {
+	LocalFormspecHandler(std::string formname, Client *client) :
+		m_client(client)
+	{
 		m_formname = formname;
-		m_client = client;
 	}
 
-	void gotText(std::string message) {
+	void gotText(std::wstring message) {
 		errorstream << "LocalFormspecHandler::gotText old style message received" << std::endl;
 	}
 
@@ -170,16 +172,25 @@ struct LocalFormspecHandler : public TextDest
 			}
 		}
 		if (m_formname == "MT_CHAT_MENU") {
+			assert(m_client != 0);
 			if ((fields.find("btn_send") != fields.end()) ||
 					(fields.find("quit") != fields.end())) {
 				if (fields.find("f_text") != fields.end()) {
-					if (m_client != 0) {
-						m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
-					}
-					else {
-						errorstream << "LocalFormspecHandler::gotText received chat message but m_client is NULL" << std::endl;
-					}
+					m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
 				}
+				return;
+			}
+		}
+
+		if (m_formname == "MT_DEATH_SCREEN") {
+			assert(m_client != 0);
+			if ((fields.find("btn_respawn") != fields.end())) {
+				m_client->sendRespawn();
+				return;
+			}
+
+			if (fields.find("quit") != fields.end()) {
+				m_client->sendRespawn();
 				return;
 			}
 		}
@@ -193,26 +204,6 @@ struct LocalFormspecHandler : public TextDest
 		}
 	}
 
-	Client *m_client;
-};
-
-/* Respawn menu callback */
-
-class MainRespawnInitiator: public IRespawnInitiator
-{
-public:
-	MainRespawnInitiator(bool *active, Client *client):
-		m_active(active), m_client(client)
-	{
-		*m_active = true;
-	}
-	void respawn()
-	{
-		*m_active = false;
-		m_client->sendRespawn();
-	}
-private:
-	bool *m_active;
 	Client *m_client;
 };
 
@@ -993,37 +984,71 @@ bool nodePlacementPrediction(Client &client,
 	return false;
 }
 
-static void show_chat_menu(FormspecFormSource* current_formspec,
-		TextDest* current_textdest, IWritableTextureSource* tsrc,
-		IrrlichtDevice * device, Client* client, std::string text)
+static inline void create_formspec_menu(GUIFormSpecMenu** cur_formspec,
+		InventoryManager *invmgr, IGameDef *gamedef,
+		IWritableTextureSource* tsrc, IrrlichtDevice * device,
+		IFormSource* fs_src, TextDest* txt_dest
+		) {
+
+	if (*cur_formspec == 0) {
+		*cur_formspec = new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr,
+				invmgr, gamedef, tsrc, fs_src, txt_dest, cur_formspec );
+		(*cur_formspec)->doPause = false;
+		(*cur_formspec)->drop();
+	}
+	else {
+		(*cur_formspec)->setFormSource(fs_src);
+		(*cur_formspec)->setTextDest(txt_dest);
+	}
+}
+
+static void show_chat_menu(GUIFormSpecMenu** cur_formspec,
+		InventoryManager *invmgr, IGameDef *gamedef,
+		IWritableTextureSource* tsrc, IrrlichtDevice * device,
+		Client* client, std::string text)
 {
 	std::string formspec =
 		"size[11,5.5,true]"
 		"field[3,2.35;6,0.5;f_text;;" + text + "]"
-		"button_exit[4,3;3,0.5;btn_send;"  + wide_to_narrow(wstrgettext("Proceed")) + "]"
+		"button_exit[4,3;3,0.5;btn_send;" + wide_to_narrow(wstrgettext("Proceed")) + "]"
 		;
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler
 	 * are deleted by guiFormSpecMenu                     */
-	current_formspec = new FormspecFormSource(formspec,&current_formspec);
-	current_textdest = new LocalFormspecHandler("MT_CHAT_MENU",client);
-	GUIFormSpecMenu *menu =
-			new GUIFormSpecMenu(device, guiroot, -1,
-					&g_menumgr,
-					NULL, NULL, tsrc);
-	menu->doPause = false;
-	menu->setFormSource(current_formspec);
-	menu->setTextDest(current_textdest);
-	menu->drop();
+	FormspecFormSource* fs_src = new FormspecFormSource(formspec);
+	LocalFormspecHandler* txt_dst = new LocalFormspecHandler("MT_CHAT_MENU", client);
+
+	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device, fs_src, txt_dst);
+}
+
+static void show_deathscreen(GUIFormSpecMenu** cur_formspec,
+		InventoryManager *invmgr, IGameDef *gamedef,
+		IWritableTextureSource* tsrc, IrrlichtDevice * device, Client* client)
+{
+	std::string formspec =
+		std::string("") +
+		"size[11,5.5,true]"
+		"bgcolor[#320000b4;true]"
+		"label[4.85,1.35;You died.]"
+		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
+		;
+
+	/* Create menu */
+	/* Note: FormspecFormSource and LocalFormspecHandler
+	 * are deleted by guiFormSpecMenu                     */
+	FormspecFormSource* fs_src = new FormspecFormSource(formspec);
+	LocalFormspecHandler* txt_dst = new LocalFormspecHandler("MT_DEATH_SCREEN", client);
+
+	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,  fs_src, txt_dst);
 }
 
 /******************************************************************************/
-static void show_pause_menu(FormspecFormSource* current_formspec,
-		TextDest* current_textdest, IWritableTextureSource* tsrc,
-		IrrlichtDevice * device, bool singleplayermode)
+static void show_pause_menu(GUIFormSpecMenu** cur_formspec,
+		InventoryManager *invmgr, IGameDef *gamedef,
+		IWritableTextureSource* tsrc, IrrlichtDevice * device,
+		bool singleplayermode)
 {
-
 	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
 			"- WASD: move\n"
 			"- Space: jump/climb\n"
@@ -1066,14 +1091,14 @@ static void show_pause_menu(FormspecFormSource* current_formspec,
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
 	 * are deleted by guiFormSpecMenu                     */
-	current_formspec = new FormspecFormSource(os.str(),&current_formspec);
-	current_textdest = new LocalFormspecHandler("MT_PAUSE_MENU");
-	GUIFormSpecMenu *menu =
-		new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr, NULL, NULL, tsrc);
-	menu->doPause = true;
-	menu->setFormSource(current_formspec);
-	menu->setTextDest(current_textdest);
-	menu->drop();
+	FormspecFormSource* fs_src = new FormspecFormSource(os.str());
+	LocalFormspecHandler* txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
+
+	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,  fs_src, txt_dst);
+	
+	if (singleplayermode) {
+		(*cur_formspec)->doPause = true;
+	}
 }
 
 /******************************************************************************/
@@ -1085,17 +1110,13 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	const SubgameSpec &gamespec /* Used for local game */,
 	bool simple_singleplayer_mode)
 {
-	FormspecFormSource* current_formspec = 0;
-	TextDest* current_textdest = 0;
+	GUIFormSpecMenu* current_formspec = 0;
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
 	
 	// Calculate text height using the font
 	u32 text_height = font->getDimension(L"Random test string").Height;
 
-	v2u32 last_screensize(0,0);
-	v2u32 screensize = driver->getScreenSize();
-	
 	/*
 		Draw "Loading" screen
 	*/
@@ -1438,10 +1459,24 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 			else
 			{
-				wchar_t* text = wgettext("Media...");
+
+				std::stringstream message;
+				message.precision(3);
+				message << gettext("Media...");
+
+				if ( ( USE_CURL == 0) ||
+						(!g_settings->getBool("enable_remote_media_server"))) {
+					float cur = client.getCurRate();
+					std::string cur_unit = gettext(" KB/s");
+
+					if (cur > 900) {
+						cur /= 1024.0;
+						cur_unit = gettext(" MB/s");
+					}
+					message << " ( " << cur << cur_unit << " )";
+				}
 				progress = 50+client.mediaReceiveProgress()*50+0.5;
-				draw_load_screen(text, device, font, dtime, progress);
-				delete[] text;
+				draw_load_screen(narrow_to_wide(message.str().c_str()), device, font, dtime, progress);
 			}
 			
 			// On some computers framerate doesn't seem to be
@@ -1545,12 +1580,12 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	// First line of debug text
 	gui::IGUIStaticText *guitext = guienv->addStaticText(
 			L"Freeminer",
-			core::rect<s32>(5, 5, 795, 5+text_height),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// Second line of debug text
 	gui::IGUIStaticText *guitext2 = guienv->addStaticText(
 			L"",
-			core::rect<s32>(5, 5+(text_height+5)*1, 795, (5+text_height)*2),
+			core::rect<s32>(0, 0, 0, 0),
 			false, false);
 	// At the middle of the screen
 	// Object infos are shown in this
@@ -1625,7 +1660,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool invert_mouse = g_settings->getBool("invert_mouse");
 
-	bool respawn_menu_active = false;
 	bool update_wielded_item_trigger = true;
 
 	bool show_hud = true;
@@ -1704,6 +1738,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	{
 		if(device->run() == false || kill == true)
 			break;
+
+		v2u32 screensize = driver->getScreenSize();
 
 		// Time of frame without fps limit
 		float busytime;
@@ -1871,15 +1907,6 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Random calculations
 		*/
-		last_screensize = screensize;
-		screensize = driver->getScreenSize();
-		v2s32 displaycenter(screensize.X/2,screensize.Y/2);
-		//bool screensize_changed = screensize != last_screensize;
-
-			
-		// Update HUD values
-		hud.screensize    = screensize;
-		hud.displaycenter = displaycenter;
 		hud.resizeHotbar();
 		
 		// Hilight boxes collected during the loop and displayed
@@ -1951,34 +1978,29 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			infostream<<"the_game: "
 					<<"Launching inventory"<<std::endl;
 			
-			GUIFormSpecMenu *menu =
-				new GUIFormSpecMenu(device, guiroot, -1,
-					&g_menumgr,
-					&client, gamedef, tsrc);
+			PlayerInventoryFormSource* fs_src = new PlayerInventoryFormSource(&client);
+			TextDest* txt_dst = new TextDestPlayerInventory(&client);
+
+			create_formspec_menu(&current_formspec, &client, gamedef, tsrc, device, fs_src, txt_dst);
 
 			InventoryLocation inventoryloc;
 			inventoryloc.setCurrentPlayer();
-
-			PlayerInventoryFormSource *src = new PlayerInventoryFormSource(&client);
-			assert(src);
-			menu->doPause = false;
-			menu->setFormSpec(src->getForm(), inventoryloc);
-			menu->setFormSource(src);
-			menu->setTextDest(new TextDestPlayerInventory(&client));
-			menu->drop();
+			current_formspec->setFormSpec(fs_src->getForm(), inventoryloc);
 		}
 		else if(input->wasKeyDown(EscapeKey))
 		{
-			show_pause_menu(current_formspec, current_textdest, tsrc, device,
+			show_pause_menu(&current_formspec, &client, gamedef, tsrc, device,
 					simple_singleplayer_mode);
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_chat")))
 		{
-			show_chat_menu(current_formspec, current_textdest, tsrc, device, &client,"");
+			show_chat_menu(&current_formspec, &client, gamedef, tsrc, device,
+					&client,"");
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_cmd")))
 		{
-			show_chat_menu(current_formspec, current_textdest, tsrc, device, &client,"/");
+			show_chat_menu(&current_formspec, &client, gamedef, tsrc, device,
+					&client,"/");
 		}
 		else if(input->wasKeyDown(getKeySetting("keymap_console")))
 		{
@@ -2377,10 +2399,11 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				first_loop_after_window_activation = false;
 			}
 			else{
-				s32 dx = input->getMousePos().X - displaycenter.X;
-				s32 dy = input->getMousePos().Y - displaycenter.Y;
-				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT)
+				s32 dx = input->getMousePos().X - (driver->getScreenSize().Width/2);
+				s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height/2);
+				if(invert_mouse || player->camera_mode == CAMERA_MODE_THIRD_FRONT) {
 					dy = -dy;
+				}
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
 				
 				/*const float keyspeed = 500;
@@ -2402,7 +2425,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				
 				turn_amount = v2f(dx, dy).getLength() * d;
 			}
-			input->setMousePos(displaycenter.X, displaycenter.Y);
+			input->setMousePos((driver->getScreenSize().Width/2),
+					(driver->getScreenSize().Height/2));
 		}
 		else{
 			// Mac OSX gets upset if this is set every frame
@@ -2517,65 +2541,31 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				}
 				else if(event.type == CE_DEATHSCREEN)
 				{
-					if(respawn_menu_active)
-						continue;
-
-					/*bool set_camera_point_target =
-							event.deathscreen.set_camera_point_target;
-					v3f camera_point_target;
-					camera_point_target.X = event.deathscreen.camera_point_target_x;
-					camera_point_target.Y = event.deathscreen.camera_point_target_y;
-					camera_point_target.Z = event.deathscreen.camera_point_target_z;*/
-
-					if (g_settings->getBool("respawn_auto")) { 
-						client.sendRespawn(); 
+					if (g_settings->getBool("respawn_auto")) {
+						client.sendRespawn();
 					} else {
-					MainRespawnInitiator *respawner =
-							new MainRespawnInitiator(
-									&respawn_menu_active, &client);
-					GUIDeathScreen *menu =
-							new GUIDeathScreen(guienv, guiroot, -1,
-								&g_menumgr, respawner);
-					menu->drop();
+					show_deathscreen(&current_formspec, &client, gamedef, tsrc,
+							device, &client);
 					}
 
 					/* Handle visualization */
-
 					damage_flash = 0;
 
 					LocalPlayer* player = client.getEnv().getLocalPlayer();
 					player->hurt_tilt_timer = 0;
 					player->hurt_tilt_strength = 0;
 
-					/*LocalPlayer* player = client.getLocalPlayer();
-					player->setPosition(player->getPosition() + v3f(0,-BS,0));
-					camera.update(player, busytime, screensize);*/
 				}
 				else if (event.type == CE_SHOW_FORMSPEC)
 				{
-					if (current_formspec == 0)
-					{
-						/* Create menu */
-						/* Note: FormspecFormSource and TextDestPlayerInventory
-						 * are deleted by guiFormSpecMenu                     */
-						current_formspec = new FormspecFormSource(*(event.show_formspec.formspec),&current_formspec);
-						current_textdest = new TextDestPlayerInventory(&client,*(event.show_formspec.formname));
-						GUIFormSpecMenu *menu =
-								new GUIFormSpecMenu(device, guiroot, -1,
-										&g_menumgr,
-										&client, gamedef, tsrc);
-						menu->doPause = false;
-						menu->setFormSource(current_formspec);
-						menu->setTextDest(current_textdest);
-						menu->drop();
-					}
-					else
-					{
-						assert(current_textdest != 0);
-						/* update menu */
-						current_textdest->setFormName(*(event.show_formspec.formname));
-						current_formspec->setForm(*(event.show_formspec.formspec));
-					}
+					FormspecFormSource* fs_src =
+							new FormspecFormSource(*(event.show_formspec.formspec));
+					TextDestPlayerInventory* txt_dst =
+							new TextDestPlayerInventory(&client,*(event.show_formspec.formname));
+
+					create_formspec_menu(&current_formspec, &client, gamedef,
+							tsrc, device, fs_src, txt_dst);
+
 					delete(event.show_formspec.formspec);
 					delete(event.show_formspec.formname);
 				}
@@ -2808,7 +2798,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		player->camera_mode = current_camera_mode;
 		tool_reload_ratio = MYMIN(tool_reload_ratio, 1.0);
-		camera.update(player, dtime, busytime, screensize, tool_reload_ratio,
+		camera.update(player, dtime, busytime, tool_reload_ratio,
 				current_camera_mode, client.getEnv());
 		camera.step(dtime);
 
@@ -3118,19 +3108,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 					InventoryLocation inventoryloc;
 					inventoryloc.setNodeMeta(nodepos);
 					
-					/* Create menu */
+					NodeMetadataFormSource* fs_src = new NodeMetadataFormSource(
+							&client.getEnv().getClientMap(), nodepos);
+					TextDest* txt_dst = new TextDestNodeMetadata(nodepos, &client);
 
-					GUIFormSpecMenu *menu =
-						new GUIFormSpecMenu(device, guiroot, -1,
-							&g_menumgr,
-							&client, gamedef, tsrc);
-					menu->doPause = false;
-					menu->setFormSpec(meta->getString("formspec"),
-							inventoryloc);
-					menu->setFormSource(new NodeMetadataFormSource(
-							&client.getEnv().getClientMap(), nodepos));
-					menu->setTextDest(new TextDestNodeMetadata(nodepos, &client));
-					menu->drop();
+					create_formspec_menu(&current_formspec, &client, gamedef,
+							tsrc, device, fs_src, txt_dst);
+
+					current_formspec->setFormSpec(meta->getString("formspec"), inventoryloc);
 				}
 				// Otherwise report right click to server
 				else
@@ -3386,7 +3371,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		{
 			guitext->setVisible(false);
 		}
-		
+
+		if (guitext->isVisible())
+		{
+			core::rect<s32> rect(
+				5,
+				5,
+				screensize.X,
+				5 + text_height
+			);
+			guitext->setRelativePosition(rect);
+		}
+
 		if(show_debug)
 		{
 			std::ostringstream os(std::ios_base::binary);
@@ -3402,6 +3398,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				<<")";
 			guitext2->setText(utf8_to_wide(os.str()).c_str());
 			guitext2->setVisible(true);
+
+			core::rect<s32> rect(
+				5,
+				5 + text_height,
+				screensize.X,
+				5 + (text_height * 2)
+			);
+			guitext2->setRelativePosition(rect);
 		}
 		else
 		{
@@ -3707,8 +3711,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if (show_hud)
 		{
-			hud.drawHotbar(v2s32(displaycenter.X, screensize.Y),
-					client.getHP(), client.getPlayerItem(), client.getBreath());
+			hud.drawHotbar(client.getHP(), client.getPlayerItem(),
+					client.getBreath());
 		}
 
 		/*
@@ -3738,7 +3742,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			Draw lua hud items
 		*/
 		if (show_hud)
-			hud.drawLuaElements();
+			hud.drawLuaElements(camera.getOffset());
 
 
 		/*

@@ -717,9 +717,6 @@ u32 TextureSource::getTextureIdDirect(const std::string &name)
 	m_textureinfo_cache.push_back(ti);
 	m_name_to_id[name] = id;
 
-	/*infostream<<"getTextureIdDirect(): "
-			<<"Returning id="<<id<<" for name \""<<name<<"\""<<std::endl;*/
-
 	return id;
 }
 
@@ -965,13 +962,33 @@ bool TextureSource::generateImage(std::string part_of_name, video::IImage *& bas
 	{
 		video::IImage *image = m_sourcecache.getOrLoad(part_of_name, m_device);
 
-		if(image == NULL)
-		{
-			if(part_of_name != ""){
-				errorstream<<"generateImage(): Could not load image \""
+		if (image != NULL) {
+			if (!driver->queryFeature(irr::video::EVDF_TEXTURE_NPOT)) {
+				core::dimension2d<u32> dim = image->getDimension();
+
+
+				if ((dim.Height %2 != 0) ||
+						(dim.Width %2 != 0)) {
+					errorstream << "TextureSource::generateImage "
+							<< part_of_name << " size npot2 x=" << dim.Width
+							<< " y=" << dim.Height << std::endl;
+				}
+			}
+		}
+
+		if (image == NULL) {
+			if (part_of_name != "") {
+				if (part_of_name.find("_normal.png") == std::string::npos){			
+					errorstream<<"generateImage(): Could not load image \""
 						<<part_of_name<<"\""<<" while building texture"<<std::endl;
-				errorstream<<"generateImage(): Creating a dummy"
+					errorstream<<"generateImage(): Creating a dummy"
 						<<" image for \""<<part_of_name<<"\""<<std::endl;
+				} else {
+					infostream<<"generateImage(): Could not load normal map \""
+						<<part_of_name<<"\""<<std::endl;
+					infostream<<"generateImage(): Creating a dummy"
+						<<" normal map for \""<<part_of_name<<"\""<<std::endl;
+				}
 			}
 
 			// Just create a dummy image

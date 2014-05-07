@@ -68,6 +68,8 @@ void RemoteClient::GetNextBlocks(
 
 	v3f playerpos = player->getPosition();
 	v3f playerspeed = player->getSpeed();
+	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
+		return;
 	v3f playerspeeddir(0,0,0);
 	if(playerspeed.getLength() > 1.0*BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();

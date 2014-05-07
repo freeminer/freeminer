@@ -2,12 +2,6 @@ print = engine.debug
 math.randomseed(os.time())
 os.setlocale("C", "numeric")
 
-local errorfct = error
-error = function(text)
-	print(debug.traceback(""))
-	errorfct(text)
-end
-
 local scriptpath = engine.get_scriptdir()
 
 mt_color_grey  = "#AAAAAA"
@@ -713,8 +707,8 @@ function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_particles"] then
 		engine.setting_set("enable_particles", fields["cb_particles"])
 	end
-	if fields["cb_finite_liquid"] then
-		engine.setting_set("liquid_finite", fields["cb_finite_liquid"])
+	if fields["cb_liquid_real"] then
+		engine.setting_set("liquid_real", fields["cb_liquid_real"])
 	end
 	if fields["cb_weather"] then
 		engine.setting_set("weather", fields["cb_weather"])
@@ -1016,7 +1010,7 @@ function tabbuilder.tab_settings()
 	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
 	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
 	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
-	add_checkbox("cb_finite_liquid", "liquid_finite", "Finite Liquid")
+	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
 	add_checkbox("cb_weather", "weather", "Weather")
 
 	if engine.setting_getbool("enable_shaders") then

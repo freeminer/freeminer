@@ -168,8 +168,10 @@ struct ABMWithState
 {
 	ActiveBlockModifier *abm;
 	float timer;
+	std::set<content_t> trigger_ids;
+	FMBitset required_neighbors, required_neighbors_activate;
 
-	ABMWithState(ActiveBlockModifier *abm_);
+	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
 };
 
 /*
@@ -200,13 +202,11 @@ private:
 
 struct ActiveABM
 {
-	ActiveABM():
-		required_neighbors(CONTENT_ID_CAPACITY)
+	ActiveABM()
 	{}
-	ActiveBlockModifier *abm;
+	ABMWithState *abmws;
+	ActiveBlockModifier *abm; //delete me, abm in ws ^
 	int chance;
-	int neighbors_range;
-	FMBitset required_neighbors;
 };
 
 class ABMHandler
@@ -262,9 +262,6 @@ public:
 		Save players
 	*/
 	void serializePlayers(const std::string &savedir);
-#if WTF
-	void deSerializePlayers(const std::string &savedir);
-#endif
 	Player * deSerializePlayer(const std::string &name);
 
 	/*
@@ -364,7 +361,7 @@ public:
 	// is weather active in this environment?
 	bool m_use_weather;
 	ABMHandler * m_abmhandler;
-	
+
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
 	u32 m_game_time_start;
@@ -431,7 +428,6 @@ private:
 	// Outgoing network message buffer for active objects
 	std::list<ActiveObjectMessage> m_active_object_messages;
 	// Some timers
-	float m_random_spawn_timer; // used for experimental code
 	float m_send_recommended_timer;
 	IntervalLimiter m_object_management_interval;
 	// List of active blocks

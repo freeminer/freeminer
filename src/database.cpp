@@ -22,34 +22,75 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "database.h"
 #include "irrlichttypes.h"
+#include <sstream>
+#include "util/string.h"
 
-static s32 unsignedToSigned(s32 i, s32 max_positive)
+
+/****************
+ * Black magic! *
+ ****************
+ * The position hashing is very messed up.
+ * It's a lot more complicated than it looks.
+ */
+
+static inline s16 unsigned_to_signed(u16 i, u16 max_positive)
 {
-	if(i < max_positive)
+	if (i < max_positive) {
 		return i;
-	else
-		return i - 2*max_positive;
+	} else {
+		return i - (max_positive * 2);
+	}
 }
 
-// modulo of a negative number does not work consistently in C
-static s64 pythonmodulo(s64 i, s64 mod)
+
+// Modulo of a negative number does not work consistently in C
+static inline s64 pythonmodulo(s64 i, s16 mod)
 {
-	if(i >= 0)
+	if (i >= 0) {
 		return i % mod;
+	}
 	return mod - ((-i) % mod);
 }
 
-s64 Database::getBlockAsInteger(const v3s16 pos) {
-	return (u64) pos.Z * 16777216 +
-		(u64) pos.Y * 4096 +
+
+s64 Database::getBlockAsInteger(const v3s16 pos) const
+{
+	return (u64) pos.Z * 0x1000000 +
+		(u64) pos.Y * 0x1000 +
 		(u64) pos.X;
 }
 
-v3s16 Database::getIntegerAsBlock(s64 i) {
-	s32 x = unsignedToSigned(pythonmodulo(i, 4096), 2048);
-	i = (i - x) / 4096;
-	s32 y = unsignedToSigned(pythonmodulo(i, 4096), 2048);
-	i = (i - y) / 4096;
-	s32 z = unsignedToSigned(pythonmodulo(i, 4096), 2048);
-	return v3s16(x,y,z);
+
+v3s16 Database::getIntegerAsBlock(s64 i) const
+{
+	v3s16 pos;
+	pos.X = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	i = (i - pos.X) / 4096;
+	pos.Y = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	i = (i - pos.Y) / 4096;
+	pos.Z = unsigned_to_signed(pythonmodulo(i, 4096), 2048);
+	return pos;
+}
+
+std::string Database::getBlockAsString(const v3s16 &pos) const {
+	std::ostringstream os;
+	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
+	return os.str().c_str();
+}
+
+v3s16 Database::getStringAsBlock(const std::string &i) const {
+	std::istringstream is(i);
+	v3s16 pos;
+	char c;
+	if (i[0] == 'a') {
+		is >> c; // 'a'
+		is >> pos.X;
+		is >> c; // ','
+		is >> pos.Y;
+		is >> c; // ','
+		is >> pos.Z;
+	} else { // old format
+		return getIntegerAsBlock(stoi64(i));
+	}
+	return pos;
 }

@@ -60,6 +60,9 @@ GameScripting::GameScripting(Server* server)
 
 	// Create the main minetest table
 	lua_newtable(L);
+	lua_setglobal(L, "minetest");
+	lua_getglobal(L, "minetest");
+	int top = lua_gettop(L);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "object_refs");
@@ -67,15 +70,11 @@ GameScripting::GameScripting(Server* server)
 	lua_newtable(L);
 	lua_setfield(L, -2, "luaentities");
 
-	lua_setglobal(L, "minetest");
-
 	// Initialize our lua_api modules
-	lua_getglobal(L, "minetest");
-	int top = lua_gettop(L);
 	InitializeModApi(L, top);
 	lua_pop(L, 1);
 
-	infostream << "SCRIPTAPI: initialized game modules" << std::endl;
+	infostream << "SCRIPTAPI: Initialized game modules" << std::endl;
 }
 
 void GameScripting::InitializeModApi(lua_State *L, int top)
@@ -103,4 +102,9 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 	NodeTimerRef::Register(L);
 	ObjectRef::Register(L);
 	LuaSettings::Register(L);
+}
+
+void log_deprecated(std::string message)
+{
+	log_deprecated(NULL,message);
 }

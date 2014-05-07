@@ -626,7 +626,7 @@ int MapgenV6::generateGround() {
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ? 
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
+					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), nullptr, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
 				} else {
 					vm->m_data[i] = n_air;
@@ -1014,7 +1014,7 @@ void MapgenV6::growGrass() {
 		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
 		{
 			if (emerge->env->m_use_weather) {
-				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z), NULL, &heat_cache);
+				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z), nullptr, &heat_cache);
 				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
 			} else
 			n->setContent(c_dirt_with_grass);

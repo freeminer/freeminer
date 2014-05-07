@@ -642,9 +642,12 @@ inline bool blockpos_over_limit(v3s16 p)
 /*
 	Returns the position of the block where the node is located
 */
-inline v3s16 getNodeBlockPos(v3s16 p)
+inline v3s16 getNodeBlockPos(const v3s16 &p)
 {
+	return v3s16(p.X >> MAP_BLOCKP, p.Y >> MAP_BLOCKP, p.Z >> MAP_BLOCKP);
+/*
 	return getContainerPos(p, MAP_BLOCKSIZE);
+*/
 }
 
 inline v2s16 getNodeSectorPos(v2s16 p)

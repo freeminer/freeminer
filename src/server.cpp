@@ -107,6 +107,7 @@ void * ServerThread::Thread()
 	ThreadStarted();
 
 	porting::setThreadName("ServerThread");
+	porting::setThreadPriority(20);
 
 	while(!StopRequested())
 	{
@@ -387,12 +388,6 @@ Server::Server(
 		infostream<<"Server: Loading environment metadata"<<std::endl;
 		m_env->loadMeta(m_path_world);
 	}
-
-#if WTF
-	// Load players
-	infostream<<"Server: Loading players"<<std::endl;
-	m_env->deSerializePlayers(m_path_world);
-#endif
 
 	/*
 		Add some test ActiveBlockModifiers to environment
@@ -1310,6 +1305,11 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		SendChatMessage(peer_id, getStatusString());
 	}
 
+/*
+	Address addr = getPeerAddress(player->peer_id);
+	std::string ip_str = addr.serializeString();
+	actionstream<<player->getName() <<" [" << ip_str << "] joins game. " << std::endl;
+*/
 	/*
 		Print out action
 	*/
@@ -1324,6 +1324,8 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		{
 			actionstream << *i << " ";
 		}
+
+		actionstream<<player->getName();
 
 		actionstream<<std::endl;
 	}
@@ -1356,6 +1358,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	catch(con::PeerNotFoundException &e)
 	{
+		/*
+		 * no peer for this packet found
+		 * most common reason is peer timeout, e.g. peer didn't
+		 * respond for some time, your server was overloaded or
+		 * things like that.
+		 */
 		verbosestream<<"Server::ProcessData(): Cancelling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;
@@ -1715,7 +1723,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 
 	u8 peer_ser_ver = getClient(peer_id,InitDone)->serialization_version;
-	u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
+	//u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
 
 	if(peer_ser_ver == SER_FMT_VER_INVALID)
 	{

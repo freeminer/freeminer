@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include <list>
 
+class Environment;
 class ClientEnvironment;
 
 class ClientActiveObject;
@@ -49,9 +50,9 @@ public:
 
 	v3f overridePosition;
 	
-	void move(f32 dtime, ClientEnvironment *env, f32 pos_max_d,
+	void move(f32 dtime, Environment *env, f32 pos_max_d);
+	void move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::list<CollisionInfo> *collision_info);
-	void move(f32 dtime, ClientEnvironment *env, f32 pos_max_d);
 
 	void applyControl(float dtime, ClientEnvironment *env);
 

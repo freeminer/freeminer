@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef PROFILER_HEADER
 #define PROFILER_HEADER
 
+#include <algorithm>
 #include "irrlichttypes.h"
 #include <string>
 #include "jthread/jmutex.h"
@@ -36,6 +37,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Time profiler
 */
 
+struct ProfValue {
+	unsigned int calls;
+	float sum, min, max, avg;
+	ProfValue(float value = 0) {
+		calls = 1;
+		sum = min = max = avg = value;
+	}
+	void add(float value = 0) {
+		++calls;
+		sum += value;
+		min = std::min(min, value);
+		max = std::max(max, value);
+		avg += (avg > value ? -1 : 1) * value/100;
+	}
+};
+
 class Profiler
 {
 public:
@@ -47,57 +64,22 @@ public:
 	{
 		JMutexAutoLock lock(m_mutex);
 		{
-			/* No average shall have been used; mark add used as -2 */
-			std::map<std::string, int>::iterator n = m_avgcounts.find(name);
-			if(n == m_avgcounts.end())
-				m_avgcounts[name] = -2;
-			else{
-				if(n->second == -1)
-					n->second = -2;
-				assert(n->second == -2);
-			}
-		}
-		{
-			std::map<std::string, float>::iterator n = m_data.find(name);
+			auto n = m_data.find(name);
 			if(n == m_data.end())
-				m_data[name] = value;
+				m_data[name] = ProfValue(value);
 			else
-				n->second += value;
+				n->second.add(value);
 		}
 	}
-
 	void avg(const std::string &name, float value)
 	{
-		JMutexAutoLock lock(m_mutex);
-		{
-			std::map<std::string, int>::iterator n = m_avgcounts.find(name);
-			if(n == m_avgcounts.end())
-				m_avgcounts[name] = 1;
-			else{
-				/* No add shall have been used */
-				assert(n->second != -2);
-				n->second = (std::max)(n->second, 0) + 1;
-			}
-		}
-		{
-			std::map<std::string, float>::iterator n = m_data.find(name);
-			if(n == m_data.end())
-				m_data[name] = value;
-			else
-				n->second += value;
-		}
+		add(name, value);
 	}
 
 	void clear()
 	{
 		JMutexAutoLock lock(m_mutex);
-		for(std::map<std::string, float>::iterator
-				i = m_data.begin();
-				i != m_data.end(); ++i)
-		{
-			i->second = 0;
-		}
-		m_avgcounts.clear();
+		m_data.clear();
 	}
 
 	void print(std::ostream &o)
@@ -112,9 +94,7 @@ public:
 		u32 minindex, maxindex;
 		paging(m_data.size(), page, pagecount, minindex, maxindex);
 
-		for(std::map<std::string, float>::iterator
-				i = m_data.begin();
-				i != m_data.end(); ++i)
+		for(auto & i : m_data)
 		{
 			if(maxindex == 0)
 				break;
@@ -126,13 +106,7 @@ public:
 				continue;
 			}
 
-			std::string name = i->first;
-			int avgcount = 1;
-			std::map<std::string, int>::iterator n = m_avgcounts.find(name);
-			if(n != m_avgcounts.end()){
-				if(n->second >= 1)
-					avgcount = n->second;
-			}
+			const std::string & name = i.first;
 			o<<"  "<<name<<": ";
 			s32 clampsize = 40;
 			s32 space = clampsize - name.size();
@@ -143,7 +117,9 @@ public:
 				else
 					o<<" ";
 			}
-			o<<(i->second / avgcount);
+
+			o<<i.second.calls<<"*"<<i.second.avg<<"="<<i.second.sum;
+			//o<<(i->second / avgcount);
 			o<<std::endl;
 		}
 	}
@@ -170,15 +146,13 @@ public:
 	void remove(const std::string& name)
 	{
 		JMutexAutoLock lock(m_mutex);
-		m_avgcounts.erase(name);
 		m_data.erase(name);
 	}
 
 private:
 	JMutex m_mutex;
-	std::map<std::string, float> m_data;
-	std::map<std::string, int> m_avgcounts;
-	std::map<std::string, float> m_graphvalues;
+	GraphValues m_graphvalues;
+	std::map<std::string, ProfValue> m_data;
 };
 
 enum ScopeProfilerType{
@@ -200,17 +174,6 @@ public:
 		if(m_profiler)
 			m_timer = new TimeTaker(m_name.c_str());
 	}
-	// name is copied
-	ScopeProfiler(Profiler *profiler, const char *name,
-			enum ScopeProfilerType type = SPT_ADD):
-		m_profiler(profiler),
-		m_name(name),
-		m_timer(NULL),
-		m_type(type)
-	{
-		if(m_profiler)
-			m_timer = new TimeTaker(m_name.c_str());
-	}
 	~ScopeProfiler()
 	{
 		if(m_timer)
@@ -218,17 +181,9 @@ public:
 			float duration_ms = m_timer->stop(true);
 			float duration = duration_ms / 1000.0;
 			if(m_profiler){
-				switch(m_type){
-				case SPT_ADD:
-					m_profiler->add(m_name, duration);
-					break;
-				case SPT_AVG:
-					m_profiler->avg(m_name, duration);
-					break;
-				case SPT_GRAPH_ADD:
+				m_profiler->add(m_name, duration);
+				if (m_type == SPT_GRAPH_ADD)
 					m_profiler->graphAdd(m_name, duration);
-					break;
-				}
 			}
 			delete m_timer;
 		}

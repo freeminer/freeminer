@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include <string>
 
 class MapBlock;
 
@@ -37,8 +38,10 @@ public:
 
 	virtual void saveBlock(MapBlock *block)=0;
 	virtual MapBlock* loadBlock(v3s16 blockpos)=0;
-	s64 getBlockAsInteger(const v3s16 pos);
-	v3s16 getIntegerAsBlock(s64 i);
+	s64 getBlockAsInteger(const v3s16 pos) const;
+	v3s16 getIntegerAsBlock(s64 i) const;
+	std::string getBlockAsString(const v3s16 &pos) const;
+	v3s16 getStringAsBlock(const std::string &i) const;
 	virtual void listAllLoadableBlocks(std::list<v3s16> &dst)=0;
 	virtual int Initialized(void)=0;
 	virtual ~Database() {};

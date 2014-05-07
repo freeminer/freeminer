@@ -50,7 +50,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
-	m_smgr(smgr),
 	m_playernode(NULL),
 	m_headnode(NULL),
 	m_cameranode(NULL),
@@ -257,7 +256,7 @@ void Camera::step(f32 dtime)
 }
 
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
-		v2u32 screensize, f32 tool_reload_ratio,
+		f32 tool_reload_ratio,
 		int current_camera_mode, ClientEnvironment &c_env)
 {
 	// Get player position
@@ -441,7 +440,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		fov_degrees += player->movement_fov;
 
 	// FOV and aspect ratio
-	m_aspect = (f32)screensize.X / (f32) screensize.Y;
+	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
 	m_fov_y = fov_degrees * M_PI / 180.0;
 	// Increase vertical FOV on lower aspect ratios (<16:10)
 	m_fov_y *= MYMAX(1.0, MYMIN(1.4, sqrt(16./10. / m_aspect)));
@@ -507,7 +506,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false && current_camera_mode == CAMERA_MODE_FIRST ||
+		(g_settings->getBool("free_move") == false ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation

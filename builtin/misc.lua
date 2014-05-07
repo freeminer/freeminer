@@ -23,6 +23,8 @@ minetest.register_globalstep(function(dtime)
 end)
 
 function minetest.after(time, func, ...)
+	assert(tonumber(time) and type(func) == "function",
+			"Invalid minetest.after invocation")
 	table.insert(minetest.timers_to_add, {time=time, func=func, args={...}})
 end
 
@@ -85,6 +87,7 @@ function minetest.get_item_group(name, group)
 end
 
 function minetest.get_node_group(name, group)
+	minetest.log("deprecated", "Deprecated usage of get_node_group, use get_item_group instead")
 	return minetest.get_item_group(name, group)
 end
 

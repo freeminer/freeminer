@@ -33,7 +33,7 @@ struct ItemDefinition;
 class LuaItemStack;
 class ModApiItemMod;
 class InventoryList;
-class InventoryLocation;
+struct InventoryLocation;
 
 class ScriptApiItem
 : virtual public ScriptApiBase

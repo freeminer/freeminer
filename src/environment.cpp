@@ -227,16 +227,28 @@ void Environment::stepTimeOfDay(float dtime)
 	ABMWithState
 */
 
-ABMWithState::ABMWithState(ActiveBlockModifier *abm_):
+ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	abm(abm_),
-	timer(0)
+	timer(0),
+	required_neighbors(CONTENT_ID_CAPACITY),
+	required_neighbors_activate(CONTENT_ID_CAPACITY)
 {
+	auto ndef = senv->getGameDef()->ndef();
 	// Initialize timer to random value to spread processing
 	float itv = abm->getTriggerInterval();
 	itv = MYMAX(0.001, itv); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
 	int maxval = MYMIN(0.51*itv, 60);   // +-60 seconds
 	timer = myrand_range(minval, maxval);
+
+	for(auto & i : abm->getRequiredNeighbors(0))
+		ndef->getIds(i, required_neighbors);
+
+	for(auto & i : abm->getRequiredNeighbors(1))
+		ndef->getIds(i, required_neighbors_activate);
+
+	for(auto & i : abm->getTriggerContents())
+		ndef->getIds(i, trigger_ids);
 }
 
 /*
@@ -322,7 +334,6 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 	m_script(scriptIface),
 	m_circuit(circuit),
 	m_gamedef(gamedef),
-	m_random_spawn_timer(3),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
 	m_active_block_abm_last(0),
@@ -412,8 +423,8 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 
 void ServerEnvironment::serializePlayers(const std::string &savedir)
 {
-	std::string players_path = savedir + "/players";
-	fs::CreateDir(players_path);
+	//std::string players_path = savedir + "/players";
+	//fs::CreateDir(players_path);
 
 	std::list<Player*>::iterator i = m_players.begin();
 	while (i != m_players.end())
@@ -423,35 +434,11 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 			Json::Value player_json;
 			player_json << *player;
 			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
-		} catch (...) {
+		} catch (...) { }
 		// TODO: remove old file storage:
-
-		if (player->path == "") {
-			std::string playername = player->getName();
-			if(playername == "")
-			{
-				//infostream<<"Not saving unnamed player."<<std::endl;
-				goto save_end;
-			}
-			if(string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false)
-				playername = "player";
-			player->path = players_path + "/" + playername;
-		}
-
-		//infostream<<"Saving player "<<player->getName()<<" to "<<player->path<<std::endl;
-		{
-			std::ostringstream ss(std::ios_base::binary);
-			player->serialize(ss);
-			if(!fs::safeWriteToFile(player->path, ss.str())) {
-				infostream<<"Failed to write "<<player->path<<std::endl;
-				goto save_end;
-			}
-		}
-		}
 
 		player->need_save = 0;
 
-		save_end:
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
 			i = m_players.erase(i);
@@ -462,88 +449,6 @@ void ServerEnvironment::serializePlayers(const std::string &savedir)
 
 	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
 }
-
-#if WTF
-void ServerEnvironment::deSerializePlayers(const std::string &savedir)
-{
-	std::string players_path = savedir + "/players";
-
-	std::vector<fs::DirListNode> player_files = fs::GetDirListing(players_path);
-	for(u32 i=0; i<player_files.size(); i++)
-	{
-		if(player_files[i].dir)
-			continue;
-
-		// Full path to this file
-		std::string path = players_path + "/" + player_files[i].name;
-
-		//infostream<<"Checking player file "<<path<<std::endl;
-
-		// Load player to see what is its name
-		RemotePlayer testplayer(m_gamedef);
-		{
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false || is.eof())
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			try {
-			testplayer.deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
-				errorstream<<e.what()<<std::endl;
-				continue;
-			}
-		}
-
-		if(!string_allowed(testplayer.getName(), PLAYERNAME_ALLOWED_CHARS))
-		{
-			infostream<<"Not loading player with invalid name: "
-					<<testplayer.getName()<<std::endl;
-		}
-
-		/*infostream<<"Loaded test player with name "<<testplayer.getName()
-				<<std::endl;*/
-
-		// Search for the player
-		std::string playername = testplayer.getName();
-		Player *player = getPlayer(playername.c_str());
-		bool newplayer = false;
-		if(player == NULL)
-		{
-			//infostream<<"Is a new player"<<std::endl;
-			player = new RemotePlayer(m_gamedef);
-			newplayer = true;
-		}
-
-		// Load player
-		{
-			verbosestream<<"Reading player "<<testplayer.getName()<<" from "
-					<<path<<std::endl;
-			// Open file and deserialize
-			std::ifstream is(path.c_str(), std::ios_base::binary);
-			if(is.good() == false || is.eof())
-			{
-				infostream<<"Failed to read "<<path<<std::endl;
-				continue;
-			}
-			try {
-			player->deSerialize(is, player_files[i].name);
-			} catch (SerializationError e) {
-				errorstream<<e.what()<<std::endl;
-				continue;
-			}
-			player->path = path;
-		}
-
-		if(newplayer)
-		{
-			addPlayer(player);
-		}
-	}
-}
-#endif
 
 Player * ServerEnvironment::deSerializePlayer(const std::string &name)
 {
@@ -602,9 +507,8 @@ void ServerEnvironment::saveMeta(const std::string &savedir)
 
 	if(!fs::safeWriteToFile(path, ss.str()))
 	{
-		infostream<<"ServerEnvironment::saveMeta(): Failed to write "
+		errorstream<<"ServerEnvironment::saveMeta(): Failed to write "
 				<<path<<std::endl;
-		throw SerializationError("Couldn't save env meta");
 	}
 }
 
@@ -655,30 +559,6 @@ void ServerEnvironment::loadMeta(const std::string &savedir)
 	}
 }
 
-#if WTF // now in .h
-struct ActiveABM
-{
-	ActiveABM():
-		required_neighbors(CONTENT_ID_CAPACITY)
-	{}
-	ActiveBlockModifier *abm;
-	int chance;
-	int neighbors_range;
-	FMBitset required_neighbors;
-};
-#endif
-
-/*
-class ABMHandler
-{
-private:
-	ServerEnvironment *m_env;
-	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
-	std::list<std::list<ActiveABM>*> m_aabms_list;
-	bool m_aabms_empty;
-public:
-*/
-
 	ABMHandler::
 	ABMHandler(std::list<ABMWithState> &abms,
 			float dtime_s, ServerEnvironment *env,
@@ -689,9 +569,10 @@ public:
 	{
 		if(dtime_s < 0.001)
 			return;
-		INodeDefManager *ndef = env->getGameDef()->ndef();
-		for(std::list<ABMWithState>::iterator
-				i = abms.begin(); i != abms.end(); ++i){
+
+		//INodeDefManager *ndef = env->getGameDef()->ndef();
+		for(auto & ai: abms){
+			auto i = &ai;
 			ActiveBlockModifier *abm = i->abm;
 			float trigger_interval = abm->getTriggerInterval();
 			if(trigger_interval < 0.001)
@@ -713,31 +594,15 @@ public:
 			if(chance == 0)
 				chance = 1;
 			ActiveABM aabm;
-			aabm.abm = abm;
-			aabm.neighbors_range = abm->getNeighborsRange();
+			aabm.abm = abm; //del, same as abmws
+			aabm.abmws = i;
 			aabm.chance = chance / intervals;
 			if(aabm.chance == 0)
 				aabm.chance = 1;
-			// Trigger neighbors
-			std::set<std::string> required_neighbors_s
-					= abm->getRequiredNeighbors(activate);
-			for(std::set<std::string>::iterator
-					i = required_neighbors_s.begin();
-					i != required_neighbors_s.end(); i++)
-			{
-				ndef->getIds(*i, aabm.required_neighbors);
-			}
+
 			// Trigger contents
-			std::set<std::string> contents_s = abm->getTriggerContents();
-			for(std::set<std::string>::iterator
-					i = contents_s.begin(); i != contents_s.end(); i++)
-			{
-				std::set<content_t> ids;
-				ndef->getIds(*i, ids);
-				for(std::set<content_t>::const_iterator k = ids.begin();
-						k != ids.end(); k++)
+				for (auto &c : i->trigger_ids)
 				{
-					content_t c = *k;
 					if (!m_aabms[c]) {
 						m_aabms[c] = new std::list<ActiveABM>;
 						m_aabms_list.push_back(m_aabms[c]);
@@ -745,7 +610,6 @@ public:
 					m_aabms[c]->push_back(aabm);
 					m_aabms_empty = false;
 				}
-			}
 		}
 	}
 
@@ -808,17 +672,17 @@ public:
 			if (!m_aabms[c])
 				continue;
 
-			for(std::list<ActiveABM>::iterator
-					i = m_aabms[c]->begin(); i != m_aabms[c]->end(); i++)
-			{
+			for(auto & ir: *(m_aabms[c])) {
+				auto i = &ir;
 				if(myrand() % i->chance != 0)
 					continue;
 				// Check neighbors
 				MapNode neighbor;
-				if(i->required_neighbors.count() > 0)
+				auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
+				if(required_neighbors.count() > 0)
 				{
 					v3s16 p1;
-					int neighbors_range = i->neighbors_range;
+					int neighbors_range = i->abm->getNeighborsRange();
 					for(p1.X = p.X - neighbors_range; p1.X <= p.X + neighbors_range; ++p1.X)
 					for(p1.Y = p.Y - neighbors_range; p1.Y <= p.Y + neighbors_range; ++p1.Y)
 					for(p1.Z = p.Z - neighbors_range; p1.Z <= p.Z + neighbors_range; ++p1.Z)
@@ -827,7 +691,7 @@ public:
 							continue;
 						MapNode n = map->getNodeNoEx(p1);
 						content_t c = n.getContent();
-						if(i->required_neighbors.get(c)){
+						if(required_neighbors.get(c)){
 							neighbor = n;
 							goto neighbor_found;
 						}
@@ -906,7 +770,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
 {
-	m_abms.push_back(ABMWithState(abm));
+	m_abms.push_back(ABMWithState(abm, this));
 }
 
 bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
@@ -1207,7 +1071,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				continue;
 
 			// Move
-			player->move(dtime, *m_map, 100*BS);
+			player->move(dtime, this, 100*BS);
 		}
 	}
 
@@ -1294,13 +1158,10 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 
 		u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		m_blocks_added_last = 0;
-		std::set<v3s16>::iterator i;
-		for(i = m_blocks_added.begin();
-				i != m_blocks_added.end(); ++i)
-		{
+		auto i = m_blocks_added.begin();
+		for(; i != m_blocks_added.end(); ++i) {
 			++n;
 			v3s16 p = *i;
-
 			MapBlock *block = m_map->getBlockOrEmerge(p);
 			if(block==NULL){
 				m_active_blocks.m_list.erase(p);
@@ -2636,7 +2497,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		if(player->isLocal() == false)
 		{
 			// Move
-			player->move(dtime, *m_map, 100*BS);
+			player->move(dtime, this, 100*BS);
 
 		}
 

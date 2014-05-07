@@ -85,6 +85,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef USE_LEVELDB
 #include "database-leveldb.h"
 #endif
+#if USE_REDIS
+#include "database-redis.h"
+#endif
 
 #include "enet/enet.h"
 
@@ -304,7 +307,7 @@ public:
 				}
 			}
 		}
-
+		/* always return false in order to continue processing events */
 		return false;
 	}
 
@@ -363,7 +366,6 @@ public:
 	s32 mouse_wheel;
 
 private:
-	IrrlichtDevice *m_device;
 
 	// The current state of keys
 	KeyList keyIsDown;
@@ -1011,11 +1013,13 @@ int main(int argc, char *argv[])
 		Run unit tests
 	*/
 
+#ifndef _MSC_VER
 	if((ENABLE_TESTS && cmd_args.getFlag("disable-unittests") == false)
 			|| cmd_args.getFlag("enable-unittests") == true)
 	{
 		run_tests();
 	}
+#endif
 #ifdef _MSC_VER
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),g_settings->get("language"),argc,argv);
 #else
@@ -1255,7 +1259,7 @@ int main(int argc, char *argv[])
 			}
 			if (!world_mt.exists("backend")) {
 				errorstream << "Please specify your current backend in world.mt file:"
-					<< std::endl << "	backend = {sqlite3|leveldb|dummy}" << std::endl;
+					<< std::endl << "	backend = {sqlite3|leveldb|redis|dummy}" << std::endl;
 				return 1;
 			}
 			std::string backend = world_mt.get("backend");
@@ -1269,6 +1273,10 @@ int main(int argc, char *argv[])
 			#if USE_LEVELDB
 			else if (migrate_to == "leveldb")
 				new_db = new Database_LevelDB(&(ServerMap&)server.getMap(), world_path);
+			#endif
+			#if USE_REDIS
+			else if (migrate_to == "redis")
+				new_db = new Database_Redis(&(ServerMap&)server.getMap(), world_path);
 			#endif
 			else {
 				errorstream << "Migration to " << migrate_to << " is not supported" << std::endl;
@@ -1453,8 +1461,10 @@ int main(int argc, char *argv[])
 
 	device = createDeviceEx(params);
 
-	if (device == 0)
+	if (device == 0) {
 		return 1; // could not create selected driver.
+	}
+	porting::initIrrlicht(device);
 
 	/*
 		Continue initialization
@@ -1490,10 +1500,11 @@ int main(int argc, char *argv[])
 	bool random_input = g_settings->getBool("random_input")
 			|| cmd_args.getFlag("random-input");
 	InputHandler *input = NULL;
-	if(random_input)
+	if(random_input) {
 		input = new RandomInputHandler();
-	else
+	} else {
 		input = new RealInputHandler(device, &receiver);
+	}
 
 	scene::ISceneManager* smgr = device->getSceneManager();
 
@@ -1503,7 +1514,7 @@ int main(int argc, char *argv[])
 	std::string font_path = g_settings->get("font_path");
 	gui::IGUIFont *font;
 	std::string fallback;
-	if (is_yes(gettext("needs_fallback_font")))
+	if (is_yes(_("needs_fallback_font")))
 		fallback = "fallback_";
 	u16 font_size = g_settings->getU16(fallback + "font_size");
 	font_path = g_settings->get(fallback + "font_path");

@@ -193,7 +193,10 @@ public:
 			IMenuManager *menumgr,
 			InventoryManager *invmgr,
 			IGameDef *gamedef,
-			ISimpleTextureSource *tsrc
+			ISimpleTextureSource *tsrc,
+			IFormSource* fs_src,
+			TextDest* txt_dst,
+			GUIFormSpecMenu** ext_ptr
 			);
 
 	~GUIFormSpecMenu();
@@ -209,12 +212,18 @@ public:
 	// form_src is deleted by this GUIFormSpecMenu
 	void setFormSource(IFormSource *form_src)
 	{
+		if (m_form_src != NULL) {
+			delete m_form_src;
+		}
 		m_form_src = form_src;
 	}
 
 	// text_dst is deleted by this GUIFormSpecMenu
 	void setTextDest(TextDest *text_dst)
 	{
+		if (m_text_dst != NULL) {
+			delete m_text_dst;
+		}
 		m_text_dst = text_dst;
 	}
 
@@ -271,8 +280,6 @@ protected:
 
 	std::string m_formspec_string;
 	InventoryLocation m_current_inventory_location;
-	IFormSource *m_form_src;
-	TextDest *m_text_dst;
 
 	std::vector<ListDrawSpec> m_inventorylists;
 	std::vector<ImageDrawSpec> m_backgrounds;
@@ -308,6 +315,10 @@ protected:
 	video::SColor m_slotbg_h;
 	video::SColor m_slotbordercolor;
 private:
+	IFormSource*      m_form_src;
+	TextDest*         m_text_dst;
+	GUIFormSpecMenu** m_ext_ptr;
+
 	typedef struct {
 		v2s32 size;
 		s32 helptext_h;
@@ -363,16 +374,13 @@ private:
 class FormspecFormSource: public IFormSource
 {
 public:
-	FormspecFormSource(std::string formspec,FormspecFormSource** game_formspec)
+	FormspecFormSource(std::string formspec)
 	{
 		m_formspec = formspec;
-		m_game_formspec = game_formspec;
 	}
 
 	~FormspecFormSource()
-	{
-		*m_game_formspec = 0;
-	}
+	{}
 
 	void setForm(std::string formspec) {
 		m_formspec = formspec;
@@ -384,7 +392,6 @@ public:
 	}
 
 	std::string m_formspec;
-	FormspecFormSource** m_game_formspec;
 };
 
 #endif

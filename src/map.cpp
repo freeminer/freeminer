@@ -54,6 +54,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
+#if USE_REDIS
+#include "database-redis.h"
+#endif
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -1162,7 +1165,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	/*
 		Add neighboring liquid nodes and the node itself if it is
 		liquid (=water node was added) to transform queue.
-		note: todo: for liquid_finite enough to add only self node
+		note: todo: for liquid_real enough to add only self node
 	*/
 	v3s16 dirs[7] = {
 		v3s16(0,0,0), // self
@@ -1354,7 +1357,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	/*
 		Add neighboring liquid nodes and this node to transform queue.
 		(it's vital for the node itself to get updated last.)
-		note: todo: for liquid_finite enough to add only self node
+		note: todo: for liquid_real enough to add only self node
 	*/
 	v3s16 dirs[7] = {
 		v3s16(0,0,1), // back
@@ -2206,7 +2209,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
-	if (g_settings->getBool("liquid_finite"))
+	if (g_settings->getBool("liquid_real"))
 		return Map::transformLiquidsFinite(m_server, modified_blocks, lighting_modified_blocks, max_cycle_ms);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -2670,6 +2673,10 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 		else if (backend == "leveldb")
 			dbase = new Database_LevelDB(this, savedir);
 		#endif
+		#if USE_REDIS
+		else if (backend == "redis")
+			dbase = new Database_Redis(this, savedir);
+		#endif
 		else
 			throw BaseException("Unknown map backend");
 	}
@@ -2832,6 +2839,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 			// Sector metadata is loaded from disk if not already loaded.
 			ServerMapSector *sector = createSector(sectorpos);
 			assert(sector);
+			(void) sector;
 
 			for(s16 y=blockpos_min.Y-extra_borders.Y;
 					y<=blockpos_max.Y+extra_borders.Y; y++)
@@ -3121,21 +3129,6 @@ ServerMapSector * ServerMap::createSector(v2s16 p2d)
 	*/
 	//if(loadSectorFull(p2d) == true)
 
-	/*
-		Try to load metadata from disk
-	*/
-#if 0
-	if(loadSectorMeta(p2d) == true)
-	{
-		ServerMapSector *sector = (ServerMapSector*)getSectorNoGenerateNoEx(p2d);
-		if(sector == NULL)
-		{
-			infostream<<"ServerMap::createSector(): loadSectorFull didn't make a sector"<<std::endl;
-			throw InvalidPositionException("");
-		}
-		return sector;
-	}
-#endif
 	/*
 		Do not create over-limit
 	*/
@@ -3471,12 +3464,6 @@ s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
 	return level;
 }
 
-bool ServerMap::loadFromFolders() {
-	if(!dbase->Initialized() && !fs::PathExists(m_savedir + DIR_DELIM + "map.sqlite")) // ?
-		return true;
-	return false;
-}
-
 void ServerMap::createDirs(std::string path)
 {
 	if(fs::CreateAllDirs(path) == false)
@@ -3485,79 +3472,6 @@ void ServerMap::createDirs(std::string path)
 				<<"\""<<path<<"\""<<std::endl;
 		throw BaseException("ServerMap failed to create directory");
 	}
-}
-
-std::string ServerMap::getSectorDir(v2s16 pos, int layout)
-{
-	char cc[9];
-	switch(layout)
-	{
-		case 1:
-			snprintf(cc, 9, "%.4x%.4x",
-				(unsigned int)pos.X&0xffff,
-				(unsigned int)pos.Y&0xffff);
-
-			return m_savedir + DIR_DELIM + "sectors" + DIR_DELIM + cc;
-		case 2:
-			snprintf(cc, 9, "%.3x" DIR_DELIM "%.3x",
-				(unsigned int)pos.X&0xfff,
-				(unsigned int)pos.Y&0xfff);
-
-			return m_savedir + DIR_DELIM + "sectors2" + DIR_DELIM + cc;
-		default:
-			assert(false);
-	}
-	return "";
-}
-
-v2s16 ServerMap::getSectorPos(std::string dirname)
-{
-	unsigned int x, y;
-	int r;
-	std::string component;
-	fs::RemoveLastPathComponent(dirname, &component, 1);
-	if(component.size() == 8)
-	{
-		// Old layout
-		r = sscanf(component.c_str(), "%4x%4x", &x, &y);
-	}
-	else if(component.size() == 3)
-	{
-		// New layout
-		fs::RemoveLastPathComponent(dirname, &component, 2);
-		r = sscanf(component.c_str(), "%3x" DIR_DELIM "%3x", &x, &y);
-		// Sign-extend the 12 bit values up to 16 bits...
-		if(x&0x800) x|=0xF000;
-		if(y&0x800) y|=0xF000;
-	}
-	else
-	{
-		assert(false);
-	}
-	assert(r == 2);
-	v2s16 pos((s16)x, (s16)y);
-	return pos;
-}
-
-v3s16 ServerMap::getBlockPos(std::string sectordir, std::string blockfile)
-{
-	v2s16 p2d = getSectorPos(sectordir);
-
-	if(blockfile.size() != 4){
-		throw InvalidFilenameException("Invalid block filename");
-	}
-	unsigned int y;
-	int r = sscanf(blockfile.c_str(), "%4x", &y);
-	if(r != 1)
-		throw InvalidFilenameException("Invalid block filename");
-	return v3s16(p2d.X, y, p2d.Y);
-}
-
-std::string ServerMap::getBlockFilename(v3s16 p)
-{
-	char cc[5];
-	snprintf(cc, 5, "%.4x", (unsigned int)p.Y&0xffff);
-	return cc;
 }
 
 s32 ServerMap::save(ModifiedState save_level, bool breakable)
@@ -3670,10 +3584,6 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 
 void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
-	if(loadFromFolders()){
-		errorstream<<"Map::listAllLoadableBlocks(): Result will be missing "
-				<<"all blocks that are stored in flat files"<<std::endl;
-	}
 	dbase->listAllLoadableBlocks(dst);
 }
 
@@ -3764,183 +3674,6 @@ void ServerMap::loadMapMeta()
 		<< m_emerge->params.seed<<std::endl;
 }
 
-void ServerMap::saveSectorMeta(ServerMapSector *sector)
-{
-	DSTACK(__FUNCTION_NAME);
-	// Format used for writing
-	u8 version = SER_FMT_VER_HIGHEST_WRITE;
-	// Get destination
-	v2s16 pos = sector->getPos();
-	std::string dir = getSectorDir(pos);
-	createDirs(dir);
-
-	std::string fullpath = dir + DIR_DELIM + "meta";
-	std::ostringstream ss(std::ios_base::binary);
-
-	sector->serialize(ss, version);
-
-	if(!fs::safeWriteToFile(fullpath, ss.str()))
-		throw FileNotGoodException("Cannot write sector metafile");
-
-	sector->differs_from_disk = false;
-}
-
-MapSector* ServerMap::loadSectorMeta(std::string sectordir, bool save_after_load)
-{
-	DSTACK(__FUNCTION_NAME);
-	// Get destination
-	v2s16 p2d = getSectorPos(sectordir);
-
-	ServerMapSector *sector = NULL;
-
-	std::string fullpath = sectordir + DIR_DELIM + "meta";
-	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-	if(is.good() == false)
-	{
-		// If the directory exists anyway, it probably is in some old
-		// format. Just go ahead and create the sector.
-		if(fs::PathExists(sectordir))
-		{
-			/*infostream<<"ServerMap::loadSectorMeta(): Sector metafile "
-					<<fullpath<<" doesn't exist but directory does."
-					<<" Continuing with a sector with no metadata."
-					<<std::endl;*/
-			sector = new ServerMapSector(this, p2d, m_gamedef);
-			m_sectors[p2d] = sector;
-		}
-		else
-		{
-			throw FileNotGoodException("Cannot open sector metafile");
-		}
-	}
-	else
-	{
-		sector = ServerMapSector::deSerialize
-				(is, this, p2d, m_sectors, m_gamedef);
-		if(save_after_load)
-			saveSectorMeta(sector);
-	}
-
-	sector->differs_from_disk = false;
-
-	return sector;
-}
-
-bool ServerMap::loadSectorMeta(v2s16 p2d)
-{
-	DSTACK(__FUNCTION_NAME);
-
-	MapSector *sector = NULL;
-
-	// The directory layout we're going to load from.
-	//  1 - original sectors/xxxxzzzz/
-	//  2 - new sectors2/xxx/zzz/
-	//  If we load from anything but the latest structure, we will
-	//  immediately save to the new one, and remove the old.
-	int loadlayout = 1;
-	std::string sectordir1 = getSectorDir(p2d, 1);
-	std::string sectordir;
-	if(fs::PathExists(sectordir1))
-	{
-		sectordir = sectordir1;
-	}
-	else
-	{
-		loadlayout = 2;
-		sectordir = getSectorDir(p2d, 2);
-	}
-
-	try{
-		sector = loadSectorMeta(sectordir, loadlayout != 2);
-	}
-	catch(InvalidFilenameException &e)
-	{
-		return false;
-	}
-	catch(FileNotGoodException &e)
-	{
-		return false;
-	}
-	catch(std::exception &e)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-#if 0
-bool ServerMap::loadSectorFull(v2s16 p2d)
-{
-	DSTACK(__FUNCTION_NAME);
-
-	MapSector *sector = NULL;
-
-	// The directory layout we're going to load from.
-	//  1 - original sectors/xxxxzzzz/
-	//  2 - new sectors2/xxx/zzz/
-	//  If we load from anything but the latest structure, we will
-	//  immediately save to the new one, and remove the old.
-	int loadlayout = 1;
-	std::string sectordir1 = getSectorDir(p2d, 1);
-	std::string sectordir;
-	if(fs::PathExists(sectordir1))
-	{
-		sectordir = sectordir1;
-	}
-	else
-	{
-		loadlayout = 2;
-		sectordir = getSectorDir(p2d, 2);
-	}
-
-	try{
-		sector = loadSectorMeta(sectordir, loadlayout != 2);
-	}
-	catch(InvalidFilenameException &e)
-	{
-		return false;
-	}
-	catch(FileNotGoodException &e)
-	{
-		return false;
-	}
-	catch(std::exception &e)
-	{
-		return false;
-	}
-
-	/*
-		Load blocks
-	*/
-	std::vector<fs::DirListNode> list2 = fs::GetDirListing
-			(sectordir);
-	std::vector<fs::DirListNode>::iterator i2;
-	for(i2=list2.begin(); i2!=list2.end(); i2++)
-	{
-		// We want files
-		if(i2->dir)
-			continue;
-		try{
-			loadBlock(sectordir, i2->name, sector, loadlayout != 2);
-		}
-		catch(InvalidFilenameException &e)
-		{
-			// This catches unknown crap in directory
-		}
-	}
-
-	if(loadlayout != 2)
-	{
-		infostream<<"Sector converted to new layout - deleting "<<
-			sectordir1<<std::endl;
-		fs::RecursiveDelete(sectordir1);
-	}
-
-	return true;
-}
-#endif
-
 void ServerMap::beginSave() {
 	dbase->beginSave();
 }
@@ -3954,219 +3687,11 @@ void ServerMap::saveBlock(MapBlock *block)
   dbase->saveBlock(block);
 }
 
-void ServerMap::loadBlock(std::string sectordir, std::string blockfile, MapSector *sector, bool save_after_load)
-{
-	DSTACK(__FUNCTION_NAME);
-	std::string fullpath = sectordir+DIR_DELIM+blockfile;
-	try{
-
-		std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-		if(is.good() == false)
-			throw FileNotGoodException("Cannot open block file");
-
-		v3s16 p3d = getBlockPos(sectordir, blockfile);
-		v2s16 p2d(p3d.X, p3d.Z);
-
-		assert(sector->getPos() == p2d);
-
-		u8 version = SER_FMT_VER_INVALID;
-		is.read((char*)&version, 1);
-
-		if(is.fail())
-			throw SerializationError("ServerMap::loadBlock(): Failed"
-					" to read MapBlock version");
-
-		/*u32 block_size = MapBlock::serializedLength(version);
-		SharedBuffer<u8> data(block_size);
-		is.read((char*)*data, block_size);*/
-
-		// This will always return a sector because we're the server
-		//MapSector *sector = emergeSector(p2d);
-
-		MapBlock *block = NULL;
-		bool created_new = false;
-		block = sector->getBlockNoCreateNoEx(p3d.Y);
-		if(block == NULL)
-		{
-			block = sector->createBlankBlockNoInsert(p3d.Y);
-			created_new = true;
-		}
-
-		// Read basic data
-		block->deSerialize(is, version, true);
-		block->pushElementsToCircuit(m_circuit);
-
-		// If it's a new block, insert it to the map
-		if(created_new)
-			sector->insertBlock(block);
-
-		/*
-			Save blocks loaded in old format in new format
-		*/
-
-		if(version < SER_FMT_VER_HIGHEST_WRITE || save_after_load)
-		{
-			saveBlock(block);
-
-			// Should be in database now, so delete the old file
-			fs::RecursiveDelete(fullpath);
-		}
-
-		// We just loaded it from the disk, so it's up-to-date.
-		block->resetModified();
-
-	}
-	catch(SerializationError &e)
-	{
-		infostream<<"WARNING: Invalid block data on disk "
-				<<"fullpath="<<fullpath
-				<<" (SerializationError). "
-				<<"what()="<<e.what()
-				<<std::endl;
-				// Ignoring. A new one will be generated.
-		assert(0);
-
-		// TODO: Backup file; name is in fullpath.
-	}
-}
-
-void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool save_after_load)
-{
-	DSTACK(__FUNCTION_NAME);
-
-	try {
-		std::istringstream is(*blob, std::ios_base::binary);
-
-		u8 version = SER_FMT_VER_INVALID;
-		is.read((char*)&version, 1);
-
-		if(is.fail())
-			throw SerializationError("ServerMap::loadBlock(): Failed"
-					" to read MapBlock version");
-
-		/*u32 block_size = MapBlock::serializedLength(version);
-		SharedBuffer<u8> data(block_size);
-		is.read((char*)*data, block_size);*/
-
-		// This will always return a sector because we're the server
-		//MapSector *sector = emergeSector(p2d);
-
-		MapBlock *block = NULL;
-		bool created_new = false;
-		block = sector->getBlockNoCreateNoEx(p3d.Y);
-		if(block == NULL)
-		{
-			block = sector->createBlankBlockNoInsert(p3d.Y);
-			created_new = true;
-		}
-
-		// Read basic data
-		block->deSerialize(is, version, true);
-
-		// If it's a new block, insert it to the map
-		if(created_new)
-			sector->insertBlock(block);
-
-		/*
-			Save blocks loaded in old format in new format
-		*/
-
-		//if(version < SER_FMT_VER_HIGHEST_READ || save_after_load)
-		// Only save if asked to; no need to update version
-		if(save_after_load)
-			saveBlock(block);
-
-		// We just loaded it from, so it's up-to-date.
-		block->resetModified();
-
-	}
-	catch(SerializationError &e)
-	{
-		errorstream<<"Invalid block data in database"
-				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
-				<<" (SerializationError): "<<e.what()<<std::endl;
-
-		// TODO: Block should be marked as invalid in memory so that it is
-		// not touched but the game can run
-
-		if(g_settings->getBool("ignore_world_load_errors")){
-			errorstream<<"Ignoring block load error. Duck and cover! "
-					<<"(ignore_world_load_errors)"<<std::endl;
-		} else {
-			throw SerializationError("Invalid block data in database");
-			//assert(0);
-		}
-	}
-}
-
 MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	v2s16 p2d(blockpos.X, blockpos.Z);
-
-	MapBlock *ret;
-
-	ret = dbase->loadBlock(blockpos);
-	if (ret) return (ret);
-	return ret;
-
-	// Not found in database, try the files
-
-	// The directory layout we're going to load from.
-	//  1 - original sectors/xxxxzzzz/
-	//  2 - new sectors2/xxx/zzz/
-	//  If we load from anything but the latest structure, we will
-	//  immediately save to the new one, and remove the old.
-	int loadlayout = 1;
-	std::string sectordir1 = getSectorDir(p2d, 1);
-	std::string sectordir;
-	if(fs::PathExists(sectordir1))
-	{
-		sectordir = sectordir1;
-	}
-	else
-	{
-		loadlayout = 2;
-		sectordir = getSectorDir(p2d, 2);
-	}
-
-	/*
-		Make sure sector is loaded
-	*/
-	MapSector *sector = getSectorNoGenerateNoEx(p2d);
-	if(sector == NULL)
-	{
-		try{
-			sector = loadSectorMeta(sectordir, loadlayout != 2);
-		}
-		catch(InvalidFilenameException &e)
-		{
-			return NULL;
-		}
-		catch(FileNotGoodException &e)
-		{
-			return NULL;
-		}
-		catch(std::exception &e)
-		{
-			return NULL;
-		}
-	}
-
-	/*
-		Make sure file exists
-	*/
-
-	std::string blockfilename = getBlockFilename(blockpos);
-	if(fs::PathExists(sectordir+DIR_DELIM+blockfilename) == false)
-		return NULL;
-
-	/*
-		Load block and save it to the database
-	*/
-	loadBlock(sectordir, blockfilename, sector, true);
-	return getBlockNoCreateNoEx(blockpos);
+	return dbase->loadBlock(blockpos);
 }
 
 void ServerMap::PrintInfo(std::ostream &out)
@@ -4176,50 +3701,52 @@ void ServerMap::PrintInfo(std::ostream &out)
 
 s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
-	u32 gametime = env->getGameTime();
+	auto bp = getNodeBlockPos(p);
+	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+		block = getBlockNoCreateNoEx(bp);
 	}
-	if (cache && cache->count(getNodeBlockPos(p)))
-		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
+	if (cache && cache->count(bp))
+		return cache->at(bp) + myrand_range(0, 1);
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
+	auto value = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
-		block->heat = heat;
+		block->heat = value;
 		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
 	if (cache)
-		(*cache)[getNodeBlockPos(p)] = heat;
-	return heat + myrand_range(0, 1);
+		(*cache)[bp] = value;
+	return value + myrand_range(0, 1);
 }
 
 s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
 {
-	u32 gametime = env->getGameTime();
+	auto bp = getNodeBlockPos(p);
+	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+		block = getBlockNoCreateNoEx(bp);
 	}
-	if (cache && cache->count(getNodeBlockPos(p)))
-		return (*cache)[getNodeBlockPos(p)] + myrand_range(0, 1);
+	if (cache && cache->count(bp))
+		return cache->at(bp) + myrand_range(0, 1);
 
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
+	auto value = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
-		block->humidity = humidity;
+		block->humidity = value;
 		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
 	}
 	if (cache)
-		(*cache)[getNodeBlockPos(p)] = humidity;
-	return humidity + myrand_range(0, 1);
+		(*cache)[bp] = value;
+	return value + myrand_range(0, 1);
 }
 
 int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {

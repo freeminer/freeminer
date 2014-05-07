@@ -102,10 +102,10 @@
 # Enable a bit lower water surface; disable for speed (not quite optimized)
 #new_style_water = false
 # Constant volume liquids
-#liquid_finite = false
+#liquid_real = false
 # Update liquids every .. recommend for finite: 0.2
 #liquid_update = 0.4
-# Send to client updated liquid every (increase on high loaded servers with liquid_finite)
+# Send to client updated liquid every (increase on high loaded servers with liquid_real)
 #liquid_send = 1.0
 # Relax flowing blocks to source if level near max and N nearby
 #  source blocks, more realistic, but not true constant.
@@ -115,7 +115,7 @@
 # Optimization: faster cave flood (and not true constant)
 #  (for finite liquids)
 #liquid_fast_flood = 1
-# Enable weather (cold-hot, water freeze-melt). use only with liquid_finite=1
+# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 #weather = false
 # Enable nice leaves; disable for speed
 #new_style_leaves = true
@@ -160,6 +160,8 @@
 #crosshair_color = (255,255,255)
 # Cross alpha (opaqueness, between 0 and 255)
 #crosshair_alpha = 255
+# scale gui by a user specified value
+#gui_scaling = 1.0
 # Sensitivity multiplier
 #mouse_sensitivity = 0.2
 # Sound settings
@@ -167,6 +169,9 @@
 #sound_volume = 0.7
 # Whether node texture animations should be desynchronized per MapBlock
 #desynchronize_mapblock_texture_animation = true
+# maximum percentage of current window to be used for hotbar
+# (usefull if you've there's something to be displayed right or left of hotbar)
+#hud_hotbar_max_width = 1.0
 # Texture filtering settings
 #mip_map = false
 #anisotropic_filter = false
@@ -185,7 +190,7 @@
 #normalmaps_strength = 0.6
 # Strength of generated normalmaps
 #normalmaps_smooth = 1
-# Defines sampling step of texture (0 - 2) 
+# Defines sampling step of texture (0 - 2)
 # Higher the value normal maps will be smoother
 #enable_parallax_occlusion = false
 # Scale of parallax occlusion effect
@@ -224,6 +229,9 @@
 # - Downloads performed by main menu (e.g. mod manager)
 # Only has an effect if compiled with cURL
 #curl_parallel_limit = 8
+
+# enable usage of remote media server (if provided by server)
+#enable_remote_media_server = true
 
 # Url to the server list displayed in the Multiplayer Tab
 #serverlist_url = servers.freeminer.org
@@ -313,6 +321,11 @@
 #max_spawn_height = 50
 # Allow players with any symbols in names
 #enable_any_name = 0 # WARNING!!! SECURITY RISK WITH SOME MODULES
+# handling for deprecated lua api calls
+#    "legacy" = (try to) mimic old behaviour (default for release)
+#    "log"    = mimic and log backtrace of deprecated call (default for debug)
+#    "error"  = abort on usage of deprecated call (suggested for mod developers)
+#deprecated_lua_api_handling = legacy
 
 # Profiler data print interval. #0 = disable.
 #profiler_print_interval = 0
