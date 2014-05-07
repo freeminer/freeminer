@@ -199,13 +199,19 @@ public:
 	}
 	std::string getModifiedReason()
 	{
+#ifdef WTFdebug
 		return m_modified_reason;
+#else
+		return std::string();
+#endif
 	}
 	void resetModified()
 	{
 		m_modified = MOD_STATE_CLEAN;
+#ifdef WTFdebug
 		m_modified_reason = "none";
 		m_modified_reason_too_long = false;
+#endif
 	}
 	
 	// is_underground getter/setter
@@ -590,8 +596,11 @@ private:
 		- On the client, this is used for nothing.
 	*/
 	u32 m_modified;
+
+#ifdef WTFdebug
 	std::string m_modified_reason;
 	bool m_modified_reason_too_long;
+#endif
 
 	/*
 		When propagating sunlight and the above block doesn't exist,

@@ -101,7 +101,7 @@ public:
 infostream<<"L start"<<std::endl;
 
 		porting::setThreadName("LightThread");
-		porting::setThreadPriority(95);
+		porting::setThreadPriority(5);
 		while(!StopRequested()) {
 			if (!m_server->m_lighting_modified_blocks.size()) {
 				m_server->m_lighting_modified_blocks.sem.wait();

@@ -1502,7 +1502,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 				if(block->getModified() != MOD_STATE_CLEAN
 						&& save_before_unloading)
 				{
-					modprofiler.add(block->getModifiedReason(), 1);
+					//modprofiler.add(block->getModifiedReason(), 1);
 					beginSave();
 					saveBlock(block);
 					endSave();
@@ -3169,7 +3169,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 					save_started = true;
 				}
 
-				modprofiler.add(block->getModifiedReason(), 1);
+				//modprofiler.add(block->getModifiedReason(), 1);
 
 				saveBlock(block);
 				block_count++;
