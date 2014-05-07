@@ -2640,6 +2640,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						delete event.hudadd.align;
 						delete event.hudadd.offset;
 						delete event.hudadd.world_pos;
+						delete event.hudadd.size;
 						continue;
 					}
 					
@@ -2655,6 +2656,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 					e->align  = *event.hudadd.align;
 					e->offset = *event.hudadd.offset;
 					e->world_pos = *event.hudadd.world_pos;
+					e->size = *event.hudadd.size;
 					
 					if (id == nhudelem)
 						player->hud.push_back(e);
@@ -2668,6 +2670,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 					delete event.hudadd.align;
 					delete event.hudadd.offset;
 					delete event.hudadd.world_pos;
+					delete event.hudadd.size;
 				}
 				else if (event.type == CE_HUDRM)
 				{
@@ -2684,6 +2687,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						delete event.hudchange.v3fdata;
 						delete event.hudchange.v2fdata;
 						delete event.hudchange.sdata;
+						delete event.hudchange.v2s32data;
 						continue;
 					}
 						
@@ -2719,11 +2723,15 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						case HUD_STAT_WORLD_POS:
 							e->world_pos = *event.hudchange.v3fdata;
 							break;
+						case HUD_STAT_SIZE:
+							e->size = *event.hudchange.v2s32data;
+							break;
 					}
 					
 					delete event.hudchange.v3fdata;
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
+					delete event.hudchange.v2s32data;
 				}
 				else if (event.type == CE_SET_SKY)
 				{
@@ -3744,8 +3752,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if (show_hud)
 		{
-			hud.drawHotbar(client.getHP(), client.getPlayerItem(),
-					client.getBreath());
+			hud.drawHotbar(client.getPlayerItem());
 		}
 
 		/*

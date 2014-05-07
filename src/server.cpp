@@ -822,7 +822,7 @@ void Server::AsyncRunStep(bool initial_step)
 			/*
 				Send player breath if changed
 			*/
-			if(playersao->m_breath_not_sent){
+			if(playersao->m_breath_not_sent) {
 				SendPlayerBreath(*i);
 			}
 
@@ -2466,6 +2466,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		std::istringstream is(datastring, std::ios_base::binary);
 		u16 breath = readU16(is);
 		playersao->setBreath(breath);
+		m_script->player_event(playersao,"breath_changed");
 	}
 	else if(command == TOSERVER_PASSWORD)
 	{
@@ -3557,6 +3558,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 	writeV2F1000(os, form->align);
 	writeV2F1000(os, form->offset);
 	writeV3F1000(os, form->world_pos);
+	writeV2S32(os,form->size);
 
 	// Make data buffer
 	std::string s = os.str();
@@ -3602,6 +3604,9 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 			break;
 		case HUD_STAT_WORLD_POS:
 			writeV3F1000(os, *(v3f *)value);
+			break;
+		case HUD_STAT_SIZE:
+			writeV2S32(os,*(v2s32 *)value);
 			break;
 		case HUD_STAT_NUMBER:
 		case HUD_STAT_ITEM:
@@ -3713,6 +3718,7 @@ void Server::SendPlayerHP(u16 peer_id)
 	assert(playersao);
 	playersao->m_hp_not_sent = false;
 	SendHP(peer_id, playersao->getHP());
+	m_script->player_event(playersao,"health_changed");
 
 	// Send to other clients
 	std::string str = gob_cmd_punched(playersao->readDamage(), playersao->getHP());
@@ -3726,6 +3732,7 @@ void Server::SendPlayerBreath(u16 peer_id)
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
 	playersao->m_breath_not_sent = false;
+	m_script->player_event(playersao,"breath_changed");
 	SendBreath(peer_id, playersao->getBreath());
 }
 
@@ -4857,6 +4864,8 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask) {
 		return false;
 
 	SendHUDSetFlags(player->peer_id, flags, mask);
+
+	m_script->player_event(player->getPlayerSAO(),"hud_changed");
 	return true;
 }
 
