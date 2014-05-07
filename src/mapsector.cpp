@@ -99,8 +99,8 @@ void Map::deleteBlock(MapBlock *block)
 	// Clear from cache
 	m_block_cache = nullptr;
 
-	//delete block;
-	m_blocks_delete.push_back(block);
+	delete block;
+	//m_blocks_delete.push_back(block); // used only in map convert, can delete
 
 	// Remove from container
 	m_blocks.erase(block_p);
