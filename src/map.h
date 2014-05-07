@@ -339,12 +339,15 @@ public:
 // from old mapsector:
 	MapBlock *m_block_cache;
 	v3s16 m_block_cache_p;
-	shared_map<v3s16, MapBlock*> m_blocks;
+	typedef shared_map<v3s16, MapBlock*> m_blocks_type;
+	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
 	MapBlock * createBlankBlock(v3s16 & p);
 	void insertBlock(MapBlock *block);
 	void deleteBlock(MapBlock *block);
+	typename m_blocks_type::iterator deleteBlock(m_blocks_type::iterator i);
+	std::vector<MapBlock *> m_blocks_delete;
 	void getBlocks(std::list<MapBlock*> &dest);
 	MapBlock *getBlockBuffered(v3s16 & p);
 

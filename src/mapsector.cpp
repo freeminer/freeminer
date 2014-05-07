@@ -93,16 +93,26 @@ void Map::insertBlock(MapBlock *block)
 
 void Map::deleteBlock(MapBlock *block)
 {
+	auto lock = m_blocks.lock_unique();
 	auto block_p = block->getPos();
 
 	// Clear from cache
 	m_block_cache = nullptr;
-	
+
+	//delete block;
+	m_blocks_delete.push_back(block);
+
 	// Remove from container
 	m_blocks.erase(block_p);
+}
 
-	// Delete
-	delete block;
+Map::m_blocks_type::iterator Map::deleteBlock(Map::m_blocks_type::iterator i) {
+	auto lock = m_blocks.lock_unique();
+	MapBlock *block = i->second;
+	m_block_cache = nullptr;
+	//delete block;
+	m_blocks_delete.push_back(block);
+	return m_blocks.erase(i);
 }
 
 void Map::getBlocks(std::list<MapBlock*> &dest)

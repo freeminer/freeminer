@@ -181,6 +181,7 @@ template <class Key, class T, class Compare = std::less<Key>,
 class shared_map: public std::map<Key, T, Compare, Allocator>,
 public locker
 {
+public:
 
     typedef Key                                      key_type;
     typedef T                                        mapped_type;
@@ -189,8 +190,6 @@ public locker
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::iterator iterator;
-
-public:
 
 /*
 	try_shared_mutex mtx;

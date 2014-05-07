@@ -1463,6 +1463,12 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
+	if (!m_blocks_update_last) {
+		//while(m_blocks_delete.size()){
+			for(auto &i : m_blocks_delete)
+				delete i;
+			m_blocks_delete.clear();
+	}
 	std::list<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
@@ -1470,8 +1476,11 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
-		for(auto & ir : m_blocks) {
-			MapBlock *block = ir.second;
+//	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+//		si != m_sectors.end(); ++si)
+//	{
+		for(auto i = m_blocks.begin(); i != m_blocks.end();) {
+			MapBlock *block = i->second;
 		if (n++ < m_blocks_update_last)
 			continue;
 		else
@@ -1529,7 +1538,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 		} // block lock
 		if (del)
-			this->deleteBlock(block);
+			i = this->deleteBlock(i);
+		else
+			++i;
 
 		if (porting::getTimeMs() > end_ms) {
 			m_blocks_update_last = n;
