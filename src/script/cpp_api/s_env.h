@@ -40,6 +40,9 @@ public:
 	// After initializing mapgens
 	void environment_OnMapgenInit(MapgenParams *mgparams);
 
+	//called on player event
+	void player_event(ServerActiveObject* player, std::string type);
+
 	void initializeEnvironment(ServerEnvironment *env);
 };
 
