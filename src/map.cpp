@@ -1468,21 +1468,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
-/*
-	beginSave();
-*/
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-
-//	for(std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
-//		si != m_sectors.end(); ++si)
-//	{
-
-		//MapSector *sector = si->second;
-
-		bool all_blocks_deleted = true;
-
-		//std::list<MapBlock*> blocks;
-		//sector->getBlocks(blocks);
 
 		for(auto & ir : m_blocks) {
 			MapBlock *block = ir.second;
@@ -1492,6 +1478,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			m_blocks_update_last = 0;
 		++calls;
 
+		bool del = 0;
+		{
 		auto lock = block->lock_unique();
 
 			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
@@ -1515,7 +1503,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 				}
 
 				// Delete from memory
-				this->deleteBlock(block);
+				//this->deleteBlock(block);
+				del = 1;
 
 				if(unloaded_blocks)
 					unloaded_blocks->push_back(p);
@@ -1524,7 +1513,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			}
 			else
 			{
-				all_blocks_deleted = false;
 				block_count_all++;
 
 /*#ifndef SERVER
@@ -1538,6 +1526,11 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 				}
 #endif*/
 			}
+
+		} // block lock
+		if (del)
+			this->deleteBlock(block);
+
 		if (porting::getTimeMs() > end_ms) {
 			m_blocks_update_last = n;
 			break;
