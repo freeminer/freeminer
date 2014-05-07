@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <atomic>
+#include <thread>
 
 #if USE_BOOST
 //#include <boost/thread/locks.hpp>
@@ -59,18 +60,24 @@ template<class T>
 class lock_rec {
 public:
 	T & lock;
-	std::atomic_int &r;
+	int &r;
+	//std::thread::native_handle_type & handle;
+	std::thread::id & thread_id;
 	//bool copy;
 	//bool locked;
-	lock_rec(T & lock_, std::atomic_int &r_):
+	//lock_rec(T & lock_, std::atomic_int &r_):
+	lock_rec(T & lock_, int & r_, std::thread::id & thread_id_):
 		lock(lock_),
-		r(r_)//,
+		r(r_),
+		thread_id(thread_id_)
 		//copy(0)
 		//,
 		//locked(0) 
 		{
-		if(!r) {
+		auto thread_me = std::this_thread::get_id();
+		if(!r || thread_me != thread_id) {
 			lock.lock();
+			thread_id = thread_me;
 			//locked = 1;
 		}
 		++r;
@@ -83,6 +90,7 @@ public:
 		//if(locked) {
 		if(!--r) {
 			//lock.unlock();
+			//handle = -1;
 		}
 		//}
 	}
@@ -93,7 +101,9 @@ public:
 	try_shared_mutex mtx;
 	semaphore sem;
 	//bool lock_ext;
-	std::atomic_int r;
+	//std::atomic_int r;
+	int r;
+	std::thread::id thread_id;
 
 	locker() {
 		//lock_ext = 0;
@@ -102,22 +112,22 @@ public:
 
 	lock_rec<unique_lock> lock_unique_int() {
 		auto lock = unique_lock(mtx, std::defer_lock);
-		return lock_rec<unique_lock> (lock, r);
+		return lock_rec<unique_lock> (lock, r, thread_id);
 	}
 
 	lock_rec<unique_lock> lock_unique() { //del
 		auto lock = unique_lock(mtx, std::defer_lock);
-		return lock_rec<unique_lock> (lock, r);
+		return lock_rec<unique_lock> (lock, r, thread_id);
 	}
 
 	lock_rec<try_shared_lock> lock_shared() {
 		auto lock = try_shared_lock(mtx, std::defer_lock);
-		return lock_rec<try_shared_lock> (lock, r);
+		return lock_rec<try_shared_lock> (lock, r, thread_id);
 	}
 
 	lock_rec<try_shared_lock> lock_shared_int() { //del
 		auto lock = try_shared_lock(mtx, std::defer_lock);
-		return lock_rec<try_shared_lock> (lock, r);
+		return lock_rec<try_shared_lock> (lock, r, thread_id);
 	}
 
 	void unlock_ext() {} //del
