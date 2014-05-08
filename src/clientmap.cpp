@@ -65,7 +65,7 @@ ClientMap::ClientMap(
 		scene::ISceneManager* mgr,
 		s32 id
 ):
-	Map(dout_client, gamedef),
+	Map(gamedef),
 	scene::ISceneNode(parent, mgr, id),
 	m_client(client),
 	m_control(control),
