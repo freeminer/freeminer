@@ -402,7 +402,7 @@ void Map::unLightNeighbors(enum LightBank bank,
 */
 void Map::spreadLight(enum LightBank bank,
 		std::set<v3s16> & from_nodes,
-		std::map<v3s16, MapBlock*> & modified_blocks)
+		std::map<v3s16, MapBlock*> & modified_blocks, int recursive)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -543,8 +543,16 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(lighted_nodes.size() > 0)
-		spreadLight(bank, lighted_nodes, modified_blocks);
+	if(lighted_nodes.size() > 0 && recursive <= 32) { // maybe 32 too small
+/*
+		infostream<<"spreadLight(): recursive("<<count<<"): changed=" <<blockchangecount
+			<<" from="<<from_nodes.size()
+			<<" lighted="<<lighted_nodes.size()
+			<<" modifiedB="<<modified_blocks.size()
+			<<std::endl;
+*/
+		spreadLight(bank, lighted_nodes, modified_blocks, ++recursive);
+	}
 }
 
 /*
@@ -1264,7 +1272,6 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		}
 		catch(InvalidPositionException &e)
 		{
-			assert(0);
 		}
 	}
 

@@ -98,14 +98,14 @@ public:
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
-infostream<<"L start"<<std::endl;
+//infostream<<"L start"<<std::endl;
 
 		porting::setThreadName("LightThread");
-		porting::setThreadPriority(5);
+		porting::setThreadPriority(99);
 		while(!StopRequested()) {
 			if (!m_server->m_lighting_modified_blocks.size()) {
 				m_server->m_lighting_modified_blocks.sem.wait();
-infostream<<"L wait"<<std::endl;
+//infostream<<"L wait"<<std::endl;
 				continue;
 			}
 shared_map<v3s16, MapBlock*> m_modified_blocks;
@@ -136,19 +136,19 @@ public:
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
-infostream<<"S start"<<std::endl;
+//infostream<<"S start"<<std::endl;
 
 		porting::setThreadName("SendBlocksThread");
 		porting::setThreadPriority(50);
 		auto time = porting::getTimeMs();
 		while(!StopRequested()) {
-infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
+//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
 			m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
 			time = porting::getTimeMs();
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			
 		}
-infostream<<"S end"<<std::endl;
+//infostream<<"S end"<<std::endl;
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 	return nullptr;
 	}
@@ -171,18 +171,18 @@ public:
 		//BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		ThreadStarted();
-infostream<<"Lq start"<<std::endl;
+//infostream<<"Lq start"<<std::endl;
 
 		porting::setThreadName("LiquidThread");
 		porting::setThreadPriority(99);
 		while(!StopRequested()) {
 			if (!m_server->getMap().m_transforming_liquid.size()) {
-infostream<<"Lq wait"<<std::endl;
+//infostream<<"Lq wait"<<std::endl;
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				continue;
 			}
 
-shared_map<v3s16, MapBlock*> m_modified_blocks;
+		shared_map<v3s16, MapBlock*> m_modified_blocks;
 		auto flowed = m_server->getMap().transformLiquids(m_server, m_modified_blocks, m_server->m_lighting_modified_blocks, 100);
 infostream<<"Lq calc="<<m_server->m_lighting_modified_blocks.size()<<" flowed="<<flowed<<std::endl;
 		if ( flowed> 0) {
