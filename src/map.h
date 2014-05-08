@@ -144,8 +144,7 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-	Map(std::ostream &dout, IGameDef *gamedef);
-	Map(std::ostream &dout, IGameDef *gamedef, Circuit* circuit);
+	Map(IGameDef *gamedef, Circuit* circuit = nullptr);
 	virtual ~Map();
 
 	/*virtual u16 nodeContainerId() const
@@ -370,8 +369,6 @@ public:
 
 protected:
 	friend class LuaVoxelManip;
-
-	std::ostream &m_dout; // A bit deprecated, could be removed
 
 	IGameDef *m_gamedef;
 	Circuit* m_circuit;

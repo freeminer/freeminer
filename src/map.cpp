@@ -81,22 +81,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Map
 */
 
-Map::Map(std::ostream &dout, IGameDef *gamedef):
-	m_liquid_step_flow(1000),
-	m_dout(dout),
-	m_gamedef(gamedef),
-	m_sectors_update_last(0),
-	m_sectors_save_last(0),
-	m_sector_cache(NULL)
-{
-	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
-	m_circuit = NULL;
-}
-
 // TODO: mmerge with ^^ with curcuit=NULL
-Map::Map(std::ostream &dout, IGameDef *gamedef, Circuit* circuit):
+Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_liquid_step_flow(1000),
-	m_dout(dout),
 	m_gamedef(gamedef),
 	m_circuit(circuit),
 	m_sectors_update_last(0),
@@ -2645,7 +2632,7 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 	ServerMap
 */
 ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* circuit):
-	Map(dout_server, gamedef, circuit),
+	Map(gamedef, circuit),
 	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
@@ -3468,7 +3455,7 @@ void ServerMap::createDirs(std::string path)
 {
 	if(fs::CreateAllDirs(path) == false)
 	{
-		m_dout<<DTIME<<"ServerMap: Failed to create directory "
+		errorstream<<DTIME<<"ServerMap: Failed to create directory "
 				<<"\""<<path<<"\""<<std::endl;
 		throw BaseException("ServerMap failed to create directory");
 	}
