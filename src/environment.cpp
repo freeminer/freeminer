@@ -1165,6 +1165,7 @@ TimeTaker timer_s2("deactivateFarObjects");
 		deactivateFarObjects(false);
 }
 
+#if WTF
 		for(std::set<v3s16>::iterator
 				i = blocks_removed.begin();
 				i != blocks_removed.end(); ++i)
@@ -1181,6 +1182,7 @@ TimeTaker timer_s2("deactivateFarObjects");
 			// Set current time as timestamp (and let it set ChangedFlag)
 			block->setTimestamp(m_game_time);
 		}
+#endif
 
 		/*
 			Handle added blocks
