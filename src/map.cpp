@@ -1463,9 +1463,12 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	for(auto &i : m_blocks_delete) // delayed delete
-		delete i;
-	m_blocks_delete.clear();
+	if (!m_blocks_update_last && m_blocks_delete.size()) {
+		verbosestream<<"Deleting blocks="<<m_blocks_delete.size()<<std::endl;
+		for(auto &i : m_blocks_delete) // delayed delete
+			delete i;
+		m_blocks_delete.clear();
+	}
 
 	std::list<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
