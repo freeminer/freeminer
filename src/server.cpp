@@ -110,7 +110,7 @@ public:
 			}
 shared_map<v3s16, MapBlock*> m_modified_blocks;
 infostream<<"L calc="<<m_server->m_lighting_modified_blocks.size()<<std::endl;
-			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_modified_blocks, 500)) {
+			if (m_server->getMap().updateLighting(m_server->m_lighting_modified_blocks, m_modified_blocks)) {
 			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
