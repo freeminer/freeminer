@@ -1135,6 +1135,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		// Convert active objects that are no more in active blocks to static
 		deactivateFarObjects(false);
 
+#if WTF
 		for(std::set<v3s16>::iterator
 				i = blocks_removed.begin();
 				i != blocks_removed.end(); ++i)
@@ -1151,6 +1152,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			// Set current time as timestamp (and let it set ChangedFlag)
 			block->setTimestamp(m_game_time);
 		}
+#endif
 
 		/*
 			Handle added blocks
