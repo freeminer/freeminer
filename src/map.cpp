@@ -659,7 +659,7 @@ s16 Map::propagateSunlight(v3s16 start,
 }
 
 u32 Map::updateLighting(enum LightBank bank,
-		std::map<v3s16, MapBlock*> & a_blocks,
+		shared_map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -917,7 +917,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-u32 Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
+u32 Map::updateLighting(shared_map<v3s16, MapBlock*> & a_blocks,
 		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	int ret = 0;
@@ -934,6 +934,7 @@ TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
 	if (max_cycle_ms && ret)
 		return ret;
 
+	a_blocks.clear();
 TimeTaker timer("updateLighting expireDayNightDiff");
 	//JMutexAutoLock lock2(m_update_lighting_mutex);
 

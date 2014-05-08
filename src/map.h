@@ -217,10 +217,10 @@ public:
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
 	u32 updateLighting(enum LightBank bank,
-			std::map<v3s16, MapBlock*>  & a_blocks,
+			shared_map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
-	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
+	u32 updateLighting(shared_map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
