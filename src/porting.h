@@ -55,6 +55,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#define ALIGNOF(type) offsetof (alignment_trick<type>, member)
 
 #ifdef _WIN32
+	#define NOMINMAX
 	#include <windows.h>
 	
 	#define sleep_ms(x) Sleep(x)

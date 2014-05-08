@@ -89,6 +89,7 @@ static lua_CFunction ll_sym (lua_State *L, void *lib, const char *sym) {
 ** =======================================================================
 */
 
+#define NOMINMAX
 #include <windows.h>
 
 
