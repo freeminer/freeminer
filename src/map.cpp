@@ -94,6 +94,10 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 Map::~Map()
 {
 	m_block_cache = nullptr;
+
+	for(auto &i : m_blocks_delete)
+		delete i;
+
 	for(auto &i : m_blocks) {
 
 #ifndef SERVER
