@@ -160,7 +160,13 @@ private:
 	v3s16 m_camera_offset;
 	JMutex m_camera_mutex;
 
-	std::map<v3s16, MapBlock*> m_drawlist;
+	std::map<v3s16, MapBlock*> * m_drawlist;
+	std::map<v3s16, MapBlock*> m_drawlist_0;
+	std::map<v3s16, MapBlock*> m_drawlist_1;
+	int m_drawlist_current;
+public:
+	int m_drawlist_last;
+private:
 	
 	std::set<v2s16> m_last_drawn_sectors;
 };
