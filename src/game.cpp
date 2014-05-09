@@ -3275,7 +3275,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			direct_brightness = time_brightness;
 			sunlight_seen = true;
 		} else {
-			ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
+			//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 			float old_brightness = sky->getBrightness();
 			direct_brightness = (float)client.getEnv().getClientMap()
 					.getBackgroundBrightness(MYMIN(fog_range*1.2, 60*BS),

@@ -130,7 +130,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 
 void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 {
-	//ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
+	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	//g_profiler->add("CM::updateDrawList() count", 1);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
