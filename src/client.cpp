@@ -2211,7 +2211,7 @@ void Client::sendReady()
 	writeU16(os, TOSERVER_CLIENT_READY);
 	writeU8(os,VERSION_MAJOR);
 	writeU8(os,VERSION_MINOR);
-	writeU8(os,VERSION_PATCH_ORIG);
+	writeU8(os,(int)VERSION_PATCH_ORIG);
 	writeU8(os,0);
 
 	writeU16(os,strlen(CMAKE_VERSION_GITHASH));
