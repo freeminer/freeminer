@@ -1663,7 +1663,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -2091,7 +2091,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_real"))
