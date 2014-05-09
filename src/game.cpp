@@ -3571,7 +3571,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			changed much
 		*/
 		update_draw_list_timer += dtime;
-		if(update_draw_list_timer >= 0.2 ||
+		if(client.getEnv().getClientMap().m_drawlist_last || update_draw_list_timer >= 0.2 ||
 				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;

@@ -72,6 +72,9 @@ ClientMap::ClientMap(
 	m_camera_position(0,0,0),
 	m_camera_direction(0,0,1),
 	m_camera_fov(M_PI)
+	,m_drawlist(&m_drawlist_1),
+	m_drawlist_current(0),
+	m_drawlist_last(0)
 {
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
@@ -135,14 +138,12 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = m_drawlist.begin();
-			i != m_drawlist.end(); ++i)
-	{
-		MapBlock *block = i->second;
-		block->refDrop();
-	}
-	m_drawlist.clear();
+	if (!m_drawlist_last)
+		m_drawlist_current = !m_drawlist_current;
+	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
+
+	float max_cycle_ms = 0.1/getControl().fps_wanted;
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
@@ -189,11 +190,17 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
-		for(auto & ir : m_blocks) {
-			MapBlock *block = ir.second;
+	for(auto & ir : m_blocks) {
 
+		if (n++ < m_drawlist_last)
+			continue;
+		else
+			m_drawlist_last = 0;
+		++calls;
+
+		MapBlock *block = ir.second;
 		auto bp = block->getPos();
-		
+
 		if(m_control.range_all == false)
 		{
 			if(bp.X < p_blocks_min.X
@@ -313,15 +320,28 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 
 			// Add to set
 			block->refGrab();
-			m_drawlist[block->getPos()] = block;
+			drawlist[block->getPos()] = block;
 
 			blocks_drawn++;
 			if(d/BS > farthest_drawn)
 				farthest_drawn = d/BS;
 
-		} // foreach sectorblocks
+		if (porting::getTimeMs() > end_ms) {
+			m_drawlist_last = n;
+			break;
+		}
+	}
+	if (!calls)
+		m_drawlist_last = 0;
 
-	//}
+	if (m_drawlist_last)
+		return;
+
+	for (auto & ir : *m_drawlist)
+		ir.second->refDrop();
+
+	m_drawlist->clear();
+	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
 	m_control.blocks_drawn = blocks_drawn;
@@ -451,11 +471,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	MeshBufListList drawbufs;
 
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = m_drawlist.begin();
-			i != m_drawlist.end(); ++i)
-	{
-		MapBlock *block = i->second;
+	for(auto & ir : *m_drawlist) {
+		MapBlock *block = ir.second;
 
 		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 		// If the mesh of the block happened to get deleted, ignore it
