@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 template<typename Value>
 class UniqueQueue
-: public locker
+//: public locker
 {
 public:
 	
@@ -51,7 +51,7 @@ public:
 	*/
 	bool push_back(Value value)
 	{
-		auto lock = lock_unique_int();
+		//auto lock = lock_unique_int();
 		// Check if already exists
 		if(m_map.find(value) != m_map.end())
 			return false;
@@ -65,7 +65,7 @@ public:
 
 	Value pop_front()
 	{
-		auto lock = lock_unique_int();
+		//auto lock = lock_unique_int();
 		typename std::list<Value>::iterator i = m_list.begin();
 		Value value = *i;
 		m_map.erase(value);
@@ -75,7 +75,7 @@ public:
 
 	u32 size()
 	{
-		auto lock = lock_shared_int();
+		//auto lock = lock_shared_int();
 		return m_map.size();
 	}
 
