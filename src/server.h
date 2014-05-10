@@ -60,8 +60,7 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 class Circuit;
 class ServerThread;
-class LiquidThread;
-class LightThread;
+class MapThread;
 class SendBlocksThread;
 
 enum ClientDeletionReason {
@@ -193,6 +192,7 @@ public:
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(bool initial_step=false);
+	int AsyncRunMapStep(bool initial_step=false);
 	u16 Receive();
 	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
@@ -547,8 +547,7 @@ private:
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
 
-	LiquidThread *m_liquid;
-	LightThread *m_light;
+	MapThread *m_map_thread;
 	SendBlocksThread *m_sendblocks;
 
 	/*
