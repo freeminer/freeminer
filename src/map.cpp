@@ -1579,6 +1579,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
+		infostream<<" (deleteq="<<m_blocks_delete.size()<<")";
 		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
 /*
