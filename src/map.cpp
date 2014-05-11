@@ -98,6 +98,7 @@ Map::~Map()
 	for(auto &i : m_blocks_delete)
 		delete i;
 
+	auto lock = m_blocks.lock_unique();
 	for(auto &i : m_blocks) {
 
 #ifndef SERVER
@@ -1487,6 +1488,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
+	{
+	auto lock = m_blocks.lock_unique();
 	for(auto i = m_blocks.begin(); i != m_blocks.end();) {
 		MapBlock *block = i->second;
 		if (n++ < m_blocks_update_last) {
@@ -1558,6 +1561,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			break;
 		}
 
+	}
 	}
 
 	if (!calls)
@@ -3156,13 +3160,9 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * g_settings->getFloat("dedicated_server_step"));
 	if (!breakable)
 		m_blocks_save_last = 0;
-//	for(std::map<v2s16, MapSector*>::iterator i = m_sectors.begin();
-//		i != m_sectors.end(); ++i)
-//	{
 
-		//std::list<MapBlock*> blocks;
-		//this->getBlocks(blocks);
-
+	{
+		auto lock = m_blocks.lock_shared();
 		for(auto &jr : m_blocks)
 		{
 			MapBlock *block = jr.second;
@@ -3199,6 +3199,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 				break;
 		}
 	}
+	}
 	if (!calls)
 		m_blocks_save_last = 0;
 
@@ -3229,8 +3230,9 @@ void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
 
 void ServerMap::listAllLoadedBlocks(std::list<v3s16> &dst)
 {
-		for(auto & i : m_blocks)
-			dst.push_back(i.second->getPos());
+	auto lock = m_blocks.lock_shared();
+	for(auto & i : m_blocks)
+		dst.push_back(i.second->getPos());
 }
 
 void ServerMap::saveMapMeta()

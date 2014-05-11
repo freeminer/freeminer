@@ -190,6 +190,8 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
+	{
+	auto lock = m_blocks.lock_shared();
 	for(auto & ir : m_blocks) {
 
 		if (n++ < m_drawlist_last)
@@ -330,6 +332,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 			m_drawlist_last = n;
 			break;
 		}
+	}
 	}
 	if (!calls)
 		m_drawlist_last = 0;
