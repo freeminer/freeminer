@@ -28,11 +28,11 @@ class KeyValueStorage
 public:
 	KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException);
 	~KeyValueStorage();
-	void put(const char *key, const char *data) throw(KeyValueStorageException);
-	void put_json(const char *key, const Json::Value & data) throw(KeyValueStorageException);
-	void get(const char *key, std::string &data) throw(KeyValueStorageException);
-	void get_json(const char *key, Json::Value & data) throw(KeyValueStorageException);
-	void del(const char *key) throw(KeyValueStorageException);
+	bool put(const char *key, const char *data);
+	bool put_json(const char *key, const Json::Value & data);
+	bool get(const char *key, std::string &data);
+	bool get_json(const char *key, Json::Value & data);
+	bool del(const char *key);
 private:
 	std::string m_savedir;
 	leveldb::DB *m_db;

@@ -34,49 +34,42 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 	}
 }
 
-KeyValueStorage::~KeyValueStorage() {
+KeyValueStorage::~KeyValueStorage()
+{
 	delete m_db;
 }
 
-void KeyValueStorage::put(const char *key, const char *data) throw(KeyValueStorageException)
+bool KeyValueStorage::put(const char *key, const char *data)
 {
 	leveldb::WriteOptions write_options;
 	leveldb::Status status = m_db->Put(write_options, key, data);
-	if(!status.ok()) {
-		throw KeyValueStorageException(status.ToString());
-	}
+	return status.ok();
 }
 
-void KeyValueStorage::put_json(const char *key, const Json::Value &data) throw(KeyValueStorageException)
+bool KeyValueStorage::put_json(const char *key, const Json::Value &data)
 {
-	put(key, json_writer.write(data).c_str());
+	return put(key, json_writer.write(data).c_str());
 }
 
-void KeyValueStorage::get(const char *key, std::string &data) throw(KeyValueStorageException)
+bool KeyValueStorage::get(const char *key, std::string &data)
 {
 	leveldb::ReadOptions read_options;
 	leveldb::Status status = m_db->Get(read_options, key, &data);
-	if(!status.ok()) {
-		throw KeyValueStorageException(status.ToString());
-	}
+	return status.ok();
 }
 
-void KeyValueStorage::get_json(const char *key, Json::Value & data) throw(KeyValueStorageException) 
+bool KeyValueStorage::get_json(const char *key, Json::Value & data)
 {
 	std::string value;
 	get(key, value);
 	if (value.empty())
-		return;
-	if (!json_reader.parse(value, data) ) {
-		throw KeyValueStorageException(json_reader.getFormattedErrorMessages());
-	}
+		return false;
+	return json_reader.parse(value, data);
 }
 
-void KeyValueStorage::del(const char *key) throw(KeyValueStorageException)
+bool KeyValueStorage::del(const char *key)
 {
 	leveldb::WriteOptions write_options;
 	leveldb::Status status = m_db->Delete(write_options, key);
-	if(!status.ok()) {
-		throw KeyValueStorageException(status.ToString());
-	}
+	return status.ok();
 }
