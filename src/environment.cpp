@@ -350,7 +350,7 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 		m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
 		m_players_storage = new KeyValueStorage(savedir, "players");
 	} catch(KeyValueStorageException &e) {
-		dstream << e.what() << std::endl;
+		errorstream << "Cant open KV database: "<< e.what() << std::endl;
 	}
 }
 
