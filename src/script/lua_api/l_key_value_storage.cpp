@@ -37,11 +37,7 @@ int ModApiKeyValueStorage::l_kv_put_string(lua_State *L)
 	
 	const char *key = luaL_checkstring(L, 1);
 	const char *data = luaL_checkstring(L, 2);
-	try {
-		env->getKeyValueStorage()->put(key, data);
-	} catch(KeyValueStorageException &e) {
-		dstream << e.what() << std::endl;
-	}
+	env->getKeyValueStorage()->put(key, data);
 
 	return 0;
 }
@@ -52,15 +48,12 @@ int ModApiKeyValueStorage::l_kv_get_string(lua_State *L)
 
 	const char *key = luaL_checkstring(L, 1);
 	std::string data;
-	try {
-		env->getKeyValueStorage()->get(key, data);
+	if(env->getKeyValueStorage()->get(key, data)) {
 		lua_pushstring(L, data.c_str());
 		return 1;
-	} catch(KeyValueStorageException &e) {
-		dstream << e.what() << std::endl;
+	} else {
+		return 0;
 	}
-
-	return 0;
 }
 
 int ModApiKeyValueStorage::l_kv_delete(lua_State *L)
@@ -68,11 +61,7 @@ int ModApiKeyValueStorage::l_kv_delete(lua_State *L)
 	GET_ENV_PTR;
 
 	const char *key = luaL_checkstring(L, 1);
-	try {
-		env->getKeyValueStorage()->del(key);
-	} catch(KeyValueStorageException &e) {
-		dstream << e.what() << std::endl;
-	}
+	env->getKeyValueStorage()->del(key);
 
 	return 0;
 }
