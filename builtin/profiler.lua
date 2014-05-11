@@ -10,7 +10,7 @@ ffi.cdef[[
 unsigned int get_time_us();
 ]]
 
-local modpath = freeminer.get_modpath("__builtin")
+local modpath = core.get_builtin_path()..DIR_DELIM
 
 package.path = package.path .. ";" .. modpath .. "/?.lua"
 ProFi = require 'ProFi'

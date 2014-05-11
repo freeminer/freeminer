@@ -305,9 +305,6 @@ Server::Server(
 		errorstream << std::endl;
 	}
 
-	// Path to builtin.lua
-	std::string builtinpath = getBuiltinLuaPath() + DIR_DELIM + "builtin.lua";
-
 	// Lock environment
 	JMutexAutoLock envlock(m_env_mutex);
 
@@ -318,16 +315,13 @@ Server::Server(
 	
 	m_circuit = new Circuit(m_script, path_world);
 
+	std::string scriptpath = getBuiltinLuaPath() + DIR_DELIM "init.lua";
 
-	// Load and run builtin.lua
-	infostream<<"Server: Loading builtin.lua [\""
-			<<builtinpath<<"\"]"<<std::endl;
-	bool success = m_script->loadMod(builtinpath, "__builtin");
-	if(!success){
-		errorstream<<"Server: Failed to load and run "
-				<<builtinpath<<std::endl;
-		throw ModError("Failed to load and run "+builtinpath);
+	if (!m_script->loadScript(scriptpath)) {
+		throw ModError("Failed to load and run " + scriptpath);
 	}
+
+
 	// Print 'em
 	infostream<<"Server: Loading mods: ";
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
@@ -3016,8 +3010,10 @@ bool Server::getClientInfo(
 	m_clients.Lock();
 	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id,Invalid);
 
-	if (client == NULL)
+	if (client == NULL) {
+		m_clients.Unlock();
 		return false;
+		}
 
 	*uptime = client->uptime();
 	*ser_vers = client->serialization_version;

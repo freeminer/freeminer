@@ -28,8 +28,8 @@ void ScriptApiPlayer::on_newplayer(ServerActiveObject *player)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_newplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_newplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_newplayers");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -40,8 +40,8 @@ void ScriptApiPlayer::on_dieplayer(ServerActiveObject *player)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_dieplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_dieplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_dieplayers");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -52,8 +52,8 @@ bool ScriptApiPlayer::on_respawnplayer(ServerActiveObject *player)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_respawnplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_respawnplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_respawnplayers");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -66,8 +66,8 @@ bool ScriptApiPlayer::on_prejoinplayer(std::string name, std::string ip, std::st
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_prejoinplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_prejoinplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_prejoinplayers");
 	lua_pushstring(L, name.c_str());
 	lua_pushstring(L, ip.c_str());
@@ -83,8 +83,8 @@ void ScriptApiPlayer::on_joinplayer(ServerActiveObject *player)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_joinplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_joinplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_joinplayers");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -95,8 +95,8 @@ void ScriptApiPlayer::on_leaveplayer(ServerActiveObject *player)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_leaveplayers
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_leaveplayers
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_leaveplayers");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -108,8 +108,8 @@ void ScriptApiPlayer::on_cheat(ServerActiveObject *player,
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_cheats
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_cheats
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_cheats");
 	// Call callbacks
 	objectrefGetOrCreate(player);
@@ -125,8 +125,8 @@ void ScriptApiPlayer::on_playerReceiveFields(ServerActiveObject *player,
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Get minetest.registered_on_chat_messages
-	lua_getglobal(L, "minetest");
+	// Get core.registered_on_chat_messages
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_player_receive_fields");
 	// Call callbacks
 	// param 1
