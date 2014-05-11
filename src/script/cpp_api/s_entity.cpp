@@ -36,8 +36,8 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name)
 			<<name<<"\""<<std::endl;
 */
 
-	// Get minetest.registered_entities[name]
-	lua_getglobal(L, "minetest");
+	// Get core.registered_entities[name]
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_entities");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	lua_pushstring(L, name);
@@ -67,8 +67,8 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name)
 		luaL_typerror(L, -1, "ObjectRef");
 	lua_setfield(L, -2, "object");
 
-	// minetest.luaentities[id] = object
-	lua_getglobal(L, "minetest");
+	// core.luaentities[id] = object
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "luaentities");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	lua_pushnumber(L, id); // Push id
@@ -87,7 +87,7 @@ void ScriptApiEntity::luaentity_Activate(u16 id,
 	verbosestream << "scriptapi_luaentity_activate: id=" << id << std::endl;
 */
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L, id);
 	int object = lua_gettop(L);
 
@@ -115,8 +115,8 @@ void ScriptApiEntity::luaentity_Remove(u16 id)
 	verbosestream << "scriptapi_luaentity_rm: id=" << id << std::endl;
 */
 
-	// Get minetest.luaentities table
-	lua_getglobal(L, "minetest");
+	// Get core.luaentities table
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "luaentities");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	int objectstable = lua_gettop(L);
@@ -126,7 +126,7 @@ void ScriptApiEntity::luaentity_Remove(u16 id)
 	lua_pushnil(L);
 	lua_settable(L, objectstable);
 
-	lua_pop(L, 2); // pop luaentities, minetest
+	lua_pop(L, 2); // pop luaentities, core
 }
 
 std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
@@ -135,7 +135,7 @@ std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
 
 	//infostream<<"scriptapi_luaentity_get_staticdata: id="<<id<<std::endl;
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L, id);
 	int object = lua_gettop(L);
 
@@ -166,7 +166,7 @@ void ScriptApiEntity::luaentity_GetProperties(u16 id,
 
 	//infostream<<"scriptapi_luaentity_get_properties: id="<<id<<std::endl;
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L, id);
 
 	// Set default values that differ from ObjectProperties defaults
@@ -205,7 +205,7 @@ void ScriptApiEntity::luaentity_Step(u16 id, float dtime)
 
 	//infostream<<"scriptapi_luaentity_step: id="<<id<<std::endl;
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L, id);
 	int object = lua_gettop(L);
 	// State: object is at top of stack
@@ -234,7 +234,7 @@ void ScriptApiEntity::luaentity_Punch(u16 id,
 
 	//infostream<<"scriptapi_luaentity_step: id="<<id<<std::endl;
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L,id);
 	int object = lua_gettop(L);
 	// State: object is at top of stack
@@ -264,7 +264,7 @@ void ScriptApiEntity::luaentity_Rightclick(u16 id,
 
 	//infostream<<"scriptapi_luaentity_step: id="<<id<<std::endl;
 
-	// Get minetest.luaentities[id]
+	// Get core.luaentities[id]
 	luaentity_get(L, id);
 	int object = lua_gettop(L);
 	// State: object is at top of stack

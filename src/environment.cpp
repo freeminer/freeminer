@@ -346,8 +346,12 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
-	m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
-	m_players_storage = new KeyValueStorage(savedir, "players");
+	try {
+		m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
+		m_players_storage = new KeyValueStorage(savedir, "players");
+	} catch(KeyValueStorageException &e) {
+		errorstream << "Cant open KV database: "<< e.what() << std::endl;
+	}
 }
 
 Player * ServerEnvironment::getPlayer(const std::string &name)

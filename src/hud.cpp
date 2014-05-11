@@ -87,17 +87,18 @@ Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect, bool selected) {
 
 	if (selected) {
+			/* draw hihlighting around selected item */
 			if (use_hotbar_selected_image) {
-			core::rect<s32> imgrect2 = rect;
-			imgrect2.UpperLeftCorner.X  -= m_padding;
-			imgrect2.UpperLeftCorner.Y  -= m_padding;
-			imgrect2.LowerRightCorner.X += m_padding;
-			imgrect2.LowerRightCorner.Y += m_padding;
-				video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
-				core::dimension2di imgsize(texture->getOriginalSize());
-			driver->draw2DImage(texture, imgrect2,
-					core::rect<s32>(core::position2d<s32>(0,0), imgsize),
-					NULL, hbar_colors, true);
+				core::rect<s32> imgrect2 = rect;
+				imgrect2.UpperLeftCorner.X  -= (m_padding*2);
+				imgrect2.UpperLeftCorner.Y  -= (m_padding*2);
+				imgrect2.LowerRightCorner.X += (m_padding*2);
+				imgrect2.LowerRightCorner.Y += (m_padding*2);
+					video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
+					core::dimension2di imgsize(texture->getOriginalSize());
+				driver->draw2DImage(texture, imgrect2,
+						core::rect<s32>(core::position2d<s32>(0,0), imgsize),
+						NULL, hbar_colors, true);
 			} else {
 				video::SColor c_outside(255,255,0,0);
 				//video::SColor c_outside(255,0,0,0);
@@ -189,8 +190,10 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 			use_hotbar_selected_image = false;
 	}
 
+	/* draw customized item background */
 	if (use_hotbar_image) {
-		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2, width+m_padding/2, height+m_padding/2);
+		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2,
+				width+m_padding/2, height+m_padding/2);
 		core::rect<s32> rect2 = imgrect2 + pos;
 		video::ITexture *texture = tsrc->getTexture(hotbar_image);
 		core::dimension2di imgsize(texture->getOriginalSize());
@@ -415,6 +418,23 @@ void Hud::drawHotbar(u16 playeritem) {
 			drawItems(secondpos, hotbar_itemcount, hotbar_itemcount/2, mainlist, playeritem + 1, 0);
 		}
 	}
+
+	//////////////////////////// compatibility code to be removed //////////////
+	// this is ugly as hell but there's no other way to keep compatibility to
+	// old servers
+	if ( player->hud_flags & HUD_FLAG_HEALTHBAR_VISIBLE)
+		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
+				floor(1 * (float) m_screensize.Y + 0.5)),
+				HUD_CORNER_UPPER, 0, "heart.png",
+				player->hp, v2s32((-10*24)-25,-(48+24+10)), v2s32(24,24));
+
+	if ((player->hud_flags & HUD_FLAG_BREATHBAR_VISIBLE) &&
+			(player->getBreath() < 11))
+		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
+				floor(1 * (float) m_screensize.Y + 0.5)),
+				HUD_CORNER_UPPER, 0, "heart.png",
+				player->getBreath(), v2s32(25,-(48+24+10)), v2s32(24,24));
+	////////////////////////////////////////////////////////////////////////////
 }
 
 

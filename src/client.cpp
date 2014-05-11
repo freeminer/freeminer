@@ -2006,8 +2006,10 @@ void Client::sendChatMessage(const std::wstring &message)
 	
 	// Write length
 	size_t messagesize = message.size();
-	assert(messagesize <= 0xFFFF);
-	writeU16(buf, (u16) (messagesize & 0xFF));
+	if (messagesize > 0xFFFF) {
+		messagesize = 0xFFFF;
+	}
+	writeU16(buf, (u16) messagesize);
 	os.write((char*)buf, 2);
 	
 	// Write string
@@ -2113,7 +2115,7 @@ void Client::sendReady()
 	writeU16(os, TOSERVER_CLIENT_READY);
 	writeU8(os,VERSION_MAJOR);
 	writeU8(os,VERSION_MINOR);
-	writeU8(os,VERSION_PATCH_ORIG);
+	writeU8(os,(int)VERSION_PATCH_ORIG);
 	writeU8(os,0);
 
 	writeU16(os,strlen(CMAKE_VERSION_GITHASH));

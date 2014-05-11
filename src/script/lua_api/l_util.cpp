@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_content.h"
 #include "cpp_api/s_async.h"
 #include "debug.h"
+#include "porting.h"
 #include "log.h"
 #include "tool.h"
 #include "settings.h"
@@ -277,6 +278,14 @@ int ModApiUtil::l_is_yes(lua_State *L)
 	return 1;
 }
 
+int ModApiUtil::l_get_builtin_path(lua_State *L)
+{
+	std::string path = porting::path_share + DIR_DELIM + "builtin";
+	lua_pushstring(L, path.c_str());
+	return 1;
+}
+
+
 void ModApiUtil::Initialize(lua_State *L, int top)
 {
 	API_FCT(debug);
@@ -297,6 +306,8 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(get_password_hash);
 
 	API_FCT(is_yes);
+
+	API_FCT(get_builtin_path);
 }
 
 void ModApiUtil::InitializeAsync(AsyncEngine& engine)
@@ -314,4 +325,7 @@ void ModApiUtil::InitializeAsync(AsyncEngine& engine)
 	ASYNC_API_FCT(write_json);
 
 	ASYNC_API_FCT(is_yes);
+
+	ASYNC_API_FCT(get_builtin_path);
 }
+

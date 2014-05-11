@@ -152,10 +152,9 @@ private:
 	std::map<v3s16, MapBlock*> * m_drawlist;
 	std::map<v3s16, MapBlock*> m_drawlist_0;
 	std::map<v3s16, MapBlock*> m_drawlist_1;
-	int m_drawlist_current;
+	s16 m_drawlist_current;
 public:
-	int m_drawlist_last;
-
+	s32 m_drawlist_last;
 private:
 
 };
