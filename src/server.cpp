@@ -105,6 +105,8 @@ public:
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			} catch (BaseException &e) {
 				errorstream<<"Server: MapThread: exeption: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
 			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
@@ -142,6 +144,8 @@ public:
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			} catch (BaseException &e) {
 				errorstream<<"Server: SendBlocksThread: exeption: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
 			}
 		}
 //infostream<<"S end"<<std::endl;
@@ -214,6 +218,8 @@ void * ServerThread::Thread()
 		catch(LuaError &e)
 		{
 			m_server->setAsyncFatalError(e.what());
+		} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
 		}
 	}
 
