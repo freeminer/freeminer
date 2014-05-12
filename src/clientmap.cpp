@@ -191,7 +191,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	float farthest_drawn = 0;
 
 	{
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec();
 	for(auto & ir : m_blocks) {
 
 		if (n++ < m_drawlist_last)

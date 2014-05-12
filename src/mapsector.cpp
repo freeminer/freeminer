@@ -34,7 +34,7 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 	
 	// If block doesn't exist, return NULL
 	{
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec();
 	auto n = m_blocks.find(p);
 	if(n == m_blocks.end())
 	{

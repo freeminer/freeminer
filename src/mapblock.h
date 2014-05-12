@@ -125,7 +125,7 @@ public:
 
 	void reallocate()
 	{
-		auto lock = lock_unique_int();
+		auto lock = lock_unique_rec();
 		if(data != NULL)
 			delete[] data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -306,7 +306,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = lock_shared_int();
+		auto lock = lock_shared_rec();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -331,7 +331,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = lock_unique_int();
+		auto lock = lock_unique_rec();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
 	}
@@ -349,7 +349,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		auto lock = lock_shared_int();
+		auto lock = lock_shared_rec();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -362,7 +362,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		auto lock = lock_unique_int();
+		auto lock = lock_unique_rec();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
 	}

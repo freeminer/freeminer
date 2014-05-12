@@ -457,7 +457,7 @@ void Map::spreadLight(enum LightBank bank,
 		if(block->isDummy())
 			continue;
 
-		auto lock = block->lock_unique();
+		auto lock = block->lock_unique_rec();
 
 		// Calculate relative position in block
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
@@ -711,7 +711,7 @@ u32 Map::updateLighting(enum LightBank bank,
 			if(block->isDummy())
 				break;
 
-			auto lock = block->lock_unique();
+			auto lock = block->lock_unique_rec();
 
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
@@ -1503,7 +1503,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		++calls;
 
 		{
-		auto lock = block->lock_unique();
+		auto lock = block->lock_unique_rec();
 
 			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
 				block->m_uptime_timer_last = uptime - 0.1;
@@ -3309,7 +3309,7 @@ void ServerMap::endSave() {
 
 void ServerMap::saveBlock(MapBlock *block)
 {
-  auto lock = block->lock_shared();
+  auto lock = block->lock_shared_rec();
   dbase->saveBlock(block);
 }
 

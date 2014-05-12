@@ -229,7 +229,8 @@ void initIrrlicht(irr::IrrlichtDevice * );
 	
 #else // Posix
 	#include <sys/time.h>
-	#include <time.h>
+	//#include <time.h>
+	#include <ctime>
 	
 	inline u32 getTimeS()
 	{
