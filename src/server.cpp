@@ -100,9 +100,12 @@ public:
 		porting::setThreadName("Map");
 		porting::setThreadPriority(20);
 		while(!StopRequested()) {
-			if (!m_server->AsyncRunMapStep())
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
+			try {
+				if (!m_server->AsyncRunMapStep())
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			} catch (BaseException &e) {
+				errorstream<<"Server: MapThread: exeption: "<<e.what()<<std::endl;
+			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 		return nullptr;
@@ -133,9 +136,13 @@ public:
 		auto time = porting::getTimeMs();
 		while(!StopRequested()) {
 //infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
-			m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
-			time = porting::getTimeMs();
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			try {
+				m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
+				time = porting::getTimeMs();
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			} catch (BaseException &e) {
+				errorstream<<"Server: SendBlocksThread: exeption: "<<e.what()<<std::endl;
+			}
 		}
 //infostream<<"S end"<<std::endl;
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
