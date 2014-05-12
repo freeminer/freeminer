@@ -1488,8 +1488,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
+	std::vector<MapBlock *> blocks_delete;
 	{
-	auto lock = m_blocks.lock_unique();
+	auto lock = m_blocks.lock_shared();
 	for(auto i = m_blocks.begin(); i != m_blocks.end();) {
 		MapBlock *block = i->second;
 		if (n++ < m_blocks_update_last) {
@@ -1501,7 +1502,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		}
 		++calls;
 
-		bool del = 0;
 		{
 		auto lock = block->lock_unique();
 
@@ -1525,9 +1525,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 					saved_blocks_count++;
 				}
 
-				// Delete from memory
-				//this->deleteBlock(block);
-				del = 1;
+				blocks_delete.push_back(block);
 
 				if(unloaded_blocks)
 					unloaded_blocks->push_back(p);
@@ -1551,10 +1549,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			}
 
 		} // block lock
-		if (del)
-			i = this->deleteBlock(i);
-		else
-			++i;
 
 		if (porting::getTimeMs() > end_ms) {
 			m_blocks_update_last = n;
@@ -1566,6 +1560,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	if (!calls)
 		m_blocks_update_last = 0;
+
+	for (auto & block : blocks_delete)
+		this->deleteBlock(block);
 
 	if(m_circuit != NULL) {
 		m_circuit->save();
