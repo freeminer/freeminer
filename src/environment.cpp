@@ -1920,7 +1920,8 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	{
 		u16 id = i->first;
 		ServerActiveObject *object = getActiveObject(id);
-		assert(object);
+		if (!object)
+			continue;
 		object->m_pending_deactivation = false;
 	}
 
@@ -1955,7 +1956,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			i != m_active_objects.end(); ++i)
 	{
 		ServerActiveObject* obj = i->second;
-		assert(obj);
+		if (!obj)
+			continue;
 
 		// Do not deactivate if static data creation not allowed
 		if(!force_delete && !obj->isStaticAllowed())
