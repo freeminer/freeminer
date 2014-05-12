@@ -923,7 +923,7 @@ function tabbuilder.tab_multiplayer()
 
 	local render_details = 1 -- engine.setting_getbool("public_serverlist")
 
-	if #menu.favorites > 0 then
+	if menu.favorites and #menu.favorites > 0 then
 		retval = retval .. menu.render_favorite(menu.favorites[1],render_details)
 
 		for i=2,#menu.favorites,1 do
