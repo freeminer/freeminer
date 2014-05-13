@@ -96,7 +96,7 @@ Map::~Map()
 	m_block_cache = nullptr;
 
 	for(auto &i : m_blocks_delete)
-		delete i;
+		delete i.first;
 
 	auto lock = m_blocks.lock_unique();
 	for(auto &i : m_blocks) {
@@ -1476,7 +1476,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	if (!m_blocks_update_last && m_blocks_delete.size()) {
 		verbosestream<<"Deleting blocks="<<m_blocks_delete.size()<<std::endl;
 		for(auto &i : m_blocks_delete) // delayed delete
-			delete i;
+			delete i.first;
 		m_blocks_delete.clear();
 	}
 
@@ -3161,13 +3161,16 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		auto lock = m_blocks.lock_shared();
 		for(auto &jr : m_blocks)
 		{
-			MapBlock *block = jr.second;
-
 			if (n++ < m_blocks_save_last)
 				continue;
 			else
 				m_blocks_save_last = 0;
 			++calls;
+
+			MapBlock *block = jr.second;
+
+			if (!block)
+				continue;
 
 			block_count_all++;
 

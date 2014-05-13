@@ -105,11 +105,11 @@ public:
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			} catch (BaseException &e) {
 				errorstream<<"Server: MapThread: exception: "<<e.what()<<std::endl;
-			} catch(std::exception &e) {
+/*			} catch(std::exception &e) {
 				errorstream<<"Server: exception: "<<e.what()<<std::endl;
 			} catch (...) {
 				errorstream<<"Ooops..."<<std::endl;
-			}
+*/			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 		return nullptr;
@@ -145,11 +145,11 @@ public:
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			} catch (BaseException &e) {
 				errorstream<<"Server: SendBlocksThread: exception: "<<e.what()<<std::endl;
-			} catch(std::exception &e) {
+/*			} catch(std::exception &e) {
 				errorstream<<"Server: exception: "<<e.what()<<std::endl;
 			} catch (...) {
 				errorstream<<"Ooops..."<<std::endl;
-			}
+*/			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 	return nullptr;

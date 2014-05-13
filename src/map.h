@@ -346,7 +346,7 @@ public:
 	MapBlock * createBlankBlock(v3s16 & p);
 	void insertBlock(MapBlock *block);
 	void deleteBlock(MapBlock *block);
-	std::vector<MapBlock *> m_blocks_delete;
+	std::map<MapBlock *, int> m_blocks_delete;
 	//void getBlocks(std::list<MapBlock*> &dest);
 	MapBlock *getBlockBuffered(v3s16 & p);
 
