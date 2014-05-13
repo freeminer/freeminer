@@ -444,7 +444,7 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 									BlockMakeData *data, bool allow_gen) {
 	v2s16 p2d(p.X, p.Z);
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
-	JMutexAutoLock envlock(m_server->m_env_mutex);
+	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
 	// Attempt to load block
 	MapBlock *block = map->getBlockNoCreateNoEx(p);
