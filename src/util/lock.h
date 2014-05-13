@@ -7,7 +7,6 @@
 #include <thread>
 
 #if USE_BOOST // not finished
-//#include <boost/thread/locks.hpp>
 //#include <ctime>
 #include <boost/thread.hpp>
 //#include <boost/thread/locks.hpp>
@@ -32,8 +31,9 @@ typedef std::unique_lock<try_shared_mutex> unique_lock;
 
 
 // http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads
+/* uncomment when need
 #include <condition_variable>
-class semaphore{
+class semaphore {
 private:
 	std::mutex mtx;
 	std::condition_variable cv;
@@ -54,7 +54,7 @@ public:
 		count--;
 	}
 };
-
+*/
 
 template<class T>
 class lock_rec {
@@ -84,7 +84,7 @@ public:
 class locker {
 public:
 	try_shared_mutex mtx;
-	semaphore sem;
+	//semaphore sem;
 	int r;
 	std::thread::id thread_id;
 

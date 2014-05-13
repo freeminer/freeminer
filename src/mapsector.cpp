@@ -99,7 +99,6 @@ void Map::deleteBlock(MapBlock *block)
 	auto block_p = block->getPos();
 	m_block_cache = nullptr;
 	m_blocks_delete.push_back(block);
-	auto lock = m_blocks.lock_unique();
 	m_blocks.erase(block_p);
 }
 

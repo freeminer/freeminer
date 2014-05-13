@@ -109,7 +109,6 @@ Map::~Map()
 		delete i.second;
 
 	}
-	m_blocks.clear();
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
