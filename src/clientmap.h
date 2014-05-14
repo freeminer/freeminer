@@ -154,7 +154,7 @@ private:
 	std::map<v3s16, MapBlock*> m_drawlist_1;
 	s16 m_drawlist_current;
 public:
-	s32 m_drawlist_last;
+	u32 m_drawlist_last;
 private:
 
 };
