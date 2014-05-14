@@ -1476,7 +1476,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (!m_blocks_update_last && m_blocks_delete->size()) {
+	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
 		for(auto &i : *m_blocks_delete) // delayed delete
@@ -1495,7 +1495,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	{
 	auto lock = m_blocks.lock_shared();
 	for(auto i = m_blocks.begin(); i != m_blocks.end();) {
-		MapBlock *block = i->second;
 		if (n++ < m_blocks_update_last) {
 			++i;
 			continue;
@@ -1505,8 +1504,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		}
 		++calls;
 
+		MapBlock *block = i->second;
 		{
-		auto lock = block->lock_unique_rec();
+			auto lock = block->lock_unique_rec();
 
 			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
 				block->m_uptime_timer_last = uptime - 0.1;
@@ -1592,7 +1592,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
-			infostream<<"Blocks modified by: "<<std::endl;
+			//infostream<<"Blocks modified by: "<<std::endl;
 			modprofiler.print(infostream);
 		}
 	}
@@ -3222,7 +3222,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 			infostream<<" to "<< m_blocks_save_last;
 		infostream<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
-		infostream<<"Blocks modified by: "<<std::endl;
+		//infostream<<"Blocks modified by: "<<std::endl;
 		modprofiler.print(infostream);
 	}
 	return m_blocks_save_last;
