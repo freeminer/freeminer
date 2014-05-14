@@ -83,6 +83,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_liquid_step_flow(1000),
 	m_block_cache(nullptr),
+	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
 	m_circuit(circuit),
 	m_blocks_update_last(0),
@@ -95,7 +96,9 @@ Map::~Map()
 {
 	m_block_cache = nullptr;
 
-	for(auto &i : m_blocks_delete)
+	for(auto &i : m_blocks_delete_1)
+		delete i.first;
+	for(auto &i : m_blocks_delete_2)
 		delete i.first;
 
 	auto lock = m_blocks.lock_unique();
@@ -1473,11 +1476,12 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (!m_blocks_update_last && m_blocks_delete.size()) {
-		verbosestream<<"Deleting blocks="<<m_blocks_delete.size()<<std::endl;
-		for(auto &i : m_blocks_delete) // delayed delete
+	if (!m_blocks_update_last && m_blocks_delete->size()) {
+		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
+		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
+		for(auto &i : *m_blocks_delete) // delayed delete
 			delete i.first;
-		m_blocks_delete.clear();
+		m_blocks_delete->clear();
 	}
 
 	std::list<v2s16> sector_deletion_queue;
@@ -1579,7 +1583,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
-		infostream<<" (deleteq="<<m_blocks_delete.size()<<")";
+		infostream<<" (deleteq1="<<m_blocks_delete_1.size()<< " deleteq2="<<m_blocks_delete_2.size()<<")";
 		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
 /*
@@ -3208,13 +3212,15 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	/*
 		Only print if something happened or saved whole map
 	*/
-	if(save_level == MOD_STATE_CLEAN
-			|| block_count != 0)
+	if(/*save_level == MOD_STATE_CLEAN
+			||*/ block_count != 0)
 	{
 		infostream<<"ServerMap: Written: "
 				<<block_count<<"/"<<block_count_all<<" blocks from "
-				<<m_blocks.size()
-				<<std::endl;
+				<<m_blocks.size();
+		if (m_blocks_save_last)
+			infostream<<" to "<< m_blocks_save_last;
+		infostream<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Blocks modified by: "<<std::endl;
 		modprofiler.print(infostream);
