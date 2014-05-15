@@ -441,6 +441,7 @@ set(common_SRCS
 	gettext.cpp
 	httpfetch.cpp
 	fmbitset.cpp
+	log_types.cpp
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
