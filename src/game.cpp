@@ -3856,6 +3856,10 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 	}
 
+	guitext->remove();
+	guitext2->remove();
+	guitext_info->remove();
+	guitext_profiler->remove();
 	/*
 		Drop stuff
 	*/
