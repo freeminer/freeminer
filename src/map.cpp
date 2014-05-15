@@ -1581,10 +1581,10 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		if (m_blocks_update_last)
 			infostream<<"ServerMap: timerUpdate(): Blocks processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
-		infostream<<"Unloaded "<<deleted_blocks_count
+		infostream<<"Unloaded "<<deleted_blocks_count<<"/"<<(block_count_all + deleted_blocks_count)
 				<<" blocks from memory";
 		infostream<<" (deleteq1="<<m_blocks_delete_1.size()<< " deleteq2="<<m_blocks_delete_2.size()<<")";
-		if(save_before_unloading)
+		if(saved_blocks_count)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
 /*
 		infostream<<", "<<block_count_all<<" blocks in memory";
