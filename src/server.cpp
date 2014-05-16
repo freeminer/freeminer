@@ -603,7 +603,9 @@ void Server::stop()
 	m_thread->Wait();
 	//m_emergethread.stop();
 	m_sendblocks->Stop();
+	m_sendblocks->Wait();
 	m_map_thread->Stop();
+	m_map_thread->Wait();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
