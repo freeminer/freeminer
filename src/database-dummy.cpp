@@ -87,10 +87,6 @@ MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
 
         if(m_database.count(getBlockAsString(blockpos))) {
                 /*
-                        Make sure sector is loaded
-                */
-                //MapSector *sector = srvmap->createSector(p2d);
-                /*
                         Load block
                 */
                 std::string datastr = m_database[getBlockAsString(blockpos)];

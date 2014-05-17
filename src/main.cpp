@@ -81,7 +81,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverlist.h"
 #include "httpfetch.h"
 #include "guiEngine.h"
-//#include "mapsector.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB

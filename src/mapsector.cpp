@@ -22,9 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "map.h"
 #include "mapblock.h"
-#include "log.h"
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
+#include "log_types.h"
 
 MapBlock * Map::getBlockBuffered(v3s16 & p)
 {
@@ -89,7 +87,7 @@ void Map::insertBlock(MapBlock *block)
 	auto block2 = getBlockBuffered(block_p);
 	if(block2){
 		//throw AlreadyExistsException("Block already exists");
-		infostream<<"Block already exists " << PP(block_p) <<std::endl;
+		infostream<<"Block already exists " << block_p <<std::endl;
 	}
 
 	// Insert into container

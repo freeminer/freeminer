@@ -32,7 +32,6 @@ LevelDB databases
 #include "leveldb/db.h"
 
 #include "map.h"
-//#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"
@@ -118,11 +117,6 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 	}
 
 	if (s.ok()) {
-		/*
-			Make sure sector is loaded
-		*/
-		//MapSector *sector = srvmap->createSector(p2d);
-
 		try {
 			std::istringstream is(datastr, std::ios_base::binary);
 			u8 version = SER_FMT_VER_INVALID;

@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
 #include "log.h"
-//#include "mapsector.h"
 #include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"

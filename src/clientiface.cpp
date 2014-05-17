@@ -36,7 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/mathconstants.h"
 
 #include "main.h"                      // for g_settings
-//#include "log_types.h"
 
 void RemoteClient::GetNextBlocks(
 		ServerEnvironment *env,
@@ -174,7 +173,6 @@ void RemoteClient::GetNextBlocks(
 	bool queue_is_full = false;
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
-	//std::map<v3s16, unsigned int> dbgmap;
 
 	s16 d;
 	for(d = d_start; d <= d_max; d++)
@@ -391,14 +389,13 @@ void RemoteClient::GetNextBlocks(
 			PrioritySortedBlockTransfer q((float)d, p, peer_id);
 
 			dest.push_back(q);
-			//dbgmap[p] = 1;
 
 			num_blocks_selected += 1;
 		}
 	}
 queue_full_break:
 
-	infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending /*<<": "<<dbgmap*/ <<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending <<std::endl;
 	num_blocks_selected += num_blocks_sending;
 	if(!num_blocks_selected && d_start == d) {
 		//new_nearest_unsent_d = 0;
@@ -451,9 +448,6 @@ void RemoteClient::SentBlock(v3s16 p)
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
 	++m_nearest_unsent_nearest;
-
-//	if(m_blocks_sending.find(p) != m_blocks_sending.end())
-//		m_blocks_sending.erase(p);
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)

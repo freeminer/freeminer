@@ -41,7 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database-sqlite3.h"
 
 #include "map.h"
-//#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"
@@ -208,11 +207,6 @@ MapBlock* Database_SQLite3::loadBlock(v3s16 blockpos)
 	}
 
 	if (sqlite3_step(m_database_read) == SQLITE_ROW) {
-		/*
-			Make sure sector is loaded
-		*/
-		//MapSector *sector = srvmap->createSector(p2d);
-
 		/*
 			Load block
 		*/

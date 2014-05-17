@@ -230,8 +230,6 @@ void VoxelManipulator::addArea(VoxelArea area)
 void VoxelManipulator::copyFrom(MapNode *src, VoxelArea src_area,
 		v3s16 from_pos, v3s16 to_pos, v3s16 size)
 {
-	if (!src)
-		return;
 	for(s16 z=0; z<size.Z; z++)
 	for(s16 y=0; y<size.Y; y++)
 	{
@@ -245,8 +243,6 @@ void VoxelManipulator::copyFrom(MapNode *src, VoxelArea src_area,
 void VoxelManipulator::copyTo(MapNode *dst, VoxelArea dst_area,
 		v3s16 dst_pos, v3s16 from_pos, v3s16 size)
 {
-	if (!dst)
-		return;
 	for(s16 z=0; z<size.Z; z++)
 	for(s16 y=0; y<size.Y; y++)
 	{

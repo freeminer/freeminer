@@ -4100,7 +4100,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 void Server::SendBlocks(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
-	TimeTaker timer("SendBlocks inside");
+	//TimeTaker timer("SendBlocks inside");
 
 	//JMutexAutoLock envlock(m_env_mutex);
 	//TODO check if one big lock could be faster then multiple small ones

@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "map.h"
-//#include "mapsector.h"
 #include "mapblock.h"
 #ifndef SERVER
 	#include "mapblock_mesh.h"

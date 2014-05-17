@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "filesys.h"
 #include "porting.h"
-//#include "mapsector.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
 #include "settings.h"
