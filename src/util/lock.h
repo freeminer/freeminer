@@ -13,8 +13,8 @@
 typedef boost::shared_mutex try_shared_mutex;
 typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
-#define DEFER_LOCK  boost::defer_lock
-#elif 0 and __cplusplus >= 201305L
+#define DEFER_LOCK boost::defer_lock
+#elif 0 && __cplusplus >= 201305L // TODO, maybe make cmake test
 #include <shared_mutex>
 //typedef std::shared_timed_mutex try_shared_mutex;
 typedef std::shared_mutex try_shared_mutex;
@@ -111,6 +111,12 @@ public:
 	}
 };
 
+//maybe remove NOEXCEPT
+#ifndef _MSC_VER
+#define NOEXCEPT noexcept
+#else
+#define NOEXCEPT
+#endif
 
 #include <map>
 template <class Key, class T, class Compare = std::less<Key>,
@@ -138,12 +144,12 @@ public:
 		(*this)[k] = v;
 	}
 
-	bool      empty()    noexcept {
+	bool      empty()    NOEXCEPT {
 		auto lock = lock_shared();
 		return full_type::empty();
 	}
 
-	size_type size()     noexcept {
+	size_type size()     NOEXCEPT {
 		auto lock = lock_shared();
 		return full_type::size();
 	}
@@ -175,7 +181,7 @@ public:
 
 	// iterator  erase(const_iterator first, const_iterator last);
 
-	void clear() noexcept {
+	void clear() NOEXCEPT {
 		auto lock = lock_unique();
 		full_type::clear();
 	}

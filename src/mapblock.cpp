@@ -52,7 +52,6 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		heat_last_update(0),
 		humidity_last_update(0),
 		m_uptime_timer_last(0),
-		m_changed_timestamp(0),
 		m_parent(parent),
 		m_pos(pos),
 		m_gamedef(gamedef),
@@ -69,6 +68,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_usage_timer(0),
 		m_refcount(0)
 {
+	m_changed_timestamp = 0;
 	data = NULL;
 	if(dummy == false)
 		reallocate();
