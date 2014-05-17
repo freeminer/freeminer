@@ -111,12 +111,6 @@ public:
 	}
 };
 
-//maybe remove NOEXCEPT
-#ifndef _MSC_VER
-#define NOEXCEPT noexcept
-#else
-#define NOEXCEPT
-#endif
 
 #include <map>
 template <class Key, class T, class Compare = std::less<Key>,
@@ -144,12 +138,12 @@ public:
 		(*this)[k] = v;
 	}
 
-	bool      empty()    NOEXCEPT {
+	bool      empty() {
 		auto lock = lock_shared();
 		return full_type::empty();
 	}
 
-	size_type size()     NOEXCEPT {
+	size_type size() {
 		auto lock = lock_shared();
 		return full_type::size();
 	}
@@ -181,7 +175,7 @@ public:
 
 	// iterator  erase(const_iterator first, const_iterator last);
 
-	void clear() NOEXCEPT {
+	void clear() {
 		auto lock = lock_unique();
 		full_type::clear();
 	}
