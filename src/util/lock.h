@@ -65,8 +65,7 @@ public:
 	lock_rec(T & lock_, int & r_, std::thread::id & thread_id_):
 		lock(lock_),
 		r(r_),
-		thread_id(thread_id_)
-	{
+		thread_id(thread_id_) {
 		auto thread_me = std::this_thread::get_id();
 		if(!r || thread_me != thread_id) {
 			lock.lock();
@@ -74,7 +73,7 @@ public:
 		}
 		++r;
 	}
-	~lock_rec(){
+	~lock_rec() {
 		if(!--r) {
 			//lock.unlock();
 		}
@@ -115,9 +114,8 @@ public:
 #include <map>
 template <class Key, class T, class Compare = std::less<Key>,
           class Allocator = std::allocator<std::pair<const Key, T>>>
-class shared_map: public std::map<Key, T, Compare, Allocator>,
-public locker
-{
+                  class shared_map: public std::map<Key, T, Compare, Allocator>,
+public locker {
 public:
 
 	typedef Key                                      key_type;
@@ -153,7 +151,7 @@ public:
 		return full_type::count(k);
 	}
 
-	mapped_type& operator[](const key_type& k){
+	mapped_type& operator[](const key_type& k) {
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
@@ -168,7 +166,7 @@ public:
 		return full_type::erase(position);
 	}
 
-	size_type erase(const key_type& k){
+	size_type erase(const key_type& k) {
 		auto lock = lock_unique();
 		return full_type::erase(k);
 	}
