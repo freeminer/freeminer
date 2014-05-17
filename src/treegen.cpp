@@ -136,7 +136,7 @@ void spawn_ltree(ServerEnvironment *env, v3s16 p0, INodeDefManager *ndef, TreeDe
 	vmanip.blitBackAll(&modified_blocks);
 
 	// update lighting
-	std::map<v3s16, MapBlock*> lighting_modified_blocks;
+	shared_map<v3s16, MapBlock*> lighting_modified_blocks;
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
 	map->updateLighting(lighting_modified_blocks, modified_blocks, 100);
 	// Send a MEET_OTHER event

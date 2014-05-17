@@ -1272,7 +1272,7 @@ void * ConnectionSendThread::Thread()
 	PROFILE(ThreadIdentifier << "ConnectionSend: [" << m_connection->getDesc() << "]");
 
 	porting::setThreadName("ConnectionSend");
-	porting::setThreadPriority(90);
+	porting::setThreadPriority(10);
 
 	/* if stop is requested don't stop immediately but try to send all        */
 	/* packets first */
@@ -2021,7 +2021,7 @@ void * ConnectionReceiveThread::Thread()
 	PROFILE(ThreadIdentifier << "ConnectionReceive: [" << m_connection->getDesc() << "]");
 
 	porting::setThreadName("ConnectionReceive");
-	porting::setThreadPriority(90);
+	porting::setThreadPriority(10);
 
 #ifdef DEBUG_CONNECTION_KBPS
 	u32 curtime = porting::getTimeMs();

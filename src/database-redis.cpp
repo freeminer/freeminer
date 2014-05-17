@@ -1,20 +1,18 @@
 /*
-Minetest
-Copyright (C) 2014 celeron55, Perttu Ahola <celeron55@gmail.com>
+This file is part of Freeminer.
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
+Freeminer is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+You should have received a copy of the GNU General Public License
+along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
@@ -29,7 +27,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <hiredis.h>
 
 #include "map.h"
-#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"
@@ -146,11 +143,6 @@ MapBlock* Database_Redis::loadBlock(v3s16 blockpos)
 	}
 
 	if (reply->type == REDIS_REPLY_STRING) {
-		/*
-			Make sure sector is loaded
-		*/
-		MapSector *sector = srvmap->createSector(p2d);
-
 		try {
 			std::istringstream is(std::string(reply->str, reply->len), std::ios_base::binary);
 			freeReplyObject(reply); // std::string copies the memory so we can already do this here
@@ -163,10 +155,10 @@ MapBlock* Database_Redis::loadBlock(v3s16 blockpos)
 
 			MapBlock *block = NULL;
 			bool created_new = false;
-			block = sector->getBlockNoCreateNoEx(blockpos.Y);
+			block = srvmap->getBlockNoCreateNoEx(blockpos.Y);
 			if (block == NULL)
 			{
-				block = sector->createBlankBlockNoInsert(blockpos.Y);
+				block = srvmap->createBlankBlockNoInsert(blockpos.Y);
 				created_new = true;
 			}
 
@@ -175,7 +167,7 @@ MapBlock* Database_Redis::loadBlock(v3s16 blockpos)
 
 			// If it's a new block, insert it to the map
 			if (created_new)
-				sector->insertBlock(block);
+				srvmap->insertBlock(block);
 
 			// We just loaded it from, so it's up-to-date.
 			block->resetModified();

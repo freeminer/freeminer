@@ -20,71 +20,22 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mapsector.h"
-#include "exceptions.h"
+#include "map.h"
 #include "mapblock.h"
-#include "serialization.h"
-#include "log.h"
-#ifndef SERVER
-#include "mapblock_mesh.h"
-#endif
+#include "log_types.h"
 
-MapSector::MapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
-		differs_from_disk(false),
-		m_parent(parent),
-		m_pos(pos),
-		m_gamedef(gamedef),
-		m_block_cache(NULL)
-{
-}
-
-MapSector::~MapSector()
-{
-	// Clear cache
-	m_block_cache = NULL;
-
-	// Delete all
-	for(std::map<s16, MapBlock*>::iterator i = m_blocks.begin();
-		i != m_blocks.end(); ++i)
-	{
-#ifndef SERVER
-		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
-		if(i->second->mesh)
-			i->second->mesh->clearHardwareBuffer = false;
-#endif
-		delete i->second;
-	}
-
-	// Clear container
-	m_blocks.clear();
-}
-
-void MapSector::deleteBlocks()
-{
-	// Clear cache
-	m_block_cache = NULL;
-
-	// Delete all
-	for(std::map<s16, MapBlock*>::iterator i = m_blocks.begin();
-		i != m_blocks.end(); ++i)
-	{
-		delete i->second;
-	}
-
-	// Clear container
-	m_blocks.clear();
-}
-
-MapBlock * MapSector::getBlockBuffered(s16 y)
+MapBlock * Map::getBlockBuffered(v3s16 & p)
 {
 	MapBlock *block;
 
-	if(m_block_cache != NULL && y == m_block_cache_y){
+	if(m_block_cache != NULL && p == m_block_cache_p){
 		return m_block_cache;
 	}
 	
 	// If block doesn't exist, return NULL
-	std::map<s16, MapBlock*>::iterator n = m_blocks.find(y);
+	{
+	auto lock = m_blocks.lock_shared_rec();
+	auto n = m_blocks.find(p);
 	if(n == m_blocks.end())
 	{
 		block = NULL;
@@ -93,192 +44,62 @@ MapBlock * MapSector::getBlockBuffered(s16 y)
 	else{
 		block = n->second;
 	}
+	}
 	
 	// Cache the last result
-	m_block_cache_y = y;
+	m_block_cache_p = p;
 	m_block_cache = block;
 	
 	return block;
 }
 
-MapBlock * MapSector::getBlockNoCreateNoEx(s16 y)
+MapBlock * Map::getBlockNoCreateNoEx(v3s16 p)
 {
-	return getBlockBuffered(y);
+	return getBlockBuffered(p);
 }
 
-MapBlock * MapSector::createBlankBlockNoInsert(s16 y)
+MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
 {
-	MapBlock *block = getBlockBuffered(y);
+	MapBlock *block = getBlockBuffered(p);
 	if (block != NULL) {
 		errorstream<<"Block already created"<<"std::endl";
 		return block;
 	}
-	v3s16 blockpos_map(m_pos.X, y, m_pos.Y);
 	
-	block = new MapBlock(m_parent, blockpos_map, m_gamedef);
+	block = new MapBlock(this, p, m_gamedef);
 	
 	return block;
 }
 
-MapBlock * MapSector::createBlankBlock(s16 y)
+MapBlock * Map::createBlankBlock(v3s16 & p)
 {
-	MapBlock *block = createBlankBlockNoInsert(y);
+	MapBlock *block = createBlankBlockNoInsert(p);
 	
-	m_blocks[y] = block;
+	m_blocks[p] = block;
 
 	return block;
 }
 
-void MapSector::insertBlock(MapBlock *block)
+void Map::insertBlock(MapBlock *block)
 {
-	s16 block_y = block->getPos().Y;
+	auto block_p = block->getPos();
 
-	MapBlock *block2 = getBlockBuffered(block_y);
-	if(block2 != NULL){
+	auto block2 = getBlockBuffered(block_p);
+	if(block2){
 		//throw AlreadyExistsException("Block already exists");
-		errorstream<<"Block already exists" /*<PP(block->getPos())*/ <<std::endl;
+		infostream<<"Block already exists " << block_p <<std::endl;
 	}
 
-	v2s16 p2d(block->getPos().X, block->getPos().Z);
-	assert(p2d == m_pos);
-	
 	// Insert into container
-	m_blocks[block_y] = block;
+	m_blocks[block_p] = block;
 }
 
-void MapSector::deleteBlock(MapBlock *block)
+void Map::deleteBlock(MapBlock *block)
 {
-	s16 block_y = block->getPos().Y;
-
-	// Clear from cache
-	m_block_cache = NULL;
-	
-	// Remove from container
-	m_blocks.erase(block_y);
-
-	// Delete
-	delete block;
+	auto block_p = block->getPos();
+	m_block_cache = nullptr;
+	(*m_blocks_delete)[block] = 1;
+	m_blocks.erase(block_p);
 }
-
-void MapSector::getBlocks(std::list<MapBlock*> &dest)
-{
-	for(std::map<s16, MapBlock*>::iterator bi = m_blocks.begin();
-		bi != m_blocks.end(); ++bi)
-	{
-		dest.push_back(bi->second);
-	}
-}
-
-/*
-	ServerMapSector
-*/
-
-ServerMapSector::ServerMapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
-		MapSector(parent, pos, gamedef)
-{
-}
-
-ServerMapSector::~ServerMapSector()
-{
-}
-
-void ServerMapSector::serialize(std::ostream &os, u8 version)
-{
-	if(!ser_ver_supported(version))
-		throw VersionMismatchException("ERROR: MapSector format not supported");
-	
-	/*
-		[0] u8 serialization version
-		+ heightmap data
-	*/
-	
-	// Server has both of these, no need to support not having them.
-	//assert(m_objects != NULL);
-
-	// Write version
-	os.write((char*)&version, 1);
-	
-	/*
-		Add stuff here, if needed
-	*/
-
-}
-
-ServerMapSector* ServerMapSector::deSerialize(
-		std::istream &is,
-		Map *parent,
-		v2s16 p2d,
-		std::map<v2s16, MapSector*> & sectors,
-		IGameDef *gamedef
-	)
-{
-	/*
-		[0] u8 serialization version
-		+ heightmap data
-	*/
-
-	/*
-		Read stuff
-	*/
-	
-	// Read version
-	u8 version = SER_FMT_VER_INVALID;
-	is.read((char*)&version, 1);
-	
-	if(!ser_ver_supported(version))
-		throw VersionMismatchException("ERROR: MapSector format not supported");
-	
-	/*
-		Add necessary reading stuff here
-	*/
-	
-	/*
-		Get or create sector
-	*/
-
-	ServerMapSector *sector = NULL;
-
-	std::map<v2s16, MapSector*>::iterator n = sectors.find(p2d);
-
-	if(n != sectors.end())
-	{
-		dstream<<"WARNING: deSerializing existent sectors not supported "
-				"at the moment, because code hasn't been tested."
-				<<std::endl;
-
-		MapSector *sector = n->second;
-		assert(sector->getId() == MAPSECTOR_SERVER);
-		return (ServerMapSector*)sector;
-	}
-	else
-	{
-		sector = new ServerMapSector(parent, p2d, gamedef);
-		sectors[p2d] = sector;
-	}
-
-	/*
-		Set stuff in sector
-	*/
-
-	// Nothing here
-
-	return sector;
-}
-
-#ifndef SERVER
-/*
-	ClientMapSector
-*/
-
-ClientMapSector::ClientMapSector(Map *parent, v2s16 pos, IGameDef *gamedef):
-		MapSector(parent, pos, gamedef)
-{
-}
-
-ClientMapSector::~ClientMapSector()
-{
-}
-
-#endif // !SERVER
 
 //END

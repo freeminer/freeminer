@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <vector>
+#include "util/lock.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -59,6 +60,8 @@ class ServerEnvironment;
 struct SimpleSoundSpec;
 class Circuit;
 class ServerThread;
+class MapThread;
+class SendBlocksThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -189,6 +192,7 @@ public:
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(bool initial_step=false);
+	int AsyncRunMapStep(bool initial_step=false);
 	u16 Receive();
 	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
@@ -400,7 +404,9 @@ private:
 	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable = 1);
 
 	// Sends blocks to clients (locks env and con on its own)
+public:
 	void SendBlocks(float dtime);
+private:
 
 	void fillMediaCache();
 	void sendMediaAnnouncement(u16 peer_id);
@@ -530,7 +536,9 @@ private:
 
 	// A buffer for time steps
 	// step() increments and AsyncRunStep() run by m_thread reads it.
+public:
 	float m_step_dtime;
+private:
 	JMutex m_step_dtime_mutex;
 
 	// current server step lag counter
@@ -538,6 +546,9 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread;
+
+	MapThread *m_map_thread;
+	SendBlocksThread *m_sendblocks;
 
 	/*
 		Time related stuff
@@ -625,8 +636,10 @@ private:
 	*/
 	std::vector<u32> m_particlespawner_ids;
 
-	std::map<v3s16, MapBlock*> m_modified_blocks;
-	std::map<v3s16, MapBlock*> m_lighting_modified_blocks;
+public:
+	shared_map<v3s16, MapBlock*> m_modified_blocks;
+	shared_map<v3s16, MapBlock*> m_lighting_modified_blocks;
+private:
 };
 
 /*
