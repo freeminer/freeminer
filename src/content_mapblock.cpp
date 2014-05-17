@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "main.h" // For g_settings
 #include "mapblock_mesh.h" // For MapBlock_LightColor() and MeshCollector
+#include "map.h"
 #include "settings.h"
 #include "nodedef.h"
 #include "tile.h"

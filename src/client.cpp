@@ -2474,7 +2474,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool la
 		Create a task to update the mesh of the block
 	*/
 	
-	MeshMakeData *data = new MeshMakeData(this, m_env.getClientMap().getControl());
+	MeshMakeData *data = new MeshMakeData(this, m_env.getMap(), m_env.getClientMap().getControl());
 	
 	{
 		//TimeTaker timer("data fill");
