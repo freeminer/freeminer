@@ -28,4 +28,8 @@ std::ostream & operator<<(std::ostream & s, v3s16 p);
 #include <map>
 std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p);
 
+
+struct MapNode;
+std::ostream & operator<<(std::ostream & s, MapNode n);
+
 #endif

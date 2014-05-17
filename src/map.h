@@ -339,6 +339,7 @@ public:
 // from old mapsector:
 	MapBlock *m_block_cache;
 	v3s16 m_block_cache_p;
+	try_shared_mutex m_block_cache_mutex;
 	typedef shared_map<v3s16, MapBlock*> m_blocks_type;
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);

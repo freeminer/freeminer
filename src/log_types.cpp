@@ -27,3 +27,9 @@ std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
 		s << i.first << "=" << i.second<<" ";
 	return s;
 }
+
+#include "mapnode.h"
+std::ostream & operator<<(std::ostream & s, MapNode n) {
+	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
+	return s;
+}
