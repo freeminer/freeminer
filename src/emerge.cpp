@@ -444,13 +444,7 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 									BlockMakeData *data, bool allow_gen) {
 	v2s16 p2d(p.X, p.Z);
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
-	JMutexAutoLock envlock(m_server->m_env_mutex);
-
-	// Load sector if it isn't loaded
-/*
-	if (map->getSectorNoGenerateNoEx(p2d) == NULL)
-		map->loadSectorMeta(p2d);
-*/
+	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
 	// Attempt to load block
 	MapBlock *block = map->getBlockNoCreateNoEx(p);
@@ -496,7 +490,7 @@ void *EmergeThread::Thread() {
 	enable_mapgen_debug_info = emerge->mapgen_debug_info;
 
 	porting::setThreadName(("EmergeThread" + itos(id)).c_str());
-	porting::setThreadPriority(5);
+	porting::setThreadPriority(80);
 
 	while (!StopRequested())
 	try {

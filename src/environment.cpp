@@ -1064,6 +1064,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		Handle players
 	*/
 	{
+		//TimeTaker timer_step_player("player step");
 		//ScopeProfiler sp(g_profiler, "SEnv: handle players avg", SPT_AVG);
 		for(std::list<Player*>::iterator i = m_players.begin();
 				i != m_players.end(); ++i)
@@ -1089,7 +1090,9 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, 2.0))
 	{
+		//TimeTaker timer_s1("Manage active block list");
 		ScopeProfiler sp(g_profiler, "SEnv: manage act. block list avg /2s", SPT_AVG);
+		if (!m_blocks_added_last) {
 		/*
 			Get player block positions
 		*/
@@ -1106,7 +1109,8 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 					floatToInt(player->getPosition(), BS));
 			players_blockpos.push_back(blockpos);
 		}
-		if (g_settings->getBool("enable_force_load")) {
+		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
+			//TimeTaker timer_s2("force load");
 			for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1138,25 +1142,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 
 		// Convert active objects that are no more in active blocks to static
 		deactivateFarObjects(false);
-
-#if WTF
-		for(std::set<v3s16>::iterator
-				i = blocks_removed.begin();
-				i != blocks_removed.end(); ++i)
-		{
-			v3s16 p = *i;
-
-			/* infostream<<"Server: Block " << PP(p)
-				<< " became inactive"<<std::endl; */
-
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-			if(block==NULL)
-				continue;
-
-			// Set current time as timestamp (and let it set ChangedFlag)
-			block->setTimestamp(m_game_time);
 		}
-#endif
 
 		/*
 			Handle added blocks
@@ -1190,6 +1176,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0))
 	{
+		//TimeTaker timer_s1("Mess around in active blocks");
 		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
 
 		//float dtime = 1.0;
@@ -1293,6 +1280,8 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			if(block==NULL)
 				continue;
 
+			auto lock = block->lock_unique_rec();
+
 			// Set current time as timestamp
 			block->setTimestampNoChangedFlag(m_game_time);
 
@@ -1393,6 +1382,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	*/
 	if(m_object_management_interval.step(dtime, 0.5))
 	{
+		//TimeTaker timer("Manage active objects");
 		//ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
 		/*
 			Remove objects that satisfy (m_removed && m_known_by_count==0)
@@ -1882,7 +1872,8 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	{
 		u16 id = i->first;
 		ServerActiveObject *object = getActiveObject(id);
-		assert(object);
+		if (!object)
+			continue;
 		object->m_pending_deactivation = false;
 	}
 
@@ -1917,7 +1908,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			i != m_active_objects.end(); ++i)
 	{
 		ServerActiveObject* obj = i->second;
-		assert(obj);
+		if (!obj)
+			continue;
 
 		// Do not deactivate if static data creation not allowed
 		if(!force_delete && !obj->isStaticAllowed())

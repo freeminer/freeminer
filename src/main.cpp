@@ -81,7 +81,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverlist.h"
 #include "httpfetch.h"
 #include "guiEngine.h"
-#include "mapsector.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
@@ -1285,8 +1284,8 @@ int main(int argc, char *argv[])
 			for (std::list<v3s16>::iterator i = blocks.begin(); i != blocks.end(); ++i) {
 				MapBlock *block = old_map.loadBlock(*i);
 				new_db->saveBlock(block);
-				MapSector *sector = old_map.getSectorNoGenerate(v2s16(i->X, i->Z));
-				sector->deleteBlock(block);
+				//MapSector *sector = old_map.getSectorNoGenerate(v2s16(i->X, i->Z));
+				old_map.deleteBlock(block);
 				++count;
 				if (count % 500 == 0)
 					actionstream << "Migrated " << count << " blocks "

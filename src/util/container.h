@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <vector>
 #include <map>
+#include "lock.h"
 
 /*
 	Queue with unique values with fast checking of value existence
