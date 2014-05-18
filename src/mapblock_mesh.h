@@ -51,6 +51,7 @@ struct MeshMakeData
 	int step;
 	Map & map;
 	MapDrawControl& draw_control;
+	bool debug;
 
 	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
 

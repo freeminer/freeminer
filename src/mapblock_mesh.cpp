@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "util/directiontables.h"
 #include "clientmap.h"
+#include "log_types.h"
 
 float srgb_linear_multiply(float f, float m, float max)
 {
@@ -68,7 +69,8 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	m_gamedef(gamedef)
 	,step(1),
 	map(map_),
-	draw_control(draw_control_)
+	draw_control(draw_control_),
+	debug(0)
 {}
 
 void MeshMakeData::fill(MapBlock *block)
@@ -794,6 +796,7 @@ static void getTileInfo(
 
 	MapNode n0 = vmanip.getNodeNoEx(blockpos_nodes + p*step);
 	MapNode n1 = vmanip.getNodeNoEx(blockpos_nodes + p*step + face_dir*step);
+	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
 	TileSpec tile0 = getNodeTile(n0, p, face_dir, data);
 	TileSpec tile1 = getNodeTile(n1, p + face_dir, -face_dir, data);
 	
@@ -1084,6 +1087,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		updateAllFastFaceRows(data, fastfaces_new, step);
 	}
 	// End of slow part
+
+	//if (data->debug) infostream<<" step="<<step<<" fastfaces_new.size="<<fastfaces_new.size()<<std::endl;
 
 	/*
 		Convert FastFaces to MeshCollector
