@@ -1432,6 +1432,7 @@ void ConnectionSendThread::runTimeouts(float dtime)
 
 				channel->UpdateBytesLost(k->data.getSize());
 
+/*
 				LOG(derr_con<<m_connection->getDesc()
 						<<"RE-SENDING timed-out RELIABLE to "
 						<< k->address.serializeString()
@@ -1440,6 +1441,7 @@ void ConnectionSendThread::runTimeouts(float dtime)
 						<<", channel="<<((int)channelnum&0xff)
 						<<", seqnum="<<seqnum
 						<<std::endl);
+*/
 
 				rawSend(*k);
 
