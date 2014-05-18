@@ -97,11 +97,14 @@ void Map::insertBlock(MapBlock *block)
 	m_blocks[block_p] = block;
 }
 
-void Map::deleteBlock(MapBlock *block)
+void Map::deleteBlock(MapBlock *block, bool now)
 {
 	auto block_p = block->getPos();
 	m_block_cache = nullptr;
-	(*m_blocks_delete)[block] = 1;
+	if (now)
+		delete block;
+	else
+		(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
 }
 
