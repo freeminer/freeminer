@@ -334,6 +334,12 @@ namespace Json {
 
       /// \c true if root must be either an array or an object value. Default: \c false.
       bool strictRoot_;
+
+      /// \c true if dropped null placeholders are allowed. Default: \c false.
+      bool allowDroppedNullPlaceholders_;
+
+      /// \c true if numeric object key are allowed. Default: \c false.
+      bool allowNumericKeys_;
    };
 
 } // namespace Json
@@ -797,6 +803,13 @@ namespace Json {
       iterator begin();
       iterator end();
 
+      // Accessors for the [start, limit) range of bytes within the JSON text from
+      // which this value was parsed, if any.
+      void setOffsetStart( size_t start );
+      void setOffsetLimit( size_t limit );
+      size_t getOffsetStart() const;
+      size_t getOffsetLimit() const;
+
    private:
       Value &resolveReference( const char *key, 
                                bool isStatic );
@@ -864,6 +877,11 @@ namespace Json {
       int memberNameIsStatic_ : 1;       // used by the ValueInternalMap container.
 # endif
       CommentInfo *comments_;
+
+      // [start, limit) byte offsets in the source JSON text from which this Value
+      // was extracted.
+      size_t start_;
+      size_t limit_;
    };
 
 
@@ -1504,6 +1522,7 @@ public: // overridden from ValueArrayAllocator
 # include "value.h"
 #endif // if !defined(JSON_IS_AMALGAMATION)
 # include <deque>
+# include <iosfwd>
 # include <stack>
 # include <string>
 
@@ -1524,6 +1543,19 @@ namespace Json {
    public:
       typedef char Char;
       typedef const Char *Location;
+
+      /** \brief An error tagged with where in the JSON text it was encountered.
+       *
+       * The offsets give the [start, limit) range of bytes within the text. Note
+       * that this is bytes, not codepoints.
+       *
+       */
+      struct StructuredError
+      {
+         size_t offset_start;
+         size_t offset_limit;
+         std::string message;
+      };
 
       /** \brief Constructs a Reader allowing all features
        * for parsing.
@@ -1587,6 +1619,14 @@ namespace Json {
        */
       std::string getFormattedErrorMessages() const;
 
+     /** \brief Returns a vector of structured erros encounted while parsing.
+      * \return A (possibly empty) vector of StructuredError objects. Currently
+      *         only one error can be returned, but the caller should tolerate multiple
+      *         errors.  This can occur if the parser recovers from a non-fatal
+      *         parse error and then encounters additional errors.
+      */
+     std::vector<StructuredError> getStructuredErrors() const;
+
    private:
       enum TokenType
       {
@@ -1638,9 +1678,11 @@ namespace Json {
       bool readObject( Token &token );
       bool readArray( Token &token );
       bool decodeNumber( Token &token );
+      bool decodeNumber( Token &token, Value &decoded );
       bool decodeString( Token &token );
       bool decodeString( Token &token, std::string &decoded );
       bool decodeDouble( Token &token );
+      bool decodeDouble( Token &token, Value &decoded );
       bool decodeUnicodeCodePoint( Token &token, 
                                    Location &current, 
                                    Location end, 
@@ -1962,6 +2004,7 @@ namespace Json {
 #endif // if !defined(JSON_IS_AMALGAMATION)
 
 #if JSON_USE_EXCEPTION
+# include <stdexcept>
 #define JSON_ASSERT( condition ) assert( condition );  // @todo <= change this into an exception throw
 #define JSON_FAIL_MESSAGE( message ) throw std::runtime_error( message );
 #else  // JSON_USE_EXCEPTION
