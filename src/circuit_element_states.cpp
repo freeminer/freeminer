@@ -4,19 +4,16 @@
 #include "debug.h"
 
 CircuitElementStates::CircuitElementStates(unsigned int states_num, bool use_shifts) : m_states_num(states_num),
-    m_use_shifts(use_shifts)
-{
+	m_use_shifts(use_shifts) {
 }
 
-CircuitElementStates::~CircuitElementStates()
-{
+CircuitElementStates::~CircuitElementStates() {
 	for(unsigned int i = 0; i < m_states.size(); ++i) {
 		delete[] m_states[i];
 	}
 }
 
-std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state)
-{
+std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state) {
 	unsigned int id = getId(state);
 	if(id != m_states.size()) {
 		return std::make_pair(m_states[id], static_cast<unsigned long>(id));
@@ -30,8 +27,7 @@ std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(co
 	}
 }
 
-std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state, unsigned char facedir)
-{
+std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(const unsigned char* state, unsigned char facedir) {
 	FaceId face = FACEDIR_TO_FACE(facedir);
 	unsigned char* rotated_state = new unsigned char[m_states_num];
 	for(unsigned int i = 0; i < m_states_num; ++i) {
@@ -44,8 +40,7 @@ std::pair<const unsigned char*, unsigned long> CircuitElementStates::addState(co
 }
 
 void CircuitElementStates::rotateStatesArray(const unsigned char* input_state,
-                                             unsigned char* output_state, FaceId face) const
-{
+        unsigned char* output_state, FaceId face) const {
 	int id;
 	unsigned char value;
 	if(m_use_shifts) {
@@ -64,8 +59,7 @@ void CircuitElementStates::rotateStatesArray(const unsigned char* input_state,
 	}
 }
 
-unsigned char CircuitElementStates::rotateState(const unsigned char state, FaceId face)
-{
+unsigned char CircuitElementStates::rotateState(const unsigned char state, FaceId face) {
 	unsigned char result = 0;
 	switch(face) {
 	case FACE_BOTTOM:
@@ -122,8 +116,7 @@ unsigned char CircuitElementStates::rotateState(const unsigned char state, FaceI
 	return result;
 }
 
-unsigned int CircuitElementStates::getId(const unsigned char* state) const
-{
+unsigned int CircuitElementStates::getId(const unsigned char* state) const {
 	unsigned int result = m_states.size();
 	for(unsigned int i = 0; i < m_states.size(); ++i) {
 		bool equal = true;
@@ -141,34 +134,27 @@ unsigned int CircuitElementStates::getId(const unsigned char* state) const
 	return result;
 }
 
-const unsigned char* CircuitElementStates::getFunc(unsigned int id) const
-{
+const unsigned char* CircuitElementStates::getFunc(unsigned int id) const {
 	return (id < m_states.size()) ? m_states[id] : NULL;
 }
 
-void CircuitElementStates::serialize(std::ostream& out)
-{
+void CircuitElementStates::serialize(std::ostream& out) {
 	unsigned long states_size = m_states.size();
 	out.write(reinterpret_cast<char*>(&states_size), sizeof(states_size));
-	for(unsigned int i = 0; i < m_states.size(); ++i)
-	{
-		for(unsigned int j = 0; j < m_states_num; ++j)
-		{
+	for(unsigned int i = 0; i < m_states.size(); ++i) {
+		for(unsigned int j = 0; j < m_states_num; ++j) {
 			out.write(reinterpret_cast<char*>(&m_states[i][j]), sizeof(m_states[i][j]));
 		}
 	}
 }
 
-void CircuitElementStates::deSerialize(std::istream& in)
-{
+void CircuitElementStates::deSerialize(std::istream& in) {
 	unsigned long states_size = m_states.size();
 	in.read(reinterpret_cast<char*>(&states_size), sizeof(states_size));
 	m_states.resize(states_size);
-	for(unsigned int i = 0; i < m_states.size(); ++i)
-	{
+	for(unsigned int i = 0; i < m_states.size(); ++i) {
 		m_states[i] = new unsigned char[m_states_num];
-		for(unsigned int j = 0; j < m_states_num; ++j)
-		{
+		for(unsigned int j = 0; j < m_states_num; ++j) {
 			in.read(reinterpret_cast<char*>(&m_states[i][j]), sizeof(m_states[i][j]));
 		}
 	}

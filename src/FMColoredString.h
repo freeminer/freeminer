@@ -30,19 +30,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 using namespace irr::video;
 
 class FMColoredString {
-	public:
-		FMColoredString();
-		FMColoredString(const std::wstring &s);
-		FMColoredString(const std::wstring &string, const std::vector<SColor> &colors);
-		void operator=(const wchar_t *str);
-		size_t size() const;
-		FMColoredString substr(size_t pos = 0, size_t len = std::string::npos) const;
-		const wchar_t *c_str() const;
-		const std::vector<SColor> &getColors() const;
-		const std::wstring &getString() const;
-	private:
-		std::wstring m_string;
-		std::vector<SColor> m_colors;
+public:
+	FMColoredString();
+	FMColoredString(const std::wstring &s);
+	FMColoredString(const std::wstring &string, const std::vector<SColor> &colors);
+	void operator=(const wchar_t *str);
+	size_t size() const;
+	FMColoredString substr(size_t pos = 0, size_t len = std::string::npos) const;
+	const wchar_t *c_str() const;
+	const std::vector<SColor> &getColors() const;
+	const std::wstring &getString() const;
+private:
+	std::wstring m_string;
+	std::vector<SColor> m_colors;
 };
 
 #endif

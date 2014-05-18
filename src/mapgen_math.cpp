@@ -159,7 +159,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	Json::Value & params = mg_params->params;
 
 	if (params.get("light", 0).asBool())
-	this->flags &= ~MG_LIGHT;
+		this->flags &= ~MG_LIGHT;
 
 	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
 	n_water_source	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
@@ -180,16 +180,16 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		internal = 1;
 		func = &mengersponge;
 		size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
-		scale = params.get("scale", 1.0/size).asDouble();
+		scale = params.get("scale", 1.0 / size).asDouble();
 		iterations = params.get("N", 20).asInt();
 		//if(!center.getLength()) center = v3f(-size, -size, -size);
-		if(!center.getLength()) center = v3f(-size/3, -size/3, -size/3);
+		if(!center.getLength()) center = v3f(-size / 3, -size / 3, -size / 3);
 	} else if (params["generator"].asString() == "mandelbox") {
 		internal = 1;
 		func = &mandelbox;
 		iterations = params.get("N", 15).asInt();
 		size = params.get("size", 1000).asDouble();
-		scale = params.get("scale", 1.0/size).asDouble();
+		scale = params.get("scale", 1.0 / size).asDouble();
 		invert = params.get("invert", 0).asBool();
 		//if(!center.getLength()) center = v3f(size * 0.3, -size * 0.6, size * 0.5);
 		if(!center.getLength()) center = v3f(size * 0.333333, -size * 0.666666, size * 0.5);
@@ -198,7 +198,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		func = &sphere;
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", 100).asDouble();
-		scale = params.get("scale", 1.0/size).asDouble();
+		scale = params.get("scale", 1.0 / size).asDouble();
 	}
 
 
@@ -404,11 +404,11 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	if (params["generator"].asString() == "menger_sponge") {
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
-		if(!center.getLength()) center = v3f(-1.0/scale / 2, -1.0/scale + (-2 * -(int)invert), 2);
+		if(!center.getLength()) center = v3f(-1.0 / scale / 2, -1.0 / scale + (-2 * -(int)invert), 2);
 	}
 
 	if (params["generator"].asString() == "mandelbulb2") {
-		if(!center.getLength()) center = v3f(5, -1.0/scale - 5, 0); //ok
+		if(!center.getLength()) center = v3f(5, -1.0 / scale - 5, 0); //ok
 	}
 	if (params["generator"].asString() == "hypercomplex") {
 		par.doubles.N = params.get("N", 20).asInt();
@@ -416,7 +416,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	}
 #endif
 
-	if (params["center_auto_top"].asBool() && params.get("center", Json::Value()).empty() && !center.getLength()) center = v3f(3, -1.0/scale + (-5 - (-(int)invert * 10)), 3);
+	if (params["center_auto_top"].asBool() && params.get("center", Json::Value()).empty() && !center.getLength()) center = v3f(3, -1.0 / scale + (-5 - (-(int)invert * 10)), 3);
 }
 
 MapgenMath::~MapgenMath() {

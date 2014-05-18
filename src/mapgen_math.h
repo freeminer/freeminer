@@ -52,27 +52,27 @@ struct MapgenMathParams : public MapgenV7Params {
 };
 
 class MapgenMath : public MapgenV7 {
-	public:
-		MapgenMathParams * mg_params;
+public:
+	MapgenMathParams * mg_params;
 
-		MapgenMath(int mapgenid, MapgenParams *mg_params, EmergeManager *emerge);
-		~MapgenMath();
+	MapgenMath(int mapgenid, MapgenParams *mg_params, EmergeManager *emerge);
+	~MapgenMath();
 
-		int generateTerrain();
-		int getGroundLevelAtPoint(v2s16 p);
+	int generateTerrain();
+	int getGroundLevelAtPoint(v2s16 p);
 
-		bool internal;
-		bool invert;
-		bool invert_yz;
-		double size;
-		double scale;
-		v3f center;
-		int iterations;
-		double distance;
+	bool internal;
+	bool invert;
+	bool invert_yz;
+	double size;
+	double scale;
+	v3f center;
+	int iterations;
+	double distance;
 
-		MapNode n_air, n_water_source, n_stone;
+	MapNode n_air, n_water_source, n_stone;
 
-		double (*func)(double, double, double, double, int);
+	double (*func)(double, double, double, double, int);
 };
 
 struct MapgenFactoryMath : public MapgenFactory {
