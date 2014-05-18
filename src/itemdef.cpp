@@ -406,9 +406,9 @@ public:
 			v3s16 p0(0, 0, 0);
 			auto block = map.createBlankBlockNoInsert(p0);
 			auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
-			for(s16 z0=0; z0<2; ++z0)
-			for(s16 y0=0; y0<2; ++y0)
-			for(s16 x0=0; x0<2; ++x0) {
+			for(s16 z0=0; z0<=2; ++z0)
+			for(s16 y0=0; y0<=2; ++y0)
+			for(s16 x0=0; x0<=2; ++x0) {
 				v3s16 p(x0,y0,z0);
 				block->setNode(p, air_node);
 			}
