@@ -15,8 +15,8 @@
 
 unsigned char CircuitElement::face_to_shift[] = {
 	0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
-		4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
-		};
+	4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
+};
 
 unsigned char CircuitElement::opposite_shift[] = {
 	3, 4, 5, 0, 1, 2
@@ -35,12 +35,10 @@ FaceId CircuitElement::facedir_to_face[] = {
 CircuitElement::CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id,
                                unsigned long element_id, unsigned int delay) :
 	m_pos(pos), m_func(func), m_func_id(func_id), m_current_input_state(0),
-	m_next_input_state(0), m_current_output_state(0), m_next_output_state(0)
-{
+	m_next_input_state(0), m_current_output_state(0), m_next_output_state(0) {
 	m_current_output_state = m_func[m_current_input_state];
 	m_element_id = element_id;
-	for(int i = 0; i < 6; ++i)
-	{
+	for(int i = 0; i < 6; ++i) {
 		m_faces[i].is_connected = false;
 	}
 	setDelay(delay);
@@ -55,8 +53,7 @@ CircuitElement::CircuitElement(v3s16 pos, const unsigned char* func, unsigned lo
 #endif
 }
 
-CircuitElement::CircuitElement(const CircuitElement& element)
-{
+CircuitElement::CircuitElement(const CircuitElement& element) {
 	m_pos = element.m_pos;
 	m_element_id = element.m_element_id;
 	m_func = element.m_func;
@@ -74,18 +71,16 @@ CircuitElement::CircuitElement(const CircuitElement& element)
 }
 
 CircuitElement::CircuitElement(unsigned long element_id) : m_pos(v3s16(0, 0, 0)),
-                                                           m_func(0), m_func_id(0), m_current_input_state(0),
-                                                           m_next_input_state(0), m_current_output_state(0),
-                                                           m_next_output_state(0)
-{
+	m_func(0), m_func_id(0), m_current_input_state(0),
+	m_next_input_state(0), m_current_output_state(0),
+	m_next_output_state(0) {
 	m_element_id = element_id;
 	for(int i = 0; i < 6; ++i) {
 		m_faces[i].is_connected = false;
 	}
 }
 
-CircuitElement::~CircuitElement()
-{
+CircuitElement::~CircuitElement() {
 	for(int i = 0; i < 6; ++i) {
 		if(m_faces[i].is_connected) {
 			m_faces[i].list_pointer->erase(m_faces[i].list_iterator);
@@ -93,8 +88,7 @@ CircuitElement::~CircuitElement()
 	}
 }
 
-void CircuitElement::update()
-{
+void CircuitElement::update() {
 	if(m_current_output_state) {
 		for(int i = 0; i < 6; ++i) {
 			if(m_faces[i].is_connected) {
@@ -104,8 +98,7 @@ void CircuitElement::update()
 	}
 }
 
-void CircuitElement::updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef)
-{
+void CircuitElement::updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef) {
 	MapNode node = map.getNodeNoEx(m_pos);
 	// Update delay (may be not synchronized)
 	unsigned long delay = ndef->get(node).circuit_element_delay;
@@ -127,8 +120,7 @@ void CircuitElement::updateState(GameScripting* m_script, Map& map, INodeDefMana
 	m_next_input_state = 0;
 }
 
-void CircuitElement::serialize(std::ostream& out) const
-{
+void CircuitElement::serialize(std::ostream& out) const {
 	out.write(reinterpret_cast<const char*>(&m_pos), sizeof(m_pos));
 	out.write(reinterpret_cast<const char*>(&m_func_id), sizeof(m_func_id));
 	for(int i = 0; i < 6; ++i) {
@@ -140,8 +132,7 @@ void CircuitElement::serialize(std::ostream& out) const
 	}
 }
 
-void CircuitElement::serializeState(std::ostream& out) const
-{
+void CircuitElement::serializeState(std::ostream& out) const {
 	out.write(reinterpret_cast<const char*>(&m_element_id), sizeof(m_element_id));
 	out.write(reinterpret_cast<const char*>(&m_current_input_state), sizeof(m_current_input_state));
 	unsigned long queue_size = m_states_queue.size();
@@ -152,14 +143,13 @@ void CircuitElement::serializeState(std::ostream& out) const
 }
 
 void CircuitElement::deSerialize(std::istream& in,
-                                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer)
-{
+                                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer) {
 	unsigned long current_element_id;
 	in.read(reinterpret_cast<char*>(&m_pos), sizeof(m_pos));
 	in.read(reinterpret_cast<char*>(&m_func_id), sizeof(m_func_id));
 	for(int i = 0; i < 6; ++i) {
 		in.read(reinterpret_cast<char*>(&current_element_id), sizeof(current_element_id));
-		if(current_element_id > 0){
+		if(current_element_id > 0) {
 			m_faces[i].list_pointer = id_to_virtual_pointer[current_element_id];
 			m_faces[i].is_connected = true;
 		} else {
@@ -168,8 +158,7 @@ void CircuitElement::deSerialize(std::istream& in,
 	}
 }
 
-void CircuitElement::deSerializeState(std::istream& in)
-{
+void CircuitElement::deSerializeState(std::istream& in) {
 	unsigned long queue_size;
 	unsigned char input_state;
 	in.read(reinterpret_cast<char*>(&m_current_input_state), sizeof(m_current_input_state));
@@ -180,8 +169,7 @@ void CircuitElement::deSerializeState(std::istream& in)
 	}
 }
 
-void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>::iterator>& neighbors) const
-{
+void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>::iterator>& neighbors) const {
 	for(int i = 0; i < 6; ++i) {
 		if(m_faces[i].is_connected) {
 			bool found = false;
@@ -199,17 +187,16 @@ void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>
 }
 
 void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, int > >& connected,
-                                           Map& map, INodeDefManager* ndef, v3s16 pos, FaceId face,
-                                           std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
-                                           bool connected_faces[6])
-{
+        Map& map, INodeDefManager* ndef, v3s16 pos, FaceId face,
+        std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
+        bool connected_faces[6]) {
 	static v3s16 directions[6] = {v3s16(0, -1, 0),
 	                              v3s16(0, 0, 1),
 	                              v3s16(-1, 0, 0),
 	                              v3s16(0, 1, 0),
 	                              v3s16(0, 0, -1),
 	                              v3s16(1, 0, 0),
-	};
+	                             };
 	std::map <v3s16, unsigned char> used;
 	used[pos] = face;
 	std::queue <std::pair <v3s16, unsigned char> > q;
@@ -254,13 +241,13 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 					}
 
 					if((current_used_iterator == used.end()) ||
-					   !(current_used_iterator->second & SHIFT_TO_FACE(OPPOSITE_SHIFT(i)))) {
+					        !(current_used_iterator->second & SHIFT_TO_FACE(OPPOSITE_SHIFT(i)))) {
 						if(current_node_features.is_connector || node_features.is_connector
-						   || (node_features.is_wire && (next_node.getContent() == current_node.getContent()))) {
+						        || (node_features.is_wire && (next_node.getContent() == current_node.getContent()))) {
 							if(node_features.param_type_2 == CPT2_FACEDIR) {
 								q.push(std::make_pair(next_pos, CircuitElementStates::rotateState(
-									                      node_features.wire_connections[OPPOSITE_SHIFT(i)],
-									                      FACEDIR_TO_FACE(next_node.param2))));
+								                          node_features.wire_connections[OPPOSITE_SHIFT(i)],
+								                          FACEDIR_TO_FACE(next_node.param2))));
 							} else {
 								q.push(std::make_pair(next_pos, node_features.wire_connections[OPPOSITE_SHIFT(i)]));
 							}
@@ -271,7 +258,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 								used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
 							}
 						}
-						
+
 						if(node_features.is_circuit_element) {
 							tmp_used_iterator = used.find(next_pos);
 							if(tmp_used_iterator != used.end()) {
@@ -292,58 +279,48 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 	}
 }
 
-CircuitElementContainer CircuitElement::getFace(int id) const
-{
+CircuitElementContainer CircuitElement::getFace(int id) const {
 	return m_faces[id];
 }
 
-unsigned long CircuitElement::getFuncId() const
-{
+unsigned long CircuitElement::getFuncId() const {
 	return m_func_id;
 }
 
-v3s16 CircuitElement::getPos() const
-{
+v3s16 CircuitElement::getPos() const {
 	return m_pos;
 }
 
-unsigned long CircuitElement::getId() const
-{
+unsigned long CircuitElement::getId() const {
 	return m_element_id;
 }
 
 void CircuitElement::connectFace(int id, std::list <CircuitElementVirtualContainer>::iterator it,
-                                 std::list <CircuitElementVirtual>::iterator pt)
-{
+                                 std::list <CircuitElementVirtual>::iterator pt) {
 	m_faces[id].list_iterator = it;
 	m_faces[id].list_pointer  = pt;
 	m_faces[id].is_connected  = true;
 }
 
-void CircuitElement::disconnectFace(int id)
-{
+void CircuitElement::disconnectFace(int id) {
 	m_faces[id].is_connected = false;
 }
 
-void CircuitElement::setId(unsigned long id)
-{
+void CircuitElement::setId(unsigned long id) {
 	m_element_id = id;
 }
 
-void CircuitElement::setInputState(unsigned char state)
-{
+void CircuitElement::setInputState(unsigned char state) {
 	m_current_input_state = state;
 }
 
-void CircuitElement::setFunc(const unsigned char* func, unsigned long func_id)
-{
+void CircuitElement::setFunc(const unsigned char* func, unsigned long func_id) {
 	m_func = func;
 	m_func_id = func_id;
 	m_current_output_state = m_func[m_current_input_state];
 }
 
-void CircuitElement::setDelay(unsigned int delay)
-{
+void CircuitElement::setDelay(unsigned int delay) {
 	if(m_states_queue.size() >= delay) {
 		while(m_states_queue.size() > delay) {
 			m_states_queue.pop_front();
@@ -351,6 +328,6 @@ void CircuitElement::setDelay(unsigned int delay)
 	} else {
 		while(m_states_queue.size() < delay) {
 			m_states_queue.push_back(0);
-		}		
+		}
 	}
 }
