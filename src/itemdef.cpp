@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh.h"
 #include "tile.h"
 #include "clientmap.h"
+#include "mapblock.h"
 #endif
 #include "log.h"
 #include "main.h" // g_settings
@@ -399,10 +400,22 @@ public:
 				reenable_shaders = true;
 				g_settings->setBool("enable_shaders",false);
 			}
+			Map map(gamedef);
 			MapDrawControl map_draw_control;
-			MeshMakeData mesh_make_data(gamedef, map_draw_control);
+			MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
+			v3s16 p0(0, 0, 0);
+			auto block = map.createBlankBlockNoInsert(p0);
+			auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
+			for(s16 z0=0; z0<2; ++z0)
+			for(s16 y0=0; y0<2; ++y0)
+			for(s16 x0=0; x0<2; ++x0) {
+				v3s16 p(x0,y0,z0);
+				block->setNode(p, air_node);
+			}
 			MapNode mesh_make_node(id, param1, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
+			block->setNode(v3s16(1,1,1), mesh_make_node);
+			map.insertBlock(block);
 			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
 			scene::IMesh *node_mesh = mapblock_mesh.getMesh();
 			assert(node_mesh);
