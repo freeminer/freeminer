@@ -2063,9 +2063,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	Player *player = m_env->getPlayer(peer_id);
 	if(player == NULL){
+/*
 		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
 				<<std::endl;
+*/
 		return;
 	}
 

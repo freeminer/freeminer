@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class IGameDef;
 struct MapDrawControl;
+class Map;
 
 /*
 	Mesh making stuff
@@ -41,15 +42,18 @@ class MapBlock;
 
 struct MeshMakeData
 {
-	VoxelManipulator m_vmanip;
+	//VoxelManipulator m_vmanip;
+	Map & m_vmanip;
 	v3s16 m_blockpos;
 	v3s16 m_crack_pos_relative;
 	bool m_smooth_lighting;
 	IGameDef *m_gamedef;
 	int step;
+	Map & map;
 	MapDrawControl& draw_control;
+	bool debug;
 
-	MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_);
+	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
 
 	/*
 		Copy central data directly from block, and other data from

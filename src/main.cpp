@@ -1285,7 +1285,7 @@ int main(int argc, char *argv[])
 				MapBlock *block = old_map.loadBlock(*i);
 				new_db->saveBlock(block);
 				//MapSector *sector = old_map.getSectorNoGenerate(v2s16(i->X, i->Z));
-				old_map.deleteBlock(block);
+				old_map.deleteBlock(block, 1);
 				++count;
 				if (count % 500 == 0)
 					actionstream << "Migrated " << count << " blocks "
