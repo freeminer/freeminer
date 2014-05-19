@@ -790,7 +790,7 @@ int main(int argc, char *argv[])
 	allowed_options.insert(std::make_pair("gameid", ValueSpec(VALUETYPE_STRING,
 			_("Set gameid (\"--gameid list\" prints available ones)"))));
 	allowed_options.insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
-			_("Migrate from current map backend to another (Only works when using minetestserver or with --server)"))));
+			_("Migrate from current map backend to another (Only works when using freeminerserver or with --server)"))));
 #ifndef SERVER
 	allowed_options.insert(std::make_pair("videomodes", ValueSpec(VALUETYPE_FLAG,
 			_("Show available video modes"))));
