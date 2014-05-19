@@ -49,7 +49,8 @@ struct ProfValue {
 		sum += value;
 		min = std::min(min, value);
 		max = std::max(max, value);
-		avg += (avg > value ? -1 : 1) * value/100;
+		//avg += (avg > value ? -1 : 1) * value/100;
+		avg = sum/calls;
 	}
 };
 
@@ -118,7 +119,10 @@ public:
 					o<<" ";
 			}
 
-			o<<i.second.calls<<"*"<<i.second.avg<<"="<<i.second.sum;
+			if (i.second.sum == i.second.calls || !i.second.sum)
+				o<<i.second.calls;
+			else
+				o<<i.second.calls<<" * "<<i.second.avg<<" = "<<i.second.sum;
 			//o<<(i->second / avgcount);
 			o<<std::endl;
 		}

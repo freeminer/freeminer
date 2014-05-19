@@ -7,14 +7,12 @@
 
 class CircuitElement;
 
-struct CircuitElementVirtualContainer
-{
+struct CircuitElementVirtualContainer {
 	unsigned char shift;
 	std::list<CircuitElement>::iterator element_pointer;
 };
 
-class CircuitElementVirtual : public std::list <CircuitElementVirtualContainer>
-{
+class CircuitElementVirtual : public std::list <CircuitElementVirtualContainer> {
 public:
 	CircuitElementVirtual(unsigned long id);
 	~CircuitElementVirtual();
@@ -29,8 +27,7 @@ public:
 
 	unsigned long getId();
 
-	inline void addState(const bool state)
-	{
+	inline void addState(const bool state) {
 		m_state |= state;
 	}
 

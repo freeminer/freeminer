@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
+#include "util/lock.h"
 
 class Map;
 class NodeMetadataList;
@@ -106,6 +107,7 @@ public:
 */
 
 class MapBlock /*: public NodeContainer*/
+: public locker
 {
 public:
 	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy=false);
@@ -123,6 +125,7 @@ public:
 
 	void reallocate()
 	{
+		auto lock = lock_unique_rec();
 		if(data != NULL)
 			delete[] data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -196,13 +199,19 @@ public:
 	}
 	std::string getModifiedReason()
 	{
+#ifdef WTFdebug
 		return m_modified_reason;
+#else
+		return std::string();
+#endif
 	}
 	void resetModified()
 	{
 		m_modified = MOD_STATE_CLEAN;
+#ifdef WTFdebug
 		m_modified_reason = "none";
 		m_modified_reason_too_long = false;
+#endif
 	}
 	
 	// is_underground getter/setter
@@ -297,6 +306,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		auto lock = lock_shared_rec();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -321,6 +331,7 @@ public:
 		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		auto lock = lock_unique_rec();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
 	}
@@ -338,6 +349,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
+		auto lock = lock_shared_rec();
 		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
 	}
 	
@@ -350,6 +362,7 @@ public:
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
+		auto lock = lock_unique_rec();
 		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
 	}
@@ -554,7 +567,8 @@ public:
 	float m_uptime_timer_last;
 
 	// Last really changed time (need send to client)
-	u32 m_changed_timestamp;
+	std::atomic_uint m_changed_timestamp;
+
 private:
 	/*
 		Private member variables
@@ -579,8 +593,11 @@ private:
 		- On the client, this is used for nothing.
 	*/
 	u32 m_modified;
+
+#ifdef WTFdebug
 	std::string m_modified_reason;
 	bool m_modified_reason_too_long;
+#endif
 
 	/*
 		When propagating sunlight and the above block doesn't exist,
@@ -648,16 +665,6 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 /*
 	return getContainerPos(p, MAP_BLOCKSIZE);
 */
-}
-
-inline v2s16 getNodeSectorPos(v2s16 p)
-{
-	return getContainerPos(p, MAP_BLOCKSIZE);
-}
-
-inline s16 getNodeBlockY(s16 y)
-{
-	return getContainerPos(y, MAP_BLOCKSIZE);
 }
 
 /*

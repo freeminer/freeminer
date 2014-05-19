@@ -15,8 +15,7 @@
 class INodeDefManager;
 class GameScripting;
 
-class Circuit
-{
+class Circuit {
 public:
 	Circuit(GameScripting* script, std::string savedir);
 	~Circuit();
@@ -28,13 +27,13 @@ public:
 	void updateElement(MapNode& node, v3s16 pos, INodeDefManager* ndef, const unsigned char* func);
 	void pushElementToQueue(v3s16 pos);
 	void processElementsQueue(Map& map, INodeDefManager* ndef);
-	
+
 	void load();
 	void save();
 	void saveElement(std::list <CircuitElement>::iterator element, bool save_edges);
 	void saveVirtualElement(std::list <CircuitElementVirtual>::iterator element, bool save_edges);
 	void saveCircuitElementsStates();
-	
+
 private:
 	std::list <CircuitElement> m_elements;
 	std::list <CircuitElementVirtual> m_virtual_elements;
@@ -50,16 +49,16 @@ private:
 
 	unsigned long m_max_id;
 	unsigned long m_max_virtual_id;
-	
+
 	std::string m_savedir;
 
 	bool m_updating_process;
-	
+
 	leveldb::DB *m_database;
 	leveldb::DB *m_virtual_database;
-	
+
 	JMutex m_elements_mutex;
-	
+
 	static const unsigned long circuit_simulator_version;
 	static const char elements_states_file[];
 	static const char elements_func_file[];

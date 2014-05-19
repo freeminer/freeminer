@@ -27,15 +27,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class ModApiMapgen : public ModApiBase {
 private:
-	// minetest.get_mapgen_object(objectname)
+	// get_mapgen_object(objectname)
 	// returns the requested object used during map generation
 	static int l_get_mapgen_object(lua_State *L);
 
-	// minetest.set_mapgen_params(params)
+	// set_mapgen_params(params)
 	// set mapgen parameters
 	static int l_set_mapgen_params(lua_State *L);
 
-	// minetest.set_noiseparam_defaults({np1={noise params}, ...})
+	// set_noiseparam_defaults({np1={noise params}, ...})
 	static int l_set_noiseparam_defaults(lua_State *L);
 
 	// set_gen_notify(flagstring)

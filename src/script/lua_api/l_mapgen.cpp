@@ -81,7 +81,7 @@ struct EnumString ModApiMapgen::es_Rotation[] =
 };
 
 
-// minetest.get_mapgen_object(objectname)
+// get_mapgen_object(objectname)
 // returns the requested object used during map generation
 int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 {
@@ -184,7 +184,7 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 	return 0;
 }
 
-// minetest.set_mapgen_params(params)
+// set_mapgen_params(params)
 // set mapgen parameters
 int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 {
@@ -228,7 +228,7 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	return 0;
 }
 
-// minetest.set_noiseparam_defaults({np1={noise params}, ...})
+// set_noiseparam_defaults({np1={noise params}, ...})
 // set default values for noise parameters if not present in global settings
 int ModApiMapgen::l_set_noiseparam_defaults(lua_State *L)
 {

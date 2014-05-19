@@ -1277,7 +1277,7 @@ void * ConnectionSendThread::Thread()
 	PROFILE(ThreadIdentifier << "ConnectionSend: [" << m_connection->getDesc() << "]");
 
 	porting::setThreadName("ConnectionSend");
-	porting::setThreadPriority(90);
+	porting::setThreadPriority(10);
 
 	/* if stop is requested don't stop immediately but try to send all        */
 	/* packets first */
@@ -1437,6 +1437,7 @@ void ConnectionSendThread::runTimeouts(float dtime)
 
 				channel->UpdateBytesLost(k->data.getSize());
 
+/*
 				LOG(derr_con<<m_connection->getDesc()
 						<<"RE-SENDING timed-out RELIABLE to "
 						<< k->address.serializeString()
@@ -1445,6 +1446,7 @@ void ConnectionSendThread::runTimeouts(float dtime)
 						<<", channel="<<((int)channelnum&0xff)
 						<<", seqnum="<<seqnum
 						<<std::endl);
+*/
 
 				rawSend(*k);
 
@@ -2026,7 +2028,7 @@ void * ConnectionReceiveThread::Thread()
 	PROFILE(ThreadIdentifier << "ConnectionReceive: [" << m_connection->getDesc() << "]");
 
 	porting::setThreadName("ConnectionReceive");
-	porting::setThreadPriority(90);
+	porting::setThreadPriority(10);
 
 #ifdef DEBUG_CONNECTION_KBPS
 	u32 curtime = porting::getTimeMs();

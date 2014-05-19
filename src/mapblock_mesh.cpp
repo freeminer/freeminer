@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "util/directiontables.h"
 #include "clientmap.h"
+#include "log_types.h"
 
 float srgb_linear_multiply(float f, float m, float max)
 {
@@ -60,20 +61,23 @@ int getFarmeshStep(MapDrawControl& draw_control, int range) {
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(IGameDef *gamedef, MapDrawControl& draw_control_):
-	m_vmanip(),
+MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_):
+	m_vmanip(map_),
 	m_blockpos(-1337,-1337,-1337),
 	m_crack_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
 	m_gamedef(gamedef)
-	,step(1)
-	,draw_control(draw_control_)
+	,step(1),
+	map(map_),
+	draw_control(draw_control_),
+	debug(0)
 {}
 
 void MeshMakeData::fill(MapBlock *block)
 {
 	m_blockpos = block->getPos();
 
+#if 0
 	v3s16 blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 	
 	/*
@@ -113,12 +117,14 @@ void MeshMakeData::fill(MapBlock *block)
 				b->copyTo(m_vmanip);
 		}
 	}
+#endif
 }
 
 void MeshMakeData::fillSingleNode(MapNode *node)
 {
 	m_blockpos = v3s16(0,0,0);
-	
+
+#if 0
 	v3s16 blockpos_nodes = v3s16(0,0,0);
 	VoxelArea area(blockpos_nodes-v3s16(1,1,1)*MAP_BLOCKSIZE,
 			blockpos_nodes+v3s16(1,1,1)*MAP_BLOCKSIZE*2-v3s16(1,1,1));
@@ -144,6 +150,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 	}
 	m_vmanip.copyFrom(data, area, area.MinEdge, area.MinEdge, area.getExtent());
 	delete[] data;
+#endif
 }
 
 void MeshMakeData::setCrack(int crack_level, v3s16 crack_pos)
@@ -782,12 +789,14 @@ static void getTileInfo(
 		,int step
 	)
 {
-	VoxelManipulator &vmanip = data->m_vmanip;
+	//VoxelManipulator &vmanip = data->m_vmanip;
+	Map &vmanip = data->m_vmanip;
 	INodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
 	MapNode n0 = vmanip.getNodeNoEx(blockpos_nodes + p*step);
 	MapNode n1 = vmanip.getNodeNoEx(blockpos_nodes + p*step + face_dir*step);
+	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
 	TileSpec tile0 = getNodeTile(n0, p, face_dir, data);
 	TileSpec tile1 = getNodeTile(n1, p + face_dir, -face_dir, data);
 	
@@ -1078,6 +1087,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		updateAllFastFaceRows(data, fastfaces_new, step);
 	}
 	// End of slow part
+
+	//if (data->debug) infostream<<" step="<<step<<" fastfaces_new.size="<<fastfaces_new.size()<<std::endl;
 
 	/*
 		Convert FastFaces to MeshCollector

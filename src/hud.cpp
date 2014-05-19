@@ -87,17 +87,18 @@ Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect, bool selected) {
 
 	if (selected) {
+			/* draw hihlighting around selected item */
 			if (use_hotbar_selected_image) {
-			core::rect<s32> imgrect2 = rect;
-			imgrect2.UpperLeftCorner.X  -= m_padding;
-			imgrect2.UpperLeftCorner.Y  -= m_padding;
-			imgrect2.LowerRightCorner.X += m_padding;
-			imgrect2.LowerRightCorner.Y += m_padding;
-				video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
-				core::dimension2di imgsize(texture->getOriginalSize());
-			driver->draw2DImage(texture, imgrect2,
-					core::rect<s32>(core::position2d<s32>(0,0), imgsize),
-					NULL, hbar_colors, true);
+				core::rect<s32> imgrect2 = rect;
+				imgrect2.UpperLeftCorner.X  -= (m_padding*2);
+				imgrect2.UpperLeftCorner.Y  -= (m_padding*2);
+				imgrect2.LowerRightCorner.X += (m_padding*2);
+				imgrect2.LowerRightCorner.Y += (m_padding*2);
+					video::ITexture *texture = tsrc->getTexture(hotbar_selected_image);
+					core::dimension2di imgsize(texture->getOriginalSize());
+				driver->draw2DImage(texture, imgrect2,
+						core::rect<s32>(core::position2d<s32>(0,0), imgsize),
+						NULL, hbar_colors, true);
 			} else {
 				video::SColor c_outside(255,255,0,0);
 				//video::SColor c_outside(255,0,0,0);
@@ -189,8 +190,10 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 			use_hotbar_selected_image = false;
 	}
 
+	/* draw customized item background */
 	if (use_hotbar_image) {
-		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2, width+m_padding/2, height+m_padding/2);
+		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2,
+				width+m_padding/2, height+m_padding/2);
 		core::rect<s32> rect2 = imgrect2 + pos;
 		video::ITexture *texture = tsrc->getTexture(hotbar_image);
 		core::dimension2di imgsize(texture->getOriginalSize());
@@ -232,7 +235,8 @@ void Hud::drawLuaElements(v3s16 camera_offset) {
 		if (!e)
 			continue;
 		
-		v2s32 pos(e->pos.X * m_screensize.X, e->pos.Y * m_screensize.Y);
+		v2s32 pos(floor(e->pos.X * (float) m_screensize.X + 0.5),
+				floor(e->pos.Y * (float) m_screensize.Y + 0.5));
 		switch (e->type) {
 			case HUD_ELEM_IMAGE: {
 				video::ITexture *texture = tsrc->getTexture(e->text);
@@ -270,7 +274,7 @@ void Hud::drawLuaElements(v3s16 camera_offset) {
 				break; }
 			case HUD_ELEM_STATBAR: {
 				v2s32 offs(e->offset.X, e->offset.Y);
-				drawStatbar(pos, HUD_CORNER_UPPER, e->dir, e->text, e->number, offs);
+				drawStatbar(pos, HUD_CORNER_UPPER, e->dir, e->text, e->number, offs, e->size);
 				break; }
 			case HUD_ELEM_INVENTORY: {
 				InventoryList *inv = inventory->getList(e->text);
@@ -312,7 +316,9 @@ void Hud::drawLuaElements(v3s16 camera_offset) {
 }
 
 
-void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s32 count, v2s32 offset) {
+void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture,
+		s32 count, v2s32 offset, v2s32 size)
+{
 	const video::SColor color(255, 255, 255, 255);
 	const video::SColor colors[] = {color, color, color, color};
 	
@@ -321,10 +327,25 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s
 		return;
 		
 	core::dimension2di srcd(stat_texture->getOriginalSize());
+	core::dimension2di dstd;
+	if (size == v2s32()) {
+		dstd = srcd;
+	} else {
+		dstd.Height = size.Y * g_settings->getFloat("gui_scaling") *
+				porting::getDisplayDensity();
+		dstd.Width  = size.X * g_settings->getFloat("gui_scaling") *
+				porting::getDisplayDensity();
+
+		offset.X *= g_settings->getFloat("gui_scaling") *
+				porting::getDisplayDensity();
+
+		offset.Y *= g_settings->getFloat("gui_scaling") *
+				porting::getDisplayDensity();
+	}
 
 	v2s32 p = pos;
 	if (corner & HUD_CORNER_LOWER)
-		p -= srcd.Height;
+		p -= dstd.Height;
 
 	p += offset;
 
@@ -342,13 +363,13 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s
 		default:
 			steppos = v2s32(1, 0);
 	}
-	steppos.X *= srcd.Width;
-	steppos.Y *= srcd.Height;
+	steppos.X *= dstd.Width;
+	steppos.Y *= dstd.Height;
 	
 	for (s32 i = 0; i < count / 2; i++)
 	{
 		core::rect<s32> srcrect(0, 0, srcd.Width, srcd.Height);
-		core::rect<s32> dstrect(srcrect);
+		core::rect<s32> dstrect(0,0, dstd.Width, dstd.Height);
 
 		dstrect += p;
 		driver->draw2DImage(stat_texture, dstrect, srcrect, NULL, colors, true);
@@ -358,7 +379,7 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s
 	if (count % 2 == 1)
 	{
 		core::rect<s32> srcrect(0, 0, srcd.Width / 2, srcd.Height);
-		core::rect<s32> dstrect(srcrect);
+		core::rect<s32> dstrect(0,0, dstd.Width / 2, dstd.Height);
 
 		dstrect += p;
 		driver->draw2DImage(stat_texture, dstrect, srcrect, NULL, colors, true);
@@ -366,7 +387,7 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture, s
 }
 
 
-void Hud::drawHotbar(s32 halfheartcount, u16 playeritem, s32 breath) {
+void Hud::drawHotbar(u16 playeritem) {
 
 	v2s32 centerlowerpos(m_displaycenter.X, m_screensize.Y);
 
@@ -398,12 +419,22 @@ void Hud::drawHotbar(s32 halfheartcount, u16 playeritem, s32 breath) {
 		}
 	}
 
-	if (player->hud_flags & HUD_FLAG_HEALTHBAR_VISIBLE)
-		drawStatbar(pos - v2s32(0, 4), HUD_CORNER_LOWER, HUD_DIR_LEFT_RIGHT,
-				"heart.png", halfheartcount, v2s32(0, 0));
-	if (player->hud_flags & HUD_FLAG_BREATHBAR_VISIBLE && breath <= 10)
-		drawStatbar(pos - v2s32(-180, 4), HUD_CORNER_LOWER, HUD_DIR_LEFT_RIGHT,
-				"bubble.png", breath*2, v2s32(0, 0));
+	//////////////////////////// compatibility code to be removed //////////////
+	// this is ugly as hell but there's no other way to keep compatibility to
+	// old servers
+	if ( player->hud_flags & HUD_FLAG_HEALTHBAR_VISIBLE)
+		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
+				floor(1 * (float) m_screensize.Y + 0.5)),
+				HUD_CORNER_UPPER, 0, "heart.png",
+				player->hp, v2s32((-10*24)-25,-(48+24+10)), v2s32(24,24));
+
+	if ((player->hud_flags & HUD_FLAG_BREATHBAR_VISIBLE) &&
+			(player->getBreath() < 11))
+		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
+				floor(1 * (float) m_screensize.Y + 0.5)),
+				HUD_CORNER_UPPER, 0, "heart.png",
+				player->getBreath(), v2s32(25,-(48+24+10)), v2s32(24,24));
+	////////////////////////////////////////////////////////////////////////////
 }
 
 

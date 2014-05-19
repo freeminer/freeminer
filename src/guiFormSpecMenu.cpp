@@ -112,7 +112,7 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 	}
 
 	if (m_ext_ptr != NULL) {
-		assert(*m_ext_ptr == this);
+		if (*m_ext_ptr == this)
 		*m_ext_ptr = NULL;
 	}
 }

@@ -20,8 +20,7 @@ class Map;
 struct MapNode;
 class INodeDefManager;
 
-enum FaceId
-{
+enum FaceId {
 	FACE_BOTTOM = 0x1,
 	FACE_BACK   = 0x2,
 	FACE_LEFT   = 0x4,
@@ -35,8 +34,7 @@ class Circuit;
 class GameScripting;
 
 
-struct CircuitElementContainer
-{
+struct CircuitElementContainer {
 	/*
 	 * iterator of CircuitElementVirtual::elements, which contains pointer to this object
 	 */
@@ -50,8 +48,7 @@ struct CircuitElementContainer
 	bool is_connected;
 };
 
-class CircuitElement
-{
+class CircuitElement {
 public:
 	CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id, unsigned long id, unsigned int delay);
 	CircuitElement(const CircuitElement& element);
@@ -60,15 +57,15 @@ public:
 	void addConnectedElement();
 	void update();
 	void updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef);
-	
+
 	void serialize(std::ostream& out) const;
 	void serializeState(std::ostream& out) const;
 	void deSerialize(std::istream& is,
 	                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer);
 	void deSerializeState(std::istream& is);
-	
+
 	void getNeighbors(std::vector <std::list <CircuitElementVirtual>::iterator>& neighbors) const;
-	
+
 	// First - pointer to object to which connected.
 	// Second - face id.
 	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, int > >& connected,
@@ -89,11 +86,10 @@ public:
 	void setFunc(const unsigned char* func, unsigned long func_id);
 	void setDelay(unsigned int delay);
 
-	inline void addState(unsigned char state)
-	{
+	inline void addState(unsigned char state) {
 		m_next_input_state |= state;
 	}
-	
+
 	static unsigned char face_to_shift[33];
 	static unsigned char opposite_shift[6];
 	static FaceId shift_to_face[6];

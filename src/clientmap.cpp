@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
 #include "log.h"
-#include "mapsector.h"
 #include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"
@@ -65,13 +64,16 @@ ClientMap::ClientMap(
 		scene::ISceneManager* mgr,
 		s32 id
 ):
-	Map(dout_client, gamedef),
+	Map(gamedef),
 	scene::ISceneNode(parent, mgr, id),
 	m_client(client),
 	m_control(control),
 	m_camera_position(0,0,0),
 	m_camera_direction(0,0,1),
 	m_camera_fov(M_PI)
+	,m_drawlist(&m_drawlist_1),
+	m_drawlist_current(0),
+	m_drawlist_last(0)
 {
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
@@ -87,56 +89,6 @@ ClientMap::~ClientMap()
 		mesh = NULL;
 	}*/
 }
-
-MapSector * ClientMap::emergeSector(v2s16 p2d)
-{
-	DSTACK(__FUNCTION_NAME);
-	// Check that it doesn't exist already
-	try{
-		return getSectorNoGenerate(p2d);
-	}
-	catch(InvalidPositionException &e)
-	{
-	}
-	
-	// Create a sector
-	ClientMapSector *sector = new ClientMapSector(this, p2d, m_gamedef);
-	
-	{
-		//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-		m_sectors[p2d] = sector;
-	}
-	
-	return sector;
-}
-
-#if 0
-void ClientMap::deSerializeSector(v2s16 p2d, std::istream &is)
-{
-	DSTACK(__FUNCTION_NAME);
-	ClientMapSector *sector = NULL;
-
-	//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-	
-	core::map<v2s16, MapSector*>::Node *n = m_sectors.find(p2d);
-
-	if(n != NULL)
-	{
-		sector = (ClientMapSector*)n->getValue();
-		assert(sector->getId() == MAPSECTOR_CLIENT);
-	}
-	else
-	{
-		sector = new ClientMapSector(this, p2d);
-		{
-			//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-			m_sectors.insert(p2d, sector);
-		}
-	}
-
-	sector->deSerialize(is);
-}
-#endif
 
 void ClientMap::OnRegisterSceneNode()
 {
@@ -180,19 +132,17 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 
 void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 {
-	//ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
+	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	//g_profiler->add("CM::updateDrawList() count", 1);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = m_drawlist.begin();
-			i != m_drawlist.end(); ++i)
-	{
-		MapBlock *block = i->second;
-		block->refDrop();
-	}
-	m_drawlist.clear();
+	if (!m_drawlist_last)
+		m_drawlist_current = !m_drawlist_current;
+	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
+
+	float max_cycle_ms = 0.1/getControl().fps_wanted;
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
@@ -239,35 +189,29 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 
-	for(std::map<v2s16, MapSector*>::iterator
-			si = m_sectors.begin();
-			si != m_sectors.end(); ++si)
 	{
-		MapSector *sector = si->second;
-		v2s16 sp = sector->getPos();
-		
+	auto lock = m_blocks.lock_shared_rec();
+	for(auto & ir : m_blocks) {
+
+		if (n++ < m_drawlist_last)
+			continue;
+		else
+			m_drawlist_last = 0;
+		++calls;
+
+		MapBlock *block = ir.second;
+		auto bp = block->getPos();
+
 		if(m_control.range_all == false)
 		{
-			if(sp.X < p_blocks_min.X
-			|| sp.X > p_blocks_max.X
-			|| sp.Y < p_blocks_min.Z
-			|| sp.Y > p_blocks_max.Z)
+			if(bp.X < p_blocks_min.X
+			|| bp.X > p_blocks_max.X
+			|| bp.Z > p_blocks_max.Z
+			|| bp.Z < p_blocks_min.Z
+			|| bp.Y < p_blocks_min.Y
+			|| bp.Y > p_blocks_max.Y)
 				continue;
 		}
-
-		std::list< MapBlock * > sectorblocks;
-		sector->getBlocks(sectorblocks);
-		
-		/*
-			Loop through blocks in sector
-		*/
-
-		u32 sector_blocks_drawn = 0;
-		
-		std::list< MapBlock * >::iterator i;
-		for(i=sectorblocks.begin(); i!=sectorblocks.end(); i++)
-		{
-			MapBlock *block = *i;
 
 			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 			/*
@@ -377,18 +321,29 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 
 			// Add to set
 			block->refGrab();
-			m_drawlist[block->getPos()] = block;
+			drawlist[block->getPos()] = block;
 
-			sector_blocks_drawn++;
 			blocks_drawn++;
 			if(d/BS > farthest_drawn)
 				farthest_drawn = d/BS;
 
-		} // foreach sectorblocks
-
-		if(sector_blocks_drawn != 0)
-			m_last_drawn_sectors.insert(sp);
+		if (porting::getTimeMs() > end_ms) {
+			m_drawlist_last = n;
+			break;
+		}
 	}
+	}
+	if (!calls)
+		m_drawlist_last = 0;
+
+	if (m_drawlist_last)
+		return;
+
+	for (auto & ir : *m_drawlist)
+		ir.second->refDrop();
+
+	m_drawlist->clear();
+	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
 	m_control.blocks_drawn = blocks_drawn;
@@ -447,14 +402,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		prefix = "CM: solid: ";
 	else
 		prefix = "CM: transparent: ";
-
-	/*
-		This is called two times per frame, reset on the non-transparent one
-	*/
-	if(pass == scene::ESNRP_SOLID)
-	{
-		m_last_drawn_sectors.clear();
-	}
 
 	bool use_trilinear_filter = g_settings->getBool("trilinear_filter");
 	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
@@ -526,11 +473,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	MeshBufListList drawbufs;
 
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = m_drawlist.begin();
-			i != m_drawlist.end(); ++i)
-	{
-		MapBlock *block = i->second;
+	for(auto & ir : *m_drawlist) {
+		MapBlock *block = ir.second;
 
 		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
 		// If the mesh of the block happened to get deleted, ignore it

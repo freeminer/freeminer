@@ -195,6 +195,14 @@ struct LocalFormspecHandler : public TextDest
 			}
 		}
 
+		// don't show error message for unhandled cursor keys
+		if ( (fields.find("key_up") != fields.end()) ||
+			(fields.find("key_down") != fields.end()) ||
+			(fields.find("key_left") != fields.end()) ||
+			(fields.find("key_right") != fields.end())) {
+			return;
+		}
+
 		errorstream << "LocalFormspecHandler::gotText unhandled >" << m_formname << "< event" << std::endl;
 		int i = 0;
 		for (std::map<std::string,std::string>::iterator iter = fields.begin();
@@ -2627,6 +2635,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						delete event.hudadd.align;
 						delete event.hudadd.offset;
 						delete event.hudadd.world_pos;
+						delete event.hudadd.size;
 						continue;
 					}
 					
@@ -2642,6 +2651,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 					e->align  = *event.hudadd.align;
 					e->offset = *event.hudadd.offset;
 					e->world_pos = *event.hudadd.world_pos;
+					e->size = *event.hudadd.size;
 					
 					if (id == nhudelem)
 						player->hud.push_back(e);
@@ -2655,6 +2665,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 					delete event.hudadd.align;
 					delete event.hudadd.offset;
 					delete event.hudadd.world_pos;
+					delete event.hudadd.size;
 				}
 				else if (event.type == CE_HUDRM)
 				{
@@ -2671,6 +2682,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						delete event.hudchange.v3fdata;
 						delete event.hudchange.v2fdata;
 						delete event.hudchange.sdata;
+						delete event.hudchange.v2s32data;
 						continue;
 					}
 						
@@ -2706,11 +2718,15 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						case HUD_STAT_WORLD_POS:
 							e->world_pos = *event.hudchange.v3fdata;
 							break;
+						case HUD_STAT_SIZE:
+							e->size = *event.hudchange.v2s32data;
+							break;
 					}
 					
 					delete event.hudchange.v3fdata;
 					delete event.hudchange.v2fdata;
 					delete event.hudchange.sdata;
+					delete event.hudchange.v2s32data;
 				}
 				else if (event.type == CE_SET_SKY)
 				{
@@ -3236,7 +3252,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			direct_brightness = time_brightness;
 			sunlight_seen = true;
 		} else {
-			ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
+			//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 			float old_brightness = sky->getBrightness();
 			direct_brightness = (float)client.getEnv().getClientMap()
 					.getBackgroundBrightness(MYMIN(fog_range*1.2, 60*BS),
@@ -3530,7 +3546,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			changed much
 		*/
 		update_draw_list_timer += dtime;
-		if(update_draw_list_timer >= 0.2 ||
+		if (!no_output)
+		if(client.getEnv().getClientMap().m_drawlist_last || update_draw_list_timer >= 0.2 ||
 				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
@@ -3711,8 +3728,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		if (show_hud)
 		{
-			hud.drawHotbar(client.getHP(), client.getPlayerItem(),
-					client.getBreath());
+			hud.drawHotbar(client.getPlayerItem());
 		}
 
 		/*
@@ -3807,6 +3823,10 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 	}
 
+	guitext->remove();
+	guitext2->remove();
+	guitext_info->remove();
+	guitext_profiler->remove();
 	/*
 		Drop stuff
 	*/

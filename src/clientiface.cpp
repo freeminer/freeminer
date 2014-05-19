@@ -136,7 +136,8 @@ void RemoteClient::GetNextBlocks(
 	/*
 		Number of blocks sending + number of blocks selected for sending
 	*/
-	u32 num_blocks_selected = m_blocks_sending.size();
+	u32 num_blocks_selected = 0;
+	u32 num_blocks_sending = m_blocks_sending.size();
 
 	/*
 		next time d will be continued from the d from which the nearest
@@ -244,7 +245,7 @@ void RemoteClient::GetNextBlocks(
 				max_simul_dynamic = max_simul_sends_setting;
 
 			// Don't select too many blocks for sending
-			if(num_blocks_selected >= max_simul_dynamic)
+			if(num_blocks_selected+num_blocks_sending >= max_simul_dynamic)
 			{
 				queue_is_full = true;
 				goto queue_full_break;
@@ -394,7 +395,8 @@ void RemoteClient::GetNextBlocks(
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending <<std::endl;
+	num_blocks_selected += num_blocks_sending;
 	if(!num_blocks_selected && d_start == d) {
 		//new_nearest_unsent_d = 0;
 		m_nothing_to_send_pause_timer = 1.0;
@@ -446,9 +448,6 @@ void RemoteClient::SentBlock(v3s16 p)
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
 	++m_nearest_unsent_nearest;
-
-	if(m_blocks_sending.find(p) != m_blocks_sending.end())
-		m_blocks_sending.erase(p);
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)

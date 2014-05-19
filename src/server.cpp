@@ -70,6 +70,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 
 #include <msgpack.hpp>
+#include <chrono>
+#include <thread>
 
 class ClientNotFoundException : public BaseException
 {
@@ -78,6 +80,87 @@ public:
 		BaseException(s)
 	{}
 };
+
+class MapThread : public JThread
+{
+	Server *m_server;
+public:
+
+	MapThread(Server *server):
+		JThread(),
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("MapThread");
+
+		DSTACK(__FUNCTION_NAME);
+		BEGIN_DEBUG_EXCEPTION_HANDLER
+		ThreadStarted();
+
+		porting::setThreadName("Map");
+		porting::setThreadPriority(20);
+		while(!StopRequested()) {
+			try {
+				if (!m_server->AsyncRunMapStep())
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				else
+					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			} catch (BaseException &e) {
+				errorstream<<"Server: MapThread: exception: "<<e.what()<<std::endl;
+			} catch(std::exception &e) {
+				errorstream<<"Server: exception: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
+			}
+		}
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		return nullptr;
+	}
+};
+
+class SendBlocksThread : public JThread
+{
+	Server *m_server;
+public:
+
+	SendBlocksThread(Server *server):
+		JThread(),
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("SendBlocksThread");
+
+		DSTACK(__FUNCTION_NAME);
+		BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+
+		porting::setThreadName("SendBlocksThread");
+		porting::setThreadPriority(50);
+		auto time = porting::getTimeMs();
+		while(!StopRequested()) {
+			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
+			try {
+				m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
+				time = porting::getTimeMs();
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			} catch (BaseException &e) {
+				errorstream<<"Server: SendBlocksThread: exception: "<<e.what()<<std::endl;
+			} catch(std::exception &e) {
+				errorstream<<"Server: exception: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
+			}
+		}
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+	return nullptr;
+	}
+};
+
+
+
 
 class ServerThread : public JThread
 {
@@ -107,7 +190,7 @@ void * ServerThread::Thread()
 	ThreadStarted();
 
 	porting::setThreadName("ServerThread");
-	porting::setThreadPriority(20);
+	porting::setThreadPriority(10);
 
 	while(!StopRequested())
 	{
@@ -140,6 +223,8 @@ void * ServerThread::Thread()
 		catch(LuaError &e)
 		{
 			m_server->setAsyncFatalError(e.what());
+		} catch (...) {
+				errorstream<<"Ooops..."<<std::endl;
 		}
 	}
 
@@ -201,6 +286,8 @@ Server::Server(
 	m_craftdef(createCraftDefManager()),
 	m_event(new EventManager()),
 	m_thread(NULL),
+	m_map_thread(nullptr),
+	m_sendblocks(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -248,6 +335,10 @@ Server::Server(
 
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
+
+	m_map_thread = new MapThread(this);
+	m_sendblocks = new SendBlocksThread(this);
+	
 
 	// Create world if it doesn't exist
 	if(!initializeWorld(m_path_world, m_gamespec.id))
@@ -307,9 +398,6 @@ Server::Server(
 		errorstream << std::endl;
 	}
 
-	// Path to builtin.lua
-	std::string builtinpath = getBuiltinLuaPath() + DIR_DELIM + "builtin.lua";
-
 	// Lock environment
 	JMutexAutoLock envlock(m_env_mutex);
 
@@ -320,16 +408,13 @@ Server::Server(
 	
 	m_circuit = new Circuit(m_script, path_world);
 
+	std::string scriptpath = getBuiltinLuaPath() + DIR_DELIM "init.lua";
 
-	// Load and run builtin.lua
-	infostream<<"Server: Loading builtin.lua [\""
-			<<builtinpath<<"\"]"<<std::endl;
-	bool success = m_script->loadMod(builtinpath, "__builtin");
-	if(!success){
-		errorstream<<"Server: Failed to load and run "
-				<<builtinpath<<std::endl;
-		throw ModError("Failed to load and run "+builtinpath);
+	if (!m_script->loadScript(scriptpath)) {
+		throw ModError("Failed to load and run " + scriptpath);
 	}
+
+
 	// Print 'em
 	infostream<<"Server: Loading mods: ";
 	for(std::vector<ModSpec>::iterator i = m_mods.begin();
@@ -441,6 +526,9 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
+	delete m_sendblocks;
+	delete m_map_thread;
+
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
 	m_emerge->stopThreads();
@@ -481,15 +569,20 @@ void Server::start(Address bind_addr)
 
 	// Stop thread if already running
 	m_thread->Stop();
-
+	m_sendblocks->Stop();
+	m_map_thread->Stop();
+	
 	// Initialize connection
 	m_con.Serve(bind_addr.getPort());
 
 	// Start thread
 	m_thread->Start();
+	m_map_thread->Start();
+	m_sendblocks->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m     "
-			<< porting::getNumberOfProcessors() << " cores"<< std::endl;
+			<< " cpp="<<__cplusplus<<"    "
+			<< " cores="<< porting::getNumberOfProcessors()<< std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
 			<<"\" mapgen=\""<<m_emerge->params.mg_name
@@ -505,9 +598,14 @@ void Server::stop()
 
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->Stop();
+	m_thread->Stop();
 	//m_emergethread.setRun(false);
 	m_thread->Wait();
 	//m_emergethread.stop();
+	m_sendblocks->Stop();
+	m_sendblocks->Wait();
+	m_map_thread->Stop();
+	m_map_thread->Wait();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -545,7 +643,7 @@ void Server::AsyncRunStep(bool initial_step)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
-		SendBlocks(dtime);
+		//SendBlocks(dtime);
 	}
 
 	if((dtime < 0.001) && (initial_step == false))
@@ -626,19 +724,6 @@ void Server::AsyncRunStep(bool initial_step)
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
-	const float map_timer_and_unload_dtime = 10.92;
-	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
-	{
-		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
-		JMutexAutoLock lock(m_env_mutex);
-		// Run Map's timers and unload unused data
-		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		if(m_env->getMap().timerUpdate(m_uptime.get(),
-				max_cycle_ms,
-				g_settings->getFloat("server_unload_unused_data_timeout")))
-					m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
-	}
-
 	/*
 		Do background stuff
 	*/
@@ -676,7 +761,7 @@ void Server::AsyncRunStep(bool initial_step)
 			/*
 				Send player breath if changed
 			*/
-			if(playersao->m_breath_not_sent){
+			if(playersao->m_breath_not_sent) {
 				SendPlayerBreath(*i);
 			}
 
@@ -694,58 +779,6 @@ void Server::AsyncRunStep(bool initial_step)
 		}
 	}
 
-	/* Transform liquids */
-	m_liquid_transform_timer += dtime;
-	if(m_liquid_transform_timer >= m_liquid_transform_interval)
-	{
-		TimeTaker timer_step("Server step: liquid transform");
-		m_liquid_transform_timer -= m_liquid_transform_interval;
-		if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
-			m_liquid_transform_timer = 0;
-
-		//JMutexAutoLock lock(m_env_mutex);
-
-		ScopeProfiler sp(g_profiler, "Server: liquid transform");
-
-		// not all liquid was processed per step, forcing on next step
-		if (m_env->getMap().transformLiquids(this, m_modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0)
-			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
-	}
-
-		/*
-			Set the modified blocks unsent for all the clients
-		*/
-
-	m_liquid_send_timer += dtime;
-	if(m_liquid_send_timer >= m_liquid_send_interval)
-	{
-		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
-		m_liquid_send_timer -= m_liquid_send_interval;
-		if (m_liquid_send_timer > m_liquid_send_interval * 2)
-			m_liquid_send_timer = 0;
-
-		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, m_modified_blocks, max_cycle_ms)) {
-			m_liquid_send_timer = m_liquid_send_interval;
-			goto no_send;
-		}
-
-		for (std::map<u16, RemoteClient*>::iterator i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
-			if (i->second->m_nearest_unsent_nearest) {
-				i->second->m_nearest_unsent_d = 0;
-				i->second->m_nearest_unsent_nearest = 0;
-			}
-
-		//JMutexAutoLock lock(m_env_mutex);
-		//JMutexAutoLock lock2(m_con_mutex);
-
-		if(m_modified_blocks.size() > 0)
-		{
-			SetBlocksNotSent(m_modified_blocks);
-		}
-		m_modified_blocks.clear();
-
-	}
-	no_send:
 
 	// Periodically print some info
 	{
@@ -1157,6 +1190,98 @@ void Server::AsyncRunStep(bool initial_step)
 					g_settings->getBool("enable_rollback_recording");
 		}
 	}
+}
+
+int Server::AsyncRunMapStep(bool initial_step) {
+	DSTACK(__FUNCTION_NAME);
+
+	TimeTaker timer_step("Server map step");
+	g_profiler->add("Server::AsyncRunMapStep (num)", 1);
+
+	int ret = 0;
+
+	float dtime;
+	{
+		JMutexAutoLock lock1(m_step_dtime_mutex);
+		dtime = m_step_dtime;
+	}
+
+	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
+	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
+
+	const float map_timer_and_unload_dtime = 10.92;
+	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
+	{
+		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
+		JMutexAutoLock lock(m_env_mutex);
+		// Run Map's timers and unload unused data
+		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
+		if(m_env->getMap().timerUpdate(m_uptime.get(), max_cycle_ms, g_settings->getFloat("server_unload_unused_data_timeout"))) {
+			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+			++ret;
+		}
+	}
+
+	/* Transform liquids */
+	m_liquid_transform_timer += dtime;
+	if(m_liquid_transform_timer >= m_liquid_transform_interval)
+	{
+		TimeTaker timer_step("Server step: liquid transform");
+		m_liquid_transform_timer -= m_liquid_transform_interval;
+		if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
+			m_liquid_transform_timer = 0;
+
+		//JMutexAutoLock lock(m_env_mutex);
+
+		ScopeProfiler sp(g_profiler, "Server: liquid transform");
+
+		// not all liquid was processed per step, forcing on next step
+		shared_map<v3s16, MapBlock*> modified_blocks; //not used
+		if (m_env->getMap().transformLiquids(this, modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0) {
+			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
+			++ret;
+		}
+	}
+
+		/*
+			Set the modified blocks unsent for all the clients
+		*/
+
+	m_liquid_send_timer += dtime;
+	if(m_liquid_send_timer >= m_liquid_send_interval)
+	{
+		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
+		m_liquid_send_timer -= m_liquid_send_interval;
+		if (m_liquid_send_timer > m_liquid_send_interval * 2)
+			m_liquid_send_timer = 0;
+
+		shared_map<v3s16, MapBlock*> modified_blocks; //not used
+
+		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
+			m_liquid_send_timer = m_liquid_send_interval;
+			++ret;
+			goto no_send;
+		}
+
+		for (std::map<u16, RemoteClient*>::iterator i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
+			if (i->second->m_nearest_unsent_nearest) {
+				i->second->m_nearest_unsent_d = 0;
+				i->second->m_nearest_unsent_nearest = 0;
+			}
+
+		//JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock2(m_con_mutex);
+
+/*
+		if(m_modified_blocks.size() > 0)
+		{
+			SetBlocksNotSent(m_modified_blocks);
+		}
+		m_modified_blocks.clear();
+*/
+	}
+	no_send:
 
 	// Save map, players and auth stuff
 	{
@@ -1166,7 +1291,7 @@ void Server::AsyncRunStep(bool initial_step)
 		{
 			counter = 0.0;
 		TimeTaker timer_step("Server step: Save map, players and auth stuff");
-			JMutexAutoLock lock(m_env_mutex);
+			//JMutexAutoLock lock(m_env_mutex);
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
 
@@ -1180,6 +1305,7 @@ void Server::AsyncRunStep(bool initial_step)
 			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
 				// partial save, will continue on next step
 				counter = g_settings->getFloat("server_map_save_interval");
+				++ret;
 				goto save_break;
 			}
 //}
@@ -1196,6 +1322,8 @@ void Server::AsyncRunStep(bool initial_step)
 		}
 		save_break:;
 	}
+
+	return ret;
 }
 
 u16 Server::Receive()
@@ -1794,9 +1922,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	Player *player = m_env->getPlayer(peer_id);
 	if(player == NULL){
+/*
 		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
 				<<std::endl;
+*/
 		return;
 	}
 
@@ -2064,6 +2194,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	else if(command == TOSERVER_BREATH)
 	{
 		playersao->setBreath(packet[TOSERVER_BREATH_VALUE].as<u16>());
+		m_script->player_event(playersao,"breath_changed");
 	}
 	else if(command == TOSERVER_CHANGE_PASSWORD)
 	{
@@ -2726,8 +2857,10 @@ bool Server::getClientInfo(
 	m_clients.Lock();
 	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id,Invalid);
 
-	if (client == NULL)
+	if (client == NULL) {
+		m_clients.Unlock();
 		return false;
+		}
 
 	*uptime = client->uptime();
 	*ser_vers = client->serialization_version;
@@ -3034,6 +3167,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 	PACK(TOCLIENT_HUDADD_ALIGN, form->align);
 	PACK(TOCLIENT_HUDADD_OFFSET, form->offset);
 	PACK(TOCLIENT_HUDADD_WORLD_POS, form->world_pos);
+	PACK(TOCLIENT_HUDADD_SIZE, form->size);
 
 	// Send as reliable
 	m_clients.send(peer_id, 1, buffer, true);
@@ -3069,6 +3203,9 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 		case HUD_STAT_WORLD_POS:
 			PACK(TOCLIENT_HUDCHANGE_V3F, *(v3f*)value);
 			break;
+		case HUD_STAT_SIZE:
+			PACK(TOCLIENT_HUDCHANGE_V2S32, *(v2s32 *)value);
+			break;
 		case HUD_STAT_NUMBER:
 		case HUD_STAT_ITEM:
 		case HUD_STAT_DIR:
@@ -3084,6 +3221,8 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
 {
 	MSGPACK_PACKET_INIT(TOCLIENT_HUD_SET_FLAGS, 2);
+	//////////////////////////// compatibility code to be removed //////////////
+	// ?? flags &= ~(HUD_FLAG_HEALTHBAR_VISIBLE | HUD_FLAG_BREATHBAR_VISIBLE);
 	PACK(TOCLIENT_HUD_SET_FLAGS_FLAGS, flags);
 	PACK(TOCLIENT_HUD_SET_FLAGS_MASK, mask);
 
@@ -3149,6 +3288,7 @@ void Server::SendPlayerHP(u16 peer_id)
 	assert(playersao);
 	playersao->m_hp_not_sent = false;
 	SendHP(peer_id, playersao->getHP());
+	m_script->player_event(playersao,"health_changed");
 
 	// Send to other clients
 	std::string str = gob_cmd_punched(playersao->readDamage(), playersao->getHP());
@@ -3162,6 +3302,7 @@ void Server::SendPlayerBreath(u16 peer_id)
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
 	playersao->m_breath_not_sent = false;
+	m_script->player_event(playersao,"breath_changed");
 	SendBreath(peer_id, playersao->getBreath());
 }
 
@@ -3458,8 +3599,9 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 void Server::SendBlocks(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
+	//TimeTaker timer("SendBlocks inside");
 
-	JMutexAutoLock envlock(m_env_mutex);
+	//JMutexAutoLock envlock(m_env_mutex);
 	//TODO check if one big lock could be faster then multiple small ones
 
 	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
@@ -3473,7 +3615,7 @@ void Server::SendBlocks(float dtime)
 
 		std::list<u16> clients = m_clients.getClientIDs();
 
-		m_clients.Lock();
+		//m_clients.Lock();
 		for(std::list<u16>::iterator
 			i = clients.begin();
 			i != clients.end(); ++i)
@@ -3486,7 +3628,7 @@ void Server::SendBlocks(float dtime)
 			total_sending += client->SendingCount();
 			client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
-		m_clients.Unlock();
+		//m_clients.Unlock();
 	}
 
 	// Sort.
@@ -3494,7 +3636,7 @@ void Server::SendBlocks(float dtime)
 	// Lowest is most important.
 	std::sort(queue.begin(), queue.end());
 
-	m_clients.Lock();
+	//m_clients.Lock();
 	for(u32 i=0; i<queue.size(); i++)
 	{
 		//TODO: Calculate limit dynamically
@@ -3522,7 +3664,7 @@ void Server::SendBlocks(float dtime)
 		client->SentBlock(q.pos);
 		total_sending++;
 	}
-	m_clients.Unlock();
+	//m_clients.Unlock();
 }
 
 void Server::fillMediaCache()
@@ -4107,6 +4249,9 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask) {
 		return false;
 
 	SendHUDSetFlags(player->peer_id, flags, mask);
+	player->hud_flags = flags;
+
+	m_script->player_event(player->getPlayerSAO(),"hud_changed");
 	return true;
 }
 
@@ -4580,8 +4725,6 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 void dedicated_server_loop(Server &server, bool &kill)
 {
 	DSTACK(__FUNCTION_NAME);
-
-	verbosestream<<"dedicated_server_loop()"<<std::endl;
 
 	IntervalLimiter m_profiler_interval;
 

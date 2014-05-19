@@ -144,8 +144,7 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-	Map(std::ostream &dout, IGameDef *gamedef);
-	Map(std::ostream &dout, IGameDef *gamedef, Circuit* circuit);
+	Map(IGameDef *gamedef, Circuit* circuit = nullptr);
 	virtual ~Map();
 
 	/*virtual u16 nodeContainerId() const
@@ -170,23 +169,6 @@ public:
 	void removeEventReceiver(MapEventReceiver *event_receiver);
 	// event shall be deleted by caller after the call.
 	void dispatchEvent(MapEditEvent *event);
-
-	// On failure returns NULL
-	MapSector * getSectorNoGenerateNoExNoLock(v2s16 p2d);
-	// Same as the above (there exists no lock anymore)
-	MapSector * getSectorNoGenerateNoEx(v2s16 p2d);
-	// On failure throws InvalidPositionException
-	MapSector * getSectorNoGenerate(v2s16 p2d);
-	// Gets an existing sector or creates an empty one
-	//MapSector * getSectorCreate(v2s16 p2d);
-
-	/*
-		This is overloaded by ClientMap and ServerMap to allow
-		their differing fetch methods.
-	*/
-	virtual MapSector * emergeSector(v2s16 p){ return NULL; }
-	virtual MapSector * emergeSector(v2s16 p,
-			std::map<v3s16, MapBlock*> &changed_blocks){ return NULL; }
 
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
@@ -223,7 +205,7 @@ public:
 
 	void spreadLight(enum LightBank bank,
 			std::set<v3s16> & from_nodes,
-			std::map<v3s16, MapBlock*> & modified_blocks);
+			std::map<v3s16, MapBlock*> & modified_blocks, int recursive = 0);
 
 	void lightNeighbors(enum LightBank bank,
 			v3s16 pos,
@@ -235,10 +217,10 @@ public:
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
 	u32 updateLighting(enum LightBank bank,
-			std::map<v3s16, MapBlock*>  & a_blocks,
+			shared_map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
-	u32 updateLighting(std::map<v3s16, MapBlock*>  & a_blocks,
+	u32 updateLighting(shared_map<v3s16, MapBlock*>  & a_blocks,
 			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
@@ -292,26 +274,11 @@ public:
 	*/
 	void unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks=NULL);
 
-	// Deletes sectors and their blocks from memory
-	// Takes cache into account
-	// If deleted sector is in sector cache, clears cache
-	void deleteSectors(std::list<v2s16> &list);
-
-#if 0
-	/*
-		Unload unused data
-		= flush changed to disk and delete from memory, if usage timer of
-		  block is more than timeout
-	*/
-	void unloadUnusedData(float timeout,
-			core::list<v3s16> *deleted_blocks=NULL);
-#endif
-
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
-	u32 transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, std::map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -348,7 +315,7 @@ public:
 	/*
 		Misc.
 	*/
-	std::map<v2s16, MapSector*> *getSectorsPtr(){return &m_sectors;}
+	//DELME std::map<v2s16, MapSector*> *getSectorsPtr(){return &m_sectors;}
 
 	/*
 		Variables
@@ -368,28 +335,41 @@ public:
 	Circuit* getCircuit();
 	INodeDefManager* getNodeDefManager();
 
+
+// from old mapsector:
+	MapBlock *m_block_cache;
+	v3s16 m_block_cache_p;
+	try_shared_mutex m_block_cache_mutex;
+	typedef shared_map<v3s16, MapBlock*> m_blocks_type;
+	m_blocks_type m_blocks;
+	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
+	MapBlock * createBlankBlockNoInsert(v3s16 & p);
+	MapBlock * createBlankBlock(v3s16 & p);
+	void insertBlock(MapBlock *block);
+	void deleteBlock(MapBlock *block, bool now = 0);
+	std::map<MapBlock *, int> * m_blocks_delete;
+	std::map<MapBlock *, int> m_blocks_delete_1, m_blocks_delete_2;
+	//void getBlocks(std::list<MapBlock*> &dest);
+	MapBlock *getBlockBuffered(v3s16 & p);
+
 protected:
 	friend class LuaVoxelManip;
-
-	std::ostream &m_dout; // A bit deprecated, could be removed
 
 	IGameDef *m_gamedef;
 	Circuit* m_circuit;
 
 	std::set<MapEventReceiver*> m_event_receivers;
 
-	std::map<v2s16, MapSector*> m_sectors;
-	u32 m_sectors_update_last;
-	u32 m_sectors_save_last;
-
-	// Be sure to set this to NULL when the cached sector is deleted
-	MapSector *m_sector_cache;
-	v2s16 m_sector_cache_p;
+	//std::map<v2s16, MapSector*> m_sectors;
+	u32 m_blocks_update_last;
+	u32 m_blocks_save_last;
 
 	// Queued transforming water nodes
+public:
 	UniqueQueue<v3s16> m_transforming_liquid;
 	JMutex m_transforming_liquid_mutex;
-	JMutex m_update_lighting_mutex;
+protected:
+	//JMutex m_update_lighting_mutex;
 };
 
 /*
@@ -411,14 +391,6 @@ public:
 	{
 		return MAPTYPE_SERVER;
 	}
-
-	/*
-		Get a sector from somewhere.
-		- Check memory
-		- Check disk (doesn't load blocks)
-		- Create blank one
-	*/
-	ServerMapSector * createSector(v2s16 p);
 
 	/*
 		Blocks are generated by using these and makeBlock().

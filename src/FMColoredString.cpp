@@ -31,8 +31,7 @@ FMColoredString::FMColoredString(const std::wstring &string, const std::vector<S
 	m_colors(colors)
 {}
 
-FMColoredString::FMColoredString(const std::wstring &s)
-{
+FMColoredString::FMColoredString(const std::wstring &s) {
 	m_string = colorizeText(s, m_colors, SColor(255, 255, 255, 255));
 }
 
@@ -49,14 +48,14 @@ FMColoredString FMColoredString::substr(size_t pos, size_t len) const {
 		return FMColoredString();
 	if (len == std::string::npos || pos + len > m_string.length()) {
 		return FMColoredString(
-			m_string.substr(pos, std::string::npos),
-			std::vector<SColor>(m_colors.begin() + pos, m_colors.end())
-		);
+		           m_string.substr(pos, std::string::npos),
+		           std::vector<SColor>(m_colors.begin() + pos, m_colors.end())
+		       );
 	} else {
 		return FMColoredString(
-			m_string.substr(pos, len),
-			std::vector<SColor>(m_colors.begin() + pos, m_colors.begin() + pos + len)
-		);
+		           m_string.substr(pos, len),
+		           std::vector<SColor>(m_colors.begin() + pos, m_colors.begin() + pos + len)
+		       );
 	}
 }
 

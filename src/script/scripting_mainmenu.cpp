@@ -21,8 +21,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "scripting_mainmenu.h"
+#include "mods.h"
+#include "porting.h"
 #include "log.h"
-#include "filesys.h"
 #include "cpp_api/s_internal.h"
 #include "lua_api/l_base.h"
 #include "lua_api/l_mainmenu.h"
@@ -42,17 +43,10 @@ MainMenuScripting::MainMenuScripting(GUIEngine* guiengine)
 
 	//TODO add security
 
-	luaL_openlibs(getStack());
-
 	SCRIPTAPI_PRECHECKHEADER
 
-	lua_newtable(L);
-	lua_setglobal(L, "engine");
-	lua_getglobal(L, "engine");
+	lua_getglobal(L, "core");
 	int top = lua_gettop(L);
-
-	lua_pushstring(L, DIR_DELIM);
-	lua_setglobal(L, "DIR_DELIM");
 
 	lua_newtable(L);
 	lua_setglobal(L, "gamedata");
@@ -60,6 +54,10 @@ MainMenuScripting::MainMenuScripting(GUIEngine* guiengine)
 	// Initialize our lua_api modules
 	initializeModApi(L, top);
 	lua_pop(L, 1);
+
+	// Push builtin initialization type
+	lua_pushstring(L, "mainmenu");
+	lua_setglobal(L, "INIT");
 
 	infostream << "SCRIPTAPI: Initialized main menu modules" << std::endl;
 }

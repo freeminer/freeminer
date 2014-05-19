@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "filesys.h"
 #include "porting.h"
-#include "mapsector.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
 #include "settings.h"
@@ -179,7 +178,7 @@ void * MeshUpdateThread::Thread()
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	porting::setThreadName("MeshUpdateThread");
-	porting::setThreadPriority(10);
+	porting::setThreadPriority(50);
 
 	while(!StopRequested())
 	{
@@ -378,96 +377,6 @@ void Client::step(float dtime)
 		}
 	}
 
-#if 0
-	{
-		/*
-			Delete unused sectors
-
-			NOTE: This jams the game for a while because deleting sectors
-			      clear caches
-		*/
-		
-		float &counter = m_delete_unused_sectors_timer;
-		counter -= dtime;
-		if(counter <= 0.0)
-		{
-			// 3 minute interval
-			//counter = 180.0;
-			counter = 60.0;
-
-			//JMutexAutoLock lock(m_env_mutex); //bulk comment-out
-
-			core::list<v3s16> deleted_blocks;
-
-			float delete_unused_sectors_timeout =
-				g_settings->getFloat("client_delete_unused_sectors_timeout");
-	
-			// Delete sector blocks
-			/*u32 num = m_env.getMap().unloadUnusedData
-					(delete_unused_sectors_timeout,
-					true, &deleted_blocks);*/
-			
-			// Delete whole sectors
-			m_env.getMap().unloadUnusedData
-					(delete_unused_sectors_timeout,
-					&deleted_blocks);
-
-			if(deleted_blocks.size() > 0)
-			{
-				/*infostream<<"Client: Deleted blocks of "<<num
-						<<" unused sectors"<<std::endl;*/
-				/*infostream<<"Client: Deleted "<<num
-						<<" unused sectors"<<std::endl;*/
-				
-				/*
-					Send info to server
-				*/
-
-				// Env is locked so con can be locked.
-				//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
-				
-				core::list<v3s16>::Iterator i = deleted_blocks.begin();
-				core::list<v3s16> sendlist;
-				for(;;)
-				{
-					if(sendlist.size() == 255 || i == deleted_blocks.end())
-					{
-						if(sendlist.size() == 0)
-							break;
-						/*
-							[0] u16 command
-							[2] u8 count
-							[3] v3s16 pos_0
-							[3+6] v3s16 pos_1
-							...
-						*/
-						u32 replysize = 2+1+6*sendlist.size();
-						SharedBuffer<u8> reply(replysize);
-						writeU16(&reply[0], TOSERVER_DELETEDBLOCKS);
-						reply[2] = sendlist.size();
-						u32 k = 0;
-						for(core::list<v3s16>::Iterator
-								j = sendlist.begin();
-								j != sendlist.end(); j++)
-						{
-							writeV3S16(&reply[2+1+6*k], *j);
-							k++;
-						}
-						m_con.Send(PEER_ID_SERVER, 1, reply, true);
-
-						if(i == deleted_blocks.end())
-							break;
-
-						sendlist.clear();
-					}
-
-					sendlist.push_back(*i);
-					i++;
-				}
-			}
-		}
-	}
-#endif
 	// UGLY hack to fix 2 second startup delay caused by non existent
 	// server client startup synchronization in local server or singleplayer mode
 	static bool initial_step = true;
@@ -1088,15 +997,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		std::string datastring((char*)&data[8], datasize-8);
 		std::istringstream istr(datastring, std::ios_base::binary);
 		
-		MapSector *sector;
-		MapBlock *block;
-		
-		v2s16 p2d(p.X, p.Z);
-		sector = m_env.getMap().emergeSector(p2d);
-		
-		assert(sector->getPos() == p2d);
-		
-		block = sector->getBlockNoCreateNoEx(p.Y);
+		MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(p);
 		if(block)
 		{
 			/*
@@ -1113,7 +1014,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			block = new MapBlock(&m_env.getMap(), p, this);
 			block->deSerialize(istr, ser_version, false);
 			block->deSerializeNetworkSpecific(istr);
-			sector->insertBlock(block);
+			m_env.getMap().insertBlock(block);
 		}
 
 		/*
@@ -1749,9 +1650,13 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		v2f align        = readV2F1000(is);
 		v2f offset       = readV2F1000(is);
 		v3f world_pos;
+		v2s32 size;
 		try{
 			world_pos    = readV3F1000(is);
 		}catch(SerializationError &e) {};
+		try{
+			size = readV2S32(is);
+		} catch(SerializationError &e) {};
 
 		ClientEvent event;
 		event.type             = CE_HUDADD;
@@ -1767,6 +1672,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		event.hudadd.align     = new v2f(align);
 		event.hudadd.offset    = new v2f(offset);
 		event.hudadd.world_pos = new v3f(world_pos);
+		event.hudadd.size      = new v2s32(size);
 		m_client_event_queue.push_back(event);
 	}
 	else if(command == TOCLIENT_HUDRM)
@@ -1787,6 +1693,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		v2f v2fdata;
 		v3f v3fdata;
 		u32 intdata = 0;
+		v2s32 v2s32data;
 		
 		std::string datastring((char *)&data[2], datasize - 2);
 		std::istringstream is(datastring, std::ios_base::binary);
@@ -1801,6 +1708,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			sdata = deSerializeString(is);
 		else if (stat == HUD_STAT_WORLD_POS)
 			v3fdata = readV3F1000(is);
+		else if (stat == HUD_STAT_SIZE )
+			v2s32data = readV2S32(is);
 		else
 			intdata = readU32(is);
 		
@@ -1812,6 +1721,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		event.hudchange.v3fdata = new v3f(v3fdata);
 		event.hudchange.sdata   = new std::string(sdata);
 		event.hudchange.data    = intdata;
+		event.hudchange.v2s32data = new v2s32(v2s32data);
 		m_client_event_queue.push_back(event);
 	}
 	else if(command == TOCLIENT_HUD_SET_FLAGS)
@@ -2019,7 +1929,6 @@ void Client::sendChatMessage(const std::string &message)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_CHAT_MESSAGE, 1);
 	PACK(TOSERVER_CHAT_MESSAGE_DATA, message);
-
 	// Send as reliable
 	Send(0, buffer, true);
 }
@@ -2081,7 +1990,7 @@ void Client::sendReady()
 	writeU16(os, TOSERVER_CLIENT_READY);
 	writeU8(os,VERSION_MAJOR);
 	writeU8(os,VERSION_MINOR);
-	writeU8(os,VERSION_PATCH_ORIG);
+	writeU8(os,(int)VERSION_PATCH_ORIG);
 	writeU8(os,0);
 
 	writeU16(os,strlen(CMAKE_VERSION_GITHASH));
@@ -2402,6 +2311,7 @@ void Client::typeChatMessage(const std::wstring &message)
 
 void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool lazy)
 {
+	ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
 	if(b == NULL)
 		return;
@@ -2410,7 +2320,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool la
 		Create a task to update the mesh of the block
 	*/
 	
-	MeshMakeData *data = new MeshMakeData(this, m_env.getClientMap().getControl());
+	MeshMakeData *data = new MeshMakeData(this, m_env.getMap(), m_env.getClientMap().getControl());
 	
 	{
 		//TimeTaker timer("data fill");
