@@ -138,15 +138,9 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		std::istringstream istr(packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
 
-		MapSector *sector;
 		MapBlock *block;
 
-		v2s16 p2d(p.X, p.Z);
-		sector = m_env.getMap().emergeSector(p2d);
-
-		assert(sector->getPos() == p2d);
-
-		block = sector->getBlockNoCreateNoEx(p.Y);
+		block = m_env.getMap().getBlockNoCreateNoEx(p);
 		bool new_block = !block;
 		if (new_block)
 			block = new MapBlock(&m_env.getMap(), p, this);
@@ -156,7 +150,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&block->humidity);
 
 		if (new_block)
-			sector->insertBlock(block);
+			m_env.getMap().insertBlock(block);
 
 		/*
 			Add it to mesh update queue and set it to be acknowledged after update.
@@ -550,6 +544,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		v2f pos, scale, align, offset;
 		std::string name, text;
 		v3f world_pos;
+		v2s32 size;
 
 		packet[TOCLIENT_HUDADD_ID].convert(&id);
 		packet[TOCLIENT_HUDADD_TYPE].convert(&type);
@@ -563,6 +558,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_HUDADD_ALIGN].convert(&align);
 		packet[TOCLIENT_HUDADD_OFFSET].convert(&offset);
 		packet[TOCLIENT_HUDADD_WORLD_POS].convert(&world_pos);
+		packet[TOCLIENT_HUDADD_SIZE].convert(&size);
 
 		ClientEvent event;
 		event.type = CE_HUDADD;
@@ -578,6 +574,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.hudadd.align  = new v2f(align);
 		event.hudadd.offset = new v2f(offset);
 		event.hudadd.world_pos = new v3f(world_pos);
+		event.hudadd.size      = new v2s32(size);
 		m_client_event_queue.push_back(event);
 	}
 	else if(command == TOCLIENT_HUDRM)
@@ -594,6 +591,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		std::string sdata;
 		v2f v2fdata;
 		v3f v3fdata;
+		v2s32 v2s32data;
 		u32 intdata = 0;
 
 		u32 id = packet[TOCLIENT_HUDCHANGE_ID].as<u32>();
@@ -606,6 +604,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			packet[TOCLIENT_HUDCHANGE_STRING].convert(&sdata);
 		else if (stat == HUD_STAT_WORLD_POS)
 			packet[TOCLIENT_HUDCHANGE_V3F].convert(&v3fdata);
+		else if (stat == HUD_STAT_SIZE)
+			packet[TOCLIENT_HUDCHANGE_V2S32].convert(&v2s32data);
 		else
 			packet[TOCLIENT_HUDCHANGE_U32].convert(&intdata);
 
