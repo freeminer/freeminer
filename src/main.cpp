@@ -1283,8 +1283,9 @@ int main(int argc, char *argv[])
 			new_db->beginSave();
 			for (std::list<v3s16>::iterator i = blocks.begin(); i != blocks.end(); ++i) {
 				MapBlock *block = old_map.loadBlock(*i);
+				if(!block)
+					continue;
 				new_db->saveBlock(block);
-				//MapSector *sector = old_map.getSectorNoGenerate(v2s16(i->X, i->Z));
 				old_map.deleteBlock(block, 1);
 				++count;
 				if (count % 500 == 0)

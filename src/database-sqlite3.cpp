@@ -148,7 +148,7 @@ void Database_SQLite3::saveBlock(MapBlock *block)
 	/*
 		Dummy blocks are not written
 	*/
-	if(block->isDummy())
+	if(!block || block->isDummy())
 	{
 		/*v3s16 p = block->getPos();
 		infostream<<"Database_SQLite3::saveBlock(): WARNING: Not writing dummy block "
