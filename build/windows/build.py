@@ -82,20 +82,23 @@ def main():
 	msbuild = which("MSBuild.exe")
 	cmake = which("cmake.exe")
 	vcbuild = which("vcbuild.exe")
+	ruby = which("ruby.exe")
+	bash = which("bash.exe")
 	if not msbuild:
 		print("MSBuild.exe not found! Make sure you run 'Visual Studio Command Prompt', not cmd.exe")
 		return
 	if not cmake:
 		print("cmake.exe not found! Make sure you have CMake installed and added to PATH.")
-<<<<<<< HEAD
-	if not vcbuild:
-		print("vcbuild.exe not found! Check README.md")
-	print("Found msbuild: {}\nFound cmake: {}\nFound vcbuild: {}".format(msbuild, cmake, vcbuild))
-=======
+		return
+	if not ruby:
+		print("ruby is required, download from http://rubyinstaller.org/ (add it to the PATH)")
+		return
+	if not which("cp.exe") or not which("rm.exe") or not which("sed.exe") or not which("bash.exe"):
+		print("cp/rm/sed/bash not found, install MinGW: http://www.mingw.org/wiki/MSYS")
+		return
 	print("Found msbuild: {}\nFound cmake: {}".format(msbuild, cmake))
 
 	print("Build type: {}".format(build_type))
->>>>>>> upstream/master
 	
 	if not os.path.exists("deps"):
 		print("Creating `deps` directory.")
@@ -242,7 +245,6 @@ def main():
 		
 		os.chdir("..")
 
-<<<<<<< HEAD
 	if not os.path.exists(msgpack):
 		print("msgpack not found, downloading")
 		download("https://github.com/msgpack/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
@@ -275,13 +277,13 @@ int msgpack_version_minor(void);
 		os.system("vcupgrade msgpack_vc2008.vcproj")
 		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration=Release")
 		os.chdir("..")
-=======
+
 	if not os.path.exists("leveldb.nupkg"):
 		print("Downloading LevelDB + dependencies from NuGet")
 		download("http://www.nuget.org/api/v2/package/LevelDB/{}".format(LEVELDB_VERSION), "leveldb.nupkg")
 		download("http://www.nuget.org/api/v2/package/Crc32C/{}".format(CRC32C_VERSION), "crc32c.nupkg")
 		download("http://www.nuget.org/api/v2/package/Snappy/{}".format(SNAPPY_VERSION), "snappy.nupkg")		
->>>>>>> upstream/master
+
 	
 	os.chdir("..")
 	
@@ -326,19 +328,8 @@ int msgpack_version_minor(void);
 		-DGETTEXT_MSGFMT=C:\usr\bin\msgfmt.exe
 		-DENABLE_GETTEXT=1
 		-DENABLE_LEVELDB=1
-<<<<<<< HEAD
 		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
 		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack.lib
-	""".format(irrlicht=irrlicht, zlib=zlib, freetype=freetype, luajit=luajit, openal=openal, libogg=libogg, libvorbis=libvorbis, curl=curl, leveldb=LEVELDB_PATH, msgpack=msgpack).replace("\n", "")
-	
-	os.system(r"cmake ..\..\.. " + cmake_string)
-	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86;{boost}\lib32-msvc-10.0</AdditionalLibraryDirectories>".format(boost=BOOST_PATH))
-	# wtf, cmake?
-	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
-	os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration=Release")
-	os.system("MSBuild INSTALL.vcxproj /p:Configuration=Release")
-	os.system("MSBuild PACKAGE.vcxproj /p:Configuration=Release")
-=======
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		freetype_lib="freetype252MT.lib" if build_type != "Debug" else "freetype252MT_D.lib",
@@ -350,12 +341,15 @@ int msgpack_version_minor(void);
 		openal=openal,
 		libogg=libogg,
 		libvorbis=libvorbis,
-		curl=curl
+		curl=curl,
+		msgpack=msgpack
 	).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")
 	patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
+	# wtf, cmake?
+	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
 
 	# install LevelDB package
 	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
@@ -369,7 +363,6 @@ int msgpack_version_minor(void);
 	os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
 	os.system("MSBuild INSTALL.vcxproj /p:Configuration={}".format(build_type))
 	os.system("MSBuild PACKAGE.vcxproj /p:Configuration={}".format(build_type))
->>>>>>> upstream/master
 	
 	
 	
