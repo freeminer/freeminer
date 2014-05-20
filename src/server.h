@@ -577,9 +577,6 @@ public:
 	ClientInterface m_clients;
 
 private:
-	friend class EmergeThread;
-	friend class RemoteClient;
-
 	/*
 		Peer change queue.
 		Queues stuff from peerAdded() and deletingPeer() to
