@@ -202,7 +202,7 @@ function menu.asyncOnlineFavourites()
 	menu.favorites = {}
 	engine.handle_async(
 		function(param)
-			--return core.get_favorites("online")
+			return core.get_favorites("online")
 		end,
 		nil,
 		function(result)

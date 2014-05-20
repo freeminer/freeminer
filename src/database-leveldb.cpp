@@ -61,7 +61,7 @@ void Database_LevelDB::saveBlock(MapBlock *block)
 	/*
 		Dummy blocks are not written
 	*/
-	if(block->isDummy())
+	if(!block || block->isDummy())
 	{
 		return;
 	}
