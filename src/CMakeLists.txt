@@ -2,6 +2,7 @@ project(freeminer)
 cmake_minimum_required( VERSION 2.6 )
 
 INCLUDE(CheckCSourceRuns)
+INCLUDE(CheckCXXSourceRuns)
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
@@ -344,11 +345,6 @@ if(ENABLE_REDIS)
 		message(STATUS "redis not found!")
 	endif(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
 endif(ENABLE_REDIS)
-
-configure_file(
-	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
-	"${PROJECT_BINARY_DIR}/cmake_config.h"
-)
 
 # Add a target that always rebuilds cmake_config_githash.h
 add_custom_target(GenerateVersion
@@ -699,9 +695,25 @@ else()
 	endif()
 
 	if(ENABLE_CXX1Y)
+		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
 		set(STD_FLAGS "-std=c++1y")
+		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
+		CHECK_CXX_SOURCE_RUNS("
+			#include <shared_mutex>
+			int main(int argc, char *argv[]) {
+				std::shared_timed_mutex m;
+				std::shared_lock<std::shared_timed_mutex> lock(m);
+				lock.unlock();
+				return 0;
+			}
+			"
+			HAVE_SHARED_MUTEX)
+		#if(NOT HAVE_SHARED_MUTEX)
+		#	set(HAVE_SHARED_MUTEX 0)
+		#endif()
 	else()
 		set(STD_FLAGS "-std=c++0x")
+		set(HAVE_SHARED_MUTEX 0)
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
@@ -825,5 +837,10 @@ if (JSON_FOUND)
 else (JSON_FOUND)
 	add_subdirectory(json)
 endif (JSON_FOUND)
+
+configure_file(
+	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
+	"${PROJECT_BINARY_DIR}/cmake_config.h"
+)
 
 #end
