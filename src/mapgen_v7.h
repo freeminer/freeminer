@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MAPGEN_V7_HEADER
 
 #include "mapgen.h"
-
+#include "mapgen_indev.h"
 /////////////////// Mapgen V7 flags
 #define MGV7_MOUNTAINS   0x01
 #define MGV7_RIDGES      0x02
@@ -44,6 +44,11 @@ struct MapgenV7Params : public MapgenSpecificParams {
 	NoiseParams np_ridge_uwater;
 	NoiseParams np_mountain;
 	NoiseParams np_ridge;
+
+	s16 float_islands;
+	NoiseIndevParams npindev_float_islands1;
+	NoiseIndevParams npindev_float_islands2;
+	NoiseIndevParams npindev_float_islands3;
 	
 	MapgenV7Params();
 	~MapgenV7Params() {}
@@ -83,6 +88,11 @@ public:
 	Noise *noise_heat;
 	Noise *noise_humidity;
 	
+	s16 float_islands;
+	NoiseIndev *noiseindev_float_islands1;
+	NoiseIndev *noiseindev_float_islands2;
+	NoiseIndev *noiseindev_float_islands3;
+
 	content_t c_stone;
 	content_t c_dirt;
 	content_t c_dirt_with_grass;
@@ -120,6 +130,10 @@ public:
 	//void addTopNodes();
 	
 	void generateCaves(int max_stone_y);
+
+	virtual void generateExperimental();
+	virtual void generateFloatIslands(int min_y);
+
 };
 
 struct MapgenFactoryV7 : public MapgenFactory {
