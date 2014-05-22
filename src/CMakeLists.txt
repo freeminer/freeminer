@@ -697,6 +697,9 @@ else()
 	if(ENABLE_CXX1Y)
 		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
 		set(STD_FLAGS "-std=c++1y")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
+		endif()
 		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
 		CHECK_CXX_SOURCE_RUNS("
 			#include <shared_mutex>
