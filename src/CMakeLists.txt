@@ -711,12 +711,8 @@ else()
 			}
 			"
 			HAVE_SHARED_MUTEX)
-		#if(NOT HAVE_SHARED_MUTEX)
-		#	set(HAVE_SHARED_MUTEX 0)
-		#endif()
 	else()
 		set(STD_FLAGS "-std=c++0x")
-		set(HAVE_SHARED_MUTEX 0)
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -O3 -ffast-math -Wall -fomit-frame-pointer -pipe -funroll-loops")
@@ -731,6 +727,11 @@ else()
 				COMPILE_DEFINITIONS "SERVER")
 	endif(BUILD_SERVER)
 
+endif()
+
+if(NOT HAVE_SHARED_MUTEX)
+	# avoid empty value in cmake_config.h
+	set(HAVE_SHARED_MUTEX 0)
 endif()
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
