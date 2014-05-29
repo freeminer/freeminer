@@ -65,7 +65,7 @@ MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
 {
 	MapBlock *block = getBlockBuffered(p);
 	if (block != NULL) {
-		errorstream<<"Block already created"<<"std::endl";
+		errorstream<<"Block already created"<<std::endl;
 		return block;
 	}
 	
