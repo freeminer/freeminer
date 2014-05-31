@@ -1300,16 +1300,6 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			u16 l = getInteriorLight(n, 1, nodedef);
 			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
 
-			/*float s = BS/2*f.visual_scale;
-			// Wall at X+ of node
-			video::S3DVertex vertices[4] =
-			{
-				video::S3DVertex(-s,-s,0, 0,0,0, c, 0,1),
-				video::S3DVertex( s,-s,0, 0,0,0, c, 1,1),
-				video::S3DVertex( s, s,0, 0,0,0, c, 1,0),
-				video::S3DVertex(-s, s,0, 0,0,0, c, 0,0),
-			};*/
-
 			float d = (float) BS/64;
 			f32 HBB = HBS/8;
 			video::S3DVertex vertices[6][4] = {
@@ -1350,25 +1340,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					video::S3DVertex(HBB,-HBS+d,HBB, 0,0,0, c, HBB-0.06,1),
 					video::S3DVertex(-HBB,-HBS+d,HBB, 0,0,0, c, HBB-0.18,1)
 				}
-			};
-
-			/*for(s32 i=0; i<4; i++)
-			{
-				if(dir == v3s16(1,0,0))
-					vertices[i].Pos.rotateXZBy(0);
-				if(dir == v3s16(-1,0,0))
-					vertices[i].Pos.rotateXZBy(180);
-				if(dir == v3s16(0,0,1))
-					vertices[i].Pos.rotateXZBy(90);
-				if(dir == v3s16(0,0,-1))
-					vertices[i].Pos.rotateXZBy(-90);
-				if(dir == v3s16(0,-1,0))
-					vertices[i].Pos.rotateXZBy(45);
-				if(dir == v3s16(0,1,0))
-					vertices[i].Pos.rotateXZBy(-45);
-
-				vertices[i].Pos += intToFloat(p, BS);
-			}*/
+			}
 
 			for(u16 j=0; j<6; j++) {
 				for(u16 i=0; i<4; i++) {
