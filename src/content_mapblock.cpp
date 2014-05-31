@@ -1276,19 +1276,6 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			break;
 		case NDT_TORCHLIKE:
 		{
-			/*v3s16 dir = n.getWallMountedDir(nodedef);
-			
-			u8 tileindex = 0;
-			if(dir == v3s16(0,-1,0)){
-				tileindex = 0; // floor
-			} else if(dir == v3s16(0,1,0)){
-				tileindex = 1; // ceiling
-			// For backwards compatibility
-			} else if(dir == v3s16(0,0,0)){
-				tileindex = 0; // floor
-			} else {
-				tileindex = 2; // side
-			}*/
 			v3s16 dir(0,0,0);
 			dir = n.getWallMountedDir(nodedef);
 
