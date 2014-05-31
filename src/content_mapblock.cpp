@@ -1327,7 +1327,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					video::S3DVertex(HBB,-HBS+d,HBB, 0,0,0, c, HBB-0.06,1),
 					video::S3DVertex(-HBB,-HBS+d,HBB, 0,0,0, c, HBB-0.18,1)
 				}
-			}
+			};
 
 			for(u16 j=0; j<6; j++) {
 				for(u16 i=0; i<4; i++) {
