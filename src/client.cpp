@@ -2465,7 +2465,7 @@ void Client::typeChatMessage(const std::wstring &message)
 
 void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool lazy)
 {
-	ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
+	//ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
 	if(b == NULL)
 		return;

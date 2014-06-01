@@ -1483,7 +1483,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		m_blocks_delete->clear();
 	}
 
-	std::list<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;

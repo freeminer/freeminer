@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/mathconstants.h"
 
+#include "profiler.h"
 #include "main.h"                      // for g_settings
 
 void RemoteClient::GetNextBlocks(
@@ -649,6 +650,7 @@ std::vector<std::string> ClientInterface::getPlayerNames()
 
 void ClientInterface::step(float dtime)
 {
+	g_profiler->add("Server: Clients:", m_clients.size());
 	m_print_info_timer += dtime;
 	if(m_print_info_timer >= 30.0)
 	{
@@ -666,7 +668,7 @@ void ClientInterface::UpdatePlayerList()
 
 
 		if(clients.size() != 0)
-			infostream<<"Players:"<<std::endl;
+			infostream<<"Players ["<<clients.size()<<"]:"<<std::endl;
 		for(std::list<u16>::iterator
 			i = clients.begin();
 			i != clients.end(); ++i)
