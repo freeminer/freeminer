@@ -275,9 +275,11 @@ void RemoteClient::GetNextBlocks(
 				if(abs(p.Y - center.Y) > d_max_gen - d_max_gen / 3)
 					generate = false;*/
 
+				/* maybe good idea (if not use block culling) but brokes far (25+) area generate by flooding emergequeue with no generate blocks
 				// Limit the send area vertically to 1/2
 				if(can_skip && abs(p.Y - center.Y) > full_d_max / 2)
 					generate = false;
+				*/
 			}
 
 
@@ -298,7 +300,7 @@ void RemoteClient::GetNextBlocks(
 				Don't send already sent blocks
 			*/
 			{
-				if(m_blocks_sent.find(p) != m_blocks_sent.end() && m_blocks_sent[p] > 0 && m_blocks_sent[p] + (d <= 2 ? 1 : d*d) > m_uptime) {
+				if(m_blocks_sent.find(p) != m_blocks_sent.end() && m_blocks_sent[p] > 0 && m_blocks_sent[p] + (d <= 2 ? 1 : d*d*d) > m_uptime) {
 					continue;
 				}
 			}
