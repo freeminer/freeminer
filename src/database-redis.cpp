@@ -155,10 +155,10 @@ MapBlock* Database_Redis::loadBlock(v3s16 blockpos)
 
 			MapBlock *block = NULL;
 			bool created_new = false;
-			block = srvmap->getBlockNoCreateNoEx(blockpos.Y);
+			block = srvmap->getBlockNoCreateNoEx(blockpos);
 			if (block == NULL)
 			{
-				block = srvmap->createBlankBlockNoInsert(blockpos.Y);
+				block = srvmap->createBlankBlockNoInsert(blockpos);
 				created_new = true;
 			}
 

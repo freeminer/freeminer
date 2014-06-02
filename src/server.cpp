@@ -720,7 +720,6 @@ void Server::AsyncRunStep(bool initial_step)
 		m_env->reportMaxLagEstimate(max_lag);
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
-		ScopeProfiler sp2(g_profiler, "SEnv step avg", SPT_AVG);
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
@@ -779,34 +778,6 @@ void Server::AsyncRunStep(bool initial_step)
 		}
 	}
 
-
-	// Periodically print some info
-	{
-		float &counter = m_print_info_timer;
-		counter += dtime;
-		if(counter >= 30.0)
-		{
-			counter = 0.0;
-
-			//JMutexAutoLock lock2(m_con_mutex);
-			//m_clients_names.clear();
-			if(m_clients.getClientList().size() != 0)
-				infostream<<"Players:"<<std::endl;
-			for(std::map<u16, RemoteClient*>::iterator
-				i = m_clients.getClientList().begin();
-				i != m_clients.getClientList().end(); ++i)
-			{
-				//u16 peer_id = i.getNode()->getKey();
-				RemoteClient *client = i->second;
-				Player *player = m_env->getPlayer(client->peer_id);
-				if(player==NULL)
-					continue;
-				infostream<<"* "<<player->getName()<<"\t";
-				client->PrintInfo(infostream);
-				//m_clients_names.push_back(player->getName());
-			}
-		}
-	}
 	m_clients.step(dtime);
 
 	m_lag += (m_lag > dtime ? -1 : 1) * dtime/100;
@@ -1214,10 +1185,10 @@ int Server::AsyncRunMapStep(bool initial_step) {
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
 		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		if(m_env->getMap().timerUpdate(m_uptime.get(), max_cycle_ms, g_settings->getFloat("server_unload_unused_data_timeout"))) {
+		if(m_env->getMap().timerUpdate(m_uptime.get(), g_settings->getFloat("server_unload_unused_data_timeout"), max_cycle_ms)) {
 			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 			++ret;
 		}
@@ -1290,7 +1261,7 @@ int Server::AsyncRunMapStep(bool initial_step) {
 		if(counter >= g_settings->getFloat("server_map_save_interval"))
 		{
 			counter = 0.0;
-		TimeTaker timer_step("Server step: Save map, players and auth stuff");
+			TimeTaker timer_step("Server step: Save map, players and auth stuff");
 			//JMutexAutoLock lock(m_env_mutex);
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
@@ -1299,7 +1270,6 @@ int Server::AsyncRunMapStep(bool initial_step) {
 			if(m_banmanager->isModified())
 				m_banmanager->save();
 
-//{TimeTaker timer_step("Server step: Save map: map");
 
 			// Save changed parts of map
 			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
@@ -1308,17 +1278,12 @@ int Server::AsyncRunMapStep(bool initial_step) {
 				++ret;
 				goto save_break;
 			}
-//}
 
-{TimeTaker timer_step("Server step: Save map: players");
 			// Save players
 			m_env->serializePlayers(m_path_world);
-}
 
-{TimeTaker timer_step("Server step: Save map: meta");
 			// Save environment metadata
 			m_env->saveMeta(m_path_world);
-}
 		}
 		save_break:;
 	}
@@ -3578,7 +3543,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 {
 	DSTACK(__FUNCTION_NAME);
 
-	g_profiler->add("Connection: blocks", 1);
+	g_profiler->add("Connection: blocks sent", 1);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 4);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());

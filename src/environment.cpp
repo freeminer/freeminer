@@ -1059,6 +1059,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	}
 
 	TimeTaker timer_step("Environment step");
+	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
 
 	/*
 		Handle players
@@ -1241,6 +1242,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			m_active_block_timer_last = 0;
 	}
 
+	g_profiler->add("SMap: Blocks: Active:", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime += dtime;
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval))
@@ -1323,7 +1325,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		//ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
 		//TimeTaker timer("Step active objects");
 
-		g_profiler->avg("SEnv: num of objects", m_active_objects.size());
+		g_profiler->add("SEnv: Objects:", m_active_objects.size());
 
 		// This helps the objects to send data at the same time
 		bool send_recommended = false;

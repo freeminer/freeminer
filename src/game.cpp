@@ -3231,14 +3231,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			Fog range
 		*/
 	
+		auto fog_was = fog_range;
 		if(draw_control.range_all)
 			fog_range = 100000*BS;
 		else {
 			fog_range = draw_control.wanted_range*BS + 0.0*MAP_BLOCKSIZE*BS;
-			if(use_weather)
-				fog_range *= (1.55 - 1.4*(float)client.getEnv().getClientMap().getHumidity(pos_i, 1)/100);
+			if(use_weather) {
+				auto humidity = client.getEnv().getClientMap().getHumidity(pos_i, 1);
+				fog_range *= (1.55 - 1.4*(float)humidity/100);
+			}
 			fog_range = MYMIN(fog_range, (draw_control.farthest_drawn+20)*BS);
 			fog_range *= 0.9;
+			fog_range = fog_was + (fog_range-fog_was)/50;
 		}
 
 		/*

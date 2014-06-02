@@ -442,7 +442,6 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
 
 bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 									BlockMakeData *data, bool allow_gen) {
-	v2s16 p2d(p.X, p.Z);
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
@@ -567,8 +566,8 @@ void *EmergeThread::Thread() {
 		// Add the originally fetched block to the modified list
 		if (block)
 			modified_blocks[p] = block;
-		else
-		infostream<<"nothing generated at "<<PP(p)<<std::endl;
+		else if (allow_generate)
+			infostream<<"nothing generated at "<<PP(p)<<std::endl;
 
 		if (modified_blocks.size() > 0) {
 			m_server->SetBlocksNotSent(modified_blocks);

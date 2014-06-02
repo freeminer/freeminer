@@ -1483,7 +1483,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		m_blocks_delete->clear();
 	}
 
-	std::list<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
@@ -1493,9 +1492,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	std::vector<MapBlock *> blocks_delete;
 	{
 	auto lock = m_blocks.lock_shared();
-	for(auto i = m_blocks.begin(); i != m_blocks.end();) {
+	for(auto ir : m_blocks) {
 		if (n++ < m_blocks_update_last) {
-			++i;
 			continue;
 		}
 		else {
@@ -1503,7 +1501,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		}
 		++calls;
 
-		MapBlock *block = i->second;
+		MapBlock *block = ir.second;
 		{
 			auto lock = block->lock_unique_rec();
 
@@ -1569,9 +1567,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	if(m_circuit != NULL) {
 		m_circuit->save();
 	}
-/*
-	endSave();
-*/
 
 	// Finally delete the empty sectors
 

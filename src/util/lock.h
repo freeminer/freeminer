@@ -7,6 +7,7 @@
 #include <thread>
 
 #if USE_BOOST // not finished
+
 //#include <ctime>
 #include <boost/thread.hpp>
 //#include <boost/thread/locks.hpp>
@@ -14,19 +15,24 @@ typedef boost::shared_mutex try_shared_mutex;
 typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK boost::defer_lock
-#elif 0 && __cplusplus >= 201305L // TODO, maybe make cmake test
+
+#elif CMAKE_HAVE_SHARED_MUTEX
+//#elif __cplusplus >= 201305L
+
 #include <shared_mutex>
-//typedef std::shared_timed_mutex try_shared_mutex;
-typedef std::shared_mutex try_shared_mutex;
-typedef std::shared_lock try_shared_lock<try_shared_mutex>;
+typedef std::shared_timed_mutex try_shared_mutex;
+typedef std::shared_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK std::defer_lock
+
 #else
+
 //typedef std::timed_mutex try_shared_mutex;
 typedef std::mutex try_shared_mutex;
 typedef std::unique_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK std::defer_lock
+
 #endif
 
 
