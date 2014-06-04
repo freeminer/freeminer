@@ -302,9 +302,8 @@ struct ConnectionCommand
 class Connection: public JThread
 {
 public:
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6);
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-			PeerHandler *peerhandler);
+			PeerHandler *peerhandler = nullptr);
 	~Connection();
 	void * Thread();
 

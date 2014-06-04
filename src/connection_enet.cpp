@@ -39,19 +39,6 @@ namespace con
 */
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
-		bool ipv6):
-	m_protocol_id(protocol_id),
-	m_max_packet_size(max_packet_size),
-	m_timeout(timeout),
-	m_enet_host(0),
-	m_peer_id(0),
-	m_bc_peerhandler(NULL),
-	m_bc_receive_timeout(0)
-{
-	Start();
-}
-
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 		bool ipv6, PeerHandler *peerhandler):
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
@@ -59,7 +46,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_enet_host(0),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
-	m_bc_receive_timeout(0)
+	m_bc_receive_timeout(30)
 {
 	Start();
 }
