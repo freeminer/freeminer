@@ -38,6 +38,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "main.h"                      // for g_settings
 
+#include "log_types.h"
+
 void RemoteClient::GetNextBlocks(
 		ServerEnvironment *env,
 		EmergeManager * emerge,
@@ -329,6 +331,9 @@ void RemoteClient::GetNextBlocks(
 					surely_not_found_on_disk = true;
 				}
 
+				if (block->getLightingExpired()) {
+					continue;
+				}
 				// Block is valid if lighting is up-to-date and data exists
 				if(block->isValid() == false)
 				{
@@ -336,7 +341,10 @@ void RemoteClient::GetNextBlocks(
 				}
 
 				if(block->isGenerated() == false)
-					block_is_invalid = true;
+				{
+					//block_is_invalid = true;
+					continue;
+				}
 
 				/*
 					If block is not close, don't send it unless it is near
@@ -369,6 +377,8 @@ void RemoteClient::GetNextBlocks(
 			*/
 			if(block == NULL || surely_not_found_on_disk || block_is_invalid)
 			{
+			//infostream<<"start gen "<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<std::endl;
+
 				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 					if (nearest_emerged_d == -1)
 						nearest_emerged_d = d;
