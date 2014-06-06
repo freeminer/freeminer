@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "jthread/jmutex.h"
+#include "util/lock.h"
 
 #include <list>
 #include <vector>
@@ -361,7 +362,7 @@ private:
 		Block is removed when GOTBLOCKS is received.
 		Value is time from sending. (not used at the moment)
 	*/
-	std::map<v3s16, float> m_blocks_sending;
+	shared_map<v3s16, float> m_blocks_sending;
 
 	/*
 		Count of excess GotBlocks().
