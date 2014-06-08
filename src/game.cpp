@@ -2732,7 +2732,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				{
 					sky->setVisible(false);
 					if(skybox){
-						skybox->drop();
+						skybox->remove();
 						skybox = NULL;
 					}
 					// Handle according to type

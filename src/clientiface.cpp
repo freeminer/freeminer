@@ -342,7 +342,6 @@ void RemoteClient::GetNextBlocks(
 
 				if(block->isGenerated() == false)
 				{
-					//block_is_invalid = true;
 					continue;
 				}
 
@@ -377,7 +376,7 @@ void RemoteClient::GetNextBlocks(
 			*/
 			if(block == NULL || surely_not_found_on_disk || block_is_invalid)
 			{
-			//infostream<<"start gen "<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<std::endl;
+				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
 
 				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 					if (nearest_emerged_d == -1)

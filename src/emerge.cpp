@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "scripting_game.h"
 #include "profiler.h"
-#include "log.h"
+#include "log_types.h"
 #include "nodedef.h"
 #include "biome.h"
 #include "mapgen_v6.h"
@@ -447,8 +447,8 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 
 	// Attempt to load block
 	MapBlock *block = map->getBlockNoCreateNoEx(p);
-	if (!block || block->isDummy() || !block->isGenerated()) {
-		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen);
+	if (!block || block->isDummy()) {
+		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen<<" block="<<block);
 		block = map->loadBlock(p);
 		if(block)
 		{
@@ -461,7 +461,7 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 
 	// If could not load and allowed to generate,
 	// start generation inside this same envlock
-	if (allow_gen && (block == NULL || !block->isGenerated())) {
+	if (allow_gen && (!block)) {
 		EMERGE_DBG_OUT("generating b="<<block);
 		*b = block;
 		return map->initBlockMake(data, p);
@@ -558,7 +558,6 @@ void *EmergeThread::Thread() {
 					m_server->m_env->activateBlock(block, 0);
 				}
 			}
-		}
 
 		/*
 			Set sent status of modified blocks on clients
@@ -568,6 +567,8 @@ void *EmergeThread::Thread() {
 			modified_blocks[p] = block;
 		else if (allow_generate)
 			infostream<<"nothing generated at "<<PP(p)<<std::endl;
+
+		}
 
 		if (modified_blocks.size() > 0) {
 			m_server->SetBlocksNotSent(modified_blocks);
