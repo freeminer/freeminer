@@ -544,6 +544,7 @@ public:
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks);
 
+	bool replace_generated;
 protected:
 	bool m_create_area;
 };

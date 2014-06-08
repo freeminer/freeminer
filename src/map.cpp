@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "nodemetadata.h"
 #include "settings.h"
-#include "log.h"
+#include "log_types.h"
 #include "profiler.h"
 #include "nodedef.h"
 #include "gamedef.h"
@@ -1506,15 +1506,10 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		{
 			auto lock = block->lock_unique_rec();
 
-			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
-				block->m_uptime_timer_last = uptime - 0.1;
-			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
-			block->m_uptime_timer_last = uptime;
-
 			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
 			{
 				v3s16 p = block->getPos();
-
+				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
 				// Save if modified
 				if(block->getModified() != MOD_STATE_CLEAN
 						&& save_before_unloading)
@@ -1535,6 +1530,12 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			}
 			else
 			{
+
+			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
+				block->m_uptime_timer_last = uptime - 0.1;
+			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
+			block->m_uptime_timer_last = uptime;
+
 				block_count_all++;
 
 /*#ifndef SERVER
@@ -2758,6 +2759,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	v3s16 bigarea_blocks_max = blockpos_max + extra_borders;
 
 	data->vmanip = new ManualMapVoxelManipulator(this);
+	data->vmanip->replace_generated = 0;
 	//data->vmanip->setMap(this);
 
 	// Add the area
@@ -3574,6 +3576,7 @@ void MapVoxelManipulator::blitBack
 
 ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 		MapVoxelManipulator(map),
+		replace_generated(true),
 		m_create_area(false)
 {
 }
@@ -3606,6 +3609,7 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 		infostream<<"initialEmerge: area: ";
 		block_area_nodes.print(infostream);
 		infostream<<" ("<<size_MB<<"MB)";
+		infostream<<" load_if_inexistent="<<load_if_inexistent;
 		infostream<<std::endl;
 	}
 
@@ -3695,6 +3699,8 @@ void ManualMapVoxelManipulator::blitBackAll(
 		{
 			continue;
 		}
+		if (!replace_generated && block->isGenerated())
+			continue;
 
 		block->copyFrom(*this);
 
