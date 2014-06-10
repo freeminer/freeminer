@@ -28,10 +28,20 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
-	leveldb::Status status = leveldb::DB::Open(options, savedir + DIR_DELIM +  m_db_name + ".db", &m_db);
+	auto path = savedir + DIR_DELIM +  m_db_name + ".db";
+	leveldb::Status status = leveldb::DB::Open(options, path, &m_db);
 	if (!status.ok()) {
-		m_db = nullptr;
-		throw KeyValueStorageException(status.ToString());
+		errorstream<< "Trying to repair database ["<<status.ToString()<<"]"<<std::endl;
+		leveldb::Status status2 = leveldb::RepairDB(path, options);
+		if (!status2.ok()) {
+			m_db = nullptr;
+			throw KeyValueStorageException(status2.ToString());
+		}
+		leveldb::Status status3 = leveldb::DB::Open(options, path, &m_db);
+		if (!status3.ok()) {
+			m_db = nullptr;
+			throw KeyValueStorageException(status3.ToString());
+		}
 	}
 }
 
