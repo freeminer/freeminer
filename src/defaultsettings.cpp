@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "filesys.h"
 #include "config.h"
+#include "connection.h" // ENET_IPV6
 
 void set_default_settings(Settings *settings)
 {
