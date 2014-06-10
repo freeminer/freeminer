@@ -49,7 +49,7 @@ cd freeminer
 Build it:
 ```
 mkdir _build && cd _build
-cmake .. -DRUN_IN_PLACE=1
+cmake ..
 make -j4
 ```
 Play it!
