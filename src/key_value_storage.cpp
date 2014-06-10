@@ -28,19 +28,34 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
-	leveldb::Status status = leveldb::DB::Open(options, savedir + DIR_DELIM +  m_db_name + ".db", &m_db);
-	if(!status.ok()) {
-		throw KeyValueStorageException(status.ToString());
+	auto path = savedir + DIR_DELIM +  m_db_name + ".db";
+	leveldb::Status status = leveldb::DB::Open(options, path, &m_db);
+	if (!status.ok()) {
+		errorstream<< "Trying to repair database ["<<status.ToString()<<"]"<<std::endl;
+		leveldb::Status status2 = leveldb::RepairDB(path, options);
+		if (!status2.ok()) {
+			m_db = nullptr;
+			throw KeyValueStorageException(status2.ToString());
+		}
+		leveldb::Status status3 = leveldb::DB::Open(options, path, &m_db);
+		if (!status3.ok()) {
+			m_db = nullptr;
+			throw KeyValueStorageException(status3.ToString());
+		}
 	}
 }
 
 KeyValueStorage::~KeyValueStorage()
 {
+	if (!m_db)
+		return;
 	delete m_db;
 }
 
 bool KeyValueStorage::put(const char *key, const char *data)
 {
+	if (!m_db)
+		return false;
 	leveldb::WriteOptions write_options;
 	leveldb::Status status = m_db->Put(write_options, key, data);
 	return status.ok();
@@ -53,6 +68,8 @@ bool KeyValueStorage::put_json(const char *key, const Json::Value &data)
 
 bool KeyValueStorage::get(const char *key, std::string &data)
 {
+	if (!m_db)
+		return false;
 	leveldb::ReadOptions read_options;
 	leveldb::Status status = m_db->Get(read_options, key, &data);
 	return status.ok();
@@ -69,6 +86,8 @@ bool KeyValueStorage::get_json(const char *key, Json::Value & data)
 
 bool KeyValueStorage::del(const char *key)
 {
+	if (!m_db)
+		return false;
 	leveldb::WriteOptions write_options;
 	leveldb::Status status = m_db->Delete(write_options, key);
 	return status.ok();
