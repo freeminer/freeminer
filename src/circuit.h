@@ -4,7 +4,7 @@
 #include <list>
 #include <vector>
 #include <map>
-#include <leveldb/db.h>
+#include "key_value_storage.h"
 
 #include "circuit_element.h"
 #include "circuit_element_virtual.h"
@@ -54,8 +54,8 @@ private:
 
 	bool m_updating_process;
 
-	leveldb::DB *m_database;
-	leveldb::DB *m_virtual_database;
+	KeyValueStorage *m_database;
+	KeyValueStorage *m_virtual_database;
 
 	JMutex m_elements_mutex;
 

@@ -24,10 +24,14 @@ const char Circuit::elements_states_file[] = "circuit_elements_states";
 const char Circuit::elements_func_file[] = "circuit_elements_func";
 
 Circuit::Circuit(GameScripting* script, std::string savedir) :  m_circuit_elements_states(64u, false),
-	m_script(script), m_min_update_delay(0.2f),
-	m_since_last_update(0.0f), m_max_id(0ul), m_max_virtual_id(1ul),
-	m_savedir(savedir), m_updating_process(false) {
-	load();
+	m_script(script),
+	m_min_update_delay(0.2f),
+	m_since_last_update(0.0f),
+	m_max_id(0ul),
+	m_max_virtual_id(1ul),
+	m_savedir(savedir),
+	m_updating_process(false) {
+		load();
 }
 
 Circuit::~Circuit() {
@@ -117,8 +121,7 @@ void Circuit::removeElement(v3s16 pos) {
 
 	std::vector <std::list <CircuitElementVirtual>::iterator> virtual_elements_for_update;
 	std::list <CircuitElement>::iterator current_element = m_pos_to_iterator[pos];
-	leveldb::Status status = m_database->Delete(leveldb::WriteOptions(), itos(current_element->getId()));
-	assert(status.ok());
+	m_database->del(itos(current_element->getId()));
 
 	current_element->getNeighbors(virtual_elements_for_update);
 
@@ -129,11 +132,9 @@ void Circuit::removeElement(v3s16 pos) {
 		if((*i)->size() > 1) {
 			std::ostringstream out(std::ios_base::binary);
 			(*i)->serialize(out);
-			status = m_virtual_database->Put(leveldb::WriteOptions(), itos((*i)->getId()), out.str());
-			assert(status.ok());
+			m_virtual_database->put(itos((*i)->getId()), out.str());
 		} else {
-			status = m_virtual_database->Delete(leveldb::WriteOptions(), itos((*i)->getId()));
-			assert(status.ok());
+			m_virtual_database->del(itos((*i)->getId()));
 			std::list <CircuitElement>::iterator element_to_save;
 			for(std::list <CircuitElementVirtualContainer>::iterator j = (*i)->begin(); j != (*i)->end(); ++j) {
 				element_to_save = j->element_pointer;
@@ -193,8 +194,7 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 				        i != all_connected.end(); ++i) {
 					if(i->first->getFace(i->second).is_connected
 					        && (i->first->getFace(i->second).list_pointer != element_with_virtual.list_pointer)) {
-						leveldb::Status status = m_virtual_database->
-						                         Delete(leveldb::WriteOptions(), itos(i->first->getFace(i->second).list_pointer->getId()));
+						m_virtual_database->del(itos(i->first->getFace(i->second).list_pointer->getId()));
 						i->first->disconnectFace(i->second);
 						m_virtual_elements.erase(i->first->getFace(i->second).list_pointer);
 					}
@@ -245,9 +245,7 @@ void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& no
 				CircuitElementContainer current_edge = current_face_connected[j].first->getFace(current_face_connected[j].second);
 				if(current_edge.is_connected) {
 					found_virtual_elements = true;
-					leveldb::Status status = m_virtual_database->
-					                         Delete(leveldb::WriteOptions(), itos(current_edge.list_pointer->getId()));
-					assert(status.ok());
+					m_virtual_database->del(itos(current_edge.list_pointer->getId()));
 
 					m_virtual_elements.erase(current_edge.list_pointer);
 					break;
@@ -458,13 +456,9 @@ void Circuit::load() {
 	unsigned long element_id;
 	unsigned long version = 0;
 	std::istringstream in(std::ios_base::binary);
-	leveldb::Options options;
-	options.create_if_missing = true;
 
-	leveldb::Status status = leveldb::DB::Open(options, m_savedir + DIR_DELIM + "circuit.db", &m_database);
-	assert(status.ok());
-	status = leveldb::DB::Open(options, m_savedir + DIR_DELIM + "circuit_virtual.db", &m_virtual_database);
-	assert(status.ok());
+	m_database = new KeyValueStorage(m_savedir, "circuit");
+	m_virtual_database = new KeyValueStorage(m_savedir, "circuit_virtual");
 
 	std::ifstream input_elements_func((m_savedir + DIR_DELIM + elements_func_file).c_str(), std::ios_base::binary);
 	if(input_elements_func.good()) {
@@ -472,8 +466,9 @@ void Circuit::load() {
 		m_circuit_elements_states.deSerialize(input_elements_func);
 	}
 
+#if USE_LEVELDB
 	// Filling list with empty virtual elements
-	leveldb::Iterator* virtual_it = m_virtual_database->NewIterator(leveldb::ReadOptions());
+	auto virtual_it = m_virtual_database->new_iterator();
 	std::map <unsigned long, std::list <CircuitElementVirtual>::iterator> id_to_virtual_pointer;
 	for(virtual_it->SeekToFirst(); virtual_it->Valid(); virtual_it->Next()) {
 		element_id = stoi(virtual_it->key().ToString());
@@ -483,10 +478,9 @@ void Circuit::load() {
 			m_max_virtual_id = element_id + 1;
 		}
 	}
-	assert(virtual_it->status().ok());
 
 	// Filling list with empty elements
-	leveldb::Iterator* it = m_database->NewIterator(leveldb::ReadOptions());
+	auto it = m_database->new_iterator();
 	std::map <unsigned long, std::list <CircuitElement>::iterator> id_to_pointer;
 	for(it->SeekToFirst(); it->Valid(); it->Next()) {
 		element_id = stoi(it->key().ToString());
@@ -496,7 +490,6 @@ void Circuit::load() {
 			m_max_id = element_id + 1;
 		}
 	}
-	assert(it->status().ok());
 
 	// Loading states of elements
 	std::ifstream input_elements_states((m_savedir + DIR_DELIM + elements_states_file).c_str());
@@ -521,7 +514,6 @@ void Circuit::load() {
 		current_element->setFunc(m_circuit_elements_states.getFunc(current_element->getFuncId()), current_element->getFuncId());
 		m_pos_to_iterator[current_element->getPos()] = current_element;
 	}
-	assert(it->status().ok());
 	delete it;
 
 	// Loading virtual elements data
@@ -531,9 +523,9 @@ void Circuit::load() {
 		std::list <CircuitElementVirtual>::iterator current_element = id_to_virtual_pointer[element_id];
 		current_element->deSerialize(in, current_element, id_to_pointer);
 	}
-	assert(virtual_it->status().ok());
 
 	delete virtual_it;
+#endif
 }
 
 void Circuit::save() {
@@ -549,16 +541,14 @@ void Circuit::save() {
 inline void Circuit::saveElement(std::list<CircuitElement>::iterator element, bool save_edges) {
 	std::ostringstream out(std::ios_base::binary);
 	element->serialize(out);
-	leveldb::Status status = m_database->Put(leveldb::WriteOptions(), itos(element->getId()), out.str());
-	assert(status.ok());
+	m_database->put(itos(element->getId()), out.str());
 	if(save_edges) {
 		for(int i = 0; i < 6; ++i) {
 			CircuitElementContainer tmp_container = element->getFace(i);
 			if(tmp_container.is_connected) {
 				std::ostringstream out(std::ios_base::binary);
 				tmp_container.list_pointer->serialize(out);
-				status = m_virtual_database->Put(leveldb::WriteOptions(),
-				                                 itos(tmp_container.list_pointer->getId()), out.str());
+				m_virtual_database->put(itos(tmp_container.list_pointer->getId()), out.str());
 			}
 		}
 	}
@@ -567,13 +557,12 @@ inline void Circuit::saveElement(std::list<CircuitElement>::iterator element, bo
 inline void Circuit::saveVirtualElement(std::list <CircuitElementVirtual>::iterator element, bool save_edges) {
 	std::ostringstream out(std::ios_base::binary);
 	element->serialize(out);
-	leveldb::Status status = m_virtual_database->Put(leveldb::WriteOptions(), itos(element->getId()), out.str());
-	assert(status.ok());
+	m_virtual_database->put(itos(element->getId()), out.str());
 	if(save_edges) {
 		for(std::list <CircuitElementVirtualContainer>::iterator i = element->begin(); i != element->end(); ++i) {
 			std::ostringstream out(std::ios_base::binary);
 			i->element_pointer->serialize(out);
-			status = m_database->Put(leveldb::WriteOptions(), itos(i->element_pointer->getId()), out.str());
+			m_database->put(itos(i->element_pointer->getId()), out.str());
 		}
 	}
 }

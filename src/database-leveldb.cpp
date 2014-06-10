@@ -27,10 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 LevelDB databases
 */
 
-
 #include "database-leveldb.h"
-#include "leveldb/db.h"
-
 #include "map.h"
 #include "mapblock.h"
 #include "serialization.h"
@@ -40,10 +37,7 @@ LevelDB databases
 
 Database_LevelDB::Database_LevelDB(ServerMap *map, std::string savedir)
 {
-	leveldb::Options options;
-	options.create_if_missing = true;
-	leveldb::Status status = leveldb::DB::Open(options, savedir + DIR_DELIM + "map.db", &m_database);
-	assert(status.ok());
+	m_database = new KeyValueStorage(savedir, "map");
 	srvmap = map;
 }
 
@@ -83,8 +77,8 @@ void Database_LevelDB::saveBlock(MapBlock *block)
 	// Write block to database
 	std::string tmp = o.str();
 
-	m_database->Put(leveldb::WriteOptions(), getBlockAsString(p3d), tmp);
-	m_database->Delete(leveldb::WriteOptions(), i64tos(getBlockAsInteger(p3d))); // delete old format
+	m_database->put(getBlockAsString(p3d), tmp);
+	m_database->del(i64tos(getBlockAsInteger(p3d))); // delete old format
 
 	// We just wrote it to the disk so clear modified flag
 	block->resetModified();
@@ -96,12 +90,12 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 	std::string datastr;
 
-	leveldb::Status s = m_database->Get(leveldb::ReadOptions(), getBlockAsString(blockpos), &datastr);
+	m_database->get(getBlockAsString(blockpos), datastr);
 
 	if (!datastr.length()) {
 
-	s = m_database->Get(leveldb::ReadOptions(), i64tos(getBlockAsInteger(blockpos)), &datastr);
-	if (datastr.length() == 0 && s.ok()) {
+		m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
+	if (datastr.length() == 0 && m_database->status.ok()) {
 		errorstream << "Blank block data in database (datastr.length() == 0) ("
 			<< blockpos.X << "," << blockpos.Y << "," << blockpos.Z << ")" << std::endl;
 
@@ -116,7 +110,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 	}
 
-	if (s.ok()) {
+	if (m_database->status.ok()) {
 		try {
 			std::istringstream is(datastr, std::ios_base::binary);
 			u8 version = SER_FMT_VER_INVALID;
@@ -176,12 +170,14 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
-	leveldb::Iterator* it = m_database->NewIterator(leveldb::ReadOptions());
+#if USE_LEVELDB
+	auto it = m_database->new_iterator();
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}
 	assert(it->status().ok());  // Check for any errors found during the scan
 	delete it;
+#endif
 }
 
 Database_LevelDB::~Database_LevelDB()
