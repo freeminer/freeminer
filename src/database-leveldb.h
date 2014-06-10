@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_LEVELDB
 
 #include "database.h"
-#include "leveldb/db.h"
+#include "key_value_storage.h"
 #include <string>
 
 class ServerMap;
@@ -46,7 +46,8 @@ public:
 	~Database_LevelDB();
 private:
 	ServerMap *srvmap;
-	leveldb::DB* m_database;
+	KeyValueStorage *m_database;
+	//leveldb::DB* m_database;
 };
 #endif
 #endif

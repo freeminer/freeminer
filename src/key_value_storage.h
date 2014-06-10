@@ -19,7 +19,10 @@
 #define KEY_VALUE_STORAGE_H
 
 #include <string>
+#include "config.h"
+#if USE_LEVELDB
 #include <leveldb/db.h>
+#endif
 #include "exceptions.h"
 #include "json/json.h"
 
@@ -28,15 +31,22 @@ class KeyValueStorage
 public:
 	KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException);
 	~KeyValueStorage();
-	bool put(const char *key, const char *data);
-	bool put_json(const char *key, const Json::Value & data);
-	bool get(const char *key, std::string &data);
-	bool get_json(const char *key, Json::Value & data);
-	bool del(const char *key);
-private:
-	std::string m_savedir;
+	bool put(const std::string & key, const std::string & data);
+	bool put_json(const std::string & key, const Json::Value & data);
+	bool get(const std::string & key, std::string &data);
+	bool get_json(const std::string & key, Json::Value & data);
+	bool del(const std::string & key);
+#if USE_LEVELDB
+	leveldb::Iterator* new_iterator();
 	leveldb::DB *m_db;
-	const char *m_db_name;
+	leveldb::Status status;
+	leveldb::ReadOptions read_options;
+	leveldb::WriteOptions write_options;
+#else
+	char *m_db;
+#endif
+private:
+	const std::string &m_db_name;
 	Json::FastWriter json_writer;
 	Json::Reader json_reader;
 };
