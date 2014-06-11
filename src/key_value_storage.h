@@ -39,7 +39,6 @@ public:
 #if USE_LEVELDB
 	leveldb::Iterator* new_iterator();
 	leveldb::DB *m_db;
-	leveldb::Status status;
 	leveldb::ReadOptions read_options;
 	leveldb::WriteOptions write_options;
 #else

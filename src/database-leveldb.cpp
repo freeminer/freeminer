@@ -90,12 +90,12 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 	std::string datastr;
 
-	m_database->get(getBlockAsString(blockpos), datastr);
+	auto ok = m_database->get(getBlockAsString(blockpos), datastr);
 
 	if (!datastr.length()) {
 
-		m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
-	if (datastr.length() == 0 && m_database->status.ok()) {
+	ok = m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
+	if (datastr.length() == 0 && ok) {
 		errorstream << "Blank block data in database (datastr.length() == 0) ("
 			<< blockpos.X << "," << blockpos.Y << "," << blockpos.Z << ")" << std::endl;
 
@@ -110,7 +110,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 
 	}
 
-	if (m_database->status.ok()) {
+	if (ok) {
 		try {
 			std::istringstream is(datastr, std::ios_base::binary);
 			u8 version = SER_FMT_VER_INVALID;
