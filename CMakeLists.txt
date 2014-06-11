@@ -46,10 +46,14 @@ endif()
 
 set(WARN_ALL 1 CACHE BOOL "Enable -Wall for Release build")
 
-if(NOT CMAKE_BUILD_TYPE)
-	# Default to release
+set(DEBUG 0 CACHE BOOL "Build with debug symbols and without optimization")
+if(DEBUG)
+	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type: Debug or Release" FORCE)
+else()
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
+MARK_AS_ADVANCED(CMAKE_BUILD_TYPE)
+MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Included stuff
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
