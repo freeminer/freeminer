@@ -4559,6 +4559,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 				PlayerSAO *playersao = player->getPlayerSAO();
 				assert(playersao);
 
+				JMutexAutoLock env_lock(m_env_mutex);
 				m_script->on_leaveplayer(playersao);
 
 				playersao->disconnected();
