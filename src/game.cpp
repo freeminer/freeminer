@@ -3831,6 +3831,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	guitext2->remove();
 	guitext_info->remove();
 	guitext_profiler->remove();
+	guitext_chat->remove();
 	/*
 		Drop stuff
 	*/

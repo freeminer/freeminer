@@ -31,7 +31,7 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 	leveldb::Options options;
 	options.create_if_missing = true;
 	auto path = savedir + DIR_DELIM +  m_db_name + ".db";
-	status = leveldb::DB::Open(options, path, &m_db);
+	auto status = leveldb::DB::Open(options, path, &m_db);
 	if (!status.ok()) {
 		errorstream<< "Trying to repair database ["<<status.ToString()<<"]"<<std::endl;
 		status = leveldb::RepairDB(path, options);
@@ -60,7 +60,7 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 	if (!m_db)
 		return false;
 #if USE_LEVELDB
-	status = m_db->Put(write_options, key, data);
+	auto status = m_db->Put(write_options, key, data);
 	return status.ok();
 #endif
 }
@@ -75,7 +75,7 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 	if (!m_db)
 		return false;
 #if USE_LEVELDB
-	status = m_db->Get(read_options, key, &data);
+	auto status = m_db->Get(read_options, key, &data);
 	return status.ok();
 #endif
 }
@@ -94,7 +94,7 @@ bool KeyValueStorage::del(const std::string &key)
 	if (!m_db)
 		return false;
 #if USE_LEVELDB
-	status = m_db->Delete(write_options, key);
+	auto status = m_db->Delete(write_options, key);
 	return status.ok();
 #endif
 }
