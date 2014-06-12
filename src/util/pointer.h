@@ -279,7 +279,6 @@ public:
 private:
 	void drop()
 	{
-		assert((*refcount) > 0);
 		(*refcount)--;
 		if(*refcount == 0)
 		{
