@@ -1503,6 +1503,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		++calls;
 
 		MapBlock *block = ir.second;
+		if (!block)
+			continue;
+
 		{
 			auto lock = block->lock_unique_rec();
 
