@@ -1245,7 +1245,8 @@ int Server::AsyncRunMapStep(bool initial_step) {
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
-	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
+	//u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
+	u32 max_cycle_ms = 500;
 
 	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
