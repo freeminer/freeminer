@@ -25,6 +25,7 @@ tags
 ## Configuration/log files
 freeminer.conf
 debug.txt
+client/favoriteservers.json
 
 ## Build files
 CMakeFiles/*

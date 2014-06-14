@@ -1177,9 +1177,7 @@ int Server::AsyncRunMapStep(bool initial_step) {
 		dtime = m_step_dtime;
 	}
 
-	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	//u32 max_cycle_ms = 1000 * (m_lag > dedicated_server_step ? dedicated_server_step/(m_lag/dedicated_server_step) : dedicated_server_step);
-	u32 max_cycle_ms = 1000 * (dedicated_server_step/(m_lag/dedicated_server_step));
+	u32 max_cycle_ms = 500;
 
 	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
@@ -3555,6 +3553,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_HEAT, block->heat);
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, block->humidity);
 
+	JMutexAutoLock lock(m_env_mutex);
 	/*
 		Send packet
 	*/
