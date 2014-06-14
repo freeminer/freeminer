@@ -61,14 +61,6 @@ void RemoteClient::GetNextBlocks(
 	if(player == NULL)
 		return;
 
-	// Won't send anything if already sending
-	if(m_blocks_sending.size() >= g_settings->getU16
-			("max_simultaneous_block_sends_per_client"))
-	{
-		//infostream<<"Not sending any blocks, Queue full."<<std::endl;
-		return;
-	}
-
 	v3f playerpos = player->getPosition();
 	v3f playerspeed = player->getSpeed();
 	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
@@ -140,7 +132,7 @@ void RemoteClient::GetNextBlocks(
 		Number of blocks sending + number of blocks selected for sending
 	*/
 	u32 num_blocks_selected = 0;
-	u32 num_blocks_sending = m_blocks_sending.size();
+	u32 num_blocks_sending = 0;
 
 	/*
 		next time d will be continued from the d from which the nearest
@@ -253,10 +245,6 @@ void RemoteClient::GetNextBlocks(
 				queue_is_full = true;
 				goto queue_full_break;
 			}
-
-			// Don't send blocks that are currently being transferred
-			if(m_blocks_sending.find(p) != m_blocks_sending.end())
-				continue;
 
 			/*
 				Do not go over-limit
@@ -437,24 +425,9 @@ queue_full_break:
 		m_nearest_unsent_d = new_nearest_unsent_d;
 }
 
-void RemoteClient::GotBlock(v3s16 p, double time)
+void RemoteClient::SentBlock(v3s16 p, double time)
 {
-	if(m_blocks_sending.find(p) != m_blocks_sending.end())
-		m_blocks_sending.erase(p);
-	else
-	{
-		m_excess_gotblocks++;
-	}
 	m_blocks_sent[p] = time;
-}
-
-void RemoteClient::SentBlock(v3s16 p)
-{
-	if(m_blocks_sending.find(p) == m_blocks_sending.end())
-		m_blocks_sending[p] = 0.0;
-	else
-		infostream<<"RemoteClient::SentBlock(): Sent block"
-				" already in m_blocks_sending"<<std::endl;
 }
 
 void RemoteClient::SetBlockNotSent(v3s16 p)

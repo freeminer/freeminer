@@ -592,7 +592,7 @@ enum ToServerCommand
 		[2+12+12+4+4] u32 keyPressed
 	*/
 
-	TOSERVER_GOTBLOCKS = 0x24,
+	TOSERVER_GOTBLOCKS = 0x24, // TODO: REMOVE IN NEXT
 	/*
 		[0] u16 command
 		[2] u8 count

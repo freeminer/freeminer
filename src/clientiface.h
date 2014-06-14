@@ -232,7 +232,6 @@ public:
 		m_state(Created),
 		m_nearest_unsent_d(0),
 		m_nearest_unsent_reset_timer(0.0),
-		m_excess_gotblocks(0),
 		m_nothing_to_send_pause_timer(0.0),
 		m_name(""),
 		m_version_major(0),
@@ -254,18 +253,11 @@ public:
 	void GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, double m_uptime, std::vector<PrioritySortedBlockTransfer> &dest);
 
-	void GotBlock(v3s16 p, double time);
-
-	void SentBlock(v3s16 p);
+	void SentBlock(v3s16 p, double time);
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
 	void SetBlockDeleted(v3s16 p);
-
-	s32 SendingCount()
-	{
-		return m_blocks_sending.size();
-	}
 
 	// Increments timeouts and removes timed-out blocks from list
 	// NOTE: This doesn't fix the server-not-sending-block bug
@@ -276,12 +268,9 @@ public:
 	{
 		o<<"RemoteClient "<<peer_id<<": "
 				<<"m_blocks_sent.size()="<<m_blocks_sent.size()
-				<<", m_blocks_sending.size()="<<m_blocks_sending.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
-				<<", m_excess_gotblocks="<<m_excess_gotblocks
 				<<", wanted_range="<<wanted_range
 				<<std::endl;
-		m_excess_gotblocks = 0;
 	}
 
 	// Time from last placing or removing blocks
@@ -353,25 +342,6 @@ private:
 
 	v3s16 m_last_center;
 	float m_nearest_unsent_reset_timer;
-
-	/*
-		Blocks that are currently on the line.
-		This is used for throttling the sending of blocks.
-		- The size of this list is limited to some value
-		Block is added when it is sent with BLOCKDATA.
-		Block is removed when GOTBLOCKS is received.
-		Value is time from sending. (not used at the moment)
-	*/
-	shared_map<v3s16, float> m_blocks_sending;
-
-	/*
-		Count of excess GotBlocks().
-		There is an excess amount because the client sometimes
-		gets a block so late that the server sends it again,
-		and the client then sends two GOTBLOCKs.
-		This is resetted by PrintInfo()
-	*/
-	u32 m_excess_gotblocks;
 
 	// CPU usage optimization
 	float m_nothing_to_send_pause_timer;

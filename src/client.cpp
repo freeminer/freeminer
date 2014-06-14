@@ -596,7 +596,7 @@ void Client::step(float dtime)
 			}
 		}
 		u32 got_blocks_size = got_blocks.size();
-		if (got_blocks_size) {
+		if (got_blocks_size) { // TODO: REMOVE IN NEXT
 				/*
 					Acknowledge block
 				*/
