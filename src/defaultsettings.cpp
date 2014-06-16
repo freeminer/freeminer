@@ -165,7 +165,7 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("enable_remote_media_server", "true");
 
-	settings->setDefault("serverlist_url", "servers.minetest.net");
+	settings->setDefault("serverlist_url", "servers.freeminer.org");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("server_url", "");
