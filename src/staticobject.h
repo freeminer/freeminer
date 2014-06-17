@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include "debug.h"
+#include "util/lock.h"
 
 struct StaticObject
 {
@@ -67,11 +68,11 @@ public:
 		}
 		else
 		{
+			auto lock = m_active.lock_shared_rec();
 			if(m_active.find(id) != m_active.end())
 			{
 				dstream<<"ERROR: StaticObjectList::insert(): "
 						<<"id already exists"<<std::endl;
-				assert(0);
 				return;
 			}
 			m_active[id] = obj;
@@ -99,7 +100,7 @@ public:
 		The caller directly manipulates these containers.
 	*/
 	std::list<StaticObject> m_stored;
-	std::map<u16, StaticObject> m_active;
+	shared_map<u16, StaticObject> m_active;
 
 private:
 };

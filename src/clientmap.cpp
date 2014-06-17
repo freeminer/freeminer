@@ -314,7 +314,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 				continue;
 
 			if (m_control.farmesh && mesh_step != block->getMesh(mesh_step)->step) { //&& !block->mesh->transparent
-				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1);
+				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1, true);
 			}
 
 			block->getMesh(mesh_step)->incrementUsageTimer(dtime);
