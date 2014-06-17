@@ -105,12 +105,16 @@ public:
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#ifdef NDEBUG
 			} catch (BaseException &e) {
-				errorstream<<"Server: MapThread: exception: "<<e.what()<<std::endl;
+				errorstream<<"MapThread: exception: "<<e.what()<<std::endl;
 			} catch(std::exception &e) {
-				errorstream<<"Server: exception: "<<e.what()<<std::endl;
+				errorstream<<"MapThread: exception: "<<e.what()<<std::endl;
 			} catch (...) {
-				errorstream<<"Ooops..."<<std::endl;
+				errorstream<<"MapThread: Ooops..."<<std::endl;
+#else
+			} catch (int) { //nothing
+#endif
 			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
@@ -145,12 +149,16 @@ public:
 				m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
 				time = porting::getTimeMs();
 				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#ifdef NDEBUG
 			} catch (BaseException &e) {
-				errorstream<<"Server: SendBlocksThread: exception: "<<e.what()<<std::endl;
+				errorstream<<"SendBlocksThread: exception: "<<e.what()<<std::endl;
 			} catch(std::exception &e) {
-				errorstream<<"Server: exception: "<<e.what()<<std::endl;
+				errorstream<<"SendBlocksThread: exception: "<<e.what()<<std::endl;
 			} catch (...) {
-				errorstream<<"Ooops..."<<std::endl;
+				errorstream<<"SendBlocksThread: Ooops..."<<std::endl;
+#else
+			} catch (int) { //nothing
+#endif
 			}
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
@@ -222,8 +230,12 @@ void * ServerThread::Thread()
 		catch(LuaError &e)
 		{
 			m_server->setAsyncFatalError(e.what());
+#ifdef NDEBUG
+		} catch(std::exception &e) {
+				errorstream<<"ServerThread: exception: "<<e.what()<<std::endl;
 		} catch (...) {
-				errorstream<<"Ooops..."<<std::endl;
+				errorstream<<"ServerThread: Ooops..."<<std::endl;
+#endif
 		}
 	}
 
@@ -580,9 +592,13 @@ void Server::start(Address bind_addr)
 	m_map_thread->Start();
 	m_sendblocks->Start();
 
-	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m     "
-			<< " cpp="<<__cplusplus<<"    "
-			<< " cores="<< porting::getNumberOfProcessors()<< std::endl;
+	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
+#ifndef NDEBUG
+			<< " DEBUG \t"
+#endif
+			<< " cpp="<<__cplusplus<<" \t"
+			<< " cores="<< porting::getNumberOfProcessors()
+			<< std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
 			<<"\" mapgen=\""<<m_emerge->params.mg_name
