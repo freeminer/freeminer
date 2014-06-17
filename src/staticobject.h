@@ -68,7 +68,7 @@ public:
 		}
 		else
 		{
-			auto lock = m_active.lock_shared();
+			auto lock = m_active.lock_shared_rec();
 			if(m_active.find(id) != m_active.end())
 			{
 				dstream<<"ERROR: StaticObjectList::insert(): "
