@@ -22,7 +22,7 @@ function menubar.handle_buttons(fields)
 	for i=1,#menubar.buttons,1 do
 		if fields[menubar.buttons[i].btn_name] ~= nil then
 			menu.last_game = menubar.buttons[i].index
-			engine.setting_set("main_menu_last_game_idx",menu.last_game)
+			core.setting_set("main_menu_last_game_idx",menu.last_game)
 			menu.update_gametype()
 		end
 	end
@@ -52,7 +52,7 @@ function menubar.refresh()
 
 			menubar.formspec = menubar.formspec ..
 				"image_button[" .. buttonpos ..  ",11.2;1.165,1.175;"  ..
-				engine.formspec_escape(gamemgr.games[i].menuicon_path) .. ";" ..
+				core.formspec_escape(gamemgr.games[i].menuicon_path) .. ";" ..
 				btn_name .. ";;true;false]"
 		else
 		
