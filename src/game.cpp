@@ -2728,10 +2728,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		ItemStack playeritem;
 		{
 			InventoryList *mlist = local_inventory.getList("main");
-			if(mlist != NULL)
-			{
+			if((mlist != NULL) && (client.getPlayerItem() < mlist->getSize()))
 				playeritem = mlist->getItem(client.getPlayerItem());
-			}
 		}
 		const ItemDefinition &playeritem_def =
 				playeritem.getDefinition(itemdef);
@@ -3508,7 +3506,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			// Update wielded tool
 			InventoryList *mlist = local_inventory.getList("main");
 			ItemStack item;
-			if(mlist != NULL)
+			if((mlist != NULL) && (client.getPlayerItem() < mlist->getSize()))
 				item = mlist->getItem(client.getPlayerItem());
 			camera.wield(item, client.getPlayerItem());
 		}
