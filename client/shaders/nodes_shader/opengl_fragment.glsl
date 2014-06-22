@@ -19,6 +19,7 @@ varying vec3 tsLightVec;
 bool normalTexturePresent = false; 
 
 const float e = 2.718281828459;
+const float BS = 10.0;
  
 float intensity (vec3 color){
 	return (color.r + color.g + color.b) / 3.0;
@@ -96,18 +97,23 @@ vec4 base = texture2D(baseTexture, uv).rgba;
 	color = base.rgb;
 #endif
 
-	vec4 col = vec4(color.rgb, base.a);
-	col = col * col; // SRGB -> Linear
-	col *= 1.8;
-	col.r = 1.0 - exp(1.0 - col.r) / e;
-	col.g = 1.0 - exp(1.0 - col.g) / e;
-	col.b = 1.0 - exp(1.0 - col.b) / e;
-	col = sqrt(col); // Linear -> SRGB
 	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
+#if MATERIAL_TYPE == TILE_MATERIAL_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_LIQUID_OPAQUE
+	float alpha = gl_Color.a;
+	vec4 col = vec4(color.rgb, alpha);
+	col *= min(gl_Color+vec4(light), 1.0);
+	if(fogDistance != 0.0){
+		float d = max(0.0, min(vPosition.z / fogDistance * 1.5 - 0.6, 1.0));
+		alpha = mix(alpha, 0.0, d);
+	}
+	gl_FragColor = vec4(col.rgb, alpha);
+#else
+	vec4 col = vec4(color.rgb, base.a);
 	col *= min(gl_Color+vec4(light), 1.0);
 	if(fogDistance != 0.0){
 		float d = max(0.0, min(vPosition.z / fogDistance * 1.5 - 0.6, 1.0));
 		col = mix(col, skyBgColor, d);
 	}
-    gl_FragColor = vec4(col.rgb, base.a);
+	gl_FragColor = vec4(col.rgb, base.a);
+#endif
 }

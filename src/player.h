@@ -287,7 +287,15 @@ public:
 	
 	u32 keyPressed;
 	
-	std::vector<HudElement *> hud;
+
+	HudElement* getHud(u32 id);
+	u32         addHud(HudElement* hud);
+	HudElement* removeHud(u32 id);
+	void        clearHud();
+	u32         maxHudId() {
+		return hud.size();
+	}
+
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
@@ -305,6 +313,8 @@ public:
 	v3f m_speed;
 	v3f m_position;
 	core::aabbox3d<f32> m_collisionbox;
+
+	std::vector<HudElement *> hud;
 };
 
 

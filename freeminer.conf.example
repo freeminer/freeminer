@@ -99,6 +99,8 @@
 #client_unload_unused_data_timeout = 600
 # Whether to fog out the end of the visible area
 #enable_fog = true
+# Whether to show the client debug info (has the same effect as hitting F5)
+#show_debug = false
 # Enable a bit lower water surface; disable for speed (not quite optimized)
 #new_style_water = false
 # Constant volume liquids
@@ -147,9 +149,15 @@
 #view_bobbing_amount = 1.0
 # Amount of fall bobbing (0 = no fall bobbing, 1.0 = normal, 2.0 = double)
 #fall_bobbing_amount = 0.0
-# Anaglyph stereo
-#anaglyph = false
-#anaglyph_strength = 0.1
+# 3d support,
+# right now:
+#     "none"       = no 3d output,
+#     "anaglyph"   = cyan/magenta color 3d,
+#     "interlaced" = odd/even line based polarisation screen support,
+#     "topbottom"  = split screen top boton,
+#     "sidebyside" = split screen side by side
+#3d_mode = none
+#3d_paralax_strength = 0.025
 # In-game chat console background color (R,G,B)
 #console_color = (0,0,0)
 # In-game chat console background alpha (opaqueness, between 0 and 255)
@@ -288,6 +296,9 @@
 #max_users = 15
 # Set to true to disallow old clients from connecting
 #strict_protocol_version_checking = false
+# Time in seconds for item entity to live. Default value: 900s
+# Setting it to -1 disables the feature
+#item_entity_ttl = 900
 # Set to true to enable creative mode (unlimited inventory)
 #creative_mode = false
 # Enable players getting damage and dying
@@ -368,11 +379,6 @@
 #dedicated_server_step = 0.1
 # Can be set to true to disable shutting down on invalid world data
 #ignore_world_load_errors = false
-# Congestion control parameters
-# time in seconds, rate in ~500B packets
-#congestion_control_aim_rtt = 0.2
-#congestion_control_max_rate = 400
-#congestion_control_min_rate = 10
 # Specifies URL from which client fetches media instead of using UDP
 # $filename should be accessible from $remote_media$filename via cURL
 # (obviously, remote_media should end with a slash)

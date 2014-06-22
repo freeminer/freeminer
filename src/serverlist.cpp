@@ -70,10 +70,9 @@ std::vector<ServerListSpec> getLocal()
 }
 
 
-#if USE_CURL
 std::vector<ServerListSpec> getOnline()
 {
-	Json::Value root = fetchJsonValue((g_settings->get("serverlist_url")+"/list").c_str(),0);
+	Json::Value root = fetchJsonValue((g_settings->get("serverlist_url")+"/list").c_str(), NULL);
 
 	std::vector<ServerListSpec> serverlist;
 
@@ -88,8 +87,6 @@ std::vector<ServerListSpec> getOnline()
 
 	return serverlist;
 }
-
-#endif
 
 /*
 	Delete a server fromt he local favorites list

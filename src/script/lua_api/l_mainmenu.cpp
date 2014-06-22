@@ -149,22 +149,36 @@ int ModApiMainMenu::l_set_background(lua_State *L)
 	std::string backgroundlevel(luaL_checkstring(L, 1));
 	std::string texturename(luaL_checkstring(L, 2));
 
-	bool retval = false;
+	bool tile_image = false;
+	bool retval     = false;
+	unsigned int minsize = 16;
+
+	if (!lua_isnone(L, 3)) {
+		tile_image = lua_toboolean(L, 3);
+	}
+
+	if (!lua_isnone(L, 4)) {
+		minsize = lua_tonumber(L, 4);
+	}
 
 	if (backgroundlevel == "background") {
-		retval |= engine->setTexture(TEX_LAYER_BACKGROUND,texturename);
+		retval |= engine->setTexture(TEX_LAYER_BACKGROUND, texturename,
+				tile_image, minsize);
 	}
 
 	if (backgroundlevel == "overlay") {
-		retval |= engine->setTexture(TEX_LAYER_OVERLAY,texturename);
+		retval |= engine->setTexture(TEX_LAYER_OVERLAY, texturename,
+				tile_image, minsize);
 	}
 
 	if (backgroundlevel == "header") {
-		retval |= engine->setTexture(TEX_LAYER_HEADER,texturename);
+		retval |= engine->setTexture(TEX_LAYER_HEADER,  texturename,
+				tile_image, minsize);
 	}
 
 	if (backgroundlevel == "footer") {
-		retval |= engine->setTexture(TEX_LAYER_FOOTER,texturename);
+		retval |= engine->setTexture(TEX_LAYER_FOOTER, texturename,
+				tile_image, minsize);
 	}
 
 	lua_pushboolean(L,retval);
@@ -445,15 +459,12 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 	}
 
 	std::vector<ServerListSpec> servers;
-#if USE_CURL
+
 	if(listtype == "online") {
 		servers = ServerList::getOnline();
 	} else {
 		servers = ServerList::getLocal();
 	}
-#else
-	servers = ServerList::getLocal();
-#endif
 
 	Json::Value root(Json::arrayValue);
 	for (unsigned int i = 0; i < servers.size(); i++)
@@ -483,15 +494,12 @@ int ModApiMainMenu::l_delete_favorite(lua_State *L)
 		(listtype != "online"))
 		return 0;
 
-#if USE_CURL
+
 	if(listtype == "online") {
 		servers = ServerList::getOnline();
 	} else {
 		servers = ServerList::getLocal();
 	}
-#else
-	servers = ServerList::getLocal();
-#endif
 
 	int fav_idx	= luaL_checkinteger(L,1) -1;
 

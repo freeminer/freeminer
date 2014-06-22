@@ -283,6 +283,21 @@ inline u32 getTime(TimePrecision prec)
 	return 0;
 }
 
+/**
+ * Delta calculation function taking two 32bit arguments.
+ * @param old_time_ms old time for delta calculation (order is relevant!)
+ * @param new_time_ms new time for delta calculation (order is relevant!)
+ * @return positive 32bit delta value
+ */
+inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
+{
+	if (new_time_ms >= old_time_ms) {
+		return (new_time_ms - old_time_ms);
+	} else {
+		return (old_time_ms - new_time_ms);
+	}
+}
+
 #if defined(linux) || defined(__linux)
 	#include <sys/prctl.h>
 
@@ -293,11 +308,18 @@ inline u32 getTime(TimePrecision prec)
 		 */
 		prctl(PR_SET_NAME, name);
 	}
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 	#include <pthread.h>
+	#include <pthread_np.h>
 
 	inline void setThreadName(const char *name) {
 		pthread_set_name_np(pthread_self(), name);
+	}
+#elif defined(__NetBSD__)
+	#include <pthread.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_setname_np(pthread_self(), name);
 	}
 #elif defined(_MSC_VER)
 	typedef struct tagTHREADNAME_INFO {

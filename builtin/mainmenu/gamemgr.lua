@@ -31,7 +31,7 @@ end
 --------------------------------------------------------------------------------
 function gamemgr.handle_games_buttons(fields)
 	if fields["gamelist"] ~= nil then
-		local event = engine.explode_textlist_event(fields["gamelist"])
+		local event = core.explode_textlist_event(fields["gamelist"])
 		gamemgr.selected_game = event.index
 	end
 	
@@ -60,16 +60,16 @@ function gamemgr.handle_new_game_buttons(fields)
 	if fields["new_game_confirm"] and
 		fields["te_game_name"] ~= nil and
 		fields["te_game_name"] ~= "" then
-		local gamepath = engine.get_gamepath()
+		local gamepath = core.get_gamepath()
 		
 		if gamepath ~= nil and
 			gamepath ~= "" then
 			local gamefolder = cleanup_path(fields["te_game_name"])
 			
 			--TODO check for already existing first
-			engine.create_dir(gamepath .. DIR_DELIM .. gamefolder)
-			engine.create_dir(gamepath .. DIR_DELIM .. gamefolder .. DIR_DELIM .. "mods")
-			engine.create_dir(gamepath .. DIR_DELIM .. gamefolder .. DIR_DELIM .. "menu")
+			core.create_dir(gamepath .. DIR_DELIM .. gamefolder)
+			core.create_dir(gamepath .. DIR_DELIM .. gamefolder .. DIR_DELIM .. "mods")
+			core.create_dir(gamepath .. DIR_DELIM .. gamefolder .. DIR_DELIM .. "menu")
 			
 			local gameconf = 
 				io.open(gamepath .. DIR_DELIM .. gamefolder .. DIR_DELIM .. "game.conf","w")
@@ -84,7 +84,7 @@ function gamemgr.handle_new_game_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = engine.setting_get("main_menu_tab")
+		current_tab = core.setting_get("main_menu_tab")
 		}
 end
 
@@ -97,16 +97,16 @@ function gamemgr.handle_edit_game_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = engine.setting_get("main_menu_tab")
+			current_tab = core.setting_get("main_menu_tab")
 			}
 	end
 
 	if fields["btn_remove_mod_from_game"] ~= nil then
-		gamemgr.delete_mod(current_game,engine.get_textlist_index("mods_current"))
+		gamemgr.delete_mod(current_game,core.get_textlist_index("mods_current"))
 	end
 	
 	if fields["btn_add_mod_to_game"] ~= nil then
-		local modindex = engine.get_textlist_index("mods_available")
+		local modindex = core.get_textlist_index("mods_available")
 		
 		local mod = modmgr.get_global_mod(modindex)
 		if mod ~= nil then
@@ -130,7 +130,7 @@ function gamemgr.add_mod(gamespec,sourcepath)
 		
 		local modname = get_last_folder(sourcepath)
 		
-		return engine.copy_dir(sourcepath,gamespec.gamemods_path .. DIR_DELIM .. modname);
+		return core.copy_dir(sourcepath,gamespec.gamemods_path .. DIR_DELIM .. modname);
 	end
 	
 	return false
@@ -148,7 +148,7 @@ function gamemgr.delete_mod(gamespec,modindex)
 
 			if game_mods[modindex].path:sub(0,gamespec.gamemods_path:len()) 
 					== gamespec.gamemods_path then
-				engine.delete_dir(game_mods[modindex].path)
+				core.delete_dir(game_mods[modindex].path)
 			end
 		end
 	end
@@ -225,7 +225,7 @@ function gamemgr.tab()
 			current_game.menuicon_path ~= "" then
 			retval = retval .. 
 				"image[6.5,5.5;2,2;" ..
-				engine.formspec_escape(current_game.menuicon_path) .. "]"
+				core.formspec_escape(current_game.menuicon_path) .. "]"
 		end
 		
 		retval = retval ..
@@ -252,7 +252,7 @@ function gamemgr.dialog_edit_game()
 			current_game.menuicon_path ~= "" then
 			retval = retval .. 
 				"image[5.25,0;2,2;" ..
-				engine.formspec_escape(current_game.menuicon_path) .. "]"
+				core.formspec_escape(current_game.menuicon_path) .. "]"
 		end
 		
 		retval = retval .. 
@@ -304,7 +304,7 @@ end
 
 --------------------------------------------------------------------------------
 function gamemgr.update_gamelist()
-	gamemgr.games = engine.get_games()
+	gamemgr.games = core.get_games()
 end
 
 --------------------------------------------------------------------------------

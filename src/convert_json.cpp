@@ -37,19 +37,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 
 Json::Value                 fetchJsonValue(const std::string &url,
-                                           struct curl_slist *chunk) {
-#if USE_CURL
+		std::vector<std::string> *extra_headers) {
 
 	HTTPFetchRequest fetchrequest;
 	HTTPFetchResult fetchresult;
 	fetchrequest.url = url;
 	fetchrequest.caller = HTTPFETCH_SYNC;
 
-	struct curl_slist* runptr = chunk;
-	while(runptr) {
-		fetchrequest.extra_headers.push_back(runptr->data);
-		runptr = runptr->next;
-	}
+	if (extra_headers != NULL)
+		fetchrequest.extra_headers = *extra_headers;
+
 	httpfetch_sync(fetchrequest,fetchresult);
 
 	if (!fetchresult.succeeded) {
@@ -76,12 +73,12 @@ Json::Value                 fetchJsonValue(const std::string &url,
 	else {
 		return root;
 	}
-#endif
+
 	return Json::Value();
 }
 
 std::vector<ModStoreMod>    readModStoreList(Json::Value& modlist) {
-	std::vector<ModStoreMod> retval;
+		std::vector<ModStoreMod> retval;
 
 	if (modlist.isArray()) {
 		for (unsigned int i = 0; i < modlist.size(); i++)

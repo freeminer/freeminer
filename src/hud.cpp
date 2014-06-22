@@ -54,6 +54,7 @@ Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
 	m_screensize       = v2u32(0, 0);
 	m_displaycenter    = v2s32(0, 0);
 	m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE * porting::getDisplayDensity() + 0.5);
+	m_hotbar_imagesize *= g_settings->getFloat("gui_scaling");
 	m_padding = m_hotbar_imagesize / 12;
 
 	const video::SColor hbar_color(255, 255, 255, 255);
@@ -230,8 +231,8 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 
 
 void Hud::drawLuaElements(v3s16 camera_offset) {
-	for (size_t i = 0; i != player->hud.size(); i++) {
-		HudElement *e = player->hud[i];
+	for (size_t i = 0; i != player->maxHudId(); i++) {
+		HudElement *e = player->getHud(i);
 		if (!e)
 			continue;
 		
@@ -439,10 +440,6 @@ void Hud::drawHotbar(u16 playeritem) {
 
 
 void Hud::drawCrosshair() {
-	if (!(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE) ||
-			(player->camera_mode == CAMERA_MODE_THIRD_FRONT)) {
-		return;
-	}
 		
 	if (use_crosshair_image) {
 		video::ITexture *crosshair = tsrc->getTexture("crosshair.png");
@@ -473,6 +470,7 @@ void Hud::drawSelectionBoxes(std::vector<aabb3f> &hilightboxes) {
 void Hud::resizeHotbar() {
 	if (m_screensize != porting::getWindowSize()) {
 		m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE * porting::getDisplayDensity() + 0.5);
+		m_hotbar_imagesize *= g_settings->getFloat("gui_scaling");
 		m_padding = m_hotbar_imagesize / 12;
 		m_screensize = porting::getWindowSize();
 		m_displaycenter = v2s32(m_screensize.X/2,m_screensize.Y/2);

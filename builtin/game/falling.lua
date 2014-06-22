@@ -98,26 +98,21 @@ core.register_entity(":__builtin:falling_node", {
 			local np = {x=bcp.x, y=bcp.y+1, z=bcp.z}
 			-- Check what's here
 			local n2 = core.get_node(np)
-			-- If it's not air or liquid, remove node and replace it with
-			-- it's drops
-			if n2.name ~= "air" and (not core.registered_nodes[n2.name] or
-					core.registered_nodes[n2.name].liquidtype == "none") then
+		-- remove node and replace it with it's drops
 				node_drop(np, remove_fast)
 --[[
-				local drops = core.get_node_drops(n2.name, "")
-				core.remove_node(np, remove_fast)
-				-- Add dropped items
-				local _, dropped_item
-				for _, dropped_item in ipairs(drops) do
-					core.add_item(np, dropped_item)
-				end
-				-- Run script hook
-				local _, callback
-				for _, callback in ipairs(core.registered_on_dignodes) do
-					callback(np, n2, nil)
-				end
-]]--
+			local drops = core.get_node_drops(n2.name, "")
+			core.remove_node(np)
+			local _, dropped_item
+			for _, dropped_item in ipairs(drops) do
+				core.add_item(np, dropped_item)
 			end
+			-- Run script hook
+			local _, callback
+			for _, callback in ipairs(core.registered_on_dignodes) do
+				callback(np, n2, nil)
+
+]]--
 			-- Create node and remove entity
 			core.add_node(np, self.node)
 			self.object:remove()
@@ -187,8 +182,10 @@ function nodeupdate_single(p, delay)
 		n_bottom = core.get_node(p_bottom)
 		-- Note: walkable is in the node definition, not in item groups
 		if core.registered_nodes[n_bottom.name] and
-				(core.get_item_group(n.name, "float") == 0 or core.registered_nodes[n_bottom.name].liquidtype == "none") and
-				(n.name ~= n_bottom.name or (core.registered_nodes[n_bottom.name].leveled and core.get_node_level(p_bottom) < core.get_node_max_level(p_bottom))) and
+				(core.get_item_group(n.name, "float") == 0 or
+					core.registered_nodes[n_bottom.name].liquidtype == "none") and
+				(n.name ~= n_bottom.name or (core.registered_nodes[n_bottom.name].leveled and
+					core.get_node_level(p_bottom) < core.get_node_max_level(p_bottom))) and
 				(not core.registered_nodes[n_bottom.name].walkable or
 					core.registered_nodes[n_bottom.name].buildable_to) then
 			if delay then
@@ -201,7 +198,7 @@ function nodeupdate_single(p, delay)
 			end
 		end
 	end
-	
+
 	if core.get_item_group(n.name, "attached_node") ~= 0 then
 		if not check_attached_node(p, n) then
 			drop_attached_node(p)
@@ -215,7 +212,7 @@ function nodeupdate(p, delay)
 	p.x = math.floor(p.x+0.5)
 	p.y = math.floor(p.y+0.5)
 	p.z = math.floor(p.z+0.5)
-	
+
 	for x = -1,1 do
 	for y = -1,1 do
 	for z = -1,1 do

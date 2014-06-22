@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes_extrabloated.h"
 #include "map.h"
+#include "camera.h"
 #include <set>
 #include <map>
 
@@ -125,8 +126,7 @@ public:
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,
 			int oldvalue, bool *sunlight_seen_result);
 
-
-	void renderPostFx();
+	void renderPostFx(CameraMode cam_mode);
 
 	// For debugging the status and position of MapBlocks
 	void renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks);

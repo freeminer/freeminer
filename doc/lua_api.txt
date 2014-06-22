@@ -1000,32 +1000,28 @@ vertlabel[<X>,<Y>;<label>]
 ^ label is the text on the label
 ^ Position and size units are inventory slots
 
-button[<X>,<Y>;<W>,<H>;<name>;<label>]
+button[<X>,<Y>;<W>,<H>;<name>;<label>;<tooltip>]
 ^ Clickable button. When clicked, fields will be sent.
 ^ x, y and name work as per field
 ^ w and h are the size of the button
 ^ label is the text on the button
 ^ Position and size units are inventory slots
+^ tooltip is optional
 
 image_button[<X>,<Y>;<W>,<H>;<texture name>;<name>;<label>]
 ^ x, y, w, h, and name work as per button
 ^ texture name is the filename of an image
 ^ Position and size units are inventory slots
 
-image_button[<X>,<Y>;<W>,<H>;<texture name>;<name>;<label>;<noclip>;<drawborder>]
-^ x, y, w, h, and name work as per button
-^ texture name is the filename of an image
-^ Position and size units are inventory slots
-^ noclip true meand imagebutton doesn't need to be within specified formsize
-^ drawborder draw button bodrer or not
-
 image_button[<X>,<Y>;<W>,<H>;<texture name>;<name>;<label>;<noclip>;<drawborder>;<pressed texture name>]
+image_button[<X>,<Y>;<W>,<H>;<texture name>;<name>;<label>;<noclip>;<drawborder>;<pressed texture name>;<tooltip>]
 ^ x, y, w, h, and name work as per button
 ^ texture name is the filename of an image
 ^ Position and size units are inventory slots
 ^ noclip true meand imagebutton doesn't need to be within specified formsize
 ^ drawborder draw button bodrer or not
 ^ pressed texture name is the filename of an image on pressed state
+^ tooltip is optional
 
 item_image_button[<X>,<Y>;<W>,<H>;<item name>;<name>;<label>]
 ^ x, y, w, h, name and label work as per button
@@ -1082,12 +1078,13 @@ dropdown[<X>,<Y>;<W>;<name>;<item 1>,<item 2>, ...,<item n>;<selected idx>]
 ^ index of currently selected dropdown item
 ^ color in hexadecimal format RRGGBB (only)
 
-checkbox[<X>,<Y>;<name>;<label>;<selected>]
+checkbox[<X>,<Y>;<name>;<label>;<selected>;<tooltip>]
 ^ show a checkbox
 ^ x and y position of checkbox
 ^ name fieldname data is transfered to lua
 ^ label to be shown left of checkbox
 ^ selected (optional) true/false
+^ tooltip (optional)
 
 table[<X>,<Y>;<W>,<H>;<name>;<cell 1>,<cell 2>,...,<cell n>;<selected idx>]
 ^ show scrollable table using options defined by the previous tableoptions[]
@@ -1327,6 +1324,9 @@ minetest.register_on_protection_violation(func(pos, name))
 ^ The provided function should check that the position is protected by the mod
   calling this function before it prints a message, if it does, to allow for
   multiple protection mods.
+minetest.register_on_item_eat(func(hp_change, replace_with_item, itemstack, user, pointed_thing))
+^ Called when an item is eaten, by minetest.item_eat
+^ Return true or itemstack to cancel the default item eat response (ie: hp increase)
 
 Other registration functions:
 minetest.register_chatcommand(cmd, chatcommand definition)
@@ -2622,10 +2622,11 @@ Decoration definition (register_decoration)
 
 Chatcommand definition (register_chatcommand)
 {
-    params = "<name> <privilege>", -- short parameter description
-    description = "Remove privilege from player", -- full description
-    privs = {privs=true}, -- require the "privs" privilege to run
-    func = function(name, param), -- called when command is run
+    params = "<name> <privilege>", -- Short parameter description
+    description = "Remove privilege from player", -- Full description
+    privs = {privs=true}, -- Require the "privs" privilege to run
+    func = function(name, param), -- Called when command is run.
+                                  -- Returns boolean success and text output.
 }
 
 Detached inventory callbacks

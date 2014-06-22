@@ -1323,6 +1323,11 @@ u16 Server::Receive()
 				"InvalidIncomingDataException: what()="
 				<<e.what()<<std::endl;
 	}
+	catch(SerializationError &e) {
+		infostream<<"Server::Receive(): "
+				"SerializationError: what()="
+				<<e.what()<<std::endl;
+	}
 	catch(con::PeerNotFoundException &e)
 	{
 		//NOTE: This is not needed anymore
@@ -1432,9 +1437,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 			actionstream << *i << " ";
 		}
 
-		actionstream<<player->getName();
-
-		actionstream<<std::endl;
+		actionstream << player->getName() <<std::endl;
 	}
 	return playersao;
 }
@@ -1830,7 +1833,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 
 	u8 peer_ser_ver = getClient(peer_id,InitDone)->serialization_version;
-	//u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
+	u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
 
 	if(peer_ser_ver == SER_FMT_VER_INVALID)
 	{
@@ -1854,7 +1857,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	else if(command == TOSERVER_CLIENT_READY) {
 		// clients <= protocol version 22 did not send ready message,
 		// they're already initialized
-		//assert(peer_proto_ver > 22);
+		if (peer_proto_ver <= 22) {
+			infostream << "Client sent message not expected by a "
+				<< "client using protocol version <= 22,"
+				<< "disconnecing peer_id: " << peer_id << std::endl;
+			m_con.DisconnectPeer(peer_id);
+			return;
+		}
 
 		PlayerSAO* playersao = StageTwoClientInit(peer_id);
 
@@ -4187,24 +4196,25 @@ bool Server::showFormspec(const char *playername, const std::string &formspec, c
 u32 Server::hudAdd(Player *player, HudElement *form) {
 	if (!player)
 		return -1;
-
-	u32 id = player->getFreeHudID();
-	if (id < player->hud.size())
-		player->hud[id] = form;
-	else
-		player->hud.push_back(form);
 	
+	u32 id = player->addHud(form);
+
 	SendHUDAdd(player->peer_id, id, form);
+
 	return id;
 }
 
 bool Server::hudRemove(Player *player, u32 id) {
-	if (!player || id >= player->hud.size() || !player->hud[id])
+	if (!player)
 		return false;
 
-	delete player->hud[id];
-	player->hud[id] = NULL;
+	HudElement* todel = player->removeHud(id);
+
+	if (!todel)
+		return false;
 	
+	delete todel;
+
 	SendHUDRemove(player->peer_id, id);
 	return true;
 }
@@ -4683,7 +4693,7 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 			isSingleplayer());
 
 	/* Clean up old HUD elements from previous sessions */
-	player->hud.clear();
+	player->clearHud();
 
 	/* Add object to environment */
 	m_env->addActiveObject(playersao);

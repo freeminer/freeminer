@@ -34,13 +34,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "sound_openal.h"
 #include "clouds.h"
 #include "httpfetch.h"
+#include "util/numeric.h"
 
 #include <IGUIStaticText.h>
 #include <ICameraSceneNode.h>
-
-#if USE_CURL
-#include <curl/curl.h>
-#endif
 
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */
@@ -143,7 +140,7 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 {
 	//initialize texture pointers
 	for (unsigned int i = 0; i < TEX_LAYER_MAX; i++) {
-		m_textures[i] = 0;
+		m_textures[i].texture = NULL;
 	}
 	// is deleted by guiformspec!
 	m_buttonhandler = new TextDestGuiEngine(this);
@@ -211,8 +208,9 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 	}
 
 	m_menu->quitMenu();
-	m_menu->drop();
-	m_menu = 0;
+	m_menu->remove();
+	delete m_menu;
+	m_menu = NULL;
 }
 
 /******************************************************************************/
@@ -241,7 +239,6 @@ bool GUIEngine::loadMainMenuScript()
 /******************************************************************************/
 void GUIEngine::run()
 {
-
 	// Always create clouds because they may or may not be
 	// needed based on the game selected
 	video::IVideoDriver* driver = m_device->getVideoDriver();
@@ -286,8 +283,6 @@ GUIEngine::~GUIEngine()
 		m_sound_manager = NULL;
 	}
 
-	//TODO: clean up m_menu here
-
 	infostream<<"GUIEngine: Deinitializing scripting"<<std::endl;
 	delete m_script;
 
@@ -295,12 +290,12 @@ GUIEngine::~GUIEngine()
 
 	//clean up texture pointers
 	for (unsigned int i = 0; i < TEX_LAYER_MAX; i++) {
-		if (m_textures[i] != 0)
-			driver->removeTexture(m_textures[i]);
+		if (m_textures[i].texture != NULL)
+			driver->removeTexture(m_textures[i].texture);
 	}
 
 	delete m_texture_source;
-	
+
 	if (m_cloud.clouds)
 		m_cloud.clouds->drop();
 }
@@ -365,7 +360,7 @@ void GUIEngine::drawBackground(video::IVideoDriver* driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND];
+	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture){
@@ -375,8 +370,27 @@ void GUIEngine::drawBackground(video::IVideoDriver* driver)
 		return;
 	}
 
-	/* Draw background texture */
 	v2u32 sourcesize = texture->getOriginalSize();
+
+	if (m_textures[TEX_LAYER_BACKGROUND].tile)
+	{
+		v2u32 tilesize(
+				MYMAX(sourcesize.X,m_textures[TEX_LAYER_BACKGROUND].minsize),
+				MYMAX(sourcesize.Y,m_textures[TEX_LAYER_BACKGROUND].minsize));
+		for (unsigned int x = 0; x < screensize.X; x += tilesize.X )
+		{
+			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
+			{
+				driver->draw2DImage(texture,
+					core::rect<s32>(x, y, x+tilesize.X, y+tilesize.Y),
+					core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+					NULL, NULL, true);
+			}
+		}
+		return;
+	}
+
+	/* Draw background texture */
 	driver->draw2DImage(texture,
 		core::rect<s32>(0, 0, screensize.X, screensize.Y),
 		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
@@ -388,7 +402,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver* driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY];
+	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture)
@@ -407,7 +421,7 @@ void GUIEngine::drawHeader(video::IVideoDriver* driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_HEADER];
+	video::ITexture* texture = m_textures[TEX_LAYER_HEADER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
@@ -441,7 +455,7 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER];
+	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
@@ -469,29 +483,38 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 }
 
 /******************************************************************************/
-bool GUIEngine::setTexture(texture_layer layer,std::string texturepath) {
-
+bool GUIEngine::setTexture(texture_layer layer, std::string texturepath,
+		bool tile_image, unsigned int minsize)
+{
 	video::IVideoDriver* driver = m_device->getVideoDriver();
 	assert(driver != 0);
 
-	if (m_textures[layer] != 0)
+	if (m_textures[layer].texture != NULL)
 	{
-		driver->removeTexture(m_textures[layer]);
-		m_textures[layer] = 0;
+		driver->removeTexture(m_textures[layer].texture);
+		m_textures[layer].texture = NULL;
 	}
 
 	if ((texturepath == "") || !fs::PathExists(texturepath))
+	{
 		return false;
+	}
 
-	m_textures[layer] = driver->getTexture(texturepath.c_str());
+	m_textures[layer].texture = driver->getTexture(texturepath.c_str());
+	m_textures[layer].tile    = tile_image;
+	m_textures[layer].minsize = minsize;
 
-	if (m_textures[layer] == 0) return false;
+	if (m_textures[layer].texture == NULL)
+	{
+		return false;
+	}
 
 	return true;
 }
 
 /******************************************************************************/
-bool GUIEngine::downloadFile(std::string url,std::string target) {
+bool GUIEngine::downloadFile(std::string url,std::string target)
+{
 #if USE_CURL
 	std::ofstream targetfile(target.c_str(), std::ios::out | std::ios::binary);
 
@@ -518,7 +541,8 @@ bool GUIEngine::downloadFile(std::string url,std::string target) {
 }
 
 /******************************************************************************/
-void GUIEngine::setTopleftText(std::string append) {
+void GUIEngine::setTopleftText(std::string append)
+{
 	std::string toset = std::string("Freeminer ") + minetest_version_hash;
 
 	if (append != "") {
@@ -544,7 +568,8 @@ void GUIEngine::stopSound(s32 handle)
 
 /******************************************************************************/
 unsigned int GUIEngine::queueAsync(std::string serialized_func,
-		std::string serialized_params) {
+		std::string serialized_params)
+{
 	return m_script->queueAsync(serialized_func, serialized_params);
 }
 
