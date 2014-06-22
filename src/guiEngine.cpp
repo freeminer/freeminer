@@ -39,10 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIStaticText.h>
 #include <ICameraSceneNode.h>
 
-#if USE_CURL
-#include <curl/curl.h>
-#endif
-
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */
 /******************************************************************************/
@@ -300,7 +296,7 @@ GUIEngine::~GUIEngine()
 	}
 
 	delete m_texture_source;
-	
+
 	if (m_cloud.clouds)
 		m_cloud.clouds->drop();
 }

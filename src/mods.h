@@ -33,10 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "json/json.h"
 #include "config.h"
 
-#if USE_CURL
-#include <curl/curl.h>
-#endif
-
 #define MODNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyz0123456789_"
 
 class ModError : public std::exception
@@ -107,7 +103,7 @@ public:
 		m_name_conflicts()
 	{}
 
-		
+
 	ModConfiguration(std::string worldpath);
 
 	// checks if all dependencies are fullfilled.
