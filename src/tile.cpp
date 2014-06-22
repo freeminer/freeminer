@@ -160,10 +160,6 @@ void clearTextureNameCache()
 }
 
 /*
-	Stores internal information about a texture.
-*/
-
-/*
 	SourceImageCache: A cache used for storing source images.
 */
 
@@ -447,10 +443,6 @@ TextureSource::~TextureSource()
 		//cleanup texture
 		if (iter->texture)
 			driver->removeTexture(iter->texture);
-
-		//cleanup source image
-		if (iter->img)
-			iter->img->drop();
 	}
 	m_textureinfo_cache.clear();
 
@@ -653,23 +645,17 @@ u32 TextureSource::getTextureIdDirect(const std::string &name)
 
 		TextureInfo *ti = &m_textureinfo_cache[base_image_id];
 
-		if(ti->img == NULL)
+		if(ti->texture == NULL)
 		{
-			infostream<<"getTextureIdDirect(): WARNING: NULL image in "
+			infostream<<"getTextureIdDirect(): WARNING: NULL Texture in "
 					<<"cache: \""<<base_image_name<<"\""
 					<<std::endl;
 		}
 		else
 		{
-			core::dimension2d<u32> dim = ti->img->getDimension();
+			core::dimension2d<u32> dim = ti->texture->getSize();
 
-			baseimg = driver->createImage(video::ECF_A8R8G8B8, dim);
-
-			ti->img->copyTo(
-					baseimg, // target
-					v2s32(0,0), // position in target
-					core::rect<s32>(v2s32(0,0), dim) // from
-			);
+			baseimg = driver->createImage(ti->texture,v2s32(0,0), dim);
 
 			/*infostream<<"getTextureIdDirect(): Loaded \""
 					<<base_image_name<<"\" from image cache"
@@ -714,6 +700,9 @@ u32 TextureSource::getTextureIdDirect(const std::string &name)
 
 	u32 id = m_textureinfo_cache.size();
 	TextureInfo ti(name, t, baseimg);
+	if (baseimg)
+		baseimg->drop();
+
 	m_textureinfo_cache.push_back(ti);
 	m_name_to_id[name] = id;
 
@@ -806,12 +795,13 @@ void TextureSource::rebuildImagesAndTextures()
 		video::IImage *img = generateImageFromScratch(ti->name);
 		// Create texture from resulting image
 		video::ITexture *t = NULL;
-		if(img)
+		if(img) {
 			t = driver->addTexture(ti->name.c_str(), img);
+			img->drop();
+		}
 		video::ITexture *t_old = ti->texture;
 		// Replace texture
 		ti->texture = t;
-		ti->img = img;
 
 		if (t_old != 0)
 			m_texture_trash.push_back(t_old);
@@ -978,7 +968,7 @@ bool TextureSource::generateImage(std::string part_of_name, video::IImage *& bas
 
 		if (image == NULL) {
 			if (part_of_name != "") {
-				if (part_of_name.find("_normal.png") == std::string::npos){			
+				if (part_of_name.find("_normal.png") == std::string::npos){
 					errorstream<<"generateImage(): Could not load image \""
 						<<part_of_name<<"\""<<" while building texture"<<std::endl;
 					errorstream<<"generateImage(): Creating a dummy"

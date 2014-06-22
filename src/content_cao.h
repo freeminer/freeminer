@@ -105,6 +105,8 @@ private:
 	u8 m_last_light;
 	bool m_is_visible;
 
+	std::vector<u16> m_children;
+
 public:
 	GenericCAO(IGameDef *gamedef, ClientEnvironment *env);
 

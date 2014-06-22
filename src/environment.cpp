@@ -2161,6 +2161,8 @@ ClientEnvironment::ClientEnvironment(ClientMap *map, scene::ISceneManager *smgr,
 	,m_active_objects_client_last(0),
 	m_move_max_loop(10)
 {
+	char zero = 0;
+	memset(m_attachements, zero, sizeof(m_attachements));
 }
 
 ClientEnvironment::~ClientEnvironment()
