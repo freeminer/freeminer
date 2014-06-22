@@ -2508,7 +2508,7 @@ s16 Map::getHeat(v3s16 p, bool no_random)
 	if(block != NULL) {
 		s16 value = block->heat;
 		// compatibility with minetest
-		if (value == HUMIDITY_UNDEFINED)
+		if (value == HEAT_UNDEFINED)
 			return 0;
 		return value + (no_random ? 0 : myrand_range(0, 1));
 	}
