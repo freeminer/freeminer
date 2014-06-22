@@ -322,7 +322,6 @@ private:
 
 	typedef struct {
 		v2s32 size;
-		s32 helptext_h;
 		core::rect<s32> rect;
 		v2s32 basepos;
 		int bp_set;
@@ -384,6 +383,8 @@ private:
 		s32 time;
 	};
 	clickpos m_doubleclickdetect[2];
+
+	int m_btn_height;
 };
 
 class FormspecFormSource: public IFormSource

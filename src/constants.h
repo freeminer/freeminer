@@ -94,11 +94,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Maximum hit points of a player
 #define PLAYER_MAX_HP 20
 
-// compatibility with minetest:
+// compatibility with OLD minetest 0.4.9: // TODO: REMOVE ON NEXT !!!
 /*
 	Environmental condition constants
 */
 #define HEAT_UNDEFINED     (-0x7fff-1)
 #define HUMIDITY_UNDEFINED (-0x7fff-1)
+
+/*
+ *    GUI related things
+ */
+#define LEGACY_SCALING                                     (2./3.)
+#define DEFAULT_FONT_SIZE                  (13.0 / LEGACY_SCALING)
+#define DEFAULT_IMGSIZE                                     (48.0)
+#define DEFAULT_XSPACING                    ((15.0 + (1.0 / 3.0)))
+#define DEFAULT_YSPACING                                     (9.0)
 
 #endif

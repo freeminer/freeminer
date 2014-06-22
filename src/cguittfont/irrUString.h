@@ -41,7 +41,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#if !defined(__FreeBSD__)
 #include <endian.h>
+#endif
 
 #ifdef USTRING_CPP0X
 #	include <utility>
