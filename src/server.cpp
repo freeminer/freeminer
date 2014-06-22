@@ -1513,9 +1513,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 			actionstream << *i << " ";
 		}
 
-		actionstream<<player->getName();
-
-		actionstream<<std::endl;
+		actionstream << player->getName() <<std::endl;
 	}
 	return playersao;
 }
