@@ -2750,8 +2750,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				return true;
 			}
 		}
-		if((event.GUIEvent.EventType==gui::EGET_BUTTON_CLICKED) ||
-				(event.GUIEvent.EventType==gui::EGET_CHECKBOX_CHANGED)) {
+		if((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
+				(event.GUIEvent.EventType == gui::EGET_CHECKBOX_CHANGED) ||
+				(event.GUIEvent.EventType == gui::EGET_COMBO_BOX_CHANGED)) {
 			unsigned int btn_id = event.GUIEvent.Caller->getID();
 
 			if (btn_id == 257) {
@@ -2783,14 +2784,36 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						}
 						return true;
 					} else {
-						acceptInput();
+						acceptInput(quit_mode_no);
 						s.send = false;
 						return true;
 					}
 				}
+				if ((s.ftype == f_DropDown) &&
+						(s.fid == event.GUIEvent.Caller->getID())) {
+					// only send the changed dropdown
+					for(u32 i=0; i<m_fields.size(); i++) {
+						FieldSpec &s2 = m_fields[i];
+						if (s2.ftype == f_DropDown) {
+							s2.send = false;
+						}
+					}
+					s.send = true;
+					acceptInput(quit_mode_no);
+
+					// revert configuration to make sure dropdowns are sent on
+					// regular button click
+					for(u32 i=0; i<m_fields.size(); i++) {
+						FieldSpec &s2 = m_fields[i];
+						if (s2.ftype == f_DropDown) {
+							s2.send = true;
+						}
+					}
+					return true;
+				}
 			}
 		}
-		if(event.GUIEvent.EventType==gui::EGET_EDITBOX_ENTER) {
+		if(event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
 			if(event.GUIEvent.Caller->getID() > 257) {
 
 				if (m_allowclose) {
@@ -2805,7 +2828,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		if(event.GUIEvent.EventType==gui::EGET_TABLE_CHANGED) {
+		if(event.GUIEvent.EventType == gui::EGET_TABLE_CHANGED) {
 			int current_id = event.GUIEvent.Caller->getID();
 			if(current_id > 257) {
 				// find the element that was clicked
