@@ -86,6 +86,7 @@ MapBlock::~MapBlock()
 
 	if(data)
 		delete[] data;
+	data = nullptr;
 }
 
 bool MapBlock::isValidPositionParent(v3s16 p)
