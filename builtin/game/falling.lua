@@ -113,7 +113,6 @@ core.register_entity(":__builtin:falling_node", {
 				callback(np, n2, nil)
 
 ]]--
-			end
 			-- Create node and remove entity
 			core.add_node(np, self.node)
 			self.object:remove()
