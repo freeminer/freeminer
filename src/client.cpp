@@ -2600,10 +2600,10 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	infostream<<"- Updating node aliases"<<std::endl;
 	m_nodedef->updateAliases(m_itemdef);
 
-	// Update node textures
+	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
 	if (!no_output)
-		m_nodedef->updateTextures(m_tsrc);
+	m_nodedef->updateTextures(m_tsrc, m_shsrc);
 
 	// Preload item textures and meshes if configured to
 	if(!no_output && g_settings->getBool("preload_item_visuals"))
