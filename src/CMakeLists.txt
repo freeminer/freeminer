@@ -499,6 +499,7 @@ set(minetest_SRCS
 	guiFileSelectMenu.cpp
 	convert_json.cpp
 	FMColoredString.cpp
+	drawscene.cpp
 	${minetest_SCRIPT_SRCS}
 )
 
