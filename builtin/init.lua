@@ -28,7 +28,12 @@ dofile(scriptdir.."key_value_storage.lua")
 if INIT == "game" then
 	dofile(gamepath.."init.lua")
 elseif INIT == "mainmenu" then
-	dofile(core.get_mainmenu_path()..DIR_DELIM.."init.lua")
+	local mainmenuscript = core.setting_get("main_menu_script")
+	if mainmenuscript ~= nil and mainmenuscript ~= "" then
+		dofile(mainmenuscript)
+	else
+		dofile(core.get_mainmenu_path()..DIR_DELIM.."init.lua")
+	end
 elseif INIT == "async" then
 	dofile(asyncpath.."init.lua")
 else
