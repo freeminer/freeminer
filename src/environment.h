@@ -43,6 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "connection.h"
 #include "fmbitset.h"
+#include "util/lock.h"
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -100,11 +101,9 @@ public:
 
 	void stepTimeOfDay(float dtime);
 
-	void setTimeOfDaySpeed(float speed)
-	{ m_time_of_day_speed = speed; }
+	void setTimeOfDaySpeed(float speed);
 	
-	float getTimeOfDaySpeed()
-	{ return m_time_of_day_speed; }
+	float getTimeOfDaySpeed();
 
 	void setDayNightRatioOverride(bool enable, u32 value)
 	{
@@ -128,6 +127,9 @@ protected:
 	// Overriding the day-night ratio is useful for custom sky visuals
 	bool m_enable_day_night_ratio_override;
 	u32 m_day_night_ratio_override;
+	
+private:
+	locker m_lock;
 
 };
 
@@ -555,7 +557,7 @@ public:
 	// Get event from queue. CEE_NONE is returned if queue is empty.
 	ClientEnvEvent getClientEvent();
 
-	std::vector<core::vector2d<int> > attachment_list; // X is child ID, Y is parent ID
+	u16 m_attachements[USHRT_MAX];
 
 	std::list<std::string> getPlayerNames()
 	{ return m_player_names; }
