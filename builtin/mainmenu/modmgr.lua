@@ -18,7 +18,7 @@
 --------------------------------------------------------------------------------
 function get_mods(path,retval,modpack)
 
-	local mods = engine.get_dirlist(path,true)
+	local mods = core.get_dirlist(path,true)
 	for i=1,#mods,1 do
 		local toadd = {}
 		local modpackfile = nil
@@ -55,8 +55,8 @@ function modmgr.extract(modfile)
 
 		if tempfolder ~= nil and
 			tempfolder ~= "" then
-			engine.create_dir(tempfolder)
-			if engine.extract_zip(modfile.name,tempfolder) then
+			core.create_dir(tempfolder)
+			if core.extract_zip(modfile.name,tempfolder) then
 				return tempfolder
 			end
 		end
@@ -92,7 +92,7 @@ function modmgr.getbasefolder(temppath)
 				}
 	end
 
-	local subdirs = engine.get_dirlist(temppath,true)
+	local subdirs = core.get_dirlist(temppath,true)
 
 	--only single mod or modpack allowed
 	if #subdirs ~= 1 then
@@ -260,7 +260,7 @@ function modmgr.tab()
 		end
 
 		retval = retval
-				.. "image[6.5,5;3,2;" .. engine.formspec_escape(modscreenshot) .. "]"
+				.. "image[6.5,5;3,2;" .. core.formspec_escape(modscreenshot) .. "]"
 				.. "label[9.5,5.6;" .. selected_mod.name .. "]"
 
 		local descriptionlines = nil
@@ -270,7 +270,7 @@ function modmgr.tab()
 		if error == nil then
 			descriptiontext = descriptionfile:read("*all")
 
-			descriptionlines = engine.splittext(descriptiontext,42)
+			descriptionlines = core.splittext(descriptiontext,42)
 			descriptionfile:close()
 		else
 			descriptionlines = {}
@@ -282,7 +282,7 @@ function modmgr.tab()
 			"textlist[6.5,7.2;8,2.4;description;"
 
 		for i=1,#descriptionlines,1 do
-			retval = retval .. engine.formspec_escape(descriptionlines[i]) .. ","
+			retval = retval .. core.formspec_escape(descriptionlines[i]) .. ","
 		end
 
 
@@ -408,7 +408,7 @@ end
 function modmgr.dialog_configure_world()
 	modmgr.precheck()
 
-	local worldspec = engine.get_worlds()[modmgr.world_config_selected_world]
+	local worldspec = core.get_worlds()[modmgr.world_config_selected_world]
 	local mod = filterlist.get_list(modmgr.modlist)[modmgr.world_config_selected_mod]
 
 	local retval =
@@ -543,7 +543,7 @@ function modmgr.get_worldconfig(worldpath)
 		if key == "gameid" then
 			worldconfig.id = value
 		else
-			worldconfig.global_mods[key] = engine.is_yes(value)
+			worldconfig.global_mods[key] = core.is_yes(value)
 		end
 	end
 
@@ -562,12 +562,12 @@ function modmgr.handle_modmgr_buttons(fields)
 		}
 
 	if fields["modlist"] ~= nil then
-		local event = engine.explode_textlist_event(fields["modlist"])
+		local event = core.explode_textlist_event(fields["modlist"])
 		modmgr.selected_mod = event.index
 	end
 
 	if fields["btn_mod_mgr_install_local"] ~= nil then
-		engine.show_file_open_dialog("mod_mgt_open_dlg",fgettext("Select Mod File:"))
+		core.show_file_open_dialog("mod_mgt_open_dlg",fgettext("Select Mod File:"))
 	end
 
 	if fields["btn_mod_mgr_download"] ~= nil then
@@ -626,8 +626,8 @@ function modmgr.installmod(modfilename,basename)
 		end
 
 		if clean_path ~= nil then
-			local targetpath = engine.get_modpath() .. DIR_DELIM .. clean_path
-			if not engine.copy_dir(basefolder.path,targetpath) then
+			local targetpath = core.get_modpath() .. DIR_DELIM .. clean_path
+			if not core.copy_dir(basefolder.path,targetpath) then
 				gamedata.errormessage = fgettext("Failed to install $1 to $2", basename, targetpath)
 			end
 		else
@@ -648,14 +648,14 @@ function modmgr.installmod(modfilename,basename)
 		end
 
 		if targetfolder ~= nil and modmgr.isValidModname(targetfolder) then
-			local targetpath = engine.get_modpath() .. DIR_DELIM .. targetfolder
-			engine.copy_dir(basefolder.path,targetpath)
+			local targetpath = core.get_modpath() .. DIR_DELIM .. targetfolder
+			core.copy_dir(basefolder.path,targetpath)
 		else
 			gamedata.errormessage = fgettext("Install Mod: unable to find real modname for: $1", modfilename)
 		end
 	end
 
-	engine.delete_dir(modpath)
+	core.delete_dir(modpath)
 
 	modmgr.refresh_globals()
 
@@ -666,9 +666,9 @@ function modmgr.handle_rename_modpack_buttons(fields)
 
 	if fields["dlg_rename_modpack_confirm"] ~= nil then
 		local mod = filterlist.get_list(modmgr.global_mods)[modmgr.selected_mod]
-		local oldpath = engine.get_modpath() .. DIR_DELIM .. mod.name
-		local targetpath = engine.get_modpath() .. DIR_DELIM .. fields["te_modpack_name"]
-		engine.copy_dir(oldpath,targetpath,false)
+		local oldpath = core.get_modpath() .. DIR_DELIM .. mod.name
+		local targetpath = core.get_modpath() .. DIR_DELIM .. fields["te_modpack_name"]
+		core.copy_dir(oldpath,targetpath,false)
 		modmgr.refresh_globals()
 		modmgr.selected_mod = filterlist.get_current_index(modmgr.global_mods,
 			filterlist.raw_index_by_uid(modmgr.global_mods, fields["te_modpack_name"]))
@@ -677,13 +677,13 @@ function modmgr.handle_rename_modpack_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = engine.setting_get("main_menu_tab")
+		current_tab = core.setting_get("main_menu_tab")
 		}
 end
 --------------------------------------------------------------------------------
 function modmgr.handle_configure_world_buttons(fields)
 	if fields["world_config_modlist"] ~= nil then
-		local event = engine.explode_textlist_event(fields["world_config_modlist"])
+		local event = core.explode_textlist_event(fields["world_config_modlist"])
 		modmgr.world_config_selected_mod = event.index
 
 		if event.type == "DCL" then
@@ -696,7 +696,7 @@ function modmgr.handle_configure_world_buttons(fields)
 	end
 
 	if fields["cb_mod_enable"] ~= nil then
-		local toset = engine.is_yes(fields["cb_mod_enable"])
+		local toset = core.is_yes(fields["cb_mod_enable"])
 		modmgr.world_config_enable_mod(toset)
 	end
 
@@ -713,7 +713,7 @@ function modmgr.handle_configure_world_buttons(fields)
 			current = {}
 		end
 
-		if engine.is_yes(fields["cb_hide_gamemods"]) then
+		if core.is_yes(fields["cb_hide_gamemods"]) then
 			current.hide_game = true
 			modmgr.hide_gamemods = true
 		else
@@ -731,7 +731,7 @@ function modmgr.handle_configure_world_buttons(fields)
 			current = {}
 		end
 
-		if engine.is_yes(fields["cb_hide_mpcontent"]) then
+		if core.is_yes(fields["cb_hide_mpcontent"]) then
 			current.hide_modpackcontents = true
 			modmgr.hide_modpackcontents = true
 		else
@@ -743,7 +743,7 @@ function modmgr.handle_configure_world_buttons(fields)
 	end
 
 	if fields["btn_config_world_save"] then
-		local worldspec = engine.get_worlds()[modmgr.world_config_selected_world]
+		local worldspec = core.get_worlds()[modmgr.world_config_selected_world]
 
 		local filename = worldspec.path ..
 				DIR_DELIM .. "world.mt"
@@ -774,7 +774,7 @@ function modmgr.handle_configure_world_buttons(fields)
 		end
 
 		if not worldfile:write() then
-			engine.log("error", "Failed to write world config file")
+			core.log("error", "Failed to write world config file")
 		end
 
 		modmgr.modlist = nil
@@ -783,7 +783,7 @@ function modmgr.handle_configure_world_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = engine.setting_get("main_menu_tab")
+			current_tab = core.setting_get("main_menu_tab")
 		}
 	end
 
@@ -794,7 +794,7 @@ function modmgr.handle_configure_world_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = engine.setting_get("main_menu_tab")
+			current_tab = core.setting_get("main_menu_tab")
 		}
 	end
 
@@ -814,7 +814,7 @@ end
 --------------------------------------------------------------------------------
 function modmgr.world_config_enable_mod(toset)
 	local mod = filterlist.get_list(modmgr.modlist)
-		[engine.get_textlist_index("world_config_modlist")]
+		[core.get_textlist_index("world_config_modlist")]
 
 	if mod.typ == "game_mod" then
 		-- game mods can't be enabled or disabled
@@ -844,8 +844,8 @@ function modmgr.handle_delete_mod_buttons(fields)
 
 		if mod.path ~= nil and
 			mod.path ~= "" and
-			mod.path ~= engine.get_modpath() then
-			if not engine.delete_dir(mod.path) then
+			mod.path ~= core.get_modpath() then
+			if not core.delete_dir(mod.path) then
 				gamedata.errormessage = fgettext("Modmgr: failed to delete \"$1\"", mod.path)
 			end
 			modmgr.refresh_globals()
@@ -857,7 +857,7 @@ function modmgr.handle_delete_mod_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = engine.setting_get("main_menu_tab")
+		current_tab = core.setting_get("main_menu_tab")
 		}
 end
 
@@ -882,7 +882,7 @@ function modmgr.preparemodlist(data)
 	local game_mods = {}
 
 	--read global mods
-	local modpath = engine.get_modpath()
+	local modpath = core.get_modpath()
 
 	if modpath ~= nil and
 		modpath ~= "" then
@@ -924,9 +924,9 @@ function modmgr.preparemodlist(data)
 				end
 			end
 			if element ~= nil then
-				element.enabled = engine.is_yes(value)
+				element.enabled = core.is_yes(value)
 			else
-				engine.log("info", "Mod: " .. key .. " " .. dump(value) .. " but not found")
+				core.log("info", "Mod: " .. key .. " " .. dump(value) .. " but not found")
 			end
 		end
 	end
@@ -937,7 +937,7 @@ end
 --------------------------------------------------------------------------------
 function modmgr.init_worldconfig()
 	modmgr.precheck()
-	local worldspec = engine.get_worlds()[modmgr.world_config_selected_world]
+	local worldspec = core.get_worlds()[modmgr.world_config_selected_world]
 
 	if worldspec ~= nil then
 		--read worldconfig
