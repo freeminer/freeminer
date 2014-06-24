@@ -105,6 +105,18 @@ void Environment::removePlayer(u16 peer_id)
 	}
 }
 
+void Environment::removePlayer(const std::string &name)
+{
+	for (std::list<Player*>::iterator it = m_players.begin();
+			it != m_players.end(); ++it) {
+		if ((*it)->getName() == name) {
+			delete *it;
+			m_players.erase(it);
+			return;
+		}
+	}
+}
+
 Player * Environment::getPlayer(u16 peer_id)
 {
 	for(std::list<Player*>::iterator i = m_players.begin();
@@ -341,16 +353,18 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 	ServerEnvironment
 */
 
-ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
-                                     GameScripting *scriptIface, Circuit* circuit,
-                                     IGameDef *gamedef):
+ServerEnvironment::ServerEnvironment(ServerMap *map,
+		GameScripting *scriptIface,
+		Circuit* circuit,
+		IGameDef *gamedef,
+		const std::string &path_world) :
 	m_abmhandler(NULL),
 	m_game_time_start(0),
-	m_savedir(savedir),
 	m_map(map),
 	m_script(scriptIface),
 	m_circuit(circuit),
 	m_gamedef(gamedef),
+	m_path_world(path_world),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
 	m_active_block_abm_last(0),
@@ -364,19 +378,11 @@ ServerEnvironment::ServerEnvironment(const std::string &savedir, ServerMap *map,
 {
 	m_use_weather = g_settings->getBool("weather");
 	try {
-		m_key_value_storage = new KeyValueStorage(savedir, "key_value_storage");
-		m_players_storage = new KeyValueStorage(savedir, "players");
+		m_key_value_storage = new KeyValueStorage(path_world, "key_value_storage");
+		m_players_storage = new KeyValueStorage(path_world, "players");
 	} catch(KeyValueStorageException &e) {
 		errorstream << "Cant open KV database: "<< e.what() << std::endl;
 	}
-}
-
-Player * ServerEnvironment::getPlayer(const std::string &name)
-{
-	Player *player = Environment::getPlayer(name);
-	if (player)
-		return player;
-	return deSerializePlayer(name);
 }
 
 ServerEnvironment::~ServerEnvironment()
@@ -442,80 +448,90 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 	return true;
 }
 
-void ServerEnvironment::serializePlayers(const std::string &savedir)
+void ServerEnvironment::saveLoadedPlayers()
 {
-	//std::string players_path = savedir + "/players";
-	//fs::CreateDir(players_path);
-
-	std::list<Player*>::iterator i = m_players.begin();
+	auto i = m_players.begin();
 	while (i != m_players.end())
 	{
-		Player *player = *i;
-		try {
-			Json::Value player_json;
-			player_json << *player;
-			m_players_storage->put_json((std::string("p.") + player->getName()).c_str(), player_json);
-		} catch (...) { }
-		// TODO: remove old file storage:
-
-		player->need_save = 0;
-
-		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
-			delete player;
-			i = m_players.erase(i);
-		} else {
-			++i;
-		}
+		auto *player = *i;
+		savePlayer(player->getName());
 	}
-
-	//infostream<<"Saved "<<saved_players.size()<<" players."<<std::endl;
 }
 
-Player * ServerEnvironment::deSerializePlayer(const std::string &name)
+void ServerEnvironment::savePlayer(const std::string &playername)
 {
-	try {
+	auto *player = getPlayer(playername);
+	if (!player)
+		return;
 	Json::Value player_json;
-	m_players_storage->get_json(("p." + name).c_str(), player_json);
-	verbosestream<<"Reading kv player "<<name<<std::endl;
-	if (!player_json.empty()) {
-		Player *player = new RemotePlayer(m_gamedef);
-		player_json >> *player;
-		addPlayer(player);
-		return player;
+	player_json << *player;
+	m_players_storage->put_json(std::string("p.") + player->getName(), player_json);
+}
+
+Player * ServerEnvironment::loadPlayer(const std::string &playername)
+{
+	auto *player = getPlayer(playername);
+	bool newplayer = false;
+	bool found = false;
+	if (!player) {
+		player = new RemotePlayer(m_gamedef);
+		newplayer = true;
 	}
+
+	try {
+		Json::Value player_json;
+		m_players_storage->get_json(("p." + playername).c_str(), player_json);
+		verbosestream<<"Reading kv player "<<playername<<std::endl;
+		if (!player_json.empty()) {
+			player_json >> *player;
+			if (newplayer) {
+				addPlayer(player);
+			}
+			return player;
+		}
 	} catch (...)  {
 	}
 
 	//TODO: REMOVE OLD SAVE TO FILE:
 
-	if(!string_allowed(name, PLAYERNAME_ALLOWED_CHARS) || !name.size()) {
-		infostream<<"Not loading player with invalid name: "<<name<<std::endl;
-		return NULL;
+	if(!string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) || !playername.size()) {
+		infostream<<"Not loading player with invalid name: "<<playername<<std::endl;
+		return nullptr;
 	}
-	std::string path = m_map->m_savedir + "/players" + "/" + name;
 
-	infostream<<"Checking player file "<<path<<std::endl;
-	Player *player = new RemotePlayer(m_gamedef);
-	verbosestream<<"Reading player "<<name<<" from " <<path<<std::endl;
-	std::ifstream is(path.c_str(), std::ios_base::binary);
-	if(is.good() == false || is.eof()) {
-		infostream<<"Failed to read "<<path<<std::endl;
+	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
+
+	RemotePlayer testplayer(m_gamedef);
+	std::string path = players_path + playername;
+		// Open file and deserialize
+		std::ifstream is(path.c_str(), std::ios_base::binary);
+		if (!is.good()) {
+			return NULL;
+		}
+		try {
+		testplayer.deSerialize(is, path);
+		} catch (SerializationError e) {
+			errorstream<<e.what()<<std::endl;
+			return nullptr;
+		}
+		if (testplayer.getName() == playername) {
+			*player = testplayer;
+			found = true;
+		}
+	if (!found) {
+		infostream << "Player file for player " << playername
+				<< " not found" << std::endl;
 		return NULL;
 	}
-	try {
-		player->deSerialize(is, name);
-	} catch (SerializationError e) {
-		errorstream<<e.what()<<std::endl;
-		return NULL;
+	if (newplayer) {
+		addPlayer(player);
 	}
-	player->path = path;
-	addPlayer(player);
 	return player;
 }
 
-void ServerEnvironment::saveMeta(const std::string &savedir)
+void ServerEnvironment::saveMeta()
 {
-	std::string path = savedir + "/env_meta.txt";
+	std::string path = m_path_world + DIR_DELIM "env_meta.txt";
 
 	// Open file and serialize
 	std::ostringstream ss(std::ios_base::binary);
@@ -533,9 +549,9 @@ void ServerEnvironment::saveMeta(const std::string &savedir)
 	}
 }
 
-void ServerEnvironment::loadMeta(const std::string &savedir)
+void ServerEnvironment::loadMeta()
 {
-	std::string path = savedir + "/env_meta.txt";
+	std::string path = m_path_world + DIR_DELIM "env_meta.txt";
 
 	// Open file and deserialize
 	std::ifstream is(path.c_str(), std::ios_base::binary);

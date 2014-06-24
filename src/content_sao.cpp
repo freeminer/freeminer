@@ -1036,6 +1036,8 @@ void PlayerSAO::removingFromEnvironment()
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
+		m_env->savePlayer(m_player->getName());
+		m_env->removePlayer(m_player->getName());
 	}
 }
 
@@ -1469,7 +1471,6 @@ void PlayerSAO::disconnected()
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
-		m_player->need_save = 1;
 	}
 }
 

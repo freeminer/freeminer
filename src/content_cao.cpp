@@ -671,7 +671,7 @@ GenericCAO::~GenericCAO()
 {
 	if(m_is_player)
 	{
-		m_env->removePlayerName(m_name.c_str());
+		m_env->removePlayerName(m_name);
 	}
 }
 
