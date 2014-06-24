@@ -48,7 +48,6 @@ Player::Player(IGameDef *gamedef):
 	movement_fov(0),
 	peer_id(PEER_ID_INEXISTENT),
 	keyPressed(0),
-	need_save(false),
 // protected
 	m_gamedef(gamedef),
 	m_breath(-1),
@@ -300,8 +299,6 @@ void RemotePlayer::setPosition(const v3f &position)
 		m_sao->setBasePosition(position);
 }
 
-
-
 Json::Value operator<<(Json::Value &json, v3f &v) {
 	json["X"] = v.X;
 	json["Y"] = v.Y;
@@ -363,4 +360,3 @@ Json::Value operator>>(Json::Value &json, Player &player) {
 
 	return json;
 }
-

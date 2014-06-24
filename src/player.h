@@ -299,9 +299,6 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
-	std::string path; //todo: remove
-	bool need_save;
-
 protected:
 	IGameDef *m_gamedef;
 
