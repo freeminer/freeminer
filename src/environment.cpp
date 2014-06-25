@@ -450,10 +450,7 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 
 void ServerEnvironment::saveLoadedPlayers()
 {
-	auto i = m_players.begin();
-	while (i != m_players.end())
-	{
-		auto *player = *i;
+	for (auto & player : m_players) {
 		savePlayer(player->getName());
 	}
 }
