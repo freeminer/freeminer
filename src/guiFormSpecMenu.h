@@ -303,7 +303,7 @@ protected:
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
-	std::map<std::wstring, TooltipSpec> m_tooltips;
+	std::map<std::string, TooltipSpec> m_tooltips;
 	
 	ItemSpec *m_selected_item;
 	u32 m_selected_amount;
