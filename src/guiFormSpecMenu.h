@@ -162,7 +162,6 @@ class GUIFormSpecMenu : public GUIModalMenu
 			send = false;
 			ftype = f_Unknown;
 			is_exit = false;
-			tooltip="";
 		}
 		std::wstring fname;
 		std::wstring flabel;
@@ -172,7 +171,6 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FormspecFieldType ftype;
 		bool is_exit;
 		core::rect<s32> rect;
-		std::string tooltip;
 	};
 
 	struct BoxDrawSpec {
@@ -184,6 +182,22 @@ class GUIFormSpecMenu : public GUIModalMenu
 		}
 		v2s32 pos;
 		v2s32 geom;
+		irr::video::SColor color;
+	};
+
+	struct TooltipSpec {
+		TooltipSpec()
+		{
+		}
+		TooltipSpec(std::string a_tooltip, irr::video::SColor a_bgcolor,
+				irr::video::SColor a_color):
+			tooltip(a_tooltip),
+			bgcolor(a_bgcolor),
+			color(a_color)
+		{
+		}
+		std::string tooltip;
+		irr::video::SColor bgcolor;
 		irr::video::SColor color;
 	};
 
@@ -289,7 +303,8 @@ protected:
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
-
+	std::map<std::wstring, TooltipSpec> m_tooltips;
+	
 	ItemSpec *m_selected_item;
 	u32 m_selected_amount;
 	bool m_selected_dragging;
@@ -303,6 +318,10 @@ protected:
 	v2s32 m_pointer;
 	gui::IGUIStaticText *m_tooltip_element;
 
+	s32 m_hoovered_time;
+	s32 m_old_tooltip_id;
+	std::string m_old_tooltip;
+
 	bool m_allowclose;
 	bool m_lock;
 	v2u32 m_lockscreensize;
@@ -314,6 +333,9 @@ protected:
 	video::SColor m_slotbg_n;
 	video::SColor m_slotbg_h;
 	video::SColor m_slotbordercolor;
+	video::SColor m_default_tooltip_bgcolor;
+	video::SColor m_default_tooltip_color;
+
 private:
 	IFormSource      *m_form_src;
 	TextDest         *m_text_dst;
@@ -369,6 +391,7 @@ private:
 	void parseBox(parserData* data,std::string element);
 	void parseBackgroundColor(parserData* data,std::string element);
 	void parseListColors(parserData* data,std::string element);
+	void parseTooltip(parserData* data,std::string element);
 
 	/**
 	 * check if event is part of a double click
