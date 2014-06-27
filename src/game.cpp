@@ -3389,7 +3389,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				core::rect<s32> rect(
 						10,
 						status_y - guitext_status->getTextHeight(),
-						10 + guitext_chat->getTextWidth(),
+						10 + guitext_status->getTextWidth(),
 						status_y
 				);
 				guitext_status->setRelativePosition(rect);
