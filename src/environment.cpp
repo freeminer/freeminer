@@ -2339,7 +2339,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				v3f speed = lplayer->getSpeed();
 				if(lplayer->in_liquid == false) {
 					speed.Y -= lplayer->movement_gravity * lplayer->physics_override_gravity * dtime_part * 2;
-					viscosity_factor = 0.96; // todo maybe depend on speed; 0.96 = ~100 nps max
+					viscosity_factor = 0.97; // todo maybe depend on speed; 0.96 = ~100 nps max
 					viscosity_factor += (1.0-viscosity_factor) *
 						(1-(MAP_GENERATION_LIMIT - pf.Y/BS)/
 							MAP_GENERATION_LIMIT);

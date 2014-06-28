@@ -582,7 +582,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 		// better air control when falling fast
 		float speed = m_speed.getLength();
 		if (!superspeed && speed > movement_speed_fast && (control.down || control.up || control.left || control.right)) {
-			v3f rotate = move_direction * (speed / (BS * 120)); // 80 - good wingsuit
+			v3f rotate = move_direction * (speed / (BS * 110)); // 80 - good wingsuit
 			if(control.up)		rotate = rotate.crossProduct(v3f(0,1,0));
 			if(control.down)	rotate = rotate.crossProduct(v3f(0,-1,0));
 			if(control.left)	rotate *=-1;
