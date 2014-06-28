@@ -819,7 +819,7 @@ void Server::AsyncRunStep(bool initial_step)
 
 			// If definitions and textures have not been sent, don't
 			// send objects either
-			if (client->getState() < DefinitionsSent)
+			if (client->getState() < CS_DefinitionsSent)
 				continue;
 
 			Player *player = m_env->getPlayer(client->peer_id);
@@ -1324,7 +1324,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	std::string playername = "";
 	PlayerSAO *playersao = NULL;
 	m_clients.Lock();
-	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id,InitDone);
+	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_InitDone);
 	if (client != NULL) {
 		playername = client->getName();
 		playersao = emergePlayer(playername.c_str(), peer_id);
@@ -1463,10 +1463,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	if(command == TOSERVER_INIT)
 	{
-		RemoteClient* client = getClient(peer_id,Created);
+		RemoteClient* client = getClient(peer_id, CS_Created);
 
 		// If net_proto_version is set, this client has already been handled
-		if(client->getState() > Created)
+		if(client->getState() > CS_Created)
 		{
 			verbosestream<<"Server: Ignoring multiple TOSERVER_INITs from "
 					<<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
@@ -1645,7 +1645,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		// Enforce user limit.
 		// Don't enforce for users that have some admin right
-		if(m_clients.getClientIDs(Created).size() >= g_settings->getU16("max_users") &&
+		if(m_clients.getClientIDs(CS_Created).size() >= g_settings->getU16("max_users") &&
 				!checkPriv(playername, "server") &&
 				!checkPriv(playername, "ban") &&
 				!checkPriv(playername, "privs") &&
@@ -1724,7 +1724,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 			// Send as reliable
 			m_clients.send(peer_id, 0, buffer, true);
-			m_clients.event(peer_id, Init);
+			m_clients.event(peer_id, CSE_Init);
 		}
 
 		return;
@@ -1735,7 +1735,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		verbosestream<<"Server: Got TOSERVER_INIT2 from "
 				<<peer_id<<std::endl;
 
-		m_clients.event(peer_id, GotInit2);
+		m_clients.event(peer_id, CSE_GotInit2);
 		u16 protocol_version = m_clients.getProtocolVersion(peer_id);
 
 
@@ -1769,7 +1769,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		// Send node definitions
 		SendNodeDef(peer_id, m_nodedef, protocol_version);
 
-		m_clients.event(peer_id, SetDefinitionsSent);
+		m_clients.event(peer_id, CSE_SetDefinitionsSent);
 
 		// Send media announcement
 		sendMediaAnnouncement(peer_id);
@@ -1784,7 +1784,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		///// begin compatibility code
 		if (protocol_version <= 22) {
-			m_clients.event(peer_id, SetClientReady);
+			m_clients.event(peer_id, CSE_SetClientReady);
 			m_script->on_joinplayer(playersao);
 		}
 		///// end compatibility code
@@ -1799,8 +1799,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		return;
 	}
 
-	u8 peer_ser_ver = getClient(peer_id,InitDone)->serialization_version;
-	u16 peer_proto_ver = getClient(peer_id,InitDone)->net_proto_version;
+	u8 peer_ser_ver = getClient(peer_id, CS_InitDone)->serialization_version;
+	u16 peer_proto_ver = getClient(peer_id, CS_InitDone)->net_proto_version;
 
 	if(peer_ser_ver == SER_FMT_VER_INVALID)
 	{
@@ -1850,7 +1850,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				data[2], data[3], data[4],
 				std::string((char*) &data[8],(u16) data[6]));
 
-		m_clients.event(peer_id, SetClientReady);
+		m_clients.event(peer_id, CSE_SetClientReady);
 		m_script->on_joinplayer(playersao);
 
 	}
@@ -1861,7 +1861,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		return;
 	}
 
-	if (m_clients.getClientState(peer_id) < Active)
+	if (m_clients.getClientState(peer_id) < CS_Active)
 	{
 		if (command == TOSERVER_PLAYERPOS) return;
 
@@ -2777,7 +2777,7 @@ void Server::deletingPeer(u16 peer_id, bool timeout)
 	verbosestream<<"Server::deletingPeer(): peer->id="
 			<<peer_id<<", timeout="<<timeout<<std::endl;
 
-	m_clients.event(peer_id,Disconnect);
+	m_clients.event(peer_id, CSE_Disconnect);
 	con::PeerChange c;
 	c.type = con::PEER_REMOVED;
 	c.peer_id = peer_id;
@@ -2806,12 +2806,12 @@ bool Server::getClientInfo(
 {
 	*state = m_clients.getClientState(peer_id);
 	m_clients.Lock();
-	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id,Invalid);
+	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
 
 	if (client == NULL) {
 		m_clients.Unlock();
 		return false;
-		}
+	}
 
 	*uptime = client->uptime();
 	*ser_vers = client->serialization_version;
@@ -3570,7 +3570,7 @@ void Server::SendBlocks(float dtime)
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
-			RemoteClient *client = m_clients.lockedGetClientNoEx(*i,Active);
+			RemoteClient *client = m_clients.lockedGetClientNoEx(*i, CS_Active);
 
 			if (client == NULL)
 				return;
@@ -3602,7 +3602,7 @@ void Server::SendBlocks(float dtime)
 			continue;
 		}
 
-		RemoteClient *client = m_clients.lockedGetClientNoEx(q.peer_id,Active);
+		RemoteClient *client = m_clients.lockedGetClientNoEx(q.peer_id, CS_Active);
 
 		if(!client)
 			continue;
@@ -3891,7 +3891,7 @@ void Server::DenyAccess(u16 peer_id, const std::string &reason)
 	DSTACK(__FUNCTION_NAME);
 
 	SendAccessDenied(peer_id, reason);
-	m_clients.event(peer_id,SetDenied);
+	m_clients.event(peer_id, CSE_SetDenied);
 	m_con.DisconnectPeer(peer_id);
 }
 
