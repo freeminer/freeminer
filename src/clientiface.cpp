@@ -208,7 +208,7 @@ void RemoteClient::GetNextBlocks(
 		}*/
 
 		std::list<v3s16> list;
-		bool can_skip = true;
+		bool can_skip = d > 1;
 		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
 		if (speed_in_blocks>0.8 && d <= 2) {
 			can_skip = false;
