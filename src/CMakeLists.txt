@@ -788,8 +788,6 @@ if(WIN32)
 	if(CURL_DLL)
 		install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
 	endif()
-
-	endif()
 endif()
 
 if(BUILD_CLIENT)
