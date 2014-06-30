@@ -225,8 +225,18 @@ void sendAnnounce(const std::string &action,
 	Json::FastWriter writer;
 	HTTPFetchRequest fetchrequest;
 	fetchrequest.url = g_settings->get("serverlist_url") + std::string("/announce");
+
+	std::string query = std::string("json=") + urlencode(writer.write(server));
+	if (query.size() < 1000)
+		fetchrequest.url += "?" + query;
+	else
+		fetchrequest.post_data = query;
+
+/*
 	fetchrequest.post_fields["json"] = writer.write(server);
 	fetchrequest.multipart = true;
+*/
+
 	httpfetch_async(fetchrequest);
 }
 #endif
