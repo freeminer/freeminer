@@ -26,9 +26,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include "irrlichttypes.h"
 #include <string>
+#include <map>
+
 #include "jthread/jmutex.h"
 #include "jthread/jmutexautolock.h"
-#include <map>
 #include "util/timetaker.h"
 #include "util/numeric.h" // paging()
 #include "debug.h" // assert()

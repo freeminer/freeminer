@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiTable.h"
+#include "clientserver.h"
 
 class IGameDef;
 class InventoryManager;
@@ -342,6 +343,7 @@ private:
 	TextDest         *m_text_dst;
 	GUIFormSpecMenu **m_ext_ptr;
 	gui::IGUIFont    *m_font;
+	unsigned int      m_formspec_version;
 
 	typedef struct {
 		v2s32 size;
@@ -393,6 +395,7 @@ private:
 	void parseBackgroundColor(parserData* data,std::string element);
 	void parseListColors(parserData* data,std::string element);
 	void parseTooltip(parserData* data,std::string element);
+	bool parseVersionDirect(std::string data);
 
 	/**
 	 * check if event is part of a double click
@@ -423,7 +426,7 @@ public:
 	{}
 
 	void setForm(std::string formspec) {
-		m_formspec = formspec;
+		m_formspec = FORMSPEC_VERSION_STRING + formspec;
 	}
 
 	std::string getForm()

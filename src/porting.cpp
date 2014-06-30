@@ -28,10 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "porting.h"
 
-#if defined(__APPLE__)
-	#include <mach-o/dyld.h>
-	#include "CoreFoundation/CoreFoundation.h"
-#elif defined(__FreeBSD__)
+#if defined(__FreeBSD__)
 	#include <sys/types.h>
 	#include <sys/sysctl.h>
 #elif defined(_WIN32)

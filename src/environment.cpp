@@ -511,6 +511,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 			errorstream<<e.what()<<std::endl;
 			return nullptr;
 		}
+		is.close();
 		if (testplayer.getName() == playername) {
 			*player = testplayer;
 			found = true;

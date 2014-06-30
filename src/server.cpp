@@ -2016,20 +2016,22 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 
 	Player *player = m_env->getPlayer(peer_id);
-	if(player == NULL){
+	if(player == NULL) {
 /*
 		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
-				<<std::endl;
+				<< " disconnecting peer!" <<std::endl;
 */
+		m_con.DisconnectPeer(peer_id);
 		return;
 	}
 
 	PlayerSAO *playersao = player->getPlayerSAO();
-	if(playersao == NULL){
+	if(playersao == NULL) {
 		errorstream<<"Server::ProcessData(): Cancelling: "
 				"No player object for peer_id="<<peer_id
-				<<std::endl;
+				<< " disconnecting peer!" <<std::endl;
+		m_con.DisconnectPeer(peer_id);
 		return;
 	}
 
@@ -3365,10 +3367,11 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
 	std::ostringstream os(std::ios_base::binary);
 	u8 buf[12];
 
+
 	// Write command
 	writeU16(buf, TOCLIENT_SHOW_FORMSPEC);
 	os.write((char*)buf, 2);
-	os<<serializeLongString(formspec);
+	os<<serializeLongString(FORMSPEC_VERSION_STRING + formspec);
 	os<<serializeString(formname);
 
 	// Make data buffer
@@ -3771,7 +3774,7 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 
 	std::ostringstream os(std::ios_base::binary);
 	writeU16(os, TOCLIENT_INVENTORY_FORMSPEC);
-	os<<serializeLongString(player->inventory_formspec);
+	os<<serializeLongString(FORMSPEC_VERSION_STRING + player->inventory_formspec);
 
 	// Make data buffer
 	std::string s = os.str();
