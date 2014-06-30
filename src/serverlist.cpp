@@ -38,27 +38,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace ServerList
 {
+
 std::string getFilePath()
 {
 	std::string serverlist_file = g_settings->get("serverlist_file");
 
-	std::string dir_path = std::string("client") + DIR_DELIM
-		;
+	std::string dir_path = std::string("client") + DIR_DELIM;
 	fs::CreateDir(porting::path_user + DIR_DELIM + dir_path);
-	std::string rel_path = dir_path + serverlist_file;
-	std::string path = porting::path_user + DIR_DELIM + rel_path;
-	return path;
+	return porting::path_user + DIR_DELIM + dir_path + serverlist_file;
 }
+
 
 std::vector<ServerListSpec> getLocal()
 {
 	std::string path = ServerList::getFilePath();
 	std::string liststring;
-	if(fs::PathExists(path))
-	{
+	if (fs::PathExists(path)) {
 		std::ifstream istream(path.c_str());
-		if(istream.is_open())
-		{
+		if (istream.is_open()) {
 			std::ostringstream ostream;
 			ostream << istream.rdbuf();
 			liststring = ostream.str();
@@ -66,19 +63,19 @@ std::vector<ServerListSpec> getLocal()
 		}
 	}
 
-	return ServerList::deSerialize(liststring);
+	return deSerialize(liststring);
 }
 
 
 std::vector<ServerListSpec> getOnline()
 {
-	Json::Value root = fetchJsonValue((g_settings->get("serverlist_url")+"/list").c_str(), NULL);
+	Json::Value root = fetchJsonValue(
+			(g_settings->get("serverlist_url") + "/list").c_str(), NULL);
 
 	std::vector<ServerListSpec> serverlist;
 
 	if (root.isArray()) {
-		for (unsigned int i = 0; i < root.size(); i++)
-		{
+		for (unsigned int i = 0; i < root.size(); i++) {
 			if (root[i].isObject()) {
 				serverlist.push_back(root[i]);
 			}
@@ -88,18 +85,18 @@ std::vector<ServerListSpec> getOnline()
 	return serverlist;
 }
 
-/*
-	Delete a server fromt he local favorites list
-*/
-bool deleteEntry (ServerListSpec server)
+
+// Delete a server from the local favorites list
+bool deleteEntry(const ServerListSpec &server)
 {
 	std::vector<ServerListSpec> serverlist = ServerList::getLocal();
-	for(unsigned i = 0; i < serverlist.size(); i++)
-	{
-		if  (serverlist[i]["address"] == server["address"]
-		&&   serverlist[i]["port"]    == server["port"])
-		{
-			serverlist.erase(serverlist.begin() + i);
+	for (std::vector<ServerListSpec>::iterator it = serverlist.begin();
+			it != serverlist.end();) {
+		if ((*it)["address"] == server["address"] &&
+				(*it)["port"] == server["port"]) {
+			it = serverlist.erase(it);
+		} else {
+			++it;
 		}
 	}
 
@@ -111,10 +108,8 @@ bool deleteEntry (ServerListSpec server)
 	return true;
 }
 
-/*
-	Insert a server to the local favorites list
-*/
-bool insert (ServerListSpec server)
+// Insert a server to the local favorites list
+bool insert(const ServerListSpec &server)
 {
 	// Remove duplicates
 	ServerList::deleteEntry(server);
@@ -127,9 +122,10 @@ bool insert (ServerListSpec server)
 	std::string path = ServerList::getFilePath();
 	std::ostringstream ss(std::ios_base::binary);
 	ss << ServerList::serialize(serverlist);
-	fs::safeWriteToFile(path, ss.str());
+	if (!fs::safeWriteToFile(path, ss.str()))
+		return false;
 
-	return false;
+	return true;
 }
 
 std::vector<ServerListSpec> deSerialize(const std::string &liststring)
@@ -147,81 +143,90 @@ std::vector<ServerListSpec> deSerialize(const std::string &liststring)
 		return serverlist;
 	}
 	if (root["list"].isArray())
-	    for (unsigned int i = 0; i < root["list"].size(); i++)
-	{
-		if (root["list"][i].isObject()) {
-			serverlist.push_back(root["list"][i]);
-		}
-	}
+		for (unsigned int i = 0; i < root["list"].size(); i++)
+			if (root["list"][i].isObject())
+				serverlist.push_back(root["list"][i]);
 	return serverlist;
 }
 
-std::string serialize(std::vector<ServerListSpec> &serverlist)
+const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 {
 	Json::Value root;
 	Json::Value list(Json::arrayValue);
-	for(std::vector<ServerListSpec>::iterator i = serverlist.begin(); i != serverlist.end(); i++)
-	{
-		list.append(*i);
+	for (std::vector<ServerListSpec>::const_iterator it = serverlist.begin();
+			it != serverlist.end();
+			it++) {
+		list.append(*it);
 	}
 	root["list"] = list;
-	Json::StyledWriter writer;
-	return writer.write( root );
+	Json::FastWriter writer;
+	return writer.write(root);
 }
 
 
 #if USE_CURL
-void sendAnnounce(std::string action, const std::vector<std::string> & clients_names, double uptime, u32 game_time, float lag, std::string gameid, std::vector<ModSpec> mods) {
+void sendAnnounce(const std::string &action,
+		const std::vector<std::string> &clients_names,
+		const double uptime,
+		const u32 game_time,
+		const float lag,
+		const std::string &gameid,
+		const std::vector<ModSpec> &mods)
+{
 	Json::Value server;
-	if (action.size())
-		server["action"]	= action;
-	server["port"]		= g_settings->get("port");
-	server["address"]	= g_settings->get("server_address");
+	server["action"] = action;
+	server["port"]    = g_settings->getU16("port");
+	if (g_settings->exists("server_address")) {
+		server["address"] = g_settings->get("server_address");
+	}
 	if (action != "delete") {
-		server["name"]		= g_settings->get("server_name");
-		server["description"]	= g_settings->get("server_description");
-		server["version"]	= minetest_version_simple;
-		server["url"]		= g_settings->get("server_url");
-		server["creative"]	= g_settings->get("creative_mode");
-		server["damage"]	= g_settings->get("enable_damage");
-		server["password"]	= g_settings->getBool("disallow_empty_password");
-		server["pvp"]		= g_settings->getBool("enable_pvp");
-		server["clients"]	= (int)clients_names.size();
-		server["clients_max"]	= g_settings->get("max_users");
-		server["clients_list"]	= Json::Value(Json::arrayValue);
-		for(u32 i = 0; i < clients_names.size(); ++i) {
-			server["clients_list"].append(clients_names[i]);
+		server["name"]         = g_settings->get("server_name");
+		server["description"]  = g_settings->get("server_description");
+		server["version"]      = minetest_version_simple;
+		server["url"]          = g_settings->get("server_url");
+		server["creative"]     = g_settings->getBool("creative_mode");
+		server["damage"]       = g_settings->getBool("enable_damage");
+		server["password"]     = g_settings->getBool("disallow_empty_password");
+		server["pvp"]          = g_settings->getBool("enable_pvp");
+		if (uptime >= 1)
+			server["uptime"]   = (int) uptime;
+		if (game_time >= 1)
+			server["game_time"]= game_time;
+		server["clients"]      = (int) clients_names.size();
+		server["clients_max"]  = g_settings->getU16("max_users");
+		server["clients_list"] = Json::Value(Json::arrayValue);
+		for (std::vector<std::string>::const_iterator it = clients_names.begin();
+				it != clients_names.end();
+				++it) {
+			server["clients_list"].append(*it);
 		}
-		if (uptime >= 1)	server["uptime"]	= (int)uptime;
-		if (gameid != "")	server["gameid"]	= gameid;
-		if (game_time >= 1)	server["game_time"]	= game_time;
+		if (gameid != "") server["gameid"] = gameid;
 	}
 
-	if(server["action"] == "start") {
-		server["dedicated"]	= g_settings->get("server_dedicated");
-		server["privs"]		= g_settings->get("default_privs");
-		server["rollback"]	= g_settings->getBool("enable_rollback_recording");
+	if (action == "start") {
+		server["dedicated"]         = g_settings->getBool("server_dedicated");
+		server["rollback"]          = g_settings->getBool("enable_rollback_recording");
+		server["mapgen"]            = g_settings->get("mg_name");
+		server["privs"]             = g_settings->get("default_privs");
+		server["can_see_far_names"] = g_settings->getBool("unlimited_player_transfer_distance");
 		server["liquid_finite"]	= g_settings->getBool("liquid_real");
-		server["mapgen"]	= g_settings->get("mg_name");
-		server["can_see_far_names"]	= g_settings->getBool("unlimited_player_transfer_distance");
-		server["mods"]		= Json::Value(Json::arrayValue);
-		for(std::vector<ModSpec>::iterator m = mods.begin(); m != mods.end(); m++) {
-			server["mods"].append(m->name);
+		server["mods"]              = Json::Value(Json::arrayValue);
+		for (std::vector<ModSpec>::const_iterator it = mods.begin();
+				it != mods.end();
+				++it) {
+			server["mods"].append(it->name);
 		}
-		actionstream << "announcing to " << g_settings->get("serverlist_url") << std::endl;
+		actionstream << "Announcing to " << g_settings->get("serverlist_url") << std::endl;
 	} else {
 		if (lag)
-			server["lag"]	= lag;
+			server["lag"] = lag;
 	}
 
 	Json::FastWriter writer;
 	HTTPFetchRequest fetchrequest;
 	fetchrequest.url = g_settings->get("serverlist_url") + std::string("/announce");
-	std::string query = std::string("json=") + urlencode(writer.write(server));
-	if (query.size() < 1000)
-		fetchrequest.url += "?" + query;
-	else
-		fetchrequest.post_fields = query;
+	fetchrequest.post_fields["json"] = writer.write(server);
+	fetchrequest.multipart = true;
 	httpfetch_async(fetchrequest);
 }
 #endif
