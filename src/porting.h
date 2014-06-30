@@ -57,14 +57,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef _WIN32
 	#define NOMINMAX
 	#include <windows.h>
-	
+
 	#define sleep_ms(x) Sleep(x)
 
 	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #else
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
-	
+
 	#if (defined(linux) || defined(__linux)) && !defined(_GNU_SOURCE)
 		#define _GNU_SOURCE
 	#endif
@@ -85,7 +85,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#endif
 
 	#define sleep_ms(x) usleep(x*1000)
-	
+
 	#define THREAD_PRIORITY_LOWEST       0
 	#define THREAD_PRIORITY_BELOW_NORMAL 1
 	#define THREAD_PRIORITY_NORMAL       2
@@ -205,17 +205,17 @@ void initIrrlicht(irr::IrrlichtDevice * );
 	#define _WIN32_WINNT 0x0501
 #endif
 	#include <windows.h>
-	
+
 	inline u32 getTimeS()
 	{
 		return GetTickCount() / 1000;
 	}
-	
+
 	inline u32 getTimeMs()
 	{
 		return GetTickCount();
 	}
-	
+
 	inline u32 getTimeUs()
 	{
 		LARGE_INTEGER freq, t;
@@ -223,7 +223,7 @@ void initIrrlicht(irr::IrrlichtDevice * );
 		QueryPerformanceCounter(&t);
 		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000.0);
 	}
-	
+
 	inline u32 getTimeNs()
 	{
 		LARGE_INTEGER freq, t;
@@ -231,7 +231,7 @@ void initIrrlicht(irr::IrrlichtDevice * );
 		QueryPerformanceCounter(&t);
 		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000000.0);
 	}
-	
+
 #else // Posix
 #include <sys/time.h>
 #include <time.h>
@@ -246,21 +246,21 @@ void initIrrlicht(irr::IrrlichtDevice * );
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec;
 	}
-	
+
 	inline u32 getTimeMs()
 	{
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 	}
-	
+
 	inline u32 getTimeUs()
 	{
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec * 1000000 + tv.tv_usec;
 	}
-	
+
 	inline u32 getTimeNs()
 	{
 		struct timespec ts;
@@ -278,7 +278,7 @@ void initIrrlicht(irr::IrrlichtDevice * );
 #endif
 		return ts.tv_sec * 1000000000 + ts.tv_nsec;
 	}
-	
+
 	/*#include <sys/timeb.h>
 	inline u32 getTimeMs()
 	{
@@ -397,6 +397,10 @@ v2u32 getWindowSize();
 #endif
 
 } // namespace porting
+
+#ifdef __ANDROID__
+#include "porting_android.h"
+#endif
 
 #endif // PORTING_HEADER
 

@@ -127,13 +127,17 @@ public:
 		disconnect_requested(false),
 		changepassword_requested(false),
 		changevolume_requested(false),
+		shutdown_requested(false),
 		device(a_device)
 	{
 	}
 
 	virtual void exitToOS()
 	{
+		shutdown_requested = true;
+#ifndef __ANDROID__
 		device->closeDevice();
+#endif
 	}
 
 	virtual void disconnect()
@@ -154,6 +158,7 @@ public:
 	bool disconnect_requested;
 	bool changepassword_requested;
 	bool changevolume_requested;
+	bool shutdown_requested;
 	IrrlichtDevice *device;
 };
 

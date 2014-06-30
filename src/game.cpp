@@ -78,6 +78,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "drawscene.h"
 #include "content_cao.h"
 
+#ifdef HAVE_TOUCHSCREENGUI
+#include "touchscreengui.h"
+#endif
+
 /*
 	Text input system
 */
@@ -964,14 +968,20 @@ static inline void create_formspec_menu(GUIFormSpecMenu** cur_formspec,
 	}
 }
 
+#ifdef __ANDROID__
+#define SIZE_TAG "size[5,5.5]"
+#else
+#define SIZE_TAG "size[5,5.5,true]"
+#endif
+
 static void show_chat_menu(GUIFormSpecMenu** cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource* tsrc, IrrlichtDevice * device,
 		Client* client, std::string text)
 {
 	std::string formspec =
-			FORMSPEC_VERSION_STRING
-		"size[11,5.5,true]"
+		FORMSPEC_VERSION_STRING
+		SIZE_TAG
 		"field[3,2.35;6,0.5;f_text;;" + text + "]"
 		"button_exit[4,3;3,0.5;btn_send;" + wide_to_narrow(wstrgettext("Proceed")) + "]"
 		;
@@ -991,7 +1001,7 @@ static void show_deathscreen(GUIFormSpecMenu** cur_formspec,
 {
 	std::string formspec =
 		std::string(FORMSPEC_VERSION_STRING) +
-		"size[11,5.5,true]"
+		SIZE_TAG
 		"bgcolor[#320000b4;true]"
 		"label[4.85,1.35;You died.]"
 		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
@@ -1012,6 +1022,21 @@ static void show_pause_menu(GUIFormSpecMenu** cur_formspec,
 		IWritableTextureSource* tsrc, IrrlichtDevice * device,
 		bool singleplayermode)
 {
+#ifdef __ANDROID__
+	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
+			"No menu visible:\n"
+			"- single tap: button activate\n"
+			"- double tap: place/use\n"
+			"- slide finger: look around\n"
+			"Menu/Inventory visible:\n"
+			"- double tap (outside):\n"
+			" -->close\n"
+			"- touch stack, touch slot:\n"
+			" --> move stack\n"
+			"- touch&drag, tap 2nd finger\n"
+			" --> place single item to slot\n"
+			));
+#else
 	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
 			"- WASD: move\n"
 			"- Space: jump/climb\n"
@@ -1024,11 +1049,11 @@ static void show_pause_menu(GUIFormSpecMenu** cur_formspec,
 			"- Mouse wheel: select item\n"
 			"- T: chat\n"
 			));
-
+#endif
 	float ypos = singleplayermode ? 1.0 : 0.5;
 	std::ostringstream os;
 
-	os << FORMSPEC_VERSION_STRING << "size[5,5.5,true]"
+	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
 			<< "button_exit[1," << (ypos++) << ";3,0.5;btn_continue;"
 					<< wide_to_narrow(wstrgettext("Continue"))     << "]";
 
@@ -1044,8 +1069,8 @@ static void show_pause_menu(GUIFormSpecMenu** cur_formspec,
 	os		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_exit_os;"
 					<< wide_to_narrow(wstrgettext("Exit to OS"))   << "]";
 /*
-			<< "textarea[7.5,0.25;3.75,6;;" << control_text << ";]"
-			<< "textarea[0.4,0.25;3.5,6;;" << "Minetest\n"
+			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
+			<< "textarea[0.4,0.25;3.5,6;;" << "Freeminer\n"
 			<< minetest_build_info << "\n"
 			<< "path_user = " << wrap_rows(porting::path_user, 20)
 			<< "\n;]";
@@ -1283,18 +1308,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				server->step(dtime);
 
 			// End condition
-			if(client.getState() == LC_Init){
+			if(client.getState() == LC_Init) {
 				could_connect = true;
 				break;
 			}
 			// Break conditions
-			if(client.accessDenied()){
+			if(client.accessDenied()) {
 				error_message = L"Access denied. Reason: "
 						+client.accessDeniedReason();
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(input->wasKeyDown(EscapeKey)){
+			if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
 				connect_aborted = true;
 				infostream<<"Connect aborted [Escape]"<<std::endl;
 				break;
@@ -1344,8 +1369,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	/*
 		Handle failure to connect
 	*/
-	if(!could_connect){
-		if(error_message == L"" && !connect_aborted){
+	if(!could_connect) {
+		if(error_message == L"" && !connect_aborted) {
 			error_message = L"Connection failed";
 			errorstream<<wide_to_narrow(error_message)<<std::endl;
 		}
@@ -1364,8 +1389,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		float fps_max = g_settings->getFloat("fps_max");
 		bool cloud_menu_background = g_settings->getBool("menu_clouds");
 		u32 lasttime = device->getTimer()->getTime();
-		while(device->run())
-		{
+		while (device->run()) {
 			f32 dtime = 0.033; // in seconds
 			if (cloud_menu_background) {
 				u32 time = device->getTimer()->getTime();
@@ -1377,29 +1401,29 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			}
 			// Update client and server
 			client.step(dtime);
-			if(server != NULL)
+			if (server != NULL)
 				server->step(dtime);
 
 			// End condition
-			if(client.mediaReceived() &&
+			if (client.mediaReceived() &&
 					client.itemdefReceived() &&
-					client.nodedefReceived()){
+					client.nodedefReceived()) {
 				got_content = true;
 				break;
 			}
 			// Break conditions
-			if(client.accessDenied()){
+			if (client.accessDenied()) {
 				error_message = L"Access denied. Reason: "
 						+client.accessDeniedReason();
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(client.getState() < LC_Init){
+			if (client.getState() < LC_Init) {
 				error_message = L"Client disconnected";
 				errorstream<<wide_to_narrow(error_message)<<std::endl;
 				break;
 			}
-			if(input->wasKeyDown(EscapeKey)){
+			if (input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
 				content_aborted = true;
 				infostream<<"Connect aborted [Escape]"<<std::endl;
 				break;
@@ -1594,6 +1618,11 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 	guitext_profiler->setVisible(false);
 	guitext_profiler->setWordWrap(true);
 
+#ifdef HAVE_TOUCHSCREENGUI
+	if (g_touchscreengui)
+		g_touchscreengui->init(tsrc,porting::getDisplayDensity());
+#endif
+
 	/*
 		Some statistics are collected in these
 	*/
@@ -1705,7 +1734,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	for(;;)
 	{
-		if(device->run() == false || kill == true)
+		if(device->run() == false || kill == true ||
+				g_gamecallback->shutdown_requested)
 			break;
 
 		v2u32 screensize = driver->getScreenSize();
@@ -1924,6 +1954,15 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 		// Input handler step() (used by the random input generator)
 		input->step(dtime);
+#ifdef HAVE_TOUCHSCREENGUI
+		if (g_touchscreengui) {
+			g_touchscreengui->step(dtime);
+		}
+#endif
+#ifdef __ANDROID__
+		if (current_formspec != 0)
+			current_formspec->getAndroidUIInput();
+#endif
 
 		// Increase timer for doubleclick of "jump"
 		if(g_settings->getBool("doubletap_jump") && jump_timer <= 0.2)
@@ -1956,7 +1995,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			inventoryloc.setCurrentPlayer();
 			current_formspec->setFormSpec(fs_src->getForm(), inventoryloc);
 		}
-		else if(input->wasKeyDown(EscapeKey))
+		else if(input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey))
 		{
 			show_pause_menu(&current_formspec, &client, gamedef, tsrc, device,
 					simple_singleplayer_mode);
@@ -2355,21 +2394,29 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		float turn_amount = 0;
 		if((device->isWindowActive() && noMenuActive()) || random_input)
 		{
+#ifndef __ANDROID__
 			if(!random_input)
 			{
 				// Mac OSX gets upset if this is set every frame
 				if(device->getCursorControl()->isVisible())
 					device->getCursorControl()->setVisible(false);
 			}
+#endif
 
 			if(first_loop_after_window_activation){
 				//infostream<<"window active, first loop"<<std::endl;
 				first_loop_after_window_activation = false;
-			}
-			else{
-				s32 dx = input->getMousePos().X - (driver->getScreenSize().Width/2);
-				s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height/2);
-				if(invert_mouse || camera.getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
+			} else {
+#ifdef HAVE_TOUCHSCREENGUI
+				if (g_touchscreengui) {
+					camera_yaw   = g_touchscreengui->getYaw();
+					camera_pitch = g_touchscreengui->getPitch();
+				} else {
+#endif
+					s32 dx = input->getMousePos().X - (driver->getScreenSize().Width/2);
+					s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height/2);
+				if ((invert_mouse)
+						|| (camera.getCameraMode() == CAMERA_MODE_THIRD_FRONT)) {
 					dy = -dy;
 				}
 				//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
@@ -2388,18 +2435,23 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				d = rangelim(d, 0.01, 100.0);
 				camera_yaw -= dx*d;
 				camera_pitch += dy*d;
+				turn_amount = v2f(dx, dy).getLength() * d;
+
+#ifdef HAVE_TOUCHSCREENGUI
+				}
+#endif
 				if(camera_pitch < -89.5) camera_pitch = -89.5;
 				if(camera_pitch > 89.5) camera_pitch = 89.5;
-
-				turn_amount = v2f(dx, dy).getLength() * d;
 			}
 			input->setMousePos((driver->getScreenSize().Width/2),
 					(driver->getScreenSize().Height/2));
 		}
 		else{
+#ifndef ANDROID
 			// Mac OSX gets upset if this is set every frame
 			if(device->getCursorControl()->isVisible() == false)
 				device->getCursorControl()->setVisible(true);
+#endif
 
 			//infostream<<"window inactive"<<std::endl;
 			first_loop_after_window_activation = true;
@@ -2817,9 +2869,18 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		core::line3d<f32> shootline(camera_position,
 				camera_position + camera_direction * BS * (d+1));
 
+
 		// prevent player pointing anything in front-view
 		if (camera.getCameraMode() == CAMERA_MODE_THIRD_FRONT)
 			shootline = core::line3d<f32>(0,0,0,0,0,0);
+
+#ifdef HAVE_TOUCHSCREENGUI
+		if ((g_settings->getBool("touchtarget")) && (g_touchscreengui)) {
+			shootline = g_touchscreengui->getShootline();
+			shootline.start += intToFloat(camera_offset,BS);
+			shootline.end += intToFloat(camera_offset,BS);
+		}
+#endif
 
 		ClientActiveObject *selected_object = NULL;
 
@@ -3349,8 +3410,13 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		else if(show_hud || show_chat)
 		{
+			u16 fps = (1.0/dtime_avg1);
 			std::ostringstream os(std::ios_base::binary);
-			os<<"Freeminer "<<minetest_version_hash;
+			os<<"Freeminer "<<minetest_version_hash
+#ifdef __ANDROID__
+				<<" FPS = "<<fps
+#endif
+;
 			guitext->setText(narrow_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
