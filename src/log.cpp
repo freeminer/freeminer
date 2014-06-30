@@ -29,6 +29,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threads.h"
 #include "debug.h"
 #include "gettime.h"
+#include "porting.h"
+#include "config.h"
 
 std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
@@ -142,6 +144,9 @@ public:
 	void printbuf()
 	{
 		log_printline(m_lev, m_buf);
+#ifdef __ANDROID__
+		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", m_buf.c_str());
+#endif
 	}
 
 	void bufchar(char c)

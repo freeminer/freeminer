@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiTable.h"
+#include "clientserver.h"
 
 class IGameDef;
 class InventoryManager;
@@ -153,7 +154,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		{
 		}
 		FieldSpec(const std::string &name, const std::wstring &label,
-		          const std::wstring &fdeflt, int id) :
+				const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
@@ -276,6 +277,10 @@ public:
 	static bool parseColor(const std::string &value,
 			video::SColor &color, bool quiet);
 
+#ifdef __ANDROID__
+	bool getAndroidUIInput();
+#endif
+
 protected:
 	v2s32 getBasePos() const
 	{
@@ -342,6 +347,7 @@ private:
 	TextDest         *m_text_dst;
 	GUIFormSpecMenu **m_ext_ptr;
 	gui::IGUIFont    *m_font;
+	unsigned int      m_formspec_version;
 
 	typedef struct {
 		v2s32 size;
@@ -393,6 +399,7 @@ private:
 	void parseBackgroundColor(parserData* data,std::string element);
 	void parseListColors(parserData* data,std::string element);
 	void parseTooltip(parserData* data,std::string element);
+	bool parseVersionDirect(std::string data);
 
 	/**
 	 * check if event is part of a double click
@@ -409,6 +416,14 @@ private:
 	clickpos m_doubleclickdetect[2];
 
 	int m_btn_height;
+
+	std::wstring getLabelByID(s32 id);
+	std::string getNameByID(s32 id);
+#ifdef __ANDROID__
+	v2s32 m_down_pos;
+	std::wstring m_JavaDialogFieldName;
+#endif
+
 };
 
 class FormspecFormSource: public IFormSource
@@ -423,7 +438,7 @@ public:
 	{}
 
 	void setForm(std::string formspec) {
-		m_formspec = formspec;
+		m_formspec = FORMSPEC_VERSION_STRING + formspec;
 	}
 
 	std::string getForm()

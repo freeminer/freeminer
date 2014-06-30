@@ -49,7 +49,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "util/serialize.h"
 #include "config.h"
-#include "cmake_config_githash.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "version.h"

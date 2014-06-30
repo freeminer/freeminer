@@ -1872,20 +1872,22 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 
 	Player *player = m_env->getPlayer(peer_id);
-	if(player == NULL){
+	if(player == NULL) {
 /*
 		verbosestream<<"Server::ProcessData(): Cancelling: "
 				"No player for peer_id="<<peer_id
-				<<std::endl;
+				<< " disconnecting peer!" <<std::endl;
 */
+		m_con.DisconnectPeer(peer_id);
 		return;
 	}
 
 	PlayerSAO *playersao = player->getPlayerSAO();
-	if(playersao == NULL){
+	if(playersao == NULL) {
 		errorstream<<"Server::ProcessData(): Cancelling: "
 				"No player object for peer_id="<<peer_id
-				<<std::endl;
+				<< " disconnecting peer!" <<std::endl;
+		m_con.DisconnectPeer(peer_id);
 		return;
 	}
 
@@ -3016,7 +3018,7 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
 	DSTACK(__FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_SHOW_FORMSPEC, 2);
-	PACK(TOCLIENT_SHOW_FORMSPEC_DATA, formspec);
+	PACK(TOCLIENT_SHOW_FORMSPEC_DATA, FORMSPEC_VERSION_STRING + formspec);
 	PACK(TOCLIENT_SHOW_FORMSPEC_NAME, formname);
 
 	// Send as reliable
@@ -3329,7 +3331,7 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 		return;
 
 	MSGPACK_PACKET_INIT(TOCLIENT_INVENTORY_FORMSPEC, 1);
-	PACK(TOCLIENT_INVENTORY_FORMSPEC_DATA, player->inventory_formspec);
+	PACK(TOCLIENT_INVENTORY_FORMSPEC_DATA, FORMSPEC_VERSION_STRING + player->inventory_formspec);
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);

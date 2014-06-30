@@ -8,7 +8,12 @@
 
 #define PROJECT_NAME "Freeminer"
 #define RUN_IN_PLACE 0
+#ifndef STATIC_SHAREDIR
+	#define STATIC_SHAREDIR ""
+#endif
+
 #define USE_GETTEXT 0
+
 #ifndef USE_SOUND
 	#define USE_SOUND 0
 #endif
@@ -20,9 +25,7 @@
 #ifndef USE_FREETYPE
 	#define USE_FREETYPE 0
 #endif
-#ifndef STATIC_SHAREDIR
-	#define STATIC_SHAREDIR ""
-#endif
+
 #ifndef USE_LEVELDB
 	#define USE_LEVELDB 0
 #endif
@@ -80,6 +83,12 @@
 	#define PRODUCT_VERSION_STRING CMAKE_PRODUCT_VERSION_STRING
 	#undef VERSION_EXTRA_STRING
 	#define VERSION_EXTRA_STRING CMAKE_VERSION_EXTRA_STRING
+#endif
+
+#ifdef __ANDROID__
+	#include "android_version.h"
+#else
+	#include "cmake_config_githash.h"
 #endif
 
 #endif
