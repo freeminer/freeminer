@@ -319,6 +319,11 @@ if(ENABLE_LEVELDB)
 	endif(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 endif(ENABLE_LEVELDB)
 
+# this is needed because VS builds install LevelDB via nuget
+if(FORCE_LEVELDB)
+	set(USE_LEVELDB 1)
+endif()
+
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
@@ -612,9 +617,9 @@ if(BUILD_CLIENT)
 			${CGUITTFONT_LIBRARY}
 		)
 	endif(USE_FREETYPE)
-	if (USE_LEVELDB)
+	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
-	endif(USE_LEVELDB)
+	endif(USE_LEVELDB AND NOT FORCE_LEVELDB)
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif(USE_REDIS)

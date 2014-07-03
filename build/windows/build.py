@@ -282,6 +282,7 @@ def main():
 		-DGETTEXT_MSGFMT=C:\usr\bin\msgfmt.exe
 		-DENABLE_GETTEXT=1
 		-DENABLE_LEVELDB=1
+		-DFORCE_LEVELDB=1
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		freetype_lib="freetype252MT.lib" if build_type != "Debug" else "freetype252MT_D.lib",
