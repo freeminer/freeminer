@@ -254,6 +254,7 @@ def main():
 		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_map.hpp"', '// #include "type/tr1/unordered_map.hpp"')
 		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_set.hpp"', '// #include "type/tr1/unordered_set.hpp"')
 		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="2"', 'RuntimeLibrary="0"')
+		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="3"', 'RuntimeLibrary="1"')
 		fout = open(os.path.join("src", "msgpack", "version.h"), "w")
 		fout.write("""
 #ifndef MSGPACK_VERSION_H__
@@ -275,7 +276,7 @@ int msgpack_version_minor(void);
 		fout.close()
 		# use newer compiler, won't link otherwise
 		os.system("vcupgrade msgpack_vc2008.vcproj")
-		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration=Release")
+		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration={}".format(build_type))
 		os.chdir("..")
 
 	if not os.path.exists("leveldb.nupkg"):
@@ -329,7 +330,7 @@ int msgpack_version_minor(void);
 		-DENABLE_GETTEXT=1
 		-DENABLE_LEVELDB=1
 		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
-		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack.lib
+		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		freetype_lib="freetype252MT.lib" if build_type != "Debug" else "freetype252MT_D.lib",
@@ -342,7 +343,8 @@ int msgpack_version_minor(void);
 		libogg=libogg,
 		libvorbis=libvorbis,
 		curl=curl,
-		msgpack=msgpack
+		msgpack=msgpack,
+		msgpack_suffix="d" if build_type == "Debug" else ""
 	).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
@@ -350,6 +352,7 @@ int msgpack_version_minor(void);
 	patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
 	# wtf, cmake?
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 
 	# install LevelDB package
 	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
