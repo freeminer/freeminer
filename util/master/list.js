@@ -1,6 +1,6 @@
 var master;
 if (!master) master = {};
-if (typeof(master.root)=='undefined')	master.root = "http://servers.minetest.net/";
+if (typeof(master.root)=='undefined')	master.root = "http://servers.freeminer.org/";
 if (!master.output)	master.output = '#server_list';
 if (!master.list)	master.list = "list";
 if (!master.list_root)	master.list_root = master.root;
