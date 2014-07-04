@@ -4,6 +4,107 @@ cmake_minimum_required( VERSION 2.6 )
 INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckCXXSourceRuns)
 
+#
+# Set some optimizations and tweaks
+#
+
+include(CheckCXXCompilerFlag)
+
+if(MSVC)
+	# Visual Studio
+
+	# EHa enables SEH exceptions (used for catching segfaults)
+	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
+	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
+
+	# Debug build doesn't catch exceptions by itself
+	# Add some optimizations because otherwise it's VERY slow
+	set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
+
+	if (STATIC_BUILD)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+	endif()
+
+	# Flags for C files (sqlite)
+	# /MT = Link statically with standard library stuff
+	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
+
+	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+else()
+	# Probably GCC
+	if(APPLE)
+		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
+	endif()
+	if(WARN_ALL)
+		set(RELEASE_WARNING_FLAGS "-Wall")
+	else()
+		set(RELEASE_WARNING_FLAGS "")
+	endif()
+
+	if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		CHECK_CXX_COMPILER_FLAG("-Wno-unused-but-set-variable" HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
+		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
+			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
+		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
+	endif()
+
+	set(OTHER_FLAGS "")
+
+	if(MINGW)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
+	endif()
+
+
+	if(SANITIZE_ADDRESS)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
+	endif()
+	if (SANITIZE_THREAD)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
+	endif()
+
+	if(ENABLE_CXX1Y)
+		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
+		set(STD_FLAGS "-std=c++1y")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
+		endif()
+		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
+		CHECK_CXX_SOURCE_RUNS("
+			#include <shared_mutex>
+			int main(int argc, char *argv[]) {
+				std::shared_timed_mutex m;
+				std::shared_lock<std::shared_timed_mutex> lock(m);
+				lock.unlock();
+				return 0;
+			}
+			"
+			HAVE_SHARED_MUTEX)
+	else()
+		set(STD_FLAGS "-std=c++0x")
+	endif()
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
+
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
+
+	if(APPLE)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+	else()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+	endif()
+
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+
+	if(USE_GPROF)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+	endif()
+
+endif()
+
+
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
@@ -638,112 +739,10 @@ if(BUILD_SERVER)
 			${CURL_LIBRARY}
 		)
 	endif(USE_CURL)
-endif(BUILD_SERVER)
 
-
-#
-# Set some optimizations and tweaks
-#
-
-include(CheckCXXCompilerFlag)
-
-if(MSVC)
-	# Visual Studio
-
-	# EHa enables SEH exceptions (used for catching segfaults)
-	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
-	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
-
-	# Debug build doesn't catch exceptions by itself
-	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
-
-	if (STATIC_BUILD)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-	endif()
-
-	# Flags for C files (sqlite)
-	# /MT = Link statically with standard library stuff
-	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-
-	if(BUILD_SERVER)
-		set_target_properties(${PROJECT_NAME}server PROPERTIES
-				COMPILE_DEFINITIONS "SERVER")
-	endif(BUILD_SERVER)
-
-	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
-else()
-	# Probably GCC
-	if(APPLE)
-		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
-	endif()
-	if(WARN_ALL)
-		set(RELEASE_WARNING_FLAGS "-Wall")
-	else()
-		set(RELEASE_WARNING_FLAGS "")
-	endif()
-
-	if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		CHECK_CXX_COMPILER_FLAG("-Wno-unused-but-set-variable" HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
-		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-	endif()
-
-	set(OTHER_FLAGS "")
-
-	if(MINGW)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
-	endif()
-
-
-	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
-	endif()
-
-	if(ENABLE_CXX1Y)
-		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
-		set(STD_FLAGS "-std=c++1y")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
-		endif()
-		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
-		CHECK_CXX_SOURCE_RUNS("
-			#include <shared_mutex>
-			int main(int argc, char *argv[]) {
-				std::shared_timed_mutex m;
-				std::shared_lock<std::shared_timed_mutex> lock(m);
-				lock.unlock();
-				return 0;
-			}
-			"
-			HAVE_SHARED_MUTEX)
-	else()
-		set(STD_FLAGS "-std=c++0x")
-	endif()
-
-	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
-
-	if(APPLE)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-	else()
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-	endif()
-
-	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
-
-	if(USE_GPROF)
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
-	endif()
-
-	if(BUILD_SERVER)
-		set_target_properties(${PROJECT_NAME}server PROPERTIES
-				COMPILE_DEFINITIONS "SERVER")
-	endif(BUILD_SERVER)
-
+	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 endif()
+
 
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
