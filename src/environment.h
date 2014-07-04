@@ -76,8 +76,8 @@ public:
 	virtual Map & getMap() = 0;
 
 	virtual void addPlayer(Player *player);
-	void removePlayer(u16 peer_id);
-	void removePlayer(const std::string &name);
+	//void removePlayer(u16 peer_id);
+	//void removePlayer(const std::string &name);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
 	Player * getRandomConnectedPlayer();
