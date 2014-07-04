@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettime.h"
 #include "porting.h"
 #include "config.h"
+#include "jthread/jmutexautolock.h"
 
 std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
@@ -151,6 +152,7 @@ public:
 
 	void bufchar(char c)
 	{
+		JMutexAutoLock lock(m_log_mutex);
 		if(c == '\n' || c == '\r'){
 			if(m_buf != "")
 				printbuf();
@@ -161,6 +163,7 @@ public:
 	}
 
 private:
+	JMutex m_log_mutex;
 	enum LogMessageLevel m_lev;
 	std::string m_buf;
 };
