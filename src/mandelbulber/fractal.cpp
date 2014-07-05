@@ -33,7 +33,7 @@ int Noise(int seed)
 /**
  * Compute the fractal at the point, in one of the various modes
  *
- * Mode: normal: Returns distance
+ * Mode: normal_mode: Returns distance
  *		 fake_ao: Returns minimum radius
  *		 colouring: Returns colour index
  *		 delta_DE1, delta_DE2: Returns radius
@@ -1150,7 +1150,7 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 		}
 		else
 		{
-			if (Mode == normal) //condition for all other trigonometric and hypercomplex fractals
+			if (Mode == normal_mode) //condition for all other trigonometric and hypercomplex fractals
 			{
 				if (r > 1e2)
 				{
@@ -1206,7 +1206,7 @@ double Compute(CVector3 z, const sFractal &par, int *iter_count)
 	if (iter_count != NULL)
 		*iter_count = L;
 
-	if (Mode == normal)
+	if (Mode == normal_mode)
 	{
 		if (L == N)
 			distance = 0;

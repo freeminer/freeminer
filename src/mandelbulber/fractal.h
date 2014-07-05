@@ -68,7 +68,7 @@ enum enumFractalFormula
 
 enum enumCalculationMode
 {
-	normal = 0, colouring = 1, fake_AO = 2, deltaDE1 = 3, deltaDE2 = 4, orbitTrap = 5
+	normal_mode = 0, colouring = 1, fake_AO = 2, deltaDE1 = 3, deltaDE2 = 4, orbitTrap = 5
 };
 
 enum enumGeneralizedFoldBoxType

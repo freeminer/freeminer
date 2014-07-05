@@ -278,9 +278,9 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	//par.IFS.foldingCount = params.get("IFS.foldingCount", 1).asInt();
 
 	if (params["mode"].asString() == "")
-		mg_params->mode = normal;
+		mg_params->mode = normal_mode;
 	if (params["mode"].asString() == "normal")
-		mg_params->mode = normal;
+		mg_params->mode = normal_mode;
 	if (params["mode"].asString() == "colouring")
 		mg_params->mode = colouring;
 	if (params["mode"].asString() == "fake_AO")
