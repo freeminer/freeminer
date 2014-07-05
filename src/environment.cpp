@@ -1692,7 +1692,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
 		MapBlock *block = m_map->emergeBlock(blockpos);
 		if(block){
-			block->m_static_objects.m_active[object->getId()] = s_obj;
+			block->m_static_objects.m_active.set(object->getId(), s_obj);
 			object->m_static_exists = true;
 			object->m_static_block = blockpos;
 

@@ -69,7 +69,7 @@ MapBlock * Map::createBlankBlock(v3s16 & p)
 {
 	MapBlock *block = createBlankBlockNoInsert(p);
 	
-	m_blocks[p] = block;
+	m_blocks.set(p, block);
 
 	return block;
 }
@@ -86,7 +86,7 @@ void Map::insertBlock(MapBlock *block)
 	}
 
 	// Insert into container
-	m_blocks[block_p] = block;
+	m_blocks.set(block_p, block);
 }
 
 void Map::deleteBlock(MapBlock *block, bool now)
