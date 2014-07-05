@@ -139,7 +139,7 @@ public:
 
 	void set(const key_type& k, const mapped_type& v) {
 		auto lock = lock_unique();
-		(*this)[k] = v;
+		full_type::operator[](k) = v;
 	}
 
 	bool      empty() {
@@ -157,15 +157,21 @@ public:
 		return full_type::count(k);
 	}
 
-	mapped_type& operator[](const key_type& k) {
+	mapped_type& operator[](const key_type& k) = delete;
+	/*
+	{ // UNSAFE
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
+	*/
 
-	mapped_type& operator[](key_type&& k) {
+	mapped_type& operator[](key_type&& k) = delete;
+	/*
+	{ // UNSAFE
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
+	*/
 
 	typename full_type::iterator  erase(const_iterator position) {
 		auto lock = lock_unique();

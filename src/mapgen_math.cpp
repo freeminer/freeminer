@@ -278,9 +278,9 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	//par.IFS.foldingCount = params.get("IFS.foldingCount", 1).asInt();
 
 	if (params["mode"].asString() == "")
-		mg_params->mode = normal;
+		mg_params->mode = normal_mode;
 	if (params["mode"].asString() == "normal")
-		mg_params->mode = normal;
+		mg_params->mode = normal_mode;
 	if (params["mode"].asString() == "colouring")
 		mg_params->mode = colouring;
 	if (params["mode"].asString() == "fake_AO")
@@ -444,9 +444,9 @@ int MapgenMath::generateTerrain() {
 	vec0 = (vec0 - center) * scale;
 	/*
 		errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
-		            << " N=" << Compute<normal>(CVector3(vec0.X, vec0.Y, vec0.Z), mg_params->par)
+		            << " N=" << Compute<normal_mode>(CVector3(vec0.X, vec0.Y, vec0.Z), mg_params->par)
 		            //<<" F="<< Compute<fake_AO>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
-		            //<<" L="<<node_min.getLength()<< " -="<<node_min.getLength() - Compute<normal>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
+		            //<<" L="<<node_min.getLength()<< " -="<<node_min.getLength() - Compute<normal_mode>(CVector3(node_min.X,node_min.Y,node_min.Z), par)
 		            << " Sc=" << scale << " internal=" << internal
 		            << std::endl;
 	*/
@@ -462,7 +462,7 @@ int MapgenMath::generateTerrain() {
 
 #if USE_MANDELBULBER
 				if (!internal)
-					d = Compute<normal>(CVector3(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z), mg_params->par);
+					d = Compute<normal_mode>(CVector3(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z), mg_params->par);
 #endif
 				if (internal)
 					d = (*func)(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z, scale, iterations);
