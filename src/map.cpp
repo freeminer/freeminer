@@ -2052,7 +2052,7 @@ u32 Map::transformLiquidsFinite(Server *m_server, std::map<v3s16, MapBlock*> & m
 			if(block != NULL) {
 				modified_blocks[blockpos] = block;
 				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
-					lighting_modified_blocks[block->getPos()] = block;
+					lighting_modified_blocks.set(block->getPos(), block);
 			}
 			must_reflow.push_back(neighbors[i].p);
 
@@ -2361,7 +2361,7 @@ u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modifie
 			// If new or old node emits light, MapBlock requires lighting update
 			if(nodemgr->get(n0).light_source != 0 ||
 					nodemgr->get(n00).light_source != 0)
-				lighting_modified_blocks[block->getPos()] = block;
+				lighting_modified_blocks.set(block->getPos(), block);
 		}
 
 		/*
