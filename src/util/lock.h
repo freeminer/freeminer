@@ -5,7 +5,6 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
-#include <debug.h>
 
 #if USE_BOOST // not finished
 
@@ -81,7 +80,7 @@ public:
 		++r;
 	}
 	~lock_rec() {
-		if(!--r && !r) {
+		if(!--r) {
 			//lock.unlock();
 		}
 	}
@@ -159,17 +158,11 @@ public:
 	}
 
 	mapped_type& operator[](const key_type& k) {
-assert("DONT USE map[]");
-auto i = 0;
-i/=0;
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
 
 	mapped_type& operator[](key_type&& k) {
-assert("DONT USE map[]");
-auto i = 0;
-i/=0;
 		auto lock = lock_unique();
 		return full_type::operator[](k);
 	}
