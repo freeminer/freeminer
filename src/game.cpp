@@ -3376,13 +3376,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 		else if(show_hud || show_chat)
 		{
-			u16 fps = (1.0/dtime_avg1);
 			std::ostringstream os(std::ios_base::binary);
 			os << "Freeminer " << minetest_version_hash
-#ifdef __ANDROID__
-				<< " FPS = " << fps
-#endif
-;
 			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
