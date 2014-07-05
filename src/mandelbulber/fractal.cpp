@@ -1274,7 +1274,7 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 	{
 		if (params.analitycDE)
 		{
-			distance = Compute<normal>(point, params, &L);
+			distance = Compute<normal_mode>(point, params, &L);
 			if (max_iter != NULL)
 			{
 				if (L == (int)params.doubles.N) *max_iter = true;
@@ -1454,7 +1454,7 @@ double CalculateDistance(CVector3 point, sFractal &params, bool *max_iter)
 #endif
 
 // force template instantiation
-template double Compute<normal>(CVector3, const sFractal&, int*);
+template double Compute<normal_mode>(CVector3, const sFractal&, int*);
 template double Compute<colouring>(CVector3, const sFractal&, int*);
 template double Compute<fake_AO>(CVector3, const sFractal&, int*);
 template double Compute<deltaDE1>(CVector3, const sFractal&, int*);
