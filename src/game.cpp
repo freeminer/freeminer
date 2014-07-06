@@ -3377,7 +3377,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		else if(show_hud || show_chat)
 		{
 			std::ostringstream os(std::ios_base::binary);
-			os << "Freeminer " << minetest_version_hash
+			os << "Freeminer " << minetest_version_hash;
 			guitext->setText(utf8_to_wide(os.str()).c_str());
 			guitext->setVisible(true);
 		}
