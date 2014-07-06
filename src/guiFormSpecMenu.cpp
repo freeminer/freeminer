@@ -86,6 +86,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_selected_amount(0),
 	m_selected_dragging(false),
 	m_tooltip_element(NULL),
+	m_old_tooltip_id(-1),
 	m_allowclose(true),
 	m_lock(false),
 	m_form_src(fsrc),
@@ -1308,7 +1309,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
 		}
-		
+
 		e->setUseAlphaChannel(true);
 		e->setImage(texture);
 		e->setPressedImage(pressed_texture);
@@ -1807,7 +1808,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_fields.clear();
 	m_boxes.clear();
 	m_tooltips.clear();
-	
+
 	// Set default values (fits old formspec values)
 	m_bgcolor = video::SColor(140,0,0,0);
 	m_bgfullscreen = false;
@@ -1817,7 +1818,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 
 	m_default_tooltip_bgcolor = video::SColor(255,56,121,65);
 	m_default_tooltip_color = video::SColor(255,255,255,255);
-	
+
 	m_slotbordercolor = video::SColor(200,0,0,0);
 	m_slotborder = false;
 
@@ -2834,7 +2835,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 
 	}
-	
+
 	if(event.EventType==EET_MOUSE_INPUT_EVENT
 			&& event.MouseInput.Event != EMIE_MOUSE_MOVED) {
 		// Mouse event other than movement

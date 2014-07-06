@@ -12,7 +12,7 @@ set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 # Also remember to set PROTOCOL_VERSION in clientserver.h when releasing
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
-set(VERSION_PATCH 9)
+set(VERSION_PATCH 10)
 set(VERSION_PATCH "${VERSION_PATCH}.3")
 set(VERSION_PATCH_ORIG ${VERSION_PATCH})
 
