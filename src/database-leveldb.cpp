@@ -35,6 +35,11 @@ LevelDB databases
 #include "settings.h"
 #include "log.h"
 
+#define ENSURE_STATUS_OK(s) \
+	if (!s.ok()) { \
+		throw FileNotGoodException(std::string("LevelDB error: ") + s.ToString()); \
+	}
+
 Database_LevelDB::Database_LevelDB(ServerMap *map, std::string savedir)
 {
 	m_database = new KeyValueStorage(savedir, "map");
@@ -95,7 +100,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 	if (!datastr.length()) {
 
 	ok = m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
-	if (datastr.length() == 0 && ok) {
+	if (datastr.length() == 0) {
 		errorstream << "Blank block data in database (datastr.length() == 0) ("
 			<< blockpos.X << "," << blockpos.Y << "," << blockpos.Z << ")" << std::endl;
 
@@ -175,7 +180,7 @@ void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}
-	assert(it->status().ok());  // Check for any errors found during the scan
+	ENSURE_STATUS_OK(it->status());  // Check for any errors found during the scan
 	delete it;
 #endif
 }
