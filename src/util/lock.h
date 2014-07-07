@@ -66,9 +66,9 @@ template<class T>
 class lock_rec {
 public:
 	T & lock;
-	int &r;
+	std::atomic_int &r;
 	std::thread::id & thread_id;
-	lock_rec(T & lock_, int & r_, std::thread::id & thread_id_):
+	lock_rec(T & lock_, std::atomic_int & r_, std::thread::id & thread_id_):
 		lock(lock_),
 		r(r_),
 		thread_id(thread_id_) {
@@ -90,7 +90,7 @@ class locker {
 public:
 	try_shared_mutex mtx;
 	//semaphore sem;
-	int r;
+	std::atomic_int r;
 	std::thread::id thread_id;
 
 	locker() {
