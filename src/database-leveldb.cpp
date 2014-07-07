@@ -100,7 +100,7 @@ MapBlock* Database_LevelDB::loadBlock(v3s16 blockpos)
 	if (!datastr.length()) {
 
 	ok = m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
-	if (datastr.length() == 0) {
+	if (datastr.length() == 0 && ok) {
 		errorstream << "Blank block data in database (datastr.length() == 0) ("
 			<< blockpos.X << "," << blockpos.Y << "," << blockpos.Z << ")" << std::endl;
 
