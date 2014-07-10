@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../constants.h" // BS, MAP_BLOCKSIZE
 #include <string.h>
 #include <iostream>
+#include <atomic>
 
 // Calculate the borders of a "d-radius" cube
 void getFacePositions(std::list<v3s16> &list, u16 d)
@@ -114,7 +115,7 @@ void getFacePositions(std::list<v3s16> &list, u16 d)
     myrand
 */
 
-static unsigned long next = 1;
+static std::atomic_ulong next;
 
 /* RAND_MAX assumed to be 32767 */
 int myrand(void)
