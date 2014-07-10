@@ -803,7 +803,7 @@ void Server::AsyncRunStep(bool initial_step)
 		JMutexAutoLock envlock(m_env_mutex);
 
 		m_clients.Lock();
-		std::map<u16, RemoteClient*> clients = m_clients.getClientList();
+		auto & clients = m_clients.getClientList();
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
 
 		// Radius inside which objects are active
@@ -811,7 +811,7 @@ void Server::AsyncRunStep(bool initial_step)
 		radius *= MAP_BLOCKSIZE;
 		s16 radius_deactivate = radius*3;
 
-		for(std::map<u16, RemoteClient*>::iterator
+		for(auto
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
@@ -990,9 +990,9 @@ void Server::AsyncRunStep(bool initial_step)
 		}
 
 		m_clients.Lock();
-		std::map<u16, RemoteClient*> clients = m_clients.getClientList();
+		auto & clients = m_clients.getClientList();
 		// Route data to every client
-		for(std::map<u16, RemoteClient*>::iterator
+		for(auto
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
@@ -1292,7 +1292,7 @@ int Server::AsyncRunMapStep(bool initial_step) {
 			goto no_send;
 		}
 
-		for (std::map<u16, RemoteClient*>::iterator i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
+		for (auto i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
 			if (i->second->m_nearest_unsent_nearest) {
 				i->second->m_nearest_unsent_d = 0;
 				i->second->m_nearest_unsent_nearest = 0;

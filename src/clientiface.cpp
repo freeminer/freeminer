@@ -783,7 +783,7 @@ void ClientInterface::DeleteClient(u16 peer_id)
 	}
 
 	// Delete client
-	delete m_clients[peer_id];
+	delete m_clients.get(peer_id);
 	m_clients.erase(peer_id);
 }
 
@@ -800,7 +800,7 @@ void ClientInterface::CreateClient(u16 peer_id)
 	// Create client
 	RemoteClient *client = new RemoteClient(m_env);
 	client->peer_id = peer_id;
-	m_clients[client->peer_id] = client;
+	m_clients.set(client->peer_id, client);
 }
 
 void ClientInterface::event(u16 peer_id, ClientStateEvent event)

@@ -134,7 +134,7 @@ public:
 
 	mapped_type& get(const key_type& k) {
 		auto lock = lock_shared();
-		return (*this)[k];
+		return full_type::operator[](k);
 	}
 
 	void set(const key_type& k, const mapped_type& v) {

@@ -118,7 +118,7 @@ protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
 	// Time of day in milli-hours (0-23999); determines day and night
-	u32 m_time_of_day;
+	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
 	float m_time_of_day_f;
 	float m_time_of_day_speed;
