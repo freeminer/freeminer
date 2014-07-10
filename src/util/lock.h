@@ -67,12 +67,12 @@ class lock_rec {
 public:
 	T & lock;
 	std::atomic_int &r;
-	std::thread::id & thread_id;
-	lock_rec(T & lock_, std::atomic_int & r_, std::thread::id & thread_id_):
+	std::atomic<std::size_t> & thread_id;
+	lock_rec(T & lock_, std::atomic_int & r_, std::atomic<std::size_t> & thread_id_):
 		lock(lock_),
 		r(r_),
 		thread_id(thread_id_) {
-		auto thread_me = std::this_thread::get_id();
+		auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 		if(!r || thread_me != thread_id) {
 			lock.lock();
 			thread_id = thread_me;
@@ -91,7 +91,7 @@ public:
 	try_shared_mutex mtx;
 	//semaphore sem;
 	std::atomic_int r;
-	std::thread::id thread_id;
+	std::atomic<std::size_t> thread_id;
 
 	locker() {
 		r = 0;
@@ -158,20 +158,8 @@ public:
 	}
 
 	mapped_type& operator[](const key_type& k) = delete;
-	/*
-	{ // UNSAFE
-		auto lock = lock_unique();
-		return full_type::operator[](k);
-	}
-	*/
 
 	mapped_type& operator[](key_type&& k) = delete;
-	/*
-	{ // UNSAFE
-		auto lock = lock_unique();
-		return full_type::operator[](k);
-	}
-	*/
 
 	typename full_type::iterator  erase(const_iterator position) {
 		auto lock = lock_unique();
