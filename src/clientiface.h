@@ -425,7 +425,7 @@ protected:
 		{ m_clients_mutex.Unlock(); }
 
 public:
-	std::map<u16, RemoteClient*>& getClientList()
+	shared_map<u16, RemoteClient*>& getClientList()
 		{ return m_clients; }
 
 private:
@@ -436,7 +436,7 @@ private:
 	con::Connection* m_con;
 	JMutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
-	std::map<u16, RemoteClient*> m_clients;
+	shared_map<u16, RemoteClient*> m_clients;
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
