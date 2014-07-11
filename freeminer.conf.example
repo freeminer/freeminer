@@ -117,8 +117,6 @@
 # Optimization: faster cave flood (and not true constant)
 #  (for finite liquids)
 #liquid_fast_flood = 1
-# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
-#weather = false
 # Enable nice leaves; disable for speed
 #new_style_leaves = true
 # Enable smooth lighting with simple ambient occlusion;
@@ -367,8 +365,6 @@
 #time_send_interval = 5
 # Length of day/night cycle. 72=20min, 360=4min, 1=24hour, 0=day/night/whatever stays unchanged
 #time_speed = 72
-# Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
-#year_days = 30
 #server_unload_unused_data_timeout = 29
 # Maximum number of statically stored objects in a block
 #max_objects_per_block = 49
@@ -492,6 +488,32 @@
 #mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
 #mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
 #mgindev_np_biome          = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
+
+
+# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
+#weather = false
+# Weather noise maps
+#mg_heat                   = 15,   30,  (500, 500, 500), 5349, 2, 0.60);
+#mg_humidity               = 50,   50,  (500, 500, 500), 842,  3, 0.45);
+# Season amplitude in celsius
+#weather_heat_season     = 30
+# Daily amplitude in celsius
+#weather_heat_daily      = 8
+# Period width on map (in nodes)
+#weather_heat_width      = 3000
+# Enable hot core (start at, nodes from bottom), 0 for disable
+#weather_hot_core        = 1000
+# Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
+#weather_heat_height     = -333
+# Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
+#year_days = 30
+# Same for humidity:
+#weather_humidity_season = 30
+#weather_humidity_daily  = -12
+#weather_humidity_width  = 300
+# Humidity change amplitude
+#weather_humidity_days   = 2
+
 
 # Float islands starts from height, 0 to disable
 #mgindev_float_islands = 500

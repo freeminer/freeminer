@@ -22,6 +22,11 @@ std::ostream & operator<<(std::ostream & s, v3s16 p) {
 	return s;
 }
 
+std::ostream & operator<<(std::ostream & s, v3f p) {
+	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
+	return s;
+}
+
 std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
 	for (auto & i: p)
 		s << i.first << "=" << i.second<<" ";
@@ -31,5 +36,12 @@ std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
 #include "mapnode.h"
 std::ostream & operator<<(std::ostream & s, MapNode n) {
 	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
+	return s;
+}
+
+#include "noise.h"
+struct NoiseParams;
+std::ostream & operator<<(std::ostream & s, NoiseParams np) {
+	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<"]";
 	return s;
 }
