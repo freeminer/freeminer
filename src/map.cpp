@@ -3412,8 +3412,8 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 
 ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 		VoxelManipulator(),
-		m_create_area(false),
 		replace_generated(true),
+		m_create_area(false),
 		m_map(map)
 {
 }

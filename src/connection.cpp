@@ -1432,10 +1432,11 @@ void ConnectionSendThread::runTimeouts(float dtime)
 			for(std::list<BufferedPacket>::iterator k = timed_outs.begin();
 				k != timed_outs.end(); ++k)
 			{
+/*
 				u16 peer_id = readPeerId(*(k->data));
 				u8 channelnum  = readChannel(*(k->data));
 				u16 seqnum  = readU16(&(k->data[BASE_HEADER_SIZE+1]));
-
+*/
 				channel->UpdateBytesLost(k->data.getSize());
 
 /*
