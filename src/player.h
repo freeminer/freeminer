@@ -112,11 +112,13 @@ public:
 
 	v3f getSpeed()
 	{
+		auto lock = lock_shared();
 		return m_speed;
 	}
 
 	void setSpeed(v3f speed)
 	{
+		auto lock = lock_unique();
 		m_speed = speed;
 	}
 	
@@ -155,31 +157,37 @@ public:
 
 	void setPitch(f32 pitch)
 	{
+		auto lock = lock_unique();
 		m_pitch = pitch;
 	}
 
 	virtual void setYaw(f32 yaw)
 	{
+		auto lock = lock_unique();
 		m_yaw = yaw;
 	}
 
 	f32 getPitch()
 	{
+		auto lock = lock_shared();
 		return m_pitch;
 	}
 
 	f32 getYaw()
 	{
+		auto lock = lock_shared();
 		return m_yaw;
 	}
 
 	u16 getBreath()
 	{
+		auto lock = lock_shared();
 		return m_breath;
 	}
 
 	virtual void setBreath(u16 breath)
 	{
+		auto lock = lock_unique();
 		m_breath = breath;
 	}
 
