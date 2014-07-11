@@ -140,45 +140,6 @@ Player * Environment::getPlayer(const std::string &name)
 	return NULL;
 }
 
-Player * Environment::getRandomConnectedPlayer()
-{
-	std::list<Player*> connected_players = getPlayers(true);
-	u32 chosen_one = myrand() % connected_players.size();
-	u32 j = 0;
-	for(std::list<Player*>::iterator
-			i = connected_players.begin();
-			i != connected_players.end(); ++i)
-	{
-		if(j == chosen_one)
-		{
-			Player *player = *i;
-			return player;
-		}
-		j++;
-	}
-	return NULL;
-}
-
-Player * Environment::getNearestConnectedPlayer(v3f pos)
-{
-	std::list<Player*> connected_players = getPlayers(true);
-	f32 nearest_d = 0;
-	Player *nearest_player = NULL;
-	for(std::list<Player*>::iterator
-			i = connected_players.begin();
-			i != connected_players.end(); ++i)
-	{
-		Player *player = *i;
-		f32 d = player->getPosition().getDistanceFrom(pos);
-		if(d < nearest_d || nearest_player == NULL)
-		{
-			nearest_d = d;
-			nearest_player = player;
-		}
-	}
-	return nearest_player;
-}
-
 std::list<Player*> Environment::getPlayers()
 {
 	return m_players;
@@ -509,7 +470,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
 
-	RemotePlayer testplayer(m_gamedef);
+	auto testplayer = new RemotePlayer(m_gamedef);
 	std::string path = players_path + playername;
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
@@ -517,17 +478,18 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 			return NULL;
 		}
 		try {
-		testplayer.deSerialize(is, path);
+		testplayer->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
 			return nullptr;
 		}
 		is.close();
-		if (testplayer.getName() == playername) {
-			*player = testplayer;
+		if (testplayer->getName() == playername) {
+			player = testplayer;
 			found = true;
 		}
 	if (!found) {
+		delete testplayer;
 		infostream << "Player file for player " << playername
 				<< " not found" << std::endl;
 		return NULL;
