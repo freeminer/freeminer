@@ -958,8 +958,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			block = new MapBlock(&m_env.getMap(), p, this);
 
 		block->deSerialize(istr, ser_version, false);
-		packet[TOCLIENT_BLOCKDATA_HEAT].convert(&block->heat);
-		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&block->humidity);
+		s32 h; // for convert to atomic
+		packet[TOCLIENT_BLOCKDATA_HEAT].convert(&h);
+		block->heat = h;
+		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&h);
+		block->humidity = h;
 
 		if (new_block)
 			m_env.getMap().insertBlock(block);

@@ -3540,8 +3540,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	block->serialize(os, ver, false);
 	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
 
-	PACK(TOCLIENT_BLOCKDATA_HEAT, block->heat);
-	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, block->humidity);
+	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
+	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
 
 	JMutexAutoLock lock(m_env_mutex);
 	/*
