@@ -470,7 +470,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
 
-	RemotePlayer testplayer(m_gamedef);
+	auto testplayer = new RemotePlayer(m_gamedef);
 	std::string path = players_path + playername;
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
@@ -478,17 +478,18 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 			return NULL;
 		}
 		try {
-		testplayer.deSerialize(is, path);
+		testplayer->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
 			return nullptr;
 		}
 		is.close();
-		if (testplayer.getName() == playername) {
-			*player = testplayer;
+		if (testplayer->getName() == playername) {
+			player = testplayer;
 			found = true;
 		}
 	if (!found) {
+		delete testplayer;
 		infostream << "Player file for player " << playername
 				<< " not found" << std::endl;
 		return NULL;

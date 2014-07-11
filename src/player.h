@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h" // BS
 #include "json/json.h"
 #include <list>
+#include "util/lock.h"
 
 #define PLAYERNAME_SIZE 20
 
@@ -96,6 +97,7 @@ struct HudElement;
 class Environment;
 
 class Player
+: public locker
 {
 public:
 
@@ -123,6 +125,7 @@ public:
 
 	v3f getPosition()
 	{
+		auto lock = lock_shared();
 		return m_position;
 	}
 
@@ -146,6 +149,7 @@ public:
 
 	virtual void setPosition(const v3f &position)
 	{
+		auto lock = lock_unique();
 		m_position = position;
 	}
 
