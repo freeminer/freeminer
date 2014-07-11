@@ -563,8 +563,8 @@ public:
 	NodeTimerList m_node_timers;
 	StaticObjectList m_static_objects;
 	
-	s16 heat;
-	s16 humidity;
+	std::atomic_short heat;
+	std::atomic_short humidity;
 	u32 heat_last_update;
 	u32 humidity_last_update;
 	float m_uptime_timer_last;
