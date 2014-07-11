@@ -140,45 +140,6 @@ Player * Environment::getPlayer(const std::string &name)
 	return NULL;
 }
 
-Player * Environment::getRandomConnectedPlayer()
-{
-	std::list<Player*> connected_players = getPlayers(true);
-	u32 chosen_one = myrand() % connected_players.size();
-	u32 j = 0;
-	for(std::list<Player*>::iterator
-			i = connected_players.begin();
-			i != connected_players.end(); ++i)
-	{
-		if(j == chosen_one)
-		{
-			Player *player = *i;
-			return player;
-		}
-		j++;
-	}
-	return NULL;
-}
-
-Player * Environment::getNearestConnectedPlayer(v3f pos)
-{
-	std::list<Player*> connected_players = getPlayers(true);
-	f32 nearest_d = 0;
-	Player *nearest_player = NULL;
-	for(std::list<Player*>::iterator
-			i = connected_players.begin();
-			i != connected_players.end(); ++i)
-	{
-		Player *player = *i;
-		f32 d = player->getPosition().getDistanceFrom(pos);
-		if(d < nearest_d || nearest_player == NULL)
-		{
-			nearest_d = d;
-			nearest_player = player;
-		}
-	}
-	return nearest_player;
-}
-
 std::list<Player*> Environment::getPlayers()
 {
 	return m_players;

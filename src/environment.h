@@ -79,8 +79,6 @@ public:
 	//void removePlayer(const std::string &name);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
-	Player * getRandomConnectedPlayer();
-	Player * getNearestConnectedPlayer(v3f pos);
 	std::list<Player*> getPlayers();
 	std::list<Player*> getPlayers(bool ignore_disconnected);
 	
