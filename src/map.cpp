@@ -3425,7 +3425,7 @@ ManualMapVoxelManipulator::~ManualMapVoxelManipulator()
 void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 						v3s16 blockpos_max, bool load_if_inexistent)
 {
-	TimeTaker timer1("initialEmerge", &emerge_time);
+	TimeTaker timer1("initialEmerge");
 
 	// Units of these are MapBlocks
 	v3s16 p_min = blockpos_min;
@@ -3461,7 +3461,7 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 		bool block_data_inexistent = false;
 		try
 		{
-			TimeTaker timer1("emerge load", &emerge_load_time);
+			TimeTaker timer1("emerge load");
 
 			block = m_map->getBlockNoCreate(p);
 			if(block->isDummy())
