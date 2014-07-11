@@ -23,15 +23,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "biome.h"
 #include "nodedef.h"
 #include "map.h" //for ManualMapVoxelManipulator
-#include "log.h"
+#include "log_types.h"
 #include "util/numeric.h"
 #include "main.h"
 #include "util/mathconstants.h"
 #include "porting.h"
+#include "settings.h"
 
-NoiseParams nparams_biome_def_heat(50, 50, v3f(500.0, 500.0, 500.0), 5349, 3, 0.70);
-NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.55);
-
+NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65);
+NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50);
 
 BiomeDefManager::BiomeDefManager() {
 	biome_registration_finished = false;
@@ -66,6 +66,19 @@ BiomeDefManager::BiomeDefManager() {
 	b->humidity_point = 0.0;
 
 	biomes.push_back(b);
+
+	g_settings->getNoiseParams("mg_heat", nparams_biome_def_heat);
+	g_settings->getNoiseParams("mg_humidity", nparams_biome_def_humidity);
+	year_days = g_settings->getS16("year_days");
+	weather_heat_season = g_settings->getS16("weather_heat_season");
+	weather_heat_daily = g_settings->getS16("weather_heat_daily");
+	weather_heat_width = g_settings->getS16("weather_heat_width");
+	weather_heat_height = g_settings->getS16("weather_heat_height");
+	weather_humidity_season = g_settings->getS16("weather_humidity_season");
+	weather_humidity_daily = g_settings->getS16("weather_humidity_daily");
+	weather_humidity_width = g_settings->getS16("weather_humidity_width");
+	weather_humidity_days = g_settings->getS16("weather_humidity_days");
+	weather_hot_core = g_settings->getS16("weather_hot_core");
 }
 
 
@@ -219,31 +232,23 @@ s16 BiomeDefManager::calcBlockHeat(v3s16 p, u64 seed, float timeofday, float tot
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	const f32 offset = 20; // = np_heat->offset
-	const f32 scale  = 20; // = np_heat->scale
-	const f32 range  = 20;
-	f32 heat = NoisePerlin2D(np_heat, p.X, p.Z, seed); // 0..50..100
-
-	heat -= np_heat->offset; // -50..0..+50
-
-	// normalizing - todo REMOVE after fixed NoiseParams nparams_biome_def_heat = {50, 50, -> 20, 50,
-	if (np_heat->scale)
-		heat /= np_heat->scale / scale; //  -20..0..+20
+	f32 heat = NoisePerlin2D(np_heat, p.X, p.Z, seed); // -30..20..70
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
-		seasonv /= 86400 * g_settings->getS16("year_days"); // season change speed
-		seasonv += (f32)p.X / 3000; // you can walk to area with other season
+		seasonv /= 86400 * year_days; // season change speed
+		seasonv += (f32)p.X / weather_heat_width; // you can walk to area with other season
 		seasonv = sin(seasonv * M_PI);
-		heat += (range * (heat < 0 ? 2 : 0.5)) * seasonv; // -60..0..30
+		//heat += (weather_heat_season * (heat < offset ? 2 : 0.5)) * seasonv; // -60..0..30
+		heat += (weather_heat_season) * seasonv; // -60..0..30
 
 		// daily change, hotter at sun +4, colder at night -4
-		heat += 8 * (sin(cycle_shift(timeofday, -0.25) * M_PI) - 0.5); //-44..20..54
+		heat += weather_heat_daily * (sin(cycle_shift(timeofday, -0.25) * M_PI) - 0.5); //-64..0..34
 	}
-	heat += offset; // -40..20..50
-	heat += p.Y / -333; // upper=colder, lower=hotter, 3c per 1000
+	heat += p.Y / weather_heat_height; // upper=colder, lower=hotter, 3c per 1000
 
-	if (p.Y < -(MAP_GENERATION_LIMIT-1000)) heat += 6000 * (1-((float)(p.Y - -MAP_GENERATION_LIMIT)/1000)); //hot core, later via realms, DISABLE BEFORE MERGING
+	if (weather_hot_core && p.Y < -(MAP_GENERATION_LIMIT-weather_hot_core))
+		heat += 6000 * (1-((float)(p.Y - -MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
 
 	return heat;
 }
@@ -255,13 +260,13 @@ s16 BiomeDefManager::calcBlockHumidity(v3s16 p, u64 seed, float timeofday, float
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
-		seasonv /= 86400 * 2; // bad weather change speed (2 days)
-		seasonv += (f32)p.Z / 300;
-		humidity += 30 * sin(seasonv * M_PI);
-		humidity += -12 * (sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5);
+		seasonv /= 86400 * weather_humidity_days; // bad weather change speed (2 days)
+		seasonv += (f32)p.Z / weather_humidity_width;
+		humidity += weather_humidity_season * sin(seasonv * M_PI);
+		humidity += weather_humidity_daily * (sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5);
 	}
 
 	humidity = rangelim(humidity, 0, 100);
-	
+
 	return humidity;
 }

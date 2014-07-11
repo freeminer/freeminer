@@ -96,7 +96,18 @@ public:
 	void addBiome(Biome *b);
 	void resolveNodeNames(INodeDefManager *ndef);
 	u8 getBiomeIdByName(const char *name);
-	
+
+	u32 year_days;
+	s32 weather_heat_season;
+	s32 weather_heat_width;
+	s32 weather_heat_daily;
+	s32 weather_heat_height;
+	s32 weather_humidity_season;
+	s32 weather_humidity_width;
+	s32 weather_humidity_daily;
+	s32 weather_humidity_days;
+	s32 weather_hot_core;
+
 	s16 calcBlockHeat(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
 };
