@@ -1491,6 +1491,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	std::vector<MapBlock *> blocks_delete;
+	int save_started = 0;
 	{
 	auto lock = m_blocks.lock_shared();
 	for(auto ir : m_blocks) {
@@ -1514,13 +1515,13 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 				v3s16 p = block->getPos();
 				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
 				// Save if modified
-				if(block->getModified() != MOD_STATE_CLEAN
-						&& save_before_unloading)
+				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading)
 				{
 					//modprofiler.add(block->getModifiedReason(), 1);
-					beginSave();
-					saveBlock(block);
-					endSave();
+					if(!save_started++)
+						beginSave();
+					if (!saveBlock(block))
+						continue;
 					saved_blocks_count++;
 				}
 
@@ -1562,6 +1563,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	}
 	}
+	if(save_started)
+		endSave();
 
 	if (!calls)
 		m_blocks_update_last = 0;
@@ -3304,18 +3307,20 @@ void ServerMap::loadMapMeta()
 		<< m_emerge->params.seed<<std::endl;
 }
 
-void ServerMap::beginSave() {
+void ServerMap::beginSave()
+{
 	dbase->beginSave();
 }
 
-void ServerMap::endSave() {
+void ServerMap::endSave()
+{
 	dbase->endSave();
 }
 
-void ServerMap::saveBlock(MapBlock *block)
+bool ServerMap::saveBlock(MapBlock *block)
 {
-  auto lock = block->lock_shared_rec();
-  dbase->saveBlock(block);
+	auto lock = block->lock_shared_rec();
+	return dbase->saveBlock(block);
 }
 
 MapBlock* ServerMap::loadBlock(v3s16 blockpos)

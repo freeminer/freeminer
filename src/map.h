@@ -259,7 +259,7 @@ public:
 
 	// Server implements this.
 	// Client leaves it as no-op.
-	virtual void saveBlock(MapBlock *block){};
+	virtual bool saveBlock(MapBlock *block){ return false; };
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.
@@ -453,8 +453,7 @@ public:
 	void saveMapMeta();
 	void loadMapMeta();
 
-
-	void saveBlock(MapBlock *block);
+	bool saveBlock(MapBlock *block);
 	MapBlock* loadBlock(v3s16 p);
 
 	// For debug printing
