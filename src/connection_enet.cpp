@@ -263,6 +263,10 @@ void Connection::send(u16 peer_id, u8 channelnum,
 	ENetPacket *packet = enet_packet_create(*data, data.getSize(), reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
 
 	ENetPeer *peer = getPeer(peer_id);
+	if(!peer) {
+		deletePeer(peer_id, false);
+		return;
+	}
 	enet_peer_send(peer, channelnum, packet);
 }
 
