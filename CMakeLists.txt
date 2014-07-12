@@ -20,7 +20,7 @@ if(VERSION_EXTRA)
 	set(VERSION_PATCH ${VERSION_PATCH}-${VERSION_EXTRA})
 else()
 	# Comment the following line during release
-	set(VERSION_PATCH "${VERSION_PATCH}-next-dev")
+	set(VERSION_PATCH ${VERSION_PATCH}-next-dev)
 endif()
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 

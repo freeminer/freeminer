@@ -48,7 +48,7 @@ int Database_Dummy::Initialized(void)
 void Database_Dummy::beginSave() {}
 void Database_Dummy::endSave() {}
 
-void Database_Dummy::saveBlock(MapBlock *block)
+bool Database_Dummy::saveBlock(MapBlock *block)
 {
 	DSTACK(__FUNCTION_NAME);
 	/*
@@ -56,7 +56,10 @@ void Database_Dummy::saveBlock(MapBlock *block)
 	*/
 	if(block->isDummy())
 	{
-		return;
+		v3s16 p = block->getPos();
+		infostream<<"Database_Dummy::saveBlock(): WARNING: Not writing dummy block "
+				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;
+		return true;
 	}
 
 	// Format used for writing
@@ -79,6 +82,7 @@ void Database_Dummy::saveBlock(MapBlock *block)
 	m_database[getBlockAsString(p3d)] = tmp;
 	// We just wrote it to the disk so clear modified flag
 	block->resetModified();
+	return true;
 }
 
 MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
