@@ -157,7 +157,7 @@ public:
 	void raiseModified(u32 mod)
 	{
 		if(mod >= MOD_STATE_WRITE_NEEDED && m_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
-			m_changed_timestamp = m_timestamp;
+			m_changed_timestamp = (unsigned int)m_timestamp;
 		}
 		if(mod > m_modified){
 			m_modified = mod;
@@ -458,10 +458,12 @@ public:
 	*/
 	void resetUsageTimer()
 	{
+		auto lock = lock_unique();
 		m_usage_timer = 0;
 	}
 	u32 getUsageTimer()
 	{
+		auto lock = lock_shared();
 		return m_usage_timer;
 	}
 	void incrementUsageTimer(float dtime);
@@ -628,7 +630,7 @@ private:
 		When block is removed from active blocks, this is set to gametime.
 		Value BLOCK_TIMESTAMP_UNDEFINED=0xffffffff means there is no timestamp.
 	*/
-	u32 m_timestamp;
+	std::atomic_uint m_timestamp;
 	// The on-disk (or to-be on-disk) timestamp value
 	u32 m_disk_timestamp;
 

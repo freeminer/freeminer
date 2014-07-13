@@ -206,7 +206,7 @@ public:
 	//
 	u16 net_proto_version;
 
-	s16 m_nearest_unsent_nearest;
+	std::atomic_int m_nearest_unsent_nearest;
 	s16 wanted_range;
 	
 	ServerEnvironment *m_env;
@@ -215,13 +215,11 @@ public:
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
 		net_proto_version(0),
-		m_nearest_unsent_nearest(0),
 		wanted_range(9 * MAP_BLOCKSIZE),
 		m_env(env),
 		m_time_from_building(9999),
 		m_pending_serialization_version(SER_FMT_VER_INVALID),
 		m_state(CS_Created),
-		m_nearest_unsent_d(0),
 		m_nearest_unsent_reset_timer(0.0),
 		m_nothing_to_send_pause_timer(0.0),
 		m_name(""),
@@ -231,6 +229,8 @@ public:
 		m_full_version("unknown"),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
+		m_nearest_unsent_d = 0;
+		m_nearest_unsent_nearest = 0;
 	}
 	~RemoteClient()
 	{
@@ -328,7 +328,7 @@ private:
 	std::map<v3s16, unsigned int> m_blocks_sent;
 
 public:
-	s16 m_nearest_unsent_d;
+	std::atomic_int m_nearest_unsent_d;
 private:
 
 	v3s16 m_last_center;

@@ -61,11 +61,11 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_day_night_differs(false),
 		m_day_night_differs_expired(true),
 		m_generated(false),
-		m_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_usage_timer(0),
 		m_refcount(0)
 {
+	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 	m_changed_timestamp = 0;
 	data = NULL;
 	if(dummy == false)
@@ -1049,6 +1049,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 void MapBlock::incrementUsageTimer(float dtime)
 {
+	auto lock = lock_unique();
 	m_usage_timer += dtime;
 /*
 #ifndef SERVER
