@@ -57,7 +57,6 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		is_underground(false),
 		m_lighting_expired(true),
 		m_day_night_differs(false),
-		m_day_night_differs_expired(true),
 		m_generated(false),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_usage_timer(0),
@@ -67,6 +66,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	humidity = 0;
 	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 	m_changed_timestamp = 0;
+	m_day_night_differs_expired = true;
 	data = NULL;
 	if(dummy == false)
 		reallocate();
@@ -384,6 +384,7 @@ void MapBlock::actuallyUpdateDayNightDiff()
 	/*
 		Check if any lighting value differs
 	*/
+	auto lock = lock_shared_rec();
 	for(u32 i=0; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
 	{
 		MapNode &n = data[i];

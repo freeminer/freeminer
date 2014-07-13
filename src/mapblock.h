@@ -622,7 +622,7 @@ private:
 	
 	// Whether day and night lighting differs
 	bool m_day_night_differs;
-	bool m_day_night_differs_expired;
+	std::atomic_bool m_day_night_differs_expired;
 
 	bool m_generated;
 	
