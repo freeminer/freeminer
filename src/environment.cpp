@@ -572,9 +572,9 @@ void ServerEnvironment::loadMeta()
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers, bool activate = false):
 		m_env(env),
-		m_aabms(),
 		m_aabms_empty(true)
 	{
+		m_aabms.resize(CONTENT_ID_CAPACITY);
 		if(dtime_s < 0.001)
 			return;
 

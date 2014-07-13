@@ -214,7 +214,7 @@ class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::list<ActiveABM> *m_aabms[CONTENT_ID_CAPACITY];
+	std::vector<std::list<ActiveABM> *> m_aabms;
 	std::list<std::list<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:
