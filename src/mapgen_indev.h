@@ -34,11 +34,12 @@ float farscale(float scale, float x, float y, float z);
 struct NoiseIndevParams : public NoiseParams {
 	float farscale;
 	float farspread;
+	float farpersist;
 
 	NoiseIndevParams() {}
 	NoiseIndevParams(float offset_, float scale_, v3f spread_,
 					 int seed_, int octaves_, float persist_,
-					  float farscale_ = 1, float farspread_ = 1)
+					  float farscale_ = 1, float farspread_ = 1, float farpersist_ = 1)
 	{
 		offset  = offset_;
 		scale   = scale_;
@@ -49,13 +50,14 @@ struct NoiseIndevParams : public NoiseParams {
 
 		farscale  = farscale_;
 		farspread = farspread_;
+		farpersist = farpersist_;
 	}
 	
 	~NoiseIndevParams() {}
 };
 
-#define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f", &(y), sizeof(y))
-#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f", &(y))
+#define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
+#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
 
 class NoiseIndev : public Noise {
 public:
@@ -66,6 +68,7 @@ public:
 	NoiseIndev(NoiseIndevParams *np, int seed, int sx, int sy, int sz);
 	void init(NoiseParams *np, int seed, int sx, int sy, int sz);
 	void transformNoiseMapFarScale(float xx = 0, float yy = 0, float zz = 0);
+	float *perlinMap2DFar(float x, float y);
 };
 
 
@@ -74,8 +77,10 @@ struct MapgenIndevParams : public MapgenV6Params {
 	NoiseIndevParams npindev_terrain_base;
 	NoiseIndevParams npindev_terrain_higher;
 	NoiseIndevParams npindev_steepness;
+	NoiseIndevParams npindev_height_select;
 	NoiseIndevParams npindev_mud;
 	NoiseIndevParams npindev_biome;
+	NoiseIndevParams npindev_beach;
 	NoiseIndevParams npindev_float_islands1;
 	NoiseIndevParams npindev_float_islands2;
 	NoiseIndevParams npindev_float_islands3;
@@ -92,8 +97,10 @@ public:
 	NoiseIndev *noiseindev_terrain_base;
 	NoiseIndev *noiseindev_terrain_higher;
 	NoiseIndev *noiseindev_steepness;
+	NoiseIndev *noiseindev_height_select;
 	NoiseIndev *noiseindev_mud;
 	NoiseIndev *noiseindev_biome;
+	NoiseIndev *noiseindev_beach;
 	NoiseIndev *noiseindev_float_islands1;
 	NoiseIndev *noiseindev_float_islands2;
 	NoiseIndev *noiseindev_float_islands3;
@@ -106,6 +113,7 @@ public:
 	float baseTerrainLevelFromNoise(v2s16 p);
 	float baseTerrainLevelFromMap(int index);
 	float getMudAmount(int index);
+	bool getHaveBeach(int index);
 	void generateCaves(int max_stone_y);
 	void generateExperimental();
 	
