@@ -146,6 +146,7 @@ public:
 
 	v3f getEyePosition()
 	{
+		auto lock = lock_shared();
 		return m_position + getEyeOffset();
 	}
 
