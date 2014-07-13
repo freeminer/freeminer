@@ -30,8 +30,6 @@ if(MSVC)
 	# Flags for C files (sqlite)
 	# /MT = Link statically with standard library stuff
 	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-
-	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
 else()
 	# Probably GCC
 	if(APPLE)
@@ -713,6 +711,10 @@ if(BUILD_CLIENT)
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif(USE_REDIS)
+
+	if(MSVC)
+		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+	endif()
 endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)

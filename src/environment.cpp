@@ -52,13 +52,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 Environment::Environment():
-	m_time_of_day(9000),
 	m_time_of_day_f(9000./24000),
 	m_time_of_day_speed(0),
 	m_time_counter(0),
 	m_enable_day_night_ratio_override(false),
 	m_day_night_ratio_override(0.0f)
 {
+	m_time_of_day = 9000;
 }
 
 Environment::~Environment()

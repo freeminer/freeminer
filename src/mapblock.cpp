@@ -47,8 +47,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
-		heat(0),
-		humidity(0),
 		heat_last_update(0),
 		humidity_last_update(0),
 		m_uptime_timer_last(0),
@@ -65,6 +63,8 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_usage_timer(0),
 		m_refcount(0)
 {
+	heat = 0;
+	humidity = 0;
 	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 	m_changed_timestamp = 0;
 	data = NULL;
