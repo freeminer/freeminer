@@ -56,7 +56,7 @@ class gsMapper
 		s16 d_scanX;
 		s16 d_scanZ;
 		s16 d_cooldown2;
-		u16 d_texindex;
+		//u16 d_texindex;
 		u16 d_colordefs;
 		bool d_above;
 		bool d_tracking;
