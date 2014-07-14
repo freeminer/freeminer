@@ -181,5 +181,22 @@ inline float easeCurve(float t) {
 		noise3d_perlin((float)(x) / (np)->spread.X, (float)(y) / (np)->spread.Y, \
 		(float)(z) / (np)->spread.Z, (s) + (np)->seed, (np)->octaves, (np)->persist))
 
+inline float linearInterpolation(float v0, float v1, float t) {
+    return v0 + (v1 - v0) * t;
+}
+
+float biLinearInterpolation(float v00, float v10,
+							float v01, float v11,
+							float x, float y);
+
+float biLinearInterpolationNoEase(float x0y0, float x1y0,
+								  float x0y1, float x1y1,
+								  float x, float y);
+
+float triLinearInterpolation(
+		float v000, float v100, float v010, float v110,
+		float v001, float v101, float v011, float v111,
+		float x, float y, float z);
+
 #endif
 

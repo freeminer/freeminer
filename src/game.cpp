@@ -82,6 +82,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "touchscreengui.h"
 #endif
 
+#include "gsmapper.h"
+
 /*
 	Text input system
 */
@@ -1610,6 +1612,9 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		g_touchscreengui->init(tsrc,porting::getDisplayDensity());
 #endif
 
+	// create mapper
+	gsMapper mapper(device, &client);
+
 	/*
 		Some statistics are collected in these
 	*/
@@ -1900,6 +1905,23 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 		/* reset infotext */
 		infotext = L"";
+
+		// Update mapper elements
+		u16 w = g_settings->getU16("hud_map_width");
+		struct _gsm_color { u32 red; u32 green; u32 blue; } gsm_color;
+		g_settings->getStruct("hud_map_back", "u32,u32,u32",
+			&gsm_color, sizeof(gsm_color) );
+		mapper.setMapVis(screensize.X-(w+10),10, w,
+			g_settings->getU16("hud_map_height"),
+			g_settings->getFloat("hud_map_scale"),
+			g_settings->getU16("hud_map_alpha"),
+			video::SColor(0, gsm_color.red, gsm_color.green, gsm_color.blue));
+		mapper.setMapType(g_settings->getBool("hud_map_above"),
+			g_settings->getU16("hud_map_scan"),
+			g_settings->getS16("hud_map_surface"),
+			g_settings->getBool("hud_map_tracking"),
+			g_settings->getU16("hud_map_border"));
+
 		/*
 			Profiler
 		*/

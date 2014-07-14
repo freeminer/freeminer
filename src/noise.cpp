@@ -66,11 +66,6 @@ float dotProduct(float vx, float vy, float wx, float wy) {
 }
 
 
-inline float linearInterpolation(float v0, float v1, float t) {
-    return v0 + (v1 - v0) * t;
-}
-
-
 float biLinearInterpolation(float v00, float v10,
 							float v01, float v11,
 							float x, float y) {

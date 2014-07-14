@@ -492,6 +492,7 @@ set(common_SRCS
 	content_sao.cpp
 	emerge.cpp
 	mapgen.cpp
+	mapgen_v5.cpp
 	mapgen_v6.cpp
 	mapgen_v7.cpp
 	mapgen_indev.cpp
@@ -606,6 +607,7 @@ set(minetest_SRCS
 	convert_json.cpp
 	FMColoredString.cpp
 	drawscene.cpp
+	gsmapper.cpp
 	${minetest_SCRIPT_SRCS}
 	intlGUIEditBox.cpp
 	FMStaticText.cpp

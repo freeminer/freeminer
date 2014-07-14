@@ -410,7 +410,7 @@ private:
 
 	// Sends blocks to clients (locks env and con on its own)
 public:
-	void SendBlocks(float dtime);
+	int SendBlocks(float dtime);
 private:
 
 	void fillMediaCache();
