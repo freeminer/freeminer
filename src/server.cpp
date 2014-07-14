@@ -146,9 +146,9 @@ public:
 		while(!StopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
 			try {
-				m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
+				int sent = m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
 				time = porting::getTimeMs();
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
 #ifdef NDEBUG
 			} catch (BaseException &e) {
 				errorstream<<"SendBlocksThread: exception: "<<e.what()<<std::endl;
@@ -4057,7 +4057,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	m_clients.send(peer_id, 2, reply, reliable);
 }
 
-void Server::SendBlocks(float dtime)
+int Server::SendBlocks(float dtime)
 {
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("SendBlocks inside");
@@ -4066,6 +4066,8 @@ void Server::SendBlocks(float dtime)
 	//TODO check if one big lock could be faster then multiple small ones
 
 	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
+
+	int total = 0;
 
 	std::vector<PrioritySortedBlockTransfer> queue;
 
@@ -4081,10 +4083,10 @@ void Server::SendBlocks(float dtime)
 		{
 			RemoteClient *client = m_clients.lockedGetClientNoEx(*i, CS_Active);
 
-			if (client == NULL)
-				return;
+			if (!client)
+				continue;
 
-			client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
+			total += client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
 		//m_clients.Unlock();
 	}
@@ -4120,8 +4122,10 @@ void Server::SendBlocks(float dtime)
 		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version, 1);
 
 		client->SentBlock(q.pos, m_uptime.get() + m_env->m_game_time_start);
+		++total;
 	}
 	//m_clients.Unlock();
+	return total;
 }
 
 void Server::fillMediaCache()

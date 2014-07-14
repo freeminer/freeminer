@@ -59,7 +59,7 @@ std::string ClientInterface::state2Name(ClientState state)
 }
 
 
-void RemoteClient::GetNextBlocks(
+int RemoteClient::GetNextBlocks(
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
@@ -73,17 +73,17 @@ void RemoteClient::GetNextBlocks(
 	m_nearest_unsent_reset_timer += dtime;
 
 	if(m_nothing_to_send_pause_timer >= 0)
-		return;
+		return 0;
 
 	Player *player = env->getPlayer(peer_id);
 	// This can happen sometimes; clients and players are not in perfect sync.
 	if(player == NULL)
-		return;
+		return 0;
 
 	v3f playerpos = player->getPosition();
 	v3f playerspeed = player->getSpeed();
 	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
-		return;
+		return 0;
 	v3f playerspeeddir(0,0,0);
 	if(playerspeed.getLength() > 1.0*BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();
@@ -442,6 +442,7 @@ queue_full_break:
 
 	if(new_nearest_unsent_d != -1)
 		m_nearest_unsent_d = new_nearest_unsent_d;
+	return num_blocks_selected - num_blocks_sending;
 }
 
 void RemoteClient::SentBlock(v3s16 p, double time)

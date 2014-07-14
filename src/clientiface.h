@@ -239,7 +239,7 @@ public:
 		Environment should be locked when this is called.
 		dtime is used for resetting send radius at slow interval
 	*/
-	void GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
+	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, double m_uptime, std::vector<PrioritySortedBlockTransfer> &dest);
 
 	void SentBlock(v3s16 p, double time);
