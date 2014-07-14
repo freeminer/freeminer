@@ -291,7 +291,7 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.dialog_create_world()
-	local mapgens = {"v6", "v7", "indev", "singlenode", "math"}
+	local mapgens = {"v5", "v6", "v7", "indev", "singlenode", "math"}
 
 	local current_seed = core.setting_get("fixed_map_seed") or ""
 	local current_mg   = core.setting_get("mg_name")
