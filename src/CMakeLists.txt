@@ -506,6 +506,7 @@ set(minetest_SRCS
 	convert_json.cpp
 	FMColoredString.cpp
 	drawscene.cpp
+	gsmapper.cpp
 	${minetest_SCRIPT_SRCS}
 )
 
