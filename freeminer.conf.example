@@ -368,6 +368,8 @@
 #server_unload_unused_data_timeout = 29
 # Maximum number of statically stored objects in a block
 #max_objects_per_block = 49
+# Save freshly generated but not changed block, disable it for reducing map size on big servers
+#save_generated_block = 1
 # Interval of saving important changes in the world
 #server_map_save_interval = 5.3
 # http://www.sqlite.org/pragma.html#pragma_synchronous only numeric values: 0 1 2

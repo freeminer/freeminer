@@ -346,6 +346,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_users", "100");
 	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("server_unload_unused_data_timeout", "610"); //more than client
+	settings->setDefault("save_generated_block", "true");
 	settings->setDefault("ignore_world_load_errors", "true");
 	settings->setDefault("active_block_range", "4");
 	settings->setDefault("max_block_send_distance", "30");
