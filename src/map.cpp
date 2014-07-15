@@ -2912,10 +2912,11 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		/*
 			Set block as modified
 		*/
-/*
+
+		if (g_settings->getBool("save_generated_block"))
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 				"finishBlockMake expireDayNightDiff");
-*/
+
 	}
 
 	/*
