@@ -1493,7 +1493,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	std::vector<MapBlock *> blocks_delete;
 	int save_started = 0;
 	{
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec();
 	for(auto ir : m_blocks) {
 		if (n++ < m_blocks_update_last) {
 			continue;
@@ -3157,7 +3157,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		m_blocks_save_last = 0;
 
 	{
-		auto lock = m_blocks.lock_shared();
+		auto lock = m_blocks.lock_shared_rec();
 		for(auto &jr : m_blocks)
 		{
 			if (n++ < m_blocks_save_last)
@@ -3230,7 +3230,7 @@ void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
 
 void ServerMap::listAllLoadedBlocks(std::list<v3s16> &dst)
 {
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec();
 	for(auto & i : m_blocks)
 		dst.push_back(i.second->getPos());
 }
