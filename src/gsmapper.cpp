@@ -91,7 +91,8 @@ video::SColor gsMapper::getColorFromId(u16 id)
 		// get the tile image
 		const ContentFeatures &f = d_client->getNodeDefManager()->get(id);
 		video::ITexture *t = d_tsrc->getTexture(f.tiledef[0].name);
-		assert(t);
+		if (!t)
+			return d_colorids[CONTENT_UNKNOWN];
 
 		video::IVideoDriver *driver = d_device->getVideoDriver();
 
