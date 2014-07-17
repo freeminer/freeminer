@@ -68,7 +68,6 @@ void StaticObjectList::serialize(std::ostream &os)
 		StaticObject &s_obj = *i;
 		s_obj.serialize(os);
 	}
-	auto lock = m_active.lock_shared_rec();
 	for(std::map<u16, StaticObject>::iterator
 			i = m_active.begin();
 			i != m_active.end(); ++i)

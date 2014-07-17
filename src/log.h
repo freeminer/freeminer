@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LOG_HEADER
 
 #include <string>
-#include <iostream> // for std::endl
 
 /*
 	Use this for logging everything.
