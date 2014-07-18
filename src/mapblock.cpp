@@ -115,44 +115,6 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 	}
 }
 
-void MapBlock::setNodeParent(v3s16 p, MapNode & n)
-{
-	if(isValidPosition(p) == false)
-	{
-		m_parent->setNode(getPosRelative() + p, n);
-	}
-	else
-	{
-		if(data == NULL)
-			throw InvalidPositionException();
-		auto lock = lock_unique_rec();
-		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
-	}
-}
-
-MapNode MapBlock::getNodeParentNoEx(v3s16 p)
-{
-	if(isValidPosition(p) == false)
-	{
-		try{
-			return m_parent->getNode(getPosRelative() + p);
-		}
-		catch(InvalidPositionException &e)
-		{
-			return MapNode(CONTENT_IGNORE);
-		}
-	}
-	else
-	{
-		if(data == NULL)
-		{
-			return MapNode(CONTENT_IGNORE);
-		}
-		auto lock = lock_shared_rec();
-		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
-	}
-}
-
 /*
 	Propagates sunlight down through the block.
 	Doesn't modify nodes that are not affected by sunlight.

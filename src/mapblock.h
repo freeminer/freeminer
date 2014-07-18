@@ -378,8 +378,6 @@ public:
 	*/
 	bool isValidPositionParent(v3s16 p);
 	MapNode getNodeParent(v3s16 p);
-	void setNodeParent(v3s16 p, MapNode & n);
-	MapNode getNodeParentNoEx(v3s16 p);
 
 	void drawbox(s16 x0, s16 y0, s16 z0, s16 w, s16 h, s16 d, MapNode node)
 	{
