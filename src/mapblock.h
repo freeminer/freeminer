@@ -456,12 +456,12 @@ public:
 	*/
 	void resetUsageTimer()
 	{
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_usage_timer = 0;
 	}
 	u32 getUsageTimer()
 	{
-		auto lock = lock_shared();
+		auto lock = lock_shared_rec();
 		return m_usage_timer;
 	}
 	void incrementUsageTimer(float dtime);
