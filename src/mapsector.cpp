@@ -31,7 +31,7 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 		if(m_block_cache && p == m_block_cache_p)
 			return m_block_cache;
 	}
-	
+
 	MapBlock *block;
 	{
 		auto lock_blocks = m_blocks.lock_shared_rec();
@@ -41,9 +41,11 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 		block = n->second;
 	}
 
+	{
 	auto lock_cache = unique_lock(m_block_cache_mutex);
 	m_block_cache_p = p;
 	m_block_cache = block;
+	}
 	return block;
 }
 

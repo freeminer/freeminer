@@ -192,6 +192,7 @@ public:
 
 	// Returns a CONTENT_IGNORE node if not found
 	MapNode getNodeNoEx(v3s16 p);
+	MapNode getNodeNoLock(v3s16 p);
 
 	void unspreadLight(enum LightBank bank,
 			std::map<v3s16, u8> & from_nodes,

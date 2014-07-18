@@ -661,6 +661,10 @@ void ServerEnvironment::loadMeta()
 		if(m_aabms_empty)
 			return;
 
+		auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+		if (!lock->owns_lock())
+			return;
+
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
 		ServerMap *map = &m_env->getServerMap();
 
@@ -697,7 +701,7 @@ void ServerEnvironment::loadMeta()
 					{
 						if(p1 == p)
 							continue;
-						MapNode n = map->getNodeNoEx(p1);
+						MapNode n = map->getNodeNoLock(p1);
 						content_t c = n.getContent();
 						if(required_neighbors.get(c)){
 							neighbor = n;
@@ -1286,8 +1290,9 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			if(block==NULL)
 				continue;
 
-			auto lock = block->lock_unique_rec();
-
+			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			if (!lock->owns_lock())
+				continue;
 			// Set current time as timestamp
 			block->setTimestampNoChangedFlag(m_game_time);
 
