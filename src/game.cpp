@@ -3601,6 +3601,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		}
 
 		/*
+			Draw map
+		*/
+		if ((g_settings->getBool("hud_map")) && show_hud)
+		{
+			mapper.drawMap( floatToInt(player->getPosition(), BS) );
+		}
+
+		/*
 			Damage flash
 		*/
 		if(damage_flash > 0.0)
