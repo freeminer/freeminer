@@ -100,7 +100,7 @@ Map::~Map()
 	for(auto &i : m_blocks_delete_2)
 		delete i.first;
 
-	auto lock = m_blocks.lock_unique();
+	auto lock = m_blocks.lock_unique_rec();
 	for(auto &i : m_blocks) {
 
 #ifndef SERVER
@@ -167,6 +167,19 @@ MapNode Map::getNodeNoEx(v3s16 p)
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(block == NULL)
+		return MapNode(CONTENT_IGNORE);
+	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	return block->getNodeNoCheck(relpos);
+}
+
+MapNode Map::getNodeNoLock(v3s16 p)
+{
+	v3s16 blockpos = getNodeBlockPos(p);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	if(block == NULL)
+		return MapNode(CONTENT_IGNORE);
+	auto lock = block->lock_shared_rec(std::chrono::milliseconds(1));
+	if (!lock->owns_lock())
 		return MapNode(CONTENT_IGNORE);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
 	return block->getNodeNoCheck(relpos);
@@ -458,7 +471,9 @@ void Map::spreadLight(enum LightBank bank,
 		if(block->isDummy())
 			continue;
 
-		auto lock = block->lock_unique_rec();
+		auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+		if (!lock->owns_lock())
+			continue;
 
 		// Calculate relative position in block
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
@@ -712,8 +727,9 @@ u32 Map::updateLighting(enum LightBank bank,
 			if(block->isDummy())
 				break;
 
-			auto lock = block->lock_unique_rec();
-
+			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			if (!lock->owns_lock())
+				break;
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
 			modified_blocks[pos] = block;
@@ -1493,7 +1509,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	std::vector<MapBlock *> blocks_delete;
 	int save_started = 0;
 	{
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec(std::chrono::milliseconds(1));
+	if (!lock->owns_lock())
+		return m_blocks_update_last;
 	for(auto ir : m_blocks) {
 		if (n++ < m_blocks_update_last) {
 			continue;
@@ -1508,8 +1526,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			continue;
 
 		{
-			auto lock = block->lock_unique_rec();
-
+			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			if (!lock->owns_lock())
+				continue;
 			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
 			{
 				v3s16 p = block->getPos();
@@ -3163,7 +3182,10 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		m_blocks_save_last = 0;
 
 	{
-		auto lock = m_blocks.lock_shared();
+		auto lock = breakable ? m_blocks.lock_shared_rec(std::chrono::milliseconds(1)) : m_blocks.lock_shared_rec();
+		if (!lock->owns_lock())
+			return m_blocks_save_last;
+
 		for(auto &jr : m_blocks)
 		{
 			if (n++ < m_blocks_save_last)
@@ -3177,6 +3199,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 			if (!block)
 				continue;
 
+
 			block_count_all++;
 
 			if(block->getModified() >= (u32)save_level)
@@ -3188,6 +3211,9 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 				}
 
 				//modprofiler.add(block->getModifiedReason(), 1);
+				auto lock = breakable ? block->lock_unique_rec(std::chrono::milliseconds(1)) : block->lock_unique_rec();
+				if (!lock->owns_lock())
+					continue;
 
 				saveBlock(block);
 				block_count++;
@@ -3236,7 +3262,7 @@ void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
 
 void ServerMap::listAllLoadedBlocks(std::list<v3s16> &dst)
 {
-	auto lock = m_blocks.lock_shared();
+	auto lock = m_blocks.lock_shared_rec();
 	for(auto & i : m_blocks)
 		dst.push_back(i.second->getPos());
 }
@@ -3320,7 +3346,6 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
-	auto lock = block->lock_shared_rec();
 	return dbase->saveBlock(block);
 }
 

@@ -104,13 +104,15 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 {
 	if(isValidPosition(p) == false)
 	{
-		return m_parent->getNode(getPosRelative() + p);
+		return m_parent->getNodeNoLock(getPosRelative() + p);
 	}
 	else
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		auto lock = lock_shared_rec();
+		auto lock = lock_shared_rec(std::chrono::milliseconds(1));
+		if (!lock->owns_lock())
+			throw InvalidPositionException();
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 }
