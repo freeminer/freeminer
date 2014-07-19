@@ -512,7 +512,7 @@ void Map::spreadLight(enum LightBank bank,
 				// Calculate relative position in block
 				v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 				// Get node straight from the block
-				MapNode n2 = block->getNode(relpos);
+				MapNode n2 = block->getNodeNoLock(relpos);
 
 				bool changed = false;
 				/*
