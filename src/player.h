@@ -288,7 +288,7 @@ public:
 	bool  free_move;
 	float movement_fov;
 
-	u16 peer_id;
+	std::atomic_short peer_id;
 
 	std::string inventory_formspec;
 	

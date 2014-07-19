@@ -624,7 +624,7 @@ private:
 		If this is false, lighting is exactly right.
 		If this is true, lighting might be wrong or right.
 	*/
-	bool m_lighting_expired;
+	std::atomic_bool m_lighting_expired;
 	
 	// Whether day and night lighting differs
 	bool m_day_night_differs;

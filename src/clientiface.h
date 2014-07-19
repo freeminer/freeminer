@@ -325,7 +325,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	std::map<v3s16, unsigned int> m_blocks_sent;
+	shared_map<v3s16, unsigned int> m_blocks_sent;
 
 public:
 	std::atomic_int m_nearest_unsent_d;
