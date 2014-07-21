@@ -639,6 +639,8 @@ private:
 public:
 	shared_map<v3s16, MapBlock*> m_modified_blocks;
 	shared_map<v3s16, MapBlock*> m_lighting_modified_blocks;
+	bool more_threads;
+
 private:
 };
 

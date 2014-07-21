@@ -319,6 +319,7 @@ Server::Server(
 
 	m_step_dtime = 0.0;
 	m_lag = g_settings->getFloat("dedicated_server_step");
+	more_threads = g_settings->getBool("more_threads");
 
 	if(path_world == "")
 		throw ServerError("Supplied empty world path");
@@ -347,9 +348,10 @@ Server::Server(
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
-	m_map_thread = new MapThread(this);
-	m_sendblocks = new SendBlocksThread(this);
-	
+	if (more_threads) {
+		m_map_thread = new MapThread(this);
+		m_sendblocks = new SendBlocksThread(this);
+	}
 
 	// Create world if it doesn't exist
 	if(!initializeWorld(m_path_world, m_gamespec.id))
@@ -516,8 +518,10 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
-	delete m_sendblocks;
-	delete m_map_thread;
+	if (m_sendblocks)
+		delete m_sendblocks;
+	if (m_map_thread)
+		delete m_map_thread;
 
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
@@ -557,8 +561,10 @@ void Server::start(Address bind_addr)
 
 	// Stop thread if already running
 	m_thread->Stop();
-	m_sendblocks->Stop();
-	m_map_thread->Stop();
+	if (m_sendblocks)
+		m_sendblocks->Stop();
+	if (m_map_thread)
+		m_map_thread->Stop();
 	
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
@@ -566,8 +572,10 @@ void Server::start(Address bind_addr)
 
 	// Start thread
 	m_thread->Start();
-	m_map_thread->Start();
-	m_sendblocks->Start();
+	if (m_map_thread)
+		m_map_thread->Start();
+	if (m_sendblocks)
+		m_sendblocks->Start();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
 #ifndef NDEBUG
@@ -595,10 +603,14 @@ void Server::stop()
 	//m_emergethread.setRun(false);
 	m_thread->Wait();
 	//m_emergethread.stop();
-	m_sendblocks->Stop();
-	m_sendblocks->Wait();
-	m_map_thread->Stop();
-	m_map_thread->Wait();
+	if (m_sendblocks) {
+		m_sendblocks->Stop();
+		m_sendblocks->Wait();
+	}
+	if (m_map_thread) {
+		m_map_thread->Stop();
+		m_map_thread->Wait();
+	}
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -633,10 +645,11 @@ void Server::AsyncRunStep(bool initial_step)
 		dtime = m_step_dtime;
 	}
 
+	if (!more_threads)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
-		//SendBlocks(dtime);
+		SendBlocks(dtime);
 	}
 
 	if((dtime < 0.001) && (initial_step == false))
@@ -770,6 +783,9 @@ void Server::AsyncRunStep(bool initial_step)
 			}
 		}
 	}
+
+	if (!more_threads)
+		AsyncRunMapStep();
 
 	m_clients.step(dtime);
 
