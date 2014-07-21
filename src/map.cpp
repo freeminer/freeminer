@@ -479,7 +479,9 @@ void Map::spreadLight(enum LightBank bank,
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
 
 		// Get node straight from the block
-		MapNode n = block->getNode(relpos);
+		MapNode n = block->getNodeNoLock(relpos);
+		if (n.getContent() == CONTENT_IGNORE)
+			continue;
 
 		u8 oldlight = n.getLight(bank, nodemgr);
 		u8 newlight = diminish_light(oldlight);
