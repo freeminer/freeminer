@@ -406,6 +406,9 @@
 # try reducing it, but don't reduce it to a number below double of targeted
 # client number
 #max_packets_per_iteration = 1024
+# Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)
+#more_threads = 1
+
 
 #
 # Physics stuff

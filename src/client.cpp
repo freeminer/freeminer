@@ -104,7 +104,8 @@ void MeshUpdateQueue::addBlock(v3s16 p, MeshMakeData *data, bool ack_block_to_se
 {
 	DSTACK(__FUNCTION_NAME);
 
-	assert(data);
+	if(!data)
+		return;
 
 	JMutexAutoLock lock(m_mutex);
 
@@ -1125,7 +1126,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.IsRunning());
 
 		MediaAnnounceList announce_list;
 		packet[TOCLIENT_ANNOUNCE_MEDIA_LIST].convert(&announce_list);
@@ -1150,7 +1151,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.IsRunning());
 
 		for(size_t i = 0; i < media_data.size(); ++i)
 			m_media_downloader->conventionalTransferDone(
@@ -1163,7 +1164,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.IsRunning());
 
 		packet[TOCLIENT_NODEDEF_DEFINITIONS].convert(m_nodedef);
 		m_nodedef_received = true;
@@ -1175,7 +1176,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.IsRunning());
 
 		packet[TOCLIENT_ITEMDEF_DEFINITIONS].convert(m_itemdef);
 		m_itemdef_received = true;
@@ -2135,9 +2136,9 @@ float Client::mediaReceiveProgress()
 void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
 	infostream<<"Client::afterContentReceived() started"<<std::endl;
-	assert(m_itemdef_received);
-	assert(m_nodedef_received);
-	assert(mediaReceived());
+	//assert(m_itemdef_received);
+	//assert(m_nodedef_received);
+	//assert(mediaReceived());
 	
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
