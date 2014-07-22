@@ -471,9 +471,9 @@ void Map::spreadLight(enum LightBank bank,
 		if(block->isDummy())
 			continue;
 
-		auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
-		if (!lock->owns_lock())
-			continue;
+		//auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+		//if (!lock->owns_lock())
+		//	continue;
 
 		// Calculate relative position in block
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
@@ -515,6 +515,8 @@ void Map::spreadLight(enum LightBank bank,
 				v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 				// Get node straight from the block
 				MapNode n2 = block->getNodeNoLock(relpos);
+				if (n2.getContent() == CONTENT_IGNORE)
+					continue;
 
 				bool changed = false;
 				/*
@@ -729,9 +731,9 @@ u32 Map::updateLighting(enum LightBank bank,
 			if(block->isDummy())
 				break;
 
-			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
-			if (!lock->owns_lock())
-				break;
+			//auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			//if (!lock->owns_lock())
+			//	break;
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
 			modified_blocks[pos] = block;
