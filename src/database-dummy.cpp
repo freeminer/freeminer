@@ -28,7 +28,6 @@ Dummy "database" class
 #include "database-dummy.h"
 
 #include "map.h"
-//#include "mapsector.h"
 #include "mapblock.h"
 #include "serialization.h"
 #include "main.h"
@@ -48,108 +47,18 @@ int Database_Dummy::Initialized(void)
 void Database_Dummy::beginSave() {}
 void Database_Dummy::endSave() {}
 
-bool Database_Dummy::saveBlock(MapBlock *block)
+bool Database_Dummy::saveBlock(v3s16 blockpos, std::string &data)
 {
-	DSTACK(__FUNCTION_NAME);
-	/*
-		Dummy blocks are not written
-	*/
-	if(block->isDummy())
-	{
-		v3s16 p = block->getPos();
-		infostream<<"Database_Dummy::saveBlock(): WARNING: Not writing dummy block "
-				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;
-		return true;
-	}
-
-	// Format used for writing
-	u8 version = SER_FMT_VER_HIGHEST_WRITE;
-	// Get destination
-	v3s16 p3d = block->getPos();
-
-	/*
-		[0] u8 serialization version
-		[1] data
-	*/
-
-	std::ostringstream o(std::ios_base::binary);
-	o.write((char*)&version, 1);
-	// Write basic data
-	block->serialize(o, version, true);
-	// Write block to database
-	std::string tmp = o.str();
-
-	m_database[getBlockAsString(p3d)] = tmp;
-	// We just wrote it to the disk so clear modified flag
-	block->resetModified();
+	m_database[getBlockAsString(blockpos)] = data;
 	return true;
 }
 
-MapBlock* Database_Dummy::loadBlock(v3s16 blockpos)
+std::string Database_Dummy::loadBlock(v3s16 blockpos)
 {
-	v2s16 p2d(blockpos.X, blockpos.Z);
-
-        if(m_database.count(getBlockAsString(blockpos))) {
-                /*
-                        Load block
-                */
-                std::string datastr = m_database[getBlockAsString(blockpos)];
-//                srvmap->loadBlock(&datastr, blockpos, sector, false);
-
-		try {
-                	std::istringstream is(datastr, std::ios_base::binary);
-                   	u8 version = SER_FMT_VER_INVALID;
-                     	is.read((char*)&version, 1);
-
-                     	if(is.fail())
-                             	throw SerializationError("ServerMap::loadBlock(): Failed"
-                                	             " to read MapBlock version");
-
-                     	MapBlock *block = NULL;
-                     	bool created_new = false;
-                     	block = srvmap->getBlockNoCreateNoEx(blockpos);
-                     	if(block == NULL)
-                     	{
-                             	block = srvmap->createBlankBlockNoInsert(blockpos);
-                             	created_new = true;
-                     	}
-                     	// Read basic data
-                     	block->deSerialize(is, version, true);
-                     	// If it's a new block, insert it to the map
-                     	if(created_new)
-                             	srvmap->insertBlock(block);
-                     	/*
-                             	Save blocks loaded in old format in new format
-                     	*/
-
-                     	//if(version < SER_FMT_VER_HIGHEST || save_after_load)
-                     	// Only save if asked to; no need to update version
-                     	//if(save_after_load)
-                        //     	saveBlock(block);
-                     	// We just loaded it from, so it's up-to-date.
-                     	block->resetModified();
-
-             	}
-             	catch(SerializationError &e)
-             	{
-                     	errorstream<<"Invalid block data in database"
-                                     <<" ("<<blockpos.X<<","<<blockpos.Y<<","<<blockpos.Z<<")"
-                                     <<" (SerializationError): "<<e.what()<<std::endl;
-                     // TODO: Block should be marked as invalid in memory so that it is
-                     // not touched but the game can run
-
-                     	if(g_settings->getBool("ignore_world_load_errors")){
-                             errorstream<<"Ignoring block load error. Duck and cover! "
-                                             <<"(ignore_world_load_errors)"<<std::endl;
-                     	} else {
-                             throw SerializationError("Invalid block data in database");
-                             //assert(0);
-                     	}
-             	}
-
-                return srvmap->getBlockNoCreateNoEx(blockpos);  // should not be using this here
-        }
-	return(NULL);
+	if (m_database.count(getBlockAsString(blockpos)))
+		return m_database[getBlockAsString(blockpos)];
+	else
+		return "";
 }
 
 void Database_Dummy::listAllLoadableBlocks(std::list<v3s16> &dst)

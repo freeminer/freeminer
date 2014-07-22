@@ -3348,14 +3348,104 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
-	return dbase->saveBlock(block);
+	return saveBlock(block, dbase);
 }
 
-MapBlock* ServerMap::loadBlock(v3s16 blockpos)
+bool ServerMap::saveBlock(MapBlock *block, Database *db)
+{
+	v3s16 p3d = block->getPos();
+
+	// Dummy blocks are not written
+	if (block->isDummy()) {
+		errorstream << "WARNING: saveBlock: Not writing dummy block "
+			<< PP(p3d) << std::endl;
+		return true;
+	}
+
+	// Format used for writing
+	u8 version = SER_FMT_VER_HIGHEST_WRITE;
+
+	/*
+		[0] u8 serialization version
+		[1] data
+	*/
+	std::ostringstream o(std::ios_base::binary);
+	o.write((char*) &version, 1);
+	block->serialize(o, version, true);
+
+	std::string data = o.str();
+	bool ret = db->saveBlock(p3d, data);
+	if(ret) {
+		// We just wrote it to the disk so clear modified flag
+		block->resetModified();
+	}
+	return ret;
+}
+
+MapBlock * ServerMap::loadBlock(v3s16 p3d)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	return dbase->loadBlock(blockpos);
+	const auto sector = this;
+	auto blob = dbase->loadBlock(p3d);
+	if(!blob.length())
+		return nullptr;
+
+	try {
+		std::istringstream is(blob, std::ios_base::binary);
+
+		u8 version = SER_FMT_VER_INVALID;
+		is.read((char*)&version, 1);
+
+		if(is.fail())
+			throw SerializationError("ServerMap::loadBlock(): Failed"
+					" to read MapBlock version");
+
+		/*u32 block_size = MapBlock::serializedLength(version);
+		SharedBuffer<u8> data(block_size);
+		is.read((char*)*data, block_size);*/
+
+		// This will always return a sector because we're the server
+		//MapSector *sector = emergeSector(p2d);
+
+		MapBlock *block = NULL;
+		bool created_new = false;
+		block = sector->getBlockNoCreateNoEx(p3d);
+		if(block == NULL)
+		{
+			block = sector->createBlankBlockNoInsert(p3d);
+			created_new = true;
+		}
+
+		// Read basic data
+		block->deSerialize(is, version, true);
+
+		// If it's a new block, insert it to the map
+		if(created_new)
+			sector->insertBlock(block);
+
+		// We just loaded it from, so it's up-to-date.
+		block->resetModified();
+		return block;
+	}
+	catch(SerializationError &e)
+	{
+		errorstream<<"Invalid block data in database"
+				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
+				<<" (SerializationError): "<<e.what()<<std::endl;
+
+		// TODO: Block should be marked as invalid in memory so that it is
+		// not touched but the game can run
+
+		if(g_settings->getBool("ignore_world_load_errors")){
+			errorstream<<"Ignoring block load error. Duck and cover! "
+					<<"(ignore_world_load_errors)"<<std::endl;
+		} else {
+			throw SerializationError("Invalid block data in database");
+			//assert(0);
+		}
+	}
+	return nullptr;
 }
 
 void ServerMap::PrintInfo(std::ostream &out)
