@@ -1309,10 +1309,12 @@ int main(int argc, char *argv[])
 			new_db->beginSave();
 			for (std::list<v3s16>::iterator i = blocks.begin(); i != blocks.end(); i++) {
 				MapBlock *block = old_map.loadBlock(*i);
-				if(!block)
-					continue;
-				new_db->saveBlock(block);
-				old_map.deleteBlock(block, 1);
+				if (!block) {
+					errorstream << "Failed to load block " << PP(*i) << ", skipping it.";
+				} else {
+					old_map.saveBlock(block, new_db);
+					old_map.deleteBlock(block, 1);
+				}
 				++count;
 				if (count % 500 == 0)
 					actionstream << "Migrated " << count << " blocks "
@@ -1957,4 +1959,3 @@ int main(int argc, char *argv[])
 }
 
 //END
-
