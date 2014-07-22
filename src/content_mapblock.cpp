@@ -103,9 +103,9 @@ void makeCuboid(MeshCollector *collector, const aabb3f &box,
 		video::S3DVertex(min.X,min.Y,min.Z, 0,0,-1, c, txc[20],txc[23]),
 	};
 
-	for(int i = 0; i < tilecount; i++)
+	for(int i = 0; i < 6; i++)
 				{
-				switch (tiles[i].rotation)
+				switch (tiles[MYMIN(i, tilecount-1)].rotation)
 				{
 				case 0:
 					break;
@@ -1095,10 +1095,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 				// The face at Z+
 				video::S3DVertex vertices[4] = {
-					video::S3DVertex(-BS/2,-BS/2,BS/2, 0,0,0, c, 0,1),
-					video::S3DVertex(BS/2,-BS/2,BS/2, 0,0,0, c, 1,1),
-					video::S3DVertex(BS/2,BS/2,BS/2, 0,0,0, c, 1,0),
-					video::S3DVertex(-BS/2,BS/2,BS/2, 0,0,0, c, 0,0),
+					video::S3DVertex(-BS/2,-BS/2,BS/2, 0,0,0, c, 1,1),
+					video::S3DVertex(BS/2,-BS/2,BS/2, 0,0,0, c, 0,1),
+					video::S3DVertex(BS/2,BS/2,BS/2, 0,0,0, c, 0,0),
+					video::S3DVertex(-BS/2,BS/2,BS/2, 0,0,0, c, 1,0),
 				};
 				
 				// Rotations in the g_6dirs format
@@ -1533,12 +1533,12 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				if(j == 0)
 				{
 					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(45);
+						vertices[i].Pos.rotateXZBy(46 + n.param2);
 				}
 				else if(j == 1)
 				{
 					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(-45);
+						vertices[i].Pos.rotateXZBy(-44 + n.param2);
 				}
 
 				for(u16 i=0; i<4; i++)
@@ -1557,16 +1557,11 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			TileSpec tile = getNodeTile(n, p, v3s16(0,0,0), data);
 			TileSpec tile_nocrack = tile;
 			tile_nocrack.material_flags &= ~MATERIAL_FLAG_CRACK;
-			
-			// A hack to put wood the right way around in the posts
-			ITextureSource *tsrc = data->m_gamedef->tsrc();
-			std::string texturestring_rot = tsrc->getTextureName(
-					tile.texture_id) + "^[transformR90";
+
+			// Put wood the right way around in the posts
 			TileSpec tile_rot = tile;
-			tile_rot.texture = tsrc->getTexture(
-					texturestring_rot,
-					&tile_rot.texture_id);
-			
+			tile_rot.rotation = 1;
+
 			u16 l = getInteriorLight(n, 1, nodedef);
 			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
 

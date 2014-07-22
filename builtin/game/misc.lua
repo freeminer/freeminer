@@ -12,11 +12,15 @@ core.register_globalstep(function(dtime)
 	end
 	core.timers_to_add = {}
 	local end_ms = os.clock() * 1000 + 50
-	for index, timer in ipairs(core.timers) do
+	local index = 1
+	while index <= #core.timers do
+		local timer = core.timers[index]
 		timer.time = timer.time - dtime
 		if timer.time <= 0 then
 			timer.func(unpack(timer.args or {}))
 			table.remove(core.timers,index)
+		else
+			index = index + 1
 		end
 		if os.clock() * 1000 > end_ms then return end
 	end
