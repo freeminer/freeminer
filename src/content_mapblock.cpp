@@ -1331,7 +1331,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				makeCuboid(&collector, box, &glass_tiles[i], 1, c, txc2);
 			}
 
-			if (param2 > 0){
+			if (param2 > 0 && f.special_tiles[0].texture) {
 				// Interior volume level is in range 0 .. 63,
 				// convert it to -0.5 .. 0.5
 				float vlev = (((float)param2 / 63.0 ) * 2.0 - 1.0);
@@ -1533,12 +1533,12 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				if(j == 0)
 				{
 					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(46 + n.param2);
+						vertices[i].Pos.rotateXZBy(46 + n.param2 * 2);
 				}
 				else if(j == 1)
 				{
 					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(-44 + n.param2);
+						vertices[i].Pos.rotateXZBy(-44 + n.param2 * 2);
 				}
 
 				for(u16 i=0; i<4; i++)
