@@ -503,12 +503,11 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, std::string element)
 				core::rect<s32>(pos.X, pos.Y, pos.X + dim.X, pos.Y + dim.Y);
 
 		FieldSpec spec(
-				narrow_to_wide(name.c_str()),
+				name,
 				L"",
 				L"",
 				258+m_fields.size()
 			);
-
 		bool is_horizontal = true;
 
 		if (parts[2] == "vertical")
@@ -2629,9 +2628,9 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 						std::stringstream os;
 						os << e->getPos();
 						if (s.fdefault == L"Changed")
-							fields[name] = "CHG:" + os.str();
+							fields[s.fname] = "CHG:" + os.str();
 						else
-							fields[name] = "VAL:" + os.str();
+							fields[s.fname] = "VAL:" + os.str();
  					}
 				}
 				else
