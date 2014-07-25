@@ -483,6 +483,7 @@ public:
 	std::string m_savedir;
 private:
 	bool m_map_saving_enabled;
+	std::mutex m_load_block_mutex;
 
 #if 0
 	// Chunk size in MapSectors
