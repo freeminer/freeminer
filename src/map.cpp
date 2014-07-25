@@ -3383,6 +3383,9 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	DSTACK(__FUNCTION_NAME);
 
 	const auto sector = this;
+#if defined(_WIN32)
+	std::lock_guard<std::mutex> lock(m_load_block_mutex); // try to fix crash with many emerge threads
+#endif
 	auto blob = dbase->loadBlock(p3d);
 	if(!blob.length())
 		return nullptr;
