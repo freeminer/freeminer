@@ -19,6 +19,8 @@
 #define KEY_VALUE_STORAGE_H
 
 #include <string>
+#include <mutex>
+
 #include "config.h"
 #if USE_LEVELDB
 #include <leveldb/db.h>
@@ -48,6 +50,7 @@ private:
 	const std::string &m_db_name;
 	Json::FastWriter json_writer;
 	Json::Reader json_reader;
+	std::mutex mutex;
 };
 
 #endif

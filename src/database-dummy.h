@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "database.h"
 #include "irrlichttypes.h"
+#include "util/lock.h"
 
 class ServerMap;
 
@@ -43,6 +44,6 @@ public:
 	~Database_Dummy();
 private:
 	ServerMap *srvmap;
-	std::map<std::string, std::string> m_database;
+	shared_map<std::string, std::string> m_database;
 };
 #endif

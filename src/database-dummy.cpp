@@ -49,14 +49,14 @@ void Database_Dummy::endSave() {}
 
 bool Database_Dummy::saveBlock(v3s16 blockpos, std::string &data)
 {
-	m_database[getBlockAsString(blockpos)] = data;
+	m_database.set(getBlockAsString(blockpos), data);
 	return true;
 }
 
 std::string Database_Dummy::loadBlock(v3s16 blockpos)
 {
 	if (m_database.count(getBlockAsString(blockpos)))
-		return m_database[getBlockAsString(blockpos)];
+		return m_database.get(getBlockAsString(blockpos));
 	else
 		return "";
 }
