@@ -2229,32 +2229,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_INTERACT)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		/*
-			[0] u16 command
-			[2] u8 action
-			[3] u16 item
-			[5] u32 length of the next item
-			[9] serialized PointedThing
-			actions:
-			0: start digging (from undersurface) or use
-			1: stop digging (all parameters ignored)
-			2: digging completed
-			3: place block or item (to abovesurface)
-			4: use item
-		*/
-		u8 action = readU8(is);
-		u16 item_i = readU16(is);
-		std::istringstream tmp_is(deSerializeLongString(is), std::ios::binary);
+		u8 action;
+		u16 item_i;
 		PointedThing pointed;
-		pointed.deSerialize(tmp_is);
 
-/*
-		verbosestream<<"TOSERVER_INTERACT: action="<<(int)action<<", item="
-				<<item_i<<", pointed="<<pointed.dump()<<std::endl;
-*/
+		packet[TOSERVER_INTERACT_ACTION].convert(&action);
+		packet[TOSERVER_INTERACT_ITEM].convert(&item_i);
+		packet[TOSERVER_INTERACT_POINTED_THING].convert(&pointed);
 
 		if(player->hp == 0)
 		{

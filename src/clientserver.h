@@ -757,25 +757,23 @@ enum {
 	TOSERVER_INVENTORY_FIELDS_DATA
 };
 
-enum ToServerCommand
-{
-	TOSERVER_INTERACT = 0x39,
+#define TOSERVER_INTERACT 0x39
+enum {
 	/*
-		[0] u16 command
-		[2] u8 action
-		[3] u16 item
-		[5] u32 length of the next item
-		[9] serialized PointedThing
 		actions:
 		0: start digging (from undersurface) or use
 		1: stop digging (all parameters ignored)
 		2: digging completed
 		3: place block or item (to abovesurface)
 		4: use item
-
-		(Obsoletes TOSERVER_GROUND_ACTION and TOSERVER_CLICK_ACTIVEOBJECT.)
 	*/
+	TOSERVER_INTERACT_ACTION,
+	TOSERVER_INTERACT_ITEM,
+	TOSERVER_INTERACT_POINTED_THING
+};
 
+enum ToServerCommand
+{
 	TOSERVER_CLIENT_READY = 0x43,
 	/*
 		u8 major

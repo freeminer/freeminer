@@ -1554,8 +1554,6 @@ void Client::interact(u8 action, const PointedThing& pointed)
 		return;
 	}
 
-	std::ostringstream os(std::ios_base::binary);
-
 	/*
 		[0] u16 command
 		[2] u8 action
@@ -1569,18 +1567,13 @@ void Client::interact(u8 action, const PointedThing& pointed)
 		3: place block or item (to abovesurface)
 		4: use item
 	*/
-	writeU16(os, TOSERVER_INTERACT);
-	writeU8(os, action);
-	writeU16(os, getPlayerItem());
-	std::ostringstream tmp_os(std::ios::binary);
-	pointed.serialize(tmp_os);
-	os<<serializeLongString(tmp_os.str());
-
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOSERVER_INTERACT, 3);
+	PACK(TOSERVER_INTERACT_ACTION, action);
+	PACK(TOSERVER_INTERACT_ITEM, getPlayerItem());
+	PACK(TOSERVER_INTERACT_POINTED_THING, pointed);
 
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,

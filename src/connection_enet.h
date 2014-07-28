@@ -37,18 +37,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "enet/enet.h"
 #include <msgpack.hpp>
+#include "util/msgpack_serialize.h"
 
 #define CHANNEL_COUNT 3
-
-#define PACK(x, y) {pk.pack((int)x); pk.pack(y);}
-#define MSGPACK_COMMAND -1
-#define MSGPACK_PACKET_INIT(id, x) \
-	msgpack::sbuffer buffer; \
-	msgpack::packer<msgpack::sbuffer> pk(&buffer); \
-	pk.pack_map((x)+1); \
-	PACK(MSGPACK_COMMAND, id);
-
-typedef std::map<int, msgpack::object> MsgpackPacket;
 
 namespace con
 {
