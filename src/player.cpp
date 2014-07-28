@@ -46,7 +46,6 @@ Player::Player(IGameDef *gamedef):
 	superspeed(false),
 	free_move(false),
 	movement_fov(0),
-	peer_id(PEER_ID_INEXISTENT),
 	keyPressed(0),
 // protected
 	m_gamedef(gamedef),
@@ -57,6 +56,7 @@ Player::Player(IGameDef *gamedef):
 	m_position(0,0,0),
 	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
 {
+	peer_id = PEER_ID_INEXISTENT;
 	updateName("<not set>");
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);

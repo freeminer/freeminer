@@ -55,13 +55,13 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_gamedef(gamedef),
 		m_modified(MOD_STATE_CLEAN),
 		is_underground(false),
-		m_lighting_expired(true),
 		m_day_night_differs(false),
 		m_generated(false),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_usage_timer(0),
 		m_refcount(0)
 {
+	m_lighting_expired = true;
 	heat = 0;
 	humidity = 0;
 	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
