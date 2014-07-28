@@ -1951,9 +1951,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_INVENTORY_ACTION)
 	{
-		// Strip command and create a stream
-		std::string datastring((char*)&data[2], datasize-2);
-		verbosestream<<"TOSERVER_INVENTORY_ACTION: data="<<datastring<<std::endl;
+		std::string datastring;
+		packet[TOSERVER_INVENTORY_ACTION_DATA].convert(&datastring);
 		std::istringstream is(datastring, std::ios_base::binary);
 		// Create an action
 		InventoryAction *a = InventoryAction::deSerialize(is);

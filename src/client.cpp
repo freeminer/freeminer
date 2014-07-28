@@ -1621,20 +1621,16 @@ void Client::sendInventoryFields(const std::string &formname,
 
 void Client::sendInventoryAction(InventoryAction *a)
 {
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
-	
-	// Write command
-	writeU16(buf, TOSERVER_INVENTORY_ACTION);
-	os.write((char*)buf, 2);
+	MSGPACK_PACKET_INIT(TOSERVER_INVENTORY_ACTION, 1);
 
+	std::ostringstream os(std::ios_base::binary);
 	a->serialize(os);
-	
-	// Make data buffer
 	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+
+	PACK(TOSERVER_INVENTORY_ACTION_DATA, s);
+
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendChatMessage(const std::string &message)

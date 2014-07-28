@@ -746,13 +746,13 @@ enum {
 		u16 breath
 	*/
 
+#define TOSERVER_INVENTORY_ACTION 0x31
+enum {
+	TOSERVER_INVENTORY_ACTION_DATA
+};
+
 enum ToServerCommand
 {
-	TOSERVER_INVENTORY_ACTION = 0x31,
-	/*
-		See InventoryAction in inventory.h
-	*/
-
 	TOSERVER_INTERACT = 0x39,
 	/*
 		[0] u16 command
