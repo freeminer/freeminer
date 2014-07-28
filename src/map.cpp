@@ -3387,7 +3387,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 MapBlock * ServerMap::loadBlock(v3s16 p3d)
 {
 	DSTACK(__FUNCTION_NAME);
-
+	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
 	auto blob = dbase->loadBlock(p3d);
 	if(!blob.length())
