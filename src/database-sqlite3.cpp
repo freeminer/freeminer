@@ -140,6 +140,8 @@ void Database_SQLite3::verifyDatabase() {
 
 bool Database_SQLite3::saveBlock(v3s16 blockpos, std::string &data)
 {
+	std::lock_guard<std::mutex> lock(mutex);
+
 	verifyDatabase();
 
 	if (sqlite3_bind_int64(m_database_write, 1, getBlockAsInteger(blockpos)) != SQLITE_OK) {
@@ -169,6 +171,8 @@ bool Database_SQLite3::saveBlock(v3s16 blockpos, std::string &data)
 
 std::string Database_SQLite3::loadBlock(v3s16 blockpos)
 {
+	std::lock_guard<std::mutex> lock(mutex);
+
 	verifyDatabase();
 
 	if (sqlite3_bind_int64(m_database_read, 1, getBlockAsInteger(blockpos)) != SQLITE_OK) {

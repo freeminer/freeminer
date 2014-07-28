@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DATABASE_SQLITE3_HEADER
 #define DATABASE_SQLITE3_HEADER
 
+#include <mutex>
 #include "database.h"
 #include <string>
 
@@ -51,6 +52,7 @@ private:
 	sqlite3_stmt *m_database_read;
 	sqlite3_stmt *m_database_write;
 	sqlite3_stmt *m_database_list;
+	std::mutex mutex;
 
 	// Create the database structure
 	void createDatabase();
