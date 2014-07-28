@@ -2641,17 +2641,11 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_INVENTORY_FIELDS)
 	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		std::string formname = deSerializeString(is);
-		int num = readU16(is);
+		std::string formname;
 		std::map<std::string, std::string> fields;
-		for(int k=0; k<num; k++){
-			std::string fieldname = deSerializeString(is);
-			std::string fieldvalue = deSerializeLongString(is);
-			fields[fieldname] = fieldvalue;
-		}
+
+		packet[TOSERVER_INVENTORY_FIELDS_FORMNAME].convert(&formname);
+		packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(&fields);
 
 		m_script->on_playerReceiveFields(playersao, formname, fields);
 	}

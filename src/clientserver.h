@@ -751,6 +751,12 @@ enum {
 	TOSERVER_INVENTORY_ACTION_DATA
 };
 
+#define TOSERVER_INVENTORY_FIELDS 0x3c
+enum {
+	TOSERVER_INVENTORY_FIELDS_FORMNAME,
+	TOSERVER_INVENTORY_FIELDS_DATA
+};
+
 enum ToServerCommand
 {
 	TOSERVER_INTERACT = 0x39,
@@ -768,19 +774,6 @@ enum ToServerCommand
 		4: use item
 
 		(Obsoletes TOSERVER_GROUND_ACTION and TOSERVER_CLICK_ACTIVEOBJECT.)
-	*/
-
-	TOSERVER_INVENTORY_FIELDS = 0x3c,
-	/*
-		u16 command
-		u16 len
-		u8[len] form name (reserved for future use)
-		u16 number of fields
-		for each field:
-			u16 len
-			u8[len] field name
-			u32 len
-			u8[len] field value
 	*/
 
 	TOSERVER_CLIENT_READY = 0x43,
