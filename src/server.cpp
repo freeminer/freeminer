@@ -1468,14 +1468,12 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	if(datasize < 2)
 		return;
 
-	ToServerCommand command;
+	int command;
 	std::map<int, msgpack::object> packet;
-	int cmd;
 	msgpack::unpacked msg;
-	if (con::parse_msgpack_packet(data, datasize, &packet, &cmd, &msg))
-		command = (ToServerCommand)cmd;
-	else
-		command = (ToServerCommand)readU16(&data[0]);
+	if (!con::parse_msgpack_packet(data, datasize, &packet, &command, &msg)) {
+		return;
+	}
 
 	if(command == TOSERVER_INIT)
 	{
@@ -1858,20 +1856,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			m_con.DisconnectPeer(peer_id);
 			return;
 		}
-
-		if(datasize < 2+8) {
-			errorstream
-				<< "TOSERVER_CLIENT_READY client sent inconsistent data, disconnecting peer_id: "
-				<< peer_id << std::endl;
-			m_con.DisconnectPeer(peer_id);
-			return;
-		}
-
 		m_clients.setClientVersion(
-				peer_id,
-				data[2], data[3], data[4],
-				std::string((char*) &data[8],(u16) data[6]));
-
+			peer_id,
+			packet[TOSERVER_CLIENT_READY_VERSION_MAJOR].as<int>(),
+			packet[TOSERVER_CLIENT_READY_VERSION_MINOR].as<int>(),
+			0, // packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>(), TODO
+			packet[TOSERVER_CLIENT_READY_VERSION_STRING].as<std::string>()
+		);
 		m_clients.event(peer_id, CSE_SetClientReady);
 		m_script->on_joinplayer(playersao);
 

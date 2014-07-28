@@ -1670,22 +1670,15 @@ void Client::sendRespawn()
 void Client::sendReady()
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_CLIENT_READY);
-	writeU8(os,VERSION_MAJOR);
-	writeU8(os,VERSION_MINOR);
-	writeU8(os,(int)VERSION_PATCH_ORIG);
-	writeU8(os,0);
+	MSGPACK_PACKET_INIT(TOSERVER_CLIENT_READY, 3);
+	PACK(TOSERVER_CLIENT_READY_VERSION_MAJOR, VERSION_MAJOR);
+	PACK(TOSERVER_CLIENT_READY_VERSION_MINOR, VERSION_MINOR);
+	// PACK(TOSERVER_CLIENT_READY_VERSION_PATCH, VERSION_PATCH_ORIG); TODO
+	PACK(TOSERVER_CLIENT_READY_VERSION_STRING, std::string(CMAKE_VERSION_GITHASH));
 
-	writeU16(os,strlen(CMAKE_VERSION_GITHASH));
-	os.write(CMAKE_VERSION_GITHASH,strlen(CMAKE_VERSION_GITHASH));
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
 	// Send as reliable
-	Send(0, data, true);
+	Send(0, buffer, true);
 }
 
 void Client::sendPlayerPos()

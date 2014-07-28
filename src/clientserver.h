@@ -772,17 +772,12 @@ enum {
 	TOSERVER_INTERACT_POINTED_THING
 };
 
-enum ToServerCommand
-{
-	TOSERVER_CLIENT_READY = 0x43,
-	/*
-		u8 major
-		u8 minor
-		u8 patch
-		u8 reserved
-		u16 len
-		u8[len] full_version_string
-	*/
+#define TOSERVER_CLIENT_READY 0x43
+enum {
+	TOSERVER_CLIENT_READY_VERSION_MAJOR,
+	TOSERVER_CLIENT_READY_VERSION_MINOR,
+	TOSERVER_CLIENT_READY_VERSION_PATCH,
+	TOSERVER_CLIENT_READY_VERSION_STRING
 };
 
 #endif
