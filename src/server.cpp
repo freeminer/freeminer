@@ -3263,20 +3263,15 @@ void Server::SendMovePlayer(u16 peer_id)
 
 void Server::SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f32 animation_speed)
 {
-	std::ostringstream os(std::ios_base::binary);
+	MSGPACK_PACKET_INIT(TOCLIENT_LOCAL_PLAYER_ANIMATIONS, 5);
+	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_IDLE, animation_frames[0]);
+	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALK, animation_frames[1]);
+	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_DIG, animation_frames[2]);
+	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALKDIG, animation_frames[3]);
+	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_FRAME_SPEED, animation_speed);
 
-	writeU16(os, TOCLIENT_LOCAL_PLAYER_ANIMATIONS);
-	writeV2S32(os, animation_frames[0]);
-	writeV2S32(os, animation_frames[1]);
-	writeV2S32(os, animation_frames[2]);
-	writeV2S32(os, animation_frames[3]);
-	writeF1000(os, animation_speed);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
 	// Send as reliable
-	m_clients.send(peer_id, 0, data, true);
+	m_clients.send(peer_id, 0, buffer, true);
 }
 
 void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)

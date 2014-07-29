@@ -1505,17 +1505,14 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	}
 	else if(command == TOCLIENT_LOCAL_PLAYER_ANIMATIONS)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
 		LocalPlayer *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 
-		player->local_animations[0] = readV2S32(is);
-		player->local_animations[1] = readV2S32(is);
-		player->local_animations[2] = readV2S32(is);
-		player->local_animations[3] = readV2S32(is);
-		player->local_animation_speed = readF1000(is);
+		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_IDLE].convert(&player->local_animations[0]);
+		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALK].convert(&player->local_animations[1]);
+		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_DIG].convert(&player->local_animations[2]);
+		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALKDIG].convert(&player->local_animations[3]);
+		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_FRAME_SPEED].convert(&player->local_animation_speed);
 	}
 	else if(command == TOCLIENT_EYE_OFFSET)
 	{
