@@ -248,7 +248,11 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 			{
 				//JMutexAutoLock lock(block->mesh_mutex);
 
-				if(!mesh || !mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount()){
+				if(!mesh) {
+					blocks_in_range_without_mesh++;
+					continue;
+				}
+				if(mesh_step == mesh->step && (!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())) {
 					blocks_in_range_without_mesh++;
 					continue;
 				}
@@ -318,7 +322,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1, true);
 			}
 
-			block->getMesh(mesh_step)->incrementUsageTimer(dtime);
+			if(!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())
+				continue;
+
+			mesh->incrementUsageTimer(dtime);
 
 			// Add to set
 			block->refGrab();
