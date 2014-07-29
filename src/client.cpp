@@ -1519,14 +1519,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	}
 	else if(command == TOCLIENT_EYE_OFFSET)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
 		LocalPlayer *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 
-		player->eye_offset_first = readV3F1000(is);
-		player->eye_offset_third = readV3F1000(is);
+		packet[TOCLIENT_EYE_OFFSET_FIRST].convert(&player->eye_offset_first);
+		packet[TOCLIENT_EYE_OFFSET_THIRD].convert(&player->eye_offset_third);
 	}
 	else
 	{

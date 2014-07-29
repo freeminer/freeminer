@@ -3281,17 +3281,11 @@ void Server::SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f
 
 void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)
 {
-	std::ostringstream os(std::ios_base::binary);
-
-	writeU16(os, TOCLIENT_EYE_OFFSET);
-	writeV3F1000(os, first);
-	writeV3F1000(os, third);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8 *)s.c_str(), s.size());
+	MSGPACK_PACKET_INIT(TOCLIENT_EYE_OFFSET, 2);
+	PACK(TOCLIENT_EYE_OFFSET_FIRST, first);
+	PACK(TOCLIENT_EYE_OFFSET_THIRD, third);
 	// Send as reliable
-	m_clients.send(peer_id, 0, data, true);
+	m_clients.send(peer_id, 0, buffer, true);
 }
 void Server::SendPlayerPrivileges(u16 peer_id)
 {

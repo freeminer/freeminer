@@ -553,13 +553,10 @@ enum {
 	*/
 
 #define TOCLIENT_EYE_OFFSET 0x52
-	/*
-		u16 command
-		v3f1000 first
-		v3f1000 third
-	*/
-
-
+enum {
+	TOCLIENT_EYE_OFFSET_FIRST,
+	TOCLIENT_EYE_OFFSET_THIRD
+};
 
 // TOSERVER_* commands
 
