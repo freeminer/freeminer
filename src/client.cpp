@@ -577,7 +577,7 @@ void Client::step(float dtime)
 		}
 		u32 got_blocks_size = got_blocks.size();
 		if (got_blocks_size) {// TODO: REMOVE IN NEXT
-			MSGPACK_PACKET_INIT(TOSERVER_GOTBLOCKS, 2);
+			MSGPACK_PACKET_INIT(TOSERVER_GOTBLOCKS, 1);
 			//PACK(TOSERVER_GOTBLOCKS_BLOCKS, got_blocks);
 			PACK(TOSERVER_GOTBLOCKS_RANGE, (int)m_env.getClientMap().getControl().wanted_range); // TODO: MAKE NEW DRAWCONTROL PACKET
 			m_con.Send(PEER_ID_SERVER, 2, buffer, true);
