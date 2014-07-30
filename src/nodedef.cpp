@@ -246,7 +246,7 @@ void ContentFeatures::reset()
 	}
 	for(int i = 0; i < 64; ++i)
 	{
-		circuit_element_states[i] = 0;
+		circuit_element_func[i] = 0;
 	}
 	circuit_element_delay = 0;
 }

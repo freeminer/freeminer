@@ -12,13 +12,13 @@
 #include <deque>
 
 #define OPPOSITE_SHIFT(x) (CircuitElement::opposite_shift[x])
-#define OPPOSITE_FACE(x) (((x<<3) | (x>>3)) & 0x3f)
-#define SHIFT_TO_FACE(x) (CircuitElement::shift_to_face[x])
+#define OPPOSITE_FACE(x) (CircuitElement::opposite_face[x])
+#define SHIFT_TO_FACE(x) (1 << x)
 #define FACE_TO_SHIFT(x) (CircuitElement::face_to_shift[x])
-#define FACEDIR_TO_FACE(x) (CircuitElement::facedir_to_face[x])
-#define WALLMOUNTED_TO_FACE(x) (CircuitElement::wallmounted_to_face[x])
-#define DELTA_ANGLE_FACEDIR_TO_SHIFT(x, y) (CircuitElement::delta_angle_facedir_to_shift[x][y])
-#define DELTA_ANGLE_WALLMOUNTED_TO_SHIFT(x, y) (CircuitElement::delta_angle_wallmounted_to_shift[x][y])
+#define ROTATE_FACE(x, y) (CircuitElement::rotate_face[FACE_TO_SHIFT(x) * 24 + y])                 // Rotate real face
+#define REVERSE_ROTATE_FACE(x, y) (CircuitElement::reverse_rotate_face[FACE_TO_SHIFT(x) * 24 + y]) // Get real face of node
+#define ROTATE_SHIFT(x, y) (FACE_TO_SHIFT(CircuitElement::rotate_face[x * 24 + y]))
+#define REVERSE_ROTATE_SHIIFT(x, y) (FACE_TO_SHIFT(CircuitElement::reverse_rotate_face[x * 24 + y]))
 
 class CircuitElement;
 class Circuit;
@@ -26,17 +26,15 @@ class GameScripting;
 class Map;
 class INodeDefManager;
 
-struct MapNode;
-
-enum FaceId
-{
-	FACE_BOTTOM = 0x1,
-	FACE_BACK   = 0x2,
-	FACE_LEFT   = 0x4,
-	FACE_TOP    = 0x8,
-	FACE_FRONT  = 0x10,
-	FACE_RIGHT  = 0x20,
-};
+// enum FaceId
+// {
+// 	FACE_TOP    = 0x1,
+// 	FACE_BOTTOM = 0x2,
+// 	FACE_RIGHT  = 0x4,
+// 	FACE_LEFT   = 0x8,
+// 	FACE_BACK   = 0x10,
+// 	FACE_FRONT  = 0x20
+// };
 
 /*
  * Graph example:
@@ -60,65 +58,78 @@ struct CircuitElementContainer
 
 class CircuitElement {
 public:
-	CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id, unsigned long id, unsigned int delay);
+	CircuitElement(v3s16 pos, const u8* func, u32 id, u8 delay);
 	CircuitElement(const CircuitElement& element);
-	CircuitElement(unsigned long id);
+	CircuitElement(u32 id);
 	~CircuitElement();
 	void addConnectedElement();
 	void update();
-	void updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef);
+	void updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef);
 
 	void serialize(std::ostream& out) const;
 	void serializeState(std::ostream& out) const;
 	void deSerialize(std::istream& is,
-	                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer);
+	                 std::map <u32, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer);
 	void deSerializeState(std::istream& is);
 
 	void getNeighbors(std::vector <std::list <CircuitElementVirtual>::iterator>& neighbors) const;
 
 	// First - pointer to object to which connected.
 	// Second - face id.
-	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, int > >& connected,
-	                                  Map& map, INodeDefManager* ndef, v3s16 pos, FaceId face,
+	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
+	                                  Map* map, INodeDefManager* ndef, v3s16 pos, u8 face,
 	                                  std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
 	                                  bool connected_faces[6]);
 	// Get all faces that are connected to the "shift". Currently 6dfacedir and wallmounted params are not supported.
-	static unsigned char getAcceptableFaces(const MapNode& node, const ContentFeatures& node_features, unsigned char shift);
+	static u8 getAcceptableFaces(const MapNode& node, const ContentFeatures& node_features, u8 shift);
 
 	CircuitElementContainer getFace(int id) const;
-	unsigned long getFuncId() const;
 	v3s16 getPos() const;
-	unsigned long getId() const;
+	u32 getId() const;
 
 	void connectFace(int id, std::list <CircuitElementVirtualContainer>::iterator it,
 	                 std::list <CircuitElementVirtual>::iterator pt);
 	void disconnectFace(int id);
-	void setId(unsigned long id);
-	void setInputState(unsigned char state);
-	void setFunc(const unsigned char* func, unsigned long func_id);
-	void setDelay(unsigned int delay);
+	void setId(u32 id);
+	void setInputState(u8 state);
+	void setFunc(const u8* func);
+	void setDelay(u8 delay);
 
-	inline void addState(unsigned char state) {
+	inline void addState(u8 state) {
 		m_next_input_state |= state;
 	}
 
-	static unsigned char face_to_shift[33];
-	static unsigned char opposite_shift[6];
-	static FaceId shift_to_face[6];
-	static FaceId facedir_to_face[6];
-	static FaceId wallmounted_to_face[6];
-	static unsigned char delta_angle_facedir_to_shift[4][6];
-	static unsigned char delta_angle_wallmounted_to_shift[6][6];
+	inline static u8 rotateFace(const MapNode& node, const ContentFeatures& node_features, u8 face) {
+		if(node_features.param_type_2 == CPT2_FACEDIR) {
+			return ROTATE_FACE(face, node.param2);
+		} else {
+			return face;
+		}
+	}
+
+	inline static u8 revRotateFace(const MapNode& node, const ContentFeatures& node_features, u8 face) {
+		if(node_features.param_type_2 == CPT2_FACEDIR) {
+			return REVERSE_ROTATE_FACE(face, node.param2);
+		} else {
+			return face;
+		}
+	}
+
+	static u8 face_to_shift[33];
+	static u8 opposite_shift[6];
+	static u8 opposite_face[33];
+	static u8 shift_to_face[6];
+	static u8 rotate_face[168];
+	static u8 reverse_rotate_face[168];
 private:
 	v3s16 m_pos;
-	unsigned long m_element_id;
-	const unsigned char* m_func;
-	unsigned long m_func_id;
-	unsigned char m_current_input_state;
-	unsigned char m_next_input_state;
-	unsigned char m_current_output_state;
-	unsigned char m_next_output_state;
-	std::deque <unsigned char> m_states_queue;
+	u32 m_element_id;
+	const u8* m_func;
+	u8 m_current_input_state;
+	u8 m_next_input_state;
+	u8 m_current_output_state;
+	u8 m_next_output_state;
+	std::deque <u8> m_states_queue;
 	CircuitElementContainer m_faces[6];
 };
 

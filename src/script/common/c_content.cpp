@@ -387,11 +387,11 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		lua_pushnil(L);
 		int i;
 		for(i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
-			f.circuit_element_states[i] = lua_tonumber(L, -1);
+			f.circuit_element_func[i] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 		}
 		if(i < 64) {
-			luaL_error(L, "Circuit states table must have exactly 64 integer numbers.");
+			luaL_error(L, "Circuit element states table must have exactly 64 integer numbers.");
 		}
 	}
 	lua_pop(L, 1);

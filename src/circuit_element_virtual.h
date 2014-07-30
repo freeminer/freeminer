@@ -5,34 +5,36 @@
 #include <map>
 #include <sstream>
 
+#include "irrlichttypes.h"
+
 class CircuitElement;
 
 struct CircuitElementVirtualContainer {
-	unsigned char shift;
+	u8 shift;
 	std::list<CircuitElement>::iterator element_pointer;
 };
 
 class CircuitElementVirtual : public std::list <CircuitElementVirtualContainer> {
 public:
-	CircuitElementVirtual(unsigned long id);
+	CircuitElementVirtual(u32 id);
 	~CircuitElementVirtual();
 
 	void update();
 
 	void serialize(std::ostream& out);
 	void deSerialize(std::istream& is, std::list <CircuitElementVirtual>::iterator current_element_it,
-	                 std::map <unsigned long, std::list<CircuitElement>::iterator>& id_to_pointer);
+	                 std::map <u32, std::list<CircuitElement>::iterator>& id_to_pointer);
 
-	void setId(unsigned long id);
+	void setId(u32 id);
 
-	unsigned long getId();
+	u32 getId();
 
 	inline void addState(const bool state) {
 		m_state |= state;
 	}
 
 private:
-	unsigned long m_element_id;
+	u32 m_element_id;
 	bool m_state;
 };
 

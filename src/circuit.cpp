@@ -2,6 +2,7 @@
 #include "circuit_element.h"
 #include "debug.h"
 #include "nodedef.h"
+#include "mapblock.h"
 #include "mapnode.h"
 #include "scripting_game.h"
 #include "map.h"
@@ -9,7 +10,7 @@
 #include "main.h"
 #include "settings.h"
 #include "log.h"
-#include "jthread/jmutexautolock.h"
+#include "key_value_storage.h"
 
 #include <map>
 #include <iomanip>
@@ -19,12 +20,14 @@
 
 #define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
 
-const unsigned long Circuit::circuit_simulator_version = 1ul;
+const u32 Circuit::circuit_simulator_version = 1ul;
 const char Circuit::elements_states_file[] = "circuit_elements_states";
 const char Circuit::elements_func_file[] = "circuit_elements_func";
 
-Circuit::Circuit(GameScripting* script, std::string savedir) :  m_circuit_elements_states(64u, false),
+Circuit::Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::string savedir) :
 	m_script(script),
+	m_map(map),
+	m_ndef(ndef),
 	m_min_update_delay(0.2f),
 	m_since_last_update(0.0f),
 	m_max_id(0ul),
@@ -39,36 +42,103 @@ Circuit::~Circuit() {
 	m_elements.clear();
 	delete m_database;
 	delete m_virtual_database;
+	m_script = nullptr;
+	m_map = nullptr;
+	m_ndef = nullptr;
+	m_database = nullptr;
+	m_virtual_database = nullptr;
 }
 
-void Circuit::addElement(Map& map, INodeDefManager* ndef, v3s16 pos)
-{
+void Circuit::addBlock(MapBlock* block) {
+	// v3s16 pos;
+	// for(pos.X = 0; pos.X < 16; ++pos.X)
+	// {
+	// 	for(pos.Y = 0; pos.Y < 16; ++pos.Y)
+	// 	{
+	// 		for(pos.Z = 0; pos.Z < 16; ++pos.Z)
+	// 		{
+	// 			MapNode tmp_node = block->getNode(pos);
+	// 			if(ndef->get(tmp_node).is_circuit_element)
+	// 			{
+	// 				pos.X = m_pos.X * MAP_BLOCKSIZE + x;
+	// 				pos.Y = m_pos.Y * MAP_BLOCKSIZE + y;
+	// 				pos.Z = m_pos.Z * MAP_BLOCKSIZE + z;
+	// 			}
+	// 		}
+	// 	}
+	// }
+}
+
+void Circuit::addNode(v3s16 pos) {
+	MapNode n = m_map->getNodeNoEx(pos);
+	if(m_ndef->get(n).is_wire || m_ndef->get(n).is_wire_connector) {
+		addWire(pos);
+	}
+	// Call circuit update
+	if(m_ndef->get(n).is_circuit_element) {
+		addElement(pos);
+	}
+}
+
+void Circuit::removeNode(v3s16 pos, const MapNode& n_old) {
+	if(m_ndef->get(n_old).is_wire || m_ndef->get(n_old).is_wire_connector) {
+		removeWire(pos);
+	}
+	if(m_ndef->get(n_old).is_circuit_element) {
+		removeElement(pos);
+	}
+}
+
+void Circuit::swapNode(v3s16 pos, const MapNode& n_old, const MapNode& n_new) {
+	if(m_ndef->get(n_new).is_circuit_element) {
+		if(m_ndef->get(n_old).is_circuit_element) {
+			updateElement(n_new, pos, m_ndef->get(n_new).circuit_element_func);
+		} else {
+			if(m_ndef->get(n_old).is_wire) {
+				removeWire(pos);
+			}
+			addElement(pos);
+		}
+	} else {
+		if(m_ndef->get(n_old).is_circuit_element) {
+			removeElement(pos);
+		} else if(m_ndef->get(n_old).is_wire) {
+			removeWire(pos);
+		}
+		if(m_ndef->get(n_new).is_wire) {
+			addWire(pos);
+		}
+	}
+}
+
+void Circuit::addElement(v3s16 pos) {
 	JMutexAutoLock lock(m_elements_mutex);
 
 	bool already_existed[6];
 	bool connected_faces[6] = {0};
 
-	std::vector <std::pair <std::list <CircuitElement>::iterator, int > > connected;
-	MapNode node = map.getNode(pos);
-	dstream << static_cast<unsigned int>(node.param2) << std::endl;
+	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > connected;
+	MapNode node = m_map->getNodeNoEx(pos);
 
-	std::pair <const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
-	saveCircuitElementsStates();
 	std::list <CircuitElement>::iterator current_element_iterator =
-	    m_elements.insert(m_elements.begin(), CircuitElement(pos, node_func.first, node_func.second,
-	                      m_max_id++, ndef->get(node).circuit_element_delay));
+		m_elements.insert(m_elements.begin(), CircuitElement(pos, m_ndef->get(node).circuit_element_func,
+	                      m_max_id++, m_ndef->get(node).circuit_element_delay));
 	m_pos_to_iterator[pos] = current_element_iterator;
 
 	// For each face add all other connected faces.
 	for(int i = 0; i < 6; ++i) {
 		if(!connected_faces[i]) {
 			connected.clear();
-			CircuitElement::findConnectedWithFace(connected, map, ndef, pos, SHIFT_TO_FACE(i), m_pos_to_iterator, connected_faces);
+			CircuitElement::findConnectedWithFace(connected, m_map, m_ndef, pos, SHIFT_TO_FACE(i), m_pos_to_iterator, connected_faces);
 			if(connected.size() > 0) {
+				dstream << "For face_id = " << i <<  " found connected: ";
+				for(auto i : connected) {
+					dstream << PP(i.first->getPos()) << static_cast<u32>(i.second) << ", ";
+				}
+				dstream << std::endl;
 				std::list <CircuitElementVirtual>::iterator virtual_element_it;
 				bool found = false;
-				for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator j = connected.begin();
-				        j != connected.end(); ++j) {
+				for(auto j = connected.begin(); j != connected.end(); ++j) {
 					if(j->first->getFace(j->second).is_connected) {
 						virtual_element_it = j->first->getFace(j->second).list_pointer;
 						found = true;
@@ -86,8 +156,7 @@ void Circuit::addElement(Map& map, INodeDefManager* ndef, v3s16 pos)
 				}
 
 				std::list <CircuitElementVirtualContainer>::iterator it;
-				for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator j = connected.begin();
-				        j != connected.end(); ++j) {
+				for(auto j = connected.begin(); j != connected.end(); ++j) {
 					if(!j->first->getFace(j->second).is_connected) {
 						it = virtual_element_it->insert(virtual_element_it->begin(), CircuitElementVirtualContainer());
 						it->shift = j->second;
@@ -123,8 +192,7 @@ void Circuit::removeElement(v3s16 pos) {
 
 	m_elements.erase(current_element);
 
-	for(std::vector <std::list <CircuitElementVirtual>::iterator>::iterator i = virtual_elements_for_update.begin();
-	        i != virtual_elements_for_update.end(); ++i) {
+	for(auto i = virtual_elements_for_update.begin(); i != virtual_elements_for_update.end(); ++i) {
 		if((*i)->size() > 1) {
 			std::ostringstream out(std::ios_base::binary);
 			(*i)->serialize(out);
@@ -132,7 +200,7 @@ void Circuit::removeElement(v3s16 pos) {
 		} else {
 			m_virtual_database->del(itos((*i)->getId()));
 			std::list <CircuitElement>::iterator element_to_save;
-			for(std::list <CircuitElementVirtualContainer>::iterator j = (*i)->begin(); j != (*i)->end(); ++j) {
+			for(auto j = (*i)->begin(); j != (*i)->end(); ++j) {
 				element_to_save = j->element_pointer;
 			}
 			m_virtual_elements.erase(*i);
@@ -143,20 +211,20 @@ void Circuit::removeElement(v3s16 pos) {
 	m_pos_to_iterator.erase(pos);
 }
 
-void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
+void Circuit::addWire(v3s16 pos) {
 	JMutexAutoLock lock(m_elements_mutex);
 
 	// This is used for converting elements of current_face_connected to their ids in all_connected.
-	std::vector <std::pair <std::list <CircuitElement>::iterator, int> > all_connected;
+	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > all_connected;
 	std::vector <std::list <CircuitElementVirtual>::iterator> created_virtual_elements;
 
 	bool used[6][6];
 	bool connected_faces[6];
 
-	MapNode node = map.getNode(pos);
-	std::vector <std::pair <std::list <CircuitElement>::iterator, int> > connected_to_face[6];
+	MapNode node = m_map->getNode(pos);
+	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > connected_to_face[6];
 	for(int i = 0; i < 6; ++i) {
-		CircuitElement::findConnectedWithFace(connected_to_face[i], map, ndef, pos, SHIFT_TO_FACE(i),
+		CircuitElement::findConnectedWithFace(connected_to_face[i], m_map, m_ndef, pos, SHIFT_TO_FACE(i),
 		                                      m_pos_to_iterator, connected_faces);
 	}
 
@@ -169,8 +237,8 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 	// For each face connect faces, that are not yet connected.
 	for(int i = 0; i < 6; ++i) {
 		all_connected.clear();
-		unsigned char acceptable_faces = CircuitElement::getAcceptableFaces(node, ndef->get(node), i);
-		for(unsigned int j = 0; j < 6; ++j) {
+		u8 acceptable_faces = CircuitElement::getAcceptableFaces(node, m_ndef->get(node), i);
+		for(int j = 0; j < 6; ++j) {
 			if((acceptable_faces & (SHIFT_TO_FACE(j))) && !used[i][j]) {
 				all_connected.insert(all_connected.end(), connected_to_face[j].begin(), connected_to_face[j].end());
 				used[i][j] = true;
@@ -181,8 +249,7 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 		if(all_connected.size() > 1) {
 			CircuitElementContainer element_with_virtual;
 			bool found_virtual = false;
-			for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator i = all_connected.begin();
-			        i != all_connected.end(); ++i) {
+			for(auto i = all_connected.begin(); i != all_connected.end(); ++i) {
 				if(i->first->getFace(i->second).is_connected) {
 					element_with_virtual = i->first->getFace(i->second);
 					found_virtual = true;
@@ -192,8 +259,7 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 
 			if(found_virtual) {
 				// Clear old connections (remove some virtual elements)
-				for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator i = all_connected.begin();
-				        i != all_connected.end(); ++i) {
+				for(auto i = all_connected.begin(); i != all_connected.end(); ++i) {
 					if(i->first->getFace(i->second).is_connected
 					        && (i->first->getFace(i->second).list_pointer != element_with_virtual.list_pointer)) {
 						m_virtual_database->del(itos(i->first->getFace(i->second).list_pointer->getId()));
@@ -208,11 +274,10 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 			created_virtual_elements.push_back(element_with_virtual.list_pointer);
 
 			// Create new connections
-			for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator i = all_connected.begin();
-			        i != all_connected.end(); ++i) {
+			for(auto i = all_connected.begin(); i != all_connected.end(); ++i) {
 				if(!(i->first->getFace(i->second).is_connected)) {
-					std::list <CircuitElementVirtualContainer>::iterator it = element_with_virtual.list_pointer->insert(
-					            element_with_virtual.list_pointer->begin(), CircuitElementVirtualContainer());
+					auto it = element_with_virtual.list_pointer->insert(
+						element_with_virtual.list_pointer->begin(), CircuitElementVirtualContainer());
 					it->element_pointer = i->first;
 					it->shift = i->second;
 					i->first->connectFace(i->second, it, element_with_virtual.list_pointer);
@@ -221,15 +286,15 @@ void Circuit::addWire(Map& map, INodeDefManager* ndef, v3s16 pos) {
 		}
 	}
 
-	for(unsigned int i = 0; i < created_virtual_elements.size(); ++i) {
+	for(u32 i = 0; i < created_virtual_elements.size(); ++i) {
 		saveVirtualElement(created_virtual_elements[i], true);
 	}
 }
 
-void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& node) {
+void Circuit::removeWire(v3s16 pos) {
 	JMutexAutoLock lock(m_elements_mutex);
 
-	std::vector <std::pair <std::list <CircuitElement>::iterator, int> > current_face_connected;
+	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > current_face_connected;
 
 	bool connected_faces[6];
 	for(int i = 0; i < 6; ++i) {
@@ -241,9 +306,9 @@ void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& no
 	for(int i = 0; i < 6; ++i) {
 		if(!connected_faces[i]) {
 			current_face_connected.clear();
-			CircuitElement::findConnectedWithFace(current_face_connected, map, ndef, pos,
+			CircuitElement::findConnectedWithFace(current_face_connected, m_map, m_ndef, pos,
 			                                      SHIFT_TO_FACE(i), m_pos_to_iterator, connected_faces);
-			for(unsigned int j = 0; j < current_face_connected.size(); ++j) {
+			for(u32 j = 0; j < current_face_connected.size(); ++j) {
 				CircuitElementContainer current_edge = current_face_connected[j].first->getFace(current_face_connected[j].second);
 				if(current_edge.is_connected) {
 					found_virtual_elements = true;
@@ -254,7 +319,7 @@ void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& no
 				}
 			}
 
-			for(unsigned int j = 0; j < current_face_connected.size(); ++j) {
+			for(u32 j = 0; j < current_face_connected.size(); ++j) {
 				saveElement(current_face_connected[j].first, false);
 			}
 
@@ -270,14 +335,14 @@ void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& no
 		for(int i = 0; i < 6; ++i) {
 			if(!connected_faces[i]) {
 				current_face_connected.clear();
-				CircuitElement::findConnectedWithFace(current_face_connected, map, ndef, pos, SHIFT_TO_FACE(i),
+				CircuitElement::findConnectedWithFace(current_face_connected, m_map, m_ndef, pos, SHIFT_TO_FACE(i),
 				                                      m_pos_to_iterator, connected_faces);
 
 				if(current_face_connected.size() > 1) {
 					std::list <CircuitElementVirtual>::iterator new_virtual_element = m_virtual_elements.insert(
 					            m_virtual_elements.begin(), CircuitElementVirtual(m_max_virtual_id++));
 
-					for(unsigned int j = 0; j < current_face_connected.size(); ++j) {
+					for(u32 j = 0; j < current_face_connected.size(); ++j) {
 						std::list <CircuitElementVirtualContainer>::iterator new_container = new_virtual_element->insert(
 						            new_virtual_element->begin(), CircuitElementVirtualContainer());
 						new_container->element_pointer = current_face_connected[j].first;
@@ -295,8 +360,9 @@ void Circuit::removeWire(Map& map, INodeDefManager* ndef, v3s16 pos, MapNode& no
 	}
 }
 
-void Circuit::update(float dtime, Map& map,  INodeDefManager* ndef) {
+void Circuit::update(float dtime) {
 	if(m_since_last_update > m_min_update_delay) {
+		dstream << "----------------------------------------" << std::endl;
 		JMutexAutoLock lock(m_elements_mutex);
 		m_updating_process = true;
 
@@ -316,7 +382,7 @@ void Circuit::update(float dtime, Map& map,  INodeDefManager* ndef) {
 		// Update state of each element.
 		for(std::list <CircuitElement>::iterator i = m_elements.begin();
 		        i != m_elements.end(); ++i) {
-			i->updateState(m_script, map, ndef);
+			i->updateState(m_script, m_map, m_ndef);
 		}
 
 		m_updating_process = false;
@@ -341,16 +407,14 @@ void Circuit::update(float dtime, Map& map,  INodeDefManager* ndef) {
 }
 
 
-void Circuit::updateElement(MapNode& node, v3s16 pos, INodeDefManager* ndef, const unsigned char* func) {
+void Circuit::updateElement(const MapNode& node, v3s16 pos, const u8* func) {
 	if(!m_updating_process) {
 		m_elements_mutex.Lock();
 	}
 
 	std::list <CircuitElement>::iterator current_element = m_pos_to_iterator[pos];
-	std::pair<const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
-	current_element->setFunc(node_func.first, node_func.second);
-	current_element->setDelay(ndef->get(node).circuit_element_delay);
-	saveCircuitElementsStates();
+	current_element->setFunc(m_ndef->get(node).circuit_element_func);
+	current_element->setDelay(m_ndef->get(node).circuit_element_delay);
 	saveElement(current_element, false);
 
 	if(!m_updating_process) {
@@ -358,122 +422,24 @@ void Circuit::updateElement(MapNode& node, v3s16 pos, INodeDefManager* ndef, con
 	}
 }
 
-void Circuit::pushElementToQueue(v3s16 pos) {
-	m_elements_queue.push_back(pos);
-}
-
-void Circuit::processElementsQueue(Map& map, INodeDefManager* ndef) {
-	if(m_elements_queue.size() > 0) {
-		JMutexAutoLock lock(m_elements_mutex);
-
-		std::vector <std::pair <std::list <CircuitElement>::iterator, int> > connected;
-		std::vector <std::list <CircuitElementVirtual>::iterator> created_virtual_elements;
-		MapNode node;
-		bool connected_faces[6];
-
-		// Filling with empty elements
-		for(unsigned int i = 0; i < m_elements_queue.size(); ++i) {
-			node = map.getNode(m_elements_queue[i]);
-			std::pair <const unsigned char*, unsigned long> node_func = addState(node, ndef->get(node));
-			m_pos_to_iterator[m_elements_queue[i]] = m_elements.insert(m_elements.begin(),
-			        CircuitElement(m_elements_queue[i],
-			                       node_func.first, node_func.second,
-			                       m_max_id++, ndef->get(node).circuit_element_delay));
-		}
-
-		for(unsigned int i = 0; i < m_elements_queue.size(); ++i) {
-			v3s16 pos = m_elements_queue[i];
-			std::list <CircuitElement>::iterator current_element_it = m_pos_to_iterator[pos];
-			for(int j = 0; j < 6; ++j) {
-				connected_faces[j] = false;
-			}
-			for(int j = 0; j < 6; ++j) {
-				if(!current_element_it->getFace(j).is_connected && !connected_faces[j]) {
-					connected.clear();
-					CircuitElement::findConnectedWithFace(connected, map, ndef, pos, SHIFT_TO_FACE(j),
-					                                      m_pos_to_iterator, connected_faces);
-
-					if(!connected.empty()) {
-						std::list <CircuitElementVirtual>::iterator virtual_element_it;
-						bool found = false;
-						for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator k = connected.begin();
-						        k != connected.end(); ++k) {
-							if(k->first->getFace(k->second).is_connected) {
-								virtual_element_it = k->first->getFace(k->second).list_pointer;
-								found = true;
-								break;
-							}
-						}
-
-						if(!found) {
-							virtual_element_it = m_virtual_elements.insert(m_virtual_elements.begin(),
-							                     CircuitElementVirtual(m_max_virtual_id++));
-						}
-
-						std::list <CircuitElementVirtualContainer>::iterator it;
-						for(std::vector <std::pair <std::list <CircuitElement>::iterator, int> >::iterator k = connected.begin();
-						        k != connected.end(); ++k) {
-							if(!k->first->getFace(k->second).is_connected) {
-								it = virtual_element_it->insert(virtual_element_it->begin(), CircuitElementVirtualContainer());
-								it->shift = k->second;
-								it->element_pointer = k->first;
-								k->first->connectFace(k->second, it, virtual_element_it);
-							}
-						}
-						it = virtual_element_it->insert(virtual_element_it->begin(), CircuitElementVirtualContainer());
-						it->shift = j;
-						it->element_pointer = current_element_it;
-						current_element_it->connectFace(j, it, virtual_element_it);
-					}
-				}
-			}
-		}
-
-		for(unsigned int i = 0; i < created_virtual_elements.size(); ++i) {
-			saveVirtualElement(created_virtual_elements[i], true);
-		}
-
-		for(unsigned int i = 0; i < m_elements_queue.size(); ++i) {
-			saveElement(m_pos_to_iterator[m_elements_queue[i]], false);
-		}
-
-		m_elements_queue.clear();
-
-		saveCircuitElementsStates();
-
-	}
-}
-
-std::pair <const unsigned char*, unsigned long> Circuit::addState(const MapNode& node, const ContentFeatures& node_features)
-{
-	// If node is rotatable, then rotate it's function.
-	if(node_features.param_type_2 == CPT2_FACEDIR) {
-		return m_circuit_elements_states.addState(node_features.circuit_element_states, FACEDIR_TO_FACE(node.param2));
-	} else if(node_features.param_type_2 == CPT2_WALLMOUNTED) {
-		return m_circuit_elements_states.addState(node_features.circuit_element_states, WALLMOUNTED_TO_FACE(node.param2));
-	} else {
-		return m_circuit_elements_states.addState(node_features.circuit_element_states);
-	}
-}
-
 void Circuit::load() {
-	unsigned long element_id;
-	unsigned long version = 0;
+	u32 element_id;
+	u32 version = 0;
 	std::istringstream in(std::ios_base::binary);
 
 	m_database = new KeyValueStorage(m_savedir, "circuit");
 	m_virtual_database = new KeyValueStorage(m_savedir, "circuit_virtual");
 
-	std::ifstream input_elements_func((m_savedir + DIR_DELIM + elements_func_file).c_str(), std::ios_base::binary);
-	if(input_elements_func.good()) {
-		input_elements_func.read(reinterpret_cast<char*>(&version), sizeof(version));
-		m_circuit_elements_states.deSerialize(input_elements_func);
-	}
+	std::ifstream input_elements_states((m_savedir + DIR_DELIM + elements_states_file).c_str());
 
+	if(input_elements_states.good()) {
+		input_elements_states.read(reinterpret_cast<char*>(&version), sizeof(version));
+	}
 #if USE_LEVELDB
 	// Filling list with empty virtual elements
+	dstream << "ok!" << std::endl;
 	auto virtual_it = m_virtual_database->new_iterator();
-	std::map <unsigned long, std::list <CircuitElementVirtual>::iterator> id_to_virtual_pointer;
+	std::map <u32, std::list <CircuitElementVirtual>::iterator> id_to_virtual_pointer;
 	for(virtual_it->SeekToFirst(); virtual_it->Valid(); virtual_it->Next()) {
 		element_id = stoi(virtual_it->key().ToString());
 		id_to_virtual_pointer[element_id] =
@@ -482,10 +448,11 @@ void Circuit::load() {
 			m_max_virtual_id = element_id + 1;
 		}
 	}
+	dstream << "ok!" << std::endl;
 
 	// Filling list with empty elements
 	auto it = m_database->new_iterator();
-	std::map <unsigned long, std::list <CircuitElement>::iterator> id_to_pointer;
+	std::map <u32, std::list <CircuitElement>::iterator> id_to_pointer;
 	for(it->SeekToFirst(); it->Valid(); it->Next()) {
 		element_id = stoi(it->key().ToString());
 		id_to_pointer[element_id] =
@@ -496,9 +463,8 @@ void Circuit::load() {
 	}
 
 	// Loading states of elements
-	std::ifstream input_elements_states((m_savedir + DIR_DELIM + elements_states_file).c_str());
 	if(input_elements_states.good()) {
-		for(unsigned long i = 0; i < m_elements.size(); ++i) {
+		for(u32 i = 0; i < m_elements.size(); ++i) {
 			input_elements_states.read(reinterpret_cast<char*>(&element_id), sizeof(element_id));
 			if(id_to_pointer.find(element_id) != id_to_pointer.end()) {
 				id_to_pointer[element_id]->deSerializeState(input_elements_states);
@@ -515,7 +481,7 @@ void Circuit::load() {
 		element_id = stoi(it->key().ToString());
 		std::list <CircuitElement>::iterator current_element = id_to_pointer[element_id];
 		current_element->deSerialize(in, id_to_virtual_pointer);
-		current_element->setFunc(m_circuit_elements_states.getFunc(current_element->getFuncId()), current_element->getFuncId());
+		// current_element->setFunc(m_circuit_elements_states.getFunc(current_element->getFuncId()), current_element->getFuncId());
 		m_pos_to_iterator[current_element->getPos()] = current_element;
 	}
 	delete it;
@@ -536,6 +502,7 @@ void Circuit::save() {
 	JMutexAutoLock lock(m_elements_mutex);
 	std::ostringstream ostr(std::ios_base::binary);
 	std::ofstream out((m_savedir + DIR_DELIM + elements_states_file).c_str(), std::ios_base::binary);
+	out.write(reinterpret_cast<const char*>(&circuit_simulator_version), sizeof(circuit_simulator_version));
 	for(std::list<CircuitElement>::iterator i = m_elements.begin(); i != m_elements.end(); ++i) {
 		i->serializeState(ostr);
 	}
@@ -569,12 +536,4 @@ inline void Circuit::saveVirtualElement(std::list <CircuitElementVirtual>::itera
 			m_database->put(itos(i->element_pointer->getId()), out.str());
 		}
 	}
-}
-
-void Circuit::saveCircuitElementsStates() {
-	std::ostringstream ostr(std::ios_base::binary);
-	std::ofstream out((m_savedir + DIR_DELIM + elements_func_file).c_str(), std::ios_base::binary);
-	ostr.write(reinterpret_cast<const char*>(&circuit_simulator_version), sizeof(circuit_simulator_version));
-	m_circuit_elements_states.serialize(ostr);
-	out << ostr.str();
 }
