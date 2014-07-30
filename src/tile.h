@@ -126,7 +126,6 @@ public:
 	ITextureSource(){}
 	virtual ~ITextureSource(){}
 	virtual u32 getTextureId(const std::string &name)=0;
-	virtual u32 getTextureIdDirect(const std::string &name)=0;
 	virtual std::string getTextureName(u32 id)=0;
 	virtual video::ITexture* getTexture(u32 id)=0;
 	virtual TextureInfo* getTextureInfo(u32 id)=0;
@@ -145,7 +144,6 @@ public:
 	IWritableTextureSource(){}
 	virtual ~IWritableTextureSource(){}
 	virtual u32 getTextureId(const std::string &name)=0;
-	virtual u32 getTextureIdDirect(const std::string &name)=0;
 	virtual std::string getTextureName(u32 id)=0;
 	virtual video::ITexture* getTexture(u32 id)=0;
 	virtual video::ITexture* getTexture(

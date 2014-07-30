@@ -234,14 +234,14 @@ if(WIN32)
 	endif()
 	set(IRRLICHT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../irrlicht-1.7.2"
 			CACHE PATH "irrlicht dir")
-	set(FREETYPE_INCLUDE_DIR_ft2build "${PROJECT_SOURCE_DIR}/../../freetype2/include/"
-			CACHE PATH "freetype include dir")
-	set(FREETYPE_INCLUDE_DIR_freetype2 "${PROJECT_SOURCE_DIR}/../../freetype2/include/freetype"
-			CACHE PATH "freetype include dir")
-	set(FREETYPE_LIBRARY "${PROJECT_SOURCE_DIR}/../../freetype2/objs/win32/vc2005/freetype247.lib"
-			CACHE FILEPATH "Path to freetype247.lib")
-	set(MINGWM10_DLL ""
-			CACHE FILEPATH "Path to mingwm10.dll (for installation)")
+		set(FREETYPE_INCLUDE_DIR_ft2build "${PROJECT_SOURCE_DIR}/../../freetype2/include/"
+				CACHE PATH "freetype include dir")
+		set(FREETYPE_INCLUDE_DIR_freetype2 "${PROJECT_SOURCE_DIR}/../../freetype2/include/freetype"
+				CACHE PATH "freetype include dir")
+		set(FREETYPE_LIBRARY "${PROJECT_SOURCE_DIR}/../../freetype2/objs/win32/vc2005/freetype247.lib"
+				CACHE FILEPATH "Path to freetype247.lib")
+		#set(MINGWM10_DLL ""
+		#		CACHE FILEPATH "Path to mingwm10.dll (for installation)")
 	if(ENABLE_SOUND)
 		set(OPENAL_DLL "" CACHE FILEPATH "Path to OpenAL32.dll for installation (optional)")
 		set(OGG_DLL "" CACHE FILEPATH "Path to libogg.dll for installation (optional)")
@@ -765,12 +765,6 @@ endif()
 if(WIN32)
 	if(NOT STATIC_BUILD)
 
-	if(MINGWM10_DLL)
-		install(FILES ${MINGWM10_DLL} DESTINATION ${BINDIR})
-	endif()
-	if(DEFINED ZLIB_DLL)
-		install(FILES ${ZLIB_DLL} DESTINATION ${BINDIR})
-	endif()
 	if(USE_SOUND)
 		if(OPENAL_DLL)
 			install(FILES ${OPENAL_DLL} DESTINATION ${BINDIR})
@@ -787,6 +781,19 @@ if(WIN32)
 	endif()
 	if(CURL_DLL)
 		install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
+	endif()
+
+	if(ZLIB_DLL)
+		install(FILES ${ZLIB_DLL} DESTINATION ${BINDIR})
+	endif()
+	if(ZLIBWAPI_DLL)
+		install(FILES ${ZLIBWAPI_DLL} DESTINATION ${BINDIR})
+	endif()
+	if(FREETYPE_DLL)
+		install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
+	endif()
+	if(LEVELDB_DLL)
+		install(FILES ${LEVELDB_DLL} DESTINATION ${BINDIR})
 	endif()
 	endif()
 endif()

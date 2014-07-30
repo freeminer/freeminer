@@ -44,7 +44,12 @@ static void applyContrast(video::SColor& color, float factor)
 	color.setBlue(core::clamp(core::round32(color.getBlue()*factor), 0, 255));
 }
 
-int getFarmeshStep(MapDrawControl& draw_control, int range) {
+inline int radius_box(const v3s16 & a, const v3s16 & b) {
+	return std::max(std::max(abs(a.X - b.X), abs(a.Y - b.Y)), abs(a.Z - b.Z));
+}
+
+int getFarmeshStep(MapDrawControl& draw_control, const v3s16 & playerpos, const v3s16 & blockpos) {
+	int range = radius_box(playerpos, blockpos);
 	if (draw_control.farmesh) {
 		if		(range >= draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
 		else if (range >= draw_control.farmesh+draw_control.farmesh_step*2)	return 8;
@@ -1266,10 +1271,12 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	{
 #if 0
 		// Usually 1-700 faces and 1-7 materials
-		std::cout<<"Updated MapBlock has "<<fastfaces_new.size()<<" faces "
+		infostream<<"Updated MapBlock mesh p="<<data->m_blockpos<<" has "<<fastfaces_new.size()<<" faces "
 				<<"and uses "<<m_mesh->getMeshBufferCount()
-				<<" materials (meshbuffers)"<<std::endl;
+				<<" materials (meshbuffers)"<<" step="<<step<< " mesh="<<m_mesh<<std::endl;
 #endif
+	} else {
+		infostream<<"null mesh generated p="<<data->m_blockpos<<std::endl;
 	}
 
 	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;

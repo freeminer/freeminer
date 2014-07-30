@@ -618,7 +618,9 @@ function tabbuilder.handle_server_buttons(fields)
 		end
 	end
 
-	if fields["world_create"] ~= nil then
+	-- is there any more hacky way to do that?
+	local world_created = fields["world_create_confirm"] ~= nil or fields["world_create_cancel"] ~= nil or fields["key_enter"] ~= nil
+	if (fields["world_create"] ~= nil or fields["dd_mapgen"] ~= nil) and not world_created then
 		tabbuilder.current_tab = "dialog_create_world"
 		tabbuilder.is_dialog = true
 		tabbuilder.show_buttons = true
@@ -778,7 +780,10 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 		end
 	end
 
-	if fields["world_create"] ~= nil then
+	-- is there any more hacky way to do that?
+	local world_created = fields["world_create_confirm"] ~= nil or fields["world_create_cancel"] ~= nil or fields["key_enter"] ~= nil
+
+	if (fields["world_create"] ~= nil or fields["dd_mapgen"] ~= nil) and not world_created then
 		tabbuilder.current_tab = "dialog_create_world"
 		tabbuilder.is_dialog = true
 		tabbuilder.show_buttons = true

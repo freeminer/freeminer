@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "profiler.h"
 #include "gettext.h"
-#include "log.h"
+#include "log_types.h"
 #include "nodemetadata.h"
 #include "nodedef.h"
 #include "itemdef.h"
@@ -197,8 +197,8 @@ void * MeshUpdateThread::Thread()
 		MapBlockMesh *mesh_new = new MapBlockMesh(q->data, m_camera_offset);
 		if(mesh_new->getMesh()->getMeshBufferCount() == 0)
 		{
-			delete mesh_new;
-			mesh_new = NULL;
+			//delete mesh_new;
+			//mesh_new = NULL;
 		}
 
 		MeshUpdateResult r;
@@ -2003,7 +2003,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, bool la
 		data->fill(b);
 		data->setCrack(m_crack_level, m_crack_pos);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
-		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p));
+		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 	}
 	
 	// Add task to queue

@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
-#include "log.h"
+#include "log_types.h"
 #include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"
@@ -213,14 +213,15 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 				continue;
 		}
 
-			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
+			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), bp);
 			/*
 				Compare block position to camera position, skip
 				if not seen on display
 			*/
 
-			if (block->getMesh(mesh_step) != NULL)
-				block->getMesh(mesh_step)->updateCameraOffset(m_camera_offset);
+			auto mesh = block->getMesh(mesh_step);
+			if (mesh)
+				mesh->updateCameraOffset(m_camera_offset);
 
 			float range = 100000 * BS;
 			if(m_control.range_all == false)
@@ -247,7 +248,11 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 			{
 				//JMutexAutoLock lock(block->mesh_mutex);
 
-				if(block->getMesh(mesh_step) == NULL){
+				if(!mesh) {
+					blocks_in_range_without_mesh++;
+					continue;
+				}
+				if(mesh_step == mesh->step && (!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())) {
 					blocks_in_range_without_mesh++;
 					continue;
 				}
@@ -313,11 +318,14 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 					&& d > m_control.wanted_min_range * BS)
 				continue;
 
-			if (m_control.farmesh && mesh_step != block->getMesh(mesh_step)->step) { //&& !block->mesh->transparent
+			if (m_control.farmesh && mesh_step != mesh->step) { //&& !block->mesh->transparent
 				m_client->addUpdateMeshTask(block->getPos(), false, mesh_step == 1, true);
 			}
 
-			block->getMesh(mesh_step)->incrementUsageTimer(dtime);
+			if(!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())
+				continue;
+
+			mesh->incrementUsageTimer(dtime);
 
 			// Add to set
 			block->refGrab();
@@ -483,9 +491,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	for(auto & ir : *m_drawlist) {
 		MapBlock *block = ir.second;
 
-		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes).getDistanceFrom(block->getPos()));
+		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block->getPos());
 		// If the mesh of the block happened to get deleted, ignore it
-		if(block->getMesh(mesh_step) == NULL)
+		auto *mapBlockMesh = block->getMesh(mesh_step);
+		if (!mapBlockMesh)
 			continue;
 
 		float d = 0.0;
@@ -499,8 +508,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// Mesh animation
 		{
 			//JMutexAutoLock lock(block->mesh_mutex);
-			MapBlockMesh *mapBlockMesh = block->getMesh(mesh_step);
-			assert(mapBlockMesh);
 
 			mapBlockMesh->updateCameraOffset(m_camera_offset);
 
@@ -533,11 +540,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		{
 			//JMutexAutoLock lock(block->mesh_mutex);
 
-			MapBlockMesh *mapBlockMesh = block->getMesh(mesh_step);
-			assert(mapBlockMesh);
-
 			scene::SMesh *mesh = mapBlockMesh->getMesh();
-			assert(mesh);
+			if (!mesh)
+				continue;
 
 			u32 c = mesh->getMeshBufferCount();
 			for(u32 i=0; i<c; i++)
