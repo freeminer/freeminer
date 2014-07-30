@@ -610,7 +610,7 @@ bool GenericCAO::collideWithObjects()
 
 void GenericCAO::initialize(const std::string &data)
 {
-	infostream<<"GenericCAO: Got init data"<<std::endl;
+	//infostream<<"GenericCAO: Got init data"<<std::endl;
 	std::istringstream is(data, std::ios::binary);
 	int num_messages = 0;
 	// version
@@ -922,10 +922,10 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
 	}
 	else if(m_prop.visual == "wielditem") {
-		infostream<<"GenericCAO::addToScene(): node"<<std::endl;
-		infostream<<"textures: "<<m_prop.textures.size()<<std::endl;
+		//infostream<<"GenericCAO::addToScene(): node"<<std::endl;
+		//infostream<<"textures: "<<m_prop.textures.size()<<std::endl;
 		if(m_prop.textures.size() >= 1){
-			infostream<<"textures[0]: "<<m_prop.textures[0]<<std::endl;
+			//infostream<<"textures[0]: "<<m_prop.textures[0]<<std::endl;
 			IItemDefManager *idef = m_gamedef->idef();
 			ItemStack item(m_prop.textures[0], 1, 0, "", idef);
 			scene::IMesh *item_mesh = idef->getWieldMesh(item.getDefinition(idef).name, m_gamedef);
