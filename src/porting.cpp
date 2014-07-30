@@ -69,15 +69,15 @@ void sigint_handler(int sig)
 {
 	if(g_killed == false)
 	{
-		dstream<<DTIME<<"INFO: sigint_handler(): "
+		g_killed = true;
+
+		dstream<<"INFO: sigint_handler(): "
 				<<"Ctrl-C pressed, shutting down."<<std::endl;
 
 		// Comment out for less clutter when testing scripts
 		/*dstream<<DTIME<<"INFO: sigint_handler(): "
 				<<"Printing debug stacks"<<std::endl;
 		debug_stacks_print();*/
-
-		g_killed = true;
 	}
 	else
 	{
