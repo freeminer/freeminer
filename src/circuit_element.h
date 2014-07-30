@@ -58,13 +58,14 @@ struct CircuitElementContainer
 
 class CircuitElement {
 public:
-	CircuitElement(v3s16 pos, const u8* func, u32 id, u8 delay);
+	CircuitElement(v3s16 pos, u32 id, u8 delay);
 	CircuitElement(const CircuitElement& element);
 	CircuitElement(u32 id);
 	~CircuitElement();
 	void addConnectedElement();
 	void update();
-	void updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef);
+	bool updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef);
+	void resetState();
 
 	void serialize(std::ostream& out) const;
 	void serializeState(std::ostream& out) const;
@@ -80,8 +81,6 @@ public:
 	                                  Map* map, INodeDefManager* ndef, v3s16 pos, u8 face,
 	                                  std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
 	                                  bool connected_faces[6]);
-	// Get all faces that are connected to the "shift". Currently 6dfacedir and wallmounted params are not supported.
-	static u8 getAcceptableFaces(const MapNode& node, const ContentFeatures& node_features, u8 shift);
 
 	CircuitElementContainer getFace(int id) const;
 	v3s16 getPos() const;
@@ -92,8 +91,10 @@ public:
 	void disconnectFace(int id);
 	void setId(u32 id);
 	void setInputState(u8 state);
-	void setFunc(const u8* func);
 	void setDelay(u8 delay);
+
+	void swap(const MapNode& n_old, const ContentFeatures& n_old_features,
+	          const MapNode& n_new, const ContentFeatures& n_new_features);
 
 	inline void addState(u8 state) {
 		m_next_input_state |= state;
@@ -124,11 +125,10 @@ public:
 private:
 	v3s16 m_pos;
 	u32 m_element_id;
-	const u8* m_func;
+	u8 m_prev_input_state;
 	u8 m_current_input_state;
 	u8 m_next_input_state;
 	u8 m_current_output_state;
-	u8 m_next_output_state;
 	std::deque <u8> m_states_queue;
 	CircuitElementContainer m_faces[6];
 };

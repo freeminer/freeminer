@@ -57,4 +57,3 @@ void CircuitElementVirtual::setId(u32 id) {
 u32 CircuitElementVirtual::getId() {
 	return m_element_id;
 }
-

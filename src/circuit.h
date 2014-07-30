@@ -29,7 +29,7 @@ public:
 	void addWire(v3s16 pos);
 	void removeWire(v3s16 pos);
 	void update(float dtime);
-	void updateElement(const MapNode& node, v3s16 pos, const unsigned char* func);
+	void swapElement(const MapNode& n_old, const MapNode& n_new, v3s16 pos);
 
 	void load();
 	void save();
@@ -65,7 +65,6 @@ private:
 
 	static const u32 circuit_simulator_version;
 	static const char elements_states_file[];
-	static const char elements_func_file[];
 };
 
 #endif
