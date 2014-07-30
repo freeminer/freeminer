@@ -120,7 +120,7 @@ public:
 		return m_box;
 	}
 	
-	void updateDrawList(video::IVideoDriver* driver, float dtime);
+	void updateDrawList(float dtime);
 	void renderMap(video::IVideoDriver* driver, s32 pass);
 
 	int getBackgroundBrightness(float max_d, u32 daylight_factor,

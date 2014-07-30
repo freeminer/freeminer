@@ -130,7 +130,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	return false;
 }
 
-void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
+void ClientMap::updateDrawList(float dtime)
 {
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	//g_profiler->add("CM::updateDrawList() count", 1);
@@ -141,8 +141,8 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime)
 		m_drawlist_current = !m_drawlist_current;
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
-	float max_cycle_ms = 0.1/getControl().fps_wanted;
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	float max_cycle_ms = 300/getControl().fps_wanted;
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
