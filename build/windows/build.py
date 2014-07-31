@@ -72,7 +72,7 @@ freetype = "freetype-2.5.2"
 luajit = "LuaJIT-2.0.2"
 gettext = "gettext-0.13.1"
 libiconv = "libiconv-1.9.1"
-MSGPACK_VERSION = "8bc827ebf5b7f26ec2b98d181bc6c5f43a12fc73"
+MSGPACK_VERSION = "c4df1ba6cc6ed2f3ef937e4b10ade41b376f3a01"
 msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 
 def main():
@@ -82,19 +82,11 @@ def main():
 	msbuild = which("MSBuild.exe")
 	cmake = which("cmake.exe")
 	vcbuild = which("vcbuild.exe")
-	ruby = which("ruby.exe")
-	bash = which("bash.exe")
 	if not msbuild:
 		print("MSBuild.exe not found! Make sure you run 'Visual Studio Command Prompt', not cmd.exe")
 		return
 	if not cmake:
 		print("cmake.exe not found! Make sure you have CMake installed and added to PATH.")
-		return
-	if not ruby:
-		print("ruby is required, download from http://rubyinstaller.org/ (add it to the PATH)")
-		return
-	if not which("cp.exe") or not which("rm.exe") or not which("sed.exe") or not which("bash.exe"):
-		print("cp/rm/sed/bash not found, install MinGW: http://www.mingw.org/wiki/MSYS")
 		return
 	print("Found msbuild: {}\nFound cmake: {}".format(msbuild, cmake))
 
@@ -247,33 +239,13 @@ def main():
 
 	if not os.path.exists(msgpack):
 		print("msgpack not found, downloading")
-		download("https://github.com/msgpack/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
+		download("https://github.com/freeminer/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
 		extract_zip("msgpack.zip", ".")
 		os.chdir(msgpack)
-		os.system("bash preprocess")
 		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_map.hpp"', '// #include "type/tr1/unordered_map.hpp"')
 		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_set.hpp"', '// #include "type/tr1/unordered_set.hpp"')
 		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="2"', 'RuntimeLibrary="0"')
 		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="3"', 'RuntimeLibrary="1"')
-		fout = open(os.path.join("src", "msgpack", "version.h"), "w")
-		fout.write("""
-#ifndef MSGPACK_VERSION_H__
-#define MSGPACK_VERSION_H__
-#ifdef __cplusplus
-extern "C" {
-#endif
-const char* msgpack_version(void);
-int msgpack_version_major(void);
-int msgpack_version_minor(void);
-#define MSGPACK_VERSION "0.5.8"
-#define MSGPACK_VERSION_MAJOR 0
-#define MSGPACK_VERSION_MINOR 5
-#ifdef __cplusplus
-}
-#endif
-#endif /* msgpack/version.h */
-""") # chosen by fair dice roll
-		fout.close()
 		# use newer compiler, won't link otherwise
 		os.system("vcupgrade msgpack_vc2008.vcproj")
 		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration={}".format(build_type))
