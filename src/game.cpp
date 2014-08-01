@@ -928,25 +928,17 @@ bool nodePlacementPrediction(Client &client,
 		// Add node to client map
 		MapNode n(id, 0, param2);
 		try{
+
 			LocalPlayer* player = client.getEnv().getLocalPlayer();
-
-			// Dont place node when player would be inside new node
-			// NOTE: This is to be eventually implemented by a mod as client-side Lua
-			if (!nodedef->get(n).walkable ||
-				(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
-				(nodedef->get(n).walkable &&
-				neighbourpos != player->getStandingNodePos() + v3s16(0,1,0) &&
-				neighbourpos != player->getStandingNodePos() + v3s16(0,2,0))) {
-
-					// This triggers the required mesh update too
-					client.addNode(p, n);
-					return true;
-				}
+			if(player->canPlaceNode(p, n)) {
+				client.addNode(p, n);
+				return true;
+			}
 		}catch(InvalidPositionException &e){
 			errorstream<<"Node placement prediction failed for "
-					<<playeritem_def.name<<" (places "
-					<<prediction
-					<<") - Position not loaded"<<std::endl;
+			           <<playeritem_def.name<<" (places "
+			           <<prediction
+			           <<") - Position not loaded"<<std::endl;
 		}
 	}
 	return false;
