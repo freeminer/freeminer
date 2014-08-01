@@ -125,6 +125,13 @@ namespace gui
 		//! Reads attributes of the element
 		virtual void deserializeAttributes(io::IAttributes* in, io::SAttributeReadWriteOptions* options);
 
+		virtual bool isDrawBackgroundEnabled() const { return false; }
+		virtual bool isDrawBorderEnabled() const { return true; }
+		virtual void setCursorChar(const wchar_t cursorChar) { };
+		virtual wchar_t getCursorChar() const { return L'_'; };
+		virtual void setCursorBlinkTime(irr::u32 timeMs) { };
+		virtual irr::u32 getCursorBlinkTime() const { return 500; } ;
+
 	protected:
 		//! Breaks the single text line.
 		void breakText();
