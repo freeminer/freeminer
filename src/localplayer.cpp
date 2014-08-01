@@ -370,6 +370,32 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d)
 	move(dtime, env, pos_max_d, NULL);
 }
 
+bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
+{
+	bool noclip = m_gamedef->checkLocalPrivilege("noclip") &&
+		g_settings->getBool("noclip");
+	// Dont place node when player would be inside new node
+	// NOTE: This is to be eventually implemented by a mod as client-side Lua
+	if (m_gamedef->ndef()->get(n).walkable && !noclip) {
+		auto nodeboxes = n.getNodeBoxes(m_gamedef->ndef());
+		aabb3f player_box = m_collisionbox;
+		v3f position(getPosition());
+		v3f node_pos(p.X, p.Y, p.Z);
+		player_box.MinEdge *= 0.999f;
+		player_box.MaxEdge *= 0.999f;
+		player_box.MinEdge += position;
+		player_box.MaxEdge += position;
+		for(auto box : nodeboxes) {
+			box.MinEdge += node_pos * BS;
+			box.MaxEdge += node_pos * BS;
+			if(box.intersectsWithBox(player_box)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 {
 	// Clear stuff

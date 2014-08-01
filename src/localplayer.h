@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Environment;
 class ClientEnvironment;
-
+class MapNode;
 class GenericCAO;
 class ClientActiveObject;
 
@@ -54,6 +54,7 @@ public:
 	void move(f32 dtime, Environment *env, f32 pos_max_d);
 	void move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::list<CollisionInfo> *collision_info);
+	bool canPlaceNode(const v3s16& p, const MapNode& node);
 
 	void applyControl(float dtime, ClientEnvironment *env);
 
