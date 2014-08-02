@@ -19,10 +19,14 @@ template<class T>
 lock_rec<T>::lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_, std::chrono::milliseconds ms):
 	thread_id(thread_id_) {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
-	if(thread_me != thread_id && lock_->try_lock_for(ms)) {
-		lock = lock_;
-		thread_id = thread_me;
-		return;
+	if(thread_me != thread_id) {
+		if (lock_->try_lock_for(ms)) {
+			lock = lock_;
+			thread_id = thread_me;
+			return;
+		} else {
+			//infostream<<"not locked in "<<ms.count()<<" thread="<<thread_id<<" lock="<<lock<<std::endl;
+		}
 	}
 	delete lock_;
 	lock = nullptr;
