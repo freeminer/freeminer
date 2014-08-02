@@ -38,7 +38,7 @@ sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-d
 Fedora:
 ```
 # the first five is the closest to Debian/Ubuntu build-essential
-sudo yum install make automake gcc gcc-c++ kernel-devel irrlicht-devel bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel luajit-devel leveldb-devel snappy-devel gettext-devel
+sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel luajit-devel leveldb-devel snappy-devel gettext-devel
 ```
 
 Download source code:
