@@ -665,6 +665,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		g_profiler->avg(prefix+"empty blocks (frac)",
 				(float)blocks_without_stuff / blocks_drawn);
 
+	g_profiler->avg("CM: PrimitiveDrawn", driver->getPrimitiveCountDrawn());
+
 	/*infostream<<"renderMap(): is_transparent_pass="<<is_transparent_pass
 			<<", rendered "<<vertex_count<<" vertices."<<std::endl;*/
 }
