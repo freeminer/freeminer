@@ -209,7 +209,7 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	v3f blockpos_relative = blockpos - camera_pos;
 
 	// Total distance
-	f32 d = blockpos_relative.getLength();
+	f32 d = radius_box(blockpos, camera_pos); //blockpos_relative.getLength();
 
 	if(distance_ptr)
 		*distance_ptr = d;

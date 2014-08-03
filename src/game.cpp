@@ -83,6 +83,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include "gsmapper.h"
+#include <future>
 
 /*
 	Text input system
@@ -1716,6 +1717,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	std::future<void> updateDrawList_future;
 	int errors = 0;
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
@@ -3597,7 +3599,10 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
-			client.getEnv().getClientMap().updateDrawList(dtime);
+			if (g_settings->getBool("more_threads"))
+				updateDrawList_future = std::async(std::launch::async, [](Client * client, float dtime){ client->getEnv().getClientMap().updateDrawList(dtime); }, &client, dtime);
+			else
+				client.getEnv().getClientMap().updateDrawList(dtime);
 			update_draw_list_last_cam_dir = camera_direction;
 		}
 
