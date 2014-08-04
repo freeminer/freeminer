@@ -142,7 +142,7 @@ void ClientMap::updateDrawList(float dtime)
 		m_drawlist_current = !m_drawlist_current;
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
-	float max_cycle_ms = 300/getControl().fps_wanted;
+	float max_cycle_ms = 150/getControl().fps_wanted;
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
 	m_camera_mutex.Lock();
@@ -232,13 +232,26 @@ void ClientMap::updateDrawList(float dtime)
 			if(m_control.range_all == false)
 				range = m_control.wanted_range * BS;
 
-			float d = 0.0;
+/*			float d = 0.0;
 			if(isBlockInSight(bp, camera_position,
-					camera_direction, camera_fov,
+					camera_direction, 0, camera_fov,
 					range, &d) == false && d > MAP_BLOCKSIZE*BS)
 			{
 				continue;
 			}
+*/
+
+			v3s16 blockpos_nodes = bp * MAP_BLOCKSIZE;
+			// Block center position
+			v3f blockpos(
+				((float)blockpos_nodes.X + MAP_BLOCKSIZE/2) * BS,
+				((float)blockpos_nodes.Y + MAP_BLOCKSIZE/2) * BS,
+				((float)blockpos_nodes.Z + MAP_BLOCKSIZE/2) * BS
+			);
+
+			f32 d = radius_box(blockpos, camera_position); //blockpos_relative.getLength();
+			if (d> range)
+				continue;
 
 			// This is ugly (spherical distance limit?)
 			/*if(m_control.range_all == false &&
