@@ -269,6 +269,9 @@
 #Save password for every server in favorites (in plaintext)
 #password_save = 1
 
+# Show cmd console on Windows
+#console_enabled = 0
+
 #
 # Server stuff
 #

@@ -182,7 +182,7 @@ MapNode Map::getNodeNoLock(v3s16 p)
 	if (!lock->owns_lock())
 		return MapNode(CONTENT_IGNORE);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
-	return block->getNodeNoCheck(relpos);
+	return block->getNodeNoLock(relpos);
 }
 
 // throws InvalidPositionException if not found

@@ -703,6 +703,8 @@ void ServerEnvironment::loadMeta()
 							continue;
 						MapNode n = map->getNodeNoLock(p1);
 						content_t c = n.getContent();
+						if (c == CONTENT_IGNORE)
+							continue;
 						if(required_neighbors.get(c)){
 							neighbor = n;
 							goto neighbor_found;

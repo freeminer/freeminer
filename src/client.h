@@ -52,17 +52,6 @@ struct MapDrawControl;
 class MtEventManager;
 struct PointedThing;
 
-struct QueuedMeshUpdate
-{
-	v3s16 p;
-	MeshMakeData *data;
-	bool ack_block_to_server;
-	bool lazy;
-
-	QueuedMeshUpdate();
-	~QueuedMeshUpdate();
-};
-
 enum LocalClientState {
 	LC_Created,
 	LC_Init,
@@ -78,41 +67,23 @@ public:
 	MeshUpdateQueue();
 
 	~MeshUpdateQueue();
-	
-	/*
-		peer_id=0 adds with nobody to send to
-	*/
-	void addBlock(v3s16 p, MeshMakeData *data,
-			bool ack_block_to_server, bool urgent, bool lazy = false);
 
-	// Returned pointer must be deleted
-	// Returns NULL if queue is empty
-	QueuedMeshUpdate * pop();
+	void addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool urgent);
+	std::shared_ptr<MeshMakeData> pop();
 
-	u32 size()
-	{
-		JMutexAutoLock lock(m_mutex);
-		return m_queue.size();
-	}
-	
+	shared_map<v3s16, bool> m_process;
 private:
-	std::vector<QueuedMeshUpdate*> m_queue;
-	std::set<v3s16> m_urgents;
-	JMutex m_mutex;
+	shared_map<unsigned int, std::map<v3s16, std::shared_ptr<MeshMakeData>>> m_queue;
 };
 
 struct MeshUpdateResult
 {
 	v3s16 p;
-	MapBlockMesh *mesh;
-	bool ack_block_to_server;
-	bool lazy;
+	MapBlockMesh * mesh;
 
-	MeshUpdateResult():
-		p(-1338,-1338,-1338),
-		mesh(NULL),
-		ack_block_to_server(false)
-		,lazy(false)
+	MeshUpdateResult(v3s16 & p_, MapBlockMesh * mesh_):
+		p(p_),
+		mesh(mesh_)
 	{
 	}
 };
@@ -417,10 +388,10 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, bool lazy=false);
+	void addUpdateMeshTask(v3s16 blockpos, bool urgent=false);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server=false, bool urgent=false);
-	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent=false);
+	void addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent=false);
 	
 	void updateCameraOffset(v3s16 camera_offset)
 	{ m_mesh_update_thread.m_camera_offset = camera_offset; }
@@ -499,7 +470,9 @@ private:
 	ISoundManager *m_sound;
 	MtEventManager *m_event;
 
+public:
 	MeshUpdateThread m_mesh_update_thread;
+private:
 	ClientEnvironment m_env;
 public:
 	con::Connection m_con;

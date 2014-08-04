@@ -142,12 +142,20 @@ public:
 		return full_type::erase(position);
 	}
 
+	typename full_type::iterator  erase(iterator position) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(position);
+	}
+
 	size_type erase(const key_type& k) {
 		auto lock = lock_unique_rec();
 		return full_type::erase(k);
 	}
 
-	// iterator  erase(const_iterator first, const_iterator last);
+	typename full_type::iterator  erase(const_iterator first, const_iterator last) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(first, last);
+	}
 
 	void clear() {
 		auto lock = lock_unique_rec();
