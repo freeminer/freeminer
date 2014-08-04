@@ -882,9 +882,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		//addUpdateMeshTaskWithEdge(p, true);
 		block->setTimestampNoChangedFlag(m_uptime);
 
-		std::set<v3s16> got_blocks;
-		got_blocks.insert(p);
-		u32 got_blocks_size = got_blocks.size();
+		//std::set<v3s16> got_blocks;
+		//got_blocks.insert(p);
 		MSGPACK_PACKET_INIT(TOSERVER_GOTBLOCKS, 1); // TODO: REMOVE IN NEXT
 		//PACK(TOSERVER_GOTBLOCKS_BLOCKS, got_blocks);
 		PACK(TOSERVER_GOTBLOCKS_RANGE, (int)m_env.getClientMap().getControl().wanted_range); // TODO: MAKE NEW DRAWCONTROL PACKET
