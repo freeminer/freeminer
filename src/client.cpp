@@ -76,6 +76,8 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 		return;
 	auto lock = m_queue.lock_unique_rec();
 	auto range = urgent ? 0 : data->range + data->step * 10;
+	if (range > 2 && m_queue.size() > 20) // TODO: maybe dynamic limit depend on gen speed
+		return;
 	auto & rmap = m_queue.get(range);
 	if (rmap.count(p))
 		return;
