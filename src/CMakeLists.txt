@@ -685,6 +685,7 @@ if(MSVC)
 	endif(BUILD_SERVER)
 
 	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+	add_definitions(-DNOMINMAX)
 else()
 	# Probably GCC
 	if(APPLE)
