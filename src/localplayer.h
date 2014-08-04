@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Environment;
 class ClientEnvironment;
-class MapNode;
+struct MapNode;
 class GenericCAO;
 class ClientActiveObject;
 

@@ -37,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "localplayer.h"
 #include "hud.h"
 #include "particles.h"
+#include "util/thread_pool.h"
 
 #include <msgpack.hpp>
 
@@ -88,12 +89,13 @@ struct MeshUpdateResult
 	}
 };
 
-class MeshUpdateThread : public JThread
+class MeshUpdateThread : public thread_pool
 {
 public:
 
-	MeshUpdateThread(IGameDef *gamedef):
+	MeshUpdateThread(IGameDef *gamedef, int id_ = 0):
 		m_gamedef(gamedef)
+		,id(id_)
 	{
 	}
 
@@ -106,6 +108,7 @@ public:
 	IGameDef *m_gamedef;
 	
 	v3s16 m_camera_offset;
+	int id;
 };
 
 enum ClientEventType
@@ -291,7 +294,7 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			bool ipv6
-			,bool simple_singleplayer_mode
+			,bool simple_singleplayer_mode_
 	);
 	
 	~Client();
@@ -528,6 +531,7 @@ private:
 	// key = name
 	std::map<std::string, Inventory*> m_detached_inventories;
 	double m_uptime;
+	bool simple_singleplayer_mode;
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	std::map<std::string, std::string> m_mesh_data;

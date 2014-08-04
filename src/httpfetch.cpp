@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <errno.h>
 #include "jthread/jevent.h"
+#include "jthread/jthread.h"
 #include "config.h"
 #include "exceptions.h"
 #include "debug.h"
