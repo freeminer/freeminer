@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define JSEMAPHORE_H_
 
 #if defined(WIN32)
-#define NOMINMAX
 #include <windows.h>
 #include <assert.h>
 #define MAX_SEMAPHORE_COUNT 1024

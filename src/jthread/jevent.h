@@ -29,7 +29,6 @@
 #define JEVENT_H_
 
 #ifdef _WIN32
-#define NOMINMAX
 #include <windows.h>
 #elif __MACH__
 #include <mach/mach.h>

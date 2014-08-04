@@ -32,7 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#ifndef _WIN32_WINNT
 		#define _WIN32_WINNT 0x0501
 	#endif
-	#define NOMINMAX
 	#include <windows.h>
 	#ifdef _MSC_VER
 		#include <eh.h>
