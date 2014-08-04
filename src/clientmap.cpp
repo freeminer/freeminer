@@ -361,9 +361,9 @@ void ClientMap::updateDrawList(float dtime)
 	for (auto & ir : *m_drawlist)
 		ir.second->refDrop();
 
-
-	m_drawlist->clear();
+	auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
+	m_drawlist_old->clear();
 
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
 	m_control.blocks_drawn = blocks_drawn;
