@@ -14,6 +14,7 @@ void thread_pool::func() {
 };
 
 void thread_pool::start (int n) {
+	requeststop = false;
 	for(int i = 0; i < n; ++i)
 		workers.emplace_back(std::thread(&thread_pool::func, this));
 }
