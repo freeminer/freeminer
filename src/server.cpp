@@ -70,7 +70,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 
 #include <chrono>
-#include <thread>
+#include "util/thread_pool.h"
 
 class ClientNotFoundException : public BaseException
 {
@@ -80,13 +80,12 @@ public:
 	{}
 };
 
-class MapThread : public JThread
+class MapThread : public thread_pool
 {
 	Server *m_server;
 public:
 
 	MapThread(Server *server):
-		JThread(),
 		m_server(server)
 	{}
 
@@ -122,13 +121,12 @@ public:
 	}
 };
 
-class SendBlocksThread : public JThread
+class SendBlocksThread : public thread_pool
 {
 	Server *m_server;
 public:
 
 	SendBlocksThread(Server *server):
-		JThread(),
 		m_server(server)
 	{}
 
@@ -169,14 +167,13 @@ public:
 
 
 
-class ServerThread : public JThread
+class ServerThread : public thread_pool
 {
 	Server *m_server;
 
 public:
 
 	ServerThread(Server *server):
-		JThread(),
 		m_server(server)
 	{
 	}
