@@ -3756,11 +3756,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	//force answer all texture and shader jobs (TODO return empty values)
 
-	while(!client.isShutdown()) {
-		tsrc->processQueue();
-		shsrc->processQueue();
-		sleep_ms(100);
-	}
+	tsrc->processQueue();
+	shsrc->processQueue();
 
 	// Client scope (client is destructed before destructing *def and tsrc)
 	}while(0);

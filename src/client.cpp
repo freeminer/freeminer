@@ -216,14 +216,7 @@ void Client::Stop()
 {
 	//request all client managed threads to stop
 	m_mesh_update_thread.Stop();
-}
-
-bool Client::isShutdown()
-{
-
-	if (!m_mesh_update_thread.IsRunning()) return true;
-
-	return false;
+	m_mesh_update_thread.Wait();
 }
 
 Client::~Client()
