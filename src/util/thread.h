@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define UTIL_THREAD_HEADER
 
 #include "../irrlichttypes.h"
-#include "../jthread/jthread.h"
 #include "../jthread/jmutex.h"
 #include "../jthread/jmutexautolock.h"
 #include "porting.h"
