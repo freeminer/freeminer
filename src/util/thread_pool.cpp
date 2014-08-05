@@ -4,6 +4,7 @@
 thread_pool::thread_pool() {
 	requeststop = false;
 };
+
 thread_pool::~thread_pool() {
 	join();
 };
@@ -13,17 +14,19 @@ void thread_pool::func() {
 };
 
 void thread_pool::start (int n) {
+	requeststop = false;
 	for(int i = 0; i < n; ++i)
 		workers.emplace_back(std::thread(&thread_pool::func, this));
 }
+
 void thread_pool::stop () {
 	requeststop = true;
 }
+
 void thread_pool::join () {
 	stop();
 	for (auto & worker : workers)
-		if (worker.joinable())
-			worker.join();
+		worker.join();
 	workers.clear();
 }
 
@@ -34,6 +37,8 @@ bool thread_pool::StopRequested() {
 	return requeststop;
 }
 bool thread_pool::IsRunning() {
+	if (requeststop)
+		join();
 	return !workers.empty();
 }
 int thread_pool::Start(int n) {
@@ -52,3 +57,11 @@ void thread_pool::Kill() {
 void * thread_pool::Thread() {
 	return nullptr;
 };
+
+bool thread_pool::IsSameThread() {
+	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
+	for (auto & worker : workers)
+		if (thread_me == std::hash<std::thread::id>()(worker.get_id()))
+			return true;
+	return false;
+}

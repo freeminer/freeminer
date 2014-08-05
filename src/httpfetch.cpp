@@ -29,16 +29,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <errno.h>
 #include "jthread/jevent.h"
-#include "jthread/jthread.h"
 #include "config.h"
 #include "exceptions.h"
 #include "debug.h"
 #include "log.h"
 #include "util/container.h"
-#include "util/thread.h"
 #include "version.h"
 #include "main.h"
 #include "settings.h"
+#include "util/thread_pool.h"
 
 JMutex g_httpfetch_mutex;
 std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
@@ -397,7 +396,7 @@ struct HTTPFetchOngoing
 	}
 };
 
-class CurlFetchThread : public JThread
+class CurlFetchThread : public thread_pool
 {
 protected:
 	enum RequestType {

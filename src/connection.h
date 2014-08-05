@@ -40,6 +40,7 @@ Not used, keep for reduce MT merge conflicts
 #include <fstream>
 #include <list>
 #include <map>
+#include "util/thread_pool.h"
 
 namespace con
 {
@@ -918,7 +919,7 @@ struct ConnectionEvent
 	}
 };
 
-class ConnectionSendThread : public JThread {
+class ConnectionSendThread : public thread_pool {
 
 public:
 	friend class UDPPeer;
@@ -973,7 +974,7 @@ private:
 	unsigned int          m_max_packets_requeued;
 };
 
-class ConnectionReceiveThread : public JThread {
+class ConnectionReceiveThread : public thread_pool {
 public:
 	ConnectionReceiveThread(Connection* parent,
 							unsigned int max_packet_size);

@@ -38,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "enet/enet.h"
 #include <msgpack.hpp>
 #include "util/msgpack_serialize.h"
+#include "util/thread_pool.h"
 
 #define CHANNEL_COUNT 3
 
@@ -290,7 +291,7 @@ struct ConnectionCommand
 	}
 };
 
-class Connection: public JThread
+class Connection: public thread_pool
 {
 public:
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,

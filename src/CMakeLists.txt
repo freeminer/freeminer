@@ -716,6 +716,7 @@ if(BUILD_CLIENT)
 
 	if(MSVC)
 		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+		add_definitions(-DNOMINMAX)
 	endif()
 endif(BUILD_CLIENT)
 

@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irr_v2d.h"
 #include "../irr_v3d.h"
 #include "../irr_aabb3d.h"
+#include <algorithm>
 #include <list>
 
 // Calculate the borders of a "d-radius" cube

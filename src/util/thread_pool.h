@@ -34,6 +34,7 @@ public:
 	void Wait();
 	void Kill();
 	virtual void * Thread();
+	bool IsSameThread();
 };
 
 
