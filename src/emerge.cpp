@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 #include "jthread/jevent.h"
-#include "jthread/jthread.h"
 #include "map.h"
 #include "environment.h"
 #include "util/container.h"
@@ -50,9 +49,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_singlenode.h"
 #include "mapgen_math.h"
 #include "circuit.h"
+#include "util/thread_pool.h"
 
 
-class EmergeThread : public JThread
+class EmergeThread : public thread_pool
 {
 public:
 	Server *m_server;
@@ -67,7 +67,6 @@ public:
 	std::queue<v3s16> blockqueue;
 
 	EmergeThread(Server *server, int ethreadid):
-		JThread(),
 		m_server(server),
 		map(NULL),
 		emerge(NULL),
