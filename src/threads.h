@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutex.h"
 
 #if (defined(WIN32) || defined(_WIN32_WCE))
+#include <winsock2.h>
+#include <windows.h>
 typedef DWORD threadid_t;
 #else
 typedef pthread_t threadid_t;
