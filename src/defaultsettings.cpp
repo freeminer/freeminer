@@ -365,7 +365,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
 	settings->setDefault("max_objects_per_block", "100");
-	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
