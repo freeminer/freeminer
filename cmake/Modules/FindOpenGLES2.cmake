@@ -58,6 +58,16 @@ ELSE (WIN32)
       PATHS /opt/graphics/OpenGL/lib
             /usr/openwin/lib
             /usr/shlib /usr/X11R6/lib
+            /usr/lib/arm-linux-gnueabihf
+            /usr/lib
+    )
+
+    FIND_LIBRARY(OPENGLES1_gl_LIBRARY
+      NAMES GLESv1_CM
+      PATHS /opt/graphics/OpenGL/lib
+            /usr/openwin/lib
+            /usr/shlib /usr/X11R6/lib
+            /usr/lib/arm-linux-gnueabihf
             /usr/lib
     )
 
@@ -73,6 +83,7 @@ ELSE (WIN32)
 		  PATHS /opt/graphics/OpenGL/lib
 				/usr/openwin/lib
 				/usr/shlib /usr/X11R6/lib
+				/usr/lib/arm-linux-gnueabihf
 				/usr/lib
 		)
 
@@ -106,7 +117,7 @@ IF (BUILD_ANDROID)
   ENDIF(OPENGLES2_gl_LIBRARY)
 ELSE ()
 
-  SET( OPENGLES2_LIBRARIES ${OPENGLES2_gl_LIBRARY} ${OPENGLES2_LIBRARIES})
+  SET( OPENGLES2_LIBRARIES ${OPENGLES2_gl_LIBRARY} ${OPENGLES2_LIBRARIES} ${OPENGLES1_gl_LIBRARY})
 
   IF(OPENGLES2_gl_LIBRARY AND EGL_egl_LIBRARY)
     SET( OPENGLES2_LIBRARIES ${OPENGLES2_gl_LIBRARY} ${OPENGLES2_LIBRARIES})
