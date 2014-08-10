@@ -1717,7 +1717,9 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+#ifndef __ANDROID__
 	std::future<void> updateDrawList_future;
+#endif
 	int errors = 0;
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
@@ -3599,9 +3601,11 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
+#ifndef __ANDROID__
 			if (g_settings->getBool("more_threads"))
 				updateDrawList_future = std::async(std::launch::async, [](Client * client, float dtime){ client->getEnv().getClientMap().updateDrawList(dtime); }, &client, dtime);
 			else
+#endif
 				client.getEnv().getClientMap().updateDrawList(dtime);
 			update_draw_list_last_cam_pos = camera_position;
 		}
