@@ -30,8 +30,8 @@ typedef std::unique_lock<try_shared_mutex> unique_lock;
 
 #else
 
-typedef std::timed_mutex try_shared_mutex;
-//typedef std::mutex try_shared_mutex;
+//typedef std::timed_mutex try_shared_mutex;
+typedef std::mutex try_shared_mutex;
 typedef std::unique_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK std::defer_lock
@@ -69,8 +69,7 @@ class lock_rec {
 public:
 	T * lock;
 	std::atomic<std::size_t> & thread_id;
-	lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_);
-	lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_, std::chrono::milliseconds ms);
+	lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
 	~lock_rec();
 	bool owns_lock();
 };
@@ -83,13 +82,13 @@ public:
 
 	locker();
 	std::unique_ptr<unique_lock> lock_unique();
-	std::unique_ptr<unique_lock> lock_unique(std::chrono::milliseconds ms);
+	std::unique_ptr<unique_lock> try_lock_unique();
 	std::unique_ptr<try_shared_lock> lock_shared();
-	std::unique_ptr<try_shared_lock> lock_shared(std::chrono::milliseconds ms);
+	std::unique_ptr<try_shared_lock> try_lock_shared();
 	std::unique_ptr<lock_rec<unique_lock>> lock_unique_rec();
-	std::unique_ptr<lock_rec<unique_lock>> lock_unique_rec(std::chrono::milliseconds ms);
+	std::unique_ptr<lock_rec<unique_lock>> try_lock_unique_rec();
 	std::unique_ptr<lock_rec<try_shared_lock>> lock_shared_rec();
-	std::unique_ptr<lock_rec<try_shared_lock>> lock_shared_rec(std::chrono::milliseconds ms);
+	std::unique_ptr<lock_rec<try_shared_lock>> try_lock_shared_rec();
 };
 
 

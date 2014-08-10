@@ -1482,6 +1482,8 @@ int main(int argc, char *argv[])
 	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 #ifdef __ANDROID__
 	params.PrivateData = porting::app_global;
+#endif
+#if defined(_IRR_COMPILE_WITH_OGLES2_) || defined(__ANDROID__)
 	params.OGLES2ShaderPath = std::string(porting::path_user + DIR_DELIM +
 			"media" + DIR_DELIM + "Shaders" + DIR_DELIM).c_str();
 #endif

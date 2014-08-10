@@ -178,7 +178,7 @@ MapNode Map::getNodeNoLock(v3s16 p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(block == NULL)
 		return MapNode(CONTENT_IGNORE);
-	auto lock = block->lock_shared_rec(std::chrono::milliseconds(1));
+	auto lock = block->try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return MapNode(CONTENT_IGNORE);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
@@ -471,7 +471,7 @@ void Map::spreadLight(enum LightBank bank,
 		if(block->isDummy())
 			continue;
 
-		//auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+		//auto lock = block->try_lock_unique_rec();
 		//if (!lock->owns_lock())
 		//	continue;
 
@@ -731,7 +731,7 @@ u32 Map::updateLighting(enum LightBank bank,
 			if(block->isDummy())
 				break;
 
-			//auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			//auto lock = block->try_lock_unique_rec();
 			//if (!lock->owns_lock())
 			//	break;
 			v3s16 pos = block->getPos();
@@ -1513,7 +1513,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	std::vector<MapBlock *> blocks_delete;
 	int save_started = 0;
 	{
-	auto lock = m_blocks.lock_shared_rec(std::chrono::milliseconds(1));
+	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return m_blocks_update_last;
 	for(auto ir : m_blocks) {
@@ -1530,7 +1530,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			continue;
 
 		{
-			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			auto lock = block->try_lock_unique_rec();
 			if (!lock->owns_lock())
 				continue;
 			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
@@ -3180,7 +3180,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		m_blocks_save_last = 0;
 
 	{
-		auto lock = breakable ? m_blocks.lock_shared_rec(std::chrono::milliseconds(1)) : m_blocks.lock_shared_rec();
+		auto lock = breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
 			return m_blocks_save_last;
 
@@ -3209,7 +3209,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 				}
 
 				//modprofiler.add(block->getModifiedReason(), 1);
-				auto lock = breakable ? block->lock_unique_rec(std::chrono::milliseconds(1)) : block->lock_unique_rec();
+				auto lock = breakable ? block->try_lock_unique_rec() : block->lock_unique_rec();
 				if (!lock->owns_lock())
 					continue;
 

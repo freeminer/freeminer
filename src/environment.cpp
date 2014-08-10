@@ -661,7 +661,7 @@ void ServerEnvironment::loadMeta()
 		if(m_aabms_empty)
 			return;
 
-		auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+		auto lock = block->try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return;
 
@@ -1292,7 +1292,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			if(block==NULL)
 				continue;
 
-			auto lock = block->lock_unique_rec(std::chrono::milliseconds(1));
+			auto lock = block->try_lock_unique_rec();
 			if (!lock->owns_lock())
 				continue;
 			// Set current time as timestamp

@@ -192,7 +192,7 @@ void ClientMap::updateDrawList(float dtime)
 
 
 	{
-	auto lock = m_blocks.lock_shared_rec(std::chrono::milliseconds(1));
+	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
 
