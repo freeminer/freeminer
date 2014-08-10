@@ -150,7 +150,7 @@ int getNumberOfProcessors() {
 
 #elif defined(_GNU_SOURCE)
 
-	return get_nprocs();
+	return get_nprocs_conf();
 
 #elif defined(_WIN32)
 

@@ -507,7 +507,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} -L${OPENSSL_DIR}/libs/${TARGET_ABI}/           \
 	${TARGET_LDFLAGS_ADDON}";                                                  \
-	./configure --host=${TARGET_HOST} --disable-shared --enable-static --with-ssl;  \
+	./configure --host=${TARGET_HOST} --disable-shared --enable-static --with-ssl --enable-ipv6;  \
 	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
 	touch ${CURL_TIMESTAMP};                                                   \
 	touch ${CURL_TIMESTAMP_INT};                                               \

@@ -596,7 +596,6 @@ void Server::stop()
 
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->Stop();
-	m_thread->Stop();
 	//m_emergethread.setRun(false);
 	m_thread->Wait();
 	//m_emergethread.stop();

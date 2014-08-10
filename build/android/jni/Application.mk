@@ -1,4 +1,5 @@
-NDK_TOOLCHAIN_VERSION := clang3.4
+#NDK_TOOLCHAIN_VERSION := clang3.4      # broken curl
+NDK_TOOLCHAIN_VERSION := 4.8
 
 APP_PLATFORM := android-9
 APP_MODULES := minetest

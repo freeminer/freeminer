@@ -2719,12 +2719,12 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				Environment->setFocus(hovered);
 			}
 			m_JavaDialogFieldName = getNameByID(hovered->getID());
-			std::string message   = gettext("Enter ");
+			std::string message   = _("Enter ");
 			std::string label     = wide_to_narrow(getLabelByID(hovered->getID()));
 			if (label == "") {
 				label = "text";
 			}
-			message += gettext(label) + ":";
+			message += _(label) + ":";
 
 			/* single line text input */
 			int type = 2;
@@ -2739,7 +2739,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				type = 3;
 			}
 
-			porting::showInputDialog(gettext("ok"), "",
+			porting::showInputDialog(_("ok"), "",
 					wide_to_narrow(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
 			return retval;

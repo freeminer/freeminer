@@ -994,7 +994,7 @@ static void show_deathscreen(GUIFormSpecMenu** cur_formspec,
 		SIZE_TAG
 		"bgcolor[#320000b4;true]"
 		"label[4.85,1.35;You died.]"
-		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
+		"button_exit[4,3;3,0.5;btn_respawn;" + _("Respawn") + "]"
 		;
 
 	/* Create menu */
@@ -1439,16 +1439,16 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 				std::stringstream message;
 				message.precision(3);
-				message << gettext("Media...");
+				message << _("Media...");
 
 				if ( ( USE_CURL == 0) ||
 						(!g_settings->getBool("enable_remote_media_server"))) {
 					float cur = client.getCurRate();
-					std::string cur_unit = gettext(" KB/s");
+					std::string cur_unit = _(" KB/s");
 
 					if (cur > 900) {
 						cur /= 1024.0;
-						cur_unit = gettext(" MB/s");
+						cur_unit = _(" MB/s");
 					}
 					message << " ( " << cur << cur_unit << " )";
 				}
@@ -1704,7 +1704,9 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+#ifndef __ANDROID__
 	std::future<void> updateDrawList_future;
+#endif
 	int errors = 0;
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 
@@ -3565,9 +3567,11 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
+#ifndef __ANDROID__
 			if (g_settings->getBool("more_threads"))
 				updateDrawList_future = std::async(std::launch::async, [](Client * client, float dtime){ client->getEnv().getClientMap().updateDrawList(dtime); }, &client, dtime);
 			else
+#endif
 				client.getEnv().getClientMap().updateDrawList(dtime);
 			update_draw_list_last_cam_pos = camera_position;
 		}
