@@ -999,7 +999,7 @@ static void show_deathscreen(GUIFormSpecMenu** cur_formspec,
 		SIZE_TAG
 		"bgcolor[#320000b4;true]"
 		"label[4.85,1.35;You died.]"
-		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
+		"button_exit[4,3;3,0.5;btn_respawn;" + _("Respawn") + "]"
 		;
 
 	/* Create menu */
@@ -1445,16 +1445,16 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 				std::stringstream message;
 				message.precision(3);
-				message << gettext("Media...");
+				message << _("Media...");
 
 				if ( ( USE_CURL == 0) ||
 						(!g_settings->getBool("enable_remote_media_server"))) {
 					float cur = client.getCurRate();
-					std::string cur_unit = gettext(" KB/s");
+					std::string cur_unit = _(" KB/s");
 
 					if (cur > 900) {
 						cur /= 1024.0;
-						cur_unit = gettext(" MB/s");
+						cur_unit = _(" MB/s");
 					}
 					message << " ( " << cur << cur_unit << " )";
 				}
