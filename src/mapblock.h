@@ -317,7 +317,7 @@ public:
 		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		if(p.Z < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = lock_shared_rec(std::chrono::milliseconds(1));
+		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return MapNode(CONTENT_IGNORE);
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];

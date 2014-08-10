@@ -113,7 +113,7 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		auto lock = lock_shared_rec(std::chrono::milliseconds(1));
+		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
 			throw InvalidPositionException();
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
