@@ -74,18 +74,27 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 {
 	DSTACK(__FUNCTION_NAME);
 
-	if (m_process.count(p))
-		return;
 	auto lock = m_queue.lock_unique_rec();
-	auto range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (range > 2 && m_queue.size() > 20) { // TODO: maybe dynamic limit depend on gen speed
-		m_queue.erase(range);
-		return;
+	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
+	if (m_process.count(p))
+		range += 100;
+	else if (m_ranges.count(p)) {
+		auto range_old = m_ranges[p];
+		if (range_old > 0 && range != range_old)  {
+			auto & rmap = m_queue.get(range_old);
+			m_ranges.erase(p);
+			rmap.erase(p);
+			if (rmap.empty())
+				m_queue.erase(range_old);
+		} else {
+			return; //already queued
+		}
 	}
 	auto & rmap = m_queue.get(range);
 	if (rmap.count(p))
 		return;
 	rmap[p] = data;
+	m_ranges[p] = range;
 }
 
 std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
@@ -94,6 +103,7 @@ std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
 	for (auto & it : m_queue) {
 		auto & rmap = it.second;
 		auto data = rmap.begin()->second;
+		m_ranges.erase(rmap.begin()->first);
 		rmap.erase(rmap.begin()->first);
 		if (rmap.empty())
 			m_queue.erase(it.first);
@@ -1581,7 +1591,7 @@ void Client::sendReady()
 	PACK(TOSERVER_CLIENT_READY_VERSION_MAJOR, VERSION_MAJOR);
 	PACK(TOSERVER_CLIENT_READY_VERSION_MINOR, VERSION_MINOR);
 	// PACK(TOSERVER_CLIENT_READY_VERSION_PATCH, VERSION_PATCH_ORIG); TODO
-	PACK(TOSERVER_CLIENT_READY_VERSION_STRING, std::string(CMAKE_VERSION_GITHASH));
+	PACK(TOSERVER_CLIENT_READY_VERSION_STRING, minetest_version_hash);
 
 	// Send as reliable
 	Send(0, buffer, true);

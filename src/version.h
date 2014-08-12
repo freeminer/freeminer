@@ -23,13 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef VERSION_HEADER
 #define VERSION_HEADER
 
-#include "config.h"
-#ifdef __ANDROID__
-	#include "android_version.h"
-#else
-	#include "cmake_config_githash.h"
-#endif
-
 extern const char *minetest_version_simple;
 extern const char *minetest_version_hash;
 extern const char *minetest_build_info;

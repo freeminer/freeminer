@@ -75,6 +75,7 @@ public:
 	shared_map<v3s16, bool> m_process;
 private:
 	shared_map<unsigned int, std::map<v3s16, std::shared_ptr<MeshMakeData>>> m_queue;
+	std::map<v3s16, unsigned int> m_ranges;
 };
 
 struct MeshUpdateResult

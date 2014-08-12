@@ -41,67 +41,80 @@ ELSE (WIN32)
 
   IF (APPLE)
 
-	create_search_paths(/Developer/Platforms)
-	findpkg_framework(OpenGLES2)
+    create_search_paths(/Developer/Platforms)
+    findpkg_framework(OpenGLES2)
     set(OPENGLES2_gl_LIBRARY "-framework OpenGLES")
 
   ELSE(APPLE)
 
     FIND_PATH(OPENGLES2_INCLUDE_DIR GLES2/gl2.h
-      /usr/openwin/share/include
-      /opt/graphics/OpenGL/include /usr/X11R6/include
-      /usr/include
+        /usr/openwin/share/include
+        /opt/graphics/OpenGL/include
+        /opt/vc/include
+        /usr/X11R6/include
+        /usr/include
     )
 
     FIND_LIBRARY(OPENGLES2_gl_LIBRARY
       NAMES GLESv2
-      PATHS /opt/graphics/OpenGL/lib
+      PATHS
+            /opt/graphics/OpenGL/lib
             /usr/openwin/lib
-            /usr/shlib /usr/X11R6/lib
+            /usr/shlib
+            /usr/X11R6/lib
+            /opt/vc/lib
             /usr/lib/arm-linux-gnueabihf
             /usr/lib
     )
 
     FIND_LIBRARY(OPENGLES1_gl_LIBRARY
       NAMES GLESv1_CM
-      PATHS /opt/graphics/OpenGL/lib
+      PATHS
+            /opt/graphics/OpenGL/lib
             /usr/openwin/lib
-            /usr/shlib /usr/X11R6/lib
+            /usr/shlib
+            /usr/X11R6/lib
+            /opt/vc/lib
             /usr/lib/arm-linux-gnueabihf
             /usr/lib
     )
 
     IF (NOT BUILD_ANDROID)
-		FIND_PATH(EGL_INCLUDE_DIR EGL/egl.h
-		  /usr/openwin/share/include
-		  /opt/graphics/OpenGL/include /usr/X11R6/include
-		  /usr/include
-		)
+        FIND_PATH(EGL_INCLUDE_DIR EGL/egl.h
+            /usr/openwin/share/include
+            /opt/graphics/OpenGL/include
+            /opt/vc/include
+            /usr/X11R6/include
+            /usr/include
+        )
 
-		FIND_LIBRARY(EGL_egl_LIBRARY
-		  NAMES EGL
-		  PATHS /opt/graphics/OpenGL/lib
-				/usr/openwin/lib
-				/usr/shlib /usr/X11R6/lib
-				/usr/lib/arm-linux-gnueabihf
-				/usr/lib
-		)
+        FIND_LIBRARY(EGL_egl_LIBRARY
+        NAMES EGL
+        PATHS
+            /opt/graphics/OpenGL/lib
+            /usr/openwin/lib
+            /usr/shlib
+            /usr/X11R6/lib
+            /opt/vc/lib
+            /usr/lib/arm-linux-gnueabihf
+            /usr/lib
+        )
 
-		# On Unix OpenGL most certainly always requires X11.
-		# Feel free to tighten up these conditions if you don't 
-		# think this is always true.
-		# It's not true on OSX.
+        # On Unix OpenGL most certainly always requires X11.
+        # Feel free to tighten up these conditions if you don't 
+        # think this is always true.
+        # It's not true on OSX.
 
-		IF (OPENGLES2_gl_LIBRARY)
-		  IF(NOT X11_FOUND)
-			INCLUDE(FindX11)
-		  ENDIF(NOT X11_FOUND)
-		  IF (X11_FOUND)
-			IF (NOT APPLE)
-			  SET (OPENGLES2_LIBRARIES ${X11_LIBRARIES})
-			ENDIF (NOT APPLE)
-		  ENDIF (X11_FOUND)
-		ENDIF (OPENGLES2_gl_LIBRARY)
+        IF (OPENGLES2_gl_LIBRARY)
+            IF(NOT X11_FOUND)
+                INCLUDE(FindX11)
+            ENDIF(NOT X11_FOUND)
+            IF (X11_FOUND)
+                IF (NOT APPLE)
+                    SET (OPENGLES2_LIBRARIES ${X11_LIBRARIES})
+                ENDIF (NOT APPLE)
+            ENDIF (X11_FOUND)
+        ENDIF (OPENGLES2_gl_LIBRARY)
     ENDIF ()
 
   ENDIF(APPLE)
