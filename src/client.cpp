@@ -76,10 +76,23 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 	auto range = urgent ? 0 : 1 + data->range + data->step * 10;
 	if (m_process.count(p))
 		range += 100;
+	else if (m_ranges.count(p)) {
+		auto range_old = m_ranges[p];
+		if (range_old > 0 && range != range_old)  {
+			auto & rmap = m_queue.get(range_old);
+			m_ranges.erase(p);
+			rmap.erase(p);
+			if (rmap.empty())
+				m_queue.erase(range_old);
+		} else {
+			return; //already queued
+		}
+	}
 	auto & rmap = m_queue.get(range);
 	if (rmap.count(p))
 		return;
 	rmap[p] = data;
+	m_ranges[p] = range;
 }
 
 std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
@@ -88,6 +101,7 @@ std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
 	for (auto & it : m_queue) {
 		auto & rmap = it.second;
 		auto data = rmap.begin()->second;
+		m_ranges.erase(rmap.begin()->first);
 		rmap.erase(rmap.begin()->first);
 		if (rmap.empty())
 			m_queue.erase(it.first);
