@@ -73,7 +73,7 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 	DSTACK(__FUNCTION_NAME);
 
 	auto lock = m_queue.lock_unique_rec();
-	auto range = urgent ? 0 : 1 + data->range + data->step * 10;
+	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
 	if (m_process.count(p))
 		range += 100;
 	else if (m_ranges.count(p)) {
