@@ -72,14 +72,10 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 {
 	DSTACK(__FUNCTION_NAME);
 
-	if (m_process.count(p))
-		return;
 	auto lock = m_queue.lock_unique_rec();
 	auto range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (range > 2 && m_queue.size() > 20) { // TODO: maybe dynamic limit depend on gen speed
-		m_queue.erase(range);
-		return;
-	}
+	if (m_process.count(p))
+		range += 100;
 	auto & rmap = m_queue.get(range);
 	if (rmap.count(p))
 		return;
