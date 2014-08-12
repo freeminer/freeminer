@@ -979,8 +979,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 		/*
 			Add it to mesh update queue and set it to be acknowledged after update.
 		*/
-		//addUpdateMeshTaskWithEdge(p, true);
-		block->setTimestampNoChangedFlag(m_uptime);
+		updateMeshTimestampWithEdge(p);
 
 		UniqueQueue<v3s16> got_blocks;
 		got_blocks.push_back(p);
@@ -2424,15 +2423,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 
 void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent)
 {
-	try{
-		v3s16 p = blockpos + v3s16(0,0,0);
-		//MapBlock *b = m_env.getMap().getBlockNoCreate(p);
-		addUpdateMeshTask(p, urgent);
-	}
-	catch(InvalidPositionException &e){}
-
-	// Leading edge
-	for (int i=0;i<6;i++)
+	for (int i=0;i<7;i++)
 	{
 		try{
 			v3s16 p = blockpos + g_6dirs[i];
@@ -2483,6 +2474,15 @@ void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent)
 			addUpdateMeshTask(p, urgent);
 		}
 		catch(InvalidPositionException &e){}
+	}
+}
+
+void Client::updateMeshTimestampWithEdge(v3s16 blockpos) {
+	for (int i = 0; i < 7; ++i) {
+		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + g_6dirs[i]);
+		if(!block)
+			continue;
+		block->setTimestampNoChangedFlag(m_uptime);
 	}
 }
 

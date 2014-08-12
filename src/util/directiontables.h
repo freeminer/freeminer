@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irrlichttypes.h"
 #include "../irr_v3d.h"
 
-extern const v3s16 g_6dirs[6];
+extern const v3s16 g_6dirs[7];
 
 extern const v3s16 g_26dirs[26];
 

@@ -391,7 +391,9 @@ public:
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent=false);
-	
+
+	void updateMeshTimestampWithEdge(v3s16 blockpos);
+
 	void updateCameraOffset(v3s16 camera_offset)
 	{ m_mesh_update_thread.m_camera_offset = camera_offset; }
 
