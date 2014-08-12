@@ -93,6 +93,7 @@ void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool
 		return;
 	rmap[p] = data;
 	m_ranges[p] = range;
+	g_profiler->avg("Client: mesh make queue", m_ranges.size());
 }
 
 std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()

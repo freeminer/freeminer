@@ -3597,8 +3597,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		*/
 		update_draw_list_timer += dtime;
 		if (!no_output)
-		if(client.getEnv().getClientMap().m_drawlist_last || update_draw_list_timer >= 0.5 ||
-				update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS ||
+		if (client.getEnv().getClientMap().m_drawlist_last || update_draw_list_timer >= 0.5 ||
+				update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
 #ifndef __ANDROID__
