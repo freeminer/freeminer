@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
-
+#include "shader.h"
 /*
 	NodeBox
 */
@@ -178,11 +178,11 @@ void ContentFeatures::reset()
 	/*
 		Cached stuff
 	*/
-#ifndef SERVER
+//#ifndef SERVER
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
-#endif
+//#endif
 	has_on_construct = false;
 	has_on_destruct = false;
 	has_after_destruct = false;
@@ -645,7 +645,8 @@ public:
 	virtual void updateTextures(ITextureSource *tsrc,
 		IShaderSource *shdsrc)
 	{
-#ifndef SERVER
+
+//#ifndef SERVER
 		infostream<<"CNodeDefManager::updateTextures(): Updating "
 				<<"textures in node definitions"<<std::endl;
 
@@ -750,12 +751,15 @@ public:
 					is_water_surface = true;
 			}
 			u32 tile_shader[6];
+			if (shdsrc) {
 			for(u16 j=0; j<6; j++)
 				tile_shader[j] = shdsrc->getShader("nodes_shader",material_type, f->drawtype);
 
 			if (is_water_surface)
 				tile_shader[0] = shdsrc->getShader("water_surface_shader",material_type, f->drawtype);
-
+			}
+#ifndef SERVER
+			if (tsrc) {
 			// Tiles (fill in f->tiles[])
 			for(u16 j=0; j<6; j++){
 				// Shader
@@ -859,8 +863,10 @@ public:
 					}
 				}
 			}
-		}
+			}
 #endif
+		}
+//#endif
 	}
 	void serialize(std::ostream &os, u16 protocol_version)
 	{

@@ -453,6 +453,7 @@ Server::Server(
 
 	// Apply item aliases in the node definition manager
 	m_nodedef->updateAliases(m_itemdef);
+	m_nodedef->updateTextures(nullptr,nullptr);
 
 	// Load the mapgen params from global settings now after any
 	// initial overrides have been set by the mods
