@@ -138,7 +138,7 @@ void spawn_ltree(ServerEnvironment *env, v3s16 p0, INodeDefManager *ndef, TreeDe
 	// update lighting
 	shared_map<v3s16, MapBlock*> lighting_modified_blocks;
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
-	map->updateLighting(lighting_modified_blocks, modified_blocks, 100);
+	map->updateLighting(lighting_modified_blocks, modified_blocks);
 	// Send a MEET_OTHER event
 	MapEditEvent event;
 	event.type = MEET_OTHER;
