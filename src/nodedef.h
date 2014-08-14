@@ -30,8 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <bitset>
 #include "mapnode.h"
-#ifndef SERVER
 #include "tile.h"
+#ifndef SERVER
 #include "shader.h"
 #endif
 #include "itemgroup.h"
@@ -228,12 +228,13 @@ struct ContentFeatures
 	// Special tiles
 	// - Currently used for flowing liquids
 	TileSpec special_tiles[CF_SPECIAL_COUNT];
+#endif
 	u8 solidness; // Used when choosing which face is drawn
 	u8 visual_solidness; // When solidness=0, this tells how it looks like
 	bool backface_culling;
 	video::SColor color_avg; //far mesh average color
 
-#endif
+//#endif
 
 	// Server-side cached callback existence for fast skipping
 	bool has_on_construct;
@@ -312,11 +313,11 @@ struct ContentFeatures
 	bool legacy_wallmounted;
 	
 	bool is_wire;
-	bool is_connector;
+	bool is_wire_connector;
 	bool is_circuit_element;
-	unsigned char wire_connections[6];
-	unsigned char circuit_element_states[64];
-	unsigned int circuit_element_delay;
+	u8 wire_connections[6];
+	u8 circuit_element_func[64];
+	u8 circuit_element_delay;
 
 	// Sound properties
 	SimpleSoundSpec sound_footstep;

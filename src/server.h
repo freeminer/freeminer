@@ -192,7 +192,7 @@ public:
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(bool initial_step=false);
-	int AsyncRunMapStep(bool initial_step=false);
+	int AsyncRunMapStep(bool async=true);
 	u16 Receive();
 	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);

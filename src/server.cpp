@@ -417,8 +417,6 @@ Server::Server(
 
 	m_script = new GameScripting(this);
 	
-	m_circuit = new Circuit(m_script, path_world);
-
 	std::string scriptpath = getBuiltinLuaPath() + DIR_DELIM "init.lua";
 
 	if (!m_script->loadScript(scriptpath)) {
@@ -454,6 +452,7 @@ Server::Server(
 
 	// Apply item aliases in the node definition manager
 	m_nodedef->updateAliases(m_itemdef);
+	m_nodedef->updateTextures(nullptr,nullptr);
 
 	// Load the mapgen params from global settings now after any
 	// initial overrides have been set by the mods
@@ -461,6 +460,7 @@ Server::Server(
 
 	// Initialize Environment
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
+	m_circuit = new Circuit(m_script, servermap, ndef(), path_world);
 	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this, m_path_world);
 	m_emerge->env = m_env;
 
@@ -781,7 +781,7 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	if (!more_threads)
-		AsyncRunMapStep();
+		AsyncRunMapStep(false);
 
 	m_clients.step(dtime);
 
@@ -1168,7 +1168,7 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 }
 
-int Server::AsyncRunMapStep(bool initial_step) {
+int Server::AsyncRunMapStep(bool async) {
 	DSTACK(__FUNCTION_NAME);
 
 	TimeTaker timer_step("Server map step");
@@ -1182,7 +1182,7 @@ int Server::AsyncRunMapStep(bool initial_step) {
 		dtime = m_step_dtime;
 	}
 
-	u32 max_cycle_ms = 500;
+	u32 max_cycle_ms = async ? 2000 : 300;
 
 	const float map_timer_and_unload_dtime = 10.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))

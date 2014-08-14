@@ -578,11 +578,11 @@ $(ASSETS_TIMESTAMP) : $(IRRLICHT_LIB)
 		touch ${IRRLICHT_DIR}/media/timestamp;                                 \
 		touch ${ASSETS_TIMESTAMP};                                             \
 	fi;                                                                        \
-	if [ ${ROOT}/../../minetest.conf.example -nt ${ASSETS_TIMESTAMP} ] ; then  \
+	if [ ${ROOT}/../../freeminer.conf.example -nt ${ASSETS_TIMESTAMP} ] ; then \
 		echo "conf changed";                                                   \
 		touch ${ASSETS_TIMESTAMP};                                             \
 	fi;                                                                        \
-	if [ ${ROOT}/../../README.txt -nt ${ASSETS_TIMESTAMP} ] ; then             \
+	if [ ${ROOT}/../../README.md -nt ${ASSETS_TIMESTAMP} ] ; then              \
 		touch ${ASSETS_TIMESTAMP};                                             \
 	fi;                                                                        \
 	if [ ! -e $(ASSETS_TIMESTAMP) ] ; then                                     \
@@ -604,8 +604,8 @@ assets : $(ASSETS_TIMESTAMP)
 	echo "assets changed, refreshing...";                                      \
 	$(MAKE) -j${PARALLEL} clean_assets;                                        \
 	mkdir -p ${ROOT}/assets/Minetest;                                          \
-	cp ${ROOT}/../../minetest.conf.example ${ROOT}/assets/Minetest;            \
-	cp ${ROOT}/../../README.txt ${ROOT}/assets/Minetest;                       \
+	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/Minetest;           \
+	cp ${ROOT}/../../README.md ${ROOT}/assets/Minetest;                        \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/Minetest;                       \
 	cp -r ${ROOT}/../../client ${ROOT}/assets/Minetest;                        \
 	cp -r ${ROOT}/../../doc ${ROOT}/assets/Minetest;                           \

@@ -684,7 +684,7 @@ void DecoSchematic::placeStructure(Map *map, v3s16 p, bool force_placement) {
 
 	// TODO: Optimize this by using Mapgen::calcLighting() instead
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
-	map->updateLighting(lighting_modified_blocks, modified_blocks, 100);
+	map->updateLighting(lighting_modified_blocks, modified_blocks);
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;

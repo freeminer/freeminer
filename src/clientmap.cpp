@@ -142,7 +142,7 @@ void ClientMap::updateDrawList(float dtime)
 		m_drawlist_current = !m_drawlist_current;
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
-	float max_cycle_ms = 150/getControl().fps_wanted;
+	float max_cycle_ms = 300/getControl().fps_wanted;
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
 	m_camera_mutex.Lock();
@@ -189,12 +189,13 @@ void ClientMap::updateDrawList(float dtime)
 	//u32 blocks_without_stuff = 0;
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
-
-
 	{
 	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
+
+	int m_mesh_queued = 0;
+	const int maxq = 200;
 
 	for(auto & ir : m_blocks) {
 
@@ -228,9 +229,9 @@ void ClientMap::updateDrawList(float dtime)
 			if (mesh)
 				mesh->updateCameraOffset(m_camera_offset);
 
-			float range = 100000 * BS;
+			float range_max = 100000 * BS;
 			if(m_control.range_all == false)
-				range = m_control.wanted_range * BS;
+				range_max = m_control.wanted_range * BS;
 
 /*			float d = 0.0;
 			if(isBlockInSight(bp, camera_position,
@@ -250,8 +251,9 @@ void ClientMap::updateDrawList(float dtime)
 			);
 
 			f32 d = radius_box(blockpos, camera_position); //blockpos_relative.getLength();
-			if (d> range)
+			if (d> range_max)
 				continue;
+			int range = d / (MAP_BLOCKSIZE * BS);
 
 			// This is ugly (spherical distance limit?)
 			/*if(m_control.range_all == false &&
@@ -268,7 +270,10 @@ void ClientMap::updateDrawList(float dtime)
 
 				if(!mesh) {
 					blocks_in_range_without_mesh++;
-					m_client->addUpdateMeshTask(bp, false);
+					if (m_mesh_queued < maxq || range <= 2) {
+						m_client->addUpdateMeshTask(bp, false);
+						++m_mesh_queued;
+					}
 					continue;
 				}
 				if(mesh_step == mesh->step && block->getTimestamp() <= mesh->timestamp && (!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())) {
@@ -339,10 +344,14 @@ void ClientMap::updateDrawList(float dtime)
 				continue;
 */
 
-			if (mesh_step != mesh->step)
+			if (mesh_step != mesh->step && (m_mesh_queued < maxq*1.2 || range <= 2)) {
 				m_client->addUpdateMeshTask(bp);
-			if (block->getTimestamp() > mesh->timestamp)
+				++m_mesh_queued;
+			}
+			if (block->getTimestamp() > mesh->timestamp && (m_mesh_queued < maxq*1.5 || range <= 2)) {
 				m_client->addUpdateMeshTaskWithEdge(bp);
+				++m_mesh_queued;
+			}
 
 			if(!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())
 				continue;
@@ -366,13 +375,14 @@ void ClientMap::updateDrawList(float dtime)
 	if (!calls)
 		m_drawlist_last = 0;
 
-//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<<std::endl;
+//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<std::endl;
 
 	if (m_drawlist_last)
 		return;
 
 	for (auto & ir : *m_drawlist)
 		ir.second->refDrop();
+
 
 	auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;

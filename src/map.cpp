@@ -284,7 +284,7 @@ void Map::unspreadLight(enum LightBank bank,
 			continue;
 		}
 
-		if(block->isDummy())
+		if(!block || block->isDummy())
 			continue;
 
 		// Calculate relative position in block
@@ -314,6 +314,8 @@ void Map::unspreadLight(enum LightBank bank,
 
 						block_checked_in_modified = false;
 						blockchangecount++;
+						if (!block || block->isDummy())
+							continue;
 					}
 				}
 				catch(InvalidPositionException &e)
@@ -324,7 +326,9 @@ void Map::unspreadLight(enum LightBank bank,
 				// Calculate relative position in block
 				v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 				// Get node straight from the block
-				MapNode n2 = block->getNode(relpos);
+				MapNode n2 = block->getNodeNoEx(relpos);
+				if (n2.getContent() == CONTENT_IGNORE)
+					continue;
 
 				bool changed = false;
 
@@ -479,7 +483,7 @@ void Map::spreadLight(enum LightBank bank,
 		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
 
 		// Get node straight from the block
-		MapNode n = block->getNodeNoLock(relpos);
+		MapNode n = block->getNodeNoEx(relpos);
 		if (n.getContent() == CONTENT_IGNORE)
 			continue;
 
@@ -514,7 +518,7 @@ void Map::spreadLight(enum LightBank bank,
 				// Calculate relative position in block
 				v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 				// Get node straight from the block
-				MapNode n2 = block->getNodeNoLock(relpos);
+				MapNode n2 = block->getNodeNoEx(relpos);
 				if (n2.getContent() == CONTENT_IGNORE)
 					continue;
 
@@ -611,14 +615,9 @@ v3s16 Map::getBrightestNeighbour(enum LightBank bank, v3s16 p)
 	for(u16 i=0; i<6; i++){
 		// Get the position of the neighbor node
 		v3s16 n2pos = p + dirs[i];
-		MapNode n2;
-		try{
-			n2 = getNode(n2pos);
-		}
-		catch(InvalidPositionException &e)
-		{
+		MapNode n2 = getNodeNoEx(n2pos);
+		if (n2.getContent() == CONTENT_IGNORE)
 			continue;
-		}
 		if(n2.getLight(bank, nodemgr) > brightest_light || found_something == false){
 			brightest_light = n2.getLight(bank, nodemgr);
 			brightest_pos = n2pos;
@@ -661,7 +660,9 @@ s16 Map::propagateSunlight(v3s16 start,
 		}
 
 		v3s16 relpos = pos - blockpos*MAP_BLOCKSIZE;
-		MapNode n = block->getNode(relpos);
+		MapNode n = block->getNodeNoEx(relpos);
+		if (n.getContent() == CONTENT_IGNORE)
+			break;
 
 		if(nodemgr->get(n).sunlight_propagates)
 		{
@@ -722,13 +723,10 @@ u32 Map::updateLighting(enum LightBank bank,
 		MapBlock *block = getBlockNoCreateNoEx(i->first);
 		//MapBlock *block = i->second;
 
-		if(!block || block->isDummy())
-			continue;
-
 		for(;;)
 		{
 			// Don't bother with dummy blocks.
-			if(block->isDummy())
+			if(!block || block->isDummy())
 				break;
 
 			//auto lock = block->try_lock_unique_rec();
@@ -749,7 +747,9 @@ u32 Map::updateLighting(enum LightBank bank,
 
 				try{
 					v3s16 p(x,y,z);
-					MapNode n = block->getNode(p);
+					MapNode n = block->getNodeNoEx(p);
+					if (n.getContent() == CONTENT_IGNORE)
+						continue;
 					u8 oldlight = n.getLight(bank, nodemgr);
 					n.setLight(bank, 0, nodemgr);
 					block->setNode(p, n);
@@ -797,11 +797,6 @@ u32 Map::updateLighting(enum LightBank bank,
 				// For night lighting, sunlight is not propagated
 				break;
 			}
-			else
-			{
-				// Invalid lighting bank
-				assert(0);
-			}
 
 			/*infostream<<"Bottom for sunlight-propagated block ("
 					<<pos.X<<","<<pos.Y<<","<<pos.Z<<") not valid"
@@ -810,16 +805,8 @@ u32 Map::updateLighting(enum LightBank bank,
 			// Bottom sunlight is not valid; get the block and loop to it
 
 			pos.Y--;
-			try{
-				block = getBlockNoCreate(pos);
-			}
-			catch(InvalidPositionException &e)
-			{
-				goto L_END_BLOCK;
-			}
-
+			block = getBlockNoCreateNoEx(pos);
 		}
-		L_END_BLOCK:;
 		if (porting::getTimeMs() > end_ms) {
 			updateLighting_last[bank] = n;
 			break;
@@ -1041,10 +1028,9 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		// Add the block of the added node to modified_blocks
 		v3s16 blockpos = getNodeBlockPos(p);
 		MapBlock * block = getBlockNoCreate(blockpos);
-		assert(block != NULL);
+		if(!block)
+			break;
 		modified_blocks[blockpos] = block;
-
-		assert(isValidPosition(p));
 
 		// Unlight neighbours of node.
 		// This means setting light of all consequent dimmer nodes
@@ -1092,14 +1078,9 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 			//m_dout<<DTIME<<"y="<<y<<std::endl;
 			v3s16 n2pos(p.X, y, p.Z);
 
-			MapNode n2;
-			try{
-				n2 = getNode(n2pos);
-			}
-			catch(InvalidPositionException &e)
-			{
+			MapNode n2 = getNodeNoEx(n2pos);
+			if (n2.getContent() == CONTENT_IGNORE)
 				break;
-			}
 
 			if(n2.getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN)
 			{
@@ -1161,19 +1142,13 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	};
 	for(u16 i=0; i<7; i++)
 	{
-		try
-		{
 
 		v3s16 p2 = p + dirs[i];
 
-		MapNode n2 = getNode(p2);
+		MapNode n2 = getNodeNoEx(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
 			transforming_liquid_push_back(p2);
-		}
-
-		}catch(InvalidPositionException &e)
-		{
 		}
 	}
 }
@@ -1262,7 +1237,8 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	// Add the block of the removed node to modified_blocks
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock * block = getBlockNoCreate(blockpos);
-	assert(block != NULL);
+	if(!block)
+		return;
 	modified_blocks[blockpos] = block;
 
 	/*
@@ -1352,20 +1328,15 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	};
 	for(u16 i=0; i<7; i++)
 	{
-		try
-		{
 
 		v3s16 p2 = p + dirs[i];
 
-		MapNode n2 = getNode(p2);
+		MapNode n2 = getNodeNoEx(p2);
 		if(ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR)
 		{
 			transforming_liquid_push_back(p2);
 		}
 
-		}catch(InvalidPositionException &e)
-		{
-		}
 	}
 }
 
@@ -3055,7 +3026,6 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 	{
 		MapBlock *block = loadBlock(p);
-		m_circuit->processElementsQueue(*this, m_gamedef->ndef());
 		if(block)
 			return block;
 	}

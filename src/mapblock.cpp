@@ -727,25 +727,6 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)
 {
-	INodeDefManager* ndef = m_gamedef->ndef();
-	v3s16 pos;
-	for(int x = 0; x < 16; ++x)
-	{
-		for(int y = 0; y < 16; ++y)
-		{
-			for(int z = 0; z < 16; ++z)
-			{
-				MapNode tmp_node = data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
-				if(ndef->get(tmp_node).is_circuit_element)
-				{
-					pos.X = m_pos.X * MAP_BLOCKSIZE + x;
-					pos.Y = m_pos.Y * MAP_BLOCKSIZE + y;
-					pos.Z = m_pos.Z * MAP_BLOCKSIZE + z;
-					circuit->pushElementToQueue(pos);
-				}
-			}
-		}
-	}
 }
 
 #ifndef SERVER

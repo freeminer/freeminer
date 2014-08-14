@@ -1,8 +1,25 @@
+/*
+  This file is part of Freeminer.
+
+  Freeminer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Freeminer  is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "circuit_element_virtual.h"
 #include "circuit_element.h"
 #include "debug.h"
 
-CircuitElementVirtual::CircuitElementVirtual(unsigned long id) : m_state(false) {
+CircuitElementVirtual::CircuitElementVirtual(u32 id) : m_state(false) {
 	m_element_id = id;
 }
 
@@ -24,23 +41,23 @@ void CircuitElementVirtual::update() {
 }
 
 void CircuitElementVirtual::serialize(std::ostream& out) {
-	unsigned long connections_num = this->size();
+	u32 connections_num = this->size();
 	out.write(reinterpret_cast<char*>(&connections_num), sizeof(connections_num));
 	for(std::list <CircuitElementVirtualContainer>::iterator i = this->begin();
 	        i != this->end(); ++i) {
-		unsigned long element_id = i->element_pointer->getId();
-		unsigned char shift = i->shift;
+		u32 element_id = i->element_pointer->getId();
+		u8  shift = i->shift;
 		out.write(reinterpret_cast<char*>(&element_id), sizeof(element_id));
 		out.write(reinterpret_cast<char*>(&shift), sizeof(shift));
 	}
 }
 
 void CircuitElementVirtual::deSerialize(std::istream& in, std::list <CircuitElementVirtual>::iterator current_element_it,
-                                        std::map <unsigned long, std::list <CircuitElement>::iterator>& id_to_pointer) {
-	unsigned long connections_num;
+                                        std::map <u32, std::list <CircuitElement>::iterator>& id_to_pointer) {
+	u32 connections_num;
 	in.read(reinterpret_cast<char*>(&connections_num), sizeof(connections_num));
-	for(unsigned long i = 0; i < connections_num; ++i) {
-		unsigned long element_id;
+	for(u32 i = 0; i < connections_num; ++i) {
+		u32 element_id;
 		CircuitElementVirtualContainer tmp_container;
 		in.read(reinterpret_cast<char*>(&element_id), sizeof(element_id));
 		in.read(reinterpret_cast<char*>(&(tmp_container.shift)), sizeof(tmp_container.shift));
@@ -50,11 +67,10 @@ void CircuitElementVirtual::deSerialize(std::istream& in, std::list <CircuitElem
 	}
 }
 
-void CircuitElementVirtual::setId(unsigned long id) {
+void CircuitElementVirtual::setId(u32 id) {
 	m_element_id = id;
 }
 
-unsigned long CircuitElementVirtual::getId() {
+u32 CircuitElementVirtual::getId() {
 	return m_element_id;
 }
-

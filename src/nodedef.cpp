@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
 #include "connection.h"
+#include "shader.h"
 
 /*
 	NodeBox
@@ -152,11 +153,11 @@ void ContentFeatures::reset()
 	/*
 		Cached stuff
 	*/
-#ifndef SERVER
+//#ifndef SERVER
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
-#endif
+//#endif
 	has_on_construct = false;
 	has_on_destruct = false;
 	has_after_destruct = false;
@@ -213,14 +214,14 @@ void ContentFeatures::reset()
 
 	is_circuit_element = false;
 	is_wire = false;
-	is_connector = false;
+	is_wire_connector = false;
 	for(int i = 0; i < 6; ++i)
 	{
 		wire_connections[i] = 0;
 	}
 	for(int i = 0; i < 64; ++i)
 	{
-		circuit_element_states[i] = 0;
+		circuit_element_func[i] = 0;
 	}
 	circuit_element_delay = 0;
 }
@@ -603,7 +604,8 @@ public:
 	virtual void updateTextures(ITextureSource *tsrc,
 		IShaderSource *shdsrc)
 	{
-#ifndef SERVER
+
+//#ifndef SERVER
 		infostream<<"CNodeDefManager::updateTextures(): Updating "
 				<<"textures in node definitions"<<std::endl;
 
@@ -708,12 +710,15 @@ public:
 					is_water_surface = true;
 			}
 			u32 tile_shader[6];
+			if (shdsrc) {
 			for(u16 j=0; j<6; j++)
 				tile_shader[j] = shdsrc->getShader("nodes_shader",material_type, f->drawtype);
 
 			if (is_water_surface)
 				tile_shader[0] = shdsrc->getShader("water_surface_shader",material_type, f->drawtype);
-
+			}
+#ifndef SERVER
+			if (tsrc) {
 			// Tiles (fill in f->tiles[])
 			for(u16 j=0; j<6; j++){
 				// Shader
@@ -817,8 +822,10 @@ public:
 					}
 				}
 			}
-		}
+			}
 #endif
+		}
+//#endif
 	}
 	// map of content features, key = id, value = ContentFeatures
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const

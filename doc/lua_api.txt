@@ -2498,13 +2498,13 @@ Node definition (register_node)
 	^ Each element of circuit MUST have this table
 	^ Each circuit element should be defined by a table of values on input and output.
 	^ Index of element - value on input, and value at index - value on output.
-	^ Each bit of value represents one face of the block (Looking towards Z+).
-	^ 1. Bottom face (LSB).
-	^ 2. Back face.
-	^ 3. Left face.
-	^ 4. Top face.
-	^ 5. Front face.
-	^ 6. Right face.
+	^ Each bit of value represents one face of the block.
+	^ 1. +Y (LSB).
+	^ 2. -Y.
+	^ 3. +X.
+	^ 4. -X.
+	^ 5. +Z.
+	^ 6. -Z.
 	^ For example if there is 4 at index 2, then if all faces except back
 	^ face are deactivated, then there will be output signal on the left face.
 	^ Each definition table must have exactly 64 integer elements (0 <= a[i] <= 63).
@@ -2512,7 +2512,7 @@ Node definition (register_node)
 	is_wire = true,
 	^ Note: if 2 blocks of wire have different ids, then signal between them WILL NOT be transmitted.
 
-	is_connector = true,
+	is_wire_connector = true,
 	^ The same as is_wire, but can connect wire blocks with different ids.
 
 	wire_connections = {8, 16, 32, 1, 2, 4},

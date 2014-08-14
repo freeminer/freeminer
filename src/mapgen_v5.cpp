@@ -130,6 +130,18 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	// Do stuff
 	actuallyGenerate();
 
+	// Generate the registered decorations
+	for (unsigned int i = 0; i != emerge->decorations.size(); i++) {
+		Decoration *deco = emerge->decorations[i];
+		deco->placeDeco(this, blockseed + i, node_min, node_max);
+	}
+
+	// Generate the registered ores
+	for (unsigned int i = 0; i != emerge->ores.size(); i++) {
+		Ore *ore = emerge->ores[i];
+		ore->placeOre(this, blockseed + i, node_min, node_max);
+	}
+
 	//printf("makeChunk: %dms\n", t.stop());
 	
 	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);

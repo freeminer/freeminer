@@ -153,7 +153,7 @@ private:
 	shared_map<v3s16, MapBlock*> * m_drawlist;
 	shared_map<v3s16, MapBlock*> m_drawlist_0;
 	shared_map<v3s16, MapBlock*> m_drawlist_1;
-	s16 m_drawlist_current;
+	int m_drawlist_current;
 public:
 	u32 m_drawlist_last;
 private:
