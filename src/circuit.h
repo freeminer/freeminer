@@ -25,7 +25,8 @@
 #include "circuit_element.h"
 #include "circuit_element_virtual.h"
 #include "irrlichttypes.h"
-#include "jthread/jmutexautolock.h"
+#include "util/lock.h"
+
 
 class INodeDefManager;
 class GameScripting;
@@ -73,12 +74,10 @@ private:
 
 	std::string m_savedir;
 
-	bool m_updating_process;
-
 	KeyValueStorage *m_database;
 	KeyValueStorage *m_virtual_database;
 
-	JMutex m_elements_mutex;
+	locker m_elements_mutex;
 
 	static const u32 circuit_simulator_version;
 	static const char elements_states_file[];

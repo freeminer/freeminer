@@ -853,7 +853,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 
 bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 {
-	INodeDefManager *ndef = m_gamedef->ndef();
+	//INodeDefManager *ndef = m_gamedef->ndef();
 	MapNode n_old = m_map->getNodeNoEx(p);
 	bool succeeded = m_map->addNodeWithEvent(p, n, false);
 	if(succeeded) {

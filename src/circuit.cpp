@@ -48,8 +48,8 @@ Circuit::Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::st
 	m_since_last_update(0.0f),
 	m_max_id(0),
 	m_max_virtual_id(1),
-	m_savedir(savedir),
-	m_updating_process(false) {
+	m_savedir(savedir)
+ {
 		load();
 }
 
@@ -131,9 +131,7 @@ void Circuit::swapNode(v3s16 pos, const MapNode& n_old, const MapNode& n_new) {
 }
 
 void Circuit::addElement(v3s16 pos) {
-	if(!m_updating_process) {
-		m_elements_mutex.Lock();
-	}
+	auto lock = m_elements_mutex.lock_unique_rec();
 
 	bool already_existed[6];
 	bool connected_faces[6] = {0};
@@ -195,15 +193,10 @@ void Circuit::addElement(v3s16 pos) {
 	}
 	saveElement(current_element_iterator, true);
 
-	if(!m_updating_process) {
-		m_elements_mutex.Unlock();
-	}
 }
 
 void Circuit::removeElement(v3s16 pos) {
-	if(!m_updating_process) {
-		m_elements_mutex.Lock();
-	}
+	auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::list <CircuitElementVirtual>::iterator> virtual_elements_for_update;
 	std::list <CircuitElement>::iterator current_element = m_pos_to_iterator[pos];
@@ -230,15 +223,10 @@ void Circuit::removeElement(v3s16 pos) {
 	}
 
 	m_pos_to_iterator.erase(pos);
-	if(!m_updating_process) {
-		m_elements_mutex.Unlock();
-	}
 }
 
 void Circuit::addWire(v3s16 pos) {
-	if(!m_updating_process) {
-		m_elements_mutex.Lock();
-	}
+	auto lock = m_elements_mutex.lock_unique_rec();
 
 	// This is used for converting elements of current_face_connected to their ids in all_connected.
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > all_connected;
@@ -315,15 +303,10 @@ void Circuit::addWire(v3s16 pos) {
 	for(u32 i = 0; i < created_virtual_elements.size(); ++i) {
 		saveVirtualElement(created_virtual_elements[i], true);
 	}
-	if(!m_updating_process) {
-		m_elements_mutex.Unlock();
-	}
 }
 
 void Circuit::removeWire(v3s16 pos) {
-	if(!m_updating_process) {
-		m_elements_mutex.Lock();
-	}
+	auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > current_face_connected;
 
@@ -387,15 +370,11 @@ void Circuit::removeWire(v3s16 pos) {
 			}
 		}
 	}
-	if(!m_updating_process) {
-		m_elements_mutex.Unlock();
-	}
 }
 
 void Circuit::update(float dtime) {
 	if(m_since_last_update > m_min_update_delay) {
-		JMutexAutoLock lock(m_elements_mutex);
-		m_updating_process = true;
+		auto lock = m_elements_mutex.lock_unique_rec();
 		m_since_last_update -= m_min_update_delay;
 		// Each element send signal to other connected virtual elements.
 		bool is_map_loaded = true;
@@ -420,7 +399,6 @@ void Circuit::update(float dtime) {
 				i->resetState();
 			}
 		}
-		m_updating_process = false;
 	} else {
 		m_since_last_update += dtime;
 	}
@@ -428,9 +406,7 @@ void Circuit::update(float dtime) {
 
 
 void Circuit::swapElement(const MapNode& n_old, const MapNode& n_new, v3s16 pos) {
-	if(!m_updating_process) {
-		m_elements_mutex.Lock();
-	}
+	auto lock = m_elements_mutex.lock_unique_rec();
 
 	const ContentFeatures& n_old_features = m_ndef->get(n_old);
 	const ContentFeatures& n_new_features = m_ndef->get(n_new);
@@ -438,9 +414,6 @@ void Circuit::swapElement(const MapNode& n_old, const MapNode& n_new, v3s16 pos)
 	current_element->swap(n_old, n_old_features, n_new, n_new_features);
 	saveElement(current_element, false);
 
-	if(!m_updating_process) {
-		m_elements_mutex.Unlock();
-	}
 }
 
 void Circuit::load() {
@@ -518,10 +491,7 @@ void Circuit::load() {
 
 void Circuit::save() {
 	dstream << "saved!" << std::endl;
-	JMutexAutoLock lock(m_elements_mutex);
-	// if(!m_updating_process) {
-	// 	m_elements_mutex.Lock();
-	// }
+	auto lock = m_elements_mutex.lock_unique_rec();
 	std::ostringstream ostr(std::ios_base::binary);
 	std::ofstream out((m_savedir + DIR_DELIM + elements_states_file).c_str(), std::ios_base::binary);
 	out.write(reinterpret_cast<const char*>(&circuit_simulator_version), sizeof(circuit_simulator_version));
@@ -529,9 +499,6 @@ void Circuit::save() {
 		i->serializeState(ostr);
 	}
 	out << ostr.str();
-	// if(!m_updating_process) {
-	// 	m_elements_mutex.Unlock();
-	// }
 }
 
 inline void Circuit::saveElement(std::list<CircuitElement>::iterator element, bool save_edges) {
