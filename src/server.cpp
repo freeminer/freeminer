@@ -416,8 +416,6 @@ Server::Server(
 
 	m_script = new GameScripting(this);
 	
-	m_circuit = new Circuit(m_script, path_world);
-
 	std::string scriptpath = getBuiltinLuaPath() + DIR_DELIM "init.lua";
 
 	if (!m_script->loadScript(scriptpath)) {
@@ -461,6 +459,7 @@ Server::Server(
 
 	// Initialize Environment
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
+	m_circuit = new Circuit(m_script, servermap, ndef(), path_world);
 	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this, m_path_world);
 	m_emerge->env = m_env;
 

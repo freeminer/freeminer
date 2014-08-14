@@ -1,5 +1,21 @@
+/*
+  This file is part of Freeminer.
+
+  Freeminer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  Freeminer  is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "circuit_element.h"
-#include "circuit_element_states.h"
 #include "nodedef.h"
 #include "mapnode.h"
 #include "map.h"
@@ -13,30 +29,41 @@
 
 #define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
 
-unsigned char CircuitElement::face_to_shift[] = {
+u8 CircuitElement::face_to_shift[] = {
 	0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
 	4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5
 };
 
-unsigned char CircuitElement::opposite_shift[] = {
-	3, 4, 5, 0, 1, 2
+u8 CircuitElement::opposite_shift[] = {
+	1, 0, 3, 2, 5, 4
 };
 
-FaceId CircuitElement::shift_to_face[] = {
-	FACE_BOTTOM, FACE_BACK, FACE_LEFT,
-	FACE_TOP, FACE_FRONT, FACE_RIGHT
+u8 CircuitElement::opposite_face[] = {
+	0, 2, 1, 0, 8, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0,
+	32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16
 };
 
-FaceId CircuitElement::facedir_to_face[] = {
-	FACE_FRONT, FACE_LEFT, FACE_BACK,
-	FACE_RIGHT, FACE_BOTTOM, FACE_TOP
+u8 CircuitElement::rotate_face[] = {
+	1, 1, 1, 1, 16, 16, 16, 16, 32, 32, 32, 32, 4, 4, 4, 4, 8, 8, 8, 8, 2, 2, 2, 2,
+	2, 2, 2, 2, 32, 32, 32, 32, 16, 16, 16, 16, 8, 8, 8, 8, 4, 4, 4, 4, 1, 1, 1, 1,
+	4, 32, 8, 16, 4, 1, 8, 2, 4, 2, 8, 1, 2, 32, 1, 16, 1, 32, 2, 16, 8, 32, 4, 16,
+	8, 16, 4, 32, 8, 2, 4, 1, 8, 1, 4, 2, 1, 16, 2, 32, 2, 16, 1, 32, 4, 16, 8, 32,
+	16, 4, 32, 8, 2, 4, 1, 8, 1, 4, 2, 8, 16, 2, 32, 1, 16, 1, 32, 2, 16, 8, 32, 4,
+	32, 8, 16, 4, 1, 8, 2, 4, 2, 8, 1, 4, 32, 1, 16, 2, 32, 2, 16, 1, 32, 4, 16, 8,
 };
 
-CircuitElement::CircuitElement(v3s16 pos, const unsigned char* func, unsigned long func_id,
-                               unsigned long element_id, unsigned int delay) :
-	m_pos(pos), m_func(func), m_func_id(func_id), m_current_input_state(0),
-	m_next_input_state(0), m_current_output_state(0), m_next_output_state(0) {
-	m_current_output_state = m_func[m_current_input_state];
+u8 CircuitElement::reverse_rotate_face[] = {
+	1, 1, 1, 1, 32, 4, 16, 8, 16, 8, 32, 4, 8, 32, 4, 16, 4, 16, 8, 32, 2, 2, 2, 2,
+	2, 2, 2, 2, 16, 8, 32, 4, 32, 4, 16, 8, 4, 16, 8, 32, 8, 32, 4, 16, 1, 1, 1, 1,
+	4, 16, 8, 32, 4, 16, 8, 32, 4, 16, 8, 32, 1, 1, 1, 1, 2, 2, 2, 2, 8, 32, 4, 16,
+	8, 32, 4, 16, 8, 32, 4, 16, 8, 32, 4, 16, 2, 2, 2, 2, 1, 1, 1, 1, 4, 16, 8, 32,
+	16, 8, 32, 4, 1, 1, 1, 1, 2, 2, 2, 2, 16, 8, 32, 4, 16, 8, 32, 4, 16, 8, 32, 4,
+	32, 4, 16, 8, 2, 2, 2, 2, 1, 1, 1, 1, 32, 4, 16, 8, 32, 4, 16, 8, 32, 4, 16, 8,
+};
+
+CircuitElement::CircuitElement(v3s16 pos, u32 element_id, u8 delay) :
+	m_pos(pos), m_prev_input_state(0), m_current_input_state(0),
+	m_next_input_state(0), m_current_output_state(0){
 	m_element_id = element_id;
 	for(int i = 0; i < 6; ++i) {
 		m_faces[i].is_connected = false;
@@ -56,12 +83,10 @@ CircuitElement::CircuitElement(v3s16 pos, const unsigned char* func, unsigned lo
 CircuitElement::CircuitElement(const CircuitElement& element) {
 	m_pos = element.m_pos;
 	m_element_id = element.m_element_id;
-	m_func = element.m_func;
-	m_func_id = element.m_func_id;
+	m_prev_input_state = element.m_prev_input_state;
 	m_current_input_state = element.m_current_input_state;
-	m_current_output_state = element.m_current_output_state;
 	m_next_input_state = element.m_next_input_state;
-	m_next_output_state = element.m_next_output_state;
+	m_current_output_state = element.m_current_output_state;
 	for(int i = 0; i < 6; ++i) {
 		m_faces[i].list_iterator = element.m_faces[i].list_iterator;
 		m_faces[i].list_pointer  = element.m_faces[i].list_pointer;
@@ -70,10 +95,9 @@ CircuitElement::CircuitElement(const CircuitElement& element) {
 	setDelay(element.m_states_queue.size());
 }
 
-CircuitElement::CircuitElement(unsigned long element_id) : m_pos(v3s16(0, 0, 0)),
-	m_func(0), m_func_id(0), m_current_input_state(0),
-	m_next_input_state(0), m_current_output_state(0),
-	m_next_output_state(0) {
+CircuitElement::CircuitElement(u32 element_id) :
+	m_pos(v3s16(0, 0, 0)), m_prev_input_state(0), m_current_input_state(0),
+	m_next_input_state(0), m_current_output_state(0) {
 	m_element_id = element_id;
 	for(int i = 0; i < 6; ++i) {
 		m_faces[i].is_connected = false;
@@ -98,33 +122,44 @@ void CircuitElement::update() {
 	}
 }
 
-void CircuitElement::updateState(GameScripting* m_script, Map& map, INodeDefManager* ndef) {
-	MapNode node = map.getNodeNoEx(m_pos);
+bool CircuitElement::updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef) {
+	MapNode node = map->getNodeNoEx(m_pos);
+	// Map not yet loaded
+	if(node.param0 == CONTENT_IGNORE) {
+		dstream << "Circuit simulator: Waiting for map blocks loading..." << std::endl;
+		return false;
+	}
+	const ContentFeatures& node_features = ndef->get(node);
 	// Update delay (may be not synchronized)
-	unsigned long delay = ndef->get(node).circuit_element_delay;
+	u32 delay = node_features.circuit_element_delay;
 	if(delay != m_states_queue.size()) {
 		setDelay(delay);
 	}
-
 	m_states_queue.push_back(m_next_input_state);
 	m_next_input_state = m_states_queue.front();
 	m_states_queue.pop_front();
-	m_current_output_state = m_func[m_next_input_state];
-	if(m_next_input_state && !m_current_input_state && ndef->get(node).has_on_activate) {
+	m_current_output_state = node_features.circuit_element_func[m_next_input_state];
+	if(m_next_input_state && !m_current_input_state && node_features.has_on_activate) {
 		m_script->node_on_activate(m_pos, node);
 	}
-	if(!m_next_input_state && m_current_input_state && ndef->get(node).has_on_deactivate) {
+	if(!m_next_input_state && m_current_input_state && node_features.has_on_deactivate) {
 		m_script->node_on_deactivate(m_pos, node);
 	}
+	m_prev_input_state = m_current_input_state;
 	m_current_input_state = m_next_input_state;
 	m_next_input_state = 0;
+	return true;
+}
+
+void CircuitElement::resetState() {
+	m_next_input_state = 0;
+	m_current_input_state = m_prev_input_state;
 }
 
 void CircuitElement::serialize(std::ostream& out) const {
 	out.write(reinterpret_cast<const char*>(&m_pos), sizeof(m_pos));
-	out.write(reinterpret_cast<const char*>(&m_func_id), sizeof(m_func_id));
 	for(int i = 0; i < 6; ++i) {
-		unsigned long tmp = 0ul;
+		u32 tmp = 0;
 		if(m_faces[i].is_connected) {
 			tmp = m_faces[i].list_pointer->getId();
 		}
@@ -135,18 +170,18 @@ void CircuitElement::serialize(std::ostream& out) const {
 void CircuitElement::serializeState(std::ostream& out) const {
 	out.write(reinterpret_cast<const char*>(&m_element_id), sizeof(m_element_id));
 	out.write(reinterpret_cast<const char*>(&m_current_input_state), sizeof(m_current_input_state));
-	unsigned long queue_size = m_states_queue.size();
+	out.write(reinterpret_cast<const char*>(&m_current_output_state), sizeof(m_current_output_state));
+	u32 queue_size = m_states_queue.size();
 	out.write(reinterpret_cast<const char*>(&queue_size), sizeof(queue_size));
-	for(std::deque <unsigned char>::const_iterator i = m_states_queue.begin(); i != m_states_queue.end(); ++i) {
+	for(auto i = m_states_queue.begin(); i != m_states_queue.end(); ++i) {
 		out.write(reinterpret_cast<const char*>(&(*i)), sizeof(*i));
 	}
 }
 
 void CircuitElement::deSerialize(std::istream& in,
-                                 std::map <unsigned long, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer) {
-	unsigned long current_element_id;
+                                 std::map <u32, std::list <CircuitElementVirtual>::iterator>& id_to_virtual_pointer) {
+	u32 current_element_id;
 	in.read(reinterpret_cast<char*>(&m_pos), sizeof(m_pos));
-	in.read(reinterpret_cast<char*>(&m_func_id), sizeof(m_func_id));
 	for(int i = 0; i < 6; ++i) {
 		in.read(reinterpret_cast<char*>(&current_element_id), sizeof(current_element_id));
 		if(current_element_id > 0) {
@@ -159,11 +194,12 @@ void CircuitElement::deSerialize(std::istream& in,
 }
 
 void CircuitElement::deSerializeState(std::istream& in) {
-	unsigned long queue_size;
-	unsigned char input_state;
+	u32 queue_size;
+	u8 input_state;
 	in.read(reinterpret_cast<char*>(&m_current_input_state), sizeof(m_current_input_state));
+	in.read(reinterpret_cast<char*>(&m_current_output_state), sizeof(m_current_output_state));
 	in.read(reinterpret_cast<char*>(&queue_size), sizeof(queue_size));
-	for(unsigned long i = 0; i < queue_size; ++i) {
+	for(u32 i = 0; i < queue_size; ++i) {
 		in.read(reinterpret_cast<char*>(&input_state), sizeof(input_state));
 		m_states_queue.push_back(input_state);
 	}
@@ -173,8 +209,8 @@ void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>
 	for(int i = 0; i < 6; ++i) {
 		if(m_faces[i].is_connected) {
 			bool found = false;
-			for(unsigned int j = 0; j < neighbors.size(); ++j) {
-				if(neighbors[j] == m_faces[i].list_pointer) {
+			for(auto j = neighbors.begin(); j != neighbors.end(); ++j) {
+				if(*j == m_faces[i].list_pointer) {
 					found = true;
 					break;
 				}
@@ -186,112 +222,99 @@ void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>
 	}
 }
 
-void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, int > >& connected,
-        Map& map, INodeDefManager* ndef, v3s16 pos, FaceId face,
+void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
+        Map* map, INodeDefManager* ndef, v3s16 pos, u8 face,
         std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
         bool connected_faces[6]) {
-	static v3s16 directions[6] = {v3s16(0, -1, 0),
-	                              v3s16(0, 0, 1),
-	                              v3s16(-1, 0, 0),
-	                              v3s16(0, 1, 0),
-	                              v3s16(0, 0, -1),
+	static v3s16 directions[6] = {v3s16(0, 1, 0),
+	                              v3s16(0, -1, 0),
 	                              v3s16(1, 0, 0),
+	                              v3s16(-1, 0, 0),
+	                              v3s16(0, 0, 1),
+	                              v3s16(0, 0, -1),
 	                             };
-	std::map <v3s16, unsigned char> used;
-	used[pos] = face;
-	std::queue <std::pair <v3s16, unsigned char> > q;
-	v3s16 current_pos;
-	v3s16 next_pos;
-	std::map <v3s16, unsigned char>::iterator current_used_iterator;
-	std::map <v3s16, unsigned char>::iterator tmp_used_iterator;
-	ContentFeatures node_features, current_node_features;
+	// First - wire pos, second - acceptable faces
+	std::queue <std::pair <v3s16, u8> > q;
+	v3s16 current_pos, next_pos;
 	MapNode next_node, current_node;
-
-	int face_id = FACE_TO_SHIFT(face);
+	// used[pos] = or of all faces, that are already processed
+	std::map <v3s16, u8> used;
+	u8 face_id = FACE_TO_SHIFT(face);
 	connected_faces[face_id] = true;
-	current_pos.X = pos.X + directions[face_id].X;
-	current_pos.Y = pos.Y + directions[face_id].Y;
-	current_pos.Z = pos.Z + directions[face_id].Z;
-	next_node = map.getNodeNoEx(current_pos);
-	node_features = ndef->get(next_node);
-	q.push(std::make_pair(current_pos, node_features.wire_connections[FACE_TO_SHIFT(OPPOSITE_FACE(face))]));
+	used[pos] = face;
+	current_node = map->getNodeNoEx(pos);
+	const ContentFeatures& first_node_features = ndef->get(current_node);
+	face = rotateFace(current_node, first_node_features, face);
+	face_id = FACE_TO_SHIFT(face);
 
-	if(ndef->get(map.getNodeNoEx(current_pos)).is_wire || ndef->get(map.getNodeNoEx(current_pos)).is_connector) {
+	current_pos = pos + directions[face_id];
+	current_node = map->getNodeNoEx(current_pos);
+	const ContentFeatures& current_node_features = ndef->get(current_node);
+	u8 real_face = revRotateFace(current_node, current_node_features, face);
+	u8 real_face_id = FACE_TO_SHIFT(real_face);
+
+	if(current_node_features.is_wire || current_node_features.is_wire_connector) {
+		q.push(std::make_pair(current_pos, current_node_features.wire_connections[real_face_id]));
+
 		while(!q.empty()) {
-			unsigned char acceptable_faces;
 			current_pos = q.front().first;
-			acceptable_faces = q.front().second;
+			u8 acceptable_faces = q.front().second;
 			q.pop();
+			current_node = map->getNodeNoEx(current_pos);
+			const ContentFeatures& current_node_features = ndef->get(current_node);
 
 			for(int i = 0; i < 6; ++i) {
-				if(acceptable_faces & (SHIFT_TO_FACE(i))) {
-					next_pos.X = current_pos.X + directions[i].X;
-					next_pos.Y = current_pos.Y + directions[i].Y;
-					next_pos.Z = current_pos.Z + directions[i].Z;
-					used[current_pos] |= SHIFT_TO_FACE(i);
-					next_node = map.getNodeNoEx(next_pos);
-					node_features = ndef->get(next_node);
-					current_node = map.getNodeNoEx(current_pos);
-					current_node_features = ndef->get(current_node);
-					current_used_iterator = used.find(next_pos);
+				u8 real_face = revRotateFace(current_node, current_node_features, SHIFT_TO_FACE(i));
+				if(acceptable_faces & real_face) {
+					used[current_pos] |= real_face;
+					next_pos = current_pos + directions[i];
+					next_node = map->getNodeNoEx(next_pos);
+					const ContentFeatures& node_features = ndef->get(next_node);
+					u8 next_real_face = revRotateFace(next_node, node_features, OPPOSITE_FACE(SHIFT_TO_FACE(i)));
+					u8 next_real_shift = FACE_TO_SHIFT(next_real_face);
 
 					// If start element, mark some of it's faces
 					if(next_pos == pos) {
-						connected_faces[OPPOSITE_SHIFT(i)] = true;
+						connected_faces[next_real_shift] = true;
 					}
 
-					if((current_used_iterator == used.end()) ||
-					        !(current_used_iterator->second & SHIFT_TO_FACE(OPPOSITE_SHIFT(i)))) {
-						if(current_node_features.is_connector || node_features.is_connector
-						        || (node_features.is_wire && (next_node.getContent() == current_node.getContent()))) {
-							if(node_features.param_type_2 == CPT2_FACEDIR) {
-								q.push(std::make_pair(next_pos, CircuitElementStates::rotateState(
-								                          node_features.wire_connections[OPPOSITE_SHIFT(i)],
-								                          FACEDIR_TO_FACE(next_node.param2))));
-							} else {
-								q.push(std::make_pair(next_pos, node_features.wire_connections[OPPOSITE_SHIFT(i)]));
-							}
-							tmp_used_iterator = used.find(next_pos);
-							if(tmp_used_iterator != used.end()) {
-								tmp_used_iterator->second |= SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							} else {
-								used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							}
+					auto next_used_iterator = used.find(next_pos);
+					bool is_part_of_circuit = node_features.is_wire_connector || node_features.is_circuit_element ||
+						(node_features.is_wire && (next_node.getContent() == current_node.getContent()));
+					bool not_used = (next_used_iterator == used.end()) ||
+						!(next_used_iterator->second & next_real_face);
+
+					if(is_part_of_circuit && not_used) {
+						if(node_features.is_circuit_element) {
+							connected.push_back(std::make_pair(pos_to_iterator[next_pos], next_real_shift));
+						} else {
+							q.push(std::make_pair(next_pos, node_features.wire_connections[next_real_shift]));
 						}
 
-						if(node_features.is_circuit_element) {
-							tmp_used_iterator = used.find(next_pos);
-							if(tmp_used_iterator != used.end()) {
-								tmp_used_iterator->second |= SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							} else {
-								used[next_pos] = SHIFT_TO_FACE(OPPOSITE_SHIFT(i));
-							}
-							connected.push_back(std::make_pair(pos_to_iterator[next_pos],
-							                                   OPPOSITE_SHIFT(i)));
+						if(next_used_iterator != used.end()) {
+							next_used_iterator->second |= next_real_face;
+						} else {
+							used[next_pos] = next_real_face;
 						}
 					}
 				}
 			}
 		}
-	} else if(ndef->get(map.getNodeNoEx(current_pos)).is_circuit_element) {
-		connected.push_back(std::make_pair(pos_to_iterator[current_pos],
-		                                   FACE_TO_SHIFT(OPPOSITE_FACE(face))));
+	} else if(current_node_features.is_circuit_element) {
+		connected.push_back(std::make_pair(pos_to_iterator[current_pos], OPPOSITE_SHIFT(real_face_id)));
 	}
 }
 
-CircuitElementContainer CircuitElement::getFace(int id) const {
+CircuitElementContainer CircuitElement::getFace(int id) const
+{
 	return m_faces[id];
-}
-
-unsigned long CircuitElement::getFuncId() const {
-	return m_func_id;
 }
 
 v3s16 CircuitElement::getPos() const {
 	return m_pos;
 }
 
-unsigned long CircuitElement::getId() const {
+u32 CircuitElement::getId() const {
 	return m_element_id;
 }
 
@@ -306,21 +329,15 @@ void CircuitElement::disconnectFace(int id) {
 	m_faces[id].is_connected = false;
 }
 
-void CircuitElement::setId(unsigned long id) {
+void CircuitElement::setId(u32 id) {
 	m_element_id = id;
 }
 
-void CircuitElement::setInputState(unsigned char state) {
+void CircuitElement::setInputState(u8 state) {
 	m_current_input_state = state;
 }
 
-void CircuitElement::setFunc(const unsigned char* func, unsigned long func_id) {
-	m_func = func;
-	m_func_id = func_id;
-	m_current_output_state = m_func[m_current_input_state];
-}
-
-void CircuitElement::setDelay(unsigned int delay) {
+void CircuitElement::setDelay(u8 delay) {
 	if(m_states_queue.size() >= delay) {
 		while(m_states_queue.size() > delay) {
 			m_states_queue.pop_front();
@@ -330,4 +347,21 @@ void CircuitElement::setDelay(unsigned int delay) {
 			m_states_queue.push_back(0);
 		}
 	}
+}
+
+void CircuitElement::swap(const MapNode& n_old, const ContentFeatures& n_old_features,
+                          const MapNode& n_new, const ContentFeatures& n_new_features) {
+	CircuitElementContainer tmp_faces[6];
+	for(int i = 0; i < 6; ++i) {
+		u8 shift = FACE_TO_SHIFT(rotateFace(n_old, n_old_features, SHIFT_TO_FACE(i)));
+		tmp_faces[shift] = m_faces[i];
+	}
+	for(int i = 0; i < 6; ++i) {
+		u8 shift = FACE_TO_SHIFT(revRotateFace(n_new, n_new_features, SHIFT_TO_FACE(i)));
+		m_faces[shift] = tmp_faces[i];
+		if(m_faces[shift].is_connected) {
+			m_faces[shift].list_iterator->shift = shift;
+		}
+	}
+	setDelay(n_new_features.circuit_element_delay);
 }

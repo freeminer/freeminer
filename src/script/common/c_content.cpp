@@ -340,15 +340,16 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	}
 	lua_pop(L, 1);
 	
-	lua_getfield(L, index, "is_connector");
+	lua_getfield(L, index, "is_wire_connector");
 	if(!lua_isnil(L, -1)) {
-		f.is_connector = true;
+		f.is_wire_connector = true;
 	}
 	lua_pop(L, 1);
 	
 	lua_getfield(L, index, "wire_connections");
 	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
-		f.is_wire = true;
+		// Both can't be set to true
+		f.is_wire |= !f.is_wire_connector;
 		int table = lua_gettop(L);
 		lua_pushnil(L);
 		int i;
@@ -371,8 +372,8 @@ ContentFeatures read_content_features(lua_State *L, int index)
 			}
 		}
 		
-	} else if(f.is_wire) {
-		// Assuming that it's a standart wire
+	} else if(f.is_wire || f.is_wire_connector) {
+		// Assuming that it's a standart wire or wire connector
 		for(int i = 0; i < 6; ++i) {
 			f.wire_connections[i] = 0x3F;
 		}
@@ -386,11 +387,11 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		lua_pushnil(L);
 		int i;
 		for(i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
-			f.circuit_element_states[i] = lua_tonumber(L, -1);
+			f.circuit_element_func[i] = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 		}
 		if(i < 64) {
-			luaL_error(L, "Circuit states table must have exactly 64 integer numbers.");
+			luaL_error(L, "Circuit element states table must have exactly 64 integer numbers.");
 		}
 	}
 	lua_pop(L, 1);

@@ -3032,7 +3032,6 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 	{
 		MapBlock *block = loadBlock(p);
-		m_circuit->processElementsQueue(*this, m_gamedef->ndef());
 		if(block)
 			return block;
 	}
