@@ -230,7 +230,7 @@
 
 # Default timeout for cURL, in milliseconds
 # Only has an effect if compiled with cURL
-#curl_timeout = 59000
+#curl_timeout = 5000
 # Limits number of parallel HTTP requests. Affects:
 # - Media fetch if server uses remote_media setting
 # - Serverlist download and server announcement
