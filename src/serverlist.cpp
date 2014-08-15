@@ -224,6 +224,7 @@ void sendAnnounce(const std::string &action,
 
 	Json::FastWriter writer;
 	HTTPFetchRequest fetchrequest;
+	fetchrequest.timeout = fetchrequest.connect_timeout = 59000;
 	fetchrequest.url = g_settings->get("serverlist_url") + std::string("/announce");
 
 	std::string query = std::string("json=") + urlencode(writer.write(server));
