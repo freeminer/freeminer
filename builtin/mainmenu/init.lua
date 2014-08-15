@@ -989,6 +989,13 @@ function tabbuilder.tab_server()
 		menu.render_world_list() ..
 		";" .. index .. "]"
 
+	if not core.setting_get("menu_last_game") then
+		local default_game = core.setting_get("default_game") or "default"
+		core.setting_set("menu_last_game", default_game )
+	end
+
+	mm_texture.init()
+
 	return retval
 end
 
