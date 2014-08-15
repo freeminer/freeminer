@@ -82,7 +82,7 @@ gsMapper::~gsMapper()
 video::SColor gsMapper::getColorFromId(u16 id)
 {
 	// check if already in my defs
-	std::map<u16, u16>::iterator i = d_nodeids.find(id);
+	auto i = d_nodeids.find(id);
 	if (i != d_nodeids.end()) {
 		return d_colorids[d_nodeids[id]];
 
