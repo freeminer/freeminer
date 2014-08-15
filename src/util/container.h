@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 #include "lock.h"
+#include "unordered_map_hash.h"
 
 /*
 	Queue with unique values with fast checking of value existence
@@ -76,7 +77,8 @@ public:
 	}
 
 private:
-	std::map<Value, u8> m_map;
+	//std::map<Value, u8> m_map;
+	std::unordered_map<Value, u8, v3s16Hash, v3s16Equal> m_map; // all usage with v3s16 now
 	std::list<Value> m_list;
 };
 
