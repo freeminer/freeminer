@@ -106,6 +106,8 @@ public:
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::iterator iterator;
+	typedef typename full_type::reverse_iterator reverse_iterator;
+	typedef typename full_type::const_reverse_iterator const_reverse_iterator;
 
 	mapped_type& get(const key_type& k) {
 		auto lock = lock_shared_rec();
@@ -131,6 +133,56 @@ public:
 		auto lock = lock_shared_rec();
 		return full_type::count(k);
 	}
+
+	iterator find(const key_type& k) {
+		auto lock = lock_shared_rec();
+		return full_type::find(k);
+	};
+
+	const_iterator find(const key_type& k) const {
+		auto lock = lock_shared_rec();
+		return full_type::find(k);
+	};
+
+	iterator begin() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::begin();
+	};
+
+	const_iterator begin()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::begin();
+	};
+
+	reverse_iterator rbegin() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::rbegin();
+	};
+
+	const_reverse_iterator rbegin()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::rbegin();
+	};
+
+	iterator end() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::end();
+	};
+
+	const_iterator end()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::end();
+	};
+
+	reverse_iterator rend() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::rend();
+	};
+
+	const_reverse_iterator rend()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::rend();
+	};
 
 	mapped_type& operator[](const key_type& k) = delete;
 
@@ -210,6 +262,36 @@ public:
 		auto lock = lock_shared_rec();
 		return full_type::count(k);
 	}
+
+	iterator find(const key_type& k) {
+		auto lock = lock_shared_rec();
+		return full_type::find(k);
+	};
+
+	const_iterator find(const key_type& k) const {
+		auto lock = lock_shared_rec();
+		return full_type::find(k);
+	};
+
+	iterator begin() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::begin();
+	};
+
+	const_iterator begin()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::begin();
+	};
+
+	iterator end() noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::end();
+	};
+
+	const_iterator end()   const noexcept {
+		auto lock = lock_shared_rec();
+		return full_type::end();
+	};
 
 	mapped_type& operator[](const key_type& k) = delete;
 

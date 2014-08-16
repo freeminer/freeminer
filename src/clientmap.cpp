@@ -189,12 +189,12 @@ void ClientMap::updateDrawList(float dtime)
 	//u32 blocks_without_stuff = 0;
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
+	int m_mesh_queued = 0;
 	{
 	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
 
-	int m_mesh_queued = 0;
 	const int maxq = 200;
 
 	for(auto & ir : m_blocks) {
