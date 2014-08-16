@@ -27,7 +27,7 @@ lock_rec<T>::lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_, bool try
 
 template<class T>
 lock_rec<T>::~lock_rec() {
-	if(owns_lock()) {
+	if(lock) {
 		thread_id = 0;
 		lock->unlock();
 		delete lock;
@@ -37,7 +37,10 @@ lock_rec<T>::~lock_rec() {
 
 template<class T>
 bool lock_rec<T>::owns_lock() {
-	return lock;
+	if (lock)
+		return lock;
+	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
+	return thread_id == thread_me;
 }
 
 locker::locker() {

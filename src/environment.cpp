@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverobject.h"
 #include "content_sao.h"
 #include "settings.h"
-#include "log.h"
+#include "log_types.h"
 #include "profiler.h"
 #include "scripting_game.h"
 #include "nodedef.h"
@@ -664,7 +664,6 @@ void ServerEnvironment::loadMeta()
 		auto lock = block->try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return;
-
 		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
 		ServerMap *map = &m_env->getServerMap();
 
@@ -677,7 +676,7 @@ void ServerEnvironment::loadMeta()
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
 		{
-			MapNode n = block->getNodeNoEx(p0);
+			MapNode n = block->getNodeNoLock(p0);
 			content_t c = n.getContent();
 			v3s16 p = p0 + block->getPosRelative();
 
@@ -1263,9 +1262,6 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			if(block==NULL)
 				continue;
 
-			auto lock = block->try_lock_unique_rec();
-			if (!lock->owns_lock())
-				continue;
 			// Set current time as timestamp
 			block->setTimestampNoChangedFlag(m_game_time);
 
