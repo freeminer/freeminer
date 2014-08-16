@@ -135,12 +135,12 @@ void Connection::receive()
 		{
 		case ENET_EVENT_TYPE_CONNECT:
 			{
-				JMutexAutoLock peerlock(m_peers_mutex);
+				//JMutexAutoLock peerlock(m_peers_mutex);
 				u16 peer_id = PEER_ID_SERVER + 1;
 				if (m_peers.size() > 0)
 					// TODO: fix this shit
 					peer_id = m_peers.rbegin()->first + 1;
-				m_peers[peer_id] = event.peer;
+				m_peers.set(peer_id, event.peer);
 
 				event.peer->data = new u16;
 				*((u16*)event.peer->data) = peer_id;
@@ -197,8 +197,9 @@ void Connection::serve(u16 port)
 // peer
 void Connection::connect(Address addr)
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
-	std::map<u16, ENetPeer*>::iterator node = m_peers.find(PEER_ID_SERVER);
+	//JMutexAutoLock peerlock(m_peers_mutex);
+	//m_peers.lock_unique_rec();
+	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node != m_peers.end()){
 		throw ConnectionException("Already connected to a server");
 	}
@@ -225,7 +226,7 @@ void Connection::connect(Address addr)
 	ENetEvent event;
 	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
 			event.type == ENET_EVENT_TYPE_CONNECT) {
-		m_peers[PEER_ID_SERVER] = peer;
+		m_peers.set(PEER_ID_SERVER, peer);
 	} else {
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
@@ -236,7 +237,8 @@ void Connection::connect(Address addr)
 
 void Connection::disconnect()
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
+	//JMutexAutoLock peerlock(m_peers_mutex);
+	m_peers.lock_shared_rec();
 	for (std::map<u16, ENetPeer*>::iterator i = m_peers.begin();
 			i != m_peers.end(); ++i)
 		enet_peer_disconnect(i->second, 0);
@@ -252,7 +254,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	{
-		JMutexAutoLock peerlock(m_peers_mutex);
+		//JMutexAutoLock peerlock(m_peers_mutex);
 		if (m_peers.find(peer_id) == m_peers.end())
 			return;
 	}
@@ -272,11 +274,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 
 ENetPeer* Connection::getPeer(u16 peer_id)
 {
-	std::map<u16, ENetPeer*>::iterator node;
-	{
-		JMutexAutoLock peerlock(m_peers_mutex);
-		node = m_peers.find(peer_id);
-	}
+	auto node = m_peers.find(peer_id);
 
 	if(node == m_peers.end())
 		return NULL;
@@ -286,7 +284,7 @@ ENetPeer* Connection::getPeer(u16 peer_id)
 
 bool Connection::deletePeer(u16 peer_id, bool timeout)
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
+	//JMutexAutoLock peerlock(m_peers_mutex);
 	if(m_peers.find(peer_id) == m_peers.end())
 		return false;
 
@@ -344,9 +342,9 @@ void Connection::Connect(Address address)
 
 bool Connection::Connected()
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
+	//JMutexAutoLock peerlock(m_peers_mutex);
 
-	std::map<u16, ENetPeer*>::iterator node = m_peers.find(PEER_ID_SERVER);
+	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node == m_peers.end())
 		return false;
 
@@ -423,12 +421,12 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
-	JMutexAutoLock peerlock(m_peers_mutex);
+	//JMutexAutoLock peerlock(m_peers_mutex);
 	auto a = Address(0, 0, 0, 0, 0);
-	if (!m_peers[peer_id])
+	if (!m_peers.get(peer_id))
 		return a;
-	a.setPort(m_peers[peer_id]->address.port);
-	a.setAddress(m_peers[peer_id]->address.host);
+	a.setPort(m_peers.get(peer_id)->address.port);
+	a.setAddress(m_peers.get(peer_id)->address.host);
 	return a;
 }
 

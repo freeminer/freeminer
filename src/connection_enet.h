@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <msgpack.hpp>
 #include "util/msgpack_serialize.h"
 #include "util/thread_pool.h"
+#include "util/lock.h"
 
 #define CHANNEL_COUNT 3
 
@@ -343,8 +344,8 @@ private:
 	ENetPeer *m_peer;
 	u16 m_peer_id;
 
-	std::map<u16, ENetPeer*> m_peers;
-	JMutex m_peers_mutex;
+	shared_map<u16, ENetPeer*> m_peers;
+	//JMutex m_peers_mutex;
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
