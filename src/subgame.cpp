@@ -247,7 +247,7 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		fs::CreateAllDirs(path);
 		std::ostringstream ss(std::ios_base::binary);
 		ss<<"gameid = "<<gameid<<
-#if USE_LEVELDB or defined(__ANDROID__)
+#if USE_LEVELDB
 				"\nbackend = leveldb\n";
 #else
 				"\nbackend = sqlite3\n";

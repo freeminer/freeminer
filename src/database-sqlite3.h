@@ -51,6 +51,9 @@ private:
 	sqlite3 *m_database;
 	sqlite3_stmt *m_database_read;
 	sqlite3_stmt *m_database_write;
+#ifdef __ANDROID__
+	sqlite3_stmt *m_database_delete;
+#endif
 	sqlite3_stmt *m_database_list;
 	std::mutex mutex;
 
