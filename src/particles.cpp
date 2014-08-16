@@ -34,6 +34,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "clientmap.h"
 #include "mapnode.h"
+#include <unordered_map>
+
 
 /*
 	Utility
@@ -47,7 +49,7 @@ v3f random_v3f(v3f min, v3f max)
 }
 
 std::vector<Particle*> all_particles;
-std::map<u32, ParticleSpawner*> all_particlespawners;
+std::unordered_map<u32, ParticleSpawner*> all_particlespawners;
 
 Particle::Particle(
 	IGameDef *gamedef,
@@ -436,7 +438,7 @@ void ParticleSpawner::step(float dtime, ClientEnvironment &env)
 
 void allparticlespawners_step (float dtime, ClientEnvironment &env)
 {
-	for(std::map<u32, ParticleSpawner*>::iterator i = 
+	for(auto i =
 			all_particlespawners.begin();
 			i != all_particlespawners.end();)
 	{
@@ -464,7 +466,7 @@ void delete_particlespawner (u32 id)
 
 void clear_particles ()
 {
-	for(std::map<u32, ParticleSpawner*>::iterator i =
+	for(auto i =
 			all_particlespawners.begin();
 			i != all_particlespawners.end();)
 	{

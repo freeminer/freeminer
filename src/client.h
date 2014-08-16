@@ -38,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "particles.h"
 #include "util/thread_pool.h"
+#include "util/unordered_map_hash.h"
 
 #include <msgpack.hpp>
 
@@ -72,10 +73,10 @@ public:
 	void addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool urgent);
 	std::shared_ptr<MeshMakeData> pop();
 
-	shared_map<v3s16, bool> m_process;
+	shared_unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> m_process;
 private:
-	shared_map<unsigned int, std::map<v3s16, std::shared_ptr<MeshMakeData>>> m_queue;
-	std::map<v3s16, unsigned int> m_ranges;
+	shared_map<unsigned int, std::unordered_map<v3s16, std::shared_ptr<MeshMakeData>, v3s16Hash, v3s16Equal>> m_queue;
+	std::unordered_map<v3s16, unsigned int, v3s16Hash, v3s16Equal> m_ranges;
 };
 
 struct MeshUpdateResult

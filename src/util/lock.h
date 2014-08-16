@@ -162,4 +162,84 @@ public:
 	}
 };
 
+#include <unordered_map>
+
+template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
+         class Alloc = std::allocator<std::pair<const Key, T> >>
+class shared_unordered_map: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
+	public locker {
+public:
+	typedef Key                                                        key_type;
+	typedef T                                                          mapped_type;
+	typedef Hash                                                       hasher;
+	typedef Pred                                                       key_equal;
+	typedef Alloc                                                      allocator_type;
+	typedef std::pair<const key_type, mapped_type>                          value_type;
+	typedef value_type&                                                reference;
+	typedef const value_type&                                          const_reference;
+	typedef typename std::allocator_traits<allocator_type>::pointer         pointer;
+	typedef typename std::allocator_traits<allocator_type>::const_pointer   const_pointer;
+	typedef typename std::allocator_traits<allocator_type>::size_type       size_type;
+	typedef typename std::allocator_traits<allocator_type>::difference_type difference_type;
+
+	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
+	typedef typename full_type::const_iterator const_iterator;
+	typedef typename full_type::iterator iterator;
+
+	mapped_type& get(const key_type& k) {
+		auto lock = lock_shared_rec();
+		return full_type::operator[](k);
+	}
+
+	void set(const key_type& k, const mapped_type& v) {
+		auto lock = lock_unique_rec();
+		full_type::operator[](k) = v;
+	}
+
+	bool      empty() {
+		auto lock = lock_shared_rec();
+		return full_type::empty();
+	}
+
+	size_type size() {
+		auto lock = lock_shared_rec();
+		return full_type::size();
+	}
+
+	size_type count(const key_type& k) {
+		auto lock = lock_shared_rec();
+		return full_type::count(k);
+	}
+
+	mapped_type& operator[](const key_type& k) = delete;
+
+	mapped_type& operator[](key_type&& k) = delete;
+
+	typename full_type::iterator  erase(const_iterator position) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(position);
+	}
+
+	typename full_type::iterator  erase(iterator position) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(position);
+	}
+
+	size_type erase(const key_type& k) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(k);
+	}
+
+	typename full_type::iterator  erase(const_iterator first, const_iterator last) {
+		auto lock = lock_unique_rec();
+		return full_type::erase(first, last);
+	}
+
+	void clear() {
+		auto lock = lock_unique_rec();
+		full_type::clear();
+	}
+
+};
+
 #endif

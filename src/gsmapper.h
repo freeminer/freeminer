@@ -27,6 +27,7 @@
 #include "irrlichttypes_extrabloated.h"
 #include "client.h"
 #include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -42,7 +43,7 @@ class gsMapper
 		std::map<v3s16, u16> d_map;
 		std::map<v3s16, u16> d_radar;
 		std::vector<video::SColor> d_colorids;
-		std::map<u16, u16> d_nodeids;
+		std::unordered_map<u16, u16> d_nodeids;
 		v3s16 d_origin;
 		u16 d_posx;
 		u16 d_posy;
