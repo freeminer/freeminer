@@ -898,7 +898,7 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 	v3f camera_position = m_camera_position;
 	m_camera_mutex.Unlock();
 
-	MapNode n = getNodeNoLock(floatToInt(camera_position, BS));
+	MapNode n = getNodeTry(floatToInt(camera_position, BS));
 	if (n.getContent() == CONTENT_IGNORE)
 		return; // may flicker
 

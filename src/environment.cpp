@@ -701,7 +701,7 @@ void ServerEnvironment::loadMeta()
 					{
 						if(p1 == p)
 							continue;
-						MapNode n = map->getNodeNoLock(p1);
+						MapNode n = map->getNodeTry(p1);
 						content_t c = n.getContent();
 						if (c == CONTENT_IGNORE)
 							continue;
