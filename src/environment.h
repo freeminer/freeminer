@@ -44,6 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "connection.h"
 #include "fmbitset.h"
 #include "util/lock.h"
+#include <unordered_set>
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -169,7 +170,7 @@ struct ABMWithState
 {
 	ActiveBlockModifier *abm;
 	float timer;
-	std::set<content_t> trigger_ids;
+	std::unordered_set<content_t> trigger_ids;
 	FMBitset required_neighbors, required_neighbors_activate;
 
 	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
