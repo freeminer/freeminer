@@ -497,7 +497,7 @@ public:
 		getId(name, id);
 		return id;
 	}
-	virtual void getIds(const std::string &name, std::set<content_t> &result)
+	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result)
 			const
 	{
 		//TimeTaker t("getIds", NULL, PRECISION_MICRO);

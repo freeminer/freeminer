@@ -38,6 +38,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
 #include "fmbitset.h"
+#include <unordered_set>
+
 
 class IItemDefManager;
 class ITextureSource;
@@ -311,7 +313,7 @@ public:
 	virtual bool getId(const std::string &name, content_t &result) const=0;
 	virtual content_t getId(const std::string &name) const=0;
 	// Allows "group:name" in addition to regular node names
-	virtual void getIds(const std::string &name, std::set<content_t> &result)
+	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result)
 			const=0;
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
@@ -332,7 +334,7 @@ public:
 	// If not found, returns CONTENT_IGNORE
 	virtual content_t getId(const std::string &name) const=0;
 	// Allows "group:name" in addition to regular node names
-	virtual void getIds(const std::string &name, std::set<content_t> &result)
+	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result)
 			const=0;
 	// If not found, returns the features of CONTENT_UNKNOWN
 	virtual const ContentFeatures& get(const std::string &name) const=0;
