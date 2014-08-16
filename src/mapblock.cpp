@@ -104,7 +104,7 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 {
 	if(isValidPosition(p) == false)
 	{
-		auto n = m_parent->getNodeNoLock(getPosRelative() + p);
+		auto n = m_parent->getNodeTry(getPosRelative() + p);
 		if (n.getContent() == CONTENT_IGNORE)
 			throw InvalidPositionException();
 		return n;

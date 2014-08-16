@@ -301,52 +301,43 @@ public:
 
 	MapNode getNode(v3s16 p)
 	{
-		if(data == NULL)
+		auto n = getNodeNoEx(p);
+		if (n.getContent() == CONTENT_IGNORE)
 			throw InvalidPositionException();
-		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Z < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = lock_shared_rec();
-		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
+		return n;
+	}
+
+	MapNode getNodeTry(v3s16 p)
+	{
+		auto lock = try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return MapNode(CONTENT_IGNORE);
+		return getNodeNoEx(p);
 	}
 
 	MapNode getNodeNoLock(v3s16 p)
 	{
-		if(data == NULL)
-			return MapNode(CONTENT_IGNORE);
-		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Z < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
+		if (!data)
 			return MapNode(CONTENT_IGNORE);
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
-	
+
 	MapNode getNodeNoEx(v3s16 p)
 	{
-		try{
-			return getNode(p);
-		}catch(InvalidPositionException &e){
-			return MapNode(CONTENT_IGNORE);
-		}
+		auto lock = lock_shared_rec();
+		return getNodeNoLock(p);
 	}
-	
-	void setNode(s16 x, s16 y, s16 z, MapNode & n)
+
+	void setNode(v3s16 p, MapNode & n)
 	{
 		if(data == NULL)
 			throw InvalidPositionException();
-		if(x < 0 || x >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(y < 0 || y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(z < 0 || z >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException();
 		auto lock = lock_unique_rec();
-		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
+		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
-	}
-	
-	void setNode(v3s16 p, MapNode & n)
-	{
-		setNode(p.X, p.Y, p.Z, n);
 	}
 
 	/*
@@ -392,7 +383,7 @@ public:
 		for(u16 z=0; z<d; z++)
 			for(u16 y=0; y<h; y++)
 				for(u16 x=0; x<w; x++)
-					setNode(x0+x, y0+y, z0+z, node);
+					setNode(v3s16(x0+x, y0+y, z0+z), node);
 	}
 
 	// See comments in mapblock.cpp
