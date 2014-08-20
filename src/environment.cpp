@@ -226,9 +226,10 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	required_neighbors_activate(CONTENT_ID_CAPACITY)
 {
 	auto ndef = senv->getGameDef()->ndef();
+	interval = abm->getTriggerInterval();
+	chance = abm->getTriggerChance();
 	// Initialize timer to random value to spread processing
-	float itv = abm->getTriggerInterval();
-	itv = MYMAX(0.001, itv); // No less than 1ms
+	float itv = MYMAX(0.001, interval); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
 	int maxval = MYMIN(0.51*itv, 60);   // +-60 seconds
 	timer = myrand_range(minval, maxval);
@@ -332,6 +333,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_active_objects_last(0),
 	m_active_block_abm_last(0),
 	m_active_block_abm_dtime(0),
+	m_active_block_abm_dtime_counter(0),
 	m_active_block_timer_last(0),
 	m_blocks_added_last(0),
 	m_game_time(0),
@@ -582,7 +584,7 @@ void ServerEnvironment::loadMeta()
 		for(auto & ai: abms){
 			auto i = &ai;
 			ActiveBlockModifier *abm = i->abm;
-			float trigger_interval = abm->getTriggerInterval();
+			float trigger_interval = i->interval;
 			if(trigger_interval < 0.001)
 				trigger_interval = 0.001;
 			float actual_interval = dtime_s;
@@ -590,15 +592,16 @@ void ServerEnvironment::loadMeta()
 				i->timer += dtime_s;
 				if(i->timer < trigger_interval)
 					continue;
-				i->timer -= trigger_interval;
-				if (i->timer > trigger_interval*2)
-					i->timer = 0;
-				actual_interval = trigger_interval;
+				actual_interval = i->timer;
+				if (i->timer > trigger_interval*3)
+					i->timer = trigger_interval;
+				else
+					i->timer -= trigger_interval;
 			}
 			float intervals = actual_interval / trigger_interval;
 			if(intervals == 0)
 				continue;
-			float chance = abm->getTriggerChance();
+			float chance = i->chance;
 			if(chance == 0)
 				chance = 1;
 			ActiveABM aabm;
@@ -607,7 +610,6 @@ void ServerEnvironment::loadMeta()
 			aabm.chance = chance / intervals;
 			if(aabm.chance == 0)
 				aabm.chance = 1;
-
 			// Trigger contents
 				for (auto &c : i->trigger_ids)
 				{
@@ -1223,7 +1225,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	}
 
 	g_profiler->add("SMap: Blocks: Active:", m_active_blocks.m_list.size());
-	m_active_block_abm_dtime += dtime;
+	m_active_block_abm_dtime_counter += dtime;
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval))
 	{
@@ -1234,7 +1236,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		if (!m_active_block_abm_last || !m_abmhandler) {
 			if (m_abmhandler)
 				delete m_abmhandler;
-			m_abmhandler = new ABMHandler(m_abms, m_active_block_abm_dtime, this, true, false);
+			m_abmhandler = new ABMHandler(m_abms, MYMAX(m_active_block_abm_dtime, m_active_block_abm_dtime_counter), this, true, false);
 		}
 /*
 		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
@@ -1284,8 +1286,10 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 					<<std::endl;
 		}
 */
-		if (!m_active_block_abm_last)
-			m_active_block_abm_dtime = 0;
+		if (!m_active_block_abm_last) {
+			m_active_block_abm_dtime = m_active_block_abm_dtime_counter;
+			m_active_block_abm_dtime_counter = 0;
+		}
 	}
 
 	/*

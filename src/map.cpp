@@ -2073,7 +2073,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
 	if (ret || loopcount > m_liquid_step_flow)
 		m_liquid_step_flow += (m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount/10;
-	// /*
+	/*
 	if (loopcount)
 		infostream<<"Map::transformLiquidsReal(): loopcount="<<loopcount
 		<<" avgflow="<<m_liquid_step_flow
@@ -2081,7 +2081,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		<<" queue="<< m_transforming_liquid.size()
 		<<" per="<< porting::getTimeMs() - (end_ms - max_cycle_ms)
 		<<" ret="<<ret<<std::endl;
-	// */
+	*/
 
 	JMutexAutoLock lock(m_transforming_liquid_mutex);
 
