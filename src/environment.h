@@ -169,6 +169,8 @@ public:
 struct ABMWithState
 {
 	ActiveBlockModifier *abm;
+	float interval;
+	float chance;
 	float timer;
 	std::unordered_set<content_t> trigger_ids;
 	FMBitset required_neighbors, required_neighbors_activate;
@@ -441,6 +443,7 @@ private:
 	u32 m_active_objects_last;
 	u32 m_active_block_abm_last;
 	float m_active_block_abm_dtime;
+	float m_active_block_abm_dtime_counter;
 	u32 m_active_block_timer_last;
 	std::set<v3s16> m_blocks_added;
 	u32 m_blocks_added_last;

@@ -2073,7 +2073,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
 	if (ret || loopcount > m_liquid_step_flow)
 		m_liquid_step_flow += (m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount/10;
-	// /*
+	/*
 	if (loopcount)
 		infostream<<"Map::transformLiquidsReal(): loopcount="<<loopcount
 		<<" avgflow="<<m_liquid_step_flow
@@ -2081,7 +2081,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		<<" queue="<< m_transforming_liquid.size()
 		<<" per="<< porting::getTimeMs() - (end_ms - max_cycle_ms)
 		<<" ret="<<ret<<std::endl;
-	// */
+	*/
 
 	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 
@@ -2759,7 +2759,6 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	v3s16 bigarea_blocks_max = blockpos_max + extra_borders;
 
 	data->vmanip = new ManualMapVoxelManipulator(this);
-	data->vmanip->replace_generated = 0;
 	//data->vmanip->setMap(this);
 
 	// Add the area
@@ -3513,7 +3512,6 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 
 ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 		VoxelManipulator(),
-		replace_generated(true),
 		m_create_area(false),
 		m_map(map)
 {
@@ -3630,8 +3628,6 @@ void ManualMapVoxelManipulator::blitBackAll(
 		bool existed = !(i->second & VMANIP_BLOCK_DATA_INEXIST);
 		if ((existed == false) || (block == NULL) ||
 			(overwrite_generated == false && block->isGenerated() == true))
-			continue;
-		if (!replace_generated && block->isGenerated()) // todo: remove replace_generated
 			continue;
 
 		block->copyFrom(*this);

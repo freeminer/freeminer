@@ -528,7 +528,6 @@ public:
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
 			bool overwrite_generated = true);
 
-	bool replace_generated;
 protected:
 	bool m_create_area;
 	Map *m_map;

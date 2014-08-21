@@ -1565,6 +1565,8 @@ minetest.get_heat(pos)
 ^ heat at pos
 minetest.get_humidity(pos)
 ^ humidity at pos
+minetest.get_time_us()
+^ get time in microseconds
 
 Inventory:
 minetest.get_inventory(location) -> InvRef

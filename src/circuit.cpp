@@ -490,7 +490,6 @@ void Circuit::load() {
 }
 
 void Circuit::save() {
-	dstream << "saved!" << std::endl;
 	auto lock = m_elements_mutex.lock_shared_rec();
 	std::ostringstream ostr(std::ios_base::binary);
 	std::ofstream out((m_savedir + DIR_DELIM + elements_states_file).c_str(), std::ios_base::binary);
