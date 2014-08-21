@@ -7,6 +7,10 @@
 #include <memory>
 #include <chrono>
 
+#ifdef _MSC_VER
+#define noexcept
+#endif
+
 #if USE_BOOST // not finished
 
 //#include <ctime>
