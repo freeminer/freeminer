@@ -490,7 +490,7 @@ class neighborRail {
 	tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 	u16 l = getInteriorLight(n, 0, nodedef);
-	video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+	video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 	float d = (float)BS/64;
 	
@@ -581,7 +581,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				top_is_same_liquid = true;
 
 			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(f.alpha, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(f.alpha, l, f.light_source);
 
 			/*
 				Generate sides
@@ -746,7 +746,6 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			// it at what it emits, for an increased effect
 			u8 light_source = nodedef->get(n).light_source;
 			if(light_source != 0){
-				//l = decode_light(undiminish_light(light_source));
 				l = decode_light(light_source);
 				l = l | (l<<8);
 			}
@@ -756,7 +755,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			// Otherwise use the light of this node (the liquid)
 			else
 				l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(f.alpha, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(f.alpha, l, f.light_source);
 
 			// Neighbor liquid levels (key = relative position)
 			// Includes current node
@@ -1082,7 +1081,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			TileSpec tile = getNodeTile(n, p, v3s16(0,0,0), data);
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			for(u32 j=0; j<6; j++)
 			{
@@ -1165,7 +1164,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			param2  = param2 & 63;
 			
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 			v3f pos = intToFloat(p, BS);
 			static const float a = BS / 2;
 			static const float g = a - 0.003;
@@ -1370,7 +1369,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					v3s16(0,0,0), data);
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			v3f pos = intToFloat(p, BS);
 			aabb3f box(-BS/2,-BS/2,-BS/2,BS/2,BS/2,BS/2);
@@ -1393,7 +1392,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			float d = (float) BS/64;
 			f32 HBB = HBS/8;
@@ -1473,7 +1472,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 				
 			float d = (float)BS/16;
 			float s = BS/2*f.visual_scale;
@@ -1516,7 +1515,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 			
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			float s = BS/2*f.visual_scale;
 
@@ -1563,7 +1562,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile_rot.rotation = 1;
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			const f32 post_rad=(f32)BS/8;
 			const f32 bar_rad=(f32)BS/16;
@@ -1652,8 +1651,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			};
 			TileSpec tiles[6];
 			
-			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			u16 l = getInteriorLight(n, 1, nodedef);
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			v3f pos = intToFloat(p, BS);
 
