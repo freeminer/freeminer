@@ -489,8 +489,6 @@
 #mgv7_spflags = mountains, ridges
 #mgv7_np_terrain = 10, 12, (350, 350, 350), 82341, 5, 0.6
 #mgv7_np_bgroup = 0.5, 0.3125, (350, 350, 350), 5923, 2, 0.6
-#mgv7_np_heat = 25, 50, (500, 500, 500), 35293, 1, 0
-#mgv7_np_humidity = 50, 31.25, (750, 750, 750), 12094, 2, 0.6
 
 # Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
 #mgindev_np_terrain_base   = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
@@ -506,8 +504,8 @@
 # Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 #weather = false
 # Weather noise maps
-#mg_heat                   = 15,   30,  (500, 500, 500), 5349, 2, 0.60);
-#mg_humidity               = 50,   50,  (500, 500, 500), 842,  3, 0.45);
+#mgv7_np_heat                   = 15,   30,  (500, 500, 500), 5349, 2, 0.60);
+#mgv7_np_humidity               = 50,   50,  (500, 500, 500), 842,  3, 0.45);
 # Season amplitude in celsius
 #weather_heat_season     = 30
 # Daily amplitude in celsius
