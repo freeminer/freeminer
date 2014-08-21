@@ -1049,19 +1049,19 @@ static void show_pause_menu(GUIFormSpecMenu** cur_formspec,
 	std::ostringstream os;
 
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-			<< "button_exit[1," << (ypos++) << ";3,0.5;btn_continue;"
+			<< "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
 					<< wide_to_narrow(wstrgettext("Continue"))     << "]";
 
 	if (!singleplayermode) {
-		os << "button_exit[1," << (ypos++) << ";3,0.5;btn_change_password;"
+		os << "button_exit[4," << (ypos++) << ";3,0.5;btn_change_password;"
 					<< wide_to_narrow(wstrgettext("Change Password")) << "]";
 		}
 
-	os 		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_sound;"
+	os 		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
 					<< wide_to_narrow(wstrgettext("Sound Volume")) << "]";
-	os		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_exit_menu;"
+	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
 					<< wide_to_narrow(wstrgettext("Exit to Menu")) << "]";
-	os		<< "button_exit[1," << (ypos++) << ";3,0.5;btn_exit_os;"
+	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"
 					<< wide_to_narrow(wstrgettext("Exit to OS"))   << "]";
 /*
 			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
