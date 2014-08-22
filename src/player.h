@@ -246,7 +246,7 @@ public:
 	// This is more stable and defines the maximum speed of the player
 	bool in_liquid_stable;
 	// Gets the viscosity of water to calculate friction
-	u8 liquid_viscosity;
+	float liquid_viscosity;
 	bool is_climbing;
 	bool swimming_vertical;
 	bool camera_barely_in_ceiling;

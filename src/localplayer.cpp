@@ -109,19 +109,19 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	try{
 		// If in liquid, the threshold of coming out is at higher y
-		if(in_liquid)
-		{
-			v3s16 pp = floatToInt(position + v3f(0,BS*0.1,0), BS);
-			in_liquid = nodemgr->get(map->getNode(pp).getContent()).isLiquid();
-			liquid_viscosity = nodemgr->get(map->getNode(pp).getContent()).liquid_viscosity;
-		}
 		// If not in liquid, the threshold of going in is at lower y
-		else
-		{
-			v3s16 pp = floatToInt(position + v3f(0,BS*0.5,0), BS);
-			in_liquid = nodemgr->get(map->getNode(pp).getContent()).isLiquid();
-			liquid_viscosity = nodemgr->get(map->getNode(pp).getContent()).liquid_viscosity;
+		v3s16 pp = floatToInt(position + v3f(0,BS*(in_liquid ? 0.1 : 0.5),0), BS);
+		auto n = map->getNode(pp);
+		auto f = nodemgr->get(n.getContent());
+		in_liquid = f.isLiquid();
+		liquid_viscosity = f.liquid_viscosity;
+		if (f.param_type_2 == CPT2_LEVELED) {
+			auto level = n.getLevel(nodemgr);
+			auto maxlevel = n.getMaxLevel(nodemgr);
+			if (level && maxlevel)
+				liquid_viscosity /= maxlevel / level;
 		}
+
 	}
 	catch(InvalidPositionException &e)
 	{
