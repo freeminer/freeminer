@@ -81,6 +81,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverlist.h"
 #include "httpfetch.h"
 #include "guiEngine.h"
+#include "player.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
@@ -1858,6 +1859,13 @@ int main(int argc, char *argv[])
 			// Break out of menu-game loop to shut down cleanly
 			if (device->run() == false || kill == true) {
 				break;
+			}
+
+			if (current_playername.length() > PLAYERNAME_SIZE-1) {
+				error_message = wgettext("Player name too long.");
+				playername = current_playername.substr(0,PLAYERNAME_SIZE-1);
+				g_settings->set("name", playername);
+				continue;
 			}
 
 			/*

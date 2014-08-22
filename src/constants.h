@@ -46,8 +46,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CONNECTION_TIMEOUT 30
 
-#define RESEND_TIMEOUT_MIN 0.5
-#define RESEND_TIMEOUT_MAX 15.0
+#define RESEND_TIMEOUT_MIN 0.1
+#define RESEND_TIMEOUT_MAX 3.0
 // resend_timeout = avg_rtt * this
 #define RESEND_TIMEOUT_FACTOR 8
 
