@@ -250,6 +250,19 @@ public:
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
 	void SetBlockDeleted(v3s16 p);
 
+	/**
+	 * tell client about this block being modified right now.
+	 * this information is required to requeue the block in case it's "on wire"
+	 * while modification is processed by server
+	 * @param p position of modified block
+	 */
+	void ResendBlockIfOnWire(v3s16 p);
+
+	s32 SendingCount()
+	{
+		return 0; //return m_blocks_sending.size();
+	}
+
 	// Increments timeouts and removes timed-out blocks from list
 	// NOTE: This doesn't fix the server-not-sending-block bug
 	//       because it is related to emerging, not sending.
