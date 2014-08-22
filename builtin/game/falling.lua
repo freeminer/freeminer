@@ -5,19 +5,26 @@
 --
 
 function node_drop(np, remove_fast)
-				local n2 = minetest.get_node(np)
-				local drops = minetest.get_node_drops(n2.name, "")
-				minetest.remove_node(np, remove_fast)
-				-- Add dropped items
-				local _, dropped_item
-				for _, dropped_item in ipairs(drops) do
-					minetest.add_item(np, dropped_item)
+			local n2 = minetest.get_node(np)
+			-- If it's not air or liquid, remove node and replace it with
+			-- it's drops
+			if n2.name ~= "air" and (not core.registered_nodes[n2.name] or
+					core.registered_nodes[n2.name].liquidtype == "none") then
+				core.remove_node(np, remove_fast)
+				if core.registered_nodes[n2.name].buildable_to == false then
+					-- Add dropped items
+					local drops = core.get_node_drops(n2.name, "")
+					local _, dropped_item
+					for _, dropped_item in ipairs(drops) do
+						core.add_item(np, dropped_item)
+					end
 				end
 				-- Run script hook
 				local _, callback
-				for _, callback in ipairs(minetest.registered_on_dignodes) do
+				for _, callback in ipairs(core.registered_on_dignodes) do
 					callback(np, n2, nil)
 				end
+			end
 end
 
 local remove_fast = 0
@@ -100,19 +107,6 @@ core.register_entity(":__builtin:falling_node", {
 			local n2 = core.get_node(np)
 		-- remove node and replace it with it's drops
 				node_drop(np, remove_fast)
---[[
-			local drops = core.get_node_drops(n2.name, "")
-			core.remove_node(np)
-			local _, dropped_item
-			for _, dropped_item in ipairs(drops) do
-				core.add_item(np, dropped_item)
-			end
-			-- Run script hook
-			local _, callback
-			for _, callback in ipairs(core.registered_on_dignodes) do
-				callback(np, n2, nil)
-
-]]--
 			-- Create node and remove entity
 			core.add_node(np, self.node)
 			self.object:remove()

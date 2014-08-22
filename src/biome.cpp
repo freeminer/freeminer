@@ -67,8 +67,8 @@ BiomeDefManager::BiomeDefManager() {
 
 	biomes.push_back(b);
 
-	g_settings->getNoiseParams("mg_heat", nparams_biome_def_heat);
-	g_settings->getNoiseParams("mg_humidity", nparams_biome_def_humidity);
+	g_settings->getNoiseParams("mgv7_np_heat", nparams_biome_def_heat);
+	g_settings->getNoiseParams("mgv7_np_humidity", nparams_biome_def_humidity);
 	year_days = g_settings->getS16("year_days");
 	weather_heat_season = g_settings->getS16("weather_heat_season");
 	weather_heat_daily = g_settings->getS16("weather_heat_daily");

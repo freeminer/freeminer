@@ -2315,6 +2315,8 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 					f32 dl = d_wanted.getLength();
 					if(dl > lplayer->movement_liquid_fluidity_smooth)
 						dl = lplayer->movement_liquid_fluidity_smooth;
+					if (lplayer->liquid_viscosity < 1) //rewrite this shit
+						dl /= 2;
 					dl *= (lplayer->liquid_viscosity * viscosity_factor) + (1 - viscosity_factor);
 
 					v3f d = d_wanted.normalize() * dl;
