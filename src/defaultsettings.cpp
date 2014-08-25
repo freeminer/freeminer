@@ -371,8 +371,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
-	settings->setDefault("more_threads", "true");
 
+#if defined(_WIN32)
+		settings->setDefault("more_threads", "false");
+#else
+		settings->setDefault("more_threads", "true");
+#endif
 
 #if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
