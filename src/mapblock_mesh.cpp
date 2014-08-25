@@ -59,7 +59,9 @@ int getFarmeshStep(MapDrawControl& draw_control, const v3s16 & playerpos, const 
 */
 
 MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_):
+#if defined(MESH_ZEROCOPY)
 	m_vmanip(map_),
+#endif
 	m_blockpos(-1337,-1337,-1337),
 	m_crack_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
@@ -80,7 +82,9 @@ void MeshMakeData::fill(MapBlock *block)
 	m_blockpos = block->getPos();
 	timestamp = block->getTimestamp();
 
-#if 0
+#if !defined(MESH_ZEROCOPY)
+	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
+
 	v3s16 blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 
 	/*
@@ -127,7 +131,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 {
 	m_blockpos = v3s16(0,0,0);
 
-#if 0
+#if !defined(MESH_ZEROCOPY)
 	v3s16 blockpos_nodes = v3s16(0,0,0);
 	VoxelArea area(blockpos_nodes-v3s16(1,1,1)*MAP_BLOCKSIZE,
 			blockpos_nodes+v3s16(1,1,1)*MAP_BLOCKSIZE*2-v3s16(1,1,1));
@@ -771,8 +775,7 @@ static void getTileInfo(
 		,int step
 	)
 {
-	//VoxelManipulator &vmanip = data->m_vmanip;
-	Map &vmanip = data->m_vmanip;
+	auto &vmanip = data->m_vmanip;
 	INodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 

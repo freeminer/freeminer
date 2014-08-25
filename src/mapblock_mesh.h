@@ -28,6 +28,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxel.h"
 #include <map>
 
+//#define MESH_ZEROCOPY //Exprimental, slower, needed for next farmesh
+
+
 class IGameDef;
 struct MapDrawControl;
 class Map;
@@ -42,8 +45,11 @@ class MapBlock;
 
 struct MeshMakeData
 {
-	//VoxelManipulator m_vmanip;
+#if defined(MESH_ZEROCOPY)
 	Map & m_vmanip;
+#else
+	VoxelManipulator m_vmanip;
+#endif
 	v3s16 m_blockpos;
 	v3s16 m_crack_pos_relative;
 	bool m_smooth_lighting;
