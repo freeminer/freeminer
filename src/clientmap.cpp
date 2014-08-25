@@ -195,7 +195,7 @@ void ClientMap::updateDrawList(float dtime)
 	if (!lock->owns_lock())
 		return;
 
-	const int maxq = 200;
+	const int maxq = 1000;
 
 	for(auto & ir : m_blocks) {
 
