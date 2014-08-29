@@ -363,13 +363,15 @@ void ClientMap::updateDrawList(float dtime)
 			drawlist.set(bp, block);
 
 			blocks_drawn++;
-			if(d/BS > farthest_drawn)
-				farthest_drawn = d/BS;
 
 		if (porting::getTimeMs() > end_ms) {
 			m_drawlist_last = n;
 			break;
 		}
+
+			if(d/BS > farthest_drawn)
+				farthest_drawn = d/BS;
+
 	}
 	}
 	if (!calls)
