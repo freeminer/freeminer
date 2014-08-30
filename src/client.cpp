@@ -169,7 +169,7 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		bool ipv6
-		, bool simple_singleplayer_mode_
+		, bool simple_singleplayer_mode
 ):
 	m_packetcounter_timer(0.0),
 	m_connection_reinit_timer(0.1),
@@ -211,7 +211,7 @@ Client::Client(
 	m_time_of_day_update_timer(0),
 	m_recommended_send_interval(0.1),
 	m_removed_sounds_check_timer(0),
-	simple_singleplayer_mode(simple_singleplayer_mode_),
+	m_simple_singleplayer_mode(simple_singleplayer_mode),
 	m_state(LC_Created)
 {
 	/*
@@ -2073,7 +2073,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	// Start mesh update thread after setting up content definitions
 	infostream<<"- Starting mesh update thread"<<std::endl;
 	if (!no_output) {
-		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (simple_singleplayer_mode ? 2 : 1));
+		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 2 : 1));
 		m_mesh_update_thread.Start(threads < 1 ? 1 : threads);
 	}
 

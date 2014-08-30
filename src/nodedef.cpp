@@ -175,9 +175,9 @@ void ContentFeatures::reset()
 	groups["dig_immediate"] = 2;
 	drawtype = NDT_NORMAL;
 	visual_scale = 1.0;
-	for(u32 i=0; i<6; i++)
+	for(u32 i = 0; i < 6; i++)
 		tiledef[i] = TileDef();
-	for(u16 j=0; j<CF_SPECIAL_COUNT; j++)
+	for(u16 j = 0; j < CF_SPECIAL_COUNT; j++)
 		tiledef_special[j] = TileDef();
 	alpha = 255;
 	post_effect_color = video::SColor(0, 0, 0, 0);
@@ -622,7 +622,7 @@ public:
 
 			// Figure out the actual tiles to use
 			TileDef tiledef[6];
-			for(u32 j=0; j<6; j++)
+			for(u32 j = 0; j < 6; j++)
 			{
 				tiledef[j] = f->tiledef[j];
 				if(tiledef[j].name == "")
@@ -720,7 +720,7 @@ public:
 #ifndef SERVER
 			if (tsrc) {
 			// Tiles (fill in f->tiles[])
-			for(u16 j=0; j<6; j++){
+			for(u16 j = 0; j < 6; j++){
 				// Shader
 				f->tiles[j].shader_id = tile_shader[j];
 				// Texture
