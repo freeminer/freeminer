@@ -1290,6 +1290,8 @@ minetest.formspec_escape(string) -> string
 ^ escapes characters [ ] \ , ;  that can not be used in formspecs
 minetest.is_yes(arg)
 ^ returns whether arg can be interpreted as yes
+minetest.get_us_time()
+^ returns time with microsecond precision
 
 minetest namespace reference
 -----------------------------
@@ -1569,8 +1571,6 @@ minetest.get_heat(pos)
 ^ heat at pos
 minetest.get_humidity(pos)
 ^ humidity at pos
-minetest.get_time_us()
-^ get time in microseconds
 
 Inventory:
 minetest.get_inventory(location) -> InvRef
