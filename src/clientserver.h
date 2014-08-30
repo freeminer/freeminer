@@ -526,7 +526,7 @@ enum ToClientCommand
 		u16 breath
 	*/
 
-	TOCLIENT_SET_SKY = 0xae, // MUST BE 0x4f (as in MT )BUT IT BROKE OLD FM SERVERS
+	TOCLIENT_SET_SKY = 0x4f,
 	/*
 		u16 command
 		u8[4] color (ARGB)
