@@ -138,7 +138,10 @@ void signal_handler_init(void)
 	Multithreading support
 */
 int getNumberOfProcessors() {
-#if defined(_SC_NPROCESSORS_ONLN)
+#if defined(_SC_NPROCESSORS_CONF)
+	return sysconf(_SC_NPROCESSORS_CONF);
+
+#elif defined(_SC_NPROCESSORS_ONLN)
 
 	return sysconf(_SC_NPROCESSORS_ONLN);
 
