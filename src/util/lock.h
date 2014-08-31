@@ -68,12 +68,12 @@ public:
 };
 */
 
-template<class T>
+template<class GUARD>
 class lock_rec {
 public:
-	T * lock;
+	GUARD * lock;
 	std::atomic<std::size_t> & thread_id;
-	lock_rec(T * lock_, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
+	lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
 	~lock_rec();
 	bool owns_lock();
 };
