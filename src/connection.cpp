@@ -2404,10 +2404,12 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 				}
 			}
 			catch(NotFoundException &e){
+/*
 				LOG(derr_con<<m_connection->getDesc()
 						<<"WARNING: ACKed packet not "
 						"in outgoing queue"
 						<<std::endl);
+*/
 				channel->UpdatePacketTooLateCounter();
 			}
 			throw ProcessedSilentlyException("Got an ACK");
