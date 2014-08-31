@@ -127,7 +127,7 @@ void * MeshUpdateThread::Thread()
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	porting::setThreadName(("MeshUpdateThread" + itos(id)).c_str());
-	porting::setThreadPriority(50);
+	porting::setThreadPriority(30);
 
 	while(!StopRequested())
 	{

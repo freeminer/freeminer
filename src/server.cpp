@@ -97,7 +97,7 @@ public:
 		ThreadStarted();
 
 		porting::setThreadName("Map");
-		porting::setThreadPriority(20);
+		porting::setThreadPriority(15);
 		while(!StopRequested()) {
 			try {
 				if (!m_server->AsyncRunMapStep())
@@ -139,7 +139,7 @@ public:
 		ThreadStarted();
 
 		porting::setThreadName("SendBlocksThread");
-		porting::setThreadPriority(50);
+		porting::setThreadPriority(30);
 		auto time = porting::getTimeMs();
 		while(!StopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
@@ -194,7 +194,7 @@ void * ServerThread::Thread()
 	ThreadStarted();
 
 	porting::setThreadName("ServerThread");
-	porting::setThreadPriority(10);
+	porting::setThreadPriority(40);
 
 	while(!StopRequested())
 	{
