@@ -105,16 +105,15 @@ template < class Key, class T, class Compare = std::less<Key>,
 class shared_map: public std::map<Key, T, Compare, Allocator>,
 	public locker {
 public:
-
-	typedef Key                                      key_type;
-	typedef T                                        mapped_type;
-	typedef Allocator                                allocator_type;
-	typedef typename allocator_type::size_type       size_type;
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
-	typedef typename full_type::const_iterator const_iterator;
-	typedef typename full_type::iterator iterator;
-	typedef typename full_type::reverse_iterator reverse_iterator;
-	typedef typename full_type::const_reverse_iterator const_reverse_iterator;
+	typedef Key                                           key_type;
+	typedef T                                             mapped_type;
+	typedef Allocator                                     allocator_type;
+	typedef typename allocator_type::size_type            size_type;
+	typedef typename full_type::const_iterator            const_iterator;
+	typedef typename full_type::iterator                  iterator;
+	typedef typename full_type::reverse_iterator          reverse_iterator;
+	typedef typename full_type::const_reverse_iterator    const_reverse_iterator;
 
 	mapped_type& get(const key_type& k) {
 		auto lock = lock_shared_rec();
@@ -228,22 +227,22 @@ template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::eq
 class shared_unordered_map: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
 	public locker {
 public:
+	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
 	typedef Key                                                        key_type;
 	typedef T                                                          mapped_type;
 	typedef Hash                                                       hasher;
 	typedef Pred                                                       key_equal;
 	typedef Alloc                                                      allocator_type;
-	typedef std::pair<const key_type, mapped_type>                          value_type;
+	typedef std::pair<const key_type, mapped_type>                     value_type;
 	typedef value_type&                                                reference;
 	typedef const value_type&                                          const_reference;
-	typedef typename std::allocator_traits<allocator_type>::pointer         pointer;
-	typedef typename std::allocator_traits<allocator_type>::const_pointer   const_pointer;
-	typedef typename std::allocator_traits<allocator_type>::size_type       size_type;
-	typedef typename std::allocator_traits<allocator_type>::difference_type difference_type;
+	typedef typename full_type::pointer                                pointer;
+	typedef typename full_type::const_pointer                          const_pointer;
+	typedef typename full_type::size_type                              size_type;
+	typedef typename full_type::difference_type                        difference_type;
 
-	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
-	typedef typename full_type::const_iterator const_iterator;
-	typedef typename full_type::iterator iterator;
+	typedef typename full_type::const_iterator                         const_iterator;
+	typedef typename full_type::iterator                               iterator;
 
 	mapped_type& get(const key_type& k) {
 		auto lock = lock_shared_rec();
