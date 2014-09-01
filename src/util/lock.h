@@ -98,6 +98,9 @@ public:
 	std::unique_ptr<lock_rec<try_shared_lock>> try_lock_shared_rec();
 };
 
+#include <memory>     // std::allocator
+#include <utility>    // std::pair
+#include <functional> // std::equal_to std::less
 
 #include <map>
 template < class Key, class T, class Compare = std::less<Key>,
