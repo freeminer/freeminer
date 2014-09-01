@@ -20,6 +20,7 @@ typedef boost::shared_mutex try_shared_mutex;
 typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK boost::defer_lock
+#define TRY_TO_LOCK boost::try_to_lock
 #define LOCK_TWO 1
 
 #elif CMAKE_HAVE_SHARED_MUTEX
@@ -29,7 +30,8 @@ typedef boost::unique_lock<try_shared_mutex> unique_lock;
 typedef std::shared_timed_mutex try_shared_mutex;
 typedef std::shared_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
-#define DEFER_LOCK std::defer_lock
+#define DEFER_LOCK	std::defer_lock
+#define TRY_TO_LOCK	std::try_to_lock
 #define LOCK_TWO 1
 
 #else
@@ -39,6 +41,7 @@ typedef std::mutex try_shared_mutex;
 typedef std::unique_lock<try_shared_mutex> try_shared_lock;
 typedef std::unique_lock<try_shared_mutex> unique_lock;
 #define DEFER_LOCK std::defer_lock
+#define TRY_TO_LOCK	std::try_to_lock
 #endif
 
 

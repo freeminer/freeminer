@@ -10,11 +10,12 @@ lock_rec<GUARD>::lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thr
 	if(thread_me != thread_id) {
 		if (try_lock) {
 			//ScopeProfiler sp(g_profiler, "Lock: try_lock");
-			lock = new GUARD(mtx, DEFER_LOCK);
-			if (lock->try_lock()) {
+			lock = new GUARD(mtx, TRY_TO_LOCK);
+			if (lock->owns_lock()) {
 				thread_id = thread_me;
 				return;
 			} else {
+				//g_profiler->add("Lock: try fail", 1);
 				//infostream<<"not locked "<<" thread="<<thread_id<<" lock="<<lock<<std::endl;
 			}
 			delete lock;
@@ -24,6 +25,8 @@ lock_rec<GUARD>::lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thr
 			thread_id = thread_me;
 			return;
 		}
+	} else {
+		//g_profiler->add("Lock: recursive", 1);
 	}
 	lock = nullptr;
 }

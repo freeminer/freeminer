@@ -24,12 +24,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "log_types.h"
 
+//#include "main.h"
+//#include "profiler.h"
+
 MapBlock * Map::getBlockBuffered(v3s16 & p)
 {
+	//ScopeProfiler sp(g_profiler, "Map: getBlockBuffered");
 	{
-		auto lock = try_shared_lock(m_block_cache_mutex);
-		if(m_block_cache && p == m_block_cache_p)
+		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if(lock.owns_lock() && m_block_cache && p == m_block_cache_p) {
+			//g_profiler->add("Map: getBlockBuffered cache hit", 1);
 			return m_block_cache;
+		}
 	}
 
 	MapBlock *block;
@@ -42,10 +48,13 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 	}
 
 	{
-	auto lock_cache = unique_lock(m_block_cache_mutex);
-	m_block_cache_p = p;
-	m_block_cache = block;
+		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if (lock.owns_lock()) {
+			m_block_cache_p = p;
+			m_block_cache = block;
+		}
 	}
+
 	return block;
 }
 
