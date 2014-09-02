@@ -81,7 +81,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_liquid_step_flow(1000),
-	m_block_cache(nullptr),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
 	m_circuit(circuit),
@@ -93,8 +92,6 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 
 Map::~Map()
 {
-	m_block_cache = nullptr;
-
 	for(auto &i : m_blocks_delete_1)
 		delete i.first;
 	for(auto &i : m_blocks_delete_2)
@@ -1473,7 +1470,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	Profiler modprofiler;
 
 	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
-		m_block_cache = nullptr;
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
 		for(auto &i : *m_blocks_delete) // delayed delete
