@@ -1213,6 +1213,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_OFF);
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_SIMPLE);
 		//material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+		//material.setFlag(video::EMF_WIREFRAME, true);
 		material.setTexture(0, p.tile.texture);
 
 		if (enable_shaders) {

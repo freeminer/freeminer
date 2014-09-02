@@ -22,6 +22,7 @@ public:
 	virtual void func();
 
 	void start (int n = 1);
+	void restart (int n = 1);
 	void stop ();
 	void join ();
 

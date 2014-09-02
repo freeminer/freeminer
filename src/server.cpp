@@ -165,7 +165,47 @@ public:
 };
 
 
+class LiquidThread : public thread_pool
+{
+	Server *m_server;
+public:
 
+	LiquidThread(Server *server):
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("Liquid");
+
+		DSTACK(__FUNCTION_NAME);
+		BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+
+		porting::setThreadName("Liquid");
+		porting::setThreadPriority(4);
+		int max_cycle_ms = 5000;
+		while(!StopRequested()) {
+			try {
+				shared_map<v3s16, MapBlock*> modified_blocks; //not used
+				int res = m_server->getEnv().getMap().transformLiquids(m_server, modified_blocks, m_server->m_lighting_modified_blocks, max_cycle_ms);
+				std::this_thread::sleep_for(std::chrono::milliseconds(res ? 5 : 1000));
+#ifdef NDEBUG
+			} catch (BaseException &e) {
+				errorstream<<"Liquid: exception: "<<e.what()<<std::endl;
+			} catch(std::exception &e) {
+				errorstream<<"Liquid: exception: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Liquid: Ooops..."<<std::endl;
+#else
+			} catch (int) { //nothing
+#endif
+			}
+		}
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+	return nullptr;
+	}
+};
 
 class ServerThread : public thread_pool
 {
@@ -296,6 +336,7 @@ Server::Server(
 	m_thread(NULL),
 	m_map_thread(nullptr),
 	m_sendblocks(nullptr),
+	m_liquid(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -348,6 +389,7 @@ Server::Server(
 	if (more_threads) {
 		m_map_thread = new MapThread(this);
 		m_sendblocks = new SendBlocksThread(this);
+		m_liquid = new LiquidThread(this);
 	}
 
 	// Create world if it doesn't exist
@@ -515,6 +557,8 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
+	if (m_liquid)
+		delete m_liquid;
 	if (m_sendblocks)
 		delete m_sendblocks;
 	if (m_map_thread)
@@ -556,23 +600,18 @@ void Server::start(Address bind_addr)
 	infostream<<"Starting server on "
 			<< bind_addr.serializeString() <<"..."<<std::endl;
 
-	// Stop thread if already running
-	m_thread->Stop();
-	if (m_sendblocks)
-		m_sendblocks->Stop();
-	if (m_map_thread)
-		m_map_thread->Stop();
-	
 	// Initialize connection
 	m_con.SetTimeoutMs(30);
 	m_con.Serve(bind_addr);
 
 	// Start thread
-	m_thread->Start();
+	m_thread->restart();
 	if (m_map_thread)
-		m_map_thread->Start();
+		m_map_thread->restart();
 	if (m_sendblocks)
-		m_sendblocks->Start();
+		m_sendblocks->restart();
+	if (m_liquid)
+		m_liquid->restart();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
 #ifndef NDEBUG
@@ -595,18 +634,15 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
-	m_thread->Stop();
 	//m_emergethread.setRun(false);
-	m_thread->Wait();
+	m_thread->join();
 	//m_emergethread.stop();
-	if (m_sendblocks) {
-		m_sendblocks->Stop();
-		m_sendblocks->Wait();
-	}
-	if (m_map_thread) {
-		m_map_thread->Stop();
-		m_map_thread->Wait();
-	}
+	if (m_liquid)
+		m_liquid->join();
+	if (m_sendblocks)
+		m_sendblocks->join();
+	if (m_map_thread)
+		m_map_thread->join();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -1265,7 +1301,7 @@ int Server::AsyncRunMapStep(bool async) {
 
 	/* Transform liquids */
 	m_liquid_transform_timer += dtime;
-	if(m_liquid_transform_timer >= m_liquid_transform_interval)
+	if(!g_settings->getBool("more_threads") && m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
 		TimeTaker timer_step("Server step: liquid transform");
 		m_liquid_transform_timer -= m_liquid_transform_interval;
