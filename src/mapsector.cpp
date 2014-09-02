@@ -107,7 +107,6 @@ void Map::deleteBlock(MapBlock *block, bool now)
 	else
 		(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
-	auto lock_cache = unique_lock(m_block_cache_mutex);
 	m_block_cache = nullptr;
 }
 
