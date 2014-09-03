@@ -39,10 +39,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "pathfinder.h"
 #include <unordered_set>
 
-
 #define GET_ENV_PTR ServerEnvironment* env =                                   \
 				dynamic_cast<ServerEnvironment*>(getEnv(L));                   \
-				if( env == NULL) return 0
+				if (env == NULL) return 0
 
 ///////////////////////////////////////////////////////////////////////////////
 

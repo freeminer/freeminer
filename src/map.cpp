@@ -2825,7 +2825,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	{
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
-		data->vmanip->blitBackAll(&changed_blocks, false);
+		data->vmanip->blitBackAll(&changed_blocks);
 	}
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()=" << changed_blocks.size());
@@ -3062,6 +3062,28 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	v3s16 p = block->getPos() *  MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
+}
+
+// N.B.  This requires no synchronization, since data will not be modified unless
+// the VoxelManipulator being updated belongs to the same thread.
+void ServerMap::updateVManip(v3s16 pos)
+{
+	Mapgen *mg = m_emerge->getCurrentMapgen();
+	if (!mg)
+		return;
+
+	ManualMapVoxelManipulator *vm = mg->vm;
+	if (!vm)
+		return;
+
+	if (!vm->m_area.contains(pos))
+		return;
+
+	s32 idx = vm->m_area.index(pos);
+	vm->m_data[idx] = getNodeNoEx(pos);
+	vm->m_flags[idx] &= ~VOXELFLAG_NO_DATA;
+
+	vm->m_is_dirty = true;
 }
 
 /**
@@ -3514,6 +3536,7 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 
 ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 		VoxelManipulator(),
+		m_is_dirty(false),
 		m_create_area(false),
 		m_map(map)
 {
@@ -3609,6 +3632,8 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 
 		m_loaded_blocks[p] = flags;
 	}
+
+	m_is_dirty = false;
 }
 
 void ManualMapVoxelManipulator::blitBackAll(

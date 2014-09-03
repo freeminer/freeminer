@@ -457,6 +457,8 @@ public:
 	bool saveBlock(MapBlock *block);
 	MapBlock* loadBlock(v3s16 p);
 
+	void updateVManip(v3s16 pos);
+
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
 
@@ -524,6 +526,8 @@ public:
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
 			bool overwrite_generated = true);
+
+	bool m_is_dirty;
 
 protected:
 	bool m_create_area;
