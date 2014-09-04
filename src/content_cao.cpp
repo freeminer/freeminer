@@ -1419,7 +1419,7 @@ void GenericCAO::updateTextures(const std::string &mod)
 		{
 			scene::IMesh *mesh = m_meshnode->getMesh();
 			{
-				std::string tname = "unknown_object.png";
+				std::string tname = "blank.png";
 				if(m_prop.textures.size() >= 1)
 					tname = m_prop.textures[0];
 				tname += mod;
@@ -1442,7 +1442,7 @@ void GenericCAO::updateTextures(const std::string &mod)
 				buf->getMaterial().setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
 			}
 			{
-				std::string tname = "unknown_object.png";
+				std::string tname = "blank.png";
 				if(m_prop.textures.size() >= 2)
 					tname = m_prop.textures[1];
 				else if(m_prop.textures.size() >= 1)

@@ -48,7 +48,7 @@ ObjectProperties::ObjectProperties():
 	automatic_face_movement_dir_offset(0.0),
 	force_load(false)
 {
-	textures.push_back("unknown_object.png");
+	textures.push_back("blank.png");
 	colors.push_back(video::SColor(255,255,255,255));
 }
 
