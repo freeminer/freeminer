@@ -30,6 +30,11 @@ void thread_pool::join () {
 	workers.clear();
 }
 
+void thread_pool::restart (int n) {
+	join();
+	start(n);
+}
+
 // JThread compat:
 void thread_pool::ThreadStarted() {
 };

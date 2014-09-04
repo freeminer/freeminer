@@ -62,6 +62,7 @@ class Circuit;
 class ServerThread;
 class MapThread;
 class SendBlocksThread;
+class LiquidThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -560,6 +561,7 @@ private:
 
 	MapThread *m_map_thread;
 	SendBlocksThread *m_sendblocks;
+	LiquidThread *m_liquid;
 
 	/*
 		Time related stuff
