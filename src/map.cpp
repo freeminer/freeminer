@@ -2049,7 +2049,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
 			v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
-			MapBlock *block = getBlockNoCreateNoEx(blockpos);
+			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 			if(block != NULL) {
 				modified_blocks[blockpos] = block;
 				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
@@ -3458,7 +3458,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block,
 		if (gametime < block->heat_last_update)
 			return block->heat + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(bp);
+		block = getBlockNoCreateNoEx(bp, true);
 	}
 	if (cache && cache->count(bp))
 		return cache->at(bp) + myrand_range(0, 1);
@@ -3483,7 +3483,7 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *bl
 		if (gametime < block->humidity_last_update)
 			return block->humidity + myrand_range(0, 1);
 	} else if (!cache) {
-		block = getBlockNoCreateNoEx(bp);
+		block = getBlockNoCreateNoEx(bp, true);
 	}
 	if (cache && cache->count(bp))
 		return cache->at(bp) + myrand_range(0, 1);
