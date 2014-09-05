@@ -1194,7 +1194,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
 					<<") being handled"<<std::endl;*/
 
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+			MapBlock *block = m_map->getBlockNoCreateNoEx(p, true);
 			if(block==NULL)
 				continue;
 
@@ -1274,7 +1274,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
 					<<") being handled"<<std::endl;*/
 
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+			MapBlock *block = m_map->getBlockNoCreateNoEx(p, true);
 			if(block==NULL)
 				continue;
 
