@@ -174,7 +174,7 @@ public:
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
-	MapBlock * getBlockNoCreateNoEx(v3s16 p);
+	MapBlock * getBlockNoCreateNoEx(v3s16 p, bool trylock = false);
 
 	/* Server overrides */
 	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
@@ -194,7 +194,7 @@ public:
 	// Returns a CONTENT_IGNORE node if not found
 	MapNode getNodeNoEx(v3s16 p);
 	MapNode getNodeTry(v3s16 p);
-	MapNode getNodeNoLock(v3s16 p); // dont use
+	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	void unspreadLight(enum LightBank bank,
 			std::map<v3s16, u8> & from_nodes,
@@ -350,7 +350,6 @@ public:
 	std::map<MapBlock *, int> * m_blocks_delete;
 	std::map<MapBlock *, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
-	MapBlock *getBlockBuffered(v3s16 & p);
 
 protected:
 	friend class LuaVoxelManip;

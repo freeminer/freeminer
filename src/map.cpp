@@ -172,13 +172,14 @@ MapNode Map::getNodeNoEx(v3s16 p)
 MapNode Map::getNodeTry(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos, true);
 	if(block == NULL)
 		return MapNode(CONTENT_IGNORE);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
 	return block->getNodeTry(relpos);
 }
 
+/*
 MapNode Map::getNodeNoLock(v3s16 p) //dont use
 {
 	v3s16 blockpos = getNodeBlockPos(p);
@@ -187,6 +188,7 @@ MapNode Map::getNodeNoLock(v3s16 p) //dont use
 		return MapNode(CONTENT_IGNORE);
 	return block->getNodeNoLock(p - blockpos*MAP_BLOCKSIZE);
 }
+*/
 
 // throws InvalidPositionException if not found
 MapNode Map::getNode(v3s16 p)
