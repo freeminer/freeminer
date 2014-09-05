@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 thread_local MapBlock *m_block_cache = nullptr;
 thread_local v3s16 m_block_cache_p;
 
-MapBlock * Map::getBlockBuffered(v3s16 & p)
+MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 {
 	//ScopeProfiler sp(g_profiler, "Map: getBlockBuffered");
 	{
@@ -42,7 +42,9 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 
 	MapBlock *block;
 	{
-		auto lock_blocks = m_blocks.lock_shared_rec();
+		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
+		if (!lock->owns_lock())
+			return nullptr;
 		auto n = m_blocks.find(p);
 		if(n == m_blocks.end())
 			return nullptr;
@@ -57,14 +59,9 @@ MapBlock * Map::getBlockBuffered(v3s16 & p)
 	return block;
 }
 
-MapBlock * Map::getBlockNoCreateNoEx(v3s16 p)
-{
-	return getBlockBuffered(p);
-}
-
 MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
 {
-	MapBlock *block = getBlockBuffered(p);
+	MapBlock *block = getBlockNoCreateNoEx(p);
 	if (block != NULL) {
 		infostream<<"Block already created "<<block->getPos()<<std::endl;
 		return block;
@@ -88,7 +85,7 @@ void Map::insertBlock(MapBlock *block)
 {
 	auto block_p = block->getPos();
 
-	auto block2 = getBlockBuffered(block_p);
+	auto block2 = getBlockNoCreateNoEx(block_p);
 	if(block2){
 		//throw AlreadyExistsException("Block already exists");
 		infostream<<"Block already exists " << block_p <<std::endl;
