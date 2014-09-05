@@ -1625,7 +1625,7 @@ struct NodeNeighbor {
 };
 
 void Map::transforming_liquid_push_back(v3s16 & p) {
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 	m_transforming_liquid.push_back(p);
 }
 
@@ -1702,7 +1702,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		*/
 		v3s16 p0;
 		{
-			JMutexAutoLock lock(m_transforming_liquid_mutex);
+			//JMutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = m_transforming_liquid.pop_front();
 		}
 		u16 total_level = 0;
@@ -2081,7 +2081,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		<<" ret="<<ret<<std::endl;
 	*/
 
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	while (must_reflow.size() > 0)
 		m_transforming_liquid.push_back(must_reflow.pop_front());
@@ -2107,7 +2107,7 @@ u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modifie
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("transformLiquids()");
 
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
@@ -2836,7 +2836,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		Copy transforming liquid information
 	*/
 	{
-	JMutexAutoLock lock(m_transforming_liquid_mutex);
+	//JMutexAutoLock lock(m_transforming_liquid_mutex);
 	while(data->transforming_liquid.size() > 0)
 	{
 		v3s16 p = data->transforming_liquid.pop_front();
