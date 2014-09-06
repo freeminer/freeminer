@@ -351,8 +351,9 @@ int RemoteClient::GetNextBlocks(
 			/*
 				Don't send already sent blocks
 			*/
+			auto block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			{
-				if(m_blocks_sent.find(p) != m_blocks_sent.end() && m_blocks_sent[p] > 0 && m_blocks_sent[p] + (d <= 2 ? 1 : d*d*d) > m_uptime) {
+				if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime) {
 					continue;
 				}
 			}
@@ -367,7 +368,7 @@ int RemoteClient::GetNextBlocks(
 			if(block != NULL)
 			{
 
-				if (m_blocks_sent[p] > 0 && m_blocks_sent[p] >= block->m_changed_timestamp) {
+				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					continue;
 				}
 
@@ -553,7 +554,7 @@ queue_full_break:
 
 void RemoteClient::SentBlock(v3s16 p, double time)
 {
-	m_blocks_sent[p] = time;
+	m_blocks_sent.set(p, time);
 }
 
 void RemoteClient::SetBlockNotSent(v3s16 p)
