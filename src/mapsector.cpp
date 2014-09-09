@@ -23,12 +23,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "mapblock.h"
 #include "log_types.h"
+#include "util/lock.h"
 
 //#include "main.h"
 //#include "profiler.h"
 
 #if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) < 407)
-#define THREAD_LOCAL static __thread
+try_shared_mutex m_block_cache_mutex;
 #else
 #define THREAD_LOCAL thread_local
 #endif
@@ -40,6 +41,10 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 {
 	//ScopeProfiler sp(g_profiler, "Map: getBlockBuffered");
 	{
+#ifndef THREAD_LOCAL
+		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if(lock.owns_lock())
+#endif
 		if(m_block_cache && p == m_block_cache_p) {
 			//g_profiler->add("Map: getBlockBuffered cache hit", 1);
 			return m_block_cache;
@@ -57,6 +62,10 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 		block = n->second;
 	}
 
+#ifndef THREAD_LOCAL
+		auto lock = try_unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if(lock.owns_lock())
+#endif
 	{
 		m_block_cache_p = p;
 		m_block_cache = block;
