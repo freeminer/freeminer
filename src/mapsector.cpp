@@ -30,6 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) < 407)
 try_shared_mutex m_block_cache_mutex;
+#define NO_THREAD_LOCAL
+#define THREAD_LOCAL
 #else
 #define THREAD_LOCAL thread_local
 #endif
@@ -41,7 +43,7 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 {
 	//ScopeProfiler sp(g_profiler, "Map: getBlockBuffered");
 	{
-#ifndef THREAD_LOCAL
+#ifdef NO_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -62,8 +64,8 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 		block = n->second;
 	}
 
-#ifndef THREAD_LOCAL
-		auto lock = try_unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
+#ifdef NO_THREAD_LOCAL
+		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
 	{
