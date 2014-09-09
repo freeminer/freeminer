@@ -27,8 +27,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "main.h"
 //#include "profiler.h"
 
-thread_local MapBlock *m_block_cache = nullptr;
-thread_local v3s16 m_block_cache_p;
+#if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) < 407)
+#define THREAD_LOCAL static __thread
+#else
+#define THREAD_LOCAL thread_local
+#endif
+
+THREAD_LOCAL MapBlock *m_block_cache = nullptr;
+THREAD_LOCAL v3s16 m_block_cache_p;
 
 MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 {
