@@ -82,7 +82,7 @@ MapBlock::~MapBlock()
 {
 	auto lock = lock_unique_rec();
 #ifndef SERVER
-	delMesh();
+	//delMesh();
 #endif
 
 	if(data)
@@ -786,6 +786,7 @@ void MapBlock::setMesh(std::shared_ptr<MapBlockMesh> rmesh) {
 	else                        {mesh   = rmesh;}
 }
 
+/*
 void MapBlock::delMesh() {
 	if (mesh16) {mesh16 = nullptr;}
 	if (mesh8)  {mesh8  = nullptr;}
@@ -793,6 +794,7 @@ void MapBlock::delMesh() {
 	if (mesh2)  {mesh2  = nullptr;}
 	if (mesh)   {mesh   = nullptr;}
 }
+*/
 #endif
 
 

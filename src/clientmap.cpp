@@ -75,6 +75,7 @@ ClientMap::ClientMap(
 	m_drawlist_current(0),
 	m_drawlist_last(0)
 {
+	m_drawlist_work = false;
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
 }
@@ -241,6 +242,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
+	m_drawlist_work = true;
 	for(auto & ir : draw_nearest) {
 
 		if (n++ < m_drawlist_last)
@@ -382,9 +384,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 		}
 
 	}
-
 	if (!calls)
 		m_drawlist_last = 0;
+
+	m_drawlist_work = false;
 
 //if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<std::endl;
 

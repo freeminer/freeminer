@@ -158,6 +158,7 @@ private:
 	std::unordered_map<v3s16, int, v3s16Hash, v3s16Equal> draw_nearest;
 public:
 	u32 m_drawlist_last;
+	std::atomic_bool m_drawlist_work;
 private:
 
 };

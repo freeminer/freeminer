@@ -511,6 +511,8 @@ void Client::step(float dtime)
 		int num_processed_meshes = 0;
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
+			if (getEnv().getClientMap().m_drawlist_work)
+				break;
 			num_processed_meshes++;
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
