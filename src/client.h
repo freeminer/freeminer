@@ -80,9 +80,9 @@ private:
 struct MeshUpdateResult
 {
 	v3s16 p;
-	MapBlockMesh * mesh;
+	std::shared_ptr<MapBlockMesh> mesh;
 
-	MeshUpdateResult(v3s16 & p_, MapBlockMesh * mesh_):
+	MeshUpdateResult(v3s16 & p_, std::shared_ptr<MapBlockMesh> mesh_):
 		p(p_),
 		mesh(mesh_)
 	{

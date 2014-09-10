@@ -141,7 +141,7 @@ void * MeshUpdateThread::Thread()
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making");
 
-		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, new MapBlockMesh(q.get(), m_camera_offset)));
+		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, std::shared_ptr<MapBlockMesh>(new MapBlockMesh(q.get(), m_camera_offset))));
 
 		m_queue_in.m_process.erase(q->m_blockpos);
 	}
@@ -237,11 +237,12 @@ Client::~Client()
 
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
+/*
 	while(!m_mesh_update_thread.m_queue_out.empty()) {
 		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 		delete r.mesh;
 	}
-
+*/
 
 	delete m_inventory_from_server;
 
@@ -518,7 +519,7 @@ void Client::step(float dtime)
 				if (r.mesh)
 					block->setMesh(r.mesh);
 			} else {
-				delete r.mesh;
+				//delete r.mesh;
 			}
 		}
 		if(num_processed_meshes > 0)

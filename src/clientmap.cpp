@@ -130,7 +130,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	return false;
 }
 
-void ClientMap::updateDrawList(float dtime)
+void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max_cycle_ms)
 {
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	//g_profiler->add("CM::updateDrawList() count", 1);
@@ -142,8 +142,8 @@ void ClientMap::updateDrawList(float dtime)
 		m_drawlist_current = !m_drawlist_current;
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
-	float max_cycle_ms = 300/getControl().fps_wanted;
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
+	if (!max_cycle_ms)
+		max_cycle_ms = 300/getControl().fps_wanted;
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
@@ -190,23 +190,24 @@ void ClientMap::updateDrawList(float dtime)
 	// Distance to farthest drawn block
 	float farthest_drawn = 0;
 	int m_mesh_queued = 0;
-	{
-	auto lock = m_blocks.try_lock_shared_rec();
-	if (!lock->owns_lock())
-		return;
 
-	const int maxq = 1000;
+	bool free_move = g_settings->getBool("free_move");
 
-	for(auto & ir : m_blocks) {
+	float range_max = 100000 * BS;
+	if(m_control.range_all == false)
+		range_max = m_control.wanted_range * BS;
 
-		if (n++ < m_drawlist_last)
-			continue;
-		else
-			m_drawlist_last = 0;
-		++calls;
+	if (!m_drawlist_last) {
+		ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
+		TimeTaker timer_step("ClientMap::updateDrawList make list");
+		draw_nearest.clear();
 
-		MapBlock *block = ir.second;
-		auto bp = block->getPos();
+		auto lock = m_blocks.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+
+		for(auto & ir : m_blocks) {
+			auto bp = ir.first;
 
 		if(m_control.range_all == false)
 		{
@@ -218,29 +219,6 @@ void ClientMap::updateDrawList(float dtime)
 			|| bp.Y > p_blocks_max.Y)
 				continue;
 		}
-
-			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), bp);
-			/*
-				Compare block position to camera position, skip
-				if not seen on display
-			*/
-
-			auto mesh = block->getMesh(mesh_step);
-			if (mesh)
-				mesh->updateCameraOffset(m_camera_offset);
-
-			float range_max = 100000 * BS;
-			if(m_control.range_all == false)
-				range_max = m_control.wanted_range * BS;
-
-/*			float d = 0.0;
-			if(isBlockInSight(bp, camera_position,
-					camera_direction, 0, camera_fov,
-					range, &d) == false && d > MAP_BLOCKSIZE*BS)
-			{
-				continue;
-			}
-*/
 
 			v3s16 blockpos_nodes = bp * MAP_BLOCKSIZE;
 			// Block center position
@@ -254,20 +232,49 @@ void ClientMap::updateDrawList(float dtime)
 			if (d> range_max)
 				continue;
 			int range = d / (MAP_BLOCKSIZE * BS);
+			draw_nearest[bp] = range;
+		}
+	}
 
-			// This is ugly (spherical distance limit?)
-			/*if(m_control.range_all == false &&
-					d - 0.5*BS*MAP_BLOCKSIZE > range)
-				continue;*/
+	const int maxq = 1000;
+
+
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
+
+	for(auto & ir : draw_nearest) {
+
+		if (n++ < m_drawlist_last)
+			continue;
+		else
+			m_drawlist_last = 0;
+		++calls;
+
+		auto bp = ir.first;
+		//auto block = getBlockNoCreateNoEx(bp);
+		auto * block = m_blocks.get(bp);
+		if (!block)
+			continue;
+
+			int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), bp);
+			/*
+				Compare block position to camera position, skip
+				if not seen on display
+			*/
+
+			auto mesh = block->getMesh(mesh_step);
+			if (mesh)
+				mesh->updateCameraOffset(m_camera_offset);
+
+			int range = ir.second;
 
 			blocks_in_range++;
 
+			auto smesh = mesh ? mesh->getMesh() : nullptr;
+			auto smesh_size = smesh ? smesh->getMeshBufferCount() : 0;
 			/*
 				Ignore if mesh doesn't exist
 			*/
 			{
-				//JMutexAutoLock lock(block->mesh_mutex);
-
 				if(!mesh) {
 					blocks_in_range_without_mesh++;
 					if (m_mesh_queued < maxq || range <= 2) {
@@ -276,7 +283,7 @@ void ClientMap::updateDrawList(float dtime)
 					}
 					continue;
 				}
-				if(mesh_step == mesh->step && block->getTimestamp() <= mesh->timestamp && (!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())) {
+				if(mesh_step == mesh->step && block->getTimestamp() <= mesh->timestamp && !smesh_size) {
 					blocks_in_range_without_mesh++;
 					continue;
 				}
@@ -289,7 +296,7 @@ void ClientMap::updateDrawList(float dtime)
 			// No occlusion culling when free_move is on and camera is
 			// inside ground
 			bool occlusion_culling_enabled = true;
-			if(g_settings->getBool("free_move")){
+			if(free_move){
 				MapNode n = getNodeNoEx(cam_pos_nodes);
 				if(n.getContent() == CONTENT_IGNORE ||
 						nodemgr->get(n).solidness == 2)
@@ -353,7 +360,7 @@ void ClientMap::updateDrawList(float dtime)
 				++m_mesh_queued;
 			}
 
-			if(!mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount())
+			if(!smesh_size)
 				continue;
 
 			mesh->incrementUsageTimer(dtime);
@@ -364,8 +371,8 @@ void ClientMap::updateDrawList(float dtime)
 
 			blocks_drawn++;
 
-			if(d/BS > farthest_drawn)
-				farthest_drawn = d/BS;
+			if(range * MAP_BLOCKSIZE > farthest_drawn)
+				farthest_drawn = range * MAP_BLOCKSIZE;
 
 			if (farthest_drawn > m_control.farthest_drawn)
 				m_control.farthest_drawn = farthest_drawn;
@@ -375,9 +382,8 @@ void ClientMap::updateDrawList(float dtime)
 			break;
 		}
 
+	}
 
-	}
-	}
 	if (!calls)
 		m_drawlist_last = 0;
 
@@ -532,11 +538,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	auto lock = m_drawlist->lock_shared_rec();
 	for(auto & ir : *m_drawlist) {
-		MapBlock *block = ir.second;
+		auto block = ir.second;
 
 		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block->getPos());
 		// If the mesh of the block happened to get deleted, ignore it
-		auto *mapBlockMesh = block->getMesh(mesh_step);
+		auto mapBlockMesh = block->getMesh(mesh_step);
 		if (!mapBlockMesh)
 			continue;
 
