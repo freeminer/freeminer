@@ -269,8 +269,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 			blocks_in_range++;
 
-			auto smesh = mesh ? mesh->getMesh() : nullptr;
-			auto smesh_size = smesh ? smesh->getMeshBufferCount() : 0;
+			auto smesh_size = block->mesh_size;
 			/*
 				Ignore if mesh doesn't exist
 			*/

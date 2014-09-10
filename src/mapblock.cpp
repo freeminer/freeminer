@@ -73,7 +73,8 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	
 #ifndef SERVER
 	mesh = NULL;
-	mesh2 = mesh4 = mesh8 = mesh16 = NULL;
+	mesh2 = mesh4 = mesh8 = mesh16 = nullptr;
+	mesh_size = 0;
 #endif
 }
 
@@ -776,6 +777,8 @@ std::shared_ptr<MapBlockMesh> MapBlock::getMesh(int step) {
 }
 
 void MapBlock::setMesh(std::shared_ptr<MapBlockMesh> rmesh) {
+	if (rmesh && !mesh_size)
+		mesh_size = rmesh->getMesh()->getMeshBufferCount();
 	     if (rmesh->step == 16) {mesh16 = rmesh;}
 	else if (rmesh->step == 8 ) {mesh8  = rmesh;}
 	else if (rmesh->step == 4 ) {mesh4  = rmesh;}
