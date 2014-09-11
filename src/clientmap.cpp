@@ -199,13 +199,14 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 		range_max = m_control.wanted_range * BS;
 
 	if (!m_drawlist_last) {
-		ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
-		TimeTaker timer_step("ClientMap::updateDrawList make list");
-		draw_nearest.clear();
+		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
+		//TimeTaker timer_step("ClientMap::updateDrawList make list");
 
 		auto lock = m_blocks.try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return;
+
+		draw_nearest.clear();
 
 		for(auto & ir : m_blocks) {
 			auto bp = ir.first;

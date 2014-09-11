@@ -2768,7 +2768,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	// Add the area
 	{
 		//TimeTaker timer("initBlockMake() initialEmerge");
-		data->vmanip->initialEmerge(bigarea_blocks_min, bigarea_blocks_max, false);
+		data->vmanip->initialEmerge(bigarea_blocks_min, bigarea_blocks_max);
 	}
 
 	// Ensure none of the blocks to be generated were marked as containing CONTENT_IGNORE
@@ -2827,7 +2827,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	{
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
-		data->vmanip->blitBackAll(&changed_blocks);
+		data->vmanip->blitBackAll(&changed_blocks, false);
 	}
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()=" << changed_blocks.size());
