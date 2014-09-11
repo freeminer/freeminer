@@ -515,9 +515,9 @@ public:
 	void pushElementsToCircuit(Circuit* circuit);
 
 #ifndef SERVER // Only on client
-	MapBlockMesh* getMesh(int step = 1);
-	void setMesh(MapBlockMesh* rmesh);
-	void delMesh();
+	std::shared_ptr<MapBlockMesh> getMesh(int step = 1);
+	void setMesh(std::shared_ptr<MapBlockMesh> rmesh);
+	//void delMesh();
 #endif
 
 private:
@@ -551,8 +551,9 @@ public:
 	*/
 
 #ifndef SERVER // Only on client
-	MapBlockMesh *mesh;
-	MapBlockMesh  *mesh2, *mesh4, *mesh8, *mesh16;
+	std::shared_ptr<MapBlockMesh> mesh;
+	std::shared_ptr<MapBlockMesh>  mesh2, mesh4, mesh8, mesh16;
+	unsigned int mesh_size;
 #endif
 	
 	NodeMetadataList m_node_metadata;

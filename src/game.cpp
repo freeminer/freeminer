@@ -3580,13 +3580,23 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				camera_offset_changed){
 			update_draw_list_timer = 0;
+			bool allow = true;
 #ifndef __ANDROID__
-			if (g_settings->getBool("more_threads"))
-				updateDrawList_future = std::async(std::launch::async, [](Client * client, float dtime){ client->getEnv().getClientMap().updateDrawList(dtime); }, &client, dtime);
+			if (g_settings->getBool("more_threads")) {
+				bool allow = true;
+				if (updateDrawList_future.valid()) {
+					auto res = updateDrawList_future.wait_for(std::chrono::milliseconds(0));
+					if (res == std::future_status::timeout)
+						allow = false;
+				}
+				if (allow)
+					updateDrawList_future = std::async(std::launch::async, [](Client * client, video::IVideoDriver* driver, float dtime){ client->getEnv().getClientMap().updateDrawList(driver, dtime, 1000); }, &client, driver, dtime);
+			}
 			else
 #endif
-				client.getEnv().getClientMap().updateDrawList(dtime);
-			update_draw_list_last_cam_pos = camera_position;
+				client.getEnv().getClientMap().updateDrawList(driver, dtime);
+			if (allow)
+				update_draw_list_last_cam_pos = camera_position;
 		}
 
 		/*
