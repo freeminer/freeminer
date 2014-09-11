@@ -36,29 +36,15 @@ MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emer
 
 	float_islands = sp->float_islands;
 
-	noise_terrain_base    = new Noise(&sp->np_terrain_base,   seed, csize.X, csize.Z);
-	noise_terrain_higher  = new Noise(&sp->np_terrain_higher, seed, csize.X, csize.Z);
-	noise_steepness       = new Noise(&sp->np_steepness,      seed, csize.X, csize.Z);
-	noise_height_select   = new Noise(&sp->np_height_select,  seed, csize.X, csize.Z);
-	noise_mud             = new Noise(&sp->np_mud,            seed, csize.X, csize.Z);
 	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
-	noise_biome           = new Noise(&sp->np_biome,          seed, csize.X, csize.Z);
-	noise_beach           = new Noise(&sp->np_beach,          seed, csize.X, csize.Z);
 }
 
 MapgenIndev::~MapgenIndev() {
-	delete noise_terrain_base;
-	delete noise_terrain_higher;
-	delete noise_steepness;
-	delete noise_height_select;
-	delete noise_mud;
 	delete noise_float_islands1;
 	delete noise_float_islands2;
 	delete noise_float_islands3;
-	delete noise_biome;
-	delete noise_beach;
 }
 
 void MapgenIndev::calculateNoise() {
@@ -166,60 +152,6 @@ void MapgenIndevParams::writeParams(Settings *settings) {
 	settings->setNoiseIndevParams("mgindev_np_float_islands2", np_float_islands2);
 	settings->setNoiseIndevParams("mgindev_np_float_islands3", np_float_islands3);
 }
-
-
-float MapgenIndev::baseTerrainLevelFromNoise(v2s16 p) {
-	if (flags & MG_FLAT)
-		return water_level;
-		
-	float terrain_base   = NoisePerlin2DPosOffset(noise_terrain_base->np,
-							p.X, 0.5, p.Y, 0.5, seed);
-	float terrain_higher = NoisePerlin2DPosOffset(noise_terrain_higher->np,
-							p.X, 0.5, p.Y, 0.5, seed);
-	float steepness      = NoisePerlin2DPosOffset(noise_steepness->np,
-							p.X, 0.5, p.Y, 0.5, seed);
-	float height_select  = NoisePerlin2DNoTxfmPosOffset(noise_height_select->np,
-							p.X, 0.5, p.Y, 0.5, seed);
-
-	return baseTerrainLevel(terrain_base, terrain_higher,
-							steepness,    height_select);
-}
-
-float MapgenIndev::baseTerrainLevelFromMap(int index) {
-	if (flags & MG_FLAT)
-		return water_level;
-	
-	float terrain_base   = noise_terrain_base->result[index];
-	float terrain_higher = noise_terrain_higher->result[index];
-	float steepness      = noise_steepness->result[index];
-	float height_select  = noise_height_select->result[index];
-	
-	return baseTerrainLevel(terrain_base, terrain_higher,
-							steepness,    height_select);
-}
-
-float MapgenIndev::getMudAmount(int index) {
-	if (flags & MG_FLAT)
-		return AVERAGE_MUD_AMOUNT;
-		
-	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
-			0.5+(float)p.X/200, 0.5+(float)p.Y/200,
-			seed+91013, 3, 0.55));*/
-	
-	return noise_mud->result[index];
-}
-
-bool MapgenIndev::getHaveBeach(int index)
-{
-	// Determine whether to have sand here
-	/*double sandnoise = noise2d_perlin(
-			0.2+(float)p2d.X/250, 0.7+(float)p2d.Y/250,
-			seed+59420, 3, 0.50);*/
-	
-	float sandnoise = noise_beach->result[index];
-	return (sandnoise > freq_beach);
-}
-
 
 void MapgenIndev::generateCaves(int max_stone_y) {
 	float cave_amount = NoisePerlin2D(np_cave, node_min.X, node_min.Y, seed);

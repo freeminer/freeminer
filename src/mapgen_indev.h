@@ -32,13 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 struct MapgenIndevParams : public MapgenV6Params {
 	s16 float_islands;
-	NoiseParams np_terrain_base;
-	NoiseParams np_terrain_higher;
-	NoiseParams np_steepness;
-	NoiseParams np_height_select;
-	NoiseParams np_mud;
-	NoiseParams np_biome;
-	NoiseParams np_beach;
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
@@ -52,13 +45,6 @@ struct MapgenIndevParams : public MapgenV6Params {
 
 class MapgenIndev : public MapgenV6 {
 public:
-	Noise *noise_terrain_base;
-	Noise *noise_terrain_higher;
-	Noise *noise_steepness;
-	Noise *noise_height_select;
-	Noise *noise_mud;
-	Noise *noise_biome;
-	Noise *noise_beach;
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
@@ -68,10 +54,6 @@ public:
 	~MapgenIndev();
 	void calculateNoise();
 
-	float baseTerrainLevelFromNoise(v2s16 p);
-	float baseTerrainLevelFromMap(int index);
-	float getMudAmount(int index);
-	bool getHaveBeach(int index);
 	void generateCaves(int max_stone_y);
 	void generateExperimental();
 	
