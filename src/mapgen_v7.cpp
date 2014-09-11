@@ -94,9 +94,9 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	noise_humidity = new Noise(bmgr->np_humidity, seed, csize.X, csize.Z);	
 
 	float_islands = sp->float_islands;
-	noiseindev_float_islands1  = new NoiseIndev(&sp->npindev_float_islands1, seed, csize.X, csize.Y, csize.Z);
-	noiseindev_float_islands2  = new NoiseIndev(&sp->npindev_float_islands2, seed, csize.X, csize.Y, csize.Z);
-	noiseindev_float_islands3  = new NoiseIndev(&sp->npindev_float_islands3, seed, csize.X, csize.Z);
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 }
 
 
@@ -118,9 +118,9 @@ MapgenV7::~MapgenV7() {
 	delete[] heightmap;
 	delete[] biomemap;
 
-	delete noiseindev_float_islands1;
-	delete noiseindev_float_islands2;
-	delete noiseindev_float_islands3;
+	delete noise_float_islands1;
+	delete noise_float_islands2;
+	delete noise_float_islands3;
 }
 
 
@@ -138,9 +138,9 @@ MapgenV7Params::MapgenV7Params() {
 	np_ridge           = NoiseParams(0,    1,   v3f(100, 100, 100), 6467,  4, 0.75);
 
 	float_islands = 500;
-	npindev_float_islands1  = NoiseIndevParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5);
-	npindev_float_islands2  = NoiseIndevParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5);
-	npindev_float_islands3  = NoiseIndevParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5);
+	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5);
+	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5);
+	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5);
 }
 
 
@@ -158,9 +158,9 @@ void MapgenV7Params::readParams(Settings *settings) {
 	settings->getNoiseParams("mgv7_np_ridge",           np_ridge);
 
 	settings->getS16NoEx("mgv7_float_islands", float_islands);
-	settings->getNoiseIndevParams("mgv7_np_float_islands1", npindev_float_islands1);
-	settings->getNoiseIndevParams("mgv7_np_float_islands2", npindev_float_islands2);
-	settings->getNoiseIndevParams("mgv7_np_float_islands3", npindev_float_islands3);
+	settings->getNoiseIndevParams("mgv7_np_float_islands1", np_float_islands1);
+	settings->getNoiseIndevParams("mgv7_np_float_islands2", np_float_islands2);
+	settings->getNoiseIndevParams("mgv7_np_float_islands3", np_float_islands3);
 }
 
 
@@ -178,9 +178,9 @@ void MapgenV7Params::writeParams(Settings *settings) {
 	settings->setNoiseParams("mgv7_np_ridge",           np_ridge);
 
 	settings->setS16("mgv7_float_islands", float_islands);
-	settings->setNoiseIndevParams("mgv7_np_float_islands1", npindev_float_islands1);
-	settings->setNoiseIndevParams("mgv7_np_float_islands2", npindev_float_islands2);
-	settings->setNoiseIndevParams("mgv7_np_float_islands3", npindev_float_islands3);
+	settings->setNoiseIndevParams("mgv7_np_float_islands1", np_float_islands1);
+	settings->setNoiseIndevParams("mgv7_np_float_islands2", np_float_islands2);
+	settings->setNoiseIndevParams("mgv7_np_float_islands3", np_float_islands3);
 }
 
 
@@ -340,24 +340,24 @@ void MapgenV7::calculateNoise() {
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
 	
-		noiseindev_float_islands1->perlinMap3D(
-			x + 0.33 * noiseindev_float_islands1->npindev->spread.X * farscale(noiseindev_float_islands1->npindev->farspread, x, y, z),
-			y + 0.33 * noiseindev_float_islands1->npindev->spread.Y * farscale(noiseindev_float_islands1->npindev->farspread, x, y, z),
-			z + 0.33 * noiseindev_float_islands1->npindev->spread.Z * farscale(noiseindev_float_islands1->npindev->farspread, x, y, z)
+		noise_float_islands1->perlinMap3D(
+			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
+			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
+			z + 0.33 * noise_float_islands1->np->spread.Z * farscale(noise_float_islands1->np->farspread, x, y, z)
 		);
-		noiseindev_float_islands1->transformNoiseMapFarScale(x, y, z);
+		noise_float_islands1->transformNoiseMap(x, y, z);
 
-		noiseindev_float_islands2->perlinMap3D(
-			x + 0.33 * noiseindev_float_islands2->npindev->spread.X * farscale(noiseindev_float_islands2->npindev->farspread, x, y, z),
-			y + 0.33 * noiseindev_float_islands2->npindev->spread.Y * farscale(noiseindev_float_islands2->npindev->farspread, x, y, z),
-			z + 0.33 * noiseindev_float_islands2->npindev->spread.Z * farscale(noiseindev_float_islands2->npindev->farspread, x, y, z)
+		noise_float_islands2->perlinMap3D(
+			x + 0.33 * noise_float_islands2->np->spread.X * farscale(noise_float_islands2->np->farspread, x, y, z),
+			y + 0.33 * noise_float_islands2->np->spread.Y * farscale(noise_float_islands2->np->farspread, x, y, z),
+			z + 0.33 * noise_float_islands2->np->spread.Z * farscale(noise_float_islands2->np->farspread, x, y, z)
 		);
-		noiseindev_float_islands2->transformNoiseMapFarScale(x, y, z);
+		noise_float_islands2->transformNoiseMap(x, y, z);
 
-		noiseindev_float_islands3->perlinMap2D(
-			x + 0.5 * noiseindev_float_islands3->npindev->spread.X * farscale(noiseindev_float_islands3->npindev->farspread, x, z),
-			z + 0.5 * noiseindev_float_islands3->npindev->spread.Z * farscale(noiseindev_float_islands3->npindev->farspread, x, z));
-		noiseindev_float_islands3->transformNoiseMapFarScale(x, y, z);
+		noise_float_islands3->perlinMap2D(
+			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
+			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
+		noise_float_islands3->transformNoiseMap(x, y, z);
 
 	//printf("calculateNoise: %dus\n", t.stop());
 }
@@ -838,13 +838,13 @@ void MapgenV7::generateFloatIslands(int min_y) {
 	for (int x1 = 0; x1 <= xl; ++x1, ++index) {
 		int y = y1 + node_min.Y;
 		u32 index2d = z1 * zstride + x1;
-		float noise3 = noiseindev_float_islands3->result[index2d];
+		float noise3 = noise_float_islands3->result[index2d];
 		float pmidy = midy + noise3 / 1.5 * AMPY;
-		float noise1 = noiseindev_float_islands1->result[index];
+		float noise1 = noise_float_islands1->result[index];
 		float offset = y > pmidy ? (y - pmidy) / TGRAD : (pmidy - y) / BGRAD;
 		float noise1off = noise1 - offset - RAR;
 		if (noise1off > 0 && noise1off < 0.7) {
-			float noise2 = noiseindev_float_islands2->result[index];
+			float noise2 = noise_float_islands2->result[index];
 			if (noise2 - noise1off > -0.7) {
 				v3s16 p = p0 + v3s16(x1, y1, z1);
 				u32 i = vm->m_area.index(p);
