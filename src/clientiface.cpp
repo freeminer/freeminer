@@ -187,6 +187,8 @@ int RemoteClient::GetNextBlocks(
 	{
 		max_simul_sends_usually
 			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
+		if(d_start<=1)
+			d_start=2;
 	}
 
 	/*
