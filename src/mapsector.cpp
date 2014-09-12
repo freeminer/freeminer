@@ -78,20 +78,19 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 
 MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
 {
-	MapBlock *block = getBlockNoCreateNoEx(p);
-	if (block != NULL) {
-		infostream<<"Block already created "<<block->getPos()<<std::endl;
-		return block;
-	}
-	
-	block = new MapBlock(this, p, m_gamedef);
-	
+	auto block = new MapBlock(this, p, m_gamedef);
 	return block;
 }
 
 MapBlock * Map::createBlankBlock(v3s16 & p)
 {
-	MapBlock *block = createBlankBlockNoInsert(p);
+	MapBlock *block = getBlockNoCreateNoEx(p);
+	if (block != NULL) {
+		infostream<<"Block already created p="<<block->getPos()<<std::endl;
+		return block;
+	}
+
+	block = createBlankBlockNoInsert(p);
 	
 	m_blocks.set(p, block);
 
