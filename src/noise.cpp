@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h> // memset
 #include "debug.h"
 #include "util/numeric.h"
+#include "constants.h"
 
 #define NOISE_MAGIC_X    1619
 #define NOISE_MAGIC_Y    31337
@@ -529,7 +530,8 @@ float *Noise::perlinMap2D(float x, float y) {
 		}
 
 		f *= 2.0;
-		g *= np->persist;
+		//g *= np->persist;
+		g *= np->persist * farscale(np->farpersist, x, y);
 	}
 
 	return result;
@@ -597,21 +599,37 @@ float *Noise::perlinMap3D(float x, float y, float z) {
 		}
 
 		f *= 2.0;
-		g *= np->persist;
+		//g *= np->persist;
+		g *= np->persist * farscale(np->farpersist, x, y, z);
 	}
 
 	return result;
 }
 
 
-void Noise::transformNoiseMap() {
+void Noise::transformNoiseMap(float xx, float yy, float zz) {
 	int i = 0;
 	for (int z = 0; z != sz; z++) {
 		for (int y = 0; y != sy; y++) {
 			for (int x = 0; x != sx; x++) {
-				result[i] = result[i] * np->scale + np->offset;
+				//result[i] = result[i] * np->scale + np->offset;
+				result[i] = result[i] * np->scale * farscale(np->farscale, xx, yy, zz) + np->offset;
 				i++;
 			}
 		}
 	}
 }
+
+
+float farscale(float scale, float z) {
+	return ( 1 + ( 1 - (MAP_GENERATION_LIMIT * 1 - (fabs(z))                     ) / (MAP_GENERATION_LIMIT * 1) ) * (scale - 1) );
+}
+
+float farscale(float scale, float x, float z) {
+	return ( 1 + ( 1 - (MAP_GENERATION_LIMIT * 2 - (fabs(x) + fabs(z))           ) / (MAP_GENERATION_LIMIT * 2) ) * (scale - 1) );
+}
+
+float farscale(float scale, float x, float y, float z) {
+	return ( 1 + ( 1 - (MAP_GENERATION_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (MAP_GENERATION_LIMIT * 3) ) * (scale - 1) );
+}
+

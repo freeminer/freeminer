@@ -850,7 +850,6 @@ void Server::AsyncRunStep(bool initial_step)
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
 		JMutexAutoLock envlock(m_env_mutex);
 
-		m_clients.Lock();
 		auto & clients = m_clients.getClientList();
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
 
@@ -859,6 +858,7 @@ void Server::AsyncRunStep(bool initial_step)
 		radius *= MAP_BLOCKSIZE;
 		s16 radius_deactivate = radius*3;
 
+		auto lock = clients.lock_shared_rec();
 		for(auto
 			i = clients.begin();
 			i != clients.end(); ++i)
@@ -956,7 +956,6 @@ void Server::AsyncRunStep(bool initial_step)
 					<<"packet size is "<<reply.getSize()<<std::endl;
 */
 		}
-		m_clients.Unlock();
 	}
 
 	/*
@@ -993,8 +992,9 @@ void Server::AsyncRunStep(bool initial_step)
 			message_list->push_back(aom);
 		}
 
-		m_clients.Lock();
 		auto & clients = m_clients.getClientList();
+		{
+		auto lock = clients.lock_shared_rec();
 		// Route data to every client
 		for(auto
 			i = clients.begin();
@@ -1043,8 +1043,7 @@ void Server::AsyncRunStep(bool initial_step)
 				m_clients.send(client->peer_id, 1, buffer, false);
 			}
 		}
-		m_clients.Unlock();
-
+		}
 		// Clear buffered_messages
 		for(std::map<u16, std::list<ActiveObjectMessage>* >::iterator
 				i = buffered_messages.begin();
@@ -1371,13 +1370,11 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 {
 	std::string playername = "";
 	PlayerSAO *playersao = NULL;
-	m_clients.Lock();
 	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_InitDone);
 	if (client != NULL) {
 		playername = client->getName();
 		playersao = emergePlayer(playername.c_str(), peer_id);
 	}
-	m_clients.Unlock();
 
 	RemotePlayer *player =
 		static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
@@ -2776,7 +2773,6 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 void Server::SetBlocksNotSent(std::map<v3s16, MapBlock *>& block)
 {
 	std::list<u16> clients = m_clients.getClientIDs();
-	m_clients.Lock();
 	// Set the modified blocks unsent for all the clients
 	for (std::list<u16>::iterator
 		 i = clients.begin();
@@ -2785,7 +2781,6 @@ void Server::SetBlocksNotSent(std::map<v3s16, MapBlock *>& block)
 			if (client != NULL)
 				client->SetBlocksNotSent(block);
 		}
-	m_clients.Unlock();
 }
 
 void Server::peerAdded(u16 peer_id)
@@ -2835,11 +2830,9 @@ bool Server::getClientInfo(
 	)
 {
 	*state = m_clients.getClientState(peer_id);
-	m_clients.Lock();
 	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
 
 	if (client == NULL) {
-		m_clients.Unlock();
 		return false;
 	}
 
@@ -2851,8 +2844,6 @@ bool Server::getClientInfo(
 	*minor = client->getMinor();
 	*patch = client->getPatch();
 	*vers_string = client->getPatch();
-
-	m_clients.Unlock();
 
 	return true;
 }
@@ -3513,8 +3504,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 				}
 			}
 		}
-
-		m_clients.Lock();
+		SharedBuffer<u8> reply(0);
 		RemoteClient* client = m_clients.lockedGetClientNoEx(*i);
 		if (client != 0)
 		{
@@ -3526,14 +3516,12 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 
 			m_clients.send(*i, 0, buffer, true);
 		}
-		m_clients.Unlock();
 	}
 }
 
 void Server::setBlockNotSent(v3s16 p)
 {
-	std::list<u16> clients = m_clients.getClientIDs();
-	m_clients.Lock();
+	auto clients = m_clients.getClientIDs();
 	for(std::list<u16>::iterator
 		i = clients.begin();
 		i != clients.end(); ++i)
@@ -3541,7 +3529,6 @@ void Server::setBlockNotSent(v3s16 p)
 		RemoteClient *client = m_clients.lockedGetClientNoEx(*i);
 		client->SetBlockNotSent(p);
 	}
-	m_clients.Unlock();
 }
 
 void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable)
@@ -3586,7 +3573,6 @@ int Server::SendBlocks(float dtime)
 
 		std::list<u16> clients = m_clients.getClientIDs();
 
-		//m_clients.Lock();
 		for(std::list<u16>::iterator
 			i = clients.begin();
 			i != clients.end(); ++i)
@@ -3598,7 +3584,6 @@ int Server::SendBlocks(float dtime)
 
 			total += client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
-		//m_clients.Unlock();
 	}
 
 	// Sort.
@@ -3606,7 +3591,6 @@ int Server::SendBlocks(float dtime)
 	// Lowest is most important.
 	std::sort(queue.begin(), queue.end());
 
-	//m_clients.Lock();
 	for(u32 i=0; i<queue.size(); i++)
 	{
 		//TODO: Calculate limit dynamically
@@ -3634,7 +3618,6 @@ int Server::SendBlocks(float dtime)
 		client->SentBlock(q.pos, m_uptime.get() + m_env->m_game_time_start);
 		++total;
 	}
-	//m_clients.Unlock();
 	return total;
 }
 

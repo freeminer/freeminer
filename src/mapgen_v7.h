@@ -46,9 +46,9 @@ struct MapgenV7Params : public MapgenSpecificParams {
 	NoiseParams np_ridge;
 
 	s16 float_islands;
-	NoiseIndevParams npindev_float_islands1;
-	NoiseIndevParams npindev_float_islands2;
-	NoiseIndevParams npindev_float_islands3;
+	NoiseParams np_float_islands1;
+	NoiseParams np_float_islands2;
+	NoiseParams np_float_islands3;
 	
 	MapgenV7Params();
 	~MapgenV7Params() {}
@@ -89,9 +89,9 @@ public:
 	Noise *noise_humidity;
 	
 	s16 float_islands;
-	NoiseIndev *noiseindev_float_islands1;
-	NoiseIndev *noiseindev_float_islands2;
-	NoiseIndev *noiseindev_float_islands3;
+	Noise *noise_float_islands1;
+	Noise *noise_float_islands2;
+	Noise *noise_float_islands3;
 
 	content_t c_stone;
 	content_t c_dirt;

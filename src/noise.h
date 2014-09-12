@@ -72,10 +72,15 @@ struct NoiseParams {
 	int octaves;
 	float persist;
 
+	float farscale;
+	float farspread;
+	float farpersist;
+
 	NoiseParams() {}
 
 	NoiseParams(float offset_, float scale_, v3f spread_,
-		int seed_, int octaves_, float persist_)
+		int seed_, int octaves_, float persist_,
+		float farscale_ = 1, float farspread_ = 1, float farpersist_ = 1)
 	{
 		offset  = offset_;
 		scale   = scale_;
@@ -83,6 +88,10 @@ struct NoiseParams {
 		seed    = seed_;
 		octaves = octaves_;
 		persist = persist_;
+
+		farscale  = farscale_;
+		farspread = farspread_;
+		farpersist = farpersist_;
 	}
 };
 
@@ -127,7 +136,7 @@ public:
 	float *perlinMap2D(float x, float y);
 	float *perlinMap2DModulated(float x, float y, float *persist_map);
 	float *perlinMap3D(float x, float y, float z);
-	void transformNoiseMap();
+	void transformNoiseMap(float xx = 0, float yy = 0, float zz = 0);
 };
 
 // Return value: -1 ... 1
@@ -197,6 +206,12 @@ float triLinearInterpolation(
 		float v000, float v100, float v010, float v110,
 		float v001, float v101, float v011, float v111,
 		float x, float y, float z);
+
+
+float farscale(float scale, float z);
+float farscale(float scale, float x, float z);
+float farscale(float scale, float x, float y, float z);
+
 
 #endif
 

@@ -1316,7 +1316,7 @@ void * ConnectionSendThread::Thread()
 		/* send non reliable packets */
 		sendPackets(dtime);
 
-		END_DEBUG_EXCEPTION_HANDLER(derr_con);
+		END_DEBUG_EXCEPTION_HANDLER(errorstream);
 	}
 
 	PROFILE(g_profiler->remove(ThreadIdentifier.str()));
@@ -2105,7 +2105,7 @@ void * ConnectionReceiveThread::Thread()
 			}
 		}
 #endif
-		END_DEBUG_EXCEPTION_HANDLER(derr_con);
+		END_DEBUG_EXCEPTION_HANDLER(errorstream);
 	}
 	PROFILE(g_profiler->remove(ThreadIdentifier.str()));
 	return NULL;
@@ -2163,7 +2163,9 @@ void ConnectionReceiveThread::receive()
 			LOG(derr_con<<m_connection->getDesc()
 					<<"Receive(): Invalid incoming packet, "
 					<<"size: " << received_size
-					<<", protocol: " << readU32(&packetdata[0]) <<std::endl);
+					<<", protocol: "
+					<< ((received_size >= 4) ? readU32(&packetdata[0]) : -1)
+					<< std::endl);
 			continue;
 		}
 
