@@ -57,6 +57,7 @@ struct MeshMakeData
 	int step;
 	int range;
 	unsigned int timestamp;
+	MapBlock * block;
 	Map & map;
 	MapDrawControl& draw_control;
 	bool debug;
@@ -68,7 +69,8 @@ struct MeshMakeData
 		Copy central data directly from block, and other data from
 		parent of block.
 	*/
-	void fill(MapBlock *block);
+	void fill(MapBlock *block_);
+	void fill_data();
 
 	/*
 		Set up with only a single node at (1,1,1)
