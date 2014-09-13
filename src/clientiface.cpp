@@ -233,6 +233,13 @@ int RemoteClient::GetNextBlocks(
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
 	int blocks_occlusion_culled = 0;
+	bool occlusion_culling_enabled = true;
+	auto cam_pos_nodes = center_nodepos;
+	auto nodemgr = env->getGameDef()->getNodeDefManager();
+	MapNode n = env->getMap().getNodeNoEx(cam_pos_nodes);
+	if(n.getContent() == CONTENT_IGNORE || nodemgr->get(n).solidness == 2)
+		occlusion_culling_enabled = false;
+
 	s16 d;
 	for(d = d_start; d <= d_max; d++)
 	{
@@ -282,6 +289,7 @@ int RemoteClient::GetNextBlocks(
 		*/
 			getFacePositions(list, d);
 		}
+
 
 		std::list<v3s16>::iterator li;
 		for(li=list.begin(); li!=list.end(); ++li)
@@ -379,25 +387,9 @@ int RemoteClient::GetNextBlocks(
 				Occlusion culling
 			*/
 			auto cpn = p;
-			auto cam_pos_nodes = center_nodepos;
-			auto nodemgr = env->getGameDef()->getNodeDefManager();
 
 			// No occlusion culling when free_move is on and camera is
 			// inside ground
-			bool occlusion_culling_enabled = true;
-			if (d <= 2)
-				occlusion_culling_enabled = false;
-				
-// /*
-//			if(g_settings->getBool("free_move")){
-//			if (occlusion_culling_enabled) {
-				MapNode n = env->getMap().getNodeNoEx(cam_pos_nodes);
-				if(n.getContent() == CONTENT_IGNORE ||
-						nodemgr->get(n).solidness == 2)
-					occlusion_culling_enabled = false;
-//			}
-// */
-
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
 			float step = BS*1;
@@ -409,7 +401,7 @@ int RemoteClient::GetNextBlocks(
 			u32 needed_count = 1;
 //infostream<<" occparams "<<" p="<<cam_pos_nodes<<" en="<<occlusion_culling_enabled<<" d="<<d<<" pnod="<<n<<" solid="<<(int)nodemgr->get(n).solidness<<std::endl;
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
-			if(
+			if( d > 2 &&
 				occlusion_culling_enabled &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(0,0,0),
 					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
