@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "camera.h" // CameraModes
 #include "util/mathconstants.h"
 #include <algorithm>
+#include <unordered_map>
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -103,7 +104,8 @@ void ClientMap::OnRegisterSceneNode()
 }
 
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
-		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr)
+		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
+		std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> & occlude_cache)
 {
 	float d0 = (float)BS * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -114,13 +116,24 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	for(float s=start_off; s<d0+end_off; s+=step){
 		v3f pf = p0f + uf * s;
 		v3s16 p = floatToInt(pf, BS);
-		MapNode n = map->getNodeNoEx(p);
 		bool is_transparent = false;
+		bool cache = true;
+		if (occlude_cache.count(p)) {
+			cache = false;
+			is_transparent = occlude_cache[p];
+		} else {
+		MapNode n = map->getNodeTry(p);
+		if (n.getContent() == CONTENT_IGNORE) {
+			cache = false;
+		}
 		const ContentFeatures &f = nodemgr->get(n);
 		if(f.solidness == 0)
 			is_transparent = (f.visual_solidness != 2);
 		else
 			is_transparent = (f.solidness != 2);
+		}
+		if (cache)
+			occlude_cache[p] = is_transparent;
 		if(!is_transparent){
 			count++;
 			if(count >= needed_count)
@@ -238,10 +251,25 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 		}
 	}
 
+#if _MSC_VER 
+	const int maxq = 100;
+#else
 	const int maxq = 1000;
+#endif
 
+			// No occlusion culling when free_move is on and camera is
+			// inside ground
+			bool occlusion_culling_enabled = true;
+			if(free_move){
+				MapNode n = getNodeNoEx(cam_pos_nodes);
+				if(n.getContent() == CONTENT_IGNORE ||
+						nodemgr->get(n).solidness == 2)
+					occlusion_culling_enabled = false;
+			}
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
+
+	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
 
 	m_drawlist_work = true;
 	for(auto & ir : draw_nearest) {
@@ -295,46 +323,36 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 				Occlusion culling
 			*/
 
-			// No occlusion culling when free_move is on and camera is
-			// inside ground
-			bool occlusion_culling_enabled = true;
-			if(free_move){
-				MapNode n = getNodeNoEx(cam_pos_nodes);
-				if(n.getContent() == CONTENT_IGNORE ||
-						nodemgr->get(n).solidness == 2)
-					occlusion_culling_enabled = false;
-			}
-
 			v3s16 cpn = bp * MAP_BLOCKSIZE;
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
 			float step = BS*1;
-			float stepfac = 1.1;
+			float stepfac = 1.2;
 			float startoff = BS*1;
-			float endoff = -BS*MAP_BLOCKSIZE*1.42*1.42;
+			float endoff = -BS*MAP_BLOCKSIZE; //*1.42; //*1.42;
 			v3s16 spn = cam_pos_nodes + v3s16(0,0,0);
 			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
 			u32 needed_count = 1;
-			if(
+			if( range > 1 &&
 				occlusion_culling_enabled &&
 				isOccluded(this, spn, cpn + v3s16(0,0,0),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(-bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(-bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(-bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(this, spn, cpn + v3s16(-bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr)
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)
 			)
 			{
 				blocks_occlusion_culled++;
@@ -390,7 +408,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 	m_drawlist_work = false;
 
-//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<std::endl;
+//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<" occache="<<occlude_cache.size()<<std::endl;
 
 	if (m_drawlist_last)
 		return;

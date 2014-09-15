@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	TimeTaker
 */
-extern bool time_taker_enabled;
+extern int time_taker_enabled;
 
 class TimeTaker
 {

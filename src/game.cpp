@@ -466,11 +466,13 @@ private:
 		Profiler::GraphValues values;
 	};
 	struct Meta{
+		float cur;
 		float min;
 		float max;
 		video::SColor color;
 		Meta(float initial=0, video::SColor color=
 				video::SColor(255,255,255,255)):
+			cur(initial),
 			min(initial),
 			max(initial),
 			color(color)
@@ -515,6 +517,7 @@ public:
 					j->second.min = value;
 				if(value > j->second.max)
 					j->second.max = value;
+				j->second.cur = value;
 			}
 		}
 
@@ -576,7 +579,7 @@ public:
 					core::rect<s32>(textx, y - texth,
 					textx2, y),
 					meta.color);
-			font->draw(utf8_to_wide(id).c_str(),
+			font->draw(utf8_to_wide(id + " " + ftos(meta.cur)).c_str(),
 					core::rect<s32>(textx, y - graphh/2 - texth/2,
 					textx2, y - graphh/2 + texth/2),
 					meta.color);

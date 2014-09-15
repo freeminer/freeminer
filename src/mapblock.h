@@ -322,23 +322,9 @@ public:
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 
-	MapNode getNodeNoEx(v3s16 p)
-	{
-		auto lock = lock_shared_rec();
-		return getNodeNoLock(p);
-	}
+	MapNode getNodeNoEx(v3s16 p);
 
-	void setNode(v3s16 p, MapNode & n)
-	{
-		if(data == NULL)
-			throw InvalidPositionException();
-		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		auto lock = lock_unique_rec();
-		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNode"*/);
-	}
+	void setNode(v3s16 p, MapNode & n);
 
 	/*
 		Non-checking variants of the above

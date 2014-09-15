@@ -39,6 +39,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "util/serialize.h"
 #include "circuit.h"
+#include "profiler.h"
+#include "main.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -725,6 +727,30 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 			<<": Done."<<std::endl);
 }
+
+	MapNode MapBlock::getNodeNoEx(v3s16 p)
+	{
+#ifndef NDEBUG
+		g_profiler->add("Map: getNodeNoEx", 1);
+#endif
+		auto lock = lock_shared_rec();
+		return getNodeNoLock(p);
+	}
+
+	void MapBlock::setNode(v3s16 p, MapNode & n)
+	{
+#ifndef NDEBUG
+		g_profiler->add("Map: setNode", 1);
+#endif
+		if(data == NULL)
+			throw InvalidPositionException();
+		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException();
+		auto lock = lock_unique_rec();
+		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
+		raiseModified(MOD_STATE_WRITE_NEEDED);
+	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)
 {

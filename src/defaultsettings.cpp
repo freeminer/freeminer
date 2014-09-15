@@ -28,6 +28,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "porting.h"
 
+const bool debug =
+#ifdef NDEBUG
+	false
+#else
+	true
+#endif
+;
+
 void set_default_settings(Settings *settings)
 {
 	// Client and server
@@ -218,7 +226,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("deprecated_lua_api_handling", "log");
 #endif
 
-	settings->setDefault("profiler_print_interval", "0");
+	settings->setDefault("profiler_print_interval", debug ? "10" : "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "2");
@@ -240,13 +248,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("ignore_world_load_errors", "false");
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "2");
-	settings->setDefault("time_taker_enabled",
-#ifdef NDEBUG
-	"0"
-#else
-	"1"
-#endif
-	);
+	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
 	settings->setDefault("emergequeue_limit_total", "256");
 	settings->setDefault("emergequeue_limit_diskonly", "32");
 	settings->setDefault("emergequeue_limit_generate", "32");
