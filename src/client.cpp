@@ -2416,6 +2416,11 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 		// Release: ~0ms
 		// Debug: 1-6ms, avg=2ms
 		data->fill(b);
+
+#if _MSC_VER
+		data->fill_data();
+#endif
+
 		data->setCrack(m_crack_level, m_crack_pos);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
 		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);

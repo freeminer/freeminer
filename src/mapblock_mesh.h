@@ -61,6 +61,7 @@ struct MeshMakeData
 	Map & map;
 	MapDrawControl& draw_control;
 	bool debug;
+	bool filled;
 
 	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();

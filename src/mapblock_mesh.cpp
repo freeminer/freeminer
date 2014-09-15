@@ -71,7 +71,8 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	block(nullptr),
 	map(map_),
 	draw_control(draw_control_),
-	debug(0)
+	debug(0),
+	filled(false)
 {}
 
 MeshMakeData::~MeshMakeData() {
@@ -87,8 +88,9 @@ void MeshMakeData::fill(MapBlock *block_)
 
 void MeshMakeData::fill_data()
 {
-	if (!block)
+	if (!block || filled)
 		return;
+	filled = true;
 
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
