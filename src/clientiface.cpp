@@ -737,7 +737,7 @@ std::vector<std::string> ClientInterface::getPlayerNames()
 
 void ClientInterface::step(float dtime)
 {
-	g_profiler->add("Server: Clients:", m_clients.size());
+	g_profiler->add("Server: Clients", m_clients.size());
 	m_print_info_timer += dtime;
 	if(m_print_info_timer >= 30.0)
 	{

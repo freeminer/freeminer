@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../log.h"
 #include <ostream>
 
-bool time_taker_enabled = 0;
+int time_taker_enabled = 0;
 
 TimeTaker::TimeTaker(const std::string &name, u32 *result, TimePrecision prec)
 {
@@ -53,7 +53,7 @@ u32 TimeTaker::stop(bool quiet)
 		}
 		else
 		{
-			if(quiet == false && dtime >= 150)
+			if(quiet == false && dtime >= time_taker_enabled)
 				infostream<<m_name<<" took "<<dtime<<"ms"<<std::endl;
 		}
 		m_running = false;
