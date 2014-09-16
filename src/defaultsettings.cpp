@@ -374,7 +374,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
 
-#if defined(_WIN32)
+#if defined(_WIN32) || ! CMAKE_THREADS
 		settings->setDefault("more_threads", "false");
 #else
 		settings->setDefault("more_threads", "true");

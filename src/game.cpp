@@ -3622,7 +3622,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				camera_offset_changed){
 			update_draw_list_timer = 0;
 			bool allow = true;
-#if !(defined(__ANDROID__) || (defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) < 407)))
+#if CMAKE_THREADS && !(defined(__ANDROID__) || (defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) < 407)))
 			if (g_settings->getBool("more_threads")) {
 				bool allow = true;
 				if (updateDrawList_future.valid()) {

@@ -357,7 +357,11 @@ Server::Server(
 
 	m_step_dtime = 0.0;
 	m_lag = g_settings->getFloat("dedicated_server_step");
+#if CMAKE_THREADS
 	more_threads = g_settings->getBool("more_threads");
+#else
+	more_threads = 0;
+#endif
 
 	if(path_world == "")
 		throw ServerError("Supplied empty world path");
@@ -614,6 +618,9 @@ void Server::start(Address bind_addr)
 		m_liquid->restart();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
+#if CMAKE_THREADS
+			<< " THREADS \t"
+#endif
 #ifndef NDEBUG
 			<< " DEBUG \t"
 #endif
@@ -1300,7 +1307,7 @@ int Server::AsyncRunMapStep(bool async) {
 
 	/* Transform liquids */
 	m_liquid_transform_timer += dtime;
-	if(!g_settings->getBool("more_threads") && m_liquid_transform_timer >= m_liquid_transform_interval)
+	if(!more_threads && m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
 		TimeTaker timer_step("Server step: liquid transform");
 		m_liquid_transform_timer -= m_liquid_transform_interval;

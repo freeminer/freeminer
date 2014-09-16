@@ -685,6 +685,8 @@ if(MSVC)
 
 	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
 	add_definitions(-DNOMINMAX)
+
+	set(THREADS 0)
 else()
 	# Probably GCC
 	if(APPLE)
@@ -760,11 +762,16 @@ else()
 				COMPILE_DEFINITIONS "SERVER")
 	endif(BUILD_SERVER)
 
+	set(THREADS 1)
 endif()
 
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
 	set(HAVE_SHARED_MUTEX 0)
+endif()
+
+if(DISABLE_THREADS)
+	set(THREADS 0)
 endif()
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
