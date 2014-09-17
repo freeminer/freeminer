@@ -138,6 +138,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
+	settings->setDefault("enable_node_highlighting", "false");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("gui_scaling", "1.0");
@@ -367,6 +368,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
+	settings->setDefault("enable_node_highlighting", "1");
 
 #if defined(_WIN32) || ! CMAKE_THREADS
 		settings->setDefault("more_threads", "false");

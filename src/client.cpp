@@ -1853,6 +1853,15 @@ int Client::getCrackLevel()
 	return m_crack_level;
 }
 
+void Client::setHighlighted(v3s16 pos, bool show_hud)
+{
+	m_show_hud = show_hud;
+	v3s16 old_highlighted_pos = m_highlighted_pos;
+	m_highlighted_pos = pos;
+	addUpdateMeshTaskForNode(old_highlighted_pos, true);
+	addUpdateMeshTaskForNode(m_highlighted_pos, true);
+}
+
 void Client::setCrack(int level, v3s16 pos)
 {
 	int old_crack_level = m_crack_level;
@@ -1915,13 +1924,13 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
 	if(b == NULL)
 		return;
-	
+
 	/*
 		Create a task to update the mesh of the block
 	*/
-	
+
 	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), m_env.getClientMap().getControl()));
-	
+
 	{
 		//TimeTaker timer("data fill");
 		// Release: ~0ms
@@ -1933,6 +1942,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 #endif
 
 		data->setCrack(m_crack_level, m_crack_pos);
+		data->setHighlighted(m_highlighted_pos, m_show_hud);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
 		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);

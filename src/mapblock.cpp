@@ -731,7 +731,7 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	MapNode MapBlock::getNodeNoEx(v3s16 p)
 	{
 #ifndef NDEBUG
-		g_profiler->add("Map: getNodeNoEx", 1);
+		ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
 		auto lock = lock_shared_rec();
 		return getNodeNoLock(p);
