@@ -533,7 +533,7 @@ void *EmergeThread::Thread() {
 
 			{
 				//envlock: usually 0ms, but can take either 30 or 400ms to acquire
-				JMutexAutoLock envlock(m_server->m_env_mutex);
+				//JMutexAutoLock envlock(m_server->m_env_mutex);
 				ScopeProfiler sp(g_profiler, "EmergeThread: after "
 						"Mapgen::makeChunk (envlock)", SPT_AVG);
 

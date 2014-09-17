@@ -2033,7 +2033,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			}
 
 			if (neighbors[i].drop) {// && level_max > 1 && total_level >= level_max - 1
-				JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
+				//JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
 				m_server->getEnv().getScriptIface()->node_drop(neighbors[i].p, 2);
 			}
 

@@ -207,6 +207,54 @@ public:
 	}
 };
 
+class EnvThread : public thread_pool
+{
+	Server *m_server;
+public:
+
+	EnvThread(Server *server):
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("Env");
+
+		DSTACK(__FUNCTION_NAME);
+		BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+
+		porting::setThreadName("Env");
+		porting::setThreadPriority(20);
+		int max_cycle_ms = 5000;
+		auto time = porting::getTimeMs();
+		while(!StopRequested()) {
+			try {
+				//int res = 
+{
+				//JMutexAutoLock envlock(m_server->m_env_mutex);
+				m_server->getEnv().step((porting::getTimeMs() - time)/1000.0f, m_server->m_uptime.get(), max_cycle_ms);
+}
+				//std::this_thread::sleep_for(std::chrono::milliseconds(res ? 5 : 1000));
+				time = porting::getTimeMs();
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+#ifdef NDEBUG
+			} catch (BaseException &e) {
+				errorstream<<"Env: exception: "<<e.what()<<std::endl;
+			} catch(std::exception &e) {
+				errorstream<<"Env: exception: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Env: Ooops..."<<std::endl;
+#else
+			} catch (int) { //nothing
+#endif
+			}
+		}
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+	return nullptr;
+	}
+};
+
 class ServerThread : public thread_pool
 {
 	Server *m_server;
@@ -337,6 +385,7 @@ Server::Server(
 	m_map_thread(nullptr),
 	m_sendblocks(nullptr),
 	m_liquid(nullptr),
+	m_envthread(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -394,6 +443,7 @@ Server::Server(
 		m_map_thread = new MapThread(this);
 		m_sendblocks = new SendBlocksThread(this);
 		m_liquid = new LiquidThread(this);
+		m_envthread = new EnvThread(this);
 	}
 
 	// Create world if it doesn't exist
@@ -455,7 +505,7 @@ Server::Server(
 	}
 
 	// Lock environment
-	JMutexAutoLock envlock(m_env_mutex);
+	//JMutexAutoLock envlock(m_env_mutex);
 
 	// Initialize scripting
 	infostream<<"Server: Initializing Lua"<<std::endl;
@@ -545,7 +595,7 @@ Server::~Server()
 	SendChatMessage(PEER_ID_INEXISTENT, L"*** Server shutting down");
 
 	{
-		JMutexAutoLock envlock(m_env_mutex);
+		//JMutexAutoLock envlock(m_env_mutex);
 
 		// Execute script shutdown hooks
 		m_script->on_shutdown();
@@ -567,6 +617,8 @@ Server::~Server()
 		delete m_sendblocks;
 	if (m_map_thread)
 		delete m_map_thread;
+	if(m_envthread)
+		delete m_envthread;
 
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
@@ -616,6 +668,8 @@ void Server::start(Address bind_addr)
 		m_sendblocks->restart();
 	if (m_liquid)
 		m_liquid->restart();
+	if(m_envthread)
+		m_envthread->restart();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
 #if CMAKE_THREADS
@@ -650,6 +704,8 @@ void Server::stop()
 		m_sendblocks->join();
 	if (m_map_thread)
 		m_map_thread->join();
+	if(m_envthread)
+		m_envthread->join();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -732,7 +788,7 @@ void Server::AsyncRunStep(bool initial_step)
 	*/
 	{
 		TimeTaker timer_step("Server step: pdate time of day and overall game time");
-		JMutexAutoLock envlock(m_env_mutex);
+		//JMutexAutoLock envlock(m_env_mutex);
 
 		m_env->setTimeOfDaySpeed(g_settings->getFloat("time_speed"));
 
@@ -752,7 +808,7 @@ void Server::AsyncRunStep(bool initial_step)
 
 	{
 		//TimeTaker timer_step("Server step: m_env->step");
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
 		max_lag *= 0.9998; // Decrease slowly (about half per 5 minutes)
@@ -765,6 +821,7 @@ void Server::AsyncRunStep(bool initial_step)
 		m_env->reportMaxLagEstimate(max_lag);
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
+		if (!more_threads)
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
@@ -777,7 +834,7 @@ void Server::AsyncRunStep(bool initial_step)
 	*/
 	{
 		//TimeTaker timer_step("Server step: Handle players");
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 
 		std::list<u16> clientids = m_clients.getClientIDs();
 
@@ -855,7 +912,7 @@ void Server::AsyncRunStep(bool initial_step)
 	{
 		TimeTaker timer_step("Server step: Check added and deleted active objects");
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
-		JMutexAutoLock envlock(m_env_mutex);
+		//JMutexAutoLock envlock(m_env_mutex);
 
 		auto & clients = m_clients.getClientList();
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
@@ -1014,7 +1071,7 @@ void Server::AsyncRunStep(bool initial_step)
 	*/
 	{
 		TimeTaker timer_step("Server step: Send object messages");
-		JMutexAutoLock envlock(m_env_mutex);
+		//JMutexAutoLock envlock(m_env_mutex);
 		ScopeProfiler sp(g_profiler, "Server: sending object messages");
 
 		// Key = object id
@@ -1133,7 +1190,7 @@ void Server::AsyncRunStep(bool initial_step)
 		TimeTaker timer_step("Server step: Send queued-for-sending map edit events.");
 		ScopeProfiler sp(g_profiler, "Server: Map events process");
 		// We will be accessing the environment
-		JMutexAutoLock lock(m_env_mutex);
+		//JMutexAutoLock lock(m_env_mutex);
 
 		// Don't send too many at a time
 		u32 count = 0;
@@ -1546,7 +1603,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
-	JMutexAutoLock envlock(m_env_mutex);
+	//JMutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 
@@ -4114,7 +4171,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	/*infostream<<"Server: Sending block ("<<p.X<<","<<p.Y<<","<<p.Z<<")"
 			<<":  \tpacket size: "<<replysize<<std::endl;*/
 
-	JMutexAutoLock lock(m_env_mutex);
+	//JMutexAutoLock lock(m_env_mutex);
 	/*
 		Send packet
 	*/
@@ -4612,7 +4669,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 				PlayerSAO *playersao = player->getPlayerSAO();
 				assert(playersao);
 
-				JMutexAutoLock env_lock(m_env_mutex);
+				//JMutexAutoLock env_lock(m_env_mutex);
 				m_script->on_leaveplayer(playersao);
 
 				playersao->disconnected();
@@ -4646,7 +4703,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 			}
 		}
 		{
-			JMutexAutoLock env_lock(m_env_mutex);
+			//JMutexAutoLock env_lock(m_env_mutex);
 			m_clients.DeleteClient(peer_id);
 		}
 	}
