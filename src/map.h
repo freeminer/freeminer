@@ -37,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "modifiedstate.h"
 #include "util/container.h"
 #include "nodetimer.h"
+#include "config.h"
 
 class Database;
 class ClientMap;
@@ -340,7 +341,11 @@ public:
 
 
 // from old mapsector:
+#if CMAKE_THREADS
 	typedef shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> m_blocks_type;
+#else
+	typedef not_shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> m_blocks_type;
+#endif
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);

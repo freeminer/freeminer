@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../log.h"
 #include <ostream>
 
-int time_taker_enabled = 0;
+unsigned int time_taker_enabled = 0;
 
 TimeTaker::TimeTaker(const std::string &name, u32 *result, TimePrecision prec)
 {

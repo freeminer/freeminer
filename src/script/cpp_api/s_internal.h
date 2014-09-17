@@ -33,34 +33,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_internal.h"
 #include "cpp_api/s_base.h"
 
-#ifdef SCRIPTAPI_LOCK_DEBUG
-#include "debug.h" // assert()
-class LockChecker {
-public:
-	LockChecker(bool* variable) {
-		assert(*variable == false);
-
-		m_variable = variable;
-		*m_variable = true;
-	}
-	~LockChecker() {
-		*m_variable = false;
-	}
-private:
-bool* m_variable;
-};
-
-#define SCRIPTAPI_LOCK_CHECK LockChecker(&(this->m_locked))
-#else
-#define SCRIPTAPI_LOCK_CHECK while(0)
-#endif
-
 #define SCRIPTAPI_PRECHECKHEADER                                               \
-		JMutexAutoLock (this->m_luastackmutex);                                \
-		SCRIPTAPI_LOCK_CHECK;                                                  \
+		auto _script_lock = std::unique_lock<std::recursive_mutex> (this->m_luastackmutex); \
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \
-		assert(lua_checkstack(L, 20));                                         \
 		StackUnroller stack_unroller(L);
 
 #endif /* S_INTERNAL_H_ */

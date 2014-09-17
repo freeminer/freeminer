@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
 #include "util/lock.h"
+#include "config.h"
 
 class Map;
 class NodeMetadataList;
@@ -107,7 +108,12 @@ public:
 */
 
 class MapBlock /*: public NodeContainer*/
-: public locker
+: 
+#if CMAKE_THREADS
+public locker
+#else
+public dummy_locker
+#endif
 {
 public:
 	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy=false);

@@ -48,29 +48,12 @@ MapgenIndev::~MapgenIndev() {
 }
 
 void MapgenIndev::calculateNoise() {
+	MapgenV6::calculateNoise();
 	int x = node_min.X;
 	int y = node_min.Y;
 	int z = node_min.Z;
 	// Need to adjust for the original implementation's +.5 offset...
 	if (!(flags & MG_FLAT)) {
-		noise_terrain_base->perlinMap2D(
-			x + 0.5 * noise_terrain_base->np->spread.X * farscale(noise_terrain_base->np->farspread, x, z),
-			z + 0.5 * noise_terrain_base->np->spread.Z * farscale(noise_terrain_base->np->farspread, x, z));
-		noise_terrain_base->transformNoiseMap(x, y, z);
-
-		noise_terrain_higher->perlinMap2D(
-			x + 0.5 * noise_terrain_higher->np->spread.X * farscale(noise_terrain_higher->np->farspread, x, z),
-			z + 0.5 * noise_terrain_higher->np->spread.Z * farscale(noise_terrain_higher->np->farspread, x, z));
-		noise_terrain_higher->transformNoiseMap(x, y, z);
-
-		noise_steepness->perlinMap2D(
-			x + 0.5 * noise_steepness->np->spread.X * farscale(noise_steepness->np->farspread, x, z),
-			z + 0.5 * noise_steepness->np->spread.Z * farscale(noise_steepness->np->farspread, x, z));
-		noise_steepness->transformNoiseMap(x, y, z);
-
-		noise_height_select->perlinMap2D(
-			x + 0.5 * noise_height_select->np->spread.X * farscale(noise_height_select->np->farspread, x, z),
-			z + 0.5 * noise_height_select->np->spread.Z * farscale(noise_height_select->np->farspread, x, z));
 
 		noise_float_islands1->perlinMap3D(
 			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
@@ -91,18 +74,7 @@ void MapgenIndev::calculateNoise() {
 			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
 		noise_float_islands3->transformNoiseMap(x, y, z);
 
-		noise_mud->perlinMap2D(
-			x + 0.5 * noise_mud->np->spread.X * farscale(noise_mud->np->farspread, x, y, z),
-			z + 0.5 * noise_mud->np->spread.Z * farscale(noise_mud->np->farspread, x, y, z));
-		noise_mud->transformNoiseMap(x, y, z);
 	}
-	noise_beach->perlinMap2D(
-		x + 0.2 * noise_beach->np->spread.X * farscale(noise_beach->np->farspread, x, z),
-		z + 0.7 * noise_beach->np->spread.Z * farscale(noise_beach->np->farspread, x, z));
-
-	noise_biome->perlinMap2D(
-		x + 0.6 * noise_biome->np->spread.X * farscale(noise_biome->np->farspread, x, z),
-		z + 0.2 * noise_biome->np->spread.Z * farscale(noise_biome->np->farspread, x, z));
 }
 
 MapgenIndevParams::MapgenIndevParams() {

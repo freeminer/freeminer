@@ -102,4 +102,3 @@ template class lock_rec<unique_lock>;
 #if LOCK_TWO
 template class lock_rec<try_shared_lock>;
 #endif
-     //

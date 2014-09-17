@@ -69,10 +69,6 @@ public:
 
 ScriptApiBase::ScriptApiBase()
 {
-	#ifdef SCRIPTAPI_LOCK_DEBUG
-	m_locked = false;
-	#endif
-
 	m_luastack = luaL_newstate();
 	assert(m_luastack);
 

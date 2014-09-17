@@ -30,6 +30,8 @@ if(MSVC)
 	# Flags for C files (sqlite)
 	# /MT = Link statically with standard library stuff
 	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
+
+	set(THREADS 0)
 else()
 	# Probably GCC
 	if(APPLE)
@@ -103,6 +105,7 @@ else()
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 	endif()
 
+	set(THREADS 1)
 endif()
 
 
@@ -754,6 +757,10 @@ endif()
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
 	set(HAVE_SHARED_MUTEX 0)
+endif()
+
+if(DISABLE_THREADS)
+	set(THREADS 0)
 endif()
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
