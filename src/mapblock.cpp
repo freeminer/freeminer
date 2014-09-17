@@ -764,7 +764,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	MapNode MapBlock::getNodeNoEx(v3s16 p)
 	{
 #ifndef NDEBUG
-		g_profiler->add("Map: getNodeNoEx", 1);
+		ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
 		auto lock = lock_shared_rec();
 		return getNodeNoLock(p);
