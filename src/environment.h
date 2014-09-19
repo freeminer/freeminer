@@ -427,7 +427,7 @@ private:
 	// World path
 	const std::string m_path_world;
 	// Active object list
-	std::map<u16, ServerActiveObject*> m_active_objects;
+	shared_map<u16, ServerActiveObject*> m_active_objects; //TODO ordummy
 	// Outgoing network message buffer for active objects
 	std::list<ActiveObjectMessage> m_active_object_messages;
 	// Some timers

@@ -880,6 +880,7 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 std::set<u16> ServerEnvironment::getObjectsInsideRadius(v3f pos, float radius)
 {
 	std::set<u16> objects;
+	auto lock = m_active_objects.lock_shared_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -899,6 +900,8 @@ void ServerEnvironment::clearAllObjects()
 	infostream<<"ServerEnvironment::clearAllObjects(): "
 			<<"Removing all active objects"<<std::endl;
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
+
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1108,6 +1111,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		}
 		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
 			//TimeTaker timer_s2("force load");
+			auto lock = m_active_objects.lock_shared_rec();
 			for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1321,6 +1325,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		//ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
 		//TimeTaker timer("Step active objects");
 
+		auto lock = m_active_objects.lock_shared_rec();
 		g_profiler->add("SEnv: Objects", m_active_objects.size());
 
 		// This helps the objects to send data at the same time
@@ -1494,6 +1499,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		- discard objects that are found in current_objects.
 		- add remaining objects to added_objects
 	*/
+	auto lock = m_active_objects.lock_shared_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1621,7 +1627,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 	/*infostream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"added (id="<<object->getId()<<")"<<std::endl;*/
 
-	m_active_objects[object->getId()] = object;
+	m_active_objects.set(object->getId(), object);
 
 /*
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
@@ -1671,6 +1677,7 @@ void ServerEnvironment::removeRemovedObjects()
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1747,6 +1754,7 @@ void ServerEnvironment::removeRemovedObjects()
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
+
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i)
@@ -1901,6 +1909,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
