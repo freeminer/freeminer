@@ -376,7 +376,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("password_save", "1");
 	settings->setDefault("enable_node_highlighting", "1");
 
-#if defined(_WIN32) || ! CMAKE_THREADS
+#if defined(_WIN32)
 		settings->setDefault("more_threads", "false");
 #else
 		settings->setDefault("more_threads", "true");
