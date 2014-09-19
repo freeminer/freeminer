@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "json/json.h"
 #include "config.h"
 
-#define MODNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyz0123456789_"
+#define MODNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyz0123456789_-"
 
 class ModError : public std::exception
 {

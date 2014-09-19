@@ -94,6 +94,7 @@ endif(LUA_ANSI)
 if(SANITIZE_THREAD)
 	set(COMMON_CFLAGS "${COMMON_CFLAGS} -fPIC")
 endif()
+
 #
 # COMMON_CFLAGS has no effect without this line
 #

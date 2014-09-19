@@ -367,11 +367,11 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
 }
 
 inline int radius_box(const v3s16 & a, const v3s16 & b) {
-	return std::max(std::max(abs(a.X - b.X), abs(a.Y - b.Y)), abs(a.Z - b.Z));
+	return std::max(std::max(std::abs(a.X - b.X), std::abs(a.Y - b.Y)), std::abs(a.Z - b.Z));
 }
 
 inline int radius_box(const v3f & a, const v3f & b) {
-	return std::max(std::max(abs(a.X - b.X), abs(a.Y - b.Y)), abs(a.Z - b.Z));
+	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));
 }
 
 #endif
