@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irr_aabb3d.h"
 #include <algorithm>
 #include <list>
+#include <cmath>
 
 // Calculate the borders of a "d-radius" cube
 void getFacePositions(std::list<v3s16> &list, u16 d);
@@ -367,7 +368,7 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
 }
 
 inline int radius_box(const v3s16 & a, const v3s16 & b) {
-	return std::max(std::max(std::abs(a.X - b.X), std::abs(a.Y - b.Y)), std::abs(a.Z - b.Z));
+	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
 }
 
 inline int radius_box(const v3f & a, const v3f & b) {
