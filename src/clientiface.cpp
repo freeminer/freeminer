@@ -404,7 +404,7 @@ int RemoteClient::GetNextBlocks(
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
 			float step = BS*1;
-			float stepfac = 1.1;
+			float stepfac = 1.3;
 			float startoff = BS*1;
 			float endoff = -BS*MAP_BLOCKSIZE*1.42*1.42;
 			v3s16 spn = cam_pos_nodes + v3s16(0,0,0);
