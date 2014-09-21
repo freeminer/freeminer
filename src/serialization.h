@@ -81,8 +81,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Misc. serialization functions
 */
 
-void compressZlib(SharedBuffer<u8> data, std::ostream &os);
-void compressZlib(const std::string &data, std::ostream &os);
+void compressZlib(SharedBuffer<u8> data, std::ostream &os, int level = -1);
+void compressZlib(const std::string &data, std::ostream &os, int level = -1);
 void decompressZlib(std::istream &is, std::ostream &os);
 
 // These choose between zlib and a self-made one according to version

@@ -147,6 +147,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("sound_volume", "0.8");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("enable_vbo", "false");
+	settings->setDefault("selectionbox_width","2");
 	settings->setDefault("hud_hotbar_max_width","1.0");
 
 	settings->setDefault("mip_map", "false");
@@ -202,7 +203,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("workaround_window_size","5");
 	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
-	settings->setDefault("bind_address","");
+	settings->setDefault("bind_address", "");
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "15");
@@ -370,7 +371,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("password_save", "1");
 	settings->setDefault("enable_node_highlighting", "1");
 
-#if defined(_WIN32) || ! CMAKE_THREADS
+#if defined(_WIN32)
 		settings->setDefault("more_threads", "false");
 #else
 		settings->setDefault("more_threads", "true");

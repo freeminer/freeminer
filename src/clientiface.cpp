@@ -42,7 +42,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
-		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr)
+		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
+		std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> & occlude_cache)
 {
 	float d0 = (float)BS * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -53,15 +54,24 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	for(float s=start_off; s<d0+end_off; s+=step){
 		v3f pf = p0f + uf * s;
 		v3s16 p = floatToInt(pf, BS);
-		MapNode n = map->getNodeNoEx(p);
-		if (n.getContent() == CONTENT_IGNORE) // ONE DIFFERENCE FROM clientmap.cpp
-			return true; //false;
 		bool is_transparent = false;
+		bool cache = true;
+		if (occlude_cache.count(p)) {
+			cache = false;
+			is_transparent = occlude_cache[p];
+		} else {
+		MapNode n = map->getNodeTry(p);
+		if (n.getContent() == CONTENT_IGNORE) {
+			return true; // ONE DIFFERENCE FROM clientmap.cpp
+		}
 		const ContentFeatures &f = nodemgr->get(n);
 		if(f.solidness == 0)
 			is_transparent = (f.visual_solidness != 2);
 		else
 			is_transparent = (f.solidness != 2);
+		}
+		if (cache)
+			occlude_cache[p] = is_transparent;
 		if(!is_transparent){
 			count++;
 			if(count >= needed_count)
@@ -71,7 +81,6 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	}
 	return false;
 }
-
 
 const char *ClientInterface::statenames[] = {
 	"Invalid",
@@ -239,6 +248,7 @@ int RemoteClient::GetNextBlocks(
 	MapNode n = env->getMap().getNodeNoEx(cam_pos_nodes);
 	if(n.getContent() == CONTENT_IGNORE || nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
+	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
 
 	s16 d;
 	for(d = d_start; d <= d_max; d++)
@@ -361,12 +371,13 @@ int RemoteClient::GetNextBlocks(
 			/*
 				Don't send already sent blocks
 			*/
-			auto block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
+			unsigned int block_sent;
 			{
-				if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime) {
-					continue;
-				}
+				auto lock = m_blocks_sent.lock_shared_rec();
+				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
+			if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)
+				continue;
 
 			/*
 				Check if map has this block
@@ -392,7 +403,7 @@ int RemoteClient::GetNextBlocks(
 			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
 			float step = BS*1;
-			float stepfac = 1.1;
+			float stepfac = 1.3;
 			float startoff = BS*1;
 			float endoff = -BS*MAP_BLOCKSIZE*1.42*1.42;
 			v3s16 spn = cam_pos_nodes + v3s16(0,0,0);
@@ -403,23 +414,23 @@ int RemoteClient::GetNextBlocks(
 			if( d > 2 &&
 				occlusion_culling_enabled &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(0,0,0),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr) &&
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr)
+					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)
 			)
 			{
 //infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<" block="<<cpn<<" total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;

@@ -1915,7 +1915,17 @@ void Client::typeChatMessage(const std::wstring &message)
 
 	// Show locally
 	if (message[0] == '/')
-		m_chat_queue.push_back("issued command: "+wide_to_utf8(message));
+	{
+		m_chat_queue.push_back("issued command: " + wide_to_utf8(message));
+	}
+	else
+	{
+		LocalPlayer *player = m_env.getLocalPlayer();
+		if(!player)
+			return;
+		std::string name = player->getName();
+		m_chat_queue.push_back("<" + wide_to_utf8(name) + "> " + wide_to_utf8(message));
+	}
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool urgent)
@@ -2118,6 +2128,34 @@ float Client::getAvgRate(void)
 	return 0;
 //	return ( m_con.getLocalStat(con::AVG_INC_RATE) +
 //			m_con.getLocalStat(con::AVG_DL_RATE));
+}
+
+void Client::makeScreenshot(IrrlichtDevice *device)
+{
+	irr::video::IVideoDriver *driver = device->getVideoDriver();
+	irr::video::IImage* const raw_image = driver->createScreenShot();
+	if (raw_image) {
+		irr::video::IImage* const image = driver->createImage(video::ECF_R8G8B8, 
+			raw_image->getDimension());
+
+		if (image) {
+			raw_image->copyTo(image);
+			irr::c8 filename[256];
+			snprintf(filename, sizeof(filename), "%s" DIR_DELIM "screenshot_%u.png",
+				 g_settings->get("screenshot_path").c_str(),
+				 device->getTimer()->getRealTime());
+			std::stringstream sstr;
+			if (driver->writeImageToFile(image, filename)) {
+				sstr << "Saved screenshot to '" << filename << "'";
+			} else {
+				sstr << "Failed to save screenshot '" << filename << "'";
+			}
+			m_chat_queue.push_back(narrow_to_wide(sstr.str()));
+			infostream << sstr << std::endl;
+			image->drop();
+		}
+		raw_image->drop();
+	}
 }
 
 // IGameDef interface
