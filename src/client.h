@@ -448,6 +448,8 @@ public:
 
 	LocalClientState getState() { return m_state; }
 
+	void makeScreenshot(IrrlichtDevice *device);
+
 private:
 
 	// Virtual methods from con::PeerHandler

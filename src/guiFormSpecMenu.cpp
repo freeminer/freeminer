@@ -58,6 +58,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "main.h"
 #include "settings.h"
+#include "client.h"
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -80,7 +81,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		ISimpleTextureSource *tsrc, IFormSource* fsrc, TextDest* tdst,
-		GUIFormSpecMenu** ext_ptr) :
+		GUIFormSpecMenu** ext_ptr, Client* client) :
 	GUIModalMenu(dev->getGUIEnvironment(), parent, id, menumgr),
 	m_device(dev),
 	m_invmgr(invmgr),
@@ -97,7 +98,8 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_text_dst(tdst),
 	m_ext_ptr(ext_ptr),
 	m_font(dev->getGUIEnvironment()->getSkin()->getFont()),
-	m_formspec_version(0)
+	m_formspec_version(0),
+	m_client(client)
 #ifdef __ANDROID__
 	,m_JavaDialogFieldName(L"")
 #endif
@@ -2939,6 +2941,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_text_dst->gotText(narrow_to_wide("MenuQuit"));
 			}
 			return true;
+		} else if (m_client != NULL && event.KeyInput.PressedDown &&
+			(kp == getKeySetting("keymap_screenshot"))) {
+				m_client->makeScreenshot(m_device);
 		}
 		if (event.KeyInput.PressedDown &&
 			(event.KeyInput.Key==KEY_RETURN ||

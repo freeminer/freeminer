@@ -72,17 +72,24 @@ std::vector<ServerListSpec> getOnline()
 	Json::Value root = fetchJsonValue(
 			(g_settings->get("serverlist_url") + "/list").c_str(), NULL);
 
-	std::vector<ServerListSpec> serverlist;
+	std::vector<ServerListSpec> server_list;
 
-	if (root.isArray()) {
-		for (unsigned int i = 0; i < root.size(); i++) {
-			if (root[i].isObject()) {
-				serverlist.push_back(root[i]);
-			}
+	if (!root.isObject()) {
+		return server_list;
+	}
+
+	root = root["list"];
+	if (!root.isArray()) {
+		return server_list;
+	}
+
+	for (unsigned int i = 0; i < root.size(); i++) {
+		if (root[i].isObject()) {
+			server_list.push_back(root[i]);
 		}
 	}
 
-	return serverlist;
+	return server_list;
 }
 
 
@@ -223,22 +230,22 @@ void sendAnnounce(const std::string &action,
 	}
 
 	Json::FastWriter writer;
-	HTTPFetchRequest fetchrequest;
-	fetchrequest.timeout = fetchrequest.connect_timeout = 59000;
-	fetchrequest.url = g_settings->get("serverlist_url") + std::string("/announce");
+	HTTPFetchRequest fetch_request;
+	fetch_request.timeout = fetch_request.connect_timeout = 59000;
+	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
 
 	std::string query = std::string("json=") + urlencode(writer.write(server));
 	if (query.size() < 1000)
-		fetchrequest.url += "?" + query;
+		fetch_request.url += "?" + query;
 	else
-		fetchrequest.post_data = query;
+		fetch_request.post_data = query;
 
 /*
-	fetchrequest.post_fields["json"] = writer.write(server);
-	fetchrequest.multipart = true;
+	fetch_request.post_fields["json"] = writer.write(server);
+	fetch_request.multipart = true;
 */
 
-	httpfetch_async(fetchrequest);
+	httpfetch_async(fetch_request);
 }
 #endif
 
