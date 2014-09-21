@@ -1924,7 +1924,7 @@ void Client::typeChatMessage(const std::wstring &message)
 		if(!player)
 			return;
 		std::string name = player->getName();
-		m_chat_queue.push_back("<" + wide_to_utf8(name) + "> " + wide_to_utf8(message));
+		m_chat_queue.push_back("<" + name + "> " + wide_to_utf8(message));
 	}
 }
 
@@ -2150,7 +2150,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";
 			}
-			m_chat_queue.push_back(narrow_to_wide(sstr.str()));
+			m_chat_queue.push_back(sstr.str());
 			infostream << sstr << std::endl;
 			image->drop();
 		}
