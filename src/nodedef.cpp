@@ -34,6 +34,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
 #include "shader.h"
+#include "exceptions.h"
+#include "debug.h"
+
 /*
 	NodeBox
 */

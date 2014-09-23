@@ -23,9 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 
 #if USE_LEVELDB
-/*
-LevelDB databases
-*/
 
 #include "database-leveldb.h"
 #include "map.h"
@@ -34,6 +31,7 @@ LevelDB databases
 #include "main.h"
 #include "settings.h"
 #include "log_types.h"
+#include "filesys.h"
 
 #define ENSURE_STATUS_OK(s) \
 	if (!(s).ok()) { \

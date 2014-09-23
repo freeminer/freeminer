@@ -20,13 +20,19 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "client.h"
 #include <iostream>
 #include <algorithm>
-#include "clientserver.h"
-#include "jthread/jmutexautolock.h"
-#include "main.h"
 #include <sstream>
+#include <IFileSystem.h>
+#include "jthread/jmutexautolock.h"
+#include "util/directiontables.h"
+#include "util/pointedthing.h"
+#include "util/serialize.h"
+#include "util/string.h"
+#include "strfnd.h"
+#include "client.h"
+#include "clientserver.h"
+#include "main.h"
 #include "filesys.h"
 #include "porting.h"
 #include "mapblock_mesh.h"
@@ -39,18 +45,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "itemdef.h"
 #include "shader.h"
-#include <IFileSystem.h>
 #include "base64.h"
 #include "clientmap.h"
 #include "clientmedia.h"
 #include "sound.h"
-#include "util/string.h"
 #include "IMeshCache.h"
 #include "serialization.h"
-#include "util/serialize.h"
 #include "config.h"
-#include "util/directiontables.h"
-#include "util/pointedthing.h"
 #include "version.h"
 #include "drawscene.h"
 

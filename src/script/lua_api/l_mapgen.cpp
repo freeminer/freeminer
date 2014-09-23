@@ -25,12 +25,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_vmanip.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "util/serialize.h"
 #include "server.h"
 #include "environment.h"
 #include "biome.h"
 #include "emerge.h"
 #include "mapgen_v7.h"
 #include "main.h"
+#include "log.h"
 
 
 struct EnumString ModApiMapgen::es_BiomeTerrainType[] =

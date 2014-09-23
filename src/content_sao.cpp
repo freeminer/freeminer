@@ -21,6 +21,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "content_sao.h"
+#include "util/serialize.h"
+#include "util/mathconstants.h"
 #include "collision.h"
 #include "environment.h"
 #include "settings.h"
@@ -32,8 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include "scripting_game.h"
 #include "genericobject.h"
-#include "util/serialize.h"
-#include "util/mathconstants.h"
+#include "log.h"
 
 std::map<u16, ServerActiveObject::Factory> ServerActiveObject::m_types;
 

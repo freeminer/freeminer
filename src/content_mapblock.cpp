@@ -21,7 +21,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "content_mapblock.h"
-
+#include "util/numeric.h"
+#include "util/directiontables.h"
 #include "main.h" // For g_settings
 #include "mapblock_mesh.h" // For MapBlock_LightColor() and MeshCollector
 #include "map.h"
@@ -29,8 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "tile.h"
 #include "gamedef.h"
-#include "util/numeric.h"
-#include "util/directiontables.h"
+#include "log.h"
+
 
 // Create a cuboid.
 //  collector - the MeshCollector for the resulting polygons

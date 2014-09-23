@@ -22,7 +22,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "guiEngine.h"
 
+#include <IGUIStaticText.h>
+#include <ICameraSceneNode.h>
 #include "scripting_mainmenu.h"
+#include "util/numeric.h"
 #include "config.h"
 #include "version.h"
 #include "porting.h"
@@ -34,14 +37,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "sound_openal.h"
 #include "clouds.h"
 #include "httpfetch.h"
-#include "util/numeric.h"
+#include "log.h"
 #ifdef __ANDROID__
 #include "tile.h"
 #include <GLES/gl.h>
 #endif
 
-#include <IGUIStaticText.h>
-#include <ICameraSceneNode.h>
 
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */

@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapnode.h"
 #include "map.h"
-//#include "serverobject.h"
 #include "content_sao.h"
 #include "nodedef.h"
 #include "content_mapnode.h" // For content_mapnode_get_new_name
@@ -41,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "util/serialize.h"
 #include "filesys.h"
+#include "log.h"
 
 
 FlagDesc flagdesc_mapgen[] = {
