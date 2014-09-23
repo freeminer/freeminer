@@ -195,7 +195,7 @@ std::string urldecode(std::string str)
 	return oss.str();
 }
 
-u32 readFlagString(std::string str, FlagDesc *flagdesc, u32 *flagmask)
+u32 readFlagString(std::string str, const FlagDesc *flagdesc, u32 *flagmask)
 {
 	if (str.length() == 0)
 		return 0;
@@ -231,7 +231,7 @@ u32 readFlagString(std::string str, FlagDesc *flagdesc, u32 *flagmask)
 	return result;
 }
 
-std::string writeFlagString(u32 flags, FlagDesc *flagdesc, u32 flagmask)
+std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask)
 {
 	std::string result;
 

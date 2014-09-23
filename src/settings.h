@@ -68,11 +68,11 @@ public:
 	{
 	}
 
-	void writeLines(std::ostream &os)
+	void writeLines(std::ostream &os) const
 	{
 		JMutexAutoLock lock(m_mutex);
 
-		for(std::map<std::string, std::string>::iterator
+		for(std::map<std::string, std::string>::const_iterator
 				i = m_settings.begin();
 				i != m_settings.end(); ++i)
 		{
@@ -83,9 +83,10 @@ public:
 	}
   
 	// return all keys used
-	std::vector<std::string> getNames(){
+	std::vector<std::string> getNames() const
+	{
 		std::vector<std::string> names;
-		for(std::map<std::string, std::string>::iterator
+		for(std::map<std::string, std::string>::const_iterator
 				i = m_settings.begin();
 				i != m_settings.end(); ++i)
 		{
@@ -95,7 +96,7 @@ public:
 	}
 
 	// remove a setting
-	bool remove(const std::string& name)
+	bool remove(const std::string &name)
 	{
 		return m_settings.erase(name);
 	}
@@ -294,7 +295,7 @@ public:
 		// If something not yet determined to have been changed, check if
 		// any new stuff was added
 		if(!something_actually_changed){
-			for(std::map<std::string, std::string>::iterator
+			for(std::map<std::string, std::string>::const_iterator
 					i = m_settings.begin();
 					i != m_settings.end(); ++i)
 			{
@@ -319,7 +320,7 @@ public:
 			/*
 				Write updated stuff
 			*/
-			for(std::list<std::string>::iterator
+			for(std::list<std::string>::const_iterator
 					i = objects.begin();
 					i != objects.end(); ++i)
 			{
@@ -329,7 +330,7 @@ public:
 			/*
 				Write stuff that was not already in the file
 			*/
-			for(std::map<std::string, std::string>::iterator
+			for(std::map<std::string, std::string>::const_iterator
 					i = m_settings.begin();
 					i != m_settings.end(); ++i)
 			{
@@ -426,7 +427,7 @@ public:
 		return true;
 	}
 
-	void set(std::string name, const std::string &value)
+	void set(const std::string &name, const std::string &value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
@@ -441,114 +442,69 @@ public:
 	}
 
 
-	void setDefault(std::string name, std::string value)
+	void setDefault(const std::string &name, std::string value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
 		m_defaults[name] = value;
 	}
 
-	bool exists(std::string name)
+	bool exists(const std::string &name) const
 	{
 		JMutexAutoLock lock(m_mutex);
 
-		return (m_settings.find(name) != m_settings.end() || m_defaults.find(name) != m_defaults.end());
+		return (m_settings.find(name) != m_settings.end() ||
+			m_defaults.find(name) != m_defaults.end());
 	}
 
-	std::string get(std::string name)
+	std::string get(const std::string &name) const
 	{
 		JMutexAutoLock lock(m_mutex);
 
-		std::map<std::string, std::string>::iterator n;
-		n = m_settings.find(name);
-		if(n == m_settings.end())
-		{
-			n = m_defaults.find(name);
-			if(n == m_defaults.end())
-			{
+		std::map<std::string, std::string>::const_iterator n;
+		if ((n = m_settings.find(name)) == m_settings.end())
+			if ((n = m_defaults.find(name)) == m_defaults.end())
 				throw SettingNotFoundException(("Setting [" + name + "] not found ").c_str());
-			}
-		}
 
 		return n->second;
 	}
 
 	//////////// Get setting
-	bool getBool(std::string name)
+	bool getBool(const std::string &name) const
 	{
 		return is_yes(get(name));
 	}
 
-	bool getFlag(std::string name)
+	bool getFlag(const std::string &name) const
 	{
-		try
-		{
+		try {
 			return getBool(name);
-		}
-		catch(SettingNotFoundException &e)
-		{
+		} catch(SettingNotFoundException &e) {
 			return false;
 		}
 	}
 
-	// Asks if empty
-	bool getBoolAsk(std::string name, std::string question, bool def)
-	{
-		// If it is in settings
-		if(exists(name))
-			return getBool(name);
-
-		std::string s;
-		char templine[10];
-		std::cout<<question<<" [y/N]: ";
-		std::cin.getline(templine, 10);
-		s = templine;
-
-		if(s == "")
-			return def;
-
-		return is_yes(s);
-	}
-
-	float getFloat(std::string name)
+	float getFloat(const std::string &name) const
 	{
 		return stof(get(name));
 	}
 
-	u16 getU16(std::string name)
+	u16 getU16(const std::string &name) const
 	{
 		return stoi(get(name), 0, 65535);
 	}
 
-	u16 getU16Ask(std::string name, std::string question, u16 def)
-	{
-		// If it is in settings
-		if(exists(name))
-			return getU16(name);
-
-		std::string s;
-		char templine[10];
-		std::cout<<question<<" ["<<def<<"]: ";
-		std::cin.getline(templine, 10);
-		s = templine;
-
-		if(s == "")
-			return def;
-
-		return stoi(s, 0, 65535);
-	}
-
-	s16 getS16(std::string name)
+	s16 getS16(const std::string &name) const
 	{
 		return stoi(get(name), -32768, 32767);
 	}
 
-	s32 getS32(std::string name)
+	s32 getS32(const std::string &name) const
 	{
 		return stoi(get(name));
 	}
 
-	v3f getV3F(std::string name)
+	v3f getV3F(const std::string &name) const
 	{
 		v3f value;
 		Strfnd f(get(name));
@@ -559,7 +515,7 @@ public:
 		return value;
 	}
 
-	v2f getV2F(std::string name)
+	v2f getV2F(const std::string &name) const
 	{
 		v2f value;
 		Strfnd f(get(name));
@@ -569,25 +525,28 @@ public:
 		return value;
 	}
 
-	u64 getU64(std::string name)
+	u64 getU64(const std::string &name) const
 	{
 		u64 value = 0;
 		std::string s = get(name);
 		std::istringstream ss(s);
-		ss>>value;
+		ss >> value;
 		return value;
 	}
 
-	u32 getFlagStr(std::string name, FlagDesc *flagdesc, u32 *flagmask)
+	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,
+			u32 *flagmask) const
 	{
 		std::string val = get(name);
-		return (std::isdigit(val[0])) ? stoi(val) :
-			readFlagString(val, flagdesc, flagmask);
+		return std::isdigit(val[0])
+			? stoi(val)
+			: readFlagString(val, flagdesc, flagmask);
 	}
 
 	// N.B. if getStruct() is used to read a non-POD aggregate type,
 	// the behavior is undefined.
-	bool getStruct(std::string name, std::string format, void *out, size_t olen)
+	bool getStruct(const std::string &name, const std::string &format,
+			void *out, size_t olen) const
 	{
 		std::string valstr;
 
@@ -604,7 +563,7 @@ public:
 	}
 
 	//////////// Try to get value, no exception thrown
-	bool getNoEx(std::string name, std::string &val)
+	bool getNoEx(const std::string &name, std::string &val) const
 	{
 		try {
 			val = get(name);
@@ -617,7 +576,7 @@ public:
 	// N.B. getFlagStrNoEx() does not set val, but merely modifies it.  Thus,
 	// val must be initialized before using getFlagStrNoEx().  The intention of
 	// this is to simplify modifying a flags field from a default value.
-	bool getFlagStrNoEx(std::string name, u32 &val, FlagDesc *flagdesc)
+	bool getFlagStrNoEx(const std::string &name, u32 &val, FlagDesc *flagdesc) const
 	{
 		try {
 			u32 flags, flagmask;
@@ -633,7 +592,7 @@ public:
 		}
 	}
 
-	bool getFloatNoEx(std::string name, float &val)
+	bool getFloatNoEx(const std::string &name, float &val) const
 	{
 		try {
 			val = getFloat(name);
@@ -643,7 +602,7 @@ public:
 		}
 	}
 
-	bool getU16NoEx(std::string name, int &val)
+	bool getU16NoEx(const std::string &name, int &val) const
 	{
 		try {
 			val = getU16(name);
@@ -653,7 +612,7 @@ public:
 		}
 	}
 
-	bool getU16NoEx(std::string name, u16 &val)
+	bool getU16NoEx(const std::string &name, u16 &val) const
 	{
 		try {
 			val = getU16(name);
@@ -663,7 +622,7 @@ public:
 		}
 	}
 
-	bool getS16NoEx(std::string name, int &val)
+	bool getS16NoEx(const std::string &name, int &val) const
 	{
 		try {
 			val = getU16(name);
@@ -673,7 +632,7 @@ public:
 		}
 	}
 
-	bool getS16NoEx(std::string name, s16 &val)
+	bool getS16NoEx(const std::string &name, s16 &val) const
 	{
 		try {
 			val = getS16(name);
@@ -683,7 +642,7 @@ public:
 		}
 	}
 
-	bool getS32NoEx(std::string name, s32 &val)
+	bool getS32NoEx(const std::string &name, s32 &val) const
 	{
 		try {
 			val = getS32(name);
@@ -693,7 +652,7 @@ public:
 		}
 	}
 
-	bool getV3FNoEx(std::string name, v3f &val)
+	bool getV3FNoEx(const std::string &name, v3f &val) const
 	{
 		try {
 			val = getV3F(name);
@@ -703,7 +662,7 @@ public:
 		}
 	}
 
-	bool getV2FNoEx(std::string name, v2f &val)
+	bool getV2FNoEx(const std::string &name, v2f &val) const
 	{
 		try {
 			val = getV2F(name);
@@ -713,7 +672,7 @@ public:
 		}
 	}
 
-	bool getU64NoEx(std::string name, u64 &val)
+	bool getU64NoEx(const std::string &name, u64 &val) const
 	{
 		try {
 			val = getU64(name);
@@ -727,7 +686,7 @@ public:
 
 	// N.B. if setStruct() is used to write a non-POD aggregate type,
 	// the behavior is undefined.
-	bool setStruct(std::string name, std::string format, void *value)
+	bool setStruct(const std::string &name, const std::string &format, void *value)
 	{
 		std::string structstr;
 		if (!serializeStructToString(&structstr, format, value))
@@ -737,50 +696,47 @@ public:
 		return true;
 	}
 
-	void setFlagStr(std::string name, u32 flags,
-		FlagDesc *flagdesc, u32 flagmask)
+	void setFlagStr(const std::string &name, u32 flags,
+		const FlagDesc *flagdesc, u32 flagmask)
 	{
 		set(name, writeFlagString(flags, flagdesc, flagmask));
 	}
 
-	void setBool(std::string name, bool value)
+	void setBool(const std::string &name, bool value)
 	{
-		if(value)
-			set(name, "true");
-		else
-			set(name, "false");
+		set(name, value ? "true" : "false");
 	}
 
-	void setFloat(std::string name, float value)
+	void setFloat(const std::string &name, float value)
 	{
 		set(name, ftos(value));
 	}
 
-	void setV3F(std::string name, v3f value)
+	void setV3F(const std::string &name, v3f value)
 	{
 		std::ostringstream os;
 		os<<"("<<value.X<<","<<value.Y<<","<<value.Z<<")";
 		set(name, os.str());
 	}
 
-	void setV2F(std::string name, v2f value)
+	void setV2F(const std::string &name, v2f value)
 	{
 		std::ostringstream os;
 		os<<"("<<value.X<<","<<value.Y<<")";
 		set(name, os.str());
 	}
 
-	void setS16(std::string name, s16 value)
+	void setS16(const std::string &name, s16 value)
 	{
 		set(name, itos(value));
 	}
 
-	void setS32(std::string name, s32 value)
+	void setS32(const std::string &name, s32 value)
 	{
 		set(name, itos(value));
 	}
 
-	void setU64(std::string name, u64 value)
+	void setU64(const std::string &name, u64 value)
 	{
 		std::ostringstream os;
 		os<<value;
@@ -807,76 +763,76 @@ public:
 	void clear()
 	{
 		JMutexAutoLock lock(m_mutex);
-
-		m_settings.clear();
-		m_defaults.clear();
+		clearNoLock();
 	}
 
-	void updateValue(Settings &other, const std::string &name)
+	void updateValue(const Settings &other, const std::string &name)
 	{
-		JMutexAutoLock lock(m_mutex);
-
-		if(&other == this)
+		if (&other == this)
 			return;
 
-		try{
+		JMutexAutoLock lock(m_mutex);
+
+		try {
 			std::string val = other.get(name);
 			m_settings[name] = val;
-		} catch(SettingNotFoundException &e){
+		} catch (SettingNotFoundException &e) {
 		}
-
-		return;
 	}
 
-	void update(Settings &other)
+	void update(const Settings &other)
 	{
-		JMutexAutoLock lock(m_mutex);
-		JMutexAutoLock lock2(other.m_mutex);
-
-		if(&other == this)
+		if (&other == this)
 			return;
 
-		m_settings.insert(other.m_settings.begin(), other.m_settings.end());
-		m_defaults.insert(other.m_defaults.begin(), other.m_defaults.end());
-
-		return;
-	}
-
-	Settings & operator+=(Settings &other)
-	{
 		JMutexAutoLock lock(m_mutex);
 		JMutexAutoLock lock2(other.m_mutex);
 
-		if(&other == this)
-			return *this;
+		updateNoLock(other);
+	}
 
+	Settings & operator+=(const Settings &other)
+	{
 		update(other);
 
 		return *this;
-
 	}
 
-	Settings & operator=(Settings &other)
+	Settings & operator=(const Settings &other)
 	{
+		if (&other == this)
+			return *this;
+
 		JMutexAutoLock lock(m_mutex);
 		JMutexAutoLock lock2(other.m_mutex);
 
-		if(&other == this)
-			return *this;
-
-		clear();
-		(*this) += other;
+		clearNoLock();
+		updateNoLock(other);
 
 		return *this;
 	}
 
 private:
+
+	void updateNoLock(const Settings &other)
+	{
+		m_settings.insert(other.m_settings.begin(), other.m_settings.end());
+		m_defaults.insert(other.m_defaults.begin(), other.m_defaults.end());
+	}
+
+	void clearNoLock()
+	{
+		m_settings.clear();
+		m_defaults.clear();
+	}
+
+
 	std::map<std::string, std::string> m_settings;
 	std::map<std::string, std::string> m_defaults;
 	// All methods that access m_settings/m_defaults directly should lock this.
-	JMutex m_mutex;
 	Json::Reader json_reader;
 	Json::FastWriter json_writer;
+	mutable JMutex m_mutex;
 };
 
 #endif
