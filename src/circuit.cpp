@@ -28,6 +28,7 @@
 #include "settings.h"
 #include "log.h"
 #include "key_value_storage.h"
+#include "filesys.h"
 
 #include <map>
 #include <iomanip>
