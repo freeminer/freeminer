@@ -1377,11 +1377,11 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 {
 	std::string playername = "";
 	PlayerSAO *playersao = NULL;
-	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_InitDone);
-	if (client != NULL) {
-		playername = client->getName();
-		playersao = emergePlayer(playername.c_str(), peer_id);
-	}
+		RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_InitDone);
+		if (client != NULL) {
+			playername = client->getName();
+			playersao = emergePlayer(playername.c_str(), peer_id);
+		}
 
 	RemotePlayer *player =
 		static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
@@ -3586,7 +3586,7 @@ int Server::SendBlocks(float dtime)
 		{
 			RemoteClient *client = m_clients.lockedGetClientNoEx(*i, CS_Active);
 
-			if (!client)
+			if (client == NULL)
 				continue;
 
 			total += client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);

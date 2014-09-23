@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "profiler.h" // For TimeTaker
 #include "connection.h"
 #include "shader.h"
+#include "exceptions.h"
+#include "debug.h"
 
 /*
 	NodeBox
@@ -695,6 +697,8 @@ public:
 				if (f->waving == 1)
 					material_type = TILE_MATERIAL_WAVING_PLANTS;
 				break;
+			case NDT_FIRELIKE:
+				f->backface_culling = false;
 			case NDT_TORCHLIKE:
 			case NDT_SIGNLIKE:
 			case NDT_FENCELIKE:

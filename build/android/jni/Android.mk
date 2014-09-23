@@ -224,7 +224,8 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/circuit_element.cpp               \
 		jni/src/circuit_element_states.cpp        \
 		jni/src/circuit_element_virtual.cpp       \
- 		jni/src/database-leveldb.cpp
+ 		jni/src/database-leveldb.cpp              \
+ 		jni/src/settings.cpp
 
 # lua api
 LOCAL_SRC_FILES +=                                \

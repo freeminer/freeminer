@@ -347,8 +347,8 @@ std::string translatePassword(std::string playername, std::string password);
 
 std::string urlencode(std::string str);
 std::string urldecode(std::string str);
-u32 readFlagString(std::string str, FlagDesc *flagdesc, u32 *flagmask);
-std::string writeFlagString(u32 flags, FlagDesc *flagdesc, u32 flagmask);
+u32 readFlagString(std::string str, const FlagDesc *flagdesc, u32 *flagmask);
+std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);

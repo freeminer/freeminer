@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "log.h"
 #include "hex.h"
+#include "debug.h"
 
 class UnknownKeycode : public BaseException
 {
