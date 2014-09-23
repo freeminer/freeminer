@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 #include "settings.h"
 #include "log.h"
+#include "filesys.h"
+
 
 Database_Redis::Database_Redis(ServerMap *map, std::string savedir)
 {
