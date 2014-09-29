@@ -68,7 +68,6 @@ core.register_entity(":__builtin:falling_node", {
 
 	on_activate = function(self, staticdata)
 		self.object:set_armor_groups({immortal=1})
-		--self.object:setacceleration({x=0, y=-10, z=0})
 		self:set_node({name=staticdata})
 	end,
 
@@ -111,8 +110,12 @@ core.register_entity(":__builtin:falling_node", {
 			core.add_node(np, self.node)
 			self.object:remove()
 			nodeupdate(np)
-		else
-			-- Do nothing
+			return
+		end
+		local vel = self.object:getvelocity()
+		if vector.equals(vel, {x=0,y=0,z=0}) then
+			local npos = self.object:getpos()
+			self.object:setpos(vector.round(npos))
 		end
 	end
 })
