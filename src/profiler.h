@@ -200,5 +200,10 @@ private:
 	enum ScopeProfilerType m_type;
 };
 
+
+// Global profiler
+class Profiler;
+extern Profiler *g_profiler;
+
 #endif
 
