@@ -3324,7 +3324,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 		if(draw_control.range_all)
 			fog_range = 100000*BS;
-		else {
+		else if (!no_output) {
 			fog_range = draw_control.wanted_range*BS + 0.0*MAP_BLOCKSIZE*BS;
 			if(use_weather) {
 				auto humidity = client.getEnv().getClientMap().getHumidity(pos_i, 1);
@@ -3345,7 +3345,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		if(g_settings->getBool("free_move")){
 			direct_brightness = time_brightness;
 			sunlight_seen = true;
-		} else {
+		} else if (!no_output) {
 			//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 			float old_brightness = sky->getBrightness();
 			direct_brightness = (float)client.getEnv().getClientMap()
@@ -3368,6 +3368,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			time_of_day_smooth = time_of_day_smooth * (1.0-todsm)
 					+ time_of_day * todsm;
 
+		if (!no_output)
 		sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 				sunlight_seen,camera.getCameraMode(), player->getYaw(),
 				player->getPitch());
@@ -3378,6 +3379,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Update clouds
 		*/
+		if (!no_output)
 		if(clouds){
 			if(sky->getCloudsVisible()){
 				clouds->setVisible(true);
