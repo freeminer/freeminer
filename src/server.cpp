@@ -99,9 +99,11 @@ public:
 
 		porting::setThreadName("Map");
 		porting::setThreadPriority(15);
+		auto time = porting::getTimeMs();
 		while(!StopRequested()) {
+			auto time_now = porting::getTimeMs();
 			try {
-				if (!m_server->AsyncRunMapStep())
+				if (!m_server->AsyncRunMapStep((time_now - time)/1000.0f))
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -116,6 +118,7 @@ public:
 			} catch (int) { //nothing
 #endif
 			}
+			time = time_now;
 		}
 		END_DEBUG_EXCEPTION_HANDLER(errorstream)
 		return nullptr;
@@ -145,8 +148,9 @@ public:
 		while(!StopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
 			try {
-				int sent = m_server->SendBlocks((porting::getTimeMs() - time)/1000.0f);
-				time = porting::getTimeMs();
+				auto time_now = porting::getTimeMs();
+				auto sent = m_server->SendBlocks((time_now - time)/1000.0f);
+				time = time_now;
 				std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
 #ifdef NDEBUG
 			} catch (BaseException &e) {
@@ -230,19 +234,21 @@ void * ServerThread::Thread()
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	m_server->AsyncRunStep(true);
+	m_server->AsyncRunStep(0.1, true);
 
 	ThreadStarted();
 
 	porting::setThreadName("ServerThread");
 	porting::setThreadPriority(40);
 
+	auto time = porting::getTimeMs();
 	while(!StopRequested())
 	{
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
-
-			m_server->AsyncRunStep();
+			auto time_now = porting::getTimeMs();
+			m_server->AsyncRunStep((time_now - time)/1000.0f);
+			time = time_now;
 
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
@@ -671,18 +677,20 @@ void Server::step(float dtime)
 	}
 }
 
-void Server::AsyncRunStep(bool initial_step)
+void Server::AsyncRunStep(float dtime, bool initial_step)
 {
 	DSTACK(__FUNCTION_NAME);
 
 	TimeTaker timer_step("Server step");
 	g_profiler->add("Server::AsyncRunStep (num)", 1);
 
+/*
 	float dtime;
 	{
 		JMutexAutoLock lock1(m_step_dtime_mutex);
 		dtime = m_step_dtime;
 	}
+*/
 
 	if (!more_threads)
 	{
@@ -701,11 +709,13 @@ void Server::AsyncRunStep(bool initial_step)
 	//infostream<<"Server steps "<<dtime<<std::endl;
 	//infostream<<"Server::AsyncRunStep(): dtime="<<dtime<<std::endl;
 
+/*
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		JMutexAutoLock lock1(m_step_dtime_mutex);
 		m_step_dtime -= dtime;
 	}
+*/
 
 	/*
 		Update uptime
@@ -824,7 +834,7 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	if (!more_threads)
-		AsyncRunMapStep(false);
+		AsyncRunMapStep(dtime, false);
 
 	m_clients.step(dtime);
 
@@ -1210,7 +1220,7 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 }
 
-int Server::AsyncRunMapStep(bool async) {
+int Server::AsyncRunMapStep(float dtime, bool async) {
 	DSTACK(__FUNCTION_NAME);
 
 	TimeTaker timer_step("Server map step");
@@ -1218,11 +1228,13 @@ int Server::AsyncRunMapStep(bool async) {
 
 	int ret = 0;
 
+/*
 	float dtime;
 	{
 		JMutexAutoLock lock1(m_step_dtime_mutex);
 		dtime = m_step_dtime;
 	}
+*/
 
 	u32 max_cycle_ms = async ? 2000 : 300;
 

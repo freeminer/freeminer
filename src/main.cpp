@@ -102,10 +102,6 @@ Settings main_settings;
 Settings *g_settings = &main_settings;
 std::string g_settings_path;
 
-// Global profiler
-Profiler main_profiler;
-Profiler *g_profiler = &main_profiler;
-
 // Menu clouds are created later
 Clouds *g_menuclouds = 0;
 irr::scene::ISceneManager *g_menucloudsmgr = 0;

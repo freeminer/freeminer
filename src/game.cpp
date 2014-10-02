@@ -1119,8 +1119,16 @@ static void updateChat(Client& client, f32 dtime, bool show_debug,
 	if (show_debug)
 		chat_y += line_height;
 
-	core::rect<s32> rect(10, chat_y, font->getDimension(recent_chat.c_str()).Width +10,
-			chat_y + (recent_chat_count * line_height));
+	// first pass to calculate height of text to be set
+	s32 width = std::min(font->getDimension(recent_chat.c_str()).Width + 10,
+			porting::getWindowSize().X - 20);
+	core::rect<s32> rect(10, chat_y, width, chat_y + porting::getWindowSize().Y);
+	guitext_chat->setRelativePosition(rect);
+
+	//now use real height of text and adjust rect according to this size	
+	rect = core::rect<s32>(10, chat_y, width,
+			chat_y + guitext_chat->getTextHeight());
+
 
 	guitext_chat->setRelativePosition(rect);
 	// Don't show chat if disabled or empty or profiler is enabled
@@ -3280,7 +3288,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 		if(draw_control.range_all)
 			fog_range = 100000*BS;
-		else {
+		else if (!no_output) {
 			fog_range = draw_control.wanted_range*BS + 0.0*MAP_BLOCKSIZE*BS;
 			if(use_weather) {
 				auto humidity = client.getEnv().getClientMap().getHumidity(pos_i, 1);
@@ -3301,7 +3309,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		if(g_settings->getBool("free_move")){
 			direct_brightness = time_brightness;
 			sunlight_seen = true;
-		} else {
+		} else if (!no_output) {
 			//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 			float old_brightness = sky->getBrightness();
 			direct_brightness = (float)client.getEnv().getClientMap()
@@ -3324,6 +3332,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 			time_of_day_smooth = time_of_day_smooth * (1.0-todsm)
 					+ time_of_day * todsm;
 
+		if (!no_output)
 		sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 				sunlight_seen,camera.getCameraMode(), player->getYaw(),
 				player->getPitch());
@@ -3334,6 +3343,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		/*
 			Update clouds
 		*/
+		if (!no_output)
 		if(clouds){
 			if(sky->getCloudsVisible()){
 				clouds->setVisible(true);

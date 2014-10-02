@@ -11,8 +11,12 @@
 	border: 1px solid gray;
 }
 
-.mts_hover_list{
-	visibility: hidden;
+tr:hover {
+	background-color: #f0f0f0;
+}
+
+.mts_hover_list {
+	display: none;
 	border: gray solid 1px;
 	position: absolute;
 	z-index: 100;
@@ -21,7 +25,7 @@
 }
 
 td:hover .mts_hover_list {
-	visibility: visible;
+	display: block;
 }
 
 .mts_hover_list_text, .mts_tooltip {

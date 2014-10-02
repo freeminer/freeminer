@@ -479,6 +479,7 @@ set(FMcommon_SRCS
 	mapgen_indev.cpp
 	mapgen_math.cpp
 	log_types.cpp
+	profiler.cpp
 )
 
 set(common_SRCS

@@ -30,10 +30,6 @@ class Settings;
 extern Settings *g_settings;
 extern std::string g_settings_path;
 
-// Global profiler
-class Profiler;
-extern Profiler *g_profiler;
-
 // Menu clouds
 class Clouds;
 extern Clouds *g_menuclouds;

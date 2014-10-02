@@ -109,6 +109,7 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/intlGUIEditBox.cpp                \
 		jni/src/key_value_storage.cpp             \
 		jni/src/log_types.cpp                     \
+		jni/src/profiler.cpp                      \
 		jni/src/ban.cpp                           \
 		jni/src/base64.cpp                        \
 		jni/src/biome.cpp                         \
