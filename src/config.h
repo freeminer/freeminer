@@ -87,5 +87,10 @@
 	#define VERSION_EXTRA_STRING CMAKE_VERSION_EXTRA_STRING
 #endif
 
+#ifdef __ANDROID__
+	#include "android_version.h"
+	#define VERSION_STRING CMAKE_VERSION_STRING
+#endif
+
 #endif
 

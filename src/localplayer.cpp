@@ -36,8 +36,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	LocalPlayer
 */
 
-LocalPlayer::LocalPlayer(IGameDef *gamedef):
-	Player(gamedef),
+LocalPlayer::LocalPlayer(IGameDef *gamedef, const char *name):
+	Player(gamedef, name),
 	parent(0),
 	isAttached(false),
 	overridePosition(v3f(0,0,0)),

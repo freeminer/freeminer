@@ -101,7 +101,7 @@ class Player
 {
 public:
 
-	Player(IGameDef *gamedef);
+	Player(IGameDef *gamedef, const std::string & name);
 	virtual ~Player() = 0;
 
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
@@ -333,7 +333,10 @@ public:
 class RemotePlayer : public Player
 {
 public:
-	RemotePlayer(IGameDef *gamedef): Player(gamedef), m_sao(0) {}
+	RemotePlayer(IGameDef *gamedef, const std::string & name):
+		Player(gamedef, name),
+		m_sao(NULL)
+	{}
 	virtual ~RemotePlayer() {}
 
 	PlayerSAO *getPlayerSAO()

@@ -1462,7 +1462,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		}
 
 	RemotePlayer *player =
-		static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
+		static_cast<RemotePlayer*>(m_env->getPlayer(playername));
 
 	// If failed, cancel
 	if((playersao == NULL) || (player == NULL))
@@ -5328,15 +5328,14 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 	// Create player if it doesn't exist
 	if (!player) {
 		newplayer = true;
-		player = new RemotePlayer(this);
-		player->updateName(name);
-		/* Set player position */
+		player = new RemotePlayer(this, name);
+		// Set player position
 		infostream<<"Server: Finding spawn place for player \""
 				<<name<<"\""<<std::endl;
 		v3f pos = findSpawnPos(m_env->getServerMap());
 		player->setPosition(pos);
 
-		/* Add player to environment */
+		// Add player to environment
 		m_env->addPlayer(player);
 	}
 

@@ -491,7 +491,7 @@ void initializePaths()
 			bindir + DIR_DELIM + ".." + DIR_DELIM + "share" + DIR_DELIM + PROJECT_NAME);
 	trylist.push_back(bindir + DIR_DELIM + "..");
 #ifdef __ANDROID__
-	trylist.push_back(DIR_DELIM "sdcard" DIR_DELIM PROJECT_NAME);
+	trylist.push_back(path_user);
 #endif
 
 	for(std::list<std::string>::const_iterator i = trylist.begin();
@@ -513,8 +513,6 @@ void initializePaths()
 	}
 #ifndef __ANDROID__
 	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + PROJECT_NAME;
-#else
-	path_user = std::string(DIR_DELIM "sdcard" DIR_DELIM PROJECT_NAME DIR_DELIM);
 #endif
 
 	/*
