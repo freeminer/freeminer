@@ -89,7 +89,9 @@ private:
 	v3s16 m_camera_offset;
 };
 
+extern Clouds *g_menuclouds;
 
+extern irr::scene::ISceneManager *g_menucloudsmgr;
 
 #endif
 

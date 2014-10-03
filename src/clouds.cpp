@@ -27,6 +27,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "settings.h"
 
+Clouds *g_menuclouds = 0;
+irr::scene::ISceneManager *g_menucloudsmgr = 0;
+
 Clouds::Clouds(
 		scene::ISceneNode* parent,
 		scene::ISceneManager* mgr,

@@ -25,14 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-// Menu clouds
-class Clouds;
-extern Clouds *g_menuclouds;
-
-// Scene manager used for menu clouds
-namespace irr{namespace scene{class ISceneManager;}}
-extern irr::scene::ISceneManager *g_menucloudsmgr;
-
 // Debug streams
 
 #include <fstream>
