@@ -31,6 +31,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include <cctype>
 
+Settings main_settings;
+Settings *g_settings = &main_settings;
+std::string g_settings_path;
 
 Settings & Settings::operator += (const Settings &other)
 {

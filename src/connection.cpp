@@ -39,6 +39,9 @@ Not used, keep for reduce MT merge conflicts
 #include "profiler.h"
 #include "main.h" // for profiling
 
+std::ostream *dout_con_ptr = &dummyout;
+std::ostream *derr_con_ptr = &verbosestream;
+
 namespace con
 {
 

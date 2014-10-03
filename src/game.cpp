@@ -2943,6 +2943,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		if(pointed != pointed_old)
 		{
 			infostream<<"Pointing at "<<pointed.dump()<<std::endl;
+
 /* node debug
 			MapNode nu = client.getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
 			MapNode na = client.getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
@@ -2950,8 +2951,14 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<nodedef->get(na.getContent()).name
 						<<std::endl;
 */
-			if (g_settings->getBool("enable_node_highlighting"))
-				client.setHighlighted(pointed.node_undersurface, show_hud);
+
+			if (g_settings->getBool("enable_node_highlighting")) {
+				if (pointed.type == POINTEDTHING_NODE) {
+					client.setHighlighted(pointed.node_undersurface, show_hud);
+				} else {
+					client.setHighlighted(pointed.node_undersurface, false);
+				}
+			}
 		}
 
 		/*

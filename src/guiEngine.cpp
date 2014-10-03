@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "porting.h"
 #include "filesys.h"
-#include "main.h"
+#include <fstream>
 #include "settings.h"
 #include "guiMainMenu.h"
 #include "sound.h"

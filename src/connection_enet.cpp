@@ -31,6 +31,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "profiler.h"
 
+std::ostream *dout_con_ptr = &dummyout;
+std::ostream *derr_con_ptr = &verbosestream;
+
 namespace con
 {
 

@@ -561,7 +561,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	f32 viewing_range_max = g_settings->getS16("viewing_range_nodes_max");
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
 	// vrange+position must be smaller than 32767
-	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(abs(m_camera_position.X/BS), abs(m_camera_position.Y/BS)), abs(m_camera_position.Z/BS)));
+	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(std::abs(m_camera_position.X/BS), std::abs(m_camera_position.Y/BS)), std::abs(m_camera_position.Z/BS)));
 	
 	// Immediately apply hard limits
 	if(m_draw_control.wanted_range < viewing_range_min)

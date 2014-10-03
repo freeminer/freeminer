@@ -24,7 +24,6 @@
 #include "scripting_game.h"
 #include "map.h"
 #include "serialization.h"
-#include "main.h"
 #include "settings.h"
 #include "log.h"
 #include "key_value_storage.h"
@@ -35,6 +34,7 @@
 #include <cassert>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 #define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
 

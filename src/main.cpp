@@ -94,33 +94,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef HAVE_TOUCHSCREENGUI
 #include "touchscreengui.h"
 #endif
-/*
-	Settings.
-	These are loaded from the config file.
-*/
-Settings main_settings;
-Settings *g_settings = &main_settings;
-std::string g_settings_path;
-
-// Menu clouds are created later
-Clouds *g_menuclouds = 0;
-irr::scene::ISceneManager *g_menucloudsmgr = 0;
-
-/*
-	Debug streams
-*/
-
-// Connection
-std::ostream *dout_con_ptr = &dummyout;
-std::ostream *derr_con_ptr = &verbosestream;
-
-// Server
-std::ostream *dout_server_ptr = &infostream;
-std::ostream *derr_server_ptr = &errorstream;
-
-// Client
-std::ostream *dout_client_ptr = &infostream;
-std::ostream *derr_client_ptr = &errorstream;
 
 #ifndef SERVER
 /*

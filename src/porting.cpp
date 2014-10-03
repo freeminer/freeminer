@@ -44,7 +44,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "log.h"
 #include "util/string.h"
-#include "main.h"
 #include "settings.h"
 #include <list>
 

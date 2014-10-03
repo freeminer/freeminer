@@ -21,7 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "mods.h"
-#include "main.h"
+#include <fstream>
 #include "filesys.h"
 #include "strfnd.h"
 #include "log.h"

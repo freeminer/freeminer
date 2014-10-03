@@ -48,7 +48,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
-
 #include "intlGUIEditBox.h"
 #include "scripting_game.h"
 #include "porting.h"

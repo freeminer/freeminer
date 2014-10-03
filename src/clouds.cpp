@@ -24,9 +24,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "noise.h"
 #include "constants.h"
 #include "debug.h"
-#include "main.h" // For g_profiler and g_settings
 #include "profiler.h"
 #include "settings.h"
+
+Clouds *g_menuclouds = 0;
+irr::scene::ISceneManager *g_menucloudsmgr = 0;
 
 Clouds::Clouds(
 		scene::ISceneNode* parent,

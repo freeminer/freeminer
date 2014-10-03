@@ -116,7 +116,10 @@ std::string wide_to_utf8(const std::wstring &input) {
 #endif
 
 #ifdef __ANDROID__
-const wchar_t* wide_chars = L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+const wchar_t* wide_chars =
+	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
+	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+	L"abcdefghijklmnopqrstuvwxyz{|}~";
 
 int wctomb(char *s, wchar_t wc)
 {
