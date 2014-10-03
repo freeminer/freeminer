@@ -157,7 +157,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
 	if (!max_cycle_ms)
-		max_cycle_ms = 300/getControl().fps_wanted;
+		max_cycle_ms = 400/getControl().fps_wanted;
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
