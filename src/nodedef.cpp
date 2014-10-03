@@ -895,8 +895,8 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 		// Get texture size to determine frame count by aspect ratio
 		v2u32 size = tile->texture->getOriginalSize();
 		int frame_height = (float)size.X /
-				(tiledef[j].animation.aspect_w ? (float)tiledef[j].animation.aspect_w : 1) *
-				(tiledef[j].animation.aspect_h ? (float)tiledef[j].animation.aspect_h : 1);
+				(tiledef->animation.aspect_w ? (float)tiledef->animation.aspect_w : 1) *
+				(tiledef->animation.aspect_h ? (float)tiledef->animation.aspect_h : 1);
 		frame_count = size.Y / (frame_height ? frame_height : size.Y ? size.Y : 1);
 		int frame_length_ms = 1000.0 * tiledef->animation.length / frame_count;
 		tile->animation_frame_count = frame_count;
