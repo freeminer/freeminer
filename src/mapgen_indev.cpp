@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_indev.h"
 #include "constants.h"
 #include "map.h"
-#include "main.h"
 #include "util/numeric.h"
 #include "log.h"
 

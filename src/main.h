@@ -25,11 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-// Settings
-class Settings;
-extern Settings *g_settings;
-extern std::string g_settings_path;
-
 // Menu clouds
 class Clouds;
 extern Clouds *g_menuclouds;

@@ -182,5 +182,7 @@ private:
 	mutable JMutex m_mutex;
 };
 
-#endif
+extern Settings *g_settings;
+extern std::string g_settings_path;
 
+#endif

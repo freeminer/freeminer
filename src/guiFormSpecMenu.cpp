@@ -50,7 +50,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettext.h"
 #if USE_FREETYPE
 #include "settings.h"
-#include "main.h"  // for g_settings
 #include "intlGUIEditBox.h"
 #endif
 

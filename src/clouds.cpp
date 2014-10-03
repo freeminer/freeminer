@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "noise.h"
 #include "constants.h"
 #include "debug.h"
-#include "main.h" // For g_profiler and g_settings
 #include "profiler.h"
 #include "settings.h"
 
