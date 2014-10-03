@@ -37,6 +37,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "util/thread_pool.h"
 
+#include <fstream>
+
+extern std::ostream *dout_con_ptr;
+extern std::ostream *derr_con_ptr;
+#define dout_con (*dout_con_ptr)
+#define derr_con (*derr_con_ptr)
+
+
 namespace con
 {
 

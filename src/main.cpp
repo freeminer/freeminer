@@ -96,22 +96,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "touchscreengui.h"
 #endif
 
-/*
-	Debug streams
-*/
-
-// Connection
-std::ostream *dout_con_ptr = &dummyout;
-std::ostream *derr_con_ptr = &verbosestream;
-
-// Server
-std::ostream *dout_server_ptr = &infostream;
-std::ostream *derr_server_ptr = &errorstream;
-
-// Client
-std::ostream *dout_client_ptr = &infostream;
-std::ostream *derr_client_ptr = &errorstream;
-
 #ifndef SERVER
 /*
 	Random stuff

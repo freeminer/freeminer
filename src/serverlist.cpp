@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 
 #include "version.h"
-#include "main.h" // for g_settings
+#include <fstream>
 #include "settings.h"
 #include "serverlist.h"
 #include "filesys.h"

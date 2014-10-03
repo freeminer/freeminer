@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "shader.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
-#include "main.h" // for g_settings
+#include <fstream>
 #include "filesys.h"
 #include "util/container.h"
 #include "util/thread.h"
