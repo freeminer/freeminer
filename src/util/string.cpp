@@ -34,7 +34,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../porting.h"
 
 #ifdef __ANDROID__
-const wchar_t* wide_chars = L" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+const wchar_t* wide_chars =
+	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
+	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+	L"abcdefghijklmnopqrstuvwxyz{|}~";
 
 int wctomb(char *s, wchar_t wc)
 {
