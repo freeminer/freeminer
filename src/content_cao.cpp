@@ -973,8 +973,15 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 	updateAnimation();
 	updateBonePosition();
 	updateAttachments();
+
+	if (g_settings->getBool("shadows")) {
+		if(m_animated_meshnode)
+			m_animated_meshnode->addShadowVolumeSceneNode();
+		else if(m_meshnode)
+			m_meshnode->addShadowVolumeSceneNode();
+	}
 }
-		
+
 void GenericCAO::updateLight(u8 light_at_pos)
 {
 	u8 li = decode_light(light_at_pos);

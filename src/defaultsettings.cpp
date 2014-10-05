@@ -377,6 +377,7 @@ void set_default_settings(Settings *settings)
 #else
 		settings->setDefault("more_threads", "true");
 #endif
+	settings->setDefault("shadows", "0");
 
 #if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)

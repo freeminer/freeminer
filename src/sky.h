@@ -30,6 +30,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define SKY_MATERIAL_COUNT 5
 #define SKY_STAR_COUNT 200
 
+class Map;
+class Player;
+class INodeDefManager;
+
 // Skybox, rendered with zbuffer turned off, before all other nodes.
 class Sky : public scene::ISceneNode
 {
@@ -54,7 +58,8 @@ public:
 
 	void update(float m_time_of_day, float time_brightness,
 			float direct_brightness, bool sunlight_seen, CameraMode cam_mode,
-			float yaw, float pitch);
+			float yaw, float pitch,
+			Player * player, Map * map, INodeDefManager *ndef);
 	
 	float getBrightness(){ return m_brightness; }
 
@@ -134,6 +139,9 @@ private:
 	video::ITexture* m_moon_texture;
 	video::ITexture* m_sun_tonemap;
 	video::ITexture* m_moon_tonemap;
+
+	irr::scene::ILightSceneNode * sun_moon_light;
+	bool shadow_enabled;
 };
 
 #endif

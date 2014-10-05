@@ -3342,7 +3342,8 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 		if (!no_output)
 		sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 				sunlight_seen,camera.getCameraMode(), player->getYaw(),
-				player->getPitch());
+				player->getPitch(),
+				player, &client.getEnv().getMap(), nodedef);
 
 		video::SColor bgcolor = sky->getBgColor();
 		video::SColor skycolor = sky->getSkyColor();
