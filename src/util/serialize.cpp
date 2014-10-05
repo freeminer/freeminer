@@ -383,7 +383,7 @@ fail:
 		return false;
 	}
 
-	memcpy(out, buf, olen);
+	memcpy(out, buf, bufpos - buf);
 	delete[] buf;
 	return true;
 }
