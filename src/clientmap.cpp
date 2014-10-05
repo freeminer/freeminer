@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/mathconstants.h"
 #include <algorithm>
 #include <unordered_map>
+#include <utility>
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -157,7 +158,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 	auto & drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
 	if (!max_cycle_ms)
-		max_cycle_ms = 400/getControl().fps_wanted;
+		max_cycle_ms = 300/getControl().fps_wanted;
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
@@ -211,7 +212,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 	if(m_control.range_all == false)
 		range_max = m_control.wanted_range * BS;
 
-	if (!m_drawlist_last) {
+	if (draw_nearest.empty()) {
 		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
 		//TimeTaker timer_step("ClientMap::updateDrawList make list");
 
@@ -247,11 +248,11 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 			if (d> range_max)
 				continue;
 			int range = d / (MAP_BLOCKSIZE * BS);
-			draw_nearest[bp] = range;
+			draw_nearest.emplace_back(std::make_pair(bp, range));
 		}
 	}
 
-#if _MSC_VER 
+#if _MSC_VER
 	const int maxq = 100;
 #else
 	const int maxq = 1000;
@@ -267,20 +268,19 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 					occlusion_culling_enabled = false;
 			}
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
+	u32 calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
 	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
 
 	m_drawlist_work = true;
-	for(auto & ir : draw_nearest) {
-
-		if (n++ < m_drawlist_last)
-			continue;
-		else
-			m_drawlist_last = 0;
-		++calls;
+	while (!draw_nearest.empty()) {
+		auto ir = draw_nearest.back();
 
 		auto bp = ir.first;
+		int range = ir.second;
+		draw_nearest.pop_back();
+		++calls;
+
 		//auto block = getBlockNoCreateNoEx(bp);
 		auto * block = m_blocks.get(bp);
 		if (!block)
@@ -295,8 +295,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 			auto mesh = block->getMesh(mesh_step);
 			if (mesh)
 				mesh->updateCameraOffset(m_camera_offset);
-
-			int range = ir.second;
 
 			blocks_in_range++;
 
@@ -398,13 +396,11 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 				m_control.farthest_drawn = farthest_drawn;
 
 		if (porting::getTimeMs() > end_ms) {
-			m_drawlist_last = n;
 			break;
 		}
 
 	}
-	if (!calls)
-		m_drawlist_last = 0;
+	m_drawlist_last = draw_nearest.size();
 
 	m_drawlist_work = false;
 
@@ -415,7 +411,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 	for (auto & ir : *m_drawlist)
 		ir.second->refDrop();
-
 
 	auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;

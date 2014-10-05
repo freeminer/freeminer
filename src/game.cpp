@@ -1758,7 +1758,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 
 	bool use_weather = g_settings->getBool("weather");
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
-#ifndef __ANDROID__
+#if CMAKE_THREADS && defined(HAVE_FUTURE)
 	std::future<void> updateDrawList_future;
 #endif
 	int errors = 0;
@@ -3584,7 +3584,7 @@ bool the_game(bool &kill, bool random_input, InputHandler *input,
 				camera_offset_changed){
 			update_draw_list_timer = 0;
 			bool allow = true;
-#if CMAKE_THREADS && !defined(__ANDROID__) && (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 407)))
+#if CMAKE_THREADS && defined(HAVE_FUTURE)
 			if (g_settings->getBool("more_threads")) {
 				bool allow = true;
 				if (updateDrawList_future.valid()) {

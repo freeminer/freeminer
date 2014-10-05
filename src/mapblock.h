@@ -538,7 +538,7 @@ public:
 
 #ifndef SERVER // Only on client
 	std::shared_ptr<MapBlockMesh> mesh;
-	std::shared_ptr<MapBlockMesh>  mesh2, mesh4, mesh8, mesh16;
+	std::shared_ptr<MapBlockMesh> mesh2, mesh4, mesh8, mesh16;
 	unsigned int mesh_size;
 #endif
 	

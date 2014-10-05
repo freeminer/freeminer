@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "porting.h"
 #include "json/json.h" // for json config values
+#include <stdint.h>
 
 enum ValueType
 {
@@ -130,7 +131,7 @@ public:
 	void setBool(const std::string &name, bool value);
 	void setS16(const std::string &name, s16 value);
 	void setS32(const std::string &name, s32 value);
-	void setU64(const std::string &name, u64 value);
+	void setU64(const std::string &name, uint64_t value);
 	void setFloat(const std::string &name, float value);
 	void setV2F(const std::string &name, v2f value);
 	void setV3F(const std::string &name, v3f value);

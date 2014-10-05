@@ -485,6 +485,7 @@ void Client::step(float dtime)
 		TimeTaker timer_step("Client: Replace updated meshes");
 
 		int num_processed_meshes = 0;
+		u32 end_ms = porting::getTimeMs() + 5;
 		while(!m_mesh_update_thread.m_queue_out.empty())
 		{
 			if (getEnv().getClientMap().m_drawlist_work)
@@ -499,6 +500,8 @@ void Client::step(float dtime)
 			} else {
 				//delete r.mesh;
 			}
+			if (porting::getTimeMs() > end_ms)
+				break;
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
