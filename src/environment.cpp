@@ -531,7 +531,7 @@ void ServerEnvironment::loadMeta()
 	if (!is.good()) {
 		infostream << "ServerEnvironment::loadMeta(): Failed to open "
 				<< path << std::endl;
-		throw SerializationError("Couldn't load env meta");
+		//throw SerializationError("Couldn't load env meta");
 	}
 
 	Settings args;
@@ -549,7 +549,7 @@ void ServerEnvironment::loadMeta()
 		m_game_time = args.getU64("game_time");
 	} catch (SettingNotFoundException &e) {
 		// Getting this is crucial, otherwise timestamps are useless
-		throw SerializationError("Couldn't load env meta game_time");
+		//throw SerializationError("Couldn't load env meta game_time");
 	}
 
 	try {

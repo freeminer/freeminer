@@ -237,6 +237,7 @@ bool deSerializeStringToStruct(std::string valstr,
 
 	char *s = &valstr[0];
 	char *buf = new char[len];
+	memset(buf, 0, len);
 	char *bufpos = buf;
 
 	char *fmtpos, *fmt = &format[0];
@@ -382,7 +383,7 @@ fail:
 		return false;
 	}
 
-	memcpy(out, buf, olen);
+	memcpy(out, buf, bufpos - buf);
 	delete[] buf;
 	return true;
 }
