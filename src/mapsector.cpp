@@ -27,14 +27,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 #include "profiler.h"
+#include "porting.h"
 
 
-#if (defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ >= 303)) || (defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 408))
-#define THREAD_LOCAL thread_local
-#else
+#if defined(NO_THREAD_LOCAL)
 try_shared_mutex m_block_cache_mutex;
-#define NO_THREAD_LOCAL
-#define THREAD_LOCAL
 #endif
 
 THREAD_LOCAL MapBlock *m_block_cache = nullptr;
