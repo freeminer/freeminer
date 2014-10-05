@@ -348,8 +348,10 @@ void Sky::render()
 				auto light_vector = core::vector3df(0, MAP_GENERATION_LIMIT*BS*2, 0);
 				light_vector.rotateXZBy(90);
 				light_vector.rotateXYBy(wicked_time_of_day * 360 + 180);
-				sun_moon_light->setPosition(light_vector);
-				sun_light_drawed = true;
+				if (light_vector.Y > 0) {
+					sun_moon_light->setPosition(light_vector);
+					sun_light_drawed = true;
+				}
 			}
 
 		}
@@ -434,7 +436,8 @@ void Sky::render()
 				auto light_vector = core::vector3df(0, -MAP_GENERATION_LIMIT*BS*2, 0);
 				light_vector.rotateXZBy(90);
 				light_vector.rotateXYBy(wicked_time_of_day * 360 - 180);
-				sun_moon_light->setPosition(light_vector);
+				if (light_vector.Y > 0)
+					sun_moon_light->setPosition(light_vector);
 			}
 
 		}
@@ -527,11 +530,12 @@ void Sky::update(float time_of_day, float time_brightness,
 		return;
 	}
 
-	auto n = map->getNodeTry(floatToInt(player->getPosition(), BS));
-	if (n.getContent() != CONTENT_IGNORE) {
-		shadow_enabled = n.getLight(LIGHTBANK_DAY, ndef) >= LIGHT_SUN;
+	if (sun_moon_light) {
+		auto n = map->getNodeTry(floatToInt(player->getPosition(), BS));
+		if (n.getContent() != CONTENT_IGNORE)
+			shadow_enabled = n.getLight(LIGHTBANK_DAY, ndef) >= LIGHT_SUN;
+		sun_moon_light->enableCastShadow(shadow_enabled);
 	}
-	sun_moon_light->enableCastShadow(shadow_enabled);
 
 	m_time_of_day = time_of_day;
 	m_time_brightness = time_brightness;
