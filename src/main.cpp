@@ -1442,7 +1442,7 @@ int main(int argc, char *argv[])
 	params.Bits          = bits;
 	params.AntiAlias     = fsaa;
 	params.Fullscreen    = fullscreen;
-	params.Stencilbuffer = false;
+	params.Stencilbuffer = g_settings->getBool("shadows");
 	params.Vsync         = vsync;
 	params.EventReceiver = receiver;
 	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
