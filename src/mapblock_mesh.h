@@ -140,7 +140,7 @@ public:
 			m_animation_force_timer--;
 	}
 	
-	void updateCameraOffset(v3s16 camera_offset);
+	bool updateCameraOffset(v3s16 camera_offset);
 
 
 	u32 getUsageTimer()

@@ -1448,12 +1448,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	return true;
 }
 
-void MapBlockMesh::updateCameraOffset(v3s16 camera_offset)
+bool MapBlockMesh::updateCameraOffset(v3s16 camera_offset)
 {
 	if (camera_offset != m_camera_offset) {
 		translateMesh(m_mesh, intToFloat(m_camera_offset-camera_offset, BS));
 		m_camera_offset = camera_offset;
+		return true;
 	}
+	return false;
 }
 
 /*
