@@ -534,7 +534,7 @@ void Settings::setS32(const std::string &name, s32 value)
 }
 
 
-void Settings::setU64(const std::string &name, u64 value)
+void Settings::setU64(const std::string &name, uint64_t value)
 {
 	std::ostringstream os;
 	os << value;
