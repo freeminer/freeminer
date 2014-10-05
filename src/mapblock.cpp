@@ -109,16 +109,16 @@ MapNode MapBlock::getNodeParent(v3s16 p)
 	{
 		auto n = m_parent->getNodeTry(getPosRelative() + p);
 		if (n.getContent() == CONTENT_IGNORE)
-			throw InvalidPositionException();
+			throw InvalidPositionException("MapBlock::getNodeParent CONTENT_IGNORE");
 		return n;
 	}
 	else
 	{
 		if(data == NULL)
-			throw InvalidPositionException();
+			throw InvalidPositionException("MapBlock::getNodeParent data=NULL");
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
-			throw InvalidPositionException();
+			throw InvalidPositionException("MapBlock::getNodeParent not locked");
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 }
@@ -776,10 +776,10 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		g_profiler->add("Map: setNode", 1);
 #endif
 		if(data == NULL)
-			throw InvalidPositionException();
-		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException();
-		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException();
+			throw InvalidPositionException("MapBlock::getNodeNoEx data=NULL");
+		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx x out of block");
+		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx y out of block");
+		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx z out of block");
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED);
