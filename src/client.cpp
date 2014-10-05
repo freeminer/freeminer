@@ -761,14 +761,9 @@ void Client::received_media()
 void Client::ReceiveAll()
 {
 	DSTACK(__FUNCTION_NAME);
-	u32 start_ms = porting::getTimeMs();
+	auto end_ms = porting::getTimeMs() + 10;
 	for(;;)
 	{
-		// Limit time even if there would be huge amounts of data to
-		// process
-		if(porting::getTimeMs() > start_ms + 100)
-			break;
-		
 		try{
 			Receive();
 			g_profiler->graphAdd("client_received_packets", 1);
@@ -783,6 +778,10 @@ void Client::ReceiveAll()
 					"InvalidIncomingDataException: what()="
 					<<e.what()<<std::endl;
 		}
+		// Limit time even if there would be huge amounts of data to
+		// process
+		if(porting::getTimeMs() > end_ms)
+			break;
 	}
 }
 
