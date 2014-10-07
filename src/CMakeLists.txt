@@ -10,6 +10,9 @@ INCLUDE(CheckCXXSourceRuns)
 
 include(CheckCXXCompilerFlag)
 
+option(DISABLE_THREADS "Disable using more threads (faster on 1-2 cores)" 0)
+option(ENABLE_CXX1Y "Try use c++14 features (shared_mutex)" 0)
+
 if(MSVC)
 	# Visual Studio
 
