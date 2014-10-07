@@ -214,7 +214,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 	if (draw_nearest.empty()) {
 		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
-		//TimeTaker timer_step("ClientMap::updateDrawList make list");
+		TimeTaker timer_step("ClientMap::updateDrawList make list");
 
 		auto lock = m_blocks.try_lock_shared_rec();
 		if (!lock->owns_lock())
