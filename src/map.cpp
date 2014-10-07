@@ -3572,7 +3572,7 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 			TimeTaker timer1("emerge load");
 
 			block = m_map->getBlockNoCreate(p);
-			if(block->isDummy())
+			if(!block || block->isDummy())
 				block_data_inexistent = true;
 			else
 				block->copyTo(*this);
