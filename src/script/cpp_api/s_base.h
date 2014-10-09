@@ -79,8 +79,8 @@ protected:
 	GUIEngine* getGuiEngine() { return m_guiengine; }
 	void setGuiEngine(GUIEngine* guiengine) { m_guiengine = guiengine; }
 
-	void objectrefGetOrCreate(ServerActiveObject *cobj);
-	void objectrefGet(u16 id);
+	void objectrefGetOrCreate(lua_State *L, ServerActiveObject *cobj);
+	void objectrefGet(lua_State *L, u16 id);
 
 	std::recursive_mutex m_luastackmutex;
 	// Stack index of Lua error handler

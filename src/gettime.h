@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		Server build: servermain.cpp
 */
 enum TimePrecision {
-	PRECISION_SECONDS,
+	PRECISION_SECONDS = 0,
 	PRECISION_MILLI,
 	PRECISION_MICRO,
 	PRECISION_NANO

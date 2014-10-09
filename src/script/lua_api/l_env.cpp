@@ -385,7 +385,7 @@ int ModApiEnvMod::l_add_entity(lua_State *L)
 	if(objectid == 0)
 		return 0;
 	// Return ObjectRef
-	getScriptApiBase(L)->objectrefGetOrCreate(obj);
+	getScriptApiBase(L)->objectrefGetOrCreate(L, obj);
 	return 1;
 }
 
@@ -450,7 +450,7 @@ int ModApiEnvMod::l_get_player_by_name(lua_State *L)
 		return 1;
 	}
 	// Put player on stack
-	getScriptApiBase(L)->objectrefGetOrCreate(sao);
+	getScriptApiBase(L)->objectrefGetOrCreate(L, sao);
 	return 1;
 }
 
@@ -469,7 +469,7 @@ int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 	for(u32 i = 0; iter != ids.end(); iter++) {
 		ServerActiveObject *obj = env->getActiveObject(*iter);
 		// Insert object reference into table
-		script->objectrefGetOrCreate(obj);
+		script->objectrefGetOrCreate(L, obj);
 		lua_rawseti(L, -2, ++i);
 	}
 	return 1;

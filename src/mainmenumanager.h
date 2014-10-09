@@ -34,6 +34,7 @@ class IGameCallback
 {
 public:
 	virtual void exitToOS() = 0;
+	virtual void keyConfig() = 0;
 	virtual void disconnect() = 0;
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
@@ -127,6 +128,7 @@ public:
 		disconnect_requested(false),
 		changepassword_requested(false),
 		changevolume_requested(false),
+		keyconfig_requested(false),
 		shutdown_requested(false),
 		device(a_device)
 	{
@@ -154,10 +156,17 @@ public:
 	{
 		changevolume_requested = true;
 	}
+
+	virtual void keyConfig()
+	{
+		keyconfig_requested = true;
+	}
+
 	
 	bool disconnect_requested;
 	bool changepassword_requested;
 	bool changevolume_requested;
+	bool keyconfig_requested;
 	bool shutdown_requested;
 	IrrlichtDevice *device;
 };
