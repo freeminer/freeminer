@@ -43,7 +43,7 @@ bool ScriptApiItem::item_OnDrop(ItemStack &item,
 
 	// Call function
 	LuaItemStack::create(L, item);
-	objectrefGetOrCreate(dropper);
+	objectrefGetOrCreate(L, dropper);
 	pushFloatPos(L, pos);
 	if (lua_pcall(L, 3, 1, m_errorhandler))
 		scriptError();
@@ -69,7 +69,7 @@ bool ScriptApiItem::item_OnPlace(ItemStack &item,
 
 	// Call function
 	LuaItemStack::create(L, item);
-	objectrefGetOrCreate(placer);
+	objectrefGetOrCreate(L, placer);
 	pushPointedThing(pointed);
 	if (lua_pcall(L, 3, 1, m_errorhandler))
 		scriptError();
@@ -95,7 +95,7 @@ bool ScriptApiItem::item_OnUse(ItemStack &item,
 
 	// Call function
 	LuaItemStack::create(L, item);
-	objectrefGetOrCreate(user);
+	objectrefGetOrCreate(L, user);
 	pushPointedThing(pointed);
 	if (lua_pcall(L, 3, 1, m_errorhandler))
 		scriptError();
@@ -118,7 +118,7 @@ bool ScriptApiItem::item_OnCraft(ItemStack &item, ServerActiveObject *user,
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "on_craft");
 	LuaItemStack::create(L, item);
-	objectrefGetOrCreate(user);
+	objectrefGetOrCreate(L, user);
 	
 	// Push inventory list
 	std::vector<ItemStack> items;
@@ -149,7 +149,7 @@ bool ScriptApiItem::item_CraftPredict(ItemStack &item, ServerActiveObject *user,
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "craft_predict");
 	LuaItemStack::create(L, item);
-	objectrefGetOrCreate(user);
+	objectrefGetOrCreate(L, user);
 
 	//Push inventory list
 	std::vector<ItemStack> items;
@@ -232,7 +232,7 @@ void ScriptApiItem::pushPointedThing(const PointedThing& pointed)
 	{
 		lua_pushstring(L, "object");
 		lua_setfield(L, -2, "type");
-		objectrefGet(pointed.object_id);
+		objectrefGet(L, pointed.object_id);
 		lua_setfield(L, -2, "ref");
 	}
 	else

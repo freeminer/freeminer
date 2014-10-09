@@ -54,6 +54,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 #include "settings.h"
 #include "client.h"
+#include "util/string.h" // for parseColorString()
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -1581,7 +1582,7 @@ void GUIFormSpecMenu::parseBox(parserData* data,std::string element)
 
 		video::SColor tmp_color;
 
-		if (parseColor(parts[2], tmp_color, false)) {
+		if (parseColorString(parts[2], tmp_color, false)) {
 			BoxDrawSpec spec(pos, geom, tmp_color);
 
 			m_boxes.push_back(spec);
@@ -1601,7 +1602,7 @@ void GUIFormSpecMenu::parseBackgroundColor(parserData* data,std::string element)
 	if (((parts.size() == 1) || (parts.size() == 2)) ||
 		((parts.size() > 2) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
-		parseColor(parts[0],m_bgcolor,false);
+		parseColorString(parts[0],m_bgcolor,false);
 
 		if (parts.size() == 2) {
 			std::string fullscreen = parts[1];
@@ -1619,20 +1620,20 @@ void GUIFormSpecMenu::parseListColors(parserData* data,std::string element)
 	if (((parts.size() == 2) || (parts.size() == 3) || (parts.size() == 5)) ||
 		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
-		parseColor(parts[0], m_slotbg_n, false);
-		parseColor(parts[1], m_slotbg_h, false);
+		parseColorString(parts[0], m_slotbg_n, false);
+		parseColorString(parts[1], m_slotbg_h, false);
 
 		if (parts.size() >= 3) {
-			if (parseColor(parts[2], m_slotbordercolor, false)) {
+			if (parseColorString(parts[2], m_slotbordercolor, false)) {
 				m_slotborder = true;
 			}
 		}
 		if (parts.size() == 5) {
 			video::SColor tmp_color;
 
-			if (parseColor(parts[3], tmp_color, false))
+			if (parseColorString(parts[3], tmp_color, false))
 				m_default_tooltip_bgcolor = tmp_color;
-			if (parseColor(parts[4], tmp_color, false))
+			if (parseColorString(parts[4], tmp_color, false))
 				m_default_tooltip_color = tmp_color;
 		}
 		return;
@@ -1650,7 +1651,7 @@ void GUIFormSpecMenu::parseTooltip(parserData* data, std::string element)
 	} else if (parts.size() == 4) {
 		std::string name = parts[0];
 		video::SColor tmp_color1, tmp_color2;
-		if ( parseColor(parts[2], tmp_color1, false) && parseColor(parts[3], tmp_color2, false) ) {
+		if ( parseColorString(parts[2], tmp_color1, false) && parseColorString(parts[3], tmp_color2, false) ) {
 			m_tooltips[name] = TooltipSpec (parts[1], tmp_color1, tmp_color2);
 			return;
 		}
@@ -2949,11 +2950,14 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 	}
 
-	if((event.EventType==EET_MOUSE_INPUT_EVENT &&
-			event.MouseInput.Event != EMIE_MOUSE_MOVED) ||
-			(event.MouseInput.Event == EMIE_MOUSE_MOVED &&
-			event.MouseInput.isRightPressed() && getItemAtPos(m_pointer).i != getItemAtPos(m_old_pointer).i)){
-		// Mouse event other than movement or crossing the border of inventory field while holding rmb
+	/* Mouse event other than movement, or crossing the border of inventory
+	  field while holding right mouse button
+	 */
+	if (event.EventType == EET_MOUSE_INPUT_EVENT &&
+			(event.MouseInput.Event != EMIE_MOUSE_MOVED ||
+			 (event.MouseInput.Event == EMIE_MOUSE_MOVED &&
+			  event.MouseInput.isRightPressed() &&
+			  getItemAtPos(m_pointer).i != getItemAtPos(m_old_pointer).i))) {
 
 		// Get selected item and hovered/clicked item (s)
 
@@ -3391,14 +3395,4 @@ std::wstring GUIFormSpecMenu::getLabelByID(s32 id)
 		}
 	}
 	return L"";
-}
-
-bool GUIFormSpecMenu::parseColor(const std::string &value, video::SColor &color,
-		bool quiet)
-{
-	if (!::parseColor(value, color) && !quiet) {
-		errorstream<<"Invalid color: \""<<value<<"\""<<std::endl;
-		return false;
-	}
-	return true;
 }

@@ -32,7 +32,7 @@ void ScriptApiPlayer::on_newplayer(ServerActiveObject *player)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_newplayers");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
 }
 
@@ -44,7 +44,7 @@ void ScriptApiPlayer::on_dieplayer(ServerActiveObject *player)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_dieplayers");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
 }
 
@@ -56,7 +56,7 @@ bool ScriptApiPlayer::on_respawnplayer(ServerActiveObject *player)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_respawnplayers");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_OR);
 	bool positioning_handled_by_some = lua_toboolean(L, -1);
 	return positioning_handled_by_some;
@@ -87,7 +87,7 @@ void ScriptApiPlayer::on_joinplayer(ServerActiveObject *player)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_joinplayers");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
 }
 
@@ -99,7 +99,7 @@ void ScriptApiPlayer::on_leaveplayer(ServerActiveObject *player)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_leaveplayers");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
 }
 
@@ -112,7 +112,7 @@ void ScriptApiPlayer::on_cheat(ServerActiveObject *player,
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_cheats");
 	// Call callbacks
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	lua_newtable(L);
 	lua_pushlstring(L, cheat_type.c_str(), cheat_type.size());
 	lua_setfield(L, -2, "type");
@@ -130,7 +130,7 @@ void ScriptApiPlayer::on_playerReceiveFields(ServerActiveObject *player,
 	lua_getfield(L, -1, "registered_on_player_receive_fields");
 	// Call callbacks
 	// param 1
-	objectrefGetOrCreate(player);
+	objectrefGetOrCreate(L, player);
 	// param 2
 	lua_pushstring(L, formname.c_str());
 	// param 3

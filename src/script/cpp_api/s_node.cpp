@@ -106,7 +106,7 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 	// Call function
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
-	objectrefGetOrCreate(puncher);
+	objectrefGetOrCreate(L, puncher);
 	pushPointedThing(pointed);
 	if (lua_pcall(L, 4, 0, m_errorhandler))
 		scriptError();
@@ -127,7 +127,7 @@ bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
 	// Call function
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
-	objectrefGetOrCreate(digger);
+	objectrefGetOrCreate(L, digger);
 	if (lua_pcall(L, 3, 0, m_errorhandler))
 		scriptError();
 	return true;
@@ -271,7 +271,7 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 		lua_pushlstring(L, value.c_str(), value.size());
 		lua_settable(L, -3);
 	}
-	objectrefGetOrCreate(sender);        // player
+	objectrefGetOrCreate(L, sender);        // player
 	if (lua_pcall(L, 4, 0, m_errorhandler))
 		scriptError();
 }

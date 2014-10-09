@@ -56,7 +56,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowMove(v3s16 p,
 	lua_pushstring(L, to_list.c_str());   // to_list
 	lua_pushinteger(L, to_index + 1);     // to_index
 	lua_pushinteger(L, count);            // count
-	objectrefGetOrCreate(player);         // player
+	objectrefGetOrCreate(L, player);      // player
 	if (lua_pcall(L, 7, 1, m_errorhandler))
 		scriptError();
 	if (!lua_isnumber(L, -1))
@@ -91,7 +91,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowPut(v3s16 p,
 	lua_pushstring(L, listname.c_str()); // listname
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
-	objectrefGetOrCreate(player);        // player
+	objectrefGetOrCreate(L, player);     // player
 	if (lua_pcall(L, 5, 1, m_errorhandler))
 		scriptError();
 	if(!lua_isnumber(L, -1))
@@ -126,7 +126,7 @@ int ScriptApiNodemeta::nodemeta_inventory_AllowTake(v3s16 p,
 	lua_pushstring(L, listname.c_str()); // listname
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
-	objectrefGetOrCreate(player);        // player
+	objectrefGetOrCreate(L, player);     // player
 	if (lua_pcall(L, 5, 1, m_errorhandler))
 		scriptError();
 	if (!lua_isnumber(L, -1))
@@ -164,7 +164,7 @@ void ScriptApiNodemeta::nodemeta_inventory_OnMove(v3s16 p,
 	lua_pushstring(L, to_list.c_str());   // to_list
 	lua_pushinteger(L, to_index + 1);     // to_index
 	lua_pushinteger(L, count);            // count
-	objectrefGetOrCreate(player);         // player
+	objectrefGetOrCreate(L, player);      // player
 	if (lua_pcall(L, 7, 0, m_errorhandler))
 		scriptError();
 }
@@ -193,7 +193,7 @@ void ScriptApiNodemeta::nodemeta_inventory_OnPut(v3s16 p,
 	lua_pushstring(L, listname.c_str()); // listname
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
-	objectrefGetOrCreate(player);        // player
+	objectrefGetOrCreate(L, player);     // player
 	if (lua_pcall(L, 5, 0, m_errorhandler))
 		scriptError();
 }
@@ -222,7 +222,7 @@ void ScriptApiNodemeta::nodemeta_inventory_OnTake(v3s16 p,
 	lua_pushstring(L, listname.c_str()); // listname
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
-	objectrefGetOrCreate(player);        // player
+	objectrefGetOrCreate(L, player);     // player
 	if (lua_pcall(L, 5, 0, m_errorhandler))
 		scriptError();
 }
