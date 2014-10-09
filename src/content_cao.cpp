@@ -556,6 +556,7 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		m_animated_meshnode(NULL),
 		m_spritenode(NULL),
 		m_textnode(NULL),
+		shadownode(NULL),
 		m_position(v3f(0,10*BS,0)),
 		m_velocity(v3f(0,0,0)),
 		m_acceleration(v3f(0,0,0)),
@@ -976,9 +977,9 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 
 	if (g_settings->getBool("shadows")) {
 		if(m_animated_meshnode)
-			m_animated_meshnode->addShadowVolumeSceneNode();
+			shadownode = m_animated_meshnode->addShadowVolumeSceneNode();
 		else if(m_meshnode)
-			m_meshnode->addShadowVolumeSceneNode();
+			shadownode = m_meshnode->addShadowVolumeSceneNode();
 	}
 }
 
@@ -1220,7 +1221,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 				INodeDefManager *ndef = m_gamedef->ndef();
 				v3s16 p = floatToInt(getPosition() + v3f(0,
 						(m_prop.collisionbox.MinEdge.Y-0.5)*BS, 0), BS);
-				MapNode n = m_env->getMap().getNodeNoEx(p);
+				MapNode n = m_env->getMap().getNodeTry(p);
 				SimpleSoundSpec spec = ndef->get(n).sound_footstep;
 				m_gamedef->sound()->playSoundAt(spec, false, getPosition());
 			}
@@ -1259,6 +1260,13 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 				+ m_prop.automatic_face_movement_dir_offset;
 		updateNodePos();
 	}
+
+	if (shadownode && !(rand()%50)) {
+		auto n = m_env->getMap().getNodeTry(floatToInt(getPosition(), BS));
+		if (n.getContent() != CONTENT_IGNORE)
+			shadownode->setVisible(n.getLight(LIGHTBANK_DAY, env->getGameDef()->ndef()) >= LIGHT_SUN);
+	}
+
 }
 
 void GenericCAO::updateTexturePos()

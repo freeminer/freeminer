@@ -58,8 +58,7 @@ public:
 
 	void update(float m_time_of_day, float time_brightness,
 			float direct_brightness, bool sunlight_seen, CameraMode cam_mode,
-			float yaw, float pitch,
-			Player * player, Map * map, INodeDefManager *ndef);
+			float yaw, float pitch);
 	
 	float getBrightness(){ return m_brightness; }
 

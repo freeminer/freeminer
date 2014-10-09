@@ -75,6 +75,7 @@ private:
 	scene::IAnimatedMeshSceneNode *m_animated_meshnode;
 	scene::IBillboardSceneNode *m_spritenode;
 	scene::ITextSceneNode* m_textnode;
+	scene::IShadowVolumeSceneNode* shadownode;
 	v3f m_position;
 	v3f m_velocity;
 	v3f m_acceleration;
