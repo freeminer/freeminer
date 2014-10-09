@@ -91,6 +91,8 @@ Sky::Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id):
 
 	if (g_settings->getBool("shadows")) {
 		sun_moon_light = mgr->addLightSceneNode(this, core::vector3df(0,MAP_GENERATION_LIMIT*BS*2,0), video::SColorf(1.0f, 0.6f, 0.7f, 1.0f), MAP_GENERATION_LIMIT*BS*5);
+	} else {
+		sun_moon_light = nullptr;
 	}
 }
 
