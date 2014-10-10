@@ -312,7 +312,7 @@ public:
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return MapNode(CONTENT_IGNORE);
-		return getNodeNoEx(p);
+		return getNodeNoLock(p);
 	}
 
 	MapNode getNodeNoLock(v3s16 p)
