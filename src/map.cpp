@@ -173,7 +173,7 @@ MapNode Map::getNodeTry(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, true);
-	if(block == NULL)
+	if(!block)
 		return MapNode(CONTENT_IGNORE);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
 	return block->getNodeTry(relpos);

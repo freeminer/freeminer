@@ -108,6 +108,7 @@ class maybe_locker : public locker { };
 class dummy_lock {
 public:
 	bool owns_lock() {return true;}
+	bool operator!() {return true;}
 	dummy_lock * operator->() {return this; }
 };
 
