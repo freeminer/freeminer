@@ -179,7 +179,7 @@ void Particle::updateLight()
 			floor(m_pos.Y+0.5),
 			floor(m_pos.Z+0.5)
 		);
-		MapNode n = m_env->getClientMap().getNode(p);
+		MapNode n = m_env->getClientMap().getNodeTry(p);
 		light = n.getLightBlend(m_env->getDayNightRatio(), m_gamedef->ndef());
 	}
 	catch(InvalidPositionException &e){
