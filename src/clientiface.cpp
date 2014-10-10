@@ -245,8 +245,8 @@ int RemoteClient::GetNextBlocks(
 	bool occlusion_culling_enabled = true;
 	auto cam_pos_nodes = center_nodepos;
 	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n = env->getMap().getNodeNoEx(cam_pos_nodes);
-	if(n.getContent() == CONTENT_IGNORE || nodemgr->get(n).solidness == 2)
+	MapNode n = env->getMap().getNodeTry(cam_pos_nodes);
+	if(nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
 
