@@ -149,7 +149,6 @@ public:
 	}
 	void unDummify()
 	{
-		assert(isDummy());
 		reallocate();
 	}
 	
