@@ -2043,7 +2043,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			if(block != NULL) {
 				modified_blocks[blockpos] = block;
 				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
-					lighting_modified_blocks.set(block->getPos(), block);
+					lighting_modified_blocks.set_try(block->getPos(), block);
 			}
 			must_reflow.push_back(neighbors[i].p);
 
