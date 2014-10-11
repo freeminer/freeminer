@@ -127,7 +127,7 @@ public:
 			ResultQueue<Key, T, Caller, CallerData> *dest)
 	{
 		{
-			JMutexAutoLock lock(m_queue.getMutex());
+			unique_lock lock(m_queue.getMutex());
 
 			/*
 				If the caller is already on the list, only update CallerData
