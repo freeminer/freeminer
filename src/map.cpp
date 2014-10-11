@@ -92,22 +92,14 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 
 Map::~Map()
 {
-	for(auto &i : m_blocks_delete_1)
-		delete i.first;
-	for(auto &i : m_blocks_delete_2)
-		delete i.first;
-
 	auto lock = m_blocks.lock_unique_rec();
-	for(auto &i : m_blocks) {
-
 #ifndef SERVER
+	for(auto &i : m_blocks) {
 		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
 		if(i.second->mesh)
 			i.second->mesh->clearHardwareBuffer = false;
-#endif
-		delete i.second;
-
 	}
+#endif
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
@@ -1474,8 +1466,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
-		for(auto &i : *m_blocks_delete) // delayed delete
-			delete i.first;
 		m_blocks_delete->clear();
 	}
 
@@ -1485,7 +1475,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
-	std::vector<MapBlock *> blocks_delete;
+	std::vector<MapBlockP> blocks_delete;
 	int save_started = 0;
 	{
 	auto lock = m_blocks.try_lock_shared_rec();
@@ -1500,7 +1490,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 		}
 		++calls;
 
-		MapBlock *block = ir.second;
+		auto block = ir.second;
 		if (!block)
 			continue;
 
@@ -1518,7 +1508,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 					//modprofiler.add(block->getModifiedReason(), 1);
 					if(!save_started++)
 						beginSave();
-					if (!saveBlock(block))
+					if (!saveBlock(block.get()))
 						continue;
 					saved_blocks_count++;
 				}
@@ -3193,11 +3183,10 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 				m_blocks_save_last = 0;
 			++calls;
 
-			MapBlock *block = jr.second;
+			MapBlock *block = jr.second.get();
 
 			if (!block)
 				continue;
-
 
 			block_count_all++;
 

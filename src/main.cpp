@@ -1280,7 +1280,8 @@ int main(int argc, char *argv[])
 					errorstream << "Failed to load block " << PP(*i) << ", skipping it.";
 				} else {
 					old_map.saveBlock(block, new_db);
-					old_map.deleteBlock(block, 1);
+					old_map.m_blocks.erase(block->getPos());
+					delete block;
 				}
 				++count;
 				if (count % 500 == 0)

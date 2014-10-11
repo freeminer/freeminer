@@ -282,7 +282,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 		++calls;
 
 		//auto block = getBlockNoCreateNoEx(bp);
-		auto * block = m_blocks.get(bp);
+		auto block = m_blocks.get(bp);
 		if (!block)
 			continue;
 
@@ -385,7 +385,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 
 			// Add to set
 			block->refGrab();
-			drawlist.set(bp, block);
+			drawlist.set(bp, block.get());
 
 			blocks_drawn++;
 
