@@ -798,6 +798,7 @@ if(NOT HAVE_THREAD_LOCAL)
 	set(HAVE_THREAD_LOCAL 0)
 endif()
 
+set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS} -pthread")
 CHECK_CXX_SOURCE_RUNS("
 	#include <future>
 	int main(int argc, char *argv[]) {
