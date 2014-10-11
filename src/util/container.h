@@ -277,6 +277,13 @@ public:
 		JMutexAutoLock lock(m_mutex);
 		return (m_size.GetValue() == 0);
 	}
+	bool empty_try()
+	{
+		try_shared_lock lock(m_mutex, std::try_to_lock);
+		if (!lock.owns_lock())
+			return 1;
+		return (m_size.GetValue() == 0);
+	}
 	void push_back(T t)
 	{
 		JMutexAutoLock lock(m_mutex);
@@ -386,7 +393,7 @@ public:
 	}
 
 protected:
-	JMutex & getMutex()
+	try_shared_mutex & getMutex()
 	{
 		return m_mutex;
 	}
@@ -398,7 +405,7 @@ protected:
 		return m_list;
 	}
 
-	JMutex m_mutex;
+	try_shared_mutex m_mutex;
 	std::list<T> m_list;
 	JSemaphore m_size;
 };

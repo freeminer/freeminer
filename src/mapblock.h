@@ -312,7 +312,7 @@ public:
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return MapNode(CONTENT_IGNORE);
-		return getNodeNoEx(p);
+		return getNodeNoLock(p);
 	}
 
 	MapNode getNodeNoLock(v3s16 p)
@@ -657,6 +657,8 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 	Get a quick string to describe what a block actually contains
 */
 std::string analyze_block(MapBlock *block);
+
+typedef std::shared_ptr<MapBlock> MapBlockP;
 
 #endif
 

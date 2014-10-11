@@ -3566,7 +3566,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
 
-	JMutexAutoLock lock(m_env_mutex);
+	//JMutexAutoLock lock(m_env_mutex);
 	/*
 		Send packet
 	*/
@@ -4001,7 +4001,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 			}
 		}
 		{
-			JMutexAutoLock env_lock(m_env_mutex);
+			//JMutexAutoLock env_lock(m_env_mutex);
 			m_clients.DeleteClient(peer_id);
 		}
 	}

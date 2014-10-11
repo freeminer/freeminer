@@ -486,7 +486,13 @@ void Client::step(float dtime)
 
 		int num_processed_meshes = 0;
 		u32 end_ms = porting::getTimeMs() + 5;
-		while(!m_mesh_update_thread.m_queue_out.empty())
+
+		auto lock = m_env.getMap().m_blocks.try_lock_shared_rec();
+		if (!lock->owns_lock()) {
+			infostream<<"skip updating meshes"<<std::endl;
+		} else {
+
+		while(!m_mesh_update_thread.m_queue_out.empty_try())
 		{
 			if (getEnv().getClientMap().m_drawlist_work)
 				break;
@@ -505,6 +511,8 @@ void Client::step(float dtime)
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
+
+		}
 	}
 
 	/*

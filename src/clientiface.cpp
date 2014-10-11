@@ -245,8 +245,8 @@ int RemoteClient::GetNextBlocks(
 	bool occlusion_culling_enabled = true;
 	auto cam_pos_nodes = center_nodepos;
 	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n = env->getMap().getNodeNoEx(cam_pos_nodes);
-	if(n.getContent() == CONTENT_IGNORE || nodemgr->get(n).solidness == 2)
+	MapNode n = env->getMap().getNodeTry(cam_pos_nodes);
+	if(nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
 
@@ -376,7 +376,7 @@ int RemoteClient::GetNextBlocks(
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
-			if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)
+			if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d) > m_uptime)
 				continue;
 
 			/*

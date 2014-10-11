@@ -38,6 +38,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 #include "nodetimer.h"
 
+#include "mapblock.h"
+
 class Database;
 class ClientMap;
 class MapSector;
@@ -340,15 +342,15 @@ public:
 
 
 // from old mapsector:
-	typedef maybe_shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> m_blocks_type;
+	typedef maybe_shared_unordered_map<v3s16, MapBlockP, v3s16Hash, v3s16Equal> m_blocks_type;
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
 	MapBlock * createBlankBlock(v3s16 & p);
 	void insertBlock(MapBlock *block);
-	void deleteBlock(MapBlock *block, bool now = 0);
-	std::map<MapBlock *, int> * m_blocks_delete;
-	std::map<MapBlock *, int> m_blocks_delete_1, m_blocks_delete_2;
+	void deleteBlock(MapBlockP block);
+	std::map<MapBlockP, int> * m_blocks_delete;
+	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
 protected:
