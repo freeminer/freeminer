@@ -406,7 +406,7 @@ v2u32 getWindowSize();
 #define HAVE_FUTURE
 #endif
 
-#if (defined(__clang__) && (__clang_major__ * 100 + __clang_minor__ >= 303)) || (defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 408))
+#if CMAKE_HAVE_THREAD_LOCAL
 #define THREAD_LOCAL thread_local
 #else
 #define NO_THREAD_LOCAL

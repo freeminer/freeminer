@@ -779,6 +779,22 @@ else()
 	set(THREADS 1)
 endif()
 
+set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
+set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
+CHECK_CXX_SOURCE_RUNS("
+	#include <string>
+	thread_local std::string test;
+	int main(int argc, char *argv[]) {
+		test = __LINE__;
+		return 0;
+	}
+	"
+	HAVE_THREAD_LOCAL)
+if(NOT HAVE_THREAD_LOCAL)
+	set(HAVE_THREAD_LOCAL 0)
+endif()
+
+
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
 	set(HAVE_SHARED_MUTEX 0)
