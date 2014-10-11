@@ -778,6 +778,10 @@ else()
 
 	set(THREADS 1)
 endif()
+if(NOT HAVE_SHARED_MUTEX)
+	# avoid empty value in cmake_config.h
+	set(HAVE_SHARED_MUTEX 0)
+endif()
 
 set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
@@ -794,11 +798,28 @@ if(NOT HAVE_THREAD_LOCAL)
 	set(HAVE_THREAD_LOCAL 0)
 endif()
 
-
-if(NOT HAVE_SHARED_MUTEX)
-	# avoid empty value in cmake_config.h
-	set(HAVE_SHARED_MUTEX 0)
+CHECK_CXX_SOURCE_RUNS("
+	#include <future>
+	int main(int argc, char *argv[]) {
+		std::future<void> updateDrawList_future;
+		bool allow = false;
+		if (updateDrawList_future.valid()) {
+			auto res = updateDrawList_future.wait_for(std::chrono::milliseconds(0));
+			if (res == std::future_status::timeout)
+				allow = false;
+		}
+		if (false)
+			updateDrawList_future = std::async(std::launch::async, [](){ });
+		return 0;
+	}
+	"
+	HAVE_FUTURE)
+if(NOT HAVE_FUTURE)
+	set(HAVE_FUTURE 0)
 endif()
+
+
+
 
 if(DISABLE_THREADS)
 	set(THREADS 0)
