@@ -39,9 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 template<typename Value>
-class UniqueQueue
-: public locker
-{
+class UniqueQueue {
 public:
 	
 	/*
@@ -52,14 +50,10 @@ public:
 	*/
 	bool push_back(Value value)
 	{
-		{
-		auto lock = lock_shared();
 		// Check if already exists
 		if(m_map.find(value) != m_map.end())
 			return false;
-		}
 
-		auto lock = lock_unique();
 		// Add
 		m_map[value] = 0;
 		m_list.push_back(value);
@@ -69,17 +63,15 @@ public:
 
 	Value pop_front()
 	{
-		auto lock = lock_unique();
 		typename std::list<Value>::iterator i = m_list.begin();
 		Value value = *i;
 		m_map.erase(value);
-		m_list.erase(i);
+		m_list.pop_front();
 		return value;
 	}
 
 	u32 size()
 	{
-		auto lock = lock_shared();
 		return m_map.size();
 	}
 
@@ -274,7 +266,7 @@ public:
 	}
 	bool empty()
 	{
-		JMutexAutoLock lock(m_mutex);
+		try_shared_lock lock(m_mutex);
 		return (m_size.GetValue() == 0);
 	}
 	bool empty_try()
@@ -286,7 +278,7 @@ public:
 	}
 	void push_back(T t)
 	{
-		JMutexAutoLock lock(m_mutex);
+		unique_lock lock(m_mutex);
 		m_list.push_back(t);
 		m_size.Post();
 	}
@@ -298,7 +290,7 @@ public:
 	{
 		if (m_size.Wait(wait_time_max_ms))
 		{
-			JMutexAutoLock lock(m_mutex);
+			unique_lock lock(m_mutex);
 
 			typename std::list<T>::iterator begin = m_list.begin();
 			T t = *begin;
@@ -315,7 +307,7 @@ public:
 	{
 		if (m_size.Wait(wait_time_max_ms))
 		{
-			JMutexAutoLock lock(m_mutex);
+			unique_lock lock(m_mutex);
 
 			typename std::list<T>::iterator begin = m_list.begin();
 			T t = *begin;
@@ -332,7 +324,7 @@ public:
 	{
 		m_size.Wait();
 
-		JMutexAutoLock lock(m_mutex);
+		unique_lock lock(m_mutex);
 
 		typename std::list<T>::iterator begin = m_list.begin();
 		T t = *begin;
@@ -344,7 +336,7 @@ public:
 	{
 		if (m_size.Wait(wait_time_max_ms))
 		{
-			JMutexAutoLock lock(m_mutex);
+			unique_lock lock(m_mutex);
 
 			typename std::list<T>::iterator last = m_list.end();
 			last--;
@@ -365,7 +357,7 @@ public:
 	{
 		if (m_size.Wait(wait_time_max_ms))
 		{
-			JMutexAutoLock lock(m_mutex);
+			unique_lock lock(m_mutex);
 
 			typename std::list<T>::iterator last = m_list.end();
 			last--;
@@ -383,7 +375,7 @@ public:
 	{
 		m_size.Wait();
 
-		JMutexAutoLock lock(m_mutex);
+		unique_lock lock(m_mutex);
 
 		typename std::list<T>::iterator last = m_list.end();
 		last--;

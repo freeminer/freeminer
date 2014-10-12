@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 
 #include "mapblock.h"
+#include <unordered_set>
 
 class Database;
 class ClientMap;
@@ -326,7 +327,8 @@ public:
 		Variables
 	*/
 
-	void transforming_liquid_push_back(v3s16 & p);
+	void transforming_liquid_push_back(v3s16 p);
+	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
 	u32 m_liquid_step_flow;
 
@@ -367,10 +369,8 @@ protected:
 
 	// Queued transforming water nodes
 public:
-	UniqueQueue<v3s16> m_transforming_liquid;
-	//JMutex m_transforming_liquid_mutex;
+	shared_unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> m_transforming_liquid;
 protected:
-	//JMutex m_update_lighting_mutex;
 };
 
 /*
@@ -532,7 +532,9 @@ public:
 
 protected:
 	bool m_create_area;
+public:
 	Map *m_map;
+protected:
 	/*
 		key = blockpos
 		value = flags describing the block

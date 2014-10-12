@@ -167,6 +167,14 @@ public:
 		full_type::operator[](k) = v;
 	}
 
+	bool set_try(const key_type& k, const mapped_type& v) {
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			return false;
+		full_type::operator[](k) = v;
+		return true;
+	}
+
 	bool      empty() {
 		auto lock = lock_shared_rec();
 		return full_type::empty();
@@ -287,6 +295,11 @@ public:
 
 	void set(const key_type& k, const mapped_type& v) {
 		full_type::operator[](k) = v;
+	}
+
+	bool set_try(const key_type& k, const mapped_type& v) {
+		full_type::operator[](k) = v;
+		return true;
 	}
 };
 

@@ -485,12 +485,15 @@ void Client::step(float dtime)
 		TimeTaker timer_step("Client: Replace updated meshes");
 
 		int num_processed_meshes = 0;
-		u32 end_ms = porting::getTimeMs() + 5;
+		u32 end_ms = porting::getTimeMs() + 10;
 
+		/*
 		auto lock = m_env.getMap().m_blocks.try_lock_shared_rec();
 		if (!lock->owns_lock()) {
 			infostream<<"skip updating meshes"<<std::endl;
-		} else {
+		} else 
+		*/
+		{
 
 		while(!m_mesh_update_thread.m_queue_out.empty_try())
 		{
