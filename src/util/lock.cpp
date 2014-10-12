@@ -3,7 +3,7 @@
 #include "../profiler.h"
 
 #if !defined(NDEBUG) && !defined(LOCK_PROFILE)
-#define LOCK_PROFILE 1
+//#define LOCK_PROFILE 1
 #endif
 
 #if LOCK_PROFILE

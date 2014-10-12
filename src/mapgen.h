@@ -148,7 +148,7 @@ public:
 	s16 findGroundLevelFull(v2s16 p2d);
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
 	void updateHeightmap(v3s16 nmin, v3s16 nmax);
-	void updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3s16 nmin, v3s16 nmax);
+	void updateLiquid(v3s16 nmin, v3s16 nmax);
 	void setLighting(v3s16 nmin, v3s16 nmax, u8 light);
 	void lightSpread(VoxelArea &a, v3s16 p, u8 light);
 	void calcLighting(v3s16 nmin, v3s16 nmax);

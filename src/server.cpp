@@ -188,7 +188,7 @@ public:
 
 		porting::setThreadName("Liquid");
 		porting::setThreadPriority(4);
-		int max_cycle_ms = 5000;
+		int max_cycle_ms = 1000;
 		while(!StopRequested()) {
 			try {
 				shared_map<v3s16, MapBlock*> modified_blocks; //not used
