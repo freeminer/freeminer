@@ -1684,7 +1684,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 	{
 		NEXT_LIQUID:;
 		// This should be done here so that it is done when continue is used
-		if (loopcount >= initial_size || porting::getTimeMs() > end_ms)
+		if (loopcount >= initial_size*2 || porting::getTimeMs() > end_ms)
 			break;
 		loopcount++;
 		/*
@@ -1838,7 +1838,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 					}
 				}
 				catch(InvalidPositionException &e) {
-					infostream<<"transformLiquidsReal: setNode() failed:"<<PP(neighbors[i].p)<<":"<<e.what()<<std::endl;
+					infostream<<"transformLiquidsReal: setNode() failed:"<< neighbors[i].p<<":"<<e.what()<<std::endl;
 					goto NEXT_LIQUID;
 				}
 			}
@@ -2056,6 +2056,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			if (!neighbors[ii].l) continue;
 			must_reflow.push_back(p0 + dirs[ii]);
 		}*/
+		//g_profiler->graphAdd("liquids", 1);
 	}
 
 	u32 ret = loopcount >= initial_size ? 0 : m_transforming_liquid.size();
@@ -2063,7 +2064,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		m_liquid_step_flow += (m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount/10;
 	/*
 	if (loopcount)
-		infostream<<"Map::transformLiquidsReal(): loopcount="<<loopcount
+		infostream<<"Map::transformLiquidsReal(): loopcount="<<loopcount<<" initial_size="<<initial_size
 		<<" avgflow="<<m_liquid_step_flow
 		<<" reflow="<<must_reflow.size()
 		<<" queue="<< m_transforming_liquid.size()
@@ -2081,7 +2082,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 
 	g_profiler->add("Server: liquids processed", loopcount);
 
-	return ret;
+	return loopcount;
 }
 
 #define WATER_DROP_BOOST 4

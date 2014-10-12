@@ -193,7 +193,7 @@ public:
 			try {
 				shared_map<v3s16, MapBlock*> modified_blocks; //not used
 				int res = m_server->getEnv().getMap().transformLiquids(m_server, modified_blocks, m_server->m_lighting_modified_blocks, max_cycle_ms);
-				std::this_thread::sleep_for(std::chrono::milliseconds(res ? 5 : 1000));
+				std::this_thread::sleep_for(std::chrono::milliseconds(std::max(300-res,1)));
 #ifdef NDEBUG
 			} catch (BaseException &e) {
 				errorstream<<"Liquid: exception: "<<e.what()<<std::endl;
