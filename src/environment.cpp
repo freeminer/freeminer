@@ -48,8 +48,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fmbitset.h"
 #include "circuit.h"
 #include "key_value_storage.h"
+#include <random>
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
+
+std::random_device random_device; // todo: move me to random.h
+std::mt19937 random_gen(random_device());
 
 Environment::Environment():
 	m_time_of_day_f(9000./24000),
@@ -736,7 +740,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
 	if(m_game_time > stamp && stamp != BLOCK_TIMESTAMP_UNDEFINED)
-		dtime_s = m_game_time - block->getTimestamp();
+		dtime_s = m_game_time - stamp;
 	dtime_s += additional_dtime;
 
 	/*infostream<<"ServerEnvironment::activateBlock(): block timestamp: "
@@ -1294,6 +1298,30 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		if (!m_active_block_abm_last) {
 			m_active_block_abm_dtime = m_active_block_abm_dtime_counter;
 			m_active_block_abm_dtime_counter = 0;
+		}
+	}
+
+	if (g_settings->getBool("abm_random")) {
+		TimeTaker timer("env: random abm");
+		MapBlock* block = nullptr;
+		auto lock = m_map->m_blocks.try_lock_shared_rec();
+		if (lock->owns_lock() && m_map->m_blocks.size()) {
+			std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
+			auto it = m_map->m_blocks.begin();
+			std::advance( it, distribution(random_gen) );
+			block = it->second.get();
+		}
+
+		if (block) {
+			u32 dtime_s = 0;
+			u32 stamp = block->getTimestamp();
+			if(m_game_time > stamp && stamp != BLOCK_TIMESTAMP_UNDEFINED)
+				dtime_s = m_game_time - stamp;
+			block->setTimestampNoChangedFlag(m_game_time);
+			if (!dtime_s)
+				dtime_s = uptime;
+			ABMHandler abmhandler(m_abms, dtime_s, this, true);
+			abmhandler.apply(block);
 		}
 	}
 
