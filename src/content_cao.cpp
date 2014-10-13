@@ -975,12 +975,14 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 	updateBonePosition();
 	updateAttachments();
 
+#if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	if (g_settings->getBool("shadows")) {
 		if(m_animated_meshnode)
 			shadownode = m_animated_meshnode->addShadowVolumeSceneNode();
 		else if(m_meshnode)
 			shadownode = m_meshnode->addShadowVolumeSceneNode();
 	}
+#endif
 }
 
 void GenericCAO::updateLight(u8 light_at_pos)
