@@ -145,7 +145,7 @@ int LuaVoxelManip::l_update_liquids(lua_State *L)
 
 	LuaVoxelManip *o = checkobject(L, 1);
 
-	Map *map = &(env->getMap());
+	//Map *map = &(env->getMap());
 	INodeDefManager *ndef = getServer(L)->getNodeDefManager();
 	ManualMapVoxelManipulator *vm = o->vm;
 
