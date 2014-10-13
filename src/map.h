@@ -177,7 +177,7 @@ public:
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
-	MapBlock * getBlockNoCreateNoEx(v3s16 p, bool trylock = false);
+	MapBlock * getBlockNoCreateNoEx(v3s16 p, bool trylock = false, bool nocache = false);
 
 	/* Server overrides */
 	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)

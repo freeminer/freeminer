@@ -37,12 +37,12 @@ try_shared_mutex m_block_cache_mutex;
 THREAD_LOCAL MapBlockP m_block_cache = nullptr;
 THREAD_LOCAL v3s16 m_block_cache_p;
 
-MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
+MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock, bool nocache)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
-	{
+	if (!nocache) {
 #if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
@@ -66,13 +66,15 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock)
 		block = n->second;
 	}
 
+	if (!nocache) {
 #if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
 		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
-	{
-		m_block_cache_p = p;
-		m_block_cache = block;
+		{
+			m_block_cache_p = p;
+			m_block_cache = block;
+		}
 	}
 
 	return block.get();
@@ -86,7 +88,7 @@ MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
 
 MapBlock * Map::createBlankBlock(v3s16 & p)
 {
-	MapBlock *block = getBlockNoCreateNoEx(p);
+	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 	if (block != NULL) {
 		infostream<<"Block already created p="<<block->getPos()<<std::endl;
 		return block;
@@ -103,7 +105,7 @@ void Map::insertBlock(MapBlock *block)
 {
 	auto block_p = block->getPos();
 
-	auto block2 = getBlockNoCreateNoEx(block_p);
+	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2){
 		//throw AlreadyExistsException("Block already exists");
 		infostream<<"Block already exists " << block_p <<std::endl;
