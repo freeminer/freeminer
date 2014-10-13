@@ -422,6 +422,8 @@
 #max_packets_per_iteration = 1024
 # Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
 #more_threads = 1
+# Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
+#abm_random = 0
 # [dev] Shadows from objects
 #shadows = 0
 
