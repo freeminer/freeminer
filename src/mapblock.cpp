@@ -70,7 +70,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	humidity = 0;
 	m_changed_timestamp = 0;
 	data = NULL;
-	if(dummy == false)
+	//if(dummy == false)
 		reallocate();
 	
 #ifndef SERVER
@@ -82,7 +82,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 
 MapBlock::~MapBlock()
 {
-	auto lock = lock_unique_rec();
+	//auto lock = lock_unique_rec();
 #ifndef SERVER
 	//delMesh();
 #endif

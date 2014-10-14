@@ -121,6 +121,9 @@ void Map::deleteBlock(MapBlockP block)
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
+#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+	auto lock = unique_lock(m_block_cache_mutex);
+#endif
 	m_block_cache = nullptr;
 }
 

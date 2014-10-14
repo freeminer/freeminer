@@ -145,7 +145,9 @@ public:
 
 	bool isDummy()
 	{
-		return (data == NULL);
+		return false;
+		//auto lock = lock_shared_rec();
+		//return (data == NULL);
 	}
 	void unDummify()
 	{
