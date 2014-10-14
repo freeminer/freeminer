@@ -70,7 +70,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_changed_timestamp = 0;
 	m_day_night_differs_expired = true;
 	data = NULL;
-	if(dummy == false)
+	//if(dummy == false)
 		reallocate();
 	
 #ifndef SERVER
@@ -82,7 +82,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 
 MapBlock::~MapBlock()
 {
-	auto lock = lock_unique_rec();
+	//auto lock = lock_unique_rec();
 #ifndef SERVER
 	//delMesh();
 #endif

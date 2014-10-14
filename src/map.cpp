@@ -3016,7 +3016,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
 	{
-		MapBlock *block = getBlockNoCreateNoEx(p);
+		MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 		if(block && block->isDummy() == false)
 		{
 			return block;
