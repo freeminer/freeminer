@@ -1304,12 +1304,14 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	if (g_settings->getBool("abm_random")) {
 		TimeTaker timer("env: random abm");
 		MapBlock* block = nullptr;
-		auto lock = m_map->m_blocks.try_lock_shared_rec();
-		if (lock->owns_lock() && m_map->m_blocks.size()) {
-			std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
-			auto it = m_map->m_blocks.begin();
-			std::advance( it, distribution(random_gen) );
-			block = it->second.get();
+		{
+			auto lock = m_map->m_blocks.try_lock_shared_rec();
+			if (lock->owns_lock() && m_map->m_blocks.size()) {
+				std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
+				auto it = m_map->m_blocks.begin();
+				std::advance( it, distribution(random_gen) );
+				block = it->second.get();
+			}
 		}
 
 		if (block) {
