@@ -726,9 +726,9 @@ u32 Map::updateLighting(enum LightBank bank,
 			if(!block || block->isDummy())
 				break;
 
-			//auto lock = block->try_lock_unique_rec();
-			//if (!lock->owns_lock())
-			//	break;
+			auto lock = block->try_lock_unique_rec(); // may cause dark areas
+			if (!lock->owns_lock())
+				break;
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
 			modified_blocks[pos] = block;
@@ -1741,7 +1741,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			nb.drop = 0;
 
 			if (nb.c == CONTENT_IGNORE) {
-				//if (i == D_SELF && (loopcount % 9) && initial_size < m_liquid_step_flow * 3)
+				//if (i == D_SELF && (loopcount % 2) && initial_size < m_liquid_step_flow * 3)
 				//	must_reflow_third[nb.p] = 1;
 				continue;
 			}
@@ -2034,7 +2034,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 			}
 
 			if (neighbors[i].drop) {// && level_max > 1 && total_level >= level_max - 1
-				JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
+				//JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
 				m_server->getEnv().getScriptIface()->node_drop(neighbors[i].p, 2);
 			}
 

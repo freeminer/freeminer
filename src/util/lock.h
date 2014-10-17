@@ -105,6 +105,7 @@ public:
 class maybe_locker : public locker { };
 
 #else
+
 class dummy_lock {
 public:
 	bool owns_lock() {return true;}
@@ -455,5 +456,113 @@ class maybe_shared_unordered_map: public not_shared_unordered_map<Key, T, Hash, 
 {};
 
 #endif
+
+
+
+/*
+Not used, but uncomment if you need
+
+#include <vector>
+
+
+template <class T, class Allocator = std::allocator<T> >
+class shared_vector :
+	public std::vector<T, Allocator>,
+	public locker
+{
+public:
+	typedef typename std::vector<T, Allocator>           full_type;
+    typedef T                                        value_type;
+    typedef Allocator                                allocator_type;
+    typedef typename full_type::reference       reference;
+    typedef typename full_type::const_reference const_reference;
+    typedef typename full_type::size_type       size_type;
+    typedef typename full_type::pointer         pointer;
+    typedef typename full_type::const_pointer   const_pointer;
+
+	typedef typename full_type::const_iterator                         const_iterator;
+	typedef typename full_type::iterator                               iterator;
+
+
+	bool      empty() {
+		auto lock = lock_shared_rec();
+		return full_type::empty();
+	}
+
+	size_type size() {
+		auto lock = lock_shared_rec();
+		return full_type::size();
+	}
+
+	reference       operator[](size_type n) {
+		auto lock = lock_unique_rec();
+		return full_type::operator[](n);
+	};
+
+	const_reference operator[](size_type n) const {
+		auto lock = lock_shared_rec();
+		return full_type::operator[](n);
+	};
+
+	void resize(size_type sz) {
+		auto lock = lock_unique_rec();
+		return full_type::resize(sz);
+	};
+
+	void clear() {
+		auto lock = lock_unique_rec();
+		return full_type::clear();
+	};
+
+	void push_back(const value_type& x) {
+		auto lock = lock_unique_rec();
+		return full_type::push_back(x);
+	};
+
+	void push_back(value_type&& x) {
+		auto lock = lock_unique_rec();
+		return full_type::push_back(x);
+	};
+
+};
+
+
+#if CMAKE_THREADS
+
+template <class T, class Allocator = std::allocator<T> >
+class maybe_shared_vector : public shared_vector<T, Allocator>
+{};
+
+#else
+
+template <class T, class Allocator = std::allocator<T> >
+class not_shared_vector :
+	public std::vector<T, Allocator>,
+	public dummy_locker
+{
+public:
+	typedef typename std::vector<T, Alloc>           full_type;
+	typedef T                                        key_type;
+	typedef T                                        mapped_type;
+    typedef T                                        value_type;
+
+	mapped_type& get(size_type n) {
+		return full_type::operator[](k);
+	}
+
+	void set(size_type n, const mapped_type& v) {
+		full_type::operator[](n) = v;
+	}
+};
+
+template <class T, class Allocator = std::allocator<T> >
+class maybe_shared_vector: public not_shared_vector<Key, Allocator>
+{};
+
+#endif
+
+*/
+
+
 
 #endif

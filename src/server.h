@@ -63,6 +63,7 @@ class ServerThread;
 class MapThread;
 class SendBlocksThread;
 class LiquidThread;
+class EnvThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -504,7 +505,7 @@ private:
 	ServerEnvironment *m_env;
 
 public:
-	JMutex m_env_mutex;
+	//JMutex m_env_mutex;
 private:
 
 	// server connection
@@ -562,6 +563,7 @@ private:
 	MapThread *m_map_thread;
 	SendBlocksThread *m_sendblocks;
 	LiquidThread *m_liquid;
+	EnvThread *m_envthread;
 
 	/*
 		Time related stuff
@@ -570,6 +572,7 @@ private:
 	// Timer for sending time of day over network
 	float m_time_of_day_send_timer;
 	// Uptime of server in seconds
+public:
 	MutexedVariable<double> m_uptime;
 
 public:

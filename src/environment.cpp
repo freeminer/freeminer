@@ -653,16 +653,27 @@ void ServerEnvironment::loadMeta()
 		return active_object_count;
 	}
 
+typedef struct {
+	ActiveABM * i;
+	v3s16 p;
+	MapNode n;
+	u32 active_object_count;
+	u32 active_object_count_wider;
+	MapNode neighbor;
+} trigger_one;
+
 	void ABMHandler::apply(MapBlock *block, bool activate)
 	{
 		if(m_aabms_empty)
 			return;
 
+		std::list<trigger_one> trigger_list;
+		ServerMap *map = &m_env->getServerMap();
+		{
 		auto lock = block->try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return;
-		ScopeProfiler sp(g_profiler, "ABM apply", SPT_ADD);
-		ServerMap *map = &m_env->getServerMap();
+		ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
 
 		u32 active_object_count_wider;
 		u32 active_object_count = this->countObjects(block, map, active_object_count_wider);
@@ -673,8 +684,10 @@ void ServerEnvironment::loadMeta()
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
 		{
-			MapNode n = block->getNodeNoLock(p0);
+			MapNode n = block->getNodeTry(p0);
 			content_t c = n.getContent();
+			if (c == CONTENT_IGNORE)
+				continue;
 			v3s16 p = p0 + block->getPosRelative();
 
 			if (!m_aabms[c])
@@ -711,6 +724,25 @@ void ServerEnvironment::loadMeta()
 				}
 neighbor_found:
 
+				trigger_list.emplace_back(trigger_one{i, p, n, active_object_count, active_object_count_wider, neighbor});
+			}
+		}
+		}
+
+		ScopeProfiler sp(g_profiler, "ABM triggers", SPT_ADD);
+
+		while (!trigger_list.empty()) {
+			auto abm = trigger_list.front();
+
+			auto & i = abm.i;
+			auto & p = abm.p;
+			auto & n = abm.n;
+			auto & active_object_count = abm.active_object_count;
+			auto & active_object_count_wider = abm.active_object_count_wider;
+			auto & neighbor = abm.neighbor;
+
+			//TODO: async call for c++ abms
+
 				i->abm->trigger(m_env, p, n,
 						active_object_count, active_object_count_wider, neighbor, activate);
 
@@ -719,8 +751,10 @@ neighbor_found:
 					active_object_count = countObjects(block, map, active_object_count_wider);
 					m_env->m_added_objects = 0;
 				}
-			}
+
+			trigger_list.pop_front();
 		}
+
 	}
 /*
 };
@@ -875,6 +909,7 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 std::set<u16> ServerEnvironment::getObjectsInsideRadius(v3f pos, float radius)
 {
 	std::set<u16> objects;
+	auto lock = m_active_objects.lock_shared_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -894,6 +929,8 @@ void ServerEnvironment::clearAllObjects()
 	infostream<<"ServerEnvironment::clearAllObjects(): "
 			<<"Removing all active objects"<<std::endl;
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
+
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1103,6 +1140,8 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		}
 		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
 			//TimeTaker timer_s2("force load");
+			auto lock = m_active_objects.try_lock_shared_rec();
+			if (lock->owns_lock())
 			for(std::map<u16, ServerActiveObject*>::iterator
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
@@ -1304,12 +1343,14 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	if (g_settings->getBool("abm_random")) {
 		TimeTaker timer("env: random abm");
 		MapBlock* block = nullptr;
-		auto lock = m_map->m_blocks.try_lock_shared_rec();
-		if (lock->owns_lock() && m_map->m_blocks.size()) {
-			std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
-			auto it = m_map->m_blocks.begin();
-			std::advance( it, distribution(random_gen) );
-			block = it->second.get();
+		{
+			auto lock = m_map->m_blocks.try_lock_shared_rec();
+			if (lock->owns_lock() && m_map->m_blocks.size()) {
+				std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
+				auto it = m_map->m_blocks.begin();
+				std::advance( it, distribution(random_gen) );
+				block = it->second.get();
+			}
 		}
 
 		if (block) {
@@ -1340,7 +1381,19 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		//ScopeProfiler sp(g_profiler, "SEnv: step act. objs avg", SPT_AVG);
 		//TimeTaker timer("Step active objects");
 
-		g_profiler->add("SEnv: Objects", m_active_objects.size());
+	std::vector<ServerActiveObject*> objects;
+	{
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (lock->owns_lock()) {
+			for(auto & ir : m_active_objects) {
+				objects.emplace_back(ir.second);
+			}
+		}
+	}
+
+	if (objects.size())
+	{
+		g_profiler->add("SEnv: Objects", objects.size());
 
 		// This helps the objects to send data at the same time
 		bool send_recommended = false;
@@ -1354,17 +1407,19 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			send_recommended = true;
 		}
 		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
+#if !CMAKE_THREADS
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-		for(std::map<u16, ServerActiveObject*>::iterator
-				i = m_active_objects.begin();
-				i != m_active_objects.end(); ++i)
-		{
+#endif
+
+		for(auto & obj : objects) {
+#if !CMAKE_THREADS
 			if (n++ < m_active_objects_last)
 				continue;
 			else
 				m_active_objects_last = 0;
 			++calls;
-			ServerActiveObject* obj = i->second;
+#endif
+			//ServerActiveObject* obj = ir;
 			// Remove non-peaceful mobs on peaceful mode
 			if(only_peaceful_mobs){
 				if(!obj->isPeaceful())
@@ -1385,13 +1440,18 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 						obj->m_messages_out.pop_front());
 			}
 
+#if !CMAKE_THREADS
 			if (porting::getTimeMs() > end_ms) {
 				m_active_objects_last = n;
 				break;
 			}
+#endif
 		}
+#if !CMAKE_THREADS
 		if (!calls)
 			m_active_objects_last = 0;
+#endif
+	}
 	}
 
 	/*
@@ -1513,6 +1573,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		- discard objects that are found in current_objects.
 		- add remaining objects to added_objects
 	*/
+	auto lock = m_active_objects.lock_shared_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1640,7 +1701,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 	/*infostream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"added (id="<<object->getId()<<")"<<std::endl;*/
 
-	m_active_objects[object->getId()] = object;
+	m_active_objects.set(object->getId(), object);
 
 /*
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
@@ -1690,6 +1751,7 @@ void ServerEnvironment::removeRemovedObjects()
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -1766,6 +1828,7 @@ void ServerEnvironment::removeRemovedObjects()
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
+
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i)
@@ -1920,6 +1983,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
 	std::list<u16> objects_to_remove;
+	auto lock = m_active_objects.lock_unique_rec();
 	for(std::map<u16, ServerActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
