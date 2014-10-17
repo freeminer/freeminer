@@ -638,7 +638,7 @@ void ServerEnvironment::loadMeta()
 		for(s16 z=-1; z<=1; z++)
 		{
 			MapBlock *block2 = map->getBlockNoCreateNoEx(
-					block->getPos() + v3s16(x,y,z));
+					block->getPos() + v3s16(x,y,z), true);
 			if(block2==NULL){
 				wider_unknown_count++;
 				continue;
@@ -649,6 +649,7 @@ void ServerEnvironment::loadMeta()
 		// Extrapolate
 		u32 active_object_count = block->m_static_objects.m_active.size();
 		u32 wider_known_count = 3*3*3 - wider_unknown_count;
+		if (wider_known_count)
 		wider += wider_unknown_count * wider / wider_known_count;
 		return active_object_count;
 	}
