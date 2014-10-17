@@ -226,7 +226,7 @@ public:
 	/*
 		Queue of messages to be sent to the client
 	*/
-	Queue<ActiveObjectMessage> m_messages_out;
+	Queue<ActiveObjectMessage> & m_messages_out;
 	float m_uptime_last;
 	
 protected:

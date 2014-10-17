@@ -1434,11 +1434,13 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			obj->step(uptime - obj->m_uptime_last, send_recommended);
 			obj->m_uptime_last = uptime;
 			// Read messages from object
+/*
 			while(!obj->m_messages_out.empty())
 			{
 				m_active_object_messages.push_back(
 						obj->m_messages_out.pop_front());
 			}
+*/
 
 #if !CMAKE_THREADS
 			if (porting::getTimeMs() > end_ms) {
@@ -1661,9 +1663,7 @@ ActiveObjectMessage ServerEnvironment::getActiveObjectMessage()
 	if(m_active_object_messages.empty())
 		return ActiveObjectMessage(0);
 
-	ActiveObjectMessage message = m_active_object_messages.front();
-	m_active_object_messages.pop_front();
-	return message;
+	return m_active_object_messages.pop_front();
 }
 
 /*
