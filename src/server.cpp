@@ -2204,6 +2204,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			m_script->on_cheat(playersao, "moved_too_fast");
 		}
 
+		auto obj = playersao; // copypasted from server step:
+		auto uptime = m_uptime.get();
+		if (!obj->m_uptime_last)  // not very good place, but minimum modifications
+			obj->m_uptime_last = uptime - 0.1;
+		obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
+		obj->m_uptime_last = uptime;
+
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
 				<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
 				<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
