@@ -504,7 +504,7 @@ public:
 
 #ifndef SERVER // Only on client
 	std::shared_ptr<MapBlockMesh> getMesh(int step = 1);
-	void setMesh(std::shared_ptr<MapBlockMesh> rmesh);
+	void setMesh(std::shared_ptr<MapBlockMesh> & rmesh);
 	//void delMesh();
 #endif
 
