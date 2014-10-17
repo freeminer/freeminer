@@ -440,7 +440,7 @@ private:
 
 	// Environment
 	ServerEnvironment *m_env;
-	JMutex m_env_mutex;
+	//JMutex m_env_mutex;
 
 	float m_print_info_timer;
 	

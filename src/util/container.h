@@ -194,6 +194,7 @@ private:
 */
 template<typename T>
 class Queue
+: public locker
 {
 public:
 	Queue():
@@ -202,18 +203,21 @@ public:
 
 	void push_back(T t)
 	{
+		auto lock = lock_unique();
 		m_list.push_back(t);
 		++m_list_size;
 	}
 	
 	void push_front(T t)
 	{
+		auto lock = lock_unique();
 		m_list.push_front(t);
 		++m_list_size;
 	}
 
 	T pop_front()
 	{
+		auto lock = lock_unique();
 		if(m_list.empty())
 			throw ItemNotFoundException("Queue: queue is empty");
 
@@ -225,6 +229,7 @@ public:
 	}
 	T pop_back()
 	{
+		auto lock = lock_unique();
 		if(m_list.empty())
 			throw ItemNotFoundException("Queue: queue is empty");
 
@@ -242,12 +247,13 @@ public:
 
 	bool empty()
 	{
+		auto lock = lock_shared();
 		return m_list.empty();
 	}
 
 protected:
 	std::list<T> m_list;
-	u32 m_list_size;
+	std::atomic_uint m_list_size;
 };
 
 /*

@@ -98,7 +98,7 @@ private:
 	float m_yaw;
 	ItemGroupList m_armor_groups;
 	
-	bool m_properties_sent;
+	std::atomic_bool m_properties_sent;
 	float m_last_sent_yaw;
 	v3f m_last_sent_position;
 	v3f m_last_sent_velocity;
@@ -302,7 +302,7 @@ private:
 	ItemGroupList m_armor_groups;
 	bool m_armor_groups_sent;
 
-	bool m_properties_sent;
+	std::atomic_bool m_properties_sent;
 	struct ObjectProperties m_prop;
 	// Cached privileges for enforcement
 	std::set<std::string> m_privs;
