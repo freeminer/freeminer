@@ -1406,7 +1406,6 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			}
 			send_recommended = true;
 		}
-		bool only_peaceful_mobs = g_settings->getBool("only_peaceful_mobs");
 #if !CMAKE_THREADS
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 #endif
@@ -1419,12 +1418,6 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				m_active_objects_last = 0;
 			++calls;
 #endif
-			//ServerActiveObject* obj = ir;
-			// Remove non-peaceful mobs on peaceful mode
-			if(only_peaceful_mobs){
-				if(!obj->isPeaceful())
-					obj->m_removed = true;
-			}
 			// Don't step if is to be removed or stored statically
 			if(obj->m_removed || obj->m_pending_deactivation)
 				continue;
