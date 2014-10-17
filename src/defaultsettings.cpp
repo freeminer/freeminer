@@ -376,7 +376,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
 	settings->setDefault("enable_node_highlighting", "1");
-	settings->setDefault("abm_random", "0");
+	settings->setDefault("abm_random", "false");
 
 #if defined(_WIN32)
 		settings->setDefault("more_threads", "false");
