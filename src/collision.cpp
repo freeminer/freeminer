@@ -210,9 +210,9 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		return result;
 
 	// Limit speed for avoiding hangs
-	speed_f.Y=rangelim(speed_f.Y,-5000,5000);
-	speed_f.X=rangelim(speed_f.X,-5000,5000);
-	speed_f.Z=rangelim(speed_f.Z,-5000,5000);
+	speed_f.Y=rangelim(speed_f.Y,-1000,1000);
+	speed_f.X=rangelim(speed_f.X,-1000,1000);
+	speed_f.Z=rangelim(speed_f.Z,-1000,1000);
 
 	/*
 		Collect node boxes in movement range
@@ -243,7 +243,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		v3s16 p(x,y,z);
 		try{
 			// Object collides into walkable nodes
-			MapNode n = map->getNode(p);
+			MapNode n = map->getNodeTry(p);
 			const ContentFeatures &f = gamedef->getNodeDefManager()->get(n);
 			if(f.walkable == false)
 				continue;
