@@ -1407,18 +1407,14 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			}
 			send_recommended = true;
 		}
-#if !CMAKE_THREADS
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-#endif
 
 		for(auto & obj : objects) {
-#if !CMAKE_THREADS
 			if (n++ < m_active_objects_last)
 				continue;
 			else
 				m_active_objects_last = 0;
 			++calls;
-#endif
 			// Don't step if is to be removed or stored statically
 			if(obj->m_removed || obj->m_pending_deactivation)
 				continue;
@@ -1436,17 +1432,13 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			}
 */
 
-#if !CMAKE_THREADS
 			if (porting::getTimeMs() > end_ms) {
 				m_active_objects_last = n;
 				break;
 			}
-#endif
 		}
-#if !CMAKE_THREADS
 		if (!calls)
 			m_active_objects_last = 0;
-#endif
 	}
 	}
 
