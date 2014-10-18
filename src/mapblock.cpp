@@ -772,7 +772,7 @@ std::shared_ptr<MapBlockMesh> MapBlock::getMesh(int step) {
 	return mesh;
 }
 
-void MapBlock::setMesh(std::shared_ptr<MapBlockMesh> rmesh) {
+void MapBlock::setMesh(std::shared_ptr<MapBlockMesh> & rmesh) {
 	if (rmesh && !mesh_size)
 		mesh_size = rmesh->getMesh()->getMeshBufferCount();
 	     if (rmesh->step == 16) {mesh16 = rmesh;}

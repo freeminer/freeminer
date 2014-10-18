@@ -231,13 +231,15 @@ public:
 
 		porting::setThreadName("Env");
 		porting::setThreadPriority(20);
-		int max_cycle_ms = 1000;
-		auto time = porting::getTimeMs();
+		unsigned int max_cycle_ms = 1000;
+		unsigned int time = porting::getTimeMs();
 		while(!StopRequested()) {
 			try {
-				m_server->getEnv().step((porting::getTimeMs() - time)/1000.0f, m_server->m_uptime.get(), max_cycle_ms);
-				time = porting::getTimeMs();
-				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+				auto ctime = porting::getTimeMs();
+				unsigned int dtimems = ctime - time;
+				time = ctime;
+				m_server->getEnv().step(dtimems/1000.0f, m_server->m_uptime.get(), max_cycle_ms);
+				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
 #ifdef NDEBUG
 			} catch (BaseException &e) {
 				errorstream<<"Env: exception: "<<e.what()<<std::endl;

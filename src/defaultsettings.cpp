@@ -211,7 +211,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("strict_protocol_version_checking", "false");
 	settings->setDefault("creative_mode", "false");
 	settings->setDefault("enable_damage", "true");
-	settings->setDefault("only_peaceful_mobs", "false");
 	settings->setDefault("fixed_map_seed", "");
 	settings->setDefault("give_initial_stuff", "false");
 	settings->setDefault("default_password", "");
@@ -371,7 +370,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_any_name", "0"); //WARNING!!! SECURITY RISK WITH SOME MODULES
 	settings->setDefault("password_save", "1");
 	settings->setDefault("enable_node_highlighting", "1");
-	settings->setDefault("abm_random", "0");
+	settings->setDefault("abm_random", "false");
 
 #if defined(_WIN32)
 		settings->setDefault("more_threads", "false");
