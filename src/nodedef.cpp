@@ -244,7 +244,7 @@ void ContentFeatures::reset()
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	pk.pack_map(36);
+	pk.pack_map(37);
 	PACK(CONTENTFEATURES_NAME, name);
 	PACK(CONTENTFEATURES_GROUPS, groups);
 	PACK(CONTENTFEATURES_DRAWTYPE, (int)drawtype);
@@ -290,8 +290,7 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	PACK(CONTENTFEATURES_DROWNING, drowning);
 	PACK(CONTENTFEATURES_LEVELED, leveled);
 	PACK(CONTENTFEATURES_WAVING, waving);
-
-	//collision_box.msgpack_pack(pk); //TODO!!
+	PACK(CONTENTFEATURES_COLLISION_BOX, collision_box);
 }
 
 void ContentFeatures::msgpack_unpack(msgpack::object o)
@@ -358,8 +357,7 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
 	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
 	packet[CONTENTFEATURES_WAVING].convert(&waving);
-
-	//collision_box.msgpack_unpack(o); // TODO!!!
+	packet[CONTENTFEATURES_COLLISION_BOX].convert(&collision_box);
 }
 
 /*
