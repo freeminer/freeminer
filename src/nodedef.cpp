@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "itemdef.h"
 #ifndef SERVER
 #include "tile.h"
+#include "mesh.h"
 #endif
 #include "log.h"
 #include "settings.h"
@@ -37,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "shader.h"
 #include "exceptions.h"
 #include "debug.h"
+#include "gamedef.h"
 
 /*
 	NodeBox
@@ -148,6 +150,12 @@ ContentFeatures::ContentFeatures()
 
 ContentFeatures::~ContentFeatures()
 {
+#ifndef SERVER
+	for (u32 i = 0; i < 24; i++) {
+		if (mesh_ptr[i])
+			mesh_ptr[i]->drop();
+	}
+#endif
 }
 
 void ContentFeatures::reset()
@@ -176,6 +184,11 @@ void ContentFeatures::reset()
 	// Unknown nodes can be dug
 	groups["dig_immediate"] = 2;
 	drawtype = NDT_NORMAL;
+	mesh = "";
+#ifndef SERVER
+	for(u32 i = 0; i < 24; i++)
+		mesh_ptr[i] = NULL;
+#endif
 	visual_scale = 1.0;
 	for(u32 i = 0; i < 6; i++)
 		tiledef[i] = TileDef();
@@ -207,6 +220,7 @@ void ContentFeatures::reset()
 	damage_per_second = 0;
 	node_box = NodeBox();
 	selection_box = NodeBox();
+	collision_box = NodeBox();
 	waving = 0;
 	legacy_facedir_simple = false;
 	legacy_wallmounted = false;
@@ -276,6 +290,8 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	PACK(CONTENTFEATURES_DROWNING, drowning);
 	PACK(CONTENTFEATURES_LEVELED, leveled);
 	PACK(CONTENTFEATURES_WAVING, waving);
+
+	//collision_box.msgpack_pack(pk); //TODO!!
 }
 
 void ContentFeatures::msgpack_unpack(msgpack::object o)
@@ -342,6 +358,8 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
 	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
 	packet[CONTENTFEATURES_WAVING].convert(&waving);
+
+	//collision_box.msgpack_unpack(o); // TODO!!!
 }
 
 /*
@@ -365,7 +383,7 @@ public:
 	virtual content_t set(const std::string &name, const ContentFeatures &def);
 	virtual content_t allocateDummy(const std::string &name);
 	virtual void updateAliases(IItemDefManager *idef);
-	virtual void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc);
+	virtual void updateTextures(IGameDef *gamedef);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
@@ -676,10 +694,13 @@ void CNodeDefManager::updateAliases(IItemDefManager *idef)
 }
 
 
-void CNodeDefManager::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc)
+void CNodeDefManager::updateTextures(IGameDef *gamedef)
 {
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
+	
+	ITextureSource *tsrc = gamedef->tsrc();
+	IShaderSource *shdsrc = gamedef->getShaderSource();
 
 	bool new_style_water           = g_settings->getBool("new_style_water");
 	bool new_style_leaves          = g_settings->getBool("new_style_leaves");
@@ -777,6 +798,10 @@ void CNodeDefManager::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			f->backface_culling = false;
 			f->solidness = 0;
 			break;
+		case NDT_MESH:
+			f->solidness = 0;
+			f->backface_culling = false;
+			break;
 		case NDT_TORCHLIKE:
 		case NDT_SIGNLIKE:
 		case NDT_FENCELIKE:
@@ -819,6 +844,34 @@ void CNodeDefManager::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			fillTileAttribs(tsrc, &f->special_tiles[j], &f->tiledef_special[j],
 				tile_shader[j], use_normal_texture,
 				f->tiledef_special[j].backface_culling, f->alpha, material_type);
+		}
+
+		// Meshnode drawtype
+		// Read the mesh and apply scale
+		if ((f->drawtype == NDT_MESH) && (f->mesh != "")) {
+			f->mesh_ptr[0] = gamedef->getMesh(f->mesh);
+			scaleMesh(f->mesh_ptr[0], v3f(f->visual_scale,f->visual_scale,f->visual_scale));
+			recalculateBoundingBox(f->mesh_ptr[0]);
+		}
+
+		//Convert regular nodebox nodes to meshnodes
+		//Change the drawtype and apply scale
+		if ((f->drawtype == NDT_NODEBOX) && 
+				((f->node_box.type == NODEBOX_REGULAR) || (f->node_box.type == NODEBOX_FIXED)) &&
+				(!f->node_box.fixed.empty())) {
+			f->drawtype = NDT_MESH;
+			f->mesh_ptr[0] = convertNodeboxNodeToMesh(f);
+			scaleMesh(f->mesh_ptr[0], v3f(f->visual_scale,f->visual_scale,f->visual_scale));
+			recalculateBoundingBox(f->mesh_ptr[0]);
+		}
+
+		//Cache 6dfacedir rotated clones of meshes
+		if (f->mesh_ptr[0] && (f->param_type_2 == CPT2_FACEDIR)) {
+			for (u16 j = 1; j < 24; j++) {
+				f->mesh_ptr[j] = cloneMesh(f->mesh_ptr[0]);
+				rotateMeshBy6dFacedir(f->mesh_ptr[j], j);
+				recalculateBoundingBox(f->mesh_ptr[j]);
+			}
 		}
 		f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
 		}

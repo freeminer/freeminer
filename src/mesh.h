@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MESH_HEADER
 
 #include "irrlichttypes_extrabloated.h"
+#include "nodedef.h"
 #include <string>
 
 /*
@@ -71,5 +72,25 @@ void setMeshColorByNormalXYZ(scene::IMesh *mesh,
 		const video::SColor &colorX,
 		const video::SColor &colorY,
 		const video::SColor &colorZ);
+/*
+	Rotate the mesh by 6d facedir value.
+	Method only for meshnodes, not suitable for entities.
+*/
+void rotateMeshBy6dFacedir(scene::IMesh *mesh, int facedir);
+
+/*
+	Clone the mesh.
+*/
+scene::IMesh* cloneMesh(scene::IMesh *src_mesh);
+
+/*
+	Convert nodebox drawtype node to mesh.
+*/
+scene::IMesh* convertNodeboxNodeToMesh(ContentFeatures *f);
+
+/*
+	Update bounding box for a mesh.
+*/
+void recalculateBoundingBox(scene::IMesh *src_mesh);
 
 #endif

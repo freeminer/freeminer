@@ -217,6 +217,7 @@ enum NodeDrawType
 	NDT_FIRELIKE, // Draw faces slightly rotated and only on connecting nodes,
 	NDT_GLASSLIKE_FRAMED_OPTIONAL,	// enabled -> connected, disabled -> Glass-like
 									// uses 2 textures, one for frames, second for faces
+	NDT_MESH, // Uses static meshes
 };
 
 #define CF_SPECIAL_COUNT 6
@@ -257,6 +258,10 @@ struct ContentFeatures
 
 	// Visual definition
 	enum NodeDrawType drawtype;
+	std::string mesh;
+#ifndef SERVER
+	scene::IMesh *mesh_ptr[24];
+#endif	
 	float visual_scale; // Misc. scale parameter
 	TileDef tiledef[6];
 	TileDef tiledef_special[CF_SPECIAL_COUNT]; // eg. flowing liquid
@@ -309,6 +314,7 @@ struct ContentFeatures
 	u32 damage_per_second;
 	NodeBox node_box;
 	NodeBox selection_box;
+	NodeBox collision_box;
 	// Used for waving leaves/plants
 	u8 waving;
 	// Compatibility with old maps
@@ -416,8 +422,8 @@ public:
 	/*
 		Update tile textures to latest return values of TextueSource.
 	*/
-	virtual void updateTextures(ITextureSource *tsrc,
-		IShaderSource *shdsrc)=0;
+	virtual void updateTextures(IGameDef *gamedef)=0;
+
 };
 
 IWritableNodeDefManager* createNodeDefManager();
