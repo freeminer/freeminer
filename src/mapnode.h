@@ -242,7 +242,7 @@ struct MapNode
 	u8 getLevel(INodeDefManager *nodemgr) const;
 	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1, bool compress = 0);
 	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
-	void freezeMelt(INodeDefManager *nodemgr, int direction = 0);
+	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
 	/*
 		Serialization functions

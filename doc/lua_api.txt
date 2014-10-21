@@ -1593,6 +1593,8 @@ minetest.set_node_level(pos, level)
 ^ set level of leveled node, default level = 1, if totallevel > maxlevel returns rest (total-max).
 minetest.add_node_level(pos, level)
 ^ increase level of leveled node by level, default level = 1, if totallevel > maxlevel returns rest (total-max). can be negative for decreasing
+minetest.freeze_melt(pos, direction)
+^ freeze (direction = -1) or melt (direction = 1) node
 minetest.get_heat(pos)
 ^ heat at pos
 minetest.get_humidity(pos)
