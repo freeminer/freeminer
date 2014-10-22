@@ -36,6 +36,7 @@ class MtEventManager;
 class IRollbackReportSink;
 namespace irr { namespace scene {
 	class IAnimatedMesh;
+	class ISceneManager;
 }}
 
 /*
@@ -66,6 +67,7 @@ public:
 	virtual MtEventManager* getEventManager()=0;
 	virtual scene::IAnimatedMesh* getMesh(const std::string &filename)
 	{ return NULL; }
+	virtual scene::ISceneManager* getSceneManager()=0;
 
 	// Only usable on the server, and NOT thread-safe. It is usable from the
 	// environment thread.

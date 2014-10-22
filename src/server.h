@@ -301,7 +301,8 @@ public:
 	virtual ISoundManager* getSoundManager();
 	virtual MtEventManager* getEventManager();
 	virtual IRollbackReportSink* getRollbackReportSink();
-
+	virtual scene::ISceneManager* getSceneManager();
+	
 	IWritableItemDefManager* getWritableItemDefManager();
 	IWritableNodeDefManager* getWritableNodeDefManager();
 	IWritableCraftDefManager* getWritableCraftDefManager();

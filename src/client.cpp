@@ -2668,6 +2668,10 @@ IShaderSource* Client::getShaderSource()
 {
 	return m_shsrc;
 }
+scene::ISceneManager* Client::getSceneManager()
+{
+	return m_device->getSceneManager();
+}
 u16 Client::allocateUnknownNodeId(const std::string &name)
 {
 	errorstream<<"Client::allocateUnknownNodeId(): "
