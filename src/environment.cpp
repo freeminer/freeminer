@@ -1737,22 +1737,24 @@ void ServerEnvironment::removeRemovedObjects()
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
-	auto lock = m_active_objects.lock_unique_rec();
-	for(std::map<u16, ServerActiveObject*>::iterator
-			i = m_active_objects.begin();
-			i != m_active_objects.end(); ++i)
+
+	std::vector<ServerActiveObject*> objects;
 	{
-		u16 id = i->first;
-		ServerActiveObject* obj = i->second;
-		// This shouldn't happen but check it
-		if(obj == NULL)
-		{
-			infostream<<"NULL object found in ServerEnvironment"
-					<<" while finding removed objects. id="<<id<<std::endl;
-			// Id to be removed from m_active_objects
-			objects_to_remove.push_back(id);
-			continue;
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (lock->owns_lock()) {
+			for(auto & ir : m_active_objects) {
+				objects.emplace_back(ir.second);
+			}
 		}
+	}
+
+	if (objects.size())
+	for (auto & obj : objects)
+	{
+		if(!obj)
+			continue;
+
+		u16 id = obj->getId();
 
 		/*
 			We will delete objects that are marked as removed or thatare
@@ -1815,11 +1817,14 @@ void ServerEnvironment::removeRemovedObjects()
 		objects_to_remove.push_back(id);
 	}
 
+	if (!objects_to_remove.empty()) {
+	auto lock = m_active_objects.lock_unique_rec();
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i)
 	{
 		m_active_objects.erase(*i);
+	}
 	}
 }
 
@@ -1969,12 +1974,21 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
 	std::list<u16> objects_to_remove;
-	auto lock = m_active_objects.lock_unique_rec();
-	for(std::map<u16, ServerActiveObject*>::iterator
-			i = m_active_objects.begin();
-			i != m_active_objects.end(); ++i)
+
+
+	std::vector<ServerActiveObject*> objects;
 	{
-		ServerActiveObject* obj = i->second;
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (lock->owns_lock()) {
+			for(auto & ir : m_active_objects) {
+				objects.emplace_back(ir.second);
+			}
+		}
+	}
+
+	if (objects.size())
+	for (auto & obj : objects)
+	{
 		if (!obj)
 			continue;
 
@@ -1986,7 +2000,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		if(!force_delete && obj->m_pending_deactivation)
 			continue;
 
-		u16 id = i->first;
+		u16 id = obj->getId();
 		v3f objectpos = obj->getBasePosition();
 
 		// The block in which the object resides in
@@ -2198,11 +2212,14 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 	//if(m_active_objects.size()) verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from="<<m_active_objects.size()<<std::endl;
 
+	if (!objects_to_remove.empty()) {
+	auto lock = m_active_objects.lock_unique_rec();
 	// Remove references from m_active_objects
 	for(std::list<u16>::iterator i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i)
 	{
 		m_active_objects.erase(*i);
+	}
 	}
 }
 
