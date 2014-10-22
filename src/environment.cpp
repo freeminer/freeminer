@@ -1743,7 +1743,13 @@ void ServerEnvironment::removeRemovedObjects()
 		auto lock = m_active_objects.try_lock_shared_rec();
 		if (lock->owns_lock()) {
 			for(auto & ir : m_active_objects) {
-				objects.emplace_back(ir.second);
+				auto obj = ir.second;
+				if (obj) {
+					objects.emplace_back(obj);
+				} else {
+					auto id = ir.first;
+					objects_to_remove.push_back(id);
+				}
 			}
 		}
 	}
@@ -1975,13 +1981,18 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 	std::list<u16> objects_to_remove;
 
-
 	std::vector<ServerActiveObject*> objects;
 	{
 		auto lock = m_active_objects.try_lock_shared_rec();
 		if (lock->owns_lock()) {
 			for(auto & ir : m_active_objects) {
-				objects.emplace_back(ir.second);
+				auto obj = ir.second;
+				if (obj) {
+					objects.emplace_back(obj);
+				} else {
+					auto id = ir.first;
+					objects_to_remove.push_back(id);
+				}
 			}
 		}
 	}
