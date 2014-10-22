@@ -376,7 +376,6 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	m_velocity(0,0,0),
 	m_acceleration(0,0,0),
 	m_yaw(0),
-	m_properties_sent(true),
 	m_last_sent_yaw(0),
 	m_last_sent_position(0,0,0),
 	m_last_sent_velocity(0,0,0),
@@ -390,6 +389,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	m_attachment_parent_id(0),
 	m_attachment_sent(false)
 {
+	m_properties_sent = true;
 	// Only register type if no environment supplied
 	if(env == NULL){
 		ServerActiveObject::registerType(getType(), create);
@@ -479,11 +479,11 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 {
 	if(!m_properties_sent)
 	{
-		m_properties_sent = true;
 		std::string str = getPropertyPacket();
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
 		m_messages_out.push_back(aom);
+		m_properties_sent = true;
 	}
 
 	// If attached, check that our parent is still there. If it isn't, detach.
@@ -959,7 +959,6 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_wield_index(0),
 	m_position_not_sent(false),
 	m_armor_groups_sent(false),
-	m_properties_sent(true),
 	m_privs(privs),
 	m_is_singleplayer(is_singleplayer),
 	m_animation_speed(0),
@@ -981,6 +980,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_physics_override_sneak_glitch(true),
 	m_physics_override_sent(false)
 {
+	m_properties_sent = true;
 	assert(m_player);
 	assert(m_peer_id != 0);
 	++m_player->refs;
@@ -1115,11 +1115,11 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 {
 	if(!m_properties_sent)
 	{
-		m_properties_sent = true;
 		std::string str = getPropertyPacket();
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
 		m_messages_out.push_back(aom);
+		m_properties_sent = true;
 	}
 
 	// If attached, check that our parent is still there. If it isn't, detach.
