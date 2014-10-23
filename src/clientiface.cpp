@@ -382,7 +382,7 @@ int RemoteClient::GetNextBlocks(
 			/*
 				Check if map has this block
 			*/
-			MapBlock *block = env->getMap().getBlockNoCreateNoEx(p, true);
+			MapBlock *block = env->getMap().getBlockNoCreateNoEx(p);
 
 			bool surely_not_found_on_disk = false;
 			bool block_is_invalid = false;
@@ -871,7 +871,7 @@ void ClientInterface::DeleteClient(u16 peer_id)
 	RemoteClient *client = n->second;
 	// Handle objects
 	{
-	auto lock = client->m_known_objects.lock_unique();
+	auto lock = client->m_known_objects.lock_unique_rec();
 	for(auto
 			i = client->m_known_objects.begin();
 			i != client->m_known_objects.end(); ++i)
