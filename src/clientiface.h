@@ -282,7 +282,7 @@ public:
 		List of active objects that the client knows of.
 		Value is dummy.
 	*/
-	std::set<u16> m_known_objects;
+	maybe_shared_unordered_map<u16, bool> m_known_objects;
 
 	ClientState getState()
 		{ return m_state; }

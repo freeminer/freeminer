@@ -1019,7 +1019,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 					data_buffer.append(serializeLongString(""));
 
 				// Add to known objects
-				client->m_known_objects.insert(id);
+				client->m_known_objects.set(id, true);
 
 				if(obj)
 					obj->m_known_by_count++;
