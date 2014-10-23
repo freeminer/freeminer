@@ -244,6 +244,9 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		try{
 			// Object collides into walkable nodes
 			MapNode n = map->getNodeTry(p);
+			if (n.getContent() == CONTENT_IGNORE) {
+				throw InvalidPositionException("found CONTENT_IGNORE");
+			}
 			const ContentFeatures &f = gamedef->getNodeDefManager()->get(n);
 			if(f.walkable == false)
 				continue;

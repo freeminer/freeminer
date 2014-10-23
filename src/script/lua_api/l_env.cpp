@@ -321,6 +321,10 @@ int ModApiEnvMod::l_set_node_level(lua_State *L)
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
 	MapNode n = env->getMap().getNodeNoEx(pos);
+	if(n.getContent() == CONTENT_IGNORE){
+		lua_pushnumber(L, 0);
+		return 1;
+	}
 	lua_pushnumber(L, n.setLevel(env->getGameDef()->ndef(), level));
 	env->setNode(pos, n);
 	return 1;
@@ -341,7 +345,32 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 	if(lua_isnumber(L, 3))
 		compress = lua_tonumber(L, 3);
 	MapNode n = env->getMap().getNodeNoEx(pos);
+	if(n.getContent() == CONTENT_IGNORE){
+		lua_pushnumber(L, 0);
+		return 1;
+	}
 	lua_pushnumber(L, n.addLevel(env->getGameDef()->ndef(), level, compress));
+	env->setNode(pos, n);
+	return 1;
+}
+
+// freeze_melt(pos, direction)
+// pos = {x=num, y=num, z=num}
+// direction: -1 (freeze), 1 (melt)
+int ModApiEnvMod::l_freeze_melt(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 pos = read_v3s16(L, 1);
+	int direction = 1;
+	if(lua_isnumber(L, 2))
+		direction = lua_tonumber(L, 2);
+	MapNode n = env->getMap().getNodeNoEx(pos);
+	if(n.getContent() == CONTENT_IGNORE){
+		lua_pushnumber(L, 0);
+		return 1;
+	}
+	lua_pushnumber(L, n.freeze_melt(env->getGameDef()->ndef(), direction));
 	env->setNode(pos, n);
 	return 1;
 }
@@ -869,6 +898,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(get_node_level);
 	API_FCT(set_node_level);
 	API_FCT(add_node_level);
+	API_FCT(freeze_melt);
 	API_FCT(add_entity);
 	API_FCT(get_meta);
 	API_FCT(get_node_timer);

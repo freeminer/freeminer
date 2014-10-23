@@ -449,10 +449,10 @@ u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add, bool compress)
 	return setLevel(nodemgr, level, compress);
 }
 
-void MapNode::freezeMelt(INodeDefManager *ndef, int direction) {
+int MapNode::freeze_melt(INodeDefManager *ndef, int direction) {
 	content_t to = ndef->getId(direction < 0 ? ndef->get(*this).freeze : ndef->get(*this).melt);
 	if (to == CONTENT_IGNORE)
-		return;
+		return 0;
 	u8 level_was_max = this->getMaxLevel(ndef);
 	u8 level_was = this->getLevel(ndef);
 	this->setContent(to);
@@ -466,6 +466,7 @@ void MapNode::freezeMelt(INodeDefManager *ndef, int direction) {
 	}
 	if (this->getMaxLevel(ndef) && !this->getLevel(ndef))
 		this->addLevel(ndef);
+	return direction;
 }
 
 u32 MapNode::serializedLength(u8 version)

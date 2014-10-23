@@ -4591,6 +4591,11 @@ IShaderSource* Server::getShaderSource()
 {
 	return NULL;
 }
+scene::ISceneManager* Server::getSceneManager()
+{
+	return NULL;
+}
+
 u16 Server::allocateUnknownNodeId(const std::string &name)
 {
 	return m_nodedef->allocateDummy(name);
