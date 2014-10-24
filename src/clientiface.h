@@ -284,7 +284,7 @@ public:
 		List of active objects that the client knows of.
 		Value is dummy.
 	*/
-	std::set<u16> m_known_objects;
+	maybe_shared_unordered_map<u16, bool> m_known_objects;
 
 	ClientState getState()
 		{ return m_state; }
@@ -431,8 +431,16 @@ public:
 	static std::string state2Name(ClientState state);
 
 public:
-	shared_map<u16, RemoteClient*>& getClientList()
-		{ return m_clients; }
+	std::vector<RemoteClient*> getClientList() {
+		std::vector<RemoteClient*> clients;
+		auto lock = m_clients.lock_shared_rec();
+		for(auto & ir : m_clients) {
+			auto c = ir.second;
+			if (c)
+				clients.emplace_back(c);
+		}
+		return clients;
+	}
 
 private:
 	/* update internal player list */

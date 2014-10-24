@@ -700,11 +700,11 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 {
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
-	
-	ITextureSource *tsrc = gamedef->tsrc();
-	IShaderSource *shdsrc = gamedef->getShaderSource();
-	scene::ISceneManager* smgr = gamedef->getSceneManager();
-	scene::IMeshManipulator* meshmanip = smgr->getMeshManipulator();
+
+	ITextureSource *tsrc = !gamedef ? nullptr : gamedef->tsrc();
+	IShaderSource *shdsrc = !gamedef ? nullptr : gamedef->getShaderSource();
+	scene::ISceneManager* smgr = !gamedef ? nullptr : gamedef->getSceneManager();
+	scene::IMeshManipulator* meshmanip = !smgr ? nullptr :smgr->getMeshManipulator();
 
 	bool new_style_water           = g_settings->getBool("new_style_water");
 	bool new_style_leaves          = g_settings->getBool("new_style_leaves");

@@ -382,7 +382,7 @@ int RemoteClient::GetNextBlocks(
 			/*
 				Check if map has this block
 			*/
-			MapBlock *block = env->getMap().getBlockNoCreateNoEx(p, true);
+			MapBlock *block = env->getMap().getBlockNoCreateNoEx(p);
 
 			bool surely_not_found_on_disk = false;
 			bool block_is_invalid = false;
@@ -883,16 +883,19 @@ void ClientInterface::DeleteClient(u16 peer_id)
 	//TODO this should be done by client destructor!!!
 	RemoteClient *client = n->second;
 	// Handle objects
-	for(std::set<u16>::iterator
+	{
+	auto lock = client->m_known_objects.lock_unique_rec();
+	for(auto
 			i = client->m_known_objects.begin();
 			i != client->m_known_objects.end(); ++i)
 	{
 		// Get object
-		u16 id = *i;
+		u16 id = i->first;
 		ServerActiveObject* obj = m_env->getActiveObject(id);
 
 		if(obj && obj->m_known_by_count > 0)
 			obj->m_known_by_count--;
+	}
 	}
 
 	// Delete client

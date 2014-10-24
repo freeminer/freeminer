@@ -911,7 +911,7 @@ std::set<u16> ServerEnvironment::getObjectsInsideRadius(v3f pos, float radius)
 {
 	std::set<u16> objects;
 	auto lock = m_active_objects.lock_shared_rec();
-	for(std::map<u16, ServerActiveObject*>::iterator
+	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
@@ -932,7 +932,7 @@ void ServerEnvironment::clearAllObjects()
 	std::list<u16> objects_to_remove;
 	auto lock = m_active_objects.lock_unique_rec();
 
-	for(std::map<u16, ServerActiveObject*>::iterator
+	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
@@ -1143,7 +1143,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			//TimeTaker timer_s2("force load");
 			auto lock = m_active_objects.try_lock_shared_rec();
 			if (lock->owns_lock())
-			for(std::map<u16, ServerActiveObject*>::iterator
+			for(auto
 				i = m_active_objects.begin();
 				i != m_active_objects.end(); ++i)
 			{
@@ -1415,6 +1415,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			else
 				m_active_objects_last = 0;
 			++calls;
+
 			// Don't step if is to be removed or stored statically
 			if(obj->m_removed || obj->m_pending_deactivation)
 				continue;
@@ -1458,15 +1459,14 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 
 ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)
 {
-	std::map<u16, ServerActiveObject*>::iterator n;
-	n = m_active_objects.find(id);
+	auto n = m_active_objects.find(id);
 	if(n == m_active_objects.end())
 		return NULL;
 	return n->second;
 }
 
 bool isFreeServerActiveObjectId(u16 id,
-		std::map<u16, ServerActiveObject*> &objects)
+		maybe_shared_map<u16, ServerActiveObject*> &objects)
 {
 	if(id == 0)
 		return false;
@@ -1475,7 +1475,7 @@ bool isFreeServerActiveObjectId(u16 id,
 }
 
 u16 getFreeServerActiveObjectId(
-		std::map<u16, ServerActiveObject*> &objects)
+		maybe_shared_map<u16, ServerActiveObject*> &objects)
 {
 	//try to reuse id's as late as possible
 	static u16 last_used_id = 0;
@@ -1549,7 +1549,7 @@ bool ServerEnvironment::addActiveObjectAsStatic(ServerActiveObject *obj)
 	inside a radius around a position
 */
 void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
-		std::set<u16> &current_objects,
+		maybe_shared_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &added_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1562,7 +1562,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		- add remaining objects to added_objects
 	*/
 	auto lock = m_active_objects.lock_shared_rec();
-	for(std::map<u16, ServerActiveObject*>::iterator
+	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
@@ -1581,8 +1581,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 				continue;
 		}
 		// Discard if already on current_objects
-		std::set<u16>::iterator n;
-		n = current_objects.find(id);
+		auto n = current_objects.find(id);
 		if(n != current_objects.end())
 			continue;
 		// Add to added_objects
@@ -1595,7 +1594,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 	inside a radius around a position
 */
 void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
-		std::set<u16> &current_objects,
+		maybe_shared_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &removed_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1608,11 +1607,11 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		- object has m_removed=true, or
 		- object is too far away
 	*/
-	for(std::set<u16>::iterator
+	for(auto
 			i = current_objects.begin();
 			i != current_objects.end(); ++i)
 	{
-		u16 id = *i;
+		u16 id = i->first;
 		ServerActiveObject *object = getActiveObject(id);
 
 		if(object == NULL){

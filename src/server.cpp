@@ -921,7 +921,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
 		//JMutexAutoLock envlock(m_env_mutex);
 
-		auto & clients = m_clients.getClientList();
+		auto clients = m_clients.getClientList();
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
 
 		// Radius inside which objects are active
@@ -929,14 +929,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		radius *= MAP_BLOCKSIZE;
 		s16 radius_deactivate = radius*3;
 
-		auto lock = clients.try_lock_shared_rec();
-		if (lock->owns_lock())
-		for(auto
-			i = clients.begin();
-			i != clients.end(); ++i)
+		for(auto & client : clients)
 		{
-			RemoteClient *client = i->second;
-
 			// If definitions and textures have not been sent, don't
 			// send objects either
 			if (client->getState() < CS_DefinitionsSent)
@@ -1008,7 +1002,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				added_objects_data.push_back(ActiveObjectAddData(id, type, data));
 
 				// Add to known objects
-				client->m_known_objects.insert(id);
+				client->m_known_objects.set(id, true);
 
 				if(obj)
 					obj->m_known_by_count++;
@@ -1064,15 +1058,15 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			message_list->push_back(aom);
 		}
 
-		auto & clients = m_clients.getClientList();
+
+
+
+
+		auto clients = m_clients.getClientList();
 		{
-		auto lock = clients.lock_shared_rec();
 		// Route data to every client
-		for(auto
-			i = clients.begin();
-			i != clients.end(); ++i)
+		for(auto & client : clients)
 		{
-			RemoteClient *client = i->second;
 			ActiveObjectMessages reliable_data;
 			ActiveObjectMessages unreliable_data;
 			// Go through all objects in message buffer
@@ -1347,10 +1341,11 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 			goto no_send;
 		}
 
-		for (auto i = m_clients.getClientList().begin(); i != m_clients.getClientList().end(); ++i)
-			if (i->second->m_nearest_unsent_nearest) {
-				i->second->m_nearest_unsent_d = 0;
-				i->second->m_nearest_unsent_nearest = 0;
+		auto clients = m_clients.getClientList();
+		for (auto & client : clients)
+			if (client->m_nearest_unsent_nearest) {
+				client->m_nearest_unsent_d = 0;
+				client->m_nearest_unsent_nearest = 0;
 			}
 
 		//JMutexAutoLock lock(m_env_mutex);
