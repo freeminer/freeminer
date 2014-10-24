@@ -1415,6 +1415,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 			else
 				m_active_objects_last = 0;
 			++calls;
+
 			// Don't step if is to be removed or stored statically
 			if(obj->m_removed || obj->m_pending_deactivation)
 				continue;
