@@ -1901,7 +1901,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		if (	liquid_levels[D_TOP] == 0 &&
 			p0.Y > water_level &&
 			level_max > 1 &&
-			neighbors[D_BOTTOM].n.getContent() == CONTENT_IGNORE &&
+			neighbors[D_BOTTOM].c == CONTENT_IGNORE &&
 			!(loopcount % 3)) {
 			--total_level;
 		}
@@ -1916,7 +1916,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		//relax down
 		if (	nodemgr->get(liquid_kind).liquid_renewable &&
 			relax &&
-			p0.Y == water_level + 1 &&
+			p0.Y == water_level &&
 			liquid_levels[D_TOP] == 0 &&
 			level_max > 1 &&
 			liquid_levels[D_BOTTOM] == level_max &&
