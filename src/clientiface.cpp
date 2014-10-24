@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 
 //VERY BAD COPYPASTE FROM clientmap.cpp!
+/*
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
 		std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> & occlude_cache)
@@ -81,6 +82,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	}
 	return false;
 }
+*/
 
 const char *ClientInterface::statenames[] = {
 	"Invalid",
@@ -241,6 +243,7 @@ int RemoteClient::GetNextBlocks(
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
+/*
 	int blocks_occlusion_culled = 0;
 	bool occlusion_culling_enabled = true;
 	auto cam_pos_nodes = center_nodepos;
@@ -249,6 +252,7 @@ int RemoteClient::GetNextBlocks(
 	if(nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
+*/
 
 	s16 d;
 	for(d = d_start; d <= d_max; d++)
@@ -392,10 +396,9 @@ int RemoteClient::GetNextBlocks(
 					continue;
 				}
 
+/*
 		{
-			/*
-				Occlusion culling
-			*/
+			//Occlusion culling
 			auto cpn = p;
 
 			// No occlusion culling when free_move is on and camera is
@@ -438,6 +441,7 @@ int RemoteClient::GetNextBlocks(
 				continue;
 			}
 		}
+*/
 
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
