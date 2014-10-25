@@ -196,10 +196,13 @@ int RemoteClient::GetNextBlocks(
 	if(m_time_from_building < g_settings->getFloat(
 				"full_block_send_enable_min_time_from_building"))
 	{
+		/*
 		max_simul_sends_usually
 			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
+		*/
 		if(d_start<=1)
 			d_start=2;
+		m_nearest_unsent_reset_timer = 999; //magical number more than ^ other number 120 - need to reset d on next iteration
 	}
 
 	/*
@@ -228,7 +231,7 @@ int RemoteClient::GetNextBlocks(
 	s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
 
 	// Don't loop very much at a time
-	s16 max_d_increment_at_time = 5;
+	s16 max_d_increment_at_time = 10;
 	if(d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 	/*if(d_max_gen > d_start+2)
@@ -274,6 +277,10 @@ int RemoteClient::GetNextBlocks(
 		}*/
 
 		std::list<v3s16> list;
+		if (d > 2 && d == d_start && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
+			list.push_back(v3s16(0,0,0));
+		}
+
 		bool can_skip = d > 1;
 		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
 		if (speed_in_blocks>0.8 && d <= 2) {
@@ -380,8 +387,9 @@ int RemoteClient::GetNextBlocks(
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
-			if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d) > m_uptime)
+			if(block_sent > 0 && block_sent + (d <= 2 ? 1 : d*d) > m_uptime) {
 				continue;
+			}
 
 			/*
 				Check if map has this block
@@ -547,7 +555,7 @@ queue_full_break:
 	} else {
 		if(d > full_d_max){
 			new_nearest_unsent_d = 0;
-			m_nothing_to_send_pause_timer = 2.0;
+			m_nothing_to_send_pause_timer = 1.0;
 		} else {
 			if(nearest_sent_d != -1)
 				new_nearest_unsent_d = nearest_sent_d;

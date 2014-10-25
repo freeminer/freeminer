@@ -4218,7 +4218,7 @@ int Server::SendBlocks(float dtime)
 			if (client == NULL)
 				continue;
 
-			total += client->GetNextBlocks(m_env,m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
+			total += client->GetNextBlocks(m_env, m_emerge, dtime, m_uptime.get() + m_env->m_game_time_start, queue);
 		}
 	}
 
