@@ -350,6 +350,7 @@ private:
 	u16 m_peer_id;
 
 	shared_map<u16, ENetPeer*> m_peers;
+	shared_unordered_map<u16, Address> m_peers_address;
 	//JMutex m_peers_mutex;
 
 	// Backwards compatibility

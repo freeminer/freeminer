@@ -205,7 +205,7 @@ public:
 	// The serialization version to use with the client
 	u8 serialization_version;
 	//
-	u16 net_proto_version;
+	std::atomic_ushort net_proto_version;
 
 	std::atomic_int m_nearest_unsent_nearest;
 	s16 wanted_range;
@@ -215,7 +215,6 @@ public:
 	RemoteClient(ServerEnvironment *env):
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
-		net_proto_version(0),
 		wanted_range(9 * MAP_BLOCKSIZE),
 		m_env(env),
 		m_time_from_building(9999),
@@ -230,6 +229,7 @@ public:
 		m_full_version("unknown"),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
+		net_proto_version = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_nearest = 0;
 	}

@@ -89,6 +89,7 @@ public:
 	Address(u32 address, u16 port);
 	Address(u8 a, u8 b, u8 c, u8 d, u16 port);
 	Address(const IPv6AddressBytes * ipv6_bytes, u16 port);
+	Address(const in6_addr & addr, u16 port) { setAddress(addr); setPort(port); };
 	bool operator==(Address &address);
 	bool operator!=(Address &address);
 	// Resolve() may throw ResolveError (address is unchanged in this case)

@@ -144,6 +144,7 @@ void Connection::receive()
 					// TODO: fix this shit
 					peer_id = m_peers.rbegin()->first + 1;
 				m_peers.set(peer_id, event.peer);
+				m_peers_address.set(peer_id, Address(event.peer->address.host, event.peer->address.port));
 
 				event.peer->data = new u16;
 				*((u16*)event.peer->data) = peer_id;
@@ -230,6 +231,8 @@ void Connection::connect(Address addr)
 	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
 			event.type == ENET_EVENT_TYPE_CONNECT) {
 		m_peers.set(PEER_ID_SERVER, peer);
+		m_peers_address.set(PEER_ID_SERVER, addr);
+
 	} else {
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
@@ -298,6 +301,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout)
 
 	// delete m_peers[peer_id]; -- enet should handle this
 	m_peers.erase(peer_id);
+	m_peers_address.erase(peer_id);
 	return true;
 }
 
@@ -424,13 +428,17 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
-	//JMutexAutoLock peerlock(m_peers_mutex);
+	if (!m_peers_address.count(peer_id))
+		return Address();
+	return m_peers_address.get(peer_id);
+/*
 	auto a = Address(0, 0, 0, 0, 0);
 	if (!m_peers.get(peer_id))
 		return a;
 	a.setPort(m_peers.get(peer_id)->address.port);
 	a.setAddress(m_peers.get(peer_id)->address.host);
 	return a;
+*/
 }
 
 void Connection::DeletePeer(u16 peer_id)
