@@ -2215,7 +2215,10 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 		// Delete active object
 		if(obj->environmentDeletes())
+		{
+			m_active_objects.set(id, nullptr);
 			delete obj;
+		}
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}

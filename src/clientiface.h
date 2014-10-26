@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "jthread/jmutex.h"
 #include "util/lock.h"
+#include "util/unordered_map_hash.h"
 
 #include <list>
 #include <vector>
@@ -338,7 +339,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	shared_map<v3s16, unsigned int> m_blocks_sent;
+	shared_unordered_map<v3s16, unsigned int, v3s16Hash, v3s16Equal> m_blocks_sent;
 
 public:
 	std::atomic_int m_nearest_unsent_d;

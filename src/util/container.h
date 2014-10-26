@@ -197,9 +197,9 @@ class Queue
 : public locker
 {
 public:
-	Queue():
-		m_list_size(0)
-	{}
+	Queue() {
+		m_list_size = 0;
+	}
 
 	void push_back(T t)
 	{
