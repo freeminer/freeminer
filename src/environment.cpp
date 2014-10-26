@@ -569,7 +569,6 @@ void ServerEnvironment::loadMeta()
 			float dtime_s, ServerEnvironment *env,
 			bool use_timers, bool activate = false):
 		m_env(env),
-		m_aabms(),
 		m_aabms_empty(true)
 	{
 		if(dtime_s < 0.001)
