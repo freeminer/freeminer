@@ -56,7 +56,6 @@ std::random_device random_device; // todo: move me to random.h
 std::mt19937 random_gen(random_device());
 
 Environment::Environment():
-	m_time_of_day_f(9000./24000),
 	m_time_of_day_speed(0),
 	m_time_counter(0),
 	m_enable_day_night_ratio_override(false),
@@ -175,7 +174,7 @@ u32 Environment::getDayNightRatio()
 	if(m_enable_day_night_ratio_override)
 		return m_day_night_ratio_override;
 	bool smooth = g_settings->getBool("enable_shaders");
-	return time_to_daynight_ratio(m_time_of_day_f*24000, smooth);
+	return time_to_daynight_ratio(m_time_of_day, smooth);
 }
 
 void Environment::setTimeOfDaySpeed(float speed)
@@ -198,24 +197,11 @@ void Environment::stepTimeOfDay(float dtime)
 	m_time_counter += dtime;
 	f32 speed = day_speed * 24000./(24.*3600);
 	u32 units = (u32)(m_time_counter*speed);
-	bool sync_f = false;
 	if(units > 0){
-		// Sync at overflow
-		if(m_time_of_day + units >= 24000)
-			sync_f = true;
 		m_time_of_day = (m_time_of_day + units) % 24000;
-		if(sync_f)
-			m_time_of_day_f = (float)m_time_of_day / 24000.0;
 	}
 	if (speed > 0) {
 		m_time_counter -= (f32)units / speed;
-	}
-	if(!sync_f){
-		m_time_of_day_f += day_speed/24/3600*dtime;
-		if(m_time_of_day_f > 1.0)
-			m_time_of_day_f -= 1.0;
-		if(m_time_of_day_f < 0.0)
-			m_time_of_day_f += 1.0;
 	}
 }
 

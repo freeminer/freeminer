@@ -93,14 +93,13 @@ public:
 	virtual void setTimeOfDay(u32 time)
 	{
 		m_time_of_day = time;
-		m_time_of_day_f = (float)time / 24000.0;
 	}
 
 	u32 getTimeOfDay()
 	{ return m_time_of_day; }
 
-	float getTimeOfDayF()
-	{ return m_time_of_day_f; }
+	inline float getTimeOfDayF()
+	{ return (float)m_time_of_day / 24000.0; }
 
 	void stepTimeOfDay(float dtime);
 
@@ -123,7 +122,6 @@ protected:
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
-	float m_time_of_day_f;
 	float m_time_of_day_speed;
 	// Used to buffer dtime for adding to m_time_of_day
 	float m_time_counter;
