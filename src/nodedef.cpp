@@ -1359,11 +1359,10 @@ int NodeResolver::addNodeList(const char *nodename,
 		std::vector<content_t> *content_vec)
 {
 	if (m_is_node_registration_complete) {
-		std::set<content_t> idset;
-		std::set<content_t>::iterator it;
+		std::unordered_set<content_t> idset;
 
 		m_ndef->getIds(nodename, idset);
-		for (it = idset.begin(); it != idset.end(); ++it)
+		for (auto it = idset.begin(); it != idset.end(); ++it)
 			content_vec->push_back(*it);
 
 		return idset.size() ? NR_STATUS_SUCCESS : NR_STATUS_FAILURE;
@@ -1447,11 +1446,10 @@ int NodeResolver::resolveNodes()
 		std::string &name = item.first;
 		std::vector<content_t> *output = item.second;
 		
-		std::set<content_t> idset;
-		std::set<content_t>::iterator it;
+		std::unordered_set<content_t> idset;
 
 		m_ndef->getIds(name, idset);
-		for (it = idset.begin(); it != idset.end(); ++it)
+		for (auto it = idset.begin(); it != idset.end(); ++it)
 			output->push_back(*it);
 	}
 
