@@ -552,8 +552,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	MeshBufListList drawbufs;
 
-	auto lock = m_drawlist->lock_shared_rec();
-	for(auto & ir : *m_drawlist) {
+	auto drawlist = m_drawlist.load();
+	auto lock = drawlist->lock_shared_rec();
+	for(auto & ir : *drawlist) {
 		auto block = ir.second;
 
 		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block->getPos());
