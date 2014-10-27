@@ -46,6 +46,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/lock.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
+#include <array>
+
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -218,7 +220,7 @@ class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::vector<std::list<ActiveABM> *> m_aabms;
+	std::array<std::list<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
 	std::list<std::list<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:

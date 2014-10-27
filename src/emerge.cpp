@@ -95,7 +95,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	registerMapgen("math",       new MapgenFactoryMath());
 
 	this->ndef     = gamedef->getNodeDefManager();
-	this->biomedef = new BiomeDefManager();
+	this->biomedef = new BiomeDefManager(gamedef->getNodeDefManager()->getResolver());
 	this->gennotify = 0;
 
 	// Note that accesses to this variable are not synchronized.
@@ -166,9 +166,9 @@ EmergeManager::~EmergeManager() {
 		delete decorations[i];
 	decorations.clear();
 
-	for (std::map<std::string, MapgenFactory *>::iterator iter = mglist.begin();
-			iter != mglist.end(); iter ++) {
-		delete iter->second;
+	for (std::map<std::string, MapgenFactory *>::iterator it = mglist.begin();
+			it != mglist.end(); ++it) {
+		delete it->second;
 	}
 	mglist.clear();
 
@@ -196,16 +196,6 @@ void EmergeManager::loadMapgenParams() {
 void EmergeManager::initMapgens() {
 	if (mapgen.size())
 		return;
-
-	// Resolve names of nodes for things that were registered
-	// (at this point, the registration period is over)
-	biomedef->resolveNodeNames(ndef);
-
-	for (size_t i = 0; i != ores.size(); i++)
-		ores[i]->resolveNodeNames(ndef);
-
-	for (size_t i = 0; i != decorations.size(); i++)
-		decorations[i]->resolveNodeNames(ndef);
 
 	if (!params.sparams) {
 		params.sparams = createMapgenParams(params.mg_name);

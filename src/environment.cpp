@@ -571,7 +571,8 @@ void ServerEnvironment::loadMeta()
 		m_env(env),
 		m_aabms_empty(true)
 	{
-		m_aabms.resize(CONTENT_ID_CAPACITY);
+		m_aabms.fill(nullptr);
+
 		if(dtime_s < 0.001)
 			return;
 

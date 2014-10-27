@@ -152,7 +152,7 @@ private:
 	v3s16 m_camera_offset;
 	JMutex m_camera_mutex;
 
-	shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> * m_drawlist;
+	std::atomic<shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> *> m_drawlist;
 	shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> m_drawlist_0;
 	shared_unordered_map<v3s16, MapBlock*, v3s16Hash, v3s16Equal> m_drawlist_1;
 	int m_drawlist_current;

@@ -369,6 +369,40 @@ struct ContentFeatures
 
 };
 
+struct NodeResolveInfo {
+	std::string n_wanted;
+	std::string n_alt;
+	content_t c_fallback;
+	content_t *output;
+};
+
+#define NR_STATUS_FAILURE 0
+#define NR_STATUS_PENDING 1
+#define NR_STATUS_SUCCESS 2
+
+class NodeResolver {
+public:
+	NodeResolver(INodeDefManager *ndef);
+	~NodeResolver();
+
+	int addNode(std::string n_wanted, std::string n_alt,
+		content_t c_fallback, content_t *content);
+	int addNodeList(const char *nodename, std::vector<content_t> *content_vec);
+
+	bool cancelNode(content_t *content);
+	int cancelNodeList(std::vector<content_t> *content_vec);
+
+	int resolveNodes();
+
+	bool isNodeRegFinished() { return m_is_node_registration_complete; }
+
+private:
+	INodeDefManager *m_ndef;
+	bool m_is_node_registration_complete;
+	std::list<NodeResolveInfo *> m_pending_contents;
+	std::list<std::pair<std::string, std::vector<content_t> *> > m_pending_content_vecs;
+};
+
 class INodeDefManager
 {
 public:
@@ -384,9 +418,11 @@ public:
 			const=0;
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
-	
+
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
+
+	virtual NodeResolver *getResolver()=0;
 };
 
 class IWritableNodeDefManager : public INodeDefManager
@@ -425,9 +461,10 @@ public:
 	*/
 	virtual void updateTextures(IGameDef *gamedef)=0;
 
+	virtual NodeResolver *getResolver()=0;
 };
 
-IWritableNodeDefManager* createNodeDefManager();
+IWritableNodeDefManager *createNodeDefManager();
 
 #endif
 
