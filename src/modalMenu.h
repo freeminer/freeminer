@@ -99,6 +99,8 @@ public:
 
 		WARNING: THIS DEALLOCATES THE MENU FROM MEMORY. Return
 		immediately if you call this from the menu itself.
+
+		(More precisely, this decrements the reference count.)
 	*/
 	void quitMenu()
 	{

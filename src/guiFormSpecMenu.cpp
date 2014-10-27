@@ -76,12 +76,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	GUIFormSpecMenu
 */
-
 GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		ISimpleTextureSource *tsrc, IFormSource* fsrc, TextDest* tdst,
-		GUIFormSpecMenu** ext_ptr, Client* client) :
+		Client* client) :
 	GUIModalMenu(dev->getGUIEnvironment(), parent, id, menumgr),
 	m_device(dev),
 	m_invmgr(invmgr),
@@ -97,7 +96,6 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_lock(false),
 	m_form_src(fsrc),
 	m_text_dst(tdst),
-	m_ext_ptr(ext_ptr),
 	m_font(dev->getGUIEnvironment()->getSkin()->getFont()),
 	m_formspec_version(0)
 #ifdef __ANDROID__
@@ -137,11 +135,6 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 	}
 	if (m_text_dst != NULL) {
 		delete m_text_dst;
-	}
-
-	if (m_ext_ptr != NULL) {
-		if (*m_ext_ptr == this)
-		*m_ext_ptr = NULL;
 	}
 }
 
