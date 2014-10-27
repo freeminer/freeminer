@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "itemgroup.h"
 #include "util/container.h"
+#include "util/lock.h"
 
 /*
 
@@ -52,6 +53,7 @@ struct ToolCapabilities;
 struct ObjectProperties;
 
 class ServerActiveObject : public ActiveObject
+, public locker
 {
 public:
 	/*
@@ -84,8 +86,14 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-	v3f getBasePosition(){ return m_base_position; }
-	void setBasePosition(v3f pos){ m_base_position = pos; }
+	v3f getBasePosition() {
+		auto lock = lock_shared();
+		return m_base_position;
+	}
+	void setBasePosition(v3f pos) {
+		auto lock = lock_unique();
+		m_base_position = pos;
+	}
 	ServerEnvironment* getEnv(){ return m_env; }
 	
 	/*

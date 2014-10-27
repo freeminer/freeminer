@@ -867,6 +867,8 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 		writeF1000(os, m_player->getYaw());
 		writeS16(os, getHP());
 
+		auto lock = lock_shared();
+
 		writeU8(os, 5 + m_bone_position.size()); // number of messages stuffed in here
 		os<<serializeLongString(getPropertyPacket()); // message 1
 		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
@@ -927,6 +929,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	// If attached, check that our parent is still there. If it isn't, detach.
 	if(m_attachment_parent_id && !isAttached())
 	{
+		auto lock = lock_unique();
 		m_attachment_parent_id = 0;
 		m_attachment_bone = "";
 		m_attachment_position = v3f(0,0,0);
@@ -1051,6 +1054,7 @@ void PlayerSAO::setPos(v3f pos)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	// Force position change on client
@@ -1062,6 +1066,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	// Force position change on client
@@ -1178,12 +1183,14 @@ void PlayerSAO::setBreath(u16 breath)
 
 void PlayerSAO::setArmorGroups(const ItemGroupList &armor_groups)
 {
+	auto lock = lock_unique();
 	m_armor_groups = armor_groups;
 	m_armor_groups_sent = false;
 }
 
 void PlayerSAO::setAnimation(v2f frame_range, float frame_speed, float frame_blend)
 {
+	auto lock = lock_unique();
 	// store these so they can be updated to clients
 	m_animation_range = frame_range;
 	m_animation_speed = frame_speed;
@@ -1200,6 +1207,7 @@ void PlayerSAO::setBonePosition(std::string bone, v3f position, v3f rotation)
 
 void PlayerSAO::setAttachment(int parent_id, std::string bone, v3f position, v3f rotation)
 {
+	auto lock = lock_unique();
 	// Attachments need to be handled on both the server and client.
 	// If we just attach on the server, we can only copy the position of the parent. Attachments
 	// are still sent to clients at an interval so players might see them lagging, plus we can't
@@ -1278,7 +1286,7 @@ void PlayerSAO::disconnected()
 
 std::string PlayerSAO::getPropertyPacket()
 {
-	m_prop.is_visible = (true);
+	// WAT?  m_prop.is_visible = (true);
 	return gob_cmd_set_properties(m_prop);
 }
 
