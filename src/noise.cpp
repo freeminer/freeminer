@@ -1,7 +1,7 @@
 /*
 noise.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+ * Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
+ * Copyright (C) 2010-2014 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 */
 
 /*
@@ -65,6 +65,7 @@ float noise3d(int x, int y, int z, int seed)
 			+ NOISE_MAGIC_SEED * seed) & 0x7fffffff;
 	n = (n >> 13) ^ n;
 	n = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+
 	return 1.f - (float)n / 0x40000000;
 }
 
