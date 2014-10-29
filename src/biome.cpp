@@ -57,7 +57,7 @@ BiomeDefManager::BiomeDefManager(NodeResolver *resolver)
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_water);
 	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_dust);
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_dust_water);
-	resolver->addNode("mapgen_ice",          "", CONTENT_AIR, &b->c_ice);
+	resolver->addNode("mapgen_ice",          "mapgen_water_source", b->c_water, &b->c_ice);
 
 	biomes.push_back(b);
 

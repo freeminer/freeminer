@@ -458,6 +458,8 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		c_stair_cobble = c_cobble;
 	if (c_stair_sandstone == CONTENT_IGNORE)
 		c_stair_sandstone = c_sandbrick;
+	if (c_ice == CONTENT_IGNORE)
+		c_ice = c_water_source;
 
 	// Maximum height of the stone surface and obstacles.
 	// This is used to guide the cave generation

@@ -245,7 +245,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	c_lava_source     = ndef->getId("mapgen_lava_source");
 	c_ice             = ndef->getId("mapgen_ice");
 	if (c_ice == CONTENT_IGNORE)
-		c_ice = CONTENT_AIR;
+		c_ice = c_water_source;
 	
 	// Make some noise
 	calculateNoise();
