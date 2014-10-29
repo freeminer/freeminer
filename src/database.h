@@ -48,5 +48,8 @@ public:
 	virtual void listAllLoadableBlocks(std::list<v3s16> &dst) = 0;
 	virtual int Initialized(void)=0;
 	virtual ~Database() {};
+
+	virtual void open() {};
+	virtual void close() {};
 };
 #endif

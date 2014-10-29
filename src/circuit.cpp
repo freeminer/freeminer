@@ -66,6 +66,16 @@ Circuit::~Circuit() {
 	m_virtual_database = nullptr;
 }
 
+void Circuit::open() {
+	m_database->open();
+	m_virtual_database->open();
+}
+
+void Circuit::close() {
+	m_database->close();
+	m_virtual_database->close();
+}
+
 void Circuit::addBlock(MapBlock* block) {
 	// v3s16 pos;
 	// for(pos.X = 0; pos.X < 16; ++pos.X)

@@ -2581,6 +2581,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
+	m_map_loading_enabled = true;
 
 	try
 	{
@@ -2647,16 +2648,8 @@ ServerMap::~ServerMap()
 
 	try
 	{
-		if(m_map_saving_enabled)
-		{
 			// Save only changed parts
 			save(MOD_STATE_WRITE_AT_UNLOAD);
-			infostream<<"ServerMap: Saved map to "<<m_savedir<<std::endl;
-		}
-		else
-		{
-			infostream<<"ServerMap: Map not saved"<<std::endl;
-		}
 	}
 	catch(std::exception &e)
 	{
@@ -2669,17 +2662,6 @@ ServerMap::~ServerMap()
 	*/
 	delete dbase;
 
-#if 0
-	/*
-		Free all MapChunks
-	*/
-	core::map<v2s16, MapChunk*>::Iterator i = m_chunks.getIterator();
-	for(; i.atEnd() == false; i++)
-	{
-		MapChunk *chunk = i.getNode()->getValue();
-		delete chunk;
-	}
-#endif
 }
 
 u64 ServerMap::getSeed()
@@ -3029,6 +3011,9 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 		}
 	}
 
+	if (!m_map_loading_enabled)
+		return nullptr;
+
 	{
 		MapBlock *block = loadBlock(p);
 		if(block)
@@ -3045,7 +3030,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
-	if (block == NULL)
+	if (block == NULL && m_map_loading_enabled)
 		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
 
 	return block;

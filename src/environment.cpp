@@ -332,12 +332,14 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_max_lag_estimate(0.1)
 {
 	m_use_weather = g_settings->getBool("weather");
-	try {
-		m_key_value_storage = new KeyValueStorage(path_world, "key_value_storage");
-		m_players_storage = new KeyValueStorage(path_world, "players");
-	} catch(KeyValueStorageException &e) {
-		errorstream << "Cant open KV database: "<< e.what() << std::endl;
-	}
+	m_key_value_storage = new KeyValueStorage(path_world, "key_value_storage");
+	m_players_storage = new KeyValueStorage(path_world, "players");
+
+	if (!m_key_value_storage->db)
+		errorstream << "Cant open KV storage: "<< m_key_value_storage->error << std::endl;
+	if (!m_players_storage->db)
+		errorstream << "Cant open players storage: "<< m_players_storage->error << std::endl;
+
 }
 
 ServerEnvironment::~ServerEnvironment()

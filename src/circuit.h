@@ -53,6 +53,8 @@ public:
 	void save();
 	void saveElement(std::list <CircuitElement>::iterator element, bool save_edges);
 	void saveVirtualElement(std::list <CircuitElementVirtual>::iterator element, bool save_edges);
+	void open();
+	void close();
 
 private:
 	std::list <CircuitElement> m_elements;

@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 Database_LevelDB::Database_LevelDB(ServerMap *map, std::string savedir)
 {
 	m_database = new KeyValueStorage(savedir, "map");
-	srvmap = map;
+	//srvmap = map;
 }
 
 int Database_LevelDB::Initialized(void)

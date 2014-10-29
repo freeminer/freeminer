@@ -483,8 +483,9 @@ private:
 
 public:
 	std::string m_savedir;
-private:
 	bool m_map_saving_enabled;
+	bool m_map_loading_enabled;
+private:
 
 #if 0
 	// Chunk size in MapSectors
@@ -499,7 +500,9 @@ private:
 		This is reset to false when written on disk.
 	*/
 	bool m_map_metadata_changed;
+public:
 	Database *dbase;
+private:
 };
 
 

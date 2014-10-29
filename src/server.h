@@ -195,6 +195,7 @@ public:
 	// This is run by ServerThread and does the actual processing
 	void AsyncRunStep(float dtime, bool initial_step=false);
 	int AsyncRunMapStep(float dtime, bool async=true);
+	int save(float dtime, bool breakable = false);
 	u16 Receive();
 	PlayerSAO* StageTwoClientInit(u16 peer_id);
 	void ProcessData(u8 *data, u32 datasize, u16 peer_id);
@@ -274,7 +275,6 @@ public:
 
 	// Creates or resets inventory
 	Inventory* createDetachedInventory(const std::string &name);
-	void deleteDetachedInventory(const std::string &name);
 
 	// Envlock and conlock should be locked when using scriptapi
 	GameScripting *getScriptIface(){ return m_script; }
@@ -642,10 +642,16 @@ private:
 	*/
 	std::vector<u32> m_particlespawner_ids;
 
+	// freeminer:
 public:
 	shared_map<v3s16, MapBlock*> m_modified_blocks;
 	shared_map<v3s16, MapBlock*> m_lighting_modified_blocks;
 	bool more_threads;
+	void deleteDetachedInventory(const std::string &name);
+	void maintenance_start();
+	void maintenance_end();
+	int maintenance_status;
+
 
 private:
 };
