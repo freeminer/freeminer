@@ -1281,7 +1281,6 @@ int main(int argc, char *argv[])
 				} else {
 					old_map.saveBlock(block, new_db);
 					old_map.m_blocks.erase(block->getPos());
-					delete block;
 				}
 				++count;
 				if (count % 500 == 0)
