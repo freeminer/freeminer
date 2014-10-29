@@ -1347,14 +1347,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			porting::g_sighup = false;
 			if(!maintenance_status) {
 				maintenance_status = 1;
-				infostream<<"Server: Starting maintenance: saving..."<<std::endl;
 				maintenance_start();
-				errorstream<<"Server: Starting maintenance: bases closed now."<<std::endl;
 				maintenance_status = 2;
 			} else if(maintenance_status == 2) {
 				maintenance_status = 3;
 				maintenance_end();
-				errorstream<<"Server: Starting maintenance: ended."<<std::endl;
 				maintenance_status = 0;
 			}
 		}
@@ -5529,6 +5526,7 @@ void Server::deleteDetachedInventory(const std::string &name)
 }
 
 void Server::maintenance_start() {
+	infostream<<"Server: Starting maintenance: saving..."<<std::endl;
 	m_emerge->stopThreads();
 	save(0.1);
 	m_env->getServerMap().m_map_saving_enabled = false;
@@ -5536,6 +5534,7 @@ void Server::maintenance_start() {
 	m_env->getServerMap().dbase->close();
 	m_env->m_key_value_storage->close();
 	m_env->m_players_storage->close();
+	actionstream<<"Server: Starting maintenance: bases closed now."<<std::endl;
 
 };
 
@@ -5546,4 +5545,5 @@ void Server::maintenance_end() {
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;
 	m_emerge->startThreads();
+	actionstream<<"Server: Starting maintenance: ended."<<std::endl;
 };
