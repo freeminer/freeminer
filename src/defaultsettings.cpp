@@ -173,6 +173,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("enable_movement_fov", "true");
 	settings->setDefault("disable_wieldlight", "false");
+	settings->setDefault("enable_mesh_cache", "true");
 
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");

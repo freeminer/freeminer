@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <list>
 #include <cmath>
+#include <algorithm>
 
 // Calculate the borders of a "d-radius" cube
 void getFacePositions(std::list<v3s16> &list, u16 d);
@@ -143,6 +144,9 @@ inline v3s16 arealim(v3s16 p, s16 d)
 		p.Z = d-1;
 	return p;
 }
+
+#define ARRLEN(x) (sizeof(x) / sizeof((x)[0]))
+#define CONTAINS(c, v) (std::find((c).begin(), (c).end(), (v)) != (c).end())
 
 // The naive swap performs better than the xor version
 #define SWAP(t, x, y) do { \
