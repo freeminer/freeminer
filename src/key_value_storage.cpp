@@ -21,48 +21,59 @@
 #include "log.h"
 #include "util/pointer.h"
 
-KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &name) throw(KeyValueStorageException)
-	:
-	//m_savedir(savedir),
-	m_db(nullptr),
-	m_db_name(name)
+KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &name) :
+	db(nullptr),
+	db_name(name)
 {
+	fullpath = savedir + DIR_DELIM + db_name + ".db";
+	open();
+}
+
+bool KeyValueStorage::open() {
 #if USE_LEVELDB
 	leveldb::Options options;
 	options.create_if_missing = true;
-	auto path = savedir + DIR_DELIM +  m_db_name + ".db";
 	std::lock_guard<std::mutex> lock(mutex);
-	auto status = leveldb::DB::Open(options, path, &m_db);
+	auto status = leveldb::DB::Open(options, fullpath, &db);
 	if (!status.ok()) {
-		errorstream<< "Trying to repair database ["<<status.ToString()<<"]"<<std::endl;
-		status = leveldb::RepairDB(path, options);
+		error = status.ToString();
+		errorstream<< "Trying to repair database ["<<error<<"]"<<std::endl;
+		status = leveldb::RepairDB(fullpath, options);
 		if (!status.ok()) {
-			m_db = nullptr;
-			throw KeyValueStorageException(status.ToString());
+			db = nullptr;
+			return true;
 		}
-		status = leveldb::DB::Open(options, path, &m_db);
+		status = leveldb::DB::Open(options, fullpath, &db);
 		if (!status.ok()) {
-			m_db = nullptr;
-			throw KeyValueStorageException(status.ToString());
+			error = status.ToString();
+			db = nullptr;
+			return true;
 		}
 	}
 #endif
+	return false;
+}
+
+void KeyValueStorage::close()
+{
+	if (!db)
+		return;
+	delete db;
+	db = nullptr;
 }
 
 KeyValueStorage::~KeyValueStorage()
 {
-	if (!m_db)
-		return;
-	delete m_db;
+	close();
 }
 
 bool KeyValueStorage::put(const std::string &key, const std::string &data)
 {
-	if (!m_db)
+	if (!db)
 		return false;
 #if USE_LEVELDB
 	std::lock_guard<std::mutex> lock(mutex);
-	auto status = m_db->Put(write_options, key, data);
+	auto status = db->Put(write_options, key, data);
 	return status.ok();
 #endif
 }
@@ -74,11 +85,11 @@ bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data)
 
 bool KeyValueStorage::get(const std::string &key, std::string &data)
 {
-	if (!m_db)
+	if (!db)
 		return false;
 #if USE_LEVELDB
 	std::lock_guard<std::mutex> lock(mutex);
-	auto status = m_db->Get(read_options, key, &data);
+	auto status = db->Get(read_options, key, &data);
 	return status.ok();
 #endif
 }
@@ -94,17 +105,17 @@ bool KeyValueStorage::get_json(const std::string &key, Json::Value & data)
 
 bool KeyValueStorage::del(const std::string &key)
 {
-	if (!m_db)
+	if (!db)
 		return false;
 #if USE_LEVELDB
 	std::lock_guard<std::mutex> lock(mutex);
-	auto status = m_db->Delete(write_options, key);
+	auto status = db->Delete(write_options, key);
 	return status.ok();
 #endif
 }
 
 #if USE_LEVELDB
 leveldb::Iterator* KeyValueStorage::new_iterator() {
-	return m_db->NewIterator(read_options);
+	return db->NewIterator(read_options);
 }
 #endif

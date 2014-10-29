@@ -47,15 +47,6 @@ public:
 	u8 id;
 	std::string name;
 	u32 flags;
-	
-/*
-	std::string nname_top;
-	std::string nname_filler;
-	std::string nname_water;
-	std::string nname_ice;
-	std::string nname_dust;
-	std::string nname_dust_water;
-*/
 
 	content_t c_top;
 	content_t c_filler;
@@ -63,10 +54,10 @@ public:
 	content_t c_ice;
 	content_t c_dust;
 	content_t c_dust_water;
-	
+
 	s16 depth_top;
 	s16 depth_filler;
-	
+
 	s16 height_min;
 	s16 height_max;
 	float heat_point;
@@ -90,13 +81,12 @@ public:
 
 	BiomeDefManager(NodeResolver *resolver);
 	~BiomeDefManager();
-	
+
 	Biome *createBiome(BiomeTerrainType btt);
 	void  calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map);
 	Biome *getBiome(float heat, float humidity, s16 y);
 
-	void addBiome(Biome *b);
-	void resolveNodeNames(INodeDefManager *ndef);
+	bool addBiome(Biome *b);
 	u8 getBiomeIdByName(const char *name);
 
 	u32 year_days;

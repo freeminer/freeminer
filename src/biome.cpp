@@ -33,7 +33,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65);
 NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50);
 
-BiomeDefManager::BiomeDefManager(NodeResolver *resolver) {
+BiomeDefManager::BiomeDefManager(NodeResolver *resolver)
+{
 	biome_registration_finished = false;
 	np_heat     = &nparams_biome_def_heat;
 	np_humidity = &nparams_biome_def_humidity;
@@ -56,7 +57,7 @@ BiomeDefManager::BiomeDefManager(NodeResolver *resolver) {
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_water);
 	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_dust);
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_dust_water);
-	resolver->addNode("mapgen_ice",          "", CONTENT_AIR, &b->c_ice);
+	resolver->addNode("mapgen_ice",          "mapgen_water_source", b->c_water, &b->c_ice);
 
 	biomes.push_back(b);
 
@@ -75,7 +76,8 @@ BiomeDefManager::BiomeDefManager(NodeResolver *resolver) {
 }
 
 
-BiomeDefManager::~BiomeDefManager() {
+BiomeDefManager::~BiomeDefManager()
+{
 	//if (biomecache)
 	//	delete[] biomecache;
 	
@@ -84,7 +86,8 @@ BiomeDefManager::~BiomeDefManager() {
 }
 
 
-Biome *BiomeDefManager::createBiome(BiomeTerrainType btt) {
+Biome *BiomeDefManager::createBiome(BiomeTerrainType btt)
+{
 	/*switch (btt) {
 		case BIOME_TERRAIN_NORMAL:
 			return new Biome;
@@ -103,7 +106,8 @@ Biome *BiomeDefManager::createBiome(BiomeTerrainType btt) {
 
 
 // just a PoC, obviously needs optimization later on (precalculate this)
-void BiomeDefManager::calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map) {
+void BiomeDefManager::calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map)
+{
 	int i = 0;
 	for (int y = 0; y != input->mapsize.Y; y++) {
 		for (int x = 0; x != input->mapsize.X; x++, i++) {
@@ -115,29 +119,31 @@ void BiomeDefManager::calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map) {
 }
 
 
-void BiomeDefManager::addBiome(Biome *b) {
+bool BiomeDefManager::addBiome(Biome *b)
+{
 	if (biome_registration_finished) {
-		errorstream << "BIomeDefManager: biome registration already "
+		errorstream << "BiomeDefManager: biome registration already "
 			"finished, dropping " << b->name << std::endl;
-		delete b;
-		return;
+		return false;
 	}
 	
 	size_t nbiomes = biomes.size();
 	if (nbiomes >= 0xFF) {
 		errorstream << "BiomeDefManager: too many biomes, dropping "
 			<< b->name << std::endl;
-		delete b;
-		return;
+		return false;
 	}
 
 	b->id = (u8)nbiomes;
 	biomes.push_back(b);
 	verbosestream << "BiomeDefManager: added biome " << b->name << std::endl;
+
+	return true;
 }
 
 
-Biome *BiomeDefManager::getBiome(float heat, float humidity, s16 y) {
+Biome *BiomeDefManager::getBiome(float heat, float humidity, s16 y)
+{
 	Biome *b, *biome_closest = NULL;
 	float dist_min = FLT_MAX;
 
@@ -160,7 +166,8 @@ Biome *BiomeDefManager::getBiome(float heat, float humidity, s16 y) {
 }
 
 
-u8 BiomeDefManager::getBiomeIdByName(const char *name) {
+u8 BiomeDefManager::getBiomeIdByName(const char *name)
+{
 	for (size_t i = 0; i != biomes.size(); i++) {
 		if (!strcasecmp(name, biomes[i]->name.c_str()))
 			return i;

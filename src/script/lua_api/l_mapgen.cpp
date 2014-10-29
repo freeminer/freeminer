@@ -145,7 +145,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 			// emerged max pos
 			push_v3s16(L, vm->m_area.MaxEdge);
 
-			return 3; }
+			return 3;
+		}
 		case MGOBJ_HEIGHTMAP: {
 			if (!mg->heightmap)
 				return 0;
@@ -156,7 +157,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 				lua_rawseti(L, -2, i + 1);
 			}
 
-			return 1; }
+			return 1;
+		}
 		case MGOBJ_BIOMEMAP: {
 			if (!mg->biomemap)
 				return 0;
@@ -167,7 +169,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 				lua_rawseti(L, -2, i + 1);
 			}
 
-			return 1; }
+			return 1;
+		}
 		case MGOBJ_HEATMAP: { // Mapgen V7 specific objects
 		case MGOBJ_HUMIDMAP:
 			if (strcmp(emerge->params.mg_name.c_str(), "v7"))
@@ -186,7 +189,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 				lua_rawseti(L, -2, i + 1);
 			}
 
-			return 1; }
+			return 1;
+		}
 		case MGOBJ_GENNOTIFY: {
 			lua_newtable(L);
 			for (int i = 0; flagdesc_gennotify[i].name; i++) {
@@ -207,7 +211,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 				posvec->clear();
 			}
 
-			return 1; }
+			return 1;
+		}
 	}
 
 	return 0;
@@ -305,15 +310,26 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 
 	NodeResolver *resolver = getServer(L)->getNodeDefManager()->getResolver();
 	BiomeDefManager *bmgr  = getServer(L)->getEmergeManager()->biomedef;
-	if (!bmgr) {
-		verbosestream << "register_biome: BiomeDefManager not active" << std::endl;
-		return 0;
-	}
 
 	enum BiomeTerrainType terrain = (BiomeTerrainType)getenumfield(L, index,
 				"terrain_type", es_BiomeTerrainType, BIOME_TERRAIN_NORMAL);
 	Biome *b = bmgr->createBiome(terrain);
 
+	b->name           = getstringfield_default(L, index, "name", "<no name>");
+	b->depth_top      = getintfield_default(L, index, "depth_top",    1);
+	b->depth_filler   = getintfield_default(L, index, "depth_filler", 3);
+	b->height_min     = getintfield_default(L, index, "height_min",   0);
+	b->height_max     = getintfield_default(L, index, "height_max",   0);
+	b->heat_point     = getfloatfield_default(L, index, "heat_point",     0.);
+	b->humidity_point = getfloatfield_default(L, index, "humidity_point", 0.);
+	b->flags          = 0; //reserved
+
+	if (!bmgr->addBiome(b)) {
+		delete b;
+		return 0;
+	}
+
+	// Pend node resolutions only if insertion succeeded
 	resolver->addNode(getstringfield_default(L, index, "node_top", ""),
 		 "mapgen_dirt_with_grass", CONTENT_AIR, &b->c_top);
 	resolver->addNode(getstringfield_default(L, index, "node_filler", ""),
@@ -327,17 +343,7 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 	resolver->addNode(getstringfield_default(L, index, "node_dust_water", ""),
 		"mapgen_water_source", CONTENT_IGNORE, &b->c_dust_water);
 
-	b->name           = getstringfield_default(L, index, "name", "<no name>");
-	b->depth_top      = getintfield_default(L, index, "depth_top",    1);
-	b->depth_filler   = getintfield_default(L, index, "depth_filler", 3);
-	b->height_min     = getintfield_default(L, index, "height_min",   0);
-	b->height_max     = getintfield_default(L, index, "height_max",   0);
-	b->heat_point     = getfloatfield_default(L, index, "heat_point",     0.);
-	b->humidity_point = getfloatfield_default(L, index, "humidity_point", 0.);
-	b->flags          = 0; //reserved
-
 	verbosestream << "register_biome: " << b->name << std::endl;
-	bmgr->addBiome(b);
 
 	return 0;
 }
@@ -353,12 +359,7 @@ int ModApiMapgen::l_register_decoration(lua_State *L)
 	NodeResolver *resolver = getServer(L)->getNodeDefManager()->getResolver();
 
 	enum DecorationType decotype = (DecorationType)getenumfield(L, index,
-				"deco_type", es_DecorationType, 0);
-	if (decotype == 0) {
-		errorstream << "register_decoration: unrecognized "
-			"decoration placement type";
-		return 0;
-	}
+				"deco_type", es_DecorationType, -1);
 
 	Decoration *deco = createDecoration(decotype);
 	if (!deco) {
@@ -397,90 +398,100 @@ int ModApiMapgen::l_register_decoration(lua_State *L)
 	}
 
 	//// Handle decoration type-specific parameters
+	bool success = false;
 	switch (decotype) {
-		case DECO_SIMPLE: {
-			DecoSimple *dsimple = (DecoSimple *)deco;
-
-			dsimple->deco_height     = getintfield_default(L, index, "height", 1);
-			dsimple->deco_height_max = getintfield_default(L, index, "height_max", 0);
-			dsimple->nspawnby        = getintfield_default(L, index, "num_spawn_by", -1);
-
-			if (dsimple->deco_height <= 0) {
-				errorstream << "register_decoration: simple decoration height"
-					" must be greater than 0" << std::endl;
-				delete dsimple;
-				return 0;
-			}
-
-			std::vector<const char *> deco_names;
-			getstringlistfield(L, index, "decoration", deco_names);
-			if (deco_names.size() == 0) {
-				errorstream << "register_decoration: no decoration nodes "
-					"defined" << std::endl;
-				delete dsimple;
-				return 0;
-			}
-
-			std::vector<const char *> spawnby_names;
-			getstringlistfield(L, index, "spawn_by", spawnby_names);
-			if (dsimple->nspawnby != -1 && spawnby_names.size() == 0) {
-				errorstream << "register_decoration: no spawn_by nodes defined,"
-					" but num_spawn_by specified" << std::endl;
-				delete dsimple;
-				return 0;
-			}
-
-			for (size_t i = 0; i != deco_names.size(); i++)
-				resolver->addNodeList(deco_names[i], &dsimple->c_decos);
-			for (size_t i = 0; i != spawnby_names.size(); i++)
-				resolver->addNodeList(spawnby_names[i], &dsimple->c_spawnby);
-
+		case DECO_SIMPLE:
+			success = regDecoSimple(L, resolver, (DecoSimple *)deco);
 			break;
-		}
-		case DECO_SCHEMATIC: {
-			DecoSchematic *dschem = (DecoSchematic *)deco;
-
-			dschem->flags = 0;
-			getflagsfield(L, index, "flags", flagdesc_deco_schematic,
-				&dschem->flags, NULL);
-
-			dschem->rotation = (Rotation)getenumfield(L, index,
-				"rotation", es_Rotation, ROTATE_0);
-
-			std::map<std::string, std::string> replace_names;
-			lua_getfield(L, index, "replacements");
-			if (lua_istable(L, -1))
-				read_schematic_replacements(L, replace_names, lua_gettop(L));
-			lua_pop(L, 1);
-
-			lua_getfield(L, index, "schematic");
-			if (!read_schematic(L, -1, dschem, getServer(L))) {
-				delete dschem;
-				return 0;
-			}
-			lua_pop(L, -1);
-
-			if (!dschem->filename.empty() &&
-				!dschem->loadSchematicFile(resolver, replace_names)) {
-				errorstream << "register_decoration: failed to load schematic"
-					" file '" << dschem->filename << "'" << std::endl;
-				delete dschem;
-				return 0;
-			}
-
+		case DECO_SCHEMATIC:
+			success = regDecoSchematic(L, resolver, (DecoSchematic *)deco);
 			break;
-		}
-		case DECO_LSYSTEM: {
-			//DecoLSystem *decolsystem = (DecoLSystem *)deco;
+		case DECO_LSYSTEM:
 			break;
-		}
+	}
+
+	if (!success) {
+		delete deco;
+		return 0;
 	}
 
 	emerge->decorations.push_back(deco);
 
 	verbosestream << "register_decoration: decoration '" << deco->getName()
 		<< "' registered" << std::endl;
+
 	return 0;
+}
+
+bool ModApiMapgen::regDecoSimple(lua_State *L,
+		NodeResolver *resolver, DecoSimple *deco)
+{
+	int index = 1;
+
+	deco->deco_height     = getintfield_default(L, index, "height", 1);
+	deco->deco_height_max = getintfield_default(L, index, "height_max", 0);
+	deco->nspawnby        = getintfield_default(L, index, "num_spawn_by", -1);
+
+	if (deco->deco_height <= 0) {
+		errorstream << "register_decoration: simple decoration height"
+			" must be greater than 0" << std::endl;
+		return false;
+	}
+
+	std::vector<const char *> deco_names;
+	getstringlistfield(L, index, "decoration", deco_names);
+	if (deco_names.size() == 0) {
+		errorstream << "register_decoration: no decoration nodes "
+			"defined" << std::endl;
+		return false;
+	}
+
+	std::vector<const char *> spawnby_names;
+	getstringlistfield(L, index, "spawn_by", spawnby_names);
+	if (deco->nspawnby != -1 && spawnby_names.size() == 0) {
+		errorstream << "register_decoration: no spawn_by nodes defined,"
+			" but num_spawn_by specified" << std::endl;
+		return false;
+	}
+
+	for (size_t i = 0; i != deco_names.size(); i++)
+		resolver->addNodeList(deco_names[i], &deco->c_decos);
+	for (size_t i = 0; i != spawnby_names.size(); i++)
+		resolver->addNodeList(spawnby_names[i], &deco->c_spawnby);
+
+	return true;
+}
+
+bool ModApiMapgen::regDecoSchematic(lua_State *L,
+		NodeResolver *resolver, DecoSchematic *deco)
+{
+	int index = 1;
+
+	deco->flags = 0;
+	getflagsfield(L, index, "flags", flagdesc_deco_schematic, &deco->flags, NULL);
+
+	deco->rotation = (Rotation)getenumfield(L, index, "rotation",
+		es_Rotation, ROTATE_0);
+
+	std::map<std::string, std::string> replace_names;
+	lua_getfield(L, index, "replacements");
+	if (lua_istable(L, -1))
+		read_schematic_replacements(L, replace_names, lua_gettop(L));
+	lua_pop(L, 1);
+
+	lua_getfield(L, index, "schematic");
+	if (!read_schematic(L, -1, deco, getServer(L)))
+		return false;
+	lua_pop(L, -1);
+
+	if (!deco->filename.empty() &&
+		!deco->loadSchematicFile(resolver, replace_names)) {
+		errorstream << "register_decoration: failed to load schematic"
+			" file '" << deco->filename << "'" << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 // register_ore({lots of stuff})
@@ -501,9 +512,6 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 		return 0;
 	}
 
-	resolver->addNode(getstringfield_default(L, index, "ore", ""),
-		"", CONTENT_AIR, &ore->c_ore);
-
 	ore->ore_param2     = (u8)getintfield_default(L, index, "ore_param2", 0);
 	ore->clust_scarcity = getintfield_default(L, index, "clust_scarcity", 1);
 	ore->clust_num_ores = getintfield_default(L, index, "clust_num_ores", 1);
@@ -511,19 +519,8 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	ore->height_min     = getintfield_default(L, index, "height_min", 0);
 	ore->height_max     = getintfield_default(L, index, "height_max", 0);
 	ore->nthresh        = getfloatfield_default(L, index, "noise_threshhold", 0.);
+	ore->noise          = NULL;
 	ore->flags          = 0;
-	getflagsfield(L, index, "flags", flagdesc_ore, &ore->flags, NULL);
-
-	std::vector<const char *> wherein_names;
-	getstringlistfield(L, index, "wherein", wherein_names);
-	for (size_t i = 0; i != wherein_names.size(); i++)
-		resolver->addNodeList(wherein_names[i], &ore->c_wherein);
-
-	lua_getfield(L, index, "noise_params");
-	ore->np = read_noiseparams(L, -1);
-	lua_pop(L, 1);
-
-	ore->noise = NULL;
 
 	if (ore->clust_scarcity <= 0 || ore->clust_num_ores <= 0) {
 		errorstream << "register_ore: clust_scarcity and clust_num_ores"
@@ -531,6 +528,20 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 		delete ore;
 		return 0;
 	}
+
+	getflagsfield(L, index, "flags", flagdesc_ore, &ore->flags, NULL);
+
+	lua_getfield(L, index, "noise_params");
+	ore->np = read_noiseparams(L, -1);
+	lua_pop(L, 1);
+
+	std::vector<const char *> wherein_names;
+	getstringlistfield(L, index, "wherein", wherein_names);
+	for (size_t i = 0; i != wherein_names.size(); i++)
+		resolver->addNodeList(wherein_names[i], &ore->c_wherein);
+
+	resolver->addNode(getstringfield_default(L, index, "ore", ""),
+		"", CONTENT_AIR, &ore->c_ore);
 
 	emerge->ores.push_back(ore);
 
@@ -599,7 +610,6 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 
 	return 1;
 }
-
 
 // place_schematic(p, schematic, rotation, replacement)
 int ModApiMapgen::l_place_schematic(lua_State *L)

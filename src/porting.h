@@ -43,6 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "gettime.h"
 #include "threads.h"
+#include <atomic>
 
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
@@ -147,6 +148,7 @@ void signal_handler_init(void);
 // When the bool is true, program should quit.
 bool * signal_handler_killstatus(void);
 
+extern std::atomic_bool g_sighup, g_siginfo;
 /*
 	Path of static data directory.
 */

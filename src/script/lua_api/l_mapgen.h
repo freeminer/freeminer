@@ -25,6 +25,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lua_api/l_base.h"
 
+class NodeResolver;
+class DecoSimple;
+class DecoSchematic;
+
 class ModApiMapgen : public ModApiBase {
 private:
 	// get_mapgen_object(objectname)
@@ -55,6 +59,11 @@ private:
 
 	// place_schematic(p, schematic, rotation, replacement)
 	static int l_place_schematic(lua_State *L);
+
+	static bool regDecoSimple(lua_State *L,
+			NodeResolver *resolver, DecoSimple *deco);
+	static bool regDecoSchematic(lua_State *L,
+			NodeResolver *resolver, DecoSchematic *deco);
 
 	static struct EnumString es_BiomeTerrainType[];
 	static struct EnumString es_DecorationType[];

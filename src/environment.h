@@ -424,8 +424,10 @@ private:
 	// Game definition
 	IGameDef *m_gamedef;
 	// Key-value storage
+public:
 	KeyValueStorage *m_key_value_storage;
 	KeyValueStorage *m_players_storage;
+private:
 	// World path
 	const std::string m_path_world;
 	// Active object list

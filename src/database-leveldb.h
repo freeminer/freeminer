@@ -44,8 +44,12 @@ public:
 	virtual void listAllLoadableBlocks(std::list<v3s16> &dst);
 	virtual int Initialized(void);
 	~Database_LevelDB();
+
+	virtual void open() { m_database->open(); };
+	virtual void close() { m_database->close(); };
+
 private:
-	ServerMap *srvmap;
+	//ServerMap *srvmap;
 	KeyValueStorage *m_database;
 	//leveldb::DB* m_database;
 };

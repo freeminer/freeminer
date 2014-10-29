@@ -72,6 +72,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <msgpack.hpp>
 #include <chrono>
 #include "util/thread_pool.h"
+#include "key_value_storage.h"
+#include "database.h"
+
 
 class ClientNotFoundException : public BaseException
 {
@@ -402,6 +405,7 @@ Server::Server(
 	m_liquid_transform_interval = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
+	maintenance_status = 0;
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
 	m_objectdata_timer = 0.0;
@@ -1255,6 +1259,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		Trigger emergethread (it somehow gets to a non-triggered but
 		bysy state sometimes)
 	*/
+	if (!maintenance_status)
 	{
 		TimeTaker timer_step("Server step: Trigger emergethread");
 		float &counter = m_emergethread_trigger_timer;
@@ -1268,6 +1273,28 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
 					g_settings->getBool("enable_rollback_recording");
+		}
+	}
+
+	{
+		if (porting::g_sighup) {
+			porting::g_sighup = false;
+			if(!maintenance_status) {
+				maintenance_status = 1;
+				maintenance_start();
+				maintenance_status = 2;
+			} else if(maintenance_status == 2) {
+				maintenance_status = 3;
+				maintenance_end();
+				maintenance_status = 0;
+			}
+		}
+		if (porting::g_siginfo) {
+			porting::g_siginfo = false;
+			infostream<<"uptime="<< (int)m_uptime.get()<<std::endl;
+			m_clients.UpdatePlayerList(); //print list
+			g_profiler->print(infostream);
+			g_profiler->clear();
 		}
 	}
 }
@@ -1291,7 +1318,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	u32 max_cycle_ms = async ? 2000 : 300;
 
 	const float map_timer_and_unload_dtime = 10.92;
-	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
+	if(!maintenance_status && m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
 		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
 		//JMutexAutoLock lock(m_env_mutex);
@@ -1364,8 +1391,14 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	}
 	no_send:
 
+	ret += save(dtime, true);
+
+	return ret;
+}
+
+int Server::save(float dtime, bool breakable) {
 	// Save map, players and auth stuff
-	{
+	int ret = 0;
 		float &counter = m_savemap_timer;
 		counter += dtime;
 		if(counter >= g_settings->getFloat("server_map_save_interval"))
@@ -1376,18 +1409,18 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
 
-			// Save ban file
-			if (m_banmanager->isModified()) {
-				m_banmanager->save();
-			}
-
-
 			// Save changed parts of map
-			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, 1)) {
+			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, breakable)) {
 				// partial save, will continue on next step
 				counter = g_settings->getFloat("server_map_save_interval");
 				++ret;
-				goto save_break;
+				if (breakable)
+					goto save_break;
+			}
+
+			// Save ban file
+			if (m_banmanager->isModified()) {
+				m_banmanager->save();
 			}
 
 			// Save players
@@ -1397,7 +1430,6 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 			m_env->saveMeta();
 		}
 		save_break:;
-	}
 
 	return ret;
 }
@@ -4491,15 +4523,6 @@ Inventory* Server::createDetachedInventory(const std::string &name)
 	return inv;
 }
 
-void Server::deleteDetachedInventory(const std::string &name)
-{
-	if(m_detached_inventories.count(name) > 0){
-		infostream<<"Server deleting detached inventory \""<<name<<"\""<<std::endl;
-		delete m_detached_inventories[name];
-		m_detached_inventories.erase(name);
-	}
-}
-
 class BoolScopeSet
 {
 public:
@@ -4830,3 +4853,40 @@ void dedicated_server_loop(Server &server, bool &kill)
 }
 
 
+
+
+
+
+//freeminer:
+
+void Server::deleteDetachedInventory(const std::string &name)
+{
+	if(m_detached_inventories.count(name) > 0){
+		infostream<<"Server deleting detached inventory \""<<name<<"\""<<std::endl;
+		delete m_detached_inventories[name];
+		m_detached_inventories.erase(name);
+	}
+}
+
+void Server::maintenance_start() {
+	infostream<<"Server: Starting maintenance: saving..."<<std::endl;
+	m_emerge->stopThreads();
+	save(0.1);
+	m_env->getServerMap().m_map_saving_enabled = false;
+	m_env->getServerMap().m_map_loading_enabled = false;
+	m_env->getServerMap().dbase->close();
+	m_env->m_key_value_storage->close();
+	m_env->m_players_storage->close();
+	actionstream<<"Server: Starting maintenance: bases closed now."<<std::endl;
+
+};
+
+void Server::maintenance_end() {
+	m_env->getServerMap().dbase->open();
+	m_env->m_key_value_storage->open();
+	m_env->m_players_storage->open();
+	m_env->getServerMap().m_map_saving_enabled = true;
+	m_env->getServerMap().m_map_loading_enabled = true;
+	m_emerge->startThreads();
+	actionstream<<"Server: Starting maintenance: ended."<<std::endl;
+};

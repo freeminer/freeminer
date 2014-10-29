@@ -718,6 +718,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 	bool enable_shaders            = g_settings->getBool("enable_shaders");
 	bool enable_bumpmapping        = g_settings->getBool("enable_bumpmapping");
 	bool enable_parallax_occlusion = g_settings->getBool("enable_parallax_occlusion");
+	bool enable_mesh_cache         = g_settings->getBool("enable_mesh_cache");
 
 	bool use_normal_texture = enable_shaders &&
 		(enable_bumpmapping || enable_parallax_occlusion);
@@ -855,23 +856,21 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 				f->tiledef_special[j].backface_culling, f->alpha, material_type);
 		}
 
-		// Meshnode drawtype
-		// Read the mesh and apply scale
 		if ((f->drawtype == NDT_MESH) && (f->mesh != "")) {
+			// Meshnode drawtype
+			// Read the mesh and apply scale
 			f->mesh_ptr[0] = gamedef->getMesh(f->mesh);
 			if (f->mesh_ptr[0]){
 				v3f scale = v3f(1.0, 1.0, 1.0) * BS * f->visual_scale;
 				scaleMesh(f->mesh_ptr[0], scale);
 				recalculateBoundingBox(f->mesh_ptr[0]);
 			}
-		}
-
-		//Convert regular nodebox nodes to meshnodes
-		//Change the drawtype and apply scale
-		else if ((f->drawtype == NDT_NODEBOX) && 
+		} else if ((f->drawtype == NDT_NODEBOX) && 
 				((f->node_box.type == NODEBOX_REGULAR) ||
 				(f->node_box.type == NODEBOX_FIXED)) &&
 				(!f->node_box.fixed.empty())) {
+			//Convert regular nodebox nodes to meshnodes
+			//Change the drawtype and apply scale
 			f->drawtype = NDT_MESH;
 			f->mesh_ptr[0] = convertNodeboxNodeToMesh(f);
 			v3f scale = v3f(1.0, 1.0, 1.0) * f->visual_scale;
@@ -879,14 +878,25 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 			recalculateBoundingBox(f->mesh_ptr[0]);
 		}
 
-		//Cache 6dfacedir rotated clones of meshes
-		if (f->mesh_ptr[0] && (f->param_type_2 == CPT2_FACEDIR)) {
+		//Cache 6dfacedir and wallmounted rotated clones of meshes
+		if (enable_mesh_cache && f->mesh_ptr[0] && (f->param_type_2 == CPT2_FACEDIR)) {
 			for (u16 j = 1; j < 24; j++) {
 				f->mesh_ptr[j] = cloneMesh(f->mesh_ptr[0]);
 				rotateMeshBy6dFacedir(f->mesh_ptr[j], j);
 				recalculateBoundingBox(f->mesh_ptr[j]);
-				meshmanip->recalculateNormals(f->mesh_ptr[j], false, false);
+				meshmanip->recalculateNormals(f->mesh_ptr[j], true, false);
 			}
+		} else if (enable_mesh_cache && f->mesh_ptr[0] && (f->param_type_2 == CPT2_WALLMOUNTED)) {
+			static const u8 wm_to_6d[6] = 	{20, 0, 16, 12, 8, 4}; 
+			for (u16 j = 1; j < 6; j++) {
+				f->mesh_ptr[j] = cloneMesh(f->mesh_ptr[0]);
+				rotateMeshBy6dFacedir(f->mesh_ptr[j], wm_to_6d[j]);
+				recalculateBoundingBox(f->mesh_ptr[j]);
+				meshmanip->recalculateNormals(f->mesh_ptr[j], true, false);
+			}
+			rotateMeshBy6dFacedir(f->mesh_ptr[0], wm_to_6d[0]);
+			recalculateBoundingBox(f->mesh_ptr[0]);
+			meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);			
 		}
 		f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
 		}
@@ -1053,11 +1063,12 @@ int NodeResolver::addNode(std::string n_wanted, std::string n_alt,
 		if (m_ndef->getId(n_wanted, *content))
 			return NR_STATUS_SUCCESS;
 
-		if (n_alt == "")
+		if (n_alt == "" || !m_ndef->getId(n_alt, *content)) {
+			*content = c_fallback;
 			return NR_STATUS_FAILURE;
+		}
 
-		return m_ndef->getId(n_alt, *content) ?
-			NR_STATUS_SUCCESS : NR_STATUS_FAILURE;
+		return NR_STATUS_SUCCESS;
 	} else {
 		NodeResolveInfo *nfi = new NodeResolveInfo;
 		nfi->n_wanted   = n_wanted;
@@ -1148,7 +1159,7 @@ int NodeResolver::resolveNodes()
 				"resolve '" << nri->n_wanted;
 			if (nri->n_alt != "")
 				errorstream << "' and '" << nri->n_alt;
-			errorstream << "' to a content ID" << std::endl;
+			errorstream << "'" << std::endl;
 		}
 
 		delete nri;
@@ -1168,6 +1179,12 @@ int NodeResolver::resolveNodes()
 		m_ndef->getIds(name, idset);
 		for (auto it = idset.begin(); it != idset.end(); ++it)
 			output->push_back(*it);
+
+		if (idset.size() == 0) {
+			num_failed++;
+			errorstream << "NodeResolver::resolveNodes():  Failed to "
+				"resolve '" << name << "'" << std::endl;
+		}
 	}
 
 	//// Mark node registration as complete so future resolve

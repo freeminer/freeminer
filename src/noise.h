@@ -1,7 +1,7 @@
 /*
 noise.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+ * Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
+ * Copyright (C) 2010-2014 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 */
 
 /*

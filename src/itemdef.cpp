@@ -377,7 +377,10 @@ public:
 				v3s16 p(x0,y0,z0);
 				block->setNode(p, air_node);
 			}
-			MapNode mesh_make_node(id, param1, 0);
+			u8 param2 = 0;
+			if (f.param_type_2 == CPT2_WALLMOUNTED)
+				param2 = 1;
+			MapNode mesh_make_node(id, param1, param2);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
 			block->setNode(v3s16(1,1,1), mesh_make_node);
 			map.insertBlock(block);
