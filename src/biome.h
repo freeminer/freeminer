@@ -62,6 +62,8 @@ public:
 	s16 height_max;
 	float heat_point;
 	float humidity_point;
+
+	content_t c_top_cold;
 };
 
 struct BiomeNoiseInput {

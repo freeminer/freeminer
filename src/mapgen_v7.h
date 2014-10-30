@@ -88,10 +88,12 @@ public:
 	Noise *noise_heat;
 	Noise *noise_humidity;
 	
+	//freeminer:
 	s16 float_islands;
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
+	content_t c_dirt_with_snow;
 
 	content_t c_stone;
 	content_t c_dirt;

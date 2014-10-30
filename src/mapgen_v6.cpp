@@ -629,6 +629,8 @@ int MapgenV6::generateGround() {
 
 		BiomeType bt = getBiome(index, v2s16(x, z));
 		
+		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+
 		// Fill ground with stone
 		v3s16 em = vm->m_area.getExtent();
 		u32 i = vm->m_area.index(x, node_min.Y, z);
@@ -638,7 +640,6 @@ int MapgenV6::generateGround() {
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ? 
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), nullptr, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
 				} else {
 					vm->m_data[i] = n_air;
