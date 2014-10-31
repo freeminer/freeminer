@@ -31,10 +31,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
 
 struct MapgenIndevParams : public MapgenV6Params {
-	s16 float_islands;
+	s16 float_islands, underground_filler;
+	
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
+	NoiseParams np_filler;
 
 	MapgenIndevParams();
 	~MapgenIndevParams() {}
@@ -48,15 +50,16 @@ public:
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
-	s16 float_islands;
+	Noise *noise_filler;
+	MapgenIndevParams *sp;
 
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();
-	void calculateNoise();
 
+	void calculateNoise();
+	int generateGround();
 	void generateCaves(int max_stone_y);
 	void generateExperimental();
-	
 	void generateFloatIslands(int min_y);
 };
 

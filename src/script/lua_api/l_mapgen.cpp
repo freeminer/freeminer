@@ -336,12 +336,15 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 		"mapgen_dirt", CONTENT_AIR, &b->c_filler);
 	resolver->addNode(getstringfield_default(L, index, "node_water", ""),
 		"mapgen_water_source", CONTENT_AIR, &b->c_water);
-	resolver->addNode(getstringfield_default(L, index, "node_ice", ""),
-		"mapgen_ice", CONTENT_AIR, &b->c_ice);
 	resolver->addNode(getstringfield_default(L, index, "node_dust", ""),
 		"air", CONTENT_IGNORE, &b->c_dust);
 	resolver->addNode(getstringfield_default(L, index, "node_dust_water", ""),
 		"mapgen_water_source", CONTENT_IGNORE, &b->c_dust_water);
+
+	resolver->addNode(getstringfield_default(L, index, "node_top_cold", ""),
+		 "mapgen_dirt_with_snow", b->c_top, &b->c_top_cold);
+	resolver->addNode(getstringfield_default(L, index, "node_ice", ""),
+		"mapgen_ice", b->c_water, &b->c_ice);
 
 	verbosestream << "register_biome: " << b->name << std::endl;
 
@@ -480,9 +483,11 @@ bool ModApiMapgen::regDecoSchematic(lua_State *L,
 	lua_pop(L, 1);
 
 	lua_getfield(L, index, "schematic");
-	if (!read_schematic(L, -1, deco, getServer(L)))
+	if (!read_schematic(L, -1, deco, getServer(L))) {
+		lua_pop(L, 1);
 		return false;
-	lua_pop(L, -1);
+	}
+	lua_pop(L, 1);
 
 	if (!deco->filename.empty() &&
 		!deco->loadSchematicFile(resolver, replace_names)) {

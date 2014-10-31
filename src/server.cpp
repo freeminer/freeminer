@@ -4757,6 +4757,11 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 		return NULL;
 	}
 
+	if (!player && maintenance_status) {
+		infostream<<"emergePlayer(): Maintenance in progress, disallowing loading player"<<std::endl;
+		return nullptr;
+	}
+
 	// Load player if it isn't already loaded
 	if (!player) {
 		player = static_cast<RemotePlayer*>(m_env->loadPlayer(name));

@@ -65,8 +65,8 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 
 	this->csize   = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
 
-	// amount of elements to skip for the next index
-	// for noise/height/biome maps (not vmanip)
+	//// amount of elements to skip for the next index
+	//// for noise/height/biome maps (not vmanip)
 	this->ystride = csize.X;
 	this->zstride = csize.X * csize.Y;
 
@@ -76,7 +76,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 
 	MapgenV7Params *sp = (MapgenV7Params *)params->sparams;
 
-	// Terrain noise
+	//// Terrain noise
 	noise_terrain_base    = new Noise(&sp->np_terrain_base,    seed, csize.X, csize.Z);
 	noise_terrain_alt     = new Noise(&sp->np_terrain_alt,     seed, csize.X, csize.Z);
 	noise_terrain_persist = new Noise(&sp->np_terrain_persist, seed, csize.X, csize.Z);
@@ -85,18 +85,36 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	noise_mount_height    = new Noise(&sp->np_mount_height,    seed, csize.X, csize.Z);
 	noise_ridge_uwater    = new Noise(&sp->np_ridge_uwater,    seed, csize.X, csize.Z);
 
-	// 3d terrain noise
+	//// 3d terrain noise
 	noise_mountain = new Noise(&sp->np_mountain, seed, csize.X, csize.Y, csize.Z);
 	noise_ridge    = new Noise(&sp->np_ridge,    seed, csize.X, csize.Y, csize.Z);
 
-	// Biome noise
+	//// Biome noise
 	noise_heat     = new Noise(bmgr->np_heat,     seed, csize.X, csize.Z);
-	noise_humidity = new Noise(bmgr->np_humidity, seed, csize.X, csize.Z);	
+	noise_humidity = new Noise(bmgr->np_humidity, seed, csize.X, csize.Z);
 
+	//// Resolve nodes to be used
+	INodeDefManager *ndef = emerge->ndef;
+
+	c_stone           = ndef->getId("mapgen_stone");
+	c_dirt            = ndef->getId("mapgen_dirt");
+	c_dirt_with_grass = ndef->getId("mapgen_dirt_with_grass");
+	c_sand            = ndef->getId("mapgen_sand");
+	c_water_source    = ndef->getId("mapgen_water_source");
+	c_lava_source     = ndef->getId("mapgen_lava_source");
+	c_ice             = ndef->getId("default:ice");
+	if (c_ice == CONTENT_IGNORE)
+		c_ice = c_water_source;
+
+	//freeminer:
+	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
+	if (c_dirt_with_snow == CONTENT_IGNORE)
+		c_dirt_with_snow = c_dirt;
 	float_islands = sp->float_islands;
 	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
+
 }
 
 
@@ -236,16 +254,6 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
 	blockseed = emerge->getBlockSeed(full_node_min);  //////use getBlockSeed2()!
-	
-	c_stone           = ndef->getId("mapgen_stone");
-	c_dirt            = ndef->getId("mapgen_dirt");
-	c_dirt_with_grass = ndef->getId("mapgen_dirt_with_grass");
-	c_sand            = ndef->getId("mapgen_sand");
-	c_water_source    = ndef->getId("mapgen_water_source");
-	c_lava_source     = ndef->getId("mapgen_lava_source");
-	c_ice             = ndef->getId("mapgen_ice");
-	if (c_ice == CONTENT_IGNORE)
-		c_ice = c_water_source;
 	
 	// Make some noise
 	calculateNoise();
@@ -489,6 +497,8 @@ int MapgenV7::generateBaseTerrain() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
+		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+
 		u32 i = vm->m_area.index(x, node_min.Y, z);		
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
@@ -496,7 +506,6 @@ int MapgenV7::generateBaseTerrain() {
 					vm->m_data[i] = n_stone;
 				else if (y <= water_level)
 				{
-					s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), nullptr, &heat_cache) : 0;
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water;
 				}
 				else
@@ -569,7 +578,7 @@ void MapgenV7::generateRidgeTerrain() {
 			if (y < ridge_heightmap[j])
 				ridge_heightmap[j] = y - 1; 
 
-			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
+			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), NULL, &heat_cache) : 0;
 			MapNode n_water_or_ice = (heat < 0 && y > water_level + heat/4) ? n_ice : n_water;
 
 			vm->m_data[vi] = (y > water_level) ? n_air : n_water_or_ice;
@@ -602,6 +611,8 @@ void MapgenV7::generateBiomes() {
 		content_t c_above = vm->m_data[i + em.X].getContent();
 		bool have_air = c_above == CONTENT_AIR;
 		
+		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), NULL, &heat_cache) : 0;
+
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[i].getContent();
 			
@@ -624,8 +635,7 @@ void MapgenV7::generateBiomes() {
 						// placed below water.  TODO: fix later
 						content_t c_place = ((y < water_level) &&
 								(biome->c_top == c_dirt_with_grass)) ?
-								 c_dirt : biome->c_top;
-						
+								c_dirt : heat < -3 ? biome->c_top_cold : biome->c_top;
 						vm->m_data[i] = MapNode(c_place);
 						nplaced++;
 					} else if (nplaced < y0_filler && nplaced >= y0_top) {
@@ -639,7 +649,6 @@ void MapgenV7::generateBiomes() {
 			} else if (c == c_water_source) {
 				have_air = true;
 				nplaced = 0;
-				s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,y,z), NULL, &heat_cache) : 0;
 				vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
 			} else if (c == CONTENT_AIR) {
 				have_air = true;

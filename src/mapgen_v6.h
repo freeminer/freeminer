@@ -142,7 +142,7 @@ public:
 	u32 get_blockseed(u64 seed, v3s16 p);
 	
 	virtual void calculateNoise();
-	int generateGround();
+	virtual int generateGround();
 	void addMud();
 	void flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos);
 	void addDirtGravelBlobs();
