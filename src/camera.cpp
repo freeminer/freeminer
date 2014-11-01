@@ -446,9 +446,17 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	}
 
 	// Greater FOV if running
+        v3f speed = player->getSpeed();
+        f32 fov_add = sqrt(pow(speed.X,2)+pow(speed.Z,2))/40;
 	if (g_settings->getBool("enable_movement_fov"))
+           { 
 		fov_degrees += player->movement_fov;
-
+                if (fov_add > 4)
+                    fov_add = 4;
+                if (fov_add > 1) 
+                   fov_degrees = fov_degrees+fov_add;
+           }        
+        
 	// FOV and aspect ratio
 	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
 	m_fov_y = fov_degrees * M_PI / 180.0;
@@ -512,7 +520,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	// If the player seems to be walking on solid ground,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
-	v3f speed = player->getSpeed();
+	//v3f speed = player->getSpeed();
+        
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
 		(g_settings->getBool("view_bobbing") == true) &&
