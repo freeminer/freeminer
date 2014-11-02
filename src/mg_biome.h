@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef BIOME_HEADER
-#define BIOME_HEADER
+#ifndef MG_BIOME_HEADER
+#define MG_BIOME_HEADER
 
 #include <string>
 #include "nodedef.h"

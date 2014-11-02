@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "biome.h"
+#include "mg_biome.h"
 #include "nodedef.h"
 #include "map.h" //for ManualMapVoxelManipulator
 #include "log_types.h"

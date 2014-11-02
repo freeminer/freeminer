@@ -1848,7 +1848,7 @@ int main(int argc, char *argv[])
 #endif
 			while(!kill &&
 			the_game(
-				kill,
+				&kill,
 				random_input,
 				input,
 				device,

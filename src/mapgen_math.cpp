@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "settings.h" // For g_settings
 #include "emerge.h"
-#include "biome.h"
+//#include "biome.h"
 
 // can use ported lib from http://mandelbulber.googlecode.com/svn/trunk/src
 #if USE_MANDELBULBER
