@@ -1424,8 +1424,6 @@ protected:
 	void showOverlayMessage(const char *msg, float dtime, int percent,
 			bool draw_clouds = true);
 
-	inline const char *boolToCStr(bool v);
-
 private:
 	InputHandler *input;
 
@@ -2589,7 +2587,7 @@ void MinetestApp::processItemSelection(u16 *new_playeritem)
 		                 player->hud_hotbar_itemcount - 1);
 
 	if (wheel < 0)
-		*new_playeritem = *new_playeritem < max_item ? *new_playeritem + 1 : max_item;
+		*new_playeritem = *new_playeritem < max_item ? *new_playeritem + 1 : 0;
 	else if (wheel > 0)
 		*new_playeritem = *new_playeritem > 0 ? *new_playeritem - 1 : max_item;
 	// else wheel == 0
@@ -2657,7 +2655,7 @@ void MinetestApp::toggleFreeMove(float *statustext_time)
 	static const wchar_t *msg[] = { L"free_move disabled", L"free_move enabled" };
 
 	bool free_move = !g_settings->getBool("free_move");
-	g_settings->set("free_move", boolToCStr(free_move));
+	g_settings->set("free_move", bool_to_cstr(free_move));
 
 	*statustext_time = 0;
 	statustext = msg[free_move];
@@ -2679,7 +2677,7 @@ void MinetestApp::toggleFast(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"fast_move disabled", L"fast_move enabled" };
 	bool fast_move = !g_settings->getBool("fast_move");
-	g_settings->set("fast_move", boolToCStr(fast_move));
+	g_settings->set("fast_move", bool_to_cstr(fast_move));
 
 	*statustext_time = 0;
 	statustext = msg[fast_move];
@@ -2693,7 +2691,7 @@ void MinetestApp::toggleNoClip(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"noclip disabled", L"noclip enabled" };
 	bool noclip = !g_settings->getBool("noclip");
-	g_settings->set("noclip", boolToCStr(noclip));
+	g_settings->set("noclip", bool_to_cstr(noclip));
 
 	*statustext_time = 0;
 	statustext = msg[noclip];
@@ -4257,13 +4255,6 @@ void MinetestApp::showOverlayMessage(const char *msg, float dtime,
 	wchar_t *text = wgettext(msg);
 	draw_load_screen(text, device, guienv, font, dtime, percent, draw_clouds);
 	delete[] text;
-}
-
-
-inline const char *MinetestApp::boolToCStr(bool v)
-{
-	static const char *str[] = { "false", "true" };
-	return str[v];
 }
 
 
