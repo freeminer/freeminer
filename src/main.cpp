@@ -1846,7 +1846,8 @@ int main(int argc, char *argv[])
 	receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
 	g_touchscreengui = receiver->m_touchscreengui;
 #endif
-			while(!kill &&
+			int tries = 5;
+			while(!kill && --tries > 0 &&
 			the_game(
 				&kill,
 				random_input,
@@ -1862,7 +1863,8 @@ int main(int argc, char *argv[])
 				chat_backend,
 				gamespec,
 				simple_singleplayer_mode
-			)){
+			)
+			){
 				smgr->clear();
 				errorstream << "Reconnecting..." << std::endl;
 			}

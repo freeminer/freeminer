@@ -987,14 +987,7 @@ bool nodePlacementPrediction(Client &client,
 			// Dont place node when player would be inside new node
 			// NOTE: This is to be eventually implemented by a mod as client-side Lua
 
-			// if(player->canPlaceNode(p, n)) // TODO: find correct way
-
-			if (!nodedef->get(n).walkable ||
-					(client.checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
-					(nodedef->get(n).walkable &&
-					 neighbourpos != player->getStandingNodePos() + v3s16(0, 1, 0) &&
-					 neighbourpos != player->getStandingNodePos() + v3s16(0, 2, 0))) {
-
+			if(player->canPlaceNode(p, n)) {
 				// This triggers the required mesh update too
 				client.addNode(p, n);
 				return true;
@@ -1299,7 +1292,8 @@ struct VolatileRunFlags {
 	bool use_weather;
 	float dedicated_server_step;
 	int errors;
-
+	bool show_block_boundaries;
+	bool reconnect;
 };
 
 
@@ -1500,10 +1494,14 @@ private:
 	std::wstring statustext;
 
 	//freeminer:
+	GUITable *playerlist;
+	video::SColor console_bg;
 	gsMapper *mapper;
 #if CMAKE_THREADS && CMAKE_HAVE_FUTURE
 	std::future<void> updateDrawList_future;
 #endif
+public:
+	VolatileRunFlags flags;
 
 };
 
@@ -1529,8 +1527,9 @@ MinetestApp::MinetestApp() :
 	sky(NULL),
 	local_inventory(NULL),
 	hud(NULL)
-
-	, mapper(nullptr)
+	,
+	playerlist(nullptr),
+	mapper(nullptr)
 {
 
 }
@@ -1612,11 +1611,11 @@ void MinetestApp::run()
 	CameraOrientation cam_view  = { 0 };
 	InteractParams interactArgs = { 0 };
 	FpsControl draw_times       = { 0 };
-	VolatileRunFlags flags      = { 0 };
+	flags      = { 0 };
 	f32 dtime; // in seconds
 
 	interactArgs.time_from_last_punch  = 10.0;
-	interactArgs.profiler_max_page = 3;
+	interactArgs.profiler_max_page = 2;
 
 	flags.show_chat = true;
 	flags.show_hud = true;
@@ -1631,6 +1630,7 @@ void MinetestApp::run()
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	//flags.show_block_boundaries = false;
 
 	/* Clear the profiler */
 	Profiler::GraphValues dummyvalues;
@@ -1834,6 +1834,8 @@ bool MinetestApp::createClient(const std::string &playername,
 {
 	showOverlayMessage("Creating client...", 0, 50);
 
+	device->setWindowCaption(L"Freeminer [Connecting]");
+
 	draw_control = new MapDrawControl;
 	if (!draw_control)
 		return false;
@@ -1902,9 +1904,13 @@ bool MinetestApp::createClient(const std::string &playername,
 	video::ITexture *t = texture_src->getTexture("crack_anylength.png");
 	if (t) {
 		v2u32 size = t->getOriginalSize();
+		if (size.X)
 		crack_animation_length = size.Y / size.X;
 	} else {
-		crack_animation_length = 5;
+		crack_animation_length = 0;
+	}
+	if (!crack_animation_length) {
+		crack_animation_length = 0;
 	}
 
 	if (!initGui(error_message))
@@ -1912,7 +1918,7 @@ bool MinetestApp::createClient(const std::string &playername,
 
 	/* Set window caption
 	 */
-	core::stringw str = L"Minetest [";
+	core::stringw str = L"Freeminer [";
 	str += driver->getName();
 	str += "]";
 	device->setWindowCaption(str.c_str());
@@ -2010,6 +2016,12 @@ bool MinetestApp::initGui(std::wstring *error_message)
 
 #endif
 
+	if(!g_settings->get("console_color").empty())
+	{
+		v3f console_color = g_settings->getV3F("console_color");
+		console_bg = video::SColor(g_settings->getU16("console_alpha"), console_color.X, console_color.Y, console_color.Z);
+	}
+
 	// create mapper
 	gsMapper mapper(device, client);
 
@@ -2029,7 +2041,7 @@ bool MinetestApp::connectToServer(const std::string &playername,
 
 		if (connect_address.isZero()) { // i.e. INADDR_ANY, IN6ADDR_ANY
 			//connect_address.Resolve("localhost");
-			if (connect_address.isIPv6()) {
+			if (connect_address.isIPv6() || g_settings->getBool("ipv6_server")) {
 				IPv6AddressBytes addr_bytes;
 				addr_bytes.bytes[15] = 1;
 				connect_address.setAddress(&addr_bytes);
@@ -2067,17 +2079,6 @@ bool MinetestApp::connectToServer(const std::string &playername,
 
 	client->connect(connect_address);
 
-
-	GUITable *playerlist = NULL;
-
-	video::SColor console_bg;
-	bool console_color_set = !g_settings->get("console_color").empty();
-	if(console_color_set)
-	{
-		v3f console_color = g_settings->getV3F("console_color");
-		console_bg = video::SColor(g_settings->getU16("console_alpha"), console_color.X, console_color.Y, console_color.Z);
-	}
-
 	/*
 		Wait for server to accept connection
 	*/
@@ -2088,6 +2089,7 @@ bool MinetestApp::connectToServer(const std::string &playername,
 		FpsControl fps_control = { 0 };
 		f32 dtime; // in seconds
 
+		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 100);
 		while (device->run()) {
 
 			limitFps(&fps_control, &dtime);
@@ -2120,6 +2122,11 @@ bool MinetestApp::connectToServer(const std::string &playername,
 
 			// Update status
 			showOverlayMessage("Connecting to server...", dtime, 100);
+
+			if (porting::getTimeMs() > end_ms) {
+				flags.reconnect = true;
+				return false;
+			}
 		}
 	} catch (con::PeerNotFoundException &e) {
 		// TODO: Should something be done here? At least an info/error
@@ -2189,16 +2196,16 @@ bool MinetestApp::getServerContent(bool *aborted)
 		} else {
 			std::stringstream message;
 			message.precision(3);
-			message << gettext("Media...");
+			message << _("Media...");
 
 			if ((USE_CURL == 0) ||
 					(!g_settings->getBool("enable_remote_media_server"))) {
 				float cur = client->getCurRate();
-				std::string cur_unit = gettext(" KB/s");
+				std::string cur_unit = _(" KB/s");
 
 				if (cur > 900) {
 					cur /= 1024.0;
-					cur_unit = gettext(" MB/s");
+					cur_unit = _(" MB/s");
 				}
 
 				message << " ( " << cur << cur_unit << " )";
@@ -2279,8 +2286,10 @@ inline bool MinetestApp::handleCallbacks()
 
 void MinetestApp::processQueues()
 {
+	if (!flags.no_output)
 	texture_src->processQueue();
 	itemdef_manager->processQueue(gamedef);
+	if (!flags.no_output)
 	shader_src->processQueue();
 }
 
@@ -3888,7 +3897,7 @@ void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
-		   << "Minetest " << minetest_version_hash
+		   << "Freeminer " << minetest_version_hash
 		   << " FPS = " << fps
 		   << " (R: range_all=" << draw_control->range_all << ")"
 		   << std::setprecision(0)
@@ -4127,12 +4136,15 @@ bool the_game(bool *kill,
 	 */
 	std::string server_address = address;
 
+	bool started = false;
 	try {
 
+		bool started = false;
 		if (app.startup(kill, random_input, input, device, font, map_dir,
 					playername, password, &server_address, port,
 					&error_message, &chat_backend, gamespec,
 					simple_singleplayer_mode)) {
+			started = true;
 
 			//std::cout << "App started" << std::endl;
 			app.run();
@@ -4152,5 +4164,5 @@ bool the_game(bool *kill,
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 
-	return 0;
+	return !started && app.flags.reconnect;
 }
