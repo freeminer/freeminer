@@ -2376,6 +2376,7 @@ void MinetestApp::updateStats(RunStats *stats, const FpsControl &draw_times,
 		jp->max = 0.0;
 		jp->min = 0.0;
 	}
+
 }
 
 
@@ -3751,6 +3752,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 
 	auto player_position = player->getPosition();
 	auto pos_i = floatToInt(player_position, BS);
+	if (!flags.no_output) {
+
 	auto fog_was = interactArgs->fog_range;
 
 	if (draw_control->range_all) {
@@ -3813,6 +3816,7 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
 				+ time_of_day * todsm;
 
+
 	sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 			sunlight_seen, camera->getCameraMode(), player->getYaw(),
 			player->getPitch());
@@ -3835,10 +3839,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Update particles
 	*/
 
-	if (!flags.no_output) {
 	allparticles_step(dtime);
 	allparticlespawners_step(dtime, client->getEnv());
-	}
 
 	/*
 		Fog
@@ -3865,6 +3867,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 				false // range fog
 		);
 	}
+
+	} // no_output
 
 	/*
 		Get chat messages from client
@@ -3973,13 +3977,13 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	draw_scene(driver, smgr, *camera, *client, player, *hud, guienv,
 			highlight_boxes, screensize, skycolor, flags.show_hud);
 
-		/*
-			Draw map
-		*/
-		if ((g_settings->getBool("hud_map")) && flags.show_hud)
-		{
-			mapper->drawMap( floatToInt(player->getPosition(), BS) );
-		}
+	/*
+		Draw map
+	*/
+	if ((g_settings->getBool("hud_map")) && flags.show_hud)
+	{
+		mapper->drawMap( floatToInt(player->getPosition(), BS) );
+	}
 
 	/*
 		Profiler graph
@@ -4017,6 +4021,30 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 			player->hurt_tilt_strength = 0;
 	}
 
+		/*
+			Draw background for player list
+		*/
+		if (playerlist != NULL)
+		{
+			driver->draw2DRectangle(console_bg, playerlist->getAbsolutePosition());
+			driver->draw2DRectangleOutline(playerlist->getAbsolutePosition(), video::SColor(255,128,128,128));
+		}
+
+		/*
+			Movement FOV (for superspeed and flying)
+		*/
+
+		float max_fov = 0;
+		if(player->free_move)
+			max_fov += 5;
+		if(player->superspeed)
+			max_fov += 8;
+
+		if((player->free_move || player->superspeed) && player->movement_fov < max_fov)
+			player->movement_fov += dtime*50;
+		if(player->movement_fov > max_fov)
+			player->movement_fov -= dtime*50;
+
 	/*
 		End scene
 	*/
@@ -4039,31 +4067,42 @@ void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
 
+	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
+	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
+	draw_control->fps = (1.0/stats.dtime_jitter.avg);
+
 	if (flags.show_debug) {
+/*
 		static float drawtime_avg = 0;
 		drawtime_avg = drawtime_avg * 0.95 + stats.drawtime * 0.05;
 
 		u16 fps = 1.0 / stats.dtime_jitter.avg;
+*/
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
 		   << "Freeminer " << minetest_version_hash
-		   << " FPS = " << fps
+		   << " FPS = " << draw_control->fps
+/*
 		   << " (R: range_all=" << draw_control->range_all << ")"
+*/
 		   << std::setprecision(0)
-		   << " drawtime = " << drawtime_avg
+		   << " drawtime = " << draw_control->drawtime_avg
+/*
 		   << std::setprecision(1)
 		   << ", dtime_jitter = "
 		   << (stats.dtime_jitter.max_fraction * 100.0) << " %"
+*/
 		   << std::setprecision(1)
 		   << ", v_range = " << draw_control->wanted_range
+		   << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step
 		   << std::setprecision(3)
 		   << ", RTT = " << client->getRTT();
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
-		os << "Minetest " << minetest_version_hash;
+		os << "Freeminer " << minetest_version_hash;
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else {
@@ -4079,13 +4118,18 @@ void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
 	}
 
 	if (flags.show_debug) {
+		auto pos_i = floatToInt(player_position, BS);
+
 		std::ostringstream os(std::ios_base::binary);
 		os << std::setprecision(1) << std::fixed
 		   << "(" << (player_position.X / BS)
 		   << ", " << (player_position.Y / BS)
 		   << ", " << (player_position.Z / BS)
+		   << ") (spd=" << (int)player->getSpeed().getLength()/BS
 		   << ") (yaw=" << (wrapDegrees_0_360(cam.camera_yaw))
-		   << ") (seed = " << ((u64)client->getMapSeed())
+		   << ") (t=" << client->getEnv().getClientMap().getHeat(pos_i, 1)
+		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1)
+		   << "%) (seed = " << ((u64)client->getMapSeed())
 		   << ")";
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
