@@ -1384,6 +1384,7 @@ protected:
 	void toggleDebug(float *statustext_time, bool *show_debug,
 			bool *show_profiler_graph);
 	void toggleUpdateCamera(float *statustext_time, bool *flag);
+	void toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags);
 	void toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 			u32 profiler_max_page);
 
@@ -1630,7 +1631,7 @@ void MinetestApp::run()
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
-	//flags.show_block_boundaries = false;
+
 
 	/* Clear the profiler */
 	Profiler::GraphValues dummyvalues;
@@ -2022,8 +2023,27 @@ bool MinetestApp::initGui(std::wstring *error_message)
 		console_bg = video::SColor(g_settings->getU16("console_alpha"), console_color.X, console_color.Y, console_color.Z);
 	}
 
+	v2u32 screensize = driver->getScreenSize();
 	// create mapper
-	gsMapper mapper(device, client);
+	mapper = new gsMapper(device, client);
+	{
+		// Update mapper elements
+		u16 w = g_settings->getU16("hud_map_width");
+		struct _gsm_color { u32 red; u32 green; u32 blue; } gsm_color;
+		g_settings->getStruct("hud_map_back", "u32,u32,u32",
+			&gsm_color, sizeof(gsm_color) );
+		mapper->setMapVis(screensize.X-(w+10),10, w,
+			g_settings->getU16("hud_map_height"),
+			g_settings->getFloat("hud_map_scale"),
+			g_settings->getU16("hud_map_alpha"),
+			video::SColor(0, gsm_color.red, gsm_color.green, gsm_color.blue));
+		mapper->setMapType(g_settings->getBool("hud_map_above"),
+			g_settings->getU16("hud_map_scan"),
+			g_settings->getS16("hud_map_surface"),
+			g_settings->getBool("hud_map_tracking"),
+			g_settings->getU16("hud_map_border"));
+	}
+
 
 	return true;
 }
@@ -2089,7 +2109,7 @@ bool MinetestApp::connectToServer(const std::string &playername,
 		FpsControl fps_control = { 0 };
 		f32 dtime; // in seconds
 
-		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 100);
+		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 1000);
 		while (device->run()) {
 
 			limitFps(&fps_control, &dtime);
@@ -2486,6 +2506,74 @@ void MinetestApp::processKeyboardInput(VolatileRunFlags *flags,
 		        << std::endl;
 		debug_stacks_print();
 	}
+
+	//freeminer
+	if (input->wasKeyDown(getKeySetting("keymap_toggle_block_boundaries"))) {
+		toggleBlockBoundaries(statustext_time, flags);
+	}
+
+
+
+		if (playerlist)
+			playerlist->setSelected(-1);
+		if(!input->isKeyDown(getKeySetting("keymap_playerlist")) && playerlist != NULL)
+		{
+			playerlist->remove();
+			playerlist = NULL;
+		}
+		if(input->wasKeyDown(getKeySetting("keymap_playerlist")) && playerlist == NULL)
+		{
+			v2u32 screensize = driver->getScreenSize();
+			std::list<std::string> players_list = client->getEnv().getPlayerNames();
+			std::vector<std::string> players;
+			players.reserve(players_list.size());
+			std::copy(players_list.begin(), players_list.end(), std::back_inserter(players));
+			std::sort(players.begin(), players.end(), string_icompare);
+
+			u32 max_height = screensize.Y * 0.7;
+
+			u32 row_height = font->getDimension(L"A").Height + 4;
+			u32 rows = max_height / row_height;
+			u32 columns = players.size() / rows;
+			if (players.size() % rows > 0)
+				++columns;
+			u32 actual_height = row_height * rows;
+			if (rows > players.size())
+				actual_height = row_height * players.size();
+			u32 max_width = 0;
+			for (size_t i = 0; i < players.size(); ++i)
+				max_width = std::max(max_width, font->getDimension(narrow_to_wide(players[i]).c_str()).Width);
+			max_width += 15;
+			u32 actual_width = columns * max_width;
+
+			if (columns != 0) {
+				u32 x = (screensize.X - actual_width) / 2;
+				u32 y = (screensize.Y - actual_height) / 2;
+				playerlist = new GUITable(guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(x, y, x + actual_width, y + actual_height), texture_src);
+				playerlist->drop();
+				playerlist->setScrollBarEnabled(false);
+				GUITable::TableOptions table_options;
+				GUITable::TableColumns table_columns;
+				for (size_t i = 0; i < columns; ++i) {
+					GUITable::TableColumn col;
+					col.type = "text";
+					table_columns.push_back(col);
+				}
+				std::vector<std::string> players_ordered;
+				players_ordered.reserve(columns * rows);
+				for (size_t i = 0; i < rows; ++i)
+					for (size_t j = 0; j < columns; ++j) {
+						size_t index = j * rows + i;
+						if (index >= players.size())
+							players_ordered.push_back("");
+						else
+							players_ordered.push_back(players[index]);
+					}
+				playerlist->setTable(table_options, table_columns, players_ordered);
+			}
+		}
+
+
 }
 
 
@@ -2682,6 +2770,17 @@ void MinetestApp::toggleUpdateCamera(float *statustext_time, bool *flag)
 }
 
 
+void MinetestApp::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags) {
+	static const wchar_t *msg[] = {
+		L"Block boundaries shown",
+		L"Block boundaries hidden"
+	};
+	flags->show_block_boundaries = !flags->show_block_boundaries;
+	*statustext_time = 0;
+	statustext = msg[flags->show_block_boundaries];
+}
+
+
 void MinetestApp::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 		u32 profiler_max_page)
 {
@@ -2847,6 +2946,12 @@ void MinetestApp::updatePlayerControl(const CameraOrientation &cam)
 			( (u32)(input->getRightState()                             & 0x1) << 8
 	);
 
+	if (input->isKeyDown(getKeySetting("keymap_zoom"))) {
+		player->zoom=true;
+	} else {
+		player->zoom=false;
+	}
+
 }
 
 
@@ -2860,7 +2965,12 @@ inline void MinetestApp::step(f32 *dtime)
 	} else {
 		if (server != NULL) {
 			//TimeTaker timer("server->step(dtime)");
+			try {
 			server->step(*dtime);
+			} catch(std::exception &e) {
+				if (!flags.errors++ || !(flags.errors % (int)(60/flags.dedicated_server_step)))
+					errorstream << "Fatal error n=" << flags.errors << " : " << e.what() << std::endl;
+			}
 		}
 
 		//TimeTaker timer("client.step(dtime)");
@@ -2895,10 +3005,13 @@ void MinetestApp::processClientEvents(CameraOrientation *cam, float *damage_flas
 			cam->camera_yaw = event.player_force_move.yaw;
 			cam->camera_pitch = event.player_force_move.pitch;
 		} else if (event.type == CE_DEATHSCREEN) {
+			if (g_settings->getBool("respawn_auto")) {
+				client->sendRespawn();
+			} else {
+
 			show_deathscreen(&current_formspec, client, gamedef, texture_src,
 					 device, client);
-
-			chat_backend->addMessage(L"", L"You died.");
+			}
 
 			/* Handle visualization */
 			*damage_flash = 0;
@@ -3263,6 +3376,13 @@ void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 
 	if (pointed != interactArgs->pointed_old) {
 		infostream << "Pointing at " << pointed.dump() << std::endl;
+/* node debug
+			MapNode nu = client->getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
+			MapNode na = client->getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
+			infostream	<< "|| nu0="<<(int)nu.param0<<" nu1"<<(int)nu.param1<<" nu2"<<(int)nu.param1<<"; nam="<<client->getNodeDefManager()->get(nu.getContent()).name
+						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<client->getNodeDefManager()->get(na.getContent()).name
+						<<std::endl;
+*/
 
 		if (g_settings->getBool("enable_node_highlighting")) {
 			if (pointed.type == POINTEDTHING_NODE) {
@@ -3383,7 +3503,26 @@ void MinetestApp::handlePointingAtNode(InteractParams *interactArgs,
 		interactArgs->repeat_rightclick_timer = 0;
 		infostream << "Ground right-clicked" << std::endl;
 
-		if (meta && meta->getString("formspec") != "" && !random_input
+				// Sign special case, at least until formspec is properly implemented.
+				// Deprecated?
+				if(meta && meta->getString("formspec") == "hack:sign_text_input"
+						&& !random_input
+						&& !input->isKeyDown(getKeySetting("keymap_sneak")))
+				{
+					infostream<<"Launching metadata text input"<<std::endl;
+
+					// Get a new text for it
+
+					TextDest *dest = new TextDestNodeMetadata(nodepos, client);
+
+					std::wstring wtext = narrow_to_wide(meta->getString("text"));
+
+					(new GUITextInputMenu(guienv, guiroot, -1,
+							&g_menumgr, dest,
+							wtext))->drop();
+				}
+				// If metadata provides an inventory view, activate it
+				else if(meta && meta->getString("formspec") != "" && !random_input
 				&& !input->isKeyDown(getKeySetting("keymap_sneak"))) {
 			infostream << "Launching custom inventory view" << std::endl;
 
@@ -3610,15 +3749,27 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Fog range
 	*/
 
+	auto player_position = player->getPosition();
+	auto pos_i = floatToInt(player_position, BS);
+	auto fog_was = interactArgs->fog_range;
+
 	if (draw_control->range_all) {
 		interactArgs->fog_range = 100000 * BS;
-	} else {
+	} else if (!flags.no_output){
 		interactArgs->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
+
+		if(flags.use_weather) {
+			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
+			interactArgs->fog_range *= (1.55 - 1.4*(float)humidity/100);
+		}
+
 		interactArgs->fog_range = MYMIN(
 				interactArgs->fog_range,
 				(draw_control->farthest_drawn + 20) * BS);
 		interactArgs->fog_range *= 0.9;
+
+		interactArgs->fog_range = fog_was + (interactArgs->fog_range-fog_was)/50;
 	}
 
 	/*
@@ -3632,8 +3783,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	if (g_settings->getBool("free_move")) {
 		direct_brightness = time_brightness;
 		sunlight_seen = true;
-	} else {
-		ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
+	} else if (!flags.no_output) {
+		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 		float old_brightness = sky->getBrightness();
 		direct_brightness = client->getEnv().getClientMap()
 				.getBackgroundBrightness(MYMIN(interactArgs->fog_range * 1.2, 60 * BS),
@@ -3670,7 +3821,6 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Update clouds
 	*/
 	if (clouds) {
-		v3f player_position = player->getPosition();
 		if (sky->getCloudsVisible()) {
 			clouds->setVisible(true);
 			clouds->step(dtime);
