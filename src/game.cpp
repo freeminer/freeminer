@@ -1937,8 +1937,6 @@ bool MinetestApp::createClient(const std::string &playername,
 		return false;
 	}
 
-	mapper = new gsMapper(device, client);
-
 	return true;
 }
 
@@ -4006,11 +4004,6 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		interactArgs->damage_flash -= 100.0 * dtime;
 	}
 
-	guitext->remove();
-	guitext2->remove();
-	guitext_info->remove();
-	guitext_profiler->remove();
-	guitext_chat->remove();
 	/*
 		Damage camera tilt
 	*/
@@ -4082,6 +4075,7 @@ void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
 		   << "Freeminer " << minetest_version_hash
+		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
 /*
 		   << " (R: range_all=" << draw_control->range_all << ")"
