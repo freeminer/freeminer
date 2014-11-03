@@ -243,7 +243,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		v3s16 p(x,y,z);
 		try{
 			// Object collides into walkable nodes
-			MapNode n = map->getNodeTry(p);
+			MapNode n = map->getNodeNoEx(p);
 			if (n.getContent() == CONTENT_IGNORE) {
 				throw InvalidPositionException("found CONTENT_IGNORE");
 			}
