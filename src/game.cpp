@@ -1231,7 +1231,7 @@ struct CameraOrientation {
 };
 
 //TODO: Needs a better name because fog_range etc are included
-struct InteractParams {
+struct GameRunData {
 	u16 dig_index;
 	u16 new_playeritem;
 	PointedThing pointed_old;
@@ -1302,11 +1302,11 @@ struct VolatileRunFlags {
  * hides most of the stuff in this class (nothing in this class is required
  * by any other file) but exposes the public methods/data only.
  */
-class MinetestApp
+class Game
 {
 public:
-	MinetestApp();
-	~MinetestApp();
+	Game();
+	~Game();
 
 	bool startup(bool *kill,
 			bool random_input,
@@ -1353,7 +1353,7 @@ protected:
 
 	// Main loop
 
-	void updateInteractTimers(InteractParams *args, f32 dtime);
+	void updateInteractTimers(GameRunData *args, f32 dtime);
 	bool checkConnection();
 	bool handleCallbacks();
 	void processQueues();
@@ -1361,7 +1361,7 @@ protected:
 			f32 dtime);
 	void updateStats(RunStats *stats, const FpsControl &draw_times, f32 dtime);
 
-	void processUserInput(VolatileRunFlags *flags, InteractParams *interact_args,
+	void processUserInput(VolatileRunFlags *flags, GameRunData *interact_args,
 			f32 dtime);
 	void processKeyboardInput(VolatileRunFlags *flags,
 			float *statustext_time,
@@ -1400,19 +1400,19 @@ protected:
 			float time_from_last_punch);
 	void updateSound(f32 dtime);
 	void processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
-			InteractParams *runData, f32 dtime, bool show_hud,
+			GameRunData *runData, f32 dtime, bool show_hud,
 			bool show_debug);
-	void handlePointingAtNode(InteractParams *runData,
+	void handlePointingAtNode(GameRunData *runData,
 			const PointedThing &pointed, const ItemDefinition &playeritem_def,
 			const ToolCapabilities &playeritem_toolcap, f32 dtime);
-	void handlePointingAtObject(InteractParams *runData,
+	void handlePointingAtObject(GameRunData *runData,
 			const PointedThing &pointed, const ItemStack &playeritem,
 			const v3f &player_position, bool show_debug);
-	void handleDigging(InteractParams *runData, const PointedThing &pointed,
+	void handleDigging(GameRunData *runData, const PointedThing &pointed,
 			const v3s16 &nodepos, const ToolCapabilities &playeritem_toolcap,
 			f32 dtime);
 	void updateFrame(std::vector<aabb3f> &highlight_boxes, ProfilerGraph *graph,
-			RunStats *stats, InteractParams *runData,
+			RunStats *stats, GameRunData *runData,
 			f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam);
 	void updateGui(float *statustext_time, const RunStats &stats, f32 dtime,
 			const VolatileRunFlags &flags, const CameraOrientation &cam);
@@ -1504,7 +1504,7 @@ public:
 
 };
 
-Game::MinetestApp() :
+Game::Game() :
 	client(NULL),
 	server(NULL),
 	font(NULL),
@@ -1535,10 +1535,10 @@ Game::MinetestApp() :
 
 
 /****************************************************************************
- MinetestApp Public
+ Game Public
  ****************************************************************************/
 
-Game::~MinetestApp()
+Game::~Game()
 {
 	delete client;
 	delete soundmaker;
@@ -1608,7 +1608,7 @@ void Game::run()
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	InteractParams runData = { 0 };
+	GameRunData runData = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
@@ -2242,7 +2242,7 @@ bool Game::getServerContent(bool *aborted)
  Run
  ****************************************************************************/
 
-inline void Game::updateInteractTimers(InteractParams *args, f32 dtime)
+inline void Game::updateInteractTimers(GameRunData *args, f32 dtime)
 {
 	if (args->nodig_delay_timer >= 0)
 		args->nodig_delay_timer -= dtime;
@@ -2382,7 +2382,7 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
  ****************************************************************************/
 
 void Game::processUserInput(VolatileRunFlags *flags,
-		InteractParams *interact_args, f32 dtime)
+		GameRunData *interact_args, f32 dtime)
 {
 	// Reset input if window not active or some menu is active
 	if (device->isWindowActive() == false
@@ -3304,7 +3304,7 @@ void Game::updateSound(f32 dtime)
 
 
 void Game::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
-		InteractParams *runData, f32 dtime, bool show_hud, bool show_debug)
+		GameRunData *runData, f32 dtime, bool show_hud, bool show_debug)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -3463,7 +3463,7 @@ void Game::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 }
 
 
-void Game::handlePointingAtNode(InteractParams *runData,
+void Game::handlePointingAtNode(GameRunData *runData,
 		const PointedThing &pointed, const ItemDefinition &playeritem_def,
 		const ToolCapabilities &playeritem_toolcap, f32 dtime)
 {
@@ -3564,7 +3564,7 @@ void Game::handlePointingAtNode(InteractParams *runData,
 }
 
 
-void Game::handlePointingAtObject(InteractParams *runData,
+void Game::handlePointingAtObject(GameRunData *runData,
 		const PointedThing &pointed,
 		const ItemStack &playeritem,
 		const v3f &player_position,
@@ -3613,7 +3613,7 @@ void Game::handlePointingAtObject(InteractParams *runData,
 }
 
 
-void Game::handleDigging(InteractParams *runData,
+void Game::handleDigging(GameRunData *runData,
 		const PointedThing &pointed, const v3s16 &nodepos,
 		const ToolCapabilities &playeritem_toolcap, f32 dtime)
 {
@@ -3737,7 +3737,7 @@ void Game::handleDigging(InteractParams *runData,
 
 
 void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
-		ProfilerGraph *graph, RunStats *stats, InteractParams *runData,
+		ProfilerGraph *graph, RunStats *stats, GameRunData *runData,
 		f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -4307,7 +4307,7 @@ bool the_game(bool *kill,
 		const SubgameSpec &gamespec,        // Used for local game
 		bool simple_singleplayer_mode)
 {
-	MinetestApp app;
+	Game app;
 
 	/* Make a copy of the server address because if a local singleplayer server
 	 * is created then this is updated and we don't want to change the value
