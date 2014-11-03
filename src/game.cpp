@@ -1400,19 +1400,19 @@ protected:
 			float time_from_last_punch);
 	void updateSound(f32 dtime);
 	void processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
-			InteractParams *interactArgs, f32 dtime, bool show_hud,
+			InteractParams *runData, f32 dtime, bool show_hud,
 			bool show_debug);
-	void handlePointingAtNode(InteractParams *interactArgs,
+	void handlePointingAtNode(InteractParams *runData,
 			const PointedThing &pointed, const ItemDefinition &playeritem_def,
 			const ToolCapabilities &playeritem_toolcap, f32 dtime);
-	void handlePointingAtObject(InteractParams *interactArgs,
+	void handlePointingAtObject(InteractParams *runData,
 			const PointedThing &pointed, const ItemStack &playeritem,
 			const v3f &player_position, bool show_debug);
-	void handleDigging(InteractParams *interactArgs, const PointedThing &pointed,
+	void handleDigging(InteractParams *runData, const PointedThing &pointed,
 			const v3s16 &nodepos, const ToolCapabilities &playeritem_toolcap,
 			f32 dtime);
 	void updateFrame(std::vector<aabb3f> &highlight_boxes, ProfilerGraph *graph,
-			RunStats *stats, InteractParams *interactArgs,
+			RunStats *stats, InteractParams *runData,
 			f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam);
 	void updateGui(float *statustext_time, const RunStats &stats, f32 dtime,
 			const VolatileRunFlags &flags, const CameraOrientation &cam);
@@ -1504,7 +1504,7 @@ public:
 
 };
 
-MinetestApp::MinetestApp() :
+Game::MinetestApp() :
 	client(NULL),
 	server(NULL),
 	font(NULL),
@@ -1538,7 +1538,7 @@ MinetestApp::MinetestApp() :
  MinetestApp Public
  ****************************************************************************/
 
-MinetestApp::~MinetestApp()
+Game::~MinetestApp()
 {
 	delete client;
 	delete soundmaker;
@@ -1564,7 +1564,7 @@ MinetestApp::~MinetestApp()
 	extendedResourceCleanup();
 }
 
-bool MinetestApp::startup(bool *kill,
+bool Game::startup(bool *kill,
 		bool random_input,
 		InputHandler *input,
 		IrrlichtDevice *device,
@@ -1603,18 +1603,18 @@ bool MinetestApp::startup(bool *kill,
 }
 
 
-void MinetestApp::run()
+void Game::run()
 {
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	InteractParams interactArgs = { 0 };
+	InteractParams runData = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
 
-	interactArgs.time_from_last_punch  = 10.0;
-	interactArgs.profiler_max_page = 2;
+	runData.time_from_last_punch  = 10.0;
+	runData.profiler_max_page = 2;
 
 	flags.show_chat = true;
 	flags.show_hud = true;
@@ -1625,7 +1625,7 @@ void MinetestApp::run()
 
 
 	// freeminer:
-	interactArgs.update_draw_list_timer = 5;
+	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
@@ -1640,7 +1640,7 @@ void MinetestApp::run()
 	shader_src->addGlobalConstantSetter(new GameGlobalShaderConstantSetter(
 			sky,
 			&flags.force_fog_off,
-			&interactArgs.fog_range,
+			&runData.fog_range,
 			client,
 			local_inventory
 	));
@@ -1653,7 +1653,7 @@ void MinetestApp::run()
 		limitFps(&draw_times, &dtime);
 
 		updateStats(&stats, draw_times, dtime);
-		updateInteractTimers(&interactArgs, dtime);
+		updateInteractTimers(&runData, dtime);
 
 		if (!checkConnection())
 			break;
@@ -1667,25 +1667,25 @@ void MinetestApp::run()
 		infotext = L"";
 		hud->resizeHotbar();
 		addProfilerGraphs(stats, draw_times, dtime);
-		processUserInput(&flags, &interactArgs, dtime);
+		processUserInput(&flags, &runData, dtime);
 		// Update camera before player movement to avoid camera lag of one frame
 		updateCameraDirection(&cam_view, &flags);
 		updatePlayerControl(cam_view);
 		step(&dtime);
-		processClientEvents(&cam_view, &interactArgs.damage_flash);
+		processClientEvents(&cam_view, &runData.damage_flash);
 		updateCamera(&flags, draw_times.busy_time, dtime,
-				interactArgs.time_from_last_punch);
+				runData.time_from_last_punch);
 		updateSound(dtime);
-		processPlayerInteraction(highlight_boxes, &interactArgs, dtime,
+		processPlayerInteraction(highlight_boxes, &runData, dtime,
 				flags.show_hud, flags.show_debug);
-		updateFrame(highlight_boxes, &graph, &stats, &interactArgs, dtime,
+		updateFrame(highlight_boxes, &graph, &stats, &runData, dtime,
 				flags, cam_view);
 		updateProfilerGraphs(&graph);
 	}
 }
 
 
-void MinetestApp::shutdown()
+void Game::shutdown()
 {
 	showOverlayMessage("Shutting down...", 0, 0, false);
 
@@ -1730,7 +1730,7 @@ void MinetestApp::shutdown()
  Startup
  ****************************************************************************/
 
-bool MinetestApp::init(
+bool Game::init(
 		const std::string &map_dir,
 		std::string *address,
 		u16 port,
@@ -1763,7 +1763,7 @@ bool MinetestApp::init(
 	return true;
 }
 
-bool MinetestApp::initSound()
+bool Game::initSound()
 {
 #if USE_SOUND
 	if (g_settings->getBool("enable_sound")) {
@@ -1790,7 +1790,7 @@ bool MinetestApp::initSound()
 	return true;
 }
 
-bool MinetestApp::createSingleplayerServer(const std::string map_dir,
+bool Game::createSingleplayerServer(const std::string map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
 	showOverlayMessage("Creating server...", 0, 25);
@@ -1827,7 +1827,7 @@ bool MinetestApp::createSingleplayerServer(const std::string map_dir,
 	return true;
 }
 
-bool MinetestApp::createClient(const std::string &playername,
+bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		std::wstring *error_message)
 {
@@ -1938,7 +1938,7 @@ bool MinetestApp::createClient(const std::string &playername,
 	return true;
 }
 
-bool MinetestApp::initGui(std::wstring *error_message)
+bool Game::initGui(std::wstring *error_message)
 {
 	// First line of debug text
 	guitext = guienv->addStaticText(
@@ -2044,7 +2044,7 @@ bool MinetestApp::initGui(std::wstring *error_message)
 	return true;
 }
 
-bool MinetestApp::connectToServer(const std::string &playername,
+bool Game::connectToServer(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		bool *connect_ok, bool *aborted)
 {
@@ -2153,7 +2153,7 @@ bool MinetestApp::connectToServer(const std::string &playername,
 	return true;
 }
 
-bool MinetestApp::getServerContent(bool *aborted)
+bool Game::getServerContent(bool *aborted)
 {
 	input->clear();
 
@@ -2242,7 +2242,7 @@ bool MinetestApp::getServerContent(bool *aborted)
  Run
  ****************************************************************************/
 
-inline void MinetestApp::updateInteractTimers(InteractParams *args, f32 dtime)
+inline void Game::updateInteractTimers(InteractParams *args, f32 dtime)
 {
 	if (args->nodig_delay_timer >= 0)
 		args->nodig_delay_timer -= dtime;
@@ -2256,7 +2256,7 @@ inline void MinetestApp::updateInteractTimers(InteractParams *args, f32 dtime)
 
 /* returns false if app should exit, otherwise true
  */
-inline bool MinetestApp::checkConnection()
+inline bool Game::checkConnection()
 {
 	if (client->accessDenied()) {
 		*error_message = L"Access denied. Reason: "
@@ -2271,7 +2271,7 @@ inline bool MinetestApp::checkConnection()
 
 /* returns false if app should exit, otherwise true
  */
-inline bool MinetestApp::handleCallbacks()
+inline bool Game::handleCallbacks()
 {
 	if (g_gamecallback->disconnect_requested) {
 		g_gamecallback->disconnect_requested = false;
@@ -2300,7 +2300,7 @@ inline bool MinetestApp::handleCallbacks()
 }
 
 
-void MinetestApp::processQueues()
+void Game::processQueues()
 {
 	if (!flags.no_output)
 	texture_src->processQueue();
@@ -2310,7 +2310,7 @@ void MinetestApp::processQueues()
 }
 
 
-void MinetestApp::addProfilerGraphs(const RunStats &stats,
+void Game::addProfilerGraphs(const RunStats &stats,
 		const FpsControl &draw_times, f32 dtime)
 {
 	g_profiler->graphAdd("mainloop_other",
@@ -2325,7 +2325,7 @@ void MinetestApp::addProfilerGraphs(const RunStats &stats,
 }
 
 
-void MinetestApp::updateStats(RunStats *stats, const FpsControl &draw_times,
+void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 		f32 dtime)
 {
 
@@ -2381,7 +2381,7 @@ void MinetestApp::updateStats(RunStats *stats, const FpsControl &draw_times,
  Input handling
  ****************************************************************************/
 
-void MinetestApp::processUserInput(VolatileRunFlags *flags,
+void Game::processUserInput(VolatileRunFlags *flags,
 		InteractParams *interact_args, f32 dtime)
 {
 	// Reset input if window not active or some menu is active
@@ -2427,7 +2427,7 @@ void MinetestApp::processUserInput(VolatileRunFlags *flags,
 }
 
 
-void MinetestApp::processKeyboardInput(VolatileRunFlags *flags,
+void Game::processKeyboardInput(VolatileRunFlags *flags,
 		float *statustext_time,
 		float *jump_timer,
 		u32 *profiler_current_page,
@@ -2574,7 +2574,7 @@ void MinetestApp::processKeyboardInput(VolatileRunFlags *flags,
 }
 
 
-void MinetestApp::processItemSelection(u16 *new_playeritem)
+void Game::processItemSelection(u16 *new_playeritem)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -2613,7 +2613,7 @@ void MinetestApp::processItemSelection(u16 *new_playeritem)
 }
 
 
-void MinetestApp::dropSelectedItem()
+void Game::dropSelectedItem()
 {
 	IDropAction *a = new IDropAction();
 	a->count = 0;
@@ -2624,7 +2624,7 @@ void MinetestApp::dropSelectedItem()
 }
 
 
-void MinetestApp::openInventory()
+void Game::openInventory()
 {
 	infostream << "the_game: " << "Launching inventory" << std::endl;
 
@@ -2640,7 +2640,7 @@ void MinetestApp::openInventory()
 }
 
 
-void MinetestApp::openConsole()
+void Game::openConsole()
 {
 	if (!gui_chat_console->isOpenInhibited()) {
 		// Open up to over half of the screen
@@ -2650,7 +2650,7 @@ void MinetestApp::openConsole()
 }
 
 
-void MinetestApp::toggleFreeMove(float *statustext_time)
+void Game::toggleFreeMove(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"free_move disabled", L"free_move enabled" };
 
@@ -2664,7 +2664,7 @@ void MinetestApp::toggleFreeMove(float *statustext_time)
 }
 
 
-void MinetestApp::toggleFreeMoveAlt(float *statustext_time, float *jump_timer)
+void Game::toggleFreeMoveAlt(float *statustext_time, float *jump_timer)
 {
 	if (g_settings->getBool("doubletap_jump") && *jump_timer < 0.2f) {
 		toggleFreeMove(statustext_time);
@@ -2673,7 +2673,7 @@ void MinetestApp::toggleFreeMoveAlt(float *statustext_time, float *jump_timer)
 }
 
 
-void MinetestApp::toggleFast(float *statustext_time)
+void Game::toggleFast(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"fast_move disabled", L"fast_move enabled" };
 	bool fast_move = !g_settings->getBool("fast_move");
@@ -2687,7 +2687,7 @@ void MinetestApp::toggleFast(float *statustext_time)
 }
 
 
-void MinetestApp::toggleNoClip(float *statustext_time)
+void Game::toggleNoClip(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"noclip disabled", L"noclip enabled" };
 	bool noclip = !g_settings->getBool("noclip");
@@ -2701,7 +2701,7 @@ void MinetestApp::toggleNoClip(float *statustext_time)
 }
 
 
-void MinetestApp::toggleChat(float *statustext_time, bool *flag)
+void Game::toggleChat(float *statustext_time, bool *flag)
 {
 	static const wchar_t *msg[] = { L"Chat hidden", L"Chat shown" };
 
@@ -2711,7 +2711,7 @@ void MinetestApp::toggleChat(float *statustext_time, bool *flag)
 }
 
 
-void MinetestApp::toggleHud(float *statustext_time, bool *flag)
+void Game::toggleHud(float *statustext_time, bool *flag)
 {
 	static const wchar_t *msg[] = { L"HUD hidden", L"HUD shown" };
 
@@ -2722,7 +2722,7 @@ void MinetestApp::toggleHud(float *statustext_time, bool *flag)
 }
 
 
-void MinetestApp::toggleFog(float *statustext_time, bool *flag)
+void Game::toggleFog(float *statustext_time, bool *flag)
 {
 	static const wchar_t *msg[] = { L"Fog enabled", L"Fog disabled" };
 
@@ -2732,7 +2732,7 @@ void MinetestApp::toggleFog(float *statustext_time, bool *flag)
 }
 
 
-void MinetestApp::toggleDebug(float *statustext_time, bool *show_debug,
+void Game::toggleDebug(float *statustext_time, bool *show_debug,
 		bool *show_profiler_graph)
 {
 	// Initial / 3x toggle: Chat only
@@ -2754,7 +2754,7 @@ void MinetestApp::toggleDebug(float *statustext_time, bool *show_debug,
 }
 
 
-void MinetestApp::toggleUpdateCamera(float *statustext_time, bool *flag)
+void Game::toggleUpdateCamera(float *statustext_time, bool *flag)
 {
 	static const wchar_t *msg[] = {
 		L"Camera update enabled",
@@ -2767,7 +2767,7 @@ void MinetestApp::toggleUpdateCamera(float *statustext_time, bool *flag)
 }
 
 
-void MinetestApp::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags) {
+void Game::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags) {
 	static const wchar_t *msg[] = {
 		L"Block boundaries shown",
 		L"Block boundaries hidden"
@@ -2778,7 +2778,7 @@ void MinetestApp::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags
 }
 
 
-void MinetestApp::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
+void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 		u32 profiler_max_page)
 {
 	*profiler_current_page = (*profiler_current_page + 1) % (profiler_max_page + 1);
@@ -2799,7 +2799,7 @@ void MinetestApp::toggleProfiler(float *statustext_time, u32 *profiler_current_p
 }
 
 
-void MinetestApp::increaseViewRange(float *statustext_time)
+void Game::increaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
 	s16 range_new = range + 10;
@@ -2810,7 +2810,7 @@ void MinetestApp::increaseViewRange(float *statustext_time)
 }
 
 
-void MinetestApp::decreaseViewRange(float *statustext_time)
+void Game::decreaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
 	s16 range_new = range - 10;
@@ -2825,7 +2825,7 @@ void MinetestApp::decreaseViewRange(float *statustext_time)
 }
 
 
-void MinetestApp::toggleFullViewRange(float *statustext_time)
+void Game::toggleFullViewRange(float *statustext_time)
 {
 	static const wchar_t *msg[] = {
 		L"Disabled full viewing range",
@@ -2839,7 +2839,7 @@ void MinetestApp::toggleFullViewRange(float *statustext_time)
 }
 
 
-void MinetestApp::updateCameraDirection(CameraOrientation *cam,
+void Game::updateCameraDirection(CameraOrientation *cam,
 		VolatileRunFlags *flags)
 {
 	// float turn_amount = 0;	// Deprecated?
@@ -2914,7 +2914,7 @@ void MinetestApp::updateCameraDirection(CameraOrientation *cam,
 }
 
 
-void MinetestApp::updatePlayerControl(const CameraOrientation &cam)
+void Game::updatePlayerControl(const CameraOrientation &cam)
 {
 	PlayerControl control(
 		input->isKeyDown(getKeySetting("keymap_forward")),
@@ -2952,7 +2952,7 @@ void MinetestApp::updatePlayerControl(const CameraOrientation &cam)
 }
 
 
-inline void MinetestApp::step(f32 *dtime)
+inline void Game::step(f32 *dtime)
 {
 	bool can_be_and_is_paused =
 			(simple_singleplayer_mode && g_menumgr.pausesGame());
@@ -2976,7 +2976,7 @@ inline void MinetestApp::step(f32 *dtime)
 }
 
 
-void MinetestApp::processClientEvents(CameraOrientation *cam, float *damage_flash)
+void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 {
 	ClientEvent event = client->getClientEvent();
 
@@ -3218,7 +3218,7 @@ void MinetestApp::processClientEvents(CameraOrientation *cam, float *damage_flas
 }
 
 
-void MinetestApp::updateCamera(VolatileRunFlags *flags, u32 busy_time,
+void Game::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 		f32 dtime, float time_from_last_punch)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -3281,7 +3281,7 @@ void MinetestApp::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 }
 
 
-void MinetestApp::updateSound(f32 dtime)
+void Game::updateSound(f32 dtime)
 {
 	// Update sound listener
 	v3s16 camera_offset = camera->getOffset();
@@ -3303,8 +3303,8 @@ void MinetestApp::updateSound(f32 dtime)
 }
 
 
-void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
-		InteractParams *interactArgs, f32 dtime, bool show_hud, bool show_debug)
+void Game::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
+		InteractParams *runData, f32 dtime, bool show_hud, bool show_debug)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -3365,13 +3365,13 @@ void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 			client, player_position, camera_direction,
 			camera_position, shootline, d,
 			playeritem_def.liquids_pointable,
-			!interactArgs->ldown_for_dig,
+			!runData->ldown_for_dig,
 			camera_offset,
 			// output
 			highlight_boxes,
-			interactArgs->selected_object);
+			runData->selected_object);
 
-	if (pointed != interactArgs->pointed_old) {
+	if (pointed != runData->pointed_old) {
 		infostream << "Pointing at " << pointed.dump() << std::endl;
 /* node debug
 			MapNode nu = client->getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
@@ -3395,44 +3395,44 @@ void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 		- releasing left mouse button
 		- pointing away from node
 	*/
-	if (interactArgs->digging) {
+	if (runData->digging) {
 		if (input->getLeftReleased()) {
 			infostream << "Left button released"
 			           << " (stopped digging)" << std::endl;
-			interactArgs->digging = false;
-		} else if (pointed != interactArgs->pointed_old) {
+			runData->digging = false;
+		} else if (pointed != runData->pointed_old) {
 			if (pointed.type == POINTEDTHING_NODE
-					&& interactArgs->pointed_old.type == POINTEDTHING_NODE
+					&& runData->pointed_old.type == POINTEDTHING_NODE
 					&& pointed.node_undersurface
-							== interactArgs->pointed_old.node_undersurface) {
+							== runData->pointed_old.node_undersurface) {
 				// Still pointing to the same node, but a different face.
 				// Don't reset.
 			} else {
 				infostream << "Pointing away from node"
 				           << " (stopped digging)" << std::endl;
-				interactArgs->digging = false;
+				runData->digging = false;
 			}
 		}
 
-		if (!interactArgs->digging) {
-			client->interact(1, interactArgs->pointed_old);
+		if (!runData->digging) {
+			client->interact(1, runData->pointed_old);
 			client->setCrack(-1, v3s16(0, 0, 0));
-			interactArgs->dig_time = 0.0;
+			runData->dig_time = 0.0;
 		}
 	}
 
-	if (!interactArgs->digging && interactArgs->ldown_for_dig && !input->getLeftState()) {
-		interactArgs->ldown_for_dig = false;
+	if (!runData->digging && runData->ldown_for_dig && !input->getLeftState()) {
+		runData->ldown_for_dig = false;
 	}
 
-	interactArgs->left_punch = false;
+	runData->left_punch = false;
 
 	soundmaker->m_player_leftpunch_sound.name = "";
 
 	if (input->getRightState())
-		interactArgs->repeat_rightclick_timer += dtime;
+		runData->repeat_rightclick_timer += dtime;
 	else
-		interactArgs->repeat_rightclick_timer = 0;
+		runData->repeat_rightclick_timer = 0;
 
 	if (playeritem_def.usable && input->getLeftState()) {
 		if (input->getLeftClicked())
@@ -3440,19 +3440,19 @@ void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		ToolCapabilities playeritem_toolcap =
 				playeritem.getToolCapabilities(itemdef_manager);
-		handlePointingAtNode(interactArgs, pointed, playeritem_def,
+		handlePointingAtNode(runData, pointed, playeritem_def,
 				playeritem_toolcap, dtime);
 	} else if (pointed.type == POINTEDTHING_OBJECT) {
-		handlePointingAtObject(interactArgs, pointed, playeritem,
+		handlePointingAtObject(runData, pointed, playeritem,
 				player_position, show_debug);
 	} else if (input->getLeftState()) {
 		// When button is held down in air, show continuous animation
-		interactArgs->left_punch = true;
+		runData->left_punch = true;
 	}
 
-	interactArgs->pointed_old = pointed;
+	runData->pointed_old = pointed;
 
-	if (interactArgs->left_punch || input->getLeftClicked())
+	if (runData->left_punch || input->getLeftClicked())
 		camera->setDigging(0); // left click animation
 
 	input->resetLeftClicked();
@@ -3463,7 +3463,7 @@ void MinetestApp::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 }
 
 
-void MinetestApp::handlePointingAtNode(InteractParams *interactArgs,
+void Game::handlePointingAtNode(InteractParams *runData,
 		const PointedThing &pointed, const ItemDefinition &playeritem_def,
 		const ToolCapabilities &playeritem_toolcap, f32 dtime)
 {
@@ -3488,16 +3488,16 @@ void MinetestApp::handlePointingAtNode(InteractParams *interactArgs,
 		}
 	}
 
-	if (interactArgs->nodig_delay_timer <= 0.0 && input->getLeftState()
+	if (runData->nodig_delay_timer <= 0.0 && input->getLeftState()
 			&& client->checkPrivilege("interact")) {
-		handleDigging(interactArgs, pointed, nodepos, playeritem_toolcap, dtime);
+		handleDigging(runData, pointed, nodepos, playeritem_toolcap, dtime);
 	}
 
 	if ((input->getRightClicked() ||
-			interactArgs->repeat_rightclick_timer >=
+			runData->repeat_rightclick_timer >=
 			g_settings->getFloat("repeat_rightclick_time")) &&
 			client->checkPrivilege("interact")) {
-		interactArgs->repeat_rightclick_timer = 0;
+		runData->repeat_rightclick_timer = 0;
 		infostream << "Ground right-clicked" << std::endl;
 
 				// Sign special case, at least until formspec is properly implemented.
@@ -3564,26 +3564,26 @@ void MinetestApp::handlePointingAtNode(InteractParams *interactArgs,
 }
 
 
-void MinetestApp::handlePointingAtObject(InteractParams *interactArgs,
+void Game::handlePointingAtObject(InteractParams *runData,
 		const PointedThing &pointed,
 		const ItemStack &playeritem,
 		const v3f &player_position,
 		bool show_debug)
 {
-	infotext = narrow_to_wide(interactArgs->selected_object->infoText());
+	infotext = narrow_to_wide(runData->selected_object->infoText());
 
 	if (infotext == L"" && show_debug) {
-		infotext = narrow_to_wide(interactArgs->selected_object->debugInfoText());
+		infotext = narrow_to_wide(runData->selected_object->debugInfoText());
 	}
 
 	if (input->getLeftState()) {
 		bool do_punch = false;
 		bool do_punch_damage = false;
 
-		if (interactArgs->object_hit_delay_timer <= 0.0) {
+		if (runData->object_hit_delay_timer <= 0.0) {
 			do_punch = true;
 			do_punch_damage = true;
-			interactArgs->object_hit_delay_timer = object_hit_delay;
+			runData->object_hit_delay_timer = object_hit_delay;
 		}
 
 		if (input->getLeftClicked())
@@ -3591,17 +3591,17 @@ void MinetestApp::handlePointingAtObject(InteractParams *interactArgs,
 
 		if (do_punch) {
 			infostream << "Left-clicked object" << std::endl;
-			interactArgs->left_punch = true;
+			runData->left_punch = true;
 		}
 
 		if (do_punch_damage) {
 			// Report direct punch
-			v3f objpos = interactArgs->selected_object->getPosition();
+			v3f objpos = runData->selected_object->getPosition();
 			v3f dir = (objpos - player_position).normalize();
 
-			bool disable_send = interactArgs->selected_object->directReportPunch(
-					dir, &playeritem, interactArgs->time_from_last_punch);
-			interactArgs->time_from_last_punch = 0;
+			bool disable_send = runData->selected_object->directReportPunch(
+					dir, &playeritem, runData->time_from_last_punch);
+			runData->time_from_last_punch = 0;
 
 			if (!disable_send)
 				client->interact(0, pointed);
@@ -3613,15 +3613,15 @@ void MinetestApp::handlePointingAtObject(InteractParams *interactArgs,
 }
 
 
-void MinetestApp::handleDigging(InteractParams *interactArgs,
+void Game::handleDigging(InteractParams *runData,
 		const PointedThing &pointed, const v3s16 &nodepos,
 		const ToolCapabilities &playeritem_toolcap, f32 dtime)
 {
-	if (!interactArgs->digging) {
+	if (!runData->digging) {
 		infostream << "Started digging" << std::endl;
 		client->interact(0, pointed);
-		interactArgs->digging = true;
-		interactArgs->ldown_for_dig = true;
+		runData->digging = true;
+		runData->ldown_for_dig = true;
 	}
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -3645,9 +3645,9 @@ void MinetestApp::handleDigging(InteractParams *interactArgs,
 
 	if (params.diggable == false) {
 		// I guess nobody will wait for this long
-		interactArgs->dig_time_complete = 10000000.0;
+		runData->dig_time_complete = 10000000.0;
 	} else {
-		interactArgs->dig_time_complete = params.time;
+		runData->dig_time_complete = params.time;
 
 		if (g_settings->getBool("enable_particles")) {
 			const ContentFeatures &features =
@@ -3657,13 +3657,13 @@ void MinetestApp::handleDigging(InteractParams *interactArgs,
 		}
 	}
 
-	if (interactArgs->dig_time_complete >= 0.001) {
-		interactArgs->dig_index = (float)crack_animation_length
-				* interactArgs->dig_time
-				/ interactArgs->dig_time_complete;
+	if (runData->dig_time_complete >= 0.001) {
+		runData->dig_index = (float)crack_animation_length
+				* runData->dig_time
+				/ runData->dig_time_complete;
 	} else {
 		// This is for torches
-		interactArgs->dig_index = crack_animation_length;
+		runData->dig_index = crack_animation_length;
 	}
 
 	SimpleSoundSpec sound_dig = nodedef_manager->get(n).sound_dig;
@@ -3682,11 +3682,11 @@ void MinetestApp::handleDigging(InteractParams *interactArgs,
 	}
 
 	// Don't show cracks if not diggable
-	if (interactArgs->dig_time_complete >= 100000.0) {
-	} else if (interactArgs->dig_index < crack_animation_length) {
+	if (runData->dig_time_complete >= 100000.0) {
+	} else if (runData->dig_index < crack_animation_length) {
 		//TimeTaker timer("client.setTempMod");
 		//infostream<<"dig_index="<<dig_index<<std::endl;
-		client->setCrack(interactArgs->dig_index, nodepos);
+		client->setCrack(runData->dig_index, nodepos);
 	} else {
 		infostream << "Digging completed" << std::endl;
 		client->interact(2, pointed);
@@ -3702,33 +3702,33 @@ void MinetestApp::handleDigging(InteractParams *interactArgs,
 			 nodepos, features.tiles);
 		}
 
-		interactArgs->dig_time = 0;
-		interactArgs->digging = false;
+		runData->dig_time = 0;
+		runData->digging = false;
 
-		interactArgs->nodig_delay_timer =
-				interactArgs->dig_time_complete / (float)crack_animation_length;
+		runData->nodig_delay_timer =
+				runData->dig_time_complete / (float)crack_animation_length;
 
 		// We don't want a corresponding delay to
 		// very time consuming nodes
-		if (interactArgs->nodig_delay_timer > 0.3)
-			interactArgs->nodig_delay_timer = 0.3;
+		if (runData->nodig_delay_timer > 0.3)
+			runData->nodig_delay_timer = 0.3;
 
 		// We want a slight delay to very little
 		// time consuming nodes
 		const float mindelay = 0.15;
 
-		if (interactArgs->nodig_delay_timer < mindelay)
-			interactArgs->nodig_delay_timer = mindelay;
+		if (runData->nodig_delay_timer < mindelay)
+			runData->nodig_delay_timer = mindelay;
 
 		// Send event to trigger sound
 		MtEvent *e = new NodeDugEvent(nodepos, wasnode);
 		gamedef->event()->put(e);
 	}
 
-	if (interactArgs->dig_time_complete < 100000.0) {
-		interactArgs->dig_time += dtime;
+	if (runData->dig_time_complete < 100000.0) {
+		runData->dig_time += dtime;
 	} else {
-		interactArgs->dig_time = 0;
+		runData->dig_time = 0;
 		client->setCrack(-1, nodepos);
 	}
 
@@ -3736,8 +3736,8 @@ void MinetestApp::handleDigging(InteractParams *interactArgs,
 }
 
 
-void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
-		ProfilerGraph *graph, RunStats *stats, InteractParams *interactArgs,
+void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
+		ProfilerGraph *graph, RunStats *stats, InteractParams *runData,
 		f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -3750,25 +3750,25 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	auto pos_i = floatToInt(player_position, BS);
 	if (!flags.no_output) {
 
-	auto fog_was = interactArgs->fog_range;
+	auto fog_was = runData->fog_range;
 
 	if (draw_control->range_all) {
-		interactArgs->fog_range = 100000 * BS;
+		runData->fog_range = 100000 * BS;
 	} else if (!flags.no_output){
-		interactArgs->fog_range = draw_control->wanted_range * BS
+		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
 		if(flags.use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
-			interactArgs->fog_range *= (1.55 - 1.4*(float)humidity/100);
+			runData->fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}
 
-		interactArgs->fog_range = MYMIN(
-				interactArgs->fog_range,
+		runData->fog_range = MYMIN(
+				runData->fog_range,
 				(draw_control->farthest_drawn + 20) * BS);
-		interactArgs->fog_range *= 0.9;
+		runData->fog_range *= 0.9;
 
-		interactArgs->fog_range = fog_was + (interactArgs->fog_range-fog_was)/50;
+		runData->fog_range = fog_was + (runData->fog_range-fog_was)/50;
 	}
 
 	/*
@@ -3786,7 +3786,7 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 		float old_brightness = sky->getBrightness();
 		direct_brightness = client->getEnv().getClientMap()
-				.getBackgroundBrightness(MYMIN(interactArgs->fog_range * 1.2, 60 * BS),
+				.getBackgroundBrightness(MYMIN(runData->fog_range * 1.2, 60 * BS),
 					daynight_ratio, (int)(old_brightness * 255.5), &sunlight_seen)
 				    / 255.0;
 	}
@@ -3846,8 +3846,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		driver->setFog(
 				sky->getBgColor(),
 				video::EFT_FOG_LINEAR,
-				interactArgs->fog_range * 0.4,
-				interactArgs->fog_range * 1.0,
+				runData->fog_range * 0.4,
+				runData->fog_range * 1.0,
 				0.01,
 				false, // pixel fog
 				false // range fog
@@ -3873,7 +3873,7 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	v2u32 screensize = driver->getScreenSize();
 
 	updateChat(*client, dtime, flags.show_debug, screensize,
-			flags.show_chat, interactArgs->profiler_current_page,
+			flags.show_chat, runData->profiler_current_page,
 			*chat_backend, guitext_chat, font);
 
 	/*
@@ -3882,8 +3882,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 
 	bool update_wielded_item_trigger = true;
 
-	if (client->getPlayerItem() != interactArgs->new_playeritem) {
-		client->selectPlayerItem(interactArgs->new_playeritem);
+	if (client->getPlayerItem() != runData->new_playeritem) {
+		client->selectPlayerItem(runData->new_playeritem);
 	}
 
 	if (client->getLocalInventoryUpdated()) {
@@ -3909,16 +3909,16 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Update block draw list every 200ms or when camera direction has
 		changed much
 	*/
-	interactArgs->update_draw_list_timer += dtime;
+	runData->update_draw_list_timer += dtime;
 
 	//auto camera_direction = camera->getDirection();
 	auto camera_position = camera->getPosition();
 
 		if (!flags.no_output)
-		if (client->getEnv().getClientMap().m_drawlist_last || interactArgs->update_draw_list_timer >= 0.5 ||
-				interactArgs->update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
+		if (client->getEnv().getClientMap().m_drawlist_last || runData->update_draw_list_timer >= 0.5 ||
+				runData->update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				flags.camera_offset_changed){
-			interactArgs->update_draw_list_timer = 0;
+			runData->update_draw_list_timer = 0;
 			bool allow = true;
 #if CMAKE_THREADS && CMAKE_HAVE_FUTURE
 			if (g_settings->getBool("more_threads")) {
@@ -3936,10 +3936,10 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 #endif
 				client->getEnv().getClientMap().updateDrawList(driver, dtime);
 			if (allow)
-				interactArgs->update_draw_list_last_cam_pos = camera->getPosition();
+				runData->update_draw_list_last_cam_pos = camera->getPosition();
 		}
 
-	updateGui(&interactArgs->statustext_time, *stats, dtime, flags, cam);
+	updateGui(&runData->statustext_time, *stats, dtime, flags, cam);
 
 	/*
 	   make sure menu is on top
@@ -3990,8 +3990,8 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	/*
 		Damage flash
 	*/
-	if (interactArgs->damage_flash > 0.0) {
-		video::SColor color(std::min(interactArgs->damage_flash, 180.0f),
+	if (runData->damage_flash > 0.0) {
+		video::SColor color(std::min(runData->damage_flash, 180.0f),
 				180,
 				0,
 				0);
@@ -3999,7 +3999,7 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 					core::rect<s32>(0, 0, screensize.X, screensize.Y),
 					NULL);
 
-		interactArgs->damage_flash -= 100.0 * dtime;
+		runData->damage_flash -= 100.0 * dtime;
 	}
 
 	/*
@@ -4051,7 +4051,7 @@ void MinetestApp::updateFrame(std::vector<aabb3f> &highlight_boxes,
 }
 
 
-void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
+void Game::updateGui(float *statustext_time, const RunStats& stats,
 		f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam)
 {
 	v2u32 screensize = driver->getScreenSize();
@@ -4178,7 +4178,7 @@ void MinetestApp::updateGui(float *statustext_time, const RunStats& stats,
 
 
 /* Log times and stuff for visualization */
-inline void MinetestApp::updateProfilerGraphs(ProfilerGraph *graph)
+inline void Game::updateProfilerGraphs(ProfilerGraph *graph)
 {
 	Profiler::GraphValues values;
 	g_profiler->graphGet(values);
@@ -4196,7 +4196,7 @@ inline void MinetestApp::updateProfilerGraphs(ProfilerGraph *graph)
  * *Must* be called after device->run() so that device->getTimer()->getTime();
  * is correct
  */
-inline void MinetestApp::limitFps(FpsControl *params, f32 *dtime)
+inline void Game::limitFps(FpsControl *params, f32 *dtime)
 {
 	// not using getRealTime is necessary for wine
 	u32 time = device->getTimer()->getTime();
@@ -4249,7 +4249,7 @@ inline void MinetestApp::limitFps(FpsControl *params, f32 *dtime)
 }
 
 
-void MinetestApp::showOverlayMessage(const char *msg, float dtime,
+void Game::showOverlayMessage(const char *msg, float dtime,
 		int percent, bool draw_clouds)
 {
 	wchar_t *text = wgettext(msg);
@@ -4263,7 +4263,7 @@ void MinetestApp::showOverlayMessage(const char *msg, float dtime,
  Shutdown / cleanup
  ****************************************************************************/
 
-void MinetestApp::extendedResourceCleanup()
+void Game::extendedResourceCleanup()
 {
 	// Extended resource accounting
 	infostream << "Irrlicht resources after cleanup:" << std::endl;
