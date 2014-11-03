@@ -1230,7 +1230,6 @@ struct CameraOrientation {
 	f32 camera_pitch;  // "up/down"
 };
 
-//TODO: Needs a better name because fog_range etc are included
 struct GameRunData {
 	u16 dig_index;
 	u16 new_playeritem;
@@ -1238,6 +1237,7 @@ struct GameRunData {
 	bool digging;
 	bool ldown_for_dig;
 	bool left_punch;
+	bool update_wielded_item_trigger;
 	float nodig_delay_timer;
 	float dig_time;
 	float dig_time_complete;
@@ -1260,6 +1260,10 @@ struct GameRunData {
 
 	//freeminer:
 	v3f update_draw_list_last_cam_pos;
+
+
+	float time_of_day;
+	float time_of_day_smooth;
 };
 
 struct Jitter {
@@ -1419,7 +1423,7 @@ protected:
 	void updateProfilerGraphs(ProfilerGraph *graph);
 
 	// Misc
-	void limitFps(FpsControl *params, f32 *dtime);
+	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
 	void showOverlayMessage(const char *msg, float dtime, int percent,
 			bool draw_clouds = true);
@@ -1608,13 +1612,14 @@ void Game::run()
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	GameRunData runData = { 0 };
+	GameRunData runData         = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
 
 	runData.time_from_last_punch  = 10.0;
 	runData.profiler_max_page = 2;
+	runData.update_wielded_item_trigger = true;
 
 	flags.show_chat = true;
 	flags.show_hud = true;
@@ -1643,7 +1648,7 @@ void Game::run()
 			&runData.fog_range,
 			client,
 			local_inventory
-	));
+			));
 
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
 
@@ -2254,7 +2259,7 @@ inline void Game::updateInteractTimers(GameRunData *args, f32 dtime)
 }
 
 
-/* returns false if app should exit, otherwise true
+/* returns false if game should exit, otherwise true
  */
 inline bool Game::checkConnection()
 {
@@ -2269,7 +2274,7 @@ inline bool Game::checkConnection()
 }
 
 
-/* returns false if app should exit, otherwise true
+/* returns false if game should exit, otherwise true
  */
 inline bool Game::handleCallbacks()
 {
@@ -3776,8 +3781,8 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	*/
 	u32 daynight_ratio = client->getEnv().getDayNightRatio();
 	float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
-	float direct_brightness = 0;
-	bool sunlight_seen = false;
+	float direct_brightness;
+	bool sunlight_seen;
 
 	if (g_settings->getBool("free_move")) {
 		direct_brightness = time_brightness;
@@ -3791,19 +3796,18 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 				    / 255.0;
 	}
 
-	float time_of_day = 0;
-	float time_of_day_smooth = 0;
+	float time_of_day = runData->time_of_day;
+	float time_of_day_smooth = runData->time_of_day_smooth;
 
 	time_of_day = client->getEnv().getTimeOfDayF();
 
 	const float maxsm = 0.05;
+	const float todsm = 0.05;
 
 	if (fabs(time_of_day - time_of_day_smooth) > maxsm &&
 			fabs(time_of_day - time_of_day_smooth + 1.0) > maxsm &&
 			fabs(time_of_day - time_of_day_smooth - 1.0) > maxsm)
 		time_of_day_smooth = time_of_day;
-
-	const float todsm = 0.05;
 
 	if (time_of_day_smooth > 0.8 && time_of_day < 0.2)
 		time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
@@ -3812,6 +3816,8 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		time_of_day_smooth = time_of_day_smooth * (1.0 - todsm)
 				+ time_of_day * todsm;
 
+	runData->time_of_day = time_of_day;
+	runData->time_of_day_smooth = time_of_day_smooth;
 
 	sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 			sunlight_seen, camera->getCameraMode(), player->getYaw(),
@@ -3880,29 +3886,25 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Inventory
 	*/
 
-	bool update_wielded_item_trigger = true;
-
-	if (client->getPlayerItem() != runData->new_playeritem) {
+	if (client->getPlayerItem() != runData->new_playeritem)
 		client->selectPlayerItem(runData->new_playeritem);
-	}
 
+	// Update local inventory if it has changed
 	if (client->getLocalInventoryUpdated()) {
 		//infostream<<"Updating local inventory"<<std::endl;
 		client->getLocalInventory(*local_inventory);
-
-		update_wielded_item_trigger = true;
+		runData->update_wielded_item_trigger = true;
 	}
 
-	if (update_wielded_item_trigger) {
-		update_wielded_item_trigger = false;
+	if (runData->update_wielded_item_trigger) {
 		// Update wielded tool
 		InventoryList *mlist = local_inventory->getList("main");
-		ItemStack item;
 
-		if (mlist  && (client->getPlayerItem() < mlist->getSize()))
-			item = mlist->getItem(client->getPlayerItem());
-
-		camera->wield(item, client->getPlayerItem());
+		if (mlist && (client->getPlayerItem() < mlist->getSize())) {
+			ItemStack item = mlist->getItem(client->getPlayerItem());
+			camera->wield(item, client->getPlayerItem());
+		}
+		runData->update_wielded_item_trigger = false;
 	}
 
 	/*
@@ -4196,28 +4198,28 @@ inline void Game::updateProfilerGraphs(ProfilerGraph *graph)
  * *Must* be called after device->run() so that device->getTimer()->getTime();
  * is correct
  */
-inline void Game::limitFps(FpsControl *params, f32 *dtime)
+inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 {
 	// not using getRealTime is necessary for wine
 	u32 time = device->getTimer()->getTime();
 
-	u32 last_time = params->last_time;
+	u32 last_time = fps_timings->last_time;
 
 	if (time > last_time) // Make sure time hasn't overflowed
-		params->busy_time = time - last_time;
+		fps_timings->busy_time = time - last_time;
 	else
-		params->busy_time = 0;
+		fps_timings->busy_time = 0;
 
 	u32 frametime_min = 1000 / (g_menumgr.pausesGame()
 			? g_settings->getFloat("pause_fps_max")
 			: g_settings->getFloat("fps_max"));
 
-	if (params->busy_time < frametime_min) {
-		params->sleep_time = frametime_min - params->busy_time;
-		device->sleep(params->sleep_time);
-		time += params->sleep_time;
+	if (fps_timings->busy_time < frametime_min) {
+		fps_timings->sleep_time = frametime_min - fps_timings->busy_time;
+		device->sleep(fps_timings->sleep_time);
+		time += fps_timings->sleep_time;
 	} else {
-		params->sleep_time = 0;
+		fps_timings->sleep_time = 0;
 	}
 
 	if (time > last_time) // Checking for overflow
@@ -4225,7 +4227,7 @@ inline void Game::limitFps(FpsControl *params, f32 *dtime)
 	else
 		*dtime = 0.03; // Choose 30fps as fallback in overflow case
 
-	params->last_time = time;
+	fps_timings->last_time = time;
 
 #if 0
 
@@ -4256,7 +4258,6 @@ void Game::showOverlayMessage(const char *msg, float dtime,
 	draw_load_screen(text, device, guienv, font, dtime, percent, draw_clouds);
 	delete[] text;
 }
-
 
 
 /****************************************************************************
@@ -4307,7 +4308,7 @@ bool the_game(bool *kill,
 		const SubgameSpec &gamespec,        // Used for local game
 		bool simple_singleplayer_mode)
 {
-	Game app;
+	Game game;
 
 	/* Make a copy of the server address because if a local singleplayer server
 	 * is created then this is updated and we don't want to change the value
@@ -4319,15 +4320,14 @@ bool the_game(bool *kill,
 	try {
 
 		bool started = false;
-		if (app.startup(kill, random_input, input, device, font, map_dir,
+		if (game.startup(kill, random_input, input, device, font, map_dir,
 					playername, password, &server_address, port,
 					&error_message, &chat_backend, gamespec,
 					simple_singleplayer_mode)) {
 			started = true;
 
-			//std::cout << "App started" << std::endl;
-			app.run();
-			app.shutdown();
+			game.run();
+			game.shutdown();
 		}
 
 	} catch (SerializationError &e) {
@@ -4343,5 +4343,5 @@ bool the_game(bool *kill,
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 	}
 
-	return !started && app.flags.reconnect;
+	return !started && game.flags.reconnect;
 }
