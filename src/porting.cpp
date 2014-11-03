@@ -61,7 +61,7 @@ bool * signal_handler_killstatus(void)
 	return &g_killed;
 }
 
-std::atomic_bool g_sighup(false), g_siginfo(false);
+std::atomic_bool g_sighup, g_siginfo;
 
 #if !defined(_WIN32) // POSIX
 	#include <signal.h>
@@ -102,6 +102,9 @@ void sigint_handler(int sig)
 
 void signal_handler_init(void)
 {
+	g_sighup = false;
+	g_siginfo = false;
+
 	signal(SIGINT, sigint_handler);
 	signal(SIGTERM, sigint_handler);
 	signal(SIGHUP, sigint_handler);
