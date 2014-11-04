@@ -312,6 +312,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("mg_flags", "");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
+	settings->setDefault("mg_indev", ""); // configuration in json struct
 
 
 	// IPv6
