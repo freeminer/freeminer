@@ -169,7 +169,7 @@ struct TestUtilities: public TestBase
 		UASSERT(is_yes("0") == false);
 		UASSERT(is_yes("1") == true);
 		UASSERT(is_yes("2") == true);
-		const char *ends[] = {"abc", "c", "bc", NULL};
+		const char *ends[] = {"abc", "c", "bc", "", NULL};
 		UASSERT(removeStringEnd("abc", ends) == "");
 		UASSERT(removeStringEnd("bc", ends) == "b");
 		UASSERT(removeStringEnd("12c", ends) == "12");
@@ -178,6 +178,30 @@ struct TestUtilities: public TestBase
 				== "%22Aardvarks%20lurk%2C%20OK%3F%22");
 		UASSERT(urldecode("%22Aardvarks%20lurk%2C%20OK%3F%22")
 				== "\"Aardvarks lurk, OK?\"");
+		UASSERT(padStringRight("hello", 8) == "hello   ");
+		UASSERT(str_equal(narrow_to_wide("abc"), narrow_to_wide("abc")));
+		UASSERT(str_equal(narrow_to_wide("ABC"), narrow_to_wide("abc"), true));
+		UASSERT(trim("  a") == "a");
+		UASSERT(trim("   a  ") == "a");
+		UASSERT(trim("a   ") == "a");
+		UASSERT(trim("") == "");
+		UASSERT(mystoi("123", 0, 1000) == 123);
+		UASSERT(mystoi("123", 0, 10) == 10);
+		std::string test_str;
+		test_str = "Hello there";
+		str_replace(test_str, "there", "world");
+		UASSERT(test_str == "Hello world");
+		test_str = "ThisAisAaAtest";
+		str_replace_char(test_str, 'A', ' ');
+		UASSERT(test_str == "This is a test");
+		UASSERT(string_allowed("hello", "abcdefghijklmno") == true);
+		UASSERT(string_allowed("123", "abcdefghijklmno") == false);
+		UASSERT(string_allowed_blacklist("hello", "123") == true);
+		UASSERT(string_allowed_blacklist("hello123", "123") == false);
+		UASSERT(wrap_rows("12345678",4) == "1234\n5678");
+		UASSERT(is_number("123") == true);
+		UASSERT(is_number("") == false);
+		UASSERT(is_number("123a") == false);
 	}
 };
 
@@ -1504,35 +1528,46 @@ struct TestSocket: public TestBase
 
 		// IPv6 socket test
 		{
-			UDPSocket socket6(true);
-			socket6.Bind(address6);
+			UDPSocket socket6;
 
-			const char sendbuffer[] = "hello world!";
-			IPv6AddressBytes bytes;
-			bytes.bytes[15] = 1;
-			
-			try {
-				socket6.Send(Address(&bytes, port), sendbuffer, sizeof(sendbuffer));
+			if (!socket6.init(true, true)) {
+				/* Note: Failing to create an IPv6 socket is not technically an
+				   error because the OS may not support IPv6 or it may
+				   have been disabled. IPv6 is not /required/ by
+				   minetest and therefore this should not cause the unit
+				   test to fail
+				*/
+				dstream << "WARNING: IPv6 socket creation failed (unit test)"
+				        << std::endl;
+			} else {
+				const char sendbuffer[] = "hello world!";
+				IPv6AddressBytes bytes;
+				bytes.bytes[15] = 1;
 
-				sleep_ms(50);
+				socket6.Bind(address6);
 
-				char rcvbuffer[256];
-				memset(rcvbuffer, 0, sizeof(rcvbuffer));
-				Address sender;
-				for(;;)
-				{
-					int bytes_read = socket6.Receive(sender, rcvbuffer, sizeof(rcvbuffer));
-					if(bytes_read < 0)
-						break;
+				try {
+					socket6.Send(Address(&bytes, port), sendbuffer, sizeof(sendbuffer));
+
+					sleep_ms(50);
+
+					char rcvbuffer[256] = { 0 };
+					Address sender;
+
+					for(;;) {
+						if (socket6.Receive(sender, rcvbuffer, sizeof(rcvbuffer )) < 0)
+							break;
+					}
+					//FIXME: This fails on some systems
+					UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
+					UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr,
+							Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
 				}
-				//FIXME: This fails on some systems
-				UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer))==0);
-				UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr, Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
+				catch (SendFailedException e) {
+					errorstream << "IPv6 support enabled but not available!"
+					            << std::endl;
+				}
 			}
-			catch (SendFailedException e) {
-				errorstream << "IPv6 support enabled but not available!" << std::endl;
- 			}
-			
 		}
 
 		// IPv4 socket test
@@ -1541,43 +1576,39 @@ struct TestSocket: public TestBase
 			socket.Bind(address);
 
 			const char sendbuffer[] = "hello world!";
-			socket.Send(Address(127,0,0,1,port), sendbuffer, sizeof(sendbuffer));
+			socket.Send(Address(127, 0, 0 ,1, port), sendbuffer, sizeof(sendbuffer));
 
 			sleep_ms(50);
 
-			char rcvbuffer[256];
-			memset(rcvbuffer, 0, sizeof(rcvbuffer));
+			char rcvbuffer[256] = { 0 };
 			Address sender;
-			for(;;)
-			{
-				int bytes_read = socket.Receive(sender, rcvbuffer, sizeof(rcvbuffer));
-				if(bytes_read < 0)
+			for(;;) {
+				if (socket.Receive(sender, rcvbuffer, sizeof(rcvbuffer)) < 0)
 					break;
 			}
 			//FIXME: This fails on some systems
-			UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer))==0);
-			UASSERT(sender.getAddress().sin_addr.s_addr == Address(127,0,0,1, 0).getAddress().sin_addr.s_addr);
+			UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
+			UASSERT(sender.getAddress().sin_addr.s_addr ==
+					Address(127, 0, 0, 1, 0).getAddress().sin_addr.s_addr);
 		}
 	}
 };
 
-#define TEST(X)\
-{\
+#define TEST(X) do {\
 	X x;\
 	infostream<<"Running " #X <<std::endl;\
 	x.Run();\
 	tests_run++;\
 	tests_failed += x.test_failed ? 1 : 0;\
-}
+} while (0)
 
-#define TESTPARAMS(X, ...)\
-{\
+#define TESTPARAMS(X, ...) do {\
 	X x;\
 	infostream<<"Running " #X <<std::endl;\
 	x.Run(__VA_ARGS__);\
 	tests_run++;\
 	tests_failed += x.test_failed ? 1 : 0;\
-}
+} while (0)
 
 void run_tests()
 {

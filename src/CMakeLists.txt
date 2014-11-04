@@ -488,7 +488,6 @@ set(FMcommon_SRCS
 set(common_SRCS
 	ban.cpp
 	base64.cpp
-	biome.cpp
 	cavegen.cpp
 	clientiface.cpp
 	collision.cpp
@@ -526,6 +525,10 @@ set(common_SRCS
 	mapgen_v7.cpp
 	mapnode.cpp
 	mapsector.cpp
+	mg_biome.cpp
+	mg_decoration.cpp
+	mg_ore.cpp
+	mg_schematic.cpp
 	mods.cpp
 	nameidmapping.cpp
 	nodedef.cpp

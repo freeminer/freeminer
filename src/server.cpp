@@ -47,7 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "craftdef.h"
 #include "emerge.h"
 #include "mapgen.h"
-#include "biome.h"
+#include "mg_biome.h"
 #include "content_mapnode.h"
 #include "content_nodemeta.h"
 #include "content_abm.h"

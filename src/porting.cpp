@@ -61,7 +61,7 @@ bool * signal_handler_killstatus(void)
 	return &g_killed;
 }
 
-std::atomic_bool g_sighup(false), g_siginfo(false);
+std::atomic_bool g_sighup, g_siginfo;
 
 #if !defined(_WIN32) // POSIX
 	#include <signal.h>
@@ -69,7 +69,7 @@ std::atomic_bool g_sighup(false), g_siginfo(false);
 void sigint_handler(int sig)
 {
 	switch(sig) {
-#if defined(__need_siginfo_t)
+#if defined(SIGINFO)
 		case SIGINFO:
 			g_siginfo = true;
 		break;
@@ -102,10 +102,13 @@ void sigint_handler(int sig)
 
 void signal_handler_init(void)
 {
+	g_sighup = false;
+	g_siginfo = false;
+
 	signal(SIGINT, sigint_handler);
 	signal(SIGTERM, sigint_handler);
 	signal(SIGHUP, sigint_handler);
-#if defined(__need_siginfo_t)
+#if defined(SIGINFO)
 	signal(SIGINFO, sigint_handler);
 #endif
 }

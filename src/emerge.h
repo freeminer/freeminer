@@ -41,8 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	infostream << "EmergeThread: " x << std::endl; }
 
 class EmergeThread;
-//class Mapgen;
-//struct MapgenFactory;
 class Biome;
 class BiomeDefManager;
 class Decoration;

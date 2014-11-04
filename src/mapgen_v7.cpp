@@ -37,7 +37,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "dungeongen.h"
 #include "cavegen.h"
 #include "treegen.h"
-#include "biome.h"
+#include "mg_biome.h"
+#include "mg_ore.h"
+#include "mg_decoration.h"
 #include "mapgen_v7.h"
 #include "mapgen_indev.h" //farscale
 #include "environment.h"

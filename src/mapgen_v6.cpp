@@ -38,6 +38,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "dungeongen.h"
 #include "cavegen.h"
 #include "treegen.h"
+#include "mg_ore.h"
+#include "mg_decoration.h"
 #include "mapgen_v6.h"
 #include "environment.h"
 

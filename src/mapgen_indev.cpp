@@ -35,6 +35,9 @@ MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emer
 {
 	sp = (MapgenIndevParams *)params->sparams;
 
+	this->ystride = csize.X;
+	this->zstride = csize.X * csize.Y;
+
 	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
@@ -56,6 +59,7 @@ void MapgenIndev::calculateNoise() {
 	// Need to adjust for the original implementation's +.5 offset...
 	if (!(flags & MG_FLAT)) {
 
+		if (sp->float_islands && y >= sp->float_islands) {
 		noise_float_islands1->perlinMap3D(
 			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
 			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
@@ -74,13 +78,16 @@ void MapgenIndev::calculateNoise() {
 			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
 			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
 		noise_float_islands3->transformNoiseMap(x, y, z);
+		}
 
+		if (sp->underground_filler && y <= sp->underground_filler) {
 		noise_filler->perlinMap3D(
 			x + 0.33 * noise_filler->np->spread.X * farscale(noise_filler->np->farspread, x, y, z),
 			y + 0.33 * noise_filler->np->spread.Y * farscale(noise_filler->np->farspread, x, y, z),
 			z + 0.33 * noise_filler->np->spread.Z * farscale(noise_filler->np->farspread, x, y, z)
 		);
 		noise_filler->transformNoiseMap(x, y, z);
+		}
 
 	}
 }
@@ -313,7 +320,7 @@ int MapgenIndev::generateGround() {
 		filler.emplace_back(n_gravel);
 		filler.emplace_back(n_stone);
 	}
-	if (node_max.Y < -100 && node_max.Y > -3000) {
+	if (node_max.Y < -100 && node_max.Y > -2000) {
 		filler.emplace_back(n_water_source);
 		filler.emplace_back(n_stone);
 	}
@@ -321,7 +328,7 @@ int MapgenIndev::generateGround() {
 		filler.emplace_back(n_air);
 		filler.emplace_back(n_stone);
 	}
-	if (node_max.Y < -10000) {
+	if (node_max.Y < -5000) {
 		filler.emplace_back(n_lava_source);
 	}
 	}
@@ -343,10 +350,14 @@ int MapgenIndev::generateGround() {
 		v3s16 em = vm->m_area.getExtent();
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 
-		for (s16 y = node_min.Y; y <= node_max.Y; y++, index3++) {
+		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+				int j = (z - node_min.Z) * zstride +
+						(y - node_min.Y) * ystride +
+						(x - node_min.X);
+
 				if (y <= surface_y) {
-					auto filler_index = rangelim(myround((noise_filler->result[index3]/((noise_filler->np->offset+noise_filler->np->scale) - (noise_filler->np->offset-noise_filler->np->scale))) * filler.size()),0, filler.size()-1);
+					auto filler_index = rangelim(myround((noise_filler->result[j]/((noise_filler->np->offset+noise_filler->np->scale) - (noise_filler->np->offset-noise_filler->np->scale))) * filler.size()),0, filler.size()-1);
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ?
 						n_desert_stone : filler[filler_index];
 				} else if (y <= water_level) {

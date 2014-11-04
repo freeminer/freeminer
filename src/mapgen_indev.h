@@ -53,6 +53,9 @@ public:
 	Noise *noise_filler;
 	MapgenIndevParams *sp;
 
+	int ystride;
+	int zstride;
+
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();
 

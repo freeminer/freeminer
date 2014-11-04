@@ -42,7 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "emerge.h"
 #include "mapgen_v6.h"
-#include "biome.h"
+#include "mg_biome.h"
 #include "config.h"
 #include "server.h"
 #include "database.h"
@@ -3278,7 +3278,7 @@ void ServerMap::loadMapMeta()
 	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
 	if (!is.good()) {
 		errorstream << "ServerMap::loadMapMeta(): "
-				<< "could not open" << fullpath << std::endl;
+				<< "could not open " << fullpath << std::endl;
 		throw FileNotGoodException("Cannot open map metadata");
 	}
 
