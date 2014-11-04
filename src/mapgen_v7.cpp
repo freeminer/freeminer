@@ -350,6 +350,7 @@ void MapgenV7::calculateNoise() {
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
 	
+	if (float_islands && y >= float_islands) {
 		noise_float_islands1->perlinMap3D(
 			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
 			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
@@ -368,6 +369,7 @@ void MapgenV7::calculateNoise() {
 			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
 			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
 		noise_float_islands3->transformNoiseMap(x, y, z);
+	}
 
 	//printf("calculateNoise: %dus\n", t.stop());
 }

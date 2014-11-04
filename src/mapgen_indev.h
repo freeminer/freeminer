@@ -36,7 +36,9 @@ struct MapgenIndevParams : public MapgenV6Params {
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
-	NoiseParams np_filler;
+	NoiseParams np_layer;
+
+	Json::Value paramsj;
 
 	MapgenIndevParams();
 	~MapgenIndevParams() {}
@@ -45,16 +47,26 @@ struct MapgenIndevParams : public MapgenV6Params {
 	void writeParams(Settings *settings);
 };
 
+typedef struct {
+	content_t content;
+	MapNode node;
+	int height_min;
+	int height_max;
+	int thickness;
+} layer_data;
+
 class MapgenIndev : public MapgenV6 {
 public:
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
-	Noise *noise_filler;
+	Noise *noise_layer;
 	MapgenIndevParams *sp;
 
 	int ystride;
 	int zstride;
+
+	std::vector<layer_data> layers;
 
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();

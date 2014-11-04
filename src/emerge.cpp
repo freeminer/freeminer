@@ -385,7 +385,8 @@ void EmergeManager::loadParamsFromSettings(Settings *settings) {
 	settings->getS16NoEx("chunksize",    params.chunksize);
 	settings->getFlagStrNoEx("mg_flags", params.flags, flagdesc_mapgen);
 
-	delete params.sparams;
+	//delete params.sparams;
+	if (!params.sparams)
 	params.sparams = createMapgenParams(params.mg_name);
 	if (params.sparams)
 		params.sparams->readParams(settings);

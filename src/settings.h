@@ -146,7 +146,7 @@ public:
 	void updateValue(const Settings &other, const std::string &name);
 	void update(const Settings &other);
 
-	Json::Value getJson(const std::string & name);
+	Json::Value getJson(const std::string & name, const Json::Value & def = Json::Value());
 	void setJson(const std::string & name, const Json::Value & value);
 
 private:

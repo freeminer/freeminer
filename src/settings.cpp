@@ -704,12 +704,12 @@ void Settings::clearNoLock()
 }
 
 
-	Json::Value Settings::getJson(const std::string & name)
+	Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 	{
 		Json::Value root;
 		std::string value = get(name);
 		if (value.empty())
-			return root;
+			return def;
 		if (!json_reader.parse( value, root ) ) {
 			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
 		}
