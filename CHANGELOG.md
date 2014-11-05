@@ -3,50 +3,74 @@ Engine
 
 ### 0.4.10.4 (dev)
 
-  * Initial support for LevelDB maintenance.
-    Temporarily closes db for backups.
   * License switched to GPLv3
   * Start using C++11 features
-  * Server: lots of speed optimizations
-  * Real liquids
-  * Real liquid optimized: processing up to 150000 nodes per second
-  * Weather (now fully adjustable)
-  melting, freezing, seasons change, [ugly] snow and rain
-  * Rewritten pathfinder (Selat)
-  * API for key-value storage (Selat)
-  * Circuit API (Selat)
-  * Auto reconnect if connection lost
-  * Do not save not changed generated blocks (reduce base size 5-20x)
-  `save_generated_block = 0`
-  * Farmesh - lose details on far meshes which allows
-  rendering up to 1000 blocks (very dev) `farmesh = 2`
-  * Save user/pass for every server `password_save = 1`
-  * Unicode support in chat, inputs, player names
-  * Allow any player names `enable_any_name = 1` (server)
-  * Optimized block sending * farther range
-  * Various death messages
-  * Mandelbulber fractal generator included for math mapgen
-  * Lot of stability fixes
   * `RUN_IN_PLACE` is now true by default.
   ALL PACKAGE MAINTAINERS NEED TO ADD `-DRUN_IN_PLACE=0` to build scripts
-  * Added map thread (liquid, lighting, map save)
-  (Server step closer to 100 ms)
-  * Client: Removed vmanip from mesh making * Adds some FPS
-  * Auto repair broken LevelDB
-  * Math and indev mapgens
-  * v5 mapgen
-  * Minimap (gsmapper) (dev)
-  * Drowning in sand/dirt/gravel
-  * Initial shadows from objects `shadows = 1`
-  * Using more threads for server (server, env, liquid, map, sendblock),
+  * Lot of stability fixes
+
+#### Server
+  * Using more threads for server (server (processing packets), env(ABMs, steps, timers), liquid, map (lighting, map save), sendblock),
     removed envlock (lua is still singlethreaded).
-    Can be disable by `more_threads = 0` or cmake: `-DDISABLE_THREADS=1`
+    (Server step now 30-50 ms)
+    Can be disabled by `more_threads = 0` or cmake: `-DDISABLE_THREADS=1` (also disables locking)
+  * Lots of speed optimizations
+  * Rewritten pathfinder (Selat)
+  * Circuit API (Selat)
+  * Allow any player names `enable_any_name = 1`
+  * Optimized block sending for farther range
+  * Various death messages
+
+#### Mapgens
+  * Indev mapgen - enchanced v6 mapgen, features:
+    Farlands -  when moving to edges of map - higher mountains, larger biomes
+    Floating islands (starts at ~ 500 , higher - bigger)
+    Huge caves
+    Water caves
+    Underground layers (not only boring stone) config: games/default/mods/default/mapgen.lua : mg_indev = { ...
+  * Math mapgen
+    Generate various fractal worlds via Mandelbulber ( http://www.mandelbulber.com/ )
+    menger_sponge, hypercomplex, xenodreambuie, mandelbox, ...
+    examples: http://forum.freeminer.org/threads/math-mapgen.34/
+  * v5 mapgen
+
+#### Core support for game features
+    Its enabled in freeminer's default game, but other games need to specify appropriate params
+  * Real liquids
+    Liquids act as liquid: flow down, keep constant volume, can fill holes and caves
+    processing up to 50000 nodes per second
+  * Weather (now fully adjustable)
+    melting, freezing, seasons change, [ugly] snow and rain
+  * Hot-cold nodes - can freeze-melt neighbour nodes (eg melt ice around torch/lava/fire/... )
+  * sand/dirt/gravel now flows as liquid with one level
+  * Drowning in sand/dirt/gravel
+  * Drop torches, plants from liquid
+
+#### Client
+  * Farmesh - lose details on far meshes which allows
+  rendering up to 1000 blocks (very dev) `farmesh = 2`
+  * Unicode support in chat, inputs, player names
+  * Minimap (gsmapper) (dev) `hud_map = 1`
+  * Save user/pass for every server `password_save = 1`
+  * Auto reconnect if connection lost
+  * Initial shadows from objects `shadows = 1`
+
+#### Storage
+  * API for key-value storage (Selat)
+  * Do not save not changed generated blocks (reduce base size 5-20x)
+  `save_generated_block = 0`
+  * Auto repair broken LevelDB
+  * Initial support for LevelDB maintenance.
+    Temporarily closes db for backups or mapper tools. 
+    `killall -HUP freeminerserver; do something; killall -HUP freeminerserver`
 
 #### Incompatible with minetest:
 
   * Players data files saved to LevelDB storage
   * New LevelDB map key format: "a10,-11,12" instead of 64bit number
   (freeminer can read minetest maps, but writes to new format)
+
+
 
 ### 0.4.9.3 (Jan 22, 2014)
 
@@ -129,7 +153,6 @@ Game
 
   * TNT mod
   * Bucket fixes
-  * Drop torches, plants from liquid
 
 ### 0.4.8.0 (Nov 28, 2013)
 

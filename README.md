@@ -41,6 +41,10 @@ Fedora:
 sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel luajit-devel leveldb-devel snappy-devel gettext-devel
 ```
 
+Recommended minimum compiler version:
+gcc 4.8
+clang 3.3
+
 Download source code:
 ```
 git clone --recursive https://github.com/freeminer/freeminer.git
