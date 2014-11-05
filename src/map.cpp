@@ -799,6 +799,8 @@ u32 Map::updateLighting(enum LightBank bank,
 					<<pos.X<<","<<pos.Y<<","<<pos.Z<<") not valid"
 					<<std::endl;*/
 
+			block->setLightingExpired(true);
+
 			// Bottom sunlight is not valid; get the block and loop to it
 
 			pos.Y--;
@@ -847,6 +849,11 @@ u32 Map::updateLighting(enum LightBank bank,
 	{
 		TimeTaker timer("updateLighting: spreadLight");
 		spreadLight(bank, light_sources, modified_blocks);
+	}
+
+	for (auto & ir : blocks_to_update) {
+		auto block = getBlockNoCreateNoEx(ir.first);
+		block->setLightingExpired(false);
 	}
 
 	/*if(debug)
