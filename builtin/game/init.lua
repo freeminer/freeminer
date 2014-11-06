@@ -26,3 +26,6 @@ dofile(gamepath.."voxelarea.lua")
 dofile(gamepath.."forceloading.lua")
 dofile(gamepath.."statbars.lua")
 
+if core.setting_getbool("mod_debugging") then
+	dofile(gamepath.."mod_debugging.lua")
+end

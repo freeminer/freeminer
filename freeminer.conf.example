@@ -349,6 +349,9 @@
 #    "error"  = abort on usage of deprecated call (suggested for mod developers)
 #deprecated_lua_api_handling = legacy
 
+# Report broken recipes in mods
+#mod_debugging = false
+
 # Mod profiler
 #mod_profiling = false
 # Detailed mod profile data
