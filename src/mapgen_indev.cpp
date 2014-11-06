@@ -28,23 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "environment.h"
 
-///////////////////////////////////////////////////////////////////////////////
-
-MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
-	: MapgenV6(mapgenid, params, emerge)
-{
-	sp = (MapgenIndevParams *)params->sparams;
-
-	this->ystride = csize.X;
-	this->zstride = csize.X * csize.Y;
-
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
-	noise_layer          = new Noise(&sp->np_layer,         seed, csize.X, csize.Y, csize.Z);
+void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & layersj) {
 
 	INodeDefManager *ndef = emerge->ndef;
-	const auto & layersj = sp->paramsj["layers"];
+	layers_n_stone = MapNode(ndef->getId("mapgen_stone"));
 	if (!layersj.empty())
 		for (int i = 0; i < layersj.size(); ++i) {
 			if (layersj[i].empty())
@@ -64,15 +51,65 @@ MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emer
 
 			layers.emplace_back(layer);
 		}
+	if (layers.empty()) {
+		infostream << "layers empty, using only default:stone"<<std::endl;
+	}
+}
+
+void Mapgen_features::layers_prepare(const v3s16 & node_min, const v3s16 & node_max) {
+	int x = node_min.X;
+	int y = node_min.Y;
+	int z = node_min.Z;
+
+		noise_layers->perlinMap3D(
+			x + 0.33 * noise_layers->np->spread.X * farscale(noise_layers->np->farspread, x, y, z),
+			y + 0.33 * noise_layers->np->spread.Y * farscale(noise_layers->np->farspread, x, y, z),
+			z + 0.33 * noise_layers->np->spread.Z * farscale(noise_layers->np->farspread, x, y, z)
+		);
+		noise_layers->transformNoiseMap(x, y, z);
+
+	for (const auto & layer : layers) {
+		if (layer.height_max < node_min.Y || layer.height_min > node_max.Y)
+			continue;
+		for (int i = 0; i < layer.thickness; ++i)
+			layers_node.emplace_back(layer.node);
+	}
+
+	if (layers_node.empty()) {
+		layers_node.emplace_back(layers_n_stone);
+	}
+}
+
+MapNode Mapgen_features::layers_get(int index) {
+	auto layer_index = rangelim(myround((noise_layers->result[index]/((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale))) * layers_node.size()),0, layers_node.size()-1);
+	return layers_node[layer_index];
+}
+
+Mapgen_features::~Mapgen_features() {
+	delete noise_layers;
+}
 
 
+MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
+	: MapgenV6(mapgenid, params, emerge)
+{
+	sp = (MapgenIndevParams *)params->sparams;
+
+	this->ystride = csize.X;
+	this->zstride = csize.X * csize.Y;
+
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
+
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
+	layers_init(emerge, sp->paramsj["layers"]);
 }
 
 MapgenIndev::~MapgenIndev() {
 	delete noise_float_islands1;
 	delete noise_float_islands2;
 	delete noise_float_islands3;
-	delete noise_layer;
 }
 
 void MapgenIndev::calculateNoise() {
@@ -104,14 +141,9 @@ void MapgenIndev::calculateNoise() {
 		noise_float_islands3->transformNoiseMap(x, y, z);
 		}
 
-		noise_layer->perlinMap3D(
-			x + 0.33 * noise_layer->np->spread.X * farscale(noise_layer->np->farspread, x, y, z),
-			y + 0.33 * noise_layer->np->spread.Y * farscale(noise_layer->np->farspread, x, y, z),
-			z + 0.33 * noise_layer->np->spread.Z * farscale(noise_layer->np->farspread, x, y, z)
-		);
-		noise_layer->transformNoiseMap(x, y, z);
-
 	}
+
+	layers_prepare(node_min, node_max);
 }
 
 MapgenIndevParams::MapgenIndevParams() {
@@ -126,16 +158,15 @@ MapgenIndevParams::MapgenIndevParams() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5, 1);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5, 1);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5, 1);
-	np_layer           = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   1.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   0.5);
 }
 
 void MapgenIndevParams::readParams(Settings *settings) {
 	MapgenV6Params::readParams(settings);
 
-	paramsj = settings->getJson("mg_indev", paramsj);
+	paramsj = settings->getJson("mg_params", paramsj);
 
-	settings->getS16NoEx("mgindev_float_islands", float_islands);
-	//settings->getS16NoEx("mgindev_underground_layer", underground_layer);
+	settings->getS16NoEx("mg_float_islands", float_islands);
 
 	settings->getNoiseIndevParams("mgindev_np_terrain_base",   np_terrain_base);
 	settings->getNoiseIndevParams("mgindev_np_terrain_higher", np_terrain_higher);
@@ -144,19 +175,18 @@ void MapgenIndevParams::readParams(Settings *settings) {
 	settings->getNoiseIndevParams("mgindev_np_mud",            np_mud);
 	settings->getNoiseIndevParams("mgindev_np_beach",          np_beach);
 	settings->getNoiseIndevParams("mgindev_np_biome",          np_biome);
-	settings->getNoiseIndevParams("mgindev_np_float_islands1", np_float_islands1);
-	settings->getNoiseIndevParams("mgindev_np_float_islands2", np_float_islands2);
-	settings->getNoiseIndevParams("mgindev_np_float_islands3", np_float_islands3);
-	settings->getNoiseIndevParams("mgindev_np_layer",          np_layer);
+	settings->getNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
+	settings->getNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
+	settings->getNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
+	settings->getNoiseIndevParams("mg_np_layers",         np_layers);
 }
 
 void MapgenIndevParams::writeParams(Settings *settings) {
 	MapgenV6Params::writeParams(settings);
 
-	settings->setJson("mg_indev", paramsj);
+	//settings->setJson("mg_indev", paramsj);
 
-	settings->setS16("mgindev_float_islands", float_islands);
-	//settings->setS16("mgindev_underground_layer", underground_layer);
+	settings->setS16("mg_float_islands", float_islands);
 
 	settings->setNoiseIndevParams("mgindev_np_terrain_base",   np_terrain_base);
 	settings->setNoiseIndevParams("mgindev_np_terrain_higher", np_terrain_higher);
@@ -165,10 +195,10 @@ void MapgenIndevParams::writeParams(Settings *settings) {
 	settings->setNoiseIndevParams("mgindev_np_mud",            np_mud);
 	settings->setNoiseIndevParams("mgindev_np_beach",          np_beach);
 	settings->setNoiseIndevParams("mgindev_np_biome",          np_biome);
-	settings->setNoiseIndevParams("mgindev_np_float_islands1", np_float_islands1);
-	settings->setNoiseIndevParams("mgindev_np_float_islands2", np_float_islands2);
-	settings->setNoiseIndevParams("mgindev_np_float_islands3", np_float_islands3);
-	settings->setNoiseIndevParams("mgindev_np_layer",          np_layer);
+	settings->setNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
+	settings->setNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
+	settings->setNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
+	settings->setNoiseIndevParams("mg_np_layers",         np_layers);
 }
 
 void MapgenIndev::generateCaves(int max_stone_y) {
@@ -311,10 +341,12 @@ void MapgenIndev::generateFloatIslands(int min_y) {
 				// Cancel if not  air
 				if (vm->m_data[i].getContent() != CONTENT_AIR)
 					continue;
-				vm->m_data[i] = n1;
+				vm->m_data[i] = layers_get(index);
 			}
 		}
 	}
+	//if (generated)
+	//	dustTopNodes();
 }
 
 void MapgenIndev::generateExperimental() {
@@ -323,28 +355,12 @@ void MapgenIndev::generateExperimental() {
 }
 
 int MapgenIndev::generateGround() {
-
-
 	//TimeTaker timer1("Generating ground level");
 	MapNode n_air(CONTENT_AIR), n_water_source(c_water_source);
 	MapNode n_stone(c_stone), n_desert_stone(c_desert_stone);
 	MapNode n_ice(c_ice), n_dirt(c_dirt),n_sand(c_sand), n_gravel(c_gravel), n_lava_source(c_lava_source);
 	int stone_surface_max_y = -MAP_GENERATION_LIMIT;
 	u32 index = 0;
-
-	std::vector<MapNode> layer_nodes;
-
-	for (const auto & layer : layers) {
-		if (layer.height_max < node_min.Y || layer.height_min > node_max.Y)
-			continue;
-		for (int i = 0; i < layer.thickness; ++i)
-			layer_nodes.emplace_back(layer.node);
-	}
-
-	if (layer_nodes.empty()) {
-		infostream << "layers empty, using only default:stone"<<std::endl;
-		layer_nodes.emplace_back(n_stone);
-	}
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
@@ -365,14 +381,14 @@ int MapgenIndev::generateGround() {
 
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
-				int j = (z - node_min.Z) * zstride +
+
+				if (y <= surface_y) {
+					int index3 = (z - node_min.Z) * zstride +
 						(y - node_min.Y) * ystride +
 						(x - node_min.X);
 
-				if (y <= surface_y) {
-					auto layer_index = rangelim(myround((noise_layer->result[j]/((noise_layer->np->offset+noise_layer->np->scale) - (noise_layer->np->offset-noise_layer->np->scale))) * layer_nodes.size()),0, layer_nodes.size()-1);
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ?
-						n_desert_stone : layer_nodes[layer_index];
+						n_desert_stone : layers_get(index3);
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
 				} else {

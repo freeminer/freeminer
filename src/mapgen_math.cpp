@@ -171,6 +171,8 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
 	iterations = params.get("N", 20).asInt(); //10;
 
+	result_max = params.get("result_max", 1.0).asDouble();
+
 	internal = 0;
 	func = &sphere;
 
@@ -423,6 +425,11 @@ MapgenMath::~MapgenMath() {
 
 //////////////////////// Map generator
 
+MapNode MapgenMath::layers_get(float value, float max) {
+	auto layer_index = rangelim(myround((value/max) * layers_node.size()), 0, layers_node.size()-1);
+	return layers_node[layer_index];
+}
+
 int MapgenMath::generateTerrain() {
 
 	u32 index = 0;
@@ -459,6 +466,7 @@ int MapgenMath::generateTerrain() {
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
 
+
 #if USE_MANDELBULBER
 				if (!internal)
 					d = Compute<normal_mode>(CVector3(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z), mg_params->par);
@@ -466,10 +474,16 @@ int MapgenMath::generateTerrain() {
 				if (internal)
 					d = (*func)(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z, scale, iterations);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
-					if (vm->m_data[i].getContent() == CONTENT_IGNORE)
+					if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
-						vm->m_data[i] = n_stone;
+/*
+						int index3 = (z - node_min.Z) * zstride +
+							(y - node_min.Y) * ystride +
+							(x - node_min.X);
+*/
+						vm->m_data[i] = layers_get(d, result_max);
+					}
 				} else if (y <= water_level) {
 					vm->m_data[i] = n_water_source;
 				} else {

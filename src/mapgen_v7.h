@@ -49,7 +49,9 @@ struct MapgenV7Params : public MapgenSpecificParams {
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
-	
+	NoiseParams np_layers;
+	Json::Value paramsj;
+
 	MapgenV7Params();
 	~MapgenV7Params() {}
 	
@@ -57,7 +59,7 @@ struct MapgenV7Params : public MapgenSpecificParams {
 	void writeParams(Settings *settings);
 };
 
-class MapgenV7 : public Mapgen {
+class MapgenV7 : public Mapgen, public Mapgen_features {
 public:
 	EmergeManager *emerge;
 	BiomeDefManager *bmgr;
