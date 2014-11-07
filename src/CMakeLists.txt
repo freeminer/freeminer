@@ -671,8 +671,13 @@ endif(BUILD_SERVER)
 
 include(CheckCXXCompilerFlag)
 
-option(DISABLE_THREADS "Disable using more threads (faster on 1-2 cores)" 0)
-option(ENABLE_CXX1Y "Try use c++14 features (shared_mutex)" 0)
+if(WIN32)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+else()
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+endif()
+
+option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 if(MSVC)
 	# Visual Studio
@@ -703,7 +708,6 @@ if(MSVC)
 	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
 	add_definitions(-DNOMINMAX)
 
-	set(THREADS 0)
 else()
 	# Probably GCC
 	if(APPLE)
@@ -778,8 +782,6 @@ else()
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 				COMPILE_DEFINITIONS "SERVER")
 	endif(BUILD_SERVER)
-
-	set(THREADS 1)
 endif()
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
@@ -825,9 +827,6 @@ endif()
 
 
 
-if(DISABLE_THREADS)
-	set(THREADS 0)
-endif()
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
