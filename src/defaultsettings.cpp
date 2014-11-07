@@ -360,7 +360,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
-	settings->setDefault("num_emerge_threads", ""); // autodetect from number of cpus
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("default_game", "default");
@@ -383,6 +382,7 @@ void set_default_settings(Settings *settings)
 #if defined(_WIN32)
 		settings->setDefault("more_threads", "false");
 #else
+		settings->setDefault("num_emerge_threads", ""); // autodetect from number of cpus
 		settings->setDefault("more_threads", "true");
 #endif
 	settings->setDefault("shadows", "0");
