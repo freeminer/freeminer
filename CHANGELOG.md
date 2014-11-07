@@ -10,10 +10,11 @@ Engine
   * Lot of stability fixes
 
 #### Server
+  * Basic mod debugging (reports broken recipes) `mod_debugging = 1`
   * Using more threads for server (server (processing packets), env(ABMs, steps, timers), liquid, map (lighting, map save), sendblock),
     removed envlock (lua is still singlethreaded).
     (Server step now 30-50 ms)
-    Can be disabled by `more_threads = 0` or cmake: `-DDISABLE_THREADS=1` (also disables locking)
+    Can be disabled by `more_threads = 0` or cmake: `-DENABLE_THREADS=0` (also disables locking)
   * Lots of speed optimizations
   * Rewritten pathfinder (Selat)
   * Circuit API (Selat)
@@ -44,7 +45,7 @@ Engine
   * Hot-cold nodes - can freeze-melt neighbour nodes (eg melt ice around torch/lava/fire/... )
   * sand/dirt/gravel now flows as liquid with one level
   * Drowning in sand/dirt/gravel
-  * Drop torches, plants from liquid
+  * Liquids drop torches and plants
 
 #### Client
   * Farmesh - lose details on far meshes which allows
@@ -61,7 +62,7 @@ Engine
   `save_generated_block = 0`
   * Auto repair broken LevelDB
   * Initial support for LevelDB maintenance.
-    Temporarily closes db for backups or mapper tools. 
+    Temporarily closes db for backups or mapper tools.
     `killall -HUP freeminerserver; do something; killall -HUP freeminerserver`
 
 #### Incompatible with minetest:
