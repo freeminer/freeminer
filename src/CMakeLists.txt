@@ -677,6 +677,12 @@ else()
 	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
 endif()
 
+if(ENABLE_THREADS)
+	set(ENABLE_THREADS 1)
+else()
+	set(ENABLE_THREADS 0)
+endif()
+
 option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 if(MSVC)
