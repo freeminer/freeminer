@@ -230,12 +230,12 @@ public:
 
 	void setLightingExpired(bool expired)
 	{
-		if(expired != m_lighting_expired){
+//		if(expired != m_lighting_expired){
 			m_lighting_expired = expired;
 /*
 			raiseModified(MOD_STATE_WRITE_NEEDED, "setLightingExpired");
 */
-		}
+//		}
 	}
 	bool getLightingExpired()
 	{
@@ -258,8 +258,8 @@ public:
 
 	bool isValid()
 	{
-		if(m_lighting_expired)
-			return false;
+		//if(m_lighting_expired)
+		//	return false;
 		if(data == NULL)
 			return false;
 		return true;

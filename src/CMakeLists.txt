@@ -10,7 +10,18 @@ INCLUDE(CheckCXXSourceRuns)
 
 include(CheckCXXCompilerFlag)
 
-option(DISABLE_THREADS "Disable using more threads (faster on 1-2 cores)" 0)
+if(WIN32)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+else()
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+endif()
+
+if(ENABLE_THREADS)
+	set(ENABLE_THREADS 1)
+else()
+	set(ENABLE_THREADS 0)
+endif()
+
 option(ENABLE_CXX1Y "Try use c++14 features (shared_mutex)" 0)
 
 if(MSVC)
@@ -34,7 +45,6 @@ if(MSVC)
 	# /MT = Link statically with standard library stuff
 	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
 
-	set(THREADS 0)
 else()
 	# Probably GCC
 	if(APPLE)
@@ -108,7 +118,6 @@ else()
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 	endif()
 
-	set(THREADS 1)
 endif()
 
 
@@ -808,13 +817,6 @@ CHECK_CXX_SOURCE_RUNS("
 	HAVE_FUTURE)
 if(NOT HAVE_FUTURE)
 	set(HAVE_FUTURE 0)
-endif()
-
-
-
-
-if(DISABLE_THREADS)
-	set(THREADS 0)
 endif()
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")

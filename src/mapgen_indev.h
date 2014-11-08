@@ -30,13 +30,36 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
 #define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
 
+typedef struct {
+	content_t content;
+	MapNode node;
+	int height_min;
+	int height_max;
+	int thickness;
+} layer_data;
+
+class Mapgen_features {
+public:
+
+	~Mapgen_features();
+
+	MapNode layers_n_stone;
+	Noise *noise_layers;
+	std::vector<layer_data> layers;
+	std::vector<MapNode> layers_node;
+	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
+	void layers_prepare(const v3s16 & node_min, const v3s16 & node_max);
+	MapNode layers_get(int index);
+};
+
+
 struct MapgenIndevParams : public MapgenV6Params {
 	s16 float_islands, underground_filler;
 	
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
-	NoiseParams np_layer;
+	NoiseParams np_layers;
 
 	Json::Value paramsj;
 
@@ -47,26 +70,16 @@ struct MapgenIndevParams : public MapgenV6Params {
 	void writeParams(Settings *settings);
 };
 
-typedef struct {
-	content_t content;
-	MapNode node;
-	int height_min;
-	int height_max;
-	int thickness;
-} layer_data;
-
-class MapgenIndev : public MapgenV6 {
+class MapgenIndev : public MapgenV6, public Mapgen_features {
 public:
-	Noise *noise_float_islands1;
-	Noise *noise_float_islands2;
-	Noise *noise_float_islands3;
-	Noise *noise_layer;
 	MapgenIndevParams *sp;
 
 	int ystride;
 	int zstride;
 
-	std::vector<layer_data> layers;
+	Noise *noise_float_islands1;
+	Noise *noise_float_islands2;
+	Noise *noise_float_islands3;
 
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();

@@ -69,10 +69,12 @@ public:
 	v3f center;
 	int iterations;
 	double distance;
+	double result_max;
 
 	MapNode n_air, n_water_source, n_stone;
 
 	double (*func)(double, double, double, double, int);
+	MapNode layers_get(float value, float max);
 };
 
 struct MapgenFactoryMath : public MapgenFactory {
