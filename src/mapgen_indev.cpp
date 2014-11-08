@@ -31,7 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & paramsj) {
 	const auto & layersj = paramsj["layers"];
 	INodeDefManager *ndef = emerge->ndef;
-	layers_n_stone = MapNode(ndef->getId("mapgen_stone"));
 	auto layer_default_thickness = paramsj.get("layer_default_thickness", 1).asInt();
 	if (!layersj.empty())
 		for (int i = 0; i < layersj.size(); ++i) {
@@ -77,17 +76,17 @@ void Mapgen_features::layers_prepare(const v3s16 & node_min, const v3s16 & node_
 	}
 
 	if (layers_node.empty()) {
-		layers_node.emplace_back(layers_n_stone);
+		layers_node.emplace_back(n_stone);
 	}
+	layers_node_size = layers_node.size();
 }
 
 MapNode Mapgen_features::layers_get(int index) {
-
-	auto layer_index = rangelim(myround((noise_layers->result[index]/((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale))) * layers_node.size()),0, layers_node.size()-1);
+	auto layer_index = rangelim(myround((noise_layers->result[index]/((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale))) * layers_node_size),0, layers_node_size-1);
 	return layers_node[layer_index];
 }
 
-void Mapgen_features::float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, const s16 min_y) {
+void Mapgen_features::float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, int min_y) {
 	int x = node_min.X;
 	int y = node_min.Y;
 	int z = node_min.Z;
@@ -114,13 +113,15 @@ void Mapgen_features::float_islands_prepare(const v3s16 & node_min, const v3s16 
 }
 
 
-Mapgen_features::Mapgen_features() :
+Mapgen_features::Mapgen_features(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
 	noise_layers(nullptr),
+	layers_node_size(0),
 	noise_float_islands1(nullptr),
 	noise_float_islands2(nullptr),
 	noise_float_islands3(nullptr)
 {
-
+	auto ndef = emerge->ndef;
+	n_stone = MapNode(ndef->getId("mapgen_stone"));
 }
 
 Mapgen_features::~Mapgen_features() {
@@ -138,6 +139,7 @@ Mapgen_features::~Mapgen_features() {
 
 MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	: MapgenV6(mapgenid, params, emerge)
+	, Mapgen_features(mapgenid, params, emerge)
 {
 	sp = (MapgenIndevParams *)params->sparams;
 
@@ -287,7 +289,7 @@ CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 /*
 // version with one perlin3d. use with good params like
 settings->setDefault("mgindev_np_float_islands1",  "-9.5, 10,  (20,  50,  50 ), 45123, 5, 0.6,  1.5, 5");
-void MapgenIndev::generateFloatIslands(int min_y) {
+void MapgenIndev::float_islands_generate(int min_y) {
 	if (node_min.Y < min_y) return;
 	v3s16 p0(node_min.X, node_min.Y, node_min.Z);
 	MapNode n1(c_stone), n2(c_desert_stone);
@@ -322,9 +324,9 @@ void MapgenIndev::generateFloatIslands(int min_y) {
 }
 */
 
-void MapgenIndev::generateFloatIslands(int min_y) {
-	if (node_min.Y < min_y) return;
-	//PseudoRandom pr(blockseed + 985);
+int Mapgen_features::float_islands_generate(const v3s16 & node_min, const v3s16 & node_max, int min_y, ManualMapVoxelManipulator *vm) {
+	int generated = 0;
+	if (node_min.Y < min_y) return generated;
 	// originally from http://forum.minetest.net/viewtopic.php?id=4776
 	float RAR = 0.8 * farscale(0.4, node_min.Y); // 0.4; // Island rarity in chunk layer. -0.4 = thick layer with holes, 0 = 50%, 0.4 = desert rarity, 0.7 = very rare.
 	float AMPY = 24; // 24; // Amplitude of island centre y variation.
@@ -332,7 +334,6 @@ void MapgenIndev::generateFloatIslands(int min_y) {
 	float BGRAD = 24; // 24; // Noise gradient to create bottom surface. Tallness of island bottom.
 
 	v3s16 p0(node_min.X, node_min.Y, node_min.Z);
-	MapNode n1(c_stone);
 
 	float xl = node_max.X - node_min.X;
 	float yl = node_max.Y - node_min.Y;
@@ -361,16 +362,16 @@ void MapgenIndev::generateFloatIslands(int min_y) {
 				if (vm->m_data[i].getContent() != CONTENT_AIR)
 					continue;
 				vm->m_data[i] = layers_get(index);
+				++generated;
 			}
 		}
 	}
-	//if (generated)
-	//	dustTopNodes();
+	return generated;
 }
 
 void MapgenIndev::generateExperimental() {
 	if (sp->float_islands)
-		generateFloatIslands(sp->float_islands);
+		float_islands_generate(node_min, node_max, sp->float_islands, vm);
 }
 
 int MapgenIndev::generateGround() {

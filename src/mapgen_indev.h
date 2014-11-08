@@ -41,13 +41,14 @@ typedef struct {
 class Mapgen_features {
 public:
 
-	Mapgen_features();
+	Mapgen_features(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~Mapgen_features();
 
-	MapNode layers_n_stone;
+	MapNode n_stone;
 	Noise *noise_layers;
 	std::vector<layer_data> layers;
 	std::vector<MapNode> layers_node;
+	unsigned int layers_node_size;
 	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
 	void layers_prepare(const v3s16 & node_min, const v3s16 & node_max);
 	MapNode layers_get(int index);
@@ -55,7 +56,8 @@ public:
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
-	void float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, const s16 min_y);
+	void float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, int min_y);
+	int float_islands_generate(const v3s16 & node_min, const v3s16 & node_max, int min_y, ManualMapVoxelManipulator *vm);
 
 };
 
@@ -91,7 +93,6 @@ public:
 	int generateGround();
 	void generateCaves(int max_stone_y);
 	void generateExperimental();
-	void generateFloatIslands(int min_y);
 };
 
 struct MapgenFactoryIndev : public MapgenFactoryV6 {

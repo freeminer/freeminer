@@ -133,7 +133,6 @@ public:
 	void generateCaves(int max_stone_y);
 
 	virtual void generateExperimental();
-	virtual void generateFloatIslands(int min_y);
 
 };
 
