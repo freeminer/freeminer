@@ -118,7 +118,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 
 	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
-	layers_init(emerge, sp->paramsj["layers"]);
+	layers_init(emerge, sp->paramsj);
 }
 
 
@@ -139,10 +139,6 @@ MapgenV7::~MapgenV7() {
 	delete[] ridge_heightmap;
 	delete[] heightmap;
 	delete[] biomemap;
-
-	delete noise_float_islands1;
-	delete noise_float_islands2;
-	delete noise_float_islands3;
 }
 
 
@@ -163,7 +159,7 @@ MapgenV7Params::MapgenV7Params() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(500, 500, 500), 3663,  2, 0.4);
 }
 
 
@@ -358,24 +354,7 @@ void MapgenV7::calculateNoise() {
 	noise_humidity->perlinMap2D(x, z);
 	
 	if (float_islands && y >= float_islands) {
-		noise_float_islands1->perlinMap3D(
-			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
-			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
-			z + 0.33 * noise_float_islands1->np->spread.Z * farscale(noise_float_islands1->np->farspread, x, y, z)
-		);
-		noise_float_islands1->transformNoiseMap(x, y, z);
-
-		noise_float_islands2->perlinMap3D(
-			x + 0.33 * noise_float_islands2->np->spread.X * farscale(noise_float_islands2->np->farspread, x, y, z),
-			y + 0.33 * noise_float_islands2->np->spread.Y * farscale(noise_float_islands2->np->farspread, x, y, z),
-			z + 0.33 * noise_float_islands2->np->spread.Z * farscale(noise_float_islands2->np->farspread, x, y, z)
-		);
-		noise_float_islands2->transformNoiseMap(x, y, z);
-
-		noise_float_islands3->perlinMap2D(
-			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
-			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
-		noise_float_islands3->transformNoiseMap(x, y, z);
+		float_islands_prepare(node_min, node_max, float_islands);
 	}
 
 	layers_prepare(node_min, node_max);
@@ -522,7 +501,7 @@ int MapgenV7::generateBaseTerrain() {
 						(y - node_min.Y) * ystride +
 						(x - node_min.X);
 
-					vm->m_data[i] =  layers_get(index3);
+					vm->m_data[i] = layers_get(index3);
 				}
 				else if (y <= water_level)
 				{

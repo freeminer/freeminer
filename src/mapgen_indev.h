@@ -41,6 +41,7 @@ typedef struct {
 class Mapgen_features {
 public:
 
+	Mapgen_features();
 	~Mapgen_features();
 
 	MapNode layers_n_stone;
@@ -50,6 +51,12 @@ public:
 	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
 	void layers_prepare(const v3s16 & node_min, const v3s16 & node_max);
 	MapNode layers_get(int index);
+
+	Noise *noise_float_islands1;
+	Noise *noise_float_islands2;
+	Noise *noise_float_islands3;
+	void float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, const s16 min_y);
+
 };
 
 
@@ -76,10 +83,6 @@ public:
 
 	int ystride;
 	int zstride;
-
-	Noise *noise_float_islands1;
-	Noise *noise_float_islands2;
-	Noise *noise_float_islands3;
 
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();

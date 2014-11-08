@@ -28,10 +28,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "environment.h"
 
-void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & layersj) {
-
+void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & paramsj) {
+	const auto & layersj = paramsj["layers"];
 	INodeDefManager *ndef = emerge->ndef;
 	layers_n_stone = MapNode(ndef->getId("mapgen_stone"));
+	auto layer_default_thickness = paramsj.get("layer_default_thickness", 1).asInt();
 	if (!layersj.empty())
 		for (int i = 0; i < layersj.size(); ++i) {
 			if (layersj[i].empty())
@@ -47,7 +48,7 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & lay
 			auto layer = layer_data{ content, MapNode(content, layerj["param1"].asInt(), layerj["param2"].asInt()) };
 			layer.height_min = layerj.get("height_min", -MAP_GENERATION_LIMIT).asInt();
 			layer.height_max = layerj.get("height_max", +MAP_GENERATION_LIMIT).asInt();
-			layer.thickness  = layerj.get("thickness", 1).asInt();
+			layer.thickness  = layerj.get("thickness", layer_default_thickness).asInt();
 
 			layers.emplace_back(layer);
 		}
@@ -81,46 +82,16 @@ void Mapgen_features::layers_prepare(const v3s16 & node_min, const v3s16 & node_
 }
 
 MapNode Mapgen_features::layers_get(int index) {
+
 	auto layer_index = rangelim(myround((noise_layers->result[index]/((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale))) * layers_node.size()),0, layers_node.size()-1);
 	return layers_node[layer_index];
 }
 
-Mapgen_features::~Mapgen_features() {
-	delete noise_layers;
-}
-
-
-MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
-	: MapgenV6(mapgenid, params, emerge)
-{
-	sp = (MapgenIndevParams *)params->sparams;
-
-	this->ystride = csize.X;
-	this->zstride = csize.X * csize.Y;
-
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
-
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
-	layers_init(emerge, sp->paramsj["layers"]);
-}
-
-MapgenIndev::~MapgenIndev() {
-	delete noise_float_islands1;
-	delete noise_float_islands2;
-	delete noise_float_islands3;
-}
-
-void MapgenIndev::calculateNoise() {
-	MapgenV6::calculateNoise();
+void Mapgen_features::float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, const s16 min_y) {
 	int x = node_min.X;
 	int y = node_min.Y;
 	int z = node_min.Z;
-	// Need to adjust for the original implementation's +.5 offset...
-	if (!(flags & MG_FLAT)) {
-
-		if (sp->float_islands && y >= sp->float_islands) {
+	if (min_y && y >= min_y) {
 		noise_float_islands1->perlinMap3D(
 			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
 			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
@@ -139,8 +110,55 @@ void MapgenIndev::calculateNoise() {
 			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
 			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
 		noise_float_islands3->transformNoiseMap(x, y, z);
-		}
+	}
+}
 
+
+Mapgen_features::Mapgen_features() :
+	noise_layers(nullptr),
+	noise_float_islands1(nullptr),
+	noise_float_islands2(nullptr),
+	noise_float_islands3(nullptr)
+{
+
+}
+
+Mapgen_features::~Mapgen_features() {
+	if (noise_layers)
+		delete noise_layers;
+	if (noise_float_islands1)
+		delete noise_float_islands1;
+	if (noise_float_islands2)
+		delete noise_float_islands2;
+	if (noise_float_islands3)
+		delete noise_float_islands3;
+
+}
+
+
+MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
+	: MapgenV6(mapgenid, params, emerge)
+{
+	sp = (MapgenIndevParams *)params->sparams;
+
+	this->ystride = csize.X;
+	this->zstride = csize.X * csize.Y;
+
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
+
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
+	layers_init(emerge, sp->paramsj);
+}
+
+MapgenIndev::~MapgenIndev() {
+}
+
+void MapgenIndev::calculateNoise() {
+	MapgenV6::calculateNoise();
+	if (!(flags & MG_FLAT)) {
+		float_islands_prepare(node_min, node_max, sp->float_islands);
 	}
 
 	layers_prepare(node_min, node_max);
@@ -158,7 +176,8 @@ MapgenIndevParams::MapgenIndevParams() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5, 1);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5, 1);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5, 1);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   0.5);
+	//np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(500, 500, 500), 3663,  2, 0.4);
 }
 
 void MapgenIndevParams::readParams(Settings *settings) {
@@ -305,7 +324,7 @@ void MapgenIndev::generateFloatIslands(int min_y) {
 
 void MapgenIndev::generateFloatIslands(int min_y) {
 	if (node_min.Y < min_y) return;
-	PseudoRandom pr(blockseed + 985);
+	//PseudoRandom pr(blockseed + 985);
 	// originally from http://forum.minetest.net/viewtopic.php?id=4776
 	float RAR = 0.8 * farscale(0.4, node_min.Y); // 0.4; // Island rarity in chunk layer. -0.4 = thick layer with holes, 0 = 50%, 0.4 = desert rarity, 0.7 = very rare.
 	float AMPY = 24; // 24; // Amplitude of island centre y variation.
