@@ -258,14 +258,14 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_wanted", "500");
 	
 	// Liquid
-	settings->setDefault("liquid_real", "true");
+	settings->setDefault("liquid_real", "false");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
 	
 	// Weather
-	settings->setDefault("weather", "true");
+	settings->setDefault("weather", "false");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
@@ -392,12 +392,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fast_move", "false");
 	
 	// Physics
-	settings->setDefault("movement_acceleration_default", "3");
-	settings->setDefault("movement_acceleration_air", "2");
+	settings->setDefault("movement_acceleration_default", "4");
+	settings->setDefault("movement_acceleration_air", "4");
 	settings->setDefault("movement_acceleration_fast", "10");
-	settings->setDefault("movement_speed_walk", "4");
-	settings->setDefault("movement_speed_crouch", "1.35");
-	settings->setDefault("movement_speed_fast", "20");
+	settings->setDefault("movement_speed_walk", "6");
+	settings->setDefault("movement_speed_crouch", "2");
+	settings->setDefault("movement_speed_fast", "20.5");
 	settings->setDefault("movement_speed_climb", "2");
 	settings->setDefault("movement_speed_jump", "6.5");
 	settings->setDefault("movement_liquid_fluidity", "1");
