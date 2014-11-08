@@ -48,6 +48,7 @@ Engine
   * Liquids drop torches and plants
 
 #### Client
+  * Default keymap for console changed to tilde (~)
   * Farmesh - lose details on far meshes which allows
   rendering up to 1000 blocks (very dev) `farmesh = 2`
   * Unicode support in chat, inputs, player names
