@@ -1042,20 +1042,16 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.tab_singleplayer()
-	local gameidx = 0
+	local gameidx = ''
 	local formspec = ''
 	local index = filterlist.get_current_index(worldlist,
 				tonumber(core.setting_get("mainmenu_last_selected_world"))
 				)
 	if menu.lastgame() then
 		gameidx = menu.lastgame().id
-	else
-		gameidx = ''
 	end
 	formspec = "label[0,2;Game: " .. core.formspec_escape(gameidx) .. "]" ..
 			"button[6.5,5;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]" ..
 			"label[6.5,0;".. fgettext("Select World:") .. "]"..
 			"checkbox[6.5,4.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 			dump(core.setting_getbool("creative_mode")) .. "]"..
@@ -1066,7 +1062,9 @@ function tabbuilder.tab_singleplayer()
 			";" .. index .. "]" ..
 			menubar.formspec
 	if #gamemgr.games > 0 then
-		formspec = formspec .. "button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]"
+		formspec = formspec .. "button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
+			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
+			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]"
 	end
 	return formspec
 end
