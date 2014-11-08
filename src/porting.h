@@ -36,7 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include <string>
-#include "IrrCompileConfig.h"
 #include "irrlicht.h"
 #include "irrlichttypes.h" // u32
 #include "irrlichttypes_extrabloated.h"
