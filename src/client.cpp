@@ -134,6 +134,8 @@ void * MeshUpdateThread::Thread()
 
 	while(!StopRequested())
 	{
+
+		try {
 		auto q = m_queue_in.pop();
 		if(!q)
 		{
@@ -147,6 +149,19 @@ void * MeshUpdateThread::Thread()
 		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, std::shared_ptr<MapBlockMesh>(new MapBlockMesh(q.get(), m_camera_offset))));
 
 		m_queue_in.m_process.erase(q->m_blockpos);
+
+#ifdef NDEBUG
+		} catch (BaseException &e) {
+			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
+		} catch(std::exception &e) {
+			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
+		} catch (...) {
+			errorstream<<"MeshUpdateThread: Ooops..."<<std::endl;
+#else
+		} catch (int) { //nothing
+#endif
+		}
+
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)

@@ -166,7 +166,7 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 		list.append(*it);
 	}
 	root["list"] = list;
-	Json::FastWriter writer;
+	Json::StyledWriter writer;
 	return writer.write(root);
 }
 
