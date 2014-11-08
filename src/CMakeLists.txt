@@ -4,6 +4,54 @@ cmake_minimum_required( VERSION 2.6 )
 INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckCXXSourceRuns)
 
+# test compiler capabilities
+set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
+set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
+CHECK_CXX_SOURCE_RUNS("
+	#include <string>
+	thread_local std::string test;
+	int main(int argc, char *argv[]) {
+		test = __LINE__;
+		return 0;
+	}
+	"
+	HAVE_THREAD_LOCAL)
+if(NOT HAVE_THREAD_LOCAL)
+	set(HAVE_THREAD_LOCAL 0)
+endif()
+
+set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS} -pthread")
+CHECK_CXX_SOURCE_RUNS("
+	#include <future>
+	int main(int argc, char *argv[]) {
+		std::future<void> updateDrawList_future;
+		bool allow = false;
+		if (updateDrawList_future.valid()) {
+			auto res = updateDrawList_future.wait_for(std::chrono::milliseconds(0));
+			if (res == std::future_status::timeout)
+				allow = false;
+		}
+		if (false)
+			updateDrawList_future = std::async(std::launch::async, [](){ });
+		return 0;
+	}
+	"
+	HAVE_FUTURE)
+if(NOT HAVE_FUTURE)
+	set(HAVE_FUTURE 0)
+endif()
+
+option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+
+if(ENABLE_THREADS)
+	set(ENABLE_THREADS 1)
+else()
+	set(ENABLE_THREADS 0)
+endif()
+
+option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
+
+
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
@@ -671,19 +719,6 @@ endif(BUILD_SERVER)
 
 include(CheckCXXCompilerFlag)
 
-if(WIN32)
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
-else()
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-endif()
-
-if(ENABLE_THREADS)
-	set(ENABLE_THREADS 1)
-else()
-	set(ENABLE_THREADS 0)
-endif()
-
-option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 if(MSVC)
 	# Visual Studio
@@ -793,45 +828,6 @@ if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
 	set(HAVE_SHARED_MUTEX 0)
 endif()
-
-set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
-set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
-CHECK_CXX_SOURCE_RUNS("
-	#include <string>
-	thread_local std::string test;
-	int main(int argc, char *argv[]) {
-		test = __LINE__;
-		return 0;
-	}
-	"
-	HAVE_THREAD_LOCAL)
-if(NOT HAVE_THREAD_LOCAL)
-	set(HAVE_THREAD_LOCAL 0)
-endif()
-
-set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS} -pthread")
-CHECK_CXX_SOURCE_RUNS("
-	#include <future>
-	int main(int argc, char *argv[]) {
-		std::future<void> updateDrawList_future;
-		bool allow = false;
-		if (updateDrawList_future.valid()) {
-			auto res = updateDrawList_future.wait_for(std::chrono::milliseconds(0));
-			if (res == std::future_status::timeout)
-				allow = false;
-		}
-		if (false)
-			updateDrawList_future = std::async(std::launch::async, [](){ });
-		return 0;
-	}
-	"
-	HAVE_FUTURE)
-if(NOT HAVE_FUTURE)
-	set(HAVE_FUTURE 0)
-endif()
-
-
-
 
 
 #MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
