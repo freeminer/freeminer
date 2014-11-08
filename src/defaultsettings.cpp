@@ -213,8 +213,8 @@ void set_default_settings(Settings *settings)
 	
 	// Shaders
 	settings->setDefault("enable_shaders", "true");
-	settings->setDefault("enable_bumpmapping", "false");
-	settings->setDefault("enable_parallax_occlusion", "false");
+	settings->setDefault("enable_bumpmapping", "true");
+	settings->setDefault("enable_parallax_occlusion", "true");
 	settings->setDefault("parallax_occlusion_scale", "0.06");
 	settings->setDefault("parallax_occlusion_bias", "0.03");
 	settings->setDefault("generate_normalmaps", "false");
@@ -245,7 +245,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("3d_paralax_strength", "0.025");
 	settings->setDefault("tooltip_show_delay", "400");
 	// A bit more than the server will send around the player, to make fog blend well
-	settings->setDefault("viewing_range_nodes_max", "240");
+	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
 	settings->setDefault("viewing_range_nodes_min", "35");
 	settings->setDefault("shadows", "0");
 
@@ -308,10 +308,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("random_input", "false");	
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("enable_vbo", "true");
-	settings->setDefault("save_generated_block", "true");
-	settings->setDefault("max_objects_per_block", "100");
-	settings->setDefault("sqlite_synchronous", "1");
-	settings->setDefault("abm_random", "false");
 	
 	//
 	// Server stuff
@@ -332,13 +328,13 @@ void set_default_settings(Settings *settings)
 	
 	// Check when player joins
 	settings->setDefault("strict_protocol_version_checking", "false");
-	settings->setDefault("enable_any_name", "0"); // WARNING! SETTING TO "1" COULD CAUSE SECURITY RISKS
+	settings->setDefault("enable_any_name", "0"); // WARNING! SETTING TO "1" COULD CAUSE SECURITY RISKS WITH MODULES WITH PLAYER DATA IN FILES CONTAINS PLAYER NAME IN FILENAME
 	settings->setDefault("disallow_empty_password", "false");
 	
 	// Gameplay settings for players on the server
-	settings->setDefault("default_game", "minetest");
+	settings->setDefault("default_game", "default");
 	settings->setDefault("motd", "");
-	settings->setDefault("max_users", "15");
+	settings->setDefault("max_users", "100");
 	settings->setDefault("creative_mode", "false");
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("fixed_map_seed", "");
@@ -357,25 +353,26 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "2");
+	settings->setDefault("abm_random", "false");
 	settings->setDefault("enable_force_load", "true");
-	// This causes frametime jitter on client side, or does it?
-	//settings->setDefault("max_simultaneous_block_sends_per_client", "1");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
-	settings->setDefault("max_block_send_distance", "9");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
+	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("max_block_generate_distance", "7");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
 	settings->setDefault("time_send_interval", "5");
-	settings->setDefault("server_unload_unused_data_timeout", "29");
-	settings->setDefault("max_objects_per_block", "49");
-	settings->setDefault("server_map_save_interval", "10");
-	settings->setDefault("sqlite_synchronous", "2");
+	settings->setDefault("server_unload_unused_data_timeout", "610");
+	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("full_block_send_enable_min_time_from_building", "2.0");
 	settings->setDefault("dedicated_server_step", "0.1");
-	settings->setDefault("ignore_world_load_errors", "false");
+	settings->setDefault("ignore_world_load_errors", "true");
 	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
-	settings->setDefault("num_emerge_threads", "1");
+	settings->setDefault("num_emerge_threads", "");
+	// Storage
+	settings->setDefault("server_map_save_interval", "300");
+	settings->setDefault("sqlite_synchronous", "1");
+	settings->setDefault("save_generated_block", "true");
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");
 	settings->setDefault("ipv6_server", "false");
@@ -437,11 +434,7 @@ void set_default_settings(Settings *settings)
 #endif
 
 #if !defined(SERVER) && defined(_MSC_VER)
-	#ifdef NDEBUG
-		settings->setDefault("console_enabled", "false"); //don't enable Windows console
-	#else
-		settings->setDefault("console_enabled", "true"); //enable Windows console
-	#endif
+	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
 
 	//
