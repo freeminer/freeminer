@@ -174,7 +174,6 @@ public:
 	void addedToEnvironment(u32 dtime_s);
 	void removingFromEnvironment();
 	bool isStaticAllowed() const;
-	bool unlimitedTransferDistance() const;
 	std::string getClientInitializationData(u16 protocol_version);
 	std::string getStaticData();
 	bool isAttached();

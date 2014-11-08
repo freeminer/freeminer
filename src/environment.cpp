@@ -1538,11 +1538,17 @@ bool ServerEnvironment::addActiveObjectAsStatic(ServerActiveObject *obj)
 	inside a radius around a position
 */
 void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
+		s16 player_radius,
 		maybe_shared_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &added_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
 	f32 radius_f = radius * BS;
+	f32 player_radius_f = player_radius * BS;
+
+	if (player_radius_f < 0)
+		player_radius_f = 0;
+
 	/*
 		Go through the object list,
 		- discard m_removed objects,
@@ -1563,12 +1569,15 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		// Discard if removed or deactivating
 		if(object->m_removed || object->m_pending_deactivation)
 			continue;
-		if(object->unlimitedTransferDistance() == false){
+
+		f32 distance_f = object->getBasePosition().getDistanceFrom(pos_f);
+		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			// Discard if too far
-			f32 distance_f = object->getBasePosition().getDistanceFrom(pos_f);
-			if(distance_f > radius_f)
+			if (distance_f > player_radius_f && player_radius_f != 0)
 				continue;
-		}
+		} else if (distance_f > radius_f)
+			continue;
+
 		// Discard if already on current_objects
 		auto n = current_objects.find(id);
 		if(n != current_objects.end())
@@ -1583,11 +1592,17 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 	inside a radius around a position
 */
 void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
+		s16 player_radius,
 		maybe_shared_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &removed_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
 	f32 radius_f = radius * BS;
+	f32 player_radius_f = player_radius * BS;
+
+	if (player_radius_f < 0)
+		player_radius_f = 0;
+
 	/*
 		Go through current_objects; object is removed if:
 		- object is not found in m_active_objects (this is actually an
@@ -1615,20 +1630,16 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 			removed_objects.insert(id);
 			continue;
 		}
-
-		// If transfer distance is unlimited, don't remove
-		if(object->unlimitedTransferDistance())
-			continue;
-
+		
 		f32 distance_f = object->getBasePosition().getDistanceFrom(pos_f);
-
-		if(distance_f >= radius_f)
-		{
-			removed_objects.insert(id);
+		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+			if (distance_f <= player_radius_f || player_radius_f == 0)
+				continue;
+		} else if (distance_f <= radius_f)
 			continue;
-		}
 
-		// Not removed
+		// Object is no longer visible
+		removed_objects.insert(id);
 	}
 }
 

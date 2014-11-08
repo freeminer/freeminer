@@ -215,8 +215,8 @@ void sendAnnounce(const std::string &action,
 		server["rollback"]          = g_settings->getBool("enable_rollback_recording");
 		server["mapgen"]            = g_settings->get("mg_name");
 		server["privs"]             = g_settings->get("default_privs");
-		server["can_see_far_names"] = g_settings->getBool("unlimited_player_transfer_distance");
-		server["liquid_finite"]	= g_settings->getBool("liquid_real");
+		server["can_see_far_names"] = g_settings->getS16("player_transfer_distance") <= 0;
+		server["liquid_real"]       = g_settings->getBool("liquid_real");
 		server["mods"]              = Json::Value(Json::arrayValue);
 		for (std::vector<ModSpec>::const_iterator it = mods.begin();
 				it != mods.end();

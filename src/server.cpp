@@ -933,8 +933,15 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		// Radius inside which objects are active
 		s16 radius = g_settings->getS16("active_object_send_range_blocks");
+		s16 player_radius = g_settings->getS16("player_transfer_distance");
+
+		if (player_radius == 0 && g_settings->exists("unlimited_player_transfer_distance") &&
+				!g_settings->getBool("unlimited_player_transfer_distance"))
+			player_radius = radius;
+
 		radius *= MAP_BLOCKSIZE;
 		s16 radius_deactivate = radius*3;
+		player_radius *= MAP_BLOCKSIZE;
 
 		for(auto & client : clients)
 		{
@@ -956,9 +963,9 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 			std::set<u16> removed_objects;
 			std::set<u16> added_objects;
-			m_env->getRemovedActiveObjects(pos, radius_deactivate,
+			m_env->getRemovedActiveObjects(pos, radius_deactivate, player_radius,
 					client->m_known_objects, removed_objects);
-			m_env->getAddedActiveObjects(pos, radius,
+			m_env->getAddedActiveObjects(pos, radius, player_radius,
 					client->m_known_objects, added_objects);
 
 			// Ignore if nothing happened
