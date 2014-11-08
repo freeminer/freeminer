@@ -174,6 +174,7 @@ irr::EKEY_CODE keyname_to_keycode(const char *name)
 	CHECKKEY(KEY_COMMA)
 	CHECKKEY(KEY_MINUS)
 	CHECKKEY(KEY_PERIOD)
+	CHECKKEY(KEY_OEM_3)
 	CHECKKEY(KEY_ATTN)
 	CHECKKEY(KEY_CRSEL)
 	CHECKKEY(KEY_EXSEL)
@@ -214,7 +215,7 @@ static const char *KeyNames[] =
 		"-", "-", "-", "-", "-", "KEY_LSHIFT", "KEY_RSHIFT", "KEY_LCONTROL",
 		"KEY_RCONTROL", "KEY_LMENU", "KEY_RMENU", "-", "-", "-", "-", "-",
 		"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
-		"-", "-", "KEY_PLUS", "KEY_COMMA", "KEY_MINUS", "KEY_PERIOD", "-", "-", "-", "-", "-",
+		"-", "-", "KEY_PLUS", "KEY_COMMA", "KEY_MINUS", "KEY_PERIOD", "-", "KEY_OEM_3", "-", "-", "-",
 		"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
 		"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
 		"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
@@ -244,7 +245,7 @@ static const char *KeyNamesLang[] =
 			"-", "-", "-", "-", "-", "-", "-", N_("Left Shift"), N_("Right Shift"),
 			N_("Left Control"), N_("Right Control"), N_("Left Menu"), N_("Right Menu"), "-", "-",
 			"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
-			"-", "-", "-", "-", "-", N_("Plus"), N_("Comma"), N_("Minus"), N_("Period"), "-", "-",
+			"-", "-", "-", "-", "-", N_("Plus"), N_("Comma"), N_("Minus"), N_("Period"), "-", N_("Tilde"),
 			"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
 			"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
 			"-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-",
