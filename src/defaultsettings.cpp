@@ -258,14 +258,22 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_wanted", "500");
 	
 	// Liquid
+#if defined(_WIN32)
 	settings->setDefault("liquid_real", "false");
+#else
+	settings->setDefault("liquid_real", "true");
+#endif
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
 	
 	// Weather
+#if defined(_WIN32)
 	settings->setDefault("weather", "false");
+#else
+	settings->setDefault("weather", "true");
+#endif
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
