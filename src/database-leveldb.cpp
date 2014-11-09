@@ -52,7 +52,7 @@ int Database_LevelDB::Initialized(void)
 void Database_LevelDB::beginSave() {}
 void Database_LevelDB::endSave() {}
 
-bool Database_LevelDB::saveBlock(v3s16 blockpos, std::string &data)
+bool Database_LevelDB::saveBlock(v3POS blockpos, std::string &data)
 {
 	if (!m_database->put(getBlockAsString(blockpos), data)) {
 		errorstream << "WARNING: saveBlock: LevelDB error saving block "
@@ -64,7 +64,7 @@ bool Database_LevelDB::saveBlock(v3s16 blockpos, std::string &data)
 	return true;
 }
 
-std::string Database_LevelDB::loadBlock(v3s16 blockpos)
+std::string Database_LevelDB::loadBlock(v3POS blockpos)
 {
 	std::string datastr;
 
@@ -78,7 +78,7 @@ std::string Database_LevelDB::loadBlock(v3s16 blockpos)
 
 }
 
-void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
+void Database_LevelDB::listAllLoadableBlocks(std::list<v3POS> &dst)
 {
 #if USE_LEVELDB
 	auto it = m_database->new_iterator();

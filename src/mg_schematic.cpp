@@ -202,7 +202,7 @@ void DecoSchematic::placeStructure(Map *map, v3s16 p, bool force_placement)
 
 	blitToVManip(p, vm, rot, force_placement);
 
-	shared_map<v3s16, MapBlock *> lighting_modified_blocks;
+	shared_map<v3POS, MapBlock *> lighting_modified_blocks;
 	std::map<v3s16, MapBlock *> modified_blocks;
 	vm->blitBackAll(&modified_blocks);
 

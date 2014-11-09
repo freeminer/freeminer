@@ -61,9 +61,9 @@ enum Adjacency
 /******************************************************************************/
 
 /** c wrapper function to use from scriptapi */
-std::vector<v3s16> getPath(ServerEnvironment* env,
-                           v3s16 source,
-                           v3s16 destination,
+std::vector<v3POS> getPath(ServerEnvironment* env,
+                           v3POS source,
+                           v3POS destination,
                            unsigned int searchdistance,
                            unsigned int max_jump,
                            unsigned int max_drop,
@@ -73,14 +73,14 @@ std::vector<v3s16> getPath(ServerEnvironment* env,
 struct OpenElement
 {
 	OpenElement();
-	OpenElement(unsigned int _f_value, unsigned int _distance, v3s16 _pos, v3s16 _prev_pos);
+	OpenElement(unsigned int _f_value, unsigned int _distance, v3POS _pos, v3POS _prev_pos);
 	OpenElement& operator=(const OpenElement& e);
 	bool operator<(const OpenElement& e) const;
 
 	unsigned int f_value;
 	unsigned int start_cost;
-	v3s16 pos;
-	v3s16 prev_pos;
+	v3POS pos;
+	v3POS prev_pos;
 };
 
 /** class doing pathfinding */
@@ -99,9 +99,9 @@ public:
 	 * @param max_drop maximum number of blocks a path may drop
 	 * @param algo algorithm to use for finding a path
 	 */
-	std::vector<v3s16> getPath(ServerEnvironment* env,
-	                           v3s16 source,
-	                           v3s16 destination,
+	std::vector<v3POS> getPath(ServerEnvironment* env,
+	                           v3POS source,
+	                           v3POS destination,
 	                           unsigned int searchdistance,
 	                           unsigned int max_jump,
 	                           unsigned int max_drop,
@@ -129,14 +129,14 @@ private:
 	 * @param pos position to calc distance
 	 * @return integer distance
 	 */
-	inline static unsigned int getManhattanDistance(v3s16 pos1, v3s16 pos2);
+	inline static unsigned int getManhattanDistance(v3POS pos1, v3POS pos2);
 
 	/**
 	 * This method finds closest path to the target
 	 */
 
-	bool findPathHeuristic(v3s16 pos, std::vector <v3s16>& adjacencies,
-	                       unsigned int (*heuristicFunction)(v3s16, v3s16));
+	bool findPathHeuristic(v3POS pos, std::vector <v3POS>& adjacencies,
+	                       unsigned int (*heuristicFunction)(v3POS, v3POS));
 
 	/**
 	 * Create a vector containing all nodes from source to destination
@@ -144,14 +144,14 @@ private:
 	 * @param pos pos to check next
 	 * @param level recursion depth
 	 */
-	void buildPath(std::vector<v3s16>& path, v3s16 start_pos, v3s16 end_pos);
+	void buildPath(std::vector<v3POS>& path, v3POS start_pos, v3POS end_pos);
 
 	int m_searchdistance;       /**< max distance to search in each direction */
 	int m_maxdrop;              /**< maximum number of blocks a path may drop */
 	int m_maxjump;              /**< maximum number of blocks a path may jump */
 
-	v3s16 m_start;              /**< source position                          */
-	v3s16 m_destination;        /**< destination position                     */
+	v3POS m_start;              /**< source position                          */
+	v3POS m_destination;        /**< destination position                     */
 
 	limits m_limits;            /**< position limits in real map coordinates  */
 
@@ -159,16 +159,16 @@ private:
 
 	Adjacency m_adjacency;
 
-	std::vector <v3s16> m_adjacency_4;
-	std::vector <v3s16> m_adjacency_8;
+	std::vector <v3POS> m_adjacency_4;
+	std::vector <v3POS> m_adjacency_8;
 
 	std::vector <unsigned int> m_adjacency_4_cost;
 	std::vector <unsigned int> m_adjacency_8_cost;
 
-	std::map <v3s16, std::pair <v3s16, unsigned int> > used;
+	std::map <v3POS, std::pair <v3POS, unsigned int> > used;
 };
 
-inline unsigned int PathFinder::getManhattanDistance(v3s16 pos1, v3s16 pos2)
+inline unsigned int PathFinder::getManhattanDistance(v3POS pos1, v3POS pos2)
 {
 	return abs(pos1.X - pos2.X) + abs(pos1.Z - pos2.Z);
 }

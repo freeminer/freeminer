@@ -1,6 +1,5 @@
 /*
 mapgen_math.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 */
 
 /*
@@ -29,9 +28,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "voxelalgorithms.h"
 #include "profiler.h"
-#include "settings.h" // For g_settings
+#include "settings.h"
 #include "emerge.h"
-//#include "biome.h"
+#include "environment.h"
+#include "mg_biome.h"
+#include "log_types.h"
 
 // can use ported lib from http://mandelbulber.googlecode.com/svn/trunk/src
 #if USE_MANDELBULBER
@@ -161,7 +162,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		this->flags &= ~MG_LIGHT;
 
 	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
-	n_water_source	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
+	n_water	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
 	n_stone		= MapNode(ndef, params.get("stone", "mapgen_stone").asString(), LIGHT_SUN);
 
 	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
@@ -432,8 +433,9 @@ MapNode MapgenMath::layers_get(float value, float max) {
 
 int MapgenMath::generateTerrain() {
 
+	MapNode n_ice(c_ice);
 	u32 index = 0;
-	v3s16 em = vm->m_area.getExtent();
+	v3POS em = vm->m_area.getExtent();
 
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
@@ -461,7 +463,8 @@ int MapgenMath::generateTerrain() {
 	double d = 0;
 	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
 		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-			//Biome *biome = bmgr->biomes[biomemap[index]];
+			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
@@ -477,15 +480,20 @@ int MapgenMath::generateTerrain() {
 					if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
-/*
-						int index3 = (z - node_min.Z) * zstride +
-							(y - node_min.Y) * ystride +
-							(x - node_min.X);
-*/
-						vm->m_data[i] = layers_get(d, result_max);
+						if (invert) {
+							int index3 = (z - node_min.Z) * zstride +
+								(y - node_min.Y) * ystride +
+								(x - node_min.X);
+							vm->m_data[i] = Mapgen_features::layers_get(index3);
+						} else {
+							vm->m_data[i] = layers_get(d, result_max);
+						}
+//						vm->m_data[i] = (y > water_level + biome->filler) ?
+//						     MapNode(biome->c_filler) : layers_get(d, result_max);
+
 					}
 				} else if (y <= water_level) {
-					vm->m_data[i] = n_water_source;
+					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water;
 				} else {
 					vm->m_data[i] = n_air;
 				}
@@ -496,6 +504,24 @@ int MapgenMath::generateTerrain() {
 	return 0;
 }
 
-int MapgenMath::getGroundLevelAtPoint(v2s16 p) {
+int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 	return 0;
+}
+
+void MapgenMath::calculateNoise() {
+	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
+	int x = node_min.X;
+	int y = node_min.Y;
+	int z = node_min.Z;
+
+	noise_filler_depth->perlinMap2D(x, z);
+
+	noise_heat->perlinMap2D(x, z);
+	noise_humidity->perlinMap2D(x, z);
+
+	if (float_islands && y >= float_islands) {
+		float_islands_prepare(node_min, node_max, float_islands);
+	}
+
+	layers_prepare(node_min, node_max);
 }

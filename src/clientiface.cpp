@@ -44,7 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
-		std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> & occlude_cache)
+		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> & occlude_cache)
 {
 	float d0 = (float)BS * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -254,7 +254,7 @@ int RemoteClient::GetNextBlocks(
 	MapNode n = env->getMap().getNodeTry(cam_pos_nodes);
 	if(nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
-	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> occlude_cache;
+	std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> occlude_cache;
 */
 
 	s16 d;
@@ -276,9 +276,9 @@ int RemoteClient::GetNextBlocks(
 			last_nearest_unsent_d = m_nearest_unsent_d;
 		}*/
 
-		std::list<v3s16> list;
+		std::list<v3POS> list;
 		if (d > 2 && d == d_start && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
-			list.push_back(v3s16(0,0,0));
+			list.push_back(v3POS(0,0,0));
 		}
 
 		bool can_skip = d > 1;
@@ -290,17 +290,17 @@ int RemoteClient::GetNextBlocks(
 					list.push_back(floatToInt(playerspeeddir*addn, 1));
 			} else if (d == 1) {
 				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( 0,  0,  1)); // back
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( -1, 0,  0)); // left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( 1,  0,  0)); // right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( 0,  0, -1)); // front
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0,  1)); // back
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  0)); // left
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  0)); // right
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0, -1)); // front
 				}
 			} else if (d == 2) {
 				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( -1, 0,  1)); // back left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( 1,  0,  1)); // left right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( -1, 0, -1)); // right left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3s16( 1,  0, -1)); // front right
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  1)); // back left
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  1)); // left right
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0, -1)); // right left
+					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0, -1)); // front right
 				}
 			}
 		} else {
@@ -312,10 +312,9 @@ int RemoteClient::GetNextBlocks(
 		}
 
 
-		std::list<v3s16>::iterator li;
-		for(li=list.begin(); li!=list.end(); ++li)
+		for(auto li=list.begin(); li!=list.end(); ++li)
 		{
-			v3s16 p = *li + center;
+			v3POS p = *li + center;
 
 			/*
 				Send throttling
@@ -411,36 +410,36 @@ int RemoteClient::GetNextBlocks(
 
 			// No occlusion culling when free_move is on and camera is
 			// inside ground
-			cpn += v3s16(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
+			cpn += v3POS(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
 
 			float step = BS*1;
 			float stepfac = 1.3;
 			float startoff = BS*1;
 			float endoff = -BS*MAP_BLOCKSIZE*1.42*1.42;
-			v3s16 spn = cam_pos_nodes + v3s16(0,0,0);
+			v3POS spn = cam_pos_nodes + v3POS(0,0,0);
 			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
 			u32 needed_count = 1;
 //infostream<<" occparams "<<" p="<<cam_pos_nodes<<" en="<<occlusion_culling_enabled<<" d="<<d<<" pnod="<<n<<" solid="<<(int)nodemgr->get(n).solidness<<std::endl;
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
 			if( d > 2 &&
 				occlusion_culling_enabled &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(0,0,0),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(0,0,0),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,bs2,bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,bs2,-bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,-bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,-bs2,bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(bs2,-bs2,-bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,-bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,bs2,bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,bs2,-bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,-bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,-bs2,bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3s16(-bs2,-bs2,-bs2),
+				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,-bs2),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)
 			)
 			{

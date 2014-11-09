@@ -43,7 +43,7 @@ static void applyFacesShading(video::SColor& color, float factor)
 	color.setGreen(core::clamp(core::round32(color.getGreen()*factor), 0, 255));
 }
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3s16 & playerpos, const v3s16 & blockpos) {
+int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const v3POS & blockpos) {
 	int range = radius_box(playerpos, blockpos);
 	if (draw_control.farmesh) {
 		if		(range >= draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
@@ -98,7 +98,7 @@ void MeshMakeData::fill_data()
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
 
-	v3s16 blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
+	v3POS blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 
 	/*
 		Copy data
@@ -364,7 +364,7 @@ u16 getSmoothLight(v3s16 p, v3s16 corner, MeshMakeData *data)
 	Converts from day + night color values (0..255)
 	and a given daynight_ratio to the final SColor shown on screen.
 */
-static void finalColorBlend(video::SColor& result,
+void finalColorBlend(video::SColor& result,
 		u8 day, u8 night, u32 daynight_ratio)
 {
 	s32 rg = (day * daynight_ratio + night * (1000-daynight_ratio)) / 1000;

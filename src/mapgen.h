@@ -131,8 +131,8 @@ public:
 	virtual void makeChunk(BlockMakeData *data) {}
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
-	std::map<v3s16, s16> heat_cache;
-	std::map<v3s16, s16> humidity_cache;
+	std::map<v3POS, s16> heat_cache;
+	std::map<v3POS, s16> humidity_cache;
 };
 
 struct MapgenFactory {

@@ -39,7 +39,7 @@ class Map;
 	Mesh making stuff
 */
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3s16 & player_pos, const v3s16 & block_pos);
+int getFarmeshStep(MapDrawControl& draw_control, const v3POS & player_pos, const v3POS & block_pos);
 
 class MapBlock;
 
@@ -238,6 +238,11 @@ inline video::SColor MapBlock_LightColor(u8 alpha, u16 light, u8 light_source=0)
 u16 getInteriorLight(MapNode n, s32 increment, INodeDefManager *ndef);
 u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, INodeDefManager *ndef);
 u16 getSmoothLight(v3s16 p, v3s16 corner, MeshMakeData *data);
+
+// Converts from day + night color values (0..255)
+// and a given daynight_ratio to the final SColor shown on screen.
+void finalColorBlend(video::SColor& result,
+		u8 day, u8 night, u32 daynight_ratio);
 
 // Retrieves the TileSpec of a face of a node
 // Adds MATERIAL_FLAG_CRACK if the node is cracked

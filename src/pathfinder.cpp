@@ -38,9 +38,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PPOS(pos) "(" << pos.X << "," << pos.Y << "," << pos.Z << ")"
 
-std::vector<v3s16> getPath(ServerEnvironment* env,
-                           v3s16 source,
-                           v3s16 destination,
+std::vector<v3POS> getPath(ServerEnvironment* env,
+                           v3POS source,
+                           v3POS destination,
                            unsigned int searchdistance,
                            unsigned int max_jump,
                            unsigned int max_drop,
@@ -56,11 +56,11 @@ std::vector<v3s16> getPath(ServerEnvironment* env,
 OpenElement::OpenElement() :
 	f_value(0),
 	start_cost(0),
-	pos(v3s16(0, 0, 0)),
-	prev_pos(v3s16(0, 0, 0)) {
+	pos(v3POS(0, 0, 0)),
+	prev_pos(v3POS(0, 0, 0)) {
 }
 
-OpenElement::OpenElement(unsigned int _f_value, unsigned int _start_cost, v3s16 _pos, v3s16 _prev_pos) :
+OpenElement::OpenElement(unsigned int _f_value, unsigned int _start_cost, v3POS _pos, v3POS _prev_pos) :
 	f_value(_f_value),
 	start_cost(_start_cost),
 	pos(_pos),
@@ -80,9 +80,9 @@ bool OpenElement::operator<(const OpenElement& e) const {
 }
 
 /******************************************************************************/
-std::vector<v3s16> PathFinder::getPath(ServerEnvironment* env,
-                                       v3s16 source,
-                                       v3s16 destination,
+std::vector<v3POS> PathFinder::getPath(ServerEnvironment* env,
+                                       v3POS source,
+                                       v3POS destination,
                                        unsigned int searchdistance,
                                        unsigned int max_jump,
                                        unsigned int max_drop,
@@ -92,7 +92,7 @@ std::vector<v3s16> PathFinder::getPath(ServerEnvironment* env,
 	timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 #endif
-	std::vector<v3s16> retval;
+	std::vector<v3POS> retval;
 
 	//check parameters
 	if (env == 0) {
@@ -136,7 +136,7 @@ std::vector<v3s16> PathFinder::getPath(ServerEnvironment* env,
 	}
 
 	if(update_cost_retval) {
-		std::vector<v3s16> path;
+		std::vector<v3POS> path;
 		buildPath(path, source, destination);
 
 		// Support bug of previous pathfinder
@@ -172,24 +172,24 @@ PathFinder::PathFinder() :
 	m_destination(0, 0, 0),
 	m_limits(),
 	m_env(0) {
-	m_adjacency_4.push_back(v3s16(-1, 0, 0));
-	m_adjacency_4.push_back(v3s16(1, 0, 0));
-	m_adjacency_4.push_back(v3s16(0, 0, 1));
-	m_adjacency_4.push_back(v3s16(0, 0, -1));
+	m_adjacency_4.push_back(v3POS(-1, 0, 0));
+	m_adjacency_4.push_back(v3POS(1, 0, 0));
+	m_adjacency_4.push_back(v3POS(0, 0, 1));
+	m_adjacency_4.push_back(v3POS(0, 0, -1));
 
 	m_adjacency_4_cost.push_back(1);
 	m_adjacency_4_cost.push_back(1);
 	m_adjacency_4_cost.push_back(1);
 	m_adjacency_4_cost.push_back(1);
 
-	m_adjacency_8.push_back(v3s16(-1, 0, 0));
-	m_adjacency_8.push_back(v3s16(1, 0, 0));
-	m_adjacency_8.push_back(v3s16(0, 0, 1));
-	m_adjacency_8.push_back(v3s16(0, 0, -1));
-	m_adjacency_8.push_back(v3s16(-1, 0, -1));
-	m_adjacency_8.push_back(v3s16(1, 0, -1));
-	m_adjacency_8.push_back(v3s16(-1, 0, 1));
-	m_adjacency_8.push_back(v3s16(1, 0, 1));
+	m_adjacency_8.push_back(v3POS(-1, 0, 0));
+	m_adjacency_8.push_back(v3POS(1, 0, 0));
+	m_adjacency_8.push_back(v3POS(0, 0, 1));
+	m_adjacency_8.push_back(v3POS(0, 0, -1));
+	m_adjacency_8.push_back(v3POS(-1, 0, -1));
+	m_adjacency_8.push_back(v3POS(1, 0, -1));
+	m_adjacency_8.push_back(v3POS(-1, 0, 1));
+	m_adjacency_8.push_back(v3POS(1, 0, 1));
 
 	m_adjacency_8_cost.push_back(1);
 	m_adjacency_8_cost.push_back(1);
@@ -211,19 +211,19 @@ unsigned int PathFinder::getDirectionCost(unsigned int id) {
 	return UINT_MAX;
 }
 
-bool PathFinder::findPathHeuristic(v3s16 pos, std::vector <v3s16>& directions,
-                                   unsigned int (*heuristicFunction)(v3s16, v3s16)) {
+bool PathFinder::findPathHeuristic(v3POS pos, std::vector <v3POS>& directions,
+                                   unsigned int (*heuristicFunction)(v3POS, v3POS)) {
 	std::multiset <OpenElement> q;
 
 	used.clear();
-	q.insert(OpenElement(heuristicFunction(pos, m_destination), 0, pos, v3s16(0, 0, 0)));
+	q.insert(OpenElement(heuristicFunction(pos, m_destination), 0, pos, v3POS(0, 0, 0)));
 	while(!q.empty()) {
-		v3s16 current_pos = q.begin()->pos;
-		v3s16 prev_pos = q.begin()->prev_pos;
+		v3POS current_pos = q.begin()->pos;
+		v3POS prev_pos = q.begin()->prev_pos;
 		unsigned int current_cost = q.begin()->start_cost;
 		q.erase(q.begin());
 		for(unsigned int i = 0; i < directions.size(); ++i) {
-			v3s16 next_pos = current_pos + directions[i];
+			v3POS next_pos = current_pos + directions[i];
 			unsigned int next_cost = current_cost + getDirectionCost(i);
 			// Check limits or already processed
 			if((next_pos.X <  m_limits.X.min) ||
@@ -242,7 +242,7 @@ bool PathFinder::findPathHeuristic(v3s16 pos, std::vector <v3s16>& directions,
 
 			if(node_at_next_pos.param0 == CONTENT_AIR) {
 				MapNode node_below_next_pos =
-				    m_env->getMap().getNodeNoEx(next_pos + v3s16(0, -1, 0));
+				    m_env->getMap().getNodeNoEx(next_pos + v3POS(0, -1, 0));
 
 
 				if(node_below_next_pos.param0 == CONTENT_IGNORE) {
@@ -251,7 +251,7 @@ bool PathFinder::findPathHeuristic(v3s16 pos, std::vector <v3s16>& directions,
 
 				if(node_below_next_pos.param0 == CONTENT_AIR) {
 					// Try jump down
-					v3s16 test_pos = next_pos - v3s16(0, -1, 0);
+					v3POS test_pos = next_pos - v3POS(0, -1, 0);
 					MapNode node_at_test_pos = m_env->getMap().getNodeNoEx(test_pos);
 
 					while((node_at_test_pos.param0 == CONTENT_AIR) &&
@@ -273,7 +273,7 @@ bool PathFinder::findPathHeuristic(v3s16 pos, std::vector <v3s16>& directions,
 				}
 			} else {
 				// Try jump up
-				v3s16 test_pos = next_pos;
+				v3POS test_pos = next_pos;
 				MapNode node_at_test_pos = m_env->getMap().getNodeNoEx(test_pos);
 
 				while((node_at_test_pos.param0 != CONTENT_IGNORE) &&
@@ -309,9 +309,9 @@ bool PathFinder::findPathHeuristic(v3s16 pos, std::vector <v3s16>& directions,
 }
 
 /******************************************************************************/
-void PathFinder::buildPath(std::vector<v3s16>& path, v3s16 start_pos, v3s16 end_pos) {
-	v3s16 current_pos = end_pos;
-	v3s16 next_pos;
+void PathFinder::buildPath(std::vector<v3POS>& path, v3POS start_pos, v3POS end_pos) {
+	v3POS current_pos = end_pos;
+	v3POS next_pos;
 	while(current_pos != start_pos) {
 		path.push_back(current_pos);
 		current_pos = used[current_pos].first;

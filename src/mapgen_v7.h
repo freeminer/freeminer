@@ -92,9 +92,6 @@ public:
 	
 	//freeminer:
 	s16 float_islands;
-	Noise *noise_float_islands1;
-	Noise *noise_float_islands2;
-	Noise *noise_float_islands3;
 	content_t c_dirt_with_snow;
 
 	content_t c_stone;
@@ -121,7 +118,7 @@ public:
 	bool getMountainTerrainAtPoint(int x, int y, int z);
 	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, int y);
 	
-	void calculateNoise();
+	virtual void calculateNoise();
 	
 	virtual int generateTerrain();
 	int generateBaseTerrain();
@@ -136,7 +133,6 @@ public:
 	void generateCaves(int max_stone_y);
 
 	virtual void generateExperimental();
-	virtual void generateFloatIslands(int min_y);
 
 };
 

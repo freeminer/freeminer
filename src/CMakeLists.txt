@@ -568,6 +568,7 @@ set(common_SRCS
 	mapblock.cpp
 	mapgen.cpp
 	mapgen_singlenode.cpp
+	mapgen_v5.cpp
 	mapgen_v6.cpp
 	mapgen_v7.cpp
 	mapnode.cpp
@@ -674,6 +675,7 @@ set(minetest_SRCS
 	shader.cpp
 	sky.cpp
 	tile.cpp
+	wieldmesh.cpp
 	${minetest_SCRIPT_SRCS}
 	${FMclient_SRCS}
 )

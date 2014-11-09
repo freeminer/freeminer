@@ -223,11 +223,11 @@ public:
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
 	u32 updateLighting(enum LightBank bank,
-			shared_map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
+			shared_map<v3POS, MapBlock*>  & a_blocks,
+			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
-	u32 updateLighting(shared_map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
+	u32 updateLighting(shared_map<v3POS, MapBlock*>  & a_blocks,
+			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
 
@@ -321,7 +321,6 @@ public:
 	/*
 		Misc.
 	*/
-	//DELME std::map<v2s16, MapSector*> *getSectorsPtr(){return &m_sectors;}
 
 	/*
 		Variables
@@ -344,7 +343,7 @@ public:
 
 
 // from old mapsector:
-	typedef maybe_shared_unordered_map<v3s16, MapBlockP, v3s16Hash, v3s16Equal> m_blocks_type;
+	typedef maybe_shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
@@ -363,13 +362,12 @@ protected:
 
 	std::set<MapEventReceiver*> m_event_receivers;
 
-	//std::map<v2s16, MapSector*> m_sectors;
 	u32 m_blocks_update_last;
 	u32 m_blocks_save_last;
 
 	// Queued transforming water nodes
 public:
-	shared_unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> m_transforming_liquid;
+	shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 protected:
 };
 
@@ -428,7 +426,7 @@ public:
 	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
-	s16 findGroundLevel(v2s16 p2d, bool cacheBlocks);
+	s16 findGroundLevel(v2POS p2d, bool cacheBlocks);
 
 	/*
 		Misc. helper functions for fiddling with directory and file

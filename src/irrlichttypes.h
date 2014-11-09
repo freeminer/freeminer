@@ -27,6 +27,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace irr;
 
+typedef s16 POS;
+// typedef s32 POS; far future
+
 // Irrlicht 1.8+ defines 64bit unsigned symbol in irrTypes.h
 #if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
 #ifdef _MSC_VER

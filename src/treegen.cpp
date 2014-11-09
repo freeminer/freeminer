@@ -141,7 +141,7 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0, INodeDefManager *nd
 	vmanip.blitBackAll(&modified_blocks);
 
 	// update lighting
-	shared_map<v3s16, MapBlock*> lighting_modified_blocks;
+	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
 	map->updateLighting(lighting_modified_blocks, modified_blocks);
 	// Send a MEET_OTHER event
@@ -648,16 +648,16 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 	}
 }
 
-void make_cavetree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
+void make_cavetree(ManualMapVoxelManipulator &vmanip, v3POS p0,
 		bool is_jungle_tree, INodeDefManager *ndef, int seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
 	MapNode leavesnode(ndef->getId(is_jungle_tree ? "mapgen_jungleleaves" : "mapgen_leaves"));
 
 	PseudoRandom pr(seed);
-	s16 trunk_h = pr.range(2, pr.range(2, 5));
-	v3s16 p1 = p0;
-	for(s16 ii=0; ii<trunk_h; ii++)
+	POS trunk_h = pr.range(2, pr.range(2, 5));
+	v3POS p1 = p0;
+	for(POS ii=0; ii<trunk_h; ii++)
 	{
 		if(vmanip.m_area.contains(p1)) {
 			if(vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)

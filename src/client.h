@@ -70,13 +70,13 @@ public:
 
 	~MeshUpdateQueue();
 
-	void addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool urgent);
+	void addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent);
 	std::shared_ptr<MeshMakeData> pop();
 
-	shared_unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> m_process;
+	shared_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
 private:
-	shared_map<unsigned int, std::unordered_map<v3s16, std::shared_ptr<MeshMakeData>, v3s16Hash, v3s16Equal>> m_queue;
-	std::unordered_map<v3s16, unsigned int, v3s16Hash, v3s16Equal> m_ranges;
+	shared_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
+	std::unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_ranges;
 };
 
 struct MeshUpdateResult
@@ -84,7 +84,7 @@ struct MeshUpdateResult
 	v3s16 p;
 	std::shared_ptr<MapBlockMesh> mesh;
 
-	MeshUpdateResult(v3s16 & p_, std::shared_ptr<MapBlockMesh> mesh_):
+	MeshUpdateResult(v3POS & p_, std::shared_ptr<MapBlockMesh> mesh_):
 		p(p_),
 		mesh(mesh_)
 	{

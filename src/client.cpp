@@ -71,7 +71,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 {
 }
 
-void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool urgent)
+void MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -1704,20 +1704,19 @@ void Client::removeNode(v3s16 p)
 	{
 	}
 	
-	// add urgent task to update the modified node
-	addUpdateMeshTaskForNode(p, true);
-
 	for(std::map<v3s16, MapBlock * >::iterator
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
 	{
-		addUpdateMeshTaskWithEdge(i->first);
+		addUpdateMeshTask(i->first, false);
 	}
+	// add urgent task to update the modified node
+	addUpdateMeshTaskForNode(p, true);
 }
 
 void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
 {
-	TimeTaker timer1("Client::addNode()");
+	//TimeTaker timer1("Client::addNode()");
 
 	std::map<v3s16, MapBlock*> modified_blocks;
 
@@ -1735,7 +1734,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
 	{
-		addUpdateMeshTaskWithEdge(i->first);
+		addUpdateMeshTask(i->first, false);
 	}
 }
 	

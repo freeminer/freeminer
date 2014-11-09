@@ -22,7 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "directiontables.h"
 
-const v3s16 g_6dirs[7] =
+const v3POS g_6dirs[7] =
 {
 	// +right, +top, +back
 	v3s16( 0, 0, 1), // back

@@ -75,7 +75,7 @@ struct CircuitElementContainer
 
 class CircuitElement {
 public:
-	CircuitElement(v3s16 pos, u32 id, u8 delay);
+	CircuitElement(v3POS pos, u32 id, u8 delay);
 	CircuitElement(const CircuitElement& element);
 	CircuitElement(u32 id);
 	~CircuitElement();
@@ -95,12 +95,12 @@ public:
 	// First - pointer to object to which connected.
 	// Second - face id.
 	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
-	                                  Map* map, INodeDefManager* ndef, v3s16 pos, u8 face,
-	                                  std::map<v3s16, std::list<CircuitElement>::iterator>& pos_to_iterator,
+	                                  Map* map, INodeDefManager* ndef, v3POS pos, u8 face,
+	                                  std::map<v3POS, std::list<CircuitElement>::iterator>& pos_to_iterator,
 	                                  bool connected_faces[6]);
 
 	CircuitElementContainer getFace(int id) const;
-	v3s16 getPos() const;
+	v3POS getPos() const;
 	u32 getId() const;
 
 	void connectFace(int id, std::list <CircuitElementVirtualContainer>::iterator it,
@@ -140,7 +140,7 @@ public:
 	static u8 rotate_face[168];
 	static u8 reverse_rotate_face[168];
 private:
-	v3s16 m_pos;
+	v3POS m_pos;
 	u32 m_element_id;
 	u8 m_prev_input_state;
 	u8 m_current_input_state;

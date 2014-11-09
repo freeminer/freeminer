@@ -35,9 +35,9 @@ try_shared_mutex m_block_cache_mutex;
 #endif
 
 THREAD_LOCAL MapBlockP m_block_cache = nullptr;
-THREAD_LOCAL v3s16 m_block_cache_p;
+THREAD_LOCAL v3POS m_block_cache_p;
 
-MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock, bool nocache)
+MapBlock * Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
@@ -80,13 +80,13 @@ MapBlock * Map::getBlockNoCreateNoEx(v3s16 p, bool trylock, bool nocache)
 	return block.get();
 }
 
-MapBlock * Map::createBlankBlockNoInsert(v3s16 & p)
+MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
 {
 	auto block = new MapBlock(this, p, m_gamedef);
 	return block;
 }
 
-MapBlock * Map::createBlankBlock(v3s16 & p)
+MapBlock * Map::createBlankBlock(v3POS & p)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 	if (block != NULL) {
