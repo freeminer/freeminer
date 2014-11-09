@@ -379,5 +379,10 @@ inline int radius_box(const v3f & a, const v3f & b) {
 	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));
 }
 
+inline bool is_power_of_two(u32 n)
+{
+	return n != 0 && (n & (n-1)) == 0;
+}
+
 #endif
 

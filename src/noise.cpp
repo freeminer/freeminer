@@ -306,7 +306,6 @@ float noise3d_perlin_abs(float x, float y, float z, int seed,
 }
 
 
-// -1->0, 0->1, 1->0
 float contour(float v)
 {
 	v = fabs(v);
@@ -656,7 +655,6 @@ void Noise::transformNoiseMap(float xx, float yy, float zz)
 	}
 }
 
-
 float farscale(float scale, float z) {
 	return ( 1 + ( 1 - (MAP_GENERATION_LIMIT * 1 - (fabs(z))                     ) / (MAP_GENERATION_LIMIT * 1) ) * (scale - 1) );
 }
@@ -668,4 +666,3 @@ float farscale(float scale, float x, float z) {
 float farscale(float scale, float x, float y, float z) {
 	return ( 1 + ( 1 - (MAP_GENERATION_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (MAP_GENERATION_LIMIT * 3) ) * (scale - 1) );
 }
-

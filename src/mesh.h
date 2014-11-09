@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes_extrabloated.h"
 #include "nodedef.h"
-#include <string>
 
 /*
 	Create a new cube mesh.
@@ -35,16 +34,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	which must be defined by the caller.
 */
 scene::IAnimatedMesh* createCubeMesh(v3f scale);
-
-/*
-	Create a new extruded mesh from a texture.
-	Maximum bounding box is (+-scale.X/2, +-scale.Y/2, +-scale.Z).
-	Thickness is in Z direction.
-
-	The resulting mesh has 1 material which must be defined by the caller.
-*/
-scene::IAnimatedMesh* createExtrudedMesh(video::ITexture *texture,
-		video::IVideoDriver *driver, v3f scale);
 
 /*
 	Multiplies each vertex coordinate by the specified scaling factors

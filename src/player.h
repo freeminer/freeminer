@@ -251,8 +251,6 @@ public:
 	bool swimming_vertical;
 	bool camera_barely_in_ceiling;
 	
-	u8 light;
-
 	Inventory inventory;
 
 	f32 movement_acceleration_default;

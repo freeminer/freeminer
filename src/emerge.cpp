@@ -45,6 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mg_biome.h"
 #include "mg_decoration.h"
 #include "mg_ore.h"
+#include "mapgen_v5.h"
 #include "mapgen_v6.h"
 #include "mapgen_v7.h"
 #include "mapgen_indev.h"
