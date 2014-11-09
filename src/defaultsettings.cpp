@@ -35,6 +35,14 @@ const bool debug =
 #endif
 ;
 
+const bool win32 =
+#if defined(_WIN32)
+	true
+#else
+	false
+#endif
+;
+
 void set_default_settings(Settings *settings)
 {
 	//
@@ -50,7 +58,8 @@ void set_default_settings(Settings *settings)
 	// Language
 	settings->setDefault("language", "");
 	
-	// Screen size
+	// Screen
+	settings->setDefault("video_driver", "opengl");
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
 	settings->setDefault("fullscreen", "false");
@@ -68,7 +77,6 @@ void set_default_settings(Settings *settings)
 	// Paths
 	settings->setDefault("texture_path", "");
 	settings->setDefault("shader_path", "");
-	settings->setDefault("video_driver", "opengl");
 	settings->setDefault("screenshot_path", ".");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 	
@@ -91,18 +99,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("high_precision_fpu", "true");
 	
 	// Debugging stuff
-#ifdef NDEBUG
-	settings->setDefault("show_debug", "false");
-	settings->setDefault("deprecated_lua_api_handling", "legacy");
-#else
-	settings->setDefault("show_debug", "true");
-	settings->setDefault("deprecated_lua_api_handling", "log");
-#endif
+	settings->setDefault("show_debug", debug ? "true" : "false");
+	settings->setDefault("deprecated_lua_api_handling", debug ? "log" : "legacy");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 	settings->setDefault("profiler_print_interval", debug ? "10" : "0");
 	settings->setDefault("debug_log_level", "2");
 	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
-	settings->setDefault("preload_item_visuals", "false");
 	
 	//
 	// Keymaps
@@ -191,7 +193,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
-	settings->setDefault("mg_params", ""); // configuration in json struct	
+	settings->setDefault("mg_params", ""); // configuration in json struct
 	
 	
 	//
@@ -224,7 +226,7 @@ void set_default_settings(Settings *settings)
 	// Lighting
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("disable_wieldlight", "false");
-	settings->setDefault("enable_node_highlighting", "true");
+	settings->setDefault("enable_node_highlighting", "false");
 	settings->setDefault("mip_map", "false");
 	
 	// Clouds, water, glass, leaves, fog
@@ -256,24 +258,17 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
+	settings->setDefault("preload_item_visuals", "false");
 	
 	// Liquid
-#if defined(_WIN32)
-	settings->setDefault("liquid_real", "false");
-#else
-	settings->setDefault("liquid_real", "true");
-#endif
+	settings->setDefault("liquid_real", win32 ? "false" : "true");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
 	
 	// Weather
-#if defined(_WIN32)
-	settings->setDefault("weather", "false");
-#else
-	settings->setDefault("weather", "true");
-#endif
+	settings->setDefault("weather", win32 ? "false" : "true");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
@@ -313,7 +308,7 @@ void set_default_settings(Settings *settings)
 	//settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("enable_mesh_cache", "true");
 	settings->setDefault("repeat_rightclick_time", "0.25");
-	settings->setDefault("random_input", "false");	
+	settings->setDefault("random_input", "false");
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("enable_vbo", "true");
 	
@@ -430,12 +425,7 @@ void set_default_settings(Settings *settings)
 	// Tweaks for windows
 	//
 
-#if defined(_WIN32)
-		settings->setDefault("more_threads", "false");
-#else
-		settings->setDefault("num_emerge_threads", ""); // autodetect from number of cpus
-		settings->setDefault("more_threads", "true");
-#endif
+	settings->setDefault("more_threads", win32 ? "false" : "true");
 
 #if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
