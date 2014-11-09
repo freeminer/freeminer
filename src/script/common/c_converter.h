@@ -101,4 +101,10 @@ void                warn_if_field_exists      (lua_State *L,
                                               const char *fieldname,
                                               const std::string &message);
 
+
+v3POS               check_v3POS         (lua_State *L, int index);
+v2POS               read_v2POS          (lua_State *L, int index);
+v3POS               read_v3POS          (lua_State *L, int index);
+void                push_v3POS          (lua_State *L, v3POS p);
+
 #endif /* C_CONVERTER_H_ */
