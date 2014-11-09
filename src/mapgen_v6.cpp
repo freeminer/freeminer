@@ -631,7 +631,7 @@ int MapgenV6::generateGround() {
 
 		BiomeType bt = getBiome(index, v2s16(x, z));
 		
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		v3s16 em = vm->m_area.getExtent();
@@ -1029,7 +1029,7 @@ void MapgenV6::growGrass() {
 		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
 		{
 			if (emerge->env->m_use_weather) {
-				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x, surface_y, z), nullptr, &heat_cache);
+				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
 				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
 			} else
 			n->setContent(c_dirt_with_grass);

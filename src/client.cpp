@@ -69,7 +69,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 {
 }
 
-void MeshUpdateQueue::addBlock(v3s16 p, std::shared_ptr<MeshMakeData> data, bool urgent)
+void MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
 	DSTACK(__FUNCTION_NAME);
 

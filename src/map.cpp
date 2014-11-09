@@ -678,8 +678,8 @@ s16 Map::propagateSunlight(v3s16 start,
 }
 
 u32 Map::updateLighting(enum LightBank bank,
-		shared_map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
+		shared_map<v3POS, MapBlock*> & a_blocks,
+		std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -930,8 +930,8 @@ u32 Map::updateLighting(enum LightBank bank,
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-u32 Map::updateLighting(shared_map<v3s16, MapBlock*> & a_blocks,
-		std::map<v3s16, MapBlock*> & modified_blocks, int max_cycle_ms)
+u32 Map::updateLighting(shared_map<v3POS, MapBlock*> & a_blocks,
+		std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms)
 {
 	int ret = 0;
 {
@@ -1674,7 +1674,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquidsReal(Server *m_server, std::map<v3POS, MapBlock*> & modified_blocks, shared_map<v3POS, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -1688,7 +1688,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 	int water_level = g_settings->getS16("water_level");
 
 	// list of nodes that due to viscosity have not reached their max level height
-	std::unordered_map<v3s16, bool, v3s16Hash, v3s16Equal> must_reflow, must_reflow_second, must_reflow_third;
+	std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> must_reflow, must_reflow_second, must_reflow_third;
 	// List of MapBlocks that will require a lighting update (due to lava)
 	u16 loop_rand = myrand();
 
@@ -1704,7 +1704,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3s16 p0;
+		v3POS p0;
 		{
 			//JMutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = transforming_liquid_pop();
@@ -2056,7 +2056,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			v3s16 blockpos = getNodeBlockPos(neighbors[i].p);
+			v3POS blockpos = getNodeBlockPos(neighbors[i].p);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 			if(block != NULL) {
 				modified_blocks[blockpos] = block;
@@ -2111,7 +2111,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & mod
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, std::map<v3POS, MapBlock*> & modified_blocks, shared_map<v3POS, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_real"))
@@ -3079,18 +3079,18 @@ void ServerMap::updateVManip(v3s16 pos)
 /**
  * Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
  */
-s16 ServerMap::findGroundLevel(v2s16 p2d, bool cacheBlocks)
+s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 {
 	
-	s16 level;
+	POS level;
 
 	// The reference height is the original mapgen height
-	s16 referenceHeight = m_emerge->getGroundLevelAtPoint(p2d);
-	s16 maxSearchHeight =  63 + referenceHeight;
-	s16 minSearchHeight = -63 + referenceHeight;
-	v3s16 probePosition(p2d.X, maxSearchHeight, p2d.Y);
-	v3s16 blockPosition = getNodeBlockPos(probePosition);
-	v3s16 prevBlockPosition = blockPosition;
+	POS referenceHeight = m_emerge->getGroundLevelAtPoint(p2d);
+	POS maxSearchHeight =  63 + referenceHeight;
+	POS minSearchHeight = -63 + referenceHeight;
+	v3POS probePosition(p2d.X, maxSearchHeight, p2d.Y);
+	v3POS blockPosition = getNodeBlockPos(probePosition);
+	v3POS prevBlockPosition = blockPosition;
 
 	// Cache the block to be inspected.
 	if(cacheBlocks) {
@@ -3450,7 +3450,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block,
 	return value + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
+s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache)
 {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();

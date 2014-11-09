@@ -435,7 +435,7 @@ int MapgenMath::generateTerrain() {
 
 	MapNode n_ice(c_ice);
 	u32 index = 0;
-	v3s16 em = vm->m_area.getExtent();
+	v3POS em = vm->m_area.getExtent();
 
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
@@ -463,7 +463,7 @@ int MapgenMath::generateTerrain() {
 	double d = 0;
 	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
 		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
@@ -504,7 +504,7 @@ int MapgenMath::generateTerrain() {
 	return 0;
 }
 
-int MapgenMath::getGroundLevelAtPoint(v2s16 p) {
+int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 	return 0;
 }
 

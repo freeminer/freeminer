@@ -56,7 +56,7 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & par
 	}
 }
 
-void Mapgen_features::layers_prepare(const v3s16 & node_min, const v3s16 & node_max) {
+void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_max) {
 	int x = node_min.X;
 	int y = node_min.Y;
 	int z = node_min.Z;
@@ -86,7 +86,7 @@ MapNode Mapgen_features::layers_get(int index) {
 	return layers_node[layer_index];
 }
 
-void Mapgen_features::float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, int min_y) {
+void Mapgen_features::float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y) {
 	int x = node_min.X;
 	int y = node_min.Y;
 	int z = node_min.Z;
@@ -235,7 +235,7 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
 	
-	if (getBiome(v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
+	if (getBiome(v2POS(node_min.X, node_min.Z)) == BT_DESERT) {
 		caves_count   /= 3;
 		bruises_count /= 3;
 	}
@@ -249,7 +249,7 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 }
 
 CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
-				v3s16 node_min, bool is_large_cave) {
+				v3POS node_min, bool is_large_cave) {
 	this->mg = mg;
 	this->vm = mg->vm;
 	this->ndef = mg->ndef;
@@ -291,7 +291,7 @@ CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 settings->setDefault("mgindev_np_float_islands1",  "-9.5, 10,  (20,  50,  50 ), 45123, 5, 0.6,  1.5, 5");
 void MapgenIndev::float_islands_generate(int min_y) {
 	if (node_min.Y < min_y) return;
-	v3s16 p0(node_min.X, node_min.Y, node_min.Z);
+	v3POS p0(node_min.X, node_min.Y, node_min.Z);
 	MapNode n1(c_stone), n2(c_desert_stone);
 	int xl = node_max.X - node_min.X;
 	int yl = node_max.Y - node_min.Y;
@@ -309,7 +309,7 @@ void MapgenIndev::float_islands_generate(int min_y) {
 				float noise = noise_float_islands1->result[index];
 				//dstream << " y1="<<y1<< " x1="<<x1<<" z1="<<z1<< " noise="<<noise << std::endl;
 				if (noise > 0 ) {
-					v3s16 p = p0 + v3s16(x1, y1, z1);
+					v3POS p = p0 + v3POS(x1, y1, z1);
 					u32 i = vm->m_area.index(p);
 					if (!vm->m_area.contains(i))
 						continue;
@@ -324,7 +324,7 @@ void MapgenIndev::float_islands_generate(int min_y) {
 }
 */
 
-int Mapgen_features::float_islands_generate(const v3s16 & node_min, const v3s16 & node_max, int min_y, ManualMapVoxelManipulator *vm) {
+int Mapgen_features::float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, ManualMapVoxelManipulator *vm) {
 	int generated = 0;
 	if (node_min.Y < min_y) return generated;
 	// originally from http://forum.minetest.net/viewtopic.php?id=4776
@@ -333,7 +333,7 @@ int Mapgen_features::float_islands_generate(const v3s16 & node_min, const v3s16 
 	float TGRAD = 24; // 24; // Noise gradient to create top surface. Tallness of island top.
 	float BGRAD = 24; // 24; // Noise gradient to create bottom surface. Tallness of island bottom.
 
-	v3s16 p0(node_min.X, node_min.Y, node_min.Z);
+	v3POS p0(node_min.X, node_min.Y, node_min.Z);
 
 	float xl = node_max.X - node_min.X;
 	float yl = node_max.Y - node_min.Y;
@@ -354,7 +354,7 @@ int Mapgen_features::float_islands_generate(const v3s16 & node_min, const v3s16 
 		if (noise1off > 0 && noise1off < 0.7) {
 			float noise2 = noise_float_islands2->result[index];
 			if (noise2 - noise1off > -0.7) {
-				v3s16 p = p0 + v3s16(x1, y1, z1);
+				v3POS p = p0 + v3POS(x1, y1, z1);
 				u32 i = vm->m_area.index(p);
 				if (!vm->m_area.contains(i))
 					continue;
@@ -391,12 +391,12 @@ int MapgenIndev::generateGround() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeType bt = getBiome(index, v2s16(x, z));
+		BiomeType bt = getBiome(index, v2POS(x, z));
 		
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3s16(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
-		v3s16 em = vm->m_area.getExtent();
+		v3POS em = vm->m_area.getExtent();
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {

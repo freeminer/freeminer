@@ -194,7 +194,7 @@ public:
 		int max_cycle_ms = 1000;
 		while(!StopRequested()) {
 			try {
-				shared_map<v3s16, MapBlock*> modified_blocks; //not used
+				shared_map<v3POS, MapBlock*> modified_blocks; //not used
 				int res = m_server->getEnv().getMap().transformLiquids(m_server, modified_blocks, m_server->m_lighting_modified_blocks, max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(std::max(300-res,1)));
 #ifdef NDEBUG
@@ -1417,7 +1417,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		// not all liquid was processed per step, forcing on next step
-		shared_map<v3s16, MapBlock*> modified_blocks; //not used
+		shared_map<v3POS, MapBlock*> modified_blocks; //not used
 		if (m_env->getMap().transformLiquids(this, modified_blocks, m_lighting_modified_blocks, max_cycle_ms) > 0) {
 			m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
 			++ret;
@@ -1436,7 +1436,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		shared_map<v3s16, MapBlock*> modified_blocks; //not used
+		shared_map<v3POS, MapBlock*> modified_blocks; //not used
 
 		if (m_env->getMap().updateLighting(m_lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
 			m_liquid_send_timer = m_liquid_send_interval;

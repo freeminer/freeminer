@@ -39,7 +39,7 @@ class Map;
 	Mesh making stuff
 */
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3s16 & player_pos, const v3s16 & block_pos);
+int getFarmeshStep(MapDrawControl& draw_control, const v3POS & player_pos, const v3POS & block_pos);
 
 class MapBlock;
 

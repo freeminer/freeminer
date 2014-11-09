@@ -110,8 +110,8 @@ s16 Mapgen::findGroundLevelFull(v2s16 p2d) {
 }
 
 
-s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax) {
-	v3s16 em = vm->m_area.getExtent();
+s16 Mapgen::findGroundLevel(v2POS p2d, s16 ymin, s16 ymax) {
+	auto em = vm->m_area.getExtent();
 	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
 	s16 y;
 

@@ -337,7 +337,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	shared_unordered_map<v3s16, unsigned int, v3s16Hash, v3s16Equal> m_blocks_sent;
+	shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
 public:
 	s16 m_nearest_unsent_d;

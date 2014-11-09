@@ -77,7 +77,7 @@ public:
 
 private:
 	//std::map<Value, u8> m_map;
-	std::unordered_map<Value, u8, v3s16Hash, v3s16Equal> m_map; // all usage with v3s16 now
+	std::unordered_map<Value, u8, v3POSHash, v3POSEqual> m_map; // all usage with v3s16 now
 	std::list<Value> m_list;
 };
 

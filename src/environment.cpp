@@ -2606,7 +2606,7 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	u32 day_night_ratio = getDayNightRatio();
 	{
 		// Get node at head
-		float player_light = 1.0;
+		//float player_light = 1.0;
 
 		// On InvalidPositionException, use this as default
 		// (day: LIGHT_SUN, night: 0)

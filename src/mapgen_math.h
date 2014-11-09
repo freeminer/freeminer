@@ -59,7 +59,7 @@ public:
 
 	void calculateNoise();
 	int generateTerrain();
-	int getGroundLevelAtPoint(v2s16 p);
+	int getGroundLevelAtPoint(v2POS p);
 
 	bool internal;
 	bool invert;

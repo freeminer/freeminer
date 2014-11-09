@@ -50,14 +50,14 @@ public:
 	std::vector<MapNode> layers_node;
 	unsigned int layers_node_size;
 	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
-	void layers_prepare(const v3s16 & node_min, const v3s16 & node_max);
+	void layers_prepare(const v3POS & node_min, const v3POS & node_max);
 	MapNode layers_get(int index);
 
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
-	void float_islands_prepare(const v3s16 & node_min, const v3s16 & node_max, int min_y);
-	int float_islands_generate(const v3s16 & node_min, const v3s16 & node_max, int min_y, ManualMapVoxelManipulator *vm);
+	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
+	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, ManualMapVoxelManipulator *vm);
 
 };
 
@@ -108,7 +108,7 @@ struct MapgenFactoryIndev : public MapgenFactoryV6 {
 class CaveIndev : public CaveV6 {
 public:
 	CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
-			v3s16 node_min, bool is_large_cave);
+			v3POS node_min, bool is_large_cave);
 };
 
 #endif
