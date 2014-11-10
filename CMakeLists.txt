@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 2.6)
 if(${CMAKE_VERSION} STREQUAL "2.8.2")
   # bug http://vtk.org/Bug/view.php?id=11020
@@ -13,16 +14,16 @@ set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
 set(VERSION_PATCH 10)
-set(VERSION_PATCH "${VERSION_PATCH}.3")
+set(VERSION_TWEAK 3)
 set(VERSION_PATCH_ORIG ${VERSION_PATCH})
 
 if(VERSION_EXTRA)
-	set(VERSION_PATCH ${VERSION_PATCH}-${VERSION_EXTRA})
+	set(VERSION_TWEAK ${VERSION_TWEAK}-${VERSION_EXTRA})
 else()
 	# Comment the following line during release
-	set(VERSION_PATCH ${VERSION_PATCH}-next-dev)
+	set(VERSION_PATCH ${VERSION_TWEAK}-next-dev)
 endif()
-set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
 
 MESSAGE(STATUS "*** Will build version ${VERSION_STRING} ***")
 
@@ -39,9 +40,10 @@ endif()
 
 set(BUILD_CLIENT 1 CACHE BOOL "Build client")
 if(WIN32)
-	if( ${CMAKE_SYSTEM_VERSION} VERSION_LESS 6.0 )
-		MESSAGE(FATAL_ERROR "Building is not supported for Windows ${CMAKE_SYSTEM_VERSION}")
-	endif()
+	# broken! http://forum.freeminer.org/threads/building-errors.182/#post-1852
+	#if( ${CMAKE_SYSTEM_VERSION} VERSION_LESS 6.0 )
+	#	MESSAGE(FATAL_ERROR "Building is not supported for Windows ${CMAKE_SYSTEM_VERSION}")
+	#endif()
 	set(BUILD_SERVER 0 CACHE BOOL "Build server")
 else()
 	set(BUILD_SERVER 1 CACHE BOOL "Build server")
@@ -192,6 +194,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "An InfiniMiner/Minecraft inspired game")
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION_TWEAK ${VERSION_TWEAK})
 set(CPACK_PACKAGE_VENDOR "celeron55")
 set(CPACK_PACKAGE_CONTACT "Perttu Ahola <celeron55@gmail.com>")
 

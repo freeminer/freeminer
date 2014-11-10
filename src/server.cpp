@@ -913,6 +913,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 					m_env->getGameTime(),
 					m_lag,
 					m_gamespec.id,
+					m_emerge->params.mg_name,
 					m_mods);
 			counter = 0.01;
 		}

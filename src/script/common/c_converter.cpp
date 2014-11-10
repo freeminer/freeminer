@@ -389,3 +389,41 @@ void setboolfield(lua_State *L, int table,
 }
 
 
+
+
+
+
+v2s16 read_v2POS(lua_State *L, int index) {
+	v2POS p;
+	luaL_checktype(L, index, LUA_TTABLE);
+	lua_getfield(L, index, "x");
+	p.X = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "y");
+	p.Y = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	return p;
+}
+
+void push_v3POS(lua_State *L, v3POS p) {
+	lua_newtable(L);
+	lua_pushnumber(L, p.X);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, p.Y);
+	lua_setfield(L, -2, "y");
+	lua_pushnumber(L, p.Z);
+	lua_setfield(L, -2, "z");
+}
+
+v3POS read_v3POS(lua_State *L, int index) {
+	// Correct rounding at <0
+	v3f pf = read_v3f(L, index);
+	return floatToInt(pf, 1.0);
+}
+
+v3POS check_v3POS(lua_State *L, int index) {
+	// Correct rounding at <0
+	v3f pf = check_v3f(L, index);
+	return floatToInt(pf, 1.0);
+}
+
