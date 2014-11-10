@@ -35,7 +35,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include <algorithm>
 
+#include "mainmenumanager.h"  // for g_gamecallback
+
 #define KMaxButtonPerColumns 12
+
+extern MainGameCallback *g_gamecallback;
 
 enum
 {
@@ -239,7 +243,11 @@ bool GUIKeyChangeMenu::acceptInput()
 		if(e != NULL && e->getType() == gui::EGUIET_CHECK_BOX)
 			g_settings->setBool("doubletap_jump", ((gui::IGUICheckBox*)e)->isChecked());
 	}
+
 	clearKeyCache();
+
+	g_gamecallback->signalKeyConfigChange();
+
 	return true;
 }
 
