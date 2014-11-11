@@ -470,6 +470,7 @@ core.register_chatcommand("giveme", {
 		if not itemstring then
 			return false, "ItemString required"
 		end
+		core.stat_add("giveme", name)
 		return handle_give_command("/giveme", name, name, itemstring)
 	end,
 })
@@ -733,6 +734,7 @@ core.register_chatcommand("die", {
 			return
 		end
 		player:set_hp(0)
+		core.stat_add("suicide", name)
 	end,
 })
 

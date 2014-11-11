@@ -34,7 +34,8 @@ void Stat::save() {
 }
 
 void Stat::unload() {
-	save(); stats.clear();
+	save();
+	stats.clear();
 }
 
 void Stat::open() {
@@ -42,12 +43,14 @@ void Stat::open() {
 }
 
 void Stat::close() {
-	unload(); database.close();
+	unload();
+	database.close();
 }
 
 stat_value Stat::get(const std::string & key) {
 	if (!stats.count(key))
 		database.get(key, stats[key]);
+	//errorstream<<"stat get: "<<key<<" = "<< stats[key]<<std::endl;
 	return stats[key];
 }
 
@@ -58,10 +61,10 @@ void Stat::write_one(const std::string & key, const stat_value & value) {
 
 void Stat::add(const std::string & key, const std::string & player, stat_value value) {
 	//errorstream<<"stat adding: "<<key<< " player="<<player<<" = "<< value<<std::endl;
-	write_one("server:total:" + key, value);
-	//write_one("server:day:"+ day + ":" + key, value);
-	//write_one("server:week:"+ week + ":" + key, value);
-	//write_one("server:month:"+ month + ":" + key, value);
+	write_one("total:" + key, value);
+	//write_one("day:"+ key + ":" + day , value);
+	//write_one("week:"+ key + ":" + week, value);
+	//write_one("month:"+ key + ":" + month, value);
 	if (!player.empty())
 		write_one("player:" + key  + ":" + player, value);
 }

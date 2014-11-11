@@ -519,7 +519,9 @@ private:
 	GameScripting *m_script;
 	
 	Circuit* m_circuit;
+public:
 	Stat stat;
+private:
 
 	// Item definition manager
 	IWritableItemDefManager *m_itemdef;

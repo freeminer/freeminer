@@ -28,6 +28,8 @@ private:
 	static int l_kv_put_string(lua_State *L);
 	static int l_kv_get_string(lua_State *L);
 	static int l_kv_delete(lua_State *L);
+	static int l_stat_get(lua_State *L);
+	static int l_stat_add(lua_State *L);
 };
 
 #endif
