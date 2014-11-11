@@ -55,6 +55,13 @@ endif()
 #
 
 include(CheckCXXCompilerFlag)
+
+if(STATIC_BUILD)
+	set(STATIC_BUILD 1)
+else()
+	set(STATIC_BUILD 0)
+endif()
+
 option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 if(MSVC)
@@ -131,7 +138,11 @@ else()
 			"
 			HAVE_SHARED_MUTEX)
 	else()
-		set(STD_FLAGS "-std=c++0x")
+		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
+			set(STD_FLAGS "-std=gnu++0x")
+		else()
+			set(STD_FLAGS "-std=c++0x")
+		endif()
 	endif()
 
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
@@ -530,6 +541,7 @@ set(FMcommon_SRCS
 	mapgen_math.cpp
 	log_types.cpp
 	profiler.cpp
+	stat.cpp
 )
 
 set(common_SRCS

@@ -15,21 +15,38 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_KEY_VALUE_STORAGE_H
-#define L_KEY_VALUE_STORAGE_H
+#ifndef STAT_H
+#define STAT_H
 
-#include "lua_api/l_base.h"
+#include <string>
+#include <unordered_map>
 
-class ModApiKeyValueStorage : public ModApiBase
-{
+#include "key_value_storage.h"
+#include "log.h"
+
+
+typedef float stat_value;
+
+class Stat {
 public:
-	static void Initialize(lua_State *L, int top);
-private:
-	static int l_kv_put_string(lua_State *L);
-	static int l_kv_get_string(lua_State *L);
-	static int l_kv_delete(lua_State *L);
-	static int l_stat_get(lua_State *L);
-	static int l_stat_add(lua_State *L);
+	KeyValueStorage database;
+	std::unordered_map<std::string, stat_value> stats; // todo: make shared
+
+	std::string day, week, month;
+
+	Stat(std::string savedir);
+	~Stat();
+
+	void save();
+	void unload();
+	void open();
+	void close();
+
+	stat_value get(const std::string & key);
+	stat_value write_one(const std::string & key, const stat_value & value);
+	stat_value add(const std::string & key, const std::string & player = "", stat_value value = 1);
+
+	void update_time();
 };
 
 #endif

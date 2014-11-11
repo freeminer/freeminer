@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define API_FCT(name) registerFunction(L, #name, l_##name,top)
 #define ASYNC_API_FCT(name) engine.registerFunction(#name, l_##name)
 
-#if (defined(WIN32) || defined(_WIN32_WCE))
+#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 #define NO_MAP_LOCK_REQUIRED
 #else
 #include "main.h"

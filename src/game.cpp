@@ -1482,6 +1482,8 @@ protected:
 	bool checkConnection();
 	bool handleCallbacks();
 	void processQueues();
+	void updateProfilers(const GameRunData &run_data, const RunStats &stats,
+			const FpsControl &draw_times, f32 dtime);
 	void addProfilerGraphs(const RunStats &stats, const FpsControl &draw_times,
 			f32 dtime);
 	void updateStats(RunStats *stats, const FpsControl &draw_times, f32 dtime);
@@ -1498,7 +1500,7 @@ protected:
 
 	void dropSelectedItem();
 	void openInventory();
-	void openConsole();
+	void openConsole(float height = 0.6);
 	void toggleFreeMove(float *statustext_time);
 	void toggleFreeMoveAlt(float *statustext_time, float *jump_timer);
 	void toggleFast(float *statustext_time);
@@ -1631,6 +1633,8 @@ private:
 	// minetest:
 
 	KeyCache keycache;
+
+	IntervalLimiter profiler_interval;
 };
 
 Game::Game() :
@@ -1794,7 +1798,8 @@ void Game::run()
 
 		infotext = L"";
 		hud->resizeHotbar();
-		addProfilerGraphs(stats, draw_times, dtime);
+
+		updateProfilers(runData, stats, draw_times, dtime);
 		processUserInput(&flags, &runData, dtime);
 		// Update camera before player movement to avoid camera lag of one frame
 		updateCameraDirection(&cam_view, &flags);
@@ -2441,6 +2446,34 @@ void Game::processQueues()
 }
 
 
+void Game::updateProfilers(const GameRunData &run_data, const RunStats &stats,
+		const FpsControl &draw_times, f32 dtime)
+{
+	float profiler_print_interval =
+			g_settings->getFloat("profiler_print_interval");
+	bool print_to_log = true;
+
+	if (profiler_print_interval == 0) {
+		print_to_log = false;
+		profiler_print_interval = 5;
+	}
+
+	if (profiler_interval.step(dtime, profiler_print_interval)) {
+		if (print_to_log) {
+			infostream << "Profiler:" << std::endl;
+			g_profiler->print(infostream);
+		}
+
+		update_profiler_gui(guitext_profiler, font, text_height,
+				run_data.profiler_current_page, run_data.profiler_max_page);
+
+		g_profiler->clear();
+	}
+
+	addProfilerGraphs(stats, draw_times, dtime);
+}
+
+
 void Game::addProfilerGraphs(const RunStats &stats,
 		const FpsControl &draw_times, f32 dtime)
 {
@@ -2577,8 +2610,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		show_pause_menu(&current_formspec, client, gamedef, texture_src, device,
 				simple_singleplayer_mode);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CHAT])) {
-		show_chat_menu(&current_formspec, client, gamedef, texture_src, device,
-				client, "");
+		openConsole(0.1);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
 		show_chat_menu(&current_formspec, client, gamedef, texture_src, device,
 				client, "/");
@@ -2780,11 +2812,11 @@ void Game::openInventory()
 }
 
 
-void Game::openConsole()
+void Game::openConsole(float height)
 {
 	if (!gui_chat_console->isOpenInhibited()) {
 		// Open up to over half of the screen
-		gui_chat_console->openConsole(0.6);
+		gui_chat_console->openConsole(height);
 		guienv->setFocus(gui_chat_console);
 	}
 }
@@ -3621,7 +3653,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	if (meta) {
 		infotext = narrow_to_wide(meta->getString("infotext"));
 	} else {
-		MapNode n = map.getNode(nodepos);
+		MapNode n = map.getNodeNoEx(nodepos);
 
 		if (nodedef_manager->get(n).tiledef[0].name == "unknown_node.png") {
 			infotext = L"Unknown node: ";
@@ -3698,7 +3730,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 			}
 
 			if (playeritem_def.node_placement_prediction == "" ||
-					nodedef_manager->get(map.getNode(nodepos)).rightclickable)
+					nodedef_manager->get(map.getNodeNoEx(nodepos)).rightclickable)
 				client->interact(3, pointed); // Report to server
 		}
 	}
@@ -3767,7 +3799,9 @@ void Game::handleDigging(GameRunData *runData,
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientMap &map = client->getEnv().getClientMap();
-	MapNode n = client->getEnv().getClientMap().getNode(nodepos);
+	MapNode n = client->getEnv().getClientMap().getNodeNoEx(nodepos);
+	if (n.getContent() == CONTENT_IGNORE)
+		return;
 
 	// NOTE: Similar piece of code exists on the server side for
 	// cheat detection.
@@ -3899,7 +3933,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		if(flags.use_weather) {
+		if (flags.use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
 			runData->fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}
@@ -4454,6 +4488,7 @@ bool the_game(bool *kill,
 			game.shutdown();
 		}
 
+#ifdef NDEBUG
 	} catch (SerializationError &e) {
 		error_message = std::string("A serialization error occurred:\n")
 				+ e.what() + "\n\nThe server is probably "
@@ -4465,6 +4500,9 @@ bool the_game(bool *kill,
 	} catch (ModError &e) {
 		errorstream << "ModError: " << e.what() << std::endl;
 		error_message = std::string() + e.what() + _("\nCheck debug.txt for details.");
+#else
+	} catch (int) { //nothing
+#endif
 	}
 
 	return !started && game.flags.reconnect;

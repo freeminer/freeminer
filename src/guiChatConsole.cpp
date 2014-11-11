@@ -122,7 +122,7 @@ GUIChatConsole::~GUIChatConsole()
 	m_font->drop();
 }
 
-void GUIChatConsole::openConsole(f32 height)
+void GUIChatConsole::openConsole(float height)
 {
 	m_open = true;
 	m_desired_height_fraction = height;

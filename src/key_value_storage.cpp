@@ -20,6 +20,7 @@
 #include "key_value_storage.h"
 #include "log.h"
 #include "util/pointer.h"
+#include "util/string.h"
 
 KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &name) :
 	db(nullptr),
@@ -78,6 +79,12 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 #endif
 }
 
+bool KeyValueStorage::put(const std::string &key, const float &data)
+{
+	return put(key, ftos(data));
+}
+
+
 bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data)
 {
 	return put(key, json_writer.write(data).c_str());
@@ -92,6 +99,16 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 	auto status = db->Get(read_options, key, &data);
 	return status.ok();
 #endif
+}
+
+bool KeyValueStorage::get(const std::string &key, float &data)
+{
+	std::string tmpstring;
+	if (get(key, tmpstring) && !tmpstring.empty()) {
+		data = stof(tmpstring);
+		return true;
+	}
+	return false;
 }
 
 bool KeyValueStorage::get_json(const std::string &key, Json::Value & data)

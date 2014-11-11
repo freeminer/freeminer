@@ -50,7 +50,7 @@ class LiquidDropABM : public ActiveBlockModifier {
 			return neighbors;
 		}
 		virtual float getTriggerInterval()
-		{ return 10; }
+		{ return 20; }
 		virtual u32 getTriggerChance()
 		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
@@ -86,9 +86,9 @@ class LiquidFreeze : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 5; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
-		{ return 5; }
+		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
@@ -154,9 +154,9 @@ class MeltWeather : public ActiveBlockModifier {
 			return s;
 		}
 		virtual float getTriggerInterval()
-		{ return 5; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
-		{ return 5; }
+		{ return 10; }
 		virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
@@ -195,9 +195,9 @@ class MeltHot : public ActiveBlockModifier {
 		virtual u32 getNeighborsRange()
 		{ return 3; }
 		virtual float getTriggerInterval()
-		{ return 3.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
-		{ return 4; }
+		{ return 5; }
 		virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 			ServerMap *map = &env->getServerMap();
@@ -228,7 +228,7 @@ class LiquidFreezeCold : public ActiveBlockModifier {
 		virtual u32 getNeighborsRange()
 		{ return 2; }
 		virtual float getTriggerInterval()
-		{ return 3.0; }
+		{ return 10; }
 		virtual u32 getTriggerChance()
 		{ return 4; }
 		virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,

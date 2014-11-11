@@ -42,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <vector>
 #include "util/lock.h"
+#include "stat.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -59,6 +60,7 @@ class GameScripting;
 class ServerEnvironment;
 struct SimpleSoundSpec;
 class Circuit;
+class Stat;
 class ServerThread;
 class MapThread;
 class SendBlocksThread;
@@ -528,6 +530,9 @@ private:
 	GameScripting *m_script;
 	
 	Circuit* m_circuit;
+public:
+	Stat stat;
+private:
 
 	// Item definition manager
 	IWritableItemDefManager *m_itemdef;

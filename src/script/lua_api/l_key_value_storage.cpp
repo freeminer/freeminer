@@ -29,6 +29,8 @@ void ModApiKeyValueStorage::Initialize(lua_State *L, int top)
 	API_FCT(kv_put_string);
 	API_FCT(kv_get_string);
 	API_FCT(kv_delete);
+	API_FCT(stat_get);
+	API_FCT(stat_add);
 }
 
 int ModApiKeyValueStorage::l_kv_put_string(lua_State *L)
@@ -65,3 +67,34 @@ int ModApiKeyValueStorage::l_kv_delete(lua_State *L)
 
 	return 0;
 }
+
+
+// bad place, todo: move to l_stat.h
+#include "server.h"
+#include "stat.h"
+
+int ModApiKeyValueStorage::l_stat_get(lua_State *L)
+{
+	GET_ENV_PTR;
+	const char *key = luaL_checkstring(L, 1);
+	lua_pushnumber(L, getServer(L)->stat.get(key));
+	return 1;
+}
+
+int ModApiKeyValueStorage::l_stat_add(lua_State *L)
+{
+	GET_ENV_PTR;
+	const char *key = luaL_checkstring(L, 1);
+
+	const char *name = "";
+	if(lua_isstring(L, 2))
+		name = lua_tostring(L, 1);
+
+	float value = 1;
+	if(lua_isnumber(L, 3))
+		value = lua_tonumber(L, 3);
+
+	getServer(L)->stat.add(key, name, value);
+	return 0;
+}
+

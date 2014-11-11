@@ -123,7 +123,7 @@ bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result)
 
 #if USE_CURL
 #include <curl/curl.h>
-#ifndef _MSC_VER
+#ifndef _WIN32
 #include <sys/utsname.h>
 #endif
 
@@ -257,7 +257,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 	else {
 		std::string useragent = std::string("Freeminer ") + minetest_version_hash;
-#ifdef _MSC_VER
+#ifdef _WIN32
 		useragent += "Windows";
 #else
 		struct utsname osinfo;
