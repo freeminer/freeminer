@@ -3807,7 +3807,9 @@ void Game::handleDigging(GameRunData *runData,
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientMap &map = client->getEnv().getClientMap();
-	MapNode n = client->getEnv().getClientMap().getNode(nodepos);
+	MapNode n = client->getEnv().getClientMap().getNodeNoEx(nodepos);
+	if (n.getContent() == CONTENT_IGNORE)
+		return;
 
 	// NOTE: Similar piece of code exists on the server side for
 	// cheat detection.
@@ -3939,7 +3941,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		if(flags.use_weather) {
+		if (flags.use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
 			runData->fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}
@@ -4493,6 +4495,7 @@ bool the_game(bool *kill,
 			game.shutdown();
 		}
 
+#ifdef NDEBUG
 	} catch (SerializationError &e) {
 		error_message = L"A serialization error occurred:\n"
 				+ narrow_to_wide(e.what()) + L"\n\nThe server is probably "
@@ -4504,6 +4507,9 @@ bool the_game(bool *kill,
 	} catch (ModError &e) {
 		errorstream << "ModError: " << e.what() << std::endl;
 		error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
+#else
+	} catch (int) { //nothing
+#endif
 	}
 
 	return !started && game.flags.reconnect;

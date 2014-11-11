@@ -3398,6 +3398,10 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
+
+		if (block->getLightingExpired())
+			errorstream<<"Loaded block with exiried lighting. (maybe sloooow appear)" << p3d<<std::endl;
+
 		return block;
 	}
 	catch(SerializationError &e)
