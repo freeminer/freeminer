@@ -75,14 +75,14 @@ stat_value Stat::add(const std::string & key, const std::string & player, stat_v
 }
 
 void Stat::update_time() {
-	time_t t = time(NULL);
-	struct tm *tm = localtime(&t);
+	auto t = time(NULL);
+	auto tm = localtime(&t);
 	char cs[20];
-	strftime(cs, 20, "%m", tm);
+	strftime(cs, 20, "%Y_%m", tm);
 	month = cs;
-	strftime(cs, 20, "%V", tm); //maybe W
+	strftime(cs, 20, "%Y_%V", tm); //maybe W
 	week = cs;
-	strftime(cs, 20, "%j", tm);
+	strftime(cs, 20, "%Y_%j", tm);
 	day = cs;
 }
 
