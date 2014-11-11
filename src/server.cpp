@@ -68,6 +68,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/thread.h"
 #include "defaultsettings.h"
 #include "circuit.h"
+//#include "stat.h"
 
 #include <chrono>
 #include "util/thread_pool.h"
@@ -383,6 +384,7 @@ Server::Server(
 	m_emerge(NULL),
 	m_script(NULL),
 	m_circuit(NULL),
+	stat(path_world),
 	m_itemdef(createItemDefManager()),
 	m_nodedef(createNodeDefManager()),
 	m_craftdef(createCraftDefManager()),
@@ -2144,6 +2146,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		m_clients.event(peer_id, CSE_SetClientReady);
 		m_script->on_joinplayer(playersao);
 
+		stat.add("join", playersao->getPlayer()->getName());
 	}
 	else if(command == TOSERVER_GOTBLOCKS) // TODO: REMOVE IN NEXT, move wanted_range to new packet
 	{
@@ -2517,6 +2520,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				line += name;
 				line += L"> ";
 				line += message;
+				stat.add("chat", player->getName());
 			} else {
 				line += L"-!- You don't have permission to shout.";
 				send_to_sender_only = true;
@@ -2570,6 +2574,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 			if(playersao->m_hp_not_sent)
 				SendPlayerHP(peer_id);
+			stat.add("damage", playersao->getPlayer()->getName(), damage);
 		}
 	}
 	else if(command == TOSERVER_BREATH)
@@ -2782,6 +2787,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_above, BS));
 				client->SetBlockNotSent(blockpos);
 			}
+			stat.add("interact_denied", playersao->getPlayer()->getName());
 			return;
 		}
 
@@ -2945,7 +2951,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				/* Actually dig node */
 
 				if(is_valid_dig && n.getContent() != CONTENT_IGNORE)
+				{
 					m_script->node_on_dig(p_under, n, playersao);
+					stat.add("dig", playersao->getPlayer()->getName());
+				}
 
 				v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_under, BS));
 				RemoteClient *client = getClient(peer_id);
@@ -2997,6 +3006,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 				// Apply returned ItemStack
 				playersao->setWieldedItem(item);
+				stat.add("place", playersao->getPlayer()->getName());
 			}
 
 			// If item has node placement prediction, always send the
@@ -3033,6 +3043,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				// Apply returned ItemStack
 				playersao->setWieldedItem(item);
+				stat.add("use", playersao->getPlayer()->getName());
 			}
 
 		} // action == 4
@@ -4657,6 +4668,8 @@ void Server::DiePlayer(u16 peer_id)
 
 	SendPlayerHP(peer_id);
 	SendDeathscreen(peer_id, false, v3f(0,0,0));
+
+	stat.add("die", playersao->getPlayer()->getName());
 }
 
 void Server::RespawnPlayer(u16 peer_id)
@@ -4677,6 +4690,8 @@ void Server::RespawnPlayer(u16 peer_id)
 		v3f pos = findSpawnPos(m_env->getServerMap());
 		playersao->setPos(pos);
 	}
+
+	stat.add("respawn", playersao->getPlayer()->getName());
 }
 
 void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
@@ -5547,6 +5562,7 @@ void Server::maintenance_start() {
 	m_env->getServerMap().dbase->close();
 	m_env->m_key_value_storage->close();
 	m_env->m_players_storage->close();
+	stat.close();
 	actionstream<<"Server: Starting maintenance: bases closed now."<<std::endl;
 
 };
@@ -5555,6 +5571,7 @@ void Server::maintenance_end() {
 	m_env->getServerMap().dbase->open();
 	m_env->m_key_value_storage->open();
 	m_env->m_players_storage->open();
+	stat.open();
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;
 	m_emerge->startThreads();

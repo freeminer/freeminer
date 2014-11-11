@@ -37,8 +37,10 @@ public:
 	void close();
 
 	bool put(const std::string & key, const std::string & data);
+	bool put(const std::string & key, const float & data);
 	bool put_json(const std::string & key, const Json::Value & data);
 	bool get(const std::string & key, std::string &data);
+	bool get(const std::string & key, float &data);
 	bool get_json(const std::string & key, Json::Value & data);
 	bool del(const std::string & key);
 #if USE_LEVELDB

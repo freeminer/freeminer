@@ -434,6 +434,7 @@ set(FMcommon_SRCS
 	mapgen_math.cpp
 	log_types.cpp
 	profiler.cpp
+	stat.cpp
 )
 
 set(common_SRCS
