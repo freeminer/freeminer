@@ -49,6 +49,12 @@ else()
 	set(ENABLE_THREADS 0)
 endif()
 
+if(STATIC_BUILD)
+	set(STATIC_BUILD 1)
+else()
+	set(STATIC_BUILD 0)
+endif()
+
 option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 
