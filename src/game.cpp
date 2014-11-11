@@ -3661,7 +3661,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	if (meta) {
 		infotext = narrow_to_wide(meta->getString("infotext"));
 	} else {
-		MapNode n = map.getNode(nodepos);
+		MapNode n = map.getNodeNoEx(nodepos);
 
 		if (nodedef_manager->get(n).tiledef[0].name == "unknown_node.png") {
 			infotext = L"Unknown node: ";
@@ -3738,7 +3738,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 			}
 
 			if (playeritem_def.node_placement_prediction == "" ||
-					nodedef_manager->get(map.getNode(nodepos)).rightclickable)
+					nodedef_manager->get(map.getNodeNoEx(nodepos)).rightclickable)
 				client->interact(3, pointed); // Report to server
 		}
 	}
