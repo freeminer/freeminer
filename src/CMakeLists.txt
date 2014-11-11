@@ -804,7 +804,11 @@ else()
 			"
 			HAVE_SHARED_MUTEX)
 	else()
-		set(STD_FLAGS "-std=c++0x")
+		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
+			set(STD_FLAGS "-std=gnu++0x")
+		else()
+			set(STD_FLAGS "-std=c++0x")
+		endif()
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
