@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef JSEMAPHORE_H_
 #define JSEMAPHORE_H_
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <assert.h>
@@ -54,7 +54,7 @@ public:
 	int GetValue();
 
 private:
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	HANDLE m_hSemaphore;
 #elif __MACH__
 	semaphore_t m_semaphore;

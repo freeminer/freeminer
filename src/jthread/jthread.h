@@ -67,7 +67,7 @@ protected:
 	void ThreadStarted();
 private:
 
-#if (defined(WIN32) || defined(_WIN32_WCE))
+#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 #ifdef _WIN32_WCE
 	DWORD threadid;
 	static DWORD WINAPI TheThread(void *param);

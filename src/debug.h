@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <exception>
 #include "gettime.h"
 
-#if (defined(WIN32) || defined(_WIN32_WCE))
+#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 	#define WIN32_LEAN_AND_MEAN
 	#ifndef _WIN32_WINNT
 		#define _WIN32_WINNT 0x0501
