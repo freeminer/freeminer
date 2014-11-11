@@ -1504,6 +1504,8 @@ int Server::save(float dtime, bool breakable) {
 
 			// Save environment metadata
 			m_env->saveMeta();
+
+			stat.save();
 		}
 		save_break:;
 
@@ -2241,10 +2243,16 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		player->control.LMB = (bool)(keyPressed&128);
 		player->control.RMB = (bool)(keyPressed&256);
 
+		auto old_pos = playersao->m_last_good_position;
 		bool cheated = playersao->checkMovementCheat();
 		if(cheated){
 			// Call callbacks
 			m_script->on_cheat(playersao, "moved_too_fast");
+		}
+		else {
+			auto dist = (old_pos/BS).getDistanceFrom(playersao->m_last_good_position/BS);
+			if (dist)
+				stat.add("move", playersao->getPlayer()->getName(), dist);
 		}
 
 		auto obj = playersao; // copypasted from server step:
@@ -2430,6 +2438,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				delete a;
 				return;
 			}
+			stat.add("drop", player->getName());
 		}
 		/*
 			Handle restrictions and special cases of the craft action
@@ -2454,6 +2463,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				delete a;
 				return;
 			}
+			stat.add("craft", player->getName());
 		}
 
 		// Do the action
@@ -2574,7 +2584,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 			if(playersao->m_hp_not_sent)
 				SendPlayerHP(peer_id);
-			stat.add("damage", playersao->getPlayer()->getName(), damage);
+			stat.add("damage", player->getName(), damage);
 		}
 	}
 	else if(command == TOSERVER_BREATH)
@@ -2787,7 +2797,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_above, BS));
 				client->SetBlockNotSent(blockpos);
 			}
-			stat.add("interact_denied", playersao->getPlayer()->getName());
+			stat.add("interact_denied", player->getName());
 			return;
 		}
 
@@ -2845,6 +2855,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					playersao->resetTimeFromLastPunch();
 				pointed_object->punch(dir, &toolcap, playersao,
 						time_from_last_punch);
+				stat.add("punch", player->getName());
 			}
 
 		} // action == 0
@@ -2953,7 +2964,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				if(is_valid_dig && n.getContent() != CONTENT_IGNORE)
 				{
 					m_script->node_on_dig(p_under, n, playersao);
-					stat.add("dig", playersao->getPlayer()->getName());
+					stat.add("dig", player->getName());
+					stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
 				}
 
 				v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_under, BS));
@@ -3006,7 +3018,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 				// Apply returned ItemStack
 				playersao->setWieldedItem(item);
-				stat.add("place", playersao->getPlayer()->getName());
+				stat.add("place", player->getName());
+				//stat.add("place_" + item.name, player->getName());
 			}
 
 			// If item has node placement prediction, always send the
@@ -3043,7 +3056,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			{
 				// Apply returned ItemStack
 				playersao->setWieldedItem(item);
-				stat.add("use", playersao->getPlayer()->getName());
+				stat.add("use", player->getName());
+				stat.add("use_" + item.name, player->getName());
 			}
 
 		} // action == 4

@@ -18,6 +18,7 @@
 #ifndef STAT_H
 #define STAT_H
 
+#include <string>
 #include <unordered_map>
 
 #include "key_value_storage.h"
@@ -31,6 +32,8 @@ public:
 	KeyValueStorage database;
 	std::unordered_map<std::string, stat_value> stats; // todo: make shared
 
+	std::string day, week, month;
+
 	Stat(std::string savedir);
 	~Stat();
 
@@ -40,9 +43,10 @@ public:
 	void close();
 
 	stat_value get(const std::string & key);
-	void write_one(const std::string & key, const stat_value & value);
-	void add(const std::string & key, const std::string & player = "", stat_value value = 1);
+	stat_value write_one(const std::string & key, const stat_value & value);
+	stat_value add(const std::string & key, const std::string & player = "", stat_value value = 1);
 
+	void update_time();
 };
 
 #endif

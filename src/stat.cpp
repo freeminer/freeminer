@@ -17,9 +17,11 @@
 
 #include "stat.h"
 //#include "log.h"
+#include <ctime>
 
 
 Stat::Stat(std::string savedir) : database(savedir, "stat") {
+	update_time();
 };
 
 Stat::~Stat() {
@@ -31,6 +33,7 @@ void Stat::save() {
 		//errorstream<<"stat saving: "<<ir.first<< " = "<< ir.second<<std::endl;
 		database.put(ir.first, ir.second);
 	}
+	update_time();
 }
 
 void Stat::unload() {
@@ -54,17 +57,32 @@ stat_value Stat::get(const std::string & key) {
 	return stats[key];
 }
 
-void Stat::write_one(const std::string & key, const stat_value & value) {
+stat_value Stat::write_one(const std::string & key, const stat_value & value) {
+	//errorstream<<"stat one: "<<key<< " = "<< value<<std::endl;
 	get(key);
-	stats[key] += value;
+	return stats[key] += value;
 }
 
-void Stat::add(const std::string & key, const std::string & player, stat_value value) {
+stat_value Stat::add(const std::string & key, const std::string & player, stat_value value) {
 	//errorstream<<"stat adding: "<<key<< " player="<<player<<" = "<< value<<std::endl;
-	write_one("total:" + key, value);
-	//write_one("day:"+ key + ":" + day , value);
-	//write_one("week:"+ key + ":" + week, value);
-	//write_one("month:"+ key + ":" + month, value);
+	stat_value ret = write_one("total|" + key, value);
+	write_one("day|"+ key + "|" + day , value);
+	write_one("week|"+ key + "|" + week, value);
+	write_one("month|"+ key + "|" + month, value);
 	if (!player.empty())
-		write_one("player:" + key  + ":" + player, value);
+		ret = write_one("player|" + key  + "|" + player, value);
+	return ret;
 }
+
+void Stat::update_time() {
+	time_t t = time(NULL);
+	struct tm *tm = localtime(&t);
+	char cs[20];
+	strftime(cs, 20, "%m", tm);
+	month = cs;
+	strftime(cs, 20, "%V", tm); //maybe W
+	week = cs;
+	strftime(cs, 20, "%j", tm);
+	day = cs;
+}
+
