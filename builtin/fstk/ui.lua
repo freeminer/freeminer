@@ -109,7 +109,7 @@ function ui.handle_buttons(fields)
 
 	if fields["btn_error_confirm"] then
 		gamedata.errormessage = nil
-		update_menu()
+		menu.update()
 		return
 	end
 
