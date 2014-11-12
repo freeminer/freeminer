@@ -1505,7 +1505,7 @@ protected:
 
 	void dropSelectedItem();
 	void openInventory();
-	void openConsole(float height = 0.6);
+	void openConsole(float height = 0.6, bool close_on_return = false);
 	void toggleFreeMove(float *statustext_time);
 	void toggleFreeMoveAlt(float *statustext_time, float *jump_timer);
 	void toggleFast(float *statustext_time);
@@ -2617,7 +2617,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		show_pause_menu(&current_formspec, client, gamedef, texture_src, device,
 				simple_singleplayer_mode);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CHAT])) {
-		openConsole(0.1);
+		openConsole(0.1, true);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
 		show_chat_menu(&current_formspec, client, gamedef, texture_src, device,
 				client, "/");
@@ -2819,11 +2819,11 @@ void Game::openInventory()
 }
 
 
-void Game::openConsole(float height)
+void Game::openConsole(float height, bool close_on_return)
 {
 	if (!gui_chat_console->isOpenInhibited()) {
 		// Open up to over half of the screen
-		gui_chat_console->openConsole(height);
+		gui_chat_console->openConsole(height, close_on_return);
 		guienv->setFocus(gui_chat_console);
 	}
 }
