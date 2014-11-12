@@ -902,7 +902,7 @@ bool nodePlacementPrediction(Client &client,
 	INodeDefManager *nodedef = client.ndef();
 	ClientMap &map = client.getEnv().getClientMap();
 
-	if (prediction != "" && !nodedef->get(map.getNode(nodepos)).rightclickable) {
+	if (prediction != "" && !nodedef->get(map.getNodeNoEx(nodepos)).rightclickable) {
 		verbosestream << "Node placement prediction for "
 			      << playeritem_def.name << " is "
 			      << prediction << std::endl;
@@ -974,7 +974,7 @@ bool nodePlacementPrediction(Client &client,
 			else
 				pp = p + v3s16(0, -1, 0);
 
-			if (!nodedef->get(map.getNode(pp)).walkable)
+			if (!nodedef->get(map.getNodeNoEx(pp)).walkable)
 				return false;
 		}
 
@@ -3873,7 +3873,7 @@ void Game::handleDigging(GameRunData *runData,
 		infostream << "Digging completed" << std::endl;
 		client->interact(2, pointed);
 		client->setCrack(-1, v3s16(0, 0, 0));
-		MapNode wasnode = map.getNode(nodepos);
+		MapNode wasnode = map.getNodeNoEx(nodepos);
 		client->removeNode(nodepos);
 
 		if (g_settings->getBool("enable_particles")) {
