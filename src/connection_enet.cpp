@@ -49,7 +49,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_enet_host(0),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
-	m_bc_receive_timeout(0)
+	m_bc_receive_timeout(1)
 {
 	Start();
 }
