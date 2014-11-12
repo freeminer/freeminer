@@ -59,6 +59,7 @@ GUIChatConsole::GUIChatConsole(
 	m_screensize(v2u32(0,0)),
 	m_animate_time_old(0),
 	m_open(false),
+	m_close_on_return(false),
 	m_height(0),
 	m_desired_height(0),
 	m_desired_height_fraction(0.0),
@@ -136,9 +137,10 @@ GUIChatConsole::~GUIChatConsole()
 #endif
 }
 
-void GUIChatConsole::openConsole(float height)
+void GUIChatConsole::openConsole(float height, bool close_on_return)
 {
 	m_open = true;
+	m_close_on_return = close_on_return;
 	m_desired_height_fraction = height;
 	m_desired_height = height * m_screensize.Y;
 	reformatConsole();
@@ -448,6 +450,12 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		{
 			std::wstring text = m_chat_backend->getPrompt().submit();
 			m_client->typeChatMessage(text);
+
+			if (m_close_on_return)
+			{
+				closeConsole();
+				Environment->removeFocus(this);
+			}
 			return true;
 		}
 		else if(event.KeyInput.Key == KEY_UP)
