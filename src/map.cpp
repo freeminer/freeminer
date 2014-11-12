@@ -1674,7 +1674,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsReal(Server *m_server, std::map<v3POS, MapBlock*> & modified_blocks, shared_map<v3POS, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -2059,7 +2059,7 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3POS, MapBlock*> & mod
 			v3POS blockpos = getNodeBlockPos(neighbors[i].p);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 			if(block != NULL) {
-				modified_blocks[blockpos] = block;
+				//modified_blocks[blockpos] = block;
 				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
 					lighting_modified_blocks.set_try(block->getPos(), block);
 			}
@@ -2111,11 +2111,11 @@ u32 Map::transformLiquidsReal(Server *m_server, std::map<v3POS, MapBlock*> & mod
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(Server *m_server, std::map<v3POS, MapBlock*> & modified_blocks, shared_map<v3POS, MapBlock*> & lighting_modified_blocks, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_real"))
-		return Map::transformLiquidsReal(m_server, modified_blocks, lighting_modified_blocks, max_cycle_ms);
+		return Map::transformLiquidsReal(m_server, max_cycle_ms);
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -2373,7 +2373,7 @@ u32 Map::transformLiquids(Server *m_server, std::map<v3POS, MapBlock*> & modifie
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
 		if(block != NULL) {
-			modified_blocks[blockpos] =  block;
+			//modified_blocks[blockpos] =  block;
 			// If new or old node emits light, MapBlock requires lighting update
 			if(nodemgr->get(n0).light_source != 0 ||
 					nodemgr->get(n00).light_source != 0)
@@ -3393,8 +3393,10 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
 
-		if (block->getLightingExpired())
-			errorstream<<"Loaded block with exiried lighting. (maybe sloooow appear)" << p3d<<std::endl;
+		if (block->getLightingExpired()) {
+			infostream<<"Loaded block with exiried lighting. (maybe sloooow appear), try recalc " << p3d<<std::endl;
+			lighting_modified_blocks.set(p3d, nullptr);
+		}
 
 		return block;
 	}
