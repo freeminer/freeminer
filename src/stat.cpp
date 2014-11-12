@@ -15,12 +15,14 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "stat.h"
-//#include "log.h"
 #include <ctime>
 
+#include "stat.h"
+//#include "log.h"
 
-Stat::Stat(std::string savedir) : database(savedir, "stat") {
+
+Stat::Stat(std::string savedir) :
+	database(savedir, "stat") {
 	update_time();
 };
 
@@ -31,7 +33,8 @@ Stat::~Stat() {
 void Stat::save() {
 	for(const auto & ir : stats) {
 		//errorstream<<"stat saving: "<<ir.first<< " = "<< ir.second<<std::endl;
-		database.put(ir.first, ir.second);
+		if (ir.second)
+			database.put(ir.first, ir.second);
 	}
 	update_time();
 }
@@ -85,4 +88,3 @@ void Stat::update_time() {
 	strftime(cs, 20, "%Y_%j", tm);
 	day = cs;
 }
-
