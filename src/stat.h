@@ -24,7 +24,6 @@
 #include "key_value_storage.h"
 #include "log.h"
 
-
 typedef float stat_value;
 
 class Stat {
