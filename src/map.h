@@ -283,8 +283,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
-	u32 transformLiquidsReal(Server *m_server, std::map<v3s16, MapBlock*> & modified_blocks, shared_map<v3s16, MapBlock*> & lighting_modified_blocks, int max_cycle_ms);
+	u32 transformLiquids(Server *m_server, int max_cycle_ms);
+	u32 transformLiquidsReal(Server *m_server, int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -368,6 +368,7 @@ protected:
 	// Queued transforming water nodes
 public:
 	shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
 protected:
 };
 
