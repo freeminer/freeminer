@@ -70,6 +70,8 @@ public:
 		f32 blink_speed = 1.0,
 		f32 relative_height = 1.0);
 
+	void setPrompt(const std::wstring& input);
+
 	// Irrlicht draw method
 	virtual void draw();
 

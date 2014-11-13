@@ -415,6 +415,12 @@ void GUIChatConsole::drawPrompt()
 
 }
 
+void GUIChatConsole::setPrompt(const std::wstring& input) {
+	for (unsigned int i = 0; i < input.size(); i++) {
+		m_chat_backend->getPrompt().input(input[i]);
+	}
+}
+
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
@@ -451,8 +457,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			std::wstring text = m_chat_backend->getPrompt().submit();
 			m_client->typeChatMessage(text);
 
-			if (m_close_on_return)
-			{
+			if (m_close_on_return) {
 				closeConsole();
 				Environment->removeFocus(this);
 			}
