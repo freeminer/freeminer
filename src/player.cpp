@@ -219,7 +219,7 @@ void Player::deSerialize(std::istream &is, std::string playername)
 
 	//args.getS32("version"); // Version field value not used
 	std::string name = args.get("name");
-	name = m_name;
+	m_name = name;
 	setPitch(args.getFloat("pitch"));
 	setYaw(args.getFloat("yaw"));
 	setPosition(args.getV3F("position"));
