@@ -88,8 +88,8 @@ public:
 	s32 weather_humidity_days;
 	s32 weather_hot_core;
 
-	s16 calcBlockHeat(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
-	s16 calcBlockHumidity(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 
 	void calcBiomes(s16 sx, s16 sy, float *heat_map, float *humidity_map,
 		s16 *height_map, u8 *biomeid_map);
