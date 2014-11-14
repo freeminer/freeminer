@@ -1436,7 +1436,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	/*
 		Manage active objects
 	*/
-	if(m_object_management_interval.step(dtime, 0.5))
+	if(m_object_management_interval.step(dtime, 5))
 	{
 		//TimeTaker timer("Manage active objects");
 		//ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
@@ -1579,10 +1579,13 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		} else if (distance_f > radius_f)
 			continue;
 
+		{
+			auto lock_co = current_objects.lock_shared_rec();
 		// Discard if already on current_objects
 		auto n = current_objects.find(id);
 		if(n != current_objects.end())
 			continue;
+		}
 		// Add to added_objects
 		added_objects.insert(id);
 	}
@@ -1604,6 +1607,9 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
+	auto lock = current_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
 	/*
 		Go through current_objects; object is removed if:
 		- object is not found in m_active_objects (this is actually an
