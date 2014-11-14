@@ -45,8 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class EmergeThread;
 class INodeDefManager;
 class Settings;
-class ServerEnvironment;
-//class ManualMapVoxelManipulator;
+//class ServerEnvironment;
 
 class BiomeManager;
 class OreManager;

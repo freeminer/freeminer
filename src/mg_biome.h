@@ -26,30 +26,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen.h"
 #include "noise.h"
 
-//#include <string>
-//#include "nodedef.h"
-//#include "gamedef.h"
-//#include "mapnode.h"
-
-enum BiomeTerrainType
+enum BiomeType
 {
-	BIOME_TERRAIN_NORMAL,
-	BIOME_TERRAIN_LIQUID,
-	BIOME_TERRAIN_NETHER,
-	BIOME_TERRAIN_AETHER,
-	BIOME_TERRAIN_FLAT
+	BIOME_TYPE_NORMAL,
+	BIOME_TYPE_LIQUID,
+	BIOME_TYPE_NETHER,
+	BIOME_TYPE_AETHER,
+	BIOME_TYPE_FLAT
 };
 
 extern NoiseParams nparams_biome_def_heat;
 extern NoiseParams nparams_biome_def_humidity;
 
-
-struct BiomeNoiseInput {
-	v2s16 mapsize;
-	float *heat_map;
-	float *humidity_map;
-	s16 *height_map;
-};
 
 class Biome : public GenElement {
 public:
@@ -103,7 +91,8 @@ public:
 	s16 calcBlockHeat(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
 
-	void calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map);
+	void calcBiomes(s16 sx, s16 sy, float *heat_map, float *humidity_map,
+		s16 *height_map, u8 *biomeid_map);
 	Biome *getBiome(float heat, float humidity, s16 y);
 };
 

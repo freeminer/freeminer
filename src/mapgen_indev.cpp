@@ -392,7 +392,7 @@ int MapgenIndev::generateGround() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeType bt = getBiome(index, v2POS(x, z));
+		auto bt = getBiome(index, v2POS(x, z));
 		
 		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
