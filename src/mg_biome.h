@@ -23,29 +23,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MG_BIOME_HEADER
 #define MG_BIOME_HEADER
 
-#include <string>
-#include "nodedef.h"
-#include "gamedef.h"
-#include "mapnode.h"
-#include "noise.h"
 #include "mapgen.h"
+#include "noise.h"
 
-enum BiomeTerrainType
+enum BiomeType
 {
-	BIOME_TERRAIN_NORMAL,
-	BIOME_TERRAIN_LIQUID,
-	BIOME_TERRAIN_NETHER,
-	BIOME_TERRAIN_AETHER,
-	BIOME_TERRAIN_FLAT
+	BIOME_TYPE_NORMAL,
+	BIOME_TYPE_LIQUID,
+	BIOME_TYPE_NETHER,
+	BIOME_TYPE_AETHER,
+	BIOME_TYPE_FLAT
 };
 
 extern NoiseParams nparams_biome_def_heat;
 extern NoiseParams nparams_biome_def_humidity;
 
-class Biome {
+
+class Biome : public GenElement {
 public:
-	u8 id;
-	std::string name;
 	u32 flags;
 
 	content_t c_top;
@@ -66,30 +61,21 @@ public:
 	content_t c_top_cold;
 };
 
-struct BiomeNoiseInput {
-	v2s16 mapsize;
-	float *heat_map;
-	float *humidity_map;
-	s16 *height_map;
-};
-
-class BiomeDefManager {
+class BiomeManager : public GenElementManager {
 public:
-	std::vector<Biome *> biomes;
+	static const char *ELEMENT_TITLE;
+	static const size_t ELEMENT_LIMIT = 0x100;
 
-	bool biome_registration_finished;
 	NoiseParams *np_heat;
 	NoiseParams *np_humidity;
 
-	BiomeDefManager(NodeResolver *resolver);
-	~BiomeDefManager();
+	BiomeManager(IGameDef *gamedef);
+	~BiomeManager();
 
-	Biome *createBiome(BiomeTerrainType btt);
-	void  calcBiomes(BiomeNoiseInput *input, u8 *biomeid_map);
-	Biome *getBiome(float heat, float humidity, s16 y);
-
-	bool addBiome(Biome *b);
-	u8 getBiomeIdByName(const char *name);
+	Biome *create(int btt)
+	{
+		return new Biome;
+	}
 
 	u32 year_days;
 	s32 weather_heat_season;
@@ -104,6 +90,10 @@ public:
 
 	s16 calcBlockHeat(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, u64 seed, float timeofday, float totaltime, bool use_weather = 1);
+
+	void calcBiomes(s16 sx, s16 sy, float *heat_map, float *humidity_map,
+		s16 *height_map, u8 *biomeid_map);
+	Biome *getBiome(float heat, float humidity, s16 y);
 };
 
 #endif

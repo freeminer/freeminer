@@ -105,39 +105,57 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		Collision detection
 	*/
 	
+	bool is_valid_position;
+	MapNode node;
+	v3s16 pp;
+
 	/*
 		Check if player is in liquid (the oscillating value)
 	*/
-	try{
-		// If in liquid, the threshold of coming out is at higher y
+
+	// If in liquid, the threshold of coming out is at higher y
+	if (in_liquid)
+	{
 		// If not in liquid, the threshold of going in is at lower y
-		v3s16 pp = floatToInt(position + v3f(0,BS*(in_liquid ? 0.1 : 0.5),0), BS);
-		auto n = map->getNode(pp);
-		auto f = nodemgr->get(n.getContent());
-		in_liquid = f.isLiquid();
-		liquid_viscosity = f.liquid_viscosity;
-		if (f.param_type_2 == CPT2_LEVELED) {
-			auto level = n.getLevel(nodemgr);
-			auto maxlevel = n.getMaxLevel(nodemgr);
-			if (level && maxlevel)
-				liquid_viscosity /= maxlevel / level;
+		pp = floatToInt(position + v3f(0,BS*(in_liquid ? 0.1 : 0.5),0), BS);
+		node = map->getNodeNoEx(pp, &is_valid_position);
+		if (is_valid_position) {
+			auto f = nodemgr->get(node.getContent());
+			in_liquid = f.isLiquid();
+			liquid_viscosity = f.liquid_viscosity;
+			if (f.param_type_2 == CPT2_LEVELED) {
+				auto level = node.getLevel(nodemgr);
+				auto maxlevel = node.getMaxLevel(nodemgr);
+				if (level && maxlevel)
+					liquid_viscosity /= maxlevel / level;
+			}
+		} else {
+			in_liquid = false;
 		}
 
 	}
-	catch(InvalidPositionException &e)
+	// If not in liquid, the threshold of going in is at lower y
+	else
 	{
-		in_liquid = false;
+		pp = floatToInt(position + v3f(0,BS*0.5,0), BS);
+		node = map->getNodeNoEx(pp, &is_valid_position);
+		if (is_valid_position) {
+			in_liquid = nodemgr->get(node.getContent()).isLiquid();
+			liquid_viscosity = nodemgr->get(node.getContent()).liquid_viscosity;
+		} else {
+			in_liquid = false;
+		}
 	}
+
 
 	/*
 		Check if player is in liquid (the stable value)
 	*/
-	try{
-		v3s16 pp = floatToInt(position + v3f(0,0,0), BS);
-		in_liquid_stable = nodemgr->get(map->getNode(pp).getContent()).isLiquid();
-	}
-	catch(InvalidPositionException &e)
-	{
+	pp = floatToInt(position + v3f(0,0,0), BS);
+	node = map->getNodeNoEx(pp, &is_valid_position);
+	if (is_valid_position) {
+		in_liquid_stable = nodemgr->get(node.getContent()).isLiquid();
+	} else {
 		in_liquid_stable = false;
 	}
 
@@ -145,16 +163,20 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	        Check if player is climbing
 	*/
 
-	try {
-		v3s16 pp = floatToInt(position + v3f(0,0.5*BS,0), BS);
-		v3s16 pp2 = floatToInt(position + v3f(0,-0.2*BS,0), BS);
-		is_climbing = ((nodemgr->get(map->getNode(pp).getContent()).climbable ||
-		nodemgr->get(map->getNode(pp2).getContent()).climbable) && !free_move);
-	}
-	catch(InvalidPositionException &e)
-	{
+
+	pp = floatToInt(position + v3f(0,0.5*BS,0), BS);
+	v3s16 pp2 = floatToInt(position + v3f(0,-0.2*BS,0), BS);
+	node = map->getNodeNoEx(pp, &is_valid_position);
+	bool is_valid_position2;
+	MapNode node2 = map->getNodeNoEx(pp2, &is_valid_position2);
+
+	if (!(is_valid_position && is_valid_position2)) {
 		is_climbing = false;
+	} else {
+		is_climbing = (nodemgr->get(node.getContent()).climbable
+				|| nodemgr->get(node2.getContent()).climbable) && !free_move;
 	}
+
 
 	/*
 		Collision uncertainty radius
@@ -268,22 +290,20 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 					max_axis_distance_f > 0.5*BS + sneak_max + 0.1*BS)
 				continue;
 
-			try{
-				// The node to be sneaked on has to be walkable
-				if(nodemgr->get(map->getNode(p)).walkable == false)
-					continue;
-				// And the node above it has to be nonwalkable
-				if(nodemgr->get(map->getNode(p+v3s16(0,1,0))).walkable == true) {
-					continue;
-				}
-				if (!physics_override_sneak_glitch) {
-					if (nodemgr->get(map->getNode(p+v3s16(0,2,0))).walkable)
-						continue;
-				}
-			}
-			catch(InvalidPositionException &e)
-			{
+
+			// The node to be sneaked on has to be walkable
+			node = map->getNodeNoEx(p, &is_valid_position);
+			if (!is_valid_position || nodemgr->get(node).walkable == false)
 				continue;
+			// And the node above it has to be nonwalkable
+			node = map->getNodeNoEx(p + v3s16(0,1,0), &is_valid_position);
+			if (!is_valid_position || nodemgr->get(node).walkable) {
+				continue;
+			}
+			if (!physics_override_sneak_glitch) {
+				node =map->getNodeNoEx(p + v3s16(0,2,0), &is_valid_position);
+				if (!is_valid_position || nodemgr->get(node).walkable)
+					continue;
 			}
 
 			min_distance_f = distance_f;

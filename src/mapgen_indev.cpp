@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "emerge.h"
 #include "environment.h"
+#include "settings.h"
 
 void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & paramsj) {
 	const auto & layersj = paramsj["layers"];
@@ -391,7 +392,7 @@ int MapgenIndev::generateGround() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeType bt = getBiome(index, v2POS(x, z));
+		auto bt = getBiome(index, v2POS(x, z));
 		
 		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 

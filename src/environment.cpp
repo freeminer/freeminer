@@ -429,7 +429,7 @@ void ServerEnvironment::savePlayer(const std::string &playername)
 		return;
 	Json::Value player_json;
 	player_json << *player;
-	m_players_storage->put_json(std::string("p.") + player->getName(), player_json);
+	m_players_storage->put_json("p." + player->getName(), player_json);
 }
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
@@ -444,7 +444,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	try {
 		Json::Value player_json;
-		m_players_storage->get_json(("p." + playername).c_str(), player_json);
+		m_players_storage->get_json("p." + playername, player_json);
 		verbosestream<<"Reading kv player "<<playername<<std::endl;
 		if (!player_json.empty()) {
 			player_json >> *player;
@@ -1436,7 +1436,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	/*
 		Manage active objects
 	*/
-	if(m_object_management_interval.step(dtime, 0.5))
+	if(m_object_management_interval.step(dtime, 5))
 	{
 		//TimeTaker timer("Manage active objects");
 		//ScopeProfiler sp(g_profiler, "SEnv: remove removed objs avg /.5s", SPT_AVG);
@@ -1579,10 +1579,13 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		} else if (distance_f > radius_f)
 			continue;
 
+		{
+			auto lock_co = current_objects.lock_shared_rec();
 		// Discard if already on current_objects
 		auto n = current_objects.find(id);
 		if(n != current_objects.end())
 			continue;
+		}
 		// Add to added_objects
 		added_objects.insert(id);
 	}
@@ -1604,6 +1607,9 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
+	auto lock = current_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
 	/*
 		Go through current_objects; object is removed if:
 		- object is not found in m_active_objects (this is actually an
@@ -2612,12 +2618,9 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		// (day: LIGHT_SUN, night: 0)
 		MapNode node_at_lplayer(CONTENT_AIR, 0x0f, 0);
 
-		try {
-			v3s16 p = lplayer->getLightPosition();
-			node_at_lplayer = m_map->getNode(p);
-		} catch (InvalidPositionException &e) {
-			//player_light = blend_light_f1((float)getDayNightRatio()/1000, LIGHT_SUN, 0);
-		}
+		v3s16 p = lplayer->getLightPosition();
+		node_at_lplayer = m_map->getNodeNoEx(p);
+		//player_light = blend_light_f1((float)getDayNightRatio()/1000, LIGHT_SUN, 0);
 
 		u16 light = getInteriorLight(node_at_lplayer, 0, m_gamedef->ndef());
 		u8 day = light & 0xff;
@@ -2654,15 +2657,16 @@ void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 		{
 			// Update lighting
 			u8 light = 0;
-			try{
-				// Get node at head
-				v3s16 p = obj->getLightPosition();
-				MapNode n = m_map->getNode(p);
+			bool pos_ok;
+
+			// Get node at head
+			v3s16 p = obj->getLightPosition();
+			MapNode n = m_map->getNodeNoEx(p, &pos_ok);
+			if (pos_ok)
 				light = n.getLightBlend(day_night_ratio, m_gamedef->ndef());
-			}
-			catch(InvalidPositionException &e){
+			else
 				light = blend_light(day_night_ratio, LIGHT_SUN, 0);
-			}
+
 			obj->updateLight(light);
 		}
 		if (porting::getTimeMs() > end_ms) {
@@ -2762,15 +2766,16 @@ u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
 	object->addToScene(m_smgr, m_texturesource, m_irr);
 	{ // Update lighting immediately
 		u8 light = 0;
-		try{
-			// Get node at head
-			v3s16 p = object->getLightPosition();
-			MapNode n = m_map->getNode(p);
+		bool pos_ok;
+
+		// Get node at head
+		v3s16 p = object->getLightPosition();
+		MapNode n = m_map->getNodeNoEx(p, &pos_ok);
+		if (pos_ok)
 			light = n.getLightBlend(getDayNightRatio(), m_gamedef->ndef());
-		}
-		catch(InvalidPositionException &e){
+		else
 			light = blend_light(getDayNightRatio(), LIGHT_SUN, 0);
-		}
+
 		object->updateLight(light);
 	}
 	return object->getId();

@@ -125,7 +125,7 @@ void CircuitElement::update() {
 bool CircuitElement::updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef) {
 	MapNode node = map->getNodeNoEx(m_pos);
 	// Map not yet loaded
-	if(node.param0 == CONTENT_IGNORE) {
+	if(!node) {
 		dstream << "Circuit simulator: Waiting for map blocks loading..." << std::endl;
 		return false;
 	}

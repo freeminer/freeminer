@@ -717,21 +717,6 @@ ClientInterface::ClientInterface(con::Connection* con)
 }
 ClientInterface::~ClientInterface()
 {
-	/*
-		Delete clients
-	*/
-	{
-		auto lock = m_clients.lock_unique_rec();
-
-		for(std::map<u16, RemoteClient*>::iterator
-			i = m_clients.begin();
-			i != m_clients.end(); ++i)
-		{
-
-			// Delete client
-			delete i->second;
-		}
-	}
 }
 
 std::list<u16> ClientInterface::getClientIDs(ClientState min_state)
@@ -739,7 +724,7 @@ std::list<u16> ClientInterface::getClientIDs(ClientState min_state)
 	std::list<u16> reply;
 	auto lock = m_clients.lock_shared_rec();
 
-	for(std::map<u16, RemoteClient*>::iterator
+	for(auto
 		i = m_clients.begin();
 		i != m_clients.end(); ++i)
 	{
@@ -814,11 +799,11 @@ void ClientInterface::sendToAll(u16 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	auto lock = m_clients.lock_shared_rec();
-	for(std::map<u16, RemoteClient*>::iterator
+	for(auto
 		i = m_clients.begin();
 		i != m_clients.end(); ++i)
 	{
-		RemoteClient *client = i->second;
+		RemoteClient *client = i->second.get();
 
 		if (client->net_proto_version != 0)
 		{
@@ -834,6 +819,7 @@ void ClientInterface::sendToAll(u16 channelnum,
 	sendToAll(channelnum, data, reliable);
 }
 
+//TODO: return here shared_ptr
 RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 {
 	auto lock = m_clients.lock_shared_rec();
@@ -844,7 +830,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 		return NULL;
 
 	if (n->second->getState() >= state_min)
-		return n->second;
+		return n->second.get();
 	else
 		return NULL;
 }
@@ -892,7 +878,7 @@ void ClientInterface::DeleteClient(u16 peer_id)
 		Mark objects to be not known by the client
 	*/
 	//TODO this should be done by client destructor!!!
-	RemoteClient *client = n->second;
+	auto client = n->second;
 	// Handle objects
 	{
 	auto lock = client->m_known_objects.lock_unique_rec();
@@ -910,7 +896,7 @@ void ClientInterface::DeleteClient(u16 peer_id)
 	}
 
 	// Delete client
-	delete m_clients.get(peer_id);
+	//delete m_clients.get(peer_id);
 	m_clients.erase(peer_id);
 }
 
@@ -923,7 +909,7 @@ void ClientInterface::CreateClient(u16 peer_id)
 	if(n != m_clients.end()) return;
 
 	// Create client
-	RemoteClient *client = new RemoteClient(m_env);
+	auto client = std::shared_ptr<RemoteClient>(new RemoteClient(m_env));
 	client->peer_id = peer_id;
 	m_clients.set(client->peer_id, client);
 }

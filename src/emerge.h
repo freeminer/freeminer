@@ -26,8 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "irr_v3d.h"
 #include "util/container.h"
-#include "map.h" // for ManualMapVoxelManipulator
 #include "mapgen.h" // for MapgenParams
+#include "map.h"
 
 #define MGPARAMS_SET_MGNAME      1
 #define MGPARAMS_SET_SEED        2
@@ -37,17 +37,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define BLOCK_EMERGE_ALLOWGEN (1<<0)
 
 #define EMERGE_DBG_OUT(x) \
-	{ if (enable_mapgen_debug_info) \
-	infostream << "EmergeThread: " x << std::endl; }
+	do {                                                   \
+		if (enable_mapgen_debug_info)                      \
+			infostream << "EmergeThread: " x << std::endl; \
+	} while (0)
 
 class EmergeThread;
-class Biome;
-class BiomeDefManager;
-class Decoration;
-class Ore;
 class INodeDefManager;
 class Settings;
-class ServerEnvironment;
+//class ServerEnvironment;
+
+class BiomeManager;
+class OreManager;
+class DecorationManager;
+class SchematicManager;
 
 struct BlockMakeData {
 	ManualMapVoxelManipulator *vmanip;
@@ -92,16 +95,18 @@ public:
 
 	u32 gennotify;
 
-	//block emerge queue data structures
+	//// Block emerge queue data structures
 	JMutex queuemutex;
 	std::map<v3s16, BlockEmergeData *> blocks_enqueued;
 	std::map<u16, u16> peer_queue_count;
 
-	//Mapgen-related structures
-	BiomeDefManager *biomedef;
-	std::vector<Ore *> ores;
-	std::vector<Decoration *> decorations;
+	//// Managers of map generation-related components
+	BiomeManager *biomemgr;
+	OreManager *oremgr;
+	DecorationManager *decomgr;
+	SchematicManager *schemmgr;
 
+	//// Methods
 	EmergeManager(IGameDef *gamedef);
 	~EmergeManager();
 
@@ -109,7 +114,7 @@ public:
 	void initMapgens();
 	Mapgen *getCurrentMapgen();
 	Mapgen *createMapgen(std::string mgname, int mgid,
-						MapgenParams *mgparams);
+		MapgenParams *mgparams);
 	MapgenSpecificParams *createMapgenParams(std::string mgname);
 	void startThreads();
 	void stopThreads();

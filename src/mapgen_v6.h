@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MAPGENV6_HEADER
 
 #include "mapgen.h"
+#include "noise.h"
 
 #define AVERAGE_MUD_AMOUNT 4
 
@@ -36,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 extern FlagDesc flagdesc_mapgen_v6[];
 
 
-enum BiomeType
+enum BiomeV6Type
 {
 	BT_NORMAL,
 	BT_DESERT
@@ -135,9 +136,9 @@ public:
 	float getMudAmount(v2s16 p);
 	virtual float getMudAmount(int index);
 	bool getHaveBeach(v2s16 p);
-	virtual bool getHaveBeach(int index);
-	BiomeType getBiome(v2s16 p);
-	BiomeType getBiome(int index, v2s16 p);
+	bool getHaveBeach(int index);
+	BiomeV6Type getBiome(v2s16 p);
+	BiomeV6Type getBiome(int index, v2s16 p);
 	
 	u32 get_blockseed(u64 seed, v3s16 p);
 	

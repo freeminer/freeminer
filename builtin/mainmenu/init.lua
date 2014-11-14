@@ -1,35 +1,103 @@
-
 local menupath = core.get_mainmenu_path()..DIR_DELIM
 local commonpath = core.get_builtin_path()..DIR_DELIM.."common"..DIR_DELIM
 
 dofile(commonpath.."filterlist.lua")
-dofile(menupath.."modmgr.lua")
-dofile(menupath.."modstore.lua")
-dofile(menupath.."gamemgr.lua")
-dofile(menupath.."textures.lua")
-dofile(menupath.."menubar.lua")
 dofile(commonpath.."async_event.lua")
+
+dofile(menupath.."modmgr.lua")
+dofile(menupath.."gamemgr.lua")
+
+dofile(menupath.."modstore.lua")
+dofile(menupath.."menubar.lua")
 
 mt_color_grey  = "#AAAAAA"
 mt_color_blue  = "#0000DD"
 mt_color_green = "#00DD00"
 mt_color_dark_green = "#003300"
 
---for all other colors ask sfan5 to complete his worK!
-
 menu = {}
 local tabbuilder = {}
 local worldlist = nil
 
 --------------------------------------------------------------------------------
-local function filter_texture_pack_list(list)
-	retval = {"None"}
-	for _,i in ipairs(list) do
-		if i~="base" then
-			table.insert(retval, i)
+-- Common/Global menu functions
+--------------------------------------------------------------------------------
+os.tempfolder = function()
+	local filetocheck = os.tmpname()
+	os.remove(filetocheck)
+
+	local randname = "MTTempModFolder_" .. math.random(0,10000)
+	if DIR_DELIM == "\\" then
+		local tempfolder = os.getenv("TEMP")
+		return tempfolder .. filetocheck
+	else
+		local backstring = filetocheck:reverse()
+		return filetocheck:sub(0,filetocheck:len()-backstring:find(DIR_DELIM)+1) ..randname
+	end
+
+end
+
+--------------------------------------------------------------------------------
+function text2textlist(xpos,ypos,width,height,tl_name,textlen,text,transparency)
+	local textlines = core.splittext(text,textlen)
+	
+	local retval = "textlist[" .. xpos .. "," .. ypos .. ";"
+								.. width .. "," .. height .. ";"
+								.. tl_name .. ";"
+	
+	for i=1, #textlines, 1 do
+		textlines[i] = textlines[i]:gsub("\r","")
+		retval = retval .. core.formspec_escape(textlines[i]) .. ","
+	end
+	
+	retval = retval .. ";0;"
+	
+	if transparency then
+		retval = retval .. "true"
+	end
+	
+	retval = retval .. "]"
+
+	return retval
+end
+
+--------------------------------------------------------------------------------
+function menu.handle_key_up_down(fields,textlist,settingname)
+
+	if fields["key_up"] then
+		local oldidx = core.get_textlist_index(textlist)
+
+		if oldidx ~= nil and oldidx > 1 then
+			local newidx = oldidx -1
+			core.setting_set(settingname,
+				filterlist.get_raw_index(worldlist,newidx))
 		end
 	end
-	return retval
+
+	if fields["key_down"] then
+		local oldidx = core.get_textlist_index(textlist)
+
+		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
+			local newidx = oldidx + 1
+			core.setting_set(settingname,
+				filterlist.get_raw_index(worldlist,newidx))
+		end
+	end
+end
+
+--------------------------------------------------------------------------------
+function menu.asyncOnlineFavourites()
+	menu.favorites = {}
+	core.handle_async(
+		function(param)
+			return core.get_favorites("online")
+		end,
+		nil,
+		function(result)
+			menu.favorites = result
+			core.event_handler("Refresh")
+		end
+		)
 end
 
 --------------------------------------------------------------------------------
@@ -75,95 +143,6 @@ function menu.render_favorite(spec,render_details)
 end
 
 --------------------------------------------------------------------------------
-os.tempfolder = function()
-	local filetocheck = os.tmpname()
-	os.remove(filetocheck)
-
-	local randname = "MTTempModFolder_" .. math.random(0,10000)
-	if DIR_DELIM == "\\" then
-		local tempfolder = os.getenv("TEMP")
-		return tempfolder .. filetocheck
-	else
-		local backstring = filetocheck:reverse()
-		return filetocheck:sub(0,filetocheck:len()-backstring:find(DIR_DELIM)+1) ..randname
-	end
-
-end
-
---------------------------------------------------------------------------------
-function text2textlist(xpos,ypos,width,height,tl_name,textlen,text,transparency)
-	local textlines = core.splittext(text,textlen)
-	
-	local retval = "textlist[" .. xpos .. "," .. ypos .. ";"
-								.. width .. "," .. height .. ";"
-								.. tl_name .. ";"
-	
-	for i=1, #textlines, 1 do
-		textlines[i] = textlines[i]:gsub("\r","")
-		retval = retval .. core.formspec_escape(textlines[i]) .. ","
-	end
-	
-	retval = retval .. ";0;"
-	
-	if transparency then
-		retval = retval .. "true"
-	end
-	
-	retval = retval .. "]"
-
-	return retval
-end
-
---------------------------------------------------------------------------------
-function init_globals()
-	--init gamedata
-	gamedata.worldindex = 0
-
-	worldlist = filterlist.create(
-					core.get_worlds,
-					compare_worlds,
-					function(element,uid)
-						if element.name == uid then
-							return true
-						end
-						return false
-					end, --unique id compare fct
-					function(element,gameid)
-						if element.gameid == gameid then
-							return true
-						end
-						return false
-					end --filter fct
-					)
-
-	filterlist.add_sort_mechanism(worldlist,"alphabetic",sort_worlds_alphabetic)
-	filterlist.set_sortmode(worldlist,"alphabetic")
-end
-
---------------------------------------------------------------------------------
-function update_menu()
-	local formspec
-
-	-- handle errors
-	if gamedata.errormessage ~= nil then
-		formspec = "size[12,5.2,true]" ..
-			"textarea[1,2;10,2;;ERROR: " ..
-			core.formspec_escape(gamedata.errormessage) ..
-			";]"..
-			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
-	else
-		formspec = "size[15.5,11.625,true]"
-		if tabbuilder.show_buttons then
-			formspec = formspec .. "image[-0.35,-0.675;" .. core.formspec_escape(menu.defaulttexturedir .. "menu.png") .. "]"
-		end
-		formspec = formspec .. "background[-50,-50;100,100;" .. core.formspec_escape(menu.defaulttexturedir .. "background.png") .. "]"
-		formspec = formspec .. tabbuilder.gettab()
-	end
-
-	core.update_formspec(formspec)
-end
-
---------------------------------------------------------------------------------
 function menu.render_world_list()
 	local retval = ""
 
@@ -178,6 +157,17 @@ function menu.render_world_list()
 					" \\[" .. core.formspec_escape(v.gameid) .. "\\]"
 	end
 
+	return retval
+end
+
+--------------------------------------------------------------------------------
+local function filter_texture_pack_list(list)
+	retval = {"None"}
+	for _,i in ipairs(list) do
+		if i~="base" then
+			table.insert(retval, i)
+		end
+	end
 	return retval
 end
 
@@ -197,42 +187,6 @@ function menu.render_texture_pack_list(list)
 end
 
 --------------------------------------------------------------------------------
-function menu.asyncOnlineFavourites()
-	menu.favorites = {}
-	core.handle_async(
-		function(param)
-			return core.get_favorites("online")
-		end,
-		nil,
-		function(result)
-			menu.favorites = result
-			core.event_handler("Refresh")
-		end
-		)
-end
-
---------------------------------------------------------------------------------
-function menu.init()
-	--init menu data
-	gamemgr.update_gamelist()
-
-	menu.last_game	= tonumber(core.setting_get("main_menu_last_game_idx"))
-
-	if type(menu.last_game) ~= "number" then
-		menu.last_game = 1
-	end
-
-	if core.setting_getbool("public_serverlist") then
-		menu.asyncOnlineFavourites()
-	else
-		menu.favorites = core.get_favorites("local")
-	end
-
-	menu.defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
-					DIR_DELIM .. "pack" .. DIR_DELIM
-end
-
---------------------------------------------------------------------------------
 function menu.lastgame()
 	if menu.last_game > 0 and menu.last_game <= #gamemgr.games then
 		return gamemgr.games[menu.last_game]
@@ -247,48 +201,81 @@ function menu.lastgame()
 	return nil
 end
 
+
+
 --------------------------------------------------------------------------------
-function menu.update_last_game()
+-- Global tab functions
+--------------------------------------------------------------------------------
+function tabbuilder.gettab()
+	local tsize = tabbuilder.tabsizes[tabbuilder.current_tab] or {width=12, height=5.2}
+	local retval = ""
 
-	local current_world = filterlist.get_raw_element(worldlist,
-							core.setting_get("mainmenu_last_selected_world")
-							)
-
-	if current_world == nil then
-		return
+	if tabbuilder.show_buttons then
+		retval = retval .. tabbuilder.tab_header()
 	end
 
-	local gamespec, i = gamemgr.find_by_gameid(current_world.gameid)
-	if i ~= nil then
-		menu.last_game = i
-		core.setting_set("main_menu_last_game_idx",menu.last_game)
+	local buildfunc = tabbuilder.tabfuncs[tabbuilder.current_tab]
+	if buildfunc ~= nil then
+		retval = retval .. buildfunc()
 	end
+
+	retval = retval .. modmgr.gettab(tabbuilder.current_tab)
+	retval = retval .. gamemgr.gettab(tabbuilder.current_tab)
+	retval = retval .. modstore.gettab(tabbuilder.current_tab)
+
+	return retval
 end
 
 --------------------------------------------------------------------------------
-function menu.handle_key_up_down(fields,textlist,settingname)
+function tabbuilder.tab_header()
 
-	if fields["key_up"] then
-		local oldidx = core.get_textlist_index(textlist)
-
-		if oldidx ~= nil and oldidx > 1 then
-			local newidx = oldidx -1
-			core.setting_set(settingname,
-				filterlist.get_raw_index(worldlist,newidx))
-		end
+	if tabbuilder.last_tab_index == nil then
+		tabbuilder.last_tab_index = 1
 	end
 
-	if fields["key_down"] then
-		local oldidx = core.get_textlist_index(textlist)
+	local formspec = "image[-0.35," .. 1.8 + tabbuilder.last_tab_index .. ";" .. core.formspec_escape(menu.defaulttexturedir .. "selected.png") .. "]"
 
-		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
-			local newidx = oldidx + 1
-			core.setting_set(settingname,
-				filterlist.get_raw_index(worldlist,newidx))
-		end
+	for i = 1, #tabbuilder.current_buttons do
+		formspec = formspec .. "label[0.35," .. 2 + i .. ";" .. tabbuilder.current_buttons[i].caption .. "]"
+		formspec = formspec .. "image_button[-0.4," .. 1.85 + i .. ";6.7,1;" .. core.formspec_escape(menu.defaulttexturedir .. "blank.png") .. ";maintab_" .. i .. ";;true;false]"
 	end
+	return formspec
 end
 
+--------------------------------------------------------------------------------
+function tabbuilder.handle_tab_buttons(fields)
+	local index = nil
+	local match = "maintab_"
+	for idx, _ in pairs(fields) do
+		if idx:sub(1, #match) == match then
+			index = tonumber(idx:sub(#match + 1, #match + 1))
+			break
+		end
+	end
+
+	if index then
+		tabbuilder.last_tab_index = index
+		tabbuilder.current_tab = tabbuilder.current_buttons[index].name
+
+		core.setting_set("main_menu_tab",tabbuilder.current_tab)
+	end
+
+	--handle tab changes
+	if tabbuilder.current_tab ~= tabbuilder.old_tab then
+		if tabbuilder.current_tab ~= "singleplayer" and not tabbuilder.is_dialog then
+			menu.update_gametype(true)
+		end
+	end
+
+	if tabbuilder.current_tab == "singleplayer" then
+		menu.update_gametype()
+	end
+
+	tabbuilder.old_tab = tabbuilder.current_tab
+end
+
+--------------------------------------------------------------------------------
+-- Dialogs
 --------------------------------------------------------------------------------
 function tabbuilder.dialog_create_world()
 	local mapgens = {"v5", "v6", "v7", "indev", "singlenode", "math"}
@@ -324,36 +311,6 @@ function tabbuilder.dialog_create_world()
 
 		"button[9.5,5.5;2.6,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
 		"button[12,5.5;2.8,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
-
-	return retval
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.dialog_delete_world()
-	return	"label[6.5,2;" ..
-			fgettext("Delete World \"$1\"?", filterlist.get_raw_list(worldlist)[menu.world_to_del].name) .. "]"..
-			"button[8,4.2;2.6,0.5;world_delete_confirm;" .. fgettext("Yes").. "]" ..
-			"button[10.5,4.2;2.8,0.5;world_delete_cancel;" .. fgettext("No") .. "]"
-end
-
---------------------------------------------------------------------------------
-
-function tabbuilder.gettab()
-	local tsize = tabbuilder.tabsizes[tabbuilder.current_tab] or {width=12, height=5.2}
-	local retval = ""
-
-	if tabbuilder.show_buttons then
-		retval = retval .. tabbuilder.tab_header()
-	end
-
-	local buildfunc = tabbuilder.tabfuncs[tabbuilder.current_tab]
-	if buildfunc ~= nil then
-		retval = retval .. buildfunc()
-	end
-
-	retval = retval .. modmgr.gettab(tabbuilder.current_tab)
-	retval = retval .. gamemgr.gettab(tabbuilder.current_tab)
-	retval = retval .. modstore.gettab(tabbuilder.current_tab)
 
 	return retval
 end
@@ -409,6 +366,14 @@ function tabbuilder.handle_create_world_buttons(fields)
 end
 
 --------------------------------------------------------------------------------
+function tabbuilder.dialog_delete_world()
+	return	"label[6.5,2;" ..
+			fgettext("Delete World \"$1\"?", filterlist.get_raw_list(worldlist)[menu.world_to_del].name) .. "]"..
+			"button[8,4.2;2.6,0.5;world_delete_confirm;" .. fgettext("Yes").. "]" ..
+			"button[10.5,4.2;2.8,0.5;world_delete_cancel;" .. fgettext("No") .. "]"
+end
+
+--------------------------------------------------------------------------------
 function tabbuilder.handle_delete_world_buttons(fields)
 
 	if fields["world_delete_confirm"] then
@@ -425,7 +390,185 @@ function tabbuilder.handle_delete_world_buttons(fields)
 	tabbuilder.current_tab = core.setting_get("main_menu_tab")
 end
 
+
+--------------------------------------------------------------------------------
+-- Singleplayer tab
+--------------------------------------------------------------------------------
+function tabbuilder.tab_singleplayer()
+	local gameidx = ''
+	local formspec = ''
+	local index = filterlist.get_current_index(worldlist,
+				tonumber(core.setting_get("mainmenu_last_selected_world"))
+				)
+	if menu.lastgame() then
+		gameidx = menu.lastgame().id
+	end
+	formspec = "label[0,2;Game: " .. core.formspec_escape(gameidx) .. "]" ..
+			"button[6.5,5;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+			"label[6.5,0;".. fgettext("Select World:") .. "]"..
+			"checkbox[6.5,4.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+			dump(core.setting_getbool("creative_mode")) .. "]"..
+			"checkbox[9.5,4.1;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+			dump(core.setting_getbool("enable_damage")) .. "]"..
+			"textlist[6.5,0.5;8.8,3.7;sp_worlds;" ..
+			menu.render_world_list() ..
+			";" .. index .. "]" ..
+			menubar.formspec
+	if #gamemgr.games > 0 then
+		formspec = formspec .. "button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
+			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
+			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]"
+	end
+	return formspec
+end
+
+--------------------------------------------------------------------------------
+function tabbuilder.handle_singleplayer_buttons(fields)
+
+	local world_doubleclick = false
+
+	if fields["sp_worlds"] ~= nil then
+		local event = core.explode_textlist_event(fields["sp_worlds"])
+
+		if event.type == "DCL" then
+			world_doubleclick = true
+		end
+
+		if event.type == "CHG" then
+			core.setting_set("mainmenu_last_selected_world",
+				filterlist.get_raw_index(worldlist,core.get_textlist_index("sp_worlds")))
+		end
+	end
+
+	menu.handle_key_up_down(fields,"sp_worlds","mainmenu_last_selected_world")
+
+	if fields["cb_creative_mode"] then
+		core.setting_set("creative_mode", fields["cb_creative_mode"])
+	end
+
+	if fields["cb_enable_damage"] then
+		core.setting_set("enable_damage", fields["cb_enable_damage"])
+	end
+
+	if fields["play"] ~= nil or
+		world_doubleclick or
+		fields["key_enter"] then
+		local selected = core.get_textlist_index("sp_worlds")
+		if selected ~= nil then
+			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
+			gamedata.singleplayer	= true
+
+			menu.update_last_game(gamedata.selected_world)
+
+			core.start()
+		end
+	end
+
+	-- is there any more hacky way to do that?
+	local world_created = fields["world_create_confirm"] ~= nil or fields["world_create_cancel"] ~= nil or fields["key_enter"] ~= nil
+
+	if (fields["world_create"] ~= nil or fields["dd_mapgen"] ~= nil) and not world_created then
+		tabbuilder.current_tab = "dialog_create_world"
+		tabbuilder.is_dialog = true
+		tabbuilder.show_buttons = true
+	end
+
+	if fields["world_delete"] ~= nil then
+		local selected = core.get_textlist_index("sp_worlds")
+		if selected ~= nil and
+			selected <= filterlist.size(worldlist) then
+			local world = filterlist.get_list(worldlist)[selected]
+			if world ~= nil and
+				world.name ~= nil and
+				world.name ~= "" then
+				menu.world_to_del = filterlist.get_raw_index(worldlist,selected)
+				tabbuilder.current_tab = "dialog_delete_world"
+				tabbuilder.is_dialog = true
+				tabbuilder.show_buttons = false
+			else
+				menu.world_to_del = 0
+			end
+		end
+	end
+
+	if fields["world_configure"] ~= nil then
+		selected = core.get_textlist_index("sp_worlds")
+		if selected ~= nil then
+			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
+			if modmgr.init_worldconfig() then
+				tabbuilder.current_tab = "dialog_configure_world"
+				tabbuilder.is_dialog = true
+				tabbuilder.show_buttons = false
+			end
+		end
+	end
+end
+
+
+
+--------------------------------------------------------------------------------
+-- Multiplayer tab
+--------------------------------------------------------------------------------
 local selected_server = {}
+
+function tabbuilder.tab_multiplayer()
+	local e = core.formspec_escape
+	local retval =
+		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..core.setting_get("address") .."]" ..
+		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..core.setting_get("remote_port") .."]" ..
+		"checkbox[6.5,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
+		dump(core.setting_getbool("public_serverlist")) .. "]"
+
+	if not core.setting_getbool("public_serverlist") then
+		retval = retval ..
+			"button[13.25,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
+	end
+
+	retval = retval ..
+		"button[12.75,10;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
+		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..(selected_server.playername or  core.setting_get("name")) .."]" ..
+		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
+		"textarea[6.75,3.8;8.8,2.75;;"
+	if menu.fav_selected ~= nil and
+		menu.favorites[menu.fav_selected].description ~= nil then
+		retval = retval ..
+			core.formspec_escape(menu.favorites[menu.fav_selected].description,true)
+	end
+
+	retval = retval ..
+		";]"
+	retval = retval .. "tablecolumns[" ..
+		"text,tooltip=Online,align=center;" ..
+		"text,align=center;" ..
+		"text,tooltip=Slots,align=center;" ..
+		"image,tooltip=Requires non-empty password,1=" .. e(menu.defaulttexturedir .. "server_flags_password.png") .. ";" ..
+		"image,tooltip=Creative,1=" .. e(menu.defaulttexturedir .. "server_flags_creative.png") .. ";" ..
+		"image,tooltip=Damage enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_damage.png") .. ";" ..
+		"image,tooltip=PvP enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_pvp.png") .. ";" ..
+		"text" ..
+		"]"
+	retval = retval .. "table[" ..
+		"6.5,0.35;8.8,3.35;favourites;"
+
+	local render_details = 1 -- core.setting_getbool("public_serverlist")
+
+	if menu.favorites and #menu.favorites > 0 then
+		retval = retval .. menu.render_favorite(menu.favorites[1],render_details)
+
+		for i=2,#menu.favorites,1 do
+			retval = retval .. "," .. menu.render_favorite(menu.favorites[i],render_details)
+		end
+	end
+
+	if menu.fav_selected ~= nil then
+		retval = retval .. ";" .. menu.fav_selected .. "]"
+	else
+		retval = retval .. ";0]"
+	end
+
+	return retval
+end
+
 --------------------------------------------------------------------------------
 function tabbuilder.handle_multiplayer_buttons(fields)
 
@@ -567,6 +710,57 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 end
 
 --------------------------------------------------------------------------------
+-- Server tab
+--------------------------------------------------------------------------------
+function tabbuilder.tab_server()
+
+	local index = filterlist.get_current_index(worldlist,
+				tonumber(core.setting_get("mainmenu_last_selected_world"))
+				)
+
+	local retval =
+		"button[6.5,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+		"button[9,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
+		"button[11.7,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
+		"button[11,8;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
+		"label[6.5,-0.25;".. fgettext("Select World:") .. "]"..
+		"checkbox[6.5,4.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+		dump(core.setting_getbool("creative_mode")) .. "]"..
+		"checkbox[9,4.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+		dump(core.setting_getbool("enable_damage")) .. "]"..
+		"checkbox[11.7,4.5;cb_server_announce;".. fgettext("Public") .. ";" ..
+		dump(core.setting_getbool("server_announce")) .. "]"..
+		"field[6.7,6;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
+		core.setting_get("name") .. "]" ..
+		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
+		
+-- TODO !!!!
+	local bind_addr = core.setting_get("bind_address")
+	if bind_addr ~= nil and bind_addr ~= "" then
+		retval = retval ..
+			"field[6.7,7;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
+			core.setting_get("bind_address") .."]" ..
+			"field[11.2,7;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
+			core.setting_get("port") .."]"
+	else
+		retval = retval ..
+			"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
+			core.setting_get("port") .."]"
+	end
+	
+	retval = retval ..
+		"textlist[6.5,0.25;7.5,3.7;srv_worlds;" ..
+		menu.render_world_list() ..
+		";" .. index .. "]"
+
+	if not core.setting_get("menu_last_game") then
+		local default_game = core.setting_get("default_game") or "default"
+		core.setting_set("menu_last_game", default_game )
+	end
+	return retval
+end
+
+--------------------------------------------------------------------------------
 function tabbuilder.handle_server_buttons(fields)
 
 	local world_doubleclick = false
@@ -658,12 +852,123 @@ function tabbuilder.handle_server_buttons(fields)
 end
 
 --------------------------------------------------------------------------------
+-- Texture packs tab
+--------------------------------------------------------------------------------
+function tabbuilder.tab_texture_packs()
+	local retval = "label[6.5,-0.25;".. fgettext("Select texture pack:") .. "]"..
+			"textlist[6.5,0.25;7.5,5.0;TPs;"
+
+	local current_texture_path = core.setting_get("texture_path")
+	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
+
+	if index == nil then index = 1 end
+
+	if current_texture_path == "" then
+		retval = retval ..
+			menu.render_texture_pack_list(list) ..
+			";" .. index .. "]"
+		return retval
+	end
+
+	local infofile = current_texture_path ..DIR_DELIM.."info.txt"
+	local infotext = ""
+	local f = io.open(infofile, "r")
+	if f==nil then
+		infotext = fgettext("No information available")
+	else
+		infotext = f:read("*all")
+		f:close()
+	end
+
+	local screenfile = current_texture_path..DIR_DELIM.."screenshot.png"
+	local no_screenshot = nil
+	if not file_exists(screenfile) then
+		screenfile = nil
+		no_screenshot = menu.defaulttexturedir .. "no_screenshot.png"
+	end
+
+	return	retval ..
+			menu.render_texture_pack_list(list) ..
+			";" .. index .. "]" ..
+			"image[6.5,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[6.75,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
+end
+
+--------------------------------------------------------------------------------
+function tabbuilder.handle_texture_pack_buttons(fields)
+	if fields["TPs"] ~= nil then
+		local event = core.explode_textlist_event(fields["TPs"])
+		if event.type == "CHG" or event.type == "DCL" then
+			local index = core.get_textlist_index("TPs")
+			core.setting_set("mainmenu_last_selected_TP",
+				index)
+			local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+			local current_index = core.get_textlist_index("TPs")
+			if current_index ~= nil and #list >= current_index then
+				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]
+				if list[current_index] == "None" then new_path = "" end
+
+				core.setting_set("texture_path", new_path)
+			end
+		end
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Settings tab
+--------------------------------------------------------------------------------
+function tabbuilder.tab_settings()
+	local tab_string = ""
+	local pos = 0
+	local add_checkbox = function(name, config, text)
+		tab_string = tab_string ..
+			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+					.. dump(core.setting_getbool(config)) .. "]"
+		pos = pos + 0.5
+	end
+	-- TODO: refactor this and handle_settings_buttons
+	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
+	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
+	add_checkbox("cb_enable_node_highlighting", "enable_node_highlighting", "Node Highlighting")
+	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
+	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
+	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
+	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
+	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
+	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
+	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
+	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
+	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
+	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
+	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
+	add_checkbox("cb_weather", "weather", "Weather")
+	add_checkbox("cb_hud_map", "hud_map", "Mini map (dev)")
+
+	if core.setting_getbool("enable_shaders") then
+		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
+		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
+		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
+		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
+		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
+		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
+	end
+
+	tab_string = tab_string ..
+		"button[6.5,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+	return tab_string
+end
+
+--------------------------------------------------------------------------------
 function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_fancy_trees"] then
 		core.setting_set("new_style_leaves", fields["cb_fancy_trees"])
 	end
 	if fields["cb_smooth_lighting"] then
 		core.setting_set("smooth_lighting", fields["cb_smooth_lighting"])
+	end
+	if fields["cb_enable_node_highlighting"] then
+		core.setting_set("enable_node_highlighting", fields["cb_enable_node_highlighting"])
 	end
 	if fields["cb_3d_clouds"] then
 		core.setting_set("enable_3d_clouds", fields["cb_3d_clouds"])
@@ -739,378 +1044,7 @@ function tabbuilder.handle_settings_buttons(fields)
 end
 
 --------------------------------------------------------------------------------
-function tabbuilder.handle_singleplayer_buttons(fields)
-
-	local world_doubleclick = false
-
-	if fields["sp_worlds"] ~= nil then
-		local event = core.explode_textlist_event(fields["sp_worlds"])
-
-		if event.type == "DCL" then
-			world_doubleclick = true
-		end
-
-		if event.type == "CHG" then
-			core.setting_set("mainmenu_last_selected_world",
-				filterlist.get_raw_index(worldlist,core.get_textlist_index("sp_worlds")))
-		end
-	end
-
-	menu.handle_key_up_down(fields,"sp_worlds","mainmenu_last_selected_world")
-
-	if fields["cb_creative_mode"] then
-		core.setting_set("creative_mode", fields["cb_creative_mode"])
-	end
-
-	if fields["cb_enable_damage"] then
-		core.setting_set("enable_damage", fields["cb_enable_damage"])
-	end
-
-	if fields["play"] ~= nil or
-		world_doubleclick or
-		fields["key_enter"] then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected ~= nil then
-			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
-			gamedata.singleplayer	= true
-
-			menu.update_last_game(gamedata.selected_world)
-
-			core.start()
-		end
-	end
-
-	-- is there any more hacky way to do that?
-	local world_created = fields["world_create_confirm"] ~= nil or fields["world_create_cancel"] ~= nil or fields["key_enter"] ~= nil
-
-	if (fields["world_create"] ~= nil or fields["dd_mapgen"] ~= nil) and not world_created then
-		tabbuilder.current_tab = "dialog_create_world"
-		tabbuilder.is_dialog = true
-		tabbuilder.show_buttons = true
-	end
-
-	if fields["world_delete"] ~= nil then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected ~= nil and
-			selected <= filterlist.size(worldlist) then
-			local world = filterlist.get_list(worldlist)[selected]
-			if world ~= nil and
-				world.name ~= nil and
-				world.name ~= "" then
-				menu.world_to_del = filterlist.get_raw_index(worldlist,selected)
-				tabbuilder.current_tab = "dialog_delete_world"
-				tabbuilder.is_dialog = true
-				tabbuilder.show_buttons = false
-			else
-				menu.world_to_del = 0
-			end
-		end
-	end
-
-	if fields["world_configure"] ~= nil then
-		selected = core.get_textlist_index("sp_worlds")
-		if selected ~= nil then
-			modmgr.world_config_selected_world = filterlist.get_raw_index(worldlist,selected)
-			if modmgr.init_worldconfig() then
-				tabbuilder.current_tab = "dialog_configure_world"
-				tabbuilder.is_dialog = true
-				tabbuilder.show_buttons = false
-			end
-		end
-	end
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.handle_texture_pack_buttons(fields)
-	if fields["TPs"] ~= nil then
-		local event = core.explode_textlist_event(fields["TPs"])
-		if event.type == "CHG" or event.type == "DCL" then
-			local index = core.get_textlist_index("TPs")
-			core.setting_set("mainmenu_last_selected_TP",
-				index)
-			local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
-			local current_index = core.get_textlist_index("TPs")
-			if current_index ~= nil and #list >= current_index then
-				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]
-				if list[current_index] == "None" then new_path = "" end
-
-				core.setting_set("texture_path", new_path)
-			end
-		end
-	end
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_header()
-
-	if tabbuilder.last_tab_index == nil then
-		tabbuilder.last_tab_index = 1
-	end
-
-	local formspec = "image[-0.35," .. 1.8 + tabbuilder.last_tab_index .. ";" .. core.formspec_escape(menu.defaulttexturedir .. "selected.png") .. "]"
-
-	for i = 1, #tabbuilder.current_buttons do
-		formspec = formspec .. "label[0.35," .. 2 + i .. ";" .. tabbuilder.current_buttons[i].caption .. "]"
-		formspec = formspec .. "image_button[-0.4," .. 1.85 + i .. ";6.7,1;" .. core.formspec_escape(menu.defaulttexturedir .. "blank.png") .. ";maintab_" .. i .. ";;true;false]"
-	end
-	return formspec
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.handle_tab_buttons(fields)
-	local index = nil
-	local match = "maintab_"
-	for idx, _ in pairs(fields) do
-		if idx:sub(1, #match) == match then
-			index = tonumber(idx:sub(#match + 1, #match + 1))
-			break
-		end
-	end
-
-	if index then
-		tabbuilder.last_tab_index = index
-		tabbuilder.current_tab = tabbuilder.current_buttons[index].name
-
-		core.setting_set("main_menu_tab",tabbuilder.current_tab)
-	end
-
-	--handle tab changes
-	if tabbuilder.current_tab ~= tabbuilder.old_tab then
-		if tabbuilder.current_tab ~= "singleplayer" and not tabbuilder.is_dialog then
-			menu.update_gametype(true)
-		end
-	end
-
-	if tabbuilder.current_tab == "singleplayer" then
-		menu.update_gametype()
-	end
-
-	tabbuilder.old_tab = tabbuilder.current_tab
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_multiplayer()
-	local e = core.formspec_escape
-	local retval =
-		"field[6.75,7.5;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..core.setting_get("address") .."]" ..
-		"field[13.45,7.5;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..core.setting_get("remote_port") .."]" ..
-		"checkbox[6.5,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
-		dump(core.setting_getbool("public_serverlist")) .. "]"
-
-	if not core.setting_getbool("public_serverlist") then
-		retval = retval ..
-			"button[13.25,3.95;2.25,0.5;btn_delete_favorite;".. fgettext("Delete") .. "]"
-	end
-
-	retval = retval ..
-		"button[12.75,10;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[6.75,8.8;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..(selected_server.playername or  core.setting_get("name")) .."]" ..
-		"pwdfield[12.3,8.8;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
-		"textarea[6.75,3.8;8.8,2.75;;"
-	if menu.fav_selected ~= nil and
-		menu.favorites[menu.fav_selected].description ~= nil then
-		retval = retval ..
-			core.formspec_escape(menu.favorites[menu.fav_selected].description,true)
-	end
-
-	retval = retval ..
-		";]"
-	retval = retval .. "tablecolumns[" ..
-		"text,tooltip=Online,align=center;" ..
-		"text,align=center;" ..
-		"text,tooltip=Slots,align=center;" ..
-		"image,tooltip=Requires non-empty password,1=" .. e(menu.defaulttexturedir .. "server_flags_password.png") .. ";" ..
-		"image,tooltip=Creative,1=" .. e(menu.defaulttexturedir .. "server_flags_creative.png") .. ";" ..
-		"image,tooltip=Damage enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_damage.png") .. ";" ..
-		"image,tooltip=PvP enabled,1=" .. e(menu.defaulttexturedir .. "server_flags_pvp.png") .. ";" ..
-		"text" ..
-		"]"
-	retval = retval .. "table[" ..
-		"6.5,0.35;8.8,3.35;favourites;"
-
-	local render_details = 1 -- core.setting_getbool("public_serverlist")
-
-	if menu.favorites and #menu.favorites > 0 then
-		retval = retval .. menu.render_favorite(menu.favorites[1],render_details)
-
-		for i=2,#menu.favorites,1 do
-			retval = retval .. "," .. menu.render_favorite(menu.favorites[i],render_details)
-		end
-	end
-
-	if menu.fav_selected ~= nil then
-		retval = retval .. ";" .. menu.fav_selected .. "]"
-	else
-		retval = retval .. ";0]"
-	end
-
-	return retval
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_server()
-
-	local index = filterlist.get_current_index(worldlist,
-				tonumber(core.setting_get("mainmenu_last_selected_world"))
-				)
-
-	local retval =
-		"button[6.5,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-		"button[9,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-		"button[11.7,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-		"button[11,8;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
-		"label[6.5,-0.25;".. fgettext("Select World:") .. "]"..
-		"checkbox[6.5,4.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
-		dump(core.setting_getbool("creative_mode")) .. "]"..
-		"checkbox[9,4.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
-		dump(core.setting_getbool("enable_damage")) .. "]"..
-		"checkbox[11.7,4.5;cb_server_announce;".. fgettext("Public") .. ";" ..
-		dump(core.setting_getbool("server_announce")) .. "]"..
-		"field[6.7,6;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
-		core.setting_get("name") .. "]" ..
-		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
-		
--- TODO !!!!
-	local bind_addr = core.setting_get("bind_address")
-	if bind_addr ~= nil and bind_addr ~= "" then
-		retval = retval ..
-			"field[6.7,7;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
-			core.setting_get("bind_address") .."]" ..
-			"field[11.2,7;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
-			core.setting_get("port") .."]"
-	else
-		retval = retval ..
-			"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
-			core.setting_get("port") .."]"
-	end
-	
-	retval = retval ..
-		"textlist[6.5,0.25;7.5,3.7;srv_worlds;" ..
-		menu.render_world_list() ..
-		";" .. index .. "]"
-
-	if not core.setting_get("menu_last_game") then
-		local default_game = core.setting_get("default_game") or "default"
-		core.setting_set("menu_last_game", default_game )
-	end
-
-	mm_texture.init()
-
-	return retval
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_settings()
-	local tab_string = ""
-	local pos = 0
-	local add_checkbox = function(name, config, text)
-		tab_string = tab_string ..
-			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
-					.. dump(core.setting_getbool(config)) .. "]"
-		pos = pos + 0.5
-	end
-	-- TODO: refactor this and handle_settings_buttons
-	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
-	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
-	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
-	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
-	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
-	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
-	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
-	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
-	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
-	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
-	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
-	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
-	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
-	add_checkbox("cb_weather", "weather", "Weather")
-	add_checkbox("cb_hud_map", "hud_map", "Mini map (dev)")
-
-	if core.setting_getbool("enable_shaders") then
-		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
-		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
-		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
-		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
-		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
-		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
-	end
-
-	tab_string = tab_string ..
-		"button[6.5,11;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
-	return tab_string
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_singleplayer()
-	local gameidx = ''
-	local formspec = ''
-	local index = filterlist.get_current_index(worldlist,
-				tonumber(core.setting_get("mainmenu_last_selected_world"))
-				)
-	if menu.lastgame() then
-		gameidx = menu.lastgame().id
-	end
-	formspec = "label[0,2;Game: " .. core.formspec_escape(gameidx) .. "]" ..
-			"button[6.5,5;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"label[6.5,0;".. fgettext("Select World:") .. "]"..
-			"checkbox[6.5,4.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
-			dump(core.setting_getbool("creative_mode")) .. "]"..
-			"checkbox[9.5,4.1;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
-			dump(core.setting_getbool("enable_damage")) .. "]"..
-			"textlist[6.5,0.5;8.8,3.7;sp_worlds;" ..
-			menu.render_world_list() ..
-			";" .. index .. "]" ..
-			menubar.formspec
-	if #gamemgr.games > 0 then
-		formspec = formspec .. "button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
-			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]"
-	end
-	return formspec
-end
-
---------------------------------------------------------------------------------
-function tabbuilder.tab_texture_packs()
-	local retval = "label[6.5,-0.25;".. fgettext("Select texture pack:") .. "]"..
-			"textlist[6.5,0.25;7.5,5.0;TPs;"
-
-	local current_texture_path = core.setting_get("texture_path")
-	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
-	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
-
-	if index == nil then index = 1 end
-
-	if current_texture_path == "" then
-		retval = retval ..
-			menu.render_texture_pack_list(list) ..
-			";" .. index .. "]"
-		return retval
-	end
-
-	local infofile = current_texture_path ..DIR_DELIM.."info.txt"
-	local infotext = ""
-	local f = io.open(infofile, "r")
-	if f==nil then
-		infotext = fgettext("No information available")
-	else
-		infotext = f:read("*all")
-		f:close()
-	end
-
-	local screenfile = current_texture_path..DIR_DELIM.."screenshot.png"
-	local no_screenshot = nil
-	if not file_exists(screenfile) then
-		screenfile = nil
-		no_screenshot = menu.defaulttexturedir .. "no_screenshot.png"
-	end
-
-	return	retval ..
-			menu.render_texture_pack_list(list) ..
-			";" .. index .. "]" ..
-			"image[6.5,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[6.75,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
-end
-
+-- Credits tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_credits()
 	local logofile = menu.defaulttexturedir .. "logo.png"
@@ -1150,14 +1084,127 @@ function tabbuilder.tab_credits()
 			";0;true]"
 end
 
+
+
+
+--------------------------------------------------------------------------------
+-- Update functions
+--------------------------------------------------------------------------------
+function menu.update()
+	local formspec
+
+	-- Handle errors
+	if gamedata.errormessage ~= nil then
+		formspec = "size[12,5.2,true]" ..
+			"textarea[1,2;10,2;;ERROR: " ..
+			core.formspec_escape(gamedata.errormessage) ..
+			";]"..
+			"button[4.5,4.2;3,0.5;btn_error_confirm;" .. fgettext("Ok") .. "]"
+	else
+		-- General size and information about what we want the formspec to be like on the menu
+		formspec = "size[15.5,11.625,true]"
+		-- Retrieve menu image from base/pack
+		if tabbuilder.show_buttons then
+			formspec = formspec .. "image[-0.35,-0.675;" .. core.formspec_escape(menu.defaulttexturedir .. "menu.png") .. "]"
+		end
+		-- Load background from base/pack
+		-- TODO: Allow games to set backgrounds again in menu/background.png
+		formspec = formspec .. "background[-50,-50;100,100;" .. core.formspec_escape(menu.defaulttexturedir .. "background.png") .. "]"
+		formspec = formspec .. tabbuilder.gettab()
+		-- Set clouds to true to avoid brown background on loading page if menu_clouds = false
+		-- TODO: Remove menu_clouds, use the base/pack background on loading screen?
+		core.set_clouds(true)
+	end
+
+	core.update_formspec(formspec)
+end
+
+--------------------------------------------------------------------------------
+function menu.update_gametype(reset)
+	local game = menu.lastgame()
+
+	if reset or game == nil then
+		--core.set_topleft_text("")
+		filterlist.set_filtercriteria(worldlist,nil)
+	else
+		--core.set_topleft_text(game.name)
+		filterlist.set_filtercriteria(worldlist,game.id)
+	end
+end
+
+--------------------------------------------------------------------------------
+function menu.update_last_game()
+
+	local current_world = filterlist.get_raw_element(worldlist,
+							core.setting_get("mainmenu_last_selected_world")
+							)
+
+	if current_world == nil then
+		return
+	end
+
+	local gamespec, i = gamemgr.find_by_gameid(current_world.gameid)
+	if i ~= nil then
+		menu.last_game = i
+		core.setting_set("main_menu_last_game_idx",menu.last_game)
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Initial Load
+--------------------------------------------------------------------------------
+function menu.init()
+	--init gamedata
+	gamedata.worldindex = 0
+
+	worldlist = filterlist.create(
+					core.get_worlds,
+					compare_worlds,
+					function(element,uid)
+						if element.name == uid then
+							return true
+						end
+						return false
+					end, --unique id compare fct
+					function(element,gameid)
+						if element.gameid == gameid then
+							return true
+						end
+						return false
+					end --filter fct
+					)
+
+	filterlist.add_sort_mechanism(worldlist,"alphabetic",sort_worlds_alphabetic)
+	filterlist.set_sortmode(worldlist,"alphabetic")
+	
+	
+	--init menu data
+	gamemgr.update_gamelist()
+
+	menu.last_game	= tonumber(core.setting_get("main_menu_last_game_idx"))
+
+	if type(menu.last_game) ~= "number" then
+		menu.last_game = 1
+	end
+
+	if core.setting_getbool("public_serverlist") then
+		menu.asyncOnlineFavourites()
+	else
+		menu.favorites = core.get_favorites("local")
+	end
+
+	menu.defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
+					DIR_DELIM .. "pack" .. DIR_DELIM
+end
+
 --------------------------------------------------------------------------------
 function tabbuilder.init()
 	tabbuilder.tabfuncs = {
 		singleplayer  = tabbuilder.tab_singleplayer,
 		multiplayer   = tabbuilder.tab_multiplayer,
 		server        = tabbuilder.tab_server,
-		settings      = tabbuilder.tab_settings,
 		texture_packs = tabbuilder.tab_texture_packs,
+		settings      = tabbuilder.tab_settings,
 		credits       = tabbuilder.tab_credits,
 		dialog_create_world = tabbuilder.dialog_create_world,
 		dialog_delete_world = tabbuilder.dialog_delete_world
@@ -1182,8 +1229,8 @@ function tabbuilder.init()
 
 	tabbuilder.current_buttons = {}
 	table.insert(tabbuilder.current_buttons,{name="singleplayer", caption=fgettext("Singleplayer")})
-	table.insert(tabbuilder.current_buttons,{name="multiplayer", caption=fgettext("Client")})
-	table.insert(tabbuilder.current_buttons,{name="server", caption=fgettext("Server")})
+	table.insert(tabbuilder.current_buttons,{name="multiplayer", caption=fgettext("Multiplayer")})
+	table.insert(tabbuilder.current_buttons,{name="server", caption=fgettext("Create Server")})
 	table.insert(tabbuilder.current_buttons,{name="texture_packs", caption=fgettext("Texture Packs")})
 
 	if core.setting_getbool("main_menu_game_mgr") then
@@ -1210,38 +1257,10 @@ function tabbuilder.init()
 	end
 end
 
---------------------------------------------------------------------------------
-function tabbuilder.checkretval(retval)
 
-	if retval ~= nil then
-		if retval.current_tab ~= nil then
-			tabbuilder.current_tab = retval.current_tab
-		end
-
-		if retval.is_dialog ~= nil then
-			tabbuilder.is_dialog = retval.is_dialog
-		end
-
-		if retval.show_buttons ~= nil then
-			tabbuilder.show_buttons = retval.show_buttons
-		end
-
-		if retval.skipformupdate ~= nil then
-			tabbuilder.skipformupdate = retval.skipformupdate
-		end
-
-		if retval.ignore_menu_quit == true then
-			tabbuilder.ignore_menu_quit = true
-		else
-			tabbuilder.ignore_menu_quit = false
-		end
-	end
-end
 
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- initialize callbacks
---------------------------------------------------------------------------------
+-- Initialize callbacks
 --------------------------------------------------------------------------------
 core.button_handler = function(fields)
 	if fields["btn_error_confirm"] then
@@ -1293,9 +1312,37 @@ core.button_handler = function(fields)
 
 	if not tabbuilder.skipformupdate then
 		--update menu
-		update_menu()
+		menu.update()
 	else
 		tabbuilder.skipformupdate = false
+	end
+end
+
+--------------------------------------------------------------------------------
+function tabbuilder.checkretval(retval)
+
+	if retval ~= nil then
+		if retval.current_tab ~= nil then
+			tabbuilder.current_tab = retval.current_tab
+		end
+
+		if retval.is_dialog ~= nil then
+			tabbuilder.is_dialog = retval.is_dialog
+		end
+
+		if retval.show_buttons ~= nil then
+			tabbuilder.show_buttons = retval.show_buttons
+		end
+
+		if retval.skipformupdate ~= nil then
+			tabbuilder.skipformupdate = retval.skipformupdate
+		end
+
+		if retval.ignore_menu_quit == true then
+			tabbuilder.ignore_menu_quit = true
+		else
+			tabbuilder.ignore_menu_quit = false
+		end
 	end
 end
 
@@ -1311,44 +1358,27 @@ core.event_handler = function(event)
 			tabbuilder.show_buttons = true
 			tabbuilder.current_tab = core.setting_get("main_menu_tab")
 			menu.update_gametype()
-			update_menu()
+			menu.update()
 		else
 			core.close()
 		end
 	end
 
 	if event == "Refresh" then
-		update_menu()
+		menu.update()
 	end
 end
 
 --------------------------------------------------------------------------------
-function menu.update_gametype(reset)
-	local game = menu.lastgame()
-
-	if reset or game == nil then
-		mm_texture.reset()
-		--core.set_topleft_text("")
-		filterlist.set_filtercriteria(worldlist,nil)
-	else
-		mm_texture.update(tabbuilder.current_tab,game)
-		--core.set_topleft_text(game.name)
-		filterlist.set_filtercriteria(worldlist,game.id)
-	end
-end
-
+-- Menu Startup
 --------------------------------------------------------------------------------
---------------------------------------------------------------------------------
--- menu startup
---------------------------------------------------------------------------------
---------------------------------------------------------------------------------
-init_globals()
-mm_texture.init()
 menu.init()
 tabbuilder.init()
-menubar.refresh()
 modstore.init()
+
+menubar.refresh()
+
 
 core.sound_play("main_menu", true)
 
-update_menu()
+menu.update()

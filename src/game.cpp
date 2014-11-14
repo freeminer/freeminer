@@ -366,12 +366,11 @@ PointedThing getPointedThing(Client *client, v3f player_position,
 		for (s16 z = zstart; z <= zend; z++)
 			for (s16 x = xstart; x <= xend; x++) {
 				MapNode n;
+				bool is_valid_position;
 
-				try {
-					n = map.getNode(v3s16(x, y, z));
-				} catch (InvalidPositionException &e) {
+				n = map.getNodeNoEx(v3s16(x, y, z), &is_valid_position);
+				if (!is_valid_position)
 					continue;
-				}
 
 				if (!isPointableNode(n, client, liquids_pointable))
 					continue;
@@ -896,22 +895,31 @@ bool nodePlacementPrediction(Client &client,
 	std::string prediction = playeritem_def.node_placement_prediction;
 	INodeDefManager *nodedef = client.ndef();
 	ClientMap &map = client.getEnv().getClientMap();
+	MapNode node;
+	bool is_valid_position;
 
-	if (prediction != "" && !nodedef->get(map.getNodeNoEx(nodepos)).rightclickable) {
+	node = map.getNodeNoEx(nodepos, &is_valid_position);
+	if (!is_valid_position)
+		return false;
+
+	if (prediction != "" && !nodedef->get(node).rightclickable) {
 		verbosestream << "Node placement prediction for "
 			      << playeritem_def.name << " is "
 			      << prediction << std::endl;
 		v3s16 p = neighbourpos;
 
 		// Place inside node itself if buildable_to
-		try {
-			MapNode n_under = map.getNode(nodepos);
-
+		MapNode n_under = map.getNodeNoEx(nodepos, &is_valid_position);
+		if (is_valid_position)
+		{
 			if (nodedef->get(n_under).buildable_to)
 				p = nodepos;
-			else if (!nodedef->get(map.getNode(p)).buildable_to)
-				return false;
-		} catch (InvalidPositionException &e) {}
+			else {
+				node = map.getNodeNoEx(p, &is_valid_position);
+				if (is_valid_position &&!nodedef->get(node).buildable_to)
+					return false;
+			}
+		}
 
 		// Find id of predicted node
 		content_t id;
@@ -1500,7 +1508,7 @@ protected:
 
 	void dropSelectedItem();
 	void openInventory();
-	void openConsole(float height = 0.6, bool close_on_return = false);
+	void openConsole(float height = 0.6, bool close_on_return = false, const std::wstring& input = L"");
 	void toggleFreeMove(float *statustext_time);
 	void toggleFreeMoveAlt(float *statustext_time, float *jump_timer);
 	void toggleFast(float *statustext_time);
@@ -2612,8 +2620,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CHAT])) {
 		openConsole(0.1, true);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
-		show_chat_menu(&current_formspec, client, gamedef, texture_src, device,
-				client, "/");
+		openConsole(0.1, true, L"/");
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CONSOLE])) {
 		openConsole();
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_FREEMOVE])) {
@@ -2812,10 +2819,13 @@ void Game::openInventory()
 }
 
 
-void Game::openConsole(float height, bool close_on_return)
+void Game::openConsole(float height, bool close_on_return, const std::wstring& input)
 {
 	if (!gui_chat_console->isOpenInhibited()) {
 		// Open up to over half of the screen
+		if (!input.empty()) {
+			gui_chat_console->setPrompt(input);
+		}
 		gui_chat_console->openConsole(height, close_on_return);
 		guienv->setFocus(gui_chat_console);
 	}
@@ -3800,8 +3810,6 @@ void Game::handleDigging(GameRunData *runData,
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientMap &map = client->getEnv().getClientMap();
 	MapNode n = client->getEnv().getClientMap().getNodeNoEx(nodepos);
-	if (n.getContent() == CONTENT_IGNORE)
-		return;
 
 	// NOTE: Similar piece of code exists on the server side for
 	// cheat detection.
@@ -3866,8 +3874,10 @@ void Game::handleDigging(GameRunData *runData,
 		infostream << "Digging completed" << std::endl;
 		client->interact(2, pointed);
 		client->setCrack(-1, v3s16(0, 0, 0));
-		MapNode wasnode = map.getNodeNoEx(nodepos);
-		client->removeNode(nodepos);
+		bool is_valid_position;
+		MapNode wasnode = map.getNodeNoEx(nodepos, &is_valid_position);
+		if (is_valid_position)
+			client->removeNode(nodepos);
 
 		if (g_settings->getBool("enable_particles")) {
 			const ContentFeatures &features =

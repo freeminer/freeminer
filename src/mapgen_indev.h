@@ -23,12 +23,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MAPGENINDEV_HEADER
 #define MAPGENINDEV_HEADER
 
+#include "json/json.h"
 #include "mapgen.h"
 #include "mapgen_v6.h"
 #include "cavegen.h"
 
 #define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
 #define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
+
 
 typedef struct {
 	content_t content;
