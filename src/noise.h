@@ -76,10 +76,12 @@ struct NoiseParams {
 	float farspread;
 	float farpersist;
 
+	bool eased;
+
 	NoiseParams() {}
 
 	NoiseParams(float offset_, float scale_, v3f spread_,
-		int seed_, int octaves_, float persist_,
+		int seed_, int octaves_, float persist_, bool eased_=false,
 		float farscale_ = 1, float farspread_ = 1, float farpersist_ = 1)
 	{
 		offset  = offset_;
@@ -88,10 +90,12 @@ struct NoiseParams {
 		seed    = seed_;
 		octaves = octaves_;
 		persist = persist_;
+		eased   = eased_;
 
 		farscale  = farscale_;
 		farspread = farspread_;
 		farpersist = farpersist_;
+
 	}
 };
 

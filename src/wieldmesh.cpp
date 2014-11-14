@@ -32,6 +32,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 #include <IMeshManipulator.h>
 
+#include "map.h"
+#include "clientmap.h"
+
 #define WIELD_SCALE_FACTOR 30.0
 #define WIELD_SCALE_FACTOR_EXTRUDED 40.0
 
@@ -329,7 +332,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, IGameDef *gamedef)
 		} else if (f.drawtype == NDT_NORMAL || f.drawtype == NDT_ALLFACES) {
 			setCube(f.tiles, def.wield_scale, tsrc);
 		} else {
-			MeshMakeData mesh_make_data(gamedef);
+			Map map(gamedef);
+			MapDrawControl map_draw_control;
+			MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
 			MapNode mesh_make_node(id, 255, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
 			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));

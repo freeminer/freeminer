@@ -193,7 +193,7 @@ int LuaPerlinNoiseMap::l_get3dMap(lua_State *L)
 	v3f p = read_v3f(L, 2);
 
 	Noise *n = o->noise;
-	n->perlinMap3D(p.X, p.Y, p.Z);
+	n->perlinMap3D(p.X, p.Y, p.Z, n->np->eased);
 
 	lua_newtable(L);
 	for (int z = 0; z != n->sz; z++) {
@@ -219,7 +219,7 @@ int LuaPerlinNoiseMap::l_get3dMap_flat(lua_State *L)
 	v3f p = read_v3f(L, 2);
 
 	Noise *n = o->noise;
-	n->perlinMap3D(p.X, p.Y, p.Z);
+	n->perlinMap3D(p.X, p.Y, p.Z, n->np->eased);
 
 
 	int maplen = n->sx * n->sy * n->sz;

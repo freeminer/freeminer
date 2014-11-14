@@ -41,7 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "log_types.h"
 #include "nodedef.h"
-#include "mapgen_v5.h"
 #include "mg_biome.h"
 #include "mg_ore.h"
 #include "mg_decoration.h"
