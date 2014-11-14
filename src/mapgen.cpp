@@ -316,8 +316,8 @@ void Mapgen::calcLightingOld(v3s16 nmin, v3s16 nmax) {
 
 GenElementManager::~GenElementManager()
 {
-	for (size_t i = 0; i != m_elements.size(); i++)
-		delete m_elements[i];
+	//for (size_t i = 0; i != m_elements.size(); i++)
+	//	delete m_elements[i];
 }
 
 
