@@ -442,12 +442,12 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			// the_game will open the pause menu
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_PRIOR)
+		else if(event.KeyInput.Key == KEY_PRIOR && event.KeyInput.Char == 0)
 		{
 			m_chat_backend->scrollPageUp();
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_NEXT)
+		else if(event.KeyInput.Key == KEY_NEXT && event.KeyInput.Char == 0)
 		{
 			m_chat_backend->scrollPageDown();
 			return true;
@@ -463,21 +463,21 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			}
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_UP)
+		else if(event.KeyInput.Key == KEY_UP && event.KeyInput.Char == 0)
 		{
 			// Up pressed
 			// Move back in history
 			m_chat_backend->getPrompt().historyPrev();
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_DOWN)
+		else if(event.KeyInput.Key == KEY_DOWN && event.KeyInput.Char == 0)
 		{
 			// Down pressed
 			// Move forward in history
 			m_chat_backend->getPrompt().historyNext();
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_LEFT)
+		else if(event.KeyInput.Key == KEY_LEFT && event.KeyInput.Char == 0)
 		{
 			// Left or Ctrl-Left pressed
 			// move character / word to the left
@@ -491,7 +491,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				scope);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_RIGHT)
+		else if(event.KeyInput.Key == KEY_RIGHT && event.KeyInput.Char == 0)
 		{
 			// Right or Ctrl-Right pressed
 			// move character / word to the right
@@ -505,7 +505,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				scope);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_HOME)
+		else if(event.KeyInput.Key == KEY_HOME && event.KeyInput.Char == 0)
 		{
 			// Home pressed
 			// move to beginning of line
@@ -515,7 +515,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_END)
+		else if(event.KeyInput.Key == KEY_END && event.KeyInput.Char == 0)
 		{
 			// End pressed
 			// move to end of line
