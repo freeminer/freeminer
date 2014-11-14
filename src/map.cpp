@@ -1646,16 +1646,16 @@ INodeDefManager* Map::getNodeDefManager()
 	return m_gamedef->ndef();
 }
 
-const v3s16 liquid_flow_dirs[7] =
+const v3POS liquid_flow_dirs[7] =
 {
 	// +right, +top, +back
-	v3s16( 0,-1, 0), // bottom
-	v3s16( 0, 0, 0), // self
-	v3s16( 0, 0, 1), // back
-	v3s16( 0, 0,-1), // front
-	v3s16( 1, 0, 0), // right
-	v3s16(-1, 0, 0), // left
-	v3s16( 0, 1, 0)  // top
+	v3POS( 0,-1, 0), // bottom
+	v3POS( 0, 0, 0), // self
+	v3POS( 0, 0, 1), // back
+	v3POS( 0, 0,-1), // front
+	v3POS( 1, 0, 0), // right
+	v3POS(-1, 0, 0), // left
+	v3POS( 0, 1, 0)  // top
 };
 
 // when looking around we must first check self node for correct type definitions
@@ -1892,7 +1892,7 @@ u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
 		//relax up
 		if (	nodemgr->get(liquid_kind).liquid_renewable &&
 			relax &&
-			((p0.Y == water_level - 1) || (fast_flood && p0.Y <= water_level - 1)) &&
+			((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
 			level_max > 1 &&
 			liquid_levels[D_TOP] == 0 &&
 			liquid_levels[D_BOTTOM] == level_max &&
@@ -1922,6 +1922,7 @@ u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
 			relax &&
 			p0.Y == water_level &&
 			liquid_levels[D_TOP] == 0 &&
+			!(loopcount % 2) &&
 			level_max > 1 &&
 			liquid_levels[D_BOTTOM] == level_max &&
 			want_level == 0 &&
