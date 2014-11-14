@@ -426,8 +426,8 @@ public:
 	static std::string state2Name(ClientState state);
 
 public:
-	std::vector<RemoteClient*> getClientList() {
-		std::vector<RemoteClient*> clients;
+	std::vector<std::shared_ptr<RemoteClient>> getClientList() {
+		std::vector<std::shared_ptr<RemoteClient>> clients;
 		auto lock = m_clients.lock_shared_rec();
 		for(auto & ir : m_clients) {
 			auto c = ir.second;
@@ -444,7 +444,7 @@ private:
 	// Connection
 	con::Connection* m_con;
 	// Connected clients (behind the con mutex)
-	shared_map<u16, RemoteClient*> m_clients;
+	shared_map<u16, std::shared_ptr<RemoteClient>> m_clients;
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
