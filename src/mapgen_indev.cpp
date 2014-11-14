@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "emerge.h"
 #include "environment.h"
+#include "settings.h"
 
 void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & paramsj) {
 	const auto & layersj = paramsj["layers"];

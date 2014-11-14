@@ -51,7 +51,7 @@ MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_) {
 	this->generating  = false;
 	this->id     = mapgenid;
 	this->emerge = emerge_;
-	this->bmgr   = emerge->biomedef;
+	this->bmgr   = emerge->biomemgr;
 
 	this->seed        = (int)params->seed;
 	this->water_level = params->water_level;
@@ -247,16 +247,10 @@ void MapgenV5::makeChunk(BlockMakeData *data) {
 	}
 
 	// Generate the registered decorations
-	for (size_t i = 0; i != emerge->decorations.size(); i++) {
-		Decoration *deco = emerge->decorations[i];
-		deco->placeDeco(this, blockseed + i, node_min, node_max);
-	}
+	emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
-	for (unsigned int i = 0; i != emerge->ores.size(); i++) {
-		Ore *ore = emerge->ores[i];
-		ore->placeOre(this, blockseed + i, node_min, node_max);
-	}
+	emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
 	// Sprinkle some dust on top after everything else was generated
 	dustTopNodes();
@@ -405,7 +399,7 @@ void MapgenV5::generateBiomes() {
 	
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-		Biome *biome  = bmgr->biomes[biomemap[index]];
+		Biome *biome  = (Biome *)bmgr->get(biomemap[index]);
 		s16 dfiller   = biome->depth_filler + noise_filler_depth->result[index];
 		s16 y0_top    = biome->depth_top;
 		s16 y0_filler = biome->depth_filler + biome->depth_top + dfiller;
@@ -418,11 +412,11 @@ void MapgenV5::generateBiomes() {
 		
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[i].getContent();
-			if ((c == c_stone || c == c_dirt_with_grass
-					|| c == c_dirt
-					|| c == c_sand
-					|| c == c_lava_source
-					|| c == c_gravel) && have_air) {
+			bool is_replaceable_content =
+				c == c_stone || c == c_dirt_with_grass || c == c_dirt ||
+				c == c_sand  || c == c_lava_source     || c == c_gravel;
+
+			if (is_replaceable_content && have_air) {
 				content_t c_below = vm->m_data[i - em.X].getContent();
 				
 				if (c_below != CONTENT_AIR) {
@@ -467,7 +461,7 @@ void MapgenV5::dustTopNodes() {
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-		Biome *biome = bmgr->biomes[biomemap[index]];
+		Biome *biome = (Biome *)bmgr->get(biomemap[index]);
 	
 		if (biome->c_dust == CONTENT_IGNORE)
 			continue;

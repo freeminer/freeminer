@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MAPGENV6_HEADER
 
 #include "mapgen.h"
+#include "noise.h"
 
 #define AVERAGE_MUD_AMOUNT 4
 

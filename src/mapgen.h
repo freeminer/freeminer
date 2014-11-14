@@ -23,15 +23,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MAPGEN_HEADER
 #define MAPGEN_HEADER
 
-#include "irrlichttypes_bloated.h"
-#include "util/container.h" // UniqueQueue
-#include "gamedef.h"
 #include "nodedef.h"
 #include "mapnode.h"
-#include "noise.h"
-#include "settings.h"
+#include "util/string.h"
+#include "util/container.h"
 
-#define DEFAULT_MAPGEN "v6"
+#define DEFAULT_MAPGEN "indev"
 
 /////////////////// Mapgen flags
 #define MG_TREES         0x01
@@ -42,11 +39,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define NUM_GEN_NOTIFY 6
 
+class Settings;
+class ManualMapVoxelManipulator;
+class INodeDefManager;
 
 extern FlagDesc flagdesc_mapgen[];
 extern FlagDesc flagdesc_gennotify[];
 
-class BiomeDefManager;
 class Biome;
 class EmergeManager;
 class MapBlock;
@@ -55,7 +54,6 @@ class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
 class Map;
-
 
 enum MapgenObject {
 	MGOBJ_VMANIP,
@@ -137,10 +135,37 @@ public:
 
 struct MapgenFactory {
 	virtual Mapgen *createMapgen(int mgid, MapgenParams *params,
-								 EmergeManager *emerge) = 0;
+		EmergeManager *emerge) = 0;
 	virtual MapgenSpecificParams *createMapgenParams() = 0;
 	virtual ~MapgenFactory() {}
 };
 
-#endif
+class GenElement {
+public:
+	u32 id;
+	std::string name;
+};
 
+class GenElementManager {
+public:
+	static const char *ELEMENT_TITLE;
+	static const size_t ELEMENT_LIMIT = -1;
+
+	GenElementManager() {}
+	virtual ~GenElementManager();
+
+	virtual GenElement *create(int type) = 0;
+
+	virtual u32 add(GenElement *elem);
+	virtual GenElement *get(u32 id);
+	virtual GenElement *update(u32 id, GenElement *elem);
+	virtual GenElement *remove(u32 id);
+
+	virtual GenElement *getByName(const char *name);
+	virtual GenElement *getByName(std::string &name);
+
+protected:
+	std::vector<GenElement *> m_elements;
+};
+
+#endif
