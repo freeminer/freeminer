@@ -2936,7 +2936,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	for(s16 x=blockpos_min.X-extra_borders.X;x<=blockpos_max.X+extra_borders.X; x++)
 	for(s16 z=blockpos_min.Z-extra_borders.Z;z<=blockpos_max.Z+extra_borders.Z; z++)
 	for(s16 y=blockpos_min.Y-extra_borders.Y;y<=blockpos_max.Y+extra_borders.Y; y++) {
-		v3s16 p(x, y, z);
+		v3POS p(x, y, z);
 		MapBlock *block = getBlockNoCreateNoEx(p);
 		if (!block)
 			continue;
@@ -3047,7 +3047,7 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
 	//block->humidity_last_update = 0;
-	v3s16 p = block->getPos() *  MAP_BLOCKSIZE;
+	v3POS p = block->getPos() *  MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }
@@ -3429,7 +3429,7 @@ void ServerMap::PrintInfo(std::ostream &out)
 	out<<"ServerMap: ";
 }
 
-s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block, std::map<v3s16, s16> * cache)
+s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache)
 {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();
