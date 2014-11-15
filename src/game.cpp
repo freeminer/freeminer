@@ -1042,6 +1042,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #define SIZE_TAG "size[11,5.5,true]"
 #endif
 
+#if 0
 static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device,
@@ -1062,6 +1063,7 @@ static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
 
 	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device, fs_src, txt_dst, NULL);
 }
+#endif
 
 static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
@@ -1642,6 +1644,7 @@ private:
 #endif
 public:
 	VolatileRunFlags flags;
+	GameRunData runData;
 private:
 	// minetest:
 
@@ -1754,7 +1757,7 @@ void Game::run()
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	GameRunData runData         = { 0 };
+	runData         = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
@@ -3286,9 +3289,11 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			e->world_pos = *event.hudadd.world_pos;
 			e->size = *event.hudadd.size;
 
+/*
 			u32 new_id = player->addHud(e);
 			//if this isn't true our huds aren't consistent
 			assert(new_id == id);
+*/
 
 			delete event.hudadd.pos;
 			delete event.hudadd.name;
@@ -3968,11 +3973,11 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	*/
 	u32 daynight_ratio = client->getEnv().getDayNightRatio();
 	float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
-	float direct_brightness;
+	float direct_brightness = time_brightness;
 	bool sunlight_seen;
 
 	if (g_settings->getBool("free_move")) {
-		direct_brightness = time_brightness;
+		//direct_brightness = time_brightness;
 		sunlight_seen = true;
 	} else if (!flags.no_output) {
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
