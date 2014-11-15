@@ -1944,6 +1944,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			u8 facedir = 0;
 			if (f.param_type_2 == CPT2_FACEDIR) {
 				facedir = n.getFaceDir(nodedef);
+				if (facedir >= 24)
+					facedir = 0;
 			} else if (f.param_type_2 == CPT2_WALLMOUNTED) {
 				//convert wallmounted to 6dfacedir.
 				//when cache enabled, it is already converted

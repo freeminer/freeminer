@@ -135,12 +135,12 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 ///////////////////////////// Weather
 
 
-s16 BiomeManager::calcBlockHeat(v3POS p, u64 seed, float timeofday, float totaltime, bool use_weather) {
+s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 	//variant 1: full random
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	f32 heat = NoisePerlin2D(np_heat, p.X, p.Z, seed); // -30..20..70
+	auto heat = NoisePerlin2D(np_heat, p.X, p.Z, seed); // -30..20..70
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -162,9 +162,9 @@ s16 BiomeManager::calcBlockHeat(v3POS p, u64 seed, float timeofday, float totalt
 }
 
 
-s16 BiomeManager::calcBlockHumidity(v3POS p, u64 seed, float timeofday, float totaltime, bool use_weather) {
+s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	f32 humidity = NoisePerlin2D(np_humidity, p.X, p.Z, seed);
+	auto humidity = NoisePerlin2D(np_humidity, p.X, p.Z, seed);
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
