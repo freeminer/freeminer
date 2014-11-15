@@ -701,7 +701,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 	case KEY_DELETE:
 		if ( !this->IsEnabled )
 			break;
-
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		if (Text.size() != 0)
 		{
 			core::stringw s;
