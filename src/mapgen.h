@@ -142,6 +142,7 @@ struct MapgenFactory {
 
 class GenElement {
 public:
+	virtual ~GenElement() {}
 	u32 id;
 	std::string name;
 };
