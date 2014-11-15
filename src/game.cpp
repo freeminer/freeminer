@@ -4251,6 +4251,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 	v2u32 screensize = driver->getScreenSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
+	INodeDefManager *nodedef = client->getNodeDefManager();
 
 	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
 	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
@@ -4318,6 +4319,22 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1)
 		   << "%) (seed = " << ((u64)client->getMapSeed())
 		   << ")";
+
+		// Node definition parameters:
+		// name - tile1 - drawtype - paramtype - paramtype2
+		if (runData.pointed_old.type == POINTEDTHING_NODE) {
+			ClientMap &map = client->getEnv().getClientMap();
+			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
+			if (nodedef->get(n).name != "unknown") {
+				const auto & features = nodedef->get(n);
+				os << " (pointing_at = " << features.name <<
+					" - " << features.tiledef[0].name.c_str() <<
+					" - " << features.drawtype <<
+					" - " << features.param_type <<
+					" - " << features.param_type_2 << ")";
+			}
+		}
+
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
 
