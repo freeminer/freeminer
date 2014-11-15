@@ -462,6 +462,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 	switch(event.KeyInput.Key)
 	{
 	case KEY_END:
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		{
 			s32 p = Text.size();
 			if (WordWrap || MultiLine)
@@ -489,6 +494,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		}
 		break;
 	case KEY_HOME:
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		{
 
 			s32 p = 0;
@@ -525,7 +535,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		}
 		break;
 	case KEY_LEFT:
-
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		if (event.KeyInput.Shift)
 		{
 			if (CursorPos > 0)
@@ -547,6 +561,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		break;
 
 	case KEY_RIGHT:
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		if (event.KeyInput.Shift)
 		{
 			if (Text.size() > (u32)CursorPos)
@@ -567,6 +586,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		BlinkStartTime = porting::getTimeMs();
 		break;
 	case KEY_UP:
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		if (MultiLine || (WordWrap && BrokenText.size() > 1) )
 		{
 			s32 lineNo = getLineFromPos(CursorPos);
@@ -598,6 +622,11 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		}
 		break;
 	case KEY_DOWN:
+		// Handle numpad input
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
 		if (MultiLine || (WordWrap && BrokenText.size() > 1) )
 		{
 			s32 lineNo = getLineFromPos(CursorPos);
