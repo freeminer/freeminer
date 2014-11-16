@@ -1872,6 +1872,14 @@ void Game::shutdown()
 			shader_src->processQueue();
 			sleep_ms(100);
 	}
+
+	guitext->remove();
+	guitext2->remove();
+	guitext_info->remove();
+	guitext_status->remove();
+	guitext_chat->remove();
+	guitext_profiler->remove();
+
 }
 
 

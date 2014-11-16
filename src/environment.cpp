@@ -1044,7 +1044,8 @@ void ServerEnvironment::clearAllObjects()
 	{
 		v3s16 p = *i;
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block);
+		if (!block)
+			continue;
 		block->refDrop();
 	}
 
@@ -1665,7 +1666,8 @@ ActiveObjectMessage ServerEnvironment::getActiveObjectMessage()
 u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		bool set_changed, u32 dtime_s)
 {
-	assert(object);
+	if(!object)
+		return 0;
 	if(object->getId() == 0){
 		u16 new_id = getFreeServerActiveObjectId(m_active_objects);
 		if(new_id == 0)
@@ -1823,8 +1825,10 @@ void ServerEnvironment::removeRemovedObjects()
 		m_script->removeObjectReference(obj);
 
 		// Delete
-		if(obj->environmentDeletes())
+		if(obj->environmentDeletes()) {
+			m_active_objects.set(id, nullptr);
 			delete obj;
+		}
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
@@ -2738,7 +2742,8 @@ u16 getFreeClientActiveObjectId(
 
 u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
 {
-	assert(object);
+	if (!object)
+		return 0;
 	if(object->getId() == 0)
 	{
 		u16 new_id = getFreeClientActiveObjectId(m_active_objects);
