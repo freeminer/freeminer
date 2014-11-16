@@ -42,6 +42,9 @@ MapBlock * Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
+#if CMAKE_THREADS && defined(NO_THREAD_LOCAL) && !defined(SERVER)
+	nocache = true;
+#endif
 	if (!nocache) {
 #if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);

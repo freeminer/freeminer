@@ -177,7 +177,7 @@ public:
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
-	MapBlock * getBlockNoCreateNoEx(v3s16 p, bool trylock = false, bool nocache = false);
+	MapBlock * getBlockNoCreateNoEx(v3POS p, bool trylock = false, bool nocache = false);
 
 	/* Server overrides */
 	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
@@ -197,7 +197,8 @@ public:
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
 	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position = NULL);
-	MapNode getNode(v3s16 p) { return getNodeNoEx(p); };
+	MapNode getNode(v3POS p) { return getNodeNoEx(p); };
+	//MapNode getNodeLog(v3POS p);
 
 	void unspreadLight(enum LightBank bank,
 			std::map<v3s16, u8> & from_nodes,

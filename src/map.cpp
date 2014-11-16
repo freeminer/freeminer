@@ -180,6 +180,17 @@ MapNode Map::getNodeTry(v3POS p)
 }
 
 /*
+MapNode Map::getNodeLog(v3POS p){
+	auto blockpos = getNodeBlockPos(p);
+	auto block = getBlockNoCreateNoEx(blockpos);  //  /*, false, true*/
+	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	auto node = block->getNodeNoEx(relpos);
+	infostream<<"getNodeLog("<<p<<") blockpos="<<blockpos<<" block="<<block<<" relpos="<<relpos<<" n="<<node<<std::endl;
+	return node;
+}
+*/
+
+/*
 MapNode Map::getNodeNoLock(v3s16 p) //dont use
 {
 	v3s16 blockpos = getNodeBlockPos(p);

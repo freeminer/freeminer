@@ -59,13 +59,13 @@ typedef u16 content_t;
 	(instead of expanding the vector of node definitions each time
 	such a node is received).
 */
-#define CONTENT_UNKNOWN 125
+#define CONTENT_UNKNOWN 2
 
 /*
 	The common material through which the player can walk and which
 	is transparent to light
 */
-#define CONTENT_AIR 126
+#define CONTENT_AIR 1
 
 /*
 	Ignored node.
@@ -77,7 +77,7 @@ typedef u16 content_t;
 	Doesn't create faces with anything and is considered being
 	out-of-map in the game map.
 */
-#define CONTENT_IGNORE 127
+#define CONTENT_IGNORE 0
 
 enum LightBank
 {

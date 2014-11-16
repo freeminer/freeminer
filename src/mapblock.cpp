@@ -737,8 +737,7 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 			<<": Done."<<std::endl);
 }
 
-	MapNode MapBlock::getNodeNoEx(v3s16 p)
-	{
+	MapNode MapBlock::getNodeNoEx(v3POS p) {
 #ifndef NDEBUG
 		ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
@@ -746,16 +745,16 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		return getNodeNoLock(p);
 	}
 
-	void MapBlock::setNode(v3s16 p, MapNode & n)
+	void MapBlock::setNode(v3POS p, MapNode & n)
 	{
 #ifndef NDEBUG
 		g_profiler->add("Map: setNode", 1);
 #endif
-		if(data == NULL)
-			throw InvalidPositionException("MapBlock::getNodeNoEx data=NULL");
-		if(p.X < 0 || p.X >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx x out of block");
-		if(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx y out of block");
-		if(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) throw InvalidPositionException("MapBlock::getNodeNoEx z out of block");
+		if( (!data) ||   //todo: maybe one length check here:
+			(p.X < 0 || p.X >= MAP_BLOCKSIZE) ||
+			(p.Y < 0 || p.Y >= MAP_BLOCKSIZE) ||
+			(p.Z < 0 || p.Z >= MAP_BLOCKSIZE) )
+			return;
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED);
