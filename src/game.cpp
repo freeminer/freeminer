@@ -1037,6 +1037,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #define SIZE_TAG "size[11,5.5,true]"
 #endif
 
+#if 0
 static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device,
@@ -1057,6 +1058,7 @@ static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
 
 	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device, fs_src, txt_dst, NULL);
 }
+#endif
 
 static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
@@ -1422,6 +1424,7 @@ struct VolatileRunFlags {
 	float dedicated_server_step;
 	int errors;
 	bool show_block_boundaries;
+	bool connected;
 	bool reconnect;
 };
 
@@ -1637,6 +1640,7 @@ private:
 #endif
 public:
 	VolatileRunFlags flags;
+	GameRunData runData;
 private:
 	// minetest:
 
@@ -1749,7 +1753,7 @@ void Game::run()
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	GameRunData runData         = { 0 };
+	runData         = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
@@ -1863,6 +1867,14 @@ void Game::shutdown()
 			shader_src->processQueue();
 			sleep_ms(100);
 	}
+
+	guitext->remove();
+	guitext2->remove();
+	guitext_info->remove();
+	guitext_status->remove();
+	guitext_chat->remove();
+	guitext_profiler->remove();
+
 }
 
 
@@ -2299,6 +2311,12 @@ bool Game::getServerContent(bool *aborted)
 	FpsControl fps_control = { 0 };
 	f32 dtime; // in seconds
 
+	int progress_old = 0;
+
+	limitFps(&fps_control, &dtime);
+	float time_counter = 0;
+	auto dtime_start = dtime;
+
 	while (device->run()) {
 
 		limitFps(&fps_control, &dtime);
@@ -2370,6 +2388,18 @@ bool Game::getServerContent(bool *aborted)
 			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
 					guienv, font, dtime, progress);
 		}
+
+		if (progress_old != progress) {
+			progress_old = progress;
+			time_counter = 0;
+		}
+		time_counter += dtime < dtime_start ? dtime : dtime - dtime_start;
+		if (time_counter > CONNECTION_TIMEOUT) {
+			flags.reconnect = 1;
+			*aborted = true;
+			return false;
+		}
+
 	}
 
 	return true;
@@ -2401,6 +2431,13 @@ inline bool Game::checkConnection()
 		*error_message = "Access denied. Reason: "
 				+ client->accessDeniedReason();
 		errorstream << *error_message << std::endl;
+		return false;
+	}
+
+	if (client->m_con.Connected()) {
+		flags.connected = 1;
+	} else if (flags.connected) {
+		flags.reconnect = 1;
 		return false;
 	}
 
@@ -3279,9 +3316,11 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			e->world_pos = *event.hudadd.world_pos;
 			e->size = *event.hudadd.size;
 
+/*
 			u32 new_id = player->addHud(e);
 			//if this isn't true our huds aren't consistent
 			assert(new_id == id);
+*/
 
 			delete event.hudadd.pos;
 			delete event.hudadd.name;
@@ -3961,11 +4000,11 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	*/
 	u32 daynight_ratio = client->getEnv().getDayNightRatio();
 	float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
-	float direct_brightness;
+	float direct_brightness = time_brightness;
 	bool sunlight_seen;
 
 	if (g_settings->getBool("free_move")) {
-		direct_brightness = time_brightness;
+		//direct_brightness = time_brightness;
 		sunlight_seen = true;
 	} else if (!flags.no_output) {
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
@@ -4240,6 +4279,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 	v2u32 screensize = driver->getScreenSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
+	INodeDefManager *nodedef = client->getNodeDefManager();
 
 	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
 	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
@@ -4307,6 +4347,22 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1)
 		   << "%) (seed = " << ((u64)client->getMapSeed())
 		   << ")";
+
+		// Node definition parameters:
+		// name - tile1 - drawtype - paramtype - paramtype2
+		if (runData.pointed_old.type == POINTEDTHING_NODE) {
+			ClientMap &map = client->getEnv().getClientMap();
+			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
+			if (nodedef->get(n).name != "unknown") {
+				const auto & features = nodedef->get(n);
+				os << " (pointing_at = " << features.name <<
+					" - " << features.tiledef[0].name.c_str() <<
+					" - " << features.drawtype <<
+					" - " << features.param_type <<
+					" - " << features.param_type_2 << ")";
+			}
+		}
+
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
 

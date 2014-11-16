@@ -33,8 +33,9 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & par
 	const auto & layersj = paramsj["layers"];
 	INodeDefManager *ndef = emerge->ndef;
 	auto layer_default_thickness = paramsj.get("layer_default_thickness", 1).asInt();
+	auto layer_thickness_multiplier = paramsj.get("layer_thickness_multiplier", 1).asInt();
 	if (!layersj.empty())
-		for (int i = 0; i < layersj.size(); ++i) {
+		for (unsigned int i = 0; i < layersj.size(); ++i) {
 			if (layersj[i].empty())
 				continue;
 			const auto & layerj = layersj[i];
@@ -48,8 +49,9 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & par
 			auto layer = layer_data{ content, MapNode(content, layerj["param1"].asInt(), layerj["param2"].asInt()) };
 			layer.height_min = layerj.get("height_min", -MAP_GENERATION_LIMIT).asInt();
 			layer.height_max = layerj.get("height_max", +MAP_GENERATION_LIMIT).asInt();
-			layer.thickness  = layerj.get("thickness", layer_default_thickness).asInt();
+			layer.thickness  = layerj.get("thickness", layer_default_thickness).asInt() * layer_thickness_multiplier;
 
+			//layer.name = name; //dev
 			layers.emplace_back(layer);
 		}
 	if (layers.empty()) {
@@ -62,18 +64,21 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 	int y = node_min.Y;
 	int z = node_min.Z;
 
-		noise_layers->perlinMap3D(
-			x + 0.33 * noise_layers->np->spread.X * farscale(noise_layers->np->farspread, x, y, z),
-			y + 0.33 * noise_layers->np->spread.Y * farscale(noise_layers->np->farspread, x, y, z),
-			z + 0.33 * noise_layers->np->spread.Z * farscale(noise_layers->np->farspread, x, y, z)
-		);
-		noise_layers->transformNoiseMap(x, y, z);
+	noise_layers->perlinMap3D(
+		x + 0.33 * noise_layers->np->spread.X * farscale(noise_layers->np->farspread, x, y, z),
+		y + 0.33 * noise_layers->np->spread.Y * farscale(noise_layers->np->farspread, x, y, z),
+		z + 0.33 * noise_layers->np->spread.Z * farscale(noise_layers->np->farspread, x, y, z)
+	);
+	noise_layers->transformNoiseMap(x, y, z);
+
+	noise_layers_width = ((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale));
 
 	for (const auto & layer : layers) {
 		if (layer.height_max < node_min.Y || layer.height_min > node_max.Y)
 			continue;
-		for (int i = 0; i < layer.thickness; ++i)
+		for (int i = 0; i < layer.thickness; ++i) {
 			layers_node.emplace_back(layer.node);
+		}
 	}
 
 	if (layers_node.empty()) {
@@ -82,8 +87,9 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 	layers_node_size = layers_node.size();
 }
 
-MapNode Mapgen_features::layers_get(int index) {
-	auto layer_index = rangelim(myround((noise_layers->result[index]/((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale))) * layers_node_size),0, layers_node_size-1);
+MapNode Mapgen_features::layers_get(unsigned int index) {
+	auto layer_index = rangelim(myround((noise_layers->result[index] / noise_layers_width) * layers_node_size), 0, layers_node_size-1);
+	//errorstream<<"ls: index="<<index<< " layer_index="<<layer_index<<" off="<<noise_layers->np->offset<<" sc="<<noise_layers->np->scale<<" noise_layers_width="<<noise_layers_width<<" layers_node_size="<<layers_node_size<<std::endl;
 	return layers_node[layer_index];
 }
 
@@ -169,18 +175,18 @@ void MapgenIndev::calculateNoise() {
 
 MapgenIndevParams::MapgenIndevParams() {
 	float_islands = 500;
-	np_terrain_base    = NoiseParams(-4,   20,  v3f(250, 250, 250), 82341, 5, 0.6,  10,  10,  0.5);
-	np_terrain_higher  = NoiseParams(20,   16,  v3f(500, 500, 500), 85039, 5, 0.6,  10,  10,  0.5);
-	np_steepness       = NoiseParams(0.85, 0.5, v3f(125, 125, 125), -932,  5, 0.7,  2,   10,  0.5);
-	np_height_select   = NoiseParams(0.5,  1,   v3f(250, 250, 250), 4213,  5, 0.69, 10,  10,  0.5);
-	np_mud             = NoiseParams(4,    2,   v3f(200, 200, 200), 91013, 3, 0.55, 1,   1,   1);
-	np_beach           = NoiseParams(0,    1,   v3f(250, 250, 250), 59420, 3, 0.50, 1,   1,   1);
-	np_biome           = NoiseParams(0,    1,   v3f(250, 250, 250), 9130,  3, 0.50, 1,   10,  1);
-	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  1,   1.5, 1);
-	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  1,   1.5, 1);
-	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  1,   0.5, 1);
-	//np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.6,  1,   5,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(500, 500, 500), 3663,  2, 0.4);
+	np_terrain_base    = NoiseParams(-4,   20,  v3f(250, 250, 250), 82341, 5, 0.6,  false, 10,  10,  0.5);
+	np_terrain_higher  = NoiseParams(20,   16,  v3f(500, 500, 500), 85039, 5, 0.6,  false, 10,  10,  0.5);
+	np_steepness       = NoiseParams(0.85, 0.5, v3f(125, 125, 125), -932,  5, 0.7,  false, 2,   10,  0.5);
+	np_height_select   = NoiseParams(0.5,  1,   v3f(250, 250, 250), 4213,  5, 0.69, false, 10,  10,  0.5);
+	np_mud             = NoiseParams(4,    2,   v3f(200, 200, 200), 91013, 3, 0.55, false, 1,   1,   1);
+	np_beach           = NoiseParams(0,    1,   v3f(250, 250, 250), 59420, 3, 0.50, false, 1,   1,   1);
+	np_biome           = NoiseParams(0,    1,   v3f(250, 250, 250), 9130,  3, 0.50, false, 1,   10,  1);
+	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5, 1);
+	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5, 1);
+	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5, 1);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.3,  false, 1,   5,   0.5);
+	//np_layers          = NoiseParams(100,  100, v3f(80, 80, 80), 3663,  2, 0.2);
 }
 
 void MapgenIndevParams::readParams(Settings *settings) {
@@ -407,7 +413,6 @@ int MapgenIndev::generateGround() {
 					int index3 = (z - node_min.Z) * zstride +
 						(y - node_min.Y) * ystride +
 						(x - node_min.X);
-
 					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ?
 						n_desert_stone : layers_get(index3);
 				} else if (y <= water_level) {

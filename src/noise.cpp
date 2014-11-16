@@ -653,11 +653,12 @@ void Noise::transformNoiseMap(float xx, float yy, float zz)
 {
 	size_t i = 0;
 
+	auto scale = farscale(np->farscale, xx, yy, zz);
 	for (int z = 0; z != sz; z++)
 	for (int y = 0; y != sy; y++)
 	for (int x = 0; x != sx; x++) {
 		//result[i] = result[i] * np->scale + np->offset;
-		result[i] = result[i] * np->scale * farscale(np->farscale, xx, yy, zz) + np->offset;
+		result[i] = result[i] * np->scale * scale + np->offset;
 		i++;
 	}
 }
