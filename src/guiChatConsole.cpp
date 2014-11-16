@@ -416,6 +416,10 @@ void GUIChatConsole::drawPrompt()
 }
 
 void GUIChatConsole::setPrompt(const std::wstring& input) {
+	m_chat_backend->getPrompt().cursorOperation(
+			ChatPrompt::CURSOROP_DELETE,
+			ChatPrompt::CURSOROP_DIR_LEFT,
+			ChatPrompt::CURSOROP_SCOPE_LINE);
 	for (unsigned int i = 0; i < input.size(); i++) {
 		m_chat_backend->getPrompt().input(input[i]);
 	}
