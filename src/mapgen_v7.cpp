@@ -162,8 +162,7 @@ MapgenV7Params::MapgenV7Params() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.3,  false, 1,   5,   0.5);
-	//np_layers          = NoiseParams(500,  500, v3f(500, 500, 500), 3663,  2, 0.4);
+	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6,  false, 1,   5,   0.5);
 }
 
 

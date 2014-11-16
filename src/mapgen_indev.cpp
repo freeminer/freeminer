@@ -69,10 +69,12 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 		y + 0.33 * noise_layers->np->spread.Y * farscale(noise_layers->np->farspread, x, y, z),
 		z + 0.33 * noise_layers->np->spread.Z * farscale(noise_layers->np->farspread, x, y, z)
 	);
+
 	noise_layers->transformNoiseMap(x, y, z);
 
 	noise_layers_width = ((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale));
 
+	layers_node.clear();
 	for (const auto & layer : layers) {
 		if (layer.height_max < node_min.Y || layer.height_min > node_max.Y)
 			continue;
@@ -85,6 +87,7 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 		layers_node.emplace_back(n_stone);
 	}
 	layers_node_size = layers_node.size();
+	//infostream<<"layers_prepare "<<node_min<<" "<< node_max<<" w="<<noise_layers_width<<" sz="<<layers_node_size<<std::endl;
 }
 
 MapNode Mapgen_features::layers_get(unsigned int index) {
@@ -185,8 +188,7 @@ MapgenIndevParams::MapgenIndevParams() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5, 1);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5, 1);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5, 1);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.3,  false, 1,   5,   0.5);
-	//np_layers          = NoiseParams(100,  100, v3f(80, 80, 80), 3663,  2, 0.2);
+	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6,  false, 1,   5,   0.5);
 }
 
 void MapgenIndevParams::readParams(Settings *settings) {
