@@ -182,7 +182,7 @@ MapNode Map::getNodeTry(v3POS p)
 /*
 MapNode Map::getNodeLog(v3POS p){
 	auto blockpos = getNodeBlockPos(p);
-	auto block = getBlockNoCreateNoEx(blockpos);  //  /*, false, true*/
+	auto block = getBlockNoCreateNoEx(blockpos);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
 	auto node = block->getNodeNoEx(relpos);
 	infostream<<"getNodeLog("<<p<<") blockpos="<<blockpos<<" block="<<block<<" relpos="<<relpos<<" n="<<node<<std::endl;
