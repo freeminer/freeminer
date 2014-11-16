@@ -304,20 +304,15 @@ public:
 		return isValidPosition(p.X, p.Y, p.Z);
 	}
 
-	MapNode getNode(s16 x, s16 y, s16 z, bool *valid_position)
+	MapNode getNode(v3POS p, bool *valid_position)
 	{
-		*valid_position = isValidPosition(x, y, z);
+		*valid_position = isValidPosition(p.X, p.Y, p.Z);
 
 		if (!*valid_position)
 			return MapNode(CONTENT_IGNORE);
 
 		auto lock = lock_shared_rec();
-		return data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x];
-	}
-	
-	MapNode getNode(v3s16 p, bool *valid_position)
-	{
-		return getNode(p.X, p.Y, p.Z, valid_position);
+		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 
 	MapNode getNode(v3s16 p)
@@ -333,14 +328,14 @@ public:
 		return getNodeNoLock(p);
 	}
 
-	MapNode getNodeNoLock(v3s16 p)
+	MapNode getNodeNoLock(v3POS p)
 	{
 		if (!data)
 			return MapNode(CONTENT_IGNORE);
 		return data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X];
 	}
 
-	MapNode getNodeNoEx(v3s16 p);
+	MapNode getNodeNoEx(v3POS p);
 
 	void setNode(v3s16 p, MapNode & n);
 
