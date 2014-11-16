@@ -1846,7 +1846,7 @@ int main(int argc, char *argv[])
 	receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
 	g_touchscreengui = receiver->m_touchscreengui;
 #endif
-			int tries = 5;
+			int tries = g_settings->getU16("reconnects");
 			while(!kill && --tries > 0 &&
 			the_game(
 				&kill,
