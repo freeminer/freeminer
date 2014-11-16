@@ -5,6 +5,36 @@ INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckCXXSourceRuns)
 
 # test compiler capabilities
+
+if(MSVC)
+else()
+	option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
+	if(ENABLE_CXX1Y)
+		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
+		set(STD_FLAGS "-std=c++1y")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
+		endif()
+		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
+		CHECK_CXX_SOURCE_RUNS("
+			#include <shared_mutex>
+			int main(int argc, char *argv[]) {
+				std::shared_timed_mutex m;
+				std::shared_lock<std::shared_timed_mutex> lock(m);
+				lock.unlock();
+				return 0;
+			}
+			"
+			HAVE_SHARED_MUTEX)
+	else()
+		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
+			set(STD_FLAGS "-std=gnu++0x")
+		else()
+			set(STD_FLAGS "-std=c++0x")
+		endif()
+	endif()
+endif()
+
 set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
 CHECK_CXX_SOURCE_RUNS("
@@ -54,8 +84,6 @@ if(STATIC_BUILD)
 else()
 	set(STATIC_BUILD 0)
 endif()
-
-option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
 
 
 # Set some random things default to not being visible in the GUI
@@ -790,31 +818,6 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
 		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-	endif()
-
-	if(ENABLE_CXX1Y)
-		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
-		set(STD_FLAGS "-std=c++1y")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
-		endif()
-		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
-		CHECK_CXX_SOURCE_RUNS("
-			#include <shared_mutex>
-			int main(int argc, char *argv[]) {
-				std::shared_timed_mutex m;
-				std::shared_lock<std::shared_timed_mutex> lock(m);
-				lock.unlock();
-				return 0;
-			}
-			"
-			HAVE_SHARED_MUTEX)
-	else()
-		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
-			set(STD_FLAGS "-std=gnu++0x")
-		else()
-			set(STD_FLAGS "-std=c++0x")
 		endif()
 	endif()
 
