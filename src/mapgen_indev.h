@@ -38,6 +38,7 @@ typedef struct {
 	int height_min;
 	int height_max;
 	int thickness;
+	//std::string name; //dev
 } layer_data;
 
 class Mapgen_features {
@@ -48,12 +49,13 @@ public:
 
 	MapNode n_stone;
 	Noise *noise_layers;
+	float noise_layers_width;
 	std::vector<layer_data> layers;
 	std::vector<MapNode> layers_node;
 	unsigned int layers_node_size;
 	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
 	void layers_prepare(const v3POS & node_min, const v3POS & node_max);
-	MapNode layers_get(int index);
+	MapNode layers_get(unsigned int index);
 
 	Noise *noise_float_islands1;
 	Noise *noise_float_islands2;
