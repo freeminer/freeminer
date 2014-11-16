@@ -1272,6 +1272,7 @@ struct KeyCache {
 		KEYMAP_ID_DEBUG_STACKS,
 
 		//freeminer
+		KEYMAP_ID_MSG,
 		KEYMAP_ID_ZOOM,
 		KEYMAP_ID_PLAYERLIST,
 
@@ -1333,6 +1334,7 @@ void KeyCache::populate()
 	key[KEYMAP_ID_DEBUG_STACKS]   = getKeySetting("keymap_print_debug_stacks");
 
 	//freeminer:
+	key[KEYMAP_ID_MSG]            = getKeySetting("keymap_msg");
 	key[KEYMAP_ID_ZOOM]           = getKeySetting("keymap_zoom");
 	key[KEYMAP_ID_PLAYERLIST]     = getKeySetting("keymap_playerlist");
 
@@ -2665,6 +2667,8 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		openConsole(0.1, true);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
 		openConsole(0.1, true, L"/");
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_MSG])) {
+		openConsole(0.1, true, L"/msg ");
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CONSOLE])) {
 		openConsole();
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_FREEMOVE])) {
@@ -2782,7 +2786,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 			}
 		}
 
-	if (!input->isKeyDown(getKeySetting("keymap_jump")) && *reset_jump_timer) {
+	if (!input->isKeyDown(keycache.key[KeyCache::KEYMAP_ID_JUMP]) && *reset_jump_timer) {
 		*reset_jump_timer = false;
 		*jump_timer = 0.0;
 	}
