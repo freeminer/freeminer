@@ -1429,6 +1429,7 @@ struct VolatileRunFlags {
 	float dedicated_server_step;
 	int errors;
 	bool show_block_boundaries;
+	bool connected;
 	bool reconnect;
 };
 
@@ -2309,6 +2310,12 @@ bool Game::getServerContent(bool *aborted)
 	FpsControl fps_control = { 0 };
 	f32 dtime; // in seconds
 
+	int progress_old = 0;
+
+	limitFps(&fps_control, &dtime);
+	float time_counter = 0;
+	auto dtime_start = dtime;
+
 	while (device->run()) {
 
 		limitFps(&fps_control, &dtime);
@@ -2380,6 +2387,18 @@ bool Game::getServerContent(bool *aborted)
 			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
 					guienv, font, dtime, progress);
 		}
+
+		if (progress_old != progress) {
+			progress_old = progress;
+			time_counter = 0;
+		}
+		time_counter += dtime < dtime_start ? dtime : dtime - dtime_start;
+		if (time_counter > CONNECTION_TIMEOUT) {
+			flags.reconnect = 1;
+			*aborted = true;
+			return false;
+		}
+
 	}
 
 	return true;
@@ -2411,6 +2430,13 @@ inline bool Game::checkConnection()
 		*error_message = L"Access denied. Reason: "
 				+ client->accessDeniedReason();
 		errorstream << wide_to_narrow(*error_message) << std::endl;
+		return false;
+	}
+
+	if (client->m_con.Connected()) {
+		flags.connected = 1;
+	} else if (flags.connected) {
+		flags.reconnect = 1;
 		return false;
 	}
 
