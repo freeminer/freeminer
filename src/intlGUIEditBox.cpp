@@ -740,9 +740,15 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		}
 		break;
 
+	case KEY_SHIFT:
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
+		break;
+
 	case KEY_ESCAPE:
 	case KEY_TAB:
-	case KEY_SHIFT:
 	case KEY_F1:
 	case KEY_F2:
 	case KEY_F3:
