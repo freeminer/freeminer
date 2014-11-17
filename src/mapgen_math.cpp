@@ -143,10 +143,12 @@ double sphere(double x, double y, double z, double d, int ITR = 1) {
 //////////////////////// Mapgen Math parameter read/write
 
 void MapgenMathParams::readParams(Settings *settings) {
+	MapgenV7Params::readParams(settings);
 	params = settings->getJson("mg_math");
 }
 
 void MapgenMathParams::writeParams(Settings *settings) {
+	MapgenV7Params::writeParams(settings);
 	settings->setJson("mg_math", params);
 }
 
@@ -518,10 +520,4 @@ void MapgenMath::calculateNoise() {
 
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
-
-	if (float_islands && y >= float_islands) {
-		float_islands_prepare(node_min, node_max, float_islands);
-	}
-
-	layers_prepare(node_min, node_max);
 }

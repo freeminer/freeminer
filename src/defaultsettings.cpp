@@ -159,7 +159,8 @@ void set_default_settings(Settings *settings)
 	// Connecting to server
 	settings->setDefault("address", "");
 	settings->setDefault("remote_port", "30000");
-	
+	settings->setDefault("reconnects", "10");
+
 	// Connecting to curl
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");

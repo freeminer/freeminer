@@ -43,6 +43,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v7.h"
 #include "mapgen_indev.h" //farscale
 #include "environment.h"
+#include "log_types.h"
+
 
 
 FlagDesc flagdesc_mapgen_v7[] = {
@@ -162,8 +164,7 @@ MapgenV7Params::MapgenV7Params() {
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663,  3, 0.3,  false, 1,   5,   0.5);
-	//np_layers          = NoiseParams(500,  500, v3f(500, 500, 500), 3663,  2, 0.4);
+	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6,  false, 1,   5,   0.5);
 }
 
 
@@ -186,7 +187,6 @@ void MapgenV7Params::readParams(Settings *settings) {
 	settings->getNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
 	settings->getNoiseIndevParams("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
-
 }
 
 
@@ -266,6 +266,13 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	
 	// Make some noise
 	calculateNoise();
+
+	if (float_islands && node_max.Y >= float_islands) {
+		float_islands_prepare(node_min, node_max, float_islands);
+	}
+
+	layers_prepare(node_min, node_max);
+
 	
 	// Generate base terrain, mountains, and ridges with initial heightmaps
 	s16 stone_surface_max_y = generateTerrain();
@@ -349,12 +356,6 @@ void MapgenV7::calculateNoise() {
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
 	
-	if (float_islands && y >= float_islands) {
-		float_islands_prepare(node_min, node_max, float_islands);
-	}
-
-	layers_prepare(node_min, node_max);
-
 	//printf("calculateNoise: %dus\n", t.stop());
 }
 
