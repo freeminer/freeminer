@@ -4278,7 +4278,7 @@ int Server::SendBlocks(float dtime)
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
-			RemoteClient *client = m_clients.lockedGetClientNoEx(*i, CS_Active);
+			auto client = m_clients.getClient(*i, CS_Active);
 
 			if (client == NULL)
 				continue;

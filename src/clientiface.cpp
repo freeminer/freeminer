@@ -806,9 +806,15 @@ void ClientInterface::sendToAll(u16 channelnum,
 	}
 }
 
+
 //TODO: return here shared_ptr
 RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 {
+	auto client = getClient(peer_id, state_min);
+	return client.get();
+}
+
+std::shared_ptr<RemoteClient> ClientInterface::getClient(u16 peer_id, ClientState state_min) {
 	auto lock = m_clients.lock_shared_rec();
 	auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
@@ -817,7 +823,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 		return NULL;
 
 	if (n->second->getState() >= state_min)
-		return n->second.get();
+		return n->second;
 	else
 		return NULL;
 }
