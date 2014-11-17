@@ -64,6 +64,7 @@ locale/
 *.cbp
 *.layout
 *.o
+_build
 
 #build variants
 build/android/assets
