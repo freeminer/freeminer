@@ -847,31 +847,23 @@ ClientState ClientInterface::getClientState(u16 peer_id)
 
 void ClientInterface::setPlayerName(u16 peer_id,std::string name)
 {
-	//JMutexAutoLock clientslock(m_clients_mutex);
-	auto lock = m_clients.lock_unique_rec();
-	auto n = m_clients.find(peer_id);
-	// The client may not exist; clients are immediately removed if their
-	// access is denied, and this event occurs later then.
-	if(n != m_clients.end())
-		n->second->setName(name);
+	auto client = getClient(peer_id, CS_Invalid);
+	if(!client)
+		return;
+
+	client->setName(name);
 }
 
 void ClientInterface::DeleteClient(u16 peer_id)
 {
-	auto lock = m_clients.lock_unique_rec();
-
-	// Error check
-	auto n = m_clients.find(peer_id);
-	// The client may not exist; clients are immediately removed if their
-	// access is denied, and this event occurs later then.
-	if(n == m_clients.end())
+	auto client = getClient(peer_id, CS_Invalid);
+	if(!client)
 		return;
 
 	/*
 		Mark objects to be not known by the client
 	*/
 	//TODO this should be done by client destructor!!!
-	auto client = n->second;
 	// Handle objects
 	{
 	auto lock = client->m_known_objects.lock_unique_rec();
@@ -895,11 +887,11 @@ void ClientInterface::DeleteClient(u16 peer_id)
 
 void ClientInterface::CreateClient(u16 peer_id)
 {
-	auto lock = m_clients.lock_unique_rec();
-	// Error check
-	auto n = m_clients.find(peer_id);
-	// The client shouldn't already exist
-	if(n != m_clients.end()) return;
+	{
+		auto client = getClient(peer_id, CS_Invalid);
+		if(client)
+			return;
+	}
 
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient(m_env));
@@ -909,17 +901,11 @@ void ClientInterface::CreateClient(u16 peer_id)
 
 void ClientInterface::event(u16 peer_id, ClientStateEvent event)
 {
-	{
-		auto lock = m_clients.lock_shared_rec();
+	auto client = getClient(peer_id, CS_Invalid);
+	if(!client)
+		return;
 
-		// Error check
-		auto n = m_clients.find(peer_id);
-
-		// No client to deliver event
-		if (n == m_clients.end())
-			return;
-		n->second->notifyEvent(event);
-	}
+	client->notifyEvent(event);
 
 	if ((event == CSE_SetClientReady) ||
 		(event == CSE_Disconnect)     ||
@@ -931,28 +917,18 @@ void ClientInterface::event(u16 peer_id, ClientStateEvent event)
 
 u16 ClientInterface::getProtocolVersion(u16 peer_id)
 {
-	auto lock = m_clients.lock_shared_rec();
-
-	// Error check
-	auto n = m_clients.find(peer_id);
-
-	// No client to get version
-	if (n == m_clients.end())
+	auto client = getClient(peer_id, CS_Invalid);
+	if(!client)
 		return 0;
 
-	return n->second->net_proto_version;
+	return client->net_proto_version;
 }
 
 void ClientInterface::setClientVersion(u16 peer_id, u8 major, u8 minor, u8 patch, std::string full)
 {
-	auto lock = m_clients.lock_unique_rec();
-
-	// Error check
-	auto n = m_clients.find(peer_id);
-
-	// No client to set versions
-	if (n == m_clients.end())
+	auto client = getClient(peer_id, CS_Invalid);
+	if(!client)
 		return;
 
-	n->second->setVersionInfo(major,minor,patch,full);
+	client->setVersionInfo(major,minor,patch,full);
 }
