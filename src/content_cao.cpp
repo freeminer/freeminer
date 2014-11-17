@@ -983,6 +983,8 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	if (g_settings->getBool("shadows")) {
+		if (m_wield_meshnode)
+			shadownode = m_wield_meshnode->m_meshnode->addShadowVolumeSceneNode();
 		if(m_animated_meshnode)
 			shadownode = m_animated_meshnode->addShadowVolumeSceneNode();
 		else if(m_meshnode)
