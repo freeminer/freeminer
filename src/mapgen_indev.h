@@ -93,7 +93,7 @@ public:
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();
 
-	void calculateNoise();
+	virtual void calculateNoise();
 	int generateGround();
 	void generateCaves(int max_stone_y);
 	void generateExperimental();

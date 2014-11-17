@@ -57,8 +57,8 @@ public:
 	MapgenMath(int mapgenid, MapgenParams *mg_params, EmergeManager *emerge);
 	~MapgenMath();
 
-	void calculateNoise();
-	int generateTerrain();
+	virtual void calculateNoise();
+	virtual int generateTerrain();
 	int getGroundLevelAtPoint(v2POS p);
 
 	bool internal;

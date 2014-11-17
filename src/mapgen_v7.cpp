@@ -43,6 +43,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v7.h"
 #include "mapgen_indev.h" //farscale
 #include "environment.h"
+#include "log_types.h"
+
 
 
 FlagDesc flagdesc_mapgen_v7[] = {
@@ -185,7 +187,6 @@ void MapgenV7Params::readParams(Settings *settings) {
 	settings->getNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
 	settings->getNoiseIndevParams("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
-
 }
 
 
@@ -265,6 +266,13 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	
 	// Make some noise
 	calculateNoise();
+
+	if (float_islands && node_max.Y >= float_islands) {
+		float_islands_prepare(node_min, node_max, float_islands);
+	}
+
+	layers_prepare(node_min, node_max);
+
 	
 	// Generate base terrain, mountains, and ridges with initial heightmaps
 	s16 stone_surface_max_y = generateTerrain();
@@ -348,12 +356,6 @@ void MapgenV7::calculateNoise() {
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
 	
-	if (float_islands && y >= float_islands) {
-		float_islands_prepare(node_min, node_max, float_islands);
-	}
-
-	layers_prepare(node_min, node_max);
-
 	//printf("calculateNoise: %dus\n", t.stop());
 }
 
