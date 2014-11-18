@@ -1848,7 +1848,7 @@ int main(int argc, char *argv[])
 #endif
 			int tries = g_settings->getU16("reconnects");
 			int n = 0;
-			while(!kill && --tries > 0 &&
+			while(!kill && ++n <= tries &&
 			the_game(
 				&kill,
 				random_input,
@@ -1867,7 +1867,7 @@ int main(int argc, char *argv[])
 			)
 			){
 				smgr->clear();
-				errorstream << "Reconnecting "<< ++n << "/" << tries << " ..." << std::endl;
+				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << std::endl;
 			}
 			smgr->clear();
 #ifdef HAVE_TOUCHSCREENGUI
