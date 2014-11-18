@@ -143,13 +143,17 @@ double sphere(double x, double y, double z, double d, int ITR = 1) {
 //////////////////////// Mapgen Math parameter read/write
 
 void MapgenMathParams::readParams(Settings *settings) {
-	MapgenV7Params::readParams(settings);
+	try {
+		MapgenV7Params::readParams(settings);
+	} catch (...) {}
 	params = settings->getJson("mg_math");
 }
 
 void MapgenMathParams::writeParams(Settings *settings) {
-	MapgenV7Params::writeParams(settings);
 	settings->setJson("mg_math", params);
+	try {
+		MapgenV7Params::writeParams(settings);
+	} catch (...) {}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -167,12 +171,16 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	n_water	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
 	n_stone		= MapNode(ndef, params.get("stone", "mapgen_stone").asString(), LIGHT_SUN);
 
+	if (params["generator"].empty()) {
+		params["generator"] = "menger_sponge";
+	}
+
 	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	invert_yz = params.get("invert_yz", 1).asBool();
 	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
 	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
-	iterations = params.get("N", 20).asInt(); //10;
+	iterations = params.get("N", 15).asInt(); //10;
 
 	result_max = params.get("result_max", 1.0).asDouble();
 
@@ -180,12 +188,12 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	func = &sphere;
 
 	//if (params["generator"].empty()) params["generator"] = "mandelbox";
-	if (params["generator"].asString() == "mengersponge" || params["generator"].empty()) {
+	if (params["generator"].asString() == "mengersponge") {
 		internal = 1;
 		func = &mengersponge;
 		size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
-		scale = params.get("scale", 1.0 / size).asDouble();
-		iterations = params.get("N", 20).asInt();
+		//scale = params.get("scale", 1.0 / size).asDouble();
+		iterations = params.get("N", 13).asInt();
 		//if(!center.getLength()) center = v3f(-size, -size, -size);
 		if(!center.getLength()) center = v3f(-size / 3, -size / 3, -size / 3);
 	} else if (params["generator"].asString() == "mandelbox") {
@@ -406,9 +414,13 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	}
 
 	if (params["generator"].asString() == "menger_sponge") {
-		invert = params.get("invert", 0).asBool();
-		size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
-		if(!center.getLength()) center = v3f(-1.0 / scale / 2, -1.0 / scale + (-2 * -(int)invert), 2);
+		invert = params.get("invert", 1).asBool();
+		//size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
+		//if(!center.getLength()) center = v3f(-1.0 / scale / 2, -1.0 / scale + (-2 * -(int)invert), 2);
+		size = params.get("size", 15000 ).asDouble();
+		scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
+		if(!center.getLength()) center = v3f(5000-5,5000+5,5000-5);
+		//par.doubles.N = params.get("N", 4).asInt();
 	}
 
 	if (params["generator"].asString() == "mandelbulb2") {
@@ -513,7 +525,7 @@ int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 void MapgenMath::calculateNoise() {
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
 	int x = node_min.X;
-	int y = node_min.Y;
+	//int y = node_min.Y;
 	int z = node_min.Z;
 
 	noise_filler_depth->perlinMap2D(x, z);
