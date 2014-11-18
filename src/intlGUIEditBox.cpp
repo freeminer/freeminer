@@ -702,7 +702,7 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		if ( !this->IsEnabled )
 			break;
 		// Handle numpad input
-		if (event.KeyInput.Char != 0) {
+		if (event.KeyInput.Char != 0 && event.KeyInput.Char != 127) {
 			inputChar(event.KeyInput.Char);
 			return true;
 		}
