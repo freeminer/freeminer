@@ -1847,6 +1847,7 @@ int main(int argc, char *argv[])
 	g_touchscreengui = receiver->m_touchscreengui;
 #endif
 			int tries = g_settings->getU16("reconnects");
+			int n = 0;
 			while(!kill && --tries > 0 &&
 			the_game(
 				&kill,
@@ -1866,7 +1867,7 @@ int main(int argc, char *argv[])
 			)
 			){
 				smgr->clear();
-				errorstream << "Reconnecting..." << std::endl;
+				errorstream << "Reconnecting "<< ++n << "/" << tries << " ..." << std::endl;
 			}
 			smgr->clear();
 #ifdef HAVE_TOUCHSCREENGUI
