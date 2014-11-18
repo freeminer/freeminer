@@ -1079,7 +1079,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 	}
 
 	TimeTaker timer_step("Environment step");
-	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
+	//g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
 
 	/*
 		Handle players

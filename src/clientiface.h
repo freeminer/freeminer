@@ -404,6 +404,8 @@ public:
 	/* create client */
 	void CreateClient(u16 peer_id);
 
+	std::shared_ptr<RemoteClient> getClient(u16 peer_id,  ClientState state_min=CS_Active);
+
 	/* get a client by peer_id */
 	RemoteClient* getClientNoEx(u16 peer_id,  ClientState state_min=CS_Active);
 

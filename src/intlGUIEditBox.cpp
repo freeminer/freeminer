@@ -702,7 +702,7 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		if ( !this->IsEnabled )
 			break;
 		// Handle numpad input
-		if (event.KeyInput.Char != 0) {
+		if (event.KeyInput.Char != 0 && event.KeyInput.Char != 127) {
 			inputChar(event.KeyInput.Char);
 			return true;
 		}
@@ -740,9 +740,15 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 		}
 		break;
 
+	case KEY_SHIFT:
+		if (event.KeyInput.Char != 0) {
+			inputChar(event.KeyInput.Char);
+			return true;
+		}
+		break;
+
 	case KEY_ESCAPE:
 	case KEY_TAB:
-	case KEY_SHIFT:
 	case KEY_F1:
 	case KEY_F2:
 	case KEY_F3:
@@ -805,11 +811,19 @@ void intlGUIEditBox::draw()
 
 	FrameRect = AbsoluteRect;
 
+#if IRRLICHT_VERSION_10000  >= 10703
+	EGUI_DEFAULT_COLOR bgCol = EGDC_GRAY_EDITABLE;
+	if (isEnabled())
+		bgCol = focus ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
+#else
+	EGUI_DEFAULT_COLOR bgCol = EGDC_WINDOW;
+#endif
+
 	// draw the border
 
 	if (Border)
 	{
-		skin->draw3DSunkenPane(this, skin->getColor(EGDC_WINDOW),
+		skin->draw3DSunkenPane(this, skin->getColor(bgCol),
 			false, true, FrameRect, &AbsoluteClippingRect);
 
 		FrameRect.UpperLeftCorner.X += skin->getSize(EGDS_TEXT_DISTANCE_X)+1;

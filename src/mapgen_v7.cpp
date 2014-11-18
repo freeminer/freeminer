@@ -208,6 +208,8 @@ void MapgenV7Params::writeParams(Settings *settings) {
 	settings->setNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
 	settings->setNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
 	settings->setNoiseIndevParams("mg_np_layers",         np_layers);
+
+	settings->setJson("mg_params", paramsj);
 }
 
 
