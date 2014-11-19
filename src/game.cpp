@@ -3327,8 +3327,8 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			e->world_pos = *event.hudadd.world_pos;
 			e->size = *event.hudadd.size;
 
+			player->addHud(e);
 /*
-			u32 new_id = player->addHud(e);
 			//if this isn't true our huds aren't consistent
 			assert(new_id == id);
 */
