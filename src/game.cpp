@@ -2870,7 +2870,7 @@ void Game::openInventory()
 void Game::openConsole(float height, bool close_on_return, const std::wstring& input)
 {
 	if (!gui_chat_console->isOpenInhibited()) {
-		// Open up to over half of the screen
+		// Set initial console prompt
 		if (!input.empty()) {
 			gui_chat_console->setPrompt(input);
 		}
