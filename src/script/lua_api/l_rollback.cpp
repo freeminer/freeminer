@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "server.h"
-#include "rollback.h"
+#include "rollback_interface.h"
 
 
 void push_RollbackNode(lua_State *L, RollbackNode &node)
