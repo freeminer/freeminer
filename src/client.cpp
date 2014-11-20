@@ -57,7 +57,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "subgame.h"
 #include "server.h"
 #include "database.h"
-#include "database-sqlite3.h"
+#include "database-leveldb.h"
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -262,11 +262,11 @@ Client::Client(
 		}
 
 		localserver = new Server(world_path, gamespec, false, false);
-		localdb = new Database_SQLite3(&(ServerMap&)localserver->getMap(), world_path);
-		localdb->beginSave();
+		localdb = nullptr;
 		actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 	} else {
 		localdb = NULL;
+		localserver = nullptr;
 	}
 }
 
@@ -311,6 +311,11 @@ Client::~Client()
 		if (mesh != NULL)
 			m_device->getSceneManager()->getMeshCache()->removeMesh(mesh);
 	}
+
+	if (localserver)
+		delete localserver;
+	if (localdb)
+		delete localdb;
 }
 
 void Client::connect(Address address)
@@ -1044,8 +1049,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 			m_env.getMap().insertBlock(block);
 		}
 
-		if (localdb != NULL) {
-			((ServerMap&) localserver->getMap()).saveBlock(block, localdb);
+		if (localserver != NULL) {
+			localserver->getMap().saveBlock(block);
 		}
 
 		/*
