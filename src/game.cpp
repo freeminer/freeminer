@@ -4369,7 +4369,9 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 			if (nodedef->get(n).name != "unknown") {
 				const auto & features = nodedef->get(n);
 				os << " (pointing_at = " << features.name <<
+#if !defined(NDEBUG)
 					" - " << features.tiledef[0].name.c_str() <<
+#endif
 					" - " << features.drawtype <<
 					" - " << features.param_type <<
 					" - " << features.param_type_2 << ")";
