@@ -312,7 +312,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("respawn_auto", "false");
-	settings->setDefault("enable_vbo", "true");
+	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("enable_local_map_saving", "false");
 	
 	//
