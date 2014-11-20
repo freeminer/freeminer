@@ -4355,7 +4355,10 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		   << ") (yaw=" << (wrapDegrees_0_360(cam.camera_yaw))
 		   << ") (t=" << client->getEnv().getClientMap().getHeat(pos_i, 1)
 		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1)
+/*
 		   << "%) (seed = " << ((u64)client->getMapSeed())
+*/
+		   << "%"
 		   << ")";
 
 		// Node definition parameters:
