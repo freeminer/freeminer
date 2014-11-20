@@ -56,8 +56,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "drawscene.h"
 #include "subgame.h"
 #include "server.h"
-#include "database.h"
-#include "database-leveldb.h"
+#include "database.h" //remove with g sunsed shit localdb
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -242,7 +241,7 @@ Client::Client(
 		m_env.addPlayer(player);
 	}
 
-	if (g_settings->getBool("enable_local_map_saving")) {
+	if (!simple_singleplayer_mode && g_settings->getBool("enable_local_map_saving")) {
 		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
 				+ DIR_DELIM + "server_" + g_settings->get("address")
 				+ "_" + g_settings->get("remote_port");
