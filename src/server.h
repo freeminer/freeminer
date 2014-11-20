@@ -32,7 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mods.h"
 #include "inventorymanager.h"
 #include "subgame.h"
-#include "rollback_interface.h" // Needed for rollbackRevertActions()
 #include "util/numeric.h"
 #include "util/thread.h"
 #include "environment.h"
@@ -55,6 +54,7 @@ class Inventory;
 class Player;
 class PlayerSAO;
 class IRollbackManager;
+struct RollbackAction;
 class EmergeManager;
 class GameScripting;
 class ServerEnvironment;
@@ -282,9 +282,6 @@ public:
 	// Envlock and conlock should be locked when using scriptapi
 	GameScripting *getScriptIface(){ return m_script; }
 
-	// Envlock should be locked when using the rollback manager
-	IRollbackManager *getRollbackManager(){ return m_rollback; }
-
 	//TODO: determine what (if anything) should be locked to access EmergeManager
 	EmergeManager *getEmergeManager(){ return m_emerge; }
 
@@ -303,9 +300,10 @@ public:
 	virtual u16 allocateUnknownNodeId(const std::string &name);
 	virtual ISoundManager* getSoundManager();
 	virtual MtEventManager* getEventManager();
-	virtual IRollbackReportSink* getRollbackReportSink();
 	virtual scene::ISceneManager* getSceneManager();
-	
+	virtual IRollbackManager *getRollbackManager() { return m_rollback; }
+
+
 	IWritableItemDefManager* getWritableItemDefManager();
 	IWritableNodeDefManager* getWritableNodeDefManager();
 	IWritableCraftDefManager* getWritableCraftDefManager();
@@ -519,7 +517,6 @@ private:
 
 	// Rollback manager (behind m_env_mutex)
 	IRollbackManager *m_rollback;
-	bool m_rollback_sink_enabled;
 	bool m_enable_rollback_recording; // Updated once in a while
 
 	// Emerge manager

@@ -53,6 +53,8 @@ class ClientMediaDownloader;
 struct MapDrawControl;
 class MtEventManager;
 struct PointedThing;
+class Database;
+class Server;
 
 enum LocalClientState {
 	LC_Created,
@@ -548,6 +550,10 @@ private:
 
 	// own state
 	LocalClientState m_state;
+
+	// Used for saving server map to disk client-side
+	Database *localdb;
+	Server *localserver;
 };
 
 #endif // !CLIENT_HEADER

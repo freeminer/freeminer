@@ -518,7 +518,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				scope);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_DELETE && event.KeyInput.Char == 0)
+		else if(event.KeyInput.Key == KEY_DELETE && (event.KeyInput.Char == 0 || event.KeyInput.Char == 127))
 		{
 			// Delete or Ctrl-Delete pressed
 			// delete character / word to the right

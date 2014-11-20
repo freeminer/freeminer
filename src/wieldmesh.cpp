@@ -404,6 +404,7 @@ void WieldMeshSceneNode::changeToMesh(scene::IMesh *mesh)
 		dummymesh->drop();  // m_meshnode grabbed it
 	}
 
+	if (mesh) {
 	if (m_lighting) {
 		m_meshnode->setMesh(mesh);
 	} else {
@@ -416,6 +417,7 @@ void WieldMeshSceneNode::changeToMesh(scene::IMesh *mesh)
 		scene::IMesh *new_mesh = meshmanip->createMeshCopy(mesh);
 		m_meshnode->setMesh(new_mesh);
 		new_mesh->drop();  // m_meshnode grabbed it
+	}
 	}
 
 	m_meshnode->setMaterialFlag(video::EMF_LIGHTING, m_lighting);

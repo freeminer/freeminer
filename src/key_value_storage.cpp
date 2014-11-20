@@ -47,6 +47,7 @@ bool KeyValueStorage::open() {
 		status = leveldb::DB::Open(options, fullpath, &db);
 		if (!status.ok()) {
 			error = status.ToString();
+			errorstream<< "Trying to reopen database ["<<error<<"]"<<std::endl;
 			db = nullptr;
 			return true;
 		}

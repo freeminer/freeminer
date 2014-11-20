@@ -2863,7 +2863,7 @@ void Game::openInventory()
 void Game::openConsole(float height, bool close_on_return, const std::wstring& input)
 {
 	if (!gui_chat_console->isOpenInhibited()) {
-		// Open up to over half of the screen
+		// Set initial console prompt
 		if (!input.empty()) {
 			gui_chat_console->setPrompt(input);
 		}
@@ -3320,8 +3320,8 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			e->world_pos = *event.hudadd.world_pos;
 			e->size = *event.hudadd.size;
 
+			player->addHud(e);
 /*
-			u32 new_id = player->addHud(e);
 			//if this isn't true our huds aren't consistent
 			assert(new_id == id);
 */
