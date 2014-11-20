@@ -497,17 +497,19 @@ class neighborRail {
 
 	float d = (float)BS/64;
 	
-	char g=-1;
-	if (is_rail_x_plus_y[0] || is_rail_x_plus_y[1] || is_rail_z_plus_y[0] || is_rail_z_plus_y[1])
-		g=1; //Object is at a slope
+			float s = BS/2;
 
-	video::S3DVertex vertices[4] =
-	{
-		video::S3DVertex(-BS/2,-BS/2+d,-BS/2, 0,0,0, c, 0,1),
-		video::S3DVertex(BS/2,-BS/2+d,-BS/2, 0,0,0, c, 1,1),
-		video::S3DVertex(BS/2,g*BS/2+d,BS/2, 0,0,0, c, 1,0),
-		video::S3DVertex(-BS/2,g*BS/2+d,BS/2, 0,0,0, c, 0,0),
-	};
+			short g = -1;
+	if (is_rail_x_plus_y[0] || is_rail_x_plus_y[1] || is_rail_z_plus_y[0] || is_rail_z_plus_y[1])
+		g = 1; //Object is at a slope
+
+			video::S3DVertex vertices[4] =
+			{
+					video::S3DVertex(-s,  -s+d,-s,  0,0,0,  c,0,1),
+					video::S3DVertex( s,  -s+d,-s,  0,0,0,  c,1,1),
+					video::S3DVertex( s, g*s+d, s,  0,0,0,  c,1,0),
+					video::S3DVertex(-s, g*s+d, s,  0,0,0,  c,0,0),
+			};
 
 	for(s32 i=0; i<4; i++)
 	{
