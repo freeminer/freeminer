@@ -4289,7 +4289,6 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 	v2u32 screensize = driver->getScreenSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
-	INodeDefManager *nodedef = client->getNodeDefManager();
 
 	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
 	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
@@ -4365,6 +4364,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		// name - tile1 - drawtype - paramtype - paramtype2
 #if !defined(NDEBUG)
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
+			INodeDefManager *nodedef = client->getNodeDefManager();
 			ClientMap &map = client->getEnv().getClientMap();
 			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
 			if (nodedef->get(n).name != "unknown") {
