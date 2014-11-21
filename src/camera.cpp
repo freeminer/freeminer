@@ -53,9 +53,9 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_cameranode(NULL),
 
 	m_wieldmgr(NULL),
-	m_wieldnode(NULL),
 	m_wieldlight(0),
 	m_wieldlight_add(0),
+	m_wieldnode(NULL),
 
 	m_draw_control(draw_control),
 	m_gamedef(gamedef),

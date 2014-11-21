@@ -4012,7 +4012,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	u32 daynight_ratio = client->getEnv().getDayNightRatio();
 	float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
 	float direct_brightness = time_brightness;
-	bool sunlight_seen;
+	bool sunlight_seen = false;
 
 	if (g_settings->getBool("free_move")) {
 		//direct_brightness = time_brightness;
@@ -4363,20 +4363,20 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 
 		// Node definition parameters:
 		// name - tile1 - drawtype - paramtype - paramtype2
+#if !defined(NDEBUG)
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
 			ClientMap &map = client->getEnv().getClientMap();
 			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
 			if (nodedef->get(n).name != "unknown") {
 				const auto & features = nodedef->get(n);
 				os << " (pointing_at = " << features.name <<
-#if !defined(NDEBUG)
 					" - " << features.tiledef[0].name.c_str() <<
-#endif
 					" - " << features.drawtype <<
 					" - " << features.param_type <<
 					" - " << features.param_type_2 << ")";
 			}
 		}
+#endif
 
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);

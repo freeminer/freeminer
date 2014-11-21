@@ -173,7 +173,6 @@ void Particle::step(float dtime)
 void Particle::updateLight()
 {
 	u8 light = 0;
-	bool pos_ok;
 
 	v3s16 p = v3s16(
 		floor(m_pos.X+0.5),
