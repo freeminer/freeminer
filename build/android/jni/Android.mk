@@ -225,9 +225,9 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/util/lock.cpp                     \
 		jni/src/util/thread_pool.cpp              \
 		jni/src/circuit.cpp                       \
-		jni/src/circuit_element.cpp               \
-		jni/src/circuit_element_states.cpp        \
 		jni/src/circuit_element_virtual.cpp       \
+		jni/src/circuit_element.cpp               \
+		jni/src/stat.cpp               \
 		jni/src/database-leveldb.cpp              \
 		jni/src/settings.cpp                      \
 		jni/src/wieldmesh.cpp

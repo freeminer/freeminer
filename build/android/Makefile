@@ -706,8 +706,8 @@ $(ROOT)/jni/src/android_version.h :
 	fi;                                                                        \
 	echo "#define CMAKE_VERSION_GITHASH \"$$GITHASH\""                         \
 	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define CMAKE_VERSION_STRING STR(VERSION_MAJOR)\".\"STR(VERSION_MINOR)\
-	\".\"STR(VERSION_PATCH)"                                                   \
+	echo "#define CMAKE_VERSION_STRING STR(VERSION_MAJOR) \".\" STR(VERSION_MINOR) \
+	\".\" STR(VERSION_PATCH)"                                                   \
 	>> ${ROOT}/jni/src/android_version.h;
 	
 manifest :
