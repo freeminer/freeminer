@@ -77,7 +77,7 @@ public:
 		Modifying methods
 	*/
 
-	void addArea(VoxelArea &a)
+	void addArea(const VoxelArea &a)
 	{
 		if(getExtent() == v3s16(0,0,0))
 		{
@@ -91,7 +91,7 @@ public:
 		if(a.MaxEdge.Y > MaxEdge.Y) MaxEdge.Y = a.MaxEdge.Y;
 		if(a.MaxEdge.Z > MaxEdge.Z) MaxEdge.Z = a.MaxEdge.Z;
 	}
-	void addPoint(v3s16 p)
+	void addPoint(const v3s16 &p)
 	{
 		if(getExtent() == v3s16(0,0,0))
 		{
@@ -108,7 +108,7 @@ public:
 	}
 
 	// Pad with d nodes
-	void pad(v3s16 d)
+	void pad(const v3s16 &d)
 	{
 		MinEdge -= d;
 		MaxEdge += d;
@@ -363,7 +363,8 @@ public:
 	*/
 	MapNode getNode(v3s16 p)
 	{
-		addArea(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
 		if(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA)
 		{
@@ -380,7 +381,8 @@ public:
 	}
 	MapNode getNodeNoEx(v3s16 p)
 	{
-		addArea(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
 		if(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA)
 		{
@@ -414,7 +416,8 @@ public:
 	}
 	MapNode & getNodeRef(v3s16 p)
 	{
-		addArea(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 		if(getFlagsRefUnsafe(p) & VOXELFLAG_NO_DATA)
 		{
 			/*dstream<<"EXCEPT: VoxelManipulator::getNode(): "
@@ -429,7 +432,8 @@ public:
 	}
 	void setNode(v3s16 p, const MapNode &n)
 	{
-		addArea(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
 		m_data[m_area.index(p)] = n;
 		m_flags[m_area.index(p)] &= ~VOXELFLAG_NO_DATA;
@@ -496,7 +500,7 @@ public:
 	void print(std::ostream &o, INodeDefManager *nodemgr,
 			VoxelPrintMode mode=VOXELPRINT_MATERIAL);
 
-	void addArea(VoxelArea area);
+	void addArea(const VoxelArea &area);
 
 	/*
 		Copy data and set flags to 0
