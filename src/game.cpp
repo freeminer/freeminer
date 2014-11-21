@@ -4005,7 +4005,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	u32 daynight_ratio = client->getEnv().getDayNightRatio();
 	float time_brightness = decode_light_f((float)daynight_ratio / 1000.0);
 	float direct_brightness = time_brightness;
-	bool sunlight_seen;
+	bool sunlight_seen = false;
 
 	if (g_settings->getBool("free_move")) {
 		//direct_brightness = time_brightness;
@@ -4283,7 +4283,6 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 	v2u32 screensize = driver->getScreenSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
-	INodeDefManager *nodedef = client->getNodeDefManager();
 
 	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
 	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
@@ -4349,12 +4348,17 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		   << ") (yaw=" << (wrapDegrees_0_360(cam.camera_yaw))
 		   << ") (t=" << client->getEnv().getClientMap().getHeat(pos_i, 1)
 		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1)
+/*
 		   << "%) (seed = " << ((u64)client->getMapSeed())
+*/
+		   << "%"
 		   << ")";
 
 		// Node definition parameters:
 		// name - tile1 - drawtype - paramtype - paramtype2
+#if !defined(NDEBUG)
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
+			INodeDefManager *nodedef = client->getNodeDefManager();
 			ClientMap &map = client->getEnv().getClientMap();
 			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
 			if (nodedef->get(n).name != "unknown") {
@@ -4366,6 +4370,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 					" - " << features.param_type_2 << ")";
 			}
 		}
+#endif
 
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
