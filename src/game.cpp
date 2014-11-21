@@ -4362,7 +4362,6 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 
 		// Node definition parameters:
 		// name - tile1 - drawtype - paramtype - paramtype2
-#if !defined(NDEBUG)
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
 			INodeDefManager *nodedef = client->getNodeDefManager();
 			ClientMap &map = client->getEnv().getClientMap();
@@ -4370,13 +4369,15 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 			if (nodedef->get(n).name != "unknown") {
 				const auto & features = nodedef->get(n);
 				os << " (pointing_at = " << features.name <<
+#if !defined(NDEBUG)
 					" - " << features.tiledef[0].name.c_str() <<
 					" - " << features.drawtype <<
 					" - " << features.param_type <<
-					" - " << features.param_type_2 << ")";
+					" - " << features.param_type_2 <<
+#endif
+					")";
 			}
 		}
-#endif
 
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
