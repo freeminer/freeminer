@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MAPGEN_V5_HEADER
 
 #include "mapgen.h"
+#include "mapgen_indev.h"
 
 /////////////////// Mapgen V5 flags
 #define MGV5_BLOBS 0x01
@@ -39,6 +40,13 @@ struct MapgenV5Params : public MapgenSpecificParams {
 	NoiseParams np_crumble;
 	NoiseParams np_wetness;
 
+	s16 float_islands;
+	NoiseParams np_float_islands1;
+	NoiseParams np_float_islands2;
+	NoiseParams np_float_islands3;
+	NoiseParams np_layers;
+	Json::Value paramsj;
+
 	MapgenV5Params();
 	~MapgenV5Params() {}
 	
@@ -47,7 +55,7 @@ struct MapgenV5Params : public MapgenSpecificParams {
 };
 
 
-class MapgenV5 : public Mapgen {
+class MapgenV5 : public Mapgen, public Mapgen_features {
 public:
 	EmergeManager *emerge;
 	BiomeManager *bmgr;
@@ -89,6 +97,10 @@ public:
 	content_t c_sandbrick;
 	content_t c_stair_cobble;
 	content_t c_stair_sandstone;
+
+	//freeminer:
+	s16 float_islands;
+	content_t c_dirt_with_snow;
 
 	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_);
 	~MapgenV5();

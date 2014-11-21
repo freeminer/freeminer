@@ -29,7 +29,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "voxelalgorithms.h"
 #include "profiler.h"
 #include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
 #include "emerge.h"
 #include "dungeongen.h"
 #include "cavegen.h"
@@ -47,7 +46,9 @@ FlagDesc flagdesc_mapgen_v5[] = {
 };
 
 
-MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_) {
+MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_):
+	Mapgen_features(mapgenid, params, emerge_)
+{
 	this->generating  = false;
 	this->id     = mapgenid;
 	this->emerge = emerge_;
@@ -114,6 +115,19 @@ MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_) {
 		c_stair_cobble = c_cobble;
 	if (c_stair_sandstone == CONTENT_IGNORE)
 		c_stair_sandstone = c_sandbrick;
+
+	//freeminer:
+	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
+	if (c_dirt_with_snow == CONTENT_IGNORE)
+		c_dirt_with_snow = c_dirt;
+	float_islands = sp->float_islands;
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
+
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
+	layers_init(emerge, sp->paramsj);
+
 }
 
 
@@ -146,6 +160,13 @@ MapgenV5Params::MapgenV5Params() {
 	np_ground       = NoiseParams(0, 40, v3f(80,  80,  80),  983240, 4, 0.55);
 	np_crumble      = NoiseParams(0, 1,  v3f(20,  20,  20),  34413,  3, 1.3);
 	np_wetness      = NoiseParams(0, 1,  v3f(40,  40,  40),  32474,  4, 1.1);
+
+	//freeminer:
+	float_islands = 500;
+	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5);
+	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5);
+	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6,  false, 1,   5,   0.5);
 }
 
 
@@ -175,6 +196,14 @@ void MapgenV5Params::readParams(Settings *settings) {
 	settings->getNoiseParams("mgv5_np_ground",       np_ground);
 	settings->getNoiseParams("mgv5_np_crumble",      np_crumble);
 	settings->getNoiseParams("mgv5_np_wetness",      np_wetness);
+
+	//freeminer:
+	settings->getS16NoEx("mg_float_islands", float_islands);
+	settings->getNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
+	settings->getNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
+	settings->getNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
+	settings->getNoiseIndevParams("mg_np_layers",         np_layers);
+	paramsj = settings->getJson("mg_params", paramsj);
 }
 
 
@@ -189,6 +218,14 @@ void MapgenV5Params::writeParams(Settings *settings) {
 	settings->setNoiseParams("mgv5_np_ground",       np_ground);
 	settings->setNoiseParams("mgv5_np_crumble",      np_crumble);
 	settings->setNoiseParams("mgv5_np_wetness",      np_wetness);
+
+	//freeminer:
+	settings->setS16("mg_float_islands", float_islands);
+	settings->setNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
+	settings->setNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
+	settings->setNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
+	settings->setNoiseIndevParams("mg_np_layers",         np_layers);
+	settings->setJson("mg_params", paramsj);
 }
 
 
@@ -252,6 +289,12 @@ void MapgenV5::makeChunk(BlockMakeData *data) {
 	
 	// Make some noise
 	calculateNoise();
+
+	if (float_islands && node_max.Y >= float_islands) {
+		float_islands_prepare(node_min, node_max, float_islands);
+	}
+
+	layers_prepare(node_min, node_max);
 
 	// Generate base terrain
 	generateBaseTerrain();
@@ -375,7 +418,7 @@ void MapgenV5::generateBaseTerrain() {
 				} else if(d1*d2 > 0.2) {
 					vm->m_data[i] = MapNode(CONTENT_AIR);
 				} else {
-					vm->m_data[i] = MapNode(c_stone);
+					vm->m_data[i] = layers_get(index);
 				}
 			}
 			index2d = index2d - ystride;
