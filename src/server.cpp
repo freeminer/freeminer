@@ -2011,12 +2011,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		stat.add("join", playersao->getPlayer()->getName());
 	}
-	else if(command == TOSERVER_GOTBLOCKS) // TODO: REMOVE IN NEXT, move wanted_range to new packet
-	{
-		RemoteClient *client = getClient(peer_id);
-		packet[TOSERVER_GOTBLOCKS_RANGE].convert(&client->wanted_range);
-		return;
-	}
 
 	if (m_clients.getClientState(peer_id) < CS_Active)
 	{
@@ -2797,6 +2791,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(&fields);
 
 		m_script->on_playerReceiveFields(playersao, formname, fields);
+	}
+	else if(command == TOSERVER_DRAWCONTROL)
+	{
+		auto client = getClient(peer_id);
+		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
+		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<u32>();
+		client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
 	}
 	else
 	{
@@ -3676,7 +3677,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 4);
+	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 5);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -3685,6 +3686,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
+	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
 
 	//JMutexAutoLock lock(m_env_mutex);
 	/*

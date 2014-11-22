@@ -2695,6 +2695,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		decreaseViewRange(statustext_time);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_RANGESELECT])) {
 		toggleFullViewRange(statustext_time);
+		client->sendDrawControl();
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_NEXT]))
 		quicktune->next();
 	else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_PREV]))

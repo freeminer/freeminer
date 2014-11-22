@@ -544,6 +544,9 @@ private:
 	std::map<std::string, Inventory*> m_detached_inventories;
 	double m_uptime;
 	bool m_simple_singleplayer_mode;
+public:
+	void sendDrawControl();
+private:
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	std::map<std::string, std::string> m_mesh_data;

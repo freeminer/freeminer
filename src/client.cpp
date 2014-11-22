@@ -517,6 +517,8 @@ void Client::step(float dtime)
 			// connectedAndInitialized() is true, peer exists.
 			float avg_rtt = getRTT();
 			infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
+
+			sendDrawControl(); //not very good place. maybe 5s timer better
 		}
 	}
 
@@ -934,6 +936,9 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	else if(command == TOCLIENT_BLOCKDATA)
 	{
 		v3s16 p = packet[TOCLIENT_BLOCKDATA_POS].as<v3s16>();
+		s8 step = 1;
+		packet[TOCLIENT_BLOCKDATA_STEP].convert(&step);
+		if (step == 1) {
 
 		std::istringstream istr(packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
 
@@ -964,12 +969,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
 		updateMeshTimestampWithEdge(p);
 
-		//std::set<v3s16> got_blocks;
-		//got_blocks.insert(p);
-		MSGPACK_PACKET_INIT(TOSERVER_GOTBLOCKS, 1); // TODO: REMOVE IN NEXT
-		//PACK(TOSERVER_GOTBLOCKS_BLOCKS, got_blocks);
-		PACK(TOSERVER_GOTBLOCKS_RANGE, (int)m_env.getClientMap().getControl().wanted_range); // TODO: MAKE NEW DRAWCONTROL PACKET
-		m_con.Send(PEER_ID_SERVER, 2, buffer, true);
+		}//step
 	}
 	else if(command == TOCLIENT_INVENTORY)
 	{
@@ -2298,5 +2298,18 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 	mesh->grab();
 	smgr->getMeshCache()->removeMesh(mesh);
 	return mesh;
+}
+
+
+
+//freeminer:
+void Client::sendDrawControl() {
+	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 3);
+	const auto & drawcontrol = m_env.getClientMap().getControl();
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)drawcontrol.wanted_range);
+	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)drawcontrol.range_all);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)drawcontrol.farmesh);
+
+	Send(0, buffer, false);
 }
 

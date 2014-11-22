@@ -209,7 +209,9 @@ public:
 
 	std::atomic_int m_nearest_unsent_nearest;
 	s16 wanted_range;
-	
+	s16 range_all;
+	s16 farmesh;
+
 	ServerEnvironment *m_env;
 
 	RemoteClient(ServerEnvironment *env):
