@@ -32,8 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class IGameDef;
 
-class ActionRow;
-class Entity;
+struct ActionRow;
+struct Entity;
 
 class RollbackManager: public IRollbackManager
 {

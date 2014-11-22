@@ -441,7 +441,7 @@ MapgenMath::~MapgenMath() {
 //////////////////////// Map generator
 
 MapNode MapgenMath::layers_get(float value, float max) {
-	auto layer_index = rangelim(myround((value/max) * layers_node.size()), 0, layers_node.size()-1);
+	auto layer_index = rangelim((unsigned int)myround((value/max) * layers_node.size()), 0, layers_node.size()-1);
 	return layers_node[layer_index];
 }
 
