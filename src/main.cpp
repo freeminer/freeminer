@@ -1739,7 +1739,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 #endif
 			int tries = g_settings->getU16("reconnects");
 			int n = 0;
-			while(!kill && ++n <= tries &&
+			while(!*kill && ++n <= tries &&
 			the_game(
 				kill,
 				random_input,
