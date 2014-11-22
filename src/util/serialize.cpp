@@ -71,11 +71,11 @@ std::string deSerializeString(std::istream &is)
 	if(is.gcount() != 2)
 		throw SerializationError("deSerializeString: size not read");
 	u16 s_size = readU16((u8*)buf);
+	std::string s;
 	if(s_size == 0)
-		return "";
+		return s;
 	Buffer<char> buf2(s_size);
 	is.read(&buf2[0], s_size);
-	std::string s;
 	s.reserve(s_size);
 	s.append(&buf2[0], s_size);
 	return s;
@@ -89,9 +89,9 @@ std::wstring deSerializeWideString(std::istream &is)
 	if(is.gcount() != 2)
 		throw SerializationError("deSerializeString: size not read");
 	u16 s_size = readU16((u8*)buf);
-	if(s_size == 0)
-		return L"";
 	std::wstring s;
+	if(s_size == 0)
+		return s;
 	s.reserve(s_size);
 	for(u32 i=0; i<s_size; i++)
 	{
@@ -121,11 +121,11 @@ std::string deSerializeLongString(std::istream &is)
 	if(is.gcount() != 4)
 		throw SerializationError("deSerializeLongString: size not read");
 	u32 s_size = readU32((u8*)buf);
+	std::string s;
 	if(s_size == 0)
-		return "";
+		return s;
 	Buffer<char> buf2(s_size);
 	is.read(&buf2[0], s_size);
-	std::string s;
 	s.reserve(s_size);
 	s.append(&buf2[0], s_size);
 	return s;

@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "log.h"
 #include "mods.h"
+#include "porting.h"
 #include "util/string.h"
 
 
@@ -96,6 +97,9 @@ ScriptApiBase::ScriptApiBase()
 
 	lua_pushstring(m_luastack, DIR_DELIM);
 	lua_setglobal(m_luastack, "DIR_DELIM");
+
+	lua_pushstring(m_luastack, porting::getPlatformName());
+	lua_setglobal(m_luastack, "PLATFORM");
 
 	m_server = NULL;
 	m_environment = NULL;

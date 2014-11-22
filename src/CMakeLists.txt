@@ -2,6 +2,7 @@ project(freeminer)
 cmake_minimum_required( VERSION 2.6 )
 
 INCLUDE(CheckCSourceRuns)
+INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckCXXSourceRuns)
 
 
@@ -515,6 +516,19 @@ if(ENABLE_REDIS)
 		message(STATUS "redis not found!")
 	endif(REDIS_LIBRARY AND REDIS_INCLUDE_DIR)
 endif(ENABLE_REDIS)
+
+CHECK_INCLUDE_FILES(endian.h HAVE_ENDIAN_H)
+
+if(HAVE_ENDIAN_H)
+	set(HAVE_ENDIAN_H 1)
+else()
+	set(HAVE_ENDIAN_H 0)
+endif()
+
+configure_file(
+	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
+	"${PROJECT_BINARY_DIR}/cmake_config.h"
+)
 
 # Add a target that always rebuilds cmake_config_githash.h
 add_custom_target(GenerateVersion

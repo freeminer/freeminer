@@ -335,7 +335,7 @@ u32 ChatBuffer::formatChatLine(const ChatLine& line, u32 cols,
 			while (frag_length < remaining_in_input &&
 					frag_length < remaining_in_output)
 			{
-				if (isspace(line_text.getString()[in_pos + frag_length]))
+				if (std::isspace(line_text.getString()[in_pos + frag_length]))
 					space_pos = frag_length;
 				++frag_length;
 			}
@@ -487,9 +487,9 @@ void ChatPrompt::nickCompletion(const std::list<std::string>& names, bool backwa
 	{
 		// no previous nick completion is active
 		prefix_start = prefix_end = m_cursor;
-		while (prefix_start > 0 && !isspace(m_line[prefix_start-1]))
+		while (prefix_start > 0 && !std::isspace(m_line[prefix_start-1]))
 			--prefix_start;
-		while (prefix_end < m_line.size() && !isspace(m_line[prefix_end]))
+		while (prefix_end < m_line.size() && !std::isspace(m_line[prefix_end]))
 			++prefix_end;
 		if (prefix_start == prefix_end)
 			return;
@@ -518,7 +518,7 @@ void ChatPrompt::nickCompletion(const std::list<std::string>& names, bool backwa
 	u32 replacement_index = 0;
 	if (!initial)
 	{
-		while (word_end < m_line.size() && !isspace(m_line[word_end]))
+		while (word_end < m_line.size() && !std::isspace(m_line[word_end]))
 			++word_end;
 		std::wstring word = m_line.substr(prefix_start, word_end - prefix_start);
 
@@ -537,7 +537,7 @@ void ChatPrompt::nickCompletion(const std::list<std::string>& names, bool backwa
 		}
 	}
 	std::wstring replacement = completions[replacement_index] + L" ";
-	if (word_end < m_line.size() && isspace(word_end))
+	if (word_end < m_line.size() && std::isspace(word_end))
 		++word_end;
 
 	// replace existing word with replacement word,
@@ -594,19 +594,19 @@ void ChatPrompt::cursorOperation(CursorOp op, CursorOpDir dir, CursorOpScope sco
 		if (increment > 0)
 		{
 			// skip one word to the right
-			while (new_cursor < length && isspace(m_line[new_cursor]))
+			while (new_cursor < length && std::isspace(m_line[new_cursor]))
 				new_cursor++;
-			while (new_cursor < length && !isspace(m_line[new_cursor]))
+			while (new_cursor < length && !std::isspace(m_line[new_cursor]))
 				new_cursor++;
-			while (new_cursor < length && isspace(m_line[new_cursor]))
+			while (new_cursor < length && std::isspace(m_line[new_cursor]))
 				new_cursor++;
 		}
 		else
 		{
 			// skip one word to the left
-			while (new_cursor >= 1 && isspace(m_line[new_cursor - 1]))
+			while (new_cursor >= 1 && std::isspace(m_line[new_cursor - 1]))
 				new_cursor--;
-			while (new_cursor >= 1 && !isspace(m_line[new_cursor - 1]))
+			while (new_cursor >= 1 && !std::isspace(m_line[new_cursor - 1]))
 				new_cursor--;
 		}
 	}

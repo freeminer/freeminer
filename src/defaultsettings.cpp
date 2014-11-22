@@ -6,12 +6,12 @@ Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 /*
 This file is part of Freeminer.
 
-Freeminer is free software: you can redistribute it and/or modify
+Freeminer is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-Freeminer  is distributed in the hope that it will be useful,
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
@@ -443,7 +443,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "false");
 	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("touchtarget", "true");
-	settings->setDefault("main_menu_script","/sdcard/freeminer/builtin/mainmenu/init_android.lua");
 	settings->setDefault("TMPFolder","/sdcard/freeminer/tmp/");
 	settings->setDefault("touchscreen_threshold","20");
 	settings->setDefault("smooth_lighting", "false");

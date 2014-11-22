@@ -2164,7 +2164,7 @@ bool Game::initGui(std::string *error_message)
 #ifdef HAVE_TOUCHSCREENGUI
 
 	if (g_touchscreengui)
-		g_touchscreengui->init(tsrc, porting::getDisplayDensity());
+		g_touchscreengui->init(texture_src, porting::getDisplayDensity());
 
 #endif
 
@@ -3096,8 +3096,8 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 #ifdef HAVE_TOUCHSCREENGUI
 
 		if (g_touchscreengui) {
-			camera_yaw   = g_touchscreengui->getYaw();
-			camera_pitch = g_touchscreengui->getPitch();
+			cam->camera_yaw   = g_touchscreengui->getYaw();
+			cam->camera_pitch = g_touchscreengui->getPitch();
 		} else {
 #endif
 			s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
@@ -4356,7 +4356,6 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 
 		// Node definition parameters:
 		// name - tile1 - drawtype - paramtype - paramtype2
-#if !defined(NDEBUG)
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
 			INodeDefManager *nodedef = client->getNodeDefManager();
 			ClientMap &map = client->getEnv().getClientMap();
@@ -4364,13 +4363,15 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 			if (nodedef->get(n).name != "unknown") {
 				const auto & features = nodedef->get(n);
 				os << " (pointing_at = " << features.name <<
+#if !defined(NDEBUG)
 					" - " << features.tiledef[0].name.c_str() <<
 					" - " << features.drawtype <<
 					" - " << features.param_type <<
-					" - " << features.param_type_2 << ")";
+					" - " << features.param_type_2 <<
+#endif
+					")";
 			}
 		}
-#endif
 
 		guitext2->setText(narrow_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);

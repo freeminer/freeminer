@@ -210,7 +210,8 @@ void EmergeManager::initMapgens() {
 	// Create the mapgens
 	for (size_t i = 0; i != emergethread.size(); i++) {
 		Mapgen *mg = createMapgen(params.mg_name, i, &params);
-		assert(mg);
+		if (!mg)
+			continue;
 		mapgen.push_back(mg);
 	}
 }
