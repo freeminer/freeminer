@@ -2114,7 +2114,7 @@ bool Game::initGui(std::wstring *error_message)
 {
 	// First line of debug text
 	guitext = guienv->addStaticText(
-			L"Minetest",
+			L"Freeminer",
 			core::rect<s32>(0, 0, 0, 0),
 			false, false, guiroot);
 
@@ -4594,7 +4594,7 @@ bool the_game(bool *kill,
 	} catch (SerializationError &e) {
 		error_message = L"A serialization error occurred:\n"
 				+ narrow_to_wide(e.what()) + L"\n\nThe server is probably "
-				L" running a different version of Minetest.";
+				L" running a different version of Freeminer.";
 		errorstream << wide_to_narrow(error_message) << std::endl;
 	} catch (ServerError &e) {
 		error_message = narrow_to_wide(e.what());

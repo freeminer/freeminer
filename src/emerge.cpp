@@ -582,7 +582,7 @@ void *EmergeThread::Thread() {
 		err << "----"<<std::endl;
 		err << "\""<<e.what()<<"\""<<std::endl;
 		err << "See debug.txt."<<std::endl;
-		err << "World probably saved by a newer version of Minetest."<<std::endl;
+		err << "World probably saved by a newer version of Freeminer."<<std::endl;
 		m_server->setAsyncFatalError(err.str());
 	}
 	catch (SerializationError &e) {
