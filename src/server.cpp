@@ -1319,6 +1319,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				break;
 		}
 
+/*
 		if(event_count >= 10){
 			infostream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(infostream);
@@ -1326,6 +1327,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			verbosestream<<"Server: MapEditEvents count="<<count<<"/"<<event_count<<" :"<<std::endl;
 			prof.print(verbosestream);
 		}
+*/
 
 	}
 
@@ -1364,6 +1366,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			}
 		}
 		if (porting::g_siginfo) {
+			// todo: add here more info
 			porting::g_siginfo = false;
 			infostream<<"uptime="<< (int)m_uptime.get()<<std::endl;
 			m_clients.UpdatePlayerList(); //print list
