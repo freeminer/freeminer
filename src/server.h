@@ -301,7 +301,7 @@ public:
 	virtual ISoundManager* getSoundManager();
 	virtual MtEventManager* getEventManager();
 	virtual scene::ISceneManager* getSceneManager();
-	virtual IRollbackManager *getRollbackManager() { return m_rollback; }
+	virtual IRollbackManager *getRollbackManager() { return m_enable_rollback_recording ? m_rollback : nullptr; }
 
 
 	IWritableItemDefManager* getWritableItemDefManager();

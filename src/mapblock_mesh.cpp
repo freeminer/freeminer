@@ -891,6 +891,8 @@ static void updateFastFaceRow(
 			makes_face, p_corrected, face_dir_corrected,
 			lights, tile, light_source, step);
 
+	auto prev_p_corrected = p_corrected;
+
 	u16 to = MAP_BLOCKSIZE/step;
 	for(u16 j=0; j<to; j++)
 	{
@@ -918,7 +920,7 @@ static void updateFastFaceRow(
 					next_tile, next_light_source, step);
 
 			if(next_makes_face == makes_face
-					&& next_p_corrected == p_corrected + translate_dir
+					&& next_p_corrected == prev_p_corrected + translate_dir
 					&& next_face_dir_corrected == face_dir_corrected
 					&& next_lights[0] == lights[0]
 					&& next_lights[1] == lights[1]
@@ -968,8 +970,8 @@ static void updateFastFaceRow(
 				v3f pf(p_corrected.X, p_corrected.Y, p_corrected.Z);
 				// Center point of face (kind of)
 				v3f sp = pf - ((f32)continuous_tiles_count / 2.0 - 0.5) * translate_dir_f;
-				if(continuous_tiles_count != 1)
-					sp += translate_dir_f;
+				if(continuous_tiles_count > 1)
+					sp += translate_dir_f * (continuous_tiles_count - 1);
 				v3f scale(1,1,1);
 
 				if(translate_dir.X != 0) {
@@ -1006,6 +1008,7 @@ static void updateFastFaceRow(
 		}
 
 		p = p_next;
+		prev_p_corrected = next_p_corrected;
 	}
 }
 
