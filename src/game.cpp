@@ -3733,6 +3733,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 		runData->repeat_rightclick_timer = 0;
 		infostream << "Ground right-clicked" << std::endl;
 
+/*
 				// Sign special case, at least until formspec is properly implemented.
 				// Deprecated?
 				if(meta && meta->getString("formspec") == "hack:sign_text_input"
@@ -3752,7 +3753,9 @@ void Game::handlePointingAtNode(GameRunData *runData,
 							wtext))->drop();
 				}
 				// If metadata provides an inventory view, activate it
-				else if(meta && meta->getString("formspec") != "" && !random_input
+				else
+*/
+				if(meta && meta->getString("formspec") != "" && !random_input
 				&& !input->isKeyDown(getKeySetting("keymap_sneak"))) {
 			infostream << "Launching custom inventory view" << std::endl;
 

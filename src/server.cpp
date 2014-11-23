@@ -1217,7 +1217,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		if(m_unsent_map_edit_queue.size() >= 4)
 			disable_single_change_sending = true;
 
-		int event_count = m_unsent_map_edit_queue.size();
+		//int event_count = m_unsent_map_edit_queue.size();
 
 		// We'll log the amount of each
 		Profiler prof;
