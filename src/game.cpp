@@ -1389,6 +1389,7 @@ struct GameRunData {
 
 	//freeminer:
 	v3f update_draw_list_last_cam_pos;
+	unsigned int autoexit;
 
 
 	float time_of_day;
@@ -1755,7 +1756,7 @@ void Game::run()
 	ProfilerGraph graph;
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	runData         = { 0 };
+	//runData         = { 0 };
 	FpsControl draw_times       = { 0 };
 	flags      = { 0 };
 	f32 dtime; // in seconds
@@ -1793,12 +1794,17 @@ void Game::run()
 
 	std::vector<aabb3f> highlight_boxes;
 
+	double run_time = 0;
+
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
 
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
 		 */
 		limitFps(&draw_times, &dtime);
+		run_time += dtime;
+		if (runData.autoexit && run_time > runData.autoexit)
+			g_gamecallback->shutdown_requested = 1;
 
 		updateStats(&stats, draw_times, dtime);
 		updateInteractTimers(&runData, dtime);
@@ -1834,6 +1840,12 @@ void Game::run()
 
 void Game::shutdown()
 {
+
+	if (runData.autoexit) {
+		actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
+		g_profiler->print(actionstream);
+	}
+
 	showOverlayMessage("Shutting down...", 0, 0, false);
 
 	if (clouds)
@@ -2505,6 +2517,7 @@ void Game::updateProfilers(const GameRunData &run_data, const RunStats &stats,
 		profiler_print_interval = 5;
 	}
 
+	if (!run_data.autoexit)
 	if (profiler_interval.step(dtime, profiler_print_interval)) {
 		if (print_to_log) {
 			infostream << "Profiler:" << std::endl;
@@ -3727,6 +3740,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 		runData->repeat_rightclick_timer = 0;
 		infostream << "Ground right-clicked" << std::endl;
 
+/*
 				// Sign special case, at least until formspec is properly implemented.
 				// Deprecated?
 				if(meta && meta->getString("formspec") == "hack:sign_text_input"
@@ -3746,7 +3760,9 @@ void Game::handlePointingAtNode(GameRunData *runData,
 							wtext))->drop();
 				}
 				// If metadata provides an inventory view, activate it
-				else if(meta && meta->getString("formspec") != "" && !random_input
+				else
+*/
+				if(meta && meta->getString("formspec") != "" && !random_input
 				&& !input->isKeyDown(getKeySetting("keymap_sneak"))) {
 			infostream << "Launching custom inventory view" << std::endl;
 
@@ -4541,7 +4557,9 @@ bool the_game(bool *kill,
 		std::string &error_message,
 		ChatBackend &chat_backend,
 		const SubgameSpec &gamespec,        // Used for local game
-		bool simple_singleplayer_mode)
+		bool simple_singleplayer_mode,
+		unsigned int autoexit
+	)
 {
 	Game game;
 
@@ -4555,11 +4573,13 @@ bool the_game(bool *kill,
 	try {
 
 		bool started = false;
+		game.runData  = { 0 };
 		if (game.startup(kill, random_input, input, device, font, map_dir,
 					playername, password, &server_address, port,
 					&error_message, &chat_backend, gamespec,
 					simple_singleplayer_mode)) {
 			started = true;
+			game.runData.autoexit = autoexit;
 
 			game.run();
 			game.shutdown();

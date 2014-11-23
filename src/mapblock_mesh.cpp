@@ -988,10 +988,9 @@ static void updateFastFaceRow(
 						sp, face_dir_corrected, scale, light_source,
 						dest);
 
-				g_profiler->avg("Meshgen: faces drawn by tiling", 0);
-				for(int i = 1; i < continuous_tiles_count; i++){
-					g_profiler->avg("Meshgen: faces drawn by tiling", 1);
-				}
+#if !defined(NDEBUG)
+				g_profiler->avg("Meshgen: faces drawn by tiling", continuous_tiles_count);
+#endif
 			}
 
 			continuous_tiles_count = 0;

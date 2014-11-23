@@ -153,6 +153,10 @@ bool Map::isValidPosition(v3s16 p)
 // Returns a CONTENT_IGNORE node if not found
 MapNode Map::getNodeNoEx(v3s16 p, bool *is_valid_position)
 {
+#ifndef NDEBUG
+	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
+#endif
+
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (block == NULL) {
@@ -171,6 +175,9 @@ MapNode Map::getNodeNoEx(v3s16 p, bool *is_valid_position)
 
 MapNode Map::getNodeTry(v3POS p)
 {
+#ifndef NDEBUG
+	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
+#endif
 	auto blockpos = getNodeBlockPos(p);
 	auto block = getBlockNoCreateNoEx(blockpos, true);
 	if(!block)

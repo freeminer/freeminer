@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "porting.h"
 
-
 #if defined(NO_THREAD_LOCAL)
 try_shared_mutex m_block_cache_mutex;
 #endif
@@ -37,11 +36,12 @@ try_shared_mutex m_block_cache_mutex;
 THREAD_LOCAL MapBlockP m_block_cache = nullptr;
 THREAD_LOCAL v3POS m_block_cache_p;
 
-MapBlock * Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
+MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
+
 #if CMAKE_THREADS && defined(NO_THREAD_LOCAL) && !defined(SERVER)
 	nocache = true;
 #endif

@@ -147,7 +147,7 @@ void * MeshUpdateThread::Thread()
 		}
 		m_queue_in.m_process.set(q->m_blockpos, 1);
 
-		ScopeProfiler sp(g_profiler, "Client: Mesh making");
+		ScopeProfiler sp(g_profiler, "Client: Mesh making " + itos(q->step));
 
 		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, std::shared_ptr<MapBlockMesh>(new MapBlockMesh(q.get(), m_camera_offset))));
 
