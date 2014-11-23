@@ -152,7 +152,9 @@ bool the_game(bool *kill,
 		std::wstring &error_message,
 		ChatBackend &chat_backend,
 		const SubgameSpec &gamespec, // Used for local game
-		bool simple_singleplayer_mode);
+		bool simple_singleplayer_mode,
+		unsigned int autoexit
+	);
 
 #endif
 

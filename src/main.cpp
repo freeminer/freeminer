@@ -742,6 +742,8 @@ protected:
 	std::string current_password;
 	std::string current_address;
 	int current_port;
+
+	unsigned int autoexit;
 };
 
 #endif // !SERVER
@@ -904,6 +906,8 @@ static void set_allowed_options(OptionList *allowed_options)
 	allowed_options->insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
 			_("Migrate from current map backend to another (Only works when using freeminerserver or with --server)"))));
 #ifndef SERVER
+	allowed_options->insert(std::make_pair("autoexit", ValueSpec(VALUETYPE_STRING,
+			_("Exit after X seconds"))));
 	allowed_options->insert(std::make_pair("videomodes", ValueSpec(VALUETYPE_FLAG,
 			_("Show available video modes"))));
 	allowed_options->insert(std::make_pair("speedtests", ValueSpec(VALUETYPE_FLAG,
@@ -1755,6 +1759,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 				chat_backend,
 				gamespec,
 				simple_singleplayer_mode
+				, autoexit
 			)
 			){
 				smgr->clear();
@@ -1821,6 +1826,10 @@ void ClientLauncher::init_args(GameParams &game_params, const Settings &cmd_args
 
 	random_input = g_settings->getBool("random_input")
 			|| cmd_args.getFlag("random-input");
+
+	int autoexit_ = 0;
+	cmd_args.getS32NoEx("autoexit", autoexit_);
+	autoexit = autoexit_;
 }
 
 bool ClientLauncher::init_engine(int log_level)
