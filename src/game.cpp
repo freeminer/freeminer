@@ -1847,7 +1847,7 @@ void Game::shutdown()
 {
 
 	if (runData.autoexit) {
-		actionstream << "Profiler:" << std::endl;
+		actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
 		g_profiler->print(actionstream);
 	}
 
