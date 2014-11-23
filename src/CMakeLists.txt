@@ -72,6 +72,8 @@ if(NOT HAVE_FUTURE)
 	set(HAVE_FUTURE 0)
 endif()
 
+set(CMAKE_REQUIRED_FLAGS "")
+
 option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
 
 if(ENABLE_THREADS)
