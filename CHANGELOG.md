@@ -1,7 +1,7 @@
 Engine
 ======
 
-### 0.4.10.4 (dev)
+### 0.4.10.4 (Now 24, 2014)
 
   * License switched to GPLv3
   * Start using C++11 features
