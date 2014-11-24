@@ -2801,6 +2801,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
 		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<u32>();
 		client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
+		client->fov  = packet[TOSERVER_DRAWCONTROL_FOV].as<f32>();
 	}
 	else
 	{

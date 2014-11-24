@@ -57,6 +57,8 @@ struct MapDrawControl
 	float fps_avg;
 	float fps_wanted;
 	float drawtime_avg;
+
+	float fov;
 };
 
 class Client;

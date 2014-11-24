@@ -2304,11 +2304,12 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 
 //freeminer:
 void Client::sendDrawControl() {
-	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 3);
-	const auto & drawcontrol = m_env.getClientMap().getControl();
-	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)drawcontrol.wanted_range);
-	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)drawcontrol.range_all);
-	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)drawcontrol.farmesh);
+	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 4);
+	const auto & draw_control = m_env.getClientMap().getControl();
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)draw_control.wanted_range);
+	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)draw_control.range_all);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)draw_control.farmesh);
+	PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
 
 	Send(0, buffer, false);
 }

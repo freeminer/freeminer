@@ -56,6 +56,7 @@ MapDrawControl::MapDrawControl():
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");
+		fov = g_settings->getFloat("fov");
 	}
 
 ClientMap::ClientMap(

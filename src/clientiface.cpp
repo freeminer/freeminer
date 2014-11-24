@@ -372,7 +372,7 @@ int RemoteClient::GetNextBlocks(
 				FOV setting. The default of 72 degrees is fine.
 			*/
 
-			float camera_fov = (80.0*M_PI/180) * 4./3.;
+			float camera_fov = ((fov+5)*M_PI/180) * 4./3.;
 			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, 10000*BS) == false)
 			{
 				continue;

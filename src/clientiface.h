@@ -211,6 +211,7 @@ public:
 	s16 wanted_range;
 	s16 range_all;
 	s16 farmesh;
+	float fov;
 
 	ServerEnvironment *m_env;
 
@@ -234,6 +235,7 @@ public:
 		net_proto_version = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_nearest = 0;
+		fov = 72; // g_settings->getFloat("fov");
 	}
 	~RemoteClient()
 	{

@@ -3180,10 +3180,21 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		( (u32)(input->getRightState()                                       & 0x1) << 8
 	);
 
+	auto & draw_control = client->getEnv().getClientMap().getControl();
 	if (input->isKeyDown(keycache.key[KeyCache::KEYMAP_ID_ZOOM])) {
-		player->zoom=true;
+		bool changed = player->zoom == false;
+		player->zoom = true;
+		if (changed) {
+			draw_control.fov = g_settings->getFloat("zoom_fov");
+			client->sendDrawControl();
+		}
 	} else {
-		player->zoom=false;
+		bool changed = player->zoom == true;
+		player->zoom = false;
+		if (changed) {
+			draw_control.fov = g_settings->getFloat("fov");
+			client->sendDrawControl();
+		}
 	}
 
 	//tt.stop();
