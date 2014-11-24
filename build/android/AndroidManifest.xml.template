@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	package="org.minetest.minetest"
+	package="org.freeminer.freeminer"
 	android:versionCode="###ANDROID_VERSION###"
 	android:versionName="###BASE_VERSION###.###ANDROID_VERSION###"
 	android:installLocation="auto">
@@ -10,9 +10,9 @@
 	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 	###DEBUG_BUILD###
-	<application android:icon="@drawable/irr_icon" android:label="Minetest" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" ###DEBUG_FLAG###>
+	<application android:icon="@drawable/irr_icon" android:label="freeminer" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" ###DEBUG_FLAG###>
 	<activity android:name=".MtNativeActivity"
-		android:label="Minetest"
+		android:label="freeminer"
 		android:launchMode="singleTask"
 		android:configChanges="orientation|keyboardHidden"
 		android:screenOrientation="landscape"
@@ -21,13 +21,13 @@
 			<action android:name="android.intent.action.MAIN" />
 			<category android:name="android.intent.category.LAUNCHER" />
 		</intent-filter>
-		<meta-data android:name="android.app.lib_name" android:value="minetest" />
+		<meta-data android:name="android.app.lib_name" android:value="freeminer" />
 	</activity>
-	<activity android:name=".MinetestTextEntry"
+	<activity android:name=".freeminerTextEntry"
 		android:theme="@style/Theme.Transparent"
 		android:excludeFromRecents="true">
 	</activity>
-	<activity android:name=".MinetestAssetCopy"
+	<activity android:name=".freeminerAssetCopy"
 		android:theme="@style/Theme.Transparent"
 		android:excludeFromRecents="true">
 	</activity>

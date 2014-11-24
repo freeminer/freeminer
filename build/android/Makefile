@@ -614,19 +614,19 @@ assets : $(ASSETS_TIMESTAMP)
 	if [ $$REFRESH -ne 0 ] ; then                                              \
 	echo "assets changed, refreshing...";                                      \
 	$(MAKE) -j${PARALLEL} clean_assets;                                        \
-	mkdir -p ${ROOT}/assets/Minetest;                                          \
-	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/Minetest;           \
-	cp ${ROOT}/../../README.md ${ROOT}/assets/Minetest;                        \
-	cp -r ${ROOT}/../../builtin ${ROOT}/assets/Minetest;                       \
-	cp -r ${ROOT}/../../client ${ROOT}/assets/Minetest;                        \
-	cp -r ${ROOT}/../../doc ${ROOT}/assets/Minetest;                           \
-	cp -r ${ROOT}/../../fonts ${ROOT}/assets/Minetest;                         \
-	cp -r ${ROOT}/../../games ${ROOT}/assets/Minetest;                         \
-	cp -r ${ROOT}/../../mods ${ROOT}/assets/Minetest;                          \
-	cp -r ${ROOT}/../../po ${ROOT}/assets/Minetest;                            \
-	cp -r ${ROOT}/../../textures ${ROOT}/assets/Minetest;                      \
-	mkdir -p ${ROOT}/assets/Minetest/media;                                    \
-	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/Minetest/media;         \
+	mkdir -p ${ROOT}/assets/freeminer;                                          \
+	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;           \
+	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer;                        \
+	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer;                       \
+	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer;                        \
+	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer;                           \
+	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer;                         \
+	cp -r ${ROOT}/../../games ${ROOT}/assets/freeminer;                         \
+	cp -r ${ROOT}/../../mods ${ROOT}/assets/freeminer;                          \
+	cp -r ${ROOT}/../../po ${ROOT}/assets/freeminer;                            \
+	cp -r ${ROOT}/../../textures ${ROOT}/assets/freeminer;                      \
+	mkdir -p ${ROOT}/assets/freeminer/media;                                    \
+	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media;         \
 	cd ${ROOT}/assets;                                                         \
 	find . -name "timestamp" -exec rm {} \; ;                                  \
 	find . -name "*.blend" -exec rm {} \; ;                                    \
@@ -655,8 +655,8 @@ apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(LEVELDB_TARGET)       \
 	TARGET_CXXFLAGS+="${TARGET_CXXFLAGS_ADDON}" &&                             \
 	ant $$BUILD_TYPE &&                                                        \
 	echo "++ Success!" &&                                                      \
-	echo "APK: bin/Minetest-$$BUILD_TYPE.apk" &&                               \
-	echo "You can install it with \`adb install -r bin/Minetest-$$BUILD_TYPE.apk\`"
+	echo "APK: bin/freeminer-$$BUILD_TYPE.apk" &&                               \
+	echo "You can install it with \`adb install -r bin/freeminer-$$BUILD_TYPE.apk\`"
 	
 prep_srcdir :
 	@rm ${ROOT}/jni/src;                                                       \
@@ -669,11 +669,11 @@ clean_apk : manifest
 	
 install_debug : 
 	@export PATH=$$PATH:${SDKFOLDER}platform-tools:${ANDROID_NDK};             \
-	adb install -r ${ROOT}/bin/Minetest-debug.apk
+	adb install -r ${ROOT}/bin/freeminer-debug.apk
 	
 install :
 	@export PATH=$$PATH:${SDKFOLDER}platform-tools:${ANDROID_NDK};             \
-	adb install -r ${ROOT}/bin/Minetest-release.apk
+	adb install -r ${ROOT}/bin/freeminer-release.apk
 	
 envpaths :
 	@echo "export PATH=$$PATH:${SDKFOLDER}platform-tools:${ANDROID_NDK}" > and_env;\

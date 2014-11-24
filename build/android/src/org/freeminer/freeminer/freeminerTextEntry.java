@@ -1,4 +1,4 @@
-package org.minetest.minetest;
+package org.freeminer.freeminer;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -12,7 +12,7 @@ import android.view.View;
 import android.view.View.OnKeyListener;
 import android.widget.EditText;
 
-public class MinetestTextEntry extends Activity {
+public class freeminerTextEntry extends Activity {
 	public AlertDialog mTextInputDialog;
 	public EditText mTextInputWidget;
 	

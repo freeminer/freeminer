@@ -2,7 +2,7 @@
 NDK_TOOLCHAIN_VERSION := 4.8
 
 APP_PLATFORM := android-9
-APP_MODULES := minetest
+APP_MODULES := freeminer
 APP_STL := gnustl_static
 
 APP_CPPFLAGS += -std=c++0x -fexceptions

@@ -51,7 +51,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := minetest
+LOCAL_MODULE := freeminer
 
 LOCAL_CPP_FEATURES += exceptions
 
