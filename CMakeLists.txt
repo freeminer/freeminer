@@ -19,8 +19,9 @@ set(VERSION_PATCH_ORIG ${VERSION_PATCH})
 if(VERSION_EXTRA)
 	set(VERSION_TWEAK ${VERSION_TWEAK}-${VERSION_EXTRA})
 else()
-	# Comment the following line during release
 	set(VERSION_TWEAK ${VERSION_TWEAK}-free)
+	# Comment the following line during release
+	set(VERSION_TWEAK ${VERSION_TWEAK}-dev)
 endif()
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
 
