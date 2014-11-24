@@ -4587,7 +4587,7 @@ bool the_game(bool *kill,
 
 #ifdef NDEBUG
 	} catch (SerializationError &e) {
-		error_message = "A serialization error occurred:\n"
+		error_message = std::string("A serialization error occurred:\n")
 				+ e.what() + "\n\nThe server is probably "
 				" running a different version of Freeminer.";
 		errorstream << (error_message) << std::endl;
