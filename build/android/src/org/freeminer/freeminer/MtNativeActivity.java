@@ -1,4 +1,4 @@
-package org.minetest.minetest;
+package org.freeminer.freeminer;
 
 import android.app.NativeActivity;
 import android.content.Intent;
@@ -22,14 +22,14 @@ public class MtNativeActivity extends NativeActivity {
 	
 	
 	public void copyAssets() {
-		Intent intent = new Intent(this, MinetestAssetCopy.class);
+		Intent intent = new Intent(this, freeminerAssetCopy.class);
 		startActivity(intent);
 	}
 	
 	public void showDialog(String acceptButton, String hint, String current,
 			int editType) {
 		
-		Intent intent = new Intent(this, MinetestTextEntry.class);
+		Intent intent = new Intent(this, freeminerTextEntry.class);
 		Bundle params = new Bundle();
 		params.putString("acceptButton", acceptButton);
 		params.putString("hint", hint);

@@ -1,4 +1,4 @@
-package org.minetest.minetest;
+package org.freeminer.freeminer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,7 +20,7 @@ import android.view.Display;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class MinetestAssetCopy extends Activity {
+public class freeminerAssetCopy extends Activity {
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -62,10 +62,10 @@ public class MinetestAssetCopy extends Activity {
 				File current_folder = new File(baseDir + "/" + full_path);
 				if (!current_folder.exists()) {
 					if (!current_folder.mkdirs()) {
-						Log.w("MinetestAssetCopy","\t failed create folder: " + baseDir + "/" + full_path);
+						Log.w("freeminerAssetCopy","\t failed create folder: " + baseDir + "/" + full_path);
 					}
 					else {
-						Log.w("MinetestAssetCopy","\t created folder: " + baseDir + "/" + full_path);
+						Log.w("freeminerAssetCopy","\t created folder: " + baseDir + "/" + full_path);
 					}
 				}
 				try {
@@ -74,7 +74,7 @@ public class MinetestAssetCopy extends Activity {
 						copyElement(current_assets[i],full_path);
 					}
 				} catch (IOException e) {
-					Log.w("MinetestAssetCopy","\t failed to read contents of folder");
+					Log.w("freeminerAssetCopy","\t failed to read contents of folder");
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -137,7 +137,7 @@ public class MinetestAssetCopy extends Activity {
 			m_asset_size_unknown = new Vector<String>();
 			String baseDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
 			
-			File TempFolder = new File(baseDir + "Minetest/tmp/");
+			File TempFolder = new File(baseDir + "freeminer/tmp/");
 			
 			if (!TempFolder.exists()) {
 				TempFolder.mkdir();
@@ -146,17 +146,17 @@ public class MinetestAssetCopy extends Activity {
 				File[] todel = TempFolder.listFiles();
 				
 				for(int i=0; i < todel.length; i++) {
-					Log.w("MinetestAssetCopy","deleting: " + todel[i].getAbsolutePath());
+					Log.w("freeminerAssetCopy","deleting: " + todel[i].getAbsolutePath());
 					todel[i].delete();
 				}
 			}
 			
 			// add a .nomedia file
 			try {
-				OutputStream dst = new FileOutputStream(baseDir + "Minetest/.nomedia");
+				OutputStream dst = new FileOutputStream(baseDir + "freeminer/.nomedia");
 				dst.close();
 			} catch (IOException e) {
-				Log.w("MinetestAssetCopy","Failed to create .nomedia file");
+				Log.w("freeminerAssetCopy","Failed to create .nomedia file");
 				e.printStackTrace();
 			}
 			
@@ -174,7 +174,7 @@ public class MinetestAssetCopy extends Activity {
 				e1.printStackTrace();
 			}
 			
-			copyElement("Minetest","");
+			copyElement("freeminer","");
 			
 			m_copy_started = true;
 			m_ProgressBar.setMax(m_tocopy.size());
@@ -200,7 +200,7 @@ public class MinetestAssetCopy extends Activity {
 					try {
 						src = getAssets().open(filename);
 					} catch (IOException e) {
-						Log.w("MinetestAssetCopy","Copying file: " + filename + " FAILED (not in assets)");
+						Log.w("freeminerAssetCopy","Copying file: " + filename + " FAILED (not in assets)");
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 						continue;
@@ -236,7 +236,7 @@ public class MinetestAssetCopy extends Activity {
 						try {
 							dst = new FileOutputStream(baseDir + "/" + filename);
 						} catch (IOException e) {
-							Log.w("MinetestAssetCopy","Copying file: " + baseDir + 
+							Log.w("freeminerAssetCopy","Copying file: " + baseDir + 
 							"/" + filename + " FAILED (couldn't open output file)");
 							e.printStackTrace();
 							src.close();
@@ -251,14 +251,14 @@ public class MinetestAssetCopy extends Activity {
 						}
 						
 						dst.close();
-						Log.w("MinetestAssetCopy","Copied file: " + m_tocopy.get(i) + " (" + total_filesize + " bytes)");
+						Log.w("freeminerAssetCopy","Copied file: " + m_tocopy.get(i) + " (" + total_filesize + " bytes)");
 					}
 					else if (len < 0) {
-						Log.w("MinetestAssetCopy","Copying file: " + m_tocopy.get(i) + " failed, size < 0");
+						Log.w("freeminerAssetCopy","Copying file: " + m_tocopy.get(i) + " failed, size < 0");
 					}
 					src.close();
 				} catch (IOException e) {
-					Log.w("MinetestAssetCopy","Copying file: " + m_tocopy.get(i) + " failed");
+					Log.w("freeminerAssetCopy","Copying file: " + m_tocopy.get(i) + " failed");
 					e.printStackTrace();
 				}
 			}

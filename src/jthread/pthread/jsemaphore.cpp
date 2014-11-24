@@ -118,6 +118,21 @@ bool JSemaphore::Wait(unsigned int time_ms) {
 	errno = 0;
 #ifdef __MACH__
 	int sem_wait_retval = semaphore_timedwait(m_semaphore, waittime);
+	// https://github.com/minetest/minetest/issues/1687#issuecomment-59040204
+	switch (sem_wait_retval) {
+		case KERN_SUCCESS:
+			sem_wait_retval = 0;
+			break;
+		case KERN_OPERATION_TIMED_OUT:
+			sem_wait_retval = ETIMEDOUT;
+			break;
+		case KERN_ABORTED:
+			sem_wait_retval = EINTR;
+			break;
+		default:
+			sem_wait_retval = EINVAL;
+			break;
+	}
 #else
 	int sem_wait_retval = sem_timedwait(&m_semaphore, &waittime);
 #endif
@@ -132,7 +147,7 @@ bool JSemaphore::Wait(unsigned int time_ms) {
 		return true;
 	}
 	else {
-		assert((errno == ETIMEDOUT) || (errno == EINTR));
+		//assert((errno == ETIMEDOUT) || (errno == EINTR));
 		return false;
 	}
 	return sem_wait_retval == 0 ? true : false;

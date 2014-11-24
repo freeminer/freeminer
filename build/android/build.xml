@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Minetest" default="help">
+<project name="freeminer" default="help">
 	<property file="local.properties" />
 	<property file="ant.properties" />
 	<property environment="env" />
