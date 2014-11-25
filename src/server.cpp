@@ -602,6 +602,9 @@ Server::~Server()
 {
 	infostream<<"Server destructing"<<std::endl;
 
+	if (!m_simple_singleplayer_mode && g_settings->getBool("server_announce"))
+		ServerList::sendAnnounce("delete");
+
 	// Send shutdown message
 	SendChatMessage(PEER_ID_INEXISTENT, "*** Server shutting down");
 
@@ -900,7 +903,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	m_clients.step(dtime);
 
 	m_lag += (m_lag > dtime ? -1 : 1) * dtime/100;
-#if USE_CURL
 	// send masterserver announce
 	{
 		float &counter = m_masterserver_timer;
@@ -919,7 +921,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		}
 		counter += dtime;
 	}
-#endif
 
 	/*
 		Check added and deleted active objects
@@ -4861,10 +4862,6 @@ void dedicated_server_loop(Server &server, bool &kill)
 		if(server.getShutdownRequested() || kill)
 		{
 			infostream<<"Dedicated server quitting"<<std::endl;
-#if USE_CURL
-			if(g_settings->getBool("server_announce") == true)
-				ServerList::sendAnnounce("delete");
-#endif
 			break;
 		}
 

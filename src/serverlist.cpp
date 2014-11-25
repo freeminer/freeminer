@@ -171,7 +171,6 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 }
 
 
-#if USE_CURL
 void sendAnnounce(const std::string &action,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
@@ -181,6 +180,7 @@ void sendAnnounce(const std::string &action,
 		const std::string &mg_name,
 		const std::vector<ModSpec> &mods)
 {
+#if USE_CURL
 	Json::Value server;
 	server["action"] = action;
 	server["port"]    = g_settings->getU16("port");
@@ -247,7 +247,7 @@ void sendAnnounce(const std::string &action,
 */
 
 	httpfetch_async(fetch_request);
-}
 #endif
+}
 
 } //namespace ServerList
