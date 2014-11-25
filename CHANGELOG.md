@@ -3,6 +3,11 @@ Engine
 
 ### 0.4.10.5 (dev)
 
+#### Protocol (Incompatimble with minetest now)
+  * enet based networking (30x+  faster than before, more reliable)
+  * msgpack based protocol (easy extendable, better backward compatibility)
+  * use utf8 everywhere
+
 
 
 ### 0.4.10.4 (Nov 24, 2014)
@@ -25,6 +30,7 @@ Engine
   * Allow any player names `enable_any_name = 1`
   * Optimized block sending for farther range
   * Various death messages
+  * Statistic collector (per player, per server, timed (daily, weekly, monthly))
 
 #### Mapgens
   * Layers added to mapgen v5

@@ -684,7 +684,7 @@ void Server::start(Address bind_addr)
 	if(m_envthread)
 		m_envthread->restart();
 
-	actionstream << "\033[1mfree\033[1;33mminer next \033[1;36mv" << minetest_version_hash << "\033[0m \t"
+	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
 #if CMAKE_THREADS
 			<< " THREADS \t"
 #endif

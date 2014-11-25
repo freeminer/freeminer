@@ -4327,7 +4327,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
-		   << "Freeminer next " << minetest_version_hash
+		   << "Freeminer " << minetest_version_hash
 		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
 /*
@@ -4349,7 +4349,7 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		guitext->setVisible(true);
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
-		os << "Freeminer next " << minetest_version_hash;
+		os << "Freeminer " << minetest_version_hash;
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else {
