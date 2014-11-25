@@ -109,7 +109,8 @@ void Connection::processCommand(ConnectionCommand &c)
 		return;
 	case CONNCMD_DISCONNECT_PEER:
 		dout_con<<getDesc()<<" processing CONNCMD_DISCONNECT"<<std::endl;
-		DisconnectPeer(c.peer_id);
+		deletePeer(c.peer_id, false); // its correct ?
+		//DisconnectPeer(c.peer_id);
 		return;
 	case CONNCMD_SEND:
 		dout_con<<getDesc()<<" processing CONNCMD_SEND"<<std::endl;
