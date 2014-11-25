@@ -38,14 +38,12 @@ namespace ServerList
 	bool insert(const ServerListSpec &server);
 	std::vector<ServerListSpec> deSerialize(const std::string &liststring);
 	const std::string serialize(const std::vector<ServerListSpec> &serverlist);
-	#if USE_CURL
 	void sendAnnounce(const std::string &action,
 			const std::vector<std::string> &clients_names = std::vector<std::string>(),
 			const double uptime = 0, const u32 game_time = 0,
 			const float lag = 0, const std::string &gameid = "",
 			const std::string &mg_name = "",
 			const std::vector<ModSpec> &mods = std::vector<ModSpec>());
-	#endif
 } // ServerList namespace
 
 #endif

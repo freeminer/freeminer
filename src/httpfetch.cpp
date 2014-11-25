@@ -281,9 +281,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	}
 
 	// Set POST (or GET) data
-	if (request.post_fields.empty()) {
-		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-	} else if (request.multipart) {
+	if (request.multipart) {
 		curl_httppost *last = NULL;
 		for (std::map<std::string, std::string>::iterator it =
 					request.post_fields.begin();
@@ -298,7 +296,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 		curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
 		// request.post_fields must now *never* be
 		// modified until CURLOPT_HTTPPOST is cleared
-	} else if (request.post_data.empty()) {
+	} else if (!request.post_fields.empty()) {
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 		std::string str;
 		for (std::map<std::string, std::string>::iterator it =
@@ -315,7 +313,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 				str.size());
 		curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS,
 				str.c_str());
-	} else {
+	} else if (!request.post_data.empty()) {
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
 				request.post_data.size());
@@ -323,6 +321,8 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 				request.post_data.c_str());
 		// request.post_data must now *never* be
 		// modified until CURLOPT_POSTFIELDS is cleared
+	} else {
+		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
 	}
 	// Set additional HTTP headers
 	for (std::vector<std::string>::iterator it = request.extra_headers.begin();
