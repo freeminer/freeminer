@@ -292,6 +292,7 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
 	packet[CONTENTFEATURES_NAME].convert(&name);
+	groups.clear();
 	packet[CONTENTFEATURES_GROUPS].convert(&groups);
 
 	int drawtype_tmp;
