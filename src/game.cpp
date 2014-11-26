@@ -2136,13 +2136,11 @@ bool Game::initGui(std::string *error_message)
 	// Chat text
 	guitext_chat = nullptr;
 
-	#if USE_FREETYPE
-	if (g_settings->getBool("freetype")) {
+	{
 		guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
 		guitext_chat->setWordWrap(true);
 		guitext_chat->drop();
 	}
-	#endif
 
 	if (!guitext_chat) {
 	guitext_chat = guienv->addStaticText(

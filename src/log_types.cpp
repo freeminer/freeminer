@@ -33,6 +33,19 @@ std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
 	return s;
 }
 
+std::ostream & operator<<(std::ostream & s, irr::video::SColor c) {
+	s << "c32(" << c.color << ": a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+	return s;
+}
+
+#include "util/string.h"
+std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
+	s << wide_to_narrow(w);
+	return s;
+}
+
+
+
 #include "mapnode.h"
 std::ostream & operator<<(std::ostream & s, MapNode n) {
 	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
