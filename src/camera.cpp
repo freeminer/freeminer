@@ -601,7 +601,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 
 	f32 wanted_frametime_change = wanted_frametime - frametime;
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
-	g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
+	//g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 
 	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
