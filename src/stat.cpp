@@ -83,7 +83,7 @@ void Stat::update_time() {
 	char cs[20];
 	strftime(cs, 20, "%Y_%m", tm);
 	month = cs;
-	strftime(cs, 20, "%Y_%V", tm); //maybe W
+	strftime(cs, 20, "%Y_%W", tm);
 	week = cs;
 	strftime(cs, 20, "%Y_%j", tm);
 	day = cs;

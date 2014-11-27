@@ -126,7 +126,7 @@ static void list_game_ids();
 static void list_worlds();
 static void setup_log_params(const Settings &cmd_args);
 static bool create_userdata_path();
-static bool init_common(int *log_level, const Settings &cmd_args);
+static bool init_common(int *log_level, const Settings &cmd_args, int argc, char *argv[]);
 static void startup_message();
 static bool read_config_file(const Settings &cmd_args);
 static void init_debug_streams(int *log_level, const Settings &cmd_args);
@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
 	}
 
 	GameParams game_params;
-	if (!init_common(&game_params.log_level, cmd_args))
+	if (!init_common(&game_params.log_level, cmd_args, argc, argv))
 		return 1;
 
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
@@ -1061,7 +1061,7 @@ static bool create_userdata_path()
 	return success;
 }
 
-static bool init_common(int *log_level, const Settings &cmd_args)
+static bool init_common(int *log_level, const Settings &cmd_args, int argc, char *argv[])
 {
 	startup_message();
 	set_default_settings(g_settings);
