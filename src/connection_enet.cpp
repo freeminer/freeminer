@@ -51,13 +51,13 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(1)
 {
-	Start();
+	start();
 }
 
 
 Connection::~Connection()
 {
-	Stop();
+	join();
 	if(m_enet_host)
 		enet_host_destroy(m_enet_host);
 }
