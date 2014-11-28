@@ -1390,7 +1390,7 @@ struct GameRunData {
 	//freeminer:
 	v3f update_draw_list_last_cam_pos;
 	unsigned int autoexit;
-
+	bool profiler_state;
 
 	float time_of_day;
 	float time_of_day_smooth;
@@ -3025,9 +3025,14 @@ void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 		sstr << "Profiler shown (page " << *profiler_current_page
 		     << " of " << profiler_max_page << ")";
 		statustext = sstr.str();
+		if (*profiler_current_page == 1)
+			runData.profiler_state = g_profiler_enabled;
+		g_profiler_enabled = true;
 	} else {
 		statustext = L"Profiler hidden";
+		g_profiler_enabled = runData.profiler_state;
 	}
+
 	*statustext_time = 0;
 }
 

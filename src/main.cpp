@@ -1075,7 +1075,11 @@ static bool init_common(int *log_level, const Settings &cmd_args, int argc, char
 
 	init_debug_streams(log_level, cmd_args);
 
-	time_taker_enabled = g_settings->getU16("time_taker_enabled") ? g_settings->getU16("time_taker_enabled") : ((g_settings->getFloat("profiler_print_interval") || *log_level >= LMT_INFO) ? 100 : 0);
+	g_time_taker_enabled = g_settings->getU16("time_taker_enabled") ? g_settings->getU16("time_taker_enabled") : ((g_settings->getFloat("profiler_print_interval") || *log_level >= LMT_INFO) ? 100 : 0);
+
+	int autoexit_ = 0;
+	cmd_args.getS32NoEx("autoexit", autoexit_);
+	g_profiler_enabled = g_settings->getFloat("profiler_print_interval") || autoexit_;
 
 	// Initialize random seed
 	srand(time(0));
