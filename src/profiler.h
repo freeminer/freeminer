@@ -37,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Time profiler
 */
+extern bool g_profiler_enabled;
 
 struct ProfValue {
 	unsigned int calls;
@@ -64,6 +65,8 @@ public:
 
 	void add(const std::string &name, float value)
 	{
+		if(!g_profiler_enabled)
+			return;
 		JMutexAutoLock lock(m_mutex);
 		{
 			auto n = m_data.find(name);
