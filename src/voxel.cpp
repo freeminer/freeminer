@@ -181,12 +181,9 @@ void VoxelManipulator::addArea(const VoxelArea &area)
 	dstream<<std::endl;*/
 
 	// Allocate and clear new data
-	//MapNode *new_data = new MapNode[new_size];
 	MapNode *new_data = reinterpret_cast<MapNode*>( ::operator new(new_size * sizeof(MapNode)));
-	//assert(new_data);
 	memset(new_data, 0, sizeof(MapNode[new_size]));
 	u8 *new_flags = new u8[new_size];
-	//assert(new_flags);
 	memset(new_flags, VOXELFLAG_NO_DATA, new_size);
 
 	// Copy old data

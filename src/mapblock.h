@@ -129,18 +129,8 @@ public:
 		if(data != NULL)
 			delete[] data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
-		//data = new MapNode[l];
-		MapNode *data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
+		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
 		memset(data, 0, sizeof(MapNode[l]));
-/*
-		for(u32 i=0; i<l; i++){
-			//data[i] = MapNode();
-			data[i] = MapNode(CONTENT_IGNORE);
-		}
-*/
-/*
-		raiseModified(MOD_STATE_WRITE_NEEDED, "reallocate");
-*/
 	}
 
 	/*
