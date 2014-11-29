@@ -130,7 +130,7 @@ public:
 			delete[] data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
-		memset(data, 0, sizeof(MapNode[l]));
+		memset(data, 0, l * sizeof(MapNode));
 	}
 
 	/*
