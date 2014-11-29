@@ -33,6 +33,8 @@ Install dependencies. Here's an example for
 Debian/Ubuntu:
 ```
 sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev  libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev
+# optional:
+sudo apt-get install libhiredis-dev cmake-curses-gui
 ```
 
 Fedora:
