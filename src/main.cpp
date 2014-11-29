@@ -1809,15 +1809,10 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 void ClientLauncher::init_args(GameParams &game_params, const Settings &cmd_args)
 {
 	address = g_settings->get("address");
-/*
 	if (game_params.world_path != "")
 		address = "";
-	else
-*/
-	if (cmd_args.exists("address")) {
+	else if (cmd_args.exists("address"))
 		address = cmd_args.get("address");
-		game_params.world_path = "";
-	}
 
 	playername = g_settings->get("name");
 	if (cmd_args.exists("name"))
