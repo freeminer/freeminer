@@ -157,7 +157,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 	m_vmanip.addArea(area);
 
 	// Fill in data
-	MapNode *data = new MapNode[volume];
+	MapNode *data = reinterpret_cast<MapNode*>( ::operator new(volume * sizeof(MapNode)));
 	for(s32 i = 0; i < volume; i++)
 	{
 		if(i == our_node_index)
