@@ -397,7 +397,8 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 		g_settings->getBool("noclip");
 	// Dont place node when player would be inside new node
 	// NOTE: This is to be eventually implemented by a mod as client-side Lua
-	if (m_gamedef->ndef()->get(n).walkable && !noclip) {
+
+	if (m_gamedef->ndef()->get(n).walkable && !noclip && !g_settings->getBool("enable_build_where_you_stand")) {
 		auto nodeboxes = n.getNodeBoxes(m_gamedef->ndef());
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());

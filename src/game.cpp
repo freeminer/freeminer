@@ -2242,9 +2242,11 @@ bool Game::connectToServer(const std::string &playername,
 		return false;
 	}
 
-	client = new Client(device, playername.c_str(), password, *draw_control,
-		    texture_src, shader_src, itemdef_manager, nodedef_manager, sound,
-			eventmgr, connect_address.isIPv6(), simple_singleplayer_mode);
+	client = new Client(device,
+			playername.c_str(), password, simple_singleplayer_mode,
+			*draw_control, texture_src, shader_src,
+			itemdef_manager, nodedef_manager, sound, eventmgr,
+			connect_address.isIPv6());
 
 	if (!client)
 		return false;
