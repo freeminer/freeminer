@@ -178,6 +178,7 @@ Client::Client(
 		IrrlichtDevice *device,
 		const char *playername,
 		std::string password,
+		bool is_simple_singleplayer_game,
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
 		IWritableShaderSource *shsrc,
@@ -186,7 +187,6 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		bool ipv6
-		, bool simple_singleplayer_mode
 ):
 	m_packetcounter_timer(0.0),
 	m_connection_reinit_timer(0.1),
@@ -207,7 +207,7 @@ Client::Client(
 		device->getSceneManager(),
 		tsrc, this, device
 	),
-	m_con(PROTOCOL_ID, simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
+	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
@@ -229,7 +229,7 @@ Client::Client(
 	m_time_of_day_update_timer(0),
 	m_recommended_send_interval(0.1),
 	m_removed_sounds_check_timer(0),
-	m_simple_singleplayer_mode(simple_singleplayer_mode),
+	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_state(LC_Created)
 {
 	/*
@@ -241,7 +241,8 @@ Client::Client(
 		m_env.addPlayer(player);
 	}
 
-	if (!simple_singleplayer_mode && g_settings->getBool("enable_local_map_saving")) {
+	if (g_settings->getBool("enable_local_map_saving")
+			&& !is_simple_singleplayer_game) {
 		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
 				+ DIR_DELIM + "server_" + g_settings->get("address")
 				+ "_" + g_settings->get("remote_port");

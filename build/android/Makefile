@@ -127,6 +127,11 @@ FREETYPE_URL_GIT = https://github.com/cdave1/freetype2-android
 
 -include $(PATHCFGFILE)
 
+#use interim target variable to switch leveldb on or off
+ifeq ($(HAVE_LEVELDB),1)
+	LEVELDB_TARGET = $(LEVELDB_LIB)
+endif
+
 .PHONY : debug release reconfig delconfig \
 	leveldb_download clean_leveldb leveldb\
 	irrlicht_download clean_irrlicht irrlicht \
@@ -142,11 +147,6 @@ FREETYPE_URL_GIT = https://github.com/cdave1/freetype2-android
 	$(OPENSSL_TIMESTAMP) curl_binary \
 	$(ROOT)/jni/src/android_version.h
 	
-#use interim target variable to switch leveldb on or off
-ifeq ($(HAVE_LEVELDB),1)
-	LEVELDB_TARGET = $(LEVELDB_LIB)
-endif
-
 debug : $(PATHCFGFILE)
 	export NDEBUG=;                                                            \
 	export BUILD_TYPE=debug;                                                   \
@@ -174,9 +174,9 @@ $(PATHCFGFILE) :
 		exit 1;                                                                \
 	fi;                                                                        \
 	echo "ANDROID_NDK = $$ANDROID_NDK" > ${PATHCFGFILE};                       \
-	echo "NDK_MODULE_PATH = $$ANDROID_NDK/toolchains" >> ${PATHCFGFILE};       \
+	echo "NDK_MODULE_PATH = $$ANDROID_NDK/toolchains" >> ${PATHCFGFILE};            \
 	echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";\
-	echo "+ Note: NDK_MODULE_PATH is set to $$ANDROID_NDK/toolchains";         \
+	echo "+ Note: NDK_MODULE_PATH is set to $$ANDROID_NDK/toolchains";              \
 	echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";\
 	echo "Please specify path of ANDROID SDK";                                 \
 	echo "e.g. /home/user/adt-bundle-linux-x86_64-20131030/sdk/";              \

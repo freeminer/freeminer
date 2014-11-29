@@ -288,6 +288,7 @@ public:
 			IrrlichtDevice *device,
 			const char *playername,
 			std::string password,
+			bool is_simple_singleplayer_game,
 			MapDrawControl &control,
 			IWritableTextureSource *tsrc,
 			IWritableShaderSource *shsrc,
@@ -296,7 +297,6 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			bool ipv6
-			,bool simple_singleplayer_mode
 	);
 	
 	~Client();

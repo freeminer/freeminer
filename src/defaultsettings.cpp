@@ -136,7 +136,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
 	settings->setDefault("keymap_toggle_force_fog_off", "KEY_F3");
-	//settings->setDefault("keymap_toggle_update_camera", "KEY_F4");
+	//settings->setDefault("keymap_toggle_update_camera", debug ? "KEY_F4" : "none");
 	settings->setDefault("keymap_toggle_block_boundaries", "KEY_F4");
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
@@ -314,7 +314,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("enable_local_map_saving", "false");
-	
+	settings->setDefault("enable_build_where_you_stand", "false" );
+
 	//
 	// Server stuff
 	//

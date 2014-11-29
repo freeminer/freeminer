@@ -340,8 +340,8 @@ end
 --------------------------------------------------------------------------------
 
 if INIT == "game" then
-	local dirs1 = {9, 18, 7, 12}
-	local dirs2 = {20, 23, 22, 21}
+	local dirs1 = {8, 17, 6, 15}
+	local dirs2 = {22, 21, 20, 23}
 
 	function core.rotate_and_place(itemstack, placer, pointed_thing,
 				infinitestacks, orient_flags)
@@ -596,6 +596,18 @@ end
 --------------------------------------------------------------------------------
 function core.pos_to_string(pos)
 	return "(" .. pos.x .. "," .. pos.y .. "," .. pos.z .. ")"
+end
+
+--------------------------------------------------------------------------------
+function table.copy(t, seen)
+	local n = {}
+	seen = seen or {}
+	seen[t] = n
+	for k, v in pairs(t) do
+		n[type(k) ~= "table" and k or seen[k] or table.copy(k, seen)] =
+			type(v) ~= "table" and v or seen[v] or table.copy(v, seen)
+	end
+	return n
 end
 
 --------------------------------------------------------------------------------
