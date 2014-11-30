@@ -378,11 +378,15 @@ float MapgenV7::baseTerrainLevelAtPoint(int x, int z) {
 	float persist = NoisePerlin2D(noise_terrain_persist->np, x, z, seed);
 	persist = rangelim(persist, 0.4, 0.9);
 
+	auto persist_save = noise_terrain_base->np->persist;
 	noise_terrain_base->np->persist = persist;
 	float height_base = NoisePerlin2D(noise_terrain_base->np, x, z, seed);
+	noise_terrain_base->np->persist = persist_save;
 
+	persist_save = noise_terrain_alt->np->persist;
 	noise_terrain_alt->np->persist = persist;
 	float height_alt = NoisePerlin2D(noise_terrain_alt->np, x, z, seed);
+	noise_terrain_alt->np->persist = persist_save;
 
 	if (height_alt > height_base)
 		return height_alt;
