@@ -368,7 +368,9 @@ protected:
 
 	// Queued transforming water nodes
 public:
-	shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	//shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	std::mutex m_transforming_liquid_mutex;
+	UniqueQueue<v3POS> m_transforming_liquid;
 	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
 protected:
 };
