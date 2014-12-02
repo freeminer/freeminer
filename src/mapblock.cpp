@@ -765,7 +765,7 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 }
 
 #ifndef SERVER
-std::shared_ptr<MapBlockMesh> MapBlock::getMesh(int step) {
+MapBlock::mesh_type MapBlock::getMesh(int step) {
 	if (step >= 16 && mesh16) return mesh16;
 	if (step >= 8  && mesh8)  return mesh8;
 	if (step >= 4  && mesh4)  return mesh4;
@@ -778,14 +778,14 @@ std::shared_ptr<MapBlockMesh> MapBlock::getMesh(int step) {
 	return mesh;
 }
 
-void MapBlock::setMesh(std::shared_ptr<MapBlockMesh> & rmesh) {
+void MapBlock::setMesh(MapBlock::mesh_type & rmesh) {
 	if (rmesh && !mesh_size)
 		mesh_size = rmesh->getMesh()->getMeshBufferCount();
-	     if (rmesh->step == 16) {mesh16 = rmesh;}
-	else if (rmesh->step == 8 ) {mesh8  = rmesh;}
-	else if (rmesh->step == 4 ) {mesh4  = rmesh;}
-	else if (rmesh->step == 2 ) {mesh2  = rmesh;}
-	else                        {mesh   = rmesh;}
+	     if (rmesh->step == 16) {mesh_old = mesh16; mesh16 = rmesh;}
+	else if (rmesh->step == 8 ) {mesh_old = mesh8;  mesh8  = rmesh;}
+	else if (rmesh->step == 4 ) {mesh_old = mesh4;  mesh4  = rmesh;}
+	else if (rmesh->step == 2 ) {mesh_old = mesh2;  mesh2  = rmesh;}
+	else                        {mesh_old = mesh;   mesh   = rmesh;}
 }
 
 /*

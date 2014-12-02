@@ -282,6 +282,10 @@ public:
 			return 1;
 		return (m_size.GetValue() == 0);
 	}
+	unsigned int size() {
+		unique_lock lock(m_mutex);
+		return m_list.size();
+	}
 	void push_back(T t)
 	{
 		unique_lock lock(m_mutex);

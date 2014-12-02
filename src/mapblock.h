@@ -510,8 +510,11 @@ public:
 	void pushElementsToCircuit(Circuit* circuit);
 
 #ifndef SERVER // Only on client
-	std::shared_ptr<MapBlockMesh> getMesh(int step = 1);
-	void setMesh(std::shared_ptr<MapBlockMesh> & rmesh);
+	//typedef typename std::atomic<std::shared_ptr<MapBlockMesh>> mesh_type;
+	typedef typename std::shared_ptr<MapBlockMesh> mesh_type;
+
+	MapBlock::mesh_type getMesh(int step = 1);
+	void setMesh(MapBlock::mesh_type & rmesh);
 	//void delMesh();
 #endif
 
@@ -546,8 +549,8 @@ public:
 	*/
 
 #ifndef SERVER // Only on client
-	std::shared_ptr<MapBlockMesh> mesh;
-	std::shared_ptr<MapBlockMesh> mesh2, mesh4, mesh8, mesh16;
+	mesh_type mesh, mesh_old;
+	mesh_type mesh2, mesh4, mesh8, mesh16;
 	unsigned int mesh_size;
 #endif
 	
