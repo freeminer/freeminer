@@ -212,6 +212,7 @@ public:
 	s16 range_all;
 	s16 farmesh;
 	float fov;
+	bool block_overflow;
 
 	ServerEnvironment *m_env;
 

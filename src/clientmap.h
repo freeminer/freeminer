@@ -59,6 +59,7 @@ struct MapDrawControl
 	float drawtime_avg;
 
 	float fov;
+	bool block_overflow;
 };
 
 class Client;

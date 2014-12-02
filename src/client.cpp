@@ -74,7 +74,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 {
 }
 
-void MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
+unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -91,15 +91,16 @@ void MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool
 			if (rmap.empty())
 				m_queue.erase(range_old);
 		} else {
-			return; //already queued
+			return m_ranges.size(); //already queued
 		}
 	}
 	auto & rmap = m_queue.get(range);
 	if (rmap.count(p))
-		return;
+		return m_ranges.size();
 	rmap[p] = data;
 	m_ranges[p] = range;
 	g_profiler->avg("Client: mesh make queue", m_ranges.size());
+	return m_ranges.size();
 }
 
 std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
@@ -877,7 +878,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// Set player position
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
 
 		packet[TOCLIENT_INIT_SEED].convert(&m_map_seed);
 		infostream<<"Client: received map seed: "<<m_map_seed<<std::endl;
@@ -2009,8 +2011,8 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	/*
 		Create a task to update the mesh of the block
 	*/
-
-	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), m_env.getClientMap().getControl()));
+	auto draw_control = m_env.getClientMap().getControl();
+	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), draw_control));
 
 	{
 		//TimeTaker timer("data fill");
@@ -2030,7 +2032,9 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	}
 
 	// Add task to queue
-	m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	unsigned int qsize = m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
+
 }
 
 void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent)
@@ -2305,12 +2309,13 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 
 //freeminer:
 void Client::sendDrawControl() {
-	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 4);
+	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 5);
 	const auto & draw_control = m_env.getClientMap().getControl();
 	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)draw_control.wanted_range);
 	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)draw_control.range_all);
 	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)draw_control.farmesh);
 	PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
+	PACK(TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW, draw_control.block_overflow);
 
 	Send(0, buffer, false);
 }

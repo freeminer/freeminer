@@ -72,7 +72,7 @@ public:
 
 	~MeshUpdateQueue();
 
-	void addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent);
+	unsigned int addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent);
 	std::shared_ptr<MeshMakeData> pop();
 
 	shared_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
