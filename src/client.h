@@ -82,9 +82,9 @@ private:
 struct MeshUpdateResult
 {
 	v3s16 p;
-	std::shared_ptr<MapBlockMesh> mesh;
+	MapBlock::mesh_type mesh;
 
-	MeshUpdateResult(v3POS & p_, std::shared_ptr<MapBlockMesh> mesh_):
+	MeshUpdateResult(v3POS & p_, MapBlock::mesh_type mesh_):
 		p(p_),
 		mesh(mesh_)
 	{
@@ -395,7 +395,7 @@ public:
 
 	void addUpdateMeshTask(v3s16 blockpos, bool urgent=false);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent = false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent=false);
 
 	void updateMeshTimestampWithEdge(v3s16 blockpos);

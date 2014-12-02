@@ -1311,6 +1311,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 MapBlockMesh::~MapBlockMesh()
 {
+	if (!m_mesh)
+		return;
+
 	if(clearHardwareBuffer)
 		for(u32 i=0; i<m_mesh->getMeshBufferCount(); i++){
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);

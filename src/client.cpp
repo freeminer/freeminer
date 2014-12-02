@@ -147,7 +147,7 @@ void * MeshUpdateThread::Thread()
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making " + itos(q->step));
 
-		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, std::shared_ptr<MapBlockMesh>(new MapBlockMesh(q.get(), m_camera_offset))));
+		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, MapBlock::mesh_type(new MapBlockMesh(q.get(), m_camera_offset))));
 
 		m_queue_in.m_process.erase(q->m_blockpos);
 
@@ -576,24 +576,21 @@ void Client::step(float dtime)
 
 		while(!m_mesh_update_thread.m_queue_out.empty_try())
 		{
-			if (getEnv().getClientMap().m_drawlist_work)
-				break;
 			num_processed_meshes++;
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
-			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
+			if (!r.mesh)
+				continue;
+			auto block = m_env.getMap().getBlock(r.p);
 			if(block)
 			{
-				if (r.mesh)
-					block->setMesh(r.mesh);
-			} else {
-				//delete r.mesh;
+				block->setMesh(r.mesh);
 			}
-			if (porting::getTimeMs() > end_ms)
+			if (porting::getTimeMs() > end_ms) {
 				break;
+			}
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
-
 		}
 	}
 
@@ -2510,7 +2507,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
 }
 
-void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent)
+void Client::addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent)
 {
 	for (int i=0;i<7;i++)
 	{

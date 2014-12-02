@@ -36,6 +36,7 @@ try_shared_mutex m_block_cache_mutex;
 THREAD_LOCAL MapBlockP m_block_cache = nullptr;
 THREAD_LOCAL v3POS m_block_cache_p;
 
+//TODO: REMOVE THIS func and use Map::getBlock
 MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 {
 #ifndef NDEBUG
@@ -81,6 +82,53 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 	}
 
 	return block.get();
+}
+
+MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
+{
+#ifndef NDEBUG
+	ScopeProfiler sp(g_profiler, "Map: getBlock");
+#endif
+
+#if CMAKE_THREADS && defined(NO_THREAD_LOCAL) && !defined(SERVER)
+	nocache = true;
+#endif
+	if (!nocache) {
+#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if(lock.owns_lock())
+#endif
+		if(m_block_cache && p == m_block_cache_p) {
+#ifndef NDEBUG
+			g_profiler->add("Map: getBlock cache hit", 1);
+#endif
+			return m_block_cache;
+		}
+	}
+
+	MapBlockP block;
+	{
+		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
+		if (!lock->owns_lock())
+			return nullptr;
+		auto n = m_blocks.find(p);
+		if(n == m_blocks.end())
+			return nullptr;
+		block = n->second;
+	}
+
+	if (!nocache) {
+#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		if(lock.owns_lock())
+#endif
+		{
+			m_block_cache_p = p;
+			m_block_cache = block;
+		}
+	}
+
+	return block;
 }
 
 MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
