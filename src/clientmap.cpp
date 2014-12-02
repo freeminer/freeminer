@@ -372,7 +372,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 				++m_mesh_queued;
 			}
 			if (block->getTimestamp() > mesh->timestamp + (smesh_size ? 0 : range >= 1 ? 60 : 5) && (m_mesh_queued < maxq*1.5 || range <= 2)) {
-				m_client->addUpdateMeshTaskWithEdge(bp, false, true);
+				m_client->addUpdateMeshTaskWithEdge(bp);
 				++m_mesh_queued;
 			}
 
