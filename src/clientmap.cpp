@@ -332,7 +332,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 			v3s16 spn = cam_pos_nodes + v3s16(0,0,0);
 			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
 			u32 needed_count = 1;
-			if( range > 1 &&
+			if( range > 1 && smesh_size &&
 				occlusion_culling_enabled &&
 				isOccluded(this, spn, cpn + v3s16(0,0,0),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
@@ -374,7 +374,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, int max
 				m_client->addUpdateMeshTask(bp);
 				++m_mesh_queued;
 			}
-			if (block->getTimestamp() > mesh->timestamp && (m_mesh_queued < maxq*1.5 || range <= 2)) {
+			if (block->getTimestamp() > mesh->timestamp + (smesh_size ? 0 : range >= 1 ? 60 : 5) && (m_mesh_queued < maxq*1.5 || range <= 2)) {
 				m_client->addUpdateMeshTaskWithEdge(bp);
 				++m_mesh_queued;
 			}
