@@ -1,7 +1,7 @@
 #!/bin/sh
 
 STARTDIR=`pwd`
-BRANCH='stable'
+BRANCH='master'
 
 brew install cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis luajit msgpack
 git submodule update --init --recursive
