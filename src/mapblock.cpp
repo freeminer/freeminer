@@ -790,7 +790,18 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			return;
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
+		setTimestampNoChangedFlag(m_parent->time_life);
 		raiseModified(MOD_STATE_WRITE_NEEDED);
+	}
+
+	void MapBlock::setNodeNoCheck(v3s16 p, MapNode & n)
+	{
+		if(data == NULL)
+			throw InvalidPositionException("setNodeNoCheck data=NULL");
+		auto lock = lock_unique_rec();
+		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
+		setTimestampNoChangedFlag(m_parent->time_life);
+		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)

@@ -373,6 +373,7 @@ public:
 	std::mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
 	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
+	std::atomic_uint time_life;
 protected:
 };
 

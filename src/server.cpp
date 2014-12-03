@@ -1385,6 +1385,8 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 
 	int ret = 0;
 
+	m_env->getMap().time_life = m_uptime.get() + m_env->m_game_time_start;
+
 /*
 	float dtime;
 	{

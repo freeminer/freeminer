@@ -358,19 +358,7 @@ public:
 		return getNodeNoCheck(p.X, p.Y, p.Z, valid_position);
 	}
 	
-	void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode & n)
-	{
-		if(data == NULL)
-			throw InvalidPositionException("setNodeNoCheck data=NULL");
-		auto lock = lock_unique_rec();
-		data[z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + y*MAP_BLOCKSIZE + x] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
-	}
-	
-	void setNodeNoCheck(v3s16 p, MapNode & n)
-	{
-		setNodeNoCheck(p.X, p.Y, p.Z, n);
-	}
+	void setNodeNoCheck(v3s16 p, MapNode & n);
 
 	/*
 		These functions consult the parent container if the position
