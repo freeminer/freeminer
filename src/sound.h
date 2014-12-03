@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <set>
-#include <msgpack.hpp>
+#include "msgpack.h"
 #include "connection.h"
 
 class OnDemandSoundFetcher

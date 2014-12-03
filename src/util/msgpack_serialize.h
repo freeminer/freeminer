@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <map>
-#include <msgpack.hpp>
+#include "../msgpack.h"
 
 #define PACK(x, y) {pk.pack((int)x); pk.pack(y);}
 #define MSGPACK_COMMAND -1

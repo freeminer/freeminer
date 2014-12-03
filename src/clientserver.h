@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <utility>
 #include <string>
 #include "irrlichttypes.h"
-#include <msgpack.hpp>
+#include "msgpack.h"
 
 #define MAX_PACKET_SIZE 1400
 

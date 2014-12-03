@@ -782,8 +782,8 @@ int main(int argc, char *argv[])
 	porting::initializePaths();
 
 	if (!create_userdata_path()) {
-		errorstream << "Cannot create user data directory" << std::endl;
-		return 1;
+		errorstream << "Cannot create user data directory "<< porting::path_user << std::endl;
+		//return 1;
 	}
 
 	// Initialize debug stacks

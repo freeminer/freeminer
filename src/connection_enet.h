@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 
 #include "enet/enet.h"
-#include <msgpack.hpp>
+#include "msgpack.h"
 #include "util/msgpack_serialize.h"
 #include "util/thread_pool.h"
 #include "util/lock.h"

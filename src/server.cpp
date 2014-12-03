@@ -70,7 +70,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 //#include "stat.h"
 
-#include <msgpack.hpp>
+#include "msgpack.h"
 #include <chrono>
 #include "util/thread_pool.h"
 #include "key_value_storage.h"

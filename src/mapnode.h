@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <list>
-#include <msgpack.hpp>
+#include "msgpack.h"
 
 class INodeDefManager;
 
