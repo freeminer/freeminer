@@ -2048,12 +2048,14 @@ void Client::addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent)
 
 void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent)
 {
+/*
 	{
 		v3s16 p = nodepos;
 		infostream<<"Client::addUpdateMeshTaskForNode(): "
 				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"
 				<<std::endl;
 	}
+*/
 
 	v3s16 blockpos = getNodeBlockPos(nodepos);
 	v3s16 blockpos_relative = blockpos * MAP_BLOCKSIZE;

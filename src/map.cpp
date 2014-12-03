@@ -88,6 +88,7 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_blocks_save_last(0)
 {
 	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
+	time_life = 0;
 }
 
 Map::~Map()
