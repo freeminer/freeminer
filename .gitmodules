@@ -1,3 +1,6 @@
 [submodule "games/default"]
 	path = games/default
 	url = https://github.com/freeminer/default.git
+[submodule "build/osx/releases/dylibbundler"]
+	path = build/osx/releases/dylibbundler
+	url = https://github.com/auriamg/macdylibbundler.git
