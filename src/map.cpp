@@ -1546,6 +1546,11 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			else
 			{
 
+#ifndef SERVER
+			if (block->mesh_old)
+				block->mesh_old = nullptr;
+#endif
+
 			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
 				block->m_uptime_timer_last = uptime - 0.1;
 			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);

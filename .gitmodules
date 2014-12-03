@@ -4,3 +4,6 @@
 [submodule "src/enet"]
 	path = src/enet
 	url = https://github.com/freeminer/enet.git
+[submodule "build/osx/releases/dylibbundler"]
+	path = build/osx/releases/dylibbundler
+	url = https://github.com/auriamg/macdylibbundler.git
