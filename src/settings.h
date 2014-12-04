@@ -35,14 +35,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "json/json.h" // for json config values
 #include <stdint.h>
 
-enum ValueType
-{
+class Settings;
+struct NoiseParams;
+
+/** function type to register a changed callback */
+typedef void (*setting_changed_callback)(const std::string);
+
+enum ValueType {
 	VALUETYPE_STRING,
 	VALUETYPE_FLAG // Doesn't take any arguments
 };
 
-struct ValueSpec
-{
+enum SettingsParseEvent {
+	SPE_NONE,
+	SPE_INVALID,
+	SPE_COMMENT,
+	SPE_KVPAIR,
+	SPE_END,
+	SPE_GROUP,
+	SPE_MULTILINE,
+};
+
+struct ValueSpec {
 	ValueSpec(ValueType a_type, const char *a_help=NULL)
 	{
 		type = a_type;
@@ -53,13 +67,39 @@ struct ValueSpec
 };
 
 /** function type to register a changed callback */
-typedef void (*setting_changed_callback)(const std::string);
+
+struct SettingsEntry {
+	SettingsEntry()
+	{
+		group = NULL;
+	}
+
+	SettingsEntry(const std::string &value_)
+	{
+		value = value_;
+		group = NULL;
+	}
+
+	SettingsEntry(Settings *group_)
+	{
+		group = group_;
+	}
+
+	SettingsEntry(const std::string &value_, Settings *group_)
+	{
+		value = value_;
+		group = group_;
+	}
+
+	std::string value;
+	Settings *group;
+};
 
 
-class Settings
-{
+class Settings {
 public:
 	Settings() {}
+	~Settings();
 
 	Settings & operator += (const Settings &other);
 	Settings & operator = (const Settings &other);
@@ -77,13 +117,31 @@ public:
 	bool parseCommandLine(int argc, char *argv[],
 			std::map<std::string, ValueSpec> &allowed_options);
 	bool parseConfigLines(std::istream &is, const std::string &end = "");
-	void writeLines(std::ostream &os) const;
+	void writeLines(std::ostream &os, u32 tab_depth=0) const;
 
+	SettingsParseEvent parseConfigObject(const std::string &line,
+		const std::string &end, std::string &name, std::string &value);
+	void getNamesPresent(std::istream &is, const std::string &end,
+		std::set<std::string> &present_values,
+		std::set<std::string> &present_groups);
+	bool updateConfigObject(std::istream &is, std::ostream &os,
+		const std::string &end, u32 tab_depth=0);
+
+	static std::string getMultiline(std::istream &is, size_t *num_lines=NULL);
+	static std::string sanitizeString(const std::string &value);
+	static bool printEntry(std::ostream &os, const std::string &name,
+		const SettingsEntry &entry, u32 tab_depth=0);
+	static void printValue(std::ostream &os, const std::string &name,
+		const std::string &value, u32 tab_depth=0);
+	static void printGroup(std::ostream &os, const std::string &name,
+		const Settings *group, u32 tab_depth=0);
 
 	/***********
 	 * Getters *
 	 ***********/
 
+	const SettingsEntry &getEntry(const std::string &name) const;
+	Settings *getGroup(const std::string &name) const;
 	std::string get(const std::string &name) const;
 	bool getBool(const std::string &name) const;
 	u16 getU16(const std::string &name) const;
@@ -99,6 +157,9 @@ public:
 	// the behavior is undefined.
 	bool getStruct(const std::string &name, const std::string &format,
 			void *out, size_t olen) const;
+	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
+	bool getNoiseParamsFromValue(const std::string &name, NoiseParams &np) const;
+	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np) const;
 
 	// return all keys used
 	std::vector<std::string> getNames() const;
@@ -109,6 +170,8 @@ public:
 	 * Getters that don't throw exceptions *
 	 ***************************************/
 
+	bool getEntryNoEx(const std::string &name, SettingsEntry &val) const;
+	bool getGroupNoEx(const std::string &name, Settings *&val) const;
 	bool getNoEx(const std::string &name, std::string &val) const;
 	bool getFlag(const std::string &name) const;
 	bool getU16NoEx(const std::string &name, u16 &val) const;
@@ -128,11 +191,15 @@ public:
 	 * Setters *
 	 ***********/
 
-	void set(const std::string &name, std::string value);
-	void set(const std::string &name, const char *value);
-	void setDefault(const std::string &name, std::string value);
+	// N.B. Groups not allocated with new must be set to NULL in the settings
+	// tree before object destruction.
+	void set(const std::string &name, const std::string &value);
+	void setGroup(const std::string &name, Settings *group);
+	void setDefault(const std::string &name, const std::string &value);
+	void setGroupDefault(const std::string &name, Settings *group);
 	void setBool(const std::string &name, bool value);
 	void setS16(const std::string &name, s16 value);
+	void setU16(const std::string &name, u16 value);
 	void setS32(const std::string &name, s32 value);
 	void setU64(const std::string &name, uint64_t value);
 	void setFloat(const std::string &name, float value);
@@ -140,6 +207,7 @@ public:
 	void setV3F(const std::string &name, v3f value);
 	void setFlagStr(const std::string &name, u32 flags,
 		const FlagDesc *flagdesc, u32 flagmask);
+	void setNoiseParams(const std::string &name, const NoiseParams &np);
 	// N.B. if setStruct() is used to write a non-POD aggregate type,
 	// the behavior is undefined.
 	bool setStruct(const std::string &name, const std::string &format, void *value);
@@ -155,34 +223,14 @@ public:
 	void registerChangedCallback(std::string name, setting_changed_callback cbf);
 
 private:
-	/***********************
-	 * Reading and writing *
-	 ***********************/
-
-	bool parseConfigObject(std::istream &is,
-			std::string &name, std::string &value);
-	bool parseConfigObject(std::istream &is,
-			std::string &name, std::string &value,
-			const std::string &end, bool &end_found);
-	/*
-	 * Reads a configuration object from stream (usually a single line)
-	 * and adds it to dst.
-	 * Preserves comments and empty lines.
-	 * Setting names that were added to dst are also added to updated.
-	 */
-	void getUpdatedConfigObject(std::istream &is,
-			std::list<std::string> &dst,
-			std::set<std::string> &updated,
-			bool &changed);
-
 
 	void updateNoLock(const Settings &other);
 	void clearNoLock();
 
 	void doCallbacks(std::string name);
 
-	std::map<std::string, std::string> m_settings;
-	std::map<std::string, std::string> m_defaults;
+	std::map<std::string, SettingsEntry> m_settings;
+	std::map<std::string, SettingsEntry> m_defaults;
 	std::map<std::string, std::vector<setting_changed_callback> > m_callbacks;
 	// All methods that access m_settings/m_defaults directly should lock this.
 	Json::Reader json_reader;

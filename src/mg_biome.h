@@ -45,6 +45,7 @@ public:
 
 	content_t c_top;
 	content_t c_filler;
+	content_t c_stone;
 	content_t c_water;
 	content_t c_ice;
 	content_t c_dust;
@@ -97,3 +98,4 @@ public:
 };
 
 #endif
+

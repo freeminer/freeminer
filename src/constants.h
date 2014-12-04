@@ -105,7 +105,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
  *    GUI related things
  */
 #define LEGACY_SCALING                                     (2./3.)
-#define TTF_DEFAULT_FONT_SIZE              (13.0 / LEGACY_SCALING)
+#define TTF_DEFAULT_FONT_SIZE              (12.0 / LEGACY_SCALING)
 #define DEFAULT_FONT_SIZE                                     (14)
 
 #endif

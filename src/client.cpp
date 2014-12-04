@@ -214,10 +214,11 @@ Client::Client(
 	m_inventory_updated(false),
 	m_inventory_from_server(NULL),
 	m_inventory_from_server_age(0.0),
-	m_show_hud(true),
+	m_show_highlighted(false),
 	m_animation_time(0),
 	m_crack_level(-1),
 	m_crack_pos(0,0,0),
+	m_highlighted_pos(0,0,0),
 	m_map_seed(0),
 	m_password(password),
 	m_access_denied(false),
@@ -2399,9 +2400,9 @@ int Client::getCrackLevel()
 	return m_crack_level;
 }
 
-void Client::setHighlighted(v3s16 pos, bool show_hud)
+void Client::setHighlighted(v3s16 pos, bool show_highlighted)
 {
-	m_show_hud = show_hud;
+	m_show_highlighted = show_highlighted;
 	v3s16 old_highlighted_pos = m_highlighted_pos;
 	m_highlighted_pos = pos;
 	addUpdateMeshTaskForNode(old_highlighted_pos, true);
@@ -2497,7 +2498,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 #endif
 
 		data->setCrack(m_crack_level, m_crack_pos);
-		data->setHighlighted(m_highlighted_pos, m_show_hud);
+		data->setHighlighted(m_highlighted_pos, m_show_highlighted);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
 		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
