@@ -97,21 +97,8 @@ GUIChatConsole::GUIChatConsole(
 		m_background_color.setBlue(255);
 	}
 
-	// load the font
-	// FIXME should a custom texture_path be searched too?
-	std::string font_name = g_settings->get("mono_font_path");
-	#if USE_FREETYPE
-	m_use_freetype = g_settings->getBool("freetype");
-	if (m_use_freetype) {
-		u16 font_size = g_settings->getU16("mono_font_size");
-		m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
-		m_font = m_freetype_font;
-	} else {
-		m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
-	}
-	#else
 	m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
-	#endif
+
 	if (m_font == NULL)
 	{
 		errorstream << "GUIChatConsole: Unable to load mono font ";
