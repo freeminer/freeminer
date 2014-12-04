@@ -179,10 +179,23 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("fallback_font_shadow", "1");
 	settings->setDefault("fallback_font_shadow_alpha", "128");
+
+	std::stringstream fontsize;
+	fontsize << TTF_DEFAULT_FONT_SIZE;
+
+	settings->setDefault("font_size", fontsize.str());
+	settings->setDefault("mono_font_size", fontsize.str());
+	settings->setDefault("fallback_font_size", fontsize.str());
 #else
 	settings->setDefault("freetype", "false");
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "fontlucida.png"));
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "fontdejavusansmono.png"));
+	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "lucida_sans"));
+	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "mono_dejavu_sans"));
+
+	std::stringstream fontsize;
+	fontsize << DEFAULT_FONT_SIZE;
+
+	settings->setDefault("font_size", fontsize.str());
+	settings->setDefault("mono_font_size", fontsize.str());
 #endif
 
 	//
@@ -476,22 +489,9 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("farmesh", "1");
 	settings->setDefault("farmesh_step", "1");
-#endif
-}
 
-void late_init_default_settings(Settings* settings)
-{
-#ifndef SERVER
-	std::stringstream fontsize;
-	fontsize << floor(
-			DEFAULT_FONT_SIZE *
-			porting::getDisplayDensity() *
-			settings->getFloat("gui_scaling")
-			);
-
-	settings->setDefault("font_size", fontsize.str());
-	settings->setDefault("mono_font_size", fontsize.str());
-	settings->setDefault("fallback_font_size", fontsize.str());
+#else
+	settings->setDefault("screen_dpi", "72");
 #endif
 }
 

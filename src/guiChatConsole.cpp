@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"  // for g_settings
 #include "porting.h"
 #include "tile.h"
-#include "IGUIFont.h"
+#include "fontengine.h"
 #include <string>
 
 #include "gettext.h"
@@ -107,14 +107,14 @@ GUIChatConsole::GUIChatConsole(
 		m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
 		m_font = m_freetype_font;
 	} else {
-		m_font = env->getFont(font_name.c_str());
+		m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
 	}
 	#else
-	m_font = env->getFont(font_name.c_str());
+	m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
 	#endif
 	if (m_font == NULL)
 	{
-		dstream << "Unable to load font: " << font_name << std::endl;
+		errorstream << "GUIChatConsole: Unable to load mono font ";
 	}
 	else
 	{
@@ -130,12 +130,7 @@ GUIChatConsole::GUIChatConsole(
 }
 
 GUIChatConsole::~GUIChatConsole()
-{
-#if USE_FREETYPE
-	if (m_use_freetype)
-		m_font->drop();
-#endif
-}
+{}
 
 void GUIChatConsole::openConsole(float height, bool close_on_return)
 {

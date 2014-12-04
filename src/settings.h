@@ -52,6 +52,9 @@ struct ValueSpec
 	const char *help;
 };
 
+/** function type to register a changed callback */
+typedef void (*setting_changed_callback)(const std::string);
+
 
 class Settings
 {
@@ -149,6 +152,8 @@ public:
 	Json::Value getJson(const std::string & name, const Json::Value & def = Json::Value());
 	void setJson(const std::string & name, const Json::Value & value);
 
+	void registerChangedCallback(std::string name, setting_changed_callback cbf);
+
 private:
 	/***********************
 	 * Reading and writing *
@@ -174,9 +179,11 @@ private:
 	void updateNoLock(const Settings &other);
 	void clearNoLock();
 
+	void doCallbacks(std::string name);
 
 	std::map<std::string, std::string> m_settings;
 	std::map<std::string, std::string> m_defaults;
+	std::map<std::string, std::vector<setting_changed_callback> > m_callbacks;
 	// All methods that access m_settings/m_defaults directly should lock this.
 	Json::Reader json_reader;
 	Json::FastWriter json_writer;

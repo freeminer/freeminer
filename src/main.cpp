@@ -1,3 +1,4 @@
+
 /*
 main.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
@@ -72,9 +73,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "log.h"
 #include "mods.h"
-#if USE_FREETYPE
-#include "xCGUITTFont.h"
-#endif
 #include "util/string.h"
 #include "subgame.h"
 #include "quicktune.h"
@@ -82,6 +80,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "httpfetch.h"
 #include "guiEngine.h"
 #include "player.h"
+#include "fontengine.h"
 
 #include "database-sqlite3.h"
 #ifdef USE_LEVELDB
@@ -1554,13 +1553,11 @@ ClientLauncher::~ClientLauncher()
 	if (input)
 		delete input;
 
+	if (g_fontengine)
+		delete g_fontengine;
+
 	if (device)
 		device->drop();
-
-#if USE_FREETYPE
-	if (use_freetype && font != NULL)
-		font->drop();
-#endif
 }
 
 bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
@@ -1575,8 +1572,6 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		errorstream << "Could not initialize game engine." << std::endl;
 		return false;
 	}
-
-	late_init_default_settings(g_settings);
 
 	// Speed tests (done after irrlicht is loaded to get timer)
 	if (cmd_args.getFlag("speedtests")) {
@@ -1614,40 +1609,6 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 
 	guienv = device->getGUIEnvironment();
 	skin = guienv->getSkin();
-	std::string font_path = g_settings->get("font_path");
-
-#if USE_FREETYPE
-
-	if (use_freetype) {
-		std::string fallback;
-		if (is_yes(_("needs_fallback_font")))
-			fallback = "fallback_";
-		u16 font_size = g_settings->getU16(fallback + "font_size");
-		font_path = g_settings->get(fallback + "font_path");
-		u32 font_shadow = g_settings->getU16(fallback + "font_shadow");
-		u32 font_shadow_alpha = g_settings->getU16(fallback + "font_shadow_alpha");
-		font = gui::CGUITTFont::createTTFont(guienv,
-				font_path.c_str(), font_size, true, true,
-				font_shadow, font_shadow_alpha);
-	} else {
-		font = guienv->getFont(font_path.c_str());
-	}
-#else
-	font = guienv->getFont(font_path.c_str());
-#endif
-	if (font)
-		skin->setFont(font);
-	else
-		errorstream << "WARNING: Font file was not found. Using default font."
-		            << std::endl;
-
-	font = skin->getFont(); // If font was not found, this will get us one
-	assert(font);
-
-	u32 text_height = font->getDimension(L"Hello, world!").Height;
-	infostream << "text_height=" << text_height << std::endl;
-
-	//skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_BUTTON_TEXT, video::SColor(255, 255, 255, 255));
 	//skin->setColor(gui::EGDC_3D_HIGH_LIGHT, video::SColor(0, 0, 0, 0));
 	//skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(0, 0, 0, 0));
@@ -1655,6 +1616,9 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 56, 121, 65));
 	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255, 255, 255, 255));
+
+	g_fontengine = new FontEngine(g_settings, guienv);
+	assert(g_fontengine != NULL);
 
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	// Irrlicht 1.8 input colours
@@ -1755,7 +1719,6 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 				random_input,
 				input,
 				device,
-				font,
 				worldspec.path,
 				current_playername,
 				current_password,
