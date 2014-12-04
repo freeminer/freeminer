@@ -217,10 +217,11 @@ Client::Client(
 	m_inventory_updated(false),
 	m_inventory_from_server(NULL),
 	m_inventory_from_server_age(0.0),
-	m_show_hud(true),
+	m_show_highlighted(false),
 	m_animation_time(0),
 	m_crack_level(-1),
 	m_crack_pos(0,0,0),
+	m_highlighted_pos(0,0,0),
 	m_map_seed(0),
 	m_password(password),
 	m_access_denied(false),
@@ -1923,9 +1924,9 @@ int Client::getCrackLevel()
 	return m_crack_level;
 }
 
-void Client::setHighlighted(v3s16 pos, bool show_hud)
+void Client::setHighlighted(v3s16 pos, bool show_highlighted)
 {
-	m_show_hud = show_hud;
+	m_show_highlighted = show_highlighted;
 	v3s16 old_highlighted_pos = m_highlighted_pos;
 	m_highlighted_pos = pos;
 	addUpdateMeshTaskForNode(old_highlighted_pos, true);
@@ -2022,7 +2023,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 #endif
 
 		data->setCrack(m_crack_level, m_crack_pos);
-		data->setHighlighted(m_highlighted_pos, m_show_hud);
+		data->setHighlighted(m_highlighted_pos, m_show_highlighted);
 		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
 		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
@@ -2154,7 +2155,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	{
 		verbosestream<<"Updating item textures and meshes"<<std::endl;
 		wchar_t* text = wgettext("Item textures...");
-		draw_load_screen(text, device, guienv, font, 0, 0);
+		draw_load_screen(text, device, guienv, 0, 0);
 		std::set<std::string> names = m_itemdef->getAll();
 		size_t size = names.size();
 		size_t count = 0;
@@ -2167,7 +2168,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 			count++;
 			percent = count*100/size;
 			if (count%50 == 0) // only update every 50 item
-				draw_load_screen(text, device, guienv, font, 0, percent);
+				draw_load_screen(text, device, guienv, 0, percent);
 		}
 		delete[] text;
 	}
@@ -2209,7 +2210,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 	irr::video::IVideoDriver *driver = device->getVideoDriver();
 	irr::video::IImage* const raw_image = driver->createScreenShot();
 	if (raw_image) {
-		irr::video::IImage* const image = driver->createImage(video::ECF_R8G8B8, 
+		irr::video::IImage* const image = driver->createImage(video::ECF_R8G8B8,
 			raw_image->getDimension());
 
 		if (image) {

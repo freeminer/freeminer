@@ -106,8 +106,6 @@ public:
 	video::IVideoDriver *driver;
 	scene::ISceneManager* smgr;
 	gui::IGUIEnvironment *guienv;
-	gui::IGUIFont *font;
-	u32 text_height;
 	IGameDef *gamedef;
 	LocalPlayer *player;
 	Inventory *inventory;
@@ -123,9 +121,8 @@ public:
 	v3s16 camera_offset;
 	
 	Hud(video::IVideoDriver *driver,scene::ISceneManager* smgr,
-		gui::IGUIEnvironment* guienv, gui::IGUIFont *font,
-		u32 text_height, IGameDef *gamedef,
-		LocalPlayer *player, Inventory *inventory);
+		gui::IGUIEnvironment* guienv, IGameDef *gamedef, LocalPlayer *player,
+		Inventory *inventory);
 	
 	void drawHotbar(u16 playeritem);
 	void resizeHotbar();

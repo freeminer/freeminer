@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"  // for g_settings
 #include "porting.h"
 #include "tile.h"
-#include "IGUIFont.h"
+#include "fontengine.h"
 #include <string>
 
 #include "gettext.h"
@@ -69,8 +69,7 @@ GUIChatConsole::GUIChatConsole(
 	m_background(NULL),
 	m_background_color(255, 0, 0, 0),
 	m_font(NULL),
-	m_fontsize(0, 0),
-	m_freetype_font(NULL)
+	m_fontsize(0, 0)
 {
 	m_animate_time_old = getTimeMs();
 
@@ -95,15 +94,11 @@ GUIChatConsole::GUIChatConsole(
 		m_background_color.setBlue(255);
 	}
 
-	// load the font
-	// FIXME should a custom texture_path be searched too?
-	std::string font_name = g_settings->get("mono_font_path");
-	u16 font_size = g_settings->getU16("mono_font_size");
-	m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
-	m_font = m_freetype_font;
+	m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
+
 	if (m_font == NULL)
 	{
-		dstream << "Unable to load font: " << font_name << std::endl;
+		errorstream << "GUIChatConsole: Unable to load mono font ";
 	}
 	else
 	{
@@ -119,9 +114,7 @@ GUIChatConsole::GUIChatConsole(
 }
 
 GUIChatConsole::~GUIChatConsole()
-{
-	m_font->drop();
-}
+{}
 
 void GUIChatConsole::openConsole(float height, bool close_on_return)
 {
@@ -309,6 +302,8 @@ void GUIChatConsole::drawText()
 	if (m_font == NULL)
 		return;
 
+	irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(m_font);
+
 	ChatBuffer& buf = m_chat_backend->getConsoleBuffer();
 	for (u32 row = 0; row < buf.getRows(); ++row)
 	{
@@ -327,7 +322,7 @@ void GUIChatConsole::drawText()
 			s32 x = (fragment.column + 1) * m_fontsize.X;
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
-			m_freetype_font->draw(
+			tmp->draw(
 				fragment.text.c_str(),
 				destrect,
 				fragment.text.getColors(),

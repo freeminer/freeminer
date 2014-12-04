@@ -131,7 +131,6 @@ private:
 	// font
 	gui::IGUIFont* m_font;
 	v2u32 m_fontsize;
-	gui::CGUITTFont *m_freetype_font;
 };
 
 

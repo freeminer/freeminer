@@ -686,6 +686,7 @@ set(minetest_SRCS
 	convert_json.cpp
 	drawscene.cpp
 	filecache.cpp
+	fontengine.cpp
 	game.cpp
 	guiChatConsole.cpp
 	guiEngine.cpp

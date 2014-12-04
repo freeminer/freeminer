@@ -331,6 +331,8 @@ protected:
 	s32 m_old_tooltip_id;
 	std::string m_old_tooltip;
 
+	bool m_rmouse_auto_place;
+
 	bool m_allowclose;
 	bool m_lock;
 	v2u32 m_lockscreensize;
@@ -348,14 +350,14 @@ protected:
 private:
 	IFormSource      *m_form_src;
 	TextDest         *m_text_dst;
-	gui::IGUIFont    *m_font;
 	unsigned int      m_formspec_version;
 
 	typedef struct {
+		bool explicit_size;
+		v2f invsize;
 		v2s32 size;
 		core::rect<s32> rect;
 		v2s32 basepos;
-		int bp_set;
 		v2u32 screensize;
 		std::string focused_fieldname;
 		GUITable::TableOptions table_options;
@@ -402,6 +404,7 @@ private:
 	void parseListColors(parserData* data,std::string element);
 	void parseTooltip(parserData* data,std::string element);
 	bool parseVersionDirect(std::string data);
+	bool parseSizeDirect(parserData* data, std::string element);
 	void parseScrollBar(parserData* data, std::string element);
 
 	/**
@@ -419,6 +422,7 @@ private:
 	clickpos m_doubleclickdetect[2];
 
 	int m_btn_height;
+	gui::IGUIFont *m_font;
 
 	std::wstring getLabelByID(s32 id);
 	std::string getNameByID(s32 id);

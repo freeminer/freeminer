@@ -170,6 +170,7 @@ void set_default_settings(Settings *settings)
 	//
 	// Fonts
 	//
+	settings->setDefault("freetype", "true");
 	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "liberationsans.ttf"));
 	settings->setDefault("font_shadow", "1");
 	settings->setDefault("font_shadow_alpha", "128");
@@ -178,6 +179,14 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("fallback_font_shadow", "1");
 	settings->setDefault("fallback_font_shadow_alpha", "128");
+
+	std::stringstream fontsize;
+	fontsize << TTF_DEFAULT_FONT_SIZE;
+
+	settings->setDefault("font_size", fontsize.str());
+	settings->setDefault("mono_font_size", fontsize.str());
+	settings->setDefault("fallback_font_size", fontsize.str());
+
 
 	//
 	// Map generation
@@ -469,22 +478,9 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("farmesh", "1");
 	settings->setDefault("farmesh_step", "1");
-#endif
-}
 
-void late_init_default_settings(Settings* settings)
-{
-#ifndef SERVER
-	std::stringstream fontsize;
-	fontsize << floor(
-			DEFAULT_FONT_SIZE *
-			porting::getDisplayDensity() *
-			settings->getFloat("gui_scaling")
-			);
-
-	settings->setDefault("font_size", fontsize.str());
-	settings->setDefault("mono_font_size", fontsize.str());
-	settings->setDefault("fallback_font_size", fontsize.str());
+#else
+	settings->setDefault("screen_dpi", "72");
 #endif
 }
 

@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h" // CameraModes
 #include "camera.h"
 #include "porting.h"
+#include "fontengine.h"
 #include <IGUIStaticText.h>
 
 #ifdef HAVE_TOUCHSCREENGUI
@@ -42,14 +43,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
-		gui::IGUIEnvironment* guienv, gui::IGUIFont *font,
-		u32 text_height, IGameDef *gamedef,
-		LocalPlayer *player, Inventory *inventory) {
+		gui::IGUIEnvironment* guienv, IGameDef *gamedef, LocalPlayer *player,
+		Inventory *inventory) {
 	this->driver      = driver;
 	this->smgr        = smgr;
 	this->guienv      = guienv;
-	this->font        = font;
-	this->text_height = text_height;
 	this->gamedef     = gamedef;
 	this->player      = player;
 	this->inventory   = inventory;
@@ -160,7 +158,7 @@ void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect, bool sele
 		video::SColor bgcolor2(128, 0, 0, 0);
 		if (!use_hotbar_image)
 			driver->draw2DRectangle(bgcolor2, rect, NULL);
-		drawItemStack(driver, font, item, rect, NULL, gamedef);
+		drawItemStack(driver, g_fontengine->getFont(), item, rect, NULL, gamedef);
 	}
 
 //NOTE: selectitem = 0 -> no selected; selectitem 1-based
@@ -244,6 +242,8 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 
 
 void Hud::drawLuaElements(v3s16 camera_offset) {
+	uint32_t text_height     = g_fontengine->getTextHeight();
+	irr::gui::IGUIFont* font = g_fontengine->getFont();
 	for (size_t i = 0; i != player->maxHudId(); i++) {
 		HudElement *e = player->getHud(i);
 		if (!e)

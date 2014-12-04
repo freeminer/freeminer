@@ -62,6 +62,7 @@ BiomeManager::BiomeManager(IGameDef *gamedef)
 
 	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_top);
 	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_filler);
+	resolver->addNode("mapgen_stone",        "", CONTENT_AIR, &b->c_stone);
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_water);
 	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_dust);
 	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_dust_water);
@@ -131,9 +132,7 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 	return biome_closest ? biome_closest : (Biome *)m_elements[0];
 }
 
-
 ///////////////////////////// Weather
-
 
 s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 	//variant 1: full random
