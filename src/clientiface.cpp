@@ -400,10 +400,9 @@ int RemoteClient::GetNextBlocks(
 			if(block != NULL)
 			{
 
-				// todo: remake:
-				//if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
-				//	continue;
-				//}
+				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
+					continue;
+				}
 
 /*
 		{
