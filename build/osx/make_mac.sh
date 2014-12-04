@@ -2,22 +2,23 @@
 
 STARTDIR=`pwd`
 BRANCH='master'
+ROOTDIR='../../..'
 
 brew install cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis luajit msgpack
 git submodule update --init --recursive
 
 # Clone MT source code if not already there
-if [ ! -d "freeminer-git" ]; then
-  git clone --recursive -b $BRANCH https://github.com/freeminer/freeminer freeminer-git
-fi
+#if [ ! -d "freeminer-git" ]; then
+#  git clone --recursive -b $BRANCH https://github.com/freeminer/freeminer freeminer-git
+#fi
 
 # Get default if it is not already there
-if [ ! -d "default" ]; then
-  git clone --recursive https://github.com/freeminer/default
-fi
+#if [ ! -d "default" ]; then
+#  git clone --recursive https://github.com/freeminer/default
+#fi
 
 # Update default from GitHub
-(cd default && git pull)
+#(cd default && git pull)
 
 # Get Carbone if it is not already there
 if [ ! -d "carbone" ]; then
@@ -35,18 +36,18 @@ fi
 # Update Voxelgarden
 (cd Voxelgarden && git pull)
 
-
+mkdir -p freeminer-git
 # Update source code and set version string
 cd freeminer-git
-git checkout --force $BRANCH --
-git pull
-git submodule update --init --recursive
+#git checkout --force $BRANCH --
+#git pull
+#git submodule update --init --recursive
 gitver=`git log -1 --format='%cd.%h' --date=short | tr -d -`
 
 #patch -p1 <../u64.patch
 
-rm -f CMakeCache.txt
-cmake . -DCMAKE_BUILD_TYPE=Release -DRUN_IN_PLACE=0 -DENABLE_FREETYPE=on -DENABLE_LEVELDB=on -DENABLE_GETTEXT=on -DENABLE_REDIS=on -DBUILD_SERVER=NO -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_CXX_FLAGS="-mmacosx-version-min=10.10 -march=core2 -msse4.1" -DCMAKE_C_FLAGS="-mmacosx-version-min=10.10 -march=core2 -msse4.1" -DCUSTOM_GETTEXT_PATH=/usr/local/opt/gettext -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib"
+rm -f $ROOTDIR/CMakeCache.txt
+cmake $ROOTDIR -DCMAKE_BUILD_TYPE=Release -DRUN_IN_PLACE=0 -DENABLE_FREETYPE=on -DENABLE_LEVELDB=on -DENABLE_GETTEXT=on -DENABLE_REDIS=on -DBUILD_SERVER=NO -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_CXX_FLAGS="-mmacosx-version-min=10.10 -march=core2 -msse4.1" -DCMAKE_C_FLAGS="-mmacosx-version-min=10.10 -march=core2 -msse4.1" -DCUSTOM_GETTEXT_PATH=/usr/local/opt/gettext -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib"
 
 make clean
 make VERBOSE=1
@@ -74,13 +75,13 @@ mkdir -p freeminer.app/Contents/Resources/bin/share/games
 # ...and copy new ones from source code directory
 for i in builtin client fonts locale textures
 do
-cp -pr ../freeminer-git/$i freeminer.app/Contents/Resources/bin/share
+cp -pr $ROOTDIR/$i freeminer.app/Contents/Resources/bin/share
 done
 
 # Copy subgames into games directory
 rm -fr freeminer.app/Contents/Resources/bin/share/games/*
 (cd freeminer.app/Contents/Resources/bin/share/games && mkdir default carbone Voxelgarden)
-cp -pr $STARTDIR/default/* freeminer.app/Contents/Resources/bin/share/games/default/
+cp -pr $ROOTDIR/games/default/* freeminer.app/Contents/Resources/bin/share/games/default/
 cp -pr $STARTDIR/carbone/* freeminer.app/Contents/Resources/bin/share/games/carbone/
 cp -pr $STARTDIR/Voxelgarden/* freeminer.app/Contents/Resources/bin/share/games/Voxelgarden/
 
