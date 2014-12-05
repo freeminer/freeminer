@@ -759,5 +759,5 @@ core.register_chatcommand("last-login", {
 core.register_chatcommand( "stat", {
 	params = "[name]",
 	description = "show in-game action statistics",
-	func = show_stat
+	func = core.show_stat_summary
 })
