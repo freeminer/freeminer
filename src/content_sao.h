@@ -293,6 +293,7 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
+	float m_time_from_last_respawn;
 private:
 	float m_time_from_last_punch;
 	v3s16 m_nocheat_dig_pos;

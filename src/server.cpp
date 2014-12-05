@@ -2232,6 +2232,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		pitch = wrapDegrees(pitch);
 		yaw = wrapDegrees(yaw);
 
+		if (playersao->m_time_from_last_respawn > 1)
 		player->setPosition(position);
 		player->setSpeed(speed);
 		player->setPitch(pitch);
@@ -2253,18 +2254,20 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			// Call callbacks
 			m_script->on_cheat(playersao, "moved_too_fast");
 		}
-		else {
+		else if (playersao->m_time_from_last_respawn > 3) {
 			auto dist = (old_pos/BS).getDistanceFrom(playersao->m_last_good_position/BS);
 			if (dist)
 				stat.add("move", playersao->getPlayer()->getName(), dist);
 		}
 
-		auto obj = playersao; // copypasted from server step:
-		auto uptime = m_uptime.get();
-		if (!obj->m_uptime_last)  // not very good place, but minimum modifications
-			obj->m_uptime_last = uptime - 0.1;
-		obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
-		obj->m_uptime_last = uptime;
+		if (playersao->m_time_from_last_respawn > 2) {
+			auto obj = playersao; // copypasted from server step:
+			auto uptime = m_uptime.get();
+			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
+				obj->m_uptime_last = uptime - 0.1;
+			obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
+			obj->m_uptime_last = uptime;
+		}
 
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
 				<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
@@ -4670,7 +4673,10 @@ void Server::DiePlayer(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	assert(playersao);
+	if (!playersao)
+		return;
+
+	playersao->m_time_from_last_respawn = 0;
 
 	infostream<<"Server::DiePlayer(): Player "
 			<<playersao->getPlayer()->getName()
@@ -4692,7 +4698,8 @@ void Server::RespawnPlayer(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	assert(playersao);
+	if (!playersao)
+		return;
 
 	infostream<<"Server::RespawnPlayer(): Player "
 			<<playersao->getPlayer()->getName()
@@ -4705,6 +4712,8 @@ void Server::RespawnPlayer(u16 peer_id)
 		v3f pos = findSpawnPos(m_env->getServerMap());
 		playersao->setPos(pos);
 	}
+
+	playersao->m_time_from_last_respawn = 0;
 
 	stat.add("respawn", playersao->getPlayer()->getName());
 }
