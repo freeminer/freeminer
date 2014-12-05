@@ -1,18 +1,18 @@
 -- converts numbers
 -- to human readable format
-local function human_readable_number(value)
+local function human_readable_number(value, p)
 	local symbol = { "P", "T", "G", "M", "k", }
-	local multiples = { 10^15, 10^12, 10^9, 10^6, 10^3,  }
+	local multiplies = { 10^15, 10^12, 10^9, 10^6, 10^3, }
 
-	for k,v in ipairs(multiples) do
+	for k,v in ipairs(multiplies) do
 		if value >= v then
-			return string.format("%.3f "..symbol[k], value / v)
+			return string.format("%."..p.."f "..symbol[k], value / v)
 		end
 	end
 	return math.ceil(value)
 end
 
-local function show_stat(name, param)
+function core.show_stat_summary(name, param)
 	local pname = name
 	if param ~= "" and not core.get_player_by_name(param) then
 		return true, "Player not found"
@@ -48,9 +48,9 @@ local function show_stat(name, param)
 		formspec = formspec
 			.."label["..x[1]..","..y..";"..key:gsub("^%l", string.upper).."]"
 			.."label["..x[2]..","..y..";"
-			..human_readable_number(core.stat_get("player|"..key.."|"..pname)).."]"
+			..human_readable_number(core.stat_get("player|"..key.."|"..pname), 3).."]"
 			.."label["..x[3]..","..y..";"
-			..human_readable_number(core.stat_get("total|"..key)).."]"
+			..human_readable_number(core.stat_get("total|"..key), 3).."]"
 	end
 	formspec = formspec.."button_exit[1,5;2,1;exit;Close"
 	core.show_formspec(name, 'stat', formspec)
