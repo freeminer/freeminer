@@ -1557,8 +1557,9 @@ protected:
 	void updateFrame(std::vector<aabb3f> &highlight_boxes, ProfilerGraph *graph,
 			RunStats *stats, GameRunData *runData,
 			f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam);
-	void updateGui(float *statustext_time, const RunStats &stats, f32 dtime,
-			const VolatileRunFlags &flags, const CameraOrientation &cam);
+	void updateGui(float *statustext_time, const RunStats &stats,
+			const GameRunData& runData, f32 dtime, const VolatileRunFlags &flags,
+			const CameraOrientation &cam);
 	void updateProfilerGraphs(ProfilerGraph *graph);
 
 	// Misc
@@ -4183,7 +4184,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 				runData->update_draw_list_last_cam_pos = camera->getPosition();
 		}
 
-	updateGui(&runData->statustext_time, *stats, dtime, flags, cam);
+	updateGui(&runData->statustext_time, *stats, *runData, dtime, flags, cam);
 
 	/*
 	   make sure menu is on top
@@ -4295,8 +4296,9 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 }
 
 
-void Game::updateGui(float *statustext_time, const RunStats& stats,
-		f32 dtime, const VolatileRunFlags &flags, const CameraOrientation &cam)
+void Game::updateGui(float *statustext_time, const RunStats &stats,
+		const GameRunData& runData, f32 dtime, const VolatileRunFlags &flags,
+		const CameraOrientation &cam)
 {
 	v2u32 screensize = driver->getScreenSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -4372,22 +4374,20 @@ void Game::updateGui(float *statustext_time, const RunStats& stats,
 		   << "%"
 		   << ")";
 
-		// Node definition parameters:
-		// name - tile1 - drawtype - paramtype - paramtype2
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
-			INodeDefManager *nodedef = client->getNodeDefManager();
 			ClientMap &map = client->getEnv().getClientMap();
-			MapNode n = map.getNode(runData.pointed_old.node_undersurface);
-			if (nodedef->get(n).name != "unknown") {
-				const auto & features = nodedef->get(n);
-				os << " (pointing_at = " << features.name <<
+			const INodeDefManager *nodedef = client->getNodeDefManager();
+			MapNode n = map.getNodeNoEx(runData.pointed_old.node_undersurface);
+			const ContentFeatures &features = nodedef->get(n);
+			if (n.getContent() != CONTENT_IGNORE && features.name != "unknown") {
+				os << " (pointing_at = " << features.name
 #if !defined(NDEBUG)
 					" - " << features.tiledef[0].name.c_str() <<
 					" - " << features.drawtype <<
 					" - " << features.param_type <<
 					" - " << features.param_type_2 <<
 #endif
-					")";
+				   << ")";
 			}
 		}
 
