@@ -755,6 +755,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_inventory(NULL),
 	m_damage(0),
 	m_last_good_position(0,0,0),
+	m_time_from_last_respawn(10), //more than ignore move time (1)
 	m_time_from_last_punch(0),
 	m_nocheat_dig_pos(32767, 32767, 32767),
 	m_nocheat_dig_time(0),
@@ -948,6 +949,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	m_move_pool.add(dtime);
 	m_time_from_last_punch += dtime;
 	m_nocheat_dig_time += dtime;
+	m_time_from_last_respawn += dtime;
 
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin
