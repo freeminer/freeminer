@@ -64,7 +64,7 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
 
-		if (is_yes(gettext("needs_fallback_font"))) {
+		if (is_yes(_("needs_fallback_font"))) {
 			m_currentMode = FM_Fallback;
 		}
 		else {
@@ -216,7 +216,7 @@ void FontEngine::readSettings()
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
 
-		if (is_yes(gettext("needs_fallback_font"))) {
+		if (is_yes(_("needs_fallback_font"))) {
 			m_currentMode = FM_Fallback;
 		}
 		else {
