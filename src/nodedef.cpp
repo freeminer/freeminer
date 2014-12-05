@@ -863,6 +863,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 				v3f scale = v3f(1.0, 1.0, 1.0) * BS * f->visual_scale;
 				scaleMesh(f->mesh_ptr[0], scale);
 				recalculateBoundingBox(f->mesh_ptr[0]);
+				meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);
 			}
 		} else if ((f->drawtype == NDT_NODEBOX) && 
 				((f->node_box.type == NODEBOX_REGULAR) ||
@@ -875,6 +876,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 			v3f scale = v3f(1.0, 1.0, 1.0) * f->visual_scale;
 			scaleMesh(f->mesh_ptr[0], scale);
 			recalculateBoundingBox(f->mesh_ptr[0]);
+			meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);
 		}
 
 		//Cache 6dfacedir and wallmounted rotated clones of meshes

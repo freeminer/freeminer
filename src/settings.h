@@ -234,7 +234,7 @@ private:
 	std::map<std::string, std::vector<setting_changed_callback> > m_callbacks;
 	// All methods that access m_settings/m_defaults directly should lock this.
 	Json::Reader json_reader;
-	Json::FastWriter json_writer;
+	Json::StyledWriter json_writer;
 	mutable JMutex m_mutex;
 };
 
