@@ -592,6 +592,11 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	group->getU16NoEx("octaves",       np.octaves);
 	group->getFloatNoEx("persistence", np.persist);
 
+	np.eased = group->getFlag("eased");
+	group->getFloatNoEx("farscale",    np.farscale);
+	group->getFloatNoEx("farspread",   np.farspread);
+	group->getFloatNoEx("farpersist",  np.farpersist);
+
 	return true;
 }
 
@@ -896,6 +901,11 @@ void Settings::setNoiseParams(const std::string &name, const NoiseParams &np)
 	group->setS32("seed",          np.seed);
 	group->setU16("octaves",       np.octaves);
 	group->setFloat("persistence", np.persist);
+
+	group->setBool("eased",        np.eased);
+	group->setFloat("farscale",    np.farscale);
+	group->setFloat("farspread",   np.farspread);
+	group->setFloat("farpersist",  np.farpersist);
 
 	Settings *old_group;
 	{
