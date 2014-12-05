@@ -4386,10 +4386,10 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 			if (n.getContent() != CONTENT_IGNORE && features.name != "unknown") {
 				os << " (pointing_at = " << features.name
 #if !defined(NDEBUG)
-					" - " << features.tiledef[0].name.c_str() <<
-					" - " << features.drawtype <<
-					" - " << features.param_type <<
-					" - " << features.param_type_2 <<
+					<< " - " << features.tiledef[0].name.c_str()
+					<< " - " << features.drawtype
+					<< " - " << features.param_type
+					<< " - " << features.param_type_2
 #endif
 				   << ")";
 			}
