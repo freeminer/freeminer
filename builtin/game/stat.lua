@@ -1,6 +1,7 @@
 -- converts numbers
 -- to human readable format
 local function human_readable_number(value, p)
+	p = p or 3
 	local symbol = { "P", "T", "G", "M", "k", }
 	local multiplies = { 10^15, 10^12, 10^9, 10^6, 10^3, }
 
@@ -48,9 +49,9 @@ function core.show_stat_summary(name, param)
 		formspec = formspec
 			.."label["..x[1]..","..y..";"..key:gsub("^%l", string.upper).."]"
 			.."label["..x[2]..","..y..";"
-			..human_readable_number(core.stat_get("player|"..key.."|"..pname), 3).."]"
+			..human_readable_number(core.stat_get("player|"..key.."|"..pname)).."]"
 			.."label["..x[3]..","..y..";"
-			..human_readable_number(core.stat_get("total|"..key), 3).."]"
+			..human_readable_number(core.stat_get("total|"..key)).."]"
 	end
 	formspec = formspec.."button_exit[1,5;2,1;exit;Close"
 	core.show_formspec(name, 'stat', formspec)
