@@ -161,6 +161,9 @@ public:
 	u32 m_drawlist_last;
 private:
 
+	bool m_cache_trilinear_filter;
+	bool m_cache_bilinear_filter;
+	bool m_cache_anistropic_filter;
 };
 
 #endif

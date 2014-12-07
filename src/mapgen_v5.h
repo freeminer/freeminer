@@ -49,7 +49,7 @@ struct MapgenV5Params : public MapgenSpecificParams {
 
 	MapgenV5Params();
 	~MapgenV5Params() {}
-	
+
 	void readParams(Settings *settings);
 	void writeParams(Settings *settings);
 };
@@ -62,7 +62,6 @@ public:
 
 	int ystride;
 	int zstride;
-	u32 flags;
 	u32 spflags;
 
 	u32 blockseed;
@@ -70,7 +69,7 @@ public:
 	v3s16 node_max;
 	v3s16 full_node_min;
 	v3s16 full_node_max;
-	
+
 	Noise *noise_filler_depth;
 	Noise *noise_factor;
 	Noise *noise_height;
@@ -104,7 +103,7 @@ public:
 
 	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_);
 	~MapgenV5();
-	
+
 	virtual void makeChunk(BlockMakeData *data);
 	int getGroundLevelAtPoint(v2s16 p);
 	void calculateNoise();
@@ -119,7 +118,7 @@ struct MapgenFactoryV5 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
 		return new MapgenV5(mgid, params, emerge);
 	};
-	
+
 	MapgenSpecificParams *createMapgenParams() {
 		return new MapgenV5Params();
 	};

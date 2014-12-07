@@ -823,6 +823,11 @@ else()
 
 	set(OTHER_FLAGS "")
 
+	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		# clang does not understand __extern_always_inline but libc headers use it
+		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
+	endif()
+
 	if(MINGW)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 	endif()

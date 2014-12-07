@@ -105,6 +105,23 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_wieldnode->setItem(ItemStack(), m_gamedef);
 	m_wieldnode->drop(); // m_wieldmgr grabbed it
 	m_wieldlightnode = m_wieldmgr->addLightSceneNode(NULL, v3f(0.0, 50.0, 0.0));
+
+	/* TODO: Add a callback function so these can be updated when a setting
+	 *       changes.  At this point in time it doesn't matter (e.g. /set
+	 *       is documented to change server settings only)
+	 *
+	 * TODO: Local caching of settings is not optimal and should at some stage
+	 *       be updated to use a global settings object for getting thse values
+	 *       (as opposed to the this local caching). This can be addressed in
+	 *       a later release.
+	 */
+	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
+	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
+	m_cache_viewing_range_min   = g_settings->getFloat("viewing_range_nodes_min");
+	m_cache_viewing_range_max   = g_settings->getFloat("viewing_range_nodes_max");
+	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
+	m_cache_fov                 = g_settings->getFloat("fov");
+	m_cache_view_bobbing        = g_settings->getBool("view_bobbing");
 }
 
 Camera::~Camera()
@@ -291,7 +308,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		// Amplify according to the intensity of the impact
 		fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
 
-		fall_bobbing *= g_settings->getFloat("fall_bobbing_amount");
+		fall_bobbing *= m_cache_fall_bobbing_amount;
 	}
 
 	// Calculate players eye offset for different camera modes
@@ -330,7 +347,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		//rel_cam_target += 0.03 * bobvec;
 		//rel_cam_up.rotateXYBy(0.02 * bobdir * bobtmp * M_PI);
 		float f = 1.0;
-		f *= g_settings->getFloat("view_bobbing_amount");
+		f *= m_cache_view_bobbing_amount;
 		rel_cam_pos += bobvec * f;
 		//rel_cam_target += 0.995 * bobvec * f;
 		rel_cam_target += bobvec * f;
@@ -423,7 +440,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		fov_degrees = g_settings->getFloat("zoom_fov");
 		m_wieldnode->setVisible(false);
 	} else {
-		fov_degrees = g_settings->getFloat("fov");
+		fov_degrees = m_cache_fov;
 		fov_degrees = MYMAX(fov_degrees, 10.0);
 		fov_degrees = MYMIN(fov_degrees, 170.0);
 		m_wieldnode->setVisible(true);
@@ -510,7 +527,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
         
 	if ((hypot(speed.X, speed.Z) > BS) &&
 		(player->touching_ground) &&
-		(g_settings->getBool("view_bobbing") == true) &&
+		(m_cache_view_bobbing == true) &&
 		(g_settings->getBool("free_move") == false ||
 				!m_gamedef->checkLocalPrivilege("fly")))
 	{
@@ -550,10 +567,10 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 			<<std::endl;*/
 
 	// Get current viewing range and FPS settings
-	f32 viewing_range_min = g_settings->getS16("viewing_range_nodes_min");
+	f32 viewing_range_min = m_cache_viewing_range_min;
 	viewing_range_min = MYMAX(15.0, viewing_range_min);
 
-	f32 viewing_range_max = g_settings->getS16("viewing_range_nodes_max");
+	f32 viewing_range_max = m_cache_viewing_range_max;
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
 	// vrange+position must be smaller than 32767
 	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(std::abs(m_camera_position.X/BS), std::abs(m_camera_position.Y/BS)), std::abs(m_camera_position.Z/BS)));
@@ -576,7 +593,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	int farmesh_step = g_settings->getS32("farmesh_step");
 	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
 
-	f32 wanted_fps = g_settings->getFloat("wanted_fps");
+	f32 wanted_fps = m_cache_wanted_fps;
 	wanted_fps = MYMAX(wanted_fps, 1.0);
 	f32 wanted_frametime = 1.0 / wanted_fps;
 

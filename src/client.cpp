@@ -269,6 +269,8 @@ Client::Client(
 		localdb = NULL;
 		localserver = nullptr;
 	}
+
+	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 }
 
 void Client::Stop()
@@ -2499,7 +2501,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 
 		data->setCrack(m_crack_level, m_crack_pos);
 		data->setHighlighted(m_highlighted_pos, m_show_highlighted);
-		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
+		data->setSmoothLighting(m_cache_smooth_lighting);
 		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
 	}
