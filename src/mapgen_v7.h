@@ -55,7 +55,7 @@ struct MapgenV7Params : public MapgenSpecificParams {
 
 	MapgenV7Params();
 	~MapgenV7Params() {}
-	
+
 	void readParams(Settings *settings);
 	void writeParams(Settings *settings);
 };
@@ -67,7 +67,6 @@ public:
 
 	int ystride;
 	int zstride;
-	u32 flags;
 	u32 spflags;
 
 	u32 blockseed;
@@ -75,9 +74,9 @@ public:
 	v3s16 node_max;
 	v3s16 full_node_min;
 	v3s16 full_node_max;
-	
+
 	s16 *ridge_heightmap;
-	
+
 	Noise *noise_terrain_base;
 	Noise *noise_terrain_alt;
 	Noise *noise_terrain_persist;
@@ -87,10 +86,10 @@ public:
 	Noise *noise_ridge_uwater;
 	Noise *noise_mountain;
 	Noise *noise_ridge;
-	
+
 	Noise *noise_heat;
 	Noise *noise_humidity;
-	
+
 	//freeminer:
 	s16 float_islands;
 	content_t c_dirt_with_snow;
@@ -109,7 +108,7 @@ public:
 
 	MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenV7();
-	
+
 	virtual void makeChunk(BlockMakeData *data);
 	int getGroundLevelAtPoint(v2s16 p);
 	Biome *getBiomeAtPoint(v3s16 p);
@@ -118,19 +117,19 @@ public:
 	float baseTerrainLevelFromMap(int index);
 	bool getMountainTerrainAtPoint(int x, int y, int z);
 	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, int y);
-	
+
 	virtual void calculateNoise();
-	
+
 	virtual int generateTerrain();
 	int generateBaseTerrain();
 	void generateMountainTerrain();
 	void generateRidgeTerrain();
-	
+
 	void generateBiomes();
 	void dustTopNodes();
-	
+
 	//void addTopNodes();
-	
+
 	void generateCaves(int max_stone_y);
 
 	virtual void generateExperimental();
@@ -141,7 +140,7 @@ struct MapgenFactoryV7 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
 		return new MapgenV7(mgid, params, emerge);
 	};
-	
+
 	MapgenSpecificParams *createMapgenParams() {
 		return new MapgenV7Params();
 	};
