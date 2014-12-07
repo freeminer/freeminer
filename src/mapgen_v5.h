@@ -101,7 +101,8 @@ public:
 	s16 float_islands;
 	content_t c_dirt_with_snow;
 
-	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge_);
+	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge);
+
 	~MapgenV5();
 
 	virtual void makeChunk(BlockMakeData *data);

@@ -50,7 +50,7 @@ MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	: Mapgen(mapgenid, params, emerge)
 	, Mapgen_features(mapgenid, params, emerge)
 {
-	this->emerge = emerge_;
+	this->emerge = emerge;
 	this->bmgr   = emerge->biomemgr;
 
 	// amount of elements to skip for the next index
