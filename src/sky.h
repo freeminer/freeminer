@@ -140,8 +140,11 @@ private:
 	video::ITexture* m_sun_tonemap;
 	video::ITexture* m_moon_tonemap;
 
+public:
 	irr::scene::ILightSceneNode * sun_moon_light;
 	bool shadow_enabled;
+private:
+
 };
 
 #endif

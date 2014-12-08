@@ -5,6 +5,7 @@ uniform sampler2D useNormalmap;
 uniform vec4 skyBgColor;
 uniform float fogDistance;
 uniform vec3 eyePosition;
+uniform vec3 sunPosition;
 
 uniform float wieldLight;
 
