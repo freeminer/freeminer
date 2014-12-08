@@ -2011,7 +2011,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	/*
 		Create a task to update the mesh of the block
 	*/
-	auto draw_control = m_env.getClientMap().getControl();
+	auto & draw_control = m_env.getClientMap().getControl();
 	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), draw_control));
 
 	{
