@@ -1,14 +1,16 @@
+-- TODO: move this function to builtin/common/misc_helpers.lua
+--
 -- Formats numbers according to SI multiplies and
--- appends a correspending prefix symbol
--- e.g. 1234000 -> 1.234 M
-local function human_readable_number(value, p)
-	p = p or 3
-	local symbol = { "P", "T", "G", "M", "k", }
-	local multiplies = { 10^15, 10^12, 10^9, 10^6, 10^3, }
+-- appends a correspending prefix symbol (e.g. 1234000 -> 1.234 M)
+function string.number_to_si(value, precision)
+	precision = precision or 3
+	local symbol = { "Y", "Z", "E", "P", "T", "G", "M", "k" }
+	local multiplies = { 10^24, 10^21, 10^18, 10^15, 10^12, 10^9, 10^6, 10^3 }
 
+	local abs_value = math.abs(value)
 	for k,v in ipairs(multiplies) do
-		if value >= v then
-			return string.format("%."..p.."f "..symbol[k], value / v)
+		if abs_value >= v then
+			return string.format("%."..precision.."f "..symbol[k], value / v)
 		end
 	end
 	return math.ceil(value)
@@ -51,9 +53,9 @@ function core.show_stat_summary(name, param)
 		formspec = formspec
 			.."label["..x[1]..","..y..";"..eng_name.."]"
 			.."label["..x[2]..","..y..";"
-			..human_readable_number(core.stat_get("player|"..key.."|"..pname)).."]"
+			..string.number_to_si(core.stat_get("player|"..key.."|"..pname)).."]"
 			.."label["..x[3]..","..y..";"
-			..human_readable_number(core.stat_get("total|"..key), 4).."]"
+			..string.number_to_si(core.stat_get("total|"..key), 4).."]"
 	end
 	core.show_formspec(name, 'stat', formspec)
 	return true
