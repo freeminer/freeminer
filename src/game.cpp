@@ -1770,6 +1770,8 @@ bool Game::startup(bool *kill,
 	driver              = device->getVideoDriver();
 	smgr                = device->getSceneManager();
 
+	smgr->getParameters()->setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
+
 	if (!init(map_dir, address, port, gamespec))
 		return false;
 
