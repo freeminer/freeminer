@@ -5,6 +5,7 @@ uniform mat4 mWorld;
 
 uniform float dayNightRatio;
 uniform vec3 eyePosition;
+uniform vec3 sunPosition;
 uniform float animationTimer;
 
 varying vec3 vPosition;
@@ -59,7 +60,7 @@ void main(void)
 
 	vPosition = gl_Position.xyz;
 	worldPosition = (mWorld * gl_Vertex).xyz;
-	vec3 sunPosition = vec3 (0.0, eyePosition.y * BS + 900.0, 0.0);
+	//vec3 sunPosition = vec3 (0.0, eyePosition.y * BS + 900.0, 0.0);
 
 	vec3 normal, tangent, binormal;
 	normal = normalize(gl_NormalMatrix * gl_Normal);

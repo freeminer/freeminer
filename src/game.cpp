@@ -876,6 +876,15 @@ public:
 		services->setPixelShaderConstant("eyePosition", (irr::f32 *)&eye_position, 3);
 		services->setVertexShaderConstant("eyePosition", (irr::f32 *)&eye_position, 3);
 
+		v3f sun_moon_position;
+		if (m_sky->sun_moon_light) {
+			sun_moon_position = m_sky->sun_moon_light->getPosition();
+		} else {
+			sun_moon_position = v3f(0.0, eye_position.Y*BS+900.0, 0.0);
+		}
+		services->setPixelShaderConstant("sunPosition", (irr::f32 *)&sun_moon_position, 3);
+		services->setVertexShaderConstant("sunPosition", (irr::f32 *)&sun_moon_position, 3);
+
 		// Uniform sampler layers
 		int layer0 = 0;
 		int layer1 = 1;
