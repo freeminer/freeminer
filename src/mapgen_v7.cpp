@@ -142,21 +142,22 @@ MapgenV7::~MapgenV7() {
 MapgenV7Params::MapgenV7Params() {
 	spflags = MGV7_MOUNTAINS | MGV7_RIDGES;
 
-	np_terrain_base    = NoiseParams(4,    70,  v3f(300, 300, 300), 82341, 6, 0.7);
-	np_terrain_alt     = NoiseParams(4,    25,  v3f(600, 600, 600), 5934,  5, 0.6);
-	np_terrain_persist = NoiseParams(0.6,  0.1, v3f(500, 500, 500), 539,   3, 0.6);
-	np_height_select   = NoiseParams(-0.5, 1,   v3f(250, 250, 250), 4213,  5, 0.69);
-	np_filler_depth    = NoiseParams(0,    1.2, v3f(150, 150, 150), 261,   4, 0.7);
-	np_mount_height    = NoiseParams(100,  30,  v3f(500, 500, 500), 72449, 4, 0.6);
-	np_ridge_uwater    = NoiseParams(0,    1,   v3f(500, 500, 500), 85039, 4, 0.6);
-	np_mountain        = NoiseParams(0,    1,   v3f(250, 350, 250), 5333,  5, 0.68);
-	np_ridge           = NoiseParams(0,    1,   v3f(100, 100, 100), 6467,  4, 0.75);
+	np_terrain_base    = NoiseParams(4,    70,  v3f(300, 300, 300), 82341, 6, 0.7, 2.0);
+	np_terrain_alt     = NoiseParams(4,    25,  v3f(600, 600, 600), 5934,  5, 0.6, 2.0);
+	np_terrain_persist = NoiseParams(0.6,  0.1, v3f(500, 500, 500), 539,   3, 0.6, 2.0);
+	np_height_select   = NoiseParams(-0.5, 1,   v3f(250, 250, 250), 4213,  5, 0.69, 2.0);
+	np_filler_depth    = NoiseParams(0,    1.2, v3f(150, 150, 150), 261,   4, 0.7, 2.0);
+	np_mount_height    = NoiseParams(100,  30,  v3f(500, 500, 500), 72449, 4, 0.6, 2.0);
+	np_ridge_uwater    = NoiseParams(0,    1,   v3f(500, 500, 500), 85039, 4, 0.6, 2.0);
+	np_mountain        = NoiseParams(0,    1,   v3f(250, 350, 250), 5333,  5, 0.68, 2.0);
+	np_ridge           = NoiseParams(0,    1,   v3f(100, 100, 100), 6467,  4, 0.75, 2.0);
 
 	float_islands = 500;
-	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6,  false, 1,   1.5);
-	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5,  false, 1,   1.5);
-	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5,  false, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6,  false, 1,   5,   0.5);
+	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
+	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
+	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   5,   0.5);
+
 }
 
 
@@ -174,10 +175,10 @@ void MapgenV7Params::readParams(Settings *settings) {
 	settings->getNoiseParams("mgv7_np_ridge",           np_ridge);
 
 	settings->getS16NoEx("mg_float_islands", float_islands);
-	settings->getNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
-	settings->getNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
-	settings->getNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
-	settings->getNoiseIndevParams("mg_np_layers",         np_layers);
+	settings->getNoiseParamsFromGroup("mg_np_float_islands1", np_float_islands1);
+	settings->getNoiseParamsFromGroup("mg_np_float_islands2", np_float_islands2);
+	settings->getNoiseParamsFromGroup("mg_np_float_islands3", np_float_islands3);
+	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
 }
 
@@ -196,10 +197,10 @@ void MapgenV7Params::writeParams(Settings *settings) {
 	settings->setNoiseParams("mgv7_np_ridge",           np_ridge);
 
 	settings->setS16("mg_float_islands", float_islands);
-	settings->setNoiseIndevParams("mg_np_float_islands1", np_float_islands1);
-	settings->setNoiseIndevParams("mg_np_float_islands2", np_float_islands2);
-	settings->setNoiseIndevParams("mg_np_float_islands3", np_float_islands3);
-	settings->setNoiseIndevParams("mg_np_layers",         np_layers);
+	settings->setNoiseParams("mg_np_float_islands1", np_float_islands1);
+	settings->setNoiseParams("mg_np_float_islands2", np_float_islands2);
+	settings->setNoiseParams("mg_np_float_islands3", np_float_islands3);
+	settings->setNoiseParams("mg_np_layers",         np_layers);
 
 	settings->setJson("mg_params", paramsj);
 }
@@ -327,10 +328,10 @@ void MapgenV7::calculateNoise() {
 	for (int i = 0; i != csize.X * csize.Z; i++)
 		persistmap[i] = rangelim(persistmap[i], 0.4, 0.9);
 
-	noise_terrain_base->perlinMap2DModulated(x, z, persistmap);
+	noise_terrain_base->perlinMap2D(x, z, persistmap);
 	noise_terrain_base->transformNoiseMap();
 
-	noise_terrain_alt->perlinMap2DModulated(x, z, persistmap);
+	noise_terrain_alt->perlinMap2D(x, z, persistmap);
 	noise_terrain_alt->transformNoiseMap();
 
 	noise_filler_depth->perlinMap2D(x, z);
@@ -804,7 +805,7 @@ void MapgenV7::addTopNodes() {
 #endif
 
 
-NoiseParams nparams_v7_def_cave(6, 6.0, v3f(250.0, 250.0, 250.0), 34329, 3, 0.50);
+NoiseParams nparams_v7_def_cave(6, 6.0, v3f(250.0, 250.0, 250.0), 34329, 3, 0.50, 2.0);
 
 void MapgenV7::generateCaves(int max_stone_y) {
 	PseudoRandom ps(blockseed + 21343);

@@ -34,9 +34,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //#define DGEN_USE_TORCHES
 
-NoiseParams nparams_dungeon_rarity(0.0, 1.0, v3f(500.0, 500.0, 500.0), 0, 2, 0.8);
-NoiseParams nparams_dungeon_wetness(0.0, 1.0, v3f(40.0, 40.0, 40.0), 32474, 4, 1.1);
-NoiseParams nparams_dungeon_density(0.0, 1.0, v3f(2.5, 2.5, 2.5), 0, 2, 1.4);
+NoiseParams nparams_dungeon_rarity(0.0, 1.0, v3f(500.0, 500.0, 500.0), 0, 2, 0.8, 2.0);
+NoiseParams nparams_dungeon_wetness(0.0, 1.0, v3f(40.0, 40.0, 40.0), 32474, 4, 1.1, 2.0);
+NoiseParams nparams_dungeon_density(0.0, 1.0, v3f(2.5, 2.5, 2.5), 0, 2, 1.4, 2.0);
 
 
 ///////////////////////////////////////////////////////////////////////////////

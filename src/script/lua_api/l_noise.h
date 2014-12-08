@@ -57,7 +57,7 @@ public:
 	// Creates an LuaPerlinNoise and leaves it on top of stack
 	static int create_object(lua_State *L);
 
-	static LuaPerlinNoise* checkobject(lua_State *L, int narg);
+	static LuaPerlinNoise *checkobject(lua_State *L, int narg);
 
 	static void Register(lua_State *L);
 };
@@ -66,7 +66,7 @@ public:
 	LuaPerlinNoiseMap
 */
 class LuaPerlinNoiseMap : public ModApiBase {
-private:
+	NoiseParams m_noise_params;
 	Noise *noise;
 	static const char className[];
 	static const luaL_reg methods[];

@@ -33,8 +33,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 const char *BiomeManager::ELEMENT_TITLE = "biome";
 
-NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65);
-NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50);
+NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65, 2.0);
+NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50, 2.0);
 
 
 ///////////////////////////////////////////////////////////////////////////////
