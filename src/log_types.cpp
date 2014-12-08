@@ -42,6 +42,6 @@ std::ostream & operator<<(std::ostream & s, MapNode n) {
 #include "noise.h"
 struct NoiseParams;
 std::ostream & operator<<(std::ostream & s, NoiseParams np) {
-	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",eased="<<np.eased<<"]";
+	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags<<"]";
 	return s;
 }

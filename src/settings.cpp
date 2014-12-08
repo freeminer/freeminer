@@ -600,7 +600,6 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	if (!group->getFlagStrNoEx("flags", np.flags, flagdesc_noiseparams))
 		np.flags = NOISE_FLAG_DEFAULTS;
 
-	np.eased = group->getFlag("eased");
 	group->getFloatNoEx("farscale",    np.farscale);
 	group->getFloatNoEx("farspread",   np.farspread);
 	group->getFloatNoEx("farpersist",  np.farpersist);
@@ -912,7 +911,6 @@ void Settings::setNoiseParams(const std::string &name, const NoiseParams &np)
 	group->setFloat("lacunarity",  np.lacunarity);
 	group->setFlagStr("flags",     np.flags, flagdesc_noiseparams, np.flags);
 
-	group->setBool("eased",        np.eased);
 	group->setFloat("farscale",    np.farscale);
 	group->setFloat("farspread",   np.farspread);
 	group->setFloat("farpersist",  np.farpersist);
