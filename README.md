@@ -36,11 +36,18 @@ sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-d
 # optional:
 sudo apt-get install libhiredis-dev cmake-curses-gui
 ```
-
+___
 Fedora:
 ```
 # the first five is the closest to Debian/Ubuntu build-essential
 sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel luajit-devel leveldb-devel snappy-devel gettext-devel
+```
+___
+Arch Linux:
+```
+sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake
+# From AUR
+yaourt -S msgpack
 ```
 
 Recommended minimum compiler version:
