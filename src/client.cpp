@@ -972,11 +972,13 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
 		updateMeshTimestampWithEdge(p);
 
+/*
 #if !defined(NDEBUG)
 		if (m_env.getClientMap().m_block_boundary.size() > 150)
 			m_env.getClientMap().m_block_boundary.clear();
 		m_env.getClientMap().m_block_boundary[p] = block;
 #endif
+*/
 
 		}//step
 
