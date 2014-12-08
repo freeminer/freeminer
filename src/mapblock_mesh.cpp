@@ -1182,6 +1182,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 					os.str()+"0",
 					&p.tile.texture_id);
 		}
+		}
 		// - Texture animation
 		if(p.tile.material_flags & MATERIAL_FLAG_ANIMATION_VERTICAL_FRAMES)
 		{
@@ -1200,7 +1201,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 			// Replace tile texture with the first animation frame
 			FrameSpec animation_frame = p.tile.frames.find(0)->second;
 			p.tile.texture = animation_frame.texture;
-		}
 		}
 
 		if(m_enable_highlighting && p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED)
