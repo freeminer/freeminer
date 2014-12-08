@@ -22,34 +22,34 @@ function core.show_stat_summary(name, param)
 		pname = param
 	end
 
-	local keys = {
-		"dig",
-		"place",
-		"craft",
-		"chat",
-		"move",
-		"drop",
-		"damage",
-		"punch",
-		"use",
-		"join",
-		"die",
+	local stat_table = {
+		chat = "Messages",
+		craft = "Crafted",
+		damage = "Damage",
+		die = "Deaths",
+		dig = "Digged",
+		drop = "Dropped",
+		join = "Join",
+		move = "Traveled",
+		place = "Placed",
+		punch = "Punches",
+		use = "Uses",
 	}
 
 	local x = { .25, 1.8, 3.5 } -- cols
 	local y = -.1 -- where rows start
-	local formspec = "size[5.0,4.6]"
+	local formspec = "size[4.9,4.6]"
 		.."label["..x[1]..","..y..";Stat]"
 		.."label["..x[2]..","..y..";Player]"
 		.."label["..x[3]..","..y..";Total]"
 		-- hacky hack xD
 		.."label[-.25,"..(y+0.1)..";"..string.rep("_", 60).."]"
 	y = y + 0.2
-	for _, key in ipairs(keys) do
+	for key, eng_name in pairs(stat_table) do
 		-- leading
 		y = y + 0.4
 		formspec = formspec
-			.."label["..x[1]..","..y..";"..key:gsub("^%l", string.upper).."]"
+			.."label["..x[1]..","..y..";"..eng_name.."]"
 			.."label["..x[2]..","..y..";"
 			..human_readable_number(core.stat_get("player|"..key.."|"..pname)).."]"
 			.."label["..x[3]..","..y..";"
