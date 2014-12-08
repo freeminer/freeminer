@@ -1086,6 +1086,9 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
 				m_con.Send(PEER_ID_SERVER, 2, reply, true);
 		}
 
+		if (m_env.getClientMap().m_block_boundary.size() > 150)
+			m_env.getClientMap().m_block_boundary.clear();
+		m_env.getClientMap().m_block_boundary[p] = block;
 	}
 	else if(command == TOCLIENT_INVENTORY)
 	{

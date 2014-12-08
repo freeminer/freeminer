@@ -959,7 +959,7 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 	}
 }
 
-void ClientMap::renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks)
+void ClientMap::renderBlockBoundaries(const std::map<v3POS, MapBlock*> & blocks)
 {
 	video::IVideoDriver* driver = SceneManager->getVideoDriver();
 	video::SMaterial mat;
@@ -967,8 +967,7 @@ void ClientMap::renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks)
 	mat.ZWriteEnable = false;
 
 	core::aabbox3d<f32> bound;
-//	std::map<v3s16, MapBlock*>& blocks = m_drawlist;
-//		const_cast<std::map<v3s16, bool>&>(nextBlocksToRequest());
+	//auto & blocks = *m_drawlist;
 	const v3f inset(BS/2);
 	const v3f blocksize(MAP_BLOCKSIZE);
 
@@ -984,7 +983,7 @@ void ClientMap::renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks)
 		}
 		driver->setMaterial(mat);
 
-		for(std::map<v3s16, MapBlock*>::iterator i = blocks.begin(); i != blocks.end(); ++i) {
+		for(auto i = blocks.begin(); i != blocks.end(); ++i) {
 			video::SColor color(255, 0, 0, 0);
 			if (i->second) {
 				color.setBlue(255);

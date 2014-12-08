@@ -132,7 +132,7 @@ public:
 	void renderPostFx(CameraMode cam_mode);
 
 	// For debugging the status and position of MapBlocks
-	void renderBlockBoundaries(std::map<v3s16, MapBlock*> blocks);
+	void renderBlockBoundaries(const std::map<v3POS, MapBlock*> & blocks);
 
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
@@ -159,6 +159,7 @@ private:
 	std::vector<std::pair<v3POS, int>> draw_nearest;
 public:
 	u32 m_drawlist_last;
+	std::map<v3POS, MapBlock*> m_block_boundary;
 private:
 
 	bool m_cache_trilinear_filter;

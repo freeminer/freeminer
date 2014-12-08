@@ -412,6 +412,10 @@ void draw_plain(Camera& camera, bool show_hud, Hud& hud,
 
 	draw_selectionbox(driver, hud, hilightboxes, show_hud);
 
+#if !defined(NDEBUG)
+	client.getEnv().getClientMap().renderBlockBoundaries(client.getEnv().getClientMap().m_block_boundary);
+#endif
+
 	if(draw_wield_tool)
 		camera.drawWieldedTool();
 }

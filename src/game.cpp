@@ -2760,11 +2760,11 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	}
 
 	//freeminer
-/*
+#if !defined(NDEBUG)
 	if (input->wasKeyDown(getKeySetting("keymap_toggle_block_boundaries"))) {
 		toggleBlockBoundaries(statustext_time, flags);
 	}
-*/
+#endif
 
 		if (playerlist)
 			playerlist->setSelected(-1);
