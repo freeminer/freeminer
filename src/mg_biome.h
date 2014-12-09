@@ -24,7 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MG_BIOME_HEADER
 
 #include "mapgen.h"
-#include "noise.h"
+
+struct NoiseParams;
 
 enum BiomeType
 {
@@ -34,10 +35,6 @@ enum BiomeType
 	BIOME_TYPE_AETHER,
 	BIOME_TYPE_FLAT
 };
-
-extern NoiseParams nparams_biome_def_heat;
-extern NoiseParams nparams_biome_def_humidity;
-
 
 class Biome : public GenElement {
 public:
@@ -66,9 +63,6 @@ class BiomeManager : public GenElementManager {
 public:
 	static const char *ELEMENT_TITLE;
 	static const size_t ELEMENT_LIMIT = 0x100;
-
-	NoiseParams *np_heat;
-	NoiseParams *np_humidity;
 
 	BiomeManager(IGameDef *gamedef);
 	~BiomeManager();

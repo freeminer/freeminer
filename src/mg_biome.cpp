@@ -33,17 +33,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 const char *BiomeManager::ELEMENT_TITLE = "biome";
 
-NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65, 2.0);
-NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50, 2.0);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
 BiomeManager::BiomeManager(IGameDef *gamedef)
 {
 	m_resolver  = gamedef->getNodeDefManager()->getResolver();
-	np_heat     = &nparams_biome_def_heat;
-	np_humidity = &nparams_biome_def_humidity;
 
 	// Create default biome to be used in case none exist
 	Biome *b = new Biome;
@@ -66,8 +61,6 @@ BiomeManager::BiomeManager(IGameDef *gamedef)
 	m_resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_dust_water);
 
 	m_resolver->addNode("mapgen_ice",          "mapgen_water_source", b->c_water, &b->c_ice);
-	g_settings->getNoiseParams("mgv7_np_heat", nparams_biome_def_heat);
-	g_settings->getNoiseParams("mgv7_np_humidity", nparams_biome_def_humidity);
 	year_days = g_settings->getS16("year_days");
 	weather_heat_season = g_settings->getS16("weather_heat_season");
 	weather_heat_daily = g_settings->getS16("weather_heat_daily");

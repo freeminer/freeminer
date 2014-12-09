@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MAPGEN_HEADER
 #define MAPGEN_HEADER
 
+#include "noise.h"
 #include "nodedef.h"
 #include "mapnode.h"
 #include "util/string.h"
@@ -110,6 +111,9 @@ struct MapgenParams {
 	s16 water_level;
 	u32 flags;
 
+	NoiseParams np_biome_heat;
+	NoiseParams np_biome_humidity;
+
 	MapgenSpecificParams *sparams;
 
 	MapgenParams()
@@ -120,6 +124,8 @@ struct MapgenParams {
 		chunksize   = 5;
 		flags       = MG_TREES | MG_CAVES | MG_LIGHT;
 		sparams     = NULL;
+		np_biome_heat     = NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65, 2.0);
+		np_biome_humidity = NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50, 2.0);
 	}
 };
 
