@@ -83,6 +83,7 @@ public:
 	s32 weather_humidity_days;
 	s32 weather_hot_core;
 
+	MapgenParams * mapgen_params;
 	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 

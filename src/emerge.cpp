@@ -190,6 +190,8 @@ void EmergeManager::loadMapgenParams() {
 					 | ((u64)(myrand() & 0xffff) << 32)
 					 | ((u64)(myrand() & 0xffff) << 48));
 	}
+
+	biomemgr->mapgen_params = &params;
 }
 
 
