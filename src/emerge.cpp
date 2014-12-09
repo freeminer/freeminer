@@ -190,6 +190,8 @@ void EmergeManager::loadMapgenParams() {
 					 | ((u64)(myrand() & 0xffff) << 32)
 					 | ((u64)(myrand() & 0xffff) << 48));
 	}
+
+	biomemgr->mapgen_params = &params;
 }
 
 
@@ -383,6 +385,8 @@ void EmergeManager::loadParamsFromSettings(Settings *settings) {
 	settings->getS16NoEx("water_level",  params.water_level);
 	settings->getS16NoEx("chunksize",    params.chunksize);
 	settings->getFlagStrNoEx("mg_flags", params.flags, flagdesc_mapgen);
+	settings->getNoiseParams("mg_biome_np_heat",     params.np_biome_heat);
+	settings->getNoiseParams("mg_biome_np_humidity", params.np_biome_humidity);
 
 	delete params.sparams;
 	params.sparams = createMapgenParams(params.mg_name);
@@ -397,6 +401,8 @@ void EmergeManager::saveParamsToSettings(Settings *settings) {
 	settings->setS16("water_level",  params.water_level);
 	settings->setS16("chunksize",    params.chunksize);
 	settings->setFlagStr("mg_flags", params.flags, flagdesc_mapgen, (u32)-1);
+	settings->setNoiseParams("mg_biome_np_heat",     params.np_biome_heat);
+	settings->setNoiseParams("mg_biome_np_humidity", params.np_biome_humidity);
 
 	if (params.sparams)
 		params.sparams->writeParams(settings);
