@@ -32,7 +32,10 @@ Install dependencies. Here's an example for
 
 Debian/Ubuntu:
 ```
-sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev  libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev
+sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev \
+libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev \
+libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev \
+libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev
 # optional:
 sudo apt-get install libhiredis-dev cmake-curses-gui
 ```
@@ -40,7 +43,10 @@ ___
 Fedora:
 ```
 # the first five is the closest to Debian/Ubuntu build-essential
-sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel luajit-devel leveldb-devel snappy-devel gettext-devel
+sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel \
+bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel \
+mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel \
+luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel
 ```
 ___
 Arch Linux:
