@@ -259,13 +259,13 @@ float MapgenV6::baseTerrainLevelFromNoise(v2s16 p) {
 	if (flags & MG_FLAT)
 		return water_level;
 
-	float terrain_base   = NoisePerlin2DPosOffset(noise_terrain_base->np,
+	float terrain_base   = NoisePerlin2DPosOffset(&noise_terrain_base->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float terrain_higher = NoisePerlin2DPosOffset(noise_terrain_higher->np,
+	float terrain_higher = NoisePerlin2DPosOffset(&noise_terrain_higher->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float steepness      = NoisePerlin2DPosOffset(noise_steepness->np,
+	float steepness      = NoisePerlin2DPosOffset(&noise_steepness->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float height_select  = NoisePerlin2DNoTxfmPosOffset(noise_height_select->np,
+	float height_select  = NoisePerlin2DNoTxfmPosOffset(&noise_height_select->np,
 							p.X, 0.5, p.Y, 0.5, seed);
 
 	return baseTerrainLevel(terrain_base, terrain_higher,
@@ -564,37 +564,37 @@ void MapgenV6::calculateNoise() {
 	// Need to adjust for the original implementation's +.5 offset...
 	if (!(flags & MG_FLAT)) {
 		noise_terrain_base->perlinMap2D(
-			x + 0.5 * noise_terrain_base->np->spread.X * farscale(noise_terrain_base->np->farspread, x, z),
-			z + 0.5 * noise_terrain_base->np->spread.Z * farscale(noise_terrain_base->np->farspread, x, z));
+			x + 0.5 * noise_terrain_base->np.spread.X * farscale(noise_terrain_base->np.farspread, x, z),
+			z + 0.5 * noise_terrain_base->np.spread.Z * farscale(noise_terrain_base->np.farspread, x, z));
 		noise_terrain_base->transformNoiseMap(x, y, z);
 
 		noise_terrain_higher->perlinMap2D(
-			x + 0.5 * noise_terrain_higher->np->spread.X * farscale(noise_terrain_higher->np->farspread, x, z),
-			z + 0.5 * noise_terrain_higher->np->spread.Z * farscale(noise_terrain_higher->np->farspread, x, z));
+			x + 0.5 * noise_terrain_higher->np.spread.X * farscale(noise_terrain_higher->np.farspread, x, z),
+			z + 0.5 * noise_terrain_higher->np.spread.Z * farscale(noise_terrain_higher->np.farspread, x, z));
 		noise_terrain_higher->transformNoiseMap(x, y, z);
 
 		noise_steepness->perlinMap2D(
-			x + 0.5 * noise_steepness->np->spread.X * farscale(noise_steepness->np->farspread, x, z),
-			z + 0.5 * noise_steepness->np->spread.Z * farscale(noise_steepness->np->farspread, x, z));
+			x + 0.5 * noise_steepness->np.spread.X * farscale(noise_steepness->np.farspread, x, z),
+			z + 0.5 * noise_steepness->np.spread.Z * farscale(noise_steepness->np.farspread, x, z));
 		noise_steepness->transformNoiseMap(x, y, z);
 
 		noise_height_select->perlinMap2D(
-			x + 0.5 * noise_height_select->np->spread.X * farscale(noise_height_select->np->farspread, x, z),
-			z + 0.5 * noise_height_select->np->spread.Z * farscale(noise_height_select->np->farspread, x, z));
+			x + 0.5 * noise_height_select->np.spread.X * farscale(noise_height_select->np.farspread, x, z),
+			z + 0.5 * noise_height_select->np.spread.Z * farscale(noise_height_select->np.farspread, x, z));
 
 		noise_mud->perlinMap2D(
-			x + 0.5 * noise_mud->np->spread.X * farscale(noise_mud->np->farspread, x, z),
-			z + 0.5 * noise_mud->np->spread.Z * farscale(noise_mud->np->farspread, x, z));
+			x + 0.5 * noise_mud->np.spread.X * farscale(noise_mud->np.farspread, x, z),
+			z + 0.5 * noise_mud->np.spread.Z * farscale(noise_mud->np.farspread, x, z));
 		noise_mud->transformNoiseMap(x, y, z);
 	}
 
 	noise_beach->perlinMap2D(
-		x + 0.2 * noise_beach->np->spread.X * farscale(noise_beach->np->farspread, x, z),
-		z + 0.7 * noise_beach->np->spread.Z * farscale(noise_beach->np->farspread, x, z));
+		x + 0.2 * noise_beach->np.spread.X * farscale(noise_beach->np.farspread, x, z),
+		z + 0.7 * noise_beach->np.spread.Z * farscale(noise_beach->np.farspread, x, z));
 
 	noise_biome->perlinMap2D(
-		x + 0.6 * noise_biome->np->spread.X * farscale(noise_biome->np->farspread, x, z),
-		z + 0.2 * noise_biome->np->spread.Z * farscale(noise_biome->np->farspread, x, z));
+		x + 0.6 * noise_biome->np.spread.X * farscale(noise_biome->np.farspread, x, z),
+		z + 0.2 * noise_biome->np.spread.Z * farscale(noise_biome->np.farspread, x, z));
 }
 
 

@@ -124,8 +124,8 @@ struct MapgenParams {
 		chunksize   = 5;
 		flags       = MG_TREES | MG_CAVES | MG_LIGHT;
 		sparams     = NULL;
-		np_biome_heat     = NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65, 2.0);
-		np_biome_humidity = NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50, 2.0);
+		np_biome_heat     = NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.5, 2.0);
+		np_biome_humidity = NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.5, 2.0);
 	}
 };
 
