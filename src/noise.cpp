@@ -67,6 +67,7 @@ float noise2d(int x, int y, int seed)
 	int n = (NOISE_MAGIC_X * x + NOISE_MAGIC_Y * y
 			+ NOISE_MAGIC_SEED * seed) & 0x7fffffff;
 	n = (n >> 13) ^ n;
+
 	n = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
 	return 1.f - (float)n / 0x40000000;
 }
@@ -317,9 +318,9 @@ float contour(float v)
 ///////////////////////// [ New perlin stuff ] ////////////////////////////
 
 
-Noise::Noise(NoiseParams *np, int seed, int sx, int sy, int sz)
+Noise::Noise(NoiseParams *np_, int seed, int sx, int sy, int sz)
 {
-	this->np   = np;
+	memcpy(&np, np_, sizeof(np));
 	this->seed = seed;
 	this->sx   = sx;
 	this->sy   = sy;
@@ -329,10 +330,10 @@ Noise::Noise(NoiseParams *np, int seed, int sx, int sy, int sz)
 	this->gradient_buf = NULL;
 	this->result       = NULL;
 
-	if (np->flags & NOISE_FLAG_DEFAULTS) {
+	if (np.flags & NOISE_FLAG_DEFAULTS) {
 		// By default, only 2d noise is eased.
 		if (sz <= 1)
-			np->flags |= NOISE_FLAG_EASED;
+			np.flags |= NOISE_FLAG_EASED;
 	}
 
 	allocBuffers();
@@ -380,7 +381,7 @@ void Noise::setSize(int sx, int sy, int sz)
 
 void Noise::setSpreadFactor(v3f spread)
 {
-	this->np->spread = spread;
+	this->np.spread = spread;
 
 	resizeNoiseBuf(sz > 1);
 }
@@ -388,7 +389,7 @@ void Noise::setSpreadFactor(v3f spread)
 
 void Noise::setOctaves(int octaves)
 {
-	this->np->octaves = octaves;
+	this->np.octaves = octaves;
 
 	resizeNoiseBuf(sz > 1);
 }
@@ -400,15 +401,15 @@ void Noise::resizeNoiseBuf(bool is3d)
 	float ofactor;
 
 	//maximum possible spread value factor
-	ofactor = pow(np->lacunarity, np->octaves - 1);
+	ofactor = pow(np.lacunarity, np.octaves - 1);
 
 	//noise lattice point count
 	//(int)(sz * spread * ofactor) is # of lattice points crossed due to length
 	// + 2 for the two initial endpoints
 	// + 1 for potentially crossing a boundary due to offset
-	nlx = (int)ceil(sx * ofactor / np->spread.X) + 3;
-	nly = (int)ceil(sy * ofactor / np->spread.Y) + 3;
-	nlz = is3d ? (int)ceil(sz * ofactor / np->spread.Z) + 3 : 1;
+	nlx = (int)ceil(sx * ofactor / np.spread.X) + 3;
+	nly = (int)ceil(sy * ofactor / np.spread.Y) + 3;
+	nlz = is3d ? (int)ceil(sz * ofactor / np.spread.Z) + 3 : 1;
 
 	delete[] noise_buf;
 	try {
@@ -440,7 +441,7 @@ void Noise::gradientMap2D(
 	int index, i, j, x0, y0, noisex, noisey;
 	int nlx, nly;
 
-	Interp2dFxn interpolate = (np->flags & NOISE_FLAG_EASED) ?
+	Interp2dFxn interpolate = (np.flags & NOISE_FLAG_EASED) ?
 		biLinearInterpolation : biLinearInterpolationNoEase;
 
 	x0 = floor(x);
@@ -504,7 +505,7 @@ void Noise::gradientMap3D(
 	int index, i, j, k, x0, y0, z0, noisex, noisey, noisez;
 	int nlx, nly, nlz;
 
-	Interp3dFxn interpolate = (np->flags & NOISE_FLAG_EASED) ?
+	Interp3dFxn interpolate = (np.flags & NOISE_FLAG_EASED) ?
 		triLinearInterpolation : triLinearInterpolationNoEase;
 
 	x0 = floor(x);
@@ -588,8 +589,8 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy;
 
-	x /= np->spread.X;
-	y /= np->spread.Y;
+	x /= np.spread.X;
+	y /= np.spread.Y;
 
 	memset(result, 0, sizeof(float) * bufsize);
 
@@ -600,16 +601,15 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 			persist_buf[i] = 1.0;
 	}
 
-	for (size_t oct = 0; oct < np->octaves; oct++) {
+	for (size_t oct = 0; oct < np.octaves; oct++) {
 		gradientMap2D(x * f, y * f,
-			f / np->spread.X, f / np->spread.Y,
-			seed + np->seed + oct);
+			f / np.spread.X, f / np.spread.Y,
+			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np->lacunarity;
-		//g *= np->persist;
-		g *= np->persist * farscale(np->farpersist, x, y);
+		f *= np.lacunarity;
+		g *= np.persist * farscale(np.farpersist, x, y);
 	}
 
 	return result;
@@ -621,9 +621,9 @@ float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy * sz;
 
-	x /= np->spread.X;
-	y /= np->spread.Y;
-	z /= np->spread.Z;
+	x /= np.spread.X;
+	y /= np.spread.Y;
+	z /= np.spread.Z;
 
 	memset(result, 0, sizeof(float) * bufsize);
 
@@ -634,16 +634,15 @@ float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 			persist_buf[i] = 1.0;
 	}
 
-	for (size_t oct = 0; oct < np->octaves; oct++) {
+	for (size_t oct = 0; oct < np.octaves; oct++) {
 		gradientMap3D(x * f, y * f, z * f,
-			f / np->spread.X, f / np->spread.Y, f / np->spread.Z,
-			seed + np->seed + oct);
+			f / np.spread.X, f / np.spread.Y, f / np.spread.Z,
+			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np->lacunarity;
-		//g *= np->persist;
-		g *= np->persist * farscale(np->farpersist, x, y, z);
+		f *= np.lacunarity;
+		g *= np.persist* farscale(np.farpersist, x, y, z);
 	}
 
 	return result;
@@ -655,7 +654,7 @@ void Noise::updateResults(float g, float *gmap,
 {
 	// This looks very ugly, but it is 50-70% faster than having
 	// conditional statements inside the loop
-	if (np->flags & NOISE_FLAG_ABSVALUE) {
+	if (np.flags & NOISE_FLAG_ABSVALUE) {
 		if (persistence_map) {
 			for (size_t i = 0; i != bufsize; i++) {
 				result[i] += gmap[i] * fabs(gradient_buf[i]);
@@ -685,10 +684,10 @@ void Noise::transformNoiseMap(float xx, float yy, float zz)
 	// modified in other threads. gcc (at least) will consider the buffer size
 	// computation as invalidated between loop comparisons, resulting in a ~2x
 	// slowdown even with -O2.  To prevent this, store the value in a local.
-	auto scale = farscale(np->farscale, xx, yy, zz);
+	auto scale = farscale(np.farscale, xx, yy, zz);
 	size_t bufsize = sx * sy * sz;
 	for (size_t i = 0; i != bufsize; i++)
-		result[i] = result[i] * np->scale * scale + np->offset;
+		result[i] = result[i] * np.scale * scale + np.offset;
 }
 
 float farscale(float scale, float z) {

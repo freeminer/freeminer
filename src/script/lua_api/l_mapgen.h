@@ -40,8 +40,8 @@ private:
 	// set mapgen parameters
 	static int l_set_mapgen_params(lua_State *L);
 
-	// set_noiseparam_defaults({np1={noise params}, ...})
-	static int l_set_noiseparam_defaults(lua_State *L);
+	// set_noiseparam_defaults(name, noiseparams, set_default)
+	static int l_set_noiseparams(lua_State *L);
 
 	// set_gen_notify(flagstring)
 	static int l_set_gen_notify(lua_State *L);
@@ -78,7 +78,5 @@ private:
 public:
 	static void Initialize(lua_State *L, int top);
 };
-
-
 
 #endif /* L_MAPGEN_H_ */
