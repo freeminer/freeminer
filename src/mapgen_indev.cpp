@@ -65,14 +65,14 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 	int z = node_min.Z;
 
 	noise_layers->perlinMap3D(
-		x + 0.33 * noise_layers->np->spread.X * farscale(noise_layers->np->farspread, x, y, z),
-		y + 0.33 * noise_layers->np->spread.Y * farscale(noise_layers->np->farspread, x, y, z),
-		z + 0.33 * noise_layers->np->spread.Z * farscale(noise_layers->np->farspread, x, y, z)
+		x + 0.33 * noise_layers->np.spread.X * farscale(noise_layers->np.farspread, x, y, z),
+		y + 0.33 * noise_layers->np.spread.Y * farscale(noise_layers->np.farspread, x, y, z),
+		z + 0.33 * noise_layers->np.spread.Z * farscale(noise_layers->np.farspread, x, y, z)
 	);
 
 	noise_layers->transformNoiseMap(x, y, z);
 
-	noise_layers_width = ((noise_layers->np->offset+noise_layers->np->scale) - (noise_layers->np->offset-noise_layers->np->scale));
+	noise_layers_width = ((noise_layers->np.offset+noise_layers->np.scale) - (noise_layers->np.offset-noise_layers->np.scale));
 
 	layers_node.clear();
 	for (const auto & layer : layers) {
@@ -92,7 +92,7 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 
 MapNode Mapgen_features::layers_get(unsigned int index) {
 	auto layer_index = rangelim((unsigned int)myround((noise_layers->result[index] / noise_layers_width) * layers_node_size), 0, layers_node_size-1);
-	//errorstream<<"ls: index="<<index<< " layer_index="<<layer_index<<" off="<<noise_layers->np->offset<<" sc="<<noise_layers->np->scale<<" noise_layers_width="<<noise_layers_width<<" layers_node_size="<<layers_node_size<<std::endl;
+	//errorstream<<"ls: index="<<index<< " layer_index="<<layer_index<<" off="<<noise_layers->np.offset<<" sc="<<noise_layers->np.scale<<" noise_layers_width="<<noise_layers_width<<" layers_node_size="<<layers_node_size<<std::endl;
 	return layers_node[layer_index];
 }
 
@@ -102,22 +102,22 @@ void Mapgen_features::float_islands_prepare(const v3POS & node_min, const v3POS 
 	int z = node_min.Z;
 	if (min_y && y >= min_y) {
 		noise_float_islands1->perlinMap3D(
-			x + 0.33 * noise_float_islands1->np->spread.X * farscale(noise_float_islands1->np->farspread, x, y, z),
-			y + 0.33 * noise_float_islands1->np->spread.Y * farscale(noise_float_islands1->np->farspread, x, y, z),
-			z + 0.33 * noise_float_islands1->np->spread.Z * farscale(noise_float_islands1->np->farspread, x, y, z)
+			x + 0.33 * noise_float_islands1->np.spread.X * farscale(noise_float_islands1->np.farspread, x, y, z),
+			y + 0.33 * noise_float_islands1->np.spread.Y * farscale(noise_float_islands1->np.farspread, x, y, z),
+			z + 0.33 * noise_float_islands1->np.spread.Z * farscale(noise_float_islands1->np.farspread, x, y, z)
 		);
 		noise_float_islands1->transformNoiseMap(x, y, z);
 
 		noise_float_islands2->perlinMap3D(
-			x + 0.33 * noise_float_islands2->np->spread.X * farscale(noise_float_islands2->np->farspread, x, y, z),
-			y + 0.33 * noise_float_islands2->np->spread.Y * farscale(noise_float_islands2->np->farspread, x, y, z),
-			z + 0.33 * noise_float_islands2->np->spread.Z * farscale(noise_float_islands2->np->farspread, x, y, z)
+			x + 0.33 * noise_float_islands2->np.spread.X * farscale(noise_float_islands2->np.farspread, x, y, z),
+			y + 0.33 * noise_float_islands2->np.spread.Y * farscale(noise_float_islands2->np.farspread, x, y, z),
+			z + 0.33 * noise_float_islands2->np.spread.Z * farscale(noise_float_islands2->np.farspread, x, y, z)
 		);
 		noise_float_islands2->transformNoiseMap(x, y, z);
 
 		noise_float_islands3->perlinMap2D(
-			x + 0.5 * noise_float_islands3->np->spread.X * farscale(noise_float_islands3->np->farspread, x, z),
-			z + 0.5 * noise_float_islands3->np->spread.Z * farscale(noise_float_islands3->np->farspread, x, z));
+			x + 0.5 * noise_float_islands3->np.spread.X * farscale(noise_float_islands3->np.farspread, x, z),
+			z + 0.5 * noise_float_islands3->np.spread.Z * farscale(noise_float_islands3->np.farspread, x, z));
 		noise_float_islands3->transformNoiseMap(x, y, z);
 	}
 }
