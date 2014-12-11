@@ -759,5 +759,13 @@ core.register_chatcommand("last-login", {
 core.register_chatcommand( "stat", {
 	params = "[name]",
 	description = "show in-game action statistics",
-	func = core.show_stat_summary
+	func = function(name, param)
+		if param == "" then
+			param = name
+		elseif not core.get_player_by_name(param) then
+			return false, "No such player."
+		end
+		local formspec = core.stat_formspec(param)
+		core.show_formspec(name, 'stat', formspec)
+	end
 })

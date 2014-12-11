@@ -16,14 +16,7 @@ function string.number_to_si(value, precision)
 	return math.ceil(value)
 end
 
-function core.show_stat_summary(name, param)
-	local pname = name
-	if param ~= "" and not core.get_player_by_name(param) then
-		return true, "Player not found"
-	elseif param ~= "" then
-		pname = param
-	end
-
+function core.stat_formspec(name)
 	local stat_table = {
 		chat = "Messages",
 		craft = "Crafted",
@@ -38,8 +31,10 @@ function core.show_stat_summary(name, param)
 		use = "Uses",
 	}
 
-	local x = { .25, 1.8, 3.5 } -- cols
-	local y = -.1 -- where rows start
+	-- collumns
+	local x = { .25, 1.8, 3.5 }
+	-- rows
+	local y = -.1
 	local formspec = "size[4.9,4.6]"
 		.."label["..x[1]..","..y..";Stat]"
 		.."label["..x[2]..","..y..";Player]"
@@ -53,10 +48,9 @@ function core.show_stat_summary(name, param)
 		formspec = formspec
 			.."label["..x[1]..","..y..";"..eng_name.."]"
 			.."label["..x[2]..","..y..";"
-			..string.number_to_si(core.stat_get("player|"..key.."|"..pname)).."]"
+			..string.number_to_si(core.stat_get("player|"..key.."|"..name)).."]"
 			.."label["..x[3]..","..y..";"
 			..string.number_to_si(core.stat_get("total|"..key), 4).."]"
 	end
-	core.show_formspec(name, 'stat', formspec)
-	return true
+	return formspec
 end
