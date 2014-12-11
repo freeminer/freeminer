@@ -95,9 +95,10 @@ Map::~Map()
 {
 	auto lock = m_blocks.lock_unique_rec();
 #ifndef SERVER
+	if(g_settings->getBool("enable_vbo"))
 	for(auto &i : m_blocks) {
 		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
-		if(i.second->mesh)
+		if(i.second && i.second->mesh)
 			i.second->mesh->clearHardwareBuffer = false;
 	}
 #endif
