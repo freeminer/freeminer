@@ -493,7 +493,7 @@ public:
 	void serialize(std::ostream &os, u8 version, bool disk);
 	// If disk == true: In addition to doing other things, will add
 	// unknown blocks from id-name mapping to wndef
-	void deSerialize(std::istream &is, u8 version, bool disk);
+	bool deSerialize(std::istream &is, u8 version, bool disk);
 
 	void pushElementsToCircuit(Circuit* circuit);
 

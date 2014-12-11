@@ -3364,10 +3364,8 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 {
 	v3s16 p3d = block->getPos();
 
-	// Dummy blocks are not written
-	if (block->isDummy()) {
-		errorstream << "WARNING: saveBlock: Not writing dummy block "
-			<< PP(p3d) << std::endl;
+	if (!block->isGenerated()) {
+		infostream << "WARNING: saveBlock: Not writing not generated block p="<< p3d << std::endl;
 		return true;
 	}
 
@@ -3427,7 +3425,8 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		}
 
 		// Read basic data
-		block->deSerialize(is, version, true);
+		if (!block->deSerialize(is, version, true))
+			return nullptr;
 
 		// If it's a new block, insert it to the map
 		if(created_new)

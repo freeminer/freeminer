@@ -381,7 +381,7 @@ int RemoteClient::GetNextBlocks(
 			/*
 				Don't send already sent blocks
 			*/
-			unsigned int block_sent;
+			unsigned int block_sent = 0;
 			{
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
@@ -454,14 +454,7 @@ int RemoteClient::GetNextBlocks(
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
-				// Block is dummy if data doesn't exist.
-				// It means it has been not found from disk and not generated
-				if(block->isDummy())
-				{
-					surely_not_found_on_disk = true;
-				}
-
-				if (block->getLightingExpired()) {
+				if (block->getLightingExpired() && (block_sent || d>=1)) {
 					continue;
 				}
 				// Block is valid if lighting is up-to-date and data exists
