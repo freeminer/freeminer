@@ -64,13 +64,7 @@ void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_
 	int y = node_min.Y;
 	int z = node_min.Z;
 
-	noise_layers->perlinMap3D(
-		x + 0.33 * noise_layers->np.spread.X * farscale(noise_layers->np.farspread, x, y, z),
-		y + 0.33 * noise_layers->np.spread.Y * farscale(noise_layers->np.farspread, x, y, z),
-		z + 0.33 * noise_layers->np.spread.Z * farscale(noise_layers->np.farspread, x, y, z)
-	);
-
-	noise_layers->transformNoiseMap(x, y, z);
+	noise_layers->perlinMap3D_PO(x, 0.33, y, 0.33, z, 0.33);
 
 	noise_layers_width = ((noise_layers->np.offset+noise_layers->np.scale) - (noise_layers->np.offset-noise_layers->np.scale));
 
@@ -101,24 +95,9 @@ void Mapgen_features::float_islands_prepare(const v3POS & node_min, const v3POS 
 	int y = node_min.Y;
 	int z = node_min.Z;
 	if (min_y && y >= min_y) {
-		noise_float_islands1->perlinMap3D(
-			x + 0.33 * noise_float_islands1->np.spread.X * farscale(noise_float_islands1->np.farspread, x, y, z),
-			y + 0.33 * noise_float_islands1->np.spread.Y * farscale(noise_float_islands1->np.farspread, x, y, z),
-			z + 0.33 * noise_float_islands1->np.spread.Z * farscale(noise_float_islands1->np.farspread, x, y, z)
-		);
-		noise_float_islands1->transformNoiseMap(x, y, z);
-
-		noise_float_islands2->perlinMap3D(
-			x + 0.33 * noise_float_islands2->np.spread.X * farscale(noise_float_islands2->np.farspread, x, y, z),
-			y + 0.33 * noise_float_islands2->np.spread.Y * farscale(noise_float_islands2->np.farspread, x, y, z),
-			z + 0.33 * noise_float_islands2->np.spread.Z * farscale(noise_float_islands2->np.farspread, x, y, z)
-		);
-		noise_float_islands2->transformNoiseMap(x, y, z);
-
-		noise_float_islands3->perlinMap2D(
-			x + 0.5 * noise_float_islands3->np.spread.X * farscale(noise_float_islands3->np.farspread, x, z),
-			z + 0.5 * noise_float_islands3->np.spread.Z * farscale(noise_float_islands3->np.farspread, x, z));
-		noise_float_islands3->transformNoiseMap(x, y, z);
+		noise_float_islands1->perlinMap3D_PO(x, 0.33, y, 0.33, z, 0.33);
+		noise_float_islands2->perlinMap3D_PO(x, 0.33, y, 0.33, z, 0.33);
+		noise_float_islands3->perlinMap2D_PO(x, 0.5, z, 0.5);
 	}
 }
 
@@ -401,7 +380,7 @@ int MapgenIndev::generateGround() {
 
 		auto bt = getBiome(index, v2POS(x, z));
 		
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		v3POS em = vm->m_area.getExtent();

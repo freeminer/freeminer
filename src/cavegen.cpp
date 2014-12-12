@@ -258,7 +258,7 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 				if (!ndef->get(c).is_ground_content)
 					continue;
 
-				s16 heat = mg->emerge->env->m_use_weather ? mg->emerge->env->getServerMap().updateBlockHeat(mg->emerge->env, p, nullptr, &mg->heat_cache) : 0;
+				s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, p, nullptr, &mg->heat_cache) : 0;
 				MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
 				if (large_cave) {
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
