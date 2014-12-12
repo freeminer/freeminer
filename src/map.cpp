@@ -281,7 +281,7 @@ void Map::unspreadLight(enum LightBank bank,
 		v3s16(-1,0,0), // left
 	};
 
-	if(from_nodes.size() == 0)
+	if(from_nodes.empty())
 		return;
 
 	u32 blockchangecount = 0;
@@ -427,7 +427,7 @@ void Map::unspreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(unlighted_nodes.size() > 0)
+	if(!unlighted_nodes.empty())
 		unspreadLight(bank, unlighted_nodes, light_sources, modified_blocks);
 }
 
@@ -464,7 +464,7 @@ void Map::spreadLight(enum LightBank bank,
 		v3s16(-1,0,0), // left
 	};
 
-	if(from_nodes.size() == 0)
+	if(from_nodes.empty())
 		return;
 
 	u32 blockchangecount = 0;
@@ -589,7 +589,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(lighted_nodes.size() > 0 && recursive <= 32) { // maybe 32 too small
+	if(!lighted_nodes.empty && recursive <= 32) { // maybe 32 too small
 /*
 		infostream<<"spreadLight(): recursive("<<count<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()

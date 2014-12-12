@@ -62,7 +62,7 @@ struct MapgenV7Params : public MapgenSpecificParams {
 
 class MapgenV7 : public Mapgen, public Mapgen_features {
 public:
-	EmergeManager *emerge;
+	EmergeManager *m_emerge;
 	BiomeManager *bmgr;
 
 	int ystride;

@@ -30,6 +30,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern FlagDesc flagdesc_noiseparams[];
 
+float farscale(float scale, float z);
+float farscale(float scale, float x, float z);
+float farscale(float scale, float x, float y, float z);
+
 class PseudoRandom
 {
 public:
@@ -164,7 +168,24 @@ public:
 	float *perlinMap2D(float x, float y, float *persistence_map=NULL);
 	float *perlinMap3D(float x, float y, float z, float *persistence_map=NULL);
 
-	void transformNoiseMap(float xx = 0, float yy = 0, float zz = 0);
+	inline float *perlinMap2D_PO(float x, float xoff, float y, float yoff,
+		float *persistence_map=NULL)
+	{
+		return perlinMap2D(
+			x + xoff * np.spread.X * farscale(np.farspread, x, y),
+			y + yoff * np.spread.Y * farscale(np.farspread, x, y),
+			persistence_map);
+	}
+
+	inline float *perlinMap3D_PO(float x, float xoff, float y, float yoff,
+		float z, float zoff, float *persistence_map=NULL)
+	{
+		return perlinMap3D(
+			x + xoff * np.spread.X * farscale(np.farspread, x, y, z),
+			y + yoff * np.spread.Y * farscale(np.farspread, x, y, z),
+			z + zoff * np.spread.Z * farscale(np.farspread, x, y, z),
+			persistence_map);
+	}
 
 private:
 	void allocBuffers();
@@ -172,6 +193,28 @@ private:
 	void updateResults(float g, float *gmap, float *persistence_map, size_t bufsize);
 
 };
+
+float NoisePerlin2D(NoiseParams *np, float x, float y, int seed);
+float NoisePerlin3D(NoiseParams *np, float x, float y, float z, int seed);
+
+inline float NoisePerlin2D_PO(NoiseParams *np, float x, float xoff,
+	float y, float yoff, int seed)
+{
+	return NoisePerlin2D(np,
+		x + xoff * np->spread.X,
+		y + yoff * np->spread.Y,
+		seed);
+}
+
+inline float NoisePerlin3D_PO(NoiseParams *np, float x, float xoff,
+	float y, float yoff, float z, float zoff, int seed)
+{
+	return NoisePerlin3D(np,
+		x + xoff * np->spread.X,
+		y + yoff * np->spread.Y,
+		z + zoff * np->spread.Z,
+		seed);
+}
 
 // Return value: -1 ... 1
 float noise2d(int x, int y, int seed);
@@ -198,63 +241,6 @@ inline float easeCurve(float t)
 }
 
 float contour(float v);
-
-#define NoisePerlin2D(np, x, y, s) \
-		((np)->offset + (np)->scale * noise2d_perlin( \
-		(float)(x) / (np)->spread.X, \
-		(float)(y) / (np)->spread.Y, \
-		(s) + (np)->seed, (np)->octaves, (np)->persist))
-
-#define NoisePerlin2DNoTxfm(np, x, y, s) \
-		(noise2d_perlin( \
-		(float)(x) / (np)->spread.X, \
-		(float)(y) / (np)->spread.Y, \
-		(s) + (np)->seed, (np)->octaves, (np)->persist))
-
-#define NoisePerlin2DPosOffset(np, x, xoff, y, yoff, s) \
-		((np)->offset + (np)->scale * noise2d_perlin( \
-		(float)(xoff) + (float)(x) / (np)->spread.X, \
-		(float)(yoff) + (float)(y) / (np)->spread.Y, \
-		(s) + (np)->seed, (np)->octaves, (np)->persist))
-
-#define NoisePerlin2DNoTxfmPosOffset(np, x, xoff, y, yoff, s) \
-		(noise2d_perlin( \
-		(float)(xoff) + (float)(x) / (np)->spread.X, \
-		(float)(yoff) + (float)(y) / (np)->spread.Y, \
-		(s) + (np)->seed, (np)->octaves, (np)->persist))
-
-#define NoisePerlin3D(np, x, y, z, s) ((np)->offset + (np)->scale * \
-		noise3d_perlin((float)(x) / (np)->spread.X, (float)(y) / (np)->spread.Y, \
-		(float)(z) / (np)->spread.Z, (s) + (np)->seed, (np)->octaves, (np)->persist))
-
-inline float linearInterpolation(float v0, float v1, float t);
-/* {
-    return v0 + (v1 - v0) * t;
-} */
-
-float biLinearInterpolation(float v00, float v10,
-							float v01, float v11,
-							float x, float y);
-
-float biLinearInterpolationNoEase(float x0y0, float x1y0,
-								  float x0y1, float x1y1,
-								  float x, float y);
-
-float triLinearInterpolation(
-		float v000, float v100, float v010, float v110,
-		float v001, float v101, float v011, float v111,
-		float x, float y, float z);
-
-
-float farscale(float scale, float z);
-float farscale(float scale, float x, float z);
-float farscale(float scale, float x, float y, float z);
-
-
-#define NoisePerlin3DEased(np, x, y, z, s) ((np)->offset + (np)->scale * \
-		noise3d_perlin((float)(x) / (np)->spread.X, (float)(y) / (np)->spread.Y, \
-		(float)(z) / (np)->spread.Z, (s) + (np)->seed, (np)->octaves, \
-		(np)->persist, true))
 
 #endif
 

@@ -971,7 +971,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 					client->m_known_objects, added_objects);
 
 			// Ignore if nothing happened
-			if(removed_objects.size() == 0 && added_objects.size() == 0)
+			if(removed_objects.empty() && added_objects.empty())
 			{
 				//infostream<<"active objects: none changed"<<std::endl;
 				continue;
@@ -1286,7 +1286,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			/*
 				Set blocks not sent to far players
 			*/
-			if(far_players.size() > 0)
+			if(!far_players.empty())
 			{
 				// Convert list format to that wanted by SetBlocksNotSent
 				std::map<v3s16, MapBlock*> modified_blocks2;
@@ -1397,7 +1397,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 
 	u32 max_cycle_ms = async ? 2000 : 300;
 
-	const float map_timer_and_unload_dtime = 10.92;
+	static const float map_timer_and_unload_dtime = 10.92;
 	if(!maintenance_status && m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
 		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
@@ -3090,7 +3090,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				continue;
 			ServerPlayingSound &psound = i->second;
 			psound.clients.erase(peer_id);
-			if(psound.clients.size() == 0)
+			if(psound.clients.empty())
 				m_playing_sounds.erase(i++);
 		}
 	}
@@ -4037,7 +4037,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 			dst_clients.push_back(*i);
 		}
 	}
-	if(dst_clients.size() == 0)
+	if(dst_clients.empty())
 		return -1;
 
 	// Create the sound
@@ -4741,7 +4741,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		{
 			ServerPlayingSound &psound = i->second;
 			psound.clients.erase(peer_id);
-			if(psound.clients.size() == 0)
+			if(psound.clients.empty())
 				m_playing_sounds.erase(i++);
 			else
 				i++;

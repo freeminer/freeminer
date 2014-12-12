@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Minetest 0.4.9\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-23 17:37+0100\n"
-"PO-Revision-Date: 2014-05-14 16:37+0100\n"
+"PO-Revision-Date: 2014-06-01 19:05+0100\n"
 "Last-Translator: Enki <sohayl@users.sourceforge.net>\n"
 "Language-Team: \n"
 "Language: it\n"
@@ -21,12 +21,17 @@ msgstr ""
 msgid "Game Name"
 msgstr "Nome del gioco"
 
-#: builtin/gamemgr.lua:25 builtin/mainmenu.lua:310
+#: builtin/gamemgr.lua:25
+#: builtin/mainmenu.lua:310
 msgid "Create"
 msgstr "Creare"
 
-#: builtin/gamemgr.lua:26 builtin/mainmenu.lua:311 builtin/modmgr.lua:331
-#: builtin/modmgr.lua:448 src/guiKeyChangeMenu.cpp:195 src/keycode.cpp:223
+#: builtin/gamemgr.lua:26
+#: builtin/mainmenu.lua:311
+#: builtin/modmgr.lua:331
+#: builtin/modmgr.lua:448
+#: src/guiKeyChangeMenu.cpp:195
+#: src/keycode.cpp:223
 msgid "Cancel"
 msgstr "Annullare"
 
@@ -38,7 +43,8 @@ msgstr "Gestore del gioco: impossibile copiare la mod \"$1\" nel gioco \"$2\""
 msgid "GAMES"
 msgstr "GIOCHI"
 
-#: builtin/gamemgr.lua:217 builtin/mainmenu.lua:1076
+#: builtin/gamemgr.lua:217
+#: builtin/mainmenu.lua:1076
 msgid "Games"
 msgstr "Giochi"
 
@@ -90,7 +96,8 @@ msgstr "Gioco"
 msgid "Delete World \"$1\"?"
 msgstr "Cancellare il mondo \"$1\"?"
 
-#: builtin/mainmenu.lua:320 builtin/modmgr.lua:877
+#: builtin/mainmenu.lua:320
+#: builtin/modmgr.lua:877
 msgid "Yes"
 msgstr "Sì"
 
@@ -132,7 +139,9 @@ msgstr "Nome/Password"
 msgid "Public Serverlist"
 msgstr "Elenco dei server pubblici"
 
-#: builtin/mainmenu.lua:829 builtin/mainmenu.lua:874 builtin/mainmenu.lua:937
+#: builtin/mainmenu.lua:829
+#: builtin/mainmenu.lua:874
+#: builtin/mainmenu.lua:937
 #: src/keycode.cpp:229
 msgid "Delete"
 msgstr "Cancellare"
@@ -141,11 +150,13 @@ msgstr "Cancellare"
 msgid "Connect"
 msgstr "Connettere"
 
-#: builtin/mainmenu.lua:875 builtin/mainmenu.lua:938
+#: builtin/mainmenu.lua:875
+#: builtin/mainmenu.lua:938
 msgid "New"
 msgstr "Nuovo"
 
-#: builtin/mainmenu.lua:876 builtin/mainmenu.lua:939
+#: builtin/mainmenu.lua:876
+#: builtin/mainmenu.lua:939
 msgid "Configure"
 msgstr "Configurare"
 
@@ -153,7 +164,8 @@ msgstr "Configurare"
 msgid "Start Game"
 msgstr "Avviare il gioco"
 
-#: builtin/mainmenu.lua:878 builtin/mainmenu.lua:941
+#: builtin/mainmenu.lua:878
+#: builtin/mainmenu.lua:941
 msgid "Select World:"
 msgstr "Selezionare il mondo:"
 
@@ -161,11 +173,13 @@ msgstr "Selezionare il mondo:"
 msgid "START SERVER"
 msgstr "AVVIO SERVER"
 
-#: builtin/mainmenu.lua:880 builtin/mainmenu.lua:943
+#: builtin/mainmenu.lua:880
+#: builtin/mainmenu.lua:943
 msgid "Creative Mode"
 msgstr "Modalità creativa"
 
-#: builtin/mainmenu.lua:882 builtin/mainmenu.lua:945
+#: builtin/mainmenu.lua:882
+#: builtin/mainmenu.lua:945
 msgid "Enable Damage"
 msgstr "Abilitare il danno"
 
@@ -241,7 +255,8 @@ msgstr "Liquido limitato"
 msgid "Change keys"
 msgstr "Cambiare i tasti"
 
-#: builtin/mainmenu.lua:940 src/keycode.cpp:248
+#: builtin/mainmenu.lua:940
+#: src/keycode.cpp:248
 msgid "Play"
 msgstr "Giocare"
 
@@ -345,7 +360,8 @@ msgstr "Disinstallare la mod selezionata"
 msgid "Rename Modpack:"
 msgstr "Rinominare il pacchetto mod:"
 
-#: builtin/modmgr.lua:329 src/keycode.cpp:227
+#: builtin/modmgr.lua:329
+#: src/keycode.cpp:227
 msgid "Accept"
 msgstr "Accettare"
 
@@ -353,11 +369,13 @@ msgstr "Accettare"
 msgid "World:"
 msgstr "Mondo:"
 
-#: builtin/modmgr.lua:427 builtin/modmgr.lua:429
+#: builtin/modmgr.lua:427
+#: builtin/modmgr.lua:429
 msgid "Hide Game"
 msgstr "Nasc. gioco"
 
-#: builtin/modmgr.lua:433 builtin/modmgr.lua:435
+#: builtin/modmgr.lua:433
+#: builtin/modmgr.lua:435
 msgid "Hide mp content"
 msgstr "Nasc. cont. pacchetti"
 
@@ -369,7 +387,8 @@ msgstr "Mod:"
 msgid "Depends:"
 msgstr "Dipendenze:"
 
-#: builtin/modmgr.lua:447 src/guiKeyChangeMenu.cpp:187
+#: builtin/modmgr.lua:447
+#: src/guiKeyChangeMenu.cpp:187
 msgid "Save"
 msgstr "Salvare"
 
@@ -381,7 +400,8 @@ msgstr "Attivare il contenuto dei pacchetti delle mod"
 msgid "Disable MP"
 msgstr "Disattivare il contenuto dei pacchetti delle mod"
 
-#: builtin/modmgr.lua:470 builtin/modmgr.lua:472
+#: builtin/modmgr.lua:470
+#: builtin/modmgr.lua:472
 msgid "enabled"
 msgstr "attivata"
 
@@ -507,7 +527,8 @@ msgstr "Siete morti."
 msgid "Respawn"
 msgstr "Riapparire"
 
-#: src/guiFormSpecMenu.cpp:1656 src/guiMessageMenu.cpp:107
+#: src/guiFormSpecMenu.cpp:1656
+#: src/guiMessageMenu.cpp:107
 #: src/guiTextInputMenu.cpp:139
 msgid "Proceed"
 msgstr "Procedere"
@@ -542,11 +563,13 @@ msgstr "Avanti"
 msgid "Backward"
 msgstr "Indietro"
 
-#: src/guiKeyChangeMenu.cpp:391 src/keycode.cpp:228
+#: src/guiKeyChangeMenu.cpp:391
+#: src/keycode.cpp:228
 msgid "Left"
 msgstr "Sinistra"
 
-#: src/guiKeyChangeMenu.cpp:392 src/keycode.cpp:228
+#: src/guiKeyChangeMenu.cpp:392
+#: src/keycode.cpp:228
 msgid "Right"
 msgstr "Destra"
 

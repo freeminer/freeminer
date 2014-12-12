@@ -761,7 +761,7 @@ void ClientInterface::UpdatePlayerList()
 		m_clients_names.clear();
 
 
-		if(clients.size() != 0)
+		if(!clients.empty())
 			infostream<<"Players ["<<clients.size()<<"]:"<<std::endl;
 		for(std::list<u16>::iterator
 			i = clients.begin();
