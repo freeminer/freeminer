@@ -66,6 +66,56 @@ Settings & Settings::operator = (const Settings &other)
 }
 
 
+bool Settings::checkNameValid(const std::string &name)
+{
+	size_t pos = name.find_first_of("\t\n\v\f\r\b =\"{}#");
+	if (pos != std::string::npos) {
+		errorstream << "Invalid character '" << name[pos]
+			<< "' found in setting name" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
+bool Settings::checkValueValid(const std::string &value)
+{
+	if (value.substr(0, 3) == "\"\"\"" ||
+		value.find("\n\"\"\"") != std::string::npos) {
+		errorstream << "Invalid character sequence '\"\"\"' found in"
+			" setting value" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+
+std::string Settings::sanitizeName(const std::string &name)
+{
+	std::string n(name);
+
+	for (const char *s = "\t\n\v\f\r\b =\"{}#"; *s; s++)
+		n.erase(std::remove(n.begin(), n.end(), *s), n.end());
+
+	return n;
+}
+
+
+std::string Settings::sanitizeValue(const std::string &value)
+{
+	std::string v(value);
+	size_t p = 0;
+
+	if (v.substr(0, 3) == "\"\"\"")
+		v.erase(0, 3);
+
+	while ((p = v.find("\n\"\"\"")) != std::string::npos)
+		v.erase(p, 4);
+
+	return v;
+}
+
+
 std::string Settings::getMultiline(std::istream &is, size_t *num_lines)
 {
 	size_t lines = 1;
@@ -207,7 +257,6 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 				printEntry(os, name, it->second, tab_depth);
 				was_modified = true;
 			} else {
-				assert(it->second.group == NULL);
 				os << line << "\n";
 				if (event == SPE_MULTILINE)
 					os << value << "\n\"\"\"\n";
@@ -685,21 +734,20 @@ bool Settings::getFlagStrNoEx(const std::string &name, u32 &val,
  * Setters *
  ***********/
 
-void Settings::setEntry(const std::string &name, const void *data,
+bool Settings::setEntry(const std::string &name, const void *data,
 	bool set_group, bool set_default)
 {
 	Settings *old_group = NULL;
 
-	// Strip any potentially dangerous characters from the name (note the value
-	// has no such restrictions)
-	std::string n(name);
-	for (const char *s = "\t\n\v\f\r\b =\""; *s; s++)
-		n.erase(std::remove(n.begin(), n.end(), *s), n.end());
+	if (!checkNameValid(name))
+		return false;
+	if (!set_group && !checkValueValid(*(const std::string *)data))
+		return false;
 
 	{
 		JMutexAutoLock lock(m_mutex);
 
-		SettingsEntry &entry = set_default ? m_defaults[n] : m_settings[n];
+		SettingsEntry &entry = set_default ? m_defaults[name] : m_settings[name];
 		old_group = entry.group;
 
 		entry.value    = set_group ? "" : *(const std::string *)data;
@@ -708,93 +756,97 @@ void Settings::setEntry(const std::string &name, const void *data,
 	}
 
 	delete old_group;
+
+	return true;
 }
 
 
-void Settings::set(const std::string &name, const std::string &value)
+bool Settings::set(const std::string &name, const std::string &value)
 {
-	setEntry(name, &value, false, false);
+	if (!setEntry(name, &value, false, false))
+		return false;
 
 	doCallbacks(name);
+	return true;
 }
 
 
-void Settings::setDefault(const std::string &name, const std::string &value)
+bool Settings::setDefault(const std::string &name, const std::string &value)
 {
-	setEntry(name, &value, false, true);
+	return setEntry(name, &value, false, true);
 }
 
 
-void Settings::setGroup(const std::string &name, Settings *group)
+bool Settings::setGroup(const std::string &name, Settings *group)
 {
-	setEntry(name, &group, true, false);
+	return setEntry(name, &group, true, false);
 }
 
 
-void Settings::setGroupDefault(const std::string &name, Settings *group)
+bool Settings::setGroupDefault(const std::string &name, Settings *group)
 {
-	setEntry(name, &group, true, true);
+	return setEntry(name, &group, true, true);
 }
 
 
-void Settings::setBool(const std::string &name, bool value)
+bool Settings::setBool(const std::string &name, bool value)
 {
-	set(name, value ? "true" : "false");
+	return set(name, value ? "true" : "false");
 }
 
 
-void Settings::setS16(const std::string &name, s16 value)
+bool Settings::setS16(const std::string &name, s16 value)
 {
-	set(name, itos(value));
+	return set(name, itos(value));
 }
 
 
-void Settings::setU16(const std::string &name, u16 value)
+bool Settings::setU16(const std::string &name, u16 value)
 {
-	set(name, itos(value));
+	return set(name, itos(value));
 }
 
 
-void Settings::setS32(const std::string &name, s32 value)
+bool Settings::setS32(const std::string &name, s32 value)
 {
-	set(name, itos(value));
+	return set(name, itos(value));
 }
 
 
-void Settings::setU64(const std::string &name, uint64_t value)
+bool Settings::setU64(const std::string &name, uint64_t value)
 {
 	std::ostringstream os;
 	os << value;
-	set(name, os.str());
+	return set(name, os.str());
 }
 
 
-void Settings::setFloat(const std::string &name, float value)
+bool Settings::setFloat(const std::string &name, float value)
 {
-	set(name, ftos(value));
+	return set(name, ftos(value));
 }
 
 
-void Settings::setV2F(const std::string &name, v2f value)
+bool Settings::setV2F(const std::string &name, v2f value)
 {
 	std::ostringstream os;
 	os << "(" << value.X << "," << value.Y << ")";
-	set(name, os.str());
+	return set(name, os.str());
 }
 
 
-void Settings::setV3F(const std::string &name, v3f value)
+bool Settings::setV3F(const std::string &name, v3f value)
 {
 	std::ostringstream os;
 	os << "(" << value.X << "," << value.Y << "," << value.Z << ")";
-	set(name, os.str());
+	return set(name, os.str());
 }
 
 
-void Settings::setFlagStr(const std::string &name, u32 flags,
+bool Settings::setFlagStr(const std::string &name, u32 flags,
 	const FlagDesc *flagdesc, u32 flagmask)
 {
-	set(name, writeFlagString(flags, flagdesc, flagmask));
+	return set(name, writeFlagString(flags, flagdesc, flagmask));
 }
 
 
@@ -805,12 +857,11 @@ bool Settings::setStruct(const std::string &name, const std::string &format,
 	if (!serializeStructToString(&structstr, format, value))
 		return false;
 
-	set(name, structstr);
-	return true;
+	return set(name, structstr);
 }
 
 
-void Settings::setNoiseParams(const std::string &name,
+bool Settings::setNoiseParams(const std::string &name,
 	const NoiseParams &np, bool set_default)
 {
 	Settings *group = new Settings;
@@ -828,7 +879,7 @@ void Settings::setNoiseParams(const std::string &name,
 	group->setFloat("farspread",   np.farspread);
 	group->setFloat("farpersist",  np.farpersist);
 
-	setEntry(name, &group, true, set_default);
+	return setEntry(name, &group, true, set_default);
 }
 
 

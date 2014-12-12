@@ -441,7 +441,7 @@ public:
 		auto lock = lock_unique_rec();
 		m_usage_timer = 0;
 	}
-	u32 getUsageTimer()
+	float getUsageTimer()
 	{
 		auto lock = lock_shared_rec();
 		return m_usage_timer;

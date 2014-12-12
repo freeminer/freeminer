@@ -56,7 +56,7 @@ FlagDesc flagdesc_mapgen_v6[] = {
 MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	: Mapgen(mapgenid, params, emerge)
 {
-	this->emerge  = emerge;
+	this->m_emerge = emerge;
 	this->ystride = csize.X; //////fix this
 
 	MapgenV6Params *sp = (MapgenV6Params *)params->sparams;
@@ -138,7 +138,7 @@ MapgenV6Params::MapgenV6Params() {
 	np_terrain_base   = NoiseParams(-4,  20.0, v3f(250.0, 250.0, 250.0), 82341,  5, 0.6, 2.0);
 	np_terrain_higher = NoiseParams(20,  16.0, v3f(500.0, 500.0, 500.0), 85039,  5, 0.6, 2.0);
 	np_steepness      = NoiseParams(0.85,0.5,  v3f(125.0, 125.0, 125.0), -932,   5, 0.7, 2.0);
-	np_height_select  = NoiseParams(0.5, 1.0,  v3f(250.0, 250.0, 250.0), 4213,   5, 0.69, 2.0);
+	np_height_select  = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 4213,   5, 0.69, 2.0);
 	np_mud            = NoiseParams(4,   2.0,  v3f(200.0, 200.0, 200.0), 91013,  3, 0.55, 2.0);
 	np_beach          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 59420,  3, 0.50, 2.0);
 	np_biome          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 9130,   3, 0.50, 2.0);
@@ -259,13 +259,13 @@ float MapgenV6::baseTerrainLevelFromNoise(v2s16 p) {
 	if (flags & MG_FLAT)
 		return water_level;
 
-	float terrain_base   = NoisePerlin2DPosOffset(&noise_terrain_base->np,
+	float terrain_base   = NoisePerlin2D_PO(&noise_terrain_base->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float terrain_higher = NoisePerlin2DPosOffset(&noise_terrain_higher->np,
+	float terrain_higher = NoisePerlin2D_PO(&noise_terrain_higher->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float steepness      = NoisePerlin2DPosOffset(&noise_steepness->np,
+	float steepness      = NoisePerlin2D_PO(&noise_steepness->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float height_select  = NoisePerlin2DNoTxfmPosOffset(&noise_height_select->np,
+	float height_select  = NoisePerlin2D_PO(&noise_height_select->np,
 							p.X, 0.5, p.Y, 0.5, seed);
 
 	return baseTerrainLevel(terrain_base, terrain_higher,
@@ -542,10 +542,10 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		placeTreesAndJungleGrass();
 
 	// Generate the registered decorations
-	emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
-	emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
+	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)
@@ -558,43 +558,18 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 
 void MapgenV6::calculateNoise() {
 	int x = node_min.X;
-	int y = node_min.Z;
 	int z = node_min.Z;
 
-	// Need to adjust for the original implementation's +.5 offset...
 	if (!(flags & MG_FLAT)) {
-		noise_terrain_base->perlinMap2D(
-			x + 0.5 * noise_terrain_base->np.spread.X * farscale(noise_terrain_base->np.farspread, x, z),
-			z + 0.5 * noise_terrain_base->np.spread.Z * farscale(noise_terrain_base->np.farspread, x, z));
-		noise_terrain_base->transformNoiseMap(x, y, z);
-
-		noise_terrain_higher->perlinMap2D(
-			x + 0.5 * noise_terrain_higher->np.spread.X * farscale(noise_terrain_higher->np.farspread, x, z),
-			z + 0.5 * noise_terrain_higher->np.spread.Z * farscale(noise_terrain_higher->np.farspread, x, z));
-		noise_terrain_higher->transformNoiseMap(x, y, z);
-
-		noise_steepness->perlinMap2D(
-			x + 0.5 * noise_steepness->np.spread.X * farscale(noise_steepness->np.farspread, x, z),
-			z + 0.5 * noise_steepness->np.spread.Z * farscale(noise_steepness->np.farspread, x, z));
-		noise_steepness->transformNoiseMap(x, y, z);
-
-		noise_height_select->perlinMap2D(
-			x + 0.5 * noise_height_select->np.spread.X * farscale(noise_height_select->np.farspread, x, z),
-			z + 0.5 * noise_height_select->np.spread.Z * farscale(noise_height_select->np.farspread, x, z));
-
-		noise_mud->perlinMap2D(
-			x + 0.5 * noise_mud->np.spread.X * farscale(noise_mud->np.farspread, x, z),
-			z + 0.5 * noise_mud->np.spread.Z * farscale(noise_mud->np.farspread, x, z));
-		noise_mud->transformNoiseMap(x, y, z);
+		noise_terrain_base->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_terrain_higher->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_steepness->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_height_select->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_mud->perlinMap2D_PO(x, 0.5, z, 0.5);
 	}
 
-	noise_beach->perlinMap2D(
-		x + 0.2 * noise_beach->np.spread.X * farscale(noise_beach->np.farspread, x, z),
-		z + 0.7 * noise_beach->np.spread.Z * farscale(noise_beach->np.farspread, x, z));
-
-	noise_biome->perlinMap2D(
-		x + 0.6 * noise_biome->np.spread.X * farscale(noise_biome->np.farspread, x, z),
-		z + 0.2 * noise_biome->np.spread.Z * farscale(noise_biome->np.farspread, x, z));
+	noise_beach->perlinMap2D_PO(x, 0.2, z, 0.7);
+	noise_biome->perlinMap2D_PO(x, 0.6, z, 0.2);
 }
 
 
@@ -616,7 +591,7 @@ int MapgenV6::generateGround() {
 			stone_surface_max_y = surface_y;
 
 		BiomeV6Type bt = getBiome(index, v2s16(x, z));
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		v3s16 em = vm->m_area.getExtent();
@@ -1014,8 +989,8 @@ void MapgenV6::growGrass() {
 		MapNode *n = &vm->m_data[i];
 		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
 		{
-			if (emerge->env->m_use_weather) {
-				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
+			if (m_emerge->env->m_use_weather) {
+				int heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
 				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
 			} else
 			n->setContent(c_dirt_with_grass);

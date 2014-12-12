@@ -60,8 +60,8 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	: Mapgen(mapgenid, params, emerge)
 	, Mapgen_features(mapgenid, params, emerge)
 {
-	this->emerge = emerge;
-	this->bmgr   = emerge->biomemgr;
+	this->m_emerge = emerge;
+	this->bmgr     = emerge->biomemgr;
 
 	//// amount of elements to skip for the next index
 	//// for noise/height/biome maps (not vmanip)
@@ -215,7 +215,7 @@ int MapgenV7::getGroundLevelAtPoint(v2s16 p) {
 
 	// Ridge/river terrain calculation
 	float width = 0.3;
-	float uwatern = NoisePerlin2DNoTxfm(&noise_ridge_uwater->np, p.X, p.Y, seed) * 2;
+	float uwatern = NoisePerlin2D(&noise_ridge_uwater->np, p.X, p.Y, seed) * 2;
 	// actually computing the depth of the ridge is much more expensive;
 	// if inside a river, simply guess
 	if (uwatern >= -width && uwatern <= width)
@@ -257,7 +257,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	full_node_min = (blockpos_min - 1) * MAP_BLOCKSIZE;
 	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
-	blockseed = emerge->getBlockSeed(full_node_min);  //////use getBlockSeed2()!
+	blockseed = m_emerge->getBlockSeed(full_node_min);  //////use getBlockSeed2()!
 
 	// Make some noise
 	calculateNoise();
@@ -291,10 +291,10 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	}
 
 	// Generate the registered decorations
-	emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
-	emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
+	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
 	// Sprinkle some dust on top after everything else was generated
 	dustTopNodes();
@@ -320,26 +320,18 @@ void MapgenV7::calculateNoise() {
 	int z = node_min.Z;
 
 	noise_height_select->perlinMap2D(x, z);
-	noise_height_select->transformNoiseMap();
-
 	noise_terrain_persist->perlinMap2D(x, z);
-	noise_terrain_persist->transformNoiseMap();
 	float *persistmap = noise_terrain_persist->result;
 	for (int i = 0; i != csize.X * csize.Z; i++)
 		persistmap[i] = rangelim(persistmap[i], 0.4, 0.9);
 
 	noise_terrain_base->perlinMap2D(x, z, persistmap);
-	noise_terrain_base->transformNoiseMap();
-
 	noise_terrain_alt->perlinMap2D(x, z, persistmap);
-	noise_terrain_alt->transformNoiseMap();
-
 	noise_filler_depth->perlinMap2D(x, z);
 
 	if (spflags & MGV7_MOUNTAINS) {
 		noise_mountain->perlinMap3D(x, y, z);
 		noise_mount_height->perlinMap2D(x, z);
-		noise_mount_height->transformNoiseMap();
 	}
 
 	if (spflags & MGV7_RIDGES) {
@@ -484,7 +476,7 @@ int MapgenV7::generateBaseTerrain() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
@@ -572,7 +564,7 @@ void MapgenV7::generateRidgeTerrain() {
 			if (y < ridge_heightmap[j])
 				ridge_heightmap[j] = y - 1;
 
-			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
+			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
 			MapNode n_water_or_ice = (heat < 0 && y > water_level + heat/4) ? n_ice : n_water;
 
 			vm->m_data[vi] = (y > water_level) ? n_air : n_water_or_ice;
@@ -605,7 +597,7 @@ void MapgenV7::generateBiomes() {
 		content_t c_above = vm->m_data[i + em.X].getContent();
 		bool have_air = c_above == CONTENT_AIR;
 
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
 
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[i].getContent();

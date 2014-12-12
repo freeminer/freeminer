@@ -534,9 +534,12 @@ struct TestSettings: public TestBase
 		group2->setS16("num_oranges", 53);
 		group2->setGroup("animals", group3);
 		group2->set("animals", "cute"); //destroys group 3
+		s.setGroup("groupy_thing", group2);
 
-		// the bad chars in here should be stripped
-		s.setGroup("groupy  \"_\"  thing", group2);
+		// Test set failure conditions
+		UASSERT(s.set("Zoop = Poop\nsome_other_setting", "false") == false);
+		UASSERT(s.set("sneaky", "\"\"\"\njabberwocky = false") == false);
+		UASSERT(s.set("hehe", "asdfasdf\n\"\"\"\nsomething = false") == false);
 
 		// Test multiline settings
 		UASSERT(group->get("ccc") == "testy\n   testa   ");
@@ -1758,6 +1761,8 @@ void run_tests()
 	IWritableNodeDefManager *ndef = createNodeDefManager();
 	define_some_nodes(idef, ndef);
 
+	log_set_lev_silence(LMT_ERROR, true);
+
 	infostream<<"run_tests() started"<<std::endl;
 	TEST(TestUtilities);
 	// TODO(xyz): figure out why this fails on MSVC
@@ -1774,6 +1779,8 @@ void run_tests()
 	//TEST(TestMapBlock);
 	//TEST(TestMapSector);
 	TEST(TestCollision);
+
+	log_set_lev_silence(LMT_ERROR, false);
 
 	delete idef;
 	delete ndef;

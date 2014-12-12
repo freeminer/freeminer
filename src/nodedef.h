@@ -89,6 +89,8 @@ class IShaderSource;
 class IGameDef;
 
 typedef std::list<std::pair<content_t, int> > GroupItems;
+typedef std::list<std::pair<std::string, std::vector<content_t> *> >
+	ContentVectorResolveList;
 
 enum ContentParamType
 {
@@ -230,7 +232,7 @@ struct ContentFeatures
 	*/
 #ifndef SERVER
 	// 0     1     2     3     4     5
-	// up    down  right left  back  front 
+	// up    down  right left  back  front
 	TileSpec tiles[6];
 	// Special tiles
 	// - Currently used for flowing liquids
@@ -262,7 +264,7 @@ struct ContentFeatures
 	std::string mesh;
 #ifndef SERVER
 	scene::IMesh *mesh_ptr[24];
-#endif	
+#endif
 	float visual_scale; // Misc. scale parameter
 	TileDef tiledef[6];
 	TileDef tiledef_special[CF_SPECIAL_COUNT]; // eg. flowing liquid
@@ -339,7 +341,7 @@ struct ContentFeatures
 	/*
 		Methods
 	*/
-	
+
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
@@ -422,7 +424,7 @@ public:
 			node name resolution.
 		@return Status of node resolution request.
 	*/
-	int addNode(std::string n_wanted, std::string n_alt,
+	int addNode(const std::string &n_wanted, const std::string &n_alt,
 		content_t c_fallback, content_t *content);
 
 	/**
@@ -443,11 +445,12 @@ public:
 
 		@return Status of node resolution request.
 	*/
-	int addNodeList(const char *nodename, std::vector<content_t> *content_vec);
+	int addNodeList(const std::string &nodename,
+		std::vector<content_t> *content_vec);
 
 	/**
-		Removes all pending requests from the resolution queue to be satisfied
-		to content.
+		Removes all pending requests from the resolution queue with the output
+		address of 'content'.
 
 		@param content Location of the content ID for the request being
 			cancelled.
@@ -456,8 +459,8 @@ public:
 	bool cancelNode(content_t *content);
 
 	/**
-		Removes all pending requests from the resolution queue to be satisfied
-		to content_vec.
+		Removes all pending requests from the resolution queue with the output
+		address of 'content_vec'.
 
 		@param content_vec Location of the content ID vector for requests being
 			cancelled.
@@ -486,7 +489,7 @@ private:
 	INodeDefManager *m_ndef;
 	bool m_is_node_registration_complete;
 	std::list<NodeResolveInfo *> m_pending_contents;
-	std::list<std::pair<std::string, std::vector<content_t> *> > m_pending_content_vecs;
+	ContentVectorResolveList m_pending_content_vecs;
 };
 
 class INodeDefManager

@@ -445,7 +445,7 @@ void Client::step(float dtime)
 		{
 			if(sendlist.size() == 255 || i == deleted_blocks.end())
 			{
-				if(sendlist.size() == 0)
+				if(sendlist.empty())
 					break;
 
 				MSGPACK_PACKET_INIT(TOSERVER_DELETEDBLOCKS, 1);
@@ -655,7 +655,7 @@ void Client::step(float dtime)
 			}
 		}
 		// Sync to server
-		if(removed_server_ids.size() != 0)
+		if(!removed_server_ids.empty())
 		{
 			MSGPACK_PACKET_INIT(TOSERVER_REMOVED_SOUNDS, 1);
 			PACK(TOSERVER_REMOVED_SOUNDS_IDS, removed_server_ids);
@@ -2227,7 +2227,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 			snprintf(filename, sizeof(filename), "%s" DIR_DELIM "screenshot_%u.png",
 				 g_settings->get("screenshot_path").c_str(),
 				 device->getTimer()->getRealTime());
-			std::stringstream sstr;
+			std::ostringstream sstr;
 			if (driver->writeImageToFile(image, filename)) {
 				sstr << "Saved screenshot to '" << filename << "'";
 			} else {
