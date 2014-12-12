@@ -46,9 +46,9 @@ dofile(scriptdir.."key_value_storage.lua")
 if INIT == "game" then
 	dofile(gamepath .. "init.lua")
 elseif INIT == "mainmenu" then
-	local mainmenuscript = core.setting_get("main_menu_script")
-	if mainmenuscript ~= nil and mainmenuscript ~= "" then
-		dofile(mainmenuscript)
+	local mm_script = core.settings:get("main_menu_script")
+	if mm_script and mm_script ~= "" then
+		dofile(mm_script)
 	else
 	  if PLATFORM == "Android" then
 		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")

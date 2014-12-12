@@ -47,6 +47,8 @@ private:
 	// get us precision time
 	static int l_get_us_time(lua_State *L);
 
+// fm old remove:
+/*
 	// setting_set(name, value)
 	static int l_setting_set(lua_State *L);
 
@@ -67,6 +69,7 @@ private:
 
 	// setting_save()
 	static int l_setting_save(lua_State *L);
+*/
 
 	// parse_json(str[, nullvalue])
 	static int l_parse_json(lua_State *L);
@@ -117,9 +120,10 @@ private:
 	static int l_get_version(lua_State *L);
 
 public:
-	static void Initialize(lua_State *L, int top);
 
-	static void InitializeAsync(AsyncEngine& engine);
+	static void Initialize(lua_State *L, int top);
+	static void InitializeAsync(lua_State *L, int top);
+	static void InitializeClient(lua_State *L, int top);
 
 };
 

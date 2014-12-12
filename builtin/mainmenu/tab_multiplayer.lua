@@ -94,7 +94,7 @@ end
 local function main_button_handler(tabview, fields, name, tabdata)
 	if fields.te_name then
 		gamedata.playername = fields.te_name
-		core.setting_set("name", fields.te_name)
+		core.settings:set("name", fields.te_name)
 	end
 
 	if fields.favourites then
@@ -124,8 +124,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				gamedata.serverdescription = fav.description
 
 				if gamedata.address and gamedata.port then
-					core.setting_set("address", gamedata.address)
-					core.setting_set("remote_port", gamedata.port)
+					core.settings:set("address", gamedata.address)
+					core.settings:set("remote_port", gamedata.port)
 					core.start()
 				end
 			end
@@ -148,8 +148,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				end
 
 				if address and port then
-					core.setting_set("address", address)
-					core.setting_set("remote_port", port)
+					core.settings:set("address", address)
+					core.settings:set("remote_port", port)
 				end
 				tabdata.fav_selected = event.row
 			end
@@ -180,8 +180,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		local port    = fav.port
 
 		if address and port then
-			core.setting_set("address", address)
-			core.setting_set("remote_port", port)
+			core.settings:set("address", address)
+			core.settings:set("remote_port", port)
 		end
 
 		tabdata.fav_selected = fav_idx
@@ -196,8 +196,67 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		asyncOnlineFavourites()
 		tabdata.fav_selected = nil
 
-		core.setting_set("address", "")
-		core.setting_set("remote_port", "30000")
+		core.settings:set("address", "")
+		core.settings:set("remote_port", "30000")
+		return true
+	end
+
+	if fields.btn_mp_search or fields.key_enter_field == "te_search" then
+		tabdata.fav_selected = 1
+		local input = fields.te_search:lower()
+		tabdata.search_for = fields.te_search
+
+		if #menudata.favorites < 2 then
+			return true
+		end
+
+		menudata.search_result = {}
+
+		-- setup the keyword list
+		local keywords = {}
+		for word in input:gmatch("%S+") do
+			table.insert(keywords, word)
+		end
+
+		if #keywords == 0 then
+			menudata.search_result = nil
+			return true
+		end
+
+		-- Search the serverlist
+		local search_result = {}
+		for i = 1, #menudata.favorites do
+			local server = menudata.favorites[i]
+			local found = 0
+			for k = 1, #keywords do
+				local keyword = keywords[k]
+				if server.name then
+					local name = server.name:lower()
+					local _, count = name:gsub(keyword, keyword)
+					found = found + count * 4
+				end
+
+				if server.description then
+					local desc = server.description:lower()
+					local _, count = desc:gsub(keyword, keyword)
+					found = found + count * 2
+				end
+			end
+			if found > 0 then
+				local points = (#menudata.favorites - i) / 5 + found
+				server.points = points
+				table.insert(search_result, server)
+			end
+		end
+		if #search_result > 0 then
+			table.sort(search_result, function(a, b)
+				return a.points > b.points
+			end)
+			menudata.search_result = search_result
+			local first_server = search_result[1]
+			core.settings:set("address",     first_server.address)
+			core.settings:set("remote_port", first_server.port)
+		end
 		return true
 	end
 
@@ -227,8 +286,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			gamedata.serverdescription = ""
 		end
 
-		core.setting_set("address",     fields.te_address)
-		core.setting_set("remote_port", fields.te_port)
+		core.settings:set("address",     fields.te_address)
+		core.settings:set("remote_port", fields.te_port)
 
 		core.start()
 		return true

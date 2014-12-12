@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lua_api/l_util.h"
 #include "lua_api/l_internal.h"
+#include "lua_api/l_settings.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "cpp_api/s_async.h"
@@ -80,6 +81,8 @@ int ModApiUtil::l_get_us_time(lua_State *L)
 	return 1;
 }
 
+// fm remove:
+/*
 #define CHECK_SECURE_SETTING(L, name) \
 	if (ScriptApiSecurity::isSecure(L) && \
 			name.compare(0, 7, "secure.") == 0) { \
@@ -170,6 +173,8 @@ int ModApiUtil::l_setting_save(lua_State *L)
 		g_settings->updateConfigFile(g_settings_path.c_str());
 	return 0;
 }
+
+*/
 
 // parse_json(str[, nullvalue])
 int ModApiUtil::l_parse_json(lua_State *L)
@@ -522,6 +527,8 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 	API_FCT(get_us_time);
 
+// fm remove:
+/*
 	API_FCT(setting_set);
 	API_FCT(setting_get);
 	API_FCT(setting_setbool);
@@ -529,6 +536,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(setting_setjson);
 	API_FCT(setting_getjson);
 	API_FCT(setting_save);
+*/
 
 	API_FCT(parse_json);
 	API_FCT(write_json);
@@ -555,36 +563,58 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
+
+	LuaSettings::create(L, g_settings, g_settings_path);
+	lua_setfield(L, top, "settings");
 }
 
-void ModApiUtil::InitializeAsync(AsyncEngine& engine)
+void ModApiUtil::InitializeClient(lua_State *L, int top)
 {
-	ASYNC_API_FCT(log);
+	API_FCT(log);
 
-	ASYNC_API_FCT(get_us_time);
+	API_FCT(get_us_time);
 
-	//ASYNC_API_FCT(setting_set);
-	ASYNC_API_FCT(setting_get);
-	//ASYNC_API_FCT(setting_setbool);
-	ASYNC_API_FCT(setting_getbool);
-	//ASYNC_API_FCT(setting_save);
+	API_FCT(parse_json);
+	API_FCT(write_json);
 
-	ASYNC_API_FCT(parse_json);
-	ASYNC_API_FCT(write_json);
+	API_FCT(is_yes);
 
-	ASYNC_API_FCT(is_yes);
+	API_FCT(get_builtin_path);
 
-	ASYNC_API_FCT(get_builtin_path);
+	API_FCT(compress);
+	API_FCT(decompress);
 
-	ASYNC_API_FCT(compress);
-	ASYNC_API_FCT(decompress);
+	API_FCT(encode_base64);
+	API_FCT(decode_base64);
 
-	ASYNC_API_FCT(mkdir);
-	ASYNC_API_FCT(get_dir_list);
+	API_FCT(get_version);
+}
 
-	ASYNC_API_FCT(encode_base64);
-	ASYNC_API_FCT(decode_base64);
+void ModApiUtil::InitializeAsync(lua_State *L, int top)
+{
+	API_FCT(log);
 
-	ASYNC_API_FCT(get_version);
+	API_FCT(get_us_time);
+
+	API_FCT(parse_json);
+	API_FCT(write_json);
+
+	API_FCT(is_yes);
+
+	API_FCT(get_builtin_path);
+
+	API_FCT(compress);
+	API_FCT(decompress);
+
+	API_FCT(mkdir);
+	API_FCT(get_dir_list);
+
+	API_FCT(encode_base64);
+	API_FCT(decode_base64);
+
+	API_FCT(get_version);
+
+	LuaSettings::create(L, g_settings, g_settings_path);
+	lua_setfield(L, top, "settings");
 }
 

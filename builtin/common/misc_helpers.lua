@@ -570,7 +570,7 @@ if minetest then
 
 	core.rotate_node = function(itemstack, placer, pointed_thing)
 		core.rotate_and_place(itemstack, placer, pointed_thing,
-				core.setting_getbool("creative_mode"),
+				core.settings:get_bool("creative_mode"),
 				{invert_wall = placer:get_player_control().sneak})
 		return itemstack
 	end

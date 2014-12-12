@@ -1,6 +1,9 @@
 local menupath = core.get_mainmenu_path()..DIR_DELIM
 local commonpath = core.get_builtin_path()..DIR_DELIM.."common"..DIR_DELIM
 
+-- fm todo remove:
+dofile(core.get_builtin_path()..DIR_DELIM.."game"..DIR_DELIM.."deprecated.lua")
+
 dofile(commonpath.."filterlist.lua")
 dofile(commonpath.."async_event.lua")
 

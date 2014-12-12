@@ -84,19 +84,6 @@ GameScripting::GameScripting(Server* server)
 
 void GameScripting::InitializeModApi(lua_State *L, int top)
 {
-	// Initialize mod api modules
-	ModApiCraft::Initialize(L, top);
-	ModApiEnvMod::Initialize(L, top);
-	ModApiInventory::Initialize(L, top);
-	ModApiItemMod::Initialize(L, top);
-	ModApiKeyValueStorage::Initialize(L, top);
-	ModApiMapgen::Initialize(L, top);
-	ModApiParticles::Initialize(L, top);
-	ModApiRollback::Initialize(L, top);
-	ModApiServer::Initialize(L, top);
-	ModApiUtil::Initialize(L, top);
-	ModApiHttp::Initialize(L, top);
-
 	// Register reference classes (userdata)
 	InvRef::Register(L);
 	LuaAreaStore::Register(L);
@@ -111,6 +98,23 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 	NodeTimerRef::Register(L);
 	ObjectRef::Register(L);
 	LuaSettings::Register(L);
+	// fm todo: StorageRef::Register(L);
+
+    // freeminer:
+	ModApiKeyValueStorage::Initialize(L, top);
+
+	// Initialize mod api modules
+	ModApiCraft::Initialize(L, top);
+	ModApiEnvMod::Initialize(L, top);
+	ModApiInventory::Initialize(L, top);
+	ModApiItemMod::Initialize(L, top);
+	ModApiMapgen::Initialize(L, top);
+	ModApiParticles::Initialize(L, top);
+	ModApiRollback::Initialize(L, top);
+	ModApiServer::Initialize(L, top);
+	ModApiUtil::Initialize(L, top);
+	ModApiHttp::Initialize(L, top);
+	// fm todo: ModApiStorage::Initialize(L, top);
 }
 
 void log_deprecated(const std::string &message)

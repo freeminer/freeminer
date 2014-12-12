@@ -33,8 +33,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_internal.h"
 
 #define luamethod(class, name) {#name, class::l_##name}
-#define API_FCT(name) registerFunction(L, #name, l_##name,top)
-#define ASYNC_API_FCT(name) engine.registerFunction(#name, l_##name)
+#define luamethod_aliased(class, name, alias) {#name, class::l_##name}, {#alias, class::l_##name}
+#define API_FCT(name) registerFunction(L, #name, l_##name, top)
 
 #define MAP_LOCK_REQUIRED
 #define NO_MAP_LOCK_REQUIRED

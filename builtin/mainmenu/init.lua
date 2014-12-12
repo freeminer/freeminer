@@ -125,9 +125,9 @@ local function init_globals()
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 		menudata.worldlist:set_sortmode("alphabetic")
 
-		if not core.setting_get("menu_last_game") then
-			local default_game = core.setting_get("default_game") or "default"
-			core.setting_set("menu_last_game", default_game)
+		if not core.settings:get("menu_last_game") then
+			local default_game = core.settings:get("default_game") or "default"
+			core.settings:set("menu_last_game", default_game)
 		end
 
 		mm_texture.init()
@@ -163,7 +163,7 @@ local function init_globals()
 	if PLATFORM ~= "Android" then
 ]]
 	if true then
-		tv_main:set_tab(core.setting_get("maintab_LAST") or 'multiplayer')
+		tv_main:set_tab(core.setting:get("maintab_LAST") or 'multiplayer')
 	end
 	ui.set_default("maintab")
 	tv_main:show()
