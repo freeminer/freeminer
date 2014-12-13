@@ -3133,7 +3133,7 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 	MapBlockP block;
 	// Cache the block to be inspected.
 	if(cacheBlocks) {
-		block = emergeBlock(blockPosition);
+		block = emergeBlock(blockPosition, false);
 	}
 
 	// Probes the nodes in the given column
@@ -3145,7 +3145,7 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 
 			// If the node is in an different block, cache it
 			if(blockPosition != prevBlockPosition) {
-				block = emergeBlock(blockPosition);
+				block = emergeBlock(blockPosition, false);
 				prevBlockPosition = blockPosition;
 			}
 		}

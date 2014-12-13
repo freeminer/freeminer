@@ -1386,6 +1386,12 @@ static bool determine_subgame(GameParams *game_params)
 		} else { // Otherwise we will be using "minetest"
 			gamespec = findSubgame(g_settings->get("default_game"));
 			infostream << "Using default gameid [" << gamespec.id << "]" << std::endl;
+			if (!gamespec.isValid()) {
+				errorstream << "Subgame specified in default_game ["
+				            << g_settings->get("default_game")
+				            << "] is invalid." << std::endl;
+				return false;
+			}
 		}
 	} else { // World exists
 		std::string world_gameid = getWorldGameId(game_params->world_path, false);
@@ -1940,6 +1946,10 @@ bool ClientLauncher::launch_game(std::string *error_message,
 			errorstream << (*error_message) << std::endl;
 			return false;
 		}
+
+		if (porting::signal_handler_killstatus())
+			return true;
+
 		if (game_params.game_spec.isValid() &&
 				game_params.game_spec.id != worldspec.gameid) {
 			errorstream << "WARNING: Overriding gamespec from \""
