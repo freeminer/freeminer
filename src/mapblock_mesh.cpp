@@ -170,7 +170,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 		}
 	}
 	m_vmanip.copyFrom(data, area, area.MinEdge, area.MinEdge, area.getExtent());
-	delete[] data;
+	delete data;
 #endif
 }
 
