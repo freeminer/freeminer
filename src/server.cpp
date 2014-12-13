@@ -4749,7 +4749,7 @@ v3f findSpawnPos(ServerMap &map)
 		s32 air_count = 0;
 		for (s32 i = 0; i < 10; i++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
-			map.emergeBlock(blockpos, true);
+			map.emergeBlock(blockpos, false);
 			content_t c = map.getNodeNoEx(nodepos).getContent();
 			if (c == CONTENT_AIR || c == CONTENT_IGNORE) {
 				air_count++;
