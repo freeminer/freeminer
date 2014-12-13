@@ -404,20 +404,20 @@ function tabbuilder.tab_singleplayer()
 		gameidx = menu.lastgame().id
 	end
 	formspec = "label[0,2;Game: " .. core.formspec_escape(gameidx) .. "]" ..
-			"button[6.5,5;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"label[6.5,0;".. fgettext("Select World:") .. "]"..
-			"checkbox[6.5,4.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+			"button[7.1,8;3,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+			"label[7.1,0;".. fgettext("Select World:") .. "]"..
+			"checkbox[7.1,7.1;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 			dump(core.setting_getbool("creative_mode")) .. "]"..
-			"checkbox[9.5,4.1;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+			"checkbox[10.1,7.1;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
 			dump(core.setting_getbool("enable_damage")) .. "]"..
-			"textlist[6.5,0.5;8.8,3.7;sp_worlds;" ..
+			"textlist[7.1,0.5;8.8,6.5;sp_worlds;" ..
 			menu.render_world_list() ..
 			";" .. index .. "]" ..
 			menubar.formspec
 	if #gamemgr.games > 0 then
-		formspec = formspec .. "button[12.25,6.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
-			"button[9.5,5;3,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[12.5,5;3,0.5;world_configure;".. fgettext("Configure") .. "]"
+		formspec = formspec .. "button[12.85,8.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
+			"button[10.1,8;3,0.5;world_create;".. fgettext("New") .. "]" ..
+			"button[13.1,8;3,0.5;world_configure;".. fgettext("Configure") .. "]"
 	end
 	return formspec
 end
