@@ -139,6 +139,7 @@ MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
 
 MapBlock * Map::createBlankBlock(v3POS & p)
 {
+	auto lock = m_blocks.lock_unique_rec();
 	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 	if (block != NULL) {
 		infostream<<"Block already created p="<<block->getPos()<<std::endl;
