@@ -81,7 +81,7 @@ public:
 
 	void *Thread();
 	bool popBlockEmerge(v3s16 *pos, u8 *flags);
-	bool getBlockOrStartGen(v3s16 p, MapBlock **b,
+	bool getBlockOrStartGen(v3s16 p, MapBlockP & b,
 			BlockMakeData *data, bool allow_generate);
 };
 
@@ -444,13 +444,13 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
 }
 
 
-bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
+bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlockP & b,
 									BlockMakeData *data, bool allow_gen) {
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
 	// Attempt to load block
-	MapBlock *block = map->getBlockNoCreateNoEx(p);
+	MapBlockP block = map->getBlock(p);
 	if (!block || block->isDummy()) {
 		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen<<" block="<<block<<" p="<<p);
 		block = map->loadBlock(p);
@@ -460,18 +460,18 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 // 			m_circuit->processElementsQueue(*map, map->getNodeDefManager());
 		}
 		if (block && block->isGenerated())
-			map->prepareBlock(block);
+			map->prepareBlock(block.get());
 	}
 
 	// If could not load and allowed to generate,
 	// start generation inside this same envlock
 	if (allow_gen && (!block)) {
 		EMERGE_DBG_OUT("generating b="<<block);
-		*b = block;
+		b = block;
 		return map->initBlockMake(data, p);
 	}
 
-	*b = block;
+	b = block;
 	return false;
 }
 
@@ -514,10 +514,10 @@ void *EmergeThread::Thread() {
 			If not found and asked to generate, initialize generator.
 		*/
 		BlockMakeData data;
-		MapBlock *block = NULL;
+		MapBlockP block = nullptr;
 		std::map<v3s16, MapBlock *> modified_blocks;
 
-		if (getBlockOrStartGen(p, &block, &data, allow_generate) && mapgen) {
+		if (getBlockOrStartGen(p, block, &data, allow_generate) && mapgen) {
 			{
 				ScopeProfiler sp(g_profiler, "EmergeThread: Mapgen::makeChunk", SPT_AVG);
 				TimeTaker t("mapgen::make_block()");
@@ -536,7 +536,7 @@ void *EmergeThread::Thread() {
 
 				map->finishBlockMake(&data, modified_blocks);
 
-				block = map->getBlockNoCreateNoEx(p);
+				block = map->getBlock(p);
 				if (block) {
 					/*
 						Do some post-generate stuff
@@ -557,9 +557,9 @@ void *EmergeThread::Thread() {
 						m_server->setAsyncFatalError(e.what());
 					}
 
-					EMERGE_DBG_OUT("ended up with: " << analyze_block(block));
+					EMERGE_DBG_OUT("ended up with: " << analyze_block(block.get()));
 
-					m_server->m_env->activateBlock(block, 0);
+					m_server->m_env->activateBlock(block.get(), 0);
 				}
 			}
 
@@ -568,7 +568,7 @@ void *EmergeThread::Thread() {
 		*/
 		// Add the originally fetched block to the modified list
 		if (block)
-			modified_blocks[p] = block;
+			modified_blocks[p] = block.get();
 		else if (allow_generate)
 			infostream<<"nothing generated at "<<PP(p)<<std::endl;
 

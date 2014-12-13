@@ -3682,7 +3682,7 @@ void Server::setBlockNotSent(v3s16 p)
 	}
 }
 
-void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable)
+void Server::SendBlockNoLock(u16 peer_id, MapBlockP block, u8 ver, u16 net_proto_version, bool reliable)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -3749,15 +3749,10 @@ int Server::SendBlocks(float dtime)
 
 		PrioritySortedBlockTransfer q = queue[i];
 
-		MapBlock *block = NULL;
-		try
-		{
-			block = m_env->getMap().getBlockNoCreate(q.pos);
-		}
-		catch(InvalidPositionException &e)
-		{
+		MapBlockP block = nullptr;
+		block = m_env->getMap().getBlock(q.pos);
+		if (!block)
 			continue;
-		}
 
 		RemoteClient *client = m_clients.lockedGetClientNoEx(q.peer_id, CS_Active);
 

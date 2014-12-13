@@ -1519,11 +1519,11 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	int count = 0;
 	new_db->beginSave();
 	for (std::list<v3s16>::iterator i = blocks.begin(); i != blocks.end(); i++) {
-		MapBlock *block = old_map.loadBlock(*i);
+		MapBlockP block = old_map.loadBlock(*i);
 		if (!block) {
 			errorstream << "Failed to load block " << PP(*i) << ", skipping it.";
 		} else {
-			old_map.saveBlock(block, new_db);
+			old_map.saveBlock(block.get(), new_db);
 			old_map.m_blocks.erase(block->getPos());
 		}
 		++count;

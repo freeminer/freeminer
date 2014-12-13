@@ -2463,7 +2463,7 @@ NodeMetadata *Map::getNodeMetadata(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
+	MapBlockP block = getBlock(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeMetadata(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -2482,7 +2482,7 @@ bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
+	MapBlockP block = getBlock(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeMetadata(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -2501,7 +2501,7 @@ void Map::removeNodeMetadata(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
+	MapBlockP block = getBlock(blockpos, false, true);
 	if(block == NULL)
 	{
 		infostream<<"WARNING: Map::removeNodeMetadata(): Block not found"
@@ -2515,7 +2515,7 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlockP block = getBlock(blockpos);
 	if(!block){
 		infostream<<"Map::getNodeTimer(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -2534,7 +2534,7 @@ void Map::setNodeTimer(v3s16 p, NodeTimer t)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlockP block = getBlock(blockpos);
 	if(!block){
 		infostream<<"Map::setNodeTimer(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -2552,7 +2552,7 @@ void Map::removeNodeTimer(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlockP block = getBlock(blockpos);
 	if(block == NULL)
 	{
 		infostream<<"WARNING: Map::removeNodeTimer(): Block not found"
@@ -2564,7 +2564,7 @@ void Map::removeNodeTimer(v3s16 p)
 
 s16 Map::getHeat(v3s16 p, bool no_random)
 {
-	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+	MapBlockP block = getBlock(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->heat;
 		return value + (no_random ? 0 : myrand_range(0, 1));
@@ -2575,7 +2575,7 @@ s16 Map::getHeat(v3s16 p, bool no_random)
 
 s16 Map::getHumidity(v3s16 p, bool no_random)
 {
-	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+	MapBlockP block = getBlock(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->humidity;
 		return value + (no_random ? 0 : myrand_range(0, 1));
@@ -2763,7 +2763,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 				v3s16 p(x,y,z);
 				//MapBlock *block = createBlock(p);
 				// 1) get from memory, 2) load from disk
-				MapBlock *block = emergeBlock(p, false);
+				MapBlockP block = emergeBlock(p, false);
 				// 3) create a blank one
 				if(block == NULL)
 				{
@@ -3014,7 +3014,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
 }
 
-MapBlock * ServerMap::createBlock(v3s16 p)
+MapBlockP ServerMap::createBlock(v3s16 p)
 {
 	DSTACKF("%s: p=(%d,%d,%d)",
 			__FUNCTION_NAME, p.X, p.Y, p.Z);
@@ -3030,7 +3030,7 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 	|| p.Z > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE)
 		throw InvalidPositionException("createBlock(): pos. over limit");
 
-	MapBlock *block = this->getBlockNoCreateNoEx(p, false, true);
+	MapBlockP block = this->getBlock(p, false, true);
 	if(block)
 	{
 		if(block->isDummy())
@@ -3038,18 +3038,18 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 		return block;
 	}
 	// Create blank
-	block = this->createBlankBlock(p);
+	block = MapBlockP(this->createBlankBlock(p));
 
 	return block;
 }
 
-MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
+MapBlockP ServerMap::emergeBlock(v3s16 p, bool create_blank)
 {
 	DSTACKF("%s: p=(%d,%d,%d), create_blank=%d",
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
 	{
-		MapBlock *block = getBlockNoCreateNoEx(p, false, true);
+		MapBlockP block = getBlock(p, false, true);
 		if(block && block->isDummy() == false)
 		{
 			return block;
@@ -3060,13 +3060,13 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 		return nullptr;
 
 	{
-		MapBlock *block = loadBlock(p);
+		MapBlockP block = loadBlock(p);
 		if(block)
 			return block;
 	}
 
 	if (create_blank) {
-		return this->createBlankBlock(p);
+		return MapBlockP(this->createBlankBlock(p));
 	}
 
 	return NULL;
@@ -3390,7 +3390,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 	return ret;
 }
 
-MapBlock * ServerMap::loadBlock(v3s16 p3d)
+MapBlockP ServerMap::loadBlock(v3s16 p3d)
 {
 	DSTACK(__FUNCTION_NAME);
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
@@ -3416,12 +3416,12 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		// This will always return a sector because we're the server
 		//MapSector *sector = emergeSector(p2d);
 
-		MapBlock *block = NULL;
+		MapBlockP block = nullptr;
 		bool created_new = false;
-		block = sector->getBlockNoCreateNoEx(p3d);
+		block = sector->getBlock(p3d);
 		if(block == NULL)
 		{
-			block = sector->createBlankBlockNoInsert(p3d);
+			block = MapBlockP(sector->createBlankBlockNoInsert(p3d));
 			created_new = true;
 		}
 
@@ -3595,37 +3595,25 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 	for(s32 x=p_min.X; x<=p_max.X; x++)
 	{
 		u8 flags = 0;
-		MapBlock *block;
+		MapBlockP block;
 		v3s16 p(x,y,z);
 		std::map<v3s16, u8>::iterator n;
 		n = m_loaded_blocks.find(p);
 		if(n != m_loaded_blocks.end())
 			continue;
 
-		bool block_data_inexistent = false;
-		try
-		{
 			TimeTaker timer1("emerge load");
 
-			block = m_map->getBlockNoCreate(p);
-			if(!block || block->isDummy())
-				block_data_inexistent = true;
-			else
-				block->copyTo(*this);
-		}
-		catch(InvalidPositionException &e)
-		{
-			block_data_inexistent = true;
-		}
-
-		if(block_data_inexistent)
-		{
+		block = m_map->getBlock(p);
+		if(block) {
+			block->copyTo(*this);
+		} else {
 
 			if (load_if_inexistent) {
 				ServerMap *svrmap = (ServerMap *)m_map;
-				block = svrmap->emergeBlock(p, false);
+				block = svrmap->emergeBlock(p, false); //todo! use MapBlockP
 				if (block == NULL)
-					block = svrmap->createBlock(p);
+					block = svrmap->createBlock(p); //todo! use MapBlockP;
 				else
 					block->copyTo(*this);
 			} else {

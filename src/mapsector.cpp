@@ -154,6 +154,11 @@ MapBlock * Map::createBlankBlock(v3POS & p)
 
 void Map::insertBlock(MapBlock *block)
 {
+	insertBlock(MapBlockP(block));
+}
+
+void Map::insertBlock(MapBlockP block)
+{
 	auto block_p = block->getPos();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
@@ -164,7 +169,7 @@ void Map::insertBlock(MapBlock *block)
 	}
 
 	// Insert into container
-	m_blocks.set(block_p, MapBlockP(block));
+	m_blocks.set(block_p, block);
 }
 
 void Map::deleteBlock(MapBlockP block)
