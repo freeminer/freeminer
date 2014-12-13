@@ -3146,8 +3146,6 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 			// If the node is in an different block, cache it
 			if(blockPosition != prevBlockPosition) {
 				block = emergeBlock(blockPosition);
-				if (!block)
-					break;
 				prevBlockPosition = blockPosition;
 			}
 		}

@@ -4745,9 +4745,7 @@ v3f findSpawnPos(ServerMap &map)
 		for (s32 i = 0; i < 10; i++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
 			auto block = map.emergeBlock(blockpos);
-			if (!block)
-				break;
-			content_t c = block->getNode(blockpos*MAP_BLOCKSIZE - nodepos).getContent();
+			content_t c = map.getNodeNoEx(nodepos).getContent();
 			if (c == CONTENT_AIR || c == CONTENT_IGNORE) {
 				air_count++;
 				if (air_count >= 2){
