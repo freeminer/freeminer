@@ -55,6 +55,8 @@ gsMapper::gsMapper(IrrlichtDevice *device, Client *client):
 
 	d_tsrc = d_client->getTextureSource();
 	d_player = d_client->getEnv().getLocalPlayer();
+
+	d_posx = d_posy = d_width = d_height = d_scale = d_alpha = 0;
 }
 
 gsMapper::~gsMapper()

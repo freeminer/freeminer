@@ -71,6 +71,7 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	m_gamedef(gamedef)
 	,step(1),
 	range(1),
+	timestamp(0),
 	block(nullptr),
 	map(map_),
 	draw_control(draw_control_),
