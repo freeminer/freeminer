@@ -169,14 +169,9 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 			bool is_valid_position;
 			MapNode n = getNodeParent(v3s16(x, MAP_BLOCKSIZE, z),
 				&is_valid_position);
-			if (is_valid_position)
+			if (n)
 			{
-				if(n.getContent() == CONTENT_IGNORE)
-				{
-					// Trust heuristics
-					no_sunlight = is_underground;
-				}
-				else if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN)
+				if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN)
 				{
 					no_sunlight = true;
 				}
@@ -194,7 +189,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 				else
 				{
 					MapNode n = getNodeNoEx(v3s16(x, MAP_BLOCKSIZE-1, z));
-					if(m_gamedef->ndef()->get(n).sunlight_propagates == false)
+					if(n && m_gamedef->ndef()->get(n).sunlight_propagates == false)
 					{
 						no_sunlight = true;
 					}
@@ -297,7 +292,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 			if(block_below_is_valid)
 			{
 				MapNode n = getNodeParent(v3s16(x, -1, z), &is_valid_position);
-				if (is_valid_position) {
+				if (n) {
 					if(nodemgr->get(n).light_propagates)
 					{
 						if(n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN

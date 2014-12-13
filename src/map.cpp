@@ -592,7 +592,7 @@ void Map::spreadLight(enum LightBank bank,
 
 	if(!lighted_nodes.empty() && recursive <= 32) { // maybe 32 too small
 /*
-		infostream<<"spreadLight(): recursive("<<count<<"): changed=" <<blockchangecount
+		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()
 			<<" lighted="<<lighted_nodes.size()
 			<<" modifiedB="<<modified_blocks.size()
