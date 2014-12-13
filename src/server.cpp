@@ -3797,6 +3797,7 @@ void Server::fillMediaCache()
 	}
 	paths.push_back(porting::path_user + DIR_DELIM + "textures" + DIR_DELIM + "server");
 
+	unsigned int size_total = 0, files_total = 0;
 	// Collect media file information from paths into cache
 	for(std::list<std::string>::iterator i = paths.begin();
 			i != paths.end(); i++)
@@ -3859,6 +3860,8 @@ void Server::fillMediaCache()
 						<<filepath<<"\""<<std::endl;
 				continue;
 			}
+			size_total += tmp_os.str().length();
+			++files_total;
 
 			SHA1 sha1;
 			sha1.addBytes(tmp_os.str().c_str(), tmp_os.str().length());
@@ -3873,6 +3876,7 @@ void Server::fillMediaCache()
 			verbosestream<<"Server: "<<sha1_hex<<" is "<<filename<<std::endl;
 		}
 	}
+	actionstream << "Serving " << files_total <<" files, " << size_total << " bytes" << std::endl;
 }
 
 struct SendableMediaAnnouncement
