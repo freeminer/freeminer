@@ -160,7 +160,7 @@ MapNode Map::getNodeNoEx(v3s16 p, bool *is_valid_position)
 #endif
 
 	v3s16 blockpos = getNodeBlockPos(p);
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlockP block = getBlock(blockpos);
 	if (block == NULL) {
 		if (is_valid_position != NULL)
 			*is_valid_position = false;
@@ -181,7 +181,7 @@ MapNode Map::getNodeTry(v3POS p)
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
 #endif
 	auto blockpos = getNodeBlockPos(p);
-	auto block = getBlockNoCreateNoEx(blockpos, true);
+	auto block = getBlock(blockpos, true);
 	if(!block)
 		return MapNode(CONTENT_IGNORE);
 	auto relpos = p - blockpos*MAP_BLOCKSIZE;
@@ -3038,7 +3038,7 @@ MapBlockP ServerMap::createBlock(v3s16 p)
 		return block;
 	}
 	// Create blank
-	block = MapBlockP(this->createBlankBlock(p));
+	block = this->createBlankBlock(p);
 
 	return block;
 }
@@ -3066,7 +3066,7 @@ MapBlockP ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	}
 
 	if (create_blank) {
-		return MapBlockP(this->createBlankBlock(p));
+		return this->createBlankBlock(p);
 	}
 
 	return NULL;
@@ -3130,9 +3130,10 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 	v3POS blockPosition = getNodeBlockPos(probePosition);
 	v3POS prevBlockPosition = blockPosition;
 
+	MapBlockP block;
 	// Cache the block to be inspected.
 	if(cacheBlocks) {
-		emergeBlock(blockPosition, true);
+		block = emergeBlock(blockPosition);
 	}
 
 	// Probes the nodes in the given column
@@ -3144,7 +3145,9 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 
 			// If the node is in an different block, cache it
 			if(blockPosition != prevBlockPosition) {
-				emergeBlock(blockPosition, true);
+				block = emergeBlock(blockPosition);
+				if (!block)
+					break;
 				prevBlockPosition = blockPosition;
 			}
 		}

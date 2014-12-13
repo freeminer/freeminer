@@ -349,7 +349,7 @@ public:
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
-	MapBlock * createBlankBlock(v3s16 & p);
+	MapBlockP createBlankBlock(v3s16 & p);
 	void insertBlock(MapBlock *block);
 	void insertBlock(MapBlockP block);
 	void deleteBlock(MapBlockP block);
