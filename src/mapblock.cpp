@@ -88,7 +88,7 @@ MapBlock::~MapBlock()
 #endif
 
 	if(data)
-		delete[] data;
+		delete data;
 	data = nullptr;
 }
 

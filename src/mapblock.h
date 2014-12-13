@@ -127,7 +127,7 @@ public:
 	{
 		auto lock = lock_unique_rec();
 		if(data != NULL)
-			delete[] data;
+			delete data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
 		memset(data, 0, l * sizeof(MapNode));
