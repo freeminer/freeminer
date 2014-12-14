@@ -69,7 +69,7 @@ Build it:
 ```
 mkdir _build && cd _build
 cmake ..
-make -j4
+time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
 Play it!
 ```
