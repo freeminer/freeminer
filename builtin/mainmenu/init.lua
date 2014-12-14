@@ -719,37 +719,37 @@ function tabbuilder.tab_server()
 				)
 
 	local retval =
-		"button[6.5,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-		"button[9,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-		"button[11.7,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-		"button[11,8;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
-		"label[6.5,-0.25;".. fgettext("Select World:") .. "]"..
-		"checkbox[6.5,4.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+		"button[7.1,7.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+		"button[9.6,7.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
+		"button[12.3,7.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
+		"button[11,11;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
+		"label[7.1,-0.25;".. fgettext("Select World:") .. "]"..
+		"checkbox[7.1,7.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 		dump(core.setting_getbool("creative_mode")) .. "]"..
-		"checkbox[9,4.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+		"checkbox[9.6,7.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
 		dump(core.setting_getbool("enable_damage")) .. "]"..
-		"checkbox[11.7,4.5;cb_server_announce;".. fgettext("Public") .. ";" ..
+		"checkbox[12.3,7.5;cb_server_announce;".. fgettext("Public") .. ";" ..
 		dump(core.setting_getbool("server_announce")) .. "]"..
-		"field[6.7,6;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
+		"field[7.3,9;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
 		core.setting_get("name") .. "]" ..
-		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
+		"pwdfield[11.8,9;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
 		
 -- TODO !!!!
 	local bind_addr = core.setting_get("bind_address")
 	if bind_addr ~= nil and bind_addr ~= "" then
 		retval = retval ..
-			"field[6.7,7;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
+			"field[7.3,10.3;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
 			core.setting_get("bind_address") .."]" ..
-			"field[11.2,7;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
+			"field[11.8,10.3;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
 			core.setting_get("port") .."]"
 	else
 		retval = retval ..
-			"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
+			"field[7.3,10.3;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
 			core.setting_get("port") .."]"
 	end
 	
 	retval = retval ..
-		"textlist[6.5,0.25;7.5,3.7;srv_worlds;" ..
+		"textlist[7.1,0.25;7.5,6.7;srv_worlds;" ..
 		menu.render_world_list() ..
 		";" .. index .. "]"
 
@@ -855,8 +855,8 @@ end
 -- Texture packs tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_texture_packs()
-	local retval = "label[6.5,-0.25;".. fgettext("Select texture pack:") .. "]"..
-			"textlist[6.5,0.25;7.5,5.0;TPs;"
+	local retval = "label[7.1,-0.25;".. fgettext("Select texture pack:") .. "]"..
+			"textlist[7.1,0.25;7.5,5.0;TPs;"
 
 	local current_texture_path = core.setting_get("texture_path")
 	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
@@ -891,8 +891,8 @@ function tabbuilder.tab_texture_packs()
 	return	retval ..
 			menu.render_texture_pack_list(list) ..
 			";" .. index .. "]" ..
-			"image[6.5,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[6.75,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
+			"image[7.1,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[7.35,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
 end
 
 --------------------------------------------------------------------------------
@@ -923,7 +923,7 @@ function tabbuilder.tab_settings()
 	local pos = 0
 	local add_checkbox = function(name, config, text)
 		tab_string = tab_string ..
-			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+			"checkbox[7.1," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
 					.. dump(core.setting_getbool(config)) .. "]"
 		pos = pos + 0.5
 	end
@@ -955,7 +955,7 @@ function tabbuilder.tab_settings()
 	end
 
 	tab_string = tab_string ..
-		"button[6.5,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
@@ -1047,41 +1047,10 @@ end
 -- Credits tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_credits()
-	local logofile = menu.defaulttexturedir .. "logo.png"
-	return	"label[6.5,0;Freeminer " .. core.get_version() .. "]" ..
-			"label[6.5,0.3;http://freeminer.org]" ..
-			"textlist[6.5,1;8.5,10;list_credits;" ..
-			"#FFFF00" .. fgettext("Core Developers") .."," ..
-			"Perttu Ahola (celeron55) <celeron55@gmail.com>,"..
-			"Ryan Kwolek (kwolekr) <kwolekr@minetest.net>,"..
-			"PilzAdam <pilzadam@minetest.net>," ..
-			"Ilya Zhuravlev (xyz) <xyz@minetest.net>,"..
-			"Lisa Milne (darkrose) <lisa@ltmnet.com>,"..
-			"Maciej Kasatkin (RealBadAngel) <mk@realbadangel.pl>,"..
-			"proller,"..
-			"sfan5 <sfan5@live.de>,"..
-			"kahrl <kahrl@gmx.net>,"..
-			"sapier,"..
-			"ShadowNinja <shadowninja@minetest.net>,"..
-			"Nathanael Courant (Nore/Novatux) <nore@mesecons.net>,"..
-			"BlockMen,"..
-			","..
-			"#FFFF00" .. fgettext("Active Contributors") .. "," ..
-			"Vanessa Ezekowitz (VanessaE) <vanessaezekowitz@gmail.com>,"..
-			"Jurgen Doser (doserj) <jurgen.doser@gmail.com>,"..
-			"Jeija <jeija@mesecons.net>,"..
-			"MirceaKitsune <mirceakitsune@gmail.com>,"..
-			"dannydark <the_skeleton_of_a_child@yahoo.co.uk>,"..
-			"0gb.us <0gb.us@0gb.us>,"..
-			"," ..
-			"#FFFF00" .. fgettext("Previous Contributors") .. "," ..
-			"Guiseppe Bilotta (Oblomov) <guiseppe.bilotta@gmail.com>,"..
-			"Jonathan Neuschafer <j.neuschaefer@gmx.net>,"..
-			"Nils Dagsson Moskopp (erlehmann) <nils@dieweltistgarnichtso.net>,"..
-			"Constantin Wenger (SpeedProg) <constantin.wenger@googlemail.com>,"..
-			"matttpt <matttpt@gmail.com>,"..
-			"JacobF <queatz@gmail.com>,"..
-			";0;true]"
+	return	"label[7.1,0;Freeminer " .. core.get_version() .. "]" ..
+			"label[7.1,0.3;http://freeminer.org]" ..
+			"label[7.1,1.3;Contributors:]" ..
+			"label[7.1,1.7;https://github.com/freeminer/freeminer/graphs/contributors]"
 end
 
 

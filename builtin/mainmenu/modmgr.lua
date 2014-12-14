@@ -229,15 +229,15 @@ function modmgr.tab()
 	end
 
 	local retval =
-		"label[6.5,-0.25;".. fgettext("Installed Mods:") .. "]" ..
-		"textlist[6.5,0.25;8,4;modlist;" ..
+		"label[7.1,-0.25;".. fgettext("Installed Mods:") .. "]" ..
+		"textlist[7.1,0.25;8,4;modlist;" ..
 		modmgr.render_modlist(modmgr.global_mods) ..
 		";" .. modmgr.selected_mod .. "]"
 
 	retval = retval ..
 --		TODO Disabled due to upcoming release 0.4.8 and irrlicht messing up localization
 --		"button[0.75,4.85;1.8,0.5;btn_mod_mgr_install_local;".. fgettext("Local install") .. "]" ..
-		"button[6.5,4.5;3.05,0.5;btn_mod_mgr_download;".. fgettext("Online mod repository") .. "]"
+		"button[7.1,4.5;3.05,0.5;btn_mod_mgr_download;".. fgettext("Online mod repository") .. "]"
 
 	local selected_mod = nil
 
@@ -262,8 +262,8 @@ function modmgr.tab()
 		end
 
 		retval = retval
-				.. "image[6.5,5;3,2;" .. core.formspec_escape(modscreenshot) .. "]"
-				.. "label[9.5,5.6;" .. selected_mod.name .. "]"
+				.. "image[7.1,5;3,2;" .. core.formspec_escape(modscreenshot) .. "]"
+				.. "label[10.1,5.6;" .. selected_mod.name .. "]"
 
 		local descriptionlines = nil
 		error = nil
@@ -280,8 +280,8 @@ function modmgr.tab()
 		end
 
 		retval = retval ..
-			"label[6.5,6.7;".. fgettext("Mod information:") .. "]" ..
-			"textlist[6.5,7.2;8,2.4;description;"
+			"label[7.1,6.7;".. fgettext("Mod information:") .. "]" ..
+			"textlist[7.1,7.2;8,2.4;description;"
 
 		for i=1,#descriptionlines,1 do
 			retval = retval .. core.formspec_escape(descriptionlines[i]) .. ","
@@ -290,9 +290,9 @@ function modmgr.tab()
 
 		if selected_mod.is_modpack then
 			retval = retval .. ";0]" ..
-				"button[10,4.85;2,0.5;btn_mod_mgr_rename_modpack;" ..
+				"button[10.6.85;2,0.5;btn_mod_mgr_rename_modpack;" ..
 				fgettext("Rename") .. "]"
-			retval = retval .. "button[6.5,4.85;4.5,0.5;btn_mod_mgr_delete_mod;"
+			retval = retval .. "button[7.1,4.85;4.5,0.5;btn_mod_mgr_delete_mod;"
 				.. fgettext("Uninstall selected modpack") .. "]"
 		else
 			--show dependencies
@@ -303,7 +303,7 @@ function modmgr.tab()
 
 			retval = retval .. toadd .. ";0]"
 
-			retval = retval .. "button[6.5,9.85;4.5,0.5;btn_mod_mgr_delete_mod;"
+			retval = retval .. "button[7.1,9.85;4.5,0.5;btn_mod_mgr_delete_mod;"
 				.. fgettext("Uninstall selected mod") .. "]"
 		end
 	end
