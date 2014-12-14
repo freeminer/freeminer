@@ -34,12 +34,12 @@ class Map;
 class Player;
 class INodeDefManager;
 
-enum SKY_ROTATE {
-	SKY_ROTATE_SUN,
-	SKY_ROTATE_MOON,
-	SKY_ROTATE_STAR,
-	SKY_ROTATE_SUNLIGHT,
-	SKY_ROTATE_MOONLIGHT
+enum class SKY_ROTATE {
+	SUN,
+	MOON,
+	STAR,
+	SUNLIGHT,
+	MOONLIGHT
 };
 
 // Skybox, rendered with zbuffer turned off, before all other nodes.
@@ -151,7 +151,7 @@ private:
 public:
 	irr::scene::ILightSceneNode * sun_moon_light;
 	v3POS camera_offset;
-	void sky_rotate(scene::ICameraSceneNode* camera, enum SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
+	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
 private:
 
 };
