@@ -3568,6 +3568,8 @@ void Game::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 
 			if (clouds)
 				clouds->updateCameraOffset(camera_offset);
+			if (sky)
+				sky->camera_offset = camera_offset;
 		}
 	}
 }
