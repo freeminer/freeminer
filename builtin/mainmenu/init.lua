@@ -855,8 +855,8 @@ end
 -- Texture packs tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_texture_packs()
-	local retval = "label[6.5,-0.25;".. fgettext("Select texture pack:") .. "]"..
-			"textlist[6.5,0.25;7.5,5.0;TPs;"
+	local retval = "label[7.1,-0.25;".. fgettext("Select texture pack:") .. "]"..
+			"textlist[7.1,0.25;7.5,5.0;TPs;"
 
 	local current_texture_path = core.setting_get("texture_path")
 	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
@@ -891,8 +891,8 @@ function tabbuilder.tab_texture_packs()
 	return	retval ..
 			menu.render_texture_pack_list(list) ..
 			";" .. index .. "]" ..
-			"image[6.5,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[6.75,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
+			"image[7.1,4.5;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[7.35,7.5;7.5,5;;"..core.formspec_escape(infotext or "")..";]"
 end
 
 --------------------------------------------------------------------------------
