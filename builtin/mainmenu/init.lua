@@ -719,37 +719,37 @@ function tabbuilder.tab_server()
 				)
 
 	local retval =
-		"button[6.5,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-		"button[9,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-		"button[11.7,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-		"button[11,8;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
-		"label[6.5,-0.25;".. fgettext("Select World:") .. "]"..
-		"checkbox[6.5,4.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+		"button[7.1,7.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
+		"button[9.6,7.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
+		"button[12.3,7.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
+		"button[11,11;3.25,0.5;start_server;".. fgettext("Start Game") .. "]" ..
+		"label[7.1,-0.25;".. fgettext("Select World:") .. "]"..
+		"checkbox[7.1,7.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 		dump(core.setting_getbool("creative_mode")) .. "]"..
-		"checkbox[9,4.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
+		"checkbox[9.6,7.5;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
 		dump(core.setting_getbool("enable_damage")) .. "]"..
-		"checkbox[11.7,4.5;cb_server_announce;".. fgettext("Public") .. ";" ..
+		"checkbox[12.3,7.5;cb_server_announce;".. fgettext("Public") .. ";" ..
 		dump(core.setting_getbool("server_announce")) .. "]"..
-		"field[6.7,6;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
+		"field[7.3,9;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
 		core.setting_get("name") .. "]" ..
-		"pwdfield[11.2,6;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
+		"pwdfield[11.8,9;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
 		
 -- TODO !!!!
 	local bind_addr = core.setting_get("bind_address")
 	if bind_addr ~= nil and bind_addr ~= "" then
 		retval = retval ..
-			"field[6.7,7;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
+			"field[7.3,10.3;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
 			core.setting_get("bind_address") .."]" ..
-			"field[11.2,7;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
+			"field[11.8,10.3;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
 			core.setting_get("port") .."]"
 	else
 		retval = retval ..
-			"field[6.7,7;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
+			"field[7.3,10.3;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
 			core.setting_get("port") .."]"
 	end
 	
 	retval = retval ..
-		"textlist[6.5,0.25;7.5,3.7;srv_worlds;" ..
+		"textlist[7.1,0.25;7.5,6.7;srv_worlds;" ..
 		menu.render_world_list() ..
 		";" .. index .. "]"
 
