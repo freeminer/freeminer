@@ -923,7 +923,7 @@ function tabbuilder.tab_settings()
 	local pos = 0
 	local add_checkbox = function(name, config, text)
 		tab_string = tab_string ..
-			"checkbox[6.5," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+			"checkbox[7.1," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
 					.. dump(core.setting_getbool(config)) .. "]"
 		pos = pos + 0.5
 	end
@@ -955,7 +955,7 @@ function tabbuilder.tab_settings()
 	end
 
 	tab_string = tab_string ..
-		"button[6.5,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	return tab_string
 end
 
