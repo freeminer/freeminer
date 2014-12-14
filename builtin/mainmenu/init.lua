@@ -1047,41 +1047,10 @@ end
 -- Credits tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_credits()
-	local logofile = menu.defaulttexturedir .. "logo.png"
-	return	"label[6.5,0;Freeminer " .. core.get_version() .. "]" ..
-			"label[6.5,0.3;http://freeminer.org]" ..
-			"textlist[6.5,1;8.5,10;list_credits;" ..
-			"#FFFF00" .. fgettext("Core Developers") .."," ..
-			"Perttu Ahola (celeron55) <celeron55@gmail.com>,"..
-			"Ryan Kwolek (kwolekr) <kwolekr@minetest.net>,"..
-			"PilzAdam <pilzadam@minetest.net>," ..
-			"Ilya Zhuravlev (xyz) <xyz@minetest.net>,"..
-			"Lisa Milne (darkrose) <lisa@ltmnet.com>,"..
-			"Maciej Kasatkin (RealBadAngel) <mk@realbadangel.pl>,"..
-			"proller,"..
-			"sfan5 <sfan5@live.de>,"..
-			"kahrl <kahrl@gmx.net>,"..
-			"sapier,"..
-			"ShadowNinja <shadowninja@minetest.net>,"..
-			"Nathanael Courant (Nore/Novatux) <nore@mesecons.net>,"..
-			"BlockMen,"..
-			","..
-			"#FFFF00" .. fgettext("Active Contributors") .. "," ..
-			"Vanessa Ezekowitz (VanessaE) <vanessaezekowitz@gmail.com>,"..
-			"Jurgen Doser (doserj) <jurgen.doser@gmail.com>,"..
-			"Jeija <jeija@mesecons.net>,"..
-			"MirceaKitsune <mirceakitsune@gmail.com>,"..
-			"dannydark <the_skeleton_of_a_child@yahoo.co.uk>,"..
-			"0gb.us <0gb.us@0gb.us>,"..
-			"," ..
-			"#FFFF00" .. fgettext("Previous Contributors") .. "," ..
-			"Guiseppe Bilotta (Oblomov) <guiseppe.bilotta@gmail.com>,"..
-			"Jonathan Neuschafer <j.neuschaefer@gmx.net>,"..
-			"Nils Dagsson Moskopp (erlehmann) <nils@dieweltistgarnichtso.net>,"..
-			"Constantin Wenger (SpeedProg) <constantin.wenger@googlemail.com>,"..
-			"matttpt <matttpt@gmail.com>,"..
-			"JacobF <queatz@gmail.com>,"..
-			";0;true]"
+	return	"label[7.1,0;Freeminer " .. core.get_version() .. "]" ..
+			"label[7.1,0.3;http://freeminer.org]" ..
+			"label[7.1,1.3;Contributors:]" ..
+			"label[7.1,1.7;https://github.com/freeminer/freeminer/graphs/contributors]"
 end
 
 
