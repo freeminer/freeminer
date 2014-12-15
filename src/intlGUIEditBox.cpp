@@ -811,7 +811,7 @@ void intlGUIEditBox::draw()
 
 	FrameRect = AbsoluteRect;
 
-#if IRRLICHT_VERSION_10000  >= 10703
+#if IRRLICHT_VERSION_10000  > 10703
 	EGUI_DEFAULT_COLOR bgCol = EGDC_GRAY_EDITABLE;
 	if (isEnabled())
 		bgCol = focus ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
