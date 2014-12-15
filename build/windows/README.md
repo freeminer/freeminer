@@ -22,5 +22,6 @@ You can also build "Debug" configuration (for development purposes) by executing
 Switching between "Debug" and "Release" configurations will require all dependencies to be rebuilt, the easiest way to achieve that is just to delete the `deps` directory.
 
 If you are going to develop FM using Visual Studio you'll have to change startup project. Select Solution explorer (Ctrl-Alt-L or view → solution explorer);  Right click "Solution 'freeminer' (10 projects)" → Properties → Common Properties → Startup Project. Select "Single startup project", then select "freeminer" in the dropdown. Then you'll be able to start Freeminer from VS and use the debugger.
+Also useful for debugging release build: http://msdn.microsoft.com/en-us/library/fsk896zz.aspx
 
 A word of warning: gettext and libintl will install themselves to `C:\usr\`. If you don't want this behavior don't build Freeminer for Windows.
