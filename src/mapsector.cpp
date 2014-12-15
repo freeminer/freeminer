@@ -41,6 +41,10 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
 
+#if !CMAKE_THREADS
+	nocache = true; //very dirty hack. fix and remove. Also compare speed: no cache and cache with lock
+#endif
+
 	if (!nocache) {
 #if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
@@ -83,6 +87,10 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
+#endif
+
+#if !CMAKE_THREADS
+	nocache = true; //very dirty hack. fix and remove
 #endif
 
 	if (!nocache) {
