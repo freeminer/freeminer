@@ -212,15 +212,19 @@ void Sky::render()
 		//video::SColor cloudyfogcolor(255,255,255,255);
 		video::SColor cloudyfogcolor = m_bgcolor;
 		//video::SColor cloudyfogcolor = m_bgcolor.getInterpolated(m_skycolor, 0.5);
+
+		v3POS player_position = floatToInt(camera->getPosition(), BS)-camera_offset;
+		float shift1 = (float)player_position.Y / MAP_GENERATION_LIMIT;
+		float shifty = shift1 * 0.4;
 		
 		// Draw far cloudy fog thing
 		for(u32 j=0; j<4; j++)
 		{
 			video::SColor c = cloudyfogcolor.getInterpolated(m_skycolor, 0.45);
-			vertices[0] = video::S3DVertex(-1, 0.08,-1, 0,0,1, c, t, t);
-			vertices[1] = video::S3DVertex( 1, 0.08,-1, 0,0,1, c, o, t);
-			vertices[2] = video::S3DVertex( 1, 0.12,-1, 0,0,1, c, o, o);
-			vertices[3] = video::S3DVertex(-1, 0.12,-1, 0,0,1, c, t, o);
+			vertices[0] = video::S3DVertex(-1, 0.08+shifty,-1, 0,0,1, c, t, t);
+			vertices[1] = video::S3DVertex( 1, 0.08+shifty,-1, 0,0,1, c, o, t);
+			vertices[2] = video::S3DVertex( 1, 0.12+shifty,-1, 0,0,1, c, o, o);
+			vertices[3] = video::S3DVertex(-1, 0.12+shifty,-1, 0,0,1, c, t, o);
 			for(u32 i=0; i<4; i++){
 				if(j==0)
 					// Don't switch
@@ -240,10 +244,10 @@ void Sky::render()
 		for(u32 j=0; j<4; j++)
 		{
 			video::SColor c = cloudyfogcolor;
-			vertices[0] = video::S3DVertex(-1,-1.0,-1, 0,0,1, c, t, t);
-			vertices[1] = video::S3DVertex( 1,-1.0,-1, 0,0,1, c, o, t);
-			vertices[2] = video::S3DVertex( 1, 0.08,-1, 0,0,1, c, o, o);
-			vertices[3] = video::S3DVertex(-1, 0.08,-1, 0,0,1, c, t, o);
+			vertices[0] = video::S3DVertex(-1,-1.0, 0, 0,0,0, c, t, t);
+			vertices[1] = video::S3DVertex( 1,-1.0, 0, 0,0,0, c, o, t);
+			vertices[2] = video::S3DVertex( 1, 0.08+shifty,-1, 0,0,1, c, o, o);
+			vertices[3] = video::S3DVertex(-1, 0.08+shifty,-1, 0,0,1, c, t, o);
 			for(u32 i=0; i<4; i++){
 				if(j==0)
 					// Don't switch
@@ -264,17 +268,17 @@ void Sky::render()
 		driver->setMaterial(m_materials[2]);
 
 		{
-			float mid1 = 0.25;
+			float mid1 = 0.25 + 0.06 * shift1;
 			float mid = (wicked_time_of_day < 0.5 ? mid1 : (1.0 - mid1));
 			float a_ = 1.0 - fabs(wicked_time_of_day - mid) * 35.0;
 			float a = easeCurve(MYMAX(0, MYMIN(1, a_)));
 			//std::cerr<<"a_="<<a_<<" a="<<a<<std::endl;
 			video::SColor c(255,255,255,255);
 			float y = -(1.0 - a) * 0.2;
-			vertices[0] = video::S3DVertex(-1,-0.05+y,-1, 0,0,1, c, t, t);
-			vertices[1] = video::S3DVertex( 1,-0.05+y,-1, 0,0,1, c, o, t);
-			vertices[2] = video::S3DVertex( 1, 0.2+y,-1, 0,0,1, c, o, o);
-			vertices[3] = video::S3DVertex(-1, 0.2+y,-1, 0,0,1, c, t, o);
+			vertices[0] = video::S3DVertex(-1,-0.05+y+shifty,-1, 0,0,1, c, t, t);
+			vertices[1] = video::S3DVertex( 1,-0.05+y+shifty,-1, 0,0,1, c, o, t);
+			vertices[2] = video::S3DVertex( 1, 0.2+y+shifty,-1, 0,0,1, c, o, o);
+			vertices[3] = video::S3DVertex(-1, 0.2+y+shifty,-1, 0,0,1, c, t, o);
 			for(u32 i=0; i<4; i++){
 				if(wicked_time_of_day < 0.5)
 					// Switch from -Z (south) to +X (east)
@@ -495,14 +499,15 @@ void Sky::render()
 					scene::EPT_QUADS, video::EIT_16BIT);
 		}while(0);
 		
+
 		for(u32 j=0; j<2; j++)
 		{
 			//video::SColor c = m_skycolor;
 			video::SColor c = cloudyfogcolor;
 			vertices[0] = video::S3DVertex(-1,-1.0,-1, 0,0,1, c, t, t);
 			vertices[1] = video::S3DVertex( 1,-1.0,-1, 0,0,1, c, o, t);
-			vertices[2] = video::S3DVertex( 1,-0.02,-1, 0,0,1, c, o, o);
-			vertices[3] = video::S3DVertex(-1,-0.02,-1, 0,0,1, c, t, o);
+			vertices[2] = video::S3DVertex( 1,-0.02+shifty,-1, 0,0,1, c, o, o);
+			vertices[3] = video::S3DVertex(-1,-0.02+shifty,-1, 0,0,1, c, t, o);
 			for(u32 i=0; i<4; i++){
 				//if(wicked_time_of_day < 0.5)
 				if(j==0)
@@ -514,6 +519,7 @@ void Sky::render()
 			}
 			driver->drawIndexedTriangleFan(&vertices[0], 4, indices, 2);
 		}
+
 	}
 }
 
