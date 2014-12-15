@@ -25,11 +25,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "util/lock.h"
 
-#include "config.h"
+//#include "config.h"
 #include "profiler.h"
-#include "porting.h"
+//#include "porting.h"
 
-#if !defined(NO_THREAD_LOCAL)
+#if CMAKE_HAVE_THREAD_LOCAL
 thread_local MapBlockP m_block_cache = nullptr;
 thread_local v3POS m_block_cache_p;
 #endif
@@ -42,7 +42,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 #endif
 
 	if (!nocache) {
-#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -66,7 +66,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 	}
 
 	if (!nocache) {
-#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -86,7 +86,7 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
 #endif
 
 	if (!nocache) {
-#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -110,7 +110,7 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
 	}
 
 	if (!nocache) {
-#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -165,7 +165,7 @@ void Map::deleteBlock(MapBlockP block)
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
-#if CMAKE_THREADS && defined(NO_THREAD_LOCAL)
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	m_block_cache = nullptr;

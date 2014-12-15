@@ -446,9 +446,4 @@ inline const char * getPlatformName()
 #endif
 
 
-#if CMAKE_HAVE_THREAD_LOCAL
-#else
-#define NO_THREAD_LOCAL
-#endif
-
 #endif // PORTING_HEADER
