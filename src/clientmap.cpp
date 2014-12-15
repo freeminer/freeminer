@@ -53,6 +53,7 @@ MapDrawControl::MapDrawControl():
 		,fps_avg(30)
 		,fps_wanted(30)
 		,drawtime_avg(30)
+		,block_overflow(false)
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");
