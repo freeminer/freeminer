@@ -633,7 +633,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 				if(transparent == is_transparent_pass)
 				{
 					if(buf->getVertexCount() == 0)
-						errorstream<<"Block ["<<analyze_block(block.get())
+						errorstream<<"Block ["<<analyze_block(block)
 								<<"] contains an empty meshbuf"<<std::endl;
 					drawbufs.add(buf);
 				}
@@ -703,7 +703,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 				if(transparent == is_transparent_pass)
 				{
 					if(buf->getVertexCount() == 0)
-						errorstream<<"Block ["<<analyze_block(block.get())
+						errorstream<<"Block ["<<analyze_block(block)
 								<<"] contains an empty meshbuf"<<std::endl;
 					/*
 						This *shouldn't* hurt too much because Irrlicht

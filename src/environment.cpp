@@ -1341,7 +1341,7 @@ void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
 				std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
 				auto it = m_map->m_blocks.begin();
 				std::advance( it, distribution(random_gen) );
-				block = it->second.get();
+				block = it->second;
 			}
 		}
 

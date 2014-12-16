@@ -54,54 +54,6 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 #ifndef NDEBUG
 			g_profiler->add("Map: getBlock cache hit", 1);
 #endif
-			return m_block_cache.get();
-		}
-	}
-
-	MapBlockP block;
-	{
-		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
-		if (!lock->owns_lock())
-			return nullptr;
-		auto n = m_blocks.find(p);
-		if(n == m_blocks.end())
-			return nullptr;
-		block = n->second;
-	}
-
-	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
-		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
-		if(lock.owns_lock())
-#endif
-		{
-			m_block_cache_p = p;
-			m_block_cache = block;
-		}
-	}
-
-	return block.get();
-}
-
-MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
-{
-#ifndef NDEBUG
-	ScopeProfiler sp(g_profiler, "Map: getBlock");
-#endif
-
-#if !CMAKE_THREADS
-	nocache = true; //very dirty hack. fix and remove
-#endif
-
-	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
-		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
-		if(lock.owns_lock())
-#endif
-		if(m_block_cache && p == m_block_cache_p) {
-#ifndef NDEBUG
-			g_profiler->add("Map: getBlock cache hit", 1);
-#endif
 			return m_block_cache;
 		}
 	}
@@ -131,6 +83,11 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
 	return block;
 }
 
+MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
+{
+	return getBlockNoCreateNoEx(p, trylock, nocache);
+}
+
 MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
 {
 	auto block = new MapBlock(this, p, m_gamedef);
@@ -148,7 +105,7 @@ MapBlock * Map::createBlankBlock(v3POS & p)
 
 	block = createBlankBlockNoInsert(p);
 	
-	m_blocks.set(p, MapBlockP(block));
+	m_blocks.set(p, block);
 
 	return block;
 }
@@ -165,7 +122,7 @@ void Map::insertBlock(MapBlock *block)
 	}
 
 	// Insert into container
-	m_blocks.set(block_p, MapBlockP(block));
+	m_blocks.set(block_p, block);
 }
 
 void Map::deleteBlock(MapBlockP block)

@@ -665,7 +665,8 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 */
 std::string analyze_block(MapBlock *block);
 
-typedef std::shared_ptr<MapBlock> MapBlockP;
+//typedef std::shared_ptr<MapBlock> MapBlockP;
+typedef MapBlock * MapBlockP;
 
 #endif
 

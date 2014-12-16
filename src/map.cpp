@@ -101,6 +101,12 @@ Map::~Map()
 			i.second->mesh->clearHardwareBuffer = false;
 	}
 #endif
+	for (auto & ir : m_blocks_delete_1)
+		delete ir.first;
+	for (auto & ir : m_blocks_delete_2)
+		delete ir.first;
+	for(auto & ir : m_blocks)
+		delete ir.second;
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
@@ -1489,6 +1495,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
+		for (auto & ir : *m_blocks_delete)
+			delete ir.first;
 		m_blocks_delete->clear();
 	}
 
@@ -1531,7 +1539,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 					//modprofiler.add(block->getModifiedReason(), 1);
 					if(!save_started++)
 						beginSave();
-					if (!saveBlock(block.get()))
+					if (!saveBlock(block))
 						continue;
 					saved_blocks_count++;
 				}
@@ -3224,7 +3232,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 				m_blocks_save_last = 0;
 			++calls;
 
-			MapBlock *block = jr.second.get();
+			MapBlock *block = jr.second;
 
 			if (!block)
 				continue;
