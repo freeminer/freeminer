@@ -1572,6 +1572,7 @@ ClientLauncher::~ClientLauncher()
 		device->drop();
 }
 
+
 bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 {
 	init_args(game_params, cmd_args);
@@ -1592,17 +1593,19 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		return true;
 	}
 
-	if (device->getVideoDriver() == NULL) {
+	video::IVideoDriver *video_driver = device->getVideoDriver();
+	if (video_driver == NULL) {
 		errorstream << "Could not initialize video driver." << std::endl;
 		return false;
 	}
 
-	auto driver = device->getVideoDriver();
+	porting::setXorgClassHint(video_driver->getExposedVideoData(), "freeminer");
+
 	/*
 		This changes the minimum allowed number of vertices in a VBO.
 		Default is 500.
 	*/
-	driver->setMinHardwareBufferVertexCount(50);
+	video_driver->setMinHardwareBufferVertexCount(50);
 
 	// Create time getter
 	g_timegetter = new IrrlichtTimeGetter(device);
