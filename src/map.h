@@ -182,8 +182,8 @@ public:
 	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
-	{ return getBlockNoCreateNoEx(p); }
+	virtual MapBlockP emergeBlock(v3s16 p, bool allow_generate=true)
+	{ return getBlock(p); }
 
 	// Returns InvalidPositionException if not found
 	bool isNodeUnderground(v3s16 p);
@@ -350,8 +350,9 @@ public:
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
-	MapBlock * createBlankBlock(v3s16 & p);
+	MapBlockP createBlankBlock(v3s16 & p);
 	void insertBlock(MapBlock *block);
+	void insertBlock(MapBlockP block);
 	void deleteBlock(MapBlockP block);
 	std::map<MapBlockP, int> * m_blocks_delete;
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
@@ -418,7 +419,7 @@ public:
 		- Memory
 		- Create blank
 	*/
-	MapBlock * createBlock(v3s16 p);
+	MapBlockP createBlock(v3s16 p);
 
 	/*
 		Forcefully get a block from somewhere.
@@ -427,7 +428,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock * emergeBlock(v3s16 p, bool create_blank=true);
+	MapBlockP emergeBlock(v3s16 p, bool create_blank=true);
 
 	/*
 		Try to get a block.
@@ -469,7 +470,7 @@ public:
 
 	bool saveBlock(MapBlock *block, Database *db);
 	bool saveBlock(MapBlock *block);
-	MapBlock* loadBlock(v3s16 p);
+	MapBlockP loadBlock(v3s16 p);
 
 	void updateVManip(v3s16 pos);
 

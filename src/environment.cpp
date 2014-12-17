@@ -1005,7 +1005,7 @@ void ServerEnvironment::clearAllObjects()
 			i != loadable_blocks.end(); ++i)
 	{
 		v3s16 p = *i;
-		MapBlock *block = m_map->emergeBlock(p, false);
+		MapBlockP block = m_map->emergeBlock(p, false);
 		if(!block){
 			errorstream<<"ServerEnvironment::clearAllObjects(): "
 					<<"Failed to emerge block "<<PP(p)<<std::endl;
@@ -1718,7 +1718,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		StaticObject s_obj(object->getType(), objectpos, staticdata);
 		// Add to the block where the object is located in
 		v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
-		MapBlock *block = m_map->emergeBlock(blockpos);
+		MapBlockP block = m_map->emergeBlock(blockpos);
 		if(block){
 			block->m_static_objects.m_active.set(object->getId(), s_obj);
 			object->m_static_exists = true;
@@ -1782,7 +1782,7 @@ void ServerEnvironment::removeRemovedObjects()
 		*/
 		if(obj->m_static_exists && obj->m_removed)
 		{
-			MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+			MapBlockP block = m_map->emergeBlock(obj->m_static_block, false);
 			if (block) {
 				block->m_static_objects.remove(id);
 				block->raiseModified(MOD_STATE_WRITE_NEEDED,
@@ -1803,7 +1803,7 @@ void ServerEnvironment::removeRemovedObjects()
 			Move static data from active to stored if not marked as removed
 		*/
 		if(obj->m_static_exists && !obj->m_removed){
-			MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+			MapBlockP block = m_map->emergeBlock(obj->m_static_block, false);
 			if (block) {
 				std::map<u16, StaticObject>::iterator i =
 						block->m_static_objects.m_active.find(id);
@@ -2038,7 +2038,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			v3s16 old_static_block = obj->m_static_block;
 
 			// Save to block where object is located
-			MapBlock *block = m_map->emergeBlock(blockpos_o, false);
+			MapBlockP block = m_map->emergeBlock(blockpos_o, false);
 			if(!block){
 				errorstream<<"ServerEnvironment::deactivateFarObjects(): "
 						<<"Could not save object id="<<id
@@ -2098,7 +2098,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 				if(obj->m_static_block == blockpos_o)
 					stays_in_same_block = true;
 
-				MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+				MapBlockP block = m_map->emergeBlock(obj->m_static_block, false);
 				if (!block)
 					continue;
 
@@ -2125,7 +2125,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			// Delete old static object
 			if(obj->m_static_exists)
 			{
-				MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
+				MapBlockP block = m_map->emergeBlock(obj->m_static_block, false);
 				if(block)
 				{
 					block->m_static_objects.remove(id);
@@ -2141,7 +2141,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			// Add to the block where the object is located in
 			v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
 			// Get or generate the block
-			MapBlock *block = NULL;
+			MapBlockP block = nullptr;
 			try{
 				block = m_map->emergeBlock(blockpos);
 			} catch(InvalidPositionException &e){
