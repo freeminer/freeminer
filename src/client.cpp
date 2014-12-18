@@ -892,9 +892,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-			Json::Value j;
-			settings.to_json(j);
-			errorstream<<"recievedS:"<<j<<std::endl;
+
+		infostream<<"recieved settings:"<<settings<<std::endl; //todo: remove
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);

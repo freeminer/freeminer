@@ -33,6 +33,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cctype>
 #include <algorithm>
 
+#include "util/lock.h"
+
 
 Settings::~Settings()
 {
@@ -1000,8 +1002,16 @@ void Settings::doCallbacks(const std::string name)
 	}
 }
 
-/*
+
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
+
+	{
+		try_shared_lock lock(m_mutex);
+		if (m_json[name].isObject())
+			return m_json.get(name, def);
+	}
+
+	//todo: remove later:
 	Json::Value root;
 	std::string value = get(name);
 	if (value.empty())
@@ -1013,46 +1023,37 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 }
 
 void Settings::setJson(const std::string & name, const Json::Value & value) {
-	set(name, value.empty() ? "{}" : json_writer.write( value ));
-}
-*/
+	set(name, value.empty() ? "{}" : json_writer.write( value )); //todo: remove later
 
-Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
-	return m_json.get(name, def);
-}
-
-void Settings::setJson(const std::string & name, const Json::Value & value) {
+	unique_lock lock(m_mutex);
 	m_json[name] = value;
 }
 
 bool Settings::to_json(Json::Value &json) const {
-//errorstream  << "To_json" << json << std::endl;
-	JMutexAutoLock lock(m_mutex);
-
-	for (const auto & key: m_json.getMemberNames())
-		json[key] = m_json[key];
+	try_shared_lock lock(m_mutex);
 
 	for (const auto & ir: m_settings) {
 		if (ir.second.is_group && ir.second.group) {
 			Json::Value v;
 			ir.second.group->to_json(v);
-			json[ir.first] = v; //ir.second;
+			json[ir.first] = v;
 		} else {
 			json[ir.first] = ir.second.value;
 		}
-	} 
-//errorstream  << "To_json Ok" << json << std::endl;
+	}
+
+	for (const auto & key: m_json.getMemberNames())
+		json[key] = m_json[key];
+
 	return true;
 }
 
 bool Settings::from_json(const Json::Value &json) {
-//errorstream  << "from_json" << std::endl;
-	//JMutexAutoLock lock(m_mutex);
 	if (!json.isObject())
 		return false;
 	for (const auto & key: json.getMemberNames()) {
 		if (json[key].isObject() || json[key].isArray())
-			m_json[key] = json[key];
+			setJson(key, json[key]);
 		else
 			set(key, json[key].asString());
 	}
@@ -1060,12 +1061,10 @@ bool Settings::from_json(const Json::Value &json) {
 }
 
 bool Settings::write_json_file(const std::string &filename) {
-//errorstream  << "wf_json" << std::endl;
 	Json::Value json;
 	to_json(json);
 
 	std::ostringstream os(std::ios_base::binary);
-
 	os << json;
 
 	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
@@ -1077,7 +1076,6 @@ bool Settings::write_json_file(const std::string &filename) {
 
 void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-//errorstream  << "pack_json" << std::endl;
 	Json::Value json;
 	to_json(json);
 	std::ostringstream os(std::ios_base::binary);
@@ -1087,7 +1085,6 @@ void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 
 void Settings::msgpack_unpack(msgpack::object o)
 {
-//errorstream  << "unpack_json" << std::endl;
 	std::string data;
 	o.convert(&data);
 	std::istringstream os(data, std::ios_base::binary);

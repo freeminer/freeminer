@@ -46,4 +46,7 @@ namespace Json {
 
 std::ostream & operator<<(std::ostream & s, Json::Value & json);
 
+class Settings;
+std::ostream & operator<<(std::ostream & s, Settings & settings);
+
 #endif
