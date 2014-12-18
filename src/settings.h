@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "porting.h"
 #include "json/json.h" // for json config values
+#include "msgpack.h"
 #include <stdint.h>
 
 class Settings;
@@ -215,6 +216,13 @@ public:
 	void setJson(const std::string & name, const Json::Value & value);
 
 	void registerChangedCallback(std::string name, setting_changed_callback cbf);
+
+	bool to_json(Json::Value &json) const;
+	bool from_json(const Json::Value &json);
+	bool write_json_file(const std::string &filename);
+	Json::Value m_json;
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 private:
 

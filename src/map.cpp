@@ -3330,6 +3330,16 @@ void ServerMap::saveMapMeta()
 	}
 
 	m_map_metadata_changed = false;
+
+	{
+		std::string fullpath = m_savedir + DIR_DELIM + "map_meta.json";
+		std::ostringstream ss(std::ios_base::binary);
+		Json::Value json;
+		params.to_json(json);
+		ss<<json;
+		fs::safeWriteToFile(fullpath, ss.str());
+	}
+
 }
 
 void ServerMap::loadMapMeta()

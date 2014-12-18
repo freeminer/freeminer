@@ -40,4 +40,10 @@ std::ostream & operator<<(std::ostream & s, MapNode n);
 struct NoiseParams;
 std::ostream & operator<<(std::ostream & s, NoiseParams np);
 
+namespace Json {
+	class Value;
+};
+
+std::ostream & operator<<(std::ostream & s, Json::Value & json);
+
 #endif

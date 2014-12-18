@@ -297,6 +297,8 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 
 bool Settings::updateConfigFile(const char *filename)
 {
+	write_json_file(std::string(filename) + ".json");
+
 	JMutexAutoLock lock(m_mutex);
 
 	std::ifstream is(filename);
@@ -974,24 +976,6 @@ void Settings::clearNoLock()
 	m_defaults.clear();
 }
 
-
-	Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
-	{
-		Json::Value root;
-		std::string value = get(name);
-		if (value.empty())
-			return def;
-		if (!json_reader.parse( value, root ) ) {
-			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
-		}
-		return root;
-	}
-
-	void Settings::setJson(const std::string & name, const Json::Value & value)
-	{
-		set(name, value.empty() ? "{}" : json_writer.write( value ));
-	}
-
 void Settings::registerChangedCallback(std::string name,
 	setting_changed_callback cbf)
 {
@@ -1014,4 +998,98 @@ void Settings::doCallbacks(const std::string name)
 	{
 		(*iter)(name);
 	}
+}
+
+/*
+Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
+	Json::Value root;
+	std::string value = get(name);
+	if (value.empty())
+		return def;
+	if (!json_reader.parse( value, root ) ) {
+		errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
+	}
+	return root;
+}
+
+void Settings::setJson(const std::string & name, const Json::Value & value) {
+	set(name, value.empty() ? "{}" : json_writer.write( value ));
+}
+*/
+
+Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
+	return m_json.get(name, def);
+}
+
+void Settings::setJson(const std::string & name, const Json::Value & value) {
+	m_json[name] = value;
+}
+
+bool Settings::to_json(Json::Value &json) const {
+	JMutexAutoLock lock(m_mutex);
+	for (const auto & ir: m_settings) {
+		if (ir.second.is_group && ir.second.group) {
+			Json::Value v;
+			ir.second.group->to_json(v);
+			json[ir.first] = v; //ir.second;
+		} else {
+			json[ir.first] = ir.second.value;
+		}
+	} 
+	return true;
+}
+
+bool Settings::from_json(const Json::Value &json) {
+	JMutexAutoLock lock(m_mutex);
+	if (!json.isObject())
+		return false;
+	for (const auto & key: json.getMemberNames()) {
+		set(key, json[key].asString());
+	} 
+
+	return true;
+}
+
+bool Settings::write_json_file(const std::string &filename) {
+	//Json::Value json;
+	to_json(m_json);
+
+	std::ostringstream os(std::ios_base::binary);
+
+	os << m_json;
+
+	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
+		errorstream << "Error writing configuration file: \"" << filename << "\"" << std::endl;
+		return false;
+	}
+
+	return true;
+    
+}
+
+void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+{
+	Json::Value json;
+	to_json(json);
+	std::ostringstream os(std::ios_base::binary);
+	os << json;
+	pk.pack(os.str());
+	//PACK(ITEMDEF_TYPE, (int)type);
+}
+
+void Settings::msgpack_unpack(msgpack::object o)
+{
+	std::string data;
+	o.convert(&data);
+	//Json::Value json;
+	std::istringstream os(data, std::ios_base::binary);
+	os >> m_json;
+	from_json(m_json);
+	//MsgpackPacket packet = o.as<MsgpackPacket>();
+/*
+	int type_tmp;
+	packet[ITEMDEF_TYPE].convert(&type_tmp);
+	type = (ItemType)type_tmp;
+	packet[ITEMDEF_NAME].convert(&name);
+*/
 }
