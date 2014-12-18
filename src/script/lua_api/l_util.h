@@ -60,6 +60,9 @@ private:
 	// setting_getbool(name)
 	static int l_setting_getbool(lua_State *L);
 
+	// setting_setjson(name, value)
+	static int l_setting_setjson(lua_State *L);
+
 	// setting_save()
 	static int l_setting_save(lua_State *L);
 

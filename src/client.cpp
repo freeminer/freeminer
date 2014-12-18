@@ -889,13 +889,12 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 				<<m_recommended_send_interval<<std::endl;
 
 		// TOCLIENT_INIT_POS
-		Settings settings;
-errorstream<<"rn:"<<packet.size();
-		packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-Json::Value j;
-settings.to_json(j);
 
-errorstream<<"recievedS:"<<j<<std::endl;
+		Settings settings;
+		packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
+			Json::Value j;
+			settings.to_json(j);
+			errorstream<<"recievedS:"<<j<<std::endl;
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);

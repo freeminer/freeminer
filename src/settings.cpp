@@ -1026,7 +1026,12 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 }
 
 bool Settings::to_json(Json::Value &json) const {
+//errorstream  << "To_json" << json << std::endl;
 	JMutexAutoLock lock(m_mutex);
+
+	for (const auto & key: m_json.getMemberNames())
+		json[key] = m_json[key];
+
 	for (const auto & ir: m_settings) {
 		if (ir.second.is_group && ir.second.group) {
 			Json::Value v;
@@ -1036,60 +1041,56 @@ bool Settings::to_json(Json::Value &json) const {
 			json[ir.first] = ir.second.value;
 		}
 	} 
+//errorstream  << "To_json Ok" << json << std::endl;
 	return true;
 }
 
 bool Settings::from_json(const Json::Value &json) {
-	JMutexAutoLock lock(m_mutex);
+//errorstream  << "from_json" << std::endl;
+	//JMutexAutoLock lock(m_mutex);
 	if (!json.isObject())
 		return false;
 	for (const auto & key: json.getMemberNames()) {
-		set(key, json[key].asString());
-	} 
-
+		if (json[key].isObject() || json[key].isArray())
+			m_json[key] = json[key];
+		else
+			set(key, json[key].asString());
+	}
 	return true;
 }
 
 bool Settings::write_json_file(const std::string &filename) {
-	//Json::Value json;
-	to_json(m_json);
+//errorstream  << "wf_json" << std::endl;
+	Json::Value json;
+	to_json(json);
 
 	std::ostringstream os(std::ios_base::binary);
 
-	os << m_json;
+	os << json;
 
 	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
-		errorstream << "Error writing configuration file: \"" << filename << "\"" << std::endl;
+		errorstream << "Error writing json configuration file: \"" << filename << "\"" << std::endl;
 		return false;
 	}
-
 	return true;
-    
 }
 
 void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
+//errorstream  << "pack_json" << std::endl;
 	Json::Value json;
 	to_json(json);
 	std::ostringstream os(std::ios_base::binary);
 	os << json;
 	pk.pack(os.str());
-	//PACK(ITEMDEF_TYPE, (int)type);
 }
 
 void Settings::msgpack_unpack(msgpack::object o)
 {
+//errorstream  << "unpack_json" << std::endl;
 	std::string data;
 	o.convert(&data);
-	//Json::Value json;
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
 	from_json(m_json);
-	//MsgpackPacket packet = o.as<MsgpackPacket>();
-/*
-	int type_tmp;
-	packet[ITEMDEF_TYPE].convert(&type_tmp);
-	type = (ItemType)type_tmp;
-	packet[ITEMDEF_NAME].convert(&name);
-*/
 }

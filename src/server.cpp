@@ -1885,15 +1885,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
 
-			// TOCLIENT_INIT_POS
 			PACK(TOCLIENT_INIT_POS, v3POS());
 
-			//m_emerge->params;
 			Settings params;
 			m_emerge->saveParamsToSettings(&params);
+errorstream << "mmppck"<<std::endl;
 			PACK(TOCLIENT_INIT_MAP_PARAMS, params);
 
-//errorstream << "b="<<buffer<<std::endl;
 			// Send as reliable
 			m_clients.send(peer_id, 0, buffer, true);
 			m_clients.event(peer_id, CSE_Init);
