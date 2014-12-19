@@ -271,6 +271,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
+
+	//old liquid stuff
+	settings->setDefault("liquid_loop_max", "10000");
+	settings->setDefault("liquid_queue_purge_time", "30");
 	
 	// Weather
 	settings->setDefault("weather", win32 ? "false" : "true");
