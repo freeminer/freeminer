@@ -1889,7 +1889,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 			Settings params;
 			m_emerge->saveParamsToSettings(&params);
-errorstream << "mmppck"<<std::endl;
 			PACK(TOCLIENT_INIT_MAP_PARAMS, params);
 
 			// Send as reliable

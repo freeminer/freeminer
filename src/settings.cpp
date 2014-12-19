@@ -300,7 +300,7 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 bool Settings::updateConfigFile(const std::string &filename)
 {
 	if (filename.find(".json") != std::string::npos) {
-		write_json_file(filename);
+		writeJsonFile(filename);
 		return true;
 	}
 
@@ -1034,13 +1034,13 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 	m_json[name] = value;
 }
 
-bool Settings::to_json(Json::Value &json) const {
+bool Settings::toJson(Json::Value &json) const {
 	try_shared_lock lock(m_mutex);
 
 	for (const auto & ir: m_settings) {
 		if (ir.second.is_group && ir.second.group) {
 			Json::Value v;
-			ir.second.group->to_json(v);
+			ir.second.group->toJson(v);
 			json[ir.first] = v;
 		} else {
 			json[ir.first] = ir.second.value;
@@ -1053,14 +1053,14 @@ bool Settings::to_json(Json::Value &json) const {
 	return true;
 }
 
-bool Settings::from_json(const Json::Value &json) {
+bool Settings::fromJson(const Json::Value &json) {
 	if (!json.isObject())
 		return false;
 	for (const auto & key: json.getMemberNames()) {
 		if (json[key].isObject()) {
 			//setJson(key, json[key]); // todo
 			auto s = new Settings;
-			s->from_json(json[key]);
+			s->fromJson(json[key]);
 			setGroup(key, s);
 		}
 		else if (json[key].isArray())
@@ -1071,9 +1071,9 @@ bool Settings::from_json(const Json::Value &json) {
 	return true;
 }
 
-bool Settings::write_json_file(const std::string &filename) {
+bool Settings::writeJsonFile(const std::string &filename) {
 	Json::Value json;
-	to_json(json);
+	toJson(json);
 
 	std::ostringstream os(std::ios_base::binary);
 	os << json;
@@ -1085,19 +1085,19 @@ bool Settings::write_json_file(const std::string &filename) {
 	return true;
 }
 
-bool Settings::read_json_file(const std::string &filename) {
+bool Settings::readJsonFile(const std::string &filename) {
 	std::ifstream is(filename.c_str(), std::ios_base::binary);
 	if (!is.good())
 		return false;
 	Json::Value json;
 	is >> json;
-	return from_json(json);
+	return fromJson(json);
 }
 
 void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	Json::Value json;
-	to_json(json);
+	toJson(json);
 	std::ostringstream os(std::ios_base::binary);
 	os << json;
 	pk.pack(os.str());
@@ -1109,5 +1109,5 @@ void Settings::msgpack_unpack(msgpack::object o)
 	o.convert(&data);
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
-	from_json(m_json);
+	fromJson(m_json);
 }

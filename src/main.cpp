@@ -1143,8 +1143,7 @@ static bool read_config_file(const Settings &cmd_args)
 
 		for (size_t i = 0; i < filenames.size(); i++) {
 
-			bool rj = g_settings->read_json_file(filenames[i] + ".json");
-			if (rj) {
+			if (g_settings->readJsonFile(filenames[i] + ".json")) {
 				g_settings_path = filenames[i] + ".json";
 				break;
 			}

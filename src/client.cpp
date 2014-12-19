@@ -893,10 +893,11 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// TOCLIENT_INIT_POS
 
-		Settings settings;
-		packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-		if (localserver)
+		if (localserver) {
+			Settings settings;
+			packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
 			localserver->getEmergeManager()->loadParamsFromSettings(&settings);
+		}
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);

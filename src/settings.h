@@ -218,10 +218,10 @@ public:
 	void registerChangedCallback(std::string name, setting_changed_callback cbf);
 
 	Json::Value m_json;
-	bool to_json(Json::Value &json) const;
-	bool from_json(const Json::Value &json);
-	bool write_json_file(const std::string &filename);
-	bool read_json_file(const std::string &filename);
+	bool toJson(Json::Value &json) const;
+	bool fromJson(const Json::Value &json);
+	bool writeJsonFile(const std::string &filename);
+	bool readJsonFile(const std::string &filename);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 

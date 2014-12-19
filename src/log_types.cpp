@@ -71,7 +71,7 @@ std::ostream & operator<<(std::ostream & s, Json::Value & json) {
 #include "settings.h"
 std::ostream & operator<<(std::ostream & s, Settings & settings) {
 	Json::Value json;
-	settings.to_json(json);
+	settings.toJson(json);
 	s << json;
 	return s;
 }
