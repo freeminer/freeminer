@@ -152,6 +152,8 @@ enum {
 	TOCLIENT_INIT_SEED,
 	// float recommended send interval (server step)
 	TOCLIENT_INIT_STEP,
+	// v3f player's position
+	TOCLIENT_INIT_POS,
 	// json map params
 	TOCLIENT_INIT_MAP_PARAMS
 };
