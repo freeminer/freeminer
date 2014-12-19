@@ -892,6 +892,7 @@ bool Settings::remove(const std::string &name)
 	JMutexAutoLock lock(m_mutex);
 
 	delete m_settings[name].group;
+	m_json.removeMember(name);
 	return m_settings.erase(name);
 }
 
@@ -976,6 +977,7 @@ void Settings::clearNoLock()
 	for (it = m_defaults.begin(); it != m_defaults.end(); ++it)
 		delete it->second.group;
 	m_defaults.clear();
+	m_json.clear();
 }
 
 void Settings::registerChangedCallback(std::string name,
@@ -1072,6 +1074,15 @@ bool Settings::write_json_file(const std::string &filename) {
 		return false;
 	}
 	return true;
+}
+
+bool Settings::read_json_file(const std::string &filename) {
+	std::ifstream is(filename.c_str(), std::ios_base::binary);
+	if (!is.good())
+		return false;
+	Json::Value json;
+	is >> json;
+	return from_json(json);
 }
 
 void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const

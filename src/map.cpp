@@ -3329,16 +3329,9 @@ void ServerMap::saveMapMeta()
 		throw FileNotGoodException("Cannot save chunk metadata");
 	}
 
-	m_map_metadata_changed = false;
+	params.write_json_file(m_savedir + DIR_DELIM + "map_meta.json");
 
-	{
-		std::string fullpath = m_savedir + DIR_DELIM + "map_meta.json";
-		std::ostringstream ss(std::ios_base::binary);
-		Json::Value json;
-		params.to_json(json);
-		ss<<json;
-		fs::safeWriteToFile(fullpath, ss.str());
-	}
+	m_map_metadata_changed = false;
 
 }
 
@@ -3346,7 +3339,13 @@ void ServerMap::loadMapMeta()
 {
 	DSTACK(__FUNCTION_NAME);
 
+	Settings params;
+
+	if (!params.read_json_file(m_savedir + DIR_DELIM + "map_meta.json")) {
+	//todo: remove deprecated
+
 	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
+	infostream<<"Cant read map_meta.json , fallback to " << fullpath << std::endl;
 	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
 	if (!is.good()) {
 		errorstream << "ServerMap::loadMapMeta(): "
@@ -3354,11 +3353,11 @@ void ServerMap::loadMapMeta()
 		throw FileNotGoodException("Cannot open map metadata");
 	}
 
-	Settings params;
-
 	if (!params.parseConfigLines(is, "[end_of_params]")) {
 		throw SerializationError("ServerMap::loadMapMeta(): "
 				"[end_of_params] not found!");
+	}
+
 	}
 
 	m_emerge->loadParamsFromSettings(&params);
