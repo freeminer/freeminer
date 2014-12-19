@@ -297,9 +297,12 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 }
 
 
-bool Settings::updateConfigFile(const char *filename)
+bool Settings::updateConfigFile(const std::string &filename)
 {
-	// write_json_file(std::string(filename) + ".json");// future
+	if (filename.find(".json") != std::string::npos) {
+		write_json_file(filename);
+		return true;
+	}
 
 	JMutexAutoLock lock(m_mutex);
 
@@ -312,7 +315,7 @@ bool Settings::updateConfigFile(const char *filename)
 	if (!was_modified)
 		return true;
 
-	if (!fs::safeWriteToFile(filename, os.str())) {
+	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
 		errorstream << "Error writing configuration file: \""
 			<< filename << "\"" << std::endl;
 		return false;
