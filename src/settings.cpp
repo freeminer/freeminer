@@ -1054,7 +1054,13 @@ bool Settings::from_json(const Json::Value &json) {
 	if (!json.isObject())
 		return false;
 	for (const auto & key: json.getMemberNames()) {
-		if (json[key].isObject() || json[key].isArray())
+		if (json[key].isObject()) {
+			//setJson(key, json[key]); // todo
+			auto s = new Settings;
+			s->from_json(json[key]);
+			setGroup(key, s);
+		}
+		else if (json[key].isArray())
 			setJson(key, json[key]);
 		else
 			set(key, json[key].asString());

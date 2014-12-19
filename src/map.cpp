@@ -3318,6 +3318,10 @@ void ServerMap::saveMapMeta()
 	Settings params;
 
 	m_emerge->saveParamsToSettings(&params);
+
+	if (!params.write_json_file(m_savedir + DIR_DELIM + "map_meta.json")) {
+	//todo: deprecated remove
+
 	params.writeLines(ss);
 
 	ss<<"[end_of_params]\n";
@@ -3328,8 +3332,7 @@ void ServerMap::saveMapMeta()
 				<<"could not write "<<fullpath<<std::endl;
 		throw FileNotGoodException("Cannot save chunk metadata");
 	}
-
-	params.write_json_file(m_savedir + DIR_DELIM + "map_meta.json");
+	}
 
 	m_map_metadata_changed = false;
 
