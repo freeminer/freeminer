@@ -1880,12 +1880,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 5);
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 4);
 			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
-
-			PACK(TOCLIENT_INIT_POS, v3POS());
 
 			Settings params;
 			m_emerge->saveParamsToSettings(&params);
