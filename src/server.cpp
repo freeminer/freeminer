@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "genericobject.h"
 #include "settings.h"
 #include "profiler.h"
-#include "log.h"
+#include "log_types.h"
 #include "scripting_game.h"
 #include "nodedef.h"
 #include "itemdef.h"
@@ -1880,12 +1880,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 5);
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 4);
 			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
 
-			PACK(TOCLIENT_INIT_POS, v3POS());
+			//if (player) //todo : remake me
+			//	PACK(TOCLIENT_INIT_POS, player->getPosition());
 
 			Settings params;
 			m_emerge->saveParamsToSettings(&params);
