@@ -83,6 +83,11 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_liquid_step_flow(1000),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
+	m_transforming_liquid_loop_count_multiplier(1.0f),
+	m_unprocessed_count(0),
+	m_inc_trending_up_start_time(0),
+	m_queue_size_timer_started(false)
+    ,
 	m_circuit(circuit),
 	m_blocks_update_last(0),
 	m_blocks_save_last(0)
@@ -1714,6 +1719,7 @@ const s8 liquid_random_map[4][7] = {
 
 u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
 {
+
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	DSTACK(__FUNCTION_NAME);
@@ -2182,6 +2188,8 @@ u32 Map::transformLiquids(Server *m_server, int max_cycle_ms)
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
 
+	u32 curr_time = getTime(PRECISION_MILLI);
+
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
 
@@ -2192,6 +2200,28 @@ u32 Map::transformLiquids(Server *m_server, int max_cycle_ms)
 	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
 
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+
+	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
+	u32 loop_max = liquid_loop_max;
+
+//	std::cout << "transformLiquids(): loopmax initial="
+//	           << loop_max * m_transforming_liquid_loop_count_multiplier;
+
+	// If liquid_loop_max is not keeping up with the queue size increase
+	// loop_max up to a maximum of liquid_loop_max * dedicated_server_step.
+	if (m_transforming_liquid.size() > loop_max * 2) {
+		// "Burst" mode
+		float server_step = g_settings->getFloat("dedicated_server_step");
+		if (m_transforming_liquid_loop_count_multiplier - 1.0 < server_step)
+			m_transforming_liquid_loop_count_multiplier *= 1.0 + server_step / 10;
+	} else {
+		m_transforming_liquid_loop_count_multiplier = 1.0;
+	}
+
+	loop_max *= m_transforming_liquid_loop_count_multiplier;
+
+//	std::cout << " queue sz=" << m_transforming_liquid.size()
+//	           << " loop_max=" << loop_max;
 
 	while(transforming_liquid_size() != 0)
 	{
@@ -2462,8 +2492,55 @@ u32 Map::transformLiquids(Server *m_server, int max_cycle_ms)
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
 	while (must_reflow.size() > 0)
-		transforming_liquid_push_back(must_reflow.pop_front());
+		m_transforming_liquid.push_back(must_reflow.pop_front());
 	//updateLighting(lighting_modified_blocks, modified_blocks);
+
+	/*
+	 * Queue size limiting
+	 */
+	u32 prev_unprocessed = m_unprocessed_count;
+	m_unprocessed_count = m_transforming_liquid.size();
+
+	// if unprocessed block count is decreasing or stable
+	if (m_unprocessed_count <= prev_unprocessed) {
+		m_queue_size_timer_started = false;
+	} else {
+		if (!m_queue_size_timer_started)
+			m_inc_trending_up_start_time = curr_time;
+		m_queue_size_timer_started = true;
+	}
+
+	u16 time_until_purge = g_settings->getU16("liquid_queue_purge_time");
+	time_until_purge *= 1000;	// seconds -> milliseconds
+
+//	std::cout << " growing for: "
+//	           << (m_queue_size_timer_started ? curr_time - m_inc_trend_up_start_time : 0)
+//	           << "ms" << std::endl;
+
+	// Account for curr_time overflowing
+	if (m_queue_size_timer_started && m_inc_trending_up_start_time > curr_time)
+		m_queue_size_timer_started = false;
+
+	/* If the queue has been growing for more than liquid_queue_purge_time seconds
+	 * and the number of unprocessed blocks is still > liquid_loop_max then we
+	 * cannot keep up; dump the oldest blocks from the queue so that the queue
+	 * has liquid_loop_max items in it
+	 */
+	if (m_queue_size_timer_started
+			&& curr_time - m_inc_trending_up_start_time > time_until_purge
+			&& m_unprocessed_count > liquid_loop_max) {
+
+		size_t dump_qty = m_unprocessed_count - liquid_loop_max;
+
+		infostream << "transformLiquids(): DUMPING " << dump_qty
+		           << " blocks from the queue" << std::endl;
+
+		while (dump_qty--)
+			m_transforming_liquid.pop_front();
+
+		m_queue_size_timer_started = false; // optimistically assume we can keep up now
+		m_unprocessed_count = m_transforming_liquid.size();
+	}
 
 	g_profiler->add("Server: liquids processed", loopcount);
 

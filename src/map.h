@@ -377,13 +377,19 @@ protected:
 	u32 m_blocks_save_last;
 
 	// Queued transforming water nodes
+
+private:
+	f32 m_transforming_liquid_loop_count_multiplier;
+	u32 m_unprocessed_count;
+	u32 m_inc_trending_up_start_time; // milliseconds
+	bool m_queue_size_timer_started;
+
 public:
 	//shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
 	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
 	std::atomic_uint time_life;
-protected:
 };
 
 /*
