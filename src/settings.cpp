@@ -299,7 +299,7 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 
 bool Settings::updateConfigFile(const char *filename)
 {
-	write_json_file(std::string(filename) + ".json");
+	// write_json_file(std::string(filename) + ".json");// future
 
 	JMutexAutoLock lock(m_mutex);
 

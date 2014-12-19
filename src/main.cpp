@@ -1118,7 +1118,6 @@ static void startup_message()
 static bool read_config_file(const Settings &cmd_args)
 {
 	// Path of configuration file in use
-	assert(g_settings_path == "");	// Sanity check
 
 	if (cmd_args.exists("config")) {
 		bool r = g_settings->readConfigFile(cmd_args.get("config").c_str());
@@ -1130,29 +1129,36 @@ static bool read_config_file(const Settings &cmd_args)
 		g_settings_path = cmd_args.get("config");
 	} else {
 		std::vector<std::string> filenames;
-		filenames.push_back(porting::path_user + DIR_DELIM + "freeminer.conf");
+		filenames.push_back(porting::path_user + DIR_DELIM + "freeminer");
 		// Legacy configuration file location
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
+				DIR_DELIM + ".." + DIR_DELIM + "freeminer");
 
 #if RUN_IN_PLACE
 		// Try also from a lower level (to aid having the same configuration
 		// for many RUN_IN_PLACE installs)
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
+				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer");
 #endif
 
 		for (size_t i = 0; i < filenames.size(); i++) {
-			bool r = g_settings->readConfigFile(filenames[i].c_str());
+
+			bool rj = g_settings->read_json_file(filenames[i] + ".json");
+			if (rj) {
+				g_settings_path = filenames[i] + ".json";
+				break;
+			}
+
+			bool r = g_settings->readConfigFile((filenames[i] + ".conf").c_str());
 			if (r) {
-				g_settings_path = filenames[i];
+				g_settings_path = filenames[i] + ".conf";
 				break;
 			}
 		}
 
 		// If no path found, use the first one (menu creates the file)
 		if (g_settings_path == "")
-			g_settings_path = filenames[0];
+			g_settings_path = filenames[0] + ".conf";
 	}
 
 	return true;
