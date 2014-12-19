@@ -58,6 +58,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "database.h" //remove with g sunsed shit localdb
 
+#include "emerge.h"
+
+
 extern gui::IGUIEnvironment* guienv;
 
 #include "msgpack.h"
@@ -892,8 +895,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-
-		infostream<<"recieved settings:"<<settings<<std::endl; //todo: remove
+		if (localserver)
+			localserver->getEmergeManager()->loadParamsFromSettings(&settings);
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
