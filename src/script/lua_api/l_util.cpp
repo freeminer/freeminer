@@ -143,6 +143,17 @@ int ModApiUtil::l_setting_getbool(lua_State *L)
 	return 1;
 }
 
+// setting_setjson(name)
+int ModApiUtil::l_setting_setjson(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *name = luaL_checkstring(L, 1);
+	Json::Value value;
+	read_json_value(L, value, 2);
+	g_settings->setJson(name, value);
+	return 0;
+}
+
 // setting_save()
 int ModApiUtil::l_setting_save(lua_State *L)
 {
@@ -331,6 +342,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(setting_get);
 	API_FCT(setting_setbool);
 	API_FCT(setting_getbool);
+	API_FCT(setting_setjson);
 	API_FCT(setting_save);
 
 	API_FCT(parse_json);

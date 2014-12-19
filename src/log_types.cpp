@@ -55,6 +55,23 @@ std::ostream & operator<<(std::ostream & s, MapNode n) {
 #include "noise.h"
 struct NoiseParams;
 std::ostream & operator<<(std::ostream & s, NoiseParams np) {
-	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags<<"]";
+	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags
+	<<",farscale"<<np.farscale<<",farspread"<<np.farspread<<",farpersist"<<np.farpersist
+	<<"]";
+	return s;
+}
+
+#include "json/json.h"
+Json::StyledWriter writer;
+std::ostream & operator<<(std::ostream & s, Json::Value & json) {
+	s << writer.write(json);
+	return s;
+}
+
+#include "settings.h"
+std::ostream & operator<<(std::ostream & s, Settings & settings) {
+	Json::Value json;
+	settings.toJson(json);
+	s << json;
 	return s;
 }

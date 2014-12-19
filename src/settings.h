@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "porting.h"
 #include "json/json.h" // for json config values
+#include "msgpack.h"
 #include <stdint.h>
 
 class Settings;
@@ -107,7 +108,7 @@ public:
 	// Read configuration file.  Returns success.
 	bool readConfigFile(const char *filename);
 	//Updates configuration file.  Returns success.
-	bool updateConfigFile(const char *filename);
+	bool updateConfigFile(const std::string &filename);
 	// NOTE: Types of allowed_options are ignored.  Returns success.
 	bool parseCommandLine(int argc, char *argv[],
 			std::map<std::string, ValueSpec> &allowed_options);
@@ -215,6 +216,14 @@ public:
 	void setJson(const std::string & name, const Json::Value & value);
 
 	void registerChangedCallback(std::string name, setting_changed_callback cbf);
+
+	Json::Value m_json;
+	bool toJson(Json::Value &json) const;
+	bool fromJson(const Json::Value &json);
+	bool writeJsonFile(const std::string &filename);
+	bool readJsonFile(const std::string &filename);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 private:
 

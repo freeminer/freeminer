@@ -58,6 +58,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "database.h" //remove with g sunsed shit localdb
 
+#include "emerge.h"
+
+
 extern gui::IGUIEnvironment* guienv;
 
 #include "msgpack.h"
@@ -887,6 +890,14 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_INIT_STEP].convert(&m_recommended_send_interval);
 		infostream<<"Client: received recommended send interval "
 				<<m_recommended_send_interval<<std::endl;
+
+		// TOCLIENT_INIT_POS
+
+		if (localserver) {
+			Settings settings;
+			packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
+			localserver->getEmergeManager()->loadParamsFromSettings(&settings);
+		}
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
