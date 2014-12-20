@@ -74,7 +74,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // floating-point and integer positions, which potentially give wrong
 // results. (negative coordinates, values between nodes, ...)
 // Use floatToInt(p, BS) and intToFloat(p, BS).
-#define BS (10.0)
+#define BS (1.0)
 #define HBS (BS/2)
 
 // Dimension of a MapBlock

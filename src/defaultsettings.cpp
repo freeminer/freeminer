@@ -405,9 +405,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fast_move", "false");
 	
 	// Physics
-	settings->setDefault("movement_acceleration_default", "4");
-	settings->setDefault("movement_acceleration_air", "4");
-	settings->setDefault("movement_acceleration_fast", "10");
+	settings->setDefault("movement_acceleration_default", "40");
+	settings->setDefault("movement_acceleration_air", "40");
+	settings->setDefault("movement_acceleration_fast", "100");
 	settings->setDefault("movement_speed_walk", "6");
 	settings->setDefault("movement_speed_crouch", "2");
 	settings->setDefault("movement_speed_fast", "20.5");
