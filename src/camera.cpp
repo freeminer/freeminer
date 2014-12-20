@@ -585,6 +585,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	else
 		m_cameranode->setFarValue(viewing_range_max * BS * 10);
 
+	m_cameranode->setNearValue(0.01);
 	int farmesh = g_settings->getS32("farmesh");
 	int farmesh_step = g_settings->getS32("farmesh_step");
 	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
@@ -751,7 +752,7 @@ void Camera::drawWieldedTool(irr::core::matrix4* translation)
 	scene::ICameraSceneNode* cam = m_wieldmgr->getActiveCamera();
 	cam->setAspectRatio(m_cameranode->getAspectRatio());
 	cam->setFOV(72.0*M_PI/180.0);
-	cam->setNearValue(0.1);
+	cam->setNearValue(0.01);
 	cam->setFarValue(1000);
 	if (translation != NULL)
 	{

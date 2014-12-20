@@ -28,7 +28,7 @@ void StaticObject::serialize(std::ostream &os)
 	// type
 	writeU8(os, type);
 	// pos
-	writeV3F1000(os, pos);
+	writeV3F1000(os, pos * 10); // todo: remove old compat *10
 	// data
 	os<<serializeString(data);
 }
@@ -37,7 +37,7 @@ void StaticObject::deSerialize(std::istream &is, u8 version)
 	// type
 	type = readU8(is);
 	// pos
-	pos = readV3F1000(is);
+	pos = readV3F1000(is)/10; // todo: remove old compat /10
 	// data
 	data = deSerializeString(is);
 }
