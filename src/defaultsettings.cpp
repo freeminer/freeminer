@@ -266,7 +266,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("preload_item_visuals", "false");
 	
 	// Liquid
-	settings->setDefault("liquid_real", win32 ? "false" : "true");
+	settings->setDefault("liquid_real", "true");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
@@ -277,7 +277,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("liquid_queue_purge_time", "30");
 	
 	// Weather
-	settings->setDefault("weather", win32 ? "false" : "true");
+	settings->setDefault("weather", "true");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
