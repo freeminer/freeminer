@@ -369,12 +369,7 @@ protected:
 	friend class LuaVoxelManip;
 
 	IGameDef *m_gamedef;
-	Circuit* m_circuit;
-
 	std::set<MapEventReceiver*> m_event_receivers;
-
-	u32 m_blocks_update_last;
-	u32 m_blocks_save_last;
 
 	// Queued transforming water nodes
 
@@ -383,6 +378,11 @@ private:
 	u32 m_unprocessed_count;
 	u32 m_inc_trending_up_start_time; // milliseconds
 	bool m_queue_size_timer_started;
+
+protected:
+	Circuit* m_circuit;
+	u32 m_blocks_update_last;
+	u32 m_blocks_save_last;
 
 public:
 	//shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
