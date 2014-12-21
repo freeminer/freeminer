@@ -348,8 +348,8 @@ public:
 	{ return m_env; }
 	
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
-	void removeNode(v3s16 p);
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true);
+	void removeNode(v3s16 p, int fast = 0);
+	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
 	
 	void setPlayerControl(PlayerControl &control);
 

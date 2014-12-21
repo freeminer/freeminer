@@ -1012,7 +1012,7 @@ bool nodePlacementPrediction(Client &client,
 
 			if(player->canPlaceNode(p, n)) {
 				// This triggers the required mesh update too
-				client.addNode(p, n);
+				client.addNode(p, n, nodedef->get(id).light_source ? 3 : 1); // add without liquids
 				return true;
 			}
 		} catch (InvalidPositionException &e) {
@@ -3923,6 +3923,7 @@ void Game::handleDigging(GameRunData *runData,
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientMap &map = client->getEnv().getClientMap();
 	MapNode n = client->getEnv().getClientMap().getNodeNoEx(nodepos);
+	const ContentFeatures &features = client->getNodeDefManager()->get(n);
 
 	// NOTE: Similar piece of code exists on the server side for
 	// cheat detection.
@@ -3946,8 +3947,6 @@ void Game::handleDigging(GameRunData *runData,
 		runData->dig_time_complete = params.time;
 
 		if (m_cache_enable_particles) {
-			const ContentFeatures &features =
-					client->getNodeDefManager()->get(n);
 			addPunchingParticles(gamedef, smgr, player,
 					client->getEnv(), nodepos, features.tiles);
 		}
@@ -3990,7 +3989,7 @@ void Game::handleDigging(GameRunData *runData,
 		bool is_valid_position;
 		MapNode wasnode = map.getNodeNoEx(nodepos, &is_valid_position);
 		if (is_valid_position)
-			client->removeNode(nodepos);
+			client->removeNode(nodepos, features.light_source ? 3 : 1);
 
 		if (m_cache_enable_particles) {
 			const ContentFeatures &features =

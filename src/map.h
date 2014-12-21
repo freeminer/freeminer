@@ -239,9 +239,11 @@ public:
 	*/
 	void addNodeAndUpdate(v3s16 p, MapNode n,
 			std::map<v3s16, MapBlock*> &modified_blocks,
-			bool remove_metadata = true);
+			bool remove_metadata = true,
+			int fast = 0
+			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks);
+			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0);
 
 	/*
 		Wrappers for the latter ones.

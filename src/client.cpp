@@ -937,7 +937,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	if(command == TOCLIENT_REMOVENODE)
 	{
 		v3s16 p = packet[TOCLIENT_REMOVENODE_POS].as<v3s16>();
-		removeNode(p);
+		removeNode(p, 2); //use light from top node
 	}
 	else if(command == TOCLIENT_ADDNODE)
 	{
@@ -945,7 +945,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
 		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
-		addNode(p, n, remove_metadata);
+		addNode(p, n, remove_metadata, 1); //fast add
 	}
 	else if(command == TOCLIENT_BLOCKDATA)
 	{
@@ -1758,13 +1758,13 @@ void Client::sendPlayerItem(u16 item)
 	Send(0, buffer, true);
 }
 
-void Client::removeNode(v3s16 p)
+void Client::removeNode(v3s16 p, int fast)
 {
 	std::map<v3s16, MapBlock*> modified_blocks;
 
 	try
 	{
-		m_env.getMap().removeNodeAndUpdate(p, modified_blocks);
+		m_env.getMap().removeNodeAndUpdate(p, modified_blocks, fast ? fast : 2);
 	}
 	catch(InvalidPositionException &e)
 	{
@@ -1778,7 +1778,7 @@ void Client::removeNode(v3s16 p)
 	}
 }
 
-void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
+void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 {
 	//TimeTaker timer1("Client::addNode()");
 
@@ -1787,7 +1787,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
 	try
 	{
 		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
-		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
+		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast ? fast : 2);
 	}
 	catch(InvalidPositionException &e)
 	{}

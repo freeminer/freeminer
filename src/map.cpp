@@ -1009,8 +1009,16 @@ TimeTaker timer("updateLighting expireDayNightDiff");
 */
 void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		std::map<v3s16, MapBlock*> &modified_blocks,
-		bool remove_metadata)
+		bool remove_metadata, int fast)
 {
+
+	if (fast == 1) {
+		if (remove_metadata)
+			removeNodeMetadata(p);
+		setNode(p, n);
+		return;
+	}
+
 	INodeDefManager *ndef = m_gamedef->ndef();
 
 	/*PrintInfo(m_dout);
@@ -1180,6 +1188,8 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		v3s16(0,-1,0), // bottom
 		v3s16(-1,0,0), // left
 	};
+
+	if (!fast)
 	for(u16 i=0; i<7; i++)
 	{
 		v3s16 p2 = p + dirs[i];
@@ -1196,7 +1206,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 /*
 */
 void Map::removeNodeAndUpdate(v3s16 p,
-		std::map<v3s16, MapBlock*> &modified_blocks)
+		std::map<v3s16, MapBlock*> &modified_blocks, int fast)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 
@@ -1210,6 +1220,21 @@ void Map::removeNodeAndUpdate(v3s16 p,
 
 	// Node will be replaced with this
 	content_t replace_material = CONTENT_AIR;
+
+	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from top; 3: place, recalculate light and skip liquid queue
+		MapNode n;
+		n.setContent(replace_material);
+		if (fast == 2) {
+			MapNode topnode = getNodeNoEx(toppos);
+			if (topnode) {
+				n.setLight(LIGHTBANK_DAY,   topnode.getLight(LIGHTBANK_DAY, ndef), ndef);
+				n.setLight(LIGHTBANK_NIGHT, topnode.getLight(LIGHTBANK_NIGHT, ndef), ndef);
+			}
+		}
+		removeNodeMetadata(p);
+		setNode(p, n);
+		return;
+	}
 
 	/*
 		Collect old node for rollback
@@ -1361,6 +1386,8 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		v3s16(-1,0,0), // left
 		v3s16(0,0,0), // self
 	};
+
+	if (!fast)
 	for(u16 i=0; i<7; i++)
 	{
 		v3s16 p2 = p + dirs[i];
