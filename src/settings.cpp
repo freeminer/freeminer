@@ -1012,7 +1012,7 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 
 	{
 		try_shared_lock lock(m_mutex);
-		if (m_json[name].isObject())
+		if (!m_json[name].empty())
 			return m_json.get(name, def);
 	}
 
@@ -1022,13 +1022,14 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 	if (value.empty())
 		return def;
 	if (!json_reader.parse( value, root ) ) {
-		errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
+		errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages()<<std::endl;
 	}
 	return root;
 }
 
 void Settings::setJson(const std::string & name, const Json::Value & value) {
-	set(name, value.empty() ? "{}" : json_writer.write( value )); //todo: remove later
+	if (!value.empty())
+		set(name, json_writer.write( value )); //todo: remove later
 
 	unique_lock lock(m_mutex);
 	m_json[name] = value;
@@ -1041,14 +1042,16 @@ bool Settings::toJson(Json::Value &json) const {
 		if (ir.second.is_group && ir.second.group) {
 			Json::Value v;
 			ir.second.group->toJson(v);
-			json[ir.first] = v;
+			if (!v.empty())
+				json[ir.first] = v;
 		} else {
 			json[ir.first] = ir.second.value;
 		}
 	}
 
 	for (const auto & key: m_json.getMemberNames())
-		json[key] = m_json[key];
+		if (!m_json[key].empty())
+			json[key] = m_json[key];
 
 	return true;
 }
