@@ -2,12 +2,22 @@ Engine
 ======
 
 ### 0.4.10.5 (dev)
+  * Lot of stability and speed fixes
 
 #### Protocol (Incompatimble with minetest now)
   * enet based networking (30x+  faster than before, more reliable)
   * msgpack based protocol (easy extendable, better backward compatibility)
   * use utf8 everywhere
 
+#### Settings
+  * Storing config to .json
+    map_meta.txt will be auto converted to json
+    optional for main config (if you want to start use:  `echo {} > freeminer.json`  and start freeminer)
+
+#### Lua api
+  * Save and load lua tables as json to settings
+    core.setting_setjson("tttt", {a1=2, b3=4, c5={e6=7,ff={1,2,3,4}}})
+    print("json readed: tttt.b3=" .. core.setting_getjson("tttt")["b3"] .. "   full saved=" .. core.write_json( core.setting_getjson("tttt")))
 
 
 ### 0.4.10.4 (Nov 24, 2014)

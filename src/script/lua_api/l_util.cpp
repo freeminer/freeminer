@@ -143,15 +143,30 @@ int ModApiUtil::l_setting_getbool(lua_State *L)
 	return 1;
 }
 
-// setting_setjson(name)
+// setting_setjson(name, value)
 int ModApiUtil::l_setting_setjson(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char *name = luaL_checkstring(L, 1);
-	Json::Value value;
-	read_json_value(L, value, 2);
-	g_settings->setJson(name, value);
+	Json::Value root;
+	read_json_value(L, root, 2);
+	g_settings->setJson(name, root);
 	return 0;
+}
+
+// setting_getjson(name[, nullvalue])
+int ModApiUtil::l_setting_getjson(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *name = luaL_checkstring(L, 1);
+	Json::Value root = g_settings->getJson(name);
+	lua_pushnil(L);
+	auto nullindex = lua_gettop(L);
+	if (!push_json_value(L, root, nullindex)) {
+		errorstream << "Failed to parse json data: \"" << root << "\"" << std::endl;
+		lua_pushnil(L);
+	}
+	return 1;
 }
 
 // setting_save()
@@ -343,6 +358,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(setting_setbool);
 	API_FCT(setting_getbool);
 	API_FCT(setting_setjson);
+	API_FCT(setting_getjson);
 	API_FCT(setting_save);
 
 	API_FCT(parse_json);
