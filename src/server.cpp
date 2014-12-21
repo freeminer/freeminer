@@ -193,7 +193,7 @@ public:
 
 		porting::setThreadName("Liquid");
 		porting::setThreadPriority(4);
-		int max_cycle_ms = 1000;
+		unsigned int max_cycle_ms = 1000;
 		while(!StopRequested()) {
 			try {
 				//shared_map<v3POS, MapBlock*> modified_blocks; //not used

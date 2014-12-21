@@ -417,7 +417,7 @@ void Client::step(float dtime)
 		Do stuff if connected
 	*/
 	
-	int max_cycle_ms = 500/g_settings->getFloat("wanted_fps");
+	unsigned int max_cycle_ms = 200/g_settings->getFloat("wanted_fps");
 	/*
 		Run Map's timers and unload unused data
 	*/

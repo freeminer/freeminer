@@ -1054,7 +1054,7 @@ void ServerEnvironment::clearAllObjects()
 			<<" in "<<num_blocks_cleared<<" blocks"<<std::endl;
 }
 
-void ServerEnvironment::step(float dtime, float uptime, int max_cycle_ms)
+void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -2325,7 +2325,7 @@ LocalPlayer * ClientEnvironment::getLocalPlayer()
 	return NULL;
 }
 
-void ClientEnvironment::step(float dtime, float uptime, int max_cycle_ms)
+void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_ms)
 {
 	DSTACK(__FUNCTION_NAME);
 

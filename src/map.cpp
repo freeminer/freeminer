@@ -720,7 +720,7 @@ s16 Map::propagateSunlight(v3s16 start,
 
 u32 Map::updateLighting(enum LightBank bank,
 		shared_map<v3POS, MapBlock*> & a_blocks,
-		std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms)
+		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -968,7 +968,7 @@ u32 Map::updateLighting(enum LightBank bank,
 }
 
 u32 Map::updateLighting(shared_map<v3POS, MapBlock*> & a_blocks,
-		std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms)
+		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
 {
 	int ret = 0;
 {
@@ -1493,7 +1493,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 	Updates usage timers
 */
 u32 Map::timerUpdate(float uptime, float unload_timeout,
-		int max_cycle_ms,
+		unsigned int max_cycle_ms,
 		std::list<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1717,7 +1717,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
+u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 {
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -2172,7 +2172,7 @@ u32 Map::transformLiquidsReal(Server *m_server, int max_cycle_ms)
 
 #define WATER_DROP_BOOST 4
 
-u32 Map::transformLiquids(Server *m_server, int max_cycle_ms)
+u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 {
 
 	if (g_settings->getBool("liquid_real"))
