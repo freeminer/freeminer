@@ -1009,7 +1009,6 @@ void Settings::doCallbacks(const std::string name)
 
 
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
-
 	{
 		try_shared_lock lock(m_mutex);
 		if (!m_json[name].empty())
@@ -1017,7 +1016,15 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 	}
 
 	//todo: remove later:
+
 	Json::Value root;
+	Settings * group = new Settings;
+	if (getGroupNoEx(name, group)) {
+		group->toJson(root);
+		delete group;
+		return root;
+	}
+
 	std::string value = get(name);
 	if (value.empty())
 		return def;
@@ -1061,7 +1068,7 @@ bool Settings::fromJson(const Json::Value &json) {
 		return false;
 	for (const auto & key: json.getMemberNames()) {
 		if (json[key].isObject()) {
-			//setJson(key, json[key]); // todo
+			setJson(key, json[key]); // save type info
 			auto s = new Settings;
 			s->fromJson(json[key]);
 			setGroup(key, s);
