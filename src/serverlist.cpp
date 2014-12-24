@@ -218,6 +218,7 @@ void sendAnnounce(const std::string &action,
 		server["privs"]             = g_settings->getBool("creative_mode") ? g_settings->get("default_privs_creative") : g_settings->get("default_privs");
 		server["can_see_far_names"] = g_settings->getS16("player_transfer_distance") <= 0;
 		server["liquid_real"]       = g_settings->getBool("liquid_real");
+		server["version_hash"]      = minetest_version_hash;
 		server["mods"]              = Json::Value(Json::arrayValue);
 		for (std::vector<ModSpec>::const_iterator it = mods.begin();
 				it != mods.end();
