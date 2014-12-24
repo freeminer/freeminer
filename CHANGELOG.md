@@ -19,6 +19,9 @@ Engine
     core.setting_setjson("tttt", {a1=2, b3=4, c5={e6=7,ff={1,2,3,4}}})
     print("json readed: tttt.b3=" .. core.setting_getjson("tttt")["b3"] .. "   full saved=" .. core.write_json( core.setting_getjson("tttt")))
 
+#### Server
+  * Added stat viewer tool (shown by issuing `/stat` command)
+
 #### Client
   * Celestial object movement and angle tuned according to position in the world (0,0 is the equator)
 
