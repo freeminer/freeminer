@@ -2873,7 +2873,10 @@ void Game::processItemSelection(u16 *new_playeritem)
 
 		if (input->wasKeyDown(*item_keys[i])) {
 			if (i < PLAYER_INVENTORY_SIZE && i < player->hud_hotbar_itemcount) {
-				*new_playeritem = i;
+				if (*new_playeritem == i && g_settings->getBool("hotbar_cycling"))
+					*new_playeritem = client->getPreviousPlayerItem();
+				else
+					*new_playeritem = i;
 				infostream << "Selected item: " << new_playeritem << std::endl;
 			}
 			break;
@@ -4654,3 +4657,4 @@ bool the_game(bool *kill,
 
 	return !started && game.flags.reconnect;
 }
+

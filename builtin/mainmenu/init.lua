@@ -920,12 +920,16 @@ end
 --------------------------------------------------------------------------------
 function tabbuilder.tab_settings()
 	local tab_string = ""
-	local pos = 0
+	local pos_x, pos_y = 7.1, 0
 	local add_checkbox = function(name, config, text)
 		tab_string = tab_string ..
-			"checkbox[7.1," .. pos ..  ";" .. name .. ";".. fgettext(text) .. ";"
+			"checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
 					.. dump(core.setting_getbool(config)) .. "]"
-		pos = pos + 0.5
+		pos_y = pos_y + 0.5
+		if pos_y == 11 then
+			pos_y = 0
+			pos_x = pos_x + 5
+		end
 	end
 	-- TODO: refactor this and handle_settings_buttons
 	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
@@ -944,6 +948,7 @@ function tabbuilder.tab_settings()
 	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
 	add_checkbox("cb_weather", "weather", "Weather")
 	add_checkbox("cb_hud_map", "hud_map", "Mini map (dev)")
+	add_checkbox("cb_hotbar_cycling", "hotbar_cycling", "Hotbar Cycling")
 
 	if core.setting_getbool("enable_shaders") then
 		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
@@ -1019,6 +1024,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_hud_map"] then
 		core.setting_set("hud_map", fields["cb_hud_map"])
+	end
+	if fields["cb_hotbar_cycling"] then
+		core.setting_set("hotbar_cycling", fields["cb_hotbar_cycling"])
 	end
 	if fields["cb_bumpmapping"] then
 		core.setting_set("enable_bumpmapping", fields["cb_bumpmapping"])
