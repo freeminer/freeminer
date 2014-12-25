@@ -565,6 +565,7 @@ set(FMcommon_SRCS
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
+	fmliquid.cpp
 )
 
 set(common_SRCS
