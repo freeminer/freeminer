@@ -273,9 +273,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("liquid_fast_flood", "1");
 
 	//old liquid stuff
-	settings->setDefault("liquid_loop_max", "10000");
-	settings->setDefault("liquid_queue_purge_time", "30");
-	
+	settings->setDefault("liquid_loop_max", "100000");
+	settings->setDefault("liquid_queue_purge_time", "0");
+	settings->setDefault("liquid_update", "1.0");
+
 	// Weather
 	settings->setDefault("weather", "true");
 	settings->setDefault("weather_heat_season", "30");
@@ -444,6 +445,7 @@ void set_default_settings(Settings *settings)
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
+
 
 	//
 	// Tweaks for Android
