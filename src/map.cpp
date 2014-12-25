@@ -2031,7 +2031,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	u16 time_until_purge = g_settings->getU16("liquid_queue_purge_time");
 
 	if (time_until_purge == 0)
-		return; // Feature disabled
+		return ret; // Feature disabled
 
 	time_until_purge *= 1000;	// seconds -> milliseconds
 
