@@ -322,7 +322,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("enable_local_map_saving", "false");
-	settings->setDefault("enable_build_where_you_stand", "false" );
+	settings->setDefault("enable_build_where_you_stand", "false");
+	settings->setDefault("hotbar_cycling", "false");
 
 	//
 	// Server stuff

@@ -217,6 +217,7 @@ Client::Client(
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
+	m_previous_playeritem(0),
 	m_inventory_updated(false),
 	m_inventory_from_server(NULL),
 	m_inventory_from_server_age(0.0),
@@ -1811,6 +1812,7 @@ void Client::setPlayerControl(PlayerControl &control)
 
 void Client::selectPlayerItem(u16 item)
 {
+	m_previous_playeritem = m_playeritem;
 	m_playeritem = item;
 	m_inventory_updated = true;
 	sendPlayerItem(item);
