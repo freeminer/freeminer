@@ -239,7 +239,7 @@ void ContentFeatures::reset()
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	pk.pack_map(37);
+	pk.pack_map(38);
 	PACK(CONTENTFEATURES_NAME, name);
 	PACK(CONTENTFEATURES_GROUPS, groups);
 	PACK(CONTENTFEATURES_DRAWTYPE, (int)drawtype);
@@ -285,6 +285,7 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	PACK(CONTENTFEATURES_DROWNING, drowning);
 	PACK(CONTENTFEATURES_LEVELED, leveled);
 	PACK(CONTENTFEATURES_WAVING, waving);
+	PACK(CONTENTFEATURES_MESH, mesh);
 	PACK(CONTENTFEATURES_COLLISION_BOX, collision_box);
 }
 
@@ -353,6 +354,7 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
 	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
 	packet[CONTENTFEATURES_WAVING].convert(&waving);
+	packet[CONTENTFEATURES_MESH].convert(&mesh);
 	packet[CONTENTFEATURES_COLLISION_BOX].convert(&collision_box);
 }
 
@@ -945,7 +947,10 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 		tile->material_flags &= ~MATERIAL_FLAG_ANIMATION_VERTICAL_FRAMES;
 	} else {
 		std::ostringstream os(std::ios::binary);
+		tile->frames.resize(frame_count);
+
 		for (int i = 0; i < frame_count; i++) {
+
 			FrameSpec frame;
 
 			os.str("");

@@ -132,6 +132,11 @@ else()
 		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
 			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
 		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
+
+		CHECK_CXX_COMPILER_FLAG("-Wno-type-limits" HAS_TYPE_LIMITS_WARNING)
+		if(HAS_TYPE_LIMITS_WARNING)
+			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-type-limits")
+		endif(HAS_TYPE_LIMITS_WARNING)
 	endif()
 
 	set(OTHER_FLAGS "")
@@ -565,6 +570,7 @@ set(FMcommon_SRCS
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
+	fmliquid.cpp
 )
 
 set(common_SRCS

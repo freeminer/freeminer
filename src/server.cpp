@@ -193,7 +193,7 @@ public:
 
 		porting::setThreadName("Liquid");
 		porting::setThreadPriority(4);
-		int max_cycle_ms = 1000;
+		unsigned int max_cycle_ms = 1000;
 		while(!StopRequested()) {
 			try {
 				//shared_map<v3POS, MapBlock*> modified_blocks; //not used
@@ -1149,7 +1149,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		// Single change sending is disabled if queue size is not small
 		bool disable_single_change_sending = false;
-		if(m_unsent_map_edit_queue.size() >= 4)
+		if(m_unsent_map_edit_queue.size() > 1)
 			disable_single_change_sending = true;
 
 		//int event_count = m_unsent_map_edit_queue.size();

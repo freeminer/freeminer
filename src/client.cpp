@@ -217,6 +217,7 @@ Client::Client(
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
+	m_previous_playeritem(0),
 	m_inventory_updated(false),
 	m_inventory_from_server(NULL),
 	m_inventory_from_server_age(0.0),
@@ -417,7 +418,7 @@ void Client::step(float dtime)
 		Do stuff if connected
 	*/
 	
-	int max_cycle_ms = 500/g_settings->getFloat("wanted_fps");
+	unsigned int max_cycle_ms = 200/g_settings->getFloat("wanted_fps");
 	/*
 		Run Map's timers and unload unused data
 	*/
@@ -937,7 +938,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	if(command == TOCLIENT_REMOVENODE)
 	{
 		v3s16 p = packet[TOCLIENT_REMOVENODE_POS].as<v3s16>();
-		removeNode(p);
+		removeNode(p, 2); //use light from top node
 	}
 	else if(command == TOCLIENT_ADDNODE)
 	{
@@ -945,7 +946,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
 		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
-		addNode(p, n, remove_metadata);
+		addNode(p, n, remove_metadata, 1); //fast add
 	}
 	else if(command == TOCLIENT_BLOCKDATA)
 	{
@@ -1758,13 +1759,13 @@ void Client::sendPlayerItem(u16 item)
 	Send(0, buffer, true);
 }
 
-void Client::removeNode(v3s16 p)
+void Client::removeNode(v3s16 p, int fast)
 {
 	std::map<v3s16, MapBlock*> modified_blocks;
 
 	try
 	{
-		m_env.getMap().removeNodeAndUpdate(p, modified_blocks);
+		m_env.getMap().removeNodeAndUpdate(p, modified_blocks, fast ? fast : 2);
 	}
 	catch(InvalidPositionException &e)
 	{
@@ -1778,7 +1779,7 @@ void Client::removeNode(v3s16 p)
 	}
 }
 
-void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
+void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 {
 	//TimeTaker timer1("Client::addNode()");
 
@@ -1787,7 +1788,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
 	try
 	{
 		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
-		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
+		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast ? fast : 2);
 	}
 	catch(InvalidPositionException &e)
 	{}
@@ -1811,6 +1812,7 @@ void Client::setPlayerControl(PlayerControl &control)
 
 void Client::selectPlayerItem(u16 item)
 {
+	m_previous_playeritem = m_playeritem;
 	m_playeritem = item;
 	m_inventory_updated = true;
 	sendPlayerItem(item);

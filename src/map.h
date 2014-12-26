@@ -227,10 +227,10 @@ public:
 
 	u32 updateLighting(enum LightBank bank,
 			shared_map<v3POS, MapBlock*>  & a_blocks,
-			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
+			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
 
 	u32 updateLighting(shared_map<v3POS, MapBlock*>  & a_blocks,
-			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
+			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
 
@@ -239,9 +239,11 @@ public:
 	*/
 	void addNodeAndUpdate(v3s16 p, MapNode n,
 			std::map<v3s16, MapBlock*> &modified_blocks,
-			bool remove_metadata = true);
+			bool remove_metadata = true,
+			int fast = 0
+			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks);
+			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0);
 
 	/*
 		Wrappers for the latter ones.
@@ -274,7 +276,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	u32 timerUpdate(float uptime, float unload_timeout, int max_cycle_ms = 100,
+	u32 timerUpdate(float uptime, float unload_timeout, unsigned int max_cycle_ms = 100,
 			std::list<v3s16> *unloaded_blocks=NULL);
 
 	/*
@@ -286,8 +288,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, int max_cycle_ms);
-	u32 transformLiquidsReal(Server *m_server, int max_cycle_ms);
+	u32 transformLiquids(Server *m_server, unsigned int max_cycle_ms);
+	u32 transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -369,12 +371,7 @@ protected:
 	friend class LuaVoxelManip;
 
 	IGameDef *m_gamedef;
-	Circuit* m_circuit;
-
 	std::set<MapEventReceiver*> m_event_receivers;
-
-	u32 m_blocks_update_last;
-	u32 m_blocks_save_last;
 
 	// Queued transforming water nodes
 
@@ -383,6 +380,11 @@ private:
 	u32 m_unprocessed_count;
 	u32 m_inc_trending_up_start_time; // milliseconds
 	bool m_queue_size_timer_started;
+
+protected:
+	Circuit* m_circuit;
+	u32 m_blocks_update_last;
+	u32 m_blocks_save_last;
 
 public:
 	//shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;

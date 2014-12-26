@@ -348,14 +348,16 @@ public:
 	{ return m_env; }
 	
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
-	void removeNode(v3s16 p);
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true);
+	void removeNode(v3s16 p, int fast = 0);
+	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
 	
 	void setPlayerControl(PlayerControl &control);
 
 	void selectPlayerItem(u16 item);
 	u16 getPlayerItem() const
 	{ return m_playeritem; }
+	u16 getPreviousPlayerItem() const
+	{ return m_previous_playeritem; }
 
 	// Returns true if the inventory of the local player has been
 	// updated from the server. If it is true, it is set to false.
@@ -494,6 +496,7 @@ private:
 	// Server serialization version
 	u8 m_server_ser_ver;
 	u16 m_playeritem;
+	u16 m_previous_playeritem;
 	bool m_inventory_updated;
 	Inventory *m_inventory_from_server;
 	float m_inventory_from_server_age;

@@ -266,18 +266,19 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("preload_item_visuals", "false");
 	
 	// Liquid
-	settings->setDefault("liquid_real", win32 ? "false" : "true");
+	settings->setDefault("liquid_real", "true");
 	settings->setDefault("liquid_update", "0.1");
 	settings->setDefault("liquid_send", "1.0");
 	settings->setDefault("liquid_relax", "2");
 	settings->setDefault("liquid_fast_flood", "1");
 
 	//old liquid stuff
-	settings->setDefault("liquid_loop_max", "10000");
-	settings->setDefault("liquid_queue_purge_time", "30");
-	
+	settings->setDefault("liquid_loop_max", "100000");
+	settings->setDefault("liquid_queue_purge_time", "0");
+	settings->setDefault("liquid_update", "1.0");
+
 	// Weather
-	settings->setDefault("weather", win32 ? "false" : "true");
+	settings->setDefault("weather", "true");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
@@ -321,7 +322,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("enable_local_map_saving", "false");
-	settings->setDefault("enable_build_where_you_stand", "false" );
+	settings->setDefault("enable_build_where_you_stand", "false");
+	settings->setDefault("hotbar_cycling", "false");
 
 	//
 	// Server stuff
@@ -444,6 +446,7 @@ void set_default_settings(Settings *settings)
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
+
 
 	//
 	// Tweaks for Android
