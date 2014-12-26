@@ -1,4 +1,4 @@
-/*
+﻿/*
 hud.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2010-2013 blue42u, Jonathon Anderson <anderjon@umail.iu.edu>
@@ -170,14 +170,6 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 		g_touchscreengui->resetHud();
 #endif
 
-	s32 height  = m_hotbar_imagesize + m_padding * 2;
-	s32 width   = (itemcount - offset) * (m_hotbar_imagesize + m_padding * 2);
-
-	if (direction == HUD_DIR_TOP_BOTTOM || direction == HUD_DIR_BOTTOM_TOP) {
-		width  = m_hotbar_imagesize + m_padding * 2;
-		height = (itemcount - offset) * (m_hotbar_imagesize + m_padding * 2);
-	}
-
 	// Position of upper left corner of bar
 	v2s32 pos = upperleftpos;
 
@@ -199,14 +191,20 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 
 	/* draw customized item background */
 	if (use_hotbar_image) {
-		core::rect<s32> imgrect2(-m_padding/2, -m_padding/2,
-				width+m_padding/2, height+m_padding/2);
-		core::rect<s32> rect2 = imgrect2 + pos;
 		video::ITexture *texture = tsrc->getTexture(hotbar_image);
 		core::dimension2di imgsize(texture->getOriginalSize());
-		driver->draw2DImage(texture, rect2,
-			core::rect<s32>(core::position2d<s32>(0,0), imgsize),
-			NULL, hbar_colors, true);
+		core::rect<s32> rect(-m_padding, -m_padding,
+			m_hotbar_imagesize + m_padding, m_hotbar_imagesize + m_padding);
+		rect += pos;
+		core::position2d<s32> step(0, 0);
+		(direction == HUD_DIR_TOP_BOTTOM || direction == HUD_DIR_BOTTOM_TOP ?
+			step.Y : step.X) = m_hotbar_imagesize + m_padding * 2;
+		for (int i = 0; i < itemcount - offset; i++) {
+			driver->draw2DImage(texture, rect,
+				core::rect<s32>(core::position2d<s32>(0, 0), imgsize),
+				NULL, hbar_colors, true);
+			rect += step;
+		}
 	}
 
 	for (s32 i = offset; i < itemcount && (size_t)i < mainlist->getSize(); i++)
@@ -214,7 +212,8 @@ void Hud::drawItems(v2s32 upperleftpos, s32 itemcount, s32 offset,
 		v2s32 steppos;
 		s32 fullimglen = m_hotbar_imagesize + m_padding * 2;
 
-		core::rect<s32> imgrect(0, 0, m_hotbar_imagesize, m_hotbar_imagesize);
+		core::rect<s32> imgrect(-m_padding, -m_padding,
+			m_hotbar_imagesize - m_padding, m_hotbar_imagesize - m_padding);
 
 		switch (direction) {
 			case HUD_DIR_RIGHT_LEFT:
@@ -425,7 +424,7 @@ void Hud::drawHotbar(u16 playeritem) {
 		pos.X += width/4;
 
 		v2s32 secondpos = pos;
-		pos = pos - v2s32(0, m_hotbar_imagesize + m_padding);
+		pos = pos - v2s32(0, m_hotbar_imagesize + m_padding * 2);
 
 		if (player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE) {
 			drawItems(pos, hotbar_itemcount/2, 0, mainlist, playeritem + 1, 0);

@@ -213,7 +213,7 @@ struct MapNode
 	 * @pre f != NULL
 	 * @pre f->param_type == CPT_LIGHT
 	 */
-	u8 getLightNoChecks(LightBank bank, const ContentFeatures *f);
+	u8 getLightNoChecks(LightBank bank, const ContentFeatures *f) const;
 
 	bool getLightBanks(u8 &lightday, u8 &lightnight, INodeDefManager *nodemgr) const;
 	
@@ -265,7 +265,7 @@ struct MapNode
 	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
 	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
-	operator bool() const { return param0; };
+	operator bool() const { return param0; }
 
 	/*
 		Serialization functions
