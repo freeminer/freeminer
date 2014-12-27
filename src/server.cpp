@@ -555,7 +555,9 @@ Server::Server(
 
 	// Apply item aliases in the node definition manager
 	m_nodedef->updateAliases(m_itemdef);
-	m_nodedef->updateTextures(this);
+
+	if (!simple_singleplayer_mode)
+		m_nodedef->updateTextures(this);
 
 	// Perform pending node name resolutions
 	m_nodedef->getResolver()->resolveNodes();
