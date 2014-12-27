@@ -267,11 +267,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 		}
 	}
 
-#if _MSC_VER
-	const int maxq = 100;
-#else
 	const int maxq = 1000;
-#endif
 
 			// No occlusion culling when free_move is on and camera is
 			// inside ground

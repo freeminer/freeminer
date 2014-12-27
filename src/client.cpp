@@ -157,6 +157,10 @@ void * MeshUpdateThread::Thread()
 
 		m_queue_in.m_process.erase(q->m_blockpos);
 
+#if _MSC_VER
+		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
+#endif
+
 #ifdef NDEBUG
 		} catch (BaseException &e) {
 			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
