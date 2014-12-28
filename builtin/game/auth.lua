@@ -140,9 +140,13 @@ core.builtin_auth_handler = {
 		assert(type(name) == "string")
 		assert(type(password) == "string")
 		core.log('info', "Built-in authentication handler adding player '"..name.."'")
+		local privs = core.setting_get("default_privs")
+		if core.setting_getbool("creative_mode") and core.setting_get("default_privs_creative") then
+			privs = core.setting_get("default_privs_creative")
+		end
 		core.auth_table[name] = {
 			password = password,
-			privileges = core.string_to_privs(core.setting_get("default_privs")),
+			privileges = core.string_to_privs(privs),
 			last_login = os.time(),
 		}
 		save_auth_file()
