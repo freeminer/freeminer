@@ -2015,6 +2015,7 @@ void Client::typeChatMessage(const std::wstring &message)
 	{
 		m_chat_queue.push_back("issued command: " + wide_to_utf8(message));
 	}
+/* recieved from server and printed later
 	else
 	{
 		LocalPlayer *player = m_env.getLocalPlayer();
@@ -2023,6 +2024,7 @@ void Client::typeChatMessage(const std::wstring &message)
 		std::string name = player->getName();
 		m_chat_queue.push_back("<" + name + "> " + wide_to_utf8(message));
 	}
+*/
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool urgent)
