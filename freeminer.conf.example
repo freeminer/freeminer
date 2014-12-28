@@ -601,7 +601,8 @@
 #more_threads = 1
 # Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
 #abm_random = 0
-
+# Default privs in creative mode
+#default_privs_creative = interact, shout, fly, fast
 
 # Constant volume liquids
 #liquid_real = false

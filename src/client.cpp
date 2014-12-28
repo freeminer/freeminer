@@ -157,6 +157,10 @@ void * MeshUpdateThread::Thread()
 
 		m_queue_in.m_process.erase(q->m_blockpos);
 
+#if _MSC_VER
+		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
+#endif
+
 #ifdef NDEBUG
 		} catch (BaseException &e) {
 			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
@@ -2010,14 +2014,6 @@ void Client::typeChatMessage(const std::wstring &message)
 	if (message[0] == '/')
 	{
 		m_chat_queue.push_back("issued command: " + wide_to_utf8(message));
-	}
-	else
-	{
-		LocalPlayer *player = m_env.getLocalPlayer();
-		if(!player)
-			return;
-		std::string name = player->getName();
-		m_chat_queue.push_back("<" + name + "> " + wide_to_utf8(message));
 	}
 }
 

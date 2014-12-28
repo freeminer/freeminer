@@ -2986,7 +2986,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 	v3s16 p3d = block->getPos();
 
 	if (!block->isGenerated()) {
-		infostream << "WARNING: saveBlock: Not writing not generated block p="<< p3d << std::endl;
+		//infostream << "WARNING: saveBlock: Not writing not generated block p="<< p3d << std::endl;
 		return true;
 	}
 

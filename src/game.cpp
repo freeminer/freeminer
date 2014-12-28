@@ -3992,7 +3992,7 @@ void Game::handleDigging(GameRunData *runData,
 		bool is_valid_position;
 		MapNode wasnode = map.getNodeNoEx(nodepos, &is_valid_position);
 		if (is_valid_position)
-			client->removeNode(nodepos, features.light_source ? 3 : 1);
+			client->removeNode(nodepos, 2);
 
 		if (m_cache_enable_particles) {
 			const ContentFeatures &features =
