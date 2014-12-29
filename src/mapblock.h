@@ -42,6 +42,8 @@ class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
 class Circuit;
+struct abm_trigger_one;
+class ServerEnvironment;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -552,6 +554,12 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
+	u32 m_analyzed_timestamp; // future
+	bool abm_active;
+	typedef std::vector<abm_trigger_one> abm_triggers_type;
+	abm_triggers_type * abm_triggers;
+	void abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate = false);
+	u32 m_abm_timestamp;
 
 private:
 	/*
