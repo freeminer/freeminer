@@ -42,8 +42,9 @@ class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
 class Circuit;
-struct abm_trigger_one;
+//struct abm_trigger_one;
 class ServerEnvironment;
+struct ActiveABM;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -103,6 +104,15 @@ public:
 	}
 };
 #endif
+
+struct abm_trigger_one {
+	ActiveABM * i;
+	v3s16 p;
+	MapNode n;
+	u32 active_object_count;
+	u32 active_object_count_wider;
+	MapNode neighbor;
+};
 
 /*
 	MapBlock itself
