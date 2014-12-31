@@ -336,6 +336,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_active_block_abm_dtime_counter(0),
 	m_active_block_timer_last(0),
 	m_blocks_added_last(0),
+	m_active_block_analyzed_last(0),
 	m_game_time_fraction_counter(0),
 	m_recommended_send_interval(0.1),
 	m_max_lag_estimate(0.1)
@@ -712,16 +713,18 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 		float dtime = 0;
 		if (m_abm_timestamp) {
 			dtime = time - m_abm_timestamp;
-		} else if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
-			dtime = time - m_changed_timestamp;
-		} else if (m_disk_timestamp && m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
-			dtime = time - m_disk_timestamp;
 		} else {
-			dtime = 1;
+			u32 ts = getActualTimestamp();
+			if (ts)
+				dtime = time - ts;
+			else
+				dtime = 1;
 		}
 		//infostream<<"MapBlock::abm_triggers_run p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
-		for (const auto & abm_trigger : *abm_triggers) {
+		//for (const auto & abm_trigger : *abm_triggers) {
+		for (auto ir = abm_triggers->begin(); ir != abm_triggers->end() ;++ir) {
+			auto & abm_trigger = *ir;
 			auto & i = abm_trigger.i;
 			float intervals = dtime / i->abmws->interval;
 			int chance = (i->abmws->chance / intervals);
@@ -734,9 +737,11 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
 
 			auto n = map->getNodeTry(abm_trigger.p);
-			if (n.getContent() != abm_trigger.c)
+			if (n.getContent() != abm_trigger.c) {
+				if (n)
+					ir = abm_triggers->erase(ir);
 				continue;
-
+			}
 			//TODO: async call for c++ abms
 
 				i->abmws->abm->trigger(m_env, abm_trigger.p, n,
@@ -753,11 +758,13 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {
-	if (block->m_analyzed_timestamp + 10 > block->m_changed_timestamp)
+
+	u32 block_timestamp = block->getActualTimestamp();
+	if (block->m_analyzed_timestamp + 10 > block_timestamp)
 		return;
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<std::endl;
-	block->m_analyzed_timestamp = block->m_changed_timestamp;
+	block->m_analyzed_timestamp = block_timestamp;
 	m_abmhandler->apply(block);
 }
 
@@ -1212,11 +1219,44 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
 
+
+	{
+if (!m_active_block_analyzed_last)
+	infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
+
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+		for(auto i = m_active_blocks.m_list.begin(); i != m_active_blocks.m_list.end(); ++i)
+		{
+			if (n++ < m_active_block_analyzed_last)
+				continue;
+			else
+				m_active_block_analyzed_last = 0;
+			++calls;
+
+			v3POS p = *i;
+
+			MapBlock *block = m_map->getBlock(p, true);
+			if(!block)
+				continue;
+
+			analyzeBlock(block);
+
+			if (porting::getTimeMs() > end_ms) {
+				m_active_block_analyzed_last = n;
+				break;
+			}
+		}
+		if (!calls)
+			m_active_block_analyzed_last = 0;
+	}
+
 	/*
 		Mess around in active blocks
 	*/
 	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0))
 	{
+if (!m_active_block_timer_last)
+	infostream<<"Start ABM timer cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		//TimeTaker timer_s1("Mess around in active blocks");
 		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
 
@@ -1255,8 +1295,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 						"Timestamp older than 60s (step)");
 */
 
-			analyzeBlock(block);
-
 			// Run node timers
 			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications
 				block->m_node_timers.m_uptime_last = uptime - dtime;
@@ -1289,6 +1327,9 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval))
 	{
+if (!m_active_block_abm_last)
+	infostream<<"Start ABM trigger cycle s="<<m_active_blocks.m_list.size()<<std::endl;
+
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
 
@@ -1311,8 +1352,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
 					<<") being handled"<<std::endl;*/
 
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p, true);
-			if(block==NULL)
+			MapBlock *block = m_map->getBlock(p, true);
+			if(!block)
 				continue;
 
 			// Set current time as timestamp
@@ -1320,6 +1361,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 			/* Handle ActiveBlockModifiers */
 			//m_abmhandler->apply(block);
+
 			block->abm_triggers_run(this, m_game_time);
 
 			if (porting::getTimeMs() > end_ms) {

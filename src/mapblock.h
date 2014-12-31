@@ -566,10 +566,20 @@ public:
 	u32 m_analyzed_timestamp;
 	u32 m_analyzed_fast_timestamp; //future
 	bool abm_active;
-	typedef std::vector<abm_trigger_one> abm_triggers_type;
+	typedef std::list<abm_trigger_one> abm_triggers_type;
 	abm_triggers_type * abm_triggers;
 	void abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
+
+	u32 getActualTimestamp() {
+		u32 block_timestamp = 0;
+		if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_changed_timestamp;
+		} else if (m_disk_timestamp && m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_disk_timestamp;
+		}
+		return block_timestamp;
+	}
 
 private:
 	/*

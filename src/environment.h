@@ -465,6 +465,7 @@ private:
 	u32 m_active_block_timer_last;
 	std::set<v3s16> m_blocks_added;
 	u32 m_blocks_added_last;
+	u32 m_active_block_analyzed_last;
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
 	std::atomic_uint m_game_time;
