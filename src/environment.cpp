@@ -779,7 +779,7 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 			if(chance && rnd % chance)
 					continue;
 
-infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
+//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
 
 			auto & p = abm_trigger.p;
 			auto & n = abm_trigger.n;
@@ -801,6 +801,15 @@ infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<
 */
 			//trigger_list.pop_front();
 		}
+}
+
+void ServerEnvironment::analyzeBlock(MapBlock * block) {
+	if (block->m_analyzed_timestamp + 10 > block->m_changed_timestamp)
+		return;
+	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
+	infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<std::endl;
+	block->m_analyzed_timestamp = block->m_changed_timestamp;
+	m_abmhandler->apply(block);
 }
 
 
@@ -1252,7 +1261,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			}
 
 			activateBlock(block);
-			m_abmhandler->apply(block, true);
+			//m_abmhandler->apply(block, true);
 			/* infostream<<"Server: Block " << PP(p)
 				<< " became active"<<std::endl; */
 			if (porting::getTimeMs() > end_ms) {
@@ -1305,6 +1314,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
 						"Timestamp older than 60s (step)");
 */
+
+			analyzeBlock(block);
 
 			// Run node timers
 			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications
@@ -1424,7 +1435,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			if (!dtime_s)
 				dtime_s = uptime;
 			//ABMHandler abmhandler(m_abms, dtime_s, this, true);
-			m_abmhandler->apply(block, true);
+			if (!block->abm_triggers)
+				m_abmhandler->apply(block, true);
 			block->abm_triggers_run(this, m_game_time);
 		}
 	}

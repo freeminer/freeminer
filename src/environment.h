@@ -378,6 +378,7 @@ public:
 	// is weather active in this environment?
 	bool m_use_weather;
 	ABMHandler * m_abmhandler;
+	void analyzeBlock(MapBlock * block);
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
