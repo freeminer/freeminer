@@ -223,6 +223,11 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	chance = abm->getTriggerChance();
 	if (!chance)
 		chance = 10;
+
+	neighbors_range = abm->getNeighborsRange();
+	if (!neighbors_range)
+		neighbors_range = 1;
+
 	// Initialize timer to random value to spread processing
 	float itv = MYMAX(0.001, interval); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
@@ -630,7 +635,6 @@ void ServerEnvironment::loadMeta()
 
 		if (block->abm_triggers)
 			block->abm_triggers->clear();
-		//std::list<abm_trigger_one> trigger_list;
 		ServerMap *map = &m_env->getServerMap();
 		{
 		auto lock = block->lock_unique_rec(); //was: try_
@@ -659,13 +663,13 @@ void ServerEnvironment::loadMeta()
 			for(auto & ir: *(m_aabms[c])) {
 				auto i = &ir;
 				// Check neighbors
-				MapNode neighbor;
+				v3POS neighbor_pos;
 				//auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
 				auto & required_neighbors = ir.abmws->required_neighbors;
 				if(required_neighbors.count() > 0)
 				{
 					v3s16 p1;
-					int neighbors_range = i->abmws->abm->getNeighborsRange();
+					int neighbors_range = i->abmws->neighbors_range;
 					for(p1.X = p.X - neighbors_range; p1.X <= p.X + neighbors_range; ++p1.X)
 					for(p1.Y = p.Y - neighbors_range; p1.Y <= p.Y + neighbors_range; ++p1.Y)
 					for(p1.Z = p.Z - neighbors_range; p1.Z <= p.Z + neighbors_range; ++p1.Z)
@@ -677,7 +681,7 @@ void ServerEnvironment::loadMeta()
 						if (c == CONTENT_IGNORE)
 							continue;
 						if(required_neighbors.get(c)){
-							neighbor = n;
+							neighbor_pos = p1;
 							goto neighbor_found;
 						}
 					}
@@ -689,7 +693,7 @@ neighbor_found:
 				if (!block->abm_triggers)
 					block->abm_triggers = new MapBlock::abm_triggers_type;
 
-				block->abm_triggers->emplace_back(abm_trigger_one{i, p, n, active_object_count, active_object_count_wider, neighbor});
+				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos});
 			}
 		}
 		}
@@ -702,6 +706,8 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 
 		if (!abm_triggers)
 			return;
+
+		ServerMap *map = &m_env->getServerMap();
 
 		float dtime = 0;
 		if (m_abm_timestamp) {
@@ -727,16 +733,14 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 
 			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
 
-			auto & p = abm_trigger.p;
-			auto & n = abm_trigger.n;
-			auto & active_object_count = abm_trigger.active_object_count;
-			auto & active_object_count_wider = abm_trigger.active_object_count_wider;
-			auto & neighbor = abm_trigger.neighbor;
+			auto n = map->getNodeTry(abm_trigger.p);
+			if (n.getContent() != abm_trigger.c)
+				continue;
 
 			//TODO: async call for c++ abms
 
-				i->abmws->abm->trigger(m_env, p, n,
-						active_object_count, active_object_count_wider, neighbor, activate);
+				i->abmws->abm->trigger(m_env, abm_trigger.p, n,
+						abm_trigger.active_object_count, abm_trigger.active_object_count_wider, map->getNodeTry(abm_trigger.neighbor_pos), activate);
 
 				// Count surrounding objects again if the abms added any
 /*

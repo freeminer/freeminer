@@ -106,11 +106,11 @@ public:
 
 struct abm_trigger_one {
 	ActiveABM * i;
-	v3s16 p;
-	MapNode n;
+	v3POS p;
+	content_t c;
 	u32 active_object_count;
 	u32 active_object_count_wider;
-	MapNode neighbor;
+	v3POS neighbor_pos;
 };
 
 /*

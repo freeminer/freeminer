@@ -183,6 +183,7 @@ struct ABMWithState
 	float interval;
 	float chance;
 	float timer;
+	int neighbors_range;
 	std::unordered_set<content_t> trigger_ids;
 	FMBitset required_neighbors, required_neighbors_activate;
 
