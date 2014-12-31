@@ -220,7 +220,6 @@ struct ActiveABM
 	ActiveABM()
 	{}
 	ABMWithState *abmws;
-	//ActiveBlockModifier *abm; //delete me, abm in ws ^
 	int chance;
 };
 

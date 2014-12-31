@@ -568,43 +568,10 @@ void ServerEnvironment::loadMeta()
 	{
 		m_aabms.fill(nullptr);
 
-//		if(dtime_s < 0.001)
-//			return;
-
-		//INodeDefManager *ndef = env->getGameDef()->ndef();
 		for(auto & ai: abms){
 			auto i = &ai;
-/*
-			ActiveBlockModifier *abm = i->abm;
-			float trigger_interval = i->interval;
-			if(trigger_interval < 0.001)
-				trigger_interval = 0.001;
-			float actual_interval = dtime_s;
-			if(use_timers){
-				i->timer += dtime_s;
-				if(i->timer < trigger_interval)
-					continue;
-				actual_interval = i->timer;
-				if (i->timer > trigger_interval*3)
-					i->timer = trigger_interval;
-				else
-					i->timer -= trigger_interval;
-			}
-			float intervals = actual_interval / trigger_interval;
-			if(intervals == 0)
-				continue;
-			float chance = i->chance;
-			if(chance == 0)
-				chance = 1;
-*/
 			ActiveABM aabm;
-//			aabm.abm = abm; //del, same as abmws
 			aabm.abmws = i;
-/*
-			aabm.chance = chance / intervals;
-			if(aabm.chance == 0)
-				aabm.chance = 1;
-*/
 			// Trigger contents
 				for (auto &c : i->trigger_ids)
 				{
@@ -659,13 +626,10 @@ void ServerEnvironment::loadMeta()
 		if(m_aabms_empty)
 			return;
 
-infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
+		//infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
 
 		if (block->abm_triggers)
-{
-//return;
 			block->abm_triggers->clear();
-}
 		//std::list<abm_trigger_one> trigger_list;
 		ServerMap *map = &m_env->getServerMap();
 		{
@@ -694,8 +658,6 @@ infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<bl
 
 			for(auto & ir: *(m_aabms[c])) {
 				auto i = &ir;
-				//if(activate && myrand() % i->chance != 0)
-				//	continue;
 				// Check neighbors
 				MapNode neighbor;
 				//auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
@@ -724,7 +686,6 @@ infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<bl
 				}
 neighbor_found:
 
-//infostream<<"adding trigger i="<<i<<" i->abm="<<i->abm<<std::endl;
 				if (!block->abm_triggers)
 					block->abm_triggers = new MapBlock::abm_triggers_type;
 
@@ -732,14 +693,12 @@ neighbor_found:
 			}
 		}
 		}
-infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
+	//infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 
 	}
 
 void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate) {
 		ScopeProfiler sp(g_profiler, "ABM triggers", SPT_ADD);
-
-//auto lock = lock_unique_rec();
 
 		if (!abm_triggers)
 			return;
@@ -747,39 +706,26 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 		float dtime = 0;
 		if (m_abm_timestamp) {
 			dtime = time - m_abm_timestamp;
-//infostream<<" dtime1 abm: dtime="<<dtime<<" time="<<time<< "  m_abm_timestamp="<<m_abm_timestamp<<std::endl;
 		} else if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
 			dtime = time - m_changed_timestamp;
-//infostream<<" dtime2 ch: dtime="<<dtime<<" time="<<time <<" m_changed_timestamp="<<m_changed_timestamp<<std::endl;
 		} else if (m_disk_timestamp && m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
 			dtime = time - m_disk_timestamp;
-//infostream<<" dtime3 ch: dtime="<<dtime<<" time="<<time <<" m_disk_timestamp="<<m_disk_timestamp<<std::endl;
 		} else {
-//infostream<<" dtime no "<< " m_uptime_timer_last=" <<m_uptime_timer_last<<  " m_disk_timestamp="<<m_disk_timestamp << " m_timestamp="<<m_timestamp << std::endl;
 			dtime = 1;
 		}
-//infostream<<"MapBlock::abm_triggers_run p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
+		//infostream<<"MapBlock::abm_triggers_run p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
 		for (const auto & abm_trigger : *abm_triggers) {
-			//auto abm = trigger_list.front();
-
 			auto & i = abm_trigger.i;
-			//if (!i || !i->abmws)
-			//	continue;
 			float intervals = dtime / i->abmws->interval;
-			
 			int chance = (i->abmws->chance / intervals);
-
-			//if (!chance)
-			//	continue;
-
 			auto rnd = myrand();
-//infostream<<"TST: dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
+			//infostream<<"TST: dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
 
 			if(chance && rnd % chance)
 					continue;
 
-//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
+			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
 
 			auto & p = abm_trigger.p;
 			auto & n = abm_trigger.n;
@@ -799,7 +745,6 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 					m_env->m_added_objects = 0;
 				}
 */
-			//trigger_list.pop_front();
 		}
 }
 
@@ -826,7 +771,6 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	// Get time difference
 	u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
-//infostream<<block->getPos()<<" activatets="<<stamp<<" replace="<<m_game_time<<std::endl;
 	if(m_game_time > stamp && stamp != BLOCK_TIMESTAMP_UNDEFINED)
 		dtime_s = m_game_time - stamp;
 	dtime_s += additional_dtime;
@@ -860,14 +804,6 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 				block->setNodeTimer(i->first,NodeTimer(i->second.timeout,0));
 		}
 	}
-
-	/* Handle ActiveBlockModifiers */
-/*
-	ABMHandler abmhandler(m_abms, dtime_s, this, false, true);
-	abmhandler.apply(block, true);
-	block->abm_active = true;
-	block->abm_triggers_run(this, m_game_time);
-*/
 }
 
 void ServerEnvironment::addActiveBlockModifier(ActiveBlockModifier *abm)
@@ -1352,15 +1288,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
 
-		// Initialize handling of ActiveBlockModifiers
-		//if (/*!m_active_block_abm_last ||*/ !m_abmhandler) {
-			//if (m_abmhandler)
-			//	delete m_abmhandler;
-			//m_abmhandler = new ABMHandler(m_abms, MYMAX(m_active_block_abm_dtime, m_active_block_abm_dtime_counter), this, true, false); //todo! move me in constructor
-		//}
-/*
-		ABMHandler abmhandler(m_abms, m_active_block_abm_dtime, this, true);
-*/
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 
 		for(std::set<v3s16>::iterator

@@ -42,7 +42,6 @@ class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
 class Circuit;
-//struct abm_trigger_one;
 class ServerEnvironment;
 struct ActiveABM;
 
@@ -564,7 +563,8 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
-	u32 m_analyzed_timestamp; // future
+	u32 m_analyzed_timestamp;
+	u32 m_analyzed_fast_timestamp; //future
 	bool abm_active;
 	typedef std::vector<abm_trigger_one> abm_triggers_type;
 	abm_triggers_type * abm_triggers;
