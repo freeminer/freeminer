@@ -32,14 +32,6 @@ class ManualMapVoxelManipulator;
 
 // Use absolute value of height to determine ore placement
 #define OREFLAG_ABSHEIGHT 0x01
-
-// Use 3d noise to get density of ore placement, instead of just the position
-#define OREFLAG_DENSITY   0x02 // not yet implemented
-
-// For claylike ore types, place ore if the number of surrounding
-// nodes isn't the specified node
-#define OREFLAG_NODEISNT  0x04 // not yet implemented
-
 #define OREFLAG_USE_NOISE 0x08
 
 #define ORE_RANGE_ACTUAL 1
@@ -47,9 +39,10 @@ class ManualMapVoxelManipulator;
 
 
 enum OreType {
-	ORE_SCATTER,
-	ORE_SHEET,
-	ORE_CLAYLIKE
+	ORE_TYPE_SCATTER,
+	ORE_TYPE_SHEET,
+	ORE_TYPE_BLOB,
+	ORE_TYPE_VEIN,
 };
 
 extern FlagDesc flagdesc_ore[];
@@ -78,7 +71,7 @@ public:
 
 	size_t placeOre(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
 	virtual void generate(ManualMapVoxelManipulator *vm, int seed,
-						u32 blockseed, v3s16 nmin, v3s16 nmax) = 0;
+		u32 blockseed, v3s16 nmin, v3s16 nmax) = 0;
 };
 
 class OreScatter : public Ore {
@@ -86,7 +79,7 @@ public:
 	static const bool NEEDS_NOISE = false;
 
 	virtual void generate(ManualMapVoxelManipulator *vm, int seed,
-						u32 blockseed, v3s16 nmin, v3s16 nmax);
+		u32 blockseed, v3s16 nmin, v3s16 nmax);
 };
 
 class OreSheet : public Ore {
@@ -94,7 +87,28 @@ public:
 	static const bool NEEDS_NOISE = true;
 
 	virtual void generate(ManualMapVoxelManipulator *vm, int seed,
-						u32 blockseed, v3s16 nmin, v3s16 nmax);
+		u32 blockseed, v3s16 nmin, v3s16 nmax);
+};
+
+class OreBlob : public Ore {
+public:
+	static const bool NEEDS_NOISE = true;
+
+	virtual void generate(ManualMapVoxelManipulator *vm, int seed,
+		u32 blockseed, v3s16 nmin, v3s16 nmax);
+};
+
+class OreVein : public Ore {
+public:
+	static const bool NEEDS_NOISE = true;
+
+	float random_factor;
+	Noise *noise2;
+
+	virtual ~OreVein();
+
+	virtual void generate(ManualMapVoxelManipulator *vm, int seed,
+		u32 blockseed, v3s16 nmin, v3s16 nmax);
 };
 
 class OreManager : public GenElementManager {
@@ -108,12 +122,14 @@ public:
 	Ore *create(int type)
 	{
 		switch (type) {
-		case ORE_SCATTER:
+		case ORE_TYPE_SCATTER:
 			return new OreScatter;
-		case ORE_SHEET:
+		case ORE_TYPE_SHEET:
 			return new OreSheet;
-		//case ORE_CLAYLIKE: //TODO: implement this!
-		//	return new OreClaylike;
+		case ORE_TYPE_BLOB:
+			return new OreBlob;
+		case ORE_TYPE_VEIN:
+			return new OreVein;
 		default:
 			return NULL;
 		}

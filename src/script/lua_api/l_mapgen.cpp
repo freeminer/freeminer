@@ -71,9 +71,10 @@ struct EnumString ModApiMapgen::es_MapgenObject[] =
 
 struct EnumString ModApiMapgen::es_OreType[] =
 {
-	{ORE_SCATTER,  "scatter"},
-	{ORE_SHEET,    "sheet"},
-	{ORE_CLAYLIKE, "claylike"},
+	{ORE_TYPE_SCATTER, "scatter"},
+	{ORE_TYPE_SHEET,   "sheet"},
+	{ORE_TYPE_BLOB,    "blob"},
+	{ORE_TYPE_VEIN,    "vein"},
 	{0, NULL},
 };
 
@@ -424,14 +425,16 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 		es_BiomeTerrainType, BIOME_TYPE_NORMAL);
 	Biome *b = bmgr->create(biometype);
 
-	b->name           = getstringfield_default(L, index, "name", "");
-	b->depth_top      = getintfield_default(L, index, "depth_top",    1);
-	b->depth_filler   = getintfield_default(L, index, "depth_filler", 3);
-	b->height_min     = getintfield_default(L, index, "height_min",   0);
-	b->height_max     = getintfield_default(L, index, "height_max",   0);
-	b->heat_point     = getfloatfield_default(L, index, "heat_point",     0.);
-	b->humidity_point = getfloatfield_default(L, index, "humidity_point", 0.);
-	b->flags          = 0; //reserved
+	b->name            = getstringfield_default(L, index, "name", "");
+	b->depth_top       = getintfield_default(L, index, "depth_top",    1);
+	b->depth_filler    = getintfield_default(L, index, "depth_filler", 3);
+	b->height_shore    = getintfield_default(L, index, "height_shore", 3);
+	b->depth_water_top = getintfield_default(L, index, "depth_water_top", 0);
+	b->height_min      = getintfield_default(L, index, "height_min",   0);
+	b->height_max      = getintfield_default(L, index, "height_max",   0);
+	b->heat_point      = getfloatfield_default(L, index, "heat_point",     0.);
+	b->humidity_point  = getfloatfield_default(L, index, "humidity_point", 0.);
+	b->flags           = 0; //reserved
 
 	u32 id = bmgr->add(b);
 	if (id == (u32)-1) {
@@ -441,16 +444,18 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 
 	NodeResolveInfo *nri = new NodeResolveInfo(b);
 	std::list<std::string> &nnames = nri->nodenames;
-	nnames.push_back(getstringfield_default(L, index, "node_top",        ""));
-	nnames.push_back(getstringfield_default(L, index, "node_filler",     ""));
-	nnames.push_back(getstringfield_default(L, index, "node_stone",      ""));
-	nnames.push_back(getstringfield_default(L, index, "node_water",      ""));
-	nnames.push_back(getstringfield_default(L, index, "node_dust",       ""));
-	nnames.push_back(getstringfield_default(L, index, "node_dust_water", ""));
+	nnames.push_back(getstringfield_default(L, index, "node_top",          ""));
+	nnames.push_back(getstringfield_default(L, index, "node_filler",       ""));
+	nnames.push_back(getstringfield_default(L, index, "node_shore_top",    ""));
+	nnames.push_back(getstringfield_default(L, index, "node_shore_filler", ""));
+	nnames.push_back(getstringfield_default(L, index, "node_underwater",   ""));
+	nnames.push_back(getstringfield_default(L, index, "node_stone",        ""));
+	nnames.push_back(getstringfield_default(L, index, "node_water_top",    ""));
+	nnames.push_back(getstringfield_default(L, index, "node_water",        ""));
+	nnames.push_back(getstringfield_default(L, index, "node_dust",         ""));
 
 	nnames.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
 	nnames.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
-
 	ndef->pendNodeResolve(nri);
 
 	verbosestream << "register_biome: " << b->name << std::endl;
@@ -649,7 +654,7 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	OreManager *oremgr    = getServer(L)->getEmergeManager()->oremgr;
 
 	enum OreType oretype = (OreType)getenumfield(L, index,
-				"ore_type", es_OreType, ORE_SCATTER);
+				"ore_type", es_OreType, ORE_TYPE_SCATTER);
 	Ore *ore = oremgr->create(oretype);
 	if (!ore) {
 		errorstream << "register_ore: ore_type " << oretype << " not implemented";
@@ -686,6 +691,12 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 		return 0;
 	}
 	lua_pop(L, 1);
+
+	if (oretype == ORE_TYPE_VEIN) {
+		OreVein *orevein = (OreVein *)ore;
+		orevein->random_factor = getfloatfield_default(L, index,
+			"random_factor", 1.f);
+	}
 
 	u32 id = oremgr->add(ore);
 	if (id == (u32)-1) {
