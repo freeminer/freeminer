@@ -88,7 +88,8 @@ public:
 
 /////////////////////////////// Emerge Manager ////////////////////////////////
 
-EmergeManager::EmergeManager(IGameDef *gamedef) {
+EmergeManager::EmergeManager(IGameDef *gamedef)
+{
 	//register built-in mapgens
 	registerMapgen("v5",         new MapgenFactoryV5());
 	registerMapgen("v6",         new MapgenFactoryV6());
@@ -153,7 +154,8 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 }
 
 
-EmergeManager::~EmergeManager() {
+EmergeManager::~EmergeManager()
+{
 	for (unsigned int i = 0; i != emergethread.size(); i++) {
 		if (threads_active) {
 			emergethread[i]->Stop();
@@ -183,7 +185,8 @@ EmergeManager::~EmergeManager() {
 }
 
 
-void EmergeManager::loadMapgenParams() {
+void EmergeManager::loadMapgenParams()
+{
 	loadParamsFromSettings(g_settings);
 
 	if (g_settings->get("fixed_map_seed").empty()) {
@@ -197,7 +200,8 @@ void EmergeManager::loadMapgenParams() {
 }
 
 
-void EmergeManager::initMapgens() {
+void EmergeManager::initMapgens()
+{
 	if (mapgen.size())
 		return;
 
@@ -221,7 +225,8 @@ void EmergeManager::initMapgens() {
 }
 
 
-Mapgen *EmergeManager::getCurrentMapgen() {
+Mapgen *EmergeManager::getCurrentMapgen()
+{
 	for (unsigned int i = 0; i != emergethread.size(); i++) {
 		if (emergethread[i]->IsSameThread())
 			return emergethread[i]->mapgen;
@@ -231,7 +236,8 @@ Mapgen *EmergeManager::getCurrentMapgen() {
 }
 
 
-void EmergeManager::startThreads() {
+void EmergeManager::startThreads()
+{
 	if (threads_active)
 		return;
 
@@ -242,7 +248,8 @@ void EmergeManager::startThreads() {
 }
 
 
-void EmergeManager::stopThreads() {
+void EmergeManager::stopThreads()
+{
 	if (!threads_active)
 		return;
 
@@ -260,7 +267,8 @@ void EmergeManager::stopThreads() {
 }
 
 
-bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate) {
+bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate)
+{
 	std::map<v3s16, BlockEmergeData *>::const_iterator iter;
 	BlockEmergeData *bedata;
 	u16 count;
@@ -314,7 +322,8 @@ bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate
 }
 
 
-int EmergeManager::getGroundLevelAtPoint(v2s16 p) {
+int EmergeManager::getGroundLevelAtPoint(v2s16 p)
+{
 	if (mapgen.size() == 0 || !mapgen[0]) {
 		errorstream << "EmergeManager: getGroundLevelAtPoint() called"
 			" before mapgen initialized" << std::endl;
@@ -325,7 +334,8 @@ int EmergeManager::getGroundLevelAtPoint(v2s16 p) {
 }
 
 
-bool EmergeManager::isBlockUnderground(v3s16 blockpos) {
+bool EmergeManager::isBlockUnderground(v3s16 blockpos)
+{
 	/*
 	v2s16 p = v2s16((blockpos.X * MAP_BLOCKSIZE) + MAP_BLOCKSIZE / 2,
 					(blockpos.Y * MAP_BLOCKSIZE) + MAP_BLOCKSIZE / 2);
@@ -339,7 +349,8 @@ bool EmergeManager::isBlockUnderground(v3s16 blockpos) {
 }
 
 
-u32 EmergeManager::getBlockSeed(v3s16 p) {
+u32 EmergeManager::getBlockSeed(v3s16 p)
+{
 	return (u32)(params.seed & 0xFFFFFFFF) +
 		p.Z * 38134234 +
 		p.Y * 42123 +
@@ -348,12 +359,13 @@ u32 EmergeManager::getBlockSeed(v3s16 p) {
 
 
 Mapgen *EmergeManager::createMapgen(std::string mgname, int mgid,
-									 MapgenParams *mgparams) {
+	MapgenParams *mgparams)
+{
 	std::map<std::string, MapgenFactory *>::const_iterator iter;
 	iter = mglist.find(mgname);
 	if (iter == mglist.end()) {
 		errorstream << "EmergeManager; mapgen " << mgname <<
-		 " not registered" << std::endl;
+			" not registered" << std::endl;
 		return NULL;
 	}
 
@@ -362,12 +374,13 @@ Mapgen *EmergeManager::createMapgen(std::string mgname, int mgid,
 }
 
 
-MapgenSpecificParams *EmergeManager::createMapgenParams(std::string mgname) {
+MapgenSpecificParams *EmergeManager::createMapgenParams(std::string mgname)
+{
 	std::map<std::string, MapgenFactory *>::const_iterator iter;
 	iter = mglist.find(mgname);
 	if (iter == mglist.end()) {
 		errorstream << "EmergeManager: mapgen " << mgname <<
-		 " not registered" << std::endl;
+			" not registered" << std::endl;
 		return NULL;
 	}
 
@@ -376,7 +389,8 @@ MapgenSpecificParams *EmergeManager::createMapgenParams(std::string mgname) {
 }
 
 
-void EmergeManager::loadParamsFromSettings(Settings *settings) {
+void EmergeManager::loadParamsFromSettings(Settings *settings)
+{
 	std::string seed_str;
 	const char *setname = (settings == g_settings) ? "fixed_map_seed" : "seed";
 
@@ -397,7 +411,8 @@ void EmergeManager::loadParamsFromSettings(Settings *settings) {
 }
 
 
-void EmergeManager::saveParamsToSettings(Settings *settings) {
+void EmergeManager::saveParamsToSettings(Settings *settings)
+{
 	settings->set("mg_name",         params.mg_name);
 	settings->setU64("seed",         params.seed);
 	settings->setS16("water_level",  params.water_level);
@@ -411,7 +426,8 @@ void EmergeManager::saveParamsToSettings(Settings *settings) {
 }
 
 
-void EmergeManager::registerMapgen(std::string mgname, MapgenFactory *mgfactory) {
+void EmergeManager::registerMapgen(std::string mgname, MapgenFactory *mgfactory)
+{
 	mglist.insert(std::make_pair(mgname, mgfactory));
 	infostream << "EmergeManager: registered mapgen " << mgname << std::endl;
 }
@@ -419,7 +435,8 @@ void EmergeManager::registerMapgen(std::string mgname, MapgenFactory *mgfactory)
 
 ////////////////////////////// Emerge Thread //////////////////////////////////
 
-bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
+bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags)
+{
 	std::map<v3s16, BlockEmergeData *>::iterator iter;
 	JMutexAutoLock queuelock(emerge->queuemutex);
 
@@ -447,7 +464,8 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
 
 
 bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
-									BlockMakeData *data, bool allow_gen) {
+	BlockMakeData *data, bool allow_gen)
+{
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
@@ -478,7 +496,8 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 }
 
 
-void *EmergeThread::Thread() {
+void *EmergeThread::Thread()
+{
 	ThreadStarted();
 	log_register_thread("EmergeThread" + itos(id));
 	DSTACK(__FUNCTION_NAME);

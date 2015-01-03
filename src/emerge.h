@@ -29,11 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen.h" // for MapgenParams
 #include "map.h"
 
-#define MGPARAMS_SET_MGNAME      1
-#define MGPARAMS_SET_SEED        2
-#define MGPARAMS_SET_WATER_LEVEL 4
-#define MGPARAMS_SET_FLAGS       8
-
 #define BLOCK_EMERGE_ALLOWGEN (1<<0)
 
 #define EMERGE_DBG_OUT(x) \
