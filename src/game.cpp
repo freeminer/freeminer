@@ -1835,6 +1835,7 @@ void Game::run()
 	std::vector<aabb3f> highlight_boxes;
 
 	double run_time = 0;
+	set_light_table(g_settings->getFloat("display_gamma"));
 
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
 
