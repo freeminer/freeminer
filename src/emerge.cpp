@@ -54,6 +54,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "util/thread_pool.h"
 
+struct MapgenDesc {
+	const char *name;
+	MapgenFactory *factory;
+};
+
+MapgenDesc reg_mapgens[] = {
+	{"v5",         new MapgenFactoryV5},
+	{"v6",         new MapgenFactoryV6},
+	{"indev",      new MapgenFactoryIndev},
+	{"v7",         new MapgenFactoryV7},
+	{"math",       new MapgenFactoryMath},
+	{"singlenode", new MapgenFactorySinglenode},
+};
 
 class EmergeThread : public thread_pool
 {
@@ -90,14 +103,6 @@ public:
 
 EmergeManager::EmergeManager(IGameDef *gamedef)
 {
-	//register built-in mapgens
-	registerMapgen("v5",         new MapgenFactoryV5());
-	registerMapgen("v6",         new MapgenFactoryV6());
-	registerMapgen("v7",         new MapgenFactoryV7());
-	registerMapgen("indev",      new MapgenFactoryIndev());
-	registerMapgen("singlenode", new MapgenFactorySinglenode());
-	registerMapgen("math",       new MapgenFactoryMath());
-
 	this->ndef      = gamedef->getNodeDefManager();
 	this->biomemgr  = new BiomeManager(gamedef);
 	this->oremgr    = new OreManager(gamedef);
@@ -167,11 +172,6 @@ EmergeManager::~EmergeManager()
 	}
 	emergethread.clear();
 	mapgen.clear();
-
-	std::map<std::string, MapgenFactory *>::iterator it;
-	for (it = mglist.begin(); it != mglist.end(); ++it)
-		delete it->second;
-	mglist.clear();
 
 	delete biomemgr;
 	delete oremgr;
@@ -349,42 +349,40 @@ bool EmergeManager::isBlockUnderground(v3s16 blockpos)
 }
 
 
-u32 EmergeManager::getBlockSeed(v3s16 p)
+void EmergeManager::getMapgenNames(std::list<const char *> &mgnames)
 {
-	return (u32)(params.seed & 0xFFFFFFFF) +
-		p.Z * 38134234 +
-		p.Y * 42123 +
-		p.X * 23;
+	for (u32 i = 0; i != ARRLEN(reg_mapgens); i++)
+		mgnames.push_back(reg_mapgens[i].name);
 }
 
 
-Mapgen *EmergeManager::createMapgen(std::string mgname, int mgid,
+Mapgen *EmergeManager::createMapgen(const std::string &mgname, int mgid,
 	MapgenParams *mgparams)
 {
-	std::map<std::string, MapgenFactory *>::const_iterator iter;
-	iter = mglist.find(mgname);
-	if (iter == mglist.end()) {
+	u32 i;
+	for (i = 0; i != ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
+	if (i == ARRLEN(reg_mapgens)) {
 		errorstream << "EmergeManager; mapgen " << mgname <<
 			" not registered" << std::endl;
 		return NULL;
 	}
 
-	MapgenFactory *mgfactory = iter->second;
+	MapgenFactory *mgfactory = reg_mapgens[i].factory;
 	return mgfactory->createMapgen(mgid, mgparams, this);
 }
 
 
-MapgenSpecificParams *EmergeManager::createMapgenParams(std::string mgname)
+MapgenSpecificParams *EmergeManager::createMapgenParams(const std::string &mgname)
 {
-	std::map<std::string, MapgenFactory *>::const_iterator iter;
-	iter = mglist.find(mgname);
-	if (iter == mglist.end()) {
-		errorstream << "EmergeManager: mapgen " << mgname <<
+	u32 i;
+	for (i = 0; i != ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
+	if (i == ARRLEN(reg_mapgens)) {
+		errorstream << "EmergeManager; mapgen " << mgname <<
 			" not registered" << std::endl;
 		return NULL;
 	}
 
-	MapgenFactory *mgfactory = iter->second;
+	MapgenFactory *mgfactory = reg_mapgens[i].factory;
 	return mgfactory->createMapgenParams();
 }
 
@@ -423,13 +421,6 @@ void EmergeManager::saveParamsToSettings(Settings *settings)
 
 	if (params.sparams)
 		params.sparams->writeParams(settings);
-}
-
-
-void EmergeManager::registerMapgen(std::string mgname, MapgenFactory *mgfactory)
-{
-	mglist.insert(std::make_pair(mgname, mgfactory));
-	infostream << "EmergeManager: registered mapgen " << mgname << std::endl;
 }
 
 
@@ -573,7 +564,7 @@ void *EmergeThread::Thread()
 						VoxelArea(minp, maxp));
 					try {  // takes about 90ms with -O1 on an e3-1230v2
 						m_server->getScriptIface()->environment_OnGenerated(
-								minp, maxp, emerge->getBlockSeed(minp));
+								minp, maxp, mapgen->blockseed);
 					} catch(LuaError &e) {
 						m_server->setAsyncFatalError(e.what());
 					}

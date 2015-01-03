@@ -74,7 +74,6 @@ public:
 	ServerEnvironment *env;
 
 	INodeDefManager *ndef;
-	std::map<std::string, MapgenFactory *> mglist;
 
 	std::vector<Mapgen *> mapgen;
 	std::vector<EmergeThread *> emergethread;
@@ -109,14 +108,14 @@ public:
 	void loadMapgenParams();
 	void initMapgens();
 	Mapgen *getCurrentMapgen();
-	Mapgen *createMapgen(std::string mgname, int mgid,
+	Mapgen *createMapgen(const std::string &mgname, int mgid,
 		MapgenParams *mgparams);
-	MapgenSpecificParams *createMapgenParams(std::string mgname);
+	MapgenSpecificParams *createMapgenParams(const std::string &mgname);
+	static void getMapgenNames(std::list<const char *> &mgnames);
 	void startThreads();
 	void stopThreads();
 	bool enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate);
 
-	void registerMapgen(std::string name, MapgenFactory *mgfactory);
 	void loadParamsFromSettings(Settings *settings);
 	void saveParamsToSettings(Settings *settings);
 
@@ -124,7 +123,6 @@ public:
 	Biome *getBiomeAtPoint(v3s16 p);
 	int getGroundLevelAtPoint(v2s16 p);
 	bool isBlockUnderground(v3s16 blockpos);
-	u32 getBlockSeed(v3s16 p);
 };
 
 #endif
