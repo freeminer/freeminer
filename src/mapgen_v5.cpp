@@ -294,7 +294,8 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	layers_prepare(node_min, node_max);
 
 	// Generate base terrain
-	generateBaseTerrain();
+	s16 stone_surface_max_y = generateBaseTerrain();
+
 	updateHeightmap(node_min, node_max);
 
 	// Generate underground dirt, sand, gravel and lava blobs
@@ -310,7 +311,7 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	generateBiomes();
 
 	// Generate dungeons and desert temples
-	if (flags & MG_DUNGEONS) {
+	if ((flags & MG_DUNGEONS) && (stone_surface_max_y >= node_min.Y)) {
 		DungeonGen dgen(this, NULL);
 		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
@@ -384,10 +385,11 @@ void MapgenV5::calculateNoise()
 
 
 // Make base ground level
-void MapgenV5::generateBaseTerrain()
+int MapgenV5::generateBaseTerrain()
 {
 	u32 index = 0;
 	u32 index2d = 0;
+	int stone_surface_max_y = -MAP_GENERATION_LIMIT;
 
 	for(s16 z=node_min.Z; z<=node_max.Z; z++) {
 		for(s16 y=node_min.Y - 1; y<=node_max.Y + 1; y++) {
@@ -414,12 +416,16 @@ void MapgenV5::generateBaseTerrain()
 					vm->m_data[i] = MapNode(CONTENT_AIR);
 				} else {
 					vm->m_data[i] = layers_get(index);
+					if (y > stone_surface_max_y)
+						stone_surface_max_y = y;
 				}
 			}
 			index2d = index2d - ystride;
 		}
 		index2d = index2d + ystride;
 	}
+
+	return stone_surface_max_y;
 }
 
 
