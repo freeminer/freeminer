@@ -47,10 +47,6 @@ VoxelManipulator::VoxelManipulator():
 VoxelManipulator::~VoxelManipulator()
 {
 	clear();
-	if(m_data)
-		delete m_data;
-	if(m_flags)
-		delete[] m_flags;
 }
 
 void VoxelManipulator::clear()
@@ -61,7 +57,7 @@ void VoxelManipulator::clear()
 		delete m_data;
 	m_data = NULL;
 	if(m_flags)
-		delete[] m_flags;
+	delete[] m_flags;
 	m_flags = NULL;
 }
 

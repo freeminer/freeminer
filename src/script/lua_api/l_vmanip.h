@@ -36,7 +36,6 @@ class ManualMapVoxelManipulator;
  */
 class LuaVoxelManip : public ModApiBase {
 private:
-	ManualMapVoxelManipulator *vm;
 	std::map<v3s16, MapBlock *> modified_blocks;
 	bool is_mapgen_vm;
 
@@ -65,8 +64,11 @@ private:
 	static int l_set_param2_data(lua_State *L);
 
 	static int l_was_modified(lua_State *L);
+	static int l_get_emerged_area(lua_State *L);
 
 public:
+	ManualMapVoxelManipulator *vm;
+
 	LuaVoxelManip(ManualMapVoxelManipulator *mmvm, bool is_mapgen_vm);
 	LuaVoxelManip(Map *map);
 	~LuaVoxelManip();
