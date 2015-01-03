@@ -1254,10 +1254,9 @@ SharedBuffer<u8> UDPPeer::addSpiltPacket(u8 channel,
 /* Connection Threads                                                         */
 /******************************************************************************/
 
-ConnectionSendThread::ConnectionSendThread(Connection* parent,
-											unsigned int max_packet_size,
+ConnectionSendThread::ConnectionSendThread( unsigned int max_packet_size,
 											float timeout) :
-	m_connection(parent),
+	m_connection(NULL),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
 	m_max_commands_per_iteration(1),
@@ -1268,6 +1267,7 @@ ConnectionSendThread::ConnectionSendThread(Connection* parent,
 
 void * ConnectionSendThread::Thread()
 {
+	assert(m_connection != NULL);
 	ThreadStarted();
 	log_register_thread("ConnectionSend");
 
@@ -2017,14 +2017,14 @@ void ConnectionSendThread::sendAsPacket(u16 peer_id, u8 channelnum,
 	m_outgoing_queue.push_back(packet);
 }
 
-ConnectionReceiveThread::ConnectionReceiveThread(Connection* parent,
-		unsigned int max_packet_size) :
-	m_connection(parent)
+ConnectionReceiveThread::ConnectionReceiveThread(unsigned int max_packet_size) :
+	m_connection(NULL)
 {
 }
 
 void * ConnectionReceiveThread::Thread()
 {
+	assert(m_connection != NULL);
 	ThreadStarted();
 	log_register_thread("ConnectionReceive");
 
@@ -2682,8 +2682,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_event_queue(),
 	m_peer_id(0),
 	m_protocol_id(protocol_id),
-	m_sendThread(this, max_packet_size, timeout),
-	m_receiveThread(this, max_packet_size),
+	m_sendThread(max_packet_size, timeout),
+	m_receiveThread(max_packet_size),
 	m_info_mutex(),
 	m_bc_peerhandler(0),
 	m_bc_receive_timeout(0),
@@ -2691,6 +2691,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_next_remote_peer_id(2)
 {
 	m_udpSocket.setTimeoutMs(5);
+
+	m_sendThread.setParent(this);
+	m_receiveThread.setParent(this);
 
 	m_sendThread.Start();
 	m_receiveThread.Start();
@@ -2703,8 +2706,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_event_queue(),
 	m_peer_id(0),
 	m_protocol_id(protocol_id),
-	m_sendThread(this, max_packet_size, timeout),
-	m_receiveThread(this, max_packet_size),
+	m_sendThread(max_packet_size, timeout),
+	m_receiveThread(max_packet_size),
 	m_info_mutex(),
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(0),
@@ -2713,6 +2716,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 
 {
 	m_udpSocket.setTimeoutMs(5);
+
+	m_sendThread.setParent(this);
+	m_receiveThread.setParent(this);
 
 	m_sendThread.Start();
 	m_receiveThread.Start();
