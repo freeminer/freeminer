@@ -1140,10 +1140,9 @@ bool CNodeDefManager::getIdsFromResolveInfo(NodeResolveInfo *nri,
 				success = false;
 			}
 		} else {
-			std::set<content_t> cids;
-			std::set<content_t>::iterator it;
+			std::unordered_set<content_t> cids;
 			getIds(name, cids);
-			for (it = cids.begin(); it != cids.end(); ++it)
+			for (auto it = cids.begin(); it != cids.end(); ++it)
 				result.push_back(*it);
 		}
 	}
