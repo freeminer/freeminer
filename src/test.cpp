@@ -62,7 +62,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define UTEST(x, fmt, ...)\
 {\
 	if(!(x)){\
-		LOGLINEF(LMT_ERROR, "Test (%s) failed: " fmt, #x, ##__VA_ARGS__);\
+		dstream << "Test (" #x ") failed: " fmt << std::endl; \
 		test_failed = true;\
 	}\
 }

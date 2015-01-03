@@ -310,6 +310,7 @@ struct ContentFeatures
 	std::string freeze;
 	std::string melt;
 	// Number of flowing liquids surrounding source
+	u8 liquid_range;
 	u8 drowning;
 	// Amount of light the node emits
 	u8 light_source;

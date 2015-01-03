@@ -1656,7 +1656,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		packet[TOSERVER_INIT_FMT].convert(&client_max);
 		u8 our_max = SER_FMT_VER_HIGHEST_READ;
 		// Use the highest version supported by both
-		u8 deployed = std::min(client_max, our_max);
+		int deployed = std::min(client_max, our_max);
 		// If it's lower than the lowest supported, give up.
 		if(deployed < SER_FMT_VER_LOWEST)
 			deployed = SER_FMT_VER_INVALID;
