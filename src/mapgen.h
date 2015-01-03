@@ -198,7 +198,7 @@ public:
 	virtual GenElement *getByName(const std::string &name);
 
 protected:
-	NodeResolver *m_resolver;
+	INodeDefManager *m_ndef;
 	std::vector<GenElement *> m_elements;
 };
 
