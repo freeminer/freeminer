@@ -182,7 +182,7 @@ public:
 	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
+	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)
 	{ return getBlockNoCreateNoEx(p); }
 
 	// Returns InvalidPositionException if not found
@@ -544,8 +544,6 @@ public:
 
 	void setMap(Map *map)
 	{m_map = map;}
-
-	void initializeBlank(v3s16 pmin, v3s16 pmax);
 
 	void initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		bool load_if_inexistent = true);
