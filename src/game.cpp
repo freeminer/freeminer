@@ -1369,7 +1369,6 @@ struct FpsControl {
  * many functions that do require objects of thse types do not modify them
  * (so they can be passed as a const qualified parameter)
  */
-
 struct CameraOrientation {
 	f32 camera_yaw;    // "right/left"
 	f32 camera_pitch;  // "up/down"
@@ -2001,7 +2000,7 @@ bool Game::initSound()
 bool Game::createSingleplayerServer(const std::string map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
-	showOverlayMessage("Creating server...", 0, 25);
+	showOverlayMessage("Creating server...", 0, 5);
 
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
@@ -2039,7 +2038,7 @@ bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		std::string *error_message)
 {
-	showOverlayMessage("Creating client...", 0, 50);
+	showOverlayMessage("Creating client...", 0, 10);
 
 	device->setWindowCaption(L"Freeminer [Connecting]");
 
@@ -2253,7 +2252,7 @@ bool Game::connectToServer(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		bool *connect_ok, bool *aborted)
 {
-	showOverlayMessage("Resolving address...", 0, 75);
+	showOverlayMessage("Resolving address...", 0, 15);
 
 	Address connect_address(0, 0, 0, 0, port);
 
@@ -2342,7 +2341,7 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			// Update status
-			showOverlayMessage("Connecting to server...", dtime, 100);
+			showOverlayMessage("Connecting to server...", dtime, 20);
 
 			if (porting::getTimeMs() > end_ms) {
 				flags.reconnect = true;
@@ -2408,16 +2407,16 @@ bool Game::getServerContent(bool *aborted)
 		}
 
 		// Display status
-		int progress = 0;
+		int progress = 25;
 
 		if (!client->itemdefReceived()) {
 			wchar_t *text = wgettext("Item definitions...");
-			progress = 0;
+			progress = 25;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else if (!client->nodedefReceived()) {
 			wchar_t *text = wgettext("Node definitions...");
-			progress = 25;
+			progress = 30;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else {
@@ -2438,7 +2437,7 @@ bool Game::getServerContent(bool *aborted)
 				message << " ( " << cur << cur_unit << " )";
 			}
 
-			progress = 50 + client->mediaReceiveProgress() * 50 + 0.5;
+			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
 			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
 					guienv, dtime, progress);
 		}
