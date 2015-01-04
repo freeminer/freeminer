@@ -380,6 +380,8 @@ public:
 	ABMHandler * m_abmhandler;
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
+	IntervalLimiter m_abm_random_interval;
+	std::list<v3POS> m_abm_random_blocks;
 
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };

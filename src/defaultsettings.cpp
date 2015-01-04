@@ -369,7 +369,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
-	settings->setDefault("active_block_range", "2");
+	settings->setDefault("active_block_range", "4");
 	settings->setDefault("abm_random", "false");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
