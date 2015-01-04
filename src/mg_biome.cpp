@@ -199,6 +199,6 @@ void Biome::resolveNodeNames(NodeResolveInfo *nri)
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_water_source",    CONTENT_AIR,    c_water);
 	m_ndef->getIdFromResolveInfo(nri, "air",                    CONTENT_IGNORE, c_dust);
 
-	m_ndef->getIdFromResolveInfo(nri, "ice",                    CONTENT_IGNORE, c_ice);
+	m_ndef->getIdFromResolveInfo(nri, "mapgen_ice",             CONTENT_IGNORE, c_ice);
 }
 
