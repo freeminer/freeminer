@@ -703,7 +703,7 @@ neighbor_found:
 	}
 
 void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate) {
-		ScopeProfiler sp(g_profiler, "ABM triggers", SPT_ADD);
+		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
 		if (!abm_triggers)
 			return;
@@ -724,6 +724,7 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 		m_abm_timestamp = time;
 		//for (const auto & abm_trigger : *abm_triggers) {
 		for (auto ir = abm_triggers->begin(); ir != abm_triggers->end() ;++ir) {
+			ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
 			auto & abm_trigger = *ir;
 			auto & i = abm_trigger.i;
 			float intervals = dtime / i->abmws->interval;
@@ -743,6 +744,7 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 				continue;
 			}
 			//TODO: async call for c++ abms
+			ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
 
 				i->abmws->abm->trigger(m_env, abm_trigger.p, n,
 						abm_trigger.active_object_count, abm_trigger.active_object_count_wider, map->getNodeTry(abm_trigger.neighbor_pos), activate);
