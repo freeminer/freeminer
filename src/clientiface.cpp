@@ -389,6 +389,10 @@ int RemoteClient::GetNextBlocks(
 			if(block != NULL)
 			{
 
+				if (d > 3 && block->content_only == CONTENT_AIR) {
+					continue;
+				}
+
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					continue;
 				}
