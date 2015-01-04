@@ -658,8 +658,11 @@ void ServerEnvironment::loadMeta()
 				continue;
 			v3s16 p = p0 + block->getPosRelative();
 
-			if (!m_aabms[c])
+			if (!m_aabms[c]) {
+					if (block->content_only)
+						return;
 				continue;
+			}
 
 			for(auto & ir: *(m_aabms[c])) {
 				auto i = &ir;
@@ -723,7 +726,7 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 		//infostream<<"MapBlock::abm_triggers_run p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
 		//for (const auto & abm_trigger : *abm_triggers) {
-		for (auto ir = abm_triggers->begin(); ir != abm_triggers->end() ;++ir) {
+		for (auto ir = abm_triggers->begin(); ir != abm_triggers->end() ; ++ir) {
 			ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
 			auto & abm_trigger = *ir;
 			auto & i = abm_trigger.i;
@@ -757,17 +760,23 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 				}
 */
 		}
+		if (abm_triggers->empty()){
+			delete abm_triggers;
+			abm_triggers = nullptr;
+		}
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {
 
 	u32 block_timestamp = block->getActualTimestamp();
-	if (block->m_analyzed_timestamp + 10 > block_timestamp)
+	if (block->m_analyzed_timestamp > block_timestamp) {
+		//infostream<<"not anlalyzing: ats="<<block->m_analyzed_timestamp<< " bts="<<  block_timestamp<<std::endl;
 		return;
+	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	block->analyze_content();
-	infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<std::endl;
-	block->m_analyzed_timestamp = block_timestamp;
+	infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<" co="<<block->content_only<<std::endl;
+	block->m_analyzed_timestamp = block_timestamp + 10;
 	m_abmhandler->apply(block);
 }
 
@@ -1223,7 +1232,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	}
 
 
-	{
+	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
 if (!m_active_block_analyzed_last)
 	infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 
@@ -1391,18 +1400,26 @@ if (!m_active_block_abm_last)
 
 	if (g_settings->getBool("abm_random")) {
 		TimeTaker timer("env: random abm");
-		MapBlock* block = nullptr;
-		{
-			auto lock = m_map->m_blocks.try_lock_shared_rec();
-			if (lock->owns_lock() && m_map->m_blocks.size()) {
-				std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
-				auto it = m_map->m_blocks.begin();
-				std::advance( it, distribution(random_gen) );
-				block = it->second;
-			}
-		}
 
-		if (block) {
+		u32 end_ms = porting::getTimeMs() + max_cycle_ms/4;
+
+
+		for (int i = 0; i < 100; ++i) {
+			MapBlock* block = nullptr;
+			{
+				TimeTaker timer("env: random abm select");
+				auto lock = m_map->m_blocks.try_lock_shared_rec();
+				if (lock->owns_lock() && m_map->m_blocks.size()) {
+					std::uniform_int_distribution<> distribution(0, m_map->m_blocks.size()-1);
+					auto it = m_map->m_blocks.begin();
+					std::advance( it, distribution(random_gen) );
+					block = it->second;
+				}
+			}
+
+			if (!block)
+				continue;
+
 			u32 dtime_s = 0;
 			u32 stamp = block->getTimestamp();
 			if(m_game_time > stamp && stamp != BLOCK_TIMESTAMP_UNDEFINED)
@@ -1412,8 +1429,12 @@ if (!m_active_block_abm_last)
 				dtime_s = uptime;
 			//ABMHandler abmhandler(m_abms, dtime_s, this, true);
 			if (!block->abm_triggers)
-				m_abmhandler->apply(block, true);
+				continue;
+				//m_abmhandler->apply(block, true);
 			block->abm_triggers_run(this, m_game_time);
+			if (porting::getTimeMs() > end_ms) {
+				break;
+			}
 		}
 	}
 

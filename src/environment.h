@@ -379,6 +379,8 @@ public:
 	bool m_use_weather;
 	ABMHandler * m_abmhandler;
 	void analyzeBlock(MapBlock * block);
+	IntervalLimiter m_analyze_blocks_interval;
+
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
