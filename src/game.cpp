@@ -1369,7 +1369,6 @@ struct FpsControl {
  * many functions that do require objects of thse types do not modify them
  * (so they can be passed as a const qualified parameter)
  */
-
 struct CameraOrientation {
 	f32 camera_yaw;    // "right/left"
 	f32 camera_pitch;  // "up/down"
@@ -1551,6 +1550,8 @@ protected:
 	void toggleFullViewRange(float *statustext_time);
 
 	void updateCameraDirection(CameraOrientation *cam, VolatileRunFlags *flags);
+	void updateCameraOrientation(CameraOrientation *cam,
+			const VolatileRunFlags &flags);
 	void updatePlayerControl(const CameraOrientation &cam);
 	void step(f32 *dtime);
 	void processClientEvents(CameraOrientation *cam, float *damage_flash);
@@ -1715,6 +1716,8 @@ Game::Game() :
 	m_cache_enable_fog                = g_settings->getBool("enable_fog");
 	m_cache_mouse_sensitivity         = g_settings->getFloat("mouse_sensitivity");
 	m_repeat_right_click_time         = g_settings->getFloat("repeat_rightclick_time");
+
+	m_cache_mouse_sensitivity = rangelim(m_cache_mouse_sensitivity, 0.001, 100.0);
 }
 
 
@@ -1804,6 +1807,7 @@ void Game::run()
 	flags.show_hud = true;
 	flags.show_debug = g_settings->getBool("show_debug");
 	flags.invert_mouse = g_settings->getBool("invert_mouse");
+	flags.first_loop_after_window_activation = true;
 
 
 	// freeminer:
@@ -1830,6 +1834,7 @@ void Game::run()
 	std::vector<aabb3f> highlight_boxes;
 
 	double run_time = 0;
+	set_light_table(g_settings->getFloat("display_gamma"));
 
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
 
@@ -1995,7 +2000,7 @@ bool Game::initSound()
 bool Game::createSingleplayerServer(const std::string map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
-	showOverlayMessage("Creating server...", 0, 25);
+	showOverlayMessage("Creating server...", 0, 5);
 
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
@@ -2033,7 +2038,7 @@ bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		std::string *error_message)
 {
-	showOverlayMessage("Creating client...", 0, 50);
+	showOverlayMessage("Creating client...", 0, 10);
 
 	device->setWindowCaption(L"Freeminer [Connecting]");
 
@@ -2247,7 +2252,7 @@ bool Game::connectToServer(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		bool *connect_ok, bool *aborted)
 {
-	showOverlayMessage("Resolving address...", 0, 75);
+	showOverlayMessage("Resolving address...", 0, 15);
 
 	Address connect_address(0, 0, 0, 0, port);
 
@@ -2336,7 +2341,7 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			// Update status
-			showOverlayMessage("Connecting to server...", dtime, 100);
+			showOverlayMessage("Connecting to server...", dtime, 20);
 
 			if (porting::getTimeMs() > end_ms) {
 				flags.reconnect = true;
@@ -2402,16 +2407,16 @@ bool Game::getServerContent(bool *aborted)
 		}
 
 		// Display status
-		int progress = 0;
+		int progress = 25;
 
 		if (!client->itemdefReceived()) {
 			wchar_t *text = wgettext("Item definitions...");
-			progress = 0;
+			progress = 25;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else if (!client->nodedefReceived()) {
 			wchar_t *text = wgettext("Node definitions...");
-			progress = 25;
+			progress = 30;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else {
@@ -2432,7 +2437,7 @@ bool Game::getServerContent(bool *aborted)
 				message << " ( " << cur << cur_unit << " )";
 			}
 
-			progress = 50 + client->mediaReceiveProgress() * 50 + 0.5;
+			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
 			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
 					guienv, dtime, progress);
 		}
@@ -3121,11 +3126,24 @@ void Game::toggleFullViewRange(float *statustext_time)
 void Game::updateCameraDirection(CameraOrientation *cam,
 		VolatileRunFlags *flags)
 {
-	// float turn_amount = 0;	// Deprecated?
+	if ((device->isWindowActive() && noMenuActive()) || random_input) {
 
-	if (!(device->isWindowActive() && noMenuActive()) || random_input) {
+#ifndef __ANDROID__
+		if (!random_input) {
+			// Mac OSX gets upset if this is set every frame
+			if (device->getCursorControl()->isVisible())
+				device->getCursorControl()->setVisible(false);
+		}
+#endif
 
-	// FIXME: Clean this up
+		if (flags->first_loop_after_window_activation)
+			flags->first_loop_after_window_activation = false;
+		else
+			updateCameraOrientation(cam, *flags);
+
+		input->setMousePos((driver->getScreenSize().Width / 2),
+				(driver->getScreenSize().Height / 2));
+	} else {
 
 #ifndef ANDROID
 		// Mac OSX gets upset if this is set every frame
@@ -3133,63 +3151,38 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 			device->getCursorControl()->setVisible(true);
 #endif
 
-		//infostream<<"window inactive"<<std::endl;
-		flags->first_loop_after_window_activation = true;
-		return;
-	}
+		if (!flags->first_loop_after_window_activation)
+			flags->first_loop_after_window_activation = true;
 
-#ifndef __ANDROID__
-	if (!random_input) {
-		// Mac OSX gets upset if this is set every frame
-		if (device->getCursorControl()->isVisible())
-			device->getCursorControl()->setVisible(false);
 	}
-#endif
+}
 
-	if (flags->first_loop_after_window_activation) {
-		//infostream<<"window active, first loop"<<std::endl;
-		flags->first_loop_after_window_activation = false;
+
+void Game::updateCameraOrientation(CameraOrientation *cam,
+		const VolatileRunFlags &flags)
+{
+#ifdef HAVE_TOUCHSCREENGUI
+	if (g_touchscreengui) {
+		cam->camera_yaw   = g_touchscreengui->getYaw();
+		cam->camera_pitch = g_touchscreengui->getPitch();
 	} else {
+#endif
+		s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
+		s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
+
+		if (flags.invert_mouse
+				|| camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
+			dy = -dy;
+		}
+
+		cam->camera_yaw   -= dx * m_cache_mouse_sensitivity;
+		cam->camera_pitch += dy * m_cache_mouse_sensitivity;
 
 #ifdef HAVE_TOUCHSCREENGUI
-
-		if (g_touchscreengui) {
-			cam->camera_yaw   = g_touchscreengui->getYaw();
-			cam->camera_pitch = g_touchscreengui->getPitch();
-		} else {
-#endif
-			s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
-			s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
-
-			if (flags->invert_mouse
-					|| (camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT)) {
-				dy = -dy;
-			}
-
-			//infostream<<"window active, pos difference "<<dx<<","<<dy<<std::endl;
-
-			float d = m_cache_mouse_sensitivity;
-			d = rangelim(d, 0.01, 100.0);
-			cam->camera_yaw -= dx * d;
-			cam->camera_pitch += dy * d;
-			// turn_amount = v2f(dx, dy).getLength() * d; // deprecated?
-
-#ifdef HAVE_TOUCHSCREENGUI
-			}
-#endif
-
-		if (cam->camera_pitch < -89.5)
-			cam->camera_pitch = -89.5;
-		else if (cam->camera_pitch > 89.5)
-			cam->camera_pitch = 89.5;
 	}
+#endif
 
-	input->setMousePos(driver->getScreenSize().Width / 2,
-			driver->getScreenSize().Height / 2);
-
-	// Deprecated? Not used anywhere else
-	// recent_turn_speed = recent_turn_speed * 0.9 + turn_amount * 0.1;
-	// std::cerr<<"recent_turn_speed = "<<recent_turn_speed<<std::endl;
+	cam->camera_pitch = rangelim(cam->camera_pitch, -89.5, 89.5);
 }
 
 
@@ -4474,10 +4467,13 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 	guitext_status->setVisible(!statustext.empty());
 
 	if (!statustext.empty()) {
-		s32 status_y = screensize.Y - 130;
+		s32 status_width  = guitext_status->getTextWidth();
+		s32 status_height = guitext_status->getTextHeight();
+		s32 status_y = screensize.Y - 150;
+		s32 status_x = (screensize.X - status_width) / 2;
 		core::rect<s32> rect(
-				10, status_y - guitext_status->getTextHeight(),
-				10 + guitext_status->getTextWidth(), status_y
+				status_x , status_y - status_height,
+				status_x + status_width, status_y
 		);
 		guitext_status->setRelativePosition(rect);
 

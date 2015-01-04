@@ -64,7 +64,6 @@ public:
 	int zstride;
 	u32 spflags;
 
-	u32 blockseed;
 	v3s16 node_min;
 	v3s16 node_max;
 	v3s16 full_node_min;
@@ -108,7 +107,7 @@ public:
 	virtual void makeChunk(BlockMakeData *data);
 	int getGroundLevelAtPoint(v2s16 p);
 	void calculateNoise();
-	void generateBaseTerrain();
+	int generateBaseTerrain();
 	void generateBlobs();
 	void generateBiomes();
 	void dustTopNodes();
@@ -116,11 +115,13 @@ public:
 
 
 struct MapgenFactoryV5 : public MapgenFactory {
-	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
+	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge)
+	{
 		return new MapgenV5(mgid, params, emerge);
 	};
 
-	MapgenSpecificParams *createMapgenParams() {
+	MapgenSpecificParams *createMapgenParams()
+	{
 		return new MapgenV5Params();
 	};
 };

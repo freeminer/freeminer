@@ -230,6 +230,7 @@ void set_default_settings(Settings *settings)
 	
 	// Lighting
 	settings->setDefault("smooth_lighting", "true");
+	settings->setDefault("display_gamma", "1.8");
 	settings->setDefault("disable_wieldlight", "false");
 	settings->setDefault("enable_node_highlighting", "false");
 	settings->setDefault("mip_map", "false");

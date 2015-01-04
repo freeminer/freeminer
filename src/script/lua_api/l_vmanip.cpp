@@ -348,6 +348,16 @@ int LuaVoxelManip::l_was_modified(lua_State *L)
 	return 1;
 }
 
+int LuaVoxelManip::l_get_emerged_area(lua_State *L)
+{
+	LuaVoxelManip *o = checkobject(L, 1);
+
+	push_v3s16(L, o->vm->m_area.MinEdge);
+	push_v3s16(L, o->vm->m_area.MaxEdge);
+
+	return 2;
+}
+
 LuaVoxelManip::LuaVoxelManip(ManualMapVoxelManipulator *mmvm, bool is_mg_vm)
 {
 	this->vm           = mmvm;
@@ -358,6 +368,17 @@ LuaVoxelManip::LuaVoxelManip(Map *map)
 {
 	this->vm = new ManualMapVoxelManipulator(map);
 	this->is_mapgen_vm = false;
+}
+
+LuaVoxelManip::LuaVoxelManip(Map *map, v3s16 p1, v3s16 p2)
+{
+	this->vm = new ManualMapVoxelManipulator(map);
+	this->is_mapgen_vm = false;
+
+	v3s16 bp1 = getNodeBlockPos(p1);
+	v3s16 bp2 = getNodeBlockPos(p2);
+	sortBoxVerticies(bp1, bp2);
+	vm->initialEmerge(bp1, bp2);
 }
 
 LuaVoxelManip::~LuaVoxelManip()
@@ -377,7 +398,9 @@ int LuaVoxelManip::create_object(lua_State *L)
 		return 0;
 
 	Map *map = &(env->getMap());
-	LuaVoxelManip *o = new LuaVoxelManip(map);
+	LuaVoxelManip *o = (lua_istable(L, 1) && lua_istable(L, 2)) ?
+		new LuaVoxelManip(map, read_v3s16(L, 1), read_v3s16(L, 2)) :
+		new LuaVoxelManip(map);
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
 	luaL_getmetatable(L, className);
@@ -443,5 +466,6 @@ const luaL_reg LuaVoxelManip::methods[] = {
 	luamethod(LuaVoxelManip, get_param2_data),
 	luamethod(LuaVoxelManip, set_param2_data),
 	luamethod(LuaVoxelManip, was_modified),
+	luamethod(LuaVoxelManip, get_emerged_area),
 	{0,0}
 };

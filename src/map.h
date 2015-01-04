@@ -182,7 +182,7 @@ public:
 	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
+	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)
 	{ return getBlockNoCreateNoEx(p); }
 
 	// Returns InvalidPositionException if not found
@@ -546,11 +546,11 @@ public:
 	{m_map = map;}
 
 	void initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
-			bool load_if_inexistent = true);
+		bool load_if_inexistent = true);
 
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
-			bool overwrite_generated = true);
+		bool overwrite_generated = true);
 
 	bool m_is_dirty;
 

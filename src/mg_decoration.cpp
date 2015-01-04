@@ -65,10 +65,7 @@ void DecorationManager::clear()
 {
 	for (size_t i = 0; i < m_elements.size(); i++) {
 		Decoration *deco = (Decoration *)m_elements[i];
-		if (!deco)
-			continue;
-
-		deco->dropResolverEntries(m_resolver);
+		delete deco;
 	}
 	m_elements.clear();
 }
@@ -88,6 +85,12 @@ Decoration::Decoration()
 
 Decoration::~Decoration()
 {
+}
+
+
+void Decoration::resolveNodeNames(NodeResolveInfo *nri)
+{
+	m_ndef->getIdsFromResolveInfo(nri, c_place_on);
 }
 
 
@@ -137,7 +140,8 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 					mg->heightmap[mapindex] :
 					mg->findGroundLevel(v2s16(x, z), nmin.Y, nmax.Y);
 
-			if (y < nmin.Y || y > nmax.Y)
+			if (y < nmin.Y || y > nmax.Y ||
+				y < y_min  || y > y_max)
 				continue;
 
 			int height = getHeight();
@@ -229,6 +233,14 @@ void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 ///////////////////////////////////////////////////////////////////////////////
 
 
+void DecoSimple::resolveNodeNames(NodeResolveInfo *nri)
+{
+	Decoration::resolveNodeNames(nri);
+	m_ndef->getIdsFromResolveInfo(nri, c_decos);
+	m_ndef->getIdsFromResolveInfo(nri, c_spawnby);
+}
+
+
 bool DecoSimple::canPlaceDecoration(ManualMapVoxelManipulator *vm, v3s16 p)
 {
 	// Don't bother if there aren't any decorations to place
@@ -307,13 +319,6 @@ size_t DecoSimple::generate(Mapgen *mg, PseudoRandom *pr, s16 max_y, v3s16 p)
 int DecoSimple::getHeight()
 {
 	return (deco_height_max > 0) ? deco_height_max : deco_height;
-}
-
-
-void DecoSimple::dropResolverEntries(NodeResolver *resolver)
-{
-	resolver->cancelNodeList(&c_decos);
-	resolver->cancelNodeList(&c_spawnby);
 }
 
 

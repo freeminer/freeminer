@@ -24,10 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "pointer.h"
 #include "numeric.h"
 
-#include <sstream>
-#include <iomanip>
 #include <cctype>
-#include <map>
 
 #include "../sha1.h"
 #include "../base64.h"
@@ -116,6 +113,11 @@ std::string wide_to_utf8(const std::wstring &input) {
 	return out;
 }
 #endif
+
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <map>
 
 static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
@@ -710,3 +712,9 @@ bool string_icompare(const std::string& a, const std::string& b)
 {
 	return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), char_icompare);
 }
+
+void str_replace(std::string &str, char from, char to)
+{
+	std::replace(str.begin(), str.end(), from, to);
+}
+

@@ -1869,6 +1869,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		content_t new_node_content;
 		s8 new_node_level = -1;
 		s8 max_node_level = -1;
+
+		u8 range = nodemgr->get(liquid_kind).liquid_range;
+		if (range > LIQUID_LEVEL_MAX+1)
+			range = LIQUID_LEVEL_MAX+1;
+
 		if ((num_sources >= 2 && nodemgr->get(liquid_kind).liquid_renewable) || liquid_type == LIQUID_SOURCE) {
 			// liquid_kind will be set to either the flowing alternative of the node (if it's a liquid)
 			// or the flowing alternative of the first of the surrounding sources (if it's air), so
@@ -3187,7 +3192,7 @@ ManualMapVoxelManipulator::~ManualMapVoxelManipulator()
 }
 
 void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
-						v3s16 blockpos_max, bool load_if_inexistent)
+	v3s16 blockpos_max, bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge");
 

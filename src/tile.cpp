@@ -1383,7 +1383,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 				return false;
 			}
 
-			str_replace_char(part_of_name, '&', '^');
+			str_replace(part_of_name, '&', '^');
 			Strfnd sf(part_of_name);
 			sf.next("{");
 			std::string imagename_top = sf.next("{");
@@ -1863,7 +1863,7 @@ void imageTransform(u32 transform, video::IImage *src, video::IImage *dst)
 	core::dimension2d<u32> dstdim = dst->getDimension();
 
 	assert(dstdim == imageTransformDimension(transform, srcdim));
-	assert(transform >= 0 && transform <= 7);
+	assert(transform <= 7);
 
 	/*
 		Compute the transformation from source coordinates (sx,sy)

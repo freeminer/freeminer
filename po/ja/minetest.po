@@ -16,7 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Poedit 1.6.5\n"
-"Language: ja\n"
+"Language: ja_JP\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 msgid "Game Name"
@@ -85,6 +85,12 @@ msgstr "アドレス"
 msgid "Port"
 msgstr "ポート"
 
+msgid "Address/Port"
+msgstr "アドレス/ポート"
+
+msgid "Name/Password"
+msgstr "名前/パスワード"
+
 msgid "Public Serverlist"
 msgstr "公開されているｻｰﾊﾞｰﾘｽﾄ"
 
@@ -124,7 +130,7 @@ msgstr "パスワード"
 msgid "Server Port"
 msgstr "ポート"
 
-msgid "Fancy trees"
+msgid "Fancy Trees"
 msgstr "きれいな木"
 
 msgid "Smooth Lighting"
@@ -175,23 +181,11 @@ msgstr "ミニマップ(開発版)"
 msgid "Hotbar Cycling"
 msgstr "ホットバーのサイクル"
 
-msgid "Bumpmapping"
-msgstr "バンプマッピング"
+msgid "Connected Glass"
+msgstr "ガラスを繋げる"
 
-msgid "Generate Normalmaps"
-msgstr "法線マッピング"
-
-msgid "Parallax Occlusion"
-msgstr "視差オクルージョンマッピング"
-
-msgid "Waving Water"
-msgstr "揺れる水"
-
-msgid "Waving Leaves"
-msgstr "揺れる葉"
-
-msgid "Waving Plants"
-msgstr "揺れる草花"
+msgid "Finite Liquid"
+msgstr "液体の制限"
 
 msgid "Change keys"
 msgstr "キー割当て変更"
@@ -217,16 +211,16 @@ msgstr "以前の貢献者"
 msgid "Singleplayer"
 msgstr "シングルプレイ"
 
-msgid "Multiplayer"
-msgstr "マルチプレイ"
+msgid "Client"
+msgstr "クライアント"
 
-msgid "Create Server"
-msgstr "サーバー作成"
+msgid "Server"
+msgstr "マルチプレイ"
 
 msgid "Settings"
 msgstr "設定"
 
-msgid "Texture Packs"
+msgid "Texturepacks"
 msgstr "テクスチャパック"
 
 msgid "Mods"
@@ -447,22 +441,19 @@ msgid "Passwords do not match!"
 msgstr "パスワードが一致しません!"
 
 msgid "Continue"
-msgstr ""
-
-msgid "Change Keys"
-msgstr ""
+msgstr "続ける"
 
 msgid "Change Password"
-msgstr ""
+msgstr "ﾊﾟｽﾜｰﾄﾞ変更"
 
 msgid "Sound Volume"
-msgstr ""
+msgstr "音量"
 
 msgid "Exit to Menu"
-msgstr ""
+msgstr "タイトル"
 
 msgid "Exit to OS"
-msgstr ""
+msgstr "終了"
 
 msgid ""
 "Default Controls:\n"
@@ -731,6 +722,27 @@ msgstr "無効なgamespecです"
 msgid "Connection error (timed out?)"
 msgstr "接続エラー(タイムアウト)"
 
+msgid "Close modstore"
+msgstr "閉じる"
+
+msgid "Bumpmapping"
+msgstr "ﾊﾞﾝﾌﾟﾏｯﾋﾟﾝｸﾞ"
+
+msgid "Generate Normalmaps"
+msgstr "法線ﾏｯﾋﾟﾝｸﾞ"
+
+msgid "Parallax Occlusion"
+msgstr "視差ｵｸﾙｰｼﾞｮﾝﾏｯﾋﾟﾝｸﾞ"
+
+msgid "Waving Water"
+msgstr "揺れる水"
+
+msgid "Waving Leaves"
+msgstr "揺れる葉"
+
+msgid "Waving Plants"
+msgstr "揺れる草花"
+
 msgid "GUI scale factor"
 msgstr "メニューの大きさ"
 
@@ -740,5 +752,8 @@ msgstr "未分類"
 msgid "Search"
 msgstr "検索"
 
-msgid "Close modstore"
+msgid "Close store"
 msgstr "閉じる"
+
+msgid "Change Keys"
+msgstr "操作変更"

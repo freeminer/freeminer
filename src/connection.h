@@ -935,12 +935,16 @@ class ConnectionSendThread : public thread_pool {
 public:
 	friend class UDPPeer;
 
-	ConnectionSendThread(Connection* parent,
-							unsigned int max_packet_size, float timeout);
+	ConnectionSendThread(unsigned int max_packet_size, float timeout);
 
 	void * Thread       ();
 
 	void Trigger();
+
+	void setParent(Connection* parent) {
+		assert(parent != NULL);
+		m_connection = parent;
+	}
 
 	void setPeerTimeout(float peer_timeout)
 		{ m_timeout = peer_timeout; }
@@ -987,10 +991,14 @@ private:
 
 class ConnectionReceiveThread : public thread_pool {
 public:
-	ConnectionReceiveThread(Connection* parent,
-							unsigned int max_packet_size);
+	ConnectionReceiveThread(unsigned int max_packet_size);
 
 	void * Thread       ();
+
+	void setParent(Connection* parent) {
+		assert(parent != NULL);
+		m_connection = parent;
+	}
 
 private:
 	void receive        ();

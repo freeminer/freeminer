@@ -663,7 +663,9 @@ int ModApiEnvMod::l_get_voxel_manip(lua_State *L)
 	GET_ENV_PTR;
 
 	Map *map = &(env->getMap());
-	LuaVoxelManip *o = new LuaVoxelManip(map);
+	LuaVoxelManip *o = (lua_istable(L, 1) && lua_istable(L, 2)) ?
+		new LuaVoxelManip(map, read_v3s16(L, 1), read_v3s16(L, 2)) :
+		new LuaVoxelManip(map);
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
 	luaL_getmetatable(L, "VoxelManip");
