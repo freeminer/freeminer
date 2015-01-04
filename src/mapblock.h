@@ -581,7 +581,7 @@ public:
 		return block_timestamp;
 	}
 	content_t content_only;
-	content_t analyze_content() {
+	content_t analyzeContent() {
 		auto lock = lock_shared_rec();
 		content_only = data[0].param0;
 		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {

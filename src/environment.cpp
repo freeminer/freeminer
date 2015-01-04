@@ -659,8 +659,8 @@ void ServerEnvironment::loadMeta()
 			v3s16 p = p0 + block->getPosRelative();
 
 			if (!m_aabms[c]) {
-					if (block->content_only)
-						return;
+				if (block->content_only)
+					return;
 				continue;
 			}
 
@@ -774,7 +774,7 @@ void ServerEnvironment::analyzeBlock(MapBlock * block) {
 		return;
 	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
-	block->analyze_content();
+	block->analyzeContent();
 	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<" co="<<block->content_only<<std::endl;
 	m_abmhandler->apply(block);
 	block->m_analyzed_timestamp = block_timestamp + 5;

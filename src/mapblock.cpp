@@ -743,7 +743,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 			m_node_timers.deSerialize(is, version);
 		}
 
-		analyze_content();
+		analyzeContent();
 	}
 		
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
