@@ -93,9 +93,7 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 {
 	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 	time_life = 0;
-#if !CMAKE_HAVE_THREAD_LOCAL
-	m_block_cache = nullptr;
-#endif
+	getBlockCacheFlush();
 }
 
 Map::~Map()
