@@ -83,23 +83,23 @@ unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> da
 
 	auto lock = m_queue.lock_unique_rec();
 	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (m_process.count(p))
-		range += 3;
-	else if (m_ranges.count(p)) {
+	if (m_process.count(p)) {
+		if (!urgent)
+			range += 3;
+	} else if (m_ranges.count(p)) {
 		auto range_old = m_ranges[p];
+		auto & rmap = m_queue.get(range_old);
 		if (range_old > 0 && range != range_old)  {
-			auto & rmap = m_queue.get(range_old);
 			m_ranges.erase(p);
 			rmap.erase(p);
 			if (rmap.empty())
 				m_queue.erase(range_old);
 		} else {
-			return m_ranges.size(); //already queued
+			rmap[p] = data;
+			return m_ranges.size();
 		}
 	}
 	auto & rmap = m_queue.get(range);
-	if (rmap.count(p))
-		return m_ranges.size();
 	rmap[p] = data;
 	m_ranges[p] = range;
 	g_profiler->avg("Client: mesh make queue", m_ranges.size());
