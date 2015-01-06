@@ -2298,9 +2298,8 @@ bool Game::connectToServer(const std::string &playername,
 	infostream << std::endl;
 
 	try {
-		errorstream << "Connection start: " << std::endl;
+
 	client->connect(connect_address);
-		errorstream << "Connection end: " << std::endl;
 
 	/*
 		Wait for server to accept connection
@@ -2350,24 +2349,23 @@ bool Game::connectToServer(const std::string &playername,
 				return false;
 			}
 		}
+
 	} catch (con::PeerNotFoundException &e) {
 		// TODO: Should something be done here? At least an info/error
 		// message?
 		return false;
 	} catch (con::ConnectionException &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
-		errorstream << "Connection error: "<<e.what() << std::endl;
+		errorstream << "Connection error: "<< e.what() << std::endl;
 		return false;
 	} catch (std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
-		errorstream << "Connection error: "<<e.what() << std::endl;
+		errorstream << "Connection error: "<< e.what() << std::endl;
 		return false;
 	} catch (...) {
 		showOverlayMessage(std::string("Oops ") , 0, 0, false);
 		return false;
 	}
-
-		errorstream << "Connection fin: " << std::endl;
 
 	return true;
 }
