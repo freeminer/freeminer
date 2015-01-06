@@ -88,6 +88,10 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
 	return getBlockNoCreateNoEx(p, trylock, nocache);
 }
 
+void Map::getBlockCacheFlush() {
+	m_block_cache = nullptr;
+}
+
 MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
 {
 	auto block = new MapBlock(this, p, m_gamedef);

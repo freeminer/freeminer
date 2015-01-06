@@ -180,6 +180,7 @@ public:
 	// Returns NULL if not found
 	MapBlock * getBlockNoCreateNoEx(v3POS p, bool trylock = false, bool nocache = false);
 	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
+	void getBlockCacheFlush();
 
 	/* Server overrides */
 	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)

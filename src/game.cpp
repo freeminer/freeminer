@@ -1581,7 +1581,7 @@ protected:
 	// Misc
 	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
-	void showOverlayMessage(const char *msg, float dtime, int percent,
+	void showOverlayMessage(const std::string &msg, float dtime, int percent,
 			bool draw_clouds = true);
 
 private:
@@ -2297,13 +2297,15 @@ bool Game::connectToServer(const std::string &playername,
 	connect_address.print(&infostream);
 	infostream << std::endl;
 
+	try {
+		errorstream << "Connection start: " << std::endl;
 	client->connect(connect_address);
+		errorstream << "Connection end: " << std::endl;
 
 	/*
 		Wait for server to accept connection
 	*/
 
-	try {
 		input->clear();
 
 		FpsControl fps_control = { 0 };
@@ -2352,7 +2354,20 @@ bool Game::connectToServer(const std::string &playername,
 		// TODO: Should something be done here? At least an info/error
 		// message?
 		return false;
+	} catch (con::ConnectionException &e) {
+		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
+		errorstream << "Connection error: "<<e.what() << std::endl;
+		return false;
+	} catch (std::exception &e) {
+		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
+		errorstream << "Connection error: "<<e.what() << std::endl;
+		return false;
+	} catch (...) {
+		showOverlayMessage(std::string("Oops ") , 0, 0, false);
+		return false;
 	}
+
+		errorstream << "Connection fin: " << std::endl;
 
 	return true;
 }
@@ -4552,10 +4567,10 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 }
 
 
-void Game::showOverlayMessage(const char *msg, float dtime,
+void Game::showOverlayMessage(const std::string &msg, float dtime,
 		int percent, bool draw_clouds)
 {
-	wchar_t *text = wgettext(msg);
+	wchar_t *text = wgettext(msg.c_str());
 	draw_load_screen(text, device, guienv, dtime, percent, draw_clouds);
 	delete[] text;
 }
