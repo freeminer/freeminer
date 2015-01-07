@@ -105,9 +105,9 @@ public:
 #endif
 
 struct abm_trigger_one {
-	ActiveABM * i;
-	v3POS p;
-	content_t c;
+	ActiveABM * abm;
+	v3POS pos;
+	content_t content;
 	u32 active_object_count;
 	u32 active_object_count_wider;
 	v3POS neighbor_pos;
@@ -568,7 +568,7 @@ public:
 	bool abm_active;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	abm_triggers_type * abm_triggers;
-	void abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate = false);
+	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
 
 	u32 getActualTimestamp() {
@@ -580,6 +580,8 @@ public:
 		}
 		return block_timestamp;
 	}
+
+	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
 	content_t content_only;
 	content_t analyzeContent() {
 		auto lock = lock_shared_rec();

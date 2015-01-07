@@ -991,7 +991,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
 		if (!block->content_only || block->content_only != CONTENT_AIR)
-		updateMeshTimestampWithEdge(p);
+			updateMeshTimestampWithEdge(p);
 
 /*
 #if !defined(NDEBUG)

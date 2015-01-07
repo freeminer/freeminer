@@ -570,8 +570,6 @@ void *EmergeThread::Thread()
 					}
 
 					EMERGE_DBG_OUT("ended up with: " << analyze_block(block));
-
-					//m_server->m_env->activateBlock(block, 0);
 				}
 			}
 

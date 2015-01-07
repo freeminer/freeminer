@@ -705,7 +705,7 @@ neighbor_found:
 
 	}
 
-void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activate) {
+void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate) {
 		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
 		if (!abm_triggers)
@@ -723,34 +723,29 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 			else
 				dtime = 1;
 		}
-		//infostream<<"MapBlock::abm_triggers_run p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
+		//infostream<<"MapBlock::abmTriggersRun p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
-		//for (const auto & abm_trigger : *abm_triggers) {
-		for (auto ir = abm_triggers->begin(); ir != abm_triggers->end() ; ++ir) {
-			ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
-			auto & abm_trigger = *ir;
-			auto & i = abm_trigger.i;
-			float intervals = dtime / i->abmws->interval;
-			int chance = (i->abmws->chance / intervals);
-			auto rnd = myrand();
-			//infostream<<"TST: dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
+		for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end() ; ++abm_trigger) {
+			//ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
+			auto & abm = abm_trigger->abm;
+			float intervals = dtime / abm->abmws->interval;
+			int chance = (abm->abmws->chance / intervals);
+			//infostream<<"TST: dtime="<<dtime<<" Achance="<<abm->abmws->chance<<" Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals << std::endl;
 
-			if(chance && rnd % chance)
+			if(chance && myrand() % chance)
 					continue;
+			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<abm->abmws->chance<<" Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals << std::endl;
 
-			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<i->abmws->chance<<" Ainterval="<<i->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals  <<" rnd="<<rnd <<std::endl;
-
-			auto n = map->getNodeTry(abm_trigger.p);
-			if (n.getContent() != abm_trigger.c) {
-				if (n)
-					ir = abm_triggers->erase(ir);
+			MapNode node = map->getNodeTry(abm_trigger->pos);
+			if (node.getContent() != abm_trigger->content) {
+				if (node)
+					abm_trigger = abm_triggers->erase(abm_trigger);
 				continue;
 			}
-			//TODO: async call for c++ abms
-			ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
+			//ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
 
-				i->abmws->abm->trigger(m_env, abm_trigger.p, n,
-						abm_trigger.active_object_count, abm_trigger.active_object_count_wider, map->getNodeTry(abm_trigger.neighbor_pos), activate);
+			abm->abmws->abm->trigger(m_env, abm_trigger->pos, node,
+				abm_trigger->active_object_count, abm_trigger->active_object_count_wider, map->getNodeTry(abm_trigger->neighbor_pos), activate);
 
 				// Count surrounding objects again if the abms added any
 /*
@@ -760,7 +755,7 @@ void MapBlock::abm_triggers_run(ServerEnvironment * m_env, u32 time, bool activa
 				}
 */
 		}
-		if (abm_triggers->empty()){
+		if (abm_triggers->empty()) {
 			delete abm_triggers;
 			abm_triggers = nullptr;
 		}
@@ -1370,7 +1365,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			/* Handle ActiveBlockModifiers */
 			//m_abmhandler->apply(block);
 
-			block->abm_triggers_run(this, m_game_time);
+			block->abmTriggersRun(this, m_game_time);
 
 			if (porting::getTimeMs() > end_ms) {
 				m_active_block_abm_last = n;
@@ -1421,7 +1416,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			if (!block->abm_triggers)
 				continue;
 			ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
-			block->abm_triggers_run(this, m_game_time);
+			block->abmTriggersRun(this, m_game_time);
 			if (porting::getTimeMs() > end_ms) {
 				break;
 			}
