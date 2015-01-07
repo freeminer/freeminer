@@ -152,8 +152,7 @@ int RemoteClient::GetNextBlocks(
 	camera_dir.rotateYZBy(player->getPitch());
 	camera_dir.rotateXZBy(player->getYaw());
 
-	/*infostream<<"camera_dir=("<<camera_dir.X<<","<<camera_dir.Y<<","
-			<<camera_dir.Z<<")"<<std::endl;*/
+	//infostream<<"camera_dir=("<<camera_dir<<")"<< " camera_pos="<<camera_pos<<std::endl;
 
 	/*
 		Get the starting value of the block finder radius.
@@ -161,8 +160,13 @@ int RemoteClient::GetNextBlocks(
 
 	if(m_last_center != center)
 	{
-		m_nearest_unsent_d = 0;
 		m_last_center = center;
+		m_nearest_unsent_reset_timer = 999;
+	}
+
+	if (m_last_direction.getDistanceFrom(camera_dir)>0.4) { // 1 = 90deg
+		m_last_direction = camera_dir;
+		m_nearest_unsent_reset_timer = 999;
 	}
 
 	/*infostream<<"m_nearest_unsent_reset_timer="
