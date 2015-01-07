@@ -222,7 +222,7 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 		interval = 10;
 	chance = abm->getTriggerChance();
 	if (!chance)
-		chance = 10;
+		chance = 50;
 
 	neighbors_range = abm->getNeighborsRange();
 	if (!neighbors_range)
