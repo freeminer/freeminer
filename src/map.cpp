@@ -904,7 +904,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 		// Make a manual voxel manipulator and load all the blocks
 		// that touch the requested blocks
-		ManualMapVoxelManipulator vmanip(this);
+		MMVManip vmanip(this);
 
 		{
 		//TimeTaker timer("initialEmerge");

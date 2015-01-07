@@ -648,7 +648,7 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 	}
 }
 
-void make_cavetree(ManualMapVoxelManipulator &vmanip, v3POS p0,
+void make_cavetree(MMVManip &vmanip, v3POS p0,
 		bool is_jungle_tree, INodeDefManager *ndef, int seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
