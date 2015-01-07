@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MG_LIGHT         0x10
 
 class Settings;
-class ManualMapVoxelManipulator;
+class MMVManip;
 class INodeDefManager;
 
 extern FlagDesc flagdesc_mapgen[];
@@ -48,7 +48,6 @@ extern FlagDesc flagdesc_gennotify[];
 class Biome;
 class EmergeManager;
 class MapBlock;
-class ManualMapVoxelManipulator;
 class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
@@ -137,7 +136,7 @@ public:
 	bool generating;
 	int id;
 
-	ManualMapVoxelManipulator *vm;
+	MMVManip *vm;
 	INodeDefManager *ndef;
 
 	u32 blockseed;

@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mg_biome.h"
 #include "gamedef.h"
 #include "nodedef.h"
-#include "map.h" //for ManualMapVoxelManipulator
+#include "map.h" //for MMVManip
 #include "log_types.h"
 #include "util/numeric.h"
 #include "main.h"

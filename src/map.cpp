@@ -2419,7 +2419,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	v3s16 bigarea_blocks_min = blockpos_min - extra_borders;
 	v3s16 bigarea_blocks_max = blockpos_max + extra_borders;
 
-	data->vmanip = new ManualMapVoxelManipulator(this);
+	data->vmanip = new MMVManip(this);
 	//data->vmanip->setMap(this);
 
 	// Add the area
@@ -2722,7 +2722,7 @@ void ServerMap::updateVManip(v3s16 pos)
 	if (!mg)
 		return;
 
-	ManualMapVoxelManipulator *vm = mg->vm;
+	MMVManip *vm = mg->vm;
 	if (!vm)
 		return;
 
@@ -3177,7 +3177,7 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 	return basepos.Y -1;
 }
 
-ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
+MMVManip::MMVManip(Map *map):
 		VoxelManipulator(),
 		m_is_dirty(false),
 		m_create_area(false),
@@ -3185,12 +3185,12 @@ ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 {
 }
 
-ManualMapVoxelManipulator::~ManualMapVoxelManipulator()
+MMVManip::~MMVManip()
 {
 }
 
-void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
-	v3s16 blockpos_max, bool load_if_inexistent)
+void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
+	bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge");
 
@@ -3279,9 +3279,8 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 	m_is_dirty = false;
 }
 
-void ManualMapVoxelManipulator::blitBackAll(
-		std::map<v3s16, MapBlock*> *modified_blocks,
-		bool overwrite_generated)
+void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
+	bool overwrite_generated)
 {
 	if(m_area.getExtent() == v3s16(0,0,0))
 		return;
