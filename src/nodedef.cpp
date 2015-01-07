@@ -208,8 +208,6 @@ void ContentFeatures::reset()
 	liquid_alternative_source = "";
 	liquid_viscosity = 0;
 	liquid_renewable = true;
-	freeze = "";
-	melt = "";
 	liquid_range = LIQUID_LEVEL_MAX+1;
 	drowning = 0;
 	light_source = 0;
@@ -224,6 +222,8 @@ void ContentFeatures::reset()
 	sound_dig = SimpleSoundSpec("__group");
 	sound_dug = SimpleSoundSpec();
 
+	freeze = "";
+	melt = "";
 	is_circuit_element = false;
 	is_wire = false;
 	is_wire_connector = false;
