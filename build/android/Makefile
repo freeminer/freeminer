@@ -20,6 +20,8 @@ PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
+GAMES_TO_COPY = default
+
 ################################################################################
 # Android Version code
 # Increase for each build!
@@ -625,23 +627,31 @@ assets : $(ASSETS_TIMESTAMP)
 	echo "assets changed, refreshing...";                                      \
 	$(MAKE) -j${PARALLEL} clean_assets;                                        \
 	mkdir -p ${ROOT}/assets/freeminer;                                          \
-	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;           \
-	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer;                        \
+	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;            \
+	cp ${ROOT}/../../README.txt ${ROOT}/assets/freeminer;                       \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer;                       \
 	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer;                        \
 	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer;                           \
 	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer;                         \
-	cp -r ${ROOT}/../../games ${ROOT}/assets/freeminer;                         \
+	mkdir ${ROOT}/assets/freeminer/games;                                       \
+	for game in ${GAMES_TO_COPY};                                              \
+	do                                                                         \
+	    cp -r ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/;       \
+	done;                                                                      \
 	cp -r ${ROOT}/../../mods ${ROOT}/assets/freeminer;                          \
 	cp -r ${ROOT}/../../po ${ROOT}/assets/freeminer;                            \
 	cp -r ${ROOT}/../../textures ${ROOT}/assets/freeminer;                      \
 	mkdir -p ${ROOT}/assets/freeminer/media;                                    \
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media;         \
-	cd ${ROOT}/assets;                                                         \
+	cd ${ROOT}/assets ||  exit 1;                                              \
 	find . -name "timestamp" -exec rm {} \; ;                                  \
 	find . -name "*.blend" -exec rm {} \; ;                                    \
+	find . -name "*~" -exec rm {} \; ;                                         \
+	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
+	find . -type d -path "*.svn" -exec rm -rf {} \; ;                          \
+	find . -type f -path "*.gitignore" -exec rm -rf {} \; ;                    \
 	ls -R | grep ":$$" | sed -e 's/:$$//' -e 's/\.//' -e 's/^\///' > "index.txt"; \
-	find Minetest >"filelist.txt";                                             \
+	find freeminer >"filelist.txt";                                             \
 	cp ${ROOT}/${ASSETS_TIMESTAMP} ${ROOT}/${ASSETS_TIMESTAMP}.old;            \
 	else                                                                       \
 		echo "nothing to be done for assets";                                  \
