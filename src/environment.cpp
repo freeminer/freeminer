@@ -665,8 +665,7 @@ void ServerEnvironment::loadMeta()
 				auto i = &ir;
 				// Check neighbors
 				v3POS neighbor_pos;
-				//auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
-				auto & required_neighbors = ir.abmws->required_neighbors;
+				auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
 				if(required_neighbors.count() > 0)
 				{
 					v3s16 p1;
@@ -694,7 +693,7 @@ neighbor_found:
 				if (!block->abm_triggers)
 					block->abm_triggers = new MapBlock::abm_triggers_type;
 
-				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos});
+				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos, activate});
 			}
 		}
 		}
@@ -759,17 +758,17 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {
-
 	u32 block_timestamp = block->getActualTimestamp();
-	if (block->m_analyzed_timestamp > block_timestamp) {
-		//infostream<<"not anlalyzing: ats="<<block->m_analyzed_timestamp<< " bts="<<  block_timestamp<<std::endl;
+	if (block->m_next_analyze_timestamp > block_timestamp) {
+		//infostream<<"not anlalyzing: ats="<<block->m_next_analyze_timestamp<< " bts="<<  block_timestamp<<std::endl;
 		return;
 	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	block->analyzeContent();
-	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<" co="<<block->content_only<<std::endl;
-	m_abmhandler.apply(block);
-	block->m_analyzed_timestamp = block_timestamp + 5;
+	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_next_analyze_timestamp   <<" co="<<block->content_only<<std::endl;
+	bool activate = block_timestamp - m_next_analyze_timestamp > 3600;
+	m_abmhandler.apply(block, activate);
+	block->m_next_analyze_timestamp = block_timestamp + 5;
 }
 
 

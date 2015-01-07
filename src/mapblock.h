@@ -111,6 +111,7 @@ struct abm_trigger_one {
 	u32 active_object_count;
 	u32 active_object_count_wider;
 	v3POS neighbor_pos;
+	bool activate;
 };
 
 /*
@@ -563,8 +564,7 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
-	u32 m_analyzed_timestamp;
-	u32 m_analyzed_fast_timestamp; //future
+	u32 m_next_analyze_timestamp;
 	bool abm_active;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	abm_triggers_type * abm_triggers;

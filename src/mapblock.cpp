@@ -78,7 +78,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	mesh2 = mesh4 = mesh8 = mesh16 = nullptr;
 	mesh_size = 0;
 #endif
-	m_analyzed_timestamp = 0;
+	m_next_analyze_timestamp = 0;
 	m_abm_timestamp = 0;
 	abm_active = false;
 	abm_triggers = nullptr;
