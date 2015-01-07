@@ -592,6 +592,8 @@ Server::Server(
 	// Add some test ActiveBlockModifiers to environment
 	add_legacy_abms(m_env, m_nodedef);
 
+	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
+
 	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
 }

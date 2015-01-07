@@ -322,7 +322,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 		Circuit* circuit,
 		IGameDef *gamedef,
 		const std::string &path_world) :
-	m_abmhandler(nullptr),
+	m_abmhandler(this),
 	m_game_time_start(0),
 	m_map(map),
 	m_script(scriptIface),
@@ -365,8 +365,6 @@ ServerEnvironment::~ServerEnvironment()
 	// Drop/delete map
 	m_map->drop();
 
-	if (m_abmhandler)
-		delete m_abmhandler;
 	// Delete ActiveBlockModifiers
 	for(std::list<ABMWithState>::iterator
 			i = m_abms.begin(); i != m_abms.end(); ++i){
@@ -565,15 +563,14 @@ void ServerEnvironment::loadMeta()
 	}
 }
 
-	ABMHandler::
-	ABMHandler(std::list<ABMWithState> &abms,
-			float dtime_s, ServerEnvironment *env,
-			bool use_timers, bool activate = false):
+	ABMHandler::ABMHandler(ServerEnvironment *env):
 		m_env(env),
 		m_aabms_empty(true)
 	{
 		m_aabms.fill(nullptr);
+	}
 
+	void ABMHandler::init(std::list<ABMWithState> &abms) {
 		for(auto & ai: abms){
 			auto i = &ai;
 			ActiveABM aabm;
@@ -771,7 +768,7 @@ void ServerEnvironment::analyzeBlock(MapBlock * block) {
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	block->analyzeContent();
 	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_analyzed_timestamp   <<" co="<<block->content_only<<std::endl;
-	m_abmhandler->apply(block);
+	m_abmhandler.apply(block);
 	block->m_analyzed_timestamp = block_timestamp + 5;
 }
 
@@ -1127,9 +1124,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	 */
 	m_circuit->update(dtime);
 
-	if (!m_abmhandler)
-		m_abmhandler = new ABMHandler(m_abms, 0, this, true, false); //todo! move me in constructor
-
 	/*
 		Manage active block list
 	*/
@@ -1215,7 +1209,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			}
 
 			activateBlock(block);
-			//m_abmhandler->apply(block, true);
 			/* infostream<<"Server: Block " << PP(p)
 				<< " became active"<<std::endl; */
 			if (porting::getTimeMs() > end_ms) {
@@ -1363,8 +1356,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			block->setTimestampNoChangedFlag(m_game_time);
 
 			/* Handle ActiveBlockModifiers */
-			//m_abmhandler->apply(block);
-
 			block->abmTriggersRun(this, m_game_time);
 
 			if (porting::getTimeMs() > end_ms) {
