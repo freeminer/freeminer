@@ -326,8 +326,10 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_game_time_start(0),
 	m_map(map),
 	m_script(scriptIface),
-	m_circuit(circuit),
 	m_gamedef(gamedef),
+	m_circuit(circuit),
+	m_key_value_storage(path_world, "key_value_storage"),
+	m_players_storage(path_world, "players"),
 	m_path_world(path_world),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
@@ -343,13 +345,11 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 {
 	m_game_time = 0;
 	m_use_weather = g_settings->getBool("weather");
-	m_key_value_storage = new KeyValueStorage(path_world, "key_value_storage");
-	m_players_storage = new KeyValueStorage(path_world, "players");
 
-	if (!m_key_value_storage->db)
-		errorstream << "Cant open KV storage: "<< m_key_value_storage->error << std::endl;
-	if (!m_players_storage->db)
-		errorstream << "Cant open players storage: "<< m_players_storage->error << std::endl;
+	if (!m_key_value_storage.db)
+		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;
+	if (!m_players_storage.db)
+		errorstream << "Cant open players storage: "<< m_players_storage.error << std::endl;
 
 }
 
@@ -370,8 +370,6 @@ ServerEnvironment::~ServerEnvironment()
 			i = m_abms.begin(); i != m_abms.end(); ++i){
 		delete i->abm;
 	}
-	delete m_key_value_storage;
-	delete m_players_storage;
 }
 
 Map & ServerEnvironment::getMap()
@@ -386,7 +384,7 @@ ServerMap & ServerEnvironment::getServerMap()
 
 KeyValueStorage *ServerEnvironment::getKeyValueStorage()
 {
-	return m_key_value_storage;
+	return &m_key_value_storage;
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -439,7 +437,7 @@ void ServerEnvironment::savePlayer(const std::string &playername)
 		return;
 	Json::Value player_json;
 	player_json << *player;
-	m_players_storage->put_json("p." + player->getName(), player_json);
+	m_players_storage.put_json("p." + player->getName(), player_json);
 }
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
@@ -454,7 +452,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	try {
 		Json::Value player_json;
-		m_players_storage->get_json("p." + playername, player_json);
+		m_players_storage.get_json("p." + playername, player_json);
 		verbosestream<<"Reading kv player "<<playername<<std::endl;
 		if (!player_json.empty()) {
 			player_json >> *player;
