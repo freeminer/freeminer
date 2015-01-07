@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>
+#include "key_value_storage.h"
 
 
 class ServerEnvironment;
@@ -60,7 +61,6 @@ class ClientMap;
 class GameScripting;
 class Player;
 class Circuit;
-class KeyValueStorage;
 
 class Environment
 {
@@ -432,15 +432,17 @@ private:
 	ServerMap *m_map;
 	// Lua state
 	GameScripting* m_script;
-	// Circuit manager
-	Circuit* m_circuit;
 	// Game definition
 	IGameDef *m_gamedef;
+
+	// Circuit manager
+	Circuit* m_circuit;
 	// Key-value storage
 public:
-	KeyValueStorage *m_key_value_storage;
-	KeyValueStorage *m_players_storage;
+	KeyValueStorage m_key_value_storage;
+	KeyValueStorage m_players_storage;
 private:
+
 	// World path
 	const std::string m_path_world;
 	// Active object list
