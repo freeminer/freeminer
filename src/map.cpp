@@ -48,7 +48,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
-#include "circuit.h"
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
@@ -78,7 +77,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Map
 */
-Map::Map(IGameDef *gamedef, Circuit* circuit):
+Map::Map(IGameDef *gamedef):
 	m_liquid_step_flow(1000),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
@@ -87,7 +86,6 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_inc_trending_up_start_time(0),
 	m_queue_size_timer_started(false)
     ,
-	m_circuit(circuit),
 	m_blocks_update_last(0),
 	m_blocks_save_last(0)
 {
@@ -1629,10 +1627,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	for (auto & block : blocks_delete)
 		this->deleteBlock(block);
 
-	if(m_circuit != NULL) {
-		m_circuit->save();
-	}
-
 	// Finally delete the empty sectors
 
 	if(deleted_blocks_count != 0)
@@ -2209,8 +2203,8 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 /*
 	ServerMap
 */
-ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* circuit):
-	Map(gamedef, circuit),
+ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
+	Map(gamedef),
 	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
@@ -3309,10 +3303,6 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 //END
 
 // freeminer:
-Circuit* Map::getCircuit()
-{
-	return m_circuit;
-}
 
 INodeDefManager* Map::getNodeDefManager()
 {

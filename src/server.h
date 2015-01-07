@@ -525,8 +525,6 @@ private:
 	// Scripting
 	// Envlock and conlock should be locked when using Lua
 	GameScripting *m_script;
-	
-	Circuit* m_circuit;
 public:
 	Stat stat;
 private:

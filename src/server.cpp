@@ -67,7 +67,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "util/thread.h"
 #include "defaultsettings.h"
-#include "circuit.h"
 //#include "stat.h"
 
 #include "msgpack.h"
@@ -383,7 +382,6 @@ Server::Server(
 	m_enable_rollback_recording(false),
 	m_emerge(NULL),
 	m_script(NULL),
-	m_circuit(NULL),
 	stat(path_world),
 	m_itemdef(createItemDefManager()),
 	m_nodedef(createNodeDefManager()),
@@ -519,7 +517,7 @@ Server::Server(
 	m_emerge->loadMapgenParams();
 
 	// Create the Map (loads map_meta.txt, overriding configured mapgen params)
-	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
+	ServerMap *servermap = new ServerMap(path_world, this, m_emerge);
 
 	// Initialize scripting
 	infostream<<"Server: Initializing Lua"<<std::endl;
@@ -569,8 +567,7 @@ Server::Server(
 	m_nodedef->runNodeResolverCallbacks();
 
 	// Initialize Environment
-	m_circuit = new Circuit(m_script, servermap, ndef(), path_world);
-	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this, m_path_world);
+	m_env = new ServerEnvironment(servermap, m_script, this, m_path_world);
 	m_emerge->env = m_env;
 
 	m_clients.setEnv(m_env);
@@ -650,7 +647,6 @@ Server::~Server()
 	delete m_itemdef;
 	delete m_nodedef;
 	delete m_craftdef;
-	delete m_circuit;
 
 	// Deinitialize scripting
 	infostream<<"Server: Deinitializing scripting"<<std::endl;

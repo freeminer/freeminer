@@ -54,7 +54,6 @@ class EmergeManager;
 class ServerEnvironment;
 struct BlockMakeData;
 struct MapgenParams;
-class Circuit;
 class Server;
 
 
@@ -149,7 +148,7 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-	Map(IGameDef *gamedef, Circuit* circuit = nullptr);
+	Map(IGameDef *gamedef);
 	virtual ~Map();
 
 	/*virtual u16 nodeContainerId() const
@@ -344,7 +343,6 @@ public:
 		return basepos.Y -1;
 	}
 
-	Circuit* getCircuit();
 	INodeDefManager* getNodeDefManager();
 
 
@@ -383,7 +381,6 @@ private:
 	bool m_queue_size_timer_started;
 
 protected:
-	Circuit* m_circuit;
 	u32 m_blocks_update_last;
 	u32 m_blocks_save_last;
 
@@ -407,7 +404,7 @@ public:
 	/*
 		savedir: directory to which map data should be saved
 	*/
-	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* m_circuit);
+	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge);
 	~ServerMap();
 
 	s32 mapType() const
