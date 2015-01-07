@@ -355,6 +355,7 @@ public:
 private:
 
 	v3s16 m_last_center;
+	v3f   m_last_direction;
 	float m_nearest_unsent_reset_timer;
 
 	// CPU usage optimization
