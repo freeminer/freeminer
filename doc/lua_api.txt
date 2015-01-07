@@ -416,6 +416,12 @@ the global `minetest.registered_*` tables.
 * `minetest.register_craftitem(name, item definition)`
     * added to `minetest.registered_items[name]`
 
+* `minetest.register_ore(ore definition)`
+    * added to `minetest.registered_ores`
+
+* `minetest.register_decoration(decoration definition)`
+    * added to `minetest.registered_decorations`
+
 Note that in some cases you will stumble upon things that are not contained
 in these tables (e.g. when a mod has been removed). Always check for
 existence before trying to access the fields.
@@ -710,7 +716,7 @@ See section "Flag Specifier Format".
 Currently supported flags: `absheight`
 
 ### `absheight`
-Also produce this same ore between the height range of `-height_max` and `-height_min`.
+Also produce this same ore between the height range of `-y_max` and `-y_min`.
 
 Useful for having ore in sky realms without having to duplicate ore entries.
 
@@ -1851,6 +1857,10 @@ and `minetest.auth_reload` call the authetification handler.
     * Sets the noiseparams setting of `name` to the noiseparams table specified in `noiseparams`.
     * `set_default` is an optional boolean (default: `true`) that specifies whether the setting
       should be applied to the default config or current active config
+* `minetest.generate_ores(vm)`
+   * Generate all registered ores within the VoxelManip specified by `vm`.
+* `minetest.generate_decorations(vm)`
+   * Generate all registered decorations within the VoxelManip specified by `vm`.
 * `minetest.clear_objects()`
     * clear all objects in the environments
 * `minetest.line_of_sight(pos1, pos2, stepsize)`: returns `boolean, pos`
@@ -2189,19 +2199,23 @@ Please note that forceloaded areas are saved when the server restarts.
 
 ### Global tables
 * `minetest.registered_items`
-    * List of registered items, indexed by name
+    * Map of registered items, indexed by name
 * `minetest.registered_nodes`
-    * List of registered node definitions, indexed by name
+    * Map of registered node definitions, indexed by name
 * `minetest.registered_craftitems`
-    * List of registered craft item definitions, indexed by name
+    * Map of registered craft item definitions, indexed by name
 * `minetest.registered_tools`
-    * List of registered tool definitions, indexed by name
+    * Map of registered tool definitions, indexed by name
 * `minetest.registered_entities`
-    * List of registered entity prototypes, indexed by name
+    * Map of registered entity prototypes, indexed by name
 * `minetest.object_refs`
-    * List of object references, indexed by active object id
+    * Map of object references, indexed by active object id
 * `minetest.luaentities`
-    * List of Lua entities, indexed by active object id
+    * Map of Lua entities, indexed by active object id
+* `minetest.registered_ores`
+    * List of registered ore definitions.
+* `minetest.registered_decorations`
+    * List of registered decoration definitions.
 
 Class reference
 ---------------
@@ -2859,7 +2873,6 @@ Definition tables
         liquid_alternative_source = "", -- Source version of flowing liquid
         liquid_viscosity = 0, -- Higher viscosity = slower flow (max. 7)
         liquid_renewable = true, -- Can new liquid source be created by placing two or more sources nearby?
-        freezemelt = "", -- water for snow/ice, ice/snow for water
         leveled = 0, -- Block contain level in param2. value - default level, used for snow. Don't forget use "leveled" type nodebox
         liquid_range = 8, -- number of flowing nodes around source (max. 8)
         drowning = 0, -- Player will take this amount of damage if no bubbles are left
@@ -3032,8 +3045,8 @@ Definition tables
         clust_size = 3,
     --  ^ Size of the bounding box of the cluster
     --  ^ In this example, there is a 3x3x3 cluster where 8 out of the 27 nodes are coal ore
-        height_min = -31000,
-        height_max = 64,
+        y_min = -31000,
+        y_max = 64,
         flags = "",
     --  ^ Attributes for this ore generation
         noise_threshhold = 0.5,
@@ -3065,8 +3078,8 @@ Definition tables
         biomes = {"Oceanside", "Hills", "Plains"},
     --  ^ List of biomes in which this decoration occurs.  Occurs in all biomes if this is omitted,
     --  ^ and ignored if the Mapgen being used does not support biomes.
-        height_min = -31000
-        height_max = 31000
+        y_min = -31000
+        y_max = 31000
     -- ^ Minimum and maximum `y` positions these decorations can be generated at.
     -- ^ This parameter refers to the `y` position of the decoration base, so
     --   the actual maximum height would be `height_max + size.Y`.

@@ -61,7 +61,7 @@ public:
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
 	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
-	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, ManualMapVoxelManipulator *vm);
+	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm);
 
 };
 

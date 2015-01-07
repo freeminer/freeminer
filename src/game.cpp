@@ -2332,13 +2332,13 @@ bool Game::connectToServer(const std::string &playername,
 				*error_message = "Access denied. Reason: "
 						+ client->accessDeniedReason();
 				errorstream << *error_message << std::endl;
-				break;
+				return false;
 			}
 
 			if (input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
 				*aborted = true;
 				infostream << "Connect aborted [Escape]" << std::endl;
-				break;
+				return false;
 			}
 
 			// Update status

@@ -29,14 +29,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Map;
 class MapBlock;
-class ManualMapVoxelManipulator;
+class MMVManip;
 
 /*
   VoxelManip
  */
 class LuaVoxelManip : public ModApiBase {
 private:
-	ManualMapVoxelManipulator *vm;
 	std::map<v3s16, MapBlock *> modified_blocks;
 	bool is_mapgen_vm;
 
@@ -68,7 +67,9 @@ private:
 	static int l_get_emerged_area(lua_State *L);
 
 public:
-	LuaVoxelManip(ManualMapVoxelManipulator *mmvm, bool is_mapgen_vm);
+	MMVManip *vm;
+
+	LuaVoxelManip(MMVManip *mmvm, bool is_mapgen_vm);
 	LuaVoxelManip(Map *map, v3s16 p1, v3s16 p2);
 	LuaVoxelManip(Map *map);
 	~LuaVoxelManip();

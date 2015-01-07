@@ -312,7 +312,7 @@ void MapgenIndev::float_islands_generate(int min_y) {
 }
 */
 
-int Mapgen_features::float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, ManualMapVoxelManipulator *vm) {
+int Mapgen_features::float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm) {
 	int generated = 0;
 	if (node_min.Y < min_y) return generated;
 	// originally from http://forum.minetest.net/viewtopic.php?id=4776

@@ -1025,7 +1025,8 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 		return root;
 	}
 
-	std::string value = get(name);
+	std::string value;
+	getNoEx(name, value);
 	if (value.empty())
 		return def;
 	if (!json_reader.parse( value, root ) ) {

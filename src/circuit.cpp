@@ -47,6 +47,8 @@ Circuit::Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::st
 	m_ndef(ndef),
 	m_min_update_delay(0.2f),
 	m_since_last_update(0.0f),
+	m_min_save_delay(60.0f),
+	m_since_last_save(0.0f),
 	m_max_id(0),
 	m_max_virtual_id(1),
 	m_savedir(savedir)
@@ -412,6 +414,13 @@ void Circuit::update(float dtime) {
 		}
 	} else {
 		m_since_last_update += dtime;
+	}
+
+	if(m_since_last_save > m_min_save_delay) {
+		save();
+		m_since_last_save = 0.0f;
+	} else {
+		m_since_last_save += dtime;
 	}
 }
 

@@ -208,8 +208,6 @@ void ContentFeatures::reset()
 	liquid_alternative_source = "";
 	liquid_viscosity = 0;
 	liquid_renewable = true;
-	freeze = "";
-	melt = "";
 	liquid_range = LIQUID_LEVEL_MAX+1;
 	drowning = 0;
 	light_source = 0;
@@ -224,6 +222,8 @@ void ContentFeatures::reset()
 	sound_dig = SimpleSoundSpec("__group");
 	sound_dug = SimpleSoundSpec();
 
+	freeze = "";
+	melt = "";
 	is_circuit_element = false;
 	is_wire = false;
 	is_wire_connector = false;
@@ -384,6 +384,9 @@ public:
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
+	inline virtual bool getNodeRegistrationStatus() const;
+	inline virtual void setNodeRegistrationStatus(bool completed);
+
 	virtual void pendNodeResolve(NodeResolveInfo *nri);
 	virtual void cancelNodeResolve(NodeResolver *resolver);
 	virtual void runNodeResolverCallbacks();
@@ -423,6 +426,9 @@ private:
 
 	// List of node strings and node resolver callbacks to perform
 	std::list<NodeResolveInfo *> m_pending_node_lookups;
+
+	// True when all nodes have been registered
+	bool m_node_registration_complete;
 };
 
 
@@ -453,6 +459,14 @@ void CNodeDefManager::clear()
 	m_name_id_mapping_with_aliases.clear();
 	m_group_to_items.clear();
 	m_next_id = 0;
+
+	m_node_registration_complete = false;
+	for (std::list<NodeResolveInfo *>::iterator
+			it = m_pending_node_lookups.begin();
+			it != m_pending_node_lookups.end();
+			++it)
+		delete *it;
+	m_pending_node_lookups.clear();
 
 	u32 initial_length = 0;
 	initial_length = MYMAX(initial_length, CONTENT_UNKNOWN + 1);
@@ -1043,10 +1057,28 @@ IWritableNodeDefManager *createNodeDefManager()
 }
 
 
+inline bool CNodeDefManager::getNodeRegistrationStatus() const
+{
+	return m_node_registration_complete;
+}
+
+
+inline void CNodeDefManager::setNodeRegistrationStatus(bool completed)
+{
+	m_node_registration_complete = completed;
+}
+
+
 void CNodeDefManager::pendNodeResolve(NodeResolveInfo *nri)
 {
 	nri->resolver->m_ndef = this;
-	m_pending_node_lookups.push_back(nri);
+	if (m_node_registration_complete) {
+		nri->resolver->resolveNodeNames(nri);
+		nri->resolver->m_lookup_done = true;
+		delete nri;
+	} else {
+		m_pending_node_lookups.push_back(nri);
+	}
 }
 
 

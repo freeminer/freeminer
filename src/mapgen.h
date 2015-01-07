@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MG_LIGHT         0x10
 
 class Settings;
-class ManualMapVoxelManipulator;
+class MMVManip;
 class INodeDefManager;
 
 extern FlagDesc flagdesc_mapgen[];
@@ -48,7 +48,6 @@ extern FlagDesc flagdesc_gennotify[];
 class Biome;
 class EmergeManager;
 class MapBlock;
-class ManualMapVoxelManipulator;
 class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
@@ -137,7 +136,7 @@ public:
 	bool generating;
 	int id;
 
-	ManualMapVoxelManipulator *vm;
+	MMVManip *vm;
 	INodeDefManager *ndef;
 
 	u32 blockseed;
@@ -157,9 +156,17 @@ public:
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
 	void updateHeightmap(v3s16 nmin, v3s16 nmax);
 	void updateLiquid(v3s16 nmin, v3s16 nmax);
-	void setLighting(v3s16 nmin, v3s16 nmax, u8 light);
+
+	void setLighting(u8 light, v3s16 nmin, v3s16 nmax);
 	void lightSpread(VoxelArea &a, v3s16 p, u8 light);
+
 	void calcLighting(v3s16 nmin, v3s16 nmax);
+	void calcLighting(v3s16 nmin, v3s16 nmax,
+		v3s16 full_nmin, v3s16 full_nmax);
+
+	void propagateSunlight(v3s16 nmin, v3s16 nmax);
+	void spreadLight(v3s16 nmin, v3s16 nmax);
+
 	void calcLightingOld(v3s16 nmin, v3s16 nmax);
 
 	virtual void makeChunk(BlockMakeData *data) {}

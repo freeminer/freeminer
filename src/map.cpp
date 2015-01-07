@@ -48,7 +48,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
-#include "circuit.h"
 #if USE_LEVELDB
 #include "database-leveldb.h"
 #endif
@@ -78,7 +77,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Map
 */
-Map::Map(IGameDef *gamedef, Circuit* circuit):
+Map::Map(IGameDef *gamedef):
 	m_liquid_step_flow(1000),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
@@ -87,7 +86,6 @@ Map::Map(IGameDef *gamedef, Circuit* circuit):
 	m_inc_trending_up_start_time(0),
 	m_queue_size_timer_started(false)
     ,
-	m_circuit(circuit),
 	m_blocks_update_last(0),
 	m_blocks_save_last(0)
 {
@@ -904,7 +902,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 		// Make a manual voxel manipulator and load all the blocks
 		// that touch the requested blocks
-		ManualMapVoxelManipulator vmanip(this);
+		MMVManip vmanip(this);
 
 		{
 		//TimeTaker timer("initialEmerge");
@@ -1629,10 +1627,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	for (auto & block : blocks_delete)
 		this->deleteBlock(block);
 
-	if(m_circuit != NULL) {
-		m_circuit->save();
-	}
-
 	// Finally delete the empty sectors
 
 	if(deleted_blocks_count != 0)
@@ -2209,8 +2203,8 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 /*
 	ServerMap
 */
-ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* circuit):
-	Map(gamedef, circuit),
+ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
+	Map(gamedef),
 	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
@@ -2419,7 +2413,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	v3s16 bigarea_blocks_min = blockpos_min - extra_borders;
 	v3s16 bigarea_blocks_max = blockpos_max + extra_borders;
 
-	data->vmanip = new ManualMapVoxelManipulator(this);
+	data->vmanip = new MMVManip(this);
 	//data->vmanip->setMap(this);
 
 	// Add the area
@@ -2722,7 +2716,7 @@ void ServerMap::updateVManip(v3s16 pos)
 	if (!mg)
 		return;
 
-	ManualMapVoxelManipulator *vm = mg->vm;
+	MMVManip *vm = mg->vm;
 	if (!vm)
 		return;
 
@@ -3177,7 +3171,7 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 	return basepos.Y -1;
 }
 
-ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
+MMVManip::MMVManip(Map *map):
 		VoxelManipulator(),
 		m_is_dirty(false),
 		m_create_area(false),
@@ -3185,12 +3179,12 @@ ManualMapVoxelManipulator::ManualMapVoxelManipulator(Map *map):
 {
 }
 
-ManualMapVoxelManipulator::~ManualMapVoxelManipulator()
+MMVManip::~MMVManip()
 {
 }
 
-void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
-	v3s16 blockpos_max, bool load_if_inexistent)
+void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
+	bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge");
 
@@ -3279,9 +3273,8 @@ void ManualMapVoxelManipulator::initialEmerge(v3s16 blockpos_min,
 	m_is_dirty = false;
 }
 
-void ManualMapVoxelManipulator::blitBackAll(
-		std::map<v3s16, MapBlock*> *modified_blocks,
-		bool overwrite_generated)
+void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
+	bool overwrite_generated)
 {
 	if(m_area.getExtent() == v3s16(0,0,0))
 		return;
@@ -3310,10 +3303,6 @@ void ManualMapVoxelManipulator::blitBackAll(
 //END
 
 // freeminer:
-Circuit* Map::getCircuit()
-{
-	return m_circuit;
-}
 
 INodeDefManager* Map::getNodeDefManager()
 {

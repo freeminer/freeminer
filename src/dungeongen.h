@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define VMANIP_FLAG_DUNGEON_UNTOUCHABLE (\
 		VMANIP_FLAG_DUNGEON_INSIDE|VMANIP_FLAG_DUNGEON_PRESERVE)
 
-class ManualMapVoxelManipulator;
+class MMVManip;
 class INodeDefManager;
 
 v3s16 rand_ortho_dir(PseudoRandom &random, bool diagonal_dirs);
@@ -60,7 +60,7 @@ struct DungeonParams {
 
 class DungeonGen {
 public:
-	ManualMapVoxelManipulator *vm;
+	MMVManip *vm;
 	Mapgen *mg;
 	u32 blockseed;
 	PseudoRandom random;

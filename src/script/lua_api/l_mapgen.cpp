@@ -243,7 +243,7 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 
 	switch (mgobj) {
 		case MGOBJ_VMANIP: {
-			ManualMapVoxelManipulator *vm = mg->vm;
+			MMVManip *vm = mg->vm;
 
 			// VoxelManip object
 			LuaVoxelManip *o = new LuaVoxelManip(vm, true);
@@ -378,12 +378,11 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	if (lua_isnumber(L, -1))
 		params->water_level = lua_tointeger(L, -1);
 
+	warn_if_field_exists(L, 1, "flagmask",
+		"Deprecated: flags field now includes unset flags.");
 	lua_getfield(L, 1, "flagmask");
-	if (lua_isstring(L, -1)) {
+	if (lua_isstring(L, -1))
 		params->flags &= ~readFlagString(lua_tostring(L, -1), flagdesc_mapgen, NULL);
-		errorstream << "set_mapgen_params(): flagmask field is deprecated, "
-			"see lua_api.txt" << std::endl;
-	}
 
 	if (getflagsfield(L, 1, "flags", flagdesc_mapgen, &flags, &flagmask)) {
 		params->flags &= ~flagmask;
@@ -693,8 +692,11 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	ore->noise          = NULL;
 	ore->flags          = 0;
 
-	// height_min and height_max are aliases for y_min and y_max, respectively,
-	// for backwards compatibility
+	warn_if_field_exists(L, index, "height_min",
+		"Deprecated: new name is \"y_min\".");
+	warn_if_field_exists(L, index, "height_max",
+		"Deprecated: new name is \"y_max\".");
+
 	int ymin, ymax;
 	if (!getintfield(L, index, "y_min", ymin) &&
 		!getintfield(L, index, "height_min", ymin))
@@ -814,6 +816,42 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 	return 1;
 }
 
+// generate_ores(vm, [ore_id])
+int ModApiMapgen::l_generate_ores(lua_State *L)
+{
+	EmergeManager *emerge = getServer(L)->getEmergeManager();
+
+	Mapgen mg;
+	mg.seed = emerge->params.seed;
+	mg.vm   = LuaVoxelManip::checkobject(L, 1)->vm;
+	mg.ndef = getServer(L)->getNodeDefManager();
+
+	u32 blockseed = Mapgen::getBlockSeed(mg.vm->m_area.MinEdge, mg.seed);
+
+	emerge->oremgr->placeAllOres(&mg, blockseed,
+		mg.vm->m_area.MinEdge, mg.vm->m_area.MaxEdge);
+
+	return 0;
+}
+
+// generate_decorations(vm, [deco_id])
+int ModApiMapgen::l_generate_decorations(lua_State *L)
+{
+	EmergeManager *emerge = getServer(L)->getEmergeManager();
+
+	Mapgen mg;
+	mg.seed = emerge->params.seed;
+	mg.vm   = LuaVoxelManip::checkobject(L, 1)->vm;
+	mg.ndef = getServer(L)->getNodeDefManager();
+
+	u32 blockseed = Mapgen::getBlockSeed(mg.vm->m_area.MinEdge, mg.seed);
+
+	emerge->decomgr->placeAllDecos(&mg, blockseed,
+		mg.vm->m_area.MinEdge, mg.vm->m_area.MaxEdge);
+
+	return 0;
+}
+
 // place_schematic(p, schematic, rotation, replacement)
 int ModApiMapgen::l_place_schematic(lua_State *L)
 {
@@ -867,6 +905,9 @@ void ModApiMapgen::Initialize(lua_State *L, int top)
 	API_FCT(clear_registered_biomes);
 	API_FCT(clear_registered_decorations);
 	API_FCT(clear_registered_ores);
+
+	API_FCT(generate_ores);
+	API_FCT(generate_decorations);
 
 	API_FCT(create_schematic);
 	API_FCT(place_schematic);

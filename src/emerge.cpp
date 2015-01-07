@@ -51,7 +51,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_indev.h"
 #include "mapgen_singlenode.h"
 #include "mapgen_math.h"
-#include "circuit.h"
 #include "util/thread_pool.h"
 
 struct MapgenDesc {
@@ -73,7 +72,6 @@ class EmergeThread : public thread_pool
 public:
 	Server *m_server;
 	ServerMap *map;
-	Circuit* m_circuit;
 	EmergeManager *emerge;
 	Mapgen *mapgen;
 	bool enable_mapgen_debug_info;
@@ -465,11 +463,6 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	if (!block || block->isDummy()) {
 		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen<<" block="<<block<<" p="<<p);
 		block = map->loadBlock(p);
-		if(block)
-		{
-// 			block->pushElementsToCircuit(m_circuit);
-// 			m_circuit->processElementsQueue(*map, map->getNodeDefManager());
-		}
 		if (block && block->isGenerated())
 			map->prepareBlock(block);
 	}
@@ -499,7 +492,6 @@ void *EmergeThread::Thread()
 	u8 flags = 0;
 
 	map       = (ServerMap *)&(m_server->m_env->getMap());
-	m_circuit = m_server->m_circuit;
 	emerge    = m_server->m_emerge;
 	mapgen    = emerge->mapgen[id];
 	enable_mapgen_debug_info = emerge->mapgen_debug_info;
@@ -609,6 +601,23 @@ void *EmergeThread::Thread()
 		err << "See debug.txt."<<std::endl;
 		err << "You can ignore this using [ignore_world_load_errors = true]."<<std::endl;
 		m_server->setAsyncFatalError(err.str());
+	}
+
+	{
+		JMutexAutoLock queuelock(emerge->queuemutex);
+		while (!blockqueue.empty())
+		{
+			v3s16 p = blockqueue.front();
+			blockqueue.pop();
+
+			std::map<v3s16, BlockEmergeData *>::iterator iter;
+			iter = emerge->blocks_enqueued.find(p);
+			if (iter == emerge->blocks_enqueued.end())
+				continue; //uh oh, queue and map out of sync!!
+
+			BlockEmergeData *bedata = iter->second;
+			delete bedata;
+		}
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
