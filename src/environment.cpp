@@ -766,7 +766,7 @@ void ServerEnvironment::analyzeBlock(MapBlock * block) {
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	block->analyzeContent();
 	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_next_analyze_timestamp   <<" co="<<block->content_only<<std::endl;
-	bool activate = block_timestamp - m_next_analyze_timestamp > 3600;
+	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
 	m_abmhandler.apply(block, activate);
 	block->m_next_analyze_timestamp = block_timestamp + 5;
 }
