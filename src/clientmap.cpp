@@ -931,9 +931,7 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 	v3f camera_position = m_camera_position;
 	m_camera_mutex.Unlock();
 
-	MapNode n = getNodeTry(floatToInt(camera_position, BS));
-	if (n.getContent() == CONTENT_IGNORE)
-		return; // may flicker
+	MapNode n = getNodeNoEx(floatToInt(camera_position, BS));
 
 	// - If the player is in a solid node, make everything black.
 	// - If the player is in liquid, draw a semi-transparent overlay.
