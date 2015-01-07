@@ -54,9 +54,10 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & par
 			//layer.name = name; //dev
 			layers.emplace_back(layer);
 		}
-	if (layers.empty()) {
-		infostream << "layers empty, using only default:stone"<<std::endl;
-	}
+	if (layers.empty())
+		infostream << "layers empty, using only default:stone mapgen.id="<<emerge->getCurrentMapgen()->id<<" mg_params="<<paramsj<<std::endl;
+	else
+		verbosestream << "layers size=" << layers.size() << std::endl;
 }
 
 void Mapgen_features::layers_prepare(const v3POS & node_min, const v3POS & node_max) {
