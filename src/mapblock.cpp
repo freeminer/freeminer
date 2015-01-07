@@ -81,7 +81,6 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_next_analyze_timestamp = 0;
 	m_abm_timestamp = 0;
 	abm_active = false;
-	abm_triggers = nullptr;
 	content_only = CONTENT_IGNORE;
 }
 
@@ -95,8 +94,6 @@ MapBlock::~MapBlock()
 	if(data)
 		delete data;
 	data = nullptr;
-	if (abm_triggers)
-		delete abm_triggers;
 }
 
 bool MapBlock::isValidPositionParent(v3s16 p)

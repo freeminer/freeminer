@@ -689,7 +689,7 @@ void ServerEnvironment::loadMeta()
 neighbor_found:
 
 				if (!block->abm_triggers)
-					block->abm_triggers = new MapBlock::abm_triggers_type;
+					block->abm_triggers = std::unique_ptr<MapBlock::abm_triggers_type>(new MapBlock::abm_triggers_type); // c++14: make_unique here
 
 				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos, activate});
 			}
@@ -749,10 +749,8 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				}
 */
 		}
-		if (abm_triggers->empty()) {
-			delete abm_triggers;
-			abm_triggers = nullptr;
-		}
+		if (abm_triggers->empty())
+			abm_triggers.release();
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {

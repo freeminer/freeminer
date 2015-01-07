@@ -567,7 +567,7 @@ public:
 	u32 m_next_analyze_timestamp;
 	bool abm_active;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
-	abm_triggers_type * abm_triggers;
+	std::unique_ptr<abm_triggers_type> abm_triggers;
 	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
 
