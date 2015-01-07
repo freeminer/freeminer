@@ -419,8 +419,9 @@ inline std::basic_string<T> unescape_string(std::basic_string<T> &s)
 	std::basic_string<T> res;
 
 	for (size_t i = 0; i < s.length(); i++) {
-		if (s[i] != '\\')
-			res += s[i];
+		if (s[i] == '\\')
+			++i;
+		res += s[i];
 	}
 
 	return res;
