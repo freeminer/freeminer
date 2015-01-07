@@ -310,7 +310,6 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 
 ServerEnvironment::ServerEnvironment(ServerMap *map,
 		GameScripting *scriptIface,
-		Circuit* circuit,
 		IGameDef *gamedef,
 		const std::string &path_world) :
 	m_abmhandler(NULL),
@@ -318,7 +317,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_map(map),
 	m_script(scriptIface),
 	m_gamedef(gamedef),
-	m_circuit(circuit),
+	m_circuit(m_script, map, gamedef->ndef(), path_world),
 	m_key_value_storage(path_world, "key_value_storage"),
 	m_players_storage(path_world, "players"),
 	m_path_world(path_world),
@@ -829,7 +828,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 		return false;
 	}
 
-	m_circuit->addNode(p);
+	m_circuit.addNode(p);
 
 	// Update active VoxelManipulator if a mapgen thread
 	m_map->updateVManip(p);
@@ -868,7 +867,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 		return false;
 	}
 
-	m_circuit->removeNode(p, n_old);
+	m_circuit.removeNode(p, n_old);
 
 	// Update active VoxelManipulator if a mapgen thread
 	m_map->updateVManip(p);
@@ -887,7 +886,7 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 	MapNode n_old = m_map->getNodeNoEx(p);
 	if (!m_map->addNodeWithEvent(p, n, false))
 		return false;
-	m_circuit->swapNode(p, n_old, n);
+	m_circuit.swapNode(p, n_old, n);
 
 	// Update active VoxelManipulator if a mapgen thread
 	m_map->updateVManip(p);
@@ -1102,7 +1101,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 	 * Update circuit
 	 */
-	m_circuit->update(dtime);
+	m_circuit.update(dtime);
 
 	/*
 		Manage active block list

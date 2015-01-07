@@ -70,6 +70,8 @@ private:
 	std::vector <v3POS> m_elements_queue;
 	float m_min_update_delay;
 	float m_since_last_update;
+	float m_min_save_delay;
+	float m_since_last_save;
 
 	u32 m_max_id;
 	u32 m_max_virtual_id;
