@@ -159,7 +159,11 @@ public:
 	void updateLiquid(v3s16 nmin, v3s16 nmax);
 	void setLighting(v3s16 nmin, v3s16 nmax, u8 light);
 	void lightSpread(VoxelArea &a, v3s16 p, u8 light);
+
 	void calcLighting(v3s16 nmin, v3s16 nmax);
+	void propagateSunlight(v3s16 nmin, v3s16 nmax);
+	void spreadLight(v3s16 nmin, v3s16 nmax);
+
 	void calcLightingOld(v3s16 nmin, v3s16 nmax);
 
 	virtual void makeChunk(BlockMakeData *data) {}
