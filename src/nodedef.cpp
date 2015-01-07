@@ -384,6 +384,9 @@ public:
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
+	inline virtual bool getNodeRegistrationStatus() const;
+	inline virtual void setNodeRegistrationStatus(bool completed);
+
 	virtual void pendNodeResolve(NodeResolveInfo *nri);
 	virtual void cancelNodeResolve(NodeResolver *resolver);
 	virtual void runNodeResolverCallbacks();
@@ -423,6 +426,9 @@ private:
 
 	// List of node strings and node resolver callbacks to perform
 	std::list<NodeResolveInfo *> m_pending_node_lookups;
+
+	// True when all nodes have been registered
+	bool m_node_registration_complete;
 };
 
 
@@ -1043,10 +1049,28 @@ IWritableNodeDefManager *createNodeDefManager()
 }
 
 
+inline bool CNodeDefManager::getNodeRegistrationStatus() const
+{
+	return m_node_registration_complete;
+}
+
+
+inline void CNodeDefManager::setNodeRegistrationStatus(bool completed)
+{
+	m_node_registration_complete = completed;
+}
+
+
 void CNodeDefManager::pendNodeResolve(NodeResolveInfo *nri)
 {
 	nri->resolver->m_ndef = this;
-	m_pending_node_lookups.push_back(nri);
+	if (m_node_registration_complete) {
+		nri->resolver->resolveNodeNames(nri);
+		nri->resolver->m_lookup_done = true;
+		delete nri;
+	} else {
+		m_pending_node_lookups.push_back(nri);
+	}
 }
 
 

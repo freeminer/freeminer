@@ -68,7 +68,7 @@ extern gui::IGUIEnvironment* guienv;
 /*
 	MeshUpdateQueue
 */
-	
+
 MeshUpdateQueue::MeshUpdateQueue()
 {
 }
@@ -133,7 +133,7 @@ void * MeshUpdateThread::Thread()
 	log_register_thread("MeshUpdateThread" + itos(id));
 
 	DSTACK(__FUNCTION_NAME);
-	
+
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	porting::setThreadName(("MeshUpdateThread" + itos(id)).c_str());
@@ -352,7 +352,7 @@ void Client::step(float dtime)
 		m_ignore_damage_timer -= dtime;
 	else
 		m_ignore_damage_timer = 0.0;
-	
+
 	m_animation_time += dtime;
 	if(m_animation_time > 60.0)
 		m_animation_time -= 60.0;
@@ -370,7 +370,7 @@ void Client::step(float dtime)
 		if(counter <= 0.0)
 		{
 			counter = 20.0;
-			
+
 			infostream << "Client packetcounter (" << m_packetcounter_timer
 					<< "):"<<std::endl;
 			m_packetcounter.print(infostream);
@@ -393,7 +393,7 @@ void Client::step(float dtime)
 			counter = 2.0;
 
 			//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-			
+
 			Player *myplayer = m_env.getLocalPlayer();
 			assert(myplayer != NULL);
 			// Send TOSERVER_INIT
@@ -421,8 +421,8 @@ void Client::step(float dtime)
 	/*
 		Do stuff if connected
 	*/
-	
 	unsigned int max_cycle_ms = 200/g_settings->getFloat("wanted_fps");
+
 	/*
 		Run Map's timers and unload unused data
 	*/
@@ -437,11 +437,11 @@ void Client::step(float dtime)
 				max_cycle_ms,
 				&deleted_blocks))
 				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
-				
+
 		/*if(deleted_blocks.size() > 0)
 			infostream<<"Client: Unloaded "<<deleted_blocks.size()
 					<<" unused blocks"<<std::endl;*/
-			
+
 		/*
 			Send info to server
 			NOTE: This loop is intentionally iterated the way it is.
@@ -483,7 +483,7 @@ void Client::step(float dtime)
 
 		// Step environment
 		m_env.step(dtime, m_uptime, max_cycle_ms);
-		
+
 		/*
 			Get events
 		*/
@@ -499,7 +499,7 @@ void Client::step(float dtime)
 				if(m_ignore_damage_timer <= 0)
 				{
 					u8 damage = event.player_damage.amount;
-					
+
 					if(event.player_damage.send_to_server)
 						sendDamage(damage);
 
@@ -638,7 +638,7 @@ void Client::step(float dtime)
 			m_sound->updateSoundPosition(client_id, pos);
 		}
 	}
-	
+
 	/*
 		Handle removed remotely initiated sounds
 	*/
@@ -677,7 +677,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 {
 	// Silly irrlicht's const-incorrectness
 	Buffer<char> data_rw(data.c_str(), data.size());
-	
+
 	std::string name;
 
 	const char *image_ext[] = {
@@ -930,7 +930,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 				" Skipping incoming command="<<command<<std::endl;
 		return;
 	}
-	
+
 	/*
 	  Handle runtime commands
 	*/
@@ -1605,7 +1605,7 @@ void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 	// Send as reliable
 	Send(0, buffer, true);
 }
-	
+
 void Client::sendInventoryFields(const std::string &formname,
 		const std::map<std::string, std::string> &fields)
 {
@@ -1730,7 +1730,8 @@ void Client::sendPlayerPos()
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
 	// Check that an existing peer_id is the same as the connection's
-	assert(myplayer->peer_id == our_peer_id);
+	if (myplayer->peer_id != our_peer_id)
+		return;
 
 	MSGPACK_PACKET_INIT(TOSERVER_PLAYERPOS, 5);
 	PACK(TOSERVER_PLAYERPOS_POSITION, myplayer->getPosition());
@@ -1774,7 +1775,7 @@ void Client::removeNode(v3s16 p, int fast)
 	catch(InvalidPositionException &e)
 	{
 	}
-	
+
 	for(std::map<v3s16, MapBlock * >::iterator
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
@@ -1796,7 +1797,6 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 	}
 	catch(InvalidPositionException &e)
 	{}
-	
 	addUpdateMeshTaskForNode(p, true);
 
 	for(std::map<v3s16, MapBlock * >::iterator
@@ -1806,7 +1806,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 		addUpdateMeshTaskWithEdge(i->first, true);
 	}
 }
-	
+
 void Client::setPlayerControl(PlayerControl &control)
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
@@ -1906,7 +1906,7 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	std::vector<DistanceSortedActiveObject> objects;
 
 	m_env.getActiveObjects(from_pos_f_on_map, max_d, objects);
-	
+
 	// Sort them.
 	// After this, the closest object is the first in the array.
 	std::sort(objects.begin(), objects.end());
@@ -1914,7 +1914,7 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	for(u32 i=0; i<objects.size(); i++)
 	{
 		ClientActiveObject *obj = objects[i].obj;
-		
+
 		core::aabbox3d<f32> *selection_box = obj->getSelectionBox();
 		if(selection_box == NULL)
 			continue;
@@ -2141,11 +2141,9 @@ float Client::mediaReceiveProgress()
 void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
 	infostream<<"Client::afterContentReceived() started"<<std::endl;
-	//assert(m_itemdef_received);
-	//assert(m_nodedef_received);
-	//assert(mediaReceived());
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+
 	wchar_t* text = wgettext("Loading textures...");
 
 	// Rebuild inherited images and recreate textures
@@ -2168,6 +2166,8 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	text = wgettext("Initializing nodes...");
 	draw_load_screen(text, device, guienv, 0, 80);
 	m_nodedef->updateAliases(m_itemdef);
+	m_nodedef->setNodeRegistrationStatus(true);
+	m_nodedef->runNodeResolverCallbacks();
 	delete[] text;
 
 	// Update node textures and assign shaders to each tile

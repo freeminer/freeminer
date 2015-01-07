@@ -563,6 +563,8 @@ Server::Server(
 	if (!simple_singleplayer_mode)
 		m_nodedef->updateTextures(this);
 
+	m_nodedef->setNodeRegistrationStatus(true);
+
 	// Perform pending node name resolutions
 	m_nodedef->runNodeResolverCallbacks();
 
