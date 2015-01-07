@@ -475,8 +475,8 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 	nnames.push_back(getstringfield_default(L, index, "node_water",        ""));
 	nnames.push_back(getstringfield_default(L, index, "node_dust",         ""));
 
-	nnames.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
 	nnames.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
+	nnames.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
 	ndef->pendNodeResolve(nri);
 
 	verbosestream << "register_biome: " << b->name << std::endl;
