@@ -104,11 +104,7 @@ std::string ClientInterface::state2Name(ClientState state)
 void RemoteClient::ResendBlockIfOnWire(v3s16 p)
 {
 	// if this block is on wire, mark it for sending again as soon as possible
-/*
-	if (m_blocks_sending.find(p) != m_blocks_sending.end()) {
-		SetBlockNotSent(p);
-	}
-*/
+	SetBlockNotSent(p);
 }
 
 int RemoteClient::GetNextBlocks(
@@ -124,6 +120,13 @@ int RemoteClient::GetNextBlocks(
 	m_nothing_to_send_pause_timer -= dtime;
 	m_nearest_unsent_reset_timer += dtime;
 	m_time_from_building += dtime;
+
+	if (m_nearest_unsent_reset) {
+		m_nearest_unsent_reset = 0;
+		m_nearest_unsent_reset_timer = 999;
+		m_nothing_to_send_pause_timer = 0;
+		m_time_from_building = 999;
+	}
 
 	if(m_nothing_to_send_pause_timer >= 0)
 		return 0;
@@ -178,7 +181,7 @@ int RemoteClient::GetNextBlocks(
 	{
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
-		m_nearest_unsent_nearest = 0;
+		m_nearest_unsent_reset = 0;
 		//infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
@@ -196,7 +199,7 @@ int RemoteClient::GetNextBlocks(
 
 		Decrease send rate if player is building stuff.
 	*/
-	if(!m_nearest_unsent_nearest && m_time_from_building < g_settings->getFloat(
+	if(m_time_from_building < g_settings->getFloat(
 				"full_block_send_enable_min_time_from_building"))
 	{
 		/*
@@ -562,22 +565,15 @@ void RemoteClient::SentBlock(v3s16 p, double time)
 
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
-	++m_nearest_unsent_nearest;
+	++m_nearest_unsent_reset;
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = blocks.begin();
-			i != blocks.end(); ++i)
-	{
-		v3s16 p = i->first;
-		SetBlockNotSent(p);
-	}
+	SetBlockNotSent(v3POS());
 }
 
 void RemoteClient::SetBlockDeleted(v3s16 p) {
-	SetBlockNotSent(p);
 	m_blocks_sent.erase(p);
 }
 

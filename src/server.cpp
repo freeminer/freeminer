@@ -1382,24 +1382,6 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 			++ret;
 			goto no_send;
 		}
-
-		auto clients = m_clients.getClientList();
-		for (auto & client : clients)
-			if (client->m_nearest_unsent_nearest) {
-				client->m_nearest_unsent_d = 0;
-				client->m_nearest_unsent_nearest = 0;
-			}
-
-		//JMutexAutoLock lock(m_env_mutex);
-		//JMutexAutoLock lock2(m_con_mutex);
-
-/*
-		if(m_modified_blocks.size() > 0)
-		{
-			SetBlocksNotSent(m_modified_blocks);
-		}
-		m_modified_blocks.clear();
-*/
 	}
 	no_send:
 
