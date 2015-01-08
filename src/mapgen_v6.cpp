@@ -546,6 +546,9 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
 
+	// Add top and bottom side of water to transforming_liquid queue
+	updateLiquid(full_node_min, full_node_max);
+
 	// Grow grass
 	growGrass();
 
