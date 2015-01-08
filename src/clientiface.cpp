@@ -123,6 +123,7 @@ int RemoteClient::GetNextBlocks(
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_nearest_unsent_reset_timer += dtime;
+	m_time_from_building += dtime;
 
 	if(m_nothing_to_send_pause_timer >= 0)
 		return 0;
@@ -195,8 +196,7 @@ int RemoteClient::GetNextBlocks(
 
 		Decrease send rate if player is building stuff.
 	*/
-	m_time_from_building += dtime;
-	if(m_time_from_building < g_settings->getFloat(
+	if(!m_nearest_unsent_nearest && m_time_from_building < g_settings->getFloat(
 				"full_block_send_enable_min_time_from_building"))
 	{
 		/*

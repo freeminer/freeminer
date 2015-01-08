@@ -1007,14 +1007,21 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		bool remove_metadata, int fast)
 {
 
-	if (fast == 1) {
+	INodeDefManager *ndef = m_gamedef->ndef();
+
+	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from old; 3: place, recalculate light and skip liquid queue
+		if (fast == 2 && !n.param1) {
+			MapNode from_node = getNodeNoEx(p);
+			if (from_node) {
+				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, ndef), ndef);
+				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
+			}
+		}
 		if (remove_metadata)
 			removeNodeMetadata(p);
 		setNode(p, n);
 		return;
 	}
-
-	INodeDefManager *ndef = m_gamedef->ndef();
 
 	/*PrintInfo(m_dout);
 	m_dout<<DTIME<<"Map::addNodeAndUpdate(): p=("
@@ -1220,10 +1227,10 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		MapNode n;
 		n.setContent(replace_material);
 		if (fast == 2) {
-			MapNode topnode = getNodeNoEx(toppos);
-			if (topnode) {
-				n.setLight(LIGHTBANK_DAY,   topnode.getLight(LIGHTBANK_DAY, ndef), ndef);
-				n.setLight(LIGHTBANK_NIGHT, topnode.getLight(LIGHTBANK_NIGHT, ndef), ndef);
+			MapNode from_node = getNodeNoEx(toppos);
+			if (from_node) {
+				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, ndef), ndef);
+				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
 			}
 		}
 		removeNodeMetadata(p);

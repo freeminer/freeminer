@@ -379,7 +379,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("time_send_interval", "5");
 	settings->setDefault("server_unload_unused_data_timeout", "610");
 	settings->setDefault("max_objects_per_block", "100");
-	settings->setDefault("full_block_send_enable_min_time_from_building", "2.0");
+	settings->setDefault("full_block_send_enable_min_time_from_building", "1.0");
 	settings->setDefault("dedicated_server_step", "0.1");
 	settings->setDefault("ignore_world_load_errors", "true");
 	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus

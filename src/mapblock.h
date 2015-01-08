@@ -161,17 +161,7 @@ public:
 	}
 	
 	// m_modified methods
-	void raiseModified(u32 mod)
-	{
-		if(mod >= MOD_STATE_WRITE_NEEDED && m_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
-			m_changed_timestamp = (unsigned int)m_timestamp;
-		}
-		if(mod > m_modified){
-			m_modified = mod;
-			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
-				m_disk_timestamp = m_timestamp;
-		}
-	}
+	void raiseModified(u32 mod);
 	void raiseModified(u32 mod, const std::string &reason)
 	{
 		raiseModified(mod);

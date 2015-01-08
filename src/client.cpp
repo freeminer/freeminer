@@ -950,7 +950,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
 		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
-		addNode(p, n, remove_metadata, 1); //fast add
+		addNode(p, n, remove_metadata, 2); //fast add
 	}
 	else if(command == TOCLIENT_BLOCKDATA)
 	{

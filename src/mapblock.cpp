@@ -769,7 +769,6 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
 	}
 
 	void MapBlock::setNodeNoCheck(v3s16 p, MapNode & n)
@@ -779,7 +778,18 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
+	}
+
+	void MapBlock::raiseModified(u32 mod)
+	{
+		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
+			m_changed_timestamp = (unsigned int)m_parent->time_life;
+		}
+		if(mod > m_modified){
+			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+		}
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)
