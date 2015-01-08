@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "nodemetadata.h"
 #include "gamedef.h"
-#include "log.h"
+#include "log_types.h"
 #include "nameidmapping.h"
 #include "content_mapnode.h" // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
@@ -78,6 +78,10 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	mesh2 = mesh4 = mesh8 = mesh16 = nullptr;
 	mesh_size = 0;
 #endif
+	m_next_analyze_timestamp = 0;
+	m_abm_timestamp = 0;
+	abm_active = false;
+	content_only = CONTENT_IGNORE;
 }
 
 MapBlock::~MapBlock()
@@ -735,6 +739,8 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 					<<": Node timers (ver>=25)"<<std::endl);
 			m_node_timers.deSerialize(is, version);
 		}
+
+		analyzeContent();
 	}
 		
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())

@@ -591,6 +591,8 @@ Server::Server(
 	// Add some test ActiveBlockModifiers to environment
 	add_legacy_abms(m_env, m_nodedef);
 
+	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
+
 	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
 }
@@ -3691,7 +3693,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 5);
+	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 6);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -3701,6 +3703,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
 	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
+
 
 	//JMutexAutoLock lock(m_env_mutex);
 	/*

@@ -975,6 +975,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&h);
 		block->humidity = h;
 
+
+		if (packet.count(TOCLIENT_BLOCKDATA_CONTENT_ONLY))
+			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
+
 		if (new_block)
 			m_env.getMap().insertBlock(block);
 
@@ -986,7 +990,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		updateMeshTimestampWithEdge(p);
+		if (!block->content_only || block->content_only != CONTENT_AIR)
+			updateMeshTimestampWithEdge(p);
 
 /*
 #if !defined(NDEBUG)

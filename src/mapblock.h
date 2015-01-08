@@ -42,6 +42,8 @@ class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
 class Circuit;
+class ServerEnvironment;
+struct ActiveABM;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -101,6 +103,16 @@ public:
 	}
 };
 #endif
+
+struct abm_trigger_one {
+	ActiveABM * abm;
+	v3POS pos;
+	content_t content;
+	u32 active_object_count;
+	u32 active_object_count_wider;
+	v3POS neighbor_pos;
+	bool activate;
+};
 
 /*
 	MapBlock itself
@@ -552,6 +564,36 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
+	u32 m_next_analyze_timestamp;
+	bool abm_active;
+	typedef std::list<abm_trigger_one> abm_triggers_type;
+	std::unique_ptr<abm_triggers_type> abm_triggers;
+	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
+	u32 m_abm_timestamp;
+
+	u32 getActualTimestamp() {
+		u32 block_timestamp = 0;
+		if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_changed_timestamp;
+		} else if (m_disk_timestamp && m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_disk_timestamp;
+		}
+		return block_timestamp;
+	}
+
+	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
+	content_t content_only;
+	content_t analyzeContent() {
+		auto lock = lock_shared_rec();
+		content_only = data[0].param0;
+		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {
+			if (data[i].param0 != content_only) {
+				content_only = CONTENT_IGNORE;
+				break;
+			}
+		}
+		return content_only;
+	}
 
 private:
 	/*

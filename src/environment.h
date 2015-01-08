@@ -50,7 +50,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 
-
 class ServerEnvironment;
 class ActiveBlockModifier;
 class ServerActiveObject;
@@ -184,6 +183,7 @@ struct ABMWithState
 	float interval;
 	float chance;
 	float timer;
+	int neighbors_range;
 	std::unordered_set<content_t> trigger_ids;
 	FMBitset required_neighbors, required_neighbors_activate;
 
@@ -221,7 +221,6 @@ struct ActiveABM
 	ActiveABM()
 	{}
 	ABMWithState *abmws;
-	ActiveBlockModifier *abm; //delete me, abm in ws ^
 	int chance;
 };
 
@@ -233,9 +232,8 @@ private:
 	std::list<std::list<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:
-	ABMHandler(std::list<ABMWithState> &abms,
-			float dtime_s, ServerEnvironment *env,
-			bool use_timers, bool activate);
+	ABMHandler(ServerEnvironment *env);
+	void init(std::list<ABMWithState> &abms);
 	~ABMHandler();
 	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
 	void apply(MapBlock *block, bool activate = false);
@@ -377,7 +375,12 @@ public:
 	
 	// is weather active in this environment?
 	bool m_use_weather;
-	ABMHandler * m_abmhandler;
+	ABMHandler m_abmhandler;
+	void analyzeBlock(MapBlock * block);
+	IntervalLimiter m_analyze_blocks_interval;
+	IntervalLimiter m_abm_random_interval;
+	std::list<v3POS> m_abm_random_blocks;
+
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
@@ -466,12 +469,15 @@ private:
 	u32 m_active_block_timer_last;
 	std::set<v3s16> m_blocks_added;
 	u32 m_blocks_added_last;
+	u32 m_active_block_analyzed_last;
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
 	std::atomic_uint m_game_time;
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
+public:
 	std::list<ABMWithState> m_abms;
+private:
 	// An interval for generally sending object positions and stuff
 	float m_recommended_send_interval;
 	// Estimate for general maximum lag as determined by server.
