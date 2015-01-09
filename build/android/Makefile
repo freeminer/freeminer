@@ -44,18 +44,19 @@ HAVE_LEVELDB = 1
 ################################################################################
 # toolchain config for arm new processors
 ################################################################################
-#TARGET_HOST = arm-linux
-#TARGET_ABI = armeabi-v7a-hard
-#TARGET_LIBDIR = armeabi-v7a
-#TARGET_TOOLCHAIN = arm-linux-androideabi-
-#TARGET_CFLAGS_ADDON =  -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 \
-#						-mfloat-abi=hard -march=armv7-a
-#TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
-#TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
-#TARGET_ARCH = armv7
-#CROSS_PREFIX = arm-linux-androideabi-
-#COMPILER_VERSION = 4.8
-#HAVE_LEVELDB = 1
+TARGET_HOST = arm-linux
+TARGET_ABI = armeabi-v7a-hard
+TARGET_LIBDIR = armeabi-v7a
+TARGET_TOOLCHAIN = arm-linux-androideabi-
+TARGET_CFLAGS_ADDON =  -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 \
+						-mfloat-abi=hard -march=armv7-a
+TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
+TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
+TARGET_ARCH = armv7
+CROSS_PREFIX = arm-linux-androideabi-
+COMPILER_VERSION = 4.9
+#COMPILER_VERSION = clang3.5
+HAVE_LEVELDB = 1
 
 ################################################################################
 # toolchain config for little endian mips
@@ -155,6 +156,9 @@ endif
 	$(OPENSSL_TIMESTAMP) curl_binary \
 	$(ROOT)/jni/src/android_version.h
 	
+
+default: release
+
 debug : $(PATHCFGFILE)
 	export NDEBUG=;                                                            \
 	export BUILD_TYPE=debug;                                                   \
@@ -677,7 +681,7 @@ clean_assets :
 
 
 #=== freeminer libs:
-.PHONY : $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
+.PHONY : default $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
 		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv
 
 MSGPACK_DIR = $(ROOT)/deps/msgpack/
@@ -698,7 +702,7 @@ msgpack_download :
 		echo "msgpack sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;                 \
+		git clone -b cpp-0.5.9 ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;                 \
 	fi
 	
 msgpack : $(MSGPACK_LIB)
@@ -731,7 +735,6 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
 	touch ${MSGPACK_TIMESTAMP};                                                \
 	touch ${MSGPACK_TIMESTAMP_INT};                                            \
-	#$(RM) -rf $${TOOLCHAIN};                                                   \
 	else                                                                       \
 		echo "nothing to be done for msgpack";                                 \
 	fi
@@ -797,13 +800,12 @@ $(ICONV_LIB): $(ICONV_TIMESTAMP)
 	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
 	touch ${ICONV_TIMESTAMP};                                                  \
 	touch ${ICONV_TIMESTAMP_INT};                                              \
-	#$(RM) -rf $${TOOLCHAIN};                                                   \
 	else                                                                       \
 		echo "nothing to be done for iconv";                                   \
 	fi
 	
 clean_iconv :
-	$(RM) -rf deps/iconv
+	$(RM) -rf $(ICONV_DIR)
 
 #==== end of freeminer libs
 
@@ -854,6 +856,7 @@ envpaths :
 clean_all : 
 	@$(MAKE) -j${PARALLEL} clean_apk;                                          \
 	$(MAKE) clean_assets clean_irrlicht clean_leveldb clean_curl clean_openssl \
+	$(MAKE) clean_msgpack clean_iconv                                          \
 	clean_openal clean_ogg clean_manifest;                                     \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env

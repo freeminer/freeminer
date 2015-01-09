@@ -485,7 +485,7 @@ void set_default_settings(Settings *settings)
 	}
 	settings->setDefault("curl_verify_cert","false");
 
-	settings->setDefault("farmesh", "1");
+	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
 
 #else
