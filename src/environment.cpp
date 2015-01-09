@@ -755,14 +755,14 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 void ServerEnvironment::analyzeBlock(MapBlock * block) {
 	u32 block_timestamp = block->getActualTimestamp();
 	if (block->m_next_analyze_timestamp > block_timestamp) {
-		//infostream<<"not anlalyzing: ats="<<block->m_next_analyze_timestamp<< " bts="<<  block_timestamp<<std::endl;
+		//infostream<<"not anlalyzing: "<< block->getPos() <<"ats="<<block->m_next_analyze_timestamp<< " bts="<<  block_timestamp<<std::endl;
 		return;
 	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	block->analyzeContent();
-	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block->m_changed_timestamp - block->m_next_analyze_timestamp   <<" co="<<block->content_only<<std::endl;
 	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
 	m_abmhandler.apply(block, activate);
+	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 5;
 }
 
@@ -1121,8 +1121,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 		Manage active block list
 	*/
-	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, 2.0))
-	{
+	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, 2.0)) {
 		//TimeTaker timer_s1("Manage active block list");
 		ScopeProfiler sp(g_profiler, "SEnv: manage act. block list avg /2s", SPT_AVG);
 		if (!m_blocks_added_last) {
@@ -1178,14 +1177,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		// Convert active objects that are no more in active blocks to static
 		deactivateFarObjects(false);
 
-		for (auto & i : blocks_removed) {
-			auto block = m_map->getBlock(i);
-			if (!block)
-				continue;
-			block->abm_active = false;
-		}
-		}
-
+		} // if (!m_blocks_added_last)
 		/*
 			Handle added blocks
 		*/
@@ -1245,8 +1237,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 		Mess around in active blocks
 	*/
-	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0))
-	{
+	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0)) {
 		//if (!m_active_block_timer_last) infostream<<"Start ABM timer cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		//TimeTaker timer_s1("Mess around in active blocks");
 		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
@@ -1316,10 +1307,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime_counter += dtime;
 	const float abm_interval = 1.0;
-	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval))
-	{
-		//if (!m_active_block_abm_last) infostream<<"Start ABM trigger cycle s="<<m_active_blocks.m_list.size()<<std::endl;
-
+	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval)) {
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
 		TimeTaker timer("modify in active blocks");
 

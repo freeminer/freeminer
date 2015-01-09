@@ -80,7 +80,6 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 #endif
 	m_next_analyze_timestamp = 0;
 	m_abm_timestamp = 0;
-	abm_active = false;
 	content_only = CONTENT_IGNORE;
 }
 
