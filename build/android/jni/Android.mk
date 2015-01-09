@@ -16,7 +16,7 @@ endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := curl
-LOCAL_SRC_FILES := deps/curl-7.39.0/lib/.libs/libcurl.a
+LOCAL_SRC_FILES := deps/curl-7.40.0/lib/.libs/libcurl.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -49,6 +49,16 @@ LOCAL_MODULE := crypto
 LOCAL_SRC_FILES := deps/openssl/libcrypto.a
 include $(PREBUILT_STATIC_LIBRARY)
 
+include $(CLEAR_VARS)
+LOCAL_MODULE := iconv
+LOCAL_SRC_FILES := deps/libiconv-1.14/lib/.libs/libiconv.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := msgpack
+LOCAL_SRC_FILES := deps/msgpack/libmsgpack.a
+include $(PREBUILT_STATIC_LIBRARY)
+
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := freeminer
@@ -67,6 +77,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				-DUSE_LEVELDB=$(HAVE_LEVELDB) \
 				$(GPROF_DEF)                  \
 				-std=c++0x                    \
+				-DHAS_INET_PTON=1 -DHAS_INET_NTOP=1 -DHAS_GETHOSTBYNAME_R=1 -DHAS_FCNTL=1 -DHAS_POLL=1 -DHAS_MSGHDR_FLAGS=1 \
 				-pipe -fstrict-aliasing
 
 ifndef NDEBUG
@@ -88,6 +99,10 @@ LOCAL_CFLAGS += -fno-stack-protector
 endif
 
 LOCAL_C_INCLUDES :=                               \
+		jni/src/enet/include                      \
+		deps/msgpack/include                      \
+		deps/libiconv-1.14/include                \
+		deps/msgpack/src                          \
 		jni/src jni/src/sqlite                    \
 		jni/src/script                            \
 		jni/src/lua/src                           \
@@ -95,7 +110,7 @@ LOCAL_C_INCLUDES :=                               \
 		jni/src/cguittfont                        \
 		deps/irrlicht/include                     \
 		deps/freetype2-android/include            \
-		deps/curl-7.39.0/include                  \
+		deps/curl-7.40.0/include                  \
 		deps/openal-soft/jni/OpenAL/include       \
 		deps/libvorbis-libogg-android/jni/include \
 		deps/leveldb/include                      \
@@ -323,6 +338,20 @@ LOCAL_SRC_FILES += jni/src/json/jsoncpp.cpp
 
 LOCAL_SHARED_LIBRARIES := openal ogg vorbis
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
+
+
+LOCAL_SRC_FILES += \
+		jni/src/enet/callbacks.c                 \
+		jni/src/enet/compress.c                  \
+		jni/src/enet/host.c                      \
+		jni/src/enet/list.c                      \
+		jni/src/enet/packet.c                    \
+		jni/src/enet/peer.c                      \
+		jni/src/enet/protocol.c                  \
+		jni/src/enet/unix.c
+
+LOCAL_STATIC_LIBRARIES += iconv msgpack
+
 
 ifeq ($(HAVE_LEVELDB), 1)
 	LOCAL_STATIC_LIBRARIES += LevelDB

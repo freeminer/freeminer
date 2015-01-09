@@ -136,7 +136,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_formspec_version(0),
 	m_font(NULL)
 #ifdef __ANDROID__
-	,m_JavaDialogFieldName(L"")
+	,m_JavaDialogFieldName("")
 #endif
 {
 	current_keys_pending.key_down = false;
@@ -2063,7 +2063,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 bool GUIFormSpecMenu::getAndroidUIInput()
 {
 	/* no dialog shown */
-	if (m_JavaDialogFieldName == L"") {
+	if (m_JavaDialogFieldName == "") {
 		return false;
 	}
 
@@ -2072,8 +2072,8 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 		return true;
 	}
 
-	std::wstring fieldname = m_JavaDialogFieldName;
-	m_JavaDialogFieldName = L"";
+	std::string fieldname = m_JavaDialogFieldName;
+	m_JavaDialogFieldName = "";
 
 	/* no value abort dialog processing */
 	if (porting::getInputDialogState() != 0) {

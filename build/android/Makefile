@@ -117,7 +117,7 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.39.0
+CURL_VERSION = 7.40.0
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
@@ -674,9 +674,144 @@ assets : $(ASSETS_TIMESTAMP)
 
 clean_assets :
 	@$(RM) -r assets
+
+
+#=== freeminer libs:
+.PHONY : $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
+		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv
+
+MSGPACK_DIR = $(ROOT)/deps/msgpack/
+MSGPACK_LIB = $(MSGPACK_DIR)lib/Android/libmsgpack.a
+MSGPACK_TIMESTAMP = $(MSGPACK_DIR)timestamp
+MSGPACK_TIMESTAMP_INT = $(ROOT)/deps/msgpack_timestamp
+MSGPACK_URL_GIT = https://github.com/msgpack/msgpack-c
+MSGPACK_TARGET = $(MSGPACK_DIR)/include/msgpack.hpp
+
+$(MSGPACK_TIMESTAMP) : msgpack_download
+	@LAST_MODIF=$$(find ${MSGPACK_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
+	if [ $$(basename $$LAST_MODIF) != "timestamp" ] ; then                     \
+		touch ${MSGPACK_TIMESTAMP};                                            \
+	fi
+
+msgpack_download :
+	@if [ ! -d ${MSGPACK_DIR} ] ; then                                         \
+		echo "msgpack sources missing, downloading...";                        \
+		mkdir -p ${ROOT}/deps;                                                 \
+		cd ${ROOT}/deps ;                                                      \
+		git clone ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;                 \
+	fi
+	
+msgpack : $(MSGPACK_LIB)
+
+$(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
+	@REFRESH=0;                                                                \
+	if [ ! -e ${MSGPACK_TIMESTAMP_INT} ] ; then                                \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ ${MSGPACK_TIMESTAMP} -nt ${MSGPACK_TIMESTAMP_INT} ] ; then            \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ $$REFRESH -ne 0 ] ; then                                              \
+	export PATH=$${PATH}:${SDKFOLDER}/platform-tools:${ANDROID_NDK};           \
+	echo "changed timestamp for msgpack detected building...";                 \
+	cd deps/msgpack;                                                           \
+	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
+	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-msgpack;                          \
+	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
+	export CC=${CROSS_PREFIX}gcc;                                              \
+	export CXX=${CROSS_PREFIX}g++;                                             \
+	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
+	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
+	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
+	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
+	cmake -DMSGPACK_CXX11=ON .;                                                \
+	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
+	touch ${MSGPACK_TIMESTAMP};                                                \
+	touch ${MSGPACK_TIMESTAMP_INT};                                            \
+	#$(RM) -rf $${TOOLCHAIN};                                                   \
+	else                                                                       \
+		echo "nothing to be done for msgpack";                                 \
+	fi
+	
+clean_msgpack :
+	$(RM) -rf deps/msgpack
+
+
+ICONV_VERSION = 1.14
+ICONV_DIR = $(ROOT)/deps/libiconv-$(ICONV_VERSION)
+ICONV_LIB = $(ICONV_DIR)/lib/.libs/libiconv.a
+ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
+ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
+ICONV_FILE=libiconv-$(ICONV_VERSION).tar.gz
+ICONV_URL=http://ftp.gnu.org/pub/gnu/libiconv/$(ICONV_FILE)
+
+$(ICONV_TIMESTAMP) : iconv_download
+	@LAST_MODIF=$$(find ${ICONV_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
+	if [ $$(basename $$LAST_MODIF) != "timestamp" ] ; then                     \
+		touch ${ICONV_TIMESTAMP};                                              \
+	fi
+
+iconv_download :
+	@if [ ! -d ${ICONV_DIR} ] ; then                                           \
+		echo "iconv sources missing, downloading...";                          \
+		mkdir -p ${ROOT}/deps;                                                 \
+		cd ${ROOT}/deps ;                                                      \
+		wget ${ICONV_URL} -O $(ICONV_FILE) || exit 1;                          \
+		tar -xzf $(ICONV_FILE);                                                \
+		cd ${ICONV_DIR};                                                       \
+		#patch -p1 < ../../iconv.patch;                                        \
+	fi
+
+iconv : $(ICONV_LIB)
+
+$(ICONV_LIB): $(ICONV_TIMESTAMP)
+	@REFRESH=0;                                                                \
+	if [ ! -e ${ICONV_TIMESTAMP_INT} ] ; then                                  \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ ${ICONV_TIMESTAMP} -nt ${ICONV_TIMESTAMP_INT} ] ; then                \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ $$REFRESH -ne 0 ] ; then                                              \
+	export PATH=$${PATH}:${SDKFOLDER}/platform-tools:${ANDROID_NDK};           \
+	echo "changed timestamp for iconv detected building...";                   \
+	cd $(ICONV_DIR);                                                           \
+	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
+	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-iconv;                            \
+	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
+	export CC=${CROSS_PREFIX}gcc;                                              \
+	export CXX=${CROSS_PREFIX}g++;                                             \
+	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
+	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
+	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
+	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
+	#cmake -DICONV_CXX11=ON .                                                  \
+	#./bootstrap                                                               \
+	./configure --host=${TARGET_HOST} --disable-shared --enable-static;        \
+	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
+	touch ${ICONV_TIMESTAMP};                                                  \
+	touch ${ICONV_TIMESTAMP_INT};                                              \
+	#$(RM) -rf $${TOOLCHAIN};                                                   \
+	else                                                                       \
+		echo "nothing to be done for iconv";                                   \
+	fi
+	
+clean_iconv :
+	$(RM) -rf deps/iconv
+
+#==== end of freeminer libs
+
+
 	
 apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
+	$(MSGPACK_TARGET) $(ICONV_LIB)                                             \
 	sqlite3_download
 	@export NDEBUG=$$NDEBUG; $(MAKE) -j${PARALLEL} manifest;                   \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \
