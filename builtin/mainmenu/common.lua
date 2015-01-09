@@ -25,6 +25,7 @@ menudata = {}
 
 --------------------------------------------------------------------------------
 local function render_client_count(n)
+	n = n + 0
 	if n > 99 then
 		return '99+'
 	elseif n >= 0 then
