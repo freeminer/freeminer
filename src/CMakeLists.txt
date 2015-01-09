@@ -182,8 +182,6 @@ endif()
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
-mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
-mark_as_advanced(JSON_INCLUDE_DIR JSON_LIBRARY)
 
 find_package(MsgPack)
 
@@ -356,7 +354,7 @@ else()
 	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
 endif()
 
-find_package(Sqlite3 REQUIRED)
+find_package(SQLite3 REQUIRED)
 find_package(Json REQUIRED)
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
@@ -892,6 +890,9 @@ if(WIN32)
 	if(FREETYPE_DLL)
 		install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
 	endif()
+	if(SQLITE3_DLL)
+		install(FILES ${SQLITE3_DLL} DESTINATION ${BINDIR})
+	endif()
 	if(LEVELDB_DLL)
 		install(FILES ${LEVELDB_DLL} DESTINATION ${BINDIR})
 	endif()
@@ -955,11 +956,6 @@ if (USE_GETTEXT)
 endif(USE_GETTEXT)
 
 # Subdirectories
-
-if (SQLITE3_FOUND)
-else (SQLITE3_FOUND)
-	add_subdirectory(sqlite)
-endif (SQLITE3_FOUND)
 
 if (BUILD_CLIENT)
 	add_subdirectory(cguittfont)

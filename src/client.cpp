@@ -217,6 +217,7 @@ Client::Client(
 		device->getSceneManager(),
 		tsrc, this, device
 	),
+	m_particle_manager(&m_env),
 	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
@@ -2307,6 +2308,11 @@ ISoundManager* Client::getSoundManager()
 MtEventManager* Client::getEventManager()
 {
 	return m_event;
+}
+
+ParticleManager* Client::getParticleManager()
+{
+	return &m_particle_manager;
 }
 
 scene::IAnimatedMesh* Client::getMesh(const std::string &filename)

@@ -442,6 +442,7 @@ public:
 	virtual u16 allocateUnknownNodeId(const std::string &name);
 	virtual ISoundManager* getSoundManager();
 	virtual MtEventManager* getEventManager();
+	virtual ParticleManager* getParticleManager();
 	virtual bool checkLocalPrivilege(const std::string &priv)
 	{ return checkPrivilege(priv); }
 	virtual scene::IAnimatedMesh* getMesh(const std::string &filename);
@@ -485,10 +486,10 @@ private:
 	ISoundManager *m_sound;
 	MtEventManager *m_event;
 
-public:
 	MeshUpdateThread m_mesh_update_thread;
 private:
 	ClientEnvironment m_env;
+	ParticleManager m_particle_manager;
 public:
 	con::Connection m_con;
 private:

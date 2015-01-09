@@ -310,6 +310,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
+	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
 	settings->setDefault("hud_hotbar_max_width","1.0");
 	
@@ -478,10 +479,10 @@ void set_default_settings(Settings *settings)
 	float x_inches = ((double) porting::getDisplaySize().X /
 			(160 * porting::getDisplayDensity()));
 	if (x_inches  < 3.5) {
-		settings->setDefault("gui_scaling", "0.6");
+		settings->setDefault("hud_scaling", "0.6");
 	}
 	else if (x_inches < 4.5) {
-		settings->setDefault("gui_scaling", "0.7");
+		settings->setDefault("hud_scaling", "0.7");
 	}
 	settings->setDefault("curl_verify_cert","false");
 
