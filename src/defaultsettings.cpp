@@ -488,6 +488,9 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
+	settings->setDefault("new_style_leaves", "false");
+	settings->setDefault("mip_map", "true");
+	settings->setDefault("active_block_range", "1");
 
 #else
 	settings->setDefault("screen_dpi", "72");

@@ -765,7 +765,7 @@ iconv_download :
 		wget ${ICONV_URL} -O $(ICONV_FILE) || exit 1;                          \
 		tar -xzf $(ICONV_FILE);                                                \
 		cd ${ICONV_DIR};                                                       \
-		#patch -p1 < ../../iconv.patch;                                        \
+		patch -p1 < ../../iconv.patch;                                         \
 	fi
 
 iconv : $(ICONV_LIB)
@@ -794,8 +794,6 @@ $(ICONV_LIB): $(ICONV_TIMESTAMP)
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
-	#cmake -DICONV_CXX11=ON .                                                  \
-	#./bootstrap                                                               \
 	./configure --host=${TARGET_HOST} --disable-shared --enable-static;        \
 	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
 	touch ${ICONV_TIMESTAMP};                                                  \
