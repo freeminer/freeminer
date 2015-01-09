@@ -34,7 +34,7 @@ elseif INIT == "mainmenu" then
 	if mainmenuscript ~= nil and mainmenuscript ~= "" then
 		dofile(mainmenuscript)
 	else
-		dofile(core.get_mainmenu_path()..DIR_DELIM.."init.lua")
+		dofile(core.get_mainmenu_path()..DIR_DELIM.."fm_init.lua")
 	end
 elseif INIT == "async" then
 	dofile(asyncpath.."init.lua")
