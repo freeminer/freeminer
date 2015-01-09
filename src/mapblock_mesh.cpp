@@ -1070,7 +1070,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
 	step(data->step),
 	timestamp(data->timestamp),
-	m_mesh(new scene::SMesh()),
+	m_mesh(nullptr),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
@@ -1080,6 +1080,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_daynight_diffs(),
 	m_usage_timer(0)
 {
+	m_mesh = new scene::SMesh();
 	m_enable_shaders = g_settings->getBool("enable_shaders");
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
