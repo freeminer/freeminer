@@ -34,7 +34,11 @@ elseif INIT == "mainmenu" then
 	if mainmenuscript ~= nil and mainmenuscript ~= "" then
 		dofile(mainmenuscript)
 	else
+	  if PLATFORM == "Android" then
+		dofile(core.get_mainmenu_path()..DIR_DELIM.."init.lua")
+	  else
 		dofile(core.get_mainmenu_path()..DIR_DELIM.."fm_init.lua")
+	  end
 	end
 elseif INIT == "async" then
 	dofile(asyncpath.."init.lua")

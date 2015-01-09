@@ -646,8 +646,8 @@ assets : $(ASSETS_TIMESTAMP)
 	echo "assets changed, refreshing...";                                      \
 	$(MAKE) -j${PARALLEL} clean_assets;                                        \
 	mkdir -p ${ROOT}/assets/freeminer;                                          \
-	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;            \
-	cp ${ROOT}/../../README.txt ${ROOT}/assets/freeminer;                       \
+	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;           \
+	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer;                        \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer;                       \
 	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer;                        \
 	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer;                           \
