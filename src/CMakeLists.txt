@@ -354,7 +354,6 @@ else()
 	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
 endif()
 
-find_package(SQLite3 REQUIRED)
 find_package(Json REQUIRED)
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
@@ -490,6 +489,26 @@ endif(ENABLE_LEVELDB)
 # this is needed because VS builds install LevelDB via nuget
 if(FORCE_LEVELDB)
 	set(USE_LEVELDB 1)
+endif()
+
+set(USE_SQLITE3 0)
+
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+
+if(ENABLE_SQLITE3)
+	find_package(SQLite3)
+	if(SQLITE3_LIBRARY AND SQLITE3_INCLUDE_DIR)
+		set(USE_SQLITE3 1)
+		message(STATUS "sqlite3 backend enabled")
+		include_directories(${SQLITE3_INCLUDE_DIR})
+	else()
+		set(USE_SQLITE3 0)
+		message(STATUS "sqlite3 not found!")
+	endif()
+endif()
+
+if(FORCE_SQLITE3)
+	set(USE_SQLITE3 1)
 endif()
 
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
@@ -733,7 +752,6 @@ include_directories(
 	${PNG_INCLUDE_DIR}
 	${GETTEXT_INCLUDE_DIR}
 	${SOUND_INCLUDE_DIRS}
-	${SQLITE3_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${MSGPACK_INCLUDE_DIRS}
@@ -768,7 +786,6 @@ if(BUILD_CLIENT)
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARIES}
@@ -811,7 +828,10 @@ if(BUILD_CLIENT)
 	)
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
-	endif(USE_LEVELDB AND NOT FORCE_LEVELDB)
+	endif()
+	if (USE_SQLITE3 AND NOT FORCE_SQLITE3)
+		target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARY})
+	endif()
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif(USE_REDIS)
@@ -828,7 +848,6 @@ if(BUILD_SERVER)
 	target_link_libraries(
 		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
