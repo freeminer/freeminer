@@ -51,7 +51,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := iconv
-LOCAL_SRC_FILES := deps/libiconv-1.14/lib/.libs/libiconv.a
+LOCAL_SRC_FILES := deps/libiconv/lib/.libs/libiconv.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -100,7 +100,7 @@ endif
 LOCAL_C_INCLUDES :=                               \
 		jni/src/enet/include                      \
 		deps/msgpack/include                      \
-		deps/libiconv-1.14/include                \
+		deps/libiconv/include                     \
 		deps/msgpack/src                          \
 		jni/src jni/src/sqlite                    \
 		jni/src/script                            \

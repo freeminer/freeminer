@@ -744,7 +744,7 @@ clean_msgpack :
 
 
 ICONV_VERSION = 1.14
-ICONV_DIR = $(ROOT)/deps/libiconv-$(ICONV_VERSION)
+ICONV_DIR = $(ROOT)/deps/libiconv
 ICONV_LIB = $(ICONV_DIR)/lib/.libs/libiconv.a
 ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
@@ -762,8 +762,9 @@ iconv_download :
 		echo "iconv sources missing, downloading...";                          \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		wget ${ICONV_URL} -O $(ICONV_FILE) || exit 1;                          \
+		[ -f $(ICONV_FILE) ] || wget ${ICONV_URL} -O $(ICONV_FILE) || exit 1;                          \
 		tar -xzf $(ICONV_FILE);                                                \
+		mv libiconv-$(ICONV_VERSION) ${ICONV_DIR};                             \
 		cd ${ICONV_DIR};                                                       \
 		patch -p1 < ../../iconv.patch;                                         \
 	fi
