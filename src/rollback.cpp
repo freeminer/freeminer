@@ -157,6 +157,8 @@ int RollbackManager::getActorId(const std::string &name)
 	registerNewActor(id, name);
 
 	return id;
+#else
+	return 0;
 #endif
 }
 
@@ -179,6 +181,8 @@ int RollbackManager::getNodeId(const std::string &name)
 	registerNewNode(id, name);
 
 	return id;
+#else
+	return 0;
 #endif
 }
 
@@ -471,6 +475,8 @@ bool RollbackManager::registerRow(const ActionRow & row)
 	SQLOK(sqlite3_reset(stmt_do));
 
 	return written == SQLITE_DONE;
+#else
+	return false;
 #endif
 }
 
