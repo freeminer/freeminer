@@ -2226,7 +2226,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 		#if USE_LEVELDB
 		dbase = new Database_LevelDB(this, savedir);
 		conf.set("backend", "leveldb");
-		#elsif USE_SQLITE3
+		#elif USE_SQLITE3
 		dbase = new Database_SQLite3(this, savedir);
 		conf.set("backend", "sqlite3");
 		#endif
