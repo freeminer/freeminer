@@ -2062,7 +2062,7 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 		std::string text = porting::getInputDialogValue();
 
 		((gui::IGUIEditBox*) tochange)->
-			setText(narrow_to_wide(text).c_str());
+			setText(utf8_to_wide(text).c_str());
 	}
 	return false;
 }

@@ -192,7 +192,7 @@ struct LocalFormspecHandler : public TextDest {
 			if ((fields.find("btn_send") != fields.end()) ||
 					(fields.find("quit") != fields.end())) {
 				if (fields.find("f_text") != fields.end()) {
-					m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
+					m_client->typeChatMessage(utf8_to_wide(fields["f_text"]));
 				}
 
 				return;
@@ -2449,7 +2449,7 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
+			draw_load_screen(utf8_to_wide(message.str()), device,
 					guienv, dtime, progress);
 		}
 
@@ -2853,7 +2853,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 
 	if (quicktune->hasMessage()) {
 		std::string msg = quicktune->getMessage();
-		statustext = narrow_to_wide(msg);
+		statustext = utf8_to_wide(msg);
 		*statustext_time = 0;
 	}
 }
@@ -3840,10 +3840,10 @@ void Game::handlePointingAtObject(GameRunData *runData,
 		const v3f &player_position,
 		bool show_debug)
 {
-	infotext = narrow_to_wide(runData->selected_object->infoText());
+	infotext = utf8_to_wide(runData->selected_object->infoText());
 
 	if (infotext == L"" && show_debug) {
-		infotext = narrow_to_wide(runData->selected_object->debugInfoText());
+		infotext = utf8_to_wide(runData->selected_object->debugInfoText());
 	}
 
 	if (input->getLeftState()) {
@@ -4412,7 +4412,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 			}
 		}
 
-		guitext2->setText(narrow_to_wide(os.str()).c_str());
+		guitext2->setText(utf8_to_wide(os.str()).c_str());
 		guitext2->setVisible(true);
 
 		core::rect<s32> rect(
