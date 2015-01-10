@@ -234,6 +234,28 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	bool touching_ground_was = touching_ground;
 	touching_ground = result.touching_ground;
+
+	if (g_settings->getBool("autojump")) {
+		v3f normalized_speed(old_speed);
+		if (control.up) {
+			normalized_speed.setLength(BS / 1.5);
+
+			v3s16 jumping_over(myround((normalized_speed.X + position.X) / BS), position.Y / BS + 0.5, myround((normalized_speed.Z + position.Z) / BS));
+			v3s16 jumping_over_top = jumping_over + v3s16(0, 1, 0);
+			v3s16 jumping_over_top2 = jumping_over + v3s16(0, 2, 0);
+				if (fabs(m_speed.Y) < 1e-6 && nodemgr->get(map->getNodeNoEx(jumping_over)).walkable
+						&& !nodemgr->get(map->getNodeNoEx(jumping_over_top)).walkable
+						&& !nodemgr->get(map->getNodeNoEx(jumping_over_top2)).walkable) {
+						// todo: test here low level leveled nodes like snow to not jump
+					m_speed.Y += BS * 8;
+					touching_ground = false;
+					return;
+				} else {
+				}
+
+		}
+	}
+
     
     //bool standing_on_unloaded = result.standing_on_unloaded;
 

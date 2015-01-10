@@ -1244,7 +1244,11 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		material.setFlag(video::EMF_BACK_FACE_CULLING, true);
 		material.setFlag(video::EMF_BILINEAR_FILTER, false);
 		material.setFlag(video::EMF_FOG_ENABLE, true);
+#ifdef __ANDROID__
+		material.setFlag(video::EMF_ZWRITE_ENABLE, true);
+#endif
 		//material.setFlag(video::EMF_WIREFRAME, true);
+
 		material.setTexture(0, p.tile.texture);
 
 		if (p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED) {

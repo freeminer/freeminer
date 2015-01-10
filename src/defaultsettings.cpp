@@ -322,6 +322,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("respawn_auto", "false");
+	settings->setDefault("autojump", "0");
 	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("enable_local_map_saving", "false");
 	settings->setDefault("enable_build_where_you_stand", "false");
@@ -491,6 +492,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("new_style_leaves", "false");
 	settings->setDefault("mip_map", "true");
 	settings->setDefault("active_block_range", "1");
+	settings->setDefault("autojump", "1");
 
 #else
 	settings->setDefault("screen_dpi", "72");

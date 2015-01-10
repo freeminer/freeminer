@@ -128,7 +128,10 @@ const wchar_t* wide_chars =
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";
 
-int wctomb(char *s, wchar_t wc)
+int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
+int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
+
+int mt_wctomb(char *s, wchar_t wc)
 {
 	for (unsigned int j = 0; j < (sizeof(wide_chars)/sizeof(wchar_t));j++) {
 		if (wc == wide_chars[j]) {
@@ -143,7 +146,7 @@ int wctomb(char *s, wchar_t wc)
 	return -1;
 }
 
-int mbtowc(wchar_t *pwc, const char *s, size_t n)
+int mt_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
 	std::wstring intermediate = narrow_to_wide(s);
 
