@@ -279,7 +279,7 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		ss<<"gameid = "<<gameid<<
 #if USE_LEVELDB
 				"\nbackend = leveldb\n";
-#else
+#elif USE_SQLITE3
 				"\nbackend = sqlite3\n";
 #endif
 		fs::safeWriteToFile(worldmt_path, ss.str());

@@ -48,6 +48,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "filesys.h"
 
+#if USE_SQLITE3
+
 Database_SQLite3::Database_SQLite3(ServerMap *map, std::string savedir)
 {
 	m_database = NULL;
@@ -292,3 +294,5 @@ Database_SQLite3::~Database_SQLite3()
 				<< "Failed to close database: rc=" << rc << std::endl;
 	}
 }
+
+#endif

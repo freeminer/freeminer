@@ -83,13 +83,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fontengine.h"
 
 #include "database-sqlite3.h"
-#ifdef USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-
-#if USE_REDIS
 #include "database-redis.h"
-#endif
 
 #include "enet/enet.h"
 
@@ -1505,9 +1500,13 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
-	if (migrate_to == "sqlite3")
+	if (migrate_to == "__magic world ")
+		0;
+#if USE_SQLITE3
+	else if (migrate_to == "sqlite3")
 		new_db = new Database_SQLite3(&(ServerMap&)server->getMap(),
 				game_params.world_path);
+#endif
 #if USE_LEVELDB
 	else if (migrate_to == "leveldb")
 		new_db = new Database_LevelDB(&(ServerMap&)server->getMap(),

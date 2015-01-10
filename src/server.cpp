@@ -1281,7 +1281,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
-					g_settings->getBool("enable_rollback_recording");
+#if USE_SQLITE
+ 					g_settings->getBool("enable_rollback_recording");
+#else
+					0;
+#endif
 		}
 	}
 

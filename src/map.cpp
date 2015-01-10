@@ -48,12 +48,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
-#if USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-#if USE_REDIS
 #include "database-redis.h"
-#endif
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -2227,14 +2223,22 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	bool succeeded = conf.readConfigFile(conf_path.c_str());
 	if (!succeeded || !conf.exists("backend")) {
 		// fall back to sqlite3
+		#if USE_LEVELDB
+		dbase = new Database_LevelDB(this, savedir);
+		conf.set("backend", "leveldb");
+		#elsif USE_SQLITE3
 		dbase = new Database_SQLite3(this, savedir);
 		conf.set("backend", "sqlite3");
-	} else {
+		#endif
+	}
+	else {
 		std::string backend = conf.get("backend");
 		if (backend == "dummy")
 			dbase = new Database_Dummy(this);
+		#if USE_SQLITE3
 		else if (backend == "sqlite3")
 			dbase = new Database_SQLite3(this, savedir);
+		#endif
 		#if USE_LEVELDB
 		else if (backend == "leveldb")
 			dbase = new Database_LevelDB(this, savedir);

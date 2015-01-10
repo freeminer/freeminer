@@ -32,7 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "util/numeric.h"
 #include "inventorymanager.h" // deserializing InventoryLocations
-#include "sqlite3.h"
 #include "filesys.h"
 
 #define POINTS_PER_NODE (16.0)
@@ -110,6 +109,7 @@ RollbackManager::RollbackManager(const std::string & world_path,
 
 RollbackManager::~RollbackManager()
 {
+#if USE_SQLITE3
 	SQLOK(sqlite3_finalize(stmt_insert));
 	SQLOK(sqlite3_finalize(stmt_replace));
 	SQLOK(sqlite3_finalize(stmt_select));
@@ -121,6 +121,7 @@ RollbackManager::~RollbackManager()
 	SQLOK(sqlite3_finalize(stmt_knownNode_insert));
 
 	SQLOK(sqlite3_close(db));
+#endif
 }
 
 
@@ -140,6 +141,7 @@ void RollbackManager::registerNewNode(const int id, const std::string &name)
 
 int RollbackManager::getActorId(const std::string &name)
 {
+#if USE_SQLITE3
 	for (std::vector<Entity>::const_iterator iter = knownActors.begin();
 			iter != knownActors.end(); ++iter) {
 		if (iter->name == name) {
@@ -155,11 +157,13 @@ int RollbackManager::getActorId(const std::string &name)
 	registerNewActor(id, name);
 
 	return id;
+#endif
 }
 
 
 int RollbackManager::getNodeId(const std::string &name)
 {
+#if USE_SQLITE3
 	for (std::vector<Entity>::const_iterator iter = knownNodes.begin();
 			iter != knownNodes.end(); ++iter) {
 		if (iter->name == name) {
@@ -175,6 +179,7 @@ int RollbackManager::getNodeId(const std::string &name)
 	registerNewNode(id, name);
 
 	return id;
+#endif
 }
 
 
@@ -206,6 +211,7 @@ const char * RollbackManager::getNodeName(const int id)
 
 bool RollbackManager::createTables()
 {
+#if USE_SQLITE3
 	SQLOK(sqlite3_exec(db,
 		"CREATE TABLE IF NOT EXISTS `actor` (\n"
 		"	`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
@@ -248,12 +254,14 @@ bool RollbackManager::createTables()
 		NULL, NULL, NULL));
 	verbosestream << "SQL Rollback: SQLite3 database structure was created" << std::endl;
 
+#endif
 	return true;
 }
 
 
 void RollbackManager::initDatabase()
 {
+#if USE_SQLITE3
 	verbosestream << "RollbackManager: Database connection setup" << std::endl;
 
 	bool needsCreate = !fs::PathExists(database_path);
@@ -376,11 +384,13 @@ void RollbackManager::initDatabase()
 		);
 	}
 	SQLOK(sqlite3_reset(stmt_knownNode_select));
+#endif
 }
 
 
 bool RollbackManager::registerRow(const ActionRow & row)
 {
+#if USE_SQLITE3
 	sqlite3_stmt * stmt_do = (row.id) ? stmt_replace : stmt_insert;
 
 	bool nodeMeta = false;
@@ -461,9 +471,11 @@ bool RollbackManager::registerRow(const ActionRow & row)
 	SQLOK(sqlite3_reset(stmt_do));
 
 	return written == SQLITE_DONE;
+#endif
 }
 
 
+#if USE_SQLITE3
 const std::list<ActionRow> RollbackManager::actionRowsFromSelect(sqlite3_stmt* stmt)
 {
 	std::list<ActionRow> rows;
@@ -528,6 +540,7 @@ const std::list<ActionRow> RollbackManager::actionRowsFromSelect(sqlite3_stmt* s
 
 	return rows;
 }
+#endif
 
 
 ActionRow RollbackManager::actionRowFromRollbackAction(const RollbackAction & action)
@@ -615,6 +628,7 @@ const std::list<RollbackAction> RollbackManager::rollbackActionsFromActionRows(
 
 const std::list<ActionRow> RollbackManager::getRowsSince(time_t firstTime, const std::string & actor)
 {
+#if USE_SQLITE3
 	sqlite3_stmt *stmt_stmt = actor.empty() ? stmt_select : stmt_select_withActor;
 	sqlite3_bind_int64(stmt_stmt, 1, firstTime);
 
@@ -626,12 +640,16 @@ const std::list<ActionRow> RollbackManager::getRowsSince(time_t firstTime, const
 	sqlite3_reset(stmt_stmt);
 
 	return rows;
+#else
+	return std::list<ActionRow>();
+#endif
 }
 
 
 const std::list<ActionRow> RollbackManager::getRowsSince_range(
 		time_t start_time, v3s16 p, int range, int limit)
 {
+#if USE_SQLITE3
 
 	sqlite3_bind_int64(stmt_select_range, 1, start_time);
 	sqlite3_bind_int  (stmt_select_range, 2, static_cast<int>(p.X - range));
@@ -646,6 +664,10 @@ const std::list<ActionRow> RollbackManager::getRowsSince_range(
 	sqlite3_reset(stmt_select_range);
 
 	return rows;
+#else
+	return std::list<ActionRow>();
+#endif
+
 }
 
 
@@ -665,6 +687,7 @@ const std::list<RollbackAction> RollbackManager::getActionsSince(
 
 void RollbackManager::migrate(const std::string & file_path)
 {
+#if USE_SQLITE3
 	std::cout << "Migrating from rollback.txt to rollback.sqlite." << std::endl;
 
 	std::ifstream fh(file_path.c_str(), std::ios::in | std::ios::ate);
@@ -772,6 +795,7 @@ void RollbackManager::migrate(const std::string & file_path)
 	std::cout
 		<< " Done: 100%                                   " << std::endl
 		<< "Now you can delete the old rollback.txt file." << std::endl;
+#endif
 }
 
 
@@ -894,6 +918,7 @@ std::string RollbackManager::getSuspect(v3s16 p, float nearness_shortcut,
 
 void RollbackManager::flush()
 {
+#if USE_SQLITE3
 	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 
 	std::list<RollbackAction>::const_iterator iter;
@@ -910,6 +935,7 @@ void RollbackManager::flush()
 
 	sqlite3_exec(db, "COMMIT", NULL, NULL, NULL);
 	action_todisk_buffer.clear();
+#endif
 }
 
 
