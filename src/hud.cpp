@@ -313,11 +313,11 @@ void Hud::drawLuaElements(v3s16 camera_offset) {
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
 				core::rect<s32> size(0, 0, 200, 2 * text_height);
-				std::wstring text = narrow_to_wide(e->name);
+				std::wstring text = utf8_to_wide(e->name);
 				font->draw(text.c_str(), size + pos, color);
 				std::ostringstream os;
 				os<<distance<<e->text;
-				text = narrow_to_wide(os.str());
+				text = utf8_to_wide(os.str());
 				pos.Y += text_height;
 				font->draw(text.c_str(), size + pos, color);
 				break; }
