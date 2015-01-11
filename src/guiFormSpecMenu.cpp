@@ -2688,7 +2688,12 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 				{
 					IGUIElement* e = getElementFromId(s.fid);
 					if(e != NULL) {
+#ifdef __ANDROID__
+// ugly temporary fix
 						fields[s.fname] = wide_to_narrow(e->getText());
+#else
+						fields[s.fname] = wide_to_utf8(e->getText());
+#endif
 					}
 				}
 			}

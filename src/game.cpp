@@ -1063,7 +1063,7 @@ static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
 		FORMSPEC_VERSION_STRING
 		SIZE_TAG
 		"field[3,2.35;6,0.5;f_text;;" + text + "]"
-		"button_exit[4,3;3,0.5;btn_send;" + wide_to_narrow(wstrgettext("Proceed")) + "]"
+		"button_exit[4,3;3,0.5;btn_send;" + (_("Proceed")) + "]"
 		;
 
 	/* Create menu */
@@ -1104,7 +1104,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 		bool singleplayermode)
 {
 #ifdef __ANDROID__
-	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
+	std::string control_text = (_("Default Controls:\n"
 				   "No menu visible:\n"
 				   "- single tap: button activate\n"
 				   "- double tap: place/use\n"
@@ -1118,7 +1118,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 				   " --> place single item to slot\n"
 							     ));
 #else
-	std::string control_text = wide_to_narrow(wstrgettext("Default Controls:\n"
+	std::string control_text = (_("Default Controls:\n"
 				   "- WASD: move\n"
 				   "- Space: jump/climb\n"
 				   "- Shift: sneak/go down\n"
@@ -1137,21 +1137,21 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
 	   << "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
-	   << wide_to_narrow(wstrgettext("Continue"))     << "]";
+	   << (_("Continue"))     << "]";
 
 	if (!singleplayermode) {
 		os << "button_exit[4," << (ypos++) << ";3,0.5;btn_change_password;"
-		   << wide_to_narrow(wstrgettext("Change Password")) << "]";
+		   << (_("Change Password")) << "]";
 	}
 
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
-			<< wide_to_narrow(wstrgettext("Sound Volume")) << "]";
+			<< (_("Sound Volume")) << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_key_config;"
-			<< wide_to_narrow(wstrgettext("Change Keys"))  << "]";
+			<< (_("Change Keys"))  << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
-			<< wide_to_narrow(wstrgettext("Exit to Menu")) << "]";
+			<< (_("Exit to Menu")) << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"
-			<< wide_to_narrow(wstrgettext("Exit to OS"))   << "]"
+			<< (_("Exit to OS"))   << "]"
 ;
 /*
 			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
