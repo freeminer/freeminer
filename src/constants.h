@@ -95,10 +95,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define PLAYER_MAX_HP 20
 
 /*
- *    GUI related things
- */
-#define LEGACY_SCALING                                     (2./3.)
-#define TTF_DEFAULT_FONT_SIZE              (12.0 / LEGACY_SCALING)
-#define DEFAULT_FONT_SIZE                                     (14)
+    GUI related things
+*/
+#define TTF_DEFAULT_FONT_SIZE   (14)
+#define DEFAULT_FONT_SIZE       (10)
 
 #endif
