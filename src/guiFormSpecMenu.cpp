@@ -700,7 +700,7 @@ void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
 
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
-		std::wstring fname_w = narrow_to_wide(name.c_str());
+		std::wstring fname_w = utf8_to_wide(name);
 
 		FieldSpec spec(
 			name,
@@ -773,7 +773,7 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
 
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
-		std::wstring fname_w = narrow_to_wide(name.c_str());
+		std::wstring fname_w = utf8_to_wide(name);
 
 		FieldSpec spec(
 			name,
@@ -836,7 +836,7 @@ void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y,
 				pos.X + width, pos.Y + (m_btn_height * 2));
 
-		std::wstring fname_w = narrow_to_wide(name.c_str());
+		std::wstring fname_w = utf8_to_wide(name);
 
 		FieldSpec spec(
 			name,
@@ -909,7 +909,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 		FieldSpec spec(
 			name,
 			wlabel,
-			narrow_to_wide(default_val.c_str()),
+			utf8_to_wide(default_val),
 			258+m_fields.size()
 			);
 
@@ -970,7 +970,7 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 	default_val = unescape_string(default_val);
 	label = unescape_string(label);
 
-	std::wstring wlabel = narrow_to_wide(label.c_str());
+	std::wstring wlabel = utf8_to_wide(label);
 
 	FieldSpec spec(
 		name,
@@ -1060,7 +1060,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	default_val = unescape_string(default_val);
 	label = unescape_string(label);
 
-	std::wstring wlabel = narrow_to_wide(label.c_str());
+	std::wstring wlabel = utf8_to_wide(label);
 
 	FieldSpec spec(
 		name,
@@ -1284,7 +1284,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 		pressed_image_name = unescape_string(pressed_image_name);
 		label = unescape_string(label);
 
-		std::wstring wlabel = narrow_to_wide(label.c_str());
+		std::wstring wlabel = utf8_to_wide(label);
 
 		FieldSpec spec(
 			name,
@@ -2688,7 +2688,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 				{
 					IGUIElement* e = getElementFromId(s.fid);
 					if(e != NULL) {
-						fields[s.fname] = wide_to_utf8(e->getText());
+						fields[s.fname] = wide_to_narrow(e->getText());
 					}
 				}
 			}
