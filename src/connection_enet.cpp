@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "connection.h"
+#include "connection_enet.h"
 #include "main.h"
 #include "serialization.h"
 #include "log.h"
@@ -49,7 +49,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_enet_host(0),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
-	m_bc_receive_timeout(1)
+	m_bc_receive_timeout(1),
+	m_last_recieved(0),
+	m_last_recieved_warn(0)
 {
 	start();
 }
@@ -76,7 +78,6 @@ void * Connection::Thread()
 			ConnectionCommand c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
-
 		receive();
 	}
 
@@ -132,13 +133,13 @@ void Connection::processCommand(ConnectionCommand &c)
 void Connection::receive()
 {
 	if (!m_enet_host) {
-		//errorstream<<"enet_host_service failed : no m_enet_host " << std::endl;
 		return;
 	}
 	ENetEvent event;
 	int ret = enet_host_service(m_enet_host, & event, 10);
 	if (ret > 0)
 	{
+		m_last_recieved = porting::getTimeMs();
 		switch (event.type)
 		{
 		case ENET_EVENT_TYPE_CONNECT:
@@ -183,6 +184,25 @@ void Connection::receive()
 		}
 	} else if (ret < 0) {
 		errorstream<<"enet_host_service failed = "<< ret << std::endl;
+		if (m_peers.count(PEER_ID_SERVER))
+			deletePeer(PEER_ID_SERVER,  false);
+	} else { //0
+		if (m_peers.count(PEER_ID_SERVER)) { //ugly fix. todo: fix enet and remove
+			unsigned int time = porting::getTimeMs();
+			if (time - m_last_recieved > 30000 && m_last_recieved_warn > 20000 && m_last_recieved_warn < 30000) {
+				errorstream<<"connection lost [30s], disconnecting."<<std::endl;
+				deletePeer(PEER_ID_SERVER,  false);
+				m_last_recieved_warn = 0;
+				m_last_recieved = 0;
+			} else if (time - m_last_recieved > 20000 && m_last_recieved_warn > 10000 && m_last_recieved_warn < 20000) {
+				errorstream<<"connection lost [20s]!"<<std::endl;
+				m_last_recieved_warn = time - m_last_recieved;
+			} else if (time - m_last_recieved > 10000 && m_last_recieved_warn < 10000) {
+				errorstream<<"connection lost [10s]? ping."<<std::endl;
+				enet_peer_ping(m_peers.get(PEER_ID_SERVER));
+				m_last_recieved_warn = time - m_last_recieved;
+			}
+		}
 	}
 }
 
@@ -208,6 +228,7 @@ void Connection::serve(u16 port)
 // peer
 void Connection::connect(Address addr)
 {
+	m_last_recieved = porting::getTimeMs();
 	//JMutexAutoLock peerlock(m_peers_mutex);
 	//m_peers.lock_unique_rec();
 	auto node = m_peers.find(PEER_ID_SERVER);

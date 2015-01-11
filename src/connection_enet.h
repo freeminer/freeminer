@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 
+#define ENET_DEBUG 1
 #include "enet/enet.h"
 #include "msgpack.h"
 #include "util/msgpack_serialize.h"
@@ -356,6 +357,8 @@ private:
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
 	int m_bc_receive_timeout;
+	unsigned int m_last_recieved;
+	int m_last_recieved_warn;
 
 	void SetPeerID(u16 id){ m_peer_id = id; }
 	u32 GetProtocolID(){ return m_protocol_id; }
