@@ -60,6 +60,7 @@ Connection::~Connection()
 	join();
 	if(m_enet_host)
 		enet_host_destroy(m_enet_host);
+	m_enet_host = nullptr;
 }
 
 /* Internal stuff */
@@ -79,7 +80,7 @@ void * Connection::Thread()
 		receive();
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 void Connection::putEvent(ConnectionEvent &e)
@@ -130,10 +131,13 @@ void Connection::processCommand(ConnectionCommand &c)
 // Receive packets from the network and buffers and create ConnectionEvents
 void Connection::receive()
 {
-	if (!m_enet_host)
+	if (!m_enet_host) {
+		//errorstream<<"enet_host_service failed : no m_enet_host " << std::endl;
 		return;
+	}
 	ENetEvent event;
-	if (enet_host_service(m_enet_host, & event, 10) > 0)
+	int ret = enet_host_service(m_enet_host, & event, 10);
+	if (ret > 0)
 	{
 		switch (event.type)
 		{
@@ -177,6 +181,8 @@ void Connection::receive()
 		case ENET_EVENT_TYPE_NONE:
 			break;
 		}
+	} else if (ret < 0) {
+		errorstream<<"enet_host_service failed = "<< ret << std::endl;
 	}
 }
 
@@ -229,12 +235,14 @@ void Connection::connect(Address addr)
 	*((u16*)peer->data) = PEER_ID_SERVER;
 
 	ENetEvent event;
-	if (enet_host_service (m_enet_host, & event, 5000) > 0 &&
-			event.type == ENET_EVENT_TYPE_CONNECT) {
+	int ret = enet_host_service (m_enet_host, & event, 5000);
+	if (ret > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 		m_peers.set(PEER_ID_SERVER, peer);
 		m_peers_address.set(PEER_ID_SERVER, addr);
-
 	} else {
+		if (ret == 0)
+			errorstream<<"enet_host_service ret="<<ret<<std::endl;
+
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
 		/* had run out without any significant event.            */
@@ -246,7 +254,7 @@ void Connection::disconnect()
 {
 	//JMutexAutoLock peerlock(m_peers_mutex);
 	m_peers.lock_shared_rec();
-	for (std::map<u16, ENetPeer*>::iterator i = m_peers.begin();
+	for (auto i = m_peers.begin();
 			i != m_peers.end(); ++i)
 		enet_peer_disconnect(i->second, 0);
 }
@@ -276,7 +284,8 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		deletePeer(peer_id, false);
 		return;
 	}
-	enet_peer_send(peer, channelnum, packet);
+	if (enet_peer_send(peer, channelnum, packet) < 0)
+		errorstream<<"enet_peer_send failed"<<std::endl;
 }
 
 ENetPeer* Connection::getPeer(u16 peer_id)
