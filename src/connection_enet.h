@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 
-#define ENET_DEBUG 1
 #include "enet/enet.h"
 #include "msgpack.h"
 #include "util/msgpack_serialize.h"
