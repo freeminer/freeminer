@@ -1491,7 +1491,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	}
 
 	std::string backend = world_mt.get("backend");
-	Database *new_db;
+	Database *new_db = nullptr;
 	std::string migrate_to = cmd_args.get("migrate");
 
 	if (backend == migrate_to) {
@@ -1517,7 +1517,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		new_db = new Database_Redis(&(ServerMap&)server->getMap(),
 				game_params.world_path);
 #endif
-	else {
+	if (!new_db) {
 		errorstream << "Migration to " << migrate_to << " is not supported"
 		            << std::endl;
 		return false;
