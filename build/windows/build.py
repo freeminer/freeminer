@@ -70,8 +70,8 @@ libvorbis = "libvorbis-1.3.4"
 zlib = "zlib-1.2.8"
 freetype = "freetype-2.5.5"
 luajit = "LuaJIT-2.0.3"
-gettext = "gettext-0.19.4"
-libiconv = "libiconv-1.14"
+gettext = "gettext-0.14.6"
+libiconv = "libiconv-1.9.2"
 MSGPACK_VERSION = "c4df1ba6cc6ed2f3ef937e4b10ade41b376f3a01"
 msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 #SQLITE_VERSION="3080704"
@@ -217,7 +217,7 @@ def main():
 		os.chdir(libiconv)
 		mflags = "-MT" if build_type != "Debug" else "-MTd"
 		# we don't want 'typedef enum { false = 0, true = 1 } _Bool;'
-		#?patch(os.path.join("windows", "stdbool.h"), "# if !0", "# if 0")
+		patch(os.path.join("windows", "stdbool.h"), "# if !0", "# if 0")
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={}".format(mflags))
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={} install".format(mflags))
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={} distclean".format(mflags))
@@ -225,7 +225,7 @@ def main():
 		os.chdir(gettext)
 		patch(os.path.join("gettext-runtime", "intl", "localename.c"), "case SUBLANG_PUNJABI_PAKISTAN:", "//case SUBLANG_PUNJABI_PAKISTAN:")
 		patch(os.path.join("gettext-runtime", "intl", "localename.c"), "case SUBLANG_ROMANIAN_MOLDOVA:", "//case SUBLANG_ROMANIAN_MOLDOVA:")
-		#? patch(os.path.join("gettext-tools", "windows", "stdbool.h"), "# if !0", "# if 0")
+		patch(os.path.join("gettext-tools", "windows", "stdbool.h"), "# if !0", "# if 0")
 		os.system("nmake -f Makefile.msvc MFLAGS={}".format(mflags))
 		os.system("nmake -f Makefile.msvc MFLAGS={} install".format(mflags))
 		os.chdir("..")
