@@ -316,7 +316,7 @@ void set_default_settings(Settings *settings)
 	
 	// Client Backend
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
-	settings->setDefault("client_unload_unused_data_timeout", "600");
+	settings->setDefault("client_unload_unused_data_timeout", "200");
 	//settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("enable_mesh_cache", "true");
 	settings->setDefault("repeat_rightclick_time", "0.25");
@@ -379,7 +379,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_block_generate_distance", "7");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
 	settings->setDefault("time_send_interval", "5");
-	settings->setDefault("server_unload_unused_data_timeout", "610");
+	settings->setDefault("server_unload_unused_data_timeout", "310");
 	settings->setDefault("max_objects_per_block", "100");
 	settings->setDefault("full_block_send_enable_min_time_from_building", "2.0");
 	settings->setDefault("dedicated_server_step", "0.1");
@@ -451,6 +451,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
 
+	if (win32) {
+		settings->setDefault("client_unload_unused_data_timeout", "60");
+		settings->setDefault("server_unload_unused_data_timeout", "65");
+	}
 
 	//
 	// Tweaks for Android
@@ -487,6 +491,12 @@ void set_default_settings(Settings *settings)
 	}
 	settings->setDefault("curl_verify_cert","false");
 
+	settings->setDefault("server_map_save_interval", "60");
+	settings->setDefault("server_unload_unused_data_timeout", "65");
+	settings->setDefault("client_unload_unused_data_timeout", "60");
+	settings->setDefault("max_objects_per_block", "20");
+	settings->setDefault("active_block_range", "2");
+	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("new_style_leaves", "false");
