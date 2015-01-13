@@ -150,6 +150,9 @@ void GUIVolumeChange::drawMenu()
 
 bool GUIVolumeChange::OnEvent(const SEvent& event)
 {
+	if (GUIModalMenu::OnEvent(event))
+		return true;
+
 	if(event.EventType==EET_KEY_INPUT_EVENT)
 	{
 		if(event.KeyInput.Key==KEY_ESCAPE && event.KeyInput.PressedDown)

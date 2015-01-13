@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef HAVE_TOUCHSCREENGUI
 #include "touchscreengui.h"
 #endif
+#include "keycode.h"
 
 class GUIModalMenu;
 
@@ -135,7 +136,17 @@ public:
 	virtual void regenerateGui(v2u32 screensize) = 0;
 	virtual void drawMenu() = 0;
 	virtual bool preprocessEvent(const SEvent& event) { return false; };
-	virtual bool OnEvent(const SEvent& event) { return false; };
+	virtual bool OnEvent(const SEvent& event) {
+		if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown) {
+			KeyPress kp(event.KeyInput);
+			if (kp == EscapeKey || kp == CancelKey) {
+				quitMenu();
+				return true;
+			}
+		}
+
+		return false;
+	};
 	virtual bool pausesGame(){ return false; } // Used for pause menu
 
 protected:
