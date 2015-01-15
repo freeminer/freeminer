@@ -583,6 +583,7 @@ set(FMcommon_SRCS
 	profiler.cpp
 	stat.cpp
 	fm_liquid.cpp
+	fm_map.cpp
 )
 
 set(common_SRCS

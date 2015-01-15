@@ -125,7 +125,8 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/FMColoredString.cpp               \
 		jni/src/FMStaticText.cpp                  \
 		jni/src/fmbitset.cpp                      \
-		jni/src/fm_liquid.cpp                      \
+		jni/src/fm_liquid.cpp                     \
+		jni/src/fm_map.cpp                        \
 		jni/src/intlGUIEditBox.cpp                \
 		jni/src/key_value_storage.cpp             \
 		jni/src/log_types.cpp                     \
