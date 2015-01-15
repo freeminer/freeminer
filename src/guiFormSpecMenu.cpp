@@ -1163,7 +1163,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
 			// in the integer cases: 0.4 is not exactly
 			// representable in binary floating point.
 			s32 posy = pos.Y + ((float)i) * spacing.Y * 2.0 / 5.0;
-			std::wstring wlabel = utf8_to_wide(lines[i].c_str());
+			std::wstring wlabel = utf8_to_wide(lines[i]);
 			core::rect<s32> rect = core::rect<s32>(
 				pos.X, posy - m_btn_height,
 				pos.X + m_font->getDimension(wlabel.c_str()).Width,

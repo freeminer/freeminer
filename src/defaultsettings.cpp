@@ -234,6 +234,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("disable_wieldlight", "false");
 	settings->setDefault("enable_node_highlighting", "false");
 	settings->setDefault("mip_map", "false");
+	settings->setDefault("ambient_occlusion_gamma", "2.2");
 	
 	// Clouds, water, glass, leaves, fog
 	settings->setDefault("enable_clouds", "true");
@@ -517,4 +518,3 @@ void override_default_settings(Settings *settings, Settings *from)
 		settings->setDefault(name, from->get(name));
 	}
 }
-

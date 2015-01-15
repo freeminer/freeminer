@@ -1685,7 +1685,9 @@ void Map::transforming_liquid_push_back(v3POS p) {
 
 v3POS Map::transforming_liquid_pop() {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	return m_transforming_liquid.pop_front();
+	auto front = m_transforming_liquid.front();
+	m_transforming_liquid.pop_front();
+	return front;
 
 	//auto lock = m_transforming_liquid.lock_unique_rec();
 	//auto it = m_transforming_liquid.begin();
@@ -2021,8 +2023,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
-	while (must_reflow.size() > 0)
-		m_transforming_liquid.push_back(must_reflow.pop_front());
+	while (must_reflow.size() > 0) {
+		m_transforming_liquid.push_back(must_reflow.front());
+		must_reflow.pop_front();
+	}
 	//updateLighting(lighting_modified_blocks, modified_blocks);
 
 	/* ----------------------------------------------------------------------
@@ -2493,10 +2497,6 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	}
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()=" << changed_blocks.size());
-
-	/*
-		Do stuff in central blocks
-	*/
 
 	/*
 		Update lighting
@@ -3254,8 +3254,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 				block = svrmap->emergeBlock(p, false);
 				if (block == NULL)
 					block = svrmap->createBlock(p);
-				else
-					block->copyTo(*this);
+				block->copyTo(*this);
 			} else {
 				flags |= VMANIP_BLOCK_DATA_INEXIST;
 

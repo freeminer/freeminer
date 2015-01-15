@@ -110,6 +110,7 @@ public:
 	int generateBaseTerrain();
 	void generateBlobs();
 	void generateBiomes();
+	void generateCaves();
 	void dustTopNodes();
 };
 

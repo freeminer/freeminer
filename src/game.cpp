@@ -1143,11 +1143,13 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 		os << "button_exit[4," << (ypos++) << ";3,0.5;btn_change_password;"
 		   << (_("Change Password")) << "]";
 	}
-
+	
+#ifndef __ANDROID__
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
 			<< (_("Sound Volume")) << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_key_config;"
 			<< (_("Change Keys"))  << "]";
+#endif
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
 			<< (_("Exit to Menu")) << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"

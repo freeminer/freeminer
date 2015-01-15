@@ -134,3 +134,16 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	end
 end)
 
+--
+-- Register biome for biome API
+--
+
+minetest.register_biome({
+	name           = "Grassland",
+	-- Will use defaults of omitted parameters
+	y_min          = -31000,
+	y_max          = 31000,
+	heat_point     = 50,
+	humidity_point = 50,
+})
+
