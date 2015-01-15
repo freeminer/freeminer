@@ -33,8 +33,7 @@ thread_local v3POS m_block_cache_p;
 #endif
 
 //TODO: REMOVE THIS func and use Map::getBlock
-MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
-{
+MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
@@ -48,12 +47,12 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
-		if(m_block_cache && p == m_block_cache_p) {
+			if(m_block_cache && p == m_block_cache_p) {
 #ifndef NDEBUG
-			g_profiler->add("Map: getBlock cache hit", 1);
+				g_profiler->add("Map: getBlock cache hit", 1);
 #endif
-			return m_block_cache;
-		}
+				return m_block_cache;
+			}
 	}
 
 	MapBlockP block;
@@ -81,8 +80,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 	return block;
 }
 
-MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
-{
+MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache) {
 	return getBlockNoCreateNoEx(p, trylock, nocache);
 }
 
@@ -90,36 +88,33 @@ void Map::getBlockCacheFlush() {
 	m_block_cache = nullptr;
 }
 
-MapBlock * Map::createBlankBlockNoInsert(v3POS & p)
-{
+MapBlock * Map::createBlankBlockNoInsert(v3POS & p) {
 	auto block = new MapBlock(this, p, m_gamedef);
 	return block;
 }
 
-MapBlock * Map::createBlankBlock(v3POS & p)
-{
+MapBlock * Map::createBlankBlock(v3POS & p) {
 	auto lock = m_blocks.lock_unique_rec();
 	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 	if (block != NULL) {
-		infostream<<"Block already created p="<<block->getPos()<<std::endl;
+		infostream << "Block already created p=" << block->getPos() << std::endl;
 		return block;
 	}
 
 	block = createBlankBlockNoInsert(p);
-	
+
 	m_blocks.set(p, block);
 
 	return block;
 }
 
-void Map::insertBlock(MapBlock *block)
-{
+void Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
-	if(block2){
+	if(block2) {
 		//throw AlreadyExistsException("Block already exists");
-		infostream<<"Block already exists " << block_p <<std::endl;
+		infostream << "Block already exists " << block_p << std::endl;
 		return; // memory leak, but very rare|impossible
 	}
 
@@ -127,8 +122,7 @@ void Map::insertBlock(MapBlock *block)
 	m_blocks.set(block_p, block);
 }
 
-void Map::deleteBlock(MapBlockP block)
-{
+void Map::deleteBlock(MapBlockP block) {
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
@@ -138,8 +132,7 @@ void Map::deleteBlock(MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode Map::getNodeTry(v3POS p)
-{
+MapNode Map::getNodeTry(v3POS p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
 #endif
@@ -147,7 +140,7 @@ MapNode Map::getNodeTry(v3POS p)
 	auto block = getBlockNoCreateNoEx(blockpos, true);
 	if(!block)
 		return MapNode(CONTENT_IGNORE);
-	auto relpos = p - blockpos*MAP_BLOCKSIZE;
+	auto relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNodeTry(relpos);
 }
 
@@ -185,8 +178,7 @@ v3POS Map::transforming_liquid_pop() {
 	//return value;
 }
 
-s16 Map::getHeat(v3s16 p, bool no_random)
-{
+s16 Map::getHeat(v3s16 p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->heat;
@@ -196,8 +188,7 @@ s16 Map::getHeat(v3s16 p, bool no_random)
 	return 0;
 }
 
-s16 Map::getHumidity(v3s16 p, bool no_random)
-{
+s16 Map::getHumidity(v3s16 p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->humidity;
@@ -210,8 +201,7 @@ s16 Map::getHumidity(v3s16 p, bool no_random)
 
 
 
-s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache)
-{
+s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache) {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();
 	if (block) {
@@ -224,7 +214,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 		return cache->at(bp) + myrand_range(0, 1);
 
 	auto value = m_emerge->biomemgr->calcBlockHeat(p, getSeed(),
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	             env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->heat = value;
@@ -235,8 +225,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 	return value + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache)
-{
+s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache) {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();
 	if (block) {
@@ -249,7 +238,7 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 		return cache->at(bp) + myrand_range(0, 1);
 
 	auto value = m_emerge->biomemgr->calcBlockHumidity(p, getSeed(),
-			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	             env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
 
 	if(block) {
 		block->humidity = value;
@@ -262,7 +251,7 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 
 int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 
-	s16 max = MYMIN(searchup + basepos.Y,0x7FFF);
+	s16 max = MYMIN(searchup + basepos.Y, 0x7FFF);
 
 	MapNode last_node = getNodeNoEx(basepos);
 	MapNode node = last_node;
@@ -278,12 +267,11 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 
 		if (!walkable_only) {
 			if ((last_node.param0 != CONTENT_AIR) &&
-				(last_node.param0 != CONTENT_IGNORE) &&
-				(node.param0 == CONTENT_AIR)) {
+			        (last_node.param0 != CONTENT_IGNORE) &&
+			        (node.param0 == CONTENT_AIR)) {
 				return runpos.Y;
 			}
-		}
-		else {
+		} else {
 			bool is_walkable = nodemgr->get(node).walkable;
 
 			if (last_was_walkable && (!is_walkable)) {
@@ -293,7 +281,7 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 		}
 	}
 
-	return basepos.Y -1;
+	return basepos.Y - 1;
 }
 
 

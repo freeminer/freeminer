@@ -30,57 +30,56 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 const bool debug =
 #ifdef NDEBUG
-	false
+    false
 #else
-	true
+    true
 #endif
-;
+    ;
 
 const bool win32 =
 #if defined(_WIN32)
-	true
+    true
 #else
-	false
+    false
 #endif
-;
+    ;
 
-void set_default_settings(Settings *settings)
-{
+void set_default_settings(Settings *settings) {
 	//
 	// Client and server
 	//
 
 	settings->setDefault("name", "");
-	
+
 	//
 	// Main freeminer engine settings
 	//
-	
+
 	// Language
 	settings->setDefault("language", "");
-	
+
 	// Screen
 	settings->setDefault("video_driver", "opengl");
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
 	settings->setDefault("fullscreen", "false");
 	settings->setDefault("fullscreen_bpp", "24");
-	settings->setDefault("workaround_window_size","5");
-	
+	settings->setDefault("workaround_window_size", "5");
+
 	// Mouse
 	settings->setDefault("invert_mouse", "false");
 	settings->setDefault("mouse_sensitivity", "0.2");
-	
+
 	// Sound
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
-	
+
 	// Paths
 	settings->setDefault("texture_path", "");
 	settings->setDefault("shader_path", "");
 	settings->setDefault("screenshot_path", ".");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
-	
+
 	// Main menu
 	settings->setDefault("menu_clouds", "true");
 	settings->setDefault("main_menu_tab", "multiplayer");
@@ -92,13 +91,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("modstore_listmods_url", "https://forum.minetest.net/mmdb/mods/");
 	settings->setDefault("modstore_details_url", "https://forum.minetest.net/mmdb/mod/*/");
 	settings->setDefault("password_save", "1");
-	
+
 	// Game Speed
 	settings->setDefault("wanted_fps", "30");
 	settings->setDefault("fps_max", "60");
 	settings->setDefault("pause_fps_max", "5");
 	settings->setDefault("high_precision_fpu", "true");
-	
+
 	// Debugging stuff
 	settings->setDefault("show_debug", debug ? "true" : "false");
 	settings->setDefault("deprecated_lua_api_handling", debug ? "log" : "legacy");
@@ -106,11 +105,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("profiler_print_interval", debug ? "10" : "0");
 	settings->setDefault("debug_log_level", "2");
 	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
-	
+
 	//
 	// Keymaps
 	//
-	
+
 	settings->setDefault("keymap_forward", "KEY_KEY_W");
 	settings->setDefault("keymap_backward", "KEY_KEY_S");
 	settings->setDefault("keymap_left", "KEY_KEY_A");
@@ -151,11 +150,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_quicktune_next", "KEY_END");
 	settings->setDefault("keymap_quicktune_dec", "KEY_NEXT");
 	settings->setDefault("keymap_quicktune_inc", "KEY_PRIOR");
-	
+
 	//
 	// Connection
 	//
-	
+
 	// Connecting to server
 	settings->setDefault("address", "");
 	settings->setDefault("remote_port", "30000");
@@ -191,7 +190,7 @@ void set_default_settings(Settings *settings)
 	//
 	// Map generation
 	//
-	
+
 	settings->setDefault("mg_name", "indev");
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
@@ -199,8 +198,8 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct
-	
-	
+
+
 	//
 	// Gameplay features
 	//
@@ -209,7 +208,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
 	settings->setDefault("trilinear_filter", "false");
-	
+
 	// Waving
 	settings->setDefault("enable_waving_leaves", "true");
 	settings->setDefault("enable_waving_plants", "true");
@@ -217,7 +216,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("water_wave_height", "1.0");
 	settings->setDefault("water_wave_length", "20.0");
 	settings->setDefault("water_wave_speed", "5.0");
-	
+
 	// Shaders
 	settings->setDefault("enable_shaders", "true");
 	settings->setDefault("enable_bumpmapping", "true");
@@ -227,7 +226,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("generate_normalmaps", "false");
 	settings->setDefault("normalmaps_strength", "0.6");
 	settings->setDefault("normalmaps_smooth", "1");
-	
+
 	// Lighting
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("display_gamma", "1.8");
@@ -235,7 +234,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_node_highlighting", "false");
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("ambient_occlusion_gamma", "2.2");
-	
+
 	// Clouds, water, glass, leaves, fog
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("enable_3d_clouds", "true");
@@ -246,10 +245,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("new_style_leaves", "true");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("directional_colored_fog", "true");
-	
+
 	// Visual Features
 	settings->setDefault("enable_particles", "true");
-	settings->setDefault("selectionbox_width","2");
+	settings->setDefault("selectionbox_width", "2");
 	settings->setDefault("3d_mode", "none");
 	settings->setDefault("3d_paralax_strength", "0.025");
 	settings->setDefault("tooltip_show_delay", "400");
@@ -266,7 +265,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("preload_item_visuals", "false");
-	
+
 	// Liquid
 	settings->setDefault("liquid_real", "true");
 	settings->setDefault("liquid_update", "0.1");
@@ -291,7 +290,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("weather_humidity_daily", "-12");
 	settings->setDefault("weather_humidity_width", "300");
 	settings->setDefault("weather_humidity_days", "2");
-	
+
 	// Mini Map
 	settings->setDefault("hud_map", "false");
 	settings->setDefault("hud_map_back", "0,0,0");
@@ -304,7 +303,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("hud_map_surface", "32");
 	settings->setDefault("hud_map_tracking", "false");
 	settings->setDefault("hud_map_border", "16");
-	
+
 	// Color / Readability
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
@@ -313,8 +312,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
-	settings->setDefault("hud_hotbar_max_width","1.0");
-	
+	settings->setDefault("hud_hotbar_max_width", "1.0");
+
 	// Client Backend
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("client_unload_unused_data_timeout", "200");
@@ -332,7 +331,7 @@ void set_default_settings(Settings *settings)
 	//
 	// Server stuff
 	//
-	
+
 	// Announcing and connection
 	settings->setDefault("server_announce", "false");
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
@@ -344,12 +343,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("server_url", "");
 	settings->setDefault("enable_remote_media_server", "true");
 	settings->setDefault("remote_media", "");
-	
+
 	// Check when player joins
 	settings->setDefault("strict_protocol_version_checking", "false");
 	settings->setDefault("enable_any_name", "0"); // WARNING! SETTING TO "1" COULD CAUSE SECURITY RISKS WITH MODULES WITH PLAYER DATA IN FILES CONTAINS PLAYER NAME IN FILENAME
 	settings->setDefault("disallow_empty_password", "false");
-	
+
 	// Gameplay settings for players on the server
 	settings->setDefault("default_game", "default");
 	settings->setDefault("motd", "");
@@ -369,7 +368,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("time_speed", "72");
 
 	// Backend server settings
-	settings->setDefault("max_packets_per_iteration","1024");
+	settings->setDefault("max_packets_per_iteration", "1024");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "3");
@@ -396,11 +395,11 @@ void set_default_settings(Settings *settings)
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");
 	settings->setDefault("ipv6_server", "false");
-	
+
 	//
 	// Movement, Physics and animation
 	//
-	
+
 	// Movement
 	settings->setDefault("enable_movement_fov", "true");
 	settings->setDefault("aux1_descends", "false");
@@ -410,7 +409,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("noclip", "false");
 	settings->setDefault("continuous_forward", "false");
 	settings->setDefault("fast_move", "false");
-	
+
 	// Physics
 	settings->setDefault("movement_acceleration_default", "4");
 	settings->setDefault("movement_acceleration_air", "4");
@@ -427,7 +426,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("view_bobbing", "true");
 	settings->setDefault("view_bobbing_amount", "1.0");
 	settings->setDefault("fall_bobbing_amount", "0.0");
-	
+
 	// Player model animations (sent to client)
 	settings->setDefault("animation_default_start", "0");
 	settings->setDefault("animation_default_stop", "79");
@@ -460,7 +459,7 @@ void set_default_settings(Settings *settings)
 	//
 	// Tweaks for Android
 	//
-	
+
 #ifdef __ANDROID__
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
@@ -469,8 +468,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "false");
 	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("touchtarget", "true");
-	settings->setDefault("TMPFolder","/sdcard/freeminer/tmp/");
-	settings->setDefault("touchscreen_threshold","20");
+	settings->setDefault("TMPFolder", "/sdcard/freeminer/tmp/");
+	settings->setDefault("touchscreen_threshold", "20");
 	settings->setDefault("smooth_lighting", "false");
 	/*
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
@@ -483,14 +482,13 @@ void set_default_settings(Settings *settings)
 
 	//check for device with small screen
 	float x_inches = ((double) porting::getDisplaySize().X /
-			(160 * porting::getDisplayDensity()));
+	                  (160 * porting::getDisplayDensity()));
 	if (x_inches  < 3.5) {
 		settings->setDefault("hud_scaling", "0.6");
-	}
-	else if (x_inches < 4.5) {
+	} else if (x_inches < 4.5) {
 		settings->setDefault("hud_scaling", "0.7");
 	}
-	settings->setDefault("curl_verify_cert","false");
+	settings->setDefault("curl_verify_cert", "false");
 
 	settings->setDefault("server_map_save_interval", "60");
 	settings->setDefault("server_unload_unused_data_timeout", "65");
@@ -510,10 +508,9 @@ void set_default_settings(Settings *settings)
 #endif
 }
 
-void override_default_settings(Settings *settings, Settings *from)
-{
+void override_default_settings(Settings *settings, Settings *from) {
 	std::vector<std::string> names = from->getNames();
-	for(size_t i=0; i<names.size(); i++){
+	for(size_t i = 0; i < names.size(); i++) {
 		const std::string &name = names[i];
 		settings->setDefault(name, from->get(name));
 	}
