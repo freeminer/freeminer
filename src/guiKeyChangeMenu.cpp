@@ -273,6 +273,9 @@ bool GUIKeyChangeMenu::resetMenu()
 }
 bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 {
+	if (GUIModalMenu::OnEvent(event))
+		return true;
+
 	if (event.EventType == EET_KEY_INPUT_EVENT && activeKey >= 0
 		&& event.KeyInput.PressedDown)
 	{

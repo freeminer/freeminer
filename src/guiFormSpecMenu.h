@@ -428,7 +428,7 @@ private:
 	std::string getNameByID(s32 id);
 #ifdef __ANDROID__
 	v2s32 m_down_pos;
-	std::wstring m_JavaDialogFieldName;
+	std::string m_JavaDialogFieldName;
 #endif
 
 };

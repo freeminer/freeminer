@@ -28,7 +28,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "rollback_interface.h"
 #include <list>
 #include <vector>
+
+#include "config.h"
+#if USE_SQLITE3
 #include "sqlite3.h"
+#endif
 
 class IGameDef;
 
@@ -66,7 +70,9 @@ private:
 	bool createTables();
 	void initDatabase();
 	bool registerRow(const ActionRow & row);
+#if USE_SQLITE3
 	const std::list<ActionRow> actionRowsFromSelect(sqlite3_stmt * stmt);
+#endif
 	ActionRow actionRowFromRollbackAction(const RollbackAction & action);
 	const std::list<RollbackAction> rollbackActionsFromActionRows(
 			const std::list<ActionRow> & rows);
@@ -92,6 +98,7 @@ private:
 	std::list<RollbackAction> action_latest_buffer;
 
 	std::string database_path;
+#if USE_SQLITE3
 	sqlite3 * db;
 	sqlite3_stmt * stmt_insert;
 	sqlite3_stmt * stmt_replace;
@@ -102,7 +109,7 @@ private:
 	sqlite3_stmt * stmt_knownActor_insert;
 	sqlite3_stmt * stmt_knownNode_select;
 	sqlite3_stmt * stmt_knownNode_insert;
-
+#endif
 	std::vector<Entity> knownActors;
 	std::vector<Entity> knownNodes;
 };

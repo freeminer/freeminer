@@ -27,6 +27,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include <string>
 
+#include "config.h"
+
+#if USE_SQLITE3
+
 extern "C" {
 	#include "sqlite3.h"
 }
@@ -64,4 +68,5 @@ private:
 	void createDirs(std::string path);
 };
 
+#endif
 #endif

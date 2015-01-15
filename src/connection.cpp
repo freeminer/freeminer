@@ -388,7 +388,7 @@ void ReliablePacketBuffer::insert(BufferedPacket &p,u16 next_expected)
 			fprintf(stderr, "Old: seqnum: %05d size: %04d, address: %s\n",
 					readU16(&(i->data[BASE_HEADER_SIZE+1])),i->data.getSize(),
 					i->address.serializeString().c_str());
-			fprintf(stderr, "New: seqnum: %05d size: %04d, address: %s\n",
+			fprintf(stderr, "New: seqnum: %05d size: %04u, address: %s\n",
 					readU16(&(p.data[BASE_HEADER_SIZE+1])),p.data.getSize(),
 					p.address.serializeString().c_str());
 			throw IncomingDataCorruption("duplicated packet isn't same as original one");
@@ -1254,10 +1254,9 @@ SharedBuffer<u8> UDPPeer::addSpiltPacket(u8 channel,
 /* Connection Threads                                                         */
 /******************************************************************************/
 
-ConnectionSendThread::ConnectionSendThread(Connection* parent,
-											unsigned int max_packet_size,
+ConnectionSendThread::ConnectionSendThread( unsigned int max_packet_size,
 											float timeout) :
-	m_connection(parent),
+	m_connection(NULL),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
 	m_max_commands_per_iteration(1),
@@ -1268,6 +1267,7 @@ ConnectionSendThread::ConnectionSendThread(Connection* parent,
 
 void * ConnectionSendThread::Thread()
 {
+	assert(m_connection != NULL);
 	ThreadStarted();
 	log_register_thread("ConnectionSend");
 
@@ -2017,14 +2017,14 @@ void ConnectionSendThread::sendAsPacket(u16 peer_id, u8 channelnum,
 	m_outgoing_queue.push_back(packet);
 }
 
-ConnectionReceiveThread::ConnectionReceiveThread(Connection* parent,
-		unsigned int max_packet_size) :
-	m_connection(parent)
+ConnectionReceiveThread::ConnectionReceiveThread(unsigned int max_packet_size) :
+	m_connection(NULL)
 {
 }
 
 void * ConnectionReceiveThread::Thread()
 {
+	assert(m_connection != NULL);
 	ThreadStarted();
 	log_register_thread("ConnectionReceive");
 
@@ -2357,6 +2357,11 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 	u8 type = readU8(&(packetdata[0]));
 
+	if (MAX_UDP_PEERS <= 65535 && peer_id >= MAX_UDP_PEERS) {
+		errorstream << "Something is wrong with peer_id" << std::endl;
+		assert(0);
+	}
+
 	if(type == TYPE_CONTROL)
 	{
 		if(packetdata.getSize() < 2)
@@ -2364,8 +2369,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 		u8 controltype = readU8(&(packetdata[1]));
 
-		if( (controltype == CONTROLTYPE_ACK)
-				&& (peer_id <= MAX_UDP_PEERS))
+		if(controltype == CONTROLTYPE_ACK)
 		{
 			assert(channel != 0);
 			if(packetdata.getSize() < 4)
@@ -2424,8 +2428,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 			}
 			throw ProcessedSilentlyException("Got an ACK");
 		}
-		else if((controltype == CONTROLTYPE_SET_PEER_ID)
-				&& (peer_id <= MAX_UDP_PEERS))
+		else if(controltype == CONTROLTYPE_SET_PEER_ID)
 		{
 			// Got a packet to set our peer id
 			if(packetdata.getSize() < 4)
@@ -2457,8 +2460,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 			throw ProcessedSilentlyException("Got a SET_PEER_ID");
 		}
-		else if((controltype == CONTROLTYPE_PING)
-				&& (peer_id <= MAX_UDP_PEERS))
+		else if(controltype == CONTROLTYPE_PING)
 		{
 			// Just ignore it, the incoming data already reset
 			// the timeout counter
@@ -2480,8 +2482,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 			throw ProcessedSilentlyException("Got a DISCO");
 		}
-		else if((controltype == CONTROLTYPE_ENABLE_BIG_SEND_WINDOW)
-				&& (peer_id <= MAX_UDP_PEERS))
+		else if(controltype == CONTROLTYPE_ENABLE_BIG_SEND_WINDOW)
 		{
 			dynamic_cast<UDPPeer*>(&peer)->setNonLegacyPeer();
 			throw ProcessedSilentlyException("Got non legacy control");
@@ -2539,7 +2540,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 			//TODO throw some error
 		}
 	}
-	else if((peer_id <= MAX_UDP_PEERS) && (type == TYPE_RELIABLE))
+	else if(type == TYPE_RELIABLE)
 	{
 		assert(channel != 0);
 		// Recursive reliable packets not allowed
@@ -2682,8 +2683,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_event_queue(),
 	m_peer_id(0),
 	m_protocol_id(protocol_id),
-	m_sendThread(this, max_packet_size, timeout),
-	m_receiveThread(this, max_packet_size),
+	m_sendThread(max_packet_size, timeout),
+	m_receiveThread(max_packet_size),
 	m_info_mutex(),
 	m_bc_peerhandler(0),
 	m_bc_receive_timeout(0),
@@ -2691,6 +2692,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_next_remote_peer_id(2)
 {
 	m_udpSocket.setTimeoutMs(5);
+
+	m_sendThread.setParent(this);
+	m_receiveThread.setParent(this);
 
 	m_sendThread.Start();
 	m_receiveThread.Start();
@@ -2703,8 +2707,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_event_queue(),
 	m_peer_id(0),
 	m_protocol_id(protocol_id),
-	m_sendThread(this, max_packet_size, timeout),
-	m_receiveThread(this, max_packet_size),
+	m_sendThread(max_packet_size, timeout),
+	m_receiveThread(max_packet_size),
 	m_info_mutex(),
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(0),
@@ -2713,6 +2717,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 
 {
 	m_udpSocket.setTimeoutMs(5);
+
+	m_sendThread.setParent(this);
+	m_receiveThread.setParent(this);
 
 	m_sendThread.Start();
 	m_receiveThread.Start();

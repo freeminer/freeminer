@@ -197,7 +197,7 @@ public:
 
 		// Try to use local texture instead if asked to
 		if(prefer_local){
-			std::string path = getTexturePath(name.c_str());
+			std::string path = getTexturePath(name);
 			if(path != ""){
 				video::IImage *img2 = driver->createImageFromFile(path.c_str());
 				if(img2){
@@ -229,7 +229,7 @@ public:
 			return n->second;
 		}
 		video::IVideoDriver* driver = device->getVideoDriver();
-		std::string path = getTexturePath(name.c_str());
+		std::string path = getTexturePath(name);
 		if(path == ""){
 			infostream<<"SourceImageCache::getOrLoad(): No path found for \""
 					<<name<<"\""<<std::endl;
@@ -791,7 +791,9 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 				partsize.Width, partsize.Height, GL_RGBA,
 				GL_UNSIGNED_BYTE, pixels);
 
+#ifndef __ANDROID__
 		driver->endScene();
+#endif
 
 		// Drop scene manager
 		smgr->drop();
@@ -904,7 +906,10 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 	// Render scene
 	driver->beginScene(true, true, video::SColor(0,0,0,0));
 	smgr->drawAll();
+
+#ifndef __ANDROID__
 	driver->endScene();
+#endif
 	
 	g_settings->setBool("disable_wieldlight", disable_wieldlight);
 
@@ -1383,7 +1388,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 				return false;
 			}
 
-			str_replace_char(part_of_name, '&', '^');
+			str_replace(part_of_name, '&', '^');
 			Strfnd sf(part_of_name);
 			sf.next("{");
 			std::string imagename_top = sf.next("{");
@@ -1863,7 +1868,7 @@ void imageTransform(u32 transform, video::IImage *src, video::IImage *dst)
 	core::dimension2d<u32> dstdim = dst->getDimension();
 
 	assert(dstdim == imageTransformDimension(transform, srcdim));
-	assert(transform >= 0 && transform <= 7);
+	assert(transform <= 7);
 
 	/*
 		Compute the transformation from source coordinates (sx,sy)

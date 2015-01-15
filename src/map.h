@@ -54,7 +54,6 @@ class EmergeManager;
 class ServerEnvironment;
 struct BlockMakeData;
 struct MapgenParams;
-class Circuit;
 class Server;
 
 
@@ -149,7 +148,7 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-	Map(IGameDef *gamedef, Circuit* circuit = nullptr);
+	Map(IGameDef *gamedef);
 	virtual ~Map();
 
 	/*virtual u16 nodeContainerId() const
@@ -180,9 +179,10 @@ public:
 	// Returns NULL if not found
 	MapBlock * getBlockNoCreateNoEx(v3POS p, bool trylock = false, bool nocache = false);
 	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
+	void getBlockCacheFlush();
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
+	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)
 	{ return getBlockNoCreateNoEx(p); }
 
 	// Returns InvalidPositionException if not found
@@ -343,7 +343,6 @@ public:
 		return basepos.Y -1;
 	}
 
-	Circuit* getCircuit();
 	INodeDefManager* getNodeDefManager();
 
 
@@ -382,7 +381,6 @@ private:
 	bool m_queue_size_timer_started;
 
 protected:
-	Circuit* m_circuit;
 	u32 m_blocks_update_last;
 	u32 m_blocks_save_last;
 
@@ -406,7 +404,7 @@ public:
 	/*
 		savedir: directory to which map data should be saved
 	*/
-	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* m_circuit);
+	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge);
 	~ServerMap();
 
 	s32 mapType() const
@@ -530,11 +528,11 @@ private:
 #define VMANIP_BLOCK_DATA_INEXIST     1
 #define VMANIP_BLOCK_CONTAINS_CIGNORE 2
 
-class ManualMapVoxelManipulator : public VoxelManipulator
+class MMVManip : public VoxelManipulator
 {
 public:
-	ManualMapVoxelManipulator(Map *map);
-	virtual ~ManualMapVoxelManipulator();
+	MMVManip(Map *map);
+	virtual ~MMVManip();
 
 	virtual void clear()
 	{
@@ -546,11 +544,11 @@ public:
 	{m_map = map;}
 
 	void initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
-			bool load_if_inexistent = true);
+		bool load_if_inexistent = true);
 
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
-			bool overwrite_generated = true);
+		bool overwrite_generated = true);
 
 	bool m_is_dirty;
 

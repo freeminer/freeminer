@@ -68,7 +68,7 @@ extern gui::IGUIEnvironment* guienv;
 /*
 	MeshUpdateQueue
 */
-	
+
 MeshUpdateQueue::MeshUpdateQueue()
 {
 }
@@ -83,23 +83,23 @@ unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> da
 
 	auto lock = m_queue.lock_unique_rec();
 	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (m_process.count(p))
-		range += 3;
-	else if (m_ranges.count(p)) {
+	if (m_process.count(p)) {
+		if (!urgent)
+			range += 3;
+	} else if (m_ranges.count(p)) {
 		auto range_old = m_ranges[p];
+		auto & rmap = m_queue.get(range_old);
 		if (range_old > 0 && range != range_old)  {
-			auto & rmap = m_queue.get(range_old);
 			m_ranges.erase(p);
 			rmap.erase(p);
 			if (rmap.empty())
 				m_queue.erase(range_old);
 		} else {
-			return m_ranges.size(); //already queued
+			rmap[p] = data;
+			return m_ranges.size();
 		}
 	}
 	auto & rmap = m_queue.get(range);
-	if (rmap.count(p))
-		return m_ranges.size();
 	rmap[p] = data;
 	m_ranges[p] = range;
 	g_profiler->avg("Client: mesh make queue", m_ranges.size());
@@ -133,7 +133,7 @@ void * MeshUpdateThread::Thread()
 	log_register_thread("MeshUpdateThread" + itos(id));
 
 	DSTACK(__FUNCTION_NAME);
-	
+
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	porting::setThreadName(("MeshUpdateThread" + itos(id)).c_str());
@@ -217,6 +217,7 @@ Client::Client(
 		device->getSceneManager(),
 		tsrc, this, device
 	),
+	m_particle_manager(&m_env),
 	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
@@ -352,7 +353,7 @@ void Client::step(float dtime)
 		m_ignore_damage_timer -= dtime;
 	else
 		m_ignore_damage_timer = 0.0;
-	
+
 	m_animation_time += dtime;
 	if(m_animation_time > 60.0)
 		m_animation_time -= 60.0;
@@ -370,7 +371,7 @@ void Client::step(float dtime)
 		if(counter <= 0.0)
 		{
 			counter = 20.0;
-			
+
 			infostream << "Client packetcounter (" << m_packetcounter_timer
 					<< "):"<<std::endl;
 			m_packetcounter.print(infostream);
@@ -393,7 +394,7 @@ void Client::step(float dtime)
 			counter = 2.0;
 
 			//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-			
+
 			Player *myplayer = m_env.getLocalPlayer();
 			assert(myplayer != NULL);
 			// Send TOSERVER_INIT
@@ -421,8 +422,8 @@ void Client::step(float dtime)
 	/*
 		Do stuff if connected
 	*/
-	
 	unsigned int max_cycle_ms = 200/g_settings->getFloat("wanted_fps");
+
 	/*
 		Run Map's timers and unload unused data
 	*/
@@ -437,11 +438,11 @@ void Client::step(float dtime)
 				max_cycle_ms,
 				&deleted_blocks))
 				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
-				
+
 		/*if(deleted_blocks.size() > 0)
 			infostream<<"Client: Unloaded "<<deleted_blocks.size()
 					<<" unused blocks"<<std::endl;*/
-			
+
 		/*
 			Send info to server
 			NOTE: This loop is intentionally iterated the way it is.
@@ -483,7 +484,7 @@ void Client::step(float dtime)
 
 		// Step environment
 		m_env.step(dtime, m_uptime, max_cycle_ms);
-		
+
 		/*
 			Get events
 		*/
@@ -499,7 +500,7 @@ void Client::step(float dtime)
 				if(m_ignore_damage_timer <= 0)
 				{
 					u8 damage = event.player_damage.amount;
-					
+
 					if(event.player_damage.send_to_server)
 						sendDamage(damage);
 
@@ -638,7 +639,7 @@ void Client::step(float dtime)
 			m_sound->updateSoundPosition(client_id, pos);
 		}
 	}
-	
+
 	/*
 		Handle removed remotely initiated sounds
 	*/
@@ -677,7 +678,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 {
 	// Silly irrlicht's const-incorrectness
 	Buffer<char> data_rw(data.c_str(), data.size());
-	
+
 	std::string name;
 
 	const char *image_ext[] = {
@@ -930,7 +931,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 				" Skipping incoming command="<<command<<std::endl;
 		return;
 	}
-	
+
 	/*
 	  Handle runtime commands
 	*/
@@ -950,7 +951,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
 		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
-		addNode(p, n, remove_metadata, 1); //fast add
+		addNode(p, n, remove_metadata, 2); //fast add
 	}
 	else if(command == TOCLIENT_BLOCKDATA)
 	{
@@ -975,6 +976,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(&h);
 		block->humidity = h;
 
+
+		if (packet.count(TOCLIENT_BLOCKDATA_CONTENT_ONLY))
+			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
+
 		if (new_block)
 			m_env.getMap().insertBlock(block);
 
@@ -986,7 +991,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		updateMeshTimestampWithEdge(p);
+		if (!block->content_only || block->content_only != CONTENT_AIR)
+			updateMeshTimestampWithEdge(p);
 
 /*
 #if !defined(NDEBUG)
@@ -1605,7 +1611,7 @@ void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 	// Send as reliable
 	Send(0, buffer, true);
 }
-	
+
 void Client::sendInventoryFields(const std::string &formname,
 		const std::map<std::string, std::string> &fields)
 {
@@ -1730,7 +1736,8 @@ void Client::sendPlayerPos()
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
 	// Check that an existing peer_id is the same as the connection's
-	assert(myplayer->peer_id == our_peer_id);
+	if (myplayer->peer_id != our_peer_id)
+		return;
 
 	MSGPACK_PACKET_INIT(TOSERVER_PLAYERPOS, 5);
 	PACK(TOSERVER_PLAYERPOS_POSITION, myplayer->getPosition());
@@ -1774,7 +1781,7 @@ void Client::removeNode(v3s16 p, int fast)
 	catch(InvalidPositionException &e)
 	{
 	}
-	
+
 	for(std::map<v3s16, MapBlock * >::iterator
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
@@ -1796,7 +1803,6 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 	}
 	catch(InvalidPositionException &e)
 	{}
-	
 	addUpdateMeshTaskForNode(p, true);
 
 	for(std::map<v3s16, MapBlock * >::iterator
@@ -1806,7 +1812,7 @@ void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 		addUpdateMeshTaskWithEdge(i->first, true);
 	}
 }
-	
+
 void Client::setPlayerControl(PlayerControl &control)
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
@@ -1906,7 +1912,7 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	std::vector<DistanceSortedActiveObject> objects;
 
 	m_env.getActiveObjects(from_pos_f_on_map, max_d, objects);
-	
+
 	// Sort them.
 	// After this, the closest object is the first in the array.
 	std::sort(objects.begin(), objects.end());
@@ -1914,7 +1920,7 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	for(u32 i=0; i<objects.size(); i++)
 	{
 		ClientActiveObject *obj = objects[i].obj;
-		
+
 		core::aabbox3d<f32> *selection_box = obj->getSelectionBox();
 		if(selection_box == NULL)
 			continue;
@@ -2141,26 +2147,34 @@ float Client::mediaReceiveProgress()
 void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
 	infostream<<"Client::afterContentReceived() started"<<std::endl;
-	//assert(m_itemdef_received);
-	//assert(m_nodedef_received);
-	//assert(mediaReceived());
-	
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
+	wchar_t* text = wgettext("Loading textures...");
+
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
+	draw_load_screen(text,device, guienv, 0, 70);
 	if (!no_output)
-		m_tsrc->rebuildImagesAndTextures();
+	m_tsrc->rebuildImagesAndTextures();
+	delete[] text;
 
 	// Rebuild shaders
 	infostream<<"- Rebuilding shaders"<<std::endl;
+	text = wgettext("Rebuilding shaders...");
+	draw_load_screen(text, device, guienv, 0, 75);
 	if (!no_output)
-		m_shsrc->rebuildShaders();
+	m_shsrc->rebuildShaders();
+	delete[] text;
 
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
+	text = wgettext("Initializing nodes...");
+	draw_load_screen(text, device, guienv, 0, 80);
 	m_nodedef->updateAliases(m_itemdef);
+	m_nodedef->setNodeRegistrationStatus(true);
+	m_nodedef->runNodeResolverCallbacks();
+	delete[] text;
 
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
@@ -2171,21 +2185,21 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	if(!no_output && g_settings->getBool("preload_item_visuals"))
 	{
 		verbosestream<<"Updating item textures and meshes"<<std::endl;
-		wchar_t* text = wgettext("Item textures...");
+		text = wgettext("Item textures...");
 		draw_load_screen(text, device, guienv, 0, 0);
 		std::set<std::string> names = m_itemdef->getAll();
 		size_t size = names.size();
 		size_t count = 0;
 		int percent = 0;
 		for(std::set<std::string>::const_iterator
-				i = names.begin(); i != names.end(); ++i){
+				i = names.begin(); i != names.end(); ++i)
+		{
 			// Asking for these caches the result
 			m_itemdef->getInventoryTexture(*i, this);
 			m_itemdef->getWieldMesh(*i, this);
 			count++;
-			percent = count*100/size;
-			if (count%50 == 0) // only update every 50 item
-				draw_load_screen(text, device, guienv, 0, percent);
+			percent = (count * 100 / size * 0.2) + 80;
+			draw_load_screen(text, device, guienv, 0, percent);
 		}
 		delete[] text;
 	}
@@ -2199,7 +2213,10 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 
 	m_state = LC_Ready;
 	sendReady();
+	text = wgettext("Done!");
+	draw_load_screen(text, device, guienv, 0, 100);
 	infostream<<"Client::afterContentReceived() done"<<std::endl;
+	delete[] text;
 }
 
 float Client::getRTT(void)
@@ -2291,6 +2308,11 @@ ISoundManager* Client::getSoundManager()
 MtEventManager* Client::getEventManager()
 {
 	return m_event;
+}
+
+ParticleManager* Client::getParticleManager()
+{
+	return &m_particle_manager;
 }
 
 scene::IAnimatedMesh* Client::getMesh(const std::string &filename)

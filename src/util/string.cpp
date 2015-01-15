@@ -24,10 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "pointer.h"
 #include "numeric.h"
 
-#include <sstream>
-#include <iomanip>
 #include <cctype>
-#include <map>
 
 #include "../sha1.h"
 #include "../base64.h"
@@ -117,6 +114,11 @@ std::string wide_to_utf8(const std::wstring &input) {
 }
 #endif
 
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <map>
+
 static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
@@ -126,7 +128,10 @@ const wchar_t* wide_chars =
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";
 
-int wctomb(char *s, wchar_t wc)
+int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
+int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
+
+int NOT_USED_wctomb(char *s, wchar_t wc)
 {
 	for (unsigned int j = 0; j < (sizeof(wide_chars)/sizeof(wchar_t));j++) {
 		if (wc == wide_chars[j]) {
@@ -141,7 +146,7 @@ int wctomb(char *s, wchar_t wc)
 	return -1;
 }
 
-int mbtowc(wchar_t *pwc, const char *s, size_t n)
+int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
 	std::wstring intermediate = narrow_to_wide(s);
 
@@ -710,3 +715,9 @@ bool string_icompare(const std::string& a, const std::string& b)
 {
 	return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), char_icompare);
 }
+
+void str_replace(std::string &str, char from, char to)
+{
+	std::replace(str.begin(), str.end(), from, to);
+}
+

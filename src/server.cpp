@@ -67,7 +67,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "util/thread.h"
 #include "defaultsettings.h"
-#include "circuit.h"
 //#include "stat.h"
 
 #include "msgpack.h"
@@ -295,16 +294,18 @@ void * ServerThread::Thread()
 	{
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
-			auto time_now = porting::getTimeMs();
+			u32 time_now = porting::getTimeMs();
+			u32 end_ms = time_now + u32(1000 * dedicated_server_step);
 			m_server->AsyncRunStep((time_now - time)/1000.0f);
 			time = time_now;
 
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
-			for (u16 i = 0; i < 1000; ++i)
-				if (!m_server->Receive() || porting::getTimeMs() > end_ms)
+			for (u16 i = 0; i < 1000; ++i) {
+				m_server->Receive();
+				if (porting::getTimeMs() > end_ms)
 					break;
+			}
 		}
 		catch(con::NoIncomingDataException &e)
 		{
@@ -383,7 +384,6 @@ Server::Server(
 	m_enable_rollback_recording(false),
 	m_emerge(NULL),
 	m_script(NULL),
-	m_circuit(NULL),
 	stat(path_world),
 	m_itemdef(createItemDefManager()),
 	m_nodedef(createNodeDefManager()),
@@ -515,6 +515,12 @@ Server::Server(
 	// Lock environment
 	//JMutexAutoLock envlock(m_env_mutex);
 
+	// Load mapgen params from Settings
+	m_emerge->loadMapgenParams();
+
+	// Create the Map (loads map_meta.txt, overriding configured mapgen params)
+	ServerMap *servermap = new ServerMap(path_world, this, m_emerge);
+
 	// Initialize scripting
 	infostream<<"Server: Initializing Lua"<<std::endl;
 
@@ -522,10 +528,8 @@ Server::Server(
 	
 	std::string scriptpath = getBuiltinLuaPath() + DIR_DELIM "init.lua";
 
-	if (!m_script->loadScript(scriptpath)) {
+	if (!m_script->loadScript(scriptpath))
 		throw ModError("Failed to load and run " + scriptpath);
-	}
-
 
 	// Print 'em
 	infostream<<"Server: Loading mods: ";
@@ -559,23 +563,16 @@ Server::Server(
 	if (!simple_singleplayer_mode)
 		m_nodedef->updateTextures(this);
 
-	// Perform pending node name resolutions
-	m_nodedef->getResolver()->resolveNodes();
+	m_nodedef->setNodeRegistrationStatus(true);
 
-	// Load the mapgen params from global settings now after any
-	// initial overrides have been set by the mods
-	m_emerge->loadMapgenParams();
+	// Perform pending node name resolutions
+	m_nodedef->runNodeResolverCallbacks();
 
 	// Initialize Environment
-	ServerMap *servermap = new ServerMap(path_world, this, m_emerge, m_circuit);
-	m_circuit = new Circuit(m_script, servermap, ndef(), path_world);
-	m_env = new ServerEnvironment(servermap, m_script, m_circuit, this, m_path_world);
+	m_env = new ServerEnvironment(servermap, m_script, this, m_path_world);
 	m_emerge->env = m_env;
 
 	m_clients.setEnv(m_env);
-
-	// Run some callbacks after the MG params have been set up but before activation
-	m_script->environment_OnMapgenInit(&m_emerge->params);
 
 	// Initialize mapgens
 	m_emerge->initMapgens();
@@ -595,6 +592,8 @@ Server::Server(
 
 	// Add some test ActiveBlockModifiers to environment
 	add_legacy_abms(m_env, m_nodedef);
+
+	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
 
 	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
@@ -652,7 +651,6 @@ Server::~Server()
 	delete m_itemdef;
 	delete m_nodedef;
 	delete m_craftdef;
-	delete m_circuit;
 
 	// Deinitialize scripting
 	infostream<<"Server: Deinitializing scripting"<<std::endl;
@@ -1285,7 +1283,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 			// Update m_enable_rollback_recording here too
 			m_enable_rollback_recording =
-					g_settings->getBool("enable_rollback_recording");
+#if USE_SQLITE
+ 					g_settings->getBool("enable_rollback_recording");
+#else
+					0;
+#endif
 		}
 	}
 
@@ -1386,24 +1388,6 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 			++ret;
 			goto no_send;
 		}
-
-		auto clients = m_clients.getClientList();
-		for (auto & client : clients)
-			if (client->m_nearest_unsent_nearest) {
-				client->m_nearest_unsent_d = 0;
-				client->m_nearest_unsent_nearest = 0;
-			}
-
-		//JMutexAutoLock lock(m_env_mutex);
-		//JMutexAutoLock lock2(m_con_mutex);
-
-/*
-		if(m_modified_blocks.size() > 0)
-		{
-			SetBlocksNotSent(m_modified_blocks);
-		}
-		m_modified_blocks.clear();
-*/
 	}
 	no_send:
 
@@ -1656,7 +1640,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		packet[TOSERVER_INIT_FMT].convert(&client_max);
 		u8 our_max = SER_FMT_VER_HIGHEST_READ;
 		// Use the highest version supported by both
-		u8 deployed = std::min(client_max, our_max);
+		int deployed = std::min(client_max, our_max);
 		// If it's lower than the lowest supported, give up.
 		if(deployed < SER_FMT_VER_LOWEST)
 			deployed = SER_FMT_VER_INVALID;
@@ -2750,7 +2734,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			}
 
 		} // action == 4
-		
+
 
 		/*
 			Catch invalid actions
@@ -3697,7 +3681,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 5);
+	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 6);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -3707,6 +3691,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
 	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
+
 
 	//JMutexAutoLock lock(m_env_mutex);
 	/*
@@ -4084,7 +4070,7 @@ void Server::DenyAccess(u16 peer_id, const std::string &reason)
 
 void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
 {
-    DenyAccess(peer_id, wide_to_narrow(reason));
+    DenyAccess(peer_id, wide_to_utf8(reason));
 }
 
 void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
@@ -4350,7 +4336,7 @@ bool Server::showFormspec(const char *playername, const std::string &formspec, c
 u32 Server::hudAdd(Player *player, HudElement *form) {
 	if (!player)
 		return -1;
-	
+
 	u32 id = player->addHud(form);
 
 	SendHUDAdd(player->peer_id, id, form);
@@ -4366,7 +4352,7 @@ bool Server::hudRemove(Player *player, u32 id) {
 
 	if (!todel)
 		return false;
-	
+
 	delete todel;
 
 	SendHUDRemove(player->peer_id, id);
@@ -4387,9 +4373,9 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask) {
 
 	SendHUDSetFlags(player->peer_id, flags, mask);
 	player->hud_flags = flags;
-	
+
 	PlayerSAO* playersao = player->getPlayerSAO();
-	
+
 	if (playersao == NULL)
 		return false;
 
@@ -4930,8 +4916,8 @@ void Server::maintenance_start() {
 	m_env->getServerMap().m_map_saving_enabled = false;
 	m_env->getServerMap().m_map_loading_enabled = false;
 	m_env->getServerMap().dbase->close();
-	m_env->m_key_value_storage->close();
-	m_env->m_players_storage->close();
+	m_env->m_key_value_storage.close();
+	m_env->m_players_storage.close();
 	stat.close();
 	actionstream<<"Server: Starting maintenance: bases closed now."<<std::endl;
 
@@ -4939,8 +4925,8 @@ void Server::maintenance_start() {
 
 void Server::maintenance_end() {
 	m_env->getServerMap().dbase->open();
-	m_env->m_key_value_storage->open();
-	m_env->m_players_storage->open();
+	m_env->m_key_value_storage.open();
+	m_env->m_players_storage.open();
 	stat.open();
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;

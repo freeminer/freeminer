@@ -5,7 +5,7 @@ Engine
   * Lot of stability and speed fixes
   * use utf8 everywhere
 
-#### Protocol (Incompatimble with minetest now)
+#### Protocol (Incompatible with minetest now)
   * enet based networking (30x+  faster than before, more reliable)
   * msgpack based protocol (easy extendable, better backward compatibility)
 

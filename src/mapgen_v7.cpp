@@ -119,7 +119,8 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 }
 
 
-MapgenV7::~MapgenV7() {
+MapgenV7::~MapgenV7()
+{
 	delete noise_terrain_base;
 	delete noise_terrain_persist;
 	delete noise_height_select;
@@ -139,7 +140,8 @@ MapgenV7::~MapgenV7() {
 }
 
 
-MapgenV7Params::MapgenV7Params() {
+MapgenV7Params::MapgenV7Params()
+{
 	spflags = MGV7_MOUNTAINS | MGV7_RIDGES;
 
 	np_terrain_base    = NoiseParams(4,    70,  v3f(300, 300, 300), 82341, 6, 0.7,  2.0);
@@ -161,7 +163,8 @@ MapgenV7Params::MapgenV7Params() {
 }
 
 
-void MapgenV7Params::readParams(Settings *settings) {
+void MapgenV7Params::readParams(Settings *settings)
+{
 	settings->getFlagStrNoEx("mgv7_spflags", spflags, flagdesc_mapgen_v7);
 
 	settings->getNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
@@ -183,7 +186,8 @@ void MapgenV7Params::readParams(Settings *settings) {
 }
 
 
-void MapgenV7Params::writeParams(Settings *settings) {
+void MapgenV7Params::writeParams(Settings *settings)
+{
 	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7, (u32)-1);
 
 	settings->setNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
@@ -209,7 +213,8 @@ void MapgenV7Params::writeParams(Settings *settings) {
 ///////////////////////////////////////
 
 
-int MapgenV7::getGroundLevelAtPoint(v2s16 p) {
+int MapgenV7::getGroundLevelAtPoint(v2s16 p)
+{
 	// Base terrain calculation
 	s16 y = baseTerrainLevelAtPoint(p.X, p.Y);
 
@@ -235,7 +240,8 @@ int MapgenV7::getGroundLevelAtPoint(v2s16 p) {
 }
 
 
-void MapgenV7::makeChunk(BlockMakeData *data) {
+void MapgenV7::makeChunk(BlockMakeData *data)
+{
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
@@ -257,7 +263,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	full_node_min = (blockpos_min - 1) * MAP_BLOCKSIZE;
 	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
-	blockseed = m_emerge->getBlockSeed(full_node_min);  //////use getBlockSeed2()!
+	blockseed = getBlockSeed2(full_node_min, seed);
 
 	// Make some noise
 	calculateNoise();
@@ -285,7 +291,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	if (flags & MG_CAVES)
 		generateCaves(stone_surface_max_y);
 
-	if (flags & MG_DUNGEONS) {
+	if ((flags & MG_DUNGEONS) && (stone_surface_max_y >= node_min.Y)) {
 		DungeonGen dgen(this, NULL);
 		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
@@ -304,8 +310,7 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 	updateLiquid(full_node_min, full_node_max);
 
 	if (flags & MG_LIGHT)
-		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
-					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
+		calcLighting(node_min, node_max);
 	//setLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
 	//			node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE, 0xFF);
 
@@ -313,7 +318,8 @@ void MapgenV7::makeChunk(BlockMakeData *data) {
 }
 
 
-void MapgenV7::calculateNoise() {
+void MapgenV7::calculateNoise()
+{
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
 	int x = node_min.X;
 	int y = node_min.Y;
@@ -346,7 +352,8 @@ void MapgenV7::calculateNoise() {
 }
 
 
-Biome *MapgenV7::getBiomeAtPoint(v3s16 p) {
+Biome *MapgenV7::getBiomeAtPoint(v3s16 p)
+{
 	float heat      = NoisePerlin2D(&noise_heat->np, p.X, p.Z, seed);
 	float humidity  = NoisePerlin2D(&noise_humidity->np, p.X, p.Z, seed);
 	s16 groundlevel = baseTerrainLevelAtPoint(p.X, p.Z);
@@ -355,7 +362,8 @@ Biome *MapgenV7::getBiomeAtPoint(v3s16 p) {
 }
 
 //needs to be updated
-float MapgenV7::baseTerrainLevelAtPoint(int x, int z) {
+float MapgenV7::baseTerrainLevelAtPoint(int x, int z)
+{
 	float hselect = NoisePerlin2D(&noise_height_select->np, x, z, seed);
 	hselect = rangelim(hselect, 0.0, 1.0);
 
@@ -379,7 +387,8 @@ float MapgenV7::baseTerrainLevelAtPoint(int x, int z) {
 }
 
 
-float MapgenV7::baseTerrainLevelFromMap(int index) {
+float MapgenV7::baseTerrainLevelFromMap(int index)
+{
 	float hselect     = rangelim(noise_height_select->result[index], 0.0, 1.0);
 	float height_base = noise_terrain_base->result[index];
 	float height_alt  = noise_terrain_alt->result[index];
@@ -391,18 +400,20 @@ float MapgenV7::baseTerrainLevelFromMap(int index) {
 }
 
 
-bool MapgenV7::getMountainTerrainAtPoint(int x, int y, int z) {
+bool MapgenV7::getMountainTerrainAtPoint(int x, int y, int z)
+{
 	float mnt_h_n = NoisePerlin2D(&noise_mount_height->np, x, z, seed);
-	float height_modifier = -((float)y / rangelim(mnt_h_n, 80.0, 150.0));
+	float height_modifier = -((float)y / mnt_h_n);
 	float mnt_n = NoisePerlin3D(&noise_mountain->np, x, y, z, seed);
 
 	return mnt_n + height_modifier >= 0.6;
 }
 
 
-bool MapgenV7::getMountainTerrainFromMap(int idx_xyz, int idx_xz, int y) {
+bool MapgenV7::getMountainTerrainFromMap(int idx_xyz, int idx_xz, int y)
+{
 	float mounthn = noise_mount_height->result[idx_xz];
-	float height_modifier = -((float)y / rangelim(mounthn, 80.0, 150.0));
+	float height_modifier = -((float)y / mounthn);
 	return (noise_mountain->result[idx_xyz] + height_modifier >= 0.6);
 }
 
@@ -442,11 +453,12 @@ void MapgenV7::carveRivers() {
 #endif
 
 
-int MapgenV7::generateTerrain() {
+int MapgenV7::generateTerrain()
+{
 	int ymax = generateBaseTerrain();
 
 	if (spflags & MGV7_MOUNTAINS)
-		generateMountainTerrain();
+		ymax = generateMountainTerrain(ymax);
 
 	if (spflags & MGV7_RIDGES)
 		generateRidgeTerrain();
@@ -455,7 +467,8 @@ int MapgenV7::generateTerrain() {
 }
 
 
-int MapgenV7::generateBaseTerrain() {
+int MapgenV7::generateBaseTerrain()
+{
 	MapNode n_air(CONTENT_AIR);
 	MapNode n_stone(c_stone);
 	MapNode n_water(c_water_source);
@@ -505,9 +518,10 @@ int MapgenV7::generateBaseTerrain() {
 }
 
 
-void MapgenV7::generateMountainTerrain() {
+int MapgenV7::generateMountainTerrain(int ymax)
+{
 	if (node_max.Y <= water_level)
-		return;
+		return ymax;
 
 	MapNode n_stone(c_stone);
 	u32 j = 0;
@@ -517,18 +531,26 @@ void MapgenV7::generateMountainTerrain() {
 		u32 vi = vm->m_area.index(node_min.X, y, z);
 		for (s16 x = node_min.X; x <= node_max.X; x++) {
 			int index = (z - node_min.Z) * csize.X + (x - node_min.X);
+			content_t c = vm->m_data[vi].getContent();
 
-			if (getMountainTerrainFromMap(j, index, y))
+			if (getMountainTerrainFromMap(j, index, y)
+					&& (c == CONTENT_AIR || c == c_water_source)) {
 				vm->m_data[vi] = n_stone;
+				if (y > ymax)
+					ymax = y;
+			}
 
 			vi++;
 			j++;
 		}
 	}
+
+	return ymax;
 }
 
 
-void MapgenV7::generateRidgeTerrain() {
+void MapgenV7::generateRidgeTerrain()
+{
 	MapNode n_water(c_water_source);
 	MapNode n_ice(c_ice);
 	MapNode n_air(CONTENT_AIR);
@@ -573,7 +595,8 @@ void MapgenV7::generateRidgeTerrain() {
 }
 
 
-void MapgenV7::generateBiomes() {
+void MapgenV7::generateBiomes()
+{
 	if (node_max.Y < water_level)
 		return;
 
@@ -586,10 +609,12 @@ void MapgenV7::generateBiomes() {
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-		Biome *biome  = (Biome *)bmgr->get(biomemap[index]);
-		s16 dfiller   = biome->depth_filler + noise_filler_depth->result[index];
-		s16 y0_top    = biome->depth_top;
-		s16 y0_filler = biome->depth_top + dfiller;
+		Biome *biome        = (Biome *)bmgr->get(biomemap[index]);
+		s16 dfiller         = biome->depth_filler + noise_filler_depth->result[index];
+		s16 y0_top          = biome->depth_top;
+		s16 y0_filler       = biome->depth_top + dfiller;
+		s16 shore_max       = water_level + biome->height_shore;
+		s16 depth_water_top = biome->depth_water_top;
 
 		s16 nplaced = 0;
 		u32 i = vm->m_area.index(x, node_max.Y, z);
@@ -617,26 +642,24 @@ void MapgenV7::generateBiomes() {
 				if (c_below != CONTENT_AIR) {
 					if (nplaced < y0_top) {
 						if(y < water_level)
-							vm->m_data[i] = MapNode(biome->c_filler);
+							vm->m_data[i] = MapNode(biome->c_underwater);
+						else if(y <= shore_max)
+							vm->m_data[i] = MapNode(biome->c_shore_top);
 						else
 							vm->m_data[i] = MapNode(
 								((y < water_level) && (biome->c_top == c_dirt_with_grass))
 									? c_dirt
 									: heat < -3
 										? biome->c_top_cold
-										: biome->c_top
-							);
-/*
-						// A hack to prevent dirt_with_grass from being
-						// placed below water.  TODO: fix later
-						content_t c_place = ((y < water_level) &&
-							(biome->c_top == c_dirt_with_grass)) ?
-							 c_dirt : biome->c_top;
-						vm->m_data[i] = MapNode(c_place);
-*/
+										: biome->c_top);
 						nplaced++;
 					} else if (nplaced < y0_filler && nplaced >= y0_top) {
-						vm->m_data[i] = MapNode(biome->c_filler);
+						if(y < water_level)
+							vm->m_data[i] = MapNode(biome->c_underwater);
+						else if(y <= shore_max)
+							vm->m_data[i] = MapNode(biome->c_shore_filler);
+						else
+							vm->m_data[i] = MapNode(biome->c_filler);
 						nplaced++;
 					} else if (c == c_stone) {
 						have_air = false;
@@ -658,7 +681,10 @@ void MapgenV7::generateBiomes() {
 			} else if (c == c_water_source) {
 				have_air = true;
 				nplaced = 0;
-				vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
+				if(y > water_level - depth_water_top)
+					vm->m_data[i] = MapNode(biome->c_water_top);
+				else
+					vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
 			} else if (c == CONTENT_AIR) {
 				have_air = true;
 				nplaced = 0;
@@ -670,7 +696,8 @@ void MapgenV7::generateBiomes() {
 }
 
 
-void MapgenV7::dustTopNodes() {
+void MapgenV7::dustTopNodes()
+{
 	v3s16 em = vm->m_area.getExtent();
 	u32 index = 0;
 
@@ -694,12 +721,7 @@ void MapgenV7::dustTopNodes() {
 		}
 
 		content_t c = vm->m_data[vi].getContent();
-		if (c == biome->c_water && biome->c_dust_water != CONTENT_IGNORE) {
-			if (y < node_min.Y)
-				continue;
-
-			vm->m_data[vi] = MapNode(biome->c_dust_water);
-		} else if (!ndef->get(c).buildable_to && c != CONTENT_IGNORE) {
+		if (!ndef->get(c).buildable_to && c != CONTENT_IGNORE) {
 			if (y == node_max.Y)
 				continue;
 
@@ -711,7 +733,8 @@ void MapgenV7::dustTopNodes() {
 
 
 #if 0
-void MapgenV7::addTopNodes() {
+void MapgenV7::addTopNodes()
+{
 	v3s16 em = vm->m_area.getExtent();
 	s16 ntopnodes;
 	u32 index = 0;
@@ -807,7 +830,8 @@ void MapgenV7::addTopNodes() {
 
 NoiseParams nparams_v7_def_cave(6, 6.0, v3f(250.0, 250.0, 250.0), 34329, 3, 0.50, 2.0);
 
-void MapgenV7::generateCaves(int max_stone_y) {
+void MapgenV7::generateCaves(int max_stone_y)
+{
 	PseudoRandom ps(blockseed + 21343);
 
 	int volume_nodes = (node_max.X - node_min.X + 1) *

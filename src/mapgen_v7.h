@@ -69,7 +69,6 @@ public:
 	int zstride;
 	u32 spflags;
 
-	u32 blockseed;
 	v3s16 node_min;
 	v3s16 node_max;
 	v3s16 full_node_min;
@@ -122,7 +121,7 @@ public:
 
 	virtual int generateTerrain();
 	int generateBaseTerrain();
-	void generateMountainTerrain();
+	int generateMountainTerrain(int ymax);
 	void generateRidgeTerrain();
 
 	void generateBiomes();
@@ -137,11 +136,13 @@ public:
 };
 
 struct MapgenFactoryV7 : public MapgenFactory {
-	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
+	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge)
+	{
 		return new MapgenV7(mgid, params, emerge);
 	};
 
-	MapgenSpecificParams *createMapgenParams() {
+	MapgenSpecificParams *createMapgenParams()
+	{
 		return new MapgenV7Params();
 	};
 };

@@ -25,6 +25,7 @@ menudata = {}
 
 --------------------------------------------------------------------------------
 local function render_client_count(n)
+	n = n + 0
 	if n > 99 then
 		return '99+'
 	elseif n >= 0 then
@@ -32,6 +33,14 @@ local function render_client_count(n)
 	else
 		return '?'
 	end
+end
+
+--------------------------------------------------------------------------------
+function image_column(tooltip, flagname)
+	return "image," ..
+		"tooltip=" .. core.formspec_escape(tooltip) .. "," ..
+		"0=" .. core.formspec_escape(defaulttexturedir .. "blank.png") .. "," ..
+		"1=" .. core.formspec_escape(defaulttexturedir .. "server_flags_" .. flagname .. ".png")
 end
 
 --------------------------------------------------------------------------------
@@ -186,8 +195,10 @@ function asyncOnlineFavourites()
 		end,
 		nil,
 		function(result)
-			menudata.favorites = result
-			core.event_handler("Refresh")
+			if core.setting_getbool("public_serverlist") then
+				menudata.favorites = result
+				core.event_handler("Refresh")
+			end
 		end
 		)
 end

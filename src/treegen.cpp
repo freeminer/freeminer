@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 namespace treegen
 {
 
-void make_tree(ManualMapVoxelManipulator &vmanip, v3s16 p0,
+void make_tree(MMVManip &vmanip, v3s16 p0,
 		bool is_apple_tree, INodeDefManager *ndef, int seed)
 {
 	/*
@@ -129,7 +129,7 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0, INodeDefManager *nd
 {
 	ServerMap *map = &env->getServerMap();
 	std::map<v3s16, MapBlock*> modified_blocks;
-	ManualMapVoxelManipulator vmanip(map);
+	MMVManip vmanip(map);
 	v3s16 tree_blockp = getNodeBlockPos(p0);
 	treegen::error e;
 
@@ -158,7 +158,7 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0, INodeDefManager *nd
 }
 
 //L-System tree generator
-treegen::error make_ltree(ManualMapVoxelManipulator &vmanip, v3s16 p0, INodeDefManager *ndef,
+treegen::error make_ltree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef,
 		TreeDef tree_definition)
 {
 	MapNode dirtnode(ndef->getId("mapgen_dirt"));
@@ -421,7 +421,7 @@ treegen::error make_ltree(ManualMapVoxelManipulator &vmanip, v3s16 p0, INodeDefM
 	return SUCCESS;
 }
 
-void tree_node_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
+void tree_node_placement(MMVManip &vmanip, v3f p0,
 		MapNode node)
 {
 	v3s16 p1 = v3s16(myround(p0.X),myround(p0.Y),myround(p0.Z));
@@ -434,7 +434,7 @@ void tree_node_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 	vmanip.m_data[vmanip.m_area.index(p1)] = node;
 }
 
-void tree_trunk_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
+void tree_trunk_placement(MMVManip &vmanip, v3f p0,
 		TreeDef &tree_definition)
 {
 	v3s16 p1 = v3s16(myround(p0.X),myround(p0.Y),myround(p0.Z));
@@ -447,7 +447,7 @@ void tree_trunk_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 	vmanip.m_data[vmanip.m_area.index(p1)] = tree_definition.trunknode;
 }
 
-void tree_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
+void tree_leaves_placement(MMVManip &vmanip, v3f p0,
 		PseudoRandom ps ,TreeDef &tree_definition)
 {
 	MapNode leavesnode=tree_definition.leavesnode;
@@ -459,7 +459,7 @@ void tree_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 	u32 vi = vmanip.m_area.index(p1);
 	if(vmanip.m_data[vi].getContent() != CONTENT_AIR
 			&& vmanip.m_data[vi].getContent() != CONTENT_IGNORE)
-		return;	
+		return;
 	if (tree_definition.fruit_chance>0)
 	{
 		if (ps.range(1,100) > 100-tree_definition.fruit_chance)
@@ -471,7 +471,7 @@ void tree_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 		vmanip.m_data[vmanip.m_area.index(p1)] = leavesnode;
 }
 
-void tree_single_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
+void tree_single_leaves_placement(MMVManip &vmanip, v3f p0,
 		PseudoRandom ps, TreeDef &tree_definition)
 {
 	MapNode leavesnode=tree_definition.leavesnode;
@@ -487,7 +487,7 @@ void tree_single_leaves_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
 	vmanip.m_data[vmanip.m_area.index(p1)] = leavesnode;
 }
 
-void tree_fruit_placement(ManualMapVoxelManipulator &vmanip, v3f p0,
+void tree_fruit_placement(MMVManip &vmanip, v3f p0,
 		TreeDef &tree_definition)
 {
 	v3s16 p1 = v3s16(myround(p0.X),myround(p0.Y),myround(p0.Z));
@@ -567,7 +567,7 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 		v3s16 p2 = p0 + v3s16(x,-1,z);
 		u32 vi1 = vmanip.m_area.index(p1);
 		u32 vi2 = vmanip.m_area.index(p2);
-		
+
 		if (vmanip.m_area.contains(p2) &&
 			vmanip.m_data[vi2].getContent() == CONTENT_AIR)
 			vmanip.m_data[vi2] = treenode;
@@ -648,7 +648,7 @@ void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
 	}
 }
 
-void make_cavetree(ManualMapVoxelManipulator &vmanip, v3POS p0,
+void make_cavetree(MMVManip &vmanip, v3POS p0,
 		bool is_jungle_tree, INodeDefManager *ndef, int seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));

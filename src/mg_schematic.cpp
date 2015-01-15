@@ -58,6 +58,12 @@ Schematic::~Schematic()
 }
 
 
+void Schematic::resolveNodeNames(NodeResolveInfo *nri)
+{
+	m_ndef->getIdsFromResolveInfo(nri, c_nodes);
+}
+
+
 void Schematic::updateContentIds()
 {
 	if (flags & SCHEM_CIDS_UPDATED)
@@ -71,8 +77,8 @@ void Schematic::updateContentIds()
 }
 
 
-void Schematic::blitToVManip(v3s16 p, ManualMapVoxelManipulator *vm,
-	Rotation rot, bool force_placement, INodeDefManager *ndef)
+void Schematic::blitToVManip(v3s16 p, MMVManip *vm, Rotation rot,
+	bool force_placement, INodeDefManager *ndef)
 {
 	int xstride = 1;
 	int ystride = size.X;
@@ -150,11 +156,11 @@ void Schematic::blitToVManip(v3s16 p, ManualMapVoxelManipulator *vm,
 }
 
 
-void Schematic::placeStructure(Map *map, v3s16 p, u32 flags,
-	Rotation rot, bool force_placement, INodeDefManager *ndef)
+void Schematic::placeStructure(Map *map, v3s16 p, u32 flags, Rotation rot,
+	bool force_placement, INodeDefManager *ndef)
 {
 	assert(schemdata != NULL);
-	ManualMapVoxelManipulator *vm = new ManualMapVoxelManipulator(map);
+	MMVManip *vm = new MMVManip(map);
 
 	if (rot == ROTATE_RAND)
 		rot = (Rotation)myrand_range(ROTATE_0, ROTATE_270);
@@ -194,8 +200,7 @@ void Schematic::placeStructure(Map *map, v3s16 p, u32 flags,
 }
 
 
-bool Schematic::loadSchematicFromFile(const char *filename,
-	NodeResolver *resolver,
+bool Schematic::loadSchematicFromFile(const char *filename, INodeDefManager *ndef,
 	std::map<std::string, std::string> &replace_names)
 {
 	content_t cignore = CONTENT_IGNORE;
@@ -224,10 +229,9 @@ bool Schematic::loadSchematicFromFile(const char *filename,
 	for (int y = 0; y != size.Y; y++)
 		slice_probs[y] = (version >= 3) ? readU8(is) : MTSCHEM_PROB_ALWAYS;
 
-	int nodecount = size.X * size.Y * size.Z;
+	NodeResolveInfo *nri = new NodeResolveInfo(this);
 
 	u16 nidmapcount = readU16(is);
-
 	for (int i = 0; i != nidmapcount; i++) {
 		std::string name = deSerializeString(is);
 		if (name == "ignore") {
@@ -241,16 +245,22 @@ bool Schematic::loadSchematicFromFile(const char *filename,
 		if (it != replace_names.end())
 			name = it->second;
 
-		resolver->addNodeList(name.c_str(), &c_nodes);
+		nri->nodenames.push_back(name);
 	}
+
+	nri->nodelistinfo.push_back(NodeListInfo(nidmapcount, CONTENT_AIR));
+	ndef->pendNodeResolve(nri);
+
+	size_t nodecount = size.X * size.Y * size.Z;
 
 	delete []schemdata;
 	schemdata = new MapNode[nodecount];
+
 	MapNode::deSerializeBulk(is, SER_FMT_VER_HIGHEST_READ, schemdata,
-				nodecount, 2, 2, true);
+		nodecount, 2, 2, true);
 
 	if (version == 1) { // fix up the probability values
-		for (int i = 0; i != nodecount; i++) {
+		for (size_t i = 0; i != nodecount; i++) {
 			if (schemdata[i].param1 == 0)
 				schemdata[i].param1 = MTSCHEM_PROB_ALWAYS;
 			if (have_cignore && schemdata[i].getContent() == cignore)
@@ -347,7 +357,7 @@ void build_nnlist_and_update_ids(MapNode *nodes, u32 nodecount,
 
 bool Schematic::getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2)
 {
-	ManualMapVoxelManipulator *vm = new ManualMapVoxelManipulator(map);
+	MMVManip *vm = new MMVManip(map);
 
 	v3s16 bp1 = getNodeBlockPos(p1);
 	v3s16 bp2 = getNodeBlockPos(p2);

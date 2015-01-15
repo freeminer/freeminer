@@ -116,7 +116,11 @@
 #    Enable smooth lighting with simple ambient occlusion.
 #    Disable for speed or for different looks.
 #smooth_lighting = true
-#    Path to texture directory. All textures are first searched from here.
+#    Adjust the gamma encoding for the light tables. Valid values are in the range
+#    1.1 to 3.0 (inclusive); lower numbers are brighter.  This setting is for the
+#    client only and is ignored by the server
+#display_gamma = 1.8
+# Path to texture directory. All textures are first searched from here.
 #texture_path =
 #    Video back-end.
 #    Possible values: null, software, burningsvideo, direct3d8, direct3d9, opengl.
@@ -214,6 +218,11 @@
 #    Set to true enables waving plants. Requires shaders enabled.
 #enable_waving_plants = false
 #    Enables caching of facedir rotated meshes
+#ambient_occlusion_gamma = 2.2
+#    The strength (darkness) of node ambient-occlusion shading.
+#    Lower is darker, Higher is lighter. The valid range of values for this
+#    setting is 0.25 to 4.0 inclusive. If the value is out of range it will be
+#    set to the nearest valid value.
 #enable_mesh_cache = true
 #    The time in seconds it takes between repeated
 #    right clicks when holding the right mouse button.
@@ -222,7 +231,7 @@
 #directional_colored_fog = true
 #    Delay showing tooltips, stated in milliseconds
 #tooltip_show_delay = 400
-#    Adjust dpi configuration to your screen (Desktop only) e.g. for 4k screens
+#    Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k screens
 #screen_dpi = 72
 #    Default timeout for cURL, stated in milliseconds.
 #    Only has an effect if compiled with cURL.
@@ -677,4 +686,3 @@
 # Animation range for model when walking and digging
 #animation_wd_start = 200
 #animation_wd_stop = 219
-

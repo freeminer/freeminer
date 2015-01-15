@@ -58,22 +58,26 @@ def patch(path, source, target):
 	fout.close()
 
 	
-LIBOGG_VERSION = "1.3.1"
+LIBOGG_VERSION = "1.3.2"
 LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.1"
-curl = "curl-7.34.0"
-openal = "openal-soft-1.15.1"
+curl = "curl-7.40.0"
+openal = "openal-soft-1.16.0"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
-libvorbis = "libvorbis-1.3.3"
+libvorbis = "libvorbis-1.3.4"
 zlib = "zlib-1.2.8"
-freetype = "freetype-2.5.2"
-luajit = "LuaJIT-2.0.2"
-gettext = "gettext-0.13.1"
-libiconv = "libiconv-1.9.1"
+freetype = "freetype-2.5.5"
+luajit = "LuaJIT-2.0.3"
+gettext = "gettext-0.14.6"
+libiconv = "libiconv-1.9.2"
 MSGPACK_VERSION = "c4df1ba6cc6ed2f3ef937e4b10ade41b376f3a01"
 msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
+#SQLITE_VERSION="3080704"
+#sqlite = "sqlite-autoconf-{}".format(SQLITE_VERSION)
+SQLITE_VERSION="3.8.4.2"
+sqlite = "sqlite-{}".format(SQLITE_VERSION)
 
 def main():
 	build_type = "Release"
@@ -257,6 +261,28 @@ def main():
 		download("http://www.nuget.org/api/v2/package/Crc32C/{}".format(CRC32C_VERSION), "crc32c.nupkg")
 		download("http://www.nuget.org/api/v2/package/Snappy/{}".format(SNAPPY_VERSION), "snappy.nupkg")		
 
+	#if not os.path.exists("sqlite.nupkg"):
+	#	download("http://www.nuget.org/api/v2/package/sqlite/{}".format(SQLITE_VERSION), "sqlite.nupkg")		
+	#if not os.path.exists("sqlite.redist.nupkg"):
+	#	download("http://www.nuget.org/api/v2/package/sqlite.redist/{}".format(SQLITE_VERSION), "sqlite.redist.nupkg")		
+
+	#if not os.path.exists(sqlite):
+		#print("sqlite not found, downloading.")
+		#os.mkdir(sqlite)
+
+		#zip_path = "sqlite-amalgamation-{}.zip".format(SQLITE_VERSION)
+		#urllib.request.urlretrieve("http://www.sqlite.org/snapshot/{}".format(zip_path), zip_path)
+		#extract_zip(zip_path, sqlite)
+
+		#tar_path = "{}.tar.gz".format(sqlite)
+		#urllib.request.urlretrieve("http://www.sqlite.org/2014/{}".format(tar_path), tar_path)
+		#extract_tar(tar_path, ".")
+
+		#os.chdir(sqlite)
+		#os.system("cmake . -DFORCE_STATIC_VCRT=1 -DLIBTYPE=STATIC")
+		#os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
+		#os.chdir("..")
+
 	
 	os.chdir("..")
 	
@@ -278,7 +304,7 @@ def main():
 		-DIRRLICHT_SOURCE_DIR=..\deps\{irrlicht}\
 		-DENABLE_SOUND=1
 		-DOPENAL_INCLUDE_DIR=..\deps\{openal}\include\AL\
-		-DOPENAL_LIBRARY=..\deps\{openal}\build\{build_type}\OpenAL32.lib
+		-DOPENAL_LIBRARY=..\deps\{openal}\build\{build_type}\OpenAL32.lib;..\deps\{openal}\build\{build_type}\common.lib
 		-DOGG_INCLUDE_DIR=..\deps\{libogg}\include\
 		-DOGG_LIBRARY=..\deps\{libogg}\win32\VS2010\Win32\{build_type}\libogg_static.lib
 		-DVORBIS_INCLUDE_DIR=..\deps\{libvorbis}\include\
@@ -286,27 +312,27 @@ def main():
 		-DVORBISFILE_LIBRARY=..\deps\{libvorbis}\win32\VS2010\Win32\{build_type}\libvorbisfile_static.lib
 		-DZLIB_INCLUDE_DIR=..\deps\{zlib}\
 		-DZLIB_LIBRARIES=..\deps\{zlib}\contrib\vstudio\vc11\x86\ZlibStat{build_type}\zlibstat.lib
-		-DENABLE_FREETYPE=1
 		-DFREETYPE_INCLUDE_DIR_freetype2=..\deps\{freetype}\include\
 		-DFREETYPE_INCLUDE_DIR_ft2build=..\deps\{freetype}\include\
-		-DFREETYPE_LIBRARY=..\deps\{freetype}\objs\win32\vc2010\{freetype_lib}
+		-DFREETYPE_LIBRARY=..\deps\{freetype}\objs\vc2010\win32\{freetype_lib}
 		-DLUA_LIBRARY=..\deps\{luajit}\src\lua51.lib
 		-DLUA_INCLUDE_DIR=..\deps\{luajit}\src\
 		-DENABLE_CURL=1
-		-DCURL_LIBRARY=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-spnego-winssl\lib\{curl_lib}
-		-DCURL_INCLUDE_DIR=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-spnego-winssl\include
+		-DCURL_LIBRARY=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-winssl\lib\{curl_lib}
+		-DCURL_INCLUDE_DIR=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-winssl\include
 		-DGETTEXT_INCLUDE_DIR=C:\usr\include\
 		-DGETTEXT_LIBRARY=C:\usr\lib\intl.lib
 		-DICONV_LIBRARY=C:\usr\lib\iconv.lib
 		-DGETTEXT_MSGFMT=C:\usr\bin\msgfmt.exe
 		-DENABLE_GETTEXT=1
 		-DENABLE_LEVELDB=1
+		-DFORCE_LEVELDB=1
+		-DENABLE_SQLITE3=1
 		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
 		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
-		-DFORCE_LEVELDB=1
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
-		freetype_lib="freetype252MT.lib" if build_type != "Debug" else "freetype252MT_D.lib",
+		freetype_lib="freetype255MT.lib" if build_type != "Debug" else "freetype255MT_D.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
 		zlib=zlib,
@@ -317,12 +343,12 @@ def main():
 		libvorbis=libvorbis,
 		curl=curl,
 		msgpack=msgpack,
-		msgpack_suffix="d" if build_type == "Debug" else ""
+		msgpack_suffix="d" if build_type == "Debug" else "",
 	).replace("\n", "")
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")
-	patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
+	#patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
 	# wtf, cmake?
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
@@ -335,6 +361,14 @@ def main():
   		<Import Project="..\Snappy.1.1.1.7\build\native\Snappy.props" Condition="Exists('..\Snappy.1.1.1.7\build\native\Snappy.props')" />
   		<Import Project="..\Crc32C.1.0.4\build\native\Crc32C.props" Condition="Exists('..\Crc32C.1.0.4\build\native\Crc32C.props')" />
   		<ItemGroup Label="ProjectConfigurations">""")
+
+	## install sqlite package
+	#os.system(r"..\NuGet.exe install sqlite -source {}\..\deps".format(os.getcwd()))
+	## patch project file to use these packages
+	#patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
+	#	r"""<Import Project="..\sqlite.{}\build\native\sqlite.targets" Condition="Exists('..\sqlite.{}\build\native\sqlite.targets')" />
+	#	<ItemGroup Label="ProjectConfigurations">""".format(SQLITE_VERSION,SQLITE_VERSION))
+
 
 	os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
 	os.system("MSBuild INSTALL.vcxproj /p:Configuration={}".format(build_type))

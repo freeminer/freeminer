@@ -132,11 +132,6 @@ else()
 		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
 			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
 		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-
-		CHECK_CXX_COMPILER_FLAG("-Wno-type-limits" HAS_TYPE_LIMITS_WARNING)
-		if(HAS_TYPE_LIMITS_WARNING)
-			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-type-limits")
-		endif(HAS_TYPE_LIMITS_WARNING)
 	endif()
 
 	set(OTHER_FLAGS "")
@@ -187,8 +182,6 @@ endif()
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
-mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
-mark_as_advanced(JSON_INCLUDE_DIR JSON_LIBRARY)
 
 find_package(MsgPack)
 
@@ -361,7 +354,6 @@ else()
 	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
 endif()
 
-find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
@@ -499,6 +491,26 @@ if(FORCE_LEVELDB)
 	set(USE_LEVELDB 1)
 endif()
 
+set(USE_SQLITE3 0)
+
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+
+if(ENABLE_SQLITE3)
+	find_package(SQLite3)
+	if(SQLITE3_LIBRARY AND SQLITE3_INCLUDE_DIR)
+		set(USE_SQLITE3 1)
+		message(STATUS "sqlite3 backend enabled")
+		include_directories(${SQLITE3_INCLUDE_DIR})
+	else()
+		set(USE_SQLITE3 0)
+		message(STATUS "sqlite3 not found!")
+	endif()
+endif()
+
+if(FORCE_SQLITE3)
+	set(USE_SQLITE3 1)
+endif()
+
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
@@ -570,7 +582,8 @@ set(FMcommon_SRCS
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
-	fmliquid.cpp
+	fm_liquid.cpp
+	fm_map.cpp
 )
 
 set(common_SRCS
@@ -740,7 +753,6 @@ include_directories(
 	${PNG_INCLUDE_DIR}
 	${GETTEXT_INCLUDE_DIR}
 	${SOUND_INCLUDE_DIRS}
-	${SQLITE3_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${MSGPACK_INCLUDE_DIRS}
@@ -775,7 +787,6 @@ if(BUILD_CLIENT)
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARIES}
@@ -818,7 +829,10 @@ if(BUILD_CLIENT)
 	)
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
-	endif(USE_LEVELDB AND NOT FORCE_LEVELDB)
+	endif()
+	if (USE_SQLITE3 AND NOT FORCE_SQLITE3)
+		target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARY})
+	endif()
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif(USE_REDIS)
@@ -835,7 +849,6 @@ if(BUILD_SERVER)
 	target_link_libraries(
 		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
@@ -896,6 +909,9 @@ if(WIN32)
 	endif()
 	if(FREETYPE_DLL)
 		install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
+	endif()
+	if(SQLITE3_DLL)
+		install(FILES ${SQLITE3_DLL} DESTINATION ${BINDIR})
 	endif()
 	if(LEVELDB_DLL)
 		install(FILES ${LEVELDB_DLL} DESTINATION ${BINDIR})
@@ -960,11 +976,6 @@ if (USE_GETTEXT)
 endif(USE_GETTEXT)
 
 # Subdirectories
-
-if (SQLITE3_FOUND)
-else (SQLITE3_FOUND)
-	add_subdirectory(sqlite)
-endif (SQLITE3_FOUND)
 
 if (BUILD_CLIENT)
 	add_subdirectory(cguittfont)

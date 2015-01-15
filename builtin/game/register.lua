@@ -226,13 +226,6 @@ function core.register_alias(name, convert_to)
 	end
 end
 
-local register_biome_raw = core.register_biome
-core.registered_biomes = {}
-function core.register_biome(biome)
-	core.registered_biomes[biome.name] = biome
-	register_biome_raw(biome)
-end
-
 function core.on_craft(itemstack, player, old_craft_list, craft_inv)
 	for _, func in ipairs(core.registered_on_crafts) do
 		itemstack = func(itemstack, player, old_craft_list, craft_inv) or itemstack
@@ -387,10 +380,38 @@ local function make_registration_reverse()
 	return t, registerfunc
 end
 
+local function make_registration_wrap(reg_fn_name, clear_fn_name)
+	local list = {}
+
+	local orig_reg_fn = core[reg_fn_name]
+	core[reg_fn_name] = function(def)
+		local retval = orig_reg_fn(def)
+		if retval ~= nil then
+			if def.name ~= nil then
+				list[def.name] = def
+			else
+				list[retval] = def
+			end
+		end
+		return retval
+	end
+
+	local orig_clear_fn = core[clear_fn_name]
+	core[clear_fn_name] = function()
+		list = {}
+		return orig_clear_fn()
+	end
+
+	return list
+end
+
+core.registered_biomes      = make_registration_wrap("register_biome",      "clear_registered_biomes")
+core.registered_ores        = make_registration_wrap("register_ore",        "clear_registered_ores")
+core.registered_decorations = make_registration_wrap("register_decoration", "clear_registered_decorations")
+
 core.registered_on_chat_messages, core.register_on_chat_message = make_registration()
 core.registered_globalsteps, core.register_globalstep = make_registration()
 core.registered_playerevents, core.register_playerevent = make_registration()
-core.registered_on_mapgen_inits, core.register_on_mapgen_init = make_registration()
 core.registered_on_shutdown, core.register_on_shutdown = make_registration()
 core.registered_on_punchnodes, core.register_on_punchnode = make_registration()
 core.registered_on_placenodes, core.register_on_placenode = make_registration()
@@ -440,3 +461,10 @@ minetest.register_on_dieplayer(function(player)
 	end
 
 end)
+
+--
+-- Compatibility for on_mapgen_init()
+--
+
+core.register_on_mapgen_init = function(func) func(core.get_mapgen_params()) end
+

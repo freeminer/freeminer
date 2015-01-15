@@ -47,10 +47,6 @@ VoxelManipulator::VoxelManipulator():
 VoxelManipulator::~VoxelManipulator()
 {
 	clear();
-	if(m_data)
-		delete m_data;
-	if(m_flags)
-		delete[] m_flags;
 }
 
 void VoxelManipulator::clear()
@@ -61,7 +57,7 @@ void VoxelManipulator::clear()
 		delete m_data;
 	m_data = NULL;
 	if(m_flags)
-		delete[] m_flags;
+	delete[] m_flags;
 	m_flags = NULL;
 }
 
@@ -146,7 +142,7 @@ void VoxelManipulator::print(std::ostream &o, INodeDefManager *ndef,
 void VoxelManipulator::addArea(const VoxelArea &area)
 {
 	// Cancel if requested area has zero volume
-	if(area.getExtent() == v3s16(0,0,0))
+	if (area.hasEmptyExtent())
 		return;
 
 	// Cancel if m_area already contains the requested area
@@ -158,7 +154,7 @@ void VoxelManipulator::addArea(const VoxelArea &area)
 	// Calculate new area
 	VoxelArea new_area;
 	// New area is the requested area if m_area has zero volume
-	if(m_area.getExtent() == v3s16(0,0,0))
+	if(m_area.hasEmptyExtent())
 	{
 		new_area = area;
 	}

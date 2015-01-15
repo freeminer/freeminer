@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "nodemetadata.h"
 #include "gamedef.h"
-#include "log.h"
+#include "log_types.h"
 #include "nameidmapping.h"
 #include "content_mapnode.h" // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
@@ -78,6 +78,9 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	mesh2 = mesh4 = mesh8 = mesh16 = nullptr;
 	mesh_size = 0;
 #endif
+	m_next_analyze_timestamp = 0;
+	m_abm_timestamp = 0;
+	content_only = CONTENT_IGNORE;
 }
 
 MapBlock::~MapBlock()
@@ -735,6 +738,8 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 					<<": Node timers (ver>=25)"<<std::endl);
 			m_node_timers.deSerialize(is, version);
 		}
+
+		analyzeContent();
 	}
 		
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
@@ -763,7 +768,6 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
 	}
 
 	void MapBlock::setNodeNoCheck(v3s16 p, MapNode & n)
@@ -773,7 +777,18 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
+	}
+
+	void MapBlock::raiseModified(u32 mod)
+	{
+		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
+			m_changed_timestamp = (unsigned int)m_parent->time_life;
+		}
+		if(mod > m_modified){
+			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+		}
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)

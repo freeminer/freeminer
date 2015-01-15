@@ -55,7 +55,7 @@ Hud::Hud(video::IVideoDriver *driver, scene::ISceneManager* smgr,
 	m_screensize       = v2u32(0, 0);
 	m_displaycenter    = v2s32(0, 0);
 	m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE * porting::getDisplayDensity() + 0.5);
-	m_hotbar_imagesize *= g_settings->getFloat("gui_scaling");
+	m_hotbar_imagesize *= g_settings->getFloat("hud_scaling");
 	m_padding = m_hotbar_imagesize / 12;
 
 	const video::SColor hbar_color(255, 255, 255, 255);
@@ -313,11 +313,11 @@ void Hud::drawLuaElements(v3s16 camera_offset) {
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
 				core::rect<s32> size(0, 0, 200, 2 * text_height);
-				std::wstring text = narrow_to_wide(e->name);
+				std::wstring text = utf8_to_wide(e->name);
 				font->draw(text.c_str(), size + pos, color);
 				std::ostringstream os;
 				os<<distance<<e->text;
-				text = narrow_to_wide(os.str());
+				text = utf8_to_wide(os.str());
 				pos.Y += text_height;
 				font->draw(text.c_str(), size + pos, color);
 				break; }
@@ -344,15 +344,15 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture,
 	if (size == v2s32()) {
 		dstd = srcd;
 	} else {
-		dstd.Height = size.Y * g_settings->getFloat("gui_scaling") *
+		dstd.Height = size.Y * g_settings->getFloat("hud_scaling") *
 				porting::getDisplayDensity();
-		dstd.Width  = size.X * g_settings->getFloat("gui_scaling") *
-				porting::getDisplayDensity();
-
-		offset.X *= g_settings->getFloat("gui_scaling") *
+		dstd.Width  = size.X * g_settings->getFloat("hud_scaling") *
 				porting::getDisplayDensity();
 
-		offset.Y *= g_settings->getFloat("gui_scaling") *
+		offset.X *= g_settings->getFloat("hud_scaling") *
+				porting::getDisplayDensity();
+
+		offset.Y *= g_settings->getFloat("hud_scaling") *
 				porting::getDisplayDensity();
 	}
 
@@ -431,23 +431,6 @@ void Hud::drawHotbar(u16 playeritem) {
 			drawItems(secondpos, hotbar_itemcount, hotbar_itemcount/2, mainlist, playeritem + 1, 0);
 		}
 	}
-
-	//////////////////////////// compatibility code to be removed //////////////
-	// this is ugly as hell but there's no other way to keep compatibility to
-	// old servers
-	if ( player->hud_flags & HUD_FLAG_HEALTHBAR_VISIBLE)
-		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
-				floor(1 * (float) m_screensize.Y + 0.5)),
-				HUD_CORNER_UPPER, 0, "heart.png",
-				player->hp, v2s32((-10*24)-25,-(48+24+10)), v2s32(24,24));
-
-	if ((player->hud_flags & HUD_FLAG_BREATHBAR_VISIBLE) &&
-			(player->getBreath() < 11))
-		drawStatbar(v2s32(floor(0.5 * (float) m_screensize.X + 0.5),
-				floor(1 * (float) m_screensize.Y + 0.5)),
-				HUD_CORNER_UPPER, 0, "heart.png",
-				player->getBreath(), v2s32(25,-(48+24+10)), v2s32(24,24));
-	////////////////////////////////////////////////////////////////////////////
 }
 
 
@@ -482,7 +465,7 @@ void Hud::drawSelectionBoxes(std::vector<aabb3f> &hilightboxes) {
 void Hud::resizeHotbar() {
 	if (m_screensize != porting::getWindowSize()) {
 		m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE * porting::getDisplayDensity() + 0.5);
-		m_hotbar_imagesize *= g_settings->getFloat("gui_scaling");
+		m_hotbar_imagesize *= g_settings->getFloat("hud_scaling");
 		m_padding = m_hotbar_imagesize / 12;
 		m_screensize = porting::getWindowSize();
 		m_displaycenter = v2s32(m_screensize.X/2,m_screensize.Y/2);

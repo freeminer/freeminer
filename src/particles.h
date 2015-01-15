@@ -30,6 +30,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "tile.h"
 #include "localplayer.h"
 #include "environment.h"
+#include <unordered_map>
+
+
+struct ClientEvent;
+class ParticleManager;
 
 class Particle : public scene::ISceneNode
 {
@@ -38,7 +43,7 @@ class Particle : public scene::ISceneNode
 		IGameDef* gamedef,
 		scene::ISceneManager* mgr,
 		LocalPlayer *player,
-		ClientEnvironment &env,
+		ClientEnvironment *env,
 		v3f pos,
 		v3f velocity,
 		v3f acceleration,
@@ -117,16 +122,18 @@ class ParticleSpawner
 		bool collisiondetection,
 		bool vertical,
 		video::ITexture *texture,
-		u32 id);
+		u32 id,
+		ParticleManager* p_manager);
 
 	~ParticleSpawner();
 
-	void step(float dtime, ClientEnvironment &env);
+	void step(float dtime, ClientEnvironment *env);
 
 	bool get_expired ()
 	{ return (m_amount <= 0) && m_spawntime != 0; }
 
 	private:
+	ParticleManager* m_particlemanager;
 	float m_time;
 	IGameDef *m_gamedef;
 	scene::ISceneManager *m_smgr;
@@ -147,24 +154,49 @@ class ParticleSpawner
 	std::vector<float> m_spawntimes;
 	bool m_collisiondetection;
 	bool m_vertical;
+
 };
 
-void allparticles_step (float dtime);
-void allparticlespawners_step (float dtime, ClientEnvironment &env);
+/**
+ * Class doing particle as well as their spawners handling
+ */
+class ParticleManager
+{
+friend class ParticleSpawner;
+public:
+	ParticleManager(ClientEnvironment* env);
+	~ParticleManager();
 
-void delete_particlespawner (u32 id);
-void clear_particles ();
+	void step (float dtime);
 
-void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
-	LocalPlayer *player, ClientEnvironment &env, v3s16 pos,
-	const TileSpec tiles[]);
+	void handleParticleEvent(ClientEvent *event,IGameDef *gamedef,
+			scene::ISceneManager* smgr, LocalPlayer *player);
 
-void addPunchingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
-	LocalPlayer *player, ClientEnvironment &env, v3s16 pos,
-	const TileSpec tiles[]);
+	void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
+		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
 
-void addNodeParticle(IGameDef* gamedef, scene::ISceneManager* smgr,
-	LocalPlayer *player, ClientEnvironment &env, v3s16 pos,
-	const TileSpec tiles[]);
+	void addPunchingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
+		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
+
+	void addNodeParticle(IGameDef* gamedef, scene::ISceneManager* smgr,
+		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
+
+protected:
+	void addParticle(Particle* toadd);
+
+private:
+
+	void stepParticles (float dtime);
+	void stepSpawners (float dtime);
+
+	void clearAll ();
+
+	std::vector<Particle*> m_particles;
+	std::unordered_map<u32, ParticleSpawner*> m_particle_spawners;
+
+	ClientEnvironment* m_env;
+	JMutex m_particle_list_lock;
+	JMutex m_spawner_list_lock;
+};
 
 #endif

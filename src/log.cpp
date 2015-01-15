@@ -33,6 +33,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "jthread/jmutexautolock.h"
 
+#ifdef __ANDROID__
+unsigned int android_log_level_mapping[] {
+		/* LMT_ERROR */   ANDROID_LOG_ERROR,
+		/* LMT_ACTION */  ANDROID_LOG_WARN,
+		/* LMT_INFO */    ANDROID_LOG_INFO,
+		/* LMT_VERBOSE */ ANDROID_LOG_VERBOSE
+	};
+#endif
+
 std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
 JMutex                            log_threadnamemutex;
@@ -164,7 +173,7 @@ public:
 	{
 		log_printline(m_lev, m_buf);
 #ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", m_buf.c_str());
+		__android_log_print(android_log_level_mapping[m_lev], PROJECT_NAME, "%s", m_buf.c_str());
 #endif
 	}
 

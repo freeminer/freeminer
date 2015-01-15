@@ -399,6 +399,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 {
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
 	{
+		KeyPress kp(event.KeyInput);
 		// Key input
 		if(KeyPress(event.KeyInput) == getKeySetting("keymap_console"))
 		{
@@ -409,7 +410,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_open_inhibited = 50;
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_ESCAPE)
+		else if (kp == EscapeKey || kp == CancelKey)
 		{
 			closeConsoleAtOnce();
 			Environment->removeFocus(this);
@@ -535,7 +536,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			const c8 *text = os_operator->getTextFromClipboard();
 			if (text)
 			{
-				std::wstring wtext = narrow_to_wide(text);
+				std::wstring wtext = utf8_to_wide(text);
 				m_chat_backend->getPrompt().input(wtext);
 			}
 			return true;

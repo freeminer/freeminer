@@ -356,6 +356,8 @@ private:
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
 	int m_bc_receive_timeout;
+	unsigned int m_last_recieved;
+	int m_last_recieved_warn;
 
 	void SetPeerID(u16 id){ m_peer_id = id; }
 	u32 GetProtocolID(){ return m_protocol_id; }

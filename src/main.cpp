@@ -83,13 +83,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fontengine.h"
 
 #include "database-sqlite3.h"
-#ifdef USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-
-#if USE_REDIS
 #include "database-redis.h"
-#endif
 
 #include "enet/enet.h"
 
@@ -1496,7 +1491,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	}
 
 	std::string backend = world_mt.get("backend");
-	Database *new_db;
+	Database *new_db = nullptr;
 	std::string migrate_to = cmd_args.get("migrate");
 
 	if (backend == migrate_to) {
@@ -1505,9 +1500,13 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
-	if (migrate_to == "sqlite3")
+	if (migrate_to == "__magic world ")
+		0;
+#if USE_SQLITE3
+	else if (migrate_to == "sqlite3")
 		new_db = new Database_SQLite3(&(ServerMap&)server->getMap(),
 				game_params.world_path);
+#endif
 #if USE_LEVELDB
 	else if (migrate_to == "leveldb")
 		new_db = new Database_LevelDB(&(ServerMap&)server->getMap(),
@@ -1518,7 +1517,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		new_db = new Database_Redis(&(ServerMap&)server->getMap(),
 				game_params.world_path);
 #endif
-	else {
+	if (!new_db) {
 		errorstream << "Migration to " << migrate_to << " is not supported"
 		            << std::endl;
 		return false;
@@ -1869,6 +1868,10 @@ bool ClientLauncher::launch_game(std::string *error_message,
 	if (!skip_main_menu) {
 		main_menu(&menudata);
 
+		// Skip further loading if there was an exit signal.
+		if (*porting::signal_handler_killstatus())
+			return false;
+
 		address = menudata.address;
 		int newport = stoi(menudata.port);
 		if (newport != 0)
@@ -1877,7 +1880,6 @@ bool ClientLauncher::launch_game(std::string *error_message,
 		simple_singleplayer_mode = menudata.simple_singleplayer_mode;
 
 		std::vector<WorldSpec> worldspecs = getAvailableWorlds();
-		worldspecs = getAvailableWorlds();
 
 		if (menudata.selected_world >= 0
 				&& menudata.selected_world < (int)worldspecs.size()) {

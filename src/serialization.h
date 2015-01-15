@@ -75,7 +75,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Lowest supported serialization version
 #define SER_FMT_VER_LOWEST 0
 
-#define ser_ver_supported(v) (v >= SER_FMT_VER_LOWEST && v <= SER_FMT_VER_HIGHEST_READ)
+inline bool ser_ver_supported(s32 v) {
+	return v >= SER_FMT_VER_LOWEST && v <= SER_FMT_VER_HIGHEST_READ;
+}
 
 /*
 	Misc. serialization functions
