@@ -404,6 +404,40 @@ core.register_chatcommand("set", {
 	end,
 })
 
+core.register_chatcommand("deleteblocks", {
+	params = "[here] [<pos1> <pos2>]",
+	description = "delete map blocks contained in area pos1 to pos2",
+	privs = {server=true},
+	func = function(name, param)
+		local p1 = {}
+		local p2 = {}
+		if param == "here" then
+			local player = core.get_player_by_name(name)
+			if player == nil then
+				core.log("error", "player is nil")
+				return false, "Unable to get current position; player is nil"
+			end
+			p1 = player:getpos()
+			p2 = p1
+		else
+			local pos1, pos2 = unpack(param:split(") ("))
+			p1 = core.string_to_pos(pos1 .. ")")
+			p2 = core.string_to_pos("(" .. pos2)
+
+			if p1 == nil or p2 == nil then
+				return false, "Incorrect area format. Expected: (x1,y1,z1) (x2,y2,z2)"
+			end
+		end
+
+		if core.delete_area(p1, p2) then
+			return true, "Successfully cleared area ranging from " ..
+				core.pos_to_string(p1, 1) .. " to " .. core.pos_to_string(p2, 1)
+		else
+			return false, "Failed to clear one or more blocks in area"
+		end
+	end,
+})
+
 core.register_chatcommand("mods", {
 	params = "",
 	description = "List mods installed on the server",

@@ -268,9 +268,10 @@ public:
 
 	virtual s32 save(ModifiedState save_level, bool breakable){assert(0); return 0;};
 
-	// Server implements this.
-	// Client leaves it as no-op.
+	// Server implements these.
+	// Client leaves them as no-op.
 	virtual bool saveBlock(MapBlock *block) { return false; };
+	virtual bool deleteBlock(v3s16 blockpos) { return false; };
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.
@@ -433,7 +434,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock * emergeBlock(v3s16 p, bool create_blank=true);
+	MapBlock *emergeBlock(v3s16 p, bool create_blank=true);
 
 	/*
 		Try to get a block.
@@ -476,6 +477,8 @@ public:
 	bool saveBlock(MapBlock *block, Database *db);
 	bool saveBlock(MapBlock *block);
 	MapBlock* loadBlock(v3s16 p);
+
+	bool deleteBlock(v3s16 blockpos);
 
 	void updateVManip(v3s16 pos);
 

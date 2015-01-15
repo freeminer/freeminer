@@ -610,7 +610,7 @@ v2u32 getWindowSize()
 }
 
 #ifndef __ANDROID__
-#ifdef WTF && XORG_USED
+#if defined(WTF) && defined(XORG_USED)
 float getDisplayDensity()
 {
 	const char* current_display = getenv("DISPLAY");

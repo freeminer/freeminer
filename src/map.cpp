@@ -3021,6 +3021,19 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	return nullptr;
 }
 
+bool ServerMap::deleteBlock(v3s16 blockpos)
+{
+	if (!dbase->deleteBlock(blockpos))
+		return false;
+
+	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	if (block) {
+		deleteBlock(blockpos);
+	}
+
+	return true;
+}
+
 void ServerMap::PrintInfo(std::ostream &out)
 {
 	out<<"ServerMap: ";

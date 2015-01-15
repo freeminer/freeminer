@@ -78,7 +78,20 @@ std::string Database_LevelDB::loadBlock(v3POS blockpos)
 
 }
 
-void Database_LevelDB::listAllLoadableBlocks(std::list<v3POS> &dst)
+bool Database_LevelDB::deleteBlock(v3s16 blockpos)
+{
+	auto ok = m_database->del(
+			(getBlockAsString(blockpos)));
+	if (ok) {
+		errorstream << "WARNING: deleteBlock: LevelDB error deleting block "
+			<< (blockpos) << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
 {
 #if USE_LEVELDB
 	auto it = m_database->new_iterator();
