@@ -1500,8 +1500,8 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
-	if (migrate_to == "__magic world ")
-		0;
+	if (migrate_to == " __magic word ")
+		{ }
 #if USE_SQLITE3
 	else if (migrate_to == "sqlite3")
 		new_db = new Database_SQLite3(&(ServerMap&)server->getMap(),
