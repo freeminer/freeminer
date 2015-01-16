@@ -55,6 +55,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	return 0;
 }
 
+#if !defined(__ANDROID__)
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t inbuf_size = input.length() + 1;
 	// maximum possible size, every character is sizeof(wchar_t) bytes
@@ -92,6 +93,8 @@ std::string wide_to_narrow(const std::wstring &input) {
 
 	return out;
 }
+#endif
+
 #else
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t outbuf_size = input.size() + 1;
@@ -123,6 +126,9 @@ static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
 #ifdef __ANDROID__
+std::wstring narrow_to_wide(const std::string &input) { return narrow_to_wide_real(input); }
+std::string wide_to_narrow(const std::wstring &input) { return wide_to_narrow_real(input); }
+
 const wchar_t* wide_chars =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
