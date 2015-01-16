@@ -2014,12 +2014,12 @@ void Client::typeChatMessage(const std::wstring &message)
 		return;
 
 	// Send to others
-	sendChatMessage(wide_to_utf8(message));
+	sendChatMessage(wide_to_narrow(message));
 
 	// Show locally
 	if (message[0] == '/')
 	{
-		m_chat_queue.push_back("issued command: " + wide_to_utf8(message));
+		m_chat_queue.push_back("issued command: " + wide_to_narrow(message));
 	}
 }
 

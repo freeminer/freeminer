@@ -453,7 +453,7 @@ void update_profiler_gui(gui::IGUIStaticText *guitext_profiler, FontEngine *fe,
 
 		std::ostringstream os(std::ios_base::binary);
 		g_profiler->printPage(os, show_profiler, show_profiler_max);
-		std::wstring text = utf8_to_wide(os.str());
+		std::wstring text = narrow_to_wide(os.str());
 		guitext_profiler->setText(text.c_str());
 		guitext_profiler->setVisible(true);
 
@@ -603,16 +603,16 @@ public:
 			s32 texth = 15;
 			char buf[10];
 			snprintf(buf, 10, "%.3g", show_max);
-			font->draw(utf8_to_wide(buf).c_str(),
+			font->draw(narrow_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - graphh,
 						   textx2, y - graphh + texth),
 					meta.color);
 			snprintf(buf, 10, "%.3g", show_min);
-			font->draw(utf8_to_wide(buf).c_str(),
+			font->draw(narrow_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - texth,
 						   textx2, y),
 					meta.color);
-			font->draw(utf8_to_wide(id + " " + ftos(meta.cur)).c_str(),
+			font->draw(narrow_to_wide(id + " " + ftos(meta.cur)).c_str(),
 					core::rect<s32>(textx, y - graphh / 2 - texth / 2,
 						   textx2, y - graphh / 2 + texth / 2),
 					meta.color);
@@ -1184,14 +1184,14 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 
 	// Get new messages from error log buffer
 	while (!chat_log_error_buf.empty()) {
-		chat_backend.addMessage(L"", utf8_to_wide(chat_log_error_buf.get()));
+		chat_backend.addMessage(L"", narrow_to_wide(chat_log_error_buf.get()));
 	}
 
 	// Get new messages from client
 	std::string message;
 
 	while (client.getChatMessage(message)) {
-		chat_backend.addUnparsedMessage(utf8_to_wide(message));
+		chat_backend.addUnparsedMessage(narrow_to_wide(message));
 	}
 
 	// Remove old messages
@@ -2451,7 +2451,7 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			draw_load_screen(utf8_to_wide(message.str().c_str()), device,
+			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
 					guienv, dtime, progress);
 		}
 
@@ -2815,7 +2815,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 				actual_height = row_height * players.size();
 			u32 max_width = 0;
 			for (size_t i = 0; i < players.size(); ++i)
-				max_width = std::max(max_width, g_fontengine->getTextWidth(utf8_to_wide(players[i]).c_str()));
+				max_width = std::max(max_width, g_fontengine->getTextWidth(narrow_to_wide(players[i]).c_str()));
 			max_width += 15;
 			u32 actual_width = columns * max_width;
 
@@ -3748,13 +3748,13 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	NodeMetadata *meta = map.getNodeMetadata(nodepos);
 
 	if (meta) {
-		infotext = utf8_to_wide(meta->getString("infotext"));
+		infotext = narrow_to_wide(meta->getString("infotext"));
 	} else {
 		MapNode n = map.getNodeNoEx(nodepos);
 
 		if (nodedef_manager->get(n).tiledef[0].name == "unknown_node.png") {
 			infotext = L"Unknown node: ";
-			infotext += utf8_to_wide(nodedef_manager->get(n).name);
+			infotext += narrow_to_wide(nodedef_manager->get(n).name);
 		}
 	}
 
@@ -3842,10 +3842,10 @@ void Game::handlePointingAtObject(GameRunData *runData,
 		const v3f &player_position,
 		bool show_debug)
 {
-	infotext = utf8_to_wide(runData->selected_object->infoText());
+	infotext = narrow_to_wide(runData->selected_object->infoText());
 
 	if (infotext == L"" && show_debug) {
-		infotext = utf8_to_wide(runData->selected_object->debugInfoText());
+		infotext = narrow_to_wide(runData->selected_object->debugInfoText());
 	}
 
 	if (input->getLeftState()) {
@@ -4365,7 +4365,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
 		os << "Freeminer " << minetest_version_hash;
-		guitext->setText(utf8_to_wide(os.str()).c_str());
+		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else {
 		guitext->setVisible(false);

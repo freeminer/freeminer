@@ -511,9 +511,9 @@ void ChatPrompt::nickCompletion(const std::list<std::string>& names, bool backwa
 			i = names.begin();
 			i != names.end(); ++i)
 	{
-		if (str_starts_with(utf8_to_wide(*i), prefix, true))
+		if (str_starts_with(narrow_to_wide(*i), prefix, true))
 		{
-			std::wstring completion = utf8_to_wide(*i);
+			std::wstring completion = narrow_to_wide(*i);
 			if (prefix_start == 0)
 				completion += L":";
 			completions.push_back(completion);

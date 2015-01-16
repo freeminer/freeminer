@@ -4070,7 +4070,7 @@ void Server::DenyAccess(u16 peer_id, const std::string &reason)
 
 void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
 {
-    DenyAccess(peer_id, wide_to_utf8(reason));
+    DenyAccess(peer_id, wide_to_narrow(reason));
 }
 
 void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
