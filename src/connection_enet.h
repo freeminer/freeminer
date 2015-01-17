@@ -178,6 +178,7 @@ enum ConnectionEventType{
 	CONNEVENT_PEER_ADDED,
 	CONNEVENT_PEER_REMOVED,
 	CONNEVENT_BIND_FAILED,
+	CONNEVENT_CONNECT_FAILED,
 };
 
 struct ConnectionEvent
@@ -188,7 +189,7 @@ struct ConnectionEvent
 	bool timeout;
 	Address address;
 
-	ConnectionEvent(): type(CONNEVENT_NONE) {}
+	ConnectionEvent(ConnectionEventType type_=CONNEVENT_NONE): type(type_) {}
 
 	std::string describe()
 	{
@@ -203,6 +204,8 @@ struct ConnectionEvent
 			return "CONNEVENT_PEER_REMOVED";
 		case CONNEVENT_BIND_FAILED:
 			return "CONNEVENT_BIND_FAILED";
+		case CONNEVENT_CONNECT_FAILED:
+			return "CONNEVENT_CONNECT_FAILED";
 		}
 		return "Invalid ConnectionEvent";
 	}

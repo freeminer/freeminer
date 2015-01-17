@@ -219,9 +219,8 @@ void Connection::serve(u16 port)
 
 	m_enet_host = enet_host_create(address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
-		ConnectionEvent ce;
-		ce.bindFailed();
-		putEvent(ce);
+		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
+		putEvent(ev);
 	}
 }
 
@@ -233,7 +232,9 @@ void Connection::connect(Address addr)
 	//m_peers.lock_unique_rec();
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node != m_peers.end()){
-		throw ConnectionException("Already connected to a server");
+		//throw ConnectionException("Already connected to a server");
+		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+		putEvent(ev);
 	}
 
 	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
@@ -244,10 +245,13 @@ void Connection::connect(Address addr)
 	else
 		address->host = addr.getAddress6().sin6_addr;
 #else
-	if (addr.isIPv6())
-		throw ConnectionException("Cant connect to ipv6 address");
-	else
+	if (addr.isIPv6()) {
+		//throw ConnectionException("Cant connect to ipv6 address");
+		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+		putEvent(ev);
+	} else {
 		address->host = addr.getAddress().sin_addr.s_addr;
+	}
 #endif
 
 	address->port = addr.getPort();
@@ -428,6 +432,8 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 		case CONNEVENT_BIND_FAILED:
 			throw ConnectionBindFailed("Failed to bind socket "
 					"(port already in use?)");
+		case CONNEVENT_CONNECT_FAILED:
+			throw ConnectionException("Failed to connect");
 		}
 	}
 	throw NoIncomingDataException("No incoming data");

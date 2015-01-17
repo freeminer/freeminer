@@ -2350,14 +2350,8 @@ bool Game::connectToServer(const std::string &playername,
 			}
 		}
 
-	} catch (con::PeerNotFoundException &e) {
-		// TODO: Should something be done here? At least an info/error
-		// message?
-		return false;
-	} catch (con::ConnectionException &e) {
-		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
-		errorstream << "Connection error: "<< e.what() << std::endl;
-		return false;
+#ifdef NDEBUG
+
 	} catch (std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
 		errorstream << "Connection error: "<< e.what() << std::endl;
@@ -2365,6 +2359,9 @@ bool Game::connectToServer(const std::string &playername,
 	} catch (...) {
 		showOverlayMessage(std::string("Oops ") , 0, 0, false);
 		return false;
+#else
+	} catch (int) { //nothing
+#endif
 	}
 
 	return true;
@@ -4598,7 +4595,6 @@ bool the_game(bool *kill,
 	bool started = false;
 	try {
 
-		bool started = false;
 		game.runData  = { 0 };
 		if (game.startup(kill, random_input, input, device, map_dir,
 					playername, password, &server_address, port,
