@@ -4353,10 +4353,13 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 		   << (stats.dtime_jitter.max_fraction * 100.0) << " %"
 */
 		   << std::setprecision(1)
-		   << ", v_range = " << draw_control->wanted_range
-		   << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step
-		   << std::setprecision(3)
+		   << ", v_range = " << draw_control->wanted_range;
+		if (draw_control->farmesh)
+			os << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step;
+		os << std::setprecision(3);
+/*
 		   << ", RTT = " << client->getRTT();
+*/
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else if (flags.show_hud || flags.show_chat) {

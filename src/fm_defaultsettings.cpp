@@ -180,7 +180,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fallback_font_shadow_alpha", "128");
 
 	std::stringstream fontsize;
-	fontsize << TTF_DEFAULT_FONT_SIZE;
+	fontsize << TTF_DEFAULT_FONT_SIZE + 5;
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
