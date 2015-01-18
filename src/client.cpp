@@ -2146,7 +2146,7 @@ float Client::mediaReceiveProgress()
 
 void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
-	infostream<<"Client::afterContentReceived() started"<<std::endl;
+	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
@@ -2204,10 +2204,10 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 		delete[] text;
 	}
 
-	// Start mesh update thread after setting up content definitions
-	infostream<<"- Starting mesh update thread"<<std::endl;
 	if (!no_output) {
+	// Start mesh update thread after setting up content definitions
 		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
+		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
 		m_mesh_update_thread.Start(threads < 1 ? 1 : threads);
 	}
 
@@ -2215,7 +2215,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	sendReady();
 	text = wgettext("Done!");
 	draw_load_screen(text, device, guienv, 0, 100);
-	infostream<<"Client::afterContentReceived() done"<<std::endl;
+	//infostream<<"Client::afterContentReceived() done"<<std::endl;
 	delete[] text;
 }
 
