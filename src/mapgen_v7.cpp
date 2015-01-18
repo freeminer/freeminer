@@ -636,7 +636,7 @@ void MapgenV7::generateBiomes()
 						(x - node_min.X);
 				have_air = !getMountainTerrainFromMap(j, index, y);
 			}
-			if (c != CONTENT_AIR && c != c_water_source && have_air) {
+			if (c != CONTENT_AIR && c != c_water_source && c != c_ice && have_air) {
 				content_t c_below = vm->m_data[i - em.X].getContent();
 
 				if (c_below != CONTENT_AIR) {
