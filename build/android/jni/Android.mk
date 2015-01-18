@@ -80,6 +80,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				-DUSE_MANDELBULBER=1 \
 				-pipe -fstrict-aliasing
 
+#todo fix and enable: -DCMAKE_UTF8=1
 #too slow				-DCMAKE_THREADS=1 -DCMAKE_HAVE_FUTURE=1 -DCMAKE_HAVE_THREAD_LOCAL=1 \
 
 

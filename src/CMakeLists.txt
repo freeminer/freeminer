@@ -83,6 +83,14 @@ else()
 	set(ENABLE_THREADS 0)
 endif()
 
+option(ENABLE_UTF8 "Use utf8" 1)
+
+if(ENABLE_UTF8)
+	set(ENABLE_UTF8 1)
+else()
+	set(ENABLE_UTF8 0)
+endif()
+
 #
 # Set some optimizations and tweaks
 #

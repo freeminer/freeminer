@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../porting.h"
 #include "../log.h"
 
+#include "../config.h"
+
 #ifndef _WIN32
 #include <iconv.h>
 #else
@@ -55,7 +57,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	return 0;
 }
 
-#if !defined(__ANDROID__)
+#if CMAKE_UTF8
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t inbuf_size = input.length() + 1;
 	// maximum possible size, every character is sizeof(wchar_t) bytes
@@ -125,17 +127,17 @@ std::string wide_to_narrow(const std::wstring &input) {
 static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
-#ifdef __ANDROID__
+#if !CMAKE_UTF8
 std::wstring narrow_to_wide(const std::string &input) { return narrow_to_wide_real(input); }
 std::string wide_to_narrow(const std::wstring &input) { return wide_to_narrow_real(input); }
+
+int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
+int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
 
 const wchar_t* wide_chars =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";
-
-int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
-int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
 
 int NOT_USED_wctomb(char *s, wchar_t wc)
 {
