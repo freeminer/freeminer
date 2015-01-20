@@ -256,8 +256,10 @@ Client::Client(
 
 	if (g_settings->getBool("enable_local_map_saving")
 			&& !is_simple_singleplayer_game) {
+		std::string address = g_settings->get("address");
+		replace( address.begin(), address.end(), ':', '_' );
 		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
-				+ DIR_DELIM + "server_" + g_settings->get("address")
+				+ DIR_DELIM + "server_" + address
 				+ "_" + g_settings->get("remote_port");
 
 		SubgameSpec gamespec;

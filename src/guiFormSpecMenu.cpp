@@ -2910,7 +2910,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			dont_send_event = true;
 		}
 		else if (event.TouchInput.touchedCount > 2) {
-			errorstream
+			infostream
 			<< "GUIFormSpecMenu::preprocessEvent to many multitouch events "
 			<< event.TouchInput.touchedCount << " ignoring them" << std::endl;
 		}

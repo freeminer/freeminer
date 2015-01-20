@@ -408,6 +408,8 @@ LuaEntitySAO::~LuaEntitySAO()
 
 void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 {
+	auto lock = lock_unique_rec();
+
 	ServerActiveObject::addedToEnvironment(dtime_s);
 
 	// Create entity from name
@@ -602,6 +604,8 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
+
+	auto lock = lock_shared_rec();
 
 	if(protocol_version >= 14)
 	{
