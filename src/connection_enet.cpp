@@ -183,7 +183,7 @@ void Connection::receive()
 			break;
 		}
 	} else if (ret < 0) {
-		errorstream<<"enet_host_service failed = "<< ret << std::endl;
+		infostream<<"enet_host_service failed = "<< ret << std::endl;
 		if (m_peers.count(PEER_ID_SERVER))
 			deletePeer(PEER_ID_SERVER,  false);
 	} else { //0
