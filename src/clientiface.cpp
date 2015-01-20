@@ -248,7 +248,7 @@ int RemoteClient::GetNextBlocks(
 	s32 nearest_emerged_d = -1;
 	s32 nearest_emergefull_d = -1;
 	s32 nearest_sent_d = -1;
-	bool queue_is_full = false;
+	//bool queue_is_full = false;
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
@@ -330,7 +330,7 @@ int RemoteClient::GetNextBlocks(
 			// Don't select too many blocks for sending
 			if(num_blocks_selected+num_blocks_sending >= max_simul_dynamic)
 			{
-				queue_is_full = true;
+				//queue_is_full = true;
 				goto queue_full_break;
 			}
 

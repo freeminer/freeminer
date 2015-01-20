@@ -76,6 +76,7 @@ public:
 	std::shared_ptr<MeshMakeData> pop();
 
 	shared_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
+
 private:
 	shared_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
 	std::unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_ranges;
@@ -110,7 +111,7 @@ public:
 	MutexedQueue<MeshUpdateResult> m_queue_out;
 
 	IGameDef *m_gamedef;
-	
+
 	v3s16 m_camera_offset;
 	int id;
 };
@@ -136,8 +137,8 @@ struct ClientEvent
 {
 	ClientEventType type;
 	union{
-		struct{
-		} none;
+		//struct{
+		//} none;
 		struct{
 			u8 amount;
 		} player_damage;
@@ -155,8 +156,8 @@ struct ClientEvent
 			std::string *formspec;
 			std::string *formname;
 		} show_formspec;
-		struct{
-		} textures_updated;
+		//struct{
+		//} textures_updated;
 		struct{
 			v3f *pos;
 			v3f *vel;
@@ -300,7 +301,7 @@ public:
 			MtEventManager *event,
 			bool ipv6
 	);
-	
+
 	~Client();
 
 	/*
@@ -346,11 +347,11 @@ public:
 
 	ClientEnvironment& getEnv()
 	{ return m_env; }
-	
+
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
 	void removeNode(v3s16 p, int fast = 0);
 	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
-	
+
 	void setPlayerControl(PlayerControl &control);
 
 	void selectPlayerItem(u16 item);
@@ -364,7 +365,7 @@ public:
 	bool getLocalInventoryUpdated();
 	// Copies the inventory of the local player to parameter
 	void getLocalInventory(Inventory &dst);
-	
+
 	/* InventoryManager interface */
 	Inventory* getInventory(const InventoryLocation &loc);
 	void inventoryAction(InventoryAction *a);
@@ -410,7 +411,7 @@ public:
 
 	// Get event from queue. CE_NONE is returned if queue is empty.
 	ClientEvent getClientEvent();
-	
+
 	bool accessDenied()
 	{ return m_access_denied; }
 
@@ -464,14 +465,14 @@ private:
 	// Virtual methods from con::PeerHandler
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
-	
+
 	void ReceiveAll();
 	void Receive();
-	
+
 	void sendPlayerPos();
 	// Send the item number 'item' as player item to the server
 	void sendPlayerItem(u16 item);
-	
+
 	float m_packetcounter_timer;
 	float m_connection_reinit_timer;
 	float m_avg_rtt_timer;
