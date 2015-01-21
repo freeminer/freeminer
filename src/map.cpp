@@ -1186,8 +1186,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	content_t replace_material = CONTENT_AIR;
 
 	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from top; 3: place, recalculate light and skip liquid queue
-		MapNode n;
-		n.setContent(replace_material);
+		MapNode n(replace_material);
 		if (fast == 2) {
 			MapNode from_node = getNodeNoEx(toppos);
 			if (from_node) {
@@ -1693,7 +1692,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
-	u32 loop_max = liquid_loop_max;
+	//u32 loop_max = liquid_loop_max;
 
 #if 0
 

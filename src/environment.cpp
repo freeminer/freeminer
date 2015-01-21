@@ -871,7 +871,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
 	if (fast) {
-		MapNode n;
+		MapNode n(CONTENT_AIR);
 		try {
 			if (fast == 2)
 				n.param1 = n_old.param1;
