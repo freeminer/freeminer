@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: freeminer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-23 17:37+0100\n"
-"PO-Revision-Date: 2014-12-28 16:40+0900\n"
+"PO-Revision-Date: 2015-01-22 21:34+0900\n"
 "Last-Translator: Rui Takeda <mrrst0914@gmail.com>\n"
 "Language-Team: Japanese\n"
 "MIME-Version: 1.0\n"
@@ -27,9 +27,6 @@ msgstr "作成"
 
 msgid "Cancel"
 msgstr "キャンセル"
-
-msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
-msgstr "Gamemgr: \"$1\"のModを \"$2\" にｺﾋﾟｰできません"
 
 msgid "Games"
 msgstr "ゲーム"
@@ -62,7 +59,7 @@ msgid "Game"
 msgstr "ゲーム"
 
 msgid "Delete World \"$1\"?"
-msgstr "\"$1\"のﾜｰﾙﾄﾞを削除しますか？"
+msgstr "ワールド\"$1\"を削除しますか？"
 
 msgid "Yes"
 msgstr "はい"
@@ -71,13 +68,14 @@ msgid "No"
 msgstr "いいえ"
 
 msgid "A world named \"$1\" already exists"
-msgstr "\"$1\"という名前のﾜｰﾙﾄﾞを作成できません。同名のﾜｰﾙﾄﾞが存在しています"
+msgstr ""
+"\"$1\"という名前のワールドを作成できません。同名のワールドが存在しています"
 
 msgid "No worldname given or no game selected"
-msgstr "ﾜｰﾙﾄﾞ名が入力されていないか、ｹﾞｰﾑが選択されていません"
+msgstr "ワールド名が入力されていないか、ゲームが選択されていません"
 
 msgid "To enable shaders the OpenGL driver needs to be used."
-msgstr "ｼｪｰﾀﾞｰを有効にするには、OpenGLのﾄﾞﾗｲﾊﾞが必要です"
+msgstr "シェーダーを有効にするには、OpenGLのドライバが必要です"
 
 msgid "Address"
 msgstr "アドレス"
@@ -92,7 +90,7 @@ msgid "Name/Password"
 msgstr "名前/パスワード"
 
 msgid "Public Serverlist"
-msgstr "公開されているｻｰﾊﾞｰﾘｽﾄ"
+msgstr "公開されているサーバーリスト"
 
 msgid "Delete"
 msgstr "削除"
@@ -119,7 +117,7 @@ msgid "Enable Damage"
 msgstr "ダメージ有効"
 
 msgid "Public"
-msgstr "公開する"
+msgstr "サーバーを公開する"
 
 msgid "Name"
 msgstr "名前"
@@ -130,14 +128,14 @@ msgstr "パスワード"
 msgid "Server Port"
 msgstr "ポート"
 
-msgid "Fancy Trees"
+msgid "Fancy trees"
 msgstr "きれいな木"
 
 msgid "Smooth Lighting"
 msgstr "自然な光"
 
 msgid "Node Highlighting"
-msgstr "自然な光"
+msgstr "ノードのハイライト"
 
 msgid "3D Clouds"
 msgstr "立体な雲"
@@ -158,7 +156,7 @@ msgid "Bi-Linear Filtering"
 msgstr "バイリニアフィルタリング"
 
 msgid "Tri-Linear Filtering"
-msgstr "鳥リニアフィルタリング"
+msgstr "トリリニアフィルタリング"
 
 msgid "Shaders"
 msgstr "シェーダー"
@@ -211,16 +209,16 @@ msgstr "以前の貢献者"
 msgid "Singleplayer"
 msgstr "シングルプレイ"
 
-msgid "Client"
-msgstr "クライアント"
-
-msgid "Server"
+msgid "Multiplayer"
 msgstr "マルチプレイ"
+
+msgid "Create Server"
+msgstr "サーバー"
 
 msgid "Settings"
 msgstr "設定"
 
-msgid "Texturepacks"
+msgid "Texture Packs"
 msgstr "テクスチャパック"
 
 msgid "Mods"
@@ -311,31 +309,37 @@ msgid "Install"
 msgstr "インストール"
 
 msgid "Item textures..."
-msgstr "ｱｲﾃﾑのﾃｸｽﾁｬ設定中..."
+msgstr "アイテムのテクスチャ設定中..."
 
 msgid "Loading..."
-msgstr "ﾛｰﾄﾞ中..."
+msgstr "読み込み中..."
 
 msgid "Creating server..."
-msgstr "ｻｰﾊﾞｰ構築中..."
+msgstr "サーバー構築中..."
 
 msgid "Creating client..."
-msgstr "ｸﾗｲｱﾝﾄ作成中..."
+msgstr "クライアント作成中..."
 
 msgid "Resolving address..."
-msgstr "ｱﾄﾞﾚｽ解決中..."
+msgstr "アドレス解決中..."
 
 msgid "Connecting to server..."
-msgstr "ｻｰﾊﾞｰ接続中..."
+msgstr "サーバー接続中..."
 
 msgid "Item definitions..."
-msgstr "ｱｲﾃﾑ定義中..."
+msgstr "アイテム定義中..."
+
+msgid "Initializing nodes..."
+msgstr "ノード初期化中..."
 
 msgid "Node definitions..."
-msgstr "ﾉｰﾄﾞ定義中..."
+msgstr "ノード定義中..."
 
 msgid "Media..."
-msgstr "..."
+msgstr "処理中..."
+
+msgid "Done!"
+msgstr "完了！"
 
 msgid "Shutting down..."
 msgstr "終了中..."
@@ -348,10 +352,10 @@ msgstr ""
 "詳細はdebug.txtを御覧ください。"
 
 msgid "You died."
-msgstr "You died!"
+msgstr "あなたは死にました！"
 
 msgid "Respawn"
-msgstr "Respawn"
+msgstr "リスポーン"
 
 msgid "Proceed"
 msgstr "決定"
@@ -363,7 +367,7 @@ msgid "Player list"
 msgstr "プレイヤーリスト"
 
 msgid "\"Use\" = climb down"
-msgstr "「使う」キーで降りる"
+msgstr "\"使う\"キーで降りる"
 
 msgid "Double tap \"jump\" to toggle fly"
 msgstr "ジャンプの二回押しで飛行"
@@ -454,31 +458,6 @@ msgstr "タイトル"
 
 msgid "Exit to OS"
 msgstr "終了"
-
-msgid ""
-"Default Controls:\n"
-"- WASD: move\n"
-"- Space: jump/climb\n"
-"- Shift: sneak/go down\n"
-"- Q: drop item\n"
-"- I: inventory\n"
-"- Mouse: turn/look\n"
-"- Mouse left: dig/punch\n"
-"- Mouse right: place/use\n"
-"- Mouse wheel: select item\n"
-"- T: chat\n"
-msgstr ""
-"基本操作:\n"
-"WASD:移動\n"
-"ｽﾍﾟｰｽ:ｼﾞｬﾝﾌﾟ/登る\n"
-"ｼﾌﾄ:忍び歩き/降りる\n"
-"Q:ｱｲﾃﾑを落とす\n"
-"I:インベントリ\n"
-"ﾏｳｽ:見回す\n"
-"左ｸﾘｯｸ:掘る/ﾊﾟﾝﾁ\n"
-"右ｸﾘｯｸ:使う\n"
-"ﾏｳｽﾎｲｰﾙ:ｱｲﾃﾑ選択\n"
-"T:ﾁｬｯﾄ\n"
 
 msgid "Sound Volume: "
 msgstr "音量"
@@ -726,13 +705,13 @@ msgid "Close modstore"
 msgstr "閉じる"
 
 msgid "Bumpmapping"
-msgstr "ﾊﾞﾝﾌﾟﾏｯﾋﾟﾝｸﾞ"
+msgstr "バンプマッピング"
 
 msgid "Generate Normalmaps"
-msgstr "法線ﾏｯﾋﾟﾝｸﾞ"
+msgstr "法線マッピング"
 
 msgid "Parallax Occlusion"
-msgstr "視差ｵｸﾙｰｼﾞｮﾝﾏｯﾋﾟﾝｸﾞ"
+msgstr "視差オクルージョンマッピング"
 
 msgid "Waving Water"
 msgstr "揺れる水"
