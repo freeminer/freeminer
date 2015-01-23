@@ -604,7 +604,7 @@ Server::~Server()
 	infostream<<"Server destructing"<<std::endl;
 
 	if (!m_simple_singleplayer_mode && g_settings->getBool("server_announce"))
-		ServerList::sendAnnounce("delete");
+		ServerList::sendAnnounce("delete", m_bind_addr.getPort());
 
 	// Send shutdown message
 	SendChatMessage(PEER_ID_INEXISTENT, "*** Server shutting down");
@@ -667,6 +667,9 @@ Server::~Server()
 void Server::start(Address bind_addr)
 {
 	DSTACK(__FUNCTION_NAME);
+
+	m_bind_addr = bind_addr;
+
 	infostream<<"Starting server on "
 			<< bind_addr.serializeString() <<"..."<<std::endl;
 
@@ -910,6 +913,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				g_settings->getBool("server_announce"))
 		{
 			ServerList::sendAnnounce(counter ? "update" : "start",
+					m_bind_addr.getPort(),
 					m_clients.getPlayerNames(),
 					m_uptime.get(),
 					m_env->getGameTime(),
