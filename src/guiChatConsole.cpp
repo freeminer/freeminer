@@ -392,6 +392,27 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 	}
 }
 
+bool GUIChatConsole::getAndroidUIInput() {
+#ifdef __ANDROID__
+	if (porting::getInputDialogState() == 0) {
+		std::string text = porting::getInputDialogValue();
+		std::wstring wtext = narrow_to_wide(text);
+		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=text "<<std::endl;
+		m_chat_backend->getPrompt().input(wtext);
+		std::wstring wrtext = m_chat_backend->getPrompt().submit();
+		m_client->typeChatMessage(wrtext);
+
+		if (m_close_on_return) {
+			closeConsole();
+			Environment->removeFocus(this);
+		}
+
+		return true;
+	}
+#endif
+	return false;
+}
+
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)

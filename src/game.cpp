@@ -2665,6 +2665,14 @@ void Game::processUserInput(VolatileRunFlags *flags,
 		input->clear();
 	}
 
+#ifdef __ANDROID__
+	if (gui_chat_console->isOpen()) {
+		if (gui_chat_console->getAndroidUIInput()) {
+			//gui_chat_console->closeConsoleAtOnce();
+		}
+	}
+#endif
+
 	if (!guienv->hasFocus(gui_chat_console) && gui_chat_console->isOpen()) {
 		gui_chat_console->closeConsoleAtOnce();
 	}
@@ -2936,6 +2944,12 @@ void Game::openConsole(float height, bool close_on_return, const std::wstring& i
 		}
 		gui_chat_console->openConsole(height, close_on_return);
 		guienv->setFocus(gui_chat_console);
+
+#ifdef __ANDROID__
+		int type = 1;
+		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+#endif
+
 	}
 }
 
