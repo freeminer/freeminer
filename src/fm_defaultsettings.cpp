@@ -398,8 +398,17 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("save_generated_block", "true");
 	// IPv6
+#if ENET_IPV6
 	settings->setDefault("enable_ipv6", "true");
+#else
+	settings->setDefault("enable_ipv6", "false");
+#endif
+
+#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
+	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+#else
 	settings->setDefault("ipv6_server", "false");
+#endif
 
 	//
 	// Movement, Physics and animation
@@ -448,9 +457,6 @@ void set_default_settings(Settings *settings) {
 
 	settings->setDefault("more_threads", win32 ? "false" : "true");
 
-#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
-	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
-#endif
 
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
