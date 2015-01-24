@@ -1817,6 +1817,8 @@ void Game::run()
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.connected = false;
+	flags.reconnect = false;
 
 
 	/* Clear the profiler */
@@ -2345,7 +2347,7 @@ bool Game::connectToServer(const std::string &playername,
 			showOverlayMessage("Connecting to server...", dtime, 20);
 
 			if (porting::getTimeMs() > end_ms) {
-				flags.reconnect = true;
+				//flags.reconnect = true;
 				return false;
 			}
 		}
@@ -2361,6 +2363,7 @@ bool Game::connectToServer(const std::string &playername,
 		return false;
 #else
 	} catch (int) { //nothing
+		return false;
 #endif
 	}
 
