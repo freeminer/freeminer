@@ -180,7 +180,12 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fallback_font_shadow_alpha", "128");
 
 	std::stringstream fontsize;
+
+#ifdef __ANDROID__
+	fontsize << TTF_DEFAULT_FONT_SIZE + 2;
+#else
 	fontsize << TTF_DEFAULT_FONT_SIZE + 5;
+#endif
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
@@ -372,7 +377,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "3");
-	settings->setDefault("abm_random", "false");
+	settings->setDefault("abm_random", "true");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
 	settings->setDefault("max_block_send_distance", "30");
@@ -490,17 +495,17 @@ void set_default_settings(Settings *settings) {
 	}
 	settings->setDefault("curl_verify_cert", "false");
 
+	settings->setDefault("chunksize", "3");
 	settings->setDefault("server_map_save_interval", "60");
 	settings->setDefault("server_unload_unused_data_timeout", "65");
 	settings->setDefault("client_unload_unused_data_timeout", "60");
 	settings->setDefault("max_objects_per_block", "20");
-	settings->setDefault("active_block_range", "2");
+	settings->setDefault("active_block_range", "1");
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("new_style_leaves", "false");
 	settings->setDefault("mip_map", "true");
-	settings->setDefault("active_block_range", "1");
 	settings->setDefault("autojump", "1");
 
 #else
