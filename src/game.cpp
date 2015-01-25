@@ -819,17 +819,36 @@ class GameGlobalShaderConstantSetter : public IShaderConstantSetter
 	f32 *m_fog_range;
 	Client *m_client;
 	Inventory *m_local_inventory;
+	bool m_fogEnabled;
 
 public:
+	void onSettingsChange(const std::string &name)
+	{
+		if (name == "enable_fog")
+			m_fogEnabled = g_settings->getBool("enable_fog");
+	}
+
+	static void SettingsCallback(const std::string name, void *userdata)
+	{
+		reinterpret_cast<GameGlobalShaderConstantSetter*>(userdata)->onSettingsChange(name);
+	}
+
 	GameGlobalShaderConstantSetter(Sky *sky, bool *force_fog_off,
 			f32 *fog_range, Client *client, Inventory *local_inventory) :
 		m_sky(sky),
 		m_force_fog_off(force_fog_off),
 		m_fog_range(fog_range),
-		m_client(client),
-		m_local_inventory(local_inventory)
-	{}
-	~GameGlobalShaderConstantSetter() {}
+		m_client(client)
+		,m_local_inventory(local_inventory)
+	{
+		g_settings->registerChangedCallback("enable_fog", SettingsCallback, this);
+		m_fogEnabled = g_settings->getBool("enable_fog");
+	}
+
+	~GameGlobalShaderConstantSetter()
+	{
+		g_settings->deregisterChangedCallback("enable_fog", SettingsCallback, this);
+	}
 
 	virtual void onSetConstants(video::IMaterialRendererServices *services,
 			bool is_highlevel)
