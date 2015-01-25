@@ -35,7 +35,7 @@ fi
 cd $ROOT/deps
 if [ ! -d "msgpack-c" ]; then
 	echo ">> Fetching msgpack-c"
-	git clone https://github.com/msgpack/msgpack-c.git || exit 1
+	git clone -b cpp-0.5.9 https://github.com/msgpack/msgpack-c.git || exit 1
 
 	echo ">> Building msgpack"
 	cd $ROOT/deps/msgpack-c
