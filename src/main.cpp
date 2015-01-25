@@ -1793,6 +1793,16 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	g_menuclouds->drop();
 	g_menucloudsmgr->drop();
 
+#ifdef _IRR_COMPILE_WITH_LEAK_HUNTER_
+	auto objects = LeakHunter::getReferenceCountedObjects();
+	infostream<<"irrlicht leaked objects="<<objects.size()<<std::endl;
+	for (unsigned int i = 0; i < objects.size(); ++i) {
+		if (!objects[i])
+			continue;
+		infostream<<i<<":" <<objects[i]<< " cnt="<<objects[i]->getReferenceCount()<<" desc="<<(objects[i]->getDebugName() ? objects[i]->getDebugName() : "")<<std::endl;
+	}
+#endif
+
 	return retval;
 }
 
