@@ -94,6 +94,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Maximum hit points of a player
 #define PLAYER_MAX_HP 20
 
+#define PLAYER_FALL_TOLERANCE_SPEED (BS*14)
+
 /*
     GUI related things
 */

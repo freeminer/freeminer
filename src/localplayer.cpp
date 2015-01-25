@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "util/numeric.h"
 
+#include "log_types.h"
+
 /*
 	LocalPlayer
 */
@@ -173,8 +175,12 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	if (!(is_valid_position && is_valid_position2)) {
 		is_climbing = false;
 	} else {
-		is_climbing = (nodemgr->get(node.getContent()).climbable
+		bool can_climbing = (nodemgr->get(node.getContent()).climbable
 				|| nodemgr->get(node2.getContent()).climbable) && !free_move;
+		if (m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
+			is_climbing = can_climbing;
+		else if (can_climbing)
+			m_speed.Y += 0.3*BS;
 	}
 
 
@@ -208,13 +214,18 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		if(!is_climbing)
 		{
 			f32 min_y = lwn_f.Y + 0.5*BS;
-			if(position.Y < min_y)
+			if(position.Y < min_y && m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
 			{
 				position.Y = min_y;
 
 				if(m_speed.Y < 0)
 					m_speed.Y = 0;
 			}
+
+			if (m_speed.Y < -PLAYER_FALL_TOLERANCE_SPEED) {
+				m_speed.Y += 0.3*BS;
+			}
+
 		}
 	}
 
