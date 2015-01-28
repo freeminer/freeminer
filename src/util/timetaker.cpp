@@ -60,7 +60,7 @@ u32 TimeTaker::stop(bool quiet)
 					"us" /* PRECISION_MICRO */,
 					"ns" /* PRECISION_NANO */,
 				};
-				infostream << m_name << " took "
+				verbosestream << m_name << " took "
 				           << dtime << units[m_precision]
 					   << std::endl;
 			}

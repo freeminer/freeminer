@@ -374,9 +374,9 @@ void Client::step(float dtime)
 		{
 			counter = 20.0;
 
-			infostream << "Client packetcounter (" << m_packetcounter_timer
+			verbosestream << "Client packetcounter (" << m_packetcounter_timer
 					<< "):"<<std::endl;
-			m_packetcounter.print(infostream);
+			m_packetcounter.print(verbosestream);
 			m_packetcounter.clear();
 		}
 	}
