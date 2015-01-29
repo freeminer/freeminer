@@ -150,7 +150,7 @@ else()
 
 
 	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 	endif()
 	if(SANITIZE_THREAD)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
@@ -158,6 +158,10 @@ else()
 			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
 		endif()
 	endif()
+	if(SANITIZE_MEMORY)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+
 
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")

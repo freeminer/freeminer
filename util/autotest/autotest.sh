@@ -30,6 +30,13 @@ time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 nice ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
+name=msan
+mkdir -p _$name && cd _$name
+cmake $rootdir  -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang` -DZDISABLE_LUAJIT=1 -DSANITIZE_MEMORY=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+nice ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
+
 name=valgrind
 mkdir -p _$name && cd _$name
 cmake $rootdir -DDISABLE_LUAJIT=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
