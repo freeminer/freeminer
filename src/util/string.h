@@ -40,6 +40,9 @@ struct FlagDesc {
 	u32 flag;
 };
 
+// You must free the returned string!
+const wchar_t *narrow_to_wide_c(const char *mbs);
+
 // try not to convert between wide/utf8 encodings; this can result in data loss
 // try to only convert between them when you need to input/output stuff via Irrlicht
 std::wstring narrow_to_wide(const std::string &input); // TODO: must be named utf8_to_wide

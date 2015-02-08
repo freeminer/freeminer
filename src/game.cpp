@@ -1598,8 +1598,10 @@ protected:
 	// Misc
 	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
-	void showOverlayMessage(const std::string &msg, float dtime, int percent,
+	void showOverlayMessage(const std::wstring &msg, float dtime, int percent,
 			bool draw_clouds = true);
+
+	void showOverlayMessage(const std::string &msg, float dtime, int percent, bool draw_clouds = true);
 
 private:
 	InputHandler *input;
@@ -1909,7 +1911,7 @@ void Game::shutdown()
 		g_profiler->print(actionstream);
 	}
 
-	showOverlayMessage("Shutting down...", 0, 0, false);
+	showOverlayMessage(wstrgettext("Shutting down..."), 0, 0, false);
 
 	if (clouds)
 		clouds->drop();
@@ -1964,7 +1966,7 @@ bool Game::init(
 		u16 port,
 		const SubgameSpec &gamespec)
 {
-	showOverlayMessage("Loading...", 0, 0);
+	showOverlayMessage(wstrgettext("Loading..."), 0, 0);
 
 	texture_src = createTextureSource(device);
 	shader_src = createShaderSource(device);
@@ -2021,7 +2023,7 @@ bool Game::initSound()
 bool Game::createSingleplayerServer(const std::string map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
-	showOverlayMessage("Creating server...", 0, 5);
+	showOverlayMessage(wstrgettext("Creating server..."), 0, 5);
 
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
@@ -2058,7 +2060,7 @@ bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		std::string *error_message)
 {
-	showOverlayMessage("Creating client...", 0, 10);
+	showOverlayMessage(wstrgettext("Creating client..."), 0, 10);
 
 	device->setWindowCaption(L"Freeminer [Connecting]");
 
@@ -2276,7 +2278,7 @@ bool Game::connectToServer(const std::string &playername,
 	*aborted = false;
 	bool local_server_mode = false;
 
-	showOverlayMessage("Resolving address...", 0, 15);
+	showOverlayMessage(wstrgettext("Resolving address..."), 0, 15);
 
 	Address connect_address(0, 0, 0, 0, port);
 
@@ -2368,7 +2370,7 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			// Update status
-			showOverlayMessage("Connecting to server...", dtime, 20);
+			showOverlayMessage(wstrgettext("Connecting to server..."), dtime, 20);
 
 			if (porting::getTimeMs() > end_ms) {
 				//flags.reconnect = true;
@@ -2447,12 +2449,12 @@ bool Game::getServerContent(bool *aborted)
 		int progress = 25;
 
 		if (!client->itemdefReceived()) {
-			wchar_t *text = wgettext("Item definitions...");
+			const wchar_t *text = wgettext("Item definitions...");
 			progress = 25;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else if (!client->nodedefReceived()) {
-			wchar_t *text = wgettext("Node definitions...");
+			const wchar_t *text = wgettext("Node definitions...");
 			progress = 30;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
@@ -2475,7 +2477,7 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			draw_load_screen(narrow_to_wide(message.str().c_str()), device,
+			draw_load_screen(narrow_to_wide(message.str()), device,
 					guienv, dtime, progress);
 		}
 
@@ -4570,13 +4572,19 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 }
 
 
+void Game::showOverlayMessage(const std::wstring &msg, float dtime,
+		int percent, bool draw_clouds)
+{
+	draw_load_screen(msg, device, guienv, dtime, percent, draw_clouds);
+}
+
 void Game::showOverlayMessage(const std::string &msg, float dtime,
 		int percent, bool draw_clouds)
 {
-	wchar_t *text = wgettext(msg.c_str());
-	draw_load_screen(text, device, guienv, dtime, percent, draw_clouds);
-	delete[] text;
+	draw_load_screen(narrow_to_wide(msg), device, guienv, dtime, percent, draw_clouds);
 }
+
+
 
 
 /****************************************************************************

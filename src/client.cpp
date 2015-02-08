@@ -2198,7 +2198,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
-	wchar_t* text = wgettext("Loading textures...");
+	const wchar_t* text = wgettext("Loading textures...");
 
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;

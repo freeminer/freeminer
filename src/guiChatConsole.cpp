@@ -31,9 +31,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "tile.h"
 #include "fontengine.h"
-#include <string>
-
+#include "log.h"
 #include "gettext.h"
+#include <string>
 
 #include "xCGUITTFont.h"
 
