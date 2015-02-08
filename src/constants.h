@@ -96,6 +96,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PLAYER_FALL_TOLERANCE_SPEED (BS*14)
 
+// Maximal breath of a player
+#define PLAYER_MAX_BREATH 11
+
 /*
     GUI related things
 */
