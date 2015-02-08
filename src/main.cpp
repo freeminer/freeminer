@@ -754,6 +754,8 @@ int main(int argc, char *argv[])
 	}
 	atexit(enet_deinitialize);
 
+	debug_set_exception_handler();
+
 	log_add_output_maxlev(&main_stderr_log_out, LMT_ACTION);
 	log_add_output_all_levs(&main_dstream_no_stderr_log_out);
 
