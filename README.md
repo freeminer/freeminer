@@ -55,6 +55,10 @@ sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake
 # From AUR
 yaourt -S msgpack
 ```
+Gentoo/Funtoo:
+```bash
+emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht dev-libs/msgpack dev-libs/leveldb
+```
 <sup>Recommended irrlicht version: `1.8.1`</sup>
 
 Download source code:
