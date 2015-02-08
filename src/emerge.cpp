@@ -187,13 +187,6 @@ void EmergeManager::loadMapgenParams()
 {
 	loadParamsFromSettings(g_settings);
 
-	if (g_settings->get("fixed_map_seed").empty()) {
-		params.seed = (((u64)(myrand() & 0xffff) << 0)
-					 | ((u64)(myrand() & 0xffff) << 16)
-					 | ((u64)(myrand() & 0xffff) << 32)
-					 | ((u64)(myrand() & 0xffff) << 48));
-	}
-
 	biomemgr->mapgen_params = &params;
 }
 
@@ -390,8 +383,15 @@ void EmergeManager::loadParamsFromSettings(Settings *settings)
 	std::string seed_str;
 	const char *setname = (settings == g_settings) ? "fixed_map_seed" : "seed";
 
-	if (settings->getNoEx(setname, seed_str))
+	if (settings->getNoEx(setname, seed_str) && !seed_str.empty()) {
 		params.seed = read_seed(seed_str.c_str());
+	} else {
+		params.seed =
+			((u64)(myrand() & 0xffff) << 0)  |
+			((u64)(myrand() & 0xffff) << 16) |
+			((u64)(myrand() & 0xffff) << 32) |
+			((u64)(myrand() & 0xffff) << 48);
+	}
 
 	settings->getNoEx("mg_name",         params.mg_name);
 	settings->getS16NoEx("water_level",  params.water_level);
