@@ -681,7 +681,8 @@ const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type)
 
 #ifndef __ANDROID__
 #if defined(WTF) && defined(XORG_USED)
-float getDisplayDensity()
+
+static float calcDisplayDensity()
 {
 	const char* current_display = getenv("DISPLAY");
 
@@ -699,13 +700,21 @@ float getDisplayDensity()
 
 				XCloseDisplay(x11display);
 
-				return (std::max(dpi_height,dpi_width) / 96.0);
+				return std::max(dpi_height,dpi_width) / 96.0;
 			}
 		}
 
 	/* return manually specified dpi */
 	return g_settings->getFloat("screen_dpi")/96.0;
 }
+
+
+float getDisplayDensity()
+{
+	static float cached_display_density = calcDisplayDensity();
+	return cached_display_density;
+}
+
 
 #else
 float getDisplayDensity()
