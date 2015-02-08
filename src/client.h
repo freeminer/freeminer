@@ -313,7 +313,9 @@ public:
 		The name of the local player should already be set when
 		calling this, as it is sent in the initialization.
 	*/
-	void connect(Address address);
+	void connect(Address address,
+			const std::string &address_name,
+			bool is_local_server);
 
 	/*
 		Stuff that references the environment is valid only as
@@ -466,6 +468,10 @@ private:
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
 
+	void initLocalMapSaving(const Address &address,
+			const std::string &hostname,
+			bool is_local_server);
+
 	void ReceiveAll();
 	void Receive();
 
@@ -517,6 +523,7 @@ private:
 	// The seed returned by the server in TOCLIENT_INIT is stored here
 	u64 m_map_seed;
 	std::string m_password;
+	bool is_simple_singleplayer_game;
 	bool m_access_denied;
 	std::string m_access_denied_reason;
 	Queue<ClientEvent> m_client_event_queue;

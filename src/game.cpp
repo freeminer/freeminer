@@ -2032,7 +2032,6 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 
 	try {
 		bind_addr.Resolve(bind_str.c_str());
-		*address = bind_str;
 	} catch (ResolveError &e) {
 		infostream << "Resolving bind address \"" << bind_str
 			   << "\" failed: " << e.what()
@@ -2275,6 +2274,7 @@ bool Game::connectToServer(const std::string &playername,
 {
 	*connect_ok = false;	// Let's not be overly optimistic
 	*aborted = false;
+	bool local_server_mode = false;
 
 	showOverlayMessage("Resolving address...", 0, 15);
 
@@ -2290,6 +2290,7 @@ bool Game::connectToServer(const std::string &playername,
 			} else {
 				connect_address.setAddress(127, 0, 0, 1);
 			}
+			local_server_mode = true;
 		}
 	} catch (ResolveError &e) {
 		*error_message = std::string("Couldn't resolve address: ") + e.what();
@@ -2306,7 +2307,8 @@ bool Game::connectToServer(const std::string &playername,
 	}
 
 	client = new Client(device,
-			playername.c_str(), password, simple_singleplayer_mode,
+			playername.c_str(), password,
+			simple_singleplayer_mode,
 			*draw_control, texture_src, shader_src,
 			itemdef_manager, nodedef_manager, sound, eventmgr,
 			connect_address.isIPv6());
@@ -2322,7 +2324,8 @@ bool Game::connectToServer(const std::string &playername,
 
 	try {
 
-	client->connect(connect_address);
+	client->connect(connect_address, *address,
+		simple_singleplayer_mode || local_server_mode);
 
 	/*
 		Wait for server to accept connection

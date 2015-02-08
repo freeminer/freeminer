@@ -375,7 +375,7 @@ Server::Server(
 	m_async_fatal_error(""),
 	m_env(NULL),
 	m_con(PROTOCOL_ID,
-			simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE,
+			MAX_PACKET_SIZE,
 			CONNECTION_TIMEOUT,
 			ipv6,
 			this),
