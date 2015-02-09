@@ -160,7 +160,7 @@ int NOT_USED_wctomb(char *s, wchar_t wc)
 
 int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
-	wchar_t *intermediate = narrow_to_wide(s);
+	std::wstring intermediate = narrow_to_wide(s);
 
 	if (intermediate.length() > 0) {
 		*pwc = intermediate[0];
@@ -173,7 +173,7 @@ int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
 const wchar_t *narrow_to_wide_c(const char *mbs)
 {
 	size_t mbl = strlen(mbs);
-	wchar_t wcs = new wchar_t[mbl + 1];
+	wchar_t* wcs = new wchar_t[mbl + 1];
 
 	for (size_t i = 0; i < mbl; i++) {
 		if (((unsigned char) mbs[i] > 31) &&
