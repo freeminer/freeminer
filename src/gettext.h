@@ -49,18 +49,17 @@ extern std::wstring narrow_to_wide(const std::string &mbs);
 // You must free the returned string!
 inline const wchar_t *wgettext(const char *str)
 {
-	return narrow_to_wide_c(gettext(str));
+	return narrow_to_wide_c(mygettext(str));
 }
 
 inline std::wstring wstrgettext(const std::string &text)
 {
-	//return chartowchar_t(mygettext(str));
-	return narrow_to_wide(gettext(text.c_str()));
+	return narrow_to_wide(mygettext(text.c_str()));
 }
 
 inline std::string strgettext(const std::string &text)
 {
-	return gettext(text.c_str());
+	return mygettext(text.c_str());
 }
 
 #endif

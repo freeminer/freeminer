@@ -134,7 +134,9 @@ static bool parseNamedColorString(const std::string &value, video::SColor &color
 #if !CMAKE_UTF8
 std::wstring narrow_to_wide(const std::string &input) { return narrow_to_wide_real(input); }
 std::string wide_to_narrow(const std::wstring &input) { return wide_to_narrow_real(input); }
+#endif
 
+#ifdef __ANDROID__
 int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
 int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
 
@@ -142,7 +144,9 @@ const wchar_t* wide_chars =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";
+#endif
 
+#if !CMAKE_UTF8
 int NOT_USED_wctomb(char *s, wchar_t wc)
 {
 	for (unsigned int j = 0; j < (sizeof(wide_chars)/sizeof(wchar_t));j++) {
