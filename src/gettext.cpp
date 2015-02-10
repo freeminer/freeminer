@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 
 #if USE_GETTEXT && defined(_MSC_VER)
-#include <WinNls.h>
+#include <windows.h>
 #include <map>
 #include <direct.h>
 #include "filesys.h"
