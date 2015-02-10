@@ -57,7 +57,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	return 0;
 }
 
-#if CMAKE_UTF8
+#ifndef __ANDROID__
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t inbuf_size = input.length() + 1;
 	// maximum possible size, every character is sizeof(wchar_t) bytes
@@ -131,12 +131,10 @@ std::string wide_to_narrow(const std::wstring &input) {
 static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
-#if !CMAKE_UTF8
+#ifdef __ANDROID__
 std::wstring narrow_to_wide(const std::string &input) { return narrow_to_wide_real(input); }
 std::string wide_to_narrow(const std::wstring &input) { return wide_to_narrow_real(input); }
-#endif
 
-#ifdef __ANDROID__
 int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
 int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
 
@@ -144,9 +142,7 @@ const wchar_t* wide_chars =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";
-#endif
 
-#if !CMAKE_UTF8
 int NOT_USED_wctomb(char *s, wchar_t wc)
 {
 	for (unsigned int j = 0; j < (sizeof(wide_chars)/sizeof(wchar_t));j++) {
@@ -220,6 +216,7 @@ const wchar_t *narrow_to_wide_c(const char *mbs)
 
 #endif
 
+#ifndef __ANDROID__
 std::wstring narrow_to_wide_real(const std::string& mbs)
 {
 	const wchar_t *wcs = narrow_to_wide_c(mbs.c_str());
@@ -229,8 +226,30 @@ std::wstring narrow_to_wide_real(const std::string& mbs)
 	delete [] wcs;
 	return wstr;
 }
+#endif
 
 #ifdef __ANDROID__
+
+std::wstring narrow_to_wide_real(const std::string& mbs) {
+	size_t wcl = mbs.size();
+
+	std::wstring retval = L"";
+
+	for (unsigned int i = 0; i < wcl; i++) {
+		if (((unsigned char) mbs[i] >31) &&
+		 ((unsigned char) mbs[i] < 127)) {
+
+			retval += wide_chars[(unsigned char) mbs[i] -32];
+		}
+		//handle newline
+		else if (mbs[i] == '\n') {
+			retval += L'\n';
+		}
+	}
+
+	return retval;
+}
+
 std::string wide_to_narrow_real(const std::wstring& wcs) {
 	size_t mbl = wcs.size()*4;
 
