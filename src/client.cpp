@@ -2055,19 +2055,19 @@ bool Client::getChatMessage(std::string &message)
 	return true;
 }
 
-void Client::typeChatMessage(const std::wstring &message)
+void Client::typeChatMessage(const std::string &message)
 {
 	// Discard empty line
 	if(message.empty())
 		return;
 
 	// Send to others
-	sendChatMessage(wide_to_narrow(message));
+	sendChatMessage(message);
 
 	// Show locally
 	if (message[0] == '/')
 	{
-		m_chat_queue.push_back("issued command: " + wide_to_narrow(message));
+		m_chat_queue.push_back("issued command: " + message);
 	}
 }
 

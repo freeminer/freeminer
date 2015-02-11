@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "tile.h"
 #include "fontengine.h"
-#include "log.h"
+#include "log_types.h"
 #include "gettext.h"
 #include <string>
 
@@ -397,10 +397,10 @@ bool GUIChatConsole::getAndroidUIInput() {
 	if (porting::getInputDialogState() == 0) {
 		std::string text = porting::getInputDialogValue();
 		std::wstring wtext = narrow_to_wide(text);
-		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=text "<<std::endl;
+		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=["<<text<<"] "<<std::endl;
 		m_chat_backend->getPrompt().input(wtext);
 		std::wstring wrtext = m_chat_backend->getPrompt().submit();
-		m_client->typeChatMessage(wrtext);
+		m_client->typeChatMessage(wide_to_narrow(wrtext));
 
 		if (m_close_on_return) {
 			closeConsole();
@@ -447,7 +447,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 		else if(event.KeyInput.Key == KEY_RETURN)
 		{
-			std::wstring text = m_chat_backend->getPrompt().submit();
+			std::string text = wide_to_narrow(m_chat_backend->getPrompt().submit());
 			m_client->typeChatMessage(text);
 
 			if (m_close_on_return) {

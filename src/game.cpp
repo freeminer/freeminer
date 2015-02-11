@@ -192,7 +192,7 @@ struct LocalFormspecHandler : public TextDest {
 			if ((fields.find("btn_send") != fields.end()) ||
 					(fields.find("quit") != fields.end())) {
 				if (fields.find("f_text") != fields.end()) {
-					m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
+					m_client->typeChatMessage(fields["f_text"]);
 				}
 
 				return;

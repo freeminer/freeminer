@@ -397,7 +397,7 @@ public:
 	{ return (m_privileges.count(priv) != 0); }
 
 	bool getChatMessage(std::string &message);
-	void typeChatMessage(const std::wstring& message);
+	void typeChatMessage(const std::string& message);
 
 	u64 getMapSeed(){ return m_map_seed; }
 
