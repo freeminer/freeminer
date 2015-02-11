@@ -3554,8 +3554,7 @@ void Game::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 		camera->toggleCameraMode();
 		GenericCAO *playercao = player->getCAO();
 
-		assert(playercao != NULL);
-
+		if (playercao)
 		playercao->setVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
 	}
 
