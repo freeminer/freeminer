@@ -61,7 +61,7 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t inbuf_size = input.length() + 1;
 	// maximum possible size, every character is sizeof(wchar_t) bytes
-	size_t outbuf_size = (input.length() + 1) * sizeof(wchar_t);
+	size_t outbuf_size = (input.length() + 1) * (sizeof(wchar_t)+2);
 
 	char *inbuf = new char[inbuf_size];
 	memcpy(inbuf, input.c_str(), inbuf_size);

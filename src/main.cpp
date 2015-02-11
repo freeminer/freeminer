@@ -1680,9 +1680,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	while (device->run() && !*kill && !g_gamecallback->shutdown_requested)
 	{
 		// Set the window caption
-		const wchar_t *text = wgettext("Main Menu");
+		std::wstring text = wstrgettext("Main Menu");
 		device->setWindowCaption((std::wstring(L"Freeminer [") + text + L"]").c_str());
-		delete[] text;
 
 		try {	// This is used for catching disconnects
 
