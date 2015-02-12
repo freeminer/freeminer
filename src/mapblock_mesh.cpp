@@ -85,16 +85,25 @@ MeshMakeData::~MeshMakeData() {
 
 void MeshMakeData::fill(MapBlock *block_)
 {
+#if ! CMAKE_THREADS
 	block = block_;
-	m_blockpos = block->getPos();
-	timestamp = block->getTimestamp();
+#endif
+	m_blockpos = block_->getPos();
 }
 
 void MeshMakeData::fill_data()
 {
-	if (!block || filled)
+
+	if (filled)
+		return;
+
+	if (!block)
+		block = map.getBlockNoCreateNoEx(m_blockpos);
+
+	if (!block)
 		return;
 	filled = true;
+	timestamp = block->getTimestamp();
 
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
@@ -1074,7 +1083,6 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
 	step(data->step),
-	timestamp(data->timestamp),
 	m_mesh(nullptr),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1094,6 +1102,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	//TimeTaker timer1("MapBlockMesh()");
 
 	data->fill_data();
+	timestamp = data->timestamp;
 
 	std::vector<FastFace> fastfaces_new;
 

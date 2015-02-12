@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 extern "C" {
 #include "lualib.h"
 #if USE_LUAJIT
-	#include "luajit.h"
+	#include <luajit.h>
 #endif
 }
 
