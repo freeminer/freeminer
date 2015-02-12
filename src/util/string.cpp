@@ -95,6 +95,31 @@ std::string wide_to_narrow(const std::wstring &input) {
 
 	return out;
 }
+#else
+
+std::wstring narrow_to_wide(const std::string &input) {
+       size_t outbuf_size = input.size() + 1;
+       wchar_t *outbuf = new wchar_t[outbuf_size];
+       memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
+       irr::core::utf8ToWchar(input.c_str(), outbuf, outbuf_size * sizeof(wchar_t));
+       std::wstring out(outbuf);
+       delete[] outbuf;
+       return out;
+}
+
+std::string wide_to_narrow(const std::wstring &input) {
+       size_t outbuf_size = (input.size() + 1) * 6;
+       char *outbuf = new char[outbuf_size];
+       memset(outbuf, 0, outbuf_size);
+       size_t inbuf_size = (input.length() + 1);
+       wchar_t *inbuf = new wchar_t[inbuf_size];
+       memcpy(inbuf, input.c_str(), inbuf_size * sizeof(wchar_t));
+       irr::core::wcharToUtf8(inbuf, outbuf, outbuf_size);
+       std::string out(outbuf);
+       delete[] outbuf;
+       delete[] inbuf;
+       return out;
+}
 #endif
 
 #else
@@ -132,12 +157,13 @@ static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
 #ifdef __ANDROID__
-std::wstring narrow_to_wide(const std::string &input) { return narrow_to_wide_real(input); }
-std::string wide_to_narrow(const std::wstring &input) { return wide_to_narrow_real(input); }
-
 int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
 int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
+#endif
 
+
+
+#ifdef __ANDROID__
 const wchar_t* wide_chars =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
@@ -216,7 +242,6 @@ const wchar_t *narrow_to_wide_c(const char *mbs)
 
 #endif
 
-#ifndef __ANDROID__
 std::wstring narrow_to_wide_real(const std::string& mbs)
 {
 	const wchar_t *wcs = narrow_to_wide_c(mbs.c_str());
@@ -226,30 +251,8 @@ std::wstring narrow_to_wide_real(const std::string& mbs)
 	delete [] wcs;
 	return wstr;
 }
-#endif
 
 #ifdef __ANDROID__
-
-std::wstring narrow_to_wide_real(const std::string& mbs) {
-	size_t wcl = mbs.size();
-
-	std::wstring retval = L"";
-
-	for (unsigned int i = 0; i < wcl; i++) {
-		if (((unsigned char) mbs[i] >31) &&
-		 ((unsigned char) mbs[i] < 127)) {
-
-			retval += wide_chars[(unsigned char) mbs[i] -32];
-		}
-		//handle newline
-		else if (mbs[i] == '\n') {
-			retval += L'\n';
-		}
-	}
-
-	return retval;
-}
-
 std::string wide_to_narrow_real(const std::wstring& wcs) {
 	size_t mbl = wcs.size()*4;
 
@@ -275,6 +278,7 @@ std::string wide_to_narrow_real(const std::wstring& wcs) {
 
 	return retval;
 }
+
 #else
 std::string wide_to_narrow_real(const std::wstring& wcs)
 {

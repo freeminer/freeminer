@@ -120,6 +120,7 @@ LOCAL_C_INCLUDES :=                               \
 		deps/sqlite/
 
 LOCAL_SRC_FILES :=                                \
+		jni/src/util/utf8.cpp                     \
 		jni/src/gsmapper.cpp                      \
 		jni/src/guiTextInputMenu.cpp              \
 		jni/src/FMColoredString.cpp               \
