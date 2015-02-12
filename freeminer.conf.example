@@ -579,6 +579,8 @@
 #zoom_fov=15
 # [dev] Shadows from objects
 #shadows = 0
+# Increase performance of headless client ( video_driver = null )
+#headless_optimize = 0
 
 # Disable death screen, respawn automaticaly
 #respawn_auto = false

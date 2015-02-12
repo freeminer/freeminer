@@ -270,6 +270,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("preload_item_visuals", "false");
+	settings->setDefault("headless_optimize", "false");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");

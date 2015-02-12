@@ -2196,7 +2196,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
 	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
-	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	bool no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
 

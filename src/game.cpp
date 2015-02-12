@@ -1837,7 +1837,7 @@ void Game::run()
 	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
-	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	flags.connected = false;
 	flags.reconnect = false;
 
