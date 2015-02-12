@@ -3,12 +3,22 @@
 # sudo apt-get install valgrind clang
 
 cmake_opt="-DBUILD_SERVER=0"
+#cmake_opt="-DBUILD_SERVER=0 -DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a"
+
 confdir=`pwd`
-run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.bot.conf--autoexit 1000"
-#run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.headless.conf--autoexit 100"
+
+run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.bot.conf --autoexit 1000"
+#run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.headless.conf --autoexit 1000"
+
 logdir=`pwd`/logs
+
 make="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
-clang="-DCMAKE_CXX_COMPILER=`which clang++-3.5` -DCMAKE_C_COMPILER=`which clang-3.5`"
+
+clang_version="-3.5"
+clang="-DCMAKE_CXX_COMPILER=`which clang++$clang_version` -DCMAKE_C_COMPILER=`which clang$clang_version`"
+
+
+
 cd ../..
 
 rootdir=..
