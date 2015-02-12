@@ -1909,9 +1909,8 @@ bool ClientLauncher::launch_game(std::string *error_message,
 	}
 
 	if (menudata.name == "")
-		menudata.name = std::string("Guest") + itos(myrand_range(1000, 9999));
-	else
-		playername = menudata.name;
+		menudata.name = std::string("Guest") + itos(myrand_range(10000, 30000));
+	playername = menudata.name;
 
 	password = translatePassword(playername, (menudata.password));
 
