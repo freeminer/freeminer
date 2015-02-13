@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Debug stuff
 */
-u32 addarea_time = 0;
 u32 clearflag_time = 0;
 //u32 getwaterpressure_time = 0;
 //u32 spreadwaterpressure_time = 0;
@@ -149,7 +148,7 @@ void VoxelManipulator::addArea(const VoxelArea &area)
 	if(m_area.contains(area))
 		return;
 
-	TimeTaker timer("addArea", &addarea_time);
+	TimeTaker timer("addArea");
 
 	// Calculate new area
 	VoxelArea new_area;
