@@ -34,19 +34,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <direct.h>
 #include "filesys.h"
 
-#define setlocale(category,localename) \
-	setlocale(category,MSVC_LocaleLookup(localename))
+#define setlocale(category, localename) \
+	setlocale(category, MSVC_LocaleLookup(localename))
 
-static std::map<std::wstring,std::wstring> glb_supported_locales;
+static std::map<std::wstring, std::wstring> glb_supported_locales;
 
 /******************************************************************************/
 BOOL CALLBACK UpdateLocaleCallback(LPTSTR pStr)
 {
 	char* endptr = 0;
-	int LOCALEID = strtol(pStr,&endptr,16);
+	int LOCALEID = strtol(pStr, &endptr,16);
 
 	wchar_t buffer[LOCALE_NAME_MAX_LENGTH];
-	memset(buffer,0,sizeof(buffer));
+	memset(buffer, 0, sizeof(buffer));
 	if (GetLocaleInfoW(
 		LOCALEID,
 		LOCALE_SISO639LANGNAME,
@@ -55,7 +55,7 @@ BOOL CALLBACK UpdateLocaleCallback(LPTSTR pStr)
 
 		std::wstring name = buffer;
 
-		memset(buffer,0,sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		GetLocaleInfoW(
 		LOCALEID,
 		LOCALE_SISO3166CTRYNAME,
@@ -64,7 +64,7 @@ BOOL CALLBACK UpdateLocaleCallback(LPTSTR pStr)
 
 		std::wstring country = buffer;
 
-		memset(buffer,0,sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		GetLocaleInfoW(
 		LOCALEID,
 		LOCALE_SENGLISHLANGUAGENAME,
@@ -99,7 +99,7 @@ const char* MSVC_LocaleLookup(const char* raw_shortname) {
 	}
 
 	if (first_use) {
-		EnumSystemLocalesA(UpdateLocaleCallback,LCID_SUPPORTED | LCID_ALTERNATE_SORTS);
+		EnumSystemLocalesA(UpdateLocaleCallback, LCID_SUPPORTED | LCID_ALTERNATE_SORTS);
 		first_use = false;
 	}
 
@@ -151,8 +151,8 @@ void init_gettext(const char *path, const std::string &configured_language) {
 		if (current_language_var != configured_language) {
 			STARTUPINFO startupinfo;
 			PROCESS_INFORMATION processinfo;
-			memset(&startupinfo,0,sizeof(startupinfo));
-			memset(&processinfo,0,sizeof(processinfo));
+			memset(&startupinfo, 0, sizeof(startupinfo));
+			memset(&processinfo, 0, sizeof(processinfo));
 			errorstream << "MSVC localization workaround active restating minetest in new environment!" << std::endl;
 
 			std::string parameters = "";
@@ -172,7 +172,7 @@ void init_gettext(const char *path, const std::string &configured_language) {
 			
 			/** users may start by short name in commandline without extention **/
 			std::string appname = argv[0];
-			if (appname.substr(appname.length() -4) != ".exe") {
+			if (appname.substr(appname.length() - 4) != ".exe") {
 				appname += ".exe";
 			}
 
@@ -263,7 +263,7 @@ void init_gettext(const char *path, const std::string &configured_language) {
 	/* no matter what locale is used we need number format to be "C" */
 	/* to ensure formspec parameters are evaluated correct!          */
 
-	setlocale(LC_NUMERIC,"C");
+	setlocale(LC_NUMERIC, "C");
 	infostream << "Message locale is now set to: "
 			<< setlocale(LC_ALL, 0) << std::endl;
 }
