@@ -98,27 +98,27 @@ std::string wide_to_narrow(const std::wstring &input) {
 #else
 
 std::wstring narrow_to_wide(const std::string &input) {
-       size_t outbuf_size = input.size() + 1;
-       wchar_t *outbuf = new wchar_t[outbuf_size];
-       memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-       irr::core::utf8ToWchar(input.c_str(), outbuf, outbuf_size * sizeof(wchar_t));
-       std::wstring out(outbuf);
-       delete[] outbuf;
-       return out;
+	size_t outbuf_size = input.size() + 1;
+	wchar_t *outbuf = new wchar_t[outbuf_size];
+	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
+	irr::core::utf8ToWchar(input.c_str(), outbuf, outbuf_size * sizeof(wchar_t));
+	std::wstring out(outbuf);
+	delete[] outbuf;
+	return out;
 }
 
 std::string wide_to_narrow(const std::wstring &input) {
-       size_t outbuf_size = (input.size() + 1) * 6;
-       char *outbuf = new char[outbuf_size];
-       memset(outbuf, 0, outbuf_size);
-       size_t inbuf_size = (input.length() + 1);
-       wchar_t *inbuf = new wchar_t[inbuf_size];
-       memcpy(inbuf, input.c_str(), inbuf_size * sizeof(wchar_t));
-       irr::core::wcharToUtf8(inbuf, outbuf, outbuf_size);
-       std::string out(outbuf);
-       delete[] outbuf;
-       delete[] inbuf;
-       return out;
+	size_t outbuf_size = (input.size() + 1) * 6;
+	char *outbuf = new char[outbuf_size];
+	memset(outbuf, 0, outbuf_size);
+	size_t inbuf_size = (input.length() + 1);
+	wchar_t *inbuf = new wchar_t[inbuf_size];
+	memcpy(inbuf, input.c_str(), inbuf_size * sizeof(wchar_t));
+	irr::core::wcharToUtf8(inbuf, outbuf, outbuf_size);
+	std::string out(outbuf);
+	delete[] outbuf;
+	delete[] inbuf;
+	return out;
 }
 #endif
 
@@ -198,6 +198,13 @@ int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
 // You must free the returned string!
 const wchar_t *narrow_to_wide_c(const char *mbs)
 {
+	size_t outbuf_size = strlen(mbs) + 1;
+	wchar_t *outbuf = new wchar_t[outbuf_size];
+	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
+	irr::core::utf8ToWchar(mbs, outbuf, outbuf_size * sizeof(wchar_t));
+	return outbuf;
+
+#if WTF
 	size_t mbl = strlen(mbs);
 	wchar_t* wcs = new wchar_t[mbl + 1];
 
@@ -211,8 +218,8 @@ const wchar_t *narrow_to_wide_c(const char *mbs)
 			wcs[i] = L'\n';
 		}
 	}
-
 	return wcs;
+#endif
 }
 
 #else
