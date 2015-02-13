@@ -451,7 +451,7 @@ int RemoteClient::GetNextBlocks(
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
-				if (block->getLightingExpired() && (block_sent || d>=1)) {
+				if (block->getLightingExpired() && (block_sent /*|| d>=1*/)) {
 					continue;
 				}
 				// Block is valid if lighting is up-to-date and data exists
