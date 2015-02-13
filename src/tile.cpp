@@ -1099,9 +1099,9 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 		if (image == NULL) {
 			if (part_of_name != "") {
 				if (part_of_name.find("_normal.png") == std::string::npos){
-					errorstream<<"generateImage(): Could not load image \""
+					infostream<<"generateImage(): Could not load image \""
 						<<part_of_name<<"\""<<" while building texture"<<std::endl;
-					errorstream<<"generateImage(): Creating a dummy"
+					infostream<<"generateImage(): Creating a dummy"
 						<<" image for \""<<part_of_name<<"\""<<std::endl;
 				} else {
 					infostream<<"generateImage(): Could not load normal map \""
@@ -1413,7 +1413,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 				return true;
 			}
 
-#ifdef __ANDROID__
+#ifdef WTF__ANDROID__
 			assert(img_top->getDimension().Height == npot2(img_top->getDimension().Height));
 			assert(img_top->getDimension().Width == npot2(img_top->getDimension().Width));
 
