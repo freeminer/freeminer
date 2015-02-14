@@ -224,9 +224,13 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	if (!chance)
 		chance = 50;
 
+	// abm process may be very slow if > 1
 	neighbors_range = abm->getNeighborsRange();
+	int nr_max = g_settings->getS32("abm_neighbors_range_max");
 	if (!neighbors_range)
 		neighbors_range = 1;
+	else if (neighbors_range > nr_max)
+		neighbors_range = nr_max;
 
 	// Initialize timer to random value to spread processing
 	float itv = MYMAX(0.001, interval); // No less than 1ms

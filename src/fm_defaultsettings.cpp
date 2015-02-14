@@ -378,6 +378,11 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "3");
+#if CMAKE_THREADS
+	settings->setDefault("abm_neighbors_range_max", win32 ? "1" : "16");
+#else
+	settings->setDefault("abm_neighbors_range_max", "1");
+#endif
 	settings->setDefault("abm_random", "true");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
@@ -458,7 +463,6 @@ void set_default_settings(Settings *settings) {
 
 	settings->setDefault("more_threads", win32 ? "false" : "true");
 
-
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
@@ -508,6 +512,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("client_unload_unused_data_timeout", "60");
 	settings->setDefault("max_objects_per_block", "20");
 	settings->setDefault("active_block_range", "1");
+	settings->setDefault("abm_neighbors_range_max", "1");
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
