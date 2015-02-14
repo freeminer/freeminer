@@ -506,7 +506,7 @@ u32 TextureSource::getTextureId(const std::string &name)
 		}
 		catch(ItemNotFoundException &e)
 		{
-			errorstream<<"Waiting for texture " << name << " timed out."<<std::endl;
+			infostream<<"Waiting for texture " << name << " timed out."<<std::endl;
 			return 0;
 		}
 	}
