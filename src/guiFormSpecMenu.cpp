@@ -101,7 +101,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_form_src(fsrc),
 	m_text_dst(tdst),
 	m_formspec_version(0),
-	m_focused_element(L""),
+	m_focused_element(""),
 	m_font(NULL)
 #ifdef __ANDROID__
 	,m_JavaDialogFieldName("")

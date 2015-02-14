@@ -258,7 +258,7 @@ public:
 	void removeChildren();
 	void setInitialFocus();
 
-	void setFocus(std::wstring elementname)
+	void setFocus(std::string elementname)
 	{
 		m_focused_element = elementname;
 	}
@@ -358,7 +358,7 @@ private:
 	IFormSource      *m_form_src;
 	TextDest         *m_text_dst;
 	unsigned int      m_formspec_version;
-	std::wstring      m_focused_element;
+	std::string      m_focused_element;
 
 	typedef struct {
 		bool explicit_size;
