@@ -101,6 +101,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_form_src(fsrc),
 	m_text_dst(tdst),
 	m_formspec_version(0),
+	m_focused_element(L""),
 	m_font(NULL)
 #ifdef __ANDROID__
 	,m_JavaDialogFieldName("")
@@ -1763,8 +1764,6 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 		<<std::endl;
 }
 
-
-
 void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 {
 	/* useless to regenerate without a screensize */
@@ -1780,6 +1779,10 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		GUITable *table = m_tables[i].second;
 		mydata.table_dyndata[tablename] = table->getDynamicData();
 	}
+
+	//set focus
+	if (!m_focused_element.empty())
+		mydata.focused_fieldname = m_focused_element;
 
 	//preserve focus
 	gui::IGUIElement *focused_element = Environment->getFocus();

@@ -1103,7 +1103,7 @@ static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 		std::string(FORMSPEC_VERSION_STRING) +
 		SIZE_TAG
 		"bgcolor[#320000b4;true]"
-		"label[4.85,1.35;You died.]"
+		"label[4.85,1.35;" + _("You died.") + "]"
 		"button_exit[4,3;3,0.5;btn_respawn;" + _("Respawn") + "]"
 		;
 
@@ -1189,7 +1189,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
 
 	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,  fs_src, txt_dst, NULL);
-
+	(*cur_formspec)->setFocus(L"btn_continue");
 	(*cur_formspec)->doPause = true;
 }
 
@@ -3551,10 +3551,14 @@ void Game::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 	v3s16 old_camera_offset = camera->getOffset();
 
 	if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CAMERA_MODE])) {
-		camera->toggleCameraMode();
 		GenericCAO *playercao = player->getCAO();
 
-		if (playercao)
+		// If playercao not loaded, don't change camera
+		if (playercao == NULL)
+			return;
+
+		camera->toggleCameraMode();
+
 		playercao->setVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
 	}
 

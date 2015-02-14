@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <windows.h>
 #include <assert.h>
 #define MAX_SEMAPHORE_COUNT 1024
-#elif __MACH__
+#elif defined(__MACH__) && defined(__APPLE__)
 #include <pthread.h>
 #include <mach/mach.h>
 #include <mach/task.h>
@@ -56,7 +56,7 @@ public:
 private:
 #if defined(WIN32) || defined(_WIN32)
 	HANDLE m_hSemaphore;
-#elif __MACH__
+#elif defined(__MACH__) && defined(__APPLE__)
 	semaphore_t m_semaphore;
 	int semcount;
 #else
