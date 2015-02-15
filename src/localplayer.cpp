@@ -439,8 +439,11 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());
 		v3f node_pos(p.X, p.Y, p.Z);
-		player_box.MinEdge *= 0.999f;
-		player_box.MaxEdge *= 0.999f;
+		v3f center = player_box.getCenter();
+		v3f min_edge = (player_box.MinEdge - center) * 0.999f;
+		v3f max_edge = (player_box.MaxEdge - center) * 0.999f;
+		player_box.MinEdge = center + min_edge;
+		player_box.MaxEdge = center + max_edge;
 		player_box.MinEdge += position;
 		player_box.MaxEdge += position;
 		for(auto box : nodeboxes) {
@@ -702,4 +705,3 @@ v3s16 LocalPlayer::getStandingNodePos()
 		return m_sneak_node;
 	return floatToInt(getPosition() - v3f(0, BS, 0), BS);
 }
-
