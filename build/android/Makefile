@@ -26,7 +26,7 @@ GAMES_TO_COPY = default
 # Android Version code
 # Increase for each build!
 ################################################################################
-ANDROID_VERSION_CODE = 6
+ANDROID_VERSION_CODE = 8
 
 ################################################################################
 # toolchain config for arm old processors
@@ -895,7 +895,9 @@ manifest :
 	grep ^set\(VERSION_MINOR\ | sed 's/)/ /' | awk '{print $$2;}');            \
 	VERS_PATCH=$$(cat ${ROOT}/../../CMakeLists.txt |                           \
 	grep ^set\(VERSION_PATCH\ | sed 's/)/ /' | awk '{print $$2;}');            \
-	BASE_VERSION="$$VERS_MAJOR.$$VERS_MINOR.$$VERS_PATCH";                     \
+	VERS_TWEAK=$$(cat ${ROOT}/../../CMakeLists.txt |                           \
+	grep ^set\(VERSION_TWEAK\ | sed 's/)/ /' | awk '{print $$2;}');            \
+	BASE_VERSION="$$VERS_MAJOR.$$VERS_MINOR.$$VERS_PATCH.$$VERS_TWEAK";        \
 	if [ "${NDEBUG}x" != "x" ] ; then                                          \
 		DBG='';                                                                \
 		DBG_FLAG="android:debuggable=\"false\"";                               \
