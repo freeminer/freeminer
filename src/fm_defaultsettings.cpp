@@ -158,7 +158,7 @@ void set_default_settings(Settings *settings) {
 	// Connecting to server
 	settings->setDefault("address", "");
 	settings->setDefault("remote_port", "30000");
-	settings->setDefault("reconnects", "10");
+	settings->setDefault("reconnects", win32 ? "1" : "5"); // TODO: wix windows
 
 	// Connecting to curl
 	settings->setDefault("curl_timeout", "5000");

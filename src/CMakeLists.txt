@@ -75,7 +75,11 @@ endif()
 
 set(CMAKE_REQUIRED_FLAGS "")
 
-option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+if(MSVC)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+else()
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+endif()
 
 if(ENABLE_THREADS)
 	set(ENABLE_THREADS 1)
