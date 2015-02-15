@@ -4138,7 +4138,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		Update clouds
 	*/
 	if (clouds) {
-		if (sky->getCloudsVisible()) {
+		if (sky->getCloudsVisible() && std::abs(clouds->m_cloud_y - player_position.Y)/BS < 3000) {
 			clouds->setVisible(true);
 			clouds->step(dtime);
 			clouds->update(v2f(player_position.X, player_position.Z),
