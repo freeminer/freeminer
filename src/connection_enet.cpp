@@ -49,7 +49,6 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_enet_host(0),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
-	m_bc_receive_timeout(1),
 	m_last_recieved(0),
 	m_last_recieved_warn(0)
 {
@@ -407,16 +406,17 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
+u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
 {
 	for(;;){
-		ConnectionEvent e = waitEvent(m_bc_receive_timeout);
+		ConnectionEvent e = waitEvent(timeout);
 		if(e.type != CONNEVENT_NONE)
 			dout_con<<getDesc()<<": Receive: got event: "
 					<<e.describe()<<std::endl;
 		switch(e.type){
 		case CONNEVENT_NONE:
-			throw NoIncomingDataException("No incoming data");
+			//throw NoIncomingDataException("No incoming data");
+			return 0;
 		case CONNEVENT_DATA_RECEIVED:
 			peer_id = e.peer_id;
 			data = SharedBuffer<u8>(e.data);
@@ -436,7 +436,8 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 			throw ConnectionException("Failed to connect");
 		}
 	}
-	throw NoIncomingDataException("No incoming data");
+	return 0;
+	//throw NoIncomingDataException("No incoming data");
 }
 
 void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)

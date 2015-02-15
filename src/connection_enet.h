@@ -318,7 +318,7 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
+	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout = 1);
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
@@ -358,7 +358,6 @@ private:
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
-	int m_bc_receive_timeout;
 	unsigned int m_last_recieved;
 	int m_last_recieved_warn;
 

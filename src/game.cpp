@@ -4408,11 +4408,13 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 */
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
+#if !defined(NDEBUG)
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
 		os << "Freeminer " << minetest_version_hash;
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
+#endif
 	} else {
 		guitext->setVisible(false);
 	}

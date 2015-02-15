@@ -872,7 +872,9 @@ void Client::Receive()
 	DSTACK(__FUNCTION_NAME);
 	SharedBuffer<u8> data;
 	u16 sender_peer_id;
-	u32 datasize = m_con.Receive(sender_peer_id, data);
+	u32 datasize = m_con.Receive(sender_peer_id, data, 1);
+	if (!datasize)
+		return;
 	ProcessData(*data, datasize, sender_peer_id);
 }
 

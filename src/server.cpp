@@ -309,6 +309,7 @@ void * ServerThread::Thread()
 		}
 		catch(con::NoIncomingDataException &e)
 		{
+			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 		catch(con::PeerNotFoundException &e)
 		{
@@ -750,7 +751,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 	TimeTaker timer_step("Server step");
 	g_profiler->add("Server::AsyncRunStep (num)", 1);
-
 /*
 	float dtime;
 	{
@@ -1449,7 +1449,9 @@ u16 Server::Receive()
 	u32 datasize;
 	u16 received = 0;
 	try{
-		datasize = m_con.Receive(peer_id,data);
+		datasize = m_con.Receive(peer_id,data,10);
+		if (!datasize)
+			return 0;
 		ProcessData(*data, datasize, peer_id);
 		++received;
 	}
