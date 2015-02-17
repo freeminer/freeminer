@@ -323,6 +323,14 @@ int DecoSimple::getHeight()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+DecoSchematic::DecoSchematic() {
+	schematic = nullptr;
+};
+
+DecoSchematic::~DecoSchematic() {
+	if (schematic)
+		delete schematic;
+};
 
 size_t DecoSchematic::generate(MMVManip *vm, PseudoRandom *pr, s16 max_y, v3s16 p)
 {

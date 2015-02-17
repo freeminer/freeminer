@@ -108,6 +108,9 @@ public:
 	Schematic *schematic;
 	std::string filename;
 
+	DecoSchematic();
+	~DecoSchematic();
+
 	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, s16 max_y, v3s16 p);
 	virtual int getHeight();
 };

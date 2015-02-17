@@ -369,6 +369,8 @@ bool Schematic::getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2)
 	for (s16 y = 0; y != size.Y; y++)
 		slice_probs[y] = MTSCHEM_PROB_ALWAYS;
 
+	if (schemdata)
+		delete []schemdata;
 	schemdata = new MapNode[size.X * size.Y * size.Z];
 
 	u32 i = 0;
