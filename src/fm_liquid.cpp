@@ -30,18 +30,17 @@ enum NeighborType {
 	NEIGHBOR_SAME_LEVEL,
 	NEIGHBOR_LOWER
 };
+
 struct NodeNeighbor {
-	MapNode n;
-	NeighborType t;
-	v3s16 p;
-	content_t c;
-	bool l; //can liquid
-	bool i; //infinity
+	MapNode node;
+	NeighborType type;
+	v3POS pos;
+	content_t content;
+	bool liquid; //can liquid
+	bool infinity;
 	int weight;
 	int drop; //drop by liquid
 };
-
-
 
 const v3POS liquid_flow_dirs[7] =
 {
@@ -77,10 +76,15 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 	//TimeTaker timer("transformLiquidsReal()");
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
+	u32 regenerated = 0;
+
+	//bool debug = 0;
 
 	u8 relax = g_settings->getS16("liquid_relax");
 	bool fast_flood = g_settings->getS16("liquid_fast_flood");
 	int water_level = g_settings->getS16("water_level");
+	s16 liquid_pressure = 0;
+	g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	// list of nodes that due to viscosity have not reached their max level height
 	//std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> must_reflow, must_reflow_second, must_reflow_third;
@@ -105,15 +109,16 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 			//JMutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = transforming_liquid_pop();
 		}
-		u16 total_level = 0;
+		s16 total_level = 0;
 		//u16 level_max = 0;
 		// surrounding flowing liquid nodes
-		NodeNeighbor neighbors[7];
+		NodeNeighbor neighbors[7] = { { } };
 		// current level of every block
 		s8 liquid_levels[7] = {-1, -1, -1, -1, -1, -1, -1};
 		 // target levels
 		s8 liquid_levels_want[7] = {-1, -1, -1, -1, -1, -1, -1};
 		s8 can_liquid_same_level = 0;
+		s8 can_liquid = 0;
 		content_t liquid_kind = CONTENT_IGNORE;
 		content_t liquid_kind_flowing = CONTENT_IGNORE;
 		content_t melt_kind = CONTENT_IGNORE;
@@ -125,9 +130,9 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 		for (u8 e = 0; e < 7; e++) {
 			u8 i = liquid_explore_map[e];
 			NodeNeighbor & nb = neighbors[i];
-			nb.p = p0 + liquid_flow_dirs[i];
-			nb.n = getNodeNoEx(neighbors[i].p);
-			nb.c = nb.n.getContent();
+			nb.pos = p0 + liquid_flow_dirs[i];
+			nb.node = getNodeNoEx(neighbors[i].pos);
+			nb.content = nb.node.getContent();
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
 				case D_TOP:
@@ -137,47 +142,47 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 					nt = NEIGHBOR_LOWER;
 					break;
 			}
-			nb.t = nt;
-			nb.l = 0;
-			nb.i = 0;
+			nb.type = nt;
+			nb.liquid = 0;
+			nb.infinity = 0;
 			nb.weight = 0;
 			nb.drop = 0;
 
-			if (nb.c == CONTENT_IGNORE) {
+			if (!nb.content) {
 				//if (i == D_SELF && (loopcount % 2) && initial_size < m_liquid_step_flow * 3)
-				//	must_reflow_third[nb.p] = 1;
-				//	must_reflow_third.push_back(nb.p);
+				//	must_reflow_third[nb.pos] = 1;
+				//	must_reflow_third.push_back(nb.pos);
 				continue;
 			}
 
-			switch (nodemgr->get(nb.c).liquid_type) {
+			switch (nodemgr->get(nb.content).liquid_type) {
 				case LIQUID_NONE:
-					if (nb.c == CONTENT_AIR) {
+					if (nb.content == CONTENT_AIR) {
 						liquid_levels[i] = 0;
-						nb.l = 1;
+						nb.liquid = 1;
 					}
-					//TODO: if (nb.c == CONTENT_AIR || nodemgr->get(nb.n).buildable_to && !nodemgr->get(nb.n).walkable) { // need lua drop api for drop torches
-					else if (	melt_kind_flowing != CONTENT_IGNORE &&
-							nb.c == melt_kind_flowing &&
-							nb.t != NEIGHBOR_UPPER &&
+					//TODO: if (nb.content == CONTENT_AIR || nodemgr->get(nb.node).buildable_to && !nodemgr->get(nb.node).walkable) { // need lua drop api for drop torches
+					else if (	melt_kind_flowing &&
+							nb.content == melt_kind_flowing &&
+							nb.type != NEIGHBOR_UPPER &&
 							!(loopcount % 2)) {
-						u8 melt_max_level = nb.n.getMaxLevel(nodemgr);
+						u8 melt_max_level = nb.node.getMaxLevel(nodemgr);
 						u8 my_max_level = MapNode(liquid_kind_flowing).getMaxLevel(nodemgr);
-						liquid_levels[i] = (float)my_max_level / melt_max_level * nb.n.getLevel(nodemgr);
+						liquid_levels[i] = (float)my_max_level / melt_max_level * nb.node.getLevel(nodemgr);
 						if (liquid_levels[i])
-							nb.l = 1;
-					} else if (	melt_kind != CONTENT_IGNORE &&
-							nb.c == melt_kind &&
-							nb.t != NEIGHBOR_UPPER &&
+							nb.liquid = 1;
+					} else if (	melt_kind &&
+							nb.content == melt_kind &&
+							nb.type != NEIGHBOR_UPPER &&
 							!(loopcount % 8)) {
 						liquid_levels[i] = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 						if (liquid_levels[i])
-							nb.l = 1;
+							nb.liquid = 1;
 					} else {
-						int drop = ((ItemGroupList) nodemgr->get(nb.n).groups)["drop_by_liquid"];
+						int drop = ((ItemGroupList) nodemgr->get(nb.node).groups)["drop_by_liquid"];
 						if (drop && !(loopcount % drop) ) {
 							liquid_levels[i] = 0;
-							nb.l = 1;
+							nb.liquid = 1;
 							nb.drop = 1;
 						}
 					}
@@ -187,110 +192,137 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 				case LIQUID_SOURCE:
 					// if this node is not (yet) of a liquid type,
 					// choose the first liquid type we encounter
-					if (liquid_kind_flowing == CONTENT_IGNORE)
+					if (!liquid_kind_flowing)
 						liquid_kind_flowing = nodemgr->getId(
-							nodemgr->get(nb.n).liquid_alternative_flowing);
-					if (liquid_kind == CONTENT_IGNORE)
-						liquid_kind = nb.c;
-					if (liquid_kind_flowing == CONTENT_IGNORE)
+							nodemgr->get(nb.node).liquid_alternative_flowing);
+					if (!liquid_kind)
+						liquid_kind = nb.content;
+					if (!liquid_kind_flowing)
 						liquid_kind_flowing = liquid_kind;
-					if (melt_kind == CONTENT_IGNORE)
-						melt_kind = nodemgr->getId(nodemgr->get(nb.n).melt);
-					if (melt_kind_flowing == CONTENT_IGNORE)
+					if (!melt_kind)
+						melt_kind = nodemgr->getId(nodemgr->get(nb.node).melt);
+					if (!melt_kind_flowing)
 						melt_kind_flowing =
 							nodemgr->getId(
-							nodemgr->get(nodemgr->getId(nodemgr->get(nb.n).melt)
+							nodemgr->get(nodemgr->getId(nodemgr->get(nb.node).melt)
 									).liquid_alternative_flowing);
-					if (melt_kind_flowing == CONTENT_IGNORE)
+					if (!melt_kind_flowing)
 						melt_kind_flowing = melt_kind;
-					if (nb.c == liquid_kind) {
-						liquid_levels[i] = nb.n.getLevel(nodemgr); //LIQUID_LEVEL_SOURCE;
-						nb.l = 1;
-						nb.i = (nb.n.param2 & LIQUID_INFINITY_MASK);
+					if (nb.content == liquid_kind) {
+						liquid_levels[i] = nb.node.getLevel(nodemgr); //LIQUID_LEVEL_SOURCE;
+						nb.liquid = 1;
+						nb.infinity = (nb.node.param2 & LIQUID_INFINITY_MASK);
 					}
 					break;
 				case LIQUID_FLOWING:
 					// if this node is not (yet) of a liquid type,
 					// choose the first liquid type we encounter
-					if (liquid_kind_flowing == CONTENT_IGNORE)
-						liquid_kind_flowing = nb.c;
-					if (liquid_kind == CONTENT_IGNORE)
+					if (!liquid_kind_flowing)
+						liquid_kind_flowing = nb.content;
+					if (!liquid_kind)
 						liquid_kind = nodemgr->getId(
-							nodemgr->get(nb.n).liquid_alternative_source);
-					if (liquid_kind == CONTENT_IGNORE)
+							nodemgr->get(nb.node).liquid_alternative_source);
+					if (!liquid_kind)
 						liquid_kind = liquid_kind_flowing;
-					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.n).melt);
-					if (melt_kind == CONTENT_IGNORE)
+					if (!melt_kind_flowing)
+						melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.node).melt);
+					if (!melt_kind)
 						melt_kind = nodemgr->getId(nodemgr->get(nodemgr->getId(
-							nodemgr->get(nb.n).melt)).liquid_alternative_source);
-					if (melt_kind == CONTENT_IGNORE)
+							nodemgr->get(nb.node).melt)).liquid_alternative_source);
+					if (!melt_kind)
 						melt_kind = melt_kind_flowing;
-					if (nb.c == liquid_kind_flowing) {
-						liquid_levels[i] = nb.n.getLevel(nodemgr);
-						nb.l = 1;
+					if (nb.content == liquid_kind_flowing) {
+						liquid_levels[i] = nb.node.getLevel(nodemgr);
+						nb.liquid = 1;
 					}
 					break;
 			}
 
 			// only self, top, bottom swap
-			if (nodemgr->get(nb.c).liquid_type && e <= 2) {
+			if (nodemgr->get(nb.content).liquid_type && e <= 2) {
 				try{
-					nb.weight = ((ItemGroupList) nodemgr->get(nb.n).groups)["weight"];
+					nb.weight = ((ItemGroupList) nodemgr->get(nb.node).groups)["weight"];
 					if (e == 1 && neighbors[D_BOTTOM].weight && neighbors[D_SELF].weight > neighbors[D_BOTTOM].weight) {
-						setNode(neighbors[D_SELF].p, neighbors[D_BOTTOM].n);
-						setNode(neighbors[D_BOTTOM].p, neighbors[D_SELF].n);
-						//must_reflow_second[neighbors[D_SELF].p] = 1;
-						//must_reflow_second[neighbors[D_BOTTOM].p] = 1;
-						must_reflow_second.push_back(neighbors[D_SELF].p);
-						must_reflow_second.push_back(neighbors[D_BOTTOM].p);
+						setNode(neighbors[D_SELF].pos, neighbors[D_BOTTOM].node);
+						setNode(neighbors[D_BOTTOM].pos, neighbors[D_SELF].node);
+						//must_reflow_second[neighbors[D_SELF].pos] = 1;
+						//must_reflow_second[neighbors[D_BOTTOM].pos] = 1;
+						must_reflow_second.push_back(neighbors[D_SELF].pos);
+						must_reflow_second.push_back(neighbors[D_BOTTOM].pos);
 						goto NEXT_LIQUID;
 					}
 					if (e == 2 && neighbors[D_SELF].weight && neighbors[D_TOP].weight > neighbors[D_SELF].weight) {
-						setNode(neighbors[D_SELF].p, neighbors[D_TOP].n);
-						setNode(neighbors[D_TOP].p, neighbors[D_SELF].n);
-						//must_reflow_second[neighbors[D_SELF].p] = 1;
-						//must_reflow_second[neighbors[D_TOP].p] = 1;
-						must_reflow_second.push_back(neighbors[D_SELF].p);
-						must_reflow_second.push_back(neighbors[D_TOP].p);
+						setNode(neighbors[D_SELF].pos, neighbors[D_TOP].node);
+						setNode(neighbors[D_TOP].pos, neighbors[D_SELF].node);
+						//must_reflow_second[neighbors[D_SELF].pos] = 1;
+						//must_reflow_second[neighbors[D_TOP].pos] = 1;
+						must_reflow_second.push_back(neighbors[D_SELF].pos);
+						must_reflow_second.push_back(neighbors[D_TOP].pos);
 						goto NEXT_LIQUID;
 					}
 				}
 				catch(InvalidPositionException &e) {
-					verbosestream<<"transformLiquidsReal: weight: setNode() failed:"<< nb.p<<":"<<e.what()<<std::endl;
+					verbosestream<<"transformLiquidsReal: weight: setNode() failed:"<< nb.pos<<":"<<e.what()<<std::endl;
 					//goto NEXT_LIQUID;
 				}
 			}
-			
-			if (nb.l && nb.t == NEIGHBOR_SAME_LEVEL)
-				++can_liquid_same_level;
+
+			if (nb.liquid) {
+				++can_liquid;
+				if(nb.type == NEIGHBOR_SAME_LEVEL)
+					++can_liquid_same_level;
+			}
 			if (liquid_levels[i] > 0)
 				total_level += liquid_levels[i];
 
 			/*
-			infostream << "get node i=" <<(int)i<<" " << PP(nb.p) << " c="
-			<< nb.c <<" p0="<< (int)nb.n.param0 <<" p1="
-			<< (int)nb.n.param1 <<" p2="<< (int)nb.n.param2 << " lt="
-			<< nodemgr->get(nb.c).liquid_type
+			infostream << "get node i=" <<(int)i<<" " << PP(nb.pos) << " c="
+			<< nb.content <<" p0="<< (int)nb.node.param0 <<" p1="
+			<< (int)nb.node.param1 <<" p2="<< (int)nb.node.param2 << " lt="
+			<< nodemgr->get(nb.content).liquid_type
 			//<< " lk=" << liquid_kind << " lkf=" << liquid_kind_flowing
-			<< " l="<< nb.l	<< " inf="<< nb.i << " nlevel=" << (int)liquid_levels[i]
+			<< " l="<< nb.liquid	<< " inf="<< nb.infinity << " nlevel=" << (int)liquid_levels[i]
 			<< " totallevel=" << (int)total_level << " cansame="
 			<< (int)can_liquid_same_level << " Lmax="<<(int)nodemgr->get(liquid_kind_flowing).getMaxLevel()<<std::endl;
 			*/
 		}
+
+		if (!liquid_kind || !neighbors[D_SELF].liquid || total_level <= 0)
+			continue;
+
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 		s16 level_max_compressed = nodemgr->get(liquid_kind_flowing).getMaxLevel(1);
+		s16 pressure = liquid_pressure ? ((ItemGroupList) nodemgr->get(liquid_kind).groups)["pressure"] : 0;
 		//s16 total_was = total_level; //debug
 		//viscosity = nodemgr->get(liquid_kind).viscosity;
 
-		if (liquid_kind == CONTENT_IGNORE || !neighbors[D_SELF].l || total_level <= 0)
-			continue;
+		s16 level_avg = total_level / can_liquid;
+		if (!pressure && level_avg) {
+			level_avg = level_max;
+		}
+
+/*
+		if (debug)
+			infostream<<" go: "
+				<<" total_level="<<(int)total_level
+				<<" total_was="<<(int)total_was
+				<<" level_max="<<(int)level_max
+				<<" level_max_compressed="<<(int)level_max_compressed
+				<<" level_avg="<<(int)level_avg
+				<<" pressure="<<(int)pressure
+				<<" can_liquid="<<(int)can_liquid
+				<<" can_liquid_same_level="<<(int)can_liquid_same_level
+			;
+*/
 
 		// fill bottom block
-		if (neighbors[D_BOTTOM].l) {
-			liquid_levels_want[D_BOTTOM] = total_level > level_max ?
-				level_max : total_level;
+		if (neighbors[D_BOTTOM].liquid) {
+			liquid_levels_want[D_BOTTOM] = level_avg > level_max ? level_avg : total_level > level_max ? level_max : total_level;
 			total_level -= liquid_levels_want[D_BOTTOM];
+			//if (pressure && total_level && liquid_levels_want[D_BOTTOM] < level_max_compressed) {
+			//	++liquid_levels_want[D_BOTTOM];
+			//	--total_level;
+			//}
 		}
 
 		//relax up
@@ -302,6 +334,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 			liquid_levels[D_BOTTOM] == level_max &&
 			total_level >= level_max * can_liquid_same_level - (can_liquid_same_level - relax) &&
 			can_liquid_same_level >= relax + 1) {
+			regenerated += level_max * can_liquid_same_level - total_level;
 			total_level = level_max * can_liquid_same_level;
 		}
 
@@ -309,17 +342,22 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 		if (	liquid_levels[D_TOP] == 0 &&
 			p0.Y > water_level &&
 			level_max > 1 &&
-			neighbors[D_BOTTOM].c == CONTENT_IGNORE &&
+			!neighbors[D_BOTTOM].content &&
 			!(loopcount % 3)) {
 			--total_level;
 		}
 
 		// calculate self level 5 blocks
-		u16 want_level =
+		u16 want_level = level_avg > level_max ? level_avg :
 			  total_level >= level_max * can_liquid_same_level
 			? level_max
 			: total_level / can_liquid_same_level;
 		total_level -= want_level * can_liquid_same_level;
+
+		if (pressure && total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +1
+			++liquid_levels_want[D_BOTTOM];
+			--total_level;
+		}
 
 		//relax down
 		if (	nodemgr->get(liquid_kind).liquid_renewable &&
@@ -337,7 +375,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 
 		for (u16 ir = D_SELF; ir < D_TOP; ++ir) { // fill only same level
 			u16 ii = liquid_random_map[(loopcount+loop_rand+1)%4][ir];
-			if (!neighbors[ii].l)
+			if (!neighbors[ii].liquid)
 				continue;
 			liquid_levels_want[ii] = want_level;
 			//if (viscosity > 1 && (liquid_levels_want[ii]-liquid_levels[ii]>8-viscosity))
@@ -355,7 +393,8 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 		}
 
 		for (u16 ir = D_SELF; ir < D_TOP; ++ir) {
-			if (total_level < 1) break;
+			if (total_level < 1)
+				break;
 			u16 ii = liquid_random_map[(loopcount+loop_rand+2)%4][ir];
 			if (liquid_levels_want[ii] >= 0 &&
 				liquid_levels_want[ii] < level_max) {
@@ -365,34 +404,60 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 		}
 
 		// fill top block if can
-		if (neighbors[D_TOP].l) {
+		if (neighbors[D_TOP].liquid) {
 			//infostream<<"compressing to top was="<<liquid_levels_want[D_TOP]<<" add="<<total_level<<std::endl;
-			liquid_levels_want[D_TOP] = total_level>level_max_compressed?level_max_compressed:total_level;
+			//liquid_levels_want[D_TOP] = total_level>level_max_compressed?level_max_compressed:total_level;
+			liquid_levels_want[D_TOP] = total_level>level_max?level_max:total_level;
 			total_level -= liquid_levels_want[D_TOP];
 		}
 
-		if (total_level > 0) { // very rare, compressed only
-			//infostream<<"compressing to self was="<<liquid_levels_want[D_SELF]<<" add="<<total_level<<std::endl;
-			liquid_levels_want[D_SELF] += total_level;
-			total_level = 0;
+		if (liquid_levels_want[D_TOP] && total_level && pressure) {
+			if (total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +2
+				++liquid_levels_want[D_BOTTOM];
+				--total_level;
+			}
+
+			for (u16 ir = D_SELF; ir < D_TOP; ++ir) {
+				if (total_level < 1)
+					break;
+				u16 ii = liquid_random_map[(loopcount+loop_rand+2)%4][ir];
+				if (neighbors[ii].liquid &&
+					liquid_levels_want[ii] < level_max_compressed) {
+					++liquid_levels_want[ii];
+					--total_level;
+				}
+			}
+		}
+
+		if (total_level > 0 && neighbors[D_TOP].liquid && liquid_levels_want[D_TOP] < level_max_compressed) {
+			s16 add = (total_level > level_max_compressed - liquid_levels_want[D_TOP]) ? level_max_compressed - liquid_levels_want[D_TOP] : total_level;
+			liquid_levels_want[D_TOP] += add;
+			total_level -= add;
+		}
+
+		if (total_level > 0 && liquid_levels_want[D_SELF] < level_max_compressed) { // very rare, compressed only
+			s16 add = (total_level > level_max_compressed - liquid_levels_want[D_SELF]) ? level_max_compressed - liquid_levels_want[D_SELF] : total_level;
+			liquid_levels_want[D_SELF] += add;
+			total_level -= add;
 		}
 
 		for (u16 ii = 0; ii < 7; ii++) // infinity and cave flood optimization
-			if (    neighbors[ii].i			||
+			if (    neighbors[ii].infinity		||
 				(liquid_levels_want[ii] >= 0	&&
-				 level_max > 1			&&
-				 fast_flood			&&
-				 p0.Y < water_level		&&
-				 initial_size >= 1000		&&
-				 ii != D_TOP			&&
-				 want_level >= level_max/4	&&
-				 can_liquid_same_level >= 5	&&
-				 liquid_levels[D_TOP] >= level_max))
+				 level_max > 1					&&
+				 fast_flood						&&
+				 p0.Y < water_level				&&
+				 initial_size >= 1000			&&
+				 ii != D_TOP					&&
+				 want_level >= level_max/4		&&
+				 can_liquid_same_level >= 5		&&
+				 liquid_levels[D_TOP] >= level_max)) {
 					liquid_levels_want[ii] = level_max;
+			}
 
 		/*
-		if (total_level > 0) //|| flowed != volume)
-			infostream <<" AFTER level=" << (int)total_level
+		if (total_level != 0) //|| flowed != volume)
+			infostream <<" AFTER err level=" << (int)total_level
 			//<< " flowed="<<flowed<< " volume=" << volume
 			<< " max="<<(int)level_max
 			<< " wantsame="<<(int)want_level<< " top="
@@ -406,10 +471,10 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 		//s16 flowed = 0; // for debug
 		for (u16 r = 0; r < 7; r++) {
 			u16 i = liquid_random_map[(loopcount+loop_rand+3)%4][r];
-			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
+			if (liquid_levels_want[i] < 0 || !neighbors[i].liquid)
 				continue;
 
-			//infostream <<" set=" <<i<< " " << PP(neighbors[i].p) << " want="<<(int)liquid_levels_want[i] << " was=" <<(int) liquid_levels[i] << std::endl;
+			//if (debug) infostream <<" set=" <<i<< " " << PP(neighbors[i].pos) << " want="<<(int)liquid_levels_want[i] << " was=" <<(int) liquid_levels[i] << std::endl;
 			
 			/* disabled because brokes constant volume of lava
 			u8 viscosity = nodemgr->get(liquid_kind).liquid_viscosity;
@@ -428,13 +493,13 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 
 			// last level must flow down on stairs
 			if (liquid_levels_want[i] != liquid_levels[i] &&
-				liquid_levels[D_TOP] <= 0 && (!neighbors[D_BOTTOM].l || level_max == 1) &&
+				liquid_levels[D_TOP] <= 0 && (!neighbors[D_BOTTOM].liquid || level_max == 1) &&
 				liquid_levels_want[i] >= 1 && liquid_levels_want[i] <= 2) {
 				for (u16 ir = D_SELF + 1; ir < D_TOP; ++ir) { // only same level
 					u16 ii = liquid_random_map[(loopcount+loop_rand+4)%4][ir];
-					if (neighbors[ii].l)
-						must_reflow_second.push_back(neighbors[i].p + liquid_flow_dirs[ii]);
-						//must_reflow_second[neighbors[i].p + liquid_flow_dirs[ii]] = 1;
+					if (neighbors[ii].liquid)
+						must_reflow_second.push_back(neighbors[i].pos + liquid_flow_dirs[ii]);
+						//must_reflow_second[neighbors[i].pos + liquid_flow_dirs[ii]] = 1;
 				}
 			}
 
@@ -445,33 +510,40 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 
 			if (neighbors[i].drop) {// && level_max > 1 && total_level >= level_max - 1
 				//JMutexAutoLock envlock(m_server->m_env_mutex); // 8(
-				m_server->getEnv().getScriptIface()->node_drop(neighbors[i].p, 2);
+				m_server->getEnv().getScriptIface()->node_drop(neighbors[i].pos, 2);
 			}
 
-			neighbors[i].n.setContent(liquid_kind_flowing);
-			neighbors[i].n.setLevel(nodemgr, liquid_levels_want[i], 1);
+			neighbors[i].node.setContent(liquid_kind_flowing);
+			neighbors[i].node.setLevel(nodemgr, liquid_levels_want[i], 1);
 
 			try{
-				setNode(neighbors[i].p, neighbors[i].n);
+				setNode(neighbors[i].pos, neighbors[i].node);
 			} catch(InvalidPositionException &e) {
-				verbosestream<<"transformLiquidsReal: setNode() failed:"<<neighbors[i].p<<":"<<e.what()<<std::endl;
+				verbosestream<<"transformLiquidsReal: setNode() failed:"<<neighbors[i].pos<<":"<<e.what()<<std::endl;
 			}
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			v3POS blockpos = getNodeBlockPos(neighbors[i].p);
+			v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 			if(block != NULL) {
 				//modified_blocks[blockpos] = block;
-				if(!nodemgr->get(neighbors[i].n).light_propagates || nodemgr->get(neighbors[i].n).light_source) // better to update always
+				if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
 					lighting_modified_blocks.set_try(block->getPos(), block);
 			}
-			//must_reflow[neighbors[i].p] = 1;
-			must_reflow.push_back(neighbors[i].p);
+			must_reflow.push_back(neighbors[i].pos);
 
 		}
 
-		//if (total_was!=flowed) infostream<<" flowed "<<flowed<<"/"<<total_was<<std::endl;
+		/* debug
+		if (total_was!=flowed) {
+			verbosestream<<" volume changed!  flowed="<<flowed<<" total_was="<<total_was;
+			for (u16 rr = 0; rr <= 6; rr++) {
+				infostream<<"  i=" <<rr<<",b"<<(int)liquid_levels[rr]<<",a"<<(int)liquid_levels_want[rr];
+			}
+			infostream<<std::endl;
+		}
+		*/
 		/* //for better relax  only same level
 		if (changed)  for (u16 ii = D_SELF + 1; ii < D_TOP; ++ii) {
 			if (!neighbors[ii].l) continue;
@@ -517,7 +589,8 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 	}
 
 	g_profiler->add("Server: liquids real processed", loopcount);
+	if (regenerated)
+		g_profiler->add("Server: liquids regenerated", regenerated);
 
 	return loopcount;
 }
-
