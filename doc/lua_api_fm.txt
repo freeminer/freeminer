@@ -1,0 +1,131 @@
+Addition to lua api in freeminer:
+
+
+Groups
+------
+### Special groups
+- slippery: Players and items will slide on the node. 
+   values 0-100: 0 = not slide, 90 = good for ice, 100 = not stop, >100 = acceleration
+ 
+### Freezing and melting groups
+---------------------------
+All values - temperature in celsius, do not forget define freezemelt.
+Do not use value=0, groups with =0 ignored
+Not recomended hot>melt and cold<freeze - it will cause chain reactions
+- freeze: for liquids, transform to something defined in freezemelt
+          if temperature lower than value
+- melt: for non-liquids, transform to liquid defined in freezemelt
+        if temperature higher than value
+- hot: melt nodes around, if their melt lower than value
+- cold: freeze liquid nodes around, if their freeze higher than value
+
+
+### Functions:
+
+core.colorize(color, text)
+^ color is a six characters string, this will reset color to white after the text
+core.color(color)
+^ will output color escape sequence
+
+core.set_node(pos, node, fast)
+  if fast=1 - skip events sending and rollback, if fast=2 - as fast=1 + get light from old node
+
+core.remove_node(pos, fast)
+  if fast=1 - skip events sending and rollback
+
+core.get_surface(basepos,yoffset,walkable_only=false)
+^ returns y-value of first surface starting at bottom or nil if no surface found
+^ basepos position to start search
+^ yoffset maximum number of nodes starting at basepos.y to search up for surface
+^ walkable_only consider each node below a non walkable node as surface 
+
+core.freeze_melt(pos, direction)
+^ freeze (direction = -1) or melt (direction = 1) node
+
+core.get_heat(pos)
+^ heat at pos
+
+core.get_humidity(pos)
+^ humidity at pos
+
+core.kv_put(key, data)
+core.kv_put_string(key, data)
+core.kv_get(key)
+core.kv_get_string(key)
+core.kv_rename(key1, key2)
+core.kv_delete(key)
+
+core.stat_get(key)
+core.stat_add(key, playername, value=1)
+
+
+### Entity definition (`register_entity`) 
+    force_load = false, -- if set to true, and option force_load_off is false,
+                           the object will load the world around it as a player.
+                           Do not use it unless absolutely required, and if you
+                           use it, please add a config in the mod to disable it.
+
+
+### ABM (ActiveBlockModifier) definition (`register_abm`)
+    neighbors_range = 1,
+    ^ find neighbors in max range from node, do not set big values (>3) - it can eat cpu
+    action = func(pos, node, active_object_count, active_object_count_wider, neighbor, activate),
+
+
+### Item definition (`register_node`, `register_craftitem`, `register_tool`)
+    wield_light = 0,
+    ^ Amount of light emitted by item when wielded (requires shaders).
+    ^ This value should be the same as light_source for nodes.
+
+
+### Node definition (`register_node`)
+
+    freeze = "", -- ice/snow for water
+    melt = "", -- water for snow/ice
+    leveled = 0, -- Block contain level in param2. value - default level, used for snow.
+    ^ Dont forget use "leveled" type nodebox.
+    ^ Special sense for liquids with paramtype2="leveled" and source :
+    ^ defines maximum number of liquid levels in node (default=8)
+    ^ Less levels -> faster flooding, more levels -> larger flood area, smoother and more cpu use for flow.
+    ^ possible values for liquids 2..63;  1 - special value for sand or gravel
+
+
+	circuit_states = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	^ Each element of circuit MUST have this table
+	^ Each circuit element should be defined by a table of values on input and output.
+	^ Index of element - value on input, and value at index - value on output.
+	^ Each bit of value represents one face of the block.
+	^ 1. +Y (LSB).
+	^ 2. -Y.
+	^ 3. +X.
+	^ 4. -X.
+	^ 5. +Z.
+	^ 6. -Z.
+	^ For example if there is 4 at index 2, then if all faces except back
+	^ face are deactivated, then there will be output signal on the left face.
+	^ Each definition table must have exactly 64 integer elements (0 <= a[i] <= 63).
+
+	is_wire = true,
+	^ Note: if 2 blocks of wire have different ids, then signal between them WILL NOT be transmitted.
+
+	is_wire_connector = true,
+	^ The same as is_wire, but can connect wire blocks with different ids.
+
+	wire_connections = {8, 16, 32, 1, 2, 4},
+	^ This array must contain 6 elements. Each element describes faces to which face with id equal
+	^ to the id of this element is connected (numeration is the same as described above).
+	^ Now only two-way wire is supported (if face A connected to face B, than B connected to A).
+
+	circuit_element_delay = 2,
+	^ Delay of circuit element in ticks. It must be a positive integer number less than 101.
+
+	on_activate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from zero to non zero
+	on_deactivate = func(pos),
+	^ If defined, node becomes element of circuit
+	^ Called when block changes it's input state from non zero to zero
+
