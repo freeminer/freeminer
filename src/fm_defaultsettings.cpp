@@ -59,7 +59,20 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("language", "");
 
 	// Screen
+#if __arm__
+ #if defined(_IRR_COMPILE_WITH_OGLES1_)
+	settings->setDefault("video_driver", "ogles1");
+ #elif defined(_IRR_COMPILE_WITH_OGLES2_)
+	settings->setDefault("video_driver", "ogles2");
+ #else
 	settings->setDefault("video_driver", "opengl");
+ #endif
+	settings->setDefault("enable_shaders", "0");
+#else
+	settings->setDefault("video_driver", "opengl");
+	settings->setDefault("enable_shaders", "1");
+#endif
+
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
 	settings->setDefault("fullscreen", "false");
@@ -223,7 +236,6 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("water_wave_speed", "5.0");
 
 	// Shaders
-	settings->setDefault("enable_shaders", "true");
 	settings->setDefault("enable_bumpmapping", "true");
 	settings->setDefault("enable_parallax_occlusion", "true");
 	settings->setDefault("parallax_occlusion_scale", "0.06");
@@ -479,10 +491,8 @@ void set_default_settings(Settings *settings) {
 #ifdef __ANDROID__
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
-	settings->setDefault("enable_shaders", "false");
 	settings->setDefault("fullscreen", "true");
 	settings->setDefault("enable_particles", "false");
-	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder", "/sdcard/freeminer/tmp/");
 	settings->setDefault("touchscreen_threshold", "20");
