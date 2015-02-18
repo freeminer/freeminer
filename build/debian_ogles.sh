@@ -17,7 +17,7 @@ sudo apt-get install -y libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev lib
 git clone -b ogl-es --recursive https://github.com/zaki/irrlicht.git irrlicht
 
 #compile irrlicht:
-time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2) -C irrlicht/source/Irrlicht
+nice make -j $(nproc || sysctl -n hw.ncpu || echo 2) -C irrlicht/source/Irrlicht
 
 #3. get freeminer
 git clone --recursive https://github.com/freeminer/freeminer.git
@@ -28,7 +28,7 @@ git pull
 
 #compile
 cmake . -DENABLE_GLES=1 -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
-time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 
 #run!
 bin/freeminer

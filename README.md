@@ -73,7 +73,7 @@ Build it:
 ```bash
 mkdir _build && cd _build
 cmake ..
-time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
 
 Play it!
