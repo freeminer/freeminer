@@ -998,6 +998,19 @@ int ModApiMainMenu::l_get_screen_info(lua_State *L)
 }
 
 /******************************************************************************/
+int ModApiMainMenu::l_get_min_supp_proto(lua_State *L)
+{
+	lua_pushinteger(L, CLIENT_PROTOCOL_VERSION_MIN);
+	return 1;
+}
+
+int ModApiMainMenu::l_get_max_supp_proto(lua_State *L)
+{
+	lua_pushinteger(L, CLIENT_PROTOCOL_VERSION_MAX);
+	return 1;
+}
+
+/******************************************************************************/
 int ModApiMainMenu::l_do_async_callback(lua_State *L)
 {
 	GUIEngine* engine = getGuiEngine(L);
@@ -1057,6 +1070,8 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(gettext);
 	API_FCT(get_video_drivers);
 	API_FCT(get_screen_info);
+	API_FCT(get_min_supp_proto);
+	API_FCT(get_max_supp_proto);
 	API_FCT(do_async_callback);
 }
 

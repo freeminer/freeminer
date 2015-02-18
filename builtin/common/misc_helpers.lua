@@ -672,7 +672,7 @@ if INIT == "mainmenu" then
 		return nil
 	end
 
-	function fgettext(text, ...)
+	function fgettext_ne(text, ...)
 		text = core.gettext(text)
 		local arg = {n=select('#', ...), ...}
 		if arg.n >= 1 then
@@ -694,6 +694,10 @@ if INIT == "mainmenu" then
 			end
 			text = result
 		end
-		return core.formspec_escape(text)
+		return text
+	end
+
+	function fgettext(text, ...)
+		return core.formspec_escape(fgettext_ne(text, ...))
 	end
 end
