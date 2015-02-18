@@ -26,7 +26,10 @@ GAMES_TO_COPY = default
 # Android Version code
 # Increase for each build!
 ################################################################################
-ANDROID_VERSION_CODE = 8
+ANDROID_VERSION_CODE = 6
+
+#and for freeminer for skip conflict:
+ANDROID_VERSION_CODE = 9
 
 ################################################################################
 # toolchain config for arm old processors
