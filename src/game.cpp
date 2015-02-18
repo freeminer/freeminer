@@ -1070,7 +1070,11 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 	}
 }
 
+#ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
+#else
+#define SIZE_TAG "size[11,5.5,true]" // Fixed size on desktop
+#endif
 
 #if 0
 static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
