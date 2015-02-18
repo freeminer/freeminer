@@ -1010,7 +1010,7 @@ void CNodeDefManager::msgpack_unpack(msgpack::object o)
 
 	for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
 			it != unpacked_features.end(); ++it) {
-		int i = it->first;
+		unsigned int i = it->first;
 		ContentFeatures f = it->second;
 
 		if(i == CONTENT_IGNORE || i == CONTENT_AIR
