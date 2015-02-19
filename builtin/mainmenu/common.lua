@@ -261,7 +261,7 @@ end
 
 --------------------------------------------------------------------------------
 function is_server_protocol_compat(proto_min, proto_max)
-	return not ((min_supp_proto > (proto_max or 24)) or (max_supp_proto < (proto_min or 13)))
+	return not ((min_supp_proto > (tonumber(proto_max) or 24)) or (max_supp_proto < (tonumber(proto_min) or 13)))
 end
 --------------------------------------------------------------------------------
 function is_server_protocol_compat_or_error(proto_min, proto_max)
