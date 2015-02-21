@@ -83,8 +83,8 @@ public:
 	//void removePlayer(const std::string &name);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
-	std::list<Player*> getPlayers();
-	std::list<Player*> getPlayers(bool ignore_disconnected);
+	std::vector<Player*> getPlayers();
+	std::vector<Player*> getPlayers(bool ignore_disconnected);
 
 	u32 getDayNightRatio();
 
@@ -117,7 +117,7 @@ public:
 
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
-	std::list<Player*> m_players;
+	std::vector<Player*> m_players;
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
@@ -197,7 +197,7 @@ struct ABMWithState
 class ActiveBlockList
 {
 public:
-	void update(std::list<v3s16> &active_positions,
+	void update(std::vector<v3s16> &active_positions,
 			s16 radius,
 			std::set<v3s16> &blocks_removed,
 			std::set<v3s16> &blocks_added);
@@ -228,8 +228,8 @@ class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::array<std::list<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
-	std::list<std::list<ActiveABM>*> m_aabms_list;
+	std::array<std::vector<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
+	std::list<std::vector<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:
 	ABMHandler(ServerEnvironment *env);

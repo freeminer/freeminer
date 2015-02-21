@@ -69,9 +69,8 @@ Environment::Environment():
 Environment::~Environment()
 {
 	// Deallocate players
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
+	for(std::vector<Player*>::iterator i = m_players.begin();
+			i != m_players.end(); ++i) {
 		delete (*i);
 	}
 }
@@ -98,7 +97,7 @@ void Environment::removePlayer(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	for(std::list<Player*>::iterator i = m_players.begin();
+	for(std::vector<Player*>::iterator i = m_players.begin();
 			i != m_players.end();)
 	{
 		Player *player = *i;
@@ -113,7 +112,7 @@ void Environment::removePlayer(u16 peer_id)
 
 void Environment::removePlayer(const std::string &name)
 {
-	for (std::list<Player*>::iterator it = m_players.begin();
+	for (std::vector<Player*>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
 		if ((*it)->getName() == name) {
 			delete *it;
@@ -126,9 +125,8 @@ void Environment::removePlayer(const std::string &name)
 
 Player * Environment::getPlayer(u16 peer_id)
 {
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
+	for(std::vector<Player*>::iterator i = m_players.begin();
+			i != m_players.end(); ++i) {
 		Player *player = *i;
 		if(player->peer_id == peer_id)
 			return player;
@@ -145,22 +143,20 @@ Player * Environment::getPlayer(const std::string &name)
 	return NULL;
 }
 
-std::list<Player*> Environment::getPlayers()
+std::vector<Player*> Environment::getPlayers()
 {
 	return m_players;
 }
 
-std::list<Player*> Environment::getPlayers(bool ignore_disconnected)
+std::vector<Player*> Environment::getPlayers(bool ignore_disconnected)
 {
-	std::list<Player*> newlist;
-	for(std::list<Player*>::iterator
+	std::vector<Player*> newlist;
+	for(std::vector<Player*>::iterator
 			i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
+			i != m_players.end(); ++i) {
 		Player *player = *i;
 
-		if(ignore_disconnected)
-		{
+		if(ignore_disconnected) {
 			// Ignore disconnected players
 			if(player->peer_id == 0)
 				continue;
@@ -264,7 +260,7 @@ void fillRadiusBlock(v3s16 p0, s16 r, std::set<v3s16> &list)
 	}
 }
 
-void ActiveBlockList::update(std::list<v3s16> &active_positions,
+void ActiveBlockList::update(std::vector<v3s16> &active_positions,
 		s16 radius,
 		std::set<v3s16> &blocks_removed,
 		std::set<v3s16> &blocks_added)
@@ -273,7 +269,7 @@ void ActiveBlockList::update(std::list<v3s16> &active_positions,
 		Create the new list
 	*/
 	std::set<v3s16> newlist = m_forceloaded_list;
-	for(std::list<v3s16>::iterator i = active_positions.begin();
+	for(std::vector<v3s16>::iterator i = active_positions.begin();
 			i != active_positions.end(); ++i)
 	{
 		fillRadiusBlock(*i, radius, newlist);
@@ -396,8 +392,8 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 
 	//calculate normalized direction vector
 	v3f normalized_vector = v3f((pos2.X - pos1.X)/distance,
-								(pos2.Y - pos1.Y)/distance,
-								(pos2.Z - pos1.Z)/distance);
+				(pos2.Y - pos1.Y)/distance,
+				(pos2.Z - pos1.Z)/distance);
 
 	//find out if there's a node on path between pos1 and pos2
 	for (float i = 1; i < distance; i += stepsize) {
@@ -580,7 +576,7 @@ void ServerEnvironment::loadMeta()
 				for (auto &c : i->trigger_ids)
 				{
 					if (!m_aabms[c]) {
-						m_aabms[c] = new std::list<ActiveABM>;
+						m_aabms[c] = new std::vector<ActiveABM>;
 						m_aabms_list.push_back(m_aabms[c]);
 					}
 					m_aabms[c]->push_back(aabm);
@@ -591,7 +587,7 @@ void ServerEnvironment::loadMeta()
 
 	ABMHandler::
 	~ABMHandler() {
-		for (std::list<std::list<ActiveABM>*>::iterator i = m_aabms_list.begin();
+		for (auto i = m_aabms_list.begin();
 				i != m_aabms_list.end(); ++i)
 			delete *i;
 	}
@@ -1099,7 +1095,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	{
 		//TimeTaker timer_step_player("player step");
 		//ScopeProfiler sp(g_profiler, "SEnv: handle players avg", SPT_AVG);
-		for(std::list<Player*>::iterator i = m_players.begin();
+		for(std::vector<Player*>::iterator i = m_players.begin();
 				i != m_players.end(); ++i)
 		{
 			Player *player = *i;
@@ -1128,15 +1124,15 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		/*
 			Get player block positions
 		*/
-		std::list<v3s16> players_blockpos;
-		for(std::list<Player*>::iterator
+		std::vector<v3s16> players_blockpos;
+		for(std::vector<Player*>::iterator
 				i = m_players.begin();
-				i != m_players.end(); ++i)
-		{
+				i != m_players.end(); ++i) {
 			Player *player = *i;
 			// Ignore disconnected players
 			if(player->peer_id == 0)
 				continue;
+
 			v3s16 blockpos = getNodeBlockPos(
 					floatToInt(player->getPosition(), BS));
 			players_blockpos.push_back(blockpos);
@@ -1949,7 +1945,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	}
 
 	// Activate stored objects
-	std::list<StaticObject> new_stored;
+	std::vector<StaticObject> new_stored;
 	for(std::list<StaticObject>::iterator
 			i = block->m_static_objects.m_stored.begin();
 			i != block->m_static_objects.m_stored.end(); ++i) {
@@ -1980,10 +1976,9 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	// Clear stored list
 	block->m_static_objects.m_stored.clear();
 	// Add leftover failed stuff to stored list
-	for(std::list<StaticObject>::iterator
+	for(std::vector<StaticObject>::iterator
 			i = new_stored.begin();
-			i != new_stored.end(); ++i)
-	{
+			i != new_stored.end(); ++i) {
 		StaticObject &s_obj = *i;
 		block->m_static_objects.m_stored.push_back(s_obj);
 	}
@@ -2026,7 +2021,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 {
 	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
-	std::list<u16> objects_to_remove;
+	std::vector<u16> objects_to_remove;
 
 	std::vector<ServerActiveObject*> objects;
 	{
@@ -2276,9 +2271,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	if (!objects_to_remove.empty()) {
 	auto lock = m_active_objects.lock_unique_rec();
 	// Remove references from m_active_objects
-	for(std::list<u16>::iterator i = objects_to_remove.begin();
-			i != objects_to_remove.end(); ++i)
-	{
+	for(std::vector<u16>::iterator i = objects_to_remove.begin();
+			i != objects_to_remove.end(); ++i) {
 		m_active_objects.erase(*i);
 	}
 	}
@@ -2352,9 +2346,8 @@ void ClientEnvironment::addPlayer(Player *player)
 
 LocalPlayer * ClientEnvironment::getLocalPlayer()
 {
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
+	for(std::vector<Player*>::iterator i = m_players.begin();
+			i != m_players.end(); ++i) {
 		Player *player = *i;
 		if(player->isLocal())
 			return (LocalPlayer*)player;
@@ -2633,16 +2626,14 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 		Stuff that can be done in an arbitarily large dtime
 	*/
-	for(std::list<Player*>::iterator i = m_players.begin();
-			i != m_players.end(); ++i)
-	{
+	for(std::vector<Player*>::iterator i = m_players.begin();
+			i != m_players.end(); ++i) {
 		Player *player = *i;
 
 		/*
 			Handle non-local players
 		*/
-		if(player->isLocal() == false)
-		{
+		if(player->isLocal() == false) {
 			// Move
 			player->move(dtime, this, 100*BS);
 
