@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutex.h"
 #include "util/lock.h"
 #include "util/unordered_map_hash.h"
+#include "network/networkpacket.h"
 
 #include <list>
 #include <vector>
@@ -399,14 +400,17 @@ public:
 	std::vector<std::string> getPlayerNames();
 
 	/* send message to client */
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable, bool deletepkt=true);
 
 	/* send message to client */
 	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
 
+	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable); //todo: delete
+
 	/* send to all clients */
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
+	void sendToAll(u16 channelnum, NetworkPacket* pkt, bool reliable);
 
 	/* delete a client */
 	void DeleteClient(u16 peer_id);
@@ -470,7 +474,7 @@ private:
 	//JMutex m_env_mutex;
 
 	float m_print_info_timer;
-	
+
 	static const char *statenames[];
 };
 

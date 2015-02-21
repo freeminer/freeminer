@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
-#include "connection.h"
+#include "network/connection.h"
 #include "fmbitset.h"
 #include "util/lock.h"
 #include <unordered_set>

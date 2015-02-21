@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include "settings.h"
 #include "mapblock.h"
-#include "connection.h"
+#include "network/connection.h"
 #include "environment.h"
 #include "map.h"
 #include "emerge.h"
@@ -768,6 +768,17 @@ void ClientInterface::UpdatePlayerList()
 	}
 }
 
+/*todo
+void ClientInterface::send(u16 peer_id, u8 channelnum,
+		NetworkPacket* pkt, bool reliable, bool deletepkt)
+{
+	m_con->Send(peer_id, channelnum, pkt, reliable);
+
+	if (deletepkt)
+		delete pkt;
+}
+*/
+
 void ClientInterface::send(u16 peer_id,u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
@@ -780,6 +791,26 @@ void ClientInterface::send(u16 peer_id,u8 channelnum,
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	send(peer_id, channelnum, data, reliable);
 }
+
+/* todo
+void ClientInterface::sendToAll(u16 channelnum,
+		NetworkPacket* pkt, bool reliable)
+{
+	auto lock = m_clients.lock_shared_rec();
+	for(auto
+		i = m_clients.begin();
+		i != m_clients.end(); ++i)
+	{
+		RemoteClient *client = i->second.get();
+
+		if (client->net_proto_version != 0) {
+			m_con->Send(client->peer_id, channelnum, pkt, reliable);
+		}
+	}
+
+	delete pkt;
+}
+*/
 
 void ClientInterface::sendToAll(u16 channelnum,
 		SharedBuffer<u8> data, bool reliable)

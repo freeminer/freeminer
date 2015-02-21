@@ -1610,15 +1610,28 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	}
 }
 
+/*
 void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
+*/
 
 void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
+
+void Client::Send(NetworkPacket* pkt)
+{
+/* TODO:
+	m_con.Send(PEER_ID_SERVER,
+		serverCommandFactoryTable[pkt->getCommand()].channel,
+		pkt,
+		serverCommandFactoryTable[pkt->getCommand()].reliable);
+*/
+}
+
 
 void Client::interact(u8 action, const PointedThing& pointed)
 {

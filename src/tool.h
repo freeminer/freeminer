@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "itemgroup.h"
 
-#include "connection.h"
+#include "network/connection.h"
 
 enum {
 	TOOLGROUPCAP_USES,

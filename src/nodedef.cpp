@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
-#include "connection.h"
+#include "network/connection.h"
 #include "shader.h"
 #include "exceptions.h"
 #include "debug.h"
