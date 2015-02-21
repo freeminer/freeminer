@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DATABASE_HEADER
 #define DATABASE_HEADER
 
-#include <list>
+#include <vector>
 #include <string>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -46,7 +46,7 @@ public:
 	v3s16 getIntegerAsBlock(s64 i) const;
 	std::string getBlockAsString(const v3s16 &pos) const;
 	v3s16 getStringAsBlock(const std::string &i) const;
-	virtual void listAllLoadableBlocks(std::list<v3s16> &dst) = 0;
+	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
 	virtual int Initialized(void)=0;
 	virtual ~Database() {};
 

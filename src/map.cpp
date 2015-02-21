@@ -2845,12 +2845,12 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	return m_blocks_save_last;
 }
 
-void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
+void ServerMap::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 	dbase->listAllLoadableBlocks(dst);
 }
 
-void ServerMap::listAllLoadedBlocks(std::list<v3s16> &dst)
+void ServerMap::listAllLoadedBlocks(std::vector<v3s16> &dst)
 {
 	auto lock = m_blocks.lock_shared_rec();
 	for(auto & i : m_blocks)

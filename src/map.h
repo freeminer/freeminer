@@ -468,8 +468,8 @@ public:
 	void endSave();
 
 	s32 save(ModifiedState save_level, bool breakable = 0);
-	void listAllLoadableBlocks(std::list<v3s16> &dst);
-	void listAllLoadedBlocks(std::list<v3s16> &dst);
+	void listAllLoadableBlocks(std::vector<v3s16> &dst);
+	void listAllLoadedBlocks(std::vector<v3s16> &dst);
 	// Saves map seed and possibly other stuff
 	void saveMapMeta();
 	void loadMapMeta();
