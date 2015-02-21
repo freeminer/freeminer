@@ -662,6 +662,14 @@ enum {
 		...
 	*/
 
+#define TOSERVER_INVENTORY_ACTION 0x31
+	/*
+		See InventoryAction in inventorymanager.h
+	*/
+enum {
+	TOSERVER_INVENTORY_ACTION_DATA
+};
+
 
 #define TOSERVER_CHAT_MESSAGE 0x32
 enum {
@@ -768,11 +776,6 @@ enum {
 		u16 command
 		u16 breath
 	*/
-
-#define TOSERVER_INVENTORY_ACTION 0x31
-enum {
-	TOSERVER_INVENTORY_ACTION_DATA
-};
 
 #define TOSERVER_INVENTORY_FIELDS 0x3c
 enum {
