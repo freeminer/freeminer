@@ -588,6 +588,7 @@ add_custom_target(GenerateVersion
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(jthread)
+add_subdirectory(network)
 add_subdirectory(script)
 add_subdirectory(util)
 
@@ -615,7 +616,6 @@ set (unittests_SRCS
 
 set(common_SRCS
 	ban.cpp
-	base64.cpp
 	cavegen.cpp
 	clientiface.cpp
 	collision.cpp
@@ -675,7 +675,6 @@ set(common_SRCS
 	serverlist.cpp
 	serverobject.cpp
 	settings.cpp
-	sha1.cpp
 	socket.cpp
 	sound.cpp
 	staticobject.cpp
@@ -685,10 +684,7 @@ set(common_SRCS
 	version.cpp
 	voxel.cpp
 	voxelalgorithms.cpp
-	network/connection.cpp
-	network/networkpacket.cpp
-	network/packethandlers/server.cpp
-	network/serveropcodes.cpp
+	${common_network_SRCS}
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
@@ -724,9 +720,16 @@ set(FMclient_SRCS
 )
 
 # Client sources
+
+if (BUILD_CLIENT)
+	add_subdirectory(client)
+endif(BUILD_CLIENT)
+
 set(minetest_SRCS
 	${common_SRCS}
 	${sound_SRCS}
+	${client_SRCS}
+	${client_network_SRCS}
 	camera.cpp
 	chat.cpp
 	client.cpp
@@ -761,9 +764,6 @@ set(minetest_SRCS
 	sky.cpp
 	tile.cpp
 	wieldmesh.cpp
-	client/clientlauncher.cpp
-	network/clientopcodes.cpp
-	network/packethandlers/client.cpp
 	${minetest_SCRIPT_SRCS}
 	${FMclient_SRCS}
 )

@@ -26,9 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cctype>
 
-#include "../sha1.h"
-#include "../base64.h"
-#include "../hex.h"
+#include "base64.h"
+#include "hex.h"
+#include "sha1.h"
 #include "../porting.h"
 #include "../log.h"
 

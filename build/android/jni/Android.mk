@@ -134,7 +134,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/log_types.cpp                     \
 		jni/src/profiler.cpp                      \
 		jni/src/ban.cpp                           \
-		jni/src/base64.cpp                        \
 		jni/src/camera.cpp                        \
 		jni/src/cavegen.cpp                       \
 		jni/src/chat.cpp                          \
@@ -223,7 +222,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/server.cpp                        \
 		jni/src/serverlist.cpp                    \
 		jni/src/serverobject.cpp                  \
-		jni/src/sha1.cpp                          \
 		jni/src/shader.cpp                        \
 		jni/src/sky.cpp                           \
 		jni/src/socket.cpp                        \
@@ -238,10 +236,12 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/version.cpp                       \
 		jni/src/voxel.cpp                         \
 		jni/src/voxelalgorithms.cpp               \
+		jni/src/util/base64.cpp                   \
 		jni/src/util/directiontables.cpp          \
 		jni/src/util/numeric.cpp                  \
 		jni/src/util/pointedthing.cpp             \
 		jni/src/util/serialize.cpp                \
+		jni/src/util/sha1.cpp                     \
 		jni/src/util/string.cpp                   \
 		jni/src/util/timetaker.cpp                \
 		jni/src/touchscreengui.cpp                \

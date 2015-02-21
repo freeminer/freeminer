@@ -21,20 +21,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "clientmedia.h"
-#include "util/serialize.h"
-#include "util/string.h"
 #include "httpfetch.h"
 #include "client.h"
-#include "network/networkprotocol.h"
 #include "filecache.h"
 #include "filesys.h"
-#include "hex.h"
-#include "sha1.h"
 #include "debug.h"
 #include "log.h"
 #include "porting.h"
 #include "settings.h"
 #include "main.h"
+#include "network/networkprotocol.h"
+#include "util/hex.h"
+#include "util/serialize.h"
+#include "util/sha1.h"
+#include "util/string.h"
 
 static std::string getMediaCacheDir()
 {

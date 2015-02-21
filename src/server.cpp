@@ -54,11 +54,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content_abm.h"
 #include "content_sao.h"
 #include "mods.h"
-#include "sha1.h"
-#include "base64.h"
 #include "sound.h" // dummySoundManager
 #include "event_manager.h"
-#include "hex.h"
 #include "serverlist.h"
 #include "util/string.h"
 #include "util/mathconstants.h"
@@ -66,6 +63,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/serialize.h"
 #include "util/thread.h"
 #include "defaultsettings.h"
+#include "util/base64.h"
+#include "util/sha1.h"
+#include "util/hex.h"
 
 class ClientNotFoundException : public BaseException
 {
@@ -2082,24 +2082,19 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 	float maxd = far_d_nodes*BS;
 	v3f p_f = intToFloat(p, BS);
 
-	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_REMOVENODE, 2 + 2 + 2);
+	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_REMOVENODE, 6);
 	*pkt << p;
 
 	std::list<u16> clients = m_clients.getClientIDs();
 	for(std::list<u16>::iterator
 		i = clients.begin();
-		i != clients.end(); ++i)
-	{
-		if(far_players)
-		{
+		i != clients.end(); ++i) {
+		if(far_players) {
 			// Get player
-			Player *player = m_env->getPlayer(*i);
-			if(player)
-			{
+			if(Player *player = m_env->getPlayer(*i)) {
 				// If player is far away, only set modified blocks not sent
 				v3f player_pos = player->getPosition();
-				if(player_pos.getDistanceFrom(p_f) > maxd)
-				{
+				if(player_pos.getDistanceFrom(p_f) > maxd) {
 					far_players->push_back(*i);
 					continue;
 				}
@@ -2121,7 +2116,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 	v3f p_f = intToFloat(p, BS);
 
 	std::list<u16> clients = m_clients.getClientIDs();
-		for(std::list<u16>::iterator
+	for(std::list<u16>::iterator
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
@@ -2142,7 +2137,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 			}
 		}
 
-		NetworkPacket* pkt = new NetworkPacket(TOCLIENT_ADDNODE, 0);
+		NetworkPacket* pkt = new NetworkPacket(TOCLIENT_ADDNODE, 6 + 2 + 1 + 1 + 1);
 		m_clients.Lock();
 		RemoteClient* client = m_clients.lockedGetClientNoEx(*i);
 		if (client != 0) {

@@ -2002,6 +2002,8 @@ struct TestConnection: public TestBase
 					<< std::endl;
 
 			UASSERT(memcmp(*sentdata, *recvdata, recvdata.getSize()) == 0);
+
+			delete pkt;
 		}
 
 		u16 peer_id_client = 2;
@@ -2066,6 +2068,8 @@ struct TestConnection: public TestBase
 
 			UASSERT(memcmp(*sentdata, *recvdata, recvdata.getSize()) == 0);
 			UASSERT(peer_id == PEER_ID_SERVER);
+
+			delete pkt;
 		}
 
 		// Check peer handlers
