@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "httpfetch.h"
 #include "client.h"
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 #include "filecache.h"
 #include "filesys.h"
 #include "hex.h"

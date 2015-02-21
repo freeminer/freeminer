@@ -45,7 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/serialize.h"
 #include "noise.h" // PseudoRandom used for random data for compression
-#include "clientserver.h" // LATEST_PROTOCOL_VERSION
+#include "network/networkprotocol.h" // LATEST_PROTOCOL_VERSION
 #include <algorithm>
 
 /*

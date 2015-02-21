@@ -20,8 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CLIENTSERVER_HEADER
-#define CLIENTSERVER_HEADER
+#ifndef NETWORKPROTOCOL_HEADER
+#define NETWORKPROTOCOL_HEADER
 #include "util/string.h"
 
 #include <vector>
@@ -573,6 +573,9 @@ enum {
 	TOCLIENT_EYE_OFFSET_THIRD
 };
 
+#define TOCLIENT_NUM_MSG_TYPES 0x53,
+
+
 // TOSERVER_* commands
 
 #define TOSERVER_INIT 0x10
@@ -803,5 +806,6 @@ enum {
 	TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW
 };
 
-#endif
+#define TOSERVER_NUM_MSG_TYPES 0x45
 
+#endif

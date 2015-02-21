@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiTable.h"
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 
 class IGameDef;
 class InventoryManager;
