@@ -700,4 +700,8 @@ if INIT == "mainmenu" then
 	function fgettext(text, ...)
 		return core.formspec_escape(fgettext_ne(text, ...))
 	end
+
+	function fgettext(text, ...)
+		return core.formspec_escape(fgettext_ne(text, ...))
+	end
 end
