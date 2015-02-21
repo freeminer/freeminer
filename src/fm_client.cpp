@@ -45,7 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "itemdef.h"
 #include "shader.h"
-#include "base64.h"
+#include "util/base64.h"
 #include "clientmap.h"
 #include "clientmedia.h"
 #include "sound.h"
