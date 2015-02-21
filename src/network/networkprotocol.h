@@ -27,8 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <utility>
 #include <string>
-#include "irrlichttypes.h"
-#include "msgpack.h"
+#include "../irrlichttypes.h"
+#include "../msgpack.h"
 
 #define MAX_PACKET_SIZE 1400
 
@@ -246,7 +246,7 @@ struct ActiveObjectAddData {
 	u16 id;
 	u8 type;
 	std::string data;
-	MSGPACK_DEFINE(id, type, data)
+	MSGPACK_DEFINE(id, type, data);
 };
 
 #define TOCLIENT_ACTIVE_OBJECT_MESSAGES 0x32
