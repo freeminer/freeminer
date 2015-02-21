@@ -143,6 +143,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 // TOCLIENT_* commands
+enum ToClientCommand
+{
+};
 
 #define TOCLIENT_INIT 0x10
 enum {
@@ -573,10 +576,13 @@ enum {
 	TOCLIENT_EYE_OFFSET_THIRD
 };
 
-#define TOCLIENT_NUM_MSG_TYPES 0x53,
+#define TOCLIENT_NUM_MSG_TYPES 0x53
 
 
 // TOSERVER_* commands
+enum ToServerCommand
+{
+};
 
 #define TOSERVER_INIT 0x10
 enum {

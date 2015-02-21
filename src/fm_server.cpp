@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 #include <algorithm>
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 #include "ban.h"
 #include "environment.h"
 #include "map.h"

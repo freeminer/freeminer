@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "strfnd.h"
 #include "client.h"
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 #include "main.h"
 #include "filesys.h"
 #include "porting.h"
@@ -2084,7 +2084,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 		Create a task to update the mesh of the block
 	*/
 	auto & draw_control = m_env.getClientMap().getControl();
-	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), draw_control));
+	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders, m_env.getMap(), draw_control));
 
 	{
 		//TimeTaker timer("data fill");
