@@ -107,7 +107,7 @@ void RemoteClient::ResendBlockIfOnWire(v3s16 p)
 	SetBlockNotSent(p);
 }
 
-int RemoteClient::GetNextBlocks(
+int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
@@ -266,13 +266,12 @@ int RemoteClient::GetNextBlocks(
 
 
 	s16 d;
-	for(d = d_start; d <= d_max; d++)
-	{
+	for(d = d_start; d <= d_max; d++) {
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
 		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
-		std::list<v3POS> list;
+		std::vector<v3POS> list;
 		if (d > 2 && d == d_start && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
 			list.push_back(v3POS(0,0,0));
 		}
@@ -304,7 +303,7 @@ int RemoteClient::GetNextBlocks(
 			Get the border/face dot coordinates of a "d-radiused"
 			box
 		*/
-			getFacePositions(list, d);
+			list = FacePositionCache::getFacePositions(d);
 		}
 
 
