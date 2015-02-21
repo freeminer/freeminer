@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutexautolock.h"
 
 #ifdef __ANDROID__
-unsigned int android_log_level_mapping[] {
+unsigned int android_log_level_mapping[] = {
 		/* LMT_ERROR */   ANDROID_LOG_ERROR,
 		/* LMT_ACTION */  ANDROID_LOG_WARN,
 		/* LMT_INFO */    ANDROID_LOG_INFO,

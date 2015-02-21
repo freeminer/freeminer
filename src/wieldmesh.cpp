@@ -345,7 +345,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, IGameDef *gamedef)
 		} else {
 			Map map(gamedef);
 			MapDrawControl map_draw_control;
-			MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
+			//// TODO: Change false in the following constructor args to
+			//// appropriate value when shader is added for wield items (if applicable)
+			MeshMakeData mesh_make_data(gamedef, false, map, map_draw_control);
 			MapNode mesh_make_node(id, 255, 0);
 			mesh_make_data.fillSingleNode(&mesh_make_node);
 			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));

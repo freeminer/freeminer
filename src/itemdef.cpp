@@ -328,8 +328,6 @@ public:
 
 			scene::IMesh *node_mesh = NULL;
 
-			bool reenable_shaders = false;
-
 			if (need_rtt_mesh || need_wield_mesh) {
 				u8 param1 = 0;
 				if (f.param_type == CPT_LIGHT)
@@ -338,13 +336,9 @@ public:
 				/*
 					Make a mesh from the node
 				*/
-				if (g_settings->getBool("enable_shaders")) {
-					reenable_shaders = true;
-					g_settings->setBool("enable_shaders", false);
-				}
 				Map map(gamedef);
 				MapDrawControl map_draw_control;
-				MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
+				MeshMakeData mesh_make_data(gamedef, false, map, map_draw_control);
 				v3s16 p0(0, 0, 0);
 				auto block = map.createBlankBlockNoInsert(p0);
 				auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
@@ -364,7 +358,7 @@ public:
 				MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
 
 /* MT
-				MeshMakeData mesh_make_data(gamedef);
+				MeshMakeData mesh_make_data(gamedef, false);
 				u8 param2 = 0;
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
 					param2 = 1;
@@ -433,9 +427,6 @@ public:
 
 			if (node_mesh)
 				node_mesh->drop();
-
-			if (reenable_shaders)
-				g_settings->setBool("enable_shaders",true);
 		}
 
 		// Put in cache

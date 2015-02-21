@@ -58,7 +58,7 @@ int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const 
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_):
+MeshMakeData::MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_):
 #if defined(MESH_ZEROCOPY)
 	m_vmanip(map_),
 #endif
@@ -68,7 +68,8 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	m_smooth_lighting(false),
 	m_show_hud(false),
 	m_highlight_mesh_color(255, 255, 255, 255),
-	m_gamedef(gamedef)
+	m_gamedef(gamedef),
+	m_use_shaders(use_shaders)
 	,step(1),
 	range(1),
 	timestamp(0),
@@ -1094,7 +1095,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_usage_timer(0)
 {
 	m_mesh = new scene::SMesh();
-	m_enable_shaders = g_settings->getBool("enable_shaders");
+	m_enable_shaders = data->m_use_shaders;
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)

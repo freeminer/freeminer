@@ -67,7 +67,9 @@ struct MeshMakeData
 	bool debug;
 	bool filled;
 
-	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
+	bool m_use_shaders;
+
+	MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
 
 	/*
