@@ -1041,8 +1041,9 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		if (!block->content_only || block->content_only != CONTENT_AIR)
+		if (!block->content_only || block->content_only != CONTENT_AIR) {
 			updateMeshTimestampWithEdge(p);
+		}
 
 /*
 #if !defined(NDEBUG)
@@ -2086,7 +2087,7 @@ void Client::typeChatMessage(const std::string &message)
 	}
 }
 
-void Client::addUpdateMeshTask(v3s16 p, bool urgent)
+void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 {
 	//ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
@@ -2112,8 +2113,10 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 		data->setCrack(m_crack_level, m_crack_pos);
 		data->setHighlighted(m_highlighted_pos, m_show_highlighted);
 		data->setSmoothLighting(m_cache_smooth_lighting);
-		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
+		data->step = step ? step : getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
+		if (step)
+			data->no_draw = true;
 	}
 
 	// Add task to queue

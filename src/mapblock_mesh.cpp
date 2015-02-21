@@ -72,6 +72,7 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapD
 	m_use_shaders(use_shaders)
 	,step(1),
 	range(1),
+	no_draw(false),
 	timestamp(0),
 	block(nullptr),
 	map(map_),
@@ -1084,6 +1085,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
 	step(data->step),
+	no_draw(data->no_draw),
 	m_mesh(nullptr),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
