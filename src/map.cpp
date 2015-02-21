@@ -2745,8 +2745,7 @@ void ServerMap::createDirs(std::string path)
 s32 ServerMap::save(ModifiedState save_level, bool breakable)
 {
 	DSTACK(__FUNCTION_NAME);
-	if(m_map_saving_enabled == false)
-	{
+	if(m_map_saving_enabled == false) {
 		infostream<<"WARNING: Not saving map, saving disabled."<<std::endl;
 		return 0;
 	}
@@ -2755,8 +2754,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		infostream<<"ServerMap: Saving whole map, this can take time."
 				<<std::endl;
 
-	if(m_map_metadata_changed || save_level == MOD_STATE_CLEAN)
-	{
+	if(m_map_metadata_changed || save_level == MOD_STATE_CLEAN) {
 		saveMapMeta();
 	}
 
@@ -2792,10 +2790,9 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 
 			block_count_all++;
 
-			if(block->getModified() >= (u32)save_level)
-			{
+			if(block->getModified() >= (u32)save_level) {
 				// Lazy beginSave()
-				if(!save_started){
+				if(!save_started) {
 					beginSave();
 					save_started = true;
 				}
