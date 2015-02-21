@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "tool.h"
 #include "serverobject.h"
-#include "content_object.h"
 #include "content_sao.h"
 #include "server.h"
 #include "hud.h"

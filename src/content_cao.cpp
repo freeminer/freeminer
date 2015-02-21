@@ -37,7 +37,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h" // For decompressZlib
 #include "gamedef.h"
 #include "clientobject.h"
-#include "content_object.h"
 #include "mesh.h"
 #include "itemdef.h"
 #include "tool.h"
@@ -148,7 +147,7 @@ public:
 	TestCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~TestCAO();
 	
-	u8 getType() const
+	ActiveObjectType getType() const
 	{
 		return ACTIVEOBJECT_TYPE_TEST;
 	}
@@ -293,7 +292,7 @@ public:
 	ItemCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~ItemCAO();
 	
-	u8 getType() const
+	ActiveObjectType getType() const
 	{
 		return ACTIVEOBJECT_TYPE_ITEM;
 	}
