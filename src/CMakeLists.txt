@@ -609,6 +609,10 @@ set(FMcommon_SRCS
 	fm_map.cpp
 )
 
+set (unittests_SRCS
+	test.cpp
+)
+
 set(common_SRCS
 	ban.cpp
 	base64.cpp
@@ -676,7 +680,6 @@ set(common_SRCS
 	sound.cpp
 	staticobject.cpp
 	subgame.cpp
-	test.cpp
 	tool.cpp
 	treegen.cpp
 	version.cpp
@@ -690,6 +693,7 @@ set(common_SRCS
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
 	${FMcommon_SRCS}
+	${unittests_SRCS}
 )
 
 # This gives us the icon and file version information

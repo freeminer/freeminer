@@ -21,19 +21,6 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef NDEBUG
-	/*#ifdef _WIN32
-		#pragma message ("Disabling unit tests")
-	#else
-		#warning "Disabling unit tests"
-	#endif*/
-	// Disable unit tests
-	#define ENABLE_TESTS 0
-#else
-	// Enable unit tests
-	#define ENABLE_TESTS 1
-#endif
-
 #ifdef _MSC_VER
 #ifndef SERVER // Dedicated server isn't linked with Irrlicht
 	#pragma comment(lib, "Irrlicht.lib")
@@ -254,9 +241,9 @@ int main(int argc, char *argv[])
 
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
 	// Run unit tests
-	if ((ENABLE_TESTS && cmd_args.getFlag("disable-unittests") == false)
-			|| cmd_args.getFlag("enable-unittests") == true) {
+	if (cmd_args.getFlag("do-unittests")) {
 		run_tests();
+		return 0;
 	}
 #endif
 
@@ -327,10 +314,8 @@ static void set_allowed_options(OptionList *allowed_options)
 			_("Load configuration from specified file"))));
 	allowed_options->insert(std::make_pair("port", ValueSpec(VALUETYPE_STRING,
 			_("Set network port (UDP)"))));
-	allowed_options->insert(std::make_pair("disable-unittests", ValueSpec(VALUETYPE_FLAG,
-			_("Disable unit tests"))));
-	allowed_options->insert(std::make_pair("enable-unittests", ValueSpec(VALUETYPE_FLAG,
-			_("Enable unit tests"))));
+	allowed_options->insert(std::make_pair("do-unittests", ValueSpec(VALUETYPE_FLAG,
+			_("Run the unit tests and exit"))));
 	allowed_options->insert(std::make_pair("map-dir", ValueSpec(VALUETYPE_STRING,
 			_("Same as --world (deprecated)"))));
 	allowed_options->insert(std::make_pair("world", ValueSpec(VALUETYPE_STRING,

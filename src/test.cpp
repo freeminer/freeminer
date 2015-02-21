@@ -2127,19 +2127,27 @@ void run_tests()
 	//TEST(TestMapBlock);
 	//TEST(TestMapSector);
 	TEST(TestCollision);
+/*
+	if(INTERNET_SIMULATOR == false){
+		TEST(TestSocket);
+		dout_con << "=== BEGIN RUNNING UNIT TESTS FOR CONNECTION ===" << std::endl;
+		TEST(TestConnection);
+		dout_con << "=== END RUNNING UNIT TESTS FOR CONNECTION ===" << std::endl;
+	}
+*/
 
 	log_set_lev_silence(LMT_ERROR, false);
 
 	delete idef;
 	delete ndef;
 
-	if(tests_failed == 0){
-		infostream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
-		infostream<<"run_tests() passed."<<std::endl;
+	if(tests_failed == 0) {
+		actionstream << "run_tests(): " << tests_failed << " / " << tests_run << " tests failed." << std::endl;
+		actionstream << "run_tests() passed." << std::endl;
 		return;
 	} else {
-		errorstream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
-		errorstream<<"run_tests() aborting."<<std::endl;
+		errorstream << "run_tests(): " << tests_failed << " / " << tests_run << " tests failed." << std::endl;
+		errorstream << "run_tests() aborting." << std::endl;
 		abort();
 	}
 }
