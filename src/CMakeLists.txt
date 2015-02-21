@@ -757,6 +757,7 @@ set(minetest_SRCS
 	sky.cpp
 	tile.cpp
 	wieldmesh.cpp
+	client/clientlauncher.cpp
 	network/clientopcodes.cpp
 	network/toclientpacket.cpp
 	${minetest_SCRIPT_SRCS}
