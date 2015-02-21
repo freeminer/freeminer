@@ -145,7 +145,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/clientobject.cpp                  \
 		jni/src/clouds.cpp                        \
 		jni/src/collision.cpp                     \
-		jni/src/connection.cpp                    \
 		jni/src/content_abm.cpp                   \
 		jni/src/content_cao.cpp                   \
 		jni/src/content_cso.cpp                   \
@@ -259,6 +258,7 @@ LOCAL_SRC_FILES :=                                \
 
 # Network
 LOCAL_SRC_FILES +=                                \
+		jni/src/network/connection.cpp            \
 		jni/src/network/networkpacket.cpp         \
 		jni/src/network/clientopcodes.cpp         \
 		jni/src/network/serveropcodes.cpp         \
