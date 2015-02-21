@@ -24,6 +24,7 @@ const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TO
 
 const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
+#if TODO
 	null_command_handler, // 0x00
 	null_command_handler, // 0x01
 	null_command_handler, // 0x02
@@ -92,4 +93,5 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_RECEIVED_MEDIA",           TOSERVER_STATE_STARTUP, &Server::handleCommand_ReceivedMedia }, // 0x41
 	{ "TOSERVER_BREATH",                   TOSERVER_STATE_INGAME, &Server::handleCommand_Breath }, // 0x42
 	{ "TOSERVER_CLIENT_READY",             TOSERVER_STATE_STARTUP, &Server::handleCommand_ClientReady }, // 0x43
+#endif
 };
