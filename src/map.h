@@ -278,13 +278,13 @@ public:
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
 	u32 timerUpdate(float uptime, float unload_timeout, unsigned int max_cycle_ms = 100,
-			std::list<v3s16> *unloaded_blocks=NULL);
+			std::vector<v3s16> *unloaded_blocks=NULL);
 
 	/*
 		Unloads all blocks with a zero refCount().
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	void unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks=NULL);
+	void unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks=NULL);
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);

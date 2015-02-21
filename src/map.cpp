@@ -1483,7 +1483,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 */
 u32 Map::timerUpdate(float uptime, float unload_timeout,
 		unsigned int max_cycle_ms,
-		std::list<v3s16> *unloaded_blocks)
+		std::vector<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
 
@@ -1619,7 +1619,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	return m_blocks_update_last;
 }
 
-void Map::unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks)
+void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
 	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
