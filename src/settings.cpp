@@ -1037,6 +1037,7 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 		delete group;
 		return root;
 	}
+	delete group;
 
 	std::string value;
 	getNoEx(name, value);
