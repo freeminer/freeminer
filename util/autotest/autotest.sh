@@ -3,7 +3,7 @@
 # sudo apt-get install valgrind clang
 
 cmake_opt="-DBUILD_SERVER=0"
-cmake_opt="-DBUILD_SERVER=0 -DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a"
+#cmake_opt="-DBUILD_SERVER=0 -DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a"
 
 confdir=`pwd`
 
@@ -27,6 +27,13 @@ mkdir -p $logdir
 mkdir -p worlds/autotest
 echo "gameid = default" > worlds/autotest/world.mt
 echo "backend = leveldb" >> worlds/autotest/world.mt
+
+name=asannt
+mkdir -p _$name && cd _$name
+cmake $rootdir $clang -DENABLE_THREADS=0 -DDISABLE_LUAJIT=1 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make
+nice ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
 
 name=asan
 mkdir -p _$name && cd _$name
