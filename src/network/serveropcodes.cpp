@@ -24,8 +24,8 @@ const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TO
 
 const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
-#if TODO
 	null_command_handler, // 0x00
+#if TODO
 	null_command_handler, // 0x01
 	null_command_handler, // 0x02
 	null_command_handler, // 0x03
