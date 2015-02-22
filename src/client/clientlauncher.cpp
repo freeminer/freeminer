@@ -325,6 +325,10 @@ void ClientLauncher::init_args(GameParams &game_params, const Settings &cmd_args
 
 	random_input = g_settings->getBool("random_input")
 			|| cmd_args.getFlag("random-input");
+
+	int autoexit_ = 0;
+	cmd_args.getS32NoEx("autoexit", autoexit_);
+	autoexit = autoexit_;
 }
 
 bool ClientLauncher::init_engine(int log_level)
