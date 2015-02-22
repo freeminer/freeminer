@@ -177,7 +177,6 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
-	v3f camera_direction = m_camera_direction;
 	f32 camera_fov = m_camera_fov;
 	//v3s16 camera_offset = m_camera_offset;
 	m_camera_mutex.Unlock();
@@ -507,7 +506,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
-	v3f camera_direction = m_camera_direction;
 	f32 camera_fov = m_camera_fov;
 	m_camera_mutex.Unlock();
 
@@ -570,7 +568,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 		float d = 0.0;
 		if(isBlockInSight(block->getPos(), camera_position,
-				camera_direction, camera_fov,
+				m_camera_direction, camera_fov,
 				100000*BS, &d) == false)
 		{
 			continue;
@@ -987,7 +985,6 @@ void ClientMap::renderBlockBoundaries(const std::map<v3POS, MapBlock*> & blocks)
 				color.setGreen(128);
 			}
 
-			v3s16 bpos = i->first;
 			bound.MinEdge = intToFloat(i->first, BS)*blocksize
 				+ inset
 				- v3f(BS)*0.5

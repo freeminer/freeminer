@@ -518,7 +518,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
 	const bool movement_XZ = hypot(speed.X, speed.Z) > BS;
-	const bool movement_Y = abs(speed.Y) > BS;
+	const bool movement_Y = std::abs(speed.Y) > BS;
 
 	const bool walking = movement_XZ && player->touching_ground;
 	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;

@@ -80,7 +80,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 
 	v3f position = getPosition();
 
-	v3f old_speed = m_speed;
+	//v3f old_speed = m_speed;
 
 	// Copy parent position if local player is attached
 	if(isAttached)
@@ -190,10 +190,10 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	//f32 d = pos_max_d * 1.1;
 	// A fairly large value in here makes moving smoother
-	f32 d = 0.15*BS;
+	//f32 d = 0.15*BS;
 
 	// This should always apply, otherwise there are glitches
-	assert(d > pos_max_d);
+	//assert(d > pos_max_d);
 
 	// Maximum distance over border for sneaking
 	f32 sneak_max = BS*0.4;

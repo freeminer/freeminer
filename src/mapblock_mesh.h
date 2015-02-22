@@ -58,6 +58,9 @@ struct MeshMakeData
 	video::SColor m_highlight_mesh_color;
 
 	IGameDef *m_gamedef;
+
+	bool m_use_shaders;
+
 	int step;
 	int range;
 	bool no_draw;
@@ -67,8 +70,6 @@ struct MeshMakeData
 	MapDrawControl& draw_control;
 	bool debug;
 	bool filled;
-
-	bool m_use_shaders;
 
 	MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
