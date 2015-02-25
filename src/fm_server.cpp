@@ -2050,8 +2050,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if (playersao->m_time_from_last_respawn > 1)
 		player->setPosition(packet[TOSERVER_PLAYERPOS_POSITION].as<v3f>());
 		player->setSpeed(packet[TOSERVER_PLAYERPOS_SPEED].as<v3f>());
-		player->setPitch(wrapDegrees(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()));
-		player->setYaw(wrapDegrees(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()));
+		player->setPitch(modulo360f(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()));
+		player->setYaw(modulo360f(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()));
 		u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
 		player->keyPressed = keyPressed;
 		player->control.up = (bool)(keyPressed&1);
