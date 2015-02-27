@@ -24,8 +24,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TOSERVER_STATE_ALL, &Server::handleCommand_Null };
 #endif
 
-const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES];
-#if TODO
+const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES]
+#if !TODO
+ = { };
+#else
  =
 {
 	null_command_handler, // 0x00

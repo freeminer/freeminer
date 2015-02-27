@@ -815,6 +815,10 @@ enum {
 	TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW
 };
 
+#if !TODO
+#define TOSERVER_NUM_MSG_TYPES 0
+#else
 #define TOSERVER_NUM_MSG_TYPES 0x45
+#endif
 
 #endif

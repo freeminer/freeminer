@@ -113,7 +113,11 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 
 const static ServerCommandFactory null_command_factory = { "TOSERVER_NULL", 0, false };
 
-const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
+const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES]
+#if !TODO
+ = { };
+#else
+ =
 {
 	null_command_factory, // 0x00
 	null_command_factory, // 0x01
@@ -184,3 +188,4 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_BREATH",             0, true }, // 0x42
 	{ "TOSERVER_CLIENT_READY",       0, true }, // 0x43
 };
+#endif
