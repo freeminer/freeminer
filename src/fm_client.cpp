@@ -2107,7 +2107,8 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 		data->fill(b);
 
 #if ! CMAKE_THREADS
-		data->fill_data();
+		if (!data->fill_data())
+			return;
 #endif
 
 		data->setCrack(m_crack_level, m_crack_pos);
