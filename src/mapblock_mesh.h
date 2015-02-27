@@ -75,7 +75,7 @@ struct MeshMakeData
 		parent of block.
 	*/
 	void fill(MapBlock *block_);
-	void fill_data();
+	bool fill_data();
 
 	/*
 		Set up with only a single node at (1,1,1)

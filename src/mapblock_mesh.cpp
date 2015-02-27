@@ -91,17 +91,17 @@ void MeshMakeData::fill(MapBlock *block_)
 	m_blockpos = block_->getPos();
 }
 
-void MeshMakeData::fill_data()
+bool MeshMakeData::fill_data()
 {
 
 	if (filled)
-		return;
+		return filled;
 
 	if (!block)
 		block = map.getBlockNoCreateNoEx(m_blockpos);
 
 	if (!block)
-		return;
+		return filled;
 	filled = true;
 	timestamp = block->getTimestamp();
 
@@ -149,6 +149,7 @@ void MeshMakeData::fill_data()
 		}
 	}
 #endif
+	return filled;
 }
 
 void MeshMakeData::fillSingleNode(MapNode *node)
@@ -1101,7 +1102,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
 
-	data->fill_data();
+	if (!data->fill_data())
+		return;
+
 	timestamp = data->timestamp;
 
 	std::vector<FastFace> fastfaces_new;
