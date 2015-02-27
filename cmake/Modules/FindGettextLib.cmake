@@ -69,6 +69,11 @@ IF(GETTEXT_INCLUDE_DIR AND GETTEXT_MSGFMT)
 				/usr/local/lib
 				/usr/lib
 			)
+			FIND_LIBRARY(ICONV_LIBRARY NAMES iconv
+				PATHS
+				/usr/local/lib
+				/usr/lib
+			)
 		ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
 		SET(GETTEXT_FOUND TRUE)
 	ENDIF(WIN32)

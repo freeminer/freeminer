@@ -33,6 +33,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cctype>
 #include <algorithm>
 
+#include "util/lock.h"
+
 
 Settings::~Settings()
 {
@@ -295,8 +297,13 @@ bool Settings::updateConfigObject(std::istream &is, std::ostream &os,
 }
 
 
-bool Settings::updateConfigFile(const char *filename)
+bool Settings::updateConfigFile(const std::string &filename)
 {
+	if (filename.find(".json") != std::string::npos) {
+		writeJsonFile(filename);
+		return true;
+	}
+
 	JMutexAutoLock lock(m_mutex);
 
 	std::ifstream is(filename);
@@ -308,7 +315,7 @@ bool Settings::updateConfigFile(const char *filename)
 	if (!was_modified)
 		return true;
 
-	if (!fs::safeWriteToFile(filename, os.str())) {
+	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
 		errorstream << "Error writing configuration file: \""
 			<< filename << "\"" << std::endl;
 		return false;
@@ -888,6 +895,7 @@ bool Settings::remove(const std::string &name)
 	JMutexAutoLock lock(m_mutex);
 
 	delete m_settings[name].group;
+	m_json.removeMember(name);
 	return m_settings.erase(name);
 }
 
@@ -972,46 +980,158 @@ void Settings::clearNoLock()
 	for (it = m_defaults.begin(); it != m_defaults.end(); ++it)
 		delete it->second.group;
 	m_defaults.clear();
+	m_json.clear();
 }
 
-
-	Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
-	{
-		Json::Value root;
-		std::string value = get(name);
-		if (value.empty())
-			return def;
-		if (!json_reader.parse( value, root ) ) {
-			errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages();
-		}
-		return root;
-	}
-
-	void Settings::setJson(const std::string & name, const Json::Value & value)
-	{
-		set(name, value.empty() ? "{}" : json_writer.write( value ));
-	}
-
 void Settings::registerChangedCallback(std::string name,
-	setting_changed_callback cbf)
+	setting_changed_callback cbf, void *userdata)
 {
-	m_callbacks[name].push_back(cbf);
+	JMutexAutoLock lock(m_callbackMutex);
+	m_callbacks[name].push_back(std::make_pair(cbf, userdata));
+}
+
+void Settings::deregisterChangedCallback(std::string name, setting_changed_callback cbf, void *userdata)
+{
+	JMutexAutoLock lock(m_callbackMutex);
+	std::map<std::string, std::vector<std::pair<setting_changed_callback, void*> > >::iterator iterToVector = m_callbacks.find(name);
+	if (iterToVector != m_callbacks.end())
+	{
+		std::vector<std::pair<setting_changed_callback, void*> > &vector = iterToVector->second;
+
+		std::vector<std::pair<setting_changed_callback, void*> >::iterator position =
+			std::find(vector.begin(), vector.end(), std::make_pair(cbf, userdata));
+
+		if (position != vector.end())
+			vector.erase(position);
+	}
 }
 
 void Settings::doCallbacks(const std::string name)
 {
-	std::vector<setting_changed_callback> tempvector;
+	JMutexAutoLock lock(m_callbackMutex);
+	std::map<std::string, std::vector<std::pair<setting_changed_callback, void*> > >::iterator iterToVector = m_callbacks.find(name);
+	if (iterToVector != m_callbacks.end())
 	{
-		JMutexAutoLock lock(m_mutex);
-		if (m_callbacks.find(name) != m_callbacks.end())
+		std::vector<std::pair<setting_changed_callback, void*> >::iterator iter;
+		for (iter = iterToVector->second.begin(); iter != iterToVector->second.end(); iter++)
 		{
-			tempvector = m_callbacks[name];
+			(iter->first)(name, iter->second);
+		}
+	}
+}
+
+
+Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
+	{
+		try_shared_lock lock(m_mutex);
+		if (!m_json[name].empty())
+			return m_json.get(name, def);
+	}
+
+	//todo: remove later:
+
+	Json::Value root;
+	Settings * group = new Settings;
+	if (getGroupNoEx(name, group)) {
+		group->toJson(root);
+		delete group;
+		return root;
+	}
+
+	std::string value;
+	getNoEx(name, value);
+	if (value.empty())
+		return def;
+	if (!json_reader.parse( value, root ) ) {
+		errorstream  << "Failed to parse json conf var [" << name << "]='" << value <<"' : " << json_reader.getFormattedErrorMessages()<<std::endl;
+	}
+	return root;
+}
+
+void Settings::setJson(const std::string & name, const Json::Value & value) {
+	if (!value.empty())
+		set(name, json_writer.write( value )); //todo: remove later
+
+	unique_lock lock(m_mutex);
+	m_json[name] = value;
+}
+
+bool Settings::toJson(Json::Value &json) const {
+	try_shared_lock lock(m_mutex);
+
+	for (const auto & ir: m_settings) {
+		if (ir.second.is_group && ir.second.group) {
+			Json::Value v;
+			ir.second.group->toJson(v);
+			if (!v.empty())
+				json[ir.first] = v;
+		} else {
+			json[ir.first] = ir.second.value;
 		}
 	}
 
-	std::vector<setting_changed_callback>::iterator iter;
-	for (iter = tempvector.begin(); iter != tempvector.end(); iter++)
-	{
-		(*iter)(name);
+	for (const auto & key: m_json.getMemberNames())
+		if (!m_json[key].empty())
+			json[key] = m_json[key];
+
+	return true;
+}
+
+bool Settings::fromJson(const Json::Value &json) {
+	if (!json.isObject())
+		return false;
+	for (const auto & key: json.getMemberNames()) {
+		if (json[key].isObject()) {
+			setJson(key, json[key]); // save type info
+			auto s = new Settings;
+			s->fromJson(json[key]);
+			setGroup(key, s);
+		}
+		else if (json[key].isArray())
+			setJson(key, json[key]);
+		else
+			set(key, json[key].asString());
 	}
+	return true;
+}
+
+bool Settings::writeJsonFile(const std::string &filename) {
+	Json::Value json;
+	toJson(json);
+
+	std::ostringstream os(std::ios_base::binary);
+	os << json;
+
+	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
+		errorstream << "Error writing json configuration file: \"" << filename << "\"" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+bool Settings::readJsonFile(const std::string &filename) {
+	std::ifstream is(filename.c_str(), std::ios_base::binary);
+	if (!is.good())
+		return false;
+	Json::Value json;
+	is >> json;
+	return fromJson(json);
+}
+
+void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+{
+	Json::Value json;
+	toJson(json);
+	std::ostringstream os(std::ios_base::binary);
+	os << json;
+	pk.pack(os.str());
+}
+
+void Settings::msgpack_unpack(msgpack::object o)
+{
+	std::string data;
+	o.convert(&data);
+	std::istringstream os(data, std::ios_base::binary);
+	os >> m_json;
+	fromJson(m_json);
 }

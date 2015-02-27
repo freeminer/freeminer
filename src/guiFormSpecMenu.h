@@ -155,7 +155,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::wstring &name, const std::wstring &label,
+		FieldSpec(const std::string &name, const std::wstring &label,
 				const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
@@ -166,7 +166,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 			ftype = f_Unknown;
 			is_exit = false;
 		}
-		std::wstring fname;
+		std::string fname;
 		std::wstring flabel;
 		std::wstring fdefault;
 		int fid;
@@ -249,13 +249,20 @@ public:
 		m_allowclose = value;
 	}
 
-	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0)) {
+	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0))
+	{
 		m_lock = lock;
 		m_lockscreensize = basescreensize;
 	}
 
 	void removeChildren();
 	void setInitialFocus();
+
+	void setFocus(std::string elementname)
+	{
+		m_focused_element = elementname;
+	}
+
 	/*
 		Remove and re-add (or reposition) stuff
 	*/
@@ -274,7 +281,7 @@ public:
 	bool doPause;
 	bool pausesGame() { return doPause; }
 
-	GUITable* getTable(std::wstring tablename);
+	GUITable* getTable(const std::string &tablename);
 
 #ifdef __ANDROID__
 	bool getAndroidUIInput();
@@ -309,7 +316,7 @@ protected:
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
-	std::map<std::wstring, TooltipSpec> m_tooltips;
+	std::map<std::string, TooltipSpec> m_tooltips;
 	std::vector<std::pair<FieldSpec,gui::IGUIScrollBar*> > m_scrollbars;
 
 	ItemSpec *m_selected_item;
@@ -351,6 +358,7 @@ private:
 	IFormSource      *m_form_src;
 	TextDest         *m_text_dst;
 	unsigned int      m_formspec_version;
+	std::string      m_focused_element;
 
 	typedef struct {
 		bool explicit_size;
@@ -359,11 +367,11 @@ private:
 		core::rect<s32> rect;
 		v2s32 basepos;
 		v2u32 screensize;
-		std::wstring focused_fieldname;
+		std::string focused_fieldname;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
 		// used to restore table selection/scroll/treeview state
-		std::map<std::wstring,GUITable::DynamicData> table_dyndata;
+		std::map<std::string, GUITable::DynamicData> table_dyndata;
 	} parserData;
 
 	typedef struct {
@@ -425,10 +433,10 @@ private:
 	gui::IGUIFont *m_font;
 
 	std::wstring getLabelByID(s32 id);
-	std::wstring getNameByID(s32 id);
+	std::string getNameByID(s32 id);
 #ifdef __ANDROID__
 	v2s32 m_down_pos;
-	std::wstring m_JavaDialogFieldName;
+	std::string m_JavaDialogFieldName;
 #endif
 
 };

@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "porting.h"
 #include "log.h"
+#include "clientserver.h"
 #include "json/json.h"
 #include "convert_json.h"
 #include "httpfetch.h"
@@ -69,8 +70,11 @@ std::vector<ServerListSpec> getLocal()
 
 std::vector<ServerListSpec> getOnline()
 {
-	Json::Value root = fetchJsonValue(
-			(g_settings->get("serverlist_url") + "/list").c_str(), NULL);
+	std::ostringstream geturl;
+	geturl << g_settings->get("serverlist_url") <<
+		"/list?proto_version_min=" << CLIENT_PROTOCOL_VERSION_MIN <<
+		"&proto_version_max=" << CLIENT_PROTOCOL_VERSION_MAX;
+	Json::Value root = fetchJsonValue(geturl.str(), NULL);
 
 	std::vector<ServerListSpec> server_list;
 
@@ -172,6 +176,7 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 
 
 void sendAnnounce(const std::string &action,
+		const u16 port,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
 		const u32 game_time,
@@ -183,14 +188,17 @@ void sendAnnounce(const std::string &action,
 #if USE_CURL
 	Json::Value server;
 	server["action"] = action;
-	server["port"]    = g_settings->getU16("port");
+	server["port"] = port;
 	if (g_settings->exists("server_address")) {
 		server["address"] = g_settings->get("server_address");
 	}
 	if (action != "delete") {
+		bool strict_checking = g_settings->getBool("strict_protocol_version_checking");
 		server["name"]         = g_settings->get("server_name");
 		server["description"]  = g_settings->get("server_description");
 		server["version"]      = minetest_version_simple;
+		server["proto_min"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MIN;
+		server["proto_max"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MAX;
 		server["url"]          = g_settings->get("server_url");
 		server["creative"]     = g_settings->getBool("creative_mode");
 		server["damage"]       = g_settings->getBool("enable_damage");
@@ -215,9 +223,10 @@ void sendAnnounce(const std::string &action,
 		server["dedicated"]         = g_settings->getBool("server_dedicated");
 		server["rollback"]          = g_settings->getBool("enable_rollback_recording");
 		server["mapgen"]            = mg_name;
-		server["privs"]             = g_settings->get("default_privs");
+		server["privs"]             = g_settings->getBool("creative_mode") ? g_settings->get("default_privs_creative") : g_settings->get("default_privs");
 		server["can_see_far_names"] = g_settings->getS16("player_transfer_distance") <= 0;
 		server["liquid_real"]       = g_settings->getBool("liquid_real");
+		server["version_hash"]      = minetest_version_hash;
 		server["mods"]              = Json::Value(Json::arrayValue);
 		for (std::vector<ModSpec>::const_iterator it = mods.begin();
 				it != mods.end();

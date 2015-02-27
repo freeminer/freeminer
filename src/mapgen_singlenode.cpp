@@ -32,11 +32,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //////////////////////// Mapgen Singlenode parameter read/write
 
-void MapgenSinglenodeParams::readParams(Settings *settings) {
+void MapgenSinglenodeParams::readParams(Settings *settings)
+{
 }
 
 
-void MapgenSinglenodeParams::writeParams(Settings *settings) {
+void MapgenSinglenodeParams::writeParams(Settings *settings)
+{
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,12 +57,14 @@ MapgenSinglenode::MapgenSinglenode(int mapgenid,
 }
 
 
-MapgenSinglenode::~MapgenSinglenode() {
+MapgenSinglenode::~MapgenSinglenode()
+{
 }
 
 //////////////////////// Map generator
 
-void MapgenSinglenode::makeChunk(BlockMakeData *data) {
+void MapgenSinglenode::makeChunk(BlockMakeData *data)
+{
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
@@ -81,6 +85,8 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 	v3s16 node_min = blockpos_min*MAP_BLOCKSIZE;
 	v3s16 node_max = (blockpos_max+v3s16(1,1,1))*MAP_BLOCKSIZE-v3s16(1,1,1);
 
+	blockseed = getBlockSeed2(node_min, data->seed);
+
 	MapNode n_node(c_node);
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
@@ -98,13 +104,13 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)
-		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
-					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
+		calcLighting(node_min, node_max);
 
 	this->generating = false;
 }
 
-int MapgenSinglenode::getGroundLevelAtPoint(v2s16 p) {
+int MapgenSinglenode::getGroundLevelAtPoint(v2s16 p)
+{
 	return 0;
 }
 

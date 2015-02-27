@@ -30,7 +30,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IrrlichtDevice.h>
 #include "threads.h"
 #include <string>
-#include <map>
+#include <vector>
+
+
+// EMT_TRANSPARENT_ALPHA_CHANNEL_REF doesn't seem to work on Android
+// (that's probably because of opengles driver and stuff?
+//  I certainly don't want to debug this, so for now workaround will only
+//  be applied to android devices)
+#ifdef __ANDROID__
+#define EMT_TRANSPARENT_ALPHA_CHANNEL_REF EMT_TRANSPARENT_ALPHA_CHANNEL
+#endif
 
 class IGameDef;
 
@@ -301,7 +310,7 @@ struct TileSpec
 	// Animation parameters
 	u8 animation_frame_count;
 	u16 animation_frame_length_ms;
-	std::map<u32, FrameSpec> frames;
+	std::vector<FrameSpec> frames;
 
 	u8 rotation;
 };

@@ -40,7 +40,7 @@ int ModApiServer::l_request_shutdown(lua_State *L)
 int ModApiServer::l_get_server_status(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	lua_pushstring(L, wide_to_narrow(getServer(L)->getStatusString()).c_str());
+	lua_pushstring(L, getServer(L)->getStatusString().c_str());
 	return 1;
 }
 
@@ -52,7 +52,7 @@ int ModApiServer::l_chat_send_all(lua_State *L)
 	// Get server from registry
 	Server *server = getServer(L);
 	// Send
-	server->notifyPlayers(narrow_to_wide(text));
+	server->notifyPlayers(text);
 	return 0;
 }
 
@@ -66,7 +66,7 @@ int ModApiServer::l_chat_send_player(lua_State *L)
 	// Get server from registry
 	Server *server = getServer(L);
 	// Send
-	server->notifyPlayer(name, narrow_to_wide(text));
+	server->notifyPlayer(name, text);
 	return 0;
 }
 
@@ -309,7 +309,7 @@ int ModApiServer::l_kick_player(lua_State *L)
 		lua_pushboolean(L, false); // No such player
 		return 1;
 	}
-	getServer(L)->DenyAccess(player->peer_id, narrow_to_wide(message));
+	getServer(L)->DenyAccess(player->peer_id, message);
 	lua_pushboolean(L, true);
 	return 1;
 }

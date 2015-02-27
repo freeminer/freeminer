@@ -48,12 +48,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "filesys.h"
 
+#if USE_SQLITE3
+
 Database_SQLite3::Database_SQLite3(ServerMap *map, std::string savedir)
 {
 	m_database = NULL;
 	m_database_read = NULL;
 	m_database_write = NULL;
 	m_database_list = NULL;
+	m_database_delete = NULL;
 	m_savedir = savedir;
 	srvmap = map;
 }
@@ -133,13 +136,11 @@ void Database_SQLite3::verifyDatabase() {
 		throw FileNotGoodException("Cannot prepare write statement");
 	}
 
-#ifdef __ANDROID__
 	d = sqlite3_prepare(m_database, "DELETE FROM `blocks` WHERE `pos`=?;", -1, &m_database_delete, NULL);
 	if(d != SQLITE_OK) {
 		infostream<<"WARNING: SQLite3 database delete statment failed to prepare: "<<sqlite3_errmsg(m_database)<<std::endl;
 		throw FileNotGoodException("Cannot prepare delete statement");
 	}
-#endif
 
 	d = sqlite3_prepare(m_database, "SELECT `pos` FROM `blocks`", -1, &m_database_list, NULL);
 	if(d != SQLITE_OK) {
@@ -150,24 +151,50 @@ void Database_SQLite3::verifyDatabase() {
 	infostream<<"ServerMap: SQLite3 database opened"<<std::endl;
 }
 
+bool Database_SQLite3::deleteBlock(v3s16 blockpos)
+{
+	verifyDatabase();
+
+	if (sqlite3_bind_int64(m_database_delete, 1,
+			getBlockAsInteger(blockpos)) != SQLITE_OK) {
+		errorstream << "WARNING: Could not bind block position for delete: "
+			<< sqlite3_errmsg(m_database) << std::endl;
+	}
+
+	if (sqlite3_step(m_database_delete) != SQLITE_DONE) {
+		errorstream << "WARNING: deleteBlock: Block failed to delete "
+			<< PP(blockpos) << ": " << sqlite3_errmsg(m_database) << std::endl;
+		sqlite3_reset(m_database_delete);
+		return false;
+	}
+
+	sqlite3_reset(m_database_delete);
+	return true;
+}
+
 bool Database_SQLite3::saveBlock(v3s16 blockpos, std::string &data)
 {
 	std::lock_guard<std::mutex> lock(mutex);
 
 	verifyDatabase();
 
+	s64 bkey = getBlockAsInteger(blockpos);
+
 #ifdef __ANDROID__
 	/**
 	 * Note: For some unknown reason sqlite3 fails to REPLACE blocks on android,
 	 * deleting them and inserting first works.
 	 */
-	if (sqlite3_bind_int64(m_database_read, 1, getBlockAsInteger(blockpos)) != SQLITE_OK) {
+	if (sqlite3_bind_int64(m_database_read, 1, bkey) != SQLITE_OK) {
 		infostream << "WARNING: Could not bind block position for load: "
 			<< sqlite3_errmsg(m_database)<<std::endl;
 	}
 
-	if (sqlite3_step(m_database_read) == SQLITE_ROW) {
-		if (sqlite3_bind_int64(m_database_delete, 1, getBlockAsInteger(blockpos)) != SQLITE_OK) {
+	int step_result = sqlite3_step(m_database_read);
+	sqlite3_reset(m_database_read);
+
+	if (step_result == SQLITE_ROW) {
+		if (sqlite3_bind_int64(m_database_delete, 1, bkey) != SQLITE_OK) {
 			infostream << "WARNING: Could not bind block position for delete: "
 				<< sqlite3_errmsg(m_database)<<std::endl;
 		}
@@ -179,17 +206,17 @@ bool Database_SQLite3::saveBlock(v3s16 blockpos, std::string &data)
 		}
 		sqlite3_reset(m_database_delete);
 	}
-	sqlite3_reset(m_database_read);
 #endif
 
-	if (sqlite3_bind_int64(m_database_write, 1, getBlockAsInteger(blockpos)) != SQLITE_OK) {
+	if (sqlite3_bind_int64(m_database_write, 1, bkey) != SQLITE_OK) {
 		errorstream << "WARNING: saveBlock: Block position failed to bind: "
 			<< PP(blockpos) << ": " << sqlite3_errmsg(m_database) << std::endl;
 		sqlite3_reset(m_database_write);
 		return false;
 	}
 
-	if (sqlite3_bind_blob(m_database_write, 2, (void *) data.c_str(), data.size(), NULL) != SQLITE_OK) {
+	if (sqlite3_bind_blob(m_database_write, 2, (void *)data.c_str(),
+			data.size(), NULL) != SQLITE_OK) {
 		errorstream << "WARNING: saveBlock: Block data failed to bind: "
 			<< PP(blockpos) << ": " << sqlite3_errmsg(m_database) << std::endl;
 		sqlite3_reset(m_database_write);
@@ -283,6 +310,7 @@ Database_SQLite3::~Database_SQLite3()
 	FINALIZE_STATEMENT(m_database_read)
 	FINALIZE_STATEMENT(m_database_write)
 	FINALIZE_STATEMENT(m_database_list)
+	FINALIZE_STATEMENT(m_database_delete)
 
 	if(m_database)
 		rc = sqlite3_close(m_database);
@@ -292,3 +320,5 @@ Database_SQLite3::~Database_SQLite3()
 				<< "Failed to close database: rc=" << rc << std::endl;
 	}
 }
+
+#endif

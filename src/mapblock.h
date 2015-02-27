@@ -42,6 +42,8 @@ class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
 class Circuit;
+class ServerEnvironment;
+struct ActiveABM;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -102,6 +104,16 @@ public:
 };
 #endif
 
+struct abm_trigger_one {
+	ActiveABM * abm;
+	v3POS pos;
+	content_t content;
+	u32 active_object_count;
+	u32 active_object_count_wider;
+	v3POS neighbor_pos;
+	bool activate;
+};
+
 /*
 	MapBlock itself
 */
@@ -127,16 +139,10 @@ public:
 	{
 		auto lock = lock_unique_rec();
 		if(data != NULL)
-			delete[] data;
+			delete data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
-		data = new MapNode[l];
-		for(u32 i=0; i<l; i++){
-			//data[i] = MapNode();
-			data[i] = MapNode(CONTENT_IGNORE);
-		}
-/*
-		raiseModified(MOD_STATE_WRITE_NEEDED, "reallocate");
-*/
+		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
+		memset(data, 0, l * sizeof(MapNode));
 	}
 
 	/*
@@ -155,17 +161,7 @@ public:
 	}
 	
 	// m_modified methods
-	void raiseModified(u32 mod)
-	{
-		if(mod >= MOD_STATE_WRITE_NEEDED && m_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
-			m_changed_timestamp = m_timestamp;
-		}
-		if(mod > m_modified){
-			m_modified = mod;
-			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
-				m_disk_timestamp = m_timestamp;
-		}
-	}
+	void raiseModified(u32 mod);
 	void raiseModified(u32 mod, const std::string &reason)
 	{
 		raiseModified(mod);
@@ -194,6 +190,32 @@ public:
 		}
 #endif
 	}
+	void raiseModified(u32 mod, const char *reason)
+	{
+		raiseModified(mod);
+#ifdef WTFdebug
+		if (mod > m_modified){
+			m_modified = mod;
+			m_modified_reason = reason;
+			m_modified_reason_too_long = false;
+
+			if (m_modified >= MOD_STATE_WRITE_AT_UNLOAD){
+				m_disk_timestamp = m_timestamp;
+			}
+		}
+		else if (mod == m_modified){
+			if (!m_modified_reason_too_long){
+				if (m_modified_reason.size() < 40)
+					m_modified_reason += ", " + std::string(reason);
+				else{
+					m_modified_reason += "...";
+					m_modified_reason_too_long = true;
+				}
+			}
+		}
+#endif
+	}
+
 	u32 getModified()
 	{
 		return m_modified;
@@ -444,10 +466,12 @@ public:
 	*/
 	void resetUsageTimer()
 	{
+		auto lock = lock_unique_rec();
 		m_usage_timer = 0;
 	}
 	float getUsageTimer()
 	{
+		auto lock = lock_shared_rec();
 		return m_usage_timer;
 	}
 	void incrementUsageTimer(float dtime);
@@ -494,23 +518,19 @@ public:
 	
 	// These don't write or read version by itself
 	// Set disk to true for on-disk format, false for over-the-network format
+	// Precondition: version >= SER_FMT_CLIENT_VER_LOWEST
 	void serialize(std::ostream &os, u8 version, bool disk);
 	// If disk == true: In addition to doing other things, will add
 	// unknown blocks from id-name mapping to wndef
-	void deSerialize(std::istream &is, u8 version, bool disk);
+	bool deSerialize(std::istream &is, u8 version, bool disk);
 
-	void serializeNetworkSpecific(std::ostream &os, u16 net_proto_version);
-	void deSerializeNetworkSpecific(std::istream &is);
-	
 	void pushElementsToCircuit(Circuit* circuit);
 
 #ifndef SERVER // Only on client
-	//typedef typename std::atomic<std::shared_ptr<MapBlockMesh>> mesh_type;
-	typedef typename std::shared_ptr<MapBlockMesh> mesh_type;
+	typedef std::shared_ptr<MapBlockMesh> mesh_type;
 
 	MapBlock::mesh_type getMesh(int step = 1);
 	void setMesh(MapBlock::mesh_type & rmesh);
-	//void delMesh();
 #endif
 
 private:
@@ -561,6 +581,35 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;
+	u32 m_next_analyze_timestamp;
+	typedef std::list<abm_trigger_one> abm_triggers_type;
+	std::unique_ptr<abm_triggers_type> abm_triggers;
+	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
+	u32 m_abm_timestamp;
+
+	u32 getActualTimestamp() {
+		u32 block_timestamp = 0;
+		if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_changed_timestamp;
+		} else if (m_disk_timestamp && m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
+			block_timestamp = m_disk_timestamp;
+		}
+		return block_timestamp;
+	}
+
+	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
+	content_t content_only;
+	content_t analyzeContent() {
+		auto lock = lock_shared_rec();
+		content_only = data[0].param0;
+		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {
+			if (data[i].param0 != content_only) {
+				content_only = CONTENT_IGNORE;
+				break;
+			}
+		}
+		return content_only;
+	}
 
 private:
 	/*
@@ -613,7 +662,7 @@ private:
 	
 	// Whether day and night lighting differs
 	bool m_day_night_differs;
-	bool m_day_night_differs_expired;
+	std::atomic_bool m_day_night_differs_expired;
 
 	bool m_generated;
 	
@@ -621,7 +670,7 @@ private:
 		When block is removed from active blocks, this is set to gametime.
 		Value BLOCK_TIMESTAMP_UNDEFINED=0xffffffff means there is no timestamp.
 	*/
-	u32 m_timestamp;
+	std::atomic_uint m_timestamp;
 	// The on-disk (or to-be on-disk) timestamp value
 	u32 m_disk_timestamp;
 
@@ -658,6 +707,16 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 /*
 	return getContainerPos(p, MAP_BLOCKSIZE);
 */
+}
+
+inline void getNodeBlockPosWithOffset(const v3s16 &p, v3s16 &block, v3s16 &offset)
+{
+	getContainerPosWithOffset(p, MAP_BLOCKSIZE, block, offset);
+}
+
+inline void getNodeSectorPosWithOffset(const v2s16 &p, v2s16 &block, v2s16 &offset)
+{
+	getContainerPosWithOffset(p, MAP_BLOCKSIZE, block, offset);
 }
 
 /*

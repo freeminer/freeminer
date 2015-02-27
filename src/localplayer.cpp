@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "util/numeric.h"
 
+#include "log_types.h"
+
 /*
 	LocalPlayer
 */
@@ -104,7 +106,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	/*
 		Collision detection
 	*/
-	
+
 	bool is_valid_position;
 	MapNode node;
 	v3s16 pp;
@@ -173,8 +175,12 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	if (!(is_valid_position && is_valid_position2)) {
 		is_climbing = false;
 	} else {
-		is_climbing = (nodemgr->get(node.getContent()).climbable
+		bool can_climbing = (nodemgr->get(node.getContent()).climbable
 				|| nodemgr->get(node2.getContent()).climbable) && !free_move;
+		if (m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
+			is_climbing = can_climbing;
+		else if (can_climbing)
+			m_speed.Y += 0.3*BS;
 	}
 
 
@@ -204,21 +210,31 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		v3f lwn_f = intToFloat(m_sneak_node, BS);
 		position.X = rangelim(position.X, lwn_f.X-maxd, lwn_f.X+maxd);
 		position.Z = rangelim(position.Z, lwn_f.Z-maxd, lwn_f.Z+maxd);
-		
+
 		if(!is_climbing)
 		{
 			f32 min_y = lwn_f.Y + 0.5*BS;
-			if(position.Y < min_y)
+			if(position.Y < min_y && m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
 			{
 				position.Y = min_y;
 
 				if(m_speed.Y < 0)
 					m_speed.Y = 0;
 			}
+
+			if (m_speed.Y < -PLAYER_FALL_TOLERANCE_SPEED) {
+				m_speed.Y += 0.3*BS;
+			}
+
 		}
 	}
 
+	// this shouldn't be hardcoded but transmitted from server
 	float player_stepheight = touching_ground ? (BS*0.6) : (BS*0.2);
+
+	if (g_settings->getBool("autojump")) {
+		player_stepheight += (0.5 * BS);
+	}
 
 	v3f accel_f = v3f(0,0,0);
 
@@ -234,7 +250,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	bool touching_ground_was = touching_ground;
 	touching_ground = result.touching_ground;
-    
+
     //bool standing_on_unloaded = result.standing_on_unloaded;
 
 	/*
@@ -285,7 +301,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			f32 max_axis_distance_f = MYMAX(
 					fabs(player_p2df.X-node_p2df.X),
 					fabs(player_p2df.Y-node_p2df.Y));
-					
+
 			if(distance_f > min_distance_f ||
 					max_axis_distance_f > 0.5*BS + sneak_max + 0.1*BS)
 				continue;
@@ -309,7 +325,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			min_distance_f = distance_f;
 			new_sneak_node = p;
 		}
-		
+
 		bool sneak_node_found = (min_distance_f < 100000.0*BS*0.9);
 
 		m_sneak_node = new_sneak_node;
@@ -322,12 +338,12 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		if(sneak_node_found && control.sneak)
 			touching_ground = true;
 	}
-	
+
 	/*
 		Set new position
 	*/
 	setPosition(position);
-	
+
 	/*
 		Report collisions
 	*/
@@ -375,7 +391,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	m_old_node_below = floatToInt(position - v3f(0,BS/2,0), BS);
 	m_old_node_below_type = nodemgr->get(map->getNodeNoEx(m_old_node_below)).name;
-	
+
 	/*
 		Check properties of the node on which the player is standing
 	*/
@@ -403,8 +419,11 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());
 		v3f node_pos(p.X, p.Y, p.Z);
-		player_box.MinEdge *= 0.999f;
-		player_box.MaxEdge *= 0.999f;
+		v3f center = player_box.getCenter();
+		v3f min_edge = (player_box.MinEdge - center) * 0.999f;
+		v3f max_edge = (player_box.MaxEdge - center) * 0.999f;
+		player_box.MinEdge = center + min_edge;
+		player_box.MaxEdge = center + max_edge;
 		player_box.MinEdge += position;
 		player_box.MaxEdge += position;
 		for(auto box : nodeboxes) {
@@ -435,10 +454,10 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 
 	v3f move_direction = v3f(0,0,1);
 	move_direction.rotateXZBy(getYaw());
-	
+
 	v3f speedH = v3f(0,0,0); // Horizontal (X, Z)
 	v3f speedV = v3f(0,0,0); // Vertical (Y)
-	
+
 	bool fly_allowed = m_gamedef->checkLocalPrivilege("fly");
 	bool fast_allowed = m_gamedef->checkLocalPrivilege("fast");
 
@@ -450,7 +469,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	bool fast_pressed = false;
 	// Whether superspeed mode is used or not
 	superspeed = false;
-	
+
 	if(g_settings->getBool("always_fly_fast") && free_move && fast_move)
 		superspeed = true;
 
@@ -460,7 +479,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 		// If free movement and fast movement, always move fast
 		if(free_move && fast_move)
 			superspeed = true;
-		
+
 		// Auxiliary button 1 (E)
 		if(control.aux1)
 		{
@@ -585,7 +604,7 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 			{
 				speedJ.Y = movement_speed_jump * physics_override_jump;
 				setSpeed(speedJ);
-				
+
 				MtEvent *e = new SimpleTriggerEvent("PlayerJump");
 				m_gamedef->event()->put(e);
 			}
@@ -666,4 +685,3 @@ v3s16 LocalPlayer::getStandingNodePos()
 		return m_sneak_node;
 	return floatToInt(getPosition() - v3f(0, BS, 0), BS);
 }
-

@@ -1,9 +1,8 @@
 #!/bin/sh
 cd ..
-#svn co https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp jsoncpp
-svn co https://svn.code.sf.net/p/jsoncpp/code/trunk/jsoncpp jsoncpp
-svn up jsoncpp
+git clone --recursive https://github.com/open-source-parsers/jsoncpp.git jsoncpp
 cd jsoncpp
+git pull
 python amalgamate.py
 cp -R dist/json ..
 cp dist/jsoncpp.cpp ../json

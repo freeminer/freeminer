@@ -127,31 +127,31 @@ Camera::~Camera()
 	m_wieldmgr->drop();
 }
 
-bool Camera::successfullyCreated(std::wstring& error_message)
+bool Camera::successfullyCreated(std::string& error_message)
 {
 	if (m_playernode == NULL)
 	{
-		error_message = L"Failed to create the player scene node";
+		error_message = "Failed to create the player scene node";
 		return false;
 	}
 	if (m_headnode == NULL)
 	{
-		error_message = L"Failed to create the head scene node";
+		error_message = "Failed to create the head scene node";
 		return false;
 	}
 	if (m_cameranode == NULL)
 	{
-		error_message = L"Failed to create the camera scene node";
+		error_message = "Failed to create the camera scene node";
 		return false;
 	}
 	if (m_wieldmgr == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene manager";
+		error_message = "Failed to create the wielded item scene manager";
 		return false;
 	}
 	if (m_wieldnode == NULL)
 	{
-		error_message = L"Failed to create the wielded item scene node";
+		error_message = "Failed to create the wielded item scene node";
 		return false;
 	}
 	return true;
@@ -278,7 +278,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	{
 		f32 oldy = old_player_position.Y;
 		f32 newy = player_position.Y;
-		f32 t = exp(-10*frametime);
+		f32 t = exp(-23*frametime);
 		player_position.Y = oldy * t + newy * (1-t);
 	}
 
@@ -433,29 +433,25 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		m_camera_position = my_cp;
 
 	// Get FOV
-	f32 fov_degrees;
 	if (player->zoom) {
-		fov_degrees = g_settings->getFloat("zoom_fov");
 		m_wieldnode->setVisible(false);
 	} else {
-		fov_degrees = m_cache_fov;
-		fov_degrees = MYMAX(fov_degrees, 10.0);
-		fov_degrees = MYMIN(fov_degrees, 170.0);
 		m_wieldnode->setVisible(true);
 	}
+	f32 fov_degrees = MYMAX(MYMIN(m_draw_control.fov, 170.0), 10.0);
 
 	// Greater FOV if running
-        v3f speed = player->getSpeed();
-        f32 fov_add = sqrt(pow(speed.X,2)+pow(speed.Z,2))/40;
-	if (g_settings->getBool("enable_movement_fov"))
-           { 
+	v3f speed = player->getSpeed();
+	f32 fov_add = sqrt(pow(speed.X,2)+pow(speed.Z,2))/40;
+
+	if (g_settings->getBool("enable_movement_fov")) {
 		fov_degrees += player->movement_fov;
-                if (fov_add > 4)
-                    fov_add = 4;
-                if (fov_add > 1) 
-                   fov_degrees = fov_degrees+fov_add;
-           }        
-        
+		if (fov_add > 4)
+			fov_add = 4;
+		if (fov_add > 1) 
+			fov_degrees = fov_degrees+fov_add;
+	}
+
 	// FOV and aspect ratio
 	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
 	m_fov_y = fov_degrees * M_PI / 180.0;

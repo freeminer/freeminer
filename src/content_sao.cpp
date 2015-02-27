@@ -56,7 +56,7 @@ public:
 	// And never save to disk
 	bool isStaticAllowed() const
 	{ return false; }
-	
+
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data)
 	{
@@ -102,7 +102,7 @@ public:
 	}
 	u8 getType() const
 	{ return ACTIVEOBJECT_TYPE_TEST; }
-	
+
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data)
 	{
@@ -173,7 +173,7 @@ class ItemSAO : public ServerActiveObject
 public:
 	u8 getType() const
 	{ return ACTIVEOBJECT_TYPE_ITEM; }
-	
+
 	float getMinimumSavedMovement()
 	{ return 0.1*BS; }
 
@@ -215,7 +215,7 @@ public:
 		if(m_move_interval.step(dtime, interval)==false)
 			return;
 		dtime = interval;
-		
+
 		core::aabbox3d<f32> box(-BS/3.,0.0,-BS/3., BS/3.,BS*2./3.,BS/3.);
 		collisionMoveResult moveresult;
 		// Apply gravity
@@ -226,13 +226,12 @@ public:
 		if(m_speed_f.getLength()*dtime > pos_max_d)
 			m_speed_f *= pos_max_d / (m_speed_f.getLength()*dtime);
 		v3f pos_f = getBasePosition();
-		v3f pos_f_old = pos_f;
 		v3f accel_f = v3f(0,0,0);
 		f32 stepheight = 0;
 		moveresult = collisionMoveSimple(m_env,m_env->getGameDef(),
 				pos_max_d, box, stepheight, dtime,
 				pos_f, m_speed_f, accel_f);
-		
+
 		if(send_recommended == false)
 			return;
 
@@ -330,7 +329,7 @@ public:
 				m_itemstring_changed = true;
 			}
 		}
-		
+
 		return 0;
 	}
 
@@ -395,7 +394,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 		ServerActiveObject::registerType(getType(), create);
 		return;
 	}
-	
+
 	// Initialize something to armor groups
 	m_armor_groups["fleshy"] = 100;
 }
@@ -409,12 +408,14 @@ LuaEntitySAO::~LuaEntitySAO()
 
 void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 {
+	auto lock = lock_unique_rec();
+
 	ServerActiveObject::addedToEnvironment(dtime_s);
-	
+
 	// Create entity from name
 	m_registered = m_env->getScriptIface()->
 		luaentity_Add(m_id, m_init_name.c_str());
-	
+
 	if(m_registered){
 		// Get properties
 		m_env->getScriptIface()->
@@ -604,6 +605,8 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
+	auto lock = lock_shared_rec();
+
 	if(protocol_version >= 14)
 	{
 		writeU8(os, 1); // version
@@ -678,10 +681,10 @@ int LuaEntitySAO::punch(v3f dir,
 		return 0;
 	}
 
-	// It's best that attachments cannot be punched 
+	// It's best that attachments cannot be punched
 	if(isAttached())
 		return 0;
-	
+
 	ItemStack *punchitem = NULL;
 	ItemStack punchitem_static;
 	if(puncher){
@@ -694,11 +697,11 @@ int LuaEntitySAO::punch(v3f dir,
 			toolcap,
 			punchitem,
 			time_from_last_punch);
-	
+
 	if(result.did_punch)
 	{
 		setHP(getHP() - result.damage);
-		
+
 
 		std::string punchername = "nil";
 
@@ -708,7 +711,7 @@ int LuaEntitySAO::punch(v3f dir,
 		actionstream<<getDescription()<<" punched by "
 				<<punchername<<", damage "<<result.damage
 				<<" hp, health now "<<getHP()<<" hp"<<std::endl;
-		
+
 		{
 			std::string str = gob_cmd_punched(result.damage, getHP());
 			// create message and add to list
@@ -894,7 +897,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	// If the object is attached client-side, don't waste bandwidth sending its position to clients
 	if(isAttached())
 		return;
-	
+
 	m_last_sent_move_precision = m_base_position.getDistanceFrom(
 			m_last_sent_position);
 	m_last_sent_position_timer = 0;
@@ -1061,6 +1064,8 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 		writeF1000(os, m_player->getYaw());
 		writeS16(os, getHP());
 
+		auto lock = lock_shared();
+
 		writeU8(os, 5 + m_bone_position.size()); // number of messages stuffed in here
 		os<<serializeLongString(getPropertyPacket()); // message 1
 		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
@@ -1121,6 +1126,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	// If attached, check that our parent is still there. If it isn't, detach.
 	if(m_attachment_parent_id && !isAttached())
 	{
+		auto lock = lock_unique();
 		m_attachment_parent_id = 0;
 		m_attachment_bone = "";
 		m_attachment_position = v3f(0,0,0);
@@ -1246,6 +1252,7 @@ void PlayerSAO::setPos(v3f pos)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	// Force position change on client
@@ -1257,6 +1264,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	// Force position change on client
@@ -1282,7 +1290,7 @@ int PlayerSAO::punch(v3f dir,
 	ServerActiveObject *puncher,
 	float time_from_last_punch)
 {
-	// It's best that attachments cannot be punched 
+	// It's best that attachments cannot be punched
 	if(isAttached())
 		return 0;
 
@@ -1373,12 +1381,14 @@ void PlayerSAO::setBreath(u16 breath)
 
 void PlayerSAO::setArmorGroups(const ItemGroupList &armor_groups)
 {
+	auto lock = lock_unique();
 	m_armor_groups = armor_groups;
 	m_armor_groups_sent = false;
 }
 
 void PlayerSAO::setAnimation(v2f frame_range, float frame_speed, float frame_blend)
 {
+	auto lock = lock_unique();
 	// store these so they can be updated to clients
 	m_animation_range = frame_range;
 	m_animation_speed = frame_speed;
@@ -1395,6 +1405,7 @@ void PlayerSAO::setBonePosition(std::string bone, v3f position, v3f rotation)
 
 void PlayerSAO::setAttachment(int parent_id, std::string bone, v3f position, v3f rotation)
 {
+	auto lock = lock_unique();
 	// Attachments need to be handled on both the server and client.
 	// If we just attach on the server, we can only copy the position of the parent. Attachments
 	// are still sent to clients at an interval so players might see them lagging, plus we can't
@@ -1473,7 +1484,7 @@ void PlayerSAO::disconnected()
 
 std::string PlayerSAO::getPropertyPacket()
 {
-	m_prop.is_visible = (true);
+	// WAT?  m_prop.is_visible = (true);
 	return gob_cmd_set_properties(m_prop);
 }
 
@@ -1498,19 +1509,15 @@ bool PlayerSAO::checkMovementCheat()
 		*/
 
 		float player_max_speed = 0;
-		float player_max_speed_up = 0;
 		if(m_privs.count("fast") != 0){
 			// Fast speed
 			player_max_speed = m_player->movement_speed_fast;
-			player_max_speed_up = m_player->movement_speed_fast;
 		} else {
 			// Normal speed
 			player_max_speed = m_player->movement_speed_walk;
-			player_max_speed_up = m_player->movement_speed_walk;
 		}
 		// Tolerance. With the lag pool we shouldn't need it.
 		player_max_speed *= 1.5;
-		player_max_speed_up *= 1.5;
 
 		v3f diff = (m_player->getPosition() - m_last_good_position);
 		float d_vert = diff.Y;

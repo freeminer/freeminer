@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MG_LIGHT         0x10
 
 class Settings;
-class ManualMapVoxelManipulator;
+class MMVManip;
 class INodeDefManager;
 
 extern FlagDesc flagdesc_mapgen[];
@@ -48,7 +48,6 @@ extern FlagDesc flagdesc_gennotify[];
 class Biome;
 class EmergeManager;
 class MapBlock;
-class ManualMapVoxelManipulator;
 class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
@@ -136,9 +135,11 @@ public:
 	u32 flags;
 	bool generating;
 	int id;
-	ManualMapVoxelManipulator *vm;
+
+	MMVManip *vm;
 	INodeDefManager *ndef;
 
+	u32 blockseed;
 	s16 *heightmap;
 	u8 *biomemap;
 	v3s16 csize;
@@ -149,13 +150,23 @@ public:
 	Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	virtual ~Mapgen();
 
+	static u32 getBlockSeed(v3s16 p, int seed);
+	static u32 getBlockSeed2(v3s16 p, int seed);
 	s16 findGroundLevelFull(v2s16 p2d);
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
 	void updateHeightmap(v3s16 nmin, v3s16 nmax);
 	void updateLiquid(v3s16 nmin, v3s16 nmax);
-	void setLighting(v3s16 nmin, v3s16 nmax, u8 light);
+
+	void setLighting(u8 light, v3s16 nmin, v3s16 nmax);
 	void lightSpread(VoxelArea &a, v3s16 p, u8 light);
+
 	void calcLighting(v3s16 nmin, v3s16 nmax);
+	void calcLighting(v3s16 nmin, v3s16 nmax,
+		v3s16 full_nmin, v3s16 full_nmax);
+
+	void propagateSunlight(v3s16 nmin, v3s16 nmax);
+	void spreadLight(v3s16 nmin, v3s16 nmax);
+
 	void calcLightingOld(v3s16 nmin, v3s16 nmax);
 
 	virtual void makeChunk(BlockMakeData *data) {}
@@ -198,7 +209,7 @@ public:
 	virtual GenElement *getByName(const std::string &name);
 
 protected:
-	NodeResolver *m_resolver;
+	INodeDefManager *m_ndef;
 	std::vector<GenElement *> m_elements;
 };
 

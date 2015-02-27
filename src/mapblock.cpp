@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "nodemetadata.h"
 #include "gamedef.h"
-#include "log.h"
+#include "log_types.h"
 #include "nameidmapping.h"
 #include "content_mapnode.h" // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
@@ -58,26 +58,29 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_modified(MOD_STATE_CLEAN),
 		is_underground(false),
 		m_day_night_differs(false),
-		m_day_night_differs_expired(true),
 		m_generated(false),
-		m_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
 		m_usage_timer(0),
 		m_refcount(0)
 {
 	heat = 0;
 	humidity = 0;
+	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 	m_changed_timestamp = 0;
+	m_day_night_differs_expired = true;
 	m_lighting_expired = true;
 	data = NULL;
 	//if(dummy == false)
 		reallocate();
-	
+
 #ifndef SERVER
 	mesh = NULL;
 	mesh2 = mesh4 = mesh8 = mesh16 = nullptr;
 	mesh_size = 0;
 #endif
+	m_next_analyze_timestamp = 0;
+	m_abm_timestamp = 0;
+	content_only = CONTENT_IGNORE;
 }
 
 MapBlock::~MapBlock()
@@ -88,7 +91,7 @@ MapBlock::~MapBlock()
 #endif
 
 	if(data)
-		delete[] data;
+		delete data;
 	data = nullptr;
 }
 
@@ -128,7 +131,7 @@ MapNode MapBlock::getNodeParent(v3s16 p, bool *is_valid_position)
 /*
 	Propagates sunlight down through the block.
 	Doesn't modify nodes that are not affected by sunlight.
-	
+
 	Returns false if sunlight at bottom block is invalid.
 	Returns true if sunlight at bottom block is valid.
 	Returns true if bottom block doesn't exist.
@@ -153,38 +156,33 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;
-	
+
 	v3s16 pos_relative = getPosRelative();
-	
+
 	for(s16 x=0; x<MAP_BLOCKSIZE; x++)
 	{
 		for(s16 z=0; z<MAP_BLOCKSIZE; z++)
 		{
 #if 1
 			bool no_sunlight = false;
-			bool no_top_block = false;
+			//bool no_top_block = false;
 
 			// Check if node above block has sunlight
 
 			bool is_valid_position;
 			MapNode n = getNodeParent(v3s16(x, MAP_BLOCKSIZE, z),
 				&is_valid_position);
-			if (is_valid_position)
+			if (n)
 			{
-				if(n.getContent() == CONTENT_IGNORE)
-				{
-					// Trust heuristics
-					no_sunlight = is_underground;
-				}
-				else if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN)
+				if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN)
 				{
 					no_sunlight = true;
 				}
 			}
 			else
 			{
-				no_top_block = true;
-				
+				//no_top_block = true;
+
 				// NOTE: This makes over-ground roofed places sunlighted
 				// Assume sunlight, unless is_underground==true
 				if(is_underground)
@@ -194,7 +192,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 				else
 				{
 					MapNode n = getNodeNoEx(v3s16(x, MAP_BLOCKSIZE-1, z));
-					if(m_gamedef->ndef()->get(n).sunlight_propagates == false)
+					if(n && m_gamedef->ndef()->get(n).sunlight_propagates == false)
 					{
 						no_sunlight = true;
 					}
@@ -226,19 +224,19 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 					<<", is_underground="<<is_underground
 					<<", no_sunlight="<<no_sunlight
 					<<std::endl;*/
-		
+
 			s16 y = MAP_BLOCKSIZE-1;
-			
+
 			// This makes difference to diminishing in water.
 			bool stopped_to_solid_object = false;
-			
+
 			u8 current_light = no_sunlight ? 0 : LIGHT_SUN;
 
 			for(; y >= 0; y--)
 			{
 				v3s16 pos(x, y, z);
 				MapNode &n = getNodeRef(pos);
-				
+
 				if(current_light == 0)
 				{
 					// Do nothing
@@ -251,7 +249,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 				{
 					// A solid object is on the way.
 					stopped_to_solid_object = true;
-					
+
 					// Light stops.
 					current_light = 0;
 				}
@@ -267,7 +265,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 				{
 					n.setLight(LIGHTBANK_DAY, current_light, nodemgr);
 				}
-				
+
 				if(diminish_light(current_light) != 0)
 				{
 					light_sources.insert(pos_relative + pos);
@@ -290,14 +288,14 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 
 				Check if the node below the block has proper sunlight at top.
 				If not, the block below is invalid.
-				
+
 				Ignore non-transparent nodes as they always have no light
 			*/
 
 			if(block_below_is_valid)
 			{
 				MapNode n = getNodeParent(v3s16(x, -1, z), &is_valid_position);
-				if (is_valid_position) {
+				if (n) {
 					if(nodemgr->get(n).light_propagates)
 					{
 						if(n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN
@@ -327,7 +325,7 @@ void MapBlock::copyTo(VoxelManipulator &dst)
 	auto lock = lock_shared_rec();
 	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
 	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
-	
+
 	// Copy from data to VoxelManipulator
 	dst.copyFrom(data, data_area, v3s16(0,0,0),
 			getPosRelative(), data_size);
@@ -338,7 +336,7 @@ void MapBlock::copyFrom(VoxelManipulator &dst)
 	auto lock = lock_unique_rec();
 	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
 	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
-	
+
 	// Copy from VoxelManipulator to data
 	dst.copyTo(data, data_area, v3s16(0,0,0),
 			getPosRelative(), data_size);
@@ -361,6 +359,7 @@ void MapBlock::actuallyUpdateDayNightDiff()
 	/*
 		Check if any lighting value differs
 	*/
+	auto lock = lock_shared_rec();
 	for(u32 i=0; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
 	{
 		MapNode &n = data[i];
@@ -541,18 +540,14 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	auto lock = lock_shared_rec();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
-	
+
 	if(data == NULL)
 	{
 		throw SerializationError("ERROR: Not writing dummy block.");
 	}
-	
-	// Can't do this anymore; we have 16-bit dynamically allocated node IDs
-	// in memory; conversion just won't work in this direction.
-	if(version < 24)
-		throw SerializationError("MapBlock::serialize: serialization to "
-				"version < 24 not possible");
-		
+
+	assert(version >= SER_FMT_CLIENT_VER_LOWEST);
+
 	// First byte
 	u8 flags = 0;
 	if(is_underground)
@@ -562,9 +557,13 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	if(m_lighting_expired)
 		flags |= 0x04;
 	if(m_generated == false)
+	{
 		flags |= 0x08;
+		infostream<<" serialize not generated block"<<std::endl;
+	}
+
 	writeU8(os, flags);
-	
+
 	/*
 		Bulk node data
 	*/
@@ -594,7 +593,7 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 		MapNode::serializeBulk(os, version, data, nodecount,
 				content_width, params_width, true);
 	}
-	
+
 	/*
 		Node metadata
 	*/
@@ -620,7 +619,7 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 
 		// Write block-specific node definition id mapping
 		nimap.serialize(os);
-		
+
 		if(version >= 25){
 			// Node timers
 			m_node_timers.serialize(os, version);
@@ -628,28 +627,12 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	}
 }
 
-void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
-{
-	if(data == NULL)
-	{
-		throw SerializationError("ERROR: Not writing dummy block.");
-	}
-
-	if(net_proto_version >= 21){
-		int version = 1;
-		writeU8(os, version);
-		writeF1000(os, heat);
-		writeF1000(os, humidity);
-	}
-}
-
-void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
+bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
 	auto lock = lock_unique_rec();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
-	
-	
+
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())<<std::endl);
 
 	m_day_night_differs_expired = false;
@@ -657,7 +640,7 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	if(version <= 21)
 	{
 		deSerialize_pre22(is, version, disk);
-		return;
+		return true;
 	}
 
 	u8 flags = readU8(is);
@@ -665,6 +648,11 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	m_day_night_differs = (flags & 0x02) ? true : false;
 	m_lighting_expired = (flags & 0x04) ? true : false;
 	m_generated = (flags & 0x08) ? false : true;
+
+	if (!m_generated) {
+		infostream<<"MapBlock::deSerialize(): deserialize not generated block"<<std::endl;
+		return false;
+	}
 
 	/*
 		Bulk node data
@@ -725,14 +713,14 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Static objects"<<std::endl);
 		m_static_objects.deSerialize(is);
-		
+
 		// Timestamp
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Timestamp"<<std::endl);
 		setTimestampNoChangedFlag(readU32(is));
 		m_disk_timestamp = m_timestamp;
-		m_changed_timestamp = m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? m_timestamp : 0;
-		
+		m_changed_timestamp = (unsigned int)m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? (unsigned int)m_timestamp : 0;
+
 		// Dynamically re-set ids based on node names
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": NameIdMapping"<<std::endl);
@@ -745,30 +733,14 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 					<<": Node timers (ver>=25)"<<std::endl);
 			m_node_timers.deSerialize(is, version);
 		}
+
+		analyzeContent();
 	}
-		
+
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 			<<": Done."<<std::endl);
+	return true;
 }
-
-void MapBlock::deSerializeNetworkSpecific(std::istream &is)
-{
-	try {
-		int version = readU8(is);
-		//if(version != 1)
-		//	throw SerializationError("unsupported MapBlock version");
-		if(version >= 1) {
-			heat = readF1000(is);
-			humidity = readF1000(is);
-		}
-	}
-	catch(SerializationError &e)
-	{
-		errorstream<<"WARNING: MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
-				<<": "<<e.what()<<std::endl;
-	}
-}
-
 
 	MapNode MapBlock::getNodeNoEx(v3POS p) {
 #ifndef NDEBUG
@@ -791,7 +763,6 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
 	}
 
 	void MapBlock::setNodeNoCheck(v3s16 p, MapNode & n)
@@ -801,7 +772,18 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		auto lock = lock_unique_rec();
 		data[p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED/*, "setNodeNoCheck"*/);
-		m_changed_timestamp = (unsigned int)m_parent->time_life;
+	}
+
+	void MapBlock::raiseModified(u32 mod)
+	{
+		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
+			m_changed_timestamp = (unsigned int)m_parent->time_life;
+		}
+		if(mod > m_modified){
+			m_modified = mod;
+			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+				m_disk_timestamp = m_timestamp;
+		}
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)
@@ -908,7 +890,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 				databuf_nodelist[i*ser_length + 1] = s[i];
 			}
 		}
-	
+
 		if(version >= 10)
 		{
 			// Uncompress and set param2 data
@@ -951,7 +933,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 			databuf_nodelist[i*ser_length + 1] = s[i+nodecount];
 			databuf_nodelist[i*ser_length + 2] = s[i+nodecount*2];
 		}
-		
+
 		/*
 			NodeMetadata
 		*/
@@ -1081,6 +1063,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 void MapBlock::incrementUsageTimer(float dtime)
 {
+	auto lock = lock_unique_rec();
 	m_usage_timer += dtime;
 /*
 #ifndef SERVER
@@ -1132,12 +1115,12 @@ std::string analyze_block(MapBlock *block)
 
 	auto lock = block->lock_shared_rec();
 	std::ostringstream desc;
-	
+
 	v3s16 p = block->getPos();
 	char spos[20];
 	snprintf(spos, 20, "(%2d,%2d,%2d), ", p.X, p.Y, p.Z);
 	desc<<spos;
-	
+
 	switch(block->getModified())
 	{
 	case MOD_STATE_CLEAN:
@@ -1194,21 +1177,21 @@ std::string analyze_block(MapBlock *block)
 			else
 				full_air = false;
 		}
-		
+
 		desc<<"content {";
-		
+
 		std::ostringstream ss;
-		
+
 		if(full_ignore)
 			ss<<"IGNORE (full), ";
 		else if(some_ignore)
 			ss<<"IGNORE, ";
-		
+
 		if(full_air)
 			ss<<"AIR (full), ";
 		else if(some_air)
 			ss<<"AIR, ";
-		
+
 		if(ss.str().size()>=2)
 			desc<<ss.str().substr(0, ss.str().size()-2);
 

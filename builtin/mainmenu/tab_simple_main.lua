@@ -35,10 +35,23 @@ local function get_formspec(tabview, name, tabdata)
 		"field[8.75,1.5;3.5,0.5;te_name;;" ..
 		core.formspec_escape(core.setting_get("name")) .."]" ..
 		"pwdfield[8.75,2.3;3.5,0.5;te_pwd;]"
-
-	--favourites
+		
+	if render_details then
+		retval = retval .. "tablecolumns[" ..
+			"color,span=3;" ..
+			"text,align=right;" ..                -- clients
+			"text,align=center,padding=0.25;" ..  -- "/"
+			"text,align=right,padding=0.25;" ..   -- clients_max
+			image_column(fgettext("Creative mode"), "creative") .. ",padding=1;" ..
+			image_column(fgettext("Damage enabled"), "damage") .. ",padding=0.25;" ..
+			image_column(fgettext("PvP enabled"), "pvp") .. ",padding=0.25;" ..
+			"color,span=1;" ..
+			"text,padding=1]"                               -- name
+	else
+		retval = retval .. "tablecolumns[text]"
+	end
 	retval = retval ..
-		"textlist[-0.05,0.0;7.55,2.75;favourites;"
+		"table[-0.05,0;7.55,2.75;favourites;"
 
 	if #menudata.favorites > 0 then
 		retval = retval .. render_favorite(menudata.favorites[1],render_details)
@@ -75,7 +88,6 @@ local function get_formspec(tabview, name, tabdata)
 end
 
 --------------------------------------------------------------------------------
-
 local function main_button_handler(tabview, fields, name, tabdata)
 
 	if fields["btn_start_singleplayer"] then
@@ -147,6 +159,11 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 			gamedata.servername			= menudata.favorites[fav_idx].name
 			gamedata.serverdescription	= menudata.favorites[fav_idx].description
+
+			if not is_server_protocol_compat_or_error(menudata.favorites[fav_idx].proto_min,
+					menudata.favorites[fav_idx].proto_max) then
+				return true
+			end
 		else
 			gamedata.servername			= ""
 			gamedata.serverdescription	= ""

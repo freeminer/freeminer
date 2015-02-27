@@ -76,7 +76,7 @@ private:
 	WieldMeshSceneNode *m_wield_meshnode;
 	scene::IBillboardSceneNode *m_spritenode;
 	scene::ITextSceneNode* m_textnode;
-	scene::IShadowVolumeSceneNode* shadownode;
+	scene::IShadowVolumeSceneNode* m_shadownode;
 	v3f m_position;
 	v3f m_velocity;
 	v3f m_acceleration;

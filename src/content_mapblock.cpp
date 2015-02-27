@@ -1143,7 +1143,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			for(u32 j=0; j<6; j++)
 			{
 				// Check this neighbor
-				v3s16 n2p = blockpos_nodes + p + g_6dirs[j];
+				v3s16 dir = g_6dirs[j];
+				v3s16 n2p = blockpos_nodes + p + dir;
 				MapNode n2 = data->m_vmanip.getNodeNoEx(n2p);
 				// Don't make face if neighbor is of same type
 				if(n2.getContent() == n.getContent())
@@ -1151,10 +1152,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 				// The face at Z+
 				video::S3DVertex vertices[4] = {
-					video::S3DVertex(-BS/2,-BS/2,BS/2, 0,0,0, c, 1,1),
-					video::S3DVertex(BS/2,-BS/2,BS/2, 0,0,0, c, 0,1),
-					video::S3DVertex(BS/2,BS/2,BS/2, 0,0,0, c, 0,0),
-					video::S3DVertex(-BS/2,BS/2,BS/2, 0,0,0, c, 1,0),
+					video::S3DVertex(-BS/2,-BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 1,1),
+					video::S3DVertex(BS/2,-BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 0,1),
+					video::S3DVertex(BS/2,BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 0,0),
+					video::S3DVertex(-BS/2,BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 1,0),
 				};
 				
 				// Rotations in the g_6dirs format
@@ -1578,15 +1579,16 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			u16 l = getInteriorLight(n, 1, nodedef);
 			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 			
-			float s = BS / 2;
-			for(u32 j = 0; j < 2; j++)
+			float s = BS / 2 * f.visual_scale;
+
+			for (int j = 0; j < 2; j++)
 			{
 				video::S3DVertex vertices[4] =
 				{
-					video::S3DVertex(-s,-s, 0, 0,0,0, c, 0,1),
-					video::S3DVertex( s,-s, 0, 0,0,0, c, 1,1),
-					video::S3DVertex( s, s, 0, 0,0,0, c, 1,0),
-					video::S3DVertex(-s, s, 0, 0,0,0, c, 0,0),
+					video::S3DVertex(-s,-BS/2, 0, 0,0,0, c, 0,1),
+					video::S3DVertex( s,-BS/2, 0, 0,0,0, c, 1,1),
+					video::S3DVertex( s,-BS/2 + s*2,0, 0,0,0, c, 1,0),
+					video::S3DVertex(-s,-BS/2 + s*2,0, 0,0,0, c, 0,0),
 				};
 
 				if(j == 0)
@@ -1600,10 +1602,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 						vertices[i].Pos.rotateXZBy(-44 + n.param2 * 2);
 				}
 
-				for(u16 i = 0; i < 4; i++)
+				for (int i = 0; i < 4; i++)
 				{
 					vertices[i].Pos *= f.visual_scale;
-					vertices[i].Pos.Y -= s * (1 - f.visual_scale);
+					vertices[i].Pos.Y += BS/2 * (f.visual_scale - 1);
 					vertices[i].Pos += intToFloat(p, BS);
 				}
 

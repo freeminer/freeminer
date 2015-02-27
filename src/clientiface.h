@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 
+#include "msgpack.h"
+
 class MapBlock;
 class ServerEnvironment;
 class EmergeManager;
@@ -203,24 +205,24 @@ public:
 	// The serialization version to use with the client
 	u8 serialization_version;
 	//
-	u16 net_proto_version;
+	std::atomic_ushort net_proto_version;
 
-	s16 m_nearest_unsent_nearest;
+	std::atomic_int m_nearest_unsent_reset;
 	s16 wanted_range;
-	
+	s16 range_all;
+	s16 farmesh;
+	float fov;
+	bool block_overflow;
+
 	ServerEnvironment *m_env;
 
 	RemoteClient(ServerEnvironment *env):
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
-		net_proto_version(0),
-		m_nearest_unsent_nearest(0),
-		wanted_range(9 * MAP_BLOCKSIZE),
 		m_env(env),
 		m_time_from_building(9999),
 		m_pending_serialization_version(SER_FMT_VER_INVALID),
 		m_state(CS_Created),
-		m_nearest_unsent_d(0),
 		m_nearest_unsent_reset_timer(0.0),
 		m_nothing_to_send_pause_timer(0.0),
 		m_name(""),
@@ -230,6 +232,15 @@ public:
 		m_full_version("unknown"),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
+		net_proto_version = 0;
+		m_nearest_unsent_d = 0;
+		m_nearest_unsent_reset = 0;
+
+		wanted_range = 9 * MAP_BLOCKSIZE;
+		range_all =0;
+		farmesh = 0;
+		fov = 72; // g_settings->getFloat("fov");
+		block_overflow = 0;
 	}
 	~RemoteClient()
 	{
@@ -340,10 +351,11 @@ private:
 	shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
 public:
-	s16 m_nearest_unsent_d;
+	std::atomic_int m_nearest_unsent_d;
 private:
 
 	v3s16 m_last_center;
+	v3f   m_last_direction;
 	float m_nearest_unsent_reset_timer;
 
 	// CPU usage optimization
@@ -389,8 +401,12 @@ public:
 	/* send message to client */
 	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 
+	/* send message to client */
+	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
+
 	/* send to all clients */
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
+	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
 
 	/* delete a client */
 	void DeleteClient(u16 peer_id);

@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include "itemgroup.h"
 #include "sound.h"
+#include "msgpack.h"
 class IGameDef;
 struct ToolCapabilities;
 
@@ -43,6 +44,24 @@ enum ItemType
 	ITEM_NODE,
 	ITEM_CRAFT,
 	ITEM_TOOL,
+};
+
+enum {
+	ITEMDEF_TYPE,
+	ITEMDEF_NAME,
+	ITEMDEF_DESCRIPTION,
+	ITEMDEF_INVENTORY_IMAGE,
+	ITEMDEF_WIELD_IMAGE,
+	ITEMDEF_WIELD_SCALE,
+	ITEMDEF_STACK_MAX,
+	ITEMDEF_USABLE,
+	ITEMDEF_LIQUIDS_POINTABLE,
+	ITEMDEF_TOOL_CAPABILITIES,
+	ITEMDEF_GROUPS,
+	ITEMDEF_NODE_PLACEMENT_PREDICTION,
+	ITEMDEF_SOUND_PLACE_NAME,
+	ITEMDEF_SOUND_PLACE_GAIN,
+	ITEMDEF_RANGE
 };
 
 struct ItemDefinition
@@ -86,8 +105,9 @@ struct ItemDefinition
 	ItemDefinition& operator=(const ItemDefinition &def);
 	~ItemDefinition();
 	void reset();
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 private:
 	void resetInitial();
 };
@@ -115,7 +135,8 @@ public:
 		IGameDef *gamedef) const=0;
 #endif
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
 };
 
 class IWritableItemDefManager : public IItemDefManager
@@ -151,9 +172,6 @@ public:
 	// Alias will be removed if <name> is defined at a later point of time.
 	virtual void registerAlias(const std::string &name,
 			const std::string &convert_to)=0;
-
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
-	virtual void deSerialize(std::istream &is)=0;
 
 	// Do stuff asked by threads that can only be done in the main thread
 	virtual void processQueue(IGameDef *gamedef)=0;

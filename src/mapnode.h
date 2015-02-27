@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <list>
+#include "msgpack.h"
 
 class INodeDefManager;
 
@@ -58,25 +59,25 @@ typedef u16 content_t;
 	(instead of expanding the vector of node definitions each time
 	such a node is received).
 */
-#define CONTENT_UNKNOWN 125
+#define CONTENT_UNKNOWN 2
 
 /*
 	The common material through which the player can walk and which
 	is transparent to light
 */
-#define CONTENT_AIR 126
+#define CONTENT_AIR 1
 
 /*
 	Ignored node.
-	
+
 	Unloaded chunks are considered to consist of this. Several other
 	methods return this when an error occurs. Also, during
 	map generation this means the node has not been set yet.
-	
+
 	Doesn't create faces with anything and is considered being
 	out-of-map in the game map.
 */
-#define CONTENT_IGNORE 127
+#define CONTENT_IGNORE 0
 
 enum LightBank
 {
@@ -138,25 +139,29 @@ struct MapNode
 		- Uhh... well, most blocks have light or nothing in here.
 	*/
 	u8 param1;
-	
+
 	/*
 		The second parameter. Initialized to 0.
 		E.g. direction for torches and flowing water.
 	*/
 	u8 param2;
 
+	/*
+	MapNode()
+	{ }
+	*/
+
 	MapNode(const MapNode & n)
 	{
 		*this = n;
 	}
-	
-	MapNode(content_t content=CONTENT_AIR, u8 a_param1=0, u8 a_param2=0)
-	{
-		param0 = content;
-		param1 = a_param1;
-		param2 = a_param2;
-	}
-	
+
+	MapNode(content_t content = CONTENT_AIR, u8 a_param1=0, u8 a_param2=0)
+		: param0(content),
+		  param1(a_param1),
+		  param2(a_param2)
+	{ }
+
 	// Create directly from a nodename
 	// If name is unknown, sets CONTENT_IGNORE
 	MapNode(INodeDefManager *ndef, const std::string &name,
@@ -168,7 +173,7 @@ struct MapNode
 				&& param1 == other.param1
 				&& param2 == other.param2);
 	}
-	
+
 	// To be used everywhere
 	content_t getContent() const
 	{
@@ -194,7 +199,7 @@ struct MapNode
 	{
 		param2 = p;
 	}
-	
+
 	void setLight(enum LightBank bank, u8 a_light, INodeDefManager *nodemgr);
 	u8 getLight(enum LightBank bank, INodeDefManager *nodemgr) const;
 
@@ -213,10 +218,10 @@ struct MapNode
 	 * @pre f != NULL
 	 * @pre f->param_type == CPT_LIGHT
 	 */
-	u8 getLightNoChecks(LightBank bank, const ContentFeatures *f);
+	u8 getLightNoChecks(LightBank bank, const ContentFeatures *f) const;
 
 	bool getLightBanks(u8 &lightday, u8 &lightnight, INodeDefManager *nodemgr) const;
-	
+
 	// 0 <= daylight_factor <= 1000
 	// 0 <= return value <= LIGHT_SUN
 	u8 getLightBlend(u32 daylight_factor, INodeDefManager *nodemgr) const
@@ -227,20 +232,10 @@ struct MapNode
 		return blend_light(daylight_factor, lightday, lightnight);
 	}
 
-	// 0.0 <= daylight_factor <= 1.0
-	// 0 <= return value <= LIGHT_SUN
-	u8 getLightBlendF1(float daylight_factor, INodeDefManager *nodemgr) const
-	{
-		u8 lightday = 0;
-		u8 lightnight = 0;
-		getLightBanks(lightday, lightnight, nodemgr);
-		return blend_light_f1(daylight_factor, lightday, lightnight);
-	}
-
 	u8 getFaceDir(INodeDefManager *nodemgr) const;
 	u8 getWallMounted(INodeDefManager *nodemgr) const;
 	v3s16 getWallMountedDir(INodeDefManager *nodemgr) const;
-	
+
 	void rotateAlongYAxis(INodeDefManager *nodemgr, Rotation rot);
 
 	/*
@@ -258,14 +253,16 @@ struct MapNode
 	*/
 	std::vector<aabb3f> getCollisionBoxes(INodeDefManager *nodemgr) const;
 
-	/* Liquid helpers */
+	/*
+		Liquid helpers
+	*/
 	u8 getMaxLevel(INodeDefManager *nodemgr, bool compress = 0) const;
 	u8 getLevel(INodeDefManager *nodemgr) const;
 	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1, bool compress = 0);
 	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
 	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
-	bool operator!() { return param0 == CONTENT_IGNORE; };
+	operator bool() const { return param0; }
 
 	/*
 		Serialization functions
@@ -274,7 +271,7 @@ struct MapNode
 	static u32 serializedLength(u8 version);
 	void serialize(u8 *dest, u8 version);
 	void deSerialize(u8 *source, u8 version);
-	
+
 	// Serializes or deserializes a list of nodes in bulk format (first the
 	// content of all nodes, then the param1 of all nodes, then the param2
 	// of all nodes).
@@ -288,6 +285,9 @@ struct MapNode
 	static void deSerializeBulk(std::istream &is, int version,
 			MapNode *nodes, u32 nodecount,
 			u8 content_width, u8 params_width, bool compressed);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 private:
 	// Deprecated serialization methods

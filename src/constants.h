@@ -94,18 +94,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Maximum hit points of a player
 #define PLAYER_MAX_HP 20
 
-// compatibility with OLD minetest 0.4.9: // TODO: REMOVE ON NEXT !!!
-/*
-	Environmental condition constants
-*/
-#define HEAT_UNDEFINED     (-0x7fff-1)
-#define HUMIDITY_UNDEFINED (-0x7fff-1)
+#define PLAYER_FALL_TOLERANCE_SPEED (BS*14)
+
+// Maximal breath of a player
+#define PLAYER_MAX_BREATH 11
 
 /*
- *    GUI related things
- */
-#define LEGACY_SCALING                                     (2./3.)
-#define TTF_DEFAULT_FONT_SIZE              (12.0 / LEGACY_SCALING)
-#define DEFAULT_FONT_SIZE                                     (14)
+    GUI related things
+*/
+
+// TODO: implement dpi-based scaling for windows and remove this hack
+#if defined(_WIN32)
+	#define TTF_DEFAULT_FONT_SIZE   (18)
+#else
+	#define TTF_DEFAULT_FONT_SIZE	(15)
+#endif
+#define DEFAULT_FONT_SIZE       (10)
 
 #endif

@@ -83,13 +83,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fontengine.h"
 
 #include "database-sqlite3.h"
-#ifdef USE_LEVELDB
 #include "database-leveldb.h"
-#endif
-
-#if USE_REDIS
 #include "database-redis.h"
-#endif
+
+#include "enet/enet.h"
 
 #ifdef HAVE_TOUCHSCREENGUI
 #include "touchscreengui.h"
@@ -687,7 +684,6 @@ public:
 	ClientLauncher() :
 		list_video_modes(false),
 		skip_main_menu(false),
-		use_freetype(false),
 		random_input(false),
 		address(""),
 		playername(""),
@@ -712,7 +708,7 @@ protected:
 	void init_args(GameParams &game_params, const Settings &cmd_args);
 	bool init_engine(int log_level);
 
-	bool launch_game(std::wstring *error_message, GameParams &game_params,
+	bool launch_game(std::string *error_message, GameParams &game_params,
 			const Settings &cmd_args);
 
 	void main_menu(MainMenuData *menudata);
@@ -720,7 +716,6 @@ protected:
 
 	bool list_video_modes;
 	bool skip_main_menu;
-	bool use_freetype;
 	bool random_input;
 	std::string address;
 	std::string playername;
@@ -751,7 +746,15 @@ static OptionList allowed_options;
 
 int main(int argc, char *argv[])
 {
-	int retval;
+	int retval = 0;
+
+	if (enet_initialize() != 0) {
+		std::cerr << "enet failed to initialize\n";
+		return EXIT_FAILURE;
+	}
+	atexit(enet_deinitialize);
+
+	debug_set_exception_handler();
 
 	log_add_output_maxlev(&main_stderr_log_out, LMT_ACTION);
 	log_add_output_all_levs(&main_dstream_no_stderr_log_out);
@@ -778,8 +781,8 @@ int main(int argc, char *argv[])
 	porting::initializePaths();
 
 	if (!create_userdata_path()) {
-		errorstream << "Cannot create user data directory" << std::endl;
-		return 1;
+		errorstream << "Cannot create user data directory "<< porting::path_user << std::endl;
+		//return 1;
 	}
 
 	// Initialize debug stacks
@@ -1112,7 +1115,6 @@ static void startup_message()
 static bool read_config_file(const Settings &cmd_args)
 {
 	// Path of configuration file in use
-	assert(g_settings_path == "");	// Sanity check
 
 	if (cmd_args.exists("config")) {
 		bool r = g_settings->readConfigFile(cmd_args.get("config").c_str());
@@ -1124,29 +1126,35 @@ static bool read_config_file(const Settings &cmd_args)
 		g_settings_path = cmd_args.get("config");
 	} else {
 		std::vector<std::string> filenames;
-		filenames.push_back(porting::path_user + DIR_DELIM + "freeminer.conf");
+		filenames.push_back(porting::path_user + DIR_DELIM + "freeminer");
 		// Legacy configuration file location
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
+				DIR_DELIM + ".." + DIR_DELIM + "freeminer");
 
 #if RUN_IN_PLACE
 		// Try also from a lower level (to aid having the same configuration
 		// for many RUN_IN_PLACE installs)
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer.conf");
+				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer");
 #endif
 
 		for (size_t i = 0; i < filenames.size(); i++) {
-			bool r = g_settings->readConfigFile(filenames[i].c_str());
+
+			if (g_settings->readJsonFile(filenames[i] + ".json")) {
+				g_settings_path = filenames[i] + ".json";
+				break;
+			}
+
+			bool r = g_settings->readConfigFile((filenames[i] + ".conf").c_str());
 			if (r) {
-				g_settings_path = filenames[i];
+				g_settings_path = filenames[i] + ".conf";
 				break;
 			}
 		}
 
 		// If no path found, use the first one (menu creates the file)
 		if (g_settings_path == "")
-			g_settings_path = filenames[0];
+			g_settings_path = filenames[0] + ".conf";
 	}
 
 	return true;
@@ -1485,7 +1493,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	}
 
 	std::string backend = world_mt.get("backend");
-	Database *new_db;
+	Database *new_db = nullptr;
 	std::string migrate_to = cmd_args.get("migrate");
 
 	if (backend == migrate_to) {
@@ -1494,9 +1502,13 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
-	if (migrate_to == "sqlite3")
+	if (migrate_to == " __magic word ")
+		{ }
+#if USE_SQLITE3
+	else if (migrate_to == "sqlite3")
 		new_db = new Database_SQLite3(&(ServerMap&)server->getMap(),
 				game_params.world_path);
+#endif
 #if USE_LEVELDB
 	else if (migrate_to == "leveldb")
 		new_db = new Database_LevelDB(&(ServerMap&)server->getMap(),
@@ -1507,7 +1519,7 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		new_db = new Database_Redis(&(ServerMap&)server->getMap(),
 				game_params.world_path);
 #endif
-	else {
+	if (!new_db) {
 		errorstream << "Migration to " << migrate_to << " is not supported"
 		            << std::endl;
 		return false;
@@ -1566,6 +1578,7 @@ ClientLauncher::~ClientLauncher()
 		device->drop();
 }
 
+
 bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 {
 	init_args(game_params, cmd_args);
@@ -1586,17 +1599,19 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		return true;
 	}
 
-	if (device->getVideoDriver() == NULL) {
+	video::IVideoDriver *video_driver = device->getVideoDriver();
+	if (video_driver == NULL) {
 		errorstream << "Could not initialize video driver." << std::endl;
 		return false;
 	}
 
-	auto driver = device->getVideoDriver();
+	porting::setXorgClassHint(video_driver->getExposedVideoData(), "freeminer");
+
 	/*
 		This changes the minimum allowed number of vertices in a VBO.
 		Default is 500.
 	*/
-	driver->setMinHardwareBufferVertexCount(50);
+	video_driver->setMinHardwareBufferVertexCount(50);
 
 	// Create time getter
 	g_timegetter = new IrrlichtTimeGetter(device);
@@ -1652,7 +1667,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 
 	// If an error occurs, this is set to something by menu().
 	// It is then displayed before	the menu shows on the next call to menu()
-	std::wstring error_message = L"";
+	std::string error_message = "";
 
 	bool first_loop = true;
 
@@ -1665,9 +1680,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	while (device->run() && !*kill && !g_gamecallback->shutdown_requested)
 	{
 		// Set the window caption
-		wchar_t *text = wgettext("Main Menu");
+		std::wstring text = wstrgettext("Main Menu");
 		device->setWindowCaption((std::wstring(L"Freeminer [") + text + L"]").c_str());
-		delete[] text;
 
 		try {	// This is used for catching disconnects
 
@@ -1703,12 +1717,14 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 				break;
 			}
 
+/*
 			if (current_playername.length() > PLAYERNAME_SIZE-1) {
 				error_message = wgettext("Player name too long.");
 				playername = current_playername.substr(0, PLAYERNAME_SIZE-1);
 				g_settings->set("name", playername);
 				continue;
 			}
+*/
 
 			device->getVideoDriver()->setTextureCreationFlag(
 					video::ETCF_CREATE_MIP_MAPS, g_settings->getBool("mip_map"));
@@ -1750,8 +1766,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 
 		} //try
 		catch (con::PeerNotFoundException &e) {
-			error_message = wgettext("Connection error (timed out?)");
-			errorstream << wide_to_narrow(error_message) << std::endl;
+			error_message = _("Connection error (timed out?)");
+			errorstream << error_message << std::endl;
 		}
 
 #ifdef NDEBUG
@@ -1760,15 +1776,15 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			narrow_message += e.what();
 			narrow_message += "\"";
 			errorstream << narrow_message << std::endl;
-			error_message = narrow_to_wide(narrow_message);
+			error_message = narrow_message;
 		}
 #endif
 
 		// If no main menu, show error and exit
-		if (skip_main_menu) {
-			if (error_message != L"") {
+		if(skip_main_menu) {
+			if(error_message != ""){
 				verbosestream << "error_message = "
-				              << wide_to_narrow(error_message) << std::endl;
+				              << error_message << std::endl;
 				retval = false;
 			}
 			break;
@@ -1777,6 +1793,16 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 
 	g_menuclouds->drop();
 	g_menucloudsmgr->drop();
+
+#ifdef _IRR_COMPILE_WITH_LEAK_HUNTER_
+	auto objects = LeakHunter::getReferenceCountedObjects();
+	infostream<<"irrlicht leaked objects="<<objects.size()<<std::endl;
+	for (unsigned int i = 0; i < objects.size(); ++i) {
+		if (!objects[i])
+			continue;
+		infostream<<i<<":" <<objects[i]<< " cnt="<<objects[i]->getReferenceCount()<<" desc="<<(objects[i]->getDebugName() ? objects[i]->getDebugName() : "")<<std::endl;
+	}
+#endif
 
 	return retval;
 }
@@ -1804,8 +1830,6 @@ void ClientLauncher::init_args(GameParams &game_params, const Settings &cmd_args
 
 	list_video_modes = cmd_args.getFlag("videomodes");
 
-	use_freetype = g_settings->getBool("freetype");
-
 	random_input = g_settings->getBool("random_input")
 			|| cmd_args.getFlag("random-input");
 
@@ -1821,7 +1845,7 @@ bool ClientLauncher::init_engine(int log_level)
 	return device != NULL;
 }
 
-bool ClientLauncher::launch_game(std::wstring *error_message,
+bool ClientLauncher::launch_game(std::string *error_message,
 		GameParams &game_params, const Settings &cmd_args)
 {
 	// Initialize menu data
@@ -1829,9 +1853,9 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 	menudata.address      = address;
 	menudata.name         = playername;
 	menudata.port         = itos(game_params.socket_port);
-	menudata.errormessage = wide_to_narrow(*error_message);
+	menudata.errormessage = (*error_message);
 
-	*error_message = L"";
+	*error_message = "";
 
 	if (cmd_args.exists("password"))
 		menudata.password = cmd_args.get("password");
@@ -1855,6 +1879,10 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 	if (!skip_main_menu) {
 		main_menu(&menudata);
 
+		// Skip further loading if there was an exit signal.
+		if (*porting::signal_handler_killstatus())
+			return false;
+
 		address = menudata.address;
 		int newport = stoi(menudata.port);
 		if (newport != 0)
@@ -1863,7 +1891,6 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 		simple_singleplayer_mode = menudata.simple_singleplayer_mode;
 
 		std::vector<WorldSpec> worldspecs = getAvailableWorlds();
-		worldspecs = getAvailableWorlds();
 
 		if (menudata.selected_world >= 0
 				&& menudata.selected_world < (int)worldspecs.size()) {
@@ -1877,16 +1904,15 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 		/* The calling function will pass this back into this function upon the
 		 * next iteration (if any) causing it to be displayed by the GUI
 		 */
-		*error_message = narrow_to_wide(menudata.errormessage);
+		*error_message = (menudata.errormessage);
 		return false;
 	}
 
 	if (menudata.name == "")
-		menudata.name = std::string("Guest") + itos(myrand_range(1000, 9999));
-	else
-		playername = menudata.name;
+		menudata.name = std::string("Guest") + itos(myrand_range(10000, 30000));
+	playername = menudata.name;
 
-	password = translatePassword(playername, narrow_to_wide(menudata.password));
+	password = translatePassword(playername, (menudata.password));
 
 	g_settings->set("name", playername);
 
@@ -1919,25 +1945,25 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 
 	if (current_address == "") { // If local game
 		if (worldspec.path == "") {
-			*error_message = wgettext("No world selected and no address "
+			*error_message = _("No world selected and no address "
 					"provided. Nothing to do.");
-			errorstream << wide_to_narrow(*error_message) << std::endl;
+			errorstream << (*error_message) << std::endl;
 			return false;
 		}
 
 		if (!fs::PathExists(worldspec.path)) {
-			*error_message = wgettext("Provided world path doesn't exist: ")
-					+ narrow_to_wide(worldspec.path);
-			errorstream << wide_to_narrow(*error_message) << std::endl;
+			*error_message = _("Provided world path doesn't exist: ")
+					+ (worldspec.path);
+			errorstream << (*error_message) << std::endl;
 			return false;
 		}
 
 		// Load gamespec for required game
 		gamespec = findWorldSubgame(worldspec.path);
 		if (!gamespec.isValid() && !game_params.game_spec.isValid()) {
-			*error_message = wgettext("Could not find or load game \"")
-					+ narrow_to_wide(worldspec.gameid) + L"\"";
-			errorstream << wide_to_narrow(*error_message) << std::endl;
+			*error_message = _("Could not find or load game \"")
+					+ (worldspec.gameid) + "\"";
+			errorstream << (*error_message) << std::endl;
 			return false;
 		}
 
@@ -1953,10 +1979,10 @@ bool ClientLauncher::launch_game(std::wstring *error_message,
 		}
 
 		if (!gamespec.isValid()) {
-			*error_message = wgettext("Invalid gamespec.");
-			*error_message += L" (world_gameid="
-					+ narrow_to_wide(worldspec.gameid) + L")";
-			errorstream << wide_to_narrow(*error_message) << std::endl;
+			*error_message = _("Invalid gamespec.");
+			*error_message += " (world_gameid="
+					+ (worldspec.gameid) + ")";
+			errorstream << *error_message << std::endl;
 			return false;
 		}
 	}
@@ -1994,22 +2020,6 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 
 bool ClientLauncher::create_engine_device(int log_level)
 {
-	static const char *driverids[] = {
-		"null",
-		"software",
-		"burningsvideo",
-		"direct3d8",
-		"direct3d9",
-		"opengl"
-#ifdef _IRR_COMPILE_WITH_OGLES1_
-		,"ogles1"
-#endif
-#ifdef _IRR_COMPILE_WITH_OGLES2_
-		,"ogles2"
-#endif
-		,"invalid"
-	};
-
 	static const irr::ELOG_LEVEL irr_log_level[5] = {
 		ELL_NONE,
 		ELL_ERROR,
@@ -2034,19 +2044,20 @@ bool ClientLauncher::create_engine_device(int log_level)
 
 	// Determine driver
 	video::E_DRIVER_TYPE driverType = video::EDT_OPENGL;
-
 	std::string driverstring = g_settings->get("video_driver");
-	for (size_t i = 0; i < sizeof driverids / sizeof driverids[0]; i++) {
-		if (strcasecmp(driverstring.c_str(), driverids[i]) == 0) {
-			driverType = (video::E_DRIVER_TYPE) i;
+	std::vector<video::E_DRIVER_TYPE> drivers
+		= porting::getSupportedVideoDrivers();
+	u32 i;
+	for (i = 0; i != drivers.size(); i++) {
+		if (!strcasecmp(driverstring.c_str(),
+			porting::getVideoDriverName(drivers[i]))) {
+			driverType = drivers[i];
 			break;
 		}
-
-		if (strcasecmp("invalid", driverids[i]) == 0) {
-			errorstream << "WARNING: Invalid video_driver specified;"
-			            << " defaulting to opengl" << std::endl;
-			break;
-		}
+	}
+	if (i == drivers.size()) {
+		errorstream << "Invalid video_driver specified; "
+			"defaulting to opengl" << std::endl;
 	}
 
 	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();

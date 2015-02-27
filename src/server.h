@@ -219,7 +219,7 @@ public:
 	void setInventoryModified(const InventoryLocation &loc);
 
 	// Connection must be locked when called
-	std::wstring getStatusString();
+	std::string getStatusString();
 
 	// read shutdown state
 	inline bool getShutdownRequested()
@@ -244,8 +244,9 @@ public:
 	void unsetIpBanned(const std::string &ip_or_name);
 	std::string getBanDescription(const std::string &ip_or_name);
 
-	void notifyPlayer(const char *name, const std::wstring &msg);
-	void notifyPlayers(const std::wstring &msg);
+	// Envlock and conlock should be locked when calling this
+	void notifyPlayer(const char *name, const std::string &msg);
+	void notifyPlayers(const std::string &msg);
 	void spawnParticle(const char *playername,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
@@ -322,7 +323,7 @@ public:
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
 	Map & getMap() { return m_env->getMap(); }
 	ServerEnvironment & getEnv() { return *m_env; }
-	
+
 	u32 hudAdd(Player *player, HudElement *element);
 	bool hudRemove(Player *player, u32 id);
 	bool hudChange(Player *player, u32 id, HudElementStat stat, void *value);
@@ -339,19 +340,25 @@ public:
 
 	bool setSky(Player *player, const video::SColor &bgcolor,
 			const std::string &type, const std::vector<std::string> &params);
-	
+
 	bool overrideDayNightRatio(Player *player, bool do_override,
 			float brightness);
 
-	/* con::PeerHandler implementation. */
-	void peerAdded(con::Peer *peer);
-	void deletingPeer(con::Peer *peer, bool timeout);
+	// con::PeerHandler implementation.
+	// These queue stuff to be processed by handlePeerChanges().
+	// As of now, these create and remove clients and players.
+	void peerAdded(u16 peer_id);
+	void deletingPeer(u16 peer_id, bool timeout);
 
 	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	void DenyAccess(u16 peer_id, const std::string &reason);
 	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
 	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
 			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
 			std::string* vers_string);
+
+	// Bind address
+	Address m_bind_addr;
 
 private:
 
@@ -361,7 +368,7 @@ private:
 	void SendMovement(u16 peer_id);
 	void SendHP(u16 peer_id, u8 hp);
 	void SendBreath(u16 peer_id, u16 breath);
-	void SendAccessDenied(u16 peer_id,const std::wstring &reason);
+	void SendAccessDenied(u16 peer_id,const std::string &reason);
 	void SendDeathscreen(u16 peer_id,bool set_camera_point_target, v3f camera_point_target);
 	void SendItemDef(u16 peer_id,IItemDefManager *itemdef, u16 protocol_version);
 	void SendNodeDef(u16 peer_id,INodeDefManager *nodedef, u16 protocol_version);
@@ -371,7 +378,8 @@ private:
 
 	// Envlock and conlock should be locked when calling these
 	void SendInventory(u16 peer_id);
-	void SendChatMessage(u16 peer_id, const std::wstring &message);
+	void SendChatMessage(u16 peer_id, const std::string &message);
+
 	void SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed);
 	void SendPlayerHP(u16 peer_id);
 	void SendPlayerBreath(u16 peer_id);
@@ -442,6 +450,12 @@ private:
 
 	void DiePlayer(u16 peer_id);
 	void RespawnPlayer(u16 peer_id);
+
+	enum ClientDeletionReason {
+		CDR_LEAVE,
+		CDR_TIMEOUT,
+		CDR_DENY
+	};
 	void DeleteClient(u16 peer_id, ClientDeletionReason reason);
 	void UpdateCrafting(u16 peer_id);
 
@@ -514,8 +528,6 @@ private:
 	// Scripting
 	// Envlock and conlock should be locked when using Lua
 	GameScripting *m_script;
-	
-	Circuit* m_circuit;
 public:
 	Stat stat;
 private:

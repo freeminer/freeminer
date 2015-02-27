@@ -41,14 +41,55 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 
 
+#include "msgpack.h"
+
+enum {
+	CONTENTFEATURES_NAME,
+	CONTENTFEATURES_GROUPS,
+	CONTENTFEATURES_DRAWTYPE,
+	CONTENTFEATURES_VISUAL_SCALE,
+	CONTENTFEATURES_TILEDEF,
+	CONTENTFEATURES_TILEDEF_SPECIAL,
+	CONTENTFEATURES_ALPHA,
+	CONTENTFEATURES_POST_EFFECT_COLOR,
+	CONTENTFEATURES_PARAM_TYPE,
+	CONTENTFEATURES_PARAM_TYPE_2,
+	CONTENTFEATURES_IS_GROUND_CONTENT,
+	CONTENTFEATURES_LIGHT_PROPAGATES,
+	CONTENTFEATURES_SUNLIGHT_PROPAGATES,
+	CONTENTFEATURES_WALKABLE,
+	CONTENTFEATURES_POINTABLE,
+	CONTENTFEATURES_DIGGABLE,
+	CONTENTFEATURES_CLIMBABLE,
+	CONTENTFEATURES_BUILDABLE_TO,
+	CONTENTFEATURES_LIQUID_TYPE,
+	CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING,
+	CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE,
+	CONTENTFEATURES_LIQUID_VISCOSITY,
+	CONTENTFEATURES_LIQUID_RENEWABLE,
+	CONTENTFEATURES_LIGHT_SOURCE,
+	CONTENTFEATURES_DAMAGE_PER_SECOND,
+	CONTENTFEATURES_NODE_BOX,
+	CONTENTFEATURES_SELECTION_BOX,
+	CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE,
+	CONTENTFEATURES_LEGACY_WALLMOUNTED,
+	CONTENTFEATURES_SOUND_FOOTSTEP,
+	CONTENTFEATURES_SOUND_DIG,
+	CONTENTFEATURES_SOUND_DUG,
+	CONTENTFEATURES_RIGHTCLICKABLE,
+	CONTENTFEATURES_DROWNING,
+	CONTENTFEATURES_LEVELED,
+	CONTENTFEATURES_WAVING,
+	CONTENTFEATURES_MESH,
+	CONTENTFEATURES_COLLISION_BOX
+};
+
 class IItemDefManager;
 class ITextureSource;
 class IShaderSource;
 class IGameDef;
 
 typedef std::list<std::pair<content_t, int> > GroupItems;
-typedef std::list<std::pair<std::string, std::vector<content_t> *> >
-	ContentVectorResolveList;
 
 enum ContentParamType
 {
@@ -86,6 +127,15 @@ enum NodeBoxType
 	NODEBOX_LEVELED, // Same as fixed, but with dynamic height from param2. for snow, ...
 };
 
+// _S_ is serialized, added to make sure collisions with NodeBoxType never happen
+enum {
+	NODEBOX_S_TYPE,
+	NODEBOX_S_FIXED,
+	NODEBOX_S_WALL_TOP,
+	NODEBOX_S_WALL_BOTTOM,
+	NODEBOX_S_WALL_SIDE
+};
+
 struct NodeBox
 {
 	enum NodeBoxType type;
@@ -101,8 +151,8 @@ struct NodeBox
 	{ reset(); }
 
 	void reset();
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 struct MapNode;
@@ -111,6 +161,14 @@ class NodeMetadata;
 /*
 	Stand-alone definition of a TileSpec (basically a server-side TileSpec)
 */
+enum {
+	TILEDEF_NAME,
+	TILEDEF_ANIMATION_TYPE,
+	TILEDEF_ANIMATION_ASPECT_W,
+	TILEDEF_ANIMATION_ASPECT_H,
+	TILEDEF_ANIMATION_LENGTH,
+	TILEDEF_BACKFACE_CULLING
+};
 enum TileAnimationType{
 	TAT_NONE=0,
 	TAT_VERTICAL_FRAMES=1,
@@ -136,8 +194,8 @@ struct TileDef
 		animation.length = 1.0;
 	}
 
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 enum NodeDrawType
@@ -252,6 +310,7 @@ struct ContentFeatures
 	std::string freeze;
 	std::string melt;
 	// Number of flowing liquids surrounding source
+	u8 liquid_range;
 	u8 drowning;
 	// Amount of light the node emits
 	u8 light_source;
@@ -286,10 +345,9 @@ struct ContentFeatures
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
-	void serialize(std::ostream &os, u16 protocol_version);
-	void deSerialize(std::istream &is);
-	void serializeOld(std::ostream &os, u16 protocol_version);
-	void deSerializeOld(std::istream &is, int version);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 
 	/*
 		Some handy methods
@@ -313,125 +371,38 @@ struct ContentFeatures
 
 };
 
-struct NodeResolveInfo {
-	std::string n_wanted;
-	std::string n_alt;
+class NodeResolver;
+class INodeDefManager;
+
+struct NodeListInfo {
+	NodeListInfo(u32 len)
+	{
+		length       = len;
+		all_required = false;
+		c_fallback   = CONTENT_IGNORE;
+	}
+
+	NodeListInfo(u32 len, content_t fallback)
+	{
+		length       = len;
+		all_required = true;
+		c_fallback   = fallback;
+	}
+
+	u32 length;
+	bool all_required;
 	content_t c_fallback;
-	content_t *output;
 };
 
-#define NR_STATUS_FAILURE 0
-#define NR_STATUS_PENDING 1
-#define NR_STATUS_SUCCESS 2
+struct NodeResolveInfo {
+	NodeResolveInfo(NodeResolver *nr)
+	{
+		resolver = nr;
+	}
 
-/**
-	NodeResolver
-
-	NodeResolver attempts to resolve node names to content ID integers. If the
-	node registration phase has not yet finished at the time the resolution
-	request is placed, the request is marked as pending and added to an internal
-	queue.  The name resolution request is later satisfied by writing directly
-	to the output location when the node registration phase has been completed.
-
-	This is primarily intended to be used for objects registered during script
-	initialization (i.e. while nodes are being registered) that reference
-	particular nodes.
-*/
-class NodeResolver {
-public:
-	NodeResolver(INodeDefManager *ndef);
-	~NodeResolver();
-
-	/**
-		Add a request to resolve the node n_wanted and set *content to the
-		result, or alternatively, n_alt if n_wanted is not found.  If n_alt
-		cannot be found either, or has not been specified, *content is set
-		to c_fallback.
-
-		If node registration is complete, the request is finished immediately
-		and NR_STATUS_SUCCESS is returned (or NR_STATUS_FAILURE if no node can
-		be found).  Otherwise, NR_STATUS_PENDING is returned and the resolution
-		request is queued.
-
-		N.B.  If the memory in which content is located has been deallocated
-		before the pending request had been satisfied, cancelNode() must be
-		called.
-
-		@param n_wanted Name of node that is wanted.
-		@param n_alt Name of node in case n_wanted could not be found.  Blank
-			if no alternative node is desired.
-		@param c_fallback Content ID that content is set to in case of node
-			resolution failure (should be CONTENT_AIR, CONTENT_IGNORE, etc.)
-		@param content Pointer to content_t that receives the result of the
-			node name resolution.
-		@return Status of node resolution request.
-	*/
-	int addNode(const std::string &n_wanted, const std::string &n_alt,
-		content_t c_fallback, content_t *content);
-
-	/**
-		Add a request to resolve the node(s) specified by nodename.
-
-		If node registration is complete, the request is finished immediately
-		and NR_STATUS_SUCCESS is returned if at least one node is resolved; if
-		zero were resolved, NR_STATUS_FAILURE.  Otherwise, NR_STATUS_PENDING is
-		returned and the resolution request is queued.
-
-		N.B.  If the memory in which content_vec is located has been deallocated
-		before the pending request had been satisfied, cancelNodeList() must be
-		called.
-
-		@param nodename Name of node (or node group) to be resolved.
-		@param content_vec Pointer to content_t vector onto which the results
-			are added.
-
-		@return Status of node resolution request.
-	*/
-	int addNodeList(const std::string &nodename,
-		std::vector<content_t> *content_vec);
-
-	/**
-		Removes all pending requests from the resolution queue with the output
-		address of 'content'.
-
-		@param content Location of the content ID for the request being
-			cancelled.
-		@return Number of pending requests cancelled.
-	*/
-	bool cancelNode(content_t *content);
-
-	/**
-		Removes all pending requests from the resolution queue with the output
-		address of 'content_vec'.
-
-		@param content_vec Location of the content ID vector for requests being
-			cancelled.
-		@return Number of pending requests cancelled.
-	*/
-	int cancelNodeList(std::vector<content_t> *content_vec);
-
-	/**
-		Carries out all pending node resolution requests.  Call this when the
-		node registration phase has completed.
-
-		Internally marks node registration as complete.
-
-		@return Number of failed pending requests.
-	*/
-	int resolveNodes();
-
-	/**
-		Returns the status of the node registration phase.
-
-		@return Boolean of whether the registration phase is complete.
-	*/
-	bool isNodeRegFinished() { return m_is_node_registration_complete; }
-
-private:
-	INodeDefManager *m_ndef;
-	bool m_is_node_registration_complete;
-	std::list<NodeResolveInfo *> m_pending_contents;
-	ContentVectorResolveList m_pending_content_vecs;
+	std::list<std::string> nodenames;
+	std::list<NodeListInfo> nodelistinfo;
+	NodeResolver *resolver;
 };
 
 class INodeDefManager
@@ -450,9 +421,20 @@ public:
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
 
-	virtual NodeResolver *getResolver()=0;
+	virtual bool getNodeRegistrationStatus() const=0;
+	virtual void setNodeRegistrationStatus(bool completed)=0;
+
+	virtual void pendNodeResolve(NodeResolveInfo *nri)=0;
+	virtual void cancelNodeResolve(NodeResolver *resolver)=0;
+	virtual void runNodeResolverCallbacks()=0;
+
+	virtual bool getIdFromResolveInfo(NodeResolveInfo *nri,
+		const std::string &node_alt, content_t c_fallback, content_t &result)=0;
+	virtual bool getIdsFromResolveInfo(NodeResolveInfo *nri,
+		std::vector<content_t> &result)=0;
 };
 
 class IWritableNodeDefManager : public INodeDefManager
@@ -491,13 +473,44 @@ public:
 	*/
 	virtual void updateTextures(IGameDef *gamedef)=0;
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
-	virtual void deSerialize(std::istream &is)=0;
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
 
-	virtual NodeResolver *getResolver()=0;
+	virtual bool getNodeRegistrationStatus() const=0;
+	virtual void setNodeRegistrationStatus(bool completed)=0;
+
+	virtual void pendNodeResolve(NodeResolveInfo *nri)=0;
+	virtual void cancelNodeResolve(NodeResolver *resolver)=0;
+	virtual void runNodeResolverCallbacks()=0;
+
+	virtual bool getIdFromResolveInfo(NodeResolveInfo *nri,
+		const std::string &node_alt, content_t c_fallback, content_t &result)=0;
+	virtual bool getIdsFromResolveInfo(NodeResolveInfo *nri,
+		std::vector<content_t> &result)=0;
 };
 
 IWritableNodeDefManager *createNodeDefManager();
+
+class NodeResolver {
+public:
+	NodeResolver()
+	{
+		m_lookup_done = false;
+		m_ndef = NULL;
+	}
+
+	virtual ~NodeResolver()
+	{
+		if (!m_lookup_done && m_ndef)
+			m_ndef->cancelNodeResolve(this);
+	}
+
+	virtual void resolveNodeNames(NodeResolveInfo *nri) = 0;
+
+	bool m_lookup_done;
+	INodeDefManager *m_ndef;
+};
+
 
 #endif
 

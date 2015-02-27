@@ -29,9 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include "object_properties.h"
 
-ServerActiveObject* createItemSAO(ServerEnvironment *env, v3f pos,
-                                  const std::string &itemstring);
-
 /*
 	LuaEntitySAO needs some internals exposed.
 */

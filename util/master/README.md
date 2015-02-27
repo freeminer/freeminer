@@ -1,4 +1,4 @@
-Minetest server list
+Freeminer server list
 ====================
 
 Setting up the webpage
@@ -25,7 +25,7 @@ Or with npm:
 
 And finally compile the template:
 
-    $ cd ~/minetest/util/master
+    $ cd ~/freeminer/util/master
     $ ~/code/doT/bin/dot-packer -s . -d .
 
 or
@@ -38,7 +38,7 @@ Embedding to any page
 
     <script>
         var master = {
-            root: 'http://servers.minetest.net/',
+            root: 'http://servers.freeminer.org/',
             limit: 10,
             clients_min: 1,
             no_flags: 1,
@@ -46,4 +46,4 @@ Embedding to any page
             no_uptime: 1
         };
     </script>
-    <script src="http://servers.minetest.net/list.js"></script>
+    <script src="http://servers.freeminer.org/list.js"></script>

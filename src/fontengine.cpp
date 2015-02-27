@@ -24,10 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "constants.h"
 #include "filesys.h"
 
-#if USE_FREETYPE
 #include "gettext.h"
 #include "xCGUITTFont.h"
-#endif
 
 /** maximum size distance for getting a "similar" font size */
 #define MAX_FONT_SIZE_OFFSET 10
@@ -36,7 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 FontEngine* g_fontengine = NULL;
 
 /** callback to be used on change of font size setting */
-static void font_setting_changed(const std::string) {
+static void font_setting_changed(const std::string, void *userdata) {
 	g_fontengine->readSettings();
 }
 
@@ -61,8 +59,6 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 
 	m_currentMode = FM_Simple;
 
-#if USE_FREETYPE
-	if (g_settings->getBool("freetype")) {
 		m_default_size[FM_Standard] = m_settings->getU16("font_size");
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
@@ -73,7 +69,6 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 		else {
 			m_currentMode = FM_Standard;
 		}
-	}
 
 	// having freetype but not using it is quite a strange case so we need to do
 	// special handling for it
@@ -83,7 +78,6 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 		m_settings->setDefault("font_size", fontsize.str());
 		m_settings->setDefault("mono_font_size", fontsize.str());
 	}
-#endif
 
 	m_default_size[FM_Simple]       = m_settings->getU16("font_size");
 	m_default_size[FM_SimpleMono]   = m_settings->getU16("mono_font_size");
@@ -91,22 +85,22 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 	updateSkin();
 
 	if (m_currentMode == FM_Standard) {
-		m_settings->registerChangedCallback("font_size", font_setting_changed);
-		m_settings->registerChangedCallback("font_path", font_setting_changed);
-		m_settings->registerChangedCallback("font_shadow", font_setting_changed);
-		m_settings->registerChangedCallback("font_shadow_alpha", font_setting_changed);
+		m_settings->registerChangedCallback("font_size", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_path", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_shadow", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_shadow_alpha", font_setting_changed, NULL);
 	}
 	else if (m_currentMode == FM_Fallback) {
-		m_settings->registerChangedCallback("fallback_font_size", font_setting_changed);
-		m_settings->registerChangedCallback("fallback_font_path", font_setting_changed);
-		m_settings->registerChangedCallback("fallback_font_shadow", font_setting_changed);
-		m_settings->registerChangedCallback("fallback_font_shadow_alpha", font_setting_changed);
+		m_settings->registerChangedCallback("fallback_font_size", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("fallback_font_path", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("fallback_font_shadow", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("fallback_font_shadow_alpha", font_setting_changed, NULL);
 	}
 
-	m_settings->registerChangedCallback("mono_font_path", font_setting_changed);
-	m_settings->registerChangedCallback("mono_font_size", font_setting_changed);
-	m_settings->registerChangedCallback("screen_dpi", font_setting_changed);
-	m_settings->registerChangedCallback("gui_scaling", font_setting_changed);
+	m_settings->registerChangedCallback("mono_font_path", font_setting_changed, NULL);
+	m_settings->registerChangedCallback("mono_font_size", font_setting_changed, NULL);
+	m_settings->registerChangedCallback("screen_dpi", font_setting_changed, NULL);
+	m_settings->registerChangedCallback("gui_scaling", font_setting_changed, NULL);
 }
 
 /******************************************************************************/
@@ -217,8 +211,6 @@ unsigned int FontEngine::getDefaultFontSize()
 /******************************************************************************/
 void FontEngine::readSettings()
 {
-#if USE_FREETYPE
-	if (g_settings->getBool("freetype")) {
 		m_default_size[FM_Standard] = m_settings->getU16("font_size");
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
@@ -229,8 +221,6 @@ void FontEngine::readSettings()
 		else {
 			m_currentMode = FM_Standard;
 		}
-	}
-#endif
 	m_default_size[FM_Simple]       = m_settings->getU16("font_size");
 	m_default_size[FM_SimpleMono]   = m_settings->getU16("mono_font_size");
 
@@ -314,11 +304,8 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 		initSimpleFont(basesize, mode);
 		return;
 	}
-#if USE_FREETYPE
+
 	else {
-		if (! is_yes(m_settings->get("freetype"))) {
-			return;
-		}
 		unsigned int size = floor(
 				porting::getDisplayDensity() *
 				m_settings->getFloat("gui_scaling") *
@@ -337,12 +324,6 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 
 		std::string font_path = g_settings->get(font_config_prefix + "font_path");
 
-		if (font_path.substr(font_path.length() -4) != ".ttf") {
-			errorstream << "FontEngine: \"" << font_path
-					<< "\" doesn't seem to be a ttf File." << std::endl;
-			return;
-		}
-
 		irr::gui::IGUIFont* font = gui::CGUITTFont::createTTFont(m_env,
 				font_path.c_str(), size, true, true, font_shadow,
 				font_shadow_alpha);
@@ -355,7 +336,6 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 					<< font_path << std::endl;
 		}
 	}
-#endif
 }
 
 /** initialize a font without freetype */
@@ -378,7 +358,7 @@ void FontEngine::initSimpleFont(unsigned int basesize, FontMode mode)
 		return;
 	}
 
-	if ((ending == ".xml") || ( ending == ".png")) {
+	if ((ending == ".xml") || (ending == ".png")) {
 		basename = font_path.substr(0,font_path.length()-4);
 	}
 

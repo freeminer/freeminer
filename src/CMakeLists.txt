@@ -5,6 +5,7 @@ INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckCXXSourceRuns)
 
+
 # test compiler capabilities
 
 if(MSVC)
@@ -74,7 +75,11 @@ endif()
 
 set(CMAKE_REQUIRED_FLAGS "")
 
-option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+if(MSVC)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+else()
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+endif()
 
 if(ENABLE_THREADS)
 	set(ENABLE_THREADS 1)
@@ -82,17 +87,125 @@ else()
 	set(ENABLE_THREADS 0)
 endif()
 
+#
+# Set some optimizations and tweaks
+#
+
+include(CheckCXXCompilerFlag)
+
 if(STATIC_BUILD)
 	set(STATIC_BUILD 1)
 else()
 	set(STATIC_BUILD 0)
 endif()
 
+if(MSVC)
+	# Visual Studio
+
+	# EHa enables SEH exceptions (used for catching segfaults)
+	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
+	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
+
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "/MDd /Zi /Ob0 /O1 /RTC1")
+
+	# Debug build doesn't catch exceptions by itself
+	# Add some optimizations because otherwise it's VERY slow
+	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
+
+	if (STATIC_BUILD)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+	endif()
+
+	# Flags for C files (sqlite)
+	# /MT = Link statically with standard library stuff
+	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
+
+else()
+	# Probably GCC
+	if(APPLE)
+		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
+	endif()
+	if(WARN_ALL)
+		set(RELEASE_WARNING_FLAGS "-Wall")
+	else()
+		set(RELEASE_WARNING_FLAGS "")
+	endif()
+
+	set(OTHER_FLAGS "")
+
+	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		# clang does not understand __extern_always_inline but libc headers use it
+		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
+	endif()
+
+	if(MINGW)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
+	endif()
+
+
+	if(SANITIZE_ADDRESS)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+	if(SANITIZE_THREAD)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
+		endif()
+	endif()
+	if(SANITIZE_MEMORY)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
+
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
+
+	if(APPLE)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+	else()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+	endif()
+
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+
+	if(USE_GPROF)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+	endif()
+
+endif()
+
+if(NOT HAVE_SHARED_MUTEX)
+	# avoid empty value in cmake_config.h
+	set(HAVE_SHARED_MUTEX 0)
+endif()
+
+# Add custom SemiDebug build mode
+set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall -Wabi" CACHE STRING
+	"Flags used by the C++ compiler during semidebug builds."
+	FORCE
+)
+set(CMAKE_C_FLAGS_SEMIDEBUG "-O1 -g -Wall -pedantic" CACHE STRING
+	"Flags used by the C compiler during semidebug builds."
+	FORCE
+)
+mark_as_advanced(
+	CMAKE_CXX_FLAGS_SEMIDEBUG
+	CMAKE_C_FLAGS_SEMIDEBUG
+)
+set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
+	"Choose the type of build. Options are: None Debug SemiDebug RelWithDebInfo MinSizeRel."
+	FORCE
+)
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
-mark_as_advanced(SQLITE3_INCLUDE_DIR SQLITE3_LIBRARY)
-mark_as_advanced(JSON_INCLUDE_DIR JSON_LIBRARY)
+
+find_package(MsgPack)
 
 option(ENABLE_CURL "Enable cURL support for fetching media" 1)
 
@@ -122,7 +235,7 @@ set(USE_GETTEXT 0)
 if(ENABLE_GETTEXT)
 	find_package(GettextLib)
 else()
-	MARK_AS_ADVANCED(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY GETTEXT_MSGFMT)
+	MARK_AS_ADVANCED(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY ICONV_LIBRARY GETTEXT_MSGFMT)
 endif()
 
 if(GETTEXT_FOUND AND ENABLE_GETTEXT)
@@ -189,16 +302,6 @@ if(USE_SOUND)
 		)
 endif()
 
-if(BUILD_CLIENT)
-option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" ON)
-else()
-option(ENABLE_FREETYPE "Enable freetype2 (truetype fonts and basic unicode support)" OFF)
-endif()
-set(USE_FREETYPE 0)
-if(ENABLE_FREETYPE)
-	set(USE_FREETYPE 1)
-endif(ENABLE_FREETYPE)
-
 if(NOT MSVC)
 	set(USE_GPROF 0 CACHE BOOL "Use -pg flag for g++")
 endif()
@@ -209,6 +312,7 @@ add_definitions ( -DUSE_CMAKE_CONFIG_H )
 if(WIN32)
 	# Windows
 	if(MSVC) # MSVC Specifics
+		set(PLATFORM_LIBS dbghelp.lib ${PLATFORM_LIBS})
 		# Surpress some useless warnings
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 	else() # Probably MinGW = GCC
@@ -225,14 +329,14 @@ if(WIN32)
 	endif()
 	set(IRRLICHT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../irrlicht-1.7.2"
 			CACHE PATH "irrlicht dir")
-	if(USE_FREETYPE)
 		set(FREETYPE_INCLUDE_DIR_ft2build "${PROJECT_SOURCE_DIR}/../../freetype2/include/"
 				CACHE PATH "freetype include dir")
 		set(FREETYPE_INCLUDE_DIR_freetype2 "${PROJECT_SOURCE_DIR}/../../freetype2/include/freetype"
 				CACHE PATH "freetype include dir")
 		set(FREETYPE_LIBRARY "${PROJECT_SOURCE_DIR}/../../freetype2/objs/win32/vc2005/freetype247.lib"
 				CACHE FILEPATH "Path to freetype247.lib")
-	endif(USE_FREETYPE)
+		#set(MINGWM10_DLL ""
+		#		CACHE FILEPATH "Path to mingwm10.dll (for installation)")
 	if(ENABLE_SOUND)
 		set(OPENAL_DLL "" CACHE FILEPATH "Path to OpenAL32.dll for installation (optional)")
 		set(OGG_DLL "" CACHE FILEPATH "Path to libogg.dll for installation (optional)")
@@ -273,7 +377,6 @@ else()
 	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
 endif()
 
-find_package(Sqlite3 REQUIRED)
 find_package(Json REQUIRED)
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
@@ -286,28 +389,30 @@ if(BUILD_CLIENT AND ENABLE_GLES)
 	find_package(OpenGLES2)
 endif()
 
-if(USE_FREETYPE)
-	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
-		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
-	elseif(UNIX)
-		include(FindPkgConfig)
-		if(PKG_CONFIG_FOUND)
-			pkg_check_modules(FREETYPE QUIET freetype2)
-			if(FREETYPE_FOUND)
-				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
-				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
-				# because cmake is idiotic
-				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
-				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
-			endif(FREETYPE_FOUND)
-		endif(PKG_CONFIG_FOUND)
-	endif()
-	if(NOT FREETYPE_FOUND)
-		find_package(Freetype REQUIRED)
-	endif(NOT FREETYPE_FOUND)
-	set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
-	set(CGUITTFONT_LIBRARY cguittfont)
-endif(USE_FREETYPE)
+if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
+	#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
+elseif(UNIX)
+	include(FindPkgConfig)
+	if(PKG_CONFIG_FOUND)
+		pkg_check_modules(FREETYPE QUIET freetype2)
+		if(FREETYPE_FOUND)
+			SET(FREETYPE_PKGCONFIG_FOUND TRUE)
+			SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
+			# because cmake is idiotic
+			string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
+			string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
+		endif(FREETYPE_FOUND)
+	endif(PKG_CONFIG_FOUND)
+endif()
+if(NOT FREETYPE_FOUND)
+	find_package(Freetype REQUIRED)
+endif(NOT FREETYPE_FOUND)
+set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
+set(CGUITTFONT_LIBRARY cguittfont)
+
+if(NOT FREETYPE_FOUND)
+	message(FATAL_ERROR "FreeType was not found.")
+endif()
 
 if (NOT DISABLE_LUAJIT)
 	find_library(LUA_LIBRARY luajit
@@ -409,6 +514,26 @@ if(FORCE_LEVELDB)
 	set(USE_LEVELDB 1)
 endif()
 
+set(USE_SQLITE3 0)
+
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+
+if(ENABLE_SQLITE3)
+	find_package(SQLite3)
+	if(SQLITE3_LIBRARY AND SQLITE3_INCLUDE_DIR)
+		set(USE_SQLITE3 1)
+		message(STATUS "sqlite3 backend enabled")
+		include_directories(${SQLITE3_INCLUDE_DIR})
+	else()
+		set(USE_SQLITE3 0)
+		message(STATUS "sqlite3 not found!")
+	endif()
+endif()
+
+if(FORCE_SQLITE3)
+	set(USE_SQLITE3 1)
+endif()
+
 #option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
@@ -466,6 +591,7 @@ add_subdirectory(jthread)
 add_subdirectory(script)
 add_subdirectory(util)
 
+add_subdirectory(enet)
 
 set(FMcommon_SRCS
 	circuit.cpp
@@ -479,6 +605,8 @@ set(FMcommon_SRCS
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
+	fm_liquid.cpp
+	fm_map.cpp
 )
 
 set(common_SRCS
@@ -584,6 +712,8 @@ set(FMclient_SRCS
 	FMColoredString.cpp
 	gsmapper.cpp
 	guiTextInputMenu.cpp
+	intlGUIEditBox.cpp
+	FMStaticText.cpp
 )
 
 # Client sources
@@ -628,14 +758,6 @@ set(minetest_SRCS
 	${FMclient_SRCS}
 )
 
-if(USE_FREETYPE)
-	set(minetest_SRCS
-		${minetest_SRCS}
-		intlGUIEditBox.cpp
-		FMStaticText.cpp
-	)
-endif(USE_FREETYPE)
-
 list(SORT minetest_SRCS)
 
 # Server sources
@@ -654,18 +776,14 @@ include_directories(
 	${PNG_INCLUDE_DIR}
 	${GETTEXT_INCLUDE_DIR}
 	${SOUND_INCLUDE_DIRS}
-	${SQLITE3_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
+	${MSGPACK_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/script
+	${PROJECT_SOURCE_DIR}/enet/include
+	${FREETYPE_INCLUDE_DIRS}
+	${CGUITTFONT_INCLUDE_DIR}
 )
-
-if(USE_FREETYPE)
-	include_directories(
-		${FREETYPE_INCLUDE_DIRS}
-		${CGUITTFONT_INCLUDE_DIR}
-	)
-endif(USE_FREETYPE)
 
 if(USE_CURL)
 	include_directories(
@@ -690,10 +808,12 @@ if(BUILD_CLIENT)
 		${PNG_LIBRARIES}
 		${X11_LIBRARIES}
 		${GETTEXT_LIBRARY}
+		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
+		${MSGPACK_LIBRARIES}
+		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
@@ -719,25 +839,31 @@ if(BUILD_CLIENT)
 			${CURL_LIBRARY}
 		)
 	endif(USE_CURL)
-	if(USE_FREETYPE)
-		if(FREETYPE_PKGCONFIG_FOUND)
-			set_target_properties(${PROJECT_NAME}
-				PROPERTIES
-				COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
-			)
-		endif(FREETYPE_PKGCONFIG_FOUND)
-		target_link_libraries(
-			${PROJECT_NAME}
-			${FREETYPE_LIBRARY}
-			${CGUITTFONT_LIBRARY}
+	if(FREETYPE_PKGCONFIG_FOUND)
+		set_target_properties(${PROJECT_NAME}
+			PROPERTIES
+			COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
 		)
-	endif(USE_FREETYPE)
+	endif(FREETYPE_PKGCONFIG_FOUND)
+	target_link_libraries(
+		${PROJECT_NAME}
+		${FREETYPE_LIBRARY}
+		${CGUITTFONT_LIBRARY}
+	)
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
-	endif(USE_LEVELDB AND NOT FORCE_LEVELDB)
+	endif()
+	if (USE_SQLITE3 AND NOT FORCE_SQLITE3)
+		target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARY})
+	endif()
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif(USE_REDIS)
+
+	if(MSVC)
+		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
+		add_definitions(-DNOMINMAX)
+	endif()
 endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)
@@ -746,10 +872,12 @@ if(BUILD_SERVER)
 	target_link_libraries(
 		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}
-		${SQLITE3_LIBRARY}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
+		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
+		${MSGPACK_LIBRARIES}
+		enet
 		${PLATFORM_LIBS}
 	)
 	if (USE_LEVELDB)
@@ -764,107 +892,7 @@ if(BUILD_SERVER)
 			${CURL_LIBRARY}
 		)
 	endif(USE_CURL)
-endif(BUILD_SERVER)
-
-
-#
-# Set some optimizations and tweaks
-#
-
-include(CheckCXXCompilerFlag)
-
-
-if(MSVC)
-	# Visual Studio
-
-	# EHa enables SEH exceptions (used for catching segfaults)
-	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
-	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
-
-	# Debug build doesn't catch exceptions by itself
-	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
-
-	if (STATIC_BUILD)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-	endif()
-
-	# Flags for C files (sqlite)
-	# /MT = Link statically with standard library stuff
-	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-
-	if(BUILD_SERVER)
-		set_target_properties(${PROJECT_NAME}server PROPERTIES
-				COMPILE_DEFINITIONS "SERVER")
-	endif(BUILD_SERVER)
-
-	target_link_libraries(${PROJECT_NAME} shlwapi.lib)
-	add_definitions(-DNOMINMAX)
-
-else()
-	# Probably GCC
-	if(APPLE)
-		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
-	endif()
-	if(WARN_ALL)
-		set(RELEASE_WARNING_FLAGS "-Wall")
-	else()
-		set(RELEASE_WARNING_FLAGS "")
-	endif()
-
-	if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		CHECK_CXX_COMPILER_FLAG("-Wno-unused-but-set-variable" HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
-		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-	endif()
-
-	set(OTHER_FLAGS "")
-
-	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		# clang does not understand __extern_always_inline but libc headers use it
-		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
-	endif()
-
-	if(MINGW)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
-	endif()
-
-
-	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
-	endif()
-	if(SANITIZE_THREAD)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-	endif()
-
-	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
-
-	if(APPLE)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-	else()
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-	endif()
-
-	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
-
-	if(USE_GPROF)
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
-	endif()
-
-	if(BUILD_SERVER)
-		set_target_properties(${PROJECT_NAME}server PROPERTIES
-				COMPILE_DEFINITIONS "SERVER")
-	endif(BUILD_SERVER)
-endif()
-if(NOT HAVE_SHARED_MUTEX)
-	# avoid empty value in cmake_config.h
-	set(HAVE_SHARED_MUTEX 0)
+	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 endif()
 
 
@@ -903,6 +931,9 @@ if(WIN32)
 	endif()
 	if(FREETYPE_DLL)
 		install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
+	endif()
+	if(SQLITE3_DLL)
+		install(FILES ${SQLITE3_DLL} DESTINATION ${BINDIR})
 	endif()
 	if(LEVELDB_DLL)
 		install(FILES ${LEVELDB_DLL} DESTINATION ${BINDIR})
@@ -968,14 +999,9 @@ endif(USE_GETTEXT)
 
 # Subdirectories
 
-if (SQLITE3_FOUND)
-else (SQLITE3_FOUND)
-	add_subdirectory(sqlite)
-endif (SQLITE3_FOUND)
-
-if (BUILD_CLIENT AND USE_FREETYPE)
+if (BUILD_CLIENT)
 	add_subdirectory(cguittfont)
-endif (BUILD_CLIENT AND USE_FREETYPE)
+endif()
 
 if (JSON_FOUND)
 else (JSON_FOUND)

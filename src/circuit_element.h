@@ -65,8 +65,7 @@ class INodeDefManager;
  * V - virtual elements
  */
 
-struct CircuitElementContainer
-{
+struct CircuitElementContainer {
 	std::list <CircuitElementVirtualContainer>::iterator list_iterator;
 	std::list <CircuitElementVirtual>::iterator list_pointer;
 

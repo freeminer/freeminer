@@ -30,16 +30,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define SKY_MATERIAL_COUNT 5
 #define SKY_STAR_COUNT 200
 
+class ITextureSource;
 class Map;
 class Player;
 class INodeDefManager;
+
+enum class SKY_ROTATE {
+	SUN,
+	MOON,
+	STAR,
+	SUNLIGHT,
+	MOONLIGHT
+};
 
 // Skybox, rendered with zbuffer turned off, before all other nodes.
 class Sky : public scene::ISceneNode
 {
 public:
 	//! constructor
-	Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id);
+	Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id,
+			ITextureSource *tsrc);
 
 	virtual void OnRegisterSceneNode();
 
@@ -142,7 +152,8 @@ private:
 
 public:
 	irr::scene::ILightSceneNode * sun_moon_light;
-	bool shadow_enabled;
+	v3POS camera_offset;
+	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
 private:
 
 };

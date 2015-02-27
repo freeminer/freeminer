@@ -64,7 +64,7 @@ void ScriptApiEnv::environment_Step(float dtime)
 void ScriptApiEnv::player_event(ServerActiveObject* player, std::string type)
 {
 	SCRIPTAPI_PRECHECKHEADER
-	
+
 	if (player == NULL)
 		return;
 
@@ -80,34 +80,6 @@ void ScriptApiEnv::player_event(ServerActiveObject* player, std::string type)
 	} catch (LuaError &e) {
 		getServer()->setAsyncFatalError(e.what());
 	}
-}
-
-void ScriptApiEnv::environment_OnMapgenInit(MapgenParams *mgparams)
-{
-	SCRIPTAPI_PRECHECKHEADER
-	
-	// Get core.registered_on_mapgen_inits
-	lua_getglobal(L, "core");
-	lua_getfield(L, -1, "registered_on_mapgen_inits");
-
-	// Call callbacks
-	lua_newtable(L);
-	
-	lua_pushstring(L, mgparams->mg_name.c_str());
-	lua_setfield(L, -2, "mgname");
-	
-	lua_pushinteger(L, mgparams->seed);
-	lua_setfield(L, -2, "seed");
-	
-	lua_pushinteger(L, mgparams->water_level);
-	lua_setfield(L, -2, "water_level");
-	
-	std::string flagstr = writeFlagString(mgparams->flags,
-		flagdesc_mapgen, (u32)-1);
-	lua_pushstring(L, flagstr.c_str());
-	lua_setfield(L, -2, "flags");
-	
-	script_run_callbacks(L, 1, RUN_CALLBACKS_MODE_FIRST);
 }
 
 void ScriptApiEnv::initializeEnvironment(ServerEnvironment *env)

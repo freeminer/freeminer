@@ -22,7 +22,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "itemdef.h"
-
 #include "gamedef.h"
 #include "nodedef.h"
 #include "tool.h"
@@ -125,105 +124,67 @@ void ItemDefinition::reset()
 	node_placement_prediction = "";
 }
 
-void ItemDefinition::serialize(std::ostream &os, u16 protocol_version) const
+void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	if(protocol_version <= 17)
-		writeU8(os, 1); // version
-	else if(protocol_version <= 20)
-		writeU8(os, 2); // version
-	else
-		writeU8(os, 3); // version
-	writeU8(os, type);
-	os<<serializeString(name);
-	os<<serializeString(description);
-	os<<serializeString(inventory_image);
-	os<<serializeString(wield_image);
-	writeV3F1000(os, wield_scale);
-	writeS16(os, stack_max);
-	writeU8(os, usable);
-	writeU8(os, liquids_pointable);
-	std::string tool_capabilities_s = "";
-	if(tool_capabilities){
-		std::ostringstream tmp_os(std::ios::binary);
-		tool_capabilities->serialize(tmp_os, protocol_version);
-		tool_capabilities_s = tmp_os.str();
-	}
-	os<<serializeString(tool_capabilities_s);
-	writeU16(os, groups.size());
-	for(std::map<std::string, int>::const_iterator
-			i = groups.begin(); i != groups.end(); i++){
-		os<<serializeString(i->first);
-		writeS16(os, i->second);
-	}
-	os<<serializeString(node_placement_prediction);
-	if(protocol_version > 17){
-		//serializeSimpleSoundSpec(sound_place, os);
-		os<<serializeString(sound_place.name);
-		writeF1000(os, sound_place.gain);
-	}
-	if(protocol_version > 20){
-		writeF1000(os, range);
-	}
+	pk.pack_map(tool_capabilities ? 15 : 14);
+	PACK(ITEMDEF_TYPE, (int)type);
+	PACK(ITEMDEF_NAME, name);
+	PACK(ITEMDEF_DESCRIPTION, description);
+	PACK(ITEMDEF_INVENTORY_IMAGE, inventory_image);
+	PACK(ITEMDEF_WIELD_IMAGE, wield_image);
+	PACK(ITEMDEF_WIELD_SCALE, wield_scale);
+	PACK(ITEMDEF_STACK_MAX, stack_max);
+	PACK(ITEMDEF_USABLE, usable);
+	PACK(ITEMDEF_LIQUIDS_POINTABLE, liquids_pointable);
+
+	if(tool_capabilities)
+		PACK(ITEMDEF_TOOL_CAPABILITIES, *tool_capabilities);
+
+	PACK(ITEMDEF_GROUPS, groups);
+	PACK(ITEMDEF_NODE_PLACEMENT_PREDICTION, node_placement_prediction);
+	PACK(ITEMDEF_SOUND_PLACE_NAME, sound_place.name);
+	PACK(ITEMDEF_SOUND_PLACE_GAIN, sound_place.gain);
+	PACK(ITEMDEF_RANGE, range);
 }
 
-void ItemDefinition::deSerialize(std::istream &is)
+void ItemDefinition::msgpack_unpack(msgpack::object o)
 {
 	// Reset everything
 	reset();
 
-	// Deserialize
-	int version = readU8(is);
-	if(version < 1 || version > 3)
-		throw SerializationError("unsupported ItemDefinition version");
-	type = (enum ItemType)readU8(is);
-	name = deSerializeString(is);
-	description = deSerializeString(is);
-	inventory_image = deSerializeString(is);
-	wield_image = deSerializeString(is);
-	wield_scale = readV3F1000(is);
-	stack_max = readS16(is);
-	usable = readU8(is);
-	liquids_pointable = readU8(is);
-	std::string tool_capabilities_s = deSerializeString(is);
-	if(!tool_capabilities_s.empty())
-	{
-		std::istringstream tmp_is(tool_capabilities_s, std::ios::binary);
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	int type_tmp;
+	packet[ITEMDEF_TYPE].convert(&type_tmp);
+	type = (ItemType)type_tmp;
+	packet[ITEMDEF_NAME].convert(&name);
+	packet[ITEMDEF_DESCRIPTION].convert(&description);
+	packet[ITEMDEF_INVENTORY_IMAGE].convert(&inventory_image);
+	packet[ITEMDEF_WIELD_IMAGE].convert(&wield_image);
+	packet[ITEMDEF_WIELD_SCALE].convert(&wield_scale);
+	packet[ITEMDEF_STACK_MAX].convert(&stack_max);
+	packet[ITEMDEF_USABLE].convert(&usable);
+	packet[ITEMDEF_LIQUIDS_POINTABLE].convert(&liquids_pointable);
+
+	if (packet.find(ITEMDEF_TOOL_CAPABILITIES) != packet.end()) {
 		tool_capabilities = new ToolCapabilities;
-		tool_capabilities->deSerialize(tmp_is);
+		packet[ITEMDEF_TOOL_CAPABILITIES].convert(tool_capabilities);
 	}
-	groups.clear();
-	u32 groups_size = readU16(is);
-	for(u32 i=0; i<groups_size; i++){
-		std::string name = deSerializeString(is);
-		int value = readS16(is);
-		groups[name] = value;
-	}
-	if(version == 1){
-		// We cant be sure that node_placement_prediction is send in version 1
-		try{
-			node_placement_prediction = deSerializeString(is);
-		}catch(SerializationError &e) {};
-		// Set the old default sound
-		sound_place.name = "default_place_node";
-		sound_place.gain = 0.5;
-	} else if(version >= 2) {
-		node_placement_prediction = deSerializeString(is);
-		//deserializeSimpleSoundSpec(sound_place, is);
-		sound_place.name = deSerializeString(is);
-		sound_place.gain = readF1000(is);
-	}
-	if(version == 3) {
-		range = readF1000(is);
-	}
-	// If you add anything here, insert it primarily inside the try-catch
-	// block to not need to increase the version.
-	try{
-	}catch(SerializationError &e) {};
+
+	packet[ITEMDEF_GROUPS].convert(&groups);
+	packet[ITEMDEF_NODE_PLACEMENT_PREDICTION].convert(&node_placement_prediction);
+	packet[ITEMDEF_SOUND_PLACE_NAME].convert(&sound_place.name);
+	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(&sound_place.gain);
+	packet[ITEMDEF_RANGE].convert(&range);
 }
 
 /*
 	CItemDefManager
 */
+
+enum {
+	ITEMDEFMANAGER_ITEMDEFS,
+	ITEMDEFMANAGER_ALIASES
+};
 
 // SUGG: Support chains of aliases?
 
@@ -605,54 +566,28 @@ public:
 			m_aliases[name] = convert_to;
 		}
 	}
-	void serialize(std::ostream &os, u16 protocol_version)
-	{
-		writeU8(os, 0); // version
-		u16 count = m_item_definitions.size();
-		writeU16(os, count);
-		for(std::map<std::string, ItemDefinition*>::const_iterator
-				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); i++)
-		{
-			ItemDefinition *def = i->second;
-			// Serialize ItemDefinition and write wrapped in a string
-			std::ostringstream tmp_os(std::ios::binary);
-			def->serialize(tmp_os, protocol_version);
-			os<<serializeString(tmp_os.str());
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
+		pk.pack_map(2);
+		pk.pack((int)ITEMDEFMANAGER_ITEMDEFS);
+		pk.pack_map(m_item_definitions.size());
+		for (std::map<std::string, ItemDefinition*>::const_iterator i = m_item_definitions.begin();
+				i != m_item_definitions.end(); ++i) {
+			pk.pack(i->first);
+			pk.pack(*(i->second));
 		}
-		writeU16(os, m_aliases.size());
-		for(std::map<std::string, std::string>::const_iterator
-			i = m_aliases.begin(); i != m_aliases.end(); i++)
-		{
-			os<<serializeString(i->first);
-			os<<serializeString(i->second);
-		}
+		PACK(ITEMDEFMANAGER_ALIASES, m_aliases);
 	}
-	void deSerialize(std::istream &is)
-	{
-		// Clear everything
+	void msgpack_unpack(msgpack::object o) {
 		clear();
-		// Deserialize
-		int version = readU8(is);
-		if(version != 0)
-			throw SerializationError("unsupported ItemDefManager version");
-		u16 count = readU16(is);
-		for(u16 i=0; i<count; i++)
-		{
-			// Deserialize a string and grab an ItemDefinition from it
-			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
-			ItemDefinition def;
-			def.deSerialize(tmp_is);
-			// Register
-			registerItem(def);
+		MsgpackPacket packet = o.as<MsgpackPacket>();
+
+		std::map<std::string, ItemDefinition> itemdefs_tmp;
+		packet[ITEMDEFMANAGER_ITEMDEFS].convert(&itemdefs_tmp);
+		for (std::map<std::string, ItemDefinition>::iterator i = itemdefs_tmp.begin();
+				i != itemdefs_tmp.end(); ++i) {
+			registerItem(i->second);
 		}
-		u16 num_aliases = readU16(is);
-		for(u16 i=0; i<num_aliases; i++)
-		{
-			std::string name = deSerializeString(is);
-			std::string convert_to = deSerializeString(is);
-			registerAlias(name, convert_to);
-		}
+		packet[ITEMDEFMANAGER_ALIASES].convert(&m_aliases);
 	}
 	void processQueue(IGameDef *gamedef)
 	{

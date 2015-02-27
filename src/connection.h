@@ -20,6 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "connection_enet.h"
+#if 0
+Not used, keep for reduce MT merge conflicts
+
+
 #ifndef CONNECTION_HEADER
 #define CONNECTION_HEADER
 
@@ -930,12 +935,16 @@ class ConnectionSendThread : public thread_pool {
 public:
 	friend class UDPPeer;
 
-	ConnectionSendThread(Connection* parent,
-							unsigned int max_packet_size, float timeout);
+	ConnectionSendThread(unsigned int max_packet_size, float timeout);
 
 	void * Thread       ();
 
 	void Trigger();
+
+	void setParent(Connection* parent) {
+		assert(parent != NULL);
+		m_connection = parent;
+	}
 
 	void setPeerTimeout(float peer_timeout)
 		{ m_timeout = peer_timeout; }
@@ -982,10 +991,14 @@ private:
 
 class ConnectionReceiveThread : public thread_pool {
 public:
-	ConnectionReceiveThread(Connection* parent,
-							unsigned int max_packet_size);
+	ConnectionReceiveThread(unsigned int max_packet_size);
 
 	void * Thread       ();
+
+	void setParent(Connection* parent) {
+		assert(parent != NULL);
+		m_connection = parent;
+	}
 
 private:
 	void receive        ();
@@ -1100,3 +1113,5 @@ private:
 
 #endif
 
+
+#endif

@@ -17,6 +17,60 @@
 
 --------------------------------------------------------------------------------
 
+local dd_filter_labels = {
+	fgettext("No Filter"),
+	fgettext("Bilinear Filter"),
+	fgettext("Trilinear Filter")
+}
+
+local filters = {
+	{dd_filter_labels[1]..","..dd_filter_labels[2]..","..dd_filter_labels[3]},
+	{"", "bilinear_filter", "trilinear_filter"},
+}
+
+local dd_mipmap_labels = {
+	fgettext("No Mipmap"),
+	fgettext("Mipmap"),
+	fgettext("Mipmap + Aniso. Filter")
+}
+
+local mipmap = {
+	{dd_mipmap_labels[1]..","..dd_mipmap_labels[2]..","..dd_mipmap_labels[3]},
+	{"", "mip_map", "anisotropic_filter"},
+}
+
+local function getFilterSettingIndex()
+	if (core.setting_get(filters[2][3]) == "true") then
+		return 3
+	end
+	if (core.setting_get(filters[2][3]) == "false" and core.setting_get(filters[2][2]) == "true") then
+		return 2
+	end
+	return 1
+end
+
+local function getMipmapSettingIndex()
+	if (core.setting_get(mipmap[2][3]) == "true") then
+		return 3
+	end
+	if (core.setting_get(mipmap[2][3]) == "false" and core.setting_get(mipmap[2][2]) == "true") then
+		return 2
+	end
+	return 1
+end
+
+local function video_driver_fname_to_name(selected_driver)
+	local video_drivers = core.get_video_drivers()
+
+	for i=1, #video_drivers do
+		if selected_driver == video_drivers[i].friendly_name then
+			return video_drivers[i].name:lower()
+		end
+	end
+
+	return ""
+end
+
 local function dlg_confirm_reset_formspec(data)
 	local retval =
 		"size[8,3]" ..
@@ -76,17 +130,14 @@ local function showconfirm_reset(tabview)
 end
 
 local function gui_scale_to_scrollbar()
-
 	local current_value = tonumber(core.setting_get("gui_scaling"))
 
 	if (current_value == nil) or current_value < 0.25 then
 		return 0
 	end
-
 	if current_value <= 1.25 then
 		return ((current_value - 0.25)/ 1.0) * 700
 	end
-
 	if current_value <= 6 then
 		return ((current_value -1.25) * 100) + 700
 	end
@@ -95,13 +146,11 @@ local function gui_scale_to_scrollbar()
 end
 
 local function scrollbar_to_gui_scale(value)
-
 	value = tonumber(value)
 
 	if (value <= 700) then
 		return ((value / 700) * 1.0) + 0.25
 	end
-
 	if (value <=1000) then
 		return ((value - 700) / 100) + 1.25
 	end
@@ -111,26 +160,24 @@ end
 
 local function formspec(tabview, name, tabdata)
 	local video_drivers = core.get_video_drivers()
-	
-	local video_driver_string = ""
-	local current_video_driver_idx = 0
-	local current_video_driver = core.setting_get("video_driver")
-	for i=1, #video_drivers, 1 do
-	
-		if i ~= 1 then
-			video_driver_string = video_driver_string .. ","
+	local current_video_driver = core.setting_get("video_driver"):lower()
+
+	local driver_formspec_string = ""
+	local driver_current_idx = 0
+
+	for i=2, #video_drivers do
+		driver_formspec_string = driver_formspec_string .. video_drivers[i].friendly_name
+		if i ~= #video_drivers then
+			driver_formspec_string = driver_formspec_string .. ","
 		end
-		video_driver_string = video_driver_string .. video_drivers[i]
-		
-		local video_driver = string.gsub(video_drivers[i], " ", "")
-		if current_video_driver:lower() == video_driver:lower() then
-			current_video_driver_idx = i
+
+		if current_video_driver == video_drivers[i].name:lower() then
+			driver_current_idx = i - 1
 		end
 	end
-	
-	
+
 	local tab_string =
-		"box[0,0;3.5,4;#999999]" ..
+		"box[0,0;3.5,3.9;#999999]" ..
 		"checkbox[0.25,0;cb_smooth_lighting;".. fgettext("Smooth Lighting")
 				.. ";".. dump(core.setting_getbool("smooth_lighting")) .. "]"..
 		"checkbox[0.25,0.5;cb_particles;".. fgettext("Enable Particles") .. ";"
@@ -143,22 +190,23 @@ local function formspec(tabview, name, tabdata)
 				.. dump(core.setting_getbool("opaque_water")) .. "]"..
 		"checkbox[0.25,2.5;cb_connected_glass;".. fgettext("Connected Glass") .. ";"
 				.. dump(core.setting_getbool("connected_glass"))	.. "]"..
-		"dropdown[0.25,3.25;3.25;dd_video_driver;"
-			.. video_driver_string .. ";" .. current_video_driver_idx .. "]" ..
+		"checkbox[0.25,3.0;cb_node_highlighting;".. fgettext("Node Highlighting") .. ";"
+				.. dump(core.setting_getbool("enable_node_highlighting")) .. "]"..
+		"box[3.75,0;3.75,3.45;#999999]" ..
+		"label[3.85,0.1;".. fgettext("Texturing:") .. "]"..
+		"dropdown[3.85,0.55;3.85;dd_filters;" .. filters[1][1] .. ";"
+				.. getFilterSettingIndex() .. "]" ..
+		"dropdown[3.85,1.35;3.85;dd_mipmap;" .. mipmap[1][1] .. ";"
+				.. getMipmapSettingIndex() .. "]" ..
+		"label[3.85,2.15;".. fgettext("Rendering:") .. "]"..
+		"dropdown[3.85,2.6;3.85;dd_video_driver;"
+				.. driver_formspec_string .. ";" .. driver_current_idx .. "]" ..
 		"tooltip[dd_video_driver;" ..
-			fgettext("Restart minetest for driver change to take effect") .. "]" ..
-		"box[3.75,0;3.75,2.5;#999999]" ..
-		"checkbox[4,0;cb_mipmapping;".. fgettext("Mip-Mapping") .. ";"
-				.. dump(core.setting_getbool("mip_map")) .. "]"..
-		"checkbox[4,0.5;cb_anisotrophic;".. fgettext("Anisotropic Filtering") .. ";"
-				.. dump(core.setting_getbool("anisotropic_filter")) .. "]"..
-		"checkbox[4,1.0;cb_bilinear;".. fgettext("Bi-Linear Filtering") .. ";"
-				.. dump(core.setting_getbool("bilinear_filter")) .. "]"..
-		"checkbox[4,1.5;cb_trilinear;".. fgettext("Tri-Linear Filtering") .. ";"
-				.. dump(core.setting_getbool("trilinear_filter")) .. "]"..
+				fgettext("Restart minetest for driver change to take effect") .. "]" ..
 		"box[7.75,0;4,4;#999999]" ..
 		"checkbox[8,0;cb_shaders;".. fgettext("Shaders") .. ";"
 				.. dump(core.setting_getbool("enable_shaders")) .. "]"
+
 	if PLATFORM ~= "Android" then
 		tab_string = tab_string ..
 		"button[8,4.75;3.75,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
@@ -167,7 +215,7 @@ local function formspec(tabview, name, tabdata)
 		"button[8,4.75;3.75,0.5;btn_reset_singleplayer;".. fgettext("Reset singleplayer world") .. "]"
 	end
 	tab_string = tab_string ..
-		"box[0,4.25;3.5,1.25;#999999]" ..
+		"box[0,4.25;3.5,1.1;#999999]" ..
 		"label[0.25,4.25;" .. fgettext("GUI scale factor") .. "]" ..
 		"scrollbar[0.25,4.75;3,0.4;sb_gui_scaling;horizontal;" ..
 		 gui_scale_to_scrollbar() .. "]" ..
@@ -177,15 +225,15 @@ local function formspec(tabview, name, tabdata)
 
 	if PLATFORM == "Android" then
 		tab_string = tab_string ..
-		"box[4.25,2.75;3.25,2.15;#999999]" ..
-		"checkbox[4.5,2.75;cb_touchscreen_target;".. fgettext("Touch free target") .. ";"
+		"box[3.75,3.55;3.75,1.8;#999999]" ..
+		"checkbox[3.9,3.45;cb_touchscreen_target;".. fgettext("Touch free target") .. ";"
 				.. dump(core.setting_getbool("touchtarget")) .. "]"
 	end
 
 	if core.setting_get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..
-				"label[4.5,3.5;" .. fgettext("Touchthreshold (px)") .. "]" ..
-				"dropdown[4.5,4;3;dd_touchthreshold;0,10,20,30,40,50;" ..
+				"label[4.3,4.1;" .. fgettext("Touchthreshold (px)") .. "]" ..
+				"dropdown[3.85,4.55;3.85;dd_touchthreshold;0,10,20,30,40,50;" ..
 				((tonumber(core.setting_get("touchscreen_threshold"))/10)+1) .. "]"
 	end
 
@@ -233,22 +281,6 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 		core.setting_set("opaque_water", fields["cb_opaque_water"])
 		return true
 	end
-	if fields["cb_mipmapping"] then
-		core.setting_set("mip_map", fields["cb_mipmapping"])
-		return true
-	end
-	if fields["cb_anisotrophic"] then
-		core.setting_set("anisotropic_filter", fields["cb_anisotrophic"])
-		return true
-	end
-	if fields["cb_bilinear"] then
-		core.setting_set("bilinear_filter", fields["cb_bilinear"])
-		return true
-	end
-	if fields["cb_trilinear"] then
-		core.setting_set("trilinear_filter", fields["cb_trilinear"])
-		return true
-	end
 	if fields["cb_shaders"] then
 		if (core.setting_get("video_driver") == "direct3d8" or core.setting_get("video_driver") == "direct3d9") then
 			core.setting_set("enable_shaders", "false")
@@ -260,6 +292,10 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 	end
 	if fields["cb_connected_glass"] then
 		core.setting_set("connected_glass", fields["cb_connected_glass"])
+		return true
+	end
+	if fields["cb_node_highlighting"] then
+		core.setting_set("enable_node_highlighting", fields["cb_node_highlighting"])
 		return true
 	end
 	if fields["cb_particles"] then
@@ -312,16 +348,48 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 
 	--Note dropdowns have to be handled LAST!
 	local ddhandled = false
+
 	if fields["dd_touchthreshold"] then
 		core.setting_set("touchscreen_threshold",fields["dd_touchthreshold"])
 		ddhandled = true
 	end
+
 	if fields["dd_video_driver"] then
-		local video_driver = string.gsub(fields["dd_video_driver"], " ", "")
-		core.setting_set("video_driver",string.lower(video_driver))
+		core.setting_set("video_driver",
+			video_driver_fname_to_name(fields["dd_video_driver"]))
 		ddhandled = true
 	end
-	
+	if fields["dd_filters"] == dd_filter_labels[1] then
+		core.setting_set("bilinear_filter", "false")
+		core.setting_set("trilinear_filter", "false")
+		ddhandled = true
+	end
+	if fields["dd_filters"] == dd_filter_labels[2] then
+		core.setting_set("bilinear_filter", "true")
+		core.setting_set("trilinear_filter", "false")
+		ddhandled = true
+	end
+	if fields["dd_filters"] == dd_filter_labels[3] then
+		core.setting_set("bilinear_filter", "false")
+		core.setting_set("trilinear_filter", "true")
+		ddhandled = true
+	end
+	if fields["dd_mipmap"] == dd_mipmap_labels[1] then
+		core.setting_set("mip_map", "false")
+		core.setting_set("anisotropic_filter", "false")
+		ddhandled = true
+	end
+	if fields["dd_mipmap"] == dd_mipmap_labels[2] then
+		core.setting_set("mip_map", "true")
+		core.setting_set("anisotropic_filter", "false")
+		ddhandled = true
+	end
+	if fields["dd_mipmap"] == dd_mipmap_labels[3] then
+		core.setting_set("mip_map", "true")
+		core.setting_set("anisotropic_filter", "true")
+		ddhandled = true
+	end
+
 	return ddhandled
 end
 
@@ -330,4 +398,4 @@ tab_settings = {
 	caption = fgettext("Settings"),
 	cbf_formspec = formspec,
 	cbf_button_handler = handle_settings_buttons
-	}
+}

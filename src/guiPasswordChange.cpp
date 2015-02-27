@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIFont.h>
 
 #include "gettext.h"
+#include "util/string.h"
 
 const int ID_oldPassword = 256;
 const int ID_newPassword1 = 257;
@@ -101,14 +102,16 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	v2s32 size = rect.getSize();
 	v2s32 topleft_client(40, 0);
 
+	const wchar_t *text;
+
 	/*
 		Add stuff
 	*/
 	s32 ypos = 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("Old Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("Old Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
@@ -122,9 +125,9 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	}
 	ypos += 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("New Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("New Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
@@ -137,9 +140,9 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	}
 	ypos += 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("Confirm Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("Confirm Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
@@ -155,7 +158,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 140, 30);
 		rect = rect + v2s32(size.X/2-140/2, ypos);
-		wchar_t* text = wgettext("Change");
+		text = wgettext("Change");
 		Environment->addButton(rect, this, ID_change, text);
 		delete[] text;
 	}
@@ -164,7 +167,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 300, 20);
 		rect += topleft_client + v2s32(35, ypos);
-		wchar_t* text = wgettext("Passwords do not match!");
+		text = wgettext("Passwords do not match!");
 		IGUIElement *e = 
 		Environment->addStaticText(
 			text,
@@ -206,12 +209,15 @@ bool GUIPasswordChange::acceptInput()
 				e->setVisible(true);
 			return false;
 		}
-		m_client->sendChangePassword(oldpass, newpass);
+		m_client->sendChangePassword(wide_to_narrow(oldpass), wide_to_narrow(newpass));
 		return true;
 }
 
 bool GUIPasswordChange::OnEvent(const SEvent& event)
 {
+	if (GUIModalMenu::OnEvent(event))
+		return true;
+
 	if(event.EventType==EET_KEY_INPUT_EVENT)
 	{
 		if(event.KeyInput.Key==KEY_ESCAPE && event.KeyInput.PressedDown)
