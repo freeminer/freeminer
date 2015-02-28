@@ -45,6 +45,7 @@ Settings main_settings;
 Settings *g_settings = &main_settings;
 std::string g_settings_path;
 
+/*
 Settings & Settings::operator += (const Settings &other)
 {
 	update(other);
@@ -66,7 +67,7 @@ Settings & Settings::operator = (const Settings &other)
 
 	return *this;
 }
-
+*/
 
 bool Settings::checkNameValid(const std::string &name)
 {
@@ -144,7 +145,7 @@ std::string Settings::getMultiline(std::istream &is, size_t *num_lines)
 }
 
 
-bool Settings::readConfigFile(const char *filename)
+bool Settings::readConfigFile(const std::string &filename)
 {
 	std::ifstream is(filename);
 	if (!is.good())
@@ -1060,7 +1061,10 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 bool Settings::toJson(Json::Value &json) const {
 	try_shared_lock lock(m_mutex);
 
-	for (const auto & ir: m_settings) {
+	json = m_json;
+
+	for (const auto & ir: m_settings)
+	if (json[ir.first].empty()) {
 		if (ir.second.is_group && ir.second.group) {
 			Json::Value v;
 			ir.second.group->toJson(v);
@@ -1081,17 +1085,19 @@ bool Settings::toJson(Json::Value &json) const {
 bool Settings::fromJson(const Json::Value &json) {
 	if (!json.isObject())
 		return false;
+	m_json = json;
 	for (const auto & key: json.getMemberNames()) {
 		if (json[key].isObject()) {
-			setJson(key, json[key]); // save type info
+			//setJson(key, json[key]); // save type info
 			auto s = new Settings;
 			s->fromJson(json[key]);
 			setGroup(key, s);
-		}
-		else if (json[key].isArray())
-			setJson(key, json[key]);
-		else
+		} else if (json[key].isArray()) {
+			//setJson(key, json[key]);
+		} else {
 			set(key, json[key].asString());
+			m_json.removeMember(key); // todo: remove
+		}
 	}
 	return true;
 }
