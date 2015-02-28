@@ -106,11 +106,11 @@ const core::aabbox3d<f32>& Sky::getBoundingBox() const
 }
 
 void Sky::sky_rotate (const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos) {
-	v3POS player_position = floatToInt(camera->getPosition(), BS)-camera_offset;
+	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
 	double shift = (double)player_position.Z / MAP_GENERATION_LIMIT;
 	double xz = 90;
 	double xy = wicked_time_of_day * 360 - 90;
-	double yz = 70 * shift; // 70 - maximum angle near end of map
+	double yz = 70 * -shift; // 70 - maximum angle near end of map
 
 	if (type == SKY_ROTATE::MOON)
 		xz *= -1;
@@ -213,8 +213,8 @@ void Sky::render()
 		video::SColor cloudyfogcolor = m_bgcolor;
 		//video::SColor cloudyfogcolor = m_bgcolor.getInterpolated(m_skycolor, 0.5);
 
-		v3POS player_position = floatToInt(camera->getPosition(), BS)-camera_offset;
-		float shift1 = (float)player_position.Y / MAP_GENERATION_LIMIT;
+		v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
+		float shift1 = -(float)player_position.Y / MAP_GENERATION_LIMIT;
 		float shifty = shift1 * 0.4;
 		
 		// Draw far cloudy fog thing
@@ -541,6 +541,13 @@ void Sky::update(float time_of_day, float time_brightness,
 		return;
 	}
 
+	scene::ICameraSceneNode* camera = SceneManager->getActiveCamera();
+	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
+	float shift1 = (float)player_position.Y / MAP_GENERATION_LIMIT;
+	float height_color = 1;
+	if (shift1 > 0)
+		height_color -= shift1*0.8;
+
 	m_time_of_day = time_of_day;
 	m_time_brightness = time_brightness;
 	m_sunlight_seen = sunlight_seen;
@@ -616,16 +623,16 @@ void Sky::update(float time_of_day, float time_brightness,
 	video::SColor bgcolor_bright = m_bgcolor_bright_f.toSColor();
 	m_bgcolor = video::SColor(
 		255,
-		bgcolor_bright.getRed() * m_brightness,
-		bgcolor_bright.getGreen() * m_brightness,
-		bgcolor_bright.getBlue() * m_brightness);
+		bgcolor_bright.getRed() * m_brightness* height_color,
+		bgcolor_bright.getGreen() * m_brightness* height_color,
+		bgcolor_bright.getBlue() * m_brightness* height_color);
 
 	video::SColor skycolor_bright = m_skycolor_bright_f.toSColor();
 	m_skycolor = video::SColor(
 		255,
-		skycolor_bright.getRed() * m_brightness,
-		skycolor_bright.getGreen() * m_brightness,
-		skycolor_bright.getBlue() * m_brightness);
+		skycolor_bright.getRed() * m_brightness * height_color,
+		skycolor_bright.getGreen() * m_brightness * height_color,
+		skycolor_bright.getBlue() * m_brightness * height_color);
 
 	// Horizon coloring based on sun and moon direction during sunset and sunrise
 	video::SColor pointcolor = video::SColor(255, 255, 255, m_bgcolor.getAlpha());

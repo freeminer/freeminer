@@ -28,6 +28,7 @@ std::ostream & operator<<(std::ostream & s, v3f p);
 
 #include <SColor.h>
 std::ostream & operator<<(std::ostream & s, irr::video::SColor c);
+std::ostream & operator<<(std::ostream & s, irr::video::SColorf c);
 
 #include <map>
 std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p);
