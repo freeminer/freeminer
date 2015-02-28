@@ -1,5 +1,5 @@
 /// Json-cpp amalgated header (http://jsoncpp.sourceforge.net/).
-/// It is intented to be used with #include <json/json.h>
+/// It is intended to be used with #include "json/json.h"
 
 // //////////////////////////////////////////////////////////////////////
 // Beginning of content of file: LICENSE
@@ -88,10 +88,10 @@ license you like.
 #ifndef JSON_VERSION_H_INCLUDED
 # define JSON_VERSION_H_INCLUDED
 
-# define JSONCPP_VERSION_STRING "1.0.0"
+# define JSONCPP_VERSION_STRING "1.4.4"
 # define JSONCPP_VERSION_MAJOR 1
-# define JSONCPP_VERSION_MINOR 0
-# define JSONCPP_VERSION_PATCH 0
+# define JSONCPP_VERSION_MINOR 4
+# define JSONCPP_VERSION_PATCH 4
 # define JSONCPP_VERSION_QUALIFIER
 # define JSONCPP_VERSION_HEXA ((JSONCPP_VERSION_MAJOR << 24) | (JSONCPP_VERSION_MINOR << 16) | (JSONCPP_VERSION_PATCH << 8))
 
@@ -127,17 +127,6 @@ license you like.
 /// std::map
 /// as Value container.
 //#  define JSON_USE_CPPTL_SMALLMAP 1
-/// If defined, indicates that Json specific container should be used
-/// (hash table & simple deque container with customizable allocator).
-/// THIS FEATURE IS STILL EXPERIMENTAL! There is know bugs: See #3177332
-//#  define JSON_VALUE_USE_INTERNAL_MAP 1
-/// Force usage of standard new/malloc based allocator instead of memory pool
-/// based allocator.
-/// The memory pools allocator used optimization (initializing Value and
-/// ValueInternalLink
-/// as if it was a POD) that may cause some validation tool to report errors.
-/// Only has effects if JSON_VALUE_USE_INTERNAL_MAP is defined.
-//#  define JSON_USE_SIMPLE_INTERNAL_ALLOCATOR 1
 
 // If non-zero, the library uses exceptions to report bad input instead of C
 // assertion macros. The default is to use exceptions.
@@ -269,12 +258,6 @@ class Value;
 class ValueIteratorBase;
 class ValueIterator;
 class ValueConstIterator;
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-class ValueMapAllocator;
-class ValueInternalLink;
-class ValueInternalArray;
-class ValueInternalMap;
-#endif // #ifdef JSON_VALUE_USE_INTERNAL_MAP
 
 } // namespace Json
 
@@ -481,10 +464,6 @@ private:
  */
 class JSON_API Value {
   friend class ValueIteratorBase;
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-  friend class ValueInternalLink;
-  friend class ValueInternalMap;
-#endif
 public:
   typedef std::vector<std::string> Members;
   typedef ValueIterator iterator;
@@ -499,7 +478,8 @@ public:
   typedef Json::LargestUInt LargestUInt;
   typedef Json::ArrayIndex ArrayIndex;
 
-  static const Value& null;
+  static const Value& null;  ///! We regret this reference to a global instance; prefer the simpler Value().
+  static const Value& nullRef;  ///! just a kludge for binary-compatibility; same as null
   /// Minimum signed integer value that can be stored in a Json::Value.
   static const LargestInt minLargestInt;
   /// Maximum signed integer value that can be stored in a Json::Value.
@@ -525,7 +505,6 @@ public:
 
 private:
 #ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
   class CZString {
   public:
     enum DuplicationPolicy {
@@ -556,7 +535,6 @@ public:
 #else
   typedef CppTL::SmallMap<CZString, Value> ObjectValues;
 #endif // ifndef JSON_USE_CPPTL_SMALLMAP
-#endif // ifndef JSON_VALUE_USE_INTERNAL_MAP
 #endif // ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
 
 public:
@@ -601,25 +579,26 @@ Json::Value obj_value(Json::objectValue); // {}
   Value(const CppTL::ConstString& value);
 #endif
   Value(bool value);
+  /// Deep copy.
   Value(const Value& other);
   ~Value();
 
+  // Deep copy, then swap(other).
   Value& operator=(Value other);
-  /// Swap values.
-  /// \note Currently, comments are intentionally not swapped, for
-  /// both logic and efficiency.
+  /// Swap everything.
   void swap(Value& other);
+  /// Swap values but leave comments and source offsets in place.
+  void swapPayload(Value& other);
 
   ValueType type() const;
 
+  /// Compare payload only, not comments etc.
   bool operator<(const Value& other) const;
   bool operator<=(const Value& other) const;
   bool operator>=(const Value& other) const;
   bool operator>(const Value& other) const;
-
   bool operator==(const Value& other) const;
   bool operator!=(const Value& other) const;
-
   int compare(const Value& other) const;
 
   const char* asCString() const;
@@ -757,9 +736,24 @@ Json::Value obj_value(Json::objectValue); // {}
   /// \return the removed Value, or null.
   /// \pre type() is objectValue or nullValue
   /// \post type() is unchanged
+  /// \deprecated
   Value removeMember(const char* key);
   /// Same as removeMember(const char*)
+  /// \deprecated
   Value removeMember(const std::string& key);
+  /** \brief Remove the named map member.
+
+      Update 'removed' iff removed.
+      \return true iff removed (no exceptions)
+  */
+  bool removeMember(const char* key, Value* removed);
+  /** \brief Remove the indexed array element.
+
+      O(n) expensive operations.
+      Update 'removed' iff removed.
+      \return true iff removed (no exceptions)
+  */
+  bool removeIndex(ArrayIndex i, Value* removed);
 
   /// Return true if the object has a member named key.
   bool isMember(const char* key) const;
@@ -782,8 +776,10 @@ Json::Value obj_value(Json::objectValue); // {}
   //      EnumValues enumValues() const;
   //# endif
 
-  /// Comments must be //... or /* ... */
+  /// \deprecated Always pass len.
   void setComment(const char* comment, CommentPlacement placement);
+  /// Comments must be //... or /* ... */
+  void setComment(const char* comment, size_t len, CommentPlacement placement);
   /// Comments must be //... or /* ... */
   void setComment(const std::string& comment, CommentPlacement placement);
   bool hasComment(CommentPlacement placement) const;
@@ -810,24 +806,11 @@ private:
 
   Value& resolveReference(const char* key, bool isStatic);
 
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-  inline bool isItemAvailable() const { return itemIsUsed_ == 0; }
-
-  inline void setItemUsed(bool isUsed = true) { itemIsUsed_ = isUsed ? 1 : 0; }
-
-  inline bool isMemberNameStatic() const { return memberNameIsStatic_ == 0; }
-
-  inline void setMemberNameIsStatic(bool isStatic) {
-    memberNameIsStatic_ = isStatic ? 1 : 0;
-  }
-#endif // # ifdef JSON_VALUE_USE_INTERNAL_MAP
-
-private:
   struct CommentInfo {
     CommentInfo();
     ~CommentInfo();
 
-    void setComment(const char* text);
+    void setComment(const char* text, size_t len);
 
     char* comment_;
   };
@@ -847,19 +830,10 @@ private:
     double real_;
     bool bool_;
     char* string_;
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-    ValueInternalArray* array_;
-    ValueInternalMap* map_;
-#else
     ObjectValues* map_;
-#endif
   } value_;
   ValueType type_ : 8;
-  int allocated_ : 1; // Notes: if declared as bool, bitfield is useless.
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-  unsigned int itemIsUsed_ : 1; // used by the ValueInternalMap container.
-  int memberNameIsStatic_ : 1;  // used by the ValueInternalMap container.
-#endif
+  unsigned int allocated_ : 1; // Notes: if declared as bool, bitfield is useless.
   CommentInfo* comments_;
 
   // [start, limit) byte offsets in the source JSON text from which this Value
@@ -931,345 +905,6 @@ private:
   Args args_;
 };
 
-#ifdef JSON_VALUE_USE_INTERNAL_MAP
-/** \brief Allocator to customize Value internal map.
- * Below is an example of a simple implementation (default implementation
- actually
- * use memory pool for speed).
- * \code
-   class DefaultValueMapAllocator : public ValueMapAllocator
-   {
-   public: // overridden from ValueMapAllocator
-      virtual ValueInternalMap *newMap()
-      {
-         return new ValueInternalMap();
-      }
-
-      virtual ValueInternalMap *newMapCopy( const ValueInternalMap &other )
-      {
-         return new ValueInternalMap( other );
-      }
-
-      virtual void destructMap( ValueInternalMap *map )
-      {
-         delete map;
-      }
-
-      virtual ValueInternalLink *allocateMapBuckets( unsigned int size )
-      {
-         return new ValueInternalLink[size];
-      }
-
-      virtual void releaseMapBuckets( ValueInternalLink *links )
-      {
-         delete [] links;
-      }
-
-      virtual ValueInternalLink *allocateMapLink()
-      {
-         return new ValueInternalLink();
-      }
-
-      virtual void releaseMapLink( ValueInternalLink *link )
-      {
-         delete link;
-      }
-   };
- * \endcode
- */
-class JSON_API ValueMapAllocator {
-public:
-  virtual ~ValueMapAllocator();
-  virtual ValueInternalMap* newMap() = 0;
-  virtual ValueInternalMap* newMapCopy(const ValueInternalMap& other) = 0;
-  virtual void destructMap(ValueInternalMap* map) = 0;
-  virtual ValueInternalLink* allocateMapBuckets(unsigned int size) = 0;
-  virtual void releaseMapBuckets(ValueInternalLink* links) = 0;
-  virtual ValueInternalLink* allocateMapLink() = 0;
-  virtual void releaseMapLink(ValueInternalLink* link) = 0;
-};
-
-/** \brief ValueInternalMap hash-map bucket chain link (for internal use only).
- * \internal previous_ & next_ allows for bidirectional traversal.
- */
-class JSON_API ValueInternalLink {
-public:
-  enum {
-    itemPerLink = 6
-  }; // sizeof(ValueInternalLink) = 128 on 32 bits architecture.
-  enum InternalFlags {
-    flagAvailable = 0,
-    flagUsed = 1
-  };
-
-  ValueInternalLink();
-
-  ~ValueInternalLink();
-
-  Value items_[itemPerLink];
-  char* keys_[itemPerLink];
-  ValueInternalLink* previous_;
-  ValueInternalLink* next_;
-};
-
-/** \brief A linked page based hash-table implementation used internally by
- *Value.
- * \internal ValueInternalMap is a tradional bucket based hash-table, with a
- *linked
- * list in each bucket to handle collision. There is an addional twist in that
- * each node of the collision linked list is a page containing a fixed amount of
- * value. This provides a better compromise between memory usage and speed.
- *
- * Each bucket is made up of a chained list of ValueInternalLink. The last
- * link of a given bucket can be found in the 'previous_' field of the following
- *bucket.
- * The last link of the last bucket is stored in tailLink_ as it has no
- *following bucket.
- * Only the last link of a bucket may contains 'available' item. The last link
- *always
- * contains at least one element unless is it the bucket one very first link.
- */
-class JSON_API ValueInternalMap {
-  friend class ValueIteratorBase;
-  friend class Value;
-
-public:
-  typedef unsigned int HashKey;
-  typedef unsigned int BucketIndex;
-
-#ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-  struct IteratorState {
-    IteratorState() : map_(0), link_(0), itemIndex_(0), bucketIndex_(0) {}
-    ValueInternalMap* map_;
-    ValueInternalLink* link_;
-    BucketIndex itemIndex_;
-    BucketIndex bucketIndex_;
-  };
-#endif // ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-
-  ValueInternalMap();
-  ValueInternalMap(const ValueInternalMap& other);
-  ValueInternalMap& operator=(ValueInternalMap other);
-  ~ValueInternalMap();
-
-  void swap(ValueInternalMap& other);
-
-  BucketIndex size() const;
-
-  void clear();
-
-  bool reserveDelta(BucketIndex growth);
-
-  bool reserve(BucketIndex newItemCount);
-
-  const Value* find(const char* key) const;
-
-  Value* find(const char* key);
-
-  Value& resolveReference(const char* key, bool isStatic);
-
-  void remove(const char* key);
-
-  void doActualRemove(ValueInternalLink* link,
-                      BucketIndex index,
-                      BucketIndex bucketIndex);
-
-  ValueInternalLink*& getLastLinkInBucket(BucketIndex bucketIndex);
-
-  Value& setNewItem(const char* key,
-                    bool isStatic,
-                    ValueInternalLink* link,
-                    BucketIndex index);
-
-  Value& unsafeAdd(const char* key, bool isStatic, HashKey hashedKey);
-
-  HashKey hash(const char* key) const;
-
-  int compare(const ValueInternalMap& other) const;
-
-private:
-  void makeBeginIterator(IteratorState& it) const;
-  void makeEndIterator(IteratorState& it) const;
-  static bool equals(const IteratorState& x, const IteratorState& other);
-  static void increment(IteratorState& iterator);
-  static void incrementBucket(IteratorState& iterator);
-  static void decrement(IteratorState& iterator);
-  static const char* key(const IteratorState& iterator);
-  static const char* key(const IteratorState& iterator, bool& isStatic);
-  static Value& value(const IteratorState& iterator);
-  static int distance(const IteratorState& x, const IteratorState& y);
-
-private:
-  ValueInternalLink* buckets_;
-  ValueInternalLink* tailLink_;
-  BucketIndex bucketsSize_;
-  BucketIndex itemCount_;
-};
-
-/** \brief A simplified deque implementation used internally by Value.
-* \internal
-* It is based on a list of fixed "page", each page contains a fixed number of
-*items.
-* Instead of using a linked-list, a array of pointer is used for fast item
-*look-up.
-* Look-up for an element is as follow:
-* - compute page index: pageIndex = itemIndex / itemsPerPage
-* - look-up item in page: pages_[pageIndex][itemIndex % itemsPerPage]
-*
-* Insertion is amortized constant time (only the array containing the index of
-*pointers
-* need to be reallocated when items are appended).
-*/
-class JSON_API ValueInternalArray {
-  friend class Value;
-  friend class ValueIteratorBase;
-
-public:
-  enum {
-    itemsPerPage = 8
-  }; // should be a power of 2 for fast divide and modulo.
-  typedef Value::ArrayIndex ArrayIndex;
-  typedef unsigned int PageIndex;
-
-#ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-  struct IteratorState // Must be a POD
-      {
-    IteratorState() : array_(0), currentPageIndex_(0), currentItemIndex_(0) {}
-    ValueInternalArray* array_;
-    Value** currentPageIndex_;
-    unsigned int currentItemIndex_;
-  };
-#endif // ifndef JSONCPP_DOC_EXCLUDE_IMPLEMENTATION
-
-  ValueInternalArray();
-  ValueInternalArray(const ValueInternalArray& other);
-  ValueInternalArray& operator=(ValueInternalArray other);
-  ~ValueInternalArray();
-  void swap(ValueInternalArray& other);
-
-  void clear();
-  void resize(ArrayIndex newSize);
-
-  Value& resolveReference(ArrayIndex index);
-
-  Value* find(ArrayIndex index) const;
-
-  ArrayIndex size() const;
-
-  int compare(const ValueInternalArray& other) const;
-
-private:
-  static bool equals(const IteratorState& x, const IteratorState& other);
-  static void increment(IteratorState& iterator);
-  static void decrement(IteratorState& iterator);
-  static Value& dereference(const IteratorState& iterator);
-  static Value& unsafeDereference(const IteratorState& iterator);
-  static int distance(const IteratorState& x, const IteratorState& y);
-  static ArrayIndex indexOf(const IteratorState& iterator);
-  void makeBeginIterator(IteratorState& it) const;
-  void makeEndIterator(IteratorState& it) const;
-  void makeIterator(IteratorState& it, ArrayIndex index) const;
-
-  void makeIndexValid(ArrayIndex index);
-
-  Value** pages_;
-  ArrayIndex size_;
-  PageIndex pageCount_;
-};
-
-/** \brief Experimental: do not use. Allocator to customize Value internal
-array.
- * Below is an example of a simple implementation (actual implementation use
- * memory pool).
-   \code
-class DefaultValueArrayAllocator : public ValueArrayAllocator
-{
-public: // overridden from ValueArrayAllocator
-virtual ~DefaultValueArrayAllocator()
-{
-}
-
-virtual ValueInternalArray *newArray()
-{
-   return new ValueInternalArray();
-}
-
-virtual ValueInternalArray *newArrayCopy( const ValueInternalArray &other )
-{
-   return new ValueInternalArray( other );
-}
-
-virtual void destruct( ValueInternalArray *array )
-{
-   delete array;
-}
-
-virtual void reallocateArrayPageIndex( Value **&indexes,
-                                       ValueInternalArray::PageIndex
-&indexCount,
-                                       ValueInternalArray::PageIndex
-minNewIndexCount )
-{
-   ValueInternalArray::PageIndex newIndexCount = (indexCount*3)/2 + 1;
-   if ( minNewIndexCount > newIndexCount )
-      newIndexCount = minNewIndexCount;
-   void *newIndexes = realloc( indexes, sizeof(Value*) * newIndexCount );
-   if ( !newIndexes )
-      throw std::bad_alloc();
-   indexCount = newIndexCount;
-   indexes = static_cast<Value **>( newIndexes );
-}
-virtual void releaseArrayPageIndex( Value **indexes,
-                                    ValueInternalArray::PageIndex indexCount )
-{
-   if ( indexes )
-      free( indexes );
-}
-
-virtual Value *allocateArrayPage()
-{
-   return static_cast<Value *>( malloc( sizeof(Value) *
-ValueInternalArray::itemsPerPage ) );
-}
-
-virtual void releaseArrayPage( Value *value )
-{
-   if ( value )
-      free( value );
-}
-};
-   \endcode
- */
-class JSON_API ValueArrayAllocator {
-public:
-  virtual ~ValueArrayAllocator();
-  virtual ValueInternalArray* newArray() = 0;
-  virtual ValueInternalArray* newArrayCopy(const ValueInternalArray& other) = 0;
-  virtual void destructArray(ValueInternalArray* array) = 0;
-  /** \brief Reallocate array page index.
-   * Reallocates an array of pointer on each page.
-   * \param indexes [input] pointer on the current index. May be \c NULL.
-   *                [output] pointer on the new index of at least
-   *                         \a minNewIndexCount pages.
-   * \param indexCount [input] current number of pages in the index.
-   *                   [output] number of page the reallocated index can handle.
-   *                            \b MUST be >= \a minNewIndexCount.
-   * \param minNewIndexCount Minimum number of page the new index must be able
-   * to
-   *                         handle.
-   */
-  virtual void
-  reallocateArrayPageIndex(Value**& indexes,
-                           ValueInternalArray::PageIndex& indexCount,
-                           ValueInternalArray::PageIndex minNewIndexCount) = 0;
-  virtual void
-  releaseArrayPageIndex(Value** indexes,
-                        ValueInternalArray::PageIndex indexCount) = 0;
-  virtual Value* allocateArrayPage() = 0;
-  virtual void releaseArrayPage(Value* value) = 0;
-};
-#endif // #ifdef JSON_VALUE_USE_INTERNAL_MAP
-
 /** \brief base class for Value iterators.
  *
  */
@@ -1281,19 +916,14 @@ public:
   typedef ValueIteratorBase SelfType;
 
   ValueIteratorBase();
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
   explicit ValueIteratorBase(const Value::ObjectValues::iterator& current);
-#else
-  ValueIteratorBase(const ValueInternalArray::IteratorState& state);
-  ValueIteratorBase(const ValueInternalMap::IteratorState& state);
-#endif
 
   bool operator==(const SelfType& other) const { return isEqual(other); }
 
   bool operator!=(const SelfType& other) const { return !isEqual(other); }
 
   difference_type operator-(const SelfType& other) const {
-    return computeDistance(other);
+    return other.computeDistance(*this);
   }
 
   /// Return either the index or the member name of the referenced value as a
@@ -1321,17 +951,9 @@ protected:
   void copy(const SelfType& other);
 
 private:
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
   Value::ObjectValues::iterator current_;
   // Indicates that iterator is for a null value.
   bool isNull_;
-#else
-  union {
-    ValueInternalArray::IteratorState array_;
-    ValueInternalMap::IteratorState map_;
-  } iterator_;
-  bool isArray_;
-#endif
 };
 
 /** \brief const iterator for object and array value.
@@ -1353,12 +975,7 @@ public:
 private:
 /*! \internal Use by Value to create an iterator.
  */
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
   explicit ValueConstIterator(const Value::ObjectValues::iterator& current);
-#else
-  ValueConstIterator(const ValueInternalArray::IteratorState& state);
-  ValueConstIterator(const ValueInternalMap::IteratorState& state);
-#endif
 public:
   SelfType& operator=(const ValueIteratorBase& other);
 
@@ -1409,12 +1026,7 @@ public:
 private:
 /*! \internal Use by Value to create an iterator.
  */
-#ifndef JSON_VALUE_USE_INTERNAL_MAP
   explicit ValueIterator(const Value::ObjectValues::iterator& current);
-#else
-  ValueIterator(const ValueInternalArray::IteratorState& state);
-  ValueIterator(const ValueInternalMap::IteratorState& state);
-#endif
 public:
   SelfType& operator=(const SelfType& other);
 
@@ -1446,6 +1058,14 @@ public:
 };
 
 } // namespace Json
+
+
+namespace std {
+/// Specialize std::swap() for Json::Value.
+template<>
+inline void swap(Json::Value& a, Json::Value& b) { a.swap(b); }
+}
+
 
 #if defined(JSONCPP_DISABLE_DLL_INTERFACE_WARNING)
 #pragma warning(pop)
@@ -1482,6 +1102,7 @@ public:
 #include <iosfwd>
 #include <stack>
 #include <string>
+#include <istream>
 
 // Disable warning C4251: <data member>: <type> needs to have dll-interface to
 // be used by...
@@ -1495,6 +1116,7 @@ namespace Json {
 /** \brief Unserialize a <a HREF="http://www.json.org">JSON</a> document into a
  *Value.
  *
+ * \deprecated Use CharReader and CharReaderBuilder.
  */
 class JSON_API Reader {
 public:
@@ -1546,7 +1168,7 @@ public:
    document to read.
    * \param endDoc Pointer on the end of the UTF-8 encoded string of the
    document to read.
-   \               Must be >= beginDoc.
+   *               Must be >= beginDoc.
    * \param root [out] Contains the root value of the document if it was
    *             successfully parsed.
    * \param collectComments \c true to collect comment and allow writing them
@@ -1655,7 +1277,6 @@ private:
 
   typedef std::deque<ErrorInfo> Errors;
 
-  bool expectToken(TokenType type, Token& token, const char* message);
   bool readToken(Token& token);
   void skipSpaces();
   bool match(Location pattern, int patternLength);
@@ -1707,7 +1328,125 @@ private:
   std::string commentsBefore_;
   Features features_;
   bool collectComments_;
+};  // Reader
+
+/** Interface for reading JSON from a char array.
+ */
+class JSON_API CharReader {
+public:
+  virtual ~CharReader() {}
+  /** \brief Read a Value from a <a HREF="http://www.json.org">JSON</a>
+   document.
+   * The document must be a UTF-8 encoded string containing the document to read.
+   *
+   * \param beginDoc Pointer on the beginning of the UTF-8 encoded string of the
+   document to read.
+   * \param endDoc Pointer on the end of the UTF-8 encoded string of the
+   document to read.
+   *        Must be >= beginDoc.
+   * \param root [out] Contains the root value of the document if it was
+   *             successfully parsed.
+   * \param errs [out] Formatted error messages (if not NULL)
+   *        a user friendly string that lists errors in the parsed
+   * document.
+   * \return \c true if the document was successfully parsed, \c false if an
+   error occurred.
+   */
+  virtual bool parse(
+      char const* beginDoc, char const* endDoc,
+      Value* root, std::string* errs) = 0;
+
+  class Factory {
+  public:
+    /** \brief Allocate a CharReader via operator new().
+     * \throw std::exception if something goes wrong (e.g. invalid settings)
+     */
+    virtual CharReader* newCharReader() const = 0;
+  };  // Factory
+};  // CharReader
+
+/** \brief Build a CharReader implementation.
+
+  \deprecated This is experimental and will be altered before the next release.
+
+Usage:
+\code
+  using namespace Json;
+  CharReaderBuilder builder;
+  builder.settings_["collectComments"] = false;
+  Value value;
+  std::string errs;
+  bool ok = parseFromStream(builder, std::cin, &value, &errs);
+\endcode
+*/
+class JSON_API CharReaderBuilder : public CharReader::Factory {
+public:
+  // Note: We use a Json::Value so that we can add data-members to this class
+  // without a major version bump.
+  /** Configuration of this builder.
+    These are case-sensitive.
+    Available settings (case-sensitive):
+    - `"collectComments": false or true`
+      - true to collect comment and allow writing them
+        back during serialization, false to discard comments.
+        This parameter is ignored if allowComments is false.
+    - `"allowComments": false or true`
+      - true if comments are allowed.
+    - `"strictRoot": false or true`
+      - true if root must be either an array or an object value
+    - `"allowDroppedNullPlaceholders": false or true`
+      - true if dropped null placeholders are allowed. (See StreamWriterBuilder.)
+    - `"allowNumericKeys": false or true`
+      - true if numeric object keys are allowed.
+    - `"allowSingleQuotes": false or true`
+      - true if '' are allowed for strings (both keys and values)
+    - `"stackLimit": integer`
+      - Exceeding stackLimit (recursive depth of `readValue()`) will
+        cause an exception.
+      - This is a security issue (seg-faults caused by deeply nested JSON),
+        so the default is low.
+    - `"failIfExtra": false or true`
+      - If true, `parse()` returns false when extra non-whitespace trails
+        the JSON value in the input string.
+
+    You can examine 'settings_` yourself
+    to see the defaults. You can also write and read them just like any
+    JSON Value.
+    \sa setDefaults()
+    */
+  Json::Value settings_;
+
+  CharReaderBuilder();
+  virtual ~CharReaderBuilder();
+
+  virtual CharReader* newCharReader() const;
+
+  /** \return true if 'settings' are legal and consistent;
+   *   otherwise, indicate bad settings via 'invalid'.
+   */
+  bool validate(Json::Value* invalid) const;
+  /** Called by ctor, but you can use this to reset settings_.
+   * \pre 'settings' != NULL (but Json::null is fine)
+   * \remark Defaults:
+   * \snippet src/lib_json/json_reader.cpp CharReaderBuilderStrictMode
+   */
+  static void setDefaults(Json::Value* settings);
+  /** Same as old Features::strictMode().
+   * \pre 'settings' != NULL (but Json::null is fine)
+   * \remark Defaults:
+   * \snippet src/lib_json/json_reader.cpp CharReaderBuilderDefaults
+   */
+  static void strictMode(Json::Value* settings);
 };
+
+/** Consume entire stream and use its begin/end.
+  * Someday we might have a real StreamReader, but for now this
+  * is convenient.
+  */
+bool parseFromStream(
+    CharReader::Factory const&,
+    std::istream&,
+    Value* root, std::string* errs);
 
 /** \brief Read from 'sin' into 'root'.
 
@@ -1769,6 +1508,7 @@ JSON_API std::istream& operator>>(std::istream&, Value&);
 #endif // if !defined(JSON_IS_AMALGAMATION)
 #include <vector>
 #include <string>
+#include <ostream>
 
 // Disable warning C4251: <data member>: <type> needs to have dll-interface to
 // be used by...
@@ -1781,7 +1521,111 @@ namespace Json {
 
 class Value;
 
+/**
+
+Usage:
+\code
+  using namespace Json;
+  void writeToStdout(StreamWriter::Factory const& factory, Value const& value) {
+    std::unique_ptr<StreamWriter> const writer(
+      factory.newStreamWriter());
+    writer->write(value, &std::cout);
+    std::cout << std::endl;  // add lf and flush
+  }
+\endcode
+*/
+class JSON_API StreamWriter {
+protected:
+  std::ostream* sout_;  // not owned; will not delete
+public:
+  StreamWriter();
+  virtual ~StreamWriter();
+  /** Write Value into document as configured in sub-class.
+      Do not take ownership of sout, but maintain a reference during function.
+      \pre sout != NULL
+      \return zero on success
+      \throw std::exception possibly, depending on configuration
+   */
+  virtual int write(Value const& root, std::ostream* sout) = 0;
+
+  /** \brief A simple abstract factory.
+   */
+  class JSON_API Factory {
+  public:
+    virtual ~Factory();
+    /** \brief Allocate a CharReader via operator new().
+     * \throw std::exception if something goes wrong (e.g. invalid settings)
+     */
+    virtual StreamWriter* newStreamWriter() const = 0;
+  };  // Factory
+};  // StreamWriter
+
+/** \brief Write into stringstream, then return string, for convenience.
+ * A StreamWriter will be created from the factory, used, and then deleted.
+ */
+std::string writeString(StreamWriter::Factory const& factory, Value const& root);
+
+
+/** \brief Build a StreamWriter implementation.
+
+Usage:
+\code
+  using namespace Json;
+  Value value = ...;
+  StreamWriterBuilder builder;
+  builder.settings_["commentStyle"] = "None";
+  builder.settings_["indentation"] = "   ";  // or whatever you like
+  std::unique_ptr<Json::StreamWriter> writer(
+      builder.newStreamWriter());
+  writer->write(value, &std::cout);
+  std::cout << std::endl;  // add lf and flush
+\endcode
+*/
+class JSON_API StreamWriterBuilder : public StreamWriter::Factory {
+public:
+  // Note: We use a Json::Value so that we can add data-members to this class
+  // without a major version bump.
+  /** Configuration of this builder.
+    Available settings (case-sensitive):
+    - "commentStyle": "None" or "All"
+    - "indentation":  "<anything>"
+    - "enableYAMLCompatibility": false or true
+      - slightly change the whitespace around colons
+    - "dropNullPlaceholders": false or true
+      - Drop the "null" string from the writer's output for nullValues.
+        Strictly speaking, this is not valid JSON. But when the output is being
+        fed to a browser's Javascript, it makes for smaller output and the
+        browser can handle the output just fine.
+
+    You can examine 'settings_` yourself
+    to see the defaults. You can also write and read them just like any
+    JSON Value.
+    \sa setDefaults()
+    */
+  Json::Value settings_;
+
+  StreamWriterBuilder();
+  virtual ~StreamWriterBuilder();
+
+  /**
+   * \throw std::exception if something goes wrong (e.g. invalid settings)
+   */
+  virtual StreamWriter* newStreamWriter() const;
+
+  /** \return true if 'settings' are legal and consistent;
+   *   otherwise, indicate bad settings via 'invalid'.
+   */
+  bool validate(Json::Value* invalid) const;
+  /** Called by ctor, but you can use this to reset settings_.
+   * \pre 'settings' != NULL (but Json::null is fine)
+   * \remark Defaults:
+   * \snippet src/lib_json/json_writer.cpp StreamWriterBuilderDefaults
+   */
+  static void setDefaults(Json::Value* settings);
+};
+
 /** \brief Abstract class for writers.
+ * \deprecated Use StreamWriter.
  */
 class JSON_API Writer {
 public:
@@ -1797,6 +1641,7 @@ public:
  *consumption,
  * but may be usefull to support feature such as RPC where bandwith is limited.
  * \sa Reader, Value
+ * \deprecated Use StreamWriterBuilder.
  */
 class JSON_API FastWriter : public Writer {
 public:
@@ -1848,6 +1693,7 @@ private:
  *#CommentPlacement.
  *
  * \sa Reader, Value, Value::setComment()
+ * \deprecated Use StreamWriterBuilder.
  */
 class JSON_API StyledWriter : public Writer {
 public:
@@ -1909,6 +1755,7 @@ private:
  *
  * \param indentation Each level will be indented by this amount extra.
  * \sa Reader, Value, Value::setComment()
+ * \deprecated Use StreamWriterBuilder.
  */
 class JSON_API StyledStreamWriter {
 public:
@@ -1945,7 +1792,8 @@ private:
   std::string indentString_;
   int rightMargin_;
   std::string indentation_;
-  bool addChildValues_;
+  bool addChildValues_ : 1;
+  bool indented_ : 1;
 };
 
 #if defined(JSON_HAS_INT64)
@@ -1992,6 +1840,7 @@ JSON_API std::ostream& operator<<(std::ostream&, const Value& root);
 #define CPPTL_JSON_ASSERTIONS_H_INCLUDED
 
 #include <stdlib.h>
+#include <sstream>
 
 #if !defined(JSON_IS_AMALGAMATION)
 #include "config.h"
@@ -2000,27 +1849,27 @@ JSON_API std::ostream& operator<<(std::ostream&, const Value& root);
 #if JSON_USE_EXCEPTION
 #include <stdexcept>
 #define JSON_ASSERT(condition)                                                 \
-  assert(condition); // @todo <= change this into an exception throw
-#define JSON_FAIL_MESSAGE(message) throw std::runtime_error(message);
+  if (!(condition)) {throw std::runtime_error( "assert json failed" );} // @todo <= add detail about condition in exception
+#define JSON_FAIL_MESSAGE(message) do{std::ostringstream oss; oss << message; throw std::runtime_error(oss.str());}while(0)
+//#define JSON_FAIL_MESSAGE(message) throw std::runtime_error(message)
 #else // JSON_USE_EXCEPTION
 #define JSON_ASSERT(condition) assert(condition);
 
 // The call to assert() will show the failure message in debug builds. In
-// release bugs we write to invalid memory in order to crash hard, so that a
-// debugger or crash reporter gets the chance to take over. We still call exit()
-// afterward in order to tell the compiler that this macro doesn't return.
+// release bugs we abort, for a core-dump or debugger.
 #define JSON_FAIL_MESSAGE(message)                                             \
   {                                                                            \
-    assert(false&& message);                                                   \
-    strcpy(reinterpret_cast<char*>(666), message);                             \
-    exit(123);                                                                 \
+    std::ostringstream oss; oss << message;                                    \
+    assert(false && oss.str().c_str());                                        \
+    abort();                                                                   \
   }
+
 
 #endif
 
 #define JSON_ASSERT_MESSAGE(condition, message)                                \
   if (!(condition)) {                                                          \
-    JSON_FAIL_MESSAGE(message)                                                 \
+    JSON_FAIL_MESSAGE(message);                                                \
   }
 
 #endif // CPPTL_JSON_ASSERTIONS_H_INCLUDED
