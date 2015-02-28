@@ -113,13 +113,10 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 
 const static ServerCommandFactory null_command_factory = { "TOSERVER_NULL", 0, false };
 
-const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES]
-#if !TODO
- = { };
-#else
- =
+const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_factory, // 0x00
+#if TODO
 	null_command_factory, // 0x01
 	null_command_factory, // 0x02
 	null_command_factory, // 0x03
@@ -187,5 +184,5 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES]
 	{ "TOSERVER_RECEIVED_MEDIA",     1, true }, // 0x41
 	{ "TOSERVER_BREATH",             0, true }, // 0x42
 	{ "TOSERVER_CLIENT_READY",       0, true }, // 0x43
-};
 #endif
+};

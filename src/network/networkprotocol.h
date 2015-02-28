@@ -816,7 +816,7 @@ enum {
 };
 
 #if !TODO
-#define TOSERVER_NUM_MSG_TYPES 0
+#define TOSERVER_NUM_MSG_TYPES 1
 #else
 #define TOSERVER_NUM_MSG_TYPES 0x45
 #endif

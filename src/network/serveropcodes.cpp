@@ -20,17 +20,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "serveropcodes.h"
 
-#if TODO
 const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TOSERVER_STATE_ALL, &Server::handleCommand_Null };
-#endif
 
-const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES]
-#if !TODO
- = { };
-#else
- =
+const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_handler, // 0x00
+#if TODO
 	null_command_handler, // 0x01
 	null_command_handler, // 0x02
 	null_command_handler, // 0x03
@@ -98,8 +93,8 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES]
 	{ "TOSERVER_RECEIVED_MEDIA",           TOSERVER_STATE_STARTUP, &Server::handleCommand_ReceivedMedia }, // 0x41
 	{ "TOSERVER_BREATH",                   TOSERVER_STATE_INGAME, &Server::handleCommand_Breath }, // 0x42
 	{ "TOSERVER_CLIENT_READY",             TOSERVER_STATE_STARTUP, &Server::handleCommand_ClientReady }, // 0x43
-};
 #endif
+};
 
 const static ClientCommandFactory null_command_factory = { "TOCLIENT_NULL", 0, false };
 
