@@ -645,7 +645,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	m_generated = (flags & 0x08) ? false : true;
 
 	if (!m_generated) {
-		infostream<<"MapBlock::deSerialize(): deserialize not generated block"<<std::endl;
+		infostream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
 		return false;
 	}
 

@@ -2993,8 +2993,11 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		}
 
 		// Read basic data
-		if (!block->deSerialize(is, version, true))
+		if (!block->deSerialize(is, version, true)) {
+			if (created_new)
+				delete block;
 			return nullptr;
+		}
 
 		// If it's a new block, insert it to the map
 		if(created_new)
