@@ -627,15 +627,18 @@ void ServerEnvironment::loadMeta()
 			return;
 
 		//infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
+		{
+			std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+			if (block->abm_triggers)
+				block->abm_triggers->clear();
+		}
 
 		ServerMap *map = &m_env->getServerMap();
 		{
-		auto lock = block->try_lock_unique_rec();
-		if (!lock->owns_lock())
-			return;
-
-		if (block->abm_triggers)
-			block->abm_triggers->clear();
+		//auto lock = block->try_lock_unique_rec();
+		//if (!lock->owns_lock())
+		//	return;
+		}
 
 		ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
 
@@ -689,12 +692,13 @@ void ServerEnvironment::loadMeta()
 				}
 neighbor_found:
 
+				std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+
 				if (!block->abm_triggers)
 					block->abm_triggers = std::unique_ptr<MapBlock::abm_triggers_type>(new MapBlock::abm_triggers_type); // c++14: make_unique here
 
 				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos, activate});
 			}
-		}
 		}
 	//infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 
@@ -706,8 +710,8 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		if (!abm_triggers)
 			return;
 
-		auto lock = try_lock_unique_rec();
-		if (!lock->owns_lock())
+		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
+		if (!lock.owns_lock())
 			return;
 
 		ServerMap *map = &m_env->getServerMap();
