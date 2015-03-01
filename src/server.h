@@ -67,6 +67,7 @@ class MapThread;
 class SendBlocksThread;
 class LiquidThread;
 class EnvThread;
+class AbmThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -600,6 +601,7 @@ private:
 	SendBlocksThread *m_sendblocks;
 	LiquidThread *m_liquid;
 	EnvThread *m_envthread;
+	AbmThread *m_abmthread;
 
 	/*
 		Time related stuff
@@ -692,7 +694,7 @@ private:
 public:
 	//shared_map<v3POS, MapBlock*> m_modified_blocks;
 	//shared_map<v3POS, MapBlock*> m_lighting_modified_blocks;
-	bool more_threads;
+	bool m_more_threads;
 	void deleteDetachedInventory(const std::string &name);
 	void maintenance_start();
 	void maintenance_end();

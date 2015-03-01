@@ -279,10 +279,10 @@ void ActiveBlockList::update(std::vector<v3s16> &active_positions,
 		Find out which blocks on the old list are not on the new list
 	*/
 	// Go through old list
-	for(std::set<v3s16>::iterator i = m_list.begin();
+	for(auto i = m_list.begin();
 			i != m_list.end(); ++i)
 	{
-		v3s16 p = *i;
+		v3POS p = i->first;
 		// If not on new list, it's been removed
 		if(newlist.find(p) == newlist.end())
 			blocks_removed.insert(p);
@@ -309,7 +309,7 @@ void ActiveBlockList::update(std::vector<v3s16> &active_positions,
 			i != newlist.end(); ++i)
 	{
 		v3s16 p = *i;
-		m_list.insert(p);
+		m_list.set(p, 1);
 	}
 }
 
@@ -1201,35 +1201,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
 
-	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
-		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
-		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
-
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-		for(auto i = m_active_blocks.m_list.begin(); i != m_active_blocks.m_list.end(); ++i)
-		{
-			if (n++ < m_active_block_analyzed_last)
-				continue;
-			else
-				m_active_block_analyzed_last = 0;
-			++calls;
-
-			v3POS p = *i;
-
-			MapBlock *block = m_map->getBlock(p, true);
-			if(!block)
-				continue;
-
-			analyzeBlock(block);
-
-			if (porting::getTimeMs() > end_ms) {
-				m_active_block_analyzed_last = n;
-				break;
-			}
-		}
-		if (!calls)
-			m_active_block_analyzed_last = 0;
-	}
+	if (!m_more_threads)
+		analyzeBlocks(dtime, max_cycle_ms);
 
 	/*
 		Mess around in active blocks
@@ -1242,7 +1215,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		//float dtime = 1.0;
 
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-		for(std::set<v3s16>::iterator
+		auto lock = m_active_blocks.m_list.lock_shared_rec();
+		for(auto
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
 		{
@@ -1252,7 +1226,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				m_active_block_timer_last = 0;
 			++calls;
 
-			v3s16 p = *i;
+			v3POS p = i->first;
 
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
 					<<") being handled"<<std::endl;*/
@@ -1309,8 +1283,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		TimeTaker timer("modify in active blocks");
 
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-
-		for(std::set<v3s16>::iterator
+		auto lock = m_active_blocks.m_list.lock_shared_rec();
+		for(auto
 				i = m_active_blocks.m_list.begin();
 				i != m_active_blocks.m_list.end(); ++i)
 		{
@@ -1322,7 +1296,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 			ScopeProfiler sp(g_profiler, "SEnv: ABM one block avg", SPT_AVG);
 
-			v3s16 p = *i;
+			v3POS p = i->first;
 
 			/*infostream<<"Server: Block ("<<p.X<<","<<p.Y<<","<<p.Z
 					<<") being handled"<<std::endl;*/
@@ -1359,39 +1333,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
-	if (g_settings->getBool("abm_random") && (!m_abm_random_blocks.empty() || m_abm_random_interval.step(dtime, 10.0))) {
-		TimeTaker timer("env: random abm " + itos(m_abm_random_blocks.size()));
-
-		u32 end_ms = porting::getTimeMs() + max_cycle_ms/10;
-
-		if (m_abm_random_blocks.empty()) {
-			auto lock = m_map->m_blocks.try_lock_shared_rec();
-			for (auto ir : m_map->m_blocks) {
-				if (!ir.second || !ir.second->abm_triggers)
-					continue;
-				m_abm_random_blocks.emplace_back(ir.first);
-			}
-			//infostream<<"Start ABM random cycle s="<<m_abm_random_blocks.size()<<std::endl;
-		}
-
-		for (auto i = m_abm_random_blocks.begin(); i != m_abm_random_blocks.end(); ++i) {
-			MapBlock* block = m_map->getBlock(*i, true);
-			i = m_abm_random_blocks.erase(i);
-			
-			ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
-
-			if (!block)
-				continue;
-
-			if (!block->abm_triggers)
-				continue;
-			ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
-			block->abmTriggersRun(this, m_game_time);
-			if (porting::getTimeMs() > end_ms) {
-				break;
-			}
-		}
-	}
 
 	/*
 		Step script environment (run global on_step())
@@ -1481,6 +1422,81 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		*/
 		removeRemovedObjects();
 	}
+}
+
+int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
+		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
+		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
+
+		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> active_blocks_list;
+		//auto active_blocks_list = m_active_blocks.m_list;
+		{
+			auto lock = m_active_blocks.m_list.lock_shared_rec();
+			active_blocks_list = m_active_blocks.m_list;
+		}
+
+		for(auto i = active_blocks_list.begin(); i != active_blocks_list.end(); ++i)
+		{
+			if (n++ < m_active_block_analyzed_last)
+				continue;
+			else
+				m_active_block_analyzed_last = 0;
+			++calls;
+
+			v3POS p = i->first;
+
+			MapBlock *block = m_map->getBlock(p, true);
+			if(!block)
+				continue;
+
+			analyzeBlock(block);
+
+			if (porting::getTimeMs() > end_ms) {
+				m_active_block_analyzed_last = n;
+				break;
+			}
+		}
+		if (!calls)
+			m_active_block_analyzed_last = 0;
+	}
+
+
+	if (g_settings->getBool("abm_random") && (!m_abm_random_blocks.empty() || m_abm_random_interval.step(dtime, 10.0))) {
+		TimeTaker timer("env: random abm " + itos(m_abm_random_blocks.size()));
+
+		u32 end_ms = porting::getTimeMs() + max_cycle_ms/10;
+
+		if (m_abm_random_blocks.empty()) {
+			auto lock = m_map->m_blocks.try_lock_shared_rec();
+			for (auto ir : m_map->m_blocks) {
+				if (!ir.second || !ir.second->abm_triggers)
+					continue;
+				m_abm_random_blocks.emplace_back(ir.first);
+			}
+			//infostream<<"Start ABM random cycle s="<<m_abm_random_blocks.size()<<std::endl;
+		}
+
+		for (auto i = m_abm_random_blocks.begin(); i != m_abm_random_blocks.end(); ++i) {
+			MapBlock* block = m_map->getBlock(*i, true);
+			i = m_abm_random_blocks.erase(i);
+			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
+
+			if (!block)
+				continue;
+
+			if (!block->abm_triggers)
+				continue;
+			//ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
+			block->abmTriggersRun(this, m_game_time);
+			if (porting::getTimeMs() > end_ms) {
+				break;
+			}
+		}
+	}
+
+	return calls;
 }
 
 ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)

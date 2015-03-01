@@ -210,7 +210,7 @@ public:
 		m_list.clear();
 	}
 
-	std::set<v3s16> m_list;
+	maybe_shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
 	std::set<v3s16> m_forceloaded_list;
 
 private:
@@ -375,11 +375,13 @@ public:
 
 	// is weather active in this environment?
 	bool m_use_weather;
+	bool m_more_threads;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3POS> m_abm_random_blocks;
+	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 

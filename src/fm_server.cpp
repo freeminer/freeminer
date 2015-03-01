@@ -260,6 +260,52 @@ public:
 	}
 };
 
+class AbmThread : public thread_pool
+{
+	Server *m_server;
+public:
+
+	AbmThread(Server *server):
+		m_server(server)
+	{}
+
+	void * Thread() {
+		log_register_thread("Abm");
+
+		DSTACK(__FUNCTION_NAME);
+		BEGIN_DEBUG_EXCEPTION_HANDLER
+
+		ThreadStarted();
+
+		porting::setThreadName("Abm");
+		porting::setThreadPriority(20);
+		unsigned int max_cycle_ms = 10000;
+		unsigned int time = porting::getTimeMs();
+		while(!StopRequested()) {
+			try {
+				auto ctime = porting::getTimeMs();
+				unsigned int dtimems = ctime - time;
+				time = ctime;
+				m_server->getEnv().analyzeBlocks(dtimems/1000.0f, max_cycle_ms);
+				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
+#ifdef NDEBUG
+			} catch (BaseException &e) {
+				errorstream<<"Abm: exception: "<<e.what()<<std::endl;
+			} catch(std::exception &e) {
+				errorstream<<"Abm: exception: "<<e.what()<<std::endl;
+			} catch (...) {
+				errorstream<<"Abm: Ooops..."<<std::endl;
+#else
+			} catch (int) { //nothing
+#endif
+			}
+		}
+		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+	return nullptr;
+	}
+};
+
+
 class ServerThread : public thread_pool
 {
 	Server *m_server;
@@ -395,6 +441,7 @@ Server::Server(
 	m_sendblocks(nullptr),
 	m_liquid(nullptr),
 	m_envthread(nullptr),
+	m_abmthread(nullptr),
 	m_time_of_day_send_timer(0),
 	m_uptime(0),
 	m_clients(&m_con),
@@ -418,9 +465,9 @@ Server::Server(
 	m_step_dtime = 0.0;
 	m_lag = g_settings->getFloat("dedicated_server_step");
 #if CMAKE_THREADS
-	more_threads = g_settings->getBool("more_threads");
+	m_more_threads = g_settings->getBool("more_threads");
 #else
-	more_threads = 0;
+	m_more_threads = 0;
 #endif
 
 	if(path_world == "")
@@ -450,11 +497,12 @@ Server::Server(
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
-	if (more_threads) {
+	if (m_more_threads) {
 		m_map_thread = new MapThread(this);
 		m_sendblocks = new SendBlocksThread(this);
 		m_liquid = new LiquidThread(this);
 		m_envthread = new EnvThread(this);
+		m_abmthread = new AbmThread(this);
 	}
 
 	// Create world if it doesn't exist
@@ -569,6 +617,7 @@ Server::Server(
 
 	// Initialize Environment
 	m_env = new ServerEnvironment(servermap, m_script, this, m_path_world);
+	m_env->m_more_threads = m_more_threads;
 	m_emerge->env = m_env;
 
 	m_clients.setEnv(m_env);
@@ -639,6 +688,8 @@ Server::~Server()
 		delete m_sendblocks;
 	if (m_map_thread)
 		delete m_map_thread;
+	if(m_abmthread)
+		delete m_abmthread;
 	if(m_envthread)
 		delete m_envthread;
 
@@ -693,6 +744,8 @@ void Server::start(Address bind_addr)
 		m_liquid->restart();
 	if(m_envthread)
 		m_envthread->restart();
+	if(m_abmthread)
+		m_abmthread->restart();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << minetest_version_hash << "\033[0m \t"
 #if CMAKE_THREADS
@@ -718,6 +771,18 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// Stop threads (set run=false first so both start stopping)
+	m_thread->stop();
+	if (m_liquid)
+		m_liquid->stop();
+	if (m_sendblocks)
+		m_sendblocks->stop();
+	if (m_map_thread)
+		m_map_thread->stop();
+	if(m_abmthread)
+		m_abmthread->stop();
+	if(m_envthread)
+		m_envthread->stop();
+
 	//m_emergethread.setRun(false);
 	m_thread->join();
 	//m_emergethread.stop();
@@ -727,6 +792,8 @@ void Server::stop()
 		m_sendblocks->join();
 	if (m_map_thread)
 		m_map_thread->join();
+	if(m_abmthread)
+		m_abmthread->join();
 	if(m_envthread)
 		m_envthread->join();
 
@@ -764,7 +831,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	}
 */
 
-	if (!more_threads)
+	if (!m_more_threads)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
@@ -847,7 +914,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		m_env->reportMaxLagEstimate(max_lag);
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
-		if (!more_threads)
+		if (!m_more_threads)
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
@@ -906,7 +973,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		}
 	}
 
-	if (!more_threads)
+	if (!m_more_threads)
 		AsyncRunMapStep(dtime, false);
 
 	m_clients.step(dtime);
@@ -1352,7 +1419,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 
 	/* Transform liquids */
 	m_liquid_transform_timer += dtime;
-	if(!more_threads && m_liquid_transform_timer >= m_liquid_transform_interval)
+	if(!m_more_threads && m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
 		TimeTaker timer_step("Server step: liquid transform");
 		m_liquid_transform_timer -= m_liquid_transform_interval;
