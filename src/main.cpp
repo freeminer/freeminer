@@ -46,7 +46,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "defaultsettings.h"
 #include "gettext.h"
 #include "profiler.h"
-#include "log.h"
+#include "log_types.h"
 #include "quicktune.h"
 #include "httpfetch.h"
 #include "guiEngine.h"
@@ -962,11 +962,12 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 	for (std::vector<v3s16>::iterator i = blocks.begin(); i != blocks.end(); i++) {
 		MapBlock *block = old_map.loadBlock(*i);
 		if (!block) {
-			errorstream << "Failed to load block " << PP(*i) << ", skipping it.";
+			errorstream << "Failed to load block " << *i << ", skipping it."<<std::endl;
 		}
 		else {
 			old_map.saveBlock(block, new_db);
 			old_map.m_blocks.erase(block->getPos());
+			delete block;
 		}
 		++count;
 		if (count % 500 == 0)
