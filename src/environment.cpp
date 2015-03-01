@@ -628,13 +628,15 @@ void ServerEnvironment::loadMeta()
 
 		//infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
 
-		if (block->abm_triggers)
-			block->abm_triggers->clear();
 		ServerMap *map = &m_env->getServerMap();
 		{
-		auto lock = block->lock_unique_rec(); //was: try_
+		auto lock = block->try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return;
+
+		if (block->abm_triggers)
+			block->abm_triggers->clear();
+
 		ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
 
 		u32 active_object_count_wider;
@@ -704,6 +706,10 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		if (!abm_triggers)
 			return;
 
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			return;
+
 		ServerMap *map = &m_env->getServerMap();
 
 		float dtime = 0;
@@ -716,6 +722,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 			else
 				dtime = 1;
 		}
+
 		//infostream<<"MapBlock::abmTriggersRun p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
 		for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end() ; ++abm_trigger) {
