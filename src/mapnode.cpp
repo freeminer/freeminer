@@ -367,7 +367,7 @@ static std::vector<aabb3f> transformNodeBox(const MapNode &n,
 		const ContentFeatures &f = nodemgr->get(n);
 		float top = BS/2;
 		if (f.param_type_2 == CPT2_LEVELED || f.param_type_2 == CPT2_FLOWINGLIQUID)
-			top = -BS/2 + BS*((float)1/f.getMaxLevel()) * n.getLevel(nodemgr);
+			top = -BS/2 + BS*((float)1/f.getMaxLevel()) * std::min(n.getLevel(nodemgr), f.getMaxLevel());
 
 		boxes.push_back(aabb3f(-BS/2,-BS/2,-BS/2,BS/2,top,BS/2));
 	}

@@ -234,6 +234,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 					if (nb.content == liquid_kind_flowing) {
 						liquid_levels[i] = nb.node.getLevel(nodemgr);
 						nb.liquid = 1;
+						nb.infinity = (nb.node.param2 & LIQUID_INFINITY_MASK);
 					}
 					break;
 			}
@@ -441,9 +442,10 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 			total_level -= add;
 		}
 
-		for (u16 ii = 0; ii < 7; ii++) // infinity and cave flood optimization
-			if (    neighbors[ii].infinity		||
-				(liquid_levels_want[ii] >= 0	&&
+		for (u16 ii = 0; ii < 7; ii++) { // infinity and cave flood optimization
+			if (neighbors[ii].infinity)
+				liquid_levels_want[ii] = liquid_levels[ii];
+			else if ( liquid_levels_want[ii] >= 0	&&
 				 level_max > 1					&&
 				 fast_flood						&&
 				 p0.Y < water_level				&&
@@ -451,9 +453,10 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
 				 ii != D_TOP					&&
 				 want_level >= level_max/4		&&
 				 can_liquid_same_level >= 5		&&
-				 liquid_levels[D_TOP] >= level_max)) {
+				 liquid_levels[D_TOP] >= level_max) {
 					liquid_levels_want[ii] = level_max;
 			}
+		}
 
 		/*
 		if (total_level != 0) //|| flowed != volume)
