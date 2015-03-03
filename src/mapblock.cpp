@@ -646,6 +646,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 
 	if (!m_generated) {
 		infostream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
+		//if (disk) m_generated = false; else // uncomment if you want convert old buggy map
 		return false;
 	}
 

@@ -954,6 +954,8 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
+	bool &kill = *porting::signal_handler_killstatus();
+
 	std::vector<v3s16> blocks;
 	ServerMap &old_map = ((ServerMap&)server->getMap());
 	old_map.listAllLoadableBlocks(blocks);
@@ -973,6 +975,8 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		if (count % 500 == 0)
 		   actionstream << "Migrated " << count << " blocks "
 			   << (100.0 * count / blocks.size()) << "% completed" << std::endl;
+		if (kill)
+			return false;
 	}
 	new_db->endSave();
 	delete new_db;
