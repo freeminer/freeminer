@@ -2762,13 +2762,16 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	g_profiler->avg("CEnv: num of simple objects", m_simple_objects.size());
 	for(std::vector<ClientSimpleObject*>::iterator
 			i = m_simple_objects.begin(); i != m_simple_objects.end();) {
-		ClientSimpleObject *simple = *i;
 		std::vector<ClientSimpleObject*>::iterator cur = i;
-		++i;
+		ClientSimpleObject *simple = *cur;
+
 		simple->step(dtime);
-		if(simple->m_to_be_removed){
+		if(simple->m_to_be_removed) {
 			delete simple;
-			m_simple_objects.erase(cur);
+			i = m_simple_objects.erase(cur);
+		}
+		else {
+			++i;
 		}
 	}
 }

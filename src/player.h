@@ -105,7 +105,7 @@ public:
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
 	{}
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
-			std::list<CollisionInfo> *collision_info)
+			std::vector<CollisionInfo> *collision_info)
 	{}
 
 	v3f getSpeed()
