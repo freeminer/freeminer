@@ -922,32 +922,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		Do background stuff
 	*/
 
-	/*
-		Handle players
-	*/
-	{
-		//TimeTaker timer_step("Server step: Handle players");
-		//JMutexAutoLock lock(m_env_mutex);
-
-		std::list<u16> clientids = m_clients.getClientIDs();
-
-		//ScopeProfiler sp(g_profiler, "Server: handle players");
-
-		for(std::list<u16>::iterator
-			i = clientids.begin();
-			i != clientids.end(); ++i)
-		{
-			PlayerSAO *playersao = getPlayerSAO(*i);
-			if(playersao == NULL)
-				continue;
-
-			if(playersao->m_moved){
-				SendMovePlayer(*i);
-				playersao->m_moved = false;
-			}
-		}
-	}
-
 	if (!m_more_threads)
 		AsyncRunMapStep(dtime, false);
 
@@ -2106,10 +2080,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		player->control.RMB = (bool)(keyPressed&256);
 
 		auto old_pos = playersao->m_last_good_position;
-		bool cheated = playersao->checkMovementCheat();
-		if(cheated){
+		if(playersao->checkMovementCheat()){
 			// Call callbacks
 			m_script->on_cheat(playersao, "moved_too_fast");
+			SendMovePlayer(peer_id);
 		}
 		else if (playersao->m_time_from_last_respawn > 3) {
 			auto dist = (old_pos/BS).getDistanceFrom(playersao->m_last_good_position/BS);
@@ -4117,6 +4091,7 @@ void Server::RespawnPlayer(u16 peer_id)
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
 		v3f pos = findSpawnPos(m_env->getServerMap());
+		// setPos will send the new position to client
 		playersao->setPos(pos);
 	}
 
