@@ -2953,9 +2953,9 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 
 void Server::SetBlocksNotSent(std::map<v3s16, MapBlock *>& block)
 {
-	std::list<u16> clients = m_clients.getClientIDs();
+	std::vector<u16> clients = m_clients.getClientIDs();
 	// Set the modified blocks unsent for all the clients
-	for (std::list<u16>::iterator
+	for (auto
 		 i = clients.begin();
 		 i != clients.end(); ++i) {
 			RemoteClient *client = m_clients.lockedGetClientNoEx(*i);
@@ -3550,15 +3550,15 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	}
 	else
 	{
-		std::list<u16> clients = m_clients.getClientIDs();
+		std::vector<u16> clients = m_clients.getClientIDs();
 
-		for(std::list<u16>::iterator
+		for(auto
 				i = clients.begin(); i != clients.end(); ++i)
 		{
 			Player *player = m_env->getPlayer(*i);
 			if(!player)
 				continue;
-			if(pos_exists){
+			if(pos_exists) {
 				if(player->getPosition().getDistanceFrom(pos) >
 						params.max_hear_distance)
 					continue;
@@ -3626,21 +3626,18 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 	MSGPACK_PACKET_INIT(TOCLIENT_REMOVENODE, 1);
 	PACK(TOCLIENT_REMOVENODE_POS, p);
 
-	std::list<u16> clients = m_clients.getClientIDs();
-	for(std::list<u16>::iterator
+	std::vector<u16> clients = m_clients.getClientIDs();
+	for(auto
 		i = clients.begin();
 		i != clients.end(); ++i)
 	{
-		if(far_players)
-		{
+		if(far_players) {
 			// Get player
 			Player *player = m_env->getPlayer(*i);
-			if(player)
-			{
+			if(player) {
 				// If player is far away, only set modified blocks not sent
 				v3f player_pos = player->getPosition();
-				if(player_pos.getDistanceFrom(p_f) > maxd)
-				{
+				if(player_pos.getDistanceFrom(p_f) > maxd) {
 					far_players->push_back(*i);
 					continue;
 				}
@@ -3659,22 +3656,20 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 	float maxd = far_d_nodes*BS;
 	v3f p_f = intToFloat(p, BS);
 
-	std::list<u16> clients = m_clients.getClientIDs();
-	for(std::list<u16>::iterator
+	std::vector<u16> clients = m_clients.getClientIDs();
+	for(auto
 				i = clients.begin();
 		i != clients.end(); ++i)
 	{
 
-		if(far_players)
-		{
+		if(far_players) {
 			// Get player
 			Player *player = m_env->getPlayer(*i);
 			if(player)
 			{
 				// If player is far away, only set modified blocks not sent
 				v3f player_pos = player->getPosition();
-				if(player_pos.getDistanceFrom(p_f) > maxd)
-				{
+				if(player_pos.getDistanceFrom(p_f) > maxd) {
 					far_players->push_back(*i);
 					continue;
 				}
@@ -3698,7 +3693,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 void Server::setBlockNotSent(v3s16 p)
 {
 	auto clients = m_clients.getClientIDs();
-	for(std::list<u16>::iterator
+	for(auto
 		i = clients.begin();
 		i != clients.end(); ++i)
 	{
@@ -3750,9 +3745,9 @@ int Server::SendBlocks(float dtime)
 	{
 		//ScopeProfiler sp(g_profiler, "Server: selecting blocks for sending");
 
-		std::list<u16> clients = m_clients.getClientIDs();
+		std::vector<u16> clients = m_clients.getClientIDs();
 
-		for(std::list<u16>::iterator
+		for(auto
 			i = clients.begin();
 			i != clients.end(); ++i)
 		{
@@ -4134,8 +4129,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 
 		// Collect information about leaving in chat
 		{
-			if(player != NULL && reason != CDR_DENY)
-			{
+			if(player != NULL && reason != CDR_DENY) {
 				std::string name = player->getName();
 				message += "*** ";
 				message += name;
@@ -4163,12 +4157,11 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 			Print out action
 		*/
 		{
-			if(player != NULL && reason != CDR_DENY)
-			{
+			if(player != NULL && reason != CDR_DENY) {
 				std::ostringstream os(std::ios_base::binary);
-				std::list<u16> clients = m_clients.getClientIDs();
+				std::vector<u16> clients = m_clients.getClientIDs();
 
-				for(std::list<u16>::iterator
+				for(auto
 					i = clients.begin();
 					i != clients.end(); ++i)
 				{
@@ -4256,8 +4249,8 @@ std::string Server::getStatusString()
 	// Information about clients
 	bool first = true;
 	os<<", clients={";
-	std::list<u16> clients = m_clients.getClientIDs();
-	for(std::list<u16>::iterator i = clients.begin();
+	std::vector<u16> clients = m_clients.getClientIDs();
+	for(auto i = clients.begin();
 		i != clients.end(); ++i)
 	{
 		// Get player
@@ -4297,8 +4290,8 @@ bool Server::checkPriv(const std::string &name, const std::string &priv)
 void Server::reportPrivsModified(const std::string &name)
 {
 	if(name == ""){
-		std::list<u16> clients = m_clients.getClientIDs();
-		for(std::list<u16>::iterator
+		std::vector<u16> clients = m_clients.getClientIDs();
+		for(auto
 				i = clients.begin();
 				i != clients.end(); ++i){
 			Player *player = m_env->getPlayer(*i);
