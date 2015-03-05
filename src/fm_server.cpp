@@ -941,23 +941,9 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			if(playersao == NULL)
 				continue;
 
-			/*
-				Send player breath if changed
-			*/
-			if(playersao->m_breath_not_sent) {
-				SendPlayerBreath(*i);
-			}
-
-			/*
-				Send player inventories if necessary
-			*/
 			if(playersao->m_moved){
 				SendMovePlayer(*i);
 				playersao->m_moved = false;
-			}
-			if(playersao->m_inventory_not_sent){
-				UpdateCrafting(*i);
-				SendInventory(*i);
 			}
 		}
 	}
@@ -1574,7 +1560,6 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	SendPlayerInventoryFormspec(peer_id);
 
 	// Send inventory
-	UpdateCrafting(peer_id);
 	SendInventory(peer_id);
 
 	// Send HP
@@ -2964,8 +2949,8 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 		PlayerSAO *playersao = player->getPlayerSAO();
 		if(!playersao)
 			return;
-		playersao->m_inventory_not_sent = true;
-		playersao->m_wielded_item_not_sent = true;
+
+		SendInventory(playersao->getPeerID());
 	}
 	break;
 	case InventoryLocation::NODEMETA:
@@ -3212,9 +3197,10 @@ void Server::SendInventory(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	assert(playersao);
+	if(!playersao)
+		return;
 
-	playersao->m_inventory_not_sent = false;
+	UpdateCrafting(playersao->getPlayer());
 
 	/*
 		Serialize it
@@ -3491,8 +3477,7 @@ void Server::SendPlayerBreath(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
-	playersao->m_breath_not_sent = false;
-	m_script->player_event(playersao,"breath_changed");
+	m_script->player_event(playersao, "breath_changed");
 	SendBreath(peer_id, playersao->getBreath());
 }
 
@@ -4124,6 +4109,7 @@ void Server::RespawnPlayer(u16 peer_id)
 	playersao->setBreath(PLAYER_MAX_BREATH);
 
 	SendPlayerHP(peer_id);
+	SendPlayerBreath(peer_id);
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
@@ -4236,12 +4222,9 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		SendChatMessage(PEER_ID_INEXISTENT,message);
 }
 
-void Server::UpdateCrafting(u16 peer_id)
+void Server::UpdateCrafting(Player* player)
 {
 	DSTACK(__FUNCTION_NAME);
-
-	Player* player = m_env->getPlayer(peer_id);
-	assert(player);
 
 	// Get a preview for crafting
 	ItemStack preview;

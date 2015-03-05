@@ -923,7 +923,7 @@ void Server::handleCommand_Breath(NetworkPacket* pkt)
 	}
 
 	playersao->setBreath(breath);
-	m_script->player_event(playersao,"breath_changed");
+	SendPlayerBreath(pkt->getPeerId());
 }
 
 void Server::handleCommand_Password(NetworkPacket* pkt)
@@ -1391,7 +1391,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 			// Placement was handled in lua
 
 			// Apply returned ItemStack
-			playersao->setWieldedItem(item);
+			if (playersao->setWieldedItem(item)) {
+				SendInventory(pkt->getPeerId());
+			}
 		}
 
 		// If item has node placement prediction, always send the

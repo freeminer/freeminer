@@ -360,6 +360,9 @@ int ObjectRef::l_set_wielded_item(lua_State *L)
 	// Do it
 	ItemStack item = read_item(L, 2, getServer(L));
 	bool success = co->setWieldedItem(item);
+	if (success && co->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		getServer(L)->SendInventory(((PlayerSAO*)co)->getPeerID());
+	}
 	lua_pushboolean(L, success);
 	return 1;
 }
@@ -817,7 +820,11 @@ int ObjectRef::l_set_breath(lua_State *L)
 	u16 breath = luaL_checknumber(L, 2);
 	// Do it
 	co->setBreath(breath);
-	co->m_breath_not_sent = true;
+
+	// If the object is a player sent the breath to client
+	if (co->getType() == ACTIVEOBJECT_TYPE_PLAYER)
+			getServer(L)->SendPlayerBreath(((PlayerSAO*)co)->getPeerID());
+
 	return 0;
 }
 
