@@ -909,7 +909,8 @@ void Server::AsyncRunStep(bool initial_step)
 
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
-			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
+			MapEditEvent* event = m_unsent_map_edit_queue.front();
+			m_unsent_map_edit_queue.pop();
 
 			// Players far away from the change are stored here.
 			// Instead of sending the changes, MapBlocks are set not sent
@@ -1295,7 +1296,7 @@ void Server::onMapEditEvent(MapEditEvent *event)
 	if(m_ignore_map_edit_events_area.contains(event->getArea()))
 		return;
 	MapEditEvent *e = event->clone();
-	m_unsent_map_edit_queue.push_back(e);
+	m_unsent_map_edit_queue.push(e);
 }
 
 Inventory* Server::getInventory(const InventoryLocation &loc)
@@ -1398,7 +1399,7 @@ void Server::peerAdded(con::Peer *peer)
 	c.type = con::PEER_ADDED;
 	c.peer_id = peer->id;
 	c.timeout = false;
-	m_peer_change_queue.push_back(c);
+	m_peer_change_queue.push(c);
 }
 
 void Server::deletingPeer(con::Peer *peer, bool timeout)
@@ -1412,7 +1413,7 @@ void Server::deletingPeer(con::Peer *peer, bool timeout)
 	c.type = con::PEER_REMOVED;
 	c.peer_id = peer->id;
 	c.timeout = timeout;
-	m_peer_change_queue.push_back(c);
+	m_peer_change_queue.push(c);
 }
 
 bool Server::getClientConInfo(u16 peer_id, con::rtt_stat_type type, float* retval)
@@ -1461,7 +1462,8 @@ void Server::handlePeerChanges()
 {
 	while(m_peer_change_queue.size() > 0)
 	{
-		con::PeerChange c = m_peer_change_queue.pop_front();
+		con::PeerChange c = m_peer_change_queue.front();
+		m_peer_change_queue.pop();
 
 		verbosestream<<"Server: Handling peer change: "
 				<<"id="<<c.peer_id<<", timeout="<<c.timeout
@@ -1840,7 +1842,7 @@ void Server::SendPlayerHP(u16 peer_id)
 	// Send to other clients
 	std::string str = gob_cmd_punched(playersao->readDamage(), playersao->getHP());
 	ActiveObjectMessage aom(playersao->getId(), true, str);
-	playersao->m_messages_out.push_back(aom);
+	playersao->m_messages_out.push(aom);
 }
 
 void Server::SendPlayerBreath(u16 peer_id)

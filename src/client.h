@@ -574,7 +574,7 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-	Queue<std::string> m_chat_queue;
+	Queue<std::string> m_chat_queue; // todo: convert to std::queue
 	// The seed returned by the server in TOCLIENT_INIT is stored here
 	u64 m_map_seed;
 	std::string m_password;

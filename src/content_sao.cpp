@@ -94,7 +94,7 @@ public:
 			data += itos(m_base_position.Z);
 
 			ActiveObjectMessage aom(getId(), false, data);
-			m_messages_out.push_back(aom);
+			m_messages_out.push(aom);
 		}
 	}
 
@@ -239,7 +239,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		std::string str = getPropertyPacket();
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 		m_properties_sent = true;
 	}
 
@@ -327,7 +327,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 				m_armor_groups);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_animation_sent == false){
@@ -335,7 +335,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		std::string str = gob_cmd_update_animation(m_animation_range, m_animation_speed, m_animation_blend);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_bone_position_sent == false){
@@ -344,7 +344,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			std::string str = gob_cmd_update_bone_position((*ii).first, (*ii).second.X, (*ii).second.Y);
 			// create message and add to list
 			ActiveObjectMessage aom(getId(), true, str);
-			m_messages_out.push_back(aom);
+			m_messages_out.push(aom);
 		}
 	}
 
@@ -353,7 +353,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		std::string str = gob_cmd_update_attachment(m_attachment_parent_id, m_attachment_bone, m_attachment_position, m_attachment_rotation);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 }
 
@@ -472,7 +472,7 @@ int LuaEntitySAO::punch(v3f dir,
 			std::string str = gob_cmd_punched(result.damage, getHP());
 			// create message and add to list
 			ActiveObjectMessage aom(getId(), true, str);
-			m_messages_out.push_back(aom);
+			m_messages_out.push(aom);
 		}
 
 		if(getHP() == 0)
@@ -621,7 +621,7 @@ void LuaEntitySAO::setTextureMod(const std::string &mod)
 	std::string str = gob_cmd_set_texture_mod(mod);
 	// create message and add to list
 	ActiveObjectMessage aom(getId(), true, str);
-	m_messages_out.push_back(aom);
+	m_messages_out.push(aom);
 }
 
 void LuaEntitySAO::setSprite(v2s16 p, int num_frames, float framelength,
@@ -635,7 +635,7 @@ void LuaEntitySAO::setSprite(v2s16 p, int num_frames, float framelength,
 	);
 	// create message and add to list
 	ActiveObjectMessage aom(getId(), true, str);
-	m_messages_out.push_back(aom);
+	m_messages_out.push(aom);
 }
 
 std::string LuaEntitySAO::getName()
@@ -675,7 +675,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	);
 	// create message and add to list
 	ActiveObjectMessage aom(getId(), false, str);
-	m_messages_out.push_back(aom);
+	m_messages_out.push(aom);
 }
 
 bool LuaEntitySAO::getCollisionBox(aabb3f *toset) {
@@ -870,7 +870,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		std::string str = getPropertyPacket();
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 		m_properties_sent = true;
 	}
 
@@ -936,7 +936,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), false, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_armor_groups_sent == false) {
@@ -945,7 +945,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 				m_armor_groups);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_physics_override_sent == false){
@@ -955,7 +955,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 				m_physics_override_sneak, m_physics_override_sneak_glitch);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_animation_sent == false){
@@ -963,7 +963,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		std::string str = gob_cmd_update_animation(m_animation_range, m_animation_speed, m_animation_blend);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 
 	if(m_bone_position_sent == false){
@@ -972,7 +972,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 			std::string str = gob_cmd_update_bone_position((*ii).first, (*ii).second.X, (*ii).second.Y);
 			// create message and add to list
 			ActiveObjectMessage aom(getId(), true, str);
-			m_messages_out.push_back(aom);
+			m_messages_out.push(aom);
 		}
 	}
 
@@ -981,7 +981,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		std::string str = gob_cmd_update_attachment(m_attachment_parent_id, m_attachment_bone, m_attachment_position, m_attachment_rotation);
 		// create message and add to list
 		ActiveObjectMessage aom(getId(), true, str);
-		m_messages_out.push_back(aom);
+		m_messages_out.push(aom);
 	}
 }
 
@@ -1044,7 +1044,7 @@ int PlayerSAO::punch(v3f dir,
 			std::string str = gob_cmd_punched(0, getHP());
 			// create message and add to list
 			ActiveObjectMessage aom(getId(), true, str);
-			m_messages_out.push_back(aom);
+			m_messages_out.push(aom);
 			return 0;
 		}
 	}
