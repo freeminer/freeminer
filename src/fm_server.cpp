@@ -1186,7 +1186,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 		while(m_unsent_map_edit_queue.size() != 0)
 		{
-			MapEditEvent* event = m_unsent_map_edit_queue.pop_front();
+			auto event = std::unique_ptr<MapEditEvent>(m_unsent_map_edit_queue.pop_front());
 
 			// Players far away from the change are stored here.
 			// Instead of sending the changes, MapBlocks are set not sent
@@ -1270,7 +1270,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				}
 			}
 
-			delete event;
+			//delete event;
 
 			++count;
 			/*// Don't send too many at a time
