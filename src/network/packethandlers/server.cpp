@@ -1392,7 +1392,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 
 			// Apply returned ItemStack
 			if (playersao->setWieldedItem(item)) {
-				SendInventory(pkt->getPeerId());
+				SendInventory(playersao);
 			}
 		}
 
