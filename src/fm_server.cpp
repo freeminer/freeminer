@@ -1534,7 +1534,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	SendPlayerInventoryFormspec(peer_id);
 
 	// Send inventory
-	SendInventory(peer_id);
+	SendInventory(playersao);
 
 	// Send HP
 	if(g_settings->getBool("enable_damage"))
@@ -2725,7 +2725,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 				// Apply returned ItemStack
 			if (playersao->setWieldedItem(item)) {
-				SendInventory(peer_id);
+				SendInventory(playersao);
 			}
 
 				stat.add("place", player->getName());
@@ -2908,7 +2908,7 @@ Inventory* Server::getInventory(const InventoryLocation &loc)
 	}
 	break;
 	default:
-		assert(0);
+		break;
 	}
 	return NULL;
 }
@@ -2927,7 +2927,7 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 		if(!playersao)
 			return;
 
-		SendInventory(playersao->getPeerID());
+		SendInventory(playersao);
 	}
 	break;
 	case InventoryLocation::NODEMETA:
@@ -2947,7 +2947,7 @@ void Server::setInventoryModified(const InventoryLocation &loc)
 	}
 	break;
 	default:
-		assert(0);
+		break;
 	}
 }
 
@@ -3169,22 +3169,18 @@ void Server::SendAnimations(u16 peer_id)
 	Non-static send methods
 */
 
-void Server::SendInventory(u16 peer_id)
+void Server::SendInventory(PlayerSAO* playerSAO)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	if(!playersao)
-		return;
-
-	UpdateCrafting(playersao->getPlayer());
+	UpdateCrafting(playerSAO->getPlayer());
 
 	/*
 		Serialize it
 	*/
 
 	std::ostringstream os;
-	playersao->getInventory()->serialize(os);
+	playerSAO->getInventory()->serialize(os);
 
 	std::string s = os.str();
 
@@ -3192,7 +3188,7 @@ void Server::SendInventory(u16 peer_id)
 	PACK(TOCLIENT_INVENTORY_DATA, s);
 
 	// Send as reliable
-	m_clients.send(peer_id, 0, buffer, true);
+	m_clients.send(playerSAO->getPeerID(), 0, buffer, true);
 }
 
 void Server::SendChatMessage(u16 peer_id, const std::string &message)
