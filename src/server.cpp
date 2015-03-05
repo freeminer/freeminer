@@ -608,17 +608,6 @@ void Server::AsyncRunStep(bool initial_step)
 				continue;
 
 			/*
-				Handle player HPs (die if hp=0)
-			*/
-			if(playersao->m_hp_not_sent && g_settings->getBool("enable_damage"))
-			{
-				if(playersao->getHP() == 0)
-					DiePlayer(*i);
-				else
-					SendPlayerHP(*i);
-			}
-
-			/*
 				Send player breath if changed
 			*/
 			if(playersao->m_breath_not_sent) {
@@ -1892,7 +1881,6 @@ void Server::SendPlayerHP(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
-	playersao->m_hp_not_sent = false;
 	SendHP(peer_id, playersao->getHP());
 	m_script->player_event(playersao,"health_changed");
 
@@ -2591,9 +2579,9 @@ void Server::DiePlayer(u16 peer_id)
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
 
-	infostream<<"Server::DiePlayer(): Player "
-			<<playersao->getPlayer()->getName()
-			<<" dies"<<std::endl;
+	infostream << "Server::DiePlayer(): Player "
+			<< playersao->getPlayer()->getName()
+			<< " dies" << std::endl;
 
 	playersao->setHP(0);
 
@@ -2611,12 +2599,14 @@ void Server::RespawnPlayer(u16 peer_id)
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
 
-	infostream<<"Server::RespawnPlayer(): Player "
-			<<playersao->getPlayer()->getName()
-			<<" respawns"<<std::endl;
+	infostream << "Server::RespawnPlayer(): Player "
+			<< playersao->getPlayer()->getName()
+			<< " respawns" << std::endl;
 
 	playersao->setHP(PLAYER_MAX_HP);
 	playersao->setBreath(PLAYER_MAX_BREATH);
+
+	SendPlayerHP(peer_id);
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
