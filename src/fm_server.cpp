@@ -942,17 +942,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				continue;
 
 			/*
-				Handle player HPs (die if hp=0)
-			*/
-			if(playersao->m_hp_not_sent && g_settings->getBool("enable_damage"))
-			{
-				if(playersao->getHP() == 0)
-					DiePlayer(*i);
-				else
-					SendPlayerHP(*i);
-			}
-
-			/*
 				Send player breath if changed
 			*/
 			if(playersao->m_breath_not_sent) {
@@ -2376,11 +2365,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 			playersao->setHP(playersao->getHP() - damage);
 
-			if(playersao->getHP() == 0 && playersao->m_hp_not_sent)
-				DiePlayer(peer_id);
+			SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
 
-			if(playersao->m_hp_not_sent)
-				SendPlayerHP(peer_id);
 			stat.add("damage", player->getName(), damage);
 		}
 	}
@@ -2440,8 +2426,8 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		RespawnPlayer(peer_id);
 
-		actionstream<<player->getName()<<" respawns at "
-				<<PP(player->getPosition()/BS)<<std::endl;
+		actionstream << player->getName() << " respawns at "
+				<< PP(player->getPosition()/BS) << std::endl;
 
 		// ActiveObject is added to environment in AsyncRunStep after
 		// the previous addition has been succesfully removed
@@ -2601,8 +2587,26 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 							).normalize();
 				float time_from_last_punch =
 					playersao->resetTimeFromLastPunch();
+
+			s16 src_original_hp = pointed_object->getHP();
+			s16 dst_origin_hp = playersao->getHP();
+
 				pointed_object->punch(dir, &toolcap, playersao,
 						time_from_last_punch);
+
+			// If the object is a player and its HP changed
+			if (src_original_hp != pointed_object->getHP() &&
+					pointed_object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+				SendPlayerHPOrDie(((PlayerSAO*)pointed_object)->getPeerID(),
+						pointed_object->getHP() == 0);
+			}
+
+			// If the puncher is a player and its HP changed
+			if (dst_origin_hp != playersao->getHP()) {
+				SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
+			}
+
+
 				stat.add("punch", player->getName());
 			}
 
@@ -3473,7 +3477,6 @@ void Server::SendPlayerHP(u16 peer_id)
 	DSTACK(__FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	assert(playersao);
-	playersao->m_hp_not_sent = false;
 	SendHP(peer_id, playersao->getHP());
 	m_script->player_event(playersao,"health_changed");
 
@@ -4090,9 +4093,9 @@ void Server::DiePlayer(u16 peer_id)
 
 	playersao->m_time_from_last_respawn = 0;
 
-	infostream<<"Server::DiePlayer(): Player "
-			<<playersao->getPlayer()->getName()
-			<<" dies"<<std::endl;
+	infostream << "Server::DiePlayer(): Player "
+			<< playersao->getPlayer()->getName()
+			<< " dies" << std::endl;
 
 	playersao->setHP(0);
 
@@ -4113,12 +4116,14 @@ void Server::RespawnPlayer(u16 peer_id)
 	if (!playersao)
 		return;
 
-	infostream<<"Server::RespawnPlayer(): Player "
-			<<playersao->getPlayer()->getName()
-			<<" respawns"<<std::endl;
+	infostream << "Server::RespawnPlayer(): Player "
+			<< playersao->getPlayer()->getName()
+			<< " respawns" << std::endl;
 
 	playersao->setHP(PLAYER_MAX_HP);
 	playersao->setBreath(PLAYER_MAX_BREATH);
+
+	SendPlayerHP(peer_id);
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
