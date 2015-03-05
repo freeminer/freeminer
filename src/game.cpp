@@ -1805,10 +1805,6 @@ bool Game::startup(bool *kill,
 
 	smgr->getParameters()->setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
 
-#ifdef __ANDROID__ // android gets all the fancy graphics
-	smgr->getParameters()->setAttribute(scene::ALLOW_ZWRITE_ON_TRANSPARENT, true);
-#endif
-
 	if (!init(map_dir, address, port, gamespec))
 		return false;
 
