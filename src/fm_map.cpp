@@ -108,18 +108,19 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 	return block;
 }
 
-void Map::insertBlock(MapBlock *block) {
+bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2) {
 		//throw AlreadyExistsException("Block already exists");
 		infostream << "Block already exists " << block_p << std::endl;
-		return; // memory leak, but very rare|impossible
+		return false;
 	}
 
 	// Insert into container
 	m_blocks.set(block_p, block);
+	return true;
 }
 
 void Map::deleteBlock(MapBlockP block) {

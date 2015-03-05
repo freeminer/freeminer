@@ -2966,6 +2966,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	if(!blob.length())
 		return nullptr;
 
+	MapBlock *block = nullptr;
 	try {
 		std::istringstream is(blob, std::ios_base::binary);
 
@@ -2983,7 +2984,6 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		// This will always return a sector because we're the server
 		//MapSector *sector = emergeSector(p2d);
 
-		MapBlock *block = NULL;
 		bool created_new = false;
 		block = sector->getBlockNoCreateNoEx(p3d);
 		if(block == NULL)
@@ -2994,15 +2994,17 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 
 		// Read basic data
 		if (!block->deSerialize(is, version, true)) {
-			if (created_new)
+			if (created_new && block)
 				delete block;
 			return nullptr;
 		}
 
 		// If it's a new block, insert it to the map
 		if(created_new)
-			sector->insertBlock(block);
-
+			if(!sector->insertBlock(block)) {
+				delete block;
+				return nullptr;
+			}
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
 
@@ -3015,6 +3017,9 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	}
 	catch(SerializationError &e)
 	{
+		if (block)
+			delete block;
+
 		errorstream<<"Invalid block data in database"
 				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
 				<<" (SerializationError): "<<e.what()<<std::endl;

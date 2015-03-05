@@ -1030,12 +1030,14 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		if (packet.count(TOCLIENT_BLOCKDATA_CONTENT_ONLY))
 			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
 
-		if (new_block)
-			m_env.getMap().insertBlock(block);
 
 		if (localserver != NULL) {
 			localserver->getMap().saveBlock(block);
 		}
+
+		if (new_block)
+			if (!m_env.getMap().insertBlock(block))
+				delete block;
 
 		/*
 			//Add it to mesh update queue and set it to be acknowledged after update.
