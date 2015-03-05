@@ -81,7 +81,6 @@ private:
 	std::queue<Value> m_queue;
 };
 
-#if 1
 template<typename Key, typename Value>
 class MutexedMap
 {
@@ -113,9 +112,9 @@ public:
 		return true;
 	}
 
-	std::list<Value> getValues()
+	std::vector<Value> getValues()
 	{
-		std::list<Value> result;
+		std::vector<Value> result;
 		for(typename std::map<Key, Value>::iterator
 			i = m_values.begin();
 			i != m_values.end(); ++i){
@@ -133,7 +132,6 @@ private:
 	std::map<Key, Value> m_values;
 	JMutex m_mutex;
 };
-#endif
 
 /*
 Generates ids for comparable values.
