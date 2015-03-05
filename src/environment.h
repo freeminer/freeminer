@@ -226,7 +226,7 @@ private:
 	bool m_aabms_empty;
 public:
 	ABMHandler(ServerEnvironment *env);
-	void init(std::list<ABMWithState> &abms);
+	void init(std::vector<ABMWithState> &abms);
 	~ABMHandler();
 	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
 	void apply(MapBlock *block, bool activate = false);
@@ -470,7 +470,7 @@ private:
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
 public:
-	std::list<ABMWithState> m_abms;
+	std::vector<ABMWithState> m_abms;
 private:
 	// An interval for generally sending object positions and stuff
 	float m_recommended_send_interval;

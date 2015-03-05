@@ -384,7 +384,7 @@ ServerEnvironment::~ServerEnvironment()
 	m_map->drop();
 
 	// Delete ActiveBlockModifiers
-	for(std::list<ABMWithState>::iterator
+	for(std::vector<ABMWithState>::iterator
 			i = m_abms.begin(); i != m_abms.end(); ++i){
 		delete i->abm;
 	}
@@ -586,7 +586,7 @@ void ServerEnvironment::loadMeta()
 		m_aabms.fill(nullptr);
 	}
 
-	void ABMHandler::init(std::list<ABMWithState> &abms) {
+	void ABMHandler::init(std::vector<ABMWithState> &abms) {
 		for(auto & ai: abms){
 			auto i = &ai;
 			ActiveABM aabm;
@@ -1332,7 +1332,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 					<<") being handled"<<std::endl;*/
 
 			MapBlock *block = m_map->getBlock(p, true);
-			if(!block)
+			if (!block)
 				continue;
 
 			// Set current time as timestamp
@@ -2416,7 +2416,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	LocalPlayer *lplayer = getLocalPlayer();
 	assert(lplayer);
 	// collision info queue
-	std::list<CollisionInfo> player_collisions;
+	std::vector<CollisionInfo> player_collisions;
 
 	/*
 		Get the speed the player is going
@@ -2557,7 +2557,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	if (!breaked && m_move_max_loop < 50)
 		++m_move_max_loop;
 
-	for(std::list<CollisionInfo>::iterator
+	for(auto
 			i = player_collisions.begin();
 			i != player_collisions.end(); ++i)
 	{

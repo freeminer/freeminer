@@ -1624,6 +1624,7 @@ void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
 
+
 void Map::PrintInfo(std::ostream &out)
 {
 	out<<"Map: ";
