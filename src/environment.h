@@ -601,7 +601,7 @@ private:
 	std::map<u16, ClientActiveObject*> m_active_objects;
 	u32 m_active_objects_client_last;
 	u32 m_move_max_loop;
-	std::list<ClientSimpleObject*> m_simple_objects;
+	std::vector<ClientSimpleObject*> m_simple_objects;
 	std::list<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	IntervalLimiter m_lava_hurt_interval;

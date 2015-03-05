@@ -748,7 +748,7 @@ void Client::deletingPeer(u16 peer_id, bool timeout)
 		string name
 	}
 */
-void Client::request_media(const std::list<std::string> &file_requests)
+void Client::request_media(const std::vector<std::string> &file_requests)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_REQUEST_MEDIA, 1);
 	PACK(TOSERVER_REQUEST_MEDIA_FILES, file_requests);
