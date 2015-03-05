@@ -89,21 +89,13 @@ public:
 	u32 getDayNightRatio();
 
 	// 0-23999
-	virtual void setTimeOfDay(u32 time)
-	{
-		m_time_of_day = time;
-	}
-
-	u32 getTimeOfDay()
-	{ return m_time_of_day; }
-
-	inline float getTimeOfDayF()
-	{ return (float)m_time_of_day / 24000.0; }
+	virtual void setTimeOfDay(u32 time);
+	u32 getTimeOfDay();
+	float getTimeOfDayF();
 
 	void stepTimeOfDay(float dtime);
 
 	void setTimeOfDaySpeed(float speed);
-
 	float getTimeOfDaySpeed();
 
 	void setDayNightRatioOverride(bool enable, u32 value)
@@ -140,7 +132,8 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	locker m_lock;
+	JMutex m_timeofday_lock;
+	JMutex m_time_lock;
 
 };
 

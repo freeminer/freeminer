@@ -2358,7 +2358,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	else if(command == TOSERVER_BREATH)
 	{
 		playersao->setBreath(packet[TOSERVER_BREATH_VALUE].as<u16>());
-		m_script->player_event(playersao,"breath_changed");
+		SendPlayerBreath(peer_id);
 	}
 	else if(command == TOSERVER_CHANGE_PASSWORD)
 	{
@@ -2750,7 +2750,10 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				// Placement was handled in lua
 
 				// Apply returned ItemStack
-				playersao->setWieldedItem(item);
+			if (playersao->setWieldedItem(item)) {
+				SendInventory(peer_id);
+			}
+
 				stat.add("place", player->getName());
 				//stat.add("place_" + item.name, player->getName());
 			}

@@ -176,15 +176,34 @@ u32 Environment::getDayNightRatio()
 
 void Environment::setTimeOfDaySpeed(float speed)
 {
-	auto lock = m_lock.lock_unique();
+	JMutexAutoLock(this->m_timeofday_lock);
 	m_time_of_day_speed = speed;
 }
 
 float Environment::getTimeOfDaySpeed()
 {
-	auto lock = m_lock.lock_shared();
+	JMutexAutoLock(this->m_timeofday_lock);
 	float retval = m_time_of_day_speed;
 	return retval;
+}
+
+void Environment::setTimeOfDay(u32 time)
+{
+	JMutexAutoLock(this->m_time_lock);
+	m_time_of_day = time;
+}
+
+u32 Environment::getTimeOfDay()
+{
+	JMutexAutoLock(this->m_time_lock);
+	u32 retval = m_time_of_day;
+	return retval;
+}
+
+float Environment::getTimeOfDayF()
+{
+	JMutexAutoLock(this->m_time_lock);
+	return (float)m_time_of_day / 24000.0;
 }
 
 void Environment::stepTimeOfDay(float dtime)
