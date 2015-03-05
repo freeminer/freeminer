@@ -485,7 +485,7 @@ void Client::step(float dtime)
 					ClientEvent event;
 					event.type = CE_PLAYER_DAMAGE;
 					event.player_damage.amount = damage;
-					m_client_event_queue.push_back(event);
+					m_client_event_queue.push(event);
 				}
 			}
 			else if(event.type == CEE_PLAYER_BREATH)
@@ -1092,7 +1092,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	else if(command == TOCLIENT_CHAT_MESSAGE)
 	{
 		std::string message = packet[TOCLIENT_CHAT_MESSAGE_DATA].as<std::string>();
-		m_chat_queue.push_back(message);
+		m_chat_queue.push(message);
 	}
 	else if(command == TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD)
 	{
@@ -1143,7 +1143,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			ClientEvent event;
 			event.type = CE_PLAYER_DAMAGE;
 			event.player_damage.amount = oldhp - hp;
-			m_client_event_queue.push_back(event);
+			m_client_event_queue.push(event);
 		}
 	}
 	else if(command == TOCLIENT_BREATH)
@@ -1176,7 +1176,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.type = CE_PLAYER_FORCE_MOVE;
 		event.player_force_move.pitch = pitch;
 		event.player_force_move.yaw = yaw;
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 
 		// Ignore damage for a few seconds, so that the player doesn't
 		// get damage from falling on ground
@@ -1193,7 +1193,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.deathscreen.camera_point_target_x = camera_point_target.X;
 		event.deathscreen.camera_point_target_y = camera_point_target.Y;
 		event.deathscreen.camera_point_target_z = camera_point_target.Z;
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_ANNOUNCE_MEDIA)
 	{
@@ -1347,7 +1347,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		// adding a std:string to a struct isn't possible
 		event.show_formspec.formspec = new std::string(formspec);
 		event.show_formspec.formname = new std::string(formname);
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_SPAWN_PARTICLE)
 	{
@@ -1373,7 +1373,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.spawn_particle.vertical = vertical;
 		event.spawn_particle.texture = new std::string(texture);
 
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_ADD_PARTICLESPAWNER)
 	{
@@ -1422,7 +1422,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.add_particlespawner.texture = new std::string(texture);
 		event.add_particlespawner.id = id;
 
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_DELETE_PARTICLESPAWNER)
 	{
@@ -1432,7 +1432,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.type = CE_DELETE_PARTICLESPAWNER;
 		event.delete_particlespawner.id = id;
 
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_HUDADD)
 	{
@@ -1475,7 +1475,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.hudadd.offset = new v2f(offset);
 		event.hudadd.world_pos = new v3f(world_pos);
 		event.hudadd.size      = new v2s32(size);
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_HUDRM)
 	{
@@ -1484,7 +1484,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		ClientEvent event;
 		event.type = CE_HUDRM;
 		event.hudrm.id = id;
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_HUDCHANGE)
 	{
@@ -1518,7 +1518,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.hudchange.sdata   = new std::string(sdata);
 		event.hudchange.data    = intdata;
 		event.hudchange.v2s32data = new v2s32(v2s32data);
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_HUD_SET_FLAGS)
 	{
@@ -1572,7 +1572,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.set_sky.bgcolor = bgcolor;
 		event.set_sky.type    = type;
 		event.set_sky.params  = params;
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO)
 	{
@@ -1585,7 +1585,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		event.type                                 = CE_OVERRIDE_DAY_NIGHT_RATIO;
 		event.override_day_night_ratio.do_override = do_override;
 		event.override_day_night_ratio.ratio_f     = day_night_ratio_f;
-		m_client_event_queue.push_back(event);
+		m_client_event_queue.push(event);
 	}
 	else if(command == TOCLIENT_LOCAL_PLAYER_ANIMATIONS)
 	{
@@ -2085,7 +2085,7 @@ void Client::typeChatMessage(const std::string &message)
 	// Show locally
 	if (message[0] == '/')
 	{
-		m_chat_queue.push_back("issued command: " + message);
+		m_chat_queue.push("issued command: " + message);
 	}
 }
 
@@ -2328,7 +2328,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";
 			}
-			m_chat_queue.push_back(sstr.str());
+			m_chat_queue.push(sstr.str());
 			infostream << sstr.str() << std::endl;
 			image->drop();
 		}
