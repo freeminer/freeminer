@@ -266,7 +266,6 @@ CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 			min_tunnel_diameter = 5;
 			max_tunnel_diameter = ps->range(7, ps->range(8,24));
 		}
-		flooded_water = !ps->range(0, 2);
 	} else {
 		part_max_length_rs = ps->range(2,9);
 		tunnel_routepoints = ps->range(10, ps->range(15,30));
