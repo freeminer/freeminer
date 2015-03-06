@@ -363,8 +363,8 @@ public:
 
 	u32 getGameTime() { return m_game_time; }
 
-	void reportMaxLagEstimate(float f) { m_max_lag_estimate = f; }
-	float getMaxLagEstimate() { return m_max_lag_estimate; }
+	void reportMaxLagEstimate(float f) { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); m_max_lag_estimate = f; }
+	float getMaxLagEstimate() { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); return m_max_lag_estimate; }
 
 	// is weather active in this environment?
 	bool m_use_weather;
@@ -467,6 +467,7 @@ private:
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
 	std::atomic_uint m_game_time;
+	std::mutex m_max_lag_estimate_mutex;
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
 public:

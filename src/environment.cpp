@@ -176,33 +176,33 @@ u32 Environment::getDayNightRatio()
 
 void Environment::setTimeOfDaySpeed(float speed)
 {
-	JMutexAutoLock(this->m_timeofday_lock);
+	JMutexAutoLock lock(this->m_timeofday_lock);
 	m_time_of_day_speed = speed;
 }
 
 float Environment::getTimeOfDaySpeed()
 {
-	JMutexAutoLock(this->m_timeofday_lock);
+	JMutexAutoLock lock(this->m_timeofday_lock);
 	float retval = m_time_of_day_speed;
 	return retval;
 }
 
 void Environment::setTimeOfDay(u32 time)
 {
-	JMutexAutoLock(this->m_time_lock);
+	JMutexAutoLock lock(this->m_time_lock);
 	m_time_of_day = time;
 }
 
 u32 Environment::getTimeOfDay()
 {
-	JMutexAutoLock(this->m_time_lock);
+	JMutexAutoLock lock(this->m_time_lock);
 	u32 retval = m_time_of_day;
 	return retval;
 }
 
 float Environment::getTimeOfDayF()
 {
-	JMutexAutoLock(this->m_time_lock);
+	JMutexAutoLock lock(this->m_time_lock);
 	return (float)m_time_of_day / 24000.0;
 }
 
@@ -358,7 +358,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_blocks_added_last(0),
 	m_active_block_analyzed_last(0),
 	m_game_time_fraction_counter(0),
-	m_recommended_send_interval(0.1),
+	m_recommended_send_interval(g_settings->getFloat("dedicated_server_step")),
 	m_max_lag_estimate(0.1)
 {
 	m_game_time = 0;
@@ -1104,7 +1104,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	// Update this one
 	// NOTE: This is kind of funny on a singleplayer game, but doesn't
 	// really matter that much.
-	m_recommended_send_interval = g_settings->getFloat("dedicated_server_step");
+	//m_recommended_send_interval = g_settings->getFloat("dedicated_server_step");
 
 	/*
 		Increment game time
@@ -1623,7 +1623,7 @@ bool ServerEnvironment::addActiveObjectAsStatic(ServerActiveObject *obj)
 */
 void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		s16 player_radius,
-		maybe_shared_unordered_map<u16, bool> &current_objects,
+		maybe_shared_unordered_map<u16, bool> &current_objects_shared,
 		std::set<u16> &added_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1633,6 +1633,11 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
+	std::unordered_map<u16, bool> current_objects;
+	{
+		auto lock = current_objects_shared.lock_shared_rec();
+		current_objects = current_objects_shared;
+	}
 	/*
 		Go through the object list,
 		- discard m_removed objects,
@@ -1662,13 +1667,10 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		} else if (distance_f > radius_f)
 			continue;
 
-		{
-			auto lock_co = current_objects.lock_shared_rec();
 		// Discard if already on current_objects
 		auto n = current_objects.find(id);
 		if(n != current_objects.end())
 			continue;
-		}
 		// Add to added_objects
 		added_objects.insert(id);
 	}
@@ -1690,9 +1692,14 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
-	auto lock = current_objects.try_lock_shared_rec();
-	if (!lock->owns_lock())
-		return;
+	std::vector<u16> current_objects_vector;
+	{
+		auto lock = current_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		for (auto & i : current_objects)
+			current_objects_vector.emplace_back(i.first);
+	}
 	/*
 		Go through current_objects; object is removed if:
 		- object is not found in m_active_objects (this is actually an
@@ -1702,10 +1709,10 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		- object is too far away
 	*/
 	for(auto
-			i = current_objects.begin();
-			i != current_objects.end(); ++i)
+			i = current_objects_vector.begin();
+			i != current_objects_vector.end(); ++i)
 	{
-		u16 id = i->first;
+		u16 id = *i;
 		ServerActiveObject *object = getActiveObject(id);
 
 		if(object == NULL){

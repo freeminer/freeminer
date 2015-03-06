@@ -685,7 +685,7 @@ private:
 		Reference count; currently used for determining if this block is in
 		the list of blocks to be drawn.
 	*/
-	int m_refcount;
+	std::atomic_int m_refcount;
 };
 
 typedef std::vector<MapBlock*> MapBlockVect;

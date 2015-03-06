@@ -720,6 +720,8 @@ Server::~Server()
 			i != m_detached_inventories.end(); i++) {
 		delete i->second;
 	}
+	while (!m_unsent_map_edit_queue.empty())
+		delete m_unsent_map_edit_queue.pop_front();
 }
 
 void Server::start(Address bind_addr)
