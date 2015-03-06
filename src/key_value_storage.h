@@ -43,6 +43,7 @@ public:
 	bool get(const std::string & key, float &data);
 	bool get_json(const std::string & key, Json::Value & data);
 	bool del(const std::string & key);
+	std::string get_error();
 #if USE_LEVELDB
 	leveldb::Iterator* new_iterator();
 	leveldb::DB *db;

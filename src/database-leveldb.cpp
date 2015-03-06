@@ -56,7 +56,7 @@ bool Database_LevelDB::saveBlock(v3POS blockpos, std::string &data)
 {
 	if (!m_database->put(getBlockAsString(blockpos), data)) {
 		errorstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< PP(blockpos) << std::endl;
+			<< blockpos <<": "<< m_database->get_error() << std::endl;
 		return false;
 	}
 	m_database->del(i64tos(getBlockAsInteger(blockpos))); // delete old format
