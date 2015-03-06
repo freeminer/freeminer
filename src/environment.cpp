@@ -726,10 +726,10 @@ neighbor_found:
 void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate) {
 		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
+		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
 		if (!abm_triggers)
 			return;
 
-		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
 		if (!lock.owns_lock())
 			return;
 

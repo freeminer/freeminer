@@ -235,6 +235,7 @@ public:
 	}
 	float resetTimeFromLastPunch()
 	{
+		auto lock = lock_unique();
 		float r = m_time_from_last_punch;
 		m_time_from_last_punch = 0.0;
 		return r;

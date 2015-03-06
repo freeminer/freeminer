@@ -899,10 +899,12 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	// Increment cheat prevention timers
 	m_dig_pool.add(dtime);
 	m_move_pool.add(dtime);
+	{
+		auto lock = lock_unique();
 	m_time_from_last_punch += dtime;
 	m_nocheat_dig_time += dtime;
 	m_time_from_last_respawn += dtime;
-
+	}
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin
 	if(isAttached())

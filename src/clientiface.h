@@ -209,9 +209,9 @@ public:
 	std::atomic_ushort net_proto_version;
 
 	std::atomic_int m_nearest_unsent_reset;
-	s16 wanted_range;
-	s16 range_all;
-	s16 farmesh;
+	std::atomic_int wanted_range;
+	std::atomic_int range_all;
+	std::atomic_int farmesh;
 	float fov;
 	bool block_overflow;
 
@@ -238,7 +238,7 @@ public:
 		m_nearest_unsent_reset = 0;
 
 		wanted_range = 9 * MAP_BLOCKSIZE;
-		range_all =0;
+		range_all = 0;
 		farmesh = 0;
 		fov = 72; // g_settings->getFloat("fov");
 		block_overflow = 0;
