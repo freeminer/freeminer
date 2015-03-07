@@ -42,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 #include "config.h"
 
+class Settings;
 class Database;
 class ClientMap;
 class MapSector;
@@ -460,6 +461,7 @@ public:
 	/*
 		Database functions
 	*/
+	static Database *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
 	// Verify we can read/write to the database
 	void verifyDatabase();
 

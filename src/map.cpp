@@ -2160,22 +2160,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 		#endif
 	}
 	std::string backend = conf.get("backend");
-	if (backend == "dummy")
-		dbase = new Database_Dummy();
-	#if USE_SQLITE3
-	else if (backend == "sqlite3")
-		dbase = new Database_SQLite3(savedir);
-	#endif
-	#if USE_LEVELDB
-	else if (backend == "leveldb")
-		dbase = new Database_LevelDB(savedir);
-	#endif
-	#if USE_REDIS
-	else if (backend == "redis")
-		dbase = new Database_Redis(conf);
-	#endif
-	else
-		throw BaseException("Unknown map backend");
+	dbase = createDatabase(backend, savedir, conf);
 
 	if (!conf.updateConfigFile(conf_path.c_str()))
 		errorstream << "ServerMap::ServerMap(): Failed to update world.mt!" << std::endl;
@@ -2897,6 +2882,28 @@ void ServerMap::loadMapMeta()
 
 	verbosestream << "ServerMap::loadMapMeta(): seed="
 		<< m_emerge->params.seed << std::endl;
+}
+
+Database *ServerMap::createDatabase(const std::string &name, const std::string &savedir, Settings &conf)
+{
+	if (name == "___ magic word ___")
+		{}
+	#if USE_SQLITE3
+	else if (name == "sqlite3")
+		return new Database_SQLite3(savedir);
+	#endif
+	else if (name == "dummy")
+		return new Database_Dummy();
+	#if USE_LEVELDB
+	else if (name == "leveldb")
+		return new Database_LevelDB(savedir);
+	#endif
+	#if USE_REDIS
+	else if (name == "redis")
+		return new Database_Redis(conf);
+	#endif
+	else
+		throw BaseException(std::string("Database backend ") + name + " not supported.");
 }
 
 void ServerMap::beginSave()
