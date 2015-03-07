@@ -54,22 +54,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-/*
-	SQLite format specification:
-	- Initially only replaces sectors/ and sectors2/
-
-	If map.sqlite does not exist in the save dir
-	or the block was not found in the database
-	the map will try to load from sectors folder.
-	In either case, map.sqlite will be created
-	and all future saves will save there.
-
-	Structure of map.sqlite:
-	Tables:
-		blocks
-			(PK) INT pos
-			BLOB data
-*/
 
 /*
 	Map
@@ -2168,32 +2152,33 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	if (!succeeded || !conf.exists("backend")) {
 		// fall back to sqlite3
 		#if USE_LEVELDB
-		dbase = new Database_LevelDB(this, savedir);
 		conf.set("backend", "leveldb");
 		#elif USE_SQLITE3
-		dbase = new Database_SQLite3(this, savedir);
 		conf.set("backend", "sqlite3");
+		#elif USE_REDIS
+		conf.set("backend", "redis");
 		#endif
 	}
-	else {
-		std::string backend = conf.get("backend");
-		if (backend == "dummy")
-			dbase = new Database_Dummy(this);
-		#if USE_SQLITE3
-		else if (backend == "sqlite3")
-			dbase = new Database_SQLite3(this, savedir);
-		#endif
-		#if USE_LEVELDB
-		else if (backend == "leveldb")
-			dbase = new Database_LevelDB(this, savedir);
-		#endif
-		#if USE_REDIS
-		else if (backend == "redis")
-			dbase = new Database_Redis(this, savedir);
-		#endif
-		else
-			throw BaseException("Unknown map backend");
-	}
+	std::string backend = conf.get("backend");
+	if (backend == "dummy")
+		dbase = new Database_Dummy();
+	#if USE_SQLITE3
+	else if (backend == "sqlite3")
+		dbase = new Database_SQLite3(savedir);
+	#endif
+	#if USE_LEVELDB
+	else if (backend == "leveldb")
+		dbase = new Database_LevelDB(savedir);
+	#endif
+	#if USE_REDIS
+	else if (backend == "redis")
+		dbase = new Database_Redis(conf);
+	#endif
+	else
+		throw BaseException("Unknown map backend");
+
+	if (!conf.updateConfigFile(conf_path.c_str()))
+		errorstream << "ServerMap::ServerMap(): Failed to update world.mt!" << std::endl;
 
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
@@ -2951,7 +2936,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 
 	std::string data = o.str();
 	bool ret = db->saveBlock(p3d, data);
-	if(ret) {
+	if (ret) {
 		// We just wrote it to the disk so clear modified flag
 		block->resetModified();
 	}

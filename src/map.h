@@ -474,8 +474,8 @@ public:
 	void saveMapMeta();
 	void loadMapMeta();
 
-	bool saveBlock(MapBlock *block, Database *db);
 	bool saveBlock(MapBlock *block);
+	static bool saveBlock(MapBlock *block, Database *db);
 	MapBlock* loadBlock(v3s16 p);
 
 	bool deleteBlock(v3s16 blockpos);

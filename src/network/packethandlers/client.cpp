@@ -170,8 +170,8 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		sector->insertBlock(block);
 	}
 
-	if (localdb != NULL) {
-		((ServerMap&) localserver->getMap()).saveBlock(block, localdb);
+	if (m_localdb) {
+		ServerMap::saveBlock(block, m_localdb);
 	}
 
 	/*

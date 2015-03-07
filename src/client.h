@@ -622,8 +622,10 @@ private:
 	LocalClientState m_state;
 
 	// Used for saving server map to disk client-side
-	Database *localdb;
-	Server *localserver;
+	Database *m_localdb;
+	IntervalLimiter m_localdb_save_interval;
+	u16 m_cache_save_interval;
+	Server *m_localserver;
 
 	// TODO: Add callback to update these when g_settings changes
 	bool m_cache_smooth_lighting;

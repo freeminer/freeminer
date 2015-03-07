@@ -54,10 +54,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "version.h"
 #include "drawscene.h"
-#include "subgame.h"
-#include "server.h"
-#include "database.h" //remove with g sunsed shit localdb
+//#include "serialization.h"
 
+#include "database.h"
+#include "server.h"
 #include "emerge.h"
 
 
@@ -243,18 +243,14 @@ Client::Client(
 	m_recommended_send_interval(0.1),
 	m_removed_sounds_check_timer(0),
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
-	m_state(LC_Created)
+	m_state(LC_Created),
+	m_localdb(NULL)
 {
-	/*
-		Add local player
-	*/
-	{
-		Player *player = new LocalPlayer(this, playername);
-
-		m_env.addPlayer(player);
-	}
+	// Add local player
+	m_env.addPlayer(new LocalPlayer(this, playername));
 
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
+	m_cache_enable_shaders  = g_settings->getBool("enable_shaders");
 }
 
 void Client::Stop()
@@ -262,15 +258,15 @@ void Client::Stop()
 	//request all client managed threads to stop
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
-	if (localdb != NULL) {
+	if (m_localdb) {
 		actionstream << "Local map saving ended" << std::endl;
-		localdb->endSave();
+		m_localdb->endSave();
 	}
 
-	if (localserver)
-		delete localserver;
-	if (localdb)
-		delete localdb;
+	if (m_localserver)
+		delete m_localserver;
+	if (m_localdb)
+		delete m_localdb;
 }
 
 Client::~Client()
@@ -774,40 +770,13 @@ void Client::initLocalMapSaving(const Address &address,
 		bool is_local_server)
 {
 
-/*
-			&& !is_simple_singleplayer_game) {
-		std::string address = g_settings->get("address");
-		replace( address.begin(), address.end(), ':', '_' );
-		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
-				+ DIR_DELIM + "server_" + address
-				+ "_" + g_settings->get("remote_port");
+	m_localserver = nullptr;
 
-		SubgameSpec gamespec;
-		if (!getWorldExists(world_path)) {
-			gamespec = findSubgame(g_settings->get("default_game"));
-			if (!gamespec.isValid())
-				gamespec = findSubgame("minimal");
-		} else {
-			std::string world_gameid = getWorldGameId(world_path, false);
-			gamespec = findWorldSubgame(world_path);
-		}
-		if (!gamespec.isValid()) {
-			errorstream << "Couldn't find subgame for local map saving." << std::endl;
-			return;
-		}
+	m_localdb = NULL;
 
-		localserver = new Server(world_path, gamespec, false, false);
-		localdb = nullptr;
-		actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
-*/
-
-
-	localserver = nullptr;
-
-	localdb = NULL;
-
-	if (!g_settings->getBool("enable_local_map_saving") || is_local_server)
+	if (!g_settings->getBool("enable_local_map_saving") || is_local_server) {
 		return;
+	}
 
 	std::string address_replaced = hostname + "_" + to_string(address.getPort());
 	replace( address_replaced.begin(), address_replaced.end(), ':', '_' );
@@ -827,15 +796,12 @@ void Client::initLocalMapSaving(const Address &address,
 		gamespec = findWorldSubgame(world_path);
 	}
 
-	if (!gamespec.isValid()) {
-		errorstream << "Couldn't find subgame for local map saving." << std::endl;
-		return;
-	}
+	fs::CreateAllDirs(world_path);
 
-	localserver = new Server(world_path, gamespec, false, false);
+	m_localserver = new Server(world_path, gamespec, false, false);
 	/*
-	localdb = new Database_SQLite3(&(ServerMap&)localserver->getMap(), world_path);
-	localdb->beginSave();
+	m_localdb = new Database_SQLite3(world_path);
+	m_localdb->beginSave();
 	*/
 	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 }
@@ -949,10 +915,10 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 
 		// TOCLIENT_INIT_POS
 
-		if (localserver) {
+		if (m_localserver) {
 			Settings settings;
 			packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-			localserver->getEmergeManager()->loadParamsFromSettings(&settings);
+			m_localserver->getEmergeManager()->loadParamsFromSettings(&settings);
 		}
 
 		// Reply to server
@@ -1031,8 +997,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
 
 
-		if (localserver != NULL) {
-			localserver->getMap().saveBlock(block);
+		if (m_localserver != NULL) {
+			m_localserver->getMap().saveBlock(block);
 		}
 
 		if (new_block)
