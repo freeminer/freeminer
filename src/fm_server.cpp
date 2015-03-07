@@ -1078,7 +1078,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		// Key = object id
 		// Value = data sent by object
-		std::map<u16, std::list<ActiveObjectMessage>* > buffered_messages;
+		std::map<u16, std::vector<ActiveObjectMessage>* > buffered_messages;
 
 		// Get active object messages from environment
 		for(;;)
@@ -1087,12 +1087,12 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			if(aom.id == 0)
 				break;
 
-			std::list<ActiveObjectMessage>* message_list = NULL;
-			std::map<u16, std::list<ActiveObjectMessage>* >::iterator n;
+			std::vector<ActiveObjectMessage>* message_list = NULL;
+			std::map<u16, std::vector<ActiveObjectMessage>* >::iterator n;
 			n = buffered_messages.find(aom.id);
 			if(n == buffered_messages.end())
 			{
-				message_list = new std::list<ActiveObjectMessage>;
+				message_list = new std::vector<ActiveObjectMessage>;
 				buffered_messages[aom.id] = message_list;
 			}
 			else
@@ -1114,7 +1114,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			ActiveObjectMessages reliable_data;
 			ActiveObjectMessages unreliable_data;
 			// Go through all objects in message buffer
-			for(std::map<u16, std::list<ActiveObjectMessage>* >::iterator
+			for(auto
 					j = buffered_messages.begin();
 					j != buffered_messages.end(); ++j)
 			{
@@ -1123,9 +1123,9 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				if(client->m_known_objects.find(id) == client->m_known_objects.end())
 					continue;
 				// Get message list of object
-				std::list<ActiveObjectMessage>* list = j->second;
+				std::vector<ActiveObjectMessage>* list = j->second;
 				// Go through every message
-				for(std::list<ActiveObjectMessage>::iterator
+				for(auto
 						k = list->begin(); k != list->end(); ++k)
 				{
 					// Add data to buffer
@@ -1155,7 +1155,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		}
 		}
 		// Clear buffered_messages
-		for(std::map<u16, std::list<ActiveObjectMessage>* >::iterator
+		for(auto
 				i = buffered_messages.begin();
 				i != buffered_messages.end(); ++i)
 		{
@@ -1193,7 +1193,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			// Players far away from the change are stored here.
 			// Instead of sending the changes, MapBlocks are set not sent
 			// for them.
-			std::list<u16> far_players;
+			std::vector<u16> far_players;
 
 			if(event->type == MEET_ADDNODE || event->type == MEET_SWAPNODE)
 			{
@@ -1260,7 +1260,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 							m_env->getMap().getBlockNoCreateNoEx(*i);
 				}
 				// Set blocks not sent
-				for(std::list<u16>::iterator
+				for(auto
 						i = far_players.begin();
 						i != far_players.end(); ++i)
 				{
@@ -3534,7 +3534,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 		return -1;
 
 	// Filter destination clients
-	std::list<u16> dst_clients;
+	std::vector<u16> dst_clients;
 	if(params.to_player != "")
 	{
 		Player *player = m_env->getPlayer(params.to_player.c_str());
@@ -3577,7 +3577,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	m_playing_sounds[id] = ServerPlayingSound();
 	ServerPlayingSound &psound = m_playing_sounds[id];
 	psound.params = params;
-	for(std::list<u16>::iterator i = dst_clients.begin();
+	for(auto i = dst_clients.begin();
 			i != dst_clients.end(); i++)
 		psound.clients.insert(*i);
 	// Create packet
@@ -3590,7 +3590,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	PACK(TOCLIENT_PLAY_SOUND_OBJECT_ID, params.object);
 	PACK(TOCLIENT_PLAY_SOUND_LOOP, params.loop);
 	// Send
-	for(std::list<u16>::iterator i = dst_clients.begin();
+	for(auto i = dst_clients.begin();
 			i != dst_clients.end(); i++){
 		// Send as reliable
 		m_clients.send(*i, 0, buffer, true);
@@ -3619,7 +3619,7 @@ void Server::stopSound(s32 handle)
 }
 
 void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
-	std::list<u16> *far_players, float far_d_nodes)
+	std::vector<u16> *far_players, float far_d_nodes)
 {
 	float maxd = far_d_nodes*BS;
 	v3f p_f = intToFloat(p, BS);
@@ -3652,7 +3652,7 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 }
 
 void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
-		std::list<u16> *far_players, float far_d_nodes,
+		std::vector<u16> *far_players, float far_d_nodes,
 		bool remove_metadata)
 {
 	float maxd = far_d_nodes*BS;
