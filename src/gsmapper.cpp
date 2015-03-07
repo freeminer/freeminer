@@ -24,7 +24,7 @@
 #include "gsmapper.h"
 #include "map.h"
 #include "nodedef.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "util/numeric.h"
 #include "util/string.h"
 #include <math.h>

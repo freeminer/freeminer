@@ -30,9 +30,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "wieldmesh.h"
-#include "tile.h"
 #include "clientmap.h"
 #include "mapblock.h"
+#include "client/tile.h"
 #endif
 #include "log.h"
 #include "main.h" // g_settings

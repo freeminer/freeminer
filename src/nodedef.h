@@ -30,8 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <bitset>
 #include "mapnode.h"
-#include "tile.h"
 #ifndef SERVER
+#include "client/tile.h"
 #include "shader.h"
 #endif
 #include "itemgroup.h"

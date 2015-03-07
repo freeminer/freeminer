@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <IAnimatedMesh.h>
 #include <SAnimatedMesh.h>
-#include "tile.h"
+#include "client/tile.h"
 
 // In Irrlicht 1.8 the signature of ITexture::lock was changed from
 // (bool, u32) to (E_TEXTURE_LOCK_MODE, u32).

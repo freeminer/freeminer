@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h" // For IntervalLimiter
 #include "util/serialize.h"
 #include "util/mathconstants.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "environment.h"
 #include "collision.h"
 #include "settings.h"

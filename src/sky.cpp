@@ -3,7 +3,7 @@
 #include "ISceneManager.h"
 #include "ICameraSceneNode.h"
 #include "S3DVertex.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "noise.h" // easeCurve
 #include "profiler.h"
 #include "util/numeric.h" // MYMIN

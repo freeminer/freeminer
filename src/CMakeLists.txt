@@ -762,7 +762,6 @@ set(minetest_SRCS
 	particles.cpp
 	shader.cpp
 	sky.cpp
-	tile.cpp
 	wieldmesh.cpp
 	${minetest_SCRIPT_SRCS}
 	${FMclient_SRCS}

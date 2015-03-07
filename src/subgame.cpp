@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "strfnd.h"
 #ifndef SERVER
-#include "tile.h" // getImagePath
+#include "client/tile.h" // getImagePath
 #endif
 #include "util/string.h"
 #include "config.h"

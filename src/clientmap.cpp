@@ -643,7 +643,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	for(std::vector<MeshBufList>::iterator i = lists.begin();
 			i != lists.end(); ++i) {
 #if 0
-
 		timecheck_counter++;
 		if(timecheck_counter > 50) {
 			timecheck_counter = 0;

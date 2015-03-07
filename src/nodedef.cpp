@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h" // For g_settings
 #include "itemdef.h"
 #ifndef SERVER
-#include "tile.h"
+#include "client/tile.h"
 #include "mesh.h"
 #include <IMeshManipulator.h>
 #endif

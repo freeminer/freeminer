@@ -45,6 +45,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 const char *GenElementManager::ELEMENT_TITLE = "element";
 
+static const s16 INVALID_HEIGHT = MAP_GENERATION_LIMIT + 1;
+
 FlagDesc flagdesc_mapgen[] = {
 	{"trees",    MG_TREES},
 	{"caves",    MG_CAVES},
@@ -159,6 +161,12 @@ s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
 }
 
 
+void Mapgen::initHeightMap(s16 *dest, size_t len)
+{
+	for (size_t i = 0; i < len; i++)
+		dest[i] = INVALID_HEIGHT;
+}
+
 void Mapgen::updateHeightmap(v3s16 nmin, v3s16 nmax)
 {
 	if (!heightmap)
@@ -170,11 +178,13 @@ void Mapgen::updateHeightmap(v3s16 nmin, v3s16 nmax)
 		for (s16 x = nmin.X; x <= nmax.X; x++, index++) {
 			s16 y = findGroundLevel(v2s16(x, z), nmin.Y, nmax.Y);
 
-			// if the values found are out of range, trust the old heightmap
-			if (y == nmax.Y && heightmap[index] > nmax.Y)
-				continue;
-			if (y == nmin.Y - 1 && heightmap[index] < nmin.Y)
-				continue;
+			if (heightmap[index] != INVALID_HEIGHT) {
+				// if the values found are out of range, trust the old heightmap
+				if (y == nmax.Y && heightmap[index] > nmax.Y)
+					continue;
+				if (y == nmin.Y - 1 && heightmap[index] < nmin.Y)
+					continue;
+			}
 
 			heightmap[index] = y;
 		}

@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "main.h" // For g_profiler and g_settings
 #include "settings.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "gamedef.h"
 #include "collision.h"
 #include <stdlib.h>

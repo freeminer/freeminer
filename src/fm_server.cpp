@@ -1989,7 +1989,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	/* Handle commands relate to client startup */
 	if(command == TOSERVER_REQUEST_MEDIA) {
-		std::list<std::string> tosend;
+		std::vector<std::string> tosend;
 		packet[TOSERVER_REQUEST_MEDIA_FILES].convert(&tosend);
 
 		sendRequestedMedia(peer_id, tosend);
@@ -3948,7 +3948,7 @@ struct SendableMedia
 };
 
 void Server::sendRequestedMedia(u16 peer_id,
-		const std::list<std::string> &tosend)
+		const std::vector<std::string> &tosend)
 {
 	DSTACK(__FUNCTION_NAME);
 
@@ -3959,7 +3959,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 	// TODO: optimize
 	MediaData media_data;
 
-	for(std::list<std::string>::const_iterator i = tosend.begin();
+	for(auto i = tosend.begin();
 			i != tosend.end(); ++i)
 	{
 		const std::string &name = *i;

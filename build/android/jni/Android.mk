@@ -230,7 +230,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/staticobject.cpp                  \
 		jni/src/subgame.cpp                       \
 		jni/src/test.cpp                          \
-		jni/src/tile.cpp                          \
 		jni/src/tool.cpp                          \
 		jni/src/treegen.cpp                       \
 		jni/src/version.cpp                       \
@@ -254,7 +253,8 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/database-leveldb.cpp              \
 		jni/src/settings.cpp                      \
 		jni/src/wieldmesh.cpp                     \
-		jni/src/client/clientlauncher.cpp
+		jni/src/client/clientlauncher.cpp         \
+		jni/src/client/tile.cpp
 
 # Network
 LOCAL_SRC_FILES +=                                \

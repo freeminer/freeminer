@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "inventory.h"
 #include "mesh.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "util/numeric.h"
 #include <ICameraSceneNode.h>
 

@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fontengine.h"
 
 #ifdef __ANDROID__
-#include "tile.h"
+#include "client/tile.h"
 #include <GLES/gl.h>
 #endif
 

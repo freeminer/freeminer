@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "main.h"  // for g_settings
 #include "porting.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "fontengine.h"
 #include "log_types.h"
 #include "gettext.h"

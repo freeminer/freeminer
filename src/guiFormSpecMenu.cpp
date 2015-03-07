@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUITabControl.h>
 #include <IGUIComboBox.h>
 #include "log.h"
-#include "tile.h" // ITextureSource
+#include "client/tile.h" // ITextureSource
 #include "hud.h" // drawItemStack
 #include "filesys.h"
 #include "gettime.h"

@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "gamedef.h"
 #include "strfnd.h" // trim()
-#include "tile.h"
+#include "client/tile.h"
 
 /*
 	A cache from shader name to shader path
