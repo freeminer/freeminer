@@ -301,6 +301,7 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		infostream << "Wrote world.mt (" << worldmt_path << ")" << std::endl;
 	}
 
+/* todofm: enable after remake layers params
 	// Create map_meta.txt if does not already exist
 	std::string map_meta_path = path + DIR_DELIM + "map_meta.json";
 	if (!fs::PathExists(map_meta_path)){
@@ -315,5 +316,6 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		params.save(conf);
 		conf.writeJsonFile(map_meta_path);
 	}
+*/
 	return true;
 }

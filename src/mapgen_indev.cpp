@@ -190,7 +190,7 @@ void MapgenIndevParams::readParams(Settings *settings) {
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 }
 
-void MapgenIndevParams::writeParams(Settings *settings) {
+void MapgenIndevParams::writeParams(Settings *settings) const {
 	MapgenV6Params::writeParams(settings);
 
 	settings->setJson("mg_params", paramsj);
