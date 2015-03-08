@@ -26,32 +26,32 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h" // for USE_GETTEXT
 
 #if USE_GETTEXT
-#include <libintl.h>
-#define mygettext(String) gettext(String)
+	#include <libintl.h>
+	#define mygettext(String) gettext(String)
 #else
-#define mygettext(String) String
+	#define mygettext(String) String
 #endif
 
 #define _(String) mygettext(String)
-#define gettext_noop(String) String
-#define N_(String) gettext_noop (String)
+#define gettext_noop(String) (String)
+#define N_(String) gettext_noop((String))
 
 #ifdef _MSC_VER
-void init_gettext(const char *path, const std::string &configured_language, int argc, char** argv);
+void init_gettext(const char *path, const std::string &configured_language,
+		int argc, char** argv);
 #else
 void init_gettext(const char *path, const std::string &configured_language);
 #endif
 
-extern const wchar_t *narrow_to_wide_c(const char *mbs);
-extern std::wstring narrow_to_wide(const std::string &mbs);
+extern wchar_t *narrow_to_wide_c(const char *str);
 
 // You must free the returned string!
+// The returned string is allocated using new
 inline const wchar_t *wgettext(const char *str)
 {
 	return narrow_to_wide_c(mygettext(str));
 }
 
-// Gettext under MSVC needs this strange way. Just don't ask...
 inline std::wstring wstrgettext(const std::string &text)
 {
 	//return narrow_to_wide(mygettext(text.c_str()));

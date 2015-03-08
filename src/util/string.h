@@ -40,19 +40,22 @@ struct FlagDesc {
 	u32 flag;
 };
 
-// You must free the returned string!
-const wchar_t *narrow_to_wide_c(const char *mbs);
 
-// try not to convert between wide/utf8 encodings; this can result in data loss
-// try to only convert between them when you need to input/output stuff via Irrlicht
-std::wstring narrow_to_wide(const std::string &input); // TODO: must be named utf8_to_wide
-std::string wide_to_narrow(const std::wstring &input); // TODO: must be named wide_to_utf8
+// You must free the returned string!
+// The returned string is allocated using new
+wchar_t *narrow_to_wide_c(const char *str);
 
 // NEVER use those two functions unless you have a VERY GOOD reason to
 // they just convert between wide and multibyte encoding
 // multibyte encoding depends on current locale, this is no good, especially on Windows
 std::wstring narrow_to_wide_real(const std::string& mbs);
 std::string wide_to_narrow_real(const std::wstring& wcs);
+
+// try not to convert between wide/utf8 encodings; this can result in data loss
+// try to only convert between them when you need to input/output stuff via Irrlicht
+// TODO: must be named utf8_to_wide and wide_to_utf8
+std::wstring narrow_to_wide(const std::string &mbs);
+std::string wide_to_narrow(const std::wstring &wcs);
 std::string translatePassword(std::string playername, std::string password);
 std::string urlencode(std::string str);
 std::string urldecode(std::string str);

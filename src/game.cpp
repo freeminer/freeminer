@@ -4634,7 +4634,6 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 	fps_timings->last_time = time;
 }
 
-
 void Game::showOverlayMessage(const std::wstring &msg, float dtime,
 		int percent, bool draw_clouds)
 {

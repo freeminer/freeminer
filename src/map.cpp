@@ -2904,6 +2904,7 @@ Database *ServerMap::createDatabase(const std::string &name, const std::string &
 	#endif
 	else
 		throw BaseException(std::string("Database backend ") + name + " not supported.");
+	return nullptr;
 }
 
 void ServerMap::beginSave()

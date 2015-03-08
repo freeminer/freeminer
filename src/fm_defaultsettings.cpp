@@ -214,6 +214,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
+	settings->setDefault("enable_floating_dungeons", "true");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct

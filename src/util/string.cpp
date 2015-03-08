@@ -26,9 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cctype>
 
+#include "sha1.h"
 #include "base64.h"
 #include "hex.h"
-#include "sha1.h"
 #include "../porting.h"
 #include "../log.h"
 
@@ -149,12 +149,35 @@ std::string wide_to_narrow(const std::wstring &input) {
 #include <iomanip>
 #include <map>
 
-#if defined(_WIN32)
-#include <windows.h>  // MultiByteToWideChar
-#endif
-
 static bool parseHexColorString(const std::string &value, video::SColor &color);
 static bool parseNamedColorString(const std::string &value, video::SColor &color);
+
+
+// You must free the returned string!
+// The returned string is allocated using new
+wchar_t *narrow_to_wide_c(const char *str)
+{
+	wchar_t* nstr = 0;
+#if defined(_WIN32)
+	int nResult = MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) str, -1, 0, 0);
+	if (nResult == 0) {
+		errorstream<<"gettext: MultiByteToWideChar returned null"<<std::endl;
+	} else {
+		nstr = new wchar_t[nResult];
+		MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) str, -1, (WCHAR *) nstr, nResult);
+	}
+#else
+	size_t len = strlen(str);
+	nstr = new wchar_t[len+1];
+
+	std::wstring intermediate = narrow_to_wide(str);
+	memset(nstr, 0, (len + 1) * sizeof(wchar_t));
+	memcpy(nstr, intermediate.c_str(), len * sizeof(wchar_t));
+#endif
+
+	return nstr;
+}
+
 
 #ifdef __ANDROID__
 int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
@@ -185,92 +208,55 @@ int NOT_USED_wctomb(char *s, wchar_t wc)
 
 int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
-	if (s == NULL || *s == '\0')
+	std::wstring intermediate = narrow_to_wide(s);
+
+	if (intermediate.length() > 0) {
+		*pwc = intermediate[0];
+		return 1;
+	}
+	else {
 		return -1;
-
-	const wchar_t *tmp = narrow_to_wide_c(s);
-	bool success = tmp[0] != '\0';
-
-	if (success)
-		*pwc = tmp[0];
-
-	delete tmp;
-
-	return success ? 1 : -1;
+	}
 }
 
-// You must free the returned string!
-const wchar_t *narrow_to_wide_c(const char *mbs)
-{
-	size_t outbuf_size = strlen(mbs) + 1;
-	wchar_t *outbuf = new wchar_t[outbuf_size];
-	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-	irr::core::utf8ToWchar(mbs, outbuf, outbuf_size * sizeof(wchar_t));
-	return outbuf;
+std::wstring narrow_to_wide_real(const std::string &mbs) {
+	size_t wcl = mbs.size();
 
-#if WTF
-	size_t mbl = strlen(mbs);
-	wchar_t *wcs = new wchar_t[mbl + 1];
+	std::wstring retval = L"";
 
-	size_t i, dest_i = 0;
-	for (i = 0; i < mbl; i++) {
-		if (((unsigned char) mbs[i] > 31) &&
-				((unsigned char) mbs[i] < 127)) {
-			wcs[dest_i++] = wide_chars[(unsigned char) mbs[i] - 32];
+	for (unsigned int i = 0; i < wcl; i++) {
+		if (((unsigned char) mbs[i] >31) &&
+		 ((unsigned char) mbs[i] < 127)) {
+
+			retval += wide_chars[(unsigned char) mbs[i] -32];
 		}
 		//handle newline
 		else if (mbs[i] == '\n') {
-			wcs[dest_i++] = L'\n';
+			retval += L'\n';
 		}
 	}
-	wcs[dest_i] = '\0';
 
-	return wcs;
-#endif
+	return retval;
 }
 
-#else
+#else // not Android
 
-// You must free the returned string!
-const wchar_t *narrow_to_wide_c(const char *mbs)
-{
-	wchar_t *wcs = NULL;
-#if defined(_WIN32)
-	int nResult = MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) mbs, -1, 0, 0);
-	if (nResult == 0) {
-		errorstream << "gettext: MultiByteToWideChar returned null" << std::endl;
-	} else {
-		wcs = new wchar_t[nResult];
-		MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) mbs, -1, (WCHAR *) wcs, nResult);
-	}
-#else
-	size_t wcl = mbstowcs(NULL, mbs, 0);
-	if (wcl == (size_t) -1)
-		return NULL;
-	wcs = new wchar_t[wcl + 1];
-	size_t l = mbstowcs(wcs, mbs, wcl);
-	assert(l != (size_t) -1); // Should never happen if the last call worked
-	wcs[l] = '\0';
-#endif
-
-	return wcs;
-}
-
-#endif
-
-std::wstring narrow_to_wide_real(const std::string& mbs)
+std::wstring narrow_to_wide_real(const std::string &mbs)
 {
 	size_t wcl = mbs.size();
 	Buffer<wchar_t> wcs(wcl + 1);
-	size_t l = mbstowcs(*wcs, mbs.c_str(), wcl);
-	if (l == (size_t)(-1))
+	size_t len = mbstowcs(*wcs, mbs.c_str(), wcl);
+	if (len == (size_t)(-1))
 		return L"<invalid multibyte string>";
-	wcs[l] = 0;
+	wcs[len] = 0;
 	return *wcs;
 }
 
+#endif
+
 #ifdef __ANDROID__
-std::string wide_to_narrow_real(const std::wstring& wcs) {
+
+std::string wide_to_narrow_real(const std::wstring &wcs) {
 	size_t mbl = wcs.size()*4;
 
 	std::string retval = "";
@@ -296,17 +282,17 @@ std::string wide_to_narrow_real(const std::wstring& wcs) {
 	return retval;
 }
 
-#else
-std::string wide_to_narrow_real(const std::wstring& wcs)
+#else // not Android
+
+std::string wide_to_narrow_real(const std::wstring &wcs)
 {
-	size_t mbl = wcs.size()*4;
+	size_t mbl = wcs.size() * 4;
 	SharedBuffer<char> mbs(mbl+1);
-	size_t l = wcstombs(*mbs, wcs.c_str(), mbl);
-	if(l == (size_t)(-1)) {
+	size_t len = wcstombs(*mbs, wcs.c_str(), mbl);
+	if (len == (size_t)(-1))
 		return "Character conversion failed!";
-	}
 	else
-		mbs[l] = 0;
+		mbs[len] = 0;
 	return *mbs;
 }
 
@@ -319,7 +305,7 @@ std::string wide_to_narrow_real(const std::wstring& wcs)
 // compatibility with password-less players).
 std::string translatePassword(std::string playername, std::string password)
 {
-	if(password.length() == 0)
+	if (password.length() == 0)
 		return "";
 
 	std::string slt = playername + password;
