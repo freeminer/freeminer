@@ -81,7 +81,7 @@ public:
 
 	void remove(u16 id)
 	{
-		assert(id != 0);
+		assert(id != 0); // Pre-condition
 		if(m_active.find(id) == m_active.end())
 		{
 			dstream<<"WARNING: StaticObjectList::remove(): id="<<id

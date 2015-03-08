@@ -736,8 +736,8 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_physics_override_sent(false)
 {
 	m_properties_sent = true;
-	assert(m_player);
-	assert(m_peer_id != 0);
+	assert(m_player);	// pre-condition
+	assert(m_peer_id != 0);	// pre-condition
 	++m_player->refs;
 	setBasePosition(m_player->getPosition());
 	m_inventory = &m_player->inventory;
@@ -848,7 +848,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 
 std::string PlayerSAO::getStaticData()
 {
-	assert(0);
+	FATAL_ERROR("Deprecated function (?)");
 	return "";
 }
 

@@ -311,7 +311,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 
 		// But go on
 		{
-			key_setting *k=NULL;
+			key_setting *k = NULL;
 			for(size_t i = 0; i < key_settings.size(); i++)
 			{
 				if(key_settings.at(i)->id == activeKey)
@@ -320,7 +320,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 					break;
 				}
 			}
-			assert(k);
+			FATAL_ERROR_IF(k == NULL, "Key setting not found");
 			k->key = kp;
 			const wchar_t *text = wgettext(k->key.name());
 			k->button->setText(text);
@@ -372,7 +372,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 							break;
 						}
 					}
-					assert(k);
+					FATAL_ERROR_IF(k == NULL, "Key setting not found");
 
 					resetMenu();
 					shift_down = false;

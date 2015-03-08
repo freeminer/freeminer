@@ -85,9 +85,9 @@ void Environment::addPlayer(Player *player)
 	*/
 	// If peer id is non-zero, it has to be unique.
 	if(player->peer_id != 0)
-		assert(getPlayer(player->peer_id) == NULL);
+		FATAL_ERROR_IF(getPlayer(player->peer_id) != NULL, "Peer id not unique");
 	// Name has to be unique.
-	assert(getPlayer(player->getName()) == NULL);
+	FATAL_ERROR_IF(getPlayer(player->getName()) != NULL, "Player name not unique");
 	// Add.
 	m_players.push_back(player);
 }
@@ -1030,7 +1030,7 @@ void ServerEnvironment::clearAllObjects()
 			i != loaded_blocks.end(); ++i) {
 		v3s16 p = *i;
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block);
+		assert(block != NULL);
 		block->refGrab();
 	}
 
@@ -1566,7 +1566,7 @@ u16 getFreeServerActiveObjectId(
 
 u16 ServerEnvironment::addActiveObject(ServerActiveObject *object)
 {
-	assert(object);
+	assert(object);	// Pre-condition
 	m_added_objects++;
 	u16 id = addActiveObjectRaw(object, true, 0);
 	return id;
@@ -2392,7 +2392,8 @@ void ClientEnvironment::addPlayer(Player *player)
 		It is a failure if player is local and there already is a local
 		player
 	*/
-	assert(!(player->isLocal() == true && getLocalPlayer() != NULL));
+	FATAL_ERROR_IF(player->isLocal() == true && getLocalPlayer() != NULL,
+		"Player is local but there is already a local player");
 
 	Environment::addPlayer(player);
 }

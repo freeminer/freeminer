@@ -1278,7 +1278,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 			n.setLight(LIGHTBANK_DAY, 0, ndef);
 			setNode(p, n);
 		} else {
-			//assert(0);
+			//FATAL_ERROR("Invalid position");
 		}
 	}
 
@@ -3026,7 +3026,6 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 					<<"(ignore_world_load_errors)"<<std::endl;
 		} else {
 			throw SerializationError("Invalid block data in database");
-			//assert(0);
 		}
 	}
 	return nullptr;

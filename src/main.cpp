@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 	if (!game_configure(&game_params, cmd_args))
 		return 1;
 
-	assert(game_params.world_path != "");
+	sanity_check(game_params.world_path != "");
 
 	infostream << "Using commanded world path ["
 	           << game_params.world_path << "]" << std::endl;
@@ -744,7 +744,7 @@ static bool auto_select_world(GameParams *game_params)
 		           << world_path << "]" << std::endl;
 	}
 
-	assert(world_path != "");
+	assert(world_path != "");	// Post-condition
 	game_params->world_path = world_path;
 	return true;
 }
@@ -800,7 +800,7 @@ static bool determine_subgame(GameParams *game_params)
 {
 	SubgameSpec gamespec;
 
-	assert(game_params->world_path != "");	// pre-condition
+	assert(game_params->world_path != "");	// Pre-condition
 
 	verbosestream << _("Determining gameid/gamespec") << std::endl;
 	// If world doesn't exist

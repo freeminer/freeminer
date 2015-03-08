@@ -65,7 +65,7 @@ void InventoryLocation::serialize(std::ostream &os) const
 		os<<"detached:"<<name;
 		break;
 	default:
-		assert(0);
+		FATAL_ERROR("Unhandled inventory location type");
 	}
 }
 

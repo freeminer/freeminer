@@ -71,7 +71,7 @@ public:
 ScriptApiBase::ScriptApiBase()
 {
 	m_luastack = luaL_newstate();
-	assert(m_luastack);
+	FATAL_ERROR_IF(!m_luastack, "luaL_newstate() failed");
 
 	luaL_openlibs(m_luastack);
 

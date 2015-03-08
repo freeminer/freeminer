@@ -328,16 +328,16 @@ BufferedPacket ReliablePacketBuffer::popSeqnum(u16 seqnum)
 void ReliablePacketBuffer::insert(BufferedPacket &p,u16 next_expected)
 {
 	JMutexAutoLock listlock(m_list_mutex);
-	assert(p.data.getSize() >= BASE_HEADER_SIZE+3);
+	FATAL_ERROR_IF(p.data.getSize() < BASE_HEADER_SIZE+3, "Invalid data size");
 	u8 type = readU8(&p.data[BASE_HEADER_SIZE+0]);
-	assert(type == TYPE_RELIABLE);
+	sanity_check(type == TYPE_RELIABLE);
 	u16 seqnum = readU16(&p.data[BASE_HEADER_SIZE+1]);
 
-	assert(seqnum_in_window(seqnum,next_expected,MAX_RELIABLE_WINDOW_SIZE));
-	assert(seqnum != next_expected);
+	sanity_check(seqnum_in_window(seqnum, next_expected, MAX_RELIABLE_WINDOW_SIZE));
+	sanity_check(seqnum != next_expected);
 
 	++m_list_size;
-	assert(m_list_size <= SEQNUM_MAX+1);
+	sanity_check(m_list_size <= SEQNUM_MAX+1);	// FIXME: Handle the error?
 
 	// Find the right place for the packet and insert it there
 	// If list is empty, just add it
@@ -393,9 +393,9 @@ void ReliablePacketBuffer::insert(BufferedPacket &p,u16 next_expected)
 			throw IncomingDataCorruption("duplicated packet isn't same as original one");
 		}
 
-		assert(readU16(&(i->data[BASE_HEADER_SIZE+1])) == seqnum);
-		assert(i->data.getSize() == p.data.getSize());
-		assert(i->address == p.address);
+		sanity_check(readU16(&(i->data[BASE_HEADER_SIZE+1])) == seqnum);
+		sanity_check(i->data.getSize() == p.data.getSize());
+		sanity_check(i->address == p.address);
 
 		/* nothing to do this seems to be a resent packet */
 		/* for paranoia reason data should be compared */
@@ -465,9 +465,9 @@ SharedBuffer<u8> IncomingSplitBuffer::insert(BufferedPacket &p, bool reliable)
 {
 	JMutexAutoLock listlock(m_map_mutex);
 	u32 headersize = BASE_HEADER_SIZE + 7;
-	assert(p.data.getSize() >= headersize);
+	FATAL_ERROR_IF(p.data.getSize() < headersize, "Invalid data size");
 	u8 type = readU8(&p.data[BASE_HEADER_SIZE+0]);
-	assert(type == TYPE_SPLIT);
+	sanity_check(type == TYPE_SPLIT);
 	u16 seqnum = readU16(&p.data[BASE_HEADER_SIZE+1]);
 	u16 chunk_count = readU16(&p.data[BASE_HEADER_SIZE+3]);
 	u16 chunk_num = readU16(&p.data[BASE_HEADER_SIZE+5]);
@@ -914,7 +914,7 @@ void Peer::DecUseCount()
 {
 	{
 		JMutexAutoLock lock(m_exclusive_access_mutex);
-		assert(m_usage > 0);
+		sanity_check(m_usage > 0);
 		m_usage--;
 
 		if (!((m_pending_deletion) && (m_usage == 0)))
@@ -1103,7 +1103,7 @@ bool UDPPeer::processReliableSendCommand(
 							- BASE_HEADER_SIZE
 							- RELIABLE_HEADER_SIZE;
 
-	assert(c.data.getSize() < MAX_RELIABLE_WINDOW_SIZE*512);
+	sanity_check(c.data.getSize() < MAX_RELIABLE_WINDOW_SIZE*512);
 
 	std::list<SharedBuffer<u8> > originals;
 	u16 split_sequence_number = channels[c.channelnum].readNextSplitSeqNum();
@@ -1160,7 +1160,7 @@ bool UDPPeer::processReliableSendCommand(
 			channels[c.channelnum].queued_reliables.push(p);
 			pcount++;
 		}
-		assert(channels[c.channelnum].queued_reliables.size() < 0xFFFF);
+		sanity_check(channels[c.channelnum].queued_reliables.size() < 0xFFFF);
 		return true;
 	}
 	else {
@@ -1178,7 +1178,7 @@ bool UDPPeer::processReliableSendCommand(
 				= channels[c.channelnum].putBackSequenceNumber(
 					(initial_sequence_number+toadd.size() % (SEQNUM_MAX+1)));
 
-			assert(successfully_put_back_sequence_number);
+			FATAL_ERROR_IF(!successfully_put_back_sequence_number, "error");
 		}
 		LOG(dout_con<<m_connection->getDesc()
 				<< " Windowsize exceeded on reliable sending "
@@ -1230,13 +1230,13 @@ void UDPPeer::RunCommandQueues(
 
 u16 UDPPeer::getNextSplitSequenceNumber(u8 channel)
 {
-	assert(channel < CHANNEL_COUNT);
+	assert(channel < CHANNEL_COUNT); // Pre-condition
 	return channels[channel].readNextIncomingSeqNum();
 }
 
 void UDPPeer::setNextSplitSequenceNumber(u8 channel, u16 seqnum)
 {
-	assert(channel < CHANNEL_COUNT);
+	assert(channel < CHANNEL_COUNT); // Pre-condition
 	channels[channel].setNextSplitSeqNum(seqnum);
 }
 
@@ -1244,7 +1244,7 @@ SharedBuffer<u8> UDPPeer::addSpiltPacket(u8 channel,
 											BufferedPacket toadd,
 											bool reliable)
 {
-	assert(channel < CHANNEL_COUNT);
+	assert(channel < CHANNEL_COUNT); // Pre-condition
 	return channels[channel].incoming_splits.insert(toadd,reliable);
 }
 
@@ -1518,7 +1518,6 @@ void ConnectionSendThread::sendAsPacketReliable(BufferedPacket& p, Channel* chan
 		LOG(derr_con<<m_connection->getDesc()
 				<<"WARNING: Going to send a reliable packet"
 				<<" in outgoing buffer" <<std::endl);
-		//assert(0);
 	}
 
 	// Send the packet
@@ -1533,7 +1532,7 @@ bool ConnectionSendThread::rawSendAsPacket(u16 peer_id, u8 channelnum,
 		LOG(dout_con<<m_connection->getDesc()
 				<<" INFO: dropped packet for non existent peer_id: "
 				<< peer_id << std::endl);
-		assert(reliable && "trying to send raw packet reliable but no peer found!");
+		FATAL_ERROR_IF(!reliable, "Trying to send raw packet reliable but no peer found!");
 		return false;
 	}
 	Channel *channel = &(dynamic_cast<UDPPeer*>(&peer)->channels[channelnum]);
@@ -1604,7 +1603,7 @@ bool ConnectionSendThread::rawSendAsPacket(u16 peer_id, u8 channelnum,
 
 void ConnectionSendThread::processReliableCommand(ConnectionCommand &c)
 {
-	assert(c.reliable);
+	assert(c.reliable);  // Pre-condition
 
 	switch(c.type) {
 	case CONNCMD_NONE:
@@ -1648,7 +1647,7 @@ void ConnectionSendThread::processReliableCommand(ConnectionCommand &c)
 	case CONNCMD_CONNECT:
 	case CONNCMD_DISCONNECT:
 	case CONCMD_ACK:
-		assert("Got command that shouldn't be reliable as reliable command" == 0);
+		FATAL_ERROR("Got command that shouldn't be reliable as reliable command");
 	default:
 		LOG(dout_con<<m_connection->getDesc()
 				<<" Invalid reliable command type: " << c.type <<std::endl);
@@ -1658,7 +1657,7 @@ void ConnectionSendThread::processReliableCommand(ConnectionCommand &c)
 
 void ConnectionSendThread::processNonReliableCommand(ConnectionCommand &c)
 {
-	assert(!c.reliable);
+	assert(!c.reliable); // Pre-condition
 
 	switch(c.type) {
 	case CONNCMD_NONE:
@@ -1702,7 +1701,7 @@ void ConnectionSendThread::processNonReliableCommand(ConnectionCommand &c)
 		sendAsPacket(c.peer_id,c.channelnum,c.data,true);
 		return;
 	case CONCMD_CREATE_PEER:
-		assert("Got command that should be reliable as unreliable command" == 0);
+		FATAL_ERROR("Got command that should be reliable as unreliable command");
 	default:
 		LOG(dout_con<<m_connection->getDesc()
 				<<" Invalid command type: " << c.type <<std::endl);
@@ -1800,7 +1799,7 @@ void ConnectionSendThread::disconnect_peer(u16 peer_id)
 void ConnectionSendThread::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data)
 {
-	assert(channelnum < CHANNEL_COUNT);
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
 
 	PeerHelper peer = m_connection->getPeerNoEx(peer_id);
 	if (!peer)
@@ -2354,7 +2353,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 	if (MAX_UDP_PEERS <= 65535 && peer_id >= MAX_UDP_PEERS) {
 		errorstream << "Something is wrong with peer_id" << std::endl;
-		assert(0);
+		FATAL_ERROR("");
 	}
 
 	if (type == TYPE_CONTROL)
@@ -2366,7 +2365,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 
 		if (controltype == CONTROLTYPE_ACK)
 		{
-			assert(channel != 0);
+			FATAL_ERROR_IF(channel == 0, "Invalid channel (0)");
 			if (packetdata.getSize() < 4)
 				throw InvalidIncomingDataException
 						("packetdata.getSize() < 4 (ACK header size)");
@@ -2536,7 +2535,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 	}
 	else if (type == TYPE_RELIABLE)
 	{
-		assert(channel != 0);
+		FATAL_ERROR_IF(channel == 0, "Invalid channel (0)");
 		// Recursive reliable packets not allowed
 		if (reliable)
 			throw InvalidIncomingDataException("Found nested reliable packets");
@@ -2660,10 +2659,7 @@ SharedBuffer<u8> ConnectionReceiveThread::processPacket(Channel *channel,
 	}
 
 	// We should never get here.
-	// If you get here, add an exception or a return to some of the
-	// above conditionals.
-	assert(0);
-	throw BaseException("Error in Channel::ProcessPacket()");
+	FATAL_ERROR("Invalid execution point");
 }
 
 /*
@@ -2749,7 +2745,7 @@ Connection::~Connection()
 /* Internal stuff */
 void Connection::putEvent(ConnectionEvent &e)
 {
-	assert(e.type != CONNEVENT_NONE);
+	assert(e.type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
 }
 
@@ -2763,7 +2759,7 @@ PeerHelper Connection::getPeer(u16 peer_id)
 	}
 
 	// Error checking
-	assert(node->second->id == peer_id);
+	FATAL_ERROR_IF(node->second->id != peer_id, "Invalid peer id");
 
 	return PeerHelper(node->second);
 }
@@ -2778,7 +2774,7 @@ PeerHelper Connection::getPeerNoEx(u16 peer_id)
 	}
 
 	// Error checking
-	assert(node->second->id == peer_id);
+	FATAL_ERROR_IF(node->second->id != peer_id, "Invalid peer id");
 
 	return PeerHelper(node->second);
 }
@@ -2950,7 +2946,7 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 void Connection::Send(u16 peer_id, u8 channelnum,
 		NetworkPacket* pkt, bool reliable)
 {
-	assert(channelnum < CHANNEL_COUNT);
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
 
 	ConnectionCommand c;
 
@@ -2980,10 +2976,10 @@ float Connection::getLocalStat(rate_stat_type type)
 {
 	PeerHelper peer = getPeerNoEx(PEER_ID_SERVER);
 
-	if (!peer) {
+	if (!peer)
 		return 0;
-		assert("Connection::getLocalStat we couldn't get our own peer? are you serious???" == 0);
-	}
+
+	FATAL_ERROR_IF(!peer, "Connection::getLocalStat we couldn't get our own peer? are you serious???");
 
 	float retval = 0.0;
 
@@ -3008,7 +3004,7 @@ float Connection::getLocalStat(rate_stat_type type)
 				retval += dynamic_cast<UDPPeer*>(&peer)->channels[j].getCurrentLossRateKB();
 				break;
 		default:
-			assert("Connection::getLocalStat Invalid stat type" == 0);
+			FATAL_ERROR("Connection::getLocalStat Invalid stat type");
 		}
 	}
 	return retval;
@@ -3101,7 +3097,7 @@ void Connection::DisconnectPeer(u16 peer_id)
 
 void Connection::sendAck(u16 peer_id, u8 channelnum, u16 seqnum)
 {
-	assert(channelnum < CHANNEL_COUNT);
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
 
 	LOG(dout_con<<getDesc()
 			<<" Queuing ACK command to peer_id: " << peer_id <<

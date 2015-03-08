@@ -210,7 +210,7 @@ public:
 			return;
 		}
 
-		assert(contains(a));
+		assert(contains(a));	// pre-condition
 
 		// Take back area, XY inclusive
 		{

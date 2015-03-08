@@ -51,7 +51,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 void makeCuboid(MeshCollector *collector, const aabb3f &box,
 	TileSpec *tiles, int tilecount, video::SColor &c, const f32* txc)
 {
-	assert(tilecount >= 1 && tilecount <= 6);
+	assert(tilecount >= 1 && tilecount <= 6); // pre-condition
 
 	v3f min = box.MinEdge;
 	v3f max = box.MaxEdge;
@@ -558,8 +558,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 		switch(f.drawtype){
 		default:
-			infostream<<"Got "<<f.drawtype<<std::endl;
-			assert(0);
+			infostream << "Got " << f.drawtype << std::endl;
+			FATAL_ERROR("Unknown drawtype");
 			break;
 		case NDT_AIRLIKE:
 			break;
@@ -1130,7 +1130,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		break;}
 		case NDT_GLASSLIKE_FRAMED_OPTIONAL:
 			// This is always pre-converted to something else
-			assert(0);
+			FATAL_ERROR("NDT_GLASSLIKE_FRAMED_OPTIONAL not pre-converted as expected");
 			break;
 		case NDT_GLASSLIKE_FRAMED:
 		{
@@ -1382,7 +1382,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		break;}
 		case NDT_ALLFACES_OPTIONAL:
 			// This is always pre-converted to something else
-			assert(0);
+			FATAL_ERROR("NDT_ALLFACES_OPTIONAL not pre-converted");
 			break;
 		case NDT_TORCHLIKE:
 		{

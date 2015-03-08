@@ -264,15 +264,15 @@ public:
 	//bool updateChangedVisibleArea();
 
 	// Call these before and after saving of many blocks
-	virtual void beginSave() {return;};
-	virtual void endSave() {return;};
+	virtual void beginSave() { return; }
+	virtual void endSave() { return; }
 
-	virtual s32 save(ModifiedState save_level, bool breakable){assert(0); return 0;};
+	virtual s32 save(ModifiedState save_level, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
 
 	// Server implements these.
 	// Client leaves them as no-op.
-	virtual bool saveBlock(MapBlock *block) { return false; };
-	virtual bool deleteBlock(v3s16 blockpos) { return false; };
+	virtual bool saveBlock(MapBlock *block) { return false; }
+	virtual bool deleteBlock(v3s16 blockpos) { return false; }
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.

@@ -651,6 +651,7 @@ content_t CNodeDefManager::allocateId()
 // IWritableNodeDefManager
 content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &def)
 {
+	// Pre-conditions
 	assert(name != "");
 	assert(name == def.name);
 
@@ -700,7 +701,7 @@ content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &d
 
 content_t CNodeDefManager::allocateDummy(const std::string &name)
 {
-	assert(name != "");
+	assert(name != "");	// Pre-condition
 	ContentFeatures f;
 	f.name = name;
 	return set(name, f);
