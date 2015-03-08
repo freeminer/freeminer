@@ -27,6 +27,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 #include "log.h"
 #include "strfnd.h"
+#include "defaultsettings.h"  // for override_default_settings
+#include "mapgen.h"  // for MapgenParams
+#include "main.h" // for g_settings
 #ifndef SERVER
 #include "client/tile.h" // getImagePath
 #endif
@@ -274,6 +277,12 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 
 	fs::CreateAllDirs(path);
 
+	// Initialize default settings and override defaults with those
+	// provided by the game
+	Settings game_defaults;
+	getGameMinetestConfig(path, game_defaults);
+	override_default_settings(g_settings, &game_defaults);
+
 	// Create world.mt if does not already exist
 	std::string worldmt_path = path + DIR_DELIM "world.mt";
 	if (!fs::PathExists(worldmt_path)) {
@@ -292,24 +301,19 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 		infostream << "Wrote world.mt (" << worldmt_path << ")" << std::endl;
 	}
 
-/* todo: maybe create json
 	// Create map_meta.txt if does not already exist
-	std::string mapmeta_path = path + DIR_DELIM "map_meta.txt";
-	if (!fs::PathExists(mapmeta_path)) {
-		std::ostringstream ss(std::ios_base::binary);
-		ss
-			<< "mg_name = "       << g_settings->get("mg_name")
-			<< "\nseed = "        << g_settings->get("fixed_map_seed")
-			<< "\nchunksize = "   << g_settings->get("chunksize")
-			<< "\nwater_level = " << g_settings->get("water_level")
-			<< "\nmg_flags = "    << g_settings->get("mg_flags")
-			<< "\n[end_of_params]\n";
-		if (!fs::safeWriteToFile(mapmeta_path, ss.str()))
-			return false;
+	std::string map_meta_path = path + DIR_DELIM + "map_meta.json";
+	if (!fs::PathExists(map_meta_path)){
+		verbosestream << "Creating map_meta.json (" << map_meta_path << ")" << std::endl;
+		fs::CreateAllDirs(path);
+		std::ostringstream oss(std::ios_base::binary);
 
-		infostream << "Wrote map_meta.txt (" << mapmeta_path << ")" << std::endl;
+		Settings conf;
+		MapgenParams params;
+
+		params.load(*g_settings);
+		params.save(conf);
+		conf.writeJsonFile(map_meta_path);
 	}
-*/
-
 	return true;
 }

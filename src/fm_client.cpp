@@ -918,7 +918,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		if (m_localserver) {
 			Settings settings;
 			packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
-			m_localserver->getEmergeManager()->loadParamsFromSettings(&settings);
+			m_localserver->getEmergeManager()->params.load(settings);
 		}
 
 		// Reply to server

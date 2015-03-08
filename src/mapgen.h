@@ -99,11 +99,12 @@ private:
 
 struct MapgenSpecificParams {
 	virtual void readParams(Settings *settings) = 0;
-	virtual void writeParams(Settings *settings) = 0;
+	virtual void writeParams(Settings *settings) const = 0;
 	virtual ~MapgenSpecificParams() {}
 };
 
-struct MapgenParams {
+class MapgenParams {
+public:
 	std::string mg_name;
 	s16 chunksize;
 	u64 seed;
@@ -115,17 +116,19 @@ struct MapgenParams {
 
 	MapgenSpecificParams *sparams;
 
-	MapgenParams()
-	{
-		mg_name     = DEFAULT_MAPGEN;
-		seed        = 0;
-		water_level = 1;
-		chunksize   = 5;
-		flags       = MG_TREES | MG_CAVES | MG_LIGHT;
-		sparams     = NULL;
-		np_biome_heat     = NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.5, 2.0);
-		np_biome_humidity = NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.5, 2.0);
-	}
+	MapgenParams() :
+		mg_name(DEFAULT_MAPGEN),
+		chunksize(5),
+		seed(0),
+		water_level(1),
+		flags(MG_TREES | MG_CAVES | MG_LIGHT),
+		np_biome_heat(NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.5, 2.0)),
+		np_biome_humidity(NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.5, 2.0)),
+		sparams(NULL)
+	{}
+
+	void load(Settings &settings);
+	void save(Settings &settings) const;
 };
 
 class Mapgen {

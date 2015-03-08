@@ -183,7 +183,7 @@ void MapgenV5Params::readParams(Settings *settings)
 }
 
 
-void MapgenV5Params::writeParams(Settings *settings)
+void MapgenV5Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv5_spflags", spflags, flagdesc_mapgen_v5, (u32)-1);
 

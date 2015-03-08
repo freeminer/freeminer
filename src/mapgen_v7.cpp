@@ -201,7 +201,7 @@ void MapgenV7Params::readParams(Settings *settings)
 }
 
 
-void MapgenV7Params::writeParams(Settings *settings)
+void MapgenV7Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7, (u32)-1);
 

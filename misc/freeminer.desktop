@@ -4,6 +4,7 @@ GenericName=Freeminer
 Comment=Multiplayer infinite-world block sandbox
 Comment[fr]=Jeu multijoueurs de type bac à sable avec des mondes infinis
 Comment[de]=Mehrspieler-Sandkastenspiel mit unendlichen Blockwelten
+Comment[tr]=Tek-Çok oyuncuyla küplerden sonsuz dünyalar inşa et
 Exec=freeminer
 Icon=freeminer
 Terminal=false

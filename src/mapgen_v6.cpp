@@ -177,7 +177,7 @@ void MapgenV6Params::readParams(Settings *settings)
 }
 
 
-void MapgenV6Params::writeParams(Settings *settings)
+void MapgenV6Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6, (u32)-1);
 	settings->setFloat("mgv6_freq_desert", freq_desert);

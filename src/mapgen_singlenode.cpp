@@ -30,18 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "emerge.h"
 
-//////////////////////// Mapgen Singlenode parameter read/write
-
-void MapgenSinglenodeParams::readParams(Settings *settings)
-{
-}
-
-
-void MapgenSinglenodeParams::writeParams(Settings *settings)
-{
-}
-
-///////////////////////////////////////////////////////////////////////////////
 
 MapgenSinglenode::MapgenSinglenode(int mapgenid,
 	MapgenParams *params, EmergeManager *emerge)

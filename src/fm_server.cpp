@@ -1896,7 +1896,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			//	PACK(TOCLIENT_INIT_POS, player->getPosition());
 
 			Settings params;
-			m_emerge->saveParamsToSettings(&params);
+			m_emerge->params.save(params);
 			PACK(TOCLIENT_INIT_MAP_PARAMS, params);
 
 			// Send as reliable

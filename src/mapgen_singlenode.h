@@ -30,8 +30,8 @@ struct MapgenSinglenodeParams : public MapgenSpecificParams {
 	MapgenSinglenodeParams() {}
 	~MapgenSinglenodeParams() {}
 	
-	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void readParams(Settings *settings) {}
+	void writeParams(Settings *settings) const {}
 };
 
 class MapgenSinglenode : public Mapgen {
