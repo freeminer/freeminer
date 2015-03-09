@@ -54,7 +54,7 @@ class IRollbackManager;
 class EmergeManager;
 class ServerEnvironment;
 struct BlockMakeData;
-struct MapgenParams;
+class MapgenParams;
 class Server;
 
 

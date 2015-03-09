@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 
 class ServerEnvironment;
-struct MapgenParams;
+class MapgenParams;
 
 class ScriptApiEnv
 		: virtual public ScriptApiBase
