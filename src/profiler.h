@@ -94,6 +94,14 @@ public:
 		printPage(o, 1, 1);
 	}
 
+	float getValue(const std::string &name) const
+	{
+		auto data = m_data.find(name);
+		if (data == m_data.end())
+			return 0.f;
+		return data->second.avg;
+	}
+
 	void printPage(std::ostream &o, u32 page, u32 pagecount)
 	{
 		JMutexAutoLock lock(m_mutex);
