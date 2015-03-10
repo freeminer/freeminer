@@ -274,7 +274,7 @@ public:
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
-	u16 hp;
+	std::atomic_ushort hp;
 
 	float hurt_tilt_timer;
 	float hurt_tilt_strength;

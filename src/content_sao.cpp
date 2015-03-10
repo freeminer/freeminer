@@ -272,7 +272,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			box.MaxEdge *= BS;
 			collisionMoveResult moveresult;
 			f32 pos_max_d = BS*0.25; // Distance per iteration
-			v3f p_pos = m_base_position;
+			v3f p_pos = getBasePosition();
 			v3f p_velocity = m_velocity;
 			v3f p_acceleration = m_acceleration;
 			moveresult = collisionMoveSimple(m_env,m_env->getGameDef(),
@@ -281,12 +281,14 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 					this, m_prop.collideWithObjects);
 
 			// Apply results
-			m_base_position = p_pos;
+			setBasePosition(p_pos);
 			m_velocity = p_velocity;
 			m_acceleration = p_acceleration;
 		} else {
-			m_base_position += dtime * m_velocity + 0.5 * dtime
+			v3f p_pos = getBasePosition();
+			p_pos += dtime * m_velocity + 0.5 * dtime
 					* dtime * m_acceleration;
+			setBasePosition(p_pos);
 			m_velocity += dtime * m_acceleration;
 		}
 
@@ -712,12 +714,10 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_inventory(NULL),
 	m_damage(0),
 	m_last_good_position(0,0,0),
-	m_time_from_last_respawn(10), //more than ignore move time (1)
 	m_time_from_last_punch(0),
 	m_nocheat_dig_pos(32767, 32767, 32767),
 	m_nocheat_dig_time(0),
 	m_wield_index(0),
-	m_position_not_sent(false),
 	m_armor_groups_sent(false),
 	m_privs(privs),
 	m_is_singleplayer(is_singleplayer),
@@ -736,6 +736,9 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_physics_override_sent(false)
 {
 	m_properties_sent = true;
+	m_position_not_sent = false;
+	m_ms_from_last_respawn = 10000; //more than ignore move time (1)
+
 	assert(m_player);	// pre-condition
 	assert(m_peer_id != 0);	// pre-condition
 	++m_player->refs;
@@ -903,7 +906,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		auto lock = lock_unique();
 	m_time_from_last_punch += dtime;
 	m_nocheat_dig_time += dtime;
-	m_time_from_last_respawn += dtime;
+	m_ms_from_last_respawn += dtime*1000;
 	}
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin

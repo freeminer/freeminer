@@ -33,6 +33,14 @@ mkdir -p worlds/autotest
 echo "gameid = default" > worlds/autotest/world.mt
 echo "backend = leveldb" >> worlds/autotest/world.mt
 
+name=tsan
+echo $name =============
+mkdir -p _$name && cd _$name
+cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make
+$run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
+
 name=asannt
 echo $name =============
 mkdir -p _$name && cd _$name
@@ -45,14 +53,6 @@ name=asan
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
-$run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
-cd ..
-
-name=tsan
-echo $name =============
-mkdir -p _$name && cd _$name
-cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
 $make
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..

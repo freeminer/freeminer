@@ -289,14 +289,14 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
-	float m_time_from_last_respawn;
+	std::atomic_uint m_ms_from_last_respawn;
 private:
 	float m_time_from_last_punch;
 	v3s16 m_nocheat_dig_pos;
 	float m_nocheat_dig_time;
 
 	int m_wield_index;
-	bool m_position_not_sent;
+	std::atomic_bool m_position_not_sent;
 	ItemGroupList m_armor_groups;
 	bool m_armor_groups_sent;
 

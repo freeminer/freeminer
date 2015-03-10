@@ -149,7 +149,7 @@ void MapgenMathParams::readParams(Settings *settings) {
 	params = settings->getJson("mg_math");
 }
 
-void MapgenMathParams::writeParams(Settings *settings) {
+void MapgenMathParams::writeParams(Settings *settings) const {
 	settings->setJson("mg_math", params);
 	try {
 		MapgenV7Params::writeParams(settings);

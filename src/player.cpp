@@ -44,7 +44,6 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	swimming_vertical(false),
 	camera_barely_in_ceiling(false),
 	inventory(gamedef->idef()),
-	hp(PLAYER_MAX_HP),
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
 	zoom(false),
@@ -61,6 +60,8 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	m_position(0,0,0),
 	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
 {
+	hp = PLAYER_MAX_HP;
+
 	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 
@@ -323,7 +324,7 @@ Json::Value operator<<(Json::Value &json, Player &player) {
 	json["pitch"] = player.m_pitch;
 	json["yaw"] = player.m_yaw;
 	json["position"] << player.m_position;
-	json["hp"] = player.hp;
+	json["hp"] = player.hp.load();
 	json["breath"] = player.m_breath;
 	return json;
 }
