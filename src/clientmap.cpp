@@ -76,9 +76,9 @@ ClientMap::ClientMap(
 	m_camera_direction(0,0,1),
 	m_camera_fov(M_PI)
 	,m_drawlist(&m_drawlist_1),
-	m_drawlist_current(0),
-	m_drawlist_last(0)
+	m_drawlist_current(0)
 {
+	m_drawlist_last = 0;
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
 

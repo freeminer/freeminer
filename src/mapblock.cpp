@@ -60,8 +60,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_day_night_differs(false),
 		m_generated(false),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
-		m_usage_timer(0),
-		m_refcount(0)
+		m_usage_timer(0)
 {
 	heat = 0;
 	humidity = 0;
@@ -69,6 +68,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_changed_timestamp = 0;
 	m_day_night_differs_expired = true;
 	m_lighting_expired = true;
+	m_refcount = 0;
 	data = NULL;
 	//if(dummy == false)
 		reallocate();
