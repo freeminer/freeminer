@@ -492,6 +492,9 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 
 	generateExperimental();
 
+	// Create initial heightmap to limit caves
+	updateHeightmap(node_min, node_max);
+
 	const s16 max_spread_amount = MAP_BLOCKSIZE;
 	// Limit dirt flow area by 1 because mud is flown into neighbors.
 	s16 mudflow_minpos = -max_spread_amount + 1;
@@ -516,7 +519,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 
 	}
 
-	// Create heightmap after mudflow
+	// Update heightmap after mudflow
 	updateHeightmap(node_min, node_max);
 
 	// Add dungeons
