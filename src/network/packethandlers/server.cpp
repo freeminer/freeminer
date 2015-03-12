@@ -556,6 +556,11 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 		return;
 	}
 
+	// If player is dead we don't care of this packet
+	if (player->hp == 0) {
+		return;
+	}
+
 	PlayerSAO *playersao = player->getPlayerSAO();
 	if (playersao == NULL) {
 		errorstream << "Server::ProcessData(): Cancelling: "
@@ -911,6 +916,15 @@ void Server::handleCommand_Breath(NetworkPacket* pkt)
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
 	}
+
+	/*
+	 * If player is dead, we don't need to update the breath
+	 * He is dead !
+	 */
+	if (player->isDead()) {
+		return;
+	}
+
 
 	PlayerSAO *playersao = player->getPlayerSAO();
 	if (playersao == NULL) {

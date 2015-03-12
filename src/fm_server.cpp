@@ -2064,7 +2064,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	if(command == TOSERVER_PLAYERPOS)
 	{
-		if (playersao->m_ms_from_last_respawn > 1000)
+	// If player is dead we don't care of this packet
+
+		if (player->hp != 0 && playersao->m_ms_from_last_respawn > 1000)
 		player->setPosition(packet[TOSERVER_PLAYERPOS_POSITION].as<v3f>());
 		player->setSpeed(packet[TOSERVER_PLAYERPOS_SPEED].as<v3f>());
 		player->setPitch(modulo360f(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()));
@@ -2333,8 +2335,15 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_BREATH)
 	{
+
+	/*
+	 * If player is dead, we don't need to update the breath
+	 * He is dead !
+	 */
+	if (!player->isDead()) {
 		playersao->setBreath(packet[TOSERVER_BREATH_VALUE].as<u16>());
 		SendPlayerBreath(peer_id);
+	}
 	}
 	else if(command == TOSERVER_CHANGE_PASSWORD)
 	{

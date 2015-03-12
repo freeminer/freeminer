@@ -239,6 +239,10 @@ public:
 	void deSerialize(std::istream &is, std::string playername);
 
 	s16 refs;
+
+	// Use a function, if isDead can be defined by other conditions
+	bool isDead() { return hp == 0; }
+
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
 	bool in_liquid;
