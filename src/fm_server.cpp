@@ -3111,11 +3111,12 @@ void Server::SendBreath(u16 peer_id, u16 breath)
 	m_clients.send(peer_id, 0, buffer, true);
 }
 
-void Server::SendAccessDenied(u16 peer_id,const std::string &reason)
+void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason)
 {
 	DSTACK(__FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED, 1);
-	PACK(TOCLIENT_ACCESS_DENIED_REASON, reason);
+	PACK(TOCLIENT_ACCESS_DENIED_CUSTOM_STRING, custom_reason);
+	PACK(TOCLIENT_ACCESS_DENIED_REASON, (int)reason);
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
@@ -4102,18 +4103,31 @@ void Server::RespawnPlayer(u16 peer_id)
 	stat.add("respawn", playersao->getPlayer()->getName());
 }
 
-void Server::DenyAccess(u16 peer_id, const std::string &reason)
+void Server::DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	SendAccessDenied(peer_id, reason);
+	SendAccessDenied(peer_id, reason, custom_reason);
 	m_clients.event(peer_id, CSE_SetDenied);
 	m_con.DisconnectPeer(peer_id);
 }
 
-void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
+//fmtodo: remove:
+void Server::DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason)
 {
-    DenyAccess(peer_id, wide_to_narrow(reason));
+    DenyAccess(peer_id, reason, wide_to_narrow(custom_reason));
+}
+
+//fmtodo: remove:
+void Server::DenyAccess(u16 peer_id, const std::string &custom_reason)
+{
+    DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, custom_reason);
+}
+
+//fmtodo: remove:
+void Server::DenyAccess(u16 peer_id, const std::wstring &custom_reason)
+{
+    DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, wide_to_narrow(custom_reason));
 }
 
 void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)

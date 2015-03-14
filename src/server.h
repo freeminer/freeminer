@@ -211,6 +211,8 @@ public:
 
 	void handleCommand_Null(NetworkPacket* pkt) {};
 	void handleCommand_Deprecated(NetworkPacket* pkt);
+	void handleCommand_Init(NetworkPacket* pkt);
+	void handleCommand_Auth(NetworkPacket* pkt);
 	void handleCommand_Init_Legacy(NetworkPacket* pkt);
 	void handleCommand_Init2(NetworkPacket* pkt);
 	void handleCommand_RequestMedia(NetworkPacket* pkt);
@@ -223,7 +225,7 @@ public:
 	void handleCommand_ChatMessage(NetworkPacket* pkt);
 	void handleCommand_Damage(NetworkPacket* pkt);
 	void handleCommand_Breath(NetworkPacket* pkt);
-	void handleCommand_Password_Legacy(NetworkPacket* pkt);
+	void handleCommand_Password(NetworkPacket* pkt);
 	void handleCommand_PlayerItem(NetworkPacket* pkt);
 	void handleCommand_Respawn(NetworkPacket* pkt);
 	void handleCommand_Interact(NetworkPacket* pkt);
@@ -383,8 +385,13 @@ public:
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
 
-	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason=NULL);
+
+	//fmtodo: remove:
+	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason=NULL);
 	void DenyAccess(u16 peer_id, const std::string &reason);
+	void DenyAccess(u16 peer_id, const std::wstring &reason);
+
 	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
 	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
 			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
@@ -406,7 +413,8 @@ private:
 	void SendMovement(u16 peer_id);
 	void SendHP(u16 peer_id, u8 hp);
 	void SendBreath(u16 peer_id, u16 breath);
-	void SendAccessDenied(u16 peer_id,const std::string &reason);
+	void SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason);
+	void SendAccessDenied_Legacy(u16 peer_id, const std::string &reason);
 	void SendDeathscreen(u16 peer_id,bool set_camera_point_target, v3f camera_point_target);
 	void SendItemDef(u16 peer_id,IItemDefManager *itemdef, u16 protocol_version);
 	void SendNodeDef(u16 peer_id,INodeDefManager *nodedef, u16 protocol_version);

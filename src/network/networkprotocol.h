@@ -121,14 +121,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		ContentFeatures: change number of special tiles to 6 (CF_SPECIAL_COUNT)
 	PROTOCOL_VERSION 25:
 		Rename TOCLIENT_ACCESS_DENIED to TOCLIENT_ACCESS_DENIED_LEGAGY
-		Rename TOCLIENT_DELETE_PARTICLESPAWNER to TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY
+		Rename TOCLIENT_DELETE_PARTICLESPAWNER to
+			TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY
 		Rename TOSERVER_PASSWORD to TOSERVER_PASSWORD_LEGACY
 		Rename TOSERVER_INIT to TOSERVER_INIT_LEGACY
+		Rename TOCLIENT_INIT to TOCLIENT_INIT_LEGACY
 		Add TOCLIENT_ACCESS_DENIED new opcode (0x0A), using error codes
 			for standard error, keeping customisation possible. This
 			permit translation
 		Add TOCLIENT_DELETE_PARTICLESPAWNER (0x53), fixing the u16 read and
 			reading u32
+		Add TOSERVER_INIT new opcode (0x02) for client presentation to server
+		Add TOSERVER_AUTH new opcode (0x03) for client authentication
+		Add TOCLIENT_HELLO for presenting server to client after client
+			presentation
+		Add TOCLIENT_AUTH_ACCEPT to accept connexion from client
 */
 
 #define LATEST_PROTOCOL_VERSION 24
@@ -158,18 +165,8 @@ enum ToClientCommand
 };
 
 /*
-#define TOCLIENT_ACCESS_DENIED 0x0A
-enum {
-	// u16 command
-	TOCLIENT_ACCESS_DENIED_COMMAND,
-	// wstring reason
-	TOCLIENT_ACCESS_DENIED_REASON
-};
-	/ *
-		u16 command
-		u16 reason_length
-		wstring reason
-	* /
+	TOCLIENT_HELLO = 0x02,
+	TOCLIENT_AUTH_ACCEPT = 0x03,
 */
 
 #define TOCLIENT_INIT 0x10
@@ -303,9 +300,9 @@ enum {
 #define TOCLIENT_ACCESS_DENIED 0x35
 enum {
 	// string
-	TOCLIENT_ACCESS_DENIED_REASON,
+	TOCLIENT_ACCESS_DENIED_CUSTOM_STRING,
 	// u16 command
-	TOCLIENT_ACCESS_DENIED_COMMAND
+	TOCLIENT_ACCESS_DENIED_REASON
 };
 	/*
 		u16 command
@@ -637,10 +634,15 @@ enum {
 		[0] u16 TOSERVER_INIT
 		[2] u8 SER_FMT_VER_HIGHEST_READ
 		[3] u8 compression_modes
-		[4] std::string player_name
-		[4+*] std::string password (new in some version)
-		[4+*+*] u16 minimum supported network protocol version (added sometime)
-		[4+*+*+2] u16 maximum supported network protocol version (added later than the previous one)
+	*/
+
+#define TOSERVER_AUTH 0x03
+	/*
+		Sent first after presentation (INIT).
+		[0] std::string player_name
+		[0+*] std::string password (new in some version)
+		[0+*+*] u16 minimum supported network protocol version (added sometime)
+		[0+*+*+2] u16 maximum supported network protocol version (added later than the previous one)
 	*/
 
 
@@ -889,8 +891,9 @@ enum AccessDeniedCode {
 	SERVER_ACCESSDENIED_TOO_MANY_USERS = 6,
 	SERVER_ACCESSDENIED_EMPTY_PASSWORD = 7,
 	SERVER_ACCESSDENIED_ALREADY_CONNECTED = 8,
-	SERVER_ACCESSDENIED_CUSTOM_STRING = 9,
-	SERVER_ACCESSDENIED_MAX = 10,
+	SERVER_ACCESSDENIED_SERVER_FAIL = 9,
+	SERVER_ACCESSDENIED_CUSTOM_STRING = 10,
+	SERVER_ACCESSDENIED_MAX = 11,
 };
 
 enum NetProtoCompressionMode {
@@ -907,6 +910,7 @@ const static std::wstring accessDeniedStrings[SERVER_ACCESSDENIED_MAX] = {
 	L"Too many users.",
 	L"Empty passwords are disallowed. Set a password and try again.",
 	L"Another client is connected with this name. If your client closed unexpectedly, try again in a minute.",
+	L"Server authenticator failed. Maybe the servers has some problems."
 	L"",
 };
 

@@ -936,7 +936,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		// to be processed even if the serialisation format has
 		// not been agreed yet, the same as TOCLIENT_INIT.
 		m_access_denied = true;
-		packet[TOCLIENT_ACCESS_DENIED_REASON].convert(&m_access_denied_reason);
+		packet[TOCLIENT_ACCESS_DENIED_CUSTOM_STRING].convert(&m_access_denied_reason);
 		return;
 	}
 
