@@ -388,9 +388,9 @@ long WINAPI Win32ExceptionHandler(struct _EXCEPTION_POINTERS *pExceptInfo)
 	MINIDUMP_USER_STREAM_INFORMATION mdusi;
 	MINIDUMP_USER_STREAM mdus;
 	bool minidump_created = false;
-	std::string version_str("Minetest ");
+	std::string version_str("Freeminer ");
 
-	std::string dumpfile = porting::path_user + DIR_DELIM "minetest.dmp";
+	std::string dumpfile = porting::path_user + DIR_DELIM "freeminer.dmp";
 
 	HANDLE hFile = CreateFileA(dumpfile.c_str(), GENERIC_WRITE,
 		FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
