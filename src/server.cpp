@@ -1109,7 +1109,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	SendPlayerBreath(peer_id);
 
 	// Show death screen if necessary
-	if(player->hp == 0)
+	if(player->isDead())
 		SendDeathscreen(peer_id, false, v3f(0,0,0));
 
 	// Note things in chat if not in simple singleplayer mode
@@ -1509,7 +1509,7 @@ void Server::SendAccessDenied(u16 peer_id,const std::wstring &reason)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_ACCESS_DENIED, 0, peer_id);
+	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_ACCESS_DENIED_LEGACY, 0, peer_id);
 	*pkt << reason;
 	Send(pkt);
 }
@@ -1680,7 +1680,7 @@ void Server::SendDeleteParticleSpawner(u16 peer_id, u32 id)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_DELETE_PARTICLESPAWNER, 2, peer_id);
+	NetworkPacket* pkt = new NetworkPacket(TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY, 2, peer_id);
 
 	// Ugly error in this packet
 	*pkt << (u16) id;
