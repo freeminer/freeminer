@@ -486,7 +486,7 @@ public:
 
 	float mediaReceiveProgress();
 
-	void afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font);
+	void afterContentReceived(IrrlichtDevice *device);
 
 	float getRTT(void);
 	float getCurRate(void);

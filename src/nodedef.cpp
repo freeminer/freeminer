@@ -380,7 +380,9 @@ public:
 	virtual content_t set(const std::string &name, const ContentFeatures &def);
 	virtual content_t allocateDummy(const std::string &name);
 	virtual void updateAliases(IItemDefManager *idef);
-	virtual void updateTextures(IGameDef *gamedef);
+	virtual void updateTextures(IGameDef *gamedef,
+	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
+	/*argument: */void *progress_callback_args);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
@@ -725,7 +727,9 @@ void CNodeDefManager::updateAliases(IItemDefManager *idef)
 }
 
 
-void CNodeDefManager::updateTextures(IGameDef *gamedef)
+void CNodeDefManager::updateTextures(IGameDef *gamedef,
+	void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
+	void *progress_callback_args)
 {
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
@@ -747,7 +751,9 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 	bool use_normal_texture = enable_shaders &&
 		(enable_bumpmapping || enable_parallax_occlusion);
 
-	for (u32 i = 0; i < m_content_features.size(); i++) {
+	u32 size = m_content_features.size();
+
+	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &m_content_features[i];
 
 		// Figure out the actual tiles to use
@@ -924,8 +930,12 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 			recalculateBoundingBox(f->mesh_ptr[0]);
 			meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);
 		}
+
 		f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
+
 		}
+		if (progress_callback)
+		progress_callback(progress_callback_args, i, size);
 #endif
 	}
 }

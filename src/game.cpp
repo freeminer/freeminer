@@ -2107,7 +2107,7 @@ bool Game::createClient(const std::string &playername,
 	}
 
 	// Update cached textures, meshes and materials
-	client->afterContentReceived(device, g_fontengine->getFont());
+	client->afterContentReceived(device);
 
 	/* Camera
 	 */
