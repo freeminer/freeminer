@@ -51,7 +51,9 @@ luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel
 ___
 Arch Linux:
 ```bash
-sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake msgpack-c
+sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake
+# From AUR (using pacaur)
+pacaur -Sa msgpack-c-0.5
 ```
 ___
 Gentoo/Funtoo:
