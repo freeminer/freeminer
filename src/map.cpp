@@ -2859,7 +2859,7 @@ void ServerMap::loadMapMeta()
 
 	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
 	if (!is.good()) {
-		errorstream << "ServerMap::loadMapMeta(): "
+		infostream << "ServerMap::loadMapMeta(): "
 			"could not open " << fullpath << std::endl;
 		throw FileNotGoodException("Cannot open map metadata");
 	}

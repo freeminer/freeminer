@@ -506,7 +506,7 @@ int MapgenMath::generateTerrain() {
 				if (internal)
 					d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
-					if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+					if (!vm->m_data[i].getContent()) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert) {

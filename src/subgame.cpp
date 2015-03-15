@@ -203,7 +203,7 @@ std::vector<SubgameSpec> getAvailableGames()
 
 bool getWorldExists(const std::string &world_path)
 {
-	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt") ||
+	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.json") ||
 			fs::PathExists(world_path + DIR_DELIM + "world.mt"));
 }
 
@@ -215,7 +215,7 @@ std::string getWorldGameId(const std::string &world_path, bool can_be_legacy)
 	if(!succeeded){
 		if(can_be_legacy){
 			// If map_meta.txt exists, it is probably an old minetest world
-			if(fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
+			if(fs::PathExists(world_path + DIR_DELIM + "map_meta.json"))
 				return LEGACY_GAMEID;
 		}
 		return "";
