@@ -1336,7 +1336,7 @@ void Server::handleCommand_Respawn(NetworkPacket* pkt)
 		return;
 	}
 
-	if (!player->isDead() || !g_settings->getBool("enable_damage"))
+	if (!player->isDead())
 		return;
 
 	RespawnPlayer(pkt->getPeerId());
