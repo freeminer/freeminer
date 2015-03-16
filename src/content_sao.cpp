@@ -880,12 +880,14 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	// If attached, check that our parent is still there. If it isn't, detach.
 	if(m_attachment_parent_id && !isAttached())
 	{
+	  {
 		auto lock = lock_unique();
 		m_attachment_parent_id = 0;
 		m_attachment_bone = "";
 		m_attachment_position = v3f(0,0,0);
 		m_attachment_rotation = v3f(0,0,0);
 		m_player->setPosition(m_last_good_position);
+	  }
 		((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 	}
 
@@ -1002,9 +1004,11 @@ void PlayerSAO::setPos(v3f pos)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	{
 	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
+	}
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
@@ -1013,9 +1017,11 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	if(isAttached())
 		return;
 	m_player->setPosition(pos);
+	{
 	auto lock = lock_unique();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
+	}
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
