@@ -2390,7 +2390,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	}
 	else if(command == TOSERVER_RESPAWN)
 	{
-		if(player->hp != 0 || !g_settings->getBool("enable_damage"))
+		if(!player->isDead())
 			return;
 
 		RespawnPlayer(peer_id);
