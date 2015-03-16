@@ -405,6 +405,8 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.param_type_2 == CPT2_LEVELED) {
 		u8 level = getParam2() & LEVELED_MASK;
+		if (f.liquid_type == LIQUID_SOURCE)
+			level += f.getMaxLevel();
 		if(level)
 			return level;
 	} 
@@ -426,9 +428,11 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 
 u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 {
+	//debug: auto level_orig = level;
 	u8 rest = 0;
 	if (level < 1) {
 		setContent(CONTENT_AIR);
+		setParam2(0);
 		return 0;
 	}
 	const ContentFeatures &f = nodemgr->get(*this);
@@ -438,13 +442,17 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 			level = f.getMaxLevel(compress);
 		}
 		if (level >= f.getMaxLevel()) {
-			if (!f.liquid_alternative_source.empty())
+			if(f.liquid_type == LIQUID_SOURCE) {
+				level -= f.getMaxLevel();
+			} else if (!f.liquid_alternative_source.empty()) {
 				setContent(nodemgr->getId(f.liquid_alternative_source));
+				level -= f.getMaxLevel();
+			}
 		} else if (!f.liquid_alternative_flowing.empty()) {
 			setContent(nodemgr->getId(f.liquid_alternative_flowing));
 		}
 		setParam2(level & LEVELED_MASK);
-		//debug: if(getLevel(nodemgr)!=level) errorstream<<"AFTERSET not match want="<<level<< " res="<< getLevel(nodemgr) <<std::endl;
+		//debug: if(getLevel(nodemgr)!=level_orig) errorstream<<"AFTERSET not match want="<<(int)level_orig<<" compress="<<compress<< " res="<< (int)getLevel(nodemgr) << " setted="<<(int)level<< " rest="<<(int)rest<<" name="<<f.name<< " max="<< (int)f.getMaxLevel()<< " maxC="<< (int)f.getMaxLevel(compress)<<std::endl;
 	} else if (f.param_type_2 == CPT2_FLOWINGLIQUID
 		|| f.liquid_type == LIQUID_FLOWING
 		|| f.liquid_type == LIQUID_SOURCE) {
@@ -462,7 +470,8 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add, bool compress)
 {
 	s8 level = getLevel(nodemgr);
-	if (add == 0) level = 1;
+	if (add == 0)
+		level = 1;
 	level += add;
 	return setLevel(nodemgr, level, compress);
 }

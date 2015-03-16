@@ -49,7 +49,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "mainmenumanager.h"
 #include "gettext.h"
-#include "log.h"
+#include "log_types.h"
 #include "filesys.h"
 // Needed for determining pointing to nodes
 #include "nodedef.h"
@@ -4512,6 +4512,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 			if (n.getContent() != CONTENT_IGNORE && features.name != "unknown") {
 				os << " (pointing_at = " << features.name
 #if !defined(NDEBUG)
+					<< " " << n
 					<< " - " << features.tiledef[0].name.c_str()
 					<< " - " << features.drawtype
 					<< " - " << features.param_type

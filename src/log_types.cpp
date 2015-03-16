@@ -53,7 +53,7 @@ std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
 
 #include "mapnode.h"
 std::ostream & operator<<(std::ostream & s, MapNode n) {
-	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
+	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param2<<"]";
 	return s;
 }
 

@@ -108,7 +108,7 @@ enum ContentParamType2
 	CPT2_FACEDIR,
 	// Direction for signs, torches and such
 	CPT2_WALLMOUNTED,
-	// Block level like FLOWINGLIQUID
+	// Block level like FLOWINGLIQUID (also for snow)
 	CPT2_LEVELED,
 };
 
@@ -360,10 +360,10 @@ struct ContentFeatures
 		return (liquid_alternative_flowing == f.liquid_alternative_flowing);
 	}
 	u8 getMaxLevel(bool compress = 0) const{
-		if(param_type_2 == CPT2_LEVELED && liquid_type == LIQUID_FLOWING && leveled)
-			return(compress ? LEVELED_MAX : leveled);
+		//if(param_type_2 == CPT2_LEVELED /* && liquid_type == LIQUID_FLOWING*/ && leveled)
+		//	return(compress ? LEVELED_MAX : leveled);
 		if(leveled || param_type_2 == CPT2_LEVELED)
-			return LEVELED_MAX;
+			return compress ? LEVELED_MAX : leveled ? leveled : LEVELED_MAX;
 		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
 			return LIQUID_LEVEL_SOURCE;
 		return 0;
