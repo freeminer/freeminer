@@ -126,9 +126,9 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			in_liquid = f.isLiquid();
 			liquid_viscosity = f.liquid_viscosity;
 			if (f.param_type_2 == CPT2_LEVELED) {
-				auto level = node.getLevel(nodemgr);
-				auto maxlevel = node.getMaxLevel(nodemgr);
-				if (level && maxlevel)
+				float level = node.getLevel(nodemgr);
+				float maxlevel = node.getMaxLevel(nodemgr);
+				if (level && maxlevel && level < maxlevel)
 					liquid_viscosity /= maxlevel / level;
 			}
 		} else {
