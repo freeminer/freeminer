@@ -212,7 +212,6 @@ NEXT_LIQUID:
 					melt_kind_flowing = melt_kind;
 				if (nb.content == liquid_kind) {
 					liquid_levels[i] = nb.node.getLevel(nodemgr); //LIQUID_LEVEL_SOURCE;
-					liquid_levels_want[i] = 0;
 					nb.liquid = 1;
 					nb.infinity = (nb.node.param2 & LIQUID_INFINITY_MASK);
 				}
@@ -236,7 +235,6 @@ NEXT_LIQUID:
 					melt_kind = melt_kind_flowing;
 				if (nb.content == liquid_kind_flowing) {
 					liquid_levels[i] = nb.node.getLevel(nodemgr);
-					liquid_levels_want[i] = 0;
 					nb.liquid = 1;
 					nb.infinity = (nb.node.param2 & LIQUID_INFINITY_MASK);
 				}
@@ -272,6 +270,7 @@ NEXT_LIQUID:
 			}
 
 			if (nb.liquid) {
+				liquid_levels_want[i] = 0;
 				++can_liquid;
 				if(nb.type == NEIGHBOR_SAME_LEVEL)
 					++can_liquid_same_level;
