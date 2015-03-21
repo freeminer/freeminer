@@ -2001,7 +2001,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if (peer_proto_ver <= 22) {
 			infostream << "Client sent message not expected by a "
 				<< "client using protocol version <= 22,"
-				<< "disconnecing peer_id: " << peer_id << std::endl;
+				<< "disconnecting peer_id: " << peer_id << std::endl;
 			m_con.DisconnectPeer(peer_id);
 			return;
 		}
