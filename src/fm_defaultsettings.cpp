@@ -283,6 +283,8 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
+	settings->setDefault("texture_clean_transparent", "true");
+	settings->setDefault("texture_min_size", "16");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("headless_optimize", "false");
 
