@@ -2773,7 +2773,9 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 					item, playersao, pointed))
 			{
 				// Apply returned ItemStack
-				playersao->setWieldedItem(item);
+				if (playersao->setWieldedItem(item)) {
+					SendInventory(playersao);
+				}
 				stat.add("use", player->getName());
 				stat.add("use_" + item.name, player->getName());
 			}
