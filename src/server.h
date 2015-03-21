@@ -567,8 +567,10 @@ private:
 	IRollbackManager *m_rollback;
 	bool m_enable_rollback_recording; // Updated once in a while
 
+public:
 	// Emerge manager
 	EmergeManager *m_emerge;
+private:
 
 	// Scripting
 	// Envlock and conlock should be locked when using Lua

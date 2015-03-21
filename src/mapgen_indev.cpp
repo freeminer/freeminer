@@ -387,7 +387,7 @@ int MapgenIndev::generateGround() {
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
-			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+			if (!vm->m_data[i].getContent()) {
 
 				if (y <= surface_y) {
 					int index3 = (z - node_min.Z) * zstride +
@@ -397,6 +397,8 @@ int MapgenIndev::generateGround() {
 						n_desert_stone : layers_get(index3);
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
+					if (liquid_pressure && y <= 0)
+						vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
 				} else {
 					vm->m_data[i] = n_air;
 				}

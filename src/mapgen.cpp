@@ -74,12 +74,14 @@ Mapgen::Mapgen()
 	id            = -1;
 	seed          = 0;
 	water_level   = 0;
+	liquid_pressure = 0;
 	flags         = 0;
 
 	vm          = NULL;
 	ndef        = NULL;
 	heightmap   = NULL;
 	biomemap    = NULL;
+
 }
 
 
@@ -90,6 +92,7 @@ Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
 	id            = mapgenid;
 	seed          = (int)params->seed;
 	water_level   = params->water_level;
+	liquid_pressure = params->liquid_pressure;
 	flags         = params->flags;
 	csize         = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
 
@@ -550,6 +553,7 @@ void MapgenParams::load(Settings &settings)
 
 	settings.getNoEx("mg_name", mg_name);
 	settings.getS16NoEx("water_level", water_level);
+	settings.getS16NoEx("liquid_pressure", liquid_pressure);
 	settings.getS16NoEx("chunksize", chunksize);
 	settings.getFlagStrNoEx("mg_flags", flags, flagdesc_mapgen);
 	settings.getNoiseParams("mg_biome_np_heat", np_biome_heat);
@@ -567,6 +571,7 @@ void MapgenParams::save(Settings &settings) const
 	settings.set("mg_name", mg_name);
 	settings.setU64("seed", seed);
 	settings.setS16("water_level", water_level);
+	settings.setS16("liquid_pressure", liquid_pressure);
 	settings.setS16("chunksize", chunksize);
 	settings.setFlagStr("mg_flags", flags, flagdesc_mapgen, (u32)-1);
 	settings.setNoiseParams("mg_biome_np_heat", np_biome_heat);

@@ -426,10 +426,10 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 	return 0;
 }
 
-u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
+u16 MapNode::setLevel(INodeDefManager *nodemgr, s16 level, bool compress)
 {
 	//debug: auto level_orig = level;
-	u8 rest = 0;
+	s16 rest = 0;
 	if (level < 1) {
 		setContent(CONTENT_AIR);
 		setParam2(0);
@@ -467,9 +467,9 @@ u8 MapNode::setLevel(INodeDefManager *nodemgr, s8 level, bool compress)
 	return rest;
 }
 
-u8 MapNode::addLevel(INodeDefManager *nodemgr, s8 add, bool compress)
+u16 MapNode::addLevel(INodeDefManager *nodemgr, s16 add, bool compress)
 {
-	s8 level = getLevel(nodemgr);
+	s16 level = getLevel(nodemgr);
 	if (add == 0)
 		level = 1;
 	level += add;

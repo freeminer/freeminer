@@ -343,6 +343,9 @@ int ModApiMapgen::l_get_mapgen_params(lua_State *L)
 	lua_pushinteger(L, params->water_level);
 	lua_setfield(L, -2, "water_level");
 
+	lua_pushinteger(L, params->liquid_pressure);
+	lua_setfield(L, -2, "liquid_pressure");
+
 	lua_pushinteger(L, params->chunksize);
 	lua_setfield(L, -2, "chunksize");
 
@@ -377,6 +380,10 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	lua_getfield(L, 1, "water_level");
 	if (lua_isnumber(L, -1))
 		params->water_level = lua_tointeger(L, -1);
+
+	lua_getfield(L, 1, "liquid_pressure");
+	if (lua_isnumber(L, -1))
+		params->liquid_pressure = lua_tointeger(L, -1);
 
 	warn_if_field_exists(L, 1, "flagmask",
 		"Deprecated: flags field now includes unset flags.");

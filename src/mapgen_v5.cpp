@@ -409,8 +409,11 @@ int MapgenV5::generateBaseTerrain()
 				float h = noise_height->result[index2d];
 
 				if (noise_ground->result[index] * f < y - h) {
-					if (y <= water_level)
+					if (y <= water_level) {
 						vm->m_data[i] = MapNode(c_water_source);
+					if (liquid_pressure && y <= 0)
+						vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
+					}
 					else
 						vm->m_data[i] = MapNode(CONTENT_AIR);
 				} else {

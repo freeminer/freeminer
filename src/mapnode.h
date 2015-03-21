@@ -109,10 +109,11 @@ enum Rotation {
 #define LIQUID_LEVEL_MAX LIQUID_LEVEL_MASK
 #define LIQUID_LEVEL_SOURCE (LIQUID_LEVEL_MAX+1)
 
-#define LIQUID_INFINITY_MASK 0x80 //0b10000000 // only for _source liquid
+#define LIQUID_INFINITY_MASK 0x80 // 0b10000000 // only for _source liquid
+#define LIQUID_STABLE_MASK   0x40 // 0b01000000
 
 // mask for param2, now as for liquid
-#define LEVELED_MASK 0x3F
+#define LEVELED_MASK 0x1F         // 0b00011111 // was: 0x3F
 #define LEVELED_MAX LEVELED_MASK
 
 
@@ -266,8 +267,8 @@ struct MapNode
 	*/
 	u8 getMaxLevel(INodeDefManager *nodemgr, bool compress = 0) const;
 	u8 getLevel(INodeDefManager *nodemgr) const;
-	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1, bool compress = 0);
-	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
+	u16 setLevel(INodeDefManager *nodemgr, s16 level = 1, bool compress = 0);
+	u16 addLevel(INodeDefManager *nodemgr, s16 add = 1, bool compress = 0);
 	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
 	operator bool() const { return param0; }

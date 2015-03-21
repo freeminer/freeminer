@@ -33,7 +33,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxelalgorithms.h"
 #include "profiler.h"
 #include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
+//#include "main.h" // For g_profiler
+#include "log_types.h"
 #include "emerge.h"
 #include "dungeongen.h"
 #include "cavegen.h"
@@ -625,6 +626,8 @@ int MapgenV6::generateGround()
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
+					if (liquid_pressure && y <= 0)
+						vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
 				} else {
 					vm->m_data[i] = n_air;
 				}
