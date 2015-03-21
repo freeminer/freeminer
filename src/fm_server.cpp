@@ -1144,16 +1144,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			*/
 			if(reliable_data.size() > 0)
 			{
-				MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
-				PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, reliable_data);
-				// Send as reliable
-				m_clients.send(client->peer_id, 0, buffer, true);
+				SendActiveObjectMessages(client->peer_id, reliable_data);
 			}
 			if(unreliable_data.size() > 0)
 			{
-				MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
-				PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, unreliable_data);
-				m_clients.send(client->peer_id, 1, buffer, false);
+				SendActiveObjectMessages(client->peer_id, unreliable_data, false);
 			}
 		}
 		}
@@ -3534,6 +3529,16 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
 }
+
+void Server::SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable)
+{
+	MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
+	PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, datas);
+
+	// Send as reliable
+	m_clients.send(peer_id, 0, buffer, reliable);
+}
+
 
 s32 Server::playSound(const SimpleSoundSpec &spec,
 		const ServerSoundParams &params)
