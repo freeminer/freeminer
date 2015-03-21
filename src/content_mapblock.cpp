@@ -1804,6 +1804,138 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		case NDT_RAILLIKE:
 		{
 			recurseRail(p, data, collector);
+#if TODO_MERGE
+			bool is_rail_x[6]; /* (-1,-1,0) X (1,-1,0) (-1,0,0) X (1,0,0) (-1,1,0) X (1,1,0) */
+			bool is_rail_z[6];
+
+			content_t thiscontent = n.getContent();
+			std::string groupname = "connect_to_raillike"; // name of the group that enables connecting to raillike nodes of different kind
+			int self_group = ((ItemGroupList) nodedef->get(n).groups)[groupname];
+
+			u8 index = 0;
+			for (s8 y0 = -1; y0 <= 1; y0++) {
+				// Prevent from indexing never used coordinates
+				for (s8 xz = -1; xz <= 1; xz++) {
+					if (xz == 0)
+						continue;
+					MapNode n_xy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x + xz, y + y0, z));
+					MapNode n_zy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y + y0, z + xz));
+					ContentFeatures def_xy = nodedef->get(n_xy);
+					ContentFeatures def_zy = nodedef->get(n_zy);
+
+					// Check if current node would connect with the rail
+					is_rail_x[index] = ((def_xy.drawtype == NDT_RAILLIKE
+							&& ((ItemGroupList) def_xy.groups)[groupname] == self_group)
+							|| n_xy.getContent() == thiscontent);
+
+					is_rail_z[index] = ((def_zy.drawtype == NDT_RAILLIKE
+							&& ((ItemGroupList) def_zy.groups)[groupname] == self_group)
+							|| n_zy.getContent() == thiscontent);
+					index++;
+				}
+			}
+
+			bool is_rail_x_all[2]; // [0] = negative x, [1] = positive x coordinate from the current node position
+			bool is_rail_z_all[2];
+			is_rail_x_all[0] = is_rail_x[0] || is_rail_x[2] || is_rail_x[4];
+			is_rail_x_all[1] = is_rail_x[1] || is_rail_x[3] || is_rail_x[5];
+			is_rail_z_all[0] = is_rail_z[0] || is_rail_z[2] || is_rail_z[4];
+			is_rail_z_all[1] = is_rail_z[1] || is_rail_z[3] || is_rail_z[5];
+
+			// reasonable default, flat straight unrotated rail
+			bool is_straight = true;
+			int adjacencies = 0;
+			int angle = 0;
+			u8 tileindex = 0;
+
+			// check for sloped rail
+			if (is_rail_x[4] || is_rail_x[5] || is_rail_z[4] || is_rail_z[5]) {
+				adjacencies = 5; // 5 means sloped
+				is_straight = true; // sloped is always straight
+			} else {
+				// is really straight, rails on both sides
+				is_straight = (is_rail_x_all[0] && is_rail_x_all[1]) || (is_rail_z_all[0] && is_rail_z_all[1]);
+				adjacencies = is_rail_x_all[0] + is_rail_x_all[1] + is_rail_z_all[0] + is_rail_z_all[1];
+			}
+
+			switch (adjacencies) {
+			case 1:
+				if (is_rail_x_all[0] || is_rail_x_all[1])
+					angle = 90;
+				break;
+			case 2:
+				if (!is_straight)
+					tileindex = 1; // curved
+				if (is_rail_x_all[0] && is_rail_x_all[1])
+					angle = 90;
+				if (is_rail_z_all[0] && is_rail_z_all[1]) {
+					if (is_rail_z[4])
+						angle = 180;
+				}
+				else if (is_rail_x_all[0] && is_rail_z_all[0])
+					angle = 270;
+				else if (is_rail_x_all[0] && is_rail_z_all[1])
+					angle = 180;
+				else if (is_rail_x_all[1] && is_rail_z_all[1])
+					angle = 90;
+				break;
+			case 3:
+				// here is where the potential to 'switch' a junction is, but not implemented at present
+				tileindex = 2; // t-junction
+				if(!is_rail_x_all[1])
+					angle = 180;
+				if(!is_rail_z_all[0])
+					angle = 90;
+				if(!is_rail_z_all[1])
+					angle = 270;
+				break;
+			case 4:
+				tileindex = 3; // crossing
+				break;
+			case 5: //sloped
+				if (is_rail_z[4])
+					angle = 180;
+				if (is_rail_x[4])
+					angle = 90;
+				if (is_rail_x[5])
+					angle = -90;
+				break;
+			default:
+				break;
+			}
+
+			TileSpec tile = getNodeTileN(n, p, tileindex, data);
+			tile.material_flags &= ~MATERIAL_FLAG_BACKFACE_CULLING;
+			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
+
+			u16 l = getInteriorLight(n, 0, nodedef);
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
+
+			float d = (float)BS/64;
+			float s = BS/2;
+
+			short g = -1;
+			if (is_rail_x[4] || is_rail_x[5] || is_rail_z[4] || is_rail_z[5])
+				g = 1; //Object is at a slope
+
+			video::S3DVertex vertices[4] =
+			{
+					video::S3DVertex(-s,  -s+d,-s,  0,0,0,  c,0,1),
+					video::S3DVertex( s,  -s+d,-s,  0,0,0,  c,1,1),
+					video::S3DVertex( s, g*s+d, s,  0,0,0,  c,1,0),
+					video::S3DVertex(-s, g*s+d, s,  0,0,0,  c,0,0),
+			};
+
+			for(s32 i=0; i<4; i++)
+			{
+				if(angle != 0)
+					vertices[i].Pos.rotateXZBy(angle);
+				vertices[i].Pos += intToFloat(p, BS);
+			}
+
+			u16 indices[] = {0,1,2,2,3,0};
+			collector.append(tile, vertices, 4, indices, 6);
+#endif
 		break;}
 		case NDT_NODEBOX:
 		{
