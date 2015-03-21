@@ -2956,11 +2956,14 @@ void ClientEnvironment::damageLocalPlayer(u8 damage, bool handle_hp)
 
 	if (!lplayer)
 		return;
-	
-	if (handle_hp && lplayer->hp > damage)
-		lplayer->hp -= damage;
-	else
-		lplayer->hp = 0;
+
+
+	if (handle_hp) {
+		if (lplayer->hp > damage)
+			lplayer->hp -= damage;
+		else
+			lplayer->hp = 0;
+	}
 
 	ClientEnvEvent event;
 	event.type = CEE_PLAYER_DAMAGE;
