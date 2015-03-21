@@ -293,7 +293,9 @@ bool initializeWorld(const std::string &path, const std::string &gameid)
 #elif USE_SQLITE3
 				<< "backend = sqlite3\n"
 #endif
-			;
+
+				<< "creative_mode = " << g_settings->get("creative_mode")
+				<< "\nenable_damage = " << g_settings->get("enable_damage") << "\n";
 
 		if (!fs::safeWriteToFile(worldmt_path, ss.str()))
 			return false;
