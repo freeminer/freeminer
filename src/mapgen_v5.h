@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen.h"
 #include "mapgen_indev.h"
 
+#define LARGE_CAVE_DEPTH -256
+
 /////////////////// Mapgen V5 flags
 //#define MGV5_   0x01
 
