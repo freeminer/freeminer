@@ -422,7 +422,7 @@ void Client::step(float dtime)
 		*/
 
 		auto i = deleted_blocks.begin();
-		std::list<v3s16> sendlist;
+		std::vector<v3s16> sendlist;
 		for(;;)
 		{
 			if(sendlist.size() == 255 || i == deleted_blocks.end())
@@ -430,10 +430,7 @@ void Client::step(float dtime)
 				if(sendlist.empty())
 					break;
 
-				MSGPACK_PACKET_INIT(TOSERVER_DELETEDBLOCKS, 1);
-				PACK(TOSERVER_DELETEDBLOCKS_DATA, sendlist);
-
-				m_con.Send(PEER_ID_SERVER, 2, buffer, true);
+				sendDeletedBlocks(sendlist);
 
 				if(i == deleted_blocks.end())
 					break;
@@ -621,7 +618,7 @@ void Client::step(float dtime)
 	{
 		m_removed_sounds_check_timer = 0;
 		// Find removed sounds and clear references to them
-		std::set<s32> removed_server_ids;
+		std::vector<s32> removed_server_ids;
 		for(std::map<s32, int>::iterator
 				i = m_sounds_server_to_client.begin();
 				i != m_sounds_server_to_client.end();)
@@ -633,16 +630,12 @@ void Client::step(float dtime)
 				m_sounds_server_to_client.erase(server_id);
 				m_sounds_client_to_server.erase(client_id);
 				m_sounds_to_objects.erase(client_id);
-				removed_server_ids.insert(server_id);
+				removed_server_ids.push_back(server_id);
 			}
 		}
 		// Sync to server
-		if(!removed_server_ids.empty())
-		{
-			MSGPACK_PACKET_INIT(TOSERVER_REMOVED_SOUNDS, 1);
-			PACK(TOSERVER_REMOVED_SOUNDS_IDS, removed_server_ids);
-			// Send as reliable
-			Send(1, buffer, true);
+		if(!removed_server_ids.empty()) {
+			sendRemovedSounds(removed_server_ids);
 		}
 	}
 }
@@ -1631,6 +1624,47 @@ void Client::interact(u8 action, const PointedThing& pointed)
 
 	// Send as reliable
 	Send(0, buffer, true);
+}
+
+/*
+void Client::sendLegacyInit(const char* playerName, const char* playerPassword)
+{
+	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
+			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
+
+	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
+	pkt.putRawString(playerName,PLAYERNAME_SIZE);
+	pkt.putRawString(playerPassword, PASSWORD_SIZE);
+	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
+
+	Send(&pkt);
+}
+*/
+
+void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
+{
+
+	MSGPACK_PACKET_INIT(TOSERVER_DELETEDBLOCKS, 1);
+	PACK(TOSERVER_DELETEDBLOCKS_DATA, blocks);
+
+	m_con.Send(PEER_ID_SERVER, 2, buffer, true);
+}
+
+/*
+void Client::sendGotBlocks(v3s16 block)
+{
+	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6);
+	pkt << (u8) 1 << block;
+	Send(&pkt);
+}
+*/
+
+void Client::sendRemovedSounds(std::vector<s32> &soundList)
+{
+	MSGPACK_PACKET_INIT(TOSERVER_REMOVED_SOUNDS, 1);
+	PACK(TOSERVER_REMOVED_SOUNDS_IDS, soundList);
+	// Send as reliable
+	Send(1, buffer, true);
 }
 
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
