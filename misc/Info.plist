@@ -5,10 +5,10 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>../Resources/minetest</string>
+	<string>freeminer</string>
 	<key>CFBundleIconFile</key>
-	<string>minetest.icns</string>
+	<string>freeminer-icon.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>net.minetest.minetest</string>
+	<string>org.freeminer.freeminer</string>
 </dict>
 </plist>
