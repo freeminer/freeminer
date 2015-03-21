@@ -1725,7 +1725,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		if (m_script->item_OnUse(
 				item, playersao, pointed)) {
 			// Apply returned ItemStack
-			playersao->setWieldedItem(item);
+			if (playersao->setWieldedItem(item)) {
+				SendInventory(playersao);
+			}
 		}
 
 	} // action == 4
