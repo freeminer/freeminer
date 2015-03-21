@@ -2953,19 +2953,14 @@ void ClientEnvironment::processActiveObjectMessage(u16 id,
 void ClientEnvironment::damageLocalPlayer(u8 damage, bool handle_hp)
 {
 	LocalPlayer *lplayer = getLocalPlayer();
+
 	if (!lplayer)
 		return;
-
-	if(handle_hp) {
-		// Don't damage a dead player
-		if (lplayer->isDead()) 
-			return;
-
-		if(lplayer->hp > damage)
-			lplayer->hp -= damage;
-		else
-			lplayer->hp = 0;
-	}
+	
+	if (handle_hp && lplayer->hp > damage)
+		lplayer->hp -= damage;
+	else
+		lplayer->hp = 0;
 
 	ClientEnvEvent event;
 	event.type = CEE_PLAYER_DAMAGE;
