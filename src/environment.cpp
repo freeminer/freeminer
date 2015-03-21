@@ -771,12 +771,13 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				abm_trigger->active_object_count, abm_trigger->active_object_count_wider, map->getNodeTry(abm_trigger->neighbor_pos), activate);
 
 				// Count surrounding objects again if the abms added any
-/*
 				if(m_env->m_added_objects > 0) {
-					active_object_count = countObjects(block, map, active_object_count_wider);
+					v3POS blockpos = getNodeBlockPos(abm_trigger->pos);
+					MapBlock * block = map->getBlock(blockpos);
+					if (block)
+						abm_trigger->active_object_count = m_env->m_abmhandler.countObjects(block, map, abm_trigger->active_object_count_wider);
 					m_env->m_added_objects = 0;
 				}
-*/
 		}
 		if (abm_triggers->empty())
 			abm_triggers.release();
