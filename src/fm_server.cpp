@@ -1610,7 +1610,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		 * respond for some time, your server was overloaded or
 		 * things like that.
 		 */
-		verbosestream<<"Server::ProcessData(): Cancelling: peer "
+		verbosestream<<"Server::ProcessData(): Canceling: peer "
 				<<peer_id<<" not found"<<std::endl;
 		return;
 	}
@@ -1978,7 +1978,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	if(peer_ser_ver == SER_FMT_VER_INVALID)
 	{
-		errorstream<<"Server::ProcessData(): Cancelling: Peer"
+		errorstream<<"Server::ProcessData(): Canceling: Peer"
 				" serialization format invalid or not initialized."
 				" Skipping incoming command="<<command<<std::endl;
 		return;
@@ -2042,7 +2042,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	Player *player = m_env->getPlayer(peer_id);
 	if(player == NULL) {
 /*
-		verbosestream<<"Server::ProcessData(): Cancelling: "
+		verbosestream<<"Server::ProcessData(): Canceling: "
 				"No player for peer_id="<<peer_id
 				<< " disconnecting peer!" <<std::endl;
 */
@@ -2052,7 +2052,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 	PlayerSAO *playersao = player->getPlayerSAO();
 	if(playersao == NULL) {
-		errorstream<<"Server::ProcessData(): Cancelling: "
+		errorstream<<"Server::ProcessData(): Canceling: "
 				"No player object for peer_id="<<peer_id
 				<< " disconnecting peer!" <<std::endl;
 		m_con.DisconnectPeer(peer_id);
@@ -2397,7 +2397,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				<< PP(player->getPosition()/BS) << std::endl;
 
 		// ActiveObject is added to environment in AsyncRunStep after
-		// the previous addition has been succesfully removed
+		// the previous addition has been successfully removed
 	}
 	else if(command == TOSERVER_INTERACT)
 	{
