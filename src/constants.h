@@ -106,8 +106,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // TODO: implement dpi-based scaling for windows and remove this hack
 #if defined(_WIN32)
 	#define TTF_DEFAULT_FONT_SIZE   (18)
+#elsif defined(__ANDROID__)
+	#define TTF_DEFAULT_FONT_SIZE   (17)
 #else
-	#define TTF_DEFAULT_FONT_SIZE	(15)
+	#define TTF_DEFAULT_FONT_SIZE	(17)
 #endif
 #define DEFAULT_FONT_SIZE       (10)
 

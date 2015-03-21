@@ -195,11 +195,7 @@ void set_default_settings(Settings *settings) {
 
 	std::stringstream fontsize;
 
-#ifdef __ANDROID__
-	fontsize << TTF_DEFAULT_FONT_SIZE + 2;
-#else
-	fontsize << TTF_DEFAULT_FONT_SIZE + 5;
-#endif
+	fontsize << TTF_DEFAULT_FONT_SIZE;
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
