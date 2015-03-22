@@ -536,7 +536,7 @@ private:
 	// Send the item number 'item' as player item to the server
 	void sendPlayerItem(u16 item);
 
-	void sendLegacyInit(const char* playerName, const char* playerPassword);
+	void sendLegacyInit(const std::string &playerName, const std::string &playerPassword);
 	void sendDeletedBlocks(std::vector<v3s16> &blocks);
 	void sendGotBlocks(v3s16 block);
 	void sendRemovedSounds(std::vector<s32> &soundList);

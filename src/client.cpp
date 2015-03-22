@@ -367,22 +367,7 @@ void Client::step(float dtime)
 			Player *myplayer = m_env.getLocalPlayer();
 			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
 
-			// Send TOSERVER_INIT
-			// [0] u16 TOSERVER_INIT
-			// [2] u8 SER_FMT_VER_HIGHEST_READ
-			// [3] u8[20] player_name
-			// [23] u8[28] password (new in some version)
-			// [51] u16 minimum supported network protocol version (added sometime)
-			// [53] u16 maximum supported network protocol version (added later than the previous one)
-			MSGPACK_PACKET_INIT(TOSERVER_INIT, 5);
-			PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
-			PACK(TOSERVER_INIT_NAME, myplayer->getName());
-			PACK(TOSERVER_INIT_PASSWORD, m_password);
-			PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
-			PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
-
-			// Send as unreliable
-			Send(1, buffer, false);
+			sendLegacyInit(myplayer->getName(), m_password);
 		}
 
 		// Not connected, return
@@ -937,20 +922,26 @@ void Client::interact(u8 action, const PointedThing& pointed)
 	Send(0, buffer, true);
 }
 
-/*
-void Client::sendLegacyInit(const char* playerName, const char* playerPassword)
+
+void Client::sendLegacyInit(const std::string &playerName, const std::string &playerPassword)
 {
-	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
-			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
+	// Send TOSERVER_INIT
+	// [0] u16 TOSERVER_INIT
+	// [2] u8 SER_FMT_VER_HIGHEST_READ
+	// [3] u8[20] player_name
+	// [23] u8[28] password (new in some version)
+	// [51] u16 minimum supported network protocol version (added sometime)
+	// [53] u16 maximum supported network protocol version (added later than the previous one)
+	MSGPACK_PACKET_INIT(TOSERVER_INIT, 5);
+	PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
+	PACK(TOSERVER_INIT_NAME, playerName);
+	PACK(TOSERVER_INIT_PASSWORD, playerPassword);
+	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
+	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
 
-	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
-	pkt.putRawString(playerName,PLAYERNAME_SIZE);
-	pkt.putRawString(playerPassword, PASSWORD_SIZE);
-	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
-
-	Send(&pkt);
+	// Send as unreliable
+	Send(1, buffer, false);
 }
-*/
 
 void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
 {
