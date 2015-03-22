@@ -26,10 +26,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
-#include "json/json.h"
 #include "jthread/jmutexautolock.h"
+#include "jthread/jmutex.h"
 #include <list>
 #include "util/lock.h"
+#include "json/json.h"
 
 #define PLAYERNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
@@ -216,7 +217,6 @@ public:
 	}
 
 	u32 getFreeHudID() {
-		JMutexAutoLock lock(m_mutex);
 		size_t size = hud.size();
 		for (size_t i = 0; i != size; i++) {
 			if (!hud[i])
