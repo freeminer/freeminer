@@ -183,6 +183,8 @@ video::IImage *textureMinSizeUpscale(video::IVideoDriver *driver, video::IImage 
 		 * animation, the short dimension will be the real size.
 		 */
 		const core::dimension2d<u32> dim = orig->getDimension();
+		if (dim.Width <=1 || dim.Height <= 1)
+			return orig;
 		u32 xscale = scaleto / dim.Width;
 		u32 yscale = scaleto / dim.Height;
 		u32 scale = (xscale > yscale) ? xscale : yscale;
