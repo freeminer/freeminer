@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventory.h"
 #include "constants.h" // BS
 #include "json/json.h"
+#include "jthread/jmutexautolock.h"
 #include <list>
 #include "util/lock.h"
 
@@ -214,7 +215,8 @@ public:
 		return m_collisionbox;
 	}
 
-	u32 getFreeHudID() const {
+	u32 getFreeHudID() {
+		JMutexAutoLock lock(m_mutex);
 		size_t size = hud.size();
 		for (size_t i = 0; i != size; i++) {
 			if (!hud[i])
@@ -325,6 +327,11 @@ public:
 	core::aabbox3d<f32> m_collisionbox;
 
 	std::vector<HudElement *> hud;
+private:
+	// Protect some critical areas
+	// hud for example can be modified by EmergeThread
+	// and ServerThread
+	JMutex m_mutex;
 };
 
 
