@@ -318,7 +318,7 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-openssl;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
-	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	CC=${CROSS_PREFIX}gcc ./Configure android-${TARGET_ARCH} no-idea no-seed -no-sha0 -DL_ENDIAN;\
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
@@ -366,7 +366,7 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-leveldb;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
-	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
 	export CXX=${CROSS_PREFIX}g++;                                             \
@@ -525,7 +525,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-curl;                             \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
-	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
 	export CXX=${CROSS_PREFIX}g++;                                             \
@@ -722,7 +722,7 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-msgpack;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
-	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
 	export CXX=${CROSS_PREFIX}g++;                                             \
@@ -786,7 +786,7 @@ $(ICONV_LIB): $(ICONV_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-iconv;                            \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
-	--install-dir=$${TOOLCHAIN} --system=linux-x86_64;                         \
+	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
 	export CXX=${CROSS_PREFIX}g++;                                             \
