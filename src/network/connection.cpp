@@ -20,9 +20,12 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
+#if !MINETEST_PROTO
 #include "connection_enet.cpp"
-#if 0
-Not used, keep for reduce MT merge conflicts
+#else
+//Not used, keep for reduce MT merge conflicts
 
 
 #include <iomanip>
@@ -2910,10 +2913,10 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
+u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
 {
 	for(;;) {
-		ConnectionEvent e = waitEvent(m_bc_receive_timeout);
+		ConnectionEvent e = waitEvent(timeout ? timeout : m_bc_receive_timeout);
 		if (e.type != CONNEVENT_NONE)
 			LOG(dout_con<<getDesc()<<": Receive: got event: "
 					<<e.describe()<<std::endl);
@@ -2925,14 +2928,14 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 			data = SharedBuffer<u8>(e.data);
 			return e.data.getSize();
 		case CONNEVENT_PEER_ADDED: {
-			UDPPeer tmp(e.peer_id, e.address, this);
+			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
-				m_bc_peerhandler->peerAdded(&tmp);
+				m_bc_peerhandler->peerAdded(e.peer_id);
 			continue; }
 		case CONNEVENT_PEER_REMOVED: {
-			UDPPeer tmp(e.peer_id, e.address, this);
+			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
-				m_bc_peerhandler->deletingPeer(&tmp, e.timeout);
+				m_bc_peerhandler->deletingPeer(e.peer_id, e.timeout);
 			continue; }
 		case CONNEVENT_BIND_FAILED:
 			throw ConnectionBindFailed("Failed to bind socket "

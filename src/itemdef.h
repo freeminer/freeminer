@@ -105,6 +105,8 @@ struct ItemDefinition
 	ItemDefinition& operator=(const ItemDefinition &def);
 	~ItemDefinition();
 	void reset();
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
@@ -172,6 +174,9 @@ public:
 	// Alias will be removed if <name> is defined at a later point of time.
 	virtual void registerAlias(const std::string &name,
 			const std::string &convert_to)=0;
+
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void deSerialize(std::istream &is)=0;
 
 	// Do stuff asked by threads that can only be done in the main thread
 	virtual void processQueue(IGameDef *gamedef)=0;

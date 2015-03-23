@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <queue>
 #include <algorithm>
 #include "network/networkprotocol.h"
+#include "network/serveropcodes.h"
 #include "ban.h"
 #include "environment.h"
 #include "map.h"
@@ -515,7 +516,7 @@ void Server::start(Address bind_addr)
 			<< bind_addr.serializeString() <<"..."<<std::endl;
 
 	// Initialize connection
-	m_con.Serve(bind_addr.getPort());
+	m_con.Serve(bind_addr);
 
 	// Start thread
 	m_thread->restart();
@@ -1159,7 +1160,7 @@ u16 Server::Receive()
 	}
 	catch(ClientStateError &e) {
 		errorstream << "ProcessData: peer=" << peer_id  << e.what() << std::endl;
-		DenyAccess(peer_id, L"Your client sent something server didn't expect."
+		DenyAccess_Legacy(peer_id, L"Your client sent something server didn't expect."
 				L"Try reconnecting or updating your client");
 	}
 	catch(con::PeerNotFoundException &e) {
@@ -1186,13 +1187,13 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		if(player && player->peer_id != 0) {
 			errorstream<<"Server: "<<playername<<": Failed to emerge player"
 					<<" (player allocated to an another client)"<<std::endl;
-			DenyAccess(peer_id, L"Another client is connected with this "
+			DenyAccess_Legacy(peer_id, L"Another client is connected with this "
 					L"name. If your client closed unexpectedly, try again in "
 					L"a minute.");
 		} else {
 			errorstream<<"Server: "<<playername<<": Failed to emerge player"
 					<<std::endl;
-			DenyAccess(peer_id, L"Could not allocate player.");
+			DenyAccess_Legacy(peer_id, L"Could not allocate player.");
 		}
 		return NULL;
 	}
@@ -1251,7 +1252,8 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	return playersao;
 }
 
-#if TODOFM
+//FMTODO
+#if MINETEST_PROTO
 
 inline void Server::handleCommand(NetworkPacket* pkt)
 {
@@ -1263,7 +1265,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
-	JMutexAutoLock envlock(m_env_mutex);
+	//JMutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 
@@ -1545,6 +1547,14 @@ void Server::handlePeerChanges()
 	}
 }
 
+void Server::Send(NetworkPacket* pkt)
+{
+	m_clients.send(pkt->getPeerId(),
+		clientCommandFactoryTable[pkt->getCommand()].channel,
+		pkt,
+		clientCommandFactoryTable[pkt->getCommand()].reliable);
+}
+
 void Server::SendMovement(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
@@ -1679,6 +1689,10 @@ void Server::SendInventory(PlayerSAO* playerSAO)
 
 	// Send as reliable
 	m_clients.send(playerSAO->getPeerID(), 0, buffer, true);
+}
+
+void Server::SendChatMessage(u16 peer_id, const std::wstring &message) {
+	SendChatMessage(peer_id, wide_to_narrow(message));
 }
 
 void Server::SendChatMessage(u16 peer_id, const std::string &message)
@@ -2612,7 +2626,7 @@ void Server::DenyAccess(u16 peer_id, const std::string &custom_reason)
 }
 
 //fmtodo: remove:
-void Server::DenyAccess(u16 peer_id, const std::wstring &custom_reason)
+void Server::DenyAccess_Legacy(u16 peer_id, const std::wstring &custom_reason)
 {
     DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, wide_to_narrow(custom_reason));
 }

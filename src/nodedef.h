@@ -475,6 +475,9 @@ public:
 	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
 	/*argument: */void *progress_callback_args = nullptr)=0;
 
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void deSerialize(std::istream &is)=0;
+
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 

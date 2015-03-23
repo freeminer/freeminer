@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "strfnd.h"
 #include "client.h"
+#include "network/clientopcodes.h"
 #include "network/networkprotocol.h"
 #include "main.h"
 #include "filesys.h"
@@ -754,7 +755,9 @@ void Client::initLocalMapSaving(const Address &address,
 
 	fs::CreateAllDirs(world_path);
 
+#if !MINETEST_PROTO
 	m_localserver = new Server(world_path, gamespec, false, false);
+#endif
 	/*
 	m_localdb = new Database_SQLite3(world_path);
 	m_localdb->beginSave();
@@ -792,13 +795,15 @@ void Client::Receive()
 	DSTACK(__FUNCTION_NAME);
 	SharedBuffer<u8> data;
 	u16 sender_peer_id;
-	u32 datasize = m_con.Receive(sender_peer_id, data, 1);
+	u32 datasize = m_con.Receive(sender_peer_id, data);
 	if (!datasize)
 		return;
 	ProcessData(*data, datasize, sender_peer_id);
 }
 
-#if FMTODO
+//FMTODO
+#if MINETEST_PROTO
+
 inline void Client::handleCommand(NetworkPacket* pkt)
 {
 	const ToClientCommandHandler& opHandle = toClientCommandTable[pkt->getCommand()];
@@ -876,20 +881,22 @@ void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 }
 */
 
+#if !MINETEST_PROTO
 void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
+#else
 
 void Client::Send(NetworkPacket* pkt)
 {
-/* TODO:
 	m_con.Send(PEER_ID_SERVER,
 		serverCommandFactoryTable[pkt->getCommand()].channel,
 		pkt,
 		serverCommandFactoryTable[pkt->getCommand()].reliable);
-*/
 }
+#endif
 
+#if !MINETEST_PROTO
 
 void Client::interact(u8 action, const PointedThing& pointed)
 {
@@ -1137,6 +1144,8 @@ void Client::sendPlayerItem(u16 item)
 	// Send as reliable
 	Send(0, buffer, true);
 }
+#endif
+
 
 void Client::removeNode(v3s16 p, int fast)
 {

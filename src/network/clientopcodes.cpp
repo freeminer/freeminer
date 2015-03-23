@@ -24,7 +24,7 @@ const static ToClientCommandHandler null_command_handler = {"TOCLIENT_NULL", TOC
 
 const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 {
-#if TODO
+#if MINETEST_PROTO
 	null_command_handler, // 0x00 (never use this)
 	null_command_handler, // 0x01
 	{ "TOCLIENT_HELLO",                   TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_Hello }, // 0x02
@@ -117,7 +117,7 @@ const static ServerCommandFactory null_command_factory = { "TOSERVER_NULL", 0, f
 const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_factory, // 0x00
-#if TODO
+#if MINETEST_PROTO
 	null_command_factory, // 0x01
 	null_command_factory, // 0x02
 	null_command_factory, // 0x03

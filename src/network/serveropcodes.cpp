@@ -25,7 +25,7 @@ const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TO
 const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_handler, // 0x00 (never use this)
-#if TODO
+#if MINETEST_PROTO
 	null_command_handler, // 0x01
 	{ "TOSERVER_INIT",                    TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Init }, // 0x02
 	{ "TOSERVER_AUTH",                    TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Auth }, // 0x03

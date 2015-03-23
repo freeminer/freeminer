@@ -557,6 +557,55 @@ public:
 			m_aliases[name] = convert_to;
 		}
 	}
+	void serialize(std::ostream &os, u16 protocol_version)
+	{
+		writeU8(os, 0); // version
+		u16 count = m_item_definitions.size();
+		writeU16(os, count);
+		for(std::map<std::string, ItemDefinition*>::const_iterator
+				i = m_item_definitions.begin();
+				i != m_item_definitions.end(); i++)
+		{
+			ItemDefinition *def = i->second;
+			// Serialize ItemDefinition and write wrapped in a string
+			std::ostringstream tmp_os(std::ios::binary);
+			def->serialize(tmp_os, protocol_version);
+			os<<serializeString(tmp_os.str());
+		}
+		writeU16(os, m_aliases.size());
+		for(std::map<std::string, std::string>::const_iterator
+			i = m_aliases.begin(); i != m_aliases.end(); i++)
+		{
+			os<<serializeString(i->first);
+			os<<serializeString(i->second);
+		}
+	}
+	void deSerialize(std::istream &is)
+	{
+		// Clear everything
+		clear();
+		// Deserialize
+		int version = readU8(is);
+		if(version != 0)
+			throw SerializationError("unsupported ItemDefManager version");
+		u16 count = readU16(is);
+		for(u16 i=0; i<count; i++)
+		{
+			// Deserialize a string and grab an ItemDefinition from it
+			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
+			ItemDefinition def;
+			def.deSerialize(tmp_is);
+			// Register
+			registerItem(def);
+		}
+		u16 num_aliases = readU16(is);
+		for(u16 i=0; i<num_aliases; i++)
+		{
+			std::string name = deSerializeString(is);
+			std::string convert_to = deSerializeString(is);
+			registerAlias(name, convert_to);
+		}
+	}
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 		pk.pack_map(2);
 		pk.pack((int)ITEMDEFMANAGER_ITEMDEFS);

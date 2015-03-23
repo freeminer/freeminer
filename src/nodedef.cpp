@@ -383,6 +383,8 @@ public:
 	virtual void updateTextures(IGameDef *gamedef,
 	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
 	/*argument: */void *progress_callback_args);
+	void serialize(std::ostream &os, u16 protocol_version);
+	void deSerialize(std::istream &is);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 

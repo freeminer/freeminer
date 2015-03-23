@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include "msgpack.h"
 #include "network/connection.h"
+#include "util/msgpack_serialize.h"
 
 class OnDemandSoundFetcher
 {

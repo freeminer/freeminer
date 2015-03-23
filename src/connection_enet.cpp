@@ -206,7 +206,7 @@ void Connection::receive()
 }
 
 // host
-void Connection::serve(u16 port)
+void Connection::serve(Address bind_addr)
 {
 	ENetAddress address;
 #if defined(ENET_IPV6)
@@ -214,7 +214,7 @@ void Connection::serve(u16 port)
 #else
 	address.host = ENET_HOST_ANY;
 #endif
-	address.port = port;
+	address.port = bind_addr.getPort(); // fmtodo
 
 	m_enet_host = enet_host_create(&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
@@ -371,6 +371,13 @@ void Connection::Serve(unsigned short port)
 {
 	ConnectionCommand c;
 	c.serve(port);
+	putCommand(c);
+}
+
+void Connection::Serve(Address bind_address)
+{
+	ConnectionCommand c;
+	c.serve(bind_address.port); // fmtodo
 	putCommand(c);
 }
 

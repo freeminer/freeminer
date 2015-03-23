@@ -314,7 +314,7 @@ public:
 	ConnectionEvent waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommand &c);
 
-	void Serve(unsigned short port);
+	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();

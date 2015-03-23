@@ -306,7 +306,7 @@ bool loadGameConfAndInitWorld(const std::string &path, const SubgameSpec &gamesp
 		infostream << "Wrote world.mt (" << worldmt_path << ")" << std::endl;
 	}
 
-/* todofm: enable after remake layers params
+/* fmtodo: enable after remake layers params
 	// Create map_meta.txt if does not already exist
 	std::string map_meta_path = path + DIR_DELIM + "map_meta.json";
 	if (!fs::PathExists(map_meta_path)){
