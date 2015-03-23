@@ -97,8 +97,8 @@ void Connection::processCommand(ConnectionCommand &c)
 		return;
 	case CONNCMD_SERVE:
 		dout_con<<getDesc()<<" processing CONNCMD_SERVE port="
-				<<c.port<<std::endl;
-		serve(c.port);
+				<<c.address.getPort()<<std::endl;
+		serve(c.address);
 		return;
 	case CONNCMD_CONNECT:
 		dout_con<<getDesc()<<" processing CONNCMD_CONNECT"<<std::endl;
@@ -367,17 +367,10 @@ void Connection::putCommand(ConnectionCommand &c)
 	m_command_queue.push_back(c);
 }
 
-void Connection::Serve(unsigned short port)
-{
-	ConnectionCommand c;
-	c.serve(port);
-	putCommand(c);
-}
-
 void Connection::Serve(Address bind_address)
 {
 	ConnectionCommand c;
-	c.serve(bind_address.port); // fmtodo
+	c.serve(bind_address);
 	putCommand(c);
 }
 

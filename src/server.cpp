@@ -1547,6 +1547,7 @@ void Server::handlePeerChanges()
 	}
 }
 
+#if MINETEST_PROTO
 void Server::Send(NetworkPacket* pkt)
 {
 	m_clients.send(pkt->getPeerId(),
@@ -1554,6 +1555,7 @@ void Server::Send(NetworkPacket* pkt)
 		pkt,
 		clientCommandFactoryTable[pkt->getCommand()].reliable);
 }
+#endif
 
 void Server::SendMovement(u16 peer_id)
 {
