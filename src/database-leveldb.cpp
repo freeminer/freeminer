@@ -41,23 +41,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 Database_LevelDB::Database_LevelDB(const std::string &savedir)
+	: m_database(savedir, "map")
 {
-	m_database = new KeyValueStorage(savedir, "map");
 }
 
 Database_LevelDB::~Database_LevelDB()
 {
-	delete m_database;
 }
 
 bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	if (!m_database->put(getBlockAsString(pos), data)) {
+	if (!m_database.put(getBlockAsString(pos), data)) {
 		errorstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< pos <<": "<< m_database->get_error() << std::endl;
+			<< pos <<": "<< m_database.get_error() << std::endl;
 		return false;
 	}
-	m_database->del(i64tos(getBlockAsInteger(pos))); // delete old format
+	m_database.del(i64tos(getBlockAsInteger(pos))); // delete old format
 
 	return true;
 }
@@ -66,11 +65,11 @@ std::string Database_LevelDB::loadBlock(const v3s16 &pos)
 {
 	std::string datastr;
 
-	m_database->get(getBlockAsString(pos), datastr);
+	m_database.get(getBlockAsString(pos), datastr);
 	if (datastr.length())
 		return datastr;
 
-	m_database->get(i64tos(getBlockAsInteger(pos)), datastr);
+	m_database.get(i64tos(getBlockAsInteger(pos)), datastr);
 
 	return datastr;
 
@@ -78,10 +77,10 @@ std::string Database_LevelDB::loadBlock(const v3s16 &pos)
 
 bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 {
-	auto ok = m_database->del(getBlockAsString(pos));
+	auto ok = m_database.del(getBlockAsString(pos));
 	if (ok) {
 		errorstream << "WARNING: deleteBlock: LevelDB error deleting block "
-			<< (pos) << ": "<< m_database->get_error() << std::endl;
+			<< (pos) << ": "<< m_database.get_error() << std::endl;
 		return false;
 	}
 
@@ -91,7 +90,7 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 #if USE_LEVELDB
-	auto it = m_database->new_iterator();
+	auto it = m_database.new_iterator();
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}
