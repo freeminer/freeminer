@@ -1,6 +1,12 @@
 Engine
 ======
 
+### 0.4.12.7 (dev)
+  * Stability and speed fixes
+  * liquid_pressure=1 (dev)
+  * thread for abm apply
+
+
 ### 0.4.12.6 (Feb 18, 2015)
   * Stability and speed fixes
 
