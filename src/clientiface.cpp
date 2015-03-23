@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "gamedef.h"
 
+
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
@@ -828,7 +829,6 @@ void ClientInterface::sendToAll(u16 channelnum,
 		}
 	}
 }
-#endif
 
 void ClientInterface::sendToAll(u16 channelnum,
 		const msgpack::sbuffer &buffer, bool reliable)
@@ -836,6 +836,7 @@ void ClientInterface::sendToAll(u16 channelnum,
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	sendToAll(channelnum, data, reliable);
 }
+#endif
 
 //TODO: return here shared_ptr
 RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)

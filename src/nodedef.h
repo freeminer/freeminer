@@ -151,6 +151,9 @@ struct NodeBox
 	{ reset(); }
 
 	void reset();
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
+
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };
@@ -193,6 +196,9 @@ struct TileDef
 		animation.aspect_h = 1;
 		animation.length = 1.0;
 	}
+
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
@@ -345,6 +351,9 @@ struct ContentFeatures
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
+
+	void serialize(std::ostream &os, u16 protocol_version);
+	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);

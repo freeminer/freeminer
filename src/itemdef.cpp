@@ -124,6 +124,102 @@ void ItemDefinition::reset()
 	node_placement_prediction = "";
 }
 
+void ItemDefinition::serialize(std::ostream &os, u16 protocol_version) const
+{
+	if(protocol_version <= 17)
+		writeU8(os, 1); // version
+	else if(protocol_version <= 20)
+		writeU8(os, 2); // version
+	else
+		writeU8(os, 3); // version
+	writeU8(os, type);
+	os<<serializeString(name);
+	os<<serializeString(description);
+	os<<serializeString(inventory_image);
+	os<<serializeString(wield_image);
+	writeV3F1000(os, wield_scale);
+	writeS16(os, stack_max);
+	writeU8(os, usable);
+	writeU8(os, liquids_pointable);
+	std::string tool_capabilities_s = "";
+	if(tool_capabilities){
+		std::ostringstream tmp_os(std::ios::binary);
+		tool_capabilities->serialize(tmp_os, protocol_version);
+		tool_capabilities_s = tmp_os.str();
+	}
+	os<<serializeString(tool_capabilities_s);
+	writeU16(os, groups.size());
+	for(std::map<std::string, int>::const_iterator
+			i = groups.begin(); i != groups.end(); i++){
+		os<<serializeString(i->first);
+		writeS16(os, i->second);
+	}
+	os<<serializeString(node_placement_prediction);
+	if(protocol_version > 17){
+		//serializeSimpleSoundSpec(sound_place, os);
+		os<<serializeString(sound_place.name);
+		writeF1000(os, sound_place.gain);
+	}
+	if(protocol_version > 20){
+		writeF1000(os, range);
+	}
+}
+
+void ItemDefinition::deSerialize(std::istream &is)
+{
+	// Reset everything
+	reset();
+
+	// Deserialize
+	int version = readU8(is);
+	if(version < 1 || version > 3)
+		throw SerializationError("unsupported ItemDefinition version");
+	type = (enum ItemType)readU8(is);
+	name = deSerializeString(is);
+	description = deSerializeString(is);
+	inventory_image = deSerializeString(is);
+	wield_image = deSerializeString(is);
+	wield_scale = readV3F1000(is);
+	stack_max = readS16(is);
+	usable = readU8(is);
+	liquids_pointable = readU8(is);
+	std::string tool_capabilities_s = deSerializeString(is);
+	if(!tool_capabilities_s.empty())
+	{
+		std::istringstream tmp_is(tool_capabilities_s, std::ios::binary);
+		tool_capabilities = new ToolCapabilities;
+		tool_capabilities->deSerialize(tmp_is);
+	}
+	groups.clear();
+	u32 groups_size = readU16(is);
+	for(u32 i=0; i<groups_size; i++){
+		std::string name = deSerializeString(is);
+		int value = readS16(is);
+		groups[name] = value;
+	}
+	if(version == 1){
+		// We cant be sure that node_placement_prediction is send in version 1
+		try{
+			node_placement_prediction = deSerializeString(is);
+		}catch(SerializationError &e) {};
+		// Set the old default sound
+		sound_place.name = "default_place_node";
+		sound_place.gain = 0.5;
+	} else if(version >= 2) {
+		node_placement_prediction = deSerializeString(is);
+		//deserializeSimpleSoundSpec(sound_place, is);
+		sound_place.name = deSerializeString(is);
+		sound_place.gain = readF1000(is);
+	}
+	if(version == 3) {
+		range = readF1000(is);
+	}
+	// If you add anything here, insert it primarily inside the try-catch
+	// block to not need to increase the version.
+	try{
+	}catch(SerializationError &e) {};
+}
+
 void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(tool_capabilities ? 15 : 14);
