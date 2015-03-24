@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/lock.h"
 #include "json/json.h"
 
+#define PLAYERNAME_SIZE 20
+
 #define PLAYERNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
 struct PlayerControl

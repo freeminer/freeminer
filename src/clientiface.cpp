@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "gamedef.h"
 
+
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
@@ -770,14 +771,9 @@ void ClientInterface::UpdatePlayerList()
 	}
 }
 
-/*todo
-void ClientInterface::send(u16 peer_id, u8 channelnum,
-		NetworkPacket* pkt, bool reliable)
-{
-	m_con->Send(peer_id, channelnum, pkt, reliable);
-}
-*/
 
+
+#if !MINETEST_PROTO
 void ClientInterface::send(u16 peer_id,u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
@@ -790,8 +786,15 @@ void ClientInterface::send(u16 peer_id,u8 channelnum,
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	send(peer_id, channelnum, data, reliable);
 }
+#endif
 
-/* todo
+#if MINETEST_PROTO
+void ClientInterface::send(u16 peer_id, u8 channelnum,
+		NetworkPacket* pkt, bool reliable)
+{
+	m_con->Send(peer_id, channelnum, pkt, reliable);
+}
+
 void ClientInterface::sendToAll(u16 channelnum,
 		NetworkPacket* pkt, bool reliable)
 {
@@ -807,7 +810,8 @@ void ClientInterface::sendToAll(u16 channelnum,
 		}
 	}
 }
-*/
+
+#else
 
 void ClientInterface::sendToAll(u16 channelnum,
 		SharedBuffer<u8> data, bool reliable)
@@ -832,6 +836,7 @@ void ClientInterface::sendToAll(u16 channelnum,
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	sendToAll(channelnum, data, reliable);
 }
+#endif
 
 //TODO: return here shared_ptr
 RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)

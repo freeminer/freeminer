@@ -1,5 +1,4 @@
 /*
-client.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 */
@@ -128,7 +127,7 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 		return;
 	}
 
-	if(command == TOCLIENT_ACCESS_DENIED)
+	if(command == TOCLIENT_ACCESS_DENIED_LEGACY)
 	{
 		// The server didn't like our password. Note, this needs
 		// to be processed even if the serialisation format has

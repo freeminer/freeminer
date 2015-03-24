@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "convert_json.h"
 #include "httpfetch.h"
 #include "util/string.h"
+#include "config.h"
 
 namespace ServerList
 {
@@ -244,16 +245,17 @@ void sendAnnounce(const std::string &action,
 	fetch_request.timeout = fetch_request.connect_timeout = 59000;
 	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
 
+#if !MINETEST_PROTO
+	// todo: need to patch masterserver script to parse multipart posts
 	std::string query = std::string("json=") + urlencode(writer.write(server));
 	if (query.size() < 1000)
 		fetch_request.url += "?" + query;
 	else
 		fetch_request.post_data = query;
-
-/*
+#else
 	fetch_request.post_fields["json"] = writer.write(server);
 	fetch_request.multipart = true;
-*/
+#endif
 
 	httpfetch_async(fetch_request);
 #endif

@@ -151,6 +151,9 @@ struct NodeBox
 	{ reset(); }
 
 	void reset();
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
+
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };
@@ -193,6 +196,9 @@ struct TileDef
 		animation.aspect_h = 1;
 		animation.length = 1.0;
 	}
+
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
@@ -346,6 +352,9 @@ struct ContentFeatures
 	~ContentFeatures();
 	void reset();
 
+	void serialize(std::ostream &os, u16 protocol_version);
+	void deSerialize(std::istream &is);
+
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
@@ -421,6 +430,8 @@ public:
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
 
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 
@@ -474,6 +485,9 @@ public:
 	virtual void updateTextures(IGameDef *gamedef,
 	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
 	/*argument: */void *progress_callback_args = nullptr)=0;
+
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void deSerialize(std::istream &is)=0;
 
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;

@@ -20,9 +20,12 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
+
+#if !MINETEST_PROTO
 #include "connection_enet.h"
-#if 0
-Not used, keep for reduce MT merge conflicts
+#else
+//Not used, keep for reduce MT merge conflicts
 
 
 #ifndef CONNECTION_HEADER
@@ -618,12 +621,12 @@ public:
 		This is called after the Peer has been inserted into the
 		Connection's peer container.
 	*/
-	virtual void peerAdded(Peer *peer) = 0;
+	virtual void peerAdded(u16 peer_id) = 0;
 	/*
 		This is called before the Peer has been removed from the
 		Connection's peer container.
 	*/
-	virtual void deletingPeer(Peer *peer, bool timeout) = 0;
+	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
 };
 
 class PeerHelper
@@ -1042,7 +1045,7 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
+	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout = 0);
 	void Send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
 	u16 GetPeerID() { return m_peer_id; }
 	Address GetPeerAddress(u16 peer_id);

@@ -388,9 +388,9 @@ public:
 	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason=NULL);
 
 	//fmtodo: remove:
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason=NULL);
+	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason);
 	void DenyAccess(u16 peer_id, const std::string &reason);
-	void DenyAccess(u16 peer_id, const std::wstring &reason);
+	void DenyAccess_Legacy(u16 peer_id, const std::wstring &reason);
 
 	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
 	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
@@ -423,6 +423,7 @@ private:
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
 
 	void SendChatMessage(u16 peer_id, const std::string &message);
+	void SendChatMessage(u16 peer_id, const std::wstring &message);
 
 	void SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed);
 	void SendPlayerHP(u16 peer_id);
@@ -455,7 +456,7 @@ private:
 	void setBlockNotSent(v3s16 p);
 
 	// Environment and Connection must be locked when called
-	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version, bool reliable = 1);
+	void SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version);
 
 	// Sends blocks to clients (locks env and con on its own)
 public:
@@ -488,7 +489,10 @@ private:
 		bool collisiondetection, bool vertical, std::string texture);
 
 	u32 SendActiveObjectRemoveAdd(u16 peer_id, const std::string &datas);
+//mt compat:
+	void SendActiveObjectMessages(u16 peer_id, const std::string &datas, bool reliable = true);
 	void SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+
 	/*
 		Something random
 	*/

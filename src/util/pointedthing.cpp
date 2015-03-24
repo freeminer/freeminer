@@ -58,6 +58,51 @@ std::string PointedThing::dump() const
 	return os.str();
 }
 
+void PointedThing::serialize(std::ostream &os) const
+{
+	writeU8(os, 0); // version
+	writeU8(os, (u8)type);
+	if(type == POINTEDTHING_NOTHING)
+	{
+		// nothing
+	}
+	else if(type == POINTEDTHING_NODE)
+	{
+		writeV3S16(os, node_undersurface);
+		writeV3S16(os, node_abovesurface);
+	}
+	else if(type == POINTEDTHING_OBJECT)
+	{
+		writeS16(os, object_id);
+	}
+}
+
+void PointedThing::deSerialize(std::istream &is)
+{
+	int version = readU8(is);
+	if(version != 0) throw SerializationError(
+			"unsupported PointedThing version");
+	type = (PointedThingType) readU8(is);
+	if(type == POINTEDTHING_NOTHING)
+	{
+		// nothing
+	}
+	else if(type == POINTEDTHING_NODE)
+	{
+		node_undersurface = readV3S16(is);
+		node_abovesurface = readV3S16(is);
+	}
+	else if(type == POINTEDTHING_OBJECT)
+	{
+		object_id = readS16(is);
+	}
+	else
+	{
+		throw SerializationError(
+			"unsupported PointedThingType");
+	}
+}
+
 void PointedThing::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 	static int sizes[3] = {1, 3, 2};
 	int t = static_cast<int>(type);

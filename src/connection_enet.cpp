@@ -97,8 +97,8 @@ void Connection::processCommand(ConnectionCommand &c)
 		return;
 	case CONNCMD_SERVE:
 		dout_con<<getDesc()<<" processing CONNCMD_SERVE port="
-				<<c.port<<std::endl;
-		serve(c.port);
+				<<c.address.getPort()<<std::endl;
+		serve(c.address);
 		return;
 	case CONNCMD_CONNECT:
 		dout_con<<getDesc()<<" processing CONNCMD_CONNECT"<<std::endl;
@@ -206,7 +206,7 @@ void Connection::receive()
 }
 
 // host
-void Connection::serve(u16 port)
+void Connection::serve(Address bind_addr)
 {
 	ENetAddress address;
 #if defined(ENET_IPV6)
@@ -214,7 +214,7 @@ void Connection::serve(u16 port)
 #else
 	address.host = ENET_HOST_ANY;
 #endif
-	address.port = port;
+	address.port = bind_addr.getPort(); // fmtodo
 
 	m_enet_host = enet_host_create(&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
@@ -367,10 +367,10 @@ void Connection::putCommand(ConnectionCommand &c)
 	m_command_queue.push_back(c);
 }
 
-void Connection::Serve(unsigned short port)
+void Connection::Serve(Address bind_address)
 {
 	ConnectionCommand c;
-	c.serve(port);
+	c.serve(bind_address);
 	putCommand(c);
 }
 

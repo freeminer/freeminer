@@ -17,8 +17,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "config.h"
+
+#if !MINETEST_PROTO
 #include "network/fm_clientpackethandler.cpp"
-#if 0 //TODO
+#else //TODO
 
 #include "client.h"
 
@@ -143,7 +146,7 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 	// to be processed even if the serialisation format has
 	// not been agreed yet, the same as TOCLIENT_INIT.
 	m_access_denied = true;
-	m_access_denied_reason = L"Unknown";
+	m_access_denied_reason = "Unknown";
 
 	if (pkt->getCommand() == TOCLIENT_ACCESS_DENIED) {
 		if (pkt->getSize() < 1)
@@ -155,7 +158,7 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 			*pkt >> m_access_denied_reason;
 		}
 		else if (denyCode < SERVER_ACCESSDENIED_MAX) {
-			m_access_denied_reason = accessDeniedStrings[denyCode];
+			m_access_denied_reason = wide_to_narrow(accessDeniedStrings[denyCode]);
 		}
 	}
 	// 13/03/15 Legacy code from 0.4.12 and lesser. must stay 1 year
@@ -208,15 +211,14 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	std::string datastring(pkt->getString(6), pkt->getSize() - 6);
 	std::istringstream istr(datastring, std::ios_base::binary);
 
-	MapSector *sector;
 	MapBlock *block;
 
-	v2s16 p2d(p.X, p.Z);
-	sector = m_env.getMap().emergeSector(p2d);
+	///v2s16 p2d(p.X, p.Z);
+	auto * sector = &m_env.getMap();
 
-	assert(sector->getPos() == p2d);
+	//assert(sector->getPos() == p2d);
 
-	block = sector->getBlockNoCreateNoEx(p.Y);
+	block = sector->getBlockNoCreateNoEx(p);
 	if (block) {
 		/*
 			Update an existing block
@@ -242,6 +244,8 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		Add it to mesh update queue and set it to be acknowledged after update.
 	*/
 	addUpdateMeshTaskWithEdge(p, true);
+
+	sendGotBlocks(p);
 }
 
 void Client::handleCommand_Inventory(NetworkPacket* pkt)
@@ -329,7 +333,7 @@ void Client::handleCommand_ChatMessage(NetworkPacket* pkt)
 		message += (wchar_t)read_wchar;
 	}
 
-	m_chat_queue.push(message);
+	m_chat_queue.push(wide_to_narrow(message));
 }
 
 void Client::handleCommand_ActiveObjectRemoveAdd(NetworkPacket* pkt)

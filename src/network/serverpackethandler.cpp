@@ -17,9 +17,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "config.h"
+
+#if !MINETEST_PROTO
 #include "network/fm_serverpackethandler.cpp"
 
-#if 0 //TODO
+#else //TODO
 
 #include "server.h"
 #include "log.h"
@@ -272,8 +275,8 @@ void Server::handleCommand_Auth(NetworkPacket* pkt)
 			DenyAccess(pkt->getPeerId(), SERVER_ACCESSDENIED_EMPTY_PASSWORD);
 			return;
 		}
-		std::wstring raw_default_password =
-			narrow_to_wide(g_settings->get("default_password"));
+		std::string raw_default_password =
+			(g_settings->get("default_password"));
 		std::string initial_password =
 			translatePassword(playername, raw_default_password);
 
@@ -576,8 +579,8 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
 					L"disallowed. Set a password and try again.");
 			return;
 		}
-		std::wstring raw_default_password =
-			narrow_to_wide(g_settings->get("default_password"));
+		std::string raw_default_password =
+			(g_settings->get("default_password"));
 		std::string initial_password =
 			translatePassword(playername, raw_default_password);
 
@@ -774,6 +777,7 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 
 void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 {
+#if NOTUSED
 	if (pkt->getSize() < 1)
 		return;
 
@@ -800,6 +804,7 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 
 		client->GotBlock(p);
 	}
+#endif
 }
 
 void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
@@ -900,7 +905,7 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
 		v3s16 p;
 		*pkt >> p;
 
-		client->SetBlockNotSent(p);
+		client->SetBlockDeleted(p);
 	}
 }
 

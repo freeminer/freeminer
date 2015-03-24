@@ -352,7 +352,13 @@ void set_default_settings(Settings *settings) {
 
 	// Announcing and connection
 	settings->setDefault("server_announce", "false");
+
+#if !MINETEST_PROTO
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
+#else
+	settings->setDefault("serverlist_url", "servers.minetest.net"); 
+#endif
+
 	settings->setDefault("server_address", "");
 	settings->setDefault("bind_address", "");
 	settings->setDefault("port", "30000");
