@@ -244,6 +244,8 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		Add it to mesh update queue and set it to be acknowledged after update.
 	*/
 	addUpdateMeshTaskWithEdge(p, true);
+
+	sendGotBlocks(p);
 }
 
 void Client::handleCommand_Inventory(NetworkPacket* pkt)

@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <list>
 #include "msgpack.h"
+#include "config.h"
 
 class INodeDefManager;
 
@@ -52,6 +53,7 @@ typedef u16 content_t;
 */
 #define MAX_REGISTERED_CONTENT 0x7fffU
 
+#if MINETEST_PROTO
 /*
 	A solid walkable node with the texture unknown_node.png.
 
@@ -59,13 +61,13 @@ typedef u16 content_t;
 	(instead of expanding the vector of node definitions each time
 	such a node is received).
 */
-#define CONTENT_UNKNOWN 2
+#define CONTENT_UNKNOWN 125
 
 /*
 	The common material through which the player can walk and which
 	is transparent to light
 */
-#define CONTENT_AIR 1
+#define CONTENT_AIR 126
 
 /*
 	Ignored node.
@@ -77,7 +79,16 @@ typedef u16 content_t;
 	Doesn't create faces with anything and is considered being
 	out-of-map in the game map.
 */
+#define CONTENT_IGNORE 127
+
+#else
+
+//freeminer:
+#define CONTENT_UNKNOWN 2
+#define CONTENT_AIR 1
 #define CONTENT_IGNORE 0
+
+#endif
 
 enum LightBank
 {
