@@ -794,6 +794,84 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				continue;
 			}
 
+#if MINETEST_PROTO
+
+			std::string data_buffer;
+
+			char buf[4];
+
+			// Handle removed objects
+			writeU16((u8*)buf, removed_objects.size());
+			data_buffer.append(buf, 2);
+			for(std::set<u16>::iterator
+					i = removed_objects.begin();
+					i != removed_objects.end(); ++i)
+			{
+				// Get object
+				u16 id = *i;
+				ServerActiveObject* obj = m_env->getActiveObject(id);
+
+				// Add to data buffer for sending
+				writeU16((u8*)buf, id);
+				data_buffer.append(buf, 2);
+
+				// Remove from known objects
+				client->m_known_objects.erase(id);
+
+				if(obj && obj->m_known_by_count > 0)
+					obj->m_known_by_count--;
+			}
+
+			// Handle added objects
+			writeU16((u8*)buf, added_objects.size());
+			data_buffer.append(buf, 2);
+			for(std::set<u16>::iterator
+					i = added_objects.begin();
+					i != added_objects.end(); ++i)
+			{
+				// Get object
+				u16 id = *i;
+				ServerActiveObject* obj = m_env->getActiveObject(id);
+
+				// Get object type
+				u8 type = ACTIVEOBJECT_TYPE_INVALID;
+				if(obj == NULL)
+					infostream<<"WARNING: "<<__FUNCTION_NAME
+							<<": NULL object"<<std::endl;
+				else
+					type = obj->getSendType();
+
+				// Add to data buffer for sending
+				writeU16((u8*)buf, id);
+				data_buffer.append(buf, 2);
+				writeU8((u8*)buf, type);
+				data_buffer.append(buf, 1);
+
+				if(obj)
+					data_buffer.append(serializeLongString(
+							obj->getClientInitializationData(client->net_proto_version)));
+				else
+					data_buffer.append(serializeLongString(""));
+
+				// Add to known objects
+				client->m_known_objects.set(id, true);
+
+				if(obj)
+					obj->m_known_by_count++;
+			}
+
+			u32 pktSize = SendActiveObjectRemoveAdd(client->peer_id, data_buffer);
+			verbosestream << "Server: Sent object remove/add: "
+					<< removed_objects.size() << " removed, "
+					<< added_objects.size() << " added, "
+					<< "packet size is " << pktSize << std::endl;
+
+
+
+#else
+
+
+
 			// Handle removed objects
 			for(std::set<u16>::iterator
 					i = removed_objects.begin();
@@ -847,13 +925,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 			// Send as reliable
 			m_clients.send(client->peer_id, 0, buffer, true);
+#endif
 
-/*
-			verbosestream<<"Server: Sent object remove/add: "
-					<<removed_objects.size()<<" removed, "
-					<<added_objects.size()<<" added, "
-					<<"packet size is "<<reply.getSize()<<std::endl;
-*/
 		}
 	}
 
@@ -889,9 +962,55 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		}
 
 		auto clients = m_clients.getClientList();
-		{
 		// Route data to every client
 		for (auto & client : clients) {
+
+#if MINETEST_PROTO
+			std::string reliable_data;
+			std::string unreliable_data;
+			// Go through all objects in message buffer
+			for (std::map<u16, std::vector<ActiveObjectMessage>* >::iterator
+					j = buffered_messages.begin();
+					j != buffered_messages.end(); ++j) {
+				// If object is not known by client, skip it
+				u16 id = j->first;
+				if (client->m_known_objects.find(id) == client->m_known_objects.end())
+					continue;
+
+				// Get message list of object
+				std::vector<ActiveObjectMessage>* list = j->second;
+				// Go through every message
+				for (std::vector<ActiveObjectMessage>::iterator
+						k = list->begin(); k != list->end(); ++k) {
+					// Compose the full new data with header
+					ActiveObjectMessage aom = *k;
+					std::string new_data;
+					// Add object id
+					char buf[2];
+					writeU16((u8*)&buf[0], aom.id);
+					new_data.append(buf, 2);
+					// Add data
+					new_data += serializeString(aom.datastring);
+					// Add data to buffer
+					if(aom.reliable)
+						reliable_data += new_data;
+					else
+						unreliable_data += new_data;
+				}
+			}
+			/*
+				reliable_data and unreliable_data are now ready.
+				Send them.
+			*/
+			if(reliable_data.size() > 0) {
+				SendActiveObjectMessages(client->peer_id, reliable_data);
+			}
+
+			if(unreliable_data.size() > 0) {
+				SendActiveObjectMessages(client->peer_id, unreliable_data, false);
+			}
+
+#else
 			ActiveObjectMessages reliable_data;
 			ActiveObjectMessages unreliable_data;
 			// Go through all objects in message buffer
@@ -924,7 +1043,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			if(unreliable_data.size() > 0) {
 				SendActiveObjectMessages(client->peer_id, unreliable_data, false);
 			}
-		}
+#endif
 		}
 		// Clear buffered_messages
 		for (auto
