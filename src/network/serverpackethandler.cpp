@@ -777,6 +777,7 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 
 void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 {
+#if NOTUSED
 	if (pkt->getSize() < 1)
 		return;
 
@@ -801,8 +802,9 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 
 		*pkt >> p;
 
-		//client->GotBlock(p);
+		client->GotBlock(p);
 	}
+#endif
 }
 
 void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
@@ -903,7 +905,7 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
 		v3s16 p;
 		*pkt >> p;
 
-		client->SetBlockNotSent(p);
+		client->SetBlockDeleted(p);
 	}
 }
 
