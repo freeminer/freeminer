@@ -5,6 +5,7 @@ Engine
   * Stability and speed fixes
   * liquid_pressure=1 (dev)
   * thread for abm apply
+  * optional support old minetest protocol (to host servers for minetest players) to enable compile with -DMINETEST_PROTO=1
 
 
 ### 0.4.12.6 (Feb 18, 2015)
