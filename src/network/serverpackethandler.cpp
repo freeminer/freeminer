@@ -956,8 +956,8 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		ma->from_inv.applyCurrentPlayer(player->getName());
 		ma->to_inv.applyCurrentPlayer(player->getName());
 
-		setInventoryModified(ma->from_inv);
-		setInventoryModified(ma->to_inv);
+		setInventoryModified(ma->from_inv, false);
+		setInventoryModified(ma->to_inv, false);
 
 		bool from_inv_is_current_player =
 			(ma->from_inv.type == InventoryLocation::PLAYER) &&
@@ -1010,7 +1010,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 
 		da->from_inv.applyCurrentPlayer(player->getName());
 
-		setInventoryModified(da->from_inv);
+		setInventoryModified(da->from_inv, false);
 
 		/*
 			Disable dropping items out of craftpreview
@@ -1037,7 +1037,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 
 		ca->craft_inv.applyCurrentPlayer(player->getName());
 
-		setInventoryModified(ca->craft_inv);
+		setInventoryModified(ca->craft_inv, false);
 
 		//bool craft_inv_is_current_player =
 		//	(ca->craft_inv.type == InventoryLocation::PLAYER) &&
@@ -1056,6 +1056,8 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 	a->apply(this, playersao, this);
 	// Eat the action
 	delete a;
+
+	SendInventory(playersao);
 }
 
 void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
