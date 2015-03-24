@@ -60,6 +60,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "server.h"
 #include "emerge.h"
+#if !MINETEST_PROTO
+#include "network/fm_clientpacketsender.cpp"
+#endif
 
 
 extern gui::IGUIEnvironment* guienv;
@@ -701,26 +704,41 @@ void Client::deletingPeer(u16 peer_id, bool timeout)
 		string name
 	}
 */
+
+#if MINETEST_PROTO
 void Client::request_media(const std::vector<std::string> &file_requests)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_REQUEST_MEDIA, 1);
-	PACK(TOSERVER_REQUEST_MEDIA_FILES, file_requests);
+	std::ostringstream os(std::ios_base::binary);
+	writeU16(os, TOSERVER_REQUEST_MEDIA);
+	size_t file_requests_size = file_requests.size();
 
-	// Send as reliable
-	Send(1, buffer, true);
-	infostream<<"Client: Sending media request list to server ("
-			<<file_requests.size()<<" files)"<<std::endl;
+	FATAL_ERROR_IF(file_requests_size > 0xFFFF, "Unsupported number of file requests");
+
+	// Packet dynamicly resized
+	NetworkPacket pkt(TOSERVER_REQUEST_MEDIA, 2 + 0);
+
+	pkt << (u16) (file_requests_size & 0xFFFF);
+
+	for(std::vector<std::string>::const_iterator i = file_requests.begin();
+			i != file_requests.end(); ++i) {
+		pkt << (*i);
+	}
+
+	Send(&pkt);
+
+	infostream << "Client: Sending media request list to server ("
+			<< file_requests.size() << " files. packet size)" << std::endl;
 }
 
 void Client::received_media()
 {
-	// notify server we received everything
-	MSGPACK_PACKET_INIT(TOSERVER_RECEIVED_MEDIA, 0);
-	// Send as reliable
-	Send(1, buffer, true);
-	infostream<<"Client: Notifying server that we received all media"
-			<<std::endl;
+	NetworkPacket pkt(TOSERVER_RECEIVED_MEDIA, 0);
+	Send(&pkt);
+	infostream << "Client: Notifying server that we received all media"
+			<< std::endl;
 }
+#endif
+
 
 void Client::initLocalMapSaving(const Address &address,
 		const std::string &hostname,
@@ -896,13 +914,12 @@ void Client::Send(NetworkPacket* pkt)
 }
 #endif
 
-#if !MINETEST_PROTO
-
+#if MINETEST_PROTO
 void Client::interact(u8 action, const PointedThing& pointed)
 {
 	if(m_state != LC_Ready) {
-		infostream << "Client::interact() "
-				"cancelled (not connected)"
+		errorstream << "Client::interact() "
+				"Canceled (not connected)"
 				<< std::endl;
 		return;
 	}
@@ -920,106 +937,141 @@ void Client::interact(u8 action, const PointedThing& pointed)
 		3: place block or item (to abovesurface)
 		4: use item
 	*/
-	MSGPACK_PACKET_INIT(TOSERVER_INTERACT, 3);
-	PACK(TOSERVER_INTERACT_ACTION, action);
-	PACK(TOSERVER_INTERACT_ITEM, getPlayerItem());
-	PACK(TOSERVER_INTERACT_POINTED_THING, pointed);
 
-	// Send as reliable
-	Send(0, buffer, true);
+	NetworkPacket pkt(TOSERVER_INTERACT, 1 + 2 + 0);
+
+	pkt << action;
+	pkt << (u16)getPlayerItem();
+
+	std::ostringstream tmp_os(std::ios::binary);
+	pointed.serialize(tmp_os);
+
+	pkt.putLongString(tmp_os.str());
+
+	Send(&pkt);
 }
-
 
 void Client::sendLegacyInit(const std::string &playerName, const std::string &playerPassword)
 {
-	// Send TOSERVER_INIT
-	// [0] u16 TOSERVER_INIT
-	// [2] u8 SER_FMT_VER_HIGHEST_READ
-	// [3] u8[20] player_name
-	// [23] u8[28] password (new in some version)
-	// [51] u16 minimum supported network protocol version (added sometime)
-	// [53] u16 maximum supported network protocol version (added later than the previous one)
-	MSGPACK_PACKET_INIT(TOSERVER_INIT, 5);
-	PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
-	PACK(TOSERVER_INIT_NAME, playerName);
-	PACK(TOSERVER_INIT_PASSWORD, playerPassword);
-	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
-	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
+	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
+			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
 
-	// Send as unreliable
-	Send(1, buffer, false);
+	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
+	pkt.putRawString(playerName.c_str(),PLAYERNAME_SIZE);
+	pkt.putRawString(playerPassword.c_str(), PASSWORD_SIZE);
+	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
+
+	Send(&pkt);
 }
 
 void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
 {
+	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof(v3s16) * blocks.size());
 
-	MSGPACK_PACKET_INIT(TOSERVER_DELETEDBLOCKS, 1);
-	PACK(TOSERVER_DELETEDBLOCKS_DATA, blocks);
+	pkt << (u8) blocks.size();
 
-	m_con.Send(PEER_ID_SERVER, 2, buffer, true);
+	u32 k = 0;
+	for(std::vector<v3s16>::iterator
+			j = blocks.begin();
+			j != blocks.end(); ++j) {
+		pkt << *j;
+		k++;
+	}
+
+	Send(&pkt);
 }
 
-/*
 void Client::sendGotBlocks(v3s16 block)
 {
 	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6);
 	pkt << (u8) 1 << block;
 	Send(&pkt);
 }
-*/
 
 void Client::sendRemovedSounds(std::vector<s32> &soundList)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_REMOVED_SOUNDS, 1);
-	PACK(TOSERVER_REMOVED_SOUNDS_IDS, soundList);
-	// Send as reliable
-	Send(1, buffer, true);
+	size_t server_ids = soundList.size();
+	assert(server_ids <= 0xFFFF);
+
+	NetworkPacket pkt(TOSERVER_REMOVED_SOUNDS, 2 + server_ids * 4);
+
+	pkt << (u16) (server_ids & 0xFFFF);
+
+	for(std::vector<s32>::iterator i = soundList.begin();
+			i != soundList.end(); i++)
+		pkt << *i;
+
+	Send(&pkt);
 }
 
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 		const std::map<std::string, std::string> &fields)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_NODEMETA_FIELDS, 3);
-	PACK(TOSERVER_NODEMETA_FIELDS_POS, p);
-	PACK(TOSERVER_NODEMETA_FIELDS_FORMNAME, formname);
-	PACK(TOSERVER_NODEMETA_FIELDS_DATA, fields);
-	// Send as reliable
-	Send(0, buffer, true);
+	size_t fields_size = fields.size();
+
+	FATAL_ERROR_IF(fields_size > 0xFFFF, "Unsupported number of nodemeta fields");
+
+	NetworkPacket pkt(TOSERVER_NODEMETA_FIELDS, 0);
+
+	pkt << p << formname << (u16) (fields_size & 0xFFFF);
+
+	for(std::map<std::string, std::string>::const_iterator
+			i = fields.begin(); i != fields.end(); i++) {
+		const std::string &name = i->first;
+		const std::string &value = i->second;
+		pkt << name;
+		pkt.putLongString(value);
+	}
+
+	Send(&pkt);
 }
 
 void Client::sendInventoryFields(const std::string &formname,
 		const std::map<std::string, std::string> &fields)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_INVENTORY_FIELDS, 2);
-	PACK(TOSERVER_INVENTORY_FIELDS_FORMNAME, formname);
-	PACK(TOSERVER_INVENTORY_FIELDS_DATA, fields);
-	Send(0, buffer, true);
+	size_t fields_size = fields.size();
+	FATAL_ERROR_IF(fields_size > 0xFFFF, "Unsupported number of inventory fields");
+
+	NetworkPacket pkt(TOSERVER_INVENTORY_FIELDS, 0);
+	pkt << formname << (u16) (fields_size & 0xFFFF);
+
+	for(std::map<std::string, std::string>::const_iterator
+			i = fields.begin(); i != fields.end(); i++) {
+		const std::string &name  = i->first;
+		const std::string &value = i->second;
+		pkt << name;
+		pkt.putLongString(value);
+	}
+
+	Send(&pkt);
 }
 
 void Client::sendInventoryAction(InventoryAction *a)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_INVENTORY_ACTION, 1);
-
 	std::ostringstream os(std::ios_base::binary);
+
 	a->serialize(os);
+
+	// Make data buffer
 	std::string s = os.str();
 
-	PACK(TOSERVER_INVENTORY_ACTION_DATA, s);
+	NetworkPacket pkt(TOSERVER_INVENTORY_ACTION, s.size());
+	pkt.putRawString(s.c_str(),s.size());
 
-	// Send as reliable
-	Send(0, buffer, true);
+	Send(&pkt);
 }
 
 void Client::sendChatMessage(const std::string &message)
 {
-	MSGPACK_PACKET_INIT(TOSERVER_CHAT_MESSAGE, 1);
-	PACK(TOSERVER_CHAT_MESSAGE_DATA, message);
-	// Send as reliable
-	Send(0, buffer, true);
+	NetworkPacket pkt(TOSERVER_CHAT_MESSAGE, 2 + message.size() * sizeof(u16));
+
+	pkt << narrow_to_wide(message);
+
+	Send(&pkt);
 }
 
 void Client::sendChangePassword(const std::string &oldpassword,
-								const std::string &newpassword)
+        const std::string &newpassword)
 {
 	Player *player = m_env.getLocalPlayer();
 	if(player == NULL)
@@ -1029,56 +1081,58 @@ void Client::sendChangePassword(const std::string &oldpassword,
 	std::string oldpwd = translatePassword(playername, oldpassword);
 	std::string newpwd = translatePassword(playername, newpassword);
 
-	MSGPACK_PACKET_INIT(TOSERVER_CHANGE_PASSWORD, 2);
-	PACK(TOSERVER_CHANGE_PASSWORD_OLD, oldpwd);
-	PACK(TOSERVER_CHANGE_PASSWORD_NEW, newpwd);
+	NetworkPacket pkt(TOSERVER_PASSWORD_LEGACY, 2 * PASSWORD_SIZE);
 
-	// Send as reliable
-	Send(0, buffer, true);
+	for(u8 i = 0; i < PASSWORD_SIZE; i++) {
+		pkt << (u8) (i < oldpwd.length() ? oldpwd[i] : 0);
+	}
+
+	for(u8 i = 0; i < PASSWORD_SIZE; i++) {
+		pkt << (u8) (i < newpwd.length() ? newpwd[i] : 0);
+	}
+
+	Send(&pkt);
 }
 
 
 void Client::sendDamage(u8 damage)
 {
 	DSTACK(__FUNCTION_NAME);
-	MSGPACK_PACKET_INIT(TOSERVER_DAMAGE, 1);
-	PACK(TOSERVER_DAMAGE_VALUE, damage);
 
-	// Send as reliable
-	Send(0, buffer, true);
+	NetworkPacket pkt(TOSERVER_DAMAGE, sizeof(u8));
+	pkt << damage;
+	Send(&pkt);
 }
 
 void Client::sendBreath(u16 breath)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOSERVER_BREATH, 1);
-	PACK(TOSERVER_BREATH_VALUE, breath);
-	// Send as reliable
-	Send(0, buffer, true);
+	NetworkPacket pkt(TOSERVER_BREATH, sizeof(u16));
+	pkt << breath;
+	Send(&pkt);
 }
 
 void Client::sendRespawn()
 {
 	DSTACK(__FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOSERVER_RESPAWN, 0);
-	// Send as reliable
-	Send(0, buffer, true);
+	NetworkPacket pkt(TOSERVER_RESPAWN, 0);
+	Send(&pkt);
 }
 
 void Client::sendReady()
 {
 	DSTACK(__FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOSERVER_CLIENT_READY, 3);
-	PACK(TOSERVER_CLIENT_READY_VERSION_MAJOR, VERSION_MAJOR);
-	PACK(TOSERVER_CLIENT_READY_VERSION_MINOR, VERSION_MINOR);
-	// PACK(TOSERVER_CLIENT_READY_VERSION_PATCH, VERSION_PATCH_ORIG); TODO
-	PACK(TOSERVER_CLIENT_READY_VERSION_STRING, std::string(minetest_version_hash));
+	NetworkPacket pkt(TOSERVER_CLIENT_READY,
+			1 + 1 + 1 + 1 + 2 + sizeof(char) * strlen(minetest_version_hash));
 
-	// Send as reliable
-	Send(0, buffer, true);
+	pkt << (u8) VERSION_MAJOR << (u8) VERSION_MINOR << (u8) VERSION_PATCH_ORIG
+		<< (u8) 0 << (u16) strlen(minetest_version_hash);
+
+	pkt.putRawString(minetest_version_hash, (u16) strlen(minetest_version_hash));
+	Send(&pkt);
 }
 
 void Client::sendPlayerPos()
@@ -1088,17 +1142,17 @@ void Client::sendPlayerPos()
 		return;
 
 	// Save bandwidth by only updating position when something changed
-	if(myplayer->last_position == myplayer->getPosition() &&
-			myplayer->last_speed == myplayer->getSpeed() &&
-			myplayer->last_pitch == myplayer->getPitch() &&
-			myplayer->last_yaw == myplayer->getYaw() &&
+	if(myplayer->last_position        == myplayer->getPosition() &&
+			myplayer->last_speed      == myplayer->getSpeed()    &&
+			myplayer->last_pitch      == myplayer->getPitch()    &&
+			myplayer->last_yaw        == myplayer->getYaw()      &&
 			myplayer->last_keyPressed == myplayer->keyPressed)
 		return;
 
-	myplayer->last_position = myplayer->getPosition();
-	myplayer->last_speed = myplayer->getSpeed();
-	myplayer->last_pitch = myplayer->getPitch();
-	myplayer->last_yaw = myplayer->getYaw();
+	myplayer->last_position   = myplayer->getPosition();
+	myplayer->last_speed      = myplayer->getSpeed();
+	myplayer->last_pitch      = myplayer->getPitch();
+	myplayer->last_yaw        = myplayer->getYaw();
 	myplayer->last_keyPressed = myplayer->keyPressed;
 
 	u16 our_peer_id;
@@ -1110,18 +1164,31 @@ void Client::sendPlayerPos()
 	// Set peer id if not set already
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
-	// Check that an existing peer_id is the same as the connection's
-	if (myplayer->peer_id != our_peer_id)
-		return;
 
-	MSGPACK_PACKET_INIT(TOSERVER_PLAYERPOS, 5);
-	PACK(TOSERVER_PLAYERPOS_POSITION, myplayer->getPosition());
-	PACK(TOSERVER_PLAYERPOS_SPEED, myplayer->getSpeed());
-	PACK(TOSERVER_PLAYERPOS_PITCH, myplayer->getPitch());
-	PACK(TOSERVER_PLAYERPOS_YAW, myplayer->getYaw());
-	PACK(TOSERVER_PLAYERPOS_KEY_PRESSED, myplayer->keyPressed);
-	// Send as unreliable
-	Send(0, buffer, false);
+	assert(myplayer->peer_id == our_peer_id);
+
+	v3f pf         = myplayer->getPosition();
+	v3f sf         = myplayer->getSpeed();
+	s32 pitch      = myplayer->getPitch() * 100;
+	s32 yaw        = myplayer->getYaw() * 100;
+	u32 keyPressed = myplayer->keyPressed;
+
+	v3s32 position(pf.X*100, pf.Y*100, pf.Z*100);
+	v3s32 speed(sf.X*100, sf.Y*100, sf.Z*100);
+	/*
+		Format:
+		[0] v3s32 position*100
+		[12] v3s32 speed*100
+		[12+12] s32 pitch*100
+		[12+12+4] s32 yaw*100
+		[12+12+4+4] u32 keyPressed
+	*/
+
+	NetworkPacket pkt(TOSERVER_PLAYERPOS, 12 + 12 + 4 + 4 + 4);
+
+	pkt << position << speed << pitch << yaw << keyPressed;
+
+	Send(&pkt);
 }
 
 void Client::sendPlayerItem(u16 item)
@@ -1135,15 +1202,17 @@ void Client::sendPlayerItem(u16 item)
 	// Set peer id if not set already
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
-	// Check that an existing peer_id is the same as the connection's
 	assert(myplayer->peer_id == our_peer_id);
 
-	MSGPACK_PACKET_INIT(TOSERVER_PLAYERITEM, 1);
-	PACK(TOSERVER_PLAYERITEM_VALUE, item);
+	NetworkPacket pkt(TOSERVER_PLAYERITEM, 2);
 
-	// Send as reliable
-	Send(0, buffer, true);
+	pkt << item;
+
+	Send(&pkt);
 }
+
+
+void Client::sendDrawControl() { }
 #endif
 
 
@@ -1758,20 +1827,5 @@ scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 	mesh->grab();
 	smgr->getMeshCache()->removeMesh(mesh);
 	return mesh;
-}
-
-
-
-//freeminer:
-void Client::sendDrawControl() {
-	MSGPACK_PACKET_INIT(TOSERVER_DRAWCONTROL, 5);
-	const auto & draw_control = m_env.getClientMap().getControl();
-	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)draw_control.wanted_range);
-	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)draw_control.range_all);
-	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)draw_control.farmesh);
-	PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
-	PACK(TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW, draw_control.block_overflow);
-
-	Send(0, buffer, false);
 }
 

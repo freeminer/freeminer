@@ -137,6 +137,8 @@ public:
 		IGameDef *gamedef) const=0;
 #endif
 
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 };

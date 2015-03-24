@@ -622,6 +622,22 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	}
 }
 
+void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
+{
+	if(data == NULL)
+	{
+		throw SerializationError("ERROR: Not writing dummy block.");
+	}
+
+	if(net_proto_version >= 21){
+		int version = 1;
+		writeU8(os, version);
+		writeF1000(os, 0); // deprecated heat
+		writeF1000(os, 0); // deprecated humidity
+	}
+}
+
+
 bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
 	auto lock = lock_unique_rec();
@@ -736,6 +752,24 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 			<<": Done."<<std::endl);
 	return true;
+}
+
+void MapBlock::deSerializeNetworkSpecific(std::istream &is)
+{
+	try {
+		int version = readU8(is);
+		//if(version != 1)
+		//	throw SerializationError("unsupported MapBlock version");
+		if(version >= 1) {
+			readF1000(is); // deprecated heat
+			readF1000(is); // deprecated humidity
+		}
+	}
+	catch(SerializationError &e)
+	{
+		errorstream<<"WARNING: MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
+				<<": "<<e.what()<<std::endl;
+	}
 }
 
 	MapNode MapBlock::getNodeNoEx(v3POS p) {

@@ -456,6 +456,14 @@ public:
 
 	static std::string state2Name(ClientState state);
 
+protected:
+	//mt compat
+	void Lock()
+		{  }
+	void Unlock()
+		{  }
+
+
 public:
 	std::vector<std::shared_ptr<RemoteClient>> getClientList() {
 		std::vector<std::shared_ptr<RemoteClient>> clients;
