@@ -34,6 +34,7 @@ thread_local v3POS m_block_cache_p;
 
 //TODO: REMOVE THIS func and use Map::getBlock
 MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
+
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
@@ -85,6 +86,9 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache) {
 }
 
 void Map::getBlockCacheFlush() {
+#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+	auto lock = unique_lock(m_block_cache_mutex);
+#endif
 	m_block_cache = nullptr;
 }
 

@@ -37,8 +37,8 @@ public:
 	Database_LevelDB(const std::string &savedir);
 	~Database_LevelDB();
 
-	virtual void open() { m_database->open(); };
-	virtual void close() { m_database->close(); };
+	virtual void open() { m_database.open(); };
+	virtual void close() { m_database.close(); };
 
 	virtual bool saveBlock(const v3s16 &pos, const std::string &data);
 	virtual std::string loadBlock(const v3s16 &pos);
@@ -47,7 +47,7 @@ public:
 
 private:
 	//leveldb::DB *m_database;
-	KeyValueStorage *m_database;
+	KeyValueStorage m_database;
 };
 
 #endif // USE_LEVELDB

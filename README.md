@@ -8,6 +8,14 @@ Freeminer is based on Minetest which is developed by a [number of contributors](
 
 It aims to make the game fun while trading off some bits of perfectionism.
 
+## Installing
+- Android: Google play: https://play.google.com/store/apps/details?id=org.freeminer.freeminer
+- Android: F-droid: https://f-droid.org/repository/browse/?fdid=org.freeminer.freeminer
+- Windows: Download from https://github.com/freeminer/freeminer/releases
+- Ubuntu: install http://www.ubuntuupdates.org/ppa/getdeb_games  and run: sudo apt-get install freeminer
+- Archlinux: yaourt -S freeminer
+- Freebsd: cd /usr/ports/games/freeminer-default && sudo make install clean
+
 ## Further documentation
 - Website: http://freeminer.org/
 - Forums: http://forum.freeminer.org/

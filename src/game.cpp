@@ -1892,6 +1892,8 @@ void Game::run()
 
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
 
+		try {
+
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
 		 */
@@ -1938,6 +1940,10 @@ void Game::run()
 		updateFrame(highlight_boxes, &graph, &stats, &runData, dtime,
 				flags, cam_view);
 		updateProfilerGraphs(&graph);
+		} catch(std::exception &e) {
+			if (!flags.errors++ || !(flags.errors % (int)(60/flags.dedicated_server_step)))
+				errorstream << "Fatal client error n=" << flags.errors << " : " << e.what() << std::endl;
+		}
 	}
 }
 
