@@ -173,8 +173,8 @@ void NodeMetadataList::remove(v3s16 p)
 	NodeMetadata *olddata = get(p);
 	if(olddata)
 	{
-		delete olddata;
 		m_data.erase(p);
+		delete olddata;
 	}
 }
 

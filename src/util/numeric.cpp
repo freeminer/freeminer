@@ -120,7 +120,6 @@ void FacePositionCache::generateFacePosition(u16 d)
     myrand
 */
 
-static std::atomic_ulong next;
 PcgRandom g_pcgrand;
 
 u32 myrand()

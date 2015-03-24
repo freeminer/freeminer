@@ -222,7 +222,7 @@ Client::Client(
 		tsrc, this, device
 	),
 	m_particle_manager(&m_env),
-	m_con(PROTOCOL_ID, MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
+	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
@@ -957,8 +957,13 @@ void Client::sendLegacyInit(const std::string &playerName, const std::string &pl
 			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
 
 	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
-	pkt.putRawString(playerName.c_str(),PLAYERNAME_SIZE);
-	pkt.putRawString(playerPassword.c_str(), PASSWORD_SIZE);
+	
+	std::string tmp = playerName;
+	tmp.resize(tmp.size()+PLAYERNAME_SIZE);
+	pkt.putRawString(tmp.c_str(),PLAYERNAME_SIZE);
+	tmp = playerPassword;
+	tmp.resize(tmp.size()+PASSWORD_SIZE);
+	pkt.putRawString(tmp.c_str(), PASSWORD_SIZE);
 	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
 
 	Send(&pkt);

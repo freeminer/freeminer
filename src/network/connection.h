@@ -363,7 +363,7 @@ private:
 	RPBSearchResult findPacket(u16 seqnum);
 
 	std::list<BufferedPacket> m_list;
-	u32 m_list_size;
+	std::atomic_uint m_list_size;
 
 	u16 m_oldest_non_answered_ack;
 
@@ -1071,7 +1071,7 @@ protected:
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 
-	std::list<u16> getPeerIDs() { return m_peer_ids; }
+	std::list<u16> getPeerIDs() { JMutexAutoLock lock(m_peers_mutex); return m_peer_ids; }
 
 	UDPSocket m_udpSocket;
 	MutexedQueue<ConnectionCommand> m_command_queue;
@@ -1085,7 +1085,7 @@ private:
 
 	MutexedQueue<ConnectionEvent> m_event_queue;
 
-	u16 m_peer_id;
+	std::atomic_ushort m_peer_id;
 	u32 m_protocol_id;
 
 	std::map<u16, Peer*> m_peers;

@@ -24,6 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef NOISE_HEADER
 #define NOISE_HEADER
 
+#include <atomic>
+
 #include "debug.h"
 #include "irr_v3d.h"
 #include "util/string.h"
@@ -89,7 +91,7 @@ public:
 	s32 randNormalDist(s32 min, s32 max, int num_trials=6);
 
 private:
-	u64 m_state;
+	std::atomic_ullong m_state;
 	u64 m_inc;
 };
 

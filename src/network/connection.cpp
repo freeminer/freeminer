@@ -224,7 +224,9 @@ SharedBuffer<u8> makeReliablePacket(
 	ReliablePacketBuffer
 */
 
-ReliablePacketBuffer::ReliablePacketBuffer(): m_list_size(0) {}
+ReliablePacketBuffer::ReliablePacketBuffer() {
+	m_list_size = 0;
+}
 
 void ReliablePacketBuffer::print()
 {
@@ -2673,7 +2675,6 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_udpSocket(ipv6),
 	m_command_queue(),
 	m_event_queue(),
-	m_peer_id(0),
 	m_protocol_id(protocol_id),
 	m_sendThread(max_packet_size, timeout),
 	m_receiveThread(max_packet_size),
@@ -2683,6 +2684,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_shutting_down(false),
 	m_next_remote_peer_id(2)
 {
+	m_peer_id = 0;
 	m_udpSocket.setTimeoutMs(5);
 
 	m_sendThread.setParent(this);
