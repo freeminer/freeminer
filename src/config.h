@@ -98,7 +98,5 @@
 	#define VERSION_STRING CMAKE_VERSION_STRING
 #endif
 
-#define MINETEST_PROTO 1
-
 #endif
 
