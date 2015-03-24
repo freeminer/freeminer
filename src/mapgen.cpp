@@ -466,8 +466,10 @@ GenElementManager::GenElementManager(IGameDef *gamedef)
 
 GenElementManager::~GenElementManager()
 {
+/*
 	for (size_t i = 0; i != m_elements.size(); i++)
 		delete m_elements[i];
+*/
 }
 
 

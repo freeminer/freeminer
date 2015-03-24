@@ -177,7 +177,7 @@ void BiomeManager::clear()
 		delete b;
 	}
 
-	m_elements.resize(1);
+	m_elements.clear();
 }
 
 
