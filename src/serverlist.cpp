@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "convert_json.h"
 #include "httpfetch.h"
 #include "util/string.h"
+#include "config.h"
 
 namespace ServerList
 {
