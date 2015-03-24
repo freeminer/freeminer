@@ -282,7 +282,7 @@ struct MapNode
 	u16 addLevel(INodeDefManager *nodemgr, s16 add = 1, bool compress = 0);
 	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
-	operator bool() const { return param0; }
+	operator bool() const { return param0 != CONTENT_IGNORE; }
 
 	/*
 		Serialization functions

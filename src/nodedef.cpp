@@ -756,6 +756,9 @@ void CNodeDefManager::clear()
 		content_t c = CONTENT_IGNORE;
 		m_content_features[c] = f;
 		addNameIdMapping(c, f.name);
+		// mtproto: 0 must be ignore always
+		if (c)
+			m_content_features[0] = f;
 	}
 }
 
