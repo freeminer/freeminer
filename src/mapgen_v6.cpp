@@ -902,7 +902,8 @@ void MapgenV6::placeTreesAndJungleGrass()
 				s16 z = grassrandom.range(p2d_min.Y, p2d_max.Y);
 				int mapindex = central_area_size.X * (z - node_min.Z)
 								+ (x - node_min.X);
-				s16 y = heightmap[mapindex];
+				//wtf s16 y = heightmap[mapindex];
+				s16 y = findGroundLevelFull(v2s16(x, z));
 				if (y < water_level)
 					continue;
 
@@ -921,7 +922,9 @@ void MapgenV6::placeTreesAndJungleGrass()
 			s16 z = myrand_range(p2d_min.Y, p2d_max.Y);
 			int mapindex = central_area_size.X * (z - node_min.Z)
 							+ (x - node_min.X);
-			s16 y = heightmap[mapindex];
+			//wtf s16 y = heightmap[mapindex];
+			s16 y = findGroundLevelFull(v2s16(x, z));
+
 			// Don't make a tree under water level
 			// Don't make a tree so high that it doesn't fit
 			if(y > node_max.Y - 6)
