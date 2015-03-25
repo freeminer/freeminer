@@ -3873,6 +3873,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	if (runData->nodig_delay_timer <= 0.0 && input->getLeftState()
 			&& client->checkPrivilege("interact")) {
 		handleDigging(runData, pointed, nodepos, playeritem_toolcap, dtime);
+		meta = map.getNodeMetadata(nodepos); // old meta can be removed
 	}
 
 	if ((input->getRightClicked() ||

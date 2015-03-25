@@ -105,7 +105,7 @@ public:
 	}
 
 	// counter used internally when triggering ABMs
-	u32 m_added_objects;
+	std::atomic_uint m_added_objects;
 
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
