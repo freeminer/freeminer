@@ -242,6 +242,7 @@ Client::Client(
 	m_time_of_day_update_timer(0),
 	m_recommended_send_interval(0.1),
 	m_removed_sounds_check_timer(0),
+	m_uptime(0),
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_state(LC_Created)
 {

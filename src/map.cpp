@@ -108,6 +108,7 @@ Map::~Map()
 		delete ir.first;
 	for(auto & ir : m_blocks)
 		delete ir.second;
+	getBlockCacheFlush();
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
