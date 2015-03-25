@@ -80,7 +80,7 @@ struct MeshMakeData
 	/*
 		Set up with only a single node at (1,1,1)
 	*/
-	void fillSingleNode(MapNode *node);
+	void fillSingleNode(MapNode *node, v3POS blockpos = v3POS(0,0,0));
 
 	/*
 		Set the (node) position of a crack

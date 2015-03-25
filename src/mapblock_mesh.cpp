@@ -152,12 +152,11 @@ bool MeshMakeData::fill_data()
 	return filled;
 }
 
-void MeshMakeData::fillSingleNode(MapNode *node)
-{
-	m_blockpos = v3s16(0,0,0);
+void MeshMakeData::fillSingleNode(MapNode *node, v3POS blockpos) {
+	m_blockpos = blockpos;
 
 #if !defined(MESH_ZEROCOPY)
-	v3s16 blockpos_nodes = v3s16(0,0,0);
+	v3s16 blockpos_nodes = m_blockpos * MAP_BLOCKSIZE;
 	VoxelArea area(blockpos_nodes-v3s16(1,1,1)*MAP_BLOCKSIZE,
 			blockpos_nodes+v3s16(1,1,1)*MAP_BLOCKSIZE*2-v3s16(1,1,1));
 	s32 volume = area.getVolume();
