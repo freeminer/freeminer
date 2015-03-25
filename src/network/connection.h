@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 
 #if !MINETEST_PROTO
-#include "connection_enet.h"
+#include "network/fm_connection.h"
 #else
 //Not used, keep for reduce MT merge conflicts
 

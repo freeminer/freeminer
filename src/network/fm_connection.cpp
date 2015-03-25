@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "connection_enet.h"
+#include "network/fm_connection.h"
 #include "main.h"
 #include "serialization.h"
 #include "log.h"
