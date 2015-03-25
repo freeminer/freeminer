@@ -767,7 +767,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				line += "> ";
 				line += message;
 				send_to_others = true;
-				stat.add("chat", player->getName());
 			} else
 				line += "-!- You don't have permission to shout.";
 		}
@@ -775,6 +774,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		if(!line.empty())
 		{
 			if(send_to_others) {
+				stat.add("chat", player->getName());
 				actionstream<<"CHAT: "<<line<<std::endl;
 				SendChatMessage(PEER_ID_INEXISTENT, line);
 			} else
@@ -1040,7 +1040,6 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			if (dst_origin_hp != playersao->getHP()) {
 				SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
 			}
-
 
 				stat.add("punch", player->getName());
 			}

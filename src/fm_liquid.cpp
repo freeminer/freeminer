@@ -124,10 +124,11 @@ NEXT_LIQUID:
 		s8 liquid_levels_want[7] = { -1, -1, -1, -1, -1, -1, -1};
 		s8 can_liquid_same_level = 0;
 		s8 can_liquid = 0;
-		content_t liquid_kind = CONTENT_IGNORE;
-		content_t liquid_kind_flowing = CONTENT_IGNORE;
-		content_t melt_kind = CONTENT_IGNORE;
-		content_t melt_kind_flowing = CONTENT_IGNORE;
+		// warning! when MINETEST_PROTO enabled - CONTENT_IGNORE != 0
+		content_t liquid_kind = 0;
+		content_t liquid_kind_flowing = 0;
+		content_t melt_kind = 0;
+		content_t melt_kind_flowing = 0;
 		//s8 viscosity = 0;
 		/*
 			Collect information about the environment, start from self
@@ -153,7 +154,7 @@ NEXT_LIQUID:
 			nb.weight = 0;
 			nb.drop = 0;
 
-			if (!nb.content) {
+			if (!nb.node) {
 				//if (i == D_SELF && (loopcount % 2) && initial_size < m_liquid_step_flow * 3)
 				//	must_reflow_third[nb.pos] = 1;
 				//	must_reflow_third.push_back(nb.pos);

@@ -177,7 +177,7 @@ void Client::handleCommand_RemoveNode(NetworkPacket* pkt)
 
 	v3s16 p;
 	*pkt >> p;
-	removeNode(p);
+	removeNode(p, 2);
 }
 
 void Client::handleCommand_AddNode(NetworkPacket* pkt)
@@ -197,7 +197,7 @@ void Client::handleCommand_AddNode(NetworkPacket* pkt)
 		remove_metadata = false;
 	}
 
-	addNode(p, n, remove_metadata);
+	addNode(p, n, remove_metadata, 2);
 }
 void Client::handleCommand_BlockData(NetworkPacket* pkt)
 {
@@ -223,7 +223,10 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		/*
 			Update an existing block
 		*/
-		block->deSerialize(istr, m_server_ser_ver, false);
+		if (!block->deSerialize(istr, m_server_ser_ver, false)) {
+			delete block;
+			return;
+		}
 		block->deSerializeNetworkSpecific(istr);
 	}
 	else {
@@ -231,7 +234,10 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 			Create a new block
 		*/
 		block = new MapBlock(&m_env.getMap(), p, this);
-		block->deSerialize(istr, m_server_ser_ver, false);
+		if(!block->deSerialize(istr, m_server_ser_ver, false)){
+			delete block;
+			return;
+		}
 		block->deSerializeNetworkSpecific(istr);
 		sector->insertBlock(block);
 	}
@@ -243,7 +249,8 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	/*
 		Add it to mesh update queue and set it to be acknowledged after update.
 	*/
-	addUpdateMeshTaskWithEdge(p, true);
+	//addUpdateMeshTaskWithEdge(p, true);
+	updateMeshTimestampWithEdge(p);
 
 	sendGotBlocks(p);
 }

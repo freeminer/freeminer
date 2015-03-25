@@ -542,7 +542,7 @@ void Server::start(Address bind_addr)
 #ifndef NDEBUG
 			<< " DEBUG \t"
 #endif
-#ifdef MINETEST_PROTO
+#if MINETEST_PROTO
 			<< " MINETEST_PROTO \t"
 #endif
 			<< " cpp="<<__cplusplus<<" \t"

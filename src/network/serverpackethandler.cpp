@@ -773,6 +773,8 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 
 	m_clients.event(peer_id, CSE_SetClientReady);
 	m_script->on_joinplayer(playersao);
+
+	stat.add("join", playersao->getPlayer()->getName());
 }
 
 void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
@@ -873,11 +875,28 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 	player->control.LMB = (keyPressed & 128);
 	player->control.RMB = (keyPressed & 256);
 
+	auto old_pos = playersao->m_last_good_position;
 	if (playersao->checkMovementCheat()) {
 		// Call callbacks
 		m_script->on_cheat(playersao, "moved_too_fast");
 		SendMovePlayer(pkt->getPeerId());
 	}
+// copypaste from fm_serverpackethandler.cpp
+		else if (playersao->m_ms_from_last_respawn > 3000) {
+			auto dist = (old_pos/BS).getDistanceFrom(playersao->m_last_good_position/BS);
+			if (dist)
+				stat.add("move", playersao->getPlayer()->getName(), dist);
+		}
+
+		if (playersao->m_ms_from_last_respawn > 2000) {
+			auto obj = playersao; // copypasted from server step:
+			auto uptime = m_uptime.get();
+			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
+				obj->m_uptime_last = uptime - 0.1;
+			obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
+			obj->m_uptime_last = uptime;
+		}
+//copypaste end
 }
 
 void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
@@ -1033,6 +1052,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 			delete a;
 			return;
 		}
+		stat.add("drop", player->getName());
 	}
 	/*
 		Handle restrictions and special cases of the craft action
@@ -1055,6 +1075,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 			delete a;
 			return;
 		}
+		stat.add("craft", player->getName());
 	}
 
 	// Do the action
@@ -1145,6 +1166,7 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
 			Send the message to others
 		*/
 		else {
+			stat.add("chat", player->getName());
 			actionstream << "CHAT: " << wide_to_narrow(line)<<std::endl;
 
 			std::vector<u16> clients = m_clients.getClientIDs();
@@ -1189,6 +1211,8 @@ void Server::handleCommand_Damage(NetworkPacket* pkt)
 
 		playersao->setHP(playersao->getHP() - damage);
 		SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
+
+		stat.add("damage", player->getName(), damage);
 	}
 }
 
@@ -1462,6 +1486,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 			// Call callbacks
 			m_script->on_cheat(playersao, "interacted_too_far");
 			// Do nothing else
+			stat.add("interact_denied", player->getName());
 			return;
 		}
 	}
@@ -1556,6 +1581,8 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 			if (dst_origin_hp != playersao->getHP()) {
 				SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
 			}
+
+			stat.add("punch", player->getName());
 		}
 
 	} // action == 0
@@ -1653,8 +1680,11 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 
 			/* Actually dig node */
 
-			if (is_valid_dig && n.getContent() != CONTENT_IGNORE)
+			if (is_valid_dig && n.getContent() != CONTENT_IGNORE) {
 				m_script->node_on_dig(p_under, n, playersao);
+				stat.add("dig", player->getName());
+				stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
+			}
 
 			v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_under, BS));
 			RemoteClient *client = getClient(pkt->getPeerId());
@@ -1702,6 +1732,8 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 			if (playersao->setWieldedItem(item)) {
 				SendInventory(playersao);
 			}
+
+			stat.add("place", player->getName());
 		}
 
 		// If item has node placement prediction, always send the
@@ -1738,6 +1770,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 			if (playersao->setWieldedItem(item)) {
 				SendInventory(playersao);
 			}
+
+			stat.add("use", player->getName());
+			stat.add("use_" + item.name, player->getName());
 		}
 
 	} // action == 4

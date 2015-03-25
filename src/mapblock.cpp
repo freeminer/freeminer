@@ -632,8 +632,8 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
 	if(net_proto_version >= 21){
 		int version = 1;
 		writeU8(os, version);
-		writeF1000(os, 0); // deprecated heat
-		writeF1000(os, 0); // deprecated humidity
+		writeF1000(os, heat); // deprecated heat
+		writeF1000(os, humidity); // deprecated humidity
 	}
 }
 
@@ -761,8 +761,8 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		//if(version != 1)
 		//	throw SerializationError("unsupported MapBlock version");
 		if(version >= 1) {
-			readF1000(is); // deprecated heat
-			readF1000(is); // deprecated humidity
+			heat = readF1000(is); // deprecated heat
+			humidity = readF1000(is); // deprecated humidity
 		}
 	}
 	catch(SerializationError &e)
