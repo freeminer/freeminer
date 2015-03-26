@@ -177,7 +177,12 @@ void VoxelManipulator::addArea(const VoxelArea &area)
 
 	// Allocate new data and clear flags
 	MapNode *new_data = reinterpret_cast<MapNode*>( ::operator new(new_size * sizeof(MapNode)));
-	memset(new_data, 0, new_size * sizeof(MapNode));
+	if (!CONTENT_IGNORE)
+		memset(new_data, 0, new_size * sizeof(MapNode));
+	else
+		for(s32 i=0; i<new_size; i++)
+			new_data[i] = MapNode(CONTENT_IGNORE);
+
 	u8 *new_flags = new u8[new_size];
 	memset(new_flags, VOXELFLAG_NO_DATA, new_size);
 

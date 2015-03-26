@@ -142,7 +142,13 @@ public:
 			delete data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
-		memset(data, 0, l * sizeof(MapNode));
+		if (!CONTENT_IGNORE)
+			memset(data, 0, l * sizeof(MapNode));
+		else
+		for(u32 i=0; i<l; i++){
+			data[i] = MapNode(CONTENT_IGNORE);
+		}
+
 	}
 
 	/*
