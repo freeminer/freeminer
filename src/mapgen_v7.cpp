@@ -562,7 +562,7 @@ int MapgenV7::generateBaseTerrain()
 				if (y <= surface_y) {
 
 					int index3 = (z - node_min.Z) * zstride +
-						(y - node_min.Y) * ystride +
+						(y - node_min.Y + 1) * ystride +
 						(x - node_min.X);
 
 					vm->m_data[i] = layers_get(index3);

@@ -387,7 +387,7 @@ int MapgenIndev::generateGround() {
 		u32 i = vm->m_area.index(x, node_min.Y, z);
 
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
-			if (!vm->m_data[i].getContent()) {
+			if (!vm->m_data[i]) {
 
 				if (y <= surface_y) {
 					int index3 = (z - node_min.Z) * zstride +
