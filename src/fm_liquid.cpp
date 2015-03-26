@@ -362,7 +362,7 @@ NEXT_LIQUID:
 		if (	liquid_levels[D_TOP] == 0 &&
 		        p0.Y > water_level &&
 		        level_max > 1 &&
-		        !neighbors[D_BOTTOM].content &&
+		        !neighbors[D_BOTTOM].node &&
 		        !(loopcount % 3)) {
 			--total_level;
 #if LIQUID_DEBUG
