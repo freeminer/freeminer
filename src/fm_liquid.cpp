@@ -77,7 +77,6 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 	//TimeTaker timer("transformLiquidsReal()");
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
-	g_profiler->add("Server: liquids queue", initial_size);
 
 	u32 regenerated = 0;
 
@@ -452,7 +451,8 @@ NEXT_LIQUID:
 				}
 */
 				//compressing self level while can
-				for (u16 ir = D_SELF; ir < D_TOP; ++ir) {
+				//for (u16 ir = D_SELF; ir < D_TOP; ++ir) {
+				for (u16 ir = D_BOTTOM; ir <= D_TOP; ++ir) {
 					if (total_level < 1)
 						break;
 					u16 ii = liquid_random_map[(loopcount + loop_rand + 3) % 4][ir];
@@ -479,32 +479,49 @@ NEXT_LIQUID:
 			if (neighbors[D_BOTTOM].liquid && 
 				liquid_levels_want[D_BOTTOM] < level_max_compressed &&
 				liquid_levels_want[D_TOP] > 0
-			) { // bottom pressure ++
-				--liquid_levels_want[D_TOP];
-				++liquid_levels_want[D_BOTTOM];
+			) {
+				//if (liquid_levels_want[D_BOTTOM] <= liquid_levels_want[D_TOP]) {
+					--liquid_levels_want[D_TOP];
+					++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-			infostream << " bottom1 pressure+: " << " top="<< (int)liquid_levels_want[D_TOP]<< " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
+					infostream << " bottom1 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
 #endif
+				//}
 			} else if (
 				neighbors[D_BOTTOM].liquid && 
 				liquid_levels_want[D_BOTTOM] < level_max_compressed &&
 				liquid_levels_want[D_SELF] > level_max
 			) {
-				--liquid_levels_want[D_SELF];
-				++liquid_levels_want[D_BOTTOM];
+				if (liquid_levels_want[D_BOTTOM] <= liquid_levels_want[D_SELF]) {
+					--liquid_levels_want[D_SELF];
+					++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-			infostream << " bottom2 pressure+: " << " self="<< (int)liquid_levels_want[D_SELF]<< " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
+					infostream << " bottom2 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
 #endif
+				}
 			} else if (
 				neighbors[D_TOP].liquid &&
 				liquid_levels_want[D_SELF] < level_max_compressed &&
 				liquid_levels_want[D_TOP] > level_max
 			) {
-				--liquid_levels_want[D_TOP];
-				++liquid_levels_want[D_SELF];
+				if (liquid_levels_want[D_SELF] <= liquid_levels_want[D_TOP]) {
+					--liquid_levels_want[D_TOP];
+					++liquid_levels_want[D_SELF];
 #if LIQUID_DEBUG
-			infostream << " bottom3 pressure+: " << " top="<< (int)liquid_levels_want[D_TOP]<< " self=" << (int)liquid_levels_want[D_SELF] << " total_level=" << (int)total_level << std::endl;
+					infostream << " bottom3 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP]<< " total_level=" << (int)total_level << std::endl;
 #endif
+				}
+			}
+
+			if (liquid_levels_want[D_TOP] > level_max && relax && total_level <= 0 && level_avg > level_max && liquid_levels_want[D_TOP] < level_avg) {
+#if LIQUID_DEBUG
+					infostream << " top pressure relax: " << " top="<< (int)liquid_levels_want[D_TOP]<< " to=>"<< level_avg << std::endl;
+#endif
+
+				//regenerated += level_avg - liquid_levels_want[D_TOP];
+				//liquid_levels_want[D_TOP] = level_avg;
+				regenerated += 1 ;
+				liquid_levels_want[D_TOP] += 1;
 			}
 		}
 
@@ -657,7 +674,9 @@ NEXT_LIQUID:
 				if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
 					lighting_modified_blocks.set_try(block->getPos(), block);
 			}
-			must_reflow.push_back(neighbors[i].pos);
+			// fmtodo: make here random %2 or..
+			if (total_level < level_max * can_liquid)
+				must_reflow.push_back(neighbors[i].pos);
 
 		}
 
@@ -716,6 +735,8 @@ NEXT_LIQUID:
 	g_profiler->add("Server: liquids real processed", loopcount);
 	if (regenerated)
 		g_profiler->add("Server: liquids regenerated", regenerated);
+	if (loopcount < initial_size)
+		g_profiler->add("Server: liquids queue", initial_size);
 
 	return loopcount;
 }
