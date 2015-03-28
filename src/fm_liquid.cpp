@@ -78,7 +78,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
 
-	u32 regenerated = 0;
+	s32 regenerated = 0;
 
 #if LIQUID_DEBUG
 	bool debug = 1;
@@ -124,10 +124,10 @@ NEXT_LIQUID:
 		s8 can_liquid_same_level = 0;
 		s8 can_liquid = 0;
 		// warning! when MINETEST_PROTO enabled - CONTENT_IGNORE != 0
-		content_t liquid_kind = 0;
-		content_t liquid_kind_flowing = 0;
-		content_t melt_kind = 0;
-		content_t melt_kind_flowing = 0;
+		content_t liquid_kind = CONTENT_IGNORE;
+		content_t liquid_kind_flowing = CONTENT_IGNORE;
+		content_t melt_kind = CONTENT_IGNORE;
+		content_t melt_kind_flowing = CONTENT_IGNORE;
 		//s8 viscosity = 0;
 		/*
 			Collect information about the environment, start from self
@@ -160,14 +160,15 @@ NEXT_LIQUID:
 				continue;
 			}
 
-			switch (nodemgr->get(nb.content).liquid_type) {
+			auto f = nodemgr->get(nb.content);
+			switch (f.liquid_type) {
 			case LIQUID_NONE:
 				if (nb.content == CONTENT_AIR) {
 					liquid_levels[i] = 0;
 					nb.liquid = 1;
 				}
 				//TODO: if (nb.content == CONTENT_AIR || nodemgr->get(nb.node).buildable_to && !nodemgr->get(nb.node).walkable) { // need lua drop api for drop torches
-				else if (	melt_kind_flowing &&
+				else if (	melt_kind_flowing != CONTENT_IGNORE &&
 				            nb.content == melt_kind_flowing &&
 				            nb.type != NEIGHBOR_UPPER &&
 				            !(loopcount % 2)) {
@@ -176,7 +177,7 @@ NEXT_LIQUID:
 					liquid_levels[i] = (float)my_max_level / melt_max_level * nb.node.getLevel(nodemgr);
 					if (liquid_levels[i])
 						nb.liquid = 1;
-				} else if (	melt_kind &&
+				} else if (	melt_kind != CONTENT_IGNORE &&
 				            nb.content == melt_kind &&
 				            nb.type != NEIGHBOR_UPPER &&
 				            !(loopcount % 8)) {
@@ -184,7 +185,7 @@ NEXT_LIQUID:
 					if (liquid_levels[i])
 						nb.liquid = 1;
 				} else {
-					int drop = ((ItemGroupList) nodemgr->get(nb.node).groups)["drop_by_liquid"];
+					int drop = ((ItemGroupList) f.groups)["drop_by_liquid"];
 					if (drop && !(loopcount % drop) ) {
 						liquid_levels[i] = 0;
 						nb.liquid = 1;
@@ -197,21 +198,21 @@ NEXT_LIQUID:
 			case LIQUID_SOURCE:
 				// if this node is not (yet) of a liquid type,
 				// choose the first liquid type we encounter
-				if (!liquid_kind_flowing)
+				if (liquid_kind_flowing == CONTENT_IGNORE)
 					liquid_kind_flowing = nodemgr->getId(
-					                          nodemgr->get(nb.node).liquid_alternative_flowing);
-				if (!liquid_kind)
+					                          f.liquid_alternative_flowing);
+				if (liquid_kind == CONTENT_IGNORE)
 					liquid_kind = nb.content;
-				if (!liquid_kind_flowing)
+				if (liquid_kind_flowing == CONTENT_IGNORE)
 					liquid_kind_flowing = liquid_kind;
-				if (!melt_kind)
-					melt_kind = nodemgr->getId(nodemgr->get(nb.node).melt);
-				if (!melt_kind_flowing)
+				if (melt_kind == CONTENT_IGNORE)
+					melt_kind = nodemgr->getId(f.melt);
+				if (melt_kind_flowing == CONTENT_IGNORE)
 					melt_kind_flowing =
 					    nodemgr->getId(
-					        nodemgr->get(nodemgr->getId(nodemgr->get(nb.node).melt)
+					        nodemgr->get(nodemgr->getId(f.melt)
 					                    ).liquid_alternative_flowing);
-				if (!melt_kind_flowing)
+				if (melt_kind_flowing == CONTENT_IGNORE)
 					melt_kind_flowing = melt_kind;
 				if (nb.content == liquid_kind) {
 					if (nb.node.param2 & LIQUID_STABLE_MASK)
@@ -224,19 +225,19 @@ NEXT_LIQUID:
 			case LIQUID_FLOWING:
 				// if this node is not (yet) of a liquid type,
 				// choose the first liquid type we encounter
-				if (!liquid_kind_flowing)
+				if (liquid_kind_flowing == CONTENT_IGNORE)
 					liquid_kind_flowing = nb.content;
-				if (!liquid_kind)
+				if (liquid_kind == CONTENT_IGNORE)
 					liquid_kind = nodemgr->getId(
-					                  nodemgr->get(nb.node).liquid_alternative_source);
-				if (!liquid_kind)
+					                  f.liquid_alternative_source);
+				if (liquid_kind == CONTENT_IGNORE)
 					liquid_kind = liquid_kind_flowing;
-				if (!melt_kind_flowing)
-					melt_kind_flowing = nodemgr->getId(nodemgr->get(nb.node).melt);
-				if (!melt_kind)
+				if (melt_kind_flowing == CONTENT_IGNORE)
+					melt_kind_flowing = nodemgr->getId(f.melt);
+				if (melt_kind == CONTENT_IGNORE)
 					melt_kind = nodemgr->getId(nodemgr->get(nodemgr->getId(
-					        nodemgr->get(nb.node).melt)).liquid_alternative_source);
-				if (!melt_kind)
+					        f.melt)).liquid_alternative_source);
+				if (melt_kind == CONTENT_IGNORE)
 					melt_kind = melt_kind_flowing;
 				if (nb.content == liquid_kind_flowing) {
 					if (nb.node.param2 & LIQUID_STABLE_MASK)
@@ -249,9 +250,9 @@ NEXT_LIQUID:
 			}
 
 			// only self, top, bottom swap
-			if (nodemgr->get(nb.content).liquid_type && e <= 2) {
+			if (f.liquid_type && e <= 2) {
 				try {
-					nb.weight = ((ItemGroupList) nodemgr->get(nb.node).groups)["weight"];
+					nb.weight = ((ItemGroupList) f.groups)["weight"];
 					if (e == 1 && neighbors[D_BOTTOM].weight && neighbors[D_SELF].weight > neighbors[D_BOTTOM].weight) {
 						setNode(neighbors[D_SELF].pos, neighbors[D_BOTTOM].node);
 						setNode(neighbors[D_BOTTOM].pos, neighbors[D_SELF].node);
@@ -259,6 +260,9 @@ NEXT_LIQUID:
 						//must_reflow_second[neighbors[D_BOTTOM].pos] = 1;
 						must_reflow_second.push_back(neighbors[D_SELF].pos);
 						must_reflow_second.push_back(neighbors[D_BOTTOM].pos);
+#if LIQUID_DEBUG
+						infostream << "Liquid swap1" << neighbors[D_SELF].pos << nodemgr->get(neighbors[D_SELF].node).name << neighbors[D_SELF].node << " w=" << neighbors[D_SELF].weight << " VS " << neighbors[D_BOTTOM].pos << nodemgr->get(neighbors[D_BOTTOM].node).name << neighbors[D_BOTTOM].node << " w=" << neighbors[D_BOTTOM].weight << std::endl;
+#endif
 						goto NEXT_LIQUID;
 					}
 					if (e == 2 && neighbors[D_SELF].weight && neighbors[D_TOP].weight > neighbors[D_SELF].weight) {
@@ -268,6 +272,9 @@ NEXT_LIQUID:
 						//must_reflow_second[neighbors[D_TOP].pos] = 1;
 						must_reflow_second.push_back(neighbors[D_SELF].pos);
 						must_reflow_second.push_back(neighbors[D_TOP].pos);
+#if LIQUID_DEBUG
+						infostream << "Liquid swap2" << neighbors[D_TOP].pos << nodemgr->get(neighbors[D_TOP].node).name << neighbors[D_TOP].node  << " w=" << neighbors[D_TOP].weight << " VS " << neighbors[D_SELF].pos << nodemgr->get(neighbors[D_SELF].node).name << neighbors[D_SELF].node << " w=" << neighbors[D_SELF].weight << std::endl;
+#endif
 						goto NEXT_LIQUID;
 					}
 				} catch(InvalidPositionException &e) {
@@ -289,7 +296,7 @@ NEXT_LIQUID:
 			infostream << "get node i=" << (int)i << " " << PP(nb.pos) << " c="
 			           << nb.content << " p0=" << (int)nb.node.param0 << " p1="
 			           << (int)nb.node.param1 << " p2=" << (int)nb.node.param2 << " lt="
-			           << nodemgr->get(nb.content).liquid_type
+			           << f.liquid_type
 			           //<< " lk=" << liquid_kind << " lkf=" << liquid_kind_flowing
 			           << " l=" << nb.liquid	<< " inf=" << nb.infinity << " nlevel=" << (int)liquid_levels[i]
 			           << " totallevel=" << (int)total_level << " cansame="
@@ -297,12 +304,13 @@ NEXT_LIQUID:
 #endif
 		}
 
-		if (!liquid_kind || !neighbors[D_SELF].liquid || total_level <= 0)
+		if (liquid_kind == CONTENT_IGNORE || !neighbors[D_SELF].liquid || total_level <= 0)
 			continue;
 
 		s16 level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
 		s16 level_max_compressed = nodemgr->get(liquid_kind_flowing).getMaxLevel(1);
 		s16 pressure = liquid_pressure ? ((ItemGroupList) nodemgr->get(liquid_kind).groups)["pressure"] : 0;
+		auto liquid_renewable = nodemgr->get(liquid_kind).liquid_renewable;
 #if LIQUID_DEBUG
 		s16 total_was = total_level; //debug
 #endif
@@ -341,7 +349,7 @@ NEXT_LIQUID:
 
 		//relax up
 		u16 relax_want = level_max * can_liquid_same_level;
-		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+		if (	liquid_renewable &&
 		        relax &&
 		        ((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
 		        level_max > 1 &&
@@ -376,30 +384,32 @@ NEXT_LIQUID:
 		                 : total_level / can_liquid_same_level;
 		total_level -= want_level * can_liquid_same_level;
 
-/*
-		if (pressure && total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +1
-			++liquid_levels_want[D_BOTTOM];
-			--total_level;
-#if LIQUID_DEBUG
-			infostream << " bottom1 pressure+1: " << " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
-#endif
-		}
-*/
+		/*
+				if (pressure && total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +1
+					++liquid_levels_want[D_BOTTOM];
+					--total_level;
+		#if LIQUID_DEBUG
+					infostream << " bottom1 pressure+1: " << " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
+		#endif
+				}
+		*/
 
 		//relax down
-		if (	nodemgr->get(liquid_kind).liquid_renewable &&
+		if (	liquid_renewable &&
 		        relax &&
-		        p0.Y == water_level &&
+		        p0.Y >= water_level - 1  &&
+		        p0.Y <= water_level + 1  &&
 		        liquid_levels[D_TOP] == 0 &&
-		        !(loopcount % 2) &&
+		        (total_level <= 1 || !(loopcount % 2)) &&
 		        level_max > 1 &&
 		        liquid_levels[D_BOTTOM] >= level_max &&
-		        want_level == 0 &&
+		        want_level <= 0 &&
 		        total_level <= (can_liquid_same_level - relax) &&
 		        can_liquid_same_level >= relax + 1) {
 #if LIQUID_DEBUG
 			infostream << " relax_down: " << " total_level WAS=" << (int)total_level << " to => 0" << std::endl;
 #endif
+			regenerated -= total_level;
 			total_level = 0;
 		}
 
@@ -444,12 +454,12 @@ NEXT_LIQUID:
 			//if (liquid_levels_want[D_TOP] && total_level && pressure) {
 			if (total_level > 0 && pressure) {
 
-/*
-				if (total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +2
-					++liquid_levels_want[D_BOTTOM];
-					--total_level;
-				}
-*/
+				/*
+								if (total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +2
+									++liquid_levels_want[D_BOTTOM];
+									--total_level;
+								}
+				*/
 				//compressing self level while can
 				//for (u16 ir = D_SELF; ir < D_TOP; ++ir) {
 				for (u16 ir = D_BOTTOM; ir <= D_TOP; ++ir) {
@@ -463,59 +473,59 @@ NEXT_LIQUID:
 					}
 				}
 
-/*
-				if (total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +2
-					++liquid_levels_want[D_BOTTOM];
-					--total_level;
-#if LIQUID_DEBUG
-			infostream << " bottom2 pressure+1: " << " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
-#endif
-				}
-*/
+				/*
+								if (total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom pressure +2
+									++liquid_levels_want[D_BOTTOM];
+									--total_level;
+				#if LIQUID_DEBUG
+							infostream << " bottom2 pressure+1: " << " bottom=" << (int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level << std::endl;
+				#endif
+								}
+				*/
 			}
 		}
 
 		if (pressure) {
-			if (neighbors[D_BOTTOM].liquid && 
-				liquid_levels_want[D_BOTTOM] < level_max_compressed &&
-				liquid_levels_want[D_TOP] > 0
-			) {
+			if (neighbors[D_BOTTOM].liquid &&
+			        liquid_levels_want[D_BOTTOM] < level_max_compressed &&
+			        liquid_levels_want[D_TOP] > 0
+			   ) {
 				//if (liquid_levels_want[D_BOTTOM] <= liquid_levels_want[D_TOP]) {
-					--liquid_levels_want[D_TOP];
-					++liquid_levels_want[D_BOTTOM];
+				--liquid_levels_want[D_TOP];
+				++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-					infostream << " bottom1 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
+				infostream << " bottom1 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM] << " slf=" << (int)liquid_levels_want[D_SELF] << " top=" << (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
 #endif
 				//}
 			} else if (
-				neighbors[D_BOTTOM].liquid && 
-				liquid_levels_want[D_BOTTOM] < level_max_compressed &&
-				liquid_levels_want[D_SELF] > level_max
+			    neighbors[D_BOTTOM].liquid &&
+			    liquid_levels_want[D_BOTTOM] < level_max_compressed &&
+			    liquid_levels_want[D_SELF] > level_max
 			) {
 				if (liquid_levels_want[D_BOTTOM] <= liquid_levels_want[D_SELF]) {
 					--liquid_levels_want[D_SELF];
 					++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-					infostream << " bottom2 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
+					infostream << " bottom2 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM] << " slf=" << (int)liquid_levels_want[D_SELF] << " top=" << (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
 #endif
 				}
 			} else if (
-				neighbors[D_TOP].liquid &&
-				liquid_levels_want[D_SELF] < level_max_compressed &&
-				liquid_levels_want[D_TOP] > level_max
+			    neighbors[D_TOP].liquid &&
+			    liquid_levels_want[D_SELF] < level_max_compressed &&
+			    liquid_levels_want[D_TOP] > level_max
 			) {
 				if (liquid_levels_want[D_SELF] <= liquid_levels_want[D_TOP]) {
 					--liquid_levels_want[D_TOP];
 					++liquid_levels_want[D_SELF];
 #if LIQUID_DEBUG
-					infostream << " bottom3 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM]<< " slf=" << (int)liquid_levels_want[D_SELF]<< " top="<< (int)liquid_levels_want[D_TOP]<< " total_level=" << (int)total_level << std::endl;
+					infostream << " bottom3 pressure+: " << " bot=" << (int)liquid_levels_want[D_BOTTOM] << " slf=" << (int)liquid_levels_want[D_SELF] << " top=" << (int)liquid_levels_want[D_TOP] << " total_level=" << (int)total_level << std::endl;
 #endif
 				}
 			}
 
 			if (liquid_levels_want[D_TOP] > level_max && relax && total_level <= 0 && level_avg > level_max && liquid_levels_want[D_TOP] < level_avg) {
 #if LIQUID_DEBUG
-					infostream << " top pressure relax: " << " top="<< (int)liquid_levels_want[D_TOP]<< " to=>"<< level_avg << std::endl;
+				infostream << " top pressure relax: " << " top=" << (int)liquid_levels_want[D_TOP] << " to=>" << level_avg << std::endl;
 #endif
 
 				//regenerated += level_avg - liquid_levels_want[D_TOP];
@@ -569,6 +579,7 @@ NEXT_LIQUID:
 				           << (int)liquid_levels_want[ii] << "  to=" << (int)liquid_levels[ii] << std::endl;
 #endif
 
+				regenerated += liquid_levels[ii] - liquid_levels_want[ii];
 				liquid_levels_want[ii] = liquid_levels[ii];
 			} else if ( liquid_levels_want[ii] >= 0	&&
 			            liquid_levels_want[ii] < level_max &&
@@ -584,7 +595,7 @@ NEXT_LIQUID:
 				infostream << " flood_fast: was=" << (int)ii << " = "
 				           << (int)liquid_levels_want[ii] << "  to=" << (int)level_max << std::endl;
 #endif
-
+				regenerated += level_max - liquid_levels_want[ii];
 				liquid_levels_want[ii] = level_max;
 			}
 		}
