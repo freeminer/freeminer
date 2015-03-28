@@ -94,6 +94,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
+	local_animation_speed           = 0.0;
 
 	// Movement overrides are multipliers and must be 1 by default
 	physics_override_speed        = 1;
