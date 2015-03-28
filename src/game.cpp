@@ -1521,7 +1521,7 @@ public:
 			// If address is "", local server is used and address is updated
 			std::string *address,
 			u16 port,
-			std::string *error_message,
+			std::string &error_message,
 			ChatBackend *chat_backend,
 			const SubgameSpec &gamespec,    // Used for local game
 			bool simple_singleplayer_mode);
@@ -1543,9 +1543,8 @@ protected:
 
 	// Client creation
 	bool createClient(const std::string &playername,
-			const std::string &password, std::string *address, u16 port,
-			std::string *error_message);
-	bool initGui(std::string *error_message);
+			const std::string &password, std::string *address, u16 port);
+	bool initGui();
 
 	// Client connection
 	bool connectToServer(const std::string &playername,
@@ -1811,7 +1810,7 @@ bool Game::startup(bool *kill,
 		const std::string &password,
 		std::string *address,     // can change if simple_singleplayer_mode
 		u16 port,
-		std::string *error_message,
+		std::string &error_message,
 		ChatBackend *chat_backend,
 		const SubgameSpec &gamespec,
 		bool simple_singleplayer_mode)
@@ -1819,7 +1818,7 @@ bool Game::startup(bool *kill,
 	// "cache"
 	this->device        = device;
 	this->kill          = kill;
-	this->error_message = error_message;
+	this->error_message = &error_message;
 	this->random_input  = random_input;
 	this->input         = input;
 	this->chat_backend  = chat_backend;
@@ -1833,7 +1832,7 @@ bool Game::startup(bool *kill,
 	if (!init(map_dir, address, port, gamespec))
 		return false;
 
-	if (!createClient(playername, password, address, port, error_message))
+	if (!createClient(playername, password, address, port))
 		return false;
 
 	return true;
@@ -2103,8 +2102,7 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 }
 
 bool Game::createClient(const std::string &playername,
-		const std::string &password, std::string *address, u16 port,
-		std::string *error_message)
+		const std::string &password, std::string *address, u16 port)
 {
 	showOverlayMessage(wstrgettext("Creating client..."), 0, 10);
 
@@ -2121,7 +2119,7 @@ bool Game::createClient(const std::string &playername,
 		return false;
 
 	if (!could_connect) {
-		if (*error_message == "" && !connect_aborted) {
+		if (error_message->empty() && !connect_aborted) {
 			// Should not happen if error messages are set properly
 			*error_message = "Connection failed for unknown reason";
 			errorstream << *error_message << std::endl;
@@ -2130,7 +2128,7 @@ bool Game::createClient(const std::string &playername,
 	}
 
 	if (!getServerContent(&connect_aborted)) {
-		if (*error_message == "" && !connect_aborted) {
+		if (error_message->empty() && !connect_aborted) {
 			// Should not happen if error messages are set properly
 			*error_message = "Connection failed for unknown reason";
 			errorstream << *error_message << std::endl;
@@ -2152,8 +2150,7 @@ bool Game::createClient(const std::string &playername,
 	if (m_cache_enable_clouds) {
 		clouds = new Clouds(smgr->getRootSceneNode(), smgr, -1, time(0));
 		if (!clouds) {
-			*error_message = "Memory allocation error";
-			*error_message += " (clouds)";
+			*error_message = "Memory allocation error (clouds)";
 			errorstream << *error_message << std::endl;
 			return false;
 		}
@@ -2167,8 +2164,7 @@ bool Game::createClient(const std::string &playername,
 	local_inventory = new Inventory(itemdef_manager);
 
 	if (!(sky && local_inventory)) {
-		*error_message = "Memory allocation error";
-		*error_message += " (sky or local inventory)";
+		*error_message = "Memory allocation error (sky or local inventory)";
 		errorstream << *error_message << std::endl;
 		return false;
 	}
@@ -2187,7 +2183,7 @@ bool Game::createClient(const std::string &playername,
 		crack_animation_length = 0;
 	}
 
-	if (!initGui(error_message))
+	if (!initGui())
 		return false;
 
 	/* Set window caption
@@ -2473,12 +2469,8 @@ bool Game::getServerContent(bool *aborted)
 		}
 
 		// Error conditions
-		if (client->accessDenied()) {
-			*error_message = "Access denied. Reason: "
-					+ client->accessDeniedReason();
-			errorstream << *error_message << std::endl;
+		if (!checkConnection())
 			return false;
-		}
 
 		if (client->getState() < LC_Init) {
 			*error_message = "Client disconnected";
@@ -4751,28 +4743,27 @@ bool the_game(bool *kill,
 
 		game.runData  = { 0 };
 		if (game.startup(kill, random_input, input, device, map_dir,
-					playername, password, &server_address, port,
-					&error_message, &chat_backend, gamespec,
-					simple_singleplayer_mode)) {
+				playername, password, &server_address, port,
+				error_message, &chat_backend, gamespec,
+				simple_singleplayer_mode)) {
 			started = true;
 			game.runData.autoexit = autoexit;
-
 			game.run();
 			game.shutdown();
 		}
 
 #ifdef NDEBUG
 	} catch (SerializationError &e) {
-		error_message = L"A serialization error occurred:\n"
-				+ (e.what()) + L"\n\nThe server is probably "
-				L" running a different version of " PROJECT_NAME ".";
-		errorstream << (error_message) << std::endl;
+		error_message = std::string("A serialization error occurred:\n")
+				+ e.what() + "\n\nThe server is probably "
+				" running a different version of " PROJECT_NAME ".";
+		errorstream << error_message << std::endl;
 	} catch (ServerError &e) {
 		error_message = e.what();
-		errorstream << "ServerError: " << e.what() << std::endl;
+		errorstream << "ServerError: " << error_message << std::endl;
 	} catch (ModError &e) {
-		errorstream << "ModError: " << e.what() << std::endl;
-		error_message = std::string() + e.what() + _("\nCheck debug.txt for details.");
+		error_message = e.what() + strgettext("\nCheck debug.txt for details.");
+		errorstream << "ModError: " << error_message << std::endl;
 #else
 	} catch (int) { //nothing
 #endif
@@ -4780,3 +4771,4 @@ bool the_game(bool *kill,
 
 	return !started && game.flags.reconnect;
 }
+

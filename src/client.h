@@ -589,6 +589,7 @@ private:
 	bool m_access_denied;
 	std::string m_access_denied_reason;
 	Queue<ClientEvent> m_client_event_queue;
+	//std::queue<ClientEvent> m_client_event_queue;
 	bool m_itemdef_received;
 	bool m_nodedef_received;
 	ClientMediaDownloader *m_media_downloader;

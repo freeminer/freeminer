@@ -155,7 +155,9 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 		u8 denyCode = SERVER_ACCESSDENIED_UNEXPECTED_DATA;
 		*pkt >> denyCode;
 		if (denyCode == SERVER_ACCESSDENIED_CUSTOM_STRING) {
-			*pkt >> m_access_denied_reason;
+			std::wstring wide_reason;
+			*pkt >> wide_reason;
+			m_access_denied_reason = wide_to_narrow(wide_reason);
 		}
 		else if (denyCode < SERVER_ACCESSDENIED_MAX) {
 			m_access_denied_reason = wide_to_narrow(accessDeniedStrings[denyCode]);
@@ -165,7 +167,9 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 	// for compat with old clients
 	else {
 		if (pkt->getSize() >= 2) {
-			*pkt >> m_access_denied_reason;
+			std::wstring wide_reason;
+			*pkt >> wide_reason;
+			m_access_denied_reason = wide_to_narrow(wide_reason);
 		}
 	}
 }
