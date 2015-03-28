@@ -41,6 +41,18 @@ local function render_client_count(n)
 	end
 end
 
+local function configure_selected_world_params(idx)
+	local worldconfig = modmgr.get_worldconfig(
+		menudata.worldlist:get_list()[idx].path)
+
+	if worldconfig.creative_mode ~= nil then
+		core.setting_set("creative_mode", worldconfig.creative_mode)
+	end
+	if worldconfig.enable_damage ~= nil then
+		core.setting_set("enable_damage", worldconfig.enable_damage)
+	end
+end
+
 --------------------------------------------------------------------------------
 function image_column(tooltip, flagname)
 	return "image," ..
@@ -198,15 +210,7 @@ function menu_handle_key_up_down(fields,textlist,settingname)
 			core.setting_set(settingname,
 				menudata.worldlist:get_raw_index(newidx))
 
-			local worldconfig = modmgr.get_worldconfig(
-					menudata.worldlist:get_list()[newidx].path)
-
-			if worldconfig.creative_mode ~= nil then
-				core.setting_set("creative_mode", worldconfig.creative_mode)
-			end
-			if worldconfig.enable_damage ~= nil then
-				core.setting_set("enable_damage", worldconfig.enable_damage)
-			end
+			configure_selected_world_params(newidx)
 		end
 		return true
 	end
@@ -218,15 +222,8 @@ function menu_handle_key_up_down(fields,textlist,settingname)
 			local newidx = oldidx + 1
 			core.setting_set(settingname,
 				menudata.worldlist:get_raw_index(newidx))
-			local worldconfig = modmgr.get_worldconfig(
-					menudata.worldlist:get_list()[newidx].path)
 
-			if worldconfig.creative_mode ~= nil then
-				core.setting_set("creative_mode", worldconfig.creative_mode)
-			end
-			if worldconfig.enable_damage ~= nil then
-				core.setting_set("enable_damage", worldconfig.enable_damage)
-			end
+			configure_selected_world_params(newidx)
 		end
 		
 		return true
