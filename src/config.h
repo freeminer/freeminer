@@ -6,9 +6,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#ifndef STATIC_SHAREDIR
-	#define STATIC_SHAREDIR ""
-#endif
 
 #define STRINGIFY(x) #x
 #define STR(x) STRINGIFY(x)
@@ -27,7 +24,9 @@
 	#define USE_REDIS 0
 	#define USE_SOUND 0
 	#define HAVE_ENDIAN_H 0
-	#define STATIC_SHAREDIR ""
+	#ifndef STATIC_SHAREDIR
+		#define STATIC_SHAREDIR ""
+	#endif
 	#ifdef NDEBUG
 		#define BUILD_TYPE "Release"
 	#else

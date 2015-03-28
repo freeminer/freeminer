@@ -315,7 +315,7 @@ set(USE_FREETYPE FALSE)
 
 	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
 		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
-	if(UNIX)
+	elseif(UNIX)
 		include(FindPkgConfig)
 		if(PKG_CONFIG_FOUND)
 			pkg_check_modules(FREETYPE QUIET freetype2)
@@ -327,7 +327,7 @@ set(USE_FREETYPE FALSE)
 				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
 			endif(FREETYPE_FOUND)
 		endif(PKG_CONFIG_FOUND)
-	endif(UNIX)
+	endif()
 	if(NOT FREETYPE_FOUND)
 		find_package(Freetype)
 	endif()
@@ -340,7 +340,6 @@ set(USE_FREETYPE FALSE)
 if(NOT FREETYPE_FOUND)
 	message(FATAL_ERROR "FreeType was not found.")
 endif()
-
 
 find_package(Lua REQUIRED)
 
@@ -416,7 +415,6 @@ if(WIN32)
 				CACHE FILEPATH "Path to freetype247.lib")
 		#set(MINGWM10_DLL ""
 		#		CACHE FILEPATH "Path to mingwm10.dll (for installation)")
-	endif()
 	if(ENABLE_SOUND)
 		set(OPENAL_DLL "" CACHE FILEPATH "Path to OpenAL32.dll for installation (optional)")
 		set(OGG_DLL "" CACHE FILEPATH "Path to libogg.dll for installation (optional)")
@@ -466,10 +464,6 @@ else()
 endif()
 
 
-configure_file(
-	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
-	"${PROJECT_BINARY_DIR}/cmake_config.h"
-)
 
 
 # Add a target that always rebuilds cmake_config_githash.h
@@ -809,8 +803,8 @@ if(BUILD_SERVER)
 endif(BUILD_SERVER)
 
 
-#MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
-#MESSAGE(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+MESSAGE(STATUS "CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}")
+MESSAGE(STATUS "CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
 
 # Installation
 

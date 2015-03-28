@@ -255,7 +255,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	if (request.useragent != "")
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 	else {
-		std::string useragent = std::string("Freeminer ") + minetest_version_hash;
+		std::string useragent = std::string("Freeminer ") + g_version_hash;
 #ifdef _WIN32
 		useragent += "Windows";
 #else

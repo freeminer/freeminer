@@ -7,7 +7,7 @@
 #include <memory>
 #include <chrono>
 
-#include <config.h>
+#include "config.h"
 
 #ifdef _MSC_VER
 #define noexcept

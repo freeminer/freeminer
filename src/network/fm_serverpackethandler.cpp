@@ -140,7 +140,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			DenyAccess(peer_id, std::string(
 					"Your client's version is not supported.\n"
 					"Server version is ")
-					+ minetest_version_simple + "."
+					+ (g_version_string) + "."
 			);
 			return;
 		}
@@ -185,7 +185,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			DenyAccess(peer_id, std::string(
 					"Your client's version is not supported.\n"
 					"Server version is ")
-					+ minetest_version_simple + ",\n"
+					+ (g_version_string) + ",\n"
 					+ "server's PROTOCOL_VERSION is "
 					+ itos(SERVER_PROTOCOL_VERSION_MIN)
 					+ "..."
@@ -207,7 +207,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 				DenyAccess(peer_id, std::string(
 						"Your client's version is not supported.\n"
 						"Server version is ")
-						+ minetest_version_simple + ",\n"
+						+ (g_version_string) + ",\n"
 						+ "server's PROTOCOL_VERSION (strict) is "
 						+ itos(LATEST_PROTOCOL_VERSION)
 						+ ", client's PROTOCOL_VERSION is "

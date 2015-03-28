@@ -2209,7 +2209,7 @@ bool Game::createClient(const std::string &playername,
 	return true;
 }
 
-bool Game::initGui(std::string *error_message)
+bool Game::initGui()
 {
 	// First line of debug text
 	guitext = guienv->addStaticText(
