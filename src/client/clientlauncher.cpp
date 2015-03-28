@@ -94,7 +94,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		return false;
 	}
 
-	porting::setXorgClassHint(video_driver->getExposedVideoData(), "freeminer");
+	porting::setXorgClassHint(video_driver->getExposedVideoData(), PROJECT_NAME);
 
 	/*
 		This changes the minimum allowed number of vertices in a VBO.
@@ -172,7 +172,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	{
 		// Set the window caption
 		const wchar_t *text = wgettext("Main Menu");
-		device->setWindowCaption((std::wstring(L"Freeminer [") + text + L"]").c_str());
+		device->setWindowCaption((narrow_to_wide(PROJECT_NAME) + L" [" + text + L"]").c_str());
 		delete[] text;
 
 		try {	// This is used for catching disconnects

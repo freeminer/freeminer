@@ -2964,7 +2964,7 @@ std::string Server::getStatusString()
 	std::ostringstream os(std::ios_base::binary);
 	os<<"# Server: ";
 	// Version
-	os<<"version="<<minetest_version_simple;
+	os<<"version="<<(g_version_string);
 	// Uptime
 	os<<", uptime="<<m_uptime.get();
 	// Max lag estimate

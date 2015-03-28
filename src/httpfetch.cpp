@@ -51,7 +51,7 @@ HTTPFetchRequest::HTTPFetchRequest()
 	connect_timeout = timeout;
 	multipart = false;
 
-	useragent = std::string("Freeminer/") + minetest_version_hash + " (" + porting::get_sysinfo() + ")";
+	useragent = std::string(PROJECT_NAME "/") + g_version_hash + " (" + porting::get_sysinfo() + ")";
 }
 
 

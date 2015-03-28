@@ -1205,8 +1205,8 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 ;
 /*
 			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
-			<< "textarea[0.4,0.25;3.5,6;;" << "Freeminer\n"
-			<< minetest_build_info << "\n"
+			<< "textarea[0.4,0.25;3.5,6;;" << PROJECT_NAME "\n"
+			<< g_build_info << "\n"
 			<< "path_user = " << wrap_rows(porting::path_user, 20)
 			<< "\n;]";
 */
@@ -2192,9 +2192,10 @@ bool Game::createClient(const std::string &playername,
 
 	/* Set window caption
 	 */
-	core::stringw str = L"Freeminer [";
+	std::wstring str = narrow_to_wide(PROJECT_NAME);
+	str += L" [";
 	str += driver->getName();
-	str += "]";
+	str += L"]";
 	device->setWindowCaption(str.c_str());
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -2216,7 +2217,7 @@ bool Game::initGui(std::string *error_message)
 {
 	// First line of debug text
 	guitext = guienv->addStaticText(
-			L"Freeminer",
+			narrow_to_wide(PROJECT_NAME).c_str(),
 			core::rect<s32>(0, 0, 0, 0),
 			false, false, guiroot);
 
@@ -4477,7 +4478,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
-		   << "Freeminer " << minetest_version_hash
+		   << PROJECT_NAME " " << g_version_hash
 		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
 /*
@@ -4503,7 +4504,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 #if !defined(NDEBUG)
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
-		os << "Freeminer " << minetest_version_hash;
+		os << PROJECT_NAME " " << g_version_hash;
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 #endif
@@ -4762,9 +4763,9 @@ bool the_game(bool *kill,
 
 #ifdef NDEBUG
 	} catch (SerializationError &e) {
-		error_message = std::string("A serialization error occurred:\n")
-				+ e.what() + "\n\nThe server is probably "
-				" running a different version of Freeminer.";
+		error_message = L"A serialization error occurred:\n"
+				+ (e.what()) + L"\n\nThe server is probably "
+				L" running a different version of " PROJECT_NAME ".";
 		errorstream << (error_message) << std::endl;
 	} catch (ServerError &e) {
 		error_message = e.what();

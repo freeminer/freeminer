@@ -10,3 +10,4 @@ set(UTIL_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/thread_pool.cpp
 	PARENT_SCOPE)
+
