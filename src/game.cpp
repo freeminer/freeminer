@@ -1703,7 +1703,7 @@ private:
 	GUITable *playerlist;
 	video::SColor console_bg;
 	gsMapper *mapper;
-#if CMAKE_THREADS && CMAKE_HAVE_FUTURE
+#if ENABLE_THREADS && HAVE_FUTURE
 	std::future<void> updateDrawList_future;
 #endif
 public:
@@ -4294,7 +4294,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 				flags.camera_offset_changed){
 			runData->update_draw_list_timer = 0;
 			bool allow = true;
-#if CMAKE_THREADS && CMAKE_HAVE_FUTURE
+#if ENABLE_THREADS && HAVE_FUTURE
 			if (g_settings->getBool("more_threads")) {
 				bool allow = true;
 				if (updateDrawList_future.valid()) {

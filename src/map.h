@@ -360,10 +360,10 @@ public:
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	try_shared_mutex m_block_cache_mutex;
 #endif
-#if !CMAKE_HAVE_THREAD_LOCAL
+#if !HAVE_THREAD_LOCAL
 	MapBlockP m_block_cache;
 	v3POS m_block_cache_p;
 #endif

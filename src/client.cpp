@@ -1490,7 +1490,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 		// Debug: 1-6ms, avg=2ms
 		data->fill(b);
 
-#if ! CMAKE_THREADS
+#if ! ENABLE_THREADS
 		if (!data->fill_data())
 			return;
 #endif

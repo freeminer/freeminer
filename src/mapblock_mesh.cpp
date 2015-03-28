@@ -87,7 +87,7 @@ MeshMakeData::~MeshMakeData() {
 
 void MeshMakeData::fill(MapBlock *block_)
 {
-#if ! CMAKE_THREADS
+#if ! ENABLE_THREADS
 	block = block_;
 #endif
 	m_blockpos = block_->getPos();

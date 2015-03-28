@@ -250,7 +250,7 @@ Server::Server(
 
 	m_step_dtime = 0.0;
 	m_lag = g_settings->getFloat("dedicated_server_step");
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 	m_more_threads = g_settings->getBool("more_threads");
 #else
 	m_more_threads = 0;
@@ -536,7 +536,7 @@ void Server::start(Address bind_addr)
 		m_abmthread->restart();
 
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash << "\033[0m \t"
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 			<< " THREADS \t"
 #endif
 #ifndef NDEBUG

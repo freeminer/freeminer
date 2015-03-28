@@ -120,7 +120,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef)
 	s16 nthreads = 0;
 	if (!g_settings->getS16NoEx("num_emerge_threads", nthreads))
 	{}
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 	if (nthreads < 1)
 		nthreads = porting::getNumberOfProcessors() - 2;
 #endif

@@ -395,10 +395,11 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("max_packets_per_iteration", "1024");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
+#if ENABLE_THREADS
 	settings->setDefault("active_block_range", "3");
-#if CMAKE_THREADS
 	settings->setDefault("abm_neighbors_range_max", win32 ? "1" : "16");
 #else
+	settings->setDefault("active_block_range", "2");
 	settings->setDefault("abm_neighbors_range_max", "1");
 #endif
 	settings->setDefault("abm_random", "true");
@@ -428,7 +429,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_ipv6", "false");
 #endif
 
-#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
+#if !defined(_WIN32) && !USE_IPV4_DEFAULT && ENET_IPV6
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #else
 	settings->setDefault("ipv6_server", "false");

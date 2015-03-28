@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mg_biome.h"
 #include "gamedef.h"
 
-#if CMAKE_HAVE_THREAD_LOCAL
+#if HAVE_THREAD_LOCAL
 thread_local MapBlockP m_block_cache = nullptr;
 thread_local v3POS m_block_cache_p;
 #endif
@@ -39,12 +39,12 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
 
-#if !CMAKE_THREADS
+#if !ENABLE_THREADS
 	nocache = true; //very dirty hack. fix and remove. Also compare speed: no cache and cache with lock
 #endif
 
 	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -68,7 +68,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 	}
 
 	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -86,7 +86,7 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache) {
 }
 
 void Map::getBlockCacheFlush() {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	m_block_cache = nullptr;
@@ -131,7 +131,7 @@ void Map::deleteBlock(MapBlockP block) {
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	m_block_cache = nullptr;
