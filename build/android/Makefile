@@ -663,6 +663,7 @@ assets : $(ASSETS_TIMESTAMP)
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media;         \
 	cd ${ROOT}/assets ||  exit 1;                                              \
 	find . -name "timestamp" -exec rm {} \; ;                                  \
+	find . -name "favoriteservers.json" -exec rm {} \; ;                       \
 	find . -name "*.blend" -exec rm {} \; ;                                    \
 	find . -name "*~" -exec rm {} \; ;                                         \
 	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
@@ -743,7 +744,7 @@ clean_msgpack :
 
 
 ICONV_VERSION = 1.14
-ICONV_DIR = $(ROOT)/deps/libiconv
+ICONV_DIR = $(ROOT)/deps/libiconv/
 ICONV_LIB = $(ICONV_DIR)/lib/.libs/libiconv.a
 ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
@@ -876,8 +877,8 @@ $(ROOT)/jni/src/android_version.h :
 	export GITTAG=$$(git describe --abbrev=0 --tags);                          \
 	echo "#define VERSION_GITHASH \"$$GITTAG-$$GITHASH-Android\""        \
 	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_STRING STR(VERSION_MAJOR)\".\"STR(VERSION_MINOR)\
-	\".\"STR(VERSION_PATCH)\".\"STR(VERSION_TWEAK)"                            \
+	echo "#define VERSION_STRING STR(VERSION_MAJOR) \".\" STR(VERSION_MINOR)\
+	 \".\" STR(VERSION_PATCH) \".\" STR(VERSION_TWEAK)"                         \
 	>> ${ROOT}/jni/src/android_version.h;
 	
 manifest :
