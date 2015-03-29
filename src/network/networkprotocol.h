@@ -20,15 +20,15 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CLIENTSERVER_HEADER
-#define CLIENTSERVER_HEADER
+#ifndef NETWORKPROTOCOL_HEADER
+#define NETWORKPROTOCOL_HEADER
 #include "util/string.h"
 
 #include <vector>
 #include <utility>
 #include <string>
-#include "irrlichttypes.h"
-#include "msgpack.h"
+#include "../irrlichttypes.h"
+#include "../msgpack.h"
 
 #define MAX_PACKET_SIZE 1400
 
@@ -119,6 +119,23 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	PROTOCOL_VERSION 24:
 		ContentFeatures version 7
 		ContentFeatures: change number of special tiles to 6 (CF_SPECIAL_COUNT)
+	PROTOCOL_VERSION 25:
+		Rename TOCLIENT_ACCESS_DENIED to TOCLIENT_ACCESS_DENIED_LEGAGY
+		Rename TOCLIENT_DELETE_PARTICLESPAWNER to
+			TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY
+		Rename TOSERVER_PASSWORD to TOSERVER_PASSWORD_LEGACY
+		Rename TOSERVER_INIT to TOSERVER_INIT_LEGACY
+		Rename TOCLIENT_INIT to TOCLIENT_INIT_LEGACY
+		Add TOCLIENT_ACCESS_DENIED new opcode (0x0A), using error codes
+			for standard error, keeping customisation possible. This
+			permit translation
+		Add TOCLIENT_DELETE_PARTICLESPAWNER (0x53), fixing the u16 read and
+			reading u32
+		Add TOSERVER_INIT new opcode (0x02) for client presentation to server
+		Add TOSERVER_AUTH new opcode (0x03) for client authentication
+		Add TOCLIENT_HELLO for presenting server to client after client
+			presentation
+		Add TOCLIENT_AUTH_ACCEPT to accept connexion from client
 */
 
 #define LATEST_PROTOCOL_VERSION 24
@@ -143,7 +160,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 // TOCLIENT_* commands
+enum ToClientCommand
+{
+};
 
+#define TOCLIENT_HELLO 0x02
+#define TOCLIENT_AUTH_ACCEPT 0x03
+#define TOCLIENT_ACCESS_DENIED 0x0A
+
+#define TOCLIENT_INIT_LEGACY 0x10
 #define TOCLIENT_INIT 0x10
 enum {
 	// u8 deployed version
@@ -243,7 +268,7 @@ struct ActiveObjectAddData {
 	u16 id;
 	u8 type;
 	std::string data;
-	MSGPACK_DEFINE(id, type, data)
+	MSGPACK_DEFINE(id, type, data);
 };
 
 #define TOCLIENT_ACTIVE_OBJECT_MESSAGES 0x32
@@ -272,9 +297,11 @@ enum {
 	TOCLIENT_MOVE_PLAYER_YAW
 };
 
-#define TOCLIENT_ACCESS_DENIED 0x35
+#define TOCLIENT_ACCESS_DENIED_LEGACY 0x35
 enum {
 	// string
+	TOCLIENT_ACCESS_DENIED_CUSTOM_STRING,
+	// u16 command
 	TOCLIENT_ACCESS_DENIED_REASON
 };
 	/*
@@ -432,10 +459,15 @@ enum {
 	TOCLIENT_ADD_PARTICLESPAWNER_ID
 };
 
+#define TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY 0x48
 #define TOCLIENT_DELETE_PARTICLESPAWNER 0x48
 enum {
 	TOCLIENT_DELETE_PARTICLESPAWNER_ID
 };
+	/*
+		u16 command
+		u16 id
+	*/
 
 /*
 #define TOCLIENT_ANIMATIONS 0x4f
@@ -573,9 +605,22 @@ enum {
 	TOCLIENT_EYE_OFFSET_THIRD
 };
 
-// TOSERVER_* commands
+// minetest wtf
+//	TOCLIENT_DELETE_PARTICLESPAWNER = 0x53,
+	/*
+		u16 command
+		u32 id
+	*/
 
-#define TOSERVER_INIT 0x10
+#define TOCLIENT_NUM_MSG_TYPES 0x54
+
+
+// TOSERVER_* commands
+enum ToServerCommand
+{
+};
+
+#define TOSERVER_INIT_LEGACY 0x10
 enum {
 	// u8 SER_FMT_VER_HIGHEST_READ
 	TOSERVER_INIT_FMT,
@@ -589,11 +634,18 @@ enum {
 
 		[0] u16 TOSERVER_INIT
 		[2] u8 SER_FMT_VER_HIGHEST_READ
-		[3] u8[20] player_name
-		[23] u8[28] password (new in some version)
-		[51] u16 minimum supported network protocol version (added sometime)
-		[53] u16 maximum supported network protocol version (added later than the previous one)
+		[3] u8 compression_modes
 	*/
+
+#define TOSERVER_AUTH 0x03
+	/*
+		Sent first after presentation (INIT).
+		[0] std::string player_name
+		[0+*] std::string password (new in some version)
+		[0+*+*] u16 minimum supported network protocol version (added sometime)
+		[0+*+*+2] u16 maximum supported network protocol version (added later than the previous one)
+	*/
+
 
 #define TOSERVER_INIT2 0x11
 	/*
@@ -625,13 +677,8 @@ enum {
 		[2+12+12+4+4] u32 keyPressed
 	*/
 
-/*
-#define TOSERVER_GOTBLOCKS 0x24 // TODO: REMOVE IN NEXT, MOVE RANGE TO NEW DRAWCONTROL PACKET
-enum {
-	TOSERVER_GOTBLOCKS_BLOCKS, // NOT USED
-	TOSERVER_GOTBLOCKS_RANGE
-};
-*/
+#define TOSERVER_GOTBLOCKS 0x24 // mt compat only
+
 	/*
 		[0] u16 command
 		[2] u8 count
@@ -653,6 +700,14 @@ enum {
 		...
 	*/
 
+#define TOSERVER_INVENTORY_ACTION 0x31
+	/*
+		See InventoryAction in inventorymanager.h
+	*/
+enum {
+	TOSERVER_INVENTORY_ACTION_DATA
+};
+
 
 #define TOSERVER_CHAT_MESSAGE 0x32
 enum {
@@ -673,7 +728,7 @@ enum {
 		u8 amount
 	*/
 
-
+#define TOSERVER_PASSWORD_LEGACY 0x36
 #define TOSERVER_CHANGE_PASSWORD 0x36
 enum {
 	TOSERVER_CHANGE_PASSWORD_OLD,
@@ -686,7 +741,6 @@ enum {
 		[2] u8[28] old password
 		[30] u8[28] new password
 	*/
-
 
 #define TOSERVER_PLAYERITEM 0x37
 enum {
@@ -733,6 +787,15 @@ enum {
 			u8[len] field value
 	*/
 
+#define TOSERVER_PASSWORD 0x3d
+	/*
+		Sent to change password.
+
+		[0] u16 TOSERVER_PASSWORD
+		[2] std::string old password
+		[2+*] std::string new password
+	*/
+
 #define TOSERVER_REQUEST_MEDIA 0x40
 enum {
 	TOSERVER_REQUEST_MEDIA_FILES
@@ -760,16 +823,22 @@ enum {
 		u16 breath
 	*/
 
-#define TOSERVER_INVENTORY_ACTION 0x31
-enum {
-	TOSERVER_INVENTORY_ACTION_DATA
-};
-
 #define TOSERVER_INVENTORY_FIELDS 0x3c
 enum {
 	TOSERVER_INVENTORY_FIELDS_FORMNAME,
 	TOSERVER_INVENTORY_FIELDS_DATA
 };
+	/*
+		u16 command
+		u16 len
+		u8[len] form name (reserved for future use)
+		u16 number of fields
+		for each field:
+			u16 len
+			u8[len] field name
+			u32 len
+			u8[len] field value
+	*/
 
 #define TOSERVER_INTERACT 0x39
 enum {
@@ -803,5 +872,43 @@ enum {
 	TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW
 };
 
+#if !MINETEST_PROTO
+#define TOSERVER_NUM_MSG_TYPES 1
+#else
+#define TOSERVER_NUM_MSG_TYPES 0x45
 #endif
 
+enum AccessDeniedCode {
+	SERVER_ACCESSDENIED_WRONG_PASSWORD,
+	SERVER_ACCESSDENIED_UNEXPECTED_DATA,
+	SERVER_ACCESSDENIED_SINGLEPLAYER,
+	SERVER_ACCESSDENIED_WRONG_VERSION,
+	SERVER_ACCESSDENIED_WRONG_CHARS_IN_NAME,
+	SERVER_ACCESSDENIED_WRONG_NAME,
+	SERVER_ACCESSDENIED_TOO_MANY_USERS,
+	SERVER_ACCESSDENIED_EMPTY_PASSWORD,
+	SERVER_ACCESSDENIED_ALREADY_CONNECTED,
+	SERVER_ACCESSDENIED_SERVER_FAIL,
+	SERVER_ACCESSDENIED_CUSTOM_STRING,
+	SERVER_ACCESSDENIED_MAX,
+};
+
+enum NetProtoCompressionMode {
+	NETPROTO_COMPRESSION_ZLIB = 0,
+};
+
+const static std::string accessDeniedStrings[SERVER_ACCESSDENIED_MAX] = {
+	"Invalid password",
+	"Your client sent something the server didn't expect.  Try reconnecting or updating your client",
+	"The server is running in simple singleplayer mode.  You cannot connect.",
+	"Your client's version is not supported.\nPlease contact server administrator.",
+	"Player name contains disallowed characters.",
+	"Player name not allowed.",
+	"Too many users.",
+	"Empty passwords are disallowed.  Set a password and try again.",
+	"Another client is connected with this name.  If your client closed unexpectedly, try again in a minute.",
+	"Server authention failed.  This is likely a server error."
+	"",
+};
+
+#endif

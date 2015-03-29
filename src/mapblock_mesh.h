@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MAPBLOCK_MESH_HEADER
 
 #include "irrlichttypes_extrabloated.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "voxel.h"
 #include <map>
 
@@ -58,8 +58,12 @@ struct MeshMakeData
 	video::SColor m_highlight_mesh_color;
 
 	IGameDef *m_gamedef;
+
+	bool m_use_shaders;
+
 	int step;
 	int range;
+	bool no_draw;
 	unsigned int timestamp;
 	MapBlock * block;
 	Map & map;
@@ -67,7 +71,7 @@ struct MeshMakeData
 	bool debug;
 	bool filled;
 
-	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
+	MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
 
 	/*
@@ -75,12 +79,12 @@ struct MeshMakeData
 		parent of block.
 	*/
 	void fill(MapBlock *block_);
-	void fill_data();
+	bool fill_data();
 
 	/*
 		Set up with only a single node at (1,1,1)
 	*/
-	void fillSingleNode(MapNode *node);
+	void fillSingleNode(MapNode *node, v3POS blockpos = v3POS(0,0,0));
 
 	/*
 		Set the (node) position of a crack
@@ -159,6 +163,7 @@ public:
 	bool clearHardwareBuffer;
 
 	int step;
+	bool no_draw;
 	unsigned int timestamp;
 
 private:

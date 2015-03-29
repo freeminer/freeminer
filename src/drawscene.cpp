@@ -18,7 +18,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "drawscene.h"
-#include "main.h" // for g_settings
+//#include "main.h" // for g_settings
+#include "log_types.h"
 #include "settings.h"
 #include "clouds.h"
 #include "clientmap.h"
@@ -506,6 +507,12 @@ void draw_load_screen(const std::wstring &text, IrrlichtDevice* device,
 		gui::IGUIEnvironment* guienv, float dtime, int percent, bool clouds )
 {
 	video::IVideoDriver* driver    = device->getVideoDriver();
+
+	if (device->getVideoDriver()->getDriverType() == video::EDT_NULL) {
+		actionstream<<" ... "<< text << std::endl;
+		return;
+	}
+
 	v2u32 screensize               = porting::getWindowSize();
 
 	v2s32 textsize(g_fontengine->getTextWidth(text), g_fontengine->getLineHeight());

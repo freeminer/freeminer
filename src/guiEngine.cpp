@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fontengine.h"
 
 #ifdef __ANDROID__
-#include "tile.h"
+#include "client/tile.h"
 #include <GLES/gl.h>
 #endif
 
@@ -174,8 +174,8 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 		m_sound_manager = &dummySoundManager;
 
 	//create topleft header
-	std::string t = (std::string("Freeminer ") +
-			minetest_version_hash);
+	std::string t = (std::string(PROJECT_NAME " ") +
+			g_version_hash);
 
 	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(t), g_fontengine->getTextHeight());
 	rect += v2s32(4, 0);
@@ -197,7 +197,8 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 			m_texture_source,
 			m_formspecgui,
 			m_buttonhandler,
-			NULL);
+			NULL,
+			false);
 
 	m_menu->allowClose(false);
 	m_menu->lockSize(true,v2u32(800,600));
@@ -307,7 +308,7 @@ void GUIEngine::run()
 GUIEngine::~GUIEngine()
 {
 	video::IVideoDriver* driver = m_device->getVideoDriver();
-	assert(driver != 0);
+	FATAL_ERROR_IF(driver == 0, "Could not get video driver");
 
 	if(m_sound_manager != &dummySoundManager){
 		delete m_sound_manager;
@@ -517,7 +518,7 @@ bool GUIEngine::setTexture(texture_layer layer, std::string texturepath,
 		bool tile_image, unsigned int minsize)
 {
 	video::IVideoDriver* driver = m_device->getVideoDriver();
-	assert(driver != 0);
+	FATAL_ERROR_IF(driver == 0, "Could not get video driver");
 
 	if (m_textures[layer].texture != NULL)
 	{
@@ -573,8 +574,8 @@ bool GUIEngine::downloadFile(std::string url, std::string target)
 /******************************************************************************/
 void GUIEngine::setTopleftText(std::string append)
 {
-	std::string toset = std::string("Freeminer ") +
-			minetest_version_hash;
+	std::string toset = (std::string(PROJECT_NAME " ") +
+			g_version_hash);
 
 	if (append != "")
 	{

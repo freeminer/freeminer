@@ -53,7 +53,7 @@ public:
 	
 	void move(f32 dtime, Environment *env, f32 pos_max_d);
 	void move(f32 dtime, Environment *env, f32 pos_max_d,
-			std::list<CollisionInfo> *collision_info);
+			std::vector<CollisionInfo> *collision_info);
 	bool canPlaceNode(const v3s16& p, const MapNode& node);
 
 	void applyControl(float dtime, ClientEnvironment *env);
@@ -84,7 +84,7 @@ public:
 	}
 
 	void setCAO(GenericCAO* toset) {
-		assert( m_cao == NULL );
+		assert( m_cao == NULL ); // Pre-condition
 		m_cao = toset;
 	}
 

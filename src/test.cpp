@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include "main.h"
 #include "socket.h"
-#include "connection.h"
+#include "network/connection.h"
 #include "serialization.h"
 #include "voxel.h"
 #include "collision.h"
@@ -45,7 +45,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/serialize.h"
 #include "noise.h" // PseudoRandom used for random data for compression
-#include "clientserver.h" // LATEST_PROTOCOL_VERSION
+#include "network/networkprotocol.h" // LATEST_PROTOCOL_VERSION
+#include "profiler.h"
 #include <algorithm>
 
 /*
@@ -150,15 +151,45 @@ struct TestBase
 
 struct TestUtilities: public TestBase
 {
+	inline float ref_WrapDegrees180(float f)
+	{
+		// This is a slower alternative to the wrapDegrees_180() function;
+		// used as a reference for testing
+		float value = fmodf(f + 180, 360);
+		if (value < 0)
+			value += 360;
+		return value - 180;
+	}
+
+	inline float ref_WrapDegrees_0_360(float f)
+	{
+		// This is a slower alternative to the wrapDegrees_0_360() function;
+		// used as a reference for testing
+		float value = fmodf(f, 360);
+		if (value < 0)
+			value += 360;
+		return value < 0 ? value + 360 : value;
+	}
+
+
 	void Run()
 	{
-		/*infostream<<"wrapDegrees(100.0) = "<<wrapDegrees(100.0)<<std::endl;
-		infostream<<"wrapDegrees(720.5) = "<<wrapDegrees(720.5)<<std::endl;
-		infostream<<"wrapDegrees(-0.5) = "<<wrapDegrees(-0.5)<<std::endl;*/
-		UASSERT(fabs(wrapDegrees(100.0) - 100.0) < 0.001);
-		UASSERT(fabs(wrapDegrees(720.5) - 0.5) < 0.001);
-		UASSERT(fabs(wrapDegrees(-0.5) - (-0.5)) < 0.001);
-		UASSERT(fabs(wrapDegrees(-365.5) - (-5.5)) < 0.001);
+		UASSERT(fabs(modulo360f(100.0) - 100.0) < 0.001);
+		UASSERT(fabs(modulo360f(720.5) - 0.5) < 0.001);
+		UASSERT(fabs(modulo360f(-0.5) - (-0.5)) < 0.001);
+		UASSERT(fabs(modulo360f(-365.5) - (-5.5)) < 0.001);
+
+		for (float f = -720; f <= -360; f += 0.25) {
+			UASSERT(fabs(modulo360f(f) - modulo360f(f + 360)) < 0.001);
+		}
+
+		for (float f = -1440; f <= 1440; f += 0.25) {
+			UASSERT(fabs(modulo360f(f) - fmodf(f, 360)) < 0.001);
+			UASSERT(fabs(wrapDegrees_180(f) - ref_WrapDegrees180(f)) < 0.001);
+			UASSERT(fabs(wrapDegrees_0_360(f) - ref_WrapDegrees_0_360(f)) < 0.001);
+			UASSERT(wrapDegrees_0_360(fabs(wrapDegrees_180(f) - wrapDegrees_0_360(f))) < 0.001);
+		}
+
 		UASSERT(lowercase("Foo bAR") == "foo bar");
 		UASSERT(trim("\n \t\r  Foo bAR  \r\n\t\t  ") == "Foo bAR");
 		UASSERT(trim("\n \t\r    \r\n\t\t  ") == "");
@@ -1660,11 +1691,26 @@ struct TestSocket: public TestBase
 	void Run()
 	{
 		const int port = g_settings->getU16("port") + 987 + myrand_range(42,123);
-		Address address(0,0,0,0, port);
+		Address address(0, 0, 0, 0, port);
+		Address bind_addr(0, 0, 0, 0, port);
 		Address address6((IPv6AddressBytes*) NULL, port);
 
+		/*
+		 * Try to use the bind_address for servers with no localhost address
+		 * For example: FreeBSD jails
+		 */
+		std::string bind_str = g_settings->get("bind_address");
+		try {
+			bind_addr.Resolve(bind_str.c_str());
+
+			if (!bind_addr.isIPv6()) {
+				address = bind_addr;
+			}
+		} catch (ResolveError &e) {
+		}
+
 		// IPv6 socket test
-		{
+		if (g_settings->getBool("enable_ipv6")) {
 			UDPSocket socket6;
 
 			if (!socket6.init(true, true)) {
@@ -1700,7 +1746,7 @@ struct TestSocket: public TestBase
 					UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr,
 							Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
 				}
-				catch (SendFailedException e) {
+				catch (SendFailedException &e) {
 					errorstream << "IPv6 support enabled but not available!"
 					            << std::endl;
 				}
@@ -1713,7 +1759,15 @@ struct TestSocket: public TestBase
 			socket.Bind(address);
 
 			const char sendbuffer[] = "hello world!";
-			socket.Send(Address(127, 0, 0 ,1, port), sendbuffer, sizeof(sendbuffer));
+			/*
+			 * If there is a bind address, use it.
+			 * It's useful in container environments
+			 */
+			if (address != Address(0, 0, 0, 0, port)) {
+				socket.Send(address, sendbuffer, sizeof(sendbuffer));
+			}
+			else
+				socket.Send(Address(127, 0, 0 ,1, port), sendbuffer, sizeof(sendbuffer));
 
 			sleep_ms(50);
 
@@ -1725,9 +1779,367 @@ struct TestSocket: public TestBase
 			}
 			//FIXME: This fails on some systems
 			UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
-			UASSERT(sender.getAddress().sin_addr.s_addr ==
-					Address(127, 0, 0, 1, 0).getAddress().sin_addr.s_addr);
+
+			if (address != Address(0, 0, 0, 0, port)) {
+				UASSERT(sender.getAddress().sin_addr.s_addr ==
+						address.getAddress().sin_addr.s_addr);
+			}
+			else {
+				UASSERT(sender.getAddress().sin_addr.s_addr ==
+						Address(127, 0, 0, 1, 0).getAddress().sin_addr.s_addr);
+			}
 		}
+	}
+};
+
+#if MINETEST_OLD_TEST
+struct TestConnection: public TestBase
+{
+	void TestHelpers()
+	{
+		/*
+			Test helper functions
+		*/
+
+		// Some constants for testing
+		u32 proto_id = 0x12345678;
+		u16 peer_id = 123;
+		u8 channel = 2;
+		SharedBuffer<u8> data1(1);
+		data1[0] = 100;
+		Address a(127,0,0,1, 10);
+		const u16 seqnum = 34352;
+
+		con::BufferedPacket p1 = con::makePacket(a, data1,
+				proto_id, peer_id, channel);
+		/*
+			We should now have a packet with this data:
+			Header:
+				[0] u32 protocol_id
+				[4] u16 sender_peer_id
+				[6] u8 channel
+			Data:
+				[7] u8 data1[0]
+		*/
+		UASSERT(readU32(&p1.data[0]) == proto_id);
+		UASSERT(readU16(&p1.data[4]) == peer_id);
+		UASSERT(readU8(&p1.data[6]) == channel);
+		UASSERT(readU8(&p1.data[7]) == data1[0]);
+
+		//infostream<<"initial data1[0]="<<((u32)data1[0]&0xff)<<std::endl;
+
+		SharedBuffer<u8> p2 = con::makeReliablePacket(data1, seqnum);
+
+		/*infostream<<"p2.getSize()="<<p2.getSize()<<", data1.getSize()="
+				<<data1.getSize()<<std::endl;
+		infostream<<"readU8(&p2[3])="<<readU8(&p2[3])
+				<<" p2[3]="<<((u32)p2[3]&0xff)<<std::endl;
+		infostream<<"data1[0]="<<((u32)data1[0]&0xff)<<std::endl;*/
+
+		UASSERT(p2.getSize() == 3 + data1.getSize());
+		UASSERT(readU8(&p2[0]) == TYPE_RELIABLE);
+		UASSERT(readU16(&p2[1]) == seqnum);
+		UASSERT(readU8(&p2[3]) == data1[0]);
+	}
+
+	struct Handler : public con::PeerHandler
+	{
+		Handler(const char *a_name)
+		{
+			count = 0;
+			last_id = 0;
+			name = a_name;
+		}
+		void peerAdded(con::Peer *peer)
+		{
+			infostream<<"Handler("<<name<<")::peerAdded(): "
+					"id="<<peer->id<<std::endl;
+			last_id = peer->id;
+			count++;
+		}
+		void deletingPeer(con::Peer *peer, bool timeout)
+		{
+			infostream<<"Handler("<<name<<")::deletingPeer(): "
+					"id="<<peer->id
+					<<", timeout="<<timeout<<std::endl;
+			last_id = peer->id;
+			count--;
+		}
+
+		s32 count;
+		u16 last_id;
+		const char *name;
+	};
+
+	void Run()
+	{
+		DSTACK("TestConnection::Run");
+
+		TestHelpers();
+
+		/*
+			Test some real connections
+
+			NOTE: This mostly tests the legacy interface.
+		*/
+
+		u32 proto_id = 0xad26846a;
+
+		Handler hand_server("server");
+		Handler hand_client("client");
+
+		Address address(0, 0, 0, 0, 30001);
+		Address bind_addr(0, 0, 0, 0, 30001);
+		/*
+		 * Try to use the bind_address for servers with no localhost address
+		 * For example: FreeBSD jails
+		 */
+		std::string bind_str = g_settings->get("bind_address");
+		try {
+			bind_addr.Resolve(bind_str.c_str());
+
+			if (!bind_addr.isIPv6()) {
+				address = bind_addr;
+			}
+		} catch (ResolveError &e) {
+		}
+
+		infostream<<"** Creating server Connection"<<std::endl;
+		con::Connection server(proto_id, 512, 5.0, false, &hand_server);
+		server.Serve(address);
+
+		infostream<<"** Creating client Connection"<<std::endl;
+		con::Connection client(proto_id, 512, 5.0, false, &hand_client);
+
+		UASSERT(hand_server.count == 0);
+		UASSERT(hand_client.count == 0);
+
+		sleep_ms(50);
+
+		Address server_address(127, 0, 0, 1, 30001);
+		if (address != Address(0, 0, 0, 0, 30001)) {
+			server_address = bind_addr;
+		}
+
+		infostream<<"** running client.Connect()"<<std::endl;
+		client.Connect(server_address);
+
+		sleep_ms(50);
+
+		// Client should not have added client yet
+		UASSERT(hand_client.count == 0);
+
+		try
+		{
+			u16 peer_id;
+			SharedBuffer<u8> data;
+			infostream<<"** running client.Receive()"<<std::endl;
+			u32 size = client.Receive(peer_id, data);
+			infostream<<"** Client received: peer_id="<<peer_id
+					<<", size="<<size
+					<<std::endl;
+		}
+		catch(con::NoIncomingDataException &e)
+		{
+		}
+
+		// Client should have added server now
+		UASSERT(hand_client.count == 1);
+		UASSERT(hand_client.last_id == 1);
+		// Server should not have added client yet
+		UASSERT(hand_server.count == 0);
+
+		sleep_ms(100);
+
+		try
+		{
+			u16 peer_id;
+			SharedBuffer<u8> data;
+			infostream<<"** running server.Receive()"<<std::endl;
+			u32 size = server.Receive(peer_id, data);
+			infostream<<"** Server received: peer_id="<<peer_id
+					<<", size="<<size
+					<<std::endl;
+		}
+		catch(con::NoIncomingDataException &e)
+		{
+			// No actual data received, but the client has
+			// probably been connected
+		}
+
+		// Client should be the same
+		UASSERT(hand_client.count == 1);
+		UASSERT(hand_client.last_id == 1);
+		// Server should have the client
+		UASSERT(hand_server.count == 1);
+		UASSERT(hand_server.last_id == 2);
+
+		//sleep_ms(50);
+
+		while(client.Connected() == false)
+		{
+			try
+			{
+				u16 peer_id;
+				SharedBuffer<u8> data;
+				infostream<<"** running client.Receive()"<<std::endl;
+				u32 size = client.Receive(peer_id, data);
+				infostream<<"** Client received: peer_id="<<peer_id
+						<<", size="<<size
+						<<std::endl;
+			}
+			catch(con::NoIncomingDataException &e)
+			{
+			}
+			sleep_ms(50);
+		}
+
+		sleep_ms(50);
+
+		try
+		{
+			u16 peer_id;
+			SharedBuffer<u8> data;
+			infostream<<"** running server.Receive()"<<std::endl;
+			u32 size = server.Receive(peer_id, data);
+			infostream<<"** Server received: peer_id="<<peer_id
+					<<", size="<<size
+					<<std::endl;
+		}
+		catch(con::NoIncomingDataException &e)
+		{
+		}
+
+		/*
+			Simple send-receive test
+		*/
+		{
+			NetworkPacket pkt((u8*) "Hello World !", 14, 0);
+
+			SharedBuffer<u8> sentdata = pkt.oldForgePacket();
+
+			infostream<<"** running client.Send()"<<std::endl;
+			client.Send(PEER_ID_SERVER, 0, &pkt, true);
+
+			sleep_ms(50);
+
+			u16 peer_id;
+			SharedBuffer<u8> recvdata;
+			infostream << "** running server.Receive()" << std::endl;
+			u32 size = server.Receive(peer_id, recvdata);
+			infostream << "** Server received: peer_id=" << peer_id
+					<< ", size=" << size
+					<< ", data=" << (const char*)pkt.getU8Ptr(0)
+					<< std::endl;
+
+			UASSERT(memcmp(*sentdata, *recvdata, recvdata.getSize()) == 0);
+		}
+
+		u16 peer_id_client = 2;
+		/*
+			Send a large packet
+		*/
+		{
+			const int datasize = 30000;
+			NetworkPacket pkt(0, datasize);
+			for (u16 i=0; i<datasize; i++) {
+				pkt << (u8) i/4;
+			}
+
+			infostream<<"Sending data (size="<<datasize<<"):";
+			for(int i=0; i<datasize && i<20; i++) {
+				if(i%2==0) infostream<<" ";
+				char buf[10];
+				snprintf(buf, 10, "%.2X", ((int)((const char*)pkt.getU8Ptr(0))[i])&0xff);
+				infostream<<buf;
+			}
+			if(datasize>20)
+				infostream<<"...";
+			infostream<<std::endl;
+
+			SharedBuffer<u8> sentdata = pkt.oldForgePacket();
+
+			server.Send(peer_id_client, 0, &pkt, true);
+
+			//sleep_ms(3000);
+
+			SharedBuffer<u8> recvdata;
+			infostream<<"** running client.Receive()"<<std::endl;
+			u16 peer_id = 132;
+			u16 size = 0;
+			bool received = false;
+			u32 timems0 = porting::getTimeMs();
+			for(;;){
+				if(porting::getTimeMs() - timems0 > 5000 || received)
+					break;
+				try{
+					size = client.Receive(peer_id, recvdata);
+					received = true;
+				}catch(con::NoIncomingDataException &e){
+				}
+				sleep_ms(10);
+			}
+			UASSERT(received);
+			infostream<<"** Client received: peer_id="<<peer_id
+					<<", size="<<size
+					<<std::endl;
+
+			infostream<<"Received data (size="<<size<<"): ";
+			for(int i=0; i<size && i<20; i++){
+				if(i%2==0) infostream<<" ";
+				char buf[10];
+				snprintf(buf, 10, "%.2X", ((int)(recvdata[i]))&0xff);
+				infostream<<buf;
+			}
+			if(size>20)
+				infostream<<"...";
+			infostream<<std::endl;
+
+			UASSERT(memcmp(*sentdata, *recvdata, recvdata.getSize()) == 0);
+			UASSERT(peer_id == PEER_ID_SERVER);
+		}
+
+		// Check peer handlers
+		UASSERT(hand_client.count == 1);
+		UASSERT(hand_client.last_id == 1);
+		UASSERT(hand_server.count == 1);
+		UASSERT(hand_server.last_id == 2);
+	}
+};
+
+#endif
+
+struct TestProfiler : public TestBase
+{
+	void Run()
+	{
+		Profiler p;
+
+		p.avg("Test1", 1.f);
+		UASSERT(p.getValue("Test1") == 1.f);
+
+		p.avg("Test1", 2.f);
+		UASSERT(p.getValue("Test1") == 1.5f);
+
+		p.avg("Test1", 3.f);
+		UASSERT(p.getValue("Test1") == 2.f);
+
+		p.avg("Test1", 486.f);
+		UASSERT(p.getValue("Test1") == 123.f);
+
+		p.avg("Test1", 8);
+		UASSERT(p.getValue("Test1") == 100.f);
+
+		p.avg("Test1", 700);
+		UASSERT(p.getValue("Test1") == 200.f);
+
+		p.avg("Test1", 10000);
+		UASSERT(p.getValue("Test1") == 1600.f);
+
+		p.avg("Test2", 123.56);
+		p.avg("Test2", 123.58);
+
+		UASSERT(p.getValue("Test2") == 123.57f);
 	}
 };
 
@@ -1771,6 +2183,8 @@ void run_tests()
 	TEST(TestSettings);
 	TEST(TestCompress);
 	TEST(TestSerialization);
+	//TEST(TestNodedefSerialization);
+	TEST(TestProfiler);
 	TESTPARAMS(TestMapNode, ndef);
 	TESTPARAMS(TestVoxelManipulator, ndef);
 	TESTPARAMS(TestVoxelAlgorithms, ndef);
@@ -1778,19 +2192,27 @@ void run_tests()
 	//TEST(TestMapBlock);
 	//TEST(TestMapSector);
 	TEST(TestCollision);
+/*
+	if(INTERNET_SIMULATOR == false){
+		TEST(TestSocket);
+		dout_con << "=== BEGIN RUNNING UNIT TESTS FOR CONNECTION ===" << std::endl;
+		TEST(TestConnection);
+		dout_con << "=== END RUNNING UNIT TESTS FOR CONNECTION ===" << std::endl;
+	}
+*/
 
 	log_set_lev_silence(LMT_ERROR, false);
 
 	delete idef;
 	delete ndef;
 
-	if(tests_failed == 0){
-		infostream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
-		infostream<<"run_tests() passed."<<std::endl;
+	if(tests_failed == 0) {
+		actionstream << "run_tests(): " << tests_failed << " / " << tests_run << " tests failed." << std::endl;
+		actionstream << "run_tests() passed." << std::endl;
 		return;
 	} else {
-		errorstream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
-		errorstream<<"run_tests() aborting."<<std::endl;
+		errorstream << "run_tests(): " << tests_failed << " / " << tests_run << " tests failed." << std::endl;
+		errorstream << "run_tests() aborting." << std::endl;
 		abort();
 	}
 }

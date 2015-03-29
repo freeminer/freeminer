@@ -127,34 +127,22 @@ Camera::~Camera()
 	m_wieldmgr->drop();
 }
 
-bool Camera::successfullyCreated(std::string& error_message)
+bool Camera::successfullyCreated(std::string &error_message)
 {
-	if (m_playernode == NULL)
-	{
+	if (!m_playernode) {
 		error_message = "Failed to create the player scene node";
-		return false;
-	}
-	if (m_headnode == NULL)
-	{
+	} else if (!m_headnode) {
 		error_message = "Failed to create the head scene node";
-		return false;
-	}
-	if (m_cameranode == NULL)
-	{
+	} else if (!m_cameranode) {
 		error_message = "Failed to create the camera scene node";
-		return false;
-	}
-	if (m_wieldmgr == NULL)
-	{
+	} else if (!m_wieldmgr) {
 		error_message = "Failed to create the wielded item scene manager";
-		return false;
-	}
-	if (m_wieldnode == NULL)
-	{
+	} else if (!m_wieldnode) {
 		error_message = "Failed to create the wielded item scene node";
-		return false;
+	} else {
+		error_message.clear();
 	}
-	return true;
+	return error_message.empty();
 }
 
 // Returns the fractional part of x
@@ -518,7 +506,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
 	const bool movement_XZ = hypot(speed.X, speed.Z) > BS;
-	const bool movement_Y = abs(speed.Y) > BS;
+	const bool movement_Y = std::abs(speed.Y) > BS;
 
 	const bool walking = movement_XZ && player->touching_ground;
 	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;

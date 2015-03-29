@@ -120,7 +120,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef)
 	s16 nthreads = 0;
 	if (!g_settings->getS16NoEx("num_emerge_threads", nthreads))
 	{}
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 	if (nthreads < 1)
 		nthreads = porting::getNumberOfProcessors() - 2;
 #endif
@@ -185,7 +185,7 @@ EmergeManager::~EmergeManager()
 
 void EmergeManager::loadMapgenParams()
 {
-	loadParamsFromSettings(g_settings);
+	params.load(*g_settings);
 
 	biomemgr->mapgen_params = &params;
 }
@@ -366,62 +366,15 @@ Mapgen *EmergeManager::createMapgen(const std::string &mgname, int mgid,
 MapgenSpecificParams *EmergeManager::createMapgenParams(const std::string &mgname)
 {
 	u32 i;
-	for (i = 0; i != ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
+	for (i = 0; i < ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
 	if (i == ARRLEN(reg_mapgens)) {
-		errorstream << "EmergeManager; mapgen " << mgname <<
+		errorstream << "EmergeManager: Mapgen " << mgname <<
 			" not registered" << std::endl;
 		return NULL;
 	}
 
 	MapgenFactory *mgfactory = reg_mapgens[i].factory;
 	return mgfactory->createMapgenParams();
-}
-
-
-void EmergeManager::loadParamsFromSettings(Settings *settings)
-{
-	std::string seed_str;
-	const char *setname = (settings == g_settings) ? "fixed_map_seed" : "seed";
-
-	if (settings->getNoEx(setname, seed_str) && !seed_str.empty()) {
-		params.seed = read_seed(seed_str.c_str());
-	} else {
-		params.seed =
-			((u64)(myrand() & 0xffff) << 0)  |
-			((u64)(myrand() & 0xffff) << 16) |
-			((u64)(myrand() & 0xffff) << 32) |
-			((u64)(myrand() & 0xffff) << 48);
-	}
-
-	settings->getNoEx("mg_name",         params.mg_name);
-	settings->getS16NoEx("water_level",  params.water_level);
-	settings->getS16NoEx("chunksize",    params.chunksize);
-	settings->getFlagStrNoEx("mg_flags", params.flags, flagdesc_mapgen);
-	settings->getNoiseParams("mg_biome_np_heat",     params.np_biome_heat);
-	settings->getNoiseParams("mg_biome_np_humidity", params.np_biome_humidity);
-
-	delete params.sparams;
-	params.sparams = createMapgenParams(params.mg_name);
-
-	if (params.sparams) {
-		params.sparams->readParams(g_settings);
-		params.sparams->readParams(settings);
-	}
-}
-
-
-void EmergeManager::saveParamsToSettings(Settings *settings)
-{
-	settings->set("mg_name",         params.mg_name);
-	settings->setU64("seed",         params.seed);
-	settings->setS16("water_level",  params.water_level);
-	settings->setS16("chunksize",    params.chunksize);
-	settings->setFlagStr("mg_flags", params.flags, flagdesc_mapgen, (u32)-1);
-	settings->setNoiseParams("mg_biome_np_heat",     params.np_biome_heat);
-	settings->setNoiseParams("mg_biome_np_humidity", params.np_biome_humidity);
-
-	if (params.sparams)
-		params.sparams->writeParams(settings);
 }
 
 
@@ -589,20 +542,22 @@ void *EmergeThread::Thread()
 	}
 	catch (VersionMismatchException &e) {
 		std::ostringstream err;
-		err << "World data version mismatch in MapBlock "<<PP(last_tried_pos)<<std::endl;
-		err << "----"<<std::endl;
-		err << "\""<<e.what()<<"\""<<std::endl;
-		err << "See debug.txt."<<std::endl;
-		err << "World probably saved by a newer version of Freeminer."<<std::endl;
+		err << "World data version mismatch in MapBlock " << PP(last_tried_pos) << std::endl
+			<< "----" << std::endl
+			<< "\"" << e.what() << "\"" << std::endl
+			<< "See debug.txt." << std::endl
+			<< "World probably saved by a newer version of " PROJECT_NAME "."
+			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
 	}
 	catch (SerializationError &e) {
 		std::ostringstream err;
-		err << "Invalid data in MapBlock "<<PP(last_tried_pos)<<std::endl;
-		err << "----"<<std::endl;
-		err << "\""<<e.what()<<"\""<<std::endl;
-		err << "See debug.txt."<<std::endl;
-		err << "You can ignore this using [ignore_world_load_errors = true]."<<std::endl;
+		err << "Invalid data in MapBlock " << PP(last_tried_pos) << std::endl
+			<< "----" << std::endl
+			<< "\"" << e.what() << "\"" << std::endl
+			<< "See debug.txt." << std::endl
+			<< "You can ignore this using [ignore_world_load_errors = true]."
+			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
 	}
 

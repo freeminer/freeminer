@@ -33,7 +33,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxelalgorithms.h"
 #include "profiler.h"
 #include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
+//#include "main.h" // For g_profiler
+#include "log_types.h"
 #include "emerge.h"
 #include "dungeongen.h"
 #include "cavegen.h"
@@ -58,6 +59,8 @@ MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 {
 	this->m_emerge = emerge;
 	this->ystride = csize.X; //////fix this
+
+	this->heightmap = new s16[csize.X * csize.Z];
 
 	MapgenV6Params *sp = (MapgenV6Params *)params->sparams;
 	this->spflags     = sp->spflags;
@@ -128,6 +131,8 @@ MapgenV6::~MapgenV6()
 	delete noise_mud;
 	delete noise_beach;
 	delete noise_biome;
+
+	delete[] heightmap;
 }
 
 
@@ -171,7 +176,7 @@ void MapgenV6Params::readParams(Settings *settings)
 }
 
 
-void MapgenV6Params::writeParams(Settings *settings)
+void MapgenV6Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6, (u32)-1);
 	settings->setFloat("mgv6_freq_desert", freq_desert);
@@ -437,6 +442,7 @@ u32 MapgenV6::get_blockseed(u64 seed, v3s16 p)
 
 void MapgenV6::makeChunk(BlockMakeData *data)
 {
+	// Pre-conditions
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
@@ -485,7 +491,8 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	// Generate general ground level to full area
 	stone_surface_max_y = generateGround();
 
-	generateExperimental();
+	// Create initial heightmap to limit caves
+	updateHeightmap(node_min, node_max);
 
 	const s16 max_spread_amount = MAP_BLOCKSIZE;
 	// Limit dirt flow area by 1 because mud is flown into neighbors.
@@ -502,14 +509,14 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 		// Add mud to the central chunk
 		addMud();
 
-		// Add blobs of dirt and gravel underground
-		addDirtGravelBlobs();
-
 		// Flow mud away from steep edges
 		if (spflags & MGV6_MUDFLOW)
 			flowMud(mudflow_minpos, mudflow_maxpos);
 
 	}
+
+	// Update heightmap after mudflow
+	updateHeightmap(node_min, node_max);
 
 	// Add dungeons
 	if ((flags & MG_DUNGEONS) && (stone_surface_max_y >= node_min.Y)) {
@@ -614,10 +621,13 @@ int MapgenV6::generateGround()
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
 				if (y <= surface_y) {
-					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ?
+					vm->m_data[i] = (y >= DESERT_STONE_BASE - surface_y
+								&& bt == BT_DESERT) ?
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
+					if (liquid_pressure && y <= 0)
+						vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
 				} else {
 					vm->m_data[i] = n_air;
 				}
@@ -827,45 +837,6 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 }
 
 
-void MapgenV6::addDirtGravelBlobs()
-{
-	if (getBiome(v2s16(node_min.X, node_min.Z)) != BT_NORMAL)
-		return;
-
-	PseudoRandom pr(blockseed + 983);
-	for (int i = 0; i < volume_nodes/10/10/10; i++) {
-		bool only_fill_cave = (myrand_range(0,1) != 0);
-		v3s16 size(
-			pr.range(1, 8),
-			pr.range(1, 8),
-			pr.range(1, 8)
-		);
-		v3s16 p0(
-			pr.range(node_min.X, node_max.X) - size.X / 2,
-			pr.range(node_min.Y, node_max.Y) - size.Y / 2,
-			pr.range(node_min.Z, node_max.Z) - size.Z / 2
-		);
-
-		MapNode n1((p0.Y > -32 && !pr.range(0, 1)) ? c_dirt : c_gravel);
-		for (int z1 = 0; z1 < size.Z; z1++)
-		for (int y1 = 0; y1 < size.Y; y1++)
-		for (int x1 = 0; x1 < size.X; x1++) {
-			v3s16 p = p0 + v3s16(x1, y1, z1);
-			u32 i = vm->m_area.index(p);
-			if (!vm->m_area.contains(i))
-				continue;
-			// Cancel if not stone and not cave air
-			if (vm->m_data[i].getContent() != c_stone &&
-				!(vm->m_flags[i] & VMANIP_FLAG_CAVE))
-				continue;
-			if (only_fill_cave && !(vm->m_flags[i] & VMANIP_FLAG_CAVE))
-				continue;
-			vm->m_data[i] = n1;
-		}
-	}
-}
-
-
 void MapgenV6::placeTreesAndJungleGrass()
 {
 	//TimeTaker t("placeTrees");
@@ -929,9 +900,11 @@ void MapgenV6::placeTreesAndJungleGrass()
 			for (u32 i = 0; i < grass_count; i++) {
 				s16 x = grassrandom.range(p2d_min.X, p2d_max.X);
 				s16 z = grassrandom.range(p2d_min.Y, p2d_max.Y);
-
-				s16 y = findGroundLevelFull(v2s16(x, z)); ////////////////optimize this!
-				if (y < water_level || y < node_min.Y || y > node_max.Y)
+				int mapindex = central_area_size.X * (z - node_min.Z)
+								+ (x - node_min.X);
+				//wtf s16 y = heightmap[mapindex];
+				s16 y = findGroundLevelFull(v2s16(x, z));
+				if (y < water_level)
 					continue;
 
 				u32 vi = vm->m_area.index(x, y, z);
@@ -947,7 +920,11 @@ void MapgenV6::placeTreesAndJungleGrass()
 		for (u32 i = 0; i < tree_count; i++) {
 			s16 x = myrand_range(p2d_min.X, p2d_max.X);
 			s16 z = myrand_range(p2d_min.Y, p2d_max.Y);
-			s16 y = findGroundLevelFull(v2s16(x, z)); ////////////////////optimize this!
+			int mapindex = central_area_size.X * (z - node_min.Z)
+							+ (x - node_min.X);
+			//wtf s16 y = heightmap[mapindex];
+			s16 y = findGroundLevelFull(v2s16(x, z));
+
 			// Don't make a tree under water level
 			// Don't make a tree so high that it doesn't fit
 			if(y > node_max.Y - 6)
@@ -974,7 +951,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 				treegen::make_jungletree(*vm, p, ndef, myrand());
 			} else {
 				bool is_apple_tree = (myrand_range(0, 3) == 0) &&
-										getHaveAppleTree(v2s16(x, z));
+							getHaveAppleTree(v2s16(x, z));
 				treegen::make_tree(*vm, p, is_apple_tree, ndef, myrand());
 			}
 		}

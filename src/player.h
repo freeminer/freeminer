@@ -26,9 +26,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
-#include "json/json.h"
+#include "jthread/jmutexautolock.h"
+#include "jthread/jmutex.h"
 #include <list>
 #include "util/lock.h"
+#include "json/json.h"
+
+#define PLAYERNAME_SIZE 20
 
 #define PLAYERNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
@@ -105,7 +109,7 @@ public:
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
 	{}
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
-			std::list<CollisionInfo> *collision_info)
+			std::vector<CollisionInfo> *collision_info)
 	{}
 
 	v3f getSpeed()
@@ -214,7 +218,7 @@ public:
 		return m_collisionbox;
 	}
 
-	u32 getFreeHudID() const {
+	u32 getFreeHudID() {
 		size_t size = hud.size();
 		for (size_t i = 0; i != size; i++) {
 			if (!hud[i])
@@ -228,7 +232,7 @@ public:
 	virtual PlayerSAO *getPlayerSAO()
 	{ return NULL; }
 	virtual void setPlayerSAO(PlayerSAO *sao)
-	{ assert(0); }
+	{ FATAL_ERROR("FIXME"); }
 
 	/*
 		serialize() writes a bunch of text that can contain
@@ -239,6 +243,10 @@ public:
 	void deSerialize(std::istream &is, std::string playername);
 
 	s16 refs;
+
+	// Use a function, if isDead can be defined by other conditions
+	bool isDead() { return hp == 0; }
+
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
 	bool in_liquid;
@@ -274,7 +282,7 @@ public:
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
-	u16 hp;
+	std::atomic_ushort hp;
 
 	float hurt_tilt_timer;
 	float hurt_tilt_strength;
@@ -321,6 +329,11 @@ public:
 	core::aabbox3d<f32> m_collisionbox;
 
 	std::vector<HudElement *> hud;
+private:
+	// Protect some critical areas
+	// hud for example can be modified by EmergeThread
+	// and ServerThread
+	JMutex m_mutex;
 };
 
 

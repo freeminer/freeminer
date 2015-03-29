@@ -149,7 +149,7 @@ void MapgenMathParams::readParams(Settings *settings) {
 	params = settings->getJson("mg_math");
 }
 
-void MapgenMathParams::writeParams(Settings *settings) {
+void MapgenMathParams::writeParams(Settings *settings) const {
 	settings->setJson("mg_math", params);
 	try {
 		MapgenV7Params::writeParams(settings);
@@ -506,7 +506,7 @@ int MapgenMath::generateTerrain() {
 				if (internal)
 					d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
-					if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert) {

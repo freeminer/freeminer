@@ -58,7 +58,7 @@ int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const 
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_):
+MeshMakeData::MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_):
 #if defined(MESH_ZEROCOPY)
 	m_vmanip(map_),
 #endif
@@ -68,9 +68,11 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	m_smooth_lighting(false),
 	m_show_hud(false),
 	m_highlight_mesh_color(255, 255, 255, 255),
-	m_gamedef(gamedef)
+	m_gamedef(gamedef),
+	m_use_shaders(use_shaders)
 	,step(1),
 	range(1),
+	no_draw(false),
 	timestamp(0),
 	block(nullptr),
 	map(map_),
@@ -85,16 +87,25 @@ MeshMakeData::~MeshMakeData() {
 
 void MeshMakeData::fill(MapBlock *block_)
 {
+#if ! ENABLE_THREADS
 	block = block_;
-	m_blockpos = block->getPos();
-	timestamp = block->getTimestamp();
+#endif
+	m_blockpos = block_->getPos();
 }
 
-void MeshMakeData::fill_data()
+bool MeshMakeData::fill_data()
 {
-	if (!block || filled)
-		return;
+
+	if (filled)
+		return filled;
+
+	if (!block)
+		block = map.getBlockNoCreateNoEx(m_blockpos);
+
+	if (!block)
+		return filled;
 	filled = true;
+	timestamp = block->getTimestamp();
 
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
@@ -140,14 +151,14 @@ void MeshMakeData::fill_data()
 		}
 	}
 #endif
+	return filled;
 }
 
-void MeshMakeData::fillSingleNode(MapNode *node)
-{
-	m_blockpos = v3s16(0,0,0);
+void MeshMakeData::fillSingleNode(MapNode *node, v3POS blockpos) {
+	m_blockpos = blockpos;
 
 #if !defined(MESH_ZEROCOPY)
-	v3s16 blockpos_nodes = v3s16(0,0,0);
+	v3s16 blockpos_nodes = m_blockpos * MAP_BLOCKSIZE;
 	VoxelArea area(blockpos_nodes-v3s16(1,1,1)*MAP_BLOCKSIZE,
 			blockpos_nodes+v3s16(1,1,1)*MAP_BLOCKSIZE*2-v3s16(1,1,1));
 	s32 volume = area.getVolume();
@@ -292,7 +303,7 @@ static u16 getSmoothLightCombined(v3s16 p, MeshMakeData *data)
 
 	for (u32 i = 0; i < 8; i++)
 	{
-		MapNode n = data->m_vmanip.getNodeNoEx(p - dirs8[i]);
+		const MapNode &n = data->m_vmanip.getNodeRefUnsafeCheckFlags(p - dirs8[i]);
 
 		// if it's CONTENT_IGNORE we can't do any light calculations
 		if (n.getContent() == CONTENT_IGNORE) {
@@ -483,8 +494,6 @@ struct FastFace
 static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 		v3f p, v3s16 dir, v3f scale, u8 light_source, std::vector<FastFace> &dest)
 {
-	FastFace face;
-
 	// Position is at the center of the cube.
 	v3f pos = p * BS;
 
@@ -635,6 +644,10 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 
 	u8 alpha = tile.alpha;
 
+	dest.push_back(FastFace());
+
+	FastFace& face = *dest.rbegin();
+
 	face.vertices[0] = video::S3DVertex(vertex_pos[0], normal,
 			MapBlock_LightColor(alpha, li0, light_source),
 			core::vector2d<f32>(x0+w*abs_scale, y0+h));
@@ -649,7 +662,6 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 			core::vector2d<f32>(x0+w*abs_scale, y0));
 
 	face.tile = tile;
-	dest.push_back(face);
 }
 
 /*
@@ -790,8 +802,8 @@ TileSpec getNodeTile(MapNode mn, v3s16 p, v3s16 dir, MeshMakeData *data)
 static void getTileInfo(
 		// Input:
 		MeshMakeData *data,
-		v3s16 p,
-		v3s16 face_dir,
+		const v3s16 &p,
+		const v3s16 &face_dir,
 		// Output:
 		bool &makes_face,
 		v3s16 &p_corrected,
@@ -806,15 +818,21 @@ static void getTileInfo(
 	INodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
-	MapNode n0 = vmanip.getNodeNoEx(blockpos_nodes + p*step);
+	MapNode &n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step);
 
 	// Don't even try to get n1 if n0 is already CONTENT_IGNORE
-	if (n0.getContent() == CONTENT_IGNORE ) {
+	if (n0.getContent() == CONTENT_IGNORE) {
 		makes_face = false;
 		return;
 	}
-	MapNode n1 = vmanip.getNodeNoEx(blockpos_nodes + p*step + face_dir*step);
+
+	const MapNode &n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step);
 	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
+
+	if (n1.getContent() == CONTENT_IGNORE) {
+		makes_face = false;
+		return;
+	}
 
 	// This is hackish
 	bool equivalent = false;
@@ -1074,7 +1092,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
 	step(data->step),
-	timestamp(data->timestamp),
+	no_draw(data->no_draw),
 	m_mesh(nullptr),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1086,16 +1104,20 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_usage_timer(0)
 {
 	m_mesh = new scene::SMesh();
-	m_enable_shaders = g_settings->getBool("enable_shaders");
+	m_enable_shaders = data->m_use_shaders;
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
 
-	data->fill_data();
+	if (!data->fill_data())
+		return;
+
+	timestamp = data->timestamp;
 
 	std::vector<FastFace> fastfaces_new;
+	fastfaces_new.reserve(512/step);
 
 	/*
 		We are including the faces of the trailing edges of the block.

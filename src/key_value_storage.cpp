@@ -76,7 +76,11 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 #if USE_LEVELDB
 	std::lock_guard<std::mutex> lock(mutex);
 	auto status = db->Put(write_options, key, data);
-	return status.ok();
+	if (!status.ok()) {
+		error = status.ToString();
+		return false;
+	}
+	return true;
 #endif
 }
 
@@ -98,7 +102,11 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 #if USE_LEVELDB
 	std::lock_guard<std::mutex> lock(mutex);
 	auto status = db->Get(read_options, key, &data);
-	return status.ok();
+	if (!status.ok()) {
+		error = status.ToString();
+		return false;
+	}
+	return true;
 #endif
 }
 
@@ -119,6 +127,11 @@ bool KeyValueStorage::get_json(const std::string &key, Json::Value & data)
 	if (value.empty())
 		return false;
 	return json_reader.parse(value, data);
+}
+
+std::string KeyValueStorage::get_error() {
+	std::lock_guard<std::mutex> lock(mutex);
+	return error;
 }
 
 bool KeyValueStorage::del(const std::string &key)

@@ -47,7 +47,6 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->flags           = 0;
 	b->depth_top       = 0;
 	b->depth_filler    = 0;
-	b->height_shore    = 0;
 	b->depth_water_top = 0;
 	b->y_min           = -MAP_GENERATION_LIMIT;
 	b->y_max           = MAP_GENERATION_LIMIT;
@@ -55,9 +54,6 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->humidity_point  = 0.0;
 
 	NodeResolveInfo *nri = new NodeResolveInfo(b);
-	nri->nodenames.push_back("air");
-	nri->nodenames.push_back("air");
-	nri->nodenames.push_back("air");
 	nri->nodenames.push_back("air");
 	nri->nodenames.push_back("air");
 	nri->nodenames.push_back("mapgen_stone");
@@ -146,7 +142,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	heat += p.Y / weather_heat_height; // upper=colder, lower=hotter, 3c per 1000
 
 	if (weather_hot_core && p.Y < -(MAP_GENERATION_LIMIT-weather_hot_core))
-		heat += 6000 * (1-((float)(p.Y - -MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
+		heat += 6000 * (1.0-((float)(p.Y - -MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
 
 	return heat;
 }
@@ -155,6 +151,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
 	auto humidity = NoisePerlin2D(&(mapgen_params->np_biome_humidity), p.X, p.Z, seed);
+	humidity *= 1.0 - ((float)p.Y / MAP_GENERATION_LIMIT);
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -180,7 +177,7 @@ void BiomeManager::clear()
 		delete b;
 	}
 
-	m_elements.resize(1);
+	m_elements.clear();
 }
 
 
@@ -191,9 +188,6 @@ void Biome::resolveNodeNames(NodeResolveInfo *nri)
 {
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_dirt_with_grass", CONTENT_AIR,    c_top);
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_dirt",            CONTENT_AIR,    c_filler);
-	m_ndef->getIdFromResolveInfo(nri, "mapgen_sand",            CONTENT_AIR,    c_shore_top);
-	m_ndef->getIdFromResolveInfo(nri, "mapgen_sand",            CONTENT_AIR,    c_shore_filler);
-	m_ndef->getIdFromResolveInfo(nri, "mapgen_sand",            CONTENT_AIR,    c_underwater);
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_stone",           CONTENT_AIR,    c_stone);
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_water_source",    CONTENT_AIR,    c_water_top);
 	m_ndef->getIdFromResolveInfo(nri, "mapgen_water_source",    CONTENT_AIR,    c_water);

@@ -55,6 +55,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_freemove", "KEY_KEY_K");
 	settings->setDefault("keymap_fastmove", "KEY_KEY_J");
 	settings->setDefault("keymap_noclip", "KEY_KEY_H");
+	settings->setDefault("keymap_cinematic", "KEY_F8");
 	settings->setDefault("keymap_screenshot", "KEY_F12");
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
@@ -122,6 +123,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("free_move", "false");
 	settings->setDefault("noclip", "false");
 	settings->setDefault("continuous_forward", "false");
+	settings->setDefault("cinematic", "false");
+	settings->setDefault("camera_smoothing", "0");
+	settings->setDefault("cinematic_camera_smoothing", "0.7");
 	settings->setDefault("fast_move", "false");
 	settings->setDefault("invert_mouse", "false");
 	settings->setDefault("enable_clouds", "true");
@@ -152,6 +156,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
 	settings->setDefault("trilinear_filter", "false");
+	settings->setDefault("texture_clean_transparent", "false");
+	settings->setDefault("texture_min_size", "64");
 	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("enable_bumpmapping", "false");
 	settings->setDefault("enable_parallax_occlusion", "false");
@@ -295,6 +301,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "");
+	settings->setDefault("enable_floating_dungeons", "true");
 
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");
@@ -319,7 +326,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "false");
 	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("touchtarget", "true");
-	settings->setDefault("TMPFolder","/sdcard/Minetest/tmp/");
+	settings->setDefault("TMPFolder","/sdcard/" PROJECT_NAME "/tmp/");
 	settings->setDefault("touchscreen_threshold","20");
 	settings->setDefault("smooth_lighting", "false");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");

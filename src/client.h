@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef CLIENT_HEADER
 #define CLIENT_HEADER
 
-#include "connection.h"
+#include "network/connection.h"
 #include "environment.h"
 #include "irrlichttypes_extrabloated.h"
 #include "jthread/jmutex.h"
@@ -37,10 +37,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "localplayer.h"
 #include "hud.h"
 #include "particles.h"
+
 #include "util/thread_pool.h"
 #include "util/unordered_map_hash.h"
-
 #include "msgpack.h"
+
+#include "network/networkpacket.h"
 
 struct MeshMakeData;
 class MapBlockMesh;
@@ -325,12 +327,67 @@ public:
 	*/
 	void step(float dtime);
 
+	/*
+	 * Command Handlers
+	 */
+
+	void handleCommand(NetworkPacket* pkt);
+
+	void handleCommand_Null(NetworkPacket* pkt) {};
+	void handleCommand_Deprecated(NetworkPacket* pkt);
+	void handleCommand_Hello(NetworkPacket* pkt);
+	void handleCommand_AuthAccept(NetworkPacket* pkt);
+	void handleCommand_InitLegacy(NetworkPacket* pkt);
+	void handleCommand_AccessDenied(NetworkPacket* pkt);
+	void handleCommand_RemoveNode(NetworkPacket* pkt);
+	void handleCommand_AddNode(NetworkPacket* pkt);
+	void handleCommand_BlockData(NetworkPacket* pkt);
+	void handleCommand_Inventory(NetworkPacket* pkt);
+	void handleCommand_TimeOfDay(NetworkPacket* pkt);
+	void handleCommand_ChatMessage(NetworkPacket* pkt);
+	void handleCommand_ActiveObjectRemoveAdd(NetworkPacket* pkt);
+	void handleCommand_ActiveObjectMessages(NetworkPacket* pkt);
+	void handleCommand_Movement(NetworkPacket* pkt);
+	void handleCommand_HP(NetworkPacket* pkt);
+	void handleCommand_Breath(NetworkPacket* pkt);
+	void handleCommand_MovePlayer(NetworkPacket* pkt);
+	void handleCommand_PlayerItem(NetworkPacket* pkt);
+	void handleCommand_DeathScreen(NetworkPacket* pkt);
+	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
+	void handleCommand_Media(NetworkPacket* pkt);
+	void handleCommand_ToolDef(NetworkPacket* pkt);
+	void handleCommand_NodeDef(NetworkPacket* pkt);
+	void handleCommand_CraftItemDef(NetworkPacket* pkt);
+	void handleCommand_ItemDef(NetworkPacket* pkt);
+	void handleCommand_PlaySound(NetworkPacket* pkt);
+	void handleCommand_StopSound(NetworkPacket* pkt);
+	void handleCommand_Privileges(NetworkPacket* pkt);
+	void handleCommand_InventoryFormSpec(NetworkPacket* pkt);
+	void handleCommand_DetachedInventory(NetworkPacket* pkt);
+	void handleCommand_ShowFormSpec(NetworkPacket* pkt);
+	void handleCommand_SpawnParticle(NetworkPacket* pkt);
+	void handleCommand_AddParticleSpawner(NetworkPacket* pkt);
+	void handleCommand_DeleteParticleSpawner(NetworkPacket* pkt);
+	void handleCommand_HudAdd(NetworkPacket* pkt);
+	void handleCommand_HudRemove(NetworkPacket* pkt);
+	void handleCommand_HudChange(NetworkPacket* pkt);
+	void handleCommand_HudSetFlags(NetworkPacket* pkt);
+	void handleCommand_HudSetParam(NetworkPacket* pkt);
+	void handleCommand_HudSetSky(NetworkPacket* pkt);
+	void handleCommand_OverrideDayNightRatio(NetworkPacket* pkt);
+	void handleCommand_LocalPlayerAnimations(NetworkPacket* pkt);
+	void handleCommand_EyeOffset(NetworkPacket* pkt);
+
 	void ProcessData(u8 *data, u32 datasize, u16 sender_peer_id);
+
 	// Returns true if something was received
 	bool AsyncProcessPacket();
 	bool AsyncProcessData();
+/*
 	void Send(u16 channelnum, SharedBuffer<u8> data, bool reliable);
+*/
 	void Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable);
+	void Send(NetworkPacket* pkt);
 
 	void interact(u8 action, const PointedThing& pointed);
 
@@ -401,7 +458,7 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool urgent=false);
+	void addUpdateMeshTask(v3s16 blockpos, bool urgent=false, int step = 0);
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent = false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent=false);
@@ -429,7 +486,7 @@ public:
 
 	float mediaReceiveProgress();
 
-	void afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font);
+	void afterContentReceived(IrrlichtDevice *device);
 
 	float getRTT(void);
 	float getCurRate(void);
@@ -454,7 +511,7 @@ public:
 	// Insert a media file appropriately into the appropriate manager
 	bool loadMedia(const std::string &data, const std::string &filename);
 	// Send a request for conventional media transfer
-	void request_media(const std::list<std::string> &file_requests);
+	void request_media(const std::vector<std::string> &file_requests);
 	// Send a notification that no conventional media transfer is needed
 	void received_media();
 
@@ -478,6 +535,11 @@ private:
 	void sendPlayerPos();
 	// Send the item number 'item' as player item to the server
 	void sendPlayerItem(u16 item);
+
+	void sendLegacyInit(const std::string &playerName, const std::string &playerPassword);
+	void sendDeletedBlocks(std::vector<v3s16> &blocks);
+	void sendGotBlocks(v3s16 block);
+	void sendRemovedSounds(std::vector<s32> &soundList);
 
 	float m_packetcounter_timer;
 	float m_connection_reinit_timer;
@@ -519,7 +581,7 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-	Queue<std::string> m_chat_queue;
+	Queue<std::string> m_chat_queue; // todo: convert to std::queue
 	// The seed returned by the server in TOCLIENT_INIT is stored here
 	u64 m_map_seed;
 	std::string m_password;
@@ -527,6 +589,7 @@ private:
 	bool m_access_denied;
 	std::string m_access_denied_reason;
 	Queue<ClientEvent> m_client_event_queue;
+	//std::queue<ClientEvent> m_client_event_queue;
 	bool m_itemdef_received;
 	bool m_nodedef_received;
 	ClientMediaDownloader *m_media_downloader;
@@ -567,12 +630,14 @@ private:
 	LocalClientState m_state;
 
 	// Used for saving server map to disk client-side
-	Database *localdb;
-	Server *localserver;
+	Database *m_localdb;
+	IntervalLimiter m_localdb_save_interval;
+	u16 m_cache_save_interval;
+	Server *m_localserver;
 
-	// TODO: Add callback to update this when g_settings changes
+	// TODO: Add callback to update these when g_settings changes
 	bool m_cache_smooth_lighting;
+	bool m_cache_enable_shaders;
 };
 
 #endif // !CLIENT_HEADER
-

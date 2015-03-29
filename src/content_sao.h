@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CONTENT_SAO_HEADER
 
 #include "serverobject.h"
-#include "content_object.h"
 #include "itemgroup.h"
 #include "player.h"
 #include "object_properties.h"
@@ -39,9 +38,9 @@ public:
 	LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	             const std::string &name, const std::string &state);
 	~LuaEntitySAO();
-	u8 getType() const
+	ActiveObjectType getType() const
 	{ return ACTIVEOBJECT_TYPE_LUAENTITY; }
-	u8 getSendType() const
+	ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	virtual void addedToEnvironment(u32 dtime_s);
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
@@ -158,9 +157,9 @@ public:
 	PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 			const std::set<std::string> &privs, bool is_singleplayer);
 	~PlayerSAO();
-	u8 getType() const
+	ActiveObjectType getType() const
 	{ return ACTIVEOBJECT_TYPE_PLAYER; }
-	u8 getSendType() const
+	ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	std::string getDescription();
 
@@ -209,7 +208,6 @@ public:
 	Inventory* getInventory();
 	const Inventory* getInventory() const;
 	InventoryLocation getInventoryLocation() const;
-	void setInventoryModified();
 	std::string getWieldList() const;
 	int getWieldIndex() const;
 	void setWieldIndex(int i);
@@ -237,6 +235,7 @@ public:
 	}
 	float resetTimeFromLastPunch()
 	{
+		auto lock = lock_unique();
 		float r = m_time_from_last_punch;
 		m_time_from_last_punch = 0.0;
 		return r;
@@ -290,14 +289,14 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
-	float m_time_from_last_respawn;
+	std::atomic_uint m_ms_from_last_respawn;
 private:
 	float m_time_from_last_punch;
 	v3s16 m_nocheat_dig_pos;
 	float m_nocheat_dig_time;
 
 	int m_wield_index;
-	bool m_position_not_sent;
+	std::atomic_bool m_position_not_sent;
 	ItemGroupList m_armor_groups;
 	bool m_armor_groups_sent;
 
@@ -322,13 +321,6 @@ private:
 	bool m_attachment_sent;
 
 public:
-	// Some flags used by Server
-	bool m_moved;
-	bool m_inventory_not_sent;
-	bool m_hp_not_sent;
-	bool m_breath_not_sent;
-	bool m_wielded_item_not_sent;
-
 	float m_physics_override_speed;
 	float m_physics_override_jump;
 	float m_physics_override_gravity;

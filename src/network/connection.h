@@ -20,9 +20,12 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "connection_enet.h"
-#if 0
-Not used, keep for reduce MT merge conflicts
+#include "config.h"
+
+#if !MINETEST_PROTO
+#include "network/fm_connection.h"
+#else
+//Not used, keep for reduce MT merge conflicts
 
 
 #ifndef CONNECTION_HEADER
@@ -32,6 +35,7 @@ Not used, keep for reduce MT merge conflicts
 #include "socket.h"
 #include "exceptions.h"
 #include "constants.h"
+#include "network/networkpacket.h"
 #include "util/pointer.h"
 #include "util/container.h"
 #include "util/thread.h"
@@ -147,14 +151,14 @@ inline bool seqnum_higher(u16 totest, u16 base)
 {
 	if (totest > base)
 	{
-		if((totest - base) > (SEQNUM_MAX/2))
+		if ((totest - base) > (SEQNUM_MAX/2))
 			return false;
 		else
 			return true;
 	}
 	else
 	{
-		if((base - totest) > (SEQNUM_MAX/2))
+		if ((base - totest) > (SEQNUM_MAX/2))
 			return true;
 		else
 			return false;
@@ -359,7 +363,7 @@ private:
 	RPBSearchResult findPacket(u16 seqnum);
 
 	std::list<BufferedPacket> m_list;
-	u32 m_list_size;
+	std::atomic_uint m_list_size;
 
 	u16 m_oldest_non_answered_ack;
 
@@ -379,9 +383,9 @@ public:
 		packet is constructed. If not, returns one of length 0.
 	*/
 	SharedBuffer<u8> insert(BufferedPacket &p, bool reliable);
-	
+
 	void removeUnreliableTimedOuts(float dtime, float timeout);
-	
+
 private:
 	// Key is seqnum
 	std::map<u16, IncomingSplitPacket*> m_buf;
@@ -453,19 +457,12 @@ struct ConnectionCommand
 		peer_id = peer_id_;
 	}
 	void send(u16 peer_id_, u8 channelnum_,
-			SharedBuffer<u8> data_, bool reliable_)
+			NetworkPacket* pkt, bool reliable_)
 	{
 		type = CONNCMD_SEND;
 		peer_id = peer_id_;
 		channelnum = channelnum_;
-		data = data_;
-		reliable = reliable_;
-	}
-	void sendToAll(u8 channelnum_, SharedBuffer<u8> data_, bool reliable_)
-	{
-		type = CONNCMD_SEND_TO_ALL;
-		channelnum = channelnum_;
-		data = data_;
+		data = pkt->oldForgePacket();
 		reliable = reliable_;
 	}
 
@@ -512,7 +509,7 @@ public:
 
 	u16 readNextSplitSeqNum();
 	void setNextSplitSeqNum(u16 seqnum);
-	
+
 	// This is for buffering the incoming packets that are coming in
 	// the wrong order
 	ReliablePacketBuffer incoming_reliables;
@@ -521,10 +518,10 @@ public:
 	ReliablePacketBuffer outgoing_reliables_sent;
 
 	//queued reliable packets
-	Queue<BufferedPacket> queued_reliables;
+	std::queue<BufferedPacket> queued_reliables;
 
 	//queue commands prior splitting to packets
-	Queue<ConnectionCommand> queued_commands;
+	std::deque<ConnectionCommand> queued_commands;
 
 	IncomingSplitBuffer incoming_splits;
 
@@ -624,12 +621,12 @@ public:
 		This is called after the Peer has been inserted into the
 		Connection's peer container.
 	*/
-	virtual void peerAdded(Peer *peer) = 0;
+	virtual void peerAdded(u16 peer_id) = 0;
 	/*
 		This is called before the Peer has been removed from the
 		Connection's peer container.
 	*/
-	virtual void deletingPeer(Peer *peer, bool timeout) = 0;
+	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
 };
 
 class PeerHelper
@@ -697,7 +694,7 @@ class Peer {
 
 		virtual ~Peer() {
 			JMutexAutoLock usage_lock(m_exclusive_access_mutex);
-			assert(m_usage == 0);
+			FATAL_ERROR_IF(m_usage != 0, "Reference counting failure");
 		};
 
 		// Unique id of the peer
@@ -890,7 +887,7 @@ struct ConnectionEvent
 
 	std::string describe()
 	{
-		switch(type){
+		switch(type) {
 		case CONNEVENT_NONE:
 			return "CONNEVENT_NONE";
 		case CONNEVENT_DATA_RECEIVED:
@@ -904,7 +901,7 @@ struct ConnectionEvent
 		}
 		return "Invalid ConnectionEvent";
 	}
-	
+
 	void dataReceived(u16 peer_id_, SharedBuffer<u8> data_)
 	{
 		type = CONNEVENT_DATA_RECEIVED;
@@ -942,7 +939,7 @@ public:
 	void Trigger();
 
 	void setParent(Connection* parent) {
-		assert(parent != NULL);
+		assert(parent != NULL); // Pre-condition
 		m_connection = parent;
 	}
 
@@ -980,7 +977,7 @@ private:
 	Connection*           m_connection;
 	unsigned int          m_max_packet_size;
 	float                 m_timeout;
-	Queue<OutgoingPacket> m_outgoing_queue;
+	std::queue<OutgoingPacket> m_outgoing_queue;
 	JSemaphore            m_send_sleep_semaphore;
 
 	unsigned int          m_iteration_packets_avaialble;
@@ -996,7 +993,7 @@ public:
 	void * Thread       ();
 
 	void setParent(Connection* parent) {
-		assert(parent != NULL);
+		assert(parent != NULL); // Pre-condition
 		m_connection = parent;
 	}
 
@@ -1042,16 +1039,15 @@ public:
 	ConnectionEvent getEvent();
 	ConnectionEvent waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommand &c);
-	
-	void SetTimeoutMs(int timeout){ m_bc_receive_timeout = timeout; }
+
+	void SetTimeoutMs(int timeout) { m_bc_receive_timeout = timeout; }
 	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
-	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	u16 GetPeerID(){ return m_peer_id; }
+	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout = 0);
+	void Send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
+	u16 GetPeerID() { return m_peer_id; }
 	Address GetPeerAddress(u16 peer_id);
 	float getPeerStat(u16 peer_id, rtt_stat_type type);
 	float getLocalStat(rate_stat_type type);
@@ -1068,14 +1064,14 @@ protected:
 	UDPPeer*  createServerPeer(Address& sender);
 	bool deletePeer(u16 peer_id, bool timeout);
 
-	void SetPeerID(u16 id){ m_peer_id = id; }
+	void SetPeerID(u16 id) { m_peer_id = id; }
 
 	void sendAck(u16 peer_id, u8 channelnum, u16 seqnum);
 
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 
-	std::list<u16> getPeerIDs();
+	std::list<u16> getPeerIDs() { JMutexAutoLock lock(m_peers_mutex); return m_peer_ids; }
 
 	UDPSocket m_udpSocket;
 	MutexedQueue<ConnectionCommand> m_command_queue;
@@ -1089,10 +1085,11 @@ private:
 
 	MutexedQueue<ConnectionEvent> m_event_queue;
 
-	u16 m_peer_id;
+	std::atomic_ushort m_peer_id;
 	u32 m_protocol_id;
-	
+
 	std::map<u16, Peer*> m_peers;
+	std::list<u16> m_peer_ids;
 	JMutex m_peers_mutex;
 
 	ConnectionSendThread m_sendThread;
@@ -1112,6 +1109,5 @@ private:
 } // namespace
 
 #endif
-
 
 #endif

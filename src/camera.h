@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "inventory.h"
 #include "mesh.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "util/numeric.h"
 #include <ICameraSceneNode.h>
 
@@ -113,7 +113,7 @@ public:
 	}
 
 	// Checks if the constructor was able to create the scene nodes
-	bool successfullyCreated(std::string& error_message);
+	bool successfullyCreated(std::string &error_message);
 
 	// Step the camera: updates the viewing range and view bobbing.
 	void step(f32 dtime);

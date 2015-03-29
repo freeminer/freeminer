@@ -78,9 +78,10 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				$(GPROF_DEF)                  \
 				-DHAS_INET_PTON=1 -DHAS_INET_NTOP=1 -DHAS_GETHOSTBYNAME_R=1 -DHAS_FCNTL=1 -DHAS_POLL=1 -DHAS_MSGHDR_FLAGS=1 \
 				-DUSE_MANDELBULBER=1 \
+				-DHAVE_THREAD_LOCAL=1 \
 				-pipe -fstrict-aliasing
 
-#too slow				-DCMAKE_THREADS=1 -DCMAKE_HAVE_FUTURE=1 -DCMAKE_HAVE_THREAD_LOCAL=1 \
+#too slow fmtodo				-DENABLE_THREADS=1 -DHAVE_FUTURE=1 -DHAVE_THREAD_LOCAL=1 \
 
 
 ifndef NDEBUG
@@ -120,6 +121,7 @@ LOCAL_C_INCLUDES :=                               \
 		deps/sqlite/
 
 LOCAL_SRC_FILES :=                                \
+		jni/src/util/utf8.cpp                     \
 		jni/src/gsmapper.cpp                      \
 		jni/src/guiTextInputMenu.cpp              \
 		jni/src/FMColoredString.cpp               \
@@ -132,7 +134,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/log_types.cpp                     \
 		jni/src/profiler.cpp                      \
 		jni/src/ban.cpp                           \
-		jni/src/base64.cpp                        \
 		jni/src/camera.cpp                        \
 		jni/src/cavegen.cpp                       \
 		jni/src/chat.cpp                          \
@@ -143,7 +144,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/clientobject.cpp                  \
 		jni/src/clouds.cpp                        \
 		jni/src/collision.cpp                     \
-		jni/src/connection.cpp                    \
 		jni/src/content_abm.cpp                   \
 		jni/src/content_cao.cpp                   \
 		jni/src/content_cso.cpp                   \
@@ -222,7 +222,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/server.cpp                        \
 		jni/src/serverlist.cpp                    \
 		jni/src/serverobject.cpp                  \
-		jni/src/sha1.cpp                          \
 		jni/src/shader.cpp                        \
 		jni/src/sky.cpp                           \
 		jni/src/socket.cpp                        \
@@ -231,16 +230,17 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/staticobject.cpp                  \
 		jni/src/subgame.cpp                       \
 		jni/src/test.cpp                          \
-		jni/src/tile.cpp                          \
 		jni/src/tool.cpp                          \
 		jni/src/treegen.cpp                       \
 		jni/src/version.cpp                       \
 		jni/src/voxel.cpp                         \
 		jni/src/voxelalgorithms.cpp               \
+		jni/src/util/base64.cpp                   \
 		jni/src/util/directiontables.cpp          \
 		jni/src/util/numeric.cpp                  \
 		jni/src/util/pointedthing.cpp             \
 		jni/src/util/serialize.cpp                \
+		jni/src/util/sha1.cpp                     \
 		jni/src/util/string.cpp                   \
 		jni/src/util/timetaker.cpp                \
 		jni/src/touchscreengui.cpp                \
@@ -252,7 +252,18 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/stat.cpp               \
 		jni/src/database-leveldb.cpp              \
 		jni/src/settings.cpp                      \
-		jni/src/wieldmesh.cpp
+		jni/src/wieldmesh.cpp                     \
+		jni/src/client/clientlauncher.cpp         \
+		jni/src/client/tile.cpp
+
+# Network
+LOCAL_SRC_FILES +=                                \
+		jni/src/network/connection.cpp            \
+		jni/src/network/networkpacket.cpp         \
+		jni/src/network/clientopcodes.cpp         \
+		jni/src/network/clientpackethandler.cpp   \
+		jni/src/network/serveropcodes.cpp         \
+		jni/src/network/serverpackethandler.cpp   \
 
 # lua api
 LOCAL_SRC_FILES +=                                \

@@ -7,7 +7,7 @@
 #include <memory>
 #include <chrono>
 
-#include <config.h>
+#include "config.h"
 
 #ifdef _MSC_VER
 #define noexcept
@@ -25,7 +25,7 @@ typedef boost::unique_lock<try_shared_mutex> unique_lock;
 #define TRY_TO_LOCK boost::try_to_lock
 #define LOCK_TWO 1
 
-#elif CMAKE_HAVE_SHARED_MUTEX
+#elif HAVE_SHARED_MUTEX
 //#elif __cplusplus >= 201305L
 
 #include <shared_mutex>
@@ -100,7 +100,7 @@ public:
 	std::unique_ptr<lock_rec<try_shared_lock>> try_lock_shared_rec();
 };
 
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 
 class maybe_locker : public locker { };
 
@@ -272,7 +272,7 @@ public:
 };
 
 
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 
 template < class Key, class T, class Compare = std::less<Key>,
          class Allocator = std::allocator<std::pair<const Key, T> >>
@@ -423,7 +423,7 @@ public:
 
 };
 
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
          class Alloc = std::allocator<std::pair<const Key, T> >>
@@ -527,7 +527,7 @@ public:
 };
 
 
-#if CMAKE_THREADS
+#if ENABLE_THREADS
 
 template <class T, class Allocator = std::allocator<T> >
 class maybe_shared_vector : public shared_vector<T, Allocator>

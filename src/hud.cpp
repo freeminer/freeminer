@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gamedef.h"
 #include "itemdef.h"
 #include "inventory.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "localplayer.h"
 #include "game.h" // CameraModes
 #include "camera.h"

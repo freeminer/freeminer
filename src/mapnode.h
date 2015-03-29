@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <list>
 #include "msgpack.h"
+#include "config.h"
 
 class INodeDefManager;
 
@@ -52,6 +53,7 @@ typedef u16 content_t;
 */
 #define MAX_REGISTERED_CONTENT 0x7fffU
 
+#if MINETEST_PROTO
 /*
 	A solid walkable node with the texture unknown_node.png.
 
@@ -59,13 +61,13 @@ typedef u16 content_t;
 	(instead of expanding the vector of node definitions each time
 	such a node is received).
 */
-#define CONTENT_UNKNOWN 2
+#define CONTENT_UNKNOWN 125
 
 /*
 	The common material through which the player can walk and which
 	is transparent to light
 */
-#define CONTENT_AIR 1
+#define CONTENT_AIR 126
 
 /*
 	Ignored node.
@@ -77,7 +79,16 @@ typedef u16 content_t;
 	Doesn't create faces with anything and is considered being
 	out-of-map in the game map.
 */
+#define CONTENT_IGNORE 127
+
+#else
+
+//freeminer:
+#define CONTENT_UNKNOWN 2
+#define CONTENT_AIR 1
 #define CONTENT_IGNORE 0
+
+#endif
 
 enum LightBank
 {
@@ -109,10 +120,11 @@ enum Rotation {
 #define LIQUID_LEVEL_MAX LIQUID_LEVEL_MASK
 #define LIQUID_LEVEL_SOURCE (LIQUID_LEVEL_MAX+1)
 
-#define LIQUID_INFINITY_MASK 0x80 //0b10000000 // only for _source liquid
+#define LIQUID_INFINITY_MASK 0x80 // 0b10000000 // only for _source liquid
+#define LIQUID_STABLE_MASK   0x40 // 0b01000000
 
 // mask for param2, now as for liquid
-#define LEVELED_MASK 0x3F
+#define LEVELED_MASK 0x1F         // 0b00011111 // was: 0x3F
 #define LEVELED_MAX LEVELED_MASK
 
 
@@ -201,6 +213,14 @@ struct MapNode
 	}
 
 	void setLight(enum LightBank bank, u8 a_light, INodeDefManager *nodemgr);
+
+	/**
+	 * Check if the light value for night differs from the light value for day.
+	 *
+	 * @return If the light values are equal, returns true; otherwise false
+	 */
+	bool isLightDayNightEq(INodeDefManager *nodemgr) const;
+
 	u8 getLight(enum LightBank bank, INodeDefManager *nodemgr) const;
 
 	/**
@@ -258,11 +278,11 @@ struct MapNode
 	*/
 	u8 getMaxLevel(INodeDefManager *nodemgr, bool compress = 0) const;
 	u8 getLevel(INodeDefManager *nodemgr) const;
-	u8 setLevel(INodeDefManager *nodemgr, s8 level = 1, bool compress = 0);
-	u8 addLevel(INodeDefManager *nodemgr, s8 add = 1, bool compress = 0);
+	u16 setLevel(INodeDefManager *nodemgr, s16 level = 1, bool compress = 0);
+	u16 addLevel(INodeDefManager *nodemgr, s16 add = 1, bool compress = 0);
 	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
 
-	operator bool() const { return param0; }
+	operator bool() const { return param0 != CONTENT_IGNORE; }
 
 	/*
 		Serialization functions

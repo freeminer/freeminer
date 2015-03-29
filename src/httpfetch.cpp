@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/thread_pool.h"
 
 JMutex g_httpfetch_mutex;
-std::map<unsigned long, std::list<HTTPFetchResult> > g_httpfetch_results;
+std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
 
 HTTPFetchRequest::HTTPFetchRequest()
 {
@@ -51,7 +51,7 @@ HTTPFetchRequest::HTTPFetchRequest()
 	connect_timeout = timeout;
 	multipart = false;
 
-	useragent = std::string("Freeminer/") + minetest_version_hash + " (" + porting::get_sysinfo() + ")";
+	useragent = std::string(PROJECT_NAME "/") + g_version_hash + " (" + porting::get_sysinfo() + ")";
 }
 
 
@@ -60,7 +60,7 @@ static void httpfetch_deliver_result(const HTTPFetchResult &fetch_result)
 	unsigned long caller = fetch_result.caller;
 	if (caller != HTTPFETCH_DISCARD) {
 		JMutexAutoLock lock(g_httpfetch_mutex);
-		g_httpfetch_results[caller].push_back(fetch_result);
+		g_httpfetch_results[caller].push(fetch_result);
 	}
 }
 
@@ -73,18 +73,18 @@ unsigned long httpfetch_caller_alloc()
 	// Check each caller ID except HTTPFETCH_DISCARD
 	const unsigned long discard = HTTPFETCH_DISCARD;
 	for (unsigned long caller = discard + 1; caller != discard; ++caller) {
-		std::map<unsigned long, std::list<HTTPFetchResult> >::iterator
+		std::map<unsigned long, std::queue<HTTPFetchResult> >::iterator
 			it = g_httpfetch_results.find(caller);
 		if (it == g_httpfetch_results.end()) {
-			verbosestream<<"httpfetch_caller_alloc: allocating "
-					<<caller<<std::endl;
+			verbosestream << "httpfetch_caller_alloc: allocating "
+					<< caller << std::endl;
 			// Access element to create it
 			g_httpfetch_results[caller];
 			return caller;
 		}
 	}
 
-	assert("httpfetch_caller_alloc: ran out of caller IDs" == 0);
+	FATAL_ERROR("httpfetch_caller_alloc: ran out of caller IDs");
 	return discard;
 }
 
@@ -105,19 +105,19 @@ bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result)
 	JMutexAutoLock lock(g_httpfetch_mutex);
 
 	// Check that caller exists
-	std::map<unsigned long, std::list<HTTPFetchResult> >::iterator
+	std::map<unsigned long, std::queue<HTTPFetchResult> >::iterator
 		it = g_httpfetch_results.find(caller);
 	if (it == g_httpfetch_results.end())
 		return false;
 
 	// Check that result queue is nonempty
-	std::list<HTTPFetchResult> &caller_results = it->second;
+	std::queue<HTTPFetchResult> &caller_results = it->second;
 	if (caller_results.empty())
 		return false;
 
 	// Pop first result
 	fetch_result = caller_results.front();
-	caller_results.pop_front();
+	caller_results.pop();
 	return true;
 }
 
@@ -200,7 +200,6 @@ private:
 	HTTPFetchRequest request;
 	HTTPFetchResult result;
 	std::ostringstream oss;
-	//char *post_fields;
 	struct curl_slist *http_header;
 	curl_httppost *post;
 };
@@ -256,7 +255,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	if (request.useragent != "")
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 	else {
-		std::string useragent = std::string("Freeminer ") + minetest_version_hash;
+		std::string useragent = std::string("Freeminer ") + g_version_hash;
 #ifdef _WIN32
 		useragent += "Windows";
 #else
@@ -651,7 +650,7 @@ protected:
 			return NULL;
 		}
 
-		assert(m_all_ongoing.empty());
+		FATAL_ERROR_IF(!m_all_ongoing.empty(), "Expected empty");
 
 		while (!StopRequested()) {
 			BEGIN_DEBUG_EXCEPTION_HANDLER
@@ -732,7 +731,7 @@ void httpfetch_init(int parallel_limit)
 			<<std::endl;
 
 	CURLcode res = curl_global_init(CURL_GLOBAL_DEFAULT);
-	assert(res == CURLE_OK);
+	FATAL_ERROR_IF(res != CURLE_OK, "CURL init failed");
 
 	g_httpfetch_thread = new CurlFetchThread(parallel_limit);
 }

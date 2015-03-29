@@ -98,15 +98,15 @@ public:
 	Settings() {}
 	~Settings();
 
-	Settings & operator += (const Settings &other);
-	Settings & operator = (const Settings &other);
+	//Settings & operator += (const Settings &other);
+	//Settings & operator = (const Settings &other);
 
 	/***********************
 	 * Reading and writing *
 	 ***********************/
 
 	// Read configuration file.  Returns success.
-	bool readConfigFile(const char *filename);
+	bool readConfigFile(const std::string &filename);
 	//Updates configuration file.  Returns success.
 	bool updateConfigFile(const std::string &filename);
 	// NOTE: Types of allowed_options are ignored.  Returns success.
@@ -209,6 +209,7 @@ public:
 	// remove a setting
 	bool remove(const std::string &name);
 	void clear();
+	void clearDefaults();
 	void updateValue(const Settings &other, const std::string &name);
 	void update(const Settings &other);
 
@@ -230,6 +231,7 @@ private:
 
 	void updateNoLock(const Settings &other);
 	void clearNoLock();
+	void clearDefaultsNoLock();
 
 	void doCallbacks(std::string name);
 

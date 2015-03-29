@@ -54,6 +54,8 @@ struct PointedThing
 	std::string dump() const;
 	bool operator==(const PointedThing &pt2) const;
 	bool operator!=(const PointedThing &pt2) const;
+	void serialize(std::ostream &os) const;
+	void deSerialize(std::istream &is);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };

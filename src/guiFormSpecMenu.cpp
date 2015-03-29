@@ -40,11 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUITabControl.h>
 #include <IGUIComboBox.h>
 #include "log.h"
-#include "tile.h" // ITextureSource
+#include "client/tile.h" // ITextureSource
 #include "hud.h" // drawItemStack
-#include "hex.h"
-#include "util/string.h"
-#include "util/numeric.h"
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
@@ -54,8 +51,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 #include "settings.h"
 #include "client.h"
-#include "util/string.h" // for parseColorString()
 #include "fontengine.h"
+#include "util/hex.h"
+#include "util/numeric.h"
+#include "util/string.h" // for parseColorString()
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -82,7 +81,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		ISimpleTextureSource *tsrc, IFormSource* fsrc, TextDest* tdst,
-		Client* client) :
+		Client* client, bool remap_dbl_click) :
 	GUIModalMenu(dev->getGUIEnvironment(), parent, id, menumgr),
 	m_device(dev),
 	m_invmgr(invmgr),
@@ -101,7 +100,9 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_form_src(fsrc),
 	m_text_dst(tdst),
 	m_formspec_version(0),
-	m_font(NULL)
+	m_focused_element(""),
+	m_font(NULL),
+	m_remap_dbl_click(remap_dbl_click)
 #ifdef __ANDROID__
 	,m_JavaDialogFieldName("")
 #endif
@@ -1438,7 +1439,7 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 		video::ITexture *texture = idef->getInventoryTexture(item.getDefinition(idef).name, m_gamedef);
 
 		m_tooltips[name] =
-			TooltipSpec (item.getDefinition(idef).description,
+			TooltipSpec(item.getDefinition(idef).description,
 						m_default_tooltip_bgcolor,
 						m_default_tooltip_color);
 
@@ -1556,13 +1557,15 @@ void GUIFormSpecMenu::parseTooltip(parserData* data, std::string element)
 	std::vector<std::string> parts = split(element,';');
 	if (parts.size() == 2) {
 		std::string name = parts[0];
-		m_tooltips[name] = TooltipSpec (parts[1], m_default_tooltip_bgcolor, m_default_tooltip_color);
+		m_tooltips[name] = TooltipSpec(unescape_string(parts[1]),
+			m_default_tooltip_bgcolor, m_default_tooltip_color);
 		return;
 	} else if (parts.size() == 4) {
 		std::string name = parts[0];
 		video::SColor tmp_color1, tmp_color2;
 		if ( parseColorString(parts[2], tmp_color1, false) && parseColorString(parts[3], tmp_color2, false) ) {
-			m_tooltips[name] = TooltipSpec (parts[1], tmp_color1, tmp_color2);
+			m_tooltips[name] = TooltipSpec(unescape_string(parts[1]),
+				tmp_color1, tmp_color2);
 			return;
 		}
 	}
@@ -1763,8 +1766,6 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 		<<std::endl;
 }
 
-
-
 void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 {
 	/* useless to regenerate without a screensize */
@@ -1780,6 +1781,10 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		GUITable *table = m_tables[i].second;
 		mydata.table_dyndata[tablename] = table->getDynamicData();
 	}
+
+	//set focus
+	if (!m_focused_element.empty())
+		mydata.focused_fieldname = m_focused_element;
 
 	//preserve focus
 	gui::IGUIElement *focused_element = Environment->getFocus();
@@ -1976,7 +1981,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_tooltip_element->setOverrideFont(m_font);
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	assert(skin != NULL);
+	sanity_check(skin != NULL);
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2220,9 +2225,9 @@ void GUIFormSpecMenu::drawSelectedItem()
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 
 	Inventory *inv = m_invmgr->getInventory(m_selected_item->inventoryloc);
-	assert(inv);
+	sanity_check(inv);
 	InventoryList *list = inv->getList(m_selected_item->listname);
-	assert(list);
+	sanity_check(list);
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
@@ -2242,7 +2247,7 @@ void GUIFormSpecMenu::drawMenu()
 	}
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	assert(skin != NULL);
+	sanity_check(skin != NULL);
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2727,7 +2732,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		if (hovered && isMyChild(hovered) &&
 				hovered->getType() == gui::EGUIET_TAB_CONTROL) {
 			gui::IGUISkin* skin = Environment->getSkin();
-			assert(skin != NULL);
+			sanity_check(skin != NULL);
 			gui::IGUIFont *old_font = skin->getFont();
 			skin->setFont(m_font);
 			bool retval = hovered->OnEvent(event);
@@ -2938,6 +2943,19 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 /******************************************************************************/
 bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 {
+	/* The following code is for capturing double-clicks of the mouse button
+	 * and translating the double-click into an EET_KEY_INPUT_EVENT event
+	 * -- which closes the form -- under some circumstances.
+	 *
+	 * There have been many github issues reporting this as a bug even though it
+	 * was an intended feature.  For this reason, remapping the double-click as
+	 * an ESC must be explicitly set when creating this class via the
+	 * /p remap_dbl_click parameter of the constructor.
+	 */
+
+	if (!m_remap_dbl_click)
+		return false;
+
 	if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 		m_doubleclickdetect[0].pos  = m_doubleclickdetect[1].pos;
 		m_doubleclickdetect[0].time = m_doubleclickdetect[1].time;
@@ -2976,6 +2994,7 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 		delete translated;
 		return true;
 	}
+
 	return false;
 }
 
@@ -3015,7 +3034,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				break;
 				default:
 					//can't happen at all!
-					assert("reached a source line that can't ever been reached" == 0);
+					FATAL_ERROR("Reached a source line that can't ever been reached");
 					break;
 			}
 			if (current_keys_pending.key_enter && m_allowclose) {
@@ -3049,8 +3068,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		if(m_selected_item) {
 			inv_selected = m_invmgr->getInventory(m_selected_item->inventoryloc);
-			assert(inv_selected);
-			assert(inv_selected->getList(m_selected_item->listname) != NULL);
+			sanity_check(inv_selected);
+			sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
 		}
 
 		u32 s_count = 0;

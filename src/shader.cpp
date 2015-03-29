@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "gamedef.h"
 #include "strfnd.h" // trim()
-#include "tile.h"
+#include "client/tile.h"
 
 /*
 	A cache from shader name to shader path
@@ -199,7 +199,7 @@ public:
 	virtual void OnSetConstants(video::IMaterialRendererServices *services, s32 userData)
 	{
 		video::IVideoDriver *driver = services->getVideoDriver();
-		assert(driver);
+		sanity_check(driver != NULL);
 
 		bool is_highlevel = userData;
 
@@ -222,7 +222,7 @@ public:
 			bool is_highlevel)
 	{
 		video::IVideoDriver *driver = services->getVideoDriver();
-		assert(driver);
+		sanity_check(driver);
 
 		// set inverted world matrix
 		core::matrix4 invWorld = driver->getTransform(video::ETS_WORLD);
@@ -367,7 +367,7 @@ void load_shaders(std::string name, SourceShaderCache *sourcecache,
 ShaderSource::ShaderSource(IrrlichtDevice *device):
 		m_device(device)
 {
-	assert(m_device);
+	assert(m_device); // Pre-condition
 
 	m_shader_callback = new ShaderCallback(this, "default");
 
@@ -508,7 +508,7 @@ void ShaderSource::insertSourceShader(const std::string &name_of_shader,
 			"name_of_shader=\""<<name_of_shader<<"\", "
 			"filename=\""<<filename<<"\""<<std::endl;*/
 
-	assert(get_current_thread_id() == m_main_thread);
+	sanity_check(get_current_thread_id() == m_main_thread);
 
 	m_sourcecache.insert(name_of_shader, filename, program, true);
 }
@@ -581,7 +581,7 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 		return shaderinfo;
 
 	video::IVideoDriver* driver = device->getVideoDriver();
-	assert(driver);
+	sanity_check(driver);
 
 	video::IGPUProgrammingServices *gpu = driver->getGPUProgrammingServices();
 	if(!gpu){

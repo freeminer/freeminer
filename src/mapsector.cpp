@@ -88,7 +88,7 @@ MapBlock * MapSector::getBlockNoCreateNoEx(s16 y)
 
 MapBlock * MapSector::createBlankBlockNoInsert(s16 y)
 {
-	assert(getBlockBuffered(y) == NULL);
+	assert(getBlockBuffered(y) == NULL);	// Pre-condition
 
 	v3s16 blockpos_map(m_pos.X, y, m_pos.Y);
 	
@@ -136,7 +136,7 @@ void MapSector::deleteBlock(MapBlock *block)
 	delete block;
 }
 
-void MapSector::getBlocks(std::list<MapBlock*> &dest)
+void MapSector::getBlocks(MapBlockVect &dest)
 {
 	for(std::map<s16, MapBlock*>::iterator bi = m_blocks.begin();
 		bi != m_blocks.end(); ++bi)

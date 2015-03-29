@@ -159,7 +159,7 @@ void Schematic::blitToVManip(v3s16 p, MMVManip *vm, Rotation rot,
 void Schematic::placeStructure(Map *map, v3s16 p, u32 flags, Rotation rot,
 	bool force_placement, INodeDefManager *ndef)
 {
-	assert(schemdata != NULL);
+	assert(schemdata != NULL); // Pre-condition
 	MMVManip *vm = new MMVManip(map);
 
 	if (rot == ROTATE_RAND)
@@ -207,6 +207,11 @@ bool Schematic::loadSchematicFromFile(const char *filename, INodeDefManager *nde
 	bool have_cignore = false;
 
 	std::ifstream is(filename, std::ios_base::binary);
+	if (!is.good()) {
+		errorstream << "loadSchematicFile: unable to open file '"
+			<< filename << "'" << std::endl;
+		return false;
+	}
 
 	u32 signature = readU32(is);
 	if (signature != MTSCHEM_FILE_SIGNATURE) {
@@ -369,6 +374,8 @@ bool Schematic::getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2)
 	for (s16 y = 0; y != size.Y; y++)
 		slice_probs[y] = MTSCHEM_PROB_ALWAYS;
 
+	if (schemdata)
+		delete []schemdata;
 	schemdata = new MapNode[size.X * size.Y * size.Z];
 
 	u32 i = 0;

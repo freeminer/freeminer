@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <bitset>
 #include "mapnode.h"
-#include "tile.h"
+#include "client/tile.h"
 #ifndef SERVER
 #include "shader.h"
 #endif
@@ -108,7 +108,7 @@ enum ContentParamType2
 	CPT2_FACEDIR,
 	// Direction for signs, torches and such
 	CPT2_WALLMOUNTED,
-	// Block level like FLOWINGLIQUID
+	// Block level like FLOWINGLIQUID (also for snow)
 	CPT2_LEVELED,
 };
 
@@ -151,6 +151,9 @@ struct NodeBox
 	{ reset(); }
 
 	void reset();
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
+
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };
@@ -193,6 +196,9 @@ struct TileDef
 		animation.aspect_h = 1;
 		animation.length = 1.0;
 	}
+
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
@@ -346,6 +352,9 @@ struct ContentFeatures
 	~ContentFeatures();
 	void reset();
 
+	void serialize(std::ostream &os, u16 protocol_version);
+	void deSerialize(std::istream &is);
+
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
@@ -360,10 +369,10 @@ struct ContentFeatures
 		return (liquid_alternative_flowing == f.liquid_alternative_flowing);
 	}
 	u8 getMaxLevel(bool compress = 0) const{
-		if(param_type_2 == CPT2_LEVELED && liquid_type == LIQUID_FLOWING && leveled)
-			return(compress ? LEVELED_MAX : leveled);
+		//if(param_type_2 == CPT2_LEVELED /* && liquid_type == LIQUID_FLOWING*/ && leveled)
+		//	return(compress ? LEVELED_MAX : leveled);
 		if(leveled || param_type_2 == CPT2_LEVELED)
-			return LEVELED_MAX;
+			return compress ? LEVELED_MAX : leveled ? leveled : LEVELED_MAX;
 		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
 			return LIQUID_LEVEL_SOURCE;
 		return 0;
@@ -421,6 +430,8 @@ public:
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
 	virtual const ContentFeatures& get(const std::string &name) const=0;
 
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 
@@ -471,7 +482,12 @@ public:
 	/*
 		Update tile textures to latest return values of TextueSource.
 	*/
-	virtual void updateTextures(IGameDef *gamedef)=0;
+	virtual void updateTextures(IGameDef *gamedef,
+	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
+	/*argument: */void *progress_callback_args = nullptr)=0;
+
+	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void deSerialize(std::istream &is)=0;
 
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;

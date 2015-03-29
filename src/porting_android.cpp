@@ -74,7 +74,7 @@ extern "C" {
 	JNIEXPORT void JNICALL Java_org_freeminer_MtNativeActivity_putMessageBoxResult(
 			JNIEnv * env, jclass thiz, jstring text)
 	{
-		errorstream << "Java_org_freeminer_MtNativeActivity_putMessageBoxResult got: "
+		errorstream << "Java_net_freeminer_MtNativeActivity_putMessageBoxResult got: "
 				<< std::string((const char*)env->GetStringChars(text,0))
 				<< std::endl;
 	}

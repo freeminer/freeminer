@@ -21,63 +21,37 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /*
-Dummy "database" class
+Dummy database class
 */
-
 
 #include "database-dummy.h"
 
-#include "map.h"
-#include "mapblock.h"
-#include "serialization.h"
-#include "main.h"
-#include "settings.h"
-#include "log.h"
-
-Database_Dummy::Database_Dummy(ServerMap *map)
+bool Database_Dummy::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	srvmap = map;
-}
-
-int Database_Dummy::Initialized(void)
-{
-	return 1;
-}
-
-void Database_Dummy::beginSave() {}
-void Database_Dummy::endSave() {}
-
-bool Database_Dummy::saveBlock(v3s16 blockpos, std::string &data)
-{
-	m_database.set(getBlockAsString(blockpos), data);
+	m_database.set(getBlockAsString(pos), data);
 	return true;
 }
 
-std::string Database_Dummy::loadBlock(v3s16 blockpos)
+std::string Database_Dummy::loadBlock(const v3s16 &pos)
 {
-	if (m_database.count(getBlockAsString(blockpos)))
-		return m_database.get(getBlockAsString(blockpos));
-	else
+	auto i = getBlockAsString(pos);
+	auto lock = m_database.lock_shared_rec();
+	auto it = m_database.find(i);
+	if (it == m_database.end())
 		return "";
+	return it->second;
 }
 
-bool Database_Dummy::deleteBlock(v3s16 blockpos)
+bool Database_Dummy::deleteBlock(const v3s16 &pos)
 {
-	m_database.erase(getBlockAsString(blockpos));
+	m_database.erase(getBlockAsString(pos));
 	return true;
 }
 
-void Database_Dummy::listAllLoadableBlocks(std::list<v3s16> &dst)
+void Database_Dummy::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
-	for(auto &x : m_database)
-	{
-		v3s16 p = getStringAsBlock(x.first);
-		//dstream<<"block_i="<<block_i<<" p="<<PP(p)<<std::endl;
-		dst.push_back(p);
+	for(auto &x : m_database) {
+		dst.push_back(getStringAsBlock(x.first));
 	}
 }
 
-Database_Dummy::~Database_Dummy()
-{
-	m_database.clear();
-}

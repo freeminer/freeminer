@@ -62,11 +62,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <windows.h>
 
 	#define sleep_ms(x) Sleep(x)
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #else
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
 
-	#if (defined(linux) || defined(__linux)) && !defined(_GNU_SOURCE)
+#if (defined(linux) || defined(__linux) || defined(__GNU__)) && !defined(_GNU_SOURCE)
 		#define _GNU_SOURCE
 	#endif
 
@@ -92,6 +94,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#define THREAD_PRIORITY_NORMAL       2
 	#define THREAD_PRIORITY_ABOVE_NORMAL 3
 	#define THREAD_PRIORITY_HIGHEST      4
+
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 #endif
 
 #ifdef _MSC_VER
@@ -235,7 +239,7 @@ void initIrrlicht(irr::IrrlichtDevice * );
 #else // Posix
 #include <sys/time.h>
 #include <time.h>
-#ifdef __MACH__
+#if defined(__MACH__) && defined(__APPLE__)
 #include <mach/clock.h>
 #include <mach/mach.h>
 #endif
@@ -265,7 +269,7 @@ void initIrrlicht(irr::IrrlichtDevice * );
 	{
 		struct timespec ts;
 		// from http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
-#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+#if defined(__MACH__) && defined(__APPLE__) // OS X does not have clock_gettime, use clock_get_time
 		clock_serv_t cclock;
 		mach_timespec_t mts;
 		host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
@@ -365,7 +369,7 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 	inline void setThreadName(const char *name) {
 		pthread_setname_np(name);
 	}
-#elif defined(_WIN32)
+#elif defined(_WIN32) || defined(__GNU__)
 	inline void setThreadName(const char* name) {}
 #else
 	#warning "Unrecognized platform, thread names will not be available."
@@ -395,6 +399,7 @@ float getDisplayDensity();
 v2u32 getDisplaySize();
 v2u32 getWindowSize();
 
+std::vector<core::vector3d<u32> > getSupportedVideoModes();
 std::vector<irr::video::E_DRIVER_TYPE> getSupportedVideoDrivers();
 const char *getVideoDriverName(irr::video::E_DRIVER_TYPE type);
 const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type);

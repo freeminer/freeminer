@@ -81,7 +81,6 @@ private:
 	std::queue<Value> m_queue;
 };
 
-#if 1
 template<typename Key, typename Value>
 class MutexedMap
 {
@@ -113,9 +112,9 @@ public:
 		return true;
 	}
 
-	std::list<Value> getValues()
+	std::vector<Value> getValues()
 	{
-		std::list<Value> result;
+		std::vector<Value> result;
 		for(typename std::map<Key, Value>::iterator
 			i = m_values.begin();
 			i != m_values.end(); ++i){
@@ -133,7 +132,6 @@ private:
 	std::map<Key, Value> m_values;
 	JMutex m_mutex;
 };
-#endif
 
 /*
 Generates ids for comparable values.
@@ -193,67 +191,47 @@ private:
 FIFO queue (well, actually a FILO also)
 */
 template<typename T>
-class Queue
-: public locker
+class Queue //TODO! rename me to shared_queue
+: public locker, public std::queue<T>
 {
 public:
-	Queue() {
-		m_list_size = 0;
-	}
+	Queue() { }
 
 	void push_back(T t)
 	{
 		auto lock = lock_unique();
-		m_list.push_back(t);
-		++m_list_size;
+		std::queue<T>::push(t);
 	}
 
-	void push_front(T t)
+	void push(T t)
 	{
 		auto lock = lock_unique();
-		m_list.push_front(t);
-		++m_list_size;
+		std::queue<T>::push(t);
 	}
+
+	// usually used as pop_front()
+	T front() = delete;
+	void pop() = delete;
 
 	T pop_front()
 	{
 		auto lock = lock_unique();
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
-		--m_list_size;
-		return t;
-	}
-	T pop_back()
-	{
-		auto lock = lock_unique();
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator last = m_list.back();
-		T t = *last;
-		m_list.erase(last);
-		--m_list_size;
-		return t;
+		T val = std::queue<T>::front();
+		std::queue<T>::pop();
+		return val;
 	}
 
 	u32 size()
 	{
-		return m_list_size;
+		auto lock = lock_shared();
+		return std::queue<T>::size();
 	}
 
 	bool empty()
 	{
 		auto lock = lock_shared();
-		return m_list.empty();
+		return std::queue<T>::empty();
 	}
-
-protected:
-	std::list<T> m_list;
-	std::atomic_uint m_list_size;
 };
 
 /*
@@ -273,7 +251,7 @@ public:
 	bool empty()
 	{
 		try_shared_lock lock(m_mutex);
-		return (m_size.GetValue() == 0);
+		return (m_queue.size() == 0);
 	}
 	bool empty_try()
 	{
@@ -284,12 +262,12 @@ public:
 	}
 	unsigned int size() {
 		unique_lock lock(m_mutex);
-		return m_list.size();
+		return m_queue.size();
 	}
 	void push_back(T t)
 	{
 		unique_lock lock(m_mutex);
-		m_list.push_back(t);
+		m_queue.push_back(t);
 		m_size.Post();
 	}
 
@@ -298,34 +276,28 @@ public:
 	*/
 	T pop_frontNoEx(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
 
 	T pop_front(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
@@ -336,26 +308,21 @@ public:
 
 		unique_lock lock(m_mutex);
 
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
+		T t = m_queue.front();
+		m_queue.pop_front();
 		return t;
 	}
 
 	T pop_back(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
@@ -365,18 +332,14 @@ public:
 	*/
 	T pop_backNoEx(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
@@ -387,10 +350,8 @@ public:
 
 		unique_lock lock(m_mutex);
 
-		typename std::list<T>::iterator last = m_list.end();
-		last--;
-		T t = *last;
-		m_list.erase(last);
+		T t = m_queue.back();
+		m_queue.pop_back();
 		return t;
 	}
 
@@ -400,15 +361,13 @@ protected:
 		return m_mutex;
 	}
 
-	// NEVER EVER modify the >>list<< you got by using this function!
-	// You may only modify it's content
-	std::list<T> & getList()
+	std::deque<T> & getQueue()
 	{
-		return m_list;
+		return m_queue;
 	}
 
+	std::deque<T> m_queue;
 	try_shared_mutex m_mutex;
-	std::list<T> m_list;
 	JSemaphore m_size;
 };
 

@@ -73,14 +73,14 @@ LocalPlayer::~LocalPlayer()
 }
 
 void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
-		std::list<CollisionInfo> *collision_info)
+		std::vector<CollisionInfo> *collision_info)
 {
 	Map *map = &env->getMap();
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	v3f position = getPosition();
 
-	v3f old_speed = m_speed;
+	//v3f old_speed = m_speed;
 
 	// Copy parent position if local player is attached
 	if(isAttached)
@@ -126,9 +126,9 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			in_liquid = f.isLiquid();
 			liquid_viscosity = f.liquid_viscosity;
 			if (f.param_type_2 == CPT2_LEVELED) {
-				auto level = node.getLevel(nodemgr);
-				auto maxlevel = node.getMaxLevel(nodemgr);
-				if (level && maxlevel)
+				float level = node.getLevel(nodemgr);
+				float maxlevel = node.getMaxLevel(nodemgr);
+				if (level && maxlevel && level < maxlevel)
 					liquid_viscosity /= maxlevel / level;
 			}
 		} else {
@@ -190,10 +190,10 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	//f32 d = pos_max_d * 1.1;
 	// A fairly large value in here makes moving smoother
-	f32 d = 0.15*BS;
+	//f32 d = 0.15*BS;
 
 	// This should always apply, otherwise there are glitches
-	assert(d > pos_max_d);
+	//sanity_check(d > pos_max_d);
 
 	// Maximum distance over border for sneaking
 	f32 sneak_max = BS*0.4;
@@ -232,9 +232,9 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// this shouldn't be hardcoded but transmitted from server
 	float player_stepheight = touching_ground ? (BS*0.6) : (BS*0.2);
 
-#ifdef __ANDROID__
-	player_stepheight += (0.5 * BS);
-#endif
+	if (g_settings->getBool("autojump")) {
+		player_stepheight += (0.5 * BS);
+	}
 
 	v3f accel_f = v3f(0,0,0);
 
@@ -250,26 +250,6 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	bool touching_ground_was = touching_ground;
 	touching_ground = result.touching_ground;
-
-	if (g_settings->getBool("autojump")) {
-		v3f normalized_speed(old_speed);
-		if (control.up) {
-			normalized_speed.setLength(BS / 1.5);
-
-			v3s16 jumping_over(myround((normalized_speed.X + position.X) / BS), position.Y / BS + 0.5, myround((normalized_speed.Z + position.Z) / BS));
-			v3s16 jumping_over_top = jumping_over + v3s16(0, 1, 0);
-			v3s16 jumping_over_top2 = jumping_over + v3s16(0, 2, 0);
-				if (fabs(m_speed.Y) < 1e-6 && nodemgr->get(map->getNodeNoEx(jumping_over)).walkable
-						&& !nodemgr->get(map->getNodeNoEx(jumping_over_top)).walkable
-						&& !nodemgr->get(map->getNodeNoEx(jumping_over_top2)).walkable) {
-						// todo: test here low level leveled nodes like snow to not jump
-					m_speed.Y += BS * 8;
-					touching_ground = false;
-					return;
-				} else {
-				}
-		}
-	}
 
     //bool standing_on_unloaded = result.standing_on_unloaded;
 
@@ -369,9 +349,8 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	bool bouncy_jump = false;
 	// Dont report if flying
-	if(collision_info && !(g_settings->getBool("free_move") && fly_allowed))
-	{
-		for(size_t i=0; i<result.collisions.size(); i++){
+	if(collision_info && !(g_settings->getBool("free_move") && fly_allowed)) {
+		for(size_t i=0; i<result.collisions.size(); i++) {
 			const CollisionInfo &info = result.collisions[i];
 			collision_info->push_back(info);
 			if(info.new_speed.Y - info.old_speed.Y > 0.1*BS &&
@@ -439,8 +418,11 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());
 		v3f node_pos(p.X, p.Y, p.Z);
-		player_box.MinEdge *= 0.999f;
-		player_box.MaxEdge *= 0.999f;
+		v3f center = player_box.getCenter();
+		v3f min_edge = (player_box.MinEdge - center) * 0.999f;
+		v3f max_edge = (player_box.MaxEdge - center) * 0.999f;
+		player_box.MinEdge = center + min_edge;
+		player_box.MaxEdge = center + max_edge;
 		player_box.MinEdge += position;
 		player_box.MaxEdge += position;
 		for(auto box : nodeboxes) {
@@ -702,4 +684,3 @@ v3s16 LocalPlayer::getStandingNodePos()
 		return m_sneak_node;
 	return floatToInt(getPosition() - v3f(0, BS, 0), BS);
 }
-

@@ -38,6 +38,11 @@ std::ostream & operator<<(std::ostream & s, irr::video::SColor c) {
 	return s;
 }
 
+std::ostream & operator<<(std::ostream & s, irr::video::SColorf c) {
+	s << "cf32(" << "a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+	return s;
+}
+
 #include "util/string.h"
 std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
 	s << wide_to_narrow(w);
@@ -48,7 +53,7 @@ std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
 
 #include "mapnode.h"
 std::ostream & operator<<(std::ostream & s, MapNode n) {
-	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
+	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param2<<"]";
 	return s;
 }
 

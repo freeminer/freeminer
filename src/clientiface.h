@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutex.h"
 #include "util/lock.h"
 #include "util/unordered_map_hash.h"
+#include "network/networkpacket.h"
 
 #include <list>
 #include <vector>
@@ -208,9 +209,9 @@ public:
 	std::atomic_ushort net_proto_version;
 
 	std::atomic_int m_nearest_unsent_reset;
-	s16 wanted_range;
-	s16 range_all;
-	s16 farmesh;
+	std::atomic_int wanted_range;
+	std::atomic_int range_all;
+	std::atomic_int farmesh;
 	float fov;
 	bool block_overflow;
 
@@ -230,6 +231,7 @@ public:
 		m_version_minor(0),
 		m_version_patch(0),
 		m_full_version("unknown"),
+		m_supported_compressions(0),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
 		net_proto_version = 0;
@@ -237,7 +239,7 @@ public:
 		m_nearest_unsent_reset = 0;
 
 		wanted_range = 9 * MAP_BLOCKSIZE;
-		range_all =0;
+		range_all = 0;
 		farmesh = 0;
 		fov = 72; // g_settings->getFloat("fov");
 		block_overflow = 0;
@@ -312,6 +314,9 @@ public:
 	void setPendingSerializationVersion(u8 version)
 		{ m_pending_serialization_version = version; }
 
+	void setSupportedCompressionModes(u8 byteFlag)
+		{ m_supported_compressions = byteFlag; }
+
 	void confirmSerializationVersion()
 		{ serialization_version = m_pending_serialization_version; }
 
@@ -375,6 +380,8 @@ private:
 
 	std::string m_full_version;
 
+	u8 m_supported_compressions;
+
 	/*
 		time this client was created
 	 */
@@ -393,20 +400,23 @@ public:
 	void step(float dtime);
 
 	/* get list of active client id's */
-	std::list<u16> getClientIDs(ClientState min_state=CS_Active);
+	std::vector<u16> getClientIDs(ClientState min_state=CS_Active);
 
 	/* get list of client player names */
 	std::vector<std::string> getPlayerNames();
 
 	/* send message to client */
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
 
 	/* send message to client */
 	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
 
+	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable); //todo: delete
+
 	/* send to all clients */
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
+	void sendToAll(u16 channelnum, NetworkPacket* pkt, bool reliable);
 
 	/* delete a client */
 	void DeleteClient(u16 peer_id);
@@ -437,11 +447,22 @@ public:
 	/* event to update client state */
 	void event(u16 peer_id, ClientStateEvent event);
 
-	/* set environment */
-	void setEnv(ServerEnvironment* env)
-	{ assert(m_env == 0); m_env = env; }
+	/* Set environment. Do not call this function if environment is already set */
+	void setEnv(ServerEnvironment *env)
+	{
+		assert(m_env == NULL); // pre-condition
+		m_env = env;
+	}
 
 	static std::string state2Name(ClientState state);
+
+protected:
+	//mt compat
+	void Lock()
+		{  }
+	void Unlock()
+		{  }
+
 
 public:
 	std::vector<std::shared_ptr<RemoteClient>> getClientList() {
@@ -470,7 +491,7 @@ private:
 	//JMutex m_env_mutex;
 
 	float m_print_info_timer;
-	
+
 	static const char *statenames[];
 };
 

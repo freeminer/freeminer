@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 
 #include <fstream>
+#include "jthread/jmutexautolock.h"
 #include "util/numeric.h"
 #include "hud.h"
 #include "constants.h"
@@ -44,7 +45,6 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	swimming_vertical(false),
 	camera_barely_in_ceiling(false),
 	inventory(gamedef->idef()),
-	hp(PLAYER_MAX_HP),
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
 	zoom(false),
@@ -61,6 +61,8 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	m_position(0,0,0),
 	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
 {
+	hp = PLAYER_MAX_HP;
+
 	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 
@@ -92,6 +94,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
+	local_animation_speed           = 0.0;
 
 	// Movement overrides are multipliers and must be 1 by default
 	physics_override_speed        = 1;
@@ -253,6 +256,8 @@ void Player::deSerialize(std::istream &is, std::string playername)
 
 u32 Player::addHud(HudElement *toadd)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	u32 id = getFreeHudID();
 
 	if (id < hud.size())
@@ -265,6 +270,8 @@ u32 Player::addHud(HudElement *toadd)
 
 HudElement* Player::getHud(u32 id)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	if (id < hud.size())
 		return hud[id];
 
@@ -273,6 +280,8 @@ HudElement* Player::getHud(u32 id)
 
 HudElement* Player::removeHud(u32 id)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	HudElement* retval = NULL;
 	if (id < hud.size()) {
 		retval = hud[id];
@@ -283,6 +292,8 @@ HudElement* Player::removeHud(u32 id)
 
 void Player::clearHud()
 {
+	JMutexAutoLock lock(m_mutex);
+
 	while(!hud.empty()) {
 		delete hud.back();
 		hud.pop_back();
@@ -323,7 +334,7 @@ Json::Value operator<<(Json::Value &json, Player &player) {
 	json["pitch"] = player.m_pitch;
 	json["yaw"] = player.m_yaw;
 	json["position"] << player.m_position;
-	json["hp"] = player.hp;
+	json["hp"] = player.hp.load();
 	json["breath"] = player.m_breath;
 	return json;
 }

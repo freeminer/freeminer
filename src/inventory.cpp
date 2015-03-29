@@ -652,7 +652,7 @@ ItemStack InventoryList::changeItem(u32 i, const ItemStack &newitem)
 
 void InventoryList::deleteItem(u32 i)
 {
-	assert(i < m_items.size());
+	assert(i < m_items.size()); // Pre-condition
 	m_items[i].clear();
 }
 

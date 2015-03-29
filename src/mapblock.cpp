@@ -60,8 +60,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 		m_day_night_differs(false),
 		m_generated(false),
 		m_disk_timestamp(BLOCK_TIMESTAMP_UNDEFINED),
-		m_usage_timer(0),
-		m_refcount(0)
+		m_usage_timer(0)
 {
 	heat = 0;
 	humidity = 0;
@@ -69,6 +68,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_changed_timestamp = 0;
 	m_day_night_differs_expired = true;
 	m_lighting_expired = true;
+	m_refcount = 0;
 	data = NULL;
 	//if(dummy == false)
 		reallocate();
@@ -345,48 +345,43 @@ void MapBlock::copyFrom(VoxelManipulator &dst)
 void MapBlock::actuallyUpdateDayNightDiff()
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
+
 	// Running this function un-expires m_day_night_differs
 	m_day_night_differs_expired = false;
 
-	if(data == NULL)
-	{
+	if (data == NULL) {
 		m_day_night_differs = false;
 		return;
 	}
 
-	bool differs = false;
+	bool differs;
 
 	/*
 		Check if any lighting value differs
 	*/
 	auto lock = lock_shared_rec();
-	for(u32 i=0; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
-	{
+	for (u32 i = 0; i < MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++) {
 		MapNode &n = data[i];
-		if(n.getLight(LIGHTBANK_DAY, nodemgr) != n.getLight(LIGHTBANK_NIGHT, nodemgr))
-		{
-			differs = true;
+
+		differs = !n.isLightDayNightEq(nodemgr);
+		if (differs)
 			break;
-		}
 	}
 
 	/*
 		If some lighting values differ, check if the whole thing is
-		just air. If it is, differ = false
+		just air. If it is just air, differs = false
 	*/
-	if(differs)
-	{
+	if (differs) {
 		bool only_air = true;
-		for(u32 i=0; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
-		{
+		for (u32 i = 0; i < MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++) {
 			MapNode &n = data[i];
-			if(n.getContent() != CONTENT_AIR)
-			{
+			if (n.getContent() != CONTENT_AIR) {
 				only_air = false;
 				break;
 			}
 		}
-		if(only_air)
+		if (only_air)
 			differs = false;
 	}
 
@@ -546,7 +541,7 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 		throw SerializationError("ERROR: Not writing dummy block.");
 	}
 
-	assert(version >= SER_FMT_CLIENT_VER_LOWEST);
+	FATAL_ERROR_IF(version < SER_FMT_CLIENT_VER_LOWEST, "Serialize version error");
 
 	// First byte
 	u8 flags = 0;
@@ -627,6 +622,22 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 	}
 }
 
+void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
+{
+	if(data == NULL)
+	{
+		throw SerializationError("ERROR: Not writing dummy block.");
+	}
+
+	if(net_proto_version >= 21){
+		int version = 1;
+		writeU8(os, version);
+		writeF1000(os, heat); // deprecated heat
+		writeF1000(os, humidity); // deprecated humidity
+	}
+}
+
+
 bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
 	auto lock = lock_unique_rec();
@@ -650,7 +661,8 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	m_generated = (flags & 0x08) ? false : true;
 
 	if (!m_generated) {
-		infostream<<"MapBlock::deSerialize(): deserialize not generated block"<<std::endl;
+		infostream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
+		//if (disk) m_generated = false; else // uncomment if you want convert old buggy map
 		return false;
 	}
 
@@ -740,6 +752,24 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 			<<": Done."<<std::endl);
 	return true;
+}
+
+void MapBlock::deSerializeNetworkSpecific(std::istream &is)
+{
+	try {
+		int version = readU8(is);
+		//if(version != 1)
+		//	throw SerializationError("unsupported MapBlock version");
+		if(version >= 1) {
+			heat = readF1000(is); // deprecated heat
+			humidity = readF1000(is); // deprecated humidity
+		}
+	}
+	catch(SerializationError &e)
+	{
+		errorstream<<"WARNING: MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
+				<<": "<<e.what()<<std::endl;
+	}
 }
 
 	MapNode MapBlock::getNodeNoEx(v3POS p) {

@@ -142,7 +142,13 @@ public:
 			delete data;
 		u32 l = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 		data = reinterpret_cast<MapNode*>( ::operator new(l * sizeof(MapNode)));
-		memset(data, 0, l * sizeof(MapNode));
+		if (!CONTENT_IGNORE)
+			memset(data, 0, l * sizeof(MapNode));
+		else
+		for(u32 i=0; i<l; i++){
+			data[i] = MapNode(CONTENT_IGNORE);
+		}
+
 	}
 
 	/*
@@ -524,6 +530,9 @@ public:
 	// unknown blocks from id-name mapping to wndef
 	bool deSerialize(std::istream &is, u8 version, bool disk);
 
+	void serializeNetworkSpecific(std::ostream &os, u16 net_proto_version);
+	void deSerializeNetworkSpecific(std::istream &is);
+
 	void pushElementsToCircuit(Circuit* circuit);
 
 #ifndef SERVER // Only on client
@@ -584,6 +593,7 @@ public:
 	u32 m_next_analyze_timestamp;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
+	std::mutex abm_triggers_mutex;
 	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
 
@@ -684,8 +694,10 @@ private:
 		Reference count; currently used for determining if this block is in
 		the list of blocks to be drawn.
 	*/
-	int m_refcount;
+	std::atomic_int m_refcount;
 };
+
+typedef std::vector<MapBlock*> MapBlockVect;
 
 inline bool blockpos_over_limit(v3s16 p)
 {

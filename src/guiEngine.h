@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "modalMenu.h"
 #include "guiFormSpecMenu.h"
 #include "sound.h"
-#include "tile.h"
+#include "client/tile.h"
 
 /******************************************************************************/
 /* Typedefs and macros                                                        */

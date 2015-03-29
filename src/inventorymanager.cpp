@@ -65,7 +65,7 @@ void InventoryLocation::serialize(std::ostream &os) const
 		os<<"detached:"<<name;
 		break;
 	default:
-		assert(0);
+		FATAL_ERROR("Unhandled inventory location type");
 	}
 }
 
@@ -459,9 +459,9 @@ void IMoveAction::apply(InventoryManager *mgr, ServerActiveObject *player, IGame
 		}
 	}
 	
-	mgr->setInventoryModified(from_inv);
+	mgr->setInventoryModified(from_inv, false);
 	if(inv_from != inv_to)
-		mgr->setInventoryModified(to_inv);
+		mgr->setInventoryModified(to_inv, false);
 }
 
 void IMoveAction::clientApply(InventoryManager *mgr, IGameDef *gamedef)
@@ -601,7 +601,7 @@ void IDropAction::apply(InventoryManager *mgr, ServerActiveObject *player, IGame
 			if(item2.count != actually_dropped_count)
 				errorstream<<"Could not take dropped count of items"<<std::endl;
 
-			mgr->setInventoryModified(from_inv);
+			mgr->setInventoryModified(from_inv, false);
 		}
 	}
 

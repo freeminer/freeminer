@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h" // For g_settings
 #include "itemdef.h"
 #ifndef SERVER
-#include "tile.h"
+#include "client/tile.h"
 #include "mesh.h"
 #include <IMeshManipulator.h>
 #endif
@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
-#include "connection.h"
+#include "network/connection.h"
 #include "shader.h"
 #include "exceptions.h"
 #include "debug.h"
@@ -54,6 +54,70 @@ void NodeBox::reset()
 	wall_top = aabb3f(-BS/2, BS/2-BS/16., -BS/2, BS/2, BS/2, BS/2);
 	wall_bottom = aabb3f(-BS/2, -BS/2, -BS/2, BS/2, -BS/2+BS/16., BS/2);
 	wall_side = aabb3f(-BS/2, -BS/2, -BS/2, -BS/2+BS/16., BS/2, BS/2);
+}
+
+void NodeBox::serialize(std::ostream &os, u16 protocol_version) const
+{
+	int version = protocol_version >= 21 ? 2 : 1;
+	writeU8(os, version);
+
+	if (version == 1 && type == NODEBOX_LEVELED)
+		writeU8(os, NODEBOX_FIXED);
+	else
+		writeU8(os, type);
+
+	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+	{
+		writeU16(os, fixed.size());
+		for(std::vector<aabb3f>::const_iterator
+				i = fixed.begin();
+				i != fixed.end(); i++)
+		{
+			writeV3F1000(os, i->MinEdge);
+			writeV3F1000(os, i->MaxEdge);
+		}
+	}
+	else if(type == NODEBOX_WALLMOUNTED)
+	{
+		writeV3F1000(os, wall_top.MinEdge);
+		writeV3F1000(os, wall_top.MaxEdge);
+		writeV3F1000(os, wall_bottom.MinEdge);
+		writeV3F1000(os, wall_bottom.MaxEdge);
+		writeV3F1000(os, wall_side.MinEdge);
+		writeV3F1000(os, wall_side.MaxEdge);
+	}
+}
+
+void NodeBox::deSerialize(std::istream &is)
+{
+	int version = readU8(is);
+	if(version < 1 || version > 2)
+		throw SerializationError("unsupported NodeBox version");
+
+	reset();
+
+	type = (enum NodeBoxType)readU8(is);
+
+	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+	{
+		u16 fixed_count = readU16(is);
+		while(fixed_count--)
+		{
+			aabb3f box;
+			box.MinEdge = readV3F1000(is);
+			box.MaxEdge = readV3F1000(is);
+			fixed.push_back(box);
+		}
+	}
+	else if(type == NODEBOX_WALLMOUNTED)
+	{
+		wall_top.MinEdge = readV3F1000(is);
+		wall_top.MaxEdge = readV3F1000(is);
+		wall_bottom.MinEdge = readV3F1000(is);
+		wall_bottom.MaxEdge = readV3F1000(is);
+		wall_side.MinEdge = readV3F1000(is);
+		wall_side.MaxEdge = readV3F1000(is);
+	}
 }
 
 void NodeBox::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
@@ -97,6 +161,33 @@ void NodeBox::msgpack_unpack(msgpack::object o)
 /*
 	TileDef
 */
+
+void TileDef::serialize(std::ostream &os, u16 protocol_version) const
+{
+	if(protocol_version >= 17)
+		writeU8(os, 1);
+	else
+		writeU8(os, 0);
+	os<<serializeString(name);
+	writeU8(os, animation.type);
+	writeU16(os, animation.aspect_w);
+	writeU16(os, animation.aspect_h);
+	writeF1000(os, animation.length);
+	if(protocol_version >= 17)
+		writeU8(os, backface_culling);
+}
+
+void TileDef::deSerialize(std::istream &is)
+{
+	int version = readU8(is);
+	name = deSerializeString(is);
+	animation.type = (TileAnimationType)readU8(is);
+	animation.aspect_w = readU16(is);
+	animation.aspect_h = readU16(is);
+	animation.length = readF1000(is);
+	if(version >= 1)
+		backface_culling = readU8(is);
+}
 
 void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
@@ -236,6 +327,141 @@ void ContentFeatures::reset()
 		circuit_element_func[i] = 0;
 	}
 	circuit_element_delay = 0;
+}
+
+void ContentFeatures::serialize(std::ostream &os, u16 protocol_version)
+{
+	if(protocol_version < 24){
+		//serializeOld(os, protocol_version);
+		return;
+	}
+
+	writeU8(os, 7); // version
+	os<<serializeString(name);
+	writeU16(os, groups.size());
+	for(ItemGroupList::const_iterator
+			i = groups.begin(); i != groups.end(); i++){
+		os<<serializeString(i->first);
+		writeS16(os, i->second);
+	}
+	writeU8(os, drawtype);
+	writeF1000(os, visual_scale);
+	writeU8(os, 6);
+	for(u32 i = 0; i < 6; i++)
+		tiledef[i].serialize(os, protocol_version);
+	writeU8(os, CF_SPECIAL_COUNT);
+	for(u32 i = 0; i < CF_SPECIAL_COUNT; i++){
+		tiledef_special[i].serialize(os, protocol_version);
+	}
+	writeU8(os, alpha);
+	writeU8(os, post_effect_color.getAlpha());
+	writeU8(os, post_effect_color.getRed());
+	writeU8(os, post_effect_color.getGreen());
+	writeU8(os, post_effect_color.getBlue());
+	writeU8(os, param_type);
+	writeU8(os, param_type_2);
+	writeU8(os, is_ground_content);
+	writeU8(os, light_propagates);
+	writeU8(os, sunlight_propagates);
+	writeU8(os, walkable);
+	writeU8(os, pointable);
+	writeU8(os, diggable);
+	writeU8(os, climbable);
+	writeU8(os, buildable_to);
+	os<<serializeString(""); // legacy: used to be metadata_name
+	writeU8(os, liquid_type);
+	os<<serializeString(liquid_alternative_flowing);
+	os<<serializeString(liquid_alternative_source);
+	writeU8(os, liquid_viscosity);
+	writeU8(os, liquid_renewable);
+	writeU8(os, light_source);
+	writeU32(os, damage_per_second);
+	node_box.serialize(os, protocol_version);
+	selection_box.serialize(os, protocol_version);
+	writeU8(os, legacy_facedir_simple);
+	writeU8(os, legacy_wallmounted);
+	serializeSimpleSoundSpec(sound_footstep, os);
+	serializeSimpleSoundSpec(sound_dig, os);
+	serializeSimpleSoundSpec(sound_dug, os);
+	writeU8(os, rightclickable);
+	writeU8(os, drowning);
+	writeU8(os, leveled);
+	writeU8(os, liquid_range);
+	writeU8(os, waving);
+	// Stuff below should be moved to correct place in a version that otherwise changes
+	// the protocol version
+	os<<serializeString(mesh);
+	collision_box.serialize(os, protocol_version);
+}
+
+void ContentFeatures::deSerialize(std::istream &is)
+{
+	int version = readU8(is);
+	if(version != 7){
+		//deSerializeOld(is, version);
+		return;
+	}
+	name = deSerializeString(is);
+	groups.clear();
+	u32 groups_size = readU16(is);
+	for(u32 i = 0; i < groups_size; i++){
+		std::string name = deSerializeString(is);
+		int value = readS16(is);
+		groups[name] = value;
+	}
+	drawtype = (enum NodeDrawType)readU8(is);
+	visual_scale = readF1000(is);
+	if(readU8(is) != 6)
+		throw SerializationError("unsupported tile count");
+	for(u32 i = 0; i < 6; i++)
+		tiledef[i].deSerialize(is);
+	if(readU8(is) != CF_SPECIAL_COUNT)
+		throw SerializationError("unsupported CF_SPECIAL_COUNT");
+	for(u32 i = 0; i < CF_SPECIAL_COUNT; i++)
+		tiledef_special[i].deSerialize(is);
+	alpha = readU8(is);
+	post_effect_color.setAlpha(readU8(is));
+	post_effect_color.setRed(readU8(is));
+	post_effect_color.setGreen(readU8(is));
+	post_effect_color.setBlue(readU8(is));
+	param_type = (enum ContentParamType)readU8(is);
+	param_type_2 = (enum ContentParamType2)readU8(is);
+	is_ground_content = readU8(is);
+	light_propagates = readU8(is);
+	sunlight_propagates = readU8(is);
+	walkable = readU8(is);
+	pointable = readU8(is);
+	diggable = readU8(is);
+	climbable = readU8(is);
+	buildable_to = readU8(is);
+	deSerializeString(is); // legacy: used to be metadata_name
+	liquid_type = (enum LiquidType)readU8(is);
+	liquid_alternative_flowing = deSerializeString(is);
+	liquid_alternative_source = deSerializeString(is);
+	liquid_viscosity = readU8(is);
+	liquid_renewable = readU8(is);
+	light_source = readU8(is);
+	damage_per_second = readU32(is);
+	node_box.deSerialize(is);
+	selection_box.deSerialize(is);
+	legacy_facedir_simple = readU8(is);
+	legacy_wallmounted = readU8(is);
+	deSerializeSimpleSoundSpec(sound_footstep, is);
+	deSerializeSimpleSoundSpec(sound_dig, is);
+	deSerializeSimpleSoundSpec(sound_dug, is);
+	rightclickable = readU8(is);
+	drowning = readU8(is);
+	leveled = readU8(is);
+	liquid_range = readU8(is);
+	waving = readU8(is);
+	// If you add anything here, insert it primarily inside the try-catch
+	// block to not need to increase the version.
+	try{
+		// Stuff below should be moved to correct place in a version that
+		// otherwise changes the protocol version
+	mesh = deSerializeString(is);
+	collision_box.deSerialize(is);
+	}catch(SerializationError &e) {};
 }
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
@@ -380,7 +606,11 @@ public:
 	virtual content_t set(const std::string &name, const ContentFeatures &def);
 	virtual content_t allocateDummy(const std::string &name);
 	virtual void updateAliases(IItemDefManager *idef);
-	virtual void updateTextures(IGameDef *gamedef);
+	virtual void updateTextures(IGameDef *gamedef,
+	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
+	/*argument: */void *progress_callback_args);
+	void serialize(std::ostream &os, u16 protocol_version);
+	void deSerialize(std::istream &is);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
@@ -526,6 +756,9 @@ void CNodeDefManager::clear()
 		content_t c = CONTENT_IGNORE;
 		m_content_features[c] = f;
 		addNameIdMapping(c, f.name);
+		// mtproto: 0 must be ignore always
+		if (c)
+			m_content_features[0] = f;
 	}
 }
 
@@ -651,6 +884,7 @@ content_t CNodeDefManager::allocateId()
 // IWritableNodeDefManager
 content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &def)
 {
+	// Pre-conditions
 	assert(name != "");
 	assert(name == def.name);
 
@@ -700,7 +934,7 @@ content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &d
 
 content_t CNodeDefManager::allocateDummy(const std::string &name)
 {
-	assert(name != "");
+	assert(name != "");	// Pre-condition
 	ContentFeatures f;
 	f.name = name;
 	return set(name, f);
@@ -724,7 +958,9 @@ void CNodeDefManager::updateAliases(IItemDefManager *idef)
 }
 
 
-void CNodeDefManager::updateTextures(IGameDef *gamedef)
+void CNodeDefManager::updateTextures(IGameDef *gamedef,
+	void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
+	void *progress_callback_args)
 {
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
@@ -746,7 +982,9 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 	bool use_normal_texture = enable_shaders &&
 		(enable_bumpmapping || enable_parallax_occlusion);
 
-	for (u32 i = 0; i < m_content_features.size(); i++) {
+	u32 size = m_content_features.size();
+
+	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &m_content_features[i];
 
 		// Figure out the actual tiles to use
@@ -923,8 +1161,12 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef)
 			recalculateBoundingBox(f->mesh_ptr[0]);
 			meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);
 		}
+
 		f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
+
 		}
+		if (progress_callback)
+		progress_callback(progress_callback_args, i, size);
 #endif
 	}
 }
@@ -988,6 +1230,81 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 }
 #endif
 
+void CNodeDefManager::serialize(std::ostream &os, u16 protocol_version)
+{
+	writeU8(os, 1); // version
+	u16 count = 0;
+	std::ostringstream os2(std::ios::binary);
+	for (u32 i = 0; i < m_content_features.size(); i++) {
+		if (i == CONTENT_IGNORE || i == CONTENT_AIR
+				|| i == CONTENT_UNKNOWN)
+			continue;
+		ContentFeatures *f = &m_content_features[i];
+		if (f->name == "")
+			continue;
+		writeU16(os2, i);
+		// Wrap it in a string to allow different lengths without
+		// strict version incompatibilities
+		std::ostringstream wrapper_os(std::ios::binary);
+		f->serialize(wrapper_os, protocol_version);
+		os2<<serializeString(wrapper_os.str());
+
+		// must not overflow
+		u16 next = count + 1;
+		FATAL_ERROR_IF(next < count, "Overflow");
+		count++;
+	}
+	writeU16(os, count);
+	os << serializeLongString(os2.str());
+}
+
+
+void CNodeDefManager::deSerialize(std::istream &is)
+{
+	clear();
+	int version = readU8(is);
+	if (version != 1)
+		throw SerializationError("unsupported NodeDefinitionManager version");
+	u16 count = readU16(is);
+	std::istringstream is2(deSerializeLongString(is), std::ios::binary);
+	ContentFeatures f;
+	for (u16 n = 0; n < count; n++) {
+		u16 i = readU16(is2);
+
+		// Read it from the string wrapper
+		std::string wrapper = deSerializeString(is2);
+		std::istringstream wrapper_is(wrapper, std::ios::binary);
+		f.deSerialize(wrapper_is);
+
+		// Check error conditions
+		if (i == CONTENT_IGNORE || i == CONTENT_AIR || i == CONTENT_UNKNOWN) {
+			infostream << "NodeDefManager::deSerialize(): WARNING: "
+				"not changing builtin node " << i << std::endl;
+			continue;
+		}
+		if (f.name == "") {
+			infostream << "NodeDefManager::deSerialize(): WARNING: "
+				"received empty name" << std::endl;
+			continue;
+		}
+
+		// Ignore aliases
+		u16 existing_id;
+		if (m_name_id_mapping.getId(f.name, existing_id) && i != existing_id) {
+			infostream << "NodeDefManager::deSerialize(): WARNING: "
+				"already defined with different ID: " << f.name << std::endl;
+			continue;
+		}
+
+		// All is ok, add node definition with the requested ID
+		if (i >= m_content_features.size())
+			m_content_features.resize((u32)(i) + 1);
+		m_content_features[i] = f;
+		addNameIdMapping(i, f.name);
+		verbosestream << "deserialized " << f.name << std::endl;
+	}
+}
+
 // map of content features, key = id, value = ContentFeatures
 void CNodeDefManager::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
@@ -1010,7 +1327,7 @@ void CNodeDefManager::msgpack_unpack(msgpack::object o)
 
 	for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
 			it != unpacked_features.end(); ++it) {
-		int i = it->first;
+		unsigned int i = it->first;
 		ContentFeatures f = it->second;
 
 		if(i == CONTENT_IGNORE || i == CONTENT_AIR
@@ -1114,7 +1431,7 @@ bool CNodeDefManager::getIdFromResolveInfo(NodeResolveInfo *nri,
 {
 	if (nri->nodenames.empty()) {
 		result = c_fallback;
-		errorstream << "Resolver empty nodename list" << std::endl;
+		infostream << "Resolver empty nodename list" << std::endl;
 		return false;
 	}
 
@@ -1154,7 +1471,7 @@ bool CNodeDefManager::getIdsFromResolveInfo(NodeResolveInfo *nri,
 
 	while (listinfo.length--) {
 		if (nri->nodenames.empty()) {
-			errorstream << "Resolver: Empty nodename list" << std::endl;
+			infostream << "Resolver: Empty nodename list" << std::endl;
 			return false;
 		}
 

@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <sstream>
-#include <list>
+#include <vector>
 #include <map>
 #include "debug.h"
 #include "util/lock.h"
@@ -81,7 +81,7 @@ public:
 
 	void remove(u16 id)
 	{
-		assert(id != 0);
+		assert(id != 0); // Pre-condition
 		if(m_active.find(id) == m_active.end())
 		{
 			dstream<<"WARNING: StaticObjectList::remove(): id="<<id
@@ -99,7 +99,7 @@ public:
 		from m_stored and inserted to m_active.
 		The caller directly manipulates these containers.
 	*/
-	std::list<StaticObject> m_stored;
+	std::vector<StaticObject> m_stored;
 	shared_map<u16, StaticObject> m_active;
 
 private:

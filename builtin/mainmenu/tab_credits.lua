@@ -22,8 +22,8 @@ tab_credits = {
 	caption = fgettext("Credits"),
 	cbf_formspec = function (tabview, name, tabdata)
 			local logofile = defaulttexturedir .. "logo.png"
-			return "label[0.5,3.2;Minetest " .. core.get_version() .. "]" ..
-				"label[0.5,3.5;http://minetest.net]" ..
+			return "label[0.5,3.2;Freeminer " .. core.get_version() .. "]" ..
+				"label[0.5,3.5;http://freeminer.org]" ..
 				"image[0.5,1;" .. core.formspec_escape(logofile) .. "]" ..
 				"textlist[3.5,-0.25;8.5,5.8;list_credits;" ..
 				"#FFFF00" .. fgettext("Core Developers") .."," ..
@@ -39,10 +39,15 @@ tab_credits = {
 				"Nathanael Courant (Nore/Novatux) <nore@mesecons.net>,"..
 				"BlockMen,"..
 				"Craig Robbins (Zeno),"..
+				"Loic Blot (nerzhul/nrz),"..
+				"paramat,"..
 				","..
 				"#FFFF00" .. fgettext("Active Contributors") .. "," ..
+				"SmallJoker <mk939@ymail.com>," ..
+				"est31 <MTest31@outlook.com>," ..
+				"gregorycu,"..
+				"Andrew Ward (rubenwardy) <rubenwardy@gmail.com>," ..
 				"TriBlade9 <triblade9@mail.com>,"..
-				"SmallJoker <mk939@ymail.com>,"..
 				"Zefram <zefram@fysh.org>,"..
 				"," ..
 				"#FFFF00" .. fgettext("Previous Contributors") .. "," ..

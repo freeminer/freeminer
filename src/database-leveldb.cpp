@@ -25,76 +25,72 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_LEVELDB
 
 #include "database-leveldb.h"
-#include "map.h"
-#include "mapblock.h"
-#include "serialization.h"
-#include "main.h"
-#include "settings.h"
 #include "log_types.h"
 #include "filesys.h"
+#include "exceptions.h"
+#include "util/string.h"
+
+#include "leveldb/db.h"
+
 
 #define ENSURE_STATUS_OK(s) \
 	if (!(s).ok()) { \
-		throw FileNotGoodException(std::string("LevelDB error: ") + (s).ToString()); \
+		throw FileNotGoodException(std::string("LevelDB error: ") + \
+				(s).ToString()); \
 	}
 
-Database_LevelDB::Database_LevelDB(ServerMap *map, std::string savedir)
+
+Database_LevelDB::Database_LevelDB(const std::string &savedir)
+	: m_database(savedir, "map")
 {
-	m_database = new KeyValueStorage(savedir, "map");
-	//srvmap = map;
 }
 
-int Database_LevelDB::Initialized(void)
+Database_LevelDB::~Database_LevelDB()
 {
-	return 1;
 }
 
-void Database_LevelDB::beginSave() {}
-void Database_LevelDB::endSave() {}
-
-bool Database_LevelDB::saveBlock(v3POS blockpos, std::string &data)
+bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	if (!m_database->put(getBlockAsString(blockpos), data)) {
+	if (!m_database.put(getBlockAsString(pos), data)) {
 		errorstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< PP(blockpos) << std::endl;
+			<< pos <<": "<< m_database.get_error() << std::endl;
 		return false;
 	}
-	m_database->del(i64tos(getBlockAsInteger(blockpos))); // delete old format
+	m_database.del(i64tos(getBlockAsInteger(pos))); // delete old format
 
 	return true;
 }
 
-std::string Database_LevelDB::loadBlock(v3POS blockpos)
+std::string Database_LevelDB::loadBlock(const v3s16 &pos)
 {
 	std::string datastr;
 
-	m_database->get(getBlockAsString(blockpos), datastr);
+	m_database.get(getBlockAsString(pos), datastr);
 	if (datastr.length())
 		return datastr;
 
-	m_database->get(i64tos(getBlockAsInteger(blockpos)), datastr);
+	m_database.get(i64tos(getBlockAsInteger(pos)), datastr);
 
 	return datastr;
 
 }
 
-bool Database_LevelDB::deleteBlock(v3s16 blockpos)
+bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 {
-	auto ok = m_database->del(
-			(getBlockAsString(blockpos)));
+	auto ok = m_database.del(getBlockAsString(pos));
 	if (ok) {
 		errorstream << "WARNING: deleteBlock: LevelDB error deleting block "
-			<< (blockpos) << std::endl;
+			<< (pos) << ": "<< m_database.get_error() << std::endl;
 		return false;
 	}
 
 	return true;
 }
 
-void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
+void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 #if USE_LEVELDB
-	auto it = m_database->new_iterator();
+	auto it = m_database.new_iterator();
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}
@@ -103,8 +99,5 @@ void Database_LevelDB::listAllLoadableBlocks(std::list<v3s16> &dst)
 #endif
 }
 
-Database_LevelDB::~Database_LevelDB()
-{
-	delete m_database;
-}
-#endif
+#endif // USE_LEVELDB
+

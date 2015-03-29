@@ -1,10 +1,13 @@
 set(UTIL_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/base64.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/directiontables.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/numeric.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/pointedthing.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serialize.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sha1.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/string.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/timetaker.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/thread_pool.cpp
 	PARENT_SCOPE)
+

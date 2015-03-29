@@ -249,7 +249,6 @@ enum ConnectionCommandType{
 struct ConnectionCommand
 {
 	enum ConnectionCommandType type;
-	u16 port;
 	Address address;
 	u16 peer_id;
 	u8 channelnum;
@@ -258,10 +257,10 @@ struct ConnectionCommand
 	
 	ConnectionCommand(): type(CONNCMD_NONE) {}
 
-	void serve(u16 port_)
+	void serve(Address address_)
 	{
 		type = CONNCMD_SERVE;
-		port = port_;
+		address = address_;
 	}
 	void connect(Address address_)
 	{
@@ -314,11 +313,11 @@ public:
 	ConnectionEvent waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommand &c);
 
-	void Serve(unsigned short port);
+	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data);
+	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout = 1);
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
@@ -334,7 +333,7 @@ private:
 	void send(float dtime);
 	void receive();
 	void runTimeouts(float dtime);
-	void serve(u16 port);
+	void serve(Address address);
 	void connect(Address address);
 	void disconnect();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
@@ -358,7 +357,6 @@ private:
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
-	int m_bc_receive_timeout;
 	unsigned int m_last_recieved;
 	int m_last_recieved_warn;
 

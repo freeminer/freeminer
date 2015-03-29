@@ -35,10 +35,11 @@ enum DecorationType {
 	DECO_LSYSTEM
 };
 
-#define DECO_PLACE_CENTER_X 0x01
-#define DECO_PLACE_CENTER_Y 0x02
-#define DECO_PLACE_CENTER_Z 0x04
-#define DECO_USE_NOISE      0x08
+#define DECO_PLACE_CENTER_X  0x01
+#define DECO_PLACE_CENTER_Y  0x02
+#define DECO_PLACE_CENTER_Z  0x04
+#define DECO_USE_NOISE       0x08
+#define DECO_FORCE_PLACEMENT 0x10
 
 extern FlagDesc flagdesc_deco[];
 
@@ -83,7 +84,7 @@ public:
 	size_t placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
 	//size_t placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
 
-	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, s16 max_y, v3s16 p) = 0;
+	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, v3s16 p) = 0;
 	virtual int getHeight() = 0;
 };
 
@@ -98,7 +99,7 @@ public:
 	virtual void resolveNodeNames(NodeResolveInfo *nri);
 
 	bool canPlaceDecoration(MMVManip *vm, v3s16 p);
-	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, s16 max_y, v3s16 p);
+	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, v3s16 p);
 	virtual int getHeight();
 };
 
@@ -108,7 +109,10 @@ public:
 	Schematic *schematic;
 	std::string filename;
 
-	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, s16 max_y, v3s16 p);
+	DecoSchematic();
+	~DecoSchematic();
+
+	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, v3s16 p);
 	virtual int getHeight();
 };
 

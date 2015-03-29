@@ -8,6 +8,14 @@ Freeminer is based on Minetest which is developed by a [number of contributors](
 
 It aims to make the game fun while trading off some bits of perfectionism.
 
+## Installing
+- Android: Google play: https://play.google.com/store/apps/details?id=org.freeminer.freeminer
+- Android: F-droid: https://f-droid.org/repository/browse/?fdid=org.freeminer.freeminer
+- Windows: Download from https://github.com/freeminer/freeminer/releases
+- Ubuntu: install http://www.ubuntuupdates.org/ppa/getdeb_games  and run: sudo apt-get install freeminer
+- Archlinux: yaourt -S freeminer
+- Freebsd: cd /usr/ports/games/freeminer-default && sudo make install clean
+
 ## Further documentation
 - Website: http://freeminer.org/
 - Forums: http://forum.freeminer.org/
@@ -52,14 +60,21 @@ ___
 Arch Linux:
 ```bash
 sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake
-# From AUR
-yaourt -S msgpack
+# From AUR (using pacaur)
+pacaur -Sa msgpack-c-0.5
 ```
+___
 Gentoo/Funtoo:
 ```bash
 emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht dev-libs/msgpack dev-libs/leveldb
 ```
-<sup>Recommended irrlicht version: `1.8.1`</sup>
+___
+Osx:
+```bash
+brew install cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis luajit msgpack
+```
+
+<sup>Recommended irrlicht version: `1.8.2`</sup>
 
 Download source code:
 ```bash
@@ -73,7 +88,7 @@ Build it:
 ```bash
 mkdir _build && cd _build
 cmake ..
-time nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
 
 Play it!

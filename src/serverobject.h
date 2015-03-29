@@ -63,7 +63,7 @@ public:
 	ServerActiveObject(ServerEnvironment *env, v3f pos);
 	virtual ~ServerActiveObject();
 
-	virtual u8 getSendType() const
+	virtual ActiveObjectType getSendType() const
 	{ return getType(); }
 
 	// Called after id has been set and has been inserted in environment
@@ -76,7 +76,7 @@ public:
 	{ return true; }
 	
 	// Create a certain type of ServerActiveObject
-	static ServerActiveObject* create(u8 type,
+	static ServerActiveObject* create(ActiveObjectType type,
 			ServerEnvironment *env, u16 id, v3f pos,
 			const std::string &data);
 	
@@ -84,11 +84,11 @@ public:
 		Some simple getters/setters
 	*/
 	v3f getBasePosition() {
-		auto lock = lock_shared_rec();
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
 		return m_base_position;
 	}
 	void setBasePosition(v3f pos) {
-		auto lock = lock_unique_rec();
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
 		m_base_position = pos;
 	}
 	ServerEnvironment* getEnv(){ return m_env; }
@@ -214,7 +214,7 @@ public:
 		m_known_by_count is true, object is deleted from the active object
 		list.
 	*/
-	bool m_pending_deactivation;
+	std::atomic_bool m_pending_deactivation;
 	
 	/*
 		Whether the object's static data has been stored to a block
@@ -241,6 +241,7 @@ protected:
 
 	ServerEnvironment *m_env;
 	v3f m_base_position;
+	std::mutex m_base_position_mutex;
 
 private:
 	// Used for creating objects based on type

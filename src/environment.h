@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
-#include "connection.h"
+#include "network/connection.h"
 #include "fmbitset.h"
 #include "util/lock.h"
 #include <unordered_set>
@@ -83,27 +83,19 @@ public:
 	//void removePlayer(const std::string &name);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
-	std::list<Player*> getPlayers();
-	std::list<Player*> getPlayers(bool ignore_disconnected);
+	std::vector<Player*> getPlayers();
+	std::vector<Player*> getPlayers(bool ignore_disconnected);
 
 	u32 getDayNightRatio();
 
 	// 0-23999
-	virtual void setTimeOfDay(u32 time)
-	{
-		m_time_of_day = time;
-	}
-
-	u32 getTimeOfDay()
-	{ return m_time_of_day; }
-
-	inline float getTimeOfDayF()
-	{ return (float)m_time_of_day / 24000.0; }
+	virtual void setTimeOfDay(u32 time);
+	u32 getTimeOfDay();
+	float getTimeOfDayF();
 
 	void stepTimeOfDay(float dtime);
 
 	void setTimeOfDaySpeed(float speed);
-
 	float getTimeOfDaySpeed();
 
 	void setDayNightRatioOverride(bool enable, u32 value)
@@ -113,11 +105,11 @@ public:
 	}
 
 	// counter used internally when triggering ABMs
-	u32 m_added_objects;
+	std::atomic_uint m_added_objects;
 
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
-	std::list<Player*> m_players;
+	std::vector<Player*> m_players;
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
@@ -140,7 +132,8 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	locker m_lock;
+	JMutex m_timeofday_lock;
+	JMutex m_time_lock;
 
 };
 
@@ -197,7 +190,7 @@ struct ABMWithState
 class ActiveBlockList
 {
 public:
-	void update(std::list<v3s16> &active_positions,
+	void update(std::vector<v3s16> &active_positions,
 			s16 radius,
 			std::set<v3s16> &blocks_removed,
 			std::set<v3s16> &blocks_added);
@@ -210,7 +203,7 @@ public:
 		m_list.clear();
 	}
 
-	std::set<v3s16> m_list;
+	maybe_shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
 	std::set<v3s16> m_forceloaded_list;
 
 private:
@@ -228,12 +221,12 @@ class ABMHandler
 {
 private:
 	ServerEnvironment *m_env;
-	std::array<std::list<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
-	std::list<std::list<ActiveABM>*> m_aabms_list;
+	std::array<std::vector<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
+	std::list<std::vector<ActiveABM>*> m_aabms_list;
 	bool m_aabms_empty;
 public:
 	ABMHandler(ServerEnvironment *env);
-	void init(std::list<ABMWithState> &abms);
+	void init(std::vector<ABMWithState> &abms);
 	~ABMHandler();
 	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
 	void apply(MapBlock *block, bool activate = false);
@@ -370,16 +363,18 @@ public:
 
 	u32 getGameTime() { return m_game_time; }
 
-	void reportMaxLagEstimate(float f) { m_max_lag_estimate = f; }
-	float getMaxLagEstimate() { return m_max_lag_estimate; }
+	void reportMaxLagEstimate(float f) { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); m_max_lag_estimate = f; }
+	float getMaxLagEstimate() { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); return m_max_lag_estimate; }
 
 	// is weather active in this environment?
 	bool m_use_weather;
+	bool m_more_threads;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3POS> m_abm_random_blocks;
+	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 
@@ -472,10 +467,11 @@ private:
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
 	std::atomic_uint m_game_time;
+	std::mutex m_max_lag_estimate_mutex;
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
 public:
-	std::list<ABMWithState> m_abms;
+	std::vector<ABMWithState> m_abms;
 private:
 	// An interval for generally sending object positions and stuff
 	float m_recommended_send_interval;
@@ -606,7 +602,7 @@ private:
 	std::map<u16, ClientActiveObject*> m_active_objects;
 	u32 m_active_objects_client_last;
 	u32 m_move_max_loop;
-	std::list<ClientSimpleObject*> m_simple_objects;
+	std::vector<ClientSimpleObject*> m_simple_objects;
 	std::list<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	IntervalLimiter m_lava_hurt_interval;

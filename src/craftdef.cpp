@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gamedef.h"
 #include "inventory.h"
 #include "util/serialize.h"
+#include "util/numeric.h"
 #include "strfnd.h"
 #include "exceptions.h"
 
@@ -421,27 +422,28 @@ bool CraftDefinitionShaped::check(const CraftInput &input, IGameDef *gamedef) co
 		return false;  // it was empty
 
 	// Different sizes?
-	if(inp_max_x - inp_min_x != rec_max_x - rec_min_x)
-		return false;
-	if(inp_max_y - inp_min_y != rec_max_y - rec_min_y)
+	if(inp_max_x - inp_min_x != rec_max_x - rec_min_x ||
+			inp_max_y - inp_min_y != rec_max_y - rec_min_y)
 		return false;
 
 	// Verify that all item names in the bounding box are equal
 	unsigned int w = inp_max_x - inp_min_x + 1;
 	unsigned int h = inp_max_y - inp_min_y + 1;
-	for(unsigned int y=0; y<h; y++)
-	for(unsigned int x=0; x<w; x++)
-	{
-		unsigned int inp_x = inp_min_x + x;
-		unsigned int inp_y = inp_min_y + y;
-		unsigned int rec_x = rec_min_x + x;
-		unsigned int rec_y = rec_min_y + y;
 
-		if(!inputItemMatchesRecipe(
-				inp_names[inp_y * inp_width + inp_x],
-				rec_names[rec_y * rec_width + rec_x], gamedef->idef())
-		){
-			return false;
+	for(unsigned int y=0; y < h; y++) {
+		unsigned int inp_y = (inp_min_y + y) * inp_width;
+		unsigned int rec_y = (rec_min_y + y) * rec_width;
+
+		for(unsigned int x=0; x < w; x++) {
+			unsigned int inp_x = inp_min_x + x;
+			unsigned int rec_x = rec_min_x + x;
+
+			if(!inputItemMatchesRecipe(
+					inp_names[inp_y + inp_x],
+					rec_names[rec_y + rec_x], gamedef->idef())
+			) {
+				return false;
+			}
 		}
 	}
 
@@ -933,85 +935,30 @@ public:
 		}
 		return false;
 	}
-	virtual bool getCraftRecipe(CraftInput &input, CraftOutput &output,
-			IGameDef *gamedef) const
-	{
-		CraftOutput tmpout;
-		tmpout.item = "";
-		tmpout.time = 0;
 
-		// If output item is empty, abort.
-		if(output.item.empty())
-			return false;
-
-		// Walk crafting definitions from back to front, so that later
-		// definitions can override earlier ones.
-		for(std::vector<CraftDefinition*>::const_reverse_iterator
-				i = m_craft_definitions.rbegin();
-				i != m_craft_definitions.rend(); i++)
-		{
-			CraftDefinition *def = *i;
-
-			/*infostream<<"Checking "<<input.dump()<<std::endl
-					<<" against "<<def->dump()<<std::endl;*/
-
-			try {
-				tmpout = def->getOutput(input, gamedef);
-				if((tmpout.item.substr(0,output.item.length()) == output.item) &&
-					((tmpout.item[output.item.length()] == 0) ||
-					(tmpout.item[output.item.length()] == ' ')))
-				{
-					// Get output, then decrement input (if requested)
-					input = def->getInput(output, gamedef);
-					return true;
-				}
-			}
-			catch(SerializationError &e)
-			{
-				errorstream<<"getCraftResult: ERROR: "
-						<<"Serialization error in recipe "
-						<<def->dump()<<std::endl;
-				// then go on with the next craft definition
-			}
-		}
-		return false;
-	}
 	virtual std::vector<CraftDefinition*> getCraftRecipes(CraftOutput &output,
-			IGameDef *gamedef) const
+			IGameDef *gamedef, unsigned limit=0) const
 	{
-		std::vector<CraftDefinition*> recipes_list;
-		CraftInput input;
-		CraftOutput tmpout;
-		tmpout.item = "";
-		tmpout.time = 0;
+		std::vector<CraftDefinition*> recipes;
 
-		for(std::vector<CraftDefinition*>::const_reverse_iterator
-				i = m_craft_definitions.rbegin();
-				i != m_craft_definitions.rend(); i++)
-		{
-			CraftDefinition *def = *i;
+		std::map<std::string, std::vector<CraftDefinition*> >::const_iterator
+			vec_iter = m_output_craft_definitions.find(output.item);
 
-			/*infostream<<"Checking "<<input.dump()<<std::endl
-					<<" against "<<def->dump()<<std::endl;*/
+		if (vec_iter == m_output_craft_definitions.end())
+			return recipes;
 
-			try {
-				tmpout = def->getOutput(input, gamedef);
-				if(tmpout.item.substr(0,output.item.length()) == output.item)
-				{
-					// Get output, then decrement input (if requested)
-					input = def->getInput(output, gamedef);
-					recipes_list.push_back(*i);
-				}
-			}
-			catch(SerializationError &e)
-			{
-				errorstream<<"getCraftResult: ERROR: "
-						<<"Serialization error in recipe "
-						<<def->dump()<<std::endl;
-				// then go on with the next craft definition
-			}
+		const std::vector<CraftDefinition*> &vec = vec_iter->second;
+
+		recipes.reserve(limit ? MYMIN(limit, vec.size()) : vec.size());
+
+		for (std::vector<CraftDefinition*>::const_reverse_iterator
+				it = vec.rbegin(); it != vec.rend(); ++it) {
+			if (limit && recipes.size() >= limit)
+				break;
+			recipes.push_back(*it);
 		}
-		return recipes_list;
+
+		return recipes;
 	}
 	virtual std::string dump() const
 	{
@@ -1025,11 +972,16 @@ public:
 		}
 		return os.str();
 	}
-	virtual void registerCraft(CraftDefinition *def)
+	virtual void registerCraft(CraftDefinition *def, IGameDef *gamedef)
 	{
 		verbosestream<<"registerCraft: registering craft definition: "
 				<<def->dump()<<std::endl;
 		m_craft_definitions.push_back(def);
+
+		CraftInput input;
+		std::string output_name = craftGetItemName(
+				def->getOutput(input, gamedef).item, gamedef);
+		m_output_craft_definitions[output_name].push_back(def);
 	}
 	virtual void clear()
 	{
@@ -1039,6 +991,7 @@ public:
 			delete *i;
 		}
 		m_craft_definitions.clear();
+		m_output_craft_definitions.clear();
 	}
 	virtual void serialize(std::ostream &os) const
 	{
@@ -1055,7 +1008,7 @@ public:
 			os<<serializeString(tmp_os.str());
 		}
 	}
-	virtual void deSerialize(std::istream &is)
+	virtual void deSerialize(std::istream &is, IGameDef *gamedef)
 	{
 		// Clear everything
 		clear();
@@ -1069,11 +1022,12 @@ public:
 			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
 			CraftDefinition *def = CraftDefinition::deSerialize(tmp_is);
 			// Register
-			registerCraft(def);
+			registerCraft(def, gamedef);
 		}
 	}
 private:
 	std::vector<CraftDefinition*> m_craft_definitions;
+	std::map<std::string, std::vector<CraftDefinition*> > m_output_craft_definitions;
 };
 
 IWritableCraftDefManager* createCraftDefManager()

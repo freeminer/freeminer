@@ -54,22 +54,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-/*
-	SQLite format specification:
-	- Initially only replaces sectors/ and sectors2/
-
-	If map.sqlite does not exist in the save dir
-	or the block was not found in the database
-	the map will try to load from sectors folder.
-	In either case, map.sqlite will be created
-	and all future saves will save there.
-
-	Structure of map.sqlite:
-	Tables:
-		blocks
-			(PK) INT pos
-			BLOB data
-*/
 
 /*
 	Map
@@ -108,6 +92,7 @@ Map::~Map()
 		delete ir.first;
 	for(auto & ir : m_blocks)
 		delete ir.second;
+	getBlockCacheFlush();
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
@@ -1294,7 +1279,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 			n.setLight(LIGHTBANK_DAY, 0, ndef);
 			setNode(p, n);
 		} else {
-			//assert(0);
+			//FATAL_ERROR("Invalid position");
 		}
 	}
 
@@ -1483,7 +1468,7 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 */
 u32 Map::timerUpdate(float uptime, float unload_timeout,
 		unsigned int max_cycle_ms,
-		std::list<v3s16> *unloaded_blocks)
+		std::vector<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
 
@@ -1619,10 +1604,11 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	return m_blocks_update_last;
 }
 
-void Map::unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks)
+void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
 	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
+
 
 void Map::PrintInfo(std::ostream &out)
 {
@@ -1922,11 +1908,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 
 		// Find out whether there is a suspect for this action
 		std::string suspect;
-		if(m_gamedef->rollback()){
+		if(m_gamedef->rollback()) {
 			suspect = m_gamedef->rollback()->getSuspect(p0, 83, 1);
 		}
 
-		if(!suspect.empty()){
+		if(m_gamedef->rollback() && !suspect.empty()){
 			// Blame suspect
 			RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
 			// Get old node for rollback
@@ -2167,32 +2153,18 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	if (!succeeded || !conf.exists("backend")) {
 		// fall back to sqlite3
 		#if USE_LEVELDB
-		dbase = new Database_LevelDB(this, savedir);
 		conf.set("backend", "leveldb");
 		#elif USE_SQLITE3
-		dbase = new Database_SQLite3(this, savedir);
 		conf.set("backend", "sqlite3");
+		#elif USE_REDIS
+		conf.set("backend", "redis");
 		#endif
 	}
-	else {
-		std::string backend = conf.get("backend");
-		if (backend == "dummy")
-			dbase = new Database_Dummy(this);
-		#if USE_SQLITE3
-		else if (backend == "sqlite3")
-			dbase = new Database_SQLite3(this, savedir);
-		#endif
-		#if USE_LEVELDB
-		else if (backend == "leveldb")
-			dbase = new Database_LevelDB(this, savedir);
-		#endif
-		#if USE_REDIS
-		else if (backend == "redis")
-			dbase = new Database_Redis(this, savedir);
-		#endif
-		else
-			throw BaseException("Unknown map backend");
-	}
+	std::string backend = conf.get("backend");
+	dbase = createDatabase(backend, savedir, conf);
+
+	if (!conf.updateConfigFile(conf_path.c_str()))
+		errorstream << "ServerMap::ServerMap(): Failed to update world.mt!" << std::endl;
 
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
@@ -2745,8 +2717,7 @@ void ServerMap::createDirs(std::string path)
 s32 ServerMap::save(ModifiedState save_level, bool breakable)
 {
 	DSTACK(__FUNCTION_NAME);
-	if(m_map_saving_enabled == false)
-	{
+	if(m_map_saving_enabled == false) {
 		infostream<<"WARNING: Not saving map, saving disabled."<<std::endl;
 		return 0;
 	}
@@ -2755,8 +2726,7 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 		infostream<<"ServerMap: Saving whole map, this can take time."
 				<<std::endl;
 
-	if(m_map_metadata_changed || save_level == MOD_STATE_CLEAN)
-	{
+	if(m_map_metadata_changed || save_level == MOD_STATE_CLEAN) {
 		saveMapMeta();
 	}
 
@@ -2792,10 +2762,9 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 
 			block_count_all++;
 
-			if(block->getModified() >= (u32)save_level)
-			{
+			if(block->getModified() >= (u32)save_level) {
 				// Lazy beginSave()
-				if(!save_started){
+				if(!save_started) {
 					beginSave();
 					save_started = true;
 				}
@@ -2845,12 +2814,12 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	return m_blocks_save_last;
 }
 
-void ServerMap::listAllLoadableBlocks(std::list<v3s16> &dst)
+void ServerMap::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 	dbase->listAllLoadableBlocks(dst);
 }
 
-void ServerMap::listAllLoadedBlocks(std::list<v3s16> &dst)
+void ServerMap::listAllLoadedBlocks(std::vector<v3s16> &dst)
 {
 	auto lock = m_blocks.lock_shared_rec();
 	for(auto & i : m_blocks)
@@ -2861,20 +2830,15 @@ void ServerMap::saveMapMeta()
 {
 	DSTACK(__FUNCTION_NAME);
 
-	/*infostream<<"ServerMap::saveMapMeta(): "
-			<<"seed="<<m_seed
-			<<std::endl;*/
-
 	createDirs(m_savedir);
 
-	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
-	std::ostringstream ss(std::ios_base::binary);
+	std::string fullpath = m_savedir + DIR_DELIM + "map_meta.txt";
+	std::ostringstream oss(std::ios_base::binary);
+	Settings conf;
 
-	Settings params;
+	m_emerge->params.save(conf);
 
-	m_emerge->saveParamsToSettings(&params);
-
-	if (!params.writeJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
+	if (!conf.writeJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
 		errorstream<<"cant write "<<m_savedir + DIR_DELIM + "map_meta.json"<<std::endl;
 	}
 
@@ -2886,34 +2850,55 @@ void ServerMap::loadMapMeta()
 {
 	DSTACK(__FUNCTION_NAME);
 
-	Settings params;
+	Settings conf;
 
-	if (!params.readJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
+	if (!conf.readJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
 
 	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
 
 	infostream<<"Cant read map_meta.json , fallback to " << fullpath << std::endl;
 
-	if (fs::PathExists(fullpath)) {
-		std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-		if (!is.good()) {
-			errorstream << "ServerMap::loadMapMeta(): "
-				"could not open " << fullpath << std::endl;
-			throw FileNotGoodException("Cannot open map metadata");
-		}
+	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
+	if (!is.good()) {
+		infostream << "ServerMap::loadMapMeta(): "
+			"could not open " << fullpath << std::endl;
+		throw FileNotGoodException("Cannot open map metadata");
+	}
 
-		if (!params.parseConfigLines(is, "[end_of_params]")) {
-			throw SerializationError("ServerMap::loadMapMeta(): "
+	if (!conf.parseConfigLines(is, "[end_of_params]")) {
+		throw SerializationError("ServerMap::loadMapMeta(): "
 				"[end_of_params] not found!");
-		}
 	}
 
 	}
 
-	m_emerge->loadParamsFromSettings(&params);
+	m_emerge->params.load(conf);
 
 	verbosestream << "ServerMap::loadMapMeta(): seed="
 		<< m_emerge->params.seed << std::endl;
+}
+
+Database *ServerMap::createDatabase(const std::string &name, const std::string &savedir, Settings &conf)
+{
+	if (name == "___ magic word ___")
+		{}
+	#if USE_SQLITE3
+	else if (name == "sqlite3")
+		return new Database_SQLite3(savedir);
+	#endif
+	else if (name == "dummy")
+		return new Database_Dummy();
+	#if USE_LEVELDB
+	else if (name == "leveldb")
+		return new Database_LevelDB(savedir);
+	#endif
+	#if USE_REDIS
+	else if (name == "redis")
+		return new Database_Redis(conf);
+	#endif
+	else
+		throw BaseException(std::string("Database backend ") + name + " not supported.");
+	return nullptr;
 }
 
 void ServerMap::beginSave()
@@ -2953,7 +2938,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 
 	std::string data = o.str();
 	bool ret = db->saveBlock(p3d, data);
-	if(ret) {
+	if (ret) {
 		// We just wrote it to the disk so clear modified flag
 		block->resetModified();
 	}
@@ -2969,6 +2954,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	if(!blob.length())
 		return nullptr;
 
+	MapBlock *block = nullptr;
 	try {
 		std::istringstream is(blob, std::ios_base::binary);
 
@@ -2986,7 +2972,6 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		// This will always return a sector because we're the server
 		//MapSector *sector = emergeSector(p2d);
 
-		MapBlock *block = NULL;
 		bool created_new = false;
 		block = sector->getBlockNoCreateNoEx(p3d);
 		if(block == NULL)
@@ -2996,13 +2981,18 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		}
 
 		// Read basic data
-		if (!block->deSerialize(is, version, true))
+		if (!block->deSerialize(is, version, true)) {
+			if (created_new && block)
+				delete block;
 			return nullptr;
+		}
 
 		// If it's a new block, insert it to the map
 		if(created_new)
-			sector->insertBlock(block);
-
+			if(!sector->insertBlock(block)) {
+				delete block;
+				return nullptr;
+			}
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
 
@@ -3015,6 +3005,9 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	}
 	catch(SerializationError &e)
 	{
+		if (block)
+			delete block;
+
 		errorstream<<"Invalid block data in database"
 				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
 				<<" (SerializationError): "<<e.what()<<std::endl;
@@ -3027,7 +3020,6 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 					<<"(ignore_world_load_errors)"<<std::endl;
 		} else {
 			throw SerializationError("Invalid block data in database");
-			//assert(0);
 		}
 	}
 	return nullptr;

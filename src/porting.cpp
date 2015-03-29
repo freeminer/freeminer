@@ -409,7 +409,7 @@ void initializePaths()
 	char buf[BUFSIZ];
 	memset(buf, 0, BUFSIZ);
 	// Get path to executable
-	assert(readlink("/proc/self/exe", buf, BUFSIZ-1) != -1);
+	FATAL_ERROR_IF(readlink("/proc/self/exe", buf, BUFSIZ-1) == -1, "Failed to get cwd");
 
 	pathRemoveFile(buf, '/');
 
@@ -421,16 +421,16 @@ void initializePaths()
 	*/
 	#elif defined(__APPLE__)
 
-	//https://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man3/dyld.3.html
-	//TODO: Test this code
-	char buf[BUFSIZ];
-	uint32_t len = sizeof(buf);
-	assert(_NSGetExecutablePath(buf, &len) != -1);
-
-	pathRemoveFile(buf, '/');
-
-	path_share = std::string(buf) + "/..";
-	path_user = std::string(buf) + "/..";
+	CFBundleRef main_bundle = CFBundleGetMainBundle();
+	CFURLRef resources_url = CFBundleCopyResourcesDirectoryURL(main_bundle);
+	char path[PATH_MAX];
+	if (CFURLGetFileSystemRepresentation(resources_url, TRUE, (UInt8 *)path, PATH_MAX)) {
+		path_share = std::string(path);
+		path_user = std::string(path) + "/../User";
+	} else {
+		dstream << "WARNING: Could not determine bundle resource path" << std::endl;
+	}
+	CFRelease(resources_url);
 
 	/*
 		FreeBSD
@@ -445,7 +445,7 @@ void initializePaths()
 	mib[1] = KERN_PROC;
 	mib[2] = KERN_PROC_PATHNAME;
 	mib[3] = -1;
-	assert(sysctl(mib, 4, buf, &len, NULL, 0) != -1);
+	FATAL_ERROR_IF(sysctl(mib, 4, buf, &len, NULL, 0) == -1, "");
 
 	pathRemoveFile(buf, '/');
 
@@ -480,13 +480,13 @@ void initializePaths()
 	*/
 	#if defined(_WIN32)
 
-	const DWORD buflen = 1000;
+	const DWORD buflen = 1000; // FIXME: Surely there is a better way to do this
 	char buf[buflen];
 	DWORD len;
 
 	// Find path of executable and set path_share relative to it
 	len = GetModuleFileName(GetModuleHandle(NULL), buf, buflen);
-	assert(len < buflen);
+	FATAL_ERROR_IF(len >= buflen, "Overlow");
 	pathRemoveFile(buf, '\\');
 
 	// Use ".\bin\.."
@@ -494,8 +494,8 @@ void initializePaths()
 
 	// Use "C:\Documents and Settings\user\Application Data\<PROJECT_NAME>"
 	len = GetEnvironmentVariable("APPDATA", buf, buflen);
-	assert(len < buflen);
-	path_user = std::string(buf) + DIR_DELIM + PROJECT_NAME;
+	FATAL_ERROR_IF(len >= buflen, "Overlow");
+	path_user = std::string(buf) + DIR_DELIM + lowercase(PROJECT_NAME);
 
 	/*
 		Linux
@@ -510,7 +510,7 @@ void initializePaths()
 		if (readlink("/proc/self/exe", buf, BUFSIZ-1) == -1) {
 			errorstream << "Unable to read bindir "<< std::endl;
 #ifndef __ANDROID__
-			assert("Unable to read bindir" == 0);
+			FATAL_ERROR("Unable to read bindir");
 #endif
 		} else {
 			pathRemoveFile(buf, '/');
@@ -525,7 +525,7 @@ void initializePaths()
 	if(static_sharedir != "" && static_sharedir != ".")
 		trylist.push_back(static_sharedir);
 	trylist.push_back(
-			bindir + DIR_DELIM + ".." + DIR_DELIM + "share" + DIR_DELIM + PROJECT_NAME);
+			bindir + DIR_DELIM + ".." + DIR_DELIM + "share" + DIR_DELIM + lowercase(PROJECT_NAME));
 	trylist.push_back(bindir + DIR_DELIM + "..");
 #ifdef __ANDROID__
 	trylist.push_back(path_user);
@@ -549,7 +549,7 @@ void initializePaths()
 		break;
 	}
 #ifndef __ANDROID__
-	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + PROJECT_NAME;
+	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + lowercase(PROJECT_NAME);
 #endif
 
 	/*
@@ -557,30 +557,22 @@ void initializePaths()
 	*/
 	#elif defined(__APPLE__)
 
-	// Code based on
-	// http://stackoverflow.com/questions/516200/relative-paths-not-working-in-xcode-c
 	CFBundleRef main_bundle = CFBundleGetMainBundle();
 	CFURLRef resources_url = CFBundleCopyResourcesDirectoryURL(main_bundle);
 	char path[PATH_MAX];
-	if(CFURLGetFileSystemRepresentation(resources_url, TRUE, (UInt8 *)path, PATH_MAX))
-	{
-		dstream<<"Bundle resource path: "<<path<<std::endl;
-		//chdir(path);
-		path_share = std::string(path) + DIR_DELIM + STATIC_SHAREDIR;
-	}
-	else
-	{
-		// error!
-		dstream<<"WARNING: Could not determine bundle resource path"<<std::endl;
+	if (CFURLGetFileSystemRepresentation(resources_url, TRUE, (UInt8 *)path, PATH_MAX)) {
+		path_share = std::string(path);
+	} else {
+		dstream << "WARNING: Could not determine bundle resource path" << std::endl;
 	}
 	CFRelease(resources_url);
 
-	path_user = std::string(getenv("HOME")) + "/Library/Application Support/" + PROJECT_NAME;
+	path_user = std::string(getenv("HOME")) + "/Library/Application Support/" + lowercase(PROJECT_NAME);
 
 	#else // FreeBSD, and probably many other POSIX-like systems.
 
 	path_share = STATIC_SHAREDIR;
-	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + PROJECT_NAME;
+	path_user = std::string(getenv("HOME")) + DIR_DELIM + "." + lowercase(PROJECT_NAME);
 
 	#endif
 
@@ -612,16 +604,20 @@ void setXorgClassHint(const video::SExposedVideoData &video_data,
 }
 
 #ifndef SERVER
+
 v2u32 getWindowSize()
 {
 	return device->getVideoDriver()->getScreenSize();
 }
 
 
-std::vector<core::vector3d<u32> > getVideoModes()
+std::vector<core::vector3d<u32> > getSupportedVideoModes()
 {
+	IrrlichtDevice *nulldevice = createDevice(video::EDT_NULL);
+	sanity_check(nulldevice != NULL);
+
 	std::vector<core::vector3d<u32> > mlist;
-	video::IVideoModeList *modelist = device->getVideoModeList();
+	video::IVideoModeList *modelist = nulldevice->getVideoModeList();
 
 	u32 num_modes = modelist->getVideoModeCount();
 	for (u32 i = 0; i != num_modes; i++) {
@@ -629,6 +625,8 @@ std::vector<core::vector3d<u32> > getVideoModes()
 		s32 mode_depth = modelist->getVideoModeDepth(i);
 		mlist.push_back(core::vector3d<u32>(mode_res.Width, mode_res.Height, mode_depth));
 	}
+
+	nulldevice->drop();
 
 	return mlist;
 }

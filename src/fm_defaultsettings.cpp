@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "filesys.h"
 #include "config.h"
-#include "connection.h" // ENET_IPV6
+#include "network/connection.h" // ENET_IPV6
 #include "constants.h"
 #include "porting.h"
 
@@ -59,7 +59,20 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("language", "");
 
 	// Screen
+#if __arm__
+ #if defined(_IRR_COMPILE_WITH_OGLES1_)
+	settings->setDefault("video_driver", "ogles1");
+ #elif defined(_IRR_COMPILE_WITH_OGLES2_)
+	settings->setDefault("video_driver", "ogles2");
+ #else
 	settings->setDefault("video_driver", "opengl");
+ #endif
+	settings->setDefault("enable_shaders", "0");
+#else
+	settings->setDefault("video_driver", "opengl");
+	settings->setDefault("enable_shaders", "1");
+#endif
+
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
 	settings->setDefault("fullscreen", "false");
@@ -132,6 +145,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_freemove", "KEY_KEY_K");
 	settings->setDefault("keymap_fastmove", "KEY_KEY_J");
 	settings->setDefault("keymap_noclip", "KEY_KEY_H");
+	settings->setDefault("keymap_cinematic", "KEY_F8");
 	settings->setDefault("keymap_screenshot", "KEY_F12");
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
@@ -158,7 +172,7 @@ void set_default_settings(Settings *settings) {
 	// Connecting to server
 	settings->setDefault("address", "");
 	settings->setDefault("remote_port", "30000");
-	settings->setDefault("reconnects", "10");
+	settings->setDefault("reconnects", win32 ? "1" : "5"); // TODO: wix windows
 
 	// Connecting to curl
 	settings->setDefault("curl_timeout", "5000");
@@ -181,11 +195,7 @@ void set_default_settings(Settings *settings) {
 
 	std::stringstream fontsize;
 
-#ifdef __ANDROID__
-	fontsize << TTF_DEFAULT_FONT_SIZE + 2;
-#else
-	fontsize << TTF_DEFAULT_FONT_SIZE + 5;
-#endif
+	fontsize << TTF_DEFAULT_FONT_SIZE;
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
@@ -200,6 +210,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "trees, caves, v6_biome_blend, v6_jungles, dungeons");
+	settings->setDefault("enable_floating_dungeons", "true");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct
@@ -223,7 +234,6 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("water_wave_speed", "5.0");
 
 	// Shaders
-	settings->setDefault("enable_shaders", "true");
 	settings->setDefault("enable_bumpmapping", "true");
 	settings->setDefault("enable_parallax_occlusion", "true");
 	settings->setDefault("parallax_occlusion_scale", "0.06");
@@ -269,7 +279,10 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
+	settings->setDefault("texture_clean_transparent", "false");
+	settings->setDefault("texture_min_size", "64");
 	settings->setDefault("preload_item_visuals", "false");
+	settings->setDefault("headless_optimize", "false");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
@@ -339,7 +352,13 @@ void set_default_settings(Settings *settings) {
 
 	// Announcing and connection
 	settings->setDefault("server_announce", "false");
+
+#if !MINETEST_PROTO
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
+#else
+	settings->setDefault("serverlist_url", "servers.minetest.net"); 
+#endif
+
 	settings->setDefault("server_address", "");
 	settings->setDefault("bind_address", "");
 	settings->setDefault("port", "30000");
@@ -376,7 +395,13 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("max_packets_per_iteration", "1024");
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
+#if ENABLE_THREADS
 	settings->setDefault("active_block_range", "3");
+	settings->setDefault("abm_neighbors_range_max", win32 ? "1" : "16");
+#else
+	settings->setDefault("active_block_range", "2");
+	settings->setDefault("abm_neighbors_range_max", "1");
+#endif
 	settings->setDefault("abm_random", "true");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
@@ -404,7 +429,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_ipv6", "false");
 #endif
 
-#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
+#if !defined(_WIN32) && !USE_IPV4_DEFAULT && ENET_IPV6
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #else
 	settings->setDefault("ipv6_server", "false");
@@ -423,6 +448,9 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("noclip", "false");
 	settings->setDefault("continuous_forward", "false");
 	settings->setDefault("fast_move", "false");
+	settings->setDefault("cinematic", "false");
+	settings->setDefault("camera_smoothing", "0");
+	settings->setDefault("cinematic_camera_smoothing", "0.7");
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "40");
@@ -457,7 +485,6 @@ void set_default_settings(Settings *settings) {
 
 	settings->setDefault("more_threads", win32 ? "false" : "true");
 
-
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
@@ -474,10 +501,8 @@ void set_default_settings(Settings *settings) {
 #ifdef __ANDROID__
 	settings->setDefault("screenW", "0");
 	settings->setDefault("screenH", "0");
-	settings->setDefault("enable_shaders", "false");
 	settings->setDefault("fullscreen", "true");
 	settings->setDefault("enable_particles", "false");
-	settings->setDefault("video_driver", "ogles1");
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder", "/sdcard/freeminer/tmp/");
 	settings->setDefault("touchscreen_threshold", "20");
@@ -507,6 +532,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("client_unload_unused_data_timeout", "60");
 	settings->setDefault("max_objects_per_block", "20");
 	settings->setDefault("active_block_range", "1");
+	settings->setDefault("abm_neighbors_range_max", "1");
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");

@@ -30,9 +30,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "wieldmesh.h"
-#include "tile.h"
 #include "clientmap.h"
 #include "mapblock.h"
+#include "client/tile.h"
 #endif
 #include "log.h"
 #include "main.h" // g_settings
@@ -122,6 +122,102 @@ void ItemDefinition::reset()
 	range = -1;
 
 	node_placement_prediction = "";
+}
+
+void ItemDefinition::serialize(std::ostream &os, u16 protocol_version) const
+{
+	if(protocol_version <= 17)
+		writeU8(os, 1); // version
+	else if(protocol_version <= 20)
+		writeU8(os, 2); // version
+	else
+		writeU8(os, 3); // version
+	writeU8(os, type);
+	os<<serializeString(name);
+	os<<serializeString(description);
+	os<<serializeString(inventory_image);
+	os<<serializeString(wield_image);
+	writeV3F1000(os, wield_scale);
+	writeS16(os, stack_max);
+	writeU8(os, usable);
+	writeU8(os, liquids_pointable);
+	std::string tool_capabilities_s = "";
+	if(tool_capabilities){
+		std::ostringstream tmp_os(std::ios::binary);
+		tool_capabilities->serialize(tmp_os, protocol_version);
+		tool_capabilities_s = tmp_os.str();
+	}
+	os<<serializeString(tool_capabilities_s);
+	writeU16(os, groups.size());
+	for(std::map<std::string, int>::const_iterator
+			i = groups.begin(); i != groups.end(); i++){
+		os<<serializeString(i->first);
+		writeS16(os, i->second);
+	}
+	os<<serializeString(node_placement_prediction);
+	if(protocol_version > 17){
+		//serializeSimpleSoundSpec(sound_place, os);
+		os<<serializeString(sound_place.name);
+		writeF1000(os, sound_place.gain);
+	}
+	if(protocol_version > 20){
+		writeF1000(os, range);
+	}
+}
+
+void ItemDefinition::deSerialize(std::istream &is)
+{
+	// Reset everything
+	reset();
+
+	// Deserialize
+	int version = readU8(is);
+	if(version < 1 || version > 3)
+		throw SerializationError("unsupported ItemDefinition version");
+	type = (enum ItemType)readU8(is);
+	name = deSerializeString(is);
+	description = deSerializeString(is);
+	inventory_image = deSerializeString(is);
+	wield_image = deSerializeString(is);
+	wield_scale = readV3F1000(is);
+	stack_max = readS16(is);
+	usable = readU8(is);
+	liquids_pointable = readU8(is);
+	std::string tool_capabilities_s = deSerializeString(is);
+	if(!tool_capabilities_s.empty())
+	{
+		std::istringstream tmp_is(tool_capabilities_s, std::ios::binary);
+		tool_capabilities = new ToolCapabilities;
+		tool_capabilities->deSerialize(tmp_is);
+	}
+	groups.clear();
+	u32 groups_size = readU16(is);
+	for(u32 i=0; i<groups_size; i++){
+		std::string name = deSerializeString(is);
+		int value = readS16(is);
+		groups[name] = value;
+	}
+	if(version == 1){
+		// We cant be sure that node_placement_prediction is send in version 1
+		try{
+			node_placement_prediction = deSerializeString(is);
+		}catch(SerializationError &e) {};
+		// Set the old default sound
+		sound_place.name = "default_place_node";
+		sound_place.gain = 0.5;
+	} else if(version >= 2) {
+		node_placement_prediction = deSerializeString(is);
+		//deserializeSimpleSoundSpec(sound_place, is);
+		sound_place.name = deSerializeString(is);
+		sound_place.gain = readF1000(is);
+	}
+	if(version == 3) {
+		range = readF1000(is);
+	}
+	// If you add anything here, insert it primarily inside the try-catch
+	// block to not need to increase the version.
+	try{
+	}catch(SerializationError &e) {};
 }
 
 void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
@@ -215,8 +311,8 @@ public:
 	virtual ~CItemDefManager()
 	{
 #ifndef SERVER
-		const std::list<ClientCached*> &values = m_clientcached.getValues();
-		for(std::list<ClientCached*>::const_iterator
+		const std::vector<ClientCached*> &values = m_clientcached.getValues();
+		for(std::vector<ClientCached*>::const_iterator
 				i = values.begin(); i != values.end(); ++i)
 		{
 			ClientCached *cc = *i;
@@ -287,7 +383,7 @@ public:
 				<<name<<"\""<<std::endl;
 
 		// This is not thread-safe
-		assert(get_current_thread_id() == m_main_thread);
+		sanity_check(get_current_thread_id() == m_main_thread);
 
 		// Skip if already in cache
 		ClientCached *cc = NULL;
@@ -328,8 +424,6 @@ public:
 
 			scene::IMesh *node_mesh = NULL;
 
-			bool reenable_shaders = false;
-
 			if (need_rtt_mesh || need_wield_mesh) {
 				u8 param1 = 0;
 				if (f.param_type == CPT_LIGHT)
@@ -338,15 +432,12 @@ public:
 				/*
 					Make a mesh from the node
 				*/
-				if (g_settings->getBool("enable_shaders")) {
-					reenable_shaders = true;
-					g_settings->setBool("enable_shaders", false);
-				}
 				Map map(gamedef);
 				MapDrawControl map_draw_control;
-				MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
-				v3s16 p0(0, 0, 0);
-				auto block = map.createBlankBlockNoInsert(p0);
+				MeshMakeData mesh_make_data(gamedef, false, map, map_draw_control);
+				v3POS p0(30456, 12432, -19999); // better to use MAP_BLOCKSIZE+1 but need to remove some checks
+				v3POS bp = getNodeBlockPos(p0);
+				auto block = map.createBlankBlockNoInsert(bp);
 				auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
 				for(s16 z0=0; z0<=2; ++z0)
 				for(s16 y0=0; y0<=2; ++y0)
@@ -358,13 +449,13 @@ public:
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
 					param2 = 1;
 				MapNode mesh_make_node(id, param1, param2);
-				mesh_make_data.fillSingleNode(&mesh_make_node);
+				mesh_make_data.fillSingleNode(&mesh_make_node, bp);
 				block->setNode(v3s16(1,1,1), mesh_make_node);
 				map.insertBlock(block);
-				MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
+				MapBlockMesh mapblock_mesh(&mesh_make_data, bp*MAP_BLOCKSIZE);
 
 /* MT
-				MeshMakeData mesh_make_data(gamedef);
+				MeshMakeData mesh_make_data(gamedef, false);
 				u8 param2 = 0;
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
 					param2 = 1;
@@ -433,9 +524,6 @@ public:
 
 			if (node_mesh)
 				node_mesh->drop();
-
-			if (reenable_shaders)
-				g_settings->setBool("enable_shaders",true);
 		}
 
 		// Put in cache
@@ -543,7 +631,7 @@ public:
 		verbosestream<<"ItemDefManager: registering \""<<def.name<<"\""<<std::endl;
 		// Ensure that the "" item (the hand) always has ToolCapabilities
 		if(def.name == "")
-			assert(def.tool_capabilities != NULL);
+			FATAL_ERROR_IF(!def.tool_capabilities, "Hand does not have ToolCapabilities");
 
 		if(m_item_definitions.count(def.name) == 0)
 			m_item_definitions[def.name] = new ItemDefinition(def);
@@ -564,6 +652,55 @@ public:
 			verbosestream<<"ItemDefManager: setting alias "<<name
 				<<" -> "<<convert_to<<std::endl;
 			m_aliases[name] = convert_to;
+		}
+	}
+	void serialize(std::ostream &os, u16 protocol_version)
+	{
+		writeU8(os, 0); // version
+		u16 count = m_item_definitions.size();
+		writeU16(os, count);
+		for(std::map<std::string, ItemDefinition*>::const_iterator
+				i = m_item_definitions.begin();
+				i != m_item_definitions.end(); i++)
+		{
+			ItemDefinition *def = i->second;
+			// Serialize ItemDefinition and write wrapped in a string
+			std::ostringstream tmp_os(std::ios::binary);
+			def->serialize(tmp_os, protocol_version);
+			os<<serializeString(tmp_os.str());
+		}
+		writeU16(os, m_aliases.size());
+		for(std::map<std::string, std::string>::const_iterator
+			i = m_aliases.begin(); i != m_aliases.end(); i++)
+		{
+			os<<serializeString(i->first);
+			os<<serializeString(i->second);
+		}
+	}
+	void deSerialize(std::istream &is)
+	{
+		// Clear everything
+		clear();
+		// Deserialize
+		int version = readU8(is);
+		if(version != 0)
+			throw SerializationError("unsupported ItemDefManager version");
+		u16 count = readU16(is);
+		for(u16 i=0; i<count; i++)
+		{
+			// Deserialize a string and grab an ItemDefinition from it
+			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
+			ItemDefinition def;
+			def.deSerialize(tmp_is);
+			// Register
+			registerItem(def);
+		}
+		u16 num_aliases = readU16(is);
+		for(u16 i=0; i<num_aliases; i++)
+		{
+			std::string name = deSerializeString(is);
+			std::string convert_to = deSerializeString(is);
+			registerAlias(name, convert_to);
 		}
 	}
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {

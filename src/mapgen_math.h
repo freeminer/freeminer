@@ -47,7 +47,7 @@ struct MapgenMathParams : public MapgenV7Params {
 #endif
 
 	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void writeParams(Settings *settings) const;
 };
 
 class MapgenMath : public MapgenV7 {

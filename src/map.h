@@ -42,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 #include "config.h"
 
+class Settings;
 class Database;
 class ClientMap;
 class MapSector;
@@ -263,28 +264,28 @@ public:
 	//bool updateChangedVisibleArea();
 
 	// Call these before and after saving of many blocks
-	virtual void beginSave() {return;};
-	virtual void endSave() {return;};
+	virtual void beginSave() { return; }
+	virtual void endSave() { return; }
 
-	virtual s32 save(ModifiedState save_level, bool breakable){assert(0); return 0;};
+	virtual s32 save(ModifiedState save_level, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
 
 	// Server implements these.
 	// Client leaves them as no-op.
-	virtual bool saveBlock(MapBlock *block) { return false; };
-	virtual bool deleteBlock(v3s16 blockpos) { return false; };
+	virtual bool saveBlock(MapBlock *block) { return false; }
+	virtual bool deleteBlock(v3s16 blockpos) { return false; }
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
 	u32 timerUpdate(float uptime, float unload_timeout, unsigned int max_cycle_ms = 100,
-			std::list<v3s16> *unloaded_blocks=NULL);
+			std::vector<v3s16> *unloaded_blocks=NULL);
 
 	/*
 		Unloads all blocks with a zero refCount().
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	void unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks=NULL);
+	void unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks=NULL);
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
@@ -353,16 +354,16 @@ public:
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
 	MapBlock * createBlankBlock(v3s16 & p);
-	void insertBlock(MapBlock *block);
+	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
 	std::map<MapBlockP, int> * m_blocks_delete;
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	try_shared_mutex m_block_cache_mutex;
 #endif
-#if !CMAKE_HAVE_THREAD_LOCAL
+#if !HAVE_THREAD_LOCAL
 	MapBlockP m_block_cache;
 	v3POS m_block_cache_p;
 #endif
@@ -460,6 +461,7 @@ public:
 	/*
 		Database functions
 	*/
+	static Database *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
 	// Verify we can read/write to the database
 	void verifyDatabase();
 
@@ -468,14 +470,14 @@ public:
 	void endSave();
 
 	s32 save(ModifiedState save_level, bool breakable = 0);
-	void listAllLoadableBlocks(std::list<v3s16> &dst);
-	void listAllLoadedBlocks(std::list<v3s16> &dst);
+	void listAllLoadableBlocks(std::vector<v3s16> &dst);
+	void listAllLoadedBlocks(std::vector<v3s16> &dst);
 	// Saves map seed and possibly other stuff
 	void saveMapMeta();
 	void loadMapMeta();
 
-	bool saveBlock(MapBlock *block, Database *db);
 	bool saveBlock(MapBlock *block);
+	static bool saveBlock(MapBlock *block, Database *db);
 	MapBlock* loadBlock(v3s16 p);
 
 	bool deleteBlock(v3s16 blockpos);

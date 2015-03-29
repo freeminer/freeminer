@@ -88,7 +88,7 @@ local function init_globals()
 		menudata.worldlist:set_sortmode("alphabetic")
 
 		if not core.setting_get("menu_last_game") then
-			local default_game = core.setting_get("default_game") or "minetest"
+			local default_game = core.setting_get("default_game") or "default"
 			core.setting_set("menu_last_game", default_game )
 		end
 
@@ -144,10 +144,15 @@ local function init_globals()
 	tv_main:add(tab_credits)
 
 	tv_main:set_global_event_handler(main_event_handler)
-	tv_main:set_fixed_size(false)
+	if PLATFORM ~= "Android" then
+		tv_main:set_fixed_size(true)
+	else
+		tv_main:set_fixed_size(false)
+	end
 
 	--if not (PLATFORM == "Android") then
-		tv_main:set_tab(core.setting_get("maintab_LAST"))
+		local tab = core.setting_get("maintab_LAST") or 'multiplayer'
+		tv_main:set_tab(tab)
 	--end
 	ui.set_default("maintab")
 	tv_main:show()

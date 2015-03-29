@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "connection_enet.h"
+#include "network/fm_connection.h"
 #include "main.h"
 #include "serialization.h"
 #include "log.h"
@@ -37,6 +37,60 @@ std::ostream *derr_con_ptr = &verbosestream;
 namespace con
 {
 
+//very ugly windows hack
+#if defined(_MSC_VER) && defined(ENET_IPV6)
+
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+int inet_pton(int af, const char *src, void *dst)
+{
+  struct sockaddr_storage ss;
+  int size = sizeof(ss);
+  char src_copy[INET6_ADDRSTRLEN+1];
+
+  ZeroMemory(&ss, sizeof(ss));
+  /* stupid non-const API */
+  strncpy (src_copy, src, INET6_ADDRSTRLEN+1);
+  src_copy[INET6_ADDRSTRLEN] = 0;
+
+  if (WSAStringToAddress(src_copy, af, NULL, (struct sockaddr *)&ss, &size) == 0) {
+    switch(af) {
+      case AF_INET:
+    *(struct in_addr *)dst = ((struct sockaddr_in *)&ss)->sin_addr;
+    return 1;
+      case AF_INET6:
+    *(struct in6_addr *)dst = ((struct sockaddr_in6 *)&ss)->sin6_addr;
+    return 1;
+    }
+  }
+  return 0;
+}
+
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
+{
+  struct sockaddr_storage ss;
+  unsigned long s = size;
+
+  ZeroMemory(&ss, sizeof(ss));
+  ss.ss_family = af;
+
+  switch(af) {
+    case AF_INET:
+      ((struct sockaddr_in *)&ss)->sin_addr = *(struct in_addr *)src;
+      break;
+    case AF_INET6:
+      ((struct sockaddr_in6 *)&ss)->sin6_addr = *(struct in6_addr *)src;
+      break;
+    default:
+      return NULL;
+  }
+  /* cannot direclty use &size because of strict aliasing rules */
+  return (WSAAddressToString((struct sockaddr *)&ss, sizeof(ss), NULL, dst, &s) == 0)?
+          dst : NULL;
+}
+#endif
+
 /*
 	Connection
 */
@@ -49,7 +103,6 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_enet_host(0),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
-	m_bc_receive_timeout(1),
 	m_last_recieved(0),
 	m_last_recieved_warn(0)
 {
@@ -98,8 +151,8 @@ void Connection::processCommand(ConnectionCommand &c)
 		return;
 	case CONNCMD_SERVE:
 		dout_con<<getDesc()<<" processing CONNCMD_SERVE port="
-				<<c.port<<std::endl;
-		serve(c.port);
+				<<c.address.getPort()<<std::endl;
+		serve(c.address);
 		return;
 	case CONNCMD_CONNECT:
 		dout_con<<getDesc()<<" processing CONNCMD_CONNECT"<<std::endl;
@@ -207,17 +260,17 @@ void Connection::receive()
 }
 
 // host
-void Connection::serve(u16 port)
+void Connection::serve(Address bind_addr)
 {
-	ENetAddress *address = new ENetAddress;
+	ENetAddress address;
 #if defined(ENET_IPV6)
-	address->host = in6addr_any;
+	address.host = in6addr_any;
 #else
-	address->host = ENET_HOST_ANY;
+	address.host = ENET_HOST_ANY;
 #endif
-	address->port = port;
+	address.port = bind_addr.getPort(); // fmtodo
 
-	m_enet_host = enet_host_create(address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
+	m_enet_host = enet_host_create(&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (m_enet_host == NULL) {
 		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
 		putEvent(ev);
@@ -238,24 +291,24 @@ void Connection::connect(Address addr)
 	}
 
 	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
-	ENetAddress *address = new ENetAddress;
+	ENetAddress address;
 #if defined(ENET_IPV6)
 	if (!addr.isIPv6())
-		inet_pton (AF_INET6, ("::ffff:"+addr.serializeString()).c_str(), &address->host);
+		inet_pton (AF_INET6, ("::ffff:"+addr.serializeString()).c_str(), &address.host);
 	else
-		address->host = addr.getAddress6().sin6_addr;
+		address.host = addr.getAddress6().sin6_addr;
 #else
 	if (addr.isIPv6()) {
 		//throw ConnectionException("Cant connect to ipv6 address");
 		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
 		putEvent(ev);
 	} else {
-		address->host = addr.getAddress().sin_addr.s_addr;
+		address.host = addr.getAddress().sin_addr.s_addr;
 	}
 #endif
 
-	address->port = addr.getPort();
-	ENetPeer *peer = enet_host_connect(m_enet_host, address, CHANNEL_COUNT, 0);
+	address.port = addr.getPort();
+	ENetPeer *peer = enet_host_connect(m_enet_host, &address, CHANNEL_COUNT, 0);
 	peer->data = new u16;
 	*((u16*)peer->data) = PEER_ID_SERVER;
 
@@ -368,10 +421,10 @@ void Connection::putCommand(ConnectionCommand &c)
 	m_command_queue.push_back(c);
 }
 
-void Connection::Serve(unsigned short port)
+void Connection::Serve(Address bind_address)
 {
 	ConnectionCommand c;
-	c.serve(port);
+	c.serve(bind_address);
 	putCommand(c);
 }
 
@@ -407,16 +460,17 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
+u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
 {
 	for(;;){
-		ConnectionEvent e = waitEvent(m_bc_receive_timeout);
+		ConnectionEvent e = waitEvent(timeout);
 		if(e.type != CONNEVENT_NONE)
 			dout_con<<getDesc()<<": Receive: got event: "
 					<<e.describe()<<std::endl;
 		switch(e.type){
 		case CONNEVENT_NONE:
-			throw NoIncomingDataException("No incoming data");
+			//throw NoIncomingDataException("No incoming data");
+			return 0;
 		case CONNEVENT_DATA_RECEIVED:
 			peer_id = e.peer_id;
 			data = SharedBuffer<u8>(e.data);
@@ -436,7 +490,8 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data)
 			throw ConnectionException("Failed to connect");
 		}
 	}
-	throw NoIncomingDataException("No incoming data");
+	return 0;
+	//throw NoIncomingDataException("No incoming data");
 }
 
 void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)

@@ -80,7 +80,7 @@ struct MapgenIndevParams : public MapgenV6Params {
 	~MapgenIndevParams() {}
 
 	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void writeParams(Settings *settings) const;
 };
 
 class MapgenIndev : public MapgenV6, public Mapgen_features {

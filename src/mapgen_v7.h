@@ -59,7 +59,7 @@ struct MapgenV7Params : public MapgenSpecificParams {
 	~MapgenV7Params() {}
 
 	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void writeParams(Settings *settings) const;
 };
 
 class MapgenV7 : public Mapgen, public Mapgen_features {
@@ -108,6 +108,10 @@ public:
 	content_t c_cobble;
 	content_t c_desert_sand;
 	content_t c_desert_stone;
+	content_t c_mossycobble;
+	content_t c_sandbrick;
+	content_t c_stair_cobble;
+	content_t c_stair_sandstone;
 
 	MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenV7();
@@ -128,7 +132,7 @@ public:
 	int generateMountainTerrain(int ymax);
 	void generateRidgeTerrain();
 
-	void generateBiomes();
+	bool generateBiomes(float *heat_map, float *humidity_map);
 	void dustTopNodes();
 
 	//void addTopNodes();

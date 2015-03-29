@@ -27,23 +27,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mg_biome.h"
 #include "gamedef.h"
 
-#if CMAKE_HAVE_THREAD_LOCAL
+#if HAVE_THREAD_LOCAL
 thread_local MapBlockP m_block_cache = nullptr;
 thread_local v3POS m_block_cache_p;
 #endif
 
 //TODO: REMOVE THIS func and use Map::getBlock
 MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
+
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getBlock");
 #endif
 
-#if !CMAKE_THREADS
+#if !ENABLE_THREADS
 	nocache = true; //very dirty hack. fix and remove. Also compare speed: no cache and cache with lock
 #endif
 
 	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -67,7 +68,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 	}
 
 	if (!nocache) {
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
 		if(lock.owns_lock())
 #endif
@@ -85,6 +86,9 @@ MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache) {
 }
 
 void Map::getBlockCacheFlush() {
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
+	auto lock = unique_lock(m_block_cache_mutex);
+#endif
 	m_block_cache = nullptr;
 }
 
@@ -108,25 +112,26 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 	return block;
 }
 
-void Map::insertBlock(MapBlock *block) {
+bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2) {
 		//throw AlreadyExistsException("Block already exists");
 		infostream << "Block already exists " << block_p << std::endl;
-		return; // memory leak, but very rare|impossible
+		return false;
 	}
 
 	// Insert into container
 	m_blocks.set(block_p, block);
+	return true;
 }
 
 void Map::deleteBlock(MapBlockP block) {
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
-#if CMAKE_THREADS && !CMAKE_HAVE_THREAD_LOCAL
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	m_block_cache = nullptr;
