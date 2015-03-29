@@ -68,7 +68,13 @@ Gentoo/Funtoo:
 ```bash
 emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht dev-libs/msgpack dev-libs/leveldb
 ```
-<sup>Recommended irrlicht version: `1.8.1`</sup>
+___
+Osx:
+```bash
+brew install cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis luajit msgpack
+```
+
+<sup>Recommended irrlicht version: `1.8.2`</sup>
 
 Download source code:
 ```bash
