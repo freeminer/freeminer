@@ -1086,14 +1086,14 @@ void UDPPeer::PutReliableSendCommand(ConnectionCommand &c,
 				<<" processing reliable command for peer id: " << c.peer_id
 				<<" data size: " << c.data.getSize() << std::endl);
 		if (!processReliableSendCommand(c,max_packet_size)) {
-			channels[c.channelnum].queued_commands.push(c);
+			channels[c.channelnum].queued_commands.push_back(c);
 		}
 	}
 	else {
 		LOG(dout_con<<m_connection->getDesc()
 				<<" Queueing reliable command for peer id: " << c.peer_id
 				<<" data size: " << c.data.getSize() <<std::endl);
-		channels[c.channelnum].queued_commands.push(c);
+		channels[c.channelnum].queued_commands.push_back(c);
 	}
 }
 
@@ -1205,17 +1205,15 @@ void UDPPeer::RunCommandQueues(
 							unsigned int maxtransfer)
 {
 
-	for (unsigned int i = 0; i < CHANNEL_COUNT; i++)
-	{
+	for (unsigned int i = 0; i < CHANNEL_COUNT; i++) {
 		unsigned int commands_processed = 0;
 
 		if ((channels[i].queued_commands.size() > 0) &&
 				(channels[i].queued_reliables.size() < maxtransfer) &&
-				(commands_processed < maxcommands))
-		{
+				(commands_processed < maxcommands)) {
 			try {
 				ConnectionCommand c = channels[i].queued_commands.front();
-				channels[i].queued_commands.pop();
+				channels[i].queued_commands.pop_front();
 				LOG(dout_con<<m_connection->getDesc()
 						<<" processing queued reliable command "<<std::endl);
 				if (!processReliableSendCommand(c,max_packet_size)) {
@@ -1223,7 +1221,7 @@ void UDPPeer::RunCommandQueues(
 							<< " Failed to queue packets for peer_id: " << c.peer_id
 							<< ", delaying sending of " << c.data.getSize()
 							<< " bytes" << std::endl);
-					channels[i].queued_commands.push(c);
+					channels[i].queued_commands.push_front(c);
 				}
 			}
 			catch (ItemNotFoundException &e) {
@@ -1352,12 +1350,10 @@ bool ConnectionSendThread::packetsQueued()
 		if (dynamic_cast<UDPPeer*>(&peer) == 0)
 			continue;
 
-		for(u16 i=0; i<CHANNEL_COUNT; i++)
-		{
+		for(u16 i=0; i < CHANNEL_COUNT; i++) {
 			Channel *channel = &(dynamic_cast<UDPPeer*>(&peer))->channels[i];
 
-			if (channel->queued_commands.size() > 0)
-			{
+			if (channel->queued_commands.size() > 0) {
 				return true;
 			}
 		}
