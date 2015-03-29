@@ -40,6 +40,7 @@ endif()
 
 set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
 set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
+
 CHECK_CXX_SOURCE_RUNS("
 	#include <string>
 	thread_local std::string test;
@@ -434,8 +435,8 @@ if(WIN32)
 		# Surpress some useless warnings
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 	else() # Probably MinGW = GCC
-		set(PLATFORM_LIBS ws2_32.lib)
 	endif()
+	set(PLATFORM_LIBS ws2_32.lib)
 	# Zlib stuff
 	set(ZLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../zlib/zlib-1.2.5"
 			CACHE PATH "Zlib include directory")

@@ -139,11 +139,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <CoreFoundation/CoreFoundation.h>
 #endif
 
-#if defined(_MSC_VER)
-int inet_pton(int af, const char *src, void *dst);
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
-#endif
-
 namespace porting
 {
 
