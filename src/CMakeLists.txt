@@ -350,14 +350,43 @@ set(USE_LEVELDB FALSE)
 if(ENABLE_LEVELDB)
 	find_library(LEVELDB_LIBRARY leveldb)
 	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
-	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
+	find_library(SNAPPY_LIBRARY snappy)
+	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
+	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
+	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")   
+	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB TRUE)
 		message(STATUS "LevelDB backend enabled.")
-		include_directories(${LEVELDB_INCLUDE_DIR})
+		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
 	else()
 		message(STATUS "LevelDB not found!")
 	endif()
 endif(ENABLE_LEVELDB)
+
+# this is needed because VS builds install LevelDB via nuget
+if(FORCE_LEVELDB)
+	set(USE_LEVELDB 1)
+endif()
+
+set(USE_SQLITE3 0)
+
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+
+if(ENABLE_SQLITE3)
+	find_package(SQLite3)
+	if(SQLITE3_LIBRARY AND SQLITE3_INCLUDE_DIR)
+		set(USE_SQLITE3 1)
+		message(STATUS "sqlite3 backend enabled")
+		include_directories(${SQLITE3_INCLUDE_DIR})
+	else()
+		set(USE_SQLITE3 0)
+		message(STATUS "sqlite3 not found!")
+	endif()
+endif()
+
+if(FORCE_SQLITE3)
+	set(USE_SQLITE3 1)
+endif()
 
 
 OPTION(ENABLE_REDIS "Enable Redis backend" TRUE)
@@ -378,6 +407,17 @@ endif(ENABLE_REDIS)
 
 #find_package(SQLite3 REQUIRED)
 find_package(Json REQUIRED)
+
+#option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
+set(USE_MANDELBULBER 1)
+#find_package(Mandelbulber)
+
+option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " OFF)
+if(ENABLE_IPV4_DEFAULT)
+	set(USE_IPV4_DEFAULT 1)
+else()
+	set(USE_IPV4_DEFAULT 0)
+endif()
 
 
 if(NOT MSVC)
