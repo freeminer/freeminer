@@ -160,7 +160,7 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 			m_access_denied_reason = wide_to_narrow(wide_reason);
 		}
 		else if (denyCode < SERVER_ACCESSDENIED_MAX) {
-			m_access_denied_reason = wide_to_narrow(accessDeniedStrings[denyCode]);
+			m_access_denied_reason = accessDeniedStrings[denyCode];
 		}
 	}
 	// 13/03/15 Legacy code from 0.4.12 and lesser. must stay 1 year
