@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_base.h"
 
 class INodeDefManager;
-class NodeResolveInfo;
+struct NodeResolveInfo;
 class DecoSimple;
 class DecoSchematic;
 

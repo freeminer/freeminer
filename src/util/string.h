@@ -40,16 +40,19 @@ struct FlagDesc {
 	u32 flag;
 };
 
+// You must free the returned string!
+const wchar_t *narrow_to_wide_c(const char *mbs);
+
 // try not to convert between wide/utf8 encodings; this can result in data loss
 // try to only convert between them when you need to input/output stuff via Irrlicht
-std::wstring utf8_to_wide(const std::string &input);
-std::string wide_to_utf8(const std::wstring &input);
+std::wstring narrow_to_wide(const std::string &input); // TODO: must be named utf8_to_wide
+std::string wide_to_narrow(const std::wstring &input); // TODO: must be named wide_to_utf8
 
 // NEVER use those two functions unless you have a VERY GOOD reason to
 // they just convert between wide and multibyte encoding
 // multibyte encoding depends on current locale, this is no good, especially on Windows
-std::wstring narrow_to_wide(const std::string& mbs);
-std::string wide_to_narrow(const std::wstring& wcs);
+std::wstring narrow_to_wide_real(const std::string& mbs);
+std::string wide_to_narrow_real(const std::wstring& wcs);
 std::string translatePassword(std::string playername, std::string password);
 std::string urlencode(std::string str);
 std::string urldecode(std::string str);
@@ -284,7 +287,7 @@ inline s32 mystoi(const std::string &str)
  */
 inline s32 mystoi(const std::wstring &str)
 {
-	return atoi(wide_to_utf8(str).c_str());
+	return atoi(wide_to_narrow(str).c_str());
 }
 
 
@@ -410,8 +413,7 @@ inline std::string wrap_rows(const std::string &from,
 
 
 /**
- * Removes all backslashes from a string that had been escaped (FormSpec strings)
- *
+ * Removes backslashes from an escaped string (FormSpec strings)
  */
 template <typename T>
 inline std::basic_string<T> unescape_string(std::basic_string<T> &s)
@@ -419,8 +421,11 @@ inline std::basic_string<T> unescape_string(std::basic_string<T> &s)
 	std::basic_string<T> res;
 
 	for (size_t i = 0; i < s.length(); i++) {
-		if (s[i] == '\\')
-			++i;
+		if (s[i] == '\\') {
+			i++;
+			if (i >= s.length())
+				break;
+		}
 		res += s[i];
 	}
 

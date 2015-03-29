@@ -56,7 +56,7 @@ public:
 	// And never save to disk
 	bool isStaticAllowed() const
 	{ return false; }
-	
+
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data)
 	{
@@ -102,7 +102,7 @@ public:
 	}
 	u8 getType() const
 	{ return ACTIVEOBJECT_TYPE_TEST; }
-	
+
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data)
 	{
@@ -162,6 +162,203 @@ private:
 TestSAO proto_TestSAO(NULL, v3f(0,0,0));
 
 /*
+	ItemSAO
+
+	DEPRECATED: New dropped items are implemented in Lua; see
+	            builtin/item_entity.lua.
+*/
+
+class ItemSAO : public ServerActiveObject
+{
+public:
+	u8 getType() const
+	{ return ACTIVEOBJECT_TYPE_ITEM; }
+
+	float getMinimumSavedMovement()
+	{ return 0.1*BS; }
+
+	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
+			const std::string &data)
+	{
+		std::istringstream is(data, std::ios::binary);
+		char buf[1];
+		// read version
+		is.read(buf, 1);
+		u8 version = buf[0];
+		// check if version is supported
+		if(version != 0)
+			return NULL;
+		std::string itemstring = deSerializeString(is);
+		infostream<<"create(): Creating item \""
+				<<itemstring<<"\""<<std::endl;
+		return new ItemSAO(env, pos, itemstring);
+	}
+
+	ItemSAO(ServerEnvironment *env, v3f pos,
+			const std::string &itemstring):
+		ServerActiveObject(env, pos),
+		m_itemstring(itemstring),
+		m_itemstring_changed(false),
+		m_speed_f(0,0,0),
+		m_last_sent_position(0,0,0)
+	{
+		ServerActiveObject::registerType(getType(), create);
+	}
+
+	void step(float dtime, bool send_recommended)
+	{
+		ScopeProfiler sp2(g_profiler, "step avg", SPT_AVG);
+
+		assert(m_env);
+
+		const float interval = 0.2;
+		if(m_move_interval.step(dtime, interval)==false)
+			return;
+		dtime = interval;
+
+		core::aabbox3d<f32> box(-BS/3.,0.0,-BS/3., BS/3.,BS*2./3.,BS/3.);
+		collisionMoveResult moveresult;
+		// Apply gravity
+		m_speed_f += v3f(0, -dtime*9.81*BS, 0);
+		// Maximum movement without glitches
+		f32 pos_max_d = BS*0.25;
+		// Limit speed
+		if(m_speed_f.getLength()*dtime > pos_max_d)
+			m_speed_f *= pos_max_d / (m_speed_f.getLength()*dtime);
+		v3f pos_f = getBasePosition();
+		v3f accel_f = v3f(0,0,0);
+		f32 stepheight = 0;
+		moveresult = collisionMoveSimple(m_env,m_env->getGameDef(),
+				pos_max_d, box, stepheight, dtime,
+				pos_f, m_speed_f, accel_f);
+
+		if(send_recommended == false)
+			return;
+
+		if(pos_f.getDistanceFrom(m_last_sent_position) > 0.05*BS)
+		{
+			setBasePosition(pos_f);
+			m_last_sent_position = pos_f;
+
+			std::ostringstream os(std::ios::binary);
+			// command (0 = update position)
+			writeU8(os, 0);
+			// pos
+			writeV3F1000(os, m_base_position);
+			// create message and add to list
+			ActiveObjectMessage aom(getId(), false, os.str());
+			m_messages_out.push_back(aom);
+		}
+		if(m_itemstring_changed)
+		{
+			m_itemstring_changed = false;
+
+			std::ostringstream os(std::ios::binary);
+			// command (1 = update itemstring)
+			writeU8(os, 1);
+			// itemstring
+			os<<serializeString(m_itemstring);
+			// create message and add to list
+			ActiveObjectMessage aom(getId(), false, os.str());
+			m_messages_out.push_back(aom);
+		}
+	}
+
+	std::string getClientInitializationData(u16 protocol_version)
+	{
+		std::ostringstream os(std::ios::binary);
+		// version
+		writeU8(os, 0);
+		// pos
+		writeV3F1000(os, m_base_position);
+		// itemstring
+		os<<serializeString(m_itemstring);
+		return os.str();
+	}
+
+	std::string getStaticData()
+	{
+		infostream<<__FUNCTION_NAME<<std::endl;
+		std::ostringstream os(std::ios::binary);
+		// version
+		writeU8(os, 0);
+		// itemstring
+		os<<serializeString(m_itemstring);
+		return os.str();
+	}
+
+	ItemStack createItemStack()
+	{
+		try{
+			IItemDefManager *idef = m_env->getGameDef()->idef();
+			ItemStack item;
+			item.deSerialize(m_itemstring, idef);
+			infostream<<__FUNCTION_NAME<<": m_itemstring=\""<<m_itemstring
+					<<"\" -> item=\""<<item.getItemString()<<"\""
+					<<std::endl;
+			return item;
+		}
+		catch(SerializationError &e)
+		{
+			infostream<<__FUNCTION_NAME<<": serialization error: "
+					<<"m_itemstring=\""<<m_itemstring<<"\""<<std::endl;
+			return ItemStack();
+		}
+	}
+
+	int punch(v3f dir,
+			const ToolCapabilities *toolcap,
+			ServerActiveObject *puncher,
+			float time_from_last_punch)
+	{
+		// Take item into inventory
+		ItemStack item = createItemStack();
+		Inventory *inv = puncher->getInventory();
+		if(inv != NULL)
+		{
+			std::string wieldlist = puncher->getWieldList();
+			ItemStack leftover = inv->addItem(wieldlist, item);
+			puncher->setInventoryModified();
+			if(leftover.empty())
+			{
+				m_removed = true;
+			}
+			else
+			{
+				m_itemstring = leftover.getItemString();
+				m_itemstring_changed = true;
+			}
+		}
+
+		return 0;
+	}
+
+	bool getCollisionBox(aabb3f *toset) {
+		return false;
+	}
+
+	bool collideWithObjects() {
+		return false;
+	}
+
+private:
+	std::string m_itemstring;
+	bool m_itemstring_changed;
+	v3f m_speed_f;
+	v3f m_last_sent_position;
+	IntervalLimiter m_move_interval;
+};
+
+// Prototype (registers item for deserialization)
+ItemSAO proto_ItemSAO(NULL, v3f(0,0,0), "");
+
+ServerActiveObject* createItemSAO(ServerEnvironment *env, v3f pos,
+                                  const std::string &itemstring)
+{
+	return new ItemSAO(env, pos, itemstring);
+}
+
+/*
 	LuaEntitySAO
 */
 
@@ -197,7 +394,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 		ServerActiveObject::registerType(getType(), create);
 		return;
 	}
-	
+
 	// Initialize something to armor groups
 	m_armor_groups["fleshy"] = 100;
 }
@@ -211,12 +408,14 @@ LuaEntitySAO::~LuaEntitySAO()
 
 void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 {
+	auto lock = lock_unique_rec();
+
 	ServerActiveObject::addedToEnvironment(dtime_s);
-	
+
 	// Create entity from name
 	m_registered = m_env->getScriptIface()->
 		luaentity_Add(m_id, m_init_name.c_str());
-	
+
 	if(m_registered){
 		// Get properties
 		m_env->getScriptIface()->
@@ -406,6 +605,8 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
+	auto lock = lock_shared_rec();
+
 	if(protocol_version >= 14)
 	{
 		writeU8(os, 1); // version
@@ -480,10 +681,10 @@ int LuaEntitySAO::punch(v3f dir,
 		return 0;
 	}
 
-	// It's best that attachments cannot be punched 
+	// It's best that attachments cannot be punched
 	if(isAttached())
 		return 0;
-	
+
 	ItemStack *punchitem = NULL;
 	ItemStack punchitem_static;
 	if(puncher){
@@ -496,11 +697,11 @@ int LuaEntitySAO::punch(v3f dir,
 			toolcap,
 			punchitem,
 			time_from_last_punch);
-	
+
 	if(result.did_punch)
 	{
 		setHP(getHP() - result.damage);
-		
+
 
 		std::string punchername = "nil";
 
@@ -510,7 +711,7 @@ int LuaEntitySAO::punch(v3f dir,
 		actionstream<<getDescription()<<" punched by "
 				<<punchername<<", damage "<<result.damage
 				<<" hp, health now "<<getHP()<<" hp"<<std::endl;
-		
+
 		{
 			std::string str = gob_cmd_punched(result.damage, getHP());
 			// create message and add to list
@@ -696,7 +897,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	// If the object is attached client-side, don't waste bandwidth sending its position to clients
 	if(isAttached())
 		return;
-	
+
 	m_last_sent_move_precision = m_base_position.getDistanceFrom(
 			m_last_sent_position);
 	m_last_sent_position_timer = 0;
@@ -1089,7 +1290,7 @@ int PlayerSAO::punch(v3f dir,
 	ServerActiveObject *puncher,
 	float time_from_last_punch)
 {
-	// It's best that attachments cannot be punched 
+	// It's best that attachments cannot be punched
 	if(isAttached())
 		return 0;
 
@@ -1308,19 +1509,15 @@ bool PlayerSAO::checkMovementCheat()
 		*/
 
 		float player_max_speed = 0;
-		float player_max_speed_up = 0;
 		if(m_privs.count("fast") != 0){
 			// Fast speed
 			player_max_speed = m_player->movement_speed_fast;
-			player_max_speed_up = m_player->movement_speed_fast;
 		} else {
 			// Normal speed
 			player_max_speed = m_player->movement_speed_walk;
-			player_max_speed_up = m_player->movement_speed_walk;
 		}
 		// Tolerance. With the lag pool we shouldn't need it.
 		player_max_speed *= 1.5;
-		player_max_speed_up *= 1.5;
 
 		v3f diff = (m_player->getPosition() - m_last_good_position);
 		float d_vert = diff.Y;

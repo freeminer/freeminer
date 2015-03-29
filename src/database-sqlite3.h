@@ -46,6 +46,7 @@ public:
 
 	virtual bool saveBlock(v3s16 blockpos, std::string &data);
 	virtual std::string loadBlock(v3s16 blockpos);
+	virtual bool deleteBlock(v3s16 blockpos);
 	virtual void listAllLoadableBlocks(std::list<v3s16> &dst);
 	virtual int Initialized(void);
 	~Database_SQLite3();
@@ -55,9 +56,7 @@ private:
 	sqlite3 *m_database;
 	sqlite3_stmt *m_database_read;
 	sqlite3_stmt *m_database_write;
-#ifdef __ANDROID__
 	sqlite3_stmt *m_database_delete;
-#endif
 	sqlite3_stmt *m_database_list;
 	std::mutex mutex;
 

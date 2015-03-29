@@ -754,6 +754,8 @@ int main(int argc, char *argv[])
 	}
 	atexit(enet_deinitialize);
 
+	debug_set_exception_handler();
+
 	log_add_output_maxlev(&main_stderr_log_out, LMT_ACTION);
 	log_add_output_all_levs(&main_dstream_no_stderr_log_out);
 
@@ -1500,8 +1502,8 @@ static bool migrate_database(const GameParams &game_params, const Settings &cmd_
 		return false;
 	}
 
-	if (migrate_to == "__magic world ")
-		0;
+	if (migrate_to == " __magic word ")
+		{ }
 #if USE_SQLITE3
 	else if (migrate_to == "sqlite3")
 		new_db = new Database_SQLite3(&(ServerMap&)server->getMap(),
@@ -1678,9 +1680,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	while (device->run() && !*kill && !g_gamecallback->shutdown_requested)
 	{
 		// Set the window caption
-		wchar_t *text = wgettext("Main Menu");
+		std::wstring text = wstrgettext("Main Menu");
 		device->setWindowCaption((std::wstring(L"Freeminer [") + text + L"]").c_str());
-		delete[] text;
 
 		try {	// This is used for catching disconnects
 
@@ -1792,6 +1793,16 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 
 	g_menuclouds->drop();
 	g_menucloudsmgr->drop();
+
+#ifdef _IRR_COMPILE_WITH_LEAK_HUNTER_
+	auto objects = LeakHunter::getReferenceCountedObjects();
+	infostream<<"irrlicht leaked objects="<<objects.size()<<std::endl;
+	for (unsigned int i = 0; i < objects.size(); ++i) {
+		if (!objects[i])
+			continue;
+		infostream<<i<<":" <<objects[i]<< " cnt="<<objects[i]->getReferenceCount()<<" desc="<<(objects[i]->getDebugName() ? objects[i]->getDebugName() : "")<<std::endl;
+	}
+#endif
 
 	return retval;
 }
@@ -2010,22 +2021,6 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 
 bool ClientLauncher::create_engine_device(int log_level)
 {
-	static const char *driverids[] = {
-		"null",
-		"software",
-		"burningsvideo",
-		"direct3d8",
-		"direct3d9",
-		"opengl"
-#ifdef _IRR_COMPILE_WITH_OGLES1_
-		,"ogles1"
-#endif
-#ifdef _IRR_COMPILE_WITH_OGLES2_
-		,"ogles2"
-#endif
-		,"invalid"
-	};
-
 	static const irr::ELOG_LEVEL irr_log_level[5] = {
 		ELL_NONE,
 		ELL_ERROR,
@@ -2050,19 +2045,20 @@ bool ClientLauncher::create_engine_device(int log_level)
 
 	// Determine driver
 	video::E_DRIVER_TYPE driverType = video::EDT_OPENGL;
-
 	std::string driverstring = g_settings->get("video_driver");
-	for (size_t i = 0; i < sizeof driverids / sizeof driverids[0]; i++) {
-		if (strcasecmp(driverstring.c_str(), driverids[i]) == 0) {
-			driverType = (video::E_DRIVER_TYPE) i;
+	std::vector<video::E_DRIVER_TYPE> drivers
+		= porting::getSupportedVideoDrivers();
+	u32 i;
+	for (i = 0; i != drivers.size(); i++) {
+		if (!strcasecmp(driverstring.c_str(),
+			porting::getVideoDriverName(drivers[i]))) {
+			driverType = drivers[i];
 			break;
 		}
-
-		if (strcasecmp("invalid", driverids[i]) == 0) {
-			errorstream << "WARNING: Invalid video_driver specified;"
-			            << " defaulting to opengl" << std::endl;
-			break;
-		}
+	}
+	if (i == drivers.size()) {
+		errorstream << "Invalid video_driver specified; "
+			"defaulting to opengl" << std::endl;
 	}
 
 	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();

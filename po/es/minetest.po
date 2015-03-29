@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-12-13 15:24+0100\n"
-"PO-Revision-Date: 2014-12-13 18:22+0200\n"
-"Last-Translator: Diego Martínez <lkaezadl3@yahoo.com>\n"
+"PO-Revision-Date: 2015-01-19 09:56+0100\n"
+"Last-Translator: Diego de las Heras <diegodelasheras@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
@@ -31,12 +31,12 @@ msgstr "Mundo:"
 #: builtin/mainmenu/dlg_config_world.lua:30
 #: builtin/mainmenu/dlg_config_world.lua:32
 msgid "Hide Game"
-msgstr "Ocultar Juego"
+msgstr "Ocultar juego"
 
 #: builtin/mainmenu/dlg_config_world.lua:36
 #: builtin/mainmenu/dlg_config_world.lua:38
 msgid "Hide mp content"
-msgstr "Esconder contenido mp"
+msgstr "Ocultar contenido mp"
 
 #: builtin/mainmenu/dlg_config_world.lua:46
 msgid "Mod:"
@@ -84,7 +84,7 @@ msgstr "Semilla"
 
 #: builtin/mainmenu/dlg_create_world.lua:56
 msgid "Mapgen"
-msgstr "Generador de Mapas"
+msgstr "Generador de mapas"
 
 #: builtin/mainmenu/dlg_create_world.lua:59
 msgid "Game"
@@ -142,7 +142,7 @@ msgstr "Modmgr: Ruta de mod \"$1\" inválida"
 
 #: builtin/mainmenu/dlg_delete_world.lua:24
 msgid "Delete World \"$1\"?"
-msgstr "Eliminar Mundo \"$1\"?"
+msgstr "¿Eliminar el mundo \"$1\"?"
 
 #: builtin/mainmenu/dlg_delete_world.lua:26
 msgid "No"
@@ -200,7 +200,7 @@ msgstr "por favor, espere..."
 
 #: builtin/mainmenu/store.lua:159
 msgid "Successfully installed:"
-msgstr "Instalado exitosamente:"
+msgstr "Instalado con éxito:"
 
 #: builtin/mainmenu/store.lua:163
 msgid "Shortname:"
@@ -222,9 +222,10 @@ msgstr "Reinstalar"
 msgid "Install"
 msgstr "Instalar"
 
+# En el menú principal de mods pone repositorio no tienda.
 #: builtin/mainmenu/store.lua:522
 msgid "Close store"
-msgstr "Cerrar tienda"
+msgstr "Cerrar repositorio"
 
 #: builtin/mainmenu/store.lua:530
 msgid "Page $1 of $2"
@@ -266,35 +267,36 @@ msgstr "Informacion del mod:"
 msgid "Rename"
 msgstr "Renombrar"
 
+# El nombre completo no cabe.
 #: builtin/mainmenu/tab_mods.lua:95
 msgid "Uninstall selected modpack"
 msgstr "Desinstalar paquete de mod seleccionado"
 
 #: builtin/mainmenu/tab_mods.lua:106
 msgid "Uninstall selected mod"
-msgstr "Desinstalar mod seleccionado"
+msgstr "Desinstalar el mod seleccionado"
 
 #: builtin/mainmenu/tab_mods.lua:121
 msgid "Select Mod File:"
-msgstr "Selecciona fichero mod:"
+msgstr "Selecciona el fichero del mod:"
 
 #: builtin/mainmenu/tab_mods.lua:165
 msgid "Mods"
 msgstr "Mods"
 
 #: builtin/mainmenu/tab_multiplayer.lua:23
-msgid "Address/Port"
-msgstr "Dirección/Puerto"
+msgid "Address / Port :"
+msgstr "Dirección / puerto:"
 
 #: builtin/mainmenu/tab_multiplayer.lua:24 builtin/mainmenu/tab_server.lua:37
 #: builtin/mainmenu/tab_simple_main.lua:25
-msgid "Name/Password"
-msgstr "Nombre/Contraseña"
+msgid "Name / Password :"
+msgstr "Nombre / contraseña:"
 
 #: builtin/mainmenu/tab_multiplayer.lua:29
 #: builtin/mainmenu/tab_simple_main.lua:30
 msgid "Public Serverlist"
-msgstr "Lista de Servidores Públicos"
+msgstr "Lista de servidores públicos"
 
 #: builtin/mainmenu/tab_multiplayer.lua:34 builtin/mainmenu/tab_server.lua:26
 #: builtin/mainmenu/tab_singleplayer.lua:85 src/keycode.cpp:230
@@ -320,7 +322,7 @@ msgstr "Configurar"
 
 #: builtin/mainmenu/tab_server.lua:29
 msgid "Start Game"
-msgstr "Iniciar Juego"
+msgstr "Iniciar juego"
 
 #: builtin/mainmenu/tab_server.lua:30 builtin/mainmenu/tab_singleplayer.lua:89
 msgid "Select World:"
@@ -350,7 +352,7 @@ msgstr "Puerto"
 
 #: builtin/mainmenu/tab_server.lua:51
 msgid "Server Port"
-msgstr "Puerto de Servidor"
+msgstr "Puerto del servidor:"
 
 #: builtin/mainmenu/tab_server.lua:174
 msgid "Server"
@@ -366,7 +368,7 @@ msgstr "No!!!"
 
 #: builtin/mainmenu/tab_settings.lua:134
 msgid "Smooth Lighting"
-msgstr "Iluminación Suave"
+msgstr "Iluminación suave"
 
 #: builtin/mainmenu/tab_settings.lua:136
 msgid "Enable Particles"
@@ -382,7 +384,7 @@ msgstr "Árboles detallados"
 
 #: builtin/mainmenu/tab_settings.lua:142
 msgid "Opaque Water"
-msgstr "Agua Opaca"
+msgstr "Agua opaca"
 
 #: builtin/mainmenu/tab_settings.lua:144
 msgid "Connected Glass"
@@ -415,7 +417,7 @@ msgstr "Sombreadores"
 
 #: builtin/mainmenu/tab_settings.lua:164
 msgid "Change keys"
-msgstr "Configurar Teclas"
+msgstr "Configurar teclas"
 
 #: builtin/mainmenu/tab_settings.lua:167
 msgid "Reset singleplayer world"
@@ -496,15 +498,16 @@ msgstr "Un jugador"
 
 #: builtin/mainmenu/tab_texturepacks.lua:49
 msgid "Select texture pack:"
-msgstr "Seleccione paquete de texturas:"
+msgstr "Seleccione un paquete de texturas:"
 
 #: builtin/mainmenu/tab_texturepacks.lua:69
 msgid "No information available"
-msgstr "Sin informacion disponible"
+msgstr "Sin información disponible"
 
+# No cabe "Paquetes de texturas".
 #: builtin/mainmenu/tab_texturepacks.lua:114
 msgid "Texturepacks"
-msgstr "Paquete de texturas"
+msgstr "Texturas"
 
 #: src/client.cpp:2726
 msgid "Item textures..."
@@ -520,11 +523,11 @@ msgstr "Revivir"
 
 #: src/game.cpp:2250
 msgid "Item definitions..."
-msgstr "Definición de objetos..."
+msgstr "Definiciones de objetos..."
 
 #: src/game.cpp:2255
 msgid "Node definitions..."
-msgstr "Definiendo nodos..."
+msgstr "Definiciones de nodos..."
 
 #: src/game.cpp:2262
 msgid "Media..."
@@ -557,15 +560,14 @@ msgstr "Entrar"
 #: src/guiKeyChangeMenu.cpp:125
 msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
 msgstr ""
-"Combinaciones de teclas.(Si este menú da error, cambiar configuración en "
-"minetest.conf)"
+"Combinaciones de teclas. (Si este menú da error, elimina líneas en minetest."
+"conf)"
 
 #: src/guiKeyChangeMenu.cpp:165
 msgid "\"Use\" = climb down"
 msgstr "\"Usar\" = Descender"
 
 #: src/guiKeyChangeMenu.cpp:180
-#, fuzzy
 msgid "Double tap \"jump\" to toggle fly"
 msgstr "Pulsa dos veces \"saltar\" para activar/desactivar volar"
 
@@ -575,7 +577,7 @@ msgstr "La tecla está en uso"
 
 #: src/guiKeyChangeMenu.cpp:371
 msgid "press key"
-msgstr "Pulsa una tecla"
+msgstr "pulsa una tecla"
 
 #: src/guiKeyChangeMenu.cpp:397
 msgid "Forward"
@@ -643,7 +645,7 @@ msgstr "Seleccionar distancia"
 
 #: src/guiKeyChangeMenu.cpp:413
 msgid "Print stacks"
-msgstr "Imprimir Pilas"
+msgstr "Imprimir pilas"
 
 #: src/guiPasswordChange.cpp:106
 msgid "Old Password"
@@ -651,7 +653,7 @@ msgstr "Contraseña anterior"
 
 #: src/guiPasswordChange.cpp:122
 msgid "New Password"
-msgstr "Nueva contraseña"
+msgstr "Contraseña nueva"
 
 #: src/guiPasswordChange.cpp:137
 msgid "Confirm Password"
@@ -667,15 +669,16 @@ msgstr "¡Las contraseñas no coinciden!"
 
 #: src/guiVolumeChange.cpp:106
 msgid "Sound Volume: "
-msgstr "Volúmen del Sonido: "
+msgstr "Volúmen del sonido: "
 
+# Es en el menú de sonido. Salir suena muy fuerte.
 #: src/guiVolumeChange.cpp:120
 msgid "Exit"
-msgstr "Salir"
+msgstr "Cerrar"
 
 #: src/keycode.cpp:224
 msgid "Left Button"
-msgstr "Click Izquierdo"
+msgstr "Botón izquierdo"
 
 #: src/keycode.cpp:224
 msgid "Middle Button"
@@ -683,7 +686,7 @@ msgstr "Click Central"
 
 #: src/keycode.cpp:224
 msgid "Right Button"
-msgstr "Click Derecho"
+msgstr "Botón derecho"
 
 #: src/keycode.cpp:224
 msgid "X Button 1"
@@ -699,7 +702,7 @@ msgstr "Limpiar"
 
 #: src/keycode.cpp:225
 msgid "Return"
-msgstr "Intro"
+msgstr "Retorno"
 
 #: src/keycode.cpp:225
 msgid "Tab"
@@ -711,7 +714,7 @@ msgstr "X Button 2"
 
 #: src/keycode.cpp:226
 msgid "Capital"
-msgstr "Bloq mayús"
+msgstr "Bloq Mayús"
 
 #: src/keycode.cpp:226
 msgid "Control"
@@ -815,7 +818,7 @@ msgstr "Captura de pantalla"
 
 #: src/keycode.cpp:233
 msgid "Left Windows"
-msgstr "Win Izquierdo"
+msgstr "Win izq."
 
 #: src/keycode.cpp:234
 msgid "Apps"
@@ -823,15 +826,15 @@ msgstr "Aplicaciones"
 
 #: src/keycode.cpp:234
 msgid "Numpad 0"
-msgstr "Teclado numérico 0"
+msgstr "Numpad 0"
 
 #: src/keycode.cpp:234
 msgid "Numpad 1"
-msgstr "Teclado Numérico 1"
+msgstr "Numpad 1"
 
 #: src/keycode.cpp:234
 msgid "Right Windows"
-msgstr "Win Derecho"
+msgstr "Win der."
 
 #: src/keycode.cpp:234
 msgid "Sleep"
@@ -839,51 +842,51 @@ msgstr "Suspender"
 
 #: src/keycode.cpp:235
 msgid "Numpad 2"
-msgstr "Teclado numérico 2"
+msgstr "Numpad 2"
 
 #: src/keycode.cpp:235
 msgid "Numpad 3"
-msgstr "Teclado Numérico 3"
+msgstr "Numpad 3"
 
 #: src/keycode.cpp:235
 msgid "Numpad 4"
-msgstr "Teclado numérico 4"
+msgstr "Numpad 4"
 
 #: src/keycode.cpp:235
 msgid "Numpad 5"
-msgstr "Teclado Numérico 5"
+msgstr "Numpad 5"
 
 #: src/keycode.cpp:235
 msgid "Numpad 6"
-msgstr "Teclado Numérico 6"
+msgstr "Numpad 6"
 
 #: src/keycode.cpp:235
 msgid "Numpad 7"
-msgstr "Teclado numérico 7"
+msgstr "Numpad 7"
 
 #: src/keycode.cpp:236
 msgid "Numpad *"
-msgstr "Teclado numérico *"
+msgstr "Numpad *"
 
 #: src/keycode.cpp:236
 msgid "Numpad +"
-msgstr "Teclado Numérico +"
+msgstr "Numpad +"
 
 #: src/keycode.cpp:236
 msgid "Numpad -"
-msgstr "Teclado Numérico -"
+msgstr "Numpad -"
 
 #: src/keycode.cpp:236
 msgid "Numpad /"
-msgstr "Teclado Numérico /"
+msgstr "Numpad /"
 
 #: src/keycode.cpp:236
 msgid "Numpad 8"
-msgstr "Teclado Numérico 8"
+msgstr "Numpad 8"
 
 #: src/keycode.cpp:236
 msgid "Numpad 9"
-msgstr "Teclado Numérico 9"
+msgstr "Numpad 9"
 
 #: src/keycode.cpp:240
 msgid "Num Lock"
@@ -895,27 +898,27 @@ msgstr "Bloq Despl"
 
 #: src/keycode.cpp:241
 msgid "Left Shift"
-msgstr "Shift Izqda"
+msgstr "Shift izq."
 
 #: src/keycode.cpp:241
 msgid "Right Shift"
-msgstr "Shift Dcha"
+msgstr "Shift der."
 
 #: src/keycode.cpp:242
 msgid "Left Control"
-msgstr "Control Izqdo"
+msgstr "Control izq."
 
 #: src/keycode.cpp:242
 msgid "Left Menu"
-msgstr "Menú Izquierdo"
+msgstr "Menú izq."
 
 #: src/keycode.cpp:242
 msgid "Right Control"
-msgstr "Control Dcho"
+msgstr "Control der."
 
 #: src/keycode.cpp:242
 msgid "Right Menu"
-msgstr "Menú Derecho"
+msgstr "Menú der."
 
 #: src/keycode.cpp:244
 msgid "Comma"
@@ -963,7 +966,7 @@ msgstr "Zoom"
 
 #: src/main.cpp:1681
 msgid "Main Menu"
-msgstr "Menú Principal"
+msgstr "Menú principal"
 
 #: src/main.cpp:1719
 msgid "Player name too long."
@@ -1003,7 +1006,7 @@ msgid ""
 "- Mouse wheel: select item\n"
 "- T: chat\n"
 msgstr ""
-"Controles Pred.:\n"
+"Controles predeterminados:\n"
 "- WASD: moverse\n"
 "- Espacio: saltar/subir\n"
 "- Mayús.: puntillas/bajar\n"
@@ -1012,8 +1015,8 @@ msgstr ""
 "- Ratón: girar/mirar\n"
 "- Ratón izq.: cavar/golpear\n"
 "- Ratón der.: colocar/usar\n"
-"- Rueda ratón: elegir objeto\n"
-"- T: conversar\n"
+"- Ratón rueda: elegir objeto\n"
+"- T: chat\n"
 
 msgid "is required by:"
 msgstr "es requerido por:"
@@ -1022,11 +1025,10 @@ msgid "Configuration saved.  "
 msgstr "Configuración guardada.  "
 
 msgid "Warning: Configuration not consistent.  "
-msgstr "Advertencia: La configuración no corresponde.  "
+msgstr "Advertencia: La configuración no es coherente."
 
 msgid "Cannot create world: Name contains invalid characters"
-msgstr ""
-"No se puede crear el mundo: El nombre contiene caracteres no válidos"
+msgstr "No se puede crear el mundo: El nombre contiene caracteres no válidos"
 
 msgid "Multiplayer"
 msgstr "Multijugador"
@@ -1035,22 +1037,19 @@ msgid "Advanced"
 msgstr "Avanzado"
 
 msgid "Show Public"
-msgstr "Servidores Públicos"
+msgstr "Mostrar público"
 
 msgid "Show Favorites"
-msgstr "Mostrar Favoritos"
+msgstr "Mostrar favoritos"
 
 msgid "Leave address blank to start a local server."
 msgstr "Dejar la dirección en blanco para iniciar un servidor local."
-
-#~ msgid "Create world"
-#~ msgstr "Crear Mundo"
 
 msgid "Address required."
 msgstr "Requiere una dirección."
 
 msgid "Cannot delete world: Nothing selected"
-msgstr "No se puede eliminar el mundo: ninguno ha sido seleccionado"
+msgstr "No se puede eliminar el mundo: Ninguno seleccionado"
 
 msgid "Files to be deleted"
 msgstr "Archivos que se eliminarán"
@@ -1064,43 +1063,18 @@ msgstr "No se puede configurar el mundo: Ninguno seleccionado"
 msgid "Failed to delete all world files"
 msgstr "No se pudo eliminar todos los archivos del mundo"
 
-#~ msgid ""
-#~ "Default Controls:\n"
-#~ "- WASD: Walk\n"
-#~ "- Mouse left: dig/hit\n"
-#~ "- Mouse right: place/use\n"
-#~ "- Mouse wheel: select item\n"
-#~ "- 0...9: select item\n"
-#~ "- Shift: sneak\n"
-#~ "- R: Toggle viewing all loaded chunks\n"
-#~ "- I: Inventory menu\n"
-#~ "- ESC: This menu\n"
-#~ "- T: Chat\n"
-#~ msgstr ""
-#~ "Controles predeterminados:\n"
-#~ "- WASD: Caminar \n"
-#~ "- Ratón, izquierdo: Cavar/Golpear\n"
-#~ "- Ratón, derecho: Poner bloque/Usar\n"
-#~ "- Ratón, rueda: seleccionar objecto\n"
-#~ "- 0... 9: Seleccionar objecto\n"
-#~ "- Mayúscula: caminar despacio\n"
-#~ "- R: Ajustar distancia de los pedazos cargados\n"
-#~ "- I: Inventario \n"
-#~ "- ESC: Este Menu\n"
-#~ "- T: Conversar\n"
-
 msgid ""
 "Warning: Some configured mods are missing.\n"
 "Their setting will be removed when you save the configuration.  "
 msgstr ""
-"ADVERTENCIA: Algunos mods configurados faltan.\n"
-"Su ajuste se quitará al guardar la configuración.  "
+"Advertencia: Algunos mods configurados faltan.\n"
+"Sus ajustes se eliminarán al guardar la configuración.  "
 
 msgid ""
 "Warning: Some mods are not configured yet.\n"
 "They will be enabled by default when you save the configuration.  "
 msgstr ""
-"ADVERTENCIA: Algunos mods no están aún configurados.\n"
+"Advertencia: Algunos mods todavía no están configurados.\n"
 "Se habilitarán de forma predeterminada al guardar la configuración.  "
 
 msgid "Exit to OS"
@@ -1110,10 +1084,10 @@ msgid "Exit to Menu"
 msgstr "Salir al menú"
 
 msgid "Sound Volume"
-msgstr "Volumen del Sonido"
+msgstr "Volumen del sonido"
 
 msgid "Change Password"
-msgstr "Modificar contraseña"
+msgstr "Cambiar contraseña"
 
 msgid "Continue"
 msgstr "Continuar"
@@ -1121,8 +1095,8 @@ msgstr "Continuar"
 msgid "You died."
 msgstr "Has muerto."
 
-msgid "Shutting down stuff..."
-msgstr "Apagando cosas..."
+msgid "Shutting down..."
+msgstr "Cerrando..."
 
 msgid "Connecting to server..."
 msgstr "Conectando al servidor..."
@@ -1155,13 +1129,13 @@ msgid "Favorites:"
 msgstr "Favoritos:"
 
 msgid "<<-- Add mod"
-msgstr "Añadir modificación"
+msgstr "<<-- Añadir mod"
 
 msgid "Remove selected mod"
-msgstr "Eliminar mod seleccionado"
+msgstr "Eliminar el mod seleccionado"
 
 msgid "Mods:"
-msgstr "Modificaciones:"
+msgstr "Mods:"
 
 msgid "Games"
 msgstr "Juegos"
@@ -1170,4 +1144,28 @@ msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
 msgstr "Gamemgr: Imposible copiar el mod \"$1\" al juego \"$2\""
 
 msgid "Game Name"
-msgstr "Nombre del Juego"
+msgstr "Nombre del juego"
+
+msgid "Change Keys"
+msgstr "Configurar teclas"
+
+msgid "Name/Password"
+msgstr "Nombre / contraseña:"
+
+msgid "Node Highlighting"
+msgstr "Resaltar nodos"
+
+msgid "Texturing:"
+msgstr "Texturizado:"
+
+msgid "Rendering:"
+msgstr "Renderizado:"
+
+msgid "Rebuilding shaders..."
+msgstr "Reconstruyendo sombreadores..."
+
+msgid "Initializing nodes..."
+msgstr "Inicializando nodos..."
+
+msgid "Done!"
+msgstr "¡Completado!"

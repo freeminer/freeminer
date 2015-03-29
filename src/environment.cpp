@@ -871,7 +871,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
 	if (fast) {
-		MapNode n;
+		MapNode n(CONTENT_AIR);
 		try {
 			if (fast == 2)
 				n.param1 = n_old.param1;
@@ -2531,7 +2531,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			continue;
 		}
 		f32 pre_factor = 1; // 1 hp per node/s
-		f32 tolerance = BS*14; // 5 without damage
+		f32 tolerance = PLAYER_FALL_TOLERANCE_SPEED; // 5 without damage
 		f32 post_factor = 1; // 1 hp per node/s
 		if(info.type == COLLISION_NODE)
 		{
@@ -2908,6 +2908,8 @@ void ClientEnvironment::damageLocalPlayer(u8 damage, bool handle_hp)
 	assert(lplayer);
 
 	if(handle_hp){
+		if (lplayer->hp == 0) // Don't damage a dead player
+			return;
 		if(lplayer->hp > damage)
 			lplayer->hp -= damage;
 		else

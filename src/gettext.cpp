@@ -26,9 +26,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "gettext.h"
 #include "util/string.h"
+#include "log.h"
 
 #if USE_GETTEXT && defined(_MSC_VER)
-#include <WinNls.h>
+#include <windows.h>
 #include <map>
 #include <direct.h>
 #include "filesys.h"
@@ -119,9 +120,9 @@ const char* MSVC_LocaleLookup(const char* raw_shortname) {
 
 /******************************************************************************/
 #ifdef _MSC_VER
-void init_gettext(const char *path,std::string configured_language,int argc, char** argv) {
+void init_gettext(const char *path, const std::string &configured_language, int argc, char** argv) {
 #else
-void init_gettext(const char *path,std::string configured_language) {
+void init_gettext(const char *path, const std::string &configured_language) {
 #endif
 #if USE_GETTEXT
 	/** first try to set user override environment **/
@@ -176,15 +177,15 @@ void init_gettext(const char *path,std::string configured_language) {
 			}
 
 			if (!CreateProcess(appname.c_str(),
-								(char*) ptr_parameters,
-								NULL,
-								NULL,
-								false,
-								DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT,
-								NULL,
-								NULL,
-								&startupinfo,
-								&processinfo)) {
+					(char*) ptr_parameters,
+					NULL,
+					NULL,
+					false,
+					DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT,
+					NULL,
+					NULL,
+					&startupinfo,
+					&processinfo)) {
 				char buffer[1024];		
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 					NULL,
@@ -264,9 +265,6 @@ void init_gettext(const char *path,std::string configured_language) {
 
 	setlocale(LC_NUMERIC,"C");
 	infostream << "Message locale is now set to: "
-			<< setlocale(LC_ALL,0) << std::endl;
+			<< setlocale(LC_ALL, 0) << std::endl;
 }
-
-
-
 

@@ -31,9 +31,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "tile.h"
 #include "fontengine.h"
-#include <string>
-
+#include "log_types.h"
 #include "gettext.h"
+#include <string>
 
 #include "xCGUITTFont.h"
 
@@ -74,24 +74,21 @@ GUIChatConsole::GUIChatConsole(
 	m_animate_time_old = getTimeMs();
 
 	// load background settings
-	bool console_color_set = !g_settings->get("console_color").empty();
 	s32 console_alpha = g_settings->getS32("console_alpha");
+	m_background_color.setAlpha(clamp_u8(console_alpha));
 
 	// load the background texture depending on settings
-	m_background_color.setAlpha(clamp_u8(console_alpha));
-	if (console_color_set)
-	{
+	ITextureSource *tsrc = client->getTextureSource();
+	if (tsrc->isKnownSourceImage("background_chat.jpg")) {
+		m_background = tsrc->getTexture("background_chat.jpg");
+		m_background_color.setRed(255);
+		m_background_color.setGreen(255);
+		m_background_color.setBlue(255);
+	} else {
 		v3f console_color = g_settings->getV3F("console_color");
 		m_background_color.setRed(clamp_u8(myround(console_color.X)));
 		m_background_color.setGreen(clamp_u8(myround(console_color.Y)));
 		m_background_color.setBlue(clamp_u8(myround(console_color.Z)));
-	}
-	else
-	{
-		m_background = env->getVideoDriver()->getTexture(getTexturePath("background_chat.jpg").c_str());
-		m_background_color.setRed(255);
-		m_background_color.setGreen(255);
-		m_background_color.setBlue(255);
 	}
 
 	m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
@@ -395,6 +392,27 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 	}
 }
 
+bool GUIChatConsole::getAndroidUIInput() {
+#ifdef __ANDROID__
+	if (porting::getInputDialogState() == 0) {
+		std::string text = porting::getInputDialogValue();
+		std::wstring wtext = narrow_to_wide(text);
+		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=["<<text<<"] "<<std::endl;
+		m_chat_backend->getPrompt().input(wtext);
+		std::wstring wrtext = m_chat_backend->getPrompt().submit();
+		m_client->typeChatMessage(wide_to_narrow(wrtext));
+
+		if (m_close_on_return) {
+			closeConsole();
+			Environment->removeFocus(this);
+		}
+
+		return true;
+	}
+#endif
+	return false;
+}
+
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
@@ -429,7 +447,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 		else if(event.KeyInput.Key == KEY_RETURN)
 		{
-			std::wstring text = m_chat_backend->getPrompt().submit();
+			std::string text = wide_to_narrow(m_chat_backend->getPrompt().submit());
 			m_client->typeChatMessage(text);
 
 			if (m_close_on_return) {
@@ -536,7 +554,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			const c8 *text = os_operator->getTextFromClipboard();
 			if (text)
 			{
-				std::wstring wtext = utf8_to_wide(text);
+				std::wstring wtext = narrow_to_wide(text);
 				m_chat_backend->getPrompt().input(wtext);
 			}
 			return true;
@@ -572,7 +590,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 		else if(event.KeyInput.Char != 0 && !event.KeyInput.Control)
 		{
-			#if (defined(linux) || defined(__linux) || defined(__FreeBSD__))
+			#if (defined(linux) || defined(__linux) || defined(__FreeBSD__)) and IRRLICHT_VERSION_10000 < 10900
 				wchar_t wc = L'_';
 				mbtowc( &wc, (char *) &event.KeyInput.Char, sizeof(event.KeyInput.Char) );
 				m_chat_backend->getPrompt().input(wc);

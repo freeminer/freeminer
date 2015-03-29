@@ -17,6 +17,60 @@
 
 --------------------------------------------------------------------------------
 
+local dd_filter_labels = {
+	fgettext("No Filter"),
+	fgettext("Bilinear Filter"),
+	fgettext("Trilinear Filter")
+}
+
+local filters = {
+	{dd_filter_labels[1]..","..dd_filter_labels[2]..","..dd_filter_labels[3]},
+	{"", "bilinear_filter", "trilinear_filter"},
+}
+
+local dd_mipmap_labels = {
+	fgettext("No Mipmap"),
+	fgettext("Mipmap"),
+	fgettext("Mipmap + Aniso. Filter")
+}
+
+local mipmap = {
+	{dd_mipmap_labels[1]..","..dd_mipmap_labels[2]..","..dd_mipmap_labels[3]},
+	{"", "mip_map", "anisotropic_filter"},
+}
+
+local function getFilterSettingIndex()
+	if (core.setting_get(filters[2][3]) == "true") then
+		return 3
+	end
+	if (core.setting_get(filters[2][3]) == "false" and core.setting_get(filters[2][2]) == "true") then
+		return 2
+	end
+	return 1
+end
+
+local function getMipmapSettingIndex()
+	if (core.setting_get(mipmap[2][3]) == "true") then
+		return 3
+	end
+	if (core.setting_get(mipmap[2][3]) == "false" and core.setting_get(mipmap[2][2]) == "true") then
+		return 2
+	end
+	return 1
+end
+
+local function video_driver_fname_to_name(selected_driver)
+	local video_drivers = core.get_video_drivers()
+
+	for i=1, #video_drivers do
+		if selected_driver == video_drivers[i].friendly_name then
+			return video_drivers[i].name:lower()
+		end
+	end
+
+	return ""
+end
+
 local function dlg_confirm_reset_formspec(data)
 	local retval =
 		"size[8,3]" ..
@@ -76,17 +130,14 @@ local function showconfirm_reset(tabview)
 end
 
 local function gui_scale_to_scrollbar()
-
 	local current_value = tonumber(core.setting_get("gui_scaling"))
 
 	if (current_value == nil) or current_value < 0.25 then
 		return 0
 	end
-
 	if current_value <= 1.25 then
 		return ((current_value - 0.25)/ 1.0) * 700
 	end
-
 	if current_value <= 6 then
 		return ((current_value -1.25) * 100) + 700
 	end
@@ -95,13 +146,11 @@ local function gui_scale_to_scrollbar()
 end
 
 local function scrollbar_to_gui_scale(value)
-
 	value = tonumber(value)
 
 	if (value <= 700) then
 		return ((value / 700) * 1.0) + 0.25
 	end
-
 	if (value <=1000) then
 		return ((value - 700) / 100) + 1.25
 	end
@@ -111,52 +160,21 @@ end
 
 local function formspec(tabview, name, tabdata)
 	local video_drivers = core.get_video_drivers()
-	
-	local video_driver_string = ""
-	local current_video_driver_idx = 0
-	local current_video_driver = core.setting_get("video_driver")
-	for i=1, #video_drivers, 1 do
+	local current_video_driver = core.setting_get("video_driver"):lower()
 
-		if i ~= 1 then
-			video_driver_string = video_driver_string .. ","
+	local driver_formspec_string = ""
+	local driver_current_idx = 0
+
+	for i=2, #video_drivers do
+		driver_formspec_string = driver_formspec_string .. video_drivers[i].friendly_name
+		if i ~= #video_drivers then
+			driver_formspec_string = driver_formspec_string .. ","
 		end
-		video_driver_string = video_driver_string .. video_drivers[i]
 
-		local video_driver = string.gsub(video_drivers[i], " ", "")
-		if current_video_driver:lower() == video_driver:lower() then
-			current_video_driver_idx = i
+		if current_video_driver == video_drivers[i].name:lower() then
+			driver_current_idx = i - 1
 		end
 	end
-
-local filters = {
-    {"No Filter,Bilinear Filter,Trilinear Filter"}, 
-    {"", "bilinear_filter", "trilinear_filter"},
-}
-
-local mipmap = {
-    {"No Mipmap,Mipmap,Mipmap + Aniso. Filter"},
-    {"", "mip_map", "anisotropic_filter"},
-}
-
-local function getFilterSettingIndex()
-     if (core.setting_get(filters[2][3]) == "true") then
-        return 3
-     end
-     if (core.setting_get(filters[2][3]) == "false" and core.setting_get(filters[2][2]) == "true") then
-        return 2
-     end
-     return 1
-end	
-
-local function getMipmapSettingIndex()
-     if (core.setting_get(mipmap[2][3]) == "true") then
-        return 3
-     end
-     if (core.setting_get(mipmap[2][3]) == "false" and core.setting_get(mipmap[2][2]) == "true") then
-        return 2
-     end
-     return 1
-end
 
 	local tab_string =
 		"box[0,0;3.5,3.9;#999999]" ..
@@ -182,7 +200,7 @@ end
 				.. getMipmapSettingIndex() .. "]" ..
 		"label[3.85,2.15;".. fgettext("Rendering:") .. "]"..
 		"dropdown[3.85,2.6;3.85;dd_video_driver;"
-				.. video_driver_string .. ";" .. current_video_driver_idx .. "]" ..
+				.. driver_formspec_string .. ";" .. driver_current_idx .. "]" ..
 		"tooltip[dd_video_driver;" ..
 				fgettext("Restart minetest for driver change to take effect") .. "]" ..
 		"box[7.75,0;4,4;#999999]" ..
@@ -335,34 +353,41 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 		core.setting_set("touchscreen_threshold",fields["dd_touchthreshold"])
 		ddhandled = true
 	end
+
 	if fields["dd_video_driver"] then
-		local video_driver = string.gsub(fields["dd_video_driver"], " ", "")
-		core.setting_set("video_driver",string.lower(video_driver))
+		core.setting_set("video_driver",
+			video_driver_fname_to_name(fields["dd_video_driver"]))
 		ddhandled = true
 	end
-	if fields["dd_filters"] == "No Filter" then
+	if fields["dd_filters"] == dd_filter_labels[1] then
 		core.setting_set("bilinear_filter", "false")
 		core.setting_set("trilinear_filter", "false")
+		ddhandled = true
 	end
-	if fields["dd_filters"] == "Bilinear Filter" then
+	if fields["dd_filters"] == dd_filter_labels[2] then
 		core.setting_set("bilinear_filter", "true")
 		core.setting_set("trilinear_filter", "false")
+		ddhandled = true
 	end
-	if fields["dd_filters"] == "Trilinear Filter" then
+	if fields["dd_filters"] == dd_filter_labels[3] then
 		core.setting_set("bilinear_filter", "false")
 		core.setting_set("trilinear_filter", "true")
+		ddhandled = true
 	end
-	if fields["dd_mipmap"] == "No Mipmap" then
+	if fields["dd_mipmap"] == dd_mipmap_labels[1] then
 		core.setting_set("mip_map", "false")
 		core.setting_set("anisotropic_filter", "false")
+		ddhandled = true
 	end
-	if fields["dd_mipmap"] == "Mipmap" then
+	if fields["dd_mipmap"] == dd_mipmap_labels[2] then
 		core.setting_set("mip_map", "true")
 		core.setting_set("anisotropic_filter", "false")
+		ddhandled = true
 	end
-	if fields["dd_mipmap"] == "Mipmap + Aniso. Filter" then
+	if fields["dd_mipmap"] == dd_mipmap_labels[3] then
 		core.setting_set("mip_map", "true")
 		core.setting_set("anisotropic_filter", "true")
+		ddhandled = true
 	end
 
 	return ddhandled
@@ -373,4 +398,4 @@ tab_settings = {
 	caption = fgettext("Settings"),
 	cbf_formspec = formspec,
 	cbf_button_handler = handle_settings_buttons
-	}
+}

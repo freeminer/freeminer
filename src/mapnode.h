@@ -146,6 +146,11 @@ struct MapNode
 	*/
 	u8 param2;
 
+	/*
+	MapNode()
+	{ }
+	*/
+
 	MapNode(const MapNode & n)
 	{
 		*this = n;

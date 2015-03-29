@@ -84,11 +84,11 @@ public:
 		Some simple getters/setters
 	*/
 	v3f getBasePosition() {
-		auto lock = lock_shared();
+		auto lock = lock_shared_rec();
 		return m_base_position;
 	}
 	void setBasePosition(v3f pos) {
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_base_position = pos;
 	}
 	ServerEnvironment* getEnv(){ return m_env; }

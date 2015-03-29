@@ -180,7 +180,12 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fallback_font_shadow_alpha", "128");
 
 	std::stringstream fontsize;
-	fontsize << TTF_DEFAULT_FONT_SIZE;
+
+#ifdef __ANDROID__
+	fontsize << TTF_DEFAULT_FONT_SIZE + 2;
+#else
+	fontsize << TTF_DEFAULT_FONT_SIZE + 5;
+#endif
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
@@ -372,7 +377,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "3");
-	settings->setDefault("abm_random", "false");
+	settings->setDefault("abm_random", "true");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
 	settings->setDefault("max_block_send_distance", "30");
@@ -393,8 +398,17 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("save_generated_block", "true");
 	// IPv6
+#if ENET_IPV6
 	settings->setDefault("enable_ipv6", "true");
+#else
+	settings->setDefault("enable_ipv6", "false");
+#endif
+
+#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
+	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+#else
 	settings->setDefault("ipv6_server", "false");
+#endif
 
 	//
 	// Movement, Physics and animation
@@ -443,9 +457,6 @@ void set_default_settings(Settings *settings) {
 
 	settings->setDefault("more_threads", win32 ? "false" : "true");
 
-#if !defined(_WIN32) && !CMAKE_USE_IPV4_DEFAULT && ENET_IPV6
-	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
-#endif
 
 #if !defined(SERVER) && defined(_MSC_VER)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
@@ -490,17 +501,17 @@ void set_default_settings(Settings *settings) {
 	}
 	settings->setDefault("curl_verify_cert", "false");
 
+	settings->setDefault("chunksize", "3");
 	settings->setDefault("server_map_save_interval", "60");
 	settings->setDefault("server_unload_unused_data_timeout", "65");
 	settings->setDefault("client_unload_unused_data_timeout", "60");
 	settings->setDefault("max_objects_per_block", "20");
-	settings->setDefault("active_block_range", "2");
+	settings->setDefault("active_block_range", "1");
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("new_style_leaves", "false");
 	settings->setDefault("mip_map", "true");
-	settings->setDefault("active_block_range", "1");
 	settings->setDefault("autojump", "1");
 
 #else

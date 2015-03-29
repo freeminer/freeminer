@@ -50,6 +50,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database-sqlite3.h"
 #include "database-leveldb.h"
 #include "database-redis.h"
+#include <deque>
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -306,7 +307,8 @@ void Map::unspreadLight(enum LightBank bank,
 			v3s16 n2pos = pos + dirs[i];
 
 			// Get the block where the node is located
-			v3s16 blockpos = getNodeBlockPos(n2pos);
+			v3s16 blockpos, relpos;
+			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed
 			try {
@@ -326,8 +328,6 @@ void Map::unspreadLight(enum LightBank bank,
 				continue;
 			}
 
-			// Calculate relative position in block
-			v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
 			// Get node straight from the block
 			bool is_valid_position;
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
@@ -394,9 +394,9 @@ void Map::unspreadLight(enum LightBank bank,
 	}
 
 	/*infostream<<"unspreadLight(): Changed block "
-			<<blockchangecount<<" times"
-			<<" for "<<from_nodes.size()<<" nodes"
-			<<std::endl;*/
+	<<blockchangecount<<" times"
+	<<" for "<<from_nodes.size()<<" nodes"
+	<<std::endl;*/
 
 	if(!unlighted_nodes.empty())
 		unspreadLight(bank, unlighted_nodes, light_sources, modified_blocks);
@@ -447,14 +447,16 @@ void Map::spreadLight(enum LightBank bank,
 	*/
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
-	// Cache this a bit, too
+		// Cache this a bit, too
 	bool block_checked_in_modified = false;
 
 	for(std::set<v3s16>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
 	{
 		v3s16 pos = *j;
-		v3s16 blockpos = getNodeBlockPos(pos);
+		v3s16 blockpos, relpos;
+
+		getNodeBlockPosWithOffset(pos, blockpos, relpos);
 
 		// Only fetch a new block if the block position has changed
 		try {
@@ -477,9 +479,6 @@ void Map::spreadLight(enum LightBank bank,
 		//if (!lock->owns_lock())
 		//	continue;
 
-		// Calculate relative position in block
-		v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
-
 		// Get node straight from the block
 		bool is_valid_position;
 		MapNode n = block->getNode(relpos, &is_valid_position);
@@ -495,7 +494,8 @@ void Map::spreadLight(enum LightBank bank,
 			v3s16 n2pos = pos + dirs[i];
 
 			// Get the block where the node is located
-			v3s16 blockpos = getNodeBlockPos(n2pos);
+			v3s16 blockpos, relpos;
+			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed
 			try {
@@ -510,8 +510,7 @@ void Map::spreadLight(enum LightBank bank,
 			catch(InvalidPositionException &e) {
 				continue;
 			}
-			// Calculate relative position in block
-			v3s16 relpos = n2pos - blockpos * MAP_BLOCKSIZE;
+
 			// Get node straight from the block
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
@@ -689,7 +688,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	//bool debug=true;
 	//u32 count_was = modified_blocks.size();
 
-	std::map<v3s16, MapBlock*> blocks_to_update;
+	//std::map<v3s16, MapBlock*> blocks_to_update;
 
 	std::set<v3s16> light_sources;
 
@@ -729,7 +728,7 @@ u32 Map::updateLighting(enum LightBank bank,
 			v3s16 pos = block->getPos();
 			v3s16 posnodes = block->getPosRelative();
 			modified_blocks[pos] = block;
-			blocks_to_update[pos] = block;
+			//blocks_to_update[pos] = block;
 
 			/*
 				Clear all light from block
@@ -844,10 +843,12 @@ u32 Map::updateLighting(enum LightBank bank,
 		spreadLight(bank, light_sources, modified_blocks);
 	}
 
+	/*
 	for (auto & ir : blocks_to_update) {
 		auto block = getBlockNoCreateNoEx(ir.first);
 		block->setLightingExpired(false);
 	}
+	*/
 
 	/*if(debug)
 	{
@@ -1185,8 +1186,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	content_t replace_material = CONTENT_AIR;
 
 	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from top; 3: place, recalculate light and skip liquid queue
-		MapNode n;
-		n.setContent(replace_material);
+		MapNode n(replace_material);
 		if (fast == 2) {
 			MapNode from_node = getNodeNoEx(toppos);
 			if (from_node) {
@@ -1244,8 +1244,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		This also clears the lighting.
 	*/
 
-	MapNode n;
-	n.setContent(replace_material);
+	MapNode n(replace_material);
 	setNode(p, n);
 
 	for(s32 i=0; i<2; i++)
@@ -1640,6 +1639,16 @@ struct NodeNeighbor {
 	NeighborType t;
 	v3s16 p;
 	bool l; //can liquid
+
+	NodeNeighbor()
+		: n(CONTENT_AIR)
+	{ }
+
+	NodeNeighbor(const MapNode &node, NeighborType n_type, v3s16 pos)
+		: n(node),
+		  t(n_type),
+		  p(pos)
+	{ }
 };
 
 void Map::transforming_liquid_push_back(v3POS p) {
@@ -1675,7 +1684,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
 
 	// list of nodes that due to viscosity have not reached their max level height
-	UniqueQueue<v3s16> must_reflow;
+	std::deque<v3s16> must_reflow;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
 	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
@@ -1683,7 +1692,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
-	u32 loop_max = liquid_loop_max;
+	//u32 loop_max = liquid_loop_max;
 
 #if 0
 
@@ -1764,7 +1773,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 					break;
 			}
 			v3s16 npos = p0 + dirs[i];
-			NodeNeighbor nb = {getNodeTry(npos), nt, npos};
+			NodeNeighbor nb(getNodeTry(npos), nt, npos);
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
 					if (nb.n.getContent() == CONTENT_AIR) {
@@ -1975,11 +1984,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
-	while (must_reflow.size() > 0) {
-		m_transforming_liquid.push_back(must_reflow.front());
-		must_reflow.pop_front();
-	}
+	for (std::deque<v3s16>::iterator iter = must_reflow.begin(); iter != must_reflow.end(); ++iter)
+		m_transforming_liquid.push_back(*iter);
+
 	//updateLighting(lighting_modified_blocks, modified_blocks);
+
 
 	/* ----------------------------------------------------------------------
 	 * Manage the queue so that it does not grow indefinately
@@ -2858,7 +2867,7 @@ void ServerMap::saveMapMeta()
 
 	createDirs(m_savedir);
 
-	std::string fullpath = m_savedir + DIR_DELIM + "map_meta.txt";
+	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
 	std::ostringstream ss(std::ios_base::binary);
 
 	Settings params;
@@ -2880,20 +2889,23 @@ void ServerMap::loadMapMeta()
 	Settings params;
 
 	if (!params.readJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
-	//todo: remove deprecated
 
 	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
-	infostream<<"Cant read map_meta.json , fallback to " << fullpath << std::endl;
-	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-	if (!is.good()) {
-		errorstream << "ServerMap::loadMapMeta(): "
-				<< "could not open " << fullpath << std::endl;
-		throw FileNotGoodException("Cannot open map metadata");
-	}
 
-	if (!params.parseConfigLines(is, "[end_of_params]")) {
-		throw SerializationError("ServerMap::loadMapMeta(): "
+	infostream<<"Cant read map_meta.json , fallback to " << fullpath << std::endl;
+
+	if (fs::PathExists(fullpath)) {
+		std::ifstream is(fullpath.c_str(), std::ios_base::binary);
+		if (!is.good()) {
+			errorstream << "ServerMap::loadMapMeta(): "
+				"could not open " << fullpath << std::endl;
+			throw FileNotGoodException("Cannot open map metadata");
+		}
+
+		if (!params.parseConfigLines(is, "[end_of_params]")) {
+			throw SerializationError("ServerMap::loadMapMeta(): "
 				"[end_of_params] not found!");
+		}
 	}
 
 	}
@@ -3019,6 +3031,19 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		}
 	}
 	return nullptr;
+}
+
+bool ServerMap::deleteBlock(v3s16 blockpos)
+{
+	if (!dbase->deleteBlock(blockpos))
+		return false;
+
+	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	if (block) {
+		deleteBlock(blockpos);
+	}
+
+	return true;
 }
 
 void ServerMap::PrintInfo(std::ostream &out)

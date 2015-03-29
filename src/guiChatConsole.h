@@ -75,6 +75,8 @@ public:
 
 	bool canTakeFocus(gui::IGUIElement* element) { return false; }
 
+	bool getAndroidUIInput();
+
 	virtual bool OnEvent(const SEvent& event);
 
 private:

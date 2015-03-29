@@ -192,7 +192,7 @@ struct LocalFormspecHandler : public TextDest {
 			if ((fields.find("btn_send") != fields.end()) ||
 					(fields.find("quit") != fields.end())) {
 				if (fields.find("f_text") != fields.end()) {
-					m_client->typeChatMessage(narrow_to_wide(fields["f_text"]));
+					m_client->typeChatMessage(fields["f_text"]);
 				}
 
 				return;
@@ -453,7 +453,7 @@ void update_profiler_gui(gui::IGUIStaticText *guitext_profiler, FontEngine *fe,
 
 		std::ostringstream os(std::ios_base::binary);
 		g_profiler->printPage(os, show_profiler, show_profiler_max);
-		std::wstring text = utf8_to_wide(os.str());
+		std::wstring text = narrow_to_wide(os.str());
 		guitext_profiler->setText(text.c_str());
 		guitext_profiler->setVisible(true);
 
@@ -603,16 +603,16 @@ public:
 			s32 texth = 15;
 			char buf[10];
 			snprintf(buf, 10, "%.3g", show_max);
-			font->draw(utf8_to_wide(buf).c_str(),
+			font->draw(narrow_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - graphh,
 						   textx2, y - graphh + texth),
 					meta.color);
 			snprintf(buf, 10, "%.3g", show_min);
-			font->draw(utf8_to_wide(buf).c_str(),
+			font->draw(narrow_to_wide(buf).c_str(),
 					core::rect<s32>(textx, y - texth,
 						   textx2, y),
 					meta.color);
-			font->draw(utf8_to_wide(id + " " + ftos(meta.cur)).c_str(),
+			font->draw(narrow_to_wide(id + " " + ftos(meta.cur)).c_str(),
 					core::rect<s32>(textx, y - graphh / 2 - texth / 2,
 						   textx2, y - graphh / 2 + texth / 2),
 					meta.color);
@@ -819,17 +819,36 @@ class GameGlobalShaderConstantSetter : public IShaderConstantSetter
 	f32 *m_fog_range;
 	Client *m_client;
 	Inventory *m_local_inventory;
+	bool m_fogEnabled;
 
 public:
+	void onSettingsChange(const std::string &name)
+	{
+		if (name == "enable_fog")
+			m_fogEnabled = g_settings->getBool("enable_fog");
+	}
+
+	static void SettingsCallback(const std::string name, void *userdata)
+	{
+		reinterpret_cast<GameGlobalShaderConstantSetter*>(userdata)->onSettingsChange(name);
+	}
+
 	GameGlobalShaderConstantSetter(Sky *sky, bool *force_fog_off,
 			f32 *fog_range, Client *client, Inventory *local_inventory) :
 		m_sky(sky),
 		m_force_fog_off(force_fog_off),
 		m_fog_range(fog_range),
-		m_client(client),
-		m_local_inventory(local_inventory)
-	{}
-	~GameGlobalShaderConstantSetter() {}
+		m_client(client)
+		,m_local_inventory(local_inventory)
+	{
+		g_settings->registerChangedCallback("enable_fog", SettingsCallback, this);
+		m_fogEnabled = g_settings->getBool("enable_fog");
+	}
+
+	~GameGlobalShaderConstantSetter()
+	{
+		g_settings->deregisterChangedCallback("enable_fog", SettingsCallback, this);
+	}
 
 	virtual void onSetConstants(video::IMaterialRendererServices *services,
 			bool is_highlevel)
@@ -851,7 +870,7 @@ public:
 		// Fog distance
 		float fog_distance = 10000 * BS;
 
-		if (g_settings->getBool("enable_fog") && !*m_force_fog_off)
+		if (m_fogEnabled && !*m_force_fog_off)
 			fog_distance = *m_fog_range;
 
 		services->setPixelShaderConstant("fogDistance", &fog_distance, 1);
@@ -1184,14 +1203,14 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 
 	// Get new messages from error log buffer
 	while (!chat_log_error_buf.empty()) {
-		chat_backend.addMessage(L"", utf8_to_wide(chat_log_error_buf.get()));
+		chat_backend.addMessage(L"", narrow_to_wide(chat_log_error_buf.get()));
 	}
 
 	// Get new messages from client
 	std::string message;
 
 	while (client.getChatMessage(message)) {
-		chat_backend.addUnparsedMessage(utf8_to_wide(message));
+		chat_backend.addUnparsedMessage(narrow_to_wide(message));
 	}
 
 	// Remove old messages
@@ -1579,8 +1598,10 @@ protected:
 	// Misc
 	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
-	void showOverlayMessage(const std::string &msg, float dtime, int percent,
+	void showOverlayMessage(const std::wstring &msg, float dtime, int percent,
 			bool draw_clouds = true);
+
+	void showOverlayMessage(const std::string &msg, float dtime, int percent, bool draw_clouds = true);
 
 private:
 	InputHandler *input;
@@ -1817,6 +1838,8 @@ void Game::run()
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.connected = false;
+	flags.reconnect = false;
 
 
 	/* Clear the profiler */
@@ -1888,7 +1911,7 @@ void Game::shutdown()
 		g_profiler->print(actionstream);
 	}
 
-	showOverlayMessage("Shutting down...", 0, 0, false);
+	showOverlayMessage(wstrgettext("Shutting down..."), 0, 0, false);
 
 	if (clouds)
 		clouds->drop();
@@ -1943,7 +1966,7 @@ bool Game::init(
 		u16 port,
 		const SubgameSpec &gamespec)
 {
-	showOverlayMessage("Loading...", 0, 0);
+	showOverlayMessage(wstrgettext("Loading..."), 0, 0);
 
 	texture_src = createTextureSource(device);
 	shader_src = createShaderSource(device);
@@ -2000,7 +2023,7 @@ bool Game::initSound()
 bool Game::createSingleplayerServer(const std::string map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
-	showOverlayMessage("Creating server...", 0, 5);
+	showOverlayMessage(wstrgettext("Creating server..."), 0, 5);
 
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
@@ -2011,7 +2034,6 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 
 	try {
 		bind_addr.Resolve(bind_str.c_str());
-		*address = bind_str;
 	} catch (ResolveError &e) {
 		infostream << "Resolving bind address \"" << bind_str
 			   << "\" failed: " << e.what()
@@ -2038,7 +2060,7 @@ bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		std::string *error_message)
 {
-	showOverlayMessage("Creating client...", 0, 10);
+	showOverlayMessage(wstrgettext("Creating client..."), 0, 10);
 
 	device->setWindowCaption(L"Freeminer [Connecting]");
 
@@ -2093,7 +2115,7 @@ bool Game::createClient(const std::string &playername,
 
 	/* Skybox
 	 */
-	sky = new Sky(smgr->getRootSceneNode(), smgr, -1);
+	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, texture_src);
 	skybox = NULL;	// This is used/set later on in the main run loop
 
 	local_inventory = new Inventory(itemdef_manager);
@@ -2252,7 +2274,11 @@ bool Game::connectToServer(const std::string &playername,
 		const std::string &password, std::string *address, u16 port,
 		bool *connect_ok, bool *aborted)
 {
-	showOverlayMessage("Resolving address...", 0, 15);
+	*connect_ok = false;	// Let's not be overly optimistic
+	*aborted = false;
+	bool local_server_mode = false;
+
+	showOverlayMessage(wstrgettext("Resolving address..."), 0, 15);
 
 	Address connect_address(0, 0, 0, 0, port);
 
@@ -2266,6 +2292,7 @@ bool Game::connectToServer(const std::string &playername,
 			} else {
 				connect_address.setAddress(127, 0, 0, 1);
 			}
+			local_server_mode = true;
 		}
 	} catch (ResolveError &e) {
 		*error_message = std::string("Couldn't resolve address: ") + e.what();
@@ -2282,7 +2309,8 @@ bool Game::connectToServer(const std::string &playername,
 	}
 
 	client = new Client(device,
-			playername.c_str(), password, simple_singleplayer_mode,
+			playername.c_str(), password,
+			simple_singleplayer_mode,
 			*draw_control, texture_src, shader_src,
 			itemdef_manager, nodedef_manager, sound, eventmgr,
 			connect_address.isIPv6());
@@ -2292,14 +2320,14 @@ bool Game::connectToServer(const std::string &playername,
 
 	gamedef = client;	// Client acts as our GameDef
 
-
 	infostream << "Connecting to server at ";
 	connect_address.print(&infostream);
 	infostream << std::endl;
 
 	try {
 
-	client->connect(connect_address);
+	client->connect(connect_address, *address,
+		simple_singleplayer_mode || local_server_mode);
 
 	/*
 		Wait for server to accept connection
@@ -2342,22 +2370,16 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			// Update status
-			showOverlayMessage("Connecting to server...", dtime, 20);
+			showOverlayMessage(wstrgettext("Connecting to server..."), dtime, 20);
 
 			if (porting::getTimeMs() > end_ms) {
-				flags.reconnect = true;
+				//flags.reconnect = true;
 				return false;
 			}
 		}
 
-	} catch (con::PeerNotFoundException &e) {
-		// TODO: Should something be done here? At least an info/error
-		// message?
-		return false;
-	} catch (con::ConnectionException &e) {
-		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
-		errorstream << "Connection error: "<< e.what() << std::endl;
-		return false;
+#ifdef NDEBUG
+
 	} catch (std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
 		errorstream << "Connection error: "<< e.what() << std::endl;
@@ -2365,6 +2387,10 @@ bool Game::connectToServer(const std::string &playername,
 	} catch (...) {
 		showOverlayMessage(std::string("Oops ") , 0, 0, false);
 		return false;
+#else
+	} catch (int) { //nothing
+		return false;
+#endif
 	}
 
 	return true;
@@ -2423,12 +2449,12 @@ bool Game::getServerContent(bool *aborted)
 		int progress = 25;
 
 		if (!client->itemdefReceived()) {
-			wchar_t *text = wgettext("Item definitions...");
+			const wchar_t *text = wgettext("Item definitions...");
 			progress = 25;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
 		} else if (!client->nodedefReceived()) {
-			wchar_t *text = wgettext("Node definitions...");
+			const wchar_t *text = wgettext("Node definitions...");
 			progress = 30;
 			draw_load_screen(text, device, guienv, dtime, progress);
 			delete[] text;
@@ -2451,7 +2477,7 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			draw_load_screen(utf8_to_wide(message.str().c_str()), device,
+			draw_load_screen(narrow_to_wide(message.str()), device,
 					guienv, dtime, progress);
 		}
 
@@ -2668,6 +2694,14 @@ void Game::processUserInput(VolatileRunFlags *flags,
 		input->clear();
 	}
 
+#ifdef __ANDROID__
+	if (gui_chat_console->isOpen()) {
+		if (gui_chat_console->getAndroidUIInput()) {
+			//gui_chat_console->closeConsoleAtOnce();
+		}
+	}
+#endif
+
 	if (!guienv->hasFocus(gui_chat_console) && gui_chat_console->isOpen()) {
 		gui_chat_console->closeConsoleAtOnce();
 	}
@@ -2815,7 +2849,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 				actual_height = row_height * players.size();
 			u32 max_width = 0;
 			for (size_t i = 0; i < players.size(); ++i)
-				max_width = std::max(max_width, g_fontengine->getTextWidth(utf8_to_wide(players[i]).c_str()));
+				max_width = std::max(max_width, g_fontengine->getTextWidth(narrow_to_wide(players[i]).c_str()));
 			max_width += 15;
 			u32 actual_width = columns * max_width;
 
@@ -2939,6 +2973,12 @@ void Game::openConsole(float height, bool close_on_return, const std::wstring& i
 		}
 		gui_chat_console->openConsole(height, close_on_return);
 		guienv->setFocus(gui_chat_console);
+
+#ifdef __ANDROID__
+		int type = 1;
+		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+#endif
+
 	}
 }
 
@@ -3514,8 +3554,7 @@ void Game::updateCamera(VolatileRunFlags *flags, u32 busy_time,
 		camera->toggleCameraMode();
 		GenericCAO *playercao = player->getCAO();
 
-		assert(playercao != NULL);
-
+		if (playercao)
 		playercao->setVisible(camera->getCameraMode() > CAMERA_MODE_FIRST);
 	}
 
@@ -3748,13 +3787,13 @@ void Game::handlePointingAtNode(GameRunData *runData,
 	NodeMetadata *meta = map.getNodeMetadata(nodepos);
 
 	if (meta) {
-		infotext = utf8_to_wide(meta->getString("infotext"));
+		infotext = narrow_to_wide(meta->getString("infotext"));
 	} else {
 		MapNode n = map.getNodeNoEx(nodepos);
 
 		if (nodedef_manager->get(n).tiledef[0].name == "unknown_node.png") {
 			infotext = L"Unknown node: ";
-			infotext += utf8_to_wide(nodedef_manager->get(n).name);
+			infotext += narrow_to_wide(nodedef_manager->get(n).name);
 		}
 	}
 
@@ -3842,10 +3881,10 @@ void Game::handlePointingAtObject(GameRunData *runData,
 		const v3f &player_position,
 		bool show_debug)
 {
-	infotext = utf8_to_wide(runData->selected_object->infoText());
+	infotext = narrow_to_wide(runData->selected_object->infoText());
 
 	if (infotext == L"" && show_debug) {
-		infotext = utf8_to_wide(runData->selected_object->debugInfoText());
+		infotext = narrow_to_wide(runData->selected_object->debugInfoText());
 	}
 
 	if (input->getLeftState()) {
@@ -4356,16 +4395,19 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 		   << (stats.dtime_jitter.max_fraction * 100.0) << " %"
 */
 		   << std::setprecision(1)
-		   << ", v_range = " << draw_control->wanted_range
-		   << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step
-		   << std::setprecision(3)
+		   << ", v_range = " << draw_control->wanted_range;
+		if (draw_control->farmesh)
+			os << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step;
+		os << std::setprecision(3);
+/*
 		   << ", RTT = " << client->getRTT();
+*/
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
 		os << "Freeminer " << minetest_version_hash;
-		guitext->setText(utf8_to_wide(os.str()).c_str());
+		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else {
 		guitext->setVisible(false);
@@ -4529,13 +4571,19 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 }
 
 
+void Game::showOverlayMessage(const std::wstring &msg, float dtime,
+		int percent, bool draw_clouds)
+{
+	draw_load_screen(msg, device, guienv, dtime, percent, draw_clouds);
+}
+
 void Game::showOverlayMessage(const std::string &msg, float dtime,
 		int percent, bool draw_clouds)
 {
-	wchar_t *text = wgettext(msg.c_str());
-	draw_load_screen(text, device, guienv, dtime, percent, draw_clouds);
-	delete[] text;
+	draw_load_screen(narrow_to_wide(msg), device, guienv, dtime, percent, draw_clouds);
 }
+
+
 
 
 /****************************************************************************
@@ -4598,7 +4646,6 @@ bool the_game(bool *kill,
 	bool started = false;
 	try {
 
-		bool started = false;
 		game.runData  = { 0 };
 		if (game.startup(kill, random_input, input, device, map_dir,
 					playername, password, &server_address, port,

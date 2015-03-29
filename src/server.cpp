@@ -375,7 +375,7 @@ Server::Server(
 	m_async_fatal_error(""),
 	m_env(NULL),
 	m_con(PROTOCOL_ID,
-			simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE,
+			MAX_PACKET_SIZE,
 			CONNECTION_TIMEOUT,
 			ipv6,
 			this),
@@ -399,7 +399,8 @@ Server::Server(
 	m_clients(&m_con),
 	m_shutdown_requested(false),
 	m_ignore_map_edit_events(false),
-	m_ignore_map_edit_events_peer_id(0)
+	m_ignore_map_edit_events_peer_id(0),
+	m_next_sound_id(0)
 
 {
 	m_liquid_transform_timer = 0.0;
@@ -604,7 +605,7 @@ Server::~Server()
 	infostream<<"Server destructing"<<std::endl;
 
 	if (!m_simple_singleplayer_mode && g_settings->getBool("server_announce"))
-		ServerList::sendAnnounce("delete");
+		ServerList::sendAnnounce("delete", m_bind_addr.getPort());
 
 	// Send shutdown message
 	SendChatMessage(PEER_ID_INEXISTENT, "*** Server shutting down");
@@ -667,6 +668,9 @@ Server::~Server()
 void Server::start(Address bind_addr)
 {
 	DSTACK(__FUNCTION_NAME);
+
+	m_bind_addr = bind_addr;
+
 	infostream<<"Starting server on "
 			<< bind_addr.serializeString() <<"..."<<std::endl;
 
@@ -910,6 +914,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				g_settings->getBool("server_announce"))
 		{
 			ServerList::sendAnnounce(counter ? "update" : "start",
+					m_bind_addr.getPort(),
 					m_clients.getPlayerNames(),
 					m_uptime.get(),
 					m_env->getGameTime(),
@@ -1642,7 +1647,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		// Use the highest version supported by both
 		int deployed = std::min(client_max, our_max);
 		// If it's lower than the lowest supported, give up.
-		if(deployed < SER_FMT_VER_LOWEST)
+		if(deployed < SER_FMT_CLIENT_VER_LOWEST)
 			deployed = SER_FMT_VER_INVALID;
 
 		if(deployed == SER_FMT_VER_INVALID)
@@ -4047,6 +4052,7 @@ void Server::RespawnPlayer(u16 peer_id)
 			<<" respawns"<<std::endl;
 
 	playersao->setHP(PLAYER_MAX_HP);
+	playersao->setBreath(PLAYER_MAX_BREATH);
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
@@ -4070,7 +4076,7 @@ void Server::DenyAccess(u16 peer_id, const std::string &reason)
 
 void Server::DenyAccess(u16 peer_id, const std::wstring &reason)
 {
-    DenyAccess(peer_id, wide_to_utf8(reason));
+    DenyAccess(peer_id, wide_to_narrow(reason));
 }
 
 void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)

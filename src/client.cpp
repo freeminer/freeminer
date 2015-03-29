@@ -218,7 +218,7 @@ Client::Client(
 		tsrc, this, device
 	),
 	m_particle_manager(&m_env),
-	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
+	m_con(PROTOCOL_ID, MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_playeritem(0),
@@ -254,34 +254,6 @@ Client::Client(
 		m_env.addPlayer(player);
 	}
 
-	if (g_settings->getBool("enable_local_map_saving")
-			&& !is_simple_singleplayer_game) {
-		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
-				+ DIR_DELIM + "server_" + g_settings->get("address")
-				+ "_" + g_settings->get("remote_port");
-
-		SubgameSpec gamespec;
-		if (!getWorldExists(world_path)) {
-			gamespec = findSubgame(g_settings->get("default_game"));
-			if (!gamespec.isValid())
-				gamespec = findSubgame("minimal");
-		} else {
-			std::string world_gameid = getWorldGameId(world_path, false);
-			gamespec = findWorldSubgame(world_path);
-		}
-		if (!gamespec.isValid()) {
-			errorstream << "Couldn't find subgame for local map saving." << std::endl;
-			return;
-		}
-
-		localserver = new Server(world_path, gamespec, false, false);
-		localdb = nullptr;
-		actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
-	} else {
-		localdb = NULL;
-		localserver = nullptr;
-	}
-
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 }
 
@@ -294,6 +266,11 @@ void Client::Stop()
 		actionstream << "Local map saving ended" << std::endl;
 		localdb->endSave();
 	}
+
+	if (localserver)
+		delete localserver;
+	if (localdb)
+		delete localdb;
 }
 
 Client::~Client()
@@ -326,16 +303,16 @@ Client::~Client()
 		if (mesh != NULL)
 			m_device->getSceneManager()->getMeshCache()->removeMesh(mesh);
 	}
-
-	if (localserver)
-		delete localserver;
-	if (localdb)
-		delete localdb;
 }
 
-void Client::connect(Address address)
+void Client::connect(Address address,
+		const std::string &address_name,
+		bool is_local_server)
 {
 	DSTACK(__FUNCTION_NAME);
+
+	initLocalMapSaving(address, address_name, is_local_server);
+
 	m_con.Connect(address);
 }
 
@@ -372,9 +349,9 @@ void Client::step(float dtime)
 		{
 			counter = 20.0;
 
-			infostream << "Client packetcounter (" << m_packetcounter_timer
+			verbosestream << "Client packetcounter (" << m_packetcounter_timer
 					<< "):"<<std::endl;
-			m_packetcounter.print(infostream);
+			m_packetcounter.print(verbosestream);
 			m_packetcounter.clear();
 		}
 	}
@@ -790,6 +767,77 @@ void Client::received_media()
 	Send(1, buffer, true);
 	infostream<<"Client: Notifying server that we received all media"
 			<<std::endl;
+}
+
+void Client::initLocalMapSaving(const Address &address,
+		const std::string &hostname,
+		bool is_local_server)
+{
+
+/*
+			&& !is_simple_singleplayer_game) {
+		std::string address = g_settings->get("address");
+		replace( address.begin(), address.end(), ':', '_' );
+		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
+				+ DIR_DELIM + "server_" + address
+				+ "_" + g_settings->get("remote_port");
+
+		SubgameSpec gamespec;
+		if (!getWorldExists(world_path)) {
+			gamespec = findSubgame(g_settings->get("default_game"));
+			if (!gamespec.isValid())
+				gamespec = findSubgame("minimal");
+		} else {
+			std::string world_gameid = getWorldGameId(world_path, false);
+			gamespec = findWorldSubgame(world_path);
+		}
+		if (!gamespec.isValid()) {
+			errorstream << "Couldn't find subgame for local map saving." << std::endl;
+			return;
+		}
+
+		localserver = new Server(world_path, gamespec, false, false);
+		localdb = nullptr;
+		actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
+*/
+
+
+	localserver = nullptr;
+
+	localdb = NULL;
+
+	if (!g_settings->getBool("enable_local_map_saving") || is_local_server)
+		return;
+
+	std::string address_replaced = hostname + "_" + to_string(address.getPort());
+	replace( address_replaced.begin(), address_replaced.end(), ':', '_' );
+
+	const std::string world_path = porting::path_user
+		+ DIR_DELIM + "worlds"
+		+ DIR_DELIM + "server_"
+		+ address_replaced;
+
+	SubgameSpec gamespec;
+
+	if (!getWorldExists(world_path)) {
+		gamespec = findSubgame(g_settings->get("default_game"));
+		if (!gamespec.isValid())
+			gamespec = findSubgame("minimal");
+	} else {
+		gamespec = findWorldSubgame(world_path);
+	}
+
+	if (!gamespec.isValid()) {
+		errorstream << "Couldn't find subgame for local map saving." << std::endl;
+		return;
+	}
+
+	localserver = new Server(world_path, gamespec, false, false);
+	/*
+	localdb = new Database_SQLite3(&(ServerMap&)localserver->getMap(), world_path);
+	localdb->beginSave();
+	*/
+	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 }
 
 void Client::ReceiveAll()
@@ -2007,19 +2055,19 @@ bool Client::getChatMessage(std::string &message)
 	return true;
 }
 
-void Client::typeChatMessage(const std::wstring &message)
+void Client::typeChatMessage(const std::string &message)
 {
 	// Discard empty line
 	if(message.empty())
 		return;
 
 	// Send to others
-	sendChatMessage(wide_to_utf8(message));
+	sendChatMessage(message);
 
 	// Show locally
 	if (message[0] == '/')
 	{
-		m_chat_queue.push_back("issued command: " + wide_to_utf8(message));
+		m_chat_queue.push_back("issued command: " + message);
 	}
 }
 
@@ -2146,11 +2194,11 @@ float Client::mediaReceiveProgress()
 
 void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 {
-	infostream<<"Client::afterContentReceived() started"<<std::endl;
+	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
 	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
-	wchar_t* text = wgettext("Loading textures...");
+	const wchar_t* text = wgettext("Loading textures...");
 
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
@@ -2204,10 +2252,10 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 		delete[] text;
 	}
 
-	// Start mesh update thread after setting up content definitions
-	infostream<<"- Starting mesh update thread"<<std::endl;
 	if (!no_output) {
+	// Start mesh update thread after setting up content definitions
 		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
+		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
 		m_mesh_update_thread.Start(threads < 1 ? 1 : threads);
 	}
 
@@ -2215,7 +2263,7 @@ void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
 	sendReady();
 	text = wgettext("Done!");
 	draw_load_screen(text, device, guienv, 0, 100);
-	infostream<<"Client::afterContentReceived() done"<<std::endl;
+	//infostream<<"Client::afterContentReceived() done"<<std::endl;
 	delete[] text;
 }
 

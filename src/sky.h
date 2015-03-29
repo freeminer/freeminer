@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define SKY_MATERIAL_COUNT 5
 #define SKY_STAR_COUNT 200
 
+class ITextureSource;
 class Map;
 class Player;
 class INodeDefManager;
@@ -47,7 +48,8 @@ class Sky : public scene::ISceneNode
 {
 public:
 	//! constructor
-	Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id);
+	Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id,
+			ITextureSource *tsrc);
 
 	virtual void OnRegisterSceneNode();
 

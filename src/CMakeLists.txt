@@ -99,13 +99,15 @@ if(MSVC)
 	# Visual Studio
 
 	# EHa enables SEH exceptions (used for catching segfaults)
-	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /O2 /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
+	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /Ob2 /Oi /Ot /Oy /GL /FD /MT /GS- /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
 	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
 	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG")
 
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "/MDd /Zi /Ob0 /O1 /RTC1")
+
 	# Debug build doesn't catch exceptions by itself
 	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MTd /Zi /Ob0 /Od /RTC1")
+	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
 
 	if (STATIC_BUILD)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
@@ -127,13 +129,6 @@ else()
 		set(RELEASE_WARNING_FLAGS "")
 	endif()
 
-	if(NOT APPLE AND NOT "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		CHECK_CXX_COMPILER_FLAG("-Wno-unused-but-set-variable" HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-		if(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-			set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-but-set-variable")
-		endif(HAS_UNUSED_BUT_SET_VARIABLE_WARNING)
-	endif()
-
 	set(OTHER_FLAGS "")
 
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -147,7 +142,7 @@ else()
 
 
 	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 	endif()
 	if(SANITIZE_THREAD)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE")
@@ -155,6 +150,10 @@ else()
 			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
 		endif()
 	endif()
+	if(SANITIZE_MEMORY)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+
 
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
@@ -167,7 +166,8 @@ else()
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
 	endif()
 
-	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
@@ -179,6 +179,24 @@ if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
 	set(HAVE_SHARED_MUTEX 0)
 endif()
+
+# Add custom SemiDebug build mode
+set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall -Wabi" CACHE STRING
+	"Flags used by the C++ compiler during semidebug builds."
+	FORCE
+)
+set(CMAKE_C_FLAGS_SEMIDEBUG "-O1 -g -Wall -pedantic" CACHE STRING
+	"Flags used by the C compiler during semidebug builds."
+	FORCE
+)
+mark_as_advanced(
+	CMAKE_CXX_FLAGS_SEMIDEBUG
+	CMAKE_C_FLAGS_SEMIDEBUG
+)
+set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
+	"Choose the type of build. Options are: None Debug SemiDebug RelWithDebInfo MinSizeRel."
+	FORCE
+)
 
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
@@ -290,6 +308,7 @@ add_definitions ( -DUSE_CMAKE_CONFIG_H )
 if(WIN32)
 	# Windows
 	if(MSVC) # MSVC Specifics
+		set(PLATFORM_LIBS dbghelp.lib ${PLATFORM_LIBS})
 		# Surpress some useless warnings
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 	else() # Probably MinGW = GCC
@@ -869,7 +888,6 @@ if(BUILD_SERVER)
 			${CURL_LIBRARY}
 		)
 	endif(USE_CURL)
-
 	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 endif()
 

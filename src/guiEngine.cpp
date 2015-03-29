@@ -63,7 +63,7 @@ void TextDestGuiEngine::gotText(std::map<std::string, std::string> fields)
 /******************************************************************************/
 void TextDestGuiEngine::gotText(std::wstring text)
 {
-	m_engine->getScriptIface()->handleMainMenuEvent(wide_to_utf8(text));
+	m_engine->getScriptIface()->handleMainMenuEvent(wide_to_narrow(text));
 }
 
 /******************************************************************************/
@@ -181,7 +181,7 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 	rect += v2s32(4, 0);
 
 	m_irr_toplefttext =
-		m_device->getGUIEnvironment()->addStaticText(utf8_to_wide(t).c_str(),
+		m_device->getGUIEnvironment()->addStaticText(narrow_to_wide(t).c_str(),
 		rect,false,true,0,-1);
 
 	//create formspecsource
@@ -367,15 +367,14 @@ void GUIEngine::cloudPostProcess()
 {
 	float fps_max = g_settings->getFloat("fps_max");
 	// Time of frame without fps limit
-	float busytime;
 	u32 busytime_u32;
+
 	// not using getRealTime is necessary for wine
 	u32 time = m_device->getTimer()->getTime();
 	if(time > m_cloud.lasttime)
 		busytime_u32 = time - m_cloud.lasttime;
 	else
 		busytime_u32 = 0;
-	busytime = busytime_u32 / 1000.0;
 
 	// FPS limiter
 	u32 frametime_min = 1000./fps_max;
@@ -583,7 +582,7 @@ void GUIEngine::setTopleftText(std::string append)
 		toset += append;
 	}
 
-	m_irr_toplefttext->setText(utf8_to_wide(toset).c_str());
+	m_irr_toplefttext->setText(narrow_to_wide(toset).c_str());
 
 	updateTopLeftTextSize();
 }

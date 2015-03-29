@@ -51,7 +51,7 @@ void android_main(android_app *app)
 		msg << "Exception handled by main: " << e.what();
 		const char* message = msg.str().c_str();
 		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", message);
-		errorstream << msg << std::endl;
+		errorstream << msg.str() << std::endl;
 		retval = -1;
 	}
 	catch(...) {
