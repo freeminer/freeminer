@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "settings.h"
 #include "emerge.h"
+#include "profiler.h"
 
 
 // TODO! split to packethandlers
@@ -46,6 +47,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	DSTACK(__FUNCTION_NAME);
+
+	ScopeProfiler sp(g_profiler, "Client::ProcessData");
 
 	// Ignore packets that don't even fit a command
 	if (datasize < 2) {

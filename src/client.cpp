@@ -902,12 +902,14 @@ void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 
 #if !MINETEST_PROTO
 void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
+	g_profiler->add("Client::Send", 1);
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
 #else
 
 void Client::Send(NetworkPacket* pkt)
 {
+	g_profiler->add("Client::Send", 1);
 	m_con.Send(PEER_ID_SERVER,
 		serverCommandFactoryTable[pkt->getCommand()].channel,
 		pkt,

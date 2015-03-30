@@ -707,6 +707,7 @@ private:
 
 	// freeminer:
 public:
+	int m_autoexit;
 	//shared_map<v3POS, MapBlock*> m_modified_blocks;
 	//shared_map<v3POS, MapBlock*> m_lighting_modified_blocks;
 	bool m_more_threads;

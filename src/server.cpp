@@ -70,6 +70,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "defaultsettings.h"
 //#include "stat.h"
 
+#include <iomanip>
 #include "msgpack.h"
 #include <chrono>
 #include "util/thread_pool.h"
@@ -241,6 +242,7 @@ Server::Server(
 	m_liquid_transform_interval = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
+	m_autoexit = 0;
 	maintenance_status = 0;
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
@@ -1679,6 +1681,7 @@ void Server::handlePeerChanges()
 #if MINETEST_PROTO
 void Server::Send(NetworkPacket* pkt)
 {
+	g_profiler->add("Server: Packets sended", 1);
 	m_clients.send(pkt->getPeerId(),
 		clientCommandFactoryTable[pkt->getCommand()].channel,
 		pkt,
@@ -3596,6 +3599,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 	IntervalLimiter m_profiler_interval;
 
 	int errors = 0;
+	double run_time = 0;
 	float steplen = g_settings->getFloat("dedicated_server_step");
 	for(;;)
 	{
@@ -3623,6 +3627,13 @@ void dedicated_server_loop(Server &server, bool &kill)
 		{
 			infostream<<"Dedicated server quitting"<<std::endl;
 			break;
+		}
+
+		run_time += steplen; // wrong not real time
+		if (server.m_autoexit && run_time > server.m_autoexit) {
+			actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
+			g_profiler->print(actionstream);
+			server.requestShutdown();
 		}
 
 		/*
