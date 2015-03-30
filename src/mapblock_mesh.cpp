@@ -1304,12 +1304,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	v3f t = v3f(0,0,0);
 	if (step>1) {
+		translateMesh(m_mesh, v3f(HBS, 0, HBS));
 		scaleMesh(m_mesh, v3f(step,step,step));
-		// TODO: remove this wrong numbers, find formula   good test: fly above ocean
-		if (step == 2)	t = v3f(BS/2,		 BS/2,		BS/2);
-		if (step == 4)	t = v3f(BS*1.666,	-BS/3.0,	BS*1.666);
-		if (step == 8)	t = v3f(BS*2.666,	-BS*2.4,	BS*2.666);
-		if (step == 16)	t = v3f(BS*6.4,		-BS*6.4,	BS*6.4);
+		t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
 	}
 	translateMesh(m_mesh, intToFloat(data->m_blockpos * MAP_BLOCKSIZE - camera_offset, BS) + t);
 
