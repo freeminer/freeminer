@@ -262,7 +262,7 @@ option(ENABLE_SOUND "Enable sound" FALSE)
 endif()
 set(USE_SOUND FALSE)
 
-if(ENABLE_SOUND)
+if(ENABLE_SOUND AND BUILD_CLIENT)
 	# Sound libraries
 	find_package(OpenAL)
 	find_package(Vorbis)
@@ -371,7 +371,7 @@ endif()
 
 set(USE_SQLITE3 0)
 
-OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" TRUE)
 
 if(ENABLE_SQLITE3)
 	find_package(SQLite3)
@@ -413,7 +413,7 @@ find_package(Json REQUIRED)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
 
-option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " OFF)
+option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " FALSE)
 if(ENABLE_IPV4_DEFAULT)
 	set(USE_IPV4_DEFAULT 1)
 else()

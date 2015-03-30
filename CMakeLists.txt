@@ -40,7 +40,6 @@ set(RUN_IN_PLACE ${DEFAULT_RUN_IN_PLACE} CACHE BOOL
 
 
 set(BUILD_CLIENT TRUE CACHE BOOL "Build client")
-set(BUILD_SERVER FALSE CACHE BOOL "Build server")
 if(WIN32 OR APPLE)
 	# win32 broken! http://forum.freeminer.org/threads/building-errors.182/#post-1852
 	#if( ${CMAKE_SYSTEM_VERSION} VERSION_LESS 6.0 )
