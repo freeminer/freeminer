@@ -893,8 +893,10 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 			auto uptime = m_uptime.get();
 			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
 				obj->m_uptime_last = uptime - 0.1;
-			obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
-			obj->m_uptime_last = uptime;
+			if (uptime - obj->m_uptime_last > 0.5) {
+				obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
+				obj->m_uptime_last = uptime;
+			}
 		}
 //copypaste end
 }
