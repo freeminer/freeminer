@@ -239,7 +239,8 @@ void init_gettext(const char *path, const std::string &configured_language) {
 #endif
 #endif
 
-	static const char *name = lowercase(PROJECT_NAME).c_str();
+	auto tmp = lowercase(PROJECT_NAME);
+	static const char *name = tmp.c_str();
 	bindtextdomain(name, path);
 	textdomain(name);
 

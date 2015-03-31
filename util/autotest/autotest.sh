@@ -37,7 +37,7 @@ name=tsan
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -45,7 +45,7 @@ name=asannt
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir $clang -DENABLE_THREADS=0 -DDISABLE_LUAJIT=1 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -61,15 +61,17 @@ name=msan
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir $clang -DSANITIZE_MEMORY=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
-name=valgrind
+name=debug
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DDISABLE_LUAJIT=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+
+name=valgrind
+$make && \
 $run valgrind ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -77,7 +79,7 @@ name=nothreads
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -85,6 +87,15 @@ name=normal
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
+
+name=minetest_proto
+echo $name =============
+mkdir -p _$name && cd _$name
+cmake $rootdir -DMINETEST_PROTO=1 -DDISABLE_LUAJIT=1 -DDEBUG=1 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make && \
+name=minetest_proto_valgrind
+$run valgrind ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
