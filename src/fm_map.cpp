@@ -115,6 +115,8 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
+	auto lock = m_blocks.lock_unique_rec();
+
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2) {
 		//throw AlreadyExistsException("Block already exists");
