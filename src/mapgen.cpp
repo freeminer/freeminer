@@ -467,8 +467,10 @@ ObjDefManager::ObjDefManager(IGameDef *gamedef, ObjDefType type)
 
 ObjDefManager::~ObjDefManager()
 {
+/* fmtodo ugly double free fix
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
+*/
 }
 
 

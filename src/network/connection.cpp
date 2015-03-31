@@ -2932,7 +2932,7 @@ u32 Connection::Receive(NetworkPacket* pkt, int timeout)
 			}
 
 			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
-			return;
+			return e.data.getSize();
 		case CONNEVENT_PEER_ADDED: {
 			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
@@ -2950,8 +2950,12 @@ u32 Connection::Receive(NetworkPacket* pkt, int timeout)
 					"(port already in use?)");
 		}
 	}
+	return 0;
+/*
 	throw NoIncomingDataException("No incoming data");
+*/
 }
+
 
 void Connection::Send(u16 peer_id, u8 channelnum,
 		NetworkPacket* pkt, bool reliable)
