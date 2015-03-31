@@ -140,6 +140,8 @@ public:
 	virtual TextureInfo* getTextureInfo(u32 id)=0;
 	virtual video::ITexture* getTexture(
 			const std::string &name, u32 *id = NULL)=0;
+	virtual video::ITexture* getTextureForMesh(
+			const std::string &name, u32 *id = NULL) = 0;
 	virtual IrrlichtDevice* getDevice()=0;
 	virtual bool isKnownSourceImage(const std::string &name)=0;
 	virtual video::ITexture* generateTextureFromMesh(
