@@ -345,8 +345,7 @@ public:
 				Map map(gamedef);
 				MapDrawControl map_draw_control;
 				MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
-				v3POS p0(30456, 12432, -19999); // better to use MAP_BLOCKSIZE+1 but need to remove some checks
-				v3POS bp = getNodeBlockPos(p0);
+				v3POS bp = v3POS(32000, 32000, 32000-id);
 				auto block = map.createBlankBlockNoInsert(bp);
 				auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
 				for(s16 z0=0; z0<=2; ++z0)
