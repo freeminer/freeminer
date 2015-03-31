@@ -46,13 +46,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //todo: split as in serverpackethandler.cpp
 
-void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
+void Server::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
 	//JMutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
+
+	auto peer_id = pkt->getPeerId();
 
 	std::string addr_s;
 	try{
@@ -86,13 +88,16 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 	try
 	{
 
+	auto datasize = pkt->getSize();
+
 	if(datasize < 2)
 		return;
 
 	int command;
 	std::map<int, msgpack::object> packet;
 	msgpack::unpacked msg;
-	if (!con::parse_msgpack_packet(data, datasize, &packet, &command, &msg)) {
+	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
+		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
 		return;
 	}
 

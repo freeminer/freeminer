@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
+#include "network/networkpacket.h"
 #include "util/serialize.h"
 #include "util/numeric.h"
 #include "util/string.h"
@@ -2914,30 +2915,36 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
+u32 Connection::Receive(NetworkPacket* pkt, int timeout)
 {
 	for(;;) {
 		ConnectionEvent e = waitEvent(timeout ? timeout : m_bc_receive_timeout);
 		if (e.type != CONNEVENT_NONE)
-			LOG(dout_con<<getDesc()<<": Receive: got event: "
-					<<e.describe()<<std::endl);
+			LOG(dout_con << getDesc() << ": Receive: got event: "
+					<< e.describe() << std::endl);
 		switch(e.type) {
 		case CONNEVENT_NONE:
 			throw NoIncomingDataException("No incoming data");
 		case CONNEVENT_DATA_RECEIVED:
-			peer_id = e.peer_id;
-			data = SharedBuffer<u8>(e.data);
-			return e.data.getSize();
+			// Data size is lesser than command size, ignoring packet
+			if (e.data.getSize() < 2) {
+				continue;
+			}
+
+			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
+			return;
 		case CONNEVENT_PEER_ADDED: {
 			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
 				m_bc_peerhandler->peerAdded(e.peer_id);
-			continue; }
+			continue;
+		}
 		case CONNEVENT_PEER_REMOVED: {
 			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
 				m_bc_peerhandler->deletingPeer(e.peer_id, e.timeout);
-			continue; }
+			continue;
+		}
 		case CONNEVENT_BIND_FAILED:
 			throw ConnectionBindFailed("Failed to bind socket "
 					"(port already in use?)");

@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "socket.h"
 #include "exceptions.h"
 #include "constants.h"
+#include "network/networkpacket.h"
 #include "util/pointer.h"
 #include "util/container.h"
 #include "util/thread.h"
@@ -317,7 +318,7 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout = 1);
+	u32 Receive(NetworkPacket* pkt, int timeout = 1);
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
@@ -368,7 +369,7 @@ private:
 };
 
 
-bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg);
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg);
 } // namespace
 
 #endif
