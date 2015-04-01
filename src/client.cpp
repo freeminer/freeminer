@@ -55,7 +55,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "version.h"
 #include "drawscene.h"
+#include "database-sqlite3.h"
 //#include "serialization.h"
+#include "guiscalingfilter.h"
 
 #include "database.h"
 #include "server.h"
@@ -1626,6 +1628,11 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	bool no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
+
+	// Clear cached pre-scaled 2D GUI images, as this cache
+	// might have images with the same name but different
+	// content from previous sessions.
+	guiScalingCacheClear(device->getVideoDriver());
 
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
