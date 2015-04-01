@@ -66,7 +66,10 @@ namespace treegen {
 	void make_tree(MMVManip &vmanip, v3s16 p0,
 		bool is_apple_tree, INodeDefManager *ndef, int seed);
 	// Add jungle tree
-	void make_jungletree(VoxelManipulator &vmanip, v3s16 p0,
+	void make_jungletree(MMVManip &vmanip, v3s16 p0,
+		INodeDefManager *ndef, int seed);
+	// Add pine tree
+	void make_pine_tree(MMVManip &vmanip, v3s16 p0,
 		INodeDefManager *ndef, int seed);
 	void make_cavetree(MMVManip &vmanip, v3POS p0,
 		bool is_jungle_tree, INodeDefManager *ndef, int seed);
