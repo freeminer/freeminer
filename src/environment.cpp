@@ -209,7 +209,7 @@ float Environment::getTimeOfDayF()
 void Environment::stepTimeOfDay(float dtime)
 {
 	float day_speed = getTimeOfDaySpeed();
-	
+
 	m_time_counter += dtime;
 	f32 speed = day_speed * 24000./(24.*3600);
 	u32 units = (u32)(m_time_counter*speed);
@@ -460,11 +460,15 @@ void ServerEnvironment::savePlayer(const std::string &playername)
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
 {
-	auto *player = getPlayer(playername);
 	bool newplayer = false;
 	bool found = false;
+	auto *player = getPlayer(playername);
+	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
+	std::string path = players_path + playername;
+
+	RemotePlayer *player = static_cast<RemotePlayer *>(getPlayer(playername.c_str()));
 	if (!player) {
-		player = new RemotePlayer(m_gamedef, playername);
+		player = new RemotePlayer(m_gamedef, "");
 		newplayer = true;
 	}
 
@@ -491,7 +495,6 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
 
-	auto testplayer = new RemotePlayer(m_gamedef, "");
 	std::string path = players_path + playername;
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
@@ -499,13 +502,13 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 			return NULL;
 		}
 		try {
-		testplayer->deSerialize(is, path);
+		player->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
 			return nullptr;
 		}
 		is.close();
-		if (testplayer->getName() == playername) {
+		if (player->getName() == playername) {
 			player = testplayer;
 			found = true;
 		}
@@ -513,11 +516,13 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 		delete testplayer;
 		infostream << "Player file for player " << playername
 				<< " not found" << std::endl;
+		if (newplayer)
+			delete player;
 		return NULL;
 	}
-	if (newplayer) {
+
+	if (newplayer)
 		addPlayer(player);
-	}
 	return player;
 }
 
@@ -1308,6 +1313,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime_counter += dtime;
+
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval)) {
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
@@ -1363,7 +1369,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			m_active_block_abm_dtime_counter = 0;
 		}
 	}
-
 
 	/*
 		Step script environment (run global on_step())
@@ -1728,7 +1733,7 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 			removed_objects.insert(id);
 			continue;
 		}
-		
+
 		f32 distance_f = object->getBasePosition().getDistanceFrom(pos_f);
 		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			if (distance_f <= player_radius_f || player_radius_f == 0)
@@ -1788,6 +1793,8 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 	m_active_objects.set(object->getId(), object);
 
 /*
+	m_active_objects[object->getId()] = object;
+
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"Added id="<<object->getId()<<"; there are now "
 			<<m_active_objects.size()<<" active objects."
@@ -2607,6 +2614,8 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	*/
 	if(m_lava_hurt_interval.step(dtime, 1.0))
 	{
+		v3f pf = lplayer->getPosition();
+
 		// Feet, middle and head
 		v3s16 p1 = floatToInt(pf + v3f(0, BS*0.1, 0), BS);
 		MapNode n1 = m_map->getNodeNoEx(p1);
@@ -2634,7 +2643,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	*/
 	if(m_drowning_interval.step(dtime, 2.0))
 	{
-		v3f pf = lplayer->getPosition();
+		//v3f pf = lplayer->getPosition();
 
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);
