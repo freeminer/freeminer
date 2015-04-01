@@ -222,7 +222,6 @@ public:
 
 	virtual const char *getObjectTitle() const = 0;
 
-	virtual ObjDef *create(int type) = 0;
 	virtual void clear();
 	virtual ObjDef *getByName(const std::string &name) const;
 
