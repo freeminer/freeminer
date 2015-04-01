@@ -1734,7 +1734,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 	struct tm *tm = localtime(&t);
 
 	char timetstamp_c[64];
-	strftime(timetstamp_c, sizeof(timetstamp_c), "%FT%T", tm);
+	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y-%m-%dT%H-%M-%S", tm);
 
 	std::string filename_base = g_settings->get("screenshot_path")
 			+ DIR_DELIM
