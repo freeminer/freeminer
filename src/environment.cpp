@@ -463,10 +463,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 	bool newplayer = false;
 	bool found = false;
 	auto *player = getPlayer(playername);
-	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
-	std::string path = players_path + playername;
 
-	RemotePlayer *player = static_cast<RemotePlayer *>(getPlayer(playername.c_str()));
 	if (!player) {
 		player = new RemotePlayer(m_gamedef, "");
 		newplayer = true;
@@ -509,11 +506,9 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 		}
 		is.close();
 		if (player->getName() == playername) {
-			player = testplayer;
 			found = true;
 		}
 	if (!found) {
-		delete testplayer;
 		infostream << "Player file for player " << playername
 				<< " not found" << std::endl;
 		if (newplayer)
