@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettime.h"
 #include "keycode.h"
 #include "settings.h"
-#include "main.h"  // for g_settings
 #include "porting.h"
 #include "client/tile.h"
 #include "fontengine.h"

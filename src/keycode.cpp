@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "keycode.h"
-#include "main.h" // For g_settings
 #include "exceptions.h"
 #include "settings.h"
 #include "log.h"

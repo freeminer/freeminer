@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "porting.h"
 #include "settings.h"
-#include "main.h"
 #include "network/networkprotocol.h"
 #include "util/hex.h"
 #include "util/serialize.h"

@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "hud.h"
-#include "main.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "log.h"

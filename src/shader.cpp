@@ -21,15 +21,16 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
+#include <iterator>
 #include "shader.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
-#include <fstream>
+//#include <fstream>
 #include "filesys.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "settings.h"
-#include <iterator>
 #include <ICameraSceneNode.h>
 #include <IGPUProgrammingServices.h>
 #include <IMaterialRenderer.h>

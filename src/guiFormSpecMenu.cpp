@@ -48,7 +48,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "intlGUIEditBox.h"
 #include "scripting_game.h"
 #include "porting.h"
-#include "main.h"
 #include "settings.h"
 #include "client.h"
 #include "fontengine.h"

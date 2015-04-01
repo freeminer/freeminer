@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "particles.h"
 #include "constants.h"
 #include "debug.h"
-#include "main.h" // For g_profiler and g_settings
 #include "settings.h"
 #include "client/tile.h"
 #include "gamedef.h"

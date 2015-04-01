@@ -39,7 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 #define NO_MAP_LOCK_REQUIRED
 #else
-#include "main.h"
 #include "profiler.h"
 #define NO_MAP_LOCK_REQUIRED \
 	ScopeProfiler nolocktime(g_profiler,"Scriptapi: unlockable time",SPT_ADD)

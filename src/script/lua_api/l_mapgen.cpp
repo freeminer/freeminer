@@ -36,7 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v5.h"
 #include "mapgen_v7.h"
 #include "settings.h"
-#include "main.h"
 #include "log.h"
 
 

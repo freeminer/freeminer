@@ -4,12 +4,12 @@
 #include "ICameraSceneNode.h"
 #include "S3DVertex.h"
 #include "client/tile.h"
-#include "noise.h" // easeCurve
+#include "noise.h"            // easeCurve
 #include "profiler.h"
-#include "util/numeric.h" // MYMIN
+#include "util/numeric.h"
 #include <cmath>
 #include "settings.h"
-#include "camera.h" // CameraModes
+#include "camera.h"           // CameraModes
 #include "log_types.h"
 #include "player.h"
 #include "map.h"

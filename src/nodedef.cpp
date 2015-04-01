@@ -22,7 +22,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nodedef.h"
 
-#include "main.h" // For g_settings
 #include "itemdef.h"
 #ifndef SERVER
 #include "client/tile.h"

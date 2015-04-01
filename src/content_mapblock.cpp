@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_mapblock.h"
 #include "util/numeric.h"
 #include "util/directiontables.h"
-#include "main.h" // For g_settings
 #include "mapblock_mesh.h" // For MapBlock_LightColor() and MeshCollector
 #include "map.h"
 #include "settings.h"

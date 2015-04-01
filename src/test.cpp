@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "map.h"
 #include "player.h"
-#include "main.h"
 #include "socket.h"
 #include "network/connection.h"
 #include "serialization.h"

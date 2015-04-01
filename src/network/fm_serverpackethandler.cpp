@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_abm.h"
 #include "content_sao.h"
 #include "emerge.h"
-#include "main.h"
 #include "nodedef.h"
 #include "player.h"
 #include "rollback_interface.h"

@@ -31,7 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <set>
 #include "util/timetaker.h"
-#include "main.h" // g_profiler
 #include "profiler.h"
 
 // float error is 10 - 9.96875 = 0.03125 // default with bug = 0

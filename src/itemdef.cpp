@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/tile.h"
 #endif
 #include "log.h"
-#include "main.h" // g_settings
 #include "settings.h"
 #include "util/serialize.h"
 #include "util/container.h"

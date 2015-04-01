@@ -28,7 +28,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mods.h"
 #include "config.h"
 #include "log.h"
-#include "main.h" // for g_settings
 #include "settings.h"
 #include "httpfetch.h"
 #include "porting.h"

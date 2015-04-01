@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h" //for MMVManip
 #include "log_types.h"
 #include "util/numeric.h"
-#include "main.h"
 #include "util/mathconstants.h"
 #include "porting.h"
 #include "settings.h"

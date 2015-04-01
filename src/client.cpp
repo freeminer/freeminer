@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client.h"
 #include "network/clientopcodes.h"
 #include "network/networkprotocol.h"
-#include "main.h"
 #include "filesys.h"
 #include "porting.h"
 #include "mapblock_mesh.h"

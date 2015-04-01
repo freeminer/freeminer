@@ -22,7 +22,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "localplayer.h"
 
-#include "main.h" // For g_settings
 #include "event.h"
 #include "collision.h"
 #include "gamedef.h"

@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiTextInputMenu.h"
 #include "debug.h"
 #include "serialization.h"
-#include "main.h" // for g_settings
 #include "settings.h"
 #include <string>
 #include <IGUICheckBox.h>

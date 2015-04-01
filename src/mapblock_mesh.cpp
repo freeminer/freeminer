@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "light.h"
 #include "mapblock.h"
 #include "map.h"
-#include "main.h" // for g_profiler
 #include "profiler.h"
 #include "nodedef.h"
 #include "gamedef.h"

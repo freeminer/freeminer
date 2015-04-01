@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlicht.h" // createDevice
 
-#include "main.h"
 #include "mainmenumanager.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
@@ -109,26 +108,6 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 static bool migrate_database(const GameParams &game_params, const Settings &cmd_args);
 
 /**********************************************************************/
-
-#ifndef SERVER
-/*
-	Random stuff
-*/
-
-/* mainmenumanager.h */
-
-gui::IGUIEnvironment* guienv = NULL;
-gui::IGUIStaticText *guiroot = NULL;
-MainMenuManager g_menumgr;
-
-bool noMenuActive()
-{
-	return (g_menumgr.menuCount() == 0);
-}
-
-// Passed to menus to allow disconnecting and exiting
-MainGameCallback *g_gamecallback = NULL;
-#endif
 
 /*
 	gettime.h implementation

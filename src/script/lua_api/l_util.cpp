@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "tool.h"
 #include "filesys.h"
 #include "settings.h"
-#include "main.h"  //required for g_settings, g_settings_path
 
 // debug(...)
 // Writes a line to dstream

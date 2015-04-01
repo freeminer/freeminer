@@ -23,14 +23,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "camera.h"
 #include "debug.h"
 #include "client.h"
-#include "main.h" // for g_settings
 #include "map.h"
-#include "clientmap.h" // MapDrawControl
+#include "clientmap.h"     // MapDrawControl
 #include "player.h"
 #include <cmath>
 #include "settings.h"
 #include "wieldmesh.h"
-#include "noise.h" // easeCurve
+#include "noise.h"         // easeCurve
 #include "gamedef.h"
 #include "sound.h"
 #include "event.h"

@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
 #include "environment.h"
 #include "filesys.h"
 #include "porting.h"
@@ -34,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "scripting_game.h"
 #include "nodedef.h"
 #include "nodemetadata.h"
-#include <fstream>
+//#include <fstream>
 #include "gamedef.h"
 #ifndef SERVER
 #include "clientmap.h"

@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SERVER
 	#include "mapblock_mesh.h"
 #endif
-#include "main.h"
 #include "filesys.h"
 #include "voxel.h"
 #include "porting.h"

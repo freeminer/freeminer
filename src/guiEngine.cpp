@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "guiEngine.h"
 
+#include <fstream>
 #include <IGUIStaticText.h>
 #include <ICameraSceneNode.h>
 #include "scripting_mainmenu.h"
@@ -30,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "porting.h"
 #include "filesys.h"
-#include <fstream>
+//#include <fstream>
 #include "settings.h"
 #include "guiMainMenu.h"
 #include "sound.h"

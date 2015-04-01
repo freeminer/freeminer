@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_internal.h"
 #include "debug.h"
 #include "log.h"
-#include "main.h"
 #include "settings.h"
 
 std::string script_get_backtrace(lua_State *L)

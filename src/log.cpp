@@ -34,6 +34,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "jthread/jmutexautolock.h"
 
+// Connection
+std::ostream *dout_con_ptr = &dummyout;
+std::ostream *derr_con_ptr = &verbosestream;
+
+// Server
+std::ostream *dout_server_ptr = &infostream;
+std::ostream *derr_server_ptr = &errorstream;
+
+#ifndef SERVER
+// Client
+std::ostream *dout_client_ptr = &infostream;
+std::ostream *derr_client_ptr = &errorstream;
+#endif
+
 #ifdef __ANDROID__
 unsigned int android_log_level_mapping[] = {
 		/* LMT_ERROR */   ANDROID_LOG_ERROR,

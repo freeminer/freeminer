@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "settings.h"
 #include "log.h"
-#include "main.h" // for g_settings
 
 #ifdef _WIN32
 	#ifndef WIN32_LEAN_AND_MEAN

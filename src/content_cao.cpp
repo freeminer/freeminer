@@ -45,7 +45,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "localplayer.h"
 #include "map.h"
-#include "main.h" // g_settings
 #include "camera.h" // CameraModes
 #include "wieldmesh.h"
 #include "log.h"

@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "network/fm_connection.h"
-#include "main.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
@@ -30,9 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "settings.h"
 #include "profiler.h"
-
-std::ostream *dout_con_ptr = &dummyout;
-std::ostream *derr_con_ptr = &verbosestream;
 
 namespace con
 {

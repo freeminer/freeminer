@@ -26,12 +26,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
 #include "log_types.h"
-#include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"
 #include "profiler.h"
 #include "settings.h"
-#include "camera.h" // CameraModes
+#include "camera.h"               // CameraModes
 #include "util/mathconstants.h"
 #include <algorithm>
 #include <unordered_map>
