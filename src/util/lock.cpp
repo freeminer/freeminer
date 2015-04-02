@@ -46,12 +46,7 @@ lock_rec<GUARD>::lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thr
 
 template<class GUARD>
 lock_rec<GUARD>::~lock_rec() {
-	if(lock) {
-		thread_id = 0;
-		lock->unlock();
-		delete lock;
-		lock = nullptr;
-	}
+	unlock();
 }
 
 template<class GUARD>
@@ -60,6 +55,16 @@ bool lock_rec<GUARD>::owns_lock() {
 		return lock;
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	return thread_id == thread_me;
+}
+
+template<class GUARD>
+void lock_rec<GUARD>::unlock() {
+	if(lock) {
+		thread_id = 0;
+		lock->unlock();
+		delete lock;
+		lock = nullptr;
+	}
 }
 
 locker::locker() {

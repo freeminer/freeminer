@@ -780,6 +780,7 @@ u32 Map::updateLighting(enum LightBank bank,
 			// Bottom sunlight is not valid; get the block and loop to it
 
 			pos.Y--;
+			lock->unlock();
 			block = getBlockNoCreateNoEx(pos);
 		}
 		if (porting::getTimeMs() > end_ms) {
