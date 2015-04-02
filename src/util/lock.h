@@ -81,6 +81,7 @@ public:
 	lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
 	~lock_rec();
 	bool owns_lock();
+	void unlock();
 };
 
 class locker {
@@ -108,9 +109,11 @@ class maybe_locker : public locker { };
 
 class dummy_lock {
 public:
+	~dummy_lock() {}; //no unused variable warning
 	bool owns_lock() {return true;}
 	bool operator!() {return true;}
 	dummy_lock * operator->() {return this; }
+	void unlock() {};
 };
 
 class dummy_locker {
