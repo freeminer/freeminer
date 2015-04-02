@@ -20,7 +20,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientopcodes.h"
 
+#if MINETEST_PROTO
 const static ToClientCommandHandler null_command_handler = {"TOCLIENT_NULL", TOCLIENT_STATE_ALL, &Client::handleCommand_Null};
+#endif
 
 const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 {
