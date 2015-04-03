@@ -1035,7 +1035,7 @@ void Settings::doCallbacks(const std::string name)
 
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
 	{
-		try_shared_lock lock(m_mutex);
+		std::lock_guard<std::mutex> lock(m_mutex);
 		if (!m_json[name].empty())
 			return m_json.get(name, def);
 	}
@@ -1065,12 +1065,12 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 	if (!value.empty())
 		set(name, json_writer.write( value )); //todo: remove later
 
-	unique_lock lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 	m_json[name] = value;
 }
 
 bool Settings::toJson(Json::Value &json) const {
-	try_shared_lock lock(m_mutex);
+	std::lock_guard<std::mutex> lock(m_mutex);
 
 	json = m_json;
 

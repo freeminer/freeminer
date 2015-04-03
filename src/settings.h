@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "json/json.h" // for json config values
 #include "msgpack.h"
+#include "util/lock.h"
 #include <stdint.h>
 
 class Settings;
