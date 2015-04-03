@@ -81,7 +81,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				-DHAVE_THREAD_LOCAL=1 \
 				-pipe -fstrict-aliasing
 
-#too slow fmtodo				-DENABLE_THREADS=1 -DHAVE_FUTURE=1 -DHAVE_THREAD_LOCAL=1 \
+#too slow fmtodo				-DENABLE_THREADS=1 -DHAVE_FUTURE=1 \
 
 
 ifndef NDEBUG
@@ -132,7 +132,6 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/intlGUIEditBox.cpp                \
 		jni/src/key_value_storage.cpp             \
 		jni/src/log_types.cpp                     \
-		jni/src/profiler.cpp                      \
 		jni/src/ban.cpp                           \
 		jni/src/camera.cpp                        \
 		jni/src/cavegen.cpp                       \
