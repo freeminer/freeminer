@@ -66,7 +66,7 @@ pacaur -Sa msgpack-c-0.5
 ___
 Gentoo/Funtoo:
 ```bash
-emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht dev-libs/msgpack dev-libs/leveldb
+emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht '<dev-libs/msgpack-1.0.0' dev-libs/leveldb
 ```
 ___
 Osx:
