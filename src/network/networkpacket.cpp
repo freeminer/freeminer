@@ -47,7 +47,7 @@ void NetworkPacket::checkReadOffset(u32 from_offset)
 		std::stringstream ss;
 		ss << "Reading outside packet (offset: " <<
 				from_offset << ", packet size: " << getSize() << ")";
-		throw SerializationError(ss.str());
+		throw PacketError(ss.str());
 	}
 }
 
