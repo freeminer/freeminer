@@ -192,7 +192,7 @@ FIFO queue (well, actually a FILO also)
 */
 template<typename T>
 class Queue //TODO! rename me to shared_queue
-: public locker, public std::queue<T>
+: public locker<>, public std::queue<T>
 {
 public:
 	Queue() { }

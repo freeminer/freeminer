@@ -73,37 +73,42 @@ public:
 };
 */
 
-template<class GUARD>
+template<class guard, class mutex = std::mutex>
 class lock_rec {
 public:
-	GUARD * lock;
+	guard * lock;
 	std::atomic<std::size_t> & thread_id;
-	lock_rec(try_shared_mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
+	lock_rec(mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
 	~lock_rec();
 	bool owns_lock();
 	void unlock();
 };
 
+template<class mutex = std::mutex, class unique_lock = std::unique_lock<mutex> , class shared_lock = std::unique_lock<mutex> >
 class locker {
 public:
-	try_shared_mutex mtx;
-	//semaphore sem;
+	typedef lock_rec<shared_lock, mutex> lock_rec_shared;
+	typedef lock_rec<unique_lock, mutex> lock_rec_unique;
+
+	mutex mtx;
 	std::atomic<std::size_t> thread_id;
 
 	locker();
 	std::unique_ptr<unique_lock> lock_unique();
 	std::unique_ptr<unique_lock> try_lock_unique();
-	std::unique_ptr<try_shared_lock> lock_shared();
-	std::unique_ptr<try_shared_lock> try_lock_shared();
-	std::unique_ptr<lock_rec<unique_lock>> lock_unique_rec();
-	std::unique_ptr<lock_rec<unique_lock>> try_lock_unique_rec();
-	std::unique_ptr<lock_rec<try_shared_lock>> lock_shared_rec();
-	std::unique_ptr<lock_rec<try_shared_lock>> try_lock_shared_rec();
+	std::unique_ptr<shared_lock> lock_shared();
+	std::unique_ptr<shared_lock> try_lock_shared();
+	std::unique_ptr<lock_rec_unique> lock_unique_rec();
+	std::unique_ptr<lock_rec_unique> try_lock_unique_rec();
+	std::unique_ptr<lock_rec_shared> lock_shared_rec();
+	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
 };
+
+class shared_locker : public locker<try_shared_mutex, unique_lock, try_shared_lock> { };
 
 #if ENABLE_THREADS
 
-class maybe_locker : public locker { };
+class maybe_locker : public locker<> { };
 
 #else
 
@@ -149,7 +154,7 @@ class maybe_locker : public dummy_locker { };
 template < class Key, class T, class Compare = std::less<Key>,
          class Allocator = std::allocator<std::pair<const Key, T> >>
 class shared_map: public std::map<Key, T, Compare, Allocator>,
-	public locker {
+	public locker<> {
 public:
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
 	typedef Key                                           key_type;
@@ -321,7 +326,7 @@ class maybe_shared_map: public not_shared_map<Key, T, Compare, Allocator>
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
          class Alloc = std::allocator<std::pair<const Key, T> >>
 class shared_unordered_map: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
-	public locker {
+	public locker<> {
 public:
 	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
 	typedef Key                                                        key_type;
@@ -471,7 +476,7 @@ Not used, but uncomment if you need
 template <class T, class Allocator = std::allocator<T> >
 class shared_vector :
 	public std::vector<T, Allocator>,
-	public locker
+	public locker<>
 {
 public:
 	typedef typename std::vector<T, Allocator>           full_type;

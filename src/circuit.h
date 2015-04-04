@@ -81,7 +81,7 @@ private:
 	KeyValueStorage *m_database;
 	KeyValueStorage *m_virtual_database;
 
-	locker m_elements_mutex;
+	locker<> m_elements_mutex;
 
 	static const u32 circuit_simulator_version;
 	static const char elements_states_file[];
