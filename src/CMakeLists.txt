@@ -216,7 +216,7 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
-find_package(MsgPack)
+find_package(MsgPack REQUIRED)
 
 option(ENABLE_CURL "Enable cURL support for fetching media" TRUE)
 set(USE_CURL FALSE)
@@ -279,8 +279,7 @@ if(ENABLE_SOUND AND BUILD_CLIENT)
 		set(USE_SOUND TRUE)
 		message(STATUS "Sound enabled.")
 	else()
-		message(FATAL_ERROR "Sound enabled, but cannot be used.\n"
-			"To continue, either fill in the required paths or disable sound. (-DENABLE_SOUND=0)")
+		message(WARNING "Sound enabled, but cannot be used.\n")
 	endif()
 endif()
 
@@ -361,7 +360,7 @@ if(ENABLE_LEVELDB)
 		message(STATUS "LevelDB backend enabled.")
 		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
 	else()
-		message(STATUS "LevelDB not found!")
+		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
 	endif()
 endif(ENABLE_LEVELDB)
 
@@ -721,7 +720,7 @@ include_directories(
 	${SOUND_INCLUDE_DIRS}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
-	${MSGPACK_INCLUDE_DIRS}
+	${MSGPACK_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
 	${PROJECT_SOURCE_DIR}/enet/include
 )
@@ -757,7 +756,7 @@ if(BUILD_CLIENT)
 		${SOUND_LIBRARIES}
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
-		${MSGPACK_LIBRARIES}
+		${MSGPACK_LIBRARY}
 		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
@@ -823,7 +822,7 @@ if(BUILD_SERVER)
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
-		${MSGPACK_LIBRARIES}
+		${MSGPACK_LIBRARY}
 		enet
 		${PLATFORM_LIBS}
 	)
