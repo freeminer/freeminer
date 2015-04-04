@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 
-#include "msgpack.h"
+#include "msgpack_fix.h"
 
 class MapBlock;
 class ServerEnvironment;

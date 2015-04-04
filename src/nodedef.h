@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 
 
-#include "msgpack.h"
+#include "msgpack_fix.h"
 
 enum {
 	CONTENTFEATURES_NAME,

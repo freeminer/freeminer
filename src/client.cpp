@@ -68,7 +68,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern gui::IGUIEnvironment* guienv;
 
-#include "msgpack.h"
+#include "msgpack_fix.h"
 
 /*
 	MeshUpdateQueue

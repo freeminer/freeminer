@@ -702,7 +702,7 @@ msgpack_download :
 		echo "msgpack sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone -b cpp-0.5.9 ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;                 \
+		git clone -b cpp-1.1.0 ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;    \
 	fi
 	
 msgpack : $(MSGPACK_LIB)

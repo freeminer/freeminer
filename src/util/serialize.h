@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <string>
 
-#include "../msgpack.h"
+#include "../msgpack_fix.h"
 #include "msgpack_define_external.h"
 
 #define FIXEDPOINT_FACTOR 1000.0f
