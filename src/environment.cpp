@@ -653,7 +653,16 @@ void ServerEnvironment::loadMeta()
 				block->abm_triggers->clear();
 		}
 
+#if ENABLE_THREADS
+		auto map = std::unique_ptr<VoxelManipulator> (new VoxelManipulator);
+		{
+			//ScopeProfiler sp(g_profiler, "ABM copy", SPT_ADD);
+			m_env->getServerMap().copy_27_blocks_to_vm(block, *map);
+		}
+#else
 		ServerMap *map = &m_env->getServerMap();
+#endif
+
 		{
 		//auto lock = block->try_lock_unique_rec();
 		//if (!lock->owns_lock())
@@ -662,20 +671,26 @@ void ServerEnvironment::loadMeta()
 
 		ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
 
+
 		u32 active_object_count_wider;
-		u32 active_object_count = this->countObjects(block, map, active_object_count_wider);
+		u32 active_object_count = this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
 		m_env->m_added_objects = 0;
 
+		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
 		{
+			v3POS p = p0 + bpr;
+#if ENABLE_THREADS
+			MapNode n = map->getNodeTry(p);
+#else
 			MapNode n = block->getNodeTry(p0);
+#endif
 			content_t c = n.getContent();
 			if (c == CONTENT_IGNORE)
 				continue;
-			v3s16 p = p0 + block->getPosRelative();
 
 			if (!m_aabms[c]) {
 				if (block->content_only)

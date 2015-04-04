@@ -109,6 +109,9 @@ bool MeshMakeData::fill_data()
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
 
+	map.copy_27_blocks_to_vm(block, m_vmanip);
+
+#if 0
 	v3POS blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 
 	/*
@@ -149,6 +152,9 @@ bool MeshMakeData::fill_data()
 				b->copyTo(m_vmanip);
 		}
 	}
+
+#endif
+
 #endif
 	return filled;
 }
