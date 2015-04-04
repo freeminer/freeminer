@@ -281,7 +281,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	m_liquid_send_timer += dtime;
 	if(m_liquid_send_timer >= m_liquid_send_interval)
 	{
-		TimeTaker timer_step("Server step: set the modified blocks unsent for all the clients");
+		TimeTaker timer_step("Server step: updateLighting");
 		m_liquid_send_timer -= m_liquid_send_interval;
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;

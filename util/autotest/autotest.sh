@@ -8,10 +8,14 @@
 cmake_opt="-DBUILD_SERVER=0"
 #cmake_opt="-DBUILD_SERVER=0 -DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a"
 
-confdir=`pwd`
+time=600
+port=63000
 
-run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.bot.conf --autoexit 1000"
-#run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.headless.conf --autoexit 1000"
+confdir=`pwd`
+config=$confdir/freeminer.bot.conf
+#config=$confdir/freeminer.headless.conf
+
+run_opts="--worldname autotest --port $port --go --config $config --autoexit $time"
 
 logdir=`pwd`/logs
 
@@ -69,10 +73,18 @@ name=debug
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DENABLE_LUAJIT=0 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-
-name=valgrind
 $make >> $logdir/autotest.$name.make.log 2>&1 && \
-$run valgrind ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+
+# too many errors: helgrind
+# too slow: drd
+# ?: exp-bbv
+# usable: memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv
+for tool in memcheck ; do
+name=valgrind_$tool
+echo $name =============
+$run valgrind --tool=$tool ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+done;
+
 cd ..
 
 name=nothreads

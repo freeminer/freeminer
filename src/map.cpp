@@ -2997,7 +2997,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		block->resetModified();
 
 		if (block->getLightingExpired()) {
-			infostream<<"Loaded block with exiried lighting. (maybe sloooow appear), try recalc " << p3d<<std::endl;
+			verbosestream<<"Loaded block with exiried lighting. (maybe sloooow appear), try recalc " << p3d<<std::endl;
 			lighting_modified_blocks.set(p3d, nullptr);
 		}
 
