@@ -92,7 +92,6 @@ src_configure() {
 		$(cmake-utils_use_enable truetype FREETYPE)
 		$(cmake-utils_use_enable nls GETTEXT)
 		-DENABLE_GLES=0
-		$(cmake-utils_use_enable leveldb LEVELDB)
 		$(cmake-utils_use_enable redis REDIS)
 		$(cmake-utils_use_enable sound SOUND)
 		$(cmake-utils_use !luajit DISABLE_LUAJIT)
