@@ -336,7 +336,7 @@ public:
 	void transforming_liquid_push_back(v3s16 p);
 	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
-	u32 m_liquid_step_flow;
+	std::atomic_uint m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);

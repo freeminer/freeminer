@@ -58,7 +58,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Map
 */
 Map::Map(IGameDef *gamedef):
-	m_liquid_step_flow(1000),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
 	m_transforming_liquid_loop_count_multiplier(1.0f),
@@ -69,6 +68,7 @@ Map::Map(IGameDef *gamedef):
 	m_blocks_update_last(0),
 	m_blocks_save_last(0)
 {
+	m_liquid_step_flow = 1000;
 	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 	time_life = 0;
 	getBlockCacheFlush();
