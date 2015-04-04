@@ -213,6 +213,9 @@
 #define MSGPACK_EXTERNAL_PACK(num, ...) \
 	MSGPACK_EXTERNAL_PACK_(num, __VA_ARGS__)
 
+#if MSGPACK_VERSION_MAJOR < 1
+// fmTODO: remove me
+
 #define MSGPACK_DEFINE_EXTERNAL(external, ...) \
 	namespace msgpack { \
 	inline external& operator>> (object o, external& v) \
@@ -232,6 +235,30 @@
 	}
 
 #else
+
+#define MSGPACK_DEFINE_EXTERNAL(external, ...) \
+	namespace msgpack { MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) { namespace adaptor { \
+	template<> struct convert<external> { \
+		msgpack::object const& operator()(msgpack::object const& o, external& v) const { \
+			if(o.type != type::ARRAY) { throw type_error(); } \
+			if(o.via.array.size != MSGPACK_VA_NUM_ARGS(__VA_ARGS__)) { throw type_error(); } \
+			MSGPACK_EXTERNAL_UNPACK(MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__) \
+			return o; \
+		} \
+	}; \
+	template<> struct pack<external> { \
+	template <typename Stream> \
+		packer<Stream>& operator()(msgpack::packer<Stream>& o, external const& v) const { \
+			o.pack_array(MSGPACK_VA_NUM_ARGS(__VA_ARGS__)); \
+			MSGPACK_EXTERNAL_PACK(MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__) \
+			return o; \
+		} \
+	}; \
+	}}}
+
+#endif
+
+#else
 // insane compiler
 
 #define MSGPACK_EXPAND(x) x
@@ -247,6 +274,11 @@
 
 #define MSGPACK_EXTERNAL_PACK(num, ...) \
 	MSGPACK_EXTERNAL_PACK_(num, __VA_ARGS__)
+
+// https://github.com/msgpack/msgpack-c/wiki/v1_1_cpp_adaptor#non-intrusive-approach
+
+#if MSGPACK_VERSION_MAJOR < 1
+// fmTODO: remove me
 
 #define MSGPACK_DEFINE_EXTERNAL(external, ...) \
 	namespace msgpack { \
@@ -265,6 +297,32 @@
 		return o; \
 	} \
 	}
+
+#else
+#define MSGPACK_DEFINE_EXTERNAL(external, ...) \
+	namespace msgpack { MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) { namespace adaptor { \
+	template<> struct convert<external> { \
+		msgpack::object const& operator()(msgpack::object const& o, external& v) const { \
+			if(o.type != type::ARRAY) { throw type_error(); } \
+			if(o.via.array.size != MSGPACK_VA_NUM_ARGS(__VA_ARGS__)) { throw type_error(); } \
+			MSGPACK_EXTERNAL_UNPACK MSGPACK_EXPAND((MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__)) \
+			return o; \
+		} \
+	}; \
+	template<> struct pack<external> { \
+	template <typename Stream> \
+		packer<Stream>& operator()(msgpack::packer<Stream>& o, external const& v) const { \
+			o.pack_array(MSGPACK_VA_NUM_ARGS(__VA_ARGS__)); \
+			MSGPACK_EXTERNAL_PACK MSGPACK_EXPAND((MSGPACK_VA_NUM_ARGS(__VA_ARGS__), __VA_ARGS__)) \
+			return o; \
+		} \
+	}; \
+	}}}
+
 #endif
+
+
+#endif
+
 
 #endif

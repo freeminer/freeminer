@@ -93,7 +93,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		return;
 
 	int command;
-	std::map<int, msgpack::object> packet;
+	MsgpackPacket packet;
 	msgpack::unpacked msg;
 	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
 		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
