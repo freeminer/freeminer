@@ -49,10 +49,10 @@ LOCAL_MODULE := crypto
 LOCAL_SRC_FILES := deps/openssl/libcrypto.a
 include $(PREBUILT_STATIC_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := iconv
-LOCAL_SRC_FILES := deps/libiconv/lib/.libs/libiconv.a
-include $(PREBUILT_STATIC_LIBRARY)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := iconv
+#LOCAL_SRC_FILES := deps/libiconv/lib/.libs/libiconv.a
+#include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := msgpack
@@ -105,7 +105,6 @@ endif
 LOCAL_C_INCLUDES :=                               \
 		jni/src/enet/include                      \
 		deps/msgpack/include                      \
-		deps/libiconv/include                     \
 		deps/msgpack/src                          \
 		jni/src jni/src/sqlite                    \
 		jni/src/script                            \
@@ -119,9 +118,10 @@ LOCAL_C_INCLUDES :=                               \
 		deps/libvorbis-libogg-android/jni/include \
 		deps/leveldb/include                      \
 		deps/sqlite/
+#		deps/libiconv/include                     \
+
 
 LOCAL_SRC_FILES :=                                \
-		jni/src/util/utf8.cpp                     \
 		jni/src/gsmapper.cpp                      \
 		jni/src/guiTextInputMenu.cpp              \
 		jni/src/FMColoredString.cpp               \
@@ -367,8 +367,8 @@ LOCAL_SRC_FILES += \
 		jni/src/enet/protocol.c                  \
 		jni/src/enet/unix.c
 
-LOCAL_STATIC_LIBRARIES += iconv msgpack
-
+LOCAL_STATIC_LIBRARIES += msgpack
+# iconv
 
 ifeq ($(HAVE_LEVELDB), 1)
 	LOCAL_STATIC_LIBRARIES += LevelDB

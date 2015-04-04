@@ -231,6 +231,14 @@ else()
 	mark_as_advanced(CLEAR CURL_LIBRARY CURL_INCLUDE_DIR)
 endif()
 
+find_package(Iconv)
+if(ICONV_INCLUDE_DIR)
+set(USE_ICONV 1)
+message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
+else()
+set(USE_ICONV 0)
+message(STATUS "iconv.h NOT found")
+endif()
 
 if(BUILD_CLIENT)
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" TRUE)
@@ -254,7 +262,6 @@ else()
 	mark_as_advanced(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY GETTEXT_MSGFMT ICONV_LIBRARY)
 	message(STATUS "GetText disabled.")
 endif()
-
 
 if(BUILD_CLIENT)
 option(ENABLE_SOUND "Enable sound" TRUE)
