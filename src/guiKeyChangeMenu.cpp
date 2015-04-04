@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiKeyChangeMenu.h"
 #include "debug.h"
 #include "serialization.h"
-#include "main.h"
 #include <string>
 #include <IGUICheckBox.h>
 #include <IGUIEditBox.h>

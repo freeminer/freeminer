@@ -589,6 +589,15 @@ public:
 	*/
 	//bool m_disable_water_climb;
 
+	//freeminer:
+	// for Map compatibility:
+	const MapNode & getNodeTry(const v3s16 &p) {
+		if (m_area.contains(p))
+			return getNodeRefUnsafe(p);
+		return ContentIgnoreNode;
+	}
+
+
 private:
 };
 

@@ -8,10 +8,14 @@
 cmake_opt="-DBUILD_SERVER=0"
 #cmake_opt="-DBUILD_SERVER=0 -DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a"
 
-confdir=`pwd`
+time=600
+port=63000
 
-run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.bot.conf --autoexit 1000"
-#run_opts="--worldname autotest --port 63000 --go --config $confdir/freeminer.headless.conf --autoexit 1000"
+confdir=`pwd`
+config=$confdir/freeminer.bot.conf
+#config=$confdir/freeminer.headless.conf
+
+run_opts="--worldname autotest --port $port --go --config $config --autoexit $time"
 
 logdir=`pwd`/logs
 
@@ -36,24 +40,24 @@ echo "backend = leveldb" >> worlds/autotest/world.mt
 name=tsan
 echo $name =============
 mkdir -p _$name && cd _$name
-cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+cmake $rootdir $clang -DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
 name=asannt
 echo $name =============
 mkdir -p _$name && cd _$name
-cmake $rootdir $clang -DENABLE_THREADS=0 -DDISABLE_LUAJIT=1 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+cmake $rootdir $clang -DENABLE_THREADS=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
 name=asan
 echo $name =============
 mkdir -p _$name && cd _$name
-cmake $rootdir $clang -DDISABLE_LUAJIT=1 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+cmake $rootdir $clang -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -61,23 +65,33 @@ name=msan
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir $clang -DSANITIZE_MEMORY=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
-name=valgrind
+name=debug
 echo $name =============
 mkdir -p _$name && cd _$name
-cmake $rootdir -DDISABLE_LUAJIT=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
-$run valgrind ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cmake $rootdir -DENABLE_LUAJIT=0 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
+
+# too many errors: helgrind
+# too slow: drd
+# ?: exp-bbv
+# usable: memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv
+for tool in memcheck ; do
+name=valgrind_$tool
+echo $name =============
+$run valgrind --tool=$tool ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+done;
+
 cd ..
 
 name=nothreads
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
@@ -85,6 +99,15 @@ name=normal
 echo $name =============
 mkdir -p _$name && cd _$name
 cmake $rootdir -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
-$make
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
+
+name=minetest_proto
+echo $name =============
+mkdir -p _$name && cd _$name
+cmake $rootdir -DMINETEST_PROTO=1 -DENABLE_LUAJIT=0 -DDEBUG=1 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1
+name=minetest_proto_valgrind
+$run valgrind ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..

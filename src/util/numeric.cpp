@@ -187,7 +187,6 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 	return h;
 }
 
-
 /*
 	blockpos: position of block in block coordinates
 	camera_pos: position of camera in nodes
@@ -252,4 +251,3 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 
 	return true;
 }
-

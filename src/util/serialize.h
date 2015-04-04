@@ -32,8 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <string>
 
-#include "../msgpack.h"
-#include "../msgpack_define_external.h"
+#include "../msgpack_fix.h"
+#include "msgpack_define_external.h"
 
 #define FIXEDPOINT_FACTOR 1000.0f
 #define FIXEDPOINT_INVFACTOR (1.0f/FIXEDPOINT_FACTOR)
@@ -461,6 +461,7 @@ MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
 //MSGPACK_DEFINE_EXTERNAL(v2s16, X, Y);
 MSGPACK_DEFINE_EXTERNAL(v2s32, X, Y);
 MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(v3s32, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
 MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 

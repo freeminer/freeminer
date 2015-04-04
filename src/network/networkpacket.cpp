@@ -22,16 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h"
 #include "util/serialize.h"
 
-NetworkPacket::NetworkPacket(u8 *data, u32 datasize, u16 peer_id):
-m_read_offset(0), m_peer_id(peer_id)
-{
-	m_read_offset = 0;
-	m_datasize = datasize - 2;
-
-	// split command and datas
-	m_command = readU16(&data[0]);
-	m_data = std::vector<u8>(&data[2], &data[2 + m_datasize]);
-}
+#include "config.h"
 
 NetworkPacket::NetworkPacket(u16 command, u32 datasize, u16 peer_id):
 m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(peer_id)
@@ -50,10 +41,41 @@ NetworkPacket::~NetworkPacket()
 	m_data.clear();
 }
 
+void NetworkPacket::checkReadOffset(u32 from_offset)
+{
+	if (from_offset >= m_datasize) {
+		std::stringstream ss;
+		ss << "Reading outside packet (offset: " <<
+				from_offset << ", packet size: " << getSize() << ")";
+		throw PacketError(ss.str());
+	}
+}
+
+void NetworkPacket::putRawPacket(u8 *data, u32 datasize, u16 peer_id)
+{
+	// If a m_command is already set, we are rewriting on same packet
+	// This is not permitted
+	assert(m_command == 0);
+
+#if MINETEST_PROTO
+	m_datasize = datasize - 2;
+#else
+	m_datasize = datasize;
+#endif
+	m_peer_id = peer_id;
+
+	// split command and datas
+	m_command = readU16(&data[0]);
+#if MINETEST_PROTO
+	m_data = std::vector<u8>(&data[2], &data[2 + m_datasize]);
+#else
+	m_data = std::vector<u8>(&data[0], &data[m_datasize]);
+#endif
+}
+
 char* NetworkPacket::getString(u32 from_offset)
 {
-	if (from_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(from_offset);
 
 	return (char*)&m_data[from_offset];
 }
@@ -64,7 +86,6 @@ void NetworkPacket::putRawString(const char* src, u32 len)
 		m_datasize += len * sizeof(char);
 		m_data.resize(m_datasize);
 	}
-
 	memcpy(&m_data[m_read_offset], src, len);
 	m_read_offset += len;
 }
@@ -184,8 +205,7 @@ std::string NetworkPacket::readLongString()
 
 NetworkPacket& NetworkPacket::operator>>(char& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU8(&m_data[m_read_offset]);
 
@@ -195,8 +215,7 @@ NetworkPacket& NetworkPacket::operator>>(char& dst)
 
 char NetworkPacket::getChar(u32 offset)
 {
-	if (offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(offset);
 
 	return readU8(&m_data[offset]);
 }
@@ -273,8 +292,7 @@ NetworkPacket& NetworkPacket::operator<<(float src)
 
 NetworkPacket& NetworkPacket::operator>>(bool& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU8(&m_data[m_read_offset]);
 
@@ -284,8 +302,7 @@ NetworkPacket& NetworkPacket::operator>>(bool& dst)
 
 NetworkPacket& NetworkPacket::operator>>(u8& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU8(&m_data[m_read_offset]);
 
@@ -295,8 +312,7 @@ NetworkPacket& NetworkPacket::operator>>(u8& dst)
 
 u8 NetworkPacket::getU8(u32 offset)
 {
-	if (offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(offset);
 
 	return readU8(&m_data[offset]);
 }
@@ -307,16 +323,14 @@ u8* NetworkPacket::getU8Ptr(u32 from_offset)
 		return NULL;
 	}
 
-	if (from_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(from_offset);
 
 	return (u8*)&m_data[from_offset];
 }
 
 NetworkPacket& NetworkPacket::operator>>(u16& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU16(&m_data[m_read_offset]);
 
@@ -326,16 +340,14 @@ NetworkPacket& NetworkPacket::operator>>(u16& dst)
 
 u16 NetworkPacket::getU16(u32 from_offset)
 {
-	if (from_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(from_offset);
 
 	return readU16(&m_data[from_offset]);
 }
 
 NetworkPacket& NetworkPacket::operator>>(u32& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU32(&m_data[m_read_offset]);
 
@@ -345,8 +357,7 @@ NetworkPacket& NetworkPacket::operator>>(u32& dst)
 
 NetworkPacket& NetworkPacket::operator>>(u64& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readU64(&m_data[m_read_offset]);
 
@@ -356,8 +367,7 @@ NetworkPacket& NetworkPacket::operator>>(u64& dst)
 
 NetworkPacket& NetworkPacket::operator>>(float& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readF1000(&m_data[m_read_offset]);
 
@@ -367,8 +377,7 @@ NetworkPacket& NetworkPacket::operator>>(float& dst)
 
 NetworkPacket& NetworkPacket::operator>>(v2f& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readV2F1000(&m_data[m_read_offset]);
 
@@ -378,8 +387,7 @@ NetworkPacket& NetworkPacket::operator>>(v2f& dst)
 
 NetworkPacket& NetworkPacket::operator>>(v3f& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readV3F1000(&m_data[m_read_offset]);
 
@@ -389,8 +397,7 @@ NetworkPacket& NetworkPacket::operator>>(v3f& dst)
 
 NetworkPacket& NetworkPacket::operator>>(s16& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readS16(&m_data[m_read_offset]);
 
@@ -406,8 +413,7 @@ NetworkPacket& NetworkPacket::operator<<(s16 src)
 
 NetworkPacket& NetworkPacket::operator>>(s32& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readS32(&m_data[m_read_offset]);
 
@@ -423,8 +429,7 @@ NetworkPacket& NetworkPacket::operator<<(s32 src)
 
 NetworkPacket& NetworkPacket::operator>>(v3s16& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readV3S16(&m_data[m_read_offset]);
 
@@ -442,8 +447,7 @@ NetworkPacket& NetworkPacket::operator>>(v2s32& dst)
 
 NetworkPacket& NetworkPacket::operator>>(v3s32& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readV3S32(&m_data[m_read_offset]);
 
@@ -491,8 +495,7 @@ NetworkPacket& NetworkPacket::operator<<(v3s32 src)
 
 NetworkPacket& NetworkPacket::operator>>(video::SColor& dst)
 {
-	if (m_read_offset >= m_datasize)
-		throw SerializationError("Malformed packet read");
+	checkReadOffset(m_read_offset);
 
 	dst = readARGB8(&m_data[m_read_offset]);
 
@@ -512,7 +515,7 @@ NetworkPacket& NetworkPacket::operator<<(video::SColor src)
 
 Buffer<u8> NetworkPacket::oldForgePacket()
 {
-	SharedBuffer<u8> sb(m_datasize + 2);
+	Buffer<u8> sb(m_datasize + 2);
 	writeU16(&sb[0], m_command);
 
 	u8* datas = getU8Ptr(0);

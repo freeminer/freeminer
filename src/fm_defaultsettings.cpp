@@ -330,6 +330,9 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
+	settings->setDefault("gui_scaling_filter", "false");
+	settings->setDefault("gui_scaling_filter_txr2img", "true");
+
 	settings->setDefault("hud_hotbar_max_width", "1.0");
 
 	// Client Backend
@@ -396,7 +399,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("active_object_send_range_blocks", "3");
 #if ENABLE_THREADS
-	settings->setDefault("active_block_range", "3");
+	settings->setDefault("active_block_range", "4");
 	settings->setDefault("abm_neighbors_range_max", win32 ? "1" : "16");
 #else
 	settings->setDefault("active_block_range", "2");

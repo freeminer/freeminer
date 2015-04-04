@@ -29,8 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "nodedef.h"
 #include "profiler.h"
-#include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
+#include "settings.h"
 
 //#define DGEN_USE_TORCHES
 

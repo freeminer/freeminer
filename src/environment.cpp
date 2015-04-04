@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
 #include "environment.h"
 #include "filesys.h"
 #include "porting.h"
@@ -34,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "scripting_game.h"
 #include "nodedef.h"
 #include "nodemetadata.h"
-#include <fstream>
+//#include <fstream>
 #include "gamedef.h"
 #ifndef SERVER
 #include "clientmap.h"
@@ -209,7 +210,7 @@ float Environment::getTimeOfDayF()
 void Environment::stepTimeOfDay(float dtime)
 {
 	float day_speed = getTimeOfDaySpeed();
-	
+
 	m_time_counter += dtime;
 	f32 speed = day_speed * 24000./(24.*3600);
 	u32 units = (u32)(m_time_counter*speed);
@@ -460,11 +461,12 @@ void ServerEnvironment::savePlayer(const std::string &playername)
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
 {
-	auto *player = getPlayer(playername);
 	bool newplayer = false;
 	bool found = false;
+	auto *player = getPlayer(playername);
+
 	if (!player) {
-		player = new RemotePlayer(m_gamedef, playername);
+		player = new RemotePlayer(m_gamedef, "");
 		newplayer = true;
 	}
 
@@ -491,7 +493,6 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	std::string players_path = m_path_world + DIR_DELIM "players" DIR_DELIM;
 
-	auto testplayer = new RemotePlayer(m_gamedef, "");
 	std::string path = players_path + playername;
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
@@ -499,25 +500,25 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 			return NULL;
 		}
 		try {
-		testplayer->deSerialize(is, path);
+		player->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
 			return nullptr;
 		}
 		is.close();
-		if (testplayer->getName() == playername) {
-			player = testplayer;
+		if (player->getName() == playername) {
 			found = true;
 		}
 	if (!found) {
-		delete testplayer;
 		infostream << "Player file for player " << playername
 				<< " not found" << std::endl;
+		if (newplayer)
+			delete player;
 		return NULL;
 	}
-	if (newplayer) {
+
+	if (newplayer)
 		addPlayer(player);
-	}
 	return player;
 }
 
@@ -652,7 +653,16 @@ void ServerEnvironment::loadMeta()
 				block->abm_triggers->clear();
 		}
 
+#if ENABLE_THREADS
+		auto map = std::unique_ptr<VoxelManipulator> (new VoxelManipulator);
+		{
+			//ScopeProfiler sp(g_profiler, "ABM copy", SPT_ADD);
+			m_env->getServerMap().copy_27_blocks_to_vm(block, *map);
+		}
+#else
 		ServerMap *map = &m_env->getServerMap();
+#endif
+
 		{
 		//auto lock = block->try_lock_unique_rec();
 		//if (!lock->owns_lock())
@@ -661,20 +671,26 @@ void ServerEnvironment::loadMeta()
 
 		ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
 
+
 		u32 active_object_count_wider;
-		u32 active_object_count = this->countObjects(block, map, active_object_count_wider);
+		u32 active_object_count = this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
 		m_env->m_added_objects = 0;
 
+		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
 		{
+			v3POS p = p0 + bpr;
+#if ENABLE_THREADS
+			MapNode n = map->getNodeTry(p);
+#else
 			MapNode n = block->getNodeTry(p0);
+#endif
 			content_t c = n.getContent();
 			if (c == CONTENT_IGNORE)
 				continue;
-			v3s16 p = p0 + block->getPosRelative();
 
 			if (!m_aabms[c]) {
 				if (block->content_only)
@@ -794,7 +810,7 @@ void ServerEnvironment::analyzeBlock(MapBlock * block) {
 	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
 	m_abmhandler.apply(block, activate);
 	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
-	block->m_next_analyze_timestamp = block_timestamp + 5;
+	block->m_next_analyze_timestamp = block_timestamp + 2;
 }
 
 
@@ -1308,6 +1324,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime_counter += dtime;
+
 	const float abm_interval = 1.0;
 	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval)) {
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
@@ -1363,7 +1380,6 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			m_active_block_abm_dtime_counter = 0;
 		}
 	}
-
 
 	/*
 		Step script environment (run global on_step())
@@ -1728,7 +1744,7 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 			removed_objects.insert(id);
 			continue;
 		}
-		
+
 		f32 distance_f = object->getBasePosition().getDistanceFrom(pos_f);
 		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			if (distance_f <= player_radius_f || player_radius_f == 0)
@@ -1788,6 +1804,8 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 	m_active_objects.set(object->getId(), object);
 
 /*
+	m_active_objects[object->getId()] = object;
+
 	verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
 			<<"Added id="<<object->getId()<<"; there are now "
 			<<m_active_objects.size()<<" active objects."
@@ -2606,6 +2624,8 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	*/
 	if(m_lava_hurt_interval.step(dtime, 1.0))
 	{
+		v3f pf = lplayer->getPosition();
+
 		// Feet, middle and head
 		v3s16 p1 = floatToInt(pf + v3f(0, BS*0.1, 0), BS);
 		MapNode n1 = m_map->getNodeNoEx(p1);
@@ -2633,7 +2653,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	*/
 	if(m_drowning_interval.step(dtime, 2.0))
 	{
-		v3f pf = lplayer->getPosition();
+		//v3f pf = lplayer->getPosition();
 
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);

@@ -20,15 +20,16 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mods.h"
+#include <cctype>
 #include <fstream>
+#include "mods.h"
+//#include <fstream>
 #include "filesys.h"
 #include "strfnd.h"
 #include "log.h"
 #include "subgame.h"
 #include "settings.h"
 #include "strfnd.h"
-#include <cctype>
 #include "convert_json.h"
 
 static bool parseDependsLine(std::istream &is,

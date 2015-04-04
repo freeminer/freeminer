@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "network/fm_connection.h"
-#include "main.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
@@ -30,9 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "settings.h"
 #include "profiler.h"
-
-std::ostream *dout_con_ptr = &dummyout;
-std::ostream *derr_con_ptr = &verbosestream;
 
 namespace con
 {
@@ -460,7 +456,7 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
+u32 Connection::Receive(NetworkPacket* pkt, int timeout)
 {
 	for(;;){
 		ConnectionEvent e = waitEvent(timeout);
@@ -472,8 +468,10 @@ u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
 			//throw NoIncomingDataException("No incoming data");
 			return 0;
 		case CONNEVENT_DATA_RECEIVED:
-			peer_id = e.peer_id;
-			data = SharedBuffer<u8>(e.data);
+			if (e.data.getSize() < 2) {
+				continue;
+			}
+			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
 			return e.data.getSize();
 		case CONNEVENT_PEER_ADDED: {
 			if(m_bc_peerhandler)
@@ -568,10 +566,10 @@ void Connection::DisconnectPeer(u16 peer_id)
 	putCommand(discon);
 }
 
-bool parse_msgpack_packet(unsigned char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg) {
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg) {
 	try {
 		//msgpack::unpacked msg;
-		msgpack::unpack(msg, (char*)data, datasize);
+		msgpack::unpack(msg, data, datasize);
 		msgpack::object obj = msg->get();
 		*packet = obj.as<MsgpackPacket>();
 

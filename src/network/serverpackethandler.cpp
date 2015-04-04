@@ -30,7 +30,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content_abm.h"
 #include "content_sao.h"
 #include "emerge.h"
-#include "main.h"
 #include "nodedef.h"
 #include "player.h"
 #include "rollback_interface.h"
@@ -203,7 +202,7 @@ void Server::handleCommand_Auth(NetworkPacket* pkt)
 		return;
 	}
 
-	if (string_allowed(playerName, PLAYERNAME_ALLOWED_CHARS) == false) {
+	if (!g_settings->getBool("enable_any_name") && string_allowed(playerName, PLAYERNAME_ALLOWED_CHARS) == false) {
 		actionstream << "Server: Player with an invalid name "
 				<< "tried to connect from " << addr_s << std::endl;
 		DenyAccess(pkt->getPeerId(), SERVER_ACCESSDENIED_WRONG_CHARS_IN_NAME);
@@ -501,7 +500,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
 		return;
 	}
 
-	if (string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false) {
+	if (!g_settings->getBool("enable_any_name") && string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) == false) {
 		actionstream << "Server: Player with an invalid name "
 				<< "tried to connect from " << addr_s << std::endl;
 		DenyAccess_Legacy(pkt->getPeerId(), L"Name contains unallowed characters");
@@ -893,8 +892,10 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 			auto uptime = m_uptime.get();
 			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
 				obj->m_uptime_last = uptime - 0.1;
-			obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
-			obj->m_uptime_last = uptime;
+			if (uptime - obj->m_uptime_last > 0.5) {
+				obj->step(uptime - obj->m_uptime_last, true); //todo: maybe limit count per time
+				obj->m_uptime_last = uptime;
+			}
 		}
 //copypaste end
 }
@@ -1171,11 +1172,14 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
 
 			std::vector<u16> clients = m_clients.getClientIDs();
 
+			SendChatMessage(PEER_ID_INEXISTENT, line);
+/*
 			for (std::vector<u16>::iterator i = clients.begin();
 				i != clients.end(); ++i) {
 				if (*i != pkt->getPeerId())
 					SendChatMessage(*i, line);
 			}
+*/
 		}
 	}
 }
@@ -1257,7 +1261,6 @@ void Server::handleCommand_Breath(NetworkPacket* pkt)
 
 void Server::handleCommand_Password(NetworkPacket* pkt)
 {
-	errorstream << "PAssword packet size: " << pkt->getSize() << " size required: " << PASSWORD_SIZE * 2 << std::endl;
 	if ((pkt->getCommand() == TOSERVER_PASSWORD && pkt->getSize() < 4) ||
 			pkt->getSize() != PASSWORD_SIZE * 2)
 		return;

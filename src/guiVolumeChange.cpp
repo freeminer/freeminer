@@ -31,7 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIScrollBar.h>
 #include <IGUIStaticText.h>
 #include <IGUIFont.h>
-#include "main.h"
 #include "settings.h"
 
 #include "gettext.h"

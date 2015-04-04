@@ -20,12 +20,13 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 
 #include "version.h"
-#include <fstream>
+//#include <fstream>
 #include "settings.h"
 #include "serverlist.h"
 #include "filesys.h"

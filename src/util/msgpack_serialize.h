@@ -22,8 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <map>
-#include "../msgpack.h"
+#include "../msgpack_fix.h"
 
 #define PACK(x, y) {pk.pack((int)x); pk.pack(y);}
 #define MSGPACK_COMMAND -1
@@ -33,4 +32,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	pk.pack_map((x)+1); \
 	PACK(MSGPACK_COMMAND, id);
 
+#if MSGPACK_VERSION_MAJOR < 1
+#include <map>
 typedef std::map<int, msgpack::object> MsgpackPacket;
+#else
+#include <unordered_map>
+typedef std::unordered_map<int, msgpack::object> MsgpackPacket;
+#endif

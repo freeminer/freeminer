@@ -254,6 +254,28 @@ int myrand_range(int min, int max);
 	Miscellaneous functions
 */
 
+inline u32 get_bits(u32 x, u32 pos, u32 len)
+{
+	u32 mask = (1 << len) - 1;
+	return (x >> pos) & mask;
+}
+
+inline void set_bits(u32 *x, u32 pos, u32 len, u32 val)
+{
+	u32 mask = (1 << len) - 1;
+	*x &= ~(mask << pos);
+	*x |= (val & mask) << pos;
+}
+
+inline u32 calc_parity(u32 v)
+{
+	v ^= v >> 16;
+	v ^= v >> 8;
+	v ^= v >> 4;
+	v &= 0xf;
+	return (0x6996 >> v) & 1;
+}
+
 u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed);
 
 bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
@@ -407,5 +429,16 @@ inline bool is_power_of_two(u32 n)
 	return n != 0 && (n & (n-1)) == 0;
 }
 
-#endif
+// Compute next-higher power of 2 efficiently, e.g. for power-of-2 texture sizes.
+// Public Domain: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+inline u32 npot2(u32 orig) {
+	orig--;
+	orig |= orig >> 1;
+	orig |= orig >> 2;
+	orig |= orig >> 4;
+	orig |= orig >> 8;
+	orig |= orig >> 16;
+	return orig + 1;
+}
 
+#endif

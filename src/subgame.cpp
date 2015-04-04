@@ -24,14 +24,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "filesys.h"
 #include "settings.h"
-#include "main.h"
 #include "log.h"
 #include "strfnd.h"
 #include "defaultsettings.h"  // for override_default_settings
 #include "mapgen.h"  // for MapgenParams
-#include "main.h" // for g_settings
+#include "util/string.h"
+
 #ifndef SERVER
-#include "client/tile.h" // getImagePath
+	#include "client/tile.h" // getImagePath
 #endif
 #include "util/string.h"
 #include "config.h"

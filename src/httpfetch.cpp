@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "util/container.h"
 #include "version.h"
-#include "main.h"
 #include "settings.h"
 #include "util/thread_pool.h"
 

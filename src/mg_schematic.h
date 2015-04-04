@@ -41,8 +41,13 @@ class NodeResolver;
 #define MTSCHEM_PROB_NEVER  0x00
 #define MTSCHEM_PROB_ALWAYS 0xFF
 
+enum SchematicType
+{
+	SCHEMATIC_NORMAL,
+};
 
-class Schematic : public GenElement, public NodeResolver {
+
+class Schematic : public ObjDef, public NodeResolver {
 public:
 	std::vector<content_t> c_nodes;
 
@@ -62,7 +67,7 @@ public:
 		Rotation rot, bool force_placement, INodeDefManager *ndef);
 
 	bool loadSchematicFromFile(const char *filename, INodeDefManager *ndef,
-		std::map<std::string, std::string> &replace_names);
+		StringMap *replace_names);
 	void saveSchematicToFile(const char *filename, INodeDefManager *ndef);
 	bool getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2);
 
@@ -73,15 +78,17 @@ public:
 		std::vector<std::pair<s16, u8> > *splist);
 };
 
-class SchematicManager : public GenElementManager {
+class SchematicManager : public ObjDefManager {
 public:
-	static const char *ELEMENT_TITLE;
-	static const size_t ELEMENT_LIMIT = 0x10000;
-
 	SchematicManager(IGameDef *gamedef);
 	~SchematicManager() {}
 
-	Schematic *create(int type)
+	const char *getObjectTitle() const
+	{
+		return "schematic";
+	}
+
+	static Schematic *create(SchematicType type)
 	{
 		return new Schematic;
 	}

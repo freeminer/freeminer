@@ -37,7 +37,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "sound.h"
 #include "settings.h"
-#include "main.h" // for g_settings
 #include "log.h"
 #include "EDriverTypes.h"
 

@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlicht.h" // createDevice
 
-#include "main.h"
 #include "mainmenumanager.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
@@ -109,26 +108,6 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 static bool migrate_database(const GameParams &game_params, const Settings &cmd_args);
 
 /**********************************************************************/
-
-#ifndef SERVER
-/*
-	Random stuff
-*/
-
-/* mainmenumanager.h */
-
-gui::IGUIEnvironment* guienv = NULL;
-gui::IGUIStaticText *guiroot = NULL;
-MainMenuManager g_menumgr;
-
-bool noMenuActive()
-{
-	return (g_menumgr.menuCount() == 0);
-}
-
-// Passed to menus to allow disconnecting and exiting
-MainGameCallback *g_gamecallback = NULL;
-#endif
 
 /*
 	gettime.h implementation
@@ -332,9 +311,9 @@ static void set_allowed_options(OptionList *allowed_options)
 			_("Set gameid (\"--gameid list\" prints available ones)"))));
 	allowed_options->insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
 			_("Migrate from current map backend to another (Only works when using freeminerserver or with --server)"))));
-#ifndef SERVER
 	allowed_options->insert(std::make_pair("autoexit", ValueSpec(VALUETYPE_STRING,
 			_("Exit after X seconds"))));
+#ifndef SERVER
 	allowed_options->insert(std::make_pair("videomodes", ValueSpec(VALUETYPE_FLAG,
 			_("Show available video modes"))));
 	allowed_options->insert(std::make_pair("speedtests", ValueSpec(VALUETYPE_FLAG,
@@ -889,6 +868,10 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 			game_params.game_spec, false, bind_addr.isIPv6());
 
 	server.start(bind_addr);
+
+	int autoexit_ = 0;
+	cmd_args.getS32NoEx("autoexit", autoexit_);
+	server.m_autoexit = autoexit_;
 
 	// Run server
 	bool &kill = *porting::signal_handler_killstatus();

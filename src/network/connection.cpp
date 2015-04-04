@@ -31,18 +31,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iomanip>
 #include <errno.h>
 #include "connection.h"
-#include "main.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
+#include "network/networkpacket.h"
 #include "util/serialize.h"
 #include "util/numeric.h"
 #include "util/string.h"
 #include "settings.h"
 #include "profiler.h"
-
-std::ostream *dout_con_ptr = &dummyout;
-std::ostream *derr_con_ptr = &verbosestream;
 
 namespace con
 {
@@ -629,7 +626,7 @@ void Channel::setNextSplitSeqNum(u16 seqnum)
 	next_outgoing_split_seqnum = seqnum;
 }
 
-u16 Channel::getOutgoingSequenceNumber(bool& successfull)
+u16 Channel::getOutgoingSequenceNumber(bool& successful)
 {
 	JMutexAutoLock internal(m_internal_mutex);
 	u16 retval = next_outgoing_seqnum;
@@ -649,7 +646,7 @@ u16 Channel::getOutgoingSequenceNumber(bool& successfull)
 			// know about difference of two unsigned may be negative in general
 			// but we already made sure it won't happen in this case
 			if (((u16)(next_outgoing_seqnum - lowest_unacked_seqnumber)) > window_size) {
-				successfull = false;
+				successful = false;
 				return 0;
 			}
 		}
@@ -659,7 +656,7 @@ u16 Channel::getOutgoingSequenceNumber(bool& successfull)
 			// but we already made sure it won't happen in this case
 			if ((next_outgoing_seqnum + (u16)(SEQNUM_MAX - lowest_unacked_seqnumber)) >
 				window_size) {
-				successfull = false;
+				successful = false;
 				return 0;
 			}
 		}
@@ -1213,15 +1210,18 @@ void UDPPeer::RunCommandQueues(
 				(commands_processed < maxcommands)) {
 			try {
 				ConnectionCommand c = channels[i].queued_commands.front();
-				channels[i].queued_commands.pop_front();
-				LOG(dout_con<<m_connection->getDesc()
-						<<" processing queued reliable command "<<std::endl);
-				if (!processReliableSendCommand(c,max_packet_size)) {
-					LOG(dout_con<<m_connection->getDesc()
+
+				LOG(dout_con << m_connection->getDesc()
+						<< " processing queued reliable command " << std::endl);
+
+				// Packet is processed, remove it from queue
+				if (processReliableSendCommand(c,max_packet_size)) {
+					channels[i].queued_commands.pop_front();
+				} else {
+					LOG(dout_con << m_connection->getDesc()
 							<< " Failed to queue packets for peer_id: " << c.peer_id
 							<< ", delaying sending of " << c.data.getSize()
 							<< " bytes" << std::endl);
-					channels[i].queued_commands.push_front(c);
 				}
 			}
 			catch (ItemNotFoundException &e) {
@@ -2911,37 +2911,47 @@ void Connection::Disconnect()
 	putCommand(c);
 }
 
-u32 Connection::Receive(u16 &peer_id, SharedBuffer<u8> &data, int timeout)
+u32 Connection::Receive(NetworkPacket* pkt, int timeout)
 {
 	for(;;) {
 		ConnectionEvent e = waitEvent(timeout ? timeout : m_bc_receive_timeout);
 		if (e.type != CONNEVENT_NONE)
-			LOG(dout_con<<getDesc()<<": Receive: got event: "
-					<<e.describe()<<std::endl);
+			LOG(dout_con << getDesc() << ": Receive: got event: "
+					<< e.describe() << std::endl);
 		switch(e.type) {
 		case CONNEVENT_NONE:
 			throw NoIncomingDataException("No incoming data");
 		case CONNEVENT_DATA_RECEIVED:
-			peer_id = e.peer_id;
-			data = SharedBuffer<u8>(e.data);
+			// Data size is lesser than command size, ignoring packet
+			if (e.data.getSize() < 2) {
+				continue;
+			}
+
+			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
 			return e.data.getSize();
 		case CONNEVENT_PEER_ADDED: {
 			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
 				m_bc_peerhandler->peerAdded(e.peer_id);
-			continue; }
+			continue;
+		}
 		case CONNEVENT_PEER_REMOVED: {
 			//UDPPeer tmp(e.peer_id, e.address, this);
 			if (m_bc_peerhandler)
 				m_bc_peerhandler->deletingPeer(e.peer_id, e.timeout);
-			continue; }
+			continue;
+		}
 		case CONNEVENT_BIND_FAILED:
 			throw ConnectionBindFailed("Failed to bind socket "
 					"(port already in use?)");
 		}
 	}
+	return 0;
+/*
 	throw NoIncomingDataException("No incoming data");
+*/
 }
+
 
 void Connection::Send(u16 peer_id, u8 channelnum,
 		NetworkPacket* pkt, bool reliable)

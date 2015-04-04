@@ -98,6 +98,9 @@ class PlayerSAO;
 struct HudElement;
 class Environment;
 
+// IMPORTANT:
+// Do *not* perform an assignment or copy operation on a Player or
+// RemotePlayer object!  This will copy the lock held for HUD synchronization
 class Player
 : public locker
 {
@@ -123,7 +126,7 @@ public:
 		auto lock = lock_unique();
 		m_speed = speed;
 	}
-	
+
 	void accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery=0);
 	void accelerateVertical(v3f target_speed, f32 max_increase);
 
@@ -257,7 +260,7 @@ public:
 	bool is_climbing;
 	bool swimming_vertical;
 	bool camera_barely_in_ceiling;
-	
+
 	Inventory inventory;
 
 	f32 movement_acceleration_default;
@@ -295,15 +298,15 @@ public:
 	std::atomic_short peer_id;
 
 	std::string inventory_formspec;
-	
+
 	PlayerControl control;
 	PlayerControl getPlayerControl()
 	{
 		return control;
 	}
-	
+
 	u32 keyPressed;
-	
+
 
 	HudElement* getHud(u32 id);
 	u32         addHud(HudElement* hud);
@@ -354,7 +357,7 @@ public:
 	void setPlayerSAO(PlayerSAO *sao)
 	{ m_sao = sao; }
 	void setPosition(const v3f &position);
-	
+
 private:
 	PlayerSAO *m_sao;
 };

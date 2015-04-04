@@ -367,6 +367,7 @@ public:
 	MapBlockP m_block_cache;
 	v3POS m_block_cache_p;
 #endif
+	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
 
 protected:
 	friend class LuaVoxelManip;

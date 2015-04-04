@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "map.h"
 #include "jthread/jmutexautolock.h"
-#include "main.h"
 #include "constants.h"
 #include "voxel.h"
 #include "config.h"
@@ -70,7 +69,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "defaultsettings.h"
 //#include "stat.h"
 
-#include "msgpack.h"
+#include <iomanip>
+#include "msgpack_fix.h"
 #include <chrono>
 #include "util/thread_pool.h"
 #include "key_value_storage.h"
@@ -241,6 +241,7 @@ Server::Server(
 	m_liquid_transform_interval = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
+	m_autoexit = 0;
 	maintenance_status = 0;
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
@@ -1265,13 +1266,13 @@ u16 Server::Receive()
 	DSTACK(__FUNCTION_NAME);
 	SharedBuffer<u8> data;
 	u16 peer_id;
-	u32 datasize;
 	u16 received = 0;
 	try {
-		datasize = m_con.Receive(peer_id,data,10);
-		if (!datasize)
-			return 0;
-		ProcessData(*data, datasize, peer_id);
+		NetworkPacket pkt;
+		auto size = m_con.Receive(&pkt, 10);
+		peer_id = pkt.getPeerId();
+		if (size)
+			ProcessData(&pkt);
 		++received;
 	}
 	catch(con::InvalidIncomingDataException &e) {
@@ -1387,13 +1388,14 @@ inline void Server::handleCommand(NetworkPacket* pkt)
 	(this->*opHandle.handler)(pkt);
 }
 
-void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
+void Server::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
 	//JMutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
+	u32 peer_id = pkt->getPeerId();
 
 	try {
 		Address address = getPeerAddress(peer_id);
@@ -1417,18 +1419,13 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		 * respond for some time, your server was overloaded or
 		 * things like that.
 		 */
-		infostream << "Server::ProcessData(): Cancelling: peer "
+		infostream << "Server::ProcessData(): Canceling: peer "
 				<< peer_id << " not found" << std::endl;
 		return;
 	}
 
 	try {
-		if(datasize < 2)
-			return;
-
-		NetworkPacket pkt(data, datasize, peer_id);
-
-		ToServerCommand command = (ToServerCommand) pkt.getCommand();
+		ToServerCommand command = (ToServerCommand) pkt->getCommand();
 
 		// Command must be handled into ToServerCommandHandler
 		if (command >= TOSERVER_NUM_MSG_TYPES) {
@@ -1437,7 +1434,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 		}
 
 		if (toServerCommandTable[command].state == TOSERVER_STATE_NOT_CONNECTED) {
-			handleCommand(&pkt);
+			handleCommand(pkt);
 			return;
 		}
 
@@ -1452,7 +1449,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 
 		/* Handle commands related to client startup */
 		if (toServerCommandTable[command].state == TOSERVER_STATE_STARTUP) {
-			handleCommand(&pkt);
+			handleCommand(pkt);
 			return;
 		}
 
@@ -1465,7 +1462,7 @@ void Server::ProcessData(u8 *data, u32 datasize, u16 peer_id)
 			return;
 		}
 
-		handleCommand(&pkt);
+		handleCommand(pkt);
 	}
 	catch(SendFailedException &e) {
 		errorstream << "Server::ProcessData(): SendFailedException: "
@@ -1679,6 +1676,7 @@ void Server::handlePeerChanges()
 #if MINETEST_PROTO
 void Server::Send(NetworkPacket* pkt)
 {
+	g_profiler->add("Server: Packets sended", 1);
 	m_clients.send(pkt->getPeerId(),
 		clientCommandFactoryTable[pkt->getCommand()].channel,
 		pkt,
@@ -2791,7 +2789,7 @@ void Server::RespawnPlayer(u16 peer_id)
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if(!repositioned){
-		v3f pos = findSpawnPos(m_env->getServerMap());
+		v3f pos = findSpawnPos();
 		// setPos will send the new position to client
 		playersao->setPos(pos);
 	}
@@ -3462,23 +3460,24 @@ std::string Server::getBuiltinLuaPath()
 	return porting::path_share + DIR_DELIM + "builtin";
 }
 
-v3f findSpawnPos(ServerMap &map)
+v3f Server::findSpawnPos()
 {
-	//return v3f(50,50,50)*BS;
+	ServerMap &map = m_env->getServerMap();
+	v3f nodeposf;
+	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf)) {
+		return nodeposf * BS;
+	}
 
-	v3s16 nodepos;
+	// Default position is static_spawnpoint
+	// We will return it if we don't found a good place
+	v3s16 nodepos(nodeposf.X, nodeposf.Y, nodeposf.Z);
 
-#if 0
-	nodepos = v2s16(0,0);
-	groundheight = 20;
-#endif
-
-#if 1
 	s16 water_level = map.getWaterLevel();
 
+	bool is_good = false;
+
 	// Try to find a good place a few times
-	for(s32 i=0; i<1000; i++)
-	{
+	for(s32 i = 0; i < 1000 && !is_good; i++) {
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(
@@ -3493,7 +3492,7 @@ v3f findSpawnPos(ServerMap &map)
 			continue;
 
 		nodepos = v3s16(nodepos2d.X, groundheight, nodepos2d.Y);
-		bool is_good = false;
+
 		s32 air_count = 0;
 		for (s32 i = 0; i < 10; i++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
@@ -3508,13 +3507,7 @@ v3f findSpawnPos(ServerMap &map)
 			}
 			nodepos.Y++;
 		}
-		if(is_good){
-			// Found a good place
-			//infostream<<"Searched through "<<i<<" places."<<std::endl;
-			break;
-		}
 	}
-#endif
 
 	return intToFloat(nodepos, BS);
 }
@@ -3563,7 +3556,7 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 		// Set player position
 		infostream<<"Server: Finding spawn place for player \""
 				<<name<<"\""<<std::endl;
-		v3f pos = findSpawnPos(m_env->getServerMap());
+		v3f pos = findSpawnPos();
 		player->setPosition(pos);
 
 		// Add player to environment
@@ -3596,6 +3589,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 	IntervalLimiter m_profiler_interval;
 
 	int errors = 0;
+	double run_time = 0;
 	float steplen = g_settings->getFloat("dedicated_server_step");
 	for(;;)
 	{
@@ -3623,6 +3617,13 @@ void dedicated_server_loop(Server &server, bool &kill)
 		{
 			infostream<<"Dedicated server quitting"<<std::endl;
 			break;
+		}
+
+		run_time += steplen; // wrong not real time
+		if (server.m_autoexit && run_time > server.m_autoexit) {
+			actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
+			g_profiler->print(actionstream);
+			server.requestShutdown();
 		}
 
 		/*

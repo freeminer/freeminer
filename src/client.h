@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util/thread_pool.h"
 #include "util/unordered_map_hash.h"
-#include "msgpack.h"
+#include "msgpack_fix.h"
 
 #include "network/networkpacket.h"
 
@@ -378,7 +378,7 @@ public:
 	void handleCommand_LocalPlayerAnimations(NetworkPacket* pkt);
 	void handleCommand_EyeOffset(NetworkPacket* pkt);
 
-	void ProcessData(u8 *data, u32 datasize, u16 sender_peer_id);
+	void ProcessData(NetworkPacket *pkt);
 
 	// Returns true if something was received
 	bool AsyncProcessPacket();

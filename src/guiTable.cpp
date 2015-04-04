@@ -36,9 +36,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "util/numeric.h"
 #include "util/string.h" // for parseColorString()
-#include "main.h"
 #include "settings.h" // for settings
 #include "porting.h" // for dpi
+#include "guiscalingfilter.h"
 
 /*
 	GUITable

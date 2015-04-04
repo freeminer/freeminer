@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
-#include "main.h" // for g_settings
 #include "filesys.h"
 #include "settings.h"
 #include "mesh.h"
@@ -37,6 +36,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gamedef.h"
 #include "strfnd.h"
 #include "util/string.h" // for parseColorString()
+#include "imagefilters.h"
+#include "guiscalingfilter.h"
 
 #ifdef __ANDROID__
 #include <GLES/gl.h>
@@ -166,47 +167,6 @@ void clearTextureNameCache()
 	g_texturename_to_path_cache.clear();
 }
 
-/* Upscale textures to user's requested minimum size.  This is a trick to make
- * filters look as good on low-res textures as on high-res ones, by making
- * low-res textures BECOME high-res ones.  This is helpful for worlds that
- * mix high- and low-res textures, or for mods with least-common-denominator
- * textures that don't have the resources to offer high-res alternatives.
- */
-video::IImage *textureMinSizeUpscale(video::IVideoDriver *driver, video::IImage *orig) {
-	if(orig == NULL)
-		return orig;
-	s32 scaleto = g_settings->getS32("texture_min_size");
-	if (scaleto > 1) {
-		const core::dimension2d<u32> dim = orig->getDimension();
-
-		// Don't upscale 1px images.  They don't benefit from it anyway
-		// (wouldn't have been blurred) and MIGHT be sun/moon tonemaps.
-		if ((dim.Width <= 1) || (dim.Height <= 1))
-			return orig;
-
-		/* Calculate scaling needed to make the shortest texture dimension
-		 * equal to the target minimum.  If e.g. this is a vertical frames
-		 * animation, the short dimension will be the real size.
-		 */
-		u32 xscale = scaleto / dim.Width;
-		u32 yscale = scaleto / dim.Height;
-		u32 scale = (xscale > yscale) ? xscale : yscale;
-
-		// Never downscale; only scale up by 2x or more.
-		if (scale > 1) {
-			u32 w = scale * dim.Width;
-			u32 h = scale * dim.Height;
-			const core::dimension2d<u32> newdim = core::dimension2d<u32>(w, h);
-			video::IImage *newimg = driver->createImage(
-					orig->getColorFormat(), newdim);
-			orig->copyToScaling(newimg);
-			return newimg;
-		}
-	}
-
-	return orig;
-}
-
 /*
 	SourceImageCache: A cache used for storing source images.
 */
@@ -248,58 +208,9 @@ public:
 			}
 		}
 
-		/* Apply the "clean transparent" filter to textures, removing borders on transparent textures.
-		 * PNG optimizers discard RGB values of fully-transparent pixels, but filters may expose the
-		 * replacement colors at borders by blending to them; this filter compensates for that by
-		 * filling in those RGB values from nearby pixels.
-		 */
-		if (g_settings->getBool("texture_clean_transparent")) {
-			const core::dimension2d<u32> dim = toadd->getDimension();
-
-			// Walk each pixel looking for ones that will show as transparent.
-			for (u32 ctrx = 0; ctrx < dim.Width; ctrx++)
-			for (u32 ctry = 0; ctry < dim.Height; ctry++) {
-				irr::video::SColor c = toadd->getPixel(ctrx, ctry);
-				if (c.getAlpha() > 127)
-					continue;
-
-				// Sample size and total weighted r, g, b values.
-				u32 ss = 0, sr = 0, sg = 0, sb = 0;
-
-				// Walk each neighbor pixel (clipped to image bounds).
-				for (u32 sx = (ctrx < 1) ? 0 : (ctrx - 1);
-						sx <= (ctrx + 1) && sx < dim.Width; sx++)
-				for (u32 sy = (ctry < 1) ? 0 : (ctry - 1);
-						sy <= (ctry + 1) && sy < dim.Height; sy++) {
-
-					// Ignore the center pixel (its RGB is already
-					// presumed meaningless).
-					if ((sx == ctrx) && (sy == ctry))
-						continue;
-
-					// Ignore other nearby pixels that would be
-					// transparent upon display.
-					irr::video::SColor d = toadd->getPixel(sx, sy);
-					if(d.getAlpha() < 128)
-						continue;
-
-					// Add one weighted sample.
-					ss++;
-					sr += d.getRed();
-					sg += d.getGreen();
-					sb += d.getBlue();
-				}
-
-				// If we found any neighbor RGB data, set pixel to average
-				// weighted by alpha.
-				if (ss > 0) {
-					c.setRed(sr / ss);
-					c.setGreen(sg / ss);
-					c.setBlue(sb / ss);
-					toadd->setPixel(ctrx, ctry, c);
-				}
-			}
-		}
+		// Apply the "clean transparent" filter, if configured.
+		if (g_settings->getBool("texture_clean_transparent"))
+			imageCleanTransparent(toadd, 127);
 
 		if (need_to_grab)
 			toadd->grab();
@@ -410,6 +321,13 @@ public:
 	video::ITexture* getTexture(const std::string &name, u32 *id);
 
 	TextureInfo* getTextureInfo(u32 id);
+	/*
+		Get a texture specifically intended for mesh
+		application, i.e. not HUD, compositing, or other 2D
+		use.  This texture may be a different size and may
+		have had additional filters applied.
+	*/
+	video::ITexture* getTextureForMesh(const std::string &name, u32 *id);
 
 	// Returns a pointer to the irrlicht device
 	virtual IrrlichtDevice* getDevice()
@@ -679,8 +597,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 	video::IVideoDriver *driver = m_device->getVideoDriver();
 	sanity_check(driver);
 
-	video::IImage *origimg = generateImage(name);
-	video::IImage *img = textureMinSizeUpscale(driver, origimg);
+	video::IImage *img = generateImage(name);
 
 	video::ITexture *tex = NULL;
 
@@ -690,8 +607,8 @@ u32 TextureSource::generateTexture(const std::string &name)
 #endif
 		// Create texture from resulting image
 		tex = driver->addTexture(name.c_str(), img);
-		if((origimg != NULL) && (img != origimg))
-			origimg->drop();
+		guiScalingCache(io::path(name.c_str()), driver, img);
+		//img->drop();
 	}
 
 	/*
@@ -754,6 +671,11 @@ TextureInfo * TextureSource::getTextureInfo(u32 id)
 	return &m_textureinfo_cache[id];
 }
 
+video::ITexture* TextureSource::getTextureForMesh(const std::string &name, u32 *id)
+{
+	return getTexture(name + "^[autoupscaleformesh", id);
+}
+
 void TextureSource::processQueue()
 {
 	/*
@@ -794,8 +716,7 @@ void TextureSource::rebuildImagesAndTextures()
 	// Recreate textures
 	for (u32 i=0; i<m_textureinfo_cache.size(); i++){
 		TextureInfo *ti = &m_textureinfo_cache[i];
-		video::IImage *origimg = generateImage(ti->name);
-		video::IImage *img = textureMinSizeUpscale(driver, origimg);
+		video::IImage *img = generateImage(ti->name);
 #ifdef __ANDROID__
 		img = Align2Npot2(img, driver);
 		sanity_check(img->getDimension().Height == npot2(img->getDimension().Height));
@@ -805,9 +726,8 @@ void TextureSource::rebuildImagesAndTextures()
 		video::ITexture *t = NULL;
 		if (img) {
 			t = driver->addTexture(ti->name.c_str(), img);
+			guiScalingCache(io::path(ti->name.c_str()), driver, img);
 			img->drop();
-			if(origimg && (origimg != img))
-				origimg->drop();
 		}
 		video::ITexture *t_old = ti->texture;
 		// Replace texture
@@ -928,6 +848,8 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 
 		rawImage->copyToScaling(inventory_image);
 		rawImage->drop();
+
+		guiScalingCache(io::path(params.rtt_texture_name.c_str()), driver, inventory_image);
 
 		video::ITexture *rtt = driver->addTexture(params.rtt_texture_name.c_str(), inventory_image);
 		inventory_image->drop();
@@ -1743,6 +1665,38 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			// Overlay the colored image
 			blit_with_interpolate_overlay(img, baseimg, v2s32(0,0), v2s32(0,0), dim, ratio);
 			img->drop();
+		}
+		else if (part_of_name.substr(0,19) == "[autoupscaleformesh") {
+			/* Upscale textures to user's requested minimum size.  This is a trick to make
+			 * filters look as good on low-res textures as on high-res ones, by making
+			 * low-res textures BECOME high-res ones.  This is helpful for worlds that
+			 * mix high- and low-res textures, or for mods with least-common-denominator
+			 * textures that don't have the resources to offer high-res alternatives.
+			 */
+			s32 scaleto = g_settings->getS32("texture_min_size");
+			if (scaleto > 1) {
+				const core::dimension2d<u32> dim = baseimg->getDimension();
+
+				/* Calculate scaling needed to make the shortest texture dimension
+				 * equal to the target minimum.  If e.g. this is a vertical frames
+				 * animation, the short dimension will be the real size.
+				 */
+				u32 xscale = scaleto / dim.Width;
+				u32 yscale = scaleto / dim.Height;
+				u32 scale = (xscale > yscale) ? xscale : yscale;
+
+				// Never downscale; only scale up by 2x or more.
+				if (scale > 1) {
+					u32 w = scale * dim.Width;
+					u32 h = scale * dim.Height;
+					const core::dimension2d<u32> newdim = core::dimension2d<u32>(w, h);
+					video::IImage *newimg = driver->createImage(
+							baseimg->getColorFormat(), newdim);
+					baseimg->copyToScaling(newimg);
+					baseimg->drop();
+					baseimg = newimg;
+				}
+			}
 		}
 		else
 		{

@@ -31,10 +31,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutex.h"
 #include "jthread/jmutexautolock.h"
 #include "util/timetaker.h"
-#include "util/numeric.h" // paging()
-#include "debug.h" // assert()
+#include "util/numeric.h"      // paging()
+#include "debug.h"             // assert()
 
 #define MAX_PROFILER_TEXT_ROWS 20
+
+// Global profiler
+class Profiler;
+extern Profiler *g_profiler;
 
 /*
 	Time profiler

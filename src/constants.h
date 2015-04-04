@@ -99,6 +99,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Maximal breath of a player
 #define PLAYER_MAX_BREATH 11
 
+// For screenshots a serial number is appended to the filename + datetimestamp
+// if filename + datetimestamp is not unique.
+// This is the maximum number of attempts to try and add a serial to the end of
+// the file attempting to ensure a unique filename
+#define SCREENSHOT_MAX_SERIAL_TRIES 1000
+
 /*
     GUI related things
 */

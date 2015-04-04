@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "light.h"
 #include "mapblock.h"
 #include "map.h"
-#include "main.h" // for g_profiler
 #include "profiler.h"
 #include "nodedef.h"
 #include "gamedef.h"
@@ -110,6 +109,9 @@ bool MeshMakeData::fill_data()
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
 
+	map.copy_27_blocks_to_vm(block, m_vmanip);
+
+#if 0
 	v3POS blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 
 	/*
@@ -150,6 +152,9 @@ bool MeshMakeData::fill_data()
 				b->copyTo(m_vmanip);
 		}
 	}
+
+#endif
+
 #endif
 	return filled;
 }
@@ -1207,7 +1212,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 			os<<":"<<(u32)p.tile.animation_frame_count<<":";
 			m_crack_materials.insert(std::make_pair(i, os.str()));
 			// Replace tile texture with the cracked one
-			p.tile.texture = tsrc->getTexture(
+			p.tile.texture = tsrc->getTextureForMesh(
 					os.str()+"0",
 					&p.tile.texture_id);
 		}
@@ -1284,9 +1289,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 				p.tile.applyMaterialOptionsWithShaders(material);
 				if (p.tile.normal_texture) {
 					material.setTexture(1, p.tile.normal_texture);
-					material.setTexture(2, tsrc->getTexture("enable_img.png"));
+					material.setTexture(2, tsrc->getTextureForMesh("enable_img.png"));
 				} else {
-					material.setTexture(2, tsrc->getTexture("disable_img.png"));
+					material.setTexture(2, tsrc->getTextureForMesh("disable_img.png"));
 				}
 			} else {
 				p.tile.applyMaterialOptions(material);
@@ -1315,12 +1320,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	v3f t = v3f(0,0,0);
 	if (step>1) {
+		translateMesh(m_mesh, v3f(HBS, 0, HBS));
 		scaleMesh(m_mesh, v3f(step,step,step));
-		// TODO: remove this wrong numbers, find formula   good test: fly above ocean
-		if (step == 2)	t = v3f(BS/2,		 BS/2,		BS/2);
-		if (step == 4)	t = v3f(BS*1.666,	-BS/3.0,	BS*1.666);
-		if (step == 8)	t = v3f(BS*2.666,	-BS*2.4,	BS*2.666);
-		if (step == 16)	t = v3f(BS*6.4,		-BS*6.4,	BS*6.4);
+		t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
 	}
 	translateMesh(m_mesh, intToFloat(data->m_blockpos * MAP_BLOCKSIZE - camera_offset, BS) + t);
 
@@ -1393,7 +1395,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 			os<<basename<<crack;
 			u32 new_texture_id = 0;
 			video::ITexture *new_texture =
-				tsrc->getTexture(os.str(), &new_texture_id);
+				tsrc->getTextureForMesh(os.str(), &new_texture_id);
 			buf->getMaterial().setTexture(0, new_texture);
 
 			// If the current material is also animated,
@@ -1436,9 +1438,9 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		if (m_enable_shaders) {
 			if (animation_frame.normal_texture) {
 				buf->getMaterial().setTexture(1, animation_frame.normal_texture);
-				buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
+				buf->getMaterial().setTexture(2, tsrc->getTextureForMesh("enable_img.png"));
 			} else {
-				buf->getMaterial().setTexture(2, tsrc->getTexture("disable_img.png"));
+				buf->getMaterial().setTexture(2, tsrc->getTextureForMesh("disable_img.png"));
 			}
 		}
 	}

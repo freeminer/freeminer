@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "emerge.h"
 #include "serverobject.h"              // TODO this is used for cleanup of only
-#include "main.h"                      // for g_settings
 
 #include "util/numeric.h"
 #include "util/mathconstants.h"

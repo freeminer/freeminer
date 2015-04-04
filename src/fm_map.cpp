@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "mg_biome.h"
 #include "gamedef.h"
+#include "util/directiontables.h"
+
 
 #if HAVE_THREAD_LOCAL
 thread_local MapBlockP m_block_cache = nullptr;
@@ -114,6 +116,8 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 
 bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
+
+	auto lock = m_blocks.lock_unique_rec();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2) {
@@ -293,3 +297,28 @@ int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
 INodeDefManager* Map::getNodeDefManager() {
 	return m_gamedef->ndef();
 }
+
+void Map::copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip) {
+
+	v3POS blockpos = block->getPos();
+	v3POS blockpos_nodes = blockpos*MAP_BLOCKSIZE;
+
+	// Allocate this block + neighbors
+	vmanip.clear();
+	VoxelArea voxel_area(blockpos_nodes - v3POS(1,1,1) * MAP_BLOCKSIZE,
+			blockpos_nodes + v3POS(1,1,1) * MAP_BLOCKSIZE*2-v3POS(1,1,1));
+	vmanip.addArea(voxel_area);
+
+	block->copyTo(vmanip);
+
+	auto * map = block->getParent();
+
+	for(u16 i=0; i<26; i++) {
+		v3POS bp = blockpos + g_26dirs[i];
+		MapBlock *b = map->getBlockNoCreateNoEx(bp);
+		if(b)
+			b->copyTo(vmanip);
+	}
+
+}
+

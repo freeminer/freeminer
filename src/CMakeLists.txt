@@ -92,6 +92,7 @@ endif()
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 0)
 if(MINETEST_PROTO)
 	set(MINETEST_PROTO 1)
+	message(STATUS "Using minetest compatible networking (slow, some features missing)")
 else()
 	set(MINETEST_PROTO 0)
 endif()
@@ -215,7 +216,7 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
-find_package(MsgPack)
+find_package(MsgPack REQUIRED)
 
 option(ENABLE_CURL "Enable cURL support for fetching media" TRUE)
 set(USE_CURL FALSE)
@@ -262,7 +263,7 @@ option(ENABLE_SOUND "Enable sound" FALSE)
 endif()
 set(USE_SOUND FALSE)
 
-if(BUILD_CLIENT AND ENABLE_SOUND)
+if(ENABLE_SOUND AND BUILD_CLIENT)
 	# Sound libraries
 	find_package(OpenAL)
 	find_package(Vorbis)
@@ -278,8 +279,7 @@ if(BUILD_CLIENT AND ENABLE_SOUND)
 		set(USE_SOUND TRUE)
 		message(STATUS "Sound enabled.")
 	else()
-		message(FATAL_ERROR "Sound enabled, but cannot be used.\n"
-			"To continue, either fill in the required paths or disable sound. (-DENABLE_SOUND=0)")
+		message(WARNING "Sound enabled, but cannot be used.\n")
 	endif()
 endif()
 
@@ -360,7 +360,7 @@ if(ENABLE_LEVELDB)
 		message(STATUS "LevelDB backend enabled.")
 		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
 	else()
-		message(STATUS "LevelDB not found!")
+		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
 	endif()
 endif(ENABLE_LEVELDB)
 
@@ -371,7 +371,7 @@ endif()
 
 set(USE_SQLITE3 0)
 
-OPTION(ENABLE_SQLITE3 "Enable sqlite backend" ON)
+OPTION(ENABLE_SQLITE3 "Enable sqlite backend" TRUE)
 
 if(ENABLE_SQLITE3)
 	find_package(SQLite3)
@@ -413,7 +413,7 @@ find_package(Json REQUIRED)
 set(USE_MANDELBULBER 1)
 #find_package(Mandelbulber)
 
-option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " OFF)
+option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " FALSE)
 if(ENABLE_IPV4_DEFAULT)
 	set(USE_IPV4_DEFAULT 1)
 else()
@@ -598,6 +598,7 @@ set(common_SRCS
 	pathfinder.cpp
 	player.cpp
 	porting.cpp
+	profiler.cpp
 	quicktune.cpp
 	rollback.cpp
 	rollback_interface.cpp
@@ -682,9 +683,11 @@ set(client_SRCS
 	guiFormSpecMenu.cpp
 	guiKeyChangeMenu.cpp
 	guiPasswordChange.cpp
+	guiscalingfilter.cpp
 	guiTable.cpp
 	guiVolumeChange.cpp
 	hud.cpp
+	imagefilters.cpp
 	keycode.cpp
 	localplayer.cpp
 	main.cpp
@@ -717,7 +720,7 @@ include_directories(
 	${SOUND_INCLUDE_DIRS}
 	${LUA_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
-	${MSGPACK_INCLUDE_DIRS}
+	${MSGPACK_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
 	${PROJECT_SOURCE_DIR}/enet/include
 )
@@ -753,7 +756,7 @@ if(BUILD_CLIENT)
 		${SOUND_LIBRARIES}
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
-		${MSGPACK_LIBRARIES}
+		${MSGPACK_LIBRARY}
 		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
@@ -794,7 +797,7 @@ if(BUILD_CLIENT)
 		)
 	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME_LOWER} ${LEVELDB_LIBRARY})
+		target_link_libraries(${PROJECT_NAME_LOWER} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
 	if (USE_SQLITE3 AND NOT FORCE_SQLITE3)
 		target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARY})
@@ -819,7 +822,7 @@ if(BUILD_SERVER)
 		${GETTEXT_LIBRARY}
 		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
-		${MSGPACK_LIBRARIES}
+		${MSGPACK_LIBRARY}
 		enet
 		${PLATFORM_LIBS}
 	)
@@ -827,7 +830,7 @@ if(BUILD_SERVER)
 			COMPILE_DEFINITIONS "SERVER")
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME_LOWER}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
-	endif(USE_LEVELDB)
+	endif()
 	if (USE_SQLITE3)
 		target_link_libraries(${PROJECT_NAME_LOWER}server ${SQLITE3_LIBRARY})
 	endif()
@@ -903,8 +906,7 @@ if(BUILD_CLIENT)
 	if(USE_GETTEXT)
 		foreach(LOCALE ${GETTEXT_AVAILABLE_LOCALES})
 			set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-			#set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
-			set(MO_BUILD_PATH "${MO_BUILD_PATH}/minetest.mo")
+			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
 			install(FILES ${MO_BUILD_PATH} DESTINATION ${MO_DEST_PATH})
 		endforeach()
 	endif()
@@ -935,8 +937,7 @@ if (USE_GETTEXT)
 		#set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME_LOWER}.po")
 		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/minetest.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-		#set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
-		set(MO_FILE_PATH "${MO_BUILD_PATH}/minetest.mo")
+		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
 
 		add_custom_command(OUTPUT ${MO_BUILD_PATH}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${MO_BUILD_PATH}

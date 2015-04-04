@@ -17,7 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "main.h"
 #include "settings.h"
 #include "wieldmesh.h"
 #include "inventory.h"
@@ -279,7 +278,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 
 	// Customize material
 	video::SMaterial &material = m_meshnode->getMaterial(0);
-	material.setTexture(0, texture);
+	material.setTexture(0, tsrc->getTextureForMesh(imagename));
 	material.MaterialType = m_material_type;
 	material.setFlag(video::EMF_BACK_FACE_CULLING, true);
 	// Enable bi/trilinear filtering only for high resolution textures

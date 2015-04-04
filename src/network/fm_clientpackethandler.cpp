@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "settings.h"
 #include "emerge.h"
+#include "profiler.h"
 
 
 // TODO! split to packethandlers
@@ -44,20 +45,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	sender_peer_id given to this shall be quaranteed to be a valid peer
 */
-void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
+void Client::ProcessData(NetworkPacket *pkt) {
 	DSTACK(__FUNCTION_NAME);
 
-	// Ignore packets that don't even fit a command
-	if (datasize < 2) {
-		m_packetcounter.add(60000);
-		return;
-	}
+	ScopeProfiler sp(g_profiler, "Client::ProcessData");
+
+	auto datasize = pkt->getSize();
+	auto sender_peer_id = pkt->getPeerId();
 
 	int command;
 	MsgpackPacket packet;
 	msgpack::unpacked msg;
 
-	if (!con::parse_msgpack_packet(data, datasize, &packet, &command, &msg)) {
+	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
 		// invalid packet
 		return;
 	}
@@ -599,8 +599,8 @@ void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id) {
 	}
 	else if(command == TOCLIENT_HUDADD)
 	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
+		//std::string datastring((char *)&data[2], datasize - 2);
+		//std::istringstream is(datastring, std::ios_base::binary);
 
 		u32 id, number, item, dir;
 		u8 type;
