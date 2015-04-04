@@ -19,9 +19,9 @@ RDEPEND="dev-db/sqlite:3
 	=dev-libs/msgpack-0.5.9
 	net-libs/enet
 	curl? ( net-misc/curl )
+	>=dev-games/irrlicht-1.8-r2
 	!dedicated? (
 		app-arch/bzip2
-		>=dev-games/irrlicht-1.8-r2
 		media-libs/libpng:0
 		virtual/jpeg
 		virtual/opengl
