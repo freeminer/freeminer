@@ -12,7 +12,7 @@ SRC_URI="https://github.com/freeminer/freeminer/tarball/${PV} -> ${P}.tar.gz"
 LICENSE="LGPL-2.1+ CC-BY-SA-3.0"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="+curl dedicated leveldb luajit nls redis +server +sound +truetype"
+IUSE="+curl dedicated luajit nls redis +server +sound +truetype"
 
 RDEPEND="dev-db/sqlite:3
 	sys-libs/zlib
@@ -20,6 +20,7 @@ RDEPEND="dev-db/sqlite:3
 	net-libs/enet
 	curl? ( net-misc/curl )
 	>=dev-games/irrlicht-1.8-r2
+	dev-libs/leveldb
 	!dedicated? (
 		app-arch/bzip2
 		media-libs/libpng:0
@@ -34,7 +35,6 @@ RDEPEND="dev-db/sqlite:3
 		)
 		truetype? ( media-libs/freetype:2 )
 	)
-	leveldb? ( dev-libs/leveldb )
 	luajit? ( dev-lang/luajit:2 )
 	nls? ( virtual/libintl )
 	redis? ( dev-libs/hiredis )"

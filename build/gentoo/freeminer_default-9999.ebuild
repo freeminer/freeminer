@@ -21,7 +21,7 @@ src_unpack() {
 }
 
 src_install() {
-	insinto "${GAMES_DATADIR}"/freeminer/games/${PN}
+	insinto "${GAMES_DATADIR}"/freeminer/games/default
 	doins -r mods menu
 #	doins game.conf freeminer.conf
 	doins game.conf minetest.conf
