@@ -7,7 +7,7 @@ inherit games git-2
 
 DESCRIPTION="The main game for the Minetest game engine"
 HOMEPAGE="http://freeminer.org/"
-EGIT_REPO_URI=="git://github.com/freeminer/default.git"
+EGIT_REPO_URI="git://github.com/freeminer/default.git"
 
 LICENSE="GPL-2 CC-BY-SA-3.0"
 SLOT="0"
