@@ -21,7 +21,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <mutex>
 #include <atomic>
 #include <thread>
-#include <chrono>
+//#include <chrono>
+#include <memory>
 
 #include "config.h"
 
