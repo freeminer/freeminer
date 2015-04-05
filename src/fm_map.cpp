@@ -18,7 +18,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "mapblock.h"
 #include "log_types.h"
-#include "util/lock.h"
 #include "profiler.h"
 
 #include "nodedef.h"

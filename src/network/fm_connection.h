@@ -40,7 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../msgpack_fix.h"
 #include "util/msgpack_serialize.h"
 #include "util/thread_pool.h"
-#include "util/lock.h"
+#include "util/concurrent_map.h"
+#include "util/concurrent_unordered_map.h"
 
 #define CHANNEL_COUNT 3
 

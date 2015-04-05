@@ -43,7 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "network/connection.h"
 #include "fmbitset.h"
-#include "util/lock.h"
+#include "util/concurrent_unordered_map.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>

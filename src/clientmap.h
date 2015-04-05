@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 #include <vector>
 #include <map>
-#include "util/lock.h"
 
 struct MapDrawControl
 {

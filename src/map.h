@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "util/unordered_map_hash.h"
+#include "util/concurrent_unordered_map.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
