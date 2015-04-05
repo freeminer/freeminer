@@ -402,6 +402,9 @@ Server::Server(
 	// Perform pending node name resolutions
 	m_nodedef->runNodeResolverCallbacks();
 
+	// init the recipe hashes to speed up crafting
+	m_craftdef->initHashes(this);
+
 	// Initialize Environment
 	m_env = new ServerEnvironment(servermap, m_script, this, m_path_world);
 	m_env->m_more_threads = m_more_threads;
@@ -2131,7 +2134,7 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 
 u32 Server::SendActiveObjectRemoveAdd(u16 peer_id, const std::string &datas)
 {
-	NetworkPacket pkt(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 0, peer_id);
+	NetworkPacket pkt(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, datas.size(), peer_id);
 	pkt.putRawString(datas.c_str(), datas.size());
 	Send(&pkt);
 	return pkt.getSize();
@@ -2140,7 +2143,7 @@ u32 Server::SendActiveObjectRemoveAdd(u16 peer_id, const std::string &datas)
 void Server::SendActiveObjectMessages(u16 peer_id, const std::string &datas, bool reliable)
 {
 	NetworkPacket pkt(TOCLIENT_ACTIVE_OBJECT_MESSAGES,
-			0, peer_id);
+			datas.size(), peer_id);
 
 	pkt.putRawString(datas.c_str(), datas.size());
 
