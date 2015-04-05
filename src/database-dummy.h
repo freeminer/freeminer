@@ -38,7 +38,7 @@ public:
 	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst);
 
 private:
-	shared_map<std::string, std::string> m_database;
+	concurrent_map<std::string, std::string> m_database;
 };
 
 #endif

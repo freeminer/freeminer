@@ -321,7 +321,7 @@ int LuaVoxelManip::l_update_map(lua_State *L)
 	Map *map = &(env->getMap());
 
 	// TODO: Optimize this by using Mapgen::calcLighting() instead
-	shared_map<v3POS, MapBlock *> lighting_mblocks;
+	concurrent_map<v3POS, MapBlock *> lighting_mblocks;
 	std::map<v3s16, MapBlock *> *mblocks = &o->modified_blocks;
 
 	lighting_mblocks.insert(mblocks->begin(), mblocks->end());

@@ -1556,7 +1556,7 @@ ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)
 }
 
 bool isFreeServerActiveObjectId(u16 id,
-		maybe_shared_map<u16, ServerActiveObject*> &objects)
+		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
 {
 	if(id == 0)
 		return false;
@@ -1565,7 +1565,7 @@ bool isFreeServerActiveObjectId(u16 id,
 }
 
 u16 getFreeServerActiveObjectId(
-		maybe_shared_map<u16, ServerActiveObject*> &objects)
+		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
 {
 	//try to reuse id's as late as possible
 	static u16 last_used_id = 0;
@@ -1640,7 +1640,7 @@ bool ServerEnvironment::addActiveObjectAsStatic(ServerActiveObject *obj)
 */
 void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		s16 player_radius,
-		maybe_shared_unordered_map<u16, bool> &current_objects_shared,
+		maybe_concurrent_unordered_map<u16, bool> &current_objects_shared,
 		std::set<u16> &added_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1699,7 +1699,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 */
 void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		s16 player_radius,
-		maybe_shared_unordered_map<u16, bool> &current_objects,
+		maybe_concurrent_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &removed_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);

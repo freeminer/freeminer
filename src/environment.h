@@ -203,7 +203,7 @@ public:
 		m_list.clear();
 	}
 
-	maybe_shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
+	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
 	std::set<v3s16> m_forceloaded_list;
 
 private:
@@ -308,7 +308,7 @@ public:
 	*/
 	void getAddedActiveObjects(v3s16 pos, s16 radius,
 			s16 player_radius,
-			maybe_shared_unordered_map<u16, bool> &current_objects,
+			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::set<u16> &added_objects);
 
 	/*
@@ -317,7 +317,7 @@ public:
 	*/
 	void getRemovedActiveObjects(v3s16 pos, s16 radius,
 			s16 player_radius,
-			maybe_shared_unordered_map<u16, bool> &current_objects,
+			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::set<u16> &removed_objects);
 
 	/*
@@ -442,7 +442,7 @@ private:
 	// World path
 	const std::string m_path_world;
 	// Active object list
-	maybe_shared_map<u16, ServerActiveObject*> m_active_objects;
+	maybe_concurrent_map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;

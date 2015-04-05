@@ -13,7 +13,7 @@
 #endif
 
 template<class guard, class mutex>
-lock_rec<guard, mutex>::lock_rec(mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock):
+recursive_lock<guard, mutex>::recursive_lock(mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock):
 	thread_id(thread_id_) {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	if(thread_me != thread_id) {
@@ -45,12 +45,12 @@ lock_rec<guard, mutex>::lock_rec(mutex & mtx, std::atomic<std::size_t> & thread_
 }
 
 template<class guard, class mutex>
-lock_rec<guard, mutex>::~lock_rec() {
+recursive_lock<guard, mutex>::~recursive_lock() {
 	unlock();
 }
 
 template<class guard, class mutex>
-bool lock_rec<guard, mutex>::owns_lock() {
+bool recursive_lock<guard, mutex>::owns_lock() {
 	if (lock)
 		return lock;
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
@@ -58,7 +58,7 @@ bool lock_rec<guard, mutex>::owns_lock() {
 }
 
 template<class guard, class mutex>
-void lock_rec<guard, mutex>::unlock() {
+void recursive_lock<guard, mutex>::unlock() {
 	if(lock) {
 		thread_id = 0;
 		lock->unlock();
@@ -97,33 +97,33 @@ std::unique_ptr<shared_lock> locker<mutex, unique_lock, shared_lock>::try_lock_s
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<lock_rec<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_unique_rec() {
+std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_unique_rec() {
 	SCOPE_PROFILE("locker::lock_unique_rec");
 	return std::unique_ptr<lock_rec_unique>(new lock_rec_unique (mtx, thread_id));
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<lock_rec<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_unique_rec() {
+std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_unique_rec() {
 	SCOPE_PROFILE("locker::try_lock_unique_rec");
 	return std::unique_ptr<lock_rec_unique>(new lock_rec_unique (mtx, thread_id, true));
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<lock_rec<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_shared_rec() {
+std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_shared_rec() {
 	SCOPE_PROFILE("locker::lock_shared_rec");
 	return std::unique_ptr<lock_rec_shared>(new lock_rec_shared (mtx, thread_id));
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<lock_rec<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_shared_rec() {
+std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_shared_rec() {
 	SCOPE_PROFILE("locker::try_lock_shared_rec");
 	return std::unique_ptr<lock_rec_shared>(new lock_rec_shared (mtx, thread_id, true));
 }
 
 
-template class lock_rec<unique_lock>;
+template class recursive_lock<unique_lock>;
 #if LOCK_TWO
-template class lock_rec<try_shared_lock>;
+template class recursive_lock<try_shared_lock>;
 #endif
 
 template class locker<>;

@@ -179,7 +179,7 @@ void Schematic::placeStructure(Map *map, v3s16 p, u32 flags, Rotation rot,
 
 	blitToVManip(p, vm, rot, force_placement, ndef);
 
-	shared_map<v3POS, MapBlock *> lighting_modified_blocks;
+	concurrent_map<v3POS, MapBlock *> lighting_modified_blocks;
 	std::map<v3s16, MapBlock *> modified_blocks;
 	vm->blitBackAll(&modified_blocks);
 

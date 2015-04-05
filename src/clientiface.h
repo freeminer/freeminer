@@ -296,7 +296,7 @@ public:
 		List of active objects that the client knows of.
 		Value is dummy.
 	*/
-	maybe_shared_unordered_map<u16, bool> m_known_objects;
+	maybe_concurrent_unordered_map<u16, bool> m_known_objects;
 
 	ClientState getState()
 		{ return m_state; }
@@ -353,7 +353,7 @@ private:
 		Key is position, value is dummy.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-	shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
 public:
 	std::atomic_int m_nearest_unsent_d;
@@ -483,7 +483,7 @@ private:
 	// Connection
 	con::Connection* m_con;
 	// Connected clients (behind the con mutex)
-	shared_map<u16, std::shared_ptr<RemoteClient>> m_clients;
+	concurrent_map<u16, std::shared_ptr<RemoteClient>> m_clients;
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment

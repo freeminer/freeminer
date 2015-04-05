@@ -136,7 +136,7 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0,
 	vmanip.blitBackAll(&modified_blocks);
 
 	// update lighting
-	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
+	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
 	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
 	map->updateLighting(lighting_modified_blocks, modified_blocks);
 	// Send a MEET_OTHER event
