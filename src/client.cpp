@@ -1740,7 +1740,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 	struct tm *tm = localtime(&t);
 
 	char timetstamp_c[64];
-	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y-%m-%dT%H-%M-%S", tm);
+	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
 
 	std::string filename_base = g_settings->get("screenshot_path")
 			+ DIR_DELIM
@@ -1753,7 +1753,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 	unsigned serial = 0;
 
 	while (serial < SCREENSHOT_MAX_SERIAL_TRIES) {
-		filename = filename_base + (serial > 0 ? ("-" + itos(serial)) : "") + filename_ext;
+		filename = filename_base + (serial > 0 ? ("_" + itos(serial)) : "") + filename_ext;
 		std::ifstream tmp(filename.c_str());
 		if (!tmp.good())
 			break;	// File did not apparently exist, we'll go with it
