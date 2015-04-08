@@ -49,6 +49,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include "circuit.h"
 #include "key_value_storage.h"
+#include <unordered_set>
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -350,7 +351,7 @@ public:
 	bool swapNode(v3s16 p, const MapNode &n);
 
 	// Find all active objects inside a radius around a point
-	std::set<u16> getObjectsInsideRadius(v3f pos, float radius);
+	std::unordered_set<u16> getObjectsInsideRadius(v3f pos, float radius);
 
 	// Clear all objects, loading and going through every MapBlock
 	void clearAllObjects();

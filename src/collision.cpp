@@ -308,8 +308,8 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			ServerEnvironment *s_env = dynamic_cast<ServerEnvironment*>(env);
 			if (s_env != 0) {
 				f32 distance = speed_f.getLength();
-				std::set<u16> s_objects = s_env->getObjectsInsideRadius(pos_f,distance * 1.5);
-				for (std::set<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); iter++) {
+				auto s_objects = s_env->getObjectsInsideRadius(pos_f,distance * 1.5);
+				for (auto iter = s_objects.begin(); iter != s_objects.end(); iter++) {
 					ServerActiveObject *current = s_env->getActiveObject(*iter);
 					if ((self == 0) || (self != current)) {
 						objects.push_back((ActiveObject*)current);
