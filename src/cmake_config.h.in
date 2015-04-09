@@ -33,6 +33,7 @@
 #cmakedefine01 MINETEST_PROTO
 #cmakedefine01 STATIC_BUILD
 #cmakedefine01 USE_ICONV
+#cmakedefine01 LOCK_PROFILE
 
 #endif
 

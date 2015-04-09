@@ -443,18 +443,18 @@ void Map::spreadLight(enum LightBank bank,
 		getNodeBlockPosWithOffset(pos, blockpos, relpos);
 
 		// Only fetch a new block if the block position has changed
-		try {
 			if(block == NULL || blockpos != blockpos_last){
-				block = getBlockNoCreate(blockpos);
+#if !ENABLE_THREADS
+				auto lock = m_nothread_locker.lock_shared_rec();
+#endif
+				block = getBlockNoCreateNoEx(blockpos);
+				if (!block)
+					continue;
 				blockpos_last = blockpos;
 
 				block_checked_in_modified = false;
 				blockchangecount++;
 			}
-		}
-		catch(InvalidPositionException &e) {
-			continue;
-		}
 
 		if(block->isDummy())
 			continue;
@@ -1495,6 +1495,13 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return m_blocks_update_last;
+
+#if !ENABLE_THREADS
+	auto lock_map = m_nothread_locker.try_lock_unique_rec();
+	if (!lock_map->owns_lock())
+		return m_blocks_update_last;
+#endif
+
 	for(auto ir : m_blocks) {
 		if (n++ < m_blocks_update_last) {
 			continue;
@@ -2586,6 +2593,11 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	DSTACKF("%s: p=(%d,%d,%d), create_blank=%d",
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
+
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	{
 		MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 		if(block && block->isDummy() == false)
