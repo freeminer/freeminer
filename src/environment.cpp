@@ -699,7 +699,7 @@ void ServerEnvironment::loadMeta()
 				continue;
 
 			if (!m_aabms[c]) {
-				if (block->content_only)
+				if (block->content_only != CONTENT_IGNORE)
 					return;
 				continue;
 			}

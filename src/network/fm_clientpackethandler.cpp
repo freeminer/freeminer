@@ -207,7 +207,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		if (!block->content_only || block->content_only != CONTENT_AIR) {
+		if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
 			updateMeshTimestampWithEdge(p);
 			if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
 				addUpdateMeshTaskWithEdge(p);
