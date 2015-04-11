@@ -488,6 +488,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	else
 		prefix = "CM: transparent: ";
 
+	//ScopeProfiler sp(g_profiler, "CM::renderMap() " + prefix, SPT_AVG);
+
 	/*
 		Get time for measuring timeout.
 
@@ -514,22 +516,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
 
-	v3s16 box_nodes_d = m_control.wanted_range * v3s16(1,1,1);
-
-	v3s16 p_nodes_min = cam_pos_nodes - box_nodes_d;
-	v3s16 p_nodes_max = cam_pos_nodes + box_nodes_d;
-
-	// Take a fair amount as we will be dropping more out later
-	// Umm... these additions are a bit strange but they are needed.
-	v3s16 p_blocks_min(
-			p_nodes_min.X / MAP_BLOCKSIZE - 3,
-			p_nodes_min.Y / MAP_BLOCKSIZE - 3,
-			p_nodes_min.Z / MAP_BLOCKSIZE - 3);
-	v3s16 p_blocks_max(
-			p_nodes_max.X / MAP_BLOCKSIZE + 1,
-			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
-			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
-
 	u32 vertex_count = 0;
 	u32 meshbuffer_count = 0;
 
@@ -555,6 +541,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	std::vector<MapBlock::mesh_type> used_meshes; //keep shared_ptr
 	auto drawlist = m_drawlist.load();
 	auto lock = drawlist->lock_shared_rec();
+	used_meshes.reserve(drawlist->size());
+	//g_profiler->add("CM::renderMap()cnt"+ prefix, drawlist->size());
 	for(auto & ir : *drawlist) {
 		auto block = ir.second;
 
@@ -563,7 +551,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		auto mapBlockMesh = block->getMesh(mesh_step);
 		if (!mapBlockMesh)
 			continue;
-		used_meshes.emplace_back(mapBlockMesh);
 
 		float d = 0.0;
 		if(isBlockInSight(block->getPos(), camera_position,
@@ -572,6 +559,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		{
 			continue;
 		}
+
+		used_meshes.emplace_back(mapBlockMesh);
 
 		// Mesh animation
 		{

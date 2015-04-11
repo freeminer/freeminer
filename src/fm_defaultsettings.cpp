@@ -221,7 +221,7 @@ void set_default_settings(Settings *settings) {
 	//
 
 	// Filters
-	settings->setDefault("anisotropic_filter", "false");
+	settings->setDefault("anisotropic_filter", "true");
 	settings->setDefault("bilinear_filter", "false");
 	settings->setDefault("trilinear_filter", "false");
 
@@ -247,7 +247,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("display_gamma", "1.8");
 	settings->setDefault("disable_wieldlight", "false");
 	settings->setDefault("enable_node_highlighting", "false");
-	settings->setDefault("mip_map", "false");
+	settings->setDefault("mip_map", "true");
 	settings->setDefault("ambient_occlusion_gamma", "2.2");
 
 	// Clouds, water, glass, leaves, fog
@@ -540,7 +540,6 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("new_style_leaves", "false");
-	settings->setDefault("mip_map", "true");
 	settings->setDefault("autojump", "1");
 
 #else
