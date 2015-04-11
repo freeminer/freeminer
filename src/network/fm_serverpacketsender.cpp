@@ -395,7 +395,8 @@ void Server::SendPlayerHP(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	assert(playersao);
+	if (!playersao)
+		return;
 	SendHP(peer_id, playersao->getHP());
 	m_script->player_event(playersao,"health_changed");
 
@@ -409,7 +410,8 @@ void Server::SendPlayerBreath(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	assert(playersao);
+	if (!playersao)
+		return;
 	m_script->player_event(playersao, "breath_changed");
 	SendBreath(peer_id, playersao->getBreath());
 }
@@ -418,7 +420,8 @@ void Server::SendMovePlayer(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 	Player *player = m_env->getPlayer(peer_id);
-	assert(player);
+	if (!player)
+		return;
 
 	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
 	PACK(TOCLIENT_MOVE_PLAYER_POS, player->getPosition());
@@ -453,7 +456,9 @@ void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)
 void Server::SendPlayerPrivileges(u16 peer_id)
 {
 	Player *player = m_env->getPlayer(peer_id);
-	assert(player);
+	if (!player)
+		return;
+
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
@@ -470,7 +475,9 @@ void Server::SendPlayerPrivileges(u16 peer_id)
 void Server::SendPlayerInventoryFormspec(u16 peer_id)
 {
 	Player *player = m_env->getPlayer(peer_id);
-	assert(player);
+	if (!player)
+		return;
+
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
