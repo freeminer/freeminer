@@ -151,8 +151,8 @@ public:
 	virtual float getMudAmount(int index);
 	bool getHaveBeach(v2s16 p);
 	bool getHaveBeach(int index);
-	BiomeV6Type getBiome(v2s16 p);
-	BiomeV6Type getBiome(int index, v2s16 p);
+	BiomeV6Type getBiome(v3POS p);
+	BiomeV6Type getBiome(int index, v3POS p);
 
 	u32 get_blockseed(u64 seed, v3s16 p);
 

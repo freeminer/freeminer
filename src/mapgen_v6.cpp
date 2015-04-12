@@ -342,7 +342,7 @@ bool MapgenV6::getHaveBeach(v2s16 p)
 }
 
 
-BiomeV6Type MapgenV6::getBiome(v2s16 p)
+BiomeV6Type MapgenV6::getBiome(v3POS p)
 {
 	int index = (p.Y - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
 			+ (p.X - full_node_min.X);
@@ -421,15 +421,22 @@ bool MapgenV6::getHaveBeach(int index)
 }
 
 
-BiomeV6Type MapgenV6::getBiome(int index, v2s16 p)
+BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 {
 	// Just do something very simple as for now
 	/*double d = noise2d_perlin(
 			0.6+(float)p2d.X/250, 0.2+(float)p2d.Y/250,
 			seed+9130, 3, 0.50);*/
 
-	float d = noise_biome->result[index];
-	float h = noise_humidity->result[index];
+	float d, h;
+
+	if (m_emerge->env->m_use_weather) {
+		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->params.np_biome_heat.offset) / m_emerge->params.np_biome_heat.scale;
+		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
+	} else {
+		d = noise_biome->result[index];
+		h = noise_humidity->result[index];
+	}
 
 	if (spflags & MGV6_SNOWBIOMES) {
 		float blend = (spflags & MGV6_BIOMEBLEND) ? noise2d(p.X, p.Y, seed) / 40 : 0;
@@ -558,7 +565,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 		dp.np_density = nparams_dungeon_density;
 		dp.np_wetness = nparams_dungeon_wetness;
 		dp.c_water = c_water_source;
-		if (getBiome(0, v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
+		if (getBiome(0, node_min) == BT_DESERT) {
 			dp.c_cobble  = c_sandbrick;
 			dp.c_moss    = c_sandbrick; // should make this 'cracked sandstone' later
 			dp.c_stair   = c_stair_sandstone;
@@ -650,7 +657,7 @@ int MapgenV6::generateGround()
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeV6Type bt = getBiome(v2s16(x, z));
+		BiomeV6Type bt = getBiome(v3POS(x, node_min.Y, z));
 		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
@@ -701,7 +708,7 @@ void MapgenV6::addMud()
 		if (surface_y == vm->m_area.MinEdge.Y - 1)
 			continue;
 
-		BiomeV6Type bt = getBiome(v2s16(x, z));
+		BiomeV6Type bt = getBiome(v3POS(x, surface_y, z));
 		addnode = (bt == BT_DESERT) ? n_desert_sand : n_dirt;
 
 		if (bt == BT_DESERT && surface_y + mud_add_amount <= water_level + 1) {
@@ -915,7 +922,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 		);
 
 		// Get biome at center position of part of division
-		BiomeV6Type bt = getBiome(p2d_center);
+		BiomeV6Type bt = getBiome(v3POS(p2d_center.X, node_min.Y, p2d_center.Y));
 
 		// Amount of trees
 		u32 tree_count;
@@ -1030,7 +1037,7 @@ void MapgenV6::growGrass() // Add surface nodes
 			surface_y = (y >= full_node_min.Y) ? y : full_node_min.Y;
 		}
 
-		BiomeV6Type bt = getBiome(index, v2s16(x, z));
+		BiomeV6Type bt = getBiome(index, v3POS(x, surface_y, z));
 		u32 i = vm->m_area.index(x, surface_y, z);
 		content_t c = vm->m_data[i].getContent();
 		if (m_emerge->env->m_use_weather && c == c_dirt) {
@@ -1071,7 +1078,7 @@ void MapgenV6::generateCaves(int max_stone_y)
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
 
-	if (getBiome(v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
+	if (getBiome(node_min) == BT_DESERT) {
 		caves_count   /= 3;
 		bruises_count /= 3;
 	}

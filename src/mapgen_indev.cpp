@@ -223,7 +223,7 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
 	
-	if (getBiome(v2POS(node_min.X, node_min.Z)) == BT_DESERT) {
+	if (getBiome(node_min) == BT_DESERT) {
 		caves_count   /= 3;
 		bruises_count /= 3;
 	}
@@ -378,7 +378,7 @@ int MapgenIndev::generateGround() {
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		auto bt = getBiome(index, v2POS(x, z));
+		auto bt = getBiome(index, v3POS(x, surface_y, z));
 		
 		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 

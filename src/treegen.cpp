@@ -782,14 +782,14 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, int seed)
 	p1.Y -= 1;
 
 	s16 size = pr.range(2, 4);
-	VoxelArea leaves_a(v3s16(-size, -pr.range(5, 8), -size), v3s16(size, pr.range(2, 4), size));
+	VoxelArea leaves_a(v3s16(-4, -4*2, -4), v3s16(4, 4, 4));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
 		leaves_d[i] = 0;
 
 	// Upper branches
-	s16 dev = 3;
+	s16 dev = size;
 	for (s16 yy = -1; yy <= 1; yy++) {
 		for (s16 zz = -dev; zz <= dev; zz++) {
 			u32 i = leaves_a.index(v3s16(-dev, yy, zz));
@@ -835,7 +835,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, int seed)
 		}
 	}
 
-	dev = 2;
+	dev = size-1;
 	for (s16 yy = my + 1; yy <= my + 2; yy++) {
 		for (s16 zz = -dev; zz <= dev; zz++) {
 			u32 i = leaves_a.index(v3s16(-dev, yy, zz));
