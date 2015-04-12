@@ -28,11 +28,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define AVERAGE_MUD_AMOUNT 4
 #define DESERT_STONE_BASE -32
+#define ICE_BASE 0
+#define FREQ_HOT 0.4
+#define FREQ_SNOW -0.4
+#define FREQ_TAIGA 0.5
+#define FREQ_JUNGLE 0.7
 
-/////////////////// Mapgen V6 flags
+//////////// Mapgen V6 flags
 #define MGV6_JUNGLES    0x01
 #define MGV6_BIOMEBLEND 0x02
 #define MGV6_MUDFLOW    0x04
+#define MGV6_SNOWBIOMES 0x08
 
 
 extern FlagDesc flagdesc_mapgen_v6[];
@@ -41,8 +47,12 @@ extern FlagDesc flagdesc_mapgen_v6[];
 enum BiomeV6Type
 {
 	BT_NORMAL,
-	BT_DESERT
+	BT_DESERT,
+	BT_JUNGLE,
+	BT_TUNDRA,
+	BT_TAIGA,
 };
+
 
 struct MapgenV6Params : public MapgenSpecificParams {
 	u32 spflags;
@@ -67,6 +77,7 @@ struct MapgenV6Params : public MapgenSpecificParams {
 	void writeParams(Settings *settings) const;
 };
 
+
 class MapgenV6 : public Mapgen {
 public:
 	EmergeManager *m_emerge;
@@ -88,6 +99,7 @@ public:
 	Noise *noise_mud;
 	Noise *noise_beach;
 	Noise *noise_biome;
+	Noise *noise_humidity;
 	NoiseParams *np_cave;
 	NoiseParams *np_humidity;
 	NoiseParams *np_trees;
@@ -106,6 +118,9 @@ public:
 	content_t c_cobble;
 	content_t c_desert_sand;
 	content_t c_desert_stone;
+	content_t c_snow;
+	content_t c_snowblock;
+
 	content_t c_ice;
 
 	content_t c_mossycobble;
@@ -150,6 +165,7 @@ public:
 	virtual void generateCaves(int max_stone_y);
 };
 
+
 struct MapgenFactoryV6 : public MapgenFactory {
 	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge)
 	{
@@ -161,5 +177,6 @@ struct MapgenFactoryV6 : public MapgenFactory {
 		return new MapgenV6Params();
 	};
 };
+
 
 #endif
