@@ -350,12 +350,16 @@ BiomeV6Type MapgenV6::getBiome(v3POS p)
 }
 
 
-float MapgenV6::getHumidity(v2s16 p)
+float MapgenV6::getHumidity(v3POS p)
 {
 	/*double noise = noise2d_perlin(
 		0.5+(float)p.X/500, 0.5+(float)p.Y/500,
 		seed+72384, 4, 0.66);
 	noise = (noise + 1.0)/2.0;*/
+
+	if (m_emerge->env->m_use_weather) {
+		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
+	}
 
 	int index = (p.Y - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
 			+ (p.X - full_node_min.X);
@@ -925,9 +929,10 @@ void MapgenV6::placeTreesAndJungleGrass()
 		BiomeV6Type bt = getBiome(v3POS(p2d_center.X, node_min.Y, p2d_center.Y));
 
 		// Amount of trees
-		u32 tree_count;
+		float humidity = getHumidity(v3POS(p2d_center.X, node_max.Y, p2d_center.Y));
+		s32 tree_count;
 		if (bt == BT_JUNGLE || bt == BT_TAIGA || bt == BT_NORMAL) {
-			tree_count = area * getTreeAmount(p2d_center);
+			tree_count = area * getTreeAmount(p2d_center) * ((humidity + 1)/2.0);
 			if (bt == BT_JUNGLE)
 				tree_count *= 4;
 		} else {
@@ -939,7 +944,6 @@ void MapgenV6::placeTreesAndJungleGrass()
 
 		// Add jungle grass
 		if (bt == BT_JUNGLE) {
-			float humidity = getHumidity(p2d_center);
 			u32 grass_count = 5 * humidity * tree_count;
 			for (u32 i = 0; i < grass_count; i++) {
 				s16 x = grassrandom.range(p2d_min.X, p2d_max.X);
@@ -961,7 +965,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 		}
 
 		// Put trees in random places on part of division
-		for (u32 i = 0; i < tree_count; i++) {
+		for (s32 i = 0; i < tree_count; i++) {
 			s16 x = myrand_range(p2d_min.X, p2d_max.X);
 			s16 z = myrand_range(p2d_min.Y, p2d_max.Y);
 			int mapindex = central_area_size.X * (z - node_min.Z)

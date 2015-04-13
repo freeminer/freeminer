@@ -144,7 +144,7 @@ public:
 	bool block_is_underground(u64 seed, v3s16 blockpos);
 	s16 find_ground_level_from_noise(u64 seed, v2s16 p2d, s16 precision);
 
-	float getHumidity(v2s16 p);
+	float getHumidity(v3POS p);
 	float getTreeAmount(v2s16 p);
 	bool getHaveAppleTree(v2s16 p);
 	float getMudAmount(v2s16 p);
