@@ -212,7 +212,7 @@ int MapgenV5::getGroundLevelAtPoint(v2s16 p)
 		f = 0.01;
 	else if (f >= 1.0)
 		f *= 1.6;
-	float h = water_level + NoisePerlin2D(&noise_height->np, p.X, p.Y, seed);
+	float h = NoisePerlin2D(&noise_height->np, p.X, p.Y, seed);
 
 	s16 search_top = water_level + 15;
 	s16 search_base = water_level;
@@ -472,7 +472,7 @@ bool MapgenV5::generateBiomes(float *heat_map, float *humidity_map)
 			if (c == c_stone && have_air) {
 				content_t c_below = vm->m_data[i - em.X].getContent();
 
-				if (c_below != CONTENT_AIR) {
+				if (c_below != CONTENT_AIR && c_below != c_water_source) {
 					if (nplaced < y0_top) {
 						vm->m_data[i] = MapNode(biome->c_top);
 						nplaced++;
