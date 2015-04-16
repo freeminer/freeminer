@@ -542,6 +542,8 @@ void Server::ProcessData(NetworkPacket *pkt)
 		player->setYaw(modulo360f(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()));
 		u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
 		player->keyPressed = keyPressed;
+		{
+		std::lock_guard<std::mutex> lock(player->control_mutex);
 		player->control.up = (bool)(keyPressed&1);
 		player->control.down = (bool)(keyPressed&2);
 		player->control.left = (bool)(keyPressed&4);
@@ -551,7 +553,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		player->control.sneak = (bool)(keyPressed&64);
 		player->control.LMB = (bool)(keyPressed&128);
 		player->control.RMB = (bool)(keyPressed&256);
-
+		}
 		auto old_pos = playersao->m_last_good_position;
 		if(playersao->checkMovementCheat()){
 			// Call callbacks

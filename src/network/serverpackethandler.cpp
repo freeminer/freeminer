@@ -864,6 +864,10 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 	player->setPitch(pitch);
 	player->setYaw(yaw);
 	player->keyPressed = keyPressed;
+
+	{
+	std::lock_guard<std::mutex> lock(player->control_mutex);
+
 	player->control.up = (keyPressed & 1);
 	player->control.down = (keyPressed & 2);
 	player->control.left = (keyPressed & 4);
@@ -873,6 +877,7 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
 	player->control.sneak = (keyPressed & 64);
 	player->control.LMB = (keyPressed & 128);
 	player->control.RMB = (keyPressed & 256);
+	}
 
 	auto old_pos = playersao->m_last_good_position;
 	if (playersao->checkMovementCheat()) {
