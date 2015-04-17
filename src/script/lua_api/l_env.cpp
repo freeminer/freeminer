@@ -316,7 +316,7 @@ int ModApiEnvMod::l_set_node_level(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 pos = read_v3s16(L, 1);
-	u8 level = 1;
+	s16 level = 1;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
 	MapNode n = env->getMap().getNodeNoEx(pos);
@@ -337,7 +337,7 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 pos = read_v3s16(L, 1);
-	u8 level = 1;
+	s16 level = 1;
 	bool compress = 0;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
