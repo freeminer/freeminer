@@ -63,6 +63,8 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 
 	//freeminer
 	b->m_nodenames.push_back("mapgen_ice");
+	b->m_nodenames.push_back("mapgen_dirt_with_snow");
+
 
 	m_ndef->pendNodeResolve(b, NODE_RESOLVE_DEFERRED);
 
