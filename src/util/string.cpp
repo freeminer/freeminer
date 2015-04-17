@@ -305,7 +305,8 @@ std::string wide_to_narrow_real(const std::wstring &wcs)
 // their password. (Exception : if the password field is
 // blank, we send a blank password - this is for backwards
 // compatibility with password-less players).
-std::string translatePassword(std::string playername, std::string password)
+std::string translatePassword(const std::string &playername,
+	const std::string &password)
 {
 	if (password.length() == 0)
 		return "";

@@ -18,8 +18,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <fstream>
+#include <typeinfo>
 #include "mg_schematic.h"
+#include "gamedef.h"
 #include "mapgen.h"
+#include "emerge.h"
 #include "map.h"
 #include "mapblock.h"
 #include "log.h"
@@ -34,6 +37,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 SchematicManager::SchematicManager(IGameDef *gamedef) :
 	ObjDefManager(gamedef, OBJDEF_SCHEMATIC)
 {
+	m_gamedef = gamedef;
+}
+
+
+void SchematicManager::clear()
+{
+	EmergeManager *emerge = m_gamedef->getEmergeManager();
+
+	// Remove all dangling references in Decorations
+	DecorationManager *decomgr = emerge->decomgr;
+	for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
+		Decoration *deco = (Decoration *)decomgr->getRaw(i);
+
+		try {
+			DecoSchematic *dschem = dynamic_cast<DecoSchematic *>(deco);
+			if (dschem)
+				dschem->schematic = NULL;
+		} catch (std::bad_cast) {
+		}
+	}
+
+	ObjDefManager::clear();
 }
 
 
@@ -56,22 +81,16 @@ Schematic::~Schematic()
 }
 
 
-void Schematic::resolveNodeNames(NodeResolveInfo *nri)
+void Schematic::resolveNodeNames()
 {
-	m_ndef->getIdsFromResolveInfo(nri, c_nodes);
-}
-
-
-void Schematic::updateContentIds()
-{
-	if (flags & SCHEM_CIDS_UPDATED)
-		return;
-
-	flags |= SCHEM_CIDS_UPDATED;
+	getIdsFromNrBacklog(&c_nodes, true, CONTENT_AIR);
 
 	size_t bufsize = size.X * size.Y * size.Z;
-	for (size_t i = 0; i != bufsize; i++)
-		schemdata[i].setContent(c_nodes[schemdata[i].getContent()]);
+	for (size_t i = 0; i != bufsize; i++) {
+		content_t c_original = schemdata[i].getContent();
+		content_t c_new = c_nodes[c_original];
+		schemdata[i].setContent(c_new);
+	}
 }
 
 
@@ -81,8 +100,6 @@ void Schematic::blitToVManip(v3s16 p, MMVManip *vm, Rotation rot,
 	int xstride = 1;
 	int ystride = size.X;
 	int zstride = size.X * size.Y;
-
-	updateContentIds();
 
 	s16 sx = size.X;
 	s16 sy = size.Y;
@@ -198,8 +215,7 @@ void Schematic::placeStructure(Map *map, v3s16 p, u32 flags, Rotation rot,
 }
 
 
-bool Schematic::deserializeFromMts(std::istream *is,
-	INodeDefManager *ndef, std::vector<std::string> *names)
+bool Schematic::deserializeFromMts(std::istream *is, std::vector<std::string> *names)
 {
 	std::istream &ss = *is;
 	content_t cignore = CONTENT_IGNORE;
@@ -263,7 +279,7 @@ bool Schematic::deserializeFromMts(std::istream *is,
 }
 
 
-bool Schematic::serializeToMts(std::ostream *os, INodeDefManager *ndef)
+bool Schematic::serializeToMts(std::ostream *os)
 {
 	std::ostream &ss = *os;
 
@@ -281,7 +297,7 @@ bool Schematic::serializeToMts(std::ostream *os, INodeDefManager *ndef)
 	u16 numids = usednodes.size();
 	writeU16(ss, numids); // name count
 	for (int i = 0; i != numids; i++)
-		ss << serializeString(ndef->get(usednodes[i]).name); // node names
+		ss << serializeString(getNodeName(usednodes[i])); // node names
 
 	// compressed bulk node data
 	MapNode::serializeBulk(ss, SER_FMT_VER_HIGHEST_WRITE,
@@ -291,8 +307,7 @@ bool Schematic::serializeToMts(std::ostream *os, INodeDefManager *ndef)
 }
 
 
-bool Schematic::serializeToLua(std::ostream *os,
-	INodeDefManager *ndef, bool use_comments)
+bool Schematic::serializeToLua(std::ostream *os, bool use_comments)
 {
 	std::ostream &ss = *os;
 
@@ -335,7 +350,7 @@ bool Schematic::serializeToLua(std::ostream *os,
 
 			for (u16 x = 0; x != size.X; x++, i++) {
 				ss << "\t\t{"
-					<< "name=\"" << ndef->get(schemdata[i]).name
+					<< "name=\"" << getNodeName(schemdata[i].getContent())
 					<< "\", param1=" << (u16)schemdata[i].param1
 					<< ", param2=" << (u16)schemdata[i].param2
 					<< "}," << std::endl;
@@ -351,40 +366,42 @@ bool Schematic::serializeToLua(std::ostream *os,
 }
 
 
-bool Schematic::loadSchematicFromFile(const char *filename,
-	INodeDefManager *ndef, StringMap *replace_names)
+bool Schematic::loadSchematicFromFile(const std::string &filename,
+	INodeDefManager *ndef, StringMap *replace_names,
+	NodeResolveMethod resolve_method)
 {
-	std::ifstream is(filename, std::ios_base::binary);
+	std::ifstream is(filename.c_str(), std::ios_base::binary);
 	if (!is.good()) {
 		errorstream << "Schematic::loadSchematicFile: unable to open file '"
 			<< filename << "'" << std::endl;
 		return false;
 	}
 
-	std::vector<std::string> names;
-	if (!deserializeFromMts(&is, ndef, &names))
+	size_t origsize = m_nodenames.size();
+	if (!deserializeFromMts(&is, &m_nodenames))
 		return false;
 
-	NodeResolveInfo *nri = new NodeResolveInfo(this);
-	for (size_t i = 0; i != names.size(); i++) {
-		if (replace_names) {
-			StringMap::iterator it = replace_names->find(names[i]);
+	if (replace_names) {
+		for (size_t i = origsize; i != m_nodenames.size(); i++) {
+			std::string &name = m_nodenames[i];
+			StringMap::iterator it = replace_names->find(name);
 			if (it != replace_names->end())
-				names[i] = it->second;
+				name = it->second;
 		}
-		nri->nodenames.push_back(names[i]);
 	}
-	nri->nodelistinfo.push_back(NodeListInfo(names.size(), CONTENT_AIR));
-	ndef->pendNodeResolve(nri);
+
+	m_nnlistsizes.push_back(m_nodenames.size() - origsize);
+
+	ndef->pendNodeResolve(this, resolve_method);
 
 	return true;
 }
 
 
-bool Schematic::saveSchematicToFile(const char *filename, INodeDefManager *ndef)
+bool Schematic::saveSchematicToFile(const std::string &filename)
 {
 	std::ostringstream os(std::ios_base::binary);
-	serializeToMts(&os, ndef);
+	serializeToMts(&os);
 	return fs::safeWriteToFile(filename, os.str());
 }
 

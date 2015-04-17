@@ -58,7 +58,8 @@ public:
 	float humidity_point;
 
 	content_t c_top_cold;
-	virtual void resolveNodeNames(NodeResolveInfo *nri);
+
+	virtual void resolveNodeNames();
 };
 
 class BiomeManager : public ObjDefManager {
@@ -66,7 +67,7 @@ public:
 	static const char *OBJECT_TITLE;
 
 	BiomeManager(IGameDef *gamedef);
-	~BiomeManager();
+	virtual ~BiomeManager();
 
 	const char *getObjectTitle() const
 	{
@@ -93,11 +94,14 @@ public:
 	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 
-	void clear();
+	virtual void clear();
 
 	void calcBiomes(s16 sx, s16 sy, float *heat_map, float *humidity_map,
 		s16 *height_map, u8 *biomeid_map);
 	Biome *getBiome(float heat, float humidity, s16 y);
+
+private:
+	IGameDef *m_gamedef;
 };
 
 #endif

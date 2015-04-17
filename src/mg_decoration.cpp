@@ -61,16 +61,6 @@ size_t DecorationManager::placeAllDecos(Mapgen *mg, u32 blockseed,
 }
 
 
-void DecorationManager::clear()
-{
-	for (size_t i = 0; i < m_objects.size(); i++) {
-		Decoration *deco = (Decoration *)m_objects[i];
-		delete deco;
-	}
-	m_objects.clear();
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -88,9 +78,9 @@ Decoration::~Decoration()
 }
 
 
-void Decoration::resolveNodeNames(NodeResolveInfo *nri)
+void Decoration::resolveNodeNames()
 {
-	m_ndef->getIdsFromResolveInfo(nri, c_place_on);
+	getIdsFromNrBacklog(&c_place_on);
 }
 
 
@@ -232,11 +222,11 @@ void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void DecoSimple::resolveNodeNames(NodeResolveInfo *nri)
+void DecoSimple::resolveNodeNames()
 {
-	Decoration::resolveNodeNames(nri);
-	m_ndef->getIdsFromResolveInfo(nri, c_decos);
-	m_ndef->getIdsFromResolveInfo(nri, c_spawnby);
+	Decoration::resolveNodeNames();
+	getIdsFromNrBacklog(&c_decos);
+	getIdsFromNrBacklog(&c_spawnby);
 }
 
 
@@ -328,8 +318,20 @@ DecoSchematic::~DecoSchematic() {
 		delete schematic;
 };
 
+DecoSchematic::DecoSchematic() :
+	Decoration::Decoration()
+{
+	schematic = NULL;
+}
+
+
 size_t DecoSchematic::generate(MMVManip *vm, PseudoRandom *pr, v3s16 p)
 {
+	// Schematic could have been unloaded but not the decoration
+	// In this case generate() does nothing (but doesn't *fail*)
+	if (schematic == NULL)
+		return 0;
+
 	if (flags & DECO_PLACE_CENTER_X)
 		p.X -= (schematic->size.X + 1) / 2;
 	if (flags & DECO_PLACE_CENTER_Y)

@@ -275,7 +275,7 @@ void Server::handleCommand_Auth(NetworkPacket* pkt)
 			return;
 		}
 		std::string raw_default_password =
-			(g_settings->get("default_password"));
+			g_settings->get("default_password");
 		std::string initial_password =
 			translatePassword(playername, raw_default_password);
 
@@ -579,7 +579,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
 			return;
 		}
 		std::string raw_default_password =
-			(g_settings->get("default_password"));
+			g_settings->get("default_password");
 		std::string initial_password =
 			translatePassword(playername, raw_default_password);
 
