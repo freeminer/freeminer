@@ -410,8 +410,8 @@ Biome *read_biome_def(lua_State *L, int index, INodeDefManager *ndef)
 	nn.push_back(getstringfield_default(L, index, "node_dust",      ""));
 
 	//freeminer:
-	nnames.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
-	nnames.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
+	nn.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
+	nn.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
 
 
 	ndef->pendNodeResolve(b, NODE_RESOLVE_DEFERRED);

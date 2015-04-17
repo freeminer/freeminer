@@ -396,7 +396,7 @@ public:
 	void sendInventoryFields(const std::string &formname,
 			const std::map<std::string, std::string> &fields);
 	void sendInventoryAction(InventoryAction *a);
-	void sendChatMessage(const std::wstring &message);
+	void sendChatMessage(const std::string &message);
 	void sendChangePassword(const std::string &oldpassword,
 	                        const std::string &newpassword);
 	void sendDamage(u8 damage);

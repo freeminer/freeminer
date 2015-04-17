@@ -309,13 +309,10 @@ int DecoSimple::getHeight()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-DecoSchematic::DecoSchematic() {
-	schematic = nullptr;
-};
-
 DecoSchematic::~DecoSchematic() {
 	if (schematic)
 		delete schematic;
+	schematic = nullptr;
 };
 
 DecoSchematic::DecoSchematic() :
