@@ -59,6 +59,7 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->m_nodenames.push_back("mapgen_stone");
 	b->m_nodenames.push_back("mapgen_water_source");
 	b->m_nodenames.push_back("mapgen_water_source");
+	b->m_nodenames.push_back("mapgen_river_water_source");
 	b->m_nodenames.push_back("air");
 
 	//freeminer
@@ -201,12 +202,14 @@ void BiomeManager::clear()
 
 void Biome::resolveNodeNames()
 {
-	getIdFromNrBacklog(&c_top,       "mapgen_dirt_with_grass", CONTENT_AIR);
-	getIdFromNrBacklog(&c_filler,    "mapgen_dirt",            CONTENT_AIR);
-	getIdFromNrBacklog(&c_stone,     "mapgen_stone",           CONTENT_AIR);
-	getIdFromNrBacklog(&c_water_top, "mapgen_water_source",    CONTENT_AIR);
-	getIdFromNrBacklog(&c_water,     "mapgen_water_source",    CONTENT_AIR);
-	getIdFromNrBacklog(&c_dust,      "air",                    CONTENT_IGNORE);
+	getIdFromNrBacklog(&c_top,         "mapgen_dirt_with_grass",    CONTENT_AIR);
+	getIdFromNrBacklog(&c_filler,      "mapgen_dirt",               CONTENT_AIR);
+	getIdFromNrBacklog(&c_stone,       "mapgen_stone",              CONTENT_AIR);
+	getIdFromNrBacklog(&c_water_top,   "mapgen_water_source",       CONTENT_AIR);
+	getIdFromNrBacklog(&c_water,       "mapgen_water_source",       CONTENT_AIR);
+	getIdFromNrBacklog(&c_river_water, "mapgen_river_water_source", CONTENT_AIR);
+	getIdFromNrBacklog(&c_dust,        "air",                       CONTENT_IGNORE);
+
 
 	//freeminer:
 	getIdFromNrBacklog(&c_ice,       "mapgen_ice",             c_water);

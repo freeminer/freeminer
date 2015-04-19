@@ -45,8 +45,9 @@ public:
 	content_t c_stone;
 	content_t c_water_top;
 	content_t c_water;
-	content_t c_ice;
+	content_t c_river_water;
 	content_t c_dust;
+
 
 	s16 depth_top;
 	s16 depth_filler;
@@ -57,6 +58,8 @@ public:
 	float heat_point;
 	float humidity_point;
 
+	//freeminer:
+	content_t c_ice;
 	content_t c_top_cold;
 
 	virtual void resolveNodeNames();
@@ -79,6 +82,7 @@ public:
 		return new Biome;
 	}
 
+	//freeminer:
 	u32 year_days;
 	s32 weather_heat_season;
 	s32 weather_heat_width;
