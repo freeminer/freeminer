@@ -29,9 +29,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _WIN32 // WINDOWS
 #define DIR_DELIM "\\"
+#define DIR_DELIM_CHAR '\\'
 #define FILESYS_CASE_INSENSITIVE 1
 #else // POSIX
 #define DIR_DELIM "/"
+#define DIR_DELIM_CHAR '/'
 #define FILESYS_CASE_INSENSITIVE 0
 #endif
 
