@@ -1077,6 +1077,11 @@ bool read_noiseparams(lua_State *L, int index, NoiseParams *np)
 	getintfield(L,   index, "seed",        np->seed);
 	getintfield(L,   index, "octaves",     np->octaves);
 
+	//freeminer:
+	getfloatfield(L, index, "farscale",  np->farscale);
+	getfloatfield(L, index, "farspread",  np->farspread);
+	getfloatfield(L, index, "farpersist",  np->farpersist);
+
 	u32 flags    = 0;
 	u32 flagmask = 0;
 	np->flags = getflagsfield(L, index, "flags", flagdesc_noiseparams,
