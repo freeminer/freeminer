@@ -1475,12 +1475,13 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 100) {
+	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
 		for (auto & ir : *m_blocks_delete)
 			delete ir.first;
 		m_blocks_delete->clear();
+		getBlockCacheFlush();
 	}
 
 	u32 deleted_blocks_count = 0;
