@@ -629,7 +629,7 @@ void initializePaths()
 		getExecPathFromProcfs(buf, sizeof(buf));
 
 	if (success) {
-		pathRemoveFile(buf, '/');
+		pathRemoveFile(buf, DIR_DELIM_CHAR);
 		std::string execpath(buf);
 
 		path_share = execpath + DIR_DELIM "..";
