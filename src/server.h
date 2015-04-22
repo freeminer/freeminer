@@ -377,11 +377,11 @@ public:
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
 
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason=NULL);
+	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason="");
 
 	//fmtodo: remove:
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason);
 	void DenyAccess(u16 peer_id, const std::string &reason);
+
 	void DenyAccess_Legacy(u16 peer_id, const std::wstring &reason);
 
 	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);

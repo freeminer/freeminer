@@ -2816,12 +2816,6 @@ void Server::DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string 
 }
 
 //fmtodo: remove:
-void Server::DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason)
-{
-    DenyAccess(peer_id, reason, wide_to_narrow(custom_reason));
-}
-
-//fmtodo: remove:
 void Server::DenyAccess(u16 peer_id, const std::string &custom_reason)
 {
     DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, custom_reason);
