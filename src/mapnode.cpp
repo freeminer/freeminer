@@ -197,7 +197,8 @@ static std::vector<aabb3f> transformNodeBox(const MapNode &n,
 			aabb3f box = *i;
 
 			if (nodebox.type == NODEBOX_LEVELED) {
-				box.MaxEdge.Y = -BS/2 + BS*((float)1/n.getMaxLevel(nodemgr)) * n.getLevel(nodemgr);
+				const ContentFeatures &f = nodemgr->get(n);
+				box.MaxEdge.Y = -BS/2 + BS*((float)1/n.getMaxLevel(nodemgr)) * std::min(n.getLevel(nodemgr), f.getMaxLevel());
 			}
 
 			switch (axisdir)
