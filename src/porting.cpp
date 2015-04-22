@@ -92,11 +92,11 @@ void sigint_handler(int sig)
 		case SIGINT:
 		case SIGTERM:
 
-	if(g_killed == false)
+	if(!g_killed)
 	{
 		g_killed = true;
 
-		dstream<<"INFO: sigint_handler(): "
+		dstream<<DTIME<<"INFO: sigint_handler(): "
 				<<"Ctrl-C pressed, shutting down."<<std::endl;
 
 		// Comment out for less clutter when testing scripts
@@ -153,7 +153,7 @@ BOOL WINAPI event_handler(DWORD sig)
 
 void signal_handler_init(void)
 {
-	SetConsoleCtrlHandler( (PHANDLER_ROUTINE)event_handler,TRUE);
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)event_handler, TRUE);
 }
 
 #endif
@@ -336,14 +336,14 @@ std::string get_sysinfo()
 
 	oss << "Windows/" << osvi.dwMajorVersion << "."
 		<< osvi.dwMinorVersion;
-	if(osvi.szCSDVersion[0])
+	if (osvi.szCSDVersion[0])
 		oss << "-" << tmp;
 	oss << " ";
 	#ifdef _WIN64
 	oss << "x86_64";
 	#else
 	BOOL is64 = FALSE;
-	if(IsWow64Process(GetCurrentProcess(), &is64) && is64)
+	if (IsWow64Process(GetCurrentProcess(), &is64) && is64)
 		oss << "x86_64"; // 32-bit app on 64-bit OS
 	else
 		oss << "x86";
@@ -508,11 +508,11 @@ bool setSystemPaths()
 	// Use ".\bin\.."
 	path_share = std::string(buf) + "\\..";
 
-	// Use "C:\Documents and Settings\user\Application Data\<PROJECT_NAME>"
+	// Use "C:\Documents and Settings\user\Application Data\<PROJECT_NAME_LOWER>"
 	DWORD len = GetEnvironmentVariable("APPDATA", buf, sizeof(buf));
 	FATAL_ERROR_IF(len == 0 || len > sizeof(buf), "Failed to get APPDATA");
 
-	path_user = std::string(buf) + DIR_DELIM + lowercase(PROJECT_NAME);
+	path_user = std::string(buf) + DIR_DELIM PROJECT_NAME_LOWER;
 	return true;
 }
 
@@ -544,7 +544,7 @@ bool setSystemPaths()
 		trylist.push_back(static_sharedir);
 
 	trylist.push_back(bindir + DIR_DELIM ".." DIR_DELIM "share"
-		DIR_DELIM + lowercase(PROJECT_NAME));
+		DIR_DELIM PROJECT_NAME_LOWER);
 	trylist.push_back(bindir + DIR_DELIM "..");
 
 #ifdef __ANDROID__
@@ -573,7 +573,7 @@ bool setSystemPaths()
 
 #ifndef __ANDROID__
 	path_user = std::string(getenv("HOME")) + DIR_DELIM "."
-		+ lowercase(PROJECT_NAME);
+		PROJECT_NAME_LOWER;
 #endif
 
 	return true;
@@ -596,9 +596,8 @@ bool setSystemPaths()
 	}
 	CFRelease(resources_url);
 
-	path_user = std::string(getenv("HOME"))
-		+ "/Library/Application Support/"
-		+ lowercase(PROJECT_NAME);
+	path_user = std::string(getenv("HOME")) +
+		"/Library/Application Support/" PROJECT_NAME_LOWER;
 	return true;
 }
 
@@ -609,7 +608,7 @@ bool setSystemPaths()
 {
 	path_share = STATIC_SHAREDIR;
 	path_user  = std::string(getenv("HOME")) + DIR_DELIM "."
-		+ lowercase(PROJECT_NAME);
+		PROJECT_NAME_LOWER;
 	return true;
 }
 

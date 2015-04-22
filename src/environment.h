@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <set>
 #include <list>
+#include <queue>
 #include <map>
 #include "irr_v3d.h"
 #include "activeobject.h"
