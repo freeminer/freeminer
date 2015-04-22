@@ -1462,6 +1462,17 @@ void Client::typeChatMessage(const std::string &message)
 	{
 		m_chat_queue.push("issued command: " + message);
 	}
+
+	//freeminer display self message after recieving from server
+#if MINETEST_PROTO
+	else
+	{
+		LocalPlayer *player = m_env.getLocalPlayer();
+		assert(player != NULL);
+		std::string name = (player->getName());
+		m_chat_queue.push(std::string() + "<" + name + "> " + message);
+	}
+#endif
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)

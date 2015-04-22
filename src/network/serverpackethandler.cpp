@@ -1177,14 +1177,14 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
 
 			std::vector<u16> clients = m_clients.getClientIDs();
 
-			SendChatMessage(PEER_ID_INEXISTENT, line);
-/*
+			//SendChatMessage(PEER_ID_INEXISTENT, line); //dupe with mt clients
+
 			for (std::vector<u16>::iterator i = clients.begin();
 				i != clients.end(); ++i) {
 				if (*i != pkt->getPeerId())
 					SendChatMessage(*i, line);
 			}
-*/
+
 		}
 	}
 }
