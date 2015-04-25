@@ -38,7 +38,7 @@ RDEPEND="dev-db/sqlite:3
 	luajit? ( dev-lang/luajit:2 )
 	nls? ( virtual/libintl )
 	redis? ( dev-libs/hiredis )
-	dev-libs/libiconv"
+	virtual/libiconv"
 DEPEND="${RDEPEND}
 	>=dev-games/irrlicht-1.8-r2
 	nls? ( sys-devel/gettext )"
