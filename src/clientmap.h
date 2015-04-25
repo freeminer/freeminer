@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 #include <vector>
 #include <map>
-#include "util/lock.h"
 
 struct MapDrawControl
 {
@@ -155,9 +154,9 @@ private:
 	v3s16 m_camera_offset;
 	JMutex m_camera_mutex;
 
-	std::atomic<shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist;
-	shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_0;
-	shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_1;
+	std::atomic<concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist;
+	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_0;
+	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_1;
 	int m_drawlist_current;
 	std::vector<std::pair<v3POS, int>> draw_nearest;
 public:

@@ -40,7 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../msgpack_fix.h"
 #include "util/msgpack_serialize.h"
 #include "util/thread_pool.h"
-#include "util/lock.h"
+#include "util/concurrent_map.h"
+#include "util/concurrent_unordered_map.h"
 
 #define CHANNEL_COUNT 3
 
@@ -352,8 +353,8 @@ private:
 	ENetPeer *m_peer;
 	u16 m_peer_id;
 
-	shared_map<u16, ENetPeer*> m_peers;
-	shared_unordered_map<u16, Address> m_peers_address;
+	concurrent_map<u16, ENetPeer*> m_peers;
+	concurrent_unordered_map<u16, Address> m_peers_address;
 	//JMutex m_peers_mutex;
 
 	// Backwards compatibility

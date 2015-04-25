@@ -751,7 +751,11 @@ core.register_chatcommand("kick", {
 		if not core.kick_player(tokick, reason) then
 			return false, "Failed to kick player " .. tokick
 		end
-		core.log("action", name .. " kicked " .. tokick)
+		local log_reason = ""
+		if reason then
+			log_reason = " with reason \"" .. reason .. "\""
+		end
+		core.log("action", name .. " kicks " .. tokick .. log_reason)
 		return true, "Kicked " .. tokick
 	end,
 })

@@ -160,7 +160,7 @@ NEXT_LIQUID:
 				continue;
 			}
 
-			auto f = nodemgr->get(nb.content);
+			const auto & f = nodemgr->get(nb.content);
 			switch (f.liquid_type) {
 			case LIQUID_NONE:
 				if (nb.content == CONTENT_AIR) {

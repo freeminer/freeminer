@@ -13,13 +13,14 @@ now used only for android
 // This file is part of the "Irrlicht Engine". The UTF-8 functions are from physfs,
 // under the zlib license, reproduced below.
 
-#include "irrTypes.h"
-#include "irrString.h"
+//#include <irrTypes.h>
+//#include <irrString.h>
+#include "../irrlichttypes.h"
 
-namespace irr
-{
-namespace core
-{
+//namespace irr
+//{
+//namespace core
+//{
 
 /*
    Copyright (c) 2001-2011 Ryan C. Gordon and others.
@@ -386,6 +387,6 @@ void wcharToUtf8(const wchar_t *in, char *out, const u64 len)
 #endif
 }
 
-} // end namespace core
-} // end namespace irr
+//} // end namespace core
+//} // end namespace irr
 

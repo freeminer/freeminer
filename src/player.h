@@ -102,7 +102,7 @@ class Environment;
 // Do *not* perform an assignment or copy operation on a Player or
 // RemotePlayer object!  This will copy the lock held for HUD synchronization
 class Player
-: public locker
+: public locker<>
 {
 public:
 
@@ -300,8 +300,10 @@ public:
 	std::string inventory_formspec;
 
 	PlayerControl control;
+	std::mutex control_mutex;
 	PlayerControl getPlayerControl()
 	{
+		std::lock_guard<std::mutex> lock(control_mutex);
 		return control;
 	}
 

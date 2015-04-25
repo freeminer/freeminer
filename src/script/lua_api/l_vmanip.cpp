@@ -49,8 +49,8 @@ int LuaVoxelManip::l_read_from_map(lua_State *L)
 	LuaVoxelManip *o = checkobject(L, 1);
 	MMVManip *vm = o->vm;
 
-	v3s16 bp1 = getNodeBlockPos(read_v3s16(L, 2));
-	v3s16 bp2 = getNodeBlockPos(read_v3s16(L, 3));
+	v3s16 bp1 = getNodeBlockPos(check_v3s16(L, 2));
+	v3s16 bp2 = getNodeBlockPos(check_v3s16(L, 3));
 	sortBoxVerticies(bp1, bp2);
 
 	vm->initialEmerge(bp1, bp2);
@@ -119,7 +119,7 @@ int LuaVoxelManip::l_get_node_at(lua_State *L)
 	GET_ENV_PTR;
 
 	LuaVoxelManip *o = checkobject(L, 1);
-	v3s16 pos        = read_v3s16(L, 2);
+	v3s16 pos        = check_v3s16(L, 2);
 
 	pushnode(L, o->vm->getNodeNoExNoEmerge(pos), env->getGameDef()->ndef());
 	return 1;
@@ -131,7 +131,7 @@ int LuaVoxelManip::l_set_node_at(lua_State *L)
 	GET_ENV_PTR;
 
 	LuaVoxelManip *o = checkobject(L, 1);
-	v3s16 pos        = read_v3s16(L, 2);
+	v3s16 pos        = check_v3s16(L, 2);
 	MapNode n        = readnode(L, 3, env->getGameDef()->ndef());
 
 	o->vm->setNodeNoEmerge(pos, n);
@@ -174,8 +174,8 @@ int LuaVoxelManip::l_calc_lighting(lua_State *L)
 	v3s16 yblock = v3s16(0, 1, 0) * MAP_BLOCKSIZE;
 	v3s16 fpmin  = vm->m_area.MinEdge;
 	v3s16 fpmax  = vm->m_area.MaxEdge;
-	v3s16 pmin   = lua_istable(L, 2) ? read_v3s16(L, 2) : fpmin + yblock;
-	v3s16 pmax   = lua_istable(L, 3) ? read_v3s16(L, 3) : fpmax - yblock;
+	v3s16 pmin   = lua_istable(L, 2) ? check_v3s16(L, 2) : fpmin + yblock;
+	v3s16 pmax   = lua_istable(L, 3) ? check_v3s16(L, 3) : fpmax - yblock;
 
 	sortBoxVerticies(pmin, pmax);
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
@@ -209,8 +209,8 @@ int LuaVoxelManip::l_set_lighting(lua_State *L)
 	MMVManip *vm = o->vm;
 
 	v3s16 yblock = v3s16(0, 1, 0) * MAP_BLOCKSIZE;
-	v3s16 pmin = lua_istable(L, 3) ? read_v3s16(L, 3) : vm->m_area.MinEdge + yblock;
-	v3s16 pmax = lua_istable(L, 4) ? read_v3s16(L, 4) : vm->m_area.MaxEdge - yblock;
+	v3s16 pmin = lua_istable(L, 3) ? check_v3s16(L, 3) : vm->m_area.MinEdge + yblock;
+	v3s16 pmax = lua_istable(L, 4) ? check_v3s16(L, 4) : vm->m_area.MaxEdge - yblock;
 
 	sortBoxVerticies(pmin, pmax);
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
@@ -321,7 +321,7 @@ int LuaVoxelManip::l_update_map(lua_State *L)
 	Map *map = &(env->getMap());
 
 	// TODO: Optimize this by using Mapgen::calcLighting() instead
-	shared_map<v3POS, MapBlock *> lighting_mblocks;
+	concurrent_map<v3POS, MapBlock *> lighting_mblocks;
 	std::map<v3s16, MapBlock *> *mblocks = &o->modified_blocks;
 
 	lighting_mblocks.insert(mblocks->begin(), mblocks->end());
@@ -405,7 +405,7 @@ int LuaVoxelManip::create_object(lua_State *L)
 
 	Map *map = &(env->getMap());
 	LuaVoxelManip *o = (lua_istable(L, 1) && lua_istable(L, 2)) ?
-		new LuaVoxelManip(map, read_v3s16(L, 1), read_v3s16(L, 2)) :
+		new LuaVoxelManip(map, check_v3s16(L, 1), check_v3s16(L, 2)) :
 		new LuaVoxelManip(map);
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;

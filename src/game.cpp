@@ -2379,7 +2379,10 @@ bool Game::connectToServer(const std::string &playername,
 		input->clear();
 
 		FpsControl fps_control = { 0 };
-		f32 dtime; // in seconds
+		f32 dtime;
+		f32 wait_time = 0; // in seconds
+
+		fps_control.last_time = device->getTimer()->getTime();
 
 		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 1000);
 		while (device->run()) {
@@ -2410,6 +2413,14 @@ bool Game::connectToServer(const std::string &playername,
 				*aborted = true;
 				infostream << "Connect aborted [Escape]" << std::endl;
 				return false;
+			}
+
+			wait_time += dtime;
+			// Only time out if we aren't waiting for the server we started
+			if ((*address != "") && (wait_time > 10)) {
+				*error_message = "Connection timed out.";
+				errorstream << *error_message << std::endl;
+				break;
 			}
 
 			// Update status
@@ -2451,6 +2462,8 @@ bool Game::getServerContent(bool *aborted)
 	limitFps(&fps_control, &dtime);
 	float time_counter = 0;
 	auto dtime_start = dtime;
+
+	fps_control.last_time = device->getTimer()->getTime();
 
 	while (device->run()) {
 
@@ -4645,7 +4658,6 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 	// not using getRealTime is necessary for wine
 	device->getTimer()->tick(); // Maker sure device time is up-to-date
 	u32 time = device->getTimer()->getTime();
-
 	u32 last_time = fps_timings->last_time;
 
 	if (time > last_time)  // Make sure time hasn't overflowed

@@ -316,7 +316,7 @@ int ModApiEnvMod::l_set_node_level(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 pos = read_v3s16(L, 1);
-	u8 level = 1;
+	s16 level = 1;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
 	MapNode n = env->getMap().getNodeNoEx(pos);
@@ -337,7 +337,7 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 pos = read_v3s16(L, 1);
-	u8 level = 1;
+	s16 level = 1;
 	bool compress = 0;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
@@ -478,10 +478,11 @@ int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 	// Do it
 	v3f pos = checkFloatPos(L, 1);
 	float radius = luaL_checknumber(L, 2) * BS;
-	std::set<u16> ids = env->getObjectsInsideRadius(pos, radius);
+	std::vector<u16> ids;
+	env->getObjectsInsideRadius(ids, pos, radius);
 	ScriptApiBase *script = getScriptApiBase(L);
 	lua_createtable(L, ids.size(), 0);
-	std::set<u16>::const_iterator iter = ids.begin();
+	std::vector<u16>::const_iterator iter = ids.begin();
 	for(u32 i = 0; iter != ids.end(); iter++) {
 		ServerActiveObject *obj = env->getActiveObject(*iter);
 		// Insert object reference into table

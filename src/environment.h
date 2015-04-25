@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <set>
 #include <list>
+#include <queue>
 #include <map>
 #include "irr_v3d.h"
 #include "activeobject.h"
@@ -43,12 +44,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "network/connection.h"
 #include "fmbitset.h"
-#include "util/lock.h"
+#include "util/concurrent_unordered_map.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>
 #include "circuit.h"
 #include "key_value_storage.h"
+#include <unordered_set>
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -203,7 +205,7 @@ public:
 		m_list.clear();
 	}
 
-	maybe_shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
+	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
 	std::set<v3s16> m_forceloaded_list;
 
 private:
@@ -308,7 +310,7 @@ public:
 	*/
 	void getAddedActiveObjects(v3s16 pos, s16 radius,
 			s16 player_radius,
-			maybe_shared_unordered_map<u16, bool> &current_objects,
+			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::set<u16> &added_objects);
 
 	/*
@@ -317,7 +319,7 @@ public:
 	*/
 	void getRemovedActiveObjects(v3s16 pos, s16 radius,
 			s16 player_radius,
-			maybe_shared_unordered_map<u16, bool> &current_objects,
+			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::set<u16> &removed_objects);
 
 	/*
@@ -350,7 +352,7 @@ public:
 	bool swapNode(v3s16 p, const MapNode &n);
 
 	// Find all active objects inside a radius around a point
-	std::set<u16> getObjectsInsideRadius(v3f pos, float radius);
+	void getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius);
 
 	// Clear all objects, loading and going through every MapBlock
 	void clearAllObjects();
@@ -442,7 +444,7 @@ private:
 	// World path
 	const std::string m_path_world;
 	// Active object list
-	maybe_shared_map<u16, ServerActiveObject*> m_active_objects;
+	maybe_concurrent_map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;

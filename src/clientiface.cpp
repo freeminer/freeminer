@@ -388,7 +388,15 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Check if map has this block
 			*/
-			MapBlock *block = env->getMap().getBlockNoCreateNoEx(p);
+
+			MapBlock *block;
+			{
+#if !ENABLE_THREADS
+			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+#endif
+
+			block = env->getMap().getBlockNoCreateNoEx(p);
+			}
 
 			bool surely_not_found_on_disk = false;
 			bool block_is_invalid = false;

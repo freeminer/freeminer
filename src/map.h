@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "util/unordered_map_hash.h"
+#include "util/concurrent_unordered_map.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -227,10 +228,10 @@ public:
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
 	u32 updateLighting(enum LightBank bank,
-			shared_map<v3POS, MapBlock*>  & a_blocks,
+			concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
 
-	u32 updateLighting(shared_map<v3POS, MapBlock*>  & a_blocks,
+	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
 
 	u32 updateLighting_last[2];
@@ -336,7 +337,7 @@ public:
 	void transforming_liquid_push_back(v3s16 p);
 	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
-	u32 m_liquid_step_flow;
+	std::atomic_uint m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
@@ -349,7 +350,7 @@ public:
 
 
 // from old mapsector:
-	typedef maybe_shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
+	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
@@ -360,6 +361,9 @@ public:
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
+#if !ENABLE_THREADS
+	locker<> m_nothread_locker;
+#endif
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	try_shared_mutex m_block_cache_mutex;
 #endif
@@ -388,10 +392,10 @@ protected:
 	u32 m_blocks_save_last;
 
 public:
-	//shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
-	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
+	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
 	std::atomic_uint time_life;
 };
 
@@ -510,6 +514,7 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
+	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
 private:
 
 #if 0

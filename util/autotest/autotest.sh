@@ -17,18 +17,21 @@ config=$confdir/freeminer.bot.conf
 
 run_opts="--worldname autotest --port $port --go --config $config --autoexit $time"
 
-logdir=`pwd`/logs
+logdir=`pwd`/logs_`date +%Y-%m-%d-%H-%M`
 
 make="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
 clang_version="-3.5"
 clang="-DCMAKE_CXX_COMPILER=`which clang++$clang_version` -DCMAKE_C_COMPILER=`which clang$clang_version`"
+# -DLOCK_PROFILE=1
 
 #run="nice /usr/bin/time --verbose" #linux
 #run="nice /usr/bin/time -lp"       #freebsd
 run="nice"
 
 cd ../..
+mv CMakeCache.txt CMakeCache.txt.backup
+mv src/cmake_config.h src/cmake_config.backup
 
 rootdir=..
 mkdir -p $logdir
@@ -45,10 +48,10 @@ $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
-name=asannt
+name=tsannt
 echo $name =============
 mkdir -p _$name && cd _$name
-cmake $rootdir $clang -DENABLE_THREADS=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+cmake $rootdir $clang -DENABLE_LUAJIT=0 -DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0 -DSANITIZE_THREAD=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
 $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
@@ -61,6 +64,16 @@ $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
+name=asannt
+echo $name =============
+mkdir -p _$name && cd _$name
+cmake $rootdir $clang -DENABLE_THREADS=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
+$make >> $logdir/autotest.$name.make.log 2>&1 && \
+$run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
+cd ..
+
+if false; then
+#useless
 name=msan
 echo $name =============
 mkdir -p _$name && cd _$name
@@ -68,6 +81,7 @@ cmake $rootdir $clang -DSANITIZE_MEMORY=1  -DDEBUG=1  -DCMAKE_RUNTIME_OUTPUT_DIR
 $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
+fi
 
 name=debug
 echo $name =============
@@ -87,6 +101,8 @@ done;
 
 cd ..
 
+if false; then
+
 name=nothreads
 echo $name =============
 mkdir -p _$name && cd _$name
@@ -95,6 +111,7 @@ $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
 
+
 name=normal
 echo $name =============
 mkdir -p _$name && cd _$name
@@ -102,6 +119,8 @@ cmake $rootdir -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $cmake_opt
 $make >> $logdir/autotest.$name.make.log 2>&1 && \
 $run ./freeminer $run_opts --logfile $logdir/autotest.$name.game.log >> $logdir/autotest.$name.out.log 2>>$logdir/autotest.$name.err.log
 cd ..
+
+fi
 
 name=minetest_proto
 echo $name =============

@@ -676,6 +676,12 @@ void ServerEnvironment::loadMeta()
 		u32 active_object_count = this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
 		m_env->m_added_objects = 0;
 
+#if !ENABLE_THREADS
+		auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
+		if (!lock_map->owns_lock())
+			return;
+#endif
+
 		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
@@ -693,7 +699,7 @@ void ServerEnvironment::loadMeta()
 				continue;
 
 			if (!m_aabms[c]) {
-				if (block->content_only)
+				if (block->content_only != CONTENT_IGNORE)
 					return;
 				continue;
 			}
@@ -743,13 +749,19 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
 		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
-		if (!abm_triggers)
-			return;
-
 		if (!lock.owns_lock())
 			return;
 
+		if (!abm_triggers)
+			return;
+
 		ServerMap *map = &m_env->getServerMap();
+
+#if !ENABLE_THREADS
+		auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
+		if (!lock_map->owns_lock())
+			return;
+#endif
 
 		float dtime = 0;
 		if (m_abm_timestamp) {
@@ -956,9 +968,8 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 	return true;
 }
 
-std::set<u16> ServerEnvironment::getObjectsInsideRadius(v3f pos, float radius)
+void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius)
 {
-	std::set<u16> objects;
 	auto lock = m_active_objects.lock_shared_rec();
 	for(auto
 			i = m_active_objects.begin();
@@ -966,12 +977,16 @@ std::set<u16> ServerEnvironment::getObjectsInsideRadius(v3f pos, float radius)
 	{
 		ServerActiveObject* obj = i->second;
 		u16 id = i->first;
+		if (!obj) {
+			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object"<<id<<" = "<<obj<<std::endl;
+			continue;
+		}
+
 		v3f objectpos = obj->getBasePosition();
 		if(objectpos.getDistanceFrom(pos) > radius)
 			continue;
-		objects.insert(id);
+		objects.push_back(id);
 	}
-	return objects;
 }
 
 void ServerEnvironment::clearAllObjects()
@@ -1134,7 +1149,9 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	}
 
 	TimeTaker timer_step("Environment step");
+#if ENABLE_THREADS
 	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
+#endif
 
 	/*
 		Handle players
@@ -1442,7 +1459,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 /*
 			while(!obj->m_messages_out.empty())
 			{
-				m_active_object_messages.push_back(
+				m_active_object_messages.push(
 						obj->m_messages_out.front());
 				obj->m_messages_out.pop();
 			}
@@ -1517,11 +1534,18 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 		u32 end_ms = porting::getTimeMs() + max_cycle_ms/10;
 
 		if (m_abm_random_blocks.empty()) {
-			auto lock = m_map->m_blocks.try_lock_shared_rec();
-			for (auto ir : m_map->m_blocks) {
-				if (!ir.second || !ir.second->abm_triggers)
-					continue;
-				m_abm_random_blocks.emplace_back(ir.first);
+#if !ENABLE_THREADS
+			auto lock_map = m_map->m_nothread_locker.try_lock_shared_rec();
+			if (lock_map->owns_lock())
+#endif
+			{
+				auto lock = m_map->m_blocks.try_lock_shared_rec();
+				if (lock->owns_lock())
+				for (auto ir : m_map->m_blocks) {
+					if (!ir.second || !ir.second->abm_triggers)
+						continue;
+					m_abm_random_blocks.emplace_back(ir.first);
+				}
 			}
 			//infostream<<"Start ABM random cycle s="<<m_abm_random_blocks.size()<<std::endl;
 		}
@@ -1556,7 +1580,7 @@ ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)
 }
 
 bool isFreeServerActiveObjectId(u16 id,
-		maybe_shared_map<u16, ServerActiveObject*> &objects)
+		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
 {
 	if(id == 0)
 		return false;
@@ -1565,7 +1589,7 @@ bool isFreeServerActiveObjectId(u16 id,
 }
 
 u16 getFreeServerActiveObjectId(
-		maybe_shared_map<u16, ServerActiveObject*> &objects)
+		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
 {
 	//try to reuse id's as late as possible
 	static u16 last_used_id = 0;
@@ -1640,7 +1664,7 @@ bool ServerEnvironment::addActiveObjectAsStatic(ServerActiveObject *obj)
 */
 void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 		s16 player_radius,
-		maybe_shared_unordered_map<u16, bool> &current_objects_shared,
+		maybe_concurrent_unordered_map<u16, bool> &current_objects_shared,
 		std::set<u16> &added_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1699,7 +1723,7 @@ void ServerEnvironment::getAddedActiveObjects(v3s16 pos, s16 radius,
 */
 void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		s16 player_radius,
-		maybe_shared_unordered_map<u16, bool> &current_objects,
+		maybe_concurrent_unordered_map<u16, bool> &current_objects,
 		std::set<u16> &removed_objects)
 {
 	v3f pos_f = intToFloat(pos, BS);
@@ -1762,6 +1786,11 @@ ActiveObjectMessage ServerEnvironment::getActiveObjectMessage()
 	if(m_active_object_messages.empty())
 		return ActiveObjectMessage(0);
 
+/*
+	ActiveObjectMessage message = m_active_object_messages.front();
+	m_active_object_messages.pop();
+	return message;
+*/
 	return m_active_object_messages.pop_front();
 }
 

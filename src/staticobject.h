@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 #include "debug.h"
-#include "util/lock.h"
+#include "util/concurrent_map.h"
 
 struct StaticObject
 {
@@ -100,7 +100,7 @@ public:
 		The caller directly manipulates these containers.
 	*/
 	std::vector<StaticObject> m_stored;
-	shared_map<u16, StaticObject> m_active;
+	concurrent_map<u16, StaticObject> m_active;
 
 private:
 };

@@ -123,8 +123,8 @@ struct MapgenParams {
 		water_level(1),
 		liquid_pressure(0),
 		flags(MG_TREES | MG_CAVES | MG_LIGHT),
-		np_biome_heat(NoiseParams(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.5, 2.0)),
-		np_biome_humidity(NoiseParams(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.5, 2.0)),
+		np_biome_heat(NoiseParams(15, 30, v3f(400.0, 400.0, 400.0), 5349, 2, 0.5, 2.0)),
+		np_biome_humidity(NoiseParams(50, 50, v3f(400.0, 400.0, 400.0), 842, 3, 0.5, 2.0)),
 		sparams(NULL)
 	{}
 
@@ -238,6 +238,8 @@ public:
 	virtual ObjDef *getRaw(u32 index) const;
 	virtual ObjDef *setRaw(u32 index, ObjDef *obj);
 
+	size_t getNumObjects() const { return m_objects.size(); }
+	ObjDefType getType() const { return m_objtype; }
 	INodeDefManager *getNodeDef() const { return m_ndef; }
 
 	u32 validateHandle(ObjDefHandle handle) const;

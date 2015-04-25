@@ -240,7 +240,14 @@ void Connection::receive()
 			unsigned int time = porting::getTimeMs();
 			if (time - m_last_recieved > 30000 && m_last_recieved_warn > 20000 && m_last_recieved_warn < 30000) {
 				errorstream<<"connection lost [30s], disconnecting."<<std::endl;
-				deletePeer(PEER_ID_SERVER,  false);
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
+				if (0)
+#endif
+#endif
+				{
+					deletePeer(PEER_ID_SERVER,  false);
+				}
 				m_last_recieved_warn = 0;
 				m_last_recieved = 0;
 			} else if (time - m_last_recieved > 20000 && m_last_recieved_warn > 10000 && m_last_recieved_warn < 20000) {

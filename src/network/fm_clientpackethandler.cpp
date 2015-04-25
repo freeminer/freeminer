@@ -151,7 +151,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	// there's no sane reason why we shouldn't have a player and
 	// almost everyone needs a player reference
 	Player *player = m_env.getLocalPlayer();
-	assert(player != NULL);
+	if(!player)
+		return;
 
 	if(command == TOCLIENT_REMOVENODE)
 	{
@@ -206,8 +207,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		if (!block->content_only || block->content_only != CONTENT_AIR) {
-			updateMeshTimestampWithEdge(p);
+		updateMeshTimestampWithEdge(p);
+		if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
+			if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
+				addUpdateMeshTaskWithEdge(p);
 		}
 
 /*
@@ -226,7 +229,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		std::string datastring = packet[TOCLIENT_INVENTORY_DATA].as<std::string>();
 		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
 
 		player->inventory.deSerialize(is);
 
@@ -295,7 +299,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	else if(command == TOCLIENT_HP)
 	{
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
+
 		u8 oldhp = player->hp;
 		u8 hp = packet[TOCLIENT_HP_HP].as<u8>();
 		player->hp = hp;
@@ -317,7 +323,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	else if(command == TOCLIENT_MOVE_PLAYER)
 	{
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
+
 		v3f pos = packet[TOCLIENT_MOVE_PLAYER_POS].as<v3f>();
 		f32 pitch = packet[TOCLIENT_MOVE_PLAYER_PITCH].as<f32>();
 		f32 yaw = packet[TOCLIENT_MOVE_PLAYER_YAW].as<f32>();
@@ -686,7 +694,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	else if(command == TOCLIENT_HUD_SET_FLAGS)
 	{
 		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
 
 		u32 flags = packet[TOCLIENT_HUD_SET_FLAGS_FLAGS].as<u32>();
 		u32 mask = packet[TOCLIENT_HUD_SET_FLAGS_MASK].as<u32>();
@@ -753,7 +762,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	else if(command == TOCLIENT_LOCAL_PLAYER_ANIMATIONS)
 	{
 		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
 
 		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_IDLE].convert(&player->local_animations[0]);
 		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALK].convert(&player->local_animations[1]);
@@ -764,7 +774,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	else if(command == TOCLIENT_EYE_OFFSET)
 	{
 		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
+		if(!player)
+			return;
 
 		packet[TOCLIENT_EYE_OFFSET_FIRST].convert(&player->eye_offset_first);
 		packet[TOCLIENT_EYE_OFFSET_THIRD].convert(&player->eye_offset_third);

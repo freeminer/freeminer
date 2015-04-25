@@ -41,7 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <vector>
-#include "util/lock.h"
 #include "stat.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
@@ -312,9 +311,6 @@ public:
 	// Envlock and conlock should be locked when using scriptapi
 	GameScripting *getScriptIface(){ return m_script; }
 
-	//TODO: determine what (if anything) should be locked to access EmergeManager
-	EmergeManager *getEmergeManager(){ return m_emerge; }
-
 	// actions: time-reversed list
 	// Return value: success/failure
 	bool rollbackRevertActions(const std::list<RollbackAction> &actions,
@@ -333,6 +329,7 @@ public:
 	virtual scene::ISceneManager* getSceneManager();
 	virtual IRollbackManager *getRollbackManager() { return m_enable_rollback_recording ? m_rollback : nullptr; }
 
+	virtual EmergeManager *getEmergeManager() { return m_emerge; }
 
 	IWritableItemDefManager* getWritableItemDefManager();
 	IWritableNodeDefManager* getWritableNodeDefManager();
@@ -380,11 +377,11 @@ public:
 	void peerAdded(u16 peer_id);
 	void deletingPeer(u16 peer_id, bool timeout);
 
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::wstring &custom_reason=NULL);
+	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason="");
 
 	//fmtodo: remove:
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason);
 	void DenyAccess(u16 peer_id, const std::string &reason);
+
 	void DenyAccess_Legacy(u16 peer_id, const std::wstring &reason);
 
 	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
@@ -705,8 +702,8 @@ private:
 	// freeminer:
 public:
 	int m_autoexit;
-	//shared_map<v3POS, MapBlock*> m_modified_blocks;
-	//shared_map<v3POS, MapBlock*> m_lighting_modified_blocks;
+	//concurrent_map<v3POS, MapBlock*> m_modified_blocks;
+	//concurrent_map<v3POS, MapBlock*> m_lighting_modified_blocks;
 	bool m_more_threads;
 	void deleteDetachedInventory(const std::string &name);
 	void maintenance_start();

@@ -34,13 +34,34 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../config.h"
 
-#ifndef _WIN32
-#include <iconv.h>
-#else
-#include <Windows.h>
-#endif
+#if defined(_WIN32)
 
-#ifndef _WIN32
+#include <Windows.h>
+
+std::wstring narrow_to_wide(const std::string &input) {
+	size_t outbuf_size = input.size() + 1;
+	wchar_t *outbuf = new wchar_t[outbuf_size];
+	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(), outbuf, outbuf_size);
+	std::wstring out(outbuf);
+	delete[] outbuf;
+	return out;
+}
+
+std::string wide_to_narrow(const std::wstring &input) {
+	size_t outbuf_size = (input.size() + 1) * 6;
+	char *outbuf = new char[outbuf_size];
+	memset(outbuf, 0, outbuf_size);
+	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(), outbuf, outbuf_size, NULL, NULL);
+	std::string out(outbuf);
+	delete[] outbuf;
+	return out;
+}
+
+#elif USE_ICONV
+
+#include <iconv.h>
+
 size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_size, char *inbuf, size_t inbuf_size) {
 	iconv_t cd = iconv_open(to, from);
 
@@ -57,7 +78,6 @@ size_t convert(const char *to, const char *from, char *outbuf, size_t outbuf_siz
 	return 0;
 }
 
-#ifndef __ANDROID__
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t inbuf_size = input.length() + 1;
 	// maximum possible size, every character is sizeof(wchar_t) bytes
@@ -95,13 +115,16 @@ std::string wide_to_narrow(const std::wstring &input) {
 
 	return out;
 }
+
 #else
+
+#include "utf8.cpp"
 
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t outbuf_size = input.size() + 1;
 	wchar_t *outbuf = new wchar_t[outbuf_size];
 	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-	irr::core::utf8ToWchar(input.c_str(), outbuf, outbuf_size * sizeof(wchar_t));
+	/* irr::core:: */ utf8ToWchar(input.c_str(), outbuf, outbuf_size * sizeof(wchar_t));
 	std::wstring out(outbuf);
 	delete[] outbuf;
 	return out;
@@ -114,34 +137,13 @@ std::string wide_to_narrow(const std::wstring &input) {
 	size_t inbuf_size = (input.length() + 1);
 	wchar_t *inbuf = new wchar_t[inbuf_size];
 	memcpy(inbuf, input.c_str(), inbuf_size * sizeof(wchar_t));
-	irr::core::wcharToUtf8(inbuf, outbuf, outbuf_size);
+	/* irr::core:: */ wcharToUtf8(inbuf, outbuf, outbuf_size);
 	std::string out(outbuf);
 	delete[] outbuf;
 	delete[] inbuf;
 	return out;
 }
-#endif
 
-#else
-std::wstring narrow_to_wide(const std::string &input) {
-	size_t outbuf_size = input.size() + 1;
-	wchar_t *outbuf = new wchar_t[outbuf_size];
-	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(), outbuf, outbuf_size);
-	std::wstring out(outbuf);
-	delete[] outbuf;
-	return out;
-}
-
-std::string wide_to_narrow(const std::wstring &input) {
-	size_t outbuf_size = (input.size() + 1) * 6;
-	char *outbuf = new char[outbuf_size];
-	memset(outbuf, 0, outbuf_size);
-	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(), outbuf, outbuf_size, NULL, NULL);
-	std::string out(outbuf);
-	delete[] outbuf;
-	return out;
-}
 #endif
 
 #include <algorithm>
@@ -303,7 +305,8 @@ std::string wide_to_narrow_real(const std::wstring &wcs)
 // their password. (Exception : if the password field is
 // blank, we send a blank password - this is for backwards
 // compatibility with password-less players).
-std::string translatePassword(std::string playername, std::string password)
+std::string translatePassword(const std::string &playername,
+	const std::string &password)
 {
 	if (password.length() == 0)
 		return "";

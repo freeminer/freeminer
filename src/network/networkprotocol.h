@@ -620,15 +620,6 @@ enum ToServerCommand
 {
 };
 
-#define TOSERVER_INIT_LEGACY 0x10
-enum {
-	// u8 SER_FMT_VER_HIGHEST_READ
-	TOSERVER_INIT_FMT,
-	TOSERVER_INIT_NAME,
-	TOSERVER_INIT_PASSWORD,
-	TOSERVER_INIT_PROTOCOL_VERSION_MIN,
-	TOSERVER_INIT_PROTOCOL_VERSION_MAX
-};
 	/*
 		Sent first after connected.
 
@@ -644,6 +635,26 @@ enum {
 		[0+*] std::string password (new in some version)
 		[0+*+*] u16 minimum supported network protocol version (added sometime)
 		[0+*+*+2] u16 maximum supported network protocol version (added later than the previous one)
+	*/
+
+#define TOSERVER_INIT_LEGACY 0x10
+enum {
+	// u8 SER_FMT_VER_HIGHEST_READ
+	TOSERVER_INIT_FMT,
+	TOSERVER_INIT_NAME,
+	TOSERVER_INIT_PASSWORD,
+	TOSERVER_INIT_PROTOCOL_VERSION_MIN,
+	TOSERVER_INIT_PROTOCOL_VERSION_MAX
+};
+	/*
+		Sent first after connected.
+
+		[0] u16 TOSERVER_INIT_LEGACY
+		[2] u8 SER_FMT_VER_HIGHEST_READ
+		[3] u8[20] player_name
+		[23] u8[28] password (new in some version)
+		[51] u16 minimum supported network protocol version (added sometime)
+		[53] u16 maximum supported network protocol version (added later than the previous one)
 	*/
 
 

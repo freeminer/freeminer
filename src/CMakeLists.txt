@@ -231,6 +231,14 @@ else()
 	mark_as_advanced(CLEAR CURL_LIBRARY CURL_INCLUDE_DIR)
 endif()
 
+find_package(Iconv)
+if(ICONV_INCLUDE_DIR)
+set(USE_ICONV 1)
+message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
+else()
+set(USE_ICONV 0)
+message(STATUS "iconv.h NOT found")
+endif()
 
 if(BUILD_CLIENT)
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" TRUE)
@@ -254,7 +262,6 @@ else()
 	mark_as_advanced(GETTEXT_ICONV_DLL GETTEXT_INCLUDE_DIR GETTEXT_LIBRARY GETTEXT_MSGFMT ICONV_LIBRARY)
 	message(STATUS "GetText disabled.")
 endif()
-
 
 if(BUILD_CLIENT)
 option(ENABLE_SOUND "Enable sound" TRUE)
@@ -313,26 +320,33 @@ endif()
 #mark_as_advanced(ENABLE_FREETYPE)
 set(USE_FREETYPE FALSE)
 
+##
+## Note: FindFreetype.cmake seems to have been fixed in recent versions of
+## CMake. If issues persist, re-enable this workaround specificially for the
+## failing platforms.
+##
+#	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
+#		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
+#	elseif(UNIX)
+#		include(FindPkgConfig)
+#		if(PKG_CONFIG_FOUND)
+#			pkg_check_modules(FREETYPE QUIET freetype2)
+#			if(FREETYPE_FOUND)
+#				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
+#				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
+#				# Because CMake is idiotic
+#				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
+#				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
+#			endif(FREETYPE_FOUND)
+#		endif(PKG_CONFIG_FOUND)
+#	endif()
+#	if(NOT FREETYPE_FOUND)
+#		find_package(Freetype)
+#	endif()
+	find_package(Freetype)
 
-	if(${CMAKE_SYSTEM} MATCHES "FreeBSD")
-		#PkgConfig not worked. result: /usr/bin/ld: cannot find -lfreetype
-	elseif(UNIX)
-		include(FindPkgConfig)
-		if(PKG_CONFIG_FOUND)
-			pkg_check_modules(FREETYPE QUIET freetype2)
-			if(FREETYPE_FOUND)
-				SET(FREETYPE_PKGCONFIG_FOUND TRUE)
-				SET(FREETYPE_LIBRARY ${FREETYPE_LIBRARIES})
-				# Because CMake is idiotic
-				string(REPLACE ";" " " FREETYPE_CFLAGS_STR ${FREETYPE_CFLAGS})
-				string(REPLACE ";" " " FREETYPE_LDFLAGS_STR ${FREETYPE_LDFLAGS})
-			endif(FREETYPE_FOUND)
-		endif(PKG_CONFIG_FOUND)
-	endif()
-	if(NOT FREETYPE_FOUND)
-		find_package(Freetype)
-	endif()
 	if(FREETYPE_FOUND)
+		message(STATUS "Freetype enabled.")
 		set(USE_FREETYPE TRUE)
 		set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
 		set(CGUITTFONT_LIBRARY cguittfont)
@@ -435,8 +449,10 @@ if(WIN32)
 		# Surpress some useless warnings
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 	else() # Probably MinGW = GCC
+		set(PLATFORM_LIBS "")
 	endif()
-	set(PLATFORM_LIBS ws2_32.lib)
+	set(PLATFORM_LIBS ws2_32.lib shlwapi.lib ${PLATFORM_LIBS})
+
 	# Zlib stuff
 	set(ZLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../zlib/zlib-1.2.5"
 			CACHE PATH "Zlib include directory")

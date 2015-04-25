@@ -410,16 +410,24 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags)
 bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	BlockMakeData *data, bool allow_gen)
 {
+	MapBlock *block;
+	{
+#if !ENABLE_THREADS
+	auto lock = map->m_nothread_locker.lock_unique_rec();
+#endif
+
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	//JMutexAutoLock envlock(m_server->m_env_mutex);
 
+
 	// Attempt to load block
-	MapBlock *block = map->getBlockNoCreateNoEx(p);
+	block = map->getBlockNoCreateNoEx(p);
 	if (!block || block->isDummy()) {
 		EMERGE_DBG_OUT("not in memory, attempting to load from disk ag="<<allow_gen<<" block="<<block<<" p="<<p);
 		block = map->loadBlock(p);
 		if (block && block->isGenerated())
 			map->prepareBlock(block);
+	}
 	}
 
 	// If could not load and allowed to generate,

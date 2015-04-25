@@ -58,7 +58,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Map
 */
 Map::Map(IGameDef *gamedef):
-	m_liquid_step_flow(1000),
 	m_blocks_delete(&m_blocks_delete_1),
 	m_gamedef(gamedef),
 	m_transforming_liquid_loop_count_multiplier(1.0f),
@@ -69,6 +68,7 @@ Map::Map(IGameDef *gamedef):
 	m_blocks_update_last(0),
 	m_blocks_save_last(0)
 {
+	m_liquid_step_flow = 1000;
 	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 	time_life = 0;
 	getBlockCacheFlush();
@@ -443,18 +443,18 @@ void Map::spreadLight(enum LightBank bank,
 		getNodeBlockPosWithOffset(pos, blockpos, relpos);
 
 		// Only fetch a new block if the block position has changed
-		try {
 			if(block == NULL || blockpos != blockpos_last){
-				block = getBlockNoCreate(blockpos);
+#if !ENABLE_THREADS
+				auto lock = m_nothread_locker.lock_shared_rec();
+#endif
+				block = getBlockNoCreateNoEx(blockpos);
+				if (!block)
+					continue;
 				blockpos_last = blockpos;
 
 				block_checked_in_modified = false;
 				blockchangecount++;
 			}
-		}
-		catch(InvalidPositionException &e) {
-			continue;
-		}
 
 		if(block->isDummy())
 			continue;
@@ -658,7 +658,7 @@ s16 Map::propagateSunlight(v3s16 start,
 }
 
 u32 Map::updateLighting(enum LightBank bank,
-		shared_map<v3POS, MapBlock*> & a_blocks,
+		concurrent_map<v3POS, MapBlock*> & a_blocks,
 		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -909,7 +909,7 @@ u32 Map::updateLighting(enum LightBank bank,
 	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
 }
 
-u32 Map::updateLighting(shared_map<v3POS, MapBlock*> & a_blocks,
+u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
 {
 	int ret = 0;
@@ -1475,12 +1475,13 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 100) {
+	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
 		for (auto & ir : *m_blocks_delete)
 			delete ir.first;
 		m_blocks_delete->clear();
+		getBlockCacheFlush();
 	}
 
 	u32 deleted_blocks_count = 0;
@@ -1495,6 +1496,13 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	auto lock = m_blocks.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return m_blocks_update_last;
+
+#if !ENABLE_THREADS
+	auto lock_map = m_nothread_locker.try_lock_unique_rec();
+	if (!lock_map->owns_lock())
+		return m_blocks_update_last;
+#endif
+
 	for(auto ir : m_blocks) {
 		if (n++ < m_blocks_update_last) {
 			continue;
@@ -2275,6 +2283,17 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	blockpos_min += chunk_offset;
 	blockpos_max += chunk_offset;
 
+	{
+		auto lock = m_mapgen_process.lock_unique_rec();
+		auto gen = m_mapgen_process.get(blockpos_min);
+		auto now = porting::getTimeMs();
+		if (gen > now - 60000 ) {
+			//verbosestream << " already generating" << blockpos_min << " for " << blockpos << " gentime=" << now - gen << std::endl;
+			return false;
+		}
+		m_mapgen_process.set(blockpos_min, now);
+	}
+
 	v3s16 extra_borders(1,1,1);
 
 	// Do nothing if not inside limits (+-1 because of neighbors)
@@ -2376,6 +2395,8 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	/*infostream<<"finishBlockMake(): ("<<blockpos_requested.X<<","
 			<<blockpos_requested.Y<<","
 			<<blockpos_requested.Z<<")"<<std::endl;*/
+
+	m_mapgen_process.erase(blockpos_min);
 
 	v3s16 extra_borders(1,1,1);
 
@@ -2586,6 +2607,11 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	DSTACKF("%s: p=(%d,%d,%d), create_blank=%d",
 			__FUNCTION_NAME,
 			p.X, p.Y, p.Z, create_blank);
+
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	{
 		MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 		if(block && block->isDummy() == false)

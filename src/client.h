@@ -77,10 +77,10 @@ public:
 	unsigned int addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent);
 	std::shared_ptr<MeshMakeData> pop();
 
-	shared_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
+	concurrent_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
 
 private:
-	shared_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
+	concurrent_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
 	std::unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_ranges;
 };
 
@@ -398,7 +398,7 @@ public:
 	void sendInventoryAction(InventoryAction *a);
 	void sendChatMessage(const std::string &message);
 	void sendChangePassword(const std::string &oldpassword,
-							const std::string &newpassword);
+	                        const std::string &newpassword);
 	void sendDamage(u8 damage);
 	void sendBreath(u16 breath);
 	void sendRespawn();
@@ -570,7 +570,6 @@ private:
 	bool m_inventory_updated;
 	Inventory *m_inventory_from_server;
 	float m_inventory_from_server_age;
-	std::set<v3s16> m_active_blocks;
 	PacketCounter m_packetcounter;
 	bool m_show_highlighted;
 	// Block mesh animation parameters

@@ -47,9 +47,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <windows.h>
 	#include <winsock2.h>
 	#include <ws2tcpip.h>
-	#ifdef _MSC_VER
-		#pragma comment(lib, "ws2_32.lib")
-	#endif
 typedef SOCKET socket_t;
 typedef int socklen_t;
 #else
@@ -157,7 +154,7 @@ void Address::Resolve(const char *name)
 
 	struct addrinfo *resolved, hints;
 	memset(&hints, 0, sizeof(hints));
-	
+
 	// Setup hints
 	hints.ai_socktype = 0;
 	hints.ai_protocol = 0;
@@ -171,7 +168,7 @@ void Address::Resolve(const char *name)
 	{
 		hints.ai_family = AF_INET;
 	}
-	
+
 	// Do getaddrinfo()
 	int e = getaddrinfo(name, NULL, &hints, &resolved);
 	if(e != 0)
@@ -517,7 +514,7 @@ int UDPSocket::Receive(Address & sender, void *data, int size)
 		dstream << (int) m_handle << " <- ";
 		sender.print(&dstream);
 		dstream << ", size=" << received;
-		
+
 		// Print packet contents
 		dstream << ", data=";
 		for(int i = 0; i < received && i < 20; i++) {
@@ -528,7 +525,7 @@ int UDPSocket::Receive(Address & sender, void *data, int size)
 		}
 		if(received > 20)
 			dstream << "...";
-		
+
 		dstream << std::endl;
 	}
 
@@ -589,7 +586,7 @@ bool UDPSocket::WaitData(int timeout_ms)
 		// No data
 		return false;
 	}
-	
+
 	// There is data
 	return true;
 }

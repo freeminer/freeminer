@@ -439,6 +439,8 @@ the global `minetest.registered_*` tables.
     * added to `minetest.registered_schematic` with the key of `schematic.name`
     * if `schematic.name` is nil, the key is the returned ID
     * if the schematic is loaded from a file, schematic.name is set to the filename
+    * if the function is called when loading the mod, and schematic.name is a relative path,
+    * then the current mod path will be prepended to the schematic filename
 
 * `minetest.clear_registered_biomes()`
     * clears all biomes currently registered
@@ -1666,7 +1668,7 @@ Helper functions
 
 ### Utilities
 
-* `minetest.get_current_modname()`: returns a string
+* `minetest.get_current_modname()`: returns the currently loading mod's name, when we are loading a mod
 * `minetest.get_modpath(modname)`: returns e.g. `"/home/user/.minetest/usermods/modname"`
     * Useful for loading additional `.lua` modules or static data from mod
 * `minetest.get_modnames()`: returns a list of installed mods
@@ -2168,6 +2170,24 @@ These functions return the leftover itemstack.
     * `force_placement` is a boolean indicating whether nodes other than `air` and
       `ignore` are replaced by the schematic
 
+* `minetest.serialize_schematic(schematic, format, options)`
+    * Return the serialized schematic specified by schematic (see: Schematic specifier)
+    * in the `format` of either "mts" or "lua".
+    * "mts" - a string containing the binary MTS data used in the MTS file format
+    * "lua" - a string containing Lua code representing the schematic in table format
+    * `options` is a table containing the following optional parameters:
+    * If `use_comments` is true and `format` is "lua", the Lua code generated will have (X, Z)
+    * position comments for every X row generated in the schematic data for easier reading.
+    * If `register_after_load` is true, then `schematic`, if not yet loaded, will be registered
+    * after loading and persist in memory.
+    * node_resolve_method can be one of either "none", "direct", or "deferred" (default: "none")
+    * This sets the way method by with node names are mapped to their content IDs, if loaded:
+    * "none" performs no node resolution and preserves all node names from the schematic definition
+    * "direct" performs an immediate lookup of content ID, given all the nodes that have been
+    * registered up to this point in script execution
+    * "deferred" pends node resolution until after the script registration phase has ended
+    * In practice, it is recommended to use "none" in nearly all use cases.
+
 ### Misc.
 * `minetest.get_connected_players()`: returns list of `ObjectRefs`
 * `minetest.hash_node_position({x=,y=,z=})`: returns an 48-bit integer
@@ -2268,6 +2288,9 @@ These functions return the leftover itemstack.
     * stops forceloading the position `pos`
 
 Please note that forceloaded areas are saved when the server restarts.
+
+minetest.global_exists(name)
+^ Checks if a global variable has been set, without triggering a warning.
 
 ### Global objects
 * `minetest.env`: `EnvRef` of the server environment and world.
@@ -2459,7 +2482,7 @@ This is basically a reference to a C++ `ServerActiveObject`
             {x=189, y=198}, -- <  dig animation key frames
             {x=200, y=219}, -- <  walk+dig animation key frames
             frame_speed=30): -- <  animation frame speed
-            
+
 * `set_eye_offset({x=0,y=0,z=0},{x=0,y=0,z=0})`: defines offset value for camera per player
     * in first person view
     * in third person view (max. values `{x=-10/10,y=-10,15,z=-5/5}`)
@@ -3175,6 +3198,10 @@ Definition tables
     --  ^ Multiplier of the randomness contribution to the noise value at any
     --   given point to decide if ore should be placed.  Set to 0 for solid veins.
     --  ^ This parameter is only valid for ore_type == "vein".
+        biomes = {"desert", "rainforest"}
+    --  ^ List of biomes in which this decoration occurs.  Occurs in all biomes if this is omitted,
+    --  ^ and ignored if the Mapgen being used does not support biomes.
+    --  ^ Can be a list of (or a single) biome names, IDs, or definitions.
     }
 
 ### Decoration definition (`register_decoration`)

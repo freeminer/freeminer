@@ -53,7 +53,7 @@ struct ToolCapabilities;
 struct ObjectProperties;
 
 class ServerActiveObject : public ActiveObject
-, public locker
+, public locker<>
 {
 public:
 	/*

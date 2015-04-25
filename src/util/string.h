@@ -56,7 +56,8 @@ std::string wide_to_narrow_real(const std::wstring& wcs);
 // TODO: must be named utf8_to_wide and wide_to_utf8
 std::wstring narrow_to_wide(const std::string &mbs);
 std::string wide_to_narrow(const std::wstring &wcs);
-std::string translatePassword(std::string playername, std::string password);
+std::string translatePassword(const std::string &playername,
+	const std::string &password);
 std::string urlencode(std::string str);
 std::string urldecode(std::string str);
 u32 readFlagString(std::string str, const FlagDesc *flagdesc, u32 *flagmask);

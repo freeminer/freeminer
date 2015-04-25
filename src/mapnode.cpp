@@ -197,7 +197,8 @@ static std::vector<aabb3f> transformNodeBox(const MapNode &n,
 			aabb3f box = *i;
 
 			if (nodebox.type == NODEBOX_LEVELED) {
-				box.MaxEdge.Y = -BS/2 + BS*((float)1/LEVELED_MAX) * n.getLevel(nodemgr);
+				const ContentFeatures &f = nodemgr->get(n);
+				box.MaxEdge.Y = -BS/2 + BS*((float)1/n.getMaxLevel(nodemgr)) * std::min(n.getLevel(nodemgr), f.getMaxLevel());
 			}
 
 			switch (axisdir)
@@ -408,6 +409,7 @@ u8 MapNode::getLevel(INodeDefManager *nodemgr) const
 			level += f.getMaxLevel();
 		if(level)
 			return level;
+		return 1; // default snow
 	} 
 	if(f.leveled) {
 		if(f.leveled > LEVELED_MAX)
@@ -479,12 +481,12 @@ int MapNode::freeze_melt(INodeDefManager *ndef, int direction) {
 	content_t to = ndef->getId(direction < 0 ? ndef->get(*this).freeze : ndef->get(*this).melt);
 	if (to == CONTENT_IGNORE)
 		return 0;
-	u8 level_was_max = this->getMaxLevel(ndef);
-	u8 level_was = this->getLevel(ndef);
+	s16 level_was_max = this->getMaxLevel(ndef);
+	s16 level_was = this->getLevel(ndef);
 	this->setContent(to);
-	u8 level_now_max = this->getMaxLevel(ndef);
+	s16 level_now_max = this->getMaxLevel(ndef);
 	if (level_was_max && level_was_max != level_now_max) {
-		u8 want = (float)level_now_max / level_was_max * level_was;
+		s16 want = (float)level_now_max / level_was_max * level_was;
 		if (!want)
 			want = 1;
 		if (want != level_was)

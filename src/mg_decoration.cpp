@@ -61,16 +61,6 @@ size_t DecorationManager::placeAllDecos(Mapgen *mg, u32 blockseed,
 }
 
 
-void DecorationManager::clear()
-{
-	for (size_t i = 0; i < m_objects.size(); i++) {
-		Decoration *deco = (Decoration *)m_objects[i];
-		delete deco;
-	}
-	m_objects.clear();
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -88,9 +78,9 @@ Decoration::~Decoration()
 }
 
 
-void Decoration::resolveNodeNames(NodeResolveInfo *nri)
+void Decoration::resolveNodeNames()
 {
-	m_ndef->getIdsFromResolveInfo(nri, c_place_on);
+	getIdsFromNrBacklog(&c_place_on);
 }
 
 
@@ -232,11 +222,11 @@ void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 ///////////////////////////////////////////////////////////////////////////////
 
 
-void DecoSimple::resolveNodeNames(NodeResolveInfo *nri)
+void DecoSimple::resolveNodeNames()
 {
-	Decoration::resolveNodeNames(nri);
-	m_ndef->getIdsFromResolveInfo(nri, c_decos);
-	m_ndef->getIdsFromResolveInfo(nri, c_spawnby);
+	Decoration::resolveNodeNames();
+	getIdsFromNrBacklog(&c_decos);
+	getIdsFromNrBacklog(&c_spawnby);
 }
 
 
@@ -319,27 +309,24 @@ int DecoSimple::getHeight()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-DecoSchematic::DecoSchematic() {
-	schematic = nullptr;
-};
-
 DecoSchematic::~DecoSchematic() {
 	if (schematic)
 		delete schematic;
+	schematic = nullptr;
 };
+
+DecoSchematic::DecoSchematic() //:
+	//kwolekr drugged? Decoration::Decoration()
+{
+	schematic = NULL;
+}
+
 
 size_t DecoSchematic::generate(MMVManip *vm, PseudoRandom *pr, v3s16 p)
 {
-	if (flags & DECO_PLACE_CENTER_X)
-		p.X -= (schematic->size.X + 1) / 2;
-	if (flags & DECO_PLACE_CENTER_Y)
-		p.Y -= (schematic->size.Y + 1) / 2;
-	if (flags & DECO_PLACE_CENTER_Z)
-		p.Z -= (schematic->size.Z + 1) / 2;
-
-	bool force_placement = (flags & DECO_FORCE_PLACEMENT);
-
-	if (!vm->m_area.contains(p))
+	// Schematic could have been unloaded but not the decoration
+	// In this case generate() does nothing (but doesn't *fail*)
+	if (schematic == NULL)
 		return 0;
 
 	u32 vi = vm->m_area.index(p);
@@ -347,8 +334,17 @@ size_t DecoSchematic::generate(MMVManip *vm, PseudoRandom *pr, v3s16 p)
 	if (!CONTAINS(c_place_on, c))
 		return 0;
 
+	if (flags & DECO_PLACE_CENTER_X)
+		p.X -= (schematic->size.X - 1) / 2;
+	if (flags & DECO_PLACE_CENTER_Y)
+		p.Y -= (schematic->size.Y - 1) / 2;
+	if (flags & DECO_PLACE_CENTER_Z)
+		p.Z -= (schematic->size.Z - 1) / 2;
+
 	Rotation rot = (rotation == ROTATE_RAND) ?
 		(Rotation)pr->range(ROTATE_0, ROTATE_270) : rotation;
+
+	bool force_placement = (flags & DECO_FORCE_PLACEMENT);
 
 	schematic->blitToVManip(p, vm, rot, force_placement, m_ndef);
 
