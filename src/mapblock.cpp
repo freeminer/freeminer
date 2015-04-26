@@ -530,7 +530,7 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 	}
 }
 
-void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
+void MapBlock::serialize(std::ostream &os, u8 version, bool disk, bool use_content_only)
 {
 	auto lock = lock_shared_rec();
 	if(!ser_ver_supported(version))
@@ -559,9 +559,9 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 
 	writeU8(os, flags);
 
-	// todo: check version and dont pack data if more than 20150427 or 0.4.12.7+
-	//if (!disk && content_only != CONTENT_IGNORE)
-	//	return;
+	// fmtodo: check version and dont pack data if more than 20150427 or 0.4.12.7+
+	if (!disk && use_content_only && content_only != CONTENT_IGNORE)
+		return;
 
 	/*
 		Bulk node data

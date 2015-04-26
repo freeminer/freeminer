@@ -679,7 +679,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
-	block->serialize(os, ver, false);
+	// fmtodo add version check to last field (dont send data if content_only and new client):
+	block->serialize(os, ver, false, m_simple_singleplayer_mode);
 	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
 
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
