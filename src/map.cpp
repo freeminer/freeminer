@@ -2396,8 +2396,6 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 			<<blockpos_requested.Y<<","
 			<<blockpos_requested.Z<<")"<<std::endl;*/
 
-	m_mapgen_process.erase(blockpos_min);
-
 	v3s16 extra_borders(1,1,1);
 
 	bool enable_mapgen_debug_info = m_emerge->mapgen_debug_info;
@@ -2570,6 +2568,8 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	if(!block) {
 		errorstream<<"finishBlockMake(): created NULL block at "<<PP(blockpos_requested)<<std::endl;
 	}
+
+	m_mapgen_process.erase(blockpos_min);
 
 }
 
