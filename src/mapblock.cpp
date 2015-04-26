@@ -559,6 +559,10 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 
 	writeU8(os, flags);
 
+	// todo: check version and dont pack data if more than 20150427 or 0.4.12.7+
+	//if (!disk && content_only != CONTENT_IGNORE)
+	//	return;
+
 	/*
 		Bulk node data
 	*/
@@ -664,6 +668,13 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		verbosestream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
 		//if (disk) m_generated = false; else // uncomment if you want convert old buggy map
 		return false;
+	}
+
+	if (!disk && content_only != CONTENT_IGNORE) {
+		auto n = MapNode(content_only);
+		for (u32 i = 0; i < MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
+			data[i] = n;
+		return true;
 	}
 
 	/*
