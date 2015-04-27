@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mainmenumanager.h"
 #include "irrlichttypes_extrabloated.h"
 #include "debug.h"
-#include "test.h"
+#include "unittest/test.h"
 #include "server.h"
 #include "filesys.h"
 #include "version.h"

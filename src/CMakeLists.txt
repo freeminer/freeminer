@@ -537,6 +537,7 @@ add_custom_target(GenerateVersion
 add_subdirectory(jthread)
 add_subdirectory(network)
 add_subdirectory(script)
+add_subdirectory(unittest)
 add_subdirectory(util)
 
 add_subdirectory(enet)
@@ -555,10 +556,6 @@ set(FMcommon_SRCS
 	stat.cpp
 	fm_liquid.cpp
 	fm_map.cpp
-)
-
-set (unittests_SRCS
-	test.cpp
 )
 
 set(common_SRCS
@@ -637,7 +634,7 @@ set(common_SRCS
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
 	${FMcommon_SRCS}
-	${unittests_SRCS}
+	${UNITTEST_SRCS}
 )
 
 
