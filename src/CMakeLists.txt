@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
 project(freeminer)
-string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckCXXSourceRuns)
@@ -751,10 +750,10 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
 
 if(BUILD_CLIENT)
-	add_executable(${PROJECT_NAME_LOWER} ${client_SRCS})
-	add_dependencies(${PROJECT_NAME_LOWER} GenerateVersion)
+	add_executable(${PROJECT_NAME} ${client_SRCS})
+	add_dependencies(${PROJECT_NAME} GenerateVersion)
 	set(client_LIBS
-		${PROJECT_NAME_LOWER}
+		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
 		${IRRLICHT_LIBRARY}
 		${OPENGLES2_LIBRARIES}
@@ -792,31 +791,31 @@ if(BUILD_CLIENT)
 	endif()
 	if(USE_CURL)
 		target_link_libraries(
-			${PROJECT_NAME_LOWER}
+			${PROJECT_NAME}
 			${CURL_LIBRARY}
 		)
 	endif()
 	if(USE_FREETYPE)
 		if(FREETYPE_PKGCONFIG_FOUND)
-			set_target_properties(${PROJECT_NAME_LOWER}
+			set_target_properties(${PROJECT_NAME}
 				PROPERTIES
 				COMPILE_FLAGS "${FREETYPE_CFLAGS_STR}"
 			)
 		endif()
 		target_link_libraries(
-			${PROJECT_NAME_LOWER}
+			${PROJECT_NAME}
 			${FREETYPE_LIBRARY}
 			${CGUITTFONT_LIBRARY}
 		)
 	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME_LOWER} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
 	if (USE_SQLITE3 AND NOT FORCE_SQLITE3)
 		target_link_libraries(${PROJECT_NAME} ${SQLITE3_LIBRARY})
 	endif()
 	if (USE_REDIS AND NOT FORCE_REDIS)
-		target_link_libraries(${PROJECT_NAME_LOWER} ${REDIS_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${REDIS_LIBRARY})
 	endif()
 	if(MSVC)
 		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
@@ -826,10 +825,10 @@ endif(BUILD_CLIENT)
 
 
 if(BUILD_SERVER)
-	add_executable(${PROJECT_NAME_LOWER}server ${server_SRCS})
-	add_dependencies(${PROJECT_NAME_LOWER}server GenerateVersion)
+	add_executable(${PROJECT_NAME}server ${server_SRCS})
+	add_dependencies(${PROJECT_NAME}server GenerateVersion)
 	target_link_libraries(
-		${PROJECT_NAME_LOWER}server
+		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
@@ -839,20 +838,20 @@ if(BUILD_SERVER)
 		enet
 		${PLATFORM_LIBS}
 	)
-	set_target_properties(${PROJECT_NAME_LOWER}server PROPERTIES
+	set_target_properties(${PROJECT_NAME}server PROPERTIES
 			COMPILE_DEFINITIONS "SERVER")
 	if (USE_LEVELDB)
-		target_link_libraries(${PROJECT_NAME_LOWER}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
 	if (USE_SQLITE3)
-		target_link_libraries(${PROJECT_NAME_LOWER}server ${SQLITE3_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${SQLITE3_LIBRARY})
 	endif()
 	if (USE_REDIS)
-		target_link_libraries(${PROJECT_NAME_LOWER}server ${REDIS_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
 	endif()
 	if(USE_CURL)
 		target_link_libraries(
-			${PROJECT_NAME_LOWER}server
+			${PROJECT_NAME}server
 			${CURL_LIBRARY}
 		)
 	endif()
@@ -901,7 +900,7 @@ if(WIN32)
 endif()
 
 if(BUILD_CLIENT)
-	install(TARGETS ${PROJECT_NAME_LOWER}
+	install(TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION ${BINDIR}
 		LIBRARY DESTINATION ${BINDIR}
 		ARCHIVE DESTINATION ${BINDIR}
@@ -919,7 +918,7 @@ if(BUILD_CLIENT)
 	if(USE_GETTEXT)
 		foreach(LOCALE ${GETTEXT_AVAILABLE_LOCALES})
 			set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
+			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
 			install(FILES ${MO_BUILD_PATH} DESTINATION ${MO_DEST_PATH})
 		endforeach()
 	endif()
@@ -940,17 +939,17 @@ if(BUILD_CLIENT)
 endif(BUILD_CLIENT)
 
 if(BUILD_SERVER)
-	install(TARGETS ${PROJECT_NAME_LOWER}server DESTINATION ${BINDIR})
+	install(TARGETS ${PROJECT_NAME}server DESTINATION ${BINDIR})
 endif()
 
 if (USE_GETTEXT)
 	set(MO_FILES)
 
 	foreach(LOCALE ${GETTEXT_AVAILABLE_LOCALES})
-		#set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME_LOWER}.po")
+		#set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME}.po")
 		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/minetest.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME_LOWER}.mo")
+		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
 
 		add_custom_command(OUTPUT ${MO_BUILD_PATH}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${MO_BUILD_PATH}
