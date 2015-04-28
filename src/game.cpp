@@ -1205,7 +1205,7 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 ;
 /*
 			<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
-			<< "textarea[0.4,0.25;3.5,6;;" << PROJECT_NAME "\n"
+			<< "textarea[0.4,0.25;3.5,6;;" << PROJECT_NAME_C "\n"
 			<< g_build_info << "\n"
 			<< "path_user = " << wrap_rows(porting::path_user, 20)
 			<< "\n;]";
@@ -1930,7 +1930,7 @@ void Game::run()
 				cam_view.camera_pitch) * cam_smoothing;
 		updatePlayerControl(cam_view);
 		step(&dtime);
-		processClientEvents(&cam_view, &runData.damage_flash);
+		processClientEvents(&cam_view_target, &runData.damage_flash);
 		updateCamera(&flags, draw_times.busy_time, dtime,
 				runData.time_from_last_punch);
 		updateSound(dtime);
@@ -2188,7 +2188,7 @@ bool Game::createClient(const std::string &playername,
 
 	/* Set window caption
 	 */
-	std::wstring str = narrow_to_wide(PROJECT_NAME);
+	std::wstring str = narrow_to_wide(PROJECT_NAME_C);
 	str += L" [";
 	str += driver->getName();
 	str += L"]";
@@ -2213,7 +2213,7 @@ bool Game::initGui()
 {
 	// First line of debug text
 	guitext = guienv->addStaticText(
-			narrow_to_wide(PROJECT_NAME).c_str(),
+			narrow_to_wide(PROJECT_NAME_C).c_str(),
 			core::rect<s32>(0, 0, 0, 0),
 			false, false, guiroot);
 
@@ -4501,7 +4501,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
-		   << PROJECT_NAME " " << g_version_hash
+		   << PROJECT_NAME_C " " << g_version_hash
 		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
 /*
@@ -4515,7 +4515,9 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 		   << (stats.dtime_jitter.max_fraction * 100.0) << " %"
 */
 		   << std::setprecision(1)
-		   << ", v_range = " << draw_control->wanted_range;
+		   << ", v_range = "
+		   << (draw_control->range_all ? "A " : "")
+		   << draw_control->wanted_range;
 		if (draw_control->farmesh)
 			os << ", farmesh = "<<draw_control->farmesh<<":"<<draw_control->farmesh_step;
 		os << std::setprecision(3);
@@ -4527,7 +4529,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 #if !defined(NDEBUG)
 	} else if (flags.show_hud || flags.show_chat) {
 		std::ostringstream os(std::ios_base::binary);
-		os << PROJECT_NAME " " << g_version_hash;
+		os << PROJECT_NAME_C " " << g_version_hash;
 		guitext->setText(narrow_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 #endif
@@ -4786,7 +4788,7 @@ bool the_game(bool *kill,
 	} catch (SerializationError &e) {
 		error_message = std::string("A serialization error occurred:\n")
 				+ e.what() + "\n\nThe server is probably "
-				" running a different version of " PROJECT_NAME ".";
+				" running a different version of " PROJECT_NAME_C ".";
 		errorstream << error_message << std::endl;
 	} catch (ServerError &e) {
 		error_message = e.what();

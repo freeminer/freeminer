@@ -220,7 +220,7 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 
 	// Maximum radius of a block.  The magic number is
 	// sqrt(3.0) / 2.0 in literal form.
-	f32 block_max_radius = 0.866025403784 * MAP_BLOCKSIZE * BS;
+	f32 block_max_radius = MAP_BLOCKSIZE * BS;
 
 	// If block is (nearly) touching the camera, don't
 	// bother validating further (that is, render it anyway)

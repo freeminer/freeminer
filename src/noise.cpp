@@ -114,7 +114,9 @@ u32 PcgRandom::range(u32 bound)
 
 s32 PcgRandom::range(s32 min, s32 max)
 {
-	assert(max >= min);
+	if (max < min)
+		throw PrngException("Invalid range (max < min)");
+
 	u32 bound = max - min + 1;
 	return range(bound) + min;
 }
@@ -145,7 +147,7 @@ s32 PcgRandom::randNormalDist(s32 min, s32 max, int num_trials)
 	s32 accum = 0;
 	for (int i = 0; i != num_trials; i++)
 		accum += range(min, max);
-	return ((float)accum / num_trials) + 0.5f;
+	return round((float)accum / num_trials);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

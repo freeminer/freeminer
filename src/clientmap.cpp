@@ -507,7 +507,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	m_camera_mutex.Lock();
 	v3f camera_position = m_camera_position;
-	f32 camera_fov = m_camera_fov;
+	f32 camera_fov = m_camera_fov * 1.1;
 	m_camera_mutex.Unlock();
 
 	/*

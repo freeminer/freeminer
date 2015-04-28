@@ -26,8 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <atomic>
 
-#include "debug.h"
 #include "irr_v3d.h"
+#include "exceptions.h"
 #include "util/string.h"
 
 extern FlagDesc flagdesc_noiseparams[];
@@ -60,14 +60,16 @@ public:
 
 	inline int range(int min, int max)
 	{
-		assert(max >= min);
+		if (max < min)
+			throw PrngException("Invalid range (max < min)");
 		/*
 		Here, we ensure the range is not too large relative to RANDOM_MAX,
 		as otherwise the effects of bias would become noticable.  Unlike
 		PcgRandom, we cannot modify this RNG's range as it would change the
 		output of this RNG for reverse compatibility.
 		*/
-		assert((u32)(max - min) <= (RANDOM_RANGE + 1) / 10);
+		if ((u32)(max - min) > (RANDOM_RANGE + 1) / 10)
+			throw PrngException("Range too large");
 
 		return (next() % (max - min + 1)) + min;
 	}
