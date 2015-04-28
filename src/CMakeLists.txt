@@ -88,11 +88,14 @@ else()
 	set(ENABLE_THREADS 0)
 endif()
 
+
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 0)
 if(MINETEST_PROTO)
 	set(MINETEST_PROTO 1)
+	set(USE_ENET 0)
 	message(STATUS "Using minetest compatible networking (slow, some features missing)")
 else()
+	set(USE_ENET 1)
 	set(MINETEST_PROTO 0)
 endif()
 
@@ -539,7 +542,11 @@ add_subdirectory(script)
 add_subdirectory(unittest)
 add_subdirectory(util)
 
-add_subdirectory(enet)
+
+if(USE_ENET)
+	add_subdirectory(enet)
+	include_directories(${PROJECT_SOURCE_DIR}/enet/include)
+endif()
 
 set(FMcommon_SRCS
 	circuit.cpp
@@ -734,7 +741,6 @@ include_directories(
 	${JSON_INCLUDE_DIR}
 	${MSGPACK_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
-	${PROJECT_SOURCE_DIR}/enet/include
 )
 
 if(USE_FREETYPE)
@@ -769,7 +775,6 @@ if(BUILD_CLIENT)
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARY}
-		enet
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
@@ -808,6 +813,9 @@ if(BUILD_CLIENT)
 			${CGUITTFONT_LIBRARY}
 		)
 	endif()
+	if(USE_ENET)
+		target_link_libraries(${PROJECT_NAME} enet)
+	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
@@ -835,11 +843,13 @@ if(BUILD_SERVER)
 		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARY}
-		enet
 		${PLATFORM_LIBS}
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
 			COMPILE_DEFINITIONS "SERVER")
+	if(USE_ENET)
+		target_link_libraries(${PROJECT_NAME}server enet)
+	endif()
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()

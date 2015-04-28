@@ -57,7 +57,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/clientlauncher.h"
 #endif
 
+#if USE_ENET
+// todo: move to connection
 #include "enet/enet.h"
+#endif
 
 #ifdef HAVE_TOUCHSCREENGUI
 #include "touchscreengui.h"
@@ -154,11 +157,13 @@ int main(int argc, char *argv[])
 {
 	int retval = 0;
 
+#if USE_ENET
 	if (enet_initialize() != 0) {
 		std::cerr << "enet failed to initialize\n";
 		return EXIT_FAILURE;
 	}
 	atexit(enet_deinitialize);
+#endif
 
 	debug_set_exception_handler();
 

@@ -32,6 +32,7 @@
 #cmakedefine01 HAVE_FUTURE
 #cmakedefine01 ENABLE_THREADS
 #cmakedefine01 MINETEST_PROTO
+#cmakedefine01 USE_ENET
 #cmakedefine01 STATIC_BUILD
 #cmakedefine01 USE_ICONV
 #cmakedefine01 LOCK_PROFILE
