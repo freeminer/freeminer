@@ -315,8 +315,7 @@ DecoSchematic::~DecoSchematic() {
 	schematic = nullptr;
 };
 
-DecoSchematic::DecoSchematic() //:
-	//kwolekr drugged? Decoration::Decoration()
+DecoSchematic::DecoSchematic()
 {
 	schematic = NULL;
 }
