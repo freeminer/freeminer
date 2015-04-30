@@ -79,6 +79,10 @@ msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 SQLITE_VERSION="3.8.4.2"
 sqlite = "sqlite-{}".format(SQLITE_VERSION)
 
+#somtimes vs becomes mad
+#error MSB8020: The build tools for Visual Studio 2012 (Platform Toolset = 'v110') cannot be found.
+patch_toolset = 1
+
 def main():
 	build_type = "Release"
 	if len(sys.argv) > 1 and sys.argv[1] == "debug":
@@ -111,6 +115,8 @@ def main():
 		patch(os.path.join("zlib", "deflate.c"), "const char deflate_copyright[] =", "static const char deflate_copyright[] =")
 		os.system("devenv /upgrade Irrlicht11.0.sln")
 		patch("Irrlicht11.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
+		if patch_toolset:
+			patch("Irrlicht11.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
 		os.system('MSBuild Irrlicht11.0.sln /p:Configuration="Static lib - {}"'.format(build_type))
 		os.chdir(os.path.join("..", "..", ".."))
 
@@ -142,6 +148,10 @@ def main():
 		extract_tar(tar_path, ".")
 		print("building libogg")
 		os.chdir(os.path.join(libogg, "win32", "VS2010"))
+
+		if patch_toolset:
+			patch("libogg_static.vcxproj", '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v120</PlatformToolset>')
+
 		os.system("devenv /upgrade libogg_static.vcxproj")
 		os.system("MSBuild libogg_static.vcxproj /p:Configuration={}".format(build_type))
 		os.chdir(os.path.join("..", "..", ".."))
@@ -160,6 +170,10 @@ def main():
 		patch(os.path.join("libvorbisfile", "libvorbisfile_static.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 		patch(os.path.join("libvorbis", "libvorbis_static.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
 		patch(os.path.join("libvorbis", "libvorbis_static.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+
+		if patch_toolset:
+			patch(os.path.join("libvorbis", "libvorbis_static.vcxproj"), '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v120</PlatformToolset>')
+			patch(os.path.join("libvorbisfile", "libvorbisfile_static.vcxproj"), '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v120</PlatformToolset>')
 
 		os.system("devenv /upgrade vorbis_static.sln")
 		os.system("MSBuild vorbis_static.sln /p:Configuration={}".format(build_type))
@@ -180,6 +194,14 @@ def main():
 		patch("zlibvc.def", "VERSION		1.2.8", "VERSION		1.2")
 		os.system("devenv /upgrade zlibvc.sln")
 		patch("zlibstat.vcxproj", "MultiThreadedDebugDLL", "MultiThreadedDebug")
+		if patch_toolset:
+			patch("zlibstat.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+			patch("zlibvc.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+			patch("minizip.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+			patch("testzlibdll.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+			patch("testzlib.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+			patch("miniunz.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+		
 		os.system("MSBuild zlibvc.sln /p:Configuration={} /p:Platform=win32".format(build_type))
 		os.chdir(os.path.join("..", "..", "..", ".."))
 
@@ -190,6 +212,10 @@ def main():
 		extract_tar(tar_path, ".")
 		print("building freetype")
 		os.chdir(os.path.join(freetype, "builds", "windows", "vc2010"))
+
+		if patch_toolset:
+			patch("freetype.vcxproj", "<PlatformToolset>v100</PlatformToolset>", "<PlatformToolset>v120</PlatformToolset>")
+
 		os.system("devenv /upgrade freetype.vcxproj")
 		os.system('MSBuild freetype.vcxproj /p:Configuration="{} Multithreaded"'.format(build_type))
 		os.chdir(os.path.join("..", "..", "..", ".."))

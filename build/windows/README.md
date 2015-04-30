@@ -27,7 +27,7 @@ Also useful for debugging release build: http://msdn.microsoft.com/en-us/library
 A word of warning: gettext and libintl will install themselves to `C:\usr\`. If you don't want this behavior don't build Freeminer for Windows.
 
 If you want to build without running VS: 
-SET PATH=%PATH%;C:\Program Files (x86)\CMake\bin;C:\Program Files (x86)\MSBuild\12.0\Bin;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\
+SET PATH=%PATH%;C:\Program Files (x86)\CMake\bin;C:\Program Files (x86)\MSBuild\12.0\Bin;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\;C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\;C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools
 SET INCLUDE="C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include";"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\include";"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Include";
 SET LIB="C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\lib\";"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\lib\";"C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Lib";
 python build.py
