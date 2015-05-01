@@ -12,14 +12,14 @@
 #define SCOPE_PROFILE(a)
 #endif
 
-template<class guard, class mutex>
-recursive_lock<guard, mutex>::recursive_lock(mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock):
+template<class GUARD, class MUTEX>
+recursive_lock<GUARD, MUTEX>::recursive_lock(MUTEX & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock):
 	thread_id(thread_id_) {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	if(thread_me != thread_id) {
 		if (try_lock) {
 			SCOPE_PROFILE("try_lock");
-			lock = new guard(mtx, TRY_TO_LOCK);
+			lock = new GUARD(mtx, TRY_TO_LOCK);
 			if (lock->owns_lock()) {
 				thread_id = thread_me;
 				return;
@@ -32,7 +32,7 @@ recursive_lock<guard, mutex>::recursive_lock(mutex & mtx, std::atomic<std::size_
 			delete lock;
 		} else {
 			SCOPE_PROFILE("lock");
-			lock = new guard(mtx);
+			lock = new GUARD(mtx);
 			thread_id = thread_me;
 			return;
 		}
@@ -44,21 +44,21 @@ recursive_lock<guard, mutex>::recursive_lock(mutex & mtx, std::atomic<std::size_
 	lock = nullptr;
 }
 
-template<class guard, class mutex>
-recursive_lock<guard, mutex>::~recursive_lock() {
+template<class GUARD, class MUTEX>
+recursive_lock<GUARD, MUTEX>::~recursive_lock() {
 	unlock();
 }
 
-template<class guard, class mutex>
-bool recursive_lock<guard, mutex>::owns_lock() {
+template<class GUARD, class MUTEX>
+bool recursive_lock<GUARD, MUTEX>::owns_lock() {
 	if (lock)
 		return lock;
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	return thread_id == thread_me;
 }
 
-template<class guard, class mutex>
-void recursive_lock<guard, mutex>::unlock() {
+template<class GUARD, class MUTEX>
+void recursive_lock<GUARD, MUTEX>::unlock() {
 	if(lock) {
 		thread_id = 0;
 		lock->unlock();
@@ -121,9 +121,12 @@ std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, s
 }
 
 
-template class recursive_lock<unique_lock>;
+template class recursive_lock<std::unique_lock<std::mutex>>;
+template class locker<>;
 #if LOCK_TWO
-template class recursive_lock<try_shared_lock>;
+template class recursive_lock<try_shared_lock, try_shared_mutex>;
+template class recursive_lock<std::unique_lock<try_shared_mutex>, try_shared_mutex>;
+
+template class locker<try_shared_mutex, std::unique_lock<try_shared_mutex>, std::shared_lock<try_shared_mutex>>;
 #endif
 
-template class locker<>;

@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include <chrono>
 #include <memory>
 
-#include "config.h"
+#include "../config.h"
 
 #ifdef _MSC_VER
 #define noexcept
@@ -90,12 +90,12 @@ public:
 };
 */
 
-template<class guard, class mutex = std::mutex>
+template<class GUARD, class MUTEX = std::mutex>
 class recursive_lock {
 public:
-	guard * lock;
+	GUARD * lock;
 	std::atomic<std::size_t> & thread_id;
-	recursive_lock(mutex & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
+	recursive_lock(MUTEX & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
 	~recursive_lock();
 	bool owns_lock();
 	void unlock();
