@@ -1486,6 +1486,7 @@ struct VolatileRunFlags {
 	bool camera_offset_changed;
 
 	//freeminer:
+	bool headless_optimize;
 	bool no_output;
 	bool use_weather;
 	float dedicated_server_step;
@@ -1865,7 +1866,8 @@ void Game::run()
 	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
-	flags.no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.headless_optimize = g_settings->getBool("headless_optimize");
+	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	flags.connected = false;
 	flags.reconnect = false;
 
@@ -2628,10 +2630,10 @@ inline bool Game::handleCallbacks()
 
 void Game::processQueues()
 {
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	texture_src->processQueue();
 	itemdef_manager->processQueue(gamedef);
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	shader_src->processQueue();
 }
 
@@ -4157,13 +4159,13 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 
 	auto player_position = player->getPosition();
 	auto pos_i = floatToInt(player_position, BS);
-	if (!flags.no_output) {
+	if (!flags.headless_optimize) {
 
 	auto fog_was = runData->fog_range;
 
 	if (draw_control->range_all) {
 		runData->fog_range = 100000 * BS;
-	} else if (!flags.no_output){
+	} else if (!flags.headless_optimize){
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
@@ -4191,7 +4193,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	if (g_settings->getBool("free_move")) {
 		//direct_brightness = time_brightness;
 		sunlight_seen = true;
-	} else if (!flags.no_output) {
+	} else if (!flags.headless_optimize) {
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 		float old_brightness = sky->getBrightness();
 		direct_brightness = client->getEnv().getClientMap()
@@ -4223,7 +4225,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	runData->time_of_day = time_of_day;
 	runData->time_of_day_smooth = time_of_day_smooth;
 
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 			sunlight_seen, camera->getCameraMode(), player->getYaw(),
 			player->getPitch());
@@ -4273,7 +4275,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		);
 	}
 
-	} // no_output
+	} // headless_optimize
 
 	/*
 		Get chat messages from client
@@ -4319,7 +4321,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	//auto camera_direction = camera->getDirection();
 	auto camera_position = camera->getPosition();
 
-		if (!flags.no_output)
+		if (!flags.headless_optimize)
 		if (client->getEnv().getClientMap().m_drawlist_last || runData->update_draw_list_timer >= 0.5 ||
 				runData->update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				flags.camera_offset_changed){
@@ -4367,14 +4369,14 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	video::SColor skycolor = sky->getSkyColor();
 
 	TimeTaker tt_draw("mainloop: draw");
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	{
 		TimeTaker timer("beginScene");
 		driver->beginScene(true, true, skycolor);
 		stats->beginscenetime = timer.stop(true);
 	}
 
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	draw_scene(driver, smgr, *camera, *client, player, *hud, guienv,
 			highlight_boxes, screensize, skycolor, flags.show_hud);
 
@@ -4444,7 +4446,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	/*
 		End scene
 	*/
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	{
 		TimeTaker timer("endScene");
 		driver->endScene();

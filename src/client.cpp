@@ -1635,7 +1635,8 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 {
 	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
-	bool no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	bool headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
 
@@ -1647,7 +1648,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
 	draw_load_screen(text,device, guienv, 0, 70);
-	if (!no_output)
+	if (!headless_optimize)
 	m_tsrc->rebuildImagesAndTextures();
 	delete[] text;
 
@@ -1655,7 +1656,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	infostream<<"- Rebuilding shaders"<<std::endl;
 	text = wgettext("Rebuilding shaders...");
 	draw_load_screen(text, device, guienv, 0, 71);
-	if (!no_output)
+	if (!headless_optimize)
 	m_shsrc->rebuildShaders();
 	delete[] text;
 
@@ -1668,7 +1669,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	m_nodedef->runNodeResolveCallbacks();
 	delete[] text;
 
-	if (!no_output) {
+	if (!headless_optimize) {
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
 	TextureUpdateArgs tu_args;
@@ -1682,7 +1683,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	}
 
 	// Preload item textures and meshes if configured to
-	if(!no_output && g_settings->getBool("preload_item_visuals"))
+	if(!headless_optimize && g_settings->getBool("preload_item_visuals"))
 	{
 		verbosestream<<"Updating item textures and meshes"<<std::endl;
 		text = wgettext("Item textures...");
@@ -1704,7 +1705,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 		delete[] text;
 	}
 
-	if (!no_output) {
+	if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
 		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
 		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
