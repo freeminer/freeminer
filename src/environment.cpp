@@ -1498,8 +1498,9 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
-			auto lock = m_active_blocks.m_list.lock_shared_rec();
-			active_blocks_list = m_active_blocks.m_list;
+			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
+			if (lock->owns_lock())
+				active_blocks_list = m_active_blocks.m_list;
 		}
 
 		for(auto i = active_blocks_list.begin(); i != active_blocks_list.end(); ++i)
