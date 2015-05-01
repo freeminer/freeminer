@@ -2386,7 +2386,6 @@ bool Game::connectToServer(const std::string &playername,
 
 		fps_control.last_time = device->getTimer()->getTime();
 
-		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 1000);
 		while (device->run()) {
 
 			limitFps(&fps_control, &dtime);
@@ -2422,16 +2421,12 @@ bool Game::connectToServer(const std::string &playername,
 			if ((*address != "") && (wait_time > 10)) {
 				*error_message = "Connection timed out.";
 				errorstream << *error_message << std::endl;
+				flags.reconnect = true;
 				break;
 			}
 
 			// Update status
 			showOverlayMessage(wstrgettext("Connecting to server..."), dtime, 20);
-
-			if (porting::getTimeMs() > end_ms) {
-				//flags.reconnect = true;
-				return false;
-			}
 		}
 
 #ifdef NDEBUG
@@ -4803,6 +4798,6 @@ bool the_game(bool *kill,
 #endif
 	}
 
-	return !started && game.flags.reconnect;
+	return started && game.flags.reconnect;
 }
 
