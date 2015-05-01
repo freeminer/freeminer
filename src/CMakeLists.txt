@@ -375,7 +375,7 @@ if(ENABLE_LEVELDB)
 		set(USE_LEVELDB TRUE)
 		message(STATUS "LevelDB backend enabled.")
 		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
-	else()
+	elseif (NOT FORCE_LEVELDB)
 		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
 	endif()
 endif(ENABLE_LEVELDB)
@@ -402,6 +402,7 @@ if(ENABLE_SQLITE3)
 endif()
 
 if(FORCE_SQLITE3)
+
 	set(USE_SQLITE3 1)
 endif()
 
