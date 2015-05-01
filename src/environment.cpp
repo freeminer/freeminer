@@ -1485,7 +1485,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		/*
 			Remove objects that satisfy (m_removed && m_known_by_count==0)
 		*/
-		removeRemovedObjects();
+		removeRemovedObjects(max_cycle_ms);
 	}
 }
 
@@ -1878,7 +1878,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 /*
 	Remove objects that satisfy (m_removed && m_known_by_count==0)
 */
-void ServerEnvironment::removeRemovedObjects()
+void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
@@ -1899,6 +1899,7 @@ void ServerEnvironment::removeRemovedObjects()
 		}
 	}
 
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 	if (objects.size())
 	for (auto & obj : objects)
 	{
@@ -1969,6 +1970,9 @@ void ServerEnvironment::removeRemovedObjects()
 
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
+
+		if (porting::getTimeMs() > end_ms)
+			break;
 	}
 
 	if (!objects_to_remove.empty()) {

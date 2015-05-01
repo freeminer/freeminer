@@ -404,7 +404,7 @@ private:
 	/*
 		Remove all objects that satisfy (m_removed && m_known_by_count==0)
 	*/
-	void removeRemovedObjects();
+	void removeRemovedObjects(unsigned int max_cycle_ms = 1000);
 
 	/*
 		Convert stored objects from block to active
