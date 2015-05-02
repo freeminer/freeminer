@@ -118,6 +118,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			m_localserver->getEmergeManager()->params.load(settings);
 		}
 
+		//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
+		//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
+
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
 		m_con.Send(PEER_ID_SERVER, 1, buffer, true);

@@ -160,6 +160,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 		u16 max_net_proto_version = min_net_proto_version;
 		packet[TOSERVER_INIT_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
 
+		if (packet.count(TOSERVER_INIT_PROTOCOL_VERSION_FM)) {
+			packet[TOSERVER_INIT_PROTOCOL_VERSION_FM].convert(&client->net_proto_version_fm);
+		}
+
 		// Start with client's maximum version
 		u16 net_proto_version = max_net_proto_version;
 
@@ -356,7 +360,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 4);
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 5);
 			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
@@ -367,6 +371,8 @@ void Server::ProcessData(NetworkPacket *pkt)
 			Settings params;
 			m_emerge->params.save(params);
 			PACK(TOCLIENT_INIT_MAP_PARAMS, params);
+
+			PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
 
 			// Send as reliable
 			m_clients.send(peer_id, 0, buffer, true);

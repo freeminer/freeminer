@@ -148,6 +148,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CLIENT_PROTOCOL_VERSION_MIN 13
 #define CLIENT_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
+#define CLIENT_PROTOCOL_VERSION_FM 1
+#define SERVER_PROTOCOL_VERSION_FM 0
+
 // Constant that differentiates the protocol from random data and other protocols
 #define PROTOCOL_ID 0x4f457403
 
@@ -180,7 +183,8 @@ enum {
 	// v3f player's position
 	TOCLIENT_INIT_POS,
 	// json map params
-	TOCLIENT_INIT_MAP_PARAMS
+	TOCLIENT_INIT_MAP_PARAMS,
+	TOCLIENT_INIT_PROTOCOL_VERSION_FM
 };
 	/*
 		Server's reply to TOSERVER_INIT.
@@ -644,7 +648,8 @@ enum {
 	TOSERVER_INIT_NAME,
 	TOSERVER_INIT_PASSWORD,
 	TOSERVER_INIT_PROTOCOL_VERSION_MIN,
-	TOSERVER_INIT_PROTOCOL_VERSION_MAX
+	TOSERVER_INIT_PROTOCOL_VERSION_MAX,
+	TOSERVER_INIT_PROTOCOL_VERSION_FM
 };
 	/*
 		Sent first after connected.

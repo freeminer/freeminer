@@ -208,6 +208,7 @@ public:
 	u8 serialization_version;
 	//
 	std::atomic_ushort net_proto_version;
+	u16 net_proto_version_fm;
 
 	std::atomic_int m_nearest_unsent_reset;
 	std::atomic_int wanted_range;
@@ -236,6 +237,7 @@ public:
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
 		net_proto_version = 0;
+		net_proto_version_fm = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_reset = 0;
 

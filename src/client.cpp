@@ -1636,7 +1636,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
 	bool headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
-	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	//bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
 
