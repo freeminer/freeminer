@@ -254,7 +254,8 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 	}
 	if (cache)
 		(*cache)[bp] = value;
-	return value + myrand_range(0, 1);
+	value += myrand_range(0, 1);
+	return value > 100 ? 100 : value;
 }
 
 int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
