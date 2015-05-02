@@ -1758,8 +1758,8 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		ServerActiveObject *object = getActiveObject(id);
 
 		if(object == NULL){
-			infostream<<"ServerEnvironment::getRemovedActiveObjects():"
-					<<" object in current_objects is NULL"<<std::endl;
+			//infostream<<"ServerEnvironment::getRemovedActiveObjects():"
+			//		<<" object in current_objects is NULL"<<std::endl;
 			removed_objects.insert(id);
 			continue;
 		}
