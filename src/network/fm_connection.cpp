@@ -267,9 +267,9 @@ void Connection::serve(Address bind_addr)
 {
 	ENetAddress address;
 #if defined(ENET_IPV6)
-	address.host = in6addr_any;
+	address.host = bind_addr.getAddress6().sin6_addr; // in6addr_any;
 #else
-	address.host = ENET_HOST_ANY;
+	address.host = bind_addr.getAddress().sin_addr.s_addr; // ENET_HOST_ANY;
 #endif
 	address.port = bind_addr.getPort(); // fmtodo
 

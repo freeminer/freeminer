@@ -2,11 +2,12 @@
 
 time=600
 clients=10
+address=::1
+port=63001
 cmake_opt="-DBUILD_SERVER=1 -DBUILD_CLIENT=1"
 
 confdir=`pwd`
-port=63001
-run_opts=" --address ::1 --port $port --go --config $confdir/freeminer.headless.conf --autoexit $time"
+run_opts=" --address $address --port $port --go --config $confdir/freeminer.headless.conf --autoexit $time"
 run_server_opts="--worldname autotest --port $port --config $confdir/freeminer.headless.conf --autoexit $time"
 
 logdir=`pwd`/logs_`date +%Y-%m-%d-%H-%M`
