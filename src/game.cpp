@@ -2076,10 +2076,12 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 	Address bind_addr(0, 0, 0, 0, port);
 
 	if (g_settings->getBool("ipv6_server")) {
-		bind_addr.setAddress((IPv6AddressBytes *) NULL);
+		bind_addr.setAddress(in6addr_any);
+		*address = "::1";
 	}
 
 	try {
+		if (!bind_str.empty())
 		bind_addr.Resolve(bind_str.c_str());
 	} catch (ResolveError &e) {
 		infostream << "Resolving bind address \"" << bind_str

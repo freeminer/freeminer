@@ -848,9 +848,10 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 	Address bind_addr(0, 0, 0, 0, game_params.socket_port);
 
 	if (g_settings->getBool("ipv6_server")) {
-		bind_addr.setAddress((IPv6AddressBytes*) NULL);
+		bind_addr.setAddress(in6addr_any);
 	}
 	try {
+		if (!bind_str.empty())
 		bind_addr.Resolve(bind_str.c_str());
 	} catch (ResolveError &e) {
 		infostream << "Resolving bind address \"" << bind_str
