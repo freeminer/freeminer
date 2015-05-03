@@ -34,7 +34,7 @@ namespace con
 {
 
 //very ugly windows hack
-#if defined(_MSC_VER) && defined(ENET_IPV6)
+#if ( defined(_MSC_VER) || defined(__MINGW32__) ) && defined(ENET_IPV6)
 
 #include <winsock2.h>
 #include <ws2tcpip.h>

@@ -36,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(_WIN32)
 
-#include <Windows.h>
+#include <windows.h>
 
 std::wstring narrow_to_wide(const std::string &input) {
 	size_t outbuf_size = input.size() + 1;
