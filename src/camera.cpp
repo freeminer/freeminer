@@ -44,6 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h" // CameraModes
 
 #include "nodedef.h"
+//#include "log_types.h"
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
@@ -585,16 +586,18 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	if (m_draw_control.wanted_max_blocks < 10)
 		m_draw_control.wanted_max_blocks = 10;
 
+/*
 	f32 block_draw_ratio = 1.0;
 	if (m_draw_control.blocks_would_have_drawn != 0)
 	{
 		block_draw_ratio = (f32)m_draw_control.blocks_drawn
 			/ (f32)m_draw_control.blocks_would_have_drawn;
 	}
+*/
 
 	// Calculate the average frametime in the case that all wanted
 	// blocks had been drawn
-	f32 frametime = m_added_busytime / m_added_frames / block_draw_ratio;
+	f32 frametime = m_added_busytime / m_added_frames /* / block_draw_ratio */ ;
 
 	m_added_busytime = 0.0;
 	m_added_frames = 0;
@@ -605,6 +608,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 
 	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
+			//infostream<<" m_draw_control.fps="<<m_draw_control.fps<< " wanted_fps="<< wanted_fps << " m_draw_control.fps_avg="<< m_draw_control.fps_avg <<" wanted_fps*1.4="<< wanted_fps*1.4 /*<<" block_draw_ratio="<<block_draw_ratio */<< " wanted_frametime="<< wanted_frametime <<" .blocks_would_have_drawn=" <<m_draw_control.blocks_would_have_drawn <<" .blocks_drawn=" <<m_draw_control.blocks_drawn <<std::endl;
 			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.4) {
 				if (m_draw_control.wanted_range >= farmesh_wanted)
 					m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
@@ -675,7 +679,11 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//wanted_range_change *= 0.9;
 	//wanted_range_change *= 0.75;
 	wanted_range_change *= 0.5;
+	if (wanted_range_change > 1)
+		wanted_range_change *= 0.4;
 	//dstream<<"wanted_range_change="<<wanted_range_change<<std::endl;
+
+	//infostream<< " wanted_range_change=" << wanted_range_change <<" m_time_per_range="<<m_time_per_range << " wanted_frametime_change="<<wanted_frametime_change<< std::endl;
 
 	// If needed range change is very small, just return
 	if(fabs(wanted_range_change) < 0.001)
@@ -696,6 +704,8 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	m_busytime_old = busytime_in;
 
 	m_draw_control.wanted_range = new_range;
+
+	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
 }
 
 void Camera::setDigging(s32 button)
