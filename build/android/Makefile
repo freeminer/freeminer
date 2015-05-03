@@ -875,7 +875,7 @@ $(ROOT)/jni/src/android_version.h :
 	>> ${ROOT}/jni/src/android_version.h;                                      \
 	export GITHASH=$$(git rev-parse --short=8 HEAD);                           \
 	export GITTAG=$$(git describe --abbrev=0 --tags);                          \
-	echo "#define VERSION_GITHASH \"$$GITTAG-$$GITHASH-Android\""              \
+	echo "#define VERSION_GITHASH \"$$GITTAG-$$GITHASH\""                      \
 	>> ${ROOT}/jni/src/android_version.h;                                      \
 	echo "#define VERSION_STRING STR(VERSION_MAJOR) \".\" STR(VERSION_MINOR)   \
 	 \".\" STR(VERSION_PATCH) \".\" STR(VERSION_TWEAK)"                        \
