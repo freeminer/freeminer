@@ -134,7 +134,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_inventory", "KEY_KEY_I");
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
-	settings->setDefault("keymap_msg", "@");
+	//settings->setDefault("keymap_msg", "@");
 	settings->setDefault("keymap_cmd", "/");
 #if IRRLICHT_VERSION_10000  >= 10703
 	settings->setDefault("keymap_console", "KEY_OEM_3");
