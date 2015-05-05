@@ -255,6 +255,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("enable_3d_clouds", "true");
 	settings->setDefault("cloud_height", "300");
+	settings->setDefault("cloud_radius", "36");
 	settings->setDefault("new_style_water", "false");
 	settings->setDefault("opaque_water", "false");
 	settings->setDefault("connected_glass", "false");

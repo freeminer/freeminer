@@ -82,8 +82,8 @@ char* NetworkPacket::getString(u32 from_offset)
 
 void NetworkPacket::putRawString(const char* src, u32 len)
 {
-	if (m_read_offset + len * sizeof(char) >= m_datasize) {
-		m_datasize += len * sizeof(char);
+	if (m_read_offset + len > m_datasize) {
+		m_datasize = m_read_offset + len;
 		m_data.resize(m_datasize);
 	}
 	memcpy(&m_data[m_read_offset], src, len);
@@ -104,7 +104,7 @@ NetworkPacket& NetworkPacket::operator>>(std::string& dst)
 	dst.reserve(strLen);
 	dst.append((char*)&m_data[m_read_offset], strLen);
 
-	m_read_offset += strLen * sizeof(char);
+	m_read_offset += strLen;
 	return *this;
 }
 
@@ -117,13 +117,7 @@ NetworkPacket& NetworkPacket::operator<<(std::string src)
 
 	*this << msgsize;
 
-	if (m_read_offset + msgsize * sizeof(char) >= m_datasize) {
-		m_datasize += msgsize * sizeof(char);
-		m_data.resize(m_datasize);
-	}
-
-	memcpy(&m_data[m_read_offset], src.c_str(), msgsize);
-	m_read_offset += msgsize;
+	putRawString(src.c_str(), (u32)msgsize);
 
 	return *this;
 }
@@ -137,13 +131,7 @@ void NetworkPacket::putLongString(std::string src)
 
 	*this << msgsize;
 
-	if (m_read_offset + msgsize * sizeof(char) >= m_datasize) {
-		m_datasize += msgsize * sizeof(char);
-		m_data.resize(m_datasize);
-	}
-
-	memcpy(&m_data[m_read_offset], src.c_str(), msgsize);
-	m_read_offset += msgsize;
+	putRawString(src.c_str(), msgsize);
 }
 
 NetworkPacket& NetworkPacket::operator>>(std::wstring& dst)
@@ -198,7 +186,7 @@ std::string NetworkPacket::readLongString()
 	dst.reserve(strLen);
 	dst.append((char*)&m_data[m_read_offset], strLen);
 
-	m_read_offset += strLen*sizeof(char);
+	m_read_offset += strLen;
 
 	return dst;
 }
