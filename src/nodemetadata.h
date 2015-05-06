@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include <string>
 #include <iostream>
+#include <vector>
 #include <map>
 
 /*
@@ -45,10 +46,10 @@ class NodeMetadata
 public:
 	NodeMetadata(IGameDef *gamedef);
 	~NodeMetadata();
-	
+
 	void serialize(std::ostream &os) const;
 	void deSerialize(std::istream &is);
-	
+
 	void clear();
 
 	// Generic key/value store
@@ -84,18 +85,20 @@ public:
 
 	void serialize(std::ostream &os) const;
 	void deSerialize(std::istream &is, IGameDef *gamedef);
-	
+
+	// Add all keys in this list to the vector keys
+	std::vector<v3s16> getAllKeys();
 	// Get pointer to data
-	NodeMetadata* get(v3s16 p);
+	NodeMetadata *get(v3s16 p);
 	// Deletes data
 	void remove(v3s16 p);
 	// Deletes old data and sets a new one
 	void set(v3s16 p, NodeMetadata *d);
 	// Deletes all
 	void clear();
-	
+
 private:
-	std::map<v3s16, NodeMetadata*> m_data;
+	std::map<v3s16, NodeMetadata *> m_data;
 };
 
 #endif

@@ -374,6 +374,22 @@ int ModApiEnvMod::l_freeze_melt(lua_State *L)
 	return 1;
 }
 
+// find_nodes_with_meta(pos1, pos2)
+int ModApiEnvMod::l_find_nodes_with_meta(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	std::vector<v3s16> positions = env->getMap().findNodesWithMetadata(
+		check_v3s16(L, 1), check_v3s16(L, 2));
+
+	lua_newtable(L);
+	for (size_t i = 0; i != positions.size(); i++) {
+		push_v3s16(L, positions[i]);
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
 
 // get_meta(pos)
 int ModApiEnvMod::l_get_meta(lua_State *L)
@@ -994,6 +1010,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(add_node_level);
 	API_FCT(freeze_melt);
 	API_FCT(add_entity);
+	API_FCT(find_nodes_with_meta);
 	API_FCT(get_meta);
 	API_FCT(get_node_timer);
 	API_FCT(get_player_by_name);

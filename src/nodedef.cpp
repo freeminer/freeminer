@@ -328,7 +328,7 @@ void ContentFeatures::reset()
 	circuit_element_delay = 0;
 }
 
-void ContentFeatures::serialize(std::ostream &os, u16 protocol_version)
+void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 {
 	if(protocol_version < 24){
 		//serializeOld(os, protocol_version);
@@ -606,9 +606,9 @@ public:
 	virtual content_t allocateDummy(const std::string &name);
 	virtual void updateAliases(IItemDefManager *idef);
 	virtual void updateTextures(IGameDef *gamedef,
-	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
-	/*argument: */void *progress_callback_args);
-	void serialize(std::ostream &os, u16 protocol_version);
+		void (*progress_cbk)(void *progress_args, u32 progress, u32 max_progress),
+		void *progress_cbk_args);
+	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
@@ -619,6 +619,7 @@ public:
 	virtual void pendNodeResolve(NodeResolver *nr, NodeResolveMethod how);
 	virtual bool cancelNodeResolveCallback(NodeResolver *nr);
 	virtual void runNodeResolveCallbacks();
+	virtual void resetNodeResolveState();
 
 private:
 	void addNameIdMapping(content_t i, std::string name);
@@ -684,8 +685,7 @@ void CNodeDefManager::clear()
 	m_group_to_items.clear();
 	m_next_id = 0;
 
-	m_node_registration_complete = false;
-	m_pending_resolve_callbacks.clear();
+	resetNodeResolveState();
 
 	u32 initial_length = 0;
 	initial_length = MYMAX(initial_length, CONTENT_UNKNOWN + 1);
@@ -1219,7 +1219,7 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 }
 #endif
 
-void CNodeDefManager::serialize(std::ostream &os, u16 protocol_version)
+void CNodeDefManager::serialize(std::ostream &os, u16 protocol_version) const
 {
 	writeU8(os, 1); // version
 	u16 count = 0;
@@ -1228,7 +1228,7 @@ void CNodeDefManager::serialize(std::ostream &os, u16 protocol_version)
 		if (i == CONTENT_IGNORE || i == CONTENT_AIR
 				|| i == CONTENT_UNKNOWN)
 			continue;
-		ContentFeatures *f = &m_content_features[i];
+		const ContentFeatures *f = &m_content_features[i];
 		if (f->name == "")
 			continue;
 		writeU16(os2, i);
@@ -1423,11 +1423,19 @@ void CNodeDefManager::runNodeResolveCallbacks()
 }
 
 
+void CNodeDefManager::resetNodeResolveState()
+{
+	m_node_registration_complete = false;
+	m_pending_resolve_callbacks.clear();
+}
+
+
 ////
 //// NodeResolver
 ////
 
-NodeResolver::NodeResolver() {
+NodeResolver::NodeResolver()
+{
 	m_ndef            = NULL;
 	m_nodenames_idx   = 0;
 	m_nnlistsizes_idx = 0;
@@ -1460,14 +1468,14 @@ void NodeResolver::nodeResolveInternal()
 
 const std::string &NodeResolver::getNodeName(content_t c) const
 {
-	if (m_nodenames.size() == 0) {
+	if (c < m_nodenames.size())
+		return m_nodenames[c];
+
+	if (m_ndef)
 		return m_ndef->get(c).name;
-	} else {
-		if (c < m_nodenames.size())
-			return m_nodenames[c];
-		else
-			return m_ndef->get(CONTENT_UNKNOWN).name;
-	}
+
+	static const std::string unknown_str("unknown");
+	return unknown_str;
 }
 
 
@@ -1476,7 +1484,7 @@ bool NodeResolver::getIdFromNrBacklog(content_t *result_out,
 {
 	if (m_nodenames_idx == m_nodenames.size()) {
 		*result_out = c_fallback;
-		errorstream << "Resolver: no more nodes in list" << std::endl;
+		errorstream << "NodeResolver: no more nodes in list" << std::endl;
 		return false;
 	}
 

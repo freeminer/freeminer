@@ -86,6 +86,9 @@ private:
 	// freeze_melt(pos)
 	static int l_freeze_melt(lua_State *L);
 
+	// find_nodes_with_meta(pos1, pos2)
+	static int l_find_nodes_with_meta(lua_State *L);
+
 	// get_meta(pos)
 	static int l_get_meta(lua_State *L);
 
