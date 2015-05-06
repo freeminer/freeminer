@@ -873,6 +873,9 @@ $(ROOT)/jni/src/android_version.h :
 	echo "#define VERSION_PATCH $$(cat ${ROOT}/../../CMakeLists.txt |          \
 	grep ^set\(VERSION_PATCH\ | sed 's/)/ /' | awk '{print $$2;}')"            \
 	>> ${ROOT}/jni/src/android_version.h;                                      \
+	echo "#define VERSION_TWEAK $$(cat ${ROOT}/../../CMakeLists.txt |          \
+	grep ^set\(VERSION_TWEAK\ | sed 's/)/ /' | awk '{print $$2;}')"            \
+	>> ${ROOT}/jni/src/android_version.h;                                      \
 	export GITHASH=$$(git rev-parse --short=8 HEAD);                           \
 	export GITTAG=$$(git describe --abbrev=0 --tags);                          \
 	echo "#define VERSION_GITHASH \"$$GITTAG-$$GITHASH\""                      \

@@ -374,16 +374,7 @@ LOCAL_SRC_FILES += jni/src/json/jsoncpp.cpp
 LOCAL_SHARED_LIBRARIES := openal ogg vorbis
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
 
-
-LOCAL_SRC_FILES += \
-		jni/src/enet/callbacks.c                 \
-		jni/src/enet/compress.c                  \
-		jni/src/enet/host.c                      \
-		jni/src/enet/list.c                      \
-		jni/src/enet/packet.c                    \
-		jni/src/enet/peer.c                      \
-		jni/src/enet/protocol.c                  \
-		jni/src/enet/unix.c
+LOCAL_SRC_FILES += $(wildcard $(LOCAL_PATH)/jni/src/enet/*.c) 
 
 LOCAL_STATIC_LIBRARIES += msgpack
 # iconv
