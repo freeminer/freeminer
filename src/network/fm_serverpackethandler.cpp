@@ -494,14 +494,17 @@ void Server::ProcessData(NetworkPacket *pkt)
 			m_con.DisconnectPeer(peer_id);
 			return;
 		}
-		int version_patch = 0;
+		int version_patch = 0, version_tweak = 0;
 		if (packet.count(TOSERVER_CLIENT_READY_VERSION_PATCH))
 			version_patch = packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>();
+		if (packet.count(TOSERVER_CLIENT_READY_VERSION_TWEAK))
+			version_tweak = packet[TOSERVER_CLIENT_READY_VERSION_TWEAK].as<int>();
 		m_clients.setClientVersion(
 			peer_id,
 			packet[TOSERVER_CLIENT_READY_VERSION_MAJOR].as<int>(),
 			packet[TOSERVER_CLIENT_READY_VERSION_MINOR].as<int>(),
-			version_patch, // packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>(), TODO
+			version_patch,
+			//version_tweak,
 			packet[TOSERVER_CLIENT_READY_VERSION_STRING].as<std::string>()
 		);
 		m_clients.event(peer_id, CSE_SetClientReady);
