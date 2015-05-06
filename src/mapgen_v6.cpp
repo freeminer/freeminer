@@ -357,7 +357,7 @@ float MapgenV6::getHumidity(v3POS p)
 		seed+72384, 4, 0.66);
 	noise = (noise + 1.0)/2.0;*/
 
-	if (m_emerge->env->m_use_weather) {
+	if (m_emerge->env->m_use_weather_biome) {
 		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
 	}
 
@@ -434,7 +434,7 @@ BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 
 	float d, h;
 
-	if (m_emerge->env->m_use_weather) {
+	if (m_emerge->env->m_use_weather_biome) {
 		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->params.np_biome_heat.offset) / m_emerge->params.np_biome_heat.scale;
 		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
 	} else {

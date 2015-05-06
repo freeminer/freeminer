@@ -364,6 +364,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 {
 	m_game_time = 0;
 	m_use_weather = g_settings->getBool("weather");
+	m_use_weather_biome = g_settings->getBool("weather_biome");
 
 	if (!m_key_value_storage.db)
 		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;

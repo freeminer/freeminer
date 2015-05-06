@@ -300,6 +300,7 @@ void set_default_settings(Settings *settings) {
 
 	// Weather
 	settings->setDefault("weather", "true");
+	settings->setDefault("weather_biome", "false");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");

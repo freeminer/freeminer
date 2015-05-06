@@ -370,6 +370,7 @@ public:
 
 	// is weather active in this environment?
 	bool m_use_weather;
+	bool m_use_weather_biome;
 	bool m_more_threads;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);
