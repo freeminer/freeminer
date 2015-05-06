@@ -547,6 +547,7 @@ add_subdirectory(util)
 if(USE_ENET)
 	add_subdirectory(enet)
 	include_directories(${PROJECT_SOURCE_DIR}/enet/include)
+	set(ENET_LIBRARY enet)
 endif()
 
 set(FMcommon_SRCS
@@ -776,6 +777,7 @@ if(BUILD_CLIENT)
 		${LUA_LIBRARY}
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARY}
+		${ENET_LIBRARY}
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
@@ -814,9 +816,6 @@ if(BUILD_CLIENT)
 			${CGUITTFONT_LIBRARY}
 		)
 	endif()
-	if(USE_ENET)
-		target_link_libraries(${PROJECT_NAME} enet)
-	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
@@ -844,13 +843,11 @@ if(BUILD_SERVER)
 		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARY}
+		${ENET_LIBRARY}
 		${PLATFORM_LIBS}
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
 			COMPILE_DEFINITIONS "SERVER")
-	if(USE_ENET)
-		target_link_libraries(${PROJECT_NAME}server enet)
-	endif()
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
