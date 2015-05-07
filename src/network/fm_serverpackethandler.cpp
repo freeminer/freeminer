@@ -499,6 +499,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			version_patch = packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>();
 		if (packet.count(TOSERVER_CLIENT_READY_VERSION_TWEAK))
 			version_tweak = packet[TOSERVER_CLIENT_READY_VERSION_TWEAK].as<int>();
+		if (version_tweak) {} //no warn todo remove
 		m_clients.setClientVersion(
 			peer_id,
 			packet[TOSERVER_CLIENT_READY_VERSION_MAJOR].as<int>(),
