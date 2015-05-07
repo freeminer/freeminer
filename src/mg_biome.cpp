@@ -66,8 +66,7 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->m_nodenames.push_back("mapgen_ice");
 	b->m_nodenames.push_back("mapgen_dirt_with_snow");
 
-
-	m_ndef->pendNodeResolve(b, NODE_RESOLVE_DEFERRED);
+	m_ndef->pendNodeResolve(b);
 
 	year_days = g_settings->getS16("year_days");
 	weather_heat_season = g_settings->getS16("weather_heat_season");
