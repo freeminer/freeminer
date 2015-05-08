@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <list>
 #include <bitset>
+#include "util/numeric.h"
 #include "mapnode.h"
 #include "client/tile.h"
 #ifndef SERVER
