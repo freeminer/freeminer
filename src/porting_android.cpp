@@ -155,9 +155,9 @@ void initAndroid()
 #endif
 
 	{
-	// https://code.google.com/p/android/issues/detail?id=40753
-	// http://stackoverflow.com/questions/10196361/how-to-check-the-device-running-api-level-using-c-code-via-ndk
-	// http://developer.android.com/reference/android/os/Build.VERSION_CODES.html#JELLY_BEAN_MR2
+		// https://code.google.com/p/android/issues/detail?id=40753
+		// http://stackoverflow.com/questions/10196361/how-to-check-the-device-running-api-level-using-c-code-via-ndk
+		// http://developer.android.com/reference/android/os/Build.VERSION_CODES.html#JELLY_BEAN_MR2
 		jclass versionClass = porting::jnienv->FindClass("android/os/Build$VERSION");
 		if (versionClass) {
 			jfieldID sdkIntFieldID = porting::jnienv->GetStaticFieldID(versionClass, "SDK_INT", "I");
@@ -167,6 +167,7 @@ void initAndroid()
 			}
 		}
 	}
+
 }
 
 

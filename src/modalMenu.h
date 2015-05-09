@@ -153,9 +153,7 @@ public:
 			}
 		}
 		#endif
-
-
-		return false; 
+		return false;
 	};
 	virtual bool OnEvent(const SEvent& event) {
 		if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown) {
