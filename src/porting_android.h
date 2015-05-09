@@ -36,6 +36,8 @@ extern android_app *app_global;
 /** java <-> c++ interaction interface **/
 extern JNIEnv *jnienv;
 
+extern int android_version_sdk_int;
+
 /**
  * do initialization required on android only
  */
@@ -75,6 +77,9 @@ int getInputDialogState();
  * get text in current input dialog
  */
 std::string getInputDialogValue();
+
+
+void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
 
 }
 

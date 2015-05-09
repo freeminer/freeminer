@@ -3038,8 +3038,12 @@ void Game::openConsole(float height, bool close_on_return, const std::wstring& i
 		guienv->setFocus(gui_chat_console);
 
 #ifdef __ANDROID__
-		int type = 1;
-		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+		if (porting::android_version_sdk_int >= 18) {
+			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+		} else {
+			int type = 1;
+			porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+		}
 #endif
 
 	}

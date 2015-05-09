@@ -2801,6 +2801,9 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
+		if (porting::android_version_sdk_int >= 18) {
+			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+		} else {
 			m_JavaDialogFieldName = getNameByID(hovered->getID());
 			std::string message   = _("Enter ");
 			std::string label     = wide_to_narrow(getLabelByID(hovered->getID()));
@@ -2825,6 +2828,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			porting::showInputDialog(_("ok"), "",
 					wide_to_narrow(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
+		}
 			return retval;
 		}
 	}
