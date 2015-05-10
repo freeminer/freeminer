@@ -1520,7 +1520,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 			auto lock = block->try_lock_unique_rec();
 			if (!lock->owns_lock())
 				continue;
-			if(block->refGet() == 0 && block->getUsageTimer() > unload_timeout)
+			if(block->getUsageTimer() > unload_timeout) // block->refGet() <= 0 &&
 			{
 				v3s16 p = block->getPos();
 				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;

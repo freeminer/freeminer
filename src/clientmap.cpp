@@ -392,7 +392,8 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 			mesh->incrementUsageTimer(dtime);
 
 			// Add to set
-			block->refGrab();
+			//block->refGrab();
+			block->resetUsageTimer();
 			drawlist.set(bp, block);
 
 			blocks_drawn++;
@@ -415,8 +416,8 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 	if (m_drawlist_last)
 		return;
 
-	for (auto & ir : *m_drawlist)
-		ir.second->refDrop();
+	//for (auto & ir : *m_drawlist)
+	//	ir.second->refDrop();
 
 	auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;

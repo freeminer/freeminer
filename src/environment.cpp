@@ -1063,7 +1063,8 @@ void ServerEnvironment::clearAllObjects()
 			i != loaded_blocks.end(); ++i) {
 		v3s16 p = *i;
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block != NULL);
+		if (!block)
+			continue;
 		block->refGrab();
 	}
 
