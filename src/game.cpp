@@ -2076,11 +2076,7 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 	Address bind_addr(0, 0, 0, 0, port);
 
 	if (g_settings->getBool("ipv6_server")) {
-errorstream<<" bind v6"<<std::endl;
 		bind_addr.setAddress(in6addr_any);
-
-//*address = "::1";
-
 	}
 
 	try {
@@ -2335,17 +2331,11 @@ bool Game::connectToServer(const std::string &playername,
 	try {
 		connect_address.Resolve(address->c_str());
 
-errorstream << " Cto="<<*address<<std::endl;
 		if (connect_address.isZero()) { // i.e. INADDR_ANY, IN6ADDR_ANY
-errorstream << " Cto zero!"<<std::endl;
-
 			//connect_address.Resolve("localhost");
 			if (connect_address.isIPv6() || g_settings->getBool("ipv6_server")) {
-errorstream << " Cto zero v6"<<std::endl;
-
 				connect_address.setAddress(in6addr_loopback);
 			} else {
-errorstream << " Cto zero v4"<<std::endl;
 				connect_address.setAddress(127, 0, 0, 1);
 			}
 			local_server_mode = true;
@@ -2355,9 +2345,6 @@ errorstream << " Cto zero v4"<<std::endl;
 		errorstream << *error_message << std::endl;
 		return false;
 	}
-
-errorstream << " connect_address.isIPv6() "<<connect_address.isIPv6()<< " "<< connect_address.serializeString()<<std::endl;
-
 
 	if (connect_address.isIPv6() && !g_settings->getBool("enable_ipv6")) {
 		*error_message = "Unable to connect to " +
