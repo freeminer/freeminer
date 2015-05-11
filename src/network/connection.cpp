@@ -1740,7 +1740,7 @@ void ConnectionSendThread::connect(Address address)
 	Address bind_addr;
 
 	if (address.isIPv6())
-		bind_addr.setAddress((IPv6AddressBytes*) NULL);
+		bind_addr.setAddress(in6addr_any);
 	else
 		bind_addr.setAddress(0,0,0,0);
 
