@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../util/auth.h"
+
 void Client::request_media(const std::vector<std::string> &file_requests)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_REQUEST_MEDIA, 1);

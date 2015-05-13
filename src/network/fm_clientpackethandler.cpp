@@ -81,7 +81,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 	//infostream<<"Client received command="<<(int)command<<std::endl;
 
-	if(command == TOCLIENT_INIT)
+	if(command == TOCLIENT_INIT_LEGACY)
 	{
 		u8 deployed;
 		packet[TOCLIENT_INIT_DEPLOYED].convert(&deployed);

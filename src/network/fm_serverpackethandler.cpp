@@ -42,6 +42,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "ban.h"
 
+#include "../util/auth.h"
+
 
 //todo: split as in serverpackethandler.cpp
 
@@ -360,7 +362,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			MSGPACK_PACKET_INIT(TOCLIENT_INIT, 5);
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT_LEGACY, 5);
 			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
@@ -376,7 +378,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 			// Send as reliable
 			m_clients.send(peer_id, 0, buffer, true);
-			m_clients.event(peer_id, CSE_Init);
+			m_clients.event(peer_id, CSE_InitLegacy);
 		}
 
 		return;
