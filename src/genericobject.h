@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define GENERIC_CMD_SET_BONE_POSITION 7
 #define GENERIC_CMD_SET_ATTACHMENT 8
 #define GENERIC_CMD_SET_PHYSICS_OVERRIDE 9
-#define GENERIC_CMD_SET_NAMETAG_COLOR 10
+#define GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES 10
 
 #include "object_properties.h"
 std::string gob_cmd_set_properties(const ObjectProperties &prop);
@@ -76,7 +76,7 @@ std::string gob_cmd_update_bone_position(std::string bone, v3f position, v3f rot
 
 std::string gob_cmd_update_attachment(int parent_id, std::string bone, v3f position, v3f rotation);
 
-std::string gob_cmd_set_nametag_color(video::SColor color);
+std::string gob_cmd_update_nametag_attributes(video::SColor color);
 
 #endif
 
