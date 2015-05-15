@@ -431,6 +431,7 @@ core.registered_on_crafts, core.register_on_craft = make_registration()
 core.registered_craft_predicts, core.register_craft_predict = make_registration()
 core.registered_on_protection_violation, core.register_on_protection_violation = make_registration()
 core.registered_on_item_eats, core.register_on_item_eat = make_registration()
+core.registered_on_punchplayers, core.register_on_punchplayer = make_registration()
 
 minetest.register_on_joinplayer(function(player)
 	if minetest.is_singleplayer() then

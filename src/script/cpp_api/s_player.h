@@ -26,7 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 
 #include "cpp_api/s_base.h"
+#include "irr_v3d.h"
 
+struct ToolCapabilities;
 
 class ScriptApiPlayer
 		: virtual public ScriptApiBase
@@ -41,6 +43,9 @@ public:
 	void on_joinplayer(ServerActiveObject *player);
 	void on_leaveplayer(ServerActiveObject *player);
 	void on_cheat(ServerActiveObject *player, const std::string &cheat_type);
+	bool on_punchplayer(ServerActiveObject *player,
+		ServerActiveObject *hitter, float time_from_last_punch,
+		const ToolCapabilities *toolcap, v3f dir, s16 damage);
 
 	void on_playerReceiveFields(ServerActiveObject *player,
 			const std::string &formname,

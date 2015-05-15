@@ -726,6 +726,8 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_bone_position_sent(false),
 	m_attachment_parent_id(0),
 	m_attachment_sent(false),
+	m_nametag_color(video::SColor(255, 255, 255, 255)),
+	m_nametag_sent(false),
 	// public
 	m_physics_override_speed(1),
 	m_physics_override_jump(1),
@@ -819,7 +821,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 
 		auto lock = lock_shared();
 
-		writeU8(os, 5 + m_bone_position.size()); // number of messages stuffed in here
+		writeU8(os, 6 + m_bone_position.size()); // number of messages stuffed in here
 		os<<serializeLongString(getPropertyPacket()); // message 1
 		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
 		os<<serializeLongString(gob_cmd_update_animation(m_animation_range, m_animation_speed, m_animation_blend)); // 3
@@ -830,6 +832,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 		os<<serializeLongString(gob_cmd_update_physics_override(m_physics_override_speed,
 				m_physics_override_jump, m_physics_override_gravity, m_physics_override_sneak,
 				m_physics_override_sneak_glitch)); // 5
+		os << serializeLongString(gob_cmd_set_nametag_color(m_nametag_color)); // 6
 	}
 	else
 	{
@@ -989,6 +992,14 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		ActiveObjectMessage aom(getId(), true, str);
 		m_messages_out.push(aom);
 	}
+
+	if (m_nametag_sent == false) {
+		m_nametag_sent = true;
+		std::string str = gob_cmd_set_nametag_color(m_nametag_color);
+		// create message and add to list
+		ActiveObjectMessage aom(getId(), true, str);
+		m_messages_out.push(aom);
+	}
 }
 
 void PlayerSAO::setBasePosition(const v3f &position)
@@ -1042,15 +1053,15 @@ int PlayerSAO::punch(v3f dir,
 	float time_from_last_punch)
 {
 	// It's best that attachments cannot be punched
-	if(isAttached())
+	if (isAttached())
 		return 0;
 
-	if(!toolcap)
+	if (!toolcap)
 		return 0;
 
 	// No effect if PvP disabled
-	if(g_settings->getBool("enable_pvp") == false){
-		if(puncher->getType() == ACTIVEOBJECT_TYPE_PLAYER){
+	if (g_settings->getBool("enable_pvp") == false) {
+		if (puncher->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			std::string str = gob_cmd_punched(0, getHP());
 			// create message and add to list
 			ActiveObjectMessage aom(getId(), true, str);
@@ -1064,14 +1075,35 @@ int PlayerSAO::punch(v3f dir,
 
 	std::string punchername = "nil";
 
-	if ( puncher != 0 )
+	if (puncher != 0)
 		punchername = puncher->getDescription();
 
-	actionstream<<"Player "<<m_player->getName()<<" punched by "
-			<<punchername<<", damage "<<hitparams.hp
-			<<" HP"<<std::endl;
+	PlayerSAO *playersao = m_player->getPlayerSAO();
 
-	setHP(getHP() - hitparams.hp);
+	bool damage_handled = m_env->getScriptIface()->on_punchplayer(playersao,
+				puncher, time_from_last_punch, toolcap, dir,
+				hitparams.hp);
+
+	if (!damage_handled) {
+		setHP(getHP() - hitparams.hp);
+	} else { // override client prediction
+		if (puncher->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+			std::string str = gob_cmd_punched(0, getHP());
+			// create message and add to list
+			ActiveObjectMessage aom(getId(), true, str);
+			m_messages_out.push(aom);
+		}
+	}
+
+
+	actionstream << "Player " << m_player->getName() << " punched by "
+			<< punchername;
+	if (!damage_handled) {
+		actionstream << ", damage " << hitparams.hp << " HP";
+	} else {
+		actionstream << ", damage handled by lua";
+	}
+	actionstream << std::endl;
 
 	return hitparams.wear;
 }
@@ -1175,6 +1207,17 @@ ObjectProperties* PlayerSAO::accessObjectProperties()
 void PlayerSAO::notifyObjectPropertiesModified()
 {
 	m_properties_sent = false;
+}
+
+void PlayerSAO::setNametagColor(video::SColor color)
+{
+	m_nametag_color = color;
+	m_nametag_sent = false;
+}
+
+video::SColor PlayerSAO::getNametagColor()
+{
+	return m_nametag_color;
 }
 
 Inventory* PlayerSAO::getInventory()
