@@ -98,22 +98,22 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	// First byte after command is maximum supported
 	// serialization version
 	u8 client_max;
-	u8 compression_modes;
+	u16 supp_compr_modes;
 	u16 min_net_proto_version = 0;
 	u16 max_net_proto_version;
 	std::string playerName;
 
-	*pkt >> client_max >> compression_modes >> min_net_proto_version
+	*pkt >> client_max >> supp_compr_modes >> min_net_proto_version
 			>> max_net_proto_version >> playerName;
 
 	u8 our_max = SER_FMT_VER_HIGHEST_READ;
 	// Use the highest version supported by both
-	u8 deployed = std::min(client_max, our_max);
+	u8 depl_serial_v = std::min(client_max, our_max);
 	// If it's lower than the lowest supported, give up.
-	if (deployed < SER_FMT_VER_LOWEST)
-		deployed = SER_FMT_VER_INVALID;
+	if (depl_serial_v < SER_FMT_VER_LOWEST)
+		depl_serial_v = SER_FMT_VER_INVALID;
 
-	if (deployed == SER_FMT_VER_INVALID) {
+	if (depl_serial_v == SER_FMT_VER_INVALID) {
 		actionstream << "Server: A mismatched client tried to connect from "
 				<< addr_s << std::endl;
 		infostream<<"Server: Cannot negotiate serialization version with "
@@ -122,7 +122,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 		return;
 	}
 
-	client->setPendingSerializationVersion(deployed);
+	client->setPendingSerializationVersion(depl_serial_v);
 
 	/*
 		Read and check network protocol version
@@ -281,12 +281,14 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	NetworkPacket resp_pkt(TOCLIENT_HELLO, 1 + 4
 		+ legacyPlayerNameCasing.size(), pkt->getPeerId());
 
-	resp_pkt << deployed << auth_mechs << legacyPlayerNameCasing;
+	u16 depl_compress_mode = NETPROTO_COMPRESSION_NONE;
+	resp_pkt << depl_serial_v << depl_compress_mode << net_proto_version
+		<< auth_mechs << legacyPlayerNameCasing;
 
 	Send(&resp_pkt);
 
 	client->allowed_auth_mechs = auth_mechs;
-	client->setSupportedCompressionModes(compression_modes);
+	client->setDeployedCompressionMode(depl_compress_mode);
 
 	m_clients.event(pkt->getPeerId(), CSE_Hello);
 }

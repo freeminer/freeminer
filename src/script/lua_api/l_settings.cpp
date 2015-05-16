@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lua_api/l_settings.h"
 #include "lua_api/l_internal.h"
+#include "cpp_api/s_security.h"
 #include "settings.h"
 #include "log.h"
 
@@ -191,6 +192,7 @@ int LuaSettings::create_object(lua_State* L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char* filename = luaL_checkstring(L, 1);
+	CHECK_SECURE_PATH_OPTIONAL(L, filename);
 	LuaSettings* o = new LuaSettings(filename);
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
 	luaL_getmetatable(L, className);

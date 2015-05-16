@@ -706,3 +706,10 @@
 # Animation range for model when walking and digging
 #animation_wd_start = 200
 #animation_wd_stop = 219
+
+#    Prevent mods from doing insecure things like running shell commands.
+#secure.enable_security = false
+#    Comma-separated list of trusted mods that are allowed to access insecure
+#    functions even when mod security is on (via request_insecure_environment()).
+#secure.trusted_mods =
+
