@@ -15,6 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "../util/auth.h"
+
 void Client::request_media(const std::vector<std::string> &file_requests)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_REQUEST_MEDIA, 1);
@@ -78,16 +80,31 @@ void Client::sendLegacyInit(const std::string &playerName, const std::string &pl
 	// [23] u8[28] password (new in some version)
 	// [51] u16 minimum supported network protocol version (added sometime)
 	// [53] u16 maximum supported network protocol version (added later than the previous one)
-	MSGPACK_PACKET_INIT(TOSERVER_INIT_LEGACY, 5);
-	PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
-	PACK(TOSERVER_INIT_NAME, playerName);
-	PACK(TOSERVER_INIT_PASSWORD, playerPassword);
-	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
-	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
+	MSGPACK_PACKET_INIT(TOSERVER_INIT_LEGACY, 6);
+	PACK(TOSERVER_INIT_LEGACY_FMT, SER_FMT_VER_HIGHEST_READ);
+	PACK(TOSERVER_INIT_LEGACY_NAME, playerName);
+	PACK(TOSERVER_INIT_LEGACY_PASSWORD, playerPassword);
+	PACK(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
+	PACK(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
+	PACK(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM, CLIENT_PROTOCOL_VERSION_FM);
 
 	// Send as unreliable
 	Send(1, buffer, false);
 }
+
+void Client::sendInit(const std::string &playerName)
+{
+	MSGPACK_PACKET_INIT(TOSERVER_INIT, 4);
+
+	// TODO (later) actually send supported compression modes
+	PACK(TOSERVER_INIT_FMT, SER_FMT_VER_HIGHEST_READ);
+	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MIN, CLIENT_PROTOCOL_VERSION_MIN);
+	PACK(TOSERVER_INIT_PROTOCOL_VERSION_MAX, CLIENT_PROTOCOL_VERSION_MAX);
+	PACK(TOSERVER_INIT_NAME, playerName);
+
+	Send(1, buffer, false);
+}
+
 
 void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
 {
@@ -210,10 +227,11 @@ void Client::sendReady()
 {
 	DSTACK(__FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOSERVER_CLIENT_READY, 3);
+	MSGPACK_PACKET_INIT(TOSERVER_CLIENT_READY, 5);
 	PACK(TOSERVER_CLIENT_READY_VERSION_MAJOR, VERSION_MAJOR);
 	PACK(TOSERVER_CLIENT_READY_VERSION_MINOR, VERSION_MINOR);
-	// PACK(TOSERVER_CLIENT_READY_VERSION_PATCH, VERSION_PATCH_ORIG); TODO
+	PACK(TOSERVER_CLIENT_READY_VERSION_PATCH, VERSION_PATCH);
+	PACK(TOSERVER_CLIENT_READY_VERSION_TWEAK, VERSION_TWEAK);
 	PACK(TOSERVER_CLIENT_READY_VERSION_STRING, std::string(g_version_hash));
 
 	// Send as reliable

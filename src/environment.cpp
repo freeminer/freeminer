@@ -364,6 +364,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 {
 	m_game_time = 0;
 	m_use_weather = g_settings->getBool("weather");
+	m_use_weather_biome = g_settings->getBool("weather_biome");
 
 	if (!m_key_value_storage.db)
 		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;
@@ -1062,7 +1063,8 @@ void ServerEnvironment::clearAllObjects()
 			i != loaded_blocks.end(); ++i) {
 		v3s16 p = *i;
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block != NULL);
+		if (!block)
+			continue;
 		block->refGrab();
 	}
 
@@ -1485,7 +1487,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		/*
 			Remove objects that satisfy (m_removed && m_known_by_count==0)
 		*/
-		removeRemovedObjects();
+		removeRemovedObjects(max_cycle_ms);
 	}
 }
 
@@ -1498,8 +1500,9 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
-			auto lock = m_active_blocks.m_list.lock_shared_rec();
-			active_blocks_list = m_active_blocks.m_list;
+			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
+			if (lock->owns_lock())
+				active_blocks_list = m_active_blocks.m_list;
 		}
 
 		for(auto i = active_blocks_list.begin(); i != active_blocks_list.end(); ++i)
@@ -1757,8 +1760,8 @@ void ServerEnvironment::getRemovedActiveObjects(v3s16 pos, s16 radius,
 		ServerActiveObject *object = getActiveObject(id);
 
 		if(object == NULL){
-			infostream<<"ServerEnvironment::getRemovedActiveObjects():"
-					<<" object in current_objects is NULL"<<std::endl;
+			//infostream<<"ServerEnvironment::getRemovedActiveObjects():"
+			//		<<" object in current_objects is NULL"<<std::endl;
 			removed_objects.insert(id);
 			continue;
 		}
@@ -1878,7 +1881,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 /*
 	Remove objects that satisfy (m_removed && m_known_by_count==0)
 */
-void ServerEnvironment::removeRemovedObjects()
+void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	std::list<u16> objects_to_remove;
@@ -1899,6 +1902,7 @@ void ServerEnvironment::removeRemovedObjects()
 		}
 	}
 
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 	if (objects.size())
 	for (auto & obj : objects)
 	{
@@ -1969,6 +1973,9 @@ void ServerEnvironment::removeRemovedObjects()
 
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
+
+		if (porting::getTimeMs() > end_ms)
+			break;
 	}
 
 	if (!objects_to_remove.empty()) {
@@ -2975,7 +2982,7 @@ void ClientEnvironment::processActiveObjectMessage(u16 id,
 	ClientActiveObject* obj = getActiveObject(id);
 	if(obj == NULL)
 	{
-		infostream<<"ClientEnvironment::processActiveObjectMessage():"
+		verbosestream<<"ClientEnvironment::processActiveObjectMessage():"
 				<<" got message for id="<<id<<", which doesn't exist."
 				<<std::endl;
 		return;

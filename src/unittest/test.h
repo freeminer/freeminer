@@ -37,7 +37,7 @@ class TestFailedException : public std::exception {
 	try {                           \
 		fxn(__VA_ARGS__);           \
 		dstream << "[PASS] ";       \
-	} catch (TestFailedException) { \
+	} catch (...) {                 \
 		dstream << "[FAIL] ";       \
 		num_tests_failed++;         \
 	}                               \
@@ -102,11 +102,17 @@ class IGameDef;
 class TestBase {
 public:
 	bool testModule(IGameDef *gamedef);
+	std::string getTestTempDirectory();
+	std::string getTestTempFile();
+
 	virtual void runTests(IGameDef *gamedef) = 0;
 	virtual const char *getName() = 0;
 
 	u32 num_tests_failed;
 	u32 num_tests_run;
+
+private:
+	std::string m_test_dir;
 };
 
 class TestManager {
@@ -124,9 +130,12 @@ public:
 };
 
 // A few item and node definitions for those tests that need them
-extern content_t CONTENT_STONE;
-extern content_t CONTENT_GRASS;
-extern content_t CONTENT_TORCH;
+extern content_t t_CONTENT_STONE;
+extern content_t t_CONTENT_GRASS;
+extern content_t t_CONTENT_TORCH;
+extern content_t t_CONTENT_WATER;
+extern content_t t_CONTENT_LAVA;
+extern content_t t_CONTENT_BRICK;
 
 void run_tests();
 

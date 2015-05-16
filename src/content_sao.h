@@ -200,6 +200,8 @@ public:
 	void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation);
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
+	void setNametagColor(video::SColor color);
+	video::SColor getNametagColor();
 
 	/*
 		Inventory interface
@@ -319,6 +321,9 @@ private:
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
 	bool m_attachment_sent;
+
+	video::SColor m_nametag_color;
+	bool m_nametag_sent;
 
 public:
 	float m_physics_override_speed;

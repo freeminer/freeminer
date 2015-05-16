@@ -451,6 +451,8 @@ void Circuit::load() {
 #if USE_LEVELDB
 	// Filling list with empty virtual elements
 	auto virtual_it = m_virtual_database->new_iterator();
+	if (!virtual_it)
+		return;
 	std::map <u32, std::list <CircuitElementVirtual>::iterator> id_to_virtual_element;
 	for(virtual_it->SeekToFirst(); virtual_it->Valid(); virtual_it->Next()) {
 		element_id = stoi(virtual_it->key().ToString());
@@ -463,6 +465,8 @@ void Circuit::load() {
 
 	// Filling list with empty elements
 	auto it = m_database->new_iterator();
+	if (!it)
+		return;
 	std::map <u32, std::list <CircuitElement>::iterator> id_to_element;
 	for(it->SeekToFirst(); it->Valid(); it->Next()) {
 		element_id = stoi(it->key().ToString());

@@ -25,11 +25,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <IFileSystem.h>
 #include "jthread/jmutexautolock.h"
+#include "util/auth.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "util/serialize.h"
 #include "util/string.h"
 #include "strfnd.h"
+#include "util/srp.h"
 #include "client.h"
 #include "network/clientopcodes.h"
 #include "network/networkprotocol.h"
@@ -238,6 +240,8 @@ Client::Client(
 	m_highlighted_pos(0,0,0),
 	m_map_seed(0),
 	m_password(password),
+	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
+	m_auth_data(NULL),
 	m_access_denied(false),
 	m_itemdef_received(false),
 	m_nodedef_received(false),
@@ -373,7 +377,30 @@ void Client::step(float dtime)
 			Player *myplayer = m_env.getLocalPlayer();
 			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
 
+			// Send TOSERVER_INIT_LEGACY
+			// [0] u16 TOSERVER_INIT_LEGACY
+			// [2] u8 SER_FMT_VER_HIGHEST_READ
+			// [3] u8[20] player_name
+			// [23] u8[28] password (new in some version)
+			// [51] u16 minimum supported network protocol version (added sometime)
+			// [53] u16 maximum supported network protocol version (added later than the previous one)
+
+/*
+			char pName[PLAYERNAME_SIZE];
+			char pPassword[PASSWORD_SIZE];
+			memset(pName, 0, PLAYERNAME_SIZE * sizeof(char));
+			memset(pPassword, 0, PASSWORD_SIZE * sizeof(char));
+
+			std::string hashed_password = translatePassword(myplayer->getName(), m_password);
+			snprintf(pName, PLAYERNAME_SIZE, "%s", myplayer->getName());
+			snprintf(pPassword, PASSWORD_SIZE, "%s", hashed_password.c_str());
+
+			sendLegacyInit(pName, pPassword);
+*/
 			sendLegacyInit(myplayer->getName(), m_password);
+
+			if (LATEST_PROTOCOL_VERSION >= 25)
+				sendInit(myplayer->getName());
 		}
 
 		// Not connected, return
@@ -945,6 +972,39 @@ void Client::interact(u8 action, const PointedThing& pointed)
 	Send(&pkt);
 }
 
+void Client::deleteAuthData()
+{
+	if (!m_auth_data)
+		return;
+
+	switch (m_chosen_auth_mech) {
+		case AUTH_MECHANISM_FIRST_SRP:
+			break;
+		case AUTH_MECHANISM_SRP:
+		case AUTH_MECHANISM_LEGACY_PASSWORD:
+			srp_user_delete((SRPUser *) m_auth_data);
+			m_auth_data = NULL;
+			break;
+		case AUTH_MECHANISM_NONE:
+			break;
+	}
+}
+
+
+AuthMechanism Client::choseAuthMech(const u32 mechs)
+{
+	if (mechs & AUTH_MECHANISM_SRP)
+		return AUTH_MECHANISM_SRP;
+
+	if (mechs & AUTH_MECHANISM_FIRST_SRP)
+		return AUTH_MECHANISM_FIRST_SRP;
+
+	if (mechs & AUTH_MECHANISM_LEGACY_PASSWORD)
+		return AUTH_MECHANISM_LEGACY_PASSWORD;
+
+	return AUTH_MECHANISM_NONE;
+}
+
 void Client::sendLegacyInit(const std::string &playerName, const std::string &playerPassword)
 {
 	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
@@ -961,6 +1021,70 @@ void Client::sendLegacyInit(const std::string &playerName, const std::string &pl
 	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
 
 	Send(&pkt);
+}
+
+void Client::sendInit(const std::string &playerName)
+{
+	NetworkPacket pkt(TOSERVER_INIT, 1 + 2 + 2 + (1 + playerName.size()));
+
+	// TODO (later) actually send supported compression modes
+	pkt << (u8) SER_FMT_VER_HIGHEST_READ << (u8) 42;
+	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
+	pkt << playerName;
+
+	Send(&pkt);
+}
+
+void Client::startAuth(AuthMechanism chosen_auth_mechanism)
+{
+	m_chosen_auth_mech = chosen_auth_mechanism;
+
+	switch (chosen_auth_mechanism) {
+		case AUTH_MECHANISM_FIRST_SRP: {
+			// send srp verifier to server
+			NetworkPacket resp_pkt(TOSERVER_FIRST_SRP, 0);
+			char *salt, *bytes_v;
+			std::size_t len_salt, len_v;
+			salt = NULL;
+			getSRPVerifier(getPlayerName(), m_password,
+				&salt, &len_salt, &bytes_v, &len_v);
+			resp_pkt
+				<< std::string((char*)salt, len_salt)
+				<< std::string((char*)bytes_v, len_v)
+				<< (u8)((m_password == "") ? 1 : 0);
+			free(salt);
+			free(bytes_v);
+			Send(&resp_pkt);
+			break;
+		}
+		case AUTH_MECHANISM_SRP:
+		case AUTH_MECHANISM_LEGACY_PASSWORD: {
+			u8 based_on = 1;
+
+			if (chosen_auth_mechanism == AUTH_MECHANISM_LEGACY_PASSWORD) {
+				m_password = translatePassword(getPlayerName(), m_password);
+				based_on = 0;
+			}
+
+			std::string playername_u = lowercase(getPlayerName());
+			m_auth_data = srp_user_new(SRP_SHA256, SRP_NG_2048,
+				getPlayerName().c_str(), playername_u.c_str(),
+				(const unsigned char *) m_password.c_str(),
+				m_password.length(), NULL, NULL);
+			char *bytes_A = 0;
+			size_t len_A = 0;
+			srp_user_start_authentication((struct SRPUser *) m_auth_data,
+				NULL, NULL, 0, (unsigned char **) &bytes_A, &len_A);
+
+			NetworkPacket resp_pkt(TOSERVER_SRP_BYTES_A, 0);
+			resp_pkt << std::string(bytes_A, len_A) << based_on;
+			free(bytes_A);
+			Send(&resp_pkt);
+			break;
+		}
+		case AUTH_MECHANISM_NONE:
+			break; // not handled in this method
+	}
 }
 
 void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
@@ -1073,24 +1197,30 @@ void Client::sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword)
 {
 	Player *player = m_env.getLocalPlayer();
-	if(player == NULL)
+	if (player == NULL)
 		return;
 
 	std::string playername = player->getName();
-	std::string oldpwd = translatePassword(playername, oldpassword);
-	std::string newpwd = translatePassword(playername, newpassword);
+	if (m_proto_ver >= 25) {
+		// get into sudo mode and then send new password to server
+		m_password = oldpassword;
+		m_new_password = newpassword;
+		startAuth(choseAuthMech(m_sudo_auth_methods));
+	} else {
+		std::string oldpwd = translatePassword(playername, oldpassword);
+		std::string newpwd = translatePassword(playername, newpassword);
 
-	NetworkPacket pkt(TOSERVER_PASSWORD_LEGACY, 2 * PASSWORD_SIZE);
+		NetworkPacket pkt(TOSERVER_PASSWORD_LEGACY, 2 * PASSWORD_SIZE);
 
-	for(u8 i = 0; i < PASSWORD_SIZE; i++) {
-		pkt << (u8) (i < oldpwd.length() ? oldpwd[i] : 0);
+		for (u8 i = 0; i < PASSWORD_SIZE; i++) {
+			pkt << (u8) (i < oldpwd.length() ? oldpwd[i] : 0);
+		}
+
+		for (u8 i = 0; i < PASSWORD_SIZE; i++) {
+			pkt << (u8) (i < newpwd.length() ? newpwd[i] : 0);
+		}
+		Send(&pkt);
 	}
-
-	for(u8 i = 0; i < PASSWORD_SIZE; i++) {
-		pkt << (u8) (i < newpwd.length() ? newpwd[i] : 0);
-	}
-
-	Send(&pkt);
 }
 
 
@@ -1635,7 +1765,8 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 {
 	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
-	bool no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	bool headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	//bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
 
@@ -1647,7 +1778,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
 	draw_load_screen(text,device, guienv, 0, 70);
-	if (!no_output)
+	if (!headless_optimize)
 	m_tsrc->rebuildImagesAndTextures();
 	delete[] text;
 
@@ -1655,7 +1786,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	infostream<<"- Rebuilding shaders"<<std::endl;
 	text = wgettext("Rebuilding shaders...");
 	draw_load_screen(text, device, guienv, 0, 71);
-	if (!no_output)
+	if (!headless_optimize)
 	m_shsrc->rebuildShaders();
 	delete[] text;
 
@@ -1668,7 +1799,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	m_nodedef->runNodeResolveCallbacks();
 	delete[] text;
 
-	if (!no_output) {
+	if (!headless_optimize) {
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
 	TextureUpdateArgs tu_args;
@@ -1682,7 +1813,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	}
 
 	// Preload item textures and meshes if configured to
-	if(!no_output && g_settings->getBool("preload_item_visuals"))
+	if(!headless_optimize && g_settings->getBool("preload_item_visuals"))
 	{
 		verbosestream<<"Updating item textures and meshes"<<std::endl;
 		text = wgettext("Item textures...");
@@ -1704,7 +1835,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 		delete[] text;
 	}
 
-	if (!no_output) {
+	if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
 		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
 		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;

@@ -1331,7 +1331,7 @@ struct KeyCache {
 		KEYMAP_ID_DEBUG_STACKS,
 
 		//freeminer
-		KEYMAP_ID_MSG,
+		//KEYMAP_ID_MSG,
 		KEYMAP_ID_ZOOM,
 		KEYMAP_ID_PLAYERLIST,
 
@@ -1394,7 +1394,7 @@ void KeyCache::populate()
 	key[KEYMAP_ID_DEBUG_STACKS]   = getKeySetting("keymap_print_debug_stacks");
 
 	//freeminer:
-	key[KEYMAP_ID_MSG]            = getKeySetting("keymap_msg");
+	//key[KEYMAP_ID_MSG]            = getKeySetting("keymap_msg");
 	key[KEYMAP_ID_ZOOM]           = getKeySetting("keymap_zoom");
 	key[KEYMAP_ID_PLAYERLIST]     = getKeySetting("keymap_playerlist");
 
@@ -1486,6 +1486,7 @@ struct VolatileRunFlags {
 	bool camera_offset_changed;
 
 	//freeminer:
+	bool headless_optimize;
 	bool no_output;
 	bool use_weather;
 	float dedicated_server_step;
@@ -1865,7 +1866,8 @@ void Game::run()
 	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	flags.use_weather = g_settings->getBool("weather");
-	flags.no_output = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.headless_optimize = g_settings->getBool("headless_optimize");
+	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	flags.connected = false;
 	flags.reconnect = false;
 
@@ -2074,10 +2076,11 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 	Address bind_addr(0, 0, 0, 0, port);
 
 	if (g_settings->getBool("ipv6_server")) {
-		bind_addr.setAddress((IPv6AddressBytes *) NULL);
+		bind_addr.setAddress(in6addr_any);
 	}
 
 	try {
+		if (!bind_str.empty())
 		bind_addr.Resolve(bind_str.c_str());
 	} catch (ResolveError &e) {
 		infostream << "Resolving bind address \"" << bind_str
@@ -2384,7 +2387,6 @@ bool Game::connectToServer(const std::string &playername,
 
 		fps_control.last_time = device->getTimer()->getTime();
 
-		auto end_ms = porting::getTimeMs() + u32(CONNECTION_TIMEOUT * 1000);
 		while (device->run()) {
 
 			limitFps(&fps_control, &dtime);
@@ -2416,20 +2418,17 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			wait_time += dtime;
+
 			// Only time out if we aren't waiting for the server we started
 			if ((*address != "") && (wait_time > 10)) {
 				*error_message = "Connection timed out.";
 				errorstream << *error_message << std::endl;
+				flags.reconnect = true;
 				break;
 			}
 
 			// Update status
-			showOverlayMessage(wstrgettext("Connecting to server..."), dtime, 20);
-
-			if (porting::getTimeMs() > end_ms) {
-				//flags.reconnect = true;
-				return false;
-			}
+			showOverlayMessage((wstrgettext("Connecting to server... ") + narrow_to_wide(itos(int(wait_time)))).c_str(), dtime, 20);
 		}
 
 #ifdef NDEBUG
@@ -2518,14 +2517,14 @@ bool Game::getServerContent(bool *aborted)
 			if ((USE_CURL == 0) ||
 					(!g_settings->getBool("enable_remote_media_server"))) {
 				float cur = client->getCurRate();
-				std::string cur_unit = _(" KB/s");
+				std::string cur_unit = _("KiB/s");
 
 				if (cur > 900) {
 					cur /= 1024.0;
-					cur_unit = _(" MB/s");
+					cur_unit = _("MiB/s");
 				}
 
-				message << " ( " << cur << cur_unit << " )";
+				message << " (" << cur << ' ' << cur_unit << ")";
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
@@ -2628,10 +2627,10 @@ inline bool Game::handleCallbacks()
 
 void Game::processQueues()
 {
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	texture_src->processQueue();
 	itemdef_manager->processQueue(gamedef);
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	shader_src->processQueue();
 }
 
@@ -2813,8 +2812,8 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		openConsole(0.1, true);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
 		openConsole(0.1, true, L"/");
-	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_MSG])) {
-		openConsole(0.1, true, L"/msg ");
+	//} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_MSG])) {
+	//	openConsole(0.1, true, L"/msg ");
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CONSOLE])) {
 		openConsole();
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_FREEMOVE])) {
@@ -3039,8 +3038,13 @@ void Game::openConsole(float height, bool close_on_return, const std::wstring& i
 		guienv->setFocus(gui_chat_console);
 
 #ifdef __ANDROID__
-		int type = 1;
-		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+		if (0 /* porting::android_version_sdk_int >= 18 */) {
+			// fmtodo: invisible input text before pressing enter
+			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+		} else {
+			int type = 1;
+			porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+		}
 #endif
 
 	}
@@ -3345,17 +3349,10 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 
 #ifdef ANDROID
 	/* For Android, invert the meaning of holding down the fast button (i.e.
-	 * holding down the fast button -- if there is one -- means walk), unless
-	 * performing an action, sneaking or jumping.
+	 * holding down the fast button -- if there is one -- means walk)
 	 */
-	const u32 autofast_exludebits =
-			  (1U << 4) | (1U << 6)     // jump, sneak
-			| (1U << 7) | (1U << 8);    // left state, right state
-
-	if ((keypress_bits & autofast_exludebits) == 0) {
-		control.aux1 = control.aux1 ^ true;
-		keypress_bits ^= ((u32)(1U << 5));
-	}
+	control.aux1 = control.aux1 ^ true;
+	keypress_bits ^= ((u32)(1U << 5));
 #endif
 
 	client->setPlayerControl(control);
@@ -4157,13 +4154,13 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 
 	auto player_position = player->getPosition();
 	auto pos_i = floatToInt(player_position, BS);
-	if (!flags.no_output) {
+	if (!flags.headless_optimize) {
 
 	auto fog_was = runData->fog_range;
 
 	if (draw_control->range_all) {
 		runData->fog_range = 100000 * BS;
-	} else if (!flags.no_output){
+	} else if (!flags.headless_optimize){
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
@@ -4191,7 +4188,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	if (g_settings->getBool("free_move")) {
 		//direct_brightness = time_brightness;
 		sunlight_seen = true;
-	} else if (!flags.no_output) {
+	} else if (!flags.headless_optimize) {
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
 		float old_brightness = sky->getBrightness();
 		direct_brightness = client->getEnv().getClientMap()
@@ -4223,7 +4220,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	runData->time_of_day = time_of_day;
 	runData->time_of_day_smooth = time_of_day_smooth;
 
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	sky->update(time_of_day_smooth, time_brightness, direct_brightness,
 			sunlight_seen, camera->getCameraMode(), player->getYaw(),
 			player->getPitch());
@@ -4273,7 +4270,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		);
 	}
 
-	} // no_output
+	} // headless_optimize
 
 	/*
 		Get chat messages from client
@@ -4319,7 +4316,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	//auto camera_direction = camera->getDirection();
 	auto camera_position = camera->getPosition();
 
-		if (!flags.no_output)
+		if (!flags.headless_optimize)
 		if (client->getEnv().getClientMap().m_drawlist_last || runData->update_draw_list_timer >= 0.5 ||
 				runData->update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				flags.camera_offset_changed){
@@ -4367,14 +4364,14 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	video::SColor skycolor = sky->getSkyColor();
 
 	TimeTaker tt_draw("mainloop: draw");
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	{
 		TimeTaker timer("beginScene");
 		driver->beginScene(true, true, skycolor);
 		stats->beginscenetime = timer.stop(true);
 	}
 
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	draw_scene(driver, smgr, *camera, *client, player, *hud, guienv,
 			highlight_boxes, screensize, skycolor, flags.show_hud);
 
@@ -4444,7 +4441,7 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 	/*
 		End scene
 	*/
-	if (!flags.no_output)
+	if (!flags.headless_optimize)
 	{
 		TimeTaker timer("endScene");
 		driver->endScene();
@@ -4801,6 +4798,6 @@ bool the_game(bool *kill,
 #endif
 	}
 
-	return !started && game.flags.reconnect;
+	return started && game.flags.reconnect;
 }
 

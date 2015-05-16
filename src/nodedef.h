@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <list>
 #include <bitset>
+#include "util/numeric.h"
 #include "mapnode.h"
 #include "client/tile.h"
 #ifndef SERVER
@@ -354,7 +355,7 @@ struct ContentFeatures
 	~ContentFeatures();
 	void reset();
 
-	void serialize(std::ostream &os, u16 protocol_version);
+	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
@@ -382,58 +383,47 @@ struct ContentFeatures
 
 };
 
-enum NodeResolveMethod {
-	NODE_RESOLVE_NONE,
-	NODE_RESOLVE_DIRECT,
-	NODE_RESOLVE_DEFERRED,
-};
-
-class INodeDefManager
-{
+class INodeDefManager {
 public:
 	INodeDefManager(){}
 	virtual ~INodeDefManager(){}
 	// Get node definition
-	virtual const ContentFeatures& get(content_t c) const=0;
-	virtual const ContentFeatures& get(const MapNode &n) const=0;
+	virtual const ContentFeatures &get(content_t c) const=0;
+	virtual const ContentFeatures &get(const MapNode &n) const=0;
 	virtual bool getId(const std::string &name, content_t &result) const=0;
 	virtual content_t getId(const std::string &name) const=0;
 	// Allows "group:name" in addition to regular node names
-	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result)
-			const=0;
+	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result) const=0;
 	virtual void getIds(const std::string &name, FMBitset &result) const=0;
-	virtual const ContentFeatures& get(const std::string &name) const=0;
+	virtual const ContentFeatures &get(const std::string &name) const=0;
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void serialize(std::ostream &os, u16 protocol_version) const=0;
 
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 
 	virtual bool getNodeRegistrationStatus() const=0;
-	virtual void setNodeRegistrationStatus(bool completed)=0;
 
-	virtual void pendNodeResolve(NodeResolver *nr, NodeResolveMethod how)=0;
+	virtual void pendNodeResolve(NodeResolver *nr)=0;
 	virtual bool cancelNodeResolveCallback(NodeResolver *nr)=0;
-	virtual void runNodeResolveCallbacks()=0;
 };
 
-class IWritableNodeDefManager : public INodeDefManager
-{
+class IWritableNodeDefManager : public INodeDefManager {
 public:
 	IWritableNodeDefManager(){}
 	virtual ~IWritableNodeDefManager(){}
 	virtual IWritableNodeDefManager* clone()=0;
 	// Get node definition
-	virtual const ContentFeatures& get(content_t c) const=0;
-	virtual const ContentFeatures& get(const MapNode &n) const=0;
+	virtual const ContentFeatures &get(content_t c) const=0;
+	virtual const ContentFeatures &get(const MapNode &n) const=0;
 	virtual bool getId(const std::string &name, content_t &result) const=0;
 	// If not found, returns CONTENT_IGNORE
 	virtual content_t getId(const std::string &name) const=0;
 	// Allows "group:name" in addition to regular node names
 	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result)
-			const=0;
+		const=0;
 	// If not found, returns the features of CONTENT_UNKNOWN
-	virtual const ContentFeatures& get(const std::string &name) const=0;
+	virtual const ContentFeatures &get(const std::string &name) const=0;
 
 	// Register node definition by name (allocate an id)
 	// If returns CONTENT_IGNORE, could not allocate id
@@ -452,10 +442,10 @@ public:
 		Update tile textures to latest return values of TextueSource.
 	*/
 	virtual void updateTextures(IGameDef *gamedef,
-	/*argument: */void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
-	/*argument: */void *progress_callback_args = nullptr)=0;
+		void (*progress_cbk)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
+		void *progress_cbk_args = nullptr)=0;
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+	virtual void serialize(std::ostream &os, u16 protocol_version) const=0;
 	virtual void deSerialize(std::istream &is)=0;
 
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
@@ -464,9 +454,10 @@ public:
 	virtual bool getNodeRegistrationStatus() const=0;
 	virtual void setNodeRegistrationStatus(bool completed)=0;
 
-	virtual void pendNodeResolve(NodeResolver *nr, NodeResolveMethod how)=0;
+	virtual void pendNodeResolve(NodeResolver *nr)=0;
 	virtual bool cancelNodeResolveCallback(NodeResolver *nr)=0;
 	virtual void runNodeResolveCallbacks()=0;
+	virtual void resetNodeResolveState()=0;
 };
 
 IWritableNodeDefManager *createNodeDefManager();
@@ -481,7 +472,6 @@ public:
 		const std::string &node_alt, content_t c_fallback);
 	bool getIdsFromNrBacklog(std::vector<content_t> *result_out,
 		bool all_required=false, content_t c_fallback=CONTENT_IGNORE);
-	const std::string &getNodeName(content_t c) const;
 
 	void nodeResolveInternal();
 

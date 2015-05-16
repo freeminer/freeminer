@@ -119,7 +119,7 @@ struct abm_trigger_one {
 */
 
 class MapBlock /*: public NodeContainer*/
-: public maybe_shared_locker
+: public maybe_locker
 {
 public:
 	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy=false);
@@ -472,12 +472,12 @@ public:
 	*/
 	void resetUsageTimer()
 	{
-		auto lock = lock_unique_rec();
+		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 		m_usage_timer = 0;
 	}
 	float getUsageTimer()
 	{
-		auto lock = lock_shared_rec();
+		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 		return m_usage_timer;
 	}
 	void incrementUsageTimer(float dtime);
@@ -689,6 +689,7 @@ private:
 		Map will unload the block when this reaches a timeout.
 	*/
 	float m_usage_timer;
+	std::mutex m_usage_timer_mutex;
 
 	/*
 		Reference count; currently used for determining if this block is in

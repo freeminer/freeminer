@@ -7,7 +7,7 @@
 # curl https://raw.githubusercontent.com/freeminer/freeminer/master/build/debian_ogles.sh | sh
 
 #1. To compile need to install packages:
-sudo apt-get install -y git subversion build-essential cmake libbz2-dev libpng12-dev libjpeg8-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev
+sudo apt-get install -y git subversion build-essential cmake libbz2-dev libpng12-dev libjpeg-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libvorbis-dev
 sudo apt-get install -y libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev libgles1-mesa-dev libgles2-mesa-dev
 
 #2. get and compile irrlicht with oppengl es support:

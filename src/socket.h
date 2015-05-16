@@ -99,7 +99,7 @@ public:
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
 	void setAddress(const IPv6AddressBytes *ipv6_bytes);
-	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_addr_family = AF_INET6; }
+	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_addr_family = AF_INET6; m_address.ipv6.sin6_family = AF_INET6; }
 	struct sockaddr_in6 getAddress6() const;
 	int getFamily() const;
 	bool isIPv6() const;

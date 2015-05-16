@@ -91,6 +91,8 @@ void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 #if USE_LEVELDB
 	auto it = m_database.new_iterator();
+	if (!it)
+		return;
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		dst.push_back(getStringAsBlock(it->key().ToString()));
 	}

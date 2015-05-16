@@ -29,6 +29,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "keycode.h"
 
+#ifdef __ANDROID__
+#include "porting_android.h"
+#endif
+
 class GUIModalMenu;
 
 class IMenuManager
@@ -135,7 +139,22 @@ public:
 
 	virtual void regenerateGui(v2u32 screensize) = 0;
 	virtual void drawMenu() = 0;
-	virtual bool preprocessEvent(const SEvent& event) { return false; };
+	virtual bool preprocessEvent(const SEvent& event) {
+		#ifdef __ANDROID__
+		if (porting::android_version_sdk_int >= 18) {
+		// display software keyboard when clicking edit boxes
+			if (event.EventType == EET_MOUSE_INPUT_EVENT
+					&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+				gui::IGUIElement *hovered =
+					Environment->getRootGUIElement()->getElementFromPoint(
+						core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+				if (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+					porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+			}
+		}
+		#endif
+		return false;
+	};
 	virtual bool OnEvent(const SEvent& event) {
 		if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown) {
 			KeyPress kp(event.KeyInput);

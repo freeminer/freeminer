@@ -81,7 +81,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 	//infostream<<"Client received command="<<(int)command<<std::endl;
 
-	if(command == TOCLIENT_INIT)
+	if(command == TOCLIENT_INIT_LEGACY)
 	{
 		u8 deployed;
 		packet[TOCLIENT_INIT_DEPLOYED].convert(&deployed);
@@ -117,6 +117,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			packet[TOCLIENT_INIT_MAP_PARAMS].convert(&settings);
 			m_localserver->getEmergeManager()->params.load(settings);
 		}
+
+		//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
+		//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 
 		// Reply to server
 		MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);

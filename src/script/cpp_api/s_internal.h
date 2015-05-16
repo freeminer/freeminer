@@ -40,3 +40,4 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		StackUnroller stack_unroller(L);
 
 #endif /* S_INTERNAL_H_ */
+

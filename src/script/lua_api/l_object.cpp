@@ -562,6 +562,16 @@ int ObjectRef::l_set_properties(lua_State *L)
 	return 0;
 }
 
+// is_player(self)
+int ObjectRef::l_is_player(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	lua_pushboolean(L, (player != NULL));
+	return 1;
+}
+
 /* LuaEntitySAO-only */
 
 // setvelocity(self, {x=num, y=num, z=num})
@@ -709,16 +719,6 @@ int ObjectRef::l_get_luaentity(lua_State *L)
 }
 
 /* Player-only */
-
-// is_player(self)
-int ObjectRef::l_is_player(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkobject(L, 1);
-	Player *player = getplayer(ref);
-	lua_pushboolean(L, (player != NULL));
-	return 1;
-}
 
 // is_player_connected(self)
 int ObjectRef::l_is_player_connected(lua_State *L)
@@ -1279,6 +1279,43 @@ int ObjectRef::l_override_day_night_ratio(lua_State *L)
 	return 1;
 }
 
+// set_nametag_attributes(self, attributes)
+int ObjectRef::l_set_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	PlayerSAO *playersao = getplayersao(ref);
+	if (playersao == NULL)
+		return 0;
+
+	video::SColor color = playersao->getNametagColor();
+	lua_getfield(L, 2, "color");
+	if (!lua_isnil(L, -1))
+		color = readARGB8(L, -1);
+	playersao->setNametagColor(color);
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// get_nametag_attributes(self)
+int ObjectRef::l_get_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	PlayerSAO *playersao = getplayersao(ref);
+	if (playersao == NULL)
+		return 0;
+
+	video::SColor color = playersao->getNametagColor();
+
+	lua_newtable(L);
+	push_ARGB8(L, color);
+	lua_setfield(L, -2, "color");
+
+	return 1;
+}
+
 ObjectRef::ObjectRef(ServerActiveObject *object):
 	m_object(object)
 {
@@ -1401,5 +1438,7 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, override_day_night_ratio),
 	luamethod(ObjectRef, set_local_animation),
 	luamethod(ObjectRef, set_eye_offset),
+	luamethod(ObjectRef, set_nametag_attributes),
+	luamethod(ObjectRef, get_nametag_attributes),
 	{0,0}
 };

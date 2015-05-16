@@ -34,7 +34,7 @@ namespace con
 {
 
 //very ugly windows hack
-#if defined(_MSC_VER) && defined(ENET_IPV6)
+#if ( defined(_MSC_VER) || defined(__MINGW32__) ) && defined(ENET_IPV6)
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -267,9 +267,9 @@ void Connection::serve(Address bind_addr)
 {
 	ENetAddress address;
 #if defined(ENET_IPV6)
-	address.host = in6addr_any;
+	address.host = bind_addr.getAddress6().sin6_addr; // in6addr_any;
 #else
-	address.host = ENET_HOST_ANY;
+	address.host = bind_addr.getAddress().sin_addr.s_addr; // ENET_HOST_ANY;
 #endif
 	address.port = bind_addr.getPort(); // fmtodo
 

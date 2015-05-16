@@ -76,11 +76,11 @@ endif()
 
 set(CMAKE_REQUIRED_FLAGS "")
 
-if(MSVC)
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
-else()
+#if(MSVC)
+#	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+#else()
 	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-endif()
+#endif()
 
 if(ENABLE_THREADS)
 	set(ENABLE_THREADS 1)
@@ -88,11 +88,14 @@ else()
 	set(ENABLE_THREADS 0)
 endif()
 
+
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 0)
 if(MINETEST_PROTO)
 	set(MINETEST_PROTO 1)
+	set(USE_ENET 0)
 	message(STATUS "Using minetest compatible networking (slow, some features missing)")
 else()
+	set(USE_ENET 1)
 	set(MINETEST_PROTO 0)
 endif()
 
@@ -357,6 +360,7 @@ endif()
 
 find_package(Lua REQUIRED)
 
+find_package(GMP REQUIRED)
 
 option(ENABLE_LEVELDB "Enable LevelDB backend" TRUE)
 set(USE_LEVELDB FALSE)
@@ -372,7 +376,7 @@ if(ENABLE_LEVELDB)
 		set(USE_LEVELDB TRUE)
 		message(STATUS "LevelDB backend enabled.")
 		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
-	else()
+	elseif (NOT FORCE_LEVELDB)
 		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
 	endif()
 endif(ENABLE_LEVELDB)
@@ -399,6 +403,7 @@ if(ENABLE_SQLITE3)
 endif()
 
 if(FORCE_SQLITE3)
+
 	set(USE_SQLITE3 1)
 endif()
 
@@ -448,7 +453,7 @@ if(WIN32)
 		# Surpress some useless warnings
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 	else() # Probably MinGW = GCC
-		set(PLATFORM_LIBS "")
+		set(PLATFORM_LIBS winmm.lib ${PLATFORM_LIBS})
 	endif()
 	set(PLATFORM_LIBS ws2_32.lib shlwapi.lib ${PLATFORM_LIBS})
 
@@ -528,7 +533,7 @@ add_custom_target(GenerateVersion
 	-D "GENERATE_VERSION_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
 	-D "GENERATE_VERSION_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
 	-D "VERSION_STRING=${VERSION_STRING}"
-	-D "VERSION_EXTRA=${VERSION_EXTRA}"
+	-D "DEVELOPMENT_BUILD=${DEVELOPMENT_BUILD}"
 	-P "${CMAKE_SOURCE_DIR}/cmake/Modules/GenerateVersion.cmake"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -539,7 +544,12 @@ add_subdirectory(script)
 add_subdirectory(unittest)
 add_subdirectory(util)
 
-add_subdirectory(enet)
+
+if(USE_ENET)
+	add_subdirectory(enet)
+	include_directories(${PROJECT_SOURCE_DIR}/enet/include)
+	set(ENET_LIBRARY enet)
+endif()
 
 set(FMcommon_SRCS
 	circuit.cpp
@@ -731,10 +741,10 @@ include_directories(
 	${GETTEXT_INCLUDE_DIR}
 	${SOUND_INCLUDE_DIRS}
 	${LUA_INCLUDE_DIR}
+	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${MSGPACK_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
-	${PROJECT_SOURCE_DIR}/enet/include
 )
 
 if(USE_FREETYPE)
@@ -767,9 +777,10 @@ if(BUILD_CLIENT)
 		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
 		${LUA_LIBRARY}
+		${GMP_LIBRARY}
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARY}
-		enet
+		${ENET_LIBRARY}
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
@@ -835,7 +846,8 @@ if(BUILD_SERVER)
 		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARY}
-		enet
+		${ENET_LIBRARY}
+		${GMP_LIBRARY}
 		${PLATFORM_LIBS}
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES

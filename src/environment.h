@@ -370,6 +370,7 @@ public:
 
 	// is weather active in this environment?
 	bool m_use_weather;
+	bool m_use_weather_biome;
 	bool m_more_threads;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);
@@ -404,7 +405,7 @@ private:
 	/*
 		Remove all objects that satisfy (m_removed && m_known_by_count==0)
 	*/
-	void removeRemovedObjects();
+	void removeRemovedObjects(unsigned int max_cycle_ms = 1000);
 
 	/*
 		Convert stored objects from block to active

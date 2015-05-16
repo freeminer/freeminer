@@ -189,6 +189,8 @@ void Sky::render()
 
 		if (m_sun_tonemap){
 			u8 * texels = (u8 *)m_sun_tonemap->lock();
+			if (!texels)
+				return;
 			video::SColor* texel = (video::SColor *)(texels + (u32)offset * 4);
 			video::SColor texel_color (255,texel->getRed(),texel->getGreen(), texel->getBlue());
 			m_sun_tonemap->unlock();
@@ -196,6 +198,8 @@ void Sky::render()
 		}
 		if (m_moon_tonemap){
 			u8 * texels = (u8 *)m_moon_tonemap->lock();
+			if (!texels)
+				return;
 			video::SColor* texel = (video::SColor *)(texels + (u32)offset * 4);
 			video::SColor texel_color (255,texel->getRed(),texel->getGreen(), texel->getBlue());
 			m_moon_tonemap->unlock();

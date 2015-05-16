@@ -2718,6 +2718,9 @@ static bool isChild(gui::IGUIElement * tocheck, gui::IGUIElement * parent)
 
 bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 {
+
+	GUIModalMenu::preprocessEvent(event);
+
 	// The IGUITabControl renders visually using the skin's selected
 	// font, which we override for the duration of form drawing,
 	// but computes tab hotspots based on how it would have rendered
@@ -2801,6 +2804,10 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
+		if (porting::android_version_sdk_int >= 18) {
+			// keyboard shown in GUIModalMenu::preprocessEvent
+			//porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+		} else {
 			m_JavaDialogFieldName = getNameByID(hovered->getID());
 			std::string message   = _("Enter ");
 			std::string label     = wide_to_narrow(getLabelByID(hovered->getID()));
@@ -2825,6 +2832,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			porting::showInputDialog(_("ok"), "",
 					wide_to_narrow(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
+		}
 			return retval;
 		}
 	}

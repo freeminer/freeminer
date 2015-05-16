@@ -557,6 +557,7 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		m_animated_meshnode(NULL),
 		m_wield_meshnode(NULL),
 		m_spritenode(NULL),
+		m_nametag_color(video::SColor(255, 255, 255, 255)),
 		m_textnode(NULL),
 		m_shadownode(nullptr),
 		m_position(v3f(0,10*BS,0)),
@@ -974,7 +975,7 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 		gui::IGUIEnvironment* gui = irr->getGUIEnvironment();
 		std::wstring wname = narrow_to_wide(m_name);
 		m_textnode = smgr->addTextSceneNode(gui->getSkin()->getFont(),
-				wname.c_str(), video::SColor(255,255,255,255), node);
+				wname.c_str(), m_nametag_color, node);
 		m_textnode->grab();
 		m_textnode->setPosition(v3f(0, BS*1.1, 0));
 	}
@@ -1743,6 +1744,12 @@ void GenericCAO::processMessage(const std::string &data)
 			std::string name = deSerializeString(is);
 			int rating = readS16(is);
 			m_armor_groups[name] = rating;
+		}
+	} else if (cmd == GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES) {
+		u8 version = readU8(is); // forward compatibility
+		m_nametag_color = readARGB8(is);
+		if (m_textnode != NULL) {
+			m_textnode->setTextColor(m_nametag_color);
 		}
 	}
 }

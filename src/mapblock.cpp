@@ -1104,7 +1104,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 void MapBlock::incrementUsageTimer(float dtime)
 {
-	auto lock = lock_unique_rec();
+	std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 	m_usage_timer += dtime;
 /*
 #ifndef SERVER

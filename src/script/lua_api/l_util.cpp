@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "tool.h"
 #include "filesys.h"
 #include "settings.h"
+#include "util/auth.h"
 
 // debug(...)
 // Writes a line to dstream

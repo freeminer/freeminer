@@ -92,6 +92,8 @@ private:
 public:
 	float m_cloud_y;
 private:
+	u16 m_cloud_radius_i;
+	bool m_enable_3d;
 	video::SColorf m_color;
 	u32 m_seed;
 	v2f m_camera_pos;

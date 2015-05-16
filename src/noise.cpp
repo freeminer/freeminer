@@ -147,7 +147,7 @@ s32 PcgRandom::randNormalDist(s32 min, s32 max, int num_trials)
 	s32 accum = 0;
 	for (int i = 0; i != num_trials; i++)
 		accum += range(min, max);
-	return round((float)accum / num_trials);
+	return myround((float)accum / num_trials);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -461,7 +461,7 @@ float NoisePerlin3D(NoiseParams *np, float x, float y, float z, int seed)
 }
 
 
-Noise::Noise(NoiseParams *np_, int seed, int sx, int sy, int sz)
+Noise::Noise(NoiseParams *np_, int seed, u32 sx, u32 sy, u32 sz)
 {
 	memcpy(&np, np_, sizeof(np));
 	this->seed = seed;
@@ -513,7 +513,7 @@ void Noise::allocBuffers()
 }
 
 
-void Noise::setSize(int sx, int sy, int sz)
+void Noise::setSize(u32 sx, u32 sy, u32 sz)
 {
 	this->sx = sx;
 	this->sy = sy;

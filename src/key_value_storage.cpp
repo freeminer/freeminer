@@ -147,6 +147,8 @@ bool KeyValueStorage::del(const std::string &key)
 
 #if USE_LEVELDB
 leveldb::Iterator* KeyValueStorage::new_iterator() {
+	if (!db)
+		return nullptr;
 	return db->NewIterator(read_options);
 }
 #endif
