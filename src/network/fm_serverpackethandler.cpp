@@ -129,7 +129,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		// First byte after command is maximum supported
 		// serialization version
 		u8 client_max;
-		packet[TOSERVER_INIT_FMT].convert(&client_max);
+		packet[TOSERVER_INIT_LEGACY_FMT].convert(&client_max);
 		u8 our_max = SER_FMT_VER_HIGHEST_READ;
 		// Use the highest version supported by both
 		int deployed = std::min(client_max, our_max);
@@ -158,12 +158,12 @@ void Server::ProcessData(NetworkPacket *pkt)
 		*/
 
 		u16 min_net_proto_version = 0;
-		packet[TOSERVER_INIT_PROTOCOL_VERSION_MIN].convert(&min_net_proto_version);
+		packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MIN].convert(&min_net_proto_version);
 		u16 max_net_proto_version = min_net_proto_version;
-		packet[TOSERVER_INIT_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
+		packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
 
-		if (packet.count(TOSERVER_INIT_PROTOCOL_VERSION_FM)) {
-			packet[TOSERVER_INIT_PROTOCOL_VERSION_FM].convert(&client->net_proto_version_fm);
+		if (packet.count(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM)) {
+			packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM].convert(&client->net_proto_version_fm);
 		}
 
 		// Start with client's maximum version
@@ -235,7 +235,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 		// Get player name
 		std::string playername;
-		packet[TOSERVER_INIT_NAME].convert(&playername);
+		packet[TOSERVER_INIT_LEGACY_NAME].convert(&playername);
 
 		if(playername.empty())
 		{
@@ -279,7 +279,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 		// Get password
 		std::string given_password;
-		packet[TOSERVER_INIT_PASSWORD].convert(&given_password);
+		packet[TOSERVER_INIT_LEGACY_PASSWORD].convert(&given_password);
 
 		if(!base64_is_valid(given_password.c_str())){
 			actionstream<<"Server: "<<playername
