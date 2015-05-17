@@ -1607,6 +1607,16 @@ To specify the value of the alpha channel, append `#AA` to the end of the color 
 (e.g. `colorname#08`). For named colors the hexadecimal string representing the alpha
 value must (always) be two hexadecimal digits.
 
+`ColorSpec`
+-----------
+A ColorSpec specifies a 32-bit color.  It can be written in either:
+table form, each element ranging from 0..255 (a, if absent, defaults to 255):
+    `colorspec = {a=255, r=0, g=255, b=0}`
+numerical form, the raw integer value of an ARGB8 quad:
+    `colorspec = 0xFF00FF00`
+or string form, a ColorString (defined above):
+    `colorspec = "green"`
+
 Vector helpers
 --------------
 
@@ -2481,7 +2491,7 @@ This is basically a reference to a C++ `ServerActiveObject`
     * `name`: `"breath"` or `"health"`
     * `hud_definition`: definition to replace builtin definition
 * `set_sky(bgcolor, type, {texture names})`
-    * `bgcolor`: `{r=0...255, g=0...255, b=0...255}` or `nil`, defaults to white
+    * `bgcolor`: ColorSpec, defaults to white
     * Available types:
         * `"regular"`: Uses 0 textures, `bgcolor` ignored
         * `"skybox"`: Uses 6 textures, `bgcolor` used
@@ -2507,13 +2517,13 @@ This is basically a reference to a C++ `ServerActiveObject`
 * `get_nametag_attributes()`
     * returns a table with the attributes of the nametag of the player
     * {
-        color = { a = 0...255, r = 0...255, g = 0...255, b = 0...255 }
+        color = {a=0..255, r=0..255, g=0..255, b=0..255},
       }
 * `set_nametag_attributes(attributes)`
     * sets the attributes of the nametag of the player
     * `attributes`:
       {
-        color = { a = 0...255, r = 0...255, g = 0...255, b = 0...255 }
+        color = ColorSpec,
       }
 
 ### `InvRef`
@@ -2630,14 +2640,30 @@ Format of `size` is `{x=dimx, y=dimy, z=dimz}`.  The `z` conponent is ommitted
 for 2D noise, and it must be must be larger than 1 for 3D noise (otherwise
 `nil` is returned).
 
+For each of the functions with an optional `buffer` parameter:  If `buffer` is not
+nil, this table will be used to store the result instead of creating a new table.
+
+
 #### Methods
 * `get2dMap(pos)`: returns a `<size.x>` times `<size.y>` 2D array of 2D noise
   with values starting at `pos={x=,y=}`
 * `get3dMap(pos)`: returns a `<size.x>` times `<size.y>` times `<size.z>` 3D array
   of 3D noise with values starting at `pos={x=,y=,z=}`
-* `get2dMap_flat(pos)`: returns a flat `<size.x * size.y>` element array of 2D noise
+* `get2dMap_flat(pos, buffer)`: returns a flat `<size.x * size.y>` element array of 2D noise
   with values starting at `pos={x=,y=}`
-* `get3dMap_flat(pos)`: Same as `get2dMap_flat`, but 3D noise
+* `get3dMap_flat(pos, buffer)`: Same as `get2dMap_flat`, but 3D noise
+* `calc2dMap(pos)`: Calculates the 2d noise map starting at `pos`.  The result is stored internally.
+* `calc3dMap(pos)`: Calculates the 3d noise map starting at `pos`.  The result is stored internally.
+* `getMapSlice(slice_offset, slice_size, buffer)`: In the form of an array, returns a slice of the
+  most recently computed noise results.  The result slice begins at coordinates `slice_offset` and
+  takes a chunk of `slice_size`.
+  E.g. to grab a 2-slice high horizontal 2d plane of noise starting at buffer offset y = 20:
+  `noisevals = noise:getMapSlice({y=20}, {y=2})`
+  It is important to note that `slice_offset` offset coordinates begin at 1, and are relative to
+  the starting position of the most recently calculated noise.
+  To grab a single vertical column of noise starting at map coordinates x = 1023, y=1000, z = 1000:
+  `noise:calc3dMap({x=1000, y=1000, z=1000})`
+  `noisevals = noise:getMapSlice({x=24, z=1}, {x=1, z=1})`
 
 ### `VoxelManip`
 An interface to the `MapVoxelManipulator` for Lua.
@@ -2655,8 +2681,9 @@ The map will be pre-loaded if two positions are passed to either.
   the `VoxelManip` at that position
 * `set_node_at(pos, node)`: Sets a specific `MapNode` in the `VoxelManip` at
   that position
-* `get_data()`: Gets the data read into the `VoxelManip` object
-    * returns raw node data is in the form of an array of node content IDs
+* `get_data(buffer)`: Gets the data read into the `VoxelManip` object
+    * returns raw node data in the form of an array of node content IDs
+    * if the param `buffer` is present, this table will be used to store the result instead
 * `set_data(data)`: Sets the data contents of the `VoxelManip` object
 * `update_map()`: Update map after writing chunk back to map.
     * To be used only by `VoxelManip` objects created by the mod itself;
@@ -3023,7 +3050,7 @@ Definition tables
         ^ List can be shortened to needed length ]]
         alpha = 255,
         use_texture_alpha = false, -- Use texture's alpha channel
-        post_effect_color = {a=0, r=0, g=0, b=0}, -- If player is inside node
+        post_effect_color = "green#0F", -- If player is inside node, see "ColorSpec"
         paramtype = "none", -- See "Nodes" --[[
         ^ paramtype = "light" allows light to propagate from or through the node with light value
         ^ falling by 1 per node. This line is essential for a light source node to spread its light. ]]

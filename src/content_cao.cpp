@@ -145,12 +145,12 @@ class TestCAO : public ClientActiveObject
 public:
 	TestCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~TestCAO();
-	
+
 	ActiveObjectType getType() const
 	{
 		return ACTIVEOBJECT_TYPE_TEST;
 	}
-	
+
 	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env);
 
 	void addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
@@ -195,9 +195,9 @@ void TestCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 {
 	if(m_node != NULL)
 		return;
-	
+
 	//video::IVideoDriver* driver = smgr->getVideoDriver();
-	
+
 	scene::SMesh *mesh = new scene::SMesh();
 	scene::IMeshBuffer *buf = new scene::SMeshBuffer();
 	video::SColor c(255,255,255,255);
@@ -290,12 +290,12 @@ class ItemCAO : public ClientActiveObject
 public:
 	ItemCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~ItemCAO();
-	
+
 	ActiveObjectType getType() const
 	{
 		return ACTIVEOBJECT_TYPE_ITEM;
 	}
-	
+
 	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env);
 
 	void addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
@@ -312,12 +312,12 @@ public:
 	void processMessage(const std::string &data);
 
 	void initialize(const std::string &data);
-	
+
 	core::aabbox3d<f32>* getSelectionBox()
 		{return &m_selection_box;}
 	v3f getPosition()
 		{return m_position;}
-	
+
 	std::string infoText()
 		{return m_infotext;}
 
@@ -361,9 +361,9 @@ void ItemCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 {
 	if(m_node != NULL)
 		return;
-	
+
 	//video::IVideoDriver* driver = smgr->getVideoDriver();
-	
+
 	scene::SMesh *mesh = new scene::SMesh();
 	scene::IMeshBuffer *buf = new scene::SMeshBuffer();
 	video::SColor c(255,255,255,255);
@@ -474,7 +474,7 @@ void ItemCAO::updateTexture()
 				<<": error deSerializing itemstring \""
 				<<m_itemstring<<std::endl;
 	}
-	
+
 	// Set meshbuffer texture
 	m_node->getMaterial(0).setTexture(0, texture);
 }
@@ -519,7 +519,7 @@ void ItemCAO::processMessage(const std::string &data)
 void ItemCAO::initialize(const std::string &data)
 {
 	infostream<<"ItemCAO: Got init data"<<std::endl;
-	
+
 	{
 		std::istringstream is(data, std::ios::binary);
 		// version
@@ -532,7 +532,7 @@ void ItemCAO::initialize(const std::string &data)
 		// itemstring
 		m_itemstring = deSerializeString(is);
 	}
-	
+
 	updateNodePos();
 	updateInfoText();
 }
@@ -754,7 +754,7 @@ ClientActiveObject* GenericCAO::getParent()
 void GenericCAO::removeFromScene(bool permanent)
 {
 	// Should be true when removing the object permanently and false when refreshing (eg: updating visuals)
-	if((m_env != NULL) && (permanent)) 
+	if((m_env != NULL) && (permanent))
 	{
 		for(std::vector<u16>::iterator ci = m_children.begin();
 						ci != m_children.end(); ci++)
@@ -765,7 +765,7 @@ void GenericCAO::removeFromScene(bool permanent)
 		}
 
 		m_env->m_attachements[getId()] = 0;
-		
+
 		LocalPlayer* player = m_env->getLocalPlayer();
 		if (this == player->parent) {
 			player->parent = NULL;
@@ -910,7 +910,7 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 		m_meshnode = smgr->addMeshSceneNode(mesh, NULL);
 		m_meshnode->grab();
 		mesh->drop();
-		
+
 		m_meshnode->setScale(v3f(m_prop.visual_size.X,
 				m_prop.visual_size.Y,
 				m_prop.visual_size.X));
@@ -1037,7 +1037,7 @@ void GenericCAO::updateNodePos()
 		}
 	}
 }
-	
+
 void GenericCAO::step(float dtime, ClientEnvironment *env)
 {
 	// Handel model of local player instantly to prevent lags
@@ -1515,7 +1515,7 @@ void GenericCAO::updateBonePosition()
 		}
 	}
 }
-	
+
 void GenericCAO::updateAttachments()
 {
 
@@ -1746,14 +1746,14 @@ void GenericCAO::processMessage(const std::string &data)
 			m_armor_groups[name] = rating;
 		}
 	} else if (cmd == GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES) {
-		u8 version = readU8(is); // forward compatibility
+		//u8 version = readU8(is); // forward compatibility
 		m_nametag_color = readARGB8(is);
 		if (m_textnode != NULL) {
 			m_textnode->setTextColor(m_nametag_color);
 		}
 	}
 }
-	
+
 /* \pre punchitem != NULL
  */
 bool GenericCAO::directReportPunch(v3f dir, const ItemStack *punchitem,
