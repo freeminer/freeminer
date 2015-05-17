@@ -424,6 +424,9 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
 	settings->setDefault("num_emerge_threads", "");
+	settings->setDefault("secure.enable_security", "false");
+	settings->setDefault("secure.trusted_mods", "");
+
 	// Storage
 	settings->setDefault("server_map_save_interval", "300");
 	settings->setDefault("sqlite_synchronous", "1");
