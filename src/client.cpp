@@ -391,13 +391,15 @@ void Client::step(float dtime)
 			memset(pName, 0, PLAYERNAME_SIZE * sizeof(char));
 			memset(pPassword, 0, PASSWORD_SIZE * sizeof(char));
 
+*/
 			std::string hashed_password = translatePassword(myplayer->getName(), m_password);
+/*
 			snprintf(pName, PLAYERNAME_SIZE, "%s", myplayer->getName());
 			snprintf(pPassword, PASSWORD_SIZE, "%s", hashed_password.c_str());
 
 			sendLegacyInit(pName, pPassword);
 */
-			sendLegacyInit(myplayer->getName(), m_password);
+			sendLegacyInit(myplayer->getName(), hashed_password);
 
 			if (LATEST_PROTOCOL_VERSION >= 25)
 				sendInit(myplayer->getName());
