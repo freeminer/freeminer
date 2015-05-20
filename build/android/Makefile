@@ -20,7 +20,7 @@ PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
-GAMES_TO_COPY = default
+GAMES_TO_COPY = default MultiCraft_game
 
 ################################################################################
 # Android Version code
