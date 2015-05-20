@@ -13,7 +13,7 @@ endif
 # GPROF = 1
 
 # build for build platform
-APP_PLATFORM = android-9
+APP_PLATFORM = android-14
 
 # paths used for timestaps, dependencys, tree config and libs
 PATHCFGFILE = path.cfg
