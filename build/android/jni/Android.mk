@@ -216,6 +216,7 @@ LOCAL_SRC_FILES :=                                \
 		jni/src/nodemetadata.cpp                  \
 		jni/src/nodetimer.cpp                     \
 		jni/src/noise.cpp                         \
+		jni/src/objdef.cpp                        \
 		jni/src/object_properties.cpp             \
 		jni/src/particles.cpp                     \
 		jni/src/pathfinder.cpp                    \

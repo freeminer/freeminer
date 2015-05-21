@@ -56,7 +56,7 @@ void ScriptApiMainMenu::handleMainMenuEvent(std::string text)
 		scriptError();
 }
 
-void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string> fields)
+void ScriptApiMainMenu::handleMainMenuButtons(const StringMap &fields)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -72,8 +72,8 @@ void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string>
 
 	// Convert fields to a Lua table
 	lua_newtable(L);
-	std::map<std::string, std::string>::const_iterator it;
-	for (it = fields.begin(); it != fields.end(); it++){
+	StringMap::const_iterator it;
+	for (it = fields.begin(); it != fields.end(); ++it) {
 		const std::string &name = it->first;
 		const std::string &value = it->second;
 		lua_pushstring(L, name.c_str());

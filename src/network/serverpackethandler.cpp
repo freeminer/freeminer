@@ -199,7 +199,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 
 	{
 		std::string reason;
-		if(m_script->on_prejoinplayer(playername, addr_s, reason)) {
+		if (m_script->on_prejoinplayer(playername, addr_s, &reason)) {
 			actionstream << "Server: Player with the name \"" << playerName << "\" "
 					<< "tried to connect from " << addr_s << " "
 					<< "but it was disallowed for the following reason: "
@@ -487,7 +487,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
 
 	{
 		std::string reason;
-		if (m_script->on_prejoinplayer(playername, addr_s, reason)) {
+		if (m_script->on_prejoinplayer(playername, addr_s, &reason)) {
 			actionstream << "Server: Player with the name \"" << playername << "\" "
 					<< "tried to connect from " << addr_s << " "
 					<< "but it was disallowed for the following reason: "
@@ -620,7 +620,7 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 		playersao = StageTwoClientInit(pkt->getPeerId());
 
 		if (playersao == NULL) {
-			errorstream
+			actionstream
 				<< "TOSERVER_INIT2 stage 2 client init failed for peer "
 				<< pkt->getPeerId() << std::endl;
 			return;
@@ -717,7 +717,7 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 	PlayerSAO* playersao = StageTwoClientInit(peer_id);
 
 	if (playersao == NULL) {
-		errorstream
+		actionstream
 			<< "TOSERVER_CLIENT_READY stage 2 client init failed for peer_id: "
 			<< peer_id << std::endl;
 		m_con.DisconnectPeer(peer_id);
@@ -1796,7 +1796,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 
 	*pkt >> p >> formname >> num;
 
-	std::map<std::string, std::string> fields;
+	StringMap fields;
 	for (u16 k = 0; k < num; k++) {
 		std::string fieldname;
 		*pkt >> fieldname;
@@ -1846,7 +1846,7 @@ void Server::handleCommand_InventoryFields(NetworkPacket* pkt)
 
 	*pkt >> formname >> num;
 
-	std::map<std::string, std::string> fields;
+	StringMap fields;
 	for (u16 k = 0; k < num; k++) {
 		std::string fieldname;
 		*pkt >> fieldname;

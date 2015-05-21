@@ -617,6 +617,7 @@ set(common_SRCS
 	nodemetadata.cpp
 	nodetimer.cpp
 	noise.cpp
+	objdef.cpp
 	object_properties.cpp
 	pathfinder.cpp
 	player.cpp

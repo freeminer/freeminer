@@ -439,6 +439,11 @@ public:
 	virtual void updateAliases(IItemDefManager *idef)=0;
 
 	/*
+		Override textures from servers with ones specified in texturepack/override.txt
+	*/
+	virtual void applyTextureOverrides(const std::string &override_filepath)=0;
+
+	/*
 		Update tile textures to latest return values of TextueSource.
 	*/
 	virtual void updateTextures(IGameDef *gamedef,
@@ -484,4 +489,3 @@ public:
 };
 
 #endif
-

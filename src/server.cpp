@@ -403,6 +403,11 @@ Server::Server(
 	if (!simple_singleplayer_mode)
 		m_nodedef->updateTextures(this);
 
+	// Apply texture overrides from texturepack/override.txt
+	std::string texture_path = g_settings->get("texture_path");
+	if (texture_path != "" && fs::IsDir(texture_path))
+		m_nodedef->applyTextureOverrides(texture_path + DIR_DELIM + "override.txt");
+
 	m_nodedef->setNodeRegistrationStatus(true);
 
 	// Perform pending node name resolutions
@@ -1322,16 +1327,16 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 		static_cast<RemotePlayer*>(m_env->getPlayer(playername));
 
 	// If failed, cancel
-	if((playersao == NULL) || (player == NULL)) {
-		if(player && player->peer_id != 0) {
-			errorstream<<"Server: "<<playername<<": Failed to emerge player"
-					<<" (player allocated to an another client)"<<std::endl;
+	if ((playersao == NULL) || (player == NULL)) {
+		if (player && player->peer_id != 0) {
+			actionstream << "Server: Failed to emerge player \"" << playername
+					<< "\" (player allocated to an another client)" << std::endl;
 			DenyAccess_Legacy(peer_id, L"Another client is connected with this "
 					L"name. If your client closed unexpectedly, try again in "
 					L"a minute.");
 		} else {
-			errorstream<<"Server: "<<playername<<": Failed to emerge player"
-					<<std::endl;
+			errorstream << "Server: " << playername << ": Failed to emerge player"
+					<< std::endl;
 			DenyAccess_Legacy(peer_id, L"Could not allocate player.");
 		}
 		return NULL;
