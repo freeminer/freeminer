@@ -1525,9 +1525,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 				v3s16 p = block->getPos();
 				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
 				// Save if modified
-				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading)
-				{
-					//modprofiler.add(block->getModifiedReason(), 1);
+				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
+					//modprofiler.add(block->getModifiedReasonString(), 1);
 					if(!save_started++)
 						beginSave();
 					if (!saveBlock(block))
@@ -2539,8 +2538,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
 		if (g_settings->getBool("save_generated_block"))
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
-				"finishBlockMake expireDayNightDiff");
-
+			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
 	}
 
 	/*
@@ -2836,7 +2834,8 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 					save_started = true;
 				}
 
-				//modprofiler.add(block->getModifiedReason(), 1);
+				//modprofiler.add(block->getModifiedReasonString(), 1);
+
 				auto lock = breakable ? block->try_lock_unique_rec() : block->lock_unique_rec();
 				if (!lock->owns_lock())
 					continue;
