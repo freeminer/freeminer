@@ -17,7 +17,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef _WIN32
 #include <strings.h>
+#endif
 #include "objdef.h"
 #include "util/numeric.h"
 #include "debug.h"
