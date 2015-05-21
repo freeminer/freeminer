@@ -339,7 +339,7 @@ bool MapgenV6::getHaveBeach(v2s16 p)
 
 BiomeV6Type MapgenV6::getBiome(v3POS p)
 {
-	int index = (p.Y - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
+	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
 			+ (p.X - full_node_min.X);
 	return getBiome(index, p);
 }
@@ -356,7 +356,7 @@ float MapgenV6::getHumidity(v3POS p)
 		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
 	}
 
-	int index = (p.Y - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
+	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
 			+ (p.X - full_node_min.X);
 	float noise = noise_humidity->result[index];
 
