@@ -11,6 +11,7 @@ math.randomseed(os.time())
 os.setlocale("C", "numeric")
 minetest = core
 freeminer = core
+multicraft = core
 
 -- Load other files
 local scriptdir = core.get_builtin_path()..DIR_DELIM

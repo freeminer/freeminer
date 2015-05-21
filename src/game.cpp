@@ -1576,6 +1576,7 @@ protected:
 	void processItemSelection(u16 *new_playeritem);
 
 	void dropSelectedItem();
+	void dropSelectedStack();
 	void openInventory();
 	void openConsole(float height = 0.6, bool close_on_return = false, const std::wstring& input = L"");
 	void toggleFreeMove(float *statustext_time);
@@ -2802,7 +2803,15 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	//TimeTaker tt("process kybd input", NULL, PRECISION_NANO);
 
 	if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_DROP])) {
-		dropSelectedItem();
+#ifdef __ANDROID__
+		dropSelectedStack();
+#else
+		if (input->isKeyDown(LControlKey) || input->isKeyDown(RControlKey)) {
+			dropSelectedStack();
+		} else {
+			dropSelectedItem();
+		}
+#endif
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_INVENTORY])) {
 		openInventory();
 	} else if (input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
@@ -2994,13 +3003,22 @@ void Game::processItemSelection(u16 *new_playeritem)
 void Game::dropSelectedItem()
 {
 	IDropAction *a = new IDropAction();
-	a->count = 0;
+	a->count = 1;
 	a->from_inv.setCurrentPlayer();
 	a->from_list = "main";
 	a->from_i = client->getPlayerItem();
 	client->inventoryAction(a);
 }
 
+void Game::dropSelectedStack()
+{
+	IDropAction *a = new IDropAction();
+	a->count = 0;
+	a->from_inv.setCurrentPlayer();
+	a->from_list = "main";
+	a->from_i = client->getPlayerItem();
+	client->inventoryAction(a);
+}
 
 void Game::openInventory()
 {
