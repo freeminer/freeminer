@@ -3056,6 +3056,74 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			return true;
 		}
 
+		if (event.KeyInput.PressedDown && kp == getKeySetting("keymap_drop")) {
+
+			// get item
+			ItemSpec s = getItemAtPos(m_pointer);
+			Inventory *inv_s = NULL;
+
+			if(s.isValid())
+			do { // breakable
+				inv_s = m_invmgr->getInventory(s.inventoryloc);
+
+				if(!inv_s) {
+					errorstream << "InventoryMenu: The selected inventory location "
+							<< "\"" << s.inventoryloc.dump() << "\" doesn't exist"
+							<< std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				InventoryList *list_from = inv_s->getList(s.listname);
+				if(list_from == NULL) {
+					verbosestream << "InventoryMenu: The selected inventory list \""
+							<< s.listname << "\" does not exist" << std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				if((u32)s.i >= list_from->getSize()) {
+					infostream << "InventoryMenu: The selected inventory list \""
+							<< s.listname<<"\" is too small (i=" << s.i << ", size="
+							<< list_from->getSize() << ")" << std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				ItemStack stack_from = list_from->getItem(s.i);
+				if(stack_from.count<=0)
+					break;
+
+				u32 drop_amount = 0;
+
+				if (event.KeyInput.Control) {
+					// if drop key + ctrl = drop full stack
+					drop_amount = stack_from.count;
+				} else {
+					// if drop key without ctrl = drop one item
+					drop_amount = 1;
+				}
+
+				// Send IACTION_DROP
+
+				// Check how many items can be dropped
+				drop_amount = stack_from.count = MYMIN(drop_amount, stack_from.count);
+				if(drop_amount == 0 || drop_amount > stack_from.count)
+					break;
+
+				infostream << "Handing IACTION_DROP to manager" << std::endl;
+
+				IDropAction *a = new IDropAction();
+				a->count = drop_amount;
+				a->from_inv = s.inventoryloc;
+				a->from_list = s.listname;
+				a->from_i = s.i;
+				m_invmgr->inventoryAction(a);
+
+			} while(0);
+		}
+
+
 	}
 
 	/* Mouse event other than movement, or crossing the border of inventory
