@@ -60,6 +60,11 @@ protected:
 	std::string m_name;
 };
 
+extern const KeyPress LControlKey;
+extern const KeyPress RControlKey;
+extern const KeyPress LShiftKey;
+extern const KeyPress RShiftKey;
+
 extern const KeyPress EscapeKey;
 extern const KeyPress CancelKey;
 extern const KeyPress NumberKey[10];
