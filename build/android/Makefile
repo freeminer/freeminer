@@ -6,14 +6,14 @@ OS := $(shell uname)
 # GPROF = 1
 
 # build for build platform
-APP_PLATFORM = android-9
+APP_PLATFORM = android-14
 
 # paths used for timestaps, dependencys, tree config and libs
 PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
-GAMES_TO_COPY = default
+GAMES_TO_COPY = default MultiCraft_game
 
 ################################################################################
 # Android Version code
