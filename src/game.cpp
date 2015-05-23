@@ -2469,6 +2469,8 @@ bool Game::getServerContent(bool *aborted)
 	limitFps(&fps_control, &dtime);
 	float time_counter = 0;
 	auto dtime_start = dtime;
+	s16 timeout_mul = 1;
+	g_settings->getS16NoEx("timeout_mul", timeout_mul);
 
 	fps_control.last_time = device->getTimer()->getTime();
 
@@ -2545,7 +2547,7 @@ bool Game::getServerContent(bool *aborted)
 			time_counter = 0;
 		}
 		time_counter += dtime < dtime_start ? dtime : dtime - dtime_start;
-		if (time_counter > CONNECTION_TIMEOUT) {
+		if (time_counter > CONNECTION_TIMEOUT * timeout_mul) {
 			flags.reconnect = 1;
 			*aborted = true;
 			return false;

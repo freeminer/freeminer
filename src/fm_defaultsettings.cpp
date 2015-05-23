@@ -44,6 +44,14 @@ const bool win32 =
 #endif
     ;
 
+const bool android =
+#if defined(__ANDROID__)
+    true
+#else
+    false
+#endif
+    ;
+
 void set_default_settings(Settings *settings) {
 	//
 	// Client and server
@@ -373,6 +381,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("server_url", "");
 	settings->setDefault("enable_remote_media_server", "true");
 	settings->setDefault("remote_media", "");
+	settings->setDefault("timeout_mul", android ? "10" : "1");
 
 	// Check when player joins
 	settings->setDefault("strict_protocol_version_checking", "false");

@@ -100,8 +100,12 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
 	m_last_recieved(0),
-	m_last_recieved_warn(0)
+	m_last_recieved_warn(0),
+	timeout_mul(0)
 {
+	timeout_mul = g_settings->getU16("timeout_mul");
+	if (!timeout_mul)
+		timeout_mul = 1;
 	start();
 }
 
@@ -189,6 +193,7 @@ void Connection::receive()
 	if (ret > 0)
 	{
 		m_last_recieved = porting::getTimeMs();
+		m_last_recieved_warn = 0;
 		switch (event.type)
 		{
 		case ENET_EVENT_TYPE_CONNECT:
@@ -238,7 +243,8 @@ void Connection::receive()
 	} else { //0
 		if (m_peers.count(PEER_ID_SERVER)) { //ugly fix. todo: fix enet and remove
 			unsigned int time = porting::getTimeMs();
-			if (time - m_last_recieved > 30000 && m_last_recieved_warn > 20000 && m_last_recieved_warn < 30000) {
+			const unsigned int t1 = 10000, t2 = 20000 * timeout_mul, t3 = 30000 * timeout_mul;
+			if (time - m_last_recieved > t1 && m_last_recieved_warn > t2 && m_last_recieved_warn < t3) {
 				errorstream<<"connection lost [30s], disconnecting."<<std::endl;
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
@@ -250,10 +256,10 @@ void Connection::receive()
 				}
 				m_last_recieved_warn = 0;
 				m_last_recieved = 0;
-			} else if (time - m_last_recieved > 20000 && m_last_recieved_warn > 10000 && m_last_recieved_warn < 20000) {
+			} else if (time - m_last_recieved > t2 && m_last_recieved_warn > t1 && m_last_recieved_warn < t2) {
 				errorstream<<"connection lost [20s]!"<<std::endl;
 				m_last_recieved_warn = time - m_last_recieved;
-			} else if (time - m_last_recieved > 10000 && m_last_recieved_warn < 10000) {
+			} else if (time - m_last_recieved > t1 && m_last_recieved_warn < t1) {
 				errorstream<<"connection lost [10s]? ping."<<std::endl;
 				enet_peer_ping(m_peers.get(PEER_ID_SERVER));
 				m_last_recieved_warn = time - m_last_recieved;
