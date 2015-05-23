@@ -728,6 +728,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 	/* Read files */
 	// TODO: optimize
 	MediaData media_data;
+	u32 size = 0;
 
 	for(auto i = tosend.begin();
 			i != tosend.end(); ++i) {
@@ -755,13 +756,21 @@ void Server::sendRequestedMedia(u16 peer_id,
 		fis.seekg(0, std::ios::beg);
 		fis.read(&contents[0], contents.size());
 		media_data.push_back(std::make_pair(name, contents));
+		size += contents.size();
+		if (size > 0xffff) {
+			MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
+			PACK(TOCLIENT_MEDIA_MEDIA, media_data);
+			m_clients.send(peer_id, 2, buffer, true);
+			media_data.clear();
+			size = 0;
+		}
 	}
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
-	PACK(TOCLIENT_MEDIA_MEDIA, media_data);
-
-	// Send as reliable
-	m_clients.send(peer_id, 2, buffer, true);
+	if (!media_data.empty()) {
+		MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
+		PACK(TOCLIENT_MEDIA_MEDIA, media_data);
+		m_clients.send(peer_id, 2, buffer, true);
+	}
 }
 
 void Server::sendDetachedInventory(const std::string &name, u16 peer_id)
