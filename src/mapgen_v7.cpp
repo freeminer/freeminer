@@ -159,16 +159,6 @@ MapgenV7Params::MapgenV7Params()
 {
 	spflags = MGV7_MOUNTAINS | MGV7_RIDGES;
 
-	np_terrain_base    = NoiseParams(4,    70,  v3f(300, 300, 300), 82341, 6, 0.7,  2.0);
-	np_terrain_alt     = NoiseParams(4,    25,  v3f(600, 600, 600), 5934,  5, 0.6,  2.0);
-	np_terrain_persist = NoiseParams(0.6,  0.1, v3f(500, 500, 500), 539,   3, 0.6,  2.0);
-	np_height_select   = NoiseParams(-0.5, 1,   v3f(250, 250, 250), 4213,  5, 0.69, 2.0);
-	np_filler_depth    = NoiseParams(0,    1.2, v3f(150, 150, 150), 261,   4, 0.7,  2.0);
-	np_mount_height    = NoiseParams(100,  30,  v3f(500, 500, 500), 72449, 4, 0.6,  2.0);
-	np_ridge_uwater    = NoiseParams(0,    1,   v3f(500, 500, 500), 85039, 4, 0.6,  2.0);
-	np_mountain        = NoiseParams(-0.6, 1,   v3f(250, 350, 250), 5333,  5, 0.68, 2.0);
-	np_ridge           = NoiseParams(0,    1,   v3f(100, 100, 100), 6467,  4, 0.75, 2.0);
-
 //freeminer:
 	float_islands = 500;
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
@@ -177,8 +167,17 @@ MapgenV7Params::MapgenV7Params()
 	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   5,   0.5);
 //----------
 
-	np_cave1           = NoiseParams(0,    12,  v3f(100, 100, 100), 52534, 4, 0.5,  2.0);
-	np_cave2           = NoiseParams(0,    12,  v3f(100, 100, 100), 10325, 4, 0.5,  2.0);
+	np_terrain_base    = NoiseParams(4,    70,  v3f(600,  600,  600),  82341, 6, 0.7,  2.0);
+	np_terrain_alt     = NoiseParams(4,    25,  v3f(600,  600,  600),  5934,  5, 0.6,  2.0);
+	np_terrain_persist = NoiseParams(0.6,  0.1, v3f(500,  500,  500),  539,   3, 0.6,  2.0);
+	np_height_select   = NoiseParams(-12,  24,  v3f(500,  500,  500),  4213,  6, 0.69, 2.0);
+	np_filler_depth    = NoiseParams(0,    1.2, v3f(150,  150,  150),  261,   4, 0.7,  2.0);
+	np_mount_height    = NoiseParams(184,  72,  v3f(500,  500,  500),  72449, 4, 0.6,  2.0);
+	np_ridge_uwater    = NoiseParams(0,    1,   v3f(1000, 1000, 1000), 85039, 5, 0.6,  2.0);
+	np_mountain        = NoiseParams(-0.6, 1,   v3f(250,  350,  250),  5333,  5, 0.68, 2.0);
+	np_ridge           = NoiseParams(0,    1,   v3f(100,  100,  100),  6467,  4, 0.75, 2.0);
+	np_cave1           = NoiseParams(0,    12,  v3f(100,  100,  100),  52534, 4, 0.5,  2.0);
+	np_cave2           = NoiseParams(0,    12,  v3f(100,  100,  100),  10325, 4, 0.5,  2.0);
 }
 
 
@@ -417,7 +416,7 @@ void MapgenV7::calculateNoise()
 		noise_mount_height->perlinMap2D(x, z);
 	}
 
-	if (node_max.Y >= water_level) {
+	if (node_max.Y >= BIOMEGEN_BASE_V7) {
 		noise_filler_depth->perlinMap2D(x, z);
 		noise_heat->perlinMap2D(x, z);
 		noise_humidity->perlinMap2D(x, z);
@@ -667,7 +666,7 @@ void MapgenV7::generateRidgeTerrain()
 
 MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 {
-	if (node_max.Y < water_level)
+	if (node_max.Y < BIOMEGEN_BASE_V7)
 		return STONE;
 
 	v3s16 em = vm->m_area.getExtent();
@@ -677,81 +676,89 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
 		Biome *biome = NULL;
-		s16 dfiller = 0;
-		s16 y0_top = 0;
-		s16 y0_filler = 0;
-		s16 depth_water_top = 0;
+		u16 depth_top = 0;
+		u16 base_filler = 0;
+		u16 depth_water_top = 0;
+		u32 vi = vm->m_area.index(x, node_max.Y, z);
 
-		s16 nplaced = 0;
-		u32 i = vm->m_area.index(x, node_max.Y, z);
+		// Check node at base of mapchunk above, either a node of a previously
+		// generated mapchunk or if not, a node of overgenerated base terrain.
+		content_t c_above = vm->m_data[vi + em.X].getContent();
+		bool air_above = c_above == CONTENT_AIR;
 
-		content_t c_above = vm->m_data[i + em.X].getContent();
-		bool have_air = c_above == CONTENT_AIR;
+		// If there is air above enable top/filler placement, otherwise force nplaced to
+		// stone level by setting a number that will exceed any possible filler depth.
+		u16 nplaced = (air_above) ? 0 : (u16)-1;
 
 		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
 
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
-			content_t c = vm->m_data[i].getContent();
+			content_t c = vm->m_data[vi].getContent();
 
-			if (c != CONTENT_IGNORE && c != CONTENT_AIR &&
-					(y == node_max.Y || have_air)) {
+			// Biome is only (re)calculated for each stone/water upper surface found
+			// below air while working downwards. The chosen biome then remains in
+			// effect for all nodes below until the next biome recalculation.
+			// Biome is (re)calculated when a stone/water node is either: detected
+			// below an air node, or, is at column top and might be underground
+			// or underwater and therefore might not be below air.
+			if (c != CONTENT_AIR && (y == node_max.Y || air_above)) {
 				biome = bmgr->getBiome(heat_map[index], humidity_map[index], y);
-				dfiller = biome->depth_filler + noise_filler_depth->result[index];
-				y0_top = biome->depth_top;
-				y0_filler = biome->depth_top + dfiller;
+				depth_top = biome->depth_top;
+				base_filler = MYMAX(depth_top + biome->depth_filler
+						+ noise_filler_depth->result[index], 0);
 				depth_water_top = biome->depth_water_top;
 
+				// Detect stone type for dungeons during every biome calculation.
+				// This is more efficient than detecting per-node and will not
+				// miss any desert stone or sandstone biomes.
 				if (biome->c_stone == c_desert_stone)
 					stone_type = DESERT_STONE;
 				else if (biome->c_stone == c_sandstone)
 					stone_type = SANDSTONE;
 			}
 
-			if (c == c_stone && have_air) {
-				content_t c_below = vm->m_data[i - em.X].getContent();
+			if (c == c_stone) {
+				content_t c_below = vm->m_data[vi - em.X].getContent();
 
-				if (c_below != CONTENT_AIR && c_below != c_water_source) {
-					if (nplaced < y0_top) {
-						vm->m_data[i] = MapNode(
+				// If the node below isn't solid, make this node stone, so that
+				// any top/filler nodes above are structurally supported.
+				// This is done by aborting the cycle of top/filler placement
+				// immediately by forcing nplaced to stone level.
+				if (c_below == CONTENT_AIR || c_below == c_water_source)
+					nplaced = (u16)-1;
+
+				if (nplaced < depth_top) {
+					vm->m_data[vi] = MapNode(
 								((y < water_level) /* && (biome->c_top == c_dirt_with_grass)*/ )
 									? biome->c_top
 									: heat < -3
 										? biome->c_top_cold
 										: biome->c_top);
-						nplaced++;
-					} else if (nplaced < y0_filler && nplaced >= y0_top) {
-						vm->m_data[i] = MapNode(biome->c_filler);
-						nplaced++;
-					} else if (c == c_stone) {
-						have_air = false;
-						nplaced  = 0;
-						vm->m_data[i] = MapNode(biome->c_stone);
-					} else {
-						have_air = false;
-						nplaced  = 0;
-					}
-				} else if (c == c_stone) {
-					have_air = false;
-					nplaced = 0;
-					vm->m_data[i] = MapNode(biome->c_stone);
+
+					nplaced++;
+				} else if (nplaced < base_filler) {
+					vm->m_data[vi] = MapNode(biome->c_filler);
+					nplaced++;
+				} else {
+					vm->m_data[vi] = MapNode(biome->c_stone);
 				}
-			} else if (c == c_stone) {
-				have_air = false;
-				nplaced = 0;
-				vm->m_data[i] = MapNode(biome->c_stone);
-			} else if (c == c_water_source || c == c_ice) {
-				have_air = true;
-				nplaced = 0;
-				if (y > water_level - depth_water_top)
-					vm->m_data[i] = MapNode(biome->c_water_top);
-				else
-					vm->m_data[i] = MapNode((heat < 0 && y > water_level + heat/4) ? biome->c_ice : biome->c_water);
+
+				air_above = false;
+			} else if (c == c_water_source) {
+				bool ice = heat < 0 && y > water_level + heat/4;
+				vm->m_data[vi] = MapNode((y > (s32)(water_level - depth_water_top)) ?
+						(ice ? biome->c_ice : biome->c_water_top) : ice ? biome->c_ice : biome->c_water);
+				nplaced = 0;  // Enable top/filler placement for next surface
+				air_above = false;  // Biome is not recalculated underwater
 			} else if (c == CONTENT_AIR) {
-				have_air = true;
-				nplaced = 0;
+				nplaced = 0;  // Enable top/filler placement for next surface
+				air_above = true;  // Biome will be recalculated at next surface
+			} else {  // Possible various nodes overgenerated from neighbouring mapchunks
+				nplaced = (u16)-1;  // Disable top/filler placement
+				air_above = false;
 			}
 
-			vm->m_area.add_y(em, i, -1);
+			vm->m_area.add_y(em, vi, -1);
 		}
 	}
 

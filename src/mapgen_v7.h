@@ -25,6 +25,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mapgen.h"
 #include "mapgen_indev.h"
+
+#define BIOMEGEN_BASE_V7 -192
+
 /////////////////// Mapgen V7 flags
 #define MGV7_MOUNTAINS   0x01
 #define MGV7_RIDGES      0x02
