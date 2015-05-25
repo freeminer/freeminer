@@ -6,7 +6,7 @@ OS := $(shell uname)
 # GPROF = 1
 
 # build for build platform
-APP_PLATFORM = android-14
+APP_PLATFORM = android-9
 
 # paths used for timestaps, dependencys, tree config and libs
 PATHCFGFILE = path.cfg
@@ -23,7 +23,7 @@ GAMES_TO_COPY = default MultiCraft_game
 ANDROID_VERSION_CODE = 12
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 18
+ANDROID_VERSION_CODE = 20
 
 PROJECT_NAME_C = freeminer
 
@@ -920,7 +920,7 @@ envpaths :
 clean_all :
 	@$(MAKE) clean_apk;                                                        \
 	$(MAKE) clean_assets clean_irrlicht clean_leveldb clean_curl clean_openssl \
-	$(MAKE) clean_msgpack clean_iconv                                          \
+	clean_msgpack clean_iconv clean_manifest                                   \
 	clean_openal clean_ogg clean_gmp clean_manifest;                           \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
