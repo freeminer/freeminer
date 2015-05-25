@@ -8,6 +8,10 @@
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
+# Minimal supported version: 1.1.0
+
+if(ENABLE_SYSTEM_MSGPACK)
+
 IF (MSGPACK_LIBRARY AND MSGPACK_INCLUDE_DIR)
     SET(MSGPACK_FIND_QUIETLY TRUE) # Already in cache, be silent
 ENDIF ()
@@ -20,3 +24,12 @@ MARK_AS_ADVANCED(MSGPACK_INCLUDE_DIR MSGPACK_LIBRARY)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(msgpack DEFAULT_MSG MSGPACK_LIBRARY MSGPACK_INCLUDE_DIR)
+
+elseif(NOT MSGPACK_LIBRARY)
+
+	add_subdirectory(msgpack-c)
+	#include_directories(${PROJECT_SOURCE_DIR}/msgpack-c/include)
+	set(MSGPACK_LIBRARY msgpack)
+	set(MSGPACK_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/msgpack-c/include)
+
+endif()
