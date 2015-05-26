@@ -13,7 +13,7 @@ PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
-GAMES_TO_COPY = default MultiCraft_game
+GAMES_TO_COPY = default
 
 ################################################################################
 # Android Version code
@@ -920,7 +920,7 @@ envpaths :
 clean_all :
 	@$(MAKE) clean_apk;                                                        \
 	$(MAKE) clean_assets clean_irrlicht clean_leveldb clean_curl clean_openssl \
-	clean_msgpack clean_iconv clean_manifest                                   \
+	clean_msgpack clean_iconv                                                  \
 	clean_openal clean_ogg clean_gmp clean_manifest;                           \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
