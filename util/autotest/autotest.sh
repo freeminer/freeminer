@@ -14,8 +14,9 @@ port=63000
 confdir=`pwd`
 config=$confdir/freeminer.bot.conf
 #config=$confdir/freeminer.headless.conf
+world=$confdir/world
 
-run_opts="--worldname autotest --port $port --go --config $config --autoexit $time"
+run_opts="--world $world --port $port --go --config $config --autoexit $time"
 
 logdir=`pwd`/logs_`date +%Y-%m-%d-%H-%M`
 
@@ -36,9 +37,9 @@ mv src/cmake_config.h src/cmake_config.backup
 rootdir=..
 mkdir -p $logdir
 
-mkdir -p worlds/autotest
-echo "gameid = default" > worlds/autotest/world.mt
-echo "backend = leveldb" >> worlds/autotest/world.mt
+mkdir -p $world
+echo "gameid = default" > $world/world.mt
+echo "backend = leveldb" >> $world/world.mt
 
 name=tsan
 echo $name =============

@@ -7,12 +7,16 @@ port=63001
 cmake_opt="-DBUILD_SERVER=1 -DBUILD_CLIENT=1"
 
 confdir=`pwd`
-run_opts=" --address $address --port $port --go --config $confdir/freeminer.headless.conf --autoexit $time"
-run_server_opts="--worldname autotest --port $port --config $confdir/freeminer.headless.conf --autoexit $time"
+#config=$confdir/freeminer.bot.conf
+config=$confdir/freeminer.headless.conf
+world=$confdir/world
+
+run_opts=" --address $address --port $port --go --config $config --autoexit $time"
+run_server_opts="--world $world --port $port --config $config --autoexit $time"
 
 logdir=`pwd`/logs_`date +%Y-%m-%d-%H-%M`
 
-make="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)" 
+make="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
 #run="nice /usr/bin/time --verbose" #linux
 #run="nice /usr/bin/time -lp"       #freebsd
@@ -26,9 +30,9 @@ rootdir=..
 
 mkdir -p $logdir
 
-mkdir -p worlds/autotest
-echo "gameid = default" > worlds/autotest/world.mt
-echo "backend = leveldb" >> worlds/autotest/world.mt
+mkdir -p $world
+echo "gameid = default" > $world/world.mt
+echo "backend = leveldb" >> $world/world.mt
 
 
 name=stress
