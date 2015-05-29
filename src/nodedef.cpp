@@ -1015,6 +1015,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
 
+	bool server = !progress_callback;
 	ITextureSource *tsrc = !gamedef ? nullptr : gamedef->tsrc();
 	IShaderSource *shdsrc = !gamedef ? nullptr : gamedef->getShaderSource();
 	scene::ISceneManager* smgr = !gamedef ? nullptr : gamedef->getSceneManager();
@@ -1089,6 +1090,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 		case NDT_GLASSLIKE_FRAMED_OPTIONAL:
 			f->solidness = 0;
 			f->visual_solidness = 1;
+			if (!server)
 			f->drawtype = connected_glass ? NDT_GLASSLIKE_FRAMED : NDT_GLASSLIKE;
 			break;
 		case NDT_ALLFACES:
@@ -1097,10 +1099,12 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			break;
 		case NDT_ALLFACES_OPTIONAL:
 			if (new_style_leaves) {
+				if (!server) 
 				f->drawtype = NDT_ALLFACES;
 				f->solidness = 0;
 				f->visual_solidness = 1;
 			} else {
+				if (!server)
 				f->drawtype = NDT_NORMAL;
 				f->solidness = 2;
 				for (u32 i = 0; i < 6; i++)

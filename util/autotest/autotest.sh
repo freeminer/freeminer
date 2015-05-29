@@ -22,7 +22,7 @@ logdir=`pwd`/logs_`date +%Y-%m-%d-%H-%M`
 
 make="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
-clang_version="-3.5"
+clang_version="-3.6"
 clang="-DCMAKE_CXX_COMPILER=`which clang++$clang_version` -DCMAKE_C_COMPILER=`which clang$clang_version`"
 # -DLOCK_PROFILE=1
 

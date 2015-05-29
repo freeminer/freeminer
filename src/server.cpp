@@ -400,9 +400,6 @@ Server::Server(
 	// Apply item aliases in the node definition manager
 	m_nodedef->updateAliases(m_itemdef);
 
-	if (!simple_singleplayer_mode)
-		m_nodedef->updateTextures(this);
-
 	// Apply texture overrides from texturepack/override.txt
 	std::string texture_path = g_settings->get("texture_path");
 	if (texture_path != "" && fs::IsDir(texture_path))
@@ -454,6 +451,10 @@ Server::Server(
 
 	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
+
+	if (!simple_singleplayer_mode)
+		m_nodedef->updateTextures(this);
+
 }
 
 Server::~Server()
