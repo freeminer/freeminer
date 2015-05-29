@@ -1074,7 +1074,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		{
 			int old_anim = player->last_animation;
 			float old_anim_speed = player->last_animation_speed;
-			m_position = player->getPosition() + v3f(0,BS,0);
+			m_position = player->getPosition();
 			m_velocity = v3f(0,0,0);
 			m_acceleration = v3f(0,0,0);
 			pos_translator.vect_show = m_position;
@@ -1622,6 +1622,10 @@ void GenericCAO::processMessage(const std::string &data)
 		if(!m_initial_tx_basepos_set){
 			m_initial_tx_basepos_set = true;
 			m_tx_basepos = m_prop.initial_sprite_basepos;
+		}
+		if (m_is_local_player) {
+			LocalPlayer *player = m_env->getLocalPlayer();
+			player->setCollisionbox(m_selection_box);
 		}
 
 		if ((m_is_player && !m_is_local_player) && m_prop.nametag == "")

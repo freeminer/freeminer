@@ -826,7 +826,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, u16 peer_id_, bool is_singleplayer
 	m_prop.hp_max = PLAYER_MAX_HP;
 	m_prop.physical = false;
 	m_prop.weight = 75;
-	m_prop.collisionbox = aabb3f(-1/3.,-1.0,-1/3., 1/3.,1.0,1/3.);
+	m_prop.collisionbox = aabb3f(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
 	// start of default appearance, this should be overwritten by LUA
 	m_prop.visual = "upright_sprite";
 	m_prop.visual_size = v2f(1, 2);
@@ -910,7 +910,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 		os<<serializeString(m_player->getName()); // name
 		writeU8(os, 1); // is_player
 		writeS16(os, getId()); //id
-		writeV3F1000(os, m_base_position + v3f(0,BS*1,0));
+		writeV3F1000(os, m_base_position);
 		writeF1000(os, m_yaw);
 		writeS16(os, getHP());
 
@@ -1057,7 +1057,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 			pos = m_env->getActiveObject(m_attachment_parent_id)->getBasePosition();
 		else
 		{
-			pos = m_base_position + v3f(0,BS*1,0);
+			pos = m_base_position;
 			vel = m_player->getSpeed();
 		}
 		std::string str = gob_cmd_update_position(
@@ -1588,7 +1588,10 @@ bool PlayerSAO::checkMovementCheat()
 
 bool PlayerSAO::getCollisionBox(aabb3f *toset)
 {
-	*toset = aabb3f(-BS * 0.30, 0.0, -BS * 0.30, BS * 0.30, BS * 1.75, BS * 0.30);
+	//update collision box
+	toset->MinEdge = m_prop.collisionbox.MinEdge * BS;
+	toset->MaxEdge = m_prop.collisionbox.MaxEdge * BS;
+
 	toset->MinEdge += m_base_position;
 	toset->MaxEdge += m_base_position;
 	return true;

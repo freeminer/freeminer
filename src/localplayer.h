@@ -157,6 +157,8 @@ public:
 		return v3f(0, BS * eye_height, 0);
 	}
 
+	void setCollisionbox(const aabb3f &box) { m_collisionbox = box; }
+
 private:
 	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery = 0);
 	void accelerateVertical(const v3f &target_speed, const f32 max_increase);
