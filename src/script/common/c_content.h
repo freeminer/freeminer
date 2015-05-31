@@ -91,6 +91,8 @@ ItemDefinition     read_item_definition      (lua_State *L,
 void               read_object_properties    (lua_State *L,
                                               int index,
                                               ObjectProperties *prop);
+void		   push_object_properties    (lua_State *L,
+					      ObjectProperties *prop);
 
 void               push_inventory_list       (lua_State *L,
                                               Inventory *inv,
@@ -130,6 +132,8 @@ bool               getflagsfield             (lua_State *L, int table,
 bool               read_flags                (lua_State *L, int index,
                                               FlagDesc *flagdesc,
                                               u32 *flags, u32 *flagmask);
+void		   push_flags_string	     (lua_State *L, FlagDesc *flagdesc,
+					      u32 flags, u32 flagmask);
 
 u32                read_flags_table          (lua_State *L, int table,
                                               FlagDesc *flagdesc, u32 *flagmask);
@@ -152,6 +156,7 @@ bool               string_to_enum            (const EnumString *spec,
 
 bool               read_noiseparams          (lua_State *L, int index,
                                               NoiseParams *np);
+void		   push_noiseparams	     (lua_State *L, NoiseParams *np);
 
 void               luaentity_get             (lua_State *L,u16 id);
 

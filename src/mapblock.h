@@ -165,15 +165,12 @@ public:
 		auto lock = lock_unique_rec();
 		if(data != NULL)
 			delete data;
-		u32 datasize = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
-		data = reinterpret_cast<MapNode*>( ::operator new(datasize * sizeof(MapNode)));
+		data = reinterpret_cast<MapNode*>( ::operator new(nodecount * sizeof(MapNode)));
 		if (!CONTENT_IGNORE)
-			memset(data, 0, datasize * sizeof(MapNode));
+			memset(data, 0, nodecount * sizeof(MapNode));
 		else
-		for(u32 i=0; i<datasize; i++){
+		for (u32 i = 0; i < nodecount; i++)
 			data[i] = MapNode(CONTENT_IGNORE);
-		}
-
 	}
 
 	/*
@@ -334,7 +331,7 @@ public:
 			return MapNode(CONTENT_IGNORE);
 
 		auto lock = lock_shared_rec();
-		return data[p.Z*zstride + p.Y*ystride + p.X];
+		return data[p.Z * zstride + p.Y * ystride + p.X];
 	}
 
 	MapNode getNodeNoEx(v3POS p);
@@ -647,6 +644,8 @@ public:
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
+
+	static const u32 nodecount = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 
 private:
 	/*

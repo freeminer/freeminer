@@ -546,6 +546,11 @@ void LuaEntitySAO::setArmorGroups(const ItemGroupList &armor_groups)
 	m_armor_groups_sent = false;
 }
 
+ItemGroupList LuaEntitySAO::getArmorGroups()
+{
+	return m_armor_groups;
+}
+
 void LuaEntitySAO::setAnimation(v2f frame_range, float frame_speed, float frame_blend)
 {
 	m_animation_range = frame_range;
@@ -554,10 +559,23 @@ void LuaEntitySAO::setAnimation(v2f frame_range, float frame_speed, float frame_
 	m_animation_sent = false;
 }
 
+void LuaEntitySAO::getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend)
+{
+	*frame_range = m_animation_range;
+	*frame_speed = m_animation_speed;
+	*frame_blend = m_animation_blend;
+}
+
 void LuaEntitySAO::setBonePosition(const std::string &bone, v3f position, v3f rotation)
 {
 	m_bone_position[bone] = core::vector2d<v3f>(position, rotation);
 	m_bone_position_sent = false;
+}
+
+void LuaEntitySAO::getBonePosition(const std::string &bone, v3f *position, v3f *rotation)
+{
+	*position = m_bone_position[bone].X;
+	*rotation = m_bone_position[bone].Y;
 }
 
 void LuaEntitySAO::setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation)
@@ -575,6 +593,15 @@ void LuaEntitySAO::setAttachment(int parent_id, const std::string &bone, v3f pos
 	m_attachment_position = position;
 	m_attachment_rotation = rotation;
 	m_attachment_sent = false;
+}
+
+void LuaEntitySAO::getAttachment(int *parent_id, std::string *bone, v3f *position,
+	v3f *rotation)
+{
+	*parent_id = m_attachment_parent_id;
+	*bone = m_attachment_bone;
+	*position = m_attachment_position;
+	*rotation = m_attachment_rotation;
 }
 
 ObjectProperties* LuaEntitySAO::accessObjectProperties()
@@ -1164,6 +1191,11 @@ void PlayerSAO::setArmorGroups(const ItemGroupList &armor_groups)
 	m_armor_groups_sent = false;
 }
 
+ItemGroupList PlayerSAO::getArmorGroups()
+{
+	return m_armor_groups;
+}
+
 void PlayerSAO::setAnimation(v2f frame_range, float frame_speed, float frame_blend)
 {
 	auto lock = lock_unique();
@@ -1174,11 +1206,24 @@ void PlayerSAO::setAnimation(v2f frame_range, float frame_speed, float frame_ble
 	m_animation_sent = false;
 }
 
+void PlayerSAO::getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend)
+{
+	*frame_range = m_animation_range;
+	*frame_speed = m_animation_speed;
+	*frame_blend = m_animation_blend;
+}
+
 void PlayerSAO::setBonePosition(const std::string &bone, v3f position, v3f rotation)
 {
 	// store these so they can be updated to clients
 	m_bone_position[bone] = core::vector2d<v3f>(position, rotation);
 	m_bone_position_sent = false;
+}
+
+void PlayerSAO::getBonePosition(const std::string &bone, v3f *position, v3f *rotation)
+{
+	*position = m_bone_position[bone].X;
+	*rotation = m_bone_position[bone].Y;
 }
 
 void PlayerSAO::setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation)
@@ -1197,6 +1242,15 @@ void PlayerSAO::setAttachment(int parent_id, const std::string &bone, v3f positi
 	m_attachment_position = position;
 	m_attachment_rotation = rotation;
 	m_attachment_sent = false;
+}
+
+void PlayerSAO::getAttachment(int *parent_id, std::string *bone, v3f *position,
+	v3f *rotation)
+{
+	*parent_id = m_attachment_parent_id;
+	*bone = m_attachment_bone;
+	*position = m_attachment_position;
+	*rotation = m_attachment_rotation;
 }
 
 ObjectProperties* PlayerSAO::accessObjectProperties()

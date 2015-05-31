@@ -424,7 +424,9 @@ size_t get_biome_list(lua_State *L, int index,
 	if (is_single) {
 		Biome *biome = get_or_load_biome(L, index, biomemgr);
 		if (!biome) {
-			errorstream << "get_biome_list: failed to get biome" << std::endl;
+			errorstream << "get_biome_list: failed to get biome '"
+				<< (lua_isstring(L, index) ? lua_tostring(L, index) : "")
+				<< "'." << std::endl;
 			return 1;
 		}
 
@@ -441,8 +443,9 @@ size_t get_biome_list(lua_State *L, int index,
 		Biome *biome = get_or_load_biome(L, -1, biomemgr);
 		if (!biome) {
 			fail_count++;
-			errorstream << "get_biome_list: failed to load biome (index "
-				<< count << ")" << std::endl;
+			errorstream << "get_biome_list: failed to get biome '"
+				<< (lua_isstring(L, -1) ? lua_tostring(L, -1) : "")
+				<< "'" << std::endl;
 			continue;
 		}
 
@@ -652,6 +655,20 @@ int ModApiMapgen::l_set_noiseparams(lua_State *L)
 }
 
 
+// get_noiseparams(name)
+int ModApiMapgen::l_get_noiseparams(lua_State *L)
+{
+	std::string name = luaL_checkstring(L, 1);
+
+	NoiseParams np;
+	if (!g_settings->getNoiseParams(name, np))
+		return 0;
+
+	push_noiseparams(L, &np);
+	return 1;
+}
+
+
 // set_gen_notify(flags, {deco_id_table})
 int ModApiMapgen::l_set_gen_notify(lua_State *L)
 {
@@ -673,6 +690,25 @@ int ModApiMapgen::l_set_gen_notify(lua_State *L)
 	}
 
 	return 0;
+}
+
+
+// get_gen_notify()
+int ModApiMapgen::l_get_gen_notify(lua_State *L)
+{
+	EmergeManager *emerge = getServer(L)->getEmergeManager();
+	push_flags_string(L, flagdesc_gennotify, emerge->gen_notify_on,
+		emerge->gen_notify_on);
+
+	lua_newtable(L);
+	int i = 1;
+	for (std::set<u32>::iterator it = emerge->gen_notify_on_deco_ids.begin();
+			it != emerge->gen_notify_on_deco_ids.end(); ++it) {
+		lua_pushnumber(L, *it);
+		lua_rawseti(L, -2, i);
+		i++;
+	}
+	return 2;
 }
 
 
@@ -1202,7 +1238,9 @@ void ModApiMapgen::Initialize(lua_State *L, int top)
 	API_FCT(get_mapgen_params);
 	API_FCT(set_mapgen_params);
 	API_FCT(set_noiseparams);
+	API_FCT(get_noiseparams);
 	API_FCT(set_gen_notify);
+	API_FCT(get_gen_notify);
 
 	API_FCT(register_biome);
 	API_FCT(register_decoration);
