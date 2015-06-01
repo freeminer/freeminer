@@ -77,8 +77,9 @@ our %config = (
     time_alive   => 650,
     source_check => 1,
     ping_timeout => 3,
-    ping         => 0, # todo
-    mineping     => 0, # not implemented for enet
+    #ping         => 1, # todo
+    #mineping     => 1,
+    fmping       => 1,
     pingable     => 1,
     trusted      => [qw( 176.9.122.10 )],       #masterserver self ip - if server on same ip with masterserver doesnt announced
     #blacklist => [], # [qw(2.3.4.5 4.5.6.7 8.9.0.1), '1.2.3.4', qr/^10\.20\.30\./, ], # list, or quoted, ips, or regex
@@ -155,6 +156,43 @@ sub float {
       : int($_[0]);
 }
 
+sub fmping ($$) {
+    my ($addr, $port) = @_;
+    printlog "fmping($addr, $port)" if $config{debug};
+    my $data;
+    my $time = time;
+    # tcpdump -x . first connection packet minus udp header
+    my $send = q{ 8fff 8452
+        82ff 0001 0000 ffff 0000 0578 0001 0000
+        0000 0003 0000 0000 0000 0000 0000 1388
+        0000 0002 0000 0002 6d4d 95c3 0000 0000
+    };
+
+    $send =~ s/\s+//g;
+    $send =~ s/([0-9a-f]{2})\s?/chr(hex($1))/eg;
+    #printlog "send: [$send] " . length $send if $config{debug};
+    eval {
+        my $socket = IO::Socket::IP->new(
+            'PeerAddr' => $addr,
+            'PeerPort' => $port,
+            'Proto'    => 'udp',
+            'Timeout'  => $config{ping_timeout},
+        );
+        $socket->send($send);
+        local $SIG{ALRM} = sub { die "alarm time out"; };
+        alarm $config{ping_timeout};
+        $socket->recv($data, POSIX::BUFSIZ) or die "recv: $!";
+        alarm 0;
+        1;    # return value from eval on normalcy
+    } or ((printlog $@),return 0);
+    return 0 unless length $data;
+    $time = float(time - $time);
+    printlog "recvd: ", length $data, " [$time]" if $config{debug};
+    #printlog "recvd: [$data] " if $config{debug};
+
+    return $time;
+}
+
 sub mineping ($$) {
     my ($addr, $port) = @_;
     printlog "mineping($addr, $port)" if $config{debug};
@@ -213,7 +251,9 @@ sub request (;$) {
             $param->{key} = "$param->{ip}:$param->{port}";
             $param->{off} = time if $param->{action} ~~ 'delete';
             if ($config{ping} and $param->{action} ne 'delete') {
-                if ($config{mineping}) {
+                if ($config{fmping}) {
+                    $param->{ping} = fmping($param->{ip}, $param->{port});
+                } elsif ($config{mineping}) {
                     $param->{ping} = mineping($param->{ip}, $param->{port});
                 } else {
                     $ping->port_number($param->{port});
