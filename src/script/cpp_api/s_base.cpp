@@ -110,8 +110,6 @@ ScriptApiBase::ScriptApiBase()
 	m_server = NULL;
 	m_environment = NULL;
 	m_guiengine = NULL;
-
-	m_secure = false;
 }
 
 ScriptApiBase::~ScriptApiBase()
