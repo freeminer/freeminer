@@ -503,7 +503,7 @@ void set_default_settings(Settings *settings) {
 
 	settings->setDefault("more_threads", win32 ? "false" : "true");
 
-#if !defined(SERVER) && defined(_MSC_VER)
+#if !defined(SERVER) && defined(_WIN32)
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 #endif
 

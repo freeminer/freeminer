@@ -496,7 +496,7 @@ static bool init_common(int *log_level, const Settings &cmd_args, int argc, char
 	// Initialize HTTP fetcher
 	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
-#ifdef _MSC_VER
+#if defined(_WIN32)
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
 		g_settings->get("language"), argc, argv);
 	//Remove windows console window if settings request

@@ -530,6 +530,7 @@ function tabbuilder.tab_multiplayer()
 		"pwdfield[12.9,10.4;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
 		"textarea[7.35,6.5;8.8,2.5;;"
 	if menu.fav_selected ~= nil and
+		menu.favorites[menu.fav_selected] ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
 		retval = retval ..
 			core.formspec_escape(menu.favorites[menu.fav_selected].description,true)
