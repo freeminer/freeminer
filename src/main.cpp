@@ -496,16 +496,18 @@ static bool init_common(int *log_level, const Settings &cmd_args, int argc, char
 	// Initialize HTTP fetcher
 	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
-#if defined(_WIN32)
+#ifdef _MSC_VER
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
 		g_settings->get("language"), argc, argv);
-	//Remove windows console window if settings request
-	if (!g_settings->getBool("console_enabled"))
-		FreeConsole();
-
 #else
 	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
 		g_settings->get("language"));
+#endif
+
+#if defined(_WIN32)
+	//Remove windows console window if settings request
+	if (!g_settings->getBool("console_enabled"))
+		FreeConsole();
 #endif
 
 	return true;
