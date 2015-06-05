@@ -243,6 +243,16 @@ void init_gettext(const char *path, const std::string &configured_language) {
 	bindtextdomain(name.c_str(), path);
 	textdomain(name.c_str());
 
+#ifdef LIBINTL_LITE_API
+	// https://github.com/j-jorge/libintl-lite.git
+	{
+		std::string clang = configured_language.empty() ? "en" : configured_language;
+		std::string cpath = path;
+		cpath += "/" + clang + "/LC_MESSAGES/" + name + ".mo";
+		loadMessageCatalog(name.c_str(), cpath.c_str());
+	}
+#endif
+
 #if defined(_WIN32)
 	// Set character encoding for Win32
 	char *tdomain = textdomain( (char *) NULL );

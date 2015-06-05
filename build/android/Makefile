@@ -23,7 +23,7 @@ GAMES_TO_COPY = default
 ANDROID_VERSION_CODE = 12
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 22
+ANDROID_VERSION_CODE = 23
 
 PROJECT_NAME_C = freeminer
 
@@ -696,7 +696,7 @@ $(ASSETS_TIMESTAMP) : $(IRRLICHT_LIB)
 		touch $(ASSETS_TIMESTAMP);                                             \
 	fi
 
-assets : $(ASSETS_TIMESTAMP)
+assets : $(ASSETS_TIMESTAMP) locale
 	@REFRESH=0;                                                                \
 	if [ ! -e ${ASSETS_TIMESTAMP}.old ] ; then                                 \
 		REFRESH=1;                                                             \
@@ -723,7 +723,7 @@ assets : $(ASSETS_TIMESTAMP)
 	    cp -r ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/;       \
 	done;                                                                      \
 	cp -r ${ROOT}/../../mods ${ROOT}/assets/freeminer;                          \
-	cp -r ${ROOT}/../../po ${ROOT}/assets/freeminer;                            \
+	cp -r ${ROOT}/cmake/locale ${ROOT}/assets/freeminer;                        \
 	cp -r ${ROOT}/../../textures ${ROOT}/assets/freeminer;                      \
 	mkdir -p ${ROOT}/assets/freeminer/media;                                    \
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media;         \
@@ -872,12 +872,73 @@ $(ICONV_LIB): $(ICONV_TIMESTAMP)
 clean_iconv :
 	$(RM) -rf $(ICONV_DIR)
 
+GETTEXT_DIR = $(ROOT)/deps/gettext/
+GETTEXT_LIB = $(GETTEXT_DIR)libintl.a
+GETTEXT_TIMESTAMP = $(GETTEXT_DIR)timestamp
+GETTEXT_TIMESTAMP_INT = $(ROOT)/deps/gettext_timestamp
+GETTEXT_URL_GIT=https://github.com/j-jorge/libintl-lite.git
+
+$(GETTEXT_TIMESTAMP) : gettext_download
+	@LAST_MODIF=$$(find ${GETTEXT_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
+	if [ $$(basename $$LAST_MODIF) != "timestamp" ] ; then                     \
+		touch ${GETTEXT_TIMESTAMP};                                              \
+	fi
+
+gettext_download :
+	@if [ ! -d ${GETTEXT_DIR} ] ; then                                           \
+		echo "gettext sources missing, downloading...";                          \
+		mkdir -p ${ROOT}/deps;                                                 \
+		cd ${ROOT}/deps ;                                                      \
+		git clone ${GETTEXT_URL_GIT} || exit 1;                                 \
+		mv libintl-lite ${GETTEXT_DIR};                            \
+		cd ${GETTEXT_DIR};                                                       \
+	fi
+
+gettext : $(GETTEXT_LIB)
+
+$(GETTEXT_LIB): $(GETTEXT_TIMESTAMP)
+	@REFRESH=0;                                                                \
+	if [ ! -e ${GETTEXT_TIMESTAMP_INT} ] ; then                                  \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ ${GETTEXT_TIMESTAMP} -nt ${GETTEXT_TIMESTAMP_INT} ] ; then                \
+		REFRESH=1;                                                             \
+	fi;                                                                        \
+	if [ $$REFRESH -ne 0 ] ; then                                              \
+	#export PATH=$${PATH}:${SDKFOLDER}/platform-tools:${ANDROID_NDK};           \
+	#echo "changed timestamp for gettext detected building...";                   \
+	cd $(GETTEXT_DIR);                                                           \
+	#export CROSS_PREFIX=${CROSS_PREFIX};                                       \
+	#export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-gettext;                            \
+	#${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	#--install-dir=$${TOOLCHAIN};                                               \
+	#export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
+	#export CXX=${CROSS_PREFIX}g++;                                             \
+	#export AR=${CROSS_PREFIX}ar;                                             \
+	#export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
+	#export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
+	#export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
+	#export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
+	touch ${GETTEXT_TIMESTAMP};                                                  \
+	touch ${GETTEXT_TIMESTAMP_INT};                                              \
+	else                                                                       \
+		echo "nothing to be done for gettext";                                   \
+	fi
+
+clean_gettext :
+	$(RM) -rf $(GETTEXT_DIR)
+
+
+locale:
+	mkdir -p cmake && cd cmake && cmake ../../.. && make translations
+
 #==== end of freeminer libs
 
 
 apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
-	$(MSGPACK_TARGET)                                                          \
+	$(MSGPACK_TARGET) $(GETTEXT_LIB)                                           \
 	sqlite3_download
 	@export NDEBUG=$$NDEBUG; $(MAKE) manifest;                                 \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \

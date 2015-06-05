@@ -557,6 +557,10 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("new_style_leaves", "false");
 	settings->setDefault("autojump", "1");
 
+	char lang[3] = {};
+	AConfiguration_getLanguage(porting::app_global->config, lang);
+	settings->setDefault("language", lang);
+
 #else
 	settings->setDefault("screen_dpi", "72");
 #endif

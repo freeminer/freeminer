@@ -64,7 +64,6 @@ LOCAL_MODULE := msgpack
 LOCAL_SRC_FILES := deps/msgpack/libmsgpack.a
 include $(PREBUILT_STATIC_LIBRARY)
 
-
 include $(CLEAR_VARS)
 LOCAL_MODULE := freeminer
 
@@ -84,6 +83,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				-DHAS_INET_PTON=1 -DHAS_INET_NTOP=1 -DHAS_GETHOSTBYNAME_R=1 -DHAS_GETADDRINFO=1 -DHAS_GETNAMEINFO=1 -DHAS_FCNTL=1 -DHAS_POLL=1 -DHAS_MSGHDR_FLAGS=1 \
 				-DUSE_MANDELBULBER=1 \
 				-DHAVE_THREAD_LOCAL=1 \
+				-DUSE_GETTEXT=1 \
 				-DPROJECT_NAME_C=\"$(PROJECT_NAME_C)\" \
 				-pipe -fstrict-aliasing
 
@@ -112,6 +112,7 @@ LOCAL_C_INCLUDES :=                               \
 		jni/src/enet/include                      \
 		deps/msgpack/include                      \
 		deps/msgpack/src                          \
+		deps/gettext                              \
 		jni/src jni/src/sqlite                    \
 		jni/src/script                            \
 		jni/src/lua/src                           \
@@ -389,6 +390,8 @@ LOCAL_SHARED_LIBRARIES := openal ogg vorbis gmp
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
 
 LOCAL_SRC_FILES += $(wildcard $(LOCAL_PATH)/jni/src/enet/*.c)
+
+LOCAL_SRC_FILES += deps/gettext/internal/libintl.cpp
 
 LOCAL_STATIC_LIBRARIES += msgpack
 # iconv

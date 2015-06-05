@@ -31,5 +31,5 @@ elseif(NOT MSGPACK_LIBRARY)
 	#include_directories(${PROJECT_SOURCE_DIR}/msgpack-c/include)
 	set(MSGPACK_LIBRARY msgpack)
 	set(MSGPACK_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/msgpack-c/include)
-
+	message(STATUS "Using bundled msgpack ${MSGPACK_INCLUDE_DIR}")
 endif()

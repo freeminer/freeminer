@@ -2813,7 +2813,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (label == "") {
 				label = "text";
 			}
-			message += _(label) + ":";
+			message += std::string(_(label.c_str())) + ":";
 
 			/* single line text input */
 			int type = 2;
