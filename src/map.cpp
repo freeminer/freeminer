@@ -406,7 +406,7 @@ void Map::unLightNeighbors(enum LightBank bank,
 */
 void Map::spreadLight(enum LightBank bank,
 		std::set<v3s16> & from_nodes,
-		std::map<v3s16, MapBlock*> & modified_blocks, int recursive)
+		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -445,7 +445,9 @@ void Map::spreadLight(enum LightBank bank,
 		// Only fetch a new block if the block position has changed
 			if(block == NULL || blockpos != blockpos_last){
 #if !ENABLE_THREADS
-				auto lock = m_nothread_locker.lock_shared_rec();
+				auto lock = m_nothread_locker.try_lock_shared_rec();
+				if (!lock->owns_lock())
+					continue;
 #endif
 				block = getBlockNoCreateNoEx(blockpos);
 				if (!block)
@@ -543,7 +545,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(!lighted_nodes.empty() && recursive <= 32) { // maybe 32 too small
+	if(!lighted_nodes.empty() && porting::getTimeMs() <= end_ms) { // maybe 32 too small
 /*
 		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()
@@ -551,7 +553,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" modifiedB="<<modified_blocks.size()
 			<<std::endl;
 */
-		spreadLight(bank, lighted_nodes, modified_blocks, ++recursive);
+		spreadLight(bank, lighted_nodes, modified_blocks, end_ms);
 	}
 }
 
@@ -825,7 +827,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	{
 		TimeTaker timer("updateLighting: spreadLight");
-		spreadLight(bank, light_sources, modified_blocks);
+		spreadLight(bank, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms*10);
 	}
 
 	/*

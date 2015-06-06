@@ -56,7 +56,7 @@ CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
 #COMPILER_VERSION = clang3.5
 HAVE_LEVELDB = 1
-USE_LUAJIT = 0
+USE_LUAJIT = 1
 
 ################################################################################
 # toolchain config for little endian mips

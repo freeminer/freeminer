@@ -216,7 +216,7 @@ public:
 
 	void spreadLight(enum LightBank bank,
 			std::set<v3s16> & from_nodes,
-			std::map<v3s16, MapBlock*> & modified_blocks, int recursive = 0);
+			std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms = 0);
 
 	void lightNeighbors(enum LightBank bank,
 			v3s16 pos,
