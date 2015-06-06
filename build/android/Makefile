@@ -56,6 +56,7 @@ CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
 #COMPILER_VERSION = clang3.5
 HAVE_LEVELDB = 1
+USE_LUAJIT = 0
 
 ################################################################################
 # toolchain config for little endian mips
@@ -302,7 +303,7 @@ openssl_download :
 		echo "openssl sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		wget ${OPENSSL_URL} || exit 1;                                         \
+		wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1;                                         \
 		tar -xzf ${OPENSSL_BASEDIR}.tar.gz;                                    \
 		cd ${OPENSSL_BASEDIR};                                                 \
 		patch -p1 < ../../openssl_arch.patch;                                  \
@@ -505,7 +506,7 @@ curl_download :
 		echo "curl sources missing, downloading...";                           \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd deps;                                                               \
-		wget ${CURL_URL_HTTP} || exit 1;                                       \
+		wget ${CURL_URL_HTTP} -O curl-${CURL_VERSION}.tar.bz2 || exit 1;                                       \
 		tar -xjf curl-${CURL_VERSION}.tar.bz2 || exit 1;                       \
 		rm curl-${CURL_VERSION}.tar.bz2;                                       \
 		ln -s curl-${CURL_VERSION} curl;                                       \
@@ -578,7 +579,7 @@ gmp_download :
 		echo "gmp sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                             \
 		cd deps;                                                           \
-		wget ${GMP_URL_HTTP} || exit 1;                                    \
+		wget ${GMP_URL_HTTP} -O gmp-${GMP_VERSION}.tar.bz2 || exit 1;                                    \
 		tar -xjf gmp-${GMP_VERSION}.tar.bz2 || exit 1;                     \
 		rm gmp-${GMP_VERSION}.tar.bz2;                                     \
 		ln -s gmp-${GMP_VERSION} gmp;                                      \
@@ -629,7 +630,7 @@ sqlite3_download: deps/${SQLITE3_FOLDER}/sqlite3.c
 
 deps/${SQLITE3_FOLDER}/sqlite3.c :
 	cd deps;                                                                    \
-	wget ${SQLITE3_URL};                                                        \
+	wget ${SQLITE3_URL} -O ${SQLITE3_FOLDER}.zip;                               \
 	unzip ${SQLITE3_FOLDER}.zip;                                                \
 	ln -s ${SQLITE3_FOLDER} sqlite
 
@@ -748,7 +749,8 @@ clean_assets :
 
 #=== freeminer libs:
 .PHONY : default $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
-		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv
+		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv \
+		$(LUAJIT_TIMESTAMP) luajit luajit_download clean_luajit
 
 MSGPACK_DIR = $(ROOT)/deps/msgpack/
 MSGPACK_LIB = $(MSGPACK_DIR)lib/Android/libmsgpack.a
@@ -930,6 +932,66 @@ clean_gettext :
 	$(RM) -rf $(GETTEXT_DIR)
 
 
+LUAJIT_DIR = $(ROOT)/deps/luajit/
+LUAJIT_LIB = $(LUAJIT_DIR)src/libluajit.a
+LUAJIT_TIMESTAMP = $(LUAJIT_DIR)timestamp
+LUAJIT_TIMESTAMP_INT = $(ROOT)/deps/luajit_timestamp
+LUAJIT_URL_GIT = http://luajit.org/git/luajit-2.0.git
+
+
+$(LUAJIT_TIMESTAMP) : luajit_download
+	@LAST_MODIF=$$(find ${LUAJIT_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
+	if [ $$(basename $$LAST_MODIF) != "timestamp" ] ; then                     \
+		touch ${LUAJIT_TIMESTAMP};                                                \
+	fi
+
+luajit_download :
+	@if [ ! -d ${LUAJIT_DIR} ] ; then                                             \
+		echo "luajit sources missing, downloading...";                            \
+		mkdir -p ${ROOT}/deps;                                                 \
+		cd ${ROOT}/deps ;                                                      \
+		git clone ${LUAJIT_URL_GIT} ${LUAJIT_DIR} || exit 1;                                     \
+	fi
+
+luajit : $(LUAJIT_LIB)
+
+$(LUAJIT_LIB): $(LUAJIT_TIMESTAMP)
+	@REFRESH=0; \
+	if [ ! -e ${LUAJIT_TIMESTAMP_INT} ] ; then \
+		echo "${LUAJIT_TIMESTAMP_INT} doesn't exist"; \
+		REFRESH=1; \
+	fi; \
+	if [ ${LUAJIT_TIMESTAMP} -nt ${LUAJIT_TIMESTAMP_INT} ] ; then  \
+		REFRESH=1; \
+	fi; \
+	if [ $$REFRESH -ne 0 ] ; then \
+	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK}; \
+	echo "changed timestamp for luajit detected building..."; \
+	cd ${LUAJIT_DIR}; \
+	export CROSS_PREFIX=${CROSS_PREFIX}; \
+	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-luajit; \
+	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh \
+	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION} \
+	--install-dir=$${TOOLCHAIN} --platform=${APP_PLATFORM}; \
+	export PATH="$${TOOLCHAIN}/bin:$${PATH}"; \
+	export CROSS=${CROSS_PREFIX}; \
+	export TARGET_FLAGS="${TARGET_CFLAGS_ADDON}"; \
+	export TARGET_LDFLAGS="-lm_hard ${TARGET_LDFLAGS_ADDON}"; \
+	$(MAKE) -j${PARALLEL} HOST_CC="gcc -m32" BUILDMODE=static; \
+	touch ${LUAJIT_TIMESTAMP}; \
+	touch ${LUAJIT_TIMESTAMP_INT}; \
+	else \
+		echo "nothing to be done for libluajit"; \
+	fi
+
+clean_luajit :
+	$(RM) -rf ${LUAJIT_DIR}
+
+ifeq ($(USE_LUAJIT),1)
+LUAJIT_TARGET=$(LUAJIT_LIB)
+endif
+
+
 locale:
 	mkdir -p cmake && cd cmake && cmake ../../.. && make translations
 
@@ -938,7 +1000,7 @@ locale:
 
 apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
-	$(MSGPACK_TARGET) $(GETTEXT_LIB)                                           \
+	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) \
 	sqlite3_download
 	@export NDEBUG=$$NDEBUG; $(MAKE) manifest;                                 \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \
@@ -946,7 +1008,8 @@ apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARG
 	mkdir -p ${ROOT}/src;                                                      \
 	ndk-build NDK_MODULE_PATH=${NDK_MODULE_PATH}                               \
 	GPROF=${GPROF} APP_ABI=${TARGET_ABI} HAVE_LEVELDB=${HAVE_LEVELDB}          \
-	PROJECT_NAME_C=${PROJECT_NAME_C}                                           \
+	USE_LUAJIT=${USE_LUAJIT} \
+	PROJECT_NAME_C=${PROJECT_NAME_C} \
 	APP_PLATFORM=${APP_PLATFORM}                                               \
 	TARGET_LIBDIR=${TARGET_LIBDIR}                                             \
 	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
@@ -981,7 +1044,7 @@ envpaths :
 clean_all :
 	@$(MAKE) clean_apk;                                                        \
 	$(MAKE) clean_assets clean_irrlicht clean_leveldb clean_curl clean_openssl \
-	clean_msgpack clean_iconv                                                  \
+	clean_msgpack clean_iconv clean_gettext clean_luajit \
 	clean_openal clean_ogg clean_gmp clean_manifest;                           \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
