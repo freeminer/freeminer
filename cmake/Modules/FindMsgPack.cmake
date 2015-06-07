@@ -9,6 +9,10 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
 # Minimal supported version: 1.1.0
+if(NOT CMAKE_CXX_COMPILER_VERSION OR (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7))
+	message(WARNING "Use system msgpack can be too old. recommended min version=1.1.0")
+	set(ENABLE_SYSTEM_MSGPACK 1)
+endif()
 
 if(ENABLE_SYSTEM_MSGPACK OR MSGPACK_LIBRARY OR MSGPACK_INCLUDE_DIR)
 
