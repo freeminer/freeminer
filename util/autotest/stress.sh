@@ -26,6 +26,7 @@ cd ../..
 mv CMakeCache.txt CMakeCache.txt.backup
 mv src/cmake_config.h src/cmake_config.backup
 
+root_prefix=auto_
 rootdir=..
 
 mkdir -p $logdir
@@ -37,7 +38,7 @@ echo "backend = leveldb" >> $world/world.mt
 
 name=stress
 echo $name =============
-mkdir -p _$name && cd _$name
+mkdir -p $root_prefix$name && cd $root_prefix$name
 cmake $rootdir -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $clang $cmake_opt
 $make >> $logdir/autotest.$name.make.log 2>&1
 

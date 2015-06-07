@@ -238,7 +238,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
 			g_touchscreengui = receiver->m_touchscreengui;
 #endif
-			int tries = g_settings->getU16("reconnects");
+			int tries = simple_singleplayer_mode ? 0 : g_settings->getU16("reconnects");
 			int n = 0;
 			while(!*kill && ++n <= tries &&
 			the_game(
