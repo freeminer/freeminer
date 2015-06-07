@@ -38,7 +38,10 @@ namespace fs
 
 #ifdef _WIN32 // WINDOWS
 
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#endif
+
 #include <windows.h>
 #include <shlwapi.h>
 
