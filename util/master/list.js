@@ -46,6 +46,8 @@ function addressString(server) {
 
 function tooltipString(str, maxLen) {
 	str = escapeHTML(str);
+	if (!str)
+		return '';
 	var shortStr = str;
 	var ret = '<span';
 	if (shortStr.length > maxLen) {
