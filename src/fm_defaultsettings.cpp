@@ -99,6 +99,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("texture_path", "");
 	settings->setDefault("shader_path", "");
 	settings->setDefault("screenshot_path", ".");
+	settings->setDefault("timelapse", "0");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 
 	// Main menu

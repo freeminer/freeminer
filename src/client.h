@@ -520,7 +520,7 @@ public:
 
 	LocalClientState getState() { return m_state; }
 
-	void makeScreenshot(IrrlichtDevice *device);
+	void makeScreenshot(const std::string & name = "screenshot_", IrrlichtDevice *device = nullptr);
 
 private:
 
@@ -646,6 +646,7 @@ private:
 	std::map<std::string, Inventory*> m_detached_inventories;
 	double m_uptime;
 	bool m_simple_singleplayer_mode;
+	float m_timelapse_timer;
 public:
 	void sendDrawControl();
 private:

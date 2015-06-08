@@ -253,6 +253,7 @@ Client::Client(
 	m_removed_sounds_check_timer(0),
 	m_uptime(0),
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
+	m_timelapse_timer(-1),
 	m_state(LC_Created),
 	m_localdb(NULL)
 {
@@ -636,6 +637,16 @@ void Client::step(float dtime)
 			sendRemovedSounds(removed_server_ids);
 		}
 	}
+
+	float timelapse = g_settings->getFloat("timelapse");
+	if (timelapse) {
+		m_timelapse_timer += dtime;
+		if (m_timelapse_timer > timelapse) {
+			m_timelapse_timer = 0;
+			makeScreenshot("timelapse_");
+		}
+	}
+
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename)
@@ -1876,8 +1887,10 @@ float Client::getAvgRate(void)
 //			m_con.getLocalStat(con::AVG_DL_RATE));
 }
 
-void Client::makeScreenshot(IrrlichtDevice *device)
+void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)
 {
+	if (!device)
+		device = m_device;
 	irr::video::IVideoDriver *driver = device->getVideoDriver();
 	irr::video::IImage* const raw_image = driver->createScreenShot();
 
@@ -1892,7 +1905,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 
 	std::string filename_base = g_settings->get("screenshot_path")
 			+ DIR_DELIM
-			+ std::string("screenshot_")
+			+ name
 			+ std::string(timetstamp_c);
 	std::string filename_ext = ".png";
 	std::string filename;
@@ -1919,6 +1932,7 @@ void Client::makeScreenshot(IrrlichtDevice *device)
 
 			std::ostringstream sstr;
 			if (driver->writeImageToFile(image, filename.c_str())) {
+				if (name == "screenshot_")
 				sstr << "Saved screenshot to '" << filename << "'";
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";
