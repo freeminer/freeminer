@@ -339,9 +339,12 @@ bool Settings::parseCommandLine(int argc, char *argv[],
 				nonopt_index++;
 				continue;
 			}
+			continue;
+/*
 			errorstream << "Invalid command-line parameter \""
 					<< arg_name << "\": --<option> expected." << std::endl;
 			return false;
+*/
 		}
 
 		std::string name = arg_name.substr(2);

@@ -6,6 +6,14 @@ Engine
   * liquid_pressure=1 (dev)
   * thread for abm apply
   * optional support old minetest protocol (to host servers for minetest players) to enable compile with -DMINETEST_PROTO=1
+  * use bundled msgpack 1.1.0 (incompatible with 0.5.x in some packets where vector<string> used)
+  * timelapse=seconds option for automated screenshots
+  * set any settings from command line: -key[=[value]]
+    ./freeminer -name=herob
+    ./freeminer "-name=hero brine"    # value with spaces
+    ./freeminer -autojump             # set autojump to 1
+    ./freeminer -enable_fog=          # set enable_fog to ""
+  * android: gettext and luajit enabled
 
 
 ### 0.4.12.6 (Feb 18, 2015)

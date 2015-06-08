@@ -219,6 +219,24 @@ int main(int argc, char *argv[])
 	if (!init_common(&game_params.log_level, cmd_args, argc, argv))
 		return 1;
 
+	// parse settings from cmdline. must be after loading settings. maybe better to move
+	for (int i = 1; i < argc; i++) {
+		std::string arg_name = argv[i];
+		if (arg_name.substr(0, 2) == "--" || arg_name[0] != '-')
+			continue;
+		std::string name = arg_name.substr(1);
+		std::string value;
+		auto vpos = name.find('=');
+		if (vpos != std::string::npos && name.size() > vpos) {
+			value = name.substr(vpos+1);
+			name.resize(vpos);
+		} else {
+			value = "1";
+		}
+		g_settings->set(name, value);
+		continue;
+	}
+
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
 	// Run unit tests
 	if (cmd_args.getFlag("run-unittests")) {
