@@ -62,7 +62,9 @@ use Time::HiRes qw(time sleep);
 use IO::Socket::IP;
 use JSON;
 use Net::Ping;
+use Fcntl qw();
 #use Data::Dumper;
+
 our $root_path;
 ($ENV{'SCRIPT_FILENAME'} || $0) =~ m|^(.+)[/\\].+?$|;    #v0w
 $root_path = $1 . '/' if $1;
@@ -77,7 +79,7 @@ our %config = (
     time_alive   => 650,
     source_check => 1,
     ping_timeout => 3,
-    #ping         => 1, # todo
+    ping         => 1,
     #mineping     => 1,
     fmping       => 1,
     pingable     => 1,
@@ -105,6 +107,12 @@ sub get_params(;$$) {    #v7
       $string
       ? get_params_one split $delim, $string
       : (get_params_one(@ARGV), map { get_params_one split $delim, $_ } split(/;\s*/, $ENV{'HTTP_COOKIE'}), $ENV{'QUERY_STRING'}, $_);
+
+    if ($ENV{'CONTENT_TYPE'} =~ m{multipart/form-data;.*boundary=(.*?)}) { # very stupid. todo: many fields
+        my $boundary = $1;
+        m{$boundary\s*Content-Disposition: form-data; name="(?<name>.*?)"\s*(?<data>.+?)\s*(?:$boundary--|$)}s;
+        $_{$+{name}} = $+{data} if length $+{name} and  length $+{data};
+    }
     wantarray ? %_ : \%_;
 }
 
@@ -117,7 +125,10 @@ sub get_params_utf8(;$$) {
 sub file_rewrite(;$@) {
     local $_ = shift;
     return unless open my $fh, '>', $_;
+    return unless flock( $fh, Fcntl::LOCK_EX );
     print $fh @_;
+    #return unless flock( $fh, Fcntl::LOCK_UN );
+    #close $fh;
 }
 
 sub printlog(;@) {
