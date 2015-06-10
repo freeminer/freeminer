@@ -878,7 +878,7 @@ content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &d
 	// Pre-conditions
 	if (name == "")
 		return CONTENT_IGNORE;
-	if (name != def.name);
+	if (name != def.name)
 		return CONTENT_IGNORE;
 
 	// Don't allow redefining ignore (but allow air and unknown)

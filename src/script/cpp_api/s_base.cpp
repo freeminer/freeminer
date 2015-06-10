@@ -168,6 +168,11 @@ void ScriptApiBase::scriptError()
 	throw LuaError(lua_tostring(m_luastack, -1));
 }
 
+void ScriptApiBase::scriptErrorNoEx()
+{
+	errorstream<<"lua exception: " << lua_tostring(m_luastack, -1) << std::endl;
+}
+
 void ScriptApiBase::stackDump(std::ostream &o)
 {
 	int i;

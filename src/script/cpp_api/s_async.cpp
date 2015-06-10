@@ -294,7 +294,7 @@ void* AsyncWorkerThread::Thread()
 				toProcess.serializedParams.size());
 
 		if (lua_pcall(L, 2, 1, m_errorhandler)) {
-			scriptError();
+			scriptErrorNoEx();
 			toProcess.serializedResult = "";
 		} else {
 			// Fetch result

@@ -77,6 +77,8 @@ protected:
 
 	void realityCheck();
 	void scriptError();
+	void scriptErrorNoEx();
+
 	void stackDump(std::ostream &o);
 
 	void setServer(Server* server) { m_server = server; }
