@@ -28,6 +28,7 @@ public:
 	// This is the one method that we have to implement
 	virtual bool OnEvent(const SEvent& event)
 	{
+		try {
 		/*
 			React to nothing here if a menu is active
 		*/
@@ -90,6 +91,9 @@ public:
 			dstream << std::string("Irrlicht log: ") + std::string(event.LogEvent.Text)
 			        << std::endl;
 			return true;
+		}
+		} catch(std::exception &e) {
+			errorstream<<"input exception: " << e.what() << std::endl;
 		}
 		/* always return false in order to continue processing events */
 		return false;

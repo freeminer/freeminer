@@ -876,8 +876,10 @@ content_t CNodeDefManager::allocateId()
 content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &def)
 {
 	// Pre-conditions
-	assert(name != "");
-	assert(name == def.name);
+	if (name == "")
+		return CONTENT_IGNORE;
+	if (name != def.name);
+		return CONTENT_IGNORE;
 
 	// Don't allow redefining ignore (but allow air and unknown)
 	if (name == "ignore") {
@@ -895,7 +897,8 @@ content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &d
 				"limit reached" << std::endl;
 			return CONTENT_IGNORE;
 		}
-		assert(id != CONTENT_IGNORE);
+		if (id == CONTENT_IGNORE)
+			return CONTENT_IGNORE;
 		addNameIdMapping(id, name);
 	}
 	m_content_features[id] = def;
@@ -925,7 +928,8 @@ content_t CNodeDefManager::set(const std::string &name, const ContentFeatures &d
 
 content_t CNodeDefManager::allocateDummy(const std::string &name)
 {
-	assert(name != "");	// Pre-condition
+	if (name == "")
+		return CONTENT_IGNORE;
 	ContentFeatures f;
 	f.name = name;
 	return set(name, f);

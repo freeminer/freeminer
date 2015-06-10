@@ -1844,7 +1844,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_clipbackground = false;
 	// Add tooltip
 	{
-		assert(m_tooltip_element == NULL);
+		//assert(m_tooltip_element == NULL);
 		// Note: parent != this so that the tooltip isn't clipped by the menu rectangle
 		m_tooltip_element = Environment->addStaticText(L"",core::rect<s32>(0,0,110,18));
 		m_tooltip_element->enableOverrideColor(true);
@@ -2987,7 +2987,7 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 		}
 
 		SEvent* translated = new SEvent();
-		assert(translated != 0);
+		//assert(translated != 0);
 		//translate doubleclick to escape
 		memset(translated, 0, sizeof(SEvent));
 		translated->EventType = irr::EET_KEY_INPUT_EVENT;
@@ -3246,7 +3246,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 			}
 			else { // m_selected_item != NULL
-				assert(m_selected_amount >= 1);
+				//assert(m_selected_amount >= 1);
 
 				if(s.isValid()) {
 					// Clicked a slot: move
@@ -3314,7 +3314,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					// moved
 					InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
 					InventoryList *list_to = inv_s->getList(s.listname);
-					assert(list_from && list_to);
+					if (!(list_from && list_to))
+						return false;
 					ItemStack stack_from = list_from->getItem(m_selected_item->i);
 					ItemStack stack_to = list_to->getItem(s.i);
 					if (stack_to.empty() || stack_to.name == stack_from.name)
@@ -3328,13 +3329,16 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		{
 			// Send IACTION_MOVE
 
-			assert(m_selected_item && m_selected_item->isValid());
-			assert(s.isValid());
+			if (!(m_selected_item && m_selected_item->isValid()))
+				return false;
+			if (!s.isValid())
+				return false;
 
 			assert(inv_selected && inv_s);
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
 			InventoryList *list_to = inv_s->getList(s.listname);
-			assert(list_from && list_to);
+			if (!(list_from && list_to))
+				return false;
 			ItemStack stack_from = list_from->getItem(m_selected_item->i);
 			ItemStack stack_to = list_to->getItem(s.i);
 
@@ -3379,15 +3383,19 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			// Send IACTION_DROP
 
-			assert(m_selected_item && m_selected_item->isValid());
-			assert(inv_selected);
+			if (!(m_selected_item && m_selected_item->isValid()))
+				return false;
+			if (!inv_selected)
+				return false;
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			assert(list_from);
+			if (!list_from)
+				return false;
 			ItemStack stack_from = list_from->getItem(m_selected_item->i);
 
 			// Check how many items can be dropped
 			drop_amount = stack_from.count = MYMIN(drop_amount, stack_from.count);
-			assert(drop_amount > 0 && drop_amount <= m_selected_amount);
+			if (!(drop_amount > 0 && drop_amount <= m_selected_amount))
+				return false;
 			m_selected_amount -= drop_amount;
 
 			infostream<<"Handing IACTION_DROP to manager"<<std::endl;
@@ -3403,8 +3411,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			// Send IACTION_CRAFT
 
-			assert(s.isValid());
-			assert(inv_s);
+			if(!s.isValid())
+				return false;
+			if(!inv_s)
+				return false;
 
 			infostream<<"Handing IACTION_CRAFT to manager"<<std::endl;
 			ICraftAction *a = new ICraftAction();
