@@ -456,10 +456,12 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		}
 
 		if (!fs::PathExists(worldspec.path)) {
+			if (!loadGameConfAndInitWorld(worldspec.path, game_params.game_spec)) {
 			error_message = _("Provided world path doesn't exist: ")
 					+ worldspec.path;
 			errorstream << error_message << std::endl;
 			return false;
+			}
 		}
 
 		// Load gamespec for required game
