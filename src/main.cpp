@@ -548,7 +548,7 @@ static bool read_config_file(const Settings &cmd_args)
 		if (!r) {
 			errorstream << "Could not read configuration from \""
 			            << cmd_args.get("config") << "\"" << std::endl;
-			return false;
+			//return false;
 		}
 		g_settings_path = cmd_args.get("config");
 	} else {
@@ -681,10 +681,16 @@ static bool get_world_from_cmdline(GameParams *game_params, const Settings &cmd_
 			}
 		}
 		if (!found) {
+			std::string fullpath = porting::path_user + DIR_DELIM + "worlds" DIR_DELIM + commanded_worldname;
+			game_configure_subgame(game_params, cmd_args);
+			if (!loadGameConfAndInitWorld(fullpath, game_params->game_spec)) {
 			dstream << _("World") << " '" << commanded_worldname
 			        << _("' not available. Available worlds:") << std::endl;
 			print_worldspecs(worldspecs, dstream);
 			return false;
+			} else {
+				commanded_world = fullpath;
+			}
 		}
 
 		game_params->world_path = get_clean_world_path(commanded_world);
@@ -802,12 +808,12 @@ static bool determine_subgame(GameParams *game_params)
 {
 	SubgameSpec gamespec;
 
-	assert(game_params->world_path != "");	// Pre-condition
+	//assert(game_params->world_path != "");	// Pre-condition
 
 	verbosestream << _("Determining gameid/gamespec") << std::endl;
 	// If world doesn't exist
-	if (game_params->world_path != ""
-			&& !getWorldExists(game_params->world_path)) {
+	if (game_params->world_path == ""
+			|| !getWorldExists(game_params->world_path)) {
 		// Try to take gamespec from command line
 		if (game_params->game_spec.isValid()) {
 			gamespec = game_params->game_spec;

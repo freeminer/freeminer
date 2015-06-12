@@ -404,6 +404,9 @@ bool ClientLauncher::launch_game(std::string &error_message,
 					worldspecs[menudata.selected_world].path);
 			worldspec = worldspecs[menudata.selected_world];
 		}
+	} else {
+		if (address.empty())
+			simple_singleplayer_mode = 1;
 	}
 
 	if (!menudata.errormessage.empty()) {
@@ -456,10 +459,12 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		}
 
 		if (!fs::PathExists(worldspec.path)) {
+			if (!loadGameConfAndInitWorld(worldspec.path, game_params.game_spec)) {
 			error_message = _("Provided world path doesn't exist: ")
 					+ worldspec.path;
 			errorstream << error_message << std::endl;
 			return false;
+			}
 		}
 
 		// Load gamespec for required game
