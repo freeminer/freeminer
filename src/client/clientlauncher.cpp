@@ -404,6 +404,9 @@ bool ClientLauncher::launch_game(std::string &error_message,
 					worldspecs[menudata.selected_world].path);
 			worldspec = worldspecs[menudata.selected_world];
 		}
+	} else {
+		if (address.empty())
+			simple_singleplayer_mode = 1;
 	}
 
 	if (!menudata.errormessage.empty()) {

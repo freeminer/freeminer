@@ -548,7 +548,7 @@ static bool read_config_file(const Settings &cmd_args)
 		if (!r) {
 			errorstream << "Could not read configuration from \""
 			            << cmd_args.get("config") << "\"" << std::endl;
-			return false;
+			//return false;
 		}
 		g_settings_path = cmd_args.get("config");
 	} else {
