@@ -124,6 +124,22 @@ class GUIFormSpecMenu : public GUIModalMenu
 		s32 start_item_i;
 	};
 
+	struct ListRingSpec
+	{
+		ListRingSpec()
+		{
+		}
+		ListRingSpec(const InventoryLocation &a_inventoryloc,
+				const std::string &a_listname):
+			inventoryloc(a_inventoryloc),
+			listname(a_listname)
+		{
+		}
+
+		InventoryLocation inventoryloc;
+		std::string listname;
+	};
+
 	struct ImageDrawSpec
 	{
 		ImageDrawSpec()
@@ -309,6 +325,7 @@ protected:
 
 
 	std::vector<ListDrawSpec> m_inventorylists;
+	std::vector<ListRingSpec> m_inventory_rings;
 	std::vector<ImageDrawSpec> m_backgrounds;
 	std::vector<ImageDrawSpec> m_images;
 	std::vector<ImageDrawSpec> m_itemimages;
@@ -387,6 +404,7 @@ private:
 
 	void parseSize(parserData* data,std::string element);
 	void parseList(parserData* data,std::string element);
+	void parseListRing(parserData* data,std::string element);
 	void parseCheckbox(parserData* data,std::string element);
 	void parseImage(parserData* data,std::string element);
 	void parseItemImage(parserData* data,std::string element);
