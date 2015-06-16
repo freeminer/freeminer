@@ -40,7 +40,7 @@ void main(void)
 
 #if ((DRAW_TYPE == NDT_NORMAL || DRAW_TYPE == NDT_LIQUID || DRAW_TYPE == NDT_FLOWINGLIQUID) && GENERATE_NORMALMAPS)
 	generate_heightmaps = 1.0;
-#else 
+#else
 	generate_heightmaps = 0.0;
 #endif
 
