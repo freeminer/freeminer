@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class IGameDef;
 struct MapDrawControl;
 class Map;
+class IShaderSource;
 
 /*
 	Mesh making stuff
@@ -169,6 +170,8 @@ public:
 private:
 	scene::SMesh *m_mesh;
 	IGameDef *m_gamedef;
+	ITextureSource *m_tsrc;
+	IShaderSource *m_shdrsrc;
 
 	bool m_enable_shaders;
 	bool m_enable_highlighting;
@@ -213,13 +216,12 @@ struct PreMeshBuffer
 {
 	TileSpec tile;
 	std::vector<u16> indices;
-	std::vector<video::S3DVertex> vertices;
+	std::vector<video::S3DVertexTangents> vertices;
 };
 
 struct MeshCollector
 {
 	std::vector<PreMeshBuffer> prebuffers;
-
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);
