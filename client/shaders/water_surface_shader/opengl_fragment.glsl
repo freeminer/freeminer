@@ -17,6 +17,8 @@ varying vec3 tsLightVec;
 
 uniform float wieldLight;
 
+bool normalTexturePresent = false;
+
 const float e = 2.718281828459;
 const float BS = 10.0;
  
