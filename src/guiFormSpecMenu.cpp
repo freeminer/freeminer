@@ -3048,10 +3048,10 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 
 bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 {
-	if(event.EventType==EET_KEY_INPUT_EVENT) {
+	if (event.EventType==EET_KEY_INPUT_EVENT) {
 		KeyPress kp(event.KeyInput);
 		if (event.KeyInput.PressedDown && ( (kp == EscapeKey) ||
-			(kp == getKeySetting("keymap_inventory")) || (kp == CancelKey))) {
+				(kp == getKeySetting("keymap_inventory")) || (kp == CancelKey))) {
 			if (m_allowclose) {
 				doPause = false;
 				acceptInput(quit_mode_cancel);
@@ -3061,8 +3061,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 			return true;
 		} else if (m_client != NULL && event.KeyInput.PressedDown &&
-			(kp == getKeySetting("keymap_screenshot"))) {
-				m_client->makeScreenshot();
+				(kp == getKeySetting("keymap_screenshot"))) {
+			m_client->makeScreenshot();
 		}
 		if (event.KeyInput.PressedDown &&
 			(event.KeyInput.Key==KEY_RETURN ||
@@ -3181,8 +3181,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		Inventory *inv_selected = NULL;
 		Inventory *inv_s = NULL;
+		InventoryList *list_s = NULL;
 
-		if(m_selected_item) {
+		if (m_selected_item) {
 			inv_selected = m_invmgr->getInventory(m_selected_item->inventoryloc);
 			sanity_check(inv_selected);
 			sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
@@ -3190,35 +3191,35 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		u32 s_count = 0;
 
-		if(s.isValid())
+		if (s.isValid())
 		do { // breakable
 			inv_s = m_invmgr->getInventory(s.inventoryloc);
 
-			if(!inv_s) {
-				errorstream<<"InventoryMenu: The selected inventory location "
-						<<"\""<<s.inventoryloc.dump()<<"\" doesn't exist"
-						<<std::endl;
+			if (!inv_s) {
+				errorstream << "InventoryMenu: The selected inventory location "
+						<< "\"" << s.inventoryloc.dump() << "\" doesn't exist"
+						<< std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			InventoryList *list = inv_s->getList(s.listname);
-			if(list == NULL) {
-				verbosestream<<"InventoryMenu: The selected inventory list \""
-						<<s.listname<<"\" does not exist"<<std::endl;
+			list_s = inv_s->getList(s.listname);
+			if (list_s == NULL) {
+				verbosestream << "InventoryMenu: The selected inventory list \""
+						<< s.listname << "\" does not exist" << std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			if((u32)s.i >= list->getSize()) {
-				infostream<<"InventoryMenu: The selected inventory list \""
-						<<s.listname<<"\" is too small (i="<<s.i<<", size="
-						<<list->getSize()<<")"<<std::endl;
+			if ((u32)s.i >= list_s->getSize()) {
+				infostream << "InventoryMenu: The selected inventory list \""
+						<< s.listname << "\" is too small (i=" << s.i << ", size="
+						<< list_s->getSize() << ")" << std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			s_count = list->getItem(s.i).count;
+			s_count = list_s->getItem(s.i).count;
 		} while(0);
 
 		bool identical = (m_selected_item != NULL) && s.isValid() &&
@@ -3230,19 +3231,19 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// up/down: 0 = down (press), 1 = up (release), 2 = unknown event, -1 movement
 		int button = 0;
 		int updown = 2;
-		if(event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
+		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
 			{ button = 0; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
+		else if (event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
 			{ button = 1; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN)
+		else if (event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN)
 			{ button = 2; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP)
 			{ button = 0; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_RMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_RMOUSE_LEFT_UP)
 			{ button = 1; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_MMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_MMOUSE_LEFT_UP)
 			{ button = 2; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_MOUSE_MOVED)
+		else if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
 			{ updown = -1;}
 
 		// Set this number to a positive value to generate a move action
@@ -3260,7 +3261,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// Set this number to a positive value to generate a craft action at s.
 		u32 craft_amount = 0;
 
-		if(updown == 0) {
+		if (updown == 0) {
 			// Some mouse button has been pressed
 
 			//infostream<<"Mouse button "<<button<<" pressed at p=("
@@ -3268,19 +3269,18 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			m_selected_dragging = false;
 
-			if(s.isValid() && s.listname == "craftpreview") {
+			if (s.isValid() && s.listname == "craftpreview") {
 				// Craft preview has been clicked: craft
 				craft_amount = (button == 2 ? 10 : 1);
-			}
-			else if(m_selected_item == NULL) {
-				if(s_count != 0) {
+			} else if (m_selected_item == NULL) {
+				if (s_count != 0) {
 					// Non-empty stack has been clicked: select or shift-move it
 					m_selected_item = new ItemSpec(s);
 
 					u32 count;
-					if(button == 1)  // right
+					if (button == 1)  // right
 						count = (s_count + 1) / 2;
-					else if(button == 2)  // middle
+					else if (button == 2)  // middle
 						count = MYMIN(s_count, 10);
 					else  // left
 						count = s_count;
@@ -3298,21 +3298,20 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 							shift_move_amount = 1;
 					}
 				}
-			}
-			else { // m_selected_item != NULL
+			} else { // m_selected_item != NULL
 				//assert(m_selected_amount >= 1);
 
-				if(s.isValid()) {
+				if (s.isValid()) {
 					// Clicked a slot: move
-					if(button == 1)  // right
+					if (button == 1)  // right
 						move_amount = 1;
-					else if(button == 2)  // middle
+					else if (button == 2)  // middle
 						move_amount = MYMIN(m_selected_amount, 10);
 					else  // left
 						move_amount = m_selected_amount;
 
-					if(identical) {
-						if(move_amount >= m_selected_amount)
+					if (identical) {
+						if (move_amount >= m_selected_amount)
 							m_selected_amount = 0;
 						else
 							m_selected_amount -= move_amount;
@@ -3321,29 +3320,28 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 				else if (!getAbsoluteClippingRect().isPointInside(m_pointer)) {
 					// Clicked outside of the window: drop
-					if(button == 1)  // right
+					if (button == 1)  // right
 						drop_amount = 1;
-					else if(button == 2)  // middle
+					else if (button == 2)  // middle
 						drop_amount = MYMIN(m_selected_amount, 10);
 					else  // left
 						drop_amount = m_selected_amount;
 				}
 			}
 		}
-		else if(updown == 1) {
+		else if (updown == 1) {
 			// Some mouse button has been released
 
 			//infostream<<"Mouse button "<<button<<" released at p=("
 			//	<<p.X<<","<<p.Y<<")"<<std::endl;
 
-			if(m_selected_item != NULL && m_selected_dragging && s.isValid()) {
-				if(!identical) {
+			if (m_selected_item != NULL && m_selected_dragging && s.isValid()) {
+				if (!identical) {
 					// Dragged to different slot: move all selected
 					move_amount = m_selected_amount;
 				}
-			}
-			else if(m_selected_item != NULL && m_selected_dragging &&
-				!(getAbsoluteClippingRect().isPointInside(m_pointer))) {
+			} else if (m_selected_item != NULL && m_selected_dragging &&
+					!(getAbsoluteClippingRect().isPointInside(m_pointer))) {
 				// Dragged outside of window: drop all selected
 				drop_amount = m_selected_amount;
 			}
@@ -3352,14 +3350,13 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			// Keep count of how many times right mouse button has been
 			// clicked. One click is drag without dropping. Click + release
 			// + click changes to drop one item when moved mode
-			if(button == 1 && m_selected_item != NULL)
+			if (button == 1 && m_selected_item != NULL)
 				m_rmouse_auto_place = !m_rmouse_auto_place;
-		}
-		else if(updown == -1) {
+		} else if (updown == -1) {
 			// Mouse has been moved and rmb is down and mouse pointer just
 			// entered a new inventory field (checked in the entry-if, this
 			// is the only action here that is generated by mouse movement)
-			if(m_selected_item != NULL && s.isValid()){
+			if (m_selected_item != NULL && s.isValid()) {
 				// Move 1 item
 				// TODO: middle mouse to move 10 items might be handy
 				if (m_rmouse_auto_place) {
@@ -3367,7 +3364,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					// or contains the same item type as what is going to be
 					// moved
 					InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-					InventoryList *list_to = inv_s->getList(s.listname);
+					InventoryList *list_to = list_s;
 					if (!(list_from && list_to))
 						return false;
 					ItemStack stack_from = list_from->getItem(m_selected_item->i);
@@ -3389,7 +3386,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			assert(inv_selected && inv_s);
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			InventoryList *list_to = inv_s->getList(s.listname);
+			InventoryList *list_to = list_s;
 			if (!(list_from && list_to))
 				return false;
 			ItemStack stack_from = list_from->getItem(m_selected_item->i);
@@ -3409,7 +3406,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_selected_content_guess_inventory = s.inventoryloc;
 			}
 			// Source stack goes fully into destination stack
-			else if(leftover.empty()) {
+			else if (leftover.empty()) {
 				m_selected_amount -= move_amount;
 				m_selected_content_guess = ItemStack(); // Clear
 			}
@@ -3420,7 +3417,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_selected_content_guess = ItemStack(); // Clear
 			}
 
-			infostream<<"Handing IACTION_MOVE to manager"<<std::endl;
+			infostream << "Handing IACTION_MOVE to manager" << std::endl;
 			IMoveAction *a = new IMoveAction();
 			a->count = move_amount;
 			a->from_inv = m_selected_item->inventoryloc;
@@ -3444,8 +3441,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					break;
 				u32 to_inv_ind = (i + 1) % mis;
 				const ListRingSpec &to_inv_sp = m_inventory_rings[to_inv_ind];
-				InventoryList *list_from = inv_s->getList(s.listname);
-				if (!list_from)
+				InventoryList *list_from = list_s;
+				if (!s.isValid())
 					break;
 				Inventory *inv_to = m_invmgr->getInventory(to_inv_sp.inventoryloc);
 				if (!inv_to)
@@ -3457,10 +3454,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				assert(shift_move_amount <= stack_from.count);
 
 				// find a place (or more than one) to add the new item
-				u32 slot_to = 0;
 				u32 ilt_size = list_to->getSize();
 				ItemStack leftover;
-				for (; slot_to < ilt_size && shift_move_amount > 0; slot_to++) {
+				for (u32 slot_to = 0; slot_to < ilt_size
+						&& shift_move_amount > 0; slot_to++) {
 					list_to->itemFits(slot_to, stack_from, &leftover);
 					if (leftover.count < stack_from.count) {
 						infostream << "Handing IACTION_MOVE to manager" << std::endl;
@@ -3500,15 +3497,14 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				return false;
 			m_selected_amount -= drop_amount;
 
-			infostream<<"Handing IACTION_DROP to manager"<<std::endl;
+			infostream << "Handing IACTION_DROP to manager" << std::endl;
 			IDropAction *a = new IDropAction();
 			a->count = drop_amount;
 			a->from_inv = m_selected_item->inventoryloc;
 			a->from_list = m_selected_item->listname;
 			a->from_i = m_selected_item->i;
 			m_invmgr->inventoryAction(a);
-		}
-		else if(craft_amount > 0) {
+		} else if (craft_amount > 0) {
 			m_selected_content_guess = ItemStack(); // Clear
 
 			// Send IACTION_CRAFT
@@ -3518,7 +3514,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			if(!inv_s)
 				return false;
 
-			infostream<<"Handing IACTION_CRAFT to manager"<<std::endl;
+			infostream << "Handing IACTION_CRAFT to manager" << std::endl;
 			ICraftAction *a = new ICraftAction();
 			a->count = craft_amount;
 			a->craft_inv = s.inventoryloc;
@@ -3526,7 +3522,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 
 		// If m_selected_amount has been decreased to zero, deselect
-		if(m_selected_amount == 0) {
+		if (m_selected_amount == 0) {
 			delete m_selected_item;
 			m_selected_item = NULL;
 			m_selected_amount = 0;
@@ -3535,12 +3531,12 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 		m_old_pointer = m_pointer;
 	}
-	if(event.EventType==EET_GUI_EVENT) {
+	if (event.EventType == EET_GUI_EVENT) {
 
-		if(event.GUIEvent.EventType==gui::EGET_TAB_CHANGED
+		if (event.GUIEvent.EventType == gui::EGET_TAB_CHANGED
 				&& isVisible()) {
 			// find the element that was clicked
-			for(unsigned int i=0; i<m_fields.size(); i++) {
+			for (unsigned int i=0; i<m_fields.size(); i++) {
 				FieldSpec &s = m_fields[i];
 				if ((s.ftype == f_TabHeader) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
@@ -3551,16 +3547,16 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 			}
 		}
-		if(event.GUIEvent.EventType==gui::EGET_ELEMENT_FOCUS_LOST
+		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-			if(!canTakeFocus(event.GUIEvent.Element)) {
+			if (!canTakeFocus(event.GUIEvent.Element)) {
 				infostream<<"GUIFormSpecMenu: Not allowing focus change."
 						<<std::endl;
 				// Returning true disables focus change
 				return true;
 			}
 		}
-		if((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
+		if ((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
 				(event.GUIEvent.EventType == gui::EGET_CHECKBOX_CHANGED) ||
 				(event.GUIEvent.EventType == gui::EGET_COMBO_BOX_CHANGED) ||
 				(event.GUIEvent.EventType == gui::EGET_SCROLL_BAR_CHANGED)) {
@@ -3579,14 +3575,14 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 
 			// find the element that was clicked
-			for(u32 i=0; i<m_fields.size(); i++) {
+			for (u32 i = 0; i < m_fields.size(); i++) {
 				FieldSpec &s = m_fields[i];
 				// if its a button, set the send field so
 				// lua knows which button was pressed
 				if (((s.ftype == f_Button) || (s.ftype == f_CheckBox)) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
 					s.send = true;
-					if(s.is_exit) {
+					if (s.is_exit) {
 						if (m_allowclose) {
 							acceptInput(quit_mode_accept);
 							quitMenu();
@@ -3599,11 +3595,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						s.send = false;
 						return true;
 					}
-				}
-				else if ((s.ftype == f_DropDown) &&
+				} else if ((s.ftype == f_DropDown) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
 					// only send the changed dropdown
-					for(u32 i=0; i<m_fields.size(); i++) {
+					for (u32 i = 0; i < m_fields.size(); i++) {
 						FieldSpec &s2 = m_fields[i];
 						if (s2.ftype == f_DropDown) {
 							s2.send = false;
@@ -3614,17 +3609,15 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 					// revert configuration to make sure dropdowns are sent on
 					// regular button click
-					for(u32 i=0; i<m_fields.size(); i++) {
+					for (u32 i = 0; i < m_fields.size(); i++) {
 						FieldSpec &s2 = m_fields[i];
 						if (s2.ftype == f_DropDown) {
 							s2.send = true;
 						}
 					}
 					return true;
-				}
-				else if ((s.ftype == f_ScrollBar) &&
-					(s.fid == event.GUIEvent.Caller->getID()))
-				{
+				} else if ((s.ftype == f_ScrollBar) &&
+						(s.fid == event.GUIEvent.Caller->getID())) {
 					s.fdefault = L"Changed";
 					acceptInput(quit_mode_no);
 					s.fdefault = L"";
@@ -3632,8 +3625,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		if(event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
-			if(event.GUIEvent.Caller->getID() > 257) {
+		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
+			if (event.GUIEvent.Caller->getID() > 257) {
 
 				if (m_allowclose) {
 					acceptInput(quit_mode_accept);
@@ -3647,11 +3640,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		if(event.GUIEvent.EventType == gui::EGET_TABLE_CHANGED) {
+		if (event.GUIEvent.EventType == gui::EGET_TABLE_CHANGED) {
 			int current_id = event.GUIEvent.Caller->getID();
-			if(current_id > 257) {
+			if (current_id > 257) {
 				// find the element that was clicked
-				for(u32 i=0; i<m_fields.size(); i++) {
+				for (u32 i = 0; i < m_fields.size(); i++) {
 					FieldSpec &s = m_fields[i];
 					// if it's a table, set the send field
 					// so lua knows which table was changed
