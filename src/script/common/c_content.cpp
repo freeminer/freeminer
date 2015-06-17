@@ -1242,8 +1242,7 @@ static bool push_json_value_helper(lua_State *L, const Json::Value &value,
 			lua_newtable(L);
 			for (Json::Value::const_iterator it = value.begin();
 					it != value.end(); ++it) {
-				const char *str = it.memberName();
-				lua_pushstring(L, str ? str : "");
+				lua_pushstring(L, it.name().c_str());
 				push_json_value_helper(L, *it, nullindex);
 				lua_rawset(L, -3);
 			}
