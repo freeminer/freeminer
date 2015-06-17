@@ -10,3 +10,6 @@
 [submodule "src/msgpack-c"]
 	path = src/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git
+[submodule "src/jsoncpp"]
+	path = src/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git

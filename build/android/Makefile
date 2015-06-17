@@ -999,7 +999,8 @@ locale:
 #==== end of freeminer libs
 
 
-apk: $(PATHCFGFILE) assets $(ICONV_LIB) $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
+# $(ICONV_LIB)
+apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
 	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) \
 	sqlite3_download
