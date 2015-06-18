@@ -93,6 +93,8 @@ public:
 
 	Noise *noise_heat;
 	Noise *noise_humidity;
+	Noise *noise_heat_blend;
+	Noise *noise_humidity_blend;
 
 	//freeminer:
 	s16 float_islands;
