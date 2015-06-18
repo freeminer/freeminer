@@ -24,10 +24,12 @@ LOCAL_MODULE := freetype
 LOCAL_SRC_FILES := deps/freetype2-android/Android/obj/local/$(TARGET_ARCH_ABI)/libfreetype2-static.a
 include $(PREBUILT_STATIC_LIBRARY)
 
+ifdef NOT_USED_ICONV
 include $(CLEAR_VARS)
 LOCAL_MODULE := iconv
 LOCAL_SRC_FILES := deps/libiconv/obj/local/$(TARGET_ARCH_ABI)/libiconv.a
 include $(PREBUILT_STATIC_LIBRARY)
+endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := openal
