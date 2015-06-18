@@ -57,6 +57,7 @@ COMPILER_VERSION = 4.9
 #COMPILER_VERSION = clang3.5
 HAVE_LEVELDB = 1
 USE_LUAJIT = 1
+USE_ENET = 1
 
 ################################################################################
 # toolchain config for little endian mips
@@ -1011,6 +1012,7 @@ apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARG
 	ndk-build NDK_MODULE_PATH=${NDK_MODULE_PATH}                               \
 	GPROF=${GPROF} APP_ABI=${TARGET_ABI} HAVE_LEVELDB=${HAVE_LEVELDB}          \
 	USE_LUAJIT=${USE_LUAJIT} \
+	USE_ENET=${USE_ENET} \
 	PROJECT_NAME_C=${PROJECT_NAME_C} \
 	APP_PLATFORM=${APP_PLATFORM}                                               \
 	TARGET_LIBDIR=${TARGET_LIBDIR}                                             \

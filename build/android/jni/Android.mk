@@ -71,11 +71,13 @@ LOCAL_SRC_FILES := deps/luajit/src/libluajit.a
 include $(PREBUILT_STATIC_LIBRARY)
 endif
 
+ifeq ($(USE_ENET), 1)
 include $(CLEAR_VARS)
 LOCAL_MODULE := enet
 LOCAL_C_INCLUDES := jni/src/enet/include
 LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/enet/*.c)
 include $(BUILD_STATIC_LIBRARY)
+endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := jsoncpp
@@ -134,7 +136,6 @@ LOCAL_CFLAGS += -fno-stack-protector
 endif
 
 LOCAL_C_INCLUDES :=                               \
-		jni/src/enet/include                      \
 		deps/msgpack/include                      \
 		deps/msgpack/src                          \
 		deps/gettext                              \
@@ -418,7 +419,14 @@ LOCAL_SHARED_LIBRARIES := openal ogg vorbis gmp
 LOCAL_STATIC_LIBRARIES := Irrlicht iconv freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
 
 #freeminer:
-LOCAL_STATIC_LIBRARIES += msgpack enet jsoncpp gettext
+LOCAL_STATIC_LIBRARIES += msgpack jsoncpp gettext
+
+ifeq ($(USE_ENET), 1)
+LOCAL_C_INCLUDES += jni/src/enet/include
+LOCAL_STATIC_LIBRARIES += enet
+else
+LOCAL_CFLAGS += -DMINETEST_PROTO=1
+endif
 
 ifeq ($(USE_LUAJIT), 1)
 LOCAL_STATIC_LIBRARIES += luajit
