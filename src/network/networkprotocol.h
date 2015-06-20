@@ -140,6 +140,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		Add TOCLIENT_HELLO for presenting server to client after client
 			presentation
 		Add TOCLIENT_AUTH_ACCEPT to accept connection from client
+		Rename GENERIC_CMD_SET_ATTACHMENT to GENERIC_CMD_ATTACH_TO
 */
 
 #define LATEST_PROTOCOL_VERSION 25

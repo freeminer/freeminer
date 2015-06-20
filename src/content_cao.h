@@ -63,7 +63,6 @@ private:
 	std::string m_name;
 	bool m_is_player;
 	bool m_is_local_player;
-	int m_id;
 	// Property-ish things
 	ObjectProperties m_prop;
 	//
@@ -165,6 +164,8 @@ public:
 	{
 		m_is_visible = toset;
 	}
+
+	void setChildrenVisible(bool toset);
 
 	void setAttachments();
 

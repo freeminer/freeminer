@@ -548,7 +548,6 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		//
 		m_is_player(false),
 		m_is_local_player(false),
-		m_id(0),
 		//
 		m_smgr(NULL),
 		m_irr(NULL),
@@ -733,6 +732,16 @@ scene::IBillboardSceneNode* GenericCAO::getSpriteSceneNode()
 	return m_spritenode;
 }
 
+void GenericCAO::setChildrenVisible(bool toset)
+{
+	for (std::vector<u16>::size_type i = 0; i < m_children.size(); i++) {
+		GenericCAO *obj = m_env->getGenericCAO(m_children[i]);
+		if (obj) {
+			obj->setVisible(toset);
+		}
+	}
+}
+
 void GenericCAO::setAttachments()
 {
 	updateAttachments();
@@ -742,7 +751,7 @@ ClientActiveObject* GenericCAO::getParent()
 {
 	ClientActiveObject *obj = NULL;
 
-	u16 attached_id = m_env->m_attachements[getId()];
+	u16 attached_id = m_env->attachement_parent_ids[getId()];
 
 	if ((attached_id != 0) &&
 			(attached_id != getId())) {
@@ -756,15 +765,14 @@ void GenericCAO::removeFromScene(bool permanent)
 	// Should be true when removing the object permanently and false when refreshing (eg: updating visuals)
 	if((m_env != NULL) && (permanent))
 	{
-		for(std::vector<u16>::iterator ci = m_children.begin();
-						ci != m_children.end(); ci++)
-		{
-			if (m_env->m_attachements[*ci] == getId()) {
-				m_env->m_attachements[*ci] = 0;
+		for (std::vector<u16>::size_type i = 0; i < m_children.size(); i++) {
+			u16 ci = m_children[i];
+			if (m_env->attachement_parent_ids[ci] == getId()) {
+				m_env->attachement_parent_ids[ci] = 0;
 			}
 		}
 
-		m_env->m_attachements[getId()] = 0;
+		m_env->attachement_parent_ids[getId()] = 0;
 
 		LocalPlayer* player = m_env->getLocalPlayer();
 		if (this == player->parent) {
@@ -1123,7 +1131,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		for(std::vector<u16>::iterator ci = m_children.begin();
 				ci != m_children.end();)
 		{
-			if (m_env->m_attachements[*ci] != getId()) {
+			if (m_env->attachement_parent_ids[*ci] != getId()) {
 				ci = m_children.erase(ci);
 				continue;
 			}
@@ -1140,11 +1148,9 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		addToScene(m_smgr, m_gamedef->tsrc(), m_irr);
 
 		// Attachments, part 2: Now that the parent has been refreshed, put its attachments back
-		for(std::vector<u16>::iterator ci = m_children.begin();
-						ci != m_children.end(); ci++)
-		{
+		for (std::vector<u16>::size_type i = 0; i < m_children.size(); i++) {
 			// Get the object of the child
-			ClientActiveObject *obj = m_env->getActiveObject(*ci);
+			ClientActiveObject *obj = m_env->getActiveObject(m_children[i]);
 			if (obj)
 				obj->setAttachments();
 		}
@@ -1519,16 +1525,7 @@ void GenericCAO::updateBonePosition()
 void GenericCAO::updateAttachments()
 {
 
-	// localplayer itself can't be attached to localplayer
-	if (!m_is_local_player)
-	{
-		m_attached_to_local = getParent() != NULL && getParent()->isLocalPlayer();
-		// Objects attached to the local player should always be hidden
-		m_is_visible = !m_attached_to_local;
-	}
-
-	if(getParent() == NULL || m_attached_to_local) // Detach or don't attach
-	{
+	if (getParent() == NULL) { // Detach or don't attach
 		scene::ISceneNode *node = getSceneNode();
 		if (node) {
 			v3f old_position = node->getAbsolutePosition();
@@ -1697,13 +1694,30 @@ void GenericCAO::processMessage(const std::string &data)
 		m_bone_position[bone] = core::vector2d<v3f>(position, rotation);
 
 		updateBonePosition();
-	}
-	else if(cmd == GENERIC_CMD_SET_ATTACHMENT) {
-		m_env->m_attachements[getId()] = readS16(is);
-		m_children.push_back(m_env->m_attachements[getId()]);
+	} else if (cmd == GENERIC_CMD_ATTACH_TO) {
+		u16 parentID = readS16(is);
+		u16 oldparent = m_env->attachement_parent_ids[getId()];
+		if (oldparent) {
+			m_children.erase(std::remove(m_children.begin(), m_children.end(),
+				getId()), m_children.end());
+		}
+		m_env->attachement_parent_ids[getId()] = parentID;
+		GenericCAO *parentobj = m_env->getGenericCAO(parentID);
+
+		if (parentobj) {
+			parentobj->m_children.push_back(getId());
+		}
+
 		m_attachment_bone = deSerializeString(is);
 		m_attachment_position = readV3F1000(is);
 		m_attachment_rotation = readV3F1000(is);
+
+		// localplayer itself can't be attached to localplayer
+		if (!m_is_local_player) {
+			m_attached_to_local = getParent() != NULL && getParent()->isLocalPlayer();
+			// Objects attached to the local player should be hidden by default
+			m_is_visible = !m_attached_to_local;
+		}
 
 		updateAttachments();
 	}
