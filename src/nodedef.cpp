@@ -1544,7 +1544,7 @@ bool NodeResolver::getIdFromNrBacklog(content_t *result_out,
 	}
 
 	if (!success) {
-		errorstream << "NodeResolver: failed to resolve node name '" << name
+		infostream << "NodeResolver: failed to resolve node name '" << name
 			<< "'." << std::endl;
 		c = c_fallback;
 	}
@@ -1579,7 +1579,7 @@ bool NodeResolver::getIdsFromNrBacklog(std::vector<content_t> *result_out,
 			if (m_ndef->getId(name, c)) {
 				result_out->push_back(c);
 			} else if (all_required) {
-				errorstream << "NodeResolver: failed to resolve node name '"
+				infostream << "NodeResolver: failed to resolve node name '"
 					<< name << "'." << std::endl;
 				result_out->push_back(c_fallback);
 				success = false;
