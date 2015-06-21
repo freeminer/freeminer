@@ -11,7 +11,7 @@ uniform float wieldLight;
 
 varying vec3 vPosition;
 varying vec3 worldPosition;
-varying float generate_heightmaps;
+varying float area_enable_parallax;
 
 varying vec3 eyeVec;
 varying vec3 tsEyeVec;
@@ -98,7 +98,7 @@ void main (void)
 	vec3 eyeRay = normalize(tsEyeVec);
 #if PARALLAX_OCCLUSION_MODE == 0
 	// Parallax occlusion with slope information
-	if (normalTexturePresent) {
+	if (normalTexturePresent && area_enable_parallax > 0.0) {
 		const float scale = PARALLAX_OCCLUSION_SCALE / PARALLAX_OCCLUSION_ITERATIONS;
 		const float bias = PARALLAX_OCCLUSION_BIAS / PARALLAX_OCCLUSION_ITERATIONS;
 		for(int i = 0; i < PARALLAX_OCCLUSION_ITERATIONS; i++) {
@@ -109,12 +109,12 @@ void main (void)
 #endif
 #if PARALLAX_OCCLUSION_MODE == 1
 	// Relief mapping
-	if (normalTexturePresent) {
+	if (normalTexturePresent && area_enable_parallax > 0.0) {
 		vec2 ds = eyeRay.xy * PARALLAX_OCCLUSION_SCALE;
 		float dist = find_intersection(uv, ds);
 		uv += dist * ds;
 #endif
-	} else if (generate_heightmaps > 0.0) {
+	} else if (area_enable_parallax > 0.0) {
 		vec2 ds = eyeRay.xy * PARALLAX_OCCLUSION_SCALE;
 		float dist = find_intersectionRGB(uv, ds);
 		uv += dist * ds;
