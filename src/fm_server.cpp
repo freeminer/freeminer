@@ -255,6 +255,11 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 
 	/* Transform liquids */
 	m_liquid_transform_timer += dtime;
+	{
+#if !ENABLE_THREADS
+	auto lockmapl = m_env->getMap().m_nothread_locker.try_lock_unique_rec();
+	if (lockmapl->owns_lock())
+#endif
 	if(!m_more_threads && m_liquid_transform_timer >= m_liquid_transform_interval)
 	{
 		TimeTaker timer_step("Server step: liquid transform");
@@ -273,7 +278,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 			++ret;
 		}
 	}
-
+	}
 		/*
 			Set the modified blocks unsent for all the clients
 		*/

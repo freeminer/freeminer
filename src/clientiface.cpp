@@ -259,7 +259,14 @@ int RemoteClient::GetNextBlocks (
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
 
 	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n = env->getMap().getNodeTry(cam_pos_nodes);
+	MapNode n;
+	{
+#if !ENABLE_THREADS
+		auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+#endif
+		n = env->getMap().getNodeTry(cam_pos_nodes);
+	}
+
 	if(n && nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 
@@ -427,6 +434,9 @@ int RemoteClient::GetNextBlocks (
 			v3POS spn = cam_pos_nodes + v3POS(0,0,0);
 			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
 			u32 needed_count = 1;
+#if !ENABLE_THREADS
+			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+#endif
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
 			if( d >= 1 &&
 				occlusion_culling_enabled &&

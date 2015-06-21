@@ -684,6 +684,10 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	//JMutexAutoLock lock2(m_update_lighting_mutex);
 
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	{
 	TimeTaker t("updateLighting: first stuff");
 
@@ -2734,6 +2738,10 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 	v3POS probePosition(p2d.X, maxSearchHeight, p2d.Y);
 	v3POS blockPosition = getNodeBlockPos(probePosition);
 	v3POS prevBlockPosition = blockPosition;
+
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
 
 	// Cache the block to be inspected.
 	if(cacheBlocks) {

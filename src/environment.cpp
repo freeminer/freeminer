@@ -1180,6 +1180,12 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	 */
 	m_circuit.update(dtime);
 
+#if !ENABLE_THREADS
+		auto lockmap = m_map->m_nothread_locker.try_lock_unique_rec();
+		if (!lockmap->owns_lock())
+			return;
+#endif
+
 	/*
 		Manage active block list
 	*/
