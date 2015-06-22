@@ -47,6 +47,7 @@ our $config    = {
     options_display => ($ENV{DISPLAY} ? '' : 'headless'),
     cmake_minetest  => '-DMINETEST_PROTO=1',
     cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
+    cgroup_memory => '4G',
     #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
     #make_add     => '',
     #run_add       => '',
@@ -133,6 +134,7 @@ qq{$config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $con
         sy
 qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task_name}.err.log | c++filt > $config->{logdir}/autotest.$g->{task_name}.err.symb.log};
     },
+    cgroup => sub { return 0 unless $config->{cgroup}; sy qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup_memory} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes"); },
     #fail => '',
 };
 
@@ -143,6 +145,7 @@ our $tasks = {
         'prepare',
         ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
         'make',
+        'cgroup',
         sub {
             local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
             commands_run('run_single');
