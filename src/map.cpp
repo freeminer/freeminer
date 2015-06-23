@@ -2467,6 +2467,9 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		NOTE: blitBackAll adds nearly everything to changed_blocks
 	*/
 	{
+#if !ENABLE_THREADS
+		auto lock = m_nothread_locker.lock_unique_rec();
+#endif
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
 		data->vmanip->blitBackAll(&changed_blocks, false);
