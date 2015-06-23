@@ -253,6 +253,7 @@ public:
 	}
 	void noCheatDigStart(v3s16 p)
 	{
+		auto lock = lock_unique();
 		m_nocheat_dig_pos = p;
 		m_nocheat_dig_time = 0;
 	}

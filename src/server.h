@@ -551,7 +551,7 @@ private:
 	float m_print_info_timer;
 	float m_masterserver_timer;
 	float m_objectdata_timer;
-	float m_emergethread_trigger_timer;
+	//float m_emergethread_trigger_timer;
 	float m_savemap_timer;
 	IntervalLimiter m_map_timer_and_unload_interval;
 
@@ -678,7 +678,7 @@ private:
 		generated area, as it will be sent anyway.
 		This is behind m_env_mutex
 	*/
-	//VoxelArea m_ignore_map_edit_events_area;
+	VoxelArea m_ignore_map_edit_events_area;
 	/*
 		If set to !=0, the incoming MapEditEvents are modified to have
 		this peed id as the disabled recipient

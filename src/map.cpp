@@ -2820,6 +2820,10 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	if (!breakable)
 		m_blocks_save_last = 0;
 
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	{
 		auto lock = breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())

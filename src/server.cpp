@@ -246,7 +246,7 @@ Server::Server(
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
 	m_objectdata_timer = 0.0;
-	m_emergethread_trigger_timer = 5.0; // to start emerge threads instantly
+	//m_emergethread_trigger_timer = 5.0; // to start emerge threads instantly
 	m_savemap_timer = 0.0;
 
 	m_step_dtime = 0.0;
@@ -455,6 +455,7 @@ Server::Server(
 	if (!simple_singleplayer_mode)
 		m_nodedef->updateTextures(this);
 
+	m_emerge->startThreads();
 }
 
 Server::~Server()
@@ -1206,6 +1207,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		Trigger emergethread (it somehow gets to a non-triggered but
 		bysy state sometimes)
 	*/
+/*
 	if (!maintenance_status)
 	{
 		TimeTaker timer_step("Server step: Trigger emergethread");
@@ -1218,6 +1220,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			m_emerge->startThreads();
 		}
 	}
+*/
 
 	{
 		if (porting::g_sighup) {
@@ -1509,10 +1512,8 @@ void Server::onMapEditEvent(MapEditEvent *event)
 	//infostream<<"Server::onMapEditEvent()"<<std::endl;
 	if(m_ignore_map_edit_events)
 		return;
-/* thread unsafe
 	if(m_ignore_map_edit_events_area.contains(event->getArea()))
 		return;
-*/
 	MapEditEvent *e = event->clone();
 	m_unsent_map_edit_queue.push(e);
 }

@@ -528,6 +528,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("TMPFolder", "/sdcard/freeminer/tmp/");
 	settings->setDefault("touchscreen_threshold", "20");
 	settings->setDefault("smooth_lighting", "false");
+	settings->setDefault("enable_3d_clouds", "false");
 	/*
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
 	settings->setDefault("emergequeue_limit_diskonly", "8");
@@ -535,6 +536,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("viewing_range_nodes_max", "50");
 	settings->setDefault("viewing_range_nodes_min", "20");
 	*/
+	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
 
 	//check for device with small screen
