@@ -62,8 +62,9 @@ void Client::handleCommand_Hello(NetworkPacket* pkt)
 	AuthMechanism chosen_auth_mechanism = choseAuthMech(auth_mechs);
 
 	infostream << "Client: TOCLIENT_HELLO received with "
-			<< "serialization_ver=" << serialization_ver
+			<< "serialization_ver=" << (u32)serialization_ver
 			<< ", auth_mechs=" << auth_mechs
+			<< ", proto_ver=" << proto_ver
 			<< ", compression_mode=" << compression_mode
 			<< ". Doing auth with mech " << chosen_auth_mechanism << std::endl;
 
