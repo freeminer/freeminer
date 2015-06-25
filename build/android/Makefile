@@ -23,7 +23,7 @@ GAMES_TO_COPY = default
 ANDROID_VERSION_CODE = 12
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 24
+ANDROID_VERSION_CODE = 25
 
 PROJECT_NAME_C = freeminer
 
@@ -111,7 +111,7 @@ IRRLICHT_TIMESTAMP = $(IRRLICHT_DIR)timestamp
 IRRLICHT_TIMESTAMP_INT = $(ROOT)/deps/irrlicht_timestamp
 IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
 
-OPENSSL_VERSION = 1.0.1l
+OPENSSL_VERSION = 1.0.2c
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
 OPENSSL_DIR = $(ROOT)/deps/$(OPENSSL_BASEDIR)/
 OPENSSL_LIB = $(OPENSSL_DIR)/libssl.so.1.0.0
@@ -119,7 +119,7 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.42.1
+CURL_VERSION = 7.43.0
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
@@ -146,8 +146,8 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3080704
-SQLITE3_URL = http://www.sqlite.org/2014/$(SQLITE3_FOLDER).zip
+SQLITE3_FOLDER = sqlite-amalgamation-3081002
+SQLITE3_URL = http://www.sqlite.org/2015/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
 
@@ -314,7 +314,7 @@ openssl_download :
 		wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1;                                         \
 		tar -xzf ${OPENSSL_BASEDIR}.tar.gz;                                    \
 		cd ${OPENSSL_BASEDIR};                                                 \
-		patch -p1 < ../../openssl_arch.patch;                                  \
+		@patch -p1 < ../../openssl_arch.patch; \
 	fi
 
 openssl : $(OPENSSL_LIB)
@@ -709,7 +709,7 @@ $(ASSETS_TIMESTAMP) : $(IRRLICHT_LIB)
 	for DIRNAME in {builtin,client,doc,fonts,games,mods,po,textures}; do        \
 		LAST_MODIF=$$(find ${ROOT}/../../${DIRNAME} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
 		if [ $$(basename $$LAST_MODIF) != "timestamp" ]; then               \
-			touch ${ROOT}/../../$DIRNAME/timestamp;                     \
+			touch ${ROOT}/../../${DIRNAME}/timestamp;                     \
 			touch ${ASSETS_TIMESTAMP};                                  \
 			echo ${DIRNAME} changed $$LAST_MODIF;                       \
 		fi;                                                                 \
@@ -964,6 +964,9 @@ endif
 locale:
 	mkdir -p cmake && cd cmake && cmake ../../.. && make translations
 
+clean_locale:
+	rm -rf cmake
+
 #==== end of freeminer libs
 
 
@@ -1015,7 +1018,7 @@ envpaths :
 clean_all :
 	@$(MAKE) clean_apk;                                                        \
 	$(MAKE) clean_assets clean_iconv clean_irrlicht clean_leveldb clean_curl clean_openssl \
-	clean_msgpack clean_gettext clean_luajit \
+	clean_msgpack clean_gettext clean_luajit clean_locale \
 	clean_openal clean_ogg clean_gmp clean_manifest;                           \
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
