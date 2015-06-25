@@ -16,7 +16,7 @@ run Android SDK Manager
 ```bash
 cd ~
 
-sudo apt-get install -y android-tools-adb ant m4 gcc-multilib lib32z1
+sudo apt-get install -y default-jdk android-tools-adb ant m4 gcc-multilib lib32z1
 wget https://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin
 chmod +x android-ndk-r10e-linux-x86_64.bin
 ./android-ndk-r10e-linux-x86_64.bin
