@@ -1513,8 +1513,10 @@ void Server::onMapEditEvent(MapEditEvent *event)
 	//infostream<<"Server::onMapEditEvent()"<<std::endl;
 	if(m_ignore_map_edit_events)
 		return;
+/* thread unsafe
 	if(m_ignore_map_edit_events_area.contains(event->getArea()))
 		return;
+*/
 	MapEditEvent *e = event->clone();
 	m_unsent_map_edit_queue.push(e);
 }

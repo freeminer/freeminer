@@ -244,7 +244,7 @@ public:
 	std::atomic_int range_all;
 	std::atomic_int farmesh;
 	float fov;
-	bool block_overflow;
+	//bool block_overflow;
 
 	ServerEnvironment *m_env;
 
@@ -288,7 +288,7 @@ public:
 		range_all = 0;
 		farmesh = 0;
 		fov = 72; // g_settings->getFloat("fov");
-		block_overflow = 0;
+		//block_overflow = 0;
 	}
 	~RemoteClient()
 	{

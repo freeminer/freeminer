@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	ActiveObject(0),
 	m_known_by_count(0),
-	m_removed(false),
 	m_static_exists(false),
 	m_static_block(1337,1337,1337),
 	m_messages_out(env->m_active_object_messages),
@@ -38,6 +37,7 @@ ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	m_base_position(pos)
 {
 	m_pending_deactivation = false;
+	m_removed = false;
 }
 
 ServerActiveObject::~ServerActiveObject()

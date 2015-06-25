@@ -1655,7 +1655,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 
 	// Add task to queue
 	unsigned int qsize = m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
-	draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
+	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 
 }
 

@@ -1788,6 +1788,8 @@ Game::Game() :
 	m_cache_hold_aux1 = false;	// This is initialised properly later
 #endif
 
+	crack_animation_length = 0;
+
 }
 
 /****************************************************************************
@@ -2203,9 +2205,6 @@ bool Game::createClient(const std::string &playername,
 		if (size.X)
 		crack_animation_length = size.Y / size.X;
 	} else {
-		crack_animation_length = 0;
-	}
-	if (!crack_animation_length) {
 		crack_animation_length = 0;
 	}
 

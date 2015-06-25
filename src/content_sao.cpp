@@ -997,6 +997,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	}
 
 	if(m_animation_sent == false){
+		auto lock = lock_unique();
 		m_animation_sent = true;
 		std::string str = gob_cmd_update_animation(
 			m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop);

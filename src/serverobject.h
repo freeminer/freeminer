@@ -211,7 +211,7 @@ public:
 		  to be deleted.
 		- This can be set to true by anything else too.
 	*/
-	bool m_removed;
+	std::atomic_bool m_removed;
 	
 	/*
 		This is set to true when an object should be removed from the active

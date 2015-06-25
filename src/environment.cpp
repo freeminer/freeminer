@@ -631,6 +631,7 @@ void ServerEnvironment::loadMeta()
 				wider_unknown_count++;
 				continue;
 			}
+			auto lock = block2->m_static_objects.m_active.lock_shared_rec();
 			wider += block2->m_static_objects.m_active.size()
 					+ block2->m_static_objects.m_stored.size();
 		}
