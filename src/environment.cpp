@@ -1601,6 +1601,7 @@ bool isFreeServerActiveObjectId(u16 id,
 u16 getFreeServerActiveObjectId(
 		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
 {
+	auto lock = objects.lock_unique_rec();
 	//try to reuse id's as late as possible
 	static u16 last_used_id = 0;
 	u16 startid = last_used_id;
