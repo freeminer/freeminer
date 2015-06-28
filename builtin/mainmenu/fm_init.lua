@@ -948,7 +948,6 @@ function tabbuilder.tab_settings()
 	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
 	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
 	add_checkbox("cb_weather", "weather", "Weather")
-	add_checkbox("cb_hud_map", "hud_map", "Mini map (dev)")
 	add_checkbox("cb_hotbar_cycling", "hotbar_cycling", "Hotbar Cycling")
 
 	if core.setting_getbool("enable_shaders") then
@@ -1022,9 +1021,6 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_weather"] then
 		core.setting_set("weather", fields["cb_weather"])
-	end
-	if fields["cb_hud_map"] then
-		core.setting_set("hud_map", fields["cb_hud_map"])
 	end
 	if fields["cb_hotbar_cycling"] then
 		core.setting_set("hotbar_cycling", fields["cb_hotbar_cycling"])

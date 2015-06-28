@@ -285,13 +285,21 @@ Mapper::~Mapper()
 	m_minimap_update_thread->Stop();
 	m_minimap_update_thread->Wait();
 	m_meshbuffer->drop();
+	if (data) {
+	if (data->minimap_mask_round)
 	data->minimap_mask_round->drop();
+	if (data->minimap_mask_square)
 	data->minimap_mask_square->drop();
+	if (data->texture)
 	driver->removeTexture(data->texture);
+	if (data->heightmap_texture)
 	driver->removeTexture(data->heightmap_texture);
+	if (data->minimap_overlay_round)
 	driver->removeTexture(data->minimap_overlay_round);
+	if (data->minimap_overlay_square)
 	driver->removeTexture(data->minimap_overlay_square);
 	delete data;
+	}
 	delete m_minimap_update_thread;
 }
 

@@ -1119,6 +1119,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_enable_shaders = data->m_use_shaders;
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
+	if (!data->fill_data())
+		return;
+
 	if (g_settings->getBool("enable_minimap")) {
 		v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 		for(s16 x = 0; x < MAP_BLOCKSIZE; x++) {
@@ -1149,8 +1152,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
 
-	if (!data->fill_data())
-		return;
 
 	timestamp = data->timestamp;
 

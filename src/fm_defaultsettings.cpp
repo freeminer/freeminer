@@ -531,6 +531,7 @@ void set_default_settings(Settings *settings) {
 	*/
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
+	settings->setDefault("enable_minimap", "false");
 
 	//check for device with small screen
 	float x_inches = ((double) porting::getDisplaySize().X /
