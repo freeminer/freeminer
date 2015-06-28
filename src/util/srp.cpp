@@ -39,6 +39,8 @@
 
 #include <config.h>
 
+#include <cstddef> // fix gmp: error: ‘::max_align_t’ has not been declared
+
 #if USE_SYSTEM_GMP || defined (__ANDROID__) || defined (ANDROID)
 	#include <gmp.h>
 #else
