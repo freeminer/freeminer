@@ -274,6 +274,7 @@ void ContentFeatures::reset()
 #ifndef SERVER
 	for(u32 i = 0; i < 24; i++)
 		mesh_ptr[i] = NULL;
+	minimap_color = video::SColor(0, 0, 0, 0);
 #endif
 	visual_scale = 1.0;
 	for(u32 i = 0; i < 6; i++)
@@ -719,7 +720,7 @@ void CNodeDefManager::clear()
 		f.buildable_to        = true;
 		f.is_ground_content   = true;
 #ifndef SERVER
-		f.color_avg = video::SColor(0,255,255,255);
+		f.minimap_color = video::SColor(0,255,255,255);
 #endif
 		// Insert directly into containers
 		content_t c = CONTENT_AIR;
@@ -741,7 +742,7 @@ void CNodeDefManager::clear()
 		f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 		f.is_ground_content   = true;
 #ifndef SERVER
-		f.color_avg = video::SColor(0,255,255,255);
+		f.minimap_color = video::SColor(0,255,255,255);
 #endif
 		// Insert directly into containers
 		content_t c = CONTENT_IGNORE;
@@ -1011,19 +1012,17 @@ void CNodeDefManager::applyTextureOverrides(const std::string &override_filepath
 	}
 }
 
-
 void CNodeDefManager::updateTextures(IGameDef *gamedef,
 	void (*progress_callback)(void *progress_args, u32 progress, u32 max_progress),
 	void *progress_callback_args)
 {
 	infostream << "CNodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
-
 	bool server = !progress_callback;
 	ITextureSource *tsrc = !gamedef ? nullptr : gamedef->tsrc();
 	IShaderSource *shdsrc = !gamedef ? nullptr : gamedef->getShaderSource();
 	scene::ISceneManager* smgr = !gamedef ? nullptr : gamedef->getSceneManager();
-	scene::IMeshManipulator* meshmanip = !smgr ? nullptr :smgr->getMeshManipulator();
+	scene::IMeshManipulator* meshmanip = !smgr ? nullptr : smgr->getMeshManipulator();
 
 	bool new_style_water           = g_settings->getBool("new_style_water");
 	bool new_style_leaves          = g_settings->getBool("new_style_leaves");
@@ -1033,6 +1032,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 	bool enable_bumpmapping        = g_settings->getBool("enable_bumpmapping");
 	bool enable_parallax_occlusion = g_settings->getBool("enable_parallax_occlusion");
 	bool enable_mesh_cache         = g_settings->getBool("enable_mesh_cache");
+	bool enable_minimap            = g_settings->getBool("enable_minimap");
 
 	bool use_normal_texture = enable_shaders &&
 		(enable_bumpmapping || enable_parallax_occlusion);
@@ -1041,6 +1041,12 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 
 	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &m_content_features[i];
+
+#ifndef SERVER
+		// minimap pixel color - the average color of a texture
+		if (enable_minimap && f->tiledef[0].name != "")
+			f->minimap_color = tsrc->getTextureAverageColor(f->tiledef[0].name);
+#endif
 
 		// Figure out the actual tiles to use
 		TileDef tiledef[6];
@@ -1219,8 +1225,6 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			recalculateBoundingBox(f->mesh_ptr[0]);
 			meshmanip->recalculateNormals(f->mesh_ptr[0], true, false);
 		}
-
-		f->color_avg = tsrc->getTextureInfo(f->tiles[0].texture_id)->color; // TODO: make average
 
 		}
 		if (progress_callback)

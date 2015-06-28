@@ -57,6 +57,20 @@ class MtEventManager;
 struct PointedThing;
 class Database;
 class Server;
+class Mapper;
+struct MinimapMapblock;
+
+/*
+struct QueuedMeshUpdate
+{
+	v3s16 p;
+	MeshMakeData *data;
+	bool ack_block_to_server;
+
+	QueuedMeshUpdate();
+	~QueuedMeshUpdate();
+};
+*/
 
 enum LocalClientState {
 	LC_Created,
@@ -498,6 +512,9 @@ public:
 	float getCurRate(void);
 	float getAvgRate(void);
 
+	Mapper* getMapper ()
+	{ return m_mapper; }
+
 	// IGameDef interface
 	virtual IItemDefManager* getItemDefManager();
 	virtual INodeDefManager* getNodeDefManager();
@@ -579,6 +596,7 @@ public:
 	con::Connection m_con;
 private:
 	IrrlichtDevice *m_device;
+	Mapper *m_mapper;
 	// Server serialization version
 	u8 m_server_ser_ver;
 	// Used version of the protocol with server

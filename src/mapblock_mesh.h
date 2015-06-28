@@ -43,6 +43,7 @@ class IShaderSource;
 int getFarmeshStep(MapDrawControl& draw_control, const v3POS & player_pos, const v3POS & block_pos);
 
 class MapBlock;
+struct MinimapMapblock;
 
 struct MeshMakeData
 {
@@ -134,6 +135,11 @@ public:
 		return m_mesh;
 	}
 
+	MinimapMapblock* getMinimapMapblock()
+	{
+		return m_minimap_mapblock;
+	}
+
 	bool isAnimationForced() const
 	{
 		return m_animation_force_timer == 0;
@@ -169,6 +175,7 @@ public:
 
 private:
 	scene::SMesh *m_mesh;
+	MinimapMapblock *m_minimap_mapblock;
 	IGameDef *m_gamedef;
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;

@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
+#include "minimap.h"
 #include "settings.h"
 #include "profiler.h"
 #include "gettext.h"
@@ -259,6 +260,9 @@ Client::Client(
 {
 	// Add local player
 	m_env.addPlayer(new LocalPlayer(this, playername));
+
+	m_mapper = new Mapper(device, this);
+	//m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_shaders  = g_settings->getBool("enable_shaders");
@@ -540,15 +544,19 @@ void Client::step(float dtime)
 		*/
 		{
 
-		while(!m_mesh_update_thread.m_queue_out.empty_try()) {
+		while (!m_mesh_update_thread.m_queue_out.empty_try()) {
 			num_processed_meshes++;
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			if (!r.mesh)
 				continue;
 			auto block = m_env.getMap().getBlock(r.p);
+			MinimapMapblock *minimap_mapblock = nullptr;
 			if(block) {
 				block->setMesh(r.mesh);
+				if (r.mesh)
+					minimap_mapblock = r.mesh->getMinimapMapblock();
 			}
+			m_mapper->addBlock(r.p, minimap_mapblock);
 			if (porting::getTimeMs() > end_ms) {
 				break;
 			}
@@ -1654,7 +1662,8 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 	}
 
 	// Add task to queue
-	unsigned int qsize = m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	//unsigned int qsize = 
+	m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 
 }

@@ -145,6 +145,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
 	//settings->setDefault("keymap_msg", "@");
 	settings->setDefault("keymap_cmd", "/");
+	settings->setDefault("keymap_minimap", "KEY_F9");
 #if IRRLICHT_VERSION_10000  >= 10703
 	settings->setDefault("keymap_console", "KEY_OEM_3");
 #else
@@ -323,19 +324,6 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_width", "300");
 	settings->setDefault("weather_humidity_days", "2");
 
-	// Mini Map
-	settings->setDefault("hud_map", "false");
-	settings->setDefault("hud_map_back", "0,0,0");
-	settings->setDefault("hud_map_width", "128");
-	settings->setDefault("hud_map_height", "128");
-	settings->setDefault("hud_map_scale", "1.0");
-	settings->setDefault("hud_map_alpha", "192");
-	settings->setDefault("hud_map_above", "true");
-	settings->setDefault("hud_map_scan", "64");
-	settings->setDefault("hud_map_surface", "32");
-	settings->setDefault("hud_map_tracking", "false");
-	settings->setDefault("hud_map_border", "16");
-
 	// Color / Readability
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
@@ -362,6 +350,11 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_local_map_saving", "false");
 	settings->setDefault("enable_build_where_you_stand", "false");
 	settings->setDefault("hotbar_cycling", "false");
+
+	// Mini Map
+	settings->setDefault("enable_minimap", "true");
+	settings->setDefault("minimap_shape_round", "true");
+	settings->setDefault("minimap_double_scan_height", "true");
 
 	//
 	// Server stuff

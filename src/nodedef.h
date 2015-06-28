@@ -249,7 +249,6 @@ struct ContentFeatures
 	u8 solidness; // Used when choosing which face is drawn
 	u8 visual_solidness; // When solidness=0, this tells how it looks like
 	bool backface_culling;
-	video::SColor color_avg; //far mesh average color
 
 //#endif
 
@@ -272,6 +271,7 @@ struct ContentFeatures
 	std::string mesh;
 #ifndef SERVER
 	scene::IMesh *mesh_ptr[24];
+	video::SColor minimap_color;
 #endif
 	float visual_scale; // Misc. scale parameter
 	TileDef tiledef[6];
@@ -280,6 +280,7 @@ struct ContentFeatures
 
 	// Post effect color, drawn when the camera is inside the node.
 	video::SColor post_effect_color;
+
 	// Type of MapNode::param1
 	ContentParamType param_type;
 	// Type of MapNode::param2

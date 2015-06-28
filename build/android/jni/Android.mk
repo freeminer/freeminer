@@ -162,7 +162,6 @@ LOCAL_C_INCLUDES += jni/src/lua/src
 endif
 
 LOCAL_SRC_FILES +=                                \
-		jni/src/gsmapper.cpp                      \
 		jni/src/guiTextInputMenu.cpp              \
 		jni/src/FMColoredString.cpp               \
 		jni/src/FMStaticText.cpp                  \
@@ -244,6 +243,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/mg_decoration.cpp                 \
 		jni/src/mg_ore.cpp                        \
 		jni/src/mg_schematic.cpp                  \
+		jni/src/minimap.cpp                       \
 		jni/src/mods.cpp                          \
 		jni/src/nameidmapping.cpp                 \
 		jni/src/nodedef.cpp                       \
