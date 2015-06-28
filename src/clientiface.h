@@ -226,6 +226,7 @@ struct PrioritySortedBlockTransfer
 };
 
 class RemoteClient
+ : public locker<>
 {
 public:
 	// peer_id=0 means this client has no associated peer

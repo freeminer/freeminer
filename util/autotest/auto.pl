@@ -161,6 +161,7 @@ our $tasks = {
         'cgroup',
         sub {
             local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+            local $config->{runner} = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
             commands_run('run_single');
         },
     ],

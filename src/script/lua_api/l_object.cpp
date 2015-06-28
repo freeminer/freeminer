@@ -704,10 +704,10 @@ int ObjectRef::l_set_properties(lua_State *L)
 	ObjectRef *ref = checkobject(L, 1);
 	ServerActiveObject *co = getobject(ref);
 	if(co == NULL) return 0;
+	auto lock = co->lock_unique_rec();
 	ObjectProperties *prop = co->accessObjectProperties();
 	if(!prop)
 		return 0;
-	//auto lock = co->lock_unique();
 	read_object_properties(L, 2, prop);
 	co->notifyObjectPropertiesModified();
 	return 0;

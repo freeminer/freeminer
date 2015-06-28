@@ -92,7 +92,7 @@ private:
 	bool m_registered;
 	struct ObjectProperties m_prop;
 	
-	s16 m_hp;
+	std::atomic_ushort m_hp;
 	v3f m_velocity;
 	v3f m_acceleration;
 	float m_yaw;
@@ -342,7 +342,7 @@ public:
 	float m_physics_override_gravity;
 	bool m_physics_override_sneak;
 	bool m_physics_override_sneak_glitch;
-	bool m_physics_override_sent;
+	std::atomic_bool m_physics_override_sent;
 };
 
 #endif

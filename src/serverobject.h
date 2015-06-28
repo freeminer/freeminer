@@ -200,7 +200,7 @@ public:
 		deleted until this is 0 to keep the id preserved for the right
 		object.
 	*/
-	u16 m_known_by_count;
+	std::atomic_ushort m_known_by_count;
 
 	/*
 		- Whether this object is to be removed when nobody knows about
@@ -227,7 +227,7 @@ public:
 	/*
 		Whether the object's static data has been stored to a block
 	*/
-	bool m_static_exists;
+	std::atomic_bool m_static_exists;
 	/*
 		The block from which the object was loaded from, and in which
 		a copy of the static data resides.

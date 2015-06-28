@@ -117,6 +117,10 @@ int RemoteClient::GetNextBlocks (
 {
 	DSTACK(__FUNCTION_NAME);
 
+	auto lock = lock_unique_rec();
+	if (!lock->owns_lock())
+		return 0;
+
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_nearest_unsent_reset_timer += dtime;

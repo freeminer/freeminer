@@ -1868,8 +1868,11 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		MapBlock *block = m_map->emergeBlock(blockpos);
 		if(block){
 			block->m_static_objects.m_active.set(object->getId(), s_obj);
+			{
+			auto lock = object->lock_unique_rec();
 			object->m_static_exists = true;
 			object->m_static_block = blockpos;
+			}
 
 			if(set_changed)
 				block->raiseModified(MOD_STATE_WRITE_NEEDED,
@@ -2174,15 +2177,22 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		// The block in which the object resides in
 		v3s16 blockpos_o = getNodeBlockPos(floatToInt(objectpos, BS));
 
+		v3POS static_block;
+		{
+			auto lock = obj->try_lock_unique();
+			if (!lock->owns_lock())
+				continue;
+			static_block = obj->m_static_block;
+		}
 		// If object's static data is stored in a deactivated block and object
 		// is actually located in an active block, re-save to the block in
 		// which the object is actually located in.
 		if(!force_delete &&
 				obj->m_static_exists &&
-				!m_active_blocks.contains(obj->m_static_block) &&
+				!m_active_blocks.contains(static_block) &&
 				 m_active_blocks.contains(blockpos_o))
 		{
-			v3s16 old_static_block = obj->m_static_block;
+			v3s16 old_static_block = static_block;
 
 			// Save to block where object is located
 			MapBlock *block = m_map->emergeBlock(blockpos_o, false);

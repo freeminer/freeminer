@@ -1342,6 +1342,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 	else if(command == TOSERVER_DRAWCONTROL)
 	{
 		auto client = getClient(peer_id);
+		auto lock = client->lock_unique_rec();
 		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
 		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<u32>();
 		client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
