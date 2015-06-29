@@ -3,8 +3,10 @@
 =info
 install:
  cpan JSON JSON::XS
- touch list_full list log.log
- chmod a+rw list_full list log.log
+ touch list_full list log.log && chmod a+rw list_full list log.log
+
+old deb linux:
+ sudo apt-get install libjson-xs-perl libjson-perl libsocket6-perl libio-socket-ip-perl
 
 freebsd:
  www/fcgiwrap www/nginx
@@ -51,11 +53,14 @@ no warnings qw(uninitialized);
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use utf8;
 use Socket;
+my $getaddrinfo_noserv;
 BEGIN {
     if ($Socket::VERSION ge '2.008') {
-        eval qq{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST NIx_NOSERV)}; # >5.16
-    } else {
-        eval qq{use Socket6 qw(getaddrinfo getnameinfo NI_NUMERICHOST NIx_NOSERV)}; # <5.16
+        eval q{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST); $getaddrinfo_noserv = Socket::NIx_NOSERV;}; # >5.16
+    } else {  # <5.16
+        eval qq{use Socket6 qw(getaddrinfo getnameinfo NI_NUMERICHOST);};
+        eval q{$getaddrinfo_noserv = Socket6::NIx_NOSERV;};
+        eval q{$getaddrinfo_noserv = Socket6::NI_NUMERICSERV;} if $@;
     }
 };
 use Time::HiRes qw(time sleep);
@@ -252,7 +257,7 @@ sub request (;$) {
             $param->{address} ||= $param->{ip};
             if ($config{source_check}) {
                 (my $err, local @_) = getaddrinfo($param->{address});
-                my $addrs = [ map{(getnameinfo($_->{addr}, NI_NUMERICHOST, NIx_NOSERV))[1]} @_];
+                my $addrs = [ map{(getnameinfo($_->{addr}, NI_NUMERICHOST, $getaddrinfo_noserv))[1]} @_];
                 if (!($param->{ip} ~~ $addrs) and !($param->{ip} ~~ $config{trusted})) {
                     printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}] [$err]") if $config{debug};
                     return;
