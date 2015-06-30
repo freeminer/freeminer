@@ -134,29 +134,18 @@ std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
 	MeshUpdateThread
 */
 
-void * MeshUpdateThread::Thread()
+void MeshUpdateThread::enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
+		bool urgent)
 {
-	ThreadStarted();
+	m_queue_in.addBlock(p, data, urgent);
+	deferUpdate();
+}
 
-	log_register_thread("MeshUpdateThread" + itos(id));
-
-	DSTACK(__FUNCTION_NAME);
-
-	BEGIN_DEBUG_EXCEPTION_HANDLER
-
-	porting::setThreadName(("MeshUpdateThread" + itos(id)).c_str());
-	porting::setThreadPriority(30);
-
-	while(!StopRequested())
-	{
-
+void MeshUpdateThread::doUpdate()
+{
+	std::shared_ptr<MeshMakeData> q;
+	while ((q = m_queue_in.pop())) {
 		try {
-		auto q = m_queue_in.pop();
-		if(!q)
-		{
-			sleep_ms(3);
-			continue;
-		}
 		m_queue_in.m_process.set(q->m_blockpos, 1);
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making " + itos(q->step));
@@ -182,10 +171,6 @@ void * MeshUpdateThread::Thread()
 		}
 
 	}
-
-	END_DEBUG_EXCEPTION_HANDLER(errorstream)
-
-	return NULL;
 }
 
 /*
@@ -217,7 +202,7 @@ Client::Client(
 	m_nodedef(nodedef),
 	m_sound(sound),
 	m_event(event),
-	m_mesh_update_thread(this),
+	m_mesh_update_thread(),
 	m_env(
 		new ClientMap(this, this, control,
 			device->getSceneManager()->getRootSceneNode(),
@@ -1663,9 +1648,9 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 
 	// Add task to queue
 	//unsigned int qsize = 
-	m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	//m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	m_mesh_update_thread.enqueueUpdate(p, data, urgent);
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
-
 }
 
 void Client::addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent)

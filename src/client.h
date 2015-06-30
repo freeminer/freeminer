@@ -110,23 +110,26 @@ struct MeshUpdateResult
 	}
 };
 
-class MeshUpdateThread : public thread_pool
+class MeshUpdateThread : public UpdateThread
 {
+private:
+	MeshUpdateQueue m_queue_in;
+ 
+protected:
+	const char *getName()
+	{ return "MeshUpdateThread"; }
+	virtual void doUpdate();
+
 public:
 
-	MeshUpdateThread(IGameDef *gamedef, int id_ = 0):
-		m_gamedef(gamedef)
-		,id(id_)
+	MeshUpdateThread()
 	{
 	}
 
-	void * Thread();
-
-	MeshUpdateQueue m_queue_in;
+	void enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
+			bool urgent);
 
 	MutexedQueue<MeshUpdateResult> m_queue_out;
-
-	IGameDef *m_gamedef;
 
 	v3s16 m_camera_offset;
 	int id;
