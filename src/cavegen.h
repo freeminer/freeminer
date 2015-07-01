@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CAVEGEN_HEADER
 
 #define VMANIP_FLAG_CAVE VOXELFLAG_CHECKED1
+#define MGV7_LAVA_DEPTH -256
 
 class MapgenV5;
 class MapgenV6;

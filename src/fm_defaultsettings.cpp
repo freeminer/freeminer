@@ -341,7 +341,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("client_unload_unused_data_timeout", "200");
 	//settings->setDefault("unload_unused_meshes_timeout", "120");
-	settings->setDefault("enable_mesh_cache", "true");
+	settings->setDefault("enable_mesh_cache", "false");
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("respawn_auto", "false");
