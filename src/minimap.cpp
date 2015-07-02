@@ -37,6 +37,7 @@ QueuedMinimapUpdate::QueuedMinimapUpdate():
 
 QueuedMinimapUpdate::~QueuedMinimapUpdate()
 {
+	if (data)
 	delete data;
 }
 
@@ -117,12 +118,15 @@ void MinimapUpdateThread::doUpdate()
 		QueuedMinimapUpdate *q = m_queue.pop();
 		std::map<v3s16, MinimapMapblock *>::iterator it;
 		it = m_blocks_cache.find(q->pos);
+		if (it != m_blocks_cache.end())
+			delete it->second;
 		if (q->data) {
 			m_blocks_cache[q->pos] = q->data;
+			q->data = nullptr;
 		} else if (it != m_blocks_cache.end()) {
-			delete it->second;
 			m_blocks_cache.erase(it);
 		}
+		delete q;
 	}
 	if (data->map_invalidated) {
 		if (data->mode != MINIMAP_MODE_OFF) {

@@ -521,6 +521,9 @@ void *EmergeThread::Thread()
 						VoxelArea(minp, maxp));
 */
 					try {  // takes about 90ms with -O1 on an e3-1230v2
+#if !ENABLE_THREADS
+						auto lock = map->m_nothread_locker.lock_unique_rec();
+#endif
 						m_server->getScriptIface()->environment_OnGenerated(
 								minp, maxp, mapgen->blockseed);
 					} catch(LuaError &e) {

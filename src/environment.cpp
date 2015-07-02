@@ -2041,6 +2041,8 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	if(block == NULL)
 		return;
 
+	//auto lock = block->m_static_objects.m_active.lock_unique_rec();
+
 	// Ignore if no stored objects (to not set changed flag)
 	if(block->m_static_objects.m_stored.empty())
 		return;

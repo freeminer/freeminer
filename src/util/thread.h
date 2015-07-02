@@ -255,9 +255,11 @@ public:
 
 		porting::setThreadName(thread_name);
 
+		porting::setThreadPriority(30);
+
 		while (!StopRequested()) {
 
-			m_update_sem.Wait();
+			m_update_sem.Wait(1000);
 
 			// Empty the queue, just in case doUpdate() is expensive
 			while (m_update_sem.GetValue()) m_update_sem.Wait();

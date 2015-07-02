@@ -31,10 +31,8 @@ ObjDefManager::ObjDefManager(IGameDef *gamedef, ObjDefType type)
 
 ObjDefManager::~ObjDefManager()
 {
-/* leak!
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
-but no crash */
 	m_objects.clear();
 }
 

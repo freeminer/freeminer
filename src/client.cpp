@@ -538,8 +538,10 @@ void Client::step(float dtime)
 			MinimapMapblock *minimap_mapblock = nullptr;
 			if(block) {
 				block->setMesh(r.mesh);
-				if (r.mesh)
+				if (r.mesh) {
 					minimap_mapblock = r.mesh->getMinimapMapblock();
+					r.mesh->m_minimap_mapblock = nullptr;
+				}
 			}
 			m_mapper->addBlock(r.p, minimap_mapblock);
 			if (porting::getTimeMs() > end_ms) {

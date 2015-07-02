@@ -175,7 +175,9 @@ public:
 
 private:
 	scene::SMesh *m_mesh;
+public:
 	MinimapMapblock *m_minimap_mapblock;
+private:
 	IGameDef *m_gamedef;
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;

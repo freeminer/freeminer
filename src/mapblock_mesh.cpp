@@ -1114,15 +1114,15 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_usage_timer(0)
 {
 	m_mesh = new scene::SMesh();
-	m_minimap_mapblock = new MinimapMapblock();
 
 	m_enable_shaders = data->m_use_shaders;
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
 	if (!data->fill_data())
 		return;
-
+	if (step == 1)
 	if (g_settings->getBool("enable_minimap")) {
+		m_minimap_mapblock = new MinimapMapblock();
 		v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 		for(s16 x = 0; x < MAP_BLOCKSIZE; x++) {
 			for(s16 z = 0; z < MAP_BLOCKSIZE; z++) {
@@ -1393,6 +1393,9 @@ MapBlockMesh::~MapBlockMesh()
 		}
 	m_mesh->drop();
 	m_mesh = NULL;
+
+	if (m_minimap_mapblock)
+		delete m_minimap_mapblock;
 }
 
 void MapBlockMesh::setStatic()
