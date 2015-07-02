@@ -744,14 +744,15 @@ assets : $(ASSETS_TIMESTAMP) locale
 	if [ $$REFRESH -ne 0 ] ; then                                              \
 	echo "assets changed, refreshing...";                                      \
 	$(MAKE) clean_assets;                                                       \
-	mkdir -p ${ROOT}/assets/freeminer;                                          \
-	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer;           \
-	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer;                        \
-	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer;                       \
-	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer;                        \
-	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer;                           \
-	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer;                         \
-	mkdir ${ROOT}/assets/freeminer/games;                                       \
+	mkdir -p ${ROOT}/assets/freeminer; \
+	cp ${ROOT}/../../freeminer.conf.example ${ROOT}/assets/freeminer; \
+	cp -r ${ROOT}/worlds ${ROOT}/assets/freeminer; \
+	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer; \
+	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer; \
+	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
+	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
+	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer; \
+	mkdir ${ROOT}/assets/freeminer/games; \
 	for game in ${GAMES_TO_COPY};                                              \
 	do                                                                         \
 	    cp -r ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/;       \
