@@ -172,6 +172,7 @@ qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/
 our $tasks = {
     build_normal => [{build_name => 'normal'}, 'prepare', 'cmake', 'make',],
     build_debug => [{build_name => 'debug'}, 'prepare', ['cmake_clang', qw(-DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',],
+    build_nothreads => [{build_name => 'nothreads'}, 'prepare', ['cmake_clang', $config->{cmake_nothreads}], 'make',],
     run_single => ['run_single'],
     clang => ['prepare', 'cmake_clang', 'make',],
     tsan  => [
@@ -204,14 +205,12 @@ our $tasks = {
         'prepare', ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
     ],
     debug => ['prepare', ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
-    nothreads => [
-        'prepare',
-        ['cmake_clang', qw(-DBUILD_SERVER=0), $config->{cmake_nothreads}], 'make', 'run_single',
-    ], (
+    nothreads => [\'build_nothreads', 'run_single',],    #'
+    (
         map {
             'valgrind_' . $_ => [
                 #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
-                \'build_debug',    #'
+                \'build_debug',                          #'
                 ['valgrind', '--tool=' . $_],
               ],
         } @{$config->{valgrind_tools}}
@@ -234,8 +233,10 @@ our $tasks = {
 
     play_task => sub { return 1 if $config->{all_run}; local $config->{go} = undef; $config->{options_bot} = undef; task_run($_) for @_; },
 
-    (map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta ), map { 'valgrind_' . $_ } @{$config->{valgrind_tools}})
-    ,    #'
+    (
+        map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads),
+        map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
+    ),    #'
     play => [[\'play_task', 'build_normal', 'run_single']],    #'
 };
 

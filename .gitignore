@@ -28,6 +28,10 @@ tags
 
 ## Configuration/log files
 freeminer.conf
+auto_*
+util/autotest/logs.*
+util/autotest/auto.json
+util/autotest/world
 debug.txt
 client/favoriteservers.json
 

@@ -382,6 +382,9 @@ public class freeminerAssetCopy extends Activity
 						refresh = false;
 					}
 					
+					if (FlashPath.contains("/worlds/") && stored_filesize > 0) {
+						refresh = false;
+					}
 				}
 				
 				if (refresh)
