@@ -3126,7 +3126,7 @@ std::string Server::getBanDescription(const std::string &ip_or_name)
 void Server::notifyPlayer(const char *name, const std::string &msg)
 {
 	Player *player = m_env->getPlayer(name);
-	if(!player)
+	if (!player)
 		return;
 
 	if (player->peer_id == PEER_ID_INEXISTENT)
@@ -3135,21 +3135,19 @@ void Server::notifyPlayer(const char *name, const std::string &msg)
 	SendChatMessage(player->peer_id, std::string("\vffffff") + msg);
 }
 
-bool Server::showFormspec(const char *playername, const std::string &formspec, const std::string &formname)
+bool Server::showFormspec(const char *playername, const std::string &formspec,
+	const std::string &formname)
 {
 	Player *player = m_env->getPlayer(playername);
-
-	if(!player)
-	{
-		infostream<<"showFormspec: couldn't find player:"<<playername<<std::endl;
+	if (!player)
 		return false;
-	}
 
 	SendShowFormspecMessage(player->peer_id, formspec, formname);
 	return true;
 }
 
-u32 Server::hudAdd(Player *player, HudElement *form) {
+u32 Server::hudAdd(Player *player, HudElement *form)
+{
 	if (!player)
 		return -1;
 
@@ -3175,7 +3173,8 @@ bool Server::hudRemove(Player *player, u32 id) {
 	return true;
 }
 
-bool Server::hudChange(Player *player, u32 id, HudElementStat stat, void *data) {
+bool Server::hudChange(Player *player, u32 id, HudElementStat stat, void *data)
+{
 	if (!player)
 		return false;
 
@@ -3183,7 +3182,8 @@ bool Server::hudChange(Player *player, u32 id, HudElementStat stat, void *data) 
 	return true;
 }
 
-bool Server::hudSetFlags(Player *player, u32 flags, u32 mask) {
+bool Server::hudSetFlags(Player *player, u32 flags, u32 mask)
+{
 	if (!player)
 		return false;
 
@@ -3199,7 +3199,8 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask) {
 	return true;
 }
 
-bool Server::hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount) {
+bool Server::hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount)
+{
 	if (!player)
 		return false;
 	if (hotbar_itemcount <= 0 || hotbar_itemcount > HUD_HOTBAR_ITEMCOUNT_MAX)
@@ -3212,13 +3213,15 @@ bool Server::hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount) {
 	return true;
 }
 
-s32 Server::hudGetHotbarItemcount(Player *player) {
+s32 Server::hudGetHotbarItemcount(Player *player)
+{
 	if (!player)
 		return 0;
 	return player->getHotbarItemcount();
 }
 
-void Server::hudSetHotbarImage(Player *player, std::string name) {
+void Server::hudSetHotbarImage(Player *player, std::string name)
+{
 	if (!player)
 		return;
 
@@ -3226,13 +3229,15 @@ void Server::hudSetHotbarImage(Player *player, std::string name) {
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE, name);
 }
 
-std::string Server::hudGetHotbarImage(Player *player) {
+std::string Server::hudGetHotbarImage(Player *player)
+{
 	if (!player)
 		return "";
 	return player->getHotbarImage();
 }
 
-void Server::hudSetHotbarSelectedImage(Player *player, std::string name) {
+void Server::hudSetHotbarSelectedImage(Player *player, std::string name)
+{
 	if (!player)
 		return;
 
@@ -3240,14 +3245,16 @@ void Server::hudSetHotbarSelectedImage(Player *player, std::string name) {
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_SELECTED_IMAGE, name);
 }
 
-std::string Server::hudGetHotbarSelectedImage(Player *player) {
+std::string Server::hudGetHotbarSelectedImage(Player *player)
+{
 	if (!player)
 		return "";
 
 	return player->getHotbarSelectedImage();
 }
 
-bool Server::setLocalPlayerAnimations(Player *player, v2s32 animation_frames[4], f32 frame_speed)
+bool Server::setLocalPlayerAnimations(Player *player,
+	v2s32 animation_frames[4], f32 frame_speed)
 {
 	if (!player)
 		return false;
@@ -3269,7 +3276,7 @@ bool Server::setPlayerEyeOffset(Player *player, v3f first, v3f third)
 }
 
 bool Server::setSky(Player *player, const video::SColor &bgcolor,
-		const std::string &type, const std::vector<std::string> &params)
+	const std::string &type, const std::vector<std::string> &params)
 {
 	if (!player)
 		return false;
@@ -3280,7 +3287,7 @@ bool Server::setSky(Player *player, const video::SColor &bgcolor,
 }
 
 bool Server::overrideDayNightRatio(Player *player, bool do_override,
-		float ratio)
+	float ratio)
 {
 	if (!player)
 		return false;
@@ -3296,9 +3303,9 @@ void Server::notifyPlayers(const std::string &msg)
 }
 
 void Server::spawnParticle(const char *playername, v3f pos,
-		v3f velocity, v3f acceleration,
-		float expirationtime, float size, bool
-		collisiondetection, bool vertical, std::string texture)
+	v3f velocity, v3f acceleration,
+	float expirationtime, float size, bool
+	collisiondetection, bool vertical, const std::string &texture)
 {
 	Player *player = m_env->getPlayer(playername);
 	if(!player)
@@ -3308,21 +3315,17 @@ void Server::spawnParticle(const char *playername, v3f pos,
 }
 
 void Server::spawnParticleAll(v3f pos, v3f velocity, v3f acceleration,
-		float expirationtime, float size,
-		bool collisiondetection, bool vertical, std::string texture)
+	float expirationtime, float size,
+	bool collisiondetection, bool vertical, const std::string &texture)
 {
 	SendSpawnParticle(PEER_ID_INEXISTENT,pos, velocity, acceleration,
 			expirationtime, size, collisiondetection, vertical, texture);
 }
 
-u32 Server::addParticleSpawner(const char *playername,
-		u16 amount, float spawntime,
-		v3f minpos, v3f maxpos,
-		v3f minvel, v3f maxvel,
-		v3f minacc, v3f maxacc,
-		float minexptime, float maxexptime,
-		float minsize, float maxsize,
-		bool collisiondetection, bool vertical, std::string texture)
+u32 Server::addParticleSpawner(const char *playername, u16 amount, float spawntime,
+	v3f minpos, v3f maxpos, v3f minvel, v3f maxvel, v3f minacc, v3f maxacc,
+	float minexptime, float maxexptime, float minsize, float maxsize,
+	bool collisiondetection, bool vertical, const std::string &texture)
 {
 	Player *player = m_env->getPlayer(playername);
 	if(!player)
@@ -3350,12 +3353,12 @@ u32 Server::addParticleSpawner(const char *playername,
 }
 
 u32 Server::addParticleSpawnerAll(u16 amount, float spawntime,
-		v3f minpos, v3f maxpos,
-		v3f minvel, v3f maxvel,
-		v3f minacc, v3f maxacc,
-		float minexptime, float maxexptime,
-		float minsize, float maxsize,
-		bool collisiondetection, bool vertical, std::string texture)
+	v3f minpos, v3f maxpos,
+	v3f minvel, v3f maxvel,
+	v3f minacc, v3f maxacc,
+	float minexptime, float maxexptime,
+	float minsize, float maxsize,
+	bool collisiondetection, bool vertical, const std::string &texture)
 {
 	u32 id = 0;
 	for(;;) // look for unused particlespawner id
@@ -3416,24 +3419,6 @@ Inventory* Server::createDetachedInventory(const std::string &name)
 	return inv;
 }
 
-class BoolScopeSet
-{
-public:
-	BoolScopeSet(bool *dst, bool val):
-		m_dst(dst)
-	{
-		m_orig_state = *m_dst;
-		*m_dst = val;
-	}
-	~BoolScopeSet()
-	{
-		*m_dst = m_orig_state;
-	}
-private:
-	bool *m_dst;
-	bool m_orig_state;
-};
-
 // actions: time-reversed list
 // Return value: success/failure
 bool Server::rollbackRevertActions(const std::list<RollbackAction> &actions,
@@ -3483,27 +3468,29 @@ bool Server::rollbackRevertActions(const std::list<RollbackAction> &actions,
 
 // IGameDef interface
 // Under envlock
-IItemDefManager* Server::getItemDefManager()
+IItemDefManager *Server::getItemDefManager()
 {
 	return m_itemdef;
 }
-INodeDefManager* Server::getNodeDefManager()
+
+INodeDefManager *Server::getNodeDefManager()
 {
 	return m_nodedef;
 }
-ICraftDefManager* Server::getCraftDefManager()
+
+ICraftDefManager *Server::getCraftDefManager()
 {
 	return m_craftdef;
 }
-ITextureSource* Server::getTextureSource()
+ITextureSource *Server::getTextureSource()
 {
 	return NULL;
 }
-IShaderSource* Server::getShaderSource()
+IShaderSource *Server::getShaderSource()
 {
 	return NULL;
 }
-scene::ISceneManager* Server::getSceneManager()
+scene::ISceneManager *Server::getSceneManager()
 {
 	return NULL;
 }
@@ -3512,44 +3499,50 @@ u16 Server::allocateUnknownNodeId(const std::string &name)
 {
 	return m_nodedef->allocateDummy(name);
 }
-ISoundManager* Server::getSoundManager()
+
+ISoundManager *Server::getSoundManager()
 {
 	return &dummySoundManager;
 }
-MtEventManager* Server::getEventManager()
+
+MtEventManager *Server::getEventManager()
 {
 	return m_event;
 }
 
-IWritableItemDefManager* Server::getWritableItemDefManager()
+IWritableItemDefManager *Server::getWritableItemDefManager()
 {
 	return m_itemdef;
 }
-IWritableNodeDefManager* Server::getWritableNodeDefManager()
+
+IWritableNodeDefManager *Server::getWritableNodeDefManager()
 {
 	return m_nodedef;
 }
-IWritableCraftDefManager* Server::getWritableCraftDefManager()
+
+IWritableCraftDefManager *Server::getWritableCraftDefManager()
 {
 	return m_craftdef;
 }
 
-const ModSpec* Server::getModSpec(const std::string &modname) const
+const ModSpec *Server::getModSpec(const std::string &modname) const
 {
-	for(std::vector<ModSpec>::const_iterator i = m_mods.begin();
-			i != m_mods.end(); i++){
-		const ModSpec &mod = *i;
-		if(mod.name == modname)
+	std::vector<ModSpec>::const_iterator it;
+	for (it = m_mods.begin(); it != m_mods.end(); ++it) {
+		const ModSpec &mod = *it;
+		if (mod.name == modname)
 			return &mod;
 	}
 	return NULL;
 }
+
 void Server::getModNames(std::vector<std::string> &modlist)
 {
-	for(std::vector<ModSpec>::iterator i = m_mods.begin(); i != m_mods.end(); i++) {
-		modlist.push_back(i->name);
-	}
+	std::vector<ModSpec>::iterator it;
+	for (it = m_mods.begin(); it != m_mods.end(); ++it)
+		modlist.push_back(it->name);
 }
+
 std::string Server::getBuiltinLuaPath()
 {
 	return porting::path_share + DIR_DELIM + "builtin";
