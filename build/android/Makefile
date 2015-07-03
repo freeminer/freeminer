@@ -750,7 +750,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
-	cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
+	#cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer; \
 	mkdir ${ROOT}/assets/freeminer/games; \
 	for game in ${GAMES_TO_COPY};                                              \
@@ -770,8 +770,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
 	find . -type d -path "*.svn" -exec rm -rf {} \; ;                          \
 	find . -type f -path "*.gitignore" -exec rm -rf {} \; ;                    \
-	find . -name "lucida_sans_*" -exec rm {} \; ; \
-	find . -name "mono_dejavu_sans_*" -exec rm {} \; ; \
+	find . \( -name "lucida_sans_*" -o -name "mono_dejavu_sans_*" -o -name "README.txt" -o -name "game_api.txt" -o -name ".git*" \) -exec rm {} \; ; \
 	ls -R | grep ":$$" | sed -e 's/:$$//' -e 's/\.//' -e 's/^\///' > "index.txt"; \
 	find freeminer >"filelist.txt"; \
 	cp ${ROOT}/${ASSETS_TIMESTAMP} ${ROOT}/${ASSETS_TIMESTAMP}.old;            \
