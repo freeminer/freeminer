@@ -37,7 +37,6 @@ QueuedMinimapUpdate::QueuedMinimapUpdate():
 
 QueuedMinimapUpdate::~QueuedMinimapUpdate()
 {
-	if (data)
 	delete data;
 }
 

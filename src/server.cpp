@@ -485,16 +485,11 @@ Server::~Server()
 	stop();
 	delete m_thread;
 
-	if (m_liquid)
-		delete m_liquid;
-	if (m_sendblocks)
-		delete m_sendblocks;
-	if (m_map_thread)
-		delete m_map_thread;
-	if(m_abmthread)
-		delete m_abmthread;
-	if(m_envthread)
-		delete m_envthread;
+	delete m_liquid;
+	delete m_sendblocks;
+	delete m_map_thread;
+	delete m_abmthread;
+	delete m_envthread;
 
 	// stop all emerge threads before deleting players that may have
 	// requested blocks to be emerged
