@@ -128,7 +128,6 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	m_init_name(name),
 	m_init_state(state),
 	m_registered(false),
-	m_hp(-1),
 	m_velocity(0,0,0),
 	m_acceleration(0,0,0),
 	m_yaw(0),
@@ -146,6 +145,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	m_attachment_parent_id(0),
 	m_attachment_sent(false)
 {
+	m_hp = -1;
 	m_properties_sent = true;
 	// Only register type if no environment supplied
 	if(env == NULL){
@@ -762,12 +762,12 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_physics_override_jump(1),
 	m_physics_override_gravity(1),
 	m_physics_override_sneak(true),
-	m_physics_override_sneak_glitch(true),
-	m_physics_override_sent(false)
+	m_physics_override_sneak_glitch(true)
 {
 	m_properties_sent = true;
 	m_position_not_sent = false;
 	m_ms_from_last_respawn = 10000; //more than ignore move time (1)
+	m_physics_override_sent = false;
 
 	assert(m_player);	// pre-condition
 	assert(m_peer_id != 0);	// pre-condition
