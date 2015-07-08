@@ -532,19 +532,24 @@ void Client::step(float dtime)
 
 		while (!m_mesh_update_thread.m_queue_out.empty_try()) {
 			num_processed_meshes++;
+
+			MinimapMapblock *minimap_mapblock = NULL;
+			bool do_mapper_update = true;
+
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 			if (!r.mesh)
 				continue;
 			auto block = m_env.getMap().getBlock(r.p);
-			MinimapMapblock *minimap_mapblock = nullptr;
 			if(block) {
 				block->setMesh(r.mesh);
 				if (r.mesh) {
 					minimap_mapblock = r.mesh->getMinimapMapblock();
 					r.mesh->m_minimap_mapblock = nullptr;
+					do_mapper_update = (minimap_mapblock != NULL);
 				}
 			}
-			m_mapper->addBlock(r.p, minimap_mapblock);
+			if (do_mapper_update)
+				m_mapper->addBlock(r.p, minimap_mapblock);
 			if (porting::getTimeMs() > end_ms) {
 				break;
 			}
