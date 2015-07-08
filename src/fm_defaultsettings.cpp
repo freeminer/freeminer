@@ -271,7 +271,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("new_style_water", "false");
 	settings->setDefault("opaque_water", "false");
 	settings->setDefault("connected_glass", "false");
-	settings->setDefault("new_style_leaves", "true");
+	settings->setDefault("leaves_style", "fancy");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("directional_colored_fog", "true");
 
@@ -553,7 +553,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
-	settings->setDefault("new_style_leaves", "false");
+	settings->setDefault("leaves_style", "simple");
 	settings->setDefault("autojump", "1");
 
 	char lang[3] = {};
