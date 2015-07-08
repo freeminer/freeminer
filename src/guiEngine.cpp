@@ -65,7 +65,7 @@ void TextDestGuiEngine::gotText(const StringMap &fields)
 /******************************************************************************/
 void TextDestGuiEngine::gotText(std::wstring text)
 {
-	m_engine->getScriptIface()->handleMainMenuEvent(wide_to_narrow(text));
+	m_engine->getScriptIface()->handleMainMenuEvent(wide_to_utf8(text));
 }
 
 /******************************************************************************/
