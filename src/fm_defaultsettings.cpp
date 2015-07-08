@@ -553,7 +553,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("abm_random", "0");
 	settings->setDefault("farmesh", "2");
 	settings->setDefault("farmesh_step", "1");
-	settings->setDefault("leaves_style", "simple");
+	settings->setDefault("leaves_style", "opaque");
 	settings->setDefault("autojump", "1");
 
 	char lang[3] = {};
