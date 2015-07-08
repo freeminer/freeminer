@@ -26,8 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen.h"
 #include "mapgen_indev.h"
 
-#define MOUNTAIN_BASE -112
-
 /////////////////// Mapgen V7 flags
 #define MGV7_MOUNTAINS   0x01
 #define MGV7_RIDGES      0x02
@@ -121,16 +119,16 @@ public:
 	int getGroundLevelAtPoint(v2s16 p);
 	Biome *getBiomeAtPoint(v3s16 p);
 
-	float baseTerrainLevelAtPoint(int x, int z);
+	float baseTerrainLevelAtPoint(s16 x, s16 z);
 	float baseTerrainLevelFromMap(int index);
-	bool getMountainTerrainAtPoint(int x, int y, int z);
-	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, int y);
+	bool getMountainTerrainAtPoint(s16 x, s16 y, s16 z);
+	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, s16 y);
 
 	virtual void calculateNoise();
 
 	virtual int generateTerrain();
-	int generateBaseTerrain();
-	int generateMountainTerrain(int ymax);
+	void generateBaseTerrain(s16 *stone_surface_min_y, s16 *stone_surface_max_y);
+	int generateMountainTerrain(s16 ymax);
 	void generateRidgeTerrain();
 
 	MgStoneType generateBiomes(float *heat_map, float *humidity_map);
@@ -138,10 +136,9 @@ public:
 
 	//void addTopNodes();
 
-	void generateCaves(int max_stone_y);
-
 	virtual void generateExperimental();
 
+	void generateCaves(s16 max_stone_y);
 };
 
 struct MapgenFactoryV7 : public MapgenFactory {
