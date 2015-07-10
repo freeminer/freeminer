@@ -68,7 +68,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
 
-#if (defined(linux) || defined(__linux) || defined(__GNU__)) && !defined(_GNU_SOURCE)
+	#if (defined(linux) || defined(__linux) || defined(__GNU__)) && !defined(_GNU_SOURCE)
 		#define _GNU_SOURCE
 	#endif
 
