@@ -370,7 +370,6 @@ public:
 	bool zoom;
 	bool  superspeed;
 	bool  free_move;
-	float movement_fov;
 
 	std::atomic_short peer_id;
 

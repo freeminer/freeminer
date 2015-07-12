@@ -44,7 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h" // CameraModes
 
 #include "nodedef.h"
-//#include "log_types.h"
+#include "log_types.h"
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
@@ -115,6 +115,9 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	 *       (as opposed to the this local caching). This can be addressed in
 	 *       a later release.
 	 */
+
+	m_cache_movement_fov        = g_settings->getBool("movement_fov");
+
 	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
 	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
 	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
@@ -430,14 +433,14 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Greater FOV if running
 	v3f speed = player->getSpeed();
-	f32 fov_add = sqrt(pow(speed.X,2)+pow(speed.Z,2))/40;
 
-	if (g_settings->getBool("enable_movement_fov")) {
-		fov_degrees += player->movement_fov;
-		if (fov_add > 4)
-			fov_add = 4;
-		if (fov_add > 1) 
-			fov_degrees = fov_degrees+fov_add;
+	if (m_cache_movement_fov) {
+		f32 fov_add = speed.dotProduct(m_camera_direction)/40;
+		if (fov_add > 10)
+			fov_add = 10;
+		if (fov_add < -10)
+			fov_add = -10;
+		fov_degrees -= fov_add;
 	}
 
 	// FOV and aspect ratio

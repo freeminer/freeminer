@@ -50,7 +50,6 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	zoom(false),
 	superspeed(false),
 	free_move(false),
-	movement_fov(0),
 	keyPressed(0),
 // protected
 	m_gamedef(gamedef),

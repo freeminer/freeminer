@@ -454,7 +454,7 @@ void set_default_settings(Settings *settings) {
 	//
 
 	// Movement
-	settings->setDefault("enable_movement_fov", "true");
+	settings->setDefault("movement_fov", "true");
 	settings->setDefault("aux1_descends", "false");
 	settings->setDefault("doubletap_jump", "false");
 	settings->setDefault("always_fly_fast", "true");
