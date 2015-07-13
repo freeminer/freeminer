@@ -117,11 +117,15 @@ MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	// freeminer:
 	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
 	c_ice             = ndef->getId("mapgen_ice");
+
+	if (c_dirt_with_snow == CONTENT_IGNORE)
+		c_dirt_with_snow = c_dirt_with_grass;
+	if (c_snow == CONTENT_IGNORE)
+		c_snow = CONTENT_AIR;
+	if (c_snowblock == CONTENT_IGNORE)
+		c_snowblock = c_dirt_with_grass;
 	if (c_ice == CONTENT_IGNORE)
 		c_ice = c_water_source;
-	if (c_dirt_with_snow == CONTENT_IGNORE)
-		c_dirt_with_snow = c_dirt;
-
 }
 
 
