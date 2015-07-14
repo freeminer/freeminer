@@ -432,6 +432,9 @@ inline video::SColor readARGB8(std::istream &is)
 	More serialization stuff
 */
 
+// 64 MB ought to be enough for anybody - Billy G.
+#define LONG_STRING_MAX (64 * 1024 * 1024)
+
 // Creates a string with the length as the first two bytes
 std::string serializeString(const std::string &plain);
 
@@ -464,6 +467,9 @@ MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(v3s32, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
 MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
+
+// Creates a string consisting of the hexadecimal representation of `data`
+std::string serializeHexString(const std::string &data, bool insert_spaces=false);
 
 // Creates a string containing comma delimited values of a struct whose layout is
 // described by the parameter format

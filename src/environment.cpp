@@ -3003,28 +3003,23 @@ void ClientEnvironment::removeActiveObject(u16 id)
 	m_active_objects.erase(id);
 }
 
-void ClientEnvironment::processActiveObjectMessage(u16 id,
-		const std::string &data)
+void ClientEnvironment::processActiveObjectMessage(u16 id, const std::string &data)
 {
-	ClientActiveObject* obj = getActiveObject(id);
-	if(obj == NULL)
-	{
-		verbosestream<<"ClientEnvironment::processActiveObjectMessage():"
-				<<" got message for id="<<id<<", which doesn't exist."
-				<<std::endl;
+	ClientActiveObject *obj = getActiveObject(id);
+	if (obj == NULL) {
+		verbosestream << "ClientEnvironment::processActiveObjectMessage():"
+			<< " got message for id=" << id << ", which doesn't exist."
+			<< std::endl;
 		return;
 	}
-	try
-	{
+
+	try {
 		obj->processMessage(data);
-	}
-	catch(SerializationError &e)
-	{
+	} catch (SerializationError &e) {
 		errorstream<<"ClientEnvironment::processActiveObjectMessage():"
-				<<" id="<<id<<" type="<<obj->getType()
-				<<" SerializationError in processMessage(),"
-				<<" message="<<serializeJsonString(data)
-				<<std::endl;
+			<< " id=" << id << " type=" << obj->getType()
+			<< " SerializationError in processMessage(): " << e.what()
+			<< std::endl;
 	}
 }
 
