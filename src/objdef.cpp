@@ -33,7 +33,6 @@ ObjDefManager::~ObjDefManager()
 {
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
-	m_objects.clear();
 }
 
 
@@ -130,10 +129,11 @@ ObjDef *ObjDefManager::getByName(const std::string &name) const
 
 void ObjDefManager::clear()
 {
+	clear();
+/*
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
-
-	m_objects.clear();
+*/
 }
 
 

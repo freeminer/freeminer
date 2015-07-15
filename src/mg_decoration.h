@@ -105,7 +105,6 @@ public:
 class DecoSchematic : public Decoration {
 public:
 	DecoSchematic();
-	~DecoSchematic();
 
 	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, v3s16 p);
 	virtual int getHeight();
