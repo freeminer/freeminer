@@ -435,12 +435,13 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f speed = player->getSpeed();
 
 	if (m_cache_movement_fov) {
-		f32 fov_add = speed.dotProduct(m_camera_direction)/40;
-		if (fov_add > 10)
-			fov_add = 10;
-		if (fov_add < -10)
-			fov_add = -10;
-		fov_degrees -= fov_add;
+		auto fog_was = m_draw_control.fov_add;
+		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/40;
+		if (m_draw_control.fov_add > fog_was + 1)
+			m_draw_control.fov_add = fog_was + ( m_draw_control.fov_add - fog_was) / 3;
+		else if (m_draw_control.fov_add < fog_was - 1)
+			m_draw_control.fov_add = fog_was - (fog_was - m_draw_control.fov_add) / 3;
+		fov_degrees -= m_draw_control.fov_add;
 	}
 
 	// FOV and aspect ratio

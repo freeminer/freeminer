@@ -46,12 +46,14 @@ MapDrawControl::MapDrawControl():
 		blocks_drawn(0),
 		blocks_would_have_drawn(0),
 		farthest_drawn(0)
-		,farmesh(0)
-		,farmesh_step(1)
-		,fps(30)
-		,fps_avg(30)
-		,fps_wanted(30)
-		,drawtime_avg(30)
+		,
+		farmesh(0),
+		farmesh_step(1),
+		fps(30),
+		fps_avg(30),
+		fps_wanted(30),
+		drawtime_avg(30),
+		fov_add(0)
 		//,block_overflow(false)
 	{
 		farmesh = g_settings->getS32("farmesh");
