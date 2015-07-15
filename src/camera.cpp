@@ -436,7 +436,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	if (m_cache_movement_fov) {
 		auto fog_was = m_draw_control.fov_add;
-		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/40;
+		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
 		if (m_draw_control.fov_add > fog_was + 1)
 			m_draw_control.fov_add = fog_was + ( m_draw_control.fov_add - fog_was) / 3;
 		else if (m_draw_control.fov_add < fog_was - 1)
