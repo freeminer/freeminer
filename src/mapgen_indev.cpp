@@ -115,15 +115,10 @@ Mapgen_features::Mapgen_features(int mapgenid, MapgenParams *params, EmergeManag
 }
 
 Mapgen_features::~Mapgen_features() {
-	if (noise_layers)
-		delete noise_layers;
-	if (noise_float_islands1)
-		delete noise_float_islands1;
-	if (noise_float_islands2)
-		delete noise_float_islands2;
-	if (noise_float_islands3)
-		delete noise_float_islands3;
-
+	delete noise_layers;
+	delete noise_float_islands1;
+	delete noise_float_islands2;
+	delete noise_float_islands3;
 }
 
 

@@ -224,6 +224,7 @@ Mapper::Mapper(IrrlichtDevice *device, Client *client)
 	data->heightmap_image = NULL;
 	data->minimap_image   = NULL;
 	data->texture         = NULL;
+	data->heightmap_texture = nullptr;
 	data->minimap_shape_round = g_settings->getBool("minimap_shape_round");
 
 	// Get round minimap textures

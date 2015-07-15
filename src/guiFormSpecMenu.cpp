@@ -2022,7 +2022,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_tooltip_element->setOverrideFont(m_font);
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	sanity_check(skin != NULL);
+	if (!skin)
+		return;
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2266,9 +2267,11 @@ void GUIFormSpecMenu::drawSelectedItem()
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 
 	Inventory *inv = m_invmgr->getInventory(m_selected_item->inventoryloc);
-	sanity_check(inv);
+	if (!inv)
+		return;
 	InventoryList *list = inv->getList(m_selected_item->listname);
-	sanity_check(list);
+	if (!list)
+		return;
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
@@ -2288,7 +2291,8 @@ void GUIFormSpecMenu::drawMenu()
 	}
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	sanity_check(skin != NULL);
+	if(!skin)
+		return;
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2776,7 +2780,8 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		if (hovered && isMyChild(hovered) &&
 				hovered->getType() == gui::EGUIET_TAB_CONTROL) {
 			gui::IGUISkin* skin = Environment->getSkin();
-			sanity_check(skin != NULL);
+			if (!skin)
+				return false;
 			gui::IGUIFont *old_font = skin->getFont();
 			skin->setFont(m_font);
 			bool retval = hovered->OnEvent(event);
@@ -3186,8 +3191,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		if (m_selected_item) {
 			inv_selected = m_invmgr->getInventory(m_selected_item->inventoryloc);
-			sanity_check(inv_selected);
-			sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
+			//sanity_check(inv_selected);
+			//sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
 		}
 
 		u32 s_count = 0;
@@ -3360,7 +3365,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			if (m_selected_item != NULL && s.isValid()) {
 				// Move 1 item
 				// TODO: middle mouse to move 10 items might be handy
-				if (m_rmouse_auto_place) {
+				if (m_rmouse_auto_place && inv_selected) {
 					// Only move an item if the destination slot is empty
 					// or contains the same item type as what is going to be
 					// moved
@@ -3377,7 +3382,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 
 		// Possibly send inventory action to server
-		if (move_amount > 0) {
+		if (move_amount > 0 && inv_selected) {
 			// Send IACTION_MOVE
 
 			if (!(m_selected_item && m_selected_item->isValid()))
@@ -3385,7 +3390,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			if (!s.isValid())
 				return false;
 
-			assert(inv_selected && inv_s);
+			//assert(inv_selected && inv_s);
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
 			InventoryList *list_to = list_s;
 			if (!(list_from && list_to))

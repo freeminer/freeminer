@@ -1373,8 +1373,7 @@ MapBlockMesh::~MapBlockMesh()
 	m_mesh->drop();
 	m_mesh = NULL;
 
-	if (m_minimap_mapblock)
-		delete m_minimap_mapblock;
+	delete m_minimap_mapblock;
 }
 
 void MapBlockMesh::setStatic()

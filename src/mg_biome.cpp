@@ -187,8 +187,6 @@ void BiomeManager::clear()
 	// Don't delete the first biome
 	for (size_t i = 1; i < m_objects.size(); i++) {
 		Biome *b = (Biome *)m_objects[i];
-		if (!b)
-			continue;
 		delete b;
 	}
 

@@ -231,7 +231,7 @@ our $tasks = {
           }
     ],
 
-    play_task => sub { return 1 if $config->{all_run}; local $config->{go} = undef; $config->{options_bot} = undef; task_run($_) for @_; },
+    play_task => sub { return 1 if $config->{all_run}; local $config->{go} = undef; local $config->{options_bot} = undef; local $config->{autoexit} = undef; task_run($_) for @_; },
 
     (
         map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads),
@@ -348,6 +348,7 @@ unless (@ARGV) {
     say for sort keys %$tasks;
     say "\n but running default list: ", join ' ', @$task_run;
     say '';
+    sleep 1;
 }
 
 for my $task (@$task_run) {

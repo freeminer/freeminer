@@ -148,7 +148,7 @@ public:
 				gui::IGUIElement *hovered =
 					Environment->getRootGUIElement()->getElementFromPoint(
 						core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
-				if (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+				if (hovered && hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
 					porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 			}
 		}

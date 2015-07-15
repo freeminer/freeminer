@@ -87,7 +87,8 @@ void script_error(lua_State *L)
 //     computed depending on mode
 void script_run_callbacks(lua_State *L, int nargs, RunCallbacksMode mode)
 {
-	FATAL_ERROR_IF(lua_gettop(L) < nargs + 1, "Not enough arguments");
+	if (lua_gettop(L) < nargs + 1)
+		return;
 
 	// Insert error handler
 	lua_pushcfunction(L, script_error_handler);
