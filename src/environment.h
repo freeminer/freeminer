@@ -267,6 +267,7 @@ public:
 
 	KeyValueStorage *getKeyValueStorage();
 
+	void kickAllPlayers(const std::string &reason);
 	// Save players
 	void saveLoadedPlayers();
 	void savePlayer(const std::string &playername);
