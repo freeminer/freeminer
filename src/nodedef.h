@@ -173,7 +173,9 @@ enum {
 	TILEDEF_ANIMATION_ASPECT_W,
 	TILEDEF_ANIMATION_ASPECT_H,
 	TILEDEF_ANIMATION_LENGTH,
-	TILEDEF_BACKFACE_CULLING
+	TILEDEF_BACKFACE_CULLING,
+	TILEDEF_TILEABLE_HORIZONTAL,
+	TILEDEF_TILEABLE_VERTICAL
 };
 enum TileAnimationType{
 	TAT_NONE=0,
@@ -183,6 +185,8 @@ struct TileDef
 {
 	std::string name;
 	bool backface_culling; // Takes effect only in special cases
+	bool tileable_horizontal;
+	bool tileable_vertical;
 	struct{
 		enum TileAnimationType type;
 		int aspect_w; // width for aspect ratio
@@ -194,6 +198,8 @@ struct TileDef
 	{
 		name = "";
 		backface_culling = true;
+		tileable_horizontal = true;
+		tileable_vertical = true;
 		animation.type = TAT_NONE;
 		animation.aspect_w = 1;
 		animation.aspect_h = 1;

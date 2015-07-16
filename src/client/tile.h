@@ -43,6 +43,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 class IGameDef;
+struct TileSpec;
+struct TileDef;
 
 /*
 	tile.{h,cpp}: Texture handling stuff.
@@ -149,6 +151,7 @@ public:
 			const TextureFromMeshParams &params)=0;
 	virtual video::ITexture* getNormalTexture(const std::string &name)=0;
 	virtual video::SColor getTextureAverageColor(const std::string &name)=0;
+	virtual video::ITexture *getShaderFlagsTexture(TileDef *tiledef, TileSpec *tile)=0;
 };
 
 class IWritableTextureSource : public ITextureSource
@@ -171,6 +174,7 @@ public:
 	virtual void rebuildImagesAndTextures()=0;
 	virtual video::ITexture* getNormalTexture(const std::string &name)=0;
 	virtual video::SColor getTextureAverageColor(const std::string &name)=0;
+	virtual video::ITexture *getShaderFlagsTexture(TileDef *tiledef, TileSpec *tile)=0;
 };
 
 IWritableTextureSource* createTextureSource(IrrlichtDevice *device);
@@ -210,12 +214,14 @@ struct FrameSpec
 	FrameSpec():
 		texture_id(0),
 		texture(NULL),
-		normal_texture(NULL)
+		normal_texture(NULL),
+		flags_texture(NULL)
 	{
 	}
 	u32 texture_id;
 	video::ITexture *texture;
 	video::ITexture *normal_texture;
+	video::ITexture *flags_texture;
 };
 
 struct TileSpec
@@ -224,6 +230,7 @@ struct TileSpec
 		texture_id(0),
 		texture(NULL),
 		normal_texture(NULL),
+		flags_texture(NULL),
 		alpha(255),
 		material_type(TILE_MATERIAL_BASIC),
 		material_flags(
@@ -290,6 +297,7 @@ struct TileSpec
 	u32 texture_id;
 	video::ITexture *texture;
 	video::ITexture *normal_texture;
+	video::ITexture *flags_texture;
 	
 	// Vertex alpha (when MATERIAL_ALPHA_VERTEX is used)
 	u8 alpha;
@@ -304,5 +312,4 @@ struct TileSpec
 
 	u8 rotation;
 };
-
 #endif

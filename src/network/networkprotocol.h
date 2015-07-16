@@ -141,6 +141,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 			presentation
 		Add TOCLIENT_AUTH_ACCEPT to accept connection from client
 		Rename GENERIC_CMD_SET_ATTACHMENT to GENERIC_CMD_ATTACH_TO
+	PROTOCOL_VERSION 26:
+		Add TileDef tileable_horizontal, tileable_vertical flags
 */
 
 #define LATEST_PROTOCOL_VERSION 25

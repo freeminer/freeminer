@@ -164,7 +164,9 @@ void NodeBox::msgpack_unpack(msgpack::object o)
 
 void TileDef::serialize(std::ostream &os, u16 protocol_version) const
 {
-	if(protocol_version >= 17)
+	if (protocol_version >= 26)
+		writeU8(os, 2);
+	else if (protocol_version >= 17)
 		writeU8(os, 1);
 	else
 		writeU8(os, 0);
@@ -173,8 +175,12 @@ void TileDef::serialize(std::ostream &os, u16 protocol_version) const
 	writeU16(os, animation.aspect_w);
 	writeU16(os, animation.aspect_h);
 	writeF1000(os, animation.length);
-	if(protocol_version >= 17)
+	if (protocol_version >= 17)
 		writeU8(os, backface_culling);
+	if (protocol_version >= 26) {
+		writeU8(os, tileable_horizontal);
+		writeU8(os, tileable_vertical);
+	}
 }
 
 void TileDef::deSerialize(std::istream &is)
@@ -185,19 +191,25 @@ void TileDef::deSerialize(std::istream &is)
 	animation.aspect_w = readU16(is);
 	animation.aspect_h = readU16(is);
 	animation.length = readF1000(is);
-	if(version >= 1)
+	if (version >= 1)
 		backface_culling = readU8(is);
+	if (version >= 2) {
+		tileable_horizontal = readU8(is);
+		tileable_vertical = readU8(is);
+	}
 }
 
 void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	pk.pack_map(6);
+	pk.pack_map(8);
 	PACK(TILEDEF_NAME, name);
 	PACK(TILEDEF_ANIMATION_TYPE, (int)animation.type);
 	PACK(TILEDEF_ANIMATION_ASPECT_W, animation.aspect_w);
 	PACK(TILEDEF_ANIMATION_ASPECT_H, animation.aspect_h);
 	PACK(TILEDEF_ANIMATION_LENGTH, animation.length);
 	PACK(TILEDEF_BACKFACE_CULLING, backface_culling);
+	PACK(TILEDEF_TILEABLE_VERTICAL, tileable_vertical);
+	PACK(TILEDEF_TILEABLE_HORIZONTAL, tileable_horizontal);
 }
 
 void TileDef::msgpack_unpack(msgpack::object o)
@@ -213,6 +225,12 @@ void TileDef::msgpack_unpack(msgpack::object o)
 	packet[TILEDEF_ANIMATION_ASPECT_H].convert(&animation.aspect_h);
 	packet[TILEDEF_ANIMATION_LENGTH].convert(&animation.length);
 	packet[TILEDEF_BACKFACE_CULLING].convert(&backface_culling);
+
+	if (packet.count(TILEDEF_TILEABLE_VERTICAL))
+		packet[TILEDEF_TILEABLE_VERTICAL].convert(&tileable_vertical);
+	if (packet.count(TILEDEF_TILEABLE_HORIZONTAL))
+		packet[TILEDEF_TILEABLE_HORIZONTAL].convert(&tileable_horizontal);
+
 }
 
 /*
@@ -253,6 +271,7 @@ void ContentFeatures::reset()
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
+
 //#endif
 	has_on_construct = false;
 	has_on_destruct = false;
@@ -1254,9 +1273,11 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 	tile->alpha         = alpha;
 	tile->material_type = material_type;
 
-	// Normal texture
-	if (use_normal_texture)
+	// Normal texture and shader flags texture
+	if (use_normal_texture) {
 		tile->normal_texture = tsrc->getNormalTexture(tiledef->name);
+	}
+	tile->flags_texture = tsrc->getShaderFlagsTexture(tiledef, tile);
 
 	// Material flags
 	tile->material_flags = 0;
@@ -1296,6 +1317,7 @@ void CNodeDefManager::fillTileAttribs(ITextureSource *tsrc, TileSpec *tile,
 			frame.texture = tsrc->getTextureForMesh(os.str(), &frame.texture_id);
 			if (tile->normal_texture)
 				frame.normal_texture = tsrc->getNormalTexture(os.str());
+			frame.flags_texture = tile->flags_texture;
 			tile->frames[i] = frame;
 		}
 	}
