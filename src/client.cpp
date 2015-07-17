@@ -729,14 +729,19 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 // Virtual methods from con::PeerHandler
 void Client::peerAdded(u16 peer_id)
 {
-	infostream<<"Client::peerAdded(): peer->id="
-			<<peer_id<<std::endl;
+	infostream << "Client::peerAdded(): peer->id="
+			<< peer_id << std::endl;
 }
 void Client::deletingPeer(u16 peer_id, bool timeout)
 {
-	infostream<<"Client::deletingPeer(): "
+	infostream << "Client::deletingPeer(): "
 			"Server Peer is getting deleted "
-			<<"(timeout="<<timeout<<")"<<std::endl;
+			<< "(timeout=" << timeout << ")" << std::endl;
+
+	if (timeout) {
+		m_access_denied = true;
+		m_access_denied_reason = gettext("Connection timed out.");
+	}
 }
 
 /*

@@ -128,6 +128,9 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("debug_log_level", "2");
 	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
 
+	settings->setDefault("kick_msg_shutdown", "Server shutting down.");
+	settings->setDefault("kick_msg_crash", "This server has experienced an internal error. You will now be disconnected.");
+
 	//
 	// Keymaps
 	//
@@ -401,6 +404,10 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_rollback_recording", "false");
 	settings->setDefault("max_spawn_height", "50");
 	settings->setDefault("time_speed", "72");
+
+	settings->setDefault("kick_msg_shutdown", "Server shutting down.");
+	settings->setDefault("kick_msg_crash", "This server has experienced an internal error. You will now be disconnected.");
+
 
 	// Backend server settings
 	settings->setDefault("max_packets_per_iteration", "1024");
