@@ -68,7 +68,7 @@ function core.stat_formspec(name)
 				.."label["..x[2]..","..y..";"
 				..string.number_to_si(core.stat_get("player|"..key.."|"..name)).."]"
 				.."label["..x[3]..","..y..";"
-				..string.number_to_si(core.stat_get("total|"..key), 4).."]"
+				..string.number_to_si(core.stat_get("total|"..key), 3).."]"
 		end
 	end
 	return formspec

@@ -1063,6 +1063,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 
 #ifndef SERVER
 		// minimap pixel color - the average color of a texture
+		if (tsrc)
 		if (enable_minimap && f->tiledef[0].name != "")
 			f->minimap_color = tsrc->getTextureAverageColor(f->tiledef[0].name);
 #endif
