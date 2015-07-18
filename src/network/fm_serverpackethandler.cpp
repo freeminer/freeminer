@@ -95,7 +95,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		return;
 
 	int command;
-	MsgpackPacket packet;
+	MsgpackPacketSafe packet;
 	msgpack::unpacked msg;
 	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
 		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
@@ -162,9 +162,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		u16 max_net_proto_version = min_net_proto_version;
 		packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
 
-		if (packet.count(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM)) {
-			packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM].convert(&client->net_proto_version_fm);
-		}
+		packet.convert_safe(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM, &client->net_proto_version_fm);
 
 		// Start with client's maximum version
 		u16 net_proto_version = max_net_proto_version;
@@ -497,10 +495,8 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 		int version_patch = 0, version_tweak = 0;
-		if (packet.count(TOSERVER_CLIENT_READY_VERSION_PATCH))
-			version_patch = packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>();
-		if (packet.count(TOSERVER_CLIENT_READY_VERSION_TWEAK))
-			version_tweak = packet[TOSERVER_CLIENT_READY_VERSION_TWEAK].as<int>();
+		packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_PATCH, &version_patch);
+		packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_TWEAK, &version_tweak);
 		if (version_tweak) {} //no warn todo remove
 		m_clients.setClientVersion(
 			peer_id,

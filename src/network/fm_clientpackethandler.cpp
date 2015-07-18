@@ -54,7 +54,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	auto sender_peer_id = pkt->getPeerId();
 
 	int command;
-	MsgpackPacket packet;
+	MsgpackPacketSafe packet;
 	msgpack::unpacked msg;
 
 	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
@@ -187,8 +187,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		if (new_block)
 			block = new MapBlock(&m_env.getMap(), p, this);
 
-		if (packet.count(TOCLIENT_BLOCKDATA_CONTENT_ONLY))
-			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, &block->content_only);
 
 		block->deSerialize(istr, ser_version, false);
 		s32 h; // for convert to atomic

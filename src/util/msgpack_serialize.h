@@ -39,3 +39,19 @@ typedef std::map<int, msgpack::object> MsgpackPacket;
 #include <unordered_map>
 typedef std::unordered_map<int, msgpack::object> MsgpackPacket;
 #endif
+
+template<typename T>
+bool packet_convert_safe(MsgpackPacket & packet, int field, T * to) {
+	if (!packet.count(field))
+		return false;
+	packet[field].convert(to);
+	return true;
+}
+
+class MsgpackPacketSafe : public MsgpackPacket {
+public:
+	template<typename T> 
+	bool convert_safe(int field, T * to) {
+		return packet_convert_safe(*this, field, to);
+	}
+};

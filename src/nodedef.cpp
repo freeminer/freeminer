@@ -225,12 +225,8 @@ void TileDef::msgpack_unpack(msgpack::object o)
 	packet[TILEDEF_ANIMATION_ASPECT_H].convert(&animation.aspect_h);
 	packet[TILEDEF_ANIMATION_LENGTH].convert(&animation.length);
 	packet[TILEDEF_BACKFACE_CULLING].convert(&backface_culling);
-
-	if (packet.count(TILEDEF_TILEABLE_VERTICAL))
-		packet[TILEDEF_TILEABLE_VERTICAL].convert(&tileable_vertical);
-	if (packet.count(TILEDEF_TILEABLE_HORIZONTAL))
-		packet[TILEDEF_TILEABLE_HORIZONTAL].convert(&tileable_horizontal);
-
+	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, &tileable_vertical);
+	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, &tileable_horizontal);
 }
 
 /*
