@@ -111,7 +111,7 @@ class InventoryManager
 public:
 	InventoryManager(){}
 	virtual ~InventoryManager(){}
-	
+
 	// Get an inventory (server and client)
 	virtual Inventory* getInventory(const InventoryLocation &loc){return NULL;}
     // Set modified (will be saved and sent over network; only on server)
@@ -127,7 +127,7 @@ public:
 struct InventoryAction
 {
 	static InventoryAction * deSerialize(std::istream &is);
-	
+
 	virtual u16 getType() const = 0;
 	virtual void serialize(std::ostream &os) const = 0;
 	virtual void apply(InventoryManager *mgr, ServerActiveObject *player,
@@ -152,7 +152,7 @@ struct IMoveAction : public InventoryAction
 	// related to movement to somewhere
 	bool caused_by_move_somewhere;
 	u32 move_count;
-	
+
 	IMoveAction()
 	{
 		count = 0;
@@ -162,7 +162,7 @@ struct IMoveAction : public InventoryAction
 		caused_by_move_somewhere = false;
 		move_count = 0;
 	}
-	
+
 	IMoveAction(std::istream &is, bool somewhere);
 
 	u16 getType() const
@@ -198,13 +198,13 @@ struct IDropAction : public InventoryAction
 	InventoryLocation from_inv;
 	std::string from_list;
 	s16 from_i;
-	
+
 	IDropAction()
 	{
 		count = 0;
 		from_i = -1;
 	}
-	
+
 	IDropAction(std::istream &is);
 
 	u16 getType() const
@@ -231,12 +231,12 @@ struct ICraftAction : public InventoryAction
 	// count=0 means "everything"
 	u16 count;
 	InventoryLocation craft_inv;
-	
+
 	ICraftAction()
 	{
 		count = 0;
 	}
-	
+
 	ICraftAction(std::istream &is);
 
 	u16 getType() const
