@@ -21,37 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "game.h"
-/*
-#include "irrlichttypes_extrabloated.h"
-#include <IGUICheckBox.h>
-#include <IGUIEditBox.h>
-#include <IGUIListBox.h>
-#include <IGUIButton.h>
-#include <IGUIStaticText.h>
-#include <IGUIFont.h>
-#include <IMaterialRendererServices.h>
-#include "IMeshCache.h"
-#include "client.h"
-#include "server.h"
-#include "guiPasswordChange.h"
-#include "guiVolumeChange.h"
-#include "guiKeyChangeMenu.h"
-#include "guiFormSpecMenu.h"
-#include "guiTextInputMenu.h"
-#include "tool.h"
-#include "guiChatConsole.h"
-#include "config.h"
-#include "version.h"
-#include "clouds.h"
-#include "particles.h"
-#include "camera.h"
-#include "mapblock.h"
-#include "settings.h"
-#include "profiler.h"
-#include "mainmenumanager.h"
-#include "gettext.h"
-#include "log_types.h"
-*/
 
 #include <iomanip>
 #include "camera.h"
@@ -98,18 +67,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_SOUND
 	#include "sound_openal.h"
 #endif
-/*
-#include "event_manager.h"
-#include <iomanip>
-#include <list>
-#include "util/directiontables.h"
-#include "util/pointedthing.h"
-#include "guiTable.h"
-#include "util/string.h"
-#include "drawscene.h"
-#include "content_cao.h"
-#include "fontengine.h"
-*/
 
 #ifdef HAVE_TOUCHSCREENGUI
 	#include "touchscreengui.h"
