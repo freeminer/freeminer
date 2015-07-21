@@ -37,7 +37,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define WIELD_SCALE_FACTOR 30.0
 #define WIELD_SCALE_FACTOR_EXTRUDED 40.0
 
-#define MIN_EXTRUSION_MESH_RESOLUTION 32   // not 16: causes too many "holes"
+#define MIN_EXTRUSION_MESH_RESOLUTION 16
 #define MAX_EXTRUSION_MESH_RESOLUTION 512
 
 static scene::IMesh* createExtrusionMesh(int resolution_x, int resolution_y)
@@ -117,6 +117,7 @@ static scene::IMesh* createExtrusionMesh(int resolution_x, int resolution_y)
 	mesh->addMeshBuffer(buf);
 	buf->drop();
 	scaleMesh(mesh, scale);  // also recalculates bounding box
+	mesh = (scene::SMesh *)createForsythOptimizedMesh(mesh);
 	return mesh;
 }
 
@@ -284,7 +285,9 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 
 	// Customize material
 	video::SMaterial &material = m_meshnode->getMaterial(0);
-	material.setTexture(0, tsrc->getTextureForMesh(imagename));
+	material.setTexture(0, tsrc->getTexture(imagename));
+	material.TextureLayer[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
+	material.TextureLayer[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE; 
 	material.MaterialType = m_material_type;
 	material.setFlag(video::EMF_BACK_FACE_CULLING, true);
 	// Enable bi/trilinear filtering only for high resolution textures
@@ -300,31 +303,25 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	material.setFlag(video::EMF_USE_MIP_MAPS, false);
 #endif
-
-#if 0
-//// TODO(RealBadAngel): Reactivate when shader is added for wield items
-	if (m_enable_shaders)
-		material.setTexture(2, tsrc->getTexture("disable_img.png"));
-#endif
+	if (m_enable_shaders) {
+		material.setTexture(2, tsrc->getShaderFlagsTexture(false, true, true));
+	}
 }
 
 void WieldMeshSceneNode::setItem(const ItemStack &item, IGameDef *gamedef)
 {
 	ITextureSource *tsrc = gamedef->getTextureSource();
 	IItemDefManager *idef = gamedef->getItemDefManager();
-	//IShaderSource *shdrsrc = gamedef->getShaderSource();
+	IShaderSource *shdrsrc = gamedef->getShaderSource();
 	INodeDefManager *ndef = gamedef->getNodeDefManager();
 	const ItemDefinition &def = item.getDefinition(idef);
 	const ContentFeatures &f = ndef->get(def.name);
 	content_t id = ndef->getId(def.name);
 
-#if 0
-//// TODO(RealBadAngel): Reactivate when shader is added for wield items
 	if (m_enable_shaders) {
-		u32 shader_id = shdrsrc->getShader("nodes_shader", TILE_MATERIAL_BASIC, NDT_NORMAL);
+		u32 shader_id = shdrsrc->getShader("wielded_shader", TILE_MATERIAL_BASIC, NDT_NORMAL);
 		m_material_type = shdrsrc->getShaderInfo(shader_id).material;
 	}
-#endif
 
 	// If wield_image is defined, it overrides everything else
 	if (def.wield_image != "") {
@@ -381,8 +378,6 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, IGameDef *gamedef)
 				material.setTexture(0, f.tiles[i].texture);
 			}
 			material.MaterialType = m_material_type;
-#if 0
-//// TODO(RealBadAngel): Reactivate when shader is added for wield items
 			if (m_enable_shaders) {
 				if (f.tiles[i].normal_texture) {
 					if (animated) {
@@ -391,12 +386,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, IGameDef *gamedef)
 					} else {
 						material.setTexture(1, f.tiles[i].normal_texture);
 					}
-					material.setTexture(2, tsrc->getTexture("enable_img.png"));
-				} else {
-					material.setTexture(2, tsrc->getTexture("disable_img.png"));
 				}
+				material.setTexture(2, f.tiles[i].flags_texture);
 			}
-#endif
 		}
 		return;
 	}
@@ -413,6 +405,7 @@ void WieldMeshSceneNode::setColor(video::SColor color)
 {
 	assert(!m_lighting);
 	setMeshColor(m_meshnode->getMesh(), color);
+	shadeMeshFaces(m_meshnode->getMesh());
 }
 
 void WieldMeshSceneNode::render()

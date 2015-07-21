@@ -166,7 +166,6 @@ private:
 	u8 m_wieldlight_add;
 
 	WieldMeshSceneNode* m_wieldnode;
-	scene::ILightSceneNode* m_wieldlightnode;
 
 	// draw control
 	MapDrawControl& m_draw_control;
