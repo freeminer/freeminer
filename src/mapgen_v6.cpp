@@ -31,7 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "content_mapnode.h" // For content_mapnode_get_new_name
 #include "voxelalgorithms.h"
-#include "profiler.h"
 #include "settings.h" // For g_settings
 #include "log_types.h"
 #include "emerge.h"

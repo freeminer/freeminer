@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "nodedef.h"
 #include "voxelalgorithms.h"
-#include "profiler.h"
 #include "emerge.h"
 
 

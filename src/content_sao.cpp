@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "collision.h"
 #include "environment.h"
 #include "settings.h"
-#include "profiler.h"
 #include "serialization.h" // For compressZlib
 #include "tool.h" // For ToolCapabilities
 #include "gamedef.h"
