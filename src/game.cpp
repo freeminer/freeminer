@@ -2508,7 +2508,7 @@ bool Game::getServerContent(bool *aborted)
 			time_counter = 0;
 		}
 		time_counter += dtime < dtime_start ? dtime : dtime - dtime_start;
-		if (time_counter > CONNECTION_TIMEOUT * timeout_mul) {
+		if (time_counter > CONNECTION_TIMEOUT * 5 * timeout_mul) {
 			flags.reconnect = 1;
 			*aborted = true;
 			return false;

@@ -495,8 +495,10 @@ void Client::step(float dtime)
 	if(counter >= 10) {
 		counter = 0.0;
 		// connectedAndInitialized() is true, peer exists.
+#if MINETEST_PROTO
 		float avg_rtt = getRTT();
 		infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
+#endif
 
 		sendDrawControl(); //not very good place. maybe 5s timer better
 	}
@@ -1877,22 +1879,31 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 
 float Client::getRTT(void)
 {
+#if MINETEST_PROTO
+	return m_con.getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
+#else
 	return 0;
-	//return m_con.getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
+#endif
 }
 
 float Client::getCurRate(void)
 {
+#if MINETEST_PROTO
+	return ( m_con.getLocalStat(con::CUR_INC_RATE) +
+			m_con.getLocalStat(con::CUR_DL_RATE));
+#else
 	return 0;
-//	return ( m_con.getLocalStat(con::CUR_INC_RATE) +
-//			m_con.getLocalStat(con::CUR_DL_RATE));
+#endif
 }
 
 float Client::getAvgRate(void)
 {
+#if MINETEST_PROTO
+	return ( m_con.getLocalStat(con::AVG_INC_RATE) +
+			m_con.getLocalStat(con::AVG_DL_RATE));
+#else
 	return 0;
-//	return ( m_con.getLocalStat(con::AVG_INC_RATE) +
-//			m_con.getLocalStat(con::AVG_DL_RATE));
+#endif
 }
 
 void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)

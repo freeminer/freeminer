@@ -380,7 +380,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("server_url", "");
 	settings->setDefault("enable_remote_media_server", "true");
 	settings->setDefault("remote_media", "");
-	settings->setDefault("timeout_mul", android ? "10" : "1");
+	settings->setDefault("timeout_mul", android ? "5" : "1");
 
 	// Check when player joins
 	settings->setDefault("strict_protocol_version_checking", "false");
@@ -504,7 +504,7 @@ void set_default_settings(Settings *settings) {
 	// Tweaks for windows
 	//
 
-	settings->setDefault("more_threads", win32 ? "false" : "true");
+	settings->setDefault("more_threads", "true");
 
 #if !defined(SERVER) && defined(_WIN32)
 	settings->setDefault("console_enabled", debug ? "true" : "false");

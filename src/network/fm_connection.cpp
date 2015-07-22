@@ -241,11 +241,12 @@ void Connection::receive()
 		if (m_peers.count(PEER_ID_SERVER))
 			deletePeer(PEER_ID_SERVER,  false);
 	} else { //0
-		if (m_peers.count(PEER_ID_SERVER)) { //ugly fix. todo: fix enet and remove
+		if (m_peers.count(PEER_ID_SERVER) && m_last_recieved) { //ugly fix. todo: fix enet and remove
 			unsigned int time = porting::getTimeMs();
-			const unsigned int t1 = 10000, t2 = 20000 * timeout_mul, t3 = 30000 * timeout_mul;
-			if (time - m_last_recieved > t1 && m_last_recieved_warn > t2 && m_last_recieved_warn < t3) {
-				errorstream<<"connection lost [30s], disconnecting."<<std::endl;
+			const unsigned int t1 = 10000, t2 = 30000 * timeout_mul, t3 = 60000 * timeout_mul;
+			unsigned int wait = time - m_last_recieved;
+			if (wait > t3 && m_last_recieved_warn > t2) {
+				errorstream<<"connection lost [60s], disconnecting."<<std::endl;
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
 				if (0)
@@ -256,13 +257,13 @@ void Connection::receive()
 				}
 				m_last_recieved_warn = 0;
 				m_last_recieved = 0;
-			} else if (time - m_last_recieved > t2 && m_last_recieved_warn > t1 && m_last_recieved_warn < t2) {
-				errorstream<<"connection lost [20s]!"<<std::endl;
+			} else if (wait > t2 && m_last_recieved_warn > t1 && m_last_recieved_warn < t2) {
+				errorstream<<"connection lost [30s]!"<<std::endl;
 				m_last_recieved_warn = time - m_last_recieved;
-			} else if (time - m_last_recieved > t1 && m_last_recieved_warn < t1) {
+			} else if (wait > t1 && m_last_recieved_warn < t1) {
 				errorstream<<"connection lost [10s]? ping."<<std::endl;
 				enet_peer_ping(m_peers.get(PEER_ID_SERVER));
-				m_last_recieved_warn = time - m_last_recieved;
+				m_last_recieved_warn = wait;
 			}
 		}
 	}
@@ -588,8 +589,15 @@ bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *
 
 		*command = (*packet)[MSGPACK_COMMAND].as<int>();
 	}
-	catch (msgpack::type_error) { return false; }
-	catch (msgpack::unpack_error) { return false; }
+	catch (msgpack::type_error e) {
+		verbosestream<<"msgpack::type_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		return false;
+	}
+	catch (msgpack::unpack_error e) {
+		verbosestream<<"msgpack::unpack_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		//verbosestream<<"bad data:["<< std::string(data, datasize) <<"]"<<std::endl;
+		return false;
+	}
 	return true;
 }
 

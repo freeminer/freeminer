@@ -62,7 +62,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		return;
 	}
 
-	//infostream<<"Client: received command="<<command<<std::endl;
+	//infostream<<"Client: received command="<<command << " size=" << datasize<<std::endl;
 	m_packetcounter.add((u16)command);
 
 	/*
