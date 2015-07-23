@@ -170,8 +170,9 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	ChatBackend chat_backend;
 
 	// If an error occurs, this is set to something by menu().
-	// It is then displayed before	the menu shows on the next call to menu()
+	// It is then displayed before the menu shows on the next call to menu()
 	std::string error_message;
+	bool reconnect_requested = false;
 
 	bool first_loop = true;
 
@@ -199,7 +200,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			*/
 			guiroot = guienv->addStaticText(L"", core::rect<s32>(0, 0, 10000, 10000));
 
-			bool game_has_run = launch_game(error_message, game_params, cmd_args);
+			bool game_has_run = launch_game(error_message, reconnect_requested,
+				game_params, cmd_args);
 
 			// If skip_main_menu, we only want to startup once
 			if (skip_main_menu && !first_loop)
@@ -240,6 +242,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 #endif
 			int tries = simple_singleplayer_mode ? 1 : g_settings->getU16("reconnects");
 			int n = 0;
+
 			while(!*kill && ++n <= tries &&
 			the_game(
 				kill,
@@ -253,6 +256,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 				current_port,
 				error_message,
 				chat_backend,
+				&reconnect_requested,
 				gamespec,
 				simple_singleplayer_mode
 				, autoexit
@@ -352,14 +356,16 @@ bool ClientLauncher::init_engine(int log_level)
 }
 
 bool ClientLauncher::launch_game(std::string &error_message,
-		GameParams &game_params, const Settings &cmd_args)
+		bool reconnect_requested, GameParams &game_params,
+		const Settings &cmd_args)
 {
 	// Initialize menu data
 	MainMenuData menudata;
-	menudata.address      = address;
-	menudata.name         = playername;
-	menudata.port         = itos(game_params.socket_port);
-	menudata.errormessage = error_message;
+	menudata.address                         = address;
+	menudata.name                            = playername;
+	menudata.port                            = itos(game_params.socket_port);
+	menudata.script_data.errormessage        = error_message;
+	menudata.script_data.reconnect_requested = reconnect_requested;
 
 	error_message.clear();
 
@@ -409,11 +415,11 @@ bool ClientLauncher::launch_game(std::string &error_message,
 			simple_singleplayer_mode = 1;
 	}
 
-	if (!menudata.errormessage.empty()) {
+	if (!menudata.script_data.errormessage.empty()) {
 		/* The calling function will pass this back into this function upon the
 		 * next iteration (if any) causing it to be displayed by the GUI
 		 */
-		error_message = menudata.errormessage;
+		error_message = menudata.script_data.errormessage;
 		return false;
 	}
 

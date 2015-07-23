@@ -1477,8 +1477,7 @@ struct VolatileRunFlags {
  * hides most of the stuff in this class (nothing in this class is required
  * by any other file) but exposes the public methods/data only.
  */
-class Game
-{
+class Game {
 public:
 	Game();
 	~Game();
@@ -1494,6 +1493,7 @@ public:
 			std::string *address,
 			u16 port,
 			std::string &error_message,
+			bool *reconnect,
 			ChatBackend *chat_backend,
 			const SubgameSpec &gamespec,    // Used for local game
 			bool simple_singleplayer_mode);
@@ -1652,6 +1652,7 @@ private:
 	scene::ISceneManager *smgr;
 	bool *kill;
 	std::string *error_message;
+	bool *reconnect_requested;
 	IGameDef *gamedef;                     // Convenience (same as *client)
 	scene::ISceneNode *skybox;
 
@@ -1797,17 +1798,19 @@ bool Game::startup(bool *kill,
 		std::string *address,     // can change if simple_singleplayer_mode
 		u16 port,
 		std::string &error_message,
+		bool *reconnect,
 		ChatBackend *chat_backend,
 		const SubgameSpec &gamespec,
 		bool simple_singleplayer_mode)
 {
 	// "cache"
-	this->device        = device;
-	this->kill          = kill;
-	this->error_message = &error_message;
-	this->random_input  = random_input;
-	this->input         = input;
-	this->chat_backend  = chat_backend;
+	this->device              = device;
+	this->kill                = kill;
+	this->error_message       = &error_message;
+	this->reconnect_requested = reconnect;
+	this->random_input        = random_input;
+	this->input               = input;
+	this->chat_backend        = chat_backend;
 	this->simple_singleplayer_mode = simple_singleplayer_mode;
 
 	driver              = device->getVideoDriver();
@@ -2376,6 +2379,7 @@ bool Game::connectToServer(const std::string &playername,
 			if (client->accessDenied()) {
 				*error_message = "Access denied. Reason: "
 						+ client->accessDeniedReason();
+				*reconnect_requested = client->reconnectRequested();
 				errorstream << *error_message << std::endl;
 				return false;
 			}
@@ -2545,6 +2549,7 @@ inline bool Game::checkConnection()
 	if (client->accessDenied()) {
 		*error_message = "Access denied. Reason: "
 				+ client->accessDeniedReason();
+		*reconnect_requested = client->reconnectRequested();
 		errorstream << *error_message << std::endl;
 		return false;
 	}
@@ -4780,6 +4785,7 @@ bool the_game(bool *kill,
 
 		std::string &error_message,
 		ChatBackend &chat_backend,
+		bool *reconnect_requested,
 		const SubgameSpec &gamespec,        // Used for local game
 		bool simple_singleplayer_mode,
 		unsigned int autoexit
@@ -4798,8 +4804,8 @@ bool the_game(bool *kill,
 
 		game.runData  = { 0 };
 		if (game.startup(kill, random_input, input, device, map_dir,
-				playername, password, &server_address, port,
-				error_message, &chat_backend, gamespec,
+				playername, password, &server_address, port, error_message,
+				reconnect_requested, &chat_backend, gamespec,
 				simple_singleplayer_mode)) {
 			started = true;
 			game.runData.autoexit = autoexit;

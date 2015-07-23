@@ -150,6 +150,7 @@ bool the_game(bool *kill,
 		u16 port,
 		std::string &error_message,
 		ChatBackend &chat_backend,
+		bool *reconnect_requested,
 		const SubgameSpec &gamespec, // Used for local game
 		bool simple_singleplayer_mode,
 		unsigned int autoexit

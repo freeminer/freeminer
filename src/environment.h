@@ -51,6 +51,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <unordered_set>
+//#include "jthread/jmutex.h"
+#include "network/networkprotocol.h" // for AccessDeniedCode
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -267,7 +269,8 @@ public:
 
 	KeyValueStorage *getKeyValueStorage();
 
-	void kickAllPlayers(const std::string &reason);
+	void kickAllPlayers(AccessDeniedCode reason,
+		const std::string &str_reason, bool reconnect);
 	// Save players
 	void saveLoadedPlayers();
 	void savePlayer(const std::string &playername);

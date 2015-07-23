@@ -257,8 +257,13 @@ public:
 			{ return m_shutdown_requested; }
 
 	// request server to shutdown
-	inline void requestShutdown(void)
-			{ m_shutdown_requested = true; }
+	inline void requestShutdown() { m_shutdown_requested = true; }
+	void requestShutdown(const std::string &msg, bool reconnect)
+	{
+		m_shutdown_requested = true;
+		m_shutdown_msg = msg;
+		m_shutdown_ask_reconnect = reconnect;
+	}
 
 	// Returns -1 if failed, sound handle on success
 	// Envlock
@@ -383,6 +388,8 @@ public:
 	void deletingPeer(u16 peer_id, bool timeout);
 
 	void DenySudoAccess(u16 peer_id);
+	void DenyAccessVerCompliant(u16 peer_id, u16 proto_ver, AccessDeniedCode reason,
+		const std::string &str_reason = "", bool reconnect = false);
 	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason="");
 
 	//fmtodo: remove:
@@ -412,7 +419,8 @@ private:
 	void SendMovement(u16 peer_id);
 	void SendHP(u16 peer_id, u8 hp);
 	void SendBreath(u16 peer_id, u16 breath);
-	void SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason);
+	void SendAccessDenied(u16 peer_id, AccessDeniedCode reason,
+		const std::string &custom_reason, bool reconnect = false);
 	void SendAccessDenied_Legacy(u16 peer_id, const std::string &reason);
 	void SendDeathscreen(u16 peer_id,bool set_camera_point_target, v3f camera_point_target);
 	void SendItemDef(u16 peer_id,IItemDefManager *itemdef, u16 protocol_version);
@@ -524,7 +532,7 @@ private:
 
 		Call with env and con locked.
 	*/
-	PlayerSAO *emergePlayer(const char *name, u16 peer_id);
+	PlayerSAO *emergePlayer(const char *name, u16 peer_id, u16 proto_version);
 
 	void handlePeerChanges();
 
@@ -651,6 +659,8 @@ private:
 	*/
 
 	bool m_shutdown_requested;
+	std::string m_shutdown_msg;
+	bool m_shutdown_ask_reconnect;
 
 	/*
 		Map edit event queue. Automatically receives all map edits.

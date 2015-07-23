@@ -494,6 +494,8 @@ public:
 	bool accessDenied()
 	{ return m_access_denied; }
 
+	bool reconnectRequested() { return m_access_denied_reconnect; }
+
 	std::string accessDeniedReason()
 	{ return m_access_denied_reason; }
 
@@ -644,6 +646,7 @@ private:
 	void * m_auth_data;
 
 	bool m_access_denied;
+	bool m_access_denied_reconnect;
 	std::string m_access_denied_reason;
 	Queue<ClientEvent> m_client_event_queue;
 	//std::queue<ClientEvent> m_client_event_queue;

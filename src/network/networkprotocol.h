@@ -236,7 +236,8 @@ enum {
 #define TOCLIENT_ACCESS_DENIED 0x0A
 	/*
 		u8 reason
-		std::string custom reason (if reason == SERVER_ACCESSDENIED_CUSTOM_STRING)
+		std::string custom reason (if needed, otherwise "")
+		u8 (bool) reconnect
 	*/
 
 #define TOCLIENT_BLOCKDATA 0x20
@@ -345,7 +346,8 @@ enum {
 	// string
 	TOCLIENT_ACCESS_DENIED_CUSTOM_STRING,
 	// u16 command
-	TOCLIENT_ACCESS_DENIED_REASON
+	TOCLIENT_ACCESS_DENIED_REASON,
+	TOCLIENT_ACCESS_DENIED_RECONNECT
 };
 	/*
 		u16 command
@@ -1009,6 +1011,8 @@ enum AccessDeniedCode {
 	SERVER_ACCESSDENIED_ALREADY_CONNECTED,
 	SERVER_ACCESSDENIED_SERVER_FAIL,
 	SERVER_ACCESSDENIED_CUSTOM_STRING,
+	SERVER_ACCESSDENIED_SHUTDOWN,
+	SERVER_ACCESSDENIED_CRASH,
 	SERVER_ACCESSDENIED_MAX,
 };
 
@@ -1026,8 +1030,10 @@ const static std::string accessDeniedStrings[SERVER_ACCESSDENIED_MAX] = {
 	"Too many users.",
 	"Empty passwords are disallowed.  Set a password and try again.",
 	"Another client is connected with this name.  If your client closed unexpectedly, try again in a minute.",
-	"Server authention failed.  This is likely a server error."
+	"Server authentication failed.  This is likely a server error.",
 	"",
+	"Server shutting down.",
+	"This server has experienced an internal error. You will now be disconnected."
 };
 
 #endif

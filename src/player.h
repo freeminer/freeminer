@@ -368,9 +368,10 @@ public:
 	float hurt_tilt_strength;
 
 	bool zoom;
-	bool  superspeed;
-	bool  free_move;
+	bool superspeed;
+	bool free_move;
 
+	u16 protocol_version;
 	std::atomic_short peer_id;
 
 	std::string inventory_formspec;

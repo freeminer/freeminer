@@ -59,12 +59,13 @@ void Server::SendBreath(u16 peer_id, u16 breath)
 	m_clients.send(peer_id, 0, buffer, true);
 }
 
-void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason)
+void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason, bool reconnect)
 {
 	DSTACK(__FUNCTION_NAME);
-	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED_LEGACY, 1);
+	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED_LEGACY, 3);
 	PACK(TOCLIENT_ACCESS_DENIED_CUSTOM_STRING, custom_reason);
 	PACK(TOCLIENT_ACCESS_DENIED_REASON, (int)reason);
+	PACK(TOCLIENT_ACCESS_DENIED_RECONNECT, reconnect);
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);

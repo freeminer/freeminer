@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class ModApiServer : public ModApiBase {
 private:
-	// request_shutdown()
+	// request_shutdown([message], [reconnect])
 	static int l_request_shutdown(lua_State *L);
 
 	// get_server_status()
