@@ -83,7 +83,7 @@ sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake msgpac
 ___
 Gentoo/Funtoo:
 ```bash
-emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht dev-libs/msgpack dev-libs/leveldb
+emerge -av media-libs/libvorbis media-libs/openal dev-games/irrlicht '<dev-libs/msgpack-1.0.0' dev-libs/leveldb
 ```
 ___
 OS X:
