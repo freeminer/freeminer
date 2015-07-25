@@ -168,27 +168,7 @@ static struct NGHex global_Ng_constants[] = {
 };
 
 
-static NGConstant *new_ng( SRP_NGType ng_type, const char *n_hex, const char *g_hex )
-{
-	NGConstant *ng = (NGConstant *) malloc(sizeof(NGConstant));
-	mpz_init(ng->N);
-	mpz_init(ng->g);
-
-	if (!ng || !ng->N || !ng->g)
-		return 0;
-
-	if (ng_type != SRP_NG_CUSTOM) {
-		n_hex = global_Ng_constants[ ng_type ].n_hex;
-		g_hex = global_Ng_constants[ ng_type ].g_hex;
-	}
-
-	mpz_set_str(ng->N, n_hex, 16);
-	mpz_set_str(ng->g, g_hex, 16);
-
-	return ng;
-}
-
-static void delete_ng( NGConstant *ng )
+static void delete_ng(NGConstant *ng)
 {
 	if (ng) {
 		mpz_clear(ng->N);
@@ -197,6 +177,31 @@ static void delete_ng( NGConstant *ng )
 	}
 }
 
+static NGConstant *new_ng( SRP_NGType ng_type, const char *n_hex, const char *g_hex )
+{
+	NGConstant *ng = (NGConstant *) malloc(sizeof(NGConstant));
+	mpz_init(ng->N);
+	mpz_init(ng->g);
+
+	if (!ng)
+		return 0;
+
+	if (ng_type != SRP_NG_CUSTOM) {
+		n_hex = global_Ng_constants[ ng_type ].n_hex;
+		g_hex = global_Ng_constants[ ng_type ].g_hex;
+	}
+
+	int rv = 0;
+	rv = mpz_set_str(ng->N, n_hex, 16);
+	rv = rv | mpz_set_str(ng->g, g_hex, 16);
+
+	if (rv) {
+		delete_ng(ng);
+		return 0;
+	}
+
+	return ng;
+}
 
 
 typedef union
@@ -825,7 +830,7 @@ struct SRPUser *srp_user_new(SRP_HashAlgorithm alg, SRP_NGType ng_type,
 	mpz_init(usr->A);
 	mpz_init(usr->S);
 
-	if (!usr->ng || !usr->a || !usr->A || !usr->S)
+	if (!usr->ng)
 		goto err_exit;
 
 	usr->username = (char*)malloc(ulen);
@@ -851,6 +856,8 @@ err_exit:
 		mpz_clear(usr->a);
 		mpz_clear(usr->A);
 		mpz_clear(usr->S);
+		if (usr->ng)
+			delete_ng(usr->ng);
 		if (usr->username)
 			free(usr->username);
 		if (usr->username_verifier)

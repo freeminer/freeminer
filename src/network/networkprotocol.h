@@ -145,7 +145,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		Add TileDef tileable_horizontal, tileable_vertical flags
 */
 
-#define LATEST_PROTOCOL_VERSION 25
+#define LATEST_PROTOCOL_VERSION 26
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 13
