@@ -743,7 +743,7 @@ void Client::deletingPeer(u16 peer_id, bool timeout)
 
 	if (timeout) {
 		m_access_denied = true;
-		m_access_denied_reason = gettext("Connection timed out.");
+		m_access_denied_reason = _("Connection timed out.");
 	}
 }
 
