@@ -1370,7 +1370,6 @@ MapBlockMesh::~MapBlockMesh()
 		}
 	m_mesh->drop();
 	m_mesh = NULL;
-
 	delete m_minimap_mapblock;
 }
 

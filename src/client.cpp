@@ -546,10 +546,19 @@ void Client::step(float dtime)
 			if(block) {
 				block->setMesh(r.mesh);
 				if (r.mesh) {
-					minimap_mapblock = r.mesh->getMinimapMapblock();
-					r.mesh->m_minimap_mapblock = nullptr;
-					do_mapper_update = (minimap_mapblock != NULL);
+					minimap_mapblock = r.mesh->moveMinimapMapblock();
+					if (minimap_mapblock == NULL)
+						do_mapper_update = false;
 				}
+
+				if (r.mesh && r.mesh->getMesh()->getMeshBufferCount() == 0) {
+					//delete r.mesh;
+				} else {
+					// Replace with the new mesh
+					block->mesh = r.mesh;
+				}
+			} else {
+				//delete r.mesh;
 			}
 			if (do_mapper_update)
 				m_mapper->addBlock(r.p, minimap_mapblock);
