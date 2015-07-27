@@ -170,6 +170,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/fm_map.cpp                        \
 		jni/src/key_value_storage.cpp             \
 		jni/src/log_types.cpp                     \
+		jni/src/areastore.cpp                     \
 		jni/src/ban.cpp                           \
 		jni/src/camera.cpp                        \
 		jni/src/cavegen.cpp                       \
@@ -350,6 +351,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/script/cpp_api/s_player.cpp       \
 		jni/src/script/cpp_api/s_security.cpp     \
 		jni/src/script/cpp_api/s_server.cpp       \
+		jni/src/script/lua_api/l_areastore.cpp    \
 		jni/src/script/lua_api/l_base.cpp         \
 		jni/src/script/lua_api/l_craft.cpp        \
 		jni/src/script/lua_api/l_env.cpp          \

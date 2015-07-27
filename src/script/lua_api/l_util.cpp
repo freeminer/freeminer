@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 #include "json/json.h"
 #include "cpp_api/s_security.h"
+#include "areastore.h"
 #include "debug.h"
 #include "porting.h"
 #include "log.h"

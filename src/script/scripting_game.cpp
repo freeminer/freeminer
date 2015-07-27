@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "settings.h"
 #include "cpp_api/s_internal.h"
+#include "lua_api/l_areastore.h"
 #include "lua_api/l_base.h"
 #include "lua_api/l_craft.h"
 #include "lua_api/l_env.h"
@@ -96,6 +97,7 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 
 	// Register reference classes (userdata)
 	InvRef::Register(L);
+	LuaAreaStore::Register(L);
 	LuaItemStack::Register(L);
 	LuaPerlinNoise::Register(L);
 	LuaPerlinNoiseMap::Register(L);
