@@ -141,7 +141,7 @@ FREETYPE_URL_GIT = https://github.com/cdave1/freetype2-android
 
 ICONV_VERSION = 1.14
 ICONV_DIR = $(ROOT)/deps/libiconv/
-ICONV_LIB = $(ICONV_DIR)/iconv.so
+ICONV_LIB = $(ICONV_DIR)/lib/.libs/libiconv.so
 ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
@@ -314,7 +314,7 @@ openssl_download :
 		wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1;                                         \
 		tar -xzf ${OPENSSL_BASEDIR}.tar.gz;                                    \
 		cd ${OPENSSL_BASEDIR};                                                 \
-		@patch -p1 < ../../openssl_arch.patch; \
+		patch -p1 < ../../openssl_arch.patch || true; \
 	fi
 
 openssl : $(OPENSSL_LIB)
@@ -455,52 +455,55 @@ $(ICONV_TIMESTAMP) : iconv_download
 	fi
 
 iconv_download :
-	@if [ ! -d ${ICONV_DIR} ] ; then                                        \
-		echo "iconv sources missing, downloading...";                       \
-		mkdir -p ${ROOT}/deps;                                                 \
-		cd ${ROOT}/deps;                                                               \
-		wget -O libiconv-${ICONV_VERSION}.tar.gz ${ICONV_URL_HTTP} || exit 1;                                    \
-		tar -xzf libiconv-${ICONV_VERSION}.tar.gz || exit 1;                     \
-		rm libiconv-${ICONV_VERSION}.tar.gz;                                     \
-		ln -s libiconv-${ICONV_VERSION} libiconv;                                      \
-		cd ${ICONV_DIR};                                                                   \
-		patch -p1 < ${ROOT}/libiconv_android.patch;                                                     \
-		patch -p1 < ${ROOT}/libiconv_android_mk.patch;                                                     \
-		patch -p1 < ${ROOT}/libiconv_stdio.patch;                                                     \
-		cd jni;                                                                       \
-		ln -s .. src;                                                                         \
+	@if [ ! -d ${ICONV_DIR} ] ; then                                           \
+		echo "iconv sources missing, downloading...";                      \
+		mkdir -p ${ROOT}/deps;                                             \
+		cd ${ROOT}/deps;                                                   \
+		wget -O libiconv-${ICONV_VERSION}.tar.gz ${ICONV_URL_HTTP} || exit 1; \
+		tar -xzf libiconv-${ICONV_VERSION}.tar.gz || exit 1;               \
+		rm libiconv-${ICONV_VERSION}.tar.gz;                               \
+		ln -s libiconv-${ICONV_VERSION} libiconv;                          \
+		cd ${ICONV_DIR};                                                   \
+		patch -p1 < ${ROOT}/libiconv_android.patch;                        \
+		patch -p1 < ${ROOT}/libiconv_stdio.patch;                          \
 	fi
 
 iconv : $(ICONV_LIB)
 
 $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 	@REFRESH=0;                                                                \
-	if [ ! -e ${ICONV_TIMESTAMP_INT} ] ; then                               \
-		REFRESH=1;                                                             \
+	if [ ! -e ${ICONV_TIMESTAMP_INT} ] ; then                                  \
+		REFRESH=1;                                                         \
 	fi;                                                                        \
-	if [ ! -e ${ICONV_LIB} ] ; then                                         \
-		REFRESH=1;                                                             \
+	if [ ! -e ${ICONV_LIB} ] ; then                                            \
+		REFRESH=1;                                                         \
 	fi;                                                                        \
-	if [ ${ICONV_TIMESTAMP} -nt ${ICONV_TIMESTAMP_INT} ] ; then          \
-		REFRESH=1;                                                             \
+	if [ ${ICONV_TIMESTAMP} -nt ${ICONV_TIMESTAMP_INT} ] ; then                \
+		REFRESH=1;                                                         \
 	fi;                                                                        \
 	if [ $$REFRESH -ne 0 ] ; then                                              \
-	mkdir -p ${ICONV_DIR};                                                  \
+	mkdir -p ${ICONV_DIR};                                                     \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \
-	echo "changed timestamp for iconv detected building...";                \
-	cd ${ICONV_DIR};                                            \
-	./configure;                                            \
-	make;                                            \
-	export NDK_PROJECT_PATH=${ICONV_DIR};                                \
-	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH}              \
-	APP_PLATFORM=${APP_PLATFORM} APP_ABI=${TARGET_ABI}                         \
-	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
-	TARGET_LDFLAGS+="${TARGET_LDFLAGS_ADDON}"                                  \
-	TARGET_CXXFLAGS+="${TARGET_CXXFLAGS_ADDON}" || exit 1;                     \
-	touch ${ICONV_TIMESTAMP};                                               \
-	touch ${ICONV_TIMESTAMP_INT};                                           \
+	echo "changed timestamp for iconv detected building...";                   \
+	cd ${ICONV_DIR};                                                           \
+	\
+	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-iconv;                            \
+	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--install-dir=$${TOOLCHAIN};                                               \
+	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
+	export CC=${CROSS_PREFIX}gcc;                                              \
+	export CXX=${CROSS_PREFIX}g++;                                             \
+	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
+	./configure --host=${TARGET_HOST} || exit 1;                               \
+	sed -i 's/LIBICONV_VERSION_INFO) /LIBICONV_VERSION_INFO) -avoid-version /g' lib/Makefile; \
+	grep "iconv_LDFLAGS" src/Makefile;                                         \
+	$(MAKE) -s || exit 1;                                                      \
+	touch ${ICONV_TIMESTAMP};                                                  \
+	touch ${ICONV_TIMESTAMP_INT};                                              \
+	rm -rf ${TOOLCHAIN};                                                       \
 	else                                                                       \
-		echo "nothing to be done for iconv";                                \
+		echo "nothing to be done for iconv";                               \
 	fi
 
 clean_iconv :
@@ -709,7 +712,7 @@ $(ASSETS_TIMESTAMP) : $(IRRLICHT_LIB)
 	for DIRNAME in {builtin,client,doc,fonts,games,mods,po,textures}; do        \
 		LAST_MODIF=$$(find ${ROOT}/../../${DIRNAME} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
 		if [ $$(basename $$LAST_MODIF) != "timestamp" ]; then               \
-			touch ${ROOT}/../../${DIRNAME}/timestamp;                     \
+			touch ${ROOT}/../../${DIRNAME}/timestamp;                   \
 			touch ${ASSETS_TIMESTAMP};                                  \
 			echo ${DIRNAME} changed $$LAST_MODIF;                       \
 		fi;                                                                 \
@@ -1070,8 +1073,8 @@ manifest :
 		DBG_FLAG="android:debuggable=\"true\"";                                \
 	fi;                                                                        \
 	cat ${ROOT}/AndroidManifest.xml.template |                                 \
-	sed s/###ANDROID_VERSION###/${ANDROID_VERSION_CODE}/g |                    \
-	sed s/###BASE_VERSION###/$$BASE_VERSION/g |                                \
+	sed "s/###ANDROID_VERSION###/${ANDROID_VERSION_CODE}/g" |                  \
+	sed "s/###BASE_VERSION###/$$BASE_VERSION/g" |                              \
 	sed -e "s@###DEBUG_BUILD###@$$DBG@g" |                                     \
 	sed -e "s@###DEBUG_FLAG###@$$DBG_FLAG@g" >${ROOT}/AndroidManifest.xml
 

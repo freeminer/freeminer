@@ -27,8 +27,10 @@ include $(PREBUILT_STATIC_LIBRARY)
 ifdef NOT_USED_ICONV
 include $(CLEAR_VARS)
 LOCAL_MODULE := iconv
-LOCAL_SRC_FILES := deps/libiconv/obj/local/$(TARGET_ARCH_ABI)/libiconv.a
-include $(PREBUILT_STATIC_LIBRARY)
+#LOCAL_SRC_FILES := deps/libiconv/obj/local/$(TARGET_ARCH_ABI)/libiconv.a
+#include $(PREBUILT_STATIC_LIBRARY)
+LOCAL_SRC_FILES := deps/libiconv/lib/.libs/libiconv.so
+include $(PREBUILT_SHARED_LIBRARY)
 endif
 
 include $(CLEAR_VARS)
@@ -419,8 +421,8 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/jthread/pthread/jevent.cpp        \
 		jni/src/jthread/pthread/jsemaphore.cpp
 
-LOCAL_SHARED_LIBRARIES := openal ogg vorbis gmp
-LOCAL_STATIC_LIBRARIES := Irrlicht iconv freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
+LOCAL_SHARED_LIBRARIES := iconv openal ogg vorbis gmp
+LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
 
 #freeminer:
 LOCAL_STATIC_LIBRARIES += msgpack jsoncpp gettext
