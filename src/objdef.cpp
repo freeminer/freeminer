@@ -31,14 +31,18 @@ ObjDefManager::ObjDefManager(IGameDef *gamedef, ObjDefType type)
 
 ObjDefManager::~ObjDefManager()
 {
+	clear();
+/*
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
+*/
 }
 
 
 ObjDefHandle ObjDefManager::add(ObjDef *obj)
 {
-	assert(obj);
+	if (!obj)
+		return OBJDEF_INVALID_HANDLE;
 
 	if (obj->name.length() && getByName(obj->name))
 		return OBJDEF_INVALID_HANDLE;
@@ -129,11 +133,10 @@ ObjDef *ObjDefManager::getByName(const std::string &name) const
 
 void ObjDefManager::clear()
 {
-	clear();
-/*
 	for (size_t i = 0; i != m_objects.size(); i++)
 		delete m_objects[i];
-*/
+
+	m_objects.clear();
 }
 
 
