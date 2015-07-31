@@ -146,7 +146,7 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3081002
+SQLITE3_FOLDER = sqlite-amalgamation-3081101
 SQLITE3_URL = http://www.sqlite.org/2015/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
