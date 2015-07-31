@@ -1000,8 +1000,9 @@ apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARG
 	echo "You can install it with \`adb install -r bin/freeminer-$$BUILD_TYPE.apk\`"
 
 prep_srcdir :
-	@rm ${ROOT}/jni/src;                                                       \
-	ln -s ${ROOT}/../../src ${ROOT}/jni/src
+	@if [ ! -e ${ROOT}/jni/src ]; then                                         \
+		ln -s ${ROOT}/../../src ${ROOT}/jni/src;                           \
+	fi
 
 clean_apk : manifest
 	@export PATH=$$PATH:${SDKFOLDER}platform-tools:${ANDROID_NDK};             \
@@ -1028,32 +1029,38 @@ clean_all :
 	sleep 1;                                                                   \
 	$(RM) -r gen libs obj deps bin Debug and_env
 
-$(ROOT)/jni/src/android_version.h :
-	@echo "#ifndef ANDROID_MT_VERSION_H"                                       \
-	>${ROOT}/jni/src/android_version.h;                                        \
-	echo "#define ANDROID_MT_VERSION_H"                                        \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_MAJOR $$(cat ${ROOT}/../../CMakeLists.txt |          \
-	grep ^set\(VERSION_MAJOR\ | sed 's/)/ /' | awk '{print $$2;}')"            \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_MINOR $$(cat ${ROOT}/../../CMakeLists.txt |          \
-	grep ^set\(VERSION_MINOR\ | sed 's/)/ /' | awk '{print $$2;}')"            \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_PATCH $$(cat ${ROOT}/../../CMakeLists.txt |          \
-	grep ^set\(VERSION_PATCH\ | sed 's/)/ /' | awk '{print $$2;}')"            \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_TWEAK $$(cat ${ROOT}/../../CMakeLists.txt |          \
-	grep ^set\(VERSION_TWEAK\ | sed 's/)/ /' | awk '{print $$2;}')"            \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
+$(ROOT)/jni/src/android_version.h : prep_srcdir
+	@export VERSION_FILE=${ROOT}/jni/src/android_version.h;                    \
+	export VERSION_FILE_NEW=$${VERSION_FILE}.new;                              \
+	{                                                                          \
+	echo "#ifndef ANDROID_MT_VERSION_H";                                       \
+	echo "#define ANDROID_MT_VERSION_H";                                       \
+	export CMAKE_FILE=${ROOT}/../../CMakeLists.txt;                            \
+	export VERSION_MAJOR=$$(cat $${CMAKE_FILE} |                               \
+	grep ^set\(VERSION_MAJOR\ | sed 's/)/ /' | cut -f2 -d' ');                 \
+	export VERSION_MINOR=$$(cat $${CMAKE_FILE} |                               \
+	grep ^set\(VERSION_MINOR\ | sed 's/)/ /' | cut -f2 -d' ');                 \
+	export VERSION_PATCH=$$(cat $${CMAKE_FILE} |                               \
+	grep ^set\(VERSION_PATCH\ | sed 's/)/ /' | cut -f2 -d' ');                 \
+	export VERSION_TWEAK=$$(cat $${CMAKE_FILE} |                               \
+	grep ^set\(VERSION_TWEAK\ | sed 's/)/ /' | cut -f2 -d' ');                 \
+	echo "#define VERSION_MAJOR $${VERSION_MAJOR}";                            \
+	echo "#define VERSION_MINOR $${VERSION_MINOR}";                            \
+	echo "#define VERSION_PATCH $${VERSION_PATCH}";                            \
+	echo "#define VERSION_TWEAK $${VERSION_TWEAK}";                            \
 	export GITHASH=$$(git rev-parse --short=8 HEAD);                           \
-	export GITTAG=$$(git describe --abbrev=0 --tags);                          \
-	echo "#define VERSION_GITHASH \"$$GITTAG-$$GITHASH\""                      \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#define VERSION_STRING STR(VERSION_MAJOR) \".\" STR(VERSION_MINOR)   \
-	 \".\" STR(VERSION_PATCH) \".\" STR(VERSION_TWEAK)"                        \
-	>> ${ROOT}/jni/src/android_version.h;                                      \
-	echo "#endif"                                                              \
-	>> ${ROOT}/jni/src/android_version.h;
+	export VERSION_STR="$${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_PATCH}.$${VERSION_TWEAK}";\
+	echo "#define VERSION_GITHASH \"$$VERSION_STR-$$GITHASH-Android\"";        \
+	echo "#define VERSION_STRING STR(VERSION_MAJOR) \".\" STR(VERSION_MINOR) \
+	\".\" STR(VERSION_PATCH) \".\" STR(VERSION_TWEAK)"; \
+	echo "#endif";                                                             \
+	} > $${VERSION_FILE_NEW};                                                  \
+	if ! cmp -s $${VERSION_FILE} $${VERSION_FILE_NEW}; then                    \
+		echo "android_version.h changed, updating...";                     \
+		mv $${VERSION_FILE_NEW} $${VERSION_FILE};                          \
+	else                                                                       \
+		rm $${VERSION_FILE_NEW};                                           \
+	fi
 
 manifest :
 	@VERS_MAJOR=$$(cat ${ROOT}/../../CMakeLists.txt |                          \
