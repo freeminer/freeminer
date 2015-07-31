@@ -111,8 +111,11 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 		b = (Biome *)m_objects[i];
 		if (!b || y > b->y_max || y < b->y_min)
 			continue;
+		float heat_point = (b->heat_point - 50) * (( mapgen_params->np_biome_heat.offset + mapgen_params->np_biome_heat.scale ) / 100)
+			 + mapgen_params->np_biome_heat.offset;
 
-		float d_heat     = heat     - b->heat_point;
+		float d_heat     = heat     - heat_point;
+
 		float d_humidity = humidity - b->humidity_point;
 		float dist = (d_heat * d_heat) +
 					 (d_humidity * d_humidity);
