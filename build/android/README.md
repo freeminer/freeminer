@@ -24,7 +24,7 @@ wget https://dl.google.com/android/android-sdk_r24.3.3-linux.tgz
 tar xf android-sdk_r24.3.3-linux.tgz
 echo "yyyyyy" | ~/android-sdk-linux/tools/android update sdk --no-ui
 
-#BROKEN echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-tool,android-10,build-tools-22.0.1
+#BROKEN echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-tool,android-15,build-tools-22.0.1
 
 ```
 
