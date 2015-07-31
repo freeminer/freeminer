@@ -117,8 +117,9 @@ static scene::IMesh* createExtrusionMesh(int resolution_x, int resolution_y)
 	mesh->addMeshBuffer(buf);
 	buf->drop();
 	scaleMesh(mesh, scale);  // also recalculates bounding box
-	mesh = (scene::SMesh *)createForsythOptimizedMesh(mesh);
-	return mesh;
+	auto newmesh = (scene::SMesh *)createForsythOptimizedMesh(mesh);
+	mesh->drop();
+	return newmesh;
 }
 
 /*
