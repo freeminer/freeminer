@@ -2848,7 +2848,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
-		if (porting::android_version_sdk_int >= 18) {
+		if (porting::canKeyboard()) {
 			// keyboard shown in GUIModalMenu::preprocessEvent
 			//porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 		} else {

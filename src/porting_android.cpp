@@ -28,6 +28,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include <sstream>
 
+#include "settings.h"
+
 #ifdef GPROF
 #include "prof.h"
 #endif
@@ -323,6 +325,17 @@ v2u32 getDisplaySize()
 	return retval;
 }
 #endif //SERVER
+
+
+int canKeyboard() {
+	auto v = g_settings->getS32("android_keyboard");
+	if (v)
+		return v;
+	// dont work on some 4.4.2
+	//if (porting::android_version_sdk_int >= 18)
+	//	return 1;
+	return false;
+}
 
 // http://stackoverflow.com/questions/5864790/how-to-show-the-soft-keyboard-on-native-activity
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv) {

@@ -566,6 +566,7 @@ void set_default_settings(Settings *settings) {
 	char lang[3] = {};
 	AConfiguration_getLanguage(porting::app_global->config, lang);
 	settings->setDefault("language", lang);
+	settings->setDefault("android_keyboard", "0");
 
 #else
 	settings->setDefault("screen_dpi", "72");

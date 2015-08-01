@@ -3037,7 +3037,7 @@ void Game::openConsole(float height, bool close_on_return, const std::wstring& i
 		guienv->setFocus(gui_chat_console);
 
 #ifdef __ANDROID__
-		if (0 /* porting::android_version_sdk_int >= 18 */) {
+		if (porting::canKeyboard() >= 2) {
 			// fmtodo: invisible input text before pressing enter
 			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 		} else {
