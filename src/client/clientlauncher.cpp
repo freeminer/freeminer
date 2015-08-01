@@ -67,8 +67,11 @@ u32 getTime(TimePrecision prec) {
 
 ClientLauncher::~ClientLauncher()
 {
-	if (receiver)
+	if (receiver) {
+		if (device)
+			device->setEventReceiver(NULL);
 		delete receiver;
+	}
 
 	if (input)
 		delete input;
@@ -76,8 +79,10 @@ ClientLauncher::~ClientLauncher()
 	if (g_fontengine)
 		delete g_fontengine;
 
-	if (device)
+	if (device) {
+		device->closeDevice();
 		device->drop();
+	}
 }
 
 
@@ -188,6 +193,10 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		const wchar_t *text = wgettext("Main Menu");
 		device->setWindowCaption((utf8_to_wide(PROJECT_NAME_C) + L" [" + text + L"]").c_str());
 		delete[] text;
+
+#ifdef __ANDROID__
+		porting::handleAndroidActivityEvents();
+#endif
 
 		try {	// This is used for catching disconnects
 

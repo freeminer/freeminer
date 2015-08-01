@@ -1886,6 +1886,9 @@ void Game::run()
 #endif
 
 	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
+#ifdef __ANDROID__
+		porting::handleAndroidActivityEvents();
+#endif
 
 		try {
 

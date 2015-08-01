@@ -88,6 +88,17 @@ android_app* app_global;
 JNIEnv*      jnienv;
 jclass       nativeActivity;
 
+void handleAndroidActivityEvents()
+{
+	int ident;
+	int events;
+	struct android_poll_source *source;
+
+	while ( (ident = ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0)
+		if (source)
+			source->process(porting::app_global, source);
+}
+
 int android_version_sdk_int = 0;
 
 jclass findClass(std::string classname)
@@ -181,7 +192,9 @@ void cleanupAndroid()
 #endif
 
 	JavaVM *jvm = app_global->activity->vm;
+	if (jvm)
 	jvm->DetachCurrentThread();
+	ANativeActivity_finish(app_global->activity);
 }
 
 void setExternalStorageDir(JNIEnv* lJNIEnv)
