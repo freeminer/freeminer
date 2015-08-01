@@ -81,6 +81,7 @@ struct MinimapData {
 	video::ITexture *minimap_overlay_round;
 	video::ITexture *minimap_overlay_square;
 	video::ITexture *player_marker;
+	JMutex m_mutex;
 };
 
 struct QueuedMinimapUpdate {
@@ -151,7 +152,7 @@ private:
 	bool m_enable_shaders;
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
-	JMutex m_mutex;
+	//JMutex m_mutex;
 };
 
 #endif

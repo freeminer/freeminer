@@ -33,6 +33,7 @@ use POSIX ();
 sub sy (@);
 sub dmp (@);
 
+our $signal;
 our $script_path;
 
 BEGIN {
@@ -251,7 +252,8 @@ sub sy (@) {
         say "failed to execute: $!";
         return $?;
     } elsif ($? & 127) {
-        say "child died with signal ", ($? & 127), ", " . (($? & 128) ? 'with' : 'without') . " coredump";
+        $signal = $? & 127;
+        say "child died with signal ", ($signal), ", " . (($? & 128) ? 'with' : 'without') . " coredump";
         return $?;
     } else {
         return $? >> 8;
@@ -353,4 +355,5 @@ unless (@ARGV) {
 
 for my $task (@$task_run) {
     warn "task failed [$task]" if task_start($task);
+    last if $signal ~~ [2, 3];
 }

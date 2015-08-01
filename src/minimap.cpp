@@ -119,7 +119,12 @@ void MinimapUpdateThread::doUpdate()
 		}
 	}
 
-	if (data->map_invalidated && data->mode != MINIMAP_MODE_OFF) {
+	bool do_update;
+	{
+		JMutexAutoLock lock(data->m_mutex);
+		do_update = data->map_invalidated && data->mode != MINIMAP_MODE_OFF;
+	}
+	if (do_update) {
 		getMap(data->pos, data->map_size, data->scan_height, data->is_radar);
 		data->map_invalidated = false;
 	}
@@ -298,7 +303,7 @@ MinimapMode Mapper::getMinimapMode()
 
 void Mapper::toggleMinimapShape()
 {
-	JMutexAutoLock lock(m_mutex);
+	JMutexAutoLock lock(data->m_mutex);
 
 	data->minimap_shape_round = !data->minimap_shape_round;
 	g_settings->setBool("minimap_shape_round", data->minimap_shape_round);
@@ -320,7 +325,7 @@ void Mapper::setMinimapMode(MinimapMode mode)
 	if (mode >= MINIMAP_MODE_COUNT)
 		return;
 
-	JMutexAutoLock lock(m_mutex);
+	JMutexAutoLock lock(data->m_mutex);
 
 	data->is_radar    = modedefs[mode].is_radar;
 	data->scan_height = modedefs[mode].scan_height;
@@ -335,7 +340,7 @@ void Mapper::setPos(v3s16 pos)
 	bool do_update = false;
 
 	{
-		JMutexAutoLock lock(m_mutex);
+		JMutexAutoLock lock(data->m_mutex);
 
 		if (pos != data->old_pos) {
 			data->old_pos = data->pos;
