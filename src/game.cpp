@@ -1782,9 +1782,6 @@ Game::~Game()
 	delete itemdef_manager;
 	delete draw_control;
 
-	if (mapper)
-		delete mapper;
-
 	extendedResourceCleanup();
 }
 
