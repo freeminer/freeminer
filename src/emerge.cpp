@@ -526,8 +526,8 @@ void *EmergeThread::Thread()
 #endif
 						m_server->getScriptIface()->environment_OnGenerated(
 								minp, maxp, mapgen->blockseed);
-					} catch(LuaError &e) {
-						m_server->setAsyncFatalError(e.what());
+					} catch (LuaError &e) {
+						m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
 					}
 
 					EMERGE_DBG_OUT("ended up with: " << analyze_block(block));

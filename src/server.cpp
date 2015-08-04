@@ -106,7 +106,7 @@ public:
 	void * Thread();
 };
 
-void * ServerThread::Thread()
+void *ServerThread::Thread()
 {
 	log_register_thread("ServerThread");
 
@@ -122,8 +122,7 @@ void * ServerThread::Thread()
 	porting::setThreadPriority(40);
 
 	auto time = porting::getTimeMs();
-	while(!StopRequested())
-	{
+	while (!StopRequested()) {
 		try{
 			//TimeTaker timer("AsyncRunStep() + Receive()");
 			u32 time_now = porting::getTimeMs();
@@ -138,30 +137,20 @@ void * ServerThread::Thread()
 				if (porting::getTimeMs() > end_ms)
 					break;
 			}
-		}
-		catch(con::NoIncomingDataException &e)
-		{
+		} catch (con::NoIncomingDataException &e) {
 			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		}
-		catch(con::PeerNotFoundException &e)
-		{
+		} catch (con::PeerNotFoundException &e) {
 			infostream<<"Server: PeerNotFoundException"<<std::endl;
-		}
-		catch(ClientNotFoundException &e)
-		{
-		}
-		catch(con::ConnectionBindFailed &e)
-		{
-			m_server->setAsyncFatalError(e.what());
-		}
-		catch(LuaError &e)
-		{
+		} catch (ClientNotFoundException &e) {
+		} catch (con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
 #ifdef NDEBUG
-		} catch(std::exception &e) {
-				errorstream<<"ServerThread: exception: "<<e.what()<<std::endl;
+		} catch (LuaError &e) {
+			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
+		} catch (std::exception &e) {
+			errorstream<<"ServerThread: exception: "<<e.what()<<std::endl;
 		} catch (...) {
-				errorstream<<"ServerThread: Ooops..."<<std::endl;
+			errorstream<<"ServerThread: Ooops..."<<std::endl;
 #endif
 		}
 	}
