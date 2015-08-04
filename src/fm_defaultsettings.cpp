@@ -285,7 +285,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("3d_paralax_strength", "0.025");
 	settings->setDefault("tooltip_show_delay", "400");
 	// A bit more than the server will send around the player, to make fog blend well
-	settings->setDefault("viewing_range_nodes_max", itos(MAP_GENERATION_LIMIT));
+	settings->setDefault("viewing_range_nodes_max", itos(MAX_MAP_GENERATION_LIMIT));
 	settings->setDefault("viewing_range_nodes_min", "35");
 	settings->setDefault("shadows", "0");
 
@@ -422,6 +422,7 @@ void set_default_settings(Settings *settings) {
 #endif
 	settings->setDefault("abm_random", "true");
 	settings->setDefault("enable_force_load", "true");
+	settings->setDefault("map_generation_limit", "31000");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50");
 	settings->setDefault("max_block_send_distance", "30");
 	settings->setDefault("max_block_generate_distance", "7");

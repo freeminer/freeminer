@@ -151,7 +151,7 @@ s16 Mapgen::findGroundLevelFull(v2s16 p2d)
 }
 
 
-// Returns -MAP_GENERATION_LIMIT if not found
+// Returns -MAX_MAP_GENERATION_LIMIT if not found
 s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
 {
 	v3s16 em = vm->m_area.getExtent();
@@ -165,7 +165,7 @@ s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
 
 		vm->m_area.add_y(em, i, -1);
 	}
-	return (y >= ymin) ? y : -MAP_GENERATION_LIMIT;
+	return (y >= ymin) ? y : -MAX_MAP_GENERATION_LIMIT;
 }
 
 
@@ -505,4 +505,3 @@ void MapgenParams::save(Settings &settings) const
 	if (sparams)
 		sparams->writeParams(&settings);
 }
-

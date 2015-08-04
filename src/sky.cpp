@@ -89,7 +89,7 @@ Sky::Sky(scene::ISceneNode* parent, scene::ISceneManager* mgr, s32 id,
 
 	m_directional_colored_fog = g_settings->getBool("directional_colored_fog");
 
-	sun_moon_light = mgr->addLightSceneNode(this, core::vector3df(0,MAP_GENERATION_LIMIT*BS*2,0), video::SColorf(1.0f, 0.6f, 0.7f, 1.0f), MAP_GENERATION_LIMIT*BS*5);
+	sun_moon_light = mgr->addLightSceneNode(this, core::vector3df(0, MAX_MAP_GENERATION_LIMIT*BS*2,0), video::SColorf(1.0f, 0.6f, 0.7f, 1.0f), MAX_MAP_GENERATION_LIMIT*BS*5);
 }
 
 void Sky::OnRegisterSceneNode()
@@ -107,7 +107,7 @@ const core::aabbox3d<f32>& Sky::getBoundingBox() const
 
 void Sky::sky_rotate (const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos) {
 	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
-	double shift = (double)player_position.Z / MAP_GENERATION_LIMIT;
+	double shift = (double)player_position.Z / MAX_MAP_GENERATION_LIMIT;
 	double xz = 90;
 	double xy = wicked_time_of_day * 360 - 90;
 	double yz = 70 * -shift; // 70 - maximum angle near end of map
@@ -218,7 +218,7 @@ void Sky::render()
 		//video::SColor cloudyfogcolor = m_bgcolor.getInterpolated(m_skycolor, 0.5);
 
 		v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
-		float shift1 = -(float)player_position.Y / MAP_GENERATION_LIMIT;
+		float shift1 = -(float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
 		float shifty = shift1 * 0.4;
 		
 		// Draw far cloudy fog thing
@@ -366,7 +366,7 @@ void Sky::render()
 			}
 
 			if (sun_moon_light) {
-				auto light_vector = core::vector3df(0, MAP_GENERATION_LIMIT*BS*2, 0);
+				auto light_vector = core::vector3df(0, MAX_MAP_GENERATION_LIMIT*BS*2, 0);
 				sky_rotate(camera, SKY_ROTATE::SUNLIGHT, wicked_time_of_day, light_vector);
 				if (light_vector.Y > 0) {
 					sun_moon_light->setPosition(light_vector);
@@ -448,7 +448,7 @@ void Sky::render()
 			}
 
 			if (!sun_light_drawed && sun_moon_light) {
-				auto light_vector = core::vector3df(0, -MAP_GENERATION_LIMIT*BS*2, 0);
+				auto light_vector = core::vector3df(0, -MAX_MAP_GENERATION_LIMIT*BS*2, 0);
 				sky_rotate(camera, SKY_ROTATE::MOONLIGHT, wicked_time_of_day, light_vector);
 				if (light_vector.Y > 0)
 					sun_moon_light->setPosition(light_vector);
@@ -547,7 +547,7 @@ void Sky::update(float time_of_day, float time_brightness,
 
 	scene::ICameraSceneNode* camera = SceneManager->getActiveCamera();
 	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
-	float shift1 = (float)player_position.Y / MAP_GENERATION_LIMIT;
+	float shift1 = (float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
 	float height_color = 1;
 	if (shift1 > 0)
 		height_color -= shift1*0.8;

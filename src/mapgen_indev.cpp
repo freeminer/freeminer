@@ -47,8 +47,8 @@ void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & par
 				continue;
 
 			auto layer = layer_data{ content, MapNode(content, layerj["param1"].asInt(), layerj["param2"].asInt()) };
-			layer.height_min = layerj.get("y_min", layerj.get("height_min", -MAP_GENERATION_LIMIT).asInt()).asInt();
-			layer.height_max = layerj.get("y_max", layerj.get("height_max", +MAP_GENERATION_LIMIT).asInt()).asInt();
+			layer.height_min = layerj.get("y_min", layerj.get("height_min", -MAX_MAP_GENERATION_LIMIT).asInt()).asInt();
+			layer.height_max = layerj.get("y_max", layerj.get("height_max", +MAX_MAP_GENERATION_LIMIT).asInt()).asInt();
 			layer.thickness  = layerj.get("thickness", layer_default_thickness).asInt() * layer_thickness_multiplier;
 
 			//layer.name = name; //dev
@@ -361,7 +361,7 @@ int MapgenIndev::generateGround() {
 	MapNode n_air(CONTENT_AIR), n_water_source(c_water_source);
 	MapNode n_stone(c_stone), n_desert_stone(c_desert_stone);
 	MapNode n_ice(c_ice), n_dirt(c_dirt),n_sand(c_sand), n_gravel(c_gravel), n_lava_source(c_lava_source);
-	int stone_surface_max_y = -MAP_GENERATION_LIMIT;
+	int stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
 	u32 index = 0;
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)

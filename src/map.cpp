@@ -2629,13 +2629,15 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 	/*
 		Do not create over-limit
 	*/
-	if(p.X < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.X > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Y < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Y > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Z < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Z > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE)
-		throw InvalidPositionException("createBlock(): pos. over limit");
+	const static u16 map_gen_limit = MYMIN(MAX_MAP_GENERATION_LIMIT,
+		g_settings->getU16("map_generation_limit"));
+	if(p.X < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.X >  map_gen_limit / MAP_BLOCKSIZE
+			|| p.Y < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.Y >  map_gen_limit / MAP_BLOCKSIZE
+			|| p.Z < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.Z >  map_gen_limit / MAP_BLOCKSIZE)
+		throw InvalidPositionException("createSector(): pos. over limit");
 
 	MapBlock *block = this->getBlockNoCreateNoEx(p, false, true);
 	if(block)

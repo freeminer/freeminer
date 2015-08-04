@@ -339,8 +339,7 @@ int RemoteClient::GetNextBlocks (
 				max_simul_dynamic = max_simul_sends_setting;
 
 			// Don't select too many blocks for sending
-			if(num_blocks_selected+num_blocks_sending >= max_simul_dynamic)
-			{
+			if (num_blocks_selected + num_blocks_sending >= max_simul_dynamic) {
 				//queue_is_full = true;
 				goto queue_full_break;
 			}
@@ -348,12 +347,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Do not go over-limit
 			*/
-			if(p.X < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.X > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Y < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Y > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Z < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Z > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE)
+			if (blockpos_over_limit(p))
 				continue;
 
 			// If this is true, inexistent block will be made from scratch
