@@ -780,7 +780,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media; \
 	cd ${ROOT}/assets ||  exit 1;                                              \
 	find . -name "timestamp" -exec rm {} \; ;                                  \
-	find . -name "favoriteservers.json" -exec rm {} \; ;                       \
+	find . \( -name "favoriteservers.json" -o -name "servers_public.json" \) -exec rm {} \; ;                       \
 	find . -name "*.blend" -exec rm {} \; ;                                    \
 	find . -name "*~" -exec rm {} \; ;                                         \
 	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
