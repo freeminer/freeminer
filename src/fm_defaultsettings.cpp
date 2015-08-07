@@ -163,7 +163,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
 	settings->setDefault("keymap_toggle_force_fog_off", "KEY_F3");
-	//settings->setDefault("keymap_toggle_update_camera", debug ? "KEY_F4" : "none");
+	//settings->setDefault("keymap_toggle_update_camera", debug ? "KEY_F4" : "");
 	settings->setDefault("keymap_toggle_block_boundaries", "KEY_F4");
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
@@ -530,6 +530,11 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("touchscreen_threshold", "20");
 	settings->setDefault("smooth_lighting", "false");
 	settings->setDefault("enable_3d_clouds", "false");
+
+	settings->setDefault("wanted_fps", "20");
+	settings->setDefault("fps_max", "30");
+	settings->setDefault("mouse_sensitivity", "0.05");
+
 	/*
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
 	settings->setDefault("emergequeue_limit_diskonly", "8");
