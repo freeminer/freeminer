@@ -109,8 +109,7 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 	pushnode(L, node, ndef);
 	objectrefGetOrCreate(L, puncher);
 	pushPointedThing(pointed);
-	if (lua_pcall(L, 4, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 4, 0, m_errorhandler));
 	return true;
 }
 
@@ -129,8 +128,7 @@ bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
 	objectrefGetOrCreate(L, digger);
-	if (lua_pcall(L, 3, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 3, 0, m_errorhandler));
 	return true;
 }
 
@@ -146,8 +144,7 @@ void ScriptApiNode::node_on_construct(v3s16 p, MapNode node)
 
 	// Call function
 	push_v3s16(L, p);
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_on_destruct(v3s16 p, MapNode node)
@@ -162,8 +159,7 @@ void ScriptApiNode::node_on_destruct(v3s16 p, MapNode node)
 
 	// Call function
 	push_v3s16(L, p);
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
@@ -179,8 +175,7 @@ void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
 	// Call function
 	push_v3s16(L, p);
 	pushnode(L, node, ndef);
-	if (lua_pcall(L, 2, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 2, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
@@ -199,8 +194,7 @@ void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
 	}
 	// Call function
 	push_v3s16(L, p);
-	if(lua_pcall(L, 1, 0, errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, errorhandler));
 	lua_pop(L, 1); // Pop error handler
 }
 
@@ -219,8 +213,7 @@ void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
 
 	// Call function
 	push_v3s16(L, p);
-	if(lua_pcall(L, 1, 0, errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, errorhandler));
 	lua_pop(L, 1); // Pop error handler
 }
 
@@ -237,8 +230,7 @@ bool ScriptApiNode::node_on_timer(v3s16 p, MapNode node, f32 dtime)
 	// Call function
 	push_v3s16(L, p);
 	lua_pushnumber(L,dtime);
-	if (lua_pcall(L, 2, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 2, 1, m_errorhandler));
 	return (bool) lua_isboolean(L, -1) && (bool) lua_toboolean(L, -1) == true;
 }
 
@@ -273,8 +265,7 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 		lua_settable(L, -3);
 	}
 	objectrefGetOrCreate(L, sender);        // player
-	if (lua_pcall(L, 4, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 4, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_falling_update(v3s16 p)
@@ -283,8 +274,7 @@ void ScriptApiNode::node_falling_update(v3s16 p)
 
 	lua_getglobal(L, "nodeupdate");
 	push_v3s16(L, p);
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_falling_update_single(v3s16 p)
@@ -293,8 +283,7 @@ void ScriptApiNode::node_falling_update_single(v3s16 p)
 
 	lua_getglobal(L, "nodeupdate_single");
 	push_v3s16(L, p);
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 
 void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
@@ -307,7 +296,6 @@ void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
 	lua_getglobal(L, "node_drop");
 	push_v3s16(L, p);
 	lua_pushinteger(L, fast);
-	if(lua_pcall(L, 2, 0, errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 2, 0, errorhandler));
 	lua_pop(L, 1); // Pop error handler
 }

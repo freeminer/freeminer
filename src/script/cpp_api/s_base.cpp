@@ -164,14 +164,9 @@ void ScriptApiBase::realityCheck()
 	}
 }
 
-void ScriptApiBase::scriptError()
+void ScriptApiBase::scriptError(int result, const char *fxn)
 {
-	throw LuaError(lua_tostring(m_luastack, -1));
-}
-
-void ScriptApiBase::scriptErrorNoEx()
-{
-	errorstream<<"lua exception: " << lua_tostring(m_luastack, -1) << std::endl;
+	script_error(getStack(), result, fxn);
 }
 
 void ScriptApiBase::stackDump(std::ostream &o)
