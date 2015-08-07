@@ -10,12 +10,16 @@ dofile(menupath.."fm_gamemgr.lua")
 dofile(menupath.."modstore.lua")
 dofile(menupath.."menubar.lua")
 
+dofile(menupath .. DIR_DELIM .. "common.lua")
+
 mt_color_grey  = "#AAAAAA"
 mt_color_blue  = "#0000DD"
 mt_color_green = "#00DD00"
 mt_color_dark_green = "#003300"
 
 menu = {}
+menudata = menu
+
 local tabbuilder = {}
 local worldlist = nil
 
@@ -86,6 +90,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 end
 
 --------------------------------------------------------------------------------
+--[[ mt version used
 function menu.asyncOnlineFavourites()
 	menu.favorites = {}
 	core.handle_async(
@@ -99,6 +104,7 @@ function menu.asyncOnlineFavourites()
 		end
 		)
 end
+]]
 
 --------------------------------------------------------------------------------
 function menu.render_favorite(spec,render_details)
@@ -656,7 +662,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		core.setting_set("public_serverlist", fields["cb_public_serverlist"])
 
 		if core.setting_getbool("public_serverlist") then
-			menu.asyncOnlineFavourites()
+			asyncOnlineFavourites()
 		else
 			menu.favorites = core.get_favorites("local")
 		end
@@ -1162,7 +1168,7 @@ function menu.init()
 	end
 
 	if core.setting_getbool("public_serverlist") then
-		menu.asyncOnlineFavourites()
+		asyncOnlineFavourites()
 	else
 		menu.favorites = core.get_favorites("local")
 	end

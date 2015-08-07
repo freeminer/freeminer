@@ -236,7 +236,16 @@ end
 function asyncOnlineFavourites()
 
 	if not menudata.public_known then
-		menudata.public_known = {{
+		local file = io.open( core.setting_get("serverlist_cache"), "r" )
+		if file then
+			local data = file:read("*all")
+			menudata.public_known = core.parse_json( data )
+			file:close()
+		end
+	end
+
+	if not menudata.public_known then
+	menudata.public_known = {{
 			name = fgettext("Loading..."),
 			description = fgettext("Try reenabling public serverlist and check your internet connection.")
 		}}
@@ -253,6 +262,13 @@ function asyncOnlineFavourites()
 				if favs[1] then
 					menudata.public_known = favs
 					menudata.favorites = menudata.public_known
+
+					local file = io.open( core.setting_get("serverlist_cache"), "w" )
+					if file then
+						file:write( core.write_json( favs ) )
+						file:close()
+					end
+
 				end
 				core.event_handler("Refresh")
 			end

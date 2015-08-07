@@ -102,6 +102,9 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("timelapse", "0");
 	settings->setDefault("serverlist_file", "favoriteservers.json");
 
+	std::string serverlist_cache = porting::path_user + DIR_DELIM + "client" + DIR_DELIM + "servers_public.json";
+	settings->setDefault("serverlist_cache", serverlist_cache);
+
 	// Main menu
 	settings->setDefault("menu_clouds", "true");
 	settings->setDefault("main_menu_tab", "multiplayer");
