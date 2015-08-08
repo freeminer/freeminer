@@ -96,5 +96,9 @@ void compress(SharedBuffer<u8> data, std::ostream &os, u8 version);
 //void compress(const std::string &data, std::ostream &os, u8 version);
 void decompress(std::istream &is, std::ostream &os, u8 version);
 
+//freeminer:
+void compressZlib(const std::string &data, std::string &os, int level = -1);
+void decompressZlib(const std::string &is, std::string &os);
+
 #endif
 

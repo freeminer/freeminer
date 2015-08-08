@@ -422,8 +422,11 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// updating content definitions
 		//assert(!m_mesh_update_thread.IsRunning());
 
-		packet[TOCLIENT_NODEDEF_DEFINITIONS].convert(m_nodedef);
-		m_nodedef_received = true;
+		if (packet_convert_safe_zip(packet, TOCLIENT_NODEDEF_DEFINITIONS_ZIP, m_nodedef)) {
+			m_nodedef_received = true;
+		} else if (packet_convert_safe(packet, TOCLIENT_NODEDEF_DEFINITIONS, m_nodedef)) {
+			m_nodedef_received = true;
+		}
 	}
 	else if(command == TOCLIENT_ITEMDEF)
 	{
@@ -434,8 +437,11 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// updating content definitions
 		//assert(!m_mesh_update_thread.IsRunning());
 
-		packet[TOCLIENT_ITEMDEF_DEFINITIONS].convert(m_itemdef);
-		m_itemdef_received = true;
+		if (packet_convert_safe_zip(packet, TOCLIENT_ITEMDEF_DEFINITIONS_ZIP, m_itemdef)) {
+			m_itemdef_received = true;
+		} else if (packet_convert_safe(packet, TOCLIENT_ITEMDEF_DEFINITIONS, m_itemdef)) {
+			m_itemdef_received = true;
+		}
 	}
 	else if(command == TOCLIENT_PLAY_SOUND)
 	{

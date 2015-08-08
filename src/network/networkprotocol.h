@@ -155,7 +155,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CLIENT_PROTOCOL_VERSION_MIN 13
 #define CLIENT_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
-#define CLIENT_PROTOCOL_VERSION_FM 1
+#define CLIENT_PROTOCOL_VERSION_FM 2
 #define SERVER_PROTOCOL_VERSION_FM 0
 
 // Constant that differentiates the protocol from random data and other protocols
@@ -372,7 +372,8 @@ typedef std::vector<std::pair<std::string, std::string> > MediaData;
 
 #define TOCLIENT_NODEDEF 0x3a
 enum {
-	TOCLIENT_NODEDEF_DEFINITIONS
+	TOCLIENT_NODEDEF_DEFINITIONS,
+	TOCLIENT_NODEDEF_DEFINITIONS_ZIP
 };
 	/*
 		u16 command
@@ -400,7 +401,8 @@ enum {
 
 #define TOCLIENT_ITEMDEF 0x3d
 enum {
-	TOCLIENT_ITEMDEF_DEFINITIONS
+	TOCLIENT_ITEMDEF_DEFINITIONS,
+	TOCLIENT_ITEMDEF_DEFINITIONS_ZIP
 };
 
 typedef std::vector<std::pair<std::string, std::string> > MediaAnnounceList;

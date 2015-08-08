@@ -89,7 +89,16 @@ void Server::SendItemDef(u16 peer_id,
 {
 	DSTACK(__FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOCLIENT_ITEMDEF, 1);
-	PACK(TOCLIENT_ITEMDEF_DEFINITIONS, *itemdef);
+
+	auto client = m_clients.getClient(peer_id, CS_InitDone);
+	if (!client)
+		return;
+
+	if (client->net_proto_version_fm >= 2) {
+		PACK_ZIP(TOCLIENT_ITEMDEF_DEFINITIONS_ZIP, *itemdef);
+	} else {
+		PACK(TOCLIENT_ITEMDEF_DEFINITIONS, *itemdef);
+	}
 
 	m_clients.send(peer_id, 0, buffer, true);
 }
@@ -100,7 +109,15 @@ void Server::SendNodeDef(u16 peer_id,
 	DSTACK(__FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_NODEDEF, 1);
-	PACK(TOCLIENT_NODEDEF_DEFINITIONS, *nodedef);
+
+	auto client = m_clients.getClient(peer_id, CS_InitDone);
+	if (!client)
+		return;
+	if (client->net_proto_version_fm >= 2) {
+		PACK_ZIP(TOCLIENT_NODEDEF_DEFINITIONS_ZIP, *nodedef);
+	} else {
+		PACK(TOCLIENT_NODEDEF_DEFINITIONS, *nodedef);
+	}
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
