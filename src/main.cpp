@@ -752,7 +752,7 @@ static bool auto_select_world(GameParams *game_params)
 		           << world_path << "]" << std::endl;
 	}
 
-	assert(world_path != "");	// Post-condition
+	//assert(world_path != "");	// Post-condition
 	game_params->world_path = world_path;
 	return true;
 }

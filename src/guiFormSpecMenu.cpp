@@ -3457,7 +3457,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				if (!list_to)
 					break;
 				ItemStack stack_from = list_from->getItem(s.i);
-				assert(shift_move_amount <= stack_from.count);
+				if(!(shift_move_amount <= stack_from.count))
+					break;
 				if (m_client->getProtoVersion() >= 25) {
 					infostream << "Handing IACTION_MOVE to manager" << std::endl;
 					IMoveAction *a = new IMoveAction();

@@ -1631,7 +1631,8 @@ u16 getFreeServerActiveObjectId(
 
 u16 ServerEnvironment::addActiveObject(ServerActiveObject *object)
 {
-	assert(object);	// Pre-condition
+	if (!object)
+		return 0;
 	m_added_objects++;
 	u16 id = addActiveObjectRaw(object, true, 0);
 	return id;
