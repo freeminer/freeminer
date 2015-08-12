@@ -558,7 +558,7 @@ private:
 			bool is_local_server);
 
 	void ReceiveAll();
-	void Receive();
+	bool Receive();
 
 	void sendPlayerPos();
 	// Send the item number 'item' as player item to the server

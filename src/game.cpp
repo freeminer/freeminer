@@ -2393,7 +2393,7 @@ bool Game::connectToServer(const std::string &playername,
 			wait_time += dtime;
 
 			// Only time out if we aren't waiting for the server we started
-			if ((*address != "") && (wait_time > 10)) {
+			if ((*address != "") && (wait_time > 15)) {
 				*error_message = "Connection timed out.";
 				errorstream << *error_message << std::endl;
 				flags.reconnect = true;

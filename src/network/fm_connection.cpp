@@ -139,7 +139,7 @@ void * Connection::Thread()
 
 void Connection::putEvent(ConnectionEvent &e)
 {
-	assert(e.type != CONNEVENT_NONE);
+	//if(e.type == CONNEVENT_NONE) return;
 	m_event_queue.push_back(e);
 }
 
@@ -237,7 +237,7 @@ void Connection::receive()
 			break;
 		}
 	} else if (ret < 0) {
-		infostream<<"enet_host_service failed = "<< ret << std::endl;
+		errorstream<<"recieve enet_host_service failed = "<< ret << std::endl;
 		if (m_peers.count(PEER_ID_SERVER))
 			deletePeer(PEER_ID_SERVER,  false);
 	} else { //0
@@ -328,8 +328,11 @@ void Connection::connect(Address addr)
 		m_peers.set(PEER_ID_SERVER, peer);
 		m_peers_address.set(PEER_ID_SERVER, addr);
 	} else {
-		if (ret == 0)
-			errorstream<<"enet_host_service ret="<<ret<<std::endl;
+		errorstream<<"connect enet_host_service ret="<<ret<<std::endl;
+		if (ret == 0) {
+			ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+			putEvent(ev);
+		}
 
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */

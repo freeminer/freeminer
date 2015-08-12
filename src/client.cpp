@@ -851,9 +851,14 @@ void Client::ReceiveAll()
 	auto end_ms = porting::getTimeMs() + 10;
 	for(;;)
 	{
+#if MINETEST_PROTO
 		try {
-			Receive();
+#endif
+			if (!Receive())
+				break;
 			g_profiler->graphAdd("client_received_packets", 1);
+
+#if MINETEST_PROTO
 		}
 		catch(con::NoIncomingDataException &e) {
 			break;
@@ -863,6 +868,7 @@ void Client::ReceiveAll()
 					"InvalidIncomingDataException: what()="
 					<<e.what()<<std::endl;
 		}
+#endif
 		// Limit time even if there would be huge amounts of data to
 		// process
 		if(porting::getTimeMs() > end_ms)
@@ -870,12 +876,15 @@ void Client::ReceiveAll()
 	}
 }
 
-void Client::Receive()
+bool Client::Receive()
 {
 	DSTACK(__FUNCTION_NAME);
 	NetworkPacket pkt;
-	if (m_con.Receive(&pkt))
-		ProcessData(&pkt);
+	if (!m_con.Receive(&pkt))
+		return false;
+
+	ProcessData(&pkt);
+	return true;
 }
 
 //FMTODO

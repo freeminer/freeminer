@@ -33,7 +33,7 @@ VERSION_TWEAK := $(shell cat $(ROOT)/../../CMakeLists.txt | \
 ANDROID_VERSION_CODE = 12
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 30
+ANDROID_VERSION_CODE = 31
 
 PROJECT_NAME_C = freeminer
 
@@ -771,7 +771,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	mkdir ${ROOT}/assets/freeminer/games; \
 	for game in ${GAMES_TO_COPY};                                              \
 	do                                                                         \
-	    cp -r ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/; \
+	    cp -Lr ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/; \
 	done;                                                                      \
 	cp -r ${ROOT}/../../mods ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/cmake/locale ${ROOT}/assets/freeminer; \
