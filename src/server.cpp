@@ -133,7 +133,8 @@ void *ServerThread::Thread()
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
-				m_server->Receive();
+				if (!m_server->Receive())
+					break;
 				if (porting::getTimeMs() > end_ms)
 					break;
 			}
@@ -1306,9 +1307,10 @@ u16 Server::Receive()
 		NetworkPacket pkt;
 		auto size = m_con.Receive(&pkt, 10);
 		peer_id = pkt.getPeerId();
-		if (size)
+		if (size) {
 			ProcessData(&pkt);
-		++received;
+			++received;
+		}
 	}
 	catch(con::InvalidIncomingDataException &e) {
 		infostream<<"Server::Receive(): "
