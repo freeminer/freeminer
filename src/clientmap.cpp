@@ -566,17 +566,26 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		used_meshes.emplace_back(mapBlockMesh);
 
 		// Mesh animation
+		if (mesh_step <= 1)
 		{
 			//JMutexAutoLock lock(block->mesh_mutex);
 
 			mapBlockMesh->updateCameraOffset(m_camera_offset);
 
 			// Pretty random but this should work somewhat nicely
+#if __ANDROID__
+			bool faraway = d >= BS*16;
+#else
 			bool faraway = d >= BS*50;
+#endif
 			//bool faraway = d >= m_control.wanted_range * BS;
 			if(mapBlockMesh->isAnimationForced() ||
 					!faraway ||
+#if __ANDROID__
+0)
+#else
 					mesh_animate_count_far < (m_control.range_all ? 200 : 50))
+#endif
 			{
 				bool animated = mapBlockMesh->animate(
 						faraway,

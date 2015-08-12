@@ -1389,7 +1389,11 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		return false;
 	}
 
+#if __ANDROID__
+	m_animation_force_timer = myrand_range(500, 1000);
+#else
 	m_animation_force_timer = myrand_range(5, 100);
+#endif
 
 	// Cracks
 	if(crack != m_last_crack)
