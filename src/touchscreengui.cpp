@@ -108,7 +108,7 @@ static irr::EKEY_CODE id2keycode(touch_gui_button_id id)
 			break;
 	}
 	if(!key.size())
-		return 0;
+		return irr::EKEY_CODE();
 	return keyname_to_keycode(g_settings->get("keymap_" + key).c_str());
 }
 
