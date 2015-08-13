@@ -2391,7 +2391,7 @@ ClientEnvironment::ClientEnvironment(ClientMap *map, scene::ISceneManager *smgr,
 	m_gamedef(gamedef),
 	m_irr(irr)
 	,m_active_objects_client_last(0),
-	m_move_max_loop(10)
+	m_move_max_loop(3)
 {
 	char zero = 0;
 	memset(attachement_parent_ids, zero, sizeof(attachement_parent_ids));
@@ -2454,6 +2454,8 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 {
 	DSTACK(__FUNCTION_NAME);
 
+	TimeTaker timer0("ClientEnvironment::step()");
+
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
@@ -2498,12 +2500,18 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	if(dtime > 2)
 		dtime = 2;
 
+	if (player_speed <= 0.01)
+		dtime_max_increment = dtime;
+
 	f32 dtime_downcount = dtime;
 
 	/*
 		Stuff that has a maximum time increment
 	*/
 
+
+	{
+		//TimeTaker timer1("ClientEnvironment::step() move");
 	u32 loopcount = 0;
 	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
 	do
@@ -2594,8 +2602,13 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 	if (breaked && m_move_max_loop > loopcount)
 		--m_move_max_loop;
-	if (!breaked && m_move_max_loop < 50)
+	if (!breaked && m_move_max_loop < 5)
 		++m_move_max_loop;
+
+	}
+
+	{
+		//TimeTaker timer2("ClientEnvironment::step() collision");
 
 	for(auto
 			i = player_collisions.begin();
@@ -2631,6 +2644,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				m_gamedef->event()->put(e);
 			}
 		}
+	}
 	}
 
 	/*
@@ -2711,6 +2725,8 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
+	{
+		//TimeTaker timer5("ClientEnvironment::step() players");
 	/*
 		Stuff that can be done in an arbitarily large dtime
 	*/
@@ -2726,6 +2742,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			player->move(dtime, this, 100*BS);
 
 		}
+	}
 	}
 
 	// Update lighting on local player (used for wield item)
@@ -2755,9 +2772,13 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		Step active objects and update lighting of them
 	*/
 
+	{
+		//TimeTaker timer6("ClientEnvironment::step() objects");
+
 	g_profiler->avg("CEnv: num of objects", m_active_objects.size());
-	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
+	bool update_lighting = m_active_object_light_update_interval.step(dtime, 1);
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
+	int skipped = 0;
 	for(std::map<u16, ClientActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -2770,6 +2791,14 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		++calls;
 
 		ClientActiveObject* obj = i->second;
+
+		auto & draw_control = getClientMap().getControl();
+		if ((pf.getDistanceFrom(obj->getPosition()) / BS) * 1.2 > draw_control.wanted_range) {
+			//errorstream<<"skip "<<obj->getId() << " p="<<pf<< " o=" << obj->getPosition() << " r=" << pf.getDistanceFrom(obj->getPosition()) / BS << " wr=" << draw_control.wanted_range<< std::endl;
+			++skipped;
+			continue;
+		}
+
 		// Step object
 		obj->step(dtime, this);
 
@@ -2796,6 +2825,10 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	}
 	if (!calls)
 		m_active_objects_client_last = 0;
+
+	//infostream<<"objects "<<m_active_objects_client_last <<"/"<<m_active_objects.size()<<" skipped="<<skipped<<std::endl;
+
+	}
 
 	/*
 		Step and handle simple objects
