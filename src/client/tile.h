@@ -38,9 +38,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // (that's probably because of opengles driver and stuff?
 //  I certainly don't want to debug this, so for now workaround will only
 //  be applied to android devices)
+/*
 #ifdef __ANDROID__
 #define EMT_TRANSPARENT_ALPHA_CHANNEL_REF EMT_TRANSPARENT_ALPHA_CHANNEL
 #endif
+*/
 
 class IGameDef;
 struct TileSpec;
