@@ -74,6 +74,8 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 		FATAL_ERROR("");
 	lua_remove(L, -2); // Remove registered_abms
 
+	scriptIface->setOriginFromTable(-1);
+
 	// Call action
 	luaL_checktype(L, -1, LUA_TTABLE);
 	lua_getfield(L, -1, "action");
