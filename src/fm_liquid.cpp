@@ -397,8 +397,7 @@ NEXT_LIQUID:
 		//relax down
 		if (	liquid_renewable &&
 		        relax &&
-		        p0.Y >= water_level - 1  &&
-		        p0.Y <= water_level + 1  &&
+		        p0.Y == water_level + 1 &&
 		        liquid_levels[D_TOP] == 0 &&
 		        (total_level <= 1 || !(loopcount % 2)) &&
 		        level_max > 1 &&
