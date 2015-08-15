@@ -417,10 +417,11 @@ void Client::step(float dtime)
 		std::vector<v3s16> deleted_blocks;
 		
 		if(m_env.getMap().timerUpdate(m_uptime,
-				g_settings->getFloat("client_unload_unused_data_timeout"),
-				max_cycle_ms,
-				&deleted_blocks))
-				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+			g_settings->getFloat("client_unload_unused_data_timeout"),
+			g_settings->getS32("client_mapblock_limit"),
+			max_cycle_ms,
+			&deleted_blocks))
+			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 
 		/*if(deleted_blocks.size() > 0)
 			infostream<<"Client: Unloaded "<<deleted_blocks.size()

@@ -279,7 +279,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	u32 timerUpdate(float uptime, float unload_timeout, unsigned int max_cycle_ms = 100,
+	u32 timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks, unsigned int max_cycle_ms = 100,
 			std::vector<v3s16> *unloaded_blocks=NULL);
 
 	/*

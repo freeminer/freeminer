@@ -322,3 +322,151 @@ void Map::copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip) {
 
 }
 
+
+
+
+u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
+		unsigned int max_cycle_ms,
+		std::vector<v3s16> *unloaded_blocks)
+{
+	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
+
+	// Profile modified reasons
+	Profiler modprofiler;
+
+	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
+		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
+		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
+		for (auto & ir : *m_blocks_delete)
+			delete ir.first;
+		m_blocks_delete->clear();
+		getBlockCacheFlush();
+	}
+
+	u32 deleted_blocks_count = 0;
+	u32 saved_blocks_count = 0;
+	u32 block_count_all = 0;
+
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+
+	std::vector<MapBlockP> blocks_delete;
+	int save_started = 0;
+	{
+	auto lock = m_blocks.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return m_blocks_update_last;
+
+#if !ENABLE_THREADS
+	auto lock_map = m_nothread_locker.try_lock_unique_rec();
+	if (!lock_map->owns_lock())
+		return m_blocks_update_last;
+#endif
+
+	for(auto ir : m_blocks) {
+		if (n++ < m_blocks_update_last) {
+			continue;
+		}
+		else {
+			m_blocks_update_last = 0;
+		}
+		++calls;
+
+		auto block = ir.second;
+		if (!block)
+			continue;
+
+		{
+			auto lock = block->try_lock_unique_rec();
+			if (!lock->owns_lock())
+				continue;
+			if(block->getUsageTimer() > unload_timeout) // block->refGet() <= 0 &&
+			{
+				v3s16 p = block->getPos();
+				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
+				// Save if modified
+				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
+					//modprofiler.add(block->getModifiedReasonString(), 1);
+					if(!save_started++)
+						beginSave();
+					if (!saveBlock(block))
+						continue;
+					saved_blocks_count++;
+				}
+
+				blocks_delete.push_back(block);
+
+				if(unloaded_blocks)
+					unloaded_blocks->push_back(p);
+
+				deleted_blocks_count++;
+			}
+			else
+			{
+
+#ifndef SERVER
+			if (block->mesh_old)
+				block->mesh_old = nullptr;
+#endif
+
+			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
+				block->m_uptime_timer_last = uptime - 0.1;
+			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
+			block->m_uptime_timer_last = uptime;
+
+				block_count_all++;
+
+/*#ifndef SERVER
+				if(block->refGet() == 0 && block->getUsageTimer() >
+						g_settings->getFloat("unload_unused_meshes_timeout"))
+				{
+					if(block->mesh){
+						delete block->mesh;
+						block->mesh = NULL;
+					}
+				}
+#endif*/
+			}
+
+		} // block lock
+
+		if (porting::getTimeMs() > end_ms) {
+			m_blocks_update_last = n;
+			break;
+		}
+
+	}
+	}
+	if(save_started)
+		endSave();
+
+	if (!calls)
+		m_blocks_update_last = 0;
+
+	for (auto & block : blocks_delete)
+		this->deleteBlock(block);
+
+	// Finally delete the empty sectors
+
+	if(deleted_blocks_count != 0)
+	{
+		if (m_blocks_update_last)
+			infostream<<"ServerMap: timerUpdate(): Blocks processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
+		PrintInfo(infostream); // ServerMap/ClientMap:
+		infostream<<"Unloaded "<<deleted_blocks_count<<"/"<<(block_count_all + deleted_blocks_count)
+				<<" blocks from memory";
+		infostream<<" (deleteq1="<<m_blocks_delete_1.size()<< " deleteq2="<<m_blocks_delete_2.size()<<")";
+		if(saved_blocks_count)
+			infostream<<", of which "<<saved_blocks_count<<" were written";
+/*
+		infostream<<", "<<block_count_all<<" blocks in memory";
+*/
+		infostream<<"."<<std::endl;
+		if(saved_blocks_count != 0){
+			PrintInfo(infostream); // ServerMap/ClientMap:
+			//infostream<<"Blocks modified by: "<<std::endl;
+			modprofiler.print(infostream);
+		}
+	}
+	return m_blocks_update_last;
+}
+

@@ -743,6 +743,19 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
 
+/*
+	static const float map_timer_and_unload_dtime = 2.92;
+	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
+	{
+		JMutexAutoLock lock(m_env_mutex);
+		// Run Map's timers and unload unused data
+		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
+		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
+			g_settings->getFloat("server_unload_unused_data_timeout"),
+			(u32)-1);
+	}
+*/
+
 	/*
 		Do background stuff
 	*/

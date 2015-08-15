@@ -47,6 +47,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
+#include <deque>
+#include <queue>
 #include "database-leveldb.h"
 #include "database-redis.h"
 #include <deque>
@@ -1469,11 +1471,26 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 	return false;
 }
 
+struct TimeOrderedMapBlock {
+	MapSector *sect;
+	MapBlock *block;
+
+	TimeOrderedMapBlock(MapSector *sect, MapBlock *block) :
+		sect(sect),
+		block(block)
+	{}
+
+	bool operator<(const TimeOrderedMapBlock &b) const
+	{
+		return block->getUsageTimer() < b.block->getUsageTimer();
+	};
+};
+
 /*
 	Updates usage timers
 */
-u32 Map::timerUpdate(float uptime, float unload_timeout,
-		unsigned int max_cycle_ms,
+#if WTF
+void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 		std::vector<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1481,145 +1498,143 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
-		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
-		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
-		for (auto & ir : *m_blocks_delete)
-			delete ir.first;
-		m_blocks_delete->clear();
-		getBlockCacheFlush();
-	}
-
+	std::vector<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	beginSave();
 
-	std::vector<MapBlockP> blocks_delete;
-	int save_started = 0;
-	{
-	auto lock = m_blocks.try_lock_shared_rec();
-	if (!lock->owns_lock())
-		return m_blocks_update_last;
+	// If there is no practical limit, we spare creation of mapblock_queue
+	if (max_loaded_blocks == (u32)-1) {
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+				si != m_sectors.end(); ++si) {
+			MapSector *sector = si->second;
 
-#if !ENABLE_THREADS
-	auto lock_map = m_nothread_locker.try_lock_unique_rec();
-	if (!lock_map->owns_lock())
-		return m_blocks_update_last;
-#endif
+			bool all_blocks_deleted = true;
 
-	for(auto ir : m_blocks) {
-		if (n++ < m_blocks_update_last) {
-			continue;
-		}
-		else {
-			m_blocks_update_last = 0;
-		}
-		++calls;
+			MapBlockVect blocks;
+			sector->getBlocks(blocks);
 
-		auto block = ir.second;
-		if (!block)
-			continue;
+			for (MapBlockVect::iterator i = blocks.begin();
+					i != blocks.end(); ++i) {
+				MapBlock *block = (*i);
 
-		{
-			auto lock = block->try_lock_unique_rec();
-			if (!lock->owns_lock())
-				continue;
-			if(block->getUsageTimer() > unload_timeout) // block->refGet() <= 0 &&
-			{
-				v3s16 p = block->getPos();
-				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
-				// Save if modified
-				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
-					//modprofiler.add(block->getModifiedReasonString(), 1);
-					if(!save_started++)
-						beginSave();
-					if (!saveBlock(block))
-						continue;
-					saved_blocks_count++;
-				}
+				block->incrementUsageTimer(dtime);
 
-				blocks_delete.push_back(block);
+				if (block->refGet() == 0
+						&& block->getUsageTimer() > unload_timeout) {
+					v3s16 p = block->getPos();
 
-				if(unloaded_blocks)
-					unloaded_blocks->push_back(p);
-
-				deleted_blocks_count++;
-			}
-			else
-			{
-
-#ifndef SERVER
-			if (block->mesh_old)
-				block->mesh_old = nullptr;
-#endif
-
-			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
-				block->m_uptime_timer_last = uptime - 0.1;
-			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
-			block->m_uptime_timer_last = uptime;
-
-				block_count_all++;
-
-/*#ifndef SERVER
-				if(block->refGet() == 0 && block->getUsageTimer() >
-						g_settings->getFloat("unload_unused_meshes_timeout"))
-				{
-					if(block->mesh){
-						delete block->mesh;
-						block->mesh = NULL;
+					// Save if modified
+					if (block->getModified() != MOD_STATE_CLEAN
+							&& save_before_unloading) {
+						modprofiler.add(block->getModifiedReasonString(), 1);
+						if (!saveBlock(block))
+							continue;
+						saved_blocks_count++;
 					}
+
+					// Delete from memory
+					sector->deleteBlock(block);
+
+					if (unloaded_blocks)
+						unloaded_blocks->push_back(p);
+
+					deleted_blocks_count++;
+				} else {
+					all_blocks_deleted = false;
+					block_count_all++;
 				}
-#endif*/
 			}
 
-		} // block lock
-
-		if (porting::getTimeMs() > end_ms) {
-			m_blocks_update_last = n;
-			break;
+			if (all_blocks_deleted) {
+				sector_deletion_queue.push_back(si->first);
+			}
 		}
+	} else {
+		std::priority_queue<TimeOrderedMapBlock> mapblock_queue;
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+				si != m_sectors.end(); ++si) {
+			MapSector *sector = si->second;
 
+			MapBlockVect blocks;
+			sector->getBlocks(blocks);
+
+			for(MapBlockVect::iterator i = blocks.begin();
+					i != blocks.end(); ++i) {
+				MapBlock *block = (*i);
+
+				block->incrementUsageTimer(dtime);
+				mapblock_queue.push(TimeOrderedMapBlock(sector, block));
+			}
+		}
+		block_count_all = mapblock_queue.size();
+		// Delete old blocks, and blocks over the limit from the memory
+		while (!mapblock_queue.empty() && (mapblock_queue.size() > max_loaded_blocks
+				|| mapblock_queue.top().block->getUsageTimer() > unload_timeout)) {
+			TimeOrderedMapBlock b = mapblock_queue.top();
+			mapblock_queue.pop();
+
+			MapBlock *block = b.block;
+
+			if (block->refGet() != 0)
+				continue;
+
+			v3s16 p = block->getPos();
+
+			// Save if modified
+			if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
+				modprofiler.add(block->getModifiedReasonString(), 1);
+				if (!saveBlock(block))
+					continue;
+				saved_blocks_count++;
+			}
+
+			// Delete from memory
+			b.sect->deleteBlock(block);
+
+			if (unloaded_blocks)
+				unloaded_blocks->push_back(p);
+
+			deleted_blocks_count++;
+			block_count_all--;
+		}
+		// Delete empty sectors
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+			si != m_sectors.end(); ++si) {
+			if (si->second->empty()) {
+				sector_deletion_queue.push_back(si->first);
+			}
+		}
 	}
-	}
-	if(save_started)
-		endSave();
-
-	if (!calls)
-		m_blocks_update_last = 0;
-
-	for (auto & block : blocks_delete)
-		this->deleteBlock(block);
+	endSave();
 
 	// Finally delete the empty sectors
+	deleteSectors(sector_deletion_queue);
 
 	if(deleted_blocks_count != 0)
 	{
-		if (m_blocks_update_last)
-			infostream<<"ServerMap: timerUpdate(): Blocks processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
-		infostream<<"Unloaded "<<deleted_blocks_count<<"/"<<(block_count_all + deleted_blocks_count)
+		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
-		infostream<<" (deleteq1="<<m_blocks_delete_1.size()<< " deleteq2="<<m_blocks_delete_2.size()<<")";
-		if(saved_blocks_count)
+		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
-/*
 		infostream<<", "<<block_count_all<<" blocks in memory";
-*/
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
-			//infostream<<"Blocks modified by: "<<std::endl;
+			infostream<<"Blocks modified by: "<<std::endl;
 			modprofiler.print(infostream);
 		}
 	}
-	return m_blocks_update_last;
 }
+
+#endif
 
 void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
-	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
+	timerUpdate(0.0, -1.0, 100, 0, unloaded_blocks);
 }
 
 
