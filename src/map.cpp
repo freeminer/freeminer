@@ -722,6 +722,8 @@ u32 Map::updateLighting(enum LightBank bank,
 			modified_blocks[pos] = block;
 			//blocks_to_update[pos] = block;
 
+			block->setLightingExpired(true);
+
 			/*
 				Clear all light from block
 			*/
@@ -782,8 +784,6 @@ u32 Map::updateLighting(enum LightBank bank,
 			/*infostream<<"Bottom for sunlight-propagated block ("
 					<<pos.X<<","<<pos.Y<<","<<pos.Z<<") not valid"
 					<<std::endl;*/
-
-			block->setLightingExpired(true);
 
 			// Bottom sunlight is not valid; get the block and loop to it
 
@@ -950,6 +950,7 @@ TimeTaker timer("updateLighting expireDayNightDiff");
 		//MapBlock *block = i->second;
 		if(block == NULL || block->isDummy())
 			continue;
+		block->setLightingExpired(false);
 		block->expireDayNightDiff();
 	}
 	return ret;

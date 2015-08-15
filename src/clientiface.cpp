@@ -151,7 +151,7 @@ int RemoteClient::GetNextBlocks (
 	// Predict to next block
 	v3f playerpos_predicted = playerpos + playerspeeddir*MAP_BLOCKSIZE*BS;
 
-	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);floatToInt(playerpos_predicted, BS);
+	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);
 
 	v3s16 center = getNodeBlockPos(center_nodepos);
 
@@ -468,9 +468,11 @@ int RemoteClient::GetNextBlocks (
 				block->resetUsageTimer();
 
 				//todo: fixme
-				//if (block->getLightingExpired() && (block_sent /*|| d>=1*/)) {
-				//	continue;
-				//}
+				if (block->getLightingExpired() && (block_sent || d >= 1)) {
+					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
+					continue;
+				}
+
 
 				// Block is valid if lighting is up-to-date and data exists
 				if(block->isValid() == false)
