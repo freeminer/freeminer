@@ -346,7 +346,7 @@ void set_default_settings(Settings *settings) {
 	// Client Backend
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("client_unload_unused_data_timeout", "200");
-	settings->setDefault("client_mapblock_limit", "1000");
+	settings->setDefault("client_mapblock_limit", "5000");
 	//settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("enable_mesh_cache", "false");
 	settings->setDefault("repeat_rightclick_time", "0.25");
