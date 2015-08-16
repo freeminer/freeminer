@@ -188,8 +188,8 @@ public:
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
 	s16 liquid_pressure;
-	std::map<v3POS, s16> heat_cache;
-	std::map<v3POS, s16> humidity_cache;
+	unordered_map_v3POS<s16> heat_cache;
+	unordered_map_v3POS<s16> humidity_cache;
 };
 
 struct MapgenFactory {

@@ -94,8 +94,8 @@ public:
 	concurrent_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
 
 private:
-	concurrent_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
-	std::unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_ranges;
+	concurrent_map<unsigned int, unordered_map_v3POS<std::shared_ptr<MeshMakeData>>> m_queue;
+	unordered_map_v3POS<unsigned int> m_ranges;
 };
 
 struct MeshUpdateResult

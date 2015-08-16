@@ -209,7 +209,7 @@ s16 Map::getHumidity(v3s16 p, bool no_random) {
 
 
 
-s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache) {
+s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> * cache) {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();
 	if (block) {
@@ -233,7 +233,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 	return value + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, std::map<v3POS, s16> * cache) {
+s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> * cache) {
 	auto bp = getNodeBlockPos(p);
 	auto gametime = env->getGameTime();
 	if (block) {

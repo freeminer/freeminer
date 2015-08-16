@@ -122,7 +122,7 @@ void ClientMap::OnRegisterSceneNode()
 
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
-		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> & occlude_cache)
+		unordered_map_v3POS<bool> & occlude_cache)
 {
 	float d0 = (float)BS * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -281,7 +281,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 
 	u32 calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
-	std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> occlude_cache;
+	unordered_map_v3POS<bool> occlude_cache;
 
 	while (!draw_nearest.empty()) {
 		auto ir = draw_nearest.back();

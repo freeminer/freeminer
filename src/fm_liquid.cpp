@@ -91,7 +91,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	// list of nodes that due to viscosity have not reached their max level height
-	//std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> must_reflow, must_reflow_second, must_reflow_third;
+	//unordered_map_v3POS<bool> must_reflow, must_reflow_second, must_reflow_third;
 	std::list<v3POS> must_reflow, must_reflow_second, must_reflow_third;
 	// List of MapBlocks that will require a lighting update (due to lava)
 	u16 loop_rand = myrand();
