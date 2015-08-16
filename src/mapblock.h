@@ -631,11 +631,14 @@ public:
 
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
 	content_t content_only;
+	u8 content_only_param1, content_only_param2;
 	content_t analyzeContent() {
 		auto lock = lock_shared_rec();
 		content_only = data[0].param0;
+		content_only_param1 = data[0].param1;
+		content_only_param2 = data[0].param2;
 		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {
-			if (data[i].param0 != content_only) {
+			if (data[i].param0 != content_only || data[i].param1 != content_only_param1 || data[i].param2 != content_only_param2) {
 				content_only = CONTENT_IGNORE;
 				break;
 			}

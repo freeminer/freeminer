@@ -693,7 +693,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 6);
+	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 8);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -708,7 +708,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
 	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
-
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
 
 	//JMutexAutoLock lock(m_env_mutex);
 	/*

@@ -107,6 +107,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_next_analyze_timestamp = 0;
 	m_abm_timestamp = 0;
 	content_only = CONTENT_IGNORE;
+	content_only_param1 = content_only_param2 = 0;
 }
 
 MapBlock::~MapBlock()
@@ -715,7 +716,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 	}
 
 	if (!disk && content_only != CONTENT_IGNORE) {
-		auto n = MapNode(content_only);
+		auto n = MapNode(content_only, content_only_param1, content_only_param2);
 		for (u32 i = 0; i < MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; i++)
 			data[i] = n;
 		return true;

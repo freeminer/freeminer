@@ -188,6 +188,8 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			block = new MapBlock(&m_env.getMap(), p, this);
 
 		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, &block->content_only);
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, &block->content_only_param1);
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, &block->content_only_param2);
 
 		block->deSerialize(istr, ser_version, false);
 		s32 h; // for convert to atomic
