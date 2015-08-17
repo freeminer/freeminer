@@ -78,7 +78,7 @@ bool packet_convert_safe_zip(MsgpackPacket & packet, int field, T * to) {
 
 class MsgpackPacketSafe : public MsgpackPacket {
 public:
-	template<typename T> 
+	template<typename T>
 	bool convert_safe(int field, T * to) {
 		return packet_convert_safe(*this, field, to);
 	}

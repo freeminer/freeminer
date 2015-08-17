@@ -24,8 +24,8 @@ struct v3s16Equal {
 struct v3POSHash {
 	std::size_t operator()(const v3POS& k) const {
 		return (  (std::hash<int>()(k.X)
-		        ^ (std::hash<int>()(k.Y) << 1)) >> 1)
-		        ^ (std::hash<int>()(k.X) << 1);
+		           ^ (std::hash<int>()(k.Y) << 1)) >> 1)
+		       ^ (std::hash<int>()(k.X) << 1);
 	}
 };
 

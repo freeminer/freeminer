@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 template < class LOCKER, class Key, class T, class Compare = std::less<Key>,
-         class Allocator = std::allocator<std::pair<const Key, T> > >
+           class Allocator = std::allocator<std::pair<const Key, T> > >
 class concurrent_map_: public std::map<Key, T, Compare, Allocator>,
 	public LOCKER {
 public:
@@ -152,7 +152,7 @@ public:
 };
 
 template <class Key, class T, class Compare = std::less<Key>,
-         class Allocator = std::allocator<std::pair<const Key, T> >>
+          class Allocator = std::allocator<std::pair<const Key, T> >>
 class concurrent_map: public concurrent_map_<locker<>, Key, T, Compare, Allocator>
 { };
 
@@ -160,14 +160,14 @@ class concurrent_map: public concurrent_map_<locker<>, Key, T, Compare, Allocato
 #if ENABLE_THREADS
 
 template < class Key, class T, class Compare = std::less<Key>,
-         class Allocator = std::allocator<std::pair<const Key, T> >>
+           class Allocator = std::allocator<std::pair<const Key, T> >>
 class maybe_concurrent_map: public concurrent_map<Key, T, Compare, Allocator>
 { };
 
 #else
 
 template < class Key, class T, class Compare = std::less<Key>,
-         class Allocator = std::allocator<std::pair<const Key, T> >>
+           class Allocator = std::allocator<std::pair<const Key, T> >>
 class not_concurrent_map: public std::map<Key, T, Compare, Allocator>,
 	public dummy_locker {
 public:
@@ -190,7 +190,7 @@ public:
 };
 
 template < class Key, class T, class Compare = std::less<Key>,
-         class Allocator = std::allocator<std::pair<const Key, T> >>
+           class Allocator = std::allocator<std::pair<const Key, T> >>
 class maybe_concurrent_map: public not_concurrent_map<Key, T, Compare, Allocator>
 { };
 

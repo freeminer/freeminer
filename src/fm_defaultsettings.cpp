@@ -68,13 +68,13 @@ void set_default_settings(Settings *settings) {
 
 	// Screen
 #if __arm__
- #if defined(_IRR_COMPILE_WITH_OGLES1_)
+#if defined(_IRR_COMPILE_WITH_OGLES1_)
 	settings->setDefault("video_driver", "ogles1");
- #elif defined(_IRR_COMPILE_WITH_OGLES2_)
+#elif defined(_IRR_COMPILE_WITH_OGLES2_)
 	settings->setDefault("video_driver", "ogles2");
- #else
+#else
 	settings->setDefault("video_driver", "opengl");
- #endif
+#endif
 	settings->setDefault("enable_shaders", "0");
 #else
 	settings->setDefault("video_driver", "opengl");
@@ -373,7 +373,7 @@ void set_default_settings(Settings *settings) {
 #if !MINETEST_PROTO
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
 #else
-	settings->setDefault("serverlist_url", "servers.minetest.net"); 
+	settings->setDefault("serverlist_url", "servers.minetest.net");
 #endif
 
 	settings->setDefault("server_address", "");

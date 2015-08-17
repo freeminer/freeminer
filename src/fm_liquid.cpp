@@ -29,9 +29,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LIQUID_DEBUG 0
 
 enum NeighborType {
-    NEIGHBOR_UPPER,
-    NEIGHBOR_SAME_LEVEL,
-    NEIGHBOR_LOWER
+	NEIGHBOR_UPPER,
+	NEIGHBOR_SAME_LEVEL,
+	NEIGHBOR_LOWER
 };
 
 struct NodeNeighbor {

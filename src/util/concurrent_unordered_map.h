@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lock.h"
 
 template < class LOCKER, class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-         class Alloc = std::allocator<std::pair<const Key, T> > >
+           class Alloc = std::allocator<std::pair<const Key, T> > >
 class concurrent_unordered_map_: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
 	public LOCKER {
 public:
@@ -131,21 +131,21 @@ public:
 };
 
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-         class Alloc = std::allocator<std::pair<const Key, T> > >
+          class Alloc = std::allocator<std::pair<const Key, T> > >
 class concurrent_unordered_map: public concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>
 { };
 
 #if ENABLE_THREADS
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-         class Alloc = std::allocator<std::pair<const Key, T> >>
+           class Alloc = std::allocator<std::pair<const Key, T> >>
 class maybe_concurrent_unordered_map: public concurrent_unordered_map<Key, T, Hash, Pred, Alloc>
 {};
 
 #else
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-         class Alloc = std::allocator<std::pair<const Key, T> >>
+           class Alloc = std::allocator<std::pair<const Key, T> >>
 class not_concurrent_unordered_map: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
 	public dummy_locker {
 public:
@@ -163,7 +163,7 @@ public:
 };
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-         class Alloc = std::allocator<std::pair<const Key, T> >>
+           class Alloc = std::allocator<std::pair<const Key, T> >>
 class maybe_concurrent_unordered_map: public not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>
 {};
 
