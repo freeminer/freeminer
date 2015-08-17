@@ -679,10 +679,11 @@ NEXT_LIQUID:
 			// or if node removed
 			v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
-			if(block != NULL) {
+			if(block) {
+				block->setLightingExpired(true);
 				//modified_blocks[blockpos] = block;
-				if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
-					lighting_modified_blocks.set_try(block->getPos(), block);
+				//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
+				//	lighting_modified_blocks.set_try(block->getPos(), block);
 			}
 			// fmtodo: make here random %2 or..
 			if (total_level < level_max * can_liquid)

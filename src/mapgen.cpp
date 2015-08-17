@@ -43,7 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "util/numeric.h"
 #include "filesys.h"
-#include "log.h"
+#include "log_types.h"
 
 FlagDesc flagdesc_mapgen[] = {
 	{"trees",    MG_TREES},

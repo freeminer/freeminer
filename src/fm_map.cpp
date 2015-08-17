@@ -156,7 +156,7 @@ MapNode Map::getNodeTry(v3POS p) {
 MapNode Map::getNodeLog(v3POS p){
 	auto blockpos = getNodeBlockPos(p);
 	auto block = getBlockNoCreateNoEx(blockpos);
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	v3POS relpos = p - blockpos*MAP_BLOCKSIZE;
 	auto node = block->getNodeNoEx(relpos);
 	infostream<<"getNodeLog("<<p<<") blockpos="<<blockpos<<" block="<<block<<" relpos="<<relpos<<" n="<<node<<std::endl;
 	return node;
@@ -164,9 +164,9 @@ MapNode Map::getNodeLog(v3POS p){
 */
 
 /*
-MapNode Map::getNodeNoLock(v3s16 p) //dont use
+MapNode Map::getNodeNoLock(v3POS p) //dont use
 {
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3POS blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(block == NULL)
 		return MapNode(CONTENT_IGNORE);
@@ -186,7 +186,7 @@ v3POS Map::transforming_liquid_pop() {
 	//return value;
 }
 
-s16 Map::getHeat(v3s16 p, bool no_random) {
+s16 Map::getHeat(v3POS p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->heat;
@@ -196,7 +196,7 @@ s16 Map::getHeat(v3s16 p, bool no_random) {
 	return 0;
 }
 
-s16 Map::getHumidity(v3s16 p, bool no_random) {
+s16 Map::getHumidity(v3POS p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
 		s16 value = block->humidity;
@@ -258,13 +258,13 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 	return value > 100 ? 100 : value;
 }
 
-int ServerMap::getSurface(v3s16 basepos, int searchup, bool walkable_only) {
+int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only) {
 
 	s16 max = MYMIN(searchup + basepos.Y, 0x7FFF);
 
 	MapNode last_node = getNodeNoEx(basepos);
 	MapNode node = last_node;
-	v3s16 runpos = basepos;
+	v3POS runpos = basepos;
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	bool last_was_walkable = nodemgr->get(node).walkable;
@@ -327,7 +327,7 @@ void Map::copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip) {
 
 u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 		unsigned int max_cycle_ms,
-		std::vector<v3s16> *unloaded_blocks)
+		std::vector<v3POS> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
 
@@ -381,7 +381,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 				continue;
 			if(block->getUsageTimer() > unload_timeout) // block->refGet() <= 0 &&
 			{
-				v3s16 p = block->getPos();
+				v3POS p = block->getPos();
 				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
 				// Save if modified
 				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
@@ -470,3 +470,260 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 	return m_blocks_update_last;
 }
 
+
+u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
+		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
+{
+	INodeDefManager *nodemgr = m_gamedef->ndef();
+
+	int ret = 0;
+	int loopcount = 0;
+
+	TimeTaker timer("updateLighting");
+
+	// For debugging
+	//bool debug=true;
+	//u32 count_was = modified_blocks.size();
+
+	//std::unordered_set<v3POS, v3POSHash, v3POSEqual> light_sources;
+	//std::unordered_map<v3POS, u8, v3POSHash, v3POSEqual> unlight_from_day, unlight_from_night;
+	std::set<v3POS> light_sources;
+	std::map<v3POS, u8> unlight_from_day, unlight_from_night;
+	unordered_map_v3POS<int> processed;
+
+
+	int num_bottom_invalid = 0;
+
+	//JMutexAutoLock lock2(m_update_lighting_mutex);
+
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
+	{
+	//TimeTaker t("updateLighting: first stuff");
+
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+	for(auto i = a_blocks.begin();
+		i != a_blocks.end(); ++i)
+	{
+
+		auto block = getBlockNoCreateNoEx(i->first);
+
+		for(;;) {
+			// Don't bother with dummy blocks.
+			if(!block || block->isDummy())
+				break;
+
+			auto lock = block->try_lock_unique_rec();
+			if (!lock->owns_lock())
+				break; // may cause dark areas
+			v3POS pos = block->getPos();
+			if (processed.count(pos) && processed[pos] <= i->first.Y ) {
+				break;
+			}
+			++loopcount;
+			processed[pos] = i->first.Y;
+			v3POS posnodes = block->getPosRelative();
+			modified_blocks[pos] = block;
+
+			block->setLightingExpired(true);
+
+			/*
+				Clear all light from block
+			*/
+			for(s16 z=0; z<MAP_BLOCKSIZE; z++)
+			for(s16 x=0; x<MAP_BLOCKSIZE; x++)
+			for(s16 y=0; y<MAP_BLOCKSIZE; y++)
+			{
+				v3POS p(x,y,z);
+				bool is_valid_position;
+				MapNode n = block->getNode(p, &is_valid_position);
+				if (!is_valid_position) {
+					/* This would happen when dealing with a
+					   dummy block.
+					*/
+					infostream<<"updateLighting(): InvalidPositionException"
+							<<std::endl;
+					continue;
+				}
+				u8 oldlight_day = n.getLight(LIGHTBANK_DAY, nodemgr);
+				u8 oldlight_night = n.getLight(LIGHTBANK_NIGHT, nodemgr);
+				n.setLight(LIGHTBANK_DAY, 0, nodemgr);
+				n.setLight(LIGHTBANK_NIGHT, 0, nodemgr);
+				block->setNode(p, n);
+
+				// If node sources light, add to list
+				//u8 source = nodemgr->get(n).light_source;
+				if(nodemgr->get(n).light_source)
+					light_sources.insert(p + posnodes);
+
+				v3POS p_map = p + posnodes;
+				// Collect borders for unlighting
+				if(x==0 || x == MAP_BLOCKSIZE-1
+						|| y==0 || y == MAP_BLOCKSIZE-1
+						|| z==0 || z == MAP_BLOCKSIZE-1) {
+					if(oldlight_day)
+						unlight_from_day[p_map] = oldlight_day;
+					if(oldlight_night)
+						unlight_from_night[p_map] = oldlight_night;
+				}
+
+
+			}
+
+			lock->unlock();
+
+				bool bottom_valid = propagateSunlight(pos, light_sources);
+
+				if(!bottom_valid)
+					num_bottom_invalid++;
+
+			pos.Y--;
+			block = getBlockNoCreateNoEx(pos);
+		}
+
+		if (porting::getTimeMs() > end_ms) {
+			++ret;
+			break;
+		}
+	}
+
+    }
+
+	{
+		//TimeTaker timer("updateLighting: unspreadLight");
+		unspreadLight(LIGHTBANK_DAY, unlight_from_day, light_sources, modified_blocks);
+		unspreadLight(LIGHTBANK_NIGHT, unlight_from_night, light_sources, modified_blocks);
+	}
+
+	{
+		//TimeTaker timer("updateLighting: spreadLight");
+		spreadLight(LIGHTBANK_DAY, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms*10);
+		spreadLight(LIGHTBANK_NIGHT, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms*10);
+	}
+
+	for (auto & i : processed) {
+		a_blocks.erase(i.first);
+		MapBlock *block = getBlockNoCreateNoEx(i.first);
+		if(!block)
+			continue;
+		block->setLightingExpired(false);
+	}
+
+	g_profiler->add("Server: light blocks", loopcount);
+
+	return ret;
+
+}
+
+
+bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
+		bool remove_light) {
+	MapBlock *block = getBlockNoCreateNoEx(pos);
+
+	INodeDefManager *nodemgr = m_gamedef->ndef();
+
+	// Whether the sunlight at the top of the bottom block is valid
+	bool block_below_is_valid = true;
+
+	v3POS pos_relative = block->getPosRelative();
+
+	for(s16 x=0; x<MAP_BLOCKSIZE; ++x) {
+		for(s16 z=0; z<MAP_BLOCKSIZE; ++z) {
+			bool no_sunlight = false;
+
+			// Check if node above block has sunlight
+
+			MapNode n = getNode(pos_relative + v3POS(x, MAP_BLOCKSIZE, z));
+			if (n) {
+				if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN) {
+					no_sunlight = true;
+				}
+			} else {
+
+				// NOTE: This makes over-ground roofed places sunlighted
+				// Assume sunlight, unless is_underground==true
+				if(block->getIsUnderground()) {
+					no_sunlight = true;
+				} else {
+					MapNode n = block->getNode(v3POS(x, MAP_BLOCKSIZE-1, z));
+					if(n && m_gamedef->ndef()->get(n).sunlight_propagates == false)
+						no_sunlight = true;
+				}
+				// NOTE: As of now, this just would make everything dark.
+				// No sunlight here
+				//no_sunlight = true;
+			}
+
+			s16 y = MAP_BLOCKSIZE-1;
+
+			// This makes difference to diminishing in water.
+			bool stopped_to_solid_object = false;
+
+			u8 current_light = no_sunlight ? 0 : LIGHT_SUN;
+
+			for(; y >= 0; --y) {
+				v3POS pos(x, y, z);
+				MapNode n = block->getNode(pos);
+
+				if(current_light == 0) {
+					// Do nothing
+				} else if(current_light == LIGHT_SUN && nodemgr->get(n).sunlight_propagates) {
+					// Do nothing: Sunlight is continued
+				} else if(nodemgr->get(n).light_propagates == false) {
+					// A solid object is on the way.
+					stopped_to_solid_object = true;
+
+					// Light stops.
+					current_light = 0;
+				} else {
+					// Diminish light
+					current_light = diminish_light(current_light);
+				}
+
+				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);
+
+				if(current_light > old_light || remove_light) {
+					n.setLight(LIGHTBANK_DAY, current_light, nodemgr);
+					block->setNode(pos, n);
+				}
+
+				if(diminish_light(current_light) != 0) {
+					light_sources.insert(pos_relative + pos);
+				}
+
+			}
+
+			// Whether or not the block below should see LIGHT_SUN
+			bool sunlight_should_go_down = (current_light == LIGHT_SUN);
+
+			/*
+				If the block below hasn't already been marked invalid:
+
+				Check if the node below the block has proper sunlight at top.
+				If not, the block below is invalid.
+
+				Ignore non-transparent nodes as they always have no light
+			*/
+
+			if(block_below_is_valid) {
+				MapNode n = getNode(pos_relative+v3POS(x, -1, z));
+				if (n) {
+					if(nodemgr->get(n).light_propagates) {
+						if(n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN
+								&& sunlight_should_go_down == false)
+							block_below_is_valid = false;
+						else if(n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN
+								&& sunlight_should_go_down == true)
+							block_below_is_valid = false;
+					}
+				} else {
+					// Just no block below, no need to panic.
+				}
+			}
+		}
+	}
+
+	return block_below_is_valid;
+}

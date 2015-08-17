@@ -71,7 +71,6 @@ Map::Map(IGameDef *gamedef):
 	m_blocks_save_last(0)
 {
 	m_liquid_step_flow = 1000;
-	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 	time_life = 0;
 	getBlockCacheFlush();
 }
@@ -661,6 +660,9 @@ s16 Map::propagateSunlight(v3s16 start,
 	return y + 1;
 }
 
+
+#if 0
+
 u32 Map::updateLighting(enum LightBank bank,
 		concurrent_map<v3POS, MapBlock*> & a_blocks,
 		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
@@ -955,6 +957,7 @@ TimeTaker timer("updateLighting expireDayNightDiff");
 	}
 	return ret;
 }
+#endif
 
 /*
 */
@@ -972,6 +975,13 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, ndef), ndef);
 				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
 			}
+
+			if (ndef->get(from_node).light_propagates) {
+				MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+				if (block)
+					block->setLightingExpired(true);
+			}
+
 		}
 		if (remove_metadata)
 			removeNodeMetadata(p);

@@ -387,7 +387,7 @@ int RemoteClient::GetNextBlocks (
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
-			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
+			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d) > m_uptime)) {
 				continue;
 			}
 
@@ -468,11 +468,11 @@ int RemoteClient::GetNextBlocks (
 				block->resetUsageTimer();
 
 				//todo: fixme
-				if (block->getLightingExpired() && (block_sent || d >= 1)) {
+				if (block->getLightingExpired()) {
 					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					continue;
+					if (block_sent && d>=1)
+						continue;
 				}
-
 
 				// Block is valid if lighting is up-to-date and data exists
 				if(block->isValid() == false)

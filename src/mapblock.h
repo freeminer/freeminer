@@ -391,8 +391,8 @@ public:
 
 	inline void setNodeNoCheck(v3s16 p, MapNode & n)
 	{
-		if (data == NULL)
-			throw InvalidPositionException("setNodeNoCheck data=NULL");
+		//if (data == NULL)
+		//	throw InvalidPositionException("setNodeNoCheck data=NULL");
 
 		auto lock = lock_unique_rec();
 
@@ -413,9 +413,11 @@ public:
 			setNode(v3s16(x0+x, y0+y, z0+z), node);
 	}
 
+/*
 	// See comments in mapblock.cpp
 	bool propagateSunlight(std::set<v3s16> &light_sources,
 		bool remove_light=false, bool *black_air_left=NULL);
+*/
 
 	// Copies data to VoxelManipulator to getPosRelative()
 	void copyTo(VoxelManipulator &dst);

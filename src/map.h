@@ -227,14 +227,14 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
+/*
 	u32 updateLighting(enum LightBank bank,
 			concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
+*/
 
 	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
-
-	u32 updateLighting_last[2];
 
 	/*
 		These handle lighting but not faces.
@@ -373,6 +373,8 @@ public:
 	v3POS m_block_cache_p;
 #endif
 	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
+
+	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
 
 protected:
 	friend class LuaVoxelManip;
