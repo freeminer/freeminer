@@ -219,6 +219,7 @@ void sendAnnounce(const std::string &action,
 			server["clients_list"].append(*it);
 		}
 		if (gameid != "") server["gameid"] = gameid;
+		server["proto"]        = g_settings->get("server_proto");
 	}
 
 	if (action == "start") {

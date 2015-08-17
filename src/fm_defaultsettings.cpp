@@ -372,8 +372,10 @@ void set_default_settings(Settings *settings) {
 
 #if !MINETEST_PROTO
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
+	settings->setDefault("server_proto", "fm_enet");
 #else
 	settings->setDefault("serverlist_url", "servers.minetest.net");
+	settings->setDefault("server_proto", "mt");
 #endif
 
 	settings->setDefault("server_address", "");
