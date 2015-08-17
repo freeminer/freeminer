@@ -2077,6 +2077,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 					<<"failed to create active object from static object "
 					<<"in block "<<PP(s_obj.pos/BS)
 					<<" type="<<(int)s_obj.type<<" data:"<<std::endl;
+			continue;
 			print_hexdump(verbosestream, s_obj.data);
 
 			new_stored.push_back(s_obj);
