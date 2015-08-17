@@ -387,6 +387,11 @@ public:
 
 	u32 m_game_time_start;
 
+	// Sets the static object status all the active objects in the specified block
+	// This is only really needed for deleting blocks from the map
+	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
+		bool static_exists, v3s16 static_block=v3s16(0,0,0));
+
 private:
 
 	/*
