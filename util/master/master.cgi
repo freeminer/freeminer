@@ -80,6 +80,7 @@ our %config = (
     list_full    => $root_path . 'list_full',
     list_pub     => $root_path . 'list',
     log          => $root_path . 'log.log',
+    tmp          => '/tmp',
     time_purge   => 86400 * 1,
     time_alive   => 650,
     source_check => 1,
@@ -134,6 +135,15 @@ sub file_rewrite(;$@) {
     print $fh @_;
     #return unless flock( $fh, Fcntl::LOCK_UN );
     #close $fh;
+}
+
+sub file_rewrite_atomic(;$@) {
+    my $name = shift;
+    my $tmp = $name;
+    $tmp =~ s/\W+/_/g;
+    $tmp = $config{tmp} . '/' . $tmp . '_' . Time::HiRes::time();
+    return unless file_rewrite($tmp, @_);
+    rename($tmp, $name);
 }
 
 sub printlog(;@) {
@@ -321,11 +331,11 @@ sub request (;$) {
             $list->{total_max}{clients} = $list->{total}{clients} if $list->{total_max}{clients} < $list->{total}{clients};
             $list->{total_max}{servers} = $list->{total}{servers} if $list->{total_max}{servers} < $list->{total}{servers};
 
-            file_rewrite($config{list_pub}, JSON->new->encode($list));
+            file_rewrite_atomic($config{list_pub}, JSON->new->encode($list));
             printlog "writed[$config{list_pub}] list size=", scalar @{$list->{list}} if $config{debug};
 
             $list->{list} = $list_full;
-            file_rewrite($config{list_full}, JSON->new->encode($list));
+            file_rewrite_atomic($config{list_full}, JSON->new->encode($list));
             printlog "writed[$config{list_full}] list size=", scalar @{$list->{list}} if $config{debug};
 
         }
