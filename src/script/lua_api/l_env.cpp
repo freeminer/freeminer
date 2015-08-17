@@ -813,7 +813,7 @@ int ModApiEnvMod::l_delete_area(lua_State *L)
 		v3s16 bp(x, y, z);
 		if (map.deleteBlock(bp)) {
 			env->setStaticForActiveObjectsInBlock(bp, false);
-			event.modified_blocks.insert(bp);
+			//event.modified_blocks.insert(bp);
 		} else {
 			success = false;
 		}

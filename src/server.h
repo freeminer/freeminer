@@ -415,6 +415,7 @@ private:
 
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
+	void SetBlocksNotSent();
 
 	void SendChatMessage(u16 peer_id, const std::string &message);
 	void SendChatMessage(u16 peer_id, const std::wstring &message);

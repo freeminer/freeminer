@@ -517,7 +517,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 				++loopcount;
 				processed[pos] = i->first.Y;
 				v3POS posnodes = block->getPosRelative();
-				modified_blocks[pos] = block;
+				//modified_blocks[pos] = block;
 
 				block->setLightingExpired(true);
 

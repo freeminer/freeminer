@@ -336,11 +336,12 @@ int LuaVoxelManip::l_update_map(lua_State *L)
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
+/*
 	for (std::map<v3s16, MapBlock *>::iterator
 		it = mblocks->begin();
 		it != mblocks->end(); ++it)
 		event.modified_blocks.insert(it->first);
-
+*/
 	map->dispatchEvent(&event);
 
 	mblocks->clear();

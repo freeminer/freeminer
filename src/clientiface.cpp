@@ -387,7 +387,7 @@ int RemoteClient::GetNextBlocks (
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
-			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d) > m_uptime)) {
+			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
 				continue;
 			}
 
@@ -470,7 +470,7 @@ int RemoteClient::GetNextBlocks (
 				//todo: fixme
 				if (block->getLightingExpired()) {
 					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					if (block_sent && d>=1)
+					if (block_sent && d>=1 && (block_sent + (d <= 1 ? 5 : d*d*d*d) > m_uptime))
 						continue;
 				}
 
@@ -590,7 +590,12 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	SetBlockNotSent(v3POS());
+	++m_nearest_unsent_reset;
+}
+
+void RemoteClient::SetBlocksNotSent()
+{
+	++m_nearest_unsent_reset;
 }
 
 void RemoteClient::SetBlockDeleted(v3s16 p) {

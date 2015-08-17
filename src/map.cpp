@@ -366,6 +366,7 @@ void Map::unspreadLight(enum LightBank bank,
 			}
 
 			// Add to modified_blocks
+/*
 			if(changed == true && block_checked_in_modified == false)
 			{
 				// If the block is not found in modified_blocks, add.
@@ -375,6 +376,7 @@ void Map::unspreadLight(enum LightBank bank,
 				}
 				block_checked_in_modified = true;
 			}
+*/
 		}
 	}
 
@@ -528,6 +530,7 @@ void Map::spreadLight(enum LightBank bank,
 				}
 			}
 
+/*
 			// Add to modified_blocks
 			if(changed == true && block_checked_in_modified == false)
 			{
@@ -538,6 +541,7 @@ void Map::spreadLight(enum LightBank bank,
 				}
 				block_checked_in_modified = true;
 			}
+*/
 		}
 	}
 
@@ -649,7 +653,7 @@ s16 Map::propagateSunlight(v3s16 start,
 			n.setLight(LIGHTBANK_DAY, LIGHT_SUN, nodemgr);
 			block->setNode(relpos, n);
 
-			modified_blocks[blockpos] = block;
+			//modified_blocks[blockpos] = block;
 		}
 		else
 		{
@@ -1044,7 +1048,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		MapBlock * block = getBlockNoCreate(blockpos);
 		if(!block)
 			break;
-		modified_blocks[blockpos] = block;
+		//modified_blocks[blockpos] = block;
 
 		// Unlight neighbours of node.
 		// This means setting light of all consequent dimmer nodes
@@ -1266,7 +1270,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	MapBlock * block = getBlockNoCreate(blockpos);
 	if(!block)
 		return;
-	modified_blocks[blockpos] = block;
+	//modified_blocks[blockpos] = block;
 
 	/*
 		If the removed node was under sunlight, propagate the

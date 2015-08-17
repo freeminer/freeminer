@@ -539,14 +539,14 @@ void *EmergeThread::Thread()
 		*/
 		// Add the originally fetched block to the modified list
 		if (block)
-			modified_blocks[p] = block;
+		1;//	modified_blocks[p] = block;
 		else if (allow_generate)
 			infostream<<"nothing generated at "<<PP(p)<<std::endl;
 
 		}
 
 		if (modified_blocks.size() > 0) {
-			m_server->SetBlocksNotSent(modified_blocks);
+			m_server->SetBlocksNotSent(/*modified_blocks*/);
 		}
 		if (mapgen->heat_cache.size() > 1000) {
 			mapgen->heat_cache.clear();

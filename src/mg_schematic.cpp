@@ -212,10 +212,12 @@ void Schematic::placeStructure(Map *map, v3s16 p, u32 flags,
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
+/*
 	for (std::map<v3s16, MapBlock *>::iterator
 		it = modified_blocks.begin();
 		it != modified_blocks.end(); ++it)
 		event.modified_blocks.insert(it->first);
+*/
 
 	map->dispatchEvent(&event);
 }

@@ -142,10 +142,12 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0,
 	// Send a MEET_OTHER event
 	MapEditEvent event;
 	event.type = MEET_OTHER;
+/*
 	for (std::map<v3s16, MapBlock*>::iterator
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
 		event.modified_blocks.insert(i->first);
+*/
 	map->dispatchEvent(&event);
 	return SUCCESS;
 }
