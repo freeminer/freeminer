@@ -520,6 +520,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 				//modified_blocks[pos] = block;
 
 				block->setLightingExpired(true);
+				block->lighting_broken = true;
 
 				/*
 					Clear all light from block
@@ -600,6 +601,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		if(!block)
 			continue;
 		block->setLightingExpired(false);
+		block->lighting_broken = false;
 	}
 
 	g_profiler->add("Server: light blocks", loopcount);

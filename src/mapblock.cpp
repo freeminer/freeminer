@@ -108,6 +108,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_abm_timestamp = 0;
 	content_only = CONTENT_IGNORE;
 	content_only_param1 = content_only_param2 = 0;
+	lighting_broken = false;
 }
 
 MapBlock::~MapBlock()

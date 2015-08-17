@@ -647,6 +647,7 @@ public:
 		}
 		return content_only;
 	}
+	std::atomic_bool lighting_broken;
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;

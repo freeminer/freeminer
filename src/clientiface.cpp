@@ -467,12 +467,12 @@ int RemoteClient::GetNextBlocks (
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
-				//todo: fixme
 				if (block->getLightingExpired()) {
 					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					if (block_sent && d>=1 && (block_sent + (d <= 1 ? 5 : d*d*d*d) > m_uptime))
-						continue;
 				}
+
+				if (block->lighting_broken && block_sent)
+					continue;
 
 				// Block is valid if lighting is up-to-date and data exists
 				if(block->isValid() == false)
