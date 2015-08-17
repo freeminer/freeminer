@@ -1,3 +1,7 @@
+#server_list .total {
+	font-weight: bold;
+}
+
 #server_list table {
 	max-width: 100%;
 	width: 100%;
@@ -11,16 +15,25 @@
 	border: 1px solid gray;
 }
 
-tr:hover {
-	background-color: #f0f0f0;
+#server_list thead {
+	background-color: #FFA;
+}
+
+#server_list tbody tr:nth-child(even) {
+	background-color: #EEE;
+}
+
+#server_list tbody tr:hover {
+	background-color: #CCC;
 }
 
 .mts_hover_list {
 	display: none;
-	border: gray solid 1px;
+	border: 1px solid #88F;
+	border-radius: 4px;
+	background-color: white;
 	position: absolute;
 	z-index: 100;
-	background-color: white;
 	padding: 0.5em;
 }
 
@@ -37,3 +50,4 @@ td:hover .mts_hover_list {
 	text-decoration: underline;
 	cursor: pointer;
 }
+

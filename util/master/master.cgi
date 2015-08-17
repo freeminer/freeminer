@@ -80,7 +80,6 @@ our %config = (
     list_full    => $root_path . 'list_full',
     list_pub     => $root_path . 'list',
     log          => $root_path . 'log.log',
-    tmp          => '/tmp',
     time_purge   => 86400 * 1,
     time_alive   => 650,
     source_check => 1,
@@ -128,35 +127,27 @@ sub get_params_utf8(;$$) {
     wantarray ? %$_ : $_;
 }
 
-sub file_rewrite(;$@) {
-    local $_ = shift;
-    return unless open my $fh, '>', $_;
-    return unless flock( $fh, Fcntl::LOCK_EX );
-    print $fh @_;
-    #return unless flock( $fh, Fcntl::LOCK_UN );
-    #close $fh;
-}
-
-sub file_rewrite_atomic(;$@) {
-    my $name = shift;
-    my $tmp = $name;
-    $tmp =~ s/\W+/_/g;
-    $tmp = $config{tmp} . '/' . $tmp . '_' . Time::HiRes::time();
-    return unless file_rewrite($tmp, @_);
-    rename($tmp, $name);
-}
-
 sub printlog(;@) {
     #local $_ = shift;
     return unless open my $fh, '>>', $config{log};
     print $fh (join ' ', @_), "\n";
 }
 
+sub file_rewrite(;$@) {
+    local $_ = shift;
+    return unless open my $fh, '>', $_;
+    die 'rewrite: cant lock'  unless flock( $fh, Fcntl::LOCK_EX );
+    print $fh @_;
+    #return unless flock( $fh, Fcntl::LOCK_UN );
+    #close $fh;
+}
+
 sub file_read ($) {
-    open my $f, '<', $_[0] or return;
+    open my $fh, '<', $_[0] or return;
+    die 'read: cant lock' unless flock( $fh, Fcntl::LOCK_SH );
     local $/ = undef;
-    my $ret = <$f>;
-    close $f;
+    my $ret = <$fh>;
+    close $fh;
     return \$ret;
 }
 
@@ -331,11 +322,11 @@ sub request (;$) {
             $list->{total_max}{clients} = $list->{total}{clients} if $list->{total_max}{clients} < $list->{total}{clients};
             $list->{total_max}{servers} = $list->{total}{servers} if $list->{total_max}{servers} < $list->{total}{servers};
 
-            file_rewrite_atomic($config{list_pub}, JSON->new->encode($list));
+            file_rewrite($config{list_pub}, JSON->new->encode($list));
             printlog "writed[$config{list_pub}] list size=", scalar @{$list->{list}} if $config{debug};
 
             $list->{list} = $list_full;
-            file_rewrite_atomic($config{list_full}, JSON->new->encode($list));
+            file_rewrite($config{list_full}, JSON->new->encode($list));
             printlog "writed[$config{list_full}] list size=", scalar @{$list->{list}} if $config{debug};
 
         }
@@ -346,16 +337,19 @@ sub request (;$) {
 sub request_cgi {
     my ($p, $after) = request(@_);
     shift @$p;
-    printu join "\n", map { join ': ', @$_ } shift @$p;
-    printu "\n\n";
-    printu join '', map { join '', @$_ } @$p;
+    printu(join "\n", map { join ': ', @$_ } shift @$p);
+    printu("\n\n");
+    printu(join '', map { join '', @$_ } @$p);
     if (fork) {
         unless ($config{debug}) {
             close STDOUT;
             close STDERR;
         }
     } else {
-        $after->() if ref $after ~~ 'CODE';
+        eval {
+            $after->() if ref $after ~~ 'CODE';
+        };
+        printlog "after error [$@]" if $@ and $config{debug};
     }
 }
 request_cgi() unless caller;
