@@ -121,7 +121,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y, csize.Z);
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X+2, csize.Y+2, csize.Z+2);
 	layers_init(emerge, sp->paramsj);
 
 	if (c_mossycobble == CONTENT_IGNORE)

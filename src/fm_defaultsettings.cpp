@@ -579,6 +579,7 @@ void set_default_settings(Settings *settings) {
 	AConfiguration_getLanguage(porting::app_global->config, lang);
 	settings->setDefault("language", lang);
 	settings->setDefault("android_keyboard", "0");
+	settings->setDefault("texture_min_size", "16");
 
 #else
 	settings->setDefault("screen_dpi", "72");
