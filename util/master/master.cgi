@@ -60,14 +60,34 @@ no warnings qw(uninitialized);
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use utf8;
 use Socket;
-my $getaddrinfo_noserv;
 BEGIN {
     if ($Socket::VERSION ge '2.008') {
-        eval q{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST); $getaddrinfo_noserv = Socket::NIx_NOSERV;}; # >5.16
+        eval q{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST); }; # >5.16
+        eval q{
+            sub get_ip ($) {
+                my $addr = $_[0];
+                (my $err, local @_) = Socket::getaddrinfo($addr);
+                return [ map{(Socket::getnameinfo($_->{addr}, Socket::NI_NUMERICHOST, Socket::NIx_NOSERV))[1]} @_];
+            };
+        };
     } else {  # <5.16
+        my $getaddrinfo_noserv;
         eval qq{use Socket6 qw(getaddrinfo getnameinfo NI_NUMERICHOST);};
         eval q{$getaddrinfo_noserv = Socket6::NIx_NOSERV;};
         eval q{$getaddrinfo_noserv = Socket6::NI_NUMERICSERV;} if $@;
+        eval q{
+            sub get_ip ($) {
+                my $addr = $_[0];
+                local @_ = getaddrinfo($addr, undef);
+                my $addrs = [];
+                while (scalar(@_) >= 5) {
+                    (my $family, my $socktype, my $proto, my $saddr, my $canonname, @_) = @_;
+                    my ($host, $port) = Socket6::getnameinfo($saddr, Socket6::NI_NUMERICHOST | $getaddrinfo_noserv);
+                    push @$addrs, $host;
+                }
+                return $addrs;
+            }
+        };
     }
 };
 use Time::HiRes qw(time sleep);
@@ -265,14 +285,7 @@ sub request (;$) {
             $param->{address} ||= $param->{ip};
             $param->{port} ||= 30000;
             if ($config{source_check}) {
-                local @_ = getaddrinfo($param->{address}, undef, AF_UNSPEC);
-                my $addrs = [];
-                while (scalar(@_) >= 5) {
-                    (my $family, my $socktype, my $proto, my $saddr, my $canonname, @_) = @_;
-                    my ($host, $port) = getnameinfo($saddr, NI_NUMERICHOST | $getaddrinfo_noserv);
-                    push @$addrs, $host;
-                }
-
+                my $addrs = get_ip($param->{address});
                 if (!($param->{ip} ~~ $addrs) and !($param->{ip} ~~ $config{trusted})) {
                     printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}]") if $config{debug};
                     return;
@@ -306,6 +319,7 @@ sub request (;$) {
             $param->{time} ||= int time;
             $param->{start} = $param->{action} ~~ 'start' ? $param->{time} : $old->{start} || $param->{time};
             delete $param->{start} if $param->{off};
+            $param->{since} = $old->{since} || $old->{time} || $param->{time};
             $param->{clients} ||= scalar @{$param->{clients_list}} if ref $param->{clients_list} eq 'ARRAY';
             $param->{first} ||= $old->{first} || $old->{time} || $param->{time};
             $param->{clients_top} = $old->{clients_top} if $old->{clients_top} > $param->{clients};
