@@ -2523,9 +2523,13 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	if(dtime_max_increment*m_move_max_loop < dtime)
 		dtime_max_increment = dtime/m_move_max_loop;
 
+	//if (dtime > 1) errorstream<<" dtime="<<dtime<<" player_speed="<<player_speed<<std::endl;
+
+#define DTIME_MAX 2.0
+
 	// Don't allow overly huge dtime
-	if(dtime > 2)
-		dtime = 2;
+	if(dtime > DTIME_MAX)
+		dtime = DTIME_MAX;
 
 	if (player_speed <= 0.01)
 		dtime_max_increment = dtime;
@@ -2625,7 +2629,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	}
 	while(dtime_downcount > 0.001);
 
-	//infostream<<"loop "<<loopcount<<"/"<<m_move_max_loop<<" breaked="<<breaked<<std::endl;
+	//if (breaked) errorstream<<"loop "<<loopcount<<"/"<<m_move_max_loop<<" breaked="<<breaked<<std::endl;
 
 	if (breaked && m_move_max_loop > loopcount)
 		--m_move_max_loop;
@@ -2637,6 +2641,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	{
 		//TimeTaker timer2("ClientEnvironment::step() collision");
 
+	if (dtime < DTIME_MAX || lplayer->getSpeed().getLength() > PLAYER_FALL_TOLERANCE_SPEED)
 	for(auto
 			i = player_collisions.begin();
 			i != player_collisions.end(); ++i)
