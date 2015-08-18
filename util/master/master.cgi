@@ -315,13 +315,12 @@ sub request (;$) {
             printlog "readed[$config{list_full}] list size=", scalar @{$list->{list}} if $config{debug};
             my $listk = {map { $_->{key} => $_ } @{$list->{list}}};
             my $old = $listk->{$param->{key}};
+            $param->{time} = int time;
             $param->{time} = $old->{time} if $param->{off};
-            $param->{time} ||= int time;
             $param->{start} = $param->{action} ~~ 'start' ? $param->{time} : $old->{start} || $param->{time};
             delete $param->{start} if $param->{off};
-            $param->{since} = $old->{since} || $old->{time} || $param->{time};
             $param->{clients} ||= scalar @{$param->{clients_list}} if ref $param->{clients_list} eq 'ARRAY';
-            $param->{first} ||= $old->{first} || $old->{time} || $param->{time};
+            $param->{first} = $old->{first} || $old->{time} || $param->{time};
             $param->{clients_top} = $old->{clients_top} if $old->{clients_top} > $param->{clients};
             $param->{clients_top} ||= $param->{clients} || 0;
             # params reported once on start, must be same as src/serverlist.cpp:~221 if(server["action"] == "start") { ...
