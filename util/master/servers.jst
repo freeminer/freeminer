@@ -62,6 +62,7 @@
 		{{? !master.no_uptime}}
 		<td class="uptime">
 			{{=humanTime(server.uptime)}}, {{=humanTime(server.game_time)}}
+			{{? server.first}} {{=hoverString("First seen", humanTime(+new Date()/1000 -server.first))}} {{?}}
 		</td>{{?}}
 		{{? !master.no_ping}}
 		<td class="ping">
