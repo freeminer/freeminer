@@ -5,6 +5,9 @@ install:
  cpan JSON JSON::XS
  touch list_full list log.log && chmod a+rw list_full list log.log
 
+deb:
+ sudo apt-get install fcgiwrap
+
 old deb linux:
  sudo apt-get install libjson-xs-perl libjson-perl libsocket6-perl libio-socket-ip-perl
 
@@ -23,7 +26,11 @@ nginx:
             add_header Access-Control-Allow-Origin *;
         }
         location /announce {
-            fastcgi_pass   unix:/var/run/fcgiwrap/fcgiwrap.sock;
+            #freebsd:
+            #fastcgi_pass   unix:/var/run/fcgiwrap/fcgiwrap.sock;
+            #linux:
+            fastcgi_pass   unix:/var/run/fcgiwrap.socket;
+
             fastcgi_param  SCRIPT_FILENAME $document_root/master.cgi;
             include        fastcgi_params;
         }
@@ -67,7 +74,7 @@ use Time::HiRes qw(time sleep);
 use IO::Socket::IP;
 use JSON;
 use Net::Ping;
-use Fcntl qw();
+use Fcntl qw( );
 #use Data::Dumper;
 
 our $root_path;
@@ -256,15 +263,21 @@ sub request (;$) {
                 return if $param->{ip} ~~ $_;
             }
             $param->{address} ||= $param->{ip};
+            $param->{port} ||= 30000;
             if ($config{source_check}) {
-                (my $err, local @_) = getaddrinfo($param->{address});
-                my $addrs = [ map{(getnameinfo($_->{addr}, NI_NUMERICHOST, $getaddrinfo_noserv))[1]} @_];
+                local @_ = getaddrinfo($param->{address}, undef, AF_UNSPEC);
+                my $addrs = [];
+                while (scalar(@_) >= 5) {
+                    (my $family, my $socktype, my $proto, my $saddr, my $canonname, @_) = @_;
+                    my ($host, $port) = getnameinfo($saddr, NI_NUMERICHOST | $getaddrinfo_noserv);
+                    push @$addrs, $host;
+                }
+
                 if (!($param->{ip} ~~ $addrs) and !($param->{ip} ~~ $config{trusted})) {
-                    printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}] [$err]") if $config{debug};
+                    printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}]") if $config{debug};
                     return;
                 }
             }
-            $param->{port} ||= 30000;
             $param->{key} = "$param->{ip}:$param->{port}";
             $param->{off} = time if $param->{action} ~~ 'delete';
             if ($config{ping} and $param->{action} ne 'delete') {
