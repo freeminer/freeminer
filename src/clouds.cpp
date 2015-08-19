@@ -112,7 +112,7 @@ void Clouds::render()
 	*/
 
 	const float cloud_mul = m_cloud_y/BS/300; // fmtodo: remake
-	const float cloud_size = BS * 64; // * cloud_mul;
+	const float cloud_size = BS * 64 * cloud_mul;
 	const v2f cloud_speed(0, -BS * 2 * cloud_mul);
 	
 	const float cloud_full_radius = cloud_size * m_cloud_radius_i;

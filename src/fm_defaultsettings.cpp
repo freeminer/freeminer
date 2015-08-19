@@ -188,7 +188,7 @@ void set_default_settings(Settings *settings) {
 	// Connecting to server
 	settings->setDefault("address", "");
 	settings->setDefault("remote_port", "30000");
-	settings->setDefault("reconnects", win32 ? "1" : "5"); // TODO: wix windows
+	settings->setDefault("reconnects", win32 ? "1" : "10"); // TODO: wix windows
 
 	// Connecting to curl
 	settings->setDefault("curl_timeout", "5000");
@@ -273,7 +273,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("enable_3d_clouds", "true");
 	settings->setDefault("cloud_height", "300");
-	settings->setDefault("cloud_radius", "36");
+	settings->setDefault("cloud_radius", "12");
 	settings->setDefault("new_style_water", "false");
 	settings->setDefault("opaque_water", "false");
 	settings->setDefault("connected_glass", "false");
@@ -580,6 +580,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("language", lang);
 	settings->setDefault("android_keyboard", "0");
 	settings->setDefault("texture_min_size", "16");
+	settings->setDefault("cloud_radius", "6");
 
 #else
 	settings->setDefault("screen_dpi", "72");

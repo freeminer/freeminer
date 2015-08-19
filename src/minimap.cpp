@@ -227,6 +227,8 @@ Mapper::Mapper(IrrlichtDevice *device, Client *client)
 	m_surface_mode_scan_height =
 		g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
 
+	setAngle(0);
+
 	// Initialize minimap data
 	data = new MinimapData;
 	data->mode              = MINIMAP_MODE_OFF;
