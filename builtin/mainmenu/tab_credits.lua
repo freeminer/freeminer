@@ -32,7 +32,6 @@ tab_credits = {
 				",Perttu Ahola (celeron55) <celeron55@gmail.com>,"..
 				",Ryan Kwolek (kwolekr) <kwolekr@minetest.net>,"..
 				",PilzAdam <pilzadam@minetest.net>," ..
-				",Maciej Kasatkin (RealBadAngel) <mk@realbadangel.pl>,"..
 				",sfan5 <sfan5@live.de>,"..
 				",kahrl <kahrl@gmx.net>,"..
 				",sapier,"..
@@ -40,25 +39,30 @@ tab_credits = {
 				",Nathanael Courant (Nore/Ekdohibs) <nore@mesecons.net>,"..
 				",BlockMen,"..
 				",Craig Robbins (Zeno),"..
-				",Loic Blot (nerzhul/nrz),"..
-				",paramat,"..
+				",Loic Blot (nerzhul/nrz) <loic.blot@unix-experience.fr>,"..
+				",Mat Gregory (paramat),"..
 				",est31 <MTest31@outlook.com>," ..
 				",,"..
 				"#FFFF00," .. fgettext("Active Contributors") .. "," ..
 				",SmallJoker <mk939@ymail.com>," ..
-				",gregorycu," ..
 				",Andrew Ward (rubenwardy) <rubenwardy@gmail.com>," ..
 				",Aaron Suen <warr1024@gmail.com>," ..
-				",TeTpaAka," ..
+				",Sokomine <wegwerf@anarres.dyndns.org>," ..
+				",Břetislav Štec (TeTpaAka)," ..
+				",Jean-Patrick G (kilbith) <jeanpatrick.guerrero@gmail.com>," ..
+				",Rui <mrrst0914@gmail.com>," ..
+				",Diego Martinez (kaeza) <kaeza@users.sf.net>," ..
 				",," ..
 				"#FFFF00," .. fgettext("Previous Core Developers") .."," ..
+				",Maciej Kasatkin (RealBadAngel) <maciej.kasatkin@o2.pl>,"..
 				",Lisa Milne (darkrose) <lisa@ltmnet.com>," ..
-				",proller <proler@gmail.com>," ..
+				",proller," ..
 				",Ilya Zhuravlev (xyz) <xyz@minetest.net>," ..
 				",," ..
 				"#FFFF00," .. fgettext("Previous Contributors") .. "," ..
 				",Vanessa Ezekowitz (VanessaE) <vanessaezekowitz@gmail.com>,"..
 				",Jurgen Doser (doserj) <jurgen.doser@gmail.com>,"..
+				",Gregory Currie (gregorycu)," ..
 				",Jeija <jeija@mesecons.net>,"..
 				",MirceaKitsune <mirceakitsune@gmail.com>,"..
 				",dannydark <the_skeleton_of_a_child@yahoo.co.uk>,"..

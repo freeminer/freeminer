@@ -305,7 +305,7 @@ void WieldMeshSceneNode::setExtruded(const std::string &imagename,
 	material.setFlag(video::EMF_USE_MIP_MAPS, false);
 #endif
 	if (m_enable_shaders) {
-		material.setTexture(2, tsrc->getShaderFlagsTexture(false, true, true));
+		material.setTexture(2, tsrc->getShaderFlagsTexture(false));
 	}
 }
 

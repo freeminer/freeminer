@@ -30,7 +30,7 @@ VERSION_TWEAK := $(shell cat $(ROOT)/../../CMakeLists.txt | \
 # Increase for each build!
 ################################################################################
 # Play Store actual version (16/03/15): 11
-ANDROID_VERSION_CODE = 12
+ANDROID_VERSION_CODE = 13
 
 #and for freeminer for skip conflict:
 ANDROID_VERSION_CODE = 32
