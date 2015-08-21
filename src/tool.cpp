@@ -94,6 +94,24 @@ void ToolCapabilities::deSerialize(std::istream &is)
 	}
 }
 
+void ToolCapabilities::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+{
+	pk.pack_map(4);
+	PACK(TOOLCAP_FULL_PUNCH_INTERVAL, full_punch_interval);
+	PACK(TOOLCAP_MAX_DROP_LEVEL, max_drop_level);
+	PACK(TOOLCAP_GROUPCAPS, groupcaps);
+	PACK(TOOLCAP_DAMAGEGROUPS, damageGroups);
+}
+
+void ToolCapabilities::msgpack_unpack(msgpack::object o)
+{
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	packet[TOOLCAP_FULL_PUNCH_INTERVAL].convert(&full_punch_interval);
+	packet[TOOLCAP_MAX_DROP_LEVEL].convert(&max_drop_level);
+	packet[TOOLCAP_GROUPCAPS].convert(&groupcaps);
+	packet[TOOLCAP_DAMAGEGROUPS].convert(&damageGroups);
+}
+
 DigParams getDigParams(const ItemGroupList &groups,
 		const ToolCapabilities *tp, float time_from_last_punch)
 {

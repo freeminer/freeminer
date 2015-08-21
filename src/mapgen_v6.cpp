@@ -31,9 +31,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "content_mapnode.h" // For content_mapnode_get_new_name
 #include "voxelalgorithms.h"
-#include "profiler.h"
 #include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
+#include "log_types.h"
 #include "emerge.h"
 #include "dungeongen.h"
 #include "cavegen.h"
@@ -47,27 +46,22 @@ FlagDesc flagdesc_mapgen_v6[] = {
 	{"jungles",    MGV6_JUNGLES},
 	{"biomeblend", MGV6_BIOMEBLEND},
 	{"mudflow",    MGV6_MUDFLOW},
+	{"snowbiomes", MGV6_SNOWBIOMES},
 	{NULL,         0}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
-MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
-	this->generating  = false;
-	this->id       = mapgenid;
-	this->emerge   = emerge;
-
-	this->seed        = (int)params->seed;
-	this->water_level = params->water_level;
-	this->flags       = params->flags;
-	this->csize       = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
-	this->gennotify   = emerge->gennotify;
-
+MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
+	: Mapgen(mapgenid, params, emerge)
+{
+	this->m_emerge = emerge;
 	this->ystride = csize.X; //////fix this
-	
-	MapgenV6Params *sp = (MapgenV6Params *)params->sparams;
 
+	this->heightmap = new s16[csize.X * csize.Z];
+
+	MapgenV6Params *sp = (MapgenV6Params *)params->sparams;
 	this->spflags     = sp->spflags;
 	this->freq_desert = sp->freq_desert;
 	this->freq_beach  = sp->freq_beach;
@@ -84,7 +78,10 @@ MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	noise_height_select  = new Noise(&sp->np_height_select,  seed, csize.X, csize.Y);
 	noise_mud            = new Noise(&sp->np_mud,            seed, csize.X, csize.Y);
 	noise_beach          = new Noise(&sp->np_beach,          seed, csize.X, csize.Y);
-	noise_biome          = new Noise(&sp->np_biome,          seed, csize.X, csize.Y);
+	noise_biome          = new Noise(&sp->np_biome,          seed,
+			csize.X + 2 * MAP_BLOCKSIZE, csize.Y + 2 * MAP_BLOCKSIZE);
+	noise_humidity       = new Noise(&sp->np_humidity,       seed,
+			csize.X + 2 * MAP_BLOCKSIZE, csize.Y + 2 * MAP_BLOCKSIZE);
 
 	//// Resolve nodes to be used
 	INodeDefManager *ndef = emerge->ndef;
@@ -96,38 +93,43 @@ MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	c_water_source    = ndef->getId("mapgen_water_source");
 	c_lava_source     = ndef->getId("mapgen_lava_source");
 	c_gravel          = ndef->getId("mapgen_gravel");
-	c_cobble          = ndef->getId("mapgen_cobble");
-	c_desert_sand     = ndef->getId("mapgen_desert_sand");
 	c_desert_stone    = ndef->getId("mapgen_desert_stone");
-	c_mossycobble     = ndef->getId("mapgen_mossycobble");
-	c_sandbrick       = ndef->getId("mapgen_sandstonebrick");
+	c_desert_sand     = ndef->getId("mapgen_desert_sand");
+	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
+	c_snow            = ndef->getId("mapgen_snow");
+	c_snowblock       = ndef->getId("mapgen_snowblock");
+	c_ice             = ndef->getId("mapgen_ice");
+
+	c_cobble          = ndef->getId("mapgen_cobble");
 	c_stair_cobble    = ndef->getId("mapgen_stair_cobble");
-	c_stair_sandstone = ndef->getId("mapgen_stair_sandstone");
+	c_mossycobble     = ndef->getId("mapgen_mossycobble");
+
 	if (c_desert_sand == CONTENT_IGNORE)
 		c_desert_sand = c_sand;
 	if (c_desert_stone == CONTENT_IGNORE)
 		c_desert_stone = c_stone;
 	if (c_mossycobble == CONTENT_IGNORE)
 		c_mossycobble = c_cobble;
-	if (c_sandbrick == CONTENT_IGNORE)
-		c_sandbrick = c_desert_stone;
 	if (c_stair_cobble == CONTENT_IGNORE)
 		c_stair_cobble = c_cobble;
-	if (c_stair_sandstone == CONTENT_IGNORE)
-		c_stair_sandstone = c_sandbrick;
 
 	// freeminer:
 	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
 	c_ice             = ndef->getId("mapgen_ice");
+
+	if (c_dirt_with_snow == CONTENT_IGNORE)
+		c_dirt_with_snow = c_dirt_with_grass;
+	if (c_snow == CONTENT_IGNORE)
+		c_snow = CONTENT_AIR;
+	if (c_snowblock == CONTENT_IGNORE)
+		c_snowblock = c_dirt_with_grass;
 	if (c_ice == CONTENT_IGNORE)
 		c_ice = c_water_source;
-	if (c_dirt_with_snow == CONTENT_IGNORE)
-		c_dirt_with_snow = c_dirt;
-
 }
 
 
-MapgenV6::~MapgenV6() {
+MapgenV6::~MapgenV6()
+{
 	delete noise_terrain_base;
 	delete noise_terrain_higher;
 	delete noise_steepness;
@@ -135,29 +137,34 @@ MapgenV6::~MapgenV6() {
 	delete noise_mud;
 	delete noise_beach;
 	delete noise_biome;
+	delete noise_humidity;
+
+	delete[] heightmap;
 }
 
 
-MapgenV6Params::MapgenV6Params() {
+MapgenV6Params::MapgenV6Params()
+{
 	spflags     = MGV6_BIOMEBLEND | MGV6_MUDFLOW;
 	freq_desert = 0.45;
 	freq_beach  = 0.15;
 
-	np_terrain_base   = NoiseParams(-4,  20.0, v3f(250.0, 250.0, 250.0), 82341,  5, 0.6);
-	np_terrain_higher = NoiseParams(20,  16.0, v3f(500.0, 500.0, 500.0), 85039,  5, 0.6);
-	np_steepness      = NoiseParams(0.85,0.5,  v3f(125.0, 125.0, 125.0), -932,   5, 0.7);
-	np_height_select  = NoiseParams(0.5, 1.0,  v3f(250.0, 250.0, 250.0), 4213,   5, 0.69);
-	np_mud            = NoiseParams(4,   2.0,  v3f(200.0, 200.0, 200.0), 91013,  3, 0.55);
-	np_beach          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 59420,  3, 0.50);
-	np_biome          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 9130,   3, 0.50);
-	np_cave           = NoiseParams(6,   6.0,  v3f(250.0, 250.0, 250.0), 34329,  3, 0.50);
-	np_humidity       = NoiseParams(0.5, 0.5,  v3f(500.0, 500.0, 500.0), 72384,  4, 0.66);
-	np_trees          = NoiseParams(0,   1.0,  v3f(125.0, 125.0, 125.0), 2,      4, 0.66);
-	np_apple_trees    = NoiseParams(0,   1.0,  v3f(100.0, 100.0, 100.0), 342902, 3, 0.45);
+	np_terrain_base   = NoiseParams(-4,   20.0, v3f(250.0, 250.0, 250.0), 82341,  5, 0.6,  2.0);
+	np_terrain_higher = NoiseParams(20,   16.0, v3f(500.0, 500.0, 500.0), 85039,  5, 0.6,  2.0);
+	np_steepness      = NoiseParams(0.85, 0.5,  v3f(125.0, 125.0, 125.0), -932,   5, 0.7,  2.0);
+	np_height_select  = NoiseParams(0,    1.0,  v3f(250.0, 250.0, 250.0), 4213,   5, 0.69, 2.0);
+	np_mud            = NoiseParams(4,    2.0,  v3f(200.0, 200.0, 200.0), 91013,  3, 0.55, 2.0);
+	np_beach          = NoiseParams(0,    1.0,  v3f(250.0, 250.0, 250.0), 59420,  3, 0.50, 2.0);
+	np_biome          = NoiseParams(0,    1.0,  v3f(500.0, 500.0, 500.0), 9130,   3, 0.50, 2.0);
+	np_cave           = NoiseParams(6,    6.0,  v3f(250.0, 250.0, 250.0), 34329,  3, 0.50, 2.0);
+	np_humidity       = NoiseParams(0.5,  0.5,  v3f(500.0, 500.0, 500.0), 72384,  3, 0.50, 2.0);
+	np_trees          = NoiseParams(0,    1.0,  v3f(125.0, 125.0, 125.0), 2,      4, 0.66, 2.0);
+	np_apple_trees    = NoiseParams(0,    1.0,  v3f(100.0, 100.0, 100.0), 342902, 3, 0.45, 2.0);
 }
 
 
-void MapgenV6Params::readParams(Settings *settings) {
+void MapgenV6Params::readParams(Settings *settings)
+{
 	settings->getFlagStrNoEx("mgv6_spflags", spflags, flagdesc_mapgen_v6);
 	settings->getFloatNoEx("mgv6_freq_desert", freq_desert);
 	settings->getFloatNoEx("mgv6_freq_beach",  freq_beach);
@@ -176,7 +183,8 @@ void MapgenV6Params::readParams(Settings *settings) {
 }
 
 
-void MapgenV6Params::writeParams(Settings *settings) {
+void MapgenV6Params::writeParams(Settings *settings) const
+{
 	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6, (u32)-1);
 	settings->setFloat("mgv6_freq_desert", freq_desert);
 	settings->setFloat("mgv6_freq_beach",  freq_beach);
@@ -199,7 +207,8 @@ void MapgenV6Params::writeParams(Settings *settings) {
 
 
 // Returns Y one under area minimum if not found
-s16 MapgenV6::find_stone_level(v2s16 p2d) {
+s16 MapgenV6::find_stone_level(v2s16 p2d)
+{
 	v3s16 em = vm->m_area.getExtent();
 	s16 y_nodes_max = vm->m_area.MaxEdge.Y;
 	s16 y_nodes_min = vm->m_area.MinEdge.Y;
@@ -207,10 +216,8 @@ s16 MapgenV6::find_stone_level(v2s16 p2d) {
 	s16 y;
 
 	for (y = y_nodes_max; y >= y_nodes_min; y--) {
-		MapNode &n = vm->m_data[i];
-		content_t c = n.getContent();
-		if (c != CONTENT_IGNORE && (
-			c == c_stone || c == c_desert_stone))
+		content_t c = vm->m_data[i].getContent();
+		if (c != CONTENT_IGNORE && (c == c_stone || c == c_desert_stone))
 			break;
 
 		vm->m_area.add_y(em, i, -1);
@@ -227,7 +234,7 @@ bool MapgenV6::block_is_underground(u64 seed, v3s16 blockpos)
 	// Nah, this is just a heuristic, just return something
 	s16 minimum_groundlevel = water_level;
 
-	if(blockpos.Y*MAP_BLOCKSIZE + MAP_BLOCKSIZE <= minimum_groundlevel)
+	if(blockpos.Y * MAP_BLOCKSIZE + MAP_BLOCKSIZE <= minimum_groundlevel)
 		return true;
 	else
 		return false;
@@ -237,7 +244,8 @@ bool MapgenV6::block_is_underground(u64 seed, v3s16 blockpos)
 //////////////////////// Base terrain height functions
 
 float MapgenV6::baseTerrainLevel(float terrain_base, float terrain_higher,
-									float steepness, float height_select) {	
+	float steepness, float height_select)
+{
 	float base   = 1 + terrain_base;
 	float higher = 1 + terrain_higher;
 
@@ -258,87 +266,102 @@ float MapgenV6::baseTerrainLevel(float terrain_base, float terrain_higher,
 	float a_off = -0.20; // Offset to more low
 	float a = 0.5 + b * (a_off + height_select);
 	a = rangelim(a, 0.0, 1.0); // Limit
-	
+
 	return base * (1.0 - a) + higher * a;
 }
 
 
-float MapgenV6::baseTerrainLevelFromNoise(v2s16 p) {
+float MapgenV6::baseTerrainLevelFromNoise(v2s16 p)
+{
 	if (flags & MG_FLAT)
 		return water_level;
-		
-	float terrain_base   = NoisePerlin2DPosOffset(noise_terrain_base->np,
+
+	float terrain_base   = NoisePerlin2D_PO(&noise_terrain_base->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float terrain_higher = NoisePerlin2DPosOffset(noise_terrain_higher->np,
+	float terrain_higher = NoisePerlin2D_PO(&noise_terrain_higher->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float steepness      = NoisePerlin2DPosOffset(noise_steepness->np,
+	float steepness      = NoisePerlin2D_PO(&noise_steepness->np,
 							p.X, 0.5, p.Y, 0.5, seed);
-	float height_select  = NoisePerlin2DNoTxfmPosOffset(noise_height_select->np,
+	float height_select  = NoisePerlin2D_PO(&noise_height_select->np,
 							p.X, 0.5, p.Y, 0.5, seed);
 
 	return baseTerrainLevel(terrain_base, terrain_higher,
-							steepness,    height_select);
+							steepness, height_select);
 }
 
 
-float MapgenV6::baseTerrainLevelFromMap(v2s16 p) {
+float MapgenV6::baseTerrainLevelFromMap(v2s16 p)
+{
 	int index = (p.Y - node_min.Z) * ystride + (p.X - node_min.X);
 	return baseTerrainLevelFromMap(index);
 }
 
 
-float MapgenV6::baseTerrainLevelFromMap(int index) {
+float MapgenV6::baseTerrainLevelFromMap(int index)
+{
 	if (flags & MG_FLAT)
 		return water_level;
-	
+
 	float terrain_base   = noise_terrain_base->result[index];
 	float terrain_higher = noise_terrain_higher->result[index];
 	float steepness      = noise_steepness->result[index];
 	float height_select  = noise_height_select->result[index];
-	
+
 	return baseTerrainLevel(terrain_base, terrain_higher,
-							steepness,    height_select);
+							steepness, height_select);
 }
 
 
-s16 MapgenV6::find_ground_level_from_noise(u64 seed, v2s16 p2d, s16 precision) {
+s16 MapgenV6::find_ground_level_from_noise(u64 seed, v2s16 p2d, s16 precision)
+{
 	return baseTerrainLevelFromNoise(p2d) + AVERAGE_MUD_AMOUNT;
 }
 
 
-int MapgenV6::getGroundLevelAtPoint(v2s16 p) {
+int MapgenV6::getGroundLevelAtPoint(v2s16 p)
+{
 	return baseTerrainLevelFromNoise(p) + AVERAGE_MUD_AMOUNT;
 }
 
 
 //////////////////////// Noise functions
 
-float MapgenV6::getMudAmount(v2s16 p) {
+float MapgenV6::getMudAmount(v2s16 p)
+{
 	int index = (p.Y - node_min.Z) * ystride + (p.X - node_min.X);
 	return getMudAmount(index);
 }
 
 
-bool MapgenV6::getHaveBeach(v2s16 p) {
+bool MapgenV6::getHaveBeach(v2s16 p)
+{
 	int index = (p.Y - node_min.Z) * ystride + (p.X - node_min.X);
 	return getHaveBeach(index);
 }
 
 
-BiomeV6Type MapgenV6::getBiome(v2s16 p) {
-	int index = (p.Y - node_min.Z) * ystride + (p.X - node_min.X);
+BiomeV6Type MapgenV6::getBiome(v3POS p)
+{
+	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
+			+ (p.X - full_node_min.X);
 	return getBiome(index, p);
 }
 
 
-float MapgenV6::getHumidity(v2s16 p)
+float MapgenV6::getHumidity(v3POS p)
 {
 	/*double noise = noise2d_perlin(
 		0.5+(float)p.X/500, 0.5+(float)p.Y/500,
 		seed+72384, 4, 0.66);
 	noise = (noise + 1.0)/2.0;*/
 
-	float noise = NoisePerlin2D(np_humidity, p.X, p.Y, seed);
+	if (m_emerge->env->m_use_weather_biome) {
+		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
+	}
+
+	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
+			+ (p.X - full_node_min.X);
+	float noise = noise_humidity->result[index];
 
 	if (noise < 0.0)
 		noise = 0.0;
@@ -353,13 +376,13 @@ float MapgenV6::getTreeAmount(v2s16 p)
 	/*double noise = noise2d_perlin(
 			0.5+(float)p.X/125, 0.5+(float)p.Y/125,
 			seed+2, 4, 0.66);*/
-	
+
 	float noise = NoisePerlin2D(np_trees, p.X, p.Y, seed);
 	float zeroval = -0.39;
 	if (noise < zeroval)
 		return 0;
 	else
-		return 0.04 * (noise-zeroval) / (1.0-zeroval);
+		return 0.04 * (noise - zeroval) / (1.0 - zeroval);
 }
 
 
@@ -368,9 +391,9 @@ bool MapgenV6::getHaveAppleTree(v2s16 p)
 	/*is_apple_tree = noise2d_perlin(
 		0.5+(float)p.X/100, 0.5+(float)p.Z/100,
 		data->seed+342902, 3, 0.45) > 0.2;*/
-	
+
 	float noise = NoisePerlin2D(np_apple_trees, p.X, p.Y, seed);
-	
+
 	return noise > 0.2;
 }
 
@@ -379,11 +402,11 @@ float MapgenV6::getMudAmount(int index)
 {
 	if (flags & MG_FLAT)
 		return AVERAGE_MUD_AMOUNT;
-		
+
 	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
 			0.5+(float)p.X/200, 0.5+(float)p.Y/200,
 			seed+91013, 3, 0.55));*/
-	
+
 	return noise_mud->result[index];
 }
 
@@ -394,42 +417,73 @@ bool MapgenV6::getHaveBeach(int index)
 	/*double sandnoise = noise2d_perlin(
 			0.2+(float)p2d.X/250, 0.7+(float)p2d.Y/250,
 			seed+59420, 3, 0.50);*/
-	
+
 	float sandnoise = noise_beach->result[index];
 	return (sandnoise > freq_beach);
 }
 
 
-BiomeV6Type MapgenV6::getBiome(int index, v2s16 p)
+BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 {
 	// Just do something very simple as for now
 	/*double d = noise2d_perlin(
 			0.6+(float)p2d.X/250, 0.2+(float)p2d.Y/250,
 			seed+9130, 3, 0.50);*/
-	
-	float d = noise_biome->result[index];
-	if (d > freq_desert)
-		return BT_DESERT;
-		
-	if ((spflags & MGV6_BIOMEBLEND) &&
-		(d > freq_desert - 0.10) &&
-		((noise2d(p.X, p.Y, seed) + 1.0) > (freq_desert - d) * 20.0))
-		return BT_DESERT;
-	
-	return BT_NORMAL;
+
+	float d, h;
+
+	if (m_emerge->env->m_use_weather_biome) {
+		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->params.np_biome_heat.offset) / m_emerge->params.np_biome_heat.scale;
+		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
+	} else {
+		d = noise_biome->result[index];
+		h = noise_humidity->result[index];
+	}
+
+	if (spflags & MGV6_SNOWBIOMES) {
+		float blend = (spflags & MGV6_BIOMEBLEND) ? noise2d(p.X, p.Y, seed) / 40 : 0;
+
+		if (d > FREQ_HOT + blend) {
+			if (h > FREQ_JUNGLE + blend)
+				return BT_JUNGLE;
+			else
+				return BT_DESERT;
+		} else if (d < FREQ_SNOW + blend) {
+			if (h > FREQ_TAIGA + blend)
+				return BT_TAIGA;
+			else
+				return BT_TUNDRA;
+		} else {
+			return BT_NORMAL;
+		}
+	} else {
+		if (d > freq_desert)
+			return BT_DESERT;
+
+		if ((spflags & MGV6_BIOMEBLEND) && (d > freq_desert - 0.10) &&
+				((noise2d(p.X, p.Y, seed) + 1.0) > (freq_desert - d) * 20.0))
+			return BT_DESERT;
+
+		if ((spflags & MGV6_JUNGLES) && h > 0.75)
+			return BT_JUNGLE;
+		else
+			return BT_NORMAL;
+	}
 }
 
 
 u32 MapgenV6::get_blockseed(u64 seed, v3s16 p)
 {
-	s32 x=p.X, y=p.Y, z=p.Z;
-	return (u32)(seed%0x100000000ULL) + z*38134234 + y*42123 + x*23;
+	s32 x = p.X, y = p.Y, z = p.Z;
+	return (u32)(seed % 0x100000000ULL) + z * 38134234 + y * 42123 + x * 23;
 }
 
 
 //////////////////////// Map generator
 
-void MapgenV6::makeChunk(BlockMakeData *data) {
+void MapgenV6::makeChunk(BlockMakeData *data)
+{
+	// Pre-conditions
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
@@ -438,25 +492,24 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 	assert(data->blockpos_requested.X <= data->blockpos_max.X &&
 		   data->blockpos_requested.Y <= data->blockpos_max.Y &&
 		   data->blockpos_requested.Z <= data->blockpos_max.Z);
-			
+
 	this->generating = true;
-	this->vm   = data->vmanip;	
+	this->vm   = data->vmanip;
 	this->ndef = data->nodedef;
-	
+
 	// Hack: use minimum block coords for old code that assumes a single block
-	v3s16 blockpos = data->blockpos_requested;
 	v3s16 blockpos_min = data->blockpos_min;
 	v3s16 blockpos_max = data->blockpos_max;
 
 	// Area of central chunk
-	node_min = blockpos_min*MAP_BLOCKSIZE;
-	node_max = (blockpos_max+v3s16(1,1,1))*MAP_BLOCKSIZE-v3s16(1,1,1);
+	node_min = blockpos_min * MAP_BLOCKSIZE;
+	node_max = (blockpos_max + v3s16(1, 1, 1)) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
 	// Full allocated area
-	full_node_min = (blockpos_min-1)*MAP_BLOCKSIZE;
-	full_node_max = (blockpos_max+2)*MAP_BLOCKSIZE-v3s16(1,1,1);
+	full_node_min = (blockpos_min - 1) * MAP_BLOCKSIZE;
+	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
-	central_area_size = node_max - node_min + v3s16(1,1,1);
+	central_area_size = node_max - node_min + v3s16(1, 1, 1);
 	assert(central_area_size.X == central_area_size.Z);
 
 	int volume_blocks = (blockpos_max.X - blockpos_min.X + 1)
@@ -479,7 +532,8 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 	// Generate general ground level to full area
 	stone_surface_max_y = generateGround();
 
-	generateExperimental();
+	// Create initial heightmap to limit caves
+	updateHeightmap(node_min, node_max);
 
 	const s16 max_spread_amount = MAP_BLOCKSIZE;
 	// Limit dirt flow area by 1 because mud is flown into neighbors.
@@ -496,136 +550,117 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		// Add mud to the central chunk
 		addMud();
 
-		// Add blobs of dirt and gravel underground
-		addDirtGravelBlobs();
-
 		// Flow mud away from steep edges
 		if (spflags & MGV6_MUDFLOW)
 			flowMud(mudflow_minpos, mudflow_maxpos);
 
 	}
-	
+
+	// Update heightmap after mudflow
+	updateHeightmap(node_min, node_max);
+
 	// Add dungeons
-	if (flags & MG_DUNGEONS) {
+	if ((flags & MG_DUNGEONS) && (stone_surface_max_y >= node_min.Y)) {
 		DungeonParams dp;
 
 		dp.np_rarity  = nparams_dungeon_rarity;
 		dp.np_density = nparams_dungeon_density;
 		dp.np_wetness = nparams_dungeon_wetness;
-		dp.c_water = c_water_source;
-		if (getBiome(0, v2s16(node_min.X, node_min.Z)) == BT_NORMAL) {
-			dp.c_cobble  = c_cobble;
-			dp.c_moss    = c_mossycobble;
-			dp.c_stair   = c_stair_cobble;
-
-			dp.diagonal_dirs = false;
-			dp.mossratio  = 3.0;
-			dp.holesize   = v3s16(1, 2, 1);
-			dp.roomsize   = v3s16(0, 0, 0);
-			dp.notifytype = GENNOTIFY_DUNGEON;
-		} else {
-			dp.c_cobble  = c_sandbrick;
-			dp.c_moss    = c_sandbrick; // should make this 'cracked sandstone' later
-			dp.c_stair   = c_stair_sandstone;
+		dp.c_water    = c_water_source;
+		if (getBiome(0, node_min) == BT_DESERT) {
+			dp.c_cobble = c_desert_stone;
+			dp.c_moss   = c_desert_stone;
+			dp.c_stair  = c_desert_stone;
 
 			dp.diagonal_dirs = true;
-			dp.mossratio  = 0.0;
-			dp.holesize   = v3s16(2, 3, 2);
-			dp.roomsize   = v3s16(2, 5, 2);
-			dp.notifytype = GENNOTIFY_TEMPLE;
+			dp.mossratio     = 0.0;
+			dp.holesize      = v3s16(2, 3, 2);
+			dp.roomsize      = v3s16(2, 5, 2);
+			dp.notifytype    = GENNOTIFY_TEMPLE;
+		} else {
+			dp.c_cobble = c_cobble;
+			dp.c_moss   = c_mossycobble;
+			dp.c_stair  = c_stair_cobble;
+
+			dp.diagonal_dirs = false;
+			dp.mossratio     = 3.0;
+			dp.holesize      = v3s16(1, 2, 1);
+			dp.roomsize      = v3s16(0, 0, 0);
+			dp.notifytype    = GENNOTIFY_DUNGEON;
 		}
 
 		DungeonGen dgen(this, &dp);
 		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
-	
+
 	// Add top and bottom side of water to transforming_liquid queue
 	updateLiquid(full_node_min, full_node_max);
 
-	// Grow grass
+	// Add surface nodes
 	growGrass();
 
 	// Generate some trees, and add grass, if a jungle
 	if (flags & MG_TREES)
 		placeTreesAndJungleGrass();
-	
+
 	// Generate the registered decorations
-	emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
-	emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
+	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)
-		calcLighting(node_min - v3s16(1, 1, 1) * MAP_BLOCKSIZE,
-					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
-	
+		calcLighting(node_min, node_max);
+
 	this->generating = false;
 }
 
 
-void MapgenV6::calculateNoise() {
+void MapgenV6::calculateNoise()
+{
 	int x = node_min.X;
-	int y = node_min.Z;
 	int z = node_min.Z;
+	int fx = full_node_min.X;
+	int fz = full_node_min.Z;
 
-	// Need to adjust for the original implementation's +.5 offset...
 	if (!(flags & MG_FLAT)) {
-		noise_terrain_base->perlinMap2D(
-			x + 0.5 * noise_terrain_base->np->spread.X * farscale(noise_terrain_base->np->farspread, x, z),
-			z + 0.5 * noise_terrain_base->np->spread.Z * farscale(noise_terrain_base->np->farspread, x, z));
-		noise_terrain_base->transformNoiseMap(x, y, z);
-
-		noise_terrain_higher->perlinMap2D(
-			x + 0.5 * noise_terrain_higher->np->spread.X * farscale(noise_terrain_higher->np->farspread, x, z),
-			z + 0.5 * noise_terrain_higher->np->spread.Z * farscale(noise_terrain_higher->np->farspread, x, z));
-		noise_terrain_higher->transformNoiseMap(x, y, z);
-
-		noise_steepness->perlinMap2D(
-			x + 0.5 * noise_steepness->np->spread.X * farscale(noise_steepness->np->farspread, x, z),
-			z + 0.5 * noise_steepness->np->spread.Z * farscale(noise_steepness->np->farspread, x, z));
-		noise_steepness->transformNoiseMap(x, y, z);
-
-		noise_height_select->perlinMap2D(
-			x + 0.5 * noise_height_select->np->spread.X * farscale(noise_height_select->np->farspread, x, z),
-			z + 0.5 * noise_height_select->np->spread.Z * farscale(noise_height_select->np->farspread, x, z));
-
-		noise_mud->perlinMap2D(
-			x + 0.5 * noise_mud->np->spread.X * farscale(noise_mud->np->farspread, x, z),
-			z + 0.5 * noise_mud->np->spread.Z * farscale(noise_mud->np->farspread, x, z));
-		noise_mud->transformNoiseMap(x, y, z);
+		noise_terrain_base->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_terrain_higher->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_steepness->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_height_select->perlinMap2D_PO(x, 0.5, z, 0.5);
+		noise_mud->perlinMap2D_PO(x, 0.5, z, 0.5);
 	}
 
-	noise_beach->perlinMap2D(
-		x + 0.2 * noise_beach->np->spread.X * farscale(noise_beach->np->farspread, x, z),
-		z + 0.7 * noise_beach->np->spread.Z * farscale(noise_beach->np->farspread, x, z));
+	noise_beach->perlinMap2D_PO(x, 0.2, z, 0.7);
 
-	noise_biome->perlinMap2D(
-		x + 0.6 * noise_biome->np->spread.X * farscale(noise_biome->np->farspread, x, z),
-		z + 0.2 * noise_biome->np->spread.Z * farscale(noise_biome->np->farspread, x, z));
+	noise_biome->perlinMap2D_PO(fx, 0.6, fz, 0.2);
+	noise_humidity->perlinMap2D_PO(fx, 0.0, fz, 0.0);
+	// Humidity map does not need range limiting 0 to 1,
+	// only humidity at point does
 }
 
 
-int MapgenV6::generateGround() {
+int MapgenV6::generateGround()
+{
 	//TimeTaker timer1("Generating ground level");
 	MapNode n_air(CONTENT_AIR), n_water_source(c_water_source);
 	MapNode n_stone(c_stone), n_desert_stone(c_desert_stone);
 	MapNode n_ice(c_ice);
-	int stone_surface_max_y = -MAP_GENERATION_LIMIT;
+	int stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+
 	u32 index = 0;
-	
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
 		// Surface height
 		s16 surface_y = (s16)baseTerrainLevelFromMap(index);
-		
+
 		// Log it
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeV6Type bt = getBiome(index, v2s16(x, z));
-		
-		s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		BiomeV6Type bt = getBiome(v3POS(x, node_min.Y, z));
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		v3s16 em = vm->m_area.getExtent();
@@ -633,10 +668,15 @@ int MapgenV6::generateGround() {
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
 				if (y <= surface_y) {
-					vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ? 
+					vm->m_data[i] = (y >= DESERT_STONE_BASE - surface_y
+							&& bt == BT_DESERT) ?
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
+					vm->m_data[i] = ((heat < 0 && y > heat/3) || (y >= ICE_BASE
+							&& bt == BT_TUNDRA)) ?
+						n_ice : n_water_source;
+					if (liquid_pressure && y <= 0)
+						vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
 				} else {
 					vm->m_data[i] = n_air;
 				}
@@ -644,12 +684,13 @@ int MapgenV6::generateGround() {
 			vm->m_area.add_y(em, i, 1);
 		}
 	}
-	
+
 	return stone_surface_max_y;
 }
 
 
-void MapgenV6::addMud() {
+void MapgenV6::addMud()
+{
 	// 15ms @cs=8
 	//TimeTaker timer1("add mud");
 	MapNode n_dirt(c_dirt), n_gravel(c_gravel);
@@ -664,12 +705,12 @@ void MapgenV6::addMud() {
 
 		// Find ground level
 		s16 surface_y = find_stone_level(v2s16(x, z)); /////////////////optimize this!
-		
+
 		// Handle area not found
 		if (surface_y == vm->m_area.MinEdge.Y - 1)
 			continue;
-		
-		BiomeV6Type bt = getBiome(index, v2s16(x, z));
+
+		BiomeV6Type bt = getBiome(v3POS(x, surface_y, z));
 		addnode = (bt == BT_DESERT) ? n_desert_sand : n_dirt;
 
 		if (bt == BT_DESERT && surface_y + mud_add_amount <= water_level + 1) {
@@ -677,25 +718,25 @@ void MapgenV6::addMud() {
 		} else if (mud_add_amount <= 0) {
 			mud_add_amount = 1 - mud_add_amount;
 			addnode = n_gravel;
-		} else if (bt == BT_NORMAL && getHaveBeach(index) &&
+		} else if (bt != BT_DESERT && getHaveBeach(index) &&
 				surface_y + mud_add_amount <= water_level + 2) {
 			addnode = n_sand;
 		}
 
-		if (bt == BT_DESERT && surface_y > 20)
+		if ((bt == BT_DESERT || bt == BT_TUNDRA) && surface_y > 20)
 			mud_add_amount = MYMAX(0, mud_add_amount - (surface_y - 20) / 5);
 
-		// If topmost node is grass, change it to mud.  It might be if it was
+		/* If topmost node is grass, change it to mud.  It might be if it was
 		// flown to there from a neighboring chunk and then converted.
 		u32 i = vm->m_area.index(x, surface_y, z);
 		if (vm->m_data[i].getContent() == c_dirt_with_grass)
-			vm->m_data[i] = n_dirt;
+			vm->m_data[i] = n_dirt;*/
 
 		// Add mud on ground
 		s16 mudcount = 0;
 		v3s16 em = vm->m_area.getExtent();
 		s16 y_start = surface_y + 1;
-		i = vm->m_area.index(x, y_start, z);
+		u32 i = vm->m_area.index(x, y_start, z);
 		for (s16 y = y_start; y <= node_max.Y; y++) {
 			if (mudcount >= mud_add_amount)
 				break;
@@ -709,12 +750,13 @@ void MapgenV6::addMud() {
 }
 
 
-void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
+void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
+{
 	// 340ms @cs=8
 	//TimeTaker timer1("flow mud");
 
 	// Iterate a few times
-	for(s16 k = 0; k < 3; k++) {
+	for (s16 k = 0; k < 3; k++) {
 		for (s16 z = mudflow_minpos; z <= mudflow_maxpos; z++)
 		for (s16 x = mudflow_minpos; x <= mudflow_maxpos; x++) {
 			// Invert coordinates every 2nd iteration
@@ -730,18 +772,16 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 			u32 i = vm->m_area.index(p2d.X, node_max.Y, p2d.Y);
 			s16 y = node_max.Y;
 
-			while(y >= node_min.Y)
-			{
+			while (y >= node_min.Y) {
 
-			for(;; y--)
-			{
+			for (;; y--) {
 				MapNode *n = NULL;
 				// Find mud
-				for(; y >= node_min.Y; y--) {
+				for (; y >= node_min.Y; y--) {
 					n = &vm->m_data[i];
 					if (n->getContent() == c_dirt ||
-						n->getContent() == c_dirt_with_grass ||
-						n->getContent() == c_gravel)
+							n->getContent() == c_dirt_with_grass ||
+							n->getContent() == c_gravel)
 						break;
 
 					vm->m_area.add_y(em, i, -1);
@@ -753,8 +793,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 					break;
 
 				if (n->getContent() == c_dirt ||
-					n->getContent() == c_dirt_with_grass)
-				{
+						n->getContent() == c_dirt_with_grass) {
 					// Make it exactly mud
 					n->setContent(c_dirt);
 
@@ -763,20 +802,20 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 						u32 i2 = i;
 						vm->m_area.add_y(em, i2, -1);
 						// Cancel if out of area
-						if(vm->m_area.contains(i2) == false)
+						if (vm->m_area.contains(i2) == false)
 							continue;
 						MapNode *n2 = &vm->m_data[i2];
 						if (n2->getContent() != c_dirt &&
-							n2->getContent() != c_dirt_with_grass)
+								n2->getContent() != c_dirt_with_grass)
 							continue;
 					}
 				}
 
 				v3s16 dirs4[4] = {
-					v3s16(0,0,1), // back
-					v3s16(1,0,0), // right
-					v3s16(0,0,-1), // front
-					v3s16(-1,0,0), // left
+					v3s16(0, 0, 1), // back
+					v3s16(1, 0, 0), // right
+					v3s16(0, 0, -1), // front
+					v3s16(-1, 0, 0), // left
 				};
 
 				// Check that upper is air or doesn't exist.
@@ -784,11 +823,11 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 				u32 i3 = i;
 				vm->m_area.add_y(em, i3, 1);
 				if (vm->m_area.contains(i3) == true &&
-					ndef->get(vm->m_data[i3]).walkable)
+						ndef->get(vm->m_data[i3]).walkable)
 					continue;
 
 				// Drop mud on side
-				for(u32 di=0; di<4; di++) {
+				for(u32 di = 0; di < 4; di++) {
 					v3s16 dirp = dirs4[di];
 					u32 i2 = i;
 					// Move to side
@@ -814,7 +853,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 						n2 = &vm->m_data[i2];
 						// if out of known area
 						if(vm->m_area.contains(i2) == false ||
-							n2->getContent() == CONTENT_IGNORE) {
+								n2->getContent() == CONTENT_IGNORE) {
 							dropped_to_unknown = true;
 							break;
 						}
@@ -844,47 +883,10 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos) {
 }
 
 
-void MapgenV6::addDirtGravelBlobs() {
-	if (getBiome(v2s16(node_min.X, node_min.Z)) != BT_NORMAL)
-		return;
-	
-	PseudoRandom pr(blockseed + 983);
-	for (int i = 0; i < volume_nodes/10/10/10; i++) {
-		bool only_fill_cave = (myrand_range(0,1) != 0);
-		v3s16 size(
-			pr.range(1, 8),
-			pr.range(1, 8),
-			pr.range(1, 8)
-		);
-		v3s16 p0(
-			pr.range(node_min.X, node_max.X) - size.X / 2,
-			pr.range(node_min.Y, node_max.Y) - size.Y / 2,
-			pr.range(node_min.Z, node_max.Z) - size.Z / 2
-		);
-		
-		MapNode n1((p0.Y > -32 && !pr.range(0, 1)) ? c_dirt : c_gravel);
-		for (int z1 = 0; z1 < size.Z; z1++)
-		for (int y1 = 0; y1 < size.Y; y1++)
-		for (int x1 = 0; x1 < size.X; x1++) {
-			v3s16 p = p0 + v3s16(x1, y1, z1);
-			u32 i = vm->m_area.index(p);
-			if (!vm->m_area.contains(i))
-				continue;
-			// Cancel if not stone and not cave air
-			if (vm->m_data[i].getContent() != c_stone &&
-				!(vm->m_flags[i] & VMANIP_FLAG_CAVE))
-				continue;
-			if (only_fill_cave && !(vm->m_flags[i] & VMANIP_FLAG_CAVE))
-				continue;
-			vm->m_data[i] = n1;
-		}
-	}
-}
-
-
-void MapgenV6::placeTreesAndJungleGrass() {
+void MapgenV6::placeTreesAndJungleGrass()
+{
 	//TimeTaker t("placeTrees");
-	
+
 	PseudoRandom grassrandom(blockseed + 53);
 
 	content_t c_sand            = ndef->getId("mapgen_sand");
@@ -895,12 +897,12 @@ void MapgenV6::placeTreesAndJungleGrass() {
 		c_junglegrass = CONTENT_AIR;
 	MapNode n_junglegrass(c_junglegrass);
 	v3s16 em = vm->m_area.getExtent();
-	
+
 	// Divide area into parts
 	s16 div = 8;
 	s16 sidelen = central_area_size.X / div;
 	double area = sidelen * sidelen;
-	
+
 	// N.B.  We must add jungle grass first, since tree leaves will
 	// obstruct the ground, giving us a false ground level
 	for (s16 z0 = 0; z0 < div; z0++)
@@ -920,34 +922,37 @@ void MapgenV6::placeTreesAndJungleGrass() {
 			node_min.X + sidelen + sidelen * x0 - 1,
 			node_min.Z + sidelen + sidelen * z0 - 1
 		);
-		
-		// Amount of trees, jungle area
-		u32 tree_count = area * getTreeAmount(p2d_center);
-		
-		float humidity = 0;
-		bool is_jungle = false;
-		if (spflags & MGV6_JUNGLES) {
-			humidity = getHumidity(p2d_center);
-			if (humidity > 0.75) {
-				is_jungle = true;
+
+		// Get biome at center position of part of division
+		BiomeV6Type bt = getBiome(v3POS(p2d_center.X, node_min.Y, p2d_center.Y));
+
+		// Amount of trees
+		float humidity = getHumidity(v3POS(p2d_center.X, node_max.Y, p2d_center.Y));
+		s32 tree_count;
+		if (bt == BT_JUNGLE || bt == BT_TAIGA || bt == BT_NORMAL) {
+			tree_count = area * getTreeAmount(p2d_center) * ((humidity + 1)/2.0);
+			if (bt == BT_JUNGLE)
 				tree_count *= 4;
-			}
+		} else {
+			tree_count = 0;
 		}
 
 		if (node_max.Y < water_level)
 			tree_count /= 2;
 
 		// Add jungle grass
-		if (is_jungle) {			
+		if (bt == BT_JUNGLE) {
 			u32 grass_count = 5 * humidity * tree_count;
 			for (u32 i = 0; i < grass_count; i++) {
 				s16 x = grassrandom.range(p2d_min.X, p2d_max.X);
 				s16 z = grassrandom.range(p2d_min.Y, p2d_max.Y);
-				
-				s16 y = findGroundLevelFull(v2s16(x, z)); ////////////////optimize this!
-				if (y < water_level || y < node_min.Y || y > node_max.Y)
+				int mapindex = central_area_size.X * (z - node_min.Z)
+								+ (x - node_min.X);
+				//wtf s16 y = heightmap[mapindex];
+				s16 y = findGroundLevelFull(v2s16(x, z));
+				if (y < water_level)
 					continue;
-				
+
 				u32 vi = vm->m_area.index(x, y, z);
 				// place on dirt_with_grass, since we know it is exposed to sunlight
 				if (vm->m_data[vi].getContent() == c_dirt_with_grass) {
@@ -956,39 +961,46 @@ void MapgenV6::placeTreesAndJungleGrass() {
 				}
 			}
 		}
-		
+
 		// Put trees in random places on part of division
-		for (u32 i = 0; i < tree_count; i++) {
+		for (s32 i = 0; i < tree_count; i++) {
 			s16 x = myrand_range(p2d_min.X, p2d_max.X);
 			s16 z = myrand_range(p2d_min.Y, p2d_max.Y);
-			s16 y = findGroundLevelFull(v2s16(x, z)); ////////////////////optimize this!
+			int mapindex = central_area_size.X * (z - node_min.Z)
+							+ (x - node_min.X);
+			//wtf s16 y = heightmap[mapindex];
+			s16 y = findGroundLevelFull(v2s16(x, z));
+
 			// Don't make a tree under water level
 			// Don't make a tree so high that it doesn't fit
-			if(y > node_max.Y - 6)
+			if (y > node_max.Y - 6)
 				continue;
-			
-			v3s16 p(x,y,z);
-			// Trees grow only on mud and grass
+
+			v3s16 p(x, y, z);
+			// Trees grow only on mud and grass and snowblock
 			{
 				u32 i = vm->m_area.index(p);
-				MapNode *n = &vm->m_data[i];
-				if (n->getContent() != c_dirt &&
-					n->getContent() != c_dirt_with_grass &&
-					(y >= water_level || n->getContent() != c_sand))
+				content_t c = vm->m_data[i].getContent();
+				if (c != c_dirt &&
+						c != c_dirt_with_grass &&
+						c != c_dirt_with_snow &&
+						c != c_snowblock &&
+						(y >= water_level || c != c_sand))
 					continue;
 			}
 			p.Y++;
-			
+
 			// Make a tree
 			if (y < water_level) {
 				if (y < water_level - 20) // do not spawn trees in lakes
-					treegen::make_cavetree(*vm, p, is_jungle, ndef, myrand());
-			}
-			else if (is_jungle) {
+					treegen::make_cavetree(*vm, p, bt == BT_JUNGLE, ndef, myrand());
+			} else if (bt == BT_JUNGLE) {
 				treegen::make_jungletree(*vm, p, ndef, myrand());
-			} else {
+			} else if (bt == BT_TAIGA) {
+				treegen::make_pine_tree(*vm, p - v3s16(0, 1, 0), ndef, myrand());
+			} else if (bt == BT_NORMAL) {
 				bool is_apple_tree = (myrand_range(0, 3) == 0) &&
-										getHaveAppleTree(v2s16(x, z));
+							getHaveAppleTree(v2s16(x, z));
 				treegen::make_tree(*vm, p, is_apple_tree, ndef, myrand());
 			}
 		}
@@ -997,42 +1009,65 @@ void MapgenV6::placeTreesAndJungleGrass() {
 }
 
 
-void MapgenV6::growGrass() {
+void MapgenV6::growGrass() // Add surface nodes
+{
+	MapNode n_dirt_with_grass(c_dirt_with_grass);
+	MapNode n_dirt_with_snow(c_dirt_with_snow);
+	MapNode n_snowblock(c_snowblock);
+	MapNode n_snow(c_snow);
+	MapNode n_dirt(c_dirt);
+	v3s16 em = vm->m_area.getExtent();
+
+	u32 index = 0;
 	for (s16 z = full_node_min.Z; z <= full_node_max.Z; z++)
-	for (s16 x = full_node_min.X; x <= full_node_max.X; x++) {
+	for (s16 x = full_node_min.X; x <= full_node_max.X; x++, index++) {
 		// Find the lowest surface to which enough light ends up to make
 		// grass grow.  Basically just wait until not air and not leaves.
 		s16 surface_y = 0;
 		{
-			v3s16 em = vm->m_area.getExtent();
 			u32 i = vm->m_area.index(x, node_max.Y, z);
 			s16 y;
 			// Go to ground level
 			for (y = node_max.Y; y >= full_node_min.Y; y--) {
 				MapNode &n = vm->m_data[i];
 				if (ndef->get(n).param_type != CPT_LIGHT ||
-					ndef->get(n).liquid_type != LIQUID_NONE)
+						ndef->get(n).liquid_type != LIQUID_NONE ||
+						n.getContent() == c_ice)
 					break;
 				vm->m_area.add_y(em, i, -1);
 			}
 			surface_y = (y >= full_node_min.Y) ? y : full_node_min.Y;
 		}
 
+		BiomeV6Type bt = getBiome(index, v3POS(x, surface_y, z));
 		u32 i = vm->m_area.index(x, surface_y, z);
-		MapNode *n = &vm->m_data[i];
-		if (n->getContent() == c_dirt && surface_y >= water_level - 20)
-		{
-			if (emerge->env->m_use_weather) {
-				int heat = emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
-				n->setContent(heat < -10 ? c_dirt_with_snow : (heat < -5 || heat > 50) ? c_dirt : c_dirt_with_grass);
-			} else
-			n->setContent(c_dirt_with_grass);
+		content_t c = vm->m_data[i].getContent();
+		if (m_emerge->env->m_use_weather && c == c_dirt) {
+			int heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
+			vm->m_data[i] = (heat < -10 ? n_dirt_with_snow : (heat < -5 || heat > 50) ? n_dirt : n_dirt_with_grass);
+		} else
+		if (surface_y >= water_level - 20) {
+			if (bt == BT_TAIGA && c == c_dirt) {
+				vm->m_data[i] = n_snowblock;
+				vm->m_area.add_y(em, i, -1);
+				vm->m_data[i] = n_dirt_with_snow;
+			} else if (bt == BT_TUNDRA) {
+				if (c == c_dirt) {
+					vm->m_data[i] = n_dirt_with_snow;
+				} else if (c == c_stone && surface_y < node_max.Y) {
+					vm->m_area.add_y(em, i, 1);
+					vm->m_data[i] = n_snow;
+				}
+			} else if (c == c_dirt) {
+				vm->m_data[i] = n_dirt_with_grass;
+			}
 		}
 	}
 }
 
 
-void MapgenV6::generateCaves(int max_stone_y) {
+void MapgenV6::generateCaves(int max_stone_y)
+{
 	float cave_amount = NoisePerlin2D(np_cave, node_min.X, node_min.Y, seed);
 	int volume_nodes = (node_max.X - node_min.X + 1) *
 					   (node_max.Y - node_min.Y + 1) * MAP_BLOCKSIZE;
@@ -1041,15 +1076,15 @@ void MapgenV6::generateCaves(int max_stone_y) {
 	u32 bruises_count = 1;
 	PseudoRandom ps(blockseed + 21343);
 	PseudoRandom ps2(blockseed + 1032);
-	
+
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
-	
-	if (getBiome(v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
+
+	if (getBiome(node_min) == BT_DESERT) {
 		caves_count   /= 3;
 		bruises_count /= 3;
 	}
-	
+
 	for (u32 i = 0; i < caves_count + bruises_count; i++) {
 		bool large_cave = (i >= caves_count);
 		CaveV6 cave(this, &ps, &ps2, large_cave);

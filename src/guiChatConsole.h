@@ -27,9 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "chat.h"
 #include "config.h"
 
-#if USE_FREETYPE
 #include "xCGUITTFont.h"
-#endif
 
 class Client;
 
@@ -76,6 +74,8 @@ public:
 	virtual void draw();
 
 	bool canTakeFocus(gui::IGUIElement* element) { return false; }
+
+	bool getAndroidUIInput();
 
 	virtual bool OnEvent(const SEvent& event);
 
@@ -133,12 +133,6 @@ private:
 	// font
 	gui::IGUIFont* m_font;
 	v2u32 m_fontsize;
-#if USE_FREETYPE
-	bool m_use_freetype;
-	gui::CGUITTFont *m_freetype_font;
-#else
-	void *m_freetype_font;
-#endif
 };
 
 

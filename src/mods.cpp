@@ -20,15 +20,16 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "mods.h"
+#include <cctype>
 #include <fstream>
+#include "mods.h"
+//#include <fstream>
 #include "filesys.h"
 #include "strfnd.h"
 #include "log.h"
 #include "subgame.h"
 #include "settings.h"
 #include "strfnd.h"
-#include <cctype>
 #include "convert_json.h"
 
 static bool parseDependsLine(std::istream &is,
@@ -50,6 +51,11 @@ static bool parseDependsLine(std::istream &is,
 void parseModContents(ModSpec &spec)
 {
 	// NOTE: this function works in mutual recursion with getModsInPath
+	Settings info;
+	info.readConfigFile((spec.path+DIR_DELIM+"mod.conf").c_str());
+
+	if (info.exists("name"))
+		spec.name = info.get("name");
 
 	spec.depends.clear();
 	spec.optdepends.clear();
@@ -243,7 +249,7 @@ void ModConfiguration::addMods(std::vector<ModSpec> new_mods)
 		for(std::vector<ModSpec>::const_iterator it = new_mods.begin();
 				it != new_mods.end(); ++it){
 			const ModSpec &mod = *it;
-			if(mod.part_of_modpack != want_from_modpack)
+			if(mod.part_of_modpack != (bool)want_from_modpack)
 				continue;
 			if(existing_mods.count(mod.name) == 0){
 				// GOOD CASE: completely new mod.

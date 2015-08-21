@@ -149,7 +149,7 @@ void MapgenMathParams::readParams(Settings *settings) {
 	params = settings->getJson("mg_math");
 }
 
-void MapgenMathParams::writeParams(Settings *settings) {
+void MapgenMathParams::writeParams(Settings *settings) const {
 	settings->setJson("mg_math", params);
 	try {
 		MapgenV7Params::writeParams(settings);
@@ -177,9 +177,10 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 
 	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	invert_yz = params.get("invert_yz", 1).asBool();
-	size = params.get("size", (MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
-	scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
-	if (!params.get("center", Json::Value()).empty()) center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
+	invert_xy = params.get("invert_xy", 0).asBool();
+	size = params.get("size", (MAX_MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
+	if (!params.get("center", Json::Value()).empty()) 
+		center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
 	iterations = params.get("N", 15).asInt(); //10;
 
 	result_max = params.get("result_max", 1.0).asDouble();
@@ -191,7 +192,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 	if (params["generator"].asString() == "mengersponge") {
 		internal = 1;
 		func = &mengersponge;
-		size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
+		size = params.get("size", (MAX_MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
 		//scale = params.get("scale", 1.0 / size).asDouble();
 		iterations = params.get("N", 13).asInt();
 		//if(!center.getLength()) center = v3f(-size, -size, -size);
@@ -201,7 +202,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		func = &mandelbox;
 		iterations = params.get("N", 15).asInt();
 		size = params.get("size", 1000).asDouble();
-		scale = params.get("scale", 1.0 / size).asDouble();
+		//scale = params.get("scale", 1.0 / size).asDouble();
 		invert = params.get("invert", 0).asBool();
 		//if(!center.getLength()) center = v3f(size * 0.3, -size * 0.6, size * 0.5);
 		if(!center.getLength()) center = v3f(size * 0.333333, -size * 0.666666, size * 0.5);
@@ -210,7 +211,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		func = &sphere;
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", 100).asDouble();
-		scale = params.get("scale", 1.0 / size).asDouble();
+		//scale = params.get("scale", 1.0 / size).asDouble();
 	}
 
 
@@ -410,7 +411,7 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 
 	if (params["generator"].asString() == "mandelboxVaryScale4D") {
 		par.doubles.N = params.get("N", 50).asInt();
-		scale = params.get("scale", 1).asDouble();
+		//scale = params.get("scale", 1).asDouble();
 	}
 
 	if (params["generator"].asString() == "menger_sponge") {
@@ -418,21 +419,31 @@ MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerg
 		//size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
 		//if(!center.getLength()) center = v3f(-1.0 / scale / 2, -1.0 / scale + (-2 * -(int)invert), 2);
 		size = params.get("size", 15000 ).asDouble();
-		scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
+		//scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
 		if(!center.getLength()) center = v3f(5000-5,5000+5,5000-5);
 		//par.doubles.N = params.get("N", 4).asInt();
 	}
 
 	if (params["generator"].asString() == "mandelbulb2") {
-		if(!center.getLength()) center = v3f(5, -1.0 / scale - 5, 0); //ok
+		if(!center.getLength()) center = v3f(5, -1.0 / (1.0 / size) - 5, 0); //ok
 	}
 	if (params["generator"].asString() == "hypercomplex") {
 		par.doubles.N = params.get("N", 20).asInt();
-		scale = params.get("scale", 0.0001).asDouble();
+		//scale = params.get("scale", 0.0001).asDouble();
 	}
 #endif
 
-	if (params["center_auto_top"].asBool() && params.get("center", Json::Value()).empty() && !center.getLength()) center = v3f(3, -1.0 / scale + (-5 - (-(int)invert * 10)), 3);
+	float s = 1.0 / size;
+	scale = v3f(s,s,s);
+	if (params["scale"].isDouble()) {
+		s = params.get("scale", 1.0 / size).asDouble();
+		scale = v3f(s,s,s);
+	}
+	else if (!params.get("scale", Json::Value()).empty())
+		scale = v3f(params["scale"].get("x", 1.0 / size).asDouble(), params["scale"].get("y", 1.0 / size).asDouble(), params["scale"].get("z", 1.0 / size).asDouble());
+
+
+	if (params["center_auto_top"].asBool() && params.get("center", Json::Value()).empty() && !center.getLength()) center = v3f(3, -1.0 / (1.0 / size) + (-5 - (-(int)invert * 10)), 3);
 }
 
 MapgenMath::~MapgenMath() {
@@ -477,21 +488,25 @@ int MapgenMath::generateTerrain() {
 	double d = 0;
 	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
 		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-			s16 heat = emerge->env->m_use_weather ? emerge->env->getServerMap().updateBlockHeat(emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
-
+				if (invert_xy)
+					std::swap(vec.X, vec.Y);
+				if (invert_yz)
+					std::swap(vec.Y, vec.Z);
 
 #if USE_MANDELBULBER
 				if (!internal)
-					d = Compute<normal_mode>(CVector3(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z), mg_params->par);
+					d = Compute<normal_mode>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+				else
 #endif
 				if (internal)
-					d = (*func)(vec.X, invert_yz ? vec.Z : vec.Y, invert_yz ? vec.Y : vec.Z, scale, iterations);
+					d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
-					if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
+					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert) {

@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MAPBLOCK_MESH_HEADER
 
 #include "irrlichttypes_extrabloated.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "voxel.h"
 #include <map>
 
@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class IGameDef;
 struct MapDrawControl;
 class Map;
+class IShaderSource;
 
 /*
 	Mesh making stuff
@@ -42,6 +43,7 @@ class Map;
 int getFarmeshStep(MapDrawControl& draw_control, const v3POS & player_pos, const v3POS & block_pos);
 
 class MapBlock;
+struct MinimapMapblock;
 
 struct MeshMakeData
 {
@@ -58,8 +60,12 @@ struct MeshMakeData
 	video::SColor m_highlight_mesh_color;
 
 	IGameDef *m_gamedef;
+
+	bool m_use_shaders;
+
 	int step;
 	int range;
+	bool no_draw;
 	unsigned int timestamp;
 	MapBlock * block;
 	Map & map;
@@ -67,7 +73,7 @@ struct MeshMakeData
 	bool debug;
 	bool filled;
 
-	MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_);
+	MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
 
 	/*
@@ -75,12 +81,12 @@ struct MeshMakeData
 		parent of block.
 	*/
 	void fill(MapBlock *block_);
-	void fill_data();
+	bool fill_data();
 
 	/*
 		Set up with only a single node at (1,1,1)
 	*/
-	void fillSingleNode(MapNode *node);
+	void fillSingleNode(MapNode *node, v3POS blockpos = v3POS(0,0,0));
 
 	/*
 		Set the (node) position of a crack
@@ -124,9 +130,16 @@ public:
 	// Returns true if anything has been changed.
 	bool animate(bool faraway, float time, int crack, u32 daynight_ratio);
 
-	scene::SMesh* getMesh()
+	scene::SMesh *getMesh()
 	{
 		return m_mesh;
+	}
+
+	MinimapMapblock *moveMinimapMapblock()
+	{
+		MinimapMapblock *p = m_minimap_mapblock;
+		m_minimap_mapblock = NULL;
+		return p;
 	}
 
 	bool isAnimationForced() const
@@ -159,11 +172,17 @@ public:
 	bool clearHardwareBuffer;
 
 	int step;
+	bool no_draw;
 	unsigned int timestamp;
 
 private:
 	scene::SMesh *m_mesh;
+public:
+	MinimapMapblock *m_minimap_mapblock;
+private:
 	IGameDef *m_gamedef;
+	ITextureSource *m_tsrc;
+	IShaderSource *m_shdrsrc;
 
 	bool m_enable_shaders;
 	bool m_enable_highlighting;
@@ -208,13 +227,12 @@ struct PreMeshBuffer
 {
 	TileSpec tile;
 	std::vector<u16> indices;
-	std::vector<video::S3DVertex> vertices;
+	std::vector<video::S3DVertexTangents> vertices;
 };
 
 struct MeshCollector
 {
 	std::vector<PreMeshBuffer> prebuffers;
-
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);

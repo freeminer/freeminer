@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "filecache.h"
 
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 #include "log.h"
 #include "filesys.h"
 #include <string>

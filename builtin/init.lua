@@ -11,6 +11,7 @@ math.randomseed(os.time())
 os.setlocale("C", "numeric")
 minetest = core
 freeminer = core
+multicraft = core
 
 -- Load other files
 local scriptdir = core.get_builtin_path()..DIR_DELIM
@@ -34,7 +35,11 @@ elseif INIT == "mainmenu" then
 	if mainmenuscript ~= nil and mainmenuscript ~= "" then
 		dofile(mainmenuscript)
 	else
+	  if PLATFORM == "Android" then
 		dofile(core.get_mainmenu_path()..DIR_DELIM.."init.lua")
+	  else
+		dofile(core.get_mainmenu_path()..DIR_DELIM.."fm_init.lua")
+	  end
 	end
 elseif INIT == "async" then
 	dofile(asyncpath.."init.lua")

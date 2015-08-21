@@ -4,6 +4,6 @@
 
 #include <mutex>
 
-typedef std::unique_lock<std::mutex> JMutexAutoLock;
+typedef std::lock_guard<std::mutex> JMutexAutoLock;
 
 #endif // JMUTEXAUTOLOCK_H

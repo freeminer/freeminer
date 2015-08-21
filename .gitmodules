@@ -1,3 +1,15 @@
 [submodule "games/default"]
 	path = games/default
 	url = https://github.com/freeminer/default.git
+[submodule "src/enet"]
+	path = src/enet
+	url = https://github.com/freeminer/enet.git
+[submodule "build/osx/releases/dylibbundler"]
+	path = build/osx/releases/dylibbundler
+	url = https://github.com/auriamg/macdylibbundler.git
+[submodule "src/msgpack-c"]
+	path = src/msgpack-c
+	url = https://github.com/msgpack/msgpack-c.git
+[submodule "src/jsoncpp"]
+	path = src/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git

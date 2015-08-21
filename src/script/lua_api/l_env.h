@@ -37,7 +37,7 @@ private:
 	// remove_node(pos)
 	// pos = {x=num, y=num, z=num}
 	static int l_remove_node(lua_State *L);
-	
+
 	// swap_node(pos, node)
 	// pos = {x=num, y=num, z=num}
 	static int l_swap_node(lua_State *L);
@@ -86,6 +86,9 @@ private:
 	// freeze_melt(pos)
 	static int l_freeze_melt(lua_State *L);
 
+	// find_nodes_with_meta(pos1, pos2)
+	static int l_find_nodes_with_meta(lua_State *L);
+
 	// get_meta(pos)
 	static int l_get_meta(lua_State *L);
 
@@ -124,6 +127,13 @@ private:
 	// nodenames: eg. {"ignore", "group:tree"} or "default:dirt"
 	static int l_find_nodes_in_area(lua_State *L);
 
+	// find_surface_nodes_in_area(minp, maxp, nodenames) -> list of positions
+	// nodenames: eg. {"ignore", "group:tree"} or "default:dirt"
+	static int l_find_nodes_in_area_under_air(lua_State *L);
+
+	// delete_area(p1, p2) -> true/false
+	static int l_delete_area(lua_State *L);
+
 	// get_perlin(seeddiff, octaves, persistence, scale)
 	// returns world-specific PerlinNoise
 	static int l_get_perlin(lua_State *L);
@@ -131,11 +141,11 @@ private:
 	// get_perlin_map(noiseparams, size)
 	// returns world-specific PerlinNoiseMap
 	static int l_get_perlin_map(lua_State *L);
-	
+
 	// get_voxel_manip()
 	// returns world-specific voxel manipulator
 	static int l_get_voxel_manip(lua_State *L);
-	
+
 	// clear_objects()
 	// clear all objects in the environment
 	static int l_clear_objects(lua_State *L);
@@ -162,11 +172,11 @@ private:
 	// forceload_block(blockpos)
 	// forceloads a block
 	static int l_forceload_block(lua_State *L);
-	
+
 	// forceload_free_block(blockpos)
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
-	
+
 	// get us precision time
 	static int l_get_us_time(lua_State *L);
 

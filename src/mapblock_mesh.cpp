@@ -24,11 +24,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "light.h"
 #include "mapblock.h"
 #include "map.h"
-#include "main.h" // for g_profiler
 #include "profiler.h"
 #include "nodedef.h"
 #include "gamedef.h"
 #include "mesh.h"
+#include "minimap.h"
 #include "content_mapblock.h"
 #include "noise.h"
 #include "shader.h"
@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "clientmap.h"
 #include "log_types.h"
+#include <IMeshManipulator.h>
 
 static void applyFacesShading(video::SColor& color, float factor)
 {
@@ -58,7 +59,7 @@ int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const 
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_control_):
+MeshMakeData::MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_):
 #if defined(MESH_ZEROCOPY)
 	m_vmanip(map_),
 #endif
@@ -68,9 +69,12 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, Map & map_, MapDrawControl& draw_c
 	m_smooth_lighting(false),
 	m_show_hud(false),
 	m_highlight_mesh_color(255, 255, 255, 255),
-	m_gamedef(gamedef)
+	m_gamedef(gamedef),
+	m_use_shaders(use_shaders)
 	,step(1),
 	range(1),
+	no_draw(false),
+	timestamp(0),
 	block(nullptr),
 	map(map_),
 	draw_control(draw_control_),
@@ -84,20 +88,32 @@ MeshMakeData::~MeshMakeData() {
 
 void MeshMakeData::fill(MapBlock *block_)
 {
+#if ! ENABLE_THREADS
 	block = block_;
-	m_blockpos = block->getPos();
-	timestamp = block->getTimestamp();
+#endif
+	m_blockpos = block_->getPos();
 }
 
-void MeshMakeData::fill_data()
+bool MeshMakeData::fill_data()
 {
-	if (!block || filled)
-		return;
+
+	if (filled)
+		return filled;
+
+	if (!block)
+		block = map.getBlockNoCreateNoEx(m_blockpos);
+
+	if (!block)
+		return filled;
 	filled = true;
+	timestamp = block->getTimestamp();
 
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
 
+	map.copy_27_blocks_to_vm(block, m_vmanip);
+
+#if 0
 	v3POS blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
 
 	/*
@@ -138,15 +154,18 @@ void MeshMakeData::fill_data()
 				b->copyTo(m_vmanip);
 		}
 	}
+
 #endif
+
+#endif
+	return filled;
 }
 
-void MeshMakeData::fillSingleNode(MapNode *node)
-{
-	m_blockpos = v3s16(0,0,0);
+void MeshMakeData::fillSingleNode(MapNode *node, v3POS blockpos) {
+	m_blockpos = blockpos;
 
 #if !defined(MESH_ZEROCOPY)
-	v3s16 blockpos_nodes = v3s16(0,0,0);
+	v3s16 blockpos_nodes = m_blockpos * MAP_BLOCKSIZE;
 	VoxelArea area(blockpos_nodes-v3s16(1,1,1)*MAP_BLOCKSIZE,
 			blockpos_nodes+v3s16(1,1,1)*MAP_BLOCKSIZE*2-v3s16(1,1,1));
 	s32 volume = area.getVolume();
@@ -157,7 +176,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 	m_vmanip.addArea(area);
 
 	// Fill in data
-	MapNode *data = new MapNode[volume];
+	MapNode *data = reinterpret_cast<MapNode*>( ::operator new(volume * sizeof(MapNode)));
 	for(s32 i = 0; i < volume; i++)
 	{
 		if(i == our_node_index)
@@ -170,7 +189,7 @@ void MeshMakeData::fillSingleNode(MapNode *node)
 		}
 	}
 	m_vmanip.copyFrom(data, area, area.MinEdge, area.MinEdge, area.getExtent());
-	delete[] data;
+	delete data;
 #endif
 }
 
@@ -291,7 +310,7 @@ static u16 getSmoothLightCombined(v3s16 p, MeshMakeData *data)
 
 	for (u32 i = 0; i < 8; i++)
 	{
-		MapNode n = data->m_vmanip.getNodeNoEx(p - dirs8[i]);
+		const MapNode &n = data->m_vmanip.getNodeRefUnsafeCheckFlags(p - dirs8[i]);
 
 		// if it's CONTENT_IGNORE we can't do any light calculations
 		if (n.getContent() == CONTENT_IGNORE) {
@@ -303,8 +322,8 @@ static u16 getSmoothLightCombined(v3s16 p, MeshMakeData *data)
 			light_source_max = f.light_source;
 		// Check f.solidness because fast-style leaves look better this way
 		if (f.param_type == CPT_LIGHT && f.solidness != 2) {
-			light_day += decode_light(n.getLight(LIGHTBANK_DAY, ndef));
-			light_night += decode_light(n.getLight(LIGHTBANK_NIGHT, ndef));
+			light_day += decode_light(n.getLightNoChecks(LIGHTBANK_DAY, &f));
+			light_night += decode_light(n.getLightNoChecks(LIGHTBANK_NIGHT, &f));
 			light_count++;
 		} else {
 			ambient_occlusion++;
@@ -332,9 +351,15 @@ static u16 getSmoothLightCombined(v3s16 p, MeshMakeData *data)
 
 	if (ambient_occlusion > 4)
 	{
-		//table of precalculated gamma space multiply factors
-		//light^2.2 * factor (0.75, 0.5, 0.25, 0.0), so table holds factor ^ (1 / 2.2)
-		static const float light_amount[4] = { 0.877424315, 0.729740053, 0.532520545, 0.0 };
+		static const float ao_gamma = rangelim(
+			g_settings->getFloat("ambient_occlusion_gamma"), 0.25, 4.0);
+
+		// Table of gamma space multiply factors.
+		static const float light_amount[3] = {
+			powf(0.75, 1.0 / ao_gamma),
+			powf(0.5,  1.0 / ao_gamma),
+			powf(0.25, 1.0 / ao_gamma)
+		};
 
 		//calculate table index for gamma space multiplier
 		ambient_occlusion -= 5;
@@ -380,19 +405,20 @@ void finalColorBlend(video::SColor& result,
 
 	// Emphase blue a bit in darker places
 	// Each entry of this array represents a range of 8 blue levels
-	static const u8 emphase_blue_when_dark[32] = {
+	static const u8 emphase_blue_when_dark[35] = {
 		1, 4, 6, 6, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0
 	};
-	b += emphase_blue_when_dark[b / 8];
-	b = irr::core::clamp (b, 0, 255);
+	b += emphase_blue_when_dark[irr::core::clamp(b, 0, 255) / 8];
+	b = irr::core::clamp(b, 0, 255);
 
 	// Artificial light is yellow-ish
 	static const u8 emphase_yellow_when_artificial[16] = {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 15, 15, 15
 	};
 	rg += emphase_yellow_when_artificial[night/16];
-	rg = irr::core::clamp (rg, 0, 255);
+	rg = irr::core::clamp(rg, 0, 255);
 
 	result.setRed(rg);
 	result.setGreen(rg);
@@ -475,8 +501,6 @@ struct FastFace
 static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 		v3f p, v3s16 dir, v3f scale, u8 light_source, std::vector<FastFace> &dest)
 {
-	FastFace face;
-
 	// Position is at the center of the cube.
 	v3f pos = p * BS;
 
@@ -627,6 +651,10 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 
 	u8 alpha = tile.alpha;
 
+	dest.push_back(FastFace());
+
+	FastFace& face = *dest.rbegin();
+
 	face.vertices[0] = video::S3DVertex(vertex_pos[0], normal,
 			MapBlock_LightColor(alpha, li0, light_source),
 			core::vector2d<f32>(x0+w*abs_scale, y0+h));
@@ -641,7 +669,6 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 			core::vector2d<f32>(x0+w*abs_scale, y0));
 
 	face.tile = tile;
-	dest.push_back(face);
 }
 
 /*
@@ -737,8 +764,7 @@ TileSpec getNodeTile(MapNode mn, v3s16 p, v3s16 dir, MeshMakeData *data)
 
 	// Get rotation for things like chests
 	u8 facedir = mn.getFaceDir(ndef);
-	if (facedir > 23)
-		facedir = 0;
+
 	static const u16 dir_to_tile[24 * 16] =
 	{
 		// 0     +X    +Y    +Z           -Z    -Y    -X   ->   value=tile,rotation
@@ -783,8 +809,8 @@ TileSpec getNodeTile(MapNode mn, v3s16 p, v3s16 dir, MeshMakeData *data)
 static void getTileInfo(
 		// Input:
 		MeshMakeData *data,
-		v3s16 p,
-		v3s16 face_dir,
+		const v3s16 &p,
+		const v3s16 &face_dir,
 		// Output:
 		bool &makes_face,
 		v3s16 &p_corrected,
@@ -799,15 +825,21 @@ static void getTileInfo(
 	INodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
-	MapNode n0 = vmanip.getNodeNoEx(blockpos_nodes + p*step);
+	MapNode &n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step);
 
 	// Don't even try to get n1 if n0 is already CONTENT_IGNORE
-	if (n0.getContent() == CONTENT_IGNORE ) {
+	if (n0.getContent() == CONTENT_IGNORE) {
 		makes_face = false;
 		return;
 	}
-	MapNode n1 = vmanip.getNodeNoEx(blockpos_nodes + p*step + face_dir*step);
+
+	const MapNode &n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step);
 	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
+
+	if (n1.getContent() == CONTENT_IGNORE) {
+		makes_face = false;
+		return;
+	}
 
 	// This is hackish
 	bool equivalent = false;
@@ -1067,9 +1099,12 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	clearHardwareBuffer(false),
 	step(data->step),
-	timestamp(data->timestamp),
-	m_mesh(new scene::SMesh()),
+	no_draw(data->no_draw),
+	m_mesh(nullptr),
+	m_minimap_mapblock(NULL),
 	m_gamedef(data->m_gamedef),
+	m_tsrc(m_gamedef->getTextureSource()),
+	m_shdrsrc(m_gamedef->getShaderSource()),
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_crack_materials(),
@@ -1078,16 +1113,29 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_daynight_diffs(),
 	m_usage_timer(0)
 {
-	m_enable_shaders = g_settings->getBool("enable_shaders");
+	m_mesh = new scene::SMesh();
+
+	m_enable_shaders = data->m_use_shaders;
 	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
+
+	if (!data->fill_data())
+		return;
+	if (step == 1)
+	if (g_settings->getBool("enable_minimap")) {
+		m_minimap_mapblock = new MinimapMapblock;
+		m_minimap_mapblock->getMinimapNodes(
+			&data->m_vmanip, data->m_blockpos * MAP_BLOCKSIZE);
+	}
 
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
 	// 24-155ms for MAP_BLOCKSIZE=32  (NOTE: probably outdated)
 	//TimeTaker timer1("MapBlockMesh()");
 
-	data->fill_data();
+
+	timestamp = data->timestamp;
 
 	std::vector<FastFace> fastfaces_new;
+	fastfaces_new.reserve(512/step);
 
 	/*
 		We are including the faces of the trailing edges of the block.
@@ -1157,8 +1205,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	/*
 		Convert MeshCollector to SMesh
 	*/
-	ITextureSource *tsrc = m_gamedef->tsrc();
-	IShaderSource *shdrsrc = m_gamedef->getShaderSource();
 
 	for(u32 i = 0; i < collector.prebuffers.size(); i++)
 	{
@@ -1171,18 +1217,19 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		{
 			// Find the texture name plus ^[crack:N:
 			std::ostringstream os(std::ios::binary);
-			os<<tsrc->getTextureName(p.tile.texture_id)<<"^[crack";
+			os<<m_tsrc->getTextureName(p.tile.texture_id)<<"^[crack";
 			if(p.tile.material_flags & MATERIAL_FLAG_CRACK_OVERLAY)
 				os<<"o";  // use ^[cracko
 			os<<":"<<(u32)p.tile.animation_frame_count<<":";
 			m_crack_materials.insert(std::make_pair(i, os.str()));
 			// Replace tile texture with the cracked one
-			p.tile.texture = tsrc->getTexture(
+			p.tile.texture = m_tsrc->getTextureForMesh(
 					os.str()+"0",
 					&p.tile.texture_id);
 		}
+		}
 		// - Texture animation
-		if(p.tile.material_flags & MATERIAL_FLAG_ANIMATION_VERTICAL_FRAMES)
+		if(p.tile.material_flags & MATERIAL_FLAG_ANIMATION_VERTICAL_FRAMES && !p.tile.frames.empty())
 		{
 			// Add to MapBlockMesh in order to animate these tiles
 			m_animation_tiles[i] = p.tile;
@@ -1197,39 +1244,43 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 				m_animation_frame_offsets[i] = 0;
 			}
 			// Replace tile texture with the first animation frame
-			FrameSpec animation_frame = p.tile.frames.find(0)->second;
+			FrameSpec animation_frame = p.tile.frames[0];
 			p.tile.texture = animation_frame.texture;
-		}
 		}
 
 		if(m_enable_highlighting && p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED)
-			m_highlighted_materials.push_back(i);	
+			m_highlighted_materials.push_back(i);
 
 		for(u32 j = 0; j < p.vertices.size(); j++)
 		{
+			video::S3DVertexTangents *vertex = &p.vertices[j];
 			// Note applyFacesShading second parameter is precalculated sqrt
 			// value for speed improvement
 			// Skip it for lightsources and top faces.
-			video::SColor &vc = p.vertices[j].Color;
+			video::SColor &vc = vertex->Color;
 			if (!vc.getBlue()) {
-				if (p.vertices[j].Normal.Y < -0.5) {
+				if (vertex->Normal.Y < -0.5) {
 					applyFacesShading (vc, 0.447213);
-				} else if (p.vertices[j].Normal.X > 0.5) {
+				} else if (vertex->Normal.X > 0.5) {
 					applyFacesShading (vc, 0.670820);
-				} else if (p.vertices[j].Normal.X < -0.5) {
+				} else if (vertex->Normal.X < -0.5) {
 					applyFacesShading (vc, 0.670820);
-				} else if (p.vertices[j].Normal.Z > 0.5) {
+				} else if (vertex->Normal.Z > 0.5) {
 					applyFacesShading (vc, 0.836660);
-				} else if (p.vertices[j].Normal.Z < -0.5) {
+				} else if (vertex->Normal.Z < -0.5) {
 					applyFacesShading (vc, 0.836660);
 				}
 			}
-			// - Classic lighting
-			// Set initial real color and store for later updates
-			u8 day = vc.getRed();
-			u8 night = vc.getGreen();
-			finalColorBlend(vc, day, night, 1000);
-			m_daynight_diffs[i][j] = std::make_pair(day, night);
+			if(!m_enable_shaders)
+			{
+				// - Classic lighting (shaders handle this by themselves)
+				// Set initial real color and store for later updates
+				u8 day = vc.getRed();
+				u8 night = vc.getGreen();
+				finalColorBlend(vc, day, night, 1000);
+				if(day != night)
+					m_daynight_diffs[i][j] = std::make_pair(day, night);
+			}
 		}
 
 		// Create material
@@ -1239,39 +1290,35 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		material.setFlag(video::EMF_BILINEAR_FILTER, false);
 		material.setFlag(video::EMF_FOG_ENABLE, true);
 		//material.setFlag(video::EMF_WIREFRAME, true);
+
 		material.setTexture(0, p.tile.texture);
 
 		if (p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED) {
 			material.MaterialType = video::EMT_TRANSPARENT_ADD_COLOR;
 		} else {
 			if (m_enable_shaders) {
-				material.MaterialType = shdrsrc->getShaderInfo(p.tile.shader_id).material;
+				material.MaterialType = m_shdrsrc->getShaderInfo(p.tile.shader_id).material;
 				p.tile.applyMaterialOptionsWithShaders(material);
 				if (p.tile.normal_texture) {
 					material.setTexture(1, p.tile.normal_texture);
-					material.setTexture(2, tsrc->getTexture("enable_img.png"));
-				} else {
-					material.setTexture(2, tsrc->getTexture("disable_img.png"));
 				}
+				material.setTexture(2, p.tile.flags_texture);
 			} else {
 				p.tile.applyMaterialOptions(material);
 			}
 		}
 
-		// Create meshbuffer
-		// This is a "Standard MeshBuffer",
-		// it's a typedeffed CMeshBuffer<video::S3DVertex>
-		scene::SMeshBuffer *buf = new scene::SMeshBuffer();
-		// Set material
-		buf->Material = material;
-		// Add to mesh
-		m_mesh->addMeshBuffer(buf);
-		// Mesh grabbed it
-		buf->drop();
-		buf->append(&p.vertices[0], p.vertices.size(),
-				&p.indices[0], p.indices.size());
-	}
-
+	// Create meshbuffer
+	scene::SMeshBufferTangents *buf = new scene::SMeshBufferTangents();
+	// Set material
+	buf->Material = material;
+	// Add to mesh
+	m_mesh->addMeshBuffer(buf);
+	// Mesh grabbed it
+	buf->drop();
+	buf->append(&p.vertices[0], p.vertices.size(),
+		&p.indices[0], p.indices.size());
+}
 	m_camera_offset = camera_offset;
 
 	/*
@@ -1280,14 +1327,16 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	v3f t = v3f(0,0,0);
 	if (step>1) {
+		translateMesh(m_mesh, v3f(HBS, 0, HBS));
 		scaleMesh(m_mesh, v3f(step,step,step));
-		// TODO: remove this wrong numbers, find formula   good test: fly above ocean
-		if (step == 2)	t = v3f(BS/2,		 BS/2,		BS/2);
-		if (step == 4)	t = v3f(BS*1.666,	-BS/3.0,	BS*1.666);
-		if (step == 8)	t = v3f(BS*2.666,	-BS*2.4,	BS*2.666);
-		if (step == 16)	t = v3f(BS*6.4,		-BS*6.4,	BS*6.4);
+		t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
 	}
 	translateMesh(m_mesh, intToFloat(data->m_blockpos * MAP_BLOCKSIZE - camera_offset, BS) + t);
+
+	if (m_enable_shaders) {
+		scene::IMeshManipulator* meshmanip = m_gamedef->getSceneManager()->getMeshManipulator();
+		meshmanip->recalculateTangents(m_mesh, true, false, false);
+	}
 
 	if(m_mesh)
 	{
@@ -1311,6 +1360,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 MapBlockMesh::~MapBlockMesh()
 {
+	if (!m_mesh)
+		return;
+
 	if(clearHardwareBuffer)
 		for(u32 i=0; i<m_mesh->getMeshBufferCount(); i++){
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);
@@ -1318,6 +1370,7 @@ MapBlockMesh::~MapBlockMesh()
 		}
 	m_mesh->drop();
 	m_mesh = NULL;
+	delete m_minimap_mapblock;
 }
 
 void MapBlockMesh::setStatic()
@@ -1330,14 +1383,17 @@ void MapBlockMesh::setStatic()
 
 bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_ratio)
 {
-
 	if(!m_has_animation)
 	{
 		m_animation_force_timer = 100000;
 		return false;
 	}
 
+#if __ANDROID__
+	m_animation_force_timer = myrand_range(500, 1000);
+#else
 	m_animation_force_timer = myrand_range(5, 100);
+#endif
 
 	// Cracks
 	if(crack != m_last_crack)
@@ -1350,12 +1406,11 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 			std::string basename = i->second;
 
 			// Create new texture name from original
-			ITextureSource *tsrc = m_gamedef->getTextureSource();
 			std::ostringstream os;
 			os<<basename<<crack;
 			u32 new_texture_id = 0;
 			video::ITexture *new_texture =
-				tsrc->getTexture(os.str(), &new_texture_id);
+				m_tsrc->getTextureForMesh(os.str(), &new_texture_id);
 			buf->getMaterial().setTexture(0, new_texture);
 
 			// If the current material is also animated,
@@ -1391,22 +1446,19 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		m_animation_frames[i->first] = frame;
 
 		scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
-		ITextureSource *tsrc = m_gamedef->getTextureSource();
 
-		FrameSpec animation_frame = tile.frames.find(frame)->second;
+		FrameSpec animation_frame = tile.frames[frame];
 		buf->getMaterial().setTexture(0, animation_frame.texture);
 		if (m_enable_shaders) {
 			if (animation_frame.normal_texture) {
 				buf->getMaterial().setTexture(1, animation_frame.normal_texture);
-				buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
-			} else {
-				buf->getMaterial().setTexture(2, tsrc->getTexture("disable_img.png"));
 			}
+			buf->getMaterial().setTexture(2, animation_frame.flags_texture);
 		}
 	}
 
 	// Day-night transition
-	if(daynight_ratio != m_last_daynight_ratio)
+	if(!m_enable_shaders && (daynight_ratio != m_last_daynight_ratio))
 	{
 		for(std::map<u32, std::map<u32, std::pair<u8, u8> > >::iterator
 				i = m_daynight_diffs.begin();
@@ -1414,16 +1466,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
 			buf->setDirty(irr::scene::EBT_VERTEX);
-			video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
+			video::S3DVertexTangents *vertices = (video::S3DVertexTangents *)buf->getVertices();
 			for(std::map<u32, std::pair<u8, u8 > >::iterator
 					j = i->second.begin();
 					j != i->second.end(); j++)
 			{
-				u32 vertexIndex = j->first;
 				u8 day = j->second.first;
 				u8 night = j->second.second;
-				finalColorBlend(vertices[vertexIndex].Color,
-						day, night, daynight_ratio);
+				finalColorBlend(vertices[j->first].Color, day, night, daynight_ratio);
 			}
 		}
 		m_last_daynight_ratio = daynight_ratio;
@@ -1432,7 +1482,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	// Node highlighting
 	if (m_enable_highlighting) {
 		u8 day = m_highlight_mesh_color.getRed();
-		u8 night = m_highlight_mesh_color.getGreen();	
+		u8 night = m_highlight_mesh_color.getGreen();
 		video::SColor hc;
 		finalColorBlend(hc, day, night, daynight_ratio);
 		float sin_r = 0.07 * sin(1.5 * time);
@@ -1447,7 +1497,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 			i != m_highlighted_materials.end(); i++)
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(*i);
-			video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
+			video::S3DVertexTangents *vertices = (video::S3DVertexTangents*)buf->getVertices();
 			for (u32 j = 0; j < buf->getVertexCount() ;j++)
 				vertices[j].Color = hc;
 		}
@@ -1474,42 +1524,40 @@ void MeshCollector::append(const TileSpec &tile,
 		const video::S3DVertex *vertices, u32 numVertices,
 		const u16 *indices, u32 numIndices)
 {
-	if(numIndices > 65535)
-	{
+	if (numIndices > 65535) {
 		dstream<<"FIXME: MeshCollector::append() called with numIndices="<<numIndices<<" (limit 65535)"<<std::endl;
 		return;
 	}
 
 	PreMeshBuffer *p = NULL;
-	for(u32 i=0; i<prebuffers.size(); i++)
-	{
+	for (u32 i = 0; i < prebuffers.size(); i++) {
 		PreMeshBuffer &pp = prebuffers[i];
-		if(pp.tile != tile)
+		if (pp.tile != tile)
 			continue;
-		if(pp.indices.size() + numIndices > 65535)
+		if (pp.indices.size() + numIndices > 65535)
 			continue;
 
 		p = &pp;
 		break;
 	}
 
-	if(p == NULL)
-	{
+	if (p == NULL) {
 		PreMeshBuffer pp;
 		pp.tile = tile;
 		prebuffers.push_back(pp);
-		p = &prebuffers[prebuffers.size()-1];
+		p = &prebuffers[prebuffers.size() - 1];
 	}
 
 	u32 vertex_count = p->vertices.size();
-	for(u32 i=0; i<numIndices; i++)
-	{
+	for (u32 i = 0; i < numIndices; i++)	{
 		u32 j = indices[i] + vertex_count;
 		p->indices.push_back(j);
 	}
-	for(u32 i=0; i<numVertices; i++)
-	{
-		p->vertices.push_back(vertices[i]);
+
+	for (u32 i = 0; i < numVertices; i++) {
+		video::S3DVertexTangents vert(vertices[i].Pos, vertices[i].Normal,
+			vertices[i].Color, vertices[i].TCoords);
+		p->vertices.push_back(vert);
 	}
 }
 
@@ -1522,15 +1570,13 @@ void MeshCollector::append(const TileSpec &tile,
 		const u16 *indices, u32 numIndices,
 		v3f pos, video::SColor c)
 {
-	if(numIndices > 65535)
-	{
+	if (numIndices > 65535) {
 		dstream<<"FIXME: MeshCollector::append() called with numIndices="<<numIndices<<" (limit 65535)"<<std::endl;
 		return;
 	}
 
 	PreMeshBuffer *p = NULL;
-	for(u32 i=0; i<prebuffers.size(); i++)
-	{
+	for (u32 i = 0; i < prebuffers.size(); i++) {
 		PreMeshBuffer &pp = prebuffers[i];
 		if(pp.tile != tile)
 			continue;
@@ -1541,25 +1587,22 @@ void MeshCollector::append(const TileSpec &tile,
 		break;
 	}
 
-	if(p == NULL)
-	{
+	if (p == NULL) {
 		PreMeshBuffer pp;
 		pp.tile = tile;
 		prebuffers.push_back(pp);
-		p = &prebuffers[prebuffers.size()-1];
+		p = &prebuffers[prebuffers.size() - 1];
 	}
 
 	u32 vertex_count = p->vertices.size();
-	for(u32 i=0; i<numIndices; i++)
-	{
+	for (u32 i = 0; i < numIndices; i++) {
 		u32 j = indices[i] + vertex_count;
 		p->indices.push_back(j);
 	}
-	for(u32 i=0; i<numVertices; i++)
-	{
-		video::S3DVertex vert = vertices[i];
-		vert.Pos += pos;
-		vert.Color = c;		
+
+	for (u32 i = 0; i < numVertices; i++) {
+		video::S3DVertexTangents vert(vertices[i].Pos + pos, vertices[i].Normal,
+			c, vertices[i].TCoords);
 		p->vertices.push_back(vert);
 	}
 }

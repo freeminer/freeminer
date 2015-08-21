@@ -33,15 +33,50 @@ std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
 	return s;
 }
 
+std::ostream & operator<<(std::ostream & s, irr::video::SColor c) {
+	s << "c32(" << c.color << ": a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+	return s;
+}
+
+std::ostream & operator<<(std::ostream & s, irr::video::SColorf c) {
+	s << "cf32(" << "a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+	return s;
+}
+
+#include "util/string.h"
+std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
+	s << wide_to_narrow(w);
+	return s;
+}
+
+
+
 #include "mapnode.h"
 std::ostream & operator<<(std::ostream & s, MapNode n) {
-	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param1<<"]";
+	s << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param2<<"]";
 	return s;
 }
 
 #include "noise.h"
 struct NoiseParams;
 std::ostream & operator<<(std::ostream & s, NoiseParams np) {
-	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",eased="<<np.eased<<"]";
+	s << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags
+	<<",farscale"<<np.farscale<<",farspread"<<np.farspread<<",farpersist"<<np.farpersist
+	<<"]";
+	return s;
+}
+
+#include "json/json.h"
+Json::StyledWriter writer;
+std::ostream & operator<<(std::ostream & s, Json::Value & json) {
+	s << writer.write(json);
+	return s;
+}
+
+#include "settings.h"
+std::ostream & operator<<(std::ostream & s, Settings & settings) {
+	Json::Value json;
+	settings.toJson(json);
+	s << json;
 	return s;
 }

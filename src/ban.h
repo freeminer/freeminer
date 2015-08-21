@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <map>
 #include <string>
+#include "util/string.h"
 #include "jthread/jmutex.h"
 #include "exceptions.h"
 
@@ -45,7 +46,7 @@ public:
 private:
 	JMutex m_mutex;
 	std::string m_banfilepath;
-	std::map<std::string, std::string> m_ips;
+	StringMap m_ips;
 	bool m_modified;
 
 };

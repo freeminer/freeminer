@@ -63,7 +63,7 @@ u8 CircuitElement::reverse_rotate_face[] = {
 
 CircuitElement::CircuitElement(v3POS pos, u32 element_id, u8 delay) :
 	m_pos(pos), m_prev_input_state(0), m_current_input_state(0),
-	m_next_input_state(0), m_current_output_state(0){
+	m_next_input_state(0), m_current_output_state(0) {
 	m_element_id = element_id;
 	for(int i = 0; i < 6; ++i) {
 		m_faces[i].is_connected = false;
@@ -280,9 +280,9 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 
 					auto next_used_iterator = used.find(next_pos);
 					bool is_part_of_circuit = node_features.is_wire_connector || node_features.is_circuit_element ||
-						(node_features.is_wire && (next_node.getContent() == current_node.getContent()));
+					                          (node_features.is_wire && (next_node.getContent() == current_node.getContent()));
 					bool not_used = (next_used_iterator == used.end()) ||
-						!(next_used_iterator->second & next_real_face);
+					                !(next_used_iterator->second & next_real_face);
 
 					if(is_part_of_circuit && not_used) {
 						if(node_features.is_circuit_element) {
@@ -305,8 +305,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 	}
 }
 
-CircuitElementContainer CircuitElement::getFace(int id) const
-{
+CircuitElementContainer CircuitElement::getFace(int id) const {
 	return m_faces[id];
 }
 

@@ -21,54 +21,53 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "mg_biome.h"
+#include "mg_decoration.h"
+#include "emerge.h"
 #include "gamedef.h"
 #include "nodedef.h"
-#include "map.h" //for ManualMapVoxelManipulator
+#include "map.h" //for MMVManip
 #include "log_types.h"
 #include "util/numeric.h"
-#include "main.h"
 #include "util/mathconstants.h"
 #include "porting.h"
 #include "settings.h"
-
-const char *BiomeManager::ELEMENT_TITLE = "biome";
-
-NoiseParams nparams_biome_def_heat(15, 30, v3f(500.0, 500.0, 500.0), 5349, 2, 0.65);
-NoiseParams nparams_biome_def_humidity(50, 50, v3f(500.0, 500.0, 500.0), 842, 3, 0.50);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
-BiomeManager::BiomeManager(IGameDef *gamedef)
+BiomeManager::BiomeManager(IGameDef *gamedef) :
+	ObjDefManager(gamedef, OBJDEF_BIOME)
 {
-	NodeResolver *resolver = gamedef->getNodeDefManager()->getResolver();
-
-	np_heat     = &nparams_biome_def_heat;
-	np_humidity = &nparams_biome_def_humidity;
+	m_gamedef = gamedef;
 
 	// Create default biome to be used in case none exist
 	Biome *b = new Biome;
 
-	b->id             = 0;
-	b->name           = "Default";
-	b->flags          = 0;
-	b->depth_top      = 0;
-	b->depth_filler   = 0;
-	b->height_min     = -MAP_GENERATION_LIMIT;
-	b->height_max     = MAP_GENERATION_LIMIT;
-	b->heat_point     = 0.0;
-	b->humidity_point = 0.0;
+	b->name            = "Default";
+	b->flags           = 0;
+	b->depth_top       = 0;
+	b->depth_filler    = -MAX_MAP_GENERATION_LIMIT;
+	b->depth_water_top = 0;
+	b->y_min           = -MAX_MAP_GENERATION_LIMIT;
+	b->y_max           = MAX_MAP_GENERATION_LIMIT;
+	b->heat_point      = 0.0;
+	b->humidity_point  = 0.0;
 
-	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_top);
-	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_filler);
-	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_water);
-	resolver->addNode("air",                 "", CONTENT_AIR, &b->c_dust);
-	resolver->addNode("mapgen_water_source", "", CONTENT_AIR, &b->c_dust_water);
-	resolver->addNode("mapgen_ice",          "mapgen_water_source", b->c_water, &b->c_ice);
+	b->m_nodenames.push_back("mapgen_stone");
+	b->m_nodenames.push_back("mapgen_stone");
+	b->m_nodenames.push_back("mapgen_stone");
+	b->m_nodenames.push_back("mapgen_water_source");
+	b->m_nodenames.push_back("mapgen_water_source");
+	b->m_nodenames.push_back("mapgen_river_water_source");
+	b->m_nodenames.push_back("air");
 
-	g_settings->getNoiseParams("mgv7_np_heat", nparams_biome_def_heat);
-	g_settings->getNoiseParams("mgv7_np_humidity", nparams_biome_def_humidity);
+	//freeminer
+	b->m_nodenames.push_back("mapgen_ice");
+	b->m_nodenames.push_back("mapgen_dirt_with_snow");
+
+	m_ndef->pendNodeResolve(b);
+
 	year_days = g_settings->getS16("year_days");
 	weather_heat_season = g_settings->getS16("weather_heat_season");
 	weather_heat_daily = g_settings->getS16("weather_heat_daily");
@@ -92,18 +91,13 @@ BiomeManager::~BiomeManager()
 }
 
 
-
 // just a PoC, obviously needs optimization later on (precalculate this)
 void BiomeManager::calcBiomes(s16 sx, s16 sy, float *heat_map,
 	float *humidity_map, s16 *height_map, u8 *biomeid_map)
 {
-	int i = 0;
-	for (int y = 0; y != sy; y++) {
-		for (int x = 0; x != sx; x++, i++) {
-			float heat     = (heat_map[i] + 1) * 50;
-			float humidity = (humidity_map[i] + 1) * 50;
-			biomeid_map[i] = getBiome(heat, humidity, height_map[i])->id;
-		}
+	for (s32 i = 0; i != sx * sy; i++) {
+		Biome *biome = getBiome(heat_map[i], humidity_map[i], height_map[i]);
+		biomeid_map[i] = biome->index;
 	}
 }
 
@@ -113,12 +107,15 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 	Biome *b, *biome_closest = NULL;
 	float dist_min = FLT_MAX;
 
-	for (size_t i = 1; i < m_elements.size(); i++) {
-		b = (Biome *)m_elements[i];
-		if (!b || y > b->height_max || y < b->height_min)
+	for (size_t i = 1; i < m_objects.size(); i++) {
+		b = (Biome *)m_objects[i];
+		if (!b || y > b->y_max || y < b->y_min)
 			continue;
+		float heat_point = (b->heat_point - 50) * (( mapgen_params->np_biome_heat.offset + mapgen_params->np_biome_heat.scale ) / 100)
+			 + mapgen_params->np_biome_heat.offset;
 
-		float d_heat     = heat     - b->heat_point;
+		float d_heat     = heat     - heat_point;
+
 		float d_humidity = humidity - b->humidity_point;
 		float dist = (d_heat * d_heat) +
 					 (d_humidity * d_humidity);
@@ -127,20 +124,18 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 			biome_closest = b;
 		}
 	}
-	
-	return biome_closest ? biome_closest : (Biome *)m_elements[0];
+
+	return biome_closest ? biome_closest : (Biome *)m_objects[0];
 }
 
-
-///////////////////////////// Weather
-
+// Freeminer Weather
 
 s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 	//variant 1: full random
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	auto heat = NoisePerlin2D(np_heat, p.X, p.Z, seed); // -30..20..70
+	auto heat = NoisePerlin2D(&(mapgen_params->np_biome_heat), p.X, p.Z, seed); // -30..20..70
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -155,8 +150,8 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	}
 	heat += p.Y / weather_heat_height; // upper=colder, lower=hotter, 3c per 1000
 
-	if (weather_hot_core && p.Y < -(MAP_GENERATION_LIMIT-weather_hot_core))
-		heat += 6000 * (1-((float)(p.Y - -MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
+	if (weather_hot_core && p.Y < -(MAX_MAP_GENERATION_LIMIT-weather_hot_core))
+		heat += 6000 * (1.0-((float)(p.Y - -MAX_MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
 
 	return heat;
 }
@@ -164,7 +159,8 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 
 s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	auto humidity = NoisePerlin2D(np_humidity, p.X, p.Z, seed);
+	auto humidity = NoisePerlin2D(&(mapgen_params->np_biome_humidity), p.X, p.Z, seed);
+	humidity *= 1.0 - ((float)p.Y / MAX_MAP_GENERATION_LIMIT);
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -177,4 +173,45 @@ s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, flo
 	humidity = rangelim(humidity, 0, 100);
 
 	return humidity;
+}
+
+
+void BiomeManager::clear()
+{
+	EmergeManager *emerge = m_gamedef->getEmergeManager();
+
+	// Remove all dangling references in Decorations
+	DecorationManager *decomgr = emerge->decomgr;
+	for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
+		Decoration *deco = (Decoration *)decomgr->getRaw(i);
+		deco->biomes.clear();
+	}
+
+	// Don't delete the first biome
+	for (size_t i = 1; i < m_objects.size(); i++) {
+		Biome *b = (Biome *)m_objects[i];
+		delete b;
+	}
+
+	m_objects.clear();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+void Biome::resolveNodeNames()
+{
+	getIdFromNrBacklog(&c_top,         "mapgen_stone",              CONTENT_AIR);
+	getIdFromNrBacklog(&c_filler,      "mapgen_stone",              CONTENT_AIR);
+	getIdFromNrBacklog(&c_stone,       "mapgen_stone",              CONTENT_AIR);
+	getIdFromNrBacklog(&c_water_top,   "mapgen_water_source",       CONTENT_AIR);
+	getIdFromNrBacklog(&c_water,       "mapgen_water_source",       CONTENT_AIR);
+	getIdFromNrBacklog(&c_river_water, "mapgen_river_water_source", CONTENT_AIR);
+	getIdFromNrBacklog(&c_dust,        "air",                       CONTENT_IGNORE);
+
+
+	//freeminer:
+	getIdFromNrBacklog(&c_ice,       "mapgen_ice",             c_water);
+	getIdFromNrBacklog(&c_top_cold,  "mapgen_dirt_with_snow",  c_top);
 }

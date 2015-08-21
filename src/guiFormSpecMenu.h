@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiTable.h"
-#include "clientserver.h"
+#include "network/networkprotocol.h"
 
 class IGameDef;
 class InventoryManager;
@@ -59,7 +59,7 @@ struct TextDest
 	virtual ~TextDest() {};
 	// This is deprecated I guess? -celeron55
 	virtual void gotText(std::wstring text){}
-	virtual void gotText(std::map<std::string, std::string> fields) = 0;
+	virtual void gotText(const StringMap &fields) = 0;
 	virtual void setFormName(std::string formname)
 	{ m_formname = formname;};
 
@@ -124,6 +124,22 @@ class GUIFormSpecMenu : public GUIModalMenu
 		s32 start_item_i;
 	};
 
+	struct ListRingSpec
+	{
+		ListRingSpec()
+		{
+		}
+		ListRingSpec(const InventoryLocation &a_inventoryloc,
+				const std::string &a_listname):
+			inventoryloc(a_inventoryloc),
+			listname(a_listname)
+		{
+		}
+
+		InventoryLocation inventoryloc;
+		std::string listname;
+	};
+
 	struct ImageDrawSpec
 	{
 		ImageDrawSpec()
@@ -155,7 +171,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::wstring &name, const std::wstring &label,
+		FieldSpec(const std::string &name, const std::wstring &label,
 				const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
@@ -166,7 +182,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 			ftype = f_Unknown;
 			is_exit = false;
 		}
-		std::wstring fname;
+		std::string fname;
 		std::wstring flabel;
 		std::wstring fdefault;
 		int fid;
@@ -213,8 +229,8 @@ public:
 			ISimpleTextureSource *tsrc,
 			IFormSource* fs_src,
 			TextDest* txt_dst,
-			Client* client
-			);
+			Client* client,
+			bool remap_dbl_click = true);
 
 	~GUIFormSpecMenu();
 
@@ -249,13 +265,20 @@ public:
 		m_allowclose = value;
 	}
 
-	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0)) {
+	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0))
+	{
 		m_lock = lock;
 		m_lockscreensize = basescreensize;
 	}
 
 	void removeChildren();
 	void setInitialFocus();
+
+	void setFocus(std::string &elementname)
+	{
+		m_focused_element = elementname;
+	}
+
 	/*
 		Remove and re-add (or reposition) stuff
 	*/
@@ -274,7 +297,7 @@ public:
 	bool doPause;
 	bool pausesGame() { return doPause; }
 
-	GUITable* getTable(std::wstring tablename);
+	GUITable* getTable(const std::string &tablename);
 
 #ifdef __ANDROID__
 	bool getAndroidUIInput();
@@ -302,6 +325,7 @@ protected:
 
 
 	std::vector<ListDrawSpec> m_inventorylists;
+	std::vector<ListRingSpec> m_inventory_rings;
 	std::vector<ImageDrawSpec> m_backgrounds;
 	std::vector<ImageDrawSpec> m_images;
 	std::vector<ImageDrawSpec> m_itemimages;
@@ -309,7 +333,7 @@ protected:
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
-	std::map<std::wstring, TooltipSpec> m_tooltips;
+	std::map<std::string, TooltipSpec> m_tooltips;
 	std::vector<std::pair<FieldSpec,gui::IGUIScrollBar*> > m_scrollbars;
 
 	ItemSpec *m_selected_item;
@@ -331,6 +355,8 @@ protected:
 	s32 m_old_tooltip_id;
 	std::string m_old_tooltip;
 
+	bool m_rmouse_auto_place;
+
 	bool m_allowclose;
 	bool m_lock;
 	v2u32 m_lockscreensize;
@@ -348,20 +374,21 @@ protected:
 private:
 	IFormSource      *m_form_src;
 	TextDest         *m_text_dst;
-	gui::IGUIFont    *m_font;
 	unsigned int      m_formspec_version;
+	std::string       m_focused_element;
 
 	typedef struct {
+		bool explicit_size;
+		v2f invsize;
 		v2s32 size;
 		core::rect<s32> rect;
 		v2s32 basepos;
-		int bp_set;
 		v2u32 screensize;
-		std::wstring focused_fieldname;
+		std::string focused_fieldname;
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
 		// used to restore table selection/scroll/treeview state
-		std::map<std::wstring,GUITable::DynamicData> table_dyndata;
+		std::map<std::string, GUITable::DynamicData> table_dyndata;
 	} parserData;
 
 	typedef struct {
@@ -377,6 +404,7 @@ private:
 
 	void parseSize(parserData* data,std::string element);
 	void parseList(parserData* data,std::string element);
+	void parseListRing(parserData* data,std::string element);
 	void parseCheckbox(parserData* data,std::string element);
 	void parseImage(parserData* data,std::string element);
 	void parseItemImage(parserData* data,std::string element);
@@ -402,6 +430,7 @@ private:
 	void parseListColors(parserData* data,std::string element);
 	void parseTooltip(parserData* data,std::string element);
 	bool parseVersionDirect(std::string data);
+	bool parseSizeDirect(parserData* data, std::string element);
 	void parseScrollBar(parserData* data, std::string element);
 
 	/**
@@ -419,13 +448,22 @@ private:
 	clickpos m_doubleclickdetect[2];
 
 	int m_btn_height;
+	gui::IGUIFont *m_font;
 
 	std::wstring getLabelByID(s32 id);
-	std::wstring getNameByID(s32 id);
+	std::string getNameByID(s32 id);
 #ifdef __ANDROID__
 	v2s32 m_down_pos;
-	std::wstring m_JavaDialogFieldName;
+	std::string m_JavaDialogFieldName;
 #endif
+
+	/* If true, remap a double-click (or double-tap) action to ESC. This is so
+	 * that, for example, Android users can double-tap to close a formspec.
+	*
+	 * This value can (currently) only be set by the class constructor
+	 * and the default value for the setting is true.
+	 */
+	bool m_remap_dbl_click;
 
 };
 

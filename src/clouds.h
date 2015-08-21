@@ -27,6 +27,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include "constants.h"
 
+// Menu clouds
+class Clouds;
+extern Clouds *g_menuclouds;
+
+// Scene manager used for menu clouds
+namespace irr{namespace scene{class ISceneManager;}}
+extern irr::scene::ISceneManager *g_menucloudsmgr;
+
 class Clouds : public scene::ISceneNode
 {
 public:
@@ -78,10 +86,17 @@ public:
 			BS * 1000000, m_cloud_y + BS - BS * camera_offset.Y, BS * 1000000);
 	}
 
+	void readSettings();
+
 private:
 	video::SMaterial m_material;
 	core::aabbox3d<f32> m_box;
+	s16 m_passed_cloud_y;
+public:
 	float m_cloud_y;
+private:
+	u16 m_cloud_radius_i;
+	bool m_enable_3d;
 	video::SColorf m_color;
 	u32 m_seed;
 	v2f m_camera_pos;

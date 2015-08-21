@@ -70,6 +70,8 @@ private:
 	std::vector <v3POS> m_elements_queue;
 	float m_min_update_delay;
 	float m_since_last_update;
+	float m_min_save_delay;
+	float m_since_last_save;
 
 	u32 m_max_id;
 	u32 m_max_virtual_id;
@@ -79,7 +81,7 @@ private:
 	KeyValueStorage *m_database;
 	KeyValueStorage *m_virtual_database;
 
-	locker m_elements_mutex;
+	locker<> m_elements_mutex;
 
 	static const u32 circuit_simulator_version;
 	static const char elements_states_file[];

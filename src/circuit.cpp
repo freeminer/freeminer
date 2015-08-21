@@ -47,11 +47,12 @@ Circuit::Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::st
 	m_ndef(ndef),
 	m_min_update_delay(0.2f),
 	m_since_last_update(0.0f),
+	m_min_save_delay(60.0f),
+	m_since_last_save(0.0f),
 	m_max_id(0),
 	m_max_virtual_id(1),
-	m_savedir(savedir)
- {
-		load();
+	m_savedir(savedir) {
+	load();
 }
 
 Circuit::~Circuit() {
@@ -151,7 +152,7 @@ void Circuit::addElement(v3POS pos) {
 	MapNode node = m_map->getNodeNoEx(pos);
 
 	auto current_element_iterator = m_elements.insert(m_elements.begin(),
-	     CircuitElement(pos, m_max_id++, m_ndef->get(node).circuit_element_delay));
+	                                CircuitElement(pos, m_max_id++, m_ndef->get(node).circuit_element_delay));
 	m_pos_to_iterator[pos] = current_element_iterator;
 
 	// For each face add all other connected faces.
@@ -302,7 +303,7 @@ void Circuit::addWire(v3POS pos) {
 			for(auto i = all_connected.begin(); i != all_connected.end(); ++i) {
 				if(!(i->first->getFace(i->second).is_connected)) {
 					auto it = element_with_virtual.list_pointer->insert(
-						element_with_virtual.list_pointer->begin(), CircuitElementVirtualContainer());
+					              element_with_virtual.list_pointer->begin(), CircuitElementVirtualContainer());
 					it->element_pointer = i->first;
 					it->shift = i->second;
 					i->first->connectFace(i->second, it, element_with_virtual.list_pointer);
@@ -363,11 +364,11 @@ void Circuit::removeWire(v3POS pos) {
 
 				if(current_face_connected.size() > 1) {
 					auto new_virtual_element = m_virtual_elements.insert(
-						m_virtual_elements.begin(), CircuitElementVirtual(m_max_virtual_id++));
+					                               m_virtual_elements.begin(), CircuitElementVirtual(m_max_virtual_id++));
 
 					for(u32 j = 0; j < current_face_connected.size(); ++j) {
 						auto new_container = new_virtual_element->insert(
-						            new_virtual_element->begin(), CircuitElementVirtualContainer());
+						                         new_virtual_element->begin(), CircuitElementVirtualContainer());
 						new_container->element_pointer = current_face_connected[j].first;
 						new_container->shift = current_face_connected[j].second;
 						current_face_connected[j].first->connectFace(current_face_connected[j].second,
@@ -413,6 +414,13 @@ void Circuit::update(float dtime) {
 	} else {
 		m_since_last_update += dtime;
 	}
+
+	if(m_since_last_save > m_min_save_delay) {
+		save();
+		m_since_last_save = 0.0f;
+	} else {
+		m_since_last_save += dtime;
+	}
 }
 
 
@@ -443,6 +451,8 @@ void Circuit::load() {
 #if USE_LEVELDB
 	// Filling list with empty virtual elements
 	auto virtual_it = m_virtual_database->new_iterator();
+	if (!virtual_it)
+		return;
 	std::map <u32, std::list <CircuitElementVirtual>::iterator> id_to_virtual_element;
 	for(virtual_it->SeekToFirst(); virtual_it->Valid(); virtual_it->Next()) {
 		element_id = stoi(virtual_it->key().ToString());
@@ -455,6 +465,8 @@ void Circuit::load() {
 
 	// Filling list with empty elements
 	auto it = m_database->new_iterator();
+	if (!it)
+		return;
 	std::map <u32, std::list <CircuitElement>::iterator> id_to_element;
 	for(it->SeekToFirst(); it->Valid(); it->Next()) {
 		element_id = stoi(it->key().ToString());

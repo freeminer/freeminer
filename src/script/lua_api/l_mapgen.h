@@ -25,26 +25,31 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lua_api/l_base.h"
 
-class INodeDefManager;
-class NodeResolver;
-class DecoSimple;
-class DecoSchematic;
-
 class ModApiMapgen : public ModApiBase {
 private:
 	// get_mapgen_object(objectname)
 	// returns the requested object used during map generation
 	static int l_get_mapgen_object(lua_State *L);
 
+	// get_mapgen_params()
+	// returns the currently active map generation parameter set
+	static int l_get_mapgen_params(lua_State *L);
+
 	// set_mapgen_params(params)
 	// set mapgen parameters
 	static int l_set_mapgen_params(lua_State *L);
 
-	// set_noiseparam_defaults({np1={noise params}, ...})
-	static int l_set_noiseparam_defaults(lua_State *L);
+	// set_noiseparam_defaults(name, noiseparams, set_default)
+	static int l_set_noiseparams(lua_State *L);
+
+	// get_noiseparam_defaults(name)
+	static int l_get_noiseparams(lua_State *L);
 
 	// set_gen_notify(flagstring)
 	static int l_set_gen_notify(lua_State *L);
+
+	// set_gen_notify(flagstring)
+	static int l_get_gen_notify(lua_State *L);
 
 	// register_biome({lots of stuff})
 	static int l_register_biome(lua_State *L);
@@ -55,27 +60,46 @@ private:
 	// register_ore({lots of stuff})
 	static int l_register_ore(lua_State *L);
 
+	// register_schematic({schematic}, replacements={})
+	static int l_register_schematic(lua_State *L);
+
+	// clear_registered_biomes()
+	static int l_clear_registered_biomes(lua_State *L);
+
+	// clear_registered_decorations()
+	static int l_clear_registered_decorations(lua_State *L);
+
+	// clear_registered_schematics()
+	static int l_clear_registered_schematics(lua_State *L);
+
+	// generate_ores(vm, p1, p2)
+	static int l_generate_ores(lua_State *L);
+
+	// generate_decorations(vm, p1, p2)
+	static int l_generate_decorations(lua_State *L);
+
+	// clear_registered_ores
+	static int l_clear_registered_ores(lua_State *L);
+
 	// create_schematic(p1, p2, probability_list, filename)
 	static int l_create_schematic(lua_State *L);
 
 	// place_schematic(p, schematic, rotation, replacement)
 	static int l_place_schematic(lua_State *L);
 
-	static bool regDecoSimple(lua_State *L,
-			NodeResolver *resolver, DecoSimple *deco);
-	static bool regDecoSchematic(lua_State *L,
-			INodeDefManager *ndef, DecoSchematic *deco);
+	// serialize_schematic(schematic, format, options={...})
+	static int l_serialize_schematic(lua_State *L);
+
+public:
+	static void Initialize(lua_State *L, int top);
 
 	static struct EnumString es_BiomeTerrainType[];
 	static struct EnumString es_DecorationType[];
 	static struct EnumString es_MapgenObject[];
 	static struct EnumString es_OreType[];
 	static struct EnumString es_Rotation[];
-
-public:
-	static void Initialize(lua_State *L, int top);
+	static struct EnumString es_SchematicFormatType[];
+	static struct EnumString es_NodeResolveMethod[];
 };
-
-
 
 #endif /* L_MAPGEN_H_ */

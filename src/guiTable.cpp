@@ -31,14 +31,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIScrollBar.h>
 #include "debug.h"
 #include "log.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "gettime.h"
 #include "util/string.h"
 #include "util/numeric.h"
 #include "util/string.h" // for parseColorString()
-#include "main.h"
 #include "settings.h" // for settings
 #include "porting.h" // for dpi
+#include "guiscalingfilter.h"
 
 /*
 	GUITable
@@ -234,10 +234,12 @@ void GUITable::setTable(const TableOptions &options,
 	// Get number of columns and rows
 	// note: error case columns.size() == 0 was handled above
 	s32 colcount = columns.size();
-	assert(colcount >= 1);
+	if (!(colcount >= 1))
+		return;
 	// rowcount = ceil(cellcount / colcount) but use integer arithmetic
 	s32 rowcount = (content.size() + colcount - 1) / colcount;
-	assert(rowcount >= 0);
+	if (!(rowcount >= 0))
+		return;
 	// Append empty strings to content if there is an incomplete row
 	s32 cellcount = rowcount * colcount;
 	while (content.size() < (u32) cellcount)
@@ -528,7 +530,8 @@ void GUITable::clear()
 std::string GUITable::checkEvent()
 {
 	s32 sel = getSelected();
-	assert(sel >= 0);
+	if (!(sel >= 0))
+		return "INV";
 
 	if (sel == 0) {
 		return "INV";
@@ -554,7 +557,8 @@ s32 GUITable::getSelected() const
 	if (m_selected < 0)
 		return 0;
 
-	assert(m_selected >= 0 && m_selected < (s32) m_visible_rows.size());
+	if (!(m_selected >= 0 && m_selected < (s32) m_visible_rows.size()))
+		return 0;
 	return m_visible_rows[m_selected] + 1;
 }
 
@@ -574,7 +578,8 @@ void GUITable::setSelected(s32 index)
 		--index;
 	if (index >= 0) {
 		m_selected = m_rows[index].visible_index;
-		assert(m_selected >= 0 && m_selected < (s32) m_visible_rows.size());
+		if (!(m_selected >= 0 && m_selected < (s32) m_visible_rows.size()))
+			return;
 	}
 
 	autoScroll();
@@ -642,10 +647,11 @@ void GUITable::draw()
 	client_clip.UpperLeftCorner.Y += 1;
 	client_clip.UpperLeftCorner.X += 1;
 	client_clip.LowerRightCorner.Y -= 1;
-	client_clip.LowerRightCorner.X -=
-		m_scrollbar->isVisible() ?
-		skin->getSize(gui::EGDS_SCROLLBAR_SIZE) :
-		1;
+	client_clip.LowerRightCorner.X -= 1;
+	if (m_scrollbar->isVisible()) {
+		client_clip.LowerRightCorner.X =
+				m_scrollbar->getAbsolutePosition().UpperLeftCorner.X;
+	}
 	client_clip.clipAgainst(AbsoluteClippingRect);
 
 	// draw visible rows
@@ -866,6 +872,14 @@ bool GUITable::OnEvent(const SEvent &event)
 		// Update tooltip
 		setToolTipText(cell ? m_strings[cell->tooltip_index].c_str() : L"");
 
+		// Fix for #1567/#1806:
+		// IGUIScrollBar passes double click events to its parent,
+		// which we don't want. Detect this case and discard the event
+		if (event.MouseInput.Event != EMIE_MOUSE_MOVED &&
+				m_scrollbar->isVisible() &&
+				m_scrollbar->isPointInside(p))
+			return true;
+
 		if (event.MouseInput.isLeftPressed() &&
 				(isPointInside(p) ||
 				 event.MouseInput.Event == EMIE_MOUSE_MOVED)) {
@@ -924,7 +938,7 @@ s32 GUITable::allocString(const std::string &text)
 	std::map<std::string, s32>::iterator it = m_alloc_strings.find(text);
 	if (it == m_alloc_strings.end()) {
 		s32 id = m_strings.size();
-		std::wstring wtext = narrow_to_wide(text);
+		std::wstring wtext = utf8_to_wide(text);
 		m_strings.push_back(core::stringw(wtext.c_str()));
 		m_alloc_strings.insert(std::make_pair(text, id));
 		return id;
@@ -1016,7 +1030,8 @@ s32 GUITable::getCellAt(s32 x, s32 row_i) const
 	s32 jmax = row->cellcount - 1;
 	while (jmin < jmax) {
 		s32 pivot = jmin + (jmax - jmin) / 2;
-		assert(pivot >= 0 && pivot < row->cellcount);
+		if(!(pivot >= 0 && pivot < row->cellcount))
+			return -1;
 		const Cell *cell = &row->cells[pivot];
 
 		if (rel_x >= cell->xmin && rel_x <= cell->xmax)
@@ -1107,7 +1122,8 @@ void GUITable::setOpenedTrees(const std::set<s32> &opened_trees)
 				m_rows[closed_parents.back()].indent >= row->indent)
 			closed_parents.pop_back();
 
-		assert(closed_parents.size() <= parents.size());
+		if(!(closed_parents.size() <= parents.size()))
+			continue;
 
 		if (closed_parents.empty()) {
 			// Visible row
@@ -1203,7 +1219,8 @@ void GUITable::toggleVisibleTree(s32 row_i, int dir, bool move_selection)
 		}
 		else if (!was_open && !do_open) {
 			// Move selection to parent
-			assert(getRow(sel) != NULL);
+			if(!(getRow(sel) != NULL))
+				return;
 			while (sel > 0 && getRow(sel - 1)->indent >= row->indent)
 				sel--;
 			sel--;

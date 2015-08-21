@@ -27,16 +27,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 
 class FMBitset {
-	public:
-		FMBitset(size_t capacity);
-		size_t count();
-		size_t size(); // std compat
-		void set(size_t index, bool value);
-		bool get(size_t index);
+public:
+	FMBitset(size_t capacity);
+	size_t count();
+	size_t size(); // std compat
+	void set(size_t index, bool value);
+	bool get(size_t index);
 
-	private:
-		std::vector<char> m_bits;
-		size_t m_count;
+private:
+	std::vector<char> m_bits;
+	size_t m_count;
 };
 
 

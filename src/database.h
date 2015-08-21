@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DATABASE_HEADER
 #define DATABASE_HEADER
 
-#include <list>
+#include <vector>
 #include <string>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -36,20 +36,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class Database
 {
 public:
-	virtual void beginSave() = 0;
-	virtual void endSave() = 0;
+	virtual ~Database() {}
 
-	virtual bool saveBlock(v3s16 blockpos, std::string &data) = 0;
-	virtual std::string loadBlock(v3s16 blockpos) = 0;
-	s64 getBlockAsInteger(const v3s16 pos) const;
-	v3s16 getIntegerAsBlock(s64 i) const;
-	std::string getBlockAsString(const v3s16 &pos) const;
-	v3s16 getStringAsBlock(const std::string &i) const;
-	virtual void listAllLoadableBlocks(std::list<v3s16> &dst) = 0;
-	virtual int Initialized(void)=0;
-	virtual ~Database() {};
+	virtual void beginSave() {}
+	virtual void endSave() {}
 
+	virtual bool saveBlock(const v3s16 &pos, const std::string &data) = 0;
+	virtual std::string loadBlock(const v3s16 &pos) = 0;
+	virtual bool deleteBlock(const v3s16 &pos) = 0;
+
+	static s64 getBlockAsInteger(const v3s16 &pos);
+	static v3s16 getIntegerAsBlock(s64 i);
+
+	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
+
+	virtual bool initialized() const { return true; }
+
+
+	std::string getBlockAsString(const v3POS &pos) const;
+	v3POS getStringAsBlock(const std::string &i) const;
 	virtual void open() {};
 	virtual void close() {};
 };
+
 #endif
+

@@ -32,11 +32,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "common/c_internal.h"
 #include "cpp_api/s_base.h"
+#include "config.h"
+
+#if ENABLE_THREADS
+#define SCRIPTAPI_LOCK auto _script_lock = std::unique_lock<std::recursive_mutex> (this->m_luastackmutex)
+#else
+#define SCRIPTAPI_LOCK
+#endif
+
 
 #define SCRIPTAPI_PRECHECKHEADER                                               \
-		auto _script_lock = std::unique_lock<std::recursive_mutex> (this->m_luastackmutex); \
+		SCRIPTAPI_LOCK; \
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \
 		StackUnroller stack_unroller(L);
 
 #endif /* S_INTERNAL_H_ */
+

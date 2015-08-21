@@ -26,67 +26,122 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 class Map;
 class Mapgen;
-class ManualMapVoxelManipulator;
+class MMVManip;
 class PseudoRandom;
 class NodeResolver;
+class IGameDef;
 
-/////////////////// Schematic flags
-#define SCHEM_CIDS_UPDATED 0x08
+/*
+	Minetest Schematic File Format
 
+	All values are stored in big-endian byte order.
+	[u32] signature: 'MTSM'
+	[u16] version: 4
+	[u16] size X
+	[u16] size Y
+	[u16] size Z
+	For each Y:
+		[u8] slice probability value
+	[Name-ID table] Name ID Mapping Table
+		[u16] name-id count
+		For each name-id mapping:
+			[u16] name length
+			[u8[]] name
+	ZLib deflated {
+	For each node in schematic:  (for z, y, x)
+		[u16] content
+	For each node in schematic:
+		[u8] param1
+		  bit 0-6: probability
+		  bit 7:   specific node force placement
+	For each node in schematic:
+		[u8] param2
+	}
 
+	Version changes:
+	1 - Initial version
+	2 - Fixed messy never/always place; 0 probability is now never, 0xFF is always
+	3 - Added y-slice probabilities; this allows for variable height structures
+	4 - Compressed range of node occurence prob., added per-node force placement bit
+*/
+
+//// Schematic constants
 #define MTSCHEM_FILE_SIGNATURE 0x4d54534d // 'MTSM'
-#define MTSCHEM_FILE_VER_HIGHEST_READ  3
-#define MTSCHEM_FILE_VER_HIGHEST_WRITE 3
+#define MTSCHEM_FILE_VER_HIGHEST_READ  4
+#define MTSCHEM_FILE_VER_HIGHEST_WRITE 4
 
-#define MTSCHEM_PROB_NEVER  0x00
-#define MTSCHEM_PROB_ALWAYS 0xFF
+#define MTSCHEM_PROB_MASK       0x7F
 
+#define MTSCHEM_PROB_NEVER      0x00
+#define MTSCHEM_PROB_ALWAYS     0x7F
+#define MTSCHEM_PROB_ALWAYS_OLD 0xFF
 
-class Schematic : public GenElement {
+#define MTSCHEM_FORCE_PLACE     0x80
+
+enum SchematicType
+{
+	SCHEMATIC_NORMAL,
+};
+
+enum SchematicFormatType {
+	SCHEM_FMT_HANDLE,
+	SCHEM_FMT_MTS,
+	SCHEM_FMT_LUA,
+};
+
+class Schematic : public ObjDef, public NodeResolver {
 public:
-	std::vector<content_t> c_nodes;
+	Schematic();
+	virtual ~Schematic();
 
+	virtual void resolveNodeNames();
+
+	bool loadSchematicFromFile(const std::string &filename, INodeDefManager *ndef,
+		StringMap *replace_names=NULL);
+	bool saveSchematicToFile(const std::string &filename, INodeDefManager *ndef);
+	bool getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2);
+
+	bool deserializeFromMts(std::istream *is, std::vector<std::string> *names);
+	bool serializeToMts(std::ostream *os, const std::vector<std::string> &names);
+	bool serializeToLua(std::ostream *os, const std::vector<std::string> &names,
+		bool use_comments, u32 indent_spaces);
+
+	void blitToVManip(v3s16 p, MMVManip *vm, Rotation rot, bool force_place);
+	void placeStructure(Map *map, v3s16 p, u32 flags, Rotation rot, bool force_place);
+
+	void applyProbabilities(v3s16 p0,
+		std::vector<std::pair<v3s16, u8> > *plist,
+		std::vector<std::pair<s16, u8> > *splist);
+
+	std::vector<content_t> c_nodes;
 	u32 flags;
 	v3s16 size;
 	MapNode *schemdata;
 	u8 *slice_probs;
-
-	Schematic();
-	~Schematic();
-
-	void updateContentIds();
-
-	void blitToVManip(v3s16 p, ManualMapVoxelManipulator *vm,
-		Rotation rot, bool force_placement, INodeDefManager *ndef);
-
-	bool loadSchematicFromFile(const char *filename, NodeResolver *resolver,
-		std::map<std::string, std::string> &replace_names);
-	void saveSchematicToFile(const char *filename, INodeDefManager *ndef);
-	bool getSchematicFromMap(Map *map, v3s16 p1, v3s16 p2);
-
-	void placeStructure(Map *map, v3s16 p, u32 flags,
-		Rotation rot, bool force_placement, INodeDefManager *nef);
-	void applyProbabilities(v3s16 p0,
-		std::vector<std::pair<v3s16, u8> > *plist,
-		std::vector<std::pair<s16, u8> > *splist);
 };
 
-class SchematicManager : public GenElementManager {
+class SchematicManager : public ObjDefManager {
 public:
-	static const char *ELEMENT_TITLE;
-	static const size_t ELEMENT_LIMIT = 0x10000;
+	SchematicManager(IGameDef *gamedef);
+	virtual ~SchematicManager() {}
 
-	SchematicManager(IGameDef *gamedef) {}
-	~SchematicManager() {}
+	virtual void clear();
 
-	Schematic *create(int type)
+	const char *getObjectTitle() const
+	{
+		return "schematic";
+	}
+
+	static Schematic *create(SchematicType type)
 	{
 		return new Schematic;
 	}
+
+private:
+	IGameDef *m_gamedef;
 };
 
-void build_nnlist_and_update_ids(MapNode *nodes, u32 nodecount,
-					std::vector<content_t> *usednodes);
-
+void generate_nodelist_and_update_ids(MapNode *nodes, size_t nodecount,
+	std::vector<std::string> *usednodes, INodeDefManager *ndef);
 
 #endif

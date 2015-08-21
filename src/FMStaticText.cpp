@@ -230,7 +230,6 @@ video::SColor FMStaticText::getBackgroundColor() const
 //! Checks if background drawing is enabled
 bool FMStaticText::isDrawBackgroundEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return Background;
 }
 
@@ -245,7 +244,6 @@ void FMStaticText::setDrawBorder(bool draw)
 //! Checks if border drawing is enabled
 bool FMStaticText::isDrawBorderEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return Border;
 }
 
@@ -289,7 +287,6 @@ void FMStaticText::enableOverrideColor(bool enable)
 
 bool FMStaticText::isOverrideColorEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return OverrideColorEnabled;
 }
 
@@ -305,7 +302,6 @@ void FMStaticText::setWordWrap(bool enable)
 
 bool FMStaticText::isWordWrapEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return WordWrap;
 }
 

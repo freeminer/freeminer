@@ -60,6 +60,12 @@ private:
 	// setting_getbool(name)
 	static int l_setting_getbool(lua_State *L);
 
+	// setting_setjson(name, value)
+	static int l_setting_setjson(lua_State *L);
+
+	// setting_getjson(name[, nullvalue])
+	static int l_setting_getjson(lua_State *L);
+
 	// setting_save()
 	static int l_setting_save(lua_State *L);
 
@@ -81,7 +87,7 @@ private:
 	// is_yes(arg)
 	static int l_is_yes(lua_State *L);
 
-	// get_scriptdir()
+	// get_builtin_path()
 	static int l_get_builtin_path(lua_State *L);
 
 	// compress(data, method, ...)
@@ -89,6 +95,15 @@ private:
 
 	// decompress(data, method, ...)
 	static int l_decompress(lua_State *L);
+
+	// mkdir(path)
+	static int l_mkdir(lua_State *L);
+
+	// get_dir_list(path, is_dir)
+	static int l_get_dir_list(lua_State *L);
+
+	// request_insecure_environment()
+	static int l_request_insecure_environment(lua_State *L);
 
 public:
 	static void Initialize(lua_State *L, int top);
@@ -98,3 +113,4 @@ public:
 };
 
 #endif /* L_UTIL_H_ */
+

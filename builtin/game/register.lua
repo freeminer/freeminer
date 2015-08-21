@@ -72,6 +72,7 @@ end
 function core.register_abm(spec)
 	-- Add to core.registered_abms
 	core.registered_abms[#core.registered_abms+1] = spec
+	spec.mod_origin = core.get_current_modname() or "??"
 end
 
 function core.register_entity(name, prototype)
@@ -86,6 +87,7 @@ function core.register_entity(name, prototype)
 
 	-- Add to core.registered_entities
 	core.registered_entities[name] = prototype
+	prototype.mod_origin = core.get_current_modname() or "??"
 end
 
 function core.register_item(name, itemdef)
@@ -146,6 +148,8 @@ function core.register_item(name, itemdef)
 		})
 	end
 	-- END Legacy stuff
+
+	itemdef.mod_origin = core.get_current_modname() or "??"
 
 	-- Disable all further modifications
 	getmetatable(itemdef).__newindex = {}
@@ -224,13 +228,6 @@ function core.register_alias(name, convert_to)
 		core.registered_aliases[name] = convert_to
 		register_alias_raw(name, convert_to)
 	end
-end
-
-local register_biome_raw = core.register_biome
-core.registered_biomes = {}
-function core.register_biome(biome)
-	core.registered_biomes[biome.name] = biome
-	register_biome_raw(biome)
 end
 
 function core.on_craft(itemstack, player, old_craft_list, craft_inv)
@@ -333,6 +330,8 @@ function core.override_item(name, redefinition)
 end
 
 
+core.callback_origins = {}
+
 function core.run_callbacks(callbacks, mode, ...)
 	assert(type(callbacks) == "table")
 	local cb_len = #callbacks
@@ -345,6 +344,14 @@ function core.run_callbacks(callbacks, mode, ...)
 	end
 	local ret = nil
 	for i = 1, cb_len do
+		local origin = core.callback_origins[callbacks[i]]
+		if origin then
+			core.set_last_run_mod(origin.mod)
+			--print("Running " .. tostring(callbacks[i]) ..
+			--	" (a " .. origin.name .. " callback in " .. origin.mod .. ")")
+		else
+			--print("No data associated with callback")
+		end
 		local cb_ret = callbacks[i](...)
 
 		if mode == 0 and i == 1 then
@@ -377,20 +384,100 @@ end
 
 local function make_registration()
 	local t = {}
-	local registerfunc = function(func) table.insert(t, func) end
+	local registerfunc = function(func)
+		table.insert(t, func)
+		core.callback_origins[func] = {
+			mod = core.get_current_modname() or "??",
+			name = debug.getinfo(1, "n").name or "??"
+		}
+		--local origin = core.callback_origins[func]
+		--print(origin.name .. ": " .. origin.mod .. " registering cbk " .. tostring(func))
+	end
 	return t, registerfunc
 end
 
 local function make_registration_reverse()
 	local t = {}
-	local registerfunc = function(func) table.insert(t, 1, func) end
+	local registerfunc = function(func)
+		table.insert(t, 1, func)
+		core.callback_origins[func] = {
+			mod = core.get_current_modname() or "??",
+			name = debug.getinfo(1, "n").name or "??"
+		}
+		--local origin = core.callback_origins[func]
+		--print(origin.name .. ": " .. origin.mod .. " registering cbk " .. tostring(func))
+	end
 	return t, registerfunc
 end
+
+local function make_registration_wrap(reg_fn_name, clear_fn_name)
+	local list = {}
+
+	local orig_reg_fn = core[reg_fn_name]
+	core[reg_fn_name] = function(def)
+		local retval = orig_reg_fn(def)
+		if retval ~= nil then
+			if def.name ~= nil then
+				list[def.name] = def
+			else
+				list[retval] = def
+			end
+		end
+		return retval
+	end
+
+	local orig_clear_fn = core[clear_fn_name]
+	core[clear_fn_name] = function()
+		for k in pairs(list) do
+			list[k] = nil
+		end
+		return orig_clear_fn()
+	end
+
+	return list
+end
+
+core.registered_on_player_hpchanges = { modifiers = { }, loggers = { } }
+
+function core.registered_on_player_hpchange(player, hp_change)
+	local last = false
+	for i = #core.registered_on_player_hpchanges.modifiers, 1, -1 do
+		local func = core.registered_on_player_hpchanges.modifiers[i]
+		hp_change, last = func(player, hp_change)
+		if type(hp_change) ~= "number" then
+			local debuginfo = debug.getinfo(func)
+			error("The register_on_hp_changes function has to return a number at " ..
+				debuginfo.short_src .. " line " .. debuginfo.linedefined)
+		end
+		if last then
+			break
+		end
+	end
+	for i, func in ipairs(core.registered_on_player_hpchanges.loggers) do
+		func(player, hp_change)
+	end
+	return hp_change
+end
+
+function core.register_on_player_hpchange(func, modifier)
+	if modifier then
+		table.insert(core.registered_on_player_hpchanges.modifiers, func)
+	else
+		table.insert(core.registered_on_player_hpchanges.loggers, func)
+	end
+	core.callback_origins[func] = {
+		mod = core.get_current_modname() or "??",
+		name = debug.getinfo(1, "n").name or "??"
+	}
+end
+
+core.registered_biomes      = make_registration_wrap("register_biome",      "clear_registered_biomes")
+core.registered_ores        = make_registration_wrap("register_ore",        "clear_registered_ores")
+core.registered_decorations = make_registration_wrap("register_decoration", "clear_registered_decorations")
 
 core.registered_on_chat_messages, core.register_on_chat_message = make_registration()
 core.registered_globalsteps, core.register_globalstep = make_registration()
 core.registered_playerevents, core.register_playerevent = make_registration()
-core.registered_on_mapgen_inits, core.register_on_mapgen_init = make_registration()
 core.registered_on_shutdown, core.register_on_shutdown = make_registration()
 core.registered_on_punchnodes, core.register_on_punchnode = make_registration()
 core.registered_on_placenodes, core.register_on_placenode = make_registration()
@@ -408,6 +495,7 @@ core.registered_on_crafts, core.register_on_craft = make_registration()
 core.registered_craft_predicts, core.register_craft_predict = make_registration()
 core.registered_on_protection_violation, core.register_on_protection_violation = make_registration()
 core.registered_on_item_eats, core.register_on_item_eat = make_registration()
+core.registered_on_punchplayers, core.register_on_punchplayer = make_registration()
 
 minetest.register_on_joinplayer(function(player)
 	if minetest.is_singleplayer() then
@@ -436,7 +524,14 @@ minetest.register_on_dieplayer(function(player)
 		minetest.chat_send_all(player_name .. " burned up.")
 	--Death by something else
 	else
-		minetest.chat_send_all(player_name .. " died.")
+		minetest.chat_send_all(player_name .. " \vbb0000died.")
 	end
 
 end)
+
+--
+-- Compatibility for on_mapgen_init()
+--
+
+core.register_on_mapgen_init = function(func) func(core.get_mapgen_params()) end
+

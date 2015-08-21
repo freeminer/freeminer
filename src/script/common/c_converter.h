@@ -51,11 +51,17 @@ int                getintfield_default           (lua_State *L, int table,
 
 bool               getstringfield(lua_State *L, int table,
                              const char *fieldname, std::string &result);
-bool               getstringlistfield(lua_State *L, int table,
+size_t             getstringlistfield(lua_State *L, int table,
                              const char *fieldname,
-                             std::vector<const char *> &result);
+                             std::vector<std::string> *result);
 bool               getintfield(lua_State *L, int table,
                              const char *fieldname, int &result);
+bool               getintfield(lua_State *L, int table,
+                             const char *fieldname, u8 &result);
+bool               getintfield(lua_State *L, int table,
+                             const char *fieldname, u16 &result);
+bool               getintfield(lua_State *L, int table,
+                             const char *fieldname, u32 &result);
 void               read_groups(lua_State *L, int index,
                              std::map<std::string, int> &result);
 bool               getboolfield(lua_State *L, int table,
@@ -73,8 +79,9 @@ void               setfloatfield(lua_State *L, int table,
 void               setboolfield(lua_State *L, int table,
                              const char *fieldname, bool value);
 
-
 v3f                 checkFloatPos       (lua_State *L, int index);
+v2f                 check_v2f           (lua_State *L, int index);
+v2s16               check_v2s16         (lua_State *L, int index);
 v3f                 check_v3f           (lua_State *L, int index);
 v3s16               check_v3s16         (lua_State *L, int index);
 
@@ -82,24 +89,33 @@ v3f                 read_v3f            (lua_State *L, int index);
 v2f                 read_v2f            (lua_State *L, int index);
 v2s16               read_v2s16          (lua_State *L, int index);
 v2s32               read_v2s32          (lua_State *L, int index);
-video::SColor       readARGB8           (lua_State *L, int index);
+video::SColor       read_ARGB8          (lua_State *L, int index);
+bool                read_color          (lua_State *L, int index,
+                                         video::SColor *color);
+
 aabb3f              read_aabb3f         (lua_State *L, int index, f32 scale);
 v3s16               read_v3s16          (lua_State *L, int index);
 std::vector<aabb3f> read_aabb3f_vector  (lua_State *L, int index, f32 scale);
-bool                read_stringlist     (lua_State *L, int index,
-                                         std::vector<const char *> &result);
+size_t              read_stringlist     (lua_State *L, int index,
+                                         std::vector<std::string> *result);
 
+void                push_v2s16          (lua_State *L, v2s16 p);
+void                push_v2s32          (lua_State *L, v2s32 p);
 void                push_v3s16          (lua_State *L, v3s16 p);
+void                push_aabb3f         (lua_State *L, aabb3f box);
+void                push_ARGB8          (lua_State *L, video::SColor color);
 void                pushFloatPos        (lua_State *L, v3f p);
 void                push_v3f            (lua_State *L, v3f p);
 void                push_v2f            (lua_State *L, v2f p);
 
+void                warn_if_field_exists(lua_State *L, int table,
+                                         const char *fieldname,
+                                         const std::string &message);
 
-
-void                warn_if_field_exists      (lua_State *L,
-                                              int table,
-                                              const char *fieldname,
-                                              const std::string &message);
+size_t write_array_slice_float(lua_State *L, int table_index, float *data,
+	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
+size_t write_array_slice_u16(lua_State *L, int table_index, u16 *data,
+	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
 
 
 v3POS               check_v3POS         (lua_State *L, int index);

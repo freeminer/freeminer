@@ -27,17 +27,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettime.h"
 #include "keycode.h"
 #include "settings.h"
-#include "main.h"  // for g_settings
 #include "porting.h"
-#include "tile.h"
-#include "IGUIFont.h"
+#include "client/tile.h"
+#include "fontengine.h"
+#include "log_types.h"
+#include "gettext.h"
 #include <string>
 
-#include "gettext.h"
-
-#if USE_FREETYPE
 #include "xCGUITTFont.h"
-#endif
 
 inline u32 clamp_u8(s32 value)
 {
@@ -71,56 +68,39 @@ GUIChatConsole::GUIChatConsole(
 	m_background(NULL),
 	m_background_color(255, 0, 0, 0),
 	m_font(NULL),
-	m_fontsize(0, 0),
-	m_freetype_font(NULL)
+	m_fontsize(0, 0)
 {
 	m_animate_time_old = getTimeMs();
 
 	// load background settings
-	bool console_color_set = !g_settings->get("console_color").empty();
 	s32 console_alpha = g_settings->getS32("console_alpha");
+	m_background_color.setAlpha(clamp_u8(console_alpha));
 
 	// load the background texture depending on settings
-	m_background_color.setAlpha(clamp_u8(console_alpha));
-	if (console_color_set)
-	{
+	ITextureSource *tsrc = client->getTextureSource();
+	if (tsrc->isKnownSourceImage("background_chat.jpg")) {
+		m_background = tsrc->getTexture("background_chat.jpg");
+		m_background_color.setRed(255);
+		m_background_color.setGreen(255);
+		m_background_color.setBlue(255);
+	} else {
 		v3f console_color = g_settings->getV3F("console_color");
 		m_background_color.setRed(clamp_u8(myround(console_color.X)));
 		m_background_color.setGreen(clamp_u8(myround(console_color.Y)));
 		m_background_color.setBlue(clamp_u8(myround(console_color.Z)));
 	}
-	else
-	{
-		m_background = env->getVideoDriver()->getTexture(getTexturePath("background_chat.jpg").c_str());
-		m_background_color.setRed(255);
-		m_background_color.setGreen(255);
-		m_background_color.setBlue(255);
-	}
 
-	// load the font
-	// FIXME should a custom texture_path be searched too?
-	std::string font_name = g_settings->get("mono_font_path");
-	#if USE_FREETYPE
-	m_use_freetype = g_settings->getBool("freetype");
-	if (m_use_freetype) {
-		u16 font_size = g_settings->getU16("mono_font_size");
-		m_freetype_font = gui::CGUITTFont::createTTFont(env, font_name.c_str(), font_size);
-		m_font = m_freetype_font;
-	} else {
-		m_font = env->getFont(font_name.c_str());
-	}
-	#else
-	m_font = env->getFont(font_name.c_str());
-	#endif
+	m_font = g_fontengine->getFont(FONT_SIZE_UNSPECIFIED, FM_Mono);
+
 	if (m_font == NULL)
 	{
-		dstream << "Unable to load font: " << font_name << std::endl;
+		errorstream << "GUIChatConsole: Unable to load mono font ";
 	}
 	else
 	{
 		core::dimension2d<u32> dim = m_font->getDimension(L"M");
 		m_fontsize = v2u32(dim.Width, dim.Height);
-		dstream << "Font size: " << m_fontsize.X << " " << m_fontsize.Y << std::endl;
+		m_font->grab();
 	}
 	m_fontsize.X = MYMAX(m_fontsize.X, 1);
 	m_fontsize.Y = MYMAX(m_fontsize.Y, 1);
@@ -131,10 +111,8 @@ GUIChatConsole::GUIChatConsole(
 
 GUIChatConsole::~GUIChatConsole()
 {
-#if USE_FREETYPE
-	if (m_use_freetype)
+	if (m_font)
 		m_font->drop();
-#endif
 }
 
 void GUIChatConsole::openConsole(float height, bool close_on_return)
@@ -323,6 +301,8 @@ void GUIChatConsole::drawText()
 	if (m_font == NULL)
 		return;
 
+	irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(m_font);
+
 	ChatBuffer& buf = m_chat_backend->getConsoleBuffer();
 	for (u32 row = 0; row < buf.getRows(); ++row)
 	{
@@ -341,24 +321,13 @@ void GUIChatConsole::drawText()
 			s32 x = (fragment.column + 1) * m_fontsize.X;
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
-			#if USE_FREETYPE // how about we get rid of this option?
-			if (m_freetype_font)
-				m_freetype_font->draw(
-					fragment.text.c_str(),
-					destrect,
-					fragment.text.getColors(),
-					false,
-					false,
-					&AbsoluteClippingRect);
-			else
-			#endif
-				m_font->draw(
-					fragment.text.c_str(),
-					destrect,
-					video::SColor(255, 255, 255, 255),
-					false,
-					false,
-					&AbsoluteClippingRect);
+			tmp->draw(
+				fragment.text.c_str(),
+				destrect,
+				fragment.text.getColors(),
+				false,
+				false,
+				&AbsoluteClippingRect);
 		}
 	}
 }
@@ -425,10 +394,32 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 	}
 }
 
+bool GUIChatConsole::getAndroidUIInput() {
+#ifdef __ANDROID__
+	if (porting::getInputDialogState() == 0) {
+		std::string text = porting::getInputDialogValue();
+		std::wstring wtext = narrow_to_wide(text);
+		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=["<<text<<"] "<<std::endl;
+		m_chat_backend->getPrompt().input(wtext);
+		std::wstring wrtext = m_chat_backend->getPrompt().submit();
+		m_client->typeChatMessage(wide_to_narrow(wrtext));
+
+		if (m_close_on_return) {
+			closeConsole();
+			Environment->removeFocus(this);
+		}
+
+		return true;
+	}
+#endif
+	return false;
+}
+
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
 	{
+		KeyPress kp(event.KeyInput);
 		// Key input
 		if(KeyPress(event.KeyInput) == getKeySetting("keymap_console"))
 		{
@@ -439,7 +430,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_open_inhibited = 50;
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_ESCAPE)
+		else if (kp == EscapeKey || kp == CancelKey)
 		{
 			closeConsoleAtOnce();
 			Environment->removeFocus(this);
@@ -458,7 +449,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 		else if(event.KeyInput.Key == KEY_RETURN)
 		{
-			std::wstring text = m_chat_backend->getPrompt().submit();
+			std::string text = wide_to_narrow(m_chat_backend->getPrompt().submit());
 			m_client->typeChatMessage(text);
 
 			if (m_close_on_return) {
@@ -557,6 +548,19 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				scope);
 			return true;
 		}
+		else if(event.KeyInput.Key == KEY_KEY_V && event.KeyInput.Control)
+		{
+			// Ctrl-V pressed
+			// paste text from clipboard
+			IOSOperator *os_operator = Environment->getOSOperator();
+			const c8 *text = os_operator->getTextFromClipboard();
+			if (text)
+			{
+				std::wstring wtext = narrow_to_wide(text);
+				m_chat_backend->getPrompt().input(wtext);
+			}
+			return true;
+		}
 		else if(event.KeyInput.Key == KEY_KEY_U && event.KeyInput.Control)
 		{
 			// Ctrl-U pressed
@@ -588,7 +592,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 		else if(event.KeyInput.Char != 0 && !event.KeyInput.Control)
 		{
-			#if (defined(linux) || defined(__linux) || defined(__FreeBSD__))
+			#if (defined(linux) || defined(__linux) || defined(__FreeBSD__)) and IRRLICHT_VERSION_10000 < 10900
 				wchar_t wc = L'_';
 				mbtowc( &wc, (char *) &event.KeyInput.Char, sizeof(event.KeyInput.Char) );
 				m_chat_backend->getPrompt().input(wc);

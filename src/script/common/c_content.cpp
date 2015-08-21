@@ -165,18 +165,13 @@ void read_object_properties(lua_State *L, int index,
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "colors");
-	if(lua_istable(L, -1)){
-		prop->colors.clear();
+	if (lua_istable(L, -1)) {
 		int table = lua_gettop(L);
-		lua_pushnil(L);
-		while(lua_next(L, table) != 0){
-			// key at index -2 and value at index -1
-			if(lua_isstring(L, -1))
-				prop->colors.push_back(readARGB8(L, -1));
-			else
-				prop->colors.push_back(video::SColor(255, 255, 255, 255));
-			// removes value, keeps key for next iteration
-			lua_pop(L, 1);
+		prop->colors.clear();
+		for (lua_pushnil(L); lua_next(L, table); lua_pop(L, 1)) {
+			video::SColor color(255, 255, 255, 255);
+			read_color(L, -1, &color);
+			prop->colors.push_back(color);
 		}
 	}
 	lua_pop(L, 1);
@@ -194,8 +189,8 @@ void read_object_properties(lua_State *L, int index,
 	getboolfield(L, -1, "is_visible", prop->is_visible);
 	getboolfield(L, -1, "makes_footstep_sound", prop->makes_footstep_sound);
 	getfloatfield(L, -1, "automatic_rotate", prop->automatic_rotate);
-	getfloatfield(L, -1, "stepheight", prop->stepheight);
-	prop->stepheight*=BS;
+	if (getfloatfield(L, -1, "stepheight", prop->stepheight))
+		prop->stepheight *= BS;
 	lua_getfield(L, -1, "automatic_face_movement_dir");
 	if (lua_isnumber(L, -1)) {
 		prop->automatic_face_movement_dir = true;
@@ -208,17 +203,78 @@ void read_object_properties(lua_State *L, int index,
 }
 
 /******************************************************************************/
-TileDef read_tiledef(lua_State *L, int index)
+void push_object_properties(lua_State *L, ObjectProperties *prop)
+{
+	lua_newtable(L);
+	lua_pushnumber(L, prop->hp_max);
+	lua_setfield(L, -2, "hp_max");
+	lua_pushboolean(L, prop->physical);
+	lua_setfield(L, -2, "physical");
+	lua_pushboolean(L, prop->collideWithObjects);
+	lua_setfield(L, -2, "collide_with_objects");
+	lua_pushnumber(L, prop->weight);
+	lua_setfield(L, -2, "weight");
+	push_aabb3f(L, prop->collisionbox);
+	lua_setfield(L, -2, "collisionbox");
+	lua_pushlstring(L, prop->visual.c_str(), prop->visual.size());
+	lua_setfield(L, -2, "visual");
+	lua_pushlstring(L, prop->mesh.c_str(), prop->mesh.size());
+	lua_setfield(L, -2, "mesh");
+	push_v2f(L, prop->visual_size);
+	lua_setfield(L, -2, "visual_size");
+
+	lua_newtable(L);
+	u16 i = 1;
+	for (std::vector<std::string>::iterator it = prop->textures.begin();
+			it != prop->textures.end(); ++it) {
+		lua_pushlstring(L, it->c_str(), it->size());
+		lua_rawseti(L, -2, i);
+	}
+	lua_setfield(L, -2, "textures");
+
+	lua_newtable(L);
+	i = 1;
+	for (std::vector<video::SColor>::iterator it = prop->colors.begin();
+			it != prop->colors.end(); ++it) {
+		push_ARGB8(L, *it);
+		lua_rawseti(L, -2, i);
+	}
+	lua_setfield(L, -2, "colors");
+
+	push_v2s16(L, prop->spritediv);
+	lua_setfield(L, -2, "spritediv");
+	push_v2s16(L, prop->initial_sprite_basepos);
+	lua_setfield(L, -2, "initial_sprite_basepos");
+	lua_pushboolean(L, prop->is_visible);
+	lua_setfield(L, -2, "is_visible");
+	lua_pushboolean(L, prop->makes_footstep_sound);
+	lua_setfield(L, -2, "makes_footstep_sound");
+	lua_pushnumber(L, prop->automatic_rotate);
+	lua_setfield(L, -2, "automatic_rotate");
+	lua_pushnumber(L, prop->stepheight / BS);
+	lua_setfield(L, -2, "stepheight");
+	if (prop->automatic_face_movement_dir)
+		lua_pushnumber(L, prop->automatic_face_movement_dir_offset);
+	else
+		lua_pushboolean(L, false);
+	lua_setfield(L, -2, "automatic_face_movement_dir");
+}
+
+/******************************************************************************/
+TileDef read_tiledef(lua_State *L, int index, u8 drawtype)
 {
 	if(index < 0)
 		index = lua_gettop(L) + 1 + index;
 
 	TileDef tiledef;
-
+	bool default_tiling = (drawtype == NDT_PLANTLIKE || drawtype == NDT_FIRELIKE)
+		? false : true;
 	// key at index -2 and value at index
 	if(lua_isstring(L, index)){
 		// "default_lava.png"
 		tiledef.name = lua_tostring(L, index);
+		tiledef.tileable_vertical = default_tiling;
+		tiledef.tileable_horizontal = default_tiling;
 	}
 	else if(lua_istable(L, index))
 	{
@@ -227,20 +283,24 @@ TileDef read_tiledef(lua_State *L, int index)
 		getstringfield(L, index, "name", tiledef.name);
 		getstringfield(L, index, "image", tiledef.name); // MaterialSpec compat.
 		tiledef.backface_culling = getboolfield_default(
-					L, index, "backface_culling", true);
+			L, index, "backface_culling", true);
+		tiledef.tileable_horizontal = getboolfield_default(
+			L, index, "tileable_horizontal", default_tiling);
+		tiledef.tileable_vertical = getboolfield_default(
+			L, index, "tileable_vertical", default_tiling);
 		// animation = {}
 		lua_getfield(L, index, "animation");
 		if(lua_istable(L, -1)){
 			// {type="vertical_frames", aspect_w=16, aspect_h=16, length=2.0}
 			tiledef.animation.type = (TileAnimationType)
-					getenumfield(L, -1, "type", es_TileAnimationType,
-					TAT_NONE);
+				getenumfield(L, -1, "type", es_TileAnimationType,
+				TAT_NONE);
 			tiledef.animation.aspect_w =
-					getintfield_default(L, -1, "aspect_w", 16);
+				getintfield_default(L, -1, "aspect_w", 16);
 			tiledef.animation.aspect_h =
-					getintfield_default(L, -1, "aspect_h", 16);
+				getintfield_default(L, -1, "aspect_h", 16);
 			tiledef.animation.length =
-					getfloatfield_default(L, -1, "length", 1.0);
+				getfloatfield_default(L, -1, "length", 1.0);
 		}
 		lua_pop(L, 1);
 	}
@@ -284,7 +344,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	lua_getfield(L, index, "on_rightclick");
 	f.rightclickable = lua_isfunction(L, -1);
 	lua_pop(L, 1);
-	
+
 	/* Name */
 	getstringfield(L, index, "name", f.name);
 
@@ -317,7 +377,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		int i = 0;
 		while(lua_next(L, table) != 0){
 			// Read tiledef from value
-			f.tiledef[i] = read_tiledef(L, -1);
+			f.tiledef[i] = read_tiledef(L, -1, f.drawtype);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 			i++;
@@ -420,7 +480,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 		int i = 0;
 		while(lua_next(L, table) != 0){
 			// Read tiledef from value
-			f.tiledef_special[i] = read_tiledef(L, -1);
+			f.tiledef_special[i] = read_tiledef(L, -1, f.drawtype);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 			i++;
@@ -442,8 +502,7 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	/* Other stuff */
 
 	lua_getfield(L, index, "post_effect_color");
-	if(!lua_isnil(L, -1))
-		f.post_effect_color = readARGB8(L, -1);
+	read_color(L, -1, &f.post_effect_color);
 	lua_pop(L, 1);
 
 	f.param_type = (ContentParamType)getenumfield(L, index, "paramtype",
@@ -632,22 +691,23 @@ NodeBox read_nodebox(lua_State *L, int index)
 MapNode readnode(lua_State *L, int index, INodeDefManager *ndef)
 {
 	lua_getfield(L, index, "name");
-	const char *name = luaL_checkstring(L, -1);
+	if (!lua_isstring(L, -1))
+		throw LuaError("Node name is not set or is not a string!");
+	const char *name = lua_tostring(L, -1);
 	lua_pop(L, 1);
-	u8 param1;
+
+	u8 param1 = 0;
 	lua_getfield(L, index, "param1");
-	if(lua_isnil(L, -1))
-		param1 = 0;
-	else
+	if (!lua_isnil(L, -1))
 		param1 = lua_tonumber(L, -1);
 	lua_pop(L, 1);
-	u8 param2;
+
+	u8 param2 = 0;
 	lua_getfield(L, index, "param2");
-	if(lua_isnil(L, -1))
-		param2 = 0;
-	else
+	if (!lua_isnil(L, -1))
 		param2 = lua_tonumber(L, -1);
 	lua_pop(L, 1);
+
 	return MapNode(ndef, name, param1, param2);
 }
 
@@ -987,6 +1047,12 @@ u32 read_flags_table(lua_State *L, int table, FlagDesc *flagdesc, u32 *flagmask)
 	return flags;
 }
 
+void push_flags_string(lua_State *L, FlagDesc *flagdesc, u32 flags, u32 flagmask)
+{
+	std::string flagstring = writeFlagString(flags, flagdesc, flagmask);
+	lua_pushlstring(L, flagstring.c_str(), flagstring.size());
+}
+
 /******************************************************************************/
 /* Lua Stored data!                                                           */
 /******************************************************************************/
@@ -1012,14 +1078,23 @@ void read_groups(lua_State *L, int index,
 }
 
 /******************************************************************************/
+void push_groups(lua_State *L, const std::map<std::string, int> &groups)
+{
+	lua_newtable(L);
+	std::map<std::string, int>::const_iterator it;
+	for (it = groups.begin(); it != groups.end(); ++it) {
+		lua_pushnumber(L, it->second);
+		lua_setfield(L, -2, it->first.c_str());
+	}
+}
+
+/******************************************************************************/
 void push_items(lua_State *L, const std::vector<ItemStack> &items)
 {
-	// Create and fill table
 	lua_createtable(L, items.size(), 0);
-	std::vector<ItemStack>::const_iterator iter = items.begin();
-	for (u32 i = 0; iter != items.end(); iter++) {
-		LuaItemStack::create(L, *iter);
-		lua_rawseti(L, -2, ++i);
+	for (u32 i = 0; i != items.size(); i++) {
+		LuaItemStack::create(L, items[i]);
+		lua_rawseti(L, -2, i + 1);
 	}
 }
 
@@ -1060,19 +1135,7 @@ void luaentity_get(lua_State *L, u16 id)
 }
 
 /******************************************************************************/
-NoiseParams *read_noiseparams(lua_State *L, int index)
-{
-	NoiseParams *np = new NoiseParams;
-
-	if (!read_noiseparams_nc(L, index, np)) {
-		delete np;
-		np = NULL;
-	}
-
-	return np;
-}
-
-bool read_noiseparams_nc(lua_State *L, int index, NoiseParams *np)
+bool read_noiseparams(lua_State *L, int index, NoiseParams *np)
 {
 	if (index < 0)
 		index = lua_gettop(L) + 1 + index;
@@ -1080,12 +1143,23 @@ bool read_noiseparams_nc(lua_State *L, int index, NoiseParams *np)
 	if (!lua_istable(L, index))
 		return false;
 
-	np->offset  = getfloatfield_default(L, index, "offset",  0.0);
-	np->scale   = getfloatfield_default(L, index, "scale",   0.0);
-	np->persist = getfloatfield_default(L, index, "persist", 0.0);
-	np->seed    = getintfield_default(L,   index, "seed",    0);
-	np->octaves = getintfield_default(L,   index, "octaves", 0);
-	np->eased   = getboolfield_default(L,  index, "eased",   false);
+	getfloatfield(L, index, "offset",      np->offset);
+	getfloatfield(L, index, "scale",       np->scale);
+	getfloatfield(L, index, "persist",     np->persist);
+	getfloatfield(L, index, "persistence", np->persist);
+	getfloatfield(L, index, "lacunarity",  np->lacunarity);
+	getintfield(L,   index, "seed",        np->seed);
+	getintfield(L,   index, "octaves",     np->octaves);
+
+	//freeminer:
+	getfloatfield(L, index, "farscale",  np->farscale);
+	getfloatfield(L, index, "farspread",  np->farspread);
+	getfloatfield(L, index, "farpersist",  np->farpersist);
+
+	u32 flags    = 0;
+	u32 flagmask = 0;
+	np->flags = getflagsfield(L, index, "flags", flagdesc_noiseparams,
+		&flags, &flagmask) ? flags : NOISE_FLAG_DEFAULTS;
 
 	lua_getfield(L, index, "spread");
 	np->spread  = read_v3f(L, -1);
@@ -1094,100 +1168,28 @@ bool read_noiseparams_nc(lua_State *L, int index, NoiseParams *np)
 	return true;
 }
 
-/******************************************************************************/
-
-bool get_schematic(lua_State *L, int index, Schematic *schem,
-	INodeDefManager *ndef, std::map<std::string, std::string> &replace_names)
+void push_noiseparams(lua_State *L, NoiseParams *np)
 {
-	if (index < 0)
-		index = lua_gettop(L) + 1 + index;
+	lua_newtable(L);
+	lua_pushnumber(L, np->offset);
+	lua_setfield(L, -2, "offset");
+	lua_pushnumber(L, np->scale);
+	lua_setfield(L, -2, "scale");
+	lua_pushnumber(L, np->persist);
+	lua_setfield(L, -2, "persistence");
+	lua_pushnumber(L, np->lacunarity);
+	lua_setfield(L, -2, "lacunarity");
+	lua_pushnumber(L, np->seed);
+	lua_setfield(L, -2, "seed");
+	lua_pushnumber(L, np->octaves);
+	lua_setfield(L, -2, "octaves");
 
-	if (lua_istable(L, index)) {
-		return read_schematic(L, index, schem, ndef, replace_names);
-	} else if (lua_isstring(L, index)) {
-		NodeResolver *resolver = ndef->getResolver();
-		const char *filename = lua_tostring(L, index);
-		return schem->loadSchematicFromFile(filename, resolver, replace_names);
-	} else {
-		return false;
-	}
-}
+	push_flags_string(L, flagdesc_noiseparams, np->flags,
+		np->flags);
+	lua_setfield(L, -2, "flags");
 
-bool read_schematic(lua_State *L, int index, Schematic *schem,
-	INodeDefManager *ndef, std::map<std::string, std::string> &replace_names)
-{
-	//// Get schematic size
-	lua_getfield(L, index, "size");
-	v3s16 size = read_v3s16(L, -1);
-	lua_pop(L, 1);
-
-	//// Get schematic data
-	lua_getfield(L, index, "data");
-	luaL_checktype(L, -1, LUA_TTABLE);
-	
-	int numnodes = size.X * size.Y * size.Z;
-	MapNode *schemdata = new MapNode[numnodes];
-	int i = 0;
-
-	lua_pushnil(L);
-	while (lua_next(L, -2)) {
-		if (i < numnodes) {
-			// same as readnode, except param1 default is MTSCHEM_PROB_CONST
-			lua_getfield(L, -1, "name");
-			std::string name = luaL_checkstring(L, -1);
-			lua_pop(L, 1);
-
-			u8 param1;
-			lua_getfield(L, -1, "param1");
-			param1 = !lua_isnil(L, -1) ? lua_tonumber(L, -1) : MTSCHEM_PROB_ALWAYS;
-			lua_pop(L, 1);
-
-			u8 param2;
-			lua_getfield(L, -1, "param2");
-			param2 = !lua_isnil(L, -1) ? lua_tonumber(L, -1) : 0;
-			lua_pop(L, 1);
-
-			std::map<std::string, std::string>::iterator it;
-			it = replace_names.find(name);
-			if (it != replace_names.end())
-				name = it->second;
-
-			schemdata[i] = MapNode(ndef, name, param1, param2);
-		}
-		
-		i++;
-		lua_pop(L, 1);
-	}
-
-	if (i != numnodes) {
-		errorstream << "read_schematic: incorrect number of "
-			"nodes provided in raw schematic data (got " << i <<
-			", expected " << numnodes << ")." << std::endl;
-		return false;
-	}
-
-	//// Get Y-slice probability values (if present)
-	u8 *slice_probs = new u8[size.Y];
-	for (i = 0; i != size.Y; i++)
-		slice_probs[i] = MTSCHEM_PROB_ALWAYS;
-
-	lua_getfield(L, index, "yslice_prob");
-	if (lua_istable(L, -1)) {
-		lua_pushnil(L);
-		while (lua_next(L, -2)) {
-			if (getintfield(L, -1, "ypos", i) && i >= 0 && i < size.Y) {
-				slice_probs[i] = getintfield_default(L, -1,
-					"prob", MTSCHEM_PROB_ALWAYS);
-			}
-			lua_pop(L, 1);
-		}
-	}
-
-	schem->flags       = 0;
-	schem->size        = size;
-	schem->schemdata   = schemdata;
-	schem->slice_probs = slice_probs;
-	return true;
+	push_v3f(L, np->spread);
+	lua_setfield(L, -2, "spread");
 }
 
 /******************************************************************************/
@@ -1245,8 +1247,7 @@ static bool push_json_value_helper(lua_State *L, const Json::Value &value,
 			lua_newtable(L);
 			for (Json::Value::const_iterator it = value.begin();
 					it != value.end(); ++it) {
-				const char *str = it.memberName();
-				lua_pushstring(L, str ? str : "");
+				lua_pushstring(L, it.name().c_str());
 				push_json_value_helper(L, *it, nullindex);
 				lua_rawset(L, -3);
 			}

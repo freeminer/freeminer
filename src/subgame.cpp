@@ -26,8 +26,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "log.h"
 #include "strfnd.h"
+#include "defaultsettings.h"  // for override_default_settings
+#include "mapgen.h"  // for MapgenParams
+#include "util/string.h"
+
 #ifndef SERVER
-#include "tile.h" // getImagePath
+	#include "client/tile.h" // getImagePath
 #endif
 #include "util/string.h"
 #include "config.h"
@@ -199,7 +203,7 @@ std::vector<SubgameSpec> getAvailableGames()
 
 bool getWorldExists(const std::string &world_path)
 {
-	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt") ||
+	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.json") ||
 			fs::PathExists(world_path + DIR_DELIM + "world.mt"));
 }
 
@@ -211,7 +215,7 @@ std::string getWorldGameId(const std::string &world_path, bool can_be_legacy)
 	if(!succeeded){
 		if(can_be_legacy){
 			// If map_meta.txt exists, it is probably an old minetest world
-			if(fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
+			if(fs::PathExists(world_path + DIR_DELIM + "map_meta.json"))
 				return LEGACY_GAMEID;
 		}
 		return "";
@@ -267,22 +271,56 @@ std::vector<WorldSpec> getAvailableWorlds()
 	return worlds;
 }
 
-bool initializeWorld(const std::string &path, const std::string &gameid)
+bool loadGameConfAndInitWorld(const std::string &path, const SubgameSpec &gamespec)
 {
-	infostream<<"Initializing world at "<<path<<std::endl;
+	// Override defaults with those provided by the game.
+	// We clear and reload the defaults because the defaults
+	// might have been overridden by other subgame config
+	// files that were loaded before.
+	g_settings->clearDefaults();
+	set_default_settings(g_settings);
+	Settings game_defaults;
+	getGameMinetestConfig(gamespec.path, game_defaults);
+	override_default_settings(g_settings, &game_defaults);
+
+	infostream << "Initializing world at " << path << std::endl;
+
+	fs::CreateAllDirs(path);
+
 	// Create world.mt if does not already exist
-	std::string worldmt_path = path + DIR_DELIM + "world.mt";
-	if(!fs::PathExists(worldmt_path)){
-		infostream<<"Creating world.mt ("<<worldmt_path<<")"<<std::endl;
-		fs::CreateAllDirs(path);
+	std::string worldmt_path = path + DIR_DELIM "world.mt";
+	if (!fs::PathExists(worldmt_path)) {
 		std::ostringstream ss(std::ios_base::binary);
-		ss<<"gameid = "<<gameid<<
+		ss << "gameid = " << gamespec.id
 #if USE_LEVELDB
-				"\nbackend = leveldb\n";
-#else
-				"\nbackend = sqlite3\n";
+				<< "\nbackend = leveldb"
+#elif USE_SQLITE3
+				<< "\nbackend = sqlite3"
 #endif
-		fs::safeWriteToFile(worldmt_path, ss.str());
+			<< "\ncreative_mode = " << g_settings->get("creative_mode")
+			<< "\nenable_damage = " << g_settings->get("enable_damage")
+			<< "\n";
+		if (!fs::safeWriteToFile(worldmt_path, ss.str()))
+			return false;
+
+		infostream << "Wrote world.mt (" << worldmt_path << ")" << std::endl;
 	}
+
+/* fmtodo: enable after remake layers params
+	// Create map_meta.txt if does not already exist
+	std::string map_meta_path = path + DIR_DELIM + "map_meta.json";
+	if (!fs::PathExists(map_meta_path)){
+		verbosestream << "Creating map_meta.json (" << map_meta_path << ")" << std::endl;
+		fs::CreateAllDirs(path);
+		std::ostringstream oss(std::ios_base::binary);
+
+		Settings conf;
+		MapgenParams params;
+
+		params.load(*g_settings);
+		params.save(conf);
+		conf.writeJsonFile(map_meta_path);
+	}
+*/
 	return true;
 }

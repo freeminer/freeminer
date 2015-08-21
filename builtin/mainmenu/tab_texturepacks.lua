@@ -31,11 +31,13 @@ local function render_texture_pack_list(list)
 	local retval = ""
 
 	for i, v in ipairs(list) do
-		if retval ~= "" then
-			retval = retval ..","
-		end
+		if v:sub(1,1) ~= "." then
+			if retval ~= "" then
+				retval = retval ..","
+			end
 
-		retval = retval .. core.formspec_escape(v)
+			retval = retval .. core.formspec_escape(v)
+		end
 	end
 
 	return retval
@@ -43,13 +45,12 @@ end
 
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
-	
+
 	local retval = "label[4,-0.25;".. fgettext("Select texture pack:") .. "]"..
-			"vertlabel[0,-0.25;".. fgettext("TEXTURE PACKS") .. "]" ..
 			"textlist[4,0.25;7.5,5.0;TPs;"
 
 	local current_texture_path = core.setting_get("texture_path")
-	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+	local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
 
 	if index == nil then index = 1 end
@@ -61,10 +62,18 @@ local function get_formspec(tabview, name, tabdata)
 		return retval
 	end
 
-	local infofile = current_texture_path ..DIR_DELIM.."info.txt"
+	local infofile = current_texture_path ..DIR_DELIM.."description.txt"
+	-- This adds backwards compatibility for old texture pack description files named
+	-- "info.txt", and should be removed once all such texture packs have been updated
+	if not file_exists(infofile) then
+		infofile = current_texture_path ..DIR_DELIM.."info.txt"
+		if file_exists(infofile) then
+			minetest.log("info.txt is depreciated. description.txt should be used instead.");
+		end
+	end
 	local infotext = ""
 	local f = io.open(infofile, "r")
-	if f==nil then
+	if not f then
 		infotext = fgettext("No information available")
 	else
 		infotext = f:read("*all")
@@ -81,8 +90,8 @@ local function get_formspec(tabview, name, tabdata)
 	return	retval ..
 			render_texture_pack_list(list) ..
 			";" .. index .. "]" ..
-			"image[0.65,0.25;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
-			"textarea[1.0,3.25;3.7,1.5;;"..core.formspec_escape(infotext or "")..";]"
+			"image[0.25,0.25;4.0,3.7;"..core.formspec_escape(screenfile or no_screenshot).."]"..
+			"textarea[0.6,3.25;3.7,1.5;;"..core.formspec_escape(infotext or "")..";]"
 end
 
 --------------------------------------------------------------------------------
@@ -93,7 +102,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			local index = core.get_textlist_index("TPs")
 			core.setting_set("mainmenu_last_selected_TP",
 				index)
-			local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+			local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 			local current_index = core.get_textlist_index("TPs")
 			if current_index ~= nil and #list >= current_index then
 				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]

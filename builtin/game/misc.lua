@@ -4,42 +4,85 @@
 -- Misc. API functions
 --
 
-core.timers_to_add = {}
-core.timers = {}
-core.register_globalstep(function(dtime)
-	for _, timer in ipairs(core.timers_to_add) do
-		table.insert(core.timers, timer)
-	end
-	core.timers_to_add = {}
+local timers = {}
+local mintime
+local function update_timers(delay)
 	local end_ms = os.clock() * 1000 + 50
-	local index = 1
-	while index <= #core.timers do
-		local timer = core.timers[index]
-		timer.time = timer.time - dtime
+	mintime = false
+	local sub = 0
+	for index = 1, #timers do
+		index = index - sub
+		local timer = timers[index]
+		timer.time = timer.time - delay
 		if timer.time <= 0 then
+			core.set_last_run_mod(timer.mod_origin)
 			timer.func(unpack(timer.args or {}))
-			table.remove(core.timers,index)
+			table.remove(timers, index)
+			sub = sub + 1
+		elseif mintime then
+			mintime = math.min(mintime, timer.time)
 		else
-			index = index + 1
+			mintime = timer.time
 		end
 		if os.clock() * 1000 > end_ms then return end
 	end
+end
+
+local timers_to_add
+local function add_timers()
+	for _, timer in ipairs(timers_to_add) do
+		table.insert(timers, timer)
+	end
+	timers_to_add = false
+end
+
+local delay = 0
+core.register_globalstep(function(dtime)
+	if not mintime then
+		-- abort if no timers are running
+		return
+	end
+	if timers_to_add then
+		add_timers()
+	end
+	delay = delay + dtime
+	if delay < mintime then
+		return
+	end
+	update_timers(delay)
+	delay = 0
 end)
 
 function core.after(time, func, ...)
 	assert(tonumber(time) and type(func) == "function",
 			"Invalid core.after invocation")
-	table.insert(core.timers_to_add, {time=time, func=func, args={...}})
+	if not mintime then
+		mintime = time
+		timers_to_add = {{
+			time   = time+delay,
+			func   = func,
+			args   = {...},
+			mod_origin = core.get_last_run_mod(),
+		}}
+		return
+	end
+	mintime = math.min(mintime, time)
+	timers_to_add = timers_to_add or {}
+	timers_to_add[#timers_to_add+1] = {
+		time   = time+delay,
+		func   = func,
+		args   = {...},
+		mod_origin = core.get_last_run_mod(),
+	}
 end
 
 function core.check_player_privs(name, privs)
 	local player_privs = core.get_player_privs(name)
 	local missing_privileges = {}
 	for priv, val in pairs(privs) do
-		if val then
-			if not player_privs[priv] then
-				table.insert(missing_privileges, priv)
-			end
+		if val
+		and not player_privs[priv] then
+			table.insert(missing_privileges, priv)
 		end
 	end
 	if #missing_privileges > 0 then
@@ -95,30 +138,6 @@ function core.get_node_group(name, group)
 	return core.get_item_group(name, group)
 end
 
-function core.string_to_pos(value)
-	local p = {}
-	p.x, p.y, p.z = string.match(value, "^([%d.-]+)[, ] *([%d.-]+)[, ] *([%d.-]+)$")
-	if p.x and p.y and p.z then
-		p.x = tonumber(p.x)
-		p.y = tonumber(p.y)
-		p.z = tonumber(p.z)
-		return p
-	end
-	local p = {}
-	p.x, p.y, p.z = string.match(value, "^%( *([%d.-]+)[, ] *([%d.-]+)[, ] *([%d.-]+) *%)$")
-	if p.x and p.y and p.z then
-		p.x = tonumber(p.x)
-		p.y = tonumber(p.y)
-		p.z = tonumber(p.z)
-		return p
-	end
-	return nil
-end
-
-assert(core.string_to_pos("10.0, 5, -2").x == 10)
-assert(core.string_to_pos("( 10.0, 5, -2)").z == -2)
-assert(core.string_to_pos("asd, 5, -2)") == nil)
-
 function core.setting_get_pos(name)
 	local value = core.setting_get(name)
 	if not value then
@@ -145,4 +164,16 @@ end
 
 function freeminer.colorize(color, message)
 	return freeminer.color(color) .. message .. freeminer.color("ffffff")
+end
+
+local raillike_ids = {}
+local raillike_cur_id = 0
+function core.raillike_group(name)
+	local id = raillike_ids[name]
+	if not id then
+		raillike_cur_id = raillike_cur_id + 1
+		raillike_ids[name] = raillike_cur_id
+		id = raillike_cur_id
+	end
+	return id
 end

@@ -51,8 +51,7 @@ int ScriptApiDetached::detached_inventory_AllowMove(
 	lua_pushinteger(L, to_index + 1);     // to_index
 	lua_pushinteger(L, count);            // count
 	objectrefGetOrCreate(L, player);      // player
-	if (lua_pcall(L, 7, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 7, 1, m_errorhandler));
 	if(!lua_isnumber(L, -1))
 		throw LuaError("allow_move should return a number. name=" + name);
 	int ret = luaL_checkinteger(L, -1);
@@ -80,8 +79,7 @@ int ScriptApiDetached::detached_inventory_AllowPut(
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
 	objectrefGetOrCreate(L, player);     // player
-	if (lua_pcall(L, 5, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 5, 1, m_errorhandler));
 	if (!lua_isnumber(L, -1))
 		throw LuaError("allow_put should return a number. name=" + name);
 	int ret = luaL_checkinteger(L, -1);
@@ -109,8 +107,7 @@ int ScriptApiDetached::detached_inventory_AllowTake(
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
 	objectrefGetOrCreate(L, player);     // player
-	if (lua_pcall(L, 5, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 5, 1, m_errorhandler));
 	if (!lua_isnumber(L, -1))
 		throw LuaError("allow_take should return a number. name=" + name);
 	int ret = luaL_checkinteger(L, -1);
@@ -142,8 +139,7 @@ void ScriptApiDetached::detached_inventory_OnMove(
 	lua_pushinteger(L, to_index + 1);     // to_index
 	lua_pushinteger(L, count);            // count
 	objectrefGetOrCreate(L, player);      // player
-	if (lua_pcall(L, 7, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 7, 0, m_errorhandler));
 }
 
 // Report put items
@@ -167,8 +163,7 @@ void ScriptApiDetached::detached_inventory_OnPut(
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
 	objectrefGetOrCreate(L, player);     // player
-	if (lua_pcall(L, 5, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 5, 0, m_errorhandler));
 }
 
 // Report taken items
@@ -192,8 +187,7 @@ void ScriptApiDetached::detached_inventory_OnTake(
 	lua_pushinteger(L, index + 1);       // index
 	LuaItemStack::create(L, stack);      // stack
 	objectrefGetOrCreate(L, player);     // player
-	if (lua_pcall(L, 5, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 5, 0, m_errorhandler));
 }
 
 // Retrieves core.detached_inventories[name][callbackname]
@@ -218,6 +212,9 @@ bool ScriptApiDetached::getDetachedInventoryCallback(
 		lua_pop(L, 1);
 		return false;
 	}
+
+	setOriginFromTable(-1);
+
 	lua_getfield(L, -1, callbackname);
 	lua_remove(L, -2);
 	// Should be a function or nil

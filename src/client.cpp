@@ -25,18 +25,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <IFileSystem.h>
 #include "jthread/jmutexautolock.h"
+#include "util/auth.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
 #include "util/serialize.h"
 #include "util/string.h"
 #include "strfnd.h"
+#include "util/srp.h"
 #include "client.h"
-#include "clientserver.h"
-#include "main.h"
+#include "network/clientopcodes.h"
+#include "network/networkprotocol.h"
 #include "filesys.h"
 #include "porting.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
+#include "minimap.h"
 #include "settings.h"
 #include "profiler.h"
 #include "gettext.h"
@@ -45,7 +48,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "itemdef.h"
 #include "shader.h"
-#include "base64.h"
+#include "util/base64.h"
 #include "clientmap.h"
 #include "clientmedia.h"
 #include "sound.h"
@@ -54,16 +57,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "version.h"
 #include "drawscene.h"
-#include "subgame.h"
+#include "database-sqlite3.h"
+//#include "serialization.h"
+#include "guiscalingfilter.h"
+
+#include "database.h"
 #include "server.h"
-#include "database.h" //remove with g sunsed shit localdb
+#include "emerge.h"
+#if !MINETEST_PROTO
+#include "network/fm_clientpacketsender.cpp"
+#endif
+
 
 extern gui::IGUIEnvironment* guienv;
+
+#include "msgpack_fix.h"
 
 /*
 	MeshUpdateQueue
 */
-	
+
 MeshUpdateQueue::MeshUpdateQueue()
 {
 }
@@ -72,32 +85,33 @@ MeshUpdateQueue::~MeshUpdateQueue()
 {
 }
 
-void MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
+unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
 	DSTACK(__FUNCTION_NAME);
 
 	auto lock = m_queue.lock_unique_rec();
 	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (m_process.count(p))
-		range += 3;
-	else if (m_ranges.count(p)) {
+	if (m_process.count(p)) {
+		if (!urgent)
+			range += 3;
+	} else if (m_ranges.count(p)) {
 		auto range_old = m_ranges[p];
+		auto & rmap = m_queue.get(range_old);
 		if (range_old > 0 && range != range_old)  {
-			auto & rmap = m_queue.get(range_old);
 			m_ranges.erase(p);
 			rmap.erase(p);
 			if (rmap.empty())
 				m_queue.erase(range_old);
 		} else {
-			return; //already queued
+			rmap[p] = data;
+			return m_ranges.size();
 		}
 	}
 	auto & rmap = m_queue.get(range);
-	if (rmap.count(p))
-		return;
 	rmap[p] = data;
 	m_ranges[p] = range;
 	g_profiler->avg("Client: mesh make queue", m_ranges.size());
+	return m_ranges.size();
 }
 
 std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
@@ -120,36 +134,29 @@ std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
 	MeshUpdateThread
 */
 
-void * MeshUpdateThread::Thread()
+void MeshUpdateThread::enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
+		bool urgent)
 {
-	ThreadStarted();
+	m_queue_in.addBlock(p, data, urgent);
+	deferUpdate();
+}
 
-	log_register_thread("MeshUpdateThread" + itos(id));
-
-	DSTACK(__FUNCTION_NAME);
-	
-	BEGIN_DEBUG_EXCEPTION_HANDLER
-
-	porting::setThreadName(("MeshUpdateThread" + itos(id)).c_str());
-	porting::setThreadPriority(30);
-
-	while(!StopRequested())
-	{
-
+void MeshUpdateThread::doUpdate()
+{
+	std::shared_ptr<MeshMakeData> q;
+	while ((q = m_queue_in.pop())) {
 		try {
-		auto q = m_queue_in.pop();
-		if(!q)
-		{
-			sleep_ms(3);
-			continue;
-		}
 		m_queue_in.m_process.set(q->m_blockpos, 1);
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making " + itos(q->step));
 
-		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, std::shared_ptr<MapBlockMesh>(new MapBlockMesh(q.get(), m_camera_offset))));
+		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, MapBlock::mesh_type(new MapBlockMesh(q.get(), m_camera_offset))));
 
 		m_queue_in.m_process.erase(q->m_blockpos);
+
+#if _MSC_VER
+		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
+#endif
 
 #ifdef NDEBUG
 		} catch (BaseException &e) {
@@ -164,10 +171,6 @@ void * MeshUpdateThread::Thread()
 		}
 
 	}
-
-	END_DEBUG_EXCEPTION_HANDLER(errorstream)
-
-	return NULL;
 }
 
 /*
@@ -178,6 +181,7 @@ Client::Client(
 		IrrlichtDevice *device,
 		const char *playername,
 		std::string password,
+		bool is_simple_singleplayer_game,
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
 		IWritableShaderSource *shsrc,
@@ -186,7 +190,6 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		bool ipv6
-		, bool simple_singleplayer_mode
 ):
 	m_packetcounter_timer(0.0),
 	m_connection_reinit_timer(0.1),
@@ -199,7 +202,7 @@ Client::Client(
 	m_nodedef(nodedef),
 	m_sound(sound),
 	m_event(event),
-	m_mesh_update_thread(this),
+	m_mesh_update_thread(),
 	m_env(
 		new ClientMap(this, this, control,
 			device->getSceneManager()->getRootSceneNode(),
@@ -207,20 +210,27 @@ Client::Client(
 		device->getSceneManager(),
 		tsrc, this, device
 	),
-	m_con(PROTOCOL_ID, simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
+	m_particle_manager(&m_env),
+	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
+	m_proto_ver(0),
 	m_playeritem(0),
+	m_previous_playeritem(0),
 	m_inventory_updated(false),
 	m_inventory_from_server(NULL),
 	m_inventory_from_server_age(0.0),
-	m_show_hud(true),
+	m_show_highlighted(false),
 	m_animation_time(0),
 	m_crack_level(-1),
 	m_crack_pos(0,0,0),
+	m_highlighted_pos(0,0,0),
 	m_map_seed(0),
 	m_password(password),
+	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
+	m_auth_data(NULL),
 	m_access_denied(false),
+	m_access_denied_reconnect(false),
 	m_itemdef_received(false),
 	m_nodedef_received(false),
 	m_media_downloader(new ClientMediaDownloader()),
@@ -229,44 +239,20 @@ Client::Client(
 	m_time_of_day_update_timer(0),
 	m_recommended_send_interval(0.1),
 	m_removed_sounds_check_timer(0),
-	m_simple_singleplayer_mode(simple_singleplayer_mode),
-	m_state(LC_Created)
+	m_uptime(0),
+	m_simple_singleplayer_mode(is_simple_singleplayer_game),
+	m_timelapse_timer(-1),
+	m_state(LC_Created),
+	m_localdb(NULL)
 {
-	/*
-		Add local player
-	*/
-	{
-		Player *player = new LocalPlayer(this, playername);
+	// Add local player
+	m_env.addPlayer(new LocalPlayer(this, playername));
 
-		m_env.addPlayer(player);
-	}
+	m_mapper = new Mapper(device, this);
+	//m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 
-	if (!simple_singleplayer_mode && g_settings->getBool("enable_local_map_saving")) {
-		const std::string world_path = porting::path_user + DIR_DELIM + "worlds"
-				+ DIR_DELIM + "server_" + g_settings->get("address")
-				+ "_" + g_settings->get("remote_port");
-
-		SubgameSpec gamespec;
-		if (!getWorldExists(world_path)) {
-			gamespec = findSubgame(g_settings->get("default_game"));
-			if (!gamespec.isValid())
-				gamespec = findSubgame("minimal");
-		} else {
-			std::string world_gameid = getWorldGameId(world_path, false);
-			gamespec = findWorldSubgame(world_path);
-		}
-		if (!gamespec.isValid()) {
-			errorstream << "Couldn't find subgame for local map saving." << std::endl;
-			return;
-		}
-
-		localserver = new Server(world_path, gamespec, false, false);
-		localdb = nullptr;
-		actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
-	} else {
-		localdb = NULL;
-		localserver = nullptr;
-	}
+	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
+	m_cache_enable_shaders  = g_settings->getBool("enable_shaders");
 }
 
 void Client::Stop()
@@ -274,10 +260,15 @@ void Client::Stop()
 	//request all client managed threads to stop
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
-	if (localdb != NULL) {
+	if (m_localdb) {
 		actionstream << "Local map saving ended" << std::endl;
-		localdb->endSave();
+		m_localdb->endSave();
 	}
+
+	if (m_localserver)
+		delete m_localserver;
+	if (m_localdb)
+		delete m_localdb;
 }
 
 Client::~Client()
@@ -287,7 +278,7 @@ Client::~Client()
 	m_mesh_update_thread.Stop();
 	m_mesh_update_thread.Wait();
 /*
-	while(!m_mesh_update_thread.m_queue_out.empty()) {
+	while (!m_mesh_update_thread.m_queue_out.empty()) {
 		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
 		delete r.mesh;
 	}
@@ -296,31 +287,32 @@ Client::~Client()
 	delete m_inventory_from_server;
 
 	// Delete detached inventories
-	for(std::map<std::string, Inventory*>::iterator
+	for (std::map<std::string, Inventory*>::iterator
 			i = m_detached_inventories.begin();
-			i != m_detached_inventories.end(); i++){
+			i != m_detached_inventories.end(); ++i) {
 		delete i->second;
 	}
 
 	// cleanup 3d model meshes on client shutdown
 	while (m_device->getSceneManager()->getMeshCache()->getMeshCount() != 0) {
-		scene::IAnimatedMesh * mesh =
+		scene::IAnimatedMesh *mesh =
 			m_device->getSceneManager()->getMeshCache()->getMeshByIndex(0);
 
 		if (mesh != NULL)
 			m_device->getSceneManager()->getMeshCache()->removeMesh(mesh);
 	}
 
-	if (localserver)
-		delete localserver;
-	if (localdb)
-		delete localdb;
+	delete m_mapper;
 }
 
-void Client::connect(Address address)
+void Client::connect(Address address,
+		const std::string &address_name,
+		bool is_local_server)
 {
 	DSTACK(__FUNCTION_NAME);
-	m_con.SetTimeoutMs(0);
+
+	initLocalMapSaving(address, address_name, is_local_server);
+
 	m_con.Connect(address);
 }
 
@@ -338,7 +330,7 @@ void Client::step(float dtime)
 		m_ignore_damage_timer -= dtime;
 	else
 		m_ignore_damage_timer = 0.0;
-	
+
 	m_animation_time += dtime;
 	if(m_animation_time > 60.0)
 		m_animation_time -= 60.0;
@@ -356,10 +348,10 @@ void Client::step(float dtime)
 		if(counter <= 0.0)
 		{
 			counter = 20.0;
-			
-			infostream << "Client packetcounter (" << m_packetcounter_timer
+
+			verbosestream << "Client packetcounter (" << m_packetcounter_timer
 					<< "):"<<std::endl;
-			m_packetcounter.print(infostream);
+			m_packetcounter.print(verbosestream);
 			m_packetcounter.clear();
 		}
 	}
@@ -370,43 +362,41 @@ void Client::step(float dtime)
 	if (initial_step) {
 		initial_step = false;
 	}
-	else if(m_state == LC_Created)
-	{
+	else if(m_state == LC_Created) {
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
-		if(counter <= 0.0)
-		{
+		if(counter <= 0.0) {
 			counter = 2.0;
 
-			//JMutexAutoLock envlock(m_env_mutex); //bulk comment-out
-			
 			Player *myplayer = m_env.getLocalPlayer();
-			assert(myplayer != NULL);
-			// Send TOSERVER_INIT
-			// [0] u16 TOSERVER_INIT
+			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
+
+			// Send TOSERVER_INIT_LEGACY
+			// [0] u16 TOSERVER_INIT_LEGACY
 			// [2] u8 SER_FMT_VER_HIGHEST_READ
 			// [3] u8[20] player_name
 			// [23] u8[28] password (new in some version)
 			// [51] u16 minimum supported network protocol version (added sometime)
 			// [53] u16 maximum supported network protocol version (added later than the previous one)
-			SharedBuffer<u8> data(2+1+PLAYERNAME_SIZE+PASSWORD_SIZE+2+2);
-			writeU16(&data[0], TOSERVER_INIT);
-			writeU8(&data[2], SER_FMT_VER_HIGHEST_READ);
 
-			memset((char*)&data[3], 0, PLAYERNAME_SIZE);
-			snprintf((char*)&data[3], PLAYERNAME_SIZE, "%s", myplayer->getName().c_str());
+/*
+			char pName[PLAYERNAME_SIZE];
+			char pPassword[PASSWORD_SIZE];
+			memset(pName, 0, PLAYERNAME_SIZE * sizeof(char));
+			memset(pPassword, 0, PASSWORD_SIZE * sizeof(char));
 
-			/*infostream<<"Client: sending initial password hash: \""<<m_password<<"\""
-					<<std::endl;*/
+*/
+			std::string hashed_password = translatePassword(myplayer->getName(), m_password);
+/*
+			snprintf(pName, PLAYERNAME_SIZE, "%s", myplayer->getName());
+			snprintf(pPassword, PASSWORD_SIZE, "%s", hashed_password.c_str());
 
-			memset((char*)&data[23], 0, PASSWORD_SIZE);
-			snprintf((char*)&data[23], PASSWORD_SIZE, "%s", m_password.c_str());
-			
-			writeU16(&data[51], CLIENT_PROTOCOL_VERSION_MIN);
-			writeU16(&data[53], CLIENT_PROTOCOL_VERSION_MAX);
+			sendLegacyInit(pName, pPassword);
+*/
+			sendLegacyInit(myplayer->getName(), hashed_password);
 
-			// Send as unreliable
-			Send(1, data, false);
+			if (LATEST_PROTOCOL_VERSION >= 25)
+				sendInit(myplayer->getName());
 		}
 
 		// Not connected, return
@@ -416,60 +406,40 @@ void Client::step(float dtime)
 	/*
 		Do stuff if connected
 	*/
-	
-	int max_cycle_ms = 500/g_settings->getFloat("wanted_fps");
+	unsigned int max_cycle_ms = 200/g_settings->getFloat("wanted_fps");
+
 	/*
 		Run Map's timers and unload unused data
 	*/
 	const float map_timer_and_unload_dtime = 10.25;
-	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
-	{
+	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		ScopeProfiler sp(g_profiler, "Client: map timer and unload");
-		std::list<v3s16> deleted_blocks;
+		std::vector<v3s16> deleted_blocks;
 		
 		if(m_env.getMap().timerUpdate(m_uptime,
-				g_settings->getFloat("client_unload_unused_data_timeout"),
-				max_cycle_ms,
-				&deleted_blocks))
-				m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
-				
+			g_settings->getFloat("client_unload_unused_data_timeout"),
+			g_settings->getS32("client_mapblock_limit"),
+			max_cycle_ms,
+			&deleted_blocks))
+			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+
 		/*if(deleted_blocks.size() > 0)
 			infostream<<"Client: Unloaded "<<deleted_blocks.size()
 					<<" unused blocks"<<std::endl;*/
-			
+
 		/*
 			Send info to server
 			NOTE: This loop is intentionally iterated the way it is.
 		*/
 
-		std::list<v3s16>::iterator i = deleted_blocks.begin();
-		std::list<v3s16> sendlist;
-		for(;;)
-		{
-			if(sendlist.size() == 255 || i == deleted_blocks.end())
-			{
-				if(sendlist.size() == 0)
+		auto i = deleted_blocks.begin();
+		std::vector<v3s16> sendlist;
+		for(;;) {
+			if(sendlist.size() == 255 || i == deleted_blocks.end()) {
+				if(sendlist.empty())
 					break;
-				/*
-					[0] u16 command
-					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
-					...
-				*/
-				u32 replysize = 2+1+6*sendlist.size();
-				SharedBuffer<u8> reply(replysize);
-				writeU16(&reply[0], TOSERVER_DELETEDBLOCKS);
-				reply[2] = sendlist.size();
-				u32 k = 0;
-				for(std::list<v3s16>::iterator
-						j = sendlist.begin();
-						j != sendlist.end(); ++j)
-				{
-					writeV3S16(&reply[2+1+6*k], *j);
-					k++;
-				}
-				m_con.Send(PEER_ID_SERVER, 2, reply, true);
+
+				sendDeletedBlocks(sendlist);
 
 				if(i == deleted_blocks.end())
 					break;
@@ -485,62 +455,56 @@ void Client::step(float dtime)
 	/*
 		Handle environment
 	*/
-	{
-		// Control local player (0ms)
-		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-		player->applyControl(dtime, &m_env);
+	// Control local player (0ms)
+	LocalPlayer *player = m_env.getLocalPlayer();
+	assert(player != NULL);
+	player->applyControl(dtime, &m_env);
 
-		// Step environment
-		m_env.step(dtime, m_uptime, max_cycle_ms);
-		
-		/*
-			Get events
-		*/
-		for(;;)
-		{
-			ClientEnvEvent event = m_env.getClientEvent();
-			if(event.type == CEE_NONE)
-			{
-				break;
-			}
-			else if(event.type == CEE_PLAYER_DAMAGE)
-			{
-				if(m_ignore_damage_timer <= 0)
-				{
-					u8 damage = event.player_damage.amount;
-					
-					if(event.player_damage.send_to_server)
-						sendDamage(damage);
+	// Step environment
+	m_env.step(dtime, m_uptime, max_cycle_ms);
 
-					// Add to ClientEvent queue
-					ClientEvent event;
-					event.type = CE_PLAYER_DAMAGE;
-					event.player_damage.amount = damage;
-					m_client_event_queue.push_back(event);
-				}
+	/*
+		Get events
+	*/
+	for(;;) {
+		ClientEnvEvent event = m_env.getClientEvent();
+		if(event.type == CEE_NONE) {
+			break;
+		}
+		else if(event.type == CEE_PLAYER_DAMAGE) {
+			if(m_ignore_damage_timer <= 0) {
+				u8 damage = event.player_damage.amount;
+
+				if(event.player_damage.send_to_server)
+					sendDamage(damage);
+
+				// Add to ClientEvent queue
+				ClientEvent event;
+				event.type = CE_PLAYER_DAMAGE;
+				event.player_damage.amount = damage;
+				m_client_event_queue.push(event);
 			}
-			else if(event.type == CEE_PLAYER_BREATH)
-			{
-					u16 breath = event.player_breath.amount;
-					sendBreath(breath);
-			}
+		}
+		else if(event.type == CEE_PLAYER_BREATH) {
+				u16 breath = event.player_breath.amount;
+				sendBreath(breath);
 		}
 	}
 
 	/*
 		Print some info
 	*/
-	{
-		float &counter = m_avg_rtt_timer;
-		counter += dtime;
-		if(counter >= 10)
-		{
-			counter = 0.0;
-			// connectedAndInitialized() is true, peer exists.
-			float avg_rtt = getRTT();
-			infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
-		}
+	float &counter = m_avg_rtt_timer;
+	counter += dtime;
+	if(counter >= 10) {
+		counter = 0.0;
+		// connectedAndInitialized() is true, peer exists.
+#if MINETEST_PROTO
+		float avg_rtt = getRTT();
+		infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
+#endif
+
+		sendDrawControl(); //not very good place. maybe 5s timer better
 	}
 
 	/*
@@ -549,8 +513,7 @@ void Client::step(float dtime)
 	{
 		float &counter = m_playerpos_send_timer;
 		counter += dtime;
-		if((m_state == LC_Ready) && (counter >= m_recommended_send_interval))
-		{
+		if((m_state == LC_Ready) && (counter >= m_recommended_send_interval)) {
 			counter = 0.0;
 			sendPlayerPos();
 		}
@@ -573,26 +536,41 @@ void Client::step(float dtime)
 		*/
 		{
 
-		while(!m_mesh_update_thread.m_queue_out.empty_try())
-		{
-			if (getEnv().getClientMap().m_drawlist_work)
-				break;
+		while (!m_mesh_update_thread.m_queue_out.empty_try()) {
 			num_processed_meshes++;
+
+			MinimapMapblock *minimap_mapblock = NULL;
+			bool do_mapper_update = true;
+
 			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
-			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
-			if(block)
-			{
-				if (r.mesh)
-					block->setMesh(r.mesh);
+			if (!r.mesh)
+				continue;
+			auto block = m_env.getMap().getBlock(r.p);
+			if(block) {
+				block->setMesh(r.mesh);
+				if (r.mesh) {
+					minimap_mapblock = r.mesh->moveMinimapMapblock();
+					if (minimap_mapblock == NULL)
+						do_mapper_update = false;
+				}
+
+				if (r.mesh && r.mesh->getMesh()->getMeshBufferCount() == 0) {
+					//delete r.mesh;
+				} else {
+					// Replace with the new mesh
+					block->mesh = r.mesh;
+				}
 			} else {
 				//delete r.mesh;
 			}
-			if (porting::getTimeMs() > end_ms)
+			if (do_mapper_update)
+				m_mapper->addBlock(r.p, minimap_mapblock);
+			if (porting::getTimeMs() > end_ms) {
 				break;
+			}
 		}
 		if(num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
-
 		}
 	}
 
@@ -613,8 +591,7 @@ void Client::step(float dtime)
 		the local inventory (so the player notices the lag problem
 		and knows something is wrong).
 	*/
-	if(m_inventory_from_server)
-	{
+	if(m_inventory_from_server) {
 		float interval = 10.0;
 		float count_before = floor(m_inventory_from_server_age / interval);
 
@@ -622,8 +599,7 @@ void Client::step(float dtime)
 
 		float count_after = floor(m_inventory_from_server_age / interval);
 
-		if(count_after != count_before)
-		{
+		if(count_after != count_before) {
 			// Do this every <interval> seconds after TOCLIENT_INVENTORY
 			// Reset the locally changed inventory to the authoritative inventory
 			Player *player = m_env.getLocalPlayer();
@@ -638,8 +614,7 @@ void Client::step(float dtime)
 	{
 		for(std::map<int, u16>::iterator
 				i = m_sounds_to_objects.begin();
-				i != m_sounds_to_objects.end(); i++)
-		{
+				i != m_sounds_to_objects.end(); i++) {
 			int client_id = i->first;
 			u16 object_id = i->second;
 			ClientActiveObject *cao = m_env.getActiveObject(object_id);
@@ -649,7 +624,7 @@ void Client::step(float dtime)
 			m_sound->updateSoundPosition(client_id, pos);
 		}
 	}
-	
+
 	/*
 		Handle removed remotely initiated sounds
 	*/
@@ -658,7 +633,7 @@ void Client::step(float dtime)
 	{
 		m_removed_sounds_check_timer = 0;
 		// Find removed sounds and clear references to them
-		std::set<s32> removed_server_ids;
+		std::vector<s32> removed_server_ids;
 		for(std::map<s32, int>::iterator
 				i = m_sounds_server_to_client.begin();
 				i != m_sounds_server_to_client.end();)
@@ -670,33 +645,31 @@ void Client::step(float dtime)
 				m_sounds_server_to_client.erase(server_id);
 				m_sounds_client_to_server.erase(client_id);
 				m_sounds_to_objects.erase(client_id);
-				removed_server_ids.insert(server_id);
+				removed_server_ids.push_back(server_id);
 			}
 		}
 		// Sync to server
-		if(removed_server_ids.size() != 0)
-		{
-			std::ostringstream os(std::ios_base::binary);
-			writeU16(os, TOSERVER_REMOVED_SOUNDS);
-			size_t server_ids = removed_server_ids.size();
-			assert(server_ids <= 0xFFFF);
-			writeU16(os, (u16) (server_ids & 0xFFFF));
-			for(std::set<s32>::iterator i = removed_server_ids.begin();
-					i != removed_server_ids.end(); i++)
-				writeS32(os, *i);
-			std::string s = os.str();
-			SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-			// Send as reliable
-			Send(1, data, true);
+		if(!removed_server_ids.empty()) {
+			sendRemovedSounds(removed_server_ids);
 		}
 	}
+
+	float timelapse = g_settings->getFloat("timelapse");
+	if (timelapse) {
+		m_timelapse_timer += dtime;
+		if (m_timelapse_timer > timelapse) {
+			m_timelapse_timer = 0;
+			makeScreenshot("timelapse_");
+		}
+	}
+
 }
 
 bool Client::loadMedia(const std::string &data, const std::string &filename)
 {
 	// Silly irrlicht's const-incorrectness
 	Buffer<char> data_rw(data.c_str(), data.size());
-	
+
 	std::string name;
 
 	const char *image_ext[] = {
@@ -716,7 +689,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 		// Create an irrlicht memory file
 		io::IReadFile *rfile = irrfs->createMemoryReadFile(
 				*data_rw, data_rw.getSize(), "_tempreadfile");
-		assert(rfile);
+		FATAL_ERROR_IF(!rfile, "Could not create irrlicht memory file.");
 		// Read image
 		video::IImage *img = vdrv->createImageFromFile(rfile);
 		if(!img){
@@ -769,16 +742,21 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 }
 
 // Virtual methods from con::PeerHandler
-void Client::peerAdded(con::Peer *peer)
+void Client::peerAdded(u16 peer_id)
 {
-	infostream<<"Client::peerAdded(): peer->id="
-			<<peer->id<<std::endl;
+	infostream << "Client::peerAdded(): peer->id="
+			<< peer_id << std::endl;
 }
-void Client::deletingPeer(con::Peer *peer, bool timeout)
+void Client::deletingPeer(u16 peer_id, bool timeout)
 {
-	infostream<<"Client::deletingPeer(): "
+	infostream << "Client::deletingPeer(): "
 			"Server Peer is getting deleted "
-			<<"(timeout="<<timeout<<")"<<std::endl;
+			<< "(timeout=" << timeout << ")" << std::endl;
+
+	if (timeout) {
+		m_access_denied = true;
+		m_access_denied_reason = _("Connection timed out.");
+	}
 }
 
 /*
@@ -789,39 +767,83 @@ void Client::deletingPeer(con::Peer *peer, bool timeout)
 		string name
 	}
 */
-void Client::request_media(const std::list<std::string> &file_requests)
+
+#if MINETEST_PROTO
+void Client::request_media(const std::vector<std::string> &file_requests)
 {
 	std::ostringstream os(std::ios_base::binary);
 	writeU16(os, TOSERVER_REQUEST_MEDIA);
 	size_t file_requests_size = file_requests.size();
-	assert(file_requests_size <= 0xFFFF);
-	writeU16(os, (u16) (file_requests_size & 0xFFFF));
 
-	for(std::list<std::string>::const_iterator i = file_requests.begin();
+	FATAL_ERROR_IF(file_requests_size > 0xFFFF, "Unsupported number of file requests");
+
+	// Packet dynamicly resized
+	NetworkPacket pkt(TOSERVER_REQUEST_MEDIA, 2 + 0);
+
+	pkt << (u16) (file_requests_size & 0xFFFF);
+
+	for(std::vector<std::string>::const_iterator i = file_requests.begin();
 			i != file_requests.end(); ++i) {
-		os<<serializeString(*i);
+		pkt << (*i);
 	}
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(1, data, true);
-	infostream<<"Client: Sending media request list to server ("
-			<<file_requests.size()<<" files)"<<std::endl;
+	Send(&pkt);
+
+	infostream << "Client: Sending media request list to server ("
+			<< file_requests.size() << " files. packet size)" << std::endl;
 }
 
 void Client::received_media()
 {
-	// notify server we received everything
-	std::ostringstream os(std::ios_base::binary);
-	writeU16(os, TOSERVER_RECEIVED_MEDIA);
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(1, data, true);
-	infostream<<"Client: Notifying server that we received all media"
-			<<std::endl;
+	NetworkPacket pkt(TOSERVER_RECEIVED_MEDIA, 0);
+	Send(&pkt);
+	infostream << "Client: Notifying server that we received all media"
+			<< std::endl;
+}
+#endif
+
+
+void Client::initLocalMapSaving(const Address &address,
+		const std::string &hostname,
+		bool is_local_server)
+{
+
+	m_localserver = nullptr;
+
+	m_localdb = NULL;
+
+	if (!g_settings->getBool("enable_local_map_saving") || is_local_server) {
+		return;
+	}
+
+	std::string address_replaced = hostname + "_" + to_string(address.getPort());
+	replace( address_replaced.begin(), address_replaced.end(), ':', '_' );
+
+	const std::string world_path = porting::path_user
+		+ DIR_DELIM + "worlds"
+		+ DIR_DELIM + "server_"
+		+ address_replaced;
+
+	SubgameSpec gamespec;
+
+	if (!getWorldExists(world_path)) {
+		gamespec = findSubgame(g_settings->get("default_game"));
+		if (!gamespec.isValid())
+			gamespec = findSubgame("minimal");
+	} else {
+		gamespec = findWorldSubgame(world_path);
+	}
+
+	fs::CreateAllDirs(world_path);
+
+#if !MINETEST_PROTO
+	m_localserver = new Server(world_path, gamespec, false, false);
+#endif
+	/*
+	m_localdb = new Database_SQLite3(world_path);
+	m_localdb->beginSave();
+	*/
+	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 }
 
 void Client::ReceiveAll()
@@ -830,20 +852,24 @@ void Client::ReceiveAll()
 	auto end_ms = porting::getTimeMs() + 10;
 	for(;;)
 	{
-		try{
-			Receive();
+#if MINETEST_PROTO
+		try {
+#endif
+			if (!Receive())
+				break;
 			g_profiler->graphAdd("client_received_packets", 1);
+
+#if MINETEST_PROTO
 		}
-		catch(con::NoIncomingDataException &e)
-		{
+		catch(con::NoIncomingDataException &e) {
 			break;
 		}
-		catch(con::InvalidIncomingDataException &e)
-		{
+		catch(con::InvalidIncomingDataException &e) {
 			infostream<<"Client::ReceiveAll(): "
 					"InvalidIncomingDataException: what()="
 					<<e.what()<<std::endl;
 		}
+#endif
 		// Limit time even if there would be huge amounts of data to
 		// process
 		if(porting::getTimeMs() > end_ms)
@@ -851,1056 +877,117 @@ void Client::ReceiveAll()
 	}
 }
 
-void Client::Receive()
+bool Client::Receive()
 {
 	DSTACK(__FUNCTION_NAME);
-	SharedBuffer<u8> data;
-	u16 sender_peer_id;
-	u32 datasize = m_con.Receive(sender_peer_id, data);
-	ProcessData(*data, datasize, sender_peer_id);
+	NetworkPacket pkt;
+	if (!m_con.Receive(&pkt))
+		return false;
+
+	ProcessData(&pkt);
+	return true;
+}
+
+//FMTODO
+#if MINETEST_PROTO
+
+inline void Client::handleCommand(NetworkPacket* pkt)
+{
+	const ToClientCommandHandler& opHandle = toClientCommandTable[pkt->getCommand()];
+	(this->*opHandle.handler)(pkt);
 }
 
 /*
 	sender_peer_id given to this shall be quaranteed to be a valid peer
 */
-void Client::ProcessData(u8 *data, u32 datasize, u16 sender_peer_id)
+void Client::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	// Ignore packets that don't even fit a command
-	if(datasize < 2)
-	{
-		m_packetcounter.add(60000);
-		return;
-	}
-
-	ToClientCommand command = (ToClientCommand)readU16(&data[0]);
+	ToClientCommand command = (ToClientCommand) pkt->getCommand();
+	u32 sender_peer_id = pkt->getPeerId();
 
 	//infostream<<"Client: received command="<<command<<std::endl;
 	m_packetcounter.add((u16)command);
-	
+
 	/*
 		If this check is removed, be sure to change the queue
 		system to know the ids
 	*/
-	if(sender_peer_id != PEER_ID_SERVER)
-	{
-		infostream<<"Client::ProcessData(): Discarding data not "
-				"coming from server: peer_id="<<sender_peer_id
-				<<std::endl;
+	if(sender_peer_id != PEER_ID_SERVER) {
+		infostream << "Client::ProcessData(): Discarding data not "
+			"coming from server: peer_id=" << sender_peer_id
+			<< std::endl;
 		return;
 	}
 
-	u8 ser_version = m_server_ser_ver;
-
-	if(command == TOCLIENT_INIT)
-	{
-		if(datasize < 3)
-			return;
-
-		u8 deployed = data[2];
-
-		infostream<<"Client: TOCLIENT_INIT received with "
-				"deployed="<<((int)deployed&0xff)<<std::endl;
-
-		if(!ser_ver_supported(deployed))
-		{
-			infostream<<"Client: TOCLIENT_INIT: Server sent "
-					<<"unsupported ser_fmt_ver"<<std::endl;
-			return;
-		}
-		
-		m_server_ser_ver = deployed;
-
-		// Get player position
-		v3s16 playerpos_s16(0, BS*2+BS*20, 0);
-		if(datasize >= 2+1+6)
-			playerpos_s16 = readV3S16(&data[2+1]);
-		v3f playerpos_f = intToFloat(playerpos_s16, BS) - v3f(0, BS/2, 0);
-
-			
-		// Set player position
-		Player *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-		player->setPosition(playerpos_f);
-		
-		if(datasize >= 2+1+6+8)
-		{
-			// Get map seed
-			m_map_seed = readU64(&data[2+1+6]);
-			infostream<<"Client: received map seed: "<<m_map_seed<<std::endl;
-		}
-
-		if(datasize >= 2+1+6+8+4)
-		{
-			// Get map seed
-			m_recommended_send_interval = readF1000(&data[2+1+6+8]);
-			infostream<<"Client: received recommended send interval "
-					<<m_recommended_send_interval<<std::endl;
-		}
-		
-		// Reply to server
-		u32 replysize = 2;
-		SharedBuffer<u8> reply(replysize);
-		writeU16(&reply[0], TOSERVER_INIT2);
-		// Send as reliable
-		m_con.Send(PEER_ID_SERVER, 1, reply, true);
-
-		m_state = LC_Init;
-
+	// Command must be handled into ToClientCommandHandler
+	if (command >= TOCLIENT_NUM_MSG_TYPES) {
+		infostream << "Client: Ignoring unknown command "
+			<< command << std::endl;
 		return;
 	}
 
-	if(command == TOCLIENT_ACCESS_DENIED)
-	{
-		// The server didn't like our password. Note, this needs
-		// to be processed even if the serialisation format has
-		// not been agreed yet, the same as TOCLIENT_INIT.
-		m_access_denied = true;
-		m_access_denied_reason = L"Unknown";
-		if(datasize >= 4)
-		{
-			std::string datastring((char*)&data[2], datasize-2);
-			std::istringstream is(datastring, std::ios_base::binary);
-			m_access_denied_reason = deSerializeWideString(is);
-		}
+	/*
+	 * Those packets are handled before m_server_ser_ver is set, it's normal
+	 * But we must use the new ToClientConnectionState in the future,
+	 * as a byte mask
+	 */
+	if(toClientCommandTable[command].state == TOCLIENT_STATE_NOT_CONNECTED) {
+		handleCommand(pkt);
 		return;
 	}
 
-	if(ser_version == SER_FMT_VER_INVALID)
-	{
-		infostream<<"Client: Server serialization"
+	if(m_server_ser_ver == SER_FMT_VER_INVALID) {
+		infostream << "Client: Server serialization"
 				" format invalid or not initialized."
-				" Skipping incoming command="<<command<<std::endl;
+				" Skipping incoming command=" << command << std::endl;
 		return;
 	}
-	
+
 	/*
 	  Handle runtime commands
 	*/
-	// there's no sane reason why we shouldn't have a player and
-	// almost everyone needs a player reference
-	Player *player = m_env.getLocalPlayer();
-	assert(player != NULL);
 
-	if(command == TOCLIENT_REMOVENODE)
-	{
-		if(datasize < 8)
-			return;
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-		removeNode(p);
-	}
-	else if(command == TOCLIENT_ADDNODE)
-	{
-		if(datasize < 8 + MapNode::serializedLength(ser_version))
-			return;
-
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-
-		MapNode n;
-		n.deSerialize(&data[8], ser_version);
-		
-		bool remove_metadata = true;
-		u32 index = 8 + MapNode::serializedLength(ser_version);
-		if ((datasize >= index+1) && data[index]){
-			remove_metadata = false;
-		}
-		
-		addNode(p, n, remove_metadata);
-	}
-	else if(command == TOCLIENT_BLOCKDATA)
-	{
-		// Ignore too small packet
-		if(datasize < 8)
-			return;
-			
-		v3s16 p;
-		p.X = readS16(&data[2]);
-		p.Y = readS16(&data[4]);
-		p.Z = readS16(&data[6]);
-		
-		std::string datastring((char*)&data[8], datasize-8);
-		std::istringstream istr(datastring, std::ios_base::binary);
-		
-		MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(p);
-		if(block)
-		{
-			/*
-				Update an existing block
-			*/
-			block->deSerialize(istr, ser_version, false);
-			block->deSerializeNetworkSpecific(istr);
-		}
-		else
-		{
-			/*
-				Create a new block
-			*/
-			block = new MapBlock(&m_env.getMap(), p, this);
-			block->deSerialize(istr, ser_version, false);
-			block->deSerializeNetworkSpecific(istr);
-			m_env.getMap().insertBlock(block);
-		}
-
-		if (localserver != NULL) {
-			localserver->getMap().saveBlock(block);
-		}
-
-		/*
-			Add it to mesh update queue and set it to be acknowledged after update.
-		*/
-		updateMeshTimestampWithEdge(p);
-
-		UniqueQueue<v3s16> got_blocks;
-		got_blocks.push_back(p);
-		u32 got_blocks_size = got_blocks.size();
-		if (got_blocks_size) { // TODO: REMOVE IN NEXT
-				/*
-					Acknowledge block
-				*/
-				/*
-					[0] u16 command
-					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
-					[3+6*i] u16 vrange
-					...
-				*/
-				u32 replysize = 2+1+(6*got_blocks_size)+2;
-				SharedBuffer<u8> reply(replysize);
-				writeU16(&reply[0], TOSERVER_GOTBLOCKS);
-				reply[2] = got_blocks_size;
-				u32 i=0;
-				while (got_blocks.size())
-					writeV3S16(&reply[3+(6*i++)], got_blocks.pop_front());
-
-				writeU16(&reply[2+1+(6*got_blocks_size)], (int)m_env.getClientMap().getControl().wanted_range);
-				// Send as reliable
-				m_con.Send(PEER_ID_SERVER, 2, reply, true);
-		}
-
-	}
-	else if(command == TOCLIENT_INVENTORY)
-	{
-		if(datasize < 3)
-			return;
-
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		player->inventory.deSerialize(is);
-
-		m_inventory_updated = true;
-
-		delete m_inventory_from_server;
-		m_inventory_from_server = new Inventory(player->inventory);
-		m_inventory_from_server_age = 0.0;
-
-	}
-	else if(command == TOCLIENT_TIME_OF_DAY)
-	{
-		if(datasize < 4)
-			return;
-		
-		u16 time_of_day  = readU16(&data[2]);
-		time_of_day      = time_of_day % 24000;
-		float time_speed = 0;
-
-		if(datasize >= 2 + 2 + 4)
-		{
-			time_speed = readF1000(&data[4]);
-		}
-		else {
-			// Old message; try to approximate speed of time by ourselves
-			float time_of_day_f = (float)time_of_day / 24000.0;
-			float tod_diff_f = 0;
-
-			if(time_of_day_f < 0.2 && m_last_time_of_day_f > 0.8)
-				tod_diff_f = time_of_day_f - m_last_time_of_day_f + 1.0;
-			else
-				tod_diff_f = time_of_day_f - m_last_time_of_day_f;
-
-			m_last_time_of_day_f         = time_of_day_f;
-			float time_diff            = m_time_of_day_update_timer;
-			m_time_of_day_update_timer = 0;
-
-			if(m_time_of_day_set){
-				time_speed = (3600.0*24.0) * tod_diff_f / time_diff;
-				infostream<<"Client: Measured time_of_day speed (old format): "
-						<<time_speed<<" tod_diff_f="<<tod_diff_f
-						<<" time_diff="<<time_diff<<std::endl;
-			}
-		}
-		
-		// Update environment
-		m_env.setTimeOfDay(time_of_day);
-		m_env.setTimeOfDaySpeed(time_speed);
-		m_time_of_day_set = true;
-
-		u32 dr = m_env.getDayNightRatio();
-		infostream<<"Client: time_of_day="<<time_of_day
-				<<" time_speed="<<time_speed
-				<<" dr="<<dr<<std::endl;
-	}
-	else if(command == TOCLIENT_CHAT_MESSAGE)
-	{
-		/*
-			u16 command
-			u16 length
-			wstring message
-		*/
-		u8 buf[6];
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		// Read stuff
-		is.read((char*) buf, 2);
-		u16 len = readU16(buf);
-		
-		std::wstring message;
-		for(unsigned int i=0; i<len; i++)
-		{
-			is.read((char*)buf, 2);
-			message += (wchar_t)readU16(buf);
-		}
-		
-		m_chat_queue.push_back(message);
-	}
-	else if(command == TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD)
-	{
-		/*
-			u16 command
-			u16 count of removed objects
-			for all removed objects {
-				u16 id
-			}
-			u16 count of added objects
-			for all added objects {
-				u16 id
-				u8 type
-				u32 initialization data length
-				string initialization data
-			}
-		*/
-
-		char buf[6];
-		// Get all data except the command number
-		std::string datastring((char*)&data[2], datasize-2);
-		// Throw them in an istringstream
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		// Read removed objects
-		is.read(buf, 2);
-		u16 removed_count = readU16((u8*)buf);
-		for(unsigned int i=0; i<removed_count; i++)
-		{
-			is.read(buf, 2);
-			u16 id = readU16((u8*)buf);
-			m_env.removeActiveObject(id);
-		}
-
-		// Read added objects
-		is.read(buf, 2);
-		u16 added_count = readU16((u8*)buf);
-		for(unsigned int i=0; i<added_count; i++)
-		{
-			is.read(buf, 2);
-			u16 id = readU16((u8*)buf);
-			is.read(buf, 1);
-			u8 type = readU8((u8*)buf);
-			std::string data = deSerializeLongString(is);
-			// Add it
-			m_env.addActiveObject(id, type, data);
-		}
-	}
-	else if(command == TOCLIENT_ACTIVE_OBJECT_MESSAGES)
-	{
-		/*
-			u16 command
-			for all objects
-			{
-				u16 id
-				u16 message length
-				string message
-			}
-		*/
-		char buf[6];
-		// Get all data except the command number
-		std::string datastring((char*)&data[2], datasize-2);
-		// Throw them in an istringstream
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		while(is.eof() == false)
-		{
-			is.read(buf, 2);
-			u16 id = readU16((u8*)buf);
-			if(is.eof())
-				break;
-			is.read(buf, 2);
-			size_t message_size = readU16((u8*)buf);
-			std::string message;
-			message.reserve(message_size);
-			for(unsigned int i=0; i<message_size; i++)
-			{
-				is.read(buf, 1);
-				message.append(buf, 1);
-			}
-			// Pass on to the environment
-			m_env.processActiveObjectMessage(id, message);
-		}
-	}
-	else if(command == TOCLIENT_MOVEMENT)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		player->movement_acceleration_default   = readF1000(is) * BS;
-		player->movement_acceleration_air       = readF1000(is) * BS;
-		player->movement_acceleration_fast      = readF1000(is) * BS;
-		player->movement_speed_walk             = readF1000(is) * BS;
-		player->movement_speed_crouch           = readF1000(is) * BS;
-		player->movement_speed_fast             = readF1000(is) * BS;
-		player->movement_speed_climb            = readF1000(is) * BS;
-		player->movement_speed_jump             = readF1000(is) * BS;
-		player->movement_liquid_fluidity        = readF1000(is) * BS;
-		player->movement_liquid_fluidity_smooth = readF1000(is) * BS;
-		player->movement_liquid_sink            = readF1000(is) * BS;
-		player->movement_gravity                = readF1000(is) * BS;
-	}
-	else if(command == TOCLIENT_HP)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u8 oldhp   = player->hp;
-		u8 hp      = readU8(is);
-		player->hp = hp;
-
-		if(hp < oldhp)
-		{
-			// Add to ClientEvent queue
-			ClientEvent event;
-			event.type = CE_PLAYER_DAMAGE;
-			event.player_damage.amount = oldhp - hp;
-			m_client_event_queue.push_back(event);
-		}
-	}
-	else if(command == TOCLIENT_BREATH)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		player->setBreath(readU16(is));
-	}
-	else if(command == TOCLIENT_MOVE_PLAYER)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		v3f pos = readV3F1000(is);
-		f32 pitch = readF1000(is);
-		f32 yaw = readF1000(is);
-		player->setPosition(pos);
-
-		infostream<<"Client got TOCLIENT_MOVE_PLAYER"
-				<<" pos=("<<pos.X<<","<<pos.Y<<","<<pos.Z<<")"
-				<<" pitch="<<pitch
-				<<" yaw="<<yaw
-				<<std::endl;
-
-		/*
-			Add to ClientEvent queue.
-			This has to be sent to the main program because otherwise
-			it would just force the pitch and yaw values to whatever
-			the camera points to.
-		*/
-		ClientEvent event;
-		event.type = CE_PLAYER_FORCE_MOVE;
-		event.player_force_move.pitch = pitch;
-		event.player_force_move.yaw = yaw;
-		m_client_event_queue.push_back(event);
-
-		// Ignore damage for a few seconds, so that the player doesn't
-		// get damage from falling on ground
-		m_ignore_damage_timer = 3.0;
-	}
-	else if(command == TOCLIENT_PLAYERITEM)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_PLAYERITEM"<<std::endl;
-	}
-	else if(command == TOCLIENT_DEATHSCREEN)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		bool set_camera_point_target = readU8(is);
-		v3f camera_point_target = readV3F1000(is);
-		
-		ClientEvent event;
-		event.type                                = CE_DEATHSCREEN;
-		event.deathscreen.set_camera_point_target = set_camera_point_target;
-		event.deathscreen.camera_point_target_x   = camera_point_target.X;
-		event.deathscreen.camera_point_target_y   = camera_point_target.Y;
-		event.deathscreen.camera_point_target_z   = camera_point_target.Z;
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_ANNOUNCE_MEDIA)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		int num_files = readU16(is);
-		
-		infostream<<"Client: Received media announcement: packet size: "
-				<<datasize<<std::endl;
-
-		if (m_media_downloader == NULL ||
-				m_media_downloader->isStarted()) {
-			const char *problem = m_media_downloader ?
-				"we already saw another announcement" :
-				"all media has been received already";
-			errorstream<<"Client: Received media announcement but "
-				<<problem<<"! "
-				<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
-			return;
-		}
-
-		// Mesh update thread must be stopped while
-		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
-
-		for(int i=0; i<num_files; i++)
-		{
-			std::string name = deSerializeString(is);
-			std::string sha1_base64 = deSerializeString(is);
-			std::string sha1_raw = base64_decode(sha1_base64);
-			m_media_downloader->addFile(name, sha1_raw);
-		}
-
-		std::vector<std::string> remote_media;
-		try {
-			Strfnd sf(deSerializeString(is));
-			while(!sf.atend()) {
-				std::string baseurl = trim(sf.next(","));
-				if(baseurl != "")
-					m_media_downloader->addRemoteServer(baseurl);
-			}
-		}
-		catch(SerializationError& e) {
-			// not supported by server or turned off
-		}
-
-		m_media_downloader->step(this);
-	}
-	else if(command == TOCLIENT_MEDIA)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		/*
-			u16 command
-			u16 total number of file bunches
-			u16 index of this bunch
-			u32 number of files in this bunch
-			for each file {
-				u16 length of name
-				string name
-				u32 length of data
-				data
-			}
-		*/
-		int num_bunches = readU16(is);
-		int bunch_i = readU16(is);
-		u32 num_files = readU32(is);
-		infostream<<"Client: Received files: bunch "<<bunch_i<<"/"
-				<<num_bunches<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
-
-		if (num_files == 0)
-			return;
-
-		if (m_media_downloader == NULL ||
-				!m_media_downloader->isStarted()) {
-			const char *problem = m_media_downloader ?
-				"media has not been requested" :
-				"all media has been received already";
-			errorstream<<"Client: Received media but "
-				<<problem<<"! "
-				<<" bunch "<<bunch_i<<"/"<<num_bunches
-				<<" files="<<num_files
-				<<" size="<<datasize<<std::endl;
-			return;
-		}
-
-		// Mesh update thread must be stopped while
-		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
-
-		for(unsigned int i=0; i<num_files; i++){
-			std::string name = deSerializeString(is);
-			std::string data = deSerializeLongString(is);
-			m_media_downloader->conventionalTransferDone(
-					name, data, this);
-		}
-	}
-	else if(command == TOCLIENT_TOOLDEF)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_TOOLDEF"<<std::endl;
-	}
-	else if(command == TOCLIENT_NODEDEF)
-	{
-		infostream<<"Client: Received node definitions: packet size: "
-				<<datasize<<std::endl;
-
-		// Mesh update thread must be stopped while
-		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
-
-		// Decompress node definitions
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		std::istringstream tmp_is(deSerializeLongString(is), std::ios::binary);
-		std::ostringstream tmp_os;
-		decompressZlib(tmp_is, tmp_os);
-
-		// Deserialize node definitions
-		std::istringstream tmp_is2(tmp_os.str());
-		m_nodedef->deSerialize(tmp_is2);
-		m_nodedef_received = true;
-	}
-	else if(command == TOCLIENT_CRAFTITEMDEF)
-	{
-		infostream<<"Client: WARNING: Ignoring TOCLIENT_CRAFTITEMDEF"<<std::endl;
-	}
-	else if(command == TOCLIENT_ITEMDEF)
-	{
-		infostream<<"Client: Received item definitions: packet size: "
-				<<datasize<<std::endl;
-
-		// Mesh update thread must be stopped while
-		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
-
-		// Decompress item definitions
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		std::istringstream tmp_is(deSerializeLongString(is), std::ios::binary);
-		std::ostringstream tmp_os;
-		decompressZlib(tmp_is, tmp_os);
-
-		// Deserialize node definitions
-		std::istringstream tmp_is2(tmp_os.str());
-		m_itemdef->deSerialize(tmp_is2);
-		m_itemdef_received = true;
-	}
-	else if(command == TOCLIENT_PLAY_SOUND)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		s32 server_id = readS32(is);
-		std::string name = deSerializeString(is);
-		float gain = readF1000(is);
-		int type = readU8(is); // 0=local, 1=positional, 2=object
-		v3f pos = readV3F1000(is);
-		u16 object_id = readU16(is);
-		bool loop = readU8(is);
-		// Start playing
-		int client_id = -1;
-		switch(type){
-		case 0: // local
-			client_id = m_sound->playSound(name, loop, gain);
-			break;
-		case 1: // positional
-			client_id = m_sound->playSoundAt(name, loop, gain, pos);
-			break;
-		case 2: { // object
-			ClientActiveObject *cao = m_env.getActiveObject(object_id);
-			if(cao)
-				pos = cao->getPosition();
-			client_id = m_sound->playSoundAt(name, loop, gain, pos);
-			// TODO: Set up sound to move with object
-			break; }
-		default:
-			break;
-		}
-		if(client_id != -1){
-			m_sounds_server_to_client[server_id] = client_id;
-			m_sounds_client_to_server[client_id] = server_id;
-			if(object_id != 0)
-				m_sounds_to_objects[client_id] = object_id;
-		}
-	}
-	else if(command == TOCLIENT_STOP_SOUND)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		s32 server_id = readS32(is);
-		std::map<s32, int>::iterator i =
-				m_sounds_server_to_client.find(server_id);
-		if(i != m_sounds_server_to_client.end()){
-			int client_id = i->second;
-			m_sound->stopSound(client_id);
-		}
-	}
-	else if(command == TOCLIENT_PRIVILEGES)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-		
-		m_privileges.clear();
-		infostream<<"Client: Privileges updated: ";
-		u16 num_privileges = readU16(is);
-		for(unsigned int i=0; i<num_privileges; i++){
-			std::string priv = deSerializeString(is);
-			m_privileges.insert(priv);
-			infostream<<priv<<" ";
-		}
-		infostream<<std::endl;
-	}
-	else if(command == TOCLIENT_INVENTORY_FORMSPEC)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		// Store formspec in LocalPlayer
-		player->inventory_formspec = deSerializeLongString(is);
-	}
-	else if(command == TOCLIENT_DETACHED_INVENTORY)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		std::string name = deSerializeString(is);
-		
-		infostream<<"Client: Detached inventory update: \""<<name<<"\""<<std::endl;
-
-		Inventory *inv = NULL;
-		if(m_detached_inventories.count(name) > 0)
-			inv = m_detached_inventories[name];
-		else{
-			inv = new Inventory(m_itemdef);
-			m_detached_inventories[name] = inv;
-		}
-		inv->deSerialize(is);
-	}
-	else if(command == TOCLIENT_SHOW_FORMSPEC)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		std::string formspec = deSerializeLongString(is);
-		std::string formname = deSerializeString(is);
-
-		ClientEvent event;
-		event.type = CE_SHOW_FORMSPEC;
-		// pointer is required as event is a struct only!
-		// adding a std:string to a struct isn't possible
-		event.show_formspec.formspec = new std::string(formspec);
-		event.show_formspec.formname = new std::string(formname);
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_SPAWN_PARTICLE)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		v3f pos                 = readV3F1000(is);
-		v3f vel                 = readV3F1000(is);
-		v3f acc                 = readV3F1000(is);
-		float expirationtime    = readF1000(is);
-		float size              = readF1000(is);
-		bool collisiondetection = readU8(is);
-		std::string texture     = deSerializeLongString(is);
-		bool vertical           = false;
-		try {
-			vertical = readU8(is);
-		} catch (...) {}
-
-		ClientEvent event;
-		event.type                              = CE_SPAWN_PARTICLE;
-		event.spawn_particle.pos                = new v3f (pos);
-		event.spawn_particle.vel                = new v3f (vel);
-		event.spawn_particle.acc                = new v3f (acc);
-		event.spawn_particle.expirationtime     = expirationtime;
-		event.spawn_particle.size               = size;
-		event.spawn_particle.collisiondetection = collisiondetection;
-		event.spawn_particle.vertical           = vertical;
-		event.spawn_particle.texture            = new std::string(texture);
-
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_ADD_PARTICLESPAWNER)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u16 amount              = readU16(is);
-		float spawntime         = readF1000(is);
-		v3f minpos              = readV3F1000(is);
-		v3f maxpos              = readV3F1000(is);
-		v3f minvel              = readV3F1000(is);
-		v3f maxvel              = readV3F1000(is);
-		v3f minacc              = readV3F1000(is);
-		v3f maxacc              = readV3F1000(is);
-		float minexptime        = readF1000(is);
-		float maxexptime        = readF1000(is);
-		float minsize           = readF1000(is);
-		float maxsize           = readF1000(is);
-		bool collisiondetection = readU8(is);
-		std::string texture     = deSerializeLongString(is);
-		u32 id                  = readU32(is);
-		bool vertical = false;
-		try {
-			vertical = readU8(is);
-		} catch (...) {}
-
-		ClientEvent event;
-		event.type                                   = CE_ADD_PARTICLESPAWNER;
-		event.add_particlespawner.amount             = amount;
-		event.add_particlespawner.spawntime          = spawntime;
-		event.add_particlespawner.minpos             = new v3f (minpos);
-		event.add_particlespawner.maxpos             = new v3f (maxpos);
-		event.add_particlespawner.minvel             = new v3f (minvel);
-		event.add_particlespawner.maxvel             = new v3f (maxvel);
-		event.add_particlespawner.minacc             = new v3f (minacc);
-		event.add_particlespawner.maxacc             = new v3f (maxacc);
-		event.add_particlespawner.minexptime         = minexptime;
-		event.add_particlespawner.maxexptime         = maxexptime;
-		event.add_particlespawner.minsize            = minsize;
-		event.add_particlespawner.maxsize            = maxsize;
-		event.add_particlespawner.collisiondetection = collisiondetection;
-		event.add_particlespawner.vertical           = vertical;
-		event.add_particlespawner.texture            = new std::string(texture);
-		event.add_particlespawner.id                 = id;
-
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_DELETE_PARTICLESPAWNER)
-	{
-		std::string datastring((char*)&data[2], datasize-2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id = readU16(is);
-
-		ClientEvent event;
-		event.type                      = CE_DELETE_PARTICLESPAWNER;
-		event.delete_particlespawner.id = id;
-
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_HUDADD)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id           = readU32(is);
-		u8 type          = readU8(is);
-		v2f pos          = readV2F1000(is);
-		std::string name = deSerializeString(is);
-		v2f scale        = readV2F1000(is);
-		std::string text = deSerializeString(is);
-		u32 number       = readU32(is);
-		u32 item         = readU32(is);
-		u32 dir          = readU32(is);
-		v2f align        = readV2F1000(is);
-		v2f offset       = readV2F1000(is);
-		v3f world_pos;
-		v2s32 size;
-		try{
-			world_pos    = readV3F1000(is);
-		}catch(SerializationError &e) {};
-		try{
-			size = readV2S32(is);
-		} catch(SerializationError &e) {};
-
-		ClientEvent event;
-		event.type             = CE_HUDADD;
-		event.hudadd.id        = id;
-		event.hudadd.type      = type;
-		event.hudadd.pos       = new v2f(pos);
-		event.hudadd.name      = new std::string(name);
-		event.hudadd.scale     = new v2f(scale);
-		event.hudadd.text      = new std::string(text);
-		event.hudadd.number    = number;
-		event.hudadd.item      = item;
-		event.hudadd.dir       = dir;
-		event.hudadd.align     = new v2f(align);
-		event.hudadd.offset    = new v2f(offset);
-		event.hudadd.world_pos = new v3f(world_pos);
-		event.hudadd.size      = new v2s32(size);
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_HUDRM)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id = readU32(is);
-
-		ClientEvent event;
-		event.type     = CE_HUDRM;
-		event.hudrm.id = id;
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_HUDCHANGE)
-	{
-		std::string sdata;
-		v2f v2fdata;
-		v3f v3fdata;
-		u32 intdata = 0;
-		v2s32 v2s32data;
-		
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 id  = readU32(is);
-		u8 stat = (HudElementStat)readU8(is);
-		
-		if (stat == HUD_STAT_POS || stat == HUD_STAT_SCALE ||
-			stat == HUD_STAT_ALIGN || stat == HUD_STAT_OFFSET)
-			v2fdata = readV2F1000(is);
-		else if (stat == HUD_STAT_NAME || stat == HUD_STAT_TEXT)
-			sdata = deSerializeString(is);
-		else if (stat == HUD_STAT_WORLD_POS)
-			v3fdata = readV3F1000(is);
-		else if (stat == HUD_STAT_SIZE )
-			v2s32data = readV2S32(is);
-		else
-			intdata = readU32(is);
-		
-		ClientEvent event;
-		event.type              = CE_HUDCHANGE;
-		event.hudchange.id      = id;
-		event.hudchange.stat    = (HudElementStat)stat;
-		event.hudchange.v2fdata = new v2f(v2fdata);
-		event.hudchange.v3fdata = new v3f(v3fdata);
-		event.hudchange.sdata   = new std::string(sdata);
-		event.hudchange.data    = intdata;
-		event.hudchange.v2s32data = new v2s32(v2s32data);
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_HUD_SET_FLAGS)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u32 flags = readU32(is);
-		u32 mask  = readU32(is);
-		
-		player->hud_flags &= ~mask;
-		player->hud_flags |= flags;
-	}
-	else if(command == TOCLIENT_HUD_SET_PARAM)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		u16 param         = readU16(is);
-		std::string value = deSerializeString(is);
-
-		if(param == HUD_PARAM_HOTBAR_ITEMCOUNT && value.size() == 4) {
-			s32 hotbar_itemcount = readS32((u8*) value.c_str());
-			if(hotbar_itemcount > 0 && hotbar_itemcount <= HUD_HOTBAR_ITEMCOUNT_MAX)
-				player->hud_hotbar_itemcount = hotbar_itemcount;
-		}
-		else if (param == HUD_PARAM_HOTBAR_IMAGE) {
-			((LocalPlayer *) player)->hotbar_image = value;
-		}
-		else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
-			((LocalPlayer *) player)->hotbar_selected_image = value;
-		}
-	}
-	else if(command == TOCLIENT_SET_SKY)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		video::SColor *bgcolor           = new video::SColor(readARGB8(is));
-		std::string *type                = new std::string(deSerializeString(is));
-		u16 count                        = readU16(is);
-		std::vector<std::string> *params = new std::vector<std::string>;
-
-		for(size_t i=0; i<count; i++)
-			params->push_back(deSerializeString(is));
-
-		ClientEvent event;
-		event.type            = CE_SET_SKY;
-		event.set_sky.bgcolor = bgcolor;
-		event.set_sky.type    = type;
-		event.set_sky.params  = params;
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		bool do_override        = readU8(is);
-		float day_night_ratio_f = (float)readU16(is) / 65536;
-
-		ClientEvent event;
-		event.type                                 = CE_OVERRIDE_DAY_NIGHT_RATIO;
-		event.override_day_night_ratio.do_override = do_override;
-		event.override_day_night_ratio.ratio_f     = day_night_ratio_f;
-		m_client_event_queue.push_back(event);
-	}
-	else if(command == TOCLIENT_LOCAL_PLAYER_ANIMATIONS)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-
-		player->local_animations[0] = readV2S32(is);
-		player->local_animations[1] = readV2S32(is);
-		player->local_animations[2] = readV2S32(is);
-		player->local_animations[3] = readV2S32(is);
-		player->local_animation_speed = readF1000(is);
-	}
-	else if(command == TOCLIENT_EYE_OFFSET)
-	{
-		std::string datastring((char *)&data[2], datasize - 2);
-		std::istringstream is(datastring, std::ios_base::binary);
-
-		LocalPlayer *player = m_env.getLocalPlayer();
-		assert(player != NULL);
-
-		player->eye_offset_first = readV3F1000(is);
-		player->eye_offset_third = readV3F1000(is);
-	}
-	else
-	{
-		infostream<<"Client: Ignoring unknown command "
-				<<command<<std::endl;
-	}
+	handleCommand(pkt);
 }
+#endif
 
+
+/*
 void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
+*/
 
+#if !MINETEST_PROTO
+void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
+	g_profiler->add("Client::Send", 1);
+	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
+}
+#else
+
+void Client::Send(NetworkPacket* pkt)
+{
+	g_profiler->add("Client::Send", 1);
+	m_con.Send(PEER_ID_SERVER,
+		serverCommandFactoryTable[pkt->getCommand()].channel,
+		pkt,
+		serverCommandFactoryTable[pkt->getCommand()].reliable);
+}
+#endif
+
+#if MINETEST_PROTO
 void Client::interact(u8 action, const PointedThing& pointed)
 {
-	if(m_state != LC_Ready){
-		infostream<<"Client::interact() "
-				"cancelled (not connected)"
-				<<std::endl;
+	if(m_state != LC_Ready) {
+		errorstream << "Client::interact() "
+				"Canceled (not connected)"
+				<< std::endl;
 		return;
 	}
-
-	std::ostringstream os(std::ios_base::binary);
 
 	/*
 		[0] u16 command
@@ -1915,220 +1002,311 @@ void Client::interact(u8 action, const PointedThing& pointed)
 		3: place block or item (to abovesurface)
 		4: use item
 	*/
-	writeU16(os, TOSERVER_INTERACT);
-	writeU8(os, action);
-	writeU16(os, getPlayerItem());
+
+	NetworkPacket pkt(TOSERVER_INTERACT, 1 + 2 + 0);
+
+	pkt << action;
+	pkt << (u16)getPlayerItem();
+
 	std::ostringstream tmp_os(std::ios::binary);
 	pointed.serialize(tmp_os);
-	os<<serializeLongString(tmp_os.str());
 
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
+	pkt.putLongString(tmp_os.str());
 
-	// Send as reliable
-	Send(0, data, true);
+	Send(&pkt);
+}
+
+void Client::deleteAuthData()
+{
+	if (!m_auth_data)
+		return;
+
+	switch (m_chosen_auth_mech) {
+		case AUTH_MECHANISM_FIRST_SRP:
+			break;
+		case AUTH_MECHANISM_SRP:
+		case AUTH_MECHANISM_LEGACY_PASSWORD:
+			srp_user_delete((SRPUser *) m_auth_data);
+			m_auth_data = NULL;
+			break;
+		case AUTH_MECHANISM_NONE:
+			break;
+	}
+	m_chosen_auth_mech = AUTH_MECHANISM_NONE;
+}
+
+
+AuthMechanism Client::choseAuthMech(const u32 mechs)
+{
+	if (mechs & AUTH_MECHANISM_SRP)
+		return AUTH_MECHANISM_SRP;
+
+	if (mechs & AUTH_MECHANISM_FIRST_SRP)
+		return AUTH_MECHANISM_FIRST_SRP;
+
+	if (mechs & AUTH_MECHANISM_LEGACY_PASSWORD)
+		return AUTH_MECHANISM_LEGACY_PASSWORD;
+
+	return AUTH_MECHANISM_NONE;
+}
+
+void Client::sendLegacyInit(const std::string &playerName, const std::string &playerPassword)
+{
+	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
+			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
+
+	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
+	
+	std::string tmp = playerName;
+	tmp.resize(tmp.size()+PLAYERNAME_SIZE);
+	pkt.putRawString(tmp.c_str(),PLAYERNAME_SIZE);
+	tmp = playerPassword;
+	tmp.resize(tmp.size()+PASSWORD_SIZE);
+	pkt.putRawString(tmp.c_str(), PASSWORD_SIZE);
+	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
+
+	Send(&pkt);
+}
+
+void Client::sendInit(const std::string &playerName)
+{
+	NetworkPacket pkt(TOSERVER_INIT, 1 + 2 + 2 + (1 + playerName.size()));
+
+	// we don't support network compression yet
+	u16 supp_comp_modes = NETPROTO_COMPRESSION_NONE;
+	pkt << (u8) SER_FMT_VER_HIGHEST_READ << (u16) supp_comp_modes;
+	pkt << (u16) CLIENT_PROTOCOL_VERSION_MIN << (u16) CLIENT_PROTOCOL_VERSION_MAX;
+	pkt << playerName;
+
+	Send(&pkt);
+}
+
+void Client::startAuth(AuthMechanism chosen_auth_mechanism)
+{
+	m_chosen_auth_mech = chosen_auth_mechanism;
+
+	switch (chosen_auth_mechanism) {
+		case AUTH_MECHANISM_FIRST_SRP: {
+			// send srp verifier to server
+			NetworkPacket resp_pkt(TOSERVER_FIRST_SRP, 0);
+			char *salt, *bytes_v;
+			std::size_t len_salt, len_v;
+			salt = NULL;
+			getSRPVerifier(getPlayerName(), m_password,
+				&salt, &len_salt, &bytes_v, &len_v);
+			resp_pkt
+				<< std::string((char*)salt, len_salt)
+				<< std::string((char*)bytes_v, len_v)
+				<< (u8)((m_password == "") ? 1 : 0);
+			free(salt);
+			free(bytes_v);
+			Send(&resp_pkt);
+			break;
+		}
+		case AUTH_MECHANISM_SRP:
+		case AUTH_MECHANISM_LEGACY_PASSWORD: {
+			u8 based_on = 1;
+
+			if (chosen_auth_mechanism == AUTH_MECHANISM_LEGACY_PASSWORD) {
+				m_password = translatePassword(getPlayerName(), m_password);
+				based_on = 0;
+			}
+
+			std::string playername_u = lowercase(getPlayerName());
+			m_auth_data = srp_user_new(SRP_SHA256, SRP_NG_2048,
+				getPlayerName().c_str(), playername_u.c_str(),
+				(const unsigned char *) m_password.c_str(),
+				m_password.length(), NULL, NULL);
+			char *bytes_A = 0;
+			size_t len_A = 0;
+			srp_user_start_authentication((struct SRPUser *) m_auth_data,
+				NULL, NULL, 0, (unsigned char **) &bytes_A, &len_A);
+
+			NetworkPacket resp_pkt(TOSERVER_SRP_BYTES_A, 0);
+			resp_pkt << std::string(bytes_A, len_A) << based_on;
+			Send(&resp_pkt);
+			break;
+		}
+		case AUTH_MECHANISM_NONE:
+			break; // not handled in this method
+	}
+}
+
+void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
+{
+	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof(v3s16) * blocks.size());
+
+	pkt << (u8) blocks.size();
+
+	u32 k = 0;
+	for(std::vector<v3s16>::iterator
+			j = blocks.begin();
+			j != blocks.end(); ++j) {
+		pkt << *j;
+		k++;
+	}
+
+	Send(&pkt);
+}
+
+void Client::sendGotBlocks(v3s16 block)
+{
+	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6);
+	pkt << (u8) 1 << block;
+	Send(&pkt);
+}
+
+void Client::sendRemovedSounds(std::vector<s32> &soundList)
+{
+	size_t server_ids = soundList.size();
+	assert(server_ids <= 0xFFFF);
+
+	NetworkPacket pkt(TOSERVER_REMOVED_SOUNDS, 2 + server_ids * 4);
+
+	pkt << (u16) (server_ids & 0xFFFF);
+
+	for(std::vector<s32>::iterator i = soundList.begin();
+			i != soundList.end(); i++)
+		pkt << *i;
+
+	Send(&pkt);
 }
 
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
-		const std::map<std::string, std::string> &fields)
+		const StringMap &fields)
 {
-	std::ostringstream os(std::ios_base::binary);
-
-	writeU16(os, TOSERVER_NODEMETA_FIELDS);
-	writeV3S16(os, p);
-	os<<serializeString(formname);
 	size_t fields_size = fields.size();
-	assert(fields_size <= 0xFFFF);
-	writeU16(os, (u16) (fields_size & 0xFFFF));
-	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
-		const std::string &name = i->first;
-		const std::string &value = i->second;
-		os<<serializeString(name);
-		os<<serializeLongString(value);
+
+	FATAL_ERROR_IF(fields_size > 0xFFFF, "Unsupported number of nodemeta fields");
+
+	NetworkPacket pkt(TOSERVER_NODEMETA_FIELDS, 0);
+
+	pkt << p << formname << (u16) (fields_size & 0xFFFF);
+
+	StringMap::const_iterator it;
+	for (it = fields.begin(); it != fields.end(); ++it) {
+		const std::string &name = it->first;
+		const std::string &value = it->second;
+		pkt << name;
+		pkt.putLongString(value);
 	}
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	Send(&pkt);
 }
-	
-void Client::sendInventoryFields(const std::string &formname,
-		const std::map<std::string, std::string> &fields)
-{
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_INVENTORY_FIELDS);
-	os<<serializeString(formname);
+void Client::sendInventoryFields(const std::string &formname,
+		const StringMap &fields)
+{
 	size_t fields_size = fields.size();
-	assert(fields_size <= 0xFFFF);
-	writeU16(os, (u16) (fields_size & 0xFFFF));
-	for(std::map<std::string, std::string>::const_iterator
-			i = fields.begin(); i != fields.end(); i++){
-		const std::string &name  = i->first;
-		const std::string &value = i->second;
-		os<<serializeString(name);
-		os<<serializeLongString(value);
+	FATAL_ERROR_IF(fields_size > 0xFFFF, "Unsupported number of inventory fields");
+
+	NetworkPacket pkt(TOSERVER_INVENTORY_FIELDS, 0);
+	pkt << formname << (u16) (fields_size & 0xFFFF);
+
+	StringMap::const_iterator it;
+	for (it = fields.begin(); it != fields.end(); ++it) {
+		const std::string &name  = it->first;
+		const std::string &value = it->second;
+		pkt << name;
+		pkt.putLongString(value);
 	}
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	Send(&pkt);
 }
 
 void Client::sendInventoryAction(InventoryAction *a)
 {
 	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
-	
-	// Write command
-	writeU16(buf, TOSERVER_INVENTORY_ACTION);
-	os.write((char*)buf, 2);
 
 	a->serialize(os);
-	
+
 	// Make data buffer
 	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+
+	NetworkPacket pkt(TOSERVER_INVENTORY_ACTION, s.size());
+	pkt.putRawString(s.c_str(),s.size());
+
+	Send(&pkt);
 }
 
-void Client::sendChatMessage(const std::wstring &message)
+void Client::sendChatMessage(const std::string &message)
 {
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[12];
-	
-	// Write command
-	writeU16(buf, TOSERVER_CHAT_MESSAGE);
-	os.write((char*)buf, 2);
-	
-	// Write length
-	size_t messagesize = message.size();
-	if (messagesize > 0xFFFF) {
-		messagesize = 0xFFFF;
-	}
-	writeU16(buf, (u16) messagesize);
-	os.write((char*)buf, 2);
-	
-	// Write string
-	for(unsigned int i=0; i<message.size(); i++)
-	{
-		u16 w = message[i];
-		writeU16(buf, w);
-		os.write((char*)buf, 2);
-	}
-	
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	NetworkPacket pkt(TOSERVER_CHAT_MESSAGE, 2 + message.size() * sizeof(u16));
+
+	pkt << narrow_to_wide(message);
+
+	Send(&pkt);
 }
 
-void Client::sendChangePassword(const std::wstring &oldpassword,
-                                const std::wstring &newpassword)
+void Client::sendChangePassword(const std::string &oldpassword,
+        const std::string &newpassword)
 {
 	Player *player = m_env.getLocalPlayer();
-	if(player == NULL)
+	if (player == NULL)
 		return;
 
 	std::string playername = player->getName();
-	std::string oldpwd = translatePassword(playername, oldpassword);
-	std::string newpwd = translatePassword(playername, newpassword);
+	if (m_proto_ver >= 25) {
+		// get into sudo mode and then send new password to server
+		m_password = oldpassword;
+		m_new_password = newpassword;
+		startAuth(choseAuthMech(m_sudo_auth_methods));
+	} else {
+		std::string oldpwd = translatePassword(playername, oldpassword);
+		std::string newpwd = translatePassword(playername, newpassword);
 
-	std::ostringstream os(std::ios_base::binary);
-	u8 buf[2+PASSWORD_SIZE*2];
-	/*
-		[0] u16 TOSERVER_PASSWORD
-		[2] u8[28] old password
-		[30] u8[28] new password
-	*/
+		NetworkPacket pkt(TOSERVER_PASSWORD_LEGACY, 2 * PASSWORD_SIZE);
 
-	writeU16(buf, TOSERVER_PASSWORD);
-	for(unsigned int i=0;i<PASSWORD_SIZE-1;i++)
-	{
-		buf[2+i] = i<oldpwd.length()?oldpwd[i]:0;
-		buf[30+i] = i<newpwd.length()?newpwd[i]:0;
+		for (u8 i = 0; i < PASSWORD_SIZE; i++) {
+			pkt << (u8) (i < oldpwd.length() ? oldpwd[i] : 0);
+		}
+
+		for (u8 i = 0; i < PASSWORD_SIZE; i++) {
+			pkt << (u8) (i < newpwd.length() ? newpwd[i] : 0);
+		}
+		Send(&pkt);
 	}
-	buf[2+PASSWORD_SIZE-1] = 0;
-	buf[30+PASSWORD_SIZE-1] = 0;
-	os.write((char*)buf, 2+PASSWORD_SIZE*2);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
 }
 
 
 void Client::sendDamage(u8 damage)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_DAMAGE);
-	writeU8(os, damage);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	NetworkPacket pkt(TOSERVER_DAMAGE, sizeof(u8));
+	pkt << damage;
+	Send(&pkt);
 }
 
 void Client::sendBreath(u16 breath)
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_BREATH);
-	writeU16(os, breath);
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	NetworkPacket pkt(TOSERVER_BREATH, sizeof(u16));
+	pkt << breath;
+	Send(&pkt);
 }
 
 void Client::sendRespawn()
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_RESPAWN);
-
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	NetworkPacket pkt(TOSERVER_RESPAWN, 0);
+	Send(&pkt);
 }
 
 void Client::sendReady()
 {
 	DSTACK(__FUNCTION_NAME);
-	std::ostringstream os(std::ios_base::binary);
 
-	writeU16(os, TOSERVER_CLIENT_READY);
-	writeU8(os,VERSION_MAJOR);
-	writeU8(os,VERSION_MINOR);
-	writeU8(os,(int)VERSION_PATCH_ORIG);
-	writeU8(os,0);
+	NetworkPacket pkt(TOSERVER_CLIENT_READY,
+			1 + 1 + 1 + 1 + 2 + sizeof(char) * strlen(g_version_hash));
 
-	writeU16(os,strlen(minetest_version_hash));
-	os.write(minetest_version_hash,strlen(minetest_version_hash));
+	pkt << (u8) VERSION_MAJOR << (u8) VERSION_MINOR << (u8) VERSION_PATCH
+		<< (u8) 0 << (u16) strlen(g_version_hash);
 
-	// Make data buffer
-	std::string s = os.str();
-	SharedBuffer<u8> data((u8*)s.c_str(), s.size());
-	// Send as reliable
-	Send(0, data, true);
+	pkt.putRawString(g_version_hash, (u16) strlen(g_version_hash));
+	Send(&pkt);
 }
 
 void Client::sendPlayerPos()
@@ -2156,13 +1334,13 @@ void Client::sendPlayerPos()
 		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
 		our_peer_id = m_con.GetPeerID();
 	}
-	
+
 	// Set peer id if not set already
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
-	// Check that an existing peer_id is the same as the connection's
+
 	assert(myplayer->peer_id == our_peer_id);
-	
+
 	v3f pf         = myplayer->getPosition();
 	v3f sf         = myplayer->getSpeed();
 	s32 pitch      = myplayer->getPitch() * 100;
@@ -2173,22 +1351,18 @@ void Client::sendPlayerPos()
 	v3s32 speed(sf.X*100, sf.Y*100, sf.Z*100);
 	/*
 		Format:
-		[0] u16 command
-		[2] v3s32 position*100
-		[2+12] v3s32 speed*100
-		[2+12+12] s32 pitch*100
-		[2+12+12+4] s32 yaw*100
-		[2+12+12+4+4] u32 keyPressed
+		[0] v3s32 position*100
+		[12] v3s32 speed*100
+		[12+12] s32 pitch*100
+		[12+12+4] s32 yaw*100
+		[12+12+4+4] u32 keyPressed
 	*/
-	SharedBuffer<u8> data(2+12+12+4+4+4);
-	writeU16(&data[0], TOSERVER_PLAYERPOS);
-	writeV3S32(&data[2], position);
-	writeV3S32(&data[2+12], speed);
-	writeS32(&data[2+12+12], pitch);
-	writeS32(&data[2+12+12+4], yaw);
-	writeU32(&data[2+12+12+4+4], keyPressed);
-	// Send as unreliable
-	Send(0, data, false);
+
+	NetworkPacket pkt(TOSERVER_PLAYERPOS, 12 + 12 + 4 + 4 + 4);
+
+	pkt << position << speed << pitch << yaw << keyPressed;
+
+	Send(&pkt);
 }
 
 void Client::sendPlayerItem(u16 item)
@@ -2202,63 +1376,58 @@ void Client::sendPlayerItem(u16 item)
 	// Set peer id if not set already
 	if(myplayer->peer_id == PEER_ID_INEXISTENT)
 		myplayer->peer_id = our_peer_id;
-	// Check that an existing peer_id is the same as the connection's
 	assert(myplayer->peer_id == our_peer_id);
 
-	SharedBuffer<u8> data(2+2);
-	writeU16(&data[0], TOSERVER_PLAYERITEM);
-	writeU16(&data[2], item);
+	NetworkPacket pkt(TOSERVER_PLAYERITEM, 2);
 
-	// Send as reliable
-	Send(0, data, true);
+	pkt << item;
+
+	Send(&pkt);
 }
 
-void Client::removeNode(v3s16 p)
+
+void Client::sendDrawControl() { }
+#endif
+
+
+void Client::removeNode(v3s16 p, int fast)
 {
 	std::map<v3s16, MapBlock*> modified_blocks;
 
-	try
-	{
-		m_env.getMap().removeNodeAndUpdate(p, modified_blocks);
+	try {
+		m_env.getMap().removeNodeAndUpdate(p, modified_blocks, fast ? fast : 2);
 	}
-	catch(InvalidPositionException &e)
-	{
+	catch(InvalidPositionException &e) {
 	}
-	
+
 	for(std::map<v3s16, MapBlock * >::iterator
 			i = modified_blocks.begin();
-			i != modified_blocks.end(); ++i)
-	{
-		addUpdateMeshTask(i->first, false);
+			i != modified_blocks.end(); ++i) {
+		addUpdateMeshTaskWithEdge(i->first, true);
 	}
-	// add urgent task to update the modified node
-	addUpdateMeshTaskForNode(p, true);
 }
 
-void Client::addNode(v3s16 p, MapNode n, bool remove_metadata)
+void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
 {
 	//TimeTaker timer1("Client::addNode()");
 
 	std::map<v3s16, MapBlock*> modified_blocks;
 
-	try
-	{
+	try {
 		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
-		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
+		m_env.getMap().addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast ? fast : 2);
 	}
-	catch(InvalidPositionException &e)
-	{}
-	
+	catch(InvalidPositionException &e) {
+	}
 	addUpdateMeshTaskForNode(p, true);
 
 	for(std::map<v3s16, MapBlock * >::iterator
 			i = modified_blocks.begin();
-			i != modified_blocks.end(); ++i)
-	{
-		addUpdateMeshTask(i->first, false);
+			i != modified_blocks.end(); ++i) {
+		addUpdateMeshTaskWithEdge(i->first, true);
 	}
 }
-	
+
 void Client::setPlayerControl(PlayerControl &control)
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
@@ -2268,6 +1437,7 @@ void Client::setPlayerControl(PlayerControl &control)
 
 void Client::selectPlayerItem(u16 item)
 {
+	m_previous_playeritem = m_playeritem;
 	m_playeritem = item;
 	m_inventory_updated = true;
 	sendPlayerItem(item);
@@ -2327,7 +1497,8 @@ Inventory* Client::getInventory(const InventoryLocation &loc)
 	}
 	break;
 	default:
-		assert(0);
+		FATAL_ERROR("Invalid inventory location type.");
+		break;
 	}
 	return NULL;
 }
@@ -2357,15 +1528,15 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	std::vector<DistanceSortedActiveObject> objects;
 
 	m_env.getActiveObjects(from_pos_f_on_map, max_d, objects);
-	
+
 	// Sort them.
 	// After this, the closest object is the first in the array.
 	std::sort(objects.begin(), objects.end());
 
-	for(unsigned int i=0; i<objects.size(); i++)
+	for(u32 i=0; i<objects.size(); i++)
 	{
 		ClientActiveObject *obj = objects[i].obj;
-		
+
 		core::aabbox3d<f32> *selection_box = obj->getSelectionBox();
 		if(selection_box == NULL)
 			continue;
@@ -2401,9 +1572,9 @@ int Client::getCrackLevel()
 	return m_crack_level;
 }
 
-void Client::setHighlighted(v3s16 pos, bool show_hud)
+void Client::setHighlighted(v3s16 pos, bool show_highlighted)
 {
-	m_show_hud = show_hud;
+	m_show_highlighted = show_highlighted;
 	v3s16 old_highlighted_pos = m_highlighted_pos;
 	m_highlighted_pos = pos;
 	addUpdateMeshTaskForNode(old_highlighted_pos, true);
@@ -2444,7 +1615,7 @@ u16 Client::getBreath()
 	return player->getBreath();
 }
 
-bool Client::getChatMessage(std::wstring &message)
+bool Client::getChatMessage(std::string &message)
 {
 	if(m_chat_queue.size() == 0)
 		return false;
@@ -2452,30 +1623,34 @@ bool Client::getChatMessage(std::wstring &message)
 	return true;
 }
 
-void Client::typeChatMessage(const std::wstring &message)
+void Client::typeChatMessage(const std::string &message)
 {
 	// Discard empty line
-	if(message == L"")
+	if(message.empty())
 		return;
 
 	// Send to others
 	sendChatMessage(message);
 
 	// Show locally
-	if (message[0] == L'/')
+	if (message[0] == '/')
 	{
-		m_chat_queue.push_back((std::wstring)L"issued command: " + message);
+		m_chat_queue.push("issued command: " + message);
 	}
+
+	//freeminer display self message after recieving from server
+#if MINETEST_PROTO
 	else
 	{
 		LocalPlayer *player = m_env.getLocalPlayer();
 		assert(player != NULL);
-		std::wstring name = narrow_to_wide(player->getName());
-		m_chat_queue.push_back((std::wstring)L"<" + name + L"> " + message);
+		std::string name = (player->getName());
+		m_chat_queue.push(std::string() + "<" + name + "> " + message);
 	}
+#endif
 }
 
-void Client::addUpdateMeshTask(v3s16 p, bool urgent)
+void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 {
 	//ScopeProfiler sp(g_profiler, "Client: Mesh prepare");
 	MapBlock *b = m_env.getMap().getBlockNoCreateNoEx(p);
@@ -2485,8 +1660,8 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 	/*
 		Create a task to update the mesh of the block
 	*/
-
-	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_env.getMap(), m_env.getClientMap().getControl()));
+	auto & draw_control = m_env.getClientMap().getControl();
+	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders, m_env.getMap(), draw_control));
 
 	{
 		//TimeTaker timer("data fill");
@@ -2494,22 +1669,28 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent)
 		// Debug: 1-6ms, avg=2ms
 		data->fill(b);
 
-#if ! CMAKE_THREADS
-		data->fill_data();
+#if ! ENABLE_THREADS
+		if (!data->fill_data())
+			return;
 #endif
 
 		data->setCrack(m_crack_level, m_crack_pos);
-		data->setHighlighted(m_highlighted_pos, m_show_hud);
-		data->setSmoothLighting(g_settings->getBool("smooth_lighting"));
-		data->step = getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
+		data->setHighlighted(m_highlighted_pos, m_show_highlighted);
+		data->setSmoothLighting(m_cache_smooth_lighting);
+		data->step = step ? step : getFarmeshStep(data->draw_control, getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)), p);
 		data->range = getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p);
+		if (step)
+			data->no_draw = true;
 	}
 
 	// Add task to queue
-	m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	//unsigned int qsize = 
+	//m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
+	m_mesh_update_thread.enqueueUpdate(p, data, urgent);
+	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 }
 
-void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent)
+void Client::addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent)
 {
 	for (int i=0;i<7;i++)
 	{
@@ -2523,19 +1704,20 @@ void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool urgent)
 
 void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent)
 {
+/*
 	{
 		v3s16 p = nodepos;
 		infostream<<"Client::addUpdateMeshTaskForNode(): "
 				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"
 				<<std::endl;
 	}
+*/
 
-	v3s16 blockpos          = getNodeBlockPos(nodepos);
+	v3s16 blockpos = getNodeBlockPos(nodepos);
 	v3s16 blockpos_relative = blockpos * MAP_BLOCKSIZE;
 
 	try{
-		v3s16 p = blockpos + v3s16(0,0,0);
-		addUpdateMeshTask(p, urgent);
+		addUpdateMeshTask(blockpos, urgent);
 	}
 	catch(InvalidPositionException &e){}
 
@@ -2593,113 +1775,216 @@ float Client::mediaReceiveProgress()
 		return 1.0; // downloader only exists when not yet done
 }
 
-void Client::afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font)
-{
-	infostream<<"Client::afterContentReceived() started"<<std::endl;
-	//assert(m_itemdef_received);
-	//assert(m_nodedef_received);
-	//assert(mediaReceived());
-	
+typedef struct TextureUpdateArgs {
+	IrrlichtDevice *device;
+	gui::IGUIEnvironment *guienv;
+	u32 last_time_ms;
+	u16 last_percent;
+	const wchar_t* text_base;
+} TextureUpdateArgs;
 
-	bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+void texture_update_progress(void *args, u32 progress, u32 max_progress)
+{
+		TextureUpdateArgs* targs = (TextureUpdateArgs*) args;
+		u16 cur_percent = ceil(progress / (double) max_progress * 100.);
+
+		// update the loading menu -- if neccessary
+		bool do_draw = false;
+		u32 time_ms = targs->last_time_ms;
+		if (cur_percent != targs->last_percent) {
+			targs->last_percent = cur_percent;
+			time_ms = getTimeMs();
+			// only draw when the user will notice something:
+			do_draw = (time_ms - targs->last_time_ms > 100);
+		}
+
+		if (do_draw) {
+			targs->last_time_ms = time_ms;
+			std::basic_stringstream<wchar_t> strm;
+			strm << targs->text_base << " " << targs->last_percent << "%...";
+			draw_load_screen(strm.str(), targs->device, targs->guienv, 0,
+				72 + (u16) ((18. / 100.) * (double) targs->last_percent));
+		}
+}
+
+void Client::afterContentReceived(IrrlichtDevice *device)
+{
+	//infostream<<"Client::afterContentReceived() started"<<std::endl;
+
+	bool headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	//bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+
+	const wchar_t* text = wgettext("Loading textures...");
+
+	// Clear cached pre-scaled 2D GUI images, as this cache
+	// might have images with the same name but different
+	// content from previous sessions.
+	guiScalingCacheClear(device->getVideoDriver());
 
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
-	if (!no_output)
-		m_tsrc->rebuildImagesAndTextures();
+	draw_load_screen(text,device, guienv, 0, 70);
+	if (!headless_optimize)
+	m_tsrc->rebuildImagesAndTextures();
+	delete[] text;
 
 	// Rebuild shaders
 	infostream<<"- Rebuilding shaders"<<std::endl;
-	if (!no_output)
-		m_shsrc->rebuildShaders();
+	text = wgettext("Rebuilding shaders...");
+	draw_load_screen(text, device, guienv, 0, 71);
+	if (!headless_optimize)
+	m_shsrc->rebuildShaders();
+	delete[] text;
 
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
+	text = wgettext("Initializing nodes...");
+	draw_load_screen(text, device, guienv, 0, 72);
 	m_nodedef->updateAliases(m_itemdef);
+	std::string texture_path = g_settings->get("texture_path");
+	if (texture_path != "" && fs::IsDir(texture_path))
+		m_nodedef->applyTextureOverrides(texture_path + DIR_DELIM + "override.txt");
+	m_nodedef->setNodeRegistrationStatus(true);
+	m_nodedef->runNodeResolveCallbacks();
+	delete[] text;
 
+	if (!headless_optimize) {
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
-	if (!no_output)
-	m_nodedef->updateTextures(this);
+	TextureUpdateArgs tu_args;
+	tu_args.device = device;
+	tu_args.guienv = guienv;
+	tu_args.last_time_ms = getTimeMs();
+	tu_args.last_percent = 0;
+	tu_args.text_base =  wgettext("Initializing nodes");
+	m_nodedef->updateTextures(this, texture_update_progress, &tu_args);
+	delete[] tu_args.text_base;
+	}
 
 	// Preload item textures and meshes if configured to
-	if(!no_output && g_settings->getBool("preload_item_visuals"))
+	if(!headless_optimize && g_settings->getBool("preload_item_visuals"))
 	{
 		verbosestream<<"Updating item textures and meshes"<<std::endl;
-		wchar_t* text = wgettext("Item textures...");
-		draw_load_screen(text, device, guienv, font, 0, 0);
+		text = wgettext("Item textures...");
+		draw_load_screen(text, device, guienv, 0, 0);
 		std::set<std::string> names = m_itemdef->getAll();
 		size_t size = names.size();
 		size_t count = 0;
 		int percent = 0;
 		for(std::set<std::string>::const_iterator
-				i = names.begin(); i != names.end(); ++i){
+				i = names.begin(); i != names.end(); ++i)
+		{
 			// Asking for these caches the result
 			m_itemdef->getInventoryTexture(*i, this);
 			m_itemdef->getWieldMesh(*i, this);
 			count++;
-			percent = count*100/size;
-			if (count%50 == 0) // only update every 50 item
-				draw_load_screen(text, device, guienv, font, 0, percent);
+			percent = (count * 100 / size * 0.2) + 80;
+			draw_load_screen(text, device, guienv, 0, percent);
 		}
 		delete[] text;
 	}
 
+	if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
-	infostream<<"- Starting mesh update thread"<<std::endl;
-	if (!no_output) {
-		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 2 : 1));
+		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
+		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
 		m_mesh_update_thread.Start(threads < 1 ? 1 : threads);
 	}
 
 	m_state = LC_Ready;
 	sendReady();
-	infostream<<"Client::afterContentReceived() done"<<std::endl;
+	text = wgettext("Done!");
+	draw_load_screen(text, device, guienv, 0, 100);
+	//infostream<<"Client::afterContentReceived() done"<<std::endl;
+	delete[] text;
 }
 
 float Client::getRTT(void)
 {
+#if MINETEST_PROTO
 	return m_con.getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
+#else
+	return 0;
+#endif
 }
 
 float Client::getCurRate(void)
 {
+#if MINETEST_PROTO
 	return ( m_con.getLocalStat(con::CUR_INC_RATE) +
 			m_con.getLocalStat(con::CUR_DL_RATE));
+#else
+	return 0;
+#endif
 }
 
 float Client::getAvgRate(void)
 {
+#if MINETEST_PROTO
 	return ( m_con.getLocalStat(con::AVG_INC_RATE) +
 			m_con.getLocalStat(con::AVG_DL_RATE));
+#else
+	return 0;
+#endif
 }
 
-void Client::makeScreenshot(IrrlichtDevice *device)
+void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)
 {
+	if (!device)
+		device = m_device;
 	irr::video::IVideoDriver *driver = device->getVideoDriver();
 	irr::video::IImage* const raw_image = driver->createScreenShot();
-	if (raw_image) {
-		irr::video::IImage* const image = driver->createImage(video::ECF_R8G8B8, 
-			raw_image->getDimension());
+
+	if (!raw_image)
+		return;
+
+	time_t t = time(NULL);
+	struct tm *tm = localtime(&t);
+
+	char timetstamp_c[64];
+	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
+
+	std::string filename_base = g_settings->get("screenshot_path")
+			+ DIR_DELIM
+			+ name
+			+ std::string(timetstamp_c);
+	std::string filename_ext = ".png";
+	std::string filename;
+
+	// Try to find a unique filename
+	unsigned serial = 0;
+
+	while (serial < SCREENSHOT_MAX_SERIAL_TRIES) {
+		filename = filename_base + (serial > 0 ? ("_" + itos(serial)) : "") + filename_ext;
+		std::ifstream tmp(filename.c_str());
+		if (!tmp.good())
+			break;	// File did not apparently exist, we'll go with it
+		serial++;
+	}
+
+	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
+		infostream << "Could not find suitable filename for screenshot" << std::endl;
+	} else {
+		irr::video::IImage* const image =
+				driver->createImage(video::ECF_R8G8B8, raw_image->getDimension());
 
 		if (image) {
 			raw_image->copyTo(image);
-			irr::c8 filename[256];
-			snprintf(filename, sizeof(filename), "%s" DIR_DELIM "screenshot_%u.png",
-				 g_settings->get("screenshot_path").c_str(),
-				 device->getTimer()->getRealTime());
-			std::stringstream sstr;
-			if (driver->writeImageToFile(image, filename)) {
+
+			std::ostringstream sstr;
+			if (driver->writeImageToFile(image, filename.c_str())) {
+				if (name == "screenshot_")
 				sstr << "Saved screenshot to '" << filename << "'";
 			} else {
 				sstr << "Failed to save screenshot '" << filename << "'";
 			}
-			m_chat_queue.push_back(narrow_to_wide(sstr.str()));
+			m_chat_queue.push(sstr.str());
 			infostream << sstr.str() << std::endl;
 			image->drop();
 		}
-		raw_image->drop();
 	}
+
+	raw_image->drop();
 }
 
 // IGameDef interface
@@ -2731,9 +2016,9 @@ scene::ISceneManager* Client::getSceneManager()
 }
 u16 Client::allocateUnknownNodeId(const std::string &name)
 {
-	errorstream<<"Client::allocateUnknownNodeId(): "
-			<<"Client cannot allocate node IDs"<<std::endl;
-	assert(0);
+	errorstream << "Client::allocateUnknownNodeId(): "
+			<< "Client cannot allocate node IDs" << std::endl;
+	FATAL_ERROR("Client allocated unknown node");
 	return CONTENT_IGNORE;
 }
 ISoundManager* Client::getSoundManager()
@@ -2745,25 +2030,29 @@ MtEventManager* Client::getEventManager()
 	return m_event;
 }
 
+ParticleManager* Client::getParticleManager()
+{
+	return &m_particle_manager;
+}
+
 scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 {
-	std::map<std::string, std::string>::const_iterator i =
-			m_mesh_data.find(filename);
-	if(i == m_mesh_data.end()){
-		errorstream<<"Client::getMesh(): Mesh not found: \""<<filename<<"\""
-				<<std::endl;
+	StringMap::const_iterator it = m_mesh_data.find(filename);
+	if (it == m_mesh_data.end()) {
+		errorstream << "Client::getMesh(): Mesh not found: \"" << filename
+			<< "\"" << std::endl;
 		return NULL;
 	}
-	const std::string &data    = i->second;
+	const std::string &data    = it->second;
 	scene::ISceneManager *smgr = m_device->getSceneManager();
 
 	// Create the mesh, remove it from cache and return it
 	// This allows unique vertex colors and other properties for each instance
 	Buffer<char> data_rw(data.c_str(), data.size()); // Const-incorrect Irrlicht
 	io::IFileSystem *irrfs = m_device->getFileSystem();
-	io::IReadFile *rfile   = irrfs->createMemoryReadFile(
+	io::IReadFile *rfile = irrfs->createMemoryReadFile(
 			*data_rw, data_rw.getSize(), filename.c_str());
-	assert(rfile);
+	FATAL_ERROR_IF(!rfile, "Could not create/open RAM file");
 
 	scene::IAnimatedMesh *mesh = smgr->getMesh(rfile);
 	rfile->drop();

@@ -35,8 +35,7 @@ bool ScriptApiServer::getAuth(const std::string &playername,
 	if (lua_type(L, -1) != LUA_TFUNCTION)
 		throw LuaError("Authentication handler missing get_auth");
 	lua_pushstring(L, playername.c_str());
-	if (lua_pcall(L, 1, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 1, m_errorhandler));
 	lua_remove(L, -2); // Remove auth handler
 
 	// nil = login not allowed
@@ -71,6 +70,9 @@ void ScriptApiServer::getAuthHandler()
 		lua_pop(L, 1);
 		lua_getfield(L, -1, "builtin_auth_handler");
 	}
+
+	setOriginFromTable(-1);
+
 	lua_remove(L, -2); // Remove core
 	if (lua_type(L, -1) != LUA_TTABLE)
 		throw LuaError("Authentication handler table not valid");
@@ -107,8 +109,7 @@ void ScriptApiServer::createAuth(const std::string &playername,
 		throw LuaError("Authentication handler missing create_auth");
 	lua_pushstring(L, playername.c_str());
 	lua_pushstring(L, password.c_str());
-	if (lua_pcall(L, 2, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 2, 0, m_errorhandler));
 }
 
 bool ScriptApiServer::setPassword(const std::string &playername,
@@ -123,8 +124,7 @@ bool ScriptApiServer::setPassword(const std::string &playername,
 		throw LuaError("Authentication handler missing set_password");
 	lua_pushstring(L, playername.c_str());
 	lua_pushstring(L, password.c_str());
-	if (lua_pcall(L, 2, 1, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 2, 1, m_errorhandler));
 	return lua_toboolean(L, -1);
 }
 
@@ -139,7 +139,7 @@ bool ScriptApiServer::on_chat_message(const std::string &name,
 	// Call callbacks
 	lua_pushstring(L, name.c_str());
 	lua_pushstring(L, message.c_str());
-	script_run_callbacks(L, 2, RUN_CALLBACKS_MODE_OR_SC);
+	runCallbacks(2, RUN_CALLBACKS_MODE_OR_SC);
 	bool ate = lua_toboolean(L, -1);
 	return ate;
 }
@@ -152,6 +152,6 @@ void ScriptApiServer::on_shutdown()
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "registered_on_shutdown");
 	// Call callbacks
-	script_run_callbacks(L, 0, RUN_CALLBACKS_MODE_FIRST);
+	runCallbacks(0, RUN_CALLBACKS_MODE_FIRST);
 }
 

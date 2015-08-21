@@ -28,8 +28,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v6.h"
 #include "cavegen.h"
 
-#define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
-#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
+//#define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
+//#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
 
 
 typedef struct {
@@ -61,7 +61,7 @@ public:
 	Noise *noise_float_islands2;
 	Noise *noise_float_islands3;
 	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
-	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, ManualMapVoxelManipulator *vm);
+	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm);
 
 };
 
@@ -80,7 +80,7 @@ struct MapgenIndevParams : public MapgenV6Params {
 	~MapgenIndevParams() {}
 
 	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void writeParams(Settings *settings) const;
 };
 
 class MapgenIndev : public MapgenV6, public Mapgen_features {

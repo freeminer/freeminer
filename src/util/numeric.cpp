@@ -23,80 +23,90 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "numeric.h"
 #include "mathconstants.h"
 
-#include "../log.h"
+#include "log.h"
 #include "../constants.h" // BS, MAP_BLOCKSIZE
+#include "../noise.h" // PseudoRandom, PcgRandom
+#include "../jthread/jmutexautolock.h"
 #include <string.h>
 #include <iostream>
 #include <atomic>
 
+std::map<u16, std::vector<v3s16> > FacePositionCache::m_cache;
+JMutex FacePositionCache::m_cache_mutex;
 // Calculate the borders of a "d-radius" cube
-void getFacePositions(std::list<v3s16> &list, u16 d)
+// TODO: Make it work without mutex and data races, probably thread-local
+std::vector<v3s16> FacePositionCache::getFacePositions(u16 d)
 {
-	if(d == 0)
-	{
-		list.push_back(v3s16(0,0,0));
+	JMutexAutoLock cachelock(m_cache_mutex);
+	if (m_cache.find(d) != m_cache.end())
+		return m_cache[d];
+
+	generateFacePosition(d);
+	return m_cache[d];
+
+}
+
+void FacePositionCache::generateFacePosition(u16 d)
+{
+	m_cache[d] = std::vector<v3s16>();
+	if(d == 0) {
+		m_cache[d].push_back(v3s16(0,0,0));
 		return;
 	}
-	if(d == 1)
-	{
+	if(d == 1) {
 		/*
 			This is an optimized sequence of coordinates.
 		*/
-		list.push_back(v3s16( 0, 1, 0)); // top
-		list.push_back(v3s16( 0, 0, 1)); // back
-		list.push_back(v3s16(-1, 0, 0)); // left
-		list.push_back(v3s16( 1, 0, 0)); // right
-		list.push_back(v3s16( 0, 0,-1)); // front
-		list.push_back(v3s16( 0,-1, 0)); // bottom
+		m_cache[d].push_back(v3s16( 0, 1, 0)); // top
+		m_cache[d].push_back(v3s16( 0, 0, 1)); // back
+		m_cache[d].push_back(v3s16(-1, 0, 0)); // left
+		m_cache[d].push_back(v3s16( 1, 0, 0)); // right
+		m_cache[d].push_back(v3s16( 0, 0,-1)); // front
+		m_cache[d].push_back(v3s16( 0,-1, 0)); // bottom
 		// 6
-		list.push_back(v3s16(-1, 0, 1)); // back left
-		list.push_back(v3s16( 1, 0, 1)); // back right
-		list.push_back(v3s16(-1, 0,-1)); // front left
-		list.push_back(v3s16( 1, 0,-1)); // front right
-		list.push_back(v3s16(-1,-1, 0)); // bottom left
-		list.push_back(v3s16( 1,-1, 0)); // bottom right
-		list.push_back(v3s16( 0,-1, 1)); // bottom back
-		list.push_back(v3s16( 0,-1,-1)); // bottom front
-		list.push_back(v3s16(-1, 1, 0)); // top left
-		list.push_back(v3s16( 1, 1, 0)); // top right
-		list.push_back(v3s16( 0, 1, 1)); // top back
-		list.push_back(v3s16( 0, 1,-1)); // top front
+		m_cache[d].push_back(v3s16(-1, 0, 1)); // back left
+		m_cache[d].push_back(v3s16( 1, 0, 1)); // back right
+		m_cache[d].push_back(v3s16(-1, 0,-1)); // front left
+		m_cache[d].push_back(v3s16( 1, 0,-1)); // front right
+		m_cache[d].push_back(v3s16(-1,-1, 0)); // bottom left
+		m_cache[d].push_back(v3s16( 1,-1, 0)); // bottom right
+		m_cache[d].push_back(v3s16( 0,-1, 1)); // bottom back
+		m_cache[d].push_back(v3s16( 0,-1,-1)); // bottom front
+		m_cache[d].push_back(v3s16(-1, 1, 0)); // top left
+		m_cache[d].push_back(v3s16( 1, 1, 0)); // top right
+		m_cache[d].push_back(v3s16( 0, 1, 1)); // top back
+		m_cache[d].push_back(v3s16( 0, 1,-1)); // top front
 		// 18
-		list.push_back(v3s16(-1, 1, 1)); // top back-left
-		list.push_back(v3s16( 1, 1, 1)); // top back-right
-		list.push_back(v3s16(-1, 1,-1)); // top front-left
-		list.push_back(v3s16( 1, 1,-1)); // top front-right
-		list.push_back(v3s16(-1,-1, 1)); // bottom back-left
-		list.push_back(v3s16( 1,-1, 1)); // bottom back-right
-		list.push_back(v3s16(-1,-1,-1)); // bottom front-left
-		list.push_back(v3s16( 1,-1,-1)); // bottom front-right
+		m_cache[d].push_back(v3s16(-1, 1, 1)); // top back-left
+		m_cache[d].push_back(v3s16( 1, 1, 1)); // top back-right
+		m_cache[d].push_back(v3s16(-1, 1,-1)); // top front-left
+		m_cache[d].push_back(v3s16( 1, 1,-1)); // top front-right
+		m_cache[d].push_back(v3s16(-1,-1, 1)); // bottom back-left
+		m_cache[d].push_back(v3s16( 1,-1, 1)); // bottom back-right
+		m_cache[d].push_back(v3s16(-1,-1,-1)); // bottom front-left
+		m_cache[d].push_back(v3s16( 1,-1,-1)); // bottom front-right
 		// 26
 		return;
 	}
 
 	// Take blocks in all sides, starting from y=0 and going +-y
-	for(s16 y=0; y<=d-1; y++)
-	{
+	for(s16 y=0; y<=d-1; y++) {
 		// Left and right side, including borders
-		for(s16 z=-d; z<=d; z++)
-		{
-			list.push_back(v3s16(d,y,z));
-			list.push_back(v3s16(-d,y,z));
-			if(y != 0)
-			{
-				list.push_back(v3s16(d,-y,z));
-				list.push_back(v3s16(-d,-y,z));
+		for(s16 z=-d; z<=d; z++) {
+			m_cache[d].push_back(v3s16(d,y,z));
+			m_cache[d].push_back(v3s16(-d,y,z));
+			if(y != 0) {
+				m_cache[d].push_back(v3s16(d,-y,z));
+				m_cache[d].push_back(v3s16(-d,-y,z));
 			}
 		}
 		// Back and front side, excluding borders
-		for(s16 x=-d+1; x<=d-1; x++)
-		{
-			list.push_back(v3s16(x,y,d));
-			list.push_back(v3s16(x,y,-d));
-			if(y != 0)
-			{
-				list.push_back(v3s16(x,-y,d));
-				list.push_back(v3s16(x,-y,-d));
+		for(s16 x=-d+1; x<=d-1; x++) {
+			m_cache[d].push_back(v3s16(x,y,d));
+			m_cache[d].push_back(v3s16(x,y,-d));
+			if(y != 0) {
+				m_cache[d].push_back(v3s16(x,-y,d));
+				m_cache[d].push_back(v3s16(x,-y,-d));
 			}
 		}
 	}
@@ -104,10 +114,9 @@ void getFacePositions(std::list<v3s16> &list, u16 d)
 	// Take the bottom and top face with borders
 	// -d<x<d, y=+-d, -d<z<d
 	for(s16 x=-d; x<=d; x++)
-	for(s16 z=-d; z<=d; z++)
-	{
-		list.push_back(v3s16(x,-d,z));
-		list.push_back(v3s16(x,d,z));
+	for(s16 z=-d; z<=d; z++) {
+		m_cache[d].push_back(v3s16(x,-d,z));
+		m_cache[d].push_back(v3s16(x,d,z));
 	}
 }
 
@@ -115,36 +124,32 @@ void getFacePositions(std::list<v3s16> &list, u16 d)
     myrand
 */
 
-static std::atomic_ulong next;
+PcgRandom g_pcgrand;
 
-/* RAND_MAX assumed to be 32767 */
-int myrand(void)
+u32 myrand()
 {
-   next = next * 1103515245 + 12345;
-   return((unsigned)(next/65536) % 32768);
+	return g_pcgrand.next();
 }
 
-void mysrand(unsigned seed)
+void mysrand(unsigned int seed)
 {
-   next = seed;
+	g_pcgrand.seed(seed);
+}
+
+void myrand_bytes(void *out, size_t len)
+{
+	g_pcgrand.bytes(out, len);
 }
 
 int myrand_range(int min, int max)
 {
-	if(max-min > MYRAND_MAX)
-	{
-		errorstream<<"WARNING: myrand_range: max-min > MYRAND_MAX"<<std::endl;
-        max = min + MYRAND_MAX;
-	}
-	if(min > max)
-	{
-		errorstream<<"WARNING: myrand_range: min > max"<<std::endl;
-		return max;
-	}
-	return (myrand()%(max-min+1))+min;
+	return g_pcgrand.range(min, max);
 }
 
-// 64-bit unaligned version of MurmurHash
+
+/*
+	64-bit unaligned version of MurmurHash
+*/
 u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 {
 	const u64 m = 0xc6a4a7935bd1e995ULL;
@@ -159,12 +164,12 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 		memcpy(&k, data, sizeof(u64));
 		data++;
 
-		k *= m; 
-		k ^= k >> r; 
-		k *= m; 
-		
+		k *= m;
+		k ^= k >> r;
+		k *= m;
+
 		h ^= k;
-		h *= m; 
+		h *= m;
 	}
 
 	const unsigned char *data2 = (const unsigned char *)data;
@@ -178,14 +183,13 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 		case 1: h ^= (u64)data2[0];
 				h *= m;
 	}
- 
+
 	h ^= h >> r;
 	h *= m;
 	h ^= h >> r;
-	
-	return h;
-} 
 
+	return h;
+}
 
 /*
 	blockpos: position of block in block coordinates
@@ -197,7 +201,7 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr)
 {
 	v3s16 blockpos_nodes = blockpos_b * MAP_BLOCKSIZE;
-	
+
 	// Block center position
 	v3f blockpos(
 			((float)blockpos_nodes.X + MAP_BLOCKSIZE/2) * BS,
@@ -213,15 +217,15 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 
 	if(distance_ptr)
 		*distance_ptr = d;
-	
+
 	// If block is far away, it's not in sight
 	if(d > range)
 		return false;
 
 	// Maximum radius of a block.  The magic number is
 	// sqrt(3.0) / 2.0 in literal form.
-	f32 block_max_radius = 0.866025403784 * MAP_BLOCKSIZE * BS;
-	
+	f32 block_max_radius = MAP_BLOCKSIZE * BS;
+
 	// If block is (nearly) touching the camera, don't
 	// bother validating further (that is, render it anyway)
 	if(d < block_max_radius)
@@ -244,11 +248,10 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	// Cosine of the angle between the camera direction
 	// and the block direction (camera_dir is an unit vector)
 	f32 cosangle = dforward / blockpos_adj.getLength();
-	
+
 	// If block is not in the field of view, skip it
 	if(cosangle < cos(camera_fov / 2))
 		return false;
 
 	return true;
 }
-

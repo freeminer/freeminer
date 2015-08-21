@@ -27,23 +27,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "database.h"
 #include "irrlichttypes.h"
-#include "util/lock.h"
-
-class ServerMap;
+#include "util/concurrent_map.h"
 
 class Database_Dummy : public Database
 {
 public:
-	Database_Dummy(ServerMap *map);
-	virtual void beginSave();
-	virtual void endSave();
-	virtual bool saveBlock(v3s16 blockpos, std::string &data);
-	virtual std::string loadBlock(v3s16 blockpos);
-	virtual void listAllLoadableBlocks(std::list<v3s16> &dst);
-	virtual int Initialized(void);
-	~Database_Dummy();
+	virtual bool saveBlock(const v3s16 &pos, const std::string &data);
+	virtual std::string loadBlock(const v3s16 &pos);
+	virtual bool deleteBlock(const v3s16 &pos);
+	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst);
+
 private:
-	ServerMap *srvmap;
-	shared_map<std::string, std::string> m_database;
+	concurrent_map<std::string, std::string> m_database;
 };
+
 #endif
+

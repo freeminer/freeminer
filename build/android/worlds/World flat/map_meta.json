@@ -1,0 +1,5 @@
+{
+	"mg_name" : "indev",
+	"mgv6_spflags" : "jungles, biomeblend, mudflow",
+	"mg_flags" : "flat, trees, caves, dungeons"
+}

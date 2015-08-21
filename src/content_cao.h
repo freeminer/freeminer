@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <map>
 #include "irrlichttypes_extrabloated.h"
-#include "content_object.h"
 #include "clientobject.h"
 #include "object_properties.h"
 #include "itemgroup.h"
@@ -64,7 +63,6 @@ private:
 	std::string m_name;
 	bool m_is_player;
 	bool m_is_local_player;
-	int m_id;
 	// Property-ish things
 	ObjectProperties m_prop;
 	//
@@ -75,8 +73,9 @@ private:
 	scene::IAnimatedMeshSceneNode *m_animated_meshnode;
 	WieldMeshSceneNode *m_wield_meshnode;
 	scene::IBillboardSceneNode *m_spritenode;
+	video::SColor m_nametag_color;
 	scene::ITextSceneNode* m_textnode;
-	scene::IShadowVolumeSceneNode* shadownode;
+	scene::IShadowVolumeSceneNode* m_shadownode;
 	v3f m_position;
 	v3f m_velocity;
 	v3f m_acceleration;
@@ -91,6 +90,7 @@ private:
 	v2s32 m_animation_range;
 	int m_animation_speed;
 	int m_animation_blend;
+	bool m_animation_loop;
 	std::map<std::string, core::vector2d<v3f> > m_bone_position; // stores position and rotation for each bone name
 	std::string m_attachment_bone;
 	v3f m_attachment_position;
@@ -119,7 +119,7 @@ public:
 		return new GenericCAO(gamedef, env);
 	}
 
-	inline u8 getType() const
+	inline ActiveObjectType getType() const
 	{
 		return ACTIVEOBJECT_TYPE_GENERIC;
 	}
@@ -166,6 +166,8 @@ public:
 		m_is_visible = toset;
 	}
 
+	void setChildrenVisible(bool toset);
+
 	void setAttachments();
 
 	void removeFromScene(bool permanent);
@@ -179,6 +181,8 @@ public:
 	}
 
 	void updateLight(u8 light_at_pos);
+
+	void updateLightNoCheck(u8 light_at_pos);
 
 	v3s16 getLightPosition();
 

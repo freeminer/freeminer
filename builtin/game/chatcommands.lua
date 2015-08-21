@@ -10,6 +10,7 @@ function core.register_chatcommand(cmd, def)
 	def.params = def.params or ""
 	def.description = def.description or ""
 	def.privs = def.privs or {}
+	def.mod_origin = core.get_current_modname() or "??"
 	core.chatcommands[cmd] = def
 end
 
@@ -37,6 +38,7 @@ core.register_on_chat_message(function(name, message)
 	end
 	local has_privs, missing_privs = core.check_player_privs(name, cmd_def.privs)
 	if has_privs then
+		core.set_last_run_mod(cmd_def.mod_origin)
 		local success, message = cmd_def.func(name, param)
 		if message then
 			core.chat_send_player(name, message)
@@ -190,7 +192,7 @@ core.register_chatcommand("revoke", {
 		local revoke_privs = core.string_to_privs(revoke_priv_str)
 		local privs = core.get_player_privs(revoke_name)
 		for priv, _ in pairs(revoke_privs) do
-			if priv ~= "interact" and priv ~= "shout" and priv ~= "interact_extra" and
+			if priv ~= "interact" and priv ~= "shout" and
 					not core.check_player_privs(name, {privs=true}) then
 				return false, "Your privileges are insufficient."
 			end
@@ -230,21 +232,28 @@ core.register_chatcommand("setpassword", {
 		if not toname then
 			return false, "Name field required"
 		end
-		local actstr = "?"
+		local act_str_past = "?"
+		local act_str_pres = "?"
 		if not raw_password then
 			core.set_player_password(toname, "")
-			actstr = "cleared"
+			act_str_past = "cleared"
+			act_str_pres = "clears"
 		else
 			core.set_player_password(toname,
 					core.get_password_hash(toname,
 							raw_password))
-			actstr = "set"
+			act_str_past = "set"
+			act_str_pres = "sets"
 		end
 		if toname ~= name then
 			core.chat_send_player(toname, "Your password was "
-					.. actstr .. " by " .. name)
+					.. act_str_past .. " by " .. name)
 		end
-		return true, "Password of player \"" .. toname .. "\" " .. actstr
+
+		core.log("action", name .. " " .. act_str_pres
+		.. " password of " .. toname .. ".")
+
+		return true, "Password of player \"" .. toname .. "\" " .. act_str_past
 	end,
 })
 
@@ -253,11 +262,14 @@ core.register_chatcommand("clearpassword", {
 	description = "set empty password",
 	privs = {password=true},
 	func = function(name, param)
-		toname = param
+		local toname = param
 		if toname == "" then
 			return false, "Name field required"
 		end
 		core.set_player_password(toname, '')
+
+		core.log("action", name .. " clears password of " .. toname .. ".")
+
 		return true, "Password of player \"" .. toname .. "\" cleared"
 	end,
 })
@@ -309,7 +321,7 @@ core.register_chatcommand("teleport", {
 			teleportee:setpos(p)
 			return true, "Teleporting to "..core.pos_to_string(p)
 		end
-		
+
 		local teleportee = nil
 		local p = nil
 		local target_name = nil
@@ -346,7 +358,7 @@ core.register_chatcommand("teleport", {
 			return true, "Teleporting " .. teleportee_name
 					.. " to " .. core.pos_to_string(p)
 		end
-		
+
 		local teleportee = nil
 		local p = nil
 		local teleportee_name = nil
@@ -368,7 +380,7 @@ core.register_chatcommand("teleport", {
 					.. " to " .. target_name
 					.. " at " .. core.pos_to_string(p)
 		end
-		
+
 		return false, 'Invalid parameters ("' .. param
 				.. '") or player not found (see /help teleport)'
 	end,
@@ -404,6 +416,51 @@ core.register_chatcommand("set", {
 	end,
 })
 
+core.register_chatcommand("deleteblocks", {
+	params = "(here [radius]) | (<pos1> <pos2>)",
+	description = "delete map blocks contained in area pos1 to pos2",
+	privs = {server=true},
+	func = function(name, param)
+		local p1 = {}
+		local p2 = {}
+		local args = param:split(" ")
+		if args[1] == "here" then
+			local player = core.get_player_by_name(name)
+			if player == nil then
+				core.log("error", "player is nil")
+				return false, "Unable to get current position; player is nil"
+			end
+			p1 = player:getpos()
+			p2 = p1
+
+			if #args >= 2 then
+				local radius = tonumber(args[2]) or 0
+				p1 = vector.add(p1, radius)
+				p2 = vector.subtract(p2, radius)
+			end
+		else
+			local pos1, pos2 = unpack(param:split(") ("))
+			if pos1 == nil or pos2 == nil then
+				return false, "Incorrect area format. Expected: (x1,y1,z1) (x2,y2,z2)"
+			end
+
+			p1 = core.string_to_pos(pos1 .. ")")
+			p2 = core.string_to_pos("(" .. pos2)
+
+			if p1 == nil or p2 == nil then
+				return false, "Incorrect area format. Expected: (x1,y1,z1) (x2,y2,z2)"
+			end
+		end
+
+		if core.delete_area(p1, p2) then
+			return true, "Successfully cleared area ranging from " ..
+				core.pos_to_string(p1, 1) .. " to " .. core.pos_to_string(p2, 1)
+		else
+			return false, "Failed to clear one or more blocks in area"
+		end
+	end,
+})
+
 core.register_chatcommand("mods", {
 	params = "",
 	description = "List mods installed on the server",
@@ -427,6 +484,7 @@ local function handle_give_command(cmd, giver, receiver, stackstring)
 		return false, receiver .. " is not a known player"
 	end
 	local leftover = receiverref:get_inventory():add_item("main", itemstack)
+	local partiality
 	if leftover:is_empty() then
 		partiality = ""
 	elseif leftover:get_count() == itemstack:get_count() then
@@ -476,22 +534,29 @@ core.register_chatcommand("giveme", {
 })
 
 core.register_chatcommand("spawnentity", {
-	params = "<EntityName>",
-	description = "Spawn entity at your position",
+	params = "<EntityName> [<X>,<Y>,<Z>]",
+	description = "Spawn entity at given (or your) position",
 	privs = {give=true, interact=true},
 	func = function(name, param)
-		local entityname = string.match(param, "(.+)$")
+		local entityname, p = string.match(param, "^([^ ]+) *(.*)$")
 		if not entityname then
 			return false, "EntityName required"
 		end
-		core.log("action", ("/spawnentity invoked, entityname=%q")
-				:format(entityname))
+		core.log("action", ("%s invokes /spawnentity, entityname=%q")
+				:format(name, entityname))
 		local player = core.get_player_by_name(name)
 		if player == nil then
 			core.log("error", "Unable to spawn entity, player is nil")
 			return false, "Unable to spawn entity, player is nil"
 		end
-		local p = player:getpos()
+		if p == "" then
+			p = player:getpos()
+		else
+			p = core.string_to_pos(p)
+			if p == nil then
+				return false, "Invalid parameters ('" .. param .. "')"
+			end
+		end
 		p.y = p.y + 1
 		core.add_entity(p, entityname)
 		return true, ("%q spawned."):format(entityname)
@@ -533,6 +598,9 @@ core.register_chatcommand("rollback_check", {
 			.. " seconds=86400=24h, limit=5)",
 	privs = {rollback=true},
 	func = function(name, param)
+		if not core.setting_getbool("enable_rollback_recording") then
+			return false, "Rollback functions are disabled."
+		end
 		local range, seconds, limit =
 			param:match("(%d+) *(%d*) *(%d*)")
 		range = tonumber(range) or 0
@@ -546,6 +614,10 @@ core.register_chatcommand("rollback_check", {
 			local name = puncher:get_player_name()
 			core.chat_send_player(name, "Checking " .. core.pos_to_string(pos) .. "...")
 			local actions = core.rollback_get_node_actions(pos, range, seconds, limit)
+			if not actions then
+				core.chat_send_player(name, "Rollback functions are disabled")
+				return
+			end
 			local num_actions = #actions
 			if num_actions == 0 then
 				core.chat_send_player(name, "Nobody has touched"
@@ -577,6 +649,9 @@ core.register_chatcommand("rollback", {
 	description = "revert actions of a player; default for <seconds> is 60",
 	privs = {rollback=true},
 	func = function(name, param)
+		if not core.setting_getbool("enable_rollback_recording") then
+			return false, "Rollback functions are disabled."
+		end
 		local target_name, seconds = string.match(param, ":([^ ]+) *(%d*)")
 		if not target_name then
 			local player_name = nil
@@ -615,19 +690,41 @@ core.register_chatcommand("status", {
 })
 
 core.register_chatcommand("time", {
-	params = "<0...24000>",
+	params = "<0..23>:<0..59> | <0..24000>",
 	description = "set time of day",
-	privs = {settime=true},
+	privs = {},
 	func = function(name, param)
 		if param == "" then
-			return false, "Missing time."
+			local current_time = math.floor(core.get_timeofday() * 1440)
+			local minutes = current_time % 60
+			local hour = (current_time - minutes) / 60
+			return true, ("Current time is %d:%02d"):format(hour, minutes)
 		end
-		local newtime = tonumber(param)
-		if newtime == nil then
-			return false, "Invalid time."
+		local player_privs = minetest.get_player_privs(name)
+		if not player_privs.settime then
+			return false, "You don't have permission to run this command " ..
+				"(missing privilege: settime)."
 		end
-		core.set_timeofday((newtime % 24000) / 24000)
-		core.log("action", name .. " sets time " .. newtime)
+		local hour, minute = param:match("^(%d+):(%d+)$")
+		if not hour then
+			local new_time = tonumber(param)
+			if not new_time then
+				return false, "Invalid time."
+			end
+			-- Backward compatibility.
+			core.set_timeofday((new_time % 24000) / 24000)
+			core.log("action", name .. " sets time to " .. new_time)
+			return true, "Time of day changed."
+		end
+		hour = tonumber(hour)
+		minute = tonumber(minute)
+		if hour < 0 or hour > 23 then
+			return false, "Invalid hour (must be between 0 and 23 inclusive)."
+		elseif minute < 0 or minute > 59 then
+			return false, "Invalid minute (must be between 0 and 59 inclusive)."
+		end
+		core.set_timeofday((hour * 60 + minute) / 1440)
+		core.log("action", ("%s sets time to %d:%02d"):format(name, hour, minute))
 		return true, "Time of day changed."
 	end,
 })
@@ -685,7 +782,11 @@ core.register_chatcommand("kick", {
 		if not core.kick_player(tokick, reason) then
 			return false, "Failed to kick player " .. tokick
 		end
-		core.log("action", name .. " kicked " .. tokick)
+		local log_reason = ""
+		if reason then
+			log_reason = " with reason \"" .. reason .. "\""
+		end
+		core.log("action", name .. " kicks " .. tokick .. log_reason)
 		return true, "Kicked " .. tokick
 	end,
 })
@@ -755,3 +856,16 @@ core.register_chatcommand("last-login", {
 	end,
 })
 
+core.register_chatcommand( "stat", {
+	params = "[name]",
+	description = "show in-game action statistics",
+	func = function(name, param)
+		if param == "" then
+			param = name
+		elseif not core.get_player_by_name(param) then
+			return false, "No such player."
+		end
+		local formspec = core.stat_formspec(param)
+		core.show_formspec(name, 'stat', formspec)
+	end
+})

@@ -20,21 +20,24 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 
 #include "version.h"
-#include <fstream>
+//#include <fstream>
 #include "settings.h"
 #include "serverlist.h"
 #include "filesys.h"
 #include "porting.h"
 #include "log.h"
+#include "network/networkprotocol.h"
 #include "json/json.h"
 #include "convert_json.h"
 #include "httpfetch.h"
 #include "util/string.h"
+#include "config.h"
 
 namespace ServerList
 {
@@ -69,8 +72,11 @@ std::vector<ServerListSpec> getLocal()
 
 std::vector<ServerListSpec> getOnline()
 {
-	Json::Value root = fetchJsonValue(
-			(g_settings->get("serverlist_url") + "/list").c_str(), NULL);
+	std::ostringstream geturl;
+	geturl << g_settings->get("serverlist_url") <<
+		"/list?proto_version_min=" << CLIENT_PROTOCOL_VERSION_MIN <<
+		"&proto_version_max=" << CLIENT_PROTOCOL_VERSION_MAX;
+	Json::Value root = fetchJsonValue(geturl.str(), NULL);
 
 	std::vector<ServerListSpec> server_list;
 
@@ -172,6 +178,7 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 
 
 void sendAnnounce(const std::string &action,
+		const u16 port,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
 		const u32 game_time,
@@ -183,14 +190,17 @@ void sendAnnounce(const std::string &action,
 #if USE_CURL
 	Json::Value server;
 	server["action"] = action;
-	server["port"]    = g_settings->getU16("port");
+	server["port"] = port;
 	if (g_settings->exists("server_address")) {
 		server["address"] = g_settings->get("server_address");
 	}
 	if (action != "delete") {
+		bool strict_checking = g_settings->getBool("strict_protocol_version_checking");
 		server["name"]         = g_settings->get("server_name");
 		server["description"]  = g_settings->get("server_description");
-		server["version"]      = minetest_version_simple;
+		server["version"]      = g_version_string;
+		server["proto_min"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MIN;
+		server["proto_max"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MAX;
 		server["url"]          = g_settings->get("server_url");
 		server["creative"]     = g_settings->getBool("creative_mode");
 		server["damage"]       = g_settings->getBool("enable_damage");
@@ -209,15 +219,17 @@ void sendAnnounce(const std::string &action,
 			server["clients_list"].append(*it);
 		}
 		if (gameid != "") server["gameid"] = gameid;
+		server["proto"]        = g_settings->get("server_proto");
 	}
 
 	if (action == "start") {
 		server["dedicated"]         = g_settings->getBool("server_dedicated");
 		server["rollback"]          = g_settings->getBool("enable_rollback_recording");
 		server["mapgen"]            = mg_name;
-		server["privs"]             = g_settings->get("default_privs");
+		server["privs"]             = g_settings->getBool("creative_mode") ? g_settings->get("default_privs_creative") : g_settings->get("default_privs");
 		server["can_see_far_names"] = g_settings->getS16("player_transfer_distance") <= 0;
 		server["liquid_real"]       = g_settings->getBool("liquid_real");
+		server["version_hash"]      = g_version_hash;
 		server["mods"]              = Json::Value(Json::arrayValue);
 		for (std::vector<ModSpec>::const_iterator it = mods.begin();
 				it != mods.end();
@@ -235,16 +247,17 @@ void sendAnnounce(const std::string &action,
 	fetch_request.timeout = fetch_request.connect_timeout = 59000;
 	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
 
+#if !MINETEST_PROTO
+	// todo: need to patch masterserver script to parse multipart posts
 	std::string query = std::string("json=") + urlencode(writer.write(server));
 	if (query.size() < 1000)
 		fetch_request.url += "?" + query;
 	else
 		fetch_request.post_data = query;
-
-/*
+#else
 	fetch_request.post_fields["json"] = writer.write(server);
 	fetch_request.multipart = true;
-*/
+#endif
 
 	httpfetch_async(fetch_request);
 #endif

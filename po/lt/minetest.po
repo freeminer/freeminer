@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-11-23 17:37+0100\n"
+"POT-Creation-Date: 2015-07-17 07:23+0200\n"
 "PO-Revision-Date: 2013-12-11 19:23+0200\n"
 "Last-Translator: Jonas Kriaučiūnas <jonukas@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,634 +15,656 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%"
-"100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n"
+"%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Weblate 1.7-dev\n"
 
-#: builtin/gamemgr.lua:23
-msgid "Game Name"
-msgstr "Žaidimo pavadinimas"
-
-#: builtin/gamemgr.lua:25 builtin/mainmenu.lua:310
-msgid "Create"
-msgstr "Sukurti"
-
-#: builtin/gamemgr.lua:26 builtin/mainmenu.lua:311 builtin/modmgr.lua:331
-#: builtin/modmgr.lua:448 src/guiKeyChangeMenu.cpp:195 src/keycode.cpp:223
-msgid "Cancel"
-msgstr "Atsisakyti"
-
-#: builtin/gamemgr.lua:118
-msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
+#: builtin/fstk/ui.lua:82
+msgid "An error occured in a Lua script, such as a mod:"
 msgstr ""
 
-#: builtin/gamemgr.lua:216
-msgid "GAMES"
-msgstr "ŽAIDIMAI"
+#: builtin/fstk/ui.lua:84
+msgid "An error occured:"
+msgstr ""
 
-#: builtin/gamemgr.lua:217 builtin/mainmenu.lua:1076
-msgid "Games"
-msgstr "Žaidimai"
-
-#: builtin/gamemgr.lua:234
-msgid "Mods:"
-msgstr "Papildiniai:"
-
-#: builtin/gamemgr.lua:235
-msgid "edit game"
-msgstr "keisti žaidimą"
-
-#: builtin/gamemgr.lua:238
-msgid "new game"
-msgstr "naujas žaidimas"
-
-#: builtin/gamemgr.lua:248
-#, fuzzy
-msgid "EDIT GAME"
-msgstr "KEISTI ŽAIDIMĄ"
-
-#: builtin/gamemgr.lua:269
-msgid "Remove selected mod"
-msgstr "Pašalinti pasirinktą papildinį"
-
-#: builtin/gamemgr.lua:272
-msgid "<<-- Add mod"
-msgstr "<<-- Pridėti papildinį"
-
-#: builtin/mainmenu.lua:158
+#: builtin/fstk/ui.lua:89 builtin/mainmenu/store.lua:165
 msgid "Ok"
 msgstr "Gerai"
 
-#: builtin/mainmenu.lua:297
+#: builtin/mainmenu/common.lua:239 src/game.cpp:1891
+msgid "Loading..."
+msgstr "Įkeliama..."
+
+#: builtin/mainmenu/common.lua:240
+msgid "Try reenabling public serverlist and check your internet connection."
+msgstr ""
+
+#: builtin/mainmenu/dlg_config_world.lua:29
+msgid "World:"
+msgstr "Pasaulis:"
+
+#: builtin/mainmenu/dlg_config_world.lua:33
+#: builtin/mainmenu/dlg_config_world.lua:35
+msgid "Hide Game"
+msgstr "Slėpti vidinius"
+
+#: builtin/mainmenu/dlg_config_world.lua:39
+#: builtin/mainmenu/dlg_config_world.lua:41
+msgid "Hide mp content"
+msgstr "Slėpti papild. pakų turinį"
+
+#: builtin/mainmenu/dlg_config_world.lua:49
+msgid "Mod:"
+msgstr "Papildinys:"
+
+#: builtin/mainmenu/dlg_config_world.lua:51 builtin/mainmenu/tab_mods.lua:99
+msgid "Depends:"
+msgstr "Priklauso:"
+
+#: builtin/mainmenu/dlg_config_world.lua:54 src/guiKeyChangeMenu.cpp:191
+msgid "Save"
+msgstr "Įrašyti"
+
+#: builtin/mainmenu/dlg_config_world.lua:55
+#: builtin/mainmenu/dlg_create_world.lua:64
+#: builtin/mainmenu/dlg_rename_modpack.lua:33 src/guiKeyChangeMenu.cpp:199
+#: src/keycode.cpp:223
+msgid "Cancel"
+msgstr "Atsisakyti"
+
+#: builtin/mainmenu/dlg_config_world.lua:71
+msgid "Enable MP"
+msgstr "Įjungti papildinį"
+
+#: builtin/mainmenu/dlg_config_world.lua:73
+msgid "Disable MP"
+msgstr "Išjungti papildinį"
+
+#: builtin/mainmenu/dlg_config_world.lua:77
+#: builtin/mainmenu/dlg_config_world.lua:79
+msgid "enabled"
+msgstr "įjungtas"
+
+#: builtin/mainmenu/dlg_config_world.lua:85
+msgid "Enable all"
+msgstr "Įjungti visus"
+
+#: builtin/mainmenu/dlg_create_world.lua:50
 msgid "World name"
 msgstr "Pasaulio pavadinimas"
 
-#: builtin/mainmenu.lua:300
+#: builtin/mainmenu/dlg_create_world.lua:53
 #, fuzzy
 msgid "Seed"
 msgstr "Sėkla"
 
-#: builtin/mainmenu.lua:303
+#: builtin/mainmenu/dlg_create_world.lua:56
 msgid "Mapgen"
 msgstr ""
 
-#: builtin/mainmenu.lua:306
+#: builtin/mainmenu/dlg_create_world.lua:59
 msgid "Game"
 msgstr "Žaidimas"
 
-#: builtin/mainmenu.lua:319
-msgid "Delete World \"$1\"?"
-msgstr "Ištrinti pasaulį „$1“?"
+#: builtin/mainmenu/dlg_create_world.lua:63
+msgid "Create"
+msgstr "Sukurti"
 
-#: builtin/mainmenu.lua:320 builtin/modmgr.lua:877
-msgid "Yes"
-msgstr "Taip"
+#: builtin/mainmenu/dlg_create_world.lua:68
+msgid "You have no subgames installed."
+msgstr ""
 
-#: builtin/mainmenu.lua:321
-msgid "No"
-msgstr "Ne"
+#: builtin/mainmenu/dlg_create_world.lua:69
+msgid "Download one from minetest.net"
+msgstr ""
 
-#: builtin/mainmenu.lua:364
+#: builtin/mainmenu/dlg_create_world.lua:72
+msgid "Warning: The minimal development test is meant for developers."
+msgstr ""
+
+#: builtin/mainmenu/dlg_create_world.lua:73
+msgid "Download a subgame, such as minetest_game, from minetest.net"
+msgstr ""
+
+#: builtin/mainmenu/dlg_create_world.lua:99
 msgid "A world named \"$1\" already exists"
 msgstr "Pasaulis, pavadintas „$1“ jau yra"
 
-#: builtin/mainmenu.lua:381
+#: builtin/mainmenu/dlg_create_world.lua:116
 msgid "No worldname given or no game selected"
 msgstr ""
 
-#: builtin/mainmenu.lua:650
-msgid "To enable shaders the OpenGL driver needs to be used."
+#: builtin/mainmenu/dlg_delete_mod.lua:26
+msgid "Are you sure you want to delete \"$1\"?"
 msgstr ""
 
-#: builtin/mainmenu.lua:818
-msgid "CLIENT"
-msgstr "ŽAISTI TINKLE"
+#: builtin/mainmenu/dlg_delete_mod.lua:27
+#: builtin/mainmenu/dlg_delete_world.lua:25
+#: builtin/mainmenu/tab_settings.lua:100
+msgid "Yes"
+msgstr "Taip"
 
-#: builtin/mainmenu.lua:819
-msgid "Favorites:"
-msgstr "Mėgiami:"
-
-#: builtin/mainmenu.lua:820
-msgid "Address/Port"
-msgstr "Adresas/Prievadas"
-
-#: builtin/mainmenu.lua:821
-msgid "Name/Password"
-msgstr "Vardas/slaptažodis"
-
-#: builtin/mainmenu.lua:824
-msgid "Public Serverlist"
-msgstr "Viešų serverių sąrašas"
-
-#: builtin/mainmenu.lua:829 builtin/mainmenu.lua:874 builtin/mainmenu.lua:937
-#: src/keycode.cpp:229
-msgid "Delete"
-msgstr "Ištrinti"
-
-#: builtin/mainmenu.lua:833
-msgid "Connect"
-msgstr "Jungtis"
-
-#: builtin/mainmenu.lua:875 builtin/mainmenu.lua:938
-msgid "New"
-msgstr "Naujas"
-
-#: builtin/mainmenu.lua:876 builtin/mainmenu.lua:939
-msgid "Configure"
-msgstr "Konfigūruoti"
-
-#: builtin/mainmenu.lua:877
-msgid "Start Game"
-msgstr "Pradėti žaidimą"
-
-#: builtin/mainmenu.lua:878 builtin/mainmenu.lua:941
-msgid "Select World:"
-msgstr "Pasirinkite pasaulį:"
-
-#: builtin/mainmenu.lua:879
-msgid "START SERVER"
-msgstr "PALEISTI SERVERĮ"
-
-#: builtin/mainmenu.lua:880 builtin/mainmenu.lua:943
-#, fuzzy
-msgid "Creative Mode"
-msgstr "Kūrybinė veiksena"
-
-#: builtin/mainmenu.lua:882 builtin/mainmenu.lua:945
-msgid "Enable Damage"
-msgstr "Leisti sužeidimus"
-
-#: builtin/mainmenu.lua:884
-msgid "Public"
-msgstr "Viešas"
-
-#: builtin/mainmenu.lua:886
-msgid "Name"
-msgstr "Vardas"
-
-#: builtin/mainmenu.lua:888
-msgid "Password"
-msgstr "Slaptažodis"
-
-#: builtin/mainmenu.lua:889
-msgid "Server Port"
-msgstr "Serverio prievadas"
-
-#: builtin/mainmenu.lua:899
-msgid "SETTINGS"
-msgstr "NUSTATYMAI"
-
-#: builtin/mainmenu.lua:900
-msgid "Fancy trees"
+#: builtin/mainmenu/dlg_delete_mod.lua:28
+msgid "No of course not!"
 msgstr ""
 
-#: builtin/mainmenu.lua:902
-#, fuzzy
-msgid "Smooth Lighting"
-msgstr "Apšvietimo efektai"
-
-#: builtin/mainmenu.lua:904
-msgid "3D Clouds"
-msgstr "Trimačiai debesys"
-
-#: builtin/mainmenu.lua:906
-msgid "Opaque Water"
-msgstr "Nepermatomas vanduo"
-
-#: builtin/mainmenu.lua:909
-msgid "Mip-Mapping"
+#: builtin/mainmenu/dlg_delete_mod.lua:41
+msgid "Modmgr: failed to delete \"$1\""
 msgstr ""
 
-#: builtin/mainmenu.lua:911
-msgid "Anisotropic Filtering"
+#: builtin/mainmenu/dlg_delete_mod.lua:45
+msgid "Modmgr: invalid modpath \"$1\""
 msgstr ""
 
-#: builtin/mainmenu.lua:913
-msgid "Bi-Linear Filtering"
-msgstr ""
+#: builtin/mainmenu/dlg_delete_world.lua:24
+msgid "Delete World \"$1\"?"
+msgstr "Ištrinti pasaulį „$1“?"
 
-#: builtin/mainmenu.lua:915
-msgid "Tri-Linear Filtering"
-msgstr ""
+#: builtin/mainmenu/dlg_delete_world.lua:26
+msgid "No"
+msgstr "Ne"
 
-#: builtin/mainmenu.lua:918
-#, fuzzy
-msgid "Shaders"
-msgstr "Šešėliai"
-
-#: builtin/mainmenu.lua:920
-msgid "Preload item visuals"
-msgstr ""
-
-#: builtin/mainmenu.lua:922
-msgid "Enable Particles"
-msgstr ""
-
-#: builtin/mainmenu.lua:924
-msgid "Finite Liquid"
-msgstr ""
-
-#: builtin/mainmenu.lua:927
-msgid "Change keys"
-msgstr "Nustatyti klavišus"
-
-#: builtin/mainmenu.lua:940 src/keycode.cpp:248
-msgid "Play"
-msgstr "Žaisti"
-
-#: builtin/mainmenu.lua:942
-msgid "SINGLE PLAYER"
-msgstr "VIENAS ŽAIDĖJAS"
-
-#: builtin/mainmenu.lua:955
-msgid "Select texture pack:"
-msgstr ""
-
-#: builtin/mainmenu.lua:956
-msgid "TEXTURE PACKS"
-msgstr ""
-
-#: builtin/mainmenu.lua:976
-msgid "No information available"
-msgstr ""
-
-#: builtin/mainmenu.lua:1005
-msgid "Core Developers"
-msgstr "Pagrindiniai kūrėjai"
-
-#: builtin/mainmenu.lua:1020
-msgid "Active Contributors"
-msgstr "Aktyvūs pagalbininkai"
-
-#: builtin/mainmenu.lua:1028
-msgid "Previous Contributors"
-msgstr ""
-
-#: builtin/mainmenu.lua:1069
-msgid "Singleplayer"
-msgstr "Žaisti vienam"
-
-#: builtin/mainmenu.lua:1070
-msgid "Client"
-msgstr "Žaisti tinkle(klientas)"
-
-#: builtin/mainmenu.lua:1071
-msgid "Server"
-msgstr "Serveris"
-
-#: builtin/mainmenu.lua:1072
-msgid "Settings"
-msgstr "Nustatymai"
-
-#: builtin/mainmenu.lua:1073
-msgid "Texture Packs"
-msgstr ""
-
-#: builtin/mainmenu.lua:1080
-msgid "Mods"
-msgstr "Papildiniai"
-
-#: builtin/mainmenu.lua:1082
-msgid "Credits"
-msgstr "Padėkos"
-
-#: builtin/modmgr.lua:236
-msgid "MODS"
-msgstr "PAPILDINIAI"
-
-#: builtin/modmgr.lua:237
-msgid "Installed Mods:"
-msgstr "Įdiegti papildiniai:"
-
-#: builtin/modmgr.lua:243
-msgid "Add mod:"
-msgstr "Pridėti papildinį:"
-
-#: builtin/modmgr.lua:244
-msgid "Local install"
-msgstr ""
-
-#: builtin/modmgr.lua:245
-msgid "Online mod repository"
-msgstr "Papildiniai internete"
-
-#: builtin/modmgr.lua:284
-msgid "No mod description available"
-msgstr "Papildinio aprašymas nepateiktas"
-
-#: builtin/modmgr.lua:288
-msgid "Mod information:"
-msgstr "Papildinio informacija:"
-
-#: builtin/modmgr.lua:299
-msgid "Rename"
-msgstr "Pervadinti"
-
-#: builtin/modmgr.lua:301
-msgid "Uninstall selected modpack"
-msgstr "Pašalinti pasirinktą papildinį"
-
-#: builtin/modmgr.lua:312
-msgid "Uninstall selected mod"
-msgstr "Pašalinti pasirinktą papildinį"
-
-#: builtin/modmgr.lua:324
+#: builtin/mainmenu/dlg_rename_modpack.lua:26
 msgid "Rename Modpack:"
 msgstr "Pervadinti papildinių paką:"
 
-#: builtin/modmgr.lua:329 src/keycode.cpp:227
+#: builtin/mainmenu/dlg_rename_modpack.lua:31 src/keycode.cpp:227
 #, fuzzy
 msgid "Accept"
 msgstr "Priimti"
 
-#: builtin/modmgr.lua:423
-msgid "World:"
-msgstr "Pasaulis:"
-
-#: builtin/modmgr.lua:427 builtin/modmgr.lua:429
-msgid "Hide Game"
-msgstr "Slėpti vidinius"
-
-#: builtin/modmgr.lua:433 builtin/modmgr.lua:435
-msgid "Hide mp content"
-msgstr "Slėpti papild. pakų turinį"
-
-#: builtin/modmgr.lua:442
-msgid "Mod:"
-msgstr "Papildinys:"
-
-#: builtin/modmgr.lua:444
-msgid "Depends:"
-msgstr "Priklauso:"
-
-#: builtin/modmgr.lua:447 src/guiKeyChangeMenu.cpp:187
-msgid "Save"
-msgstr "Įrašyti"
-
-#: builtin/modmgr.lua:464
-msgid "Enable MP"
-msgstr "Įjungti papildinį"
-
-#: builtin/modmgr.lua:466
-msgid "Disable MP"
-msgstr "Išjungti papildinį"
-
-#: builtin/modmgr.lua:470 builtin/modmgr.lua:472
-msgid "enabled"
-msgstr "įjungtas"
-
-#: builtin/modmgr.lua:478
-msgid "Enable all"
-msgstr "Įjungti visus"
-
-#: builtin/modmgr.lua:577
-msgid "Select Mod File:"
-msgstr "Pasirinkite papildinio failą:"
-
-#: builtin/modmgr.lua:616
+#: builtin/mainmenu/modmgr.lua:344
 msgid "Install Mod: file: \"$1\""
 msgstr ""
 
-#: builtin/modmgr.lua:617
+#: builtin/mainmenu/modmgr.lua:345
 msgid ""
 "\n"
-"Install Mod: unsupported filetype \"$1\""
+"Install Mod: unsupported filetype \"$1\" or broken archive"
 msgstr ""
 
-#: builtin/modmgr.lua:638
+#: builtin/mainmenu/modmgr.lua:365
 msgid "Failed to install $1 to $2"
 msgstr "Nepavyko įdiegti $1 į $2"
 
-#: builtin/modmgr.lua:641
+#: builtin/mainmenu/modmgr.lua:368
 msgid "Install Mod: unable to find suitable foldername for modpack $1"
 msgstr ""
 
-#: builtin/modmgr.lua:661
+#: builtin/mainmenu/modmgr.lua:388
 msgid "Install Mod: unable to find real modname for: $1"
 msgstr ""
 
-#: builtin/modmgr.lua:855
-msgid "Modmgr: failed to delete \"$1\""
+#: builtin/mainmenu/store.lua:88
+msgid "Unsorted"
 msgstr ""
 
-#: builtin/modmgr.lua:859
-msgid "Modmgr: invalid modpath \"$1\""
+#: builtin/mainmenu/store.lua:99 builtin/mainmenu/store.lua:580
+msgid "Search"
 msgstr ""
 
-#: builtin/modmgr.lua:876
-msgid "Are you sure you want to delete \"$1\"?"
+#: builtin/mainmenu/store.lua:126
+msgid "Downloading $1, please wait..."
 msgstr ""
 
-#: builtin/modmgr.lua:878
-msgid "No of course not!"
+#: builtin/mainmenu/store.lua:160
+msgid "Successfully installed:"
 msgstr ""
 
-#: builtin/modstore.lua:183
-msgid "Page $1 of $2"
-msgstr ""
+#: builtin/mainmenu/store.lua:162
+#, fuzzy
+msgid "Shortname:"
+msgstr "Pasaulio pavadinimas"
 
-#: builtin/modstore.lua:243
+#: builtin/mainmenu/store.lua:472
 msgid "Rating"
 msgstr ""
 
-#: builtin/modstore.lua:251
+#: builtin/mainmenu/store.lua:497
 msgid "re-Install"
 msgstr "Įdiegti iš naujo"
 
-#: builtin/modstore.lua:253
+#: builtin/mainmenu/store.lua:499
 msgid "Install"
 msgstr "Įdiegti"
 
-#: src/client.cpp:2917
+#: builtin/mainmenu/store.lua:518
+msgid "Close store"
+msgstr ""
+
+#: builtin/mainmenu/store.lua:526
+msgid "Page $1 of $2"
+msgstr ""
+
+#: builtin/mainmenu/tab_credits.lua:22
+msgid "Credits"
+msgstr "Padėkos"
+
+#: builtin/mainmenu/tab_credits.lua:31
+msgid "Core Developers"
+msgstr "Pagrindiniai kūrėjai"
+
+#: builtin/mainmenu/tab_credits.lua:47
+msgid "Active Contributors"
+msgstr "Aktyvūs pagalbininkai"
+
+#: builtin/mainmenu/tab_credits.lua:54
+#, fuzzy
+msgid "Previous Core Developers"
+msgstr "Pagrindiniai kūrėjai"
+
+#: builtin/mainmenu/tab_credits.lua:59
+msgid "Previous Contributors"
+msgstr ""
+
+#: builtin/mainmenu/tab_mods.lua:30
+msgid "Installed Mods:"
+msgstr "Įdiegti papildiniai:"
+
+#: builtin/mainmenu/tab_mods.lua:39
+msgid "Online mod repository"
+msgstr "Papildiniai internete"
+
+#: builtin/mainmenu/tab_mods.lua:78
+msgid "No mod description available"
+msgstr "Papildinio aprašymas nepateiktas"
+
+#: builtin/mainmenu/tab_mods.lua:82
+msgid "Mod information:"
+msgstr "Papildinio informacija:"
+
+#: builtin/mainmenu/tab_mods.lua:93
+msgid "Rename"
+msgstr "Pervadinti"
+
+#: builtin/mainmenu/tab_mods.lua:95
+msgid "Uninstall selected modpack"
+msgstr "Pašalinti pasirinktą papildinį"
+
+#: builtin/mainmenu/tab_mods.lua:106
+msgid "Uninstall selected mod"
+msgstr "Pašalinti pasirinktą papildinį"
+
+#: builtin/mainmenu/tab_mods.lua:121
+msgid "Select Mod File:"
+msgstr "Pasirinkite papildinio failą:"
+
+#: builtin/mainmenu/tab_mods.lua:165
+msgid "Mods"
+msgstr "Papildiniai"
+
+#: builtin/mainmenu/tab_multiplayer.lua:23
+#, fuzzy
+msgid "Address / Port :"
+msgstr "Adresas/Prievadas"
+
+#: builtin/mainmenu/tab_multiplayer.lua:24
+#, fuzzy
+msgid "Name / Password :"
+msgstr "Vardas/slaptažodis"
+
+#: builtin/mainmenu/tab_multiplayer.lua:29
+#: builtin/mainmenu/tab_simple_main.lua:30
+msgid "Public Serverlist"
+msgstr "Viešų serverių sąrašas"
+
+#: builtin/mainmenu/tab_multiplayer.lua:34 builtin/mainmenu/tab_server.lua:26
+#: builtin/mainmenu/tab_singleplayer.lua:96 src/keycode.cpp:229
+msgid "Delete"
+msgstr "Ištrinti"
+
+#: builtin/mainmenu/tab_multiplayer.lua:38
+#: builtin/mainmenu/tab_simple_main.lua:34
+msgid "Connect"
+msgstr "Jungtis"
+
+#: builtin/mainmenu/tab_multiplayer.lua:62
+#: builtin/mainmenu/tab_simple_main.lua:45
+#, fuzzy
+msgid "Creative mode"
+msgstr "Kūrybinė veiksena"
+
+#: builtin/mainmenu/tab_multiplayer.lua:63
+#: builtin/mainmenu/tab_simple_main.lua:46
+#, fuzzy
+msgid "Damage enabled"
+msgstr "įjungtas"
+
+#: builtin/mainmenu/tab_multiplayer.lua:64
+#: builtin/mainmenu/tab_simple_main.lua:47
+#, fuzzy
+msgid "PvP enabled"
+msgstr "įjungtas"
+
+#: builtin/mainmenu/tab_multiplayer.lua:257
+msgid "Client"
+msgstr "Žaisti tinkle(klientas)"
+
+#: builtin/mainmenu/tab_server.lua:27 builtin/mainmenu/tab_singleplayer.lua:97
+msgid "New"
+msgstr "Naujas"
+
+#: builtin/mainmenu/tab_server.lua:28 builtin/mainmenu/tab_singleplayer.lua:98
+msgid "Configure"
+msgstr "Konfigūruoti"
+
+#: builtin/mainmenu/tab_server.lua:29
+msgid "Start Game"
+msgstr "Pradėti žaidimą"
+
+#: builtin/mainmenu/tab_server.lua:30
+#: builtin/mainmenu/tab_singleplayer.lua:100
+msgid "Select World:"
+msgstr "Pasirinkite pasaulį:"
+
+#: builtin/mainmenu/tab_server.lua:31 builtin/mainmenu/tab_simple_main.lua:76
+#: builtin/mainmenu/tab_singleplayer.lua:101
+#, fuzzy
+msgid "Creative Mode"
+msgstr "Kūrybinė veiksena"
+
+#: builtin/mainmenu/tab_server.lua:33 builtin/mainmenu/tab_simple_main.lua:78
+#: builtin/mainmenu/tab_singleplayer.lua:103
+msgid "Enable Damage"
+msgstr "Leisti sužeidimus"
+
+#: builtin/mainmenu/tab_server.lua:35
+msgid "Public"
+msgstr "Viešas"
+
+#: builtin/mainmenu/tab_server.lua:37 builtin/mainmenu/tab_simple_main.lua:25
+msgid "Name/Password"
+msgstr "Vardas/slaptažodis"
+
+#: builtin/mainmenu/tab_server.lua:45
+msgid "Bind Address"
+msgstr ""
+
+#: builtin/mainmenu/tab_server.lua:47
+msgid "Port"
+msgstr ""
+
+#: builtin/mainmenu/tab_server.lua:51
+msgid "Server Port"
+msgstr "Serverio prievadas"
+
+#: builtin/mainmenu/tab_server.lua:138
+#: builtin/mainmenu/tab_singleplayer.lua:165
+msgid "No world created or selected!"
+msgstr ""
+
+#: builtin/mainmenu/tab_server.lua:191
+msgid "Server"
+msgstr "Serveris"
+
+#: builtin/mainmenu/tab_settings.lua:21
+#, fuzzy
+msgid "Opaque Leaves"
+msgstr "Nepermatomas vanduo"
+
+#: builtin/mainmenu/tab_settings.lua:22
+msgid "Simple Leaves"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:23
+msgid "Fancy Leaves"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:32
+msgid "No Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:33
+msgid "Bilinear Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:34
+msgid "Trilinear Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:43
+msgid "No Mipmap"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:44
+msgid "Mipmap"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:45
+msgid "Mipmap + Aniso. Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:98
+msgid "Are you sure to reset your singleplayer world?"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:102
+msgid "No!!!"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:202
+#, fuzzy
+msgid "Smooth Lighting"
+msgstr "Apšvietimo efektai"
+
+#: builtin/mainmenu/tab_settings.lua:204
+msgid "Enable Particles"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:206
+msgid "3D Clouds"
+msgstr "Trimačiai debesys"
+
+#: builtin/mainmenu/tab_settings.lua:208
+msgid "Opaque Water"
+msgstr "Nepermatomas vanduo"
+
+#: builtin/mainmenu/tab_settings.lua:210
+#, fuzzy
+msgid "Connected Glass"
+msgstr "Jungtis"
+
+#: builtin/mainmenu/tab_settings.lua:212
+msgid "Node Highlighting"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:217
+msgid "Texturing:"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:222
+msgid "Rendering:"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:226
+msgid "Restart minetest for driver change to take effect"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:228
+#, fuzzy
+msgid "Shaders"
+msgstr "Šešėliai"
+
+#: builtin/mainmenu/tab_settings.lua:233
+msgid "Change keys"
+msgstr "Nustatyti klavišus"
+
+#: builtin/mainmenu/tab_settings.lua:236
+#, fuzzy
+msgid "Reset singleplayer world"
+msgstr "Žaisti vienam"
+
+#: builtin/mainmenu/tab_settings.lua:240
+msgid "GUI scale factor"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:244
+msgid "Scaling factor applied to menu elements: "
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:250
+msgid "Touch free target"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:256
+msgid "Touchthreshold (px)"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:263 builtin/mainmenu/tab_settings.lua:277
+msgid "Bumpmapping"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:265 builtin/mainmenu/tab_settings.lua:278
+msgid "Generate Normalmaps"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:267 builtin/mainmenu/tab_settings.lua:279
+msgid "Parallax Occlusion"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:269 builtin/mainmenu/tab_settings.lua:280
+msgid "Waving Water"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:271 builtin/mainmenu/tab_settings.lua:281
+msgid "Waving Leaves"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:273 builtin/mainmenu/tab_settings.lua:282
+msgid "Waving Plants"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:308
+msgid "To enable shaders the OpenGL driver needs to be used."
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:430
+msgid "Settings"
+msgstr "Nustatymai"
+
+#: builtin/mainmenu/tab_simple_main.lua:82
+#, fuzzy
+msgid "Start Singleplayer"
+msgstr "Žaisti vienam"
+
+#: builtin/mainmenu/tab_simple_main.lua:83
+#, fuzzy
+msgid "Config mods"
+msgstr "Konfigūruoti"
+
+#: builtin/mainmenu/tab_simple_main.lua:201
+#, fuzzy
+msgid "Main"
+msgstr "Pagrindinis meniu"
+
+#: builtin/mainmenu/tab_singleplayer.lua:99 src/keycode.cpp:248
+msgid "Play"
+msgstr "Žaisti"
+
+#: builtin/mainmenu/tab_singleplayer.lua:246
+msgid "Singleplayer"
+msgstr "Žaisti vienam"
+
+#: builtin/mainmenu/tab_texturepacks.lua:49
+msgid "Select texture pack:"
+msgstr ""
+
+#: builtin/mainmenu/tab_texturepacks.lua:69
+msgid "No information available"
+msgstr ""
+
+#: builtin/mainmenu/tab_texturepacks.lua:114
+msgid "Texturepacks"
+msgstr ""
+
+#: src/client.cpp:1721
+#, fuzzy
+msgid "Loading textures..."
+msgstr "Įkeliama..."
+
+#: src/client.cpp:1736
+#, fuzzy
+msgid "Rebuilding shaders..."
+msgstr "Ieškoma adreso..."
+
+#: src/client.cpp:1743
+msgid "Initializing nodes..."
+msgstr ""
+
+#: src/client.cpp:1760
+msgid "Initializing nodes"
+msgstr ""
+
+#: src/client.cpp:1768
 msgid "Item textures..."
 msgstr ""
 
-#: src/game.cpp:940
-msgid "Loading..."
-msgstr "Įkeliama..."
-
-#: src/game.cpp:1000
-msgid "Creating server...."
-msgstr "Kuriamas serveris...."
-
-#: src/game.cpp:1016
-#, fuzzy
-msgid "Creating client..."
-msgstr "Kuriamas klientas..."
-
-#: src/game.cpp:1025
-msgid "Resolving address..."
-msgstr "Ieškoma adreso..."
-
-#: src/game.cpp:1122
-msgid "Connecting to server..."
-msgstr "Jungiamasi prie serverio..."
-
-#: src/game.cpp:1219
-msgid "Item definitions..."
+#: src/client.cpp:1793
+msgid "Done!"
 msgstr ""
 
-#: src/game.cpp:1226
-msgid "Node definitions..."
+#: src/client/clientlauncher.cpp:185
+msgid "Main Menu"
+msgstr "Pagrindinis meniu"
+
+#: src/client/clientlauncher.cpp:223
+msgid "Player name too long."
 msgstr ""
 
-#: src/game.cpp:1233
-msgid "Media..."
+#: src/client/clientlauncher.cpp:261
+msgid "Connection error (timed out?)"
 msgstr ""
 
-#: src/game.cpp:3409
-msgid "Shutting down stuff..."
+#: src/client/clientlauncher.cpp:425
+msgid "No world selected and no address provided. Nothing to do."
 msgstr ""
 
-#: src/game.cpp:3439
-msgid ""
-"\n"
-"Check debug.txt for details."
+#: src/client/clientlauncher.cpp:432
+msgid "Provided world path doesn't exist: "
 msgstr ""
 
-#: src/guiDeathScreen.cpp:96
-msgid "You died."
-msgstr "Jūs numirėte."
+#: src/client/clientlauncher.cpp:441
+msgid "Could not find or load game \""
+msgstr ""
 
-#: src/guiDeathScreen.cpp:104
-msgid "Respawn"
-msgstr "Prisikelti"
+#: src/client/clientlauncher.cpp:459
+msgid "Invalid gamespec."
+msgstr ""
 
-#: src/guiFormSpecMenu.cpp:1656 src/guiMessageMenu.cpp:107
-#: src/guiTextInputMenu.cpp:139
+#: src/fontengine.cpp:70 src/fontengine.cpp:226
+msgid "needs_fallback_font"
+msgstr ""
+
+#: src/game.cpp:1052 src/guiFormSpecMenu.cpp:2065
 #, fuzzy
 msgid "Proceed"
 msgstr "Tęsti"
 
-#: src/guiKeyChangeMenu.cpp:121
-msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
+#: src/game.cpp:1072
+msgid "You died."
+msgstr "Jūs numirėte."
+
+#: src/game.cpp:1073
+msgid "Respawn"
+msgstr "Prisikelti"
+
+#: src/game.cpp:1092
+msgid ""
+"Default Controls:\n"
+"No menu visible:\n"
+"- single tap: button activate\n"
+"- double tap: place/use\n"
+"- slide finger: look around\n"
+"Menu/Inventory visible:\n"
+"- double tap (outside):\n"
+" -->close\n"
+"- touch stack, touch slot:\n"
+" --> move stack\n"
+"- touch&drag, tap 2nd finger\n"
+" --> place single item to slot\n"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:161
-msgid "\"Use\" = climb down"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:176
-msgid "Double tap \"jump\" to toggle fly"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:288
-msgid "Key already in use"
-msgstr "Klavišas jau naudojamas"
-
-#: src/guiKeyChangeMenu.cpp:363
-msgid "press key"
-msgstr "paspauskite klavišą"
-
-#: src/guiKeyChangeMenu.cpp:389
-msgid "Forward"
-msgstr "Pirmyn"
-
-#: src/guiKeyChangeMenu.cpp:390
-msgid "Backward"
-msgstr "Atgal"
-
-#: src/guiKeyChangeMenu.cpp:391 src/keycode.cpp:228
-msgid "Left"
-msgstr "Kairėn"
-
-#: src/guiKeyChangeMenu.cpp:392 src/keycode.cpp:228
-msgid "Right"
-msgstr "Dešinėn"
-
-#: src/guiKeyChangeMenu.cpp:393
-msgid "Use"
-msgstr "Naudoti"
-
-#: src/guiKeyChangeMenu.cpp:394
-msgid "Jump"
-msgstr "Pašokti"
-
-#: src/guiKeyChangeMenu.cpp:395
-msgid "Sneak"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:396
-msgid "Drop"
-msgstr "Mesti"
-
-#: src/guiKeyChangeMenu.cpp:397
-msgid "Inventory"
-msgstr "Inventorius"
-
-#: src/guiKeyChangeMenu.cpp:398
-msgid "Chat"
-msgstr "Susirašinėti"
-
-#: src/guiKeyChangeMenu.cpp:399
-msgid "Command"
-msgstr "Komanda"
-
-#: src/guiKeyChangeMenu.cpp:400
-msgid "Console"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:401
-msgid "Toggle fly"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:402
-msgid "Toggle fast"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:403
-msgid "Toggle noclip"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:404
-msgid "Range select"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:405
-msgid "Print stacks"
-msgstr ""
-
-#: src/guiPasswordChange.cpp:106
-msgid "Old Password"
-msgstr "Senas slaptažodis"
-
-#: src/guiPasswordChange.cpp:122
-msgid "New Password"
-msgstr "Naujas slaptažodis"
-
-#: src/guiPasswordChange.cpp:137
-msgid "Confirm Password"
-msgstr "Patvirtinti slaptažodį"
-
-#: src/guiPasswordChange.cpp:153
-msgid "Change"
-msgstr "Pakeisti"
-
-#: src/guiPasswordChange.cpp:162
-msgid "Passwords do not match!"
-msgstr "Slaptažodžiai nesutampa!"
-
-#: src/guiPauseMenu.cpp:122
-msgid "Continue"
-msgstr "Tęsti"
-
-#: src/guiPauseMenu.cpp:133
-msgid "Change Password"
-msgstr "Keisti slaptažodį"
-
-#: src/guiPauseMenu.cpp:143
-msgid "Sound Volume"
-msgstr ""
-
-#: src/guiPauseMenu.cpp:152
-msgid "Exit to Menu"
-msgstr "Grįžti į meniu"
-
-#: src/guiPauseMenu.cpp:161
-msgid "Exit to OS"
-msgstr "Išeiti iš žaidimo"
-
-#: src/guiPauseMenu.cpp:170
+#: src/game.cpp:1106
 msgid ""
 "Default Controls:\n"
 "- WASD: move\n"
@@ -657,11 +679,204 @@ msgid ""
 "- T: chat\n"
 msgstr ""
 
-#: src/guiVolumeChange.cpp:107
+#: src/game.cpp:1125
+msgid "Continue"
+msgstr "Tęsti"
+
+#: src/game.cpp:1129
+msgid "Change Password"
+msgstr "Keisti slaptažodį"
+
+#: src/game.cpp:1134
+msgid "Sound Volume"
+msgstr ""
+
+#: src/game.cpp:1136
+#, fuzzy
+msgid "Change Keys"
+msgstr "Nustatyti klavišus"
+
+#: src/game.cpp:1139
+msgid "Exit to Menu"
+msgstr "Grįžti į meniu"
+
+#: src/game.cpp:1141
+msgid "Exit to OS"
+msgstr "Išeiti iš žaidimo"
+
+#: src/game.cpp:1841
+msgid "Shutting down..."
+msgstr ""
+
+#: src/game.cpp:1948
+#, fuzzy
+msgid "Creating server..."
+msgstr "Kuriamas serveris...."
+
+#: src/game.cpp:1984
+#, fuzzy
+msgid "Creating client..."
+msgstr "Kuriamas klientas..."
+
+#: src/game.cpp:2159
+msgid "Resolving address..."
+msgstr "Ieškoma adreso..."
+
+#: src/game.cpp:2261
+msgid "Connecting to server..."
+msgstr "Jungiamasi prie serverio..."
+
+#: src/game.cpp:2317
+msgid "Item definitions..."
+msgstr ""
+
+#: src/game.cpp:2322
+msgid "Node definitions..."
+msgstr ""
+
+#: src/game.cpp:2329
+msgid "Media..."
+msgstr ""
+
+#: src/game.cpp:2334
+msgid "KiB/s"
+msgstr ""
+
+#: src/game.cpp:2338
+msgid "MiB/s"
+msgstr ""
+
+#: src/game.cpp:4363
+msgid ""
+"\n"
+"Check debug.txt for details."
+msgstr ""
+
+#: src/guiFormSpecMenu.cpp:2855
+msgid "Enter "
+msgstr ""
+
+#: src/guiFormSpecMenu.cpp:2875
+msgid "ok"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:125
+msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:165
+msgid "\"Use\" = climb down"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:180
+msgid "Double tap \"jump\" to toggle fly"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:295
+msgid "Key already in use"
+msgstr "Klavišas jau naudojamas"
+
+#: src/guiKeyChangeMenu.cpp:373
+msgid "press key"
+msgstr "paspauskite klavišą"
+
+#: src/guiKeyChangeMenu.cpp:399
+msgid "Forward"
+msgstr "Pirmyn"
+
+#: src/guiKeyChangeMenu.cpp:400
+msgid "Backward"
+msgstr "Atgal"
+
+#: src/guiKeyChangeMenu.cpp:401 src/keycode.cpp:228
+msgid "Left"
+msgstr "Kairėn"
+
+#: src/guiKeyChangeMenu.cpp:402 src/keycode.cpp:228
+msgid "Right"
+msgstr "Dešinėn"
+
+#: src/guiKeyChangeMenu.cpp:403
+msgid "Use"
+msgstr "Naudoti"
+
+#: src/guiKeyChangeMenu.cpp:404
+msgid "Jump"
+msgstr "Pašokti"
+
+#: src/guiKeyChangeMenu.cpp:405
+msgid "Sneak"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:406
+msgid "Drop"
+msgstr "Mesti"
+
+#: src/guiKeyChangeMenu.cpp:407
+msgid "Inventory"
+msgstr "Inventorius"
+
+#: src/guiKeyChangeMenu.cpp:408
+msgid "Chat"
+msgstr "Susirašinėti"
+
+#: src/guiKeyChangeMenu.cpp:409
+msgid "Command"
+msgstr "Komanda"
+
+#: src/guiKeyChangeMenu.cpp:410
+msgid "Console"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:411
+msgid "Toggle fly"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:412
+msgid "Toggle fast"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:413
+msgid "Toggle Cinematic"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:414
+msgid "Toggle noclip"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:415
+msgid "Range select"
+msgstr ""
+
+#: src/guiKeyChangeMenu.cpp:416
+msgid "Print stacks"
+msgstr ""
+
+#: src/guiPasswordChange.cpp:108
+msgid "Old Password"
+msgstr "Senas slaptažodis"
+
+#: src/guiPasswordChange.cpp:124
+msgid "New Password"
+msgstr "Naujas slaptažodis"
+
+#: src/guiPasswordChange.cpp:139
+msgid "Confirm Password"
+msgstr "Patvirtinti slaptažodį"
+
+#: src/guiPasswordChange.cpp:155
+msgid "Change"
+msgstr "Pakeisti"
+
+#: src/guiPasswordChange.cpp:164
+msgid "Passwords do not match!"
+msgstr "Slaptažodžiai nesutampa!"
+
+#: src/guiVolumeChange.cpp:105
 msgid "Sound Volume: "
 msgstr ""
 
-#: src/guiVolumeChange.cpp:121
+#: src/guiVolumeChange.cpp:119
 msgid "Exit"
 msgstr "Išeiti"
 
@@ -954,26 +1169,57 @@ msgstr ""
 msgid "Zoom"
 msgstr "Pritraukti"
 
-#: src/main.cpp:1472
-msgid "needs_fallback_font"
-msgstr ""
+#~ msgid "Game Name"
+#~ msgstr "Žaidimo pavadinimas"
 
-#: src/main.cpp:1547
-msgid "Main Menu"
-msgstr "Pagrindinis meniu"
+#~ msgid "GAMES"
+#~ msgstr "ŽAIDIMAI"
 
-#: src/main.cpp:1723
-msgid "No world selected and no address provided. Nothing to do."
-msgstr ""
+#~ msgid "Games"
+#~ msgstr "Žaidimai"
 
-#: src/main.cpp:1731
-msgid "Could not find or load game \""
-msgstr ""
+#~ msgid "Mods:"
+#~ msgstr "Papildiniai:"
 
-#: src/main.cpp:1745
-msgid "Invalid gamespec."
-msgstr ""
+#~ msgid "edit game"
+#~ msgstr "keisti žaidimą"
 
-#: src/main.cpp:1790
-msgid "Connection error (timed out?)"
-msgstr ""
+#~ msgid "new game"
+#~ msgstr "naujas žaidimas"
+
+#, fuzzy
+#~ msgid "EDIT GAME"
+#~ msgstr "KEISTI ŽAIDIMĄ"
+
+#~ msgid "Remove selected mod"
+#~ msgstr "Pašalinti pasirinktą papildinį"
+
+#~ msgid "<<-- Add mod"
+#~ msgstr "<<-- Pridėti papildinį"
+
+#~ msgid "CLIENT"
+#~ msgstr "ŽAISTI TINKLE"
+
+#~ msgid "Favorites:"
+#~ msgstr "Mėgiami:"
+
+#~ msgid "START SERVER"
+#~ msgstr "PALEISTI SERVERĮ"
+
+#~ msgid "Name"
+#~ msgstr "Vardas"
+
+#~ msgid "Password"
+#~ msgstr "Slaptažodis"
+
+#~ msgid "SETTINGS"
+#~ msgstr "NUSTATYMAI"
+
+#~ msgid "SINGLE PLAYER"
+#~ msgstr "VIENAS ŽAIDĖJAS"
+
+#~ msgid "MODS"
+#~ msgstr "PAPILDINIAI"
+
+#~ msgid "Add mod:"
+#~ msgstr "Pridėti papildinį:"

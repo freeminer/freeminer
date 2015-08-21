@@ -8,635 +8,672 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-11-23 17:37+0100\n"
-"PO-Revision-Date: 2014-10-30 19:27+0700\n"
-"Last-Translator: Muhammad Rifqi Priyo Susanto <muhammadrifqipriyosusanto@gmail.com>\n"
+"POT-Creation-Date: 2015-07-17 07:23+0200\n"
+"PO-Revision-Date: 2015-03-02 00:21+0700\n"
+"Last-Translator: Muhammad Rifqi Priyo Susanto "
+"<muhammadrifqipriyosusanto@gmail.com>\n"
 "Language-Team: Bahasa Indonesia <>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: builtin/gamemgr.lua:23
-msgid "Game Name"
-msgstr "Nama Permainan"
+#: builtin/fstk/ui.lua:82
+msgid "An error occured in a Lua script, such as a mod:"
+msgstr ""
 
-#: builtin/gamemgr.lua:25 builtin/mainmenu.lua:310
-msgid "Create"
-msgstr "Buat"
+#: builtin/fstk/ui.lua:84
+msgid "An error occured:"
+msgstr ""
 
-#: builtin/gamemgr.lua:26 builtin/mainmenu.lua:311 builtin/modmgr.lua:331
-#: builtin/modmgr.lua:448 src/guiKeyChangeMenu.cpp:195 src/keycode.cpp:223
-msgid "Cancel"
-msgstr "Batal"
-
-#: builtin/gamemgr.lua:118
-msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
-msgstr "Manajer Permainan: Tidak dapat menyalin mod \"$1\" ke permainan \"$2\""
-
-#: builtin/gamemgr.lua:216
-msgid "GAMES"
-msgstr "PERMAINAN"
-
-#: builtin/gamemgr.lua:217 builtin/mainmenu.lua:1076
-msgid "Games"
-msgstr "Permainan"
-
-#: builtin/gamemgr.lua:234
-msgid "Mods:"
-msgstr "Mod:"
-
-#: builtin/gamemgr.lua:235
-msgid "edit game"
-msgstr "sunting permainan"
-
-#: builtin/gamemgr.lua:238
-msgid "new game"
-msgstr "permainan baru"
-
-#: builtin/gamemgr.lua:248
-msgid "EDIT GAME"
-msgstr "SUNTING PERMAINAN"
-
-#: builtin/gamemgr.lua:269
-msgid "Remove selected mod"
-msgstr "Cabut mod terpilih"
-
-#: builtin/gamemgr.lua:272
-msgid "<<-- Add mod"
-msgstr "<<-- Tambah mod"
-
-#: builtin/mainmenu.lua:158
+#: builtin/fstk/ui.lua:89 builtin/mainmenu/store.lua:165
 msgid "Ok"
 msgstr "Oke"
 
-#: builtin/mainmenu.lua:297
-msgid "World name"
-msgstr "Nama dunia"
-
-#: builtin/mainmenu.lua:300
-msgid "Seed"
-msgstr "Seed"
-
-#: builtin/mainmenu.lua:303
-msgid "Mapgen"
-msgstr "Generator peta"
-
-#: builtin/mainmenu.lua:306
-msgid "Game"
-msgstr "Permainan"
-
-#: builtin/mainmenu.lua:319
-msgid "Delete World \"$1\"?"
-msgstr "Hapus Dunia \"$1\"?"
-
-#: builtin/mainmenu.lua:320 builtin/modmgr.lua:877
-msgid "Yes"
-msgstr "Ya"
-
-#: builtin/mainmenu.lua:321
-msgid "No"
-msgstr "Tidak"
-
-#: builtin/mainmenu.lua:364
-msgid "A world named \"$1\" already exists"
-msgstr "Dunia bernama \"$1\" telah ada"
-
-#: builtin/mainmenu.lua:381
-msgid "No worldname given or no game selected"
-msgstr "Tidak ada nama atau permainan yang dipilih"
-
-#: builtin/mainmenu.lua:650
-msgid "To enable shaders the OpenGL driver needs to be used."
-msgstr "Untuk mengaktifkan shaders OpenGL driver harus digunakan."
-
-#: builtin/mainmenu.lua:818
-msgid "CLIENT"
-msgstr "KLIEN"
-
-#: builtin/mainmenu.lua:819
-msgid "Favorites:"
-msgstr "Favorit:"
-
-#: builtin/mainmenu.lua:820
-msgid "Address/Port"
-msgstr "Alamat/Port"
-
-#: builtin/mainmenu.lua:821
-msgid "Name/Password"
-msgstr "Nama/Kata sandi"
-
-#: builtin/mainmenu.lua:824
-msgid "Public Serverlist"
-msgstr "Daftar Server Publik"
-
-#: builtin/mainmenu.lua:829 builtin/mainmenu.lua:874 builtin/mainmenu.lua:937
-#: src/keycode.cpp:229
-msgid "Delete"
-msgstr "Hapus"
-
-#: builtin/mainmenu.lua:833
-msgid "Connect"
-msgstr "Sambung"
-
-#: builtin/mainmenu.lua:875 builtin/mainmenu.lua:938
-msgid "New"
-msgstr "Baru"
-
-#: builtin/mainmenu.lua:876 builtin/mainmenu.lua:939
-msgid "Configure"
-msgstr "Konfigurasi"
-
-#: builtin/mainmenu.lua:877
-msgid "Start Game"
-msgstr "Mulai Permainan"
-
-#: builtin/mainmenu.lua:878 builtin/mainmenu.lua:941
-msgid "Select World:"
-msgstr "Pilih Dunia:"
-
-#: builtin/mainmenu.lua:879
-msgid "START SERVER"
-msgstr "MULAI SERVER"
-
-#: builtin/mainmenu.lua:880 builtin/mainmenu.lua:943
-msgid "Creative Mode"
-msgstr "Mode Kreatif"
-
-#: builtin/mainmenu.lua:882 builtin/mainmenu.lua:945
-msgid "Enable Damage"
-msgstr "Aktifkan Kerusakan"
-
-#: builtin/mainmenu.lua:884
-msgid "Public"
-msgstr "Publik"
-
-#: builtin/mainmenu.lua:886
-msgid "Name"
-msgstr "Nama"
-
-#: builtin/mainmenu.lua:888
-msgid "Password"
-msgstr "Kata Sandi"
-
-#: builtin/mainmenu.lua:889
-msgid "Server Port"
-msgstr "Port Server"
-
-#: builtin/mainmenu.lua:899
-msgid "SETTINGS"
-msgstr "PENGATURAN"
-
-#: builtin/mainmenu.lua:900
-msgid "Fancy trees"
-msgstr "Pohon mewah"
-
-#: builtin/mainmenu.lua:902
-msgid "Smooth Lighting"
-msgstr "Pencahayaan Halus"
-
-#: builtin/mainmenu.lua:904
-msgid "3D Clouds"
-msgstr "Awan 3D"
-
-#: builtin/mainmenu.lua:906
-msgid "Opaque Water"
-msgstr "Air Buram"
-
-#: builtin/mainmenu.lua:909
-msgid "Mip-Mapping"
-msgstr "Mip-Mapping"
-
-#: builtin/mainmenu.lua:911
-msgid "Anisotropic Filtering"
-msgstr "Anisotropic Filtering"
-
-#: builtin/mainmenu.lua:913
-msgid "Bi-Linear Filtering"
-msgstr "Bi-Linear Filtering"
-
-#: builtin/mainmenu.lua:915
-msgid "Tri-Linear Filtering"
-msgstr "Tri-Linear Filtering"
-
-#: builtin/mainmenu.lua:918
-msgid "Shaders"
-msgstr "Shaders"
-
-#: builtin/mainmenu.lua:920
-msgid "Preload item visuals"
-msgstr "Pramuat gambaran barang"
-
-#: builtin/mainmenu.lua:922
-msgid "Enable Particles"
-msgstr "Aktifkan Partikel"
-
-#: builtin/mainmenu.lua:924
-msgid "Finite Liquid"
-msgstr "Cairan Terbatas"
-
-#: builtin/mainmenu.lua:927
-msgid "Change keys"
-msgstr "Ubah tombol"
-
-#: builtin/mainmenu.lua:940 src/keycode.cpp:248
-msgid "Play"
-msgstr "Mainkan"
-
-#: builtin/mainmenu.lua:942
-msgid "SINGLE PLAYER"
-msgstr "PEMAIN TUNGGAL"
-
-#: builtin/mainmenu.lua:955
-msgid "Select texture pack:"
-msgstr "Pilih paket tekstur:"
-
-#: builtin/mainmenu.lua:956
-msgid "TEXTURE PACKS"
-msgstr "PAKET TEKSTUR"
-
-#: builtin/mainmenu.lua:976
-msgid "No information available"
-msgstr "Tidak ada informasi tersedia"
-
-#: builtin/mainmenu.lua:1005
-msgid "Core Developers"
-msgstr "Pengembang Inti"
-
-#: builtin/mainmenu.lua:1020
-msgid "Active Contributors"
-msgstr "Kontributor Aktif"
-
-#: builtin/mainmenu.lua:1028
-msgid "Previous Contributors"
-msgstr "Kontributor Sebelumnya"
-
-#: builtin/mainmenu.lua:1069
-msgid "Singleplayer"
-msgstr "Pemain Tunggal"
-
-#: builtin/mainmenu.lua:1070
-msgid "Client"
-msgstr "Klien"
-
-#: builtin/mainmenu.lua:1071
-msgid "Server"
-msgstr "Server"
-
-#: builtin/mainmenu.lua:1072
-msgid "Settings"
-msgstr "Pengaturan"
-
-#: builtin/mainmenu.lua:1073
-msgid "Texture Packs"
-msgstr "Paket Tekstur"
-
-#: builtin/mainmenu.lua:1080
-msgid "Mods"
-msgstr "Mod"
-
-#: builtin/mainmenu.lua:1082
-msgid "Credits"
-msgstr "Penghargaan"
-
-#: builtin/modmgr.lua:236
-msgid "MODS"
-msgstr "MOD"
-
-#: builtin/modmgr.lua:237
-msgid "Installed Mods:"
-msgstr "Mod Terpasang:"
-
-#: builtin/modmgr.lua:243
-msgid "Add mod:"
-msgstr "Tambah mod:"
-
-#: builtin/modmgr.lua:244
-msgid "Local install"
-msgstr "Pemasangan lokal"
-
-#: builtin/modmgr.lua:245
-msgid "Online mod repository"
-msgstr "Gudang mod daring"
-
-#: builtin/modmgr.lua:284
-msgid "No mod description available"
-msgstr "Tidak ada deskripsi mod tersedia"
-
-#: builtin/modmgr.lua:288
-msgid "Mod information:"
-msgstr "Informasi mod:"
-
-#: builtin/modmgr.lua:299
-msgid "Rename"
-msgstr "Ganti Nama"
-
-#: builtin/modmgr.lua:301
-msgid "Uninstall selected modpack"
-msgstr "Copot pemasangan paket mod terpilih"
-
-#: builtin/modmgr.lua:312
-msgid "Uninstall selected mod"
-msgstr "Copot pemasangan mod terpilih"
-
-#: builtin/modmgr.lua:324
-msgid "Rename Modpack:"
-msgstr "Ganti Nama Paket Mod"
-
-#: builtin/modmgr.lua:329 src/keycode.cpp:227
-msgid "Accept"
-msgstr "Terima"
-
-#: builtin/modmgr.lua:423
+#: builtin/mainmenu/common.lua:239 src/game.cpp:1891
+msgid "Loading..."
+msgstr ""
+
+#: builtin/mainmenu/common.lua:240
+msgid "Try reenabling public serverlist and check your internet connection."
+msgstr ""
+
+#: builtin/mainmenu/dlg_config_world.lua:29
 msgid "World:"
 msgstr "Dunia:"
 
-#: builtin/modmgr.lua:427 builtin/modmgr.lua:429
+#: builtin/mainmenu/dlg_config_world.lua:33
+#: builtin/mainmenu/dlg_config_world.lua:35
 msgid "Hide Game"
-msgstr "Sembunyikan\npermainan"
+msgstr ""
+"Sembunyikan\n"
+"permainan"
 
-#: builtin/modmgr.lua:433 builtin/modmgr.lua:435
+#: builtin/mainmenu/dlg_config_world.lua:39
+#: builtin/mainmenu/dlg_config_world.lua:41
 msgid "Hide mp content"
-msgstr "Sembunyikan\nkonten pm"
+msgstr ""
+"Sembunyikan\n"
+"konten pm"
 
-#: builtin/modmgr.lua:442
+#: builtin/mainmenu/dlg_config_world.lua:49
 msgid "Mod:"
 msgstr "Mod:"
 
-#: builtin/modmgr.lua:444
+#: builtin/mainmenu/dlg_config_world.lua:51 builtin/mainmenu/tab_mods.lua:99
 msgid "Depends:"
 msgstr "Bergantung pada:"
 
-#: builtin/modmgr.lua:447 src/guiKeyChangeMenu.cpp:187
+#: builtin/mainmenu/dlg_config_world.lua:54 src/guiKeyChangeMenu.cpp:191
 msgid "Save"
 msgstr "Simpan"
 
-#: builtin/modmgr.lua:464
+#: builtin/mainmenu/dlg_config_world.lua:55
+#: builtin/mainmenu/dlg_create_world.lua:64
+#: builtin/mainmenu/dlg_rename_modpack.lua:33 src/guiKeyChangeMenu.cpp:199
+#: src/keycode.cpp:223
+msgid "Cancel"
+msgstr "Batal"
+
+#: builtin/mainmenu/dlg_config_world.lua:71
 msgid "Enable MP"
 msgstr "Aktifkan PM"
 
-#: builtin/modmgr.lua:466
+#: builtin/mainmenu/dlg_config_world.lua:73
 msgid "Disable MP"
 msgstr "Nonaktifkan PM"
 
-#: builtin/modmgr.lua:470 builtin/modmgr.lua:472
+#: builtin/mainmenu/dlg_config_world.lua:77
+#: builtin/mainmenu/dlg_config_world.lua:79
 msgid "enabled"
 msgstr "diaktifkan"
 
-#: builtin/modmgr.lua:478
+#: builtin/mainmenu/dlg_config_world.lua:85
 msgid "Enable all"
 msgstr "Aktifkan semua"
 
-#: builtin/modmgr.lua:577
-msgid "Select Mod File:"
-msgstr "Pilih Berkas Mod:"
+#: builtin/mainmenu/dlg_create_world.lua:50
+msgid "World name"
+msgstr "Nama dunia"
 
-#: builtin/modmgr.lua:616
-msgid "Install Mod: file: \"$1\""
-msgstr "Pasang Mod: berkas: \"$1\""
+#: builtin/mainmenu/dlg_create_world.lua:53
+msgid "Seed"
+msgstr "Seed"
 
-#: builtin/modmgr.lua:617
-msgid ""
-"\n"
-"Install Mod: unsupported filetype \"$1\""
-msgstr ""
-"\n"
-"Pemasangan Mod: tipe berkas tidak didukung \"$1\""
+#: builtin/mainmenu/dlg_create_world.lua:56
+msgid "Mapgen"
+msgstr "Generator peta"
 
-#: builtin/modmgr.lua:638
-msgid "Failed to install $1 to $2"
-msgstr "Gagal untuk memasang $1 ke $2"
+#: builtin/mainmenu/dlg_create_world.lua:59
+msgid "Game"
+msgstr "Permainan"
 
-#: builtin/modmgr.lua:641
-msgid "Install Mod: unable to find suitable foldername for modpack $1"
-msgstr "Pemasangan Mod: tidak dapat mencari nama folder yang sesuai untuk paket mod $1"
+#: builtin/mainmenu/dlg_create_world.lua:63
+msgid "Create"
+msgstr "Buat"
 
-#: builtin/modmgr.lua:661
-msgid "Install Mod: unable to find real modname for: $1"
-msgstr "Pemasangan Mod: tidak dapat mencari nama yang sebenarnya dari: $1"
+#: builtin/mainmenu/dlg_create_world.lua:68
+msgid "You have no subgames installed."
+msgstr "Kamu tidak punya sub-permainan terpasang"
 
-#: builtin/modmgr.lua:855
-msgid "Modmgr: failed to delete \"$1\""
-msgstr "Manajer mod: gagal untuk menghapus \"$1\""
+#: builtin/mainmenu/dlg_create_world.lua:69
+msgid "Download one from minetest.net"
+msgstr "Unduh satu dari minetest.net"
 
-#: builtin/modmgr.lua:859
-msgid "Modmgr: invalid modpath \"$1\""
-msgstr "Manajer mod: jalur mod tidak sah"
+#: builtin/mainmenu/dlg_create_world.lua:72
+msgid "Warning: The minimal development test is meant for developers."
+msgstr "Peringatan: minimal development test ditujukan untuk pengembang."
 
-#: builtin/modmgr.lua:876
+#: builtin/mainmenu/dlg_create_world.lua:73
+msgid "Download a subgame, such as minetest_game, from minetest.net"
+msgstr "Unduh sebuah sub-permainan, seperti minetest_game, dari minetest.net"
+
+#: builtin/mainmenu/dlg_create_world.lua:99
+msgid "A world named \"$1\" already exists"
+msgstr "Dunia bernama \"$1\" telah ada"
+
+#: builtin/mainmenu/dlg_create_world.lua:116
+msgid "No worldname given or no game selected"
+msgstr "Tidak ada nama atau permainan yang dipilih"
+
+#: builtin/mainmenu/dlg_delete_mod.lua:26
 msgid "Are you sure you want to delete \"$1\"?"
 msgstr "Kamu yakin ingin menghapus \"$1\"?"
 
-#: builtin/modmgr.lua:878
+#: builtin/mainmenu/dlg_delete_mod.lua:27
+#: builtin/mainmenu/dlg_delete_world.lua:25
+#: builtin/mainmenu/tab_settings.lua:100
+msgid "Yes"
+msgstr "Ya"
+
+#: builtin/mainmenu/dlg_delete_mod.lua:28
 msgid "No of course not!"
 msgstr "Tentu tidak!"
 
-#: builtin/modstore.lua:183
-msgid "Page $1 of $2"
-msgstr "Halaman $1 dari $2"
+#: builtin/mainmenu/dlg_delete_mod.lua:41
+msgid "Modmgr: failed to delete \"$1\""
+msgstr "Pengelola mod: gagal untuk menghapus \"$1\""
 
-#: builtin/modstore.lua:243
+#: builtin/mainmenu/dlg_delete_mod.lua:45
+msgid "Modmgr: invalid modpath \"$1\""
+msgstr "Pengelola mod: jalur mod tidak sah"
+
+#: builtin/mainmenu/dlg_delete_world.lua:24
+msgid "Delete World \"$1\"?"
+msgstr "Hapus Dunia \"$1\"?"
+
+#: builtin/mainmenu/dlg_delete_world.lua:26
+msgid "No"
+msgstr "Tidak"
+
+#: builtin/mainmenu/dlg_rename_modpack.lua:26
+msgid "Rename Modpack:"
+msgstr "Ganti Nama Paket Mod:"
+
+#: builtin/mainmenu/dlg_rename_modpack.lua:31 src/keycode.cpp:227
+msgid "Accept"
+msgstr "Setuju"
+
+#: builtin/mainmenu/modmgr.lua:344
+msgid "Install Mod: file: \"$1\""
+msgstr "Pemasangan Mod: berkas: \"$1\""
+
+#: builtin/mainmenu/modmgr.lua:345
+#, fuzzy
+msgid ""
+"\n"
+"Install Mod: unsupported filetype \"$1\" or broken archive"
+msgstr ""
+"\n"
+"Pemasangan Mod: tipe berkas tidak didukung \"$1\" atau kerusakan arsip"
+
+#: builtin/mainmenu/modmgr.lua:365
+msgid "Failed to install $1 to $2"
+msgstr "Gagal untuk memasang $1 ke $2"
+
+#: builtin/mainmenu/modmgr.lua:368
+msgid "Install Mod: unable to find suitable foldername for modpack $1"
+msgstr ""
+"Pemasangan Mod: tidak dapat mencari nama folder yang sesuai untuk paket mod "
+"$1"
+
+#: builtin/mainmenu/modmgr.lua:388
+msgid "Install Mod: unable to find real modname for: $1"
+msgstr "Pemasangan Mod: tidak dapat mencari nama yang sebenarnya dari: $1"
+
+#: builtin/mainmenu/store.lua:88
+msgid "Unsorted"
+msgstr "Tidak diurutkan"
+
+#: builtin/mainmenu/store.lua:99 builtin/mainmenu/store.lua:580
+msgid "Search"
+msgstr "Cari"
+
+#: builtin/mainmenu/store.lua:126
+#, fuzzy
+msgid "Downloading $1, please wait..."
+msgstr "mohon tunggu..."
+
+#: builtin/mainmenu/store.lua:160
+msgid "Successfully installed:"
+msgstr "Berhasil dipasang:"
+
+#: builtin/mainmenu/store.lua:162
+#, fuzzy
+msgid "Shortname:"
+msgstr "Nama pendek:"
+
+#: builtin/mainmenu/store.lua:472
 msgid "Rating"
 msgstr "Peringkat"
 
-#: builtin/modstore.lua:251
+#: builtin/mainmenu/store.lua:497
 msgid "re-Install"
 msgstr "Pasang ulang"
 
-#: builtin/modstore.lua:253
+#: builtin/mainmenu/store.lua:499
 msgid "Install"
 msgstr "Pasang"
 
-#: src/client.cpp:2917
+#: builtin/mainmenu/store.lua:518
+msgid "Close store"
+msgstr "Tutup toko"
+
+#: builtin/mainmenu/store.lua:526
+msgid "Page $1 of $2"
+msgstr "Halaman $1 dari $2"
+
+#: builtin/mainmenu/tab_credits.lua:22
+msgid "Credits"
+msgstr "Penghargaan"
+
+#: builtin/mainmenu/tab_credits.lua:31
+msgid "Core Developers"
+msgstr "Pengembang Inti"
+
+#: builtin/mainmenu/tab_credits.lua:47
+msgid "Active Contributors"
+msgstr "Kontributor Aktif"
+
+#: builtin/mainmenu/tab_credits.lua:54
+#, fuzzy
+msgid "Previous Core Developers"
+msgstr "Pengembang Inti"
+
+#: builtin/mainmenu/tab_credits.lua:59
+msgid "Previous Contributors"
+msgstr "Kontributor Sebelumnya"
+
+#: builtin/mainmenu/tab_mods.lua:30
+msgid "Installed Mods:"
+msgstr "Mod Terpasang:"
+
+#: builtin/mainmenu/tab_mods.lua:39
+msgid "Online mod repository"
+msgstr "Gudang mod daring"
+
+#: builtin/mainmenu/tab_mods.lua:78
+msgid "No mod description available"
+msgstr "Tidak ada deskripsi mod tersedia"
+
+#: builtin/mainmenu/tab_mods.lua:82
+msgid "Mod information:"
+msgstr "Informasi mod:"
+
+#: builtin/mainmenu/tab_mods.lua:93
+msgid "Rename"
+msgstr "Ganti Nama"
+
+#: builtin/mainmenu/tab_mods.lua:95
+msgid "Uninstall selected modpack"
+msgstr "Copot pemasangan paket mod terpilih"
+
+#: builtin/mainmenu/tab_mods.lua:106
+msgid "Uninstall selected mod"
+msgstr "Copot pemasangan mod terpilih"
+
+#: builtin/mainmenu/tab_mods.lua:121
+msgid "Select Mod File:"
+msgstr "Pilih Berkas Mod:"
+
+#: builtin/mainmenu/tab_mods.lua:165
+msgid "Mods"
+msgstr "Mod"
+
+#: builtin/mainmenu/tab_multiplayer.lua:23
+#, fuzzy
+msgid "Address / Port :"
+msgstr "Alamat/Port"
+
+#: builtin/mainmenu/tab_multiplayer.lua:24
+#, fuzzy
+msgid "Name / Password :"
+msgstr "Nama/Kata sandi"
+
+#: builtin/mainmenu/tab_multiplayer.lua:29
+#: builtin/mainmenu/tab_simple_main.lua:30
+msgid "Public Serverlist"
+msgstr "Daftar Server Publik"
+
+#: builtin/mainmenu/tab_multiplayer.lua:34 builtin/mainmenu/tab_server.lua:26
+#: builtin/mainmenu/tab_singleplayer.lua:96 src/keycode.cpp:229
+msgid "Delete"
+msgstr "Hapus"
+
+#: builtin/mainmenu/tab_multiplayer.lua:38
+#: builtin/mainmenu/tab_simple_main.lua:34
+msgid "Connect"
+msgstr "Sambung"
+
+#: builtin/mainmenu/tab_multiplayer.lua:62
+#: builtin/mainmenu/tab_simple_main.lua:45
+#, fuzzy
+msgid "Creative mode"
+msgstr "Mode Kreatif"
+
+#: builtin/mainmenu/tab_multiplayer.lua:63
+#: builtin/mainmenu/tab_simple_main.lua:46
+#, fuzzy
+msgid "Damage enabled"
+msgstr "diaktifkan"
+
+#: builtin/mainmenu/tab_multiplayer.lua:64
+#: builtin/mainmenu/tab_simple_main.lua:47
+#, fuzzy
+msgid "PvP enabled"
+msgstr "diaktifkan"
+
+#: builtin/mainmenu/tab_multiplayer.lua:257
+msgid "Client"
+msgstr "Klien"
+
+#: builtin/mainmenu/tab_server.lua:27 builtin/mainmenu/tab_singleplayer.lua:97
+msgid "New"
+msgstr "Baru"
+
+#: builtin/mainmenu/tab_server.lua:28 builtin/mainmenu/tab_singleplayer.lua:98
+msgid "Configure"
+msgstr "Konfigurasi"
+
+#: builtin/mainmenu/tab_server.lua:29
+msgid "Start Game"
+msgstr "Mulai Permainan"
+
+#: builtin/mainmenu/tab_server.lua:30
+#: builtin/mainmenu/tab_singleplayer.lua:100
+msgid "Select World:"
+msgstr "Pilih Dunia:"
+
+#: builtin/mainmenu/tab_server.lua:31 builtin/mainmenu/tab_simple_main.lua:76
+#: builtin/mainmenu/tab_singleplayer.lua:101
+msgid "Creative Mode"
+msgstr "Mode Kreatif"
+
+#: builtin/mainmenu/tab_server.lua:33 builtin/mainmenu/tab_simple_main.lua:78
+#: builtin/mainmenu/tab_singleplayer.lua:103
+msgid "Enable Damage"
+msgstr "Aktifkan Kerusakan"
+
+#: builtin/mainmenu/tab_server.lua:35
+msgid "Public"
+msgstr "Publik"
+
+#: builtin/mainmenu/tab_server.lua:37 builtin/mainmenu/tab_simple_main.lua:25
+msgid "Name/Password"
+msgstr "Nama/Kata sandi"
+
+#: builtin/mainmenu/tab_server.lua:45
+msgid "Bind Address"
+msgstr ""
+
+#: builtin/mainmenu/tab_server.lua:47
+msgid "Port"
+msgstr "Port"
+
+#: builtin/mainmenu/tab_server.lua:51
+msgid "Server Port"
+msgstr "Port Server"
+
+#: builtin/mainmenu/tab_server.lua:138
+#: builtin/mainmenu/tab_singleplayer.lua:165
+#, fuzzy
+msgid "No world created or selected!"
+msgstr "Tidak ada nama atau permainan yang dipilih"
+
+#: builtin/mainmenu/tab_server.lua:191
+msgid "Server"
+msgstr "Server"
+
+#: builtin/mainmenu/tab_settings.lua:21
+#, fuzzy
+msgid "Opaque Leaves"
+msgstr "Air Buram"
+
+#: builtin/mainmenu/tab_settings.lua:22
+#, fuzzy
+msgid "Simple Leaves"
+msgstr "Daun Melambai"
+
+#: builtin/mainmenu/tab_settings.lua:23
+#, fuzzy
+msgid "Fancy Leaves"
+msgstr "Pohon Indah"
+
+#: builtin/mainmenu/tab_settings.lua:32
+msgid "No Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:33
+#, fuzzy
+msgid "Bilinear Filter"
+msgstr "Bi-Linear Filtering"
+
+#: builtin/mainmenu/tab_settings.lua:34
+#, fuzzy
+msgid "Trilinear Filter"
+msgstr "Tri-Linear Filtering"
+
+#: builtin/mainmenu/tab_settings.lua:43
+msgid "No Mipmap"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:44
+msgid "Mipmap"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:45
+msgid "Mipmap + Aniso. Filter"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:98
+msgid "Are you sure to reset your singleplayer world?"
+msgstr "Yakin ingin mengaturulang dunia anda?"
+
+#: builtin/mainmenu/tab_settings.lua:102
+msgid "No!!!"
+msgstr "Tidak!!!"
+
+#: builtin/mainmenu/tab_settings.lua:202
+msgid "Smooth Lighting"
+msgstr "Pencahayaan Halus"
+
+#: builtin/mainmenu/tab_settings.lua:204
+msgid "Enable Particles"
+msgstr "Aktifkan Partikel"
+
+#: builtin/mainmenu/tab_settings.lua:206
+msgid "3D Clouds"
+msgstr "Awan 3D"
+
+#: builtin/mainmenu/tab_settings.lua:208
+msgid "Opaque Water"
+msgstr "Air Buram"
+
+#: builtin/mainmenu/tab_settings.lua:210
+#, fuzzy
+msgid "Connected Glass"
+msgstr "Kaca Tersambung"
+
+#: builtin/mainmenu/tab_settings.lua:212
+msgid "Node Highlighting"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:217
+msgid "Texturing:"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:222
+msgid "Rendering:"
+msgstr ""
+
+#: builtin/mainmenu/tab_settings.lua:226
+msgid "Restart minetest for driver change to take effect"
+msgstr "Mulai ulang minetest untuk beralih ke driver yang dipilih"
+
+#: builtin/mainmenu/tab_settings.lua:228
+msgid "Shaders"
+msgstr "Shaders"
+
+#: builtin/mainmenu/tab_settings.lua:233
+msgid "Change keys"
+msgstr "Ubah tombol"
+
+#: builtin/mainmenu/tab_settings.lua:236
+#, fuzzy
+msgid "Reset singleplayer world"
+msgstr "Atur ulang dunia pemain tunggal"
+
+#: builtin/mainmenu/tab_settings.lua:240
+msgid "GUI scale factor"
+msgstr "Skala antarmuka"
+
+#: builtin/mainmenu/tab_settings.lua:244
+msgid "Scaling factor applied to menu elements: "
+msgstr "Faktor skala yang diatur untuk elemen menu: "
+
+#: builtin/mainmenu/tab_settings.lua:250
+msgid "Touch free target"
+msgstr "Bebas sentuhan"
+
+#: builtin/mainmenu/tab_settings.lua:256
+msgid "Touchthreshold (px)"
+msgstr "Batas sentuhan (px)"
+
+#: builtin/mainmenu/tab_settings.lua:263 builtin/mainmenu/tab_settings.lua:277
+#, fuzzy
+msgid "Bumpmapping"
+msgstr "Bumpmapping"
+
+#: builtin/mainmenu/tab_settings.lua:265 builtin/mainmenu/tab_settings.lua:278
+msgid "Generate Normalmaps"
+msgstr "Gunakan Normalmaps"
+
+#: builtin/mainmenu/tab_settings.lua:267 builtin/mainmenu/tab_settings.lua:279
+msgid "Parallax Occlusion"
+msgstr "Parallax Occlusion"
+
+#: builtin/mainmenu/tab_settings.lua:269 builtin/mainmenu/tab_settings.lua:280
+msgid "Waving Water"
+msgstr "Air Berombak"
+
+#: builtin/mainmenu/tab_settings.lua:271 builtin/mainmenu/tab_settings.lua:281
+msgid "Waving Leaves"
+msgstr "Daun Melambai"
+
+#: builtin/mainmenu/tab_settings.lua:273 builtin/mainmenu/tab_settings.lua:282
+msgid "Waving Plants"
+msgstr "Tanaman Berayun"
+
+#: builtin/mainmenu/tab_settings.lua:308
+msgid "To enable shaders the OpenGL driver needs to be used."
+msgstr "Untuk mengaktifkan shaders OpenGL driver harus digunakan."
+
+#: builtin/mainmenu/tab_settings.lua:430
+msgid "Settings"
+msgstr "Pengaturan"
+
+#: builtin/mainmenu/tab_simple_main.lua:82
+#, fuzzy
+msgid "Start Singleplayer"
+msgstr "Mulai Pemain Tunggal"
+
+#: builtin/mainmenu/tab_simple_main.lua:83
+#, fuzzy
+msgid "Config mods"
+msgstr "Konfigurasi mod"
+
+#: builtin/mainmenu/tab_simple_main.lua:201
+#, fuzzy
+msgid "Main"
+msgstr "Beranda"
+
+#: builtin/mainmenu/tab_singleplayer.lua:99 src/keycode.cpp:248
+msgid "Play"
+msgstr "Mainkan"
+
+#: builtin/mainmenu/tab_singleplayer.lua:246
+msgid "Singleplayer"
+msgstr "Pemain Tunggal"
+
+#: builtin/mainmenu/tab_texturepacks.lua:49
+msgid "Select texture pack:"
+msgstr "Pilih paket tekstur:"
+
+#: builtin/mainmenu/tab_texturepacks.lua:69
+msgid "No information available"
+msgstr "Tidak ada informasi tersedia"
+
+#: builtin/mainmenu/tab_texturepacks.lua:114
+#, fuzzy
+msgid "Texturepacks"
+msgstr "Paket Tekstur"
+
+#: src/client.cpp:1721
+#, fuzzy
+msgid "Loading textures..."
+msgstr "Tekstur barang..."
+
+#: src/client.cpp:1736
+msgid "Rebuilding shaders..."
+msgstr ""
+
+#: src/client.cpp:1743
+msgid "Initializing nodes..."
+msgstr ""
+
+#: src/client.cpp:1760
+msgid "Initializing nodes"
+msgstr ""
+
+#: src/client.cpp:1768
 msgid "Item textures..."
 msgstr "Tekstur barang..."
 
-#: src/game.cpp:940
-msgid "Loading..."
-msgstr "Memuat..."
-
-#: src/game.cpp:1000
-msgid "Creating server...."
-msgstr "Membuat server...."
-
-#: src/game.cpp:1016
-msgid "Creating client..."
-msgstr "Membuat klien..."
-
-#: src/game.cpp:1025
-msgid "Resolving address..."
-msgstr "Menyelesaikan alamat..."
-
-#: src/game.cpp:1122
-msgid "Connecting to server..."
-msgstr "Menyambung ke server..."
-
-#: src/game.cpp:1219
-msgid "Item definitions..."
-msgstr "Definisi barang..."
-
-#: src/game.cpp:1226
-msgid "Node definitions..."
-msgstr "Definisi node..."
-
-#: src/game.cpp:1233
-msgid "Media..."
-msgstr "Media..."
-
-#: src/game.cpp:3409
-msgid "Shutting down stuff..."
-msgstr "Mematikan..."
-
-#: src/game.cpp:3439
-msgid ""
-"\n"
-"Check debug.txt for details."
+#: src/client.cpp:1793
+msgid "Done!"
 msgstr ""
-"\n"
-"Cek debug.txt untuk detail."
 
-#: src/guiDeathScreen.cpp:96
-msgid "You died."
-msgstr "Kamu mati."
+#: src/client/clientlauncher.cpp:185
+msgid "Main Menu"
+msgstr "Menu Utama"
 
-#: src/guiDeathScreen.cpp:104
-msgid "Respawn"
-msgstr "Bangkit"
+#: src/client/clientlauncher.cpp:223
+msgid "Player name too long."
+msgstr "Nama pemain terlalu panjang."
 
-#: src/guiFormSpecMenu.cpp:1656 src/guiMessageMenu.cpp:107
-#: src/guiTextInputMenu.cpp:139
+#: src/client/clientlauncher.cpp:261
+msgid "Connection error (timed out?)"
+msgstr "Koneksi rusak (terlalu lama?)"
+
+#: src/client/clientlauncher.cpp:425
+msgid "No world selected and no address provided. Nothing to do."
+msgstr "Tidak ada dunia yang dipilih dan tidak ada alamat yang diberikan."
+
+#: src/client/clientlauncher.cpp:432
+msgid "Provided world path doesn't exist: "
+msgstr "Jalur dunia yang diberikan tidak ada: "
+
+#: src/client/clientlauncher.cpp:441
+msgid "Could not find or load game \""
+msgstr "Tidak dapat mencari atau memuat permainan \""
+
+#: src/client/clientlauncher.cpp:459
+msgid "Invalid gamespec."
+msgstr "Spesifikasi permainan tidak sah."
+
+#: src/fontengine.cpp:70 src/fontengine.cpp:226
+msgid "needs_fallback_font"
+msgstr "needs_fallback_font"
+
+#: src/game.cpp:1052 src/guiFormSpecMenu.cpp:2065
 msgid "Proceed"
 msgstr "Lanjut"
 
-#: src/guiKeyChangeMenu.cpp:121
-msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
-msgstr "Kontrol. (Jika menu ini kacau, hapus pengaturan kontrol dari minetest.conf)"
+#: src/game.cpp:1072
+msgid "You died."
+msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:161
-msgid "\"Use\" = climb down"
-msgstr "\"Pakai\" = turun"
+#: src/game.cpp:1073
+msgid "Respawn"
+msgstr "Bangkit"
 
-#: src/guiKeyChangeMenu.cpp:176
-msgid "Double tap \"jump\" to toggle fly"
-msgstr "Tekan ganda \"lompat\" untuk beralih terbang"
+#: src/game.cpp:1092
+msgid ""
+"Default Controls:\n"
+"No menu visible:\n"
+"- single tap: button activate\n"
+"- double tap: place/use\n"
+"- slide finger: look around\n"
+"Menu/Inventory visible:\n"
+"- double tap (outside):\n"
+" -->close\n"
+"- touch stack, touch slot:\n"
+" --> move stack\n"
+"- touch&drag, tap 2nd finger\n"
+" --> place single item to slot\n"
+msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:288
-msgid "Key already in use"
-msgstr "Tombol telah terpakai"
-
-#: src/guiKeyChangeMenu.cpp:363
-msgid "press key"
-msgstr "tekan tombol"
-
-#: src/guiKeyChangeMenu.cpp:389
-msgid "Forward"
-msgstr "Maju"
-
-#: src/guiKeyChangeMenu.cpp:390
-msgid "Backward"
-msgstr "Mundur"
-
-#: src/guiKeyChangeMenu.cpp:391 src/keycode.cpp:228
-msgid "Left"
-msgstr "Kiri"
-
-#: src/guiKeyChangeMenu.cpp:392 src/keycode.cpp:228
-msgid "Right"
-msgstr "Kanan"
-
-#: src/guiKeyChangeMenu.cpp:393
-msgid "Use"
-msgstr "Pakai"
-
-#: src/guiKeyChangeMenu.cpp:394
-msgid "Jump"
-msgstr "Lompat"
-
-#: src/guiKeyChangeMenu.cpp:395
-msgid "Sneak"
-msgstr "Menyelinap"
-
-#: src/guiKeyChangeMenu.cpp:396
-msgid "Drop"
-msgstr "Jatuhkan"
-
-#: src/guiKeyChangeMenu.cpp:397
-msgid "Inventory"
-msgstr "Inventaris"
-
-#: src/guiKeyChangeMenu.cpp:398
-msgid "Chat"
-msgstr "Obrolan"
-
-#: src/guiKeyChangeMenu.cpp:399
-msgid "Command"
-msgstr "Perintah"
-
-#: src/guiKeyChangeMenu.cpp:400
-msgid "Console"
-msgstr "Konsol"
-
-#: src/guiKeyChangeMenu.cpp:401
-msgid "Toggle fly"
-msgstr "Terbang"
-
-#: src/guiKeyChangeMenu.cpp:402
-msgid "Toggle fast"
-msgstr "Gerak cepat"
-
-#: src/guiKeyChangeMenu.cpp:403
-msgid "Toggle noclip"
-msgstr "Tembus blok"
-
-#: src/guiKeyChangeMenu.cpp:404
-msgid "Range select"
-msgstr "Jarak pandang"
-
-#: src/guiKeyChangeMenu.cpp:405
-msgid "Print stacks"
-msgstr "Cetak tumpukan"
-
-#: src/guiPasswordChange.cpp:106
-msgid "Old Password"
-msgstr "Kata Sandi Lama"
-
-#: src/guiPasswordChange.cpp:122
-msgid "New Password"
-msgstr "Kata Sandi Baru"
-
-#: src/guiPasswordChange.cpp:137
-msgid "Confirm Password"
-msgstr "Konfirmasi Kata Sandi"
-
-#: src/guiPasswordChange.cpp:153
-msgid "Change"
-msgstr "Ubah"
-
-#: src/guiPasswordChange.cpp:162
-msgid "Passwords do not match!"
-msgstr "Kata sandi tidak cocok!"
-
-#: src/guiPauseMenu.cpp:122
-msgid "Continue"
-msgstr "Lanjut"
-
-#: src/guiPauseMenu.cpp:133
-msgid "Change Password"
-msgstr "Ubah Kata Sandi"
-
-#: src/guiPauseMenu.cpp:143
-msgid "Sound Volume"
-msgstr "Volume Suara"
-
-#: src/guiPauseMenu.cpp:152
-msgid "Exit to Menu"
-msgstr "Menu Utama"
-
-#: src/guiPauseMenu.cpp:161
-msgid "Exit to OS"
-msgstr "Akhiri Program"
-
-#: src/guiPauseMenu.cpp:170
+#: src/game.cpp:1106
 msgid ""
 "Default Controls:\n"
 "- WASD: move\n"
@@ -650,23 +687,213 @@ msgid ""
 "- Mouse wheel: select item\n"
 "- T: chat\n"
 msgstr ""
-"Kontrol Bawaan:\n"
-"- WASD: gerak\n"
-"- Space: lompat/panjat\n"
-"- Shift: menyelinap/turun\n"
-"- Q: jatuhkan barang\n"
-"- I: inventaris\n"
-"- Mouse: tengok/lihat\n"
-"- Mouse left: gali/pukul\n"
-"- Mouse right: taruh/pakai\n"
-"- Mouse wheel: pilih barang\n"
-"- T: obrolan\n"
 
-#: src/guiVolumeChange.cpp:107
+#: src/game.cpp:1125
+msgid "Continue"
+msgstr ""
+
+#: src/game.cpp:1129
+#, fuzzy
+msgid "Change Password"
+msgstr "Kata Sandi Baru"
+
+#: src/game.cpp:1134
+#, fuzzy
+msgid "Sound Volume"
+msgstr "Volume Suara: "
+
+#: src/game.cpp:1136
+#, fuzzy
+msgid "Change Keys"
+msgstr "Ubah tombol"
+
+#: src/game.cpp:1139
+#, fuzzy
+msgid "Exit to Menu"
+msgstr "Right Menu"
+
+#: src/game.cpp:1141
+msgid "Exit to OS"
+msgstr ""
+
+#: src/game.cpp:1841
+msgid "Shutting down..."
+msgstr ""
+
+#: src/game.cpp:1948
+msgid "Creating server..."
+msgstr ""
+
+#: src/game.cpp:1984
+msgid "Creating client..."
+msgstr ""
+
+#: src/game.cpp:2159
+msgid "Resolving address..."
+msgstr ""
+
+#: src/game.cpp:2261
+msgid "Connecting to server..."
+msgstr ""
+
+#: src/game.cpp:2317
+msgid "Item definitions..."
+msgstr "Definisi barang..."
+
+#: src/game.cpp:2322
+msgid "Node definitions..."
+msgstr "Definisi node..."
+
+#: src/game.cpp:2329
+msgid "Media..."
+msgstr "Media..."
+
+#: src/game.cpp:2334
+msgid "KiB/s"
+msgstr ""
+
+#: src/game.cpp:2338
+msgid "MiB/s"
+msgstr ""
+
+#: src/game.cpp:4363
+msgid ""
+"\n"
+"Check debug.txt for details."
+msgstr ""
+"\n"
+"Cek debug.txt untuk detail."
+
+#: src/guiFormSpecMenu.cpp:2855
+msgid "Enter "
+msgstr "Masuk "
+
+#: src/guiFormSpecMenu.cpp:2875
+msgid "ok"
+msgstr "oke"
+
+#: src/guiKeyChangeMenu.cpp:125
+msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
+msgstr ""
+"Pengaturan tombol. (Jika menu ini kacau, hapus pengaturan kontrol dari "
+"minetest.conf)"
+
+#: src/guiKeyChangeMenu.cpp:165
+msgid "\"Use\" = climb down"
+msgstr "\"Pakai\" = turun"
+
+#: src/guiKeyChangeMenu.cpp:180
+msgid "Double tap \"jump\" to toggle fly"
+msgstr ""
+"Tekan ganda \"lompat\" untuk\n"
+"beralih terbang"
+
+#: src/guiKeyChangeMenu.cpp:295
+msgid "Key already in use"
+msgstr "Tombol telah terpakai"
+
+#: src/guiKeyChangeMenu.cpp:373
+msgid "press key"
+msgstr "tekan tombol"
+
+#: src/guiKeyChangeMenu.cpp:399
+msgid "Forward"
+msgstr "Maju"
+
+#: src/guiKeyChangeMenu.cpp:400
+msgid "Backward"
+msgstr "Mundur"
+
+#: src/guiKeyChangeMenu.cpp:401 src/keycode.cpp:228
+msgid "Left"
+msgstr "Kiri"
+
+#: src/guiKeyChangeMenu.cpp:402 src/keycode.cpp:228
+msgid "Right"
+msgstr "Kanan"
+
+#: src/guiKeyChangeMenu.cpp:403
+msgid "Use"
+msgstr "Pakai"
+
+#: src/guiKeyChangeMenu.cpp:404
+msgid "Jump"
+msgstr "Lompat"
+
+#: src/guiKeyChangeMenu.cpp:405
+msgid "Sneak"
+msgstr "Menyelinap"
+
+#: src/guiKeyChangeMenu.cpp:406
+msgid "Drop"
+msgstr "Jatuhkan"
+
+#: src/guiKeyChangeMenu.cpp:407
+msgid "Inventory"
+msgstr "Inventaris"
+
+#: src/guiKeyChangeMenu.cpp:408
+msgid "Chat"
+msgstr "Obrolan"
+
+#: src/guiKeyChangeMenu.cpp:409
+msgid "Command"
+msgstr "Perintah"
+
+#: src/guiKeyChangeMenu.cpp:410
+msgid "Console"
+msgstr "Konsol"
+
+#: src/guiKeyChangeMenu.cpp:411
+msgid "Toggle fly"
+msgstr "Terbang"
+
+#: src/guiKeyChangeMenu.cpp:412
+msgid "Toggle fast"
+msgstr "Gerak cepat"
+
+#: src/guiKeyChangeMenu.cpp:413
+#, fuzzy
+msgid "Toggle Cinematic"
+msgstr "Gerak cepat"
+
+#: src/guiKeyChangeMenu.cpp:414
+msgid "Toggle noclip"
+msgstr "Tembus blok"
+
+#: src/guiKeyChangeMenu.cpp:415
+msgid "Range select"
+msgstr "Jarak pandang"
+
+#: src/guiKeyChangeMenu.cpp:416
+msgid "Print stacks"
+msgstr "Cetak tumpukan"
+
+#: src/guiPasswordChange.cpp:108
+msgid "Old Password"
+msgstr "Kata Sandi Lama"
+
+#: src/guiPasswordChange.cpp:124
+msgid "New Password"
+msgstr "Kata Sandi Baru"
+
+#: src/guiPasswordChange.cpp:139
+msgid "Confirm Password"
+msgstr "Konfirmasi Kata Sandi"
+
+#: src/guiPasswordChange.cpp:155
+msgid "Change"
+msgstr "Ubah"
+
+#: src/guiPasswordChange.cpp:164
+msgid "Passwords do not match!"
+msgstr "Kata sandi tidak cocok!"
+
+#: src/guiVolumeChange.cpp:105
 msgid "Sound Volume: "
 msgstr "Volume Suara: "
 
-#: src/guiVolumeChange.cpp:121
+#: src/guiVolumeChange.cpp:119
 msgid "Exit"
 msgstr "Keluar"
 
@@ -958,26 +1185,20 @@ msgstr "PA1"
 msgid "Zoom"
 msgstr "Zoom"
 
-#: src/main.cpp:1472
-msgid "needs_fallback_font"
-msgstr "needs_fallback_font"
+#~ msgid " MB/s"
+#~ msgstr " MB/detik"
 
-#: src/main.cpp:1547
-msgid "Main Menu"
-msgstr "Menu Utama"
+#~ msgid " KB/s"
+#~ msgstr " KB/detik"
 
-#: src/main.cpp:1723
-msgid "No world selected and no address provided. Nothing to do."
-msgstr "Tidak ada dunia yang dipilih dan tidak ada alamat yang diberikan."
+#~ msgid "Fly mode"
+#~ msgstr "Mode terbang"
 
-#: src/main.cpp:1731
-msgid "Could not find or load game \""
-msgstr "Tidak dapat mencari atau memuat permainan \""
+#~ msgid "Anisotropic Filtering"
+#~ msgstr "Anisotropic Filtering"
 
-#: src/main.cpp:1745
-msgid "Invalid gamespec."
-msgstr "Spesifikasi permainan tidak sah."
+#~ msgid "Mip-Mapping"
+#~ msgstr "Mip-Mapping"
 
-#: src/main.cpp:1790
-msgid "Connection error (timed out?)"
-msgstr "Koneksi rusak (terlalu lama?)"
+#~ msgid "Downloading"
+#~ msgstr "Mengunduh"

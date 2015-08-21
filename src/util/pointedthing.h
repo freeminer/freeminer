@@ -27,12 +27,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irr_v3d.h"
 #include <iostream>
 #include <string>
+#include "util/msgpack_serialize.h"
 
 enum PointedThingType
 {
 	POINTEDTHING_NOTHING,
 	POINTEDTHING_NODE,
 	POINTEDTHING_OBJECT
+};
+
+enum PointedThingSerialization {
+	POINTEDTHING_TYPE,
+	POINTEDTHING_UNDER,
+	POINTEDTHING_ABOVE,
+	POINTEDTHING_OBJECT_ID
 };
 
 struct PointedThing
@@ -44,10 +52,12 @@ struct PointedThing
 
 	PointedThing();
 	std::string dump() const;
-	void serialize(std::ostream &os) const;
-	void deSerialize(std::istream &is);
 	bool operator==(const PointedThing &pt2) const;
 	bool operator!=(const PointedThing &pt2) const;
+	void serialize(std::ostream &os) const;
+	void deSerialize(std::istream &is);
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 #endif

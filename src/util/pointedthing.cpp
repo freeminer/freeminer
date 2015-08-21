@@ -103,6 +103,44 @@ void PointedThing::deSerialize(std::istream &is)
 	}
 }
 
+void PointedThing::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
+	static int sizes[3] = {1, 3, 2};
+	int t = static_cast<int>(type);
+	pk.pack_map(sizes[t]);
+	PACK(POINTEDTHING_TYPE, t);
+	switch (type) {
+	case POINTEDTHING_NOTHING:
+		break;
+	case POINTEDTHING_NODE:
+		PACK(POINTEDTHING_UNDER, node_undersurface);
+		PACK(POINTEDTHING_ABOVE, node_abovesurface);
+		break;
+	case POINTEDTHING_OBJECT:
+		PACK(POINTEDTHING_OBJECT_ID, object_id);
+		break;
+	}
+}
+
+void PointedThing::msgpack_unpack(msgpack::object o) {
+	int t;
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	packet[POINTEDTHING_TYPE].convert(&t);
+	type = static_cast<PointedThingType>(t);
+	switch (type) {
+	case POINTEDTHING_NOTHING:
+		break;
+	case POINTEDTHING_NODE:
+		packet[POINTEDTHING_UNDER].convert(&node_undersurface);
+		packet[POINTEDTHING_ABOVE].convert(&node_abovesurface);
+		break;
+	case POINTEDTHING_OBJECT:
+		packet[POINTEDTHING_OBJECT_ID].convert(&object_id);
+		break;
+	default:
+		throw SerializationError("unsupported PointedThingType");
+	}
+}
+
 bool PointedThing::operator==(const PointedThing &pt2) const
 {
 	if(type != pt2.type)

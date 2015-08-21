@@ -24,15 +24,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
 
-void ScriptApiMainMenu::setMainMenuErrorMessage(std::string errormessage)
+void ScriptApiMainMenu::setMainMenuData(MainMenuDataForScript *data)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
 	lua_getglobal(L, "gamedata");
 	int gamedata_idx = lua_gettop(L);
 	lua_pushstring(L, "errormessage");
-	lua_pushstring(L, errormessage.c_str());
+	if (!data->errormessage.empty()) {
+		lua_pushstring(L, data->errormessage.c_str());
+	} else {
+		lua_pushnil(L);
+	}
 	lua_settable(L, gamedata_idx);
+	setboolfield(L, gamedata_idx, "reconnect_requested",
+		data->reconnect_requested);
 	lua_pop(L, 1);
 }
 
@@ -52,11 +58,10 @@ void ScriptApiMainMenu::handleMainMenuEvent(std::string text)
 
 	// Call it
 	lua_pushstring(L, text.c_str());
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 
-void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string> fields)
+void ScriptApiMainMenu::handleMainMenuButtons(const StringMap &fields)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -72,8 +77,8 @@ void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string>
 
 	// Convert fields to a Lua table
 	lua_newtable(L);
-	std::map<std::string, std::string>::const_iterator it;
-	for (it = fields.begin(); it != fields.end(); it++){
+	StringMap::const_iterator it;
+	for (it = fields.begin(); it != fields.end(); ++it) {
 		const std::string &name = it->first;
 		const std::string &value = it->second;
 		lua_pushstring(L, name.c_str());
@@ -82,7 +87,6 @@ void ScriptApiMainMenu::handleMainMenuButtons(std::map<std::string, std::string>
 	}
 
 	// Call it
-	if (lua_pcall(L, 1, 0, m_errorhandler))
-		scriptError();
+	PCALL_RES(lua_pcall(L, 1, 0, m_errorhandler));
 }
 

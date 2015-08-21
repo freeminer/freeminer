@@ -2,6 +2,7 @@
 #define UNORDERED_MAP_HASH_HEADER
 
 #include <unordered_map>
+#include <unordered_set>
 #include "../irr_v3d.h"
 
 /*
@@ -23,8 +24,8 @@ struct v3s16Equal {
 struct v3POSHash {
 	std::size_t operator()(const v3POS& k) const {
 		return (  (std::hash<int>()(k.X)
-		        ^ (std::hash<int>()(k.Y) << 1)) >> 1)
-		        ^ (std::hash<int>()(k.X) << 1);
+		           ^ (std::hash<int>()(k.Y) << 1)) >> 1)
+		       ^ (std::hash<int>()(k.X) << 1);
 	}
 };
 
@@ -33,5 +34,11 @@ struct v3POSEqual {
 		return lhs.X == rhs.X && lhs.Y == rhs.Y && lhs.Z == rhs.Z;
 	}
 };
+
+template <typename T>
+class unordered_map_v3POS : public std::unordered_map<v3POS, T, v3POSHash, v3POSEqual> { };
+
+//template <typename T>
+class unordered_set_v3POS : public std::unordered_set<v3POS, v3POSHash, v3POSEqual> { };
 
 #endif

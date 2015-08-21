@@ -27,12 +27,37 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <algorithm>
 #include "threads.h"
+#include "jthread/jmutexautolock.h"
 #include "debug.h"
 #include "gettime.h"
 #include "porting.h"
 #include "config.h"
+#include "jthread/jmutexautolock.h"
 
-std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
+// Connection
+std::ostream *dout_con_ptr = &dummyout;
+std::ostream *derr_con_ptr = &verbosestream;
+
+// Server
+std::ostream *dout_server_ptr = &infostream;
+std::ostream *derr_server_ptr = &errorstream;
+
+#ifndef SERVER
+// Client
+std::ostream *dout_client_ptr = &infostream;
+std::ostream *derr_client_ptr = &errorstream;
+#endif
+
+#ifdef __ANDROID__
+unsigned int android_log_level_mapping[] = {
+		/* LMT_ERROR */   ANDROID_LOG_ERROR,
+		/* LMT_ACTION */  ANDROID_LOG_WARN,
+		/* LMT_INFO */    ANDROID_LOG_INFO,
+		/* LMT_VERBOSE */ ANDROID_LOG_VERBOSE
+	};
+#endif
+
+std::vector<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
 JMutex                            log_threadnamemutex;
 
@@ -56,27 +81,38 @@ void log_add_output_all_levs(ILogOutput *out)
 void log_remove_output(ILogOutput *out)
 {
 	for(int i=0; i<LMT_NUM_VALUES; i++){
-		std::list<ILogOutput*>::iterator it =
+		std::vector<ILogOutput*>::iterator it =
 				std::find(log_outputs[i].begin(), log_outputs[i].end(), out);
 		if(it != log_outputs[i].end())
 			log_outputs[i].erase(it);
 	}
 }
 
+void log_set_lev_silence(enum LogMessageLevel lev, bool silence)
+{
+	JMutexAutoLock lock(log_threadnamemutex);
+
+	for (std::vector<ILogOutput *>::iterator it = log_outputs[lev].begin();
+			it != log_outputs[lev].end(); ++it) {
+		ILogOutput *out = *it;
+		out->silence = silence;
+	}
+}
+
 void log_register_thread(const std::string &name)
 {
 	threadid_t id = get_current_thread_id();
-	log_threadnamemutex.Lock();
+	JMutexAutoLock lock(log_threadnamemutex);
+
 	log_threadnames[id] = name;
-	log_threadnamemutex.Unlock();
 }
 
 void log_deregister_thread()
 {
 	threadid_t id = get_current_thread_id();
-	log_threadnamemutex.Lock();
+	JMutexAutoLock lock(log_threadnamemutex);
+
 	log_threadnames.erase(id);
-	log_threadnamemutex.Unlock();
 }
 
 static std::string get_lev_string(enum LogMessageLevel lev)
@@ -98,7 +134,7 @@ static std::string get_lev_string(enum LogMessageLevel lev)
 
 void log_printline(enum LogMessageLevel lev, const std::string &text)
 {
-	log_threadnamemutex.Lock();
+	JMutexAutoLock lock(log_threadnamemutex);
 	std::string threadname = "(unknown thread)";
 	std::map<threadid_t, std::string>::const_iterator i;
 	i = log_threadnames.find(get_current_thread_id());
@@ -106,15 +142,18 @@ void log_printline(enum LogMessageLevel lev, const std::string &text)
 		threadname = i->second;
 	std::string levelname = get_lev_string(lev);
 	std::ostringstream os(std::ios_base::binary);
-	os<<getTimestamp()<<": "<<levelname<<"["<<threadname<<"]: "<<text;
-	for(std::list<ILogOutput*>::iterator i = log_outputs[lev].begin();
-			i != log_outputs[lev].end(); i++){
+	os << getTimestamp() << ": " << levelname << "["<<threadname<<"]: " << text;
+
+	for(std::vector<ILogOutput*>::iterator i = log_outputs[lev].begin();
+			i != log_outputs[lev].end(); i++) {
 		ILogOutput *out = *i;
+		if (out->silence)
+			continue;
+
 		out->printLog(os.str());
 		out->printLog(os.str(), lev);
 		out->printLog(lev, text);
 	}
-	log_threadnamemutex.Unlock();
 }
 
 class Logbuf : public std::streambuf
@@ -145,12 +184,13 @@ public:
 	{
 		log_printline(m_lev, m_buf);
 #ifdef __ANDROID__
-		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", m_buf.c_str());
+		__android_log_print(android_log_level_mapping[m_lev], PROJECT_NAME, "%s", m_buf.c_str());
 #endif
 	}
 
 	void bufchar(char c)
 	{
+		JMutexAutoLock lock(m_log_mutex);
 		if(c == '\n' || c == '\r'){
 			if(m_buf != "")
 				printbuf();
@@ -161,6 +201,7 @@ public:
 	}
 
 private:
+	JMutex m_log_mutex;
 	enum LogMessageLevel m_lev;
 	std::string m_buf;
 };

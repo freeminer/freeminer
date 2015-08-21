@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIFont.h>
 
 #include "gettext.h"
+#include "util/string.h"
 
 const int ID_oldPassword = 256;
 const int ID_newPassword1 = 257;
@@ -84,7 +85,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 		Remove stuff
 	*/
 	removeChildren();
-	
+
 	/*
 		Calculate new sizes and positions
 	*/
@@ -94,59 +95,61 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 			screensize.X/2 + 580/2,
 			screensize.Y/2 + 300/2
 	);
-	
+
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 
 	v2s32 size = rect.getSize();
 	v2s32 topleft_client(40, 0);
 
+	const wchar_t *text;
+
 	/*
 		Add stuff
 	*/
 	s32 ypos = 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("Old Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("Old Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_oldPassword);
 		Environment->setFocus(e);
 		e->setPasswordBox(true);
 	}
 	ypos += 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("New Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("New Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword1);
 		e->setPasswordBox(true);
 	}
 	ypos += 50;
 	{
-		core::rect<s32> rect(0, 0, 110, 20);
-		rect += topleft_client + v2s32(35, ypos+6);
-		wchar_t* text = wgettext("Confirm Password");
+		core::rect<s32> rect(0, 0, 150, 20);
+		rect += topleft_client + v2s32(25, ypos+6);
+		text = wgettext("Confirm Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
 		core::rect<s32> rect(0, 0, 230, 30);
 		rect += topleft_client + v2s32(160, ypos);
-		gui::IGUIEditBox *e = 
+		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword2);
 		e->setPasswordBox(true);
 	}
@@ -155,7 +158,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 140, 30);
 		rect = rect + v2s32(size.X/2-140/2, ypos);
-		wchar_t* text = wgettext("Change");
+		text = wgettext("Change");
 		Environment->addButton(rect, this, ID_change, text);
 		delete[] text;
 	}
@@ -164,8 +167,8 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 300, 20);
 		rect += topleft_client + v2s32(35, ypos);
-		wchar_t* text = wgettext("Passwords do not match!");
-		IGUIElement *e = 
+		text = wgettext("Passwords do not match!");
+		IGUIElement *e =
 		Environment->addStaticText(
 			text,
 			rect, false, true, this, ID_message);
@@ -180,7 +183,7 @@ void GUIPasswordChange::drawMenu()
 	if (!skin)
 		return;
 	video::IVideoDriver* driver = Environment->getVideoDriver();
-	
+
 	video::SColor bgcolor(140,0,0,0);
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
 
@@ -206,12 +209,16 @@ bool GUIPasswordChange::acceptInput()
 				e->setVisible(true);
 			return false;
 		}
-		m_client->sendChangePassword(oldpass, newpass);
+		m_client->sendChangePassword(wide_to_utf8(oldpass),
+			wide_to_utf8(newpass));
 		return true;
 }
 
 bool GUIPasswordChange::OnEvent(const SEvent& event)
 {
+	if (GUIModalMenu::OnEvent(event))
+		return true;
+
 	if(event.EventType==EET_KEY_INPUT_EVENT)
 	{
 		if(event.KeyInput.Key==KEY_ESCAPE && event.KeyInput.PressedDown)

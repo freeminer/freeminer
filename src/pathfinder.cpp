@@ -219,7 +219,7 @@ bool PathFinder::findPathHeuristic(v3POS pos, std::vector <v3POS>& directions,
 	q.insert(OpenElement(heuristicFunction(pos, m_destination), 0, pos, v3POS(0, 0, 0)));
 	while(!q.empty()) {
 		v3POS current_pos = q.begin()->pos;
-		v3POS prev_pos = q.begin()->prev_pos;
+		//v3POS prev_pos = q.begin()->prev_pos;
 		unsigned int current_cost = q.begin()->start_cost;
 		q.erase(q.begin());
 		for(unsigned int i = 0; i < directions.size(); ++i) {

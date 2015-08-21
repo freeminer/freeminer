@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include <exception>
+#include <assert.h>
 #include "gettime.h"
 
 #if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
@@ -75,28 +76,40 @@ extern std::ostream dstream;
 extern std::ostream dstream_no_stderr;
 extern Nullstream dummyout;
 
+
+/* Abort program execution immediately
+ */
+__NORETURN extern void fatal_error_fn(
+		const char *msg, const char *file,
+		unsigned int line, const char *function);
+
+#define FATAL_ERROR(msg) \
+	fatal_error_fn((msg), __FILE__, __LINE__, __FUNCTION_NAME)
+
+#define FATAL_ERROR_IF(expr, msg) \
+	((expr) \
+	? fatal_error_fn((msg), __FILE__, __LINE__, __FUNCTION_NAME) \
+	: (void)(0))
+
 /*
-	Include assert.h and immediately undef assert so that it can't override
-	our assert later on. leveldb/slice.h is a notable offender.
+	sanity_check()
+	Equivalent to assert() but persists in Release builds (i.e. when NDEBUG is
+	defined)
 */
 
-#include <assert.h>
-#undef assert
-
-/*
-	Assert
-*/
-
-__NORETURN extern void assert_fail(
+__NORETURN extern void sanity_check_fn(
 		const char *assertion, const char *file,
 		unsigned int line, const char *function);
 
-#define ASSERT(expr)\
-	((expr)\
-	? (void)(0)\
-	: assert_fail(#expr, __FILE__, __LINE__, __FUNCTION_NAME))
+#define SANITY_CHECK(expr) \
+	((expr) \
+	? (void)(0) \
+	: sanity_check_fn(#expr, __FILE__, __LINE__, __FUNCTION_NAME))
 
-#define assert(expr) ASSERT(expr)
+#define sanity_check(expr) SANITY_CHECK(expr)
+
+
+void debug_set_exception_handler();
 
 /*
 	DebugStack
@@ -121,13 +134,12 @@ private:
 	bool m_overflowed;
 };
 
-#define DSTACK(msg)\
+#define DSTACK(msg) \
 	DebugStacker __debug_stacker(msg);
 
-#define DSTACKF(...)\
-	char __buf[DEBUG_STACK_TEXT_SIZE];\
-	snprintf(__buf,\
-			DEBUG_STACK_TEXT_SIZE, __VA_ARGS__);\
+#define DSTACKF(...) \
+	char __buf[DEBUG_STACK_TEXT_SIZE];                   \
+	snprintf(__buf, DEBUG_STACK_TEXT_SIZE, __VA_ARGS__); \
 	DebugStacker __debug_stacker(__buf);
 
 /*
@@ -135,34 +147,13 @@ private:
 */
 
 #if CATCH_UNHANDLED_EXCEPTIONS == 1
-	#define BEGIN_PORTABLE_DEBUG_EXCEPTION_HANDLER try{
-	#define END_PORTABLE_DEBUG_EXCEPTION_HANDLER(logstream)\
-		}catch(std::exception &e){\
-			logstream<<"ERROR: An unhandled exception occurred: "\
-					<<e.what()<<std::endl;\
-			assert(0);\
+	#define BEGIN_DEBUG_EXCEPTION_HANDLER try {
+	#define END_DEBUG_EXCEPTION_HANDLER(logstream) \
+		} catch (std::exception &e) {                               \
+			logstream << "ERROR: An unhandled exception occurred: " \
+				<< e.what() << std::endl;                           \
+			assert(0);                                              \
 		}
-	#ifdef _WIN32 // Windows
-		#ifdef _MSC_VER // MSVC
-void se_trans_func(unsigned int, EXCEPTION_POINTERS*);
-			#define BEGIN_DEBUG_EXCEPTION_HANDLER \
-				BEGIN_PORTABLE_DEBUG_EXCEPTION_HANDLER\
-				_set_se_translator(se_trans_func);
-
-			#define END_DEBUG_EXCEPTION_HANDLER(logstream) \
-				END_PORTABLE_DEBUG_EXCEPTION_HANDLER(logstream)
-		#else // Probably mingw
-			#define BEGIN_DEBUG_EXCEPTION_HANDLER\
-				BEGIN_PORTABLE_DEBUG_EXCEPTION_HANDLER
-			#define END_DEBUG_EXCEPTION_HANDLER(logstream)\
-				END_PORTABLE_DEBUG_EXCEPTION_HANDLER(logstream)
-		#endif
-	#else // Posix
-		#define BEGIN_DEBUG_EXCEPTION_HANDLER\
-			BEGIN_PORTABLE_DEBUG_EXCEPTION_HANDLER
-		#define END_DEBUG_EXCEPTION_HANDLER(logstream)\
-			END_PORTABLE_DEBUG_EXCEPTION_HANDLER(logstream)
-	#endif
 #else
 	// Dummy ones
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER

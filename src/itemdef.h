@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include "itemgroup.h"
 #include "sound.h"
+#include "msgpack_fix.h"
 class IGameDef;
 struct ToolCapabilities;
 
@@ -43,6 +44,24 @@ enum ItemType
 	ITEM_NODE,
 	ITEM_CRAFT,
 	ITEM_TOOL,
+};
+
+enum {
+	ITEMDEF_TYPE,
+	ITEMDEF_NAME,
+	ITEMDEF_DESCRIPTION,
+	ITEMDEF_INVENTORY_IMAGE,
+	ITEMDEF_WIELD_IMAGE,
+	ITEMDEF_WIELD_SCALE,
+	ITEMDEF_STACK_MAX,
+	ITEMDEF_USABLE,
+	ITEMDEF_LIQUIDS_POINTABLE,
+	ITEMDEF_TOOL_CAPABILITIES,
+	ITEMDEF_GROUPS,
+	ITEMDEF_NODE_PLACEMENT_PREDICTION,
+	ITEMDEF_SOUND_PLACE_NAME,
+	ITEMDEF_SOUND_PLACE_GAIN,
+	ITEMDEF_RANGE
 };
 
 struct ItemDefinition
@@ -88,6 +107,9 @@ struct ItemDefinition
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 private:
 	void resetInitial();
 };
@@ -116,6 +138,9 @@ public:
 #endif
 
 	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
+
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
 };
 
 class IWritableItemDefManager : public IItemDefManager

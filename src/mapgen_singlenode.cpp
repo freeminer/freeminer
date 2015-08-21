@@ -27,22 +27,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "nodedef.h"
 #include "voxelalgorithms.h"
-#include "profiler.h"
 #include "emerge.h"
 
-//////////////////////// Mapgen Singlenode parameter read/write
-
-void MapgenSinglenodeParams::readParams(Settings *settings) {
-}
-
-
-void MapgenSinglenodeParams::writeParams(Settings *settings) {
-}
-
-///////////////////////////////////////////////////////////////////////////////
 
 MapgenSinglenode::MapgenSinglenode(int mapgenid,
-		MapgenParams *params, EmergeManager *emerge)
+	MapgenParams *params, EmergeManager *emerge)
+	: Mapgen(mapgenid, params, emerge)
 {
 	flags = params->flags;
 
@@ -54,12 +44,15 @@ MapgenSinglenode::MapgenSinglenode(int mapgenid,
 }
 
 
-MapgenSinglenode::~MapgenSinglenode() {
+MapgenSinglenode::~MapgenSinglenode()
+{
 }
 
 //////////////////////// Map generator
 
-void MapgenSinglenode::makeChunk(BlockMakeData *data) {
+void MapgenSinglenode::makeChunk(BlockMakeData *data)
+{
+	// Pre-conditions
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
@@ -70,18 +63,20 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 		   data->blockpos_requested.Z <= data->blockpos_max.Z);
 
 	this->generating = true;
-	this->vm   = data->vmanip;	
+	this->vm   = data->vmanip;
 	this->ndef = data->nodedef;
-			
+
 	v3s16 blockpos_min = data->blockpos_min;
 	v3s16 blockpos_max = data->blockpos_max;
 
 	// Area of central chunk
 	v3s16 node_min = blockpos_min*MAP_BLOCKSIZE;
 	v3s16 node_max = (blockpos_max+v3s16(1,1,1))*MAP_BLOCKSIZE-v3s16(1,1,1);
-	
+
+	blockseed = getBlockSeed2(node_min, data->seed);
+
 	MapNode n_node(c_node);
-	
+
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 		u32 i = vm->m_area.index(node_min.X, y, z);
@@ -97,13 +92,13 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)
-		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
-					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
-	
+		calcLighting(node_min, node_max);
+
 	this->generating = false;
 }
 
-int MapgenSinglenode::getGroundLevelAtPoint(v2s16 p) {
+int MapgenSinglenode::getGroundLevelAtPoint(v2s16 p)
+{
 	return 0;
 }
 

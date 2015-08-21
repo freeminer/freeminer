@@ -33,55 +33,54 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "lock.h"
 #include "unordered_map_hash.h"
+#include <unordered_set>
+#include <queue>
 
 /*
-	Queue with unique values with fast checking of value existence
+Queue with unique values with fast checking of value existence
 */
 
 template<typename Value>
 class UniqueQueue {
 public:
-	
+
 	/*
-		Does nothing if value is already queued.
-		Return value:
-			true: value added
-			false: value already exists
+	Does nothing if value is already queued.
+	Return value:
+	true: value added
+	false: value already exists
 	*/
-	bool push_back(Value value)
+	bool push_back(const Value& value)
 	{
-		// Check if already exists
-		if(m_map.find(value) != m_map.end())
-			return false;
-
-		// Add
-		m_map[value] = 0;
-		m_list.push_back(value);
-		
-		return true;
+		if (m_set.insert(value).second)
+		{
+			m_queue.push(value);
+			return true;
+		}
+		return false;
 	}
 
-	Value pop_front()
+	void pop_front()
 	{
-		typename std::list<Value>::iterator i = m_list.begin();
-		Value value = *i;
-		m_map.erase(value);
-		m_list.pop_front();
-		return value;
+		m_set.erase(m_queue.front());
+		m_queue.pop();
 	}
 
-	u32 size()
+	const Value& front() const
 	{
-		return m_map.size();
+		return m_queue.front();
+	}
+
+	u32 size() const
+	{
+		return m_queue.size();
 	}
 
 private:
-	//std::map<Value, u8> m_map;
-	std::unordered_map<Value, u8, v3POSHash, v3POSEqual> m_map; // all usage with v3s16 now
-	std::list<Value> m_list;
+	std::unordered_set<Value, v3POSHash, v3POSEqual> m_set;
+	std::queue<Value> m_queue;
 };
 
-#if 1
 template<typename Key, typename Value>
 class MutexedMap
 {
@@ -89,14 +88,14 @@ public:
 	MutexedMap()
 	{
 	}
-	
+
 	void set(const Key &name, const Value &value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
 		m_values[name] = value;
 	}
-	
+
 	bool get(const Key &name, Value *result)
 	{
 		JMutexAutoLock lock(m_mutex);
@@ -106,24 +105,24 @@ public:
 
 		if(n == m_values.end())
 			return false;
-		
+
 		if(result != NULL)
 			*result = n->second;
-			
+
 		return true;
 	}
 
-	std::list<Value> getValues()
+	std::vector<Value> getValues()
 	{
-		std::list<Value> result;
+		std::vector<Value> result;
 		for(typename std::map<Key, Value>::iterator
-				i = m_values.begin();
-				i != m_values.end(); ++i){
+			i = m_values.begin();
+			i != m_values.end(); ++i){
 			result.push_back(i->second);
 		}
 		return result;
 	}
-	
+
 	void clear ()
 	{
 		m_values.clear();
@@ -133,19 +132,18 @@ private:
 	std::map<Key, Value> m_values;
 	JMutex m_mutex;
 };
-#endif
 
 /*
-	Generates ids for comparable values.
-	Id=0 is reserved for "no value".
+Generates ids for comparable values.
+Id=0 is reserved for "no value".
 
-	Is fast at:
-	- Returning value by id (very fast)
-	- Returning id by value
-	- Generating a new id for a value
+Is fast at:
+- Returning value by id (very fast)
+- Returning id by value
+- Generating a new id for a value
 
-	Is not able to:
-	- Remove an id/value pair (is possible to implement but slow)
+Is not able to:
+- Remove an id/value pair (is possible to implement but slow)
 */
 template<typename T>
 class MutexedIdGenerator
@@ -154,7 +152,7 @@ public:
 	MutexedIdGenerator()
 	{
 	}
-	
+
 	// Returns true if found
 	bool getValue(u32 id, T &value)
 	{
@@ -166,7 +164,7 @@ public:
 		value = m_id_to_value[id-1];
 		return true;
 	}
-	
+
 	// If id exists for value, returns the id.
 	// Otherwise generates an id for the value.
 	u32 getId(const T &value)
@@ -190,74 +188,54 @@ private:
 };
 
 /*
-	FIFO queue (well, actually a FILO also)
+FIFO queue (well, actually a FILO also)
 */
 template<typename T>
-class Queue
-: public locker
+class Queue //TODO! rename me to shared_queue
+: public locker<>, public std::queue<T>
 {
 public:
-	Queue() {
-		m_list_size = 0;
-	}
+	Queue() { }
 
 	void push_back(T t)
 	{
 		auto lock = lock_unique();
-		m_list.push_back(t);
-		++m_list_size;
+		std::queue<T>::push(t);
 	}
-	
-	void push_front(T t)
+
+	void push(T t)
 	{
 		auto lock = lock_unique();
-		m_list.push_front(t);
-		++m_list_size;
+		std::queue<T>::push(t);
 	}
+
+	// usually used as pop_front()
+	T front() = delete;
+	void pop() = delete;
 
 	T pop_front()
 	{
 		auto lock = lock_unique();
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
-		--m_list_size;
-		return t;
-	}
-	T pop_back()
-	{
-		auto lock = lock_unique();
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator last = m_list.back();
-		T t = *last;
-		m_list.erase(last);
-		--m_list_size;
-		return t;
+		T val = std::queue<T>::front();
+		std::queue<T>::pop();
+		return val;
 	}
 
 	u32 size()
 	{
-		return m_list_size;
+		auto lock = lock_shared();
+		return std::queue<T>::size();
 	}
 
 	bool empty()
 	{
 		auto lock = lock_shared();
-		return m_list.empty();
+		return std::queue<T>::empty();
 	}
-
-protected:
-	std::list<T> m_list;
-	std::atomic_uint m_list_size;
 };
 
 /*
-	Thread-safe FIFO queue (well, actually a FILO also)
+Thread-safe FIFO queue (well, actually a FILO also)
 */
 
 template<typename T>
@@ -273,7 +251,7 @@ public:
 	bool empty()
 	{
 		try_shared_lock lock(m_mutex);
-		return (m_size.GetValue() == 0);
+		return (m_queue.size() == 0);
 	}
 	bool empty_try()
 	{
@@ -282,46 +260,44 @@ public:
 			return 1;
 		return (m_size.GetValue() == 0);
 	}
+	unsigned int size() {
+		unique_lock lock(m_mutex);
+		return m_queue.size();
+	}
 	void push_back(T t)
 	{
 		unique_lock lock(m_mutex);
-		m_list.push_back(t);
+		m_queue.push_back(t);
 		m_size.Post();
 	}
 
 	/* this version of pop_front returns a empty element of T on timeout.
-	 * Make sure default constructor of T creates a recognizable "empty" element
-	 */
+	* Make sure default constructor of T creates a recognizable "empty" element
+	*/
 	T pop_frontNoEx(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
 
 	T pop_front(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
@@ -332,47 +308,38 @@ public:
 
 		unique_lock lock(m_mutex);
 
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
+		T t = m_queue.front();
+		m_queue.pop_front();
 		return t;
 	}
 
 	T pop_back(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
 
 	/* this version of pop_back returns a empty element of T on timeout.
-	 * Make sure default constructor of T creates a recognizable "empty" element
-	 */
+	* Make sure default constructor of T creates a recognizable "empty" element
+	*/
 	T pop_backNoEx(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			unique_lock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
@@ -383,10 +350,8 @@ public:
 
 		unique_lock lock(m_mutex);
 
-		typename std::list<T>::iterator last = m_list.end();
-		last--;
-		T t = *last;
-		m_list.erase(last);
+		T t = m_queue.back();
+		m_queue.pop_back();
 		return t;
 	}
 
@@ -396,16 +361,83 @@ protected:
 		return m_mutex;
 	}
 
-	// NEVER EVER modify the >>list<< you got by using this function!
-	// You may only modify it's content
-	std::list<T> & getList()
+	std::deque<T> & getQueue()
 	{
-		return m_list;
+		return m_queue;
 	}
 
+	std::deque<T> m_queue;
 	try_shared_mutex m_mutex;
-	std::list<T> m_list;
 	JSemaphore m_size;
+};
+
+template<typename K, typename V>
+class LRUCache
+{
+public:
+	LRUCache(size_t limit, void (*cache_miss)(void *data, const K &key, V *dest),
+			void *data)
+	{
+		m_limit = limit;
+		m_cache_miss = cache_miss;
+		m_cache_miss_data = data;
+	}
+
+	void setLimit(size_t limit)
+	{
+		m_limit = limit;
+		invalidate();
+	}
+
+	void invalidate()
+	{
+		m_map.clear();
+		m_queue.clear();
+	}
+
+	const V *lookupCache(K key)
+	{
+		typename cache_type::iterator it = m_map.find(key);
+		V *ret;
+		if (it != m_map.end()) {
+			// found!
+
+			cache_entry_t &entry = it->second;
+
+			ret = &entry.second;
+
+			// update the usage information
+			m_queue.erase(entry.first);
+			m_queue.push_front(key);
+			entry.first = m_queue.begin();
+		} else {
+			// cache miss -- enter into cache
+			cache_entry_t &entry =
+				m_map[key];
+			ret = &entry.second;
+			m_cache_miss(m_cache_miss_data, key, &entry.second);
+
+			// delete old entries
+			if (m_queue.size() == m_limit) {
+				const K &id = m_queue.back();
+				m_map.erase(id);
+				m_queue.pop_back();
+			}
+
+			m_queue.push_front(key);
+			entry.first = m_queue.begin();
+		}
+		return ret;
+	}
+private:
+	void (*m_cache_miss)(void *data, const K &key, V *dest);
+	void *m_cache_miss_data;
+	size_t m_limit;
+	typedef typename std::template pair<typename std::template list<K>::iterator, V> cache_entry_t;
+	typedef std::template map<K, cache_entry_t> cache_type;
+	cache_type m_map;
+	// we can't use std::deque here, because its iterators get invalidated
+	std::list<K> m_queue;
 };
 
 #endif

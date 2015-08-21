@@ -29,6 +29,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "itemgroup.h"
 
+#include "network/connection.h"
+#include "util/msgpack_serialize.h"
+
+enum {
+	TOOLGROUPCAP_USES,
+	TOOLGROUPCAP_MAXLEVEL,
+	TOOLGROUPCAP_TIMES
+};
+
 struct ToolGroupCap
 {
 	std::map<int, float> times;
@@ -50,12 +59,37 @@ struct ToolGroupCap
 		*time = i->second;
 		return true;
 	}
+
+	template<typename Packer>
+	void msgpack_pack(Packer& pk) const
+	{
+		pk.pack_map(3);
+		PACK(TOOLGROUPCAP_USES, uses);
+		PACK(TOOLGROUPCAP_MAXLEVEL, maxlevel);
+		PACK(TOOLGROUPCAP_TIMES, times);
+	}
+	void msgpack_unpack(msgpack::object o)
+	{
+		MsgpackPacket packet;
+		o.convert(&packet);
+
+		packet[TOOLGROUPCAP_USES].convert(&uses);
+		packet[TOOLGROUPCAP_MAXLEVEL].convert(&maxlevel);
+		packet[TOOLGROUPCAP_TIMES].convert(&times);
+	}
 };
 
 
 // CLANG SUCKS DONKEY BALLS
 typedef std::map<std::string, struct ToolGroupCap> ToolGCMap;
 typedef std::map<std::string, s16> DamageGroup;
+
+enum {
+	TOOLCAP_FULL_PUNCH_INTERVAL,
+	TOOLCAP_MAX_DROP_LEVEL,
+	TOOLCAP_GROUPCAPS,
+	TOOLCAP_DAMAGEGROUPS
+};
 
 struct ToolCapabilities
 {
@@ -80,6 +114,9 @@ struct ToolCapabilities
 
 	void serialize(std::ostream &os, u16 version) const;
 	void deSerialize(std::istream &is);
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
 };
 
 struct DigParams

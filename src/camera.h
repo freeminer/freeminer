@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "inventory.h"
 #include "mesh.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "util/numeric.h"
 #include <ICameraSceneNode.h>
 
@@ -113,7 +113,7 @@ public:
 	}
 
 	// Checks if the constructor was able to create the scene nodes
-	bool successfullyCreated(std::wstring& error_message);
+	bool successfullyCreated(std::string &error_message);
 
 	// Step the camera: updates the viewing range and view bobbing.
 	void step(f32 dtime);
@@ -166,7 +166,6 @@ private:
 	u8 m_wieldlight_add;
 
 	WieldMeshSceneNode* m_wieldnode;
-	scene::ILightSceneNode* m_wieldlightnode;
 
 	// draw control
 	MapDrawControl& m_draw_control;
@@ -216,6 +215,14 @@ private:
 	ItemStack m_wield_item_next;
 
 	CameraMode m_camera_mode;
+
+	bool m_cache_movement_fov;
+
+	f32 m_cache_fall_bobbing_amount;
+	f32 m_cache_view_bobbing_amount;
+	f32 m_cache_wanted_fps;
+	f32 m_cache_fov;
+	bool m_cache_view_bobbing;
 };
 
 #endif

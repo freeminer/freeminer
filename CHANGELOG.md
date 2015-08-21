@@ -1,8 +1,48 @@
 Engine
 ======
 
-### 0.4.10.5 (dev)
+### 0.4.13.7 (Aug 20, 2015)
+  * Stability and speed fixes
+  * liquid_pressure=1 (dev)
+  * thread for abm apply
+  * optional support old minetest protocol (to host servers for minetest players) to enable compile with -DMINETEST_PROTO=1
+  * use bundled msgpack 1.1.0 (incompatible with 0.5.x in some packets where vector<string> used)
+  * timelapse=seconds option for automated screenshots
+  * set any settings from command line: -key[=[value]]
+    ./freeminer -name=herob
+    ./freeminer "-name=hero brine"    # value with spaces
+    ./freeminer -autojump             # set autojump to 1
+    ./freeminer -enable_fog=          # set enable_fog to ""
+  * android: gettext and luajit enabled
 
+
+### 0.4.12.6 (Feb 18, 2015)
+  * Stability and speed fixes
+
+
+### 0.4.11.5 (Dec 25, 2014)
+  * Lot of stability and speed fixes
+  * use utf8 everywhere
+
+#### Protocol (Incompatible with minetest now)
+  * enet based networking (30x+  faster than before, more reliable)
+  * msgpack based protocol (easy extendable, better backward compatibility)
+
+#### Settings
+  * Storing config to .json
+    map_meta.txt will be auto converted to json
+    optional for main config (if you want to start use:  `echo {} > freeminer.json`  and start freeminer)
+
+#### Server
+  * Added stat viewer tool (shown by issuing `/stat` command)
+
+#### Client
+  * Celestial object movement and angle tuned according to position in the world (0,0 is the equator)
+
+#### API
+  * Save and load lua tables as json to settings
+    core.setting_setjson("tttt", {a1=2, b3=4, c5={e6=7,ff={1,2,3,4}}})
+    print("json readed: tttt.b3=" .. core.setting_getjson("tttt")["b3"] .. "   full saved=" .. core.write_json( core.setting_getjson("tttt")))
 
 
 ### 0.4.10.4 (Nov 24, 2014)
@@ -25,6 +65,7 @@ Engine
   * Allow any player names `enable_any_name = 1`
   * Optimized block sending for farther range
   * Various death messages
+  * Statistic collector (per player, per server, timed (daily, weekly, monthly))
 
 #### Mapgens
   * Layers added to mapgen v5
@@ -73,12 +114,20 @@ Engine
     Temporarily closes db for backups or mapper tools.
     `killall -HUP freeminerserver; do something; killall -HUP freeminerserver`
 
+#### API
+  * new param `fast` improving performance:
+    * `core.set_node(pos, node, fast)` (might cause lighting bugs)
+    * `core.remove_node(pos, fast)`
+
+#### Game
+  * TNT mod
+  * Bucket fixes
+
 #### Incompatible with minetest:
 
   * Players data files saved to LevelDB storage
   * New LevelDB map key format: "a10,-11,12" instead of 64bit number
   (freeminer can read minetest maps, but writes to new format)
-
 
 
 ### 0.4.9.3 (Jan 22, 2014)
@@ -95,6 +144,7 @@ Engine
   * Third person view, press F7 to cycle through available modes. (BlockMen)
   * A lot of boring bugfixes, performance improvements and other stuff.
 
+
 ### 0.4.8.2 (Dec 6, 2013)
 
   * Greater FOV (field of view) when running. (Jeija)
@@ -106,6 +156,7 @@ Engine
   * New main menu. (xyz)
   * Renamed `minetest.conf` to `freeminer.conf`
   * Renamed default `minetest_game` to `default`
+
 
 ### 0.4.8.0 (Nov 28, 2013)
   * 99% lag-free; optimized server can handle 50-100-... players;
@@ -131,18 +182,7 @@ Engine
   from <http://mandelbulber.com>, all params are adjustable
   * And some small bugfixes and improvements.
 
-***************
-API
-===
-
-### 0.4.10.4 (dev)
-
-  * new param `fast` improving performance:
-    * `core.set_node(pos, node, fast)` (might cause lighting bugs)
-    * `core.remove_node(pos, fast)`
-
-### 0.4.8.0 (Nov 28, 2013)
-
+#### API
   * New node groups: freeze, melt, hot, cold (define temperatures);
   learn how to use them here
   * New node group: slippery
@@ -154,17 +194,7 @@ API
       (for example, melting snow in 4×4 area around torch)
   * `core.get_surface` (sapier #640)
 
-****************
-Game
-====
-
-### 0.4.10.4 (dev)
-
-  * TNT mod
-  * Bucket fixes
-
-### 0.4.8.0 (Nov 28, 2013)
-
+#### Game
   * Weather support
   (liquids freeze, melt; plants, trees growing; dirt transforms, ...)
   * Rain, snow

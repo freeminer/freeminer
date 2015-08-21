@@ -41,12 +41,15 @@ public:
 	void setCube(const TileSpec tiles[6],
 			v3f wield_scale, ITextureSource *tsrc);
 	void setExtruded(const std::string &imagename,
-			v3f wield_scale, ITextureSource *tsrc);
+			v3f wield_scale, ITextureSource *tsrc, u8 num_frames);
 	void setItem(const ItemStack &item, IGameDef *gamedef);
 
 	// Sets the vertex color of the wield mesh.
 	// Must only be used if the constructor was called with lighting = false
 	void setColor(video::SColor color);
+
+	scene::IMesh *getMesh()
+	{ return m_meshnode->getMesh(); }
 
 	virtual void render();
 
@@ -66,6 +69,7 @@ private:
 	bool m_lighting;
 
 	bool m_enable_shaders;
+	bool m_anisotropic_filter;
 	bool m_bilinear_filter;
 	bool m_trilinear_filter;
 

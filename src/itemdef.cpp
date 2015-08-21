@@ -22,7 +22,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "itemdef.h"
-
 #include "gamedef.h"
 #include "nodedef.h"
 #include "tool.h"
@@ -31,12 +30,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "wieldmesh.h"
-#include "tile.h"
 #include "clientmap.h"
 #include "mapblock.h"
+#include "client/tile.h"
 #endif
 #include "log.h"
-#include "main.h" // g_settings
 #include "settings.h"
 #include "util/serialize.h"
 #include "util/container.h"
@@ -221,9 +219,67 @@ void ItemDefinition::deSerialize(std::istream &is)
 	}catch(SerializationError &e) {};
 }
 
+void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+{
+	pk.pack_map(tool_capabilities ? 15 : 14);
+	PACK(ITEMDEF_TYPE, (int)type);
+	PACK(ITEMDEF_NAME, name);
+	PACK(ITEMDEF_DESCRIPTION, description);
+	PACK(ITEMDEF_INVENTORY_IMAGE, inventory_image);
+	PACK(ITEMDEF_WIELD_IMAGE, wield_image);
+	PACK(ITEMDEF_WIELD_SCALE, wield_scale);
+	PACK(ITEMDEF_STACK_MAX, stack_max);
+	PACK(ITEMDEF_USABLE, usable);
+	PACK(ITEMDEF_LIQUIDS_POINTABLE, liquids_pointable);
+
+	if(tool_capabilities)
+		PACK(ITEMDEF_TOOL_CAPABILITIES, *tool_capabilities);
+
+	PACK(ITEMDEF_GROUPS, groups);
+	PACK(ITEMDEF_NODE_PLACEMENT_PREDICTION, node_placement_prediction);
+	PACK(ITEMDEF_SOUND_PLACE_NAME, sound_place.name);
+	PACK(ITEMDEF_SOUND_PLACE_GAIN, sound_place.gain);
+	PACK(ITEMDEF_RANGE, range);
+}
+
+void ItemDefinition::msgpack_unpack(msgpack::object o)
+{
+	// Reset everything
+	reset();
+
+	MsgpackPacket packet = o.as<MsgpackPacket>();
+	int type_tmp;
+	packet[ITEMDEF_TYPE].convert(&type_tmp);
+	type = (ItemType)type_tmp;
+	packet[ITEMDEF_NAME].convert(&name);
+	packet[ITEMDEF_DESCRIPTION].convert(&description);
+	packet[ITEMDEF_INVENTORY_IMAGE].convert(&inventory_image);
+	packet[ITEMDEF_WIELD_IMAGE].convert(&wield_image);
+	packet[ITEMDEF_WIELD_SCALE].convert(&wield_scale);
+	packet[ITEMDEF_STACK_MAX].convert(&stack_max);
+	packet[ITEMDEF_USABLE].convert(&usable);
+	packet[ITEMDEF_LIQUIDS_POINTABLE].convert(&liquids_pointable);
+
+	if (packet.find(ITEMDEF_TOOL_CAPABILITIES) != packet.end()) {
+		tool_capabilities = new ToolCapabilities;
+		packet[ITEMDEF_TOOL_CAPABILITIES].convert(tool_capabilities);
+	}
+
+	packet[ITEMDEF_GROUPS].convert(&groups);
+	packet[ITEMDEF_NODE_PLACEMENT_PREDICTION].convert(&node_placement_prediction);
+	packet[ITEMDEF_SOUND_PLACE_NAME].convert(&sound_place.name);
+	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(&sound_place.gain);
+	packet[ITEMDEF_RANGE].convert(&range);
+}
+
 /*
 	CItemDefManager
 */
+
+enum {
+	ITEMDEFMANAGER_ITEMDEFS,
+	ITEMDEFMANAGER_ALIASES
+};
 
 // SUGG: Support chains of aliases?
 
@@ -254,8 +310,8 @@ public:
 	virtual ~CItemDefManager()
 	{
 #ifndef SERVER
-		const std::list<ClientCached*> &values = m_clientcached.getValues();
-		for(std::list<ClientCached*>::const_iterator
+		const std::vector<ClientCached*> &values = m_clientcached.getValues();
+		for(std::vector<ClientCached*>::const_iterator
 				i = values.begin(); i != values.end(); ++i)
 		{
 			ClientCached *cc = *i;
@@ -286,26 +342,23 @@ public:
 	}
 	virtual std::string getAlias(const std::string &name) const
 	{
-		std::map<std::string, std::string>::const_iterator i;
-		i = m_aliases.find(name);
-		if(i != m_aliases.end())
-			return i->second;
+		StringMap::const_iterator it = m_aliases.find(name);
+		if (it != m_aliases.end())
+			return it->second;
 		return name;
 	}
 	virtual std::set<std::string> getAll() const
 	{
 		std::set<std::string> result;
-		for(std::map<std::string, ItemDefinition*>::const_iterator
-				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); i++)
-		{
-			result.insert(i->first);
+		for(std::map<std::string, ItemDefinition *>::const_iterator
+				it = m_item_definitions.begin();
+				it != m_item_definitions.end(); ++it) {
+			result.insert(it->first);
 		}
-		for(std::map<std::string, std::string>::const_iterator
-				i = m_aliases.begin();
-				i != m_aliases.end(); i++)
-		{
-			result.insert(i->first);
+		for (StringMap::const_iterator
+				it = m_aliases.begin();
+				it != m_aliases.end(); ++it) {
+			result.insert(it->first);
 		}
 		return result;
 	}
@@ -326,7 +379,7 @@ public:
 				<<name<<"\""<<std::endl;
 
 		// This is not thread-safe
-		assert(get_current_thread_id() == m_main_thread);
+		sanity_check(get_current_thread_id() == m_main_thread);
 
 		// Skip if already in cache
 		ClientCached *cc = NULL;
@@ -367,8 +420,6 @@ public:
 
 			scene::IMesh *node_mesh = NULL;
 
-			bool reenable_shaders = false;
-
 			if (need_rtt_mesh || need_wield_mesh) {
 				u8 param1 = 0;
 				if (f.param_type == CPT_LIGHT)
@@ -377,15 +428,11 @@ public:
 				/*
 					Make a mesh from the node
 				*/
-				if (g_settings->getBool("enable_shaders")) {
-					reenable_shaders = true;
-					g_settings->setBool("enable_shaders", false);
-				}
 				Map map(gamedef);
 				MapDrawControl map_draw_control;
-				MeshMakeData mesh_make_data(gamedef, map, map_draw_control);
-				v3s16 p0(0, 0, 0);
-				auto block = map.createBlankBlockNoInsert(p0);
+				MeshMakeData mesh_make_data(gamedef, false, map, map_draw_control);
+				v3POS bp = v3POS(32000, 32000, 32000-id);
+				auto block = map.createBlankBlockNoInsert(bp);
 				auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
 				for(s16 z0=0; z0<=2; ++z0)
 				for(s16 y0=0; y0<=2; ++y0)
@@ -397,13 +444,13 @@ public:
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
 					param2 = 1;
 				MapNode mesh_make_node(id, param1, param2);
-				mesh_make_data.fillSingleNode(&mesh_make_node);
+				mesh_make_data.fillSingleNode(&mesh_make_node, bp);
 				block->setNode(v3s16(1,1,1), mesh_make_node);
 				map.insertBlock(block);
-				MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
+				MapBlockMesh mapblock_mesh(&mesh_make_data, bp*MAP_BLOCKSIZE);
 
 /* MT
-				MeshMakeData mesh_make_data(gamedef);
+				MeshMakeData mesh_make_data(gamedef, false);
 				u8 param2 = 0;
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
 					param2 = 1;
@@ -472,9 +519,6 @@ public:
 
 			if (node_mesh)
 				node_mesh->drop();
-
-			if (reenable_shaders)
-				g_settings->setBool("enable_shaders",true);
 		}
 
 		// Put in cache
@@ -582,7 +626,7 @@ public:
 		verbosestream<<"ItemDefManager: registering \""<<def.name<<"\""<<std::endl;
 		// Ensure that the "" item (the hand) always has ToolCapabilities
 		if(def.name == "")
-			assert(def.tool_capabilities != NULL);
+			FATAL_ERROR_IF(!def.tool_capabilities, "Hand does not have ToolCapabilities");
 
 		if(m_item_definitions.count(def.name) == 0)
 			m_item_definitions[def.name] = new ItemDefinition(def);
@@ -610,22 +654,24 @@ public:
 		writeU8(os, 0); // version
 		u16 count = m_item_definitions.size();
 		writeU16(os, count);
-		for(std::map<std::string, ItemDefinition*>::const_iterator
-				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); i++)
-		{
-			ItemDefinition *def = i->second;
+
+		for (std::map<std::string, ItemDefinition *>::const_iterator
+				it = m_item_definitions.begin();
+				it != m_item_definitions.end(); ++it) {
+			ItemDefinition *def = it->second;
 			// Serialize ItemDefinition and write wrapped in a string
 			std::ostringstream tmp_os(std::ios::binary);
 			def->serialize(tmp_os, protocol_version);
-			os<<serializeString(tmp_os.str());
+			os << serializeString(tmp_os.str());
 		}
+
 		writeU16(os, m_aliases.size());
-		for(std::map<std::string, std::string>::const_iterator
-			i = m_aliases.begin(); i != m_aliases.end(); i++)
-		{
-			os<<serializeString(i->first);
-			os<<serializeString(i->second);
+
+		for (StringMap::const_iterator
+				it = m_aliases.begin();
+				it != m_aliases.end(); ++it) {
+			os << serializeString(it->first);
+			os << serializeString(it->second);
 		}
 	}
 	void deSerialize(std::istream &is)
@@ -654,6 +700,29 @@ public:
 			registerAlias(name, convert_to);
 		}
 	}
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
+		pk.pack_map(2);
+		pk.pack((int)ITEMDEFMANAGER_ITEMDEFS);
+		pk.pack_map(m_item_definitions.size());
+		for (std::map<std::string, ItemDefinition*>::const_iterator i = m_item_definitions.begin();
+				i != m_item_definitions.end(); ++i) {
+			pk.pack(i->first);
+			pk.pack(*(i->second));
+		}
+		PACK(ITEMDEFMANAGER_ALIASES, m_aliases);
+	}
+	void msgpack_unpack(msgpack::object o) {
+		clear();
+		MsgpackPacket packet = o.as<MsgpackPacket>();
+
+		std::map<std::string, ItemDefinition> itemdefs_tmp;
+		packet[ITEMDEFMANAGER_ITEMDEFS].convert(&itemdefs_tmp);
+		for (std::map<std::string, ItemDefinition>::iterator i = itemdefs_tmp.begin();
+				i != itemdefs_tmp.end(); ++i) {
+			registerItem(i->second);
+		}
+		packet[ITEMDEFMANAGER_ALIASES].convert(&m_aliases);
+	}
 	void processQueue(IGameDef *gamedef)
 	{
 #ifndef SERVER
@@ -672,7 +741,7 @@ private:
 	// Key is name
 	std::map<std::string, ItemDefinition*> m_item_definitions;
 	// Aliases
-	std::map<std::string, std::string> m_aliases;
+	StringMap m_aliases;
 #ifndef SERVER
 	// The id of the thread that is allowed to use irrlicht directly
 	threadid_t m_main_thread;

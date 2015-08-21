@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <IAnimatedMesh.h>
 #include <SAnimatedMesh.h>
+#include "client/tile.h"
 
 // In Irrlicht 1.8 the signature of ITexture::lock was changed from
 // (bool, u32) to (E_TEXTURE_LOCK_MODE, u32).
@@ -35,6 +36,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #define MY_ETLM_READ_ONLY video::ETLM_READ_ONLY
 #endif
+
+static void applyFacesShading(video::SColor& color, float factor)
+{
+	color.setRed(core::clamp(core::round32(color.getRed()*factor), 0, 255));
+	color.setGreen(core::clamp(core::round32(color.getGreen()*factor), 0, 255));
+	color.setBlue(core::clamp(core::round32(color.getBlue()*factor), 0, 255));
+}
 
 scene::IAnimatedMesh* createCubeMesh(v3f scale)
 {
@@ -97,26 +105,25 @@ scene::IAnimatedMesh* createCubeMesh(v3f scale)
 
 void scaleMesh(scene::IMesh *mesh, v3f scale)
 {
-	if(mesh == NULL)
+	if (mesh == NULL)
 		return;
 
 	core::aabbox3d<f32> bbox;
-	bbox.reset(0,0,0);
+	bbox.reset(0, 0, 0);
 
-	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
-	{
+	u32 mc = mesh->getMeshBufferCount();
+	for (u32 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
-		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
-		{
-			vertices[i].Pos *= scale;
-		}
+		const u32 stride = getVertexPitchFromType(buf->getVertexType());
+		u32 vertex_count = buf->getVertexCount();
+		u8 *vertices = (u8 *)buf->getVertices();
+		for (u32 i = 0; i < vertex_count; i++)
+			((video::S3DVertex *)(vertices + i * stride))->Pos *= scale;
+
 		buf->recalculateBoundingBox();
 
 		// calculate total bounding box
-		if(j == 0)
+		if (j == 0)
 			bbox = buf->getBoundingBox();
 		else
 			bbox.addInternalBox(buf->getBoundingBox());
@@ -126,26 +133,25 @@ void scaleMesh(scene::IMesh *mesh, v3f scale)
 
 void translateMesh(scene::IMesh *mesh, v3f vec)
 {
-	if(mesh == NULL)
+	if (mesh == NULL)
 		return;
 
 	core::aabbox3d<f32> bbox;
-	bbox.reset(0,0,0);
+	bbox.reset(0, 0, 0);
 
-	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
-	{
+	u32 mc = mesh->getMeshBufferCount();
+	for (u32 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
-		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
-		{
-			vertices[i].Pos += vec;
-		}
+		const u32 stride = getVertexPitchFromType(buf->getVertexType());
+		u32 vertex_count = buf->getVertexCount();
+		u8 *vertices = (u8 *)buf->getVertices();
+		for (u32 i = 0; i < vertex_count; i++)
+			((video::S3DVertex *)(vertices + i * stride))->Pos += vec;
+
 		buf->recalculateBoundingBox();
 
 		// calculate total bounding box
-		if(j == 0)
+		if (j == 0)
 			bbox = buf->getBoundingBox();
 		else
 			bbox.addInternalBox(buf->getBoundingBox());
@@ -153,20 +159,48 @@ void translateMesh(scene::IMesh *mesh, v3f vec)
 	mesh->setBoundingBox(bbox);
 }
 
+
 void setMeshColor(scene::IMesh *mesh, const video::SColor &color)
 {
-	if(mesh == NULL)
+	if (mesh == NULL)
 		return;
-	
-	u16 mc = mesh->getMeshBufferCount();
-	for(u16 j=0; j<mc; j++)
-	{
+
+	u32 mc = mesh->getMeshBufferCount();
+	for (u32 j = 0; j < mc; j++) {
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		video::S3DVertex *vertices = (video::S3DVertex*)buf->getVertices();
-		u16 vc = buf->getVertexCount();
-		for(u16 i=0; i<vc; i++)
-		{
-			vertices[i].Color = color;
+		const u32 stride = getVertexPitchFromType(buf->getVertexType());
+		u32 vertex_count = buf->getVertexCount();
+		u8 *vertices = (u8 *)buf->getVertices();
+		for (u32 i = 0; i < vertex_count; i++)
+			((video::S3DVertex *)(vertices + i * stride))->Color = color;
+	}
+}
+
+void shadeMeshFaces(scene::IMesh *mesh)
+{
+	if (mesh == NULL)
+		return;
+
+	u32 mc = mesh->getMeshBufferCount();
+	for (u32 j = 0; j < mc; j++) {
+		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
+		const u32 stride = getVertexPitchFromType(buf->getVertexType());
+		u32 vertex_count = buf->getVertexCount();
+		u8 *vertices = (u8 *)buf->getVertices();
+		for (u32 i = 0; i < vertex_count; i++) {
+			video::S3DVertex *vertex = (video::S3DVertex *)(vertices + i * stride);
+			video::SColor &vc = vertex->Color;
+			if (vertex->Normal.Y < -0.5) {
+				applyFacesShading (vc, 0.447213);
+			} else if (vertex->Normal.Z > 0.5) {
+				applyFacesShading (vc, 0.670820);
+			} else if (vertex->Normal.Z < -0.5) {
+				applyFacesShading (vc, 0.670820);
+			} else if (vertex->Normal.X > 0.5) {
+				applyFacesShading (vc, 0.836660);
+			} else if (vertex->Normal.X < -0.5) {
+				applyFacesShading (vc, 0.836660);
+			}
 		}
 	}
 }

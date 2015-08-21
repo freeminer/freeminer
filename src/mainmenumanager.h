@@ -42,7 +42,7 @@ public:
 	virtual void signalKeyConfigChange() = 0;
 };
 
-extern gui::IGUIEnvironment* guienv;
+extern gui::IGUIEnvironment *guienv;
 extern gui::IGUIStaticText *guiroot;
 
 // Handler for the modal menus
@@ -59,7 +59,7 @@ public:
 			assert(*i != menu);
 		}
 
-		if(m_stack.size() != 0)
+		if(!m_stack.empty())
 			m_stack.back()->setVisible(false);
 		m_stack.push_back(menu);
 	}
@@ -87,14 +87,14 @@ public:
 		assert(*i == menu);
 		m_stack.erase(i);*/
 		
-		if(m_stack.size() != 0)
+		if(!m_stack.empty())
 			m_stack.back()->setVisible(true);
 	}
 
 	// Returns true to prevent further processing
 	virtual bool preprocessEvent(const SEvent& event)
 	{
-		if(m_stack.size() != 0)
+		if(!m_stack.empty())
 			return m_stack.back()->preprocessEvent(event);
 		else
 			return false;

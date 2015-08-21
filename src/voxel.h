@@ -79,7 +79,7 @@ public:
 
 	void addArea(const VoxelArea &a)
 	{
-		if(getExtent() == v3s16(0,0,0))
+		if (hasEmptyExtent())
 		{
 			*this = a;
 			return;
@@ -93,7 +93,7 @@ public:
 	}
 	void addPoint(const v3s16 &p)
 	{
-		if(getExtent() == v3s16(0,0,0))
+		if(hasEmptyExtent())
 		{
 			MinEdge = p;
 			MaxEdge = p;
@@ -134,6 +134,15 @@ public:
 	{
 		return MaxEdge - MinEdge + v3s16(1,1,1);
 	}
+
+	/* Because MaxEdge and MinEdge are included in the voxel area an empty extent
+	 * is not represented by (0, 0, 0), but instead (-1, -1, -1)
+	 */
+	bool hasEmptyExtent() const
+	{
+		return MaxEdge - MinEdge == v3s16(-1, -1, -1);
+	}
+
 	s32 getVolume() const
 	{
 		v3s16 e = getExtent();
@@ -143,7 +152,7 @@ public:
 	{
 		// No area contains an empty area
 		// NOTE: Algorithms depend on this, so do not change.
-		if(a.getExtent() == v3s16(0,0,0))
+		if(a.hasEmptyExtent())
 			return false;
 
 		return(
@@ -201,7 +210,7 @@ public:
 			return;
 		}
 
-		assert(contains(a));
+		assert(contains(a));	// pre-condition
 
 		// Take back area, XY inclusive
 		{
@@ -401,10 +410,21 @@ public:
 	}
 	// Stuff explodes if non-emerged area is touched with this.
 	// Emerge first, and check VOXELFLAG_NO_DATA if appropriate.
-	MapNode & getNodeRefUnsafe(v3s16 p)
+	MapNode & getNodeRefUnsafe(const v3s16 &p)
 	{
 		return m_data[m_area.index(p)];
 	}
+
+	const MapNode & getNodeRefUnsafeCheckFlags(const v3s16 &p)
+	{
+		s32 index = m_area.index(p);
+
+		if (m_flags[index] & VOXELFLAG_NO_DATA)
+			return ContentIgnoreNode;
+
+		return m_data[index];
+	}
+
 	u8 & getFlagsRefUnsafe(v3s16 p)
 	{
 		return m_flags[m_area.index(p)];
@@ -557,6 +577,8 @@ public:
 	*/
 	u8 *m_flags;
 
+	static const MapNode ContentIgnoreNode;
+
 	//TODO: Use these or remove them
 	//TODO: Would these make any speed improvement?
 	//bool m_pressure_route_valid;
@@ -566,6 +588,15 @@ public:
 		Some settings
 	*/
 	//bool m_disable_water_climb;
+
+	//freeminer:
+	// for Map compatibility:
+	const MapNode & getNodeTry(const v3s16 &p) {
+		if (m_area.contains(p))
+			return getNodeRefUnsafe(p);
+		return ContentIgnoreNode;
+	}
+
 
 private:
 };

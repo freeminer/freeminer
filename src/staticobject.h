@@ -26,10 +26,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <sstream>
-#include <list>
+#include <vector>
 #include <map>
 #include "debug.h"
-#include "util/lock.h"
+#include "util/concurrent_map.h"
 
 struct StaticObject
 {
@@ -62,13 +62,13 @@ public:
 	*/
 	void insert(u16 id, StaticObject obj)
 	{
+		auto lock = m_active.lock_unique_rec();
 		if(id == 0)
 		{
 			m_stored.push_back(obj);
 		}
 		else
 		{
-			auto lock = m_active.lock_shared_rec();
 			if(m_active.find(id) != m_active.end())
 			{
 				dstream<<"ERROR: StaticObjectList::insert(): "
@@ -81,7 +81,9 @@ public:
 
 	void remove(u16 id)
 	{
-		assert(id != 0);
+		if (!id)
+			return;
+		auto lock = m_active.lock_shared_rec();
 		if(m_active.find(id) == m_active.end())
 		{
 			dstream<<"WARNING: StaticObjectList::remove(): id="<<id
@@ -99,8 +101,8 @@ public:
 		from m_stored and inserted to m_active.
 		The caller directly manipulates these containers.
 	*/
-	std::list<StaticObject> m_stored;
-	shared_map<u16, StaticObject> m_active;
+	std::vector<StaticObject> m_stored;
+	concurrent_map<u16, StaticObject> m_active;
 
 private:
 };

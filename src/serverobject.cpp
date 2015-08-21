@@ -28,31 +28,35 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	ActiveObject(0),
-	m_known_by_count(0),
-	m_removed(false),
-	m_pending_deactivation(false),
-	m_static_exists(false),
 	m_static_block(1337,1337,1337),
 	m_messages_out(env->m_active_object_messages),
 	m_uptime_last(0),
 	m_env(env),
 	m_base_position(pos)
 {
+	m_pending_deactivation = false;
+	m_removed = false;
+	m_static_exists = false;
+	m_known_by_count = 0;
 }
 
 ServerActiveObject::~ServerActiveObject()
 {
 }
 
-ServerActiveObject* ServerActiveObject::create(u8 type,
+ServerActiveObject* ServerActiveObject::create(ActiveObjectType type,
 		ServerEnvironment *env, u16 id, v3f pos,
 		const std::string &data)
 {
 	// Find factory function
 	std::map<u16, Factory>::iterator n;
 	n = m_types.find(type);
-	if(n == m_types.end())
-	{
+	if(n == m_types.end()) {
+		// These are 0.3 entity types, return without error.
+		if (ACTIVEOBJECT_TYPE_ITEM <= type && type <= ACTIVEOBJECT_TYPE_MOBV2) {
+			return NULL;
+		}
+
 		// If factory is not found, just return.
 		dstream<<"WARNING: ServerActiveObject: No factory for type="
 				<<type<<std::endl;
@@ -92,14 +96,9 @@ ItemStack ServerActiveObject::getWieldedItem() const
 
 bool ServerActiveObject::setWieldedItem(const ItemStack &item)
 {
-	Inventory *inv = getInventory();
-	if(inv)
-	{
-		InventoryList *list = inv->getList(getWieldList());
-		if (list)
-		{
+	if(Inventory *inv = getInventory()) {
+		if (InventoryList *list = inv->getList(getWieldList())) {
 			list->changeItem(getWieldIndex(), item);
-			setInventoryModified();
 			return true;
 		}
 	}

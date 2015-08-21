@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapnode.h"
 #include "nodedef.h"
 #include "nameidmapping.h"
-#include <map>
+#include "util/string.h"
 
 /*
 	Legacy node content type IDs
@@ -221,14 +221,13 @@ public:
 	}
 	std::string get(const std::string &old)
 	{
-		std::map<std::string, std::string>::const_iterator i;
-		i = old_to_new.find(old);
-		if(i == old_to_new.end())
+		StringMap::const_iterator it = old_to_new.find(old);
+		if (it == old_to_new.end())
 			return "";
-		return i->second;
+		return it->second;
 	}
 private:
-	std::map<std::string, std::string> old_to_new;
+	StringMap old_to_new;
 };
 
 NewNameGetter newnamegetter;
@@ -237,16 +236,3 @@ std::string content_mapnode_get_new_name(const std::string &oldname)
 {
 	return newnamegetter.get(oldname);
 }
-
-content_t legacy_get_id(const std::string &oldname, INodeDefManager *ndef)
-{
-	std::string newname = content_mapnode_get_new_name(oldname);
-	if(newname == "")
-		return CONTENT_IGNORE;
-	content_t id;
-	bool found = ndef->getId(newname, id);
-	if(!found)
-		return CONTENT_IGNORE;
-	return id;
-}
-

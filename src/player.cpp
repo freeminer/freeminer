@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 
 #include <fstream>
+#include "jthread/jmutexautolock.h"
 #include "util/numeric.h"
 #include "hud.h"
 #include "constants.h"
@@ -44,24 +45,25 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	swimming_vertical(false),
 	camera_barely_in_ceiling(false),
 	inventory(gamedef->idef()),
-	hp(PLAYER_MAX_HP),
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
 	zoom(false),
 	superspeed(false),
 	free_move(false),
-	movement_fov(0),
-	peer_id(PEER_ID_INEXISTENT),
+	protocol_version(0),
 	keyPressed(0),
 // protected
 	m_gamedef(gamedef),
-	m_breath(-1),
+	m_breath(PLAYER_MAX_BREATH),
 	m_pitch(0),
 	m_yaw(0),
 	m_speed(0,0,0),
 	m_position(0,0,0),
 	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
 {
+	hp = PLAYER_MAX_HP;
+
+	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 
 	inventory.clear();
@@ -77,9 +79,11 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 		//"image[1,0.6;1,2;player.png]"
 		"list[current_player;main;0,3.5;8,4;]"
 		"list[current_player;craft;3,0;3,3;]"
+		"listring[]"
 		"list[current_player;craftpreview;7,1;1,1;]";
 
-	// Initialize movement settings at default values, so movement can work if the server fails to send them
+	// Initialize movement settings at default values, so movement can work
+	// if the server fails to send them
 	movement_acceleration_default   = 3    * BS;
 	movement_acceleration_air       = 2    * BS;
 	movement_acceleration_fast      = 10   * BS;
@@ -92,6 +96,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
+	local_animation_speed           = 0.0;
 
 	// Movement overrides are multipliers and must be 1 by default
 	physics_override_speed        = 1;
@@ -100,9 +105,10 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	physics_override_sneak        = true;
 	physics_override_sneak_glitch = true;
 
-	hud_flags = HUD_FLAG_HOTBAR_VISIBLE | HUD_FLAG_HEALTHBAR_VISIBLE |
-			 HUD_FLAG_CROSSHAIR_VISIBLE | HUD_FLAG_WIELDITEM_VISIBLE |
-			 HUD_FLAG_BREATHBAR_VISIBLE;
+	hud_flags =
+		HUD_FLAG_HOTBAR_VISIBLE    | HUD_FLAG_HEALTHBAR_VISIBLE |
+		HUD_FLAG_CROSSHAIR_VISIBLE | HUD_FLAG_WIELDITEM_VISIBLE |
+		HUD_FLAG_BREATHBAR_VISIBLE | HUD_FLAG_MINIMAP_VISIBLE;
 
 	hud_hotbar_itemcount = HUD_HOTBAR_ITEMCOUNT_DEFAULT;
 }
@@ -130,31 +136,12 @@ void Player::accelerateHorizontal(v3f target_speed, f32 max_increase, float slip
 	f32 dl = d_wanted.getLength();
 	if(dl > max_increase)
 		dl = max_increase;
-	
+
 	v3f d = d_wanted.normalize() * dl;
 
 	m_speed.X += d.X;
 	m_speed.Z += d.Z;
 
-#if 0 // old code
-	if(m_speed.X < target_speed.X - max_increase)
-		m_speed.X += max_increase;
-	else if(m_speed.X > target_speed.X + max_increase)
-		m_speed.X -= max_increase;
-	else if(m_speed.X < target_speed.X)
-		m_speed.X = target_speed.X;
-	else if(m_speed.X > target_speed.X)
-		m_speed.X = target_speed.X;
-
-	if(m_speed.Z < target_speed.Z - max_increase)
-		m_speed.Z += max_increase;
-	else if(m_speed.Z > target_speed.Z + max_increase)
-		m_speed.Z -= max_increase;
-	else if(m_speed.Z < target_speed.Z)
-		m_speed.Z = target_speed.Z;
-	else if(m_speed.Z > target_speed.Z)
-		m_speed.Z = target_speed.Z;
-#endif
 }
 
 // Vertical acceleration (Y), X and Z directions are ignored
@@ -171,16 +158,6 @@ void Player::accelerateVertical(v3f target_speed, f32 max_increase)
 
 	m_speed.Y += d_wanted;
 
-#if 0 // old code
-	if(m_speed.Y < target_speed.Y - max_increase)
-		m_speed.Y += max_increase;
-	else if(m_speed.Y > target_speed.Y + max_increase)
-		m_speed.Y -= max_increase;
-	else if(m_speed.Y < target_speed.Y)
-		m_speed.Y = target_speed.Y;
-	else if(m_speed.Y > target_speed.Y)
-		m_speed.Y = target_speed.Y;
-#endif
 }
 
 v3s16 Player::getLightPosition() const
@@ -226,12 +203,12 @@ void Player::deSerialize(std::istream &is, std::string playername)
 	try{
 		hp = args.getS32("hp");
 	}catch(SettingNotFoundException &e) {
-		hp = 20;
+		hp = PLAYER_MAX_HP;
 	}
 	try{
 		m_breath = args.getS32("breath");
 	}catch(SettingNotFoundException &e) {
-		m_breath = 11;
+		m_breath = PLAYER_MAX_BREATH;
 	}
 
 	inventory.deSerialize(is);
@@ -253,6 +230,8 @@ void Player::deSerialize(std::istream &is, std::string playername)
 
 u32 Player::addHud(HudElement *toadd)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	u32 id = getFreeHudID();
 
 	if (id < hud.size())
@@ -265,6 +244,8 @@ u32 Player::addHud(HudElement *toadd)
 
 HudElement* Player::getHud(u32 id)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	if (id < hud.size())
 		return hud[id];
 
@@ -273,6 +254,8 @@ HudElement* Player::getHud(u32 id)
 
 HudElement* Player::removeHud(u32 id)
 {
+	JMutexAutoLock lock(m_mutex);
+
 	HudElement* retval = NULL;
 	if (id < hud.size()) {
 		retval = hud[id];
@@ -283,6 +266,8 @@ HudElement* Player::removeHud(u32 id)
 
 void Player::clearHud()
 {
+	JMutexAutoLock lock(m_mutex);
+
 	while(!hud.empty()) {
 		delete hud.back();
 		hud.pop_back();
@@ -323,7 +308,7 @@ Json::Value operator<<(Json::Value &json, Player &player) {
 	json["pitch"] = player.m_pitch;
 	json["yaw"] = player.m_yaw;
 	json["position"] << player.m_position;
-	json["hp"] = player.hp;
+	json["hp"] = player.hp.load();
 	json["breath"] = player.m_breath;
 	return json;
 }

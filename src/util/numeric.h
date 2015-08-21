@@ -27,13 +27,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irr_v2d.h"
 #include "../irr_v3d.h"
 #include "../irr_aabb3d.h"
+#include "../jthread/jmutex.h"
 #include <algorithm>
 #include <list>
 #include <cmath>
+#include <map>
+#include <vector>
 #include <algorithm>
 
-// Calculate the borders of a "d-radius" cube
-void getFacePositions(std::list<v3s16> &list, u16 d);
+
+/*
+ * This class permits to cache getFacePosition call results
+ * This reduces CPU usage and vector calls
+ */
+class FacePositionCache
+{
+public:
+	static std::vector<v3s16> getFacePositions(u16 d);
+private:
+	static void generateFacePosition(u16 d);
+	static std::map<u16, std::vector<v3s16> > m_cache;
+	static JMutex m_cache_mutex;
+};
 
 class IndentationRaiser
 {
@@ -89,6 +104,26 @@ inline v3s16 getContainerPos(v3s16 p, v3s16 d)
 		getContainerPos(p.Z, d.Z)
 	);
 }
+
+inline void getContainerPosWithOffset(s16 p, s16 d, s16 &container, s16 &offset)
+{
+	container = (p >= 0 ? p : p - d + 1) / d;
+	offset = p & (d - 1);
+}
+
+inline void getContainerPosWithOffset(const v2s16 &p, s16 d, v2s16 &container, v2s16 &offset)
+{
+	getContainerPosWithOffset(p.X, d, container.X, offset.X);
+	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
+}
+
+inline void getContainerPosWithOffset(const v3s16 &p, s16 d, v3s16 &container, v3s16 &offset)
+{
+	getContainerPosWithOffset(p.X, d, container.X, offset.X);
+	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
+	getContainerPosWithOffset(p.Z, d, container.Z, offset.Z);
+}
+
 
 inline bool isInArea(v3s16 p, s16 d)
 {
@@ -156,71 +191,92 @@ inline void sortBoxVerticies(v3s16 &p1, v3s16 &p2) {
 }
 
 
-/*
-	See test.cpp for example cases.
-	wraps degrees to the range of -360...360
-	NOTE: Wrapping to 0...360 is not used because pitch needs negative values.
-*/
-inline float wrapDegrees(float f)
+/** Returns \p f wrapped to the range [-360, 360]
+ *
+ *  See test.cpp for example cases.
+ *
+ *  \note This is also used in cases where degrees wrapped to the range [0, 360]
+ *  is innapropriate (e.g. pitch needs negative values)
+ *
+ *  \internal functionally equivalent -- although precision may vary slightly --
+ *  to fmodf((f), 360.0f) however empirical tests indicate that this approach is
+ *  faster.
+ */
+inline float modulo360f(float f)
 {
-	// Take examples of f=10, f=720.5, f=-0.5, f=-360.5
-	// This results in
-	// 10, 720, -1, -361
-	int i = floor(f);
-	// 0, 2, 0, -1
-	int l = i / 360;
-	// NOTE: This would be used for wrapping to 0...360
-	// 0, 2, -1, -2
-	/*if(i < 0)
-		l -= 1;*/
-	// 0, 720, 0, -360
-	int k = l * 360;
-	// 10, 0.5, -0.5, -0.5
-	f -= float(k);
-	return f;
+	int sign;
+	int whole;
+	float fraction;
+
+	if (f < 0) {
+		f = -f;
+		sign = -1;
+	} else {
+		sign = 1;
+	}
+
+	whole = f;
+
+	fraction = f - whole;
+	whole %= 360;
+
+	return sign * (whole + fraction);
 }
 
-/* Wrap to 0...360 */
+
+/** Returns \p f wrapped to the range [0, 360]
+  */
 inline float wrapDegrees_0_360(float f)
 {
-	// Take examples of f=10, f=720.5, f=-0.5, f=-360.5
-	// This results in
-	// 10, 720, -1, -361
-	int i = floor(f);
-	// 0, 2, 0, -1
-	int l = i / 360;
-	// Wrap to 0...360
-	// 0, 2, -1, -2
-	if(i < 0)
-		l -= 1;
-	// 0, 720, 0, -360
-	int k = l * 360;
-	// 10, 0.5, -0.5, -0.5
-	f -= float(k);
-	return f;
+	float value = modulo360f(f);
+	return value < 0 ? value + 360 : value;
 }
 
-/* Wrap to -180...180 */
+
+/** Returns \p f wrapped to the range [-180, 180]
+  */
 inline float wrapDegrees_180(float f)
 {
-	f += 180;
-	f = wrapDegrees_0_360(f);
-	f -= 180;
-	return f;
+	float value = modulo360f(f + 180);
+	if (value < 0)
+		value += 360;
+	return value - 180;
 }
 
 /*
 	Pseudo-random (VC++ rand() sucks)
 */
-int myrand(void);
-void mysrand(unsigned seed);
-#define MYRAND_MAX 32767
-
+#define MYRAND_RANGE 0xffffffff
+u32 myrand();
+void mysrand(unsigned int seed);
+void myrand_bytes(void *out, size_t len);
 int myrand_range(int min, int max);
 
 /*
 	Miscellaneous functions
 */
+
+inline u32 get_bits(u32 x, u32 pos, u32 len)
+{
+	u32 mask = (1 << len) - 1;
+	return (x >> pos) & mask;
+}
+
+inline void set_bits(u32 *x, u32 pos, u32 len, u32 val)
+{
+	u32 mask = (1 << len) - 1;
+	*x &= ~(mask << pos);
+	*x |= (val & mask) << pos;
+}
+
+inline u32 calc_parity(u32 v)
+{
+	v ^= v >> 16;
+	v ^= v >> 8;
+	v ^= v >> 4;
+	v &= 0xf;
+	return (0x6996 >> v) & 1;
+}
 
 u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed);
 
@@ -239,7 +295,7 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 */
 inline s32 myround(f32 f)
 {
-	return floor(f + 0.5);
+	return (s32)(f < 0.f ? (f - 0.5f) : (f + 0.5f));
 }
 
 /*
@@ -375,5 +431,16 @@ inline bool is_power_of_two(u32 n)
 	return n != 0 && (n & (n-1)) == 0;
 }
 
-#endif
+// Compute next-higher power of 2 efficiently, e.g. for power-of-2 texture sizes.
+// Public Domain: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+inline u32 npot2(u32 orig) {
+	orig--;
+	orig |= orig >> 1;
+	orig |= orig >> 2;
+	orig |= orig >> 4;
+	orig |= orig >> 8;
+	orig |= orig >> 16;
+	return orig + 1;
+}
 
+#endif

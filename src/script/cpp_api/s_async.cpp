@@ -155,7 +155,7 @@ void AsyncEngine::step(lua_State *L, int errorhandler)
 		lua_getfield(L, -1, "async_event_handler");
 
 		if (lua_isnil(L, -1)) {
-			assert("Async event handler does not exist!" == 0);
+			FATAL_ERROR("Async event handler does not exist!");
 		}
 
 		luaL_checktype(L, -1, LUA_TFUNCTION);
@@ -164,9 +164,7 @@ void AsyncEngine::step(lua_State *L, int errorhandler)
 		lua_pushlstring(L, jobDone.serializedResult.data(),
 				jobDone.serializedResult.size());
 
-		if (lua_pcall(L, 2, 0, errorhandler)) {
-			script_error(L);
-		}
+		PCALL_RESL(L, lua_pcall(L, 2, 0, errorhandler));
 	}
 	resultQueueMutex.Unlock();
 	lua_pop(L, 1); // Pop core
@@ -237,7 +235,7 @@ AsyncWorkerThread::AsyncWorkerThread(AsyncEngine* jobDispatcher,
 /******************************************************************************/
 AsyncWorkerThread::~AsyncWorkerThread()
 {
-	assert(IsRunning() == false);
+	sanity_check(IsRunning() == false);
 }
 
 /******************************************************************************/
@@ -247,7 +245,7 @@ void* AsyncWorkerThread::Thread()
 
 	// Register thread for error logging
 	char number[21];
-	snprintf(number, sizeof(number), "%d", threadnum);
+	snprintf(number, sizeof(number), "%u", threadnum);
 	log_register_thread(std::string("AsyncWorkerThread_") + number);
 
 	porting::setThreadName((std::string("AsyncWorkTh_") + number).c_str());
@@ -257,7 +255,7 @@ void* AsyncWorkerThread::Thread()
 	std::string script = getServer()->getBuiltinLuaPath() + DIR_DELIM + "init.lua";
 	if (!loadScript(script)) {
 		errorstream
-			<< "AsyncWorkderThread execution of async base environment failed!"
+			<< "AsyncWorkerThread execution of async base environment failed!"
 			<< std::endl;
 		abort();
 	}
@@ -293,8 +291,9 @@ void* AsyncWorkerThread::Thread()
 				toProcess.serializedParams.data(),
 				toProcess.serializedParams.size());
 
-		if (lua_pcall(L, 2, 1, m_errorhandler)) {
-			scriptError();
+		int result = lua_pcall(L, 2, 1, m_errorhandler);
+		if (result) {
+			PCALL_RES(result);
 			toProcess.serializedResult = "";
 		} else {
 			// Fetch result

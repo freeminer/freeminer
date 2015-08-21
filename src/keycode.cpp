@@ -21,12 +21,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "keycode.h"
-#include "main.h" // For g_settings
 #include "exceptions.h"
 #include "settings.h"
 #include "log.h"
-#include "hex.h"
 #include "debug.h"
+#include "util/hex.h"
 
 class UnknownKeycode : public BaseException
 {
@@ -263,13 +262,18 @@ KeyPress::KeyPress() :
 
 KeyPress::KeyPress(const char *name)
 {
-	if (strlen(name) > 4) {
+	if (name[0] == 0) {
+		Key = irr::KEY_KEY_CODES_COUNT;
+		Char = L'\0';
+		return;
+	} else if (strlen(name) > 4) {
 		try {
 			Key = keyname_to_keycode(name);
 			m_name = name;
 			if (strlen(name) > 8 && strncmp(name, "KEY_KEY_", 8) == 0) {
 				int chars_read = mbtowc(&Char, name + 8, 1);
-				assert (chars_read == 1 && "unexpected multibyte character");
+
+				FATAL_ERROR_IF(chars_read != 1, "Unexpected multibyte character");
 			} else
 				Char = L'\0';
 			return;
@@ -281,7 +285,8 @@ KeyPress::KeyPress(const char *name)
 		try {
 			Key = keyname_to_keycode(m_name.c_str());
 			int chars_read = mbtowc(&Char, name, 1);
-			assert (chars_read == 1 && "unexpected multibyte character");
+
+			FATAL_ERROR_IF(chars_read != 1, "Unexpected multibyte character");
 			return;
 		} catch (UnknownKeycode &e) {};
 	}
@@ -291,7 +296,7 @@ KeyPress::KeyPress(const char *name)
 	Key = irr::KEY_KEY_CODES_COUNT;
 
 	int mbtowc_ret = mbtowc(&Char, name, 1);
-	assert (mbtowc_ret == 1 && "unexpected multibyte character");
+	FATAL_ERROR_IF(mbtowc_ret != 1, "Unexpected multibyte character");
 	m_name = name[0];
 }
 
@@ -339,6 +344,11 @@ const char *KeyPress::name() const
 		return m_name.c_str();
 	}
 }
+
+const KeyPress LControlKey("KEY_LCONTROL");
+const KeyPress RControlKey("KEY_RCONTROL");
+const KeyPress LShiftKey("KEY_LSHIFT");
+const KeyPress RShiftKey("KEY_RSHIFT");
 
 const KeyPress EscapeKey("KEY_ESCAPE");
 const KeyPress CancelKey("KEY_CANCEL");

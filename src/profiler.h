@@ -31,12 +31,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "jthread/jmutex.h"
 #include "jthread/jmutexautolock.h"
 #include "util/timetaker.h"
-#include "util/numeric.h" // paging()
-#include "debug.h" // assert()
+#include "util/numeric.h"      // paging()
+#include "debug.h"             // assert()
+
+#define MAX_PROFILER_TEXT_ROWS 20
+
+// Global profiler
+class Profiler;
+extern Profiler *g_profiler;
 
 /*
 	Time profiler
 */
+extern bool g_profiler_enabled;
 
 struct ProfValue {
 	unsigned int calls;
@@ -64,6 +71,8 @@ public:
 
 	void add(const std::string &name, float value)
 	{
+		if(!g_profiler_enabled)
+			return;
 		JMutexAutoLock lock(m_mutex);
 		{
 			auto n = m_data.find(name);
@@ -87,6 +96,14 @@ public:
 	void print(std::ostream &o)
 	{
 		printPage(o, 1, 1);
+	}
+
+	float getValue(const std::string &name) const
+	{
+		auto data = m_data.find(name);
+		if (data == m_data.end())
+			return 0.f;
+		return data->second.avg;
 	}
 
 	void printPage(std::ostream &o, u32 page, u32 pagecount)

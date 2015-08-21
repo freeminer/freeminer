@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "itemgroup.h"
 #include "util/container.h"
+#include "util/lock.h"
 
 /*
 
@@ -52,6 +53,7 @@ struct ToolCapabilities;
 struct ObjectProperties;
 
 class ServerActiveObject : public ActiveObject
+, public locker<>
 {
 public:
 	/*
@@ -61,7 +63,7 @@ public:
 	ServerActiveObject(ServerEnvironment *env, v3f pos);
 	virtual ~ServerActiveObject();
 
-	virtual u8 getSendType() const
+	virtual ActiveObjectType getSendType() const
 	{ return getType(); }
 
 	// Called after id has been set and has been inserted in environment
@@ -74,15 +76,21 @@ public:
 	{ return true; }
 	
 	// Create a certain type of ServerActiveObject
-	static ServerActiveObject* create(u8 type,
+	static ServerActiveObject* create(ActiveObjectType type,
 			ServerEnvironment *env, u16 id, v3f pos,
 			const std::string &data);
 	
 	/*
 		Some simple getters/setters
 	*/
-	v3f getBasePosition(){ return m_base_position; }
-	void setBasePosition(v3f pos){ m_base_position = pos; }
+	v3f getBasePosition() {
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		return m_base_position;
+	}
+	void setBasePosition(v3f pos) {
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		m_base_position = pos;
+	}
 	ServerEnvironment* getEnv(){ return m_env; }
 	
 	/*
@@ -150,14 +158,28 @@ public:
 
 	virtual void setArmorGroups(const ItemGroupList &armor_groups)
 	{}
+	virtual ItemGroupList getArmorGroups()
+	{ return ItemGroupList(); }
 	virtual void setPhysicsOverride(float physics_override_speed, float physics_override_jump, float physics_override_gravity)
 	{}
-	virtual void setAnimation(v2f frames, float frame_speed, float frame_blend)
+	virtual void setAnimation(v2f frames, float frame_speed, float frame_blend, bool frame_loop)
 	{}
-	virtual void setBonePosition(std::string bone, v3f position, v3f rotation)
+	virtual void getAnimation(v2f *frames, float *frame_speed, float *frame_blend, bool *frame_loop)
 	{}
-	virtual void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation)
+	virtual void setBonePosition(const std::string &bone, v3f position, v3f rotation)
 	{}
+	virtual void getBonePosition(const std::string &bone, v3f *position, v3f *lotation)
+	{}
+	virtual void setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation)
+	{}
+	virtual void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation)
+	{}
+	virtual void addAttachmentChild(int child_id)
+	{}
+	virtual void removeAttachmentChild(int child_id)
+	{}
+	virtual std::set<int> getAttachmentChildIds()
+	{ return std::set<int>(); }
 	virtual ObjectProperties* accessObjectProperties()
 	{ return NULL; }
 	virtual void notifyObjectPropertiesModified()
@@ -184,7 +206,7 @@ public:
 		deleted until this is 0 to keep the id preserved for the right
 		object.
 	*/
-	u16 m_known_by_count;
+	std::atomic_ushort m_known_by_count;
 
 	/*
 		- Whether this object is to be removed when nobody knows about
@@ -195,7 +217,7 @@ public:
 		  to be deleted.
 		- This can be set to true by anything else too.
 	*/
-	bool m_removed;
+	std::atomic_bool m_removed;
 	
 	/*
 		This is set to true when an object should be removed from the active
@@ -206,12 +228,12 @@ public:
 		m_known_by_count is true, object is deleted from the active object
 		list.
 	*/
-	bool m_pending_deactivation;
+	std::atomic_bool m_pending_deactivation;
 	
 	/*
 		Whether the object's static data has been stored to a block
 	*/
-	bool m_static_exists;
+	std::atomic_bool m_static_exists;
 	/*
 		The block from which the object was loaded from, and in which
 		a copy of the static data resides.
@@ -233,6 +255,7 @@ protected:
 
 	ServerEnvironment *m_env;
 	v3f m_base_position;
+	std::mutex m_base_position_mutex;
 
 private:
 	// Used for creating objects based on type

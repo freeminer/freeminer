@@ -42,6 +42,7 @@
 #include "porting.h"
 //#include "Keycodes.h"
 #include "log.h"
+//#include "util/string.h"
 
 /*
 	todo:
@@ -177,7 +178,6 @@ void intlGUIEditBox::enableOverrideColor(bool enable)
 
 bool intlGUIEditBox::isOverrideColorEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return OverrideColorEnabled;
 }
 
@@ -203,7 +203,6 @@ void intlGUIEditBox::updateAbsolutePosition()
 //! Checks if word wrap is enabled
 bool intlGUIEditBox::isWordWrapEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return WordWrap;
 }
 
@@ -218,7 +217,6 @@ void intlGUIEditBox::setMultiLine(bool enable)
 //! Checks if multi line editing is enabled
 bool intlGUIEditBox::isMultiLineEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return MultiLine;
 }
 
@@ -238,7 +236,6 @@ void intlGUIEditBox::setPasswordBox(bool passwordBox, wchar_t passwordChar)
 
 bool intlGUIEditBox::isPasswordBox() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return PasswordBox;
 }
 
@@ -271,7 +268,7 @@ bool intlGUIEditBox::OnEvent(const SEvent& event)
 			break;
 		case EET_KEY_INPUT_EVENT:
         {
-#if (defined(linux) || defined(__linux) || defined(__FreeBSD__))
+#if (defined(linux) || defined(__linux) || defined(__FreeBSD__)) and IRRLICHT_VERSION_10000 < 10900
             // ################################################################
 			// ValkaTR:
             // This part is the difference from the original intlGUIEditBox
@@ -317,7 +314,6 @@ bool intlGUIEditBox::processKey(const SEvent& event)
 	s32 newMarkEnd = MarkEnd;
 
 	// control shortcut handling
-
 	if (event.KeyInput.Control)
 	{
 		// german backlash '\' entered with control + '?'
@@ -811,7 +807,7 @@ void intlGUIEditBox::draw()
 
 	FrameRect = AbsoluteRect;
 
-#if IRRLICHT_VERSION_10000  >= 10703
+#if IRRLICHT_VERSION_10000  > 10703
 	EGUI_DEFAULT_COLOR bgCol = EGDC_GRAY_EDITABLE;
 	if (isEnabled())
 		bgCol = focus ? EGDC_FOCUSED_EDITABLE : EGDC_EDITABLE;
@@ -1022,7 +1018,6 @@ void intlGUIEditBox::setAutoScroll(bool enable)
 //! \return true if automatic scrolling is enabled, false if not
 bool intlGUIEditBox::isAutoScrollEnabled() const
 {
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return AutoScroll;
 }
 

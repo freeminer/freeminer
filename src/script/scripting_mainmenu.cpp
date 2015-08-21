@@ -41,8 +41,6 @@ MainMenuScripting::MainMenuScripting(GUIEngine* guiengine)
 {
 	setGuiEngine(guiengine);
 
-	//TODO add security
-
 	SCRIPTAPI_PRECHECKHEADER
 
 	lua_getglobal(L, "core");

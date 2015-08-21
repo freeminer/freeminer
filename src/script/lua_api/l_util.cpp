@@ -27,13 +27,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_async.h"
 #include "serialization.h"
 #include "json/json.h"
+#include "cpp_api/s_security.h"
+#include "areastore.h"
 #include "debug.h"
 #include "porting.h"
 #include "log.h"
 #include "tool.h"
 #include "filesys.h"
 #include "settings.h"
-#include "main.h"  //required for g_settings, g_settings_path
+#include "util/auth.h"
+#include <algorithm>
 
 // debug(...)
 // Writes a line to dstream
@@ -95,12 +98,19 @@ int ModApiUtil::l_log(lua_State *L)
 	return 0;
 }
 
+#define CHECK_SECURE_SETTING(L, name) \
+	if (name.compare(0, 7, "secure.") == 0) {\
+		lua_pushliteral(L, "Attempt to set secure setting.");\
+		lua_error(L);\
+	}
+
 // setting_set(name, value)
 int ModApiUtil::l_setting_set(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	const char *name = luaL_checkstring(L, 1);
-	const char *value = luaL_checkstring(L, 2);
+	std::string name = luaL_checkstring(L, 1);
+	std::string value = luaL_checkstring(L, 2);
+	CHECK_SECURE_SETTING(L, name);
 	g_settings->set(name, value);
 	return 0;
 }
@@ -123,8 +133,9 @@ int ModApiUtil::l_setting_get(lua_State *L)
 int ModApiUtil::l_setting_setbool(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	const char *name = luaL_checkstring(L, 1);
+	std::string name = luaL_checkstring(L, 1);
 	bool value = lua_toboolean(L, 2);
+	CHECK_SECURE_SETTING(L, name);
 	g_settings->setBool(name, value);
 	return 0;
 }
@@ -138,6 +149,32 @@ int ModApiUtil::l_setting_getbool(lua_State *L)
 		bool value = g_settings->getBool(name);
 		lua_pushboolean(L, value);
 	} catch(SettingNotFoundException &e){
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+// setting_setjson(name, value)
+int ModApiUtil::l_setting_setjson(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *name = luaL_checkstring(L, 1);
+	Json::Value root;
+	read_json_value(L, root, 2);
+	g_settings->setJson(name, root);
+	return 0;
+}
+
+// setting_getjson(name[, nullvalue])
+int ModApiUtil::l_setting_getjson(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *name = luaL_checkstring(L, 1);
+	Json::Value root = g_settings->getJson(name);
+	lua_pushnil(L);
+	auto nullindex = lua_gettop(L);
+	if (!push_json_value(L, root, nullindex)) {
+		errorstream << "Failed to parse json data: \"" << root << "\"" << std::endl;
 		lua_pushnil(L);
 	}
 	return 1;
@@ -259,8 +296,7 @@ int ModApiUtil::l_get_password_hash(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	std::string name = luaL_checkstring(L, 1);
 	std::string raw_password = luaL_checkstring(L, 2);
-	std::string hash = translatePassword(name,
-			narrow_to_wide(raw_password));
+	std::string hash = translatePassword(name, raw_password);
 	lua_pushstring(L, hash.c_str());
 	return 1;
 }
@@ -311,7 +347,7 @@ int ModApiUtil::l_compress(lua_State *L)
 int ModApiUtil::l_decompress(lua_State *L)
 {
 	size_t size;
-	const char * data = luaL_checklstring(L, 1, &size);
+	const char *data = luaL_checklstring(L, 1, &size);
 
 	std::istringstream is(std::string(data, size));
 	std::ostringstream os;
@@ -323,6 +359,64 @@ int ModApiUtil::l_decompress(lua_State *L)
 	return 1;
 }
 
+// mkdir(path)
+int ModApiUtil::l_mkdir(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *path = luaL_checkstring(L, 1);
+	CHECK_SECURE_PATH_OPTIONAL(L, path);
+	lua_pushboolean(L, fs::CreateAllDirs(path));
+	return 1;
+}
+
+// get_dir_list(path, is_dir)
+int ModApiUtil::l_get_dir_list(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *path = luaL_checkstring(L, 1);
+	short is_dir = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : -1;
+
+	CHECK_SECURE_PATH_OPTIONAL(L, path);
+
+	std::vector<fs::DirListNode> list = fs::GetDirListing(path);
+
+	int index = 0;
+	lua_newtable(L);
+
+	for (size_t i = 0; i < list.size(); i++) {
+		if (is_dir == -1 || is_dir == list[i].dir) {
+			lua_pushstring(L, list[i].name.c_str());
+			lua_rawseti(L, -2, ++index);
+		}
+	}
+
+	return 1;
+}
+
+int ModApiUtil::l_request_insecure_environment(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	if (!ScriptApiSecurity::isSecure(L)) {
+		lua_getglobal(L, "_G");
+		return 1;
+	}
+	lua_getfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
+	if (!lua_isstring(L, -1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	const char *mod_name = lua_tostring(L, -1);
+	std::string trusted_mods = g_settings->get("secure.trusted_mods");
+	std::vector<std::string> mod_list = str_split(trusted_mods, ',');
+	if (std::find(mod_list.begin(), mod_list.end(), mod_name) == mod_list.end()) {
+		lua_pushnil(L);
+		return 1;
+	}
+	lua_getfield(L, LUA_REGISTRYINDEX, "globals_backup");
+	return 1;
+}
+
+
 void ModApiUtil::Initialize(lua_State *L, int top)
 {
 	API_FCT(debug);
@@ -332,6 +426,8 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(setting_get);
 	API_FCT(setting_setbool);
 	API_FCT(setting_getbool);
+	API_FCT(setting_setjson);
+	API_FCT(setting_getjson);
 	API_FCT(setting_save);
 
 	API_FCT(parse_json);
@@ -348,6 +444,11 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 	API_FCT(compress);
 	API_FCT(decompress);
+
+	API_FCT(mkdir);
+	API_FCT(get_dir_list);
+
+	API_FCT(request_insecure_environment);
 }
 
 void ModApiUtil::InitializeAsync(AsyncEngine& engine)
@@ -370,5 +471,8 @@ void ModApiUtil::InitializeAsync(AsyncEngine& engine)
 
 	ASYNC_API_FCT(compress);
 	ASYNC_API_FCT(decompress);
+
+	ASYNC_API_FCT(mkdir);
+	ASYNC_API_FCT(get_dir_list);
 }
 

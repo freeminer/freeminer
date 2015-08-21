@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "util/unordered_map_hash.h"
+#include "util/concurrent_unordered_map.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -40,7 +41,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mapblock.h"
 #include <unordered_set>
+#include "config.h"
 
+class Settings;
 class Database;
 class ClientMap;
 class MapSector;
@@ -53,7 +56,6 @@ class EmergeManager;
 class ServerEnvironment;
 struct BlockMakeData;
 struct MapgenParams;
-class Circuit;
 class Server;
 
 
@@ -89,9 +91,9 @@ struct MapEditEvent
 
 	MapEditEvent():
 		type(MEET_OTHER),
+		n(CONTENT_AIR),
 		already_known_by_peer(0)
-	{
-	}
+	{ }
 
 	MapEditEvent * clone()
 	{
@@ -148,7 +150,7 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-	Map(IGameDef *gamedef, Circuit* circuit = nullptr);
+	Map(IGameDef *gamedef);
 	virtual ~Map();
 
 	/*virtual u16 nodeContainerId() const
@@ -178,9 +180,11 @@ public:
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
 	MapBlock * getBlockNoCreateNoEx(v3POS p, bool trylock = false, bool nocache = false);
+	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
+	void getBlockCacheFlush();
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool allow_generate=true)
+	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)
 	{ return getBlockNoCreateNoEx(p); }
 
 	// Returns InvalidPositionException if not found
@@ -212,7 +216,7 @@ public:
 
 	void spreadLight(enum LightBank bank,
 			std::set<v3s16> & from_nodes,
-			std::map<v3s16, MapBlock*> & modified_blocks, int recursive = 0);
+			std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms = 0);
 
 	void lightNeighbors(enum LightBank bank,
 			v3s16 pos,
@@ -223,23 +227,25 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
+/*
 	u32 updateLighting(enum LightBank bank,
-			shared_map<v3POS, MapBlock*>  & a_blocks,
-			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
+			concurrent_map<v3POS, MapBlock*>  & a_blocks,
+			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
+*/
 
-	u32 updateLighting(shared_map<v3POS, MapBlock*>  & a_blocks,
-			std::map<v3POS, MapBlock*> & modified_blocks, int max_cycle_ms = 0);
-
-	u32 updateLighting_last[2];
+	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
+			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
 
 	/*
 		These handle lighting but not faces.
 	*/
 	void addNodeAndUpdate(v3s16 p, MapNode n,
 			std::map<v3s16, MapBlock*> &modified_blocks,
-			bool remove_metadata = true);
+			bool remove_metadata = true,
+			int fast = 0
+			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks);
+			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0);
 
 	/*
 		Wrappers for the latter ones.
@@ -259,39 +265,41 @@ public:
 	//bool updateChangedVisibleArea();
 
 	// Call these before and after saving of many blocks
-	virtual void beginSave() {return;};
-	virtual void endSave() {return;};
+	virtual void beginSave() { return; }
+	virtual void endSave() { return; }
 
-	virtual s32 save(ModifiedState save_level, bool breakable){assert(0); return 0;};
+	virtual s32 save(ModifiedState save_level, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
 
-	// Server implements this.
-	// Client leaves it as no-op.
-	virtual bool saveBlock(MapBlock *block) { return false; };
+	// Server implements these.
+	// Client leaves them as no-op.
+	virtual bool saveBlock(MapBlock *block) { return false; }
+	virtual bool deleteBlock(v3s16 blockpos) { return false; }
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	u32 timerUpdate(float uptime, float unload_timeout, int max_cycle_ms = 100,
-			std::list<v3s16> *unloaded_blocks=NULL);
+	u32 timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks, unsigned int max_cycle_ms = 100,
+			std::vector<v3s16> *unloaded_blocks=NULL);
 
 	/*
 		Unloads all blocks with a zero refCount().
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	void unloadUnreferencedBlocks(std::list<v3s16> *unloaded_blocks=NULL);
+	void unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks=NULL);
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, int max_cycle_ms);
-	u32 transformLiquidsReal(Server *m_server, int max_cycle_ms);
+	u32 transformLiquids(Server *m_server, unsigned int max_cycle_ms);
+	u32 transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
 	*/
 
-	NodeMetadata* getNodeMetadata(v3s16 p);
+	std::vector<v3s16> findNodesWithMetadata(v3s16 p1, v3s16 p2);
+	NodeMetadata *getNodeMetadata(v3s16 p);
 
 	/**
 	 * Sets metadata for a node.
@@ -330,7 +338,7 @@ public:
 	void transforming_liquid_push_back(v3s16 p);
 	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
-	u32 m_liquid_step_flow;
+	std::atomic_uint m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
@@ -339,38 +347,59 @@ public:
 		return basepos.Y -1;
 	}
 
-	Circuit* getCircuit();
 	INodeDefManager* getNodeDefManager();
 
 
 // from old mapsector:
-	typedef maybe_shared_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
+	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
 	m_blocks_type m_blocks;
 	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
 	MapBlock * createBlankBlockNoInsert(v3s16 & p);
 	MapBlock * createBlankBlock(v3s16 & p);
-	void insertBlock(MapBlock *block);
+	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
 	std::map<MapBlockP, int> * m_blocks_delete;
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
+#if !ENABLE_THREADS
+	locker<> m_nothread_locker;
+#endif
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
+	try_shared_mutex m_block_cache_mutex;
+#endif
+#if !HAVE_THREAD_LOCAL
+	MapBlockP m_block_cache;
+	v3POS m_block_cache_p;
+#endif
+	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
+
+	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
+
 protected:
 	friend class LuaVoxelManip;
 
 	IGameDef *m_gamedef;
-	Circuit* m_circuit;
-
 	std::set<MapEventReceiver*> m_event_receivers;
 
+	// Queued transforming water nodes
+
+private:
+	f32 m_transforming_liquid_loop_count_multiplier;
+	u32 m_unprocessed_count;
+	u32 m_inc_trending_up_start_time; // milliseconds
+	bool m_queue_size_timer_started;
+
+protected:
 	u32 m_blocks_update_last;
 	u32 m_blocks_save_last;
 
-	// Queued transforming water nodes
 public:
-	shared_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
-	shared_map<v3POS, MapBlock*> lighting_modified_blocks;
-protected:
+	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	std::mutex m_transforming_liquid_mutex;
+	UniqueQueue<v3POS> m_transforming_liquid;
+	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
+	std::atomic_uint time_life;
 };
 
 /*
@@ -385,7 +414,7 @@ public:
 	/*
 		savedir: directory to which map data should be saved
 	*/
-	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge, Circuit* m_circuit);
+	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge);
 	~ServerMap();
 
 	s32 mapType() const
@@ -414,7 +443,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock * emergeBlock(v3s16 p, bool create_blank=true);
+	MapBlock *emergeBlock(v3s16 p, bool create_blank=true);
 
 	/*
 		Try to get a block.
@@ -440,6 +469,7 @@ public:
 	/*
 		Database functions
 	*/
+	static Database *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
 	// Verify we can read/write to the database
 	void verifyDatabase();
 
@@ -448,15 +478,17 @@ public:
 	void endSave();
 
 	s32 save(ModifiedState save_level, bool breakable = 0);
-	void listAllLoadableBlocks(std::list<v3s16> &dst);
-	void listAllLoadedBlocks(std::list<v3s16> &dst);
+	void listAllLoadableBlocks(std::vector<v3s16> &dst);
+	void listAllLoadedBlocks(std::vector<v3s16> &dst);
 	// Saves map seed and possibly other stuff
 	void saveMapMeta();
 	void loadMapMeta();
 
-	bool saveBlock(MapBlock *block, Database *db);
 	bool saveBlock(MapBlock *block);
+	static bool saveBlock(MapBlock *block, Database *db);
 	MapBlock* loadBlock(v3s16 p);
+
+	bool deleteBlock(v3s16 blockpos);
 
 	void updateVManip(v3s16 pos);
 
@@ -468,8 +500,8 @@ public:
 	u64 getSeed();
 	s16 getWaterLevel();
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, std::map<v3POS, s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, std::map<v3POS, s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
@@ -485,6 +517,7 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
+	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
 private:
 
 #if 0
@@ -509,11 +542,11 @@ private:
 #define VMANIP_BLOCK_DATA_INEXIST     1
 #define VMANIP_BLOCK_CONTAINS_CIGNORE 2
 
-class ManualMapVoxelManipulator : public VoxelManipulator
+class MMVManip : public VoxelManipulator
 {
 public:
-	ManualMapVoxelManipulator(Map *map);
-	virtual ~ManualMapVoxelManipulator();
+	MMVManip(Map *map);
+	virtual ~MMVManip();
 
 	virtual void clear()
 	{
@@ -525,11 +558,11 @@ public:
 	{m_map = map;}
 
 	void initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
-			bool load_if_inexistent = true);
+		bool load_if_inexistent = true);
 
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
-			bool overwrite_generated = true);
+		bool overwrite_generated = true);
 
 	bool m_is_dirty;
 

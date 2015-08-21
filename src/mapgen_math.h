@@ -47,7 +47,7 @@ struct MapgenMathParams : public MapgenV7Params {
 #endif
 
 	void readParams(Settings *settings);
-	void writeParams(Settings *settings);
+	void writeParams(Settings *settings) const;
 };
 
 class MapgenMath : public MapgenV7 {
@@ -64,8 +64,9 @@ public:
 	bool internal;
 	bool invert;
 	bool invert_yz;
+	bool invert_xy;
 	double size;
-	double scale;
+	v3f scale;
 	v3f center;
 	int iterations;
 	double distance;
