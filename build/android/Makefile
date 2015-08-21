@@ -1083,7 +1083,7 @@ $(ROOT)/jni/src/android_version.h : prep_srcdir
 	fi
 
 manifest :
-	@BASE_VERSION="${VERS_MAJOR}.${VERS_MINOR}.${VERS_PATCH}.${VERS_TWEAK}"; \
+	@BASE_VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}"; \
 	if [ "${NDEBUG}x" != "x" ] ; then                                          \
 		DBG='';                                                                \
 		DBG_FLAG="android:debuggable=\"false\"";                               \
