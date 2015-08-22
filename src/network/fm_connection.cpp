@@ -237,7 +237,7 @@ void Connection::receive()
 			break;
 		}
 	} else if (ret < 0) {
-		errorstream<<"recieve enet_host_service failed = "<< ret << std::endl;
+		infostream<<"recieve enet_host_service failed = "<< ret << std::endl;
 		if (m_peers.count(PEER_ID_SERVER))
 			deletePeer(PEER_ID_SERVER,  false);
 	} else { //0
@@ -364,7 +364,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		if (m_peers.find(peer_id) == m_peers.end())
 			return;
 	}
-	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
+	//dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
 
 	assert(channelnum < CHANNEL_COUNT);
 
@@ -375,8 +375,12 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		deletePeer(peer_id, false);
 		return;
 	}
-	if (enet_peer_send(peer, channelnum, packet) < 0)
-		errorstream<<"enet_peer_send failed"<<std::endl;
+	if (enet_peer_send(peer, channelnum, packet) < 0) {
+		infostream<<"enet_peer_send failed peer="<<peer_id<<" reliable="<<reliable<< " size="<<data.getSize()<<std::endl;
+		if (reliable)
+			deletePeer(peer_id, false);
+		return;
+	}
 }
 
 ENetPeer* Connection::getPeer(u16 peer_id)
