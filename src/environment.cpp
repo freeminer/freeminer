@@ -2827,7 +2827,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		ClientActiveObject* obj = i->second;
 
 		auto & draw_control = getClientMap().getControl();
-		if ((pf.getDistanceFrom(obj->getPosition()) / BS) * 1.2 > draw_control.wanted_range) {
+		if ((pf.getDistanceFrom(obj->getPosition()) / BS) * 1.2 > draw_control.wanted_range && end_ms % 300) {
 			//errorstream<<"skip "<<obj->getId() << " p="<<pf<< " o=" << obj->getPosition() << " r=" << pf.getDistanceFrom(obj->getPosition()) / BS << " wr=" << draw_control.wanted_range<< std::endl;
 			++skipped;
 			continue;
