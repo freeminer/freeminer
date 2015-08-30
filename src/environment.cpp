@@ -2531,8 +2531,10 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	if(dtime > DTIME_MAX)
 		dtime = DTIME_MAX;
 
-	if (player_speed <= 0.01)
+
+	if (player_speed <= 0.01 && dtime < 0.1)
 		dtime_max_increment = dtime;
+
 
 	f32 dtime_downcount = dtime;
 
