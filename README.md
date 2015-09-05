@@ -62,7 +62,7 @@ Debian/Ubuntu:
 sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev \
 libpng12-dev libjpeg-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev \
 libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev \
-libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev libgmp-dev
+libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev libgmp-dev libspatialindex-dev
 # optional:
 sudo apt-get install libhiredis-dev cmake-curses-gui
 ```
@@ -73,7 +73,7 @@ Fedora:
 sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel \
 bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel \
 mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel \
-luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel
+luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel spatialindex-devel
 ```
 ___
 Arch Linux:
