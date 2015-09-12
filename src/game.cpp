@@ -1555,6 +1555,8 @@ protected:
 	void toggleFast(float *statustext_time);
 	void toggleNoClip(float *statustext_time);
 	void toggleCinematic(float *statustext_time);
+	void enableCinematic();
+	void disableCinematic();
 
 	void toggleChat(float *statustext_time, bool *flag);
 	void toggleHud(float *statustext_time, bool *flag);
@@ -1708,6 +1710,8 @@ private:
 	bool m_cache_enable_fog;
 	f32  m_cache_mouse_sensitivity;
 	f32  m_repeat_right_click_time;
+
+	bool m_cinematic;
 
 #ifdef __ANDROID__
 	bool m_cache_hold_aux1;
@@ -1937,7 +1941,7 @@ void Game::run()
 		// Update camera before player movement to avoid camera lag of one frame
 		updateCameraDirection(&cam_view_target, &flags);
 		float cam_smoothing = 0;
-		if (g_settings->getBool("cinematic"))
+		if (m_cinematic)
 			cam_smoothing = 1 - g_settings->getFloat("cinematic_camera_smoothing");
 		else
 			cam_smoothing = 1 - g_settings->getFloat("camera_smoothing");
@@ -3126,13 +3130,22 @@ void Game::toggleNoClip(float *statustext_time)
 void Game::toggleCinematic(float *statustext_time)
 {
 	static const wchar_t *msg[] = { L"cinematic disabled", L"cinematic enabled" };
-	bool cinematic = !g_settings->getBool("cinematic");
-	g_settings->set("cinematic", bool_to_cstr(cinematic));
+	m_cinematic = !g_settings->getBool("cinematic");
+	g_settings->set("cinematic", bool_to_cstr(m_cinematic));
 
 	*statustext_time = 0;
-	statustext = msg[cinematic];
+	statustext = msg[m_cinematic];
 }
 
+void Game::enableCinematic()
+{
+	m_cinematic = true;
+}
+
+void Game::disableCinematic()
+{
+	m_cinematic = false;
+}
 
 void Game::toggleChat(float *statustext_time, bool *flag)
 {
@@ -3441,6 +3454,9 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		bool changed = player->zoom == false;
 		player->zoom = true;
 		if (changed) {
+			if(g_settings->getBool("enable_zoom_cinematic") && !g_settings->getBool("cinematic")) {
+				enableCinematic();
+			}
 			draw_control.fov = g_settings->getFloat("zoom_fov");
 			client->sendDrawControl();
 		}
@@ -3448,6 +3464,9 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		bool changed = player->zoom == true;
 		player->zoom = false;
 		if (changed) {
+			if(g_settings->getBool("enable_zoom_cinematic") && !g_settings->getBool("cinematic")) {
+				disableCinematic();
+			}
 			draw_control.fov = g_settings->getFloat("fov");
 			client->sendDrawControl();
 		}
@@ -4782,6 +4801,8 @@ void Game::readSettings()
 	m_cache_enable_fog                = g_settings->getBool("enable_fog");
 	m_cache_mouse_sensitivity         = g_settings->getFloat("mouse_sensitivity");
 	m_repeat_right_click_time         = g_settings->getFloat("repeat_rightclick_time");
+
+	m_cinematic                       = g_settings->getBool("cinematic");
 
 	m_cache_mouse_sensitivity = rangelim(m_cache_mouse_sensitivity, 0.001, 100.0);
 }
