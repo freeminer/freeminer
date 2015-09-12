@@ -279,6 +279,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("connected_glass", "false");
 	settings->setDefault("leaves_style", "fancy");
 	settings->setDefault("enable_fog", "true");
+	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("directional_colored_fog", "true");
 
 	// Visual Features
