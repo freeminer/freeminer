@@ -504,12 +504,17 @@ void Mapper::drawMinimap()
 	material.TextureLayer[0].Texture = minimap_texture;
 	material.TextureLayer[1].Texture = data->heightmap_texture;
 
+// TODO: Fix minimap drawing with shaders
+/*
 	if (m_enable_shaders && !data->is_radar) {
 		u16 sid = m_shdrsrc->getShader("minimap_shader", 1, 1);
 		material.MaterialType = m_shdrsrc->getShaderInfo(sid).material;
 	} else {
 		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	}
+*/
+
+	material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 
 	if (data->minimap_shape_round)
 		matrix.setRotationDegrees(core::vector3df(0, 0, 360 - m_angle));
