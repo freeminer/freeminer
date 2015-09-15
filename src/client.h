@@ -516,6 +516,9 @@ public:
 	Mapper* getMapper ()
 	{ return m_mapper; }
 
+	bool isMinimapDisabledByServer()
+	{ return m_minimap_disabled_by_server; }
+
 	// IGameDef interface
 	virtual IItemDefManager* getItemDefManager();
 	virtual INodeDefManager* getNodeDefManager();
@@ -598,6 +601,7 @@ public:
 private:
 	IrrlichtDevice *m_device;
 	Mapper *m_mapper;
+	bool m_minimap_disabled_by_server;
 	// Server serialization version
 	u8 m_server_ser_ver;
 
