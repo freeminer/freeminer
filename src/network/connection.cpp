@@ -312,7 +312,7 @@ BufferedPacket ReliablePacketBuffer::popSeqnum(u16 seqnum)
 
 
 	RPBSearchResult next = r;
-	next++;
+	++next;
 	if (next != notFound()) {
 		u16 s = readU16(&(next->data[BASE_HEADER_SIZE+1]));
 		m_oldest_non_answered_ack = s;
@@ -376,7 +376,7 @@ void ReliablePacketBuffer::insert(BufferedPacket &p,u16 next_expected)
 	/* this is true e.g. on wrap around */
 	if (seqnum < next_expected) {
 		while(((s < seqnum) || (s >= next_expected)) && (i != m_list.end())) {
-			i++;
+			++i;
 			if (i != m_list.end())
 				s = readU16(&(i->data[BASE_HEADER_SIZE+1]));
 		}
@@ -385,7 +385,7 @@ void ReliablePacketBuffer::insert(BufferedPacket &p,u16 next_expected)
 	else
 	{
 		while(((s < seqnum) && (s >= next_expected)) && (i != m_list.end())) {
-			i++;
+			++i;
 			if (i != m_list.end())
 				s = readU16(&(i->data[BASE_HEADER_SIZE+1]));
 		}
@@ -1786,7 +1786,7 @@ void ConnectionSendThread::disconnect()
 
 	for (std::list<u16>::iterator i = peerids.begin();
 			i != peerids.end();
-			i++)
+			++i)
 	{
 		sendAsPacket(*i, 0,data,false);
 	}
@@ -1866,7 +1866,7 @@ void ConnectionSendThread::sendToAll(u8 channelnum, SharedBuffer<u8> data)
 
 	for (std::list<u16>::iterator i = peerids.begin();
 			i != peerids.end();
-			i++)
+			++i)
 	{
 		send(*i, channelnum, data);
 	}
@@ -1878,7 +1878,7 @@ void ConnectionSendThread::sendToAllReliable(ConnectionCommand &c)
 
 	for (std::list<u16>::iterator i = peerids.begin();
 			i != peerids.end();
-			i++)
+			++i)
 	{
 		PeerHelper peer = m_connection->getPeerNoEx(*i);
 

@@ -2091,7 +2091,7 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 	}
 
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-			iter != m_fields.end(); iter++) {
+			iter != m_fields.end(); ++iter) {
 
 		if (iter->fname != fieldname) {
 			continue;
@@ -2464,7 +2464,7 @@ void GUIFormSpecMenu::drawMenu()
 
 		if (id != -1 && delta >= m_tooltip_show_delay) {
 			for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-					iter != m_fields.end(); iter++) {
+					iter != m_fields.end(); ++iter) {
 				if ( (iter->fid == id) && (m_tooltips[iter->fname].tooltip != "") ){
 					if (m_old_tooltip != m_tooltips[iter->fname].tooltip) {
 						m_old_tooltip = m_tooltips[iter->fname].tooltip;
@@ -3688,7 +3688,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 std::string GUIFormSpecMenu::getNameByID(s32 id)
 {
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-				iter != m_fields.end(); iter++) {
+				iter != m_fields.end(); ++iter) {
 		if (iter->fid == id) {
 			return iter->fname;
 		}
@@ -3704,7 +3704,7 @@ std::string GUIFormSpecMenu::getNameByID(s32 id)
 std::wstring GUIFormSpecMenu::getLabelByID(s32 id)
 {
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-				iter != m_fields.end(); iter++) {
+				iter != m_fields.end(); ++iter) {
 		if (iter->fid == id) {
 			return iter->flabel;
 		}

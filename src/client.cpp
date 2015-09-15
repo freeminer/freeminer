@@ -612,7 +612,8 @@ void Client::step(float dtime)
 	{
 		for(std::map<int, u16>::iterator
 				i = m_sounds_to_objects.begin();
-				i != m_sounds_to_objects.end(); i++) {
+				i != m_sounds_to_objects.end(); ++i)
+		{
 			int client_id = i->first;
 			u16 object_id = i->second;
 			ClientActiveObject *cao = m_env.getActiveObject(object_id);
@@ -638,8 +639,8 @@ void Client::step(float dtime)
 		{
 			s32 server_id = i->first;
 			int client_id = i->second;
-			i++;
-			if(!m_sound->soundExists(client_id)){
+			++i;
+			if(!m_sound->soundExists(client_id)) {
 				m_sounds_server_to_client.erase(server_id);
 				m_sounds_client_to_server.erase(client_id);
 				m_sounds_to_objects.erase(client_id);
@@ -1164,7 +1165,7 @@ void Client::sendRemovedSounds(std::vector<s32> &soundList)
 	pkt << (u16) (server_ids & 0xFFFF);
 
 	for(std::vector<s32>::iterator i = soundList.begin();
-			i != soundList.end(); i++)
+			i != soundList.end(); ++i)
 		pkt << *i;
 
 	Send(&pkt);

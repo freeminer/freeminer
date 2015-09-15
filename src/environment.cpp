@@ -881,7 +881,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 		MapNode n;
 		for(std::map<v3s16, NodeTimer>::iterator
 				i = elapsed_timers.begin();
-				i != elapsed_timers.end(); i++){
+				i != elapsed_timers.end(); ++i){
 			n = block->getNodeNoEx(i->first);
 			v3s16 p = i->first + block->getPosRelative();
 			if(m_script->node_on_timer(p,n,i->second.elapsed))
@@ -1345,7 +1345,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				MapNode n;
 				for(std::map<v3s16, NodeTimer>::iterator
 						i = elapsed_timers.begin();
-						i != elapsed_timers.end(); i++){
+						i != elapsed_timers.end(); ++i){
 					n = block->getNodeNoEx(i->first);
 					p = i->first + block->getPosRelative();
 					if(m_script->node_on_timer(p,n,i->second.elapsed))
