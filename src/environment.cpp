@@ -3074,7 +3074,7 @@ void ClientEnvironment::damageLocalPlayer(u8 damage, bool handle_hp)
 	event.type = CEE_PLAYER_DAMAGE;
 	event.player_damage.amount = damage;
 	event.player_damage.send_to_server = handle_hp;
-	m_client_event_queue.push_back(event);
+	m_client_event_queue.push(event);
 }
 
 void ClientEnvironment::updateLocalPlayerBreath(u16 breath)
@@ -3082,7 +3082,7 @@ void ClientEnvironment::updateLocalPlayerBreath(u16 breath)
 	ClientEnvEvent event;
 	event.type = CEE_PLAYER_BREATH;
 	event.player_breath.amount = breath;
-	m_client_event_queue.push_back(event);
+	m_client_event_queue.push(event);
 }
 
 /*
@@ -3116,7 +3116,7 @@ ClientEnvEvent ClientEnvironment::getClientEvent()
 		event.type = CEE_NONE;
 	else {
 		event = m_client_event_queue.front();
-		m_client_event_queue.pop_front();
+		m_client_event_queue.pop();
 	}
 	return event;
 }
