@@ -14,6 +14,7 @@ PATHCFGFILE = path.cfg
 ROOT = $(shell pwd)
 
 GAMES_TO_COPY = default
+MODS_TO_COPY =
 
 
 VERSION_MAJOR := $(shell cat $(ROOT)/../../CMakeLists.txt | \
@@ -773,10 +774,13 @@ assets : $(ASSETS_TIMESTAMP) locale
 	do                                                                         \
 	    cp -Lr ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/; \
 	done;                                                                      \
-	cp -r ${ROOT}/../../mods ${ROOT}/assets/freeminer; \
+	mkdir ${ROOT}/assets/freeminer/mods; \
+	for mod in ${MODS_TO_COPY}; do                                             \
+	    cp -r ${ROOT}/../../mods/$$mod ${ROOT}/assets/freeminer/mods/; \
+	done;                                                                      \
 	cp -r ${ROOT}/cmake/locale ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../textures ${ROOT}/assets/freeminer; \
-	mkdir -p ${ROOT}/assets/freeminer/media;                                    \
+	mkdir -p ${ROOT}/assets/freeminer/media; \
 	cp -r ${IRRLICHT_DIR}/media/Shaders ${ROOT}/assets/freeminer/media; \
 	cd ${ROOT}/assets ||  exit 1;                                              \
 	find . -name "timestamp" -exec rm {} \; ;                                  \

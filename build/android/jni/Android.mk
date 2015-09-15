@@ -418,9 +418,9 @@ LOCAL_SRC_FILES += deps/sqlite/sqlite3.c
 
 # Threading
 LOCAL_SRC_FILES += \
-		jni/src/threading/Mutex.cpp \
-		jni/src/threading/Semaphore.cpp \
-		jni/src/threading/Thread.cpp
+		jni/src/threading/mutex.cpp \
+		jni/src/threading/semaphore.cpp \
+		jni/src/threading/thread.cpp
 
 LOCAL_SHARED_LIBRARIES := iconv openal ogg vorbis gmp
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
