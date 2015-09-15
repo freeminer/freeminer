@@ -89,10 +89,12 @@ const char *ClientInterface::statenames[] = {
 	"Disconnecting",
 	"Denied",
 	"Created",
-	"InitSent",
+	"AwaitingInit2",
+	"HelloSent",
 	"InitDone",
 	"DefinitionsSent",
-	"Active"
+	"Active",
+	"SudoMode",
 };
 
 
