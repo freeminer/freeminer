@@ -251,7 +251,7 @@ void Map::unspreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 	// Cache this a bit, too
-	bool block_checked_in_modified = false;
+	//bool block_checked_in_modified = false;
 
 	for(std::map<v3s16, u8>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -265,7 +265,7 @@ void Map::unspreadLight(enum LightBank bank,
 				block = getBlockNoCreate(blockpos);
 				blockpos_last = blockpos;
 
-				block_checked_in_modified = false;
+				//block_checked_in_modified = false;
 				blockchangecount++;
 			}
 		}
@@ -305,7 +305,7 @@ void Map::unspreadLight(enum LightBank bank,
 
 					blockpos_last = blockpos;
 
-					block_checked_in_modified = false;
+					//block_checked_in_modified = false;
 					blockchangecount++;
 				}
 			}
@@ -319,7 +319,7 @@ void Map::unspreadLight(enum LightBank bank,
 			if (!is_valid_position)
 				continue;
 
-			bool changed = false;
+			//bool changed = false;
 
 			//TODO: Optimize output by optimizing light_sources?
 
@@ -344,7 +344,7 @@ void Map::unspreadLight(enum LightBank bank,
 					block->setNode(relpos, n2);
 
 					unlighted_nodes[n2pos] = current_light;
-					changed = true;
+					//changed = true;
 
 					/*
 						Remove from light_sources if it is there
@@ -435,7 +435,7 @@ void Map::spreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 		// Cache this a bit, too
-	bool block_checked_in_modified = false;
+	//bool block_checked_in_modified = false;
 
 	for(std::set<v3s16>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -457,7 +457,7 @@ void Map::spreadLight(enum LightBank bank,
 					continue;
 				blockpos_last = blockpos;
 
-				block_checked_in_modified = false;
+				//block_checked_in_modified = false;
 				blockchangecount++;
 			}
 
@@ -492,7 +492,7 @@ void Map::spreadLight(enum LightBank bank,
 					block = getBlockNoCreate(blockpos);
 					blockpos_last = blockpos;
 
-					block_checked_in_modified = false;
+					//block_checked_in_modified = false;
 					blockchangecount++;
 				}
 			}
@@ -505,7 +505,7 @@ void Map::spreadLight(enum LightBank bank,
 			if (!is_valid_position)
 				continue;
 
-			bool changed = false;
+			//bool changed = false;
 			/*
 				If the neighbor is brighter than the current node,
 				add to list (it will light up this node on its turn)
@@ -513,7 +513,7 @@ void Map::spreadLight(enum LightBank bank,
 			if(n2.getLight(bank, nodemgr) > undiminish_light(oldlight))
 			{
 				lighted_nodes.insert(n2pos);
-				changed = true;
+				//changed = true;
 			}
 			/*
 				If the neighbor is dimmer than how much light this node
@@ -526,7 +526,7 @@ void Map::spreadLight(enum LightBank bank,
 					n2.setLight(bank, newlight, nodemgr);
 					block->setNode(relpos, n2);
 					lighted_nodes.insert(n2pos);
-					changed = true;
+					//changed = true;
 				}
 			}
 

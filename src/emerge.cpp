@@ -537,7 +537,7 @@ void *EmergeThread::run()
 		*/
 		// Add the originally fetched block to the modified list
 		if (block)
-		1;//	modified_blocks[p] = block;
+		{ }//	modified_blocks[p] = block;
 		else if (allow_generate)
 			infostream<<"nothing generated at "<<PP(p)<<std::endl;
 

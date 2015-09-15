@@ -652,7 +652,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 			s16 y = MAP_BLOCKSIZE - 1;
 
 			// This makes difference to diminishing in water.
-			bool stopped_to_solid_object = false;
+			//bool stopped_to_solid_object = false;
 
 			u8 current_light = no_sunlight ? 0 : LIGHT_SUN;
 
@@ -666,7 +666,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 					// Do nothing: Sunlight is continued
 				} else if(nodemgr->get(n).light_propagates == false) {
 					// A solid object is on the way.
-					stopped_to_solid_object = true;
+					//stopped_to_solid_object = true;
 
 					// Light stops.
 					current_light = 0;

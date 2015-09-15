@@ -134,10 +134,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 		// Use the highest version supported by both
 		int deployed = std::min(client_max, our_max);
 		// If it's lower than the lowest supported, give up.
-		if(deployed < SER_FMT_CLIENT_VER_LOWEST)
+		if (deployed < SER_FMT_VER_LOWEST_READ)
 			deployed = SER_FMT_VER_INVALID;
 
-		if(deployed == SER_FMT_VER_INVALID)
+		if (deployed == SER_FMT_VER_INVALID)
 		{
 			actionstream<<"Server: A mismatched client tried to connect from "
 					<<addr_s<<std::endl;
