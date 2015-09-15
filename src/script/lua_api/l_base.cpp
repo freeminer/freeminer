@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 ScriptApiBase *ModApiBase::getScriptApiBase(lua_State *L)
 {
 	// Get server from registry
-	lua_getfield(L, LUA_REGISTRYINDEX, "scriptapi");
+	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_SCRIPTAPI);
 	ScriptApiBase *sapi_ptr = (ScriptApiBase*) lua_touserdata(L, -1);
 	lua_pop(L, 1);
 	return sapi_ptr;
@@ -52,7 +52,7 @@ GUIEngine *ModApiBase::getGuiEngine(lua_State *L)
 
 std::string ModApiBase::getCurrentModPath(lua_State *L)
 {
-	lua_getfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
+	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
 	const char *current_mod_name = lua_tostring(L, -1);
 	if (!current_mod_name)
 		return ".";
