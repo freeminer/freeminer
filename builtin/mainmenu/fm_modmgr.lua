@@ -290,9 +290,9 @@ function modmgr.tab()
 
 		if selected_mod.is_modpack then
 			retval = retval .. ";0]" ..
-				"button[10.6.85;2,0.5;btn_mod_mgr_rename_modpack;" ..
+				"button[10.6,4.50;2,0.5;btn_mod_mgr_rename_modpack;" ..
 				fgettext("Rename") .. "]"
-			retval = retval .. "button[7.1,4.85;4.5,0.5;btn_mod_mgr_delete_mod;"
+			retval = retval .. "button[7.1,9.85;4.5,0.5;btn_mod_mgr_delete_mod;"
 				.. fgettext("Uninstall selected modpack") .. "]"
 		else
 			--show dependencies
