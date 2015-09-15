@@ -926,47 +926,84 @@ end
 -- Settings tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_settings()
+
 	local tab_string = ""
 	local pos_x, pos_y = 7.1, 0
-	local add_checkbox = function(name, config, text)
-		tab_string = tab_string ..
-			"checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
-					.. dump(core.setting_getbool(config)) .. "]"
+
+	local calc_next_pos = function()
 		pos_y = pos_y + 0.5
-		if pos_y == 11 then
+		if pos_y >= 11 then
 			pos_y = 0
 			pos_x = pos_x + 5
 		end
 	end
-	-- TODO: refactor this and handle_settings_buttons
-	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
-	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
-	add_checkbox("cb_enable_node_highlighting", "enable_node_highlighting", "Node Highlighting")
-	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
-	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
-	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
-	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
-	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
-	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
-	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
-	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
-	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
-	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
-	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
-	add_checkbox("cb_weather", "weather", "Weather")
-	add_checkbox("cb_hotbar_cycling", "hotbar_cycling", "Hotbar Cycling")
 
-	if core.setting_getbool("enable_shaders") then
-		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
-		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
-		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
-		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
-		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
-		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
+	local add_checkbox = function(name, config, text, enabled)
+		if(enabled) then
+		    tab_string = tab_string ..
+			    "checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
+					    .. dump(core.setting_getbool(config)) .. "]"
+		else
+		    tab_string = tab_string ..
+			    "textlist[" .. pos_x+0.33 .. "," .. pos_y+0.2 .. ";4,1;;#888888" .. fgettext(text) .. ";0;true]"
+		end
+		calc_next_pos()
 	end
 
+	local add_title = function(text)
+		-- add free space before title
+		if(pos_y > 0) then
+			calc_next_pos()
+		end
+		tab_string = tab_string ..
+			"textlist[" .. pos_x-0.1 .. "," .. pos_y+0.2 .. ";4,1;;#ffffff" .. fgettext(text) .. ";0;true]"
+		calc_next_pos()
+	end
+
+	-- TODO: refactor this and handle_settings_buttons
+
+	-- UI settings
+	add_title("UI settings")
+	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting",      true )
+	add_checkbox( "cb_hotbar_cycling",            "hotbar_cycling",             "Hotbar Cycling",         true )
+	-- Enviroment settings
+	add_title("Enviroment settings")
+	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid",            true )
+	add_checkbox( "cb_weather",                   "weather",                    "Weather",                true )
+
+	-- Graphics settings
+	add_title("Graphics settings")
+	add_checkbox( "cb_mipmapping",                "mip_map",                    "Mip-Mapping",            true )
+	add_checkbox( "cb_anisotrophic",              "anisotropic_filter",         "Anisotropic Filtering",  true )
+	add_checkbox( "cb_bilinear",                  "bilinear_filter",            "Bi-Linear Filtering",    true )
+	add_checkbox( "cb_trilinear",                 "trilinear_filter",           "Tri-Linear Filtering",   true )
+
+	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting",        true )
+	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees",            true )
+	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water",           true )
+	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds",              true )
+	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals",   true )
+	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)",          true )
+
+	-- Effects settings
+	calc_next_pos()
+	add_title("Effects settings")
+	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles",       true )
+	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders",                true )
+
+	local enable_shaders = core.setting_getbool("enable_shaders");
+
+	add_checkbox( "cb_bumpmapping",               "enable_bumpmapping",         "Bumpmapping",           enable_shaders )
+	add_checkbox( "cb_parallax",                  "enable_parallax_occlusion",  "Parallax Occlusion",    enable_shaders )
+	add_checkbox( "cb_generate_normalmaps",       "generate_normalmaps",        "Generate Normalmaps",   enable_shaders )
+	add_checkbox( "cb_waving_water",              "enable_waving_water",        "Waving Water",          enable_shaders )
+	add_checkbox( "cb_waving_leaves",             "enable_waving_leaves",       "Waving Leaves",         enable_shaders )
+	add_checkbox( "cb_waving_plants",             "enable_waving_plants",       "Waving Plants",         enable_shaders )
+
+	-- Input setup
 	tab_string = tab_string ..
 		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+
 	return tab_string
 end
 
