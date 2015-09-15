@@ -256,6 +256,15 @@ if(NOT USE_ICONV)
 	set(USE_ICONV 0)
 endif()
 
+if(NOT USE_CURL)
+	if(BUILD_CLIENT)
+		message(WARNING "cURL is required to load the server list")
+	endif()
+	if(BUILD_SERVER)
+		message(WARNING "cURL is required to announce to the server list")
+	endif()
+endif()
+
 
 if(BUILD_CLIENT)
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" TRUE)
