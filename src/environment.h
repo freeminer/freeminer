@@ -51,7 +51,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <unordered_set>
-//#include "jthread/jmutex.h"
+//#include "threading/mutex.h"
 #include "network/networkprotocol.h" // for AccessDeniedCode
 
 class ServerEnvironment;
@@ -136,8 +136,8 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	JMutex m_timeofday_lock;
-	JMutex m_time_lock;
+	Mutex m_timeofday_lock;
+	Mutex m_time_lock;
 
 };
 

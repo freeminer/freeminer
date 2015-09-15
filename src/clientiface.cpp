@@ -783,7 +783,7 @@ ClientInterface::~ClientInterface()
 std::vector<u16> ClientInterface::getClientIDs(ClientState min_state)
 {
 	std::vector<u16> reply;
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 
 	for(auto
 		i = m_clients.begin();
@@ -835,7 +835,7 @@ void ClientInterface::UpdatePlayerList()
 			infostream << "* " << player->getName() << "\t";
 
 			{
-				//JMutexAutoLock clientslock(m_clients_mutex);
+				//MutexAutoLock clientslock(m_clients_mutex);
 				RemoteClient* client = lockedGetClientNoEx(*i);
 				if(client != NULL)
 					client->PrintInfo(infostream);
@@ -873,7 +873,7 @@ void ClientInterface::send(u16 peer_id, u8 channelnum,
 void ClientInterface::sendToAll(u16 channelnum,
 		NetworkPacket* pkt, bool reliable)
 {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	for(auto
 		i = m_clients.begin();
 		i != m_clients.end(); ++i)
@@ -921,7 +921,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 }
 
 std::shared_ptr<RemoteClient> ClientInterface::getClient(u16 peer_id, ClientState state_min) {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
@@ -941,7 +941,7 @@ RemoteClient* ClientInterface::lockedGetClientNoEx(u16 peer_id, ClientState stat
 
 ClientState ClientInterface::getClientState(u16 peer_id)
 {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.

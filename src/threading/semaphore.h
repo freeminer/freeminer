@@ -1,10 +1,6 @@
 /*
-jthread/jsemaphore.h
-Copyright (C) 2013 sapier, < sapier AT gmx DOT net >
-*/
-
-/*
 This file is part of Freeminer.
+Copyright (C) 2013 sapier <sapier AT gmx DOT net>
 
 Freeminer is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,49 +16,37 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef JSEMAPHORE_H_
-#define JSEMAPHORE_H_
+#ifndef THREADING_SEMAPHORE_H
+#define THREADING_SEMAPHORE_H
 
 #if defined(WIN32) || defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <assert.h>
-#define MAX_SEMAPHORE_COUNT 1024
+	#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
 #elif defined(__MACH__) && defined(__APPLE__)
-#include <pthread.h>
-#include <mach/mach.h>
-#include <mach/task.h>
-#include <mach/semaphore.h>
-#include <sys/semaphore.h>
-#include <errno.h>
-#include <time.h>
+	#include <mach/semaphore.h>
 #else
-#include <pthread.h>
-#include <semaphore.h>
+	#include <semaphore.h>
 #endif
 
-class JSemaphore {
+
+class Semaphore {
 public:
-	JSemaphore();
-	~JSemaphore();
-	JSemaphore(int initval);
+	Semaphore(int val=0);
+	~Semaphore();
 
-	void Post();
-	void Wait();
-	bool Wait(unsigned int time_ms);
-
-	int GetValue();
+	void post(unsigned int num=1);
+	void wait();
+	bool wait(unsigned int time_ms);
 
 private:
 #if defined(WIN32) || defined(_WIN32)
-	HANDLE m_hSemaphore;
+	HANDLE semaphore;
 #elif defined(__MACH__) && defined(__APPLE__)
-	semaphore_t m_semaphore;
-	int semcount;
+	semaphore_t semaphore;
 #else
-	sem_t m_semaphore;
+	sem_t semaphore;
 #endif
 };
 
+#endif
 
-#endif /* JSEMAPHORE_H_ */

@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/connection.h"
 #include "environment.h"
 #include "irrlichttypes_extrabloated.h"
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include <ostream>
 #include <map>
 #include <set>
@@ -116,15 +116,11 @@ private:
 	MeshUpdateQueue m_queue_in;
  
 protected:
-	const char *getName()
-	{ return "MeshUpdateThread"; }
 	virtual void doUpdate();
 
 public:
 
-	MeshUpdateThread()
-	{
-	}
+	MeshUpdateThread() : UpdateThread("Mesh") {}
 
 	void enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
 			bool urgent);

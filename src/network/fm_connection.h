@@ -39,7 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "enet/enet.h"
 #include "../msgpack_fix.h"
 #include "util/msgpack_serialize.h"
-#include "util/thread_pool.h"
 #include "util/concurrent_map.h"
 #include "util/concurrent_unordered_map.h"
 
@@ -301,13 +300,13 @@ struct ConnectionCommand
 	}
 };
 
-class Connection: public thread_pool
+class Connection: public Thread
 {
 public:
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 			PeerHandler *peerhandler = nullptr);
 	~Connection();
-	void * Thread();
+	void * run();
 
 	/* Interface */
 
@@ -355,7 +354,7 @@ private:
 
 	concurrent_map<u16, ENetPeer*> m_peers;
 	concurrent_unordered_map<u16, Address> m_peers_address;
-	//JMutex m_peers_mutex;
+	//Mutex m_peers_mutex;
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;

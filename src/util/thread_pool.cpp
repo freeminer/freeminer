@@ -1,7 +1,8 @@
 #include <util/thread_pool.h>
 #include <log.h>
 
-thread_pool::thread_pool() {
+thread_pool::thread_pool(const std::string &name) : 
+	name(name) {
 	requeststop = false;
 };
 
@@ -10,7 +11,7 @@ thread_pool::~thread_pool() {
 };
 
 void thread_pool::func() {
-	Thread();
+	run();
 };
 
 void thread_pool::start (int n) {
@@ -36,9 +37,7 @@ void thread_pool::restart (int n) {
 }
 
 // JThread compat:
-void thread_pool::ThreadStarted() {
-};
-bool thread_pool::StopRequested() {
+bool thread_pool::stopRequested() {
 	return requeststop;
 }
 bool thread_pool::IsRunning() {
@@ -50,20 +49,20 @@ int thread_pool::Start(int n) {
 	start(n);
 	return 0;
 };
-void thread_pool::Stop() {
+/*void thread_pool::Stop() {
 	stop();
-}
-void thread_pool::Wait() {
+}*/
+void thread_pool::wait() {
 	join();
 };
-void thread_pool::Kill() {
+/*void thread_pool::Kill() {
 	join();
-};
-void * thread_pool::Thread() {
+};*/
+void * thread_pool::run() {
 	return nullptr;
 };
 
-bool thread_pool::IsSameThread() {
+bool thread_pool::isSameThread() {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	for (auto & worker : workers)
 		if (thread_me == std::hash<std::thread::id>()(worker.get_id()))

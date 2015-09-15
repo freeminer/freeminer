@@ -16,7 +16,7 @@ public:
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 
-	thread_pool();
+	thread_pool(const std::string &name="Unnamed");
 	virtual ~thread_pool();
 
 	virtual void func();
@@ -26,16 +26,18 @@ public:
 	void stop ();
 	void join ();
 
-// JThread compat:
-	void ThreadStarted();
-	bool StopRequested();
+// Thread compat:
+
+	bool stopRequested();
 	bool IsRunning();
 	int Start(int n = 1);
-	void Stop();
-	void Wait();
-	void Kill();
-	virtual void * Thread();
-	bool IsSameThread();
+	//void Stop();
+	void wait();
+	//void Kill();
+	virtual void * run() = 0;
+	bool isSameThread();
+protected:
+	std::string name;
 };
 
 

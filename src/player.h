@@ -26,8 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
-#include "jthread/jmutexautolock.h"
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include <list>
 #include "util/lock.h"
 #include "json/json.h"
@@ -423,7 +422,7 @@ private:
 	// Protect some critical areas
 	// hud for example can be modified by EmergeThread
 	// and ServerThread
-	JMutex m_mutex;
+	Mutex m_mutex;
 };
 
 

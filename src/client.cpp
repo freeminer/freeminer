@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <sstream>
 #include <IFileSystem.h>
-#include "jthread/jmutexautolock.h"
+#include "threading/mutex_auto_lock.h"
 #include "util/auth.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
@@ -258,25 +258,23 @@ Client::Client(
 void Client::Stop()
 {
 	//request all client managed threads to stop
-	m_mesh_update_thread.Stop();
-	m_mesh_update_thread.Wait();
+	m_mesh_update_thread.stop();
+	// Save local server map
 	if (m_localdb) {
 		actionstream << "Local map saving ended" << std::endl;
 		m_localdb->endSave();
 	}
 
-	if (m_localserver)
-		delete m_localserver;
-	if (m_localdb)
-		delete m_localdb;
+	delete m_localserver;
+	delete m_localdb;
 }
 
 Client::~Client()
 {
 	m_con.Disconnect();
 
-	m_mesh_update_thread.Stop();
-	m_mesh_update_thread.Wait();
+	m_mesh_update_thread.stop();
+	m_mesh_update_thread.wait();
 /*
 	while (!m_mesh_update_thread.m_queue_out.empty()) {
 		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
@@ -957,7 +955,7 @@ void Client::ProcessData(NetworkPacket *pkt)
 /*
 void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 {
-	//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
+	//MutexAutoLock lock(m_con_mutex); //bulk comment-out
 	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
 }
 */
@@ -1331,7 +1329,7 @@ void Client::sendPlayerPos()
 
 	u16 our_peer_id;
 	{
-		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
+		//MutexAutoLock lock(m_con_mutex); //bulk comment-out
 		our_peer_id = m_con.GetPeerID();
 	}
 
@@ -1886,9 +1884,9 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 
 	if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
-		auto threads = !g_settings->getBool("more_threads") ? 1 : (porting::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
+		auto threads = !g_settings->getBool("more_threads") ? 1 : (Thread::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
 		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
-		m_mesh_update_thread.Start(threads < 1 ? 1 : threads);
+		m_mesh_update_thread.start(threads < 1 ? 1 : threads);
 	}
 
 	m_state = LC_Ready;

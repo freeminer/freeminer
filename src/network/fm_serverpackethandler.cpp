@@ -51,7 +51,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
-	//JMutexAutoLock envlock(m_env_mutex);
+	//MutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 

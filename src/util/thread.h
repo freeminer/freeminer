@@ -24,8 +24,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define UTIL_THREAD_HEADER
 
 #include "../irrlichttypes.h"
-#include "../jthread/jmutex.h"
-#include "../jthread/jmutexautolock.h"
+#include "../threading/thread.h"
+#include "../threading/mutex.h"
+#include "../threading/mutex_auto_lock.h"
 #include "porting.h"
 #include "log.h"
 #include "thread_pool.h"
@@ -39,27 +40,27 @@ public:
 
 	T get()
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		return m_value;
 	}
 
 	void set(T value)
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		m_value = value;
 	}
 
 	// You'll want to grab this in a SharedPtr
-	JMutexAutoLock *getLock()
+	MutexAutoLock *getLock()
 	{
-		return new JMutexAutoLock(m_mutex);
+		return new MutexAutoLock(m_mutex);
 	}
 
 	// You pretty surely want to grab the lock when accessing this
 	T m_value;
 
 private:
-	JMutex m_mutex;
+	Mutex m_mutex;
 };
 
 /*
@@ -121,7 +122,7 @@ public:
 		typename std::list<CallerInfo<Caller, CallerData, Key, T> >::iterator j;
 
 		{
-			unique_lock lock(m_queue.getMutex());
+			MutexAutoLock lock(m_queue.getMutex());
 
 			/*
 				If the caller is already on the list, only update CallerData
@@ -195,45 +196,36 @@ private:
 	MutexedQueue<GetRequest<Key, T, Caller, CallerData> > m_queue;
 };
 
-class UpdateThread : public thread_pool {
+class UpdateThread : public thread_pool
+{
 public:
-	UpdateThread() {}
-	virtual ~UpdateThread() {}
+	UpdateThread(const std::string &name) : thread_pool(name + "Update") {}
+	~UpdateThread() {}
 
-	void deferUpdate()
-	{
-		m_update_sem.Post();
-	}
+	void deferUpdate() { m_update_sem.post(); }
 
-	void Stop()
+	void stop()
 	{
-		stop();
+		thread_pool::stop();
 
 		// give us a nudge
-		m_update_sem.Post();
+		m_update_sem.post();
 	}
 
-	void *Thread()
+	void *run()
 	{
-		ThreadStarted();
 
-		const char *thread_name = getName();
-		log_register_thread(thread_name);
-		porting::setThreadName(thread_name);
 		porting::setThreadPriority(30);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		while (!StopRequested()) {
-			m_update_sem.Wait(1000);
+		while (!stopRequested()) {
+			m_update_sem.wait(1000);
+			// Set semaphore to 0
+			while (m_update_sem.wait(0));
 
-			// Empty the queue, just in case doUpdate() is expensive
-			while (m_update_sem.GetValue())
-				m_update_sem.Wait();
-
-			if (StopRequested())
-				break;
+			if (stopRequested()) break;
 
 			doUpdate();
 		}
@@ -245,10 +237,9 @@ public:
 
 protected:
 	virtual void doUpdate() = 0;
-	virtual const char *getName() = 0;
 
 private:
-	JSemaphore m_update_sem;
+	Semaphore m_update_sem;
 };
 
 #endif

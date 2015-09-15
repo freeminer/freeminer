@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "ban.h"
 #include "environment.h"
 #include "map.h"
-#include "jthread/jmutexautolock.h"
+#include "threading/mutex_auto_lock.h"
 #include "constants.h"
 #include "voxel.h"
 #include "config.h"
@@ -94,36 +94,32 @@ public:
 
 class ServerThread : public thread_pool
 {
-	Server *m_server;
-
 public:
 
 	ServerThread(Server *server):
 		m_server(server)
-	{
-	}
+	{}
 
-	void * Thread();
+	void *run();
+
+private:
+	Server *m_server;
 };
 
-void *ServerThread::Thread()
+void *ServerThread::run()
 {
-	log_register_thread("ServerThread");
-
 	DSTACK(__FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	m_server->AsyncRunStep(0.1, true);
 
-	ThreadStarted();
-
 	porting::setThreadName("ServerThread");
 	porting::setThreadPriority(40);
 
 	auto time = porting::getTimeMs();
-	while (!StopRequested()) {
-		try{
+	while (!stopRequested()) {
+		try {
 			//TimeTaker timer("AsyncRunStep() + Receive()");
 			u32 time_now = porting::getTimeMs();
 			m_server->AsyncRunStep((time_now - time)/1000.0f);
@@ -333,8 +329,8 @@ Server::Server(
 		errorstream << std::endl;
 	}
 
-	// Lock environment
-	//JMutexAutoLock envlock(m_env_mutex);
+	//lock environment
+	//MutexAutoLock envlock(m_env_mutex);
 
 	// Load mapgen params from Settings
 	m_emerge->loadMapgenParams();
@@ -460,7 +456,7 @@ Server::~Server()
 	SendChatMessage(PEER_ID_INEXISTENT, "*** Server shutting down");
 
 	{
-		//JMutexAutoLock envlock(m_env_mutex);
+		//MutexAutoLock envlock(m_env_mutex);
 
 		// Execute script shutdown hooks
 		m_script->on_shutdown();
@@ -562,7 +558,7 @@ void Server::start(Address bind_addr)
 			<< " MINETEST_PROTO \t"
 #endif
 			<< " cpp="<<__cplusplus<<" \t"
-			<< " cores="<< porting::getNumberOfProcessors()
+			<< " cores="<< Thread::getNumberOfProcessors()
 #if __ANDROID__
 			<< " android=" << porting::android_version_sdk_int
 #endif
@@ -617,7 +613,7 @@ void Server::step(float dtime)
 	if(dtime > 2.0)
 		dtime = 2.0;
 	{
-		JMutexAutoLock lock(m_step_dtime_mutex);
+		MutexAutoLock lock(m_step_dtime_mutex);
 		m_step_dtime += dtime;
 	}
 	// Assert if fatal error occurred in thread
@@ -651,7 +647,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 /*
 	float dtime;
 	{
-		JMutexAutoLock lock1(m_step_dtime_mutex);
+		MutexAutoLock lock1(m_step_dtime_mutex);
 		dtime = m_step_dtime;
 	}
 */
@@ -676,7 +672,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 /*
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
-		JMutexAutoLock lock1(m_step_dtime_mutex);
+		MutexAutoLock lock1(m_step_dtime_mutex);
 		m_step_dtime -= dtime;
 	}
 */
@@ -706,7 +702,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	*/
 	{
 		TimeTaker timer_step("Server step: pdate time of day and overall game time");
-		//JMutexAutoLock envlock(m_env_mutex);
+		//MutexAutoLock envlock(m_env_mutex);
 
 		m_env->setTimeOfDaySpeed(g_settings->getFloat("time_speed"));
 
@@ -726,7 +722,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 	{
 		//TimeTaker timer_step("Server step: m_env->step");
-		//JMutexAutoLock lock(m_env_mutex);
+		//MutexAutoLock lock(m_env_mutex);
 		// Figure out and report maximum lag to environment
 		float max_lag = m_env->getMaxLagEstimate();
 		max_lag *= 0.9998; // Decrease slowly (about half per 5 minutes)
@@ -747,7 +743,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	static const float map_timer_and_unload_dtime = 2.92;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime))
 	{
-		JMutexAutoLock lock(m_env_mutex);
+		MutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
 		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
@@ -792,7 +788,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	{
 		TimeTaker timer_step("Server step: Check added and deleted active objects");
 		//infostream<<"Server: Checking added and deleted active objects"<<std::endl;
-		//JMutexAutoLock envlock(m_env_mutex);
+		//MutexAutoLock envlock(m_env_mutex);
 
 		auto clients = m_clients.getClientList();
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
@@ -982,7 +978,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	*/
 	{
 		TimeTaker timer_step("Server step: Send object messages");
-		//JMutexAutoLock envlock(m_env_mutex);
+		//MutexAutoLock envlock(m_env_mutex);
 		ScopeProfiler sp(g_profiler, "Server: sending object messages");
 
 		// Key = object id
@@ -1107,7 +1103,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		TimeTaker timer_step("Server step: Send queued-for-sending map edit events.");
 		ScopeProfiler sp(g_profiler, "Server: Map events process");
 		// We will be accessing the environment
-		//JMutexAutoLock lock(m_env_mutex);
+		//MutexAutoLock lock(m_env_mutex);
 
 		// Don't send too many at a time
 		u32 count = 0;
@@ -1284,7 +1280,7 @@ int Server::save(float dtime, bool breakable) {
 		{
 			counter = 0.0;
 			TimeTaker timer_step("Server step: Save map, players and auth stuff");
-			//JMutexAutoLock lock(m_env_mutex);
+			//MutexAutoLock lock(m_env_mutex);
 
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
 
@@ -1447,7 +1443,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
-	//JMutexAutoLock envlock(m_env_mutex);
+	//MutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 	u32 peer_id = pkt->getPeerId();
@@ -1641,10 +1637,9 @@ void Server::SetBlocksNotSent()
 	for (auto
 		 i = clients.begin();
 		 i != clients.end(); ++i) {
-			RemoteClient *client = m_clients.lockedGetClientNoEx(*i);
-			if (client)
+			if (RemoteClient *client = m_clients.lockedGetClientNoEx(*i))
 				client->SetBlocksNotSent();
-		}
+	}
 }
 
 void Server::peerAdded(u16 peer_id)
@@ -2380,7 +2375,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 		}
 
 		NetworkPacket pkt(TOCLIENT_ADDNODE, 6 + 2 + 1 + 1 + 1);
-		m_clients.Lock();
+		m_clients.lock();
 		RemoteClient* client = m_clients.lockedGetClientNoEx(*i);
 		if (client != 0) {
 			pkt << p << n.param0 << n.param1 << n.param2
@@ -2394,7 +2389,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 				}
 			}
 		}
-		m_clients.Unlock();
+		m_clients.unlock();
 
 		// Send as reliable
 		if (pkt.getSize() > 0)
@@ -2451,7 +2446,7 @@ int Server::SendBlocks(float dtime)
 	DSTACK(__FUNCTION_NAME);
 	//TimeTaker timer("SendBlocks inside");
 
-	//JMutexAutoLock envlock(m_env_mutex);
+	//MutexAutoLock envlock(m_env_mutex);
 	//TODO check if one big lock could be faster then multiple small ones
 
 	//ScopeProfiler sp(g_profiler, "Server: sel and send blocks to clients");
@@ -2998,7 +2993,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 				PlayerSAO *playersao = player->getPlayerSAO();
 				assert(playersao);
 
-				//JMutexAutoLock env_lock(m_env_mutex);
+				//MutexAutoLock env_lock(m_env_mutex);
 				m_script->on_leaveplayer(playersao);
 
 				playersao->disconnected();
@@ -3031,7 +3026,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 			}
 		}
 		{
-			//JMutexAutoLock env_lock(m_env_mutex);
+			//MutexAutoLock env_lock(m_env_mutex);
 			m_clients.DeleteClient(peer_id);
 		}
 	}

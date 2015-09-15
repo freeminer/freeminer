@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include "util/concurrent_map.h"
 #include "util/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
@@ -506,11 +506,9 @@ public:
 	static std::string state2Name(ClientState state);
 
 protected:
-	//mt compat
-	void Lock()
-		{  }
-	void Unlock()
-		{  }
+	//TODO find way to avoid this functions
+	void lock() { /*m_clients_mutex.lock();*/ }
+	void unlock() { /*m_clients_mutex.unlock();*/ }
 
 
 public:
@@ -531,13 +529,14 @@ private:
 
 	// Connection
 	con::Connection* m_con;
+	//Mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	concurrent_map<u16, std::shared_ptr<RemoteClient>> m_clients;
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
 	ServerEnvironment *m_env;
-	//JMutex m_env_mutex;
+	//Mutex m_env_mutex;
 
 	float m_print_info_timer;
 

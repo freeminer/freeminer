@@ -100,7 +100,7 @@ ClientMap::ClientMap(
 
 ClientMap::~ClientMap()
 {
-	/*JMutexAutoLock lock(mesh_mutex);
+	/*MutexAutoLock lock(mesh_mutex);
 
 	if(mesh != NULL)
 	{
@@ -176,11 +176,11 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 	if (!max_cycle_ms)
 		max_cycle_ms = 300/getControl().fps_wanted;
 
-	m_camera_mutex.Lock();
+	m_camera_mutex.lock();
 	v3f camera_position = m_camera_position;
 	f32 camera_fov = m_camera_fov;
 	//v3s16 camera_offset = m_camera_offset;
-	m_camera_mutex.Unlock();
+	m_camera_mutex.unlock();
 
 	// Use a higher fov to accomodate faster camera movements.
 	// Blocks are cropped better when they are drawn.
@@ -508,10 +508,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	int crack = m_client->getCrackLevel();
 	u32 daynight_ratio = m_client->getEnv().getDayNightRatio();
 
-	m_camera_mutex.Lock();
+	m_camera_mutex.lock();
 	v3f camera_position = m_camera_position;
 	f32 camera_fov = m_camera_fov * 1.1;
-	m_camera_mutex.Unlock();
+	m_camera_mutex.unlock();
 
 	/*
 		Get all blocks and draw all visible ones
@@ -568,7 +568,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// Mesh animation
 		if (mesh_step <= 1)
 		{
-			//JMutexAutoLock lock(block->mesh_mutex);
+			//MutexAutoLock lock(block->mesh_mutex);
 
 			mapBlockMesh->updateCameraOffset(m_camera_offset);
 
@@ -607,7 +607,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			Get the meshbuffers of the block
 		*/
 		{
-			//JMutexAutoLock lock(block->mesh_mutex);
+			//MutexAutoLock lock(block->mesh_mutex);
 
 			auto *mesh = mapBlockMesh->getMesh();
 			if (!mesh)
@@ -874,9 +874,9 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 	// Sadly ISceneManager has no "post effects" render pass, in that case we
 	// could just register for that and handle it in renderMap().
 
-	m_camera_mutex.Lock();
+	m_camera_mutex.lock();
 	v3f camera_position = m_camera_position;
-	m_camera_mutex.Unlock();
+	m_camera_mutex.unlock();
 
 	MapNode n = getNodeNoEx(floatToInt(camera_position, BS));
 

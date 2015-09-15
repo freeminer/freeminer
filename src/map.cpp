@@ -690,7 +690,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
-	//JMutexAutoLock lock2(m_update_lighting_mutex);
+	//MutexAutoLock lock2(m_update_lighting_mutex);
 
 #if !ENABLE_THREADS
 	auto lock = m_nothread_locker.lock_unique_rec();
@@ -942,7 +942,7 @@ TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
 
 	a_blocks.clear();
 TimeTaker timer("updateLighting expireDayNightDiff");
-	//JMutexAutoLock lock2(m_update_lighting_mutex);
+	//MutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
 		Update information about whether day and night light differ

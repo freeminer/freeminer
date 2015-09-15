@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include <iostream>
 #include <queue>
-#include "jthread/jevent.h"
+#include "threading/event.h"
 #include "map.h"
 #include "environment.h"
 #include "util/container.h"
@@ -87,9 +87,10 @@ public:
 		enable_mapgen_debug_info(false),
 		id(ethreadid)
 	{
+		name = "Emerge-" + itos(id);
 	}
 
-	void *Thread();
+	void *run();
 	bool popBlockEmerge(v3s16 *pos, u8 *flags);
 	bool getBlockOrStartGen(v3s16 p, MapBlock **b,
 			BlockMakeData *data, bool allow_generate);
@@ -121,7 +122,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef)
 	{}
 #if ENABLE_THREADS
 	if (nthreads < 1)
-		nthreads = porting::getNumberOfProcessors() - 2;
+		nthreads = Thread::getNumberOfProcessors() - 2;
 #endif
 	if (nthreads < 1)
 		nthreads = 1;
@@ -160,9 +161,9 @@ EmergeManager::~EmergeManager()
 {
 	for (u32 i = 0; i != emergethread.size(); i++) {
 		if (threads_active) {
-			emergethread[i]->Stop();
+			emergethread[i]->stop();
 			emergethread[i]->qevent.signal();
-			emergethread[i]->Wait();
+			emergethread[i]->wait();
 		}
 		delete emergethread[i];
 		delete mapgen[i];
@@ -218,7 +219,7 @@ void EmergeManager::initMapgens()
 Mapgen *EmergeManager::getCurrentMapgen()
 {
 	for (u32 i = 0; i != emergethread.size(); i++) {
-		if (emergethread[i]->IsSameThread())
+		if (emergethread[i]->isSameThread())
 			return emergethread[i]->mapgen;
 	}
 
@@ -232,7 +233,7 @@ void EmergeManager::startThreads()
 		return;
 
 	for (u32 i = 0; i != emergethread.size(); i++)
-		emergethread[i]->Start();
+		emergethread[i]->start();
 
 	threads_active = true;
 }
@@ -245,13 +246,13 @@ void EmergeManager::stopThreads()
 
 	// Request thread stop in parallel
 	for (u32 i = 0; i != emergethread.size(); i++) {
-		emergethread[i]->Stop();
+		emergethread[i]->stop();
 		emergethread[i]->qevent.signal();
 	}
 
 	// Then do the waiting for each
 	for (u32 i = 0; i != emergethread.size(); i++)
-		emergethread[i]->Wait();
+		emergethread[i]->wait();
 
 	threads_active = false;
 }
@@ -269,7 +270,7 @@ bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate
 		flags |= BLOCK_EMERGE_ALLOWGEN;
 
 	{
-		JMutexAutoLock queuelock(queuemutex);
+		MutexAutoLock queuelock(queuemutex);
 
 		count = blocks_enqueued.size();
 		if (count >= qlimit_total)
@@ -382,7 +383,7 @@ MapgenSpecificParams *EmergeManager::createMapgenParams(const std::string &mgnam
 bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags)
 {
 	std::map<v3s16, BlockEmergeData *>::iterator iter;
-	JMutexAutoLock queuelock(emerge->queuemutex);
+	MutexAutoLock queuelock(emerge->queuemutex);
 
 	if (blockqueue.empty())
 		return false;
@@ -418,8 +419,7 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 	{
 
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
-	//JMutexAutoLock envlock(m_server->m_env_mutex);
-
+	//MutexAutoLock envlock(m_server->m_env_mutex);
 
 	// Attempt to load block
 	block = map->getBlockNoCreateNoEx(p);
@@ -444,10 +444,8 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 }
 
 
-void *EmergeThread::Thread()
+void *EmergeThread::run()
 {
-	ThreadStarted();
-	log_register_thread("EmergeThread" + itos(id));
 	DSTACK(__FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
@@ -463,7 +461,7 @@ void *EmergeThread::Thread()
 	porting::setThreadName(("EmergeThread" + itos(id)).c_str());
 	porting::setThreadPriority(5);
 
-	while (!StopRequested())
+	while (!stopRequested())
 	try {
 		if (!popBlockEmerge(&p, &flags)) {
 			qevent.wait();
@@ -498,7 +496,7 @@ void *EmergeThread::Thread()
 
 			{
 				//envlock: usually 0ms, but can take either 30 or 400ms to acquire
-				//JMutexAutoLock envlock(m_server->m_env_mutex);
+				//MutexAutoLock envlock(m_server->m_env_mutex);
 				ScopeProfiler sp(g_profiler, "EmergeThread: after "
 						"Mapgen::makeChunk (envlock)", SPT_AVG);
 
@@ -575,7 +573,7 @@ void *EmergeThread::Thread()
 	}
 
 	{
-		JMutexAutoLock queuelock(emerge->queuemutex);
+		MutexAutoLock queuelock(emerge->queuemutex);
 		while (!blockqueue.empty())
 		{
 			v3s16 p = blockqueue.front();
@@ -592,6 +590,5 @@ void *EmergeThread::Thread()
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
-	log_deregister_thread();
 	return NULL;
 }

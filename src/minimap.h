@@ -20,17 +20,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef MINIMAP_HEADER
 #define MINIMAP_HEADER
 
-#include <map>
-#include <string>
-#include <vector>
 #include "irrlichttypes_extrabloated.h"
 #include "client.h"
 #include "voxel.h"
-#include "jthread/jmutex.h"
-#include "jthread/jsemaphore.h"
+#include "threading/mutex.h"
+#include "threading/semaphore.h"
+#include <map>
+#include <string>
+#include <vector>
 
 #define MINIMAP_MAX_SX 512
 #define MINIMAP_MAX_SY 512
+
 
 enum MinimapMode {
 	MINIMAP_MODE_OFF,
@@ -81,7 +82,7 @@ struct MinimapData {
 	video::ITexture *minimap_overlay_round;
 	video::ITexture *minimap_overlay_square;
 	video::ITexture *player_marker;
-	JMutex m_mutex;
+	Mutex m_mutex;
 };
 
 struct QueuedMinimapUpdate {
@@ -91,6 +92,7 @@ struct QueuedMinimapUpdate {
 
 class MinimapUpdateThread : public UpdateThread {
 public:
+	MinimapUpdateThread() : UpdateThread("Minimap") {}
 	virtual ~MinimapUpdateThread();
 
 	void getMap(v3s16 pos, s16 size, s16 height, bool radar);
@@ -106,11 +108,10 @@ public:
 	MinimapData *data;
 
 protected:
-	const char *getName() { return "MinimapUpdateThread"; }
 	virtual void doUpdate();
 
 private:
-	JMutex m_queue_mutex;
+	Mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
 	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
 };
@@ -152,7 +153,7 @@ private:
 	bool m_enable_shaders;
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
-	//JMutex m_mutex;
+	//Mutex m_mutex;
 };
 
 #endif

@@ -72,28 +72,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		#define _GNU_SOURCE
 	#endif
 
-	#include <sched.h>
-
-	#ifdef __FreeBSD__
-		#include <pthread_np.h>
-		typedef cpuset_t cpu_set_t;
-	#elif defined(__sun) || defined(sun)
-		#include <sys/types.h>
-		#include <sys/processor.h>
-	#elif defined(_AIX)
-		#include <sys/processor.h>
-	#elif __APPLE__
-		#include <mach/mach_init.h>
-		#include <mach/thread_policy.h>
-	#endif
-
 	#define sleep_ms(x) usleep(x*1000)
-
-	#define THREAD_PRIORITY_LOWEST       0
-	#define THREAD_PRIORITY_BELOW_NORMAL 1
-	#define THREAD_PRIORITY_NORMAL       2
-	#define THREAD_PRIORITY_ABOVE_NORMAL 3
-	#define THREAD_PRIORITY_HIGHEST      4
 
 	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 #endif
@@ -175,21 +154,6 @@ std::string getDataPath(const char *subpath);
 	Initialize path_share and path_user.
 */
 void initializePaths();
-
-/*
-	Get number of online processors in the system.
-*/
-int getNumberOfProcessors();
-
-/*
-	Set a thread's affinity to a particular processor.
-*/
-bool threadBindToProcessor(threadid_t tid, int pnumber);
-
-/*
-	Set a thread's priority.
-*/
-bool threadSetPriority(threadid_t tid, int prio);
 
 /*
 	Return system information
@@ -375,6 +339,7 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 	#warning "Unrecognized platform, thread names will not be available."
 	inline void setThreadName(const char* name) {}
 #endif
+
 
 #if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 	#define PORTING_USE_PTHREAD 1

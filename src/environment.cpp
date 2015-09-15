@@ -52,6 +52,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <random>
+#include "threading/mutex_auto_lock.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -178,33 +179,33 @@ u32 Environment::getDayNightRatio()
 
 void Environment::setTimeOfDaySpeed(float speed)
 {
-	JMutexAutoLock lock(this->m_timeofday_lock);
+	MutexAutoLock lock(this->m_timeofday_lock);
 	m_time_of_day_speed = speed;
 }
 
 float Environment::getTimeOfDaySpeed()
 {
-	JMutexAutoLock lock(this->m_timeofday_lock);
+	MutexAutoLock lock(this->m_timeofday_lock);
 	float retval = m_time_of_day_speed;
 	return retval;
 }
 
 void Environment::setTimeOfDay(u32 time)
 {
-	JMutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(this->m_time_lock);
 	m_time_of_day = time;
 }
 
 u32 Environment::getTimeOfDay()
 {
-	JMutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(this->m_time_lock);
 	u32 retval = m_time_of_day;
 	return retval;
 }
 
 float Environment::getTimeOfDayF()
 {
-	JMutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(this->m_time_lock);
 	return (float)m_time_of_day / 24000.0;
 }
 

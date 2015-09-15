@@ -332,7 +332,7 @@ private:
 	// The first position contains a dummy shader.
 	std::vector<ShaderInfo> m_shaderinfo_cache;
 	// The former container is behind this mutex
-	JMutex m_shaderinfo_cache_mutex;
+	Mutex m_shaderinfo_cache_mutex;
 
 	// Queued shader fetches (to be processed by the main thread)
 	RequestQueue<std::string, u32, u8, u8> m_get_shader_queue;
@@ -473,7 +473,7 @@ u32 ShaderSource::getShaderIdDirect(const std::string &name,
 		Add shader to caches (add dummy shaders too)
 	*/
 
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	u32 id = m_shaderinfo_cache.size();
 	m_shaderinfo_cache.push_back(info);
@@ -487,7 +487,7 @@ u32 ShaderSource::getShaderIdDirect(const std::string &name,
 
 ShaderInfo ShaderSource::getShaderInfo(u32 id)
 {
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	if(id >= m_shaderinfo_cache.size())
 		return ShaderInfo();
@@ -515,7 +515,7 @@ void ShaderSource::insertSourceShader(const std::string &name_of_shader,
 
 void ShaderSource::rebuildShaders()
 {
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	/*// Oh well... just clear everything, they'll load sometime.
 	m_shaderinfo_cache.clear();

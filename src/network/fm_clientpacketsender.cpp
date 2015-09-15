@@ -260,7 +260,7 @@ void Client::sendPlayerPos()
 
 	u16 our_peer_id;
 	{
-		//JMutexAutoLock lock(m_con_mutex); //bulk comment-out
+		//MutexAutoLock lock(m_con_mutex); //bulk comment-out
 		our_peer_id = m_con.GetPeerID();
 	}
 

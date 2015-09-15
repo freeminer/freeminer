@@ -711,7 +711,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
 
-	//JMutexAutoLock lock(m_env_mutex);
+	//MutexAutoLock lock(m_env_mutex);
 	/*
 		Send packet
 	*/

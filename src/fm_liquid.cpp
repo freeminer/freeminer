@@ -110,7 +110,7 @@ NEXT_LIQUID:
 		*/
 		v3POS p0;
 		{
-			//JMutexAutoLock lock(m_transforming_liquid_mutex);
+			//MutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = transforming_liquid_pop();
 		}
 		s16 total_level = 0;

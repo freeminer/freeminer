@@ -413,13 +413,14 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/lua/src/print.c
 endif
 
-# sqlite
+# SQLite3
 LOCAL_SRC_FILES += deps/sqlite/sqlite3.c
 
-# jthread
-LOCAL_SRC_FILES +=                                \
-		jni/src/jthread/pthread/jevent.cpp        \
-		jni/src/jthread/pthread/jsemaphore.cpp
+# Threading
+LOCAL_SRC_FILES += \
+		jni/src/threading/Mutex.cpp \
+		jni/src/threading/Semaphore.cpp \
+		jni/src/threading/Thread.cpp
 
 LOCAL_SHARED_LIBRARIES := iconv openal ogg vorbis gmp
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)

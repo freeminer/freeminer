@@ -7,17 +7,16 @@ public:
 		m_server(server)
 	{}
 
-	void * Thread() {
+	void * run() {
 		log_register_thread("MapThread");
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
-		ThreadStarted();
 
 		porting::setThreadName("Map");
 		porting::setThreadPriority(15);
 		auto time = porting::getTimeMs();
-		while(!StopRequested()) {
+		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
 			try {
 				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f))
@@ -50,18 +49,16 @@ public:
 		m_server(server)
 	{}
 
-	void * Thread() {
+	void * run() {
 		log_register_thread("SendBlocksThread");
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		ThreadStarted();
-
 		porting::setThreadName("SendBlocksThread");
 		porting::setThreadPriority(30);
 		auto time = porting::getTimeMs();
-		while(!StopRequested()) {
+		while(!stopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
 			try {
 				auto time_now = porting::getTimeMs();
@@ -94,18 +91,16 @@ public:
 		m_server(server)
 	{}
 
-	void * Thread() {
+	void * run() {
 		log_register_thread("Liquid");
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		ThreadStarted();
-
 		porting::setThreadName("Liquid");
 		porting::setThreadPriority(4);
 		unsigned int max_cycle_ms = 1000;
-		while(!StopRequested()) {
+		while(!stopRequested()) {
 			try {
 				//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
 				int res = m_server->getEnv().getMap().transformLiquids(m_server, max_cycle_ms);
@@ -135,19 +130,17 @@ public:
 		m_server(server)
 	{}
 
-	void * Thread() {
+	void * run() {
 		log_register_thread("Env");
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		ThreadStarted();
-
 		porting::setThreadName("Env");
 		porting::setThreadPriority(20);
 		unsigned int max_cycle_ms = 1000;
 		unsigned int time = porting::getTimeMs();
-		while(!StopRequested()) {
+		while(!stopRequested()) {
 			try {
 				auto ctime = porting::getTimeMs();
 				unsigned int dtimems = ctime - time;
@@ -179,19 +172,17 @@ public:
 		m_server(server)
 	{}
 
-	void * Thread() {
+	void * run() {
 		log_register_thread("Abm");
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		ThreadStarted();
-
 		porting::setThreadName("Abm");
 		porting::setThreadPriority(20);
 		unsigned int max_cycle_ms = 10000;
 		unsigned int time = porting::getTimeMs();
-		while(!StopRequested()) {
+		while(!stopRequested()) {
 			try {
 				auto ctime = porting::getTimeMs();
 				unsigned int dtimems = ctime - time;
@@ -228,7 +219,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	/*
 		float dtime;
 		{
-			JMutexAutoLock lock1(m_step_dtime_mutex);
+			MutexAutoLock lock1(m_step_dtime_mutex);
 			dtime = m_step_dtime;
 		}
 	*/
@@ -238,7 +229,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	static const float map_timer_and_unload_dtime = 10.92;
 	if(!maintenance_status && m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		TimeTaker timer_step("Server step: Run Map's timers and unload unused data");
-		//JMutexAutoLock lock(m_env_mutex);
+		//MutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
 		if(m_env->getMap().timerUpdate(m_uptime.get(), g_settings->getFloat("server_unload_unused_data_timeout"), -1, max_cycle_ms)) {
@@ -260,7 +251,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 				if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
 					m_liquid_transform_timer = 0;
 
-				//JMutexAutoLock lock(m_env_mutex);
+				//MutexAutoLock lock(m_env_mutex);
 
 				ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
