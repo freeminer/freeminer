@@ -384,7 +384,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		MediaAnnounceList announce_list;
 		packet[TOCLIENT_ANNOUNCE_MEDIA_LIST].convert(&announce_list);
@@ -409,7 +409,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		for(size_t i = 0; i < media_data.size(); ++i)
 			m_media_downloader->conventionalTransferDone(
@@ -422,7 +422,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		if (packet_convert_safe_zip(packet, TOCLIENT_NODEDEF_DEFINITIONS_ZIP, m_nodedef)) {
 			m_nodedef_received = true;
@@ -437,7 +437,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		if (packet_convert_safe_zip(packet, TOCLIENT_ITEMDEF_DEFINITIONS_ZIP, m_itemdef)) {
 			m_itemdef_received = true;

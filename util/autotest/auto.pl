@@ -235,7 +235,7 @@ our $tasks = {
     play_task => sub { return 1 if $config->{all_run}; local $config->{go} = undef; local $config->{options_bot} = undef; local $config->{autoexit} = undef; task_run($_) for @_; },
 
     (
-        map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads),
+        map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads minetest),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
     play => [[\'play_task', 'build_normal', 'run_single']],    #'

@@ -40,7 +40,7 @@ void thread_pool::restart (int n) {
 bool thread_pool::stopRequested() {
 	return requeststop;
 }
-bool thread_pool::IsRunning() {
+bool thread_pool::isRunning() {
 	if (requeststop)
 		join();
 	return !workers.empty();

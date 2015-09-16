@@ -29,7 +29,7 @@ public:
 // Thread compat:
 
 	bool stopRequested();
-	bool IsRunning();
+	bool isRunning();
 	int Start(int n = 1);
 	//void Stop();
 	void wait();
