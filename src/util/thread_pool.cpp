@@ -17,7 +17,6 @@ void thread_pool::func() {
 };
 
 void thread_pool::reg(const std::string &name, int priority) {
-errorstream<<"reg("<<name<<", priority"<<")"<<std::endl;
 	if (!name.empty()) {
 		porting::setThreadName(name.c_str());
 		log_register_thread(name);

@@ -102,7 +102,6 @@ void log_set_lev_silence(enum LogMessageLevel lev, bool silence)
 void log_register_thread(const std::string &name)
 {
 	threadid_t id = get_current_thread_id();
-std::cerr<<"log reg ["<<name<<"] n="<< id <<std::endl;
 	MutexAutoLock lock(log_thread_name_mutex);
 
 	log_thread_names[id] = name;

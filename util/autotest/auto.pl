@@ -121,12 +121,14 @@ our $commands = {
         rename $config->{config} => $config->{config} . '.old';
         return 0;
     },
-    cmake_clang => sub {
-        sy
-qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` -DCMAKE_CXX_COMPILER=`which clang++$config->{clang_version}` -DCMAKE_C_COMPILER=`which clang$config->{clang_version}` @_ $config->{cmake_int} $config->{cmake_add}};
+    use_clang => sub {
+        $config->{clang_version} = $config->{clang} if $config->{clang} and $config->{clang} ne '1';
+        $config->{cmake_compiler} = "-DCMAKE_CXX_COMPILER=`which clang++$config->{clang_version}` -DCMAKE_C_COMPILER=`which clang$config->{clang_version}`";
+        return 0;
     },
     cmake => sub {
-        sy qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` @_ $config->{cmake_int} $config->{cmake_add} };
+        commands_run('use_clang',) if $config->{clang};
+        sy qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_compiler} @_ $config->{cmake_int} $config->{cmake_add} };
     },
     make => sub {
         sy
@@ -172,13 +174,13 @@ qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/
 
 our $tasks = {
     build_normal => [{build_name => 'normal'}, 'prepare', 'cmake', 'make',],
-    build_debug => [{build_name => 'debug'}, 'prepare', ['cmake_clang', qw(-DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',],
-    build_nothreads => [{build_name => 'nothreads'}, 'prepare', ['cmake_clang', $config->{cmake_nothreads}], 'make',],
+    build_debug => [{build_name => 'debug'}, 'prepare', ['cmake', qw(-DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',],
+    build_nothreads => [{build_name => 'nothreads'}, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     run_single => ['run_single'],
-    clang => ['prepare', 'cmake_clang', 'make',],
+    clang => ['prepare', 'use_clang', 'cmake', 'make',],
     tsan  => [
-        'prepare',
-        ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
+        'prepare', 'use_clang',
+        ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
         'make', 'cgroup',
         sub {
             local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
@@ -195,7 +197,7 @@ our $tasks = {
         task_run('tsan');
     },
     asan => [
-        'prepare', ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
+        'prepare', 'use_clang', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
         'symbolize',
     ],
     asannta => sub {
@@ -203,9 +205,9 @@ our $tasks = {
         task_run('asan');
     },
     msan => [
-        'prepare', ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
+        'prepare', 'use_clang', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
     ],
-    debug => ['prepare', ['cmake_clang', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
+    debug => ['prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
     nothreads => [\'build_nothreads', 'run_single',],    #'
     (
         map {
