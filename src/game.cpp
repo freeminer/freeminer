@@ -1873,6 +1873,13 @@ void Game::run()
 	flags.invert_mouse = g_settings->getBool("invert_mouse");
 	flags.first_loop_after_window_activation = true;
 
+	mapper->setMinimapMode(MINIMAP_MODE_OFF);
+	if(flags.show_minimap) {
+		u16 minimapMode = g_settings->getU16("minimap_default_mode");
+		if( minimapMode>0 && minimapMode<MINIMAP_MODE_COUNT ) {
+			mapper->setMinimapMode(MinimapMode(minimapMode));
+		}
+	}
 
 	// freeminer:
 	runData.update_draw_list_timer = 5;

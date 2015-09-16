@@ -28,6 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "porting.h"
 
+#ifndef SERVER // Only on client
+#include "minimap.h"
+#endif
+
 const bool debug =
 #ifdef NDEBUG
     false
@@ -361,6 +365,10 @@ void set_default_settings(Settings *settings) {
 
 	// Mini Map
 	settings->setDefault("enable_minimap", "true");
+// TODO: refactor and resolve client/server dependencies
+#ifndef SERVER // Only on client
+	settings->setDefault("minimap_default_mode", itos(MINIMAP_MODE_SURFACEx1));
+#endif
 	settings->setDefault("minimap_shape_round", "true");
 	settings->setDefault("minimap_double_scan_height", "true");
 
