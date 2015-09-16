@@ -108,14 +108,13 @@ private:
 
 void *ServerThread::run()
 {
+	reg("Server", 40);
+
 	DSTACK(__FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
 	m_server->AsyncRunStep(0.1, true);
-
-	porting::setThreadName("ServerThread");
-	porting::setThreadPriority(40);
 
 	auto time = porting::getTimeMs();
 	while (!stopRequested()) {

@@ -27,12 +27,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <algorithm>
 #include "threads.h"
+#include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
 #include "debug.h"
 #include "gettime.h"
 #include "porting.h"
 #include "config.h"
-#include "threading/mutex_auto_lock.h"
 
 // Connection
 std::ostream *dout_con_ptr = &dummyout;
@@ -102,6 +102,7 @@ void log_set_lev_silence(enum LogMessageLevel lev, bool silence)
 void log_register_thread(const std::string &name)
 {
 	threadid_t id = get_current_thread_id();
+std::cerr<<"log reg ["<<name<<"] n="<< id <<std::endl;
 	MutexAutoLock lock(log_thread_name_mutex);
 
 	log_thread_names[id] = name;

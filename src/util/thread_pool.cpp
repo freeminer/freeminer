@@ -1,7 +1,8 @@
 #include <util/thread_pool.h>
 #include <log.h>
+#include <porting.h>
 
-thread_pool::thread_pool(const std::string &name) : 
+thread_pool::thread_pool(const std::string &name) :
 	name(name) {
 	requeststop = false;
 };
@@ -11,7 +12,18 @@ thread_pool::~thread_pool() {
 };
 
 void thread_pool::func() {
+	reg(name);
 	run();
+};
+
+void thread_pool::reg(const std::string &name, int priority) {
+errorstream<<"reg("<<name<<", priority"<<")"<<std::endl;
+	if (!name.empty()) {
+		porting::setThreadName(name.c_str());
+		log_register_thread(name);
+	}
+	if (priority)
+		porting::setThreadPriority(priority);
 };
 
 void thread_pool::start (int n) {
@@ -45,19 +57,12 @@ bool thread_pool::isRunning() {
 		join();
 	return !workers.empty();
 }
-int thread_pool::Start(int n) {
-	start(n);
-	return 0;
-};
-/*void thread_pool::Stop() {
-	stop();
-}*/
 void thread_pool::wait() {
 	join();
 };
-/*void thread_pool::Kill() {
+void thread_pool::kill() {
 	join();
-};*/
+};
 void * thread_pool::run() {
 	return nullptr;
 };

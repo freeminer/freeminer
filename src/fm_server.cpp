@@ -8,13 +8,11 @@ public:
 	{}
 
 	void * run() {
-		log_register_thread("MapThread");
+		reg("Map", 15);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		porting::setThreadName("Map");
-		porting::setThreadPriority(15);
 		auto time = porting::getTimeMs();
 		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
@@ -50,13 +48,11 @@ public:
 	{}
 
 	void * run() {
-		log_register_thread("SendBlocksThread");
+		reg("SendBlocks", 30);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		porting::setThreadName("SendBlocksThread");
-		porting::setThreadPriority(30);
 		auto time = porting::getTimeMs();
 		while(!stopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
@@ -92,13 +88,11 @@ public:
 	{}
 
 	void * run() {
-		log_register_thread("Liquid");
+		reg("Liquid", 4);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		porting::setThreadName("Liquid");
-		porting::setThreadPriority(4);
 		unsigned int max_cycle_ms = 1000;
 		while(!stopRequested()) {
 			try {
@@ -131,13 +125,11 @@ public:
 	{}
 
 	void * run() {
-		log_register_thread("Env");
+		reg("Env", 20);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		porting::setThreadName("Env");
-		porting::setThreadPriority(20);
 		unsigned int max_cycle_ms = 1000;
 		unsigned int time = porting::getTimeMs();
 		while(!stopRequested()) {
@@ -173,13 +165,11 @@ public:
 	{}
 
 	void * run() {
-		log_register_thread("Abm");
+		reg("Abm", 20);
 
 		DSTACK(__FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
-		porting::setThreadName("Abm");
-		porting::setThreadPriority(20);
 		unsigned int max_cycle_ms = 10000;
 		unsigned int time = porting::getTimeMs();
 		while(!stopRequested()) {

@@ -16,11 +16,12 @@ public:
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 
-	thread_pool(const std::string &name="Unnamed");
+	thread_pool(const std::string &name="");
 	virtual ~thread_pool();
 
 	virtual void func();
 
+	void reg (const std::string &name, int priority = 0);
 	void start (int n = 1);
 	void restart (int n = 1);
 	void stop ();
@@ -30,10 +31,8 @@ public:
 
 	bool stopRequested();
 	bool isRunning();
-	int Start(int n = 1);
-	//void Stop();
 	void wait();
-	//void Kill();
+	void kill();
 	virtual void * run() = 0;
 	bool isSameThread();
 protected:
