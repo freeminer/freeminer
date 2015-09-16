@@ -966,6 +966,11 @@ function tabbuilder.tab_settings()
 	add_title("UI settings")
 	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting",      true )
 	add_checkbox( "cb_hotbar_cycling",            "hotbar_cycling",             "Hotbar Cycling",         true )
+	add_checkbox( "cb_enable_minimap",            "enable_minimap",             "Show minimap",           true )
+
+	local enable_minimap = core.setting_getbool("enable_minimap");
+	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",    enable_minimap )
+
 	-- Enviroment settings
 	add_title("Enviroment settings")
 	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid",            true )
@@ -1067,6 +1072,12 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_hotbar_cycling"] then
 		core.setting_set("hotbar_cycling", fields["cb_hotbar_cycling"])
+	end
+	if fields["cb_enable_minimap"] then
+		core.setting_set("enable_minimap", fields["cb_enable_minimap"])
+	end
+	if fields["cb_minimap_shape_round"] then
+		core.setting_set("minimap_shape_round", fields["cb_minimap_shape_round"])
 	end
 	if fields["cb_bumpmapping"] then
 		core.setting_set("enable_bumpmapping", fields["cb_bumpmapping"])
