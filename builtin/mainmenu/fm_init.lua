@@ -932,14 +932,14 @@ function tabbuilder.tab_settings()
 
 	local calc_next_pos = function()
 		pos_y = pos_y + 0.5
-		if pos_y >= 11 then
+		if(pos_y >= 11) then
 			pos_y = 0
 			pos_x = pos_x + 5
 		end
 	end
 
-	local add_checkbox = function(name, config, text, enabled)
-		if(enabled) then
+	local add_checkbox = function(name, config, text, disabled)
+		if(disabled == nil or disabled == false) then
 		    tab_string = tab_string ..
 			    "checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
 					    .. dump(core.setting_getbool(config)) .. "]"
@@ -964,46 +964,46 @@ function tabbuilder.tab_settings()
 
 	-- UI settings
 	add_title("UI settings")
-	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting",      true )
-	add_checkbox( "cb_hotbar_cycling",            "hotbar_cycling",             "Hotbar Cycling",         true )
-	add_checkbox( "cb_enable_minimap",            "enable_minimap",             "Show minimap",           true )
+	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting"     )
+	add_checkbox( "cb_hotbar_cycling",            "hotbar_cycling",             "Hotbar Cycling"        )
+	add_checkbox( "cb_enable_minimap",            "enable_minimap",             "Show minimap"          )
 
-	local enable_minimap = core.setting_getbool("enable_minimap");
-	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",    enable_minimap )
+	local disable_minimap_group = not core.setting_getbool("enable_minimap");
+	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",  disable_minimap_group )
 
 	-- Enviroment settings
 	add_title("Enviroment settings")
-	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid",            true )
-	add_checkbox( "cb_weather",                   "weather",                    "Weather",                true )
+	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
+	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
 
 	-- Graphics settings
 	add_title("Graphics settings")
-	add_checkbox( "cb_mipmapping",                "mip_map",                    "Mip-Mapping",            true )
-	add_checkbox( "cb_anisotrophic",              "anisotropic_filter",         "Anisotropic Filtering",  true )
-	add_checkbox( "cb_bilinear",                  "bilinear_filter",            "Bi-Linear Filtering",    true )
-	add_checkbox( "cb_trilinear",                 "trilinear_filter",           "Tri-Linear Filtering",   true )
+	add_checkbox( "cb_mipmapping",                "mip_map",                    "Mip-Mapping"           )
+	add_checkbox( "cb_anisotrophic",              "anisotropic_filter",         "Anisotropic Filtering" )
+	add_checkbox( "cb_bilinear",                  "bilinear_filter",            "Bi-Linear Filtering"   )
+	add_checkbox( "cb_trilinear",                 "trilinear_filter",           "Tri-Linear Filtering"  )
 
-	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting",        true )
-	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees",            true )
-	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water",           true )
-	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds",              true )
-	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals",   true )
-	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)",          true )
+	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting"       )
+	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees"           )
+	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water"          )
+	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds"             )
+	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals"  )
+	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
 
 	-- Effects settings
 	calc_next_pos()
 	add_title("Effects settings")
-	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles",       true )
-	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders",                true )
+	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles"      )
+	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders"               )
 
-	local enable_shaders = core.setting_getbool("enable_shaders");
+	local disable_shaders_group = not core.setting_getbool("enable_shaders");
 
-	add_checkbox( "cb_bumpmapping",               "enable_bumpmapping",         "Bumpmapping",           enable_shaders )
-	add_checkbox( "cb_parallax",                  "enable_parallax_occlusion",  "Parallax Occlusion",    enable_shaders )
-	add_checkbox( "cb_generate_normalmaps",       "generate_normalmaps",        "Generate Normalmaps",   enable_shaders )
-	add_checkbox( "cb_waving_water",              "enable_waving_water",        "Waving Water",          enable_shaders )
-	add_checkbox( "cb_waving_leaves",             "enable_waving_leaves",       "Waving Leaves",         enable_shaders )
-	add_checkbox( "cb_waving_plants",             "enable_waving_plants",       "Waving Plants",         enable_shaders )
+	add_checkbox( "cb_bumpmapping",               "enable_bumpmapping",         "Bumpmapping",          disable_shaders_group )
+	add_checkbox( "cb_parallax",                  "enable_parallax_occlusion",  "Parallax Occlusion",   disable_shaders_group )
+	add_checkbox( "cb_generate_normalmaps",       "generate_normalmaps",        "Generate Normalmaps",  disable_shaders_group )
+	add_checkbox( "cb_waving_water",              "enable_waving_water",        "Waving Water",         disable_shaders_group )
+	add_checkbox( "cb_waving_leaves",             "enable_waving_leaves",       "Waving Leaves",        disable_shaders_group )
+	add_checkbox( "cb_waving_plants",             "enable_waving_plants",       "Waving Plants",        disable_shaders_group )
 
 	-- Input setup
 	tab_string = tab_string ..
