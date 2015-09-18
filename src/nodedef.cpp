@@ -735,7 +735,7 @@ void CNodeDefManager::clear()
 		f.buildable_to        = true;
 		f.is_ground_content   = true;
 #ifndef SERVER
-		f.minimap_color = video::SColor(0,255,255,255);
+		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
 		content_t c = CONTENT_AIR;
@@ -757,7 +757,7 @@ void CNodeDefManager::clear()
 		f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 		f.is_ground_content   = true;
 #ifndef SERVER
-		f.minimap_color = video::SColor(0,255,255,255);
+		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
 		content_t c = CONTENT_IGNORE;
