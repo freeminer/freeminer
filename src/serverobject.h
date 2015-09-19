@@ -270,5 +270,9 @@ private:
 	static std::map<u16, Factory> m_types;
 };
 
+typedef ActiveObjectRegistry<ServerActiveObject> ServerRegistry;
+extern ServerRegistry serverRegistry; // setup in content_sao.cpp
+
+
 #endif
 

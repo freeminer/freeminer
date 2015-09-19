@@ -87,46 +87,64 @@ protected:
 	u16 m_id; // 0 is invalid, "no id"
 };
 
+/* A registry for active objects... there should be two, one for the client one for the server.
+   This lets the server tell the client or vice versa which object should be created, by sending
+   an integer over the wire. The registry will create the correct class according to what that
+   integer is associated with. Since server objects and client objects are initialized differently,
+   and also can have the same integer for different objects (42 from server might mean differently
+   than 42 from client), they need two registries. But they both basically do the same thing, so
+   here's a template to create each of them simply and consistently.
+
+   note: since the client (may have) an embedded server, it needs both a client and server registry.
+*/
+
 template<typename T>
 class ActiveObjectRegistry {
-  // Used for creating objects based on type
-  typedef T* (*Factory)(typename T::Parameters params);
+	// The signature for various classes static "create" method.
+	// class should define an inner Parameters class, for how client/server take different arguments
+	// and also a static create function with this signature, that creates the class and returns its pointer.
+	typedef T* (*Factory)(typename T::Parameters params);
 public:
-  T* create(ActiveObjectType type,
-            typename T::Parameters params) {
-    //IGameDef *gamedef, TEnvironment *env) 
-    // Find factory function
-       typename std::map<ActiveObjectType, Factory>::iterator n;
-       n = m_types.find(type);
-       if(n == m_types.end()) {
-               // If factory is not found, just return.
-               dstream<<"WARNING: ActiveObjectRegistry: No factory for type="
-                               <<(int)type<<std::endl;
-               return NULL;
-       }
+	T* create(ActiveObjectType type,
+			  typename T::Parameters params) {
+		//IGameDef *gamedef, TEnvironment *env) 
+		// Find factory function
+		typename std::map<ActiveObjectType, Factory>::iterator n;
+		n = m_types.find(type);
+		if(n == m_types.end()) {
+			// If factory is not found, just return.
+			dstream<<"WARNING: ActiveObjectRegistry: No factory for type="
+				   <<(int)type<<std::endl;
+			return NULL;
+		}
 
-       Factory f = n->second;
-       T *object = (*f)(params);
-       // m_type must be public because C++ sucks at friendship           
-       object->m_type = type;
-       return object;
-  }
-
-  template <typename Impl, ActiveObjectType type>
-  void add() {
-       typename std::map<ActiveObjectType, Factory>::iterator n;
-       n = m_types.find(type);
-       if(n != m_types.end())
-      return;
-    // Impl::create should have signature Factory
-       m_types[type] = Impl::create;
-  }
-
-  static void setup();
-
+		Factory f = n->second;
+		T *object = (*f)(params);
+		// m_type must be public because C++ sucks at friendship           
+		object->m_type = type;
+		return object;
+	}
+	// register all types inside this function, NOT globally
+	// then call ...Registry.setup() in main.
+	void setup();
+	
 private:
-       // Used for creating objects based on type
-  std::map<ActiveObjectType, Factory> m_types;
+	// add class to the registry. This is private because it should be
+	// called ONLY in setup and NEVER in a global context, despite
+	// the registry being a global object. Remember, global objects could
+	// cause segfaults, if you use them before main() starts.
+	template <typename Impl, ActiveObjectType type>
+	void add() {
+		typename std::map<ActiveObjectType, Factory>::iterator n;
+		n = m_types.find(type);
+		if(n != m_types.end())
+			return;
+		// Impl::create should have signature Factory
+		m_types[type] = Impl::create;
+	}
+
+	// Used for creating objects based on type
+	std::map<ActiveObjectType, Factory> m_types;
 };
   
 

@@ -1432,3 +1432,9 @@ bool PlayerSAO::collideWithObjects(){
 	return true;
 }
 
+void ServerRegistry::setup() {
+	add<TestSAO, ACTIVEOBJECT_TYPE_TEST>();
+	add<LuaEntityCreatorSAO,ACTIVEOBJECT_TYPE_LUAENTITY>();
+	// never have to serialize this
+	//serverRegistry.add<PlayerSAO,ACTIVEOBJECT_TYPE_PLAYER>();
+}
