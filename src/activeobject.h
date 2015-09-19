@@ -64,7 +64,7 @@ class ActiveObject
 {
 public:
 	ActiveObject(u16 id):
-		m_id(id)
+	m_type(ACTIVEOBJECT_TYPE_INVALID), m_id(id)
 	{
 	}
 	
@@ -78,12 +78,58 @@ public:
 		m_id = id;
 	}
 
-	virtual ActiveObjectType getType() const = 0;
+	// this is cheaper and easier to manage than
+	// a virtual table pointer function
+	ActiveObjectType m_type;
 	virtual bool getCollisionBox(aabb3f *toset) = 0;
 	virtual bool collideWithObjects() = 0;
 protected:
 	u16 m_id; // 0 is invalid, "no id"
 };
+
+template<typename T>
+class ActiveObjectRegistry {
+  // Used for creating objects based on type
+  typedef T* (*Factory)(typename T::Parameters params);
+public:
+  T* create(ActiveObjectType type,
+            typename T::Parameters params) {
+    //IGameDef *gamedef, TEnvironment *env) 
+    // Find factory function
+       typename std::map<ActiveObjectType, Factory>::iterator n;
+       n = m_types.find(type);
+       if(n == m_types.end()) {
+               // If factory is not found, just return.
+               dstream<<"WARNING: ActiveObjectRegistry: No factory for type="
+                               <<(int)type<<std::endl;
+               return NULL;
+       }
+
+       Factory f = n->second;
+       T *object = (*f)(params);
+       // m_type must be public because C++ sucks at friendship           
+       object->m_type = type;
+       return object;
+  }
+
+  template <typename Impl, ActiveObjectType type>
+  void add() {
+       typename std::map<ActiveObjectType, Factory>::iterator n;
+       n = m_types.find(type);
+       if(n != m_types.end())
+      return;
+    // Impl::create should have signature Factory
+       m_types[type] = Impl::create;
+  }
+
+  static void setup();
+
+private:
+       // Used for creating objects based on type
+  std::map<ActiveObjectType, Factory> m_types;
+};
+  
+
 
 #endif
 

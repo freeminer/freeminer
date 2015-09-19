@@ -49,6 +49,15 @@ class WieldMeshSceneNode;
 class ClientActiveObject : public ActiveObject
 {
 public:
+	// Used for creating objects based on type
+	struct Parameters {
+		Parameters(IGameDef *gamedef, ClientEnvironment *env) :
+			m_gamedef(gamedef),
+			m_env(env) {}
+		IGameDef* m_gamedef;
+		ClientEnvironment* m_env;
+	};
+
 	ClientActiveObject(u16 id, IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~ClientActiveObject();
 

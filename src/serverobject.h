@@ -56,10 +56,18 @@ class ServerActiveObject : public ActiveObject
 , public locker<>
 {
 public:
-	/*
-		NOTE: m_env can be NULL, but step() isn't called if it is.
-		Prototypes are used that way.
-	*/
+    // Used for creating objects based on type
+    struct Parameters {
+		ServerEnvironment *m_env;
+		v3f m_pos;
+		const std::string &m_data;
+		Parameters(ServerEnvironment *env,
+				   v3f pos,
+				   const std::string &data) :
+			m_env(env), m_pos(pos), m_data(data)
+			{}
+    };
+
 	ServerActiveObject(ServerEnvironment *env, v3f pos);
 	virtual ~ServerActiveObject();
 
