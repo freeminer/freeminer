@@ -119,11 +119,6 @@ public:
 		return new GenericCAO(gamedef, env);
 	}
 
-	inline ActiveObjectType getType() const
-	{
-		return ACTIVEOBJECT_TYPE_GENERIC;
-	}
-
 	void initialize(const std::string &data);
 
 	ClientActiveObject *getParent();

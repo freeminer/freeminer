@@ -108,14 +108,8 @@ public:
 	{ return false; }
 
 protected:
-	// Used for creating objects based on type
-	typedef ClientActiveObject* (*Factory)(IGameDef *gamedef, ClientEnvironment *env);
-	static void registerType(u16 type, Factory f);
 	IGameDef *m_gamedef;
 	ClientEnvironment *m_env;
-private:
-	// Used for creating objects based on type
-	static std::map<u16, Factory> m_types;
 };
 
 struct DistanceSortedActiveObject

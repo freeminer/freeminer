@@ -67,7 +67,7 @@ public:
 	m_type(ACTIVEOBJECT_TYPE_INVALID), m_id(id)
 	{
 	}
-	
+
 	u16 getId()
 	{
 		return m_id;
@@ -78,6 +78,9 @@ public:
 		m_id = id;
 	}
 
+	ActiveObjectType getType() const {
+		return m_type;
+	}
 	// this is cheaper and easier to manage than
 	// a virtual table pointer function
 	ActiveObjectType m_type;
@@ -107,7 +110,7 @@ class ActiveObjectRegistry {
 public:
 	T* create(ActiveObjectType type,
 			  typename T::Parameters params) {
-		//IGameDef *gamedef, TEnvironment *env) 
+		//IGameDef *gamedef, TEnvironment *env)
 		// Find factory function
 		typename std::map<ActiveObjectType, Factory>::iterator n;
 		n = m_types.find(type);
@@ -120,14 +123,14 @@ public:
 
 		Factory f = n->second;
 		T *object = (*f)(params);
-		// m_type must be public because C++ sucks at friendship           
+		// m_type must be public because C++ sucks at friendship
 		object->m_type = type;
 		return object;
 	}
 	// register all types inside this function, NOT globally
 	// then call ...Registry.setup() in main.
 	void setup();
-	
+
 private:
 	// add class to the registry. This is private because it should be
 	// called ONLY in setup and NEVER in a global context, despite
@@ -146,8 +149,7 @@ private:
 	// Used for creating objects based on type
 	std::map<ActiveObjectType, Factory> m_types;
 };
-  
+
 
 
 #endif
-
