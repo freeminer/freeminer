@@ -1820,3 +1820,20 @@ std::string GenericCAO::debugInfoText()
 	os<<"}";
 	return os.str();
 }
+
+class GenericCAOCreator : GenericCAO {
+public:
+	// public-ify the protected constructor
+	GenericCAOCreator(IGameDef *gamedef, ClientEnvironment *env) : GenericCAO(gamedef,env) {}
+
+	static ClientActiveObject* create(ClientActiveObject::Parameters params) {
+		return new GenericCAOCreator(params.m_gamedef, params.m_env);
+	}
+};
+
+
+void ClientRegistry::setup() {
+	add<TestCAO,ACTIVEOBJECT_TYPE_TEST>();
+	add<ItemCAO,ACTIVEOBJECT_TYPE_ITEM>();
+	add<GenericCAOCreator,ACTIVEOBJECT_TYPE_GENERIC>();
+}

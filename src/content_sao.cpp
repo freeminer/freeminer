@@ -48,16 +48,10 @@ public:
 		ServerActiveObject(env, pos),
 		m_timer1(0),
 		m_age(0)
+	{}
+	static ServerActiveObject* create(ServerActiveObject::Parameters params)
 	{
-		ServerActiveObject::registerType(getType(), create);
-	}
-	ActiveObjectType getType() const
-	{ return ACTIVEOBJECT_TYPE_TEST; }
-
-	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
-			const std::string &data)
-	{
-		return new TestSAO(env, pos);
+		return new TestSAO(params.m_env, params.m_pos);
 	}
 
 	void step(float dtime, bool send_recommended)
@@ -111,25 +105,23 @@ private:
 	float m_age;
 };
 
-// Prototype (registers item for deserialization)
-TestSAO proto_TestSAO(NULL, v3f(0,0,0));
-
 /*
 	LuaEntitySAO
 */
 
-// Prototype (registers item for deserialization)
-LuaEntitySAO proto_LuaEntitySAO(NULL, v3f(0,0,0), "_prototype", "");
-
 LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
-		const std::string &name, const std::string &state):
+						   const std::string &name, const std::string &state,
+						   s16 hp,
+                           v3f velocity,
+                           float yaw) :
 	ServerActiveObject(env, pos),
 	m_init_name(name),
 	m_init_state(state),
 	m_registered(false),
-	m_velocity(0,0,0),
+	m_hp(hp),
+	m_velocity(velocity),
 	m_acceleration(0,0,0),
-	m_yaw(0),
+	m_yaw(yaw),
 	m_last_sent_yaw(0),
 	m_last_sent_position(0,0,0),
 	m_last_sent_velocity(0,0,0),
@@ -144,13 +136,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	m_attachment_parent_id(0),
 	m_attachment_sent(false)
 {
-	m_hp = -1;
 	m_properties_sent = true;
-	// Only register type if no environment supplied
-	if(env == NULL){
-		ServerActiveObject::registerType(getType(), create);
-		return;
-	}
 
 	// Initialize something to armor groups
 	m_armor_groups["fleshy"] = 100;
@@ -183,7 +169,18 @@ void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 	}
 }
 
-ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
+class LuaEntitySAOCreator : public LuaEntitySAO {
+public:
+	LuaEntityCreatorSAO(ServerActiveObject::Parameters params,
+						std::string name, std::string state,
+						s16 hp,
+						v3f velocity,
+						float yaw) :
+		LuaEntitySAO(params.m_env, params.m_pos, name, state, hp, velocity, yaw) {}
+	static ServerActiveObject* create(ServerActiveObject::Parameters params);
+}
+
+ServerActiveObject* LuaEntitySAOCreator::create(ServerEnvironment *env, v3f pos,
 		const std::string &data)
 {
 	std::string name;
@@ -213,10 +210,8 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 	infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
 			<<state<<"\")"<<std::endl;
 */
-	LuaEntitySAO *sao = new LuaEntitySAO(env, pos, name, state);
-	sao->m_hp = hp;
-	sao->m_velocity = velocity;
-	sao->m_yaw = yaw;
+	LuaEntitySAO *sao = new LuaEntitySAOCreator(params, name, state,
+												hp, velocity, yaw);
 	return sao;
 }
 
@@ -1431,6 +1426,53 @@ bool PlayerSAO::getCollisionBox(aabb3f *toset) {
 bool PlayerSAO::collideWithObjects(){
 	return true;
 }
+
+/* no reason to expose creation of lua objects outside of this translation unit, and the registry. */
+
+class LuaEntityCreatorSAO : public LuaEntitySAO {
+public:
+	LuaEntityCreatorSAO(ServerActiveObject::Parameters params,
+						std::string name, std::string state,
+						// SIGH
+						s16 hp,
+						v3f velocity,
+						float yaw) :
+		LuaEntitySAO(params.m_env, params.m_pos, name, state,hp,velocity,yaw) {}
+	static ServerActiveObject* create(ServerActiveObject::Parameters params)
+		{
+			std::string name;
+			std::string state;
+			s16 hp = 1;
+			v3f velocity;
+			float yaw = 0;
+			if(params.m_data != ""){
+				std::istringstream is(params.m_data, std::ios::binary);
+				// read version
+				u8 version = readU8(is);
+				// check if version is supported
+				if(version == 0){
+					name = deSerializeString(is);
+					state = deSerializeLongString(is);
+				}
+				else if(version == 1){
+					name = deSerializeString(is);
+					state = deSerializeLongString(is);
+					hp = readS16(is);
+					velocity = readV3F1000(is);
+					yaw = readF1000(is);
+				}
+			}
+			// create object
+			/*
+			  infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
+			  <<state<<"\")"<<std::endl;
+			*/
+			LuaEntitySAO *sao = new LuaEntityCreatorSAO(params,
+														name,state,hp,velocity,yaw);
+			return sao;
+		}
+};
+
 
 void ServerRegistry::setup() {
 	add<TestSAO, ACTIVEOBJECT_TYPE_TEST>();
