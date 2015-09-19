@@ -69,10 +69,15 @@ public:
     };
 
 	ServerActiveObject(ServerEnvironment *env, v3f pos);
-	virtual ~ServerActiveObject();
+	virtual ~ServerActiveObject() {}
 
+	// by default, send the type it is.
+	// but f/i players only have a send type as generic
+	// (this is why player objects can't be any more special than mobs)
+	// TODO: no special send types, and account for all types being possibly sent
+	// even if players == mobs far as other players are concerned
 	virtual ActiveObjectType getSendType() const
-	{ return getType(); }
+	{ return m_type; }
 
 	// Called after id has been set and has been inserted in environment
 	virtual void addedToEnvironment(u32 dtime_s){};

@@ -54,8 +54,6 @@ struct ToolCapabilities;
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-std::map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
-
 SmoothTranslator::SmoothTranslator():
 	vect_old(0,0,0),
 	vect_show(0,0,0),
@@ -144,14 +142,11 @@ class TestCAO : public ClientActiveObject
 {
 public:
 	TestCAO(IGameDef *gamedef, ClientEnvironment *env);
-	virtual ~TestCAO();
+	virtual ~TestCAO() {}
 
-	ActiveObjectType getType() const
-	{
-		return ACTIVEOBJECT_TYPE_TEST;
+	static ClientActiveObject* create(ClientActiveObject::Parameters params) {
+		return new TestCAO(params.m_gamedef, params.m_env);
 	}
-
-	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env);
 
 	void addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			IrrlichtDevice *irr);
@@ -170,20 +165,11 @@ private:
 	v3f m_position;
 };
 
-// Prototype
-TestCAO proto_TestCAO(NULL, NULL);
-
 TestCAO::TestCAO(IGameDef *gamedef, ClientEnvironment *env):
 	ClientActiveObject(0, gamedef, env),
 	m_node(NULL),
 	m_position(v3f(0,10*BS,0))
-{
-	ClientActiveObject::registerType(getType(), create);
-}
-
-TestCAO::~TestCAO()
-{
-}
+{}
 
 ClientActiveObject* TestCAO::create(IGameDef *gamedef, ClientEnvironment *env)
 {
@@ -289,14 +275,11 @@ class ItemCAO : public ClientActiveObject
 {
 public:
 	ItemCAO(IGameDef *gamedef, ClientEnvironment *env);
-	virtual ~ItemCAO();
+	virtual ~ItemCAO() {}
 
-	ActiveObjectType getType() const
-	{
-		return ACTIVEOBJECT_TYPE_ITEM;
+	static ClientActiveObject* create(ClientActiveObject::Parameters params) {
+		return new ItemCAO(params.m_gamedef, params.m_env);
 	}
-
-	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env);
 
 	void addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			IrrlichtDevice *irr);
@@ -332,29 +315,12 @@ private:
 
 #include "inventory.h"
 
-// Prototype
-ItemCAO proto_ItemCAO(NULL, NULL);
-
 ItemCAO::ItemCAO(IGameDef *gamedef, ClientEnvironment *env):
 	ClientActiveObject(0, gamedef, env),
 	m_selection_box(-BS/3.,0.0,-BS/3., BS/3.,BS*2./3.,BS/3.),
 	m_node(NULL),
 	m_position(v3f(0,10*BS,0))
-{
-	if(!gamedef && !env)
-	{
-		ClientActiveObject::registerType(getType(), create);
-	}
-}
-
-ItemCAO::~ItemCAO()
-{
-}
-
-ClientActiveObject* ItemCAO::create(IGameDef *gamedef, ClientEnvironment *env)
-{
-	return new ItemCAO(gamedef, env);
-}
+{}
 
 void ItemCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			IrrlichtDevice *irr)
@@ -586,10 +552,7 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		m_step_distance_counter(0),
 		m_last_light(255),
 		m_is_visible(false)
-{
-	if(gamedef == NULL)
-		ClientActiveObject::registerType(getType(), create);
-}
+{}
 
 bool GenericCAO::getCollisionBox(aabb3f *toset)
 {
@@ -1857,6 +1820,3 @@ std::string GenericCAO::debugInfoText()
 	os<<"}";
 	return os.str();
 }
-
-// Prototype
-GenericCAO proto_GenericCAO(NULL, NULL);
