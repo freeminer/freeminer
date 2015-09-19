@@ -98,10 +98,6 @@ public:
 	*/
 	virtual void initialize(const std::string &data){}
 
-	// Create a certain type of ClientActiveObject
-	static ClientActiveObject* create(ActiveObjectType type, IGameDef *gamedef,
-			ClientEnvironment *env);
-
 	// If returns true, punch will not be sent to the server
 	virtual bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
 			float time_from_last_punch=1000000)
@@ -128,5 +124,8 @@ struct DistanceSortedActiveObject
 		return d < other.d;
 	}
 };
+
+typedef ActiveObjectRegistry<ClientActiveObject> ClientRegistry;
+extern ClientRegistry clientRegistry; // setup in content_cao.cpp
 
 #endif

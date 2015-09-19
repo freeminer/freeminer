@@ -108,6 +108,11 @@ class ActiveObjectRegistry {
 	// and also a static create function with this signature, that creates the class and returns its pointer.
 	typedef T* (*Factory)(typename T::Parameters params);
 public:
+	// is it good for this type to not have a factory? default: false (see ServerRegistry::check)
+	bool check(ActiveObjectType type) {
+		return false
+	}
+	
 	T* create(ActiveObjectType type,
 			  typename T::Parameters params) {
 		//IGameDef *gamedef, TEnvironment *env)
@@ -115,6 +120,8 @@ public:
 		typename std::map<ActiveObjectType, Factory>::iterator n;
 		n = m_types.find(type);
 		if(n == m_types.end()) {
+			if(check(type))
+				return NULL;
 			// If factory is not found, just return.
 			dstream<<"WARNING: ActiveObjectRegistry: No factory for type="
 				   <<(int)type<<std::endl;

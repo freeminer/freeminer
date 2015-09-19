@@ -169,9 +169,9 @@ void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 	}
 }
 
-class LuaEntitySAOCreator : public LuaEntitySAO {
+static class LuaEntitySAOCreator : public LuaEntitySAO {
 public:
-	LuaEntityCreatorSAO(ServerActiveObject::Parameters params,
+	LuaEntitySAOCreator(ServerActiveObject::Parameters params,
 						std::string name, std::string state,
 						s16 hp,
 						v3f velocity,
@@ -1429,9 +1429,9 @@ bool PlayerSAO::collideWithObjects(){
 
 /* no reason to expose creation of lua objects outside of this translation unit, and the registry. */
 
-class LuaEntityCreatorSAO : public LuaEntitySAO {
+class LuaEntitySAOCreator : public LuaEntitySAO {
 public:
-	LuaEntityCreatorSAO(ServerActiveObject::Parameters params,
+	LuaEntitySAOCreator(ServerActiveObject::Parameters params,
 						std::string name, std::string state,
 						// SIGH
 						s16 hp,
@@ -1467,7 +1467,7 @@ public:
 			  infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
 			  <<state<<"\")"<<std::endl;
 			*/
-			LuaEntitySAO *sao = new LuaEntityCreatorSAO(params,
+			LuaEntitySAO *sao = new LuaEntitySAOCreator(params,
 														name,state,hp,velocity,yaw);
 			return sao;
 		}
@@ -1476,7 +1476,7 @@ public:
 
 void ServerRegistry::setup() {
 	add<TestSAO, ACTIVEOBJECT_TYPE_TEST>();
-	add<LuaEntityCreatorSAO,ACTIVEOBJECT_TYPE_LUAENTITY>();
+	add<LuaEntitySAOCreator,ACTIVEOBJECT_TYPE_LUAENTITY>();
 	// never have to serialize this
 	//serverRegistry.add<PlayerSAO,ACTIVEOBJECT_TYPE_PLAYER>();
 }
