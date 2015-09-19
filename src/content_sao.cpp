@@ -35,8 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "genericobject.h"
 #include "log.h"
 
-std::map<u16, ServerActiveObject::Factory> ServerActiveObject::m_types;
-
 /*
 	TestSAO
 */
@@ -1428,6 +1426,7 @@ public:
 };
 
 
+template<>
 void ServerRegistry::setup() {
 	add<TestSAO, ACTIVEOBJECT_TYPE_TEST>();
 	add<LuaEntitySAOCreator,ACTIVEOBJECT_TYPE_LUAENTITY>();

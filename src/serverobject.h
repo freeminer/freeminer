@@ -77,7 +77,7 @@ public:
 	// TODO: no special send types, and account for all types being possibly sent
 	// even if players == mobs far as other players are concerned
 	virtual ActiveObjectType getSendType() const
-	{ return m_type; }
+		{ return getType(); }
 
 	// Called after id has been set and has been inserted in environment
 	virtual void addedToEnvironment(u32 dtime_s){};

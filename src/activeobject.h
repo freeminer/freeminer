@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef ACTIVEOBJECT_HEADER
 #define ACTIVEOBJECT_HEADER
 
+#include "debug.h"
 #include "irr_aabb3d.h"
 #include <string>
 #include <map>
@@ -113,7 +114,7 @@ public:
 	bool check(ActiveObjectType type) {
 		return false;
 	}
-	
+
 	T* create(ActiveObjectType type,
 			  typename T::Parameters params) {
 		//IGameDef *gamedef, TEnvironment *env)

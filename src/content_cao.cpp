@@ -1827,6 +1827,7 @@ public:
 };
 
 
+template<>
 void ClientRegistry::setup() {
 	add<TestCAO,ACTIVEOBJECT_TYPE_TEST>();
 	add<ItemCAO,ACTIVEOBJECT_TYPE_ITEM>();

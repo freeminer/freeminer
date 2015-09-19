@@ -69,7 +69,7 @@ bool ServerActiveObject::setWieldedItem(const ItemStack &item)
 }
 
 template<>
-bool ServerRegistry::check(ActiveObjectType type,
+bool ServerRegistry::check(ActiveObjectType type)
 {
 	// These are 0.3 entity types, return without error.
 	return ACTIVEOBJECT_TYPE_ITEM <= type && type <= ACTIVEOBJECT_TYPE_MOBV2;

@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class LuaEntitySAO : public ServerActiveObject
 {
 public:
-	LuaEntitySAO(
+	LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	             const std::string &name, const std::string &state,
 	             s16 hp = -1,
 	             v3f velocity = v3f(0,0,0),
