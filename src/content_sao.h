@@ -35,16 +35,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class LuaEntitySAO : public ServerActiveObject
 {
 public:
-	LuaEntitySAO(ServerEnvironment *env, v3f pos,
-	             const std::string &name, const std::string &state);
+	LuaEntitySAO(
+	             const std::string &name, const std::string &state,
+	             s16 hp = -1,
+	             v3f velocity = v3f(0,0,0),
+	             float yaw = 0.0);
 	~LuaEntitySAO();
-	ActiveObjectType getType() const
-	{ return ACTIVEOBJECT_TYPE_LUAENTITY; }
-	ActiveObjectType getSendType() const
+	virtual ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	virtual void addedToEnvironment(u32 dtime_s);
-	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
-			const std::string &data);
 	bool isAttached();
 	void step(float dtime, bool send_recommended);
 	std::string getClientInitializationData(u16 protocol_version);
@@ -166,9 +165,7 @@ public:
 	PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 			const std::set<std::string> &privs, bool is_singleplayer);
 	~PlayerSAO();
-	ActiveObjectType getType() const
-	{ return ACTIVEOBJECT_TYPE_PLAYER; }
-	ActiveObjectType getSendType() const
+	virtual ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	std::string getDescription();
 
