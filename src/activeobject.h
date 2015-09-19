@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irr_aabb3d.h"
 #include <string>
+#include <map>
 
 enum ActiveObjectType {
 	ACTIVEOBJECT_TYPE_INVALID = 0,
@@ -110,7 +111,7 @@ class ActiveObjectRegistry {
 public:
 	// is it good for this type to not have a factory? default: false (see ServerRegistry::check)
 	bool check(ActiveObjectType type) {
-		return false
+		return false;
 	}
 	
 	T* create(ActiveObjectType type,

@@ -171,11 +171,6 @@ TestCAO::TestCAO(IGameDef *gamedef, ClientEnvironment *env):
 	m_position(v3f(0,10*BS,0))
 {}
 
-ClientActiveObject* TestCAO::create(IGameDef *gamedef, ClientEnvironment *env)
-{
-	return new TestCAO(gamedef, env);
-}
-
 void TestCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			IrrlichtDevice *irr)
 {

@@ -169,52 +169,6 @@ void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 	}
 }
 
-static class LuaEntitySAOCreator : public LuaEntitySAO {
-public:
-	LuaEntitySAOCreator(ServerActiveObject::Parameters params,
-						std::string name, std::string state,
-						s16 hp,
-						v3f velocity,
-						float yaw) :
-		LuaEntitySAO(params.m_env, params.m_pos, name, state, hp, velocity, yaw) {}
-	static ServerActiveObject* create(ServerActiveObject::Parameters params);
-}
-
-ServerActiveObject* LuaEntitySAOCreator::create(ServerEnvironment *env, v3f pos,
-		const std::string &data)
-{
-	std::string name;
-	std::string state;
-	s16 hp = 1;
-	v3f velocity;
-	float yaw = 0;
-	if(data != ""){
-		std::istringstream is(data, std::ios::binary);
-		// read version
-		u8 version = readU8(is);
-		// check if version is supported
-		if(version == 0){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
-		}
-		else if(version == 1){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
-			hp = readS16(is);
-			velocity = readV3F1000(is);
-			yaw = readF1000(is);
-		}
-	}
-	// create object
-/*
-	infostream<<"LuaEntitySAO::create(name=\""<<name<<"\" state=\""
-			<<state<<"\")"<<std::endl;
-*/
-	LuaEntitySAO *sao = new LuaEntitySAOCreator(params, name, state,
-												hp, velocity, yaw);
-	return sao;
-}
-
 bool LuaEntitySAO::isAttached()
 {
 	if(!m_attachment_parent_id)
