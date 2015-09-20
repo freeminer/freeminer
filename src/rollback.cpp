@@ -489,7 +489,7 @@ const std::list<ActionRow> RollbackManager::actionRowsFromSelect(sqlite3_stmt* s
 	size_t size;
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		ActionRow row;
+		ActionRow row = {};
 
 		row.actor     = sqlite3_column_int  (stmt, 0);
 		row.timestamp = sqlite3_column_int64(stmt, 1);
@@ -551,7 +551,7 @@ const std::list<ActionRow> RollbackManager::actionRowsFromSelect(sqlite3_stmt* s
 
 ActionRow RollbackManager::actionRowFromRollbackAction(const RollbackAction & action)
 {
-	ActionRow row;
+	ActionRow row = {};
 
 	row.id        = 0;
 	row.actor     = getActorId(action.actor);
@@ -717,7 +717,7 @@ void RollbackManager::migrate(const std::string & file_path)
 	time_t t = start;
 	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 	do {
-		ActionRow row;
+		ActionRow row = {};
 
 		row.id = id;
 

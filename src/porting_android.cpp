@@ -51,7 +51,8 @@ void android_main(android_app *app)
 	} catch (BaseException &e) {
 		std::stringstream msg;
 		msg << "Exception handled by main: " << e.what();
-		const char *message = msg.str().c_str();
+		std::string smsg = msg.str();
+		const char *message = smsg.c_str();
 		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", message);
 		errorstream << msg.str() << std::endl;
 		retval = -1;
