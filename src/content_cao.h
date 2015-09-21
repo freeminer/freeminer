@@ -56,8 +56,10 @@ struct SmoothTranslator
 	bool is_moving();
 };
 
+
 class GenericCAO : public ClientActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_GENERIC);
 private:
 	// Only set at initialization
 	std::string m_name;

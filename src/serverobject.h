@@ -52,8 +52,7 @@ class Player;
 struct ToolCapabilities;
 struct ObjectProperties;
 
-class ServerActiveObject : public ActiveObject
-, public locker<>
+class ServerActiveObject : public ActiveObject, public locker<>
 {
 public:
     // Used for creating objects based on type

@@ -140,6 +140,7 @@ static void setBillboardTextureMatrix(scene::IBillboardSceneNode *bill,
 
 class TestCAO : public ClientActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_TEST);
 public:
 	TestCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~TestCAO() {}
@@ -268,6 +269,7 @@ void TestCAO::processMessage(const std::string &data)
 
 class ItemCAO : public ClientActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_ITEM);
 public:
 	ItemCAO(IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~ItemCAO() {}
@@ -1816,7 +1818,8 @@ std::string GenericCAO::debugInfoText()
 	return os.str();
 }
 
-class GenericCAOCreator : GenericCAO {
+class GenericCAOCreator : public GenericCAO {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_GENERIC); // meh!
 public:
 	// public-ify the protected constructor
 	GenericCAOCreator(IGameDef *gamedef, ClientEnvironment *env) : GenericCAO(gamedef,env) {}
@@ -1826,10 +1829,9 @@ public:
 	}
 };
 
-
 template<>
 void ClientRegistry::setup() {
-	add<TestCAO,ACTIVEOBJECT_TYPE_TEST>();
-	add<ItemCAO,ACTIVEOBJECT_TYPE_ITEM>();
-	add<GenericCAOCreator,ACTIVEOBJECT_TYPE_GENERIC>();
+	add<TestCAO>();
+	add<ItemCAO>();
+	add<GenericCAOCreator>();
 }

@@ -65,10 +65,8 @@ struct ActiveObjectMessage
 class ActiveObject
 {
 public:
-	ActiveObject(u16 id):
-	m_type(ACTIVEOBJECT_TYPE_INVALID), m_id(id)
-	{
-	}
+	ActiveObject(u16 id): m_id(id)
+	{}
 
 	u16 getId()
 	{
@@ -80,17 +78,54 @@ public:
 		m_id = id;
 	}
 
-	ActiveObjectType getType() const {
-		return m_type;
-	}
-	// this is cheaper and easier to manage than
-	// a virtual table pointer function
-	ActiveObjectType m_type;
+	virtual ActiveObjectType getType() const = 0;
+
 	virtual bool getCollisionBox(aabb3f *toset) = 0;
 	virtual bool collideWithObjects() = 0;
 protected:
 	u16 m_id; // 0 is invalid, "no id"
 };
+
+/* active objects that have a type (i.e. all of them), will create a special activeobject intermediary
+   to manage them always having the integer for that type. Just inherit from SomeActiveObject, TypedActiveObject<SOMETYPE>
+   should be efficient and consistent...
+
+   We have to have this template do the inheriting from ActiveObject, since C++ sucks at mixins.
+   `class C: A, B` won't use A's virtual methods to fill in for pure virtual methods in B, or vice versa.
+   http://stackoverflow.com/a/3092538/3833643
+
+template <ActiveObjectType type, typename HacktiveObject>
+class TypedActiveObject : public HacktiveObject {
+public:
+	template <typename A, typename B, typename C, typename CPLUSPLUSSUCKS>
+	TypedActiveObject(A a, B b, C c, CPLUSPLUSSUCKS d) {
+		HacktiveObject(a,b,c,d);
+	}
+	virtual ActiveObjectType getType() const {
+		return type;
+	}
+	static ActiveObjectType getTypeStatic() {
+		return type;
+	}
+};
+
+Can't have an intermediary template class, because C++ sucks and won't skip it for constructors.
+Can't have a mixin template class, because C++ sucks, and doesn't let you mix in virtual methods.
+Stupid to have every typed object constructor have to go TypedBLahBLoh<SOME_TYPE_NUMBER,MyType>(...) instead of ServerActiveObject(..)
+
+So we'll just use a C macro. ActiveObjectRegistry doesn't care, as long as getTypeStatic is implemented!
+*/
+
+#define HAVE_TYPE(type)							\
+	public:										\
+	virtual ActiveObjectType getType() const {	\
+		return type;							\
+	}											\
+	/* did we mention that C++ sucks */			\
+	static ActiveObjectType getTypeStatic() {	\
+		return type;							\
+	}
+
 
 /* A registry for active objects... there should be two, one for the client one for the server.
    This lets the server tell the client or vice versa which object should be created, by sending
@@ -132,8 +167,6 @@ public:
 
 		Factory f = n->second;
 		T *object = (*f)(params);
-		// m_type must be public because C++ sucks at friendship
-		object->m_type = type;
 		return object;
 	}
 	// register all types inside this function, NOT globally
@@ -145,9 +178,10 @@ private:
 	// called ONLY in setup and NEVER in a global context, despite
 	// the registry being a global object. Remember, global objects could
 	// cause segfaults, if you use them before main() starts.
-	template <typename Impl, ActiveObjectType type>
+	template <typename Impl>
 	void add() {
 		typename std::map<ActiveObjectType, Factory>::iterator n;
+		ActiveObjectType type = Impl::getTypeStatic();
 		n = m_types.find(type);
 		if(n != m_types.end())
 			return;

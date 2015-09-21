@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class LuaEntitySAO : public ServerActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_LUAENTITY);
 public:
 	LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	             const std::string &name, const std::string &state,
@@ -161,6 +162,7 @@ public:
 
 class PlayerSAO : public ServerActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_PLAYER);
 public:
 	PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 			const std::set<std::string> &privs, bool is_singleplayer);

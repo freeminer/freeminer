@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class TestSAO : public ServerActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_TEST);
 public:
 	TestSAO(ServerEnvironment *env, v3f pos):
 		ServerActiveObject(env, pos),
@@ -1428,8 +1429,8 @@ public:
 
 template<>
 void ServerRegistry::setup() {
-	add<TestSAO, ACTIVEOBJECT_TYPE_TEST>();
-	add<LuaEntitySAOCreator,ACTIVEOBJECT_TYPE_LUAENTITY>();
-	// never have to serialize this
-	//serverRegistry.add<PlayerSAO,ACTIVEOBJECT_TYPE_PLAYER>();
+	add<TestSAO>();
+	add<LuaEntitySAOCreator>();
+	// never have to serialize this?
+	//add<PlayerSAO>();
 }
