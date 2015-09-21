@@ -180,11 +180,12 @@ static void delete_ng(NGConstant *ng)
 static NGConstant *new_ng( SRP_NGType ng_type, const char *n_hex, const char *g_hex )
 {
 	NGConstant *ng = (NGConstant *) malloc(sizeof(NGConstant));
+	if (!ng)
+		return 0;
+
 	mpz_init(ng->N);
 	mpz_init(ng->g);
 
-	if (!ng)
-		return 0;
 
 	if (ng_type != SRP_NG_CUSTOM) {
 		n_hex = global_Ng_constants[ ng_type ].n_hex;
@@ -543,6 +544,7 @@ static int fill_buff()
 		for (i = 0; i < RAND_BUFF_MAX; i++) {
 			g_rand_buff[i] = srp_pcgrandom_next(r);
 		}
+		free(r);
 	}
 #endif
 	return 1;
@@ -617,10 +619,10 @@ void srp_create_salted_verification_key( SRP_HashAlgorithm alg,
 
 	*len_v = mpz_num_bytes(v);
 
-	*bytes_v = (unsigned char*)malloc(*len_v);
-
 	if (!bytes_v)
 		goto cleanup_and_exit;
+
+	*bytes_v = (unsigned char*)malloc(*len_v);
 
 	mpz_to_bin(v, *bytes_v);
 
@@ -974,7 +976,8 @@ void  srp_user_process_challenge(struct SRPUser *usr,
 	mpz_t tmp3; mpz_init(tmp3);
 	mpz_t tmp4; mpz_init(tmp4);
 
-	*len_M = 0;
+	if(len_M)
+		*len_M = 0;
 	*bytes_M = 0;
 
 	if (!H_nn(u, usr->hash_alg, usr->ng->N, usr->A, B))
