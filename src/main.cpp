@@ -273,6 +273,10 @@ int main(int argc, char *argv[])
 	if (game_params.is_dedicated_server)
 		return run_dedicated_server(game_params, cmd_args) ? 0 : 1;
 
+	// this must be setup for both clients AND servers
+	// since the client might spawn a server
+	serverRegistry.setup();
+
 #ifndef SERVER
 	clientRegistry.setup();
 	ClientLauncher launcher;
@@ -877,7 +881,6 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 	verbosestream << _("Using gameid") << " ["
 	              << game_params.game_spec.id << "]" << std::endl;
 
-	serverRegistry.setup();
 	// Bind address
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, game_params.socket_port);
