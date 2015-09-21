@@ -7,6 +7,7 @@
 #include <chrono>
 #include <vector>
 #include <condition_variable>
+#include <string>
 
 class thread_pool {
 public:
