@@ -34,6 +34,7 @@ util/autotest/auto.json
 util/autotest/world
 debug.txt
 client/favoriteservers.json
+client/servers_public.json
 
 ## Doxygen files
 doc/Doxyfile
