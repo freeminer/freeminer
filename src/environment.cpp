@@ -1236,6 +1236,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				if(obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
 					continue;
 				ObjectProperties* props = obj->accessObjectProperties();
+				if (!props)
+					continue;
 				if(props->force_load){
 					v3f objectpos = obj->getBasePosition();
 					v3s16 blockpos = getNodeBlockPos(
