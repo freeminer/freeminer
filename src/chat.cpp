@@ -763,7 +763,13 @@ void ChatBackend::clearRecentChat()
 void ChatBackend::step(float dtime)
 {
 	m_recent_buffer.step(dtime);
-	m_recent_buffer.deleteByAge(60.0);
+	m_recent_buffer.deleteByAge(
+#ifdef __ANDROID__
+20.0
+#else
+60.0
+#endif
+	);
 
 	// no need to age messages in anything but m_recent_buffer
 }
