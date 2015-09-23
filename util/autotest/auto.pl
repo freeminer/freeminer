@@ -128,7 +128,9 @@ our $commands = {
     },
     cmake => sub {
         commands_run('use_clang',) if $config->{clang};
-        sy qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_compiler} @_ $config->{cmake_int} $config->{cmake_add} };
+        $config->{cmake_build_client} = "-DBUILD_CLIENT=0" if $config->{no_build_client};
+        $config->{cmake_build_server} = "-DBUILD_SERVER=0" if $config->{no_build_server};
+        sy qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_build_client} $config->{cmake_build_server} $config->{cmake_compiler} @_ $config->{cmake_int} $config->{cmake_add} };
     },
     make => sub {
         sy
@@ -152,11 +154,15 @@ qq{$config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $co
           . qq{ $config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.server.err.log &};
     },
     clients => sub {
+      for (0 .. ($config->{clients_runs}||1)) {
+        my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
         sy
-qq{$config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{ $config->{run_add}  >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
           for 0 .. $config->{clients_num};
+          sleep $config->{clients_sleep}||1;
+      }
     },
     symbolize => sub {
         sy
@@ -178,9 +184,9 @@ our $tasks = {
     build_nothreads => [{build_name => 'nothreads'}, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     run_single => ['run_single'],
     clang => ['prepare', 'use_clang', 'cmake', 'make',],
-    tsan  => [
+    tsan  => [ {no_build_server=>1,},
         'prepare', 'use_clang',
-        ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
+        ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
         'make', 'cgroup',
         sub {
             local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
@@ -189,26 +195,31 @@ our $tasks = {
         },
     ],
     tsannt => sub {
+        local $config->{no_build_server}=1;
         local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads};
         task_run('tsan');
     },
     tsannta => sub {
+        local $config->{no_build_server}=1;
         local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
         task_run('tsan');
     },
     asan => [
-        'prepare', 'use_clang', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
+        {no_build_server=>1,},
+        'prepare', 'use_clang', ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
         'symbolize',
     ],
     asannta => sub {
+        local $config->{no_build_server}=1;
         local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
         task_run('asan');
     },
     msan => [
-        'prepare', 'use_clang', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
+        {no_build_server=>1,},
+        'prepare', 'use_clang', ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
     ],
-    debug => ['prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
-    nothreads => [\'build_nothreads', 'run_single',],    #'
+    debug => [{no_build_server=>1,}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
+    nothreads => [{no_build_server=>1,}, \'build_nothreads', 'run_single',],    #'
     (
         map {
             'valgrind_' . $_ => [
@@ -219,10 +230,10 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    minetest => ['prepare', ['cmake', $config->{cmake_minetest}], 'make', 'run_single',],
-    minetest_tsan   => sub { local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('tsan'); },
-    minetest_tsannt => sub { local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('tsannt'); },
-    minetest_asan   => sub { local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('asan'); },
+    minetest => [{no_build_server=>1,}, 'prepare', ['cmake', $config->{cmake_minetest}], 'make', 'run_single',],
+    minetest_tsan   => sub { local $config->{no_build_server}=1;local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('tsan'); },
+    minetest_tsannt => sub { local $config->{no_build_server}=1;local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('tsannt'); },
+    minetest_asan   => sub { local $config->{no_build_server}=1;local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_minetest}; task_run('asan'); },
     stress => [{build_name => 'normal'}, 'prepare', 'cmake', 'make', 'server', 'clients',],
     debug_mapgen =>
       [{build_name => 'debug'}, sub { local $config->{world} = "$config->{logdir}/world_$g->{task_name}"; task_run('debug'); }],
@@ -234,13 +245,13 @@ our $tasks = {
           }
     ],
 
-    play_task => sub { return 1 if $config->{all_run}; local $config->{go} = undef; local $config->{options_bot} = undef; local $config->{autoexit} = undef; task_run($_) for @_; },
+    play_task => sub { return 1 if $config->{all_run}; local $config->{no_build_server}=1; local $config->{go} = undef; local $config->{options_bot} = undef; local $config->{autoexit} = undef; task_run($_) for @_; },
 
     (
-        map { 'play_' . $_ => [[\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads minetest),
+        map { 'play_' . $_ => [ [ {no_build_server=>1,}, \'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads minetest),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
-    play => [[\'play_task', 'build_normal', 'run_single']],    #'
+    play => [{no_build_server=>1,}, [\'play_task', 'build_normal', 'run_single']],    #'
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
