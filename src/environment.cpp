@@ -95,36 +95,17 @@ void Environment::addPlayer(Player *player)
 	m_players.push_back(player);
 }
 
-/*
-void Environment::removePlayer(u16 peer_id)
-{
-	DSTACK(__FUNCTION_NAME);
-
-	for(std::vector<Player*>::iterator i = m_players.begin();
-			i != m_players.end();)
-	{
-		Player *player = *i;
-		if(player->peer_id == peer_id) {
-			delete player;
-			i = m_players.erase(i);
-		} else {
-			++i;
-		}
-	}
-}
-
-void Environment::removePlayer(const std::string &name)
+void Environment::removePlayer(Player* player)
 {
 	for (std::vector<Player*>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
-		if ((*it)->getName() == name) {
+		if ((*it) == player) {
 			delete *it;
 			m_players.erase(it);
 			return;
 		}
 	}
 }
-*/
 
 Player * Environment::getPlayer(u16 peer_id)
 {
@@ -454,7 +435,7 @@ void ServerEnvironment::saveLoadedPlayers()
 	while (i != m_players.end())
 	{
 		auto *player = *i;
-		savePlayer(player->getName());
+		savePlayer((RemotePlayer*)player);
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
 			i = m_players.erase(i);
@@ -464,9 +445,8 @@ void ServerEnvironment::saveLoadedPlayers()
 	}
 }
 
-void ServerEnvironment::savePlayer(const std::string &playername)
+void ServerEnvironment::savePlayer(RemotePlayer *player)
 {
-	auto *player = getPlayer(playername);
 	if (!player)
 		return;
 	Json::Value player_json;
