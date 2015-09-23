@@ -20,6 +20,7 @@ tags
 !/textures/base/
 /sounds/
 /mods/*
+/screenshots/
 !/mods/minetest/
 /mods/minetest/*
 !/mods/minetest/mods_here.txt
