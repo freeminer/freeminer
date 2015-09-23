@@ -1944,10 +1944,16 @@ void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)
 	char timetstamp_c[64];
 	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
 
-	std::string filename_base = g_settings->get("screenshot_path")
+	std::string screenshot_path = porting::path_user + DIR_DELIM + g_settings->get("screenshot_path");
+	if (!fs::CreateDir(screenshot_path)) {
+		errorstream << "Failed to save screenshot: can't create directory for screenshots (\"" << screenshot_path << "\")." << std::endl;
+		return;
+	}
+
+	std::string screenshot_name = name + std::string(timetstamp_c);
+	std::string filename_base = screenshot_path
 			+ DIR_DELIM
-			+ name
-			+ std::string(timetstamp_c);
+			+ screenshot_name;
 	std::string filename_ext = ".png";
 	std::string filename;
 
@@ -1963,7 +1969,7 @@ void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)
 	}
 
 	if (serial == SCREENSHOT_MAX_SERIAL_TRIES) {
-		infostream << "Could not find suitable filename for screenshot" << std::endl;
+		errorstream << "Could not find suitable filename for screenshot" << std::endl;
 	} else {
 		irr::video::IImage* const image =
 				driver->createImage(video::ECF_R8G8B8, raw_image->getDimension());
@@ -1974,9 +1980,9 @@ void Client::makeScreenshot(const std::string & name, IrrlichtDevice *device)
 			std::ostringstream sstr;
 			if (driver->writeImageToFile(image, filename.c_str())) {
 				if (name == "screenshot_")
-				sstr << "Saved screenshot to '" << filename << "'";
+					sstr << "Saved screenshot to '" << screenshot_name << filename_ext << "'";
 			} else {
-				sstr << "Failed to save screenshot '" << filename << "'";
+				sstr << "Failed to save screenshot '" << screenshot_name << filename_ext << "'";
 			}
 			m_chat_queue.push(sstr.str());
 			infostream << sstr.str() << std::endl;
