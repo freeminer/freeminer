@@ -2060,6 +2060,12 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 			i != block->m_static_objects.m_stored.end(); ++i) {
 		StaticObject &s_obj = *i;
 
+		if (s_obj.pos.X > MAX_MAP_GENERATION_LIMIT * BS || s_obj.pos.X > MAX_MAP_GENERATION_LIMIT * BS || s_obj.pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
+			errorstream << "activateObjects broken static object: blockpos="<<block->getPos()<<" type=" << (int)s_obj.type << " p="<<s_obj.pos<<std::endl;
+			break;
+		}
+
+
 		// Create an active object from the data
 		ServerActiveObject *obj = ServerActiveObject::create
 				((ActiveObjectType) s_obj.type, this, 0, s_obj.pos, s_obj.data);

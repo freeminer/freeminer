@@ -596,14 +596,21 @@ bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *
 		*command = (*packet)[MSGPACK_COMMAND].as<int>();
 	}
 	catch (msgpack::type_error e) {
-		verbosestream<<"msgpack::type_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		verbosestream<<"parse_msgpack_packet: msgpack::type_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
 		return false;
 	}
 	catch (msgpack::unpack_error e) {
-		verbosestream<<"msgpack::unpack_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		verbosestream<<"parse_msgpack_packet: msgpack::unpack_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
 		//verbosestream<<"bad data:["<< std::string(data, datasize) <<"]"<<std::endl;
 		return false;
+	} catch (std::exception &e) {
+		errorstream<<"parse_msgpack_packet: exception: "<<e.what()<<" datasize="<<datasize<<std::endl;
+		return false;
+	} catch (...) {
+		errorstream<<"parse_msgpack_packet: Ooops..."<<std::endl;
+		return false;
 	}
+
 	return true;
 }
 

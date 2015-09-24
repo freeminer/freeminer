@@ -22,9 +22,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "staticobject.h"
 #include "util/serialize.h"
+#include "constants.h"
+#include "log_types.h"
 
 void StaticObject::serialize(std::ostream &os)
 {
+	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
+		errorstream << "serialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
+		return;
+	}
 	// type
 	writeU8(os, type);
 	// pos
@@ -38,6 +44,10 @@ void StaticObject::deSerialize(std::istream &is, u8 version)
 	type = readU8(is);
 	// pos
 	pos = readV3F1000(is);
+	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
+		errorstream << "deSerialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
+		return;
+	}
 	// data
 	data = deSerializeString(is);
 }
