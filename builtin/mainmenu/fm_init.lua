@@ -928,12 +928,13 @@ end
 function tabbuilder.tab_settings()
 
 	local tab_string = ""
-	local pos_x, pos_y = 7.1, 0
+	local pos_x_offset, pos_y_offset = 7.1, -0.43
+	local pos_x, pos_y = pos_x_offset, pos_y_offset
 
 	local calc_next_pos = function()
 		pos_y = pos_y + 0.5
 		if(pos_y >= 11) then
-			pos_y = 0
+			pos_y = pos_y_offset
 			pos_x = pos_x + 5
 		end
 	end
@@ -952,7 +953,7 @@ function tabbuilder.tab_settings()
 
 	local add_title = function(text)
 		-- add free space before title
-		if(pos_y > 0) then
+		if(pos_y > pos_y_offset) then
 			calc_next_pos()
 		end
 		tab_string = tab_string ..
@@ -1007,7 +1008,7 @@ function tabbuilder.tab_settings()
 
 	-- Input setup
 	tab_string = tab_string ..
-		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[" .. pos_x_offset .. ",11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 
 	return tab_string
 end
