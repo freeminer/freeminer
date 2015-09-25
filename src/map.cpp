@@ -2301,10 +2301,10 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	}
 	catch(std::exception &e)
 	{
-		infostream<<"WARNING: ServerMap: Failed to load map from "<<savedir
+		actionstream<<"WARNING: ServerMap: Failed to load map from "<<savedir
 				<<", exception: "<<e.what()<<std::endl;
-		infostream<<"Please remove the map or fix it."<<std::endl;
-		infostream<<"WARNING: Map saving will be disabled."<<std::endl;
+		actionstream<<"Please remove the map or fix it."<<std::endl;
+		actionstream<<"WARNING: Map saving will be disabled."<<std::endl;
 	}
 
 	infostream<<"Initializing new map."<<std::endl;
