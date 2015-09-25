@@ -961,8 +961,6 @@ function tabbuilder.tab_settings()
 		calc_next_pos()
 	end
 
-	-- TODO: refactor this and handle_settings_buttons
-
 	-- UI settings
 	add_title("UI settings")
 	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting"     )
@@ -1015,6 +1013,9 @@ end
 
 --------------------------------------------------------------------------------
 function tabbuilder.handle_settings_buttons(fields)
+
+	-- TODO: refactor this
+
 	if fields["cb_fancy_trees"] then
 		core.setting_set("new_style_leaves", fields["cb_fancy_trees"])
 	end
