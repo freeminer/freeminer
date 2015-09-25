@@ -986,6 +986,7 @@ function tabbuilder.tab_settings()
 	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting"       )
 	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees"           )
 	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water"          )
+	add_checkbox( "cb_connected_glass",           "connected_glass",            "Connected glass"       )
 	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds"             )
 	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals"  )
 	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
@@ -1028,6 +1029,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_opaque_water"] then
 		core.setting_set("opaque_water", fields["cb_opaque_water"])
+	end
+	if fields["cb_connected_glass"] then
+		core.setting_set("connected_glass", fields["cb_connected_glass"])
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
