@@ -971,11 +971,6 @@ function tabbuilder.tab_settings()
 	local disable_minimap_group = not core.setting_getbool("enable_minimap");
 	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",  disable_minimap_group )
 
-	-- Enviroment settings
-	add_title("Enviroment settings")
-	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
-	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
-
 	-- Graphics settings
 	add_title("Graphics settings")
 	add_checkbox( "cb_mipmapping",                "mip_map",                    "Mip-Mapping"           )
@@ -992,10 +987,14 @@ function tabbuilder.tab_settings()
 	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
 
 	-- Effects settings
-	calc_next_pos()
 	add_title("Effects settings")
 	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles"      )
 	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders"               )
+
+	-- Enviroment settings
+	add_title("Enviroment settings")
+	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
+	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
 
 	local disable_shaders_group = not core.setting_getbool("enable_shaders");
 
