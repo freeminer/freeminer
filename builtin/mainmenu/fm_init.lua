@@ -928,12 +928,13 @@ end
 function tabbuilder.tab_settings()
 
 	local tab_string = ""
-	local pos_x, pos_y = 7.1, 0
+	local pos_x_offset, pos_y_offset = 7.1, -0.43
+	local pos_x, pos_y = pos_x_offset, pos_y_offset
 
 	local calc_next_pos = function()
 		pos_y = pos_y + 0.5
 		if(pos_y >= 11) then
-			pos_y = 0
+			pos_y = pos_y_offset
 			pos_x = pos_x + 5
 		end
 	end
@@ -952,15 +953,13 @@ function tabbuilder.tab_settings()
 
 	local add_title = function(text)
 		-- add free space before title
-		if(pos_y > 0) then
+		if(pos_y > pos_y_offset) then
 			calc_next_pos()
 		end
 		tab_string = tab_string ..
 			"textlist[" .. pos_x-0.1 .. "," .. pos_y+0.2 .. ";4,1;;#ffffff" .. fgettext(text) .. ";0;true]"
 		calc_next_pos()
 	end
-
-	-- TODO: refactor this and handle_settings_buttons
 
 	-- UI settings
 	add_title("UI settings")
@@ -970,11 +969,6 @@ function tabbuilder.tab_settings()
 
 	local disable_minimap_group = not core.setting_getbool("enable_minimap");
 	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",  disable_minimap_group )
-
-	-- Enviroment settings
-	add_title("Enviroment settings")
-	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
-	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
 
 	-- Graphics settings
 	add_title("Graphics settings")
@@ -986,15 +980,20 @@ function tabbuilder.tab_settings()
 	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting"       )
 	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees"           )
 	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water"          )
+	add_checkbox( "cb_connected_glass",           "connected_glass",            "Connected glass"       )
 	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds"             )
 	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals"  )
 	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
 
 	-- Effects settings
-	calc_next_pos()
 	add_title("Effects settings")
 	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles"      )
 	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders"               )
+
+	-- Enviroment settings
+	add_title("Enviroment settings")
+	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
+	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
 
 	local disable_shaders_group = not core.setting_getbool("enable_shaders");
 
@@ -1007,13 +1006,16 @@ function tabbuilder.tab_settings()
 
 	-- Input setup
 	tab_string = tab_string ..
-		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[" .. pos_x_offset .. ",11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 
 	return tab_string
 end
 
 --------------------------------------------------------------------------------
 function tabbuilder.handle_settings_buttons(fields)
+
+	-- TODO: refactor this
+
 	if fields["cb_fancy_trees"] then
 		core.setting_set("new_style_leaves", fields["cb_fancy_trees"])
 	end
@@ -1028,6 +1030,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_opaque_water"] then
 		core.setting_set("opaque_water", fields["cb_opaque_water"])
+	end
+	if fields["cb_connected_glass"] then
+		core.setting_set("connected_glass", fields["cb_connected_glass"])
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
