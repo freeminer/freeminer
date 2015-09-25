@@ -61,6 +61,7 @@ our $config = {
     config            => $script_path . 'auto.json',
     logdir            => $script_path . 'logs.' . POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()) . $logdir_add,
     screenshot_dir    => 'screenshot.' . POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),
+    env               => 'OPENSSL_armcap=0',
     runner            => 'nice ',
     name              => 'bot',
     go                => '--go',
@@ -157,7 +158,7 @@ qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2)  $config->{make_add} >>
     },
     run_single => sub {
         sy
-qq{$config->{runner} @_ ./freeminer --gameid $config->{gameid} --world $config->{world} --port $config->{port} $config->{go} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --world $config->{world} --port $config->{port} $config->{go} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{$config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.err.log };
         return 0;
@@ -168,7 +169,7 @@ qq{$config->{runner} @_ ./freeminer --gameid $config->{gameid} --world $config->
     },
     server => sub {
         sy
-qq{$config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $config->{world} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $config->{world} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{ $config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.server.err.log &};
     },
@@ -176,7 +177,7 @@ qq{$config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $co
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             sy
-qq{$config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
               . options_make()
               . qq{ $config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
               for 0 .. $config->{clients_num};
