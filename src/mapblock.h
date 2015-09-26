@@ -74,6 +74,7 @@ enum{
 	// The block and all its neighbors have been generated
 	BLOCKGEN_FULLY_GENERATED=6
 };*/
+static MapNode ignoreNode(CONTENT_IGNORE);
 
 #if 0
 enum
@@ -99,7 +100,7 @@ public:
 			return getNode(p);
 		}
 		catch(InvalidPositionException &e){
-			return MapNode(CONTENT_IGNORE);
+			return ignoreNode;
 		}
 	}
 };
@@ -171,7 +172,7 @@ public:
 			memset(data, 0, nodecount * sizeof(MapNode));
 		else
 		for (u32 i = 0; i < nodecount; i++)
-			data[i] = MapNode(CONTENT_IGNORE);
+			data[i] = ignoreNode;
 	}
 
 	/*
@@ -329,7 +330,7 @@ public:
 		*valid_position = isValidPosition(p.X, p.Y, p.Z);
 
 		if (!*valid_position)
-			return MapNode(CONTENT_IGNORE);
+			return ignoreNode;
 
 		auto lock = lock_shared_rec();
 		return data[p.Z * zstride + p.Y * ystride + p.X];
@@ -346,7 +347,7 @@ public:
 	{
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
-			return MapNode(CONTENT_IGNORE);
+			return ignoreNode;
 		return getNodeNoLock(p);
 	}
 
@@ -366,7 +367,7 @@ public:
 	MapNode getNodeNoLock(v3POS p)
 	{
 		if (!data)
-			return MapNode(CONTENT_IGNORE);
+			return ignoreNode;
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
@@ -378,7 +379,7 @@ public:
 	{
 		*valid_position = data != NULL;
 		if (!valid_position)
-			return MapNode(CONTENT_IGNORE);
+			return ignoreNode;
 
 		auto lock = lock_shared_rec();
 		return data[z * zstride + y * ystride + x];

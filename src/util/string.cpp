@@ -333,7 +333,7 @@ int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NU
 
 #ifdef __ANDROID__
 
-const wchar_t* wide_chars =
+const wchar_t wide_chars[] =
 	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
 	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
 	L"abcdefghijklmnopqrstuvwxyz{|}~";

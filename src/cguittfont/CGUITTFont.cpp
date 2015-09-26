@@ -491,9 +491,6 @@ CGUITTGlyphPage* CGUITTFont::createGlyphPage(const u8& pixel_mode)
 	name += "_";
 	name += Glyph_Pages.size(); // The newly created page will be at the end of the collection.
 
-	// Create the new page.
-	page = new CGUITTGlyphPage(Driver, name);
-
 	// Determine our maximum texture size.
 	// If we keep getting 0, set it to 1024x1024, as that number is pretty safe.
 	core::dimension2du max_texture_size = max_page_texture_size;
@@ -513,12 +510,15 @@ CGUITTGlyphPage* CGUITTFont::createGlyphPage(const u8& pixel_mode)
 	if (page_texture_size.Width > max_texture_size.Width || page_texture_size.Height > max_texture_size.Height)
 		page_texture_size = max_texture_size;
 
-	if (!page->createPageTexture(pixel_mode, page_texture_size))
-		// TODO: add error message?
-		return 0;
+	// Create the new page.
+	page = new CGUITTGlyphPage(Driver, name);
 
 	if (page)
 	{
+		if (!page->createPageTexture(pixel_mode, page_texture_size))
+			// TODO: add error message?
+			return 0;
+
 		// Determine the number of glyph slots on the page and add it to the list of pages.
 		page->available_slots = (page_texture_size.Width / size) * (page_texture_size.Height / size);
 		Glyph_Pages.push_back(page);
