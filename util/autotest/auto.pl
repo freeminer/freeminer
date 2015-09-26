@@ -149,17 +149,17 @@ our $commands = {
         $config->{cmake_build_client} = "-DBUILD_CLIENT=" . (0 + !$config->{no_build_client});
         $config->{cmake_build_server} = "-DBUILD_SERVER=" . (0 + !$config->{no_build_server});
         sy
-qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_build_client} $config->{cmake_build_server} $config->{cmake_compiler} @_ $config->{cmake_int} $config->{cmake_add} };
+qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_build_client} $config->{cmake_build_server} $config->{cmake_compiler} @_ $config->{cmake_int} $config->{cmake_add} 2>&1 | tee $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
         sy
-qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} >> $config->{logdir}/autotest.$g->{task_name}.make.log 2>&1};
+qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} 2>&1 | tee $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy
 qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --world $config->{world} --port $config->{port} $config->{go} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
-          . qq{$config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.err.log };
+          . qq{$config->{run_add} 2>&1 | tee $config->{logdir}/autotest.$g->{task_name}.out.log };
         return 0;
     },
     valgrind => sub {
@@ -170,7 +170,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
         sy
 qq{$config->{env} $config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $config->{world} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
-          . qq{ $config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.server.err.log &};
+          . qq{ $config->{run_add} 2>&1 | tee $config->{logdir}/autotest.$g->{task_name}.out.log &};
     },
     clients => sub {
         for (0 .. ($config->{clients_runs} || 0)) {
@@ -178,14 +178,14 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver --gameid $config->{game
             sy
 qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
               . options_make()
-              . qq{ $config->{run_add} >> $config->{logdir}/autotest.$g->{task_name}.out.log 2>>$config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
+              . qq{ $config->{run_add} | tee $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
               for 0 .. $config->{clients_num};
             sleep $config->{clients_sleep} || 1;
         }
     },
     symbolize => sub {
         sy
-qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task_name}.err.log | c++filt > $config->{logdir}/autotest.$g->{task_name}.err.symb.log};
+qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task_name}.out.log | c++filt > $config->{logdir}/autotest.$g->{task_name}.out.symb.log};
     },
     cgroup => sub {
         return 0 unless $config->{cgroup};
@@ -216,9 +216,9 @@ our $tasks = {
         ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
         'make', 'cgroup',
         sub {
-            local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-            local $config->{runner} = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
-            local $options->{opt}{enable_minimap} = 0; # too unsafe
+            local $config->{options_display}      = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+            local $config->{runner}               = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
+            local $options->{opt}{enable_minimap} = 0;                                                                          # too unsafe
             commands_run('run_single');
         },
     ],
@@ -232,9 +232,15 @@ our $tasks = {
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_nothreads_a};
         task_run('tsan');
     },
-    asan => [
-        {-no_build_server => 1,},
-        'prepare', 'use_clang', ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
+    asan => [{
+            -no_build_server => 1,
+            #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
+        },
+        'prepare',
+        'use_clang',
+        ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)],
+        'make',
+        'run_single',
         'symbolize',
     ],
     asannta => sub {
@@ -252,7 +258,7 @@ our $tasks = {
         map {
             'valgrind_' . $_ => [
                 #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
-                \'build_debug',                                                   #'
+                \'build_debug',                                                    #'
                 ['valgrind', '--tool=' . $_],
               ],
         } @{$config->{valgrind_tools}}
@@ -304,7 +310,7 @@ our $tasks = {
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
-    timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],          #'
+    timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],           #'
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
