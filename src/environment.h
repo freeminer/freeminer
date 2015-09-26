@@ -45,6 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/connection.h"
 #include "fmbitset.h"
 #include "util/concurrent_unordered_map.h"
+#include "util/concurrent_vector.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>
@@ -113,7 +114,7 @@ public:
 
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
-	std::vector<Player*> m_players;
+	concurrent_vector<Player*> m_players;
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1

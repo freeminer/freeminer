@@ -71,7 +71,7 @@ struct MinimapData {
 	u16 scan_height;
 	u16 map_size;
 	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
-	bool map_invalidated;
+	std::atomic_bool map_invalidated;
 	bool minimap_shape_round;
 	video::IImage *minimap_image;
 	video::IImage *heightmap_image;

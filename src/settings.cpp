@@ -1137,7 +1137,7 @@ bool Settings::readJsonFile(const std::string &filename) {
 	try {
 		is >> json;
 	} catch (std::exception &e) {
-		errorstream << "Error reading json file: \"" << filename << "\"" << std::endl;
+		errorstream << "Error reading json file: \"" << filename << "\" : " << e.what() << std::endl;
 		return false;
 	}
 	return fromJson(json);

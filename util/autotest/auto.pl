@@ -218,6 +218,7 @@ our $tasks = {
         sub {
             local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
             local $config->{runner} = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
+            local $options->{opt}{enable_minimap} = 0; # too unsafe
             commands_run('run_single');
         },
     ],
