@@ -80,7 +80,6 @@ our $config = {
 };
 
 map { /^--(\w+)(?:=(.*))/ and $config->{$1} = $2; } @ARGV;
-$config->{cgroup} = '4G' if $config->{cgroup} eq 1;
 
 our $g = {};
 
@@ -154,7 +153,7 @@ qq{cmake .. -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd` $config->{cmake_build_client}
     },
     make => sub {
         sy
-qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2)  $config->{make_add} >> $config->{logdir}/autotest.$g->{task_name}.make.log 2>&1};
+qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} >> $config->{logdir}/autotest.$g->{task_name}.make.log 2>&1};
     },
     run_single => sub {
         sy
@@ -190,6 +189,7 @@ qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task
     },
     cgroup => sub {
         return 0 unless $config->{cgroup};
+        local $config->{cgroup} = '4G' if $config->{cgroup} eq 1;
         sy
 qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes");
     },
@@ -210,7 +210,7 @@ our $tasks = {
     run_single => ['run_single'],
     clang => ['prepare', 'use_clang', 'cmake', 'make',],
     tsan  => [
-        {no_build_server => 1,},
+        {-no_build_server => 1,},
         'prepare',
         'use_clang',
         ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_THREAD=1 -DDEBUG=1)],
@@ -232,7 +232,7 @@ our $tasks = {
         task_run('tsan');
     },
     asan => [
-        {no_build_server => 1,},
+        {-no_build_server => 1,},
         'prepare', 'use_clang', ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_ADDRESS=1 -DDEBUG=1)], 'make', 'run_single',
         'symbolize',
     ],
@@ -242,11 +242,11 @@ our $tasks = {
         task_run('asan');
     },
     msan => [
-        {no_build_server => 1,},
+        {-no_build_server => 1,},
         'prepare', 'use_clang', ['cmake', qw(-DENABLE_LUAJIT=0 -DSANITIZE_MEMORY=1 -DDEBUG=1)], 'make', 'run_single', 'symbolize',
     ],
-    debug => [{no_build_server => 1,}, 'prepare', ['cmake', qw(-DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
-    nothreads => [{no_build_server => 1,}, \'build_nothreads', 'run_single',],    #'
+    debug => [{-no_build_server => 1,}, 'prepare', ['cmake', qw(-DENABLE_LUAJIT=0 -DDEBUG=1)], 'make', 'run_single',],
+    nothreads => [{-no_build_server => 1,}, \'build_nothreads', 'run_single',],    #'
     (
         map {
             'valgrind_' . $_ => [
@@ -257,7 +257,7 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    minetest => [{no_build_server => 1,}, 'prepare', ['cmake', $config->{cmake_minetest}], 'make', 'run_single',],
+    minetest => [{-no_build_server => 1,}, 'prepare', ['cmake', $config->{cmake_minetest}], 'make', 'run_single',],
     minetest_tsan => sub {
         local $config->{no_build_server} = 1;
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
@@ -299,10 +299,10 @@ our $tasks = {
     },
 
     (
-        map { 'play_' . $_ => [{no_build_server => 1,}, [\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads minetest),
+        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb tsan asan msan asannta nothreads minetest),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
-    play => [{no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
+    play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
     timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],          #'
 };
 
@@ -346,7 +346,7 @@ sub command_run(@) {
         return $cmd->(@_);
     } elsif ('HASH' eq ref $cmd) {
         for my $k (keys %$cmd) {
-            if ($k =~ /^-(.+)/) {
+            if ($k =~ /^-+(.+)/) {
                 $config->{$1} = $cmd->{$k};
             } else {
                 $g->{$k} = $cmd->{$k};
