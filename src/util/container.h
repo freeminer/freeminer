@@ -235,18 +235,20 @@ public:
 	MutexedQueue() {}
 	bool empty() const
 	{
-		try_shared_lock lock(m_mutex);
+		//try_shared_lock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		return (m_queue.size() == 0);
 	}
 	bool empty_try()
 	{
-		try_shared_lock lock(m_mutex, std::try_to_lock);
-		if (!lock.owns_lock())
-			return 1;
+		//try_shared_lock lock(m_mutex, std::try_to_lock);
+		MutexAutoLock lock(m_mutex);
+		//if (!lock.owns_lock())
+		//	return 1;
 		return (m_queue.size() == 0);
 	}
 	unsigned int size() {
-		unique_lock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		return m_queue.size();
 	}
 

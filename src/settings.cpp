@@ -32,6 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "noise.h"
 #include <cctype>
 #include <algorithm>
+#include <mutex>
 
 static Settings main_settings;
 Settings *g_settings = &main_settings;
@@ -1037,7 +1038,7 @@ void Settings::doCallbacks(const std::string name)
 
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
 	{
-		std::lock_guard<std::mutex> lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		if (!m_json[name].empty())
 			return m_json.get(name, def);
 	}
@@ -1067,12 +1068,12 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 	if (!value.empty())
 		set(name, json_writer.write( value )); //todo: remove later
 
-	std::lock_guard<std::mutex> lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 	m_json[name] = value;
 }
 
 bool Settings::toJson(Json::Value &json) const {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	json = m_json;
 
