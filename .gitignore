@@ -1,30 +1,47 @@
-## Generic ignorable patterns and files
+## Editors and Development environments
 *~
-.*.swp
-.*-swp
-*bak*
-tags
-*.vim
+*.swp
+*.bak*
 *.orig
-*.rej
+# Vim
+*.vim
+# Kate
+.*.kate-swp
+.swp.*
+# KDevelop4
+.kdev4/
+*.kdev4
+# Eclipse (CDT and LDT)
+.project
+.cproject
+.settings/
+.buildpath
+.metadata
+# GNU Global
+tags
+!tags/
+gtags.files
 
 ## Files related to minetest development cycle
 /*.patch
+# GNU Patch reject file
+*.rej
 
-## Non-static Minetest directories
+## Non-static Minetest directories or symlinks to these
 /bin/
 /games/*
 !/games/minimal/
-/cache/
+/cache
 /textures/*
 !/textures/base/
-/sounds/
+/screenshots
+/sounds
 /mods/*
 /screenshots/
 !/mods/minetest/
 /mods/minetest/*
 !/mods/minetest/mods_here.txt
-/worlds/
+/worlds
 /world/
 
 ## Configuration/log files
@@ -57,9 +74,7 @@ src/cmake_config_githash.h
 src/lua/build/
 locale/
 .directory
-.kdev4/
 *.cbp
-*.kdev4
 *.layout
 *.o
 _build
@@ -78,4 +93,3 @@ build/android/path.cfg
 build/android/and_env
 build/android/AndroidManifest.xml
 timestamp
-

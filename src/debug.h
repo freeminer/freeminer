@@ -45,7 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 // Whether to catch all std::exceptions.
-// Assert will be called on such an event.
+// When "catching", the program will abort with an error message.
 // In debug mode, leave these for the debugger and don't catch them.
 #ifdef NDEBUG
 	#define CATCH_UNHANDLED_EXCEPTIONS 1
@@ -148,11 +148,11 @@ private:
 
 #if CATCH_UNHANDLED_EXCEPTIONS == 1
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER try {
-	#define END_DEBUG_EXCEPTION_HANDLER(logstream) \
-		} catch (std::exception &e) {                               \
-			logstream << "ERROR: An unhandled exception occurred: " \
-				<< e.what() << std::endl;                           \
-			assert(0);                                              \
+	#define END_DEBUG_EXCEPTION_HANDLER(logstream)           \
+		} catch (std::exception &e) {                        \
+			logstream << "An unhandled exception occurred: " \
+				<< e.what() << std::endl;                    \
+			FATAL_ERROR(e.what());                           \
 		}
 #else
 	// Dummy ones
