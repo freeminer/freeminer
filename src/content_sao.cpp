@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "scripting_game.h"
 #include "genericobject.h"
-#include "log.h"
+#include "log_types.h"
 
 std::map<u16, ServerActiveObject::Factory> ServerActiveObject::m_types;
 
@@ -364,6 +364,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	std::ostringstream os(std::ios::binary);
 
 	auto lock = lock_shared_rec();
+	try {
 
 	if(protocol_version >= 14)
 	{
@@ -396,6 +397,11 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 		writeU8(os, 2); // number of messages stuffed in here
 		os<<serializeLongString(getPropertyPacket()); // message 1
 		os<<serializeLongString(gob_cmd_update_armor_groups(m_armor_groups)); // 2
+	}
+
+	} catch (std::exception &e){
+		errorstream << "Catn serialize object id="<<getId()<< " pos="<< getBasePosition() << std::endl;
+		return "";
 	}
 
 	// return result

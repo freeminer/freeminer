@@ -268,7 +268,12 @@ inline void writeS64(u8 *data, s64 i)
 
 inline void writeF1000(u8 *data, f32 i)
 {
-	assert(i >= F1000_MIN && i <= F1000_MAX);
+	//assert(i >= F1000_MIN && i <= F1000_MAX);
+	if (i < F1000_MIN)
+		writeS32(data, F1000_MIN);
+	else if (i > F1000_MAX)
+		writeS32(data, F1000_MAX);
+	else
 	writeS32(data, i * FIXEDPOINT_FACTOR);
 }
 
