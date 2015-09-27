@@ -433,7 +433,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	}
 
 	if (menudata.name.empty())
-		playername = menudata.name = std::string("Guest") + itos(myrand_range(10000, 90000));
+		playername = menudata.name = std::string("Guest") + itos(myrand_range(100000, 999999));
 	else
 		playername = menudata.name;
 

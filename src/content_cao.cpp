@@ -983,6 +983,10 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 		// Add a text node for showing the name
 		gui::IGUIEnvironment* gui = irr->getGUIEnvironment();
 		std::wstring wname = utf8_to_wide(m_name);
+		if (m_name.size() > 15) {
+			wname.resize(15);
+			wname+=L".";
+		}
 		m_textnode = smgr->addTextSceneNode(gui->getSkin()->getFont(),
 				wname.c_str(), m_nametag_color, node);
 		m_textnode->grab();
