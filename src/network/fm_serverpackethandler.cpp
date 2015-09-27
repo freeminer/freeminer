@@ -760,7 +760,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		std::string name = player->getName();
 
 		// Run script hook
-		bool ate = m_script->on_chat_message(player->getName(), message);
+		bool ate = m_script->on_chat_message(name, message);
 		// If script ate the message, don't proceed
 		if(ate)
 			return;
@@ -785,7 +785,13 @@ void Server::ProcessData(NetworkPacket *pkt)
 		{
 			if(checkPriv(player->getName(), "shout")){
 				line += "<";
-				line += name;
+				if (name.size() > 15) {
+					auto cutted = name;
+					cutted.resize(15);
+					line += cutted + ".";
+				} else {
+					line += name;
+				}
 				line += "> ";
 				line += message;
 				send_to_others = true;
@@ -796,7 +802,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		if(!line.empty())
 		{
 			if(send_to_others) {
-				stat.add("chat", player->getName());
+				stat.add("chat", name);
 				actionstream<<"CHAT: "<<line<<std::endl;
 				SendChatMessage(PEER_ID_INEXISTENT, line);
 			} else
