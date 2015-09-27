@@ -770,7 +770,9 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				dtime = 1;
 		}
 
-		//infostream<<"MapBlock::abmTriggersRun p="<<getPos()<<" abm_triggers="<<abm_triggers<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
+		unordered_map_v3POS<int> active_object_added;
+
+		//infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
 		for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end() ; ++abm_trigger) {
 			//ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
@@ -790,16 +792,24 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				continue;
 			}
 			//ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
-
+			v3POS blockpos = getNodeBlockPos(abm_trigger->pos);
+			int active_object_add = 0;
+			if (active_object_added.count(blockpos))
+				active_object_add = active_object_added[blockpos];
 			abm->abmws->abm->trigger(m_env, abm_trigger->pos, node,
-				abm_trigger->active_object_count, abm_trigger->active_object_count_wider, map->getNodeTry(abm_trigger->neighbor_pos), activate);
+				abm_trigger->active_object_count+active_object_add, abm_trigger->active_object_count_wider+active_object_add, map->getNodeTry(abm_trigger->neighbor_pos), activate);
 
 				// Count surrounding objects again if the abms added any
+				//infostream<<" m_env->m_added_objects="<<m_env->m_added_objects<<" add="<<active_object_add<<" bp="<<getNodeBlockPos(abm_trigger->pos)<<std::endl;
 				if(m_env->m_added_objects > 0) {
-					v3POS blockpos = getNodeBlockPos(abm_trigger->pos);
 					MapBlock * block = map->getBlock(blockpos);
-					if (block)
+					if (block) {
+						auto was = abm_trigger->active_object_count;
 						abm_trigger->active_object_count = m_env->m_abmhandler.countObjects(block, map, abm_trigger->active_object_count_wider);
+						//infostream<<" was="<<was<<" now abm_trigger->active_object_count="<<abm_trigger->active_object_count<<std::endl;
+						if (abm_trigger->active_object_count > was)
+							active_object_added[blockpos] = abm_trigger->active_object_count - was;
+					}
 					m_env->m_added_objects = 0;
 				}
 		}
