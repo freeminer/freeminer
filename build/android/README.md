@@ -6,8 +6,8 @@ http://developer.android.com/sdk/index.html
 run Android SDK Manager
 ~/android-sdk-linux/tools/android
  and install
-  API 10 - SDK platform
-  API 10 - Google APIs
+  Android SDK build-tools 23.0.1
+  API 15 - SDK platform
 
 
 ##or semi-aumomatic way: (todo: make .sh)
@@ -20,11 +20,10 @@ sudo apt-get install -y default-jdk android-tools-adb ant m4 gcc-multilib lib32z
 wget https://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin
 chmod +x android-ndk-r10e-linux-x86_64.bin
 ./android-ndk-r10e-linux-x86_64.bin
-wget https://dl.google.com/android/android-sdk_r24.3.3-linux.tgz
-tar xf android-sdk_r24.3.3-linux.tgz
+wget https://dl.google.com/android/android-sdk_r24.3.4-linux.tgz
+tar xf android-sdk_r24.3.4-linux.tgz
 echo "yyyyyy" | ~/android-sdk-linux/tools/android update sdk --no-ui
-
-#BROKEN echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-tool,android-15,build-tools-22.0.1
+echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-tool,android-15,build-tools-23.0.1
 
 ```
 
