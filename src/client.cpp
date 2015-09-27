@@ -302,6 +302,7 @@ Client::~Client()
 	}
 
 	delete m_mapper;
+	delete m_media_downloader;
 }
 
 void Client::connect(Address address,
