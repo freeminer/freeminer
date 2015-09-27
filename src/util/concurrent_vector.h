@@ -25,17 +25,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 template <class T, class Allocator = std::allocator<T> >
 class concurrent_vector :
 	public std::vector<T, Allocator>,
-	public locker<>
-{
+	public locker<> {
 public:
 	typedef typename std::vector<T, Allocator>           full_type;
-    typedef T                                        value_type;
-    typedef Allocator                                allocator_type;
-    typedef typename full_type::reference       reference;
-    typedef typename full_type::const_reference const_reference;
-    typedef typename full_type::size_type       size_type;
-    typedef typename full_type::pointer         pointer;
-    typedef typename full_type::const_pointer   const_pointer;
+	typedef T                                        value_type;
+	typedef Allocator                                allocator_type;
+	typedef typename full_type::reference       reference;
+	typedef typename full_type::const_reference const_reference;
+	typedef typename full_type::size_type       size_type;
+	typedef typename full_type::pointer         pointer;
+	typedef typename full_type::const_pointer   const_pointer;
 
 	typedef typename full_type::const_iterator                         const_iterator;
 	typedef typename full_type::iterator                               iterator;
@@ -95,16 +94,16 @@ class maybe_concurrent_vector : public concurrent_vector<T, Allocator>
 template <class T, class Allocator = std::allocator<T> >
 class not_concurrent_vector :
 	public std::vector<T, Allocator>,
-	public dummy_locker
-{
+	public dummy_locker {
 public:
-	typedef typename std::vector<T, Alloc>           full_type;
+	typedef typename std::vector<T, Allocator>       full_type;
 	typedef T                                        key_type;
 	typedef T                                        mapped_type;
-    typedef T                                        value_type;
+	typedef T                                        value_type;
+	typedef typename full_type::size_type       size_type;
 
 	mapped_type& get(size_type n) {
-		return full_type::operator[](k);
+		return full_type::operator[](n);
 	}
 
 	void set(size_type n, const mapped_type& v) {
@@ -113,7 +112,7 @@ public:
 };
 
 template <class T, class Allocator = std::allocator<T> >
-class maybe_concurrent_vector: public not_concurrent_vector<Key, Allocator>
+class maybe_concurrent_vector: public not_concurrent_vector<T, Allocator>
 {};
 
 #endif
