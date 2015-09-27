@@ -122,7 +122,7 @@ Connection::~Connection()
 
 void * Connection::run()
 {
-	log_register_thread("Connection");
+	reg("Connection");
 
 	while(!stopRequested())
 	{

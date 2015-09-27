@@ -17,7 +17,7 @@ public:
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 
-	thread_pool(const std::string &name="");
+	thread_pool(const std::string &name="Unnamed");
 	virtual ~thread_pool();
 
 	virtual void func();

@@ -169,7 +169,6 @@ bool Thread::start()
 
 bool Thread::kill()
 {
-errorstream<<"Thread::kill() "<< name << " r="<<running<< std::endl;
 #ifdef _WIN32
 	if (!running)
 		return false;
