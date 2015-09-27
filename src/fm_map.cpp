@@ -500,13 +500,14 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		for(auto i = a_blocks.begin();
 		        i != a_blocks.end(); ++i) {
 
+			processed[i->first] = -1000000;
 			auto block = getBlockNoCreateNoEx(i->first);
 
 			for(;;) {
 				// Don't bother with dummy blocks.
-				if(!block || block->isDummy())
+				if(!block || block->isDummy()) {
 					break;
-
+				}
 				auto lock = block->try_lock_unique_rec();
 				if (!lock->owns_lock())
 					break; // may cause dark areas
@@ -595,6 +596,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		spreadLight(LIGHTBANK_NIGHT, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms * 10);
 	}
 
+	//infostream<<"light: processed="<<processed.size()<< " loopcount="<<loopcount<< " ablocks_bef="<<a_blocks.size();
 	for (auto & i : processed) {
 		a_blocks.erase(i.first);
 		MapBlock *block = getBlockNoCreateNoEx(i.first);
@@ -603,6 +605,8 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		block->setLightingExpired(false);
 		block->lighting_broken = false;
 	}
+	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
+
 
 	g_profiler->add("Server: light blocks", loopcount);
 

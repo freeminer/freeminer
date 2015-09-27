@@ -1638,7 +1638,9 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 
 	std::unordered_map<u16, bool> current_objects;
 	{
-		auto lock = current_objects_shared.lock_shared_rec();
+		auto lock = current_objects_shared.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
 		current_objects = current_objects_shared;
 	}
 	/*
@@ -1648,7 +1650,9 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 		- discard objects that are found in current_objects.
 		- add remaining objects to added_objects
 	*/
-	auto lock = m_active_objects.lock_shared_rec();
+	auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
 	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i) {
@@ -1695,6 +1699,8 @@ void ServerEnvironment::getRemovedActiveObjects(Player *player, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
+	auto player_position = player->getPosition();
+
 	std::vector<u16> current_objects_vector;
 	{
 		auto lock = current_objects.try_lock_shared_rec();
@@ -1730,7 +1736,7 @@ void ServerEnvironment::getRemovedActiveObjects(Player *player, s16 radius,
 			continue;
 		}
 
-		f32 distance_f = object->getBasePosition().getDistanceFrom(player->getPosition());
+		f32 distance_f = object->getBasePosition().getDistanceFrom(player_position);
 		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			if (distance_f <= player_radius_f || player_radius_f == 0)
 				continue;
