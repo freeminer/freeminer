@@ -287,7 +287,11 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	// Do not move if world has not loaded yet, since custom node boxes
 	// are not available for collision detection.
 	if (!any_position_valid)
+	{
+/* wtf?
 		return result;
+*/
+	}
 
 	} // tt2
 
