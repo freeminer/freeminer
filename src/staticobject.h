@@ -50,7 +50,7 @@ struct StaticObject
 	}
 
 	void serialize(std::ostream &os);
-	void deSerialize(std::istream &is, u8 version);
+	bool deSerialize(std::istream &is, u8 version);
 };
 
 class StaticObjectList
