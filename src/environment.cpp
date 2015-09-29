@@ -984,7 +984,7 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 		ServerActiveObject* obj = i->second;
 		u16 id = i->first;
 		if (!obj) {
-			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object"<<id<<" = "<<obj<<std::endl;
+			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object "<<id<<" = "<<obj<<std::endl;
 			continue;
 		}
 

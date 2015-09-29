@@ -540,11 +540,17 @@ int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 void MapgenMath::calculateNoise() {
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
 	int x = node_min.X;
-	//int y = node_min.Y;
+	int y = node_min.Y - 1;
 	int z = node_min.Z;
+
+	if (flags & MG_CAVES) {
+		noise_cave1->perlinMap3D(x, y, z);
+		noise_cave2->perlinMap3D(x, y, z);
+	}
 
 	noise_filler_depth->perlinMap2D(x, z);
 
 	noise_heat->perlinMap2D(x, z);
 	noise_humidity->perlinMap2D(x, z);
+
 }
