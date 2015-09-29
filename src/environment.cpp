@@ -2153,7 +2153,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 {
 	//ScopeProfiler sp(g_profiler, "SEnv: deactivateFarObjects");
 
-	std::vector<u16> objects_to_remove;
+	//std::vector<u16> objects_to_remove;
 
 	std::vector<ServerActiveObject*> objects;
 	{
@@ -2406,12 +2406,14 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	//if(m_active_objects.size()) verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from="<<m_active_objects.size()<<std::endl;
 
 	if (!objects_to_remove.empty()) {
-	auto lock = m_active_objects.lock_unique_rec();
+	auto lock = m_active_objects.try_lock_unique_rec();
 	// Remove references from m_active_objects
+	if (lock->owns_lock())
 	for(std::vector<u16>::iterator i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i) {
 		m_active_objects.erase(*i);
 	}
+	objects_to_remove.clear();
 	}
 }
 

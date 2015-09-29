@@ -456,6 +456,7 @@ private:
 	const std::string m_path_world;
 	// Active object list
 	maybe_concurrent_map<u16, ServerActiveObject*> m_active_objects;
+	std::vector<u16> objects_to_remove;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;
