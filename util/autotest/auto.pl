@@ -160,7 +160,7 @@ our $commands = {
           if $config->{cmake_clang} || $config->{clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
-        warn 'D=', Data::Dumper::Dumper \%D;
+        #warn 'D=', Data::Dumper::Dumper \%D;
         my $D = join ' ', map { '-D' . $_ . '=' . $D{$_} } sort keys %D;
         sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
@@ -175,7 +175,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
           . qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.out.log };
         0;
     },
-    'run_single_tsan' => sub {
+    run_single_tsan => sub {
         local $config->{options_display}      = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{runner}               = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
         local $options->{opt}{enable_minimap} = 0;                                                                          # too unsafe
@@ -186,7 +186,10 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
         local $config->{runner} = $config->{runner} . " valgrind @_";
         commands_run('run_single',);
     },
-    server => sub {
+    run_server => sub {
+        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver };
+    },
+    run_server_auto => sub {
         sy
 qq{$config->{env} $config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $config->{world} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
@@ -231,6 +234,8 @@ our $tasks = {
     build_normal => [{build_name => '_normal'}, 'prepare', 'cmake', 'make',],
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
+    build_server => [{-no_build_client => 1,}, 'build_normal',],
+    build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
     build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-no_build_server => 1, -cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
@@ -308,11 +313,11 @@ our $tasks = {
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
         commands_run('bot_asan');
     },
-    stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'server', 'run_clients',],
+    stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
     clients     => [{ZZbuild_name => 'normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make', 'run_clients'],
     stress_tsan => [
         {build_name => '_tsan', -cmake_tsan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
-        'server', ['sleep', 10], {build_name => 'normal', -cmake_tsan => 0,}, 'clients',
+        'run_server_auto', ['sleep', 10], {build_name => 'normal', -cmake_tsan => 0,}, 'clients',
     ],
     debug_mapgen => [
         #{build_name => 'debug'},
@@ -321,13 +326,13 @@ our $tasks = {
             commands_run('debug');
           }
     ],
-    gdb => [
-        #{build_name => 'debug'},
+    gdb => 
         sub {
             local $config->{runner} = $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' -ex 'cont' -ex 'quit' --args };
-            commands_run('debug');
-          }
-    ],
+            @_ = ('debug') if !@_;
+            for (@_) { my $r = commands_run($_); return $r if $r;}
+            },
+    server_gdb => [{-no_build_client => 1,}, 'build_debug', ['gdb', 'run_server']],
 
     play_task => sub {
         return 1 if $config->{all_run};

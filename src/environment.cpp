@@ -1223,7 +1223,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				i != m_active_objects.end(); ++i)
 			{
 				ServerActiveObject* obj = i->second;
-				if(obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
+				if(!obj || obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
 					continue;
 				ObjectProperties* props = obj->accessObjectProperties();
 				if (!props)
