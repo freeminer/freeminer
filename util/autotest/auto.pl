@@ -22,6 +22,12 @@ $0 play_gdb
 #normal play
 $0 play
 
+# run server with debug in gdb
+$0 server_gdb
+
+# run server without debug in gdb
+$0 server_gdb_nd
+
 # timelapse video
 $0 timelapse
 
@@ -333,6 +339,7 @@ our $tasks = {
             for (@_) { my $r = commands_run($_); return $r if $r;}
             },
     server_gdb => [{-no_build_client => 1,}, 'build_debug', ['gdb', 'run_server']],
+    server_gdb_nd => [{-no_build_client => 1,}, 'build_normal', ['gdb', 'run_server']],
 
     play_task => sub {
         return 1 if $config->{all_run};
