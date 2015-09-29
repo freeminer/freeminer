@@ -1663,6 +1663,7 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 	auto lock = m_active_objects.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
+	auto player_position = player->getPosition();
 	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i) {
@@ -1677,7 +1678,7 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 		if(object->m_removed || object->m_pending_deactivation)
 			continue;
 
-		f32 distance_f = object->getBasePosition().getDistanceFrom(player->getPosition());
+		f32 distance_f = object->getBasePosition().getDistanceFrom(player_position);
 		if (object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			// Discard if too far
 			if (distance_f > player_radius_f && player_radius_f != 0)
@@ -1709,8 +1710,6 @@ void ServerEnvironment::getRemovedActiveObjects(Player *player, s16 radius,
 	if (player_radius_f < 0)
 		player_radius_f = 0;
 
-	auto player_position = player->getPosition();
-
 	std::vector<u16> current_objects_vector;
 	{
 		auto lock = current_objects.try_lock_shared_rec();
@@ -1727,6 +1726,8 @@ void ServerEnvironment::getRemovedActiveObjects(Player *player, s16 radius,
 		- object has m_removed=true, or
 		- object is too far away
 	*/
+	auto player_position = player->getPosition();
+
 	for(auto
 			i = current_objects_vector.begin();
 			i != current_objects_vector.end(); ++i)
@@ -2393,12 +2394,14 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		// Deregister in scripting api
 		m_script->removeObjectReference(obj);
 
+/*
 		// Delete active object
 		if(obj->environmentDeletes())
 		{
 			m_active_objects.set(id, nullptr);
 			delete obj;
 		}
+*/
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
@@ -2406,14 +2409,14 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	//if(m_active_objects.size()) verbosestream<<"ServerEnvironment::deactivateFarObjects(): deactivated="<<objects_to_remove.size()<< " from="<<m_active_objects.size()<<std::endl;
 
 	if (!objects_to_remove.empty()) {
-	auto lock = m_active_objects.try_lock_unique_rec();
+		auto lock = m_active_objects.try_lock_unique_rec();
 	// Remove references from m_active_objects
-	if (lock->owns_lock())
-	for(std::vector<u16>::iterator i = objects_to_remove.begin();
-			i != objects_to_remove.end(); ++i) {
-		m_active_objects.erase(*i);
-	}
-	objects_to_remove.clear();
+		if (lock->owns_lock())
+			for(auto & i : objects_to_remove) {
+			delete m_active_objects.get(i);
+			m_active_objects.erase(i);
+		}
+		objects_to_remove.clear();
 	}
 }
 
