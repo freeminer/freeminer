@@ -193,7 +193,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
         commands_run('run_single',);
     },
     run_server => sub {
-        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver };
+        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server_auto => sub {
         sy

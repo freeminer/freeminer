@@ -987,6 +987,8 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object "<<id<<" = "<<obj<<std::endl;
 			continue;
 		}
+		if (obj->m_removed || obj->m_pending_deactivation)
+			continue;
 
 		v3f objectpos = obj->getBasePosition();
 		if(objectpos.getDistanceFrom(pos) > radius)
@@ -1172,7 +1174,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			Player *player = *i;
 
 			// Ignore disconnected players
-			if(player->peer_id == 0)
+			if(!player || player->peer_id == 0)
 				continue;
 
 			// Move
@@ -1207,7 +1209,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 				i != m_players.end(); ++i) {
 			Player *player = *i;
 			// Ignore disconnected players
-			if(player->peer_id == 0)
+			if(!player || player->peer_id == 0)
 				continue;
 
 			v3s16 blockpos = getNodeBlockPos(
@@ -1592,6 +1594,8 @@ ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)
 	auto n = m_active_objects.find(id);
 	if(n == m_active_objects.end())
 		return NULL;
+	if (!n->second || n->second->m_removed || n->second->m_pending_deactivation)
+		return NULL;
 	return n->second;
 }
 
@@ -1900,7 +1904,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 {
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
-	std::list<u16> objects_to_remove;
+	//std::list<u16> objects_to_remove;
 
 	std::vector<ServerActiveObject*> objects;
 	{
@@ -1999,6 +2003,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 	// Remove references from m_active_objects
 	for(auto i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i) {
+		delete m_active_objects.get(*i);
 		m_active_objects.erase(*i);
 	}
 	}
@@ -2394,14 +2399,13 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		// Deregister in scripting api
 		m_script->removeObjectReference(obj);
 
-/*
 		// Delete active object
 		if(obj->environmentDeletes())
 		{
 			m_active_objects.set(id, nullptr);
 			delete obj;
 		}
-*/
+
 		// Id to be removed from m_active_objects
 		objects_to_remove.push_back(id);
 	}
@@ -2418,6 +2422,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		}
 		objects_to_remove.clear();
 	}
+
 }
 
 #ifndef SERVER
