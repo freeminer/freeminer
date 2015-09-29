@@ -42,31 +42,4 @@ ClientActiveObject::~ClientActiveObject()
 	removeFromScene(true);
 }
 
-ClientActiveObject* ClientActiveObject::create(ActiveObjectType type,
-		IGameDef *gamedef, ClientEnvironment *env)
-{
-	// Find factory function
-	std::map<u16, Factory>::iterator n;
-	n = m_types.find(type);
-	if(n == m_types.end()) {
-		// If factory is not found, just return.
-		dstream<<"WARNING: ClientActiveObject: No factory for type="
-				<<(int)type<<std::endl;
-		return NULL;
-	}
-
-	Factory f = n->second;
-	ClientActiveObject *object = (*f)(gamedef, env);
-	return object;
-}
-
-void ClientActiveObject::registerType(u16 type, Factory f)
-{
-	std::map<u16, Factory>::iterator n;
-	n = m_types.find(type);
-	if(n != m_types.end())
-		return;
-	m_types[type] = f;
-}
-
-
+ClientRegistry clientRegistry;

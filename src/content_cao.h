@@ -56,8 +56,10 @@ struct SmoothTranslator
 	bool is_moving();
 };
 
+
 class GenericCAO : public ClientActiveObject
 {
+	HAVE_TYPE(ACTIVEOBJECT_TYPE_GENERIC);
 private:
 	// Only set at initialization
 	std::string m_name;
@@ -117,11 +119,6 @@ public:
 	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env)
 	{
 		return new GenericCAO(gamedef, env);
-	}
-
-	inline ActiveObjectType getType() const
-	{
-		return ACTIVEOBJECT_TYPE_GENERIC;
 	}
 
 	void initialize(const std::string &data);

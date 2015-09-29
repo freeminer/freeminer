@@ -71,6 +71,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef std::map<std::string, ValueSpec> OptionList;
 
+// include the registries for setup...
+
+#ifndef SERVER
+#include "clientobject.h"
+#endif
+#include "serverobject.h"
+
 /**********************************************************************
  * Private functions
  **********************************************************************/
@@ -266,7 +273,12 @@ int main(int argc, char *argv[])
 	if (game_params.is_dedicated_server)
 		return run_dedicated_server(game_params, cmd_args) ? 0 : 1;
 
+	// this must be setup for both clients AND servers
+	// since the client might spawn a server
+	serverRegistry.setup();
+
 #ifndef SERVER
+	clientRegistry.setup();
 	ClientLauncher launcher;
 	retval = launcher.run(game_params, cmd_args) ? 0 : 1;
 #else

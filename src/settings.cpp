@@ -1131,7 +1131,7 @@ bool Settings::writeJsonFile(const std::string &filename) {
 
 bool Settings::readJsonFile(const std::string &filename) {
 	std::ifstream is(filename.c_str(), std::ios_base::binary);
-	if (!is.good())
+	if (!(is.is_open() && is.good()))
 		return false;
 	Json::Value json;
 	try {

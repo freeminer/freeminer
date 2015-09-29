@@ -49,6 +49,15 @@ class WieldMeshSceneNode;
 class ClientActiveObject : public ActiveObject
 {
 public:
+	// Used for creating objects based on type
+	struct Parameters {
+		Parameters(IGameDef *gamedef, ClientEnvironment *env) :
+			m_gamedef(gamedef),
+			m_env(env) {}
+		IGameDef* m_gamedef;
+		ClientEnvironment* m_env;
+	};
+
 	ClientActiveObject(u16 id, IGameDef *gamedef, ClientEnvironment *env);
 	virtual ~ClientActiveObject();
 
@@ -89,24 +98,14 @@ public:
 	*/
 	virtual void initialize(const std::string &data){}
 
-	// Create a certain type of ClientActiveObject
-	static ClientActiveObject* create(ActiveObjectType type, IGameDef *gamedef,
-			ClientEnvironment *env);
-
 	// If returns true, punch will not be sent to the server
 	virtual bool directReportPunch(v3f dir, const ItemStack *punchitem=NULL,
 			float time_from_last_punch=1000000)
 	{ return false; }
 
 protected:
-	// Used for creating objects based on type
-	typedef ClientActiveObject* (*Factory)(IGameDef *gamedef, ClientEnvironment *env);
-	static void registerType(u16 type, Factory f);
 	IGameDef *m_gamedef;
 	ClientEnvironment *m_env;
-private:
-	// Used for creating objects based on type
-	static std::map<u16, Factory> m_types;
 };
 
 struct DistanceSortedActiveObject
@@ -125,5 +124,8 @@ struct DistanceSortedActiveObject
 		return d < other.d;
 	}
 };
+
+typedef ActiveObjectRegistry<ClientActiveObject> ClientRegistry;
+extern ClientRegistry clientRegistry; // setup in content_cao.cpp
 
 #endif
