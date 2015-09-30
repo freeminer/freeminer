@@ -101,11 +101,18 @@ cd freeminer
 
 <sup>Recommended minimum compiler version: `gcc 4.8` or `clang 3.3`</sup>
 
-Build it:
+Build it(linux):
 ```bash
 mkdir _build && cd _build
 cmake ..
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+```
+
+Build it(OSX):
+```bash
+mkdir _build && cd _build
+cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include
+make -j8 package
 ```
 
 Play it!
