@@ -114,6 +114,7 @@ mkdir _build && cd _build
 cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include
 make -j8 package
 ```
+(if the make command doesn't work on OS X install bsdmake)
 
 Play it!
 ```
