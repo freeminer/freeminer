@@ -47,11 +47,13 @@ our $signal;
 our $script_path;
 
 BEGIN {
-    ($ENV{'SCRIPT_FILENAME'} || $0) =~ m|^(.+)[/\\].+?$|;    #v0w
-    ($script_path = (($1 and $1 ne '.') ? $1 : Cwd::cwd()) . '/') =~ tr|\\|/|;
+    ($0) =~ m|^(.+)[/\\].+?$|;    #v0w
+    $script_path = $1;
+    ($script_path = (((($script_path =~ m{^/}) ? $script_path . '/' : Cwd::cwd() . '/' . $script_path . '/')))) =~ tr|\\|/|;
 }
 
 our $root_path = $script_path . '../../';
+1 while $root_path =~ s{[^/]+/\.\./}{}g;
 my $logdir_add = (@ARGV == 1 and $ARGV[0] =~ /^\w+$/) ? '.' . $ARGV[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
@@ -193,7 +195,8 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
         commands_run('run_single',);
     },
     run_server => sub {
-        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
+        sy
+qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server_auto => sub {
         sy
@@ -240,7 +243,7 @@ our $tasks = {
     build_normal => [{build_name => '_normal'}, 'prepare', 'cmake', 'make',],
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
-    build_server => [{-no_build_client => 1,}, 'build_normal',],
+    build_server       => [{-no_build_client => 1,}, 'build_normal',],
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
@@ -332,13 +335,12 @@ our $tasks = {
             commands_run('debug');
           }
     ],
-    gdb => 
-        sub {
-            local $config->{runner} = $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' -ex 'cont' -ex 'quit' --args };
-            @_ = ('debug') if !@_;
-            for (@_) { my $r = commands_run($_); return $r if $r;}
-            },
-    server_gdb => [{-no_build_client => 1,}, 'build_debug', ['gdb', 'run_server']],
+    gdb => sub {
+        local $config->{runner} = $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' -ex 'cont' -ex 'quit' --args };
+        @_ = ('debug') if !@_;
+        for (@_) { my $r = commands_run($_); return $r if $r; }
+    },
+    server_gdb    => [{-no_build_client => 1,}, 'build_debug',  ['gdb', 'run_server']],
     server_gdb_nd => [{-no_build_client => 1,}, 'build_normal', ['gdb', 'run_server']],
 
     play_task => sub {
@@ -356,6 +358,11 @@ our $tasks = {
     ),    #'
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
     timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],           #'
+    up => sub {
+        chdir $config->{root_path};
+        sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop}
+          and sy qq{git submodule update --init --recursive};
+    },
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }

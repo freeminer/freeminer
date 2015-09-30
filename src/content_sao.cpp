@@ -816,6 +816,8 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 
 PlayerSAO::~PlayerSAO()
 {
+	if (!m_player)
+		return;
 	if(m_inventory != &m_player->inventory)
 		delete m_inventory;
 	--m_player->refs;
@@ -847,6 +849,7 @@ void PlayerSAO::removingFromEnvironment()
 		m_player->peer_id = 0;
 		m_env->savePlayer((RemotePlayer*)m_player);
 		m_env->removePlayer(m_player);
+		m_player = nullptr;
 	}
 }
 

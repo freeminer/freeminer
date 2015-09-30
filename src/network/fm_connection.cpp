@@ -538,6 +538,7 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
+	auto lock = m_peers_address.lock_unique_rec();
 	if (!m_peers_address.count(peer_id))
 		return Address();
 	return m_peers_address.get(peer_id);

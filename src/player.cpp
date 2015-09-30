@@ -305,11 +305,12 @@ Json::Value operator<<(Json::Value &json, Player &player) {
 	json["inventory_old"] = ss.str();
 
 	json["name"] = player.m_name;
-	json["pitch"] = player.m_pitch;
-	json["yaw"] = player.m_yaw;
-	json["position"] << player.m_position;
+	json["pitch"] = player.getPitch();
+	json["yaw"] = player.getYaw();
+	auto pos = player.getPosition();
+	json["position"] << pos;
 	json["hp"] = player.hp.load();
-	json["breath"] = player.m_breath;
+	json["breath"] = player.getBreath();
 	return json;
 }
 
