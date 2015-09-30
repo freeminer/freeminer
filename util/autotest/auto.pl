@@ -49,11 +49,11 @@ our $script_path;
 BEGIN {
     ($0) =~ m|^(.+)[/\\].+?$|;    #v0w
     $script_path = $1;
-    ($script_path = (((($script_path =~ m{^/}) ? $script_path . '/' : Cwd::cwd() . '/' . $script_path . '/')))) =~ tr|\\|/|;
+    ($script_path = ($script_path =~ m{^/} ? $script_path . '/' : Cwd::cwd() . '/' . $script_path . '/')) =~ tr|\\|/|;
 }
 
 our $root_path = $script_path . '../../';
-1 while $root_path =~ s{[^/]+/\.\./}{}g;
+1 while $root_path =~ s{[^/\.]+/\.\./}{}g;
 my $logdir_add = (@ARGV == 1 and $ARGV[0] =~ /^\w+$/) ? '.' . $ARGV[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
@@ -359,9 +359,12 @@ our $tasks = {
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
     timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],           #'
     up => sub {
+        my $cwd = Cwd::cwd();
         chdir $config->{root_path};
         sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop}
           and sy qq{git submodule update --init --recursive};
+        chdir $cwd;
+        return 0;
     },
 };
 
