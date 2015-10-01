@@ -37,7 +37,7 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
-use 5.16.0;
+use feature qw(say);
 use Data::Dumper;
 use Cwd;
 use POSIX ();
@@ -403,6 +403,7 @@ sub options_make(@) {
     return join ' ', map {"-$_=$r->{$_}"} sort keys %$r;
 }
 
+sub command_run(@);
 sub command_run(@) {
     my $cmd = shift;
     #say "command_run $cmd ", @_;
@@ -418,7 +419,7 @@ sub command_run(@) {
         }
     } elsif ('ARRAY' eq ref $cmd) {
         #for (@{$cmd}) {
-        my $r = __SUB__->(array $cmd, @_);
+        my $r = command_run(array $cmd, @_);
         warn("command $_ returned $r"), return $r if $r;
         #}
     } elsif ($cmd) {
@@ -429,12 +430,13 @@ sub command_run(@) {
     }
 }
 
+sub commands_run(@);
 sub commands_run(@) {
     my $name = shift;
     #say "commands_run $name ", @_;
     my $c = $commands->{$name} || $tasks->{$name};
     if ('SCALAR' eq ref $name) {
-        __SUB__->($$name, @_);
+        commands_run($$name, @_);
     } elsif ('ARRAY' eq ref $c) {
         for (@{$c}) {
             my $r = command_run $_, @_;
