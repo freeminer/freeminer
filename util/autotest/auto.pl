@@ -31,6 +31,8 @@ $0 server_gdb_nd
 # timelapse video
 $0 timelapse
 
+$0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --options_add=headless
+
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -326,7 +328,7 @@ our $tasks = {
     clients     => [{ZZbuild_name => 'normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make', 'run_clients'],
     stress_tsan => [
         {build_name => '_tsan', -cmake_tsan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
-        'run_server_auto', ['sleep', 10], {build_name => 'normal', -cmake_tsan => 0,}, 'clients',
+        'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
     ],
     debug_mapgen => [
         #{build_name => 'debug'},

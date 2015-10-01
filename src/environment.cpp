@@ -109,6 +109,7 @@ void Environment::removePlayer(Player* player)
 
 Player * Environment::getPlayer(u16 peer_id)
 {
+	auto lock = m_players.lock_shared_rec();
 	for(std::vector<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i) {
 		Player *player = *i;
@@ -120,6 +121,7 @@ Player * Environment::getPlayer(u16 peer_id)
 
 Player * Environment::getPlayer(const std::string &name)
 {
+	auto lock = m_players.lock_shared_rec();
 	for(auto &player : m_players) {
  		if(player->getName() == name)
 			return player;
