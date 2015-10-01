@@ -833,6 +833,10 @@ std::string PlayerSAO::getDescription()
 void PlayerSAO::addedToEnvironment(u32 dtime_s)
 {
 	ServerActiveObject::addedToEnvironment(dtime_s);
+	if (!m_player) {
+		errorstream << "PlayerSAO::addedToEnvironment(): Fail id=" << m_peer_id << std::endl;
+		return;
+	}
 	ServerActiveObject::setBasePosition(m_player->getPosition());
 	m_player->setPlayerSAO(this);
 	m_player->peer_id = m_peer_id;
@@ -848,8 +852,10 @@ void PlayerSAO::removingFromEnvironment()
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
 		m_env->savePlayer((RemotePlayer*)m_player);
+		/*
 		m_env->removePlayer(m_player);
 		m_player = nullptr;
+		*/
 	}
 }
 

@@ -97,6 +97,7 @@ void Environment::addPlayer(Player *player)
 
 void Environment::removePlayer(Player* player)
 {
+	auto lock = m_players.lock_unique_rec();
 	for (std::vector<Player*>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
 		if ((*it) == player) {
@@ -433,6 +434,7 @@ void ServerEnvironment::kickAllPlayers(AccessDeniedCode reason,
 
 void ServerEnvironment::saveLoadedPlayers()
 {
+	auto lock = m_players.lock_unique_rec();
 	auto i = m_players.begin();
 	while (i != m_players.end())
 	{
