@@ -708,8 +708,10 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		gamedata.selected_world = 0
 
-		core.setting_set("address",fields["te_address"])
-		core.setting_set("remote_port",fields["te_port"])
+		if fields["te_address"] and fields["te_port"] then
+			core.setting_set("address", fields["te_address"])
+			core.setting_set("remote_port", fields["te_port"])
+		end
 
 		core.start()
 		return

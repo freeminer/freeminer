@@ -330,6 +330,10 @@ our $tasks = {
         {build_name => '_tsan', -cmake_tsan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
         'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
     ],
+    stress_asan => [
+        {build_name => '_asan', -cmake_asan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
+        'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_asan => 0,}, 'clients',
+    ],
     debug_mapgen => [
         #{build_name => 'debug'},
         sub {

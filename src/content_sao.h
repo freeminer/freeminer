@@ -329,7 +329,7 @@ private:
 	float m_animation_speed;
 	float m_animation_blend;
 	bool m_animation_loop;
-	bool m_animation_sent;
+	std::atomic_bool m_animation_sent;
 
 	std::map<std::string, core::vector2d<v3f> > m_bone_position; // Stores position and rotation for each bone name
 	bool m_bone_position_sent;
