@@ -500,7 +500,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		for(auto i = a_blocks.begin();
 		        i != a_blocks.end(); ++i) {
 
-			processed[i->first] = -1000000;
+			processed[i->first] = 1000000;
 			auto block = getBlockNoCreateNoEx(i->first);
 
 			for(;;) {
@@ -513,6 +513,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 					break; // may cause dark areas
 				v3POS pos = block->getPos();
 				if (processed.count(pos) && processed[pos] <= i->first.Y ) {
+					//verbosestream<<"Light: skipping pos" << pos << " pps="<<processed[pos] << " if="<< i->first.Y <<std::endl;
 					break;
 				}
 				++loopcount;
