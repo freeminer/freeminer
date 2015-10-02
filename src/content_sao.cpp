@@ -847,15 +847,15 @@ void PlayerSAO::addedToEnvironment(u32 dtime_s)
 void PlayerSAO::removingFromEnvironment()
 {
 	ServerActiveObject::removingFromEnvironment();
-	if(m_player->getPlayerSAO() == this)
+	if(m_player && m_player->getPlayerSAO() == this)
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
 		m_env->savePlayer((RemotePlayer*)m_player);
 		/*
 		m_env->removePlayer(m_player);
-		m_player = nullptr;
 		*/
+		m_player = nullptr;
 	}
 }
 
@@ -868,6 +868,8 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
+	if (!m_player)
+		return "";
 	if(protocol_version >= 15)
 	{
 		writeU8(os, 1); // version

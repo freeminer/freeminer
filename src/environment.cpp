@@ -3023,9 +3023,11 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 
 	obj->setId(id);
 
+	bool add = false;
 	try
 	{
 		obj->initialize(init_data);
+		add = true;
 	}
 	catch(SerializationError &e)
 	{
@@ -3037,7 +3039,10 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 				<<std::endl;
 	}
 
+	if (add)
 	addActiveObject(obj);
+	else
+		delete obj;
 }
 
 void ClientEnvironment::removeActiveObject(u16 id)

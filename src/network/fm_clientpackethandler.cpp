@@ -136,7 +136,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// to be processed even if the serialisation format has
 		// not been agreed yet, the same as TOCLIENT_INIT.
 		m_access_denied = true;
+		m_access_denied_reason = "";
 		packet[TOCLIENT_ACCESS_DENIED_CUSTOM_STRING].convert(&m_access_denied_reason);
+		packet[TOCLIENT_ACCESS_DENIED_RECONNECT].convert(m_access_denied_reconnect);
+
+		u8 denyCode = SERVER_ACCESSDENIED_UNEXPECTED_DATA;
+		packet[TOCLIENT_ACCESS_DENIED_REASON].convert(&denyCode);
+
+		if (m_access_denied_reason.empty())
+			m_access_denied_reason = accessDeniedStrings[denyCode];
+
 		return;
 	}
 

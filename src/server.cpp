@@ -930,28 +930,28 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			while (!added_objects.empty()) {
 				// Get object
 				u16 id = added_objects.front();
-				ServerActiveObject* obj = m_env->getActiveObject(id);
+				added_objects.pop();
 
-				// Get object type
-				u8 type = ACTIVEOBJECT_TYPE_INVALID;
-				if(obj == NULL)
+				ServerActiveObject* obj = m_env->getActiveObject(id);
+				if(!obj) {
 					infostream<<"WARNING: "<<__FUNCTION_NAME
 							<<": NULL object"<<std::endl;
-				else
-					type = obj->getSendType();
+					continue;
+				}
+				// Get object type
+				u8 type = obj->getSendType();
 
-				std::string data = "";
-				if(obj)
-					data = obj->getClientInitializationData(client->net_proto_version);
+				std::string data = obj->getClientInitializationData(client->net_proto_version);
+				if (!data.size())
+					continue;
+
 				added_objects_data.push_back(ActiveObjectAddData(id, type, data));
 
 				// Add to known objects
 				client->m_known_objects.set(id, true);
 
-				if(obj)
-					obj->m_known_by_count++;
+				obj->m_known_by_count++;
 
-				added_objects.pop();
 			}
 
 			MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);

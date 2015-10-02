@@ -337,8 +337,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 		if(given_password != checkpwd){
-			actionstream<<"Server: "<<playername<<" supplied wrong password"
-					<<std::endl;
+			actionstream<<"Server: "<<playername<<" supplied wrong password" <<std::endl;
 			DenyAccess(peer_id, "Wrong password");
 			return;
 		}
@@ -346,12 +345,20 @@ void Server::ProcessData(NetworkPacket *pkt)
 		RemotePlayer *player =
 				static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
 
-		if(player && player->peer_id != 0){
-			errorstream<<"Server: "<<playername<<": Failed to emerge player"
-					<<" (player allocated to an another client)"<<std::endl;
-			DenyAccess(peer_id, "Another client is connected with this "
+		if (player && player->peer_id != 0){
+
+			if (given_password.size()) {
+				actionstream << "Server: " << playername << " rejoining" <<std::endl;
+				DenyAccessVerCompliant(player->peer_id, player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
+				player->getPlayerSAO()->removingFromEnvironment();
+				m_env->removePlayer(player);
+				player = nullptr;
+			} else {
+				errorstream<<"Server: "<<playername<<": Failed to emerge player" <<" (player allocated to an another client)"<<std::endl;
+				DenyAccess(peer_id, "Another client is connected with this "
 					"name. If your client closed unexpectedly, try again in "
 					"a minute.");
+			}
 		}
 
 		m_clients.setPlayerName(peer_id,playername);
