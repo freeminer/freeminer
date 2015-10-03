@@ -826,6 +826,8 @@ PlayerSAO::~PlayerSAO()
 
 std::string PlayerSAO::getDescription()
 {
+	if (!m_player)
+		return "";
 	return std::string("player ") + m_player->getName();
 }
 
