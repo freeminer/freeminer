@@ -2814,8 +2814,12 @@ void Server::DiePlayer(u16 peer_id)
 
 	playersao->m_ms_from_last_respawn = 0;
 
+	auto player = playersao->getPlayer();
+	if (!player)
+		return;
+
 	infostream << "Server::DiePlayer(): Player "
-			<< playersao->getPlayer()->getName()
+			<< player->getName()
 			<< " dies" << std::endl;
 
 	playersao->setHP(0);
@@ -2826,7 +2830,7 @@ void Server::DiePlayer(u16 peer_id)
 	SendPlayerHP(peer_id);
 	SendDeathscreen(peer_id, false, v3f(0,0,0));
 
-	stat.add("die", playersao->getPlayer()->getName());
+	stat.add("die", player->getName());
 }
 
 void Server::RespawnPlayer(u16 peer_id)
