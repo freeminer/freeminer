@@ -27,6 +27,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class ModApiMapgen : public ModApiBase {
 private:
+	// get_biome_id(biomename)
+	// returns the biome id used in biomemap
+	static int l_get_biome_id(lua_State *L);
+
 	// get_mapgen_object(objectname)
 	// returns the requested object used during map generation
 	static int l_get_mapgen_object(lua_State *L);
