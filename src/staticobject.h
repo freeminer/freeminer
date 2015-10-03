@@ -86,8 +86,10 @@ public:
 		auto lock = m_active.lock_shared_rec();
 		if(m_active.find(id) == m_active.end())
 		{
+			/*
 			dstream<<"WARNING: StaticObjectList::remove(): id="<<id
 					<<" not found"<<std::endl;
+			*/
 			return;
 		}
 		m_active.erase(id);
