@@ -1370,6 +1370,8 @@ const Inventory* PlayerSAO::getInventory() const
 InventoryLocation PlayerSAO::getInventoryLocation() const
 {
 	InventoryLocation loc;
+	if (!m_player)
+		return loc;
 	loc.setPlayer(m_player->getName());
 	return loc;
 }
@@ -1395,7 +1397,7 @@ void PlayerSAO::disconnected()
 {
 	m_peer_id = 0;
 	m_removed = true;
-	if(m_player->getPlayerSAO() == this)
+	if(m_player && m_player->getPlayerSAO() == this)
 	{
 		m_player->setPlayerSAO(NULL);
 		m_player->peer_id = 0;
@@ -1411,6 +1413,8 @@ std::string PlayerSAO::getPropertyPacket()
 bool PlayerSAO::checkMovementCheat()
 {
 	bool cheated = false;
+	if (!m_player)
+		return cheated;
 	if(isAttached() || m_is_singleplayer ||
 			g_settings->getBool("disable_anticheat"))
 	{
@@ -1460,6 +1464,8 @@ bool PlayerSAO::checkMovementCheat()
 }
 
 bool PlayerSAO::getCollisionBox(aabb3f *toset) {
+	if (!m_player)
+		return false;
 	//update collision box
 	*toset = m_player->getCollisionbox();
 
