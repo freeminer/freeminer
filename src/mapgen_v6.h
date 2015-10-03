@@ -120,7 +120,7 @@ public:
 	content_t c_snow;
 	content_t c_snowblock;
 
-	content_t c_ice;
+	content_t c_ice, c_clay;
 
 	content_t c_cobble;
 	content_t c_mossycobble;

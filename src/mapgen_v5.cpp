@@ -106,11 +106,11 @@ MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 
 	//freeminer:
 	float_islands = sp->float_islands;
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + 2, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + 2, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X+2, csize.Y+2, csize.Z+2);
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + 2, csize.Z);
 	layers_init(emerge, sp->paramsj);
 	//===
 
@@ -156,7 +156,7 @@ MapgenV5Params::MapgenV5Params()
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683, 6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 5,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 5,   0.5);
 }
 
 

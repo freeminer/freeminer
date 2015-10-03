@@ -99,6 +99,7 @@ MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	c_snow            = ndef->getId("mapgen_snow");
 	c_snowblock       = ndef->getId("mapgen_snowblock");
 	c_ice             = ndef->getId("mapgen_ice");
+	c_clay            = ndef->getId("default:clay");
 
 	c_cobble          = ndef->getId("mapgen_cobble");
 	c_stair_cobble    = ndef->getId("mapgen_stair_cobble");
@@ -217,7 +218,7 @@ s16 MapgenV6::find_stone_level(v2s16 p2d)
 
 	for (y = y_nodes_max; y >= y_nodes_min; y--) {
 		content_t c = vm->m_data[i].getContent();
-		if (c != CONTENT_IGNORE && (c == c_stone || c == c_desert_stone))
+		if (c != CONTENT_IGNORE && (c == c_stone || c == c_desert_stone || c == c_clay || c == c_sand || c == c_gravel || c == c_desert_sand || c == c_cobble || c == c_stair_cobble || c == c_mossycobble))
 			break;
 
 		vm->m_area.add_y(em, i, -1);

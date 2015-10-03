@@ -118,11 +118,11 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 
 	//freeminer:
 	float_islands = sp->float_islands;
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y, csize.Z);
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + 2, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + 2, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X+2, csize.Y+2, csize.Z+2);
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + 2, csize.Z);
 	layers_init(emerge, sp->paramsj);
 
 	if (c_mossycobble == CONTENT_IGNORE)
@@ -170,7 +170,7 @@ MapgenV7Params::MapgenV7Params()
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 50,  100), 3663,  5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   5,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   5,   0.5);
 //----------
 
 	np_terrain_base    = NoiseParams(4,    70,  v3f(600,  600,  600),  82341, 5, 0.6,  2.0);
@@ -718,6 +718,8 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();
 
+			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != CONTENT_IGNORE);
+
 			// Biome is recalculated each time an upper surface is detected while
 			// working down a column. The selected biome then remains in effect for
 			// all nodes below until the next surface and biome recalculation.
@@ -725,7 +727,7 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 			// 1. At the surface of stone below air or water.
 			// 2. At the surface of water below air.
 			// 3. When stone or water is detected but biome has not yet been calculated.
-			if ((c == c_stone && (air_above || water_above || !biome)) ||
+			if ((cc_stone && (air_above || water_above || !biome)) ||
 					(c == c_water_source && (air_above || !biome))) {
 				biome = bmgr->getBiome(heat_map[index], humidity_map[index], y);
 				depth_top = biome->depth_top;
@@ -742,7 +744,10 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 					stone_type = SANDSTONE;
 			}
 
-			if (c == c_stone) {
+			if (cc_stone && biome && (c == biome->c_ice || c == biome->c_water || c == biome->c_water_top))
+				cc_stone = false;
+
+			if (cc_stone) {
 				content_t c_below = vm->m_data[vi - em.X].getContent();
 
 				// If the node below isn't solid, make this node stone, so that
@@ -764,7 +769,7 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 				} else if (nplaced < base_filler) {
 					vm->m_data[vi] = MapNode(biome->c_filler);
 					nplaced++;
-				} else {
+				} else if (nplaced < (depth_top+base_filler+depth_water_top)){
 					vm->m_data[vi] = MapNode(biome->c_stone);
 				}
 
