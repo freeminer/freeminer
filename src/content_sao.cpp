@@ -934,6 +934,9 @@ bool PlayerSAO::isAttached()
 
 void PlayerSAO::step(float dtime, bool send_recommended)
 {
+	if (!m_player)
+		return;
+
 	if(!m_properties_sent)
 	{
 		std::string str = getPropertyPacket();
