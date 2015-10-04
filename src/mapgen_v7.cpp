@@ -217,7 +217,7 @@ void MapgenV7Params::readParams(Settings *settings)
 
 void MapgenV7Params::writeParams(Settings *settings) const
 {
-	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7, (u32)-1);
+	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7, U32_MAX);
 
 	settings->setNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
 	settings->setNoiseParams("mgv7_np_terrain_alt",     np_terrain_alt);
@@ -711,7 +711,7 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 
 		// If there is air or water above enable top/filler placement, otherwise force
 		// nplaced to stone level by setting a number exceeding any possible filler depth.
-		u16 nplaced = (air_above || water_above) ? 0 : (u16)-1;
+		u16 nplaced = (air_above || water_above) ? 0 : U16_MAX;
 
 		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
 
@@ -755,7 +755,7 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 				// This is done by aborting the cycle of top/filler placement
 				// immediately by forcing nplaced to stone level.
 				if (c_below == CONTENT_AIR || c_below == c_water_source)
-					nplaced = (u16)-1;
+					nplaced = U16_MAX;
 
 				if (nplaced < depth_top) {
 					vm->m_data[vi] = MapNode(
@@ -787,7 +787,7 @@ MgStoneType MapgenV7::generateBiomes(float *heat_map, float *humidity_map)
 				air_above = true;
 				water_above = false;
 			} else {  // Possible various nodes overgenerated from neighbouring mapchunks
-				nplaced = (u16)-1;  // Disable top/filler placement
+				nplaced = U16_MAX;  // Disable top/filler placement
 				air_above = false;
 				water_above = false;
 			}
