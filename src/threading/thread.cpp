@@ -276,10 +276,10 @@ void Thread::setName(const std::string &name)
 
 unsigned int Thread::getNumberOfProcessors()
 {
-#if __cplusplus >= 201103L
-	return std::thread::hardware_concurrency();
-#elif defined(_SC_NPROCESSORS_CONF)
+#if defined(_SC_NPROCESSORS_CONF)
 	return sysconf(_SC_NPROCESSORS_CONF);
+#elif __cplusplus >= 201103L
+	return std::thread::hardware_concurrency();
 #elif defined(_SC_NPROCESSORS_ONLN)
 	return sysconf(_SC_NPROCESSORS_ONLN);
 #elif defined(__FreeBSD__) || defined(__APPLE__)

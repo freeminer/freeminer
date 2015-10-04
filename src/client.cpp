@@ -1889,7 +1889,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 
 	if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
-		auto threads = !g_settings->getBool("more_threads") ? 1 : (Thread::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
+		int threads = !g_settings->getBool("more_threads") ? 1 : (Thread::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
 		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
 		m_mesh_update_thread.start(threads < 1 ? 1 : threads);
 	}
