@@ -4428,7 +4428,6 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 		if (client->getEnv().getClientMap().m_drawlist_last || runData->update_draw_list_timer >= 0.5 ||
 				runData->update_draw_list_last_cam_pos.getDistanceFrom(camera_position) > MAP_BLOCKSIZE*BS*2 ||
 				flags.camera_offset_changed){
-			runData->update_draw_list_timer = 0;
 			bool allow = true;
 #if ENABLE_THREADS && HAVE_FUTURE
 			if (g_settings->getBool("more_threads")) {
@@ -4439,14 +4438,16 @@ void Game::updateFrame(std::vector<aabb3f> &highlight_boxes,
 						allow = false;
 				}
 				if (allow) {
-					updateDrawList_future = std::async(std::launch::async, [](Client * client, video::IVideoDriver* driver, float dtime){ client->getEnv().getClientMap().updateDrawList(driver, dtime, 1000); }, client, driver, dtime);
+					updateDrawList_future = std::async(std::launch::async, [](Client * client, video::IVideoDriver* driver, float dtime){ client->getEnv().getClientMap().updateDrawList(driver, dtime, 1000); }, client, driver, runData->update_draw_list_timer);
 				}
 			}
 			else
 #endif
-				client->getEnv().getClientMap().updateDrawList(driver, dtime);
+				client->getEnv().getClientMap().updateDrawList(driver, runData->update_draw_list_timer);
 			if (allow)
 				runData->update_draw_list_last_cam_pos = camera->getPosition();
+
+			runData->update_draw_list_timer = 0;
 		}
 
 	updateGui(&runData->statustext_time, *stats, *runData, dtime, flags, cam);
