@@ -13,7 +13,7 @@ PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
-GAMES_TO_COPY = default
+GAMES_TO_COPY = default pixture
 MODS_TO_COPY =
 
 
@@ -34,7 +34,7 @@ VERSION_TWEAK := $(shell cat $(ROOT)/../../CMakeLists.txt | \
 ANDROID_VERSION_CODE = 13
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 34
+ANDROID_VERSION_CODE = 35
 
 PROJECT_NAME_C = freeminer
 

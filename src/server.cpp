@@ -370,6 +370,10 @@ Server::Server(
 			throw ModError(err.str());
 		}
 		std::string script_path = mod.path + DIR_DELIM "init.lua";
+		if (!fs::PathExists(script_path)) {
+			errorstream << "Ignoring empty mod: "<< mod.name << std::endl;
+			continue;
+		}
 		infostream << "  [" << padStringRight(mod.name, 12) << "] [\""
 				<< script_path << "\"]" << std::endl;
 		if (!m_script->loadMod(script_path, mod.name, &error_msg)) {
