@@ -74,26 +74,34 @@ USE_ENET = 1
 ################################################################################
 # toolchain config for little endian mips
 ################################################################################
-#TARGET_HOST = mipsel-linux
-#TARGET_ABI = mips
-#TARGET_LIBDIR = mips
-#TARGET_TOOLCHAIN = mipsel-linux-android-
-#TARGET_ARCH = mips32
-#CROSS_PREFIX = mipsel-linux-android-
-#COMPILER_VERSION = 4.8
-#HAVE_LEVELDB = 0
+ifeq ($(TARGET_MIPS),1)
+TARGET_HOST = mipsel-linux
+TARGET_ABI = mips
+TARGET_LIBDIR = mips
+TARGET_TOOLCHAIN = mipsel-linux-android-
+TARGET_CFLAGS_ADDON =
+TARGET_CXXFLAGS_ADDON =
+TARGET_LDFLAGS_ADDON =
+TARGET_ARCH = mips32
+CROSS_PREFIX = mipsel-linux-android-
+HAVE_LEVELDB = 0
+endif
 
 ################################################################################
 # toolchain config for x86
 ################################################################################
-#TARGET_HOST = x86-linux
-#TARGET_ABI = x86
-#TARGET_LIBDIR = x86
-#TARGET_TOOLCHAIN = x86-
-#CROSS_PREFIX = i686-linux-android-
-#TARGET_ARCH = x86
-#COMPILER_VERSION = 4.8
-#HAVE_LEVELDB = 1
+ifeq ($(TARGET_x86),1)
+TARGET_HOST = x86-linux
+TARGET_ABI = x86
+TARGET_LIBDIR = x86
+TARGET_TOOLCHAIN = x86-
+TARGET_CFLAGS_ADDON =
+TARGET_CXXFLAGS_ADDON =
+TARGET_LDFLAGS_ADDON =
+CROSS_PREFIX = i686-linux-android-
+TARGET_ARCH = x86
+endif
+
 
 ################################################################################
 ASSETS_TIMESTAMP = deps/assets_timestamp
