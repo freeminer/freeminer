@@ -52,6 +52,9 @@ DEALINGS IN THE SOFTWARE.
 # endif
 #endif
 
+#if !defined(_WIN32)
+	#include <unistd.h>
+#endif
 
 // For setName
 #if defined(linux) || defined(__linux)
@@ -287,7 +290,7 @@ unsigned int Thread::getNumberOfProcessors()
 	len = sizeof(count);
 	return sysctlbyname("hw.ncpu", &count, &len, NULL, 0);
 #elif defined(_GNU_SOURCE)
-	return get_nprocs();
+	return get_nprocs_conf();
 #elif defined(_WIN32)
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
