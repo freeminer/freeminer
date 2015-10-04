@@ -13,3 +13,6 @@
 [submodule "src/jsoncpp"]
 	path = src/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
+[submodule "games/pixture"]
+	path = games/pixture
+	url = https://github.com/kaadmy/pixture.git
