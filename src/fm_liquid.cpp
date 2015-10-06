@@ -85,8 +85,8 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 #endif
 
 	u8 relax = g_settings->getS16("liquid_relax");
-	bool fast_flood = g_settings->getS16("liquid_fast_flood");
-	int water_level = g_settings->getS16("water_level");
+	static bool fast_flood = g_settings->getS16("liquid_fast_flood");
+	static int water_level = g_settings->getS16("water_level");
 	s16 liquid_pressure = m_server->m_emerge->params.liquid_pressure;
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
