@@ -2011,6 +2011,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 		delete m_active_objects.get(*i);
 		m_active_objects.erase(*i);
 	}
+	objects_to_remove.clear();
 	}
 }
 
