@@ -771,7 +771,6 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_animation_speed(0),
 	m_animation_blend(0),
 	m_animation_loop(true),
-	m_animation_sent(false),
 	m_bone_position_sent(false),
 	m_attachment_parent_id(0),
 	m_attachment_sent(false),
@@ -788,6 +787,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_position_not_sent = false;
 	m_ms_from_last_respawn = 10000; //more than ignore move time (1)
 	m_physics_override_sent = false;
+	m_animation_sent = false;
 
 	assert(m_player);	// pre-condition
 	assert(m_peer_id != 0);	// pre-condition
