@@ -42,4 +42,8 @@
 		" USE_LUAJIT=" STR(USE_LUAJIT) \
 		" STATIC_SHAREDIR=" STR(STATIC_SHAREDIR)
 
+#ifndef GAMES_VERSION
+	#define GAMES_VERSION ""
+#endif
+
 #endif

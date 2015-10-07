@@ -93,13 +93,13 @@ SubgameSpec findSubgame(const std::string &id)
 	}
 
 	find_paths.push_back(GameFindPath(
-			user + DIR_DELIM + "games" + DIR_DELIM + id + "_game", true));
+			user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", true));
 	find_paths.push_back(GameFindPath(
-			user + DIR_DELIM + "games" + DIR_DELIM + id, true));
+			user + DIR_DELIM + "games" + GAMES_VERSION+ DIR_DELIM + id, true));
 	find_paths.push_back(GameFindPath(
-			share + DIR_DELIM + "games" + DIR_DELIM + id + "_game", false));
+			share + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", false));
 	find_paths.push_back(GameFindPath(
-			share + DIR_DELIM + "games" + DIR_DELIM + id, false));
+			share + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id, false));
 	// Find game directory
 	std::string game_path;
 	bool user_game = true; // Game is in user's directory
@@ -153,8 +153,8 @@ std::set<std::string> getAvailableGameIds()
 {
 	std::set<std::string> gameids;
 	std::set<std::string> gamespaths;
-	gamespaths.insert(porting::path_share + DIR_DELIM + "games");
-	gamespaths.insert(porting::path_user + DIR_DELIM + "games");
+	gamespaths.insert(porting::path_share + DIR_DELIM + "games" + GAMES_VERSION);
+	gamespaths.insert(porting::path_user + DIR_DELIM + "games" + GAMES_VERSION);
 
 	Strfnd search_paths(getSubgamePathEnv());
 

@@ -584,6 +584,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("leaves_style", "opaque");
 	settings->setDefault("autojump", "1");
+	settings->setDefault("mg_name", "v7");
 
 	char lang[3] = {};
 	AConfiguration_getLanguage(porting::app_global->config, lang);

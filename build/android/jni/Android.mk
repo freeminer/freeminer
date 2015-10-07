@@ -114,6 +114,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 				$(GPROF_DEF)                  \
 				-DUSE_MANDELBULBER=1 \
 				-DHAVE_THREAD_LOCAL=1 \
+				-DGAMES_VERSION=\"$(GAMES_VERSION)\" \
 				-DUSE_GETTEXT=1 \
 				-DPROJECT_NAME_C=\"$(PROJECT_NAME_C)\" \
 				-pipe -fstrict-aliasing

@@ -34,9 +34,11 @@ VERSION_TWEAK := $(shell cat $(ROOT)/../../CMakeLists.txt | \
 ANDROID_VERSION_CODE = 13
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 35
+ANDROID_VERSION_CODE = 37
 
 PROJECT_NAME_C = freeminer
+
+GAMES_VERSION = ""
 
 ################################################################################
 # toolchain config for arm old processors
@@ -101,7 +103,6 @@ TARGET_LDFLAGS_ADDON =
 CROSS_PREFIX = i686-linux-android-
 TARGET_ARCH = x86
 endif
-
 
 ################################################################################
 ASSETS_TIMESTAMP = deps/assets_timestamp
@@ -777,10 +778,10 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
 	#cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer; \
-	mkdir ${ROOT}/assets/freeminer/games; \
+	mkdir ${ROOT}/assets/freeminer/games${GAMES_VERSION}; \
 	for game in ${GAMES_TO_COPY};                                              \
 	do                                                                         \
-	    cp -Lr ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games/; \
+	    cp -Lr ${ROOT}/../../games/$$game ${ROOT}/assets/freeminer/games${GAMES_VERSION}/; \
 	done;                                                                      \
 	mkdir ${ROOT}/assets/freeminer/mods; \
 	for mod in ${MODS_TO_COPY}; do                                             \
@@ -1013,6 +1014,7 @@ apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARG
 	GPROF=${GPROF} APP_ABI=${TARGET_ABI} HAVE_LEVELDB=${HAVE_LEVELDB}          \
 	USE_LUAJIT=${USE_LUAJIT} \
 	USE_ENET=${USE_ENET} \
+	GAMES_VERSION=${GAMES_VERSION} \
 	PROJECT_NAME_C=${PROJECT_NAME_C} \
 	APP_PLATFORM=${APP_PLATFORM}                                               \
 	TARGET_LIBDIR=${TARGET_LIBDIR}                                             \
