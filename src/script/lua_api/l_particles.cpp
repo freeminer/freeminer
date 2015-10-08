@@ -193,6 +193,9 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 		playername = getstringfield_default(L, 1, "playername", "");
 	}
 
+	maxsize /= BS_OLD;
+	minsize /= BS_OLD;
+
 	u32 id = getServer(L)->addParticleSpawner(amount, time,
 			minpos, maxpos,
 			minvel, maxvel,

@@ -34,7 +34,7 @@ void StaticObject::serialize(std::ostream &os)
 	// type
 	writeU8(os, type);
 	// pos
-	writeV3F1000(os, pos * 10); // todo: remove old compat *10
+	writeV3F1000(os, pos * BS_OLD); // todo: remove old compat *10
 	// data
 	os<<serializeString(data);
 }
