@@ -230,6 +230,12 @@ public:
 	bool readJsonFile(const std::string &filename);
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
+	friend std::ostream & operator<<(std::ostream & os, Settings & settings) {
+		Json::Value json;
+		settings.toJson(json);
+		os << json;
+		return os;
+	}
 
 private:
 

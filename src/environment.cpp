@@ -773,6 +773,8 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 			else
 				dtime = 1;
 		}
+		if (!dtime)
+			dtime = 1;
 
 		unordered_map_v3POS<int> active_object_added;
 
@@ -781,7 +783,16 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end() ; ++abm_trigger) {
 			//ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
 			auto & abm = abm_trigger->abm;
+			if (!abm || !abm->abmws || !abm->abmws->interval) {
+				infostream << "remove strange abm trigger dtime=" << dtime << std::endl;
+				abm_trigger = abm_triggers->erase(abm_trigger);
+				continue;
+			}
 			float intervals = dtime / abm->abmws->interval;
+			if (!intervals) {
+				verbosestream << "abm: intervals=" << intervals << " dtime="<<dtime<< std::endl;
+				intervals = 1;
+			}
 			int chance = (abm->abmws->chance / intervals);
 			//infostream<<"TST: dtime="<<dtime<<" Achance="<<abm->abmws->chance<<" Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals << std::endl;
 
@@ -2199,6 +2210,11 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 		u16 id = obj->getId();
 		v3f objectpos = obj->getBasePosition();
+
+		if (obj->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+			//infostream<<"deactivating far object player id=" <<id<< std::endl;
+			continue;
+		}
 
 		// The block in which the object resides in
 		v3s16 blockpos_o = getNodeBlockPos(floatToInt(objectpos, BS));

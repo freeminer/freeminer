@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "util/string.h"
 #include "exceptions.h"
+#include "log_types.h"
 
 #define NOISE_MAGIC_X    1619
 #define NOISE_MAGIC_Y    31337
@@ -362,6 +363,14 @@ float contour(float v)
 
 
 ///////////////////////// [ New noise ] ////////////////////////////
+	std::ostream & operator<<(std::ostream & os, NoiseParams & np)
+	 {
+		os << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags
+		<<",farscale"<<np.farscale<<",farspread"<<np.farspread<<",farpersist"<<np.farpersist
+		<<"]";
+		return os;
+	}
+
 
 
 float NoisePerlin2D(NoiseParams *np, float x, float y, int seed)

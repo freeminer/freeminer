@@ -154,6 +154,9 @@ struct NoiseParams {
 		farspread = farspread_;
 		farpersist = farpersist_;
 	}
+
+	friend std::ostream & operator<<(std::ostream & os, NoiseParams & np);
+
 };
 
 

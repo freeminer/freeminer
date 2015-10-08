@@ -309,6 +309,12 @@ struct MapNode
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 
+	friend std::ostream & operator<<(std::ostream &os, const MapNode n) {
+		os << "node["<<(int)n.param0<<","<<(int)n.param1<<","<<(int)n.param2<<"]";
+		return os;
+	}
+
+
 private:
 	// Deprecated serialization methods
 	void deSerialize_pre22(u8 *source, u8 version);
