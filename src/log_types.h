@@ -35,19 +35,10 @@ std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p);
 
 std::ostream & operator<<(std::ostream & s, const std::wstring & w);
 
-struct MapNode;
-std::ostream & operator<<(std::ostream & s, MapNode n);
-
-struct NoiseParams;
-std::ostream & operator<<(std::ostream & s, NoiseParams np);
-
 namespace Json {
 	class Value;
 };
 
 std::ostream & operator<<(std::ostream & s, Json::Value & json);
-
-class Settings;
-std::ostream & operator<<(std::ostream & s, Settings & settings);
 
 #endif

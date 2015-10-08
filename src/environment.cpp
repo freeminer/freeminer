@@ -788,7 +788,6 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				abm_trigger = abm_triggers->erase(abm_trigger);
 				continue;
 			}
-			auto awsinterval = abm->abmws->interval;
 			float intervals = dtime / abm->abmws->interval;
 			if (!intervals) {
 				verbosestream << "abm: intervals=" << intervals << " dtime="<<dtime<< std::endl;
