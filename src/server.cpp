@@ -1339,6 +1339,8 @@ u16 Server::Receive()
 	}
 	catch(con::PeerNotFoundException &e) {
 		// Do nothing
+	} catch (ClientNotFoundException &e) {
+		//verbosestream<<"Server: recieve: clientnotfound:"<< e.what() <<std::endl;
 	} catch (msgpack::v1::type_error &e) {
 		verbosestream<<"Server: recieve: msgpack:"<< e.what() <<std::endl;
 	} catch (std::exception &e) {
