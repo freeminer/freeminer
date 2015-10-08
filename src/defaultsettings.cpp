@@ -50,6 +50,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
 	settings->setDefault("keymap_cmd", "/");
+	settings->setDefault("keymap_minimap", "KEY_F9");
 	settings->setDefault("keymap_console", "KEY_F10");
 	settings->setDefault("keymap_rangeselect", "KEY_KEY_R");
 	settings->setDefault("keymap_freemove", "KEY_KEY_K");
@@ -64,7 +65,7 @@ void set_default_settings(Settings *settings)
 #if DEBUG
 			"KEY_F4");
 #else
-			"none");
+			"");
 #endif
 	settings->setDefault("keymap_toggle_debug", "KEY_F5");
 	settings->setDefault("keymap_toggle_profiler", "KEY_F6");
@@ -100,6 +101,7 @@ void set_default_settings(Settings *settings)
 	// A bit more than the server will send around the player, to make fog blend well
 	settings->setDefault("viewing_range_nodes_max", "240");
 	settings->setDefault("viewing_range_nodes_min", "35");
+	settings->setDefault("map_generation_limit", "31000");
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
 	settings->setDefault("fullscreen", "false");
@@ -109,11 +111,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("address", "");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("client_unload_unused_data_timeout", "600");
+	settings->setDefault("client_mapblock_limit", "5000");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fov", "72");
 	settings->setDefault("view_bobbing", "true");
 	settings->setDefault("new_style_water", "false");
-	settings->setDefault("new_style_leaves", "true");
+	settings->setDefault("leaves_style", "fancy");
 	settings->setDefault("connected_glass", "false");
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("display_gamma", "1.8");
@@ -167,8 +170,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("generate_normalmaps", "false");
 	settings->setDefault("normalmaps_strength", "0.6");
 	settings->setDefault("normalmaps_smooth", "1");
-	settings->setDefault("parallax_occlusion_scale", "0.06");
-	settings->setDefault("parallax_occlusion_bias", "0.03");
+	settings->setDefault("parallax_occlusion_mode", "1");
+	settings->setDefault("parallax_occlusion_iterations", "4");
+	settings->setDefault("parallax_occlusion_scale", "0.08");
+	settings->setDefault("parallax_occlusion_bias", "0.04");
 	settings->setDefault("enable_waving_water", "false");
 	settings->setDefault("water_wave_height", "1.0");
 	settings->setDefault("water_wave_length", "20.0");
@@ -179,7 +184,11 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_shaders", "true");
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
-	settings->setDefault("enable_mesh_cache", "true");
+	settings->setDefault("enable_mesh_cache", "false");
+
+	settings->setDefault("enable_minimap", "true");
+	settings->setDefault("minimap_shape_round", "true");
+	settings->setDefault("minimap_double_scan_height", "true");
 
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
@@ -252,6 +261,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("deprecated_lua_api_handling", "log");
 #endif
 
+	settings->setDefault("kick_msg_shutdown", "Server shutting down.");
+	settings->setDefault("kick_msg_crash", "This server has experienced an internal error. You will now be disconnected.");
+	settings->setDefault("ask_reconnect_on_crash", "false");
+
 	settings->setDefault("profiler_print_interval", "0");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 	settings->setDefault("active_object_send_range_blocks", "3");
@@ -265,7 +278,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
 	settings->setDefault("time_send_interval", "5");
 	settings->setDefault("time_speed", "72");
-	settings->setDefault("year_days", "30");
 	settings->setDefault("server_unload_unused_data_timeout", "29");
 	settings->setDefault("max_objects_per_block", "49");
 	settings->setDefault("server_map_save_interval", "5.3");
@@ -279,6 +291,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_diskonly", "32");
 	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
+	settings->setDefault("secure.enable_security", "false");
+	settings->setDefault("secure.trusted_mods", "");
 
 	// physics stuff
 	settings->setDefault("movement_acceleration_default", "30");
@@ -304,8 +318,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "dungeons");
-	settings->setDefault("mgv6_spflags", "jungles");
-	settings->setDefault("enable_floating_dungeons", "true");
+	settings->setDefault("mgv6_spflags", "jungles, snowbiomes");
 
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");

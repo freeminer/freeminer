@@ -62,7 +62,7 @@ Debian/Ubuntu:
 sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev \
 libpng12-dev libjpeg-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev \
 libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev \
-libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev libgmp-dev
+libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev libgmp-dev libspatialindex-dev
 # optional:
 sudo apt-get install libhiredis-dev cmake-curses-gui
 ```
@@ -73,7 +73,7 @@ Fedora:
 sudo yum install make automake gcc gcc-c++ kernel-devel cmake irrlicht-devel \
 bzip2-devel libpng-devel libjpeg-turbo-devel freetype-devel libXxf86vm-devel \
 mesa-libGL-devel sqlite-devel libvorbis-devel openal-soft-devel libcurl-devel \
-luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel
+luajit-devel leveldb-devel snappy-devel gettext-devel msgpack msgpack-devel spatialindex-devel
 ```
 ___
 Arch Linux:
@@ -101,12 +101,20 @@ cd freeminer
 
 <sup>Recommended minimum compiler version: `gcc 4.8` or `clang 3.3`</sup>
 
-Build it:
+Build it(linux):
 ```bash
 mkdir _build && cd _build
 cmake ..
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
+
+Build it(OSX):
+```bash
+mkdir _build && cd _build
+cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include
+make -j8 package
+```
+(if the make command doesn't work on OS X install bsdmake)
 
 Play it!
 ```

@@ -178,8 +178,8 @@ void Schematic::blitToVManip(v3s16 p, MMVManip *vm, Rotation rot, bool force_pla
 void Schematic::placeStructure(Map *map, v3s16 p, u32 flags,
 	Rotation rot, bool force_place)
 {
-	assert(schemdata != NULL); // Pre-condition
-	sanity_check(m_ndef != NULL);
+	if(!schemdata || !m_ndef)
+		return;
 
 	MMVManip *vm = new MMVManip(map);
 
@@ -212,10 +212,12 @@ void Schematic::placeStructure(Map *map, v3s16 p, u32 flags,
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
+/*
 	for (std::map<v3s16, MapBlock *>::iterator
 		it = modified_blocks.begin();
 		it != modified_blocks.end(); ++it)
 		event.modified_blocks.insert(it->first);
+*/
 
 	map->dispatchEvent(&event);
 }

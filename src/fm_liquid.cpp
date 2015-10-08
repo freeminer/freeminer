@@ -29,9 +29,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LIQUID_DEBUG 0
 
 enum NeighborType {
-    NEIGHBOR_UPPER,
-    NEIGHBOR_SAME_LEVEL,
-    NEIGHBOR_LOWER
+	NEIGHBOR_UPPER,
+	NEIGHBOR_SAME_LEVEL,
+	NEIGHBOR_LOWER
 };
 
 struct NodeNeighbor {
@@ -85,13 +85,13 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 #endif
 
 	u8 relax = g_settings->getS16("liquid_relax");
-	bool fast_flood = g_settings->getS16("liquid_fast_flood");
-	int water_level = g_settings->getS16("water_level");
+	static bool fast_flood = g_settings->getS16("liquid_fast_flood");
+	static int water_level = g_settings->getS16("water_level");
 	s16 liquid_pressure = m_server->m_emerge->params.liquid_pressure;
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	// list of nodes that due to viscosity have not reached their max level height
-	//std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> must_reflow, must_reflow_second, must_reflow_third;
+	//unordered_map_v3POS<bool> must_reflow, must_reflow_second, must_reflow_third;
 	std::list<v3POS> must_reflow, must_reflow_second, must_reflow_third;
 	// List of MapBlocks that will require a lighting update (due to lava)
 	u16 loop_rand = myrand();
@@ -110,7 +110,7 @@ NEXT_LIQUID:
 		*/
 		v3POS p0;
 		{
-			//JMutexAutoLock lock(m_transforming_liquid_mutex);
+			//MutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = transforming_liquid_pop();
 		}
 		s16 total_level = 0;
@@ -397,8 +397,7 @@ NEXT_LIQUID:
 		//relax down
 		if (	liquid_renewable &&
 		        relax &&
-		        p0.Y >= water_level - 1  &&
-		        p0.Y <= water_level + 1  &&
+		        p0.Y == water_level + 1 &&
 		        liquid_levels[D_TOP] == 0 &&
 		        (total_level <= 1 || !(loopcount % 2)) &&
 		        level_max > 1 &&
@@ -680,10 +679,11 @@ NEXT_LIQUID:
 			// or if node removed
 			v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
-			if(block != NULL) {
+			if(block) {
+				block->setLightingExpired(true);
 				//modified_blocks[blockpos] = block;
-				if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
-					lighting_modified_blocks.set_try(block->getPos(), block);
+				//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
+				//	lighting_modified_blocks.set_try(block->getPos(), block);
 			}
 			// fmtodo: make here random %2 or..
 			if (total_level < level_max * can_liquid)

@@ -72,8 +72,8 @@ freetype = "freetype-2.5.5"
 luajit = "LuaJIT-2.0.3"
 gettext = "gettext-0.14.6"
 libiconv = "libiconv-1.9.2"
-MSGPACK_VERSION = "c4df1ba6cc6ed2f3ef937e4b10ade41b376f3a01"
-msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
+#MSGPACK_VERSION = "cpp-1.1.0"
+#msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 #SQLITE_VERSION="3080704"
 #sqlite = "sqlite-autoconf-{}".format(SQLITE_VERSION)
 SQLITE_VERSION="3.8.4.2"
@@ -267,19 +267,19 @@ def main():
 		
 		os.chdir("..")
 
-	if not os.path.exists(msgpack):
-		print("msgpack not found, downloading")
-		download("https://github.com/freeminer/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
-		extract_zip("msgpack.zip", ".")
-		os.chdir(msgpack)
-		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_map.hpp"', '// #include "type/tr1/unordered_map.hpp"')
-		patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_set.hpp"', '// #include "type/tr1/unordered_set.hpp"')
-		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="2"', 'RuntimeLibrary="0"')
-		patch("msgpack_vc2008.vcproj", 'RuntimeLibrary="3"', 'RuntimeLibrary="1"')
-		# use newer compiler, won't link otherwise
-		os.system("vcupgrade msgpack_vc2008.vcproj")
-		os.system("MSBuild msgpack_vc2008.vcxproj /p:Configuration={}".format(build_type))
-		os.chdir("..")
+	#if os.path.exists(msgpack):
+	#	print("msgpack not found, downloading")
+	#	#download("https://github.com/msgpack/msgpack-c/archive/{}.zip".format(MSGPACK_VERSION), "msgpack.zip")
+	#	#extract_zip("msgpack.zip", ".")
+	#	os.chdir(msgpack)
+	#	#patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_map.hpp"', '// #include "type/tr1/unordered_map.hpp"')
+	#	#patch(os.path.join("src", "msgpack", "type.hpp"), '#include "type/tr1/unordered_set.hpp"', '// #include "type/tr1/unordered_set.hpp"')
+	#	patch("msgpack_vc8.vcproj", 'RuntimeLibrary="2"', 'RuntimeLibrary="0"')
+	#	patch("msgpack_vc8.vcproj", 'RuntimeLibrary="3"', 'RuntimeLibrary="1"')
+	#	# use newer compiler, won't link otherwise
+	#	os.system("vcupgrade msgpack_vc8.vcproj")
+	#	os.system("MSBuild msgpack_vc8.vcxproj /p:Configuration={}".format(build_type))
+	#	os.chdir("..")
 
 	if not os.path.exists("leveldb.nupkg"):
 		print("Downloading LevelDB + dependencies from NuGet")
@@ -354,8 +354,6 @@ def main():
 		-DENABLE_LEVELDB=1
 		-DFORCE_LEVELDB=1
 		-DENABLE_SQLITE3=1
-		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
-		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		freetype_lib="freetype255MT.lib" if build_type != "Debug" else "freetype255MT_D.lib",
@@ -368,9 +366,14 @@ def main():
 		libogg=libogg,
 		libvorbis=libvorbis,
 		curl=curl,
-		msgpack=msgpack,
-		msgpack_suffix="d" if build_type == "Debug" else "",
+		#msgpack=msgpack,
+		#msgpack_suffix="d" if build_type == "Debug" else "",
 	).replace("\n", "")
+
+# now in cmake
+#		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
+#		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
+
 	
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")

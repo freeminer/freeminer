@@ -139,6 +139,19 @@ function core.dir_to_wallmounted(dir)
 	end
 end
 
+function core.wallmounted_to_dir(wallmounted)
+	-- table of dirs in wallmounted order
+	return ({[0] = {x = 0, y = 1, z = 0},
+		{x = 0,  y = -1, z = 0},
+		{x = 1,  y = 0,  z = 0},
+		{x = -1, y = 0,  z = 0},
+		{x = 0,  y = 0,  z = 1},
+		{x = 0,  y = 0,  z = -1}})
+
+		--indexed into by the wallmounted in question
+		[wallmounted]
+end
+
 function core.get_node_drops(nodename, toolname)
 	local drop = ItemStack({name=nodename}):get_definition().drop
 	if drop == nil then
@@ -359,12 +372,16 @@ function core.item_drop(itemstack, dropper, pos)
 			v.y = v.y*2 + 2
 			v.z = v.z*2
 			obj:setvelocity(v)
+			return itemstack
 		end
 
 	else
-		core.add_item(pos, itemstack)
+		if core.add_item(pos, itemstack) then
+			return itemstack
+		end
 	end
-	return itemstack
+	-- If we reach this, adding the object to the
+	-- environment failed
 end
 
 function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
@@ -489,6 +506,15 @@ function core.node_dig(pos, node, digger)
 	-- Run script hook
 	local _, callback
 	for _, callback in ipairs(core.registered_on_dignodes) do
+		local origin = core.callback_origins[callback]
+		if origin then
+			core.set_last_run_mod(origin.mod)
+			--print("Running " .. tostring(callback) ..
+			--	" (a " .. origin.name .. " callback in " .. origin.mod .. ")")
+		else
+			--print("No data associated with callback")
+		end
+
 		-- Copy pos and node because callback can modify them
 		local pos_copy = {x=pos.x, y=pos.y, z=pos.z}
 		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}

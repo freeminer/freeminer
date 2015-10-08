@@ -100,8 +100,12 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
 	m_last_recieved(0),
-	m_last_recieved_warn(0)
+	m_last_recieved_warn(0),
+	timeout_mul(0)
 {
+	timeout_mul = g_settings->getU16("timeout_mul");
+	if (!timeout_mul)
+		timeout_mul = 1;
 	start();
 }
 
@@ -116,12 +120,11 @@ Connection::~Connection()
 
 /* Internal stuff */
 
-void * Connection::Thread()
+void * Connection::run()
 {
-	ThreadStarted();
-	log_register_thread("Connection");
+	reg("Connection");
 
-	while(!StopRequested())
+	while(!stopRequested())
 	{
 		while(!m_command_queue.empty()){
 			ConnectionCommand c = m_command_queue.pop_frontNoEx();
@@ -135,7 +138,7 @@ void * Connection::Thread()
 
 void Connection::putEvent(ConnectionEvent &e)
 {
-	assert(e.type != CONNEVENT_NONE);
+	//if(e.type == CONNEVENT_NONE) return;
 	m_event_queue.push_back(e);
 }
 
@@ -189,11 +192,12 @@ void Connection::receive()
 	if (ret > 0)
 	{
 		m_last_recieved = porting::getTimeMs();
+		m_last_recieved_warn = 0;
 		switch (event.type)
 		{
 		case ENET_EVENT_TYPE_CONNECT:
 			{
-				//JMutexAutoLock peerlock(m_peers_mutex);
+				//MutexAutoLock peerlock(m_peers_mutex);
 				u16 peer_id = PEER_ID_SERVER + 1;
 				if (m_peers.size() > 0)
 					// TODO: fix this shit
@@ -232,14 +236,16 @@ void Connection::receive()
 			break;
 		}
 	} else if (ret < 0) {
-		infostream<<"enet_host_service failed = "<< ret << std::endl;
+		infostream<<"recieve enet_host_service failed = "<< ret << std::endl;
 		if (m_peers.count(PEER_ID_SERVER))
 			deletePeer(PEER_ID_SERVER,  false);
 	} else { //0
-		if (m_peers.count(PEER_ID_SERVER)) { //ugly fix. todo: fix enet and remove
+		if (m_peers.count(PEER_ID_SERVER) && m_last_recieved) { //ugly fix. todo: fix enet and remove
 			unsigned int time = porting::getTimeMs();
-			if (time - m_last_recieved > 30000 && m_last_recieved_warn > 20000 && m_last_recieved_warn < 30000) {
-				errorstream<<"connection lost [30s], disconnecting."<<std::endl;
+			const unsigned int t1 = 10000, t2 = 30000 * timeout_mul, t3 = 60000 * timeout_mul;
+			unsigned int wait = time - m_last_recieved;
+			if (wait > t3 && m_last_recieved_warn > t2) {
+				errorstream<<"connection lost [60s], disconnecting."<<std::endl;
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer) || __has_feature(address_sanitizer)
 				if (0)
@@ -250,13 +256,13 @@ void Connection::receive()
 				}
 				m_last_recieved_warn = 0;
 				m_last_recieved = 0;
-			} else if (time - m_last_recieved > 20000 && m_last_recieved_warn > 10000 && m_last_recieved_warn < 20000) {
-				errorstream<<"connection lost [20s]!"<<std::endl;
+			} else if (wait > t2 && m_last_recieved_warn > t1 && m_last_recieved_warn < t2) {
+				errorstream<<"connection lost [30s]!"<<std::endl;
 				m_last_recieved_warn = time - m_last_recieved;
-			} else if (time - m_last_recieved > 10000 && m_last_recieved_warn < 10000) {
+			} else if (wait > t1 && m_last_recieved_warn < t1) {
 				errorstream<<"connection lost [10s]? ping."<<std::endl;
 				enet_peer_ping(m_peers.get(PEER_ID_SERVER));
-				m_last_recieved_warn = time - m_last_recieved;
+				m_last_recieved_warn = wait;
 			}
 		}
 	}
@@ -284,7 +290,7 @@ void Connection::serve(Address bind_addr)
 void Connection::connect(Address addr)
 {
 	m_last_recieved = porting::getTimeMs();
-	//JMutexAutoLock peerlock(m_peers_mutex);
+	//MutexAutoLock peerlock(m_peers_mutex);
 	//m_peers.lock_unique_rec();
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node != m_peers.end()){
@@ -321,8 +327,11 @@ void Connection::connect(Address addr)
 		m_peers.set(PEER_ID_SERVER, peer);
 		m_peers_address.set(PEER_ID_SERVER, addr);
 	} else {
-		if (ret == 0)
-			errorstream<<"enet_host_service ret="<<ret<<std::endl;
+		errorstream<<"connect enet_host_service ret="<<ret<<std::endl;
+		if (ret == 0) {
+			ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+			putEvent(ev);
+		}
 
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
@@ -333,7 +342,7 @@ void Connection::connect(Address addr)
 
 void Connection::disconnect()
 {
-	//JMutexAutoLock peerlock(m_peers_mutex);
+	//MutexAutoLock peerlock(m_peers_mutex);
 	m_peers.lock_shared_rec();
 	for (auto i = m_peers.begin();
 			i != m_peers.end(); ++i)
@@ -350,11 +359,11 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
 	{
-		//JMutexAutoLock peerlock(m_peers_mutex);
+		//MutexAutoLock peerlock(m_peers_mutex);
 		if (m_peers.find(peer_id) == m_peers.end())
 			return;
 	}
-	dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
+	//dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
 
 	assert(channelnum < CHANNEL_COUNT);
 
@@ -365,8 +374,12 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		deletePeer(peer_id, false);
 		return;
 	}
-	if (enet_peer_send(peer, channelnum, packet) < 0)
-		errorstream<<"enet_peer_send failed"<<std::endl;
+	if (enet_peer_send(peer, channelnum, packet) < 0) {
+		infostream<<"enet_peer_send failed peer="<<peer_id<<" reliable="<<reliable<< " size="<<data.getSize()<<std::endl;
+		if (reliable)
+			deletePeer(peer_id, false);
+		return;
+	}
 }
 
 ENetPeer* Connection::getPeer(u16 peer_id)
@@ -381,7 +394,7 @@ ENetPeer* Connection::getPeer(u16 peer_id)
 
 bool Connection::deletePeer(u16 peer_id, bool timeout)
 {
-	//JMutexAutoLock peerlock(m_peers_mutex);
+	//MutexAutoLock peerlock(m_peers_mutex);
 	if(m_peers.find(peer_id) == m_peers.end())
 		return false;
 
@@ -440,7 +453,7 @@ void Connection::Connect(Address address)
 
 bool Connection::Connected()
 {
-	//JMutexAutoLock peerlock(m_peers_mutex);
+	//MutexAutoLock peerlock(m_peers_mutex);
 
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node == m_peers.end())
@@ -525,6 +538,7 @@ void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer
 
 Address Connection::GetPeerAddress(u16 peer_id)
 {
+	auto lock = m_peers_address.lock_unique_rec();
 	if (!m_peers_address.count(peer_id))
 		return Address();
 	return m_peers_address.get(peer_id);
@@ -582,8 +596,22 @@ bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *
 
 		*command = (*packet)[MSGPACK_COMMAND].as<int>();
 	}
-	catch (msgpack::type_error) { return false; }
-	catch (msgpack::unpack_error) { return false; }
+	catch (msgpack::type_error e) {
+		verbosestream<<"parse_msgpack_packet: msgpack::type_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		return false;
+	}
+	catch (msgpack::unpack_error e) {
+		verbosestream<<"parse_msgpack_packet: msgpack::unpack_error : "<<e.what()<<" datasize="<<datasize<<std::endl;
+		//verbosestream<<"bad data:["<< std::string(data, datasize) <<"]"<<std::endl;
+		return false;
+	} catch (std::exception &e) {
+		errorstream<<"parse_msgpack_packet: exception: "<<e.what()<<" datasize="<<datasize<<std::endl;
+		return false;
+	} catch (...) {
+		errorstream<<"parse_msgpack_packet: Ooops..."<<std::endl;
+		return false;
+	}
+
 	return true;
 }
 

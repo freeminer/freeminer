@@ -67,7 +67,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // The absolute working limit is (2^15 - viewing_range).
 // I really don't want to make every algorithm to check if it's going near
 // the limit or not, so this is lower.
-#define MAP_GENERATION_LIMIT (31000)
+// This is the maximum value the setting map_generation_limit can be
+#define MAX_MAP_GENERATION_LIMIT (31000)
 
 // Size of node in floating-point units
 // The original idea behind this is to disallow plain casts between
@@ -76,6 +77,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Use floatToInt(p, BS) and intToFloat(p, BS).
 #define BS (1.0)
 #define HBS (BS/2)
+
+#define BS_OLD (10.0)
 
 // Dimension of a MapBlock
 #define MAP_BLOCKP 4

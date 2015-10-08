@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CAVEGEN_HEADER
 
 #define VMANIP_FLAG_CAVE VOXELFLAG_CHECKED1
+#define MGV7_LAVA_DEPTH -256
 
 class MapgenV5;
 class MapgenV6;
@@ -71,7 +72,7 @@ public:
 	CaveV5(MapgenV5 *mg, PseudoRandom *ps);
 	void makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height);
 	void makeTunnel(bool dirswitch);
-	void carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine);
+	void carveRoute(v3f vec, float f, bool randomize_xz);
 };
 
 class CaveV6 {
@@ -116,7 +117,7 @@ public:
 	CaveV6(MapgenV6 *mg, PseudoRandom *ps, PseudoRandom *ps2, bool large_cave);
 	void makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height);
 	void makeTunnel(bool dirswitch);
-	void carveRoute(v3f vec, float f, bool randomize_xz);
+	void carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_ground);
 };
 
 class CaveV7 {
@@ -161,7 +162,7 @@ public:
 	CaveV7(MapgenV7 *mg, PseudoRandom *ps);
 	void makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height);
 	void makeTunnel(bool dirswitch);
-	void carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine);
+	void carveRoute(v3f vec, float f, bool randomize_xz);
 };
 
 #endif

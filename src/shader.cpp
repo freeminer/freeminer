@@ -107,10 +107,8 @@ std::string getShaderPath(const std::string &name_of_shader,
 class SourceShaderCache
 {
 public:
-	void insert(const std::string &name_of_shader,
-			const std::string &filename,
-			const std::string &program,
-			bool prefer_local)
+	void insert(const std::string &name_of_shader, const std::string &filename,
+		const std::string &program, bool prefer_local)
 	{
 		std::string combined = name_of_shader + DIR_DELIM + filename;
 		// Try to use local shader instead if asked to
@@ -126,42 +124,43 @@ public:
 		}
 		m_programs[combined] = program;
 	}
+
 	std::string get(const std::string &name_of_shader,
-			const std::string &filename)
+		const std::string &filename)
 	{
 		std::string combined = name_of_shader + DIR_DELIM + filename;
-		std::map<std::string, std::string>::iterator n;
-		n = m_programs.find(combined);
-		if(n != m_programs.end())
+		StringMap::iterator n = m_programs.find(combined);
+		if (n != m_programs.end())
 			return n->second;
 		return "";
 	}
+
 	// Primarily fetches from cache, secondarily tries to read from filesystem
 	std::string getOrLoad(const std::string &name_of_shader,
-			const std::string &filename)
+		const std::string &filename)
 	{
 		std::string combined = name_of_shader + DIR_DELIM + filename;
-		std::map<std::string, std::string>::iterator n;
-		n = m_programs.find(combined);
-		if(n != m_programs.end())
+		StringMap::iterator n = m_programs.find(combined);
+		if (n != m_programs.end())
 			return n->second;
 		std::string path = getShaderPath(name_of_shader, filename);
-		if(path == ""){
-			infostream<<"SourceShaderCache::getOrLoad(): No path found for \""
-					<<combined<<"\""<<std::endl;
+		if (path == "") {
+			infostream << "SourceShaderCache::getOrLoad(): No path found for \""
+				<< combined << "\"" << std::endl;
 			return "";
 		}
-		infostream<<"SourceShaderCache::getOrLoad(): Loading path \""<<path
-				<<"\""<<std::endl;
+		infostream << "SourceShaderCache::getOrLoad(): Loading path \""
+			<< path << "\"" << std::endl;
 		std::string p = readFile(path);
-		if(p != ""){
+		if (p != "") {
 			m_programs[combined] = p;
 			return p;
 		}
 		return "";
 	}
 private:
-	std::map<std::string, std::string> m_programs;
+	StringMap m_programs;
+
 	std::string readFile(const std::string &path)
 	{
 		std::ifstream is(path.c_str(), std::ios::binary);
@@ -278,23 +277,23 @@ public:
 
 		The id 0 points to a null shader. Its material is EMT_SOLID.
 	*/
-	u32 getShaderIdDirect(const std::string &name, 
+	u32 getShaderIdDirect(const std::string &name,
 		const u8 material_type, const u8 drawtype);
 
 	/*
 		If shader specified by the name pointed by the id doesn't
-		exist, create it, then return id. 
+		exist, create it, then return id.
 
 		Can be called from any thread. If called from some other thread
 		and not found in cache, the call is queued to the main thread
 		for processing.
 	*/
-	
+
 	u32 getShader(const std::string &name,
 		const u8 material_type, const u8 drawtype);
-	
+
 	ShaderInfo getShaderInfo(u32 id);
-	
+
 	// Processes queued shader requests from other threads.
 	// Shall be called from the main thread.
 	void processQueue();
@@ -333,7 +332,7 @@ private:
 	// The first position contains a dummy shader.
 	std::vector<ShaderInfo> m_shaderinfo_cache;
 	// The former container is behind this mutex
-	JMutex m_shaderinfo_cache_mutex;
+	Mutex m_shaderinfo_cache_mutex;
 
 	// Queued shader fetches (to be processed by the main thread)
 	RequestQueue<std::string, u32, u8, u8> m_get_shader_queue;
@@ -384,7 +383,7 @@ ShaderSource::ShaderSource(IrrlichtDevice *device):
 ShaderSource::~ShaderSource()
 {
 	for (std::vector<IShaderConstantSetter*>::iterator iter = m_global_setters.begin();
-			iter != m_global_setters.end(); iter++) {
+			iter != m_global_setters.end(); ++iter) {
 		delete *iter;
 	}
 	m_global_setters.clear();
@@ -395,7 +394,7 @@ ShaderSource::~ShaderSource()
 	}
 }
 
-u32 ShaderSource::getShader(const std::string &name, 
+u32 ShaderSource::getShader(const std::string &name,
 		const u8 material_type, const u8 drawtype)
 {
 	/*
@@ -439,7 +438,7 @@ u32 ShaderSource::getShader(const std::string &name,
 /*
 	This method generates all the shaders
 */
-u32 ShaderSource::getShaderIdDirect(const std::string &name, 
+u32 ShaderSource::getShaderIdDirect(const std::string &name,
 		const u8 material_type, const u8 drawtype)
 {
 	//infostream<<"getShaderIdDirect(): name=\""<<name<<"\""<<std::endl;
@@ -474,7 +473,7 @@ u32 ShaderSource::getShaderIdDirect(const std::string &name,
 		Add shader to caches (add dummy shaders too)
 	*/
 
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	u32 id = m_shaderinfo_cache.size();
 	m_shaderinfo_cache.push_back(info);
@@ -488,7 +487,7 @@ u32 ShaderSource::getShaderIdDirect(const std::string &name,
 
 ShaderInfo ShaderSource::getShaderInfo(u32 id)
 {
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	if(id >= m_shaderinfo_cache.size())
 		return ShaderInfo();
@@ -498,7 +497,7 @@ ShaderInfo ShaderSource::getShaderInfo(u32 id)
 
 void ShaderSource::processQueue()
 {
- 
+
 
 }
 
@@ -516,7 +515,7 @@ void ShaderSource::insertSourceShader(const std::string &name_of_shader,
 
 void ShaderSource::rebuildShaders()
 {
-	JMutexAutoLock lock(m_shaderinfo_cache_mutex);
+	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
 	/*// Oh well... just clear everything, they'll load sometime.
 	m_shaderinfo_cache.clear();
@@ -576,7 +575,7 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 			shaderinfo.base_material = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
 		break;
 	}
-	
+
 	bool enable_shaders = g_settings->getBool("enable_shaders");
 	if(!enable_shaders)
 		return shaderinfo;
@@ -652,7 +651,7 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 		"NDT_FIRELIKE",
 		"NDT_GLASSLIKE_FRAMED_OPTIONAL"
 	};
-	
+
 	for (int i = 0; i < 14; i++){
 		shaders_header += "#define ";
 		shaders_header += drawTypes[i];
@@ -685,47 +684,62 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 	shaders_header += itos(drawtype);
 	shaders_header += "\n";
 
-	if (g_settings->getBool("generate_normalmaps")){
-		shaders_header += "#define GENERATE_NORMALMAPS\n";
-		shaders_header += "#define NORMALMAPS_STRENGTH ";
-		shaders_header += ftos(g_settings->getFloat("normalmaps_strength"));
-		shaders_header += "\n";
-		float sample_step;
-		int smooth = (int)g_settings->getFloat("normalmaps_smooth");
-		switch (smooth){
-		case 0:
-			sample_step = 0.0078125; // 1.0 / 128.0
-			break;
-		case 1:
-			sample_step = 0.00390625; // 1.0 / 256.0
-			break;
-		case 2:
-			sample_step = 0.001953125; // 1.0 / 512.0
-			break;
-		default:
-			sample_step = 0.0078125;
-			break;
-		}
-		shaders_header += "#define SAMPLE_STEP ";
-		shaders_header += ftos(sample_step);
-		shaders_header += "\n";
+	if (g_settings->getBool("generate_normalmaps")) {
+		shaders_header += "#define GENERATE_NORMALMAPS 1\n";
+	} else {
+		shaders_header += "#define GENERATE_NORMALMAPS 0\n";
 	}
+	shaders_header += "#define NORMALMAPS_STRENGTH ";
+	shaders_header += ftos(g_settings->getFloat("normalmaps_strength"));
+	shaders_header += "\n";
+	float sample_step;
+	int smooth = (int)g_settings->getFloat("normalmaps_smooth");
+	switch (smooth){
+	case 0:
+		sample_step = 0.0078125; // 1.0 / 128.0
+		break;
+	case 1:
+		sample_step = 0.00390625; // 1.0 / 256.0
+		break;
+	case 2:
+		sample_step = 0.001953125; // 1.0 / 512.0
+		break;
+	default:
+		sample_step = 0.0078125;
+		break;
+	}
+	shaders_header += "#define SAMPLE_STEP ";
+	shaders_header += ftos(sample_step);
+	shaders_header += "\n";
 
 	if (g_settings->getBool("enable_bumpmapping"))
 		shaders_header += "#define ENABLE_BUMPMAPPING\n";
 
 	if (g_settings->getBool("enable_parallax_occlusion")){
+		int mode = g_settings->getFloat("parallax_occlusion_mode");
+		float scale = g_settings->getFloat("parallax_occlusion_scale");
+		float bias = g_settings->getFloat("parallax_occlusion_bias");
+		int iterations = g_settings->getFloat("parallax_occlusion_iterations");
 		shaders_header += "#define ENABLE_PARALLAX_OCCLUSION\n";
+		shaders_header += "#define PARALLAX_OCCLUSION_MODE ";
+		shaders_header += itos(mode);
+		shaders_header += "\n";
 		shaders_header += "#define PARALLAX_OCCLUSION_SCALE ";
-		shaders_header += ftos(g_settings->getFloat("parallax_occlusion_scale"));
+		shaders_header += ftos(scale);
 		shaders_header += "\n";
 		shaders_header += "#define PARALLAX_OCCLUSION_BIAS ";
-		shaders_header += ftos(g_settings->getFloat("parallax_occlusion_bias"));
+		shaders_header += ftos(bias);
+		shaders_header += "\n";
+		shaders_header += "#define PARALLAX_OCCLUSION_ITERATIONS ";
+		shaders_header += itos(iterations);
 		shaders_header += "\n";
 	}
 
+	shaders_header += "#define USE_NORMALMAPS ";
 	if (g_settings->getBool("enable_bumpmapping") || g_settings->getBool("enable_parallax_occlusion"))
-		shaders_header += "#define USE_NORMALMAPS\n";
+		shaders_header += "1\n";
+	else
+		shaders_header += "0\n";
 
 	if (g_settings->getBool("enable_waving_water")){
 		shaders_header += "#define ENABLE_WAVING_WATER 1\n";
@@ -745,10 +759,10 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 	shaders_header += "#define ENABLE_WAVING_LEAVES ";
 	if (g_settings->getBool("enable_waving_leaves"))
 		shaders_header += "1\n";
-	else 	
+	else
 		shaders_header += "0\n";
 
-	shaders_header += "#define ENABLE_WAVING_PLANTS ";		
+	shaders_header += "#define ENABLE_WAVING_PLANTS ";
 	if (g_settings->getBool("enable_waving_plants"))
 		shaders_header += "1\n";
 	else
@@ -760,7 +774,6 @@ ShaderInfo generate_shader(std::string name, u8 material_type, u8 drawtype,
 		vertex_program = shaders_header + vertex_program;
 	if(geometry_program != "")
 		geometry_program = shaders_header + geometry_program;
-
 	// Call addHighLevelShaderMaterial() or addShaderMaterial()
 	const c8* vertex_program_ptr = 0;
 	const c8* pixel_program_ptr = 0;

@@ -262,7 +262,11 @@ KeyPress::KeyPress() :
 
 KeyPress::KeyPress(const char *name)
 {
-	if (strlen(name) > 4) {
+	if (name[0] == 0) {
+		Key = irr::KEY_KEY_CODES_COUNT;
+		Char = L'\0';
+		return;
+	} else if (strlen(name) > 4) {
 		try {
 			Key = keyname_to_keycode(name);
 			m_name = name;
@@ -340,6 +344,11 @@ const char *KeyPress::name() const
 		return m_name.c_str();
 	}
 }
+
+const KeyPress LControlKey("KEY_LCONTROL");
+const KeyPress RControlKey("KEY_RCONTROL");
+const KeyPress LShiftKey("KEY_LSHIFT");
+const KeyPress RShiftKey("KEY_RSHIFT");
 
 const KeyPress EscapeKey("KEY_ESCAPE");
 const KeyPress CancelKey("KEY_CANCEL");

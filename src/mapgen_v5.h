@@ -25,9 +25,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define LARGE_CAVE_DEPTH -256
 
-/////////////////// Mapgen V5 flags
-//#define MGV5_   0x01
-
 class BiomeManager;
 
 extern FlagDesc flagdesc_mapgen_v5[];
@@ -77,14 +74,18 @@ public:
 	Noise *noise_cave1;
 	Noise *noise_cave2;
 	Noise *noise_ground;
+
 	Noise *noise_heat;
 	Noise *noise_humidity;
+	Noise *noise_heat_blend;
+	Noise *noise_humidity_blend;
 
 	content_t c_stone;
 	content_t c_water_source;
 	content_t c_lava_source;
 	content_t c_desert_stone;
 	content_t c_ice;
+	content_t c_sandstone;
 
 	content_t c_cobble;
 	content_t c_stair_cobble;
@@ -103,7 +104,7 @@ public:
 	int getGroundLevelAtPoint(v2s16 p);
 	void calculateNoise();
 	int generateBaseTerrain();
-	bool generateBiomes(float *heat_map, float *humidity_map);
+	MgStoneType generateBiomes(float *heat_map, float *humidity_map);
 	void generateCaves(int max_stone_y);
 	void dustTopNodes();
 };

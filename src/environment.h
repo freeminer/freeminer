@@ -45,12 +45,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/connection.h"
 #include "fmbitset.h"
 #include "util/concurrent_unordered_map.h"
+#include "util/concurrent_vector.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <unordered_set>
+//#include "threading/mutex.h"
+#include "network/networkprotocol.h" // for AccessDeniedCode
 
 class ServerEnvironment;
 class ActiveBlockModifier;
@@ -62,6 +65,7 @@ class ServerMap;
 class ClientMap;
 class GameScripting;
 class Player;
+class RemotePlayer;
 
 class Environment
 {
@@ -81,8 +85,7 @@ public:
 	virtual Map & getMap() = 0;
 
 	virtual void addPlayer(Player *player);
-	//void removePlayer(u16 peer_id);
-	//void removePlayer(const std::string &name);
+	void removePlayer(Player *player);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
 	std::vector<Player*> getPlayers();
@@ -111,7 +114,7 @@ public:
 
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
-	std::vector<Player*> m_players;
+	concurrent_vector<Player*> m_players;
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
@@ -134,8 +137,8 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	JMutex m_timeofday_lock;
-	JMutex m_time_lock;
+	Mutex m_timeofday_lock;
+	Mutex m_time_lock;
 
 };
 
@@ -267,9 +270,11 @@ public:
 
 	KeyValueStorage *getKeyValueStorage();
 
+	void kickAllPlayers(AccessDeniedCode reason,
+		const std::string &str_reason, bool reconnect);
 	// Save players
 	void saveLoadedPlayers();
-	void savePlayer(const std::string &playername);
+	void savePlayer(RemotePlayer *player);
 	Player *loadPlayer(const std::string &playername);
 
 	/*
@@ -308,19 +313,19 @@ public:
 		Find out what new objects have been added to
 		inside a radius around a position
 	*/
-	void getAddedActiveObjects(v3s16 pos, s16 radius,
+	void getAddedActiveObjects(Player *player, s16 radius,
 			s16 player_radius,
 			maybe_concurrent_unordered_map<u16, bool> &current_objects,
-			std::set<u16> &added_objects);
+			std::queue<u16> &added_objects);
 
 	/*
 		Find out what new objects have been removed from
 		inside a radius around a position
 	*/
-	void getRemovedActiveObjects(v3s16 pos, s16 radius,
+	void getRemovedActiveObjects(Player* player, s16 radius,
 			s16 player_radius,
 			maybe_concurrent_unordered_map<u16, bool> &current_objects,
-			std::set<u16> &removed_objects);
+			std::queue<u16> &removed_objects);
 
 	/*
 		Get the next message emitted by some active object.
@@ -382,6 +387,11 @@ public:
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 
 	u32 m_game_time_start;
+
+	// Sets the static object status all the active objects in the specified block
+	// This is only really needed for deleting blocks from the map
+	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
+		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
 private:
 
@@ -446,6 +456,7 @@ private:
 	const std::string m_path_world;
 	// Active object list
 	maybe_concurrent_map<u16, ServerActiveObject*> m_active_objects;
+	std::vector<u16> objects_to_remove;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;
@@ -486,6 +497,8 @@ private:
 #ifndef SERVER
 
 #include "clientobject.h"
+#include "content_cao.h"
+
 class ClientSimpleObject;
 
 /*
@@ -548,6 +561,7 @@ public:
 		ActiveObjects
 	*/
 
+	GenericCAO* getGenericCAO(u16 id);
 	ClientActiveObject* getActiveObject(u16 id);
 
 	/*
@@ -583,7 +597,7 @@ public:
 	// Get event from queue. CEE_NONE is returned if queue is empty.
 	ClientEnvEvent getClientEvent();
 
-	u16 m_attachements[USHRT_MAX];
+	u16 attachement_parent_ids[USHRT_MAX + 1];
 
 	std::list<std::string> getPlayerNames()
 	{ return m_player_names; }
@@ -606,7 +620,7 @@ private:
 	u32 m_active_objects_client_last;
 	u32 m_move_max_loop;
 	std::vector<ClientSimpleObject*> m_simple_objects;
-	std::list<ClientEnvEvent> m_client_event_queue;
+	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;
 	IntervalLimiter m_lava_hurt_interval;
 	IntervalLimiter m_drowning_interval;

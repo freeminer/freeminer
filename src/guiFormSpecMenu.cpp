@@ -56,6 +56,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h" // for parseColorString()
 #include "guiscalingfilter.h"
 
+#if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
+#include "intlGUIEditBox.h"
+#endif
+
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
 		errorstream<< "Invalid pos for element " << a << "specified: \""	\
@@ -104,7 +108,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_font(NULL),
 	m_remap_dbl_click(remap_dbl_click)
 #ifdef __ANDROID__
-	,m_JavaDialogFieldName("")
+	, m_JavaDialogFieldName("")
 #endif
 {
 	current_keys_pending.key_down = false;
@@ -240,28 +244,27 @@ GUITable* GUIFormSpecMenu::getTable(const std::string &tablename)
 	return 0;
 }
 
-std::vector<std::string> split(const std::string &s, char delim) {
+static std::vector<std::string> split(const std::string &s, char delim)
+{
 	std::vector<std::string> tokens;
 
 	std::string current = "";
 	bool last_was_escape = false;
-	for(unsigned int i=0; i < s.size(); i++) {
+	for (unsigned int i = 0; i < s.size(); i++) {
+		char si = s.c_str()[i];
 		if (last_was_escape) {
 			current += '\\';
-			current += s.c_str()[i];
+			current += si;
 			last_was_escape = false;
-		}
-		else {
-			if (s.c_str()[i] == delim) {
+		} else {
+			if (si == delim) {
 				tokens.push_back(current);
 				current = "";
 				last_was_escape = false;
-			}
-			else if (s.c_str()[i] == '\\'){
+			} else if (si == '\\') {
 				last_was_escape = true;
-			}
-			else {
-				current += s.c_str()[i];
+			} else {
+				current += si;
 				last_was_escape = false;
 			}
 		}
@@ -353,6 +356,41 @@ void GUIFormSpecMenu::parseList(parserData* data,std::string element)
 	errorstream<< "Invalid list element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+void GUIFormSpecMenu::parseListRing(parserData* data, std::string element)
+{
+	if (m_gamedef == 0) {
+		errorstream << "WARNING: invalid use of 'listring' with m_gamedef==0" << std::endl;
+		return;
+	}
+
+	std::vector<std::string> parts = split(element, ';');
+
+	if (parts.size() == 2) {
+		std::string location = parts[0];
+		std::string listname = parts[1];
+
+		InventoryLocation loc;
+
+		if (location == "context" || location == "current_name")
+			loc = m_current_inventory_location;
+		else
+			loc.deSerialize(location);
+
+		m_inventory_rings.push_back(ListRingSpec(loc, listname));
+		return;
+	} else if ((element == "") && (m_inventorylists.size() > 1)) {
+		size_t siz = m_inventorylists.size();
+		// insert the last two inv list elements into the list ring
+		const ListDrawSpec &spa = m_inventorylists[siz - 2];
+		const ListDrawSpec &spb = m_inventorylists[siz - 1];
+		m_inventory_rings.push_back(ListRingSpec(spa.inventoryloc, spa.listname));
+		m_inventory_rings.push_back(ListRingSpec(spb.inventoryloc, spb.listname));
+		return;
+	}
+	errorstream<< "Invalid list ring element(" << parts.size() << ", "
+		<< m_inventorylists.size() << "): '" << element << "'"  << std::endl;
+}
+
 void GUIFormSpecMenu::parseCheckbox(parserData* data,std::string element)
 {
 	std::vector<std::string> parts = split(element,';');
@@ -379,7 +417,7 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data,std::string element)
 		if (selected == "true")
 			fselected = true;
 
-		std::wstring wlabel = narrow_to_wide(label);
+		std::wstring wlabel = utf8_to_wide(label);
 
 		core::rect<s32> rect = core::rect<s32>(
 				pos.X, pos.Y + ((imgsize.Y/2) - m_btn_height),
@@ -576,7 +614,7 @@ void GUIFormSpecMenu::parseButton(parserData* data,std::string element,
 
 		label = unescape_string(label);
 
-		std::wstring wlabel = narrow_to_wide(label);
+		std::wstring wlabel = utf8_to_wide(label);
 
 		FieldSpec spec(
 			name,
@@ -701,8 +739,6 @@ void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
 
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
-		std::wstring fname_w = narrow_to_wide(name);
-
 		FieldSpec spec(
 			name,
 			L"",
@@ -774,8 +810,6 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
 
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
-		std::wstring fname_w = narrow_to_wide(name);
-
 		FieldSpec spec(
 			name,
 			L"",
@@ -799,8 +833,9 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
 
 		e->setTextList(items, is_yes(str_transparent));
 
-		if (data->table_dyndata.find(name) != data->table_dyndata.end())
+		if (data->table_dyndata.find(name) != data->table_dyndata.end()) {
 			e->setDynamicData(data->table_dyndata[name]);
+		}
 
 		if (str_initial_selection != "" && str_initial_selection != "0")
 			e->setSelected(stoi(str_initial_selection.c_str()));
@@ -837,8 +872,6 @@ void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y,
 				pos.X + width, pos.Y + (m_btn_height * 2));
 
-		std::wstring fname_w = narrow_to_wide(name);
-
 		FieldSpec spec(
 			name,
 			L"",
@@ -856,8 +889,9 @@ void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
 			Environment->setFocus(e);
 		}
 
-		for (unsigned int i=0; i < items.size(); i++)
-			e->addItem(narrow_to_wide(items[i]).c_str());
+		for (unsigned int i=0; i < items.size(); i++) {
+			e->addItem(utf8_to_wide(items[i]).c_str());
+		}
 
 		if (str_initial_selection != "")
 			e->setSelected(stoi(str_initial_selection.c_str())-1);
@@ -905,7 +939,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 		default_val = unescape_string(default_val);
 		label = unescape_string(label);
 
-		std::wstring wlabel = narrow_to_wide(label);
+		std::wstring wlabel = utf8_to_wide(label);
 
 		FieldSpec spec(
 			name,
@@ -971,12 +1005,12 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 	default_val = unescape_string(default_val);
 	label = unescape_string(label);
 
-	std::wstring wlabel = narrow_to_wide(label);
+	std::wstring wlabel = utf8_to_wide(label);
 
 	FieldSpec spec(
 		name,
-		narrow_to_wide(label),
-		narrow_to_wide(default_val),
+		wlabel,
+		utf8_to_wide(default_val),
 		258+m_fields.size()
 	);
 
@@ -1061,12 +1095,12 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	default_val = unescape_string(default_val);
 	label = unescape_string(label);
 
-	std::wstring wlabel = narrow_to_wide(label);
+	std::wstring wlabel = utf8_to_wide(label);
 
 	FieldSpec spec(
 		name,
-		narrow_to_wide(label),
-		narrow_to_wide(default_val),
+		wlabel,
+		utf8_to_wide(default_val),
 		258+m_fields.size()
 	);
 
@@ -1164,7 +1198,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
 			// in the integer cases: 0.4 is not exactly
 			// representable in binary floating point.
 			s32 posy = pos.Y + ((float)i) * spacing.Y * 2.0 / 5.0;
-			std::wstring wlabel = narrow_to_wide(lines[i]);
+			std::wstring wlabel = utf8_to_wide(lines[i]);
 			core::rect<s32> rect = core::rect<s32>(
 				pos.X, posy - m_btn_height,
 				pos.X + m_font->getDimension(wlabel.c_str()).Width,
@@ -1196,7 +1230,7 @@ void GUIFormSpecMenu::parseVertLabel(parserData* data,std::string element)
 		((parts.size() > 2) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
-		std::wstring text = narrow_to_wide(unescape_string(parts[1]));
+		std::wstring text = utf8_to_wide(unescape_string(parts[1]));
 
 		MY_CHECKPOS("vertlabel",1);
 
@@ -1285,12 +1319,12 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 		pressed_image_name = unescape_string(pressed_image_name);
 		label = unescape_string(label);
 
-		std::wstring wlabel = narrow_to_wide(label);
+		std::wstring wlabel = utf8_to_wide(label);
 
 		FieldSpec spec(
 			name,
-			narrow_to_wide(label),
-			narrow_to_wide(image_name),
+			wlabel,
+			utf8_to_wide(image_name),
 			258+m_fields.size()
 		);
 		spec.ftype = f_Button;
@@ -1382,8 +1416,8 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data,std::string element)
 
 		e->setNotClipped(true);
 
-		for (unsigned int i=0; i< buttons.size(); i++) {
-			std::wstring wlabel = narrow_to_wide(buttons[i]);
+		for (unsigned int i = 0; i < buttons.size(); i++) {
+			std::wstring wlabel = utf8_to_wide(buttons[i]);
 			e->addTab(wlabel.c_str(), -1);
 		}
 
@@ -1448,9 +1482,9 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 		label = unescape_string(label);
 		FieldSpec spec(
 			name,
-			narrow_to_wide(label.c_str()),
-			narrow_to_wide(item_name.c_str()),
-			258+m_fields.size()
+			utf8_to_wide(label),
+			utf8_to_wide(item_name),
+			258 + m_fields.size()
 		);
 
 		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, spec.flabel.c_str());
@@ -1652,6 +1686,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
 		return;
 	}
 
+	if (type == "listring") {
+		parseListRing(data, description);
+		return;
+	}
+
 	if (type == "checkbox") {
 		parseCheckbox(data,description);
 		return;
@@ -1844,8 +1883,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 
 	m_clipbackground = false;
 	// Add tooltip
+	if(!m_tooltip_element)
 	{
-		assert(m_tooltip_element == NULL);
 		// Note: parent != this so that the tooltip isn't clipped by the menu rectangle
 		m_tooltip_element = Environment->addStaticText(L"",core::rect<s32>(0,0,110,18));
 		m_tooltip_element->enableOverrideColor(true);
@@ -1983,7 +2022,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_tooltip_element->setOverrideFont(m_font);
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	sanity_check(skin != NULL);
+	if (!skin)
+		return;
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2051,7 +2091,7 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 	}
 
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-			iter != m_fields.end(); iter++) {
+			iter != m_fields.end(); ++iter) {
 
 		if (iter->fname != fieldname) {
 			continue;
@@ -2069,7 +2109,7 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 		std::string text = porting::getInputDialogValue();
 
 		((gui::IGUIEditBox*) tochange)->
-			setText(narrow_to_wide(text).c_str());
+			setText(utf8_to_wide(text).c_str());
 	}
 	return false;
 }
@@ -2193,7 +2233,7 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int phase)
 				m_tooltip_element->setOverrideColor(m_default_tooltip_color);
 				m_tooltip_element->setVisible(true);
 				this->bringToFront(m_tooltip_element);
-				m_tooltip_element->setText(narrow_to_wide(tooltip_text).c_str());
+				m_tooltip_element->setText(utf8_to_wide(tooltip_text).c_str());
 				s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 				s32 tooltip_height = m_tooltip_element->getTextHeight() * tt_rows.size() + 5;
 				v2u32 screenSize = driver->getScreenSize();
@@ -2227,9 +2267,11 @@ void GUIFormSpecMenu::drawSelectedItem()
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 
 	Inventory *inv = m_invmgr->getInventory(m_selected_item->inventoryloc);
-	sanity_check(inv);
+	if (!inv)
+		return;
 	InventoryList *list = inv->getList(m_selected_item->listname);
-	sanity_check(list);
+	if (!list)
+		return;
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
@@ -2249,7 +2291,8 @@ void GUIFormSpecMenu::drawMenu()
 	}
 
 	gui::IGUISkin* skin = Environment->getSkin();
-	sanity_check(skin != NULL);
+	if(!skin)
+		return;
 	gui::IGUIFont *old_font = skin->getFont();
 	skin->setFont(m_font);
 
@@ -2421,11 +2464,11 @@ void GUIFormSpecMenu::drawMenu()
 
 		if (id != -1 && delta >= m_tooltip_show_delay) {
 			for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-					iter != m_fields.end(); iter++) {
+					iter != m_fields.end(); ++iter) {
 				if ( (iter->fid == id) && (m_tooltips[iter->fname].tooltip != "") ){
 					if (m_old_tooltip != m_tooltips[iter->fname].tooltip) {
 						m_old_tooltip = m_tooltips[iter->fname].tooltip;
-						m_tooltip_element->setText(narrow_to_wide(m_tooltips[iter->fname].tooltip).c_str());
+						m_tooltip_element->setText(utf8_to_wide(m_tooltips[iter->fname].tooltip).c_str());
 						std::vector<std::string> tt_rows = str_split(m_tooltips[iter->fname].tooltip, '\n');
 						s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 						s32 tooltip_height = m_tooltip_element->getTextHeight() * tt_rows.size() + 5;
@@ -2584,7 +2627,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 {
 	if(m_text_dst)
 	{
-		std::map<std::string, std::string> fields;
+		StringMap fields;
 
 		if (quitmode == quit_mode_accept) {
 			fields["quit"] = "true";
@@ -2619,10 +2662,10 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 		for(unsigned int i=0; i<m_fields.size(); i++) {
 			const FieldSpec &s = m_fields[i];
 			if(s.send) {
-				if(s.ftype == f_Button) {
-					fields[s.fname] = wide_to_narrow(s.flabel);
-				}
-				else if(s.ftype == f_Table) {
+				std::string name = s.fname;
+				if (s.ftype == f_Button) {
+					fields[name] = wide_to_utf8(s.flabel);
+				} else if (s.ftype == f_Table) {
 					GUITable *table = getTable(s.fname);
 					if (table) {
 						fields[s.fname] = table->checkEvent();
@@ -2638,8 +2681,8 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 					}
 					s32 selected = e->getSelected();
 					if (selected >= 0) {
-						fields[s.fname] =
-							wide_to_narrow(e->getItem(selected));
+						fields[name] =
+							wide_to_utf8(e->getItem(selected));
 					}
 				}
 				else if (s.ftype == f_TabHeader) {
@@ -2695,7 +2738,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 				{
 					IGUIElement* e = getElementFromId(s.fid);
 					if(e != NULL) {
-						fields[s.fname] = wide_to_narrow(e->getText());
+						fields[name] = wide_to_utf8(e->getText());
 					}
 				}
 			}
@@ -2737,7 +2780,8 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		if (hovered && isMyChild(hovered) &&
 				hovered->getType() == gui::EGUIET_TAB_CONTROL) {
 			gui::IGUISkin* skin = Environment->getSkin();
-			sanity_check(skin != NULL);
+			if (!skin)
+				return false;
 			gui::IGUIFont *old_font = skin->getFont();
 			skin->setFont(m_font);
 			bool retval = hovered->OnEvent(event);
@@ -2804,17 +2848,17 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
-		if (porting::android_version_sdk_int >= 18) {
+		if (porting::canKeyboard()) {
 			// keyboard shown in GUIModalMenu::preprocessEvent
 			//porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 		} else {
 			m_JavaDialogFieldName = getNameByID(hovered->getID());
 			std::string message   = _("Enter ");
-			std::string label     = wide_to_narrow(getLabelByID(hovered->getID()));
+			std::string label     = wide_to_utf8(getLabelByID(hovered->getID()));
 			if (label == "") {
 				label = "text";
 			}
-			message += _(label) + ":";
+			message += std::string(_(label.c_str())) + ":";
 
 			/* single line text input */
 			int type = 2;
@@ -2830,7 +2874,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			}
 
 			porting::showInputDialog(_("ok"), "",
-					wide_to_narrow(((gui::IGUIEditBox*) hovered)->getText()),
+					wide_to_utf8(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
 		}
 			return retval;
@@ -2988,7 +3032,7 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 		}
 
 		SEvent* translated = new SEvent();
-		assert(translated != 0);
+		//assert(translated != 0);
 		//translate doubleclick to escape
 		memset(translated, 0, sizeof(SEvent));
 		translated->EventType = irr::EET_KEY_INPUT_EVENT;
@@ -3010,10 +3054,10 @@ bool GUIFormSpecMenu::DoubleClickDetection(const SEvent event)
 
 bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 {
-	if(event.EventType==EET_KEY_INPUT_EVENT) {
+	if (event.EventType==EET_KEY_INPUT_EVENT) {
 		KeyPress kp(event.KeyInput);
 		if (event.KeyInput.PressedDown && ( (kp == EscapeKey) ||
-			(kp == getKeySetting("keymap_inventory")) || (kp == CancelKey))) {
+				(kp == getKeySetting("keymap_inventory")) || (kp == CancelKey))) {
 			if (m_allowclose) {
 				doPause = false;
 				acceptInput(quit_mode_cancel);
@@ -3023,8 +3067,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 			return true;
 		} else if (m_client != NULL && event.KeyInput.PressedDown &&
-			(kp == getKeySetting("keymap_screenshot"))) {
-				m_client->makeScreenshot(m_device);
+				(kp == getKeySetting("keymap_screenshot"))) {
+			m_client->makeScreenshot();
 		}
 		if (event.KeyInput.PressedDown &&
 			(event.KeyInput.Key==KEY_RETURN ||
@@ -3056,6 +3100,74 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			return true;
 		}
 
+		if (event.KeyInput.PressedDown && kp == getKeySetting("keymap_drop")) {
+
+			// get item
+			ItemSpec s = getItemAtPos(m_pointer);
+			Inventory *inv_s = NULL;
+
+			if(s.isValid())
+			do { // breakable
+				inv_s = m_invmgr->getInventory(s.inventoryloc);
+
+				if(!inv_s) {
+					errorstream << "InventoryMenu: The selected inventory location "
+							<< "\"" << s.inventoryloc.dump() << "\" doesn't exist"
+							<< std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				InventoryList *list_from = inv_s->getList(s.listname);
+				if(list_from == NULL) {
+					verbosestream << "InventoryMenu: The selected inventory list \""
+							<< s.listname << "\" does not exist" << std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				if((u32)s.i >= list_from->getSize()) {
+					infostream << "InventoryMenu: The selected inventory list \""
+							<< s.listname<<"\" is too small (i=" << s.i << ", size="
+							<< list_from->getSize() << ")" << std::endl;
+					s.i = -1;  // make it invalid again
+					break;
+				}
+
+				ItemStack stack_from = list_from->getItem(s.i);
+				if(stack_from.count<=0)
+					break;
+
+				u32 drop_amount = 0;
+
+				if (event.KeyInput.Control) {
+					// if drop key + ctrl = drop full stack
+					drop_amount = stack_from.count;
+				} else {
+					// if drop key without ctrl = drop one item
+					drop_amount = 1;
+				}
+
+				// Send IACTION_DROP
+
+				// Check how many items can be dropped
+				drop_amount = stack_from.count = MYMIN(drop_amount, stack_from.count);
+				if(drop_amount == 0 || drop_amount > stack_from.count)
+					break;
+
+				infostream << "Handing IACTION_DROP to manager" << std::endl;
+
+				IDropAction *a = new IDropAction();
+				a->count = drop_amount;
+				a->from_inv = s.inventoryloc;
+				a->from_list = s.listname;
+				a->from_i = s.i;
+				m_invmgr->inventoryAction(a);
+
+			} while(0);
+		}
+
+
 	}
 
 	/* Mouse event other than movement, or crossing the border of inventory
@@ -3075,44 +3187,45 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		Inventory *inv_selected = NULL;
 		Inventory *inv_s = NULL;
+		InventoryList *list_s = NULL;
 
-		if(m_selected_item) {
+		if (m_selected_item) {
 			inv_selected = m_invmgr->getInventory(m_selected_item->inventoryloc);
-			sanity_check(inv_selected);
-			sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
+			//sanity_check(inv_selected);
+			//sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
 		}
 
 		u32 s_count = 0;
 
-		if(s.isValid())
+		if (s.isValid())
 		do { // breakable
 			inv_s = m_invmgr->getInventory(s.inventoryloc);
 
-			if(!inv_s) {
-				errorstream<<"InventoryMenu: The selected inventory location "
-						<<"\""<<s.inventoryloc.dump()<<"\" doesn't exist"
-						<<std::endl;
+			if (!inv_s) {
+				errorstream << "InventoryMenu: The selected inventory location "
+						<< "\"" << s.inventoryloc.dump() << "\" doesn't exist"
+						<< std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			InventoryList *list = inv_s->getList(s.listname);
-			if(list == NULL) {
-				verbosestream<<"InventoryMenu: The selected inventory list \""
-						<<s.listname<<"\" does not exist"<<std::endl;
+			list_s = inv_s->getList(s.listname);
+			if (list_s == NULL) {
+				verbosestream << "InventoryMenu: The selected inventory list \""
+						<< s.listname << "\" does not exist" << std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			if((u32)s.i >= list->getSize()) {
-				infostream<<"InventoryMenu: The selected inventory list \""
-						<<s.listname<<"\" is too small (i="<<s.i<<", size="
-						<<list->getSize()<<")"<<std::endl;
+			if ((u32)s.i >= list_s->getSize()) {
+				infostream << "InventoryMenu: The selected inventory list \""
+						<< s.listname << "\" is too small (i=" << s.i << ", size="
+						<< list_s->getSize() << ")" << std::endl;
 				s.i = -1;  // make it invalid again
 				break;
 			}
 
-			s_count = list->getItem(s.i).count;
+			s_count = list_s->getItem(s.i).count;
 		} while(0);
 
 		bool identical = (m_selected_item != NULL) && s.isValid() &&
@@ -3124,24 +3237,28 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// up/down: 0 = down (press), 1 = up (release), 2 = unknown event, -1 movement
 		int button = 0;
 		int updown = 2;
-		if(event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
+		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
 			{ button = 0; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
+		else if (event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN)
 			{ button = 1; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN)
+		else if (event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN)
 			{ button = 2; updown = 0; }
-		else if(event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP)
 			{ button = 0; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_RMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_RMOUSE_LEFT_UP)
 			{ button = 1; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_MMOUSE_LEFT_UP)
+		else if (event.MouseInput.Event == EMIE_MMOUSE_LEFT_UP)
 			{ button = 2; updown = 1; }
-		else if(event.MouseInput.Event == EMIE_MOUSE_MOVED)
+		else if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
 			{ updown = -1;}
 
 		// Set this number to a positive value to generate a move action
 		// from m_selected_item to s.
 		u32 move_amount = 0;
+
+		// Set this number to a positive value to generate a move action
+		// from s to the next inventory ring.
+		u32 shift_move_amount = 0;
 
 		// Set this number to a positive value to generate a drop action
 		// from m_selected_item.
@@ -3150,7 +3267,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// Set this number to a positive value to generate a craft action at s.
 		u32 craft_amount = 0;
 
-		if(updown == 0) {
+		if (updown == 0) {
 			// Some mouse button has been pressed
 
 			//infostream<<"Mouse button "<<button<<" pressed at p=("
@@ -3158,40 +3275,49 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 			m_selected_dragging = false;
 
-			if(s.isValid() && s.listname == "craftpreview") {
+			if (s.isValid() && s.listname == "craftpreview") {
 				// Craft preview has been clicked: craft
 				craft_amount = (button == 2 ? 10 : 1);
-			}
-			else if(m_selected_item == NULL) {
-				if(s_count != 0) {
-					// Non-empty stack has been clicked: select it
+			} else if (m_selected_item == NULL) {
+				if (s_count != 0) {
+					// Non-empty stack has been clicked: select or shift-move it
 					m_selected_item = new ItemSpec(s);
 
-					if(button == 1)  // right
-						m_selected_amount = (s_count + 1) / 2;
-					else if(button == 2)  // middle
-						m_selected_amount = MYMIN(s_count, 10);
+					u32 count;
+					if (button == 1)  // right
+						count = (s_count + 1) / 2;
+					else if (button == 2)  // middle
+						count = MYMIN(s_count, 10);
 					else  // left
-						m_selected_amount = s_count;
+						count = s_count;
 
-					m_selected_dragging = true;
-					m_rmouse_auto_place = false;
+					if (!event.MouseInput.Shift) {
+						// no shift: select item
+						m_selected_amount = count;
+						m_selected_dragging = true;
+						m_rmouse_auto_place = false;
+					} else {
+						// shift pressed: move item
+						if (button != 1)
+							shift_move_amount = count;
+						else // count of 1 at left click like after drag & drop
+							shift_move_amount = 1;
+					}
 				}
-			}
-			else { // m_selected_item != NULL
-				assert(m_selected_amount >= 1);
+			} else { // m_selected_item != NULL
+				//assert(m_selected_amount >= 1);
 
-				if(s.isValid()) {
+				if (s.isValid()) {
 					// Clicked a slot: move
-					if(button == 1)  // right
+					if (button == 1)  // right
 						move_amount = 1;
-					else if(button == 2)  // middle
+					else if (button == 2)  // middle
 						move_amount = MYMIN(m_selected_amount, 10);
 					else  // left
 						move_amount = m_selected_amount;
 
-					if(identical) {
-						if(move_amount >= m_selected_amount)
+					if (identical) {
+						if (move_amount >= m_selected_amount)
 							m_selected_amount = 0;
 						else
 							m_selected_amount -= move_amount;
@@ -3200,29 +3326,28 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 				else if (!getAbsoluteClippingRect().isPointInside(m_pointer)) {
 					// Clicked outside of the window: drop
-					if(button == 1)  // right
+					if (button == 1)  // right
 						drop_amount = 1;
-					else if(button == 2)  // middle
+					else if (button == 2)  // middle
 						drop_amount = MYMIN(m_selected_amount, 10);
 					else  // left
 						drop_amount = m_selected_amount;
 				}
 			}
 		}
-		else if(updown == 1) {
+		else if (updown == 1) {
 			// Some mouse button has been released
 
 			//infostream<<"Mouse button "<<button<<" released at p=("
 			//	<<p.X<<","<<p.Y<<")"<<std::endl;
 
-			if(m_selected_item != NULL && m_selected_dragging && s.isValid()) {
-				if(!identical) {
+			if (m_selected_item != NULL && m_selected_dragging && s.isValid()) {
+				if (!identical) {
 					// Dragged to different slot: move all selected
 					move_amount = m_selected_amount;
 				}
-			}
-			else if(m_selected_item != NULL && m_selected_dragging &&
-				!(getAbsoluteClippingRect().isPointInside(m_pointer))) {
+			} else if (m_selected_item != NULL && m_selected_dragging &&
+					!(getAbsoluteClippingRect().isPointInside(m_pointer))) {
 				// Dragged outside of window: drop all selected
 				drop_amount = m_selected_amount;
 			}
@@ -3231,23 +3356,23 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			// Keep count of how many times right mouse button has been
 			// clicked. One click is drag without dropping. Click + release
 			// + click changes to drop one item when moved mode
-			if(button == 1 && m_selected_item != NULL)
+			if (button == 1 && m_selected_item != NULL)
 				m_rmouse_auto_place = !m_rmouse_auto_place;
-		}
-		else if(updown == -1) {
+		} else if (updown == -1) {
 			// Mouse has been moved and rmb is down and mouse pointer just
 			// entered a new inventory field (checked in the entry-if, this
 			// is the only action here that is generated by mouse movement)
-			if(m_selected_item != NULL && s.isValid()){
+			if (m_selected_item != NULL && s.isValid()) {
 				// Move 1 item
 				// TODO: middle mouse to move 10 items might be handy
-				if (m_rmouse_auto_place) {
+				if (m_rmouse_auto_place && inv_selected) {
 					// Only move an item if the destination slot is empty
 					// or contains the same item type as what is going to be
 					// moved
 					InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-					InventoryList *list_to = inv_s->getList(s.listname);
-					assert(list_from && list_to);
+					InventoryList *list_to = list_s;
+					if (!(list_from && list_to))
+						return false;
 					ItemStack stack_from = list_from->getItem(m_selected_item->i);
 					ItemStack stack_to = list_to->getItem(s.i);
 					if (stack_to.empty() || stack_to.name == stack_from.name)
@@ -3257,17 +3382,19 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 
 		// Possibly send inventory action to server
-		if(move_amount > 0)
-		{
+		if (move_amount > 0 && inv_selected) {
 			// Send IACTION_MOVE
 
-			assert(m_selected_item && m_selected_item->isValid());
-			assert(s.isValid());
+			if (!(m_selected_item && m_selected_item->isValid()))
+				return false;
+			if (!s.isValid())
+				return false;
 
-			assert(inv_selected && inv_s);
+			//assert(inv_selected && inv_s);
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			InventoryList *list_to = inv_s->getList(s.listname);
-			assert(list_from && list_to);
+			InventoryList *list_to = list_s;
+			if (!(list_from && list_to))
+				return false;
 			ItemStack stack_from = list_from->getItem(m_selected_item->i);
 			ItemStack stack_to = list_to->getItem(s.i);
 
@@ -3285,7 +3412,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_selected_content_guess_inventory = s.inventoryloc;
 			}
 			// Source stack goes fully into destination stack
-			else if(leftover.empty()) {
+			else if (leftover.empty()) {
 				m_selected_amount -= move_amount;
 				m_selected_content_guess = ItemStack(); // Clear
 			}
@@ -3296,7 +3423,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_selected_content_guess = ItemStack(); // Clear
 			}
 
-			infostream<<"Handing IACTION_MOVE to manager"<<std::endl;
+			infostream << "Handing IACTION_MOVE to manager" << std::endl;
 			IMoveAction *a = new IMoveAction();
 			a->count = move_amount;
 			a->from_inv = m_selected_item->inventoryloc;
@@ -3306,40 +3433,106 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			a->to_list = s.listname;
 			a->to_i = s.i;
 			m_invmgr->inventoryAction(a);
-		}
-		else if(drop_amount > 0) {
+		} else if (shift_move_amount > 0) {
+			u32 mis = m_inventory_rings.size();
+			u32 i = 0;
+			for (; i < mis; i++) {
+				const ListRingSpec &sp = m_inventory_rings[i];
+				if (sp.inventoryloc == s.inventoryloc
+						&& sp.listname == s.listname)
+					break;
+			}
+			do {
+				if (i >= mis) // if not found
+					break;
+				u32 to_inv_ind = (i + 1) % mis;
+				const ListRingSpec &to_inv_sp = m_inventory_rings[to_inv_ind];
+				InventoryList *list_from = list_s;
+				if (!s.isValid())
+					break;
+				Inventory *inv_to = m_invmgr->getInventory(to_inv_sp.inventoryloc);
+				if (!inv_to)
+					break;
+				InventoryList *list_to = inv_to->getList(to_inv_sp.listname);
+				if (!list_to)
+					break;
+				ItemStack stack_from = list_from->getItem(s.i);
+				if(!(shift_move_amount <= stack_from.count))
+					break;
+				if (m_client->getProtoVersion() >= 25) {
+					infostream << "Handing IACTION_MOVE to manager" << std::endl;
+					IMoveAction *a = new IMoveAction();
+					a->count = shift_move_amount;
+					a->from_inv = s.inventoryloc;
+					a->from_list = s.listname;
+					a->from_i = s.i;
+					a->to_inv = to_inv_sp.inventoryloc;
+					a->to_list = to_inv_sp.listname;
+					a->move_somewhere = true;
+					m_invmgr->inventoryAction(a);
+				} else {
+					// find a place (or more than one) to add the new item
+					u32 ilt_size = list_to->getSize();
+					ItemStack leftover;
+					for (u32 slot_to = 0; slot_to < ilt_size
+							&& shift_move_amount > 0; slot_to++) {
+						list_to->itemFits(slot_to, stack_from, &leftover);
+						if (leftover.count < stack_from.count) {
+							infostream << "Handing IACTION_MOVE to manager" << std::endl;
+							IMoveAction *a = new IMoveAction();
+							a->count = MYMIN(shift_move_amount,
+								(u32) (stack_from.count - leftover.count));
+							shift_move_amount -= a->count;
+							a->from_inv = s.inventoryloc;
+							a->from_list = s.listname;
+							a->from_i = s.i;
+							a->to_inv = to_inv_sp.inventoryloc;
+							a->to_list = to_inv_sp.listname;
+							a->to_i = slot_to;
+							m_invmgr->inventoryAction(a);
+							stack_from = leftover;
+						}
+					}
+				}
+			} while (0);
+		} else if (drop_amount > 0) {
 			m_selected_content_guess = ItemStack(); // Clear
 
 			// Send IACTION_DROP
 
-			assert(m_selected_item && m_selected_item->isValid());
-			assert(inv_selected);
+			if (!(m_selected_item && m_selected_item->isValid()))
+				return false;
+			if (!inv_selected)
+				return false;
 			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			assert(list_from);
+			if (!list_from)
+				return false;
 			ItemStack stack_from = list_from->getItem(m_selected_item->i);
 
 			// Check how many items can be dropped
 			drop_amount = stack_from.count = MYMIN(drop_amount, stack_from.count);
-			assert(drop_amount > 0 && drop_amount <= m_selected_amount);
+			if (!(drop_amount > 0 && drop_amount <= m_selected_amount))
+				return false;
 			m_selected_amount -= drop_amount;
 
-			infostream<<"Handing IACTION_DROP to manager"<<std::endl;
+			infostream << "Handing IACTION_DROP to manager" << std::endl;
 			IDropAction *a = new IDropAction();
 			a->count = drop_amount;
 			a->from_inv = m_selected_item->inventoryloc;
 			a->from_list = m_selected_item->listname;
 			a->from_i = m_selected_item->i;
 			m_invmgr->inventoryAction(a);
-		}
-		else if(craft_amount > 0) {
+		} else if (craft_amount > 0) {
 			m_selected_content_guess = ItemStack(); // Clear
 
 			// Send IACTION_CRAFT
 
-			assert(s.isValid());
-			assert(inv_s);
+			if(!s.isValid())
+				return false;
+			if(!inv_s)
+				return false;
 
-			infostream<<"Handing IACTION_CRAFT to manager"<<std::endl;
+			infostream << "Handing IACTION_CRAFT to manager" << std::endl;
 			ICraftAction *a = new ICraftAction();
 			a->count = craft_amount;
 			a->craft_inv = s.inventoryloc;
@@ -3347,7 +3540,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 
 		// If m_selected_amount has been decreased to zero, deselect
-		if(m_selected_amount == 0) {
+		if (m_selected_amount == 0) {
 			delete m_selected_item;
 			m_selected_item = NULL;
 			m_selected_amount = 0;
@@ -3356,12 +3549,12 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 		m_old_pointer = m_pointer;
 	}
-	if(event.EventType==EET_GUI_EVENT) {
+	if (event.EventType == EET_GUI_EVENT) {
 
-		if(event.GUIEvent.EventType==gui::EGET_TAB_CHANGED
+		if (event.GUIEvent.EventType == gui::EGET_TAB_CHANGED
 				&& isVisible()) {
 			// find the element that was clicked
-			for(unsigned int i=0; i<m_fields.size(); i++) {
+			for (unsigned int i=0; i<m_fields.size(); i++) {
 				FieldSpec &s = m_fields[i];
 				if ((s.ftype == f_TabHeader) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
@@ -3372,16 +3565,16 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 			}
 		}
-		if(event.GUIEvent.EventType==gui::EGET_ELEMENT_FOCUS_LOST
+		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
-			if(!canTakeFocus(event.GUIEvent.Element)) {
+			if (!canTakeFocus(event.GUIEvent.Element)) {
 				infostream<<"GUIFormSpecMenu: Not allowing focus change."
 						<<std::endl;
 				// Returning true disables focus change
 				return true;
 			}
 		}
-		if((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
+		if ((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
 				(event.GUIEvent.EventType == gui::EGET_CHECKBOX_CHANGED) ||
 				(event.GUIEvent.EventType == gui::EGET_COMBO_BOX_CHANGED) ||
 				(event.GUIEvent.EventType == gui::EGET_SCROLL_BAR_CHANGED)) {
@@ -3400,14 +3593,14 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 
 			// find the element that was clicked
-			for(u32 i=0; i<m_fields.size(); i++) {
+			for (u32 i = 0; i < m_fields.size(); i++) {
 				FieldSpec &s = m_fields[i];
 				// if its a button, set the send field so
 				// lua knows which button was pressed
 				if (((s.ftype == f_Button) || (s.ftype == f_CheckBox)) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
 					s.send = true;
-					if(s.is_exit) {
+					if (s.is_exit) {
 						if (m_allowclose) {
 							acceptInput(quit_mode_accept);
 							quitMenu();
@@ -3420,11 +3613,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						s.send = false;
 						return true;
 					}
-				}
-				else if ((s.ftype == f_DropDown) &&
+				} else if ((s.ftype == f_DropDown) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
 					// only send the changed dropdown
-					for(u32 i=0; i<m_fields.size(); i++) {
+					for (u32 i = 0; i < m_fields.size(); i++) {
 						FieldSpec &s2 = m_fields[i];
 						if (s2.ftype == f_DropDown) {
 							s2.send = false;
@@ -3435,17 +3627,15 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 					// revert configuration to make sure dropdowns are sent on
 					// regular button click
-					for(u32 i=0; i<m_fields.size(); i++) {
+					for (u32 i = 0; i < m_fields.size(); i++) {
 						FieldSpec &s2 = m_fields[i];
 						if (s2.ftype == f_DropDown) {
 							s2.send = true;
 						}
 					}
 					return true;
-				}
-				else if ((s.ftype == f_ScrollBar) &&
-					(s.fid == event.GUIEvent.Caller->getID()))
-				{
+				} else if ((s.ftype == f_ScrollBar) &&
+						(s.fid == event.GUIEvent.Caller->getID())) {
 					s.fdefault = L"Changed";
 					acceptInput(quit_mode_no);
 					s.fdefault = L"";
@@ -3453,8 +3643,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		if(event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
-			if(event.GUIEvent.Caller->getID() > 257) {
+		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
+			if (event.GUIEvent.Caller->getID() > 257) {
 
 				if (m_allowclose) {
 					acceptInput(quit_mode_accept);
@@ -3468,11 +3658,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		if(event.GUIEvent.EventType == gui::EGET_TABLE_CHANGED) {
+		if (event.GUIEvent.EventType == gui::EGET_TABLE_CHANGED) {
 			int current_id = event.GUIEvent.Caller->getID();
-			if(current_id > 257) {
+			if (current_id > 257) {
 				// find the element that was clicked
-				for(u32 i=0; i<m_fields.size(); i++) {
+				for (u32 i = 0; i < m_fields.size(); i++) {
 					FieldSpec &s = m_fields[i];
 					// if it's a table, set the send field
 					// so lua knows which table was changed
@@ -3498,7 +3688,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 std::string GUIFormSpecMenu::getNameByID(s32 id)
 {
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-				iter != m_fields.end(); iter++) {
+				iter != m_fields.end(); ++iter) {
 		if (iter->fid == id) {
 			return iter->fname;
 		}
@@ -3514,7 +3704,7 @@ std::string GUIFormSpecMenu::getNameByID(s32 id)
 std::wstring GUIFormSpecMenu::getLabelByID(s32 id)
 {
 	for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
-				iter != m_fields.end(); iter++) {
+				iter != m_fields.end(); ++iter) {
 		if (iter->fid == id) {
 			return iter->flabel;
 		}

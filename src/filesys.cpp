@@ -38,7 +38,10 @@ namespace fs
 
 #ifdef _WIN32 // WINDOWS
 
+#ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#endif
+
 #include <windows.h>
 #include <shlwapi.h>
 
@@ -148,7 +151,7 @@ bool RecursiveDelete(const std::string &path)
 		infostream<<"RecursiveDelete: Deleting content of directory "
 				<<path<<std::endl;
 		std::vector<DirListNode> content = GetDirListing(path);
-		for(int i=0; i<content.size(); i++){
+		for(size_t i=0; i<content.size(); i++){
 			const DirListNode &n = content[i];
 			std::string fullpath = path + DIR_DELIM + n.name;
 			bool did = RecursiveDelete(fullpath);
@@ -189,7 +192,7 @@ bool DeleteSingleFileOrEmptyDirectory(const std::string &path)
 
 std::string TempPath()
 {
-	DWORD bufsize = GetTempPath(0, "");
+	DWORD bufsize = GetTempPath(0, NULL);
 	if(bufsize == 0){
 		errorstream<<"GetTempPath failed, error = "<<GetLastError()<<std::endl;
 		return "";
@@ -667,6 +670,19 @@ std::string RemoveRelativePathComponents(std::string path)
 	while(pos != 0 && IsDirDelimiter(path[pos-1]))
 		pos--;
 	return path.substr(0, pos);
+}
+
+std::string AbsolutePath(const std::string &path)
+{
+#ifdef _WIN32
+	char *abs_path = _fullpath(NULL, path.c_str(), MAX_PATH);
+#else
+	char *abs_path = realpath(path.c_str(), NULL);
+#endif
+	if (!abs_path) return "";
+	std::string abs_path_str(abs_path);
+	free(abs_path);
+	return abs_path_str;
 }
 
 const char *GetFilenameFromPath(const char *path)

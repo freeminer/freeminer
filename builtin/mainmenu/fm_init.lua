@@ -10,12 +10,16 @@ dofile(menupath.."fm_gamemgr.lua")
 dofile(menupath.."modstore.lua")
 dofile(menupath.."menubar.lua")
 
+dofile(menupath .. DIR_DELIM .. "common.lua")
+
 mt_color_grey  = "#AAAAAA"
 mt_color_blue  = "#0000DD"
 mt_color_green = "#00DD00"
 mt_color_dark_green = "#003300"
 
 menu = {}
+menudata = menu
+
 local tabbuilder = {}
 local worldlist = nil
 
@@ -86,6 +90,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 end
 
 --------------------------------------------------------------------------------
+--[[ mt version used
 function menu.asyncOnlineFavourites()
 	menu.favorites = {}
 	core.handle_async(
@@ -99,6 +104,7 @@ function menu.asyncOnlineFavourites()
 		end
 		)
 end
+]]
 
 --------------------------------------------------------------------------------
 function menu.render_favorite(spec,render_details)
@@ -530,6 +536,7 @@ function tabbuilder.tab_multiplayer()
 		"pwdfield[12.9,10.4;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
 		"textarea[7.35,6.5;8.8,2.5;;"
 	if menu.fav_selected ~= nil and
+		menu.favorites[menu.fav_selected] ~= nil and
 		menu.favorites[menu.fav_selected].description ~= nil then
 		retval = retval ..
 			core.formspec_escape(menu.favorites[menu.fav_selected].description,true)
@@ -655,7 +662,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		core.setting_set("public_serverlist", fields["cb_public_serverlist"])
 
 		if core.setting_getbool("public_serverlist") then
-			menu.asyncOnlineFavourites()
+			asyncOnlineFavourites()
 		else
 			menu.favorites = core.get_favorites("local")
 		end
@@ -701,8 +708,10 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 		gamedata.selected_world = 0
 
-		core.setting_set("address",fields["te_address"])
-		core.setting_set("remote_port",fields["te_port"])
+		if fields["te_address"] and fields["te_port"] then
+			core.setting_set("address", fields["te_address"])
+			core.setting_set("remote_port", fields["te_port"])
+		end
 
 		core.start()
 		return
@@ -859,7 +868,7 @@ function tabbuilder.tab_texture_packs()
 			"textlist[7.1,0.25;7.5,5.0;TPs;"
 
 	local current_texture_path = core.setting_get("texture_path")
-	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+	local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
 
 	if index == nil then index = 1 end
@@ -903,7 +912,7 @@ function tabbuilder.handle_texture_pack_buttons(fields)
 			local index = core.get_textlist_index("TPs")
 			core.setting_set("mainmenu_last_selected_TP",
 				index)
-			local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+			local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 			local current_index = core.get_textlist_index("TPs")
 			if current_index ~= nil and #list >= current_index then
 				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]
@@ -919,53 +928,96 @@ end
 -- Settings tab
 --------------------------------------------------------------------------------
 function tabbuilder.tab_settings()
+
 	local tab_string = ""
-	local pos_x, pos_y = 7.1, 0
-	local add_checkbox = function(name, config, text)
-		tab_string = tab_string ..
-			"checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
-					.. dump(core.setting_getbool(config)) .. "]"
+	local pos_x_offset, pos_y_offset = 7.1, -0.43
+	local pos_x, pos_y = pos_x_offset, pos_y_offset
+
+	local calc_next_pos = function()
 		pos_y = pos_y + 0.5
-		if pos_y == 11 then
-			pos_y = 0
+		if(pos_y >= 11) then
+			pos_y = pos_y_offset
 			pos_x = pos_x + 5
 		end
 	end
-	-- TODO: refactor this and handle_settings_buttons
-	add_checkbox("cb_fancy_trees", "new_style_leaves", "Fancy trees")
-	add_checkbox("cb_smooth_lighting", "smooth_lighting", "Smooth Lighting")
-	add_checkbox("cb_enable_node_highlighting", "enable_node_highlighting", "Node Highlighting")
-	add_checkbox("cb_3d_clouds", "enable_3d_clouds", "3D Clouds")
-	add_checkbox("cb_opaque_water", "opaque_water", "Opaque Water")
-	add_checkbox("cb_farmesh", "farmesh", "Farmesh (dev)")
-	add_checkbox("cb_mipmapping", "mip_map", "Mip-Mapping")
-	add_checkbox("cb_anisotrophic", "anisotropic_filter", "Anisotropic Filtering")
-	add_checkbox("cb_bilinear", "bilinear_filter", "Bi-Linear Filtering")
-	add_checkbox("cb_trilinear", "trilinear_filter", "Tri-Linear Filtering")
-	add_checkbox("cb_shaders", "enable_shaders", "Shaders")
-	add_checkbox("cb_pre_ivis", "preload_item_visuals", "Preload item visuals")
-	add_checkbox("cb_particles", "enable_particles", "Enable Particles")
-	add_checkbox("cb_liquid_real", "liquid_real", "Real Liquid")
-	add_checkbox("cb_weather", "weather", "Weather")
-	add_checkbox("cb_hud_map", "hud_map", "Mini map (dev)")
-	add_checkbox("cb_hotbar_cycling", "hotbar_cycling", "Hotbar Cycling")
 
-	if core.setting_getbool("enable_shaders") then
-		add_checkbox("cb_bumpmapping", "enable_bumpmapping", "Bumpmapping")
-		add_checkbox("cb_parallax", "enable_parallax_occlusion", "Parallax Occlusion")
-		add_checkbox("cb_generate_normalmaps", "generate_normalmaps", "Generate Normalmaps")
-		add_checkbox("cb_waving_water", "enable_waving_water", "Waving Water")
-		add_checkbox("cb_waving_leaves", "enable_waving_leaves", "Waving Leaves")
-		add_checkbox("cb_waving_plants", "enable_waving_plants", "Waving Plants")
+	local add_checkbox = function(name, config, text, disabled)
+		if(disabled == nil or disabled == false) then
+		    tab_string = tab_string ..
+			    "checkbox[" .. pos_x .. "," .. pos_y ..  ";" .. name .. ";".. fgettext(text) .. ";"
+					    .. dump(core.setting_getbool(config)) .. "]"
+		else
+		    tab_string = tab_string ..
+			    "textlist[" .. pos_x+0.33 .. "," .. pos_y+0.2 .. ";4,1;;#888888" .. fgettext(text) .. ";0;true]"
+		end
+		calc_next_pos()
 	end
 
+	local add_title = function(text)
+		-- add free space before title
+		if(pos_y > pos_y_offset) then
+			calc_next_pos()
+		end
+		tab_string = tab_string ..
+			"textlist[" .. pos_x-0.1 .. "," .. pos_y+0.2 .. ";4,1;;#ffffff" .. fgettext(text) .. ";0;true]"
+		calc_next_pos()
+	end
+
+	-- UI settings
+	add_title("UI settings")
+	add_checkbox( "cb_enable_node_highlighting",  "enable_node_highlighting",   "Node Highlighting"     )
+	add_checkbox( "cb_hotbar_cycling",            "hotbar_cycling",             "Hotbar Cycling"        )
+	add_checkbox( "cb_enable_minimap",            "enable_minimap",             "Show minimap"          )
+
+	local disable_minimap_group = not core.setting_getbool("enable_minimap");
+	add_checkbox( "cb_minimap_shape_round",       "minimap_shape_round",        "Minimap shape round",  disable_minimap_group )
+
+	-- Graphics settings
+	add_title("Graphics settings")
+	add_checkbox( "cb_mipmapping",                "mip_map",                    "Mip-Mapping"           )
+	add_checkbox( "cb_anisotrophic",              "anisotropic_filter",         "Anisotropic Filtering" )
+	add_checkbox( "cb_bilinear",                  "bilinear_filter",            "Bi-Linear Filtering"   )
+	add_checkbox( "cb_trilinear",                 "trilinear_filter",           "Tri-Linear Filtering"  )
+
+	add_checkbox( "cb_smooth_lighting",           "smooth_lighting",            "Smooth Lighting"       )
+	add_checkbox( "cb_fancy_trees",               "new_style_leaves",           "Fancy trees"           )
+	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water"          )
+	add_checkbox( "cb_connected_glass",           "connected_glass",            "Connected glass"       )
+	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds"             )
+	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals"  )
+	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
+
+	-- Effects settings
+	add_title("Effects settings")
+	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles"      )
+	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders"               )
+
+	-- Enviroment settings
+	add_title("Enviroment settings")
+	add_checkbox( "cb_liquid_real",               "liquid_real",                "Real Liquid"           )
+	add_checkbox( "cb_weather",                   "weather",                    "Weather"               )
+
+	local disable_shaders_group = not core.setting_getbool("enable_shaders");
+
+	add_checkbox( "cb_bumpmapping",               "enable_bumpmapping",         "Bumpmapping",          disable_shaders_group )
+	add_checkbox( "cb_parallax",                  "enable_parallax_occlusion",  "Parallax Occlusion",   disable_shaders_group )
+	add_checkbox( "cb_generate_normalmaps",       "generate_normalmaps",        "Generate Normalmaps",  disable_shaders_group )
+	add_checkbox( "cb_waving_water",              "enable_waving_water",        "Waving Water",         disable_shaders_group )
+	add_checkbox( "cb_waving_leaves",             "enable_waving_leaves",       "Waving Leaves",        disable_shaders_group )
+	add_checkbox( "cb_waving_plants",             "enable_waving_plants",       "Waving Plants",        disable_shaders_group )
+
+	-- Input setup
 	tab_string = tab_string ..
-		"button[7.1,11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+		"button[" .. pos_x_offset .. ",11.5;3,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
+
 	return tab_string
 end
 
 --------------------------------------------------------------------------------
 function tabbuilder.handle_settings_buttons(fields)
+
+	-- TODO: refactor this
+
 	if fields["cb_fancy_trees"] then
 		core.setting_set("new_style_leaves", fields["cb_fancy_trees"])
 	end
@@ -980,6 +1032,9 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_opaque_water"] then
 		core.setting_set("opaque_water", fields["cb_opaque_water"])
+	end
+	if fields["cb_connected_glass"] then
+		core.setting_set("connected_glass", fields["cb_connected_glass"])
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
@@ -1022,11 +1077,14 @@ function tabbuilder.handle_settings_buttons(fields)
 	if fields["cb_weather"] then
 		core.setting_set("weather", fields["cb_weather"])
 	end
-	if fields["cb_hud_map"] then
-		core.setting_set("hud_map", fields["cb_hud_map"])
-	end
 	if fields["cb_hotbar_cycling"] then
 		core.setting_set("hotbar_cycling", fields["cb_hotbar_cycling"])
+	end
+	if fields["cb_enable_minimap"] then
+		core.setting_set("enable_minimap", fields["cb_enable_minimap"])
+	end
+	if fields["cb_minimap_shape_round"] then
+		core.setting_set("minimap_shape_round", fields["cb_minimap_shape_round"])
 	end
 	if fields["cb_bumpmapping"] then
 		core.setting_set("enable_bumpmapping", fields["cb_bumpmapping"])
@@ -1165,7 +1223,7 @@ function menu.init()
 	end
 
 	if core.setting_getbool("public_serverlist") then
-		menu.asyncOnlineFavourites()
+		asyncOnlineFavourites()
 	else
 		menu.favorites = core.get_favorites("local")
 	end

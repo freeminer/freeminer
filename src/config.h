@@ -15,7 +15,7 @@
 	#include "cmake_config.h"
 #elif defined (__ANDROID__) || defined (ANDROID)
 	#define PROJECT_NAME "freeminer"
-	#define PROJECT_NAME_C "freeminer"
+//	#define PROJECT_NAME_C "freeminer"
 	#ifndef STATIC_SHAREDIR
 		#define STATIC_SHAREDIR ""
 	#endif
@@ -41,5 +41,9 @@
 		" USE_FREETYPE=" STR(USE_FREETYPE) \
 		" USE_LUAJIT=" STR(USE_LUAJIT) \
 		" STATIC_SHAREDIR=" STR(STATIC_SHAREDIR)
+
+#ifndef GAMES_VERSION
+	#define GAMES_VERSION ""
+#endif
 
 #endif

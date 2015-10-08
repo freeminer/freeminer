@@ -168,7 +168,7 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 	Json::Value list(Json::arrayValue);
 	for (std::vector<ServerListSpec>::const_iterator it = serverlist.begin();
 			it != serverlist.end();
-			it++) {
+			++it) {
 		list.append(*it);
 	}
 	root["list"] = list;
@@ -219,6 +219,7 @@ void sendAnnounce(const std::string &action,
 			server["clients_list"].append(*it);
 		}
 		if (gameid != "") server["gameid"] = gameid;
+		server["proto"]        = g_settings->get("server_proto");
 	}
 
 	if (action == "start") {

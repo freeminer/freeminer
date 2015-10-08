@@ -23,9 +23,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef THREADS_HEADER
 #define THREADS_HEADER
 
-#include "jthread/jmutex.h"
+/*
 
-#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
+#include "threading/mutex.h"
+
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE)
 #include <winsock2.h>
 #include <windows.h>
 typedef DWORD threadid_t;
@@ -35,11 +37,23 @@ typedef pthread_t threadid_t;
 
 inline threadid_t get_current_thread_id()
 {
-#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE)
 	return GetCurrentThreadId();
 #else
 	return pthread_self();
 #endif
+}
+
+*/
+
+#include <thread>
+
+//typedef std::thread::id threadid_t;
+typedef std::size_t threadid_t;
+
+inline threadid_t get_current_thread_id() {
+	//return std::this_thread::get_id();
+	return std::hash<std::thread::id>()(std::this_thread::get_id());
 }
 
 #endif

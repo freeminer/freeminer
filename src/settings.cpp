@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
-#include "jthread/jmutexautolock.h"
+#include "threading/mutex_auto_lock.h"
 #include "strfnd.h"
 #include <iostream>
 #include <fstream>
@@ -32,6 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "noise.h"
 #include <cctype>
 #include <algorithm>
+#include <mutex>
 
 static Settings main_settings;
 Settings *g_settings = &main_settings;
@@ -56,8 +57,8 @@ Settings & Settings::operator = (const Settings &other)
 	if (&other == this)
 		return *this;
 
-	JMutexAutoLock lock(m_mutex);
-	JMutexAutoLock lock2(other.m_mutex);
+	MutexAutoLock lock(m_mutex);
+	MutexAutoLock lock2(other.m_mutex);
 
 	clearNoLock();
 	updateNoLock(other);
@@ -68,10 +69,11 @@ Settings & Settings::operator = (const Settings &other)
 
 bool Settings::checkNameValid(const std::string &name)
 {
-	size_t pos = name.find_first_of("\t\n\v\f\r\b =\"{}#");
-	if (pos != std::string::npos) {
-		errorstream << "Invalid character '" << name[pos]
-			<< "' found in setting name" << std::endl;
+	bool valid = name.find_first_of("=\"{}#") == std::string::npos;
+	if (valid) valid = trim(name) == name;
+	if (!valid) {
+		errorstream << "Invalid setting name \"" << name << "\""
+			<< std::endl;
 		return false;
 	}
 	return true;
@@ -83,7 +85,7 @@ bool Settings::checkValueValid(const std::string &value)
 	if (value.substr(0, 3) == "\"\"\"" ||
 		value.find("\n\"\"\"") != std::string::npos) {
 		errorstream << "Invalid character sequence '\"\"\"' found in"
-			" setting value" << std::endl;
+			" setting value!" << std::endl;
 		return false;
 	}
 	return true;
@@ -92,9 +94,9 @@ bool Settings::checkValueValid(const std::string &value)
 
 std::string Settings::sanitizeName(const std::string &name)
 {
-	std::string n(name);
+	std::string n = trim(name);
 
-	for (const char *s = "\t\n\v\f\r\b =\"{}#"; *s; s++)
+	for (const char *s = "=\"{}#"; *s; s++)
 		n.erase(std::remove(n.begin(), n.end(), *s), n.end());
 
 	return n;
@@ -154,7 +156,7 @@ bool Settings::readConfigFile(const std::string &filename)
 
 bool Settings::parseConfigLines(std::istream &is, const std::string &end)
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	std::string line, name, value;
 
@@ -193,7 +195,7 @@ bool Settings::parseConfigLines(std::istream &is, const std::string &end)
 
 void Settings::writeLines(std::ostream &os, u32 tab_depth) const
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	for (std::map<std::string, SettingsEntry>::const_iterator
 			it = m_settings.begin();
@@ -302,7 +304,7 @@ bool Settings::updateConfigFile(const std::string &filename)
 		return true;
 	}
 
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	std::ifstream is(filename);
 	std::ostringstream os(std::ios_base::binary);
@@ -338,9 +340,12 @@ bool Settings::parseCommandLine(int argc, char *argv[],
 				nonopt_index++;
 				continue;
 			}
+			continue;
+/*
 			errorstream << "Invalid command-line parameter \""
 					<< arg_name << "\": --<option> expected." << std::endl;
 			return false;
+*/
 		}
 
 		std::string name = arg_name.substr(2);
@@ -383,7 +388,7 @@ bool Settings::parseCommandLine(int argc, char *argv[],
 
 const SettingsEntry &Settings::getEntry(const std::string &name) const
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	std::map<std::string, SettingsEntry>::const_iterator n;
 	if ((n = m_settings.find(name)) == m_settings.end()) {
@@ -570,7 +575,7 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 
 bool Settings::exists(const std::string &name) const
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	return (m_settings.find(name) != m_settings.end() ||
 		m_defaults.find(name) != m_defaults.end());
@@ -750,7 +755,7 @@ bool Settings::setEntry(const std::string &name, const void *data,
 		return false;
 
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 
 		SettingsEntry &entry = set_default ? m_defaults[name] : m_settings[name];
 		old_group = entry.group;
@@ -890,7 +895,7 @@ bool Settings::setNoiseParams(const std::string &name,
 
 bool Settings::remove(const std::string &name)
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	delete m_settings[name].group;
 	m_json.removeMember(name);
@@ -900,13 +905,13 @@ bool Settings::remove(const std::string &name)
 
 void Settings::clear()
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 	clearNoLock();
 }
 
 void Settings::clearDefaults()
 {
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 	clearDefaultsNoLock();
 }
 
@@ -915,7 +920,7 @@ void Settings::updateValue(const Settings &other, const std::string &name)
 	if (&other == this)
 		return;
 
-	JMutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	try {
 		std::string val = other.get(name);
@@ -931,8 +936,8 @@ void Settings::update(const Settings &other)
 	if (&other == this)
 		return;
 
-	JMutexAutoLock lock(m_mutex);
-	JMutexAutoLock lock2(other.m_mutex);
+	MutexAutoLock lock(m_mutex);
+	MutexAutoLock lock2(other.m_mutex);
 
 	updateNoLock(other);
 }
@@ -996,13 +1001,13 @@ void Settings::clearDefaultsNoLock()
 void Settings::registerChangedCallback(std::string name,
 	setting_changed_callback cbf, void *userdata)
 {
-	JMutexAutoLock lock(m_callbackMutex);
+	MutexAutoLock lock(m_callbackMutex);
 	m_callbacks[name].push_back(std::make_pair(cbf, userdata));
 }
 
 void Settings::deregisterChangedCallback(std::string name, setting_changed_callback cbf, void *userdata)
 {
-	JMutexAutoLock lock(m_callbackMutex);
+	MutexAutoLock lock(m_callbackMutex);
 	std::map<std::string, std::vector<std::pair<setting_changed_callback, void*> > >::iterator iterToVector = m_callbacks.find(name);
 	if (iterToVector != m_callbacks.end())
 	{
@@ -1018,12 +1023,12 @@ void Settings::deregisterChangedCallback(std::string name, setting_changed_callb
 
 void Settings::doCallbacks(const std::string name)
 {
-	JMutexAutoLock lock(m_callbackMutex);
+	MutexAutoLock lock(m_callbackMutex);
 	std::map<std::string, std::vector<std::pair<setting_changed_callback, void*> > >::iterator iterToVector = m_callbacks.find(name);
 	if (iterToVector != m_callbacks.end())
 	{
 		std::vector<std::pair<setting_changed_callback, void*> >::iterator iter;
-		for (iter = iterToVector->second.begin(); iter != iterToVector->second.end(); iter++)
+		for (iter = iterToVector->second.begin(); iter != iterToVector->second.end(); ++iter)
 		{
 			(iter->first)(name, iter->second);
 		}
@@ -1033,7 +1038,7 @@ void Settings::doCallbacks(const std::string name)
 
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
 	{
-		std::lock_guard<std::mutex> lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		if (!m_json[name].empty())
 			return m_json.get(name, def);
 	}
@@ -1063,12 +1068,12 @@ void Settings::setJson(const std::string & name, const Json::Value & value) {
 	if (!value.empty())
 		set(name, json_writer.write( value )); //todo: remove later
 
-	std::lock_guard<std::mutex> lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 	m_json[name] = value;
 }
 
 bool Settings::toJson(Json::Value &json) const {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	json = m_json;
 
@@ -1130,7 +1135,12 @@ bool Settings::readJsonFile(const std::string &filename) {
 	if (!is.good())
 		return false;
 	Json::Value json;
-	is >> json;
+	try {
+		is >> json;
+	} catch (std::exception &e) {
+		errorstream << "Error reading json file: \"" << filename << "\" : " << e.what() << std::endl;
+		return false;
+	}
 	return fromJson(json);
 }
 

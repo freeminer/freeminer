@@ -28,6 +28,7 @@ public:
 	// This is the one method that we have to implement
 	virtual bool OnEvent(const SEvent& event)
 	{
+		try {
 		/*
 			React to nothing here if a menu is active
 		*/
@@ -85,11 +86,21 @@ public:
 					mouse_wheel += event.MouseInput.Wheel;
 				}
 			}
-		}
-		if (event.EventType == irr::EET_LOG_TEXT_EVENT) {
-			dstream << std::string("Irrlicht log: ") + std::string(event.LogEvent.Text)
-			        << std::endl;
+		} else if (event.EventType == irr::EET_LOG_TEXT_EVENT) {
+			static const enum LogMessageLevel irr_loglev_conv[] = {
+				LMT_VERBOSE, // ELL_DEBUG
+				LMT_INFO,    // ELL_INFORMATION
+				LMT_ACTION,  // ELL_WARNING
+				LMT_ERROR,   // ELL_ERROR
+				LMT_ERROR,   // ELL_NONE
+			};
+			assert(event.LogEvent.Level < ARRLEN(irr_loglev_conv));
+			log_printline(irr_loglev_conv[event.LogEvent.Level],
+				std::string("Irrlicht: ") + (const char *)event.LogEvent.Text);
 			return true;
+		}
+		} catch(std::exception &e) {
+			errorstream<<"input exception: " << e.what() << std::endl;
 		}
 		/* always return false in order to continue processing events */
 		return false;

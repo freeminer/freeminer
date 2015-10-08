@@ -47,15 +47,15 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->name            = "Default";
 	b->flags           = 0;
 	b->depth_top       = 0;
-	b->depth_filler    = 0;
+	b->depth_filler    = -MAX_MAP_GENERATION_LIMIT;
 	b->depth_water_top = 0;
-	b->y_min           = -MAP_GENERATION_LIMIT;
-	b->y_max           = MAP_GENERATION_LIMIT;
+	b->y_min           = -MAX_MAP_GENERATION_LIMIT;
+	b->y_max           = MAX_MAP_GENERATION_LIMIT;
 	b->heat_point      = 0.0;
 	b->humidity_point  = 0.0;
 
-	b->m_nodenames.push_back("air");
-	b->m_nodenames.push_back("air");
+	b->m_nodenames.push_back("mapgen_stone");
+	b->m_nodenames.push_back("mapgen_stone");
 	b->m_nodenames.push_back("mapgen_stone");
 	b->m_nodenames.push_back("mapgen_water_source");
 	b->m_nodenames.push_back("mapgen_water_source");
@@ -111,8 +111,11 @@ Biome *BiomeManager::getBiome(float heat, float humidity, s16 y)
 		b = (Biome *)m_objects[i];
 		if (!b || y > b->y_max || y < b->y_min)
 			continue;
+		float heat_point = (b->heat_point - 50) * (( mapgen_params->np_biome_heat.offset + mapgen_params->np_biome_heat.scale ) / 100)
+			 + mapgen_params->np_biome_heat.offset;
 
-		float d_heat     = heat     - b->heat_point;
+		float d_heat     = heat     - heat_point;
+
 		float d_humidity = humidity - b->humidity_point;
 		float dist = (d_heat * d_heat) +
 					 (d_humidity * d_humidity);
@@ -147,8 +150,8 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	}
 	heat += p.Y / weather_heat_height; // upper=colder, lower=hotter, 3c per 1000
 
-	if (weather_hot_core && p.Y < -(MAP_GENERATION_LIMIT-weather_hot_core))
-		heat += 6000 * (1.0-((float)(p.Y - -MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
+	if (weather_hot_core && p.Y < -(MAX_MAP_GENERATION_LIMIT-weather_hot_core))
+		heat += 6000 * (1.0-((float)(p.Y - -MAX_MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
 
 	return heat;
 }
@@ -157,7 +160,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
 	auto humidity = NoisePerlin2D(&(mapgen_params->np_biome_humidity), p.X, p.Z, seed);
-	humidity *= 1.0 - ((float)p.Y / MAP_GENERATION_LIMIT);
+	humidity *= 1.0 - ((float)p.Y / MAX_MAP_GENERATION_LIMIT);
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -187,8 +190,6 @@ void BiomeManager::clear()
 	// Don't delete the first biome
 	for (size_t i = 1; i < m_objects.size(); i++) {
 		Biome *b = (Biome *)m_objects[i];
-		if (!b)
-			continue;
 		delete b;
 	}
 
@@ -201,8 +202,8 @@ void BiomeManager::clear()
 
 void Biome::resolveNodeNames()
 {
-	getIdFromNrBacklog(&c_top,         "mapgen_dirt_with_grass",    CONTENT_AIR);
-	getIdFromNrBacklog(&c_filler,      "mapgen_dirt",               CONTENT_AIR);
+	getIdFromNrBacklog(&c_top,         "mapgen_stone",              CONTENT_AIR);
+	getIdFromNrBacklog(&c_filler,      "mapgen_stone",              CONTENT_AIR);
 	getIdFromNrBacklog(&c_stone,       "mapgen_stone",              CONTENT_AIR);
 	getIdFromNrBacklog(&c_water_top,   "mapgen_water_source",       CONTENT_AIR);
 	getIdFromNrBacklog(&c_water,       "mapgen_water_source",       CONTENT_AIR);
@@ -214,4 +215,3 @@ void Biome::resolveNodeNames()
 	getIdFromNrBacklog(&c_ice,       "mapgen_ice",             c_water);
 	getIdFromNrBacklog(&c_top_cold,  "mapgen_dirt_with_snow",  c_top);
 }
-

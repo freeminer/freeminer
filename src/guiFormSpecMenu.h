@@ -59,7 +59,7 @@ struct TextDest
 	virtual ~TextDest() {};
 	// This is deprecated I guess? -celeron55
 	virtual void gotText(std::wstring text){}
-	virtual void gotText(std::map<std::string, std::string> fields) = 0;
+	virtual void gotText(const StringMap &fields) = 0;
 	virtual void setFormName(std::string formname)
 	{ m_formname = formname;};
 
@@ -122,6 +122,22 @@ class GUIFormSpecMenu : public GUIModalMenu
 		v2s32 pos;
 		v2s32 geom;
 		s32 start_item_i;
+	};
+
+	struct ListRingSpec
+	{
+		ListRingSpec()
+		{
+		}
+		ListRingSpec(const InventoryLocation &a_inventoryloc,
+				const std::string &a_listname):
+			inventoryloc(a_inventoryloc),
+			listname(a_listname)
+		{
+		}
+
+		InventoryLocation inventoryloc;
+		std::string listname;
 	};
 
 	struct ImageDrawSpec
@@ -258,7 +274,7 @@ public:
 	void removeChildren();
 	void setInitialFocus();
 
-	void setFocus(std::string elementname)
+	void setFocus(std::string &elementname)
 	{
 		m_focused_element = elementname;
 	}
@@ -309,6 +325,7 @@ protected:
 
 
 	std::vector<ListDrawSpec> m_inventorylists;
+	std::vector<ListRingSpec> m_inventory_rings;
 	std::vector<ImageDrawSpec> m_backgrounds;
 	std::vector<ImageDrawSpec> m_images;
 	std::vector<ImageDrawSpec> m_itemimages;
@@ -387,6 +404,7 @@ private:
 
 	void parseSize(parserData* data,std::string element);
 	void parseList(parserData* data,std::string element);
+	void parseListRing(parserData* data,std::string element);
 	void parseCheckbox(parserData* data,std::string element);
 	void parseImage(parserData* data,std::string element);
 	void parseItemImage(parserData* data,std::string element);

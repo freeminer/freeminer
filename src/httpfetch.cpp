@@ -28,17 +28,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <errno.h>
-#include "jthread/jevent.h"
+#include "threading/event.h"
 #include "config.h"
 #include "exceptions.h"
 #include "debug.h"
 #include "log.h"
 #include "util/container.h"
+#include "util/thread.h"
 #include "version.h"
 #include "settings.h"
-#include "util/thread_pool.h"
 
-JMutex g_httpfetch_mutex;
+Mutex g_httpfetch_mutex;
 std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
 
 HTTPFetchRequest::HTTPFetchRequest()
@@ -58,7 +58,7 @@ static void httpfetch_deliver_result(const HTTPFetchResult &fetch_result)
 {
 	unsigned long caller = fetch_result.caller;
 	if (caller != HTTPFETCH_DISCARD) {
-		JMutexAutoLock lock(g_httpfetch_mutex);
+		MutexAutoLock lock(g_httpfetch_mutex);
 		g_httpfetch_results[caller].push(fetch_result);
 	}
 }
@@ -67,7 +67,7 @@ static void httpfetch_request_clear(unsigned long caller);
 
 unsigned long httpfetch_caller_alloc()
 {
-	JMutexAutoLock lock(g_httpfetch_mutex);
+	MutexAutoLock lock(g_httpfetch_mutex);
 
 	// Check each caller ID except HTTPFETCH_DISCARD
 	const unsigned long discard = HTTPFETCH_DISCARD;
@@ -94,14 +94,14 @@ void httpfetch_caller_free(unsigned long caller)
 
 	httpfetch_request_clear(caller);
 	if (caller != HTTPFETCH_DISCARD) {
-		JMutexAutoLock lock(g_httpfetch_mutex);
+		MutexAutoLock lock(g_httpfetch_mutex);
 		g_httpfetch_results.erase(caller);
 	}
 }
 
 bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result)
 {
-	JMutexAutoLock lock(g_httpfetch_mutex);
+	MutexAutoLock lock(g_httpfetch_mutex);
 
 	// Check that caller exists
 	std::map<unsigned long, std::queue<HTTPFetchResult> >::iterator
@@ -281,8 +281,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	// Set POST (or GET) data
 	if (request.multipart) {
 		curl_httppost *last = NULL;
-		for (std::map<std::string, std::string>::iterator it =
-					request.post_fields.begin();
+		for (StringMap::iterator it = request.post_fields.begin();
 				it != request.post_fields.end(); ++it) {
 			curl_formadd(&post, &last,
 					CURLFORM_NAMELENGTH, it->first.size(),
@@ -297,10 +296,8 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	} else if (!request.post_fields.empty()) {
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 		std::string str;
-		for (std::map<std::string, std::string>::iterator it =
-					request.post_fields.begin();
-				it != request.post_fields.end();
-				++it) {
+		for (StringMap::iterator it = request.post_fields.begin();
+				it != request.post_fields.end(); ++it) {
 			if (str != "")
 				str += "&";
 			str += urlencode(it->first);
@@ -410,7 +407,7 @@ HTTPFetchOngoing::~HTTPFetchOngoing()
 }
 
 
-class CurlFetchThread : public thread_pool
+class CurlFetchThread : public Thread
 {
 protected:
 	enum RequestType {
@@ -434,7 +431,8 @@ protected:
 	std::list<HTTPFetchRequest> m_queued_fetches;
 
 public:
-	CurlFetchThread(int parallel_limit)
+	CurlFetchThread(int parallel_limit) :
+		Thread("CurlFetch")
 	{
 		if (parallel_limit >= 1)
 			m_parallel_limit = parallel_limit;
@@ -633,13 +631,9 @@ protected:
 		}
 	}
 
-	void * Thread()
+	void *run()
 	{
-		ThreadStarted();
-		log_register_thread("CurlFetchThread");
 		DSTACK(__FUNCTION_NAME);
-
-		porting::setThreadName("CurlFetchThread");
 
 		CurlHandlePool pool;
 
@@ -651,7 +645,7 @@ protected:
 
 		FATAL_ERROR_IF(!m_all_ongoing.empty(), "Expected empty");
 
-		while (!StopRequested()) {
+		while (!stopRequested()) {
 			BEGIN_DEBUG_EXCEPTION_HANDLER
 
 			/*
@@ -739,9 +733,9 @@ void httpfetch_cleanup()
 {
 	verbosestream<<"httpfetch_cleanup: cleaning up"<<std::endl;
 
-	g_httpfetch_thread->Stop();
+	g_httpfetch_thread->stop();
 	g_httpfetch_thread->requestWakeUp();
-	g_httpfetch_thread->Wait();
+	g_httpfetch_thread->wait();
 	delete g_httpfetch_thread;
 
 	curl_global_cleanup();
@@ -750,18 +744,17 @@ void httpfetch_cleanup()
 void httpfetch_async(const HTTPFetchRequest &fetch_request)
 {
 	g_httpfetch_thread->requestFetch(fetch_request);
-	if (!g_httpfetch_thread->IsRunning())
-		g_httpfetch_thread->Start();
+	if (!g_httpfetch_thread->isRunning())
+		g_httpfetch_thread->start();
 }
 
 static void httpfetch_request_clear(unsigned long caller)
 {
-	if (g_httpfetch_thread->IsRunning()) {
+	if (g_httpfetch_thread->isRunning()) {
 		Event event;
 		g_httpfetch_thread->requestClear(caller, &event);
 		event.wait();
-	}
-	else {
+	} else {
 		g_httpfetch_thread->requestClear(caller, NULL);
 	}
 }

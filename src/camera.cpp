@@ -44,7 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h" // CameraModes
 
 #include "nodedef.h"
-//#include "log_types.h"
+#include "log_types.h"
 
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
@@ -101,10 +101,9 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	// all other 3D scene nodes and before the GUI.
 	m_wieldmgr = smgr->createNewSceneManager();
 	m_wieldmgr->addCameraSceneNode();
-	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr->getRootSceneNode(), m_wieldmgr, -1, true);
+	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr->getRootSceneNode(), m_wieldmgr, -1, false);
 	m_wieldnode->setItem(ItemStack(), m_gamedef);
 	m_wieldnode->drop(); // m_wieldmgr grabbed it
-	m_wieldlightnode = m_wieldmgr->addLightSceneNode(NULL, v3f(0.0, 50.0, 0.0));
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -115,6 +114,9 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	 *       (as opposed to the this local caching). This can be addressed in
 	 *       a later release.
 	 */
+
+	m_cache_movement_fov        = g_settings->getBool("movement_fov");
+
 	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
 	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
 	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
@@ -171,55 +173,37 @@ void Camera::step(f32 dtime)
 	{
 		//f32 offset = dtime * m_view_bobbing_speed * 0.035;
 		f32 offset = dtime * m_view_bobbing_speed * 0.030;
-		if (m_view_bobbing_state == 2)
-		{
-#if 0
+		if (m_view_bobbing_state == 2) {
 			// Animation is getting turned off
-			if (m_view_bobbing_anim < 0.5)
+			if (m_view_bobbing_anim < 0.25) {
 				m_view_bobbing_anim -= offset;
-			else
-				m_view_bobbing_anim += offset;
-			if (m_view_bobbing_anim <= 0 || m_view_bobbing_anim >= 1)
-			{
-				m_view_bobbing_anim = 0;
-				m_view_bobbing_state = 0;
-			}
-#endif
-#if 1
-			// Animation is getting turned off
-			if(m_view_bobbing_anim < 0.25)
-			{
-				m_view_bobbing_anim -= offset;
-			} else if(m_view_bobbing_anim > 0.75) {
+			} else if (m_view_bobbing_anim > 0.75) {
 				m_view_bobbing_anim += offset;
 			}
-			if(m_view_bobbing_anim < 0.5)
-			{
+
+			if (m_view_bobbing_anim < 0.5) {
 				m_view_bobbing_anim += offset;
-				if(m_view_bobbing_anim > 0.5)
+				if (m_view_bobbing_anim > 0.5)
 					m_view_bobbing_anim = 0.5;
 			} else {
 				m_view_bobbing_anim -= offset;
-				if(m_view_bobbing_anim < 0.5)
+				if (m_view_bobbing_anim < 0.5)
 					m_view_bobbing_anim = 0.5;
 			}
-			if(m_view_bobbing_anim <= 0 || m_view_bobbing_anim >= 1 ||
-					fabs(m_view_bobbing_anim - 0.5) < 0.01)
-			{
+
+			if (m_view_bobbing_anim <= 0 || m_view_bobbing_anim >= 1 ||
+					fabs(m_view_bobbing_anim - 0.5) < 0.01) {
 				m_view_bobbing_anim = 0;
 				m_view_bobbing_state = 0;
 			}
-#endif
 		}
-		else
-		{
+		else {
 			float was = m_view_bobbing_anim;
 			m_view_bobbing_anim = my_modf(m_view_bobbing_anim + offset);
 			bool step = (was == 0 ||
 					(was < 0.5f && m_view_bobbing_anim >= 0.5f) ||
 					(was > 0.5f && m_view_bobbing_anim <= 0.5f));
-			if(step)
-			{
+			if(step) {
 				MtEvent *e = new SimpleTriggerEvent("ViewBobbingStep");
 				m_gamedef->event()->put(e);
 			}
@@ -430,14 +414,15 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Greater FOV if running
 	v3f speed = player->getSpeed();
-	f32 fov_add = sqrt(pow(speed.X,2)+pow(speed.Z,2))/40;
 
-	if (g_settings->getBool("enable_movement_fov")) {
-		fov_degrees += player->movement_fov;
-		if (fov_add > 4)
-			fov_add = 4;
-		if (fov_add > 1) 
-			fov_degrees = fov_degrees+fov_add;
+	if (m_cache_movement_fov) {
+		auto fog_was = m_draw_control.fov_add;
+		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
+		if (m_draw_control.fov_add > fog_was + 1)
+			m_draw_control.fov_add = fog_was + ( m_draw_control.fov_add - fog_was) / 3;
+		else if (m_draw_control.fov_add < fog_was - 1)
+			m_draw_control.fov_add = fog_was - (fog_was - m_draw_control.fov_add) / 3;
+		fov_degrees -= m_draw_control.fov_add;
 	}
 
 	// FOV and aspect ratio
@@ -493,11 +478,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	m_wieldnode->setPosition(wield_position);
 	m_wieldnode->setRotation(wield_rotation);
 
-	// Shine light upon the wield mesh
-	video::SColor black(255,0,0,0);
-	m_wieldmgr->setAmbientLight(player->light_color.getInterpolated(black, 0.7));
-	m_wieldlightnode->getLightData().DiffuseColor = player->light_color.getInterpolated(black, 0.3);
-	m_wieldlightnode->setPosition(v3f(30+5*sin(2*player->getYaw()*M_PI/180), -50, 0));
+	m_wieldnode->setColor(player->light_color);
 
 	// Render distance feedback loop
 	updateViewingRange(frametime, busytime);

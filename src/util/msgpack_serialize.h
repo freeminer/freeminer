@@ -24,7 +24,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../msgpack_fix.h"
 
+#include "../serialization.h" //decompressZlib
+
 #define PACK(x, y) {pk.pack((int)x); pk.pack(y);}
+
+#define PACK_ZIP(x, y) { \
+	msgpack::sbuffer buffer_zip; \
+	msgpack::packer<msgpack::sbuffer> pk_zip(&buffer_zip); \
+	pk_zip.pack(y); \
+	std::string s; \
+	compressZlib(std::string(buffer_zip.data(), buffer_zip.size()), s); \
+	PACK(x, s); \
+	}
+
 #define MSGPACK_COMMAND -1
 #define MSGPACK_PACKET_INIT(id, x) \
 	msgpack::sbuffer buffer; \
@@ -39,3 +51,35 @@ typedef std::map<int, msgpack::object> MsgpackPacket;
 #include <unordered_map>
 typedef std::unordered_map<int, msgpack::object> MsgpackPacket;
 #endif
+
+template<typename T>
+bool packet_convert_safe(MsgpackPacket & packet, int field, T * to) {
+	if (!packet.count(field))
+		return false;
+	packet[field].convert(to);
+	return true;
+}
+
+template<typename T>
+bool packet_convert_safe_zip(MsgpackPacket & packet, int field, T * to) {
+	if (!packet.count(field))
+		return false;
+	try {
+		std::string sz, s;
+		packet[field].convert(sz);
+		decompressZlib(sz, s);
+		msgpack::unpacked msg;
+		msgpack::unpack(msg, s.c_str(), s.size());
+		msgpack::object obj = msg.get();
+		obj.convert(to);
+	} catch (...) { return false; }
+	return true;
+}
+
+class MsgpackPacketSafe : public MsgpackPacket {
+public:
+	template<typename T>
+	bool convert_safe(int field, T * to) {
+		return packet_convert_safe(*this, field, to);
+	}
+};

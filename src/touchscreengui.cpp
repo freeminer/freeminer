@@ -107,7 +107,8 @@ static irr::EKEY_CODE id2keycode(touch_gui_button_id id)
 			key = "rangeselect";
 			break;
 	}
-	assert(key != "");
+	if(!key.size())
+		return irr::EKEY_CODE();
 	return keyname_to_keycode(g_settings->get("keymap_" + key).c_str());
 }
 
@@ -175,7 +176,8 @@ static int getMaxControlPadSize(float density) {
 
 void TouchScreenGUI::init(ISimpleTextureSource* tsrc, float density)
 {
-	assert(tsrc != 0);
+	if (!tsrc)
+		return;
 
 	u32 control_pad_size =
 			MYMIN((2 * m_screensize.Y) / 3,getMaxControlPadSize(density));
@@ -331,7 +333,7 @@ bool TouchScreenGUI::isHUDButton(const SEvent &event)
 {
 	// check if hud item is pressed
 	for (std::map<int,rect<s32> >::iterator iter = m_hud_rects.begin();
-			iter != m_hud_rects.end(); iter++) {
+			iter != m_hud_rects.end(); ++iter) {
 		if (iter->second.isPointInside(
 				v2s32(event.TouchInput.X,
 						event.TouchInput.Y)
@@ -388,7 +390,8 @@ void TouchScreenGUI::ButtonEvent(touch_gui_button_id button,
 
 	/* add this event */
 	if (action) {
-		assert(std::find(btn->ids.begin(),btn->ids.end(), eventID) == btn->ids.end());
+		if(!(std::find(btn->ids.begin(),btn->ids.end(), eventID) == btn->ids.end()))
+			return;
 
 		btn->ids.push_back(eventID);
 
@@ -405,7 +408,8 @@ void TouchScreenGUI::ButtonEvent(touch_gui_button_id button,
 		std::vector<int>::iterator pos =
 				std::find(btn->ids.begin(),btn->ids.end(), eventID);
 		/* has to be in touch list */
-		assert(pos != btn->ids.end());
+		if(!(pos != btn->ids.end()))
+			return;
 		btn->ids.erase(pos);
 
 		if (btn->ids.size() > 0)  { return; }
@@ -510,7 +514,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 		}
 
 		for (std::vector<id_status>::iterator iter = m_known_ids.begin();
-				iter != m_known_ids.end(); iter++) {
+				iter != m_known_ids.end(); ++iter) {
 			if (iter->id == event.TouchInput.ID) {
 				m_known_ids.erase(iter);
 				break;
@@ -518,7 +522,8 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 		}
 	}
 	else {
-		assert(event.TouchInput.Event == ETIE_MOVED);
+		if(!(event.TouchInput.Event == ETIE_MOVED))
+			return;
 		int move_idx = event.TouchInput.ID;
 
 		if (m_pointerpos[event.TouchInput.ID] ==
@@ -591,7 +596,7 @@ void TouchScreenGUI::handleChangedButton(const SEvent &event)
 			continue;
 		}
 		for(std::vector<int>::iterator iter = m_buttons[i].ids.begin();
-				iter != m_buttons[i].ids.end(); iter++) {
+				iter != m_buttons[i].ids.end(); ++iter) {
 
 			if (event.TouchInput.ID == *iter) {
 
@@ -704,8 +709,7 @@ void TouchScreenGUI::step(float dtime)
 			if (btn->repeatcounter < btn->repeatdelay) continue;
 
 			btn->repeatcounter              = 0;
-			SEvent translated;
-			memset(&translated,0,sizeof(SEvent));
+			SEvent translated = { };
 			translated.EventType            = irr::EET_KEY_INPUT_EVENT;
 			translated.KeyInput.Key         = btn->keycode;
 			translated.KeyInput.PressedDown = false;
@@ -730,8 +734,7 @@ void TouchScreenGUI::step(float dtime)
 					->getRayFromScreenCoordinates(
 							v2s32(m_move_downlocation.X,m_move_downlocation.Y));
 
-			SEvent translated;
-			memset(&translated,0,sizeof(SEvent));
+			SEvent translated = { };
 			translated.EventType               = EET_MOUSE_INPUT_EVENT;
 			translated.MouseInput.X            = m_move_downlocation.X;
 			translated.MouseInput.Y            = m_move_downlocation.Y;

@@ -105,8 +105,9 @@ const char* MSVC_LocaleLookup(const char* raw_shortname) {
 
 	last_raw_value = shortname;
 
-	if (glb_supported_locales.find(narrow_to_wide(shortname)) != glb_supported_locales.end()) {
-		last_full_name = wide_to_narrow(glb_supported_locales[narrow_to_wide(shortname)]);
+	if (glb_supported_locales.find(utf8_to_wide(shortname)) != glb_supported_locales.end()) {
+		last_full_name = wide_to_utf8(
+			glb_supported_locales[utf8_to_wide(shortname)]);
 		return last_full_name.c_str();
 	}
 
@@ -169,7 +170,7 @@ void init_gettext(const char *path, const std::string &configured_language) {
 			if (parameters != "") {
 				ptr_parameters = parameters.c_str();
 			}
-			
+
 			/** users may start by short name in commandline without extention **/
 			std::string appname = argv[0];
 			if (appname.substr(appname.length() - 4) != ".exe") {
@@ -186,7 +187,7 @@ void init_gettext(const char *path, const std::string &configured_language) {
 					NULL,
 					&startupinfo,
 					&processinfo)) {
-				char buffer[1024];		
+				char buffer[1024];
 				FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 					NULL,
 					GetLastError(),
@@ -204,14 +205,14 @@ void init_gettext(const char *path, const std::string &configured_language) {
 			else {
 				exit(0);
 			}
+		}
 #else
-			errorstream << "*******************************************************" << std::endl;
-			errorstream << "Can't apply locale workaround for server!" << std::endl;
-			errorstream << "Expect language to be broken!" << std::endl;
-			errorstream << "*******************************************************" << std::endl;
+		errorstream << "*******************************************************" << std::endl;
+		errorstream << "Can't apply locale workaround for server!" << std::endl;
+		errorstream << "Expect language to be broken!" << std::endl;
+		errorstream << "*******************************************************" << std::endl;
 
 #endif
-		}
 
 		setlocale(LC_ALL,configured_language.c_str());
 #else // Mingw
@@ -242,6 +243,16 @@ void init_gettext(const char *path, const std::string &configured_language) {
 	static std::string name = lowercase(PROJECT_NAME);
 	bindtextdomain(name.c_str(), path);
 	textdomain(name.c_str());
+
+#ifdef LIBINTL_LITE_API
+	// https://github.com/j-jorge/libintl-lite.git
+	{
+		std::string clang = configured_language.empty() ? "en" : configured_language;
+		std::string cpath = path;
+		cpath += "/" + clang + "/LC_MESSAGES/" + name + ".mo";
+		loadMessageCatalog(name.c_str(), cpath.c_str());
+	}
+#endif
 
 #if defined(_WIN32)
 	// Set character encoding for Win32

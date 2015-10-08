@@ -25,8 +25,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log.h"
 #include <queue>
+#include "util/lock.h"
 
 class LogOutputBuffer : public ILogOutput
+ , public shared_locker
 {
 public:
 	LogOutputBuffer(LogMessageLevel maxlev)
@@ -39,18 +41,21 @@ public:
 	}
 	virtual void printLog(const std::string &line)
 	{
+		auto lock = lock_unique();
 		m_buf.push(line);
 	}
 	std::string get()
 	{
 		if(empty())
 			return "";
+		auto lock = lock_unique();
 		std::string s = m_buf.front();
 		m_buf.pop();
 		return s;
 	}
 	bool empty()
 	{
+		auto lock = lock_shared();
 		return m_buf.empty();
 	}
 private:

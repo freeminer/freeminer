@@ -48,7 +48,7 @@ struct PointedThing
 	PointedThingType type;
 	v3s16 node_undersurface;
 	v3s16 node_abovesurface;
-	s16 object_id;
+	u16 object_id;
 
 	PointedThing();
 	std::string dump() const;

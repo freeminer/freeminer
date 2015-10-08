@@ -45,7 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, INodeDefManager *nodemgr,
-		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> & occlude_cache)
+		unordered_map_v3POS<bool> & occlude_cache)
 {
 	float d0 = (float)1 * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -89,10 +89,12 @@ const char *ClientInterface::statenames[] = {
 	"Disconnecting",
 	"Denied",
 	"Created",
-	"InitSent",
+	"AwaitingInit2",
+	"HelloSent",
 	"InitDone",
 	"DefinitionsSent",
-	"Active"
+	"Active",
+	"SudoMode",
 };
 
 
@@ -116,6 +118,10 @@ int RemoteClient::GetNextBlocks (
 		std::vector<PrioritySortedBlockTransfer> &dest)
 {
 	DSTACK(__FUNCTION_NAME);
+
+	auto lock = lock_unique_rec();
+	if (!lock->owns_lock())
+		return 0;
 
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
@@ -147,7 +153,7 @@ int RemoteClient::GetNextBlocks (
 	// Predict to next block
 	v3f playerpos_predicted = playerpos + playerspeeddir*MAP_BLOCKSIZE*BS;
 
-	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);floatToInt(playerpos_predicted, BS);
+	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);
 
 	v3s16 center = getNodeBlockPos(center_nodepos);
 
@@ -191,17 +197,17 @@ int RemoteClient::GetNextBlocks (
 
 	//infostream<<"d_start="<<d_start<<std::endl;
 
-	u16 max_simul_sends_setting = g_settings->getU16
+	static const u16 max_simul_sends_setting = g_settings->getU16
 			("max_simultaneous_block_sends_per_client");
-	u16 max_simul_sends_usually = max_simul_sends_setting;
+	static const u16 max_simul_sends_usually = max_simul_sends_setting;
 
 	/*
 		Check the time from last addNode/removeNode.
 
 		Decrease send rate if player is building stuff.
 	*/
-	if(m_time_from_building < g_settings->getFloat(
-				"full_block_send_enable_min_time_from_building"))
+	static const auto full_block_send_enable_min_time_from_building = g_settings->getFloat("full_block_send_enable_min_time_from_building");
+	if(m_time_from_building < full_block_send_enable_min_time_from_building)
 	{
 		/*
 		max_simul_sends_usually
@@ -227,7 +233,8 @@ int RemoteClient::GetNextBlocks (
 	*/
 	s32 new_nearest_unsent_d = -1;
 
-	s16 full_d_max = g_settings->getS16("max_block_send_distance");
+	static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
+	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
 		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
 		if (wanted_blocks < full_d_max)
@@ -235,7 +242,7 @@ int RemoteClient::GetNextBlocks (
 	}
 
 	s16 d_max = full_d_max;
-	s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
+	static const s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
 
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 10;
@@ -255,15 +262,24 @@ int RemoteClient::GetNextBlocks (
 
 
 	int blocks_occlusion_culled = 0;
-	bool occlusion_culling_enabled = true;
+	static const bool server_occlusion = g_settings->getBool("server_occlusion");
+	bool occlusion_culling_enabled = server_occlusion;
+
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
 
 	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n = env->getMap().getNodeTry(cam_pos_nodes);
+	MapNode n;
+	{
+#if !ENABLE_THREADS
+		auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+#endif
+		n = env->getMap().getNodeTry(cam_pos_nodes);
+	}
+
 	if(n && nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 
-	std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> occlude_cache;
+	unordered_map_v3POS<bool> occlude_cache;
 
 
 	s16 d;
@@ -328,8 +344,7 @@ int RemoteClient::GetNextBlocks (
 				max_simul_dynamic = max_simul_sends_setting;
 
 			// Don't select too many blocks for sending
-			if(num_blocks_selected+num_blocks_sending >= max_simul_dynamic)
-			{
+			if (num_blocks_selected + num_blocks_sending >= max_simul_dynamic) {
 				//queue_is_full = true;
 				goto queue_full_break;
 			}
@@ -337,12 +352,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Do not go over-limit
 			*/
-			if(p.X < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.X > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Y < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Y > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Z < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-			|| p.Z > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE)
+			if (blockpos_over_limit(p))
 				continue;
 
 			// If this is true, inexistent block will be made from scratch
@@ -382,7 +392,7 @@ int RemoteClient::GetNextBlocks (
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
-			if(block_sent > 0 && ((block_overflow && d>1) || block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
+			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
 				continue;
 			}
 
@@ -412,7 +422,8 @@ int RemoteClient::GetNextBlocks (
 					continue;
 				}
 
-		{
+		if (occlusion_culling_enabled) {
+			ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
 			//Occlusion culling
 			auto cpn = p*MAP_BLOCKSIZE;
 
@@ -427,6 +438,9 @@ int RemoteClient::GetNextBlocks (
 			v3POS spn = cam_pos_nodes + v3POS(0,0,0);
 			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
 			u32 needed_count = 1;
+#if !ENABLE_THREADS
+			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+#endif
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
 			if( d >= 1 &&
 				occlusion_culling_enabled &&
@@ -451,6 +465,7 @@ int RemoteClient::GetNextBlocks (
 			)
 			{
 				//infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<" block="<<cpn<<" total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
+				g_profiler->add("SMap: Occlusion skip", 1);
 				blocks_occlusion_culled++;
 				continue;
 			}
@@ -459,10 +474,12 @@ int RemoteClient::GetNextBlocks (
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
-				//todo: fixme
-				//if (block->getLightingExpired() && (block_sent /*|| d>=1*/)) {
-				//	continue;
-				//}
+				if (block->getLightingExpired()) {
+					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
+				}
+
+				if (block->lighting_broken && block_sent)
+					continue;
 
 				// Block is valid if lighting is up-to-date and data exists
 				if(block->isValid() == false)
@@ -580,7 +597,12 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-	SetBlockNotSent(v3POS());
+	++m_nearest_unsent_reset;
+}
+
+void RemoteClient::SetBlocksNotSent()
+{
+	++m_nearest_unsent_reset;
 }
 
 void RemoteClient::SetBlockDeleted(v3s16 p) {
@@ -768,7 +790,7 @@ ClientInterface::~ClientInterface()
 std::vector<u16> ClientInterface::getClientIDs(ClientState min_state)
 {
 	std::vector<u16> reply;
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 
 	for(auto
 		i = m_clients.begin();
@@ -820,7 +842,7 @@ void ClientInterface::UpdatePlayerList()
 			infostream << "* " << player->getName() << "\t";
 
 			{
-				//JMutexAutoLock clientslock(m_clients_mutex);
+				//MutexAutoLock clientslock(m_clients_mutex);
 				RemoteClient* client = lockedGetClientNoEx(*i);
 				if(client != NULL)
 					client->PrintInfo(infostream);
@@ -858,7 +880,7 @@ void ClientInterface::send(u16 peer_id, u8 channelnum,
 void ClientInterface::sendToAll(u16 channelnum,
 		NetworkPacket* pkt, bool reliable)
 {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	for(auto
 		i = m_clients.begin();
 		i != m_clients.end(); ++i)
@@ -906,7 +928,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 }
 
 std::shared_ptr<RemoteClient> ClientInterface::getClient(u16 peer_id, ClientState state_min) {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
@@ -926,7 +948,7 @@ RemoteClient* ClientInterface::lockedGetClientNoEx(u16 peer_id, ClientState stat
 
 ClientState ClientInterface::getClientState(u16 peer_id)
 {
-	auto lock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_shared_rec();
 	auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.

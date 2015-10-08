@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_content.h"
 #include "environment.h"
 #include "map.h"
+#include "gamedef.h"
 #include "nodemetadata.h"
 
 
@@ -46,7 +47,7 @@ NodeMetadata* NodeMetaRef::getmeta(NodeMetaRef *ref, bool auto_create)
 {
 	NodeMetadata *meta = ref->m_env->getMap().getNodeMetadata(ref->m_p);
 	if(meta == NULL && auto_create)	{
-		meta = new NodeMetadata(ref->m_env->getGameDef());
+		meta = new NodeMetadata(ref->m_env->getGameDef()->idef());
 		if(!ref->m_env->getMap().setNodeMetadata(ref->m_p, meta)) {
 			delete meta;
 			return NULL;
@@ -66,9 +67,10 @@ void NodeMetaRef::reportMetadataChange(NodeMetaRef *ref)
 	ref->m_env->getMap().dispatchEvent(&event);
 	// Set the block to be saved
 	MapBlock *block = ref->m_env->getMap().getBlockNoCreateNoEx(blockpos);
-	if(block)
+	if (block) {
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
-				"NodeMetaRef::reportMetadataChange");
+			MOD_REASON_REPORT_META_CHANGE);
+	}
 }
 
 // Exported functions
@@ -192,32 +194,34 @@ int NodeMetaRef::l_to_table(lua_State *L)
 	NodeMetaRef *ref = checkobject(L, 1);
 
 	NodeMetadata *meta = getmeta(ref, true);
-	if(meta == NULL){
+	if (meta == NULL) {
 		lua_pushnil(L);
 		return 1;
 	}
 	lua_newtable(L);
+
 	// fields
 	lua_newtable(L);
 	{
-		std::map<std::string, std::string> fields = meta->getStrings();
-		for(std::map<std::string, std::string>::const_iterator
-				i = fields.begin(); i != fields.end(); i++){
-			const std::string &name = i->first;
-			const std::string &value = i->second;
+		StringMap fields = meta->getStrings();
+		for (StringMap::const_iterator
+				it = fields.begin(); it != fields.end(); ++it) {
+			const std::string &name = it->first;
+			const std::string &value = it->second;
 			lua_pushlstring(L, name.c_str(), name.size());
 			lua_pushlstring(L, value.c_str(), value.size());
 			lua_settable(L, -3);
 		}
 	}
 	lua_setfield(L, -2, "fields");
+
 	// inventory
 	lua_newtable(L);
 	Inventory *inv = meta->getInventory();
-	if(inv){
-		std::vector<const InventoryList*> lists = inv->getLists();
-		for(std::vector<const InventoryList*>::const_iterator
-				i = lists.begin(); i != lists.end(); i++){
+	if (inv) {
+		std::vector<const InventoryList *> lists = inv->getLists();
+		for(std::vector<const InventoryList *>::const_iterator
+				i = lists.begin(); i != lists.end(); i++) {
 			push_inventory_list(L, inv, (*i)->getName().c_str());
 			lua_setfield(L, -2, (*i)->getName().c_str());
 		}

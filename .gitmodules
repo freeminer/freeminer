@@ -7,3 +7,12 @@
 [submodule "build/osx/releases/dylibbundler"]
 	path = build/osx/releases/dylibbundler
 	url = https://github.com/auriamg/macdylibbundler.git
+[submodule "src/msgpack-c"]
+	path = src/msgpack-c
+	url = https://github.com/msgpack/msgpack-c.git
+[submodule "src/jsoncpp"]
+	path = src/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git
+[submodule "games/pixture"]
+	path = games/pixture
+	url = https://github.com/kaadmy/pixture.git

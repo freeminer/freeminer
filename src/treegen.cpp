@@ -142,10 +142,12 @@ treegen::error spawn_ltree(ServerEnvironment *env, v3s16 p0,
 	// Send a MEET_OTHER event
 	MapEditEvent event;
 	event.type = MEET_OTHER;
+/*
 	for (std::map<v3s16, MapBlock*>::iterator
 			i = modified_blocks.begin();
 			i != modified_blocks.end(); ++i)
 		event.modified_blocks.insert(i->first);
+*/
 	map->dispatchEvent(&event);
 	return SUCCESS;
 }
@@ -763,9 +765,19 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, int seed)
 		and in games that have saplings; both are deprecated but not
 		replaced yet
 	*/
-	MapNode treenode(ndef->getId("mapgen_pinetree"));
-	MapNode leavesnode(ndef->getId("mapgen_pine_needles"));
-	MapNode snownode(ndef->getId("mapgen_snow"));
+	content_t c_tree   = ndef->getId("mapgen_pine_tree");
+	content_t c_leaves = ndef->getId("mapgen_pine_needles");
+	content_t c_snow = ndef->getId("mapgen_snow");
+	if (c_tree == CONTENT_IGNORE)
+		c_tree = ndef->getId("mapgen_tree");
+	if (c_leaves == CONTENT_IGNORE)
+		c_leaves = ndef->getId("mapgen_leaves");
+	if (c_snow == CONTENT_IGNORE)
+		c_snow = CONTENT_AIR;
+
+	MapNode treenode(c_tree);
+	MapNode leavesnode(c_leaves);
+	MapNode snownode(c_snow);
 
 	PseudoRandom pr(seed);
 	s16 trunk_h = pr.range(9, 13);

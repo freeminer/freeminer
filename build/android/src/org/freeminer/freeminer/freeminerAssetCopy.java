@@ -229,6 +229,12 @@ public class freeminerAssetCopy extends Activity
 					{
 						Log.e("freeminerAssetCopy","Copying file: " +
 								m_tocopy.get(i) + " failed, size < 0");
+						if (true) { // todo: test here input file size == 0 create empty file
+							try {
+								OutputStream dst = new FileOutputStream(baseDir + "/" + filename);
+								dst.close();
+							} catch (IOException e) { }
+						}
 					}
 					src.close();
 				} 
@@ -376,6 +382,9 @@ public class freeminerAssetCopy extends Activity
 						refresh = false;
 					}
 					
+					if (FlashPath.contains("/worlds/") && stored_filesize > 0) {
+						refresh = false;
+					}
 				}
 				
 				if (refresh)

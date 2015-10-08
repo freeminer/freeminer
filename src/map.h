@@ -216,7 +216,7 @@ public:
 
 	void spreadLight(enum LightBank bank,
 			std::set<v3s16> & from_nodes,
-			std::map<v3s16, MapBlock*> & modified_blocks, int recursive = 0);
+			std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms = 0);
 
 	void lightNeighbors(enum LightBank bank,
 			v3s16 pos,
@@ -227,14 +227,14 @@ public:
 	s16 propagateSunlight(v3s16 start,
 			std::map<v3s16, MapBlock*> & modified_blocks);
 
+/*
 	u32 updateLighting(enum LightBank bank,
 			concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
+*/
 
 	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
-
-	u32 updateLighting_last[2];
 
 	/*
 		These handle lighting but not faces.
@@ -279,7 +279,7 @@ public:
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
 	*/
-	u32 timerUpdate(float uptime, float unload_timeout, unsigned int max_cycle_ms = 100,
+	u32 timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks, unsigned int max_cycle_ms = 100,
 			std::vector<v3s16> *unloaded_blocks=NULL);
 
 	/*
@@ -373,6 +373,8 @@ public:
 	v3POS m_block_cache_p;
 #endif
 	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
+
+	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
 
 protected:
 	friend class LuaVoxelManip;
@@ -498,8 +500,8 @@ public:
 	u64 getSeed();
 	s16 getWaterLevel();
 
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, std::map<v3POS, s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, std::map<v3POS, s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found

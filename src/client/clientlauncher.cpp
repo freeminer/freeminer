@@ -67,8 +67,11 @@ u32 getTime(TimePrecision prec) {
 
 ClientLauncher::~ClientLauncher()
 {
-	if (receiver)
+	if (receiver) {
+		if (device)
+			device->setEventReceiver(NULL);
 		delete receiver;
+	}
 
 	if (input)
 		delete input;
@@ -76,8 +79,10 @@ ClientLauncher::~ClientLauncher()
 	if (g_fontengine)
 		delete g_fontengine;
 
-	if (device)
+	if (device) {
+		device->closeDevice();
 		device->drop();
+	}
 }
 
 
@@ -170,8 +175,9 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	ChatBackend chat_backend;
 
 	// If an error occurs, this is set to something by menu().
-	// It is then displayed before	the menu shows on the next call to menu()
+	// It is then displayed before the menu shows on the next call to menu()
 	std::string error_message;
+	bool reconnect_requested = false;
 
 	bool first_loop = true;
 
@@ -185,8 +191,12 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	{
 		// Set the window caption
 		const wchar_t *text = wgettext("Main Menu");
-		device->setWindowCaption((narrow_to_wide(PROJECT_NAME_C) + L" [" + text + L"]").c_str());
+		device->setWindowCaption((utf8_to_wide(PROJECT_NAME_C) + L" [" + text + L"]").c_str());
 		delete[] text;
+
+#ifdef __ANDROID__
+		porting::handleAndroidActivityEvents();
+#endif
 
 		try {	// This is used for catching disconnects
 
@@ -199,7 +209,8 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			*/
 			guiroot = guienv->addStaticText(L"", core::rect<s32>(0, 0, 10000, 10000));
 
-			bool game_has_run = launch_game(error_message, game_params, cmd_args);
+			bool game_has_run = launch_game(error_message, reconnect_requested,
+				game_params, cmd_args);
 
 			// If skip_main_menu, we only want to startup once
 			if (skip_main_menu && !first_loop)
@@ -238,8 +249,9 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
 			g_touchscreengui = receiver->m_touchscreengui;
 #endif
-			int tries = g_settings->getU16("reconnects");
+			int tries = simple_singleplayer_mode ? 1 : g_settings->getU16("reconnects");
 			int n = 0;
+
 			while(!*kill && ++n <= tries &&
 			the_game(
 				kill,
@@ -253,6 +265,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 				current_port,
 				error_message,
 				chat_backend,
+				&reconnect_requested,
 				gamespec,
 				simple_singleplayer_mode
 				, autoexit
@@ -352,14 +365,16 @@ bool ClientLauncher::init_engine(int log_level)
 }
 
 bool ClientLauncher::launch_game(std::string &error_message,
-		GameParams &game_params, const Settings &cmd_args)
+		bool reconnect_requested, GameParams &game_params,
+		const Settings &cmd_args)
 {
 	// Initialize menu data
 	MainMenuData menudata;
-	menudata.address      = address;
-	menudata.name         = playername;
-	menudata.port         = itos(game_params.socket_port);
-	menudata.errormessage = error_message;
+	menudata.address                         = address;
+	menudata.name                            = playername;
+	menudata.port                            = itos(game_params.socket_port);
+	menudata.script_data.errormessage        = error_message;
+	menudata.script_data.reconnect_requested = reconnect_requested;
 
 	error_message.clear();
 
@@ -404,18 +419,21 @@ bool ClientLauncher::launch_game(std::string &error_message,
 					worldspecs[menudata.selected_world].path);
 			worldspec = worldspecs[menudata.selected_world];
 		}
+	} else {
+		if (address.empty())
+			simple_singleplayer_mode = 1;
 	}
 
-	if (!menudata.errormessage.empty()) {
+	if (!menudata.script_data.errormessage.empty()) {
 		/* The calling function will pass this back into this function upon the
 		 * next iteration (if any) causing it to be displayed by the GUI
 		 */
-		error_message = menudata.errormessage;
+		error_message = menudata.script_data.errormessage;
 		return false;
 	}
 
 	if (menudata.name.empty())
-		playername = menudata.name = std::string("Guest") + itos(myrand_range(10000, 90000));
+		playername = menudata.name = std::string("Guest") + itos(myrand_range(100000, 999999));
 	else
 		playername = menudata.name;
 
@@ -430,7 +448,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 
 	// If using simple singleplayer mode, override
 	if (simple_singleplayer_mode) {
-		assert(skip_main_menu == false);
+		//assert(skip_main_menu == false);
 		current_playername = "singleplayer";
 		current_password = "";
 		current_address = "";
@@ -456,10 +474,12 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		}
 
 		if (!fs::PathExists(worldspec.path)) {
+			if (!loadGameConfAndInitWorld(worldspec.path, game_params.game_spec)) {
 			error_message = _("Provided world path doesn't exist: ")
 					+ worldspec.path;
 			errorstream << error_message << std::endl;
 			return false;
+			}
 		}
 
 		// Load gamespec for required game
@@ -672,14 +692,14 @@ void ClientLauncher::speed_tests()
 		infostream << "Around 5000/ms should do well here." << std::endl;
 		TimeTaker timer("Testing mutex speed");
 
-		JMutex m;
+		Mutex m;
 		u32 n = 0;
 		u32 i = 0;
 		do {
 			n += 10000;
 			for (; i < n; i++) {
-				m.Lock();
-				m.Unlock();
+				m.lock();
+				m.unlock();
 			}
 		}
 		// Do at least 10ms

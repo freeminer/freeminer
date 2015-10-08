@@ -23,9 +23,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef MG_BIOME_HEADER
 #define MG_BIOME_HEADER
 
-#include "mapgen.h"
+#include "objdef.h"
+#include "nodedef.h"
 
-struct NoiseParams;
+#include "mapgen.h"
 
 enum BiomeType
 {

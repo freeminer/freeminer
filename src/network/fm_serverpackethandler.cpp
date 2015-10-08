@@ -51,7 +51,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 {
 	DSTACK(__FUNCTION_NAME);
 	// Environment is locked first.
-	//JMutexAutoLock envlock(m_env_mutex);
+	//MutexAutoLock envlock(m_env_mutex);
 
 	ScopeProfiler sp(g_profiler, "Server::ProcessData");
 
@@ -95,10 +95,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 		return;
 
 	int command;
-	MsgpackPacket packet;
+	MsgpackPacketSafe packet;
 	msgpack::unpacked msg;
 	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
-		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<")"<<std::endl;
+		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
 		return;
 	}
 
@@ -134,10 +134,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 		// Use the highest version supported by both
 		int deployed = std::min(client_max, our_max);
 		// If it's lower than the lowest supported, give up.
-		if(deployed < SER_FMT_CLIENT_VER_LOWEST)
+		if (deployed < SER_FMT_VER_LOWEST_READ)
 			deployed = SER_FMT_VER_INVALID;
 
-		if(deployed == SER_FMT_VER_INVALID)
+		if (deployed == SER_FMT_VER_INVALID)
 		{
 			actionstream<<"Server: A mismatched client tried to connect from "
 					<<addr_s<<std::endl;
@@ -162,9 +162,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		u16 max_net_proto_version = min_net_proto_version;
 		packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
 
-		if (packet.count(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM)) {
-			packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM].convert(&client->net_proto_version_fm);
-		}
+		packet.convert_safe(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM, &client->net_proto_version_fm);
 
 		// Start with client's maximum version
 		u16 net_proto_version = max_net_proto_version;
@@ -263,7 +261,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 		{
 			std::string reason;
-			if(m_script->on_prejoinplayer(playername, addr_s, reason))
+			if(m_script->on_prejoinplayer(playername, addr_s, &reason))
 			{
 				actionstream<<"Server: Player with the name \""<<playername<<"\" "
 						<<"tried to connect from "<<addr_s<<" "
@@ -339,8 +337,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 		if(given_password != checkpwd){
-			actionstream<<"Server: "<<playername<<" supplied wrong password"
-					<<std::endl;
+			actionstream<<"Server: "<<playername<<" supplied wrong password" <<std::endl;
 			DenyAccess(peer_id, "Wrong password");
 			return;
 		}
@@ -348,12 +345,20 @@ void Server::ProcessData(NetworkPacket *pkt)
 		RemotePlayer *player =
 				static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
 
-		if(player && player->peer_id != 0){
-			errorstream<<"Server: "<<playername<<": Failed to emerge player"
-					<<" (player allocated to an another client)"<<std::endl;
-			DenyAccess(peer_id, "Another client is connected with this "
+		if (player && player->peer_id != 0){
+
+			if (given_password.size()) {
+				actionstream << "Server: " << playername << " rejoining" <<std::endl;
+				DenyAccessVerCompliant(player->peer_id, player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
+				player->getPlayerSAO()->removingFromEnvironment();
+				m_env->removePlayer(player);
+				player = nullptr;
+			} else {
+				errorstream<<"Server: "<<playername<<": Failed to emerge player" <<" (player allocated to an another client)"<<std::endl;
+				DenyAccess(peer_id, "Another client is connected with this "
 					"name. If your client closed unexpectedly, try again in "
 					"a minute.");
+			}
 		}
 
 		m_clients.setPlayerName(peer_id,playername);
@@ -497,10 +502,8 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 		int version_patch = 0, version_tweak = 0;
-		if (packet.count(TOSERVER_CLIENT_READY_VERSION_PATCH))
-			version_patch = packet[TOSERVER_CLIENT_READY_VERSION_PATCH].as<int>();
-		if (packet.count(TOSERVER_CLIENT_READY_VERSION_TWEAK))
-			version_tweak = packet[TOSERVER_CLIENT_READY_VERSION_TWEAK].as<int>();
+		packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_PATCH, &version_patch);
+		packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_TWEAK, &version_tweak);
 		if (version_tweak) {} //no warn todo remove
 		m_clients.setClientVersion(
 			peer_id,
@@ -764,7 +767,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		std::string name = player->getName();
 
 		// Run script hook
-		bool ate = m_script->on_chat_message(player->getName(), message);
+		bool ate = m_script->on_chat_message(name, message);
 		// If script ate the message, don't proceed
 		if(ate)
 			return;
@@ -789,7 +792,13 @@ void Server::ProcessData(NetworkPacket *pkt)
 		{
 			if(checkPriv(player->getName(), "shout")){
 				line += "<";
-				line += name;
+				if (name.size() > 15) {
+					auto cutted = name;
+					cutted.resize(15);
+					line += cutted + ".";
+				} else {
+					line += name;
+				}
 				line += "> ";
 				line += message;
 				send_to_others = true;
@@ -800,7 +809,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		if(!line.empty())
 		{
 			if(send_to_others) {
-				stat.add("chat", player->getName());
+				stat.add("chat", name);
 				actionstream<<"CHAT: "<<line<<std::endl;
 				SendChatMessage(PEER_ID_INEXISTENT, line);
 			} else
@@ -819,7 +828,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 			playersao->setHP(playersao->getHP() - damage);
 
-			SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
+			SendPlayerHPOrDie(playersao);
 
 			stat.add("damage", player->getName(), damage);
 		}
@@ -909,6 +918,11 @@ void Server::ProcessData(NetworkPacket *pkt)
 				<<" tried to interact, but is dead!"<<std::endl;
 			return;
 		}
+
+#if !ENABLE_THREADS
+		auto lock = m_env->getMap().m_nothread_locker.lock_unique_rec();
+#endif
+
 
 		v3f player_pos = playersao->getLastGoodPosition();
 
@@ -1058,13 +1072,12 @@ void Server::ProcessData(NetworkPacket *pkt)
 			// If the object is a player and its HP changed
 			if (src_original_hp != pointed_object->getHP() &&
 					pointed_object->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
-				SendPlayerHPOrDie(((PlayerSAO*)pointed_object)->getPeerID(),
-						pointed_object->getHP() == 0);
+				SendPlayerHPOrDie(((PlayerSAO*)pointed_object));
 			}
 
 			// If the puncher is a player and its HP changed
 			if (dst_origin_hp != playersao->getHP()) {
-				SendPlayerHPOrDie(playersao->getPeerID(), playersao->getHP() == 0);
+				SendPlayerHPOrDie(playersao);
 			}
 
 				stat.add("punch", player->getName());
@@ -1337,11 +1350,12 @@ void Server::ProcessData(NetworkPacket *pkt)
 	else if(command == TOSERVER_DRAWCONTROL)
 	{
 		auto client = getClient(peer_id);
+		auto lock = client->lock_unique_rec();
 		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
 		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<u32>();
 		client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
 		client->fov  = packet[TOSERVER_DRAWCONTROL_FOV].as<f32>();
-		client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
+		//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
 	}
 	else
 	{

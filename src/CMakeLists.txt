@@ -76,11 +76,11 @@ endif()
 
 set(CMAKE_REQUIRED_FLAGS "")
 
-#if(MSVC)
-#	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
-#else()
+if(MSVC)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+else()
 	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-#endif()
+endif()
 
 if(ENABLE_THREADS)
 	set(ENABLE_THREADS 1)
@@ -150,6 +150,7 @@ else()
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 		# clang does not understand __extern_always_inline but libc headers use it
 		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -Wsign-compare")
 	endif()
 
 	if(MINGW)
@@ -220,6 +221,12 @@ mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
 find_package(MsgPack REQUIRED)
 
+if(NOT (BUILD_CLIENT OR BUILD_SERVER))
+	message(WARNING "Neither BUILD_CLIENT nor BUILD_SERVER is set! Setting BUILD_SERVER=true")
+	set(BUILD_SERVER TRUE)
+endif()
+
+
 option(ENABLE_CURL "Enable cURL support for fetching media" TRUE)
 set(USE_CURL FALSE)
 
@@ -233,14 +240,31 @@ else()
 	mark_as_advanced(CLEAR CURL_LIBRARY CURL_INCLUDE_DIR)
 endif()
 
-find_package(Iconv)
-if(ICONV_INCLUDE_DIR)
-set(USE_ICONV 1)
-message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
-else()
-set(USE_ICONV 0)
-message(STATUS "iconv.h NOT found")
+option(ENABLE_ICONV "Enable utf8 convert via iconv " FALSE)
+
+if(ENABLE_ICONV)
+	find_package(Iconv)
+	if(ICONV_INCLUDE_DIR)
+		set(USE_ICONV 1)
+		message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
+	else()
+		message(STATUS "iconv.h NOT found")
+	endif()
 endif()
+
+if(NOT USE_ICONV)
+	set(USE_ICONV 0)
+endif()
+
+if(NOT USE_CURL)
+	if(BUILD_CLIENT)
+		message(WARNING "cURL is required to load the server list")
+	endif()
+	if(BUILD_SERVER)
+		message(WARNING "cURL is required to announce to the server list")
+	endif()
+endif()
+
 
 if(BUILD_CLIENT)
 OPTION(ENABLE_GETTEXT "Use GetText for internationalization" TRUE)
@@ -438,6 +462,21 @@ else()
 	set(USE_IPV4_DEFAULT 0)
 endif()
 
+OPTION(ENABLE_SPATIAL "Enable SpatialIndex AreaStore backend" TRUE)
+set(USE_SPATIAL FALSE)
+
+if(ENABLE_SPATIAL)
+	find_library(SPATIAL_LIBRARY spatialindex)
+	find_path(SPATIAL_INCLUDE_DIR spatialindex/SpatialIndex.h)
+	if(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
+		set(USE_SPATIAL TRUE)
+		message(STATUS "SpatialIndex AreaStore backend enabled.")
+		include_directories(${SPATIAL_INCLUDE_DIR})
+	else(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
+		message(STATUS "SpatialIndex not found!")
+	endif(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
+endif(ENABLE_SPATIAL)
+
 
 if(NOT MSVC)
 	set(USE_GPROF FALSE CACHE BOOL "Use -pg flag for g++")
@@ -509,11 +548,18 @@ else()
 	else()
 		set(PLATFORM_LIBS -lrt ${PLATFORM_LIBS})
 	endif(APPLE)
-	#set(CLIENT_PLATFORM_LIBS -lXxf86vm)
+
 	# This way Xxf86vm is found on OpenBSD too
 	find_library(XXF86VM_LIBRARY Xxf86vm)
 	mark_as_advanced(XXF86VM_LIBRARY)
 	set(CLIENT_PLATFORM_LIBS ${CLIENT_PLATFORM_LIBS} ${XXF86VM_LIBRARY})
+
+	# Prefer local iconv if installed
+	find_library(ICONV_LIBRARY iconv)
+	mark_as_advanced(ICONV_LIBRARY)
+	if (ICONV_LIBRARY)
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${ICONV_LIBRARY})
+	endif()
 endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
@@ -538,7 +584,7 @@ add_custom_target(GenerateVersion
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 
-add_subdirectory(jthread)
+add_subdirectory(threading)
 add_subdirectory(network)
 add_subdirectory(script)
 add_subdirectory(unittest)
@@ -568,6 +614,7 @@ set(FMcommon_SRCS
 )
 
 set(common_SRCS
+	areastore.cpp
 	ban.cpp
 	cavegen.cpp
 	clientiface.cpp
@@ -616,6 +663,7 @@ set(common_SRCS
 	nodemetadata.cpp
 	nodetimer.cpp
 	noise.cpp
+	objdef.cpp
 	object_properties.cpp
 	pathfinder.cpp
 	player.cpp
@@ -668,7 +716,6 @@ endif()
 
 set(FMclient_SRCS
 	FMColoredString.cpp
-	gsmapper.cpp
 	guiTextInputMenu.cpp
 	intlGUIEditBox.cpp
 	FMStaticText.cpp
@@ -710,11 +757,13 @@ set(client_SRCS
 	guiVolumeChange.cpp
 	hud.cpp
 	imagefilters.cpp
+	intlGUIEditBox.cpp
 	keycode.cpp
 	localplayer.cpp
 	main.cpp
 	mapblock_mesh.cpp
 	mesh.cpp
+	minimap.cpp
 	particles.cpp
 	shader.cpp
 	sky.cpp
@@ -774,7 +823,6 @@ if(BUILD_CLIENT)
 		${PNG_LIBRARIES}
 		${X11_LIBRARIES}
 		${GETTEXT_LIBRARY}
-		${ICONV_LIBRARY}
 		${SOUND_LIBRARIES}
 		${LUA_LIBRARY}
 		${GMP_LIBRARY}
@@ -787,13 +835,11 @@ if(BUILD_CLIENT)
 	if(STATIC_BUILD AND USE_GETTEXT)
 		target_link_libraries(
 			${PROJECT_NAME}
-			${ICONV_LIBRARY}
 		)
 	endif()
 	if(APPLE)
 		target_link_libraries(
 			${client_LIBS}
-			${ICONV_LIBRARY}
 		)
 	else()
 		target_link_libraries(
@@ -832,6 +878,9 @@ if(BUILD_CLIENT)
 		target_link_libraries(${PROJECT_NAME} shlwapi.lib)
 		add_definitions(-DNOMINMAX)
 	endif()
+	if (USE_SPATIAL)
+		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
+	endif()
 endif(BUILD_CLIENT)
 
 
@@ -843,7 +892,6 @@ if(BUILD_SERVER)
 		${ZLIB_LIBRARIES}
 		${JSON_LIBRARY}
 		${GETTEXT_LIBRARY}
-		${ICONV_LIBRARY}
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
@@ -861,6 +909,9 @@ if(BUILD_SERVER)
 	if (USE_REDIS)
 		target_link_libraries(${PROJECT_NAME}server ${REDIS_LIBRARY})
 	endif()
+	if (USE_SPATIAL)
+		target_link_libraries(${PROJECT_NAME}server ${SPATIAL_LIBRARY})
+	endif()
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}server
@@ -869,6 +920,7 @@ if(BUILD_SERVER)
 	endif()
 	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 endif(BUILD_SERVER)
+
 
 # Installation
 

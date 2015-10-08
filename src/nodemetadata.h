@@ -24,10 +24,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define NODEMETADATA_HEADER
 
 #include "irr_v3d.h"
-#include <string>
 #include <iostream>
 #include <vector>
-#include <map>
+#include "util/string.h"
 
 /*
 	NodeMetadata stores arbitary amounts of data for special blocks.
@@ -39,12 +38,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 class Inventory;
-class IGameDef;
+class IItemDefManager;
 
 class NodeMetadata
 {
 public:
-	NodeMetadata(IGameDef *gamedef);
+	NodeMetadata(IItemDefManager *item_def_mgr);
 	~NodeMetadata();
 
 	void serialize(std::ostream &os) const;
@@ -57,19 +56,19 @@ public:
 	void setString(const std::string &name, const std::string &var);
 	// Support variable names in values
 	std::string resolveString(const std::string &str, unsigned short recursion = 0) const;
-	std::map<std::string, std::string> getStrings() const
+	StringMap getStrings() const
 	{
 		return m_stringvars;
 	}
 
 	// The inventory
-	Inventory* getInventory()
+	Inventory *getInventory()
 	{
 		return m_inventory;
 	}
 
 private:
-	std::map<std::string, std::string> m_stringvars;
+	StringMap m_stringvars;
 	Inventory *m_inventory;
 };
 
@@ -84,7 +83,7 @@ public:
 	~NodeMetadataList();
 
 	void serialize(std::ostream &os) const;
-	void deSerialize(std::istream &is, IGameDef *gamedef);
+	void deSerialize(std::istream &is, IItemDefManager *item_def_mgr);
 
 	// Add all keys in this list to the vector keys
 	std::vector<v3s16> getAllKeys();

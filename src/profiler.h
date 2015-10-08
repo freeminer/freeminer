@@ -28,8 +28,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <map>
 
-#include "jthread/jmutex.h"
-#include "jthread/jmutexautolock.h"
+#include "threading/mutex.h"
+#include "threading/mutex_auto_lock.h"
 #include "util/timetaker.h"
 #include "util/numeric.h"      // paging()
 #include "debug.h"             // assert()
@@ -73,7 +73,7 @@ public:
 	{
 		if(!g_profiler_enabled)
 			return;
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		{
 			auto n = m_data.find(name);
 			if(n == m_data.end())
@@ -89,7 +89,7 @@ public:
 
 	void clear()
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		m_data.clear();
 	}
 
@@ -108,7 +108,7 @@ public:
 
 	void printPage(std::ostream &o, u32 page, u32 pagecount)
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 
 		u32 minindex, maxindex;
 		paging(m_data.size(), page, pagecount, minindex, maxindex);
@@ -150,7 +150,7 @@ public:
 
 	void graphAdd(const std::string &id, float value)
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		std::map<std::string, float>::iterator i =
 				m_graphvalues.find(id);
 		if(i == m_graphvalues.end())
@@ -160,19 +160,19 @@ public:
 	}
 	void graphGet(GraphValues &result)
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		result = m_graphvalues;
 		m_graphvalues.clear();
 	}
 
 	void remove(const std::string& name)
 	{
-		JMutexAutoLock lock(m_mutex);
+		MutexAutoLock lock(m_mutex);
 		m_data.erase(name);
 	}
 
 private:
-	JMutex m_mutex;
+	Mutex m_mutex;
 	GraphValues m_graphvalues;
 	std::map<std::string, ProfValue> m_data;
 };

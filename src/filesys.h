@@ -31,10 +31,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define DIR_DELIM "\\"
 #define DIR_DELIM_CHAR '\\'
 #define FILESYS_CASE_INSENSITIVE 1
+#define PATH_DELIM ";"
 #else // POSIX
 #define DIR_DELIM "/"
 #define DIR_DELIM_CHAR '/'
 #define FILESYS_CASE_INSENSITIVE 0
+#define PATH_DELIM ":"
 #endif
 
 namespace fs
@@ -106,13 +108,17 @@ std::string RemoveLastPathComponent(const std::string &path,
 // this does not resolve symlinks and check for existence of directories.
 std::string RemoveRelativePathComponents(std::string path);
 
-// Return the filename from a path or the entire path if no directory delimiter
-// is found.
+// Returns the absolute path for the passed path, with "." and ".." path
+// components and symlinks removed.  Returns "" on error.
+std::string AbsolutePath(const std::string &path);
+
+// Returns the filename from a path or the entire path if no directory
+// delimiter is found.
 const char *GetFilenameFromPath(const char *path);
 
 bool safeWriteToFile(const std::string &path, const std::string &content);
 
-}//fs
+} // namespace fs
 
 #endif
 

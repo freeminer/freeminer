@@ -1,5 +1,6 @@
 set (UNITTEST_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_areastore.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_collision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_compression.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_connection.cpp
@@ -16,6 +17,7 @@ set (UNITTEST_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_serialization.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_socket.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_threading.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_utilities.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_voxelalgorithms.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_voxelmanipulator.cpp

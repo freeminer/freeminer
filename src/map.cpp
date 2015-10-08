@@ -47,6 +47,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
+#include <deque>
+#include <queue>
 #include "database-leveldb.h"
 #include "database-redis.h"
 #include <deque>
@@ -69,7 +71,6 @@ Map::Map(IGameDef *gamedef):
 	m_blocks_save_last(0)
 {
 	m_liquid_step_flow = 1000;
-	updateLighting_last[LIGHTBANK_DAY] = updateLighting_last[LIGHTBANK_NIGHT] = 0;
 	time_life = 0;
 	getBlockCacheFlush();
 }
@@ -250,7 +251,7 @@ void Map::unspreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 	// Cache this a bit, too
-	bool block_checked_in_modified = false;
+	//bool block_checked_in_modified = false;
 
 	for(std::map<v3s16, u8>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -264,7 +265,7 @@ void Map::unspreadLight(enum LightBank bank,
 				block = getBlockNoCreate(blockpos);
 				blockpos_last = blockpos;
 
-				block_checked_in_modified = false;
+				//block_checked_in_modified = false;
 				blockchangecount++;
 			}
 		}
@@ -304,7 +305,7 @@ void Map::unspreadLight(enum LightBank bank,
 
 					blockpos_last = blockpos;
 
-					block_checked_in_modified = false;
+					//block_checked_in_modified = false;
 					blockchangecount++;
 				}
 			}
@@ -318,7 +319,7 @@ void Map::unspreadLight(enum LightBank bank,
 			if (!is_valid_position)
 				continue;
 
-			bool changed = false;
+			//bool changed = false;
 
 			//TODO: Optimize output by optimizing light_sources?
 
@@ -343,7 +344,7 @@ void Map::unspreadLight(enum LightBank bank,
 					block->setNode(relpos, n2);
 
 					unlighted_nodes[n2pos] = current_light;
-					changed = true;
+					//changed = true;
 
 					/*
 						Remove from light_sources if it is there
@@ -365,6 +366,7 @@ void Map::unspreadLight(enum LightBank bank,
 			}
 
 			// Add to modified_blocks
+/*
 			if(changed == true && block_checked_in_modified == false)
 			{
 				// If the block is not found in modified_blocks, add.
@@ -374,6 +376,7 @@ void Map::unspreadLight(enum LightBank bank,
 				}
 				block_checked_in_modified = true;
 			}
+*/
 		}
 	}
 
@@ -406,7 +409,7 @@ void Map::unLightNeighbors(enum LightBank bank,
 */
 void Map::spreadLight(enum LightBank bank,
 		std::set<v3s16> & from_nodes,
-		std::map<v3s16, MapBlock*> & modified_blocks, int recursive)
+		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -432,7 +435,7 @@ void Map::spreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 		// Cache this a bit, too
-	bool block_checked_in_modified = false;
+	//bool block_checked_in_modified = false;
 
 	for(std::set<v3s16>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -445,14 +448,16 @@ void Map::spreadLight(enum LightBank bank,
 		// Only fetch a new block if the block position has changed
 			if(block == NULL || blockpos != blockpos_last){
 #if !ENABLE_THREADS
-				auto lock = m_nothread_locker.lock_shared_rec();
+				auto lock = m_nothread_locker.try_lock_shared_rec();
+				if (!lock->owns_lock())
+					continue;
 #endif
 				block = getBlockNoCreateNoEx(blockpos);
 				if (!block)
 					continue;
 				blockpos_last = blockpos;
 
-				block_checked_in_modified = false;
+				//block_checked_in_modified = false;
 				blockchangecount++;
 			}
 
@@ -487,7 +492,7 @@ void Map::spreadLight(enum LightBank bank,
 					block = getBlockNoCreate(blockpos);
 					blockpos_last = blockpos;
 
-					block_checked_in_modified = false;
+					//block_checked_in_modified = false;
 					blockchangecount++;
 				}
 			}
@@ -500,7 +505,7 @@ void Map::spreadLight(enum LightBank bank,
 			if (!is_valid_position)
 				continue;
 
-			bool changed = false;
+			//bool changed = false;
 			/*
 				If the neighbor is brighter than the current node,
 				add to list (it will light up this node on its turn)
@@ -508,7 +513,7 @@ void Map::spreadLight(enum LightBank bank,
 			if(n2.getLight(bank, nodemgr) > undiminish_light(oldlight))
 			{
 				lighted_nodes.insert(n2pos);
-				changed = true;
+				//changed = true;
 			}
 			/*
 				If the neighbor is dimmer than how much light this node
@@ -521,10 +526,11 @@ void Map::spreadLight(enum LightBank bank,
 					n2.setLight(bank, newlight, nodemgr);
 					block->setNode(relpos, n2);
 					lighted_nodes.insert(n2pos);
-					changed = true;
+					//changed = true;
 				}
 			}
 
+/*
 			// Add to modified_blocks
 			if(changed == true && block_checked_in_modified == false)
 			{
@@ -535,6 +541,7 @@ void Map::spreadLight(enum LightBank bank,
 				}
 				block_checked_in_modified = true;
 			}
+*/
 		}
 	}
 
@@ -543,7 +550,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(!lighted_nodes.empty() && recursive <= 32) { // maybe 32 too small
+	if(!lighted_nodes.empty() && porting::getTimeMs() <= end_ms) { // maybe 32 too small
 /*
 		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()
@@ -551,7 +558,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" modifiedB="<<modified_blocks.size()
 			<<std::endl;
 */
-		spreadLight(bank, lighted_nodes, modified_blocks, ++recursive);
+		spreadLight(bank, lighted_nodes, modified_blocks, end_ms);
 	}
 }
 
@@ -646,7 +653,7 @@ s16 Map::propagateSunlight(v3s16 start,
 			n.setLight(LIGHTBANK_DAY, LIGHT_SUN, nodemgr);
 			block->setNode(relpos, n);
 
-			modified_blocks[blockpos] = block;
+			//modified_blocks[blockpos] = block;
 		}
 		else
 		{
@@ -656,6 +663,9 @@ s16 Map::propagateSunlight(v3s16 start,
 	}
 	return y + 1;
 }
+
+
+#if 0
 
 u32 Map::updateLighting(enum LightBank bank,
 		concurrent_map<v3POS, MapBlock*> & a_blocks,
@@ -680,7 +690,11 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	int num_bottom_invalid = 0;
 
-	//JMutexAutoLock lock2(m_update_lighting_mutex);
+	//MutexAutoLock lock2(m_update_lighting_mutex);
+
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
 
 	{
 	TimeTaker t("updateLighting: first stuff");
@@ -713,6 +727,8 @@ u32 Map::updateLighting(enum LightBank bank,
 			v3s16 posnodes = block->getPosRelative();
 			modified_blocks[pos] = block;
 			//blocks_to_update[pos] = block;
+
+			block->setLightingExpired(true);
 
 			/*
 				Clear all light from block
@@ -775,8 +791,6 @@ u32 Map::updateLighting(enum LightBank bank,
 					<<pos.X<<","<<pos.Y<<","<<pos.Z<<") not valid"
 					<<std::endl;*/
 
-			block->setLightingExpired(true);
-
 			// Bottom sunlight is not valid; get the block and loop to it
 
 			pos.Y--;
@@ -825,7 +839,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	{
 		TimeTaker timer("updateLighting: spreadLight");
-		spreadLight(bank, light_sources, modified_blocks);
+		spreadLight(bank, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms*10);
 	}
 
 	/*
@@ -928,7 +942,7 @@ TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
 
 	a_blocks.clear();
 TimeTaker timer("updateLighting expireDayNightDiff");
-	//JMutexAutoLock lock2(m_update_lighting_mutex);
+	//MutexAutoLock lock2(m_update_lighting_mutex);
 
 	/*
 		Update information about whether day and night light differ
@@ -942,10 +956,12 @@ TimeTaker timer("updateLighting expireDayNightDiff");
 		//MapBlock *block = i->second;
 		if(block == NULL || block->isDummy())
 			continue;
+		block->setLightingExpired(false);
 		block->expireDayNightDiff();
 	}
 	return ret;
 }
+#endif
 
 /*
 */
@@ -963,6 +979,13 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, ndef), ndef);
 				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
 			}
+
+			if (ndef->get(from_node).light_propagates) {
+				MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
+				if (block)
+					block->setLightingExpired(true);
+			}
+
 		}
 		if (remove_metadata)
 			removeNodeMetadata(p);
@@ -1025,7 +1048,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		MapBlock * block = getBlockNoCreate(blockpos);
 		if(!block)
 			break;
-		modified_blocks[blockpos] = block;
+		//modified_blocks[blockpos] = block;
 
 		// Unlight neighbours of node.
 		// This means setting light of all consequent dimmer nodes
@@ -1247,7 +1270,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	MapBlock * block = getBlockNoCreate(blockpos);
 	if(!block)
 		return;
-	modified_blocks[blockpos] = block;
+	//modified_blocks[blockpos] = block;
 
 	/*
 		If the removed node was under sunlight, propagate the
@@ -1463,11 +1486,26 @@ bool Map::getDayNightDiff(v3s16 blockpos)
 	return false;
 }
 
+struct TimeOrderedMapBlock {
+	MapSector *sect;
+	MapBlock *block;
+
+	TimeOrderedMapBlock(MapSector *sect, MapBlock *block) :
+		sect(sect),
+		block(block)
+	{}
+
+	bool operator<(const TimeOrderedMapBlock &b) const
+	{
+		return block->getUsageTimer() < b.block->getUsageTimer();
+	};
+};
+
 /*
 	Updates usage timers
 */
-u32 Map::timerUpdate(float uptime, float unload_timeout,
-		unsigned int max_cycle_ms,
+#if WTF
+void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 		std::vector<v3s16> *unloaded_blocks)
 {
 	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
@@ -1475,146 +1513,143 @@ u32 Map::timerUpdate(float uptime, float unload_timeout,
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	if (/*!m_blocks_update_last && */ m_blocks_delete->size() > 1000) {
-		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
-		verbosestream<<"Deleting blocks="<<m_blocks_delete->size()<<std::endl;
-		for (auto & ir : *m_blocks_delete)
-			delete ir.first;
-		m_blocks_delete->clear();
-		getBlockCacheFlush();
-	}
-
+	std::vector<v2s16> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	beginSave();
 
-	std::vector<MapBlockP> blocks_delete;
-	int save_started = 0;
-	{
-	auto lock = m_blocks.try_lock_shared_rec();
-	if (!lock->owns_lock())
-		return m_blocks_update_last;
+	// If there is no practical limit, we spare creation of mapblock_queue
+	if (max_loaded_blocks == U32_MAX) {
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+				si != m_sectors.end(); ++si) {
+			MapSector *sector = si->second;
 
-#if !ENABLE_THREADS
-	auto lock_map = m_nothread_locker.try_lock_unique_rec();
-	if (!lock_map->owns_lock())
-		return m_blocks_update_last;
-#endif
+			bool all_blocks_deleted = true;
 
-	for(auto ir : m_blocks) {
-		if (n++ < m_blocks_update_last) {
-			continue;
-		}
-		else {
-			m_blocks_update_last = 0;
-		}
-		++calls;
+			MapBlockVect blocks;
+			sector->getBlocks(blocks);
 
-		auto block = ir.second;
-		if (!block)
-			continue;
+			for (MapBlockVect::iterator i = blocks.begin();
+					i != blocks.end(); ++i) {
+				MapBlock *block = (*i);
 
-		{
-			auto lock = block->try_lock_unique_rec();
-			if (!lock->owns_lock())
-				continue;
-			if(block->getUsageTimer() > unload_timeout) // block->refGet() <= 0 &&
-			{
-				v3s16 p = block->getPos();
-				//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
-				// Save if modified
-				if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading)
-				{
-					//modprofiler.add(block->getModifiedReason(), 1);
-					if(!save_started++)
-						beginSave();
-					if (!saveBlock(block))
-						continue;
-					saved_blocks_count++;
-				}
+				block->incrementUsageTimer(dtime);
 
-				blocks_delete.push_back(block);
+				if (block->refGet() == 0
+						&& block->getUsageTimer() > unload_timeout) {
+					v3s16 p = block->getPos();
 
-				if(unloaded_blocks)
-					unloaded_blocks->push_back(p);
-
-				deleted_blocks_count++;
-			}
-			else
-			{
-
-#ifndef SERVER
-			if (block->mesh_old)
-				block->mesh_old = nullptr;
-#endif
-
-			if (!block->m_uptime_timer_last)  // not very good place, but minimum modifications
-				block->m_uptime_timer_last = uptime - 0.1;
-			block->incrementUsageTimer(uptime - block->m_uptime_timer_last);
-			block->m_uptime_timer_last = uptime;
-
-				block_count_all++;
-
-/*#ifndef SERVER
-				if(block->refGet() == 0 && block->getUsageTimer() >
-						g_settings->getFloat("unload_unused_meshes_timeout"))
-				{
-					if(block->mesh){
-						delete block->mesh;
-						block->mesh = NULL;
+					// Save if modified
+					if (block->getModified() != MOD_STATE_CLEAN
+							&& save_before_unloading) {
+						modprofiler.add(block->getModifiedReasonString(), 1);
+						if (!saveBlock(block))
+							continue;
+						saved_blocks_count++;
 					}
+
+					// Delete from memory
+					sector->deleteBlock(block);
+
+					if (unloaded_blocks)
+						unloaded_blocks->push_back(p);
+
+					deleted_blocks_count++;
+				} else {
+					all_blocks_deleted = false;
+					block_count_all++;
 				}
-#endif*/
 			}
 
-		} // block lock
-
-		if (porting::getTimeMs() > end_ms) {
-			m_blocks_update_last = n;
-			break;
+			if (all_blocks_deleted) {
+				sector_deletion_queue.push_back(si->first);
+			}
 		}
+	} else {
+		std::priority_queue<TimeOrderedMapBlock> mapblock_queue;
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+				si != m_sectors.end(); ++si) {
+			MapSector *sector = si->second;
 
+			MapBlockVect blocks;
+			sector->getBlocks(blocks);
+
+			for(MapBlockVect::iterator i = blocks.begin();
+					i != blocks.end(); ++i) {
+				MapBlock *block = (*i);
+
+				block->incrementUsageTimer(dtime);
+				mapblock_queue.push(TimeOrderedMapBlock(sector, block));
+			}
+		}
+		block_count_all = mapblock_queue.size();
+		// Delete old blocks, and blocks over the limit from the memory
+		while (!mapblock_queue.empty() && (mapblock_queue.size() > max_loaded_blocks
+				|| mapblock_queue.top().block->getUsageTimer() > unload_timeout)) {
+			TimeOrderedMapBlock b = mapblock_queue.top();
+			mapblock_queue.pop();
+
+			MapBlock *block = b.block;
+
+			if (block->refGet() != 0)
+				continue;
+
+			v3s16 p = block->getPos();
+
+			// Save if modified
+			if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
+				modprofiler.add(block->getModifiedReasonString(), 1);
+				if (!saveBlock(block))
+					continue;
+				saved_blocks_count++;
+			}
+
+			// Delete from memory
+			b.sect->deleteBlock(block);
+
+			if (unloaded_blocks)
+				unloaded_blocks->push_back(p);
+
+			deleted_blocks_count++;
+			block_count_all--;
+		}
+		// Delete empty sectors
+		for (std::map<v2s16, MapSector*>::iterator si = m_sectors.begin();
+			si != m_sectors.end(); ++si) {
+			if (si->second->empty()) {
+				sector_deletion_queue.push_back(si->first);
+			}
+		}
 	}
-	}
-	if(save_started)
-		endSave();
-
-	if (!calls)
-		m_blocks_update_last = 0;
-
-	for (auto & block : blocks_delete)
-		this->deleteBlock(block);
+	endSave();
 
 	// Finally delete the empty sectors
+	deleteSectors(sector_deletion_queue);
 
 	if(deleted_blocks_count != 0)
 	{
-		if (m_blocks_update_last)
-			infostream<<"ServerMap: timerUpdate(): Blocks processed:"<<calls<<"/"<<m_blocks.size()<<" to "<<m_blocks_update_last<<std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
-		infostream<<"Unloaded "<<deleted_blocks_count<<"/"<<(block_count_all + deleted_blocks_count)
+		infostream<<"Unloaded "<<deleted_blocks_count
 				<<" blocks from memory";
-		infostream<<" (deleteq1="<<m_blocks_delete_1.size()<< " deleteq2="<<m_blocks_delete_2.size()<<")";
-		if(saved_blocks_count)
+		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
-/*
 		infostream<<", "<<block_count_all<<" blocks in memory";
-*/
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
-			//infostream<<"Blocks modified by: "<<std::endl;
+			infostream<<"Blocks modified by: "<<std::endl;
 			modprofiler.print(infostream);
 		}
 	}
-	return m_blocks_update_last;
 }
+
+#endif
 
 void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
-	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
+	timerUpdate(0.0, -1.0, 100, 0, unloaded_blocks);
 }
 
 
@@ -2266,10 +2301,10 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	}
 	catch(std::exception &e)
 	{
-		infostream<<"WARNING: ServerMap: Failed to load map from "<<savedir
+		actionstream<<"WARNING: ServerMap: Failed to load map from "<<savedir
 				<<", exception: "<<e.what()<<std::endl;
-		infostream<<"Please remove the map or fix it."<<std::endl;
-		infostream<<"WARNING: Map saving will be disabled."<<std::endl;
+		actionstream<<"Please remove the map or fix it."<<std::endl;
+		actionstream<<"WARNING: Map saving will be disabled."<<std::endl;
 	}
 
 	infostream<<"Initializing new map."<<std::endl;
@@ -2315,14 +2350,9 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	bool enable_mapgen_debug_info = m_emerge->mapgen_debug_info;
 	EMERGE_DBG_OUT("initBlockMake(): " PP(blockpos) " - " PP(blockpos));
 
-	s16 chunksize = m_emerge->params.chunksize;
-	s16 coffset = -chunksize / 2;
-	v3s16 chunk_offset(coffset, coffset, coffset);
-	v3s16 blockpos_div = getContainerPos(blockpos - chunk_offset, chunksize);
-	v3s16 blockpos_min = blockpos_div * chunksize;
-	v3s16 blockpos_max = blockpos_div * chunksize + v3s16(1,1,1)*(chunksize-1);
-	blockpos_min += chunk_offset;
-	blockpos_max += chunk_offset;
+	s16 csize = m_emerge->params.chunksize;
+	v3s16 blockpos_min = EmergeManager::getContainingChunk(blockpos, csize);
+	v3s16 blockpos_max = blockpos_min + v3s16(1, 1, 1) * (csize - 1);
 
 	{
 		auto lock = m_mapgen_process.lock_unique_rec();
@@ -2462,6 +2492,9 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		NOTE: blitBackAll adds nearly everything to changed_blocks
 	*/
 	{
+#if !ENABLE_THREADS
+		auto lock = m_nothread_locker.lock_unique_rec();
+#endif
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
 		data->vmanip->blitBackAll(&changed_blocks, false);
@@ -2539,8 +2572,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
 		if (g_settings->getBool("save_generated_block"))
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
-				"finishBlockMake expireDayNightDiff");
-
+			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
 	}
 
 	/*
@@ -2622,13 +2654,15 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 	/*
 		Do not create over-limit
 	*/
-	if(p.X < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.X > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Y < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Y > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Z < -MAP_GENERATION_LIMIT / MAP_BLOCKSIZE
-	|| p.Z > MAP_GENERATION_LIMIT / MAP_BLOCKSIZE)
-		throw InvalidPositionException("createBlock(): pos. over limit");
+	const static u16 map_gen_limit = MYMIN(MAX_MAP_GENERATION_LIMIT,
+		g_settings->getU16("map_generation_limit"));
+	if(p.X < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.X >  map_gen_limit / MAP_BLOCKSIZE
+			|| p.Y < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.Y >  map_gen_limit / MAP_BLOCKSIZE
+			|| p.Z < -map_gen_limit / MAP_BLOCKSIZE
+			|| p.Z >  map_gen_limit / MAP_BLOCKSIZE)
+		throw InvalidPositionException("createSector(): pos. over limit");
 
 	MapBlock *block = this->getBlockNoCreateNoEx(p, false, true);
 	if(block)
@@ -2735,6 +2769,10 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 	v3POS blockPosition = getNodeBlockPos(probePosition);
 	v3POS prevBlockPosition = blockPosition;
 
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	// Cache the block to be inspected.
 	if(cacheBlocks) {
 		emergeBlock(blockPosition, false);
@@ -2809,6 +2847,10 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 	if (!breakable)
 		m_blocks_save_last = 0;
 
+#if !ENABLE_THREADS
+	auto lock = m_nothread_locker.lock_unique_rec();
+#endif
+
 	{
 		auto lock = breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
@@ -2836,7 +2878,8 @@ s32 ServerMap::save(ModifiedState save_level, bool breakable)
 					save_started = true;
 				}
 
-				//modprofiler.add(block->getModifiedReason(), 1);
+				//modprofiler.add(block->getModifiedReasonString(), 1);
+
 				auto lock = breakable ? block->try_lock_unique_rec() : block->lock_unique_rec();
 				if (!lock->owns_lock())
 					continue;

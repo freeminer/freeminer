@@ -99,7 +99,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		if event.type == "DCL" then
 			if event.row <= #menudata.favorites then
 				if not is_server_protocol_compat_or_error(menudata.favorites[event.row].proto_min,
-						menudata.favorites[event.row].proto_max) then
+						menudata.favorites[event.row].proto_max, menudata.favorites[event.row].proto) then
 					return true
 				end
 				gamedata.address    = menudata.favorites[event.row].address
@@ -221,7 +221,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			gamedata.serverdescription = menudata.favorites[fav_idx].description
 
 			if not is_server_protocol_compat_or_error(menudata.favorites[fav_idx].proto_min,
-					menudata.favorites[fav_idx].proto_max)then
+					menudata.favorites[fav_idx].proto_max, menudata.favorites[fav_idx].proto) then
 				return true
 			end
 		else

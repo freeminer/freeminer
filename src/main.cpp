@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 	log_add_output_maxlev(&main_stderr_log_out, LMT_ACTION);
 	log_add_output_all_levs(&main_dstream_no_stderr_log_out);
 
-	log_register_thread("main");
+	log_register_thread("Main");
 
 	Settings cmd_args;
 	bool cmd_args_ok = get_cmdline_opts(argc, argv, &cmd_args);
@@ -218,6 +218,24 @@ int main(int argc, char *argv[])
 	GameParams game_params;
 	if (!init_common(&game_params.log_level, cmd_args, argc, argv))
 		return 1;
+
+	// parse settings from cmdline. must be after loading settings. maybe better to move
+	for (int i = 1; i < argc; i++) {
+		std::string arg_name = argv[i];
+		if (arg_name.substr(0, 2) == "--" || arg_name[0] != '-')
+			continue;
+		std::string name = arg_name.substr(1);
+		std::string value;
+		auto vpos = name.find('=');
+		if (vpos != std::string::npos && name.size() > vpos) {
+			value = name.substr(vpos+1);
+			name.resize(vpos);
+		} else {
+			value = "1";
+		}
+		g_settings->set(name, value);
+		continue;
+	}
 
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
 	// Run unit tests
@@ -376,7 +394,7 @@ static void list_game_ids()
 {
 	std::set<std::string> gameids = getAvailableGameIds();
 	for (std::set<std::string>::const_iterator i = gameids.begin();
-			i != gameids.end(); i++)
+			i != gameids.end(); ++i)
 		dstream << (*i) <<std::endl;
 }
 
@@ -497,15 +515,17 @@ static bool init_common(int *log_level, const Settings &cmd_args, int argc, char
 	httpfetch_init(g_settings->getS32("curl_parallel_limit"));
 
 #ifdef _MSC_VER
-	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
+	init_gettext(porting::path_locale.c_str(),
 		g_settings->get("language"), argc, argv);
+#else
+	init_gettext(porting::path_locale.c_str(),
+		g_settings->get("language"));
+#endif
+
+#if defined(_WIN32)
 	//Remove windows console window if settings request
 	if (!g_settings->getBool("console_enabled"))
 		FreeConsole();
-
-#else
-	init_gettext((porting::path_share + DIR_DELIM + "locale").c_str(),
-		g_settings->get("language"));
 #endif
 
 	return true;
@@ -528,7 +548,7 @@ static bool read_config_file(const Settings &cmd_args)
 		if (!r) {
 			errorstream << "Could not read configuration from \""
 			            << cmd_args.get("config") << "\"" << std::endl;
-			return false;
+			//return false;
 		}
 		g_settings_path = cmd_args.get("config");
 	} else {
@@ -661,10 +681,16 @@ static bool get_world_from_cmdline(GameParams *game_params, const Settings &cmd_
 			}
 		}
 		if (!found) {
+			std::string fullpath = porting::path_user + DIR_DELIM + "worlds" DIR_DELIM + commanded_worldname;
+			game_configure_subgame(game_params, cmd_args);
+			if (!loadGameConfAndInitWorld(fullpath, game_params->game_spec)) {
 			dstream << _("World") << " '" << commanded_worldname
 			        << _("' not available. Available worlds:") << std::endl;
 			print_worldspecs(worldspecs, dstream);
 			return false;
+			} else {
+				commanded_world = fullpath;
+			}
 		}
 
 		game_params->world_path = get_clean_world_path(commanded_world);
@@ -726,7 +752,7 @@ static bool auto_select_world(GameParams *game_params)
 		           << world_path << "]" << std::endl;
 	}
 
-	assert(world_path != "");	// Post-condition
+	//assert(world_path != "");	// Post-condition
 	game_params->world_path = world_path;
 	return true;
 }
@@ -782,12 +808,12 @@ static bool determine_subgame(GameParams *game_params)
 {
 	SubgameSpec gamespec;
 
-	assert(game_params->world_path != "");	// Pre-condition
+	//assert(game_params->world_path != "");	// Pre-condition
 
 	verbosestream << _("Determining gameid/gamespec") << std::endl;
 	// If world doesn't exist
-	if (game_params->world_path != ""
-			&& !getWorldExists(game_params->world_path)) {
+	if (game_params->world_path == ""
+			|| !getWorldExists(game_params->world_path)) {
 		// Try to take gamespec from command line
 		if (game_params->game_spec.isValid()) {
 			gamespec = game_params->game_spec;

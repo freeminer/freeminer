@@ -17,7 +17,7 @@
 
 --------------------------------------------------------------------------------
 local function filter_texture_pack_list(list)
-	local retval = {"None"}
+	local retval = {fgettext("None")}
 	for _, item in ipairs(list) do
 		if item ~= "base" then
 			table.insert(retval, item)
@@ -45,12 +45,12 @@ end
 
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
-	
+
 	local retval = "label[4,-0.25;".. fgettext("Select texture pack:") .. "]"..
 			"textlist[4,0.25;7.5,5.0;TPs;"
 
 	local current_texture_path = core.setting_get("texture_path")
-	local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+	local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
 
 	if index == nil then index = 1 end
@@ -62,10 +62,18 @@ local function get_formspec(tabview, name, tabdata)
 		return retval
 	end
 
-	local infofile = current_texture_path ..DIR_DELIM.."info.txt"
+	local infofile = current_texture_path ..DIR_DELIM.."description.txt"
+	-- This adds backwards compatibility for old texture pack description files named
+	-- "info.txt", and should be removed once all such texture packs have been updated
+	if not file_exists(infofile) then
+		infofile = current_texture_path ..DIR_DELIM.."info.txt"
+		if file_exists(infofile) then
+			minetest.log("info.txt is depreciated. description.txt should be used instead.");
+		end
+	end
 	local infotext = ""
 	local f = io.open(infofile, "r")
-	if f==nil then
+	if not f then
 		infotext = fgettext("No information available")
 	else
 		infotext = f:read("*all")
@@ -94,11 +102,11 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			local index = core.get_textlist_index("TPs")
 			core.setting_set("mainmenu_last_selected_TP",
 				index)
-			local list = filter_texture_pack_list(core.get_dirlist(core.get_texturepath(), true))
+			local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 			local current_index = core.get_textlist_index("TPs")
 			if current_index ~= nil and #list >= current_index then
 				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]
-				if list[current_index] == "None" then new_path = "" end
+				if list[current_index] == fgettext("None") then new_path = "" end
 
 				core.setting_set("texture_path", new_path)
 			end

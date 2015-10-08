@@ -61,9 +61,16 @@ public:
 	void setHP(s16 hp);
 	s16 getHP() const;
 	void setArmorGroups(const ItemGroupList &armor_groups);
-	void setAnimation(v2f frame_range, float frame_speed, float frame_blend);
-	void setBonePosition(std::string bone, v3f position, v3f rotation);
-	void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation);
+	ItemGroupList getArmorGroups();
+	void setAnimation(v2f frame_range, float frame_speed, float frame_blend, bool frame_loop);
+	void getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend, bool *frame_loop);
+	void setBonePosition(const std::string &bone, v3f position, v3f rotation);
+	void getBonePosition(const std::string &bone, v3f *position, v3f *rotation);
+	void setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation);
+	void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation);
+	void addAttachmentChild(int child_id);
+	void removeAttachmentChild(int child_id);
+	std::set<int> getAttachmentChildIds();
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
 	/* LuaEntitySAO-specific */
@@ -88,7 +95,7 @@ private:
 	bool m_registered;
 	struct ObjectProperties m_prop;
 	
-	s16 m_hp;
+	std::atomic_ushort m_hp;
 	v3f m_velocity;
 	v3f m_acceleration;
 	float m_yaw;
@@ -105,12 +112,14 @@ private:
 	v2f m_animation_range;
 	float m_animation_speed;
 	float m_animation_blend;
+	bool m_animation_loop;
 	bool m_animation_sent;
 
 	std::map<std::string, core::vector2d<v3f> > m_bone_position;
 	bool m_bone_position_sent;
 
 	int m_attachment_parent_id;
+	std::set<int> m_attachment_child_ids;
 	std::string m_attachment_bone;
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
@@ -195,9 +204,16 @@ public:
 	u16 getBreath() const;
 	void setBreath(u16 breath);
 	void setArmorGroups(const ItemGroupList &armor_groups);
-	void setAnimation(v2f frame_range, float frame_speed, float frame_blend);
-	void setBonePosition(std::string bone, v3f position, v3f rotation);
-	void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation);
+	ItemGroupList getArmorGroups();
+	void setAnimation(v2f frame_range, float frame_speed, float frame_blend, bool frame_loop);
+	void getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend, bool *frame_loop);
+	void setBonePosition(const std::string &bone, v3f position, v3f rotation);
+	void getBonePosition(const std::string &bone, v3f *position, v3f *rotation);
+	void setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation);
+	void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation);
+	void addAttachmentChild(int child_id);
+	void removeAttachmentChild(int child_id);
+	std::set<int> getAttachmentChildIds();
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
 	void setNametagColor(video::SColor color);
@@ -244,6 +260,7 @@ public:
 	}
 	void noCheatDigStart(v3s16 p)
 	{
+		auto lock = lock_unique();
 		m_nocheat_dig_pos = p;
 		m_nocheat_dig_time = 0;
 	}
@@ -311,12 +328,14 @@ private:
 	v2f m_animation_range;
 	float m_animation_speed;
 	float m_animation_blend;
-	bool m_animation_sent;
+	bool m_animation_loop;
+	std::atomic_bool m_animation_sent;
 
 	std::map<std::string, core::vector2d<v3f> > m_bone_position; // Stores position and rotation for each bone name
 	bool m_bone_position_sent;
 
 	int m_attachment_parent_id;
+	std::set<int> m_attachment_child_ids;
 	std::string m_attachment_bone;
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
@@ -331,7 +350,7 @@ public:
 	float m_physics_override_gravity;
 	bool m_physics_override_sneak;
 	bool m_physics_override_sneak_glitch;
-	bool m_physics_override_sent;
+	std::atomic_bool m_physics_override_sent;
 };
 
 #endif

@@ -50,7 +50,7 @@ struct StaticObject
 	}
 
 	void serialize(std::ostream &os);
-	void deSerialize(std::istream &is, u8 version);
+	bool deSerialize(std::istream &is, u8 version);
 };
 
 class StaticObjectList
@@ -62,13 +62,13 @@ public:
 	*/
 	void insert(u16 id, StaticObject obj)
 	{
+		auto lock = m_active.lock_unique_rec();
 		if(id == 0)
 		{
 			m_stored.push_back(obj);
 		}
 		else
 		{
-			auto lock = m_active.lock_shared_rec();
 			if(m_active.find(id) != m_active.end())
 			{
 				dstream<<"ERROR: StaticObjectList::insert(): "
@@ -81,11 +81,15 @@ public:
 
 	void remove(u16 id)
 	{
-		assert(id != 0); // Pre-condition
+		if (!id)
+			return;
+		auto lock = m_active.lock_shared_rec();
 		if(m_active.find(id) == m_active.end())
 		{
+			/*
 			dstream<<"WARNING: StaticObjectList::remove(): id="<<id
 					<<" not found"<<std::endl;
+			*/
 			return;
 		}
 		m_active.erase(id);

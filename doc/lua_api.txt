@@ -1,4 +1,4 @@
-Minetest Lua Modding API Reference 0.4.12
+Minetest Lua Modding API Reference 0.4.13
 =========================================
 * More information at <http://www.minetest.net/>
 * Developer Wiki: <http://dev.minetest.net/>
@@ -64,6 +64,15 @@ e.g.
 
 The game directory can contain the file minetest.conf, which will be used
 to set default settings when running the particular game.
+
+### Menu images
+
+Games can provide custom main menu images. They are put inside a `menu` directory inside the game directory.
+
+The images are named `$identifier.png`, where `$identifier` is one of `overlay,background,footer,header`.
+If you want to specify multiple images for one identifier, add additional images named like `$identifier.$n.png`, with an ascending number $n starting with 1,
+and a random image will be chosen from the provided ones.
+
 
 Mod load path
 -------------
@@ -384,13 +393,13 @@ Examples of sound parameter tables:
     {
         pos = {x=1,y=2,z=3},
         gain = 1.0, -- default
-        max_hear_distance = 32, -- default
+        max_hear_distance = 32, -- default, uses an euclidean metric
     }
     -- Play connected to an object, looped
     {
         object = <an ObjectRef>,
         gain = 1.0, -- default
-        max_hear_distance = 32, -- default
+        max_hear_distance = 32, -- default, uses an euclidean metric
         loop = true, -- only sounds connected to objects can be looped
     }
 
@@ -705,24 +714,40 @@ a non-equal distribution of ore.
 
 ### `sheet`
 Creates a sheet of ore in a blob shape according to the 2D perlin noise
-described by `noise_params`. The relative height of the sheet can be
-controlled by the same perlin noise as well, by specifying a non-zero
-`scale` parameter in `noise_params`.
+described by `noise_params` and `noise_threshold`. This is essentially an
+improved version of the so-called "stratus" ore seen in some unofficial mods.
 
-**IMPORTANT**: The noise is not transformed by `offset` or `scale` when comparing
-against the noise threshold, but scale is used to determine relative height.
-The height of the blob is randomly scattered, with a maximum height of `clust_size`.
+This sheet consists of vertical columns of uniform randomly distributed height,
+varying between the inclusive range `column_height_min` and `column_height_max`.
+If `column_height_min` is not specified, this parameter defaults to 1.
+If `column_height_max` is not specified, this parameter defaults to `clust_size`
+for reverse compatibility.  New code should prefer `column_height_max`.
 
-`clust_scarcity` and `clust_num_ores` are ignored.
+The `column_midpoint_factor` parameter controls the position of the column at which
+ore eminates from.  If 1, columns grow upward.  If 0, columns grow downward.  If 0.5,
+columns grow equally starting from each direction.  `column_midpoint_factor` is a
+decimal number ranging in value from 0 to 1.  If this parameter is not specified,
+the default is 0.5.
 
-This is essentially an improved version of the so-called "stratus" ore seen in
-some unofficial mods.
+The ore parameters `clust_scarcity` and `clust_num_ores` are ignored for this ore type.
+
+### `puff`
+Creates a sheet of ore in a cloud-like puff shape.
+
+As with the `sheet` ore type, the size and shape of puffs are described by
+`noise_params` and `noise_threshold` and are placed at random vertical positions
+within the currently generated chunk.
+
+The vertical top and bottom displacement of each puff are determined by the noise
+parameters `np_puff_top` and `np_puff_bottom`, respectively.
+
 
 ### `blob`
 Creates a deformed sphere of ore according to 3d perlin noise described by
 `noise_params`.  The maximum size of the blob is `clust_size`, and
 `clust_scarcity` has the same meaning as with the `scatter` type.
-### `vein
+
+### `vein`
 Creates veins of ore varying in density by according to the intersection of two
 instances of 3d perlin noise with diffferent seeds, both described by
 `noise_params`.  `random_factor` varies the influence random chance has on
@@ -756,6 +781,17 @@ Currently supported flags: `absheight`
 Also produce this same ore between the height range of `-y_max` and `-y_min`.
 
 Useful for having ore in sky realms without having to duplicate ore entries.
+
+### `puff_cliffs`
+If set, puff ore generation will not taper down large differences in displacement
+when approaching the edge of a puff.  This flag has no effect for ore types other
+than `puff`.
+
+### `puff_additive_composition`
+By default, when noise described by `np_puff_top` or `np_puff_bottom` results in a
+negative displacement, the sub-column at that point is not generated.  With this
+attribute set, puff ore generation will instead generate the absolute difference in
+noise displacement values.  This flag has no effect for ore types other than `puff`.
 
 Decoration types
 ----------------
@@ -1340,6 +1376,17 @@ examples.
 #### `list[<inventory location>;<list name>;<X>,<Y>;<W>,<H>;<starting item index>]`
 * Show an inventory list
 
+#### `listring[<inventory location>;<list name>]`
+* Allows to create a ring of inventory lists
+* Shift-clicking on items in one element of the ring
+* will send them to the next inventory list inside the ring
+* The first occurrence of an element inside the ring will
+* determine the inventory where items will be sent to
+
+#### `listring[]`
+* Shorthand for doing `listring[<inventory location>;<list name>]`
+* for the last two inventory lists added by list[...]
+
 #### `listcolors[<slot_bg_normal>;<slot_bg_hover>]`
 * Sets background color of slots as `ColorString`
 * Sets background color of slots on mouse hovering
@@ -1607,7 +1654,17 @@ To specify the value of the alpha channel, append `#AA` to the end of the color 
 (e.g. `colorname#08`). For named colors the hexadecimal string representing the alpha
 value must (always) be two hexadecimal digits.
 
-Vector helpers
+`ColorSpec`
+-----------
+A ColorSpec specifies a 32-bit color.  It can be written in either:
+table form, each element ranging from 0..255 (a, if absent, defaults to 255):
+    `colorspec = {a=255, r=0, g=255, b=0}`
+numerical form, the raw integer value of an ARGB8 quad:
+    `colorspec = 0xFF00FF00`
+or string form, a ColorString (defined above):
+    `colorspec = "green"`
+
+Spatial Vectors
 --------------
 
 * `vector.new([x[, y, z]])`: returns a vector.
@@ -1625,8 +1682,8 @@ For the following functions `x` can be either a vector or a number:
 
 * `vector.add(v, x)`: returns a vector
 * `vector.subtract(v, x)`: returns a vector
-* `vector.multiply(v, x)`: returns a vector
-* `vector.divide(v, x)`: returns a vector
+* `vector.multiply(v, x)`: returns a scaled vector or Schur product
+* `vector.divide(v, x)`: returns a scaled vector or Schur quotient
 
 Helper functions
 -----------------
@@ -1651,6 +1708,8 @@ Helper functions
     * Convert position to a printable string
 * `minetest.string_to_pos(string)`: returns a position
     * Same but in reverse. Returns `nil` if the string can't be parsed to a position.
+* `minetest.string_to_area("(X1, Y1, Z1) (X2, Y2, Z2)")`: returns two positions
+    * Converts a string representing an area box into two positions
 * `minetest.formspec_escape(string)`: returns a string
     * escapes the characters "[", "]", "\", "," and ";", which can not be used in formspecs
 * `minetest.is_yes(arg)`
@@ -1674,36 +1733,41 @@ Helper functions
     * Useful for storing custom data
 * `minetest.is_singleplayer()`
 * `minetest.features`
-    * table containing API feature flags: `{foo=true, bar=true}`
+    * Table containing API feature flags: `{foo=true, bar=true}`
 * `minetest.has_feature(arg)`: returns `boolean, missing_features`
     * `arg`: string or table in format `{foo=true, bar=true}`
     * `missing_features`: `{foo=true, bar=true}`
-* `minetest.get_player_information(playername)`
-    * table containing information about player peer.
+* `minetest.get_player_information(player_name)`: returns a table containing
+  information about player. Example return value:
+        {
+            address = "127.0.0.1",     -- IP address of client
+            ip_version = 4,            -- IPv4 / IPv6
+            min_rtt = 0.01,            -- minimum round trip time
+            max_rtt = 0.2,             -- maximum round trip time
+            avg_rtt = 0.02,            -- average round trip time
+            min_jitter = 0.01,         -- minimum packet time jitter
+            max_jitter = 0.5,          -- maximum packet time jitter
+            avg_jitter = 0.03,         -- average packet time jitter
+            connection_uptime = 200,   -- seconds since client connected
 
-Example of `minetest.get_player_information` return value:
-
-    {
-        address = "127.0.0.1",     -- IP address of client
-        ip_version = 4,            -- IPv4 / IPv6
-        min_rtt = 0.01,            -- minimum round trip time
-        max_rtt = 0.2,             -- maximum round trip time
-        avg_rtt = 0.02,            -- average round trip time
-        min_jitter = 0.01,         -- minimum packet time jitter
-        max_jitter = 0.5,          -- maximum packet time jitter
-        avg_jitter = 0.03,         -- average packet time jitter
-        connection_uptime = 200,   -- seconds since client connected
-
-        -- following information is available on debug build only!!!
-        -- DO NOT USE IN MODS
-        --ser_vers = 26,             -- serialization version used by client
-        --prot_vers = 23,            -- protocol version used by client
-        --major = 0,                 -- major version number
-        --minor = 4,                 -- minor version number
-        --patch = 10,                -- patch version number
-        --vers_string = "0.4.9-git", -- full version string
-        --state = "Active"           -- current client state
-    }
+            -- following information is available on debug build only!!!
+            -- DO NOT USE IN MODS
+            --ser_vers = 26,             -- serialization version used by client
+            --prot_vers = 23,            -- protocol version used by client
+            --major = 0,                 -- major version number
+            --minor = 4,                 -- minor version number
+            --patch = 10,                -- patch version number
+            --vers_string = "0.4.9-git", -- full version string
+            --state = "Active"           -- current client state
+        }
+* `minetest.mkdir(path)`: returns success.
+    * Creates a directory specified by `path`, creating parent directories
+      if they don't exist.
+* `minetest.get_dir_list(path, [is_dir])`: returns list of entry names
+    * is_dir is one of:
+      * nil: return all entries,
+      * true: return only subdirectory names, or
+      * false: return only file names.
 
 ### Logging
 * `minetest.debug(line)`
@@ -1770,6 +1834,13 @@ Call these functions only at load time!
        the puncher to the punched.
      * `damage` - number that represents the damage calculated by the engine
      * should return `true` to prevent the default damage mechanism
+* `minetest.register_on_player_hpchange(func(player, hp_change), modifier)`
+    * Called when the player gets damaged or healed
+    * `player`: ObjectRef of the player
+    * `hp_change`: the amount of change. Negative when it is damage.
+    * `modifier`: when true, the function should return the actual hp_change.
+      Note: modifiers only get a temporary hp_change that can be modified by later modifiers.
+      modifiers can return true as a second argument to stop the execution of further functions.
 * `minetest.register_on_respawnplayer(func(ObjectRef))`
      * Called when player is to be respawned
      * Called _before_ repositioning of player occurs
@@ -1791,6 +1862,7 @@ Call these functions only at load time!
         * `dug_too_fast`
 * `minetest.register_on_chat_message(func(name, message))`
     * Called always when a player says something
+    * Return `true` to mark the message as handled, which means that it will not be sent to other players
 * `minetest.register_on_player_receive_fields(func(player, formname, fields))`
     * Called when a button is pressed in player's inventory form
     * Newest functions are called first
@@ -1825,8 +1897,12 @@ Call these functions only at load time!
 
 ### Setting-related
 * `minetest.setting_set(name, value)`
+    * Setting names can't contain whitespace or any of `="{}#`.
+    * Setting values can't contain the sequence `\n"""`.
+    * Setting names starting with "secure." can't be set.
 * `minetest.setting_get(name)`: returns string or `nil`
 * `minetest.setting_setbool(name, value)`
+    * See documentation on `setting_set` for restrictions.
 * `minetest.setting_getbool(name)`: returns boolean or `nil`
 * `minetest.setting_get_pos(name)`: returns position or nil
 * `minetest.setting_save()`, returns `nil`, save all settings to config file
@@ -1867,9 +1943,13 @@ and `minetest.auth_reload` call the authetification handler.
     * Returns `{name="ignore", ...}` for unloaded area
 * `minetest.get_node_or_nil(pos)`
     * Returns `nil` for unloaded area
-* `minetest.get_node_light(pos, timeofday)` returns a number between `0` and `15` or `nil`
+* `minetest.get_node_light(pos, timeofday)`
+    * Gets the light value at the given position. Note that the light value
+      "inside" the node at the given position is returned, so you usually want
+      to get the light value of a neighbor.
+    * `pos`: The position where to measure the light.
     * `timeofday`: `nil` for current time, `0` for night, `0.5` for day
-
+    * Returns a number between `0` and `15` or `nil`
 * `minetest.place_node(pos, node)`
     * Place node with the same effects that a player would cause
 * `minetest.dig_node(pos)`
@@ -1891,13 +1971,16 @@ and `minetest.auth_reload` call the authetification handler.
     * Returns `ObjectRef`, or `nil` if failed
 * `minetest.get_player_by_name(name)`: Get an `ObjectRef` to a player
 * `minetest.get_objects_inside_radius(pos, radius)`
+    * `radius`: using an euclidean metric
 * `minetest.set_timeofday(val)`
     * `val` is between `0` and `1`; `0` for midnight, `0.5` for midday
 * `minetest.get_timeofday()`
 * `minetest.get_gametime()`: returns the time, in seconds, since the world was created
 * `minetest.find_node_near(pos, radius, nodenames)`: returns pos or `nil`
+    * `radius`: using a maximum metric
     * `nodenames`: e.g. `{"ignore", "group:tree"}` or `"default:dirt"`
 * `minetest.find_nodes_in_area(minp, maxp, nodenames)`: returns a list of positions
+    * returns as second value a table with the count of the individual nodes found
     * `nodenames`: e.g. `{"ignore", "group:tree"}` or `"default:dirt"`
 * `minetest.find_nodes_in_area_under_air(minp, maxp, nodenames)`: returns a list of positions
     * returned positions are nodes with a node air above
@@ -1913,8 +1996,12 @@ and `minetest.auth_reload` call the authetification handler.
     * `flags` is a flag field with the available flags: `dungeon`, `temple`, `cave_begin`,
    `cave_end`, `large_cave_begin`, `large_cave_end`, `decoration`
    * The second parameter is a list of IDS of decorations which notification is requested for
+* `get_gen_notify()`: returns a flagstring and a table with the deco_ids
 * `minetest.get_mapgen_object(objectname)`
     * Return requested mapgen object if available (see "Mapgen objects")
+* `minetest.get_biome_id(biome_name)`
+    * Returns the biome id, as used in the biomemap Mapgen object, for a
+      given biome_name string.
 * `minetest.get_mapgen_params()` Returns mapgen parameters, a table containing
   `mgname`, `seed`, `chunksize`, `water_level`, and `flags`.
 * `minetest.set_mapgen_params(MapgenParams)`
@@ -1931,6 +2018,7 @@ and `minetest.auth_reload` call the authetification handler.
     * Sets the noiseparams setting of `name` to the noiseparams table specified in `noiseparams`.
     * `set_default` is an optional boolean (default: `true`) that specifies whether the setting
       should be applied to the default config or current active config
+* `minetest.get_noiseparams(name)`: returns a table of the noiseparams for name
 * `minetest.generate_ores(vm, pos1, pos2)`
     * Generate all registered ores within the VoxelManip `vm` and in the area from `pos1` to `pos2`.
     * `pos1` and `pos2` are optional and default to mapchunk minp and maxp.
@@ -1939,6 +2027,9 @@ and `minetest.auth_reload` call the authetification handler.
     * `pos1` and `pos2` are optional and default to mapchunk minp and maxp.
 * `minetest.clear_objects()`
     * clear all objects in the environments
+* `minetest.emerge_area(pos1, pos2)`
+    * queues all mapblocks in the area from pos1 to pos2, inclusive, for emerge
+    * i.e. asynchronously loads blocks from disk, or if inexistent, generates them
 * `minetest.delete_area(pos1, pos2)`
     * delete all mapblocks in the area from pos1 to pos2, inclusive
 * `minetest.line_of_sight(pos1, pos2, stepsize)`: returns `boolean, pos`
@@ -1953,7 +2044,7 @@ and `minetest.auth_reload` call the authetification handler.
     * returns a table of 3D points representing a path from `pos1` to `pos2` or `nil`
     * `pos1`: start position
     * `pos2`: end position
-    * `searchdistance`: number of blocks to search in each direction
+    * `searchdistance`: number of blocks to search in each direction using a maximum metric
     * `max_jump`: maximum height difference to consider walkable
     * `max_drop`: maximum height difference to consider droppable
     * `algorithm`: One of `"A*_noprefetch"` (default), `"A*"`, `"Dijkstra"`
@@ -2037,6 +2128,8 @@ and `minetest.auth_reload` call the authetification handler.
       `{ stack1, stack2, stack3, stack4, stack 5, stack 6, stack 7, stack 8, stack 9 }`
     * `output.item` = `ItemStack`, if unsuccessful: empty `ItemStack`
     * `output.time` = a number, if unsuccessful: `0`
+    * `output.replacements` = list of `ItemStack`s that couldn't be placed in
+      `decremented_input.items`
     * `decremented_input` = like `input`
 * `minetest.get_craft_recipe(output)`: returns input
     * returns last registered recipe for output item (node)
@@ -2122,7 +2215,8 @@ These functions return the leftover itemstack.
     * Optional: Variable number of arguments that are passed to `func`
 
 ### Server
-* `minetest.request_shutdown()`: request for server shutdown
+* `minetest.request_shutdown([message],[reconnect])`: request for server shutdown. Will display `message` to clients,
+    and `reconnect` == true displays a reconnect button.
 * `minetest.get_server_status()`: returns server status string
 
 ### Bans
@@ -2139,7 +2233,7 @@ These functions return the leftover itemstack.
 
 * `minetest.add_particlespawner(particlespawner definition)`
     * Add a `ParticleSpawner`, an object that spawns an amount of particles over `time` seconds
-    * Returns an `id`
+    * Returns an `id`, and -1 if adding didn't succeed
     * `Deprecated: minetest.add_particlespawner(amount, time,
       minpos, maxpos,
       minvel, maxvel,
@@ -2247,6 +2341,9 @@ These functions return the leftover itemstack.
     * currently supported.
     * `...` indicates method-specific arguments. Currently, no methods use this.
 * `minetest.is_protected(pos, name)`: returns boolean
+    * Returns true, if player `name` shouldn't be abled to dig at `pos` or do other
+      actions, defineable by mods, due to some mod-defined ownership-like concept.
+      Returns false or nil, if the player is allowed to do such actions.
     * This function should be overridden by protection mods and should be used to
       check if a player can interact at a position.
     * This function should call the old version of itself if the position is not
@@ -2278,31 +2375,35 @@ These functions return the leftover itemstack.
           the floor or ceiling
         * The first four options are mutually-exclusive; the last in the list takes
           precedence over the first.
-
-
-
 * `minetest.rotate_node(itemstack, placer, pointed_thing)`
-     * calls `rotate_and_place()` with infinitestacks set according to the state of
+    * calls `rotate_and_place()` with infinitestacks set according to the state of
        the creative mode setting, and checks for "sneak" to set the `invert_wall`
        parameter.
 
 * `minetest.forceload_block(pos)`
     * forceloads the position `pos`.
     * returns `true` if area could be forceloaded
+    * Please note that forceloaded areas are saved when the server restarts.
 
 * `minetest.forceload_free_block(pos)`
     * stops forceloading the position `pos`
-Please note that forceloaded areas are saved when the server restarts.
 
-minetest.global_exists(name)
-^ Checks if a global variable has been set, without triggering a warning.
+* `minetest.request_insecure_environment()`: returns an environment containing
+  insecure functions if the calling mod has been listed as trusted in the
+  `secure.trusted_mods` setting or security is disabled, otherwise returns `nil`.
+    * Only works at init time.
+    * **DO NOT ALLOW ANY OTHER MODS TO ACCESS THE RETURNED ENVIRONMENT, STORE IT IN
+      A LOCAL VARIABLE!**
+
+* `minetest.global_exists(name)`
+    * Checks if a global variable has been set, without triggering a warning.
 
 ### Global objects
 * `minetest.env`: `EnvRef` of the server environment and world.
     * Any function in the minetest namespace can be called using the syntax
      `minetest.env:somefunction(somearguments)`
      instead of `minetest.somefunction(somearguments)`
-   * Deprecated, but support is not to be dropped soon
+    * Deprecated, but support is not to be dropped soon
 
 ### Global tables
 * `minetest.registered_items`
@@ -2343,7 +2444,7 @@ Can be gotten via `minetest.get_meta(pos)`.
 * `from_table(nil or {})`
     * See "Node Metadata"
 
-### `NoteTimerRef`
+### `NodeTimerRef`
 Node Timers: a high resolution persistent per-node timer.
 Can be gotten via `minetest.get_node_timer(pos)`.
 
@@ -2389,17 +2490,22 @@ This is basically a reference to a C++ `ServerActiveObject`
 * `get_wielded_item()`: returns an `ItemStack`
 * `set_wielded_item(item)`: replaces the wielded item, returns `true` if successful
 * `set_armor_groups({group1=rating, group2=rating, ...})`
-* `set_animation({x=1,y=1}, frame_speed=15, frame_blend=0)`
+* `get_armor_groups()`: returns a table with the armor group ratings
+* `set_animation({x=1,y=1}, frame_speed=15, frame_blend=0, frame_loop=true)`
+* `get_animation()`: returns range, frame_speed, frame_blend and frame_loop
 * `set_attach(parent, bone, position, rotation)`
     * `bone`: string
     * `position`: `{x=num, y=num, z=num}` (relative)
     * `rotation`: `{x=num, y=num, z=num}`
+* `get_attach()`: returns parent, bone, position, rotation or nil if it isn't attached
 * `set_detach()`
 * `set_bone_position(bone, position, rotation)`
     * `bone`: string
     * `position`: `{x=num, y=num, z=num}` (relative)
     * `rotation`: `{x=num, y=num, z=num}`
+* `get_bone_position(bone)`: returns position and rotation of the bone
 * `set_properties(object property table)`
+* `get_properties()`: returns object property table
 * `is_player()`: returns true for players, false otherwise
 
 ##### LuaEntitySAO-only (no-op for other objects)
@@ -2419,6 +2525,7 @@ This is basically a reference to a C++ `ServerActiveObject`
 
 ##### Player-only (no-op for other objects)
 * `get_player_name()`: returns `""` if is not a player
+* `get_player_velocity()`: returns `nil` if is not a player otherwise a table {x, y, z} representing the player's instantaneous velocity in nodes/s
 * `get_look_dir()`: get camera direction as a unit vector
 * `get_look_pitch()`: pitch in radians
 * `get_look_yaw()`: yaw in radians (wraps around pretty randomly as of now)
@@ -2445,6 +2552,7 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `gravity`: multiplier to default gravity value (default: `1`)
         * `sneak`: whether player can sneak (default: `true`)
         * `sneak_glitch`: whether player can use the sneak glitch (default: `true`)
+* `get_physics_override()`: returns the table given to set_physics_override
 * `hud_add(hud definition)`: add a HUD element described by HUD def, returns ID
    number on success
 * `hud_remove(id)`: remove the HUD element of the specified id
@@ -2452,33 +2560,40 @@ This is basically a reference to a C++ `ServerActiveObject`
     * element `stat` values: `position`, `name`, `scale`, `text`, `number`, `item`, `dir`
 * `hud_get(id)`: gets the HUD element definition structure of the specified ID
 * `hud_set_flags(flags)`: sets specified HUD flags to `true`/`false`
-    * `flags`: (is visible) `hotbar`, `healthbar`, `crosshair`, `wielditem`
+    * `flags`: (is visible) `hotbar`, `healthbar`, `crosshair`, `wielditem`, `minimap`
     * pass a table containing a `true`/`false` value of each flag to be set or unset
     * if a flag equals `nil`, the flag is not modified
+    * note that setting `minimap` modifies the client's permission to view the minimap -
+    * the client may locally elect to not view the minimap
 * `hud_get_flags()`: returns a table containing status of hud flags
-    * returns `{ hotbar=true, healthbar=true, crosshair=true, wielditem=true, breathbar=true }`
+    * returns `{ hotbar=true, healthbar=true, crosshair=true, wielditem=true, breathbar=true, minimap=true }`
 * `hud_set_hotbar_itemcount(count)`: sets number of items in builtin hotbar
     * `count`: number of items, must be between `1` and `23`
+* `hud_get_hotbar_itemcount`: returns number of visible items
 * `hud_set_hotbar_image(texturename)`
     * sets background image for hotbar
+* `hud_get_hotbar_image`: returns texturename
 * `hud_set_hotbar_selected_image(texturename)`
     * sets image for selected item of hotbar
+* `hud_get_hotbar_selected_image`: returns texturename
 * `hud_replace_builtin(name, hud_definition)`
     * replace definition of a builtin hud element
     * `name`: `"breath"` or `"health"`
     * `hud_definition`: definition to replace builtin definition
 * `set_sky(bgcolor, type, {texture names})`
-    * `bgcolor`: `{r=0...255, g=0...255, b=0...255}` or `nil`, defaults to white
+    * `bgcolor`: ColorSpec, defaults to white
     * Available types:
         * `"regular"`: Uses 0 textures, `bgcolor` ignored
         * `"skybox"`: Uses 6 textures, `bgcolor` used
         * `"plain"`: Uses 0 textures, `bgcolor` used
     * **Note**: currently does not work directly in `on_joinplayer`; use
       `minetest.after(0)` in there.
+* `get_sky()`: returns bgcolor, type and a table with the textures
 * `override_day_night_ratio(ratio or nil)`
     * `0`...`1`: Overrides day-night ratio, controlling sunlight to a specific amount
     * `nil`: Disables override, defaulting to sunlight based on day-night cycle
-* `set_local_animation(walk, dig, walk+dig, frame_speed=frame_speed)`
+* `get_day_night_ratio()`: returns the ratio or nil if it isn't overridden
+* `set_local_animation(stand/idle, walk, dig, walk+dig, frame_speed=frame_speed)`
 
 	set animation for player model in third person view
 
@@ -2487,20 +2602,21 @@ This is basically a reference to a C++ `ServerActiveObject`
             {x=189, y=198}, -- <  dig animation key frames
             {x=200, y=219}, -- <  walk+dig animation key frames
             frame_speed=30): -- <  animation frame speed
-
+* `get_local_animation()`: returns stand, walk, dig, dig+walk tables and frame_speed
 * `set_eye_offset({x=0,y=0,z=0},{x=0,y=0,z=0})`: defines offset value for camera per player
     * in first person view
     * in third person view (max. values `{x=-10/10,y=-10,15,z=-5/5}`)
+* `get_eye_offset()`: returns offset_first and offset_third
 * `get_nametag_attributes()`
     * returns a table with the attributes of the nametag of the player
     * {
-        color = { a = 0...255, r = 0...255, g = 0...255, b = 0...255 }
+        color = {a=0..255, r=0..255, g=0..255, b=0..255},
       }
 * `set_nametag_attributes(attributes)`
     * sets the attributes of the nametag of the player
     * `attributes`:
       {
-        color = { a = 0...255, r = 0...255, g = 0...255, b = 0...255 }
+        color = ColorSpec,
       }
 
 ### `InvRef`
@@ -2531,6 +2647,28 @@ An `InvRef` is a reference to an inventory.
   with an empty `ItemStack`
 * `get_location()`: returns a location compatible to `minetest.get_inventory(location)`
     * returns `{type="undefined"}` in case location is not known
+
+### `AreaStore`
+A fast access data structure to store areas, and find areas near a given position or area.
+Every area has a `data` string attribute to store additional information.
+You can create an empty `AreaStore` by calling `AreaStore()`, or `AreaStore(type_name)`.
+If you chose the parameter-less constructor, a fast implementation will be automatically chosen for you.
+
+#### Methods
+* `get_area(id, include_borders, include_data)`: returns the area with the id `id`. (optional) Boolean values `include_borders` and `include_data` control what's copied.
+* `get_areas_for_pos(pos, include_borders, include_data)`: returns all areas that contain the position `pos`. (optional) Boolean values `include_borders` and `include_data` control what's copied.
+* `get_areas_in_area(edge1, edge2, accept_overlap, include_borders, include_data)`: returns all areas that contain all nodes inside the area specified by `edge1` and `edge2` (inclusive). If `accept_overlap` is true, also areas are returned that have nodes in common with the specified area. (optional) Boolean values `include_borders` and `include_data` control what's copied.
+* `insert_area(edge1, edge2, data)`: inserts an area into the store. Returns the id if successful, nil otherwise. The (inclusive) positions `edge1` and `edge2` describe the area, `data`
+is a string stored with the area.
+* `reserve(count)`: reserves resources for at most `count` many contained areas. Only needed for efficiency, and only some implementations profit.
+* `remove_area(id)`: removes the area with the given id from the store, returns success.
+* `set_cache_params(params)`: sets params for the included prefiltering cache. Calling invalidates the cache, so that its elements have to be newly generated.
+    * `params`:
+      {
+        enabled = boolean, -- whether to enable, default true
+        block_radius = number, -- the radius (in nodes) of the areas the cache generates prefiltered lists for, minimum 16, default 64
+        limit = number, -- the cache's size, minimum 20, default 1000
+      }
 
 ### `ItemStack`
 An `ItemStack` is a stack of items.
@@ -2617,14 +2755,30 @@ Format of `size` is `{x=dimx, y=dimy, z=dimz}`.  The `z` conponent is ommitted
 for 2D noise, and it must be must be larger than 1 for 3D noise (otherwise
 `nil` is returned).
 
+For each of the functions with an optional `buffer` parameter:  If `buffer` is not
+nil, this table will be used to store the result instead of creating a new table.
+
+
 #### Methods
 * `get2dMap(pos)`: returns a `<size.x>` times `<size.y>` 2D array of 2D noise
   with values starting at `pos={x=,y=}`
 * `get3dMap(pos)`: returns a `<size.x>` times `<size.y>` times `<size.z>` 3D array
   of 3D noise with values starting at `pos={x=,y=,z=}`
-* `get2dMap_flat(pos)`: returns a flat `<size.x * size.y>` element array of 2D noise
+* `get2dMap_flat(pos, buffer)`: returns a flat `<size.x * size.y>` element array of 2D noise
   with values starting at `pos={x=,y=}`
-* `get3dMap_flat(pos)`: Same as `get2dMap_flat`, but 3D noise
+* `get3dMap_flat(pos, buffer)`: Same as `get2dMap_flat`, but 3D noise
+* `calc2dMap(pos)`: Calculates the 2d noise map starting at `pos`.  The result is stored internally.
+* `calc3dMap(pos)`: Calculates the 3d noise map starting at `pos`.  The result is stored internally.
+* `getMapSlice(slice_offset, slice_size, buffer)`: In the form of an array, returns a slice of the
+  most recently computed noise results.  The result slice begins at coordinates `slice_offset` and
+  takes a chunk of `slice_size`.
+  E.g. to grab a 2-slice high horizontal 2d plane of noise starting at buffer offset y = 20:
+  `noisevals = noise:getMapSlice({y=20}, {y=2})`
+  It is important to note that `slice_offset` offset coordinates begin at 1, and are relative to
+  the starting position of the most recently calculated noise.
+  To grab a single vertical column of noise starting at map coordinates x = 1023, y=1000, z = 1000:
+  `noise:calc3dMap({x=1000, y=1000, z=1000})`
+  `noisevals = noise:getMapSlice({x=24, z=1}, {x=1, z=1})`
 
 ### `VoxelManip`
 An interface to the `MapVoxelManipulator` for Lua.
@@ -2642,8 +2796,9 @@ The map will be pre-loaded if two positions are passed to either.
   the `VoxelManip` at that position
 * `set_node_at(pos, node)`: Sets a specific `MapNode` in the `VoxelManip` at
   that position
-* `get_data()`: Gets the data read into the `VoxelManip` object
-    * returns raw node data is in the form of an array of node content IDs
+* `get_data(buffer)`: Gets the data read into the `VoxelManip` object
+    * returns raw node data in the form of an array of node content IDs
+    * if the param `buffer` is present, this table will be used to store the result instead
 * `set_data(data)`: Sets the data contents of the `VoxelManip` object
 * `update_map()`: Update map after writing chunk back to map.
     * To be used only by `VoxelManip` objects created by the mod itself;
@@ -2983,8 +3138,13 @@ Definition tables
 ### Tile definition
 * `"image.png"`
 * `{name="image.png", animation={Tile Animation definition}}`
-* `{name="image.png", backface_culling=bool}`
-    * backface culling only supported in special tiles
+* `{name="image.png", backface_culling=bool, tileable_vertical=bool,
+    tileable_horizontal=bool}`
+    * backface culling only supported in special tiles.
+    * tileable flags are info for shaders, how they should treat texture
+	  when displacement mapping is used
+	  Directions are from the point of view of the tile texture,
+	  not the node it's on
 * deprecated, yet still supported field names:
     * `image` (name)
 
@@ -3010,7 +3170,7 @@ Definition tables
         ^ List can be shortened to needed length ]]
         alpha = 255,
         use_texture_alpha = false, -- Use texture's alpha channel
-        post_effect_color = {a=0, r=0, g=0, b=0}, -- If player is inside node
+        post_effect_color = "green#0F", -- If player is inside node, see "ColorSpec"
         paramtype = "none", -- See "Nodes" --[[
         ^ paramtype = "light" allows light to propagate from or through the node with light value
         ^ falling by 1 per node. This line is essential for a light source node to spread its light. ]]
@@ -3059,14 +3219,17 @@ Definition tables
         },
 
         on_construct = func(pos), --[[
-        ^ Node constructor; always called after adding node
+        ^ Node constructor; called after adding node
         ^ Can set up metadata and stuff like that
+        ^ Not called for bulk node placement (i.e. schematics and VoxelManip)
         ^ default: nil ]]
         on_destruct = func(pos), --[[
-        ^ Node destructor; always called before removing node
+        ^ Node destructor; called before removing node
+        ^ Not called for bulk node placement (i.e. schematics and VoxelManip)
         ^ default: nil ]]
         after_destruct = func(pos, oldnode), --[[
-        ^ Node destructor; always called after removing node
+        ^ Node destructor; called after removing node
+        ^ Not called for bulk node placement (i.e. schematics and VoxelManip)
         ^ default: nil ]]
 
         after_place_node = func(pos, placer, itemstack, pointed_thing) --[[
@@ -3256,7 +3419,9 @@ Definition tables
     --      ^ Number of nodes the decoration can be at maximum.
     --  ^ If absent, the parameter 'height' is used as a constant.
         spawn_by = "default:water",
-    --  ^ Node that the decoration only spawns next to, in a 1-node square radius.
+    --  ^ Node that the decoration only spawns next to.
+    --  ^ The neighbours checked are the 8 nodes horizontally surrounding the lowest node of the
+    --  ^ decoration, and the 8 nodes horizontally surrounding the ground node below the decoration.
         num_spawn_by = 1,
     --  ^ Number of spawn_by nodes that must be surrounding the decoration position to occur.
     --  ^ If absent or -1, decorations occur next to any nodes.

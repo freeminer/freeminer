@@ -3,8 +3,13 @@
 =info
 install:
  cpan JSON JSON::XS
- touch list_full list log.log
- chmod a+rw list_full list log.log
+ touch list_full list log.log && chmod a+rw list_full list log.log
+
+deb:
+ sudo apt-get install fcgiwrap
+
+old deb linux:
+ sudo apt-get install libjson-xs-perl libjson-perl libsocket6-perl libio-socket-ip-perl
 
 freebsd:
  www/fcgiwrap www/nginx
@@ -21,7 +26,11 @@ nginx:
             add_header Access-Control-Allow-Origin *;
         }
         location /announce {
-            fastcgi_pass   unix:/var/run/fcgiwrap/fcgiwrap.sock;
+            #freebsd:
+            #fastcgi_pass   unix:/var/run/fcgiwrap/fcgiwrap.sock;
+            #linux:
+            fastcgi_pass   unix:/var/run/fcgiwrap.socket;
+
             fastcgi_param  SCRIPT_FILENAME $document_root/master.cgi;
             include        fastcgi_params;
         }
@@ -53,16 +62,41 @@ use utf8;
 use Socket;
 BEGIN {
     if ($Socket::VERSION ge '2.008') {
-        eval qq{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST NIx_NOSERV)}; # >5.16
-    } else {
-        eval qq{use Socket6 qw(getaddrinfo getnameinfo NI_NUMERICHOST NIx_NOSERV)}; # <5.16
+        eval q{use Socket qw(getaddrinfo getnameinfo NI_NUMERICHOST); }; # >5.16
+        eval q{
+            sub get_ip ($) {
+                my $addr = $_[0];
+                (my $err, local @_) = Socket::getaddrinfo($addr);
+                return [ map{(Socket::getnameinfo($_->{addr}, Socket::NI_NUMERICHOST, Socket::NIx_NOSERV))[1]} @_];
+            };
+        };
+    } else {  # <5.16
+        my $getaddrinfo_noserv;
+        eval qq{use Socket6 qw(getaddrinfo getnameinfo NI_NUMERICHOST);};
+        eval q{$getaddrinfo_noserv = Socket6::NIx_NOSERV;};
+        eval q{$getaddrinfo_noserv = Socket6::NI_NUMERICSERV;} if $@;
+        eval q{
+            sub get_ip ($) {
+                my $addr = $_[0];
+                local @_ = getaddrinfo($addr, undef);
+                my $addrs = [];
+                while (scalar(@_) >= 5) {
+                    (my $family, my $socktype, my $proto, my $saddr, my $canonname, @_) = @_;
+                    my ($host, $port) = Socket6::getnameinfo($saddr, Socket6::NI_NUMERICHOST | $getaddrinfo_noserv);
+                    push @$addrs, $host;
+                }
+                return $addrs;
+            }
+        };
     }
 };
 use Time::HiRes qw(time sleep);
 use IO::Socket::IP;
 use JSON;
 use Net::Ping;
+use Fcntl qw( );
 #use Data::Dumper;
+
 our $root_path;
 ($ENV{'SCRIPT_FILENAME'} || $0) =~ m|^(.+)[/\\].+?$|;    #v0w
 $root_path = $1 . '/' if $1;
@@ -77,8 +111,9 @@ our %config = (
     time_alive   => 650,
     source_check => 1,
     ping_timeout => 3,
-    ping         => 0, # todo
-    mineping     => 0, # not implemented for enet
+    ping         => 1,
+    #mineping     => 1,
+    fmping       => 1,
     pingable     => 1,
     trusted      => [qw( 176.9.122.10 )],       #masterserver self ip - if server on same ip with masterserver doesnt announced
     #blacklist => [], # [qw(2.3.4.5 4.5.6.7 8.9.0.1), '1.2.3.4', qr/^10\.20\.30\./, ], # list, or quoted, ips, or regex
@@ -104,6 +139,12 @@ sub get_params(;$$) {    #v7
       $string
       ? get_params_one split $delim, $string
       : (get_params_one(@ARGV), map { get_params_one split $delim, $_ } split(/;\s*/, $ENV{'HTTP_COOKIE'}), $ENV{'QUERY_STRING'}, $_);
+
+    if ($ENV{'CONTENT_TYPE'} =~ m{multipart/form-data;.*boundary=(.*?)}) { # very stupid. todo: many fields
+        my $boundary = $1;
+        m{$boundary\s*Content-Disposition: form-data; name="(?<name>.*?)"\s*(?<data>.+?)\s*(?:$boundary--|$)}s;
+        $_{$+{name}} = $+{data} if length $+{name} and  length $+{data};
+    }
     wantarray ? %_ : \%_;
 }
 
@@ -113,23 +154,27 @@ sub get_params_utf8(;$$) {
     wantarray ? %$_ : $_;
 }
 
-sub file_rewrite(;$@) {
-    local $_ = shift;
-    return unless open my $fh, '>', $_;
-    print $fh @_;
-}
-
 sub printlog(;@) {
     #local $_ = shift;
     return unless open my $fh, '>>', $config{log};
     print $fh (join ' ', @_), "\n";
 }
 
+sub file_rewrite(;$@) {
+    local $_ = shift;
+    return unless open my $fh, '>', $_;
+    die 'rewrite: cant lock'  unless flock( $fh, Fcntl::LOCK_EX );
+    print $fh @_;
+    #return unless flock( $fh, Fcntl::LOCK_UN );
+    #close $fh;
+}
+
 sub file_read ($) {
-    open my $f, '<', $_[0] or return;
+    open my $fh, '<', $_[0] or return;
+    die 'read: cant lock' unless flock( $fh, Fcntl::LOCK_SH );
     local $/ = undef;
-    my $ret = <$f>;
-    close $f;
+    my $ret = <$fh>;
+    close $fh;
     return \$ret;
 }
 
@@ -153,6 +198,43 @@ sub float {
     return ($_[0] < 8 and $_[0] - int($_[0]))
       ? sprintf('%.' . ($_[0] < 1 ? 3 : ($_[0] < 3 ? 2 : 1)) . 'f', $_[0])
       : int($_[0]);
+}
+
+sub fmping ($$) {
+    my ($addr, $port) = @_;
+    printlog "fmping($addr, $port)" if $config{debug};
+    my $data;
+    my $time = time;
+    # tcpdump -x . first connection packet minus udp header
+    my $send = q{ 8fff 8452
+        82ff 0001 0000 ffff 0000 0578 0001 0000
+        0000 0003 0000 0000 0000 0000 0000 1388
+        0000 0002 0000 0002 6d4d 95c3 0000 0000
+    };
+
+    $send =~ s/\s+//g;
+    $send =~ s/([0-9a-f]{2})\s?/chr(hex($1))/eg;
+    #printlog "send: [$send] " . length $send if $config{debug};
+    eval {
+        my $socket = IO::Socket::IP->new(
+            'PeerAddr' => $addr,
+            'PeerPort' => $port,
+            'Proto'    => 'udp',
+            'Timeout'  => $config{ping_timeout},
+        );
+        $socket->send($send);
+        local $SIG{ALRM} = sub { die "alarm time out"; };
+        alarm $config{ping_timeout};
+        $socket->recv($data, POSIX::BUFSIZ) or die "recv: $!";
+        alarm 0;
+        1;    # return value from eval on normalcy
+    } or ((printlog $@),return 0);
+    return 0 unless length $data;
+    $time = float(time - $time);
+    printlog "recvd: ", length $data, " [$time]" if $config{debug};
+    #printlog "recvd: [$data] " if $config{debug};
+
+    return $time;
 }
 
 sub mineping ($$) {
@@ -201,19 +283,20 @@ sub request (;$) {
                 return if $param->{ip} ~~ $_;
             }
             $param->{address} ||= $param->{ip};
+            $param->{port} ||= 30000;
             if ($config{source_check}) {
-                (my $err, local @_) = getaddrinfo($param->{address});
-                my $addrs = [ map{(getnameinfo($_->{addr}, NI_NUMERICHOST, NIx_NOSERV))[1]} @_];
+                my $addrs = get_ip($param->{address});
                 if (!($param->{ip} ~~ $addrs) and !($param->{ip} ~~ $config{trusted})) {
-                    printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}] [$err]") if $config{debug};
+                    printlog("bad address (", @$addrs, ")[$param->{address}] ne [$param->{ip}]") if $config{debug};
                     return;
                 }
             }
-            $param->{port} ||= 30000;
             $param->{key} = "$param->{ip}:$param->{port}";
             $param->{off} = time if $param->{action} ~~ 'delete';
             if ($config{ping} and $param->{action} ne 'delete') {
-                if ($config{mineping}) {
+                if ($config{fmping}) {
+                    $param->{ping} = fmping($param->{ip}, $param->{port});
+                } elsif ($config{mineping}) {
                     $param->{ping} = mineping($param->{ip}, $param->{port});
                 } else {
                     $ping->port_number($param->{port});
@@ -232,12 +315,12 @@ sub request (;$) {
             printlog "readed[$config{list_full}] list size=", scalar @{$list->{list}} if $config{debug};
             my $listk = {map { $_->{key} => $_ } @{$list->{list}}};
             my $old = $listk->{$param->{key}};
+            $param->{time} = int time;
             $param->{time} = $old->{time} if $param->{off};
-            $param->{time} ||= int time;
             $param->{start} = $param->{action} ~~ 'start' ? $param->{time} : $old->{start} || $param->{time};
             delete $param->{start} if $param->{off};
             $param->{clients} ||= scalar @{$param->{clients_list}} if ref $param->{clients_list} eq 'ARRAY';
-            $param->{first} ||= $old->{first} || $old->{time} || $param->{time};
+            $param->{first} = $old->{first} || $old->{time} || $param->{time};
             $param->{clients_top} = $old->{clients_top} if $old->{clients_top} > $param->{clients};
             $param->{clients_top} ||= $param->{clients} || 0;
             # params reported once on start, must be same as src/serverlist.cpp:~221 if(server["action"] == "start") { ...
@@ -280,16 +363,19 @@ sub request (;$) {
 sub request_cgi {
     my ($p, $after) = request(@_);
     shift @$p;
-    printu join "\n", map { join ': ', @$_ } shift @$p;
-    printu "\n\n";
-    printu join '', map { join '', @$_ } @$p;
+    printu(join "\n", map { join ': ', @$_ } shift @$p);
+    printu("\n\n");
+    printu(join '', map { join '', @$_ } @$p);
     if (fork) {
         unless ($config{debug}) {
             close STDOUT;
             close STDERR;
         }
     } else {
-        $after->() if ref $after ~~ 'CODE';
+        eval {
+            $after->() if ref $after ~~ 'CODE';
+        };
+        printlog "after error [$@]" if $@ and $config{debug};
     }
 }
 request_cgi() unless caller;

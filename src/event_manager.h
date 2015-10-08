@@ -56,7 +56,7 @@ public:
 		if(i != m_dest.end()){
 			std::list<FuncSpec> &funcs = i->second.funcs;
 			for(std::list<FuncSpec>::iterator i = funcs.begin();
-					i != funcs.end(); i++){
+					i != funcs.end(); ++i){
 				(*(i->f))(e, i->d);
 			}
 		}
@@ -86,12 +86,12 @@ public:
 					if(remove)
 						funcs.erase(j++);
 					else
-						j++;
+						++j;
 				}
 			}
 		} else{
 			for(std::map<std::string, Dest>::iterator
-					i = m_dest.begin(); i != m_dest.end(); i++){
+					i = m_dest.begin(); i != m_dest.end(); ++i){
 				std::list<FuncSpec> &funcs = i->second.funcs;
 				std::list<FuncSpec>::iterator j = funcs.begin();
 				while(j != funcs.end()){
@@ -99,7 +99,7 @@ public:
 					if(remove)
 						funcs.erase(j++);
 					else
-						j++;
+						++j;
 				}
 			}
 		}

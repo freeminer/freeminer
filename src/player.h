@@ -26,8 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
-#include "jthread/jmutexautolock.h"
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include <list>
 #include "util/lock.h"
 #include "json/json.h"
@@ -140,13 +139,8 @@ public:
 
 	v3f getEyeOffset()
 	{
-		// This is at the height of the eyes of the current figure
-		// return v3f(0, BS*1.5, 0);
-		// This is more like in minecraft
-		if(camera_barely_in_ceiling)
-			return v3f(0,BS*1.5,0);
-		else
-			return v3f(0,BS*1.625,0);
+		float eye_height = camera_barely_in_ceiling ? 1.5f : 1.625f;
+		return v3f(0, BS * eye_height, 0);
 	}
 
 	v3f getEyePosition()
@@ -217,7 +211,8 @@ public:
 		return m_name;
 	}
 
-	core::aabbox3d<f32> getCollisionbox() {
+	core::aabbox3d<f32> getCollisionbox()
+	{
 		return m_collisionbox;
 	}
 
@@ -230,12 +225,91 @@ public:
 		return size;
 	}
 
+	void setHotbarItemcount(s32 hotbar_itemcount)
+	{
+		hud_hotbar_itemcount = hotbar_itemcount;
+	}
+
+	s32 getHotbarItemcount()
+	{
+		return hud_hotbar_itemcount;
+	}
+
+	void setHotbarImage(const std::string &name)
+	{
+		hud_hotbar_image = name;
+	}
+
+	std::string getHotbarImage()
+	{
+		return hud_hotbar_image;
+	}
+
+	void setHotbarSelectedImage(const std::string &name)
+	{
+		hud_hotbar_selected_image = name;
+	}
+
+	std::string getHotbarSelectedImage() {
+		return hud_hotbar_selected_image;
+	}
+
+	void setSky(const video::SColor &bgcolor, const std::string &type,
+		const std::vector<std::string> &params)
+	{
+		m_sky_bgcolor = bgcolor;
+		m_sky_type = type;
+		m_sky_params = params;
+	}
+
+	void getSky(video::SColor *bgcolor, std::string *type,
+		std::vector<std::string> *params)
+	{
+		*bgcolor = m_sky_bgcolor;
+		*type = m_sky_type;
+		*params = m_sky_params;
+	}
+
+	void overrideDayNightRatio(bool do_override, float ratio)
+	{
+		m_day_night_ratio_do_override = do_override;
+		m_day_night_ratio = ratio;
+	}
+
+	void getDayNightRatio(bool *do_override, float *ratio)
+	{
+		*do_override = m_day_night_ratio_do_override;
+		*ratio = m_day_night_ratio;
+	}
+
+	void setLocalAnimations(v2s32 frames[4], float frame_speed)
+	{
+		for (int i = 0; i < 4; i++)
+			local_animations[i] = frames[i];
+		local_animation_speed = frame_speed;
+	}
+
+	void getLocalAnimations(v2s32 *frames, float *frame_speed)
+	{
+		for (int i = 0; i < 4; i++)
+			frames[i] = local_animations[i];
+		*frame_speed = local_animation_speed;
+	}
+
 	virtual bool isLocal() const
-	{ return false; }
+	{
+		return false;
+	}
+
 	virtual PlayerSAO *getPlayerSAO()
-	{ return NULL; }
+	{
+		return NULL;
+	}
+
 	virtual void setPlayerSAO(PlayerSAO *sao)
-	{ FATAL_ERROR("FIXME"); }
+	{
+		FATAL_ERROR("FIXME");
+	}
 
 	/*
 		serialize() writes a bunch of text that can contain
@@ -260,6 +334,8 @@ public:
 	bool is_climbing;
 	bool swimming_vertical;
 	bool camera_barely_in_ceiling;
+	v3f eye_offset_first;
+	v3f eye_offset_third;
 
 	Inventory inventory;
 
@@ -291,10 +367,10 @@ public:
 	float hurt_tilt_strength;
 
 	bool zoom;
-	bool  superspeed;
-	bool  free_move;
-	float movement_fov;
+	bool superspeed;
+	bool free_move;
 
+	u16 protocol_version;
 	std::atomic_short peer_id;
 
 	std::string inventory_formspec;
@@ -320,7 +396,8 @@ public:
 
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
-
+	std::string hud_hotbar_image;
+	std::string hud_hotbar_selected_image;
 protected:
 	IGameDef *m_gamedef;
 
@@ -334,11 +411,18 @@ public:
 	core::aabbox3d<f32> m_collisionbox;
 
 	std::vector<HudElement *> hud;
+
+	std::string m_sky_type;
+	video::SColor m_sky_bgcolor;
+	std::vector<std::string> m_sky_params;
+
+	bool m_day_night_ratio_do_override;
+	float m_day_night_ratio;
 private:
 	// Protect some critical areas
 	// hud for example can be modified by EmergeThread
 	// and ServerThread
-	JMutex m_mutex;
+	Mutex m_mutex;
 };
 
 

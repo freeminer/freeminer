@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/connection.h"
 #include "environment.h"
 #include "irrlichttypes_extrabloated.h"
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include <ostream>
 #include <map>
 #include <set>
@@ -57,6 +57,20 @@ class MtEventManager;
 struct PointedThing;
 class Database;
 class Server;
+class Mapper;
+struct MinimapMapblock;
+
+/*
+struct QueuedMeshUpdate
+{
+	v3s16 p;
+	MeshMakeData *data;
+	bool ack_block_to_server;
+
+	QueuedMeshUpdate();
+	~QueuedMeshUpdate();
+};
+*/
 
 enum LocalClientState {
 	LC_Created,
@@ -80,8 +94,8 @@ public:
 	concurrent_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
 
 private:
-	concurrent_map<unsigned int, std::unordered_map<v3POS, std::shared_ptr<MeshMakeData>, v3POSHash, v3POSEqual>> m_queue;
-	std::unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_ranges;
+	concurrent_map<unsigned int, unordered_map_v3POS<std::shared_ptr<MeshMakeData>>> m_queue;
+	unordered_map_v3POS<unsigned int> m_ranges;
 };
 
 struct MeshUpdateResult
@@ -96,23 +110,22 @@ struct MeshUpdateResult
 	}
 };
 
-class MeshUpdateThread : public thread_pool
+class MeshUpdateThread : public UpdateThread
 {
+private:
+	MeshUpdateQueue m_queue_in;
+ 
+protected:
+	virtual void doUpdate();
+
 public:
 
-	MeshUpdateThread(IGameDef *gamedef, int id_ = 0):
-		m_gamedef(gamedef)
-		,id(id_)
-	{
-	}
+	MeshUpdateThread() : UpdateThread("Mesh") {}
 
-	void * Thread();
-
-	MeshUpdateQueue m_queue_in;
+	void enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
+			bool urgent);
 
 	MutexedQueue<MeshUpdateResult> m_queue_out;
-
-	IGameDef *m_gamedef;
 
 	v3s16 m_camera_offset;
 	int id;
@@ -395,13 +408,13 @@ public:
 	void interact(u8 action, const PointedThing& pointed);
 
 	void sendNodemetaFields(v3s16 p, const std::string &formname,
-			const std::map<std::string, std::string> &fields);
+		const StringMap &fields);
 	void sendInventoryFields(const std::string &formname,
-			const std::map<std::string, std::string> &fields);
+		const StringMap &fields);
 	void sendInventoryAction(InventoryAction *a);
 	void sendChatMessage(const std::string &message);
 	void sendChangePassword(const std::string &oldpassword,
-	                        const std::string &newpassword);
+		const std::string &newpassword);
 	void sendDamage(u8 damage);
 	void sendBreath(u16 breath);
 	void sendRespawn();
@@ -477,6 +490,8 @@ public:
 	bool accessDenied()
 	{ return m_access_denied; }
 
+	bool reconnectRequested() { return m_access_denied_reconnect; }
+
 	std::string accessDeniedReason()
 	{ return m_access_denied_reason; }
 
@@ -487,6 +502,9 @@ public:
 	bool mediaReceived()
 	{ return m_media_downloader == NULL; }
 
+	u8 getProtoVersion()
+	{ return m_proto_ver; }
+
 	float mediaReceiveProgress();
 
 	void afterContentReceived(IrrlichtDevice *device);
@@ -494,6 +512,12 @@ public:
 	float getRTT(void);
 	float getCurRate(void);
 	float getAvgRate(void);
+
+	Mapper* getMapper ()
+	{ return m_mapper; }
+
+	bool isMinimapDisabledByServer()
+	{ return m_minimap_disabled_by_server; }
 
 	// IGameDef interface
 	virtual IItemDefManager* getItemDefManager();
@@ -520,7 +544,7 @@ public:
 
 	LocalClientState getState() { return m_state; }
 
-	void makeScreenshot(IrrlichtDevice *device);
+	void makeScreenshot(const std::string & name = "screenshot_", IrrlichtDevice *device = nullptr);
 
 private:
 
@@ -533,7 +557,7 @@ private:
 			bool is_local_server);
 
 	void ReceiveAll();
-	void Receive();
+	bool Receive();
 
 	void sendPlayerPos();
 	// Send the item number 'item' as player item to the server
@@ -576,10 +600,18 @@ public:
 	con::Connection m_con;
 private:
 	IrrlichtDevice *m_device;
+	Mapper *m_mapper;
+	bool m_minimap_disabled_by_server;
 	// Server serialization version
 	u8 m_server_ser_ver;
+
 	// Used version of the protocol with server
+	// Values smaller than 25 only mean they are smaller than 25,
+	// and aren't accurate. We simply just don't know, because
+	// the server didn't send the version back then.
+	// If 0, server init hasn't been received yet.
 	u8 m_proto_ver;
+
 	u16 m_playeritem;
 	u16 m_previous_playeritem;
 	bool m_inventory_updated;
@@ -614,6 +646,7 @@ private:
 	void * m_auth_data;
 
 	bool m_access_denied;
+	bool m_access_denied_reconnect;
 	std::string m_access_denied_reason;
 	Queue<ClientEvent> m_client_event_queue;
 	//std::queue<ClientEvent> m_client_event_queue;
@@ -646,12 +679,13 @@ private:
 	std::map<std::string, Inventory*> m_detached_inventories;
 	double m_uptime;
 	bool m_simple_singleplayer_mode;
+	float m_timelapse_timer;
 public:
 	void sendDrawControl();
 private:
 
 	// Storage for mesh data for creating multiple instances of the same mesh
-	std::map<std::string, std::string> m_mesh_data;
+	StringMap m_mesh_data;
 
 	// own state
 	LocalClientState m_state;

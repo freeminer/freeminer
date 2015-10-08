@@ -158,14 +158,28 @@ public:
 
 	virtual void setArmorGroups(const ItemGroupList &armor_groups)
 	{}
+	virtual ItemGroupList getArmorGroups()
+	{ return ItemGroupList(); }
 	virtual void setPhysicsOverride(float physics_override_speed, float physics_override_jump, float physics_override_gravity)
 	{}
-	virtual void setAnimation(v2f frames, float frame_speed, float frame_blend)
+	virtual void setAnimation(v2f frames, float frame_speed, float frame_blend, bool frame_loop)
 	{}
-	virtual void setBonePosition(std::string bone, v3f position, v3f rotation)
+	virtual void getAnimation(v2f *frames, float *frame_speed, float *frame_blend, bool *frame_loop)
 	{}
-	virtual void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation)
+	virtual void setBonePosition(const std::string &bone, v3f position, v3f rotation)
 	{}
+	virtual void getBonePosition(const std::string &bone, v3f *position, v3f *lotation)
+	{}
+	virtual void setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation)
+	{}
+	virtual void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation)
+	{}
+	virtual void addAttachmentChild(int child_id)
+	{}
+	virtual void removeAttachmentChild(int child_id)
+	{}
+	virtual std::set<int> getAttachmentChildIds()
+	{ return std::set<int>(); }
 	virtual ObjectProperties* accessObjectProperties()
 	{ return NULL; }
 	virtual void notifyObjectPropertiesModified()
@@ -192,7 +206,7 @@ public:
 		deleted until this is 0 to keep the id preserved for the right
 		object.
 	*/
-	u16 m_known_by_count;
+	std::atomic_ushort m_known_by_count;
 
 	/*
 		- Whether this object is to be removed when nobody knows about
@@ -203,7 +217,7 @@ public:
 		  to be deleted.
 		- This can be set to true by anything else too.
 	*/
-	bool m_removed;
+	std::atomic_bool m_removed;
 	
 	/*
 		This is set to true when an object should be removed from the active
@@ -219,7 +233,7 @@ public:
 	/*
 		Whether the object's static data has been stored to a block
 	*/
-	bool m_static_exists;
+	std::atomic_bool m_static_exists;
 	/*
 		The block from which the object was loaded from, and in which
 		a copy of the static data resides.

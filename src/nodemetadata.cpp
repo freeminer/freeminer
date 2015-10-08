@@ -33,9 +33,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	NodeMetadata
 */
 
-NodeMetadata::NodeMetadata(IGameDef *gamedef):
+NodeMetadata::NodeMetadata(IItemDefManager *item_def_mgr):
 	m_stringvars(),
-	m_inventory(new Inventory(gamedef->idef()))
+	m_inventory(new Inventory(item_def_mgr))
 {
 }
 
@@ -48,10 +48,11 @@ void NodeMetadata::serialize(std::ostream &os) const
 {
 	int num_vars = m_stringvars.size();
 	writeU32(os, num_vars);
-	for(std::map<std::string, std::string>::const_iterator
-			i = m_stringvars.begin(); i != m_stringvars.end(); i++){
-		os<<serializeString(i->first);
-		os<<serializeLongString(i->second);
+	for (StringMap::const_iterator
+			it = m_stringvars.begin();
+			it != m_stringvars.end(); ++it) {
+		os << serializeString(it->first);
+		os << serializeLongString(it->second);
 	}
 
 	m_inventory->serialize(os);
@@ -98,39 +99,39 @@ void NodeMetadataList::serialize(std::ostream &os) const
 
 	for(std::map<v3s16, NodeMetadata*>::const_iterator
 			i = m_data.begin();
-			i != m_data.end(); i++)
+			i != m_data.end(); ++i)
 	{
 		v3s16 p = i->first;
 		NodeMetadata *data = i->second;
 
-		u16 p16 = p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X;
+		u16 p16 = p.Z * MAP_BLOCKSIZE * MAP_BLOCKSIZE + p.Y * MAP_BLOCKSIZE + p.X;
 		writeU16(os, p16);
 
 		data->serialize(os);
 	}
 }
 
-void NodeMetadataList::deSerialize(std::istream &is, IGameDef *gamedef)
+void NodeMetadataList::deSerialize(std::istream &is, IItemDefManager *item_def_mgr)
 {
 	clear();
 
 	u8 version = readU8(is);
 
-	if(version == 0){
+	if (version == 0) {
 		// Nothing
 		return;
 	}
 
-	if(version != 1){
-		infostream<<__FUNCTION_NAME<<": version "<<version<<" not supported"
-				<<std::endl;
-		throw SerializationError("NodeMetadataList::deSerialize");
+	if (version != 1) {
+		std::string err_str = std::string(__FUNCTION_NAME)
+			+ ": version " + itos(version) + " not supported";
+		infostream << err_str << std::endl;
+		throw SerializationError(err_str);
 	}
 
 	u16 count = readU16(is);
 
-	for(u16 i=0; i<count; i++)
-	{
+	for (u16 i=0; i < count; i++) {
 		u16 p16 = readU16(is);
 
 		v3s16 p;
@@ -140,8 +141,7 @@ void NodeMetadataList::deSerialize(std::istream &is, IGameDef *gamedef)
 		p16 &= MAP_BLOCKSIZE - 1;
 		p.X = p16;
 
-		if(m_data.find(p) != m_data.end())
-		{
+		if (m_data.find(p) != m_data.end()) {
 			infostream<<"WARNING: NodeMetadataList::deSerialize(): "
 					<<"already set data at position"
 					<<"("<<p.X<<","<<p.Y<<","<<p.Z<<"): Ignoring."
@@ -149,7 +149,7 @@ void NodeMetadataList::deSerialize(std::istream &is, IGameDef *gamedef)
 			continue;
 		}
 
-		NodeMetadata *data = new NodeMetadata(gamedef);
+		NodeMetadata *data = new NodeMetadata(item_def_mgr);
 		data->deSerialize(is);
 		m_data[p] = data;
 	}
@@ -206,11 +206,10 @@ void NodeMetadataList::clear()
 std::string NodeMetadata::getString(const std::string &name,
 	unsigned short recursion) const
 {
-	std::map<std::string, std::string>::const_iterator it;
-	it = m_stringvars.find(name);
-	if (it == m_stringvars.end()) {
+	StringMap::const_iterator it = m_stringvars.find(name);
+	if (it == m_stringvars.end())
 		return "";
-	}
+
 	return resolveString(it->second, recursion);
 }
 

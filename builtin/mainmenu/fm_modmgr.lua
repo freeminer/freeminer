@@ -17,7 +17,7 @@
 
 --------------------------------------------------------------------------------
 function get_mods(path,retval,modpack)
-	local mods = core.get_dirlist(path, true)
+	local mods = core.get_dir_list(path, true)
 	
 	for i=1, #mods, 1 do
 		if mods[i]:sub(1,1) ~= "." then
@@ -94,7 +94,7 @@ function modmgr.getbasefolder(temppath)
 				}
 	end
 
-	local subdirs = core.get_dirlist(temppath,true)
+	local subdirs = core.get_dir_list(temppath,true)
 
 	--only single mod or modpack allowed
 	if #subdirs ~= 1 then
@@ -290,9 +290,9 @@ function modmgr.tab()
 
 		if selected_mod.is_modpack then
 			retval = retval .. ";0]" ..
-				"button[10.6.85;2,0.5;btn_mod_mgr_rename_modpack;" ..
+				"button[10.6,4.50;2,0.5;btn_mod_mgr_rename_modpack;" ..
 				fgettext("Rename") .. "]"
-			retval = retval .. "button[7.1,4.85;4.5,0.5;btn_mod_mgr_delete_mod;"
+			retval = retval .. "button[7.1,9.85;4.5,0.5;btn_mod_mgr_delete_mod;"
 				.. fgettext("Uninstall selected modpack") .. "]"
 		else
 			--show dependencies

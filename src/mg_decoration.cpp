@@ -90,11 +90,9 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 	int carea_size = nmax.X - nmin.X + 1;
 
 	// Divide area into parts
-	if (carea_size % sidelen) {
-		errorstream << "Decoration::placeDeco: chunk size is not divisible by "
-			"sidelen; setting sidelen to " << carea_size << std::endl;
+	// If chunksize is changed it may no longer be divisable by sidelen
+	if (carea_size % sidelen)
 		sidelen = carea_size;
-	}
 
 	s16 divlen = carea_size / sidelen;
 	int area = sidelen * sidelen;
@@ -129,7 +127,6 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 			s16 y = mg->heightmap ?
 					mg->heightmap[mapindex] :
 					mg->findGroundLevel(v2s16(x, z), nmin.Y, nmax.Y);
-			y = MYMAX(y, mg->water_level);
 
 			if (y < nmin.Y || y > nmax.Y ||
 				y < y_min  || y > y_max)
@@ -140,7 +137,7 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 #if 0
 				printf("Decoration at (%d %d %d) cut off\n", x, y, z);
 				//add to queue
-				JMutexAutoLock cutofflock(cutoff_mutex);
+				MutexAutoLock cutofflock(cutoff_mutex);
 				cutoffs.push_back(CutoffData(x, y, z, height));
 #endif
 			}
@@ -173,7 +170,7 @@ void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 	// Copy over the cutoffs we're interested in so we don't needlessly hold a lock
 	{
-		JMutexAutoLock cutofflock(cutoff_mutex);
+		MutexAutoLock cutofflock(cutoff_mutex);
 		for (std::list<CutoffData>::iterator i = cutoffs.begin();
 			i != cutoffs.end(); ++i) {
 			CutoffData cutoff = *i;
@@ -204,7 +201,7 @@ void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 	// Remove cutoffs that were handled from the cutoff list
 	{
-		JMutexAutoLock cutofflock(cutoff_mutex);
+		MutexAutoLock cutofflock(cutoff_mutex);
 		for (std::list<CutoffData>::iterator i = cutoffs.begin();
 			i != cutoffs.end(); ++i) {
 
@@ -247,7 +244,7 @@ bool DecoSimple::canPlaceDecoration(MMVManip *vm, v3s16 p)
 		return true;
 
 	int nneighs = 0;
-	v3s16 dirs[8] = {
+	v3s16 dirs[16] = {
 		v3s16( 0, 0,  1),
 		v3s16( 0, 0, -1),
 		v3s16( 1, 0,  0),
@@ -255,7 +252,16 @@ bool DecoSimple::canPlaceDecoration(MMVManip *vm, v3s16 p)
 		v3s16( 1, 0,  1),
 		v3s16(-1, 0,  1),
 		v3s16(-1, 0, -1),
-		v3s16( 1, 0, -1)
+		v3s16( 1, 0, -1),
+
+		v3s16( 0, 1,  1),
+		v3s16( 0, 1, -1),
+		v3s16( 1, 1,  0),
+		v3s16(-1, 1,  0),
+		v3s16( 1, 1,  1),
+		v3s16(-1, 1,  1),
+		v3s16(-1, 1, -1),
+		v3s16( 1, 1, -1)
 	};
 
 	// Check a Moore neighborhood if there are enough spawnby nodes
@@ -308,12 +314,6 @@ int DecoSimple::getHeight()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-DecoSchematic::~DecoSchematic() {
-	if (schematic)
-		delete schematic;
-	schematic = nullptr;
-};
 
 DecoSchematic::DecoSchematic()
 {

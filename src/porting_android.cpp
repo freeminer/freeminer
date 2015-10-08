@@ -23,10 +23,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "porting.h"
 #include "porting_android.h"
+#include "threading/thread.h"
 #include "config.h"
 #include "filesys.h"
 #include "log.h"
 #include <sstream>
+
+#include "settings.h"
 
 #ifdef GPROF
 #include "prof.h"
@@ -39,30 +42,28 @@ void android_main(android_app *app)
 	int retval = 0;
 	porting::app_global = app;
 
-	porting::setThreadName("MainThread");
+	Thread::setName("MainThread");
 
 	try {
 		app_dummy();
-		char *argv[] = { (char*) "freeminer" };
+		char *argv[] = {(char*) PROJECT_NAME};
 		main(sizeof(argv) / sizeof(argv[0]), argv);
-		}
-	catch(BaseException e) {
+	} catch (BaseException &e) {
 		std::stringstream msg;
 		msg << "Exception handled by main: " << e.what();
-		const char* message = msg.str().c_str();
+		const char *message = msg.str().c_str();
 		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME, "%s", message);
 		errorstream << msg.str() << std::endl;
 		retval = -1;
-	}
-	catch(...) {
+	} catch (...) {
 		__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME,
-				"Some exception occured");
+				"An unknown exception occured!");
 		errorstream << "Uncaught exception in main thread!" << std::endl;
 		retval = -1;
 	}
 
 	porting::cleanupAndroid();
-	errorstream << "Shutting down freeminer." << std::endl;
+	errorstream << "Shutting down." << std::endl;
 	exit(retval);
 }
 
@@ -87,6 +88,17 @@ std::string path_storage = DIR_DELIM "sdcard" DIR_DELIM;
 android_app* app_global;
 JNIEnv*      jnienv;
 jclass       nativeActivity;
+
+void handleAndroidActivityEvents()
+{
+	int ident;
+	int events;
+	struct android_poll_source *source;
+
+	while ( (ident = ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0)
+		if (source)
+			source->process(porting::app_global, source);
+}
 
 int android_version_sdk_int = 0;
 
@@ -140,7 +152,7 @@ void initAndroid()
 		exit(-1);
 	}
 
-	nativeActivity = findClass("org/freeminer/freeminer/MtNativeActivity");
+	nativeActivity = findClass("org/freeminer/" PROJECT_NAME_C "/MtNativeActivity");
 	if (nativeActivity == 0) {
 		errorstream <<
 			"porting::initAndroid unable to find java native activity class" <<
@@ -181,7 +193,9 @@ void cleanupAndroid()
 #endif
 
 	JavaVM *jvm = app_global->activity->vm;
+	if (jvm)
 	jvm->DetachCurrentThread();
+	ANativeActivity_finish(app_global->activity);
 }
 
 void setExternalStorageDir(JNIEnv* lJNIEnv)
@@ -310,6 +324,17 @@ v2u32 getDisplaySize()
 	return retval;
 }
 #endif //SERVER
+
+
+int canKeyboard() {
+	auto v = g_settings->getS32("android_keyboard");
+	if (v)
+		return v;
+	// dont work on some 4.4.2
+	//if (porting::android_version_sdk_int >= 18)
+	//	return 1;
+	return false;
+}
 
 // http://stackoverflow.com/questions/5864790/how-to-show-the-soft-keyboard-on-native-activity
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv) {

@@ -160,11 +160,12 @@ bool wouldCollideWithCeiling(
 {
 	//TimeTaker tt("wouldCollideWithCeiling");
 
-	assert(y_increase >= 0);	// pre-condition
+	if (!(y_increase >= 0))
+		return false;
 
 	for(std::vector<aabb3f>::const_iterator
 			i = staticboxes.begin();
-			i != staticboxes.end(); i++)
+			i != staticboxes.end(); ++i)
 	{
 		const aabb3f& staticbox = *i;
 		if((movingbox.MaxEdge.Y - d <= staticbox.MinEdge.Y) &&
@@ -235,6 +236,8 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	s16 max_y = MYMAX(oldpos_i.Y, newpos_i.Y) + (box_0.MaxEdge.Y / BS) + 1;
 	s16 max_z = MYMAX(oldpos_i.Z, newpos_i.Z) + (box_0.MaxEdge.Z / BS) + 1;
 
+	bool any_position_valid = false;
+
 	for(s16 x = min_x; x <= max_x; x++)
 	for(s16 y = min_y; y <= max_y; y++)
 	for(s16 z = min_z; z <= max_z; z++)
@@ -247,6 +250,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		if (is_position_valid) {
 			// Object collides into walkable nodes
 
+			any_position_valid = true;
 			const ContentFeatures &f = gamedef->getNodeDefManager()->get(n);
 			if(f.walkable == false)
 				continue;
@@ -255,7 +259,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			std::vector<aabb3f> nodeboxes = n.getCollisionBoxes(gamedef->ndef());
 			for(std::vector<aabb3f>::iterator
 					i = nodeboxes.begin();
-					i != nodeboxes.end(); i++)
+					i != nodeboxes.end(); ++i)
 			{
 				aabb3f box = *i;
 				box.MinEdge += v3f(x, y, z)*BS;
@@ -279,6 +283,16 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			is_object.push_back(false);
 		}
 	}
+
+	// Do not move if world has not loaded yet, since custom node boxes
+	// are not available for collision detection.
+	if (!any_position_valid)
+	{
+/* wtf?
+		return result;
+*/
+	}
+
 	} // tt2
 
 	if(collideWithObjects)
@@ -287,7 +301,6 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		//TimeTaker tt3("collisionMoveSimple collect object boxes");
 
 		/* add object boxes to cboxes */
-
 
 		std::vector<ActiveObject*> objects;
 #ifndef SERVER
@@ -310,7 +323,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				f32 distance = speed_f.getLength();
 				std::vector<u16> s_objects;
 				s_env->getObjectsInsideRadius(s_objects, pos_f, distance * 1.5);
-				for (std::vector<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); iter++) {
+				for (std::vector<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); ++iter) {
 					ServerActiveObject *current = s_env->getActiveObject(*iter);
 					if ((self == 0) || (self != current)) {
 						objects.push_back((ActiveObject*)current);
@@ -338,11 +351,13 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		}
 	} //tt3
 
+/*
 	assert(cboxes.size() == is_unloaded.size());    // post-condition
 	assert(cboxes.size() == is_step_up.size());     // post-condition
 	assert(cboxes.size() == bouncy_values.size());  // post-condition
 	assert(cboxes.size() == node_positions.size()); // post-condition
 	assert(cboxes.size() == is_object.size());      // post-condition
+*/
 
 	/*
 		Collision detection
@@ -357,7 +372,8 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	//f32 d = 0.15*BS;
 
 	// This should always apply, otherwise there are glitches
-	assert(d > pos_max_d);	// invariant
+	if(!(d > pos_max_d))
+		return result;
 
 	int loopcount = 0;
 
@@ -448,7 +464,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				pos_f += speed_f * nearest_dtime;
 				dtime -= nearest_dtime;
 			}
-			
+
 			bool is_collision = true;
 			if(is_unloaded[nearest_boxindex])
 				is_collision = false;
@@ -551,76 +567,3 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 
 	return result;
 }
-
-#if 0
-// This doesn't seem to work and isn't used
-collisionMoveResult collisionMovePrecise(Map *map, IGameDef *gamedef,
-		f32 pos_max_d, const aabb3f &box_0,
-		f32 stepheight, f32 dtime,
-		v3f &pos_f, v3f &speed_f, v3f &accel_f)
-{
-	//TimeTaker tt("collisionMovePrecise");
-    ScopeProfiler sp(g_profiler, "collisionMovePrecise avg", SPT_AVG);
-	
-	collisionMoveResult final_result;
-
-	// If there is no speed, there are no collisions
-	if(speed_f.getLength() == 0)
-		return final_result;
-
-	// Don't allow overly huge dtime
-	if(dtime > 2.0)
-		dtime = 2.0;
-
-	f32 dtime_downcount = dtime;
-
-	u32 loopcount = 0;
-	do
-	{
-		loopcount++;
-
-		// Maximum time increment (for collision detection etc)
-		// time = distance / speed
-		f32 dtime_max_increment = 1.0;
-		if(speed_f.getLength() != 0)
-			dtime_max_increment = pos_max_d / speed_f.getLength();
-
-		// Maximum time increment is 10ms or lower
-		if(dtime_max_increment > 0.01)
-			dtime_max_increment = 0.01;
-
-		f32 dtime_part;
-		if(dtime_downcount > dtime_max_increment)
-		{
-			dtime_part = dtime_max_increment;
-			dtime_downcount -= dtime_part;
-		}
-		else
-		{
-			dtime_part = dtime_downcount;
-			/*
-				Setting this to 0 (no -=dtime_part) disables an infinite loop
-				when dtime_part is so small that dtime_downcount -= dtime_part
-				does nothing
-			*/
-			dtime_downcount = 0;
-		}
-
-		collisionMoveResult result = collisionMoveSimple(map, gamedef,
-				pos_max_d, box_0, stepheight, dtime_part,
-				pos_f, speed_f, accel_f);
-
-		if(result.touching_ground)
-			final_result.touching_ground = true;
-		if(result.collides)
-			final_result.collides = true;
-		if(result.collides_xz)
-			final_result.collides_xz = true;
-		if(result.standing_on_unloaded)
-			final_result.standing_on_unloaded = true;
-	}
-	while(dtime_downcount > 0.001);
-
-	return final_result;
-}
-#endif

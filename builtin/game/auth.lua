@@ -56,16 +56,19 @@ local function read_auth_file()
 		core.log("info", core.auth_file_path.." could not be opened for reading ("..errmsg.."); assuming new world")
 		return
 	end
+	local n = 0
 	for line in file:lines() do
+		n = n + 1
 		if line ~= "" then
 			local fields = line:split(":", true)
 			local name, password, privilege_string, last_login = unpack(fields)
 			last_login = tonumber(last_login)
 			if not (name and password and privilege_string) then
-				error("Invalid line in auth.txt: "..dump(line))
-			end
+				print("Invalid line in auth.txt:" .. n .. " " .. dump(line))
+			else
 			local privileges = core.string_to_privs(privilege_string)
 			newtable[uri_decode(name)] = {password=password, privileges=privileges, last_login=last_login}
+			end
 		end
 	end
 	io.close(file)
@@ -192,6 +195,7 @@ function core.register_authentication_handler(handler)
 	end
 	core.registered_auth_handler = handler
 	core.registered_auth_handler_modname = core.get_current_modname()
+	handler.mod_origin = core.registered_auth_handler_modname
 end
 
 function core.get_auth_handler()

@@ -41,8 +41,6 @@ MainMenuScripting::MainMenuScripting(GUIEngine* guiengine)
 {
 	setGuiEngine(guiengine);
 
-	//TODO add security
-
 	SCRIPTAPI_PRECHECKHEADER
 
 	lua_getglobal(L, "core");
@@ -83,7 +81,7 @@ void MainMenuScripting::initializeModApi(lua_State *L, int top)
 
 /******************************************************************************/
 void MainMenuScripting::step() {
-	asyncEngine.step(getStack(), m_errorhandler);
+	asyncEngine.step(getStack());
 }
 
 /******************************************************************************/

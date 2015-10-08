@@ -7,6 +7,7 @@
 #include <chrono>
 #include <vector>
 #include <condition_variable>
+#include <string>
 
 class thread_pool {
 public:
@@ -16,26 +17,27 @@ public:
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 
-	thread_pool();
+	thread_pool(const std::string &name="Unnamed");
 	virtual ~thread_pool();
 
 	virtual void func();
 
+	void reg (const std::string &name, int priority = 0);
 	void start (int n = 1);
 	void restart (int n = 1);
 	void stop ();
 	void join ();
 
-// JThread compat:
-	void ThreadStarted();
-	bool StopRequested();
-	bool IsRunning();
-	int Start(int n = 1);
-	void Stop();
-	void Wait();
-	void Kill();
-	virtual void * Thread();
-	bool IsSameThread();
+// Thread compat:
+
+	bool stopRequested();
+	bool isRunning();
+	void wait();
+	void kill();
+	virtual void * run() = 0;
+	bool isSameThread();
+protected:
+	std::string name;
 };
 
 

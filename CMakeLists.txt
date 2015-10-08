@@ -14,8 +14,8 @@ set(PROJECT_NAME_CAPITALIZED "freeminer")
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
-set(VERSION_PATCH 12)
-set(VERSION_TWEAK 6)
+set(VERSION_PATCH 13)
+set(VERSION_TWEAK 7)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
@@ -68,7 +68,7 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 
-# This is done here so that relative search paths are more reasnable
+# This is done here so that relative search paths are more reasonable
 find_package(Irrlicht)
 
 
@@ -184,7 +184,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/fonts" DESTINATION "${SHAREDIR}")
 install(FILES "README.md" DESTINATION "${DOCDIR}")
 install(FILES "doc/lua_api.txt" DESTINATION "${DOCDIR}")
 install(FILES "doc/menu_lua_api.txt" DESTINATION "${DOCDIR}")
-install(FILES "doc/mapformat.txt" DESTINATION "${DOCDIR}")
+install(FILES "doc/world_format.txt" DESTINATION "${DOCDIR}")
 install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX AND NOT APPLE)

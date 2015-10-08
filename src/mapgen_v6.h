@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define FREQ_HOT 0.4
 #define FREQ_SNOW -0.4
 #define FREQ_TAIGA 0.5
-#define FREQ_JUNGLE 0.7
+#define FREQ_JUNGLE 0.5
 
 //////////// Mapgen V6 flags
 #define MGV6_JUNGLES    0x01
@@ -120,7 +120,7 @@ public:
 	content_t c_snow;
 	content_t c_snowblock;
 
-	content_t c_ice;
+	content_t c_ice, c_clay;
 
 	content_t c_cobble;
 	content_t c_mossycobble;

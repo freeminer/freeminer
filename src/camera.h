@@ -166,7 +166,6 @@ private:
 	u8 m_wieldlight_add;
 
 	WieldMeshSceneNode* m_wieldnode;
-	scene::ILightSceneNode* m_wieldlightnode;
 
 	// draw control
 	MapDrawControl& m_draw_control;
@@ -216,6 +215,8 @@ private:
 	ItemStack m_wield_item_next;
 
 	CameraMode m_camera_mode;
+
+	bool m_cache_movement_fov;
 
 	f32 m_cache_fall_bobbing_amount;
 	f32 m_cache_view_bobbing_amount;

@@ -117,15 +117,19 @@ int ModApiMainMenu::l_start(lua_State *L)
 
 	bool valid = false;
 
+	MainMenuData *data = engine->m_data;
 
-	engine->m_data->selected_world		= getIntegerData(L, "selected_world",valid) -1;
-	engine->m_data->simple_singleplayer_mode = getBoolData(L,"singleplayer",valid);
-	engine->m_data->name				= getTextData(L,"playername");
-	engine->m_data->password			= getTextData(L,"password");
-	engine->m_data->address				= getTextData(L,"address");
-	engine->m_data->port				= getTextData(L,"port");
-	engine->m_data->serverdescription	= getTextData(L,"serverdescription");
-	engine->m_data->servername			= getTextData(L,"servername");
+	data->selected_world = getIntegerData(L, "selected_world",valid) -1;
+	data->simple_singleplayer_mode = getBoolData(L,"singleplayer",valid);
+	data->do_reconnect = getBoolData(L, "do_reconnect", valid);
+	if (!data->do_reconnect) {
+		data->name     = getTextData(L,"playername");
+		data->password = getTextData(L,"password");
+		data->address  = getTextData(L,"address");
+		data->port     = getTextData(L,"port");
+	}
+	data->serverdescription = getTextData(L,"serverdescription");
+	data->servername        = getTextData(L,"servername");
 
 	//close menu next time
 	engine->m_startgame = true;
@@ -633,7 +637,7 @@ int ModApiMainMenu::l_get_modpath(lua_State *L)
 int ModApiMainMenu::l_get_gamepath(lua_State *L)
 {
 	std::string gamepath
-			= fs::RemoveRelativePathComponents(porting::path_user + DIR_DELIM + "games" + DIR_DELIM);
+			= fs::RemoveRelativePathComponents(porting::path_user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM);
 	lua_pushstring(L, gamepath.c_str());
 	return 1;
 }
@@ -652,30 +656,6 @@ int ModApiMainMenu::l_get_texturepath_share(lua_State *L)
 	std::string gamepath
 			= fs::RemoveRelativePathComponents(porting::path_share + DIR_DELIM + "textures");
 	lua_pushstring(L, gamepath.c_str());
-	return 1;
-}
-
-/******************************************************************************/
-int ModApiMainMenu::l_get_dirlist(lua_State *L)
-{
-	const char *path	= luaL_checkstring(L, 1);
-	bool dironly		= lua_toboolean(L, 2);
-
-	std::vector<fs::DirListNode> dirlist = fs::GetDirListing(path);
-
-	unsigned int index = 1;
-	lua_newtable(L);
-	int table = lua_gettop(L);
-
-	for (unsigned int i=0;i< dirlist.size(); i++) {
-		if ((dirlist[i].dir) || (dironly == false)) {
-			lua_pushnumber(L,index);
-			lua_pushstring(L,dirlist[i].name.c_str());
-			lua_settable(L, table);
-			index++;
-		}
-	}
-
 	return 1;
 }
 
@@ -842,7 +822,7 @@ bool ModApiMainMenu::isMinetestPath(std::string path)
 		return true;
 
 	/* games */
-	if (fs::PathStartsWith(path,fs::RemoveRelativePathComponents(porting::path_share + DIR_DELIM + "games")))
+	if (fs::PathStartsWith(path,fs::RemoveRelativePathComponents(porting::path_share + DIR_DELIM + "games" + GAMES_VERSION)))
 		return true;
 
 	/* mods */
@@ -983,7 +963,7 @@ int ModApiMainMenu::l_get_video_modes(lua_State *L)
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
 	std::wstring wtext = wstrgettext((std::string) luaL_checkstring(L, 1));
-	lua_pushstring(L, wide_to_narrow(wtext).c_str());
+	lua_pushstring(L, wide_to_utf8(wtext).c_str());
 
 	return 1;
 }
@@ -1072,7 +1052,6 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_gamepath);
 	API_FCT(get_texturepath);
 	API_FCT(get_texturepath_share);
-	API_FCT(get_dirlist);
 	API_FCT(create_dir);
 	API_FCT(delete_dir);
 	API_FCT(copy_dir);
@@ -1106,7 +1085,6 @@ void ModApiMainMenu::InitializeAsync(AsyncEngine& engine)
 	ASYNC_API_FCT(get_gamepath);
 	ASYNC_API_FCT(get_texturepath);
 	ASYNC_API_FCT(get_texturepath_share);
-	ASYNC_API_FCT(get_dirlist);
 	ASYNC_API_FCT(create_dir);
 	ASYNC_API_FCT(delete_dir);
 	ASYNC_API_FCT(copy_dir);

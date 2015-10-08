@@ -28,6 +28,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "zlib.h"
 
+#include <sstream>
+
 /* report a zlib or i/o error */
 void zerr(int ret)
 {   
@@ -268,4 +270,20 @@ void decompress(std::istream &is, std::ostream &os, u8 version)
 	}
 }
 
+
+
+//freeminer:
+void compressZlib(const std::string &data, std::string &os, int level) {
+	SharedBuffer<u8> databuf((u8*)data.c_str(), data.size());
+	std::ostringstream oss;
+	compressZlib(databuf, oss, level);
+	os = oss.str();
+}
+
+void decompressZlib(const std::string &is, std::string &os) {
+	std::istringstream iss(is);
+	std::ostringstream oss;
+	decompressZlib(iss, oss);
+	os = oss.str();
+}
 

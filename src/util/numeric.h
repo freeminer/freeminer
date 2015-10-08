@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../irr_v3d.h"
 #include "../irr_aabb3d.h"
 #include <algorithm>
+#include "../threading/mutex.h"
 #include <list>
 #include <cmath>
 #include <map>
@@ -46,6 +47,7 @@ public:
 private:
 	static void generateFacePosition(u16 d);
 	static std::map<u16, std::vector<v3s16> > m_cache;
+	static Mutex m_cache_mutex;
 };
 
 class IndentationRaiser

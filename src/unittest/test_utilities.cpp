@@ -37,11 +37,13 @@ public:
 	void testUrlEncode();
 	void testUrlDecode();
 	void testPadString();
+	void testStartsWith();
 	void testStrEqual();
 	void testStringTrim();
 	void testStrToIntConversion();
 	void testStringReplace();
 	void testStringAllowed();
+	void testUTF8();
 	void testWrapRows();
 	void testIsNumber();
 	void testIsPowerOfTwo();
@@ -60,11 +62,13 @@ void TestUtilities::runTests(IGameDef *gamedef)
 	TEST(testUrlEncode);
 	TEST(testUrlDecode);
 	TEST(testPadString);
+	TEST(testStartsWith);
 	TEST(testStrEqual);
 	TEST(testStringTrim);
 	TEST(testStrToIntConversion);
 	TEST(testStringReplace);
 	TEST(testStringAllowed);
+	TEST(testUTF8);
 	TEST(testWrapRows);
 	TEST(testIsNumber);
 	TEST(testIsPowerOfTwo);
@@ -123,6 +127,8 @@ void TestUtilities::testLowercase()
 
 void TestUtilities::testTrim()
 {
+	UASSERT(trim("") == "");
+	UASSERT(trim("dirt_with_grass") == "dirt_with_grass");
 	UASSERT(trim("\n \t\r  Foo bAR  \r\n\t\t  ") == "Foo bAR");
 	UASSERT(trim("\n \t\r    \r\n\t\t  ") == "");
 }
@@ -169,6 +175,19 @@ void TestUtilities::testPadString()
 	UASSERT(padStringRight("hello", 8) == "hello   ");
 }
 
+void TestUtilities::testStartsWith()
+{
+	UASSERT(str_starts_with(std::string(), std::string()) == true);
+	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
+		std::string()) == true);
+	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
+		std::string("the")) == true);
+	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
+		std::string("The")) == false);
+	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
+		std::string("The"), true) == true);
+	UASSERT(str_starts_with(std::string("T"), std::string("The")) == false);
+}
 
 void TestUtilities::testStrEqual()
 {
@@ -213,10 +232,34 @@ void TestUtilities::testStringAllowed()
 	UASSERT(string_allowed_blacklist("hello123", "123") == false);
 }
 
+void TestUtilities::testUTF8()
+{
+	UASSERT(wide_to_utf8(utf8_to_wide("")) == "");
+	UASSERT(wide_to_utf8(utf8_to_wide("the shovel dug a crumbly node!"))
+		== "the shovel dug a crumbly node!");
+}
 
 void TestUtilities::testWrapRows()
 {
 	UASSERT(wrap_rows("12345678",4) == "1234\n5678");
+	// test that wrap_rows doesn't wrap inside multibyte sequences
+	{
+		const unsigned char s[] = {
+			0x2f, 0x68, 0x6f, 0x6d, 0x65, 0x2f, 0x72, 0x61, 0x70, 0x74, 0x6f,
+			0x72, 0x2f, 0xd1, 0x82, 0xd0, 0xb5, 0xd1, 0x81, 0xd1, 0x82, 0x2f,
+			0x6d, 0x69, 0x6e, 0x65, 0x74, 0x65, 0x73, 0x74, 0x2f, 0x62, 0x69,
+			0x6e, 0x2f, 0x2e, 0x2e, 0};
+		std::string str((char *)s);
+		UASSERT(utf8_to_wide(wrap_rows(str, 20)) != L"<invalid UTF-8 string>");
+	};
+	{
+		const unsigned char s[] = {
+			0x74, 0x65, 0x73, 0x74, 0x20, 0xd1, 0x82, 0xd0, 0xb5, 0xd1, 0x81,
+			0xd1, 0x82, 0x20, 0xd1, 0x82, 0xd0, 0xb5, 0xd1, 0x81, 0xd1, 0x82,
+			0x20, 0xd1, 0x82, 0xd0, 0xb5, 0xd1, 0x81, 0xd1, 0x82, 0};
+		std::string str((char *)s);
+		UASSERT(utf8_to_wide(wrap_rows(str, 8)) != L"<invalid UTF-8 string>");
+	}
 }
 
 
@@ -239,7 +282,7 @@ void TestUtilities::testIsPowerOfTwo()
 		UASSERT(is_power_of_two((1 << exponent)) == true);
 		UASSERT(is_power_of_two((1 << exponent) + 1) == false);
 	}
-	UASSERT(is_power_of_two((u32)-1) == false);
+	UASSERT(is_power_of_two(U32_MAX) == false);
 }
 
 void TestUtilities::testMyround()

@@ -21,9 +21,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MG_DECORATION_HEADER
 
 #include <set>
-#include "mapgen.h"
+#include "objdef.h"
+#include "noise.h"
+#include "nodedef.h"
 
-struct NoiseParams;
 class Mapgen;
 class MMVManip;
 class PseudoRandom;
@@ -83,7 +84,7 @@ public:
 
 	std::set<u8> biomes;
 	//std::list<CutoffData> cutoffs;
-	//JMutex cutoff_mutex;
+	//Mutex cutoff_mutex;
 };
 
 class DecoSimple : public Decoration {
@@ -104,7 +105,6 @@ public:
 class DecoSchematic : public Decoration {
 public:
 	DecoSchematic();
-	~DecoSchematic();
 
 	virtual size_t generate(MMVManip *vm, PseudoRandom *pr, v3s16 p);
 	virtual int getHeight();

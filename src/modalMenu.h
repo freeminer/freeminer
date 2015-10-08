@@ -141,14 +141,14 @@ public:
 	virtual void drawMenu() = 0;
 	virtual bool preprocessEvent(const SEvent& event) {
 		#ifdef __ANDROID__
-		if (porting::android_version_sdk_int >= 18) {
+		if (porting::canKeyboard()) {
 		// display software keyboard when clicking edit boxes
 			if (event.EventType == EET_MOUSE_INPUT_EVENT
 					&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 				gui::IGUIElement *hovered =
 					Environment->getRootGUIElement()->getElementFromPoint(
 						core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
-				if (hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+				if (hovered && hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
 					porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 			}
 		}

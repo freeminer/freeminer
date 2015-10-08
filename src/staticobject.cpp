@@ -22,9 +22,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "staticobject.h"
 #include "util/serialize.h"
+#include "constants.h"
+#include "log_types.h"
 
 void StaticObject::serialize(std::ostream &os)
 {
+	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
+		errorstream << "serialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
+		return;
+	}
 	// type
 	writeU8(os, type);
 	// pos
@@ -32,14 +38,19 @@ void StaticObject::serialize(std::ostream &os)
 	// data
 	os<<serializeString(data);
 }
-void StaticObject::deSerialize(std::istream &is, u8 version)
+bool StaticObject::deSerialize(std::istream &is, u8 version)
 {
 	// type
 	type = readU8(is);
 	// pos
-	pos = readV3F1000(is)/10; // todo: remove old compat /10
+	pos = readV3F1000(is)/BS_OLD;
+	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
+		errorstream << "deSerialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
+		return true;
+	}
 	// data
 	data = deSerializeString(is);
+	return false;
 }
 
 void StaticObjectList::serialize(std::ostream &os)
@@ -47,9 +58,20 @@ void StaticObjectList::serialize(std::ostream &os)
 	// version
 	u8 version = 0;
 	writeU8(os, version);
+
 	// count
-	u16 count = m_stored.size() + m_active.size();
+	size_t count = m_stored.size() + m_active.size();
+	// Make sure it fits into u16, else it would get truncated and cause e.g.
+	// issue #2610 (Invalid block data in database: unsupported NameIdMapping version).
+	if (count > U16_MAX) {
+		errorstream << "StaticObjectList::serialize(): "
+			<< "too many objects (" << count << ") in list, "
+			<< "not writing them to disk." << std::endl;
+		writeU16(os, 0);  // count = 0
+		return;
+	}
 	writeU16(os, count);
+
 	for(std::vector<StaticObject>::iterator
 			i = m_stored.begin();
 			i != m_stored.end(); ++i) {
@@ -70,9 +92,17 @@ void StaticObjectList::deSerialize(std::istream &is)
 	u8 version = readU8(is);
 	// count
 	u16 count = readU16(is);
+
+	if (count > 1000) {
+		errorstream << "StaticObjectList::deSerialize(): "
+			<< "too many objects count=" << count << " version="<<(int)version<<" in list, "
+			<< "maybe corrupt block." << std::endl;
+	}
+
 	for(u16 i = 0; i < count; i++) {
 		StaticObject s_obj;
-		s_obj.deSerialize(is, version);
+		if (s_obj.deSerialize(is, version))
+			return;
 		m_stored.push_back(s_obj);
 	}
 }

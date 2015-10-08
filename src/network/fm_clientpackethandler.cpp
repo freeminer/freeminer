@@ -54,7 +54,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	auto sender_peer_id = pkt->getPeerId();
 
 	int command;
-	MsgpackPacket packet;
+	MsgpackPacketSafe packet;
 	msgpack::unpacked msg;
 
 	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
@@ -62,7 +62,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		return;
 	}
 
-	//infostream<<"Client: received command="<<command<<std::endl;
+	//infostream<<"Client: received command="<<command << " size=" << datasize<<std::endl;
 	m_packetcounter.add((u16)command);
 
 	/*
@@ -136,7 +136,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// to be processed even if the serialisation format has
 		// not been agreed yet, the same as TOCLIENT_INIT.
 		m_access_denied = true;
+		m_access_denied_reason = "";
 		packet[TOCLIENT_ACCESS_DENIED_CUSTOM_STRING].convert(&m_access_denied_reason);
+		packet[TOCLIENT_ACCESS_DENIED_RECONNECT].convert(m_access_denied_reconnect);
+
+		u8 denyCode = SERVER_ACCESSDENIED_UNEXPECTED_DATA;
+		packet[TOCLIENT_ACCESS_DENIED_REASON].convert(&denyCode);
+
+		if (m_access_denied_reason.empty())
+			m_access_denied_reason = accessDeniedStrings[denyCode];
+
 		return;
 	}
 
@@ -187,8 +196,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		if (new_block)
 			block = new MapBlock(&m_env.getMap(), p, this);
 
-		if (packet.count(TOCLIENT_BLOCKDATA_CONTENT_ONLY))
-			block->content_only = packet[TOCLIENT_BLOCKDATA_CONTENT_ONLY].as<content_t>();
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, &block->content_only);
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, &block->content_only_param1);
+		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, &block->content_only_param2);
 
 		block->deSerialize(istr, ser_version, false);
 		s32 h; // for convert to atomic
@@ -383,7 +393,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		MediaAnnounceList announce_list;
 		packet[TOCLIENT_ANNOUNCE_MEDIA_LIST].convert(&announce_list);
@@ -408,7 +418,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
 		for(size_t i = 0; i < media_data.size(); ++i)
 			m_media_downloader->conventionalTransferDone(
@@ -421,10 +431,13 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
-		packet[TOCLIENT_NODEDEF_DEFINITIONS].convert(m_nodedef);
-		m_nodedef_received = true;
+		if (packet_convert_safe_zip(packet, TOCLIENT_NODEDEF_DEFINITIONS_ZIP, m_nodedef)) {
+			m_nodedef_received = true;
+		} else if (packet_convert_safe(packet, TOCLIENT_NODEDEF_DEFINITIONS, m_nodedef)) {
+			m_nodedef_received = true;
+		}
 	}
 	else if(command == TOCLIENT_ITEMDEF)
 	{
@@ -433,10 +446,13 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		//assert(!m_mesh_update_thread.IsRunning());
+		//assert(!m_mesh_update_thread.isRunning());
 
-		packet[TOCLIENT_ITEMDEF_DEFINITIONS].convert(m_itemdef);
-		m_itemdef_received = true;
+		if (packet_convert_safe_zip(packet, TOCLIENT_ITEMDEF_DEFINITIONS_ZIP, m_itemdef)) {
+			m_itemdef_received = true;
+		} else if (packet_convert_safe(packet, TOCLIENT_ITEMDEF_DEFINITIONS, m_itemdef)) {
+			m_itemdef_received = true;
+		}
 	}
 	else if(command == TOCLIENT_PLAY_SOUND)
 	{

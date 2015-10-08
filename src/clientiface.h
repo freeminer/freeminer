@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
-#include "jthread/jmutex.h"
+#include "threading/mutex.h"
 #include "util/concurrent_map.h"
 #include "util/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
@@ -57,14 +57,14 @@ class EmergeManager;
       \-----------------/
                |                  depending of the incoming packet
                +---------------------------------------
-               v                                      |
+               v                                      v
 +-----------------------------+        +-----------------------------+
 |IN:                          |        |IN:                          |
 | TOSERVER_INIT_LEGACY        |-----   | TOSERVER_INIT               |      invalid playername,
 +-----------------------------+    |   +-----------------------------+  password (for _LEGACY),
                |                   |                  |                       or denied by mod
                | Auth ok           -------------------+---------------------------------
-               |                                      |                                |
+               v                                      v                                |
 +-----------------------------+        +-----------------------------+                 |
 |OUT:                         |        |OUT:                         |                 |
 | TOCLIENT_INIT_LEGACY        |        | TOCLIENT_HELLO              |                 |
@@ -112,7 +112,7 @@ class EmergeManager;
                |                      +-----------------------------+                  |
                |      ^                           |                                    |
                |      -----------------------------                                    |
-               |                                                                       |
+               v                                                                       |
 +-----------------------------+                        --------------------------------+
 |IN:                          |                        |                               |
 | TOSERVER_CLIENT_READY       |                        v                               |
@@ -136,13 +136,13 @@ class EmergeManager;
       |                 |---------------------------------------------------------------
  ---->|     Active      |
  |    |                 |----------------------------------------------
- |    \-----------------/      timeout                                |
+ |    \-----------------/      timeout                                v
  |       |           |                                  +-----------------------------+
  |       |           |                                  |OUT:                         |
  |       |           |                                  | TOCLIENT_DISCONNECT         |
  |       |           |                                  +-----------------------------+
  |       |           |                                                |
- |       |           |                                                v
+ |       |           v                                                v
  |       |  +-----------------------------+                    /-----------------\
  |       |  |IN:                          |                    |                 |
  |       |  | TOSERVER_DISCONNECT         |------------------->|  Disconnecting  |
@@ -166,7 +166,7 @@ class EmergeManager;
  |                  |                               +-----------------------------+
  |                  |    sets password accordingly  |IN:                          |
  -------------------+-------------------------------| TOSERVER_FIRST_SRP          |
-                                                   +-----------------------------+
+                                                    +-----------------------------+
 
 */
 namespace con {
@@ -174,6 +174,9 @@ namespace con {
 }
 
 #define CI_ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+// Also make sure to update the ClientInterface::statenames
+// array when modifying these enums
 
 enum ClientState
 {
@@ -226,6 +229,7 @@ struct PrioritySortedBlockTransfer
 };
 
 class RemoteClient
+ : public locker<>
 {
 public:
 	// peer_id=0 means this client has no associated peer
@@ -244,12 +248,13 @@ public:
 	std::atomic_int range_all;
 	std::atomic_int farmesh;
 	float fov;
-	bool block_overflow;
+	//bool block_overflow;
 
 	ServerEnvironment *m_env;
 
 	/* Authentication information */
 	std::string enc_pwd;
+	bool create_player_on_auth_success;
 	AuthMechanism chosen_mech;
 	void * auth_data;
 	u32 allowed_auth_mechs;
@@ -264,6 +269,7 @@ public:
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
 		m_env(env),
+		create_player_on_auth_success(false),
 		chosen_mech(AUTH_MECHANISM_NONE),
 		auth_data(NULL),
 		m_time_from_building(9999),
@@ -276,7 +282,7 @@ public:
 		m_version_minor(0),
 		m_version_patch(0),
 		m_full_version("unknown"),
-		m_supported_compressions(0),
+		m_deployed_compression(0),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
 		net_proto_version = 0;
@@ -288,7 +294,7 @@ public:
 		range_all = 0;
 		farmesh = 0;
 		fov = 72; // g_settings->getFloat("fov");
-		block_overflow = 0;
+		//block_overflow = 0;
 	}
 	~RemoteClient()
 	{
@@ -306,6 +312,7 @@ public:
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
+	void SetBlocksNotSent();
 	void SetBlockDeleted(v3s16 p);
 
 	/**
@@ -360,8 +367,8 @@ public:
 	void setPendingSerializationVersion(u8 version)
 		{ m_pending_serialization_version = version; }
 
-	void setSupportedCompressionModes(u8 byteFlag)
-		{ m_supported_compressions = byteFlag; }
+	void setDeployedCompressionMode(u16 byteFlag)
+		{ m_deployed_compression = byteFlag; }
 
 	void confirmSerializationVersion()
 		{ serialization_version = m_pending_serialization_version; }
@@ -425,7 +432,7 @@ private:
 
 	std::string m_full_version;
 
-	u8 m_supported_compressions;
+	u16 m_deployed_compression;
 
 	/*
 		time this client was created
@@ -502,11 +509,9 @@ public:
 	static std::string state2Name(ClientState state);
 
 protected:
-	//mt compat
-	void Lock()
-		{  }
-	void Unlock()
-		{  }
+	//TODO find way to avoid this functions
+	void lock() { /*m_clients_mutex.lock();*/ }
+	void unlock() { /*m_clients_mutex.unlock();*/ }
 
 
 public:
@@ -527,13 +532,14 @@ private:
 
 	// Connection
 	con::Connection* m_con;
+	//Mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	concurrent_map<u16, std::shared_ptr<RemoteClient>> m_clients;
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
 	ServerEnvironment *m_env;
-	//JMutex m_env_mutex;
+	//Mutex m_env_mutex;
 
 	float m_print_info_timer;
 

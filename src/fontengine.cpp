@@ -33,7 +33,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 FontEngine* g_fontengine = NULL;
 
 /** callback to be used on change of font size setting */
-static void font_setting_changed(const std::string, void *userdata) {
+static void font_setting_changed(const std::string &name, void *userdata)
+{
 	g_fontengine->readSettings();
 }
 
@@ -115,7 +116,7 @@ void FontEngine::cleanCache()
 
 		for (std::map<unsigned int, irr::gui::IGUIFont*>::iterator iter
 				= m_font_cache[i].begin();
-				iter != m_font_cache[i].end(); iter++) {
+				iter != m_font_cache[i].end(); ++iter) {
 			iter->second->drop();
 			iter->second = NULL;
 		}
