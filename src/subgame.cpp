@@ -95,7 +95,7 @@ SubgameSpec findSubgame(const std::string &id)
 	find_paths.push_back(GameFindPath(
 			user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", true));
 	find_paths.push_back(GameFindPath(
-			user + DIR_DELIM + "games" + GAMES_VERSION+ DIR_DELIM + id, true));
+			user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id, true));
 	find_paths.push_back(GameFindPath(
 			share + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", false));
 	find_paths.push_back(GameFindPath(
