@@ -118,6 +118,11 @@ MapBlock::~MapBlock()
 	//delMesh();
 #endif
 
+	{
+		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
+		abm_triggers = nullptr;
+	}
+
 	if(data)
 		delete data;
 	data = nullptr;
