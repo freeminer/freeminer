@@ -19,7 +19,7 @@ void Server::SendMovement(u16 peer_id)
 {
 	DSTACK(__FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 12);
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 13);
 
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT, g_settings->getFloat("movement_acceleration_default") * BS);
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_AIR, g_settings->getFloat("movement_acceleration_air") * BS);
@@ -33,6 +33,7 @@ void Server::SendMovement(u16 peer_id)
 	PACK(TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH, g_settings->getFloat("movement_liquid_fluidity_smooth") * BS);
 	PACK(TOCLIENT_MOVEMENT_LIQUID_SINK, g_settings->getFloat("movement_liquid_sink") * BS);
 	PACK(TOCLIENT_MOVEMENT_GRAVITY, g_settings->getFloat("movement_gravity") * BS);
+	PACK(TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, g_settings->getFloat("movement_fall_aerodynamics"));
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
