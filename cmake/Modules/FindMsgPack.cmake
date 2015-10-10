@@ -9,9 +9,11 @@
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
 # Minimal supported version: 1.1.0
-if(NOT CMAKE_CXX_COMPILER_VERSION OR (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7))
-	message(WARNING "Using system msgpack (compiler too old). it can be too old. recommended min version=1.1.0")
-	set(ENABLE_SYSTEM_MSGPACK 1)
+if(CMAKE_VERSION VERSION_LESS 2.8.9)
+  message(WARNING "Your cmake is bad and you should feel bad! (at least 2.8.9 is recommended)")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
+  message(WARNING "Using system msgpack (insufficient gcc version (${CMAKE_CXX_COMPILER_VERSION})). Minimal supported msgpack version is 1.1.0")
+  set(ENABLE_SYSTEM_MSGPACK 1)
 endif()
 
 if(ENABLE_SYSTEM_MSGPACK OR MSGPACK_LIBRARY OR MSGPACK_INCLUDE_DIR)

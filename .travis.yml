@@ -1,17 +1,82 @@
 language: cpp
+
 compiler:
   - gcc
-  - clang
-before_install:
-  - if [ $CC = "clang" ]; then export PATH="/usr/bin/:$PATH"; sudo sh -c 'echo "deb http://ppa.launchpad.net/eudoxos/llvm-3.1/ubuntu precise main" >> /etc/apt/sources.list'; sudo apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 92DE8183; sudo apt-get update; sudo apt-get install llvm-3.1; sudo apt-get install clang; fi
-  - sudo apt-get install libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev gettext libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev
-script:
-  - mkdir -p travisbuild
-  - cd travisbuild
-  - cmake -DENABLE_GETTEXT=1 ..
-  - make -j2
-  - sudo make install
-notifications:
-  email: false
+  # TODO: "ambiguous conversion for functional-style cast
+  # from 'long' to 'core::stringc' (aka 'string<c8>')"
+  #- clang
+
+os:
+  - linux
+  - osx
+
 matrix:
   fast_finish: true
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test    # for gcc-4.8
+      - llvm-toolchain-precise-3.7 # for clang
+    packages:
+      - clang
+      - cmake
+      - doxygen
+      - g++-4.8
+      - gcc-4.8
+      - gettext
+      - libbz2-dev
+      - libgettextpo0
+      - libgl1-mesa-dev
+      - libirrlicht-dev
+      - libjpeg8-dev
+      - libleveldb-dev
+      - libogg-dev
+      - libopenal-dev
+      - libpng12-dev
+      - libsnappy-dev
+      - libsqlite3-dev
+      - libvorbis-dev
+      - libxxf86vm-dev
+      - llvm-3.7
+
+before_install:
+  - if [ $CC = 'gcc' ]; then
+      export CC='gcc-4.8';
+      export CXX='g++-4.8';
+      export LINK='gcc-4.8';
+      export LINKXX='g++-4.8';
+    fi
+  - if [ "$CXX" == 'clang++' ]; then
+      cpwd=$(pwd);
+      export CXXFLAGS="-std=c++0x -stdlib=libc++";
+      svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx;
+      cd libcxx/lib && bash buildit;
+      sudo cp ./libc++.so.1.0 /usr/lib/;
+      sudo mkdir /usr/include/c++/v1;
+      cd .. && sudo cp -r include/* /usr/include/c++/v1/;
+      cd /usr/lib && sudo ln -sf libc++.so.1.0 libc++.so;
+      sudo ln -sf libc++.so.1.0 libc++.so.1 && cd $cwd;
+      export CC=$(which clang);
+      export CXX=$(which clang++);
+      cd "$cpwd";
+    fi
+  - if [ $TRAVIS_OS_NAME == 'osx' ]; then
+      brew update;
+      brew install gettext irrlicht libogg;
+    fi
+  #- git submodule update --init --recursive&
+
+script:
+  - mkdir -p _build
+  - cd _build
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+      cmake -DENABLE_GETTEXT=1 ..;
+      sudo make -j3 install;
+    else
+      cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include;
+      make -j3 package;
+    fi
+
+notifications:
+  email: false
