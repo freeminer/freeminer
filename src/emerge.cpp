@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "map.h"
 #include "mapblock.h"
+#include "mapgen_fractal.h"
 #include "mapgen_v5.h"
 #include "mapgen_v6.h"
 #include "mapgen_v7.h"
@@ -111,6 +112,7 @@ MapgenDesc g_reg_mapgens[] = {
 	{"v6",         new MapgenFactoryV6,         true},
 	{"v7",         new MapgenFactoryV7,         true},
 	{"math",       new MapgenFactoryMath,       true},
+	{"fractal",    new MapgenFactoryFractal,    false},
 	{"singlenode", new MapgenFactorySinglenode, false},
 };
 
