@@ -160,6 +160,8 @@ public:
 	// Replace the current line with the given text
 	void replace(std::wstring line);
 
+	// Add a line to history
+	void historyPush(std::wstring line);
 	// Select previous command from history
 	void historyPrev();
 	// Select next command from history
