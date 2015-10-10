@@ -455,6 +455,7 @@ void ChatPrompt::replace(std::wstring line)
 	m_nick_completion_start = 0;
 	m_nick_completion_end = 0;
 }
+
 void ChatPrompt::historyPush(std::wstring line) {
 	m_history.push_back(line);
 	if (m_history.size() > m_history_limit)
