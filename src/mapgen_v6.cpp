@@ -1,6 +1,5 @@
 /*
-mapgen_v6.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
 */
 
 /*
@@ -315,13 +314,13 @@ float MapgenV6::baseTerrainLevelFromMap(int index)
 
 s16 MapgenV6::find_ground_level_from_noise(u64 seed, v2s16 p2d, s16 precision)
 {
-	return baseTerrainLevelFromNoise(p2d) + AVERAGE_MUD_AMOUNT;
+	return baseTerrainLevelFromNoise(p2d) + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
 
 int MapgenV6::getGroundLevelAtPoint(v2s16 p)
 {
-	return baseTerrainLevelFromNoise(p) + AVERAGE_MUD_AMOUNT;
+	return baseTerrainLevelFromNoise(p) + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
 
@@ -402,7 +401,7 @@ bool MapgenV6::getHaveAppleTree(v2s16 p)
 float MapgenV6::getMudAmount(int index)
 {
 	if (flags & MG_FLAT)
-		return AVERAGE_MUD_AMOUNT;
+		return MGV6_AVERAGE_MUD_AMOUNT;
 
 	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
 			0.5+(float)p.X/200, 0.5+(float)p.Y/200,
@@ -444,13 +443,13 @@ BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 	if (spflags & MGV6_SNOWBIOMES) {
 		float blend = (spflags & MGV6_BIOMEBLEND) ? noise2d(p.X, p.Y, seed) / 40 : 0;
 
-		if (d > FREQ_HOT + blend) {
-			if (h > FREQ_JUNGLE + blend)
+		if (d > MGV6_FREQ_HOT + blend) {
+			if (h > MGV6_FREQ_JUNGLE + blend)
 				return BT_JUNGLE;
 			else
 				return BT_DESERT;
-		} else if (d < FREQ_SNOW + blend) {
-			if (h > FREQ_TAIGA + blend)
+		} else if (d < MGV6_FREQ_SNOW + blend) {
+			if (h > MGV6_FREQ_TAIGA + blend)
 				return BT_TAIGA;
 			else
 				return BT_TUNDRA;
@@ -669,11 +668,11 @@ int MapgenV6::generateGround()
 		for (s16 y = node_min.Y; y <= node_max.Y; y++) {
 			if (vm->m_data[i].getContent() == CONTENT_IGNORE) {
 				if (y <= surface_y) {
-					vm->m_data[i] = (y >= DESERT_STONE_BASE - surface_y
+					vm->m_data[i] = (y >= MGV6_DESERT_STONE_BASE - surface_y
 							&& bt == BT_DESERT) ?
 						n_desert_stone : n_stone;
 				} else if (y <= water_level) {
-					vm->m_data[i] = ((heat < 0 && y > heat/3) || (y >= ICE_BASE
+					vm->m_data[i] = ((heat < 0 && y > heat/3) || (y >= MGV6_ICE_BASE
 							&& bt == BT_TUNDRA)) ?
 						n_ice : n_water_source;
 					if (liquid_pressure && y <= 0)
