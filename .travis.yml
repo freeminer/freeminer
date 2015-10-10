@@ -8,7 +8,7 @@ compiler:
 
 os:
   - linux
-  #- osx
+  - osx
 
 matrix:
   fast_finish: true
@@ -41,17 +41,13 @@ addons:
       - llvm-3.7
 
 before_install:
-  - brew update
-  - brew install gettext irrlicht libogg
-
-before_install:
   - if [ $CC = 'gcc' ]; then
       export CC='gcc-4.8';
       export CXX='g++-4.8';
       export LINK='gcc-4.8';
       export LINKXX='g++-4.8';
     fi
-  - if [ "$CXX" == "clang++" ]; then
+  - if [ "$CXX" == 'clang++' ]; then
       cpwd=$(pwd);
       export CXXFLAGS="-std=c++0x -stdlib=libc++";
       svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx;
@@ -64,6 +60,10 @@ before_install:
       export CC=$(which clang);
       export CXX=$(which clang++);
       cd "$cpwd";
+    fi
+  - if [ $TRAVIS_OS_NAME == 'osx' ]; then
+      brew update;
+      brew install gettext irrlicht libogg;
     fi
   #- git submodule update --init --recursive&
 
