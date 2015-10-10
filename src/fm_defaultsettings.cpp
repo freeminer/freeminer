@@ -503,7 +503,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("movement_liquid_fluidity_smooth", "0.5");
 	settings->setDefault("movement_liquid_sink", "10");
 	settings->setDefault("movement_gravity", "9.81");
-	settings->setDefault("movement_fall_aerodynamics", "1100");
+	settings->setDefault("movement_fall_aerodynamics", "110");
 
 	settings->setDefault("view_bobbing", "true");
 	settings->setDefault("view_bobbing_amount", "1.0");

@@ -841,8 +841,8 @@
 #abm_random = 0
 # Default privs in creative mode
 #default_privs_creative = interact, shout, fly, fast
-# Change falling direction in cost of speed. 100 - you are bird, 800 - good wingsuite, 2000 - hammer
-#movement_fall_aerodynamics = 1100
+# Change falling direction in cost of speed. 10 - you are bird, 80 - good wingsuite, 200 - hammer
+#movement_fall_aerodynamics = 110
 
 # Constant volume liquids
 #liquid_real = false
