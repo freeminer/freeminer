@@ -113,6 +113,8 @@ enum ContentParamType2
 	CPT2_WALLMOUNTED,
 	// Block level like FLOWINGLIQUID (also for snow)
 	CPT2_LEVELED,
+	// 2D rotation for things like plants
+	CPT2_DEGROTATE,
 };
 
 enum LiquidType
