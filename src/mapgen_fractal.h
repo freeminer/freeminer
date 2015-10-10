@@ -56,7 +56,7 @@ struct MapgenFractalParams : public MapgenSpecificParams {
 	MapgenFractalParams();
 	~MapgenFractalParams() {}
 
-	void readParams(const Settings *settings);
+	void readParams(Settings *settings);
 	void writeParams(Settings *settings) const;
 };
 
