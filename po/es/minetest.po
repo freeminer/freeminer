@@ -8,29 +8,26 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-09-12 23:20+0200\n"
-"PO-Revision-Date: 2015-08-26 01:29+0200\n"
-"Last-Translator: shadowninja <owenptorres@gmail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/minetest/"
-"minetest/es/>\n"
+"PO-Revision-Date: 2015-10-04 12:36+0200\n"
+"Last-Translator: OdnetninI <odnetnininds@gmail.com>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/minetest/minetest/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2.4-dev\n"
-"X-Language: es\n"
-"X-Source-Language: en\n"
+"X-Generator: Weblate 2.5-dev\n"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
-msgstr "Ha ocurrido un error en una script de Lua, como en un mod:"
+msgstr "Ha ocurrido un error en un script de Lua, por ejemplo en un mod:"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured:"
 msgstr "Ha ocurrido un error:"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Main menu"
 msgstr "Menú principal"
 
@@ -39,13 +36,12 @@ msgid "Ok"
 msgstr "Aceptar"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Reconnect"
-msgstr "Conectar"
+msgstr "Volver a conectar"
 
 #: builtin/fstk/ui.lua
 msgid "The server has requested a reconnect:"
-msgstr ""
+msgstr "El servidor ha solicitado una reconexión:"
 
 #: builtin/mainmenu/common.lua src/game.cpp
 msgid "Loading..."
@@ -53,7 +49,7 @@ msgstr "Cargando..."
 
 #: builtin/mainmenu/common.lua
 msgid "Protocol version mismatch, server "
-msgstr ""
+msgstr "No concuerda la versión del protocolo, servidor "
 
 #: builtin/mainmenu/common.lua
 msgid "Try reenabling public serverlist and check your internet connection."
@@ -88,6 +84,8 @@ msgid ""
 "Failed to enable mod \"$1\" as it contains disallowed characters. Only "
 "chararacters [a-z0-9_] are allowed."
 msgstr ""
+"Error al habilitar el mod \"$1\" por contener caracteres no permitidos. Solo "
+"se permiten los caracteres [a-z0-9_]."
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Hide Game"
@@ -313,7 +311,7 @@ msgstr "Desinstalar el mod seleccionado"
 # El nombre completo no cabe.
 #: builtin/mainmenu/tab_mods.lua
 msgid "Uninstall selected modpack"
-msgstr "Desinstalar el paquete selecc."
+msgstr "Desinstalar el paquete seleccionado"
 
 #: builtin/mainmenu/tab_multiplayer.lua
 msgid "Address / Port :"
@@ -373,7 +371,7 @@ msgstr "Activar daño"
 # Los dos puntos son intencionados.
 #: builtin/mainmenu/tab_server.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Name/Password"
-msgstr "Nombre/Contraseña"
+msgstr "Nombre / contraseña"
 
 #: builtin/mainmenu/tab_server.lua builtin/mainmenu/tab_singleplayer.lua
 msgid "New"
@@ -381,7 +379,7 @@ msgstr "Nuevo"
 
 #: builtin/mainmenu/tab_server.lua builtin/mainmenu/tab_singleplayer.lua
 msgid "No world created or selected!"
-msgstr "No se ha dado un nombre al mundo o no se ha seleccionado uno"
+msgstr "¡No se ha dado un nombre al mundo o no se ha seleccionado uno!"
 
 #: builtin/mainmenu/tab_server.lua
 msgid "Port"
@@ -401,7 +399,7 @@ msgstr "Servidor"
 
 #: builtin/mainmenu/tab_server.lua
 msgid "Server Port"
-msgstr "Puerto del servidor:"
+msgstr "Puerto del servidor"
 
 #: builtin/mainmenu/tab_server.lua
 msgid "Start Game"
@@ -409,7 +407,7 @@ msgstr "Iniciar juego"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "2x"
-msgstr ""
+msgstr "2x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "3D Clouds"
@@ -417,15 +415,15 @@ msgstr "Nubes 3D"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "4x"
-msgstr ""
+msgstr "4x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "8x"
-msgstr ""
+msgstr "8x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Antialiasing:"
-msgstr ""
+msgstr "Suavizado:"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Are you sure to reset your singleplayer world?"
@@ -489,7 +487,7 @@ msgstr "Resaltar nodos"
 
 #: builtin/mainmenu/tab_settings.lua builtin/mainmenu/tab_texturepacks.lua
 msgid "None"
-msgstr ""
+msgstr "Ninguno"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Opaque Leaves"
@@ -593,9 +591,8 @@ msgid "Texturepacks"
 msgstr "Texturas"
 
 #: src/client.cpp
-#, fuzzy
 msgid "Connection timed out."
-msgstr "Error de conexión (¿tiempo agotado?)"
+msgstr "Tiempo de espera de la conexión agotado."
 
 #: src/client.cpp
 msgid "Done!"
@@ -656,12 +653,13 @@ msgid "needs_fallback_font"
 msgstr "needs_fallback_font"
 
 #: src/game.cpp
+#, fuzzy
 msgid ""
 "\n"
 "Check debug.txt for details."
 msgstr ""
 "\n"
-"Consulta debug.txt para obtener más detalles."
+"Revisa el archivo debug.txt para más detalles."
 
 #: src/game.cpp
 msgid "Change Keys"

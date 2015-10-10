@@ -8,27 +8,26 @@ msgstr ""
 "Project-Id-Version: 0.0.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-09-12 23:20+0200\n"
-"PO-Revision-Date: 2015-09-03 21:35+0200\n"
-"Last-Translator: Tim <t4im@openmailbox.org>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/minetest/minetest/"
-"de/>\n"
+"PO-Revision-Date: 2015-10-02 20:11+0200\n"
+"Last-Translator: pilino1234 <mhilgendrf@aol.com>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/minetest/minetest/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2.4-dev\n"
+"X-Generator: Weblate 2.5-dev\n"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
-msgstr "Ein Fehler ist in Lua aufgetreten (z.B. aufgrund eines Mods):"
+msgstr "Es ist ein Fehler in einem Lua-Skript aufgetreten, z.b in einem Mod:"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured:"
-msgstr "Ein Fehler ist aufgetreten:"
+msgstr "Es ist ein Fehler aufgetreten:"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Main menu"
 msgstr "Hauptmenü"
 
@@ -37,27 +36,26 @@ msgid "Ok"
 msgstr "OK"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Reconnect"
-msgstr "Verbinden"
+msgstr "Erneut verbinden"
 
 #: builtin/fstk/ui.lua
 msgid "The server has requested a reconnect:"
-msgstr ""
+msgstr "Der Server hat um eine Wiederverbindung gebeten:"
 
 #: builtin/mainmenu/common.lua src/game.cpp
 msgid "Loading..."
-msgstr "Lädt ..."
+msgstr "Lädt…"
 
 #: builtin/mainmenu/common.lua
 msgid "Protocol version mismatch, server "
-msgstr ""
+msgstr "Serverprotokollversionsfehler "
 
 #: builtin/mainmenu/common.lua
 msgid "Try reenabling public serverlist and check your internet connection."
 msgstr ""
-"Bitte versuchen Sie die öffentliche Serverliste neu zu aktivieren und prüfen "
-"Sie Ihre Internetverbindung."
+"Versuche die Öffentliche Serverliste neu zu laden bzw. prüfe deine "
+"Internetverbindung."
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/dlg_create_world.lua
 #: builtin/mainmenu/dlg_rename_modpack.lua src/guiKeyChangeMenu.cpp
@@ -86,6 +84,8 @@ msgid ""
 "Failed to enable mod \"$1\" as it contains disallowed characters. Only "
 "chararacters [a-z0-9_] are allowed."
 msgstr ""
+"Fehler beim aktivieren der Mod \"$1\": Ungültiger Name. Nur folgende Zeichen "
+"sind erlaubt: [a-z0-9_]."
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Hide Game"
@@ -93,11 +93,11 @@ msgstr "Spiel ausblenden"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Hide mp content"
-msgstr "MP-Mods verstecken"
+msgstr "Modpacks verstecken"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mod:"
-msgstr "Mod:"
+msgstr "Modifikation:"
 
 #: builtin/mainmenu/dlg_config_world.lua src/guiKeyChangeMenu.cpp
 msgid "Save"
@@ -113,7 +113,7 @@ msgstr "Aktiviert"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "A world named \"$1\" already exists"
-msgstr "Eine Welt namens „$1“ existiert bereits"
+msgstr "Eine Welt mit dem Namen „$1“ existiert bereits"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Create"
@@ -159,7 +159,7 @@ msgstr "Keine Spiele installiert."
 
 #: builtin/mainmenu/dlg_delete_mod.lua
 msgid "Are you sure you want to delete \"$1\"?"
-msgstr "„$1“ wirklich löschen?"
+msgstr "Bist du sicher, dass du \"$1\" wirklich löschen möchtest?"
 
 #: builtin/mainmenu/dlg_delete_mod.lua
 msgid "Modmgr: failed to delete \"$1\""
@@ -278,7 +278,7 @@ msgstr "Frühere Mitwirkende"
 
 #: builtin/mainmenu/tab_credits.lua
 msgid "Previous Core Developers"
-msgstr "Frühere Hauptentwickler"
+msgstr "Ehemalige Hauptentwickler"
 
 #: builtin/mainmenu/tab_mods.lua
 msgid "Installed Mods:"
@@ -290,7 +290,7 @@ msgstr "Modinformation:"
 
 #: builtin/mainmenu/tab_mods.lua
 msgid "Mods"
-msgstr "Mods"
+msgstr "Modifikationen"
 
 #: builtin/mainmenu/tab_mods.lua
 msgid "No mod description available"
@@ -405,7 +405,7 @@ msgstr "Spiel starten"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "2x"
-msgstr ""
+msgstr "2x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "3D Clouds"
@@ -413,15 +413,15 @@ msgstr "3D-Wolken"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "4x"
-msgstr ""
+msgstr "4x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "8x"
-msgstr ""
+msgstr "8x"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Antialiasing:"
-msgstr ""
+msgstr "Kantenglättung:"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Are you sure to reset your singleplayer world?"
@@ -433,7 +433,7 @@ msgstr "Bilinearer Filter"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Bumpmapping"
-msgstr "Bumpmapping"
+msgstr "Bumpmappen"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Change keys"
@@ -485,7 +485,7 @@ msgstr "Blöcke hervorheben"
 
 #: builtin/mainmenu/tab_settings.lua builtin/mainmenu/tab_texturepacks.lua
 msgid "None"
-msgstr ""
+msgstr "Keine"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Opaque Leaves"
@@ -497,7 +497,7 @@ msgstr "Undurchs. Wasser"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Parallax Occlusion"
-msgstr "Parallax Occlusion"
+msgstr "Parallax Oklusion"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Reset singleplayer world"
@@ -588,9 +588,8 @@ msgid "Texturepacks"
 msgstr "Texturpakete"
 
 #: src/client.cpp
-#, fuzzy
 msgid "Connection timed out."
-msgstr "Verbindungsfehler (Zeitüberschreitung?)"
+msgstr "Verbindungsfehler, Zeitüberschreitung."
 
 #: src/client.cpp
 msgid "Done!"
@@ -917,7 +916,7 @@ msgstr "Tonlautstärke: "
 
 #: src/keycode.cpp
 msgid "Apps"
-msgstr "Apps"
+msgstr "Anwendungen"
 
 #: src/keycode.cpp
 msgid "Attn"
@@ -933,7 +932,7 @@ msgstr "Feststellen"
 
 #: src/keycode.cpp
 msgid "Clear"
-msgstr "Clear"
+msgstr "sauber"
 
 #: src/keycode.cpp
 msgid "Comma"
@@ -945,11 +944,11 @@ msgstr "Strg"
 
 #: src/keycode.cpp
 msgid "Convert"
-msgstr "Convert"
+msgstr "Konvertierung"
 
 #: src/keycode.cpp
 msgid "CrSel"
-msgstr "CrSel"
+msgstr "Cr Sel"
 
 #: src/keycode.cpp
 msgid "Down"
@@ -961,7 +960,7 @@ msgstr "Ende"
 
 #: src/keycode.cpp
 msgid "Erase OEF"
-msgstr "Erase OEF"
+msgstr "Verdecke OEF"
 
 #: src/keycode.cpp
 msgid "Escape"
@@ -977,7 +976,7 @@ msgstr "Ausführen"
 
 #: src/keycode.cpp
 msgid "Final"
-msgstr "Final"
+msgstr "Ziel"
 
 #: src/keycode.cpp
 msgid "Help"
@@ -1037,7 +1036,7 @@ msgstr "Minus"
 
 #: src/keycode.cpp
 msgid "Mode Change"
-msgstr "Mode Change"
+msgstr "Modus wechseln"
 
 #: src/keycode.cpp
 msgid "Next"
@@ -1045,7 +1044,7 @@ msgstr "Bild runter"
 
 #: src/keycode.cpp
 msgid "Nonconvert"
-msgstr "Nonconvert"
+msgstr "Keine konventierung"
 
 #: src/keycode.cpp
 msgid "Num Lock"
@@ -1109,7 +1108,7 @@ msgstr "Ziffernblock 9"
 
 #: src/keycode.cpp
 msgid "OEM Clear"
-msgstr "OEM Clear"
+msgstr "OEM Reinigen"
 
 #: src/keycode.cpp
 msgid "PA1"
@@ -1165,11 +1164,11 @@ msgstr "Rollen"
 
 #: src/keycode.cpp
 msgid "Select"
-msgstr "Select"
+msgstr "Auswählen"
 
 #: src/keycode.cpp
 msgid "Shift"
-msgstr "Umsch."
+msgstr "L. Umsch"
 
 #: src/keycode.cpp
 msgid "Sleep"
