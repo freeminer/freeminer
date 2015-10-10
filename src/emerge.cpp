@@ -59,6 +59,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 struct MapgenDesc {
 	const char *name;
 	MapgenFactory *factory;
+	bool is_user_visible;
 };
 
 class EmergeThread : public thread_pool {
@@ -105,12 +106,12 @@ private:
 ////
 
 MapgenDesc g_reg_mapgens[] = {
-	{"indev",      new MapgenFactoryIndev},
-	{"math",       new MapgenFactoryMath},
-	{"v5",         new MapgenFactoryV5},
-	{"v6",         new MapgenFactoryV6},
-	{"v7",         new MapgenFactoryV7},
-	{"singlenode", new MapgenFactorySinglenode},
+	{"indev",      new MapgenFactoryIndev,      true},
+	{"v5",         new MapgenFactoryV5,         true},
+	{"v6",         new MapgenFactoryV6,         true},
+	{"v7",         new MapgenFactoryV7,         true},
+	{"math",       new MapgenFactoryMath,       true},
+	{"singlenode", new MapgenFactorySinglenode, false},
 };
 
 ////
@@ -359,10 +360,13 @@ bool EmergeManager::isBlockUnderground(v3s16 blockpos)
 }
 
 
-void EmergeManager::getMapgenNames(std::vector<const char *> *mgnames)
+void EmergeManager::getMapgenNames(
+	std::vector<const char *> *mgnames, bool include_hidden)
 {
-	for (u32 i = 0; i != ARRLEN(g_reg_mapgens); i++)
-		mgnames->push_back(g_reg_mapgens[i].name);
+	for (u32 i = 0; i != ARRLEN(g_reg_mapgens); i++) {
+		if (include_hidden || g_reg_mapgens[i].is_user_visible)
+			mgnames->push_back(g_reg_mapgens[i].name);
+	}
 }
 
 
