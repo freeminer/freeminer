@@ -630,7 +630,11 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	if (!lua_istable(L, 1))
 		return 0;
 
-	MapgenParams *params = &getServer(L)->getEmergeManager()->params;
+	EmergeManager *emerge = getServer(L)->getEmergeManager();
+	if (emerge->isRunning())
+		throw LuaError("Cannot set parameters while mapgen is running");
+
+	MapgenParams *params = &emerge->params;
 	u32 flags = 0, flagmask = 0;
 
 	lua_getfield(L, 1, "mgname");
@@ -651,6 +655,10 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	lua_getfield(L, 1, "liquid_pressure");
 	if (lua_isnumber(L, -1))
 		params->liquid_pressure = lua_tointeger(L, -1);
+
+	lua_getfield(L, 1, "chunksize");
+	if (lua_isnumber(L, -1))
+		params->chunksize = lua_tointeger(L, -1);
 
 	warn_if_field_exists(L, 1, "flagmask",
 		"Deprecated: flags field now includes unset flags.");
