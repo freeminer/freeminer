@@ -94,6 +94,7 @@ Engine
   * Liquids drop torches and plants
 
 #### Client
+  * Clearing on-screen chat by invoking the /clear command
   * Fixed some input issues: not working numpad and some keys in azerty layout
   * Chat forms were replaced with console (opens up to 10% height of the screen)
   * Default keymap for console changed to tilde (~)

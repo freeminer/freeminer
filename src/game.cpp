@@ -2373,6 +2373,7 @@ bool Game::connectToServer(const std::string &playername,
 	if (!client)
 		return false;
 
+	client->chat_backend = chat_backend;
 	gamedef = client;	// Client acts as our GameDef
 
 	infostream << "Connecting to server at ";
