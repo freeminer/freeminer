@@ -809,7 +809,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			player_radius = radius;
 
 		radius *= MAP_BLOCKSIZE;
-		s16 radius_deactivate = radius*3;
+		s16 radius_deactivate = radius * 2;
 		player_radius *= MAP_BLOCKSIZE;
 
 		for(auto & client : clients) {

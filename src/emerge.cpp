@@ -582,7 +582,10 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	// 2). Attempt to load block from disk
 	*block = m_map->loadBlock(pos);
 	if (*block && (*block)->isGenerated())
+	{
+		m_map->prepareBlock(*block);
 		return EMERGE_FROM_DISK;
+	}
 
 	// 3). Attempt to start generation
 	if (allow_gen && m_map->initBlockMake(pos, bmdata))
