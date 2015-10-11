@@ -149,6 +149,7 @@ int ObjectRef::l_remove(lua_State *L)
 	std::set<int>::iterator it;
 	for (it = child_ids.begin(); it != child_ids.end(); ++it) {
 		ServerActiveObject *child = env->getActiveObject(*it);
+		if (child)
 		child->setAttachment(0, "", v3f(0, 0, 0), v3f(0, 0, 0));
 	}
 
@@ -666,6 +667,7 @@ int ObjectRef::l_set_attach(lua_State *L)
 	co->getAttachment(&parent_id, &bone, &position, &rotation);
 	if (parent_id) {
 		ServerActiveObject *old_parent = env->getActiveObject(parent_id);
+		if (old_parent)
 		old_parent->removeAttachmentChild(co->getId());
 	}
 
@@ -703,7 +705,7 @@ int ObjectRef::l_get_attach(lua_State *L)
 	if (!parent_id)
 		return 0;
 	ServerActiveObject *parent = env->getActiveObject(parent_id);
-
+	if (parent)
 	getScriptApiBase(L)->objectrefGetOrCreate(L, parent);
 	lua_pushlstring(L, bone.c_str(), bone.size());
 	push_v3f(L, position);

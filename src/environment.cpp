@@ -1609,12 +1609,12 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 	return calls;
 }
 
-ServerActiveObject* ServerEnvironment::getActiveObject(u16 id)
+ServerActiveObject* ServerEnvironment::getActiveObject(u16 id, bool removed)
 {
 	auto n = m_active_objects.find(id);
 	if(n == m_active_objects.end())
 		return NULL;
-	if (!n->second || n->second->m_removed || n->second->m_pending_deactivation)
+	if (!removed && (!n->second || n->second->m_removed || n->second->m_pending_deactivation))
 		return NULL;
 	return n->second;
 }
@@ -2149,7 +2149,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 			i != block->m_static_objects.m_active.end(); ++i)
 	{
 		u16 id = i->first;
-		ServerActiveObject *object = getActiveObject(id);
+		ServerActiveObject *object = getActiveObject(id, true);
 		if (!object)
 			continue;
 		object->m_pending_deactivation = false;

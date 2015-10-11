@@ -852,7 +852,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			while (!removed_objects.empty()) {
 				// Get object
 				u16 id = removed_objects.front();
-				ServerActiveObject* obj = m_env->getActiveObject(id);
+				ServerActiveObject* obj = m_env->getActiveObject(id, true);
 
 				// Add to data buffer for sending
 				writeU16((u8*)buf, id);
@@ -920,7 +920,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			while (!removed_objects.empty()) {
 				// Get object
 				u16 id = removed_objects.front();
-				ServerActiveObject* obj = m_env->getActiveObject(id);
+				ServerActiveObject* obj = m_env->getActiveObject(id, true);
 
 				// Remove from known objects
 				client->m_known_objects.erase(id);

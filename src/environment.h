@@ -288,7 +288,7 @@ public:
 		-------------------------------------------
 	*/
 
-	ServerActiveObject* getActiveObject(u16 id);
+	ServerActiveObject* getActiveObject(u16 id, bool removed = false);
 
 	/*
 		Add an active object to the environment.
