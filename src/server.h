@@ -194,7 +194,7 @@ public:
 	void AsyncRunStep(float dtime, bool initial_step=false);
 	int AsyncRunMapStep(float dtime, bool async=true);
 	int save(float dtime, bool breakable = false);
-	u16 Receive();
+	u16 Receive(int ms = 10);
 	PlayerSAO* StageTwoClientInit(u16 peer_id);
 
 	/*

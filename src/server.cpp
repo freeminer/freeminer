@@ -126,9 +126,13 @@ void *ServerThread::run()
 
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step/2);
+			u32 end_ms = porting::getTimeMs();
+			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
+			if (sleep < 10)
+				sleep = 10;
+			end_ms += sleep; //u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
-				if (!m_server->Receive())
+				if (!m_server->Receive(sleep))
 					break;
 				if (porting::getTimeMs() > end_ms)
 					break;
@@ -1307,7 +1311,7 @@ int Server::save(float dtime, bool breakable) {
 	return ret;
 }
 
-u16 Server::Receive()
+u16 Server::Receive(int ms)
 {
 	DSTACK(__FUNCTION_NAME);
 	SharedBuffer<u8> data;
@@ -1315,7 +1319,7 @@ u16 Server::Receive()
 	u16 received = 0;
 	try {
 		NetworkPacket pkt;
-		auto size = m_con.Receive(&pkt, 10);
+		auto size = m_con.Receive(&pkt, ms);
 		peer_id = pkt.getPeerId();
 		if (size) {
 			ProcessData(&pkt);
