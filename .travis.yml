@@ -2,9 +2,7 @@ language: cpp
 
 compiler:
   - gcc
-  # TODO: "ambiguous conversion for functional-style cast
-  # from 'long' to 'core::stringc' (aka 'string<c8>')"
-  #- clang
+  - clang
 
 os:
   - linux
@@ -16,6 +14,7 @@ matrix:
 addons:
   apt:
     sources:
+      # NOTE gcc-4.9 breaks clang
       - ubuntu-toolchain-r-test    # for gcc-4.8
       - llvm-toolchain-precise-3.7 # for clang
     packages:
@@ -47,29 +46,15 @@ before_install:
       export LINK='gcc-4.8';
       export LINKXX='g++-4.8';
     fi
-  - if [ "$CXX" == 'clang++' ]; then
-      cpwd=$(pwd);
-      export CXXFLAGS="-std=c++0x -stdlib=libc++";
-      svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx;
-      cd libcxx/lib && bash buildit;
-      sudo cp ./libc++.so.1.0 /usr/lib/;
-      sudo mkdir /usr/include/c++/v1;
-      cd .. && sudo cp -r include/* /usr/include/c++/v1/;
-      cd /usr/lib && sudo ln -sf libc++.so.1.0 libc++.so;
-      sudo ln -sf libc++.so.1.0 libc++.so.1 && cd $cwd;
-      export CC=$(which clang);
-      export CXX=$(which clang++);
-      cd "$cpwd";
-    fi
   - if [ $TRAVIS_OS_NAME == 'osx' ]; then
       brew update;
       brew install gettext irrlicht libogg;
     fi
+  - mkdir -p _build
+  - cd _build
   #- git submodule update --init --recursive&
 
 script:
-  - mkdir -p _build
-  - cd _build
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       cmake -DENABLE_GETTEXT=1 ..;
       sudo make -j3 install;
