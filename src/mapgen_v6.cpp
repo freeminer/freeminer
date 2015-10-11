@@ -532,6 +532,8 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	// Generate general ground level to full area
 	stone_surface_max_y = generateGround();
 
+	generateExperimental();
+
 	// Create initial heightmap to limit caves
 	updateHeightmap(node_min, node_max);
 

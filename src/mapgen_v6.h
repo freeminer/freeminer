@@ -161,6 +161,7 @@ public:
 	void growGrass();
 	void placeTreesAndJungleGrass();
 	virtual void generateCaves(int max_stone_y);
+	virtual void generateExperimental() {}
 };
 
 
