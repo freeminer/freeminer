@@ -67,6 +67,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
+#include "chat.h"
 
 
 extern gui::IGUIEnvironment* guienv;
@@ -1632,15 +1633,18 @@ void Client::typeChatMessage(const std::string &message)
 	if(message.empty())
 		return;
 
-	// Send to others
-	sendChatMessage(message);
-
-	// Show locally
-	if (message[0] == '/')
-	{
-		m_chat_queue.push("issued command: " + message);
+	if (message[0] == '/') {
+		// TODO register client commands in help
+		std::string command = message.substr(1,-1);
+		// Clears on-screen chat messages
+		if (command.compare("clear") == 0) {
+			chat_backend->clearRecentChat();
+			return;
+		// it's kinda self-evident when you run a local command
+		} else {
+			m_chat_queue.push("issued command: " + message);
+		}
 	}
-
 	//freeminer display self message after recieving from server
 #if MINETEST_PROTO
 	else
@@ -1651,6 +1655,9 @@ void Client::typeChatMessage(const std::string &message)
 		m_chat_queue.push(std::string() + "<" + name + "> " + message);
 	}
 #endif
+
+	// Send to others
+	sendChatMessage(message);
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
