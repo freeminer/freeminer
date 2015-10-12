@@ -571,7 +571,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 {
 	//MutexAutoLock envlock(m_server->m_env_mutex);
 #if !ENABLE_THREADS
-	auto lock = map->m_nothread_locker.lock_unique_rec();
+	auto lock = m_map->m_nothread_locker.lock_unique_rec();
 #endif
 
 	// 1). Attempt to fetch block from memory
@@ -634,7 +634,7 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 	*/
 	try {
 #if !ENABLE_THREADS
-		auto lock = map->m_nothread_locker.lock_unique_rec();
+		auto lock = m_map->m_nothread_locker.lock_unique_rec();
 #endif
 		m_server->getScriptIface()->environment_OnGenerated(
 			minp, maxp, m_mapgen->blockseed);
