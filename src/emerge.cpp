@@ -737,6 +737,8 @@ void *EmergeThread::run()
 			<< "You can ignore this using [ignore_world_load_errors = true]."
 			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
+	} catch (std::exception &e) {
+		errorstream << "emerge: exception at " << pos << " : " << e.what() << std::endl;
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
