@@ -1,22 +1,21 @@
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/games-action/minetest/minetest-0.4.10-r2.ebuild,v 1.1 2014/09/25 20:13:59 hasufell Exp $
 
 EAPI=5
-inherit eutils cmake-utils gnome2-utils user games git-2
+inherit eutils cmake-utils gnome2-utils user games git-r3
 
 DESCRIPTION="An InfiniMiner/Minecraft inspired game"
 HOMEPAGE="http://freeminer.org/"
-EGIT_REPO_URI="git://github.com/freeminer/freeminer.git"
 
-LICENSE="LGPL-2.1+ CC-BY-SA-3.0"
+LICENSE="GPL-3+ CC-BY-SA-3.0"
 SLOT="0"
 KEYWORDS=""
-IUSE="+curl dedicated luajit nls redis +server +sound +truetype"
+IUSE="+curl dedicated luajit nls redis +server +sound +spatial +truetype "
 
 RDEPEND="dev-db/sqlite:3
 	sys-libs/zlib
-	=dev-libs/msgpack-0.5.9
+	=dev-libs/msgpack-1.1.0
+	=dev-libs/jsoncpp-1.6.5
 	net-libs/enet
 	curl? ( net-misc/curl )
 	>=dev-games/irrlicht-1.8-r2
@@ -38,6 +37,7 @@ RDEPEND="dev-db/sqlite:3
 	luajit? ( dev-lang/luajit:2 )
 	nls? ( virtual/libintl )
 	redis? ( dev-libs/hiredis )
+	spatial? ( sci-libs/libspatialindex )
 	virtual/libiconv"
 DEPEND="${RDEPEND}
 	>=dev-games/irrlicht-1.8-r2
@@ -51,14 +51,15 @@ pkg_setup() {
 	fi
 }
 
+EGIT_MIN_CLONE_TYPE=shallow
 src_unpack() {
-	git-2_src_unpack
+	git-r3_fetch "git://github.com/freeminer/freeminer.git" master
+	git-r3_checkout "git://github.com/freeminer/freeminer.git"
 }
 
 src_prepare() {
 #	epatch \
 #		"${FILESDIR}"/${P}-as-needed.patch \
-#		"${FILESDIR}"/${P}-shared-irrlicht.patch \
 
 
 	# correct gettext behavior
@@ -71,15 +72,16 @@ src_prepare() {
 	fi
 
 	# jthread is modified
-	# json is modified
 	# rm -r src/sqlite || die
+	# rm -r src/msgpack-c || die
 
 	# set paths
 	sed \
 		-e "s#@BINDIR@#${GAMES_BINDIR}#g" \
 		-e "s#@GROUP@#${GAMES_GROUP}#g" \
 		"${FILESDIR}"/freeminerserver.confd > "${T}"/freeminerserver.confd || die
-	}
+}
+
 CMAKE_BUILD_TYPE="Release"
 #CMAKE_IN_SOURCE_BUILD="1"
 src_configure() {
@@ -93,6 +95,9 @@ src_configure() {
 		$(cmake-utils_use_enable truetype FREETYPE)
 		$(cmake-utils_use_enable nls GETTEXT)
 		-DENABLE_GLES=0
+		-DENABLE_SYSTEM_MSGPACK=1
+		-DENABLE_SYSTEM_JSONCPP=1
+		-DENABLE_SPATIAL=$(usex spatial)
 		$(cmake-utils_use_enable redis REDIS)
 		$(cmake-utils_use_enable sound SOUND)
 		$(cmake-utils_use !luajit DISABLE_LUAJIT)
@@ -140,7 +145,7 @@ pkg_postinst() {
 	if use server || use dedicated ; then
 		elog
 		elog "Configure your server via /etc/conf.d/freeminer-server"
-		elog "The user \"minetest\" is created with /var/lib/${PN} homedir."
+		elog "The user \"${PN}\" is created with /var/lib/${PN} homedir."
 		elog "Default logfile is ~/freeminer-server.log"
 		elog
 	fi
