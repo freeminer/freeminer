@@ -101,7 +101,7 @@ public:
 		static int water_level = g_settings->getS16("water_level");
 		bool top_liquid = ndef->get(n).liquid_type > LIQUID_NONE && p.Y > water_level;
 		int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
-		if (heat <= freeze - 1 && ((!top_liquid && (activate || heat <= freeze - 50)) ||
+		if (heat <= freeze - 1 && ((!top_liquid && (activate || (heat <= freeze - 50))) || heat <= freeze - 50 ||
 		                           (myrand_range(freeze - 50, heat) <= (freeze + (top_liquid ? -42 : c == CONTENT_AIR ? -10 : -40))))) {
 			content_t c_self = n.getContent();
 			// making freeze not annoying, do not freeze random blocks in center of ocean

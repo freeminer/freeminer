@@ -119,7 +119,7 @@ u32 PcgRandom::range(u32 bound)
 s32 PcgRandom::range(s32 min, s32 max)
 {
 	if (max < min)
-		throw PrngException("Invalid range (max < min)");
+		throw PrngException("Invalid range (max < min) min=" + to_string(min) + " max=" + to_string(max));
 
 	u32 bound = max - min + 1;
 	return range(bound) + min;
