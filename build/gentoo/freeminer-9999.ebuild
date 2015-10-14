@@ -1,4 +1,3 @@
-# Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=5
@@ -135,18 +134,11 @@ pkg_postinst() {
 	games_pkg_postinst
 	gnome2_icon_cache_update
 
-	if ! use dedicated ; then
-		elog
-		elog "optional dependencies:"
-		elog "	games-action/freeminer_default (official mod)"
-		elog
-	fi
-
 	if use server || use dedicated ; then
 		elog
 		elog "Configure your server via /etc/conf.d/freeminer-server"
 		elog "The user \"${PN}\" is created with /var/lib/${PN} homedir."
-		elog "Default logfile is ~/freeminer-server.log"
+		elog "Default logfile is /var/lib/freeminer/server.log"
 		elog
 	fi
 }
