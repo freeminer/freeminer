@@ -1,5 +1,7 @@
 language: cpp
 
+cache: ccache
+
 compiler:
   - gcc
   - clang
@@ -23,16 +25,10 @@ addons:
       - doxygen
       - g++-4.8
       - gcc-4.8
-      - gettext
-      - libbz2-dev
-      - libgettextpo0
-      - libgl1-mesa-dev
       - libirrlicht-dev
-      - libjpeg8-dev
       - libleveldb-dev
       - libogg-dev
       - libopenal-dev
-      - libpng12-dev
       - libsnappy-dev
       - libsqlite3-dev
       - libvorbis-dev
@@ -45,19 +41,25 @@ before_install:
       export CXX='g++-4.8';
       export LINK='gcc-4.8';
       export LINKXX='g++-4.8';
+    else
+      export CC="clang";
+      export CXX="clang++";
     fi
   - if [ $TRAVIS_OS_NAME == 'osx' ]; then
       brew update;
       brew install gettext irrlicht libogg;
+    else
+      export PATH="/usr/lib/ccache/:$PATH";
+      ccache -s;
     fi
   - mkdir -p _build
   - cd _build
-  #- git submodule update --init --recursive&
 
 script:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
-      cmake -DENABLE_GETTEXT=1 ..;
+    cmake -DRUN_IN_PLACE=0 -DENABLE_GETTEXT=1 ..;
       sudo make -j3 install;
+      freeminer --go -video_driver=null -enable_sound=0 -enable_clouds=0 -enable_fog=0 -autojump=1 -respawn_auto=1 -disable_anticheat=1 -random_input=1 -continuous_forward=1 --address '' --autoexit 15;
     else
       cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include;
       make -j3 package;
