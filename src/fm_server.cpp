@@ -17,7 +17,7 @@ public:
 		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
 			try {
-				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f), 1)
+				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
