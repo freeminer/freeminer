@@ -2743,7 +2743,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 
 	// Don't do anything with sqlite unless something is really saved
 	bool save_started = false;
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step));
+	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(1000 * dedicated_server_step);
 	if (!breakable)
 		m_blocks_save_last = 0;
 
