@@ -268,7 +268,7 @@ public:
 	virtual void beginSave() { return; }
 	virtual void endSave() { return; }
 
-	virtual s32 save(ModifiedState save_level, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
+	virtual s32 save(ModifiedState save_level, float dedicated_server_step, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
 
 	// Server implements these.
 	// Client leaves them as no-op.
@@ -477,7 +477,7 @@ public:
 	void beginSave();
 	void endSave();
 
-	s32 save(ModifiedState save_level, bool breakable = 0);
+	s32 save(ModifiedState save_level, float dedicated_server_step = 0.1, bool breakable = 0);
 	void listAllLoadableBlocks(std::vector<v3s16> &dst);
 	void listAllLoadedBlocks(std::vector<v3s16> &dst);
 	// Saves map seed and possibly other stuff

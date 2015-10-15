@@ -764,7 +764,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	*/
 
 	if (!m_more_threads)
-		AsyncRunMapStep(dtime, false);
+		AsyncRunMapStep(dtime, dedicated_server_step, false);
 
 	m_clients.step(dtime);
 
@@ -1271,7 +1271,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	}
 }
 
-int Server::save(float dtime, bool breakable) {
+int Server::save(float dtime, float dedicated_server_step, bool breakable) {
 	// Save map, players and auth stuff
 	int ret = 0;
 		float &counter = m_savemap_timer;
@@ -1285,7 +1285,7 @@ int Server::save(float dtime, bool breakable) {
 			ScopeProfiler sp(g_profiler, "Server: saving stuff");
 
 			// Save changed parts of map
-			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, breakable)) {
+			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, dedicated_server_step, breakable)) {
 				// partial save, will continue on next step
 				counter = g_settings->getFloat("server_map_save_interval");
 				++ret;

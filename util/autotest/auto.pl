@@ -89,6 +89,7 @@ sub init_config () {
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
         tee               => '2>&1 | tee -a ',
+        run_task          => 'run_single',
         #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
         #make_add     => '',
         #run_add       => '',
@@ -189,12 +190,12 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
         local $config->{options_display}      = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{runner}               = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
         local $options->{opt}{enable_minimap} = 0;                                                                          # too unsafe
-        commands_run('run_single');
+        commands_run($config->{run_task});
     },
 
     valgrind => sub {
         local $config->{runner} = $config->{runner} . " valgrind @_";
-        commands_run('run_single',);
+        commands_run($config->{run_task});
     },
     run_server => sub {
         sy
@@ -249,8 +250,8 @@ our $tasks = {
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
-    build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-no_build_server => 1, -cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
-    bot_tsan   => ['build_tsan', 'cgroup', 'run_single_tsan',],
+    build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
+    bot_tsan   => [{-no_build_server => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
     bot_tsannt => sub {
         $g->{build_name} .= '_nt';
         local $config->{no_build_server} = 1;
@@ -268,7 +269,6 @@ our $tasks = {
             $g->{build_name} .= '_asan';
             0;
         }, {
-            -no_build_server => 1,
             -cmake_asan      => 1,
             #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
@@ -277,26 +277,27 @@ our $tasks = {
         'make',
     ],
     bot_asan => [
+        {-no_build_server => 1,},
         'build_asan',
-        'run_single',
+        $config->{run_task},
         'symbolize',
     ],
     bot_asannta => sub {
         $g->{build_name} .= '_nta';
-        local $config->{no_build_server} = 1;
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_nothreads_a};
         commands_run('bot_asan');
     },
     bot_msan => [
-        {build_name => '_msan', -no_build_server => 1, -cmake_msan => 1,},
+        {build_name => '_msan', -cmake_msan => 1,},
         'prepare',
-        'cmake', 'make', 'run_single', 'symbolize',
+        'cmake', 'make', $config->{run_task}, 'symbolize',
     ],
-    debug     => [{-no_build_server => 1,}, 'build_debug',      'run_single',],
-    nothreads => [{-no_build_server => 1,}, \'build_nothreads', 'run_single',],    #'
+    debug     => [{-no_build_server => 1,}, 'build_debug',      $config->{run_task},],
+    nothreads => [{-no_build_server => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
             'valgrind_' . $_ => [
+                {build_name => ''},
                 #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
                 \'build_debug',                                                    #'
                 ['valgrind', '--tool=' . $_],
@@ -305,7 +306,7 @@ our $tasks = {
     ),
 
     build_minetest => [{build_name => '_minetest',}, 'prepare', {-no_build_server => 1,}, ['cmake', $config->{cmake_minetest}], 'make',],
-    bot_minetest      => ['build_minetest', 'run_single',],
+    bot_minetest      => ['build_minetest', $config->{run_task},],
     bot_minetest_tsan => sub {
         $g->{build_name} .= '_minetest';
         local $config->{no_build_server} = 1;
@@ -324,16 +325,29 @@ our $tasks = {
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
         commands_run('bot_asan');
     },
-    stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
-    clients     => [{ZZbuild_name => 'normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make', 'run_clients'],
+    #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
+    stress => sub{commands_run($_[0] || 'build_normal'); for ('run_server_auto', 'run_clients') { my $r = commands_run($_); return $r if $r; } return 0; },
+    #clients     => [{ZZbuild_name => 'normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make', 'run_clients'],
+    clients_build     => [{build_name => '_normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make'],
+    clients_run     => [{build_name => '_normal'}, 'run_clients'],
+    clients     => ['clients_build', 'clients_run'],
+
     stress_tsan => [
-        {build_name => '_tsan', -cmake_tsan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
+        { -no_build_client => 1, -no_build_server => 0}, 'build_tsan', 'cgroup',
         'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
     ],
     stress_asan => [
-        {build_name => '_asan', -cmake_asan => 1, -no_build_client => 1, -no_build_server => 0}, 'prepare', 'cmake', 'make', 'cgroup',
+        { -no_build_client => 1, -no_build_server => 0}, 'build_asan', 'cgroup',
         'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_asan => 0,}, 'clients',
     ],
+
+    stress_massif => ['clients_build', sub {
+        local $config->{run_task} = 'run_server_auto';
+        commands_run('valgrind_massif');
+    }, ['sleep', 10], 'clients_run'],
+
+    stress => ['build_normal', 'run_server_auto', ['sleep', 5], 'clients_run'],
+
     debug_mapgen => [
         #{build_name => 'debug'},
         sub {
@@ -355,14 +369,14 @@ our $tasks = {
         local $config->{go}              = undef;
         local $config->{options_bot}     = undef;
         local $config->{autoexit}        = undef;
-        for (@_) { last if commands_run($_); }
+        for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
     (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb tsan asan msan bot_asannta nothreads minetest),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
-    play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', 'run_single']],    #'
+    play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
     timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],           #'
     up => sub {
         my $cwd = Cwd::cwd();
@@ -458,6 +472,7 @@ sub commands_run(@) {
 
 sub task_start(@) {
     my $name = shift;
+    $name = $1, unshift @_, $2 if $name =~ /^(.*?)=(.*)$/;
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name}  = $name;

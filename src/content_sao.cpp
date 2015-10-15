@@ -857,6 +857,7 @@ void PlayerSAO::removingFromEnvironment()
 		/*
 		m_env->removePlayer(m_player);
 		*/
+		--m_player->refs;
 		m_player = nullptr;
 	}
 }
