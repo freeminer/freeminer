@@ -564,8 +564,14 @@ void Server::start(Address bind_addr)
 #if MINETEST_PROTO
 			<< " MINETEST_PROTO \t"
 #endif
-			<< " cpp="<<__cplusplus<<" \t"
-			<< " cores="<< Thread::getNumberOfProcessors()
+			<< " cpp=" <<__cplusplus << " \t"
+
+			<< " cores=";
+	auto cores_online = std::thread::hardware_concurrency(), cores_avail = Thread::getNumberOfProcessors();
+	if (cores_online != cores_avail)
+		actionstream << cores_online << "/";
+	actionstream << cores_avail
+
 #if __ANDROID__
 			<< " android=" << porting::android_version_sdk_int
 #endif
