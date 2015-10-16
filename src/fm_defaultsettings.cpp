@@ -90,6 +90,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fullscreen", "false");
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("workaround_window_size", "5");
+	settings->setDefault("chat_buffer_size", "6");
 
 	// Mouse
 	settings->setDefault("invert_mouse", "false");
