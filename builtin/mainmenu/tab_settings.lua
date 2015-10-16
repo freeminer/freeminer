@@ -251,12 +251,14 @@ local function formspec(tabview, name, tabdata)
 				.. getMipmapSettingIndex() .. "]" ..
 		"label[3.85,2.15;".. fgettext("Antialiasing:") .. "]"..
 		"dropdown[3.85,2.6;3.85;dd_antialiasing;" .. antialiasing[1][1] .. ";"
-				.. getAntialiasingSettingIndex() .. "]" ..
+				.. getAntialiasingSettingIndex() .. "]"
+
+	if PLATFORM ~= "Android" or core.setting_getbool("enable_shaders") then
+		tab_string = tab_string ..
 		"box[7.75,0;4,4;#999999]" ..
 		"checkbox[8,0;cb_shaders;".. fgettext("Shaders") .. ";"
 				.. dump(core.setting_getbool("enable_shaders")) .. "]"
 
-	if PLATFORM ~= "Android" then
 		tab_string = tab_string ..
 		"button[8,4.75;3.75,0.5;btn_change_keys;".. fgettext("Change keys") .. "]"
 	else
@@ -286,7 +288,7 @@ local function formspec(tabview, name, tabdata)
 				((tonumber(core.setting_get("touchscreen_threshold"))/10)+1) .. "]"
 	end
 
-	if core.setting_getbool("enable_shaders") then
+	if PLATFORM ~= "Android" or core.setting_getbool("enable_shaders") then
 		tab_string = tab_string ..
 				"checkbox[8,0.5;cb_bumpmapping;".. fgettext("Bumpmapping") .. ";"
 						.. dump(core.setting_getbool("enable_bumpmapping")) .. "]"..
@@ -308,6 +310,12 @@ local function formspec(tabview, name, tabdata)
 				"textlist[8.33,2.2;4,1;;#888888" .. fgettext("Waving Water") .. ";0;true]" ..
 				"textlist[8.33,2.7;4,1;;#888888" .. fgettext("Waving Leaves") .. ";0;true]" ..
 				"textlist[8.33,3.2;4,1;;#888888" .. fgettext("Waving Plants") .. ";0;true]"
+	end
+
+	if PLATFORM == "Android" then
+		tab_string = tab_string ..
+				"checkbox[8,3.5;cb_waving_plants;".. fgettext("Android keyboard") .. ";"
+						.. dump(core.setting_getbool("android_keyboard")) .. "]"
 	end
 
 	local get_vrange_min = core.setting_get("viewing_range_nodes_min")

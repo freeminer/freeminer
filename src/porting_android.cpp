@@ -326,7 +326,7 @@ v2u32 getDisplaySize()
 
 
 int canKeyboard() {
-	static auto v = g_settings->getS32("android_keyboard");
+	auto v = g_settings->getS32("android_keyboard");
 	if (v)
 		return v;
 	// dont work on some 4.4.2
