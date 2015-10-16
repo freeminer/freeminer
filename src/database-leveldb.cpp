@@ -52,8 +52,8 @@ Database_LevelDB::~Database_LevelDB()
 bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 {
 	if (!m_database.put(getBlockAsString(pos), data)) {
-		errorstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< pos <<": "<< m_database.get_error() << std::endl;
+		warningstream << "WARNING: saveBlock: LevelDB error saving block "
+			<< pos << ": "<< m_database.get_error() << std::endl;
 		return false;
 	}
 	m_database.del(i64tos(getBlockAsInteger(pos))); // delete old format
@@ -79,8 +79,8 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 {
 	auto ok = m_database.del(getBlockAsString(pos));
 	if (ok) {
-		errorstream << "WARNING: deleteBlock: LevelDB error deleting block "
-			<< (pos) << ": "<< m_database.get_error() << std::endl;
+		warningstream << "WARNING: deleteBlock: LevelDB error deleting block "
+			<< (pos) << ": " << m_database.get_error() << std::endl;
 		return false;
 	}
 

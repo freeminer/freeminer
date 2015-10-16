@@ -673,7 +673,7 @@ u32 Map::updateLighting(enum LightBank bank,
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
-	/*m_dout<<DTIME<<"Map::updateLighting(): "
+	/*m_dout<<"Map::updateLighting(): "
 			<<a_blocks.size()<<" blocks."<<std::endl;*/
 
 	//TimeTaker timer("updateLighting");
@@ -994,7 +994,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	}
 
 	/*PrintInfo(m_dout);
-	m_dout<<DTIME<<"Map::addNodeAndUpdate(): p=("
+	m_dout<<"Map::addNodeAndUpdate(): p=("
 			<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
 
 	/*
@@ -1093,7 +1093,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	{
 		s16 y = p.Y - 1;
 		for(;; y--){
-			//m_dout<<DTIME<<"y="<<y<<std::endl;
+			//m_dout<<"y="<<y<<std::endl;
 			v3s16 n2pos(p.X, y, p.Z);
 
 			MapNode n2;
@@ -1183,7 +1183,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	INodeDefManager *ndef = m_gamedef->ndef();
 
 	/*PrintInfo(m_dout);
-	m_dout<<DTIME<<"Map::removeNodeAndUpdate(): p=("
+	m_dout<<"Map::removeNodeAndUpdate(): p=("
 			<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;*/
 
 	bool node_under_sunlight = true;
@@ -1280,14 +1280,14 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	if(node_under_sunlight)
 	{
 		s16 ybottom = propagateSunlight(p, modified_blocks);
-		/*m_dout<<DTIME<<"Node was under sunlight. "
+		/*m_dout<<"Node was under sunlight. "
 				"Propagating sunlight";
-		m_dout<<DTIME<<" -> ybottom="<<ybottom<<std::endl;*/
+		m_dout<<" -> ybottom="<<ybottom<<std::endl;*/
 		s16 y = p.Y;
 		for(; y >= ybottom; y--)
 		{
 			v3s16 p2(p.X, y, p.Z);
-			/*m_dout<<DTIME<<"lighting neighbors of node ("
+			/*m_dout<<"lighting neighbors of node ("
 					<<p2.X<<","<<p2.Y<<","<<p2.Z<<")"
 					<<std::endl;*/
 			lightNeighbors(LIGHTBANK_DAY, p2, modified_blocks);
@@ -2124,7 +2124,7 @@ NodeMetadata *Map::getNodeMetadata(v3s16 p)
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
-		infostream<<"WARNING: Map::getNodeMetadata(): Block not found"
+		warningstream<<"Map::getNodeMetadata(): Block not found"
 				<<std::endl;
 		return NULL;
 	}
@@ -2143,7 +2143,7 @@ bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
-		infostream<<"WARNING: Map::setNodeMetadata(): Block not found"
+		warningstream<<"Map::setNodeMetadata(): Block not found"
 				<<std::endl;
 		return false;
 	}
@@ -2158,7 +2158,7 @@ void Map::removeNodeMetadata(v3s16 p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(block == NULL)
 	{
-		infostream<<"WARNING: Map::removeNodeMetadata(): Block not found"
+		warningstream<<"Map::removeNodeMetadata(): Block not found"
 				<<std::endl;
 		return;
 	}
@@ -2176,7 +2176,7 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
-		infostream<<"WARNING: Map::getNodeTimer(): Block not found"
+		warningstream<<"Map::getNodeTimer(): Block not found"
 				<<std::endl;
 		return NodeTimer();
 	}
@@ -2195,7 +2195,7 @@ void Map::setNodeTimer(v3s16 p, NodeTimer t)
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
-		infostream<<"WARNING: Map::setNodeTimer(): Block not found"
+		warningstream<<"Map::setNodeTimer(): Block not found"
 				<<std::endl;
 		return;
 	}
@@ -2209,7 +2209,7 @@ void Map::removeNodeTimer(v3s16 p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(block == NULL)
 	{
-		infostream<<"WARNING: Map::removeNodeTimer(): Block not found"
+		warningstream<<"Map::removeNodeTimer(): Block not found"
 				<<std::endl;
 		return;
 	}
@@ -2277,7 +2277,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 							  <<" Using default settings."<<std::endl;
 				}
 				catch(FileNotGoodException &e){
-					infostream<<"WARNING: Could not load map metadata"
+					warningstream<<"Could not load map metadata"
 							//<<" Disabling chunk-based generator."
 							<<std::endl;
 					//m_chunksize = 0;
@@ -2301,10 +2301,10 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 	}
 	catch(std::exception &e)
 	{
-		actionstream<<"WARNING: ServerMap: Failed to load map from "<<savedir
+		warningstream<<"ServerMap: Failed to load map from "<<savedir
 				<<", exception: "<<e.what()<<std::endl;
-		actionstream<<"Please remove the map or fix it."<<std::endl;
-		actionstream<<"WARNING: Map saving will be disabled."<<std::endl;
+		infostream<<"Please remove the map or fix it."<<std::endl;
+		warningstream<<"Map saving will be disabled."<<std::endl;
 	}
 
 	infostream<<"Initializing new map."<<std::endl;
@@ -2713,7 +2713,7 @@ void ServerMap::createDirs(std::string path)
 {
 	if(fs::CreateAllDirs(path) == false)
 	{
-		errorstream<<DTIME<<"ServerMap: Failed to create directory "
+		warningstream<<"ServerMap: Failed to create directory "
 				<<"\""<<path<<"\""<<std::endl;
 		throw BaseException("ServerMap failed to create directory");
 	}
@@ -2723,7 +2723,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 {
 	DSTACK(__FUNCTION_NAME);
 	if(m_map_saving_enabled == false) {
-		infostream<<"WARNING: Not saving map, saving disabled."<<std::endl;
+		warningstream<<"Not saving map, saving disabled."<<std::endl;
 		return 0;
 	}
 
@@ -2934,7 +2934,7 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 	v3s16 p3d = block->getPos();
 
 	if (!block->isGenerated()) {
-		//infostream << "WARNING: saveBlock: Not writing not generated block p="<< p3d << std::endl;
+		//warningstream << "saveBlock: Not writing not generated block p="<< p3d << std::endl;
 		return true;
 	}
 

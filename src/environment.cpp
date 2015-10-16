@@ -1423,7 +1423,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 /*
 		if(m_active_block_abm_last) {
-			infostream<<"WARNING: active block modifiers ("
+			warningstream<<"WARNING: active block modifiers ("
 					<<calls<<"/"<<m_active_blocks.m_list.size()<<" to "<<m_active_block_abm_last<<") took "
 					<<porting::getTimeMs()-end_ms + u32(1000 * m_recommended_send_interval)<<"ms "
 					<<std::endl;
@@ -2371,7 +2371,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 					// reason. Unsuccessful attempts have been made to find
 					// said reason.
 					if(id && block->m_static_objects.m_active.find(id) != block->m_static_objects.m_active.end()){
-						infostream<<"ServerEnv: WARNING: Performing hack #83274"
+						warningstream<<"ServerEnv: Performing hack #83274"
 								<<std::endl;
 						block->m_static_objects.remove(id);
 					}

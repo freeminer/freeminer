@@ -2128,6 +2128,7 @@ void * ConnectionReceiveThread::run()
 #endif
 		END_DEBUG_EXCEPTION_HANDLER(errorstream);
 	}
+
 	PROFILE(g_profiler->remove(ThreadIdentifier.str()));
 	return NULL;
 }

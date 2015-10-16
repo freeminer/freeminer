@@ -1767,7 +1767,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		Catch invalid actions
 	*/
 	else {
-		infostream << "WARNING: Server: Invalid action "
+		warningstream << "Server: Invalid action "
 				<< action << std::endl;
 	}
 }
