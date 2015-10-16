@@ -741,6 +741,6 @@ void *EmergeThread::run()
 		errorstream << "emerge: exception at " << pos << " : " << e.what() << std::endl;
 	}
 
-	END_DEBUG_EXCEPTION_HANDLER(errorstream)
+	END_DEBUG_EXCEPTION_HANDLER
 	return NULL;
 }
