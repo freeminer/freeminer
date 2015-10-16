@@ -79,6 +79,13 @@ static const irr::u16 UTF16_LO_SURROGATE = 0xDC00;
 #define UTF16_IS_SURROGATE_HI(c)	(((c) & 0xFC00) == 0xD800)
 #define UTF16_IS_SURROGATE_LO(c)	(((c) & 0xFC00) == 0xDC00)
 
+// WTF
+#if __ANDROID__
+#	define TO_STRING core::stringc
+#else
+#	define TO_STRING std::to_string
+#endif
+
 
 namespace irr
 {
@@ -2075,7 +2082,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (short c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -2085,7 +2092,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (unsigned short c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -2096,7 +2103,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (int c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -2106,7 +2113,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (unsigned int c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 #endif
@@ -2117,7 +2124,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (long c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -2127,7 +2134,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (unsigned long c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -2137,7 +2144,7 @@ public:
 	//! \return A reference to our current string.
 	ustring16<TAlloc>& operator += (double c)
 	{
-		append(std::to_string(c));
+		append(TO_STRING(c));
 		return *this;
 	}
 
@@ -3397,7 +3404,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const short right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3406,7 +3413,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const short ri
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const short left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3417,7 +3424,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned short right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3426,7 +3433,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned short left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3437,7 +3444,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const int right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3446,7 +3453,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const int righ
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const int left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3457,7 +3464,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned int right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3466,7 +3473,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned int left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3477,7 +3484,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const long right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3486,7 +3493,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const long rig
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const long left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3497,7 +3504,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned long right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3506,7 +3513,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const unsigned
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned long left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3517,7 +3524,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const float right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3526,7 +3533,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const float ri
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const float left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3537,7 +3544,7 @@ template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const double right)
 {
 	ustring16<TAlloc> ret(left);
-	ret += std::to_string(right);
+	ret += TO_STRING(right);
 	return ret;
 }
 
@@ -3546,7 +3553,7 @@ inline ustring16<TAlloc> operator+(const ustring16<TAlloc>& left, const double r
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const double left, const ustring16<TAlloc>& right)
 {
-	ustring16<TAlloc> ret((std::to_string(left)));
+	ustring16<TAlloc> ret((TO_STRING(left)));
 	ret += right;
 	return ret;
 }
@@ -3694,7 +3701,7 @@ inline ustring16<TAlloc> operator+(const uchar32_t left, ustring16<TAlloc>&& rig
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const short right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3703,7 +3710,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const short right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const short left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3712,7 +3719,7 @@ inline ustring16<TAlloc> operator+(const short left, ustring16<TAlloc>&& right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned short right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3721,7 +3728,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned shor
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned short left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3730,7 +3737,7 @@ inline ustring16<TAlloc> operator+(const unsigned short left, ustring16<TAlloc>&
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const int right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3739,7 +3746,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const int right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const int left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3748,7 +3755,7 @@ inline ustring16<TAlloc> operator+(const int left, ustring16<TAlloc>&& right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned int right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3757,7 +3764,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned int 
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned int left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3766,7 +3773,7 @@ inline ustring16<TAlloc> operator+(const unsigned int left, ustring16<TAlloc>&& 
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const long right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3775,7 +3782,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const long right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const long left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3784,7 +3791,7 @@ inline ustring16<TAlloc> operator+(const long left, ustring16<TAlloc>&& right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned long right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3793,7 +3800,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const unsigned long
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const unsigned long left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3802,7 +3809,7 @@ inline ustring16<TAlloc> operator+(const unsigned long left, ustring16<TAlloc>&&
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const float right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3811,7 +3818,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const float right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const float left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 
@@ -3820,7 +3827,7 @@ inline ustring16<TAlloc> operator+(const float left, ustring16<TAlloc>&& right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const double right)
 {
-	left.append(std::to_string(right));
+	left.append(TO_STRING(right));
 	return std::move(left);
 }
 
@@ -3829,7 +3836,7 @@ inline ustring16<TAlloc> operator+(ustring16<TAlloc>&& left, const double right)
 template <typename TAlloc>
 inline ustring16<TAlloc> operator+(const double left, ustring16<TAlloc>&& right)
 {
-	right.insert(std::to_string(left), 0);
+	right.insert(TO_STRING(left), 0);
 	return std::move(right);
 }
 #endif

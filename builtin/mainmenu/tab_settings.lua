@@ -314,7 +314,7 @@ local function formspec(tabview, name, tabdata)
 
 	if PLATFORM == "Android" then
 		tab_string = tab_string ..
-				"checkbox[8,3.5;cb_waving_plants;".. fgettext("Android keyboard") .. ";"
+				"checkbox[8,3.5;cb_android_keyboard;".. fgettext("Android keyboard") .. ";"
 						.. dump(core.setting_getbool("android_keyboard")) .. "]"
 	end
 
@@ -360,6 +360,13 @@ end
 
 --------------------------------------------------------------------------------
 local function handle_settings_buttons(this, fields, tabname, tabdata)
+
+	if fields["cb_android_keyboard"] then
+		core.setting_set("android_keyboard", fields["cb_android_keyboard"])
+		return true
+	end
+
+
 	if fields["cb_smooth_lighting"] then
 		core.setting_set("smooth_lighting", fields["cb_smooth_lighting"])
 		return true

@@ -72,7 +72,7 @@ COMPILER_VERSION = 4.9
 HAVE_LEVELDB = 1
 USE_LUAJIT = 1
 USE_ENET = 1
-APP_STL = libc++       # gnustl libcxx|libc++ stlport
+APP_STL = gnustl       # gnustl libcxx|libc++ stlport
 
 ################################################################################
 # toolchain config for little endian mips
