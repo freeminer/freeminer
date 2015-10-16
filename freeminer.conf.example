@@ -229,6 +229,9 @@
 #    In-game chat console background alpha (opaqueness, between 0 and 255)
 #console_alpha = 200
 
+#    In-game chat buffer size (number of messages to show)
+#chat_buffer_size = 6
+
 #    Selection box border color (R,G,B)
 #selectionbox_color = (0,0,0)
 
