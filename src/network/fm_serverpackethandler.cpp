@@ -337,7 +337,9 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 		if(given_password != checkpwd){
-			actionstream<<"Server: "<<playername<<" supplied wrong password" <<std::endl;
+			actionstream<<"Server: "<<playername<<" supplied wrong password"
+				<< " at " << addr_s
+				<< std::endl;
 			DenyAccess(peer_id, "Wrong password");
 			return;
 		}
