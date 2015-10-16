@@ -113,7 +113,7 @@ int ModApiServer::l_get_player_ip(lua_State *L)
 	}
 	catch(con::PeerNotFoundException) // unlikely
 	{
-		dstream << __FUNCTION_NAME << ": peer was not found" << std::endl;
+		dstream << FUNCTION_NAME << ": peer was not found" << std::endl;
 		lua_pushnil(L); // error
 		return 1;
 	}
@@ -139,7 +139,7 @@ int ModApiServer::l_get_player_information(lua_State *L)
 	}
 	catch(con::PeerNotFoundException) // unlikely
 	{
-		dstream << __FUNCTION_NAME << ": peer was not found" << std::endl;
+		dstream << FUNCTION_NAME << ": peer was not found" << std::endl;
 		lua_pushnil(L); // error
 		return 1;
 	}
@@ -153,7 +153,7 @@ int ModApiServer::l_get_player_information(lua_State *L)
 
 #define ERET(code)                                                             \
 	if (!(code)) {                                                             \
-		dstream << __FUNCTION_NAME << ": peer was not found" << std::endl;     \
+		dstream << FUNCTION_NAME << ": peer was not found" << std::endl;     \
 		lua_pushnil(L); /* error */                                            \
 		return 1;                                                              \
 	}
@@ -284,7 +284,7 @@ int ModApiServer::l_ban_player(lua_State *L)
 	}
 	catch(con::PeerNotFoundException) // unlikely
 	{
-		dstream << __FUNCTION_NAME << ": peer was not found" << std::endl;
+		dstream << FUNCTION_NAME << ": peer was not found" << std::endl;
 		lua_pushboolean(L, false); // error
 		return 1;
 	}

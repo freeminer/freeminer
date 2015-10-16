@@ -73,7 +73,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	//TimeTaker timer("transformLiquidsReal()");
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();

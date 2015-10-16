@@ -214,10 +214,9 @@ public:
 
 	void *run()
 	{
-
 		porting::setThreadPriority(30);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		while (!stopRequested()) {

@@ -49,7 +49,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 void Server::ProcessData(NetworkPacket *pkt)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	// Environment is locked first.
 	//MutexAutoLock envlock(m_env_mutex);
 

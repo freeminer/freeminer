@@ -10,7 +10,7 @@ public:
 	void * run() {
 		reg("Map", 15);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		auto time = porting::getTimeMs();
@@ -34,7 +34,7 @@ public:
 			}
 			time = time_now;
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -50,7 +50,7 @@ public:
 	void * run() {
 		reg("SendBlocks", 30);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		auto time = porting::getTimeMs();
@@ -73,7 +73,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -90,7 +90,7 @@ public:
 	void * run() {
 		reg("Liquid", 4);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 1000;
@@ -111,7 +111,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -127,7 +127,7 @@ public:
 	void * run() {
 		reg("Env", 20);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 1000;
@@ -151,7 +151,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -167,7 +167,7 @@ public:
 	void * run() {
 		reg("Abm", 20);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 10000;
@@ -191,13 +191,13 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
 
 int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async) {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	TimeTaker timer_step("Server map step");
 	g_profiler->add("Server::AsyncRunMapStep (num)", 1);

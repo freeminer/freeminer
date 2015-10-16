@@ -196,7 +196,7 @@ void Client::sendChangePassword(const std::string &oldpassword,
 
 void Client::sendDamage(u8 damage)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOSERVER_DAMAGE, 1);
 	PACK(TOSERVER_DAMAGE_VALUE, damage);
 
@@ -206,7 +206,7 @@ void Client::sendDamage(u8 damage)
 
 void Client::sendBreath(u16 breath)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOSERVER_BREATH, 1);
 	PACK(TOSERVER_BREATH_VALUE, breath);
@@ -216,7 +216,7 @@ void Client::sendBreath(u16 breath)
 
 void Client::sendRespawn()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOSERVER_RESPAWN, 0);
 	// Send as reliable
@@ -225,7 +225,7 @@ void Client::sendRespawn()
 
 void Client::sendReady()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOSERVER_CLIENT_READY, 5);
 	PACK(TOSERVER_CLIENT_READY_VERSION_MAJOR, VERSION_MAJOR);

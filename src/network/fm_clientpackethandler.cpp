@@ -46,7 +46,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	sender_peer_id given to this shall be quaranteed to be a valid peer
 */
 void Client::ProcessData(NetworkPacket *pkt) {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	ScopeProfiler sp(g_profiler, "Client::ProcessData");
 

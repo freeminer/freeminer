@@ -88,7 +88,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 
 unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	auto lock = m_queue.lock_unique_rec();
 	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
@@ -310,7 +310,7 @@ void Client::connect(Address address,
 		const std::string &address_name,
 		bool is_local_server)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	initLocalMapSaving(address, address_name, is_local_server);
 
@@ -319,7 +319,7 @@ void Client::connect(Address address,
 
 void Client::step(float dtime)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	m_uptime += dtime;
 
@@ -850,7 +850,7 @@ void Client::initLocalMapSaving(const Address &address,
 
 void Client::ReceiveAll()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	auto end_ms = porting::getTimeMs() + 10;
 	for(;;)
 	{
@@ -881,7 +881,7 @@ void Client::ReceiveAll()
 
 bool Client::Receive()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	NetworkPacket pkt;
 	if (!m_con.Receive(&pkt))
 		return false;
@@ -904,7 +904,7 @@ inline void Client::handleCommand(NetworkPacket* pkt)
 */
 void Client::ProcessData(NetworkPacket *pkt)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	ToClientCommand command = (ToClientCommand) pkt->getCommand();
 	u32 sender_peer_id = pkt->getPeerId();
@@ -1275,7 +1275,7 @@ void Client::sendChangePassword(const std::string &oldpassword,
 
 void Client::sendDamage(u8 damage)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_DAMAGE, sizeof(u8));
 	pkt << damage;
@@ -1284,7 +1284,7 @@ void Client::sendDamage(u8 damage)
 
 void Client::sendBreath(u16 breath)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_BREATH, sizeof(u16));
 	pkt << breath;
@@ -1293,7 +1293,7 @@ void Client::sendBreath(u16 breath)
 
 void Client::sendRespawn()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_RESPAWN, 0);
 	Send(&pkt);
@@ -1301,7 +1301,7 @@ void Client::sendRespawn()
 
 void Client::sendReady()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_CLIENT_READY,
 			1 + 1 + 1 + 1 + 2 + sizeof(char) * strlen(g_version_hash));

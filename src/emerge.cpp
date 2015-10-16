@@ -655,7 +655,7 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 
 void *EmergeThread::run()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	v3s16 pos;

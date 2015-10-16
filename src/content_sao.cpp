@@ -411,7 +411,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 std::string LuaEntitySAO::getStaticData()
 {
 /*
-	verbosestream<<__FUNCTION_NAME<<std::endl;
+	verbosestream<<FUNCTION_NAME<<std::endl;
 */
 	std::ostringstream os(std::ios::binary);
 	// version

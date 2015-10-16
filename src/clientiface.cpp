@@ -117,7 +117,7 @@ int RemoteClient::GetNextBlocks (
 		double m_uptime,
 		std::vector<PrioritySortedBlockTransfer> &dest)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	auto lock = lock_unique_rec();
 	if (!lock->owns_lock())
