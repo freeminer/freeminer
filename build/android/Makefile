@@ -68,10 +68,11 @@ TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
 TARGET_ARCH = armv7
 CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
-#COMPILER_VERSION = clang3.5
+#COMPILER_VERSION = clang3.6
 HAVE_LEVELDB = 1
 USE_LUAJIT = 1
 USE_ENET = 1
+APP_STL = libc++       # gnustl libcxx|libc++ stlport
 
 ################################################################################
 # toolchain config for little endian mips
@@ -130,7 +131,9 @@ IRRLICHT_DIR = $(ROOT)/deps/irrlicht/
 IRRLICHT_LIB = $(IRRLICHT_DIR)lib/Android/libIrrlicht.a
 IRRLICHT_TIMESTAMP = $(IRRLICHT_DIR)timestamp
 IRRLICHT_TIMESTAMP_INT = $(ROOT)/deps/irrlicht_timestamp
-IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
+#IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
+IRRLICHT_URL_GIT = https://github.com/zaki/irrlicht.git
+IRRLICHT_GIT_BRANCH = ogl-es
 
 OPENSSL_VERSION = 1.0.2d
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
@@ -140,7 +143,7 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.44.0
+CURL_VERSION = 7.45.0
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
@@ -358,6 +361,7 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-openssl;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	CC=${CROSS_PREFIX}gcc ./Configure android-${TARGET_ARCH} no-idea no-seed -no-sha0 -DL_ENDIAN;\
@@ -406,6 +410,7 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-leveldb;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -414,7 +419,7 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
-	$(MAKE) -s || exit 1;                                                      \
+	$(MAKE) || exit 1; \
 	touch ${LEVELDB_TIMESTAMP};                                                \
 	touch ${LEVELDB_TIMESTAMP_INT};                                            \
 	$(RM) -rf $${TOOLCHAIN};                                                   \
@@ -513,6 +518,7 @@ $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-iconv;                            \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -521,7 +527,7 @@ $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 	./configure --host=${TARGET_HOST} || exit 1;                               \
 	sed -i 's/LIBICONV_VERSION_INFO) /LIBICONV_VERSION_INFO) -avoid-version /g' lib/Makefile; \
 	grep "iconv_LDFLAGS" src/Makefile;                                         \
-	$(MAKE) -s || exit 1;                                                      \
+	$(MAKE) || exit 1; \
 	touch ${ICONV_TIMESTAMP};                                                  \
 	touch ${ICONV_TIMESTAMP_INT};                                              \
 	rm -rf ${TOOLCHAIN};                                                       \
@@ -542,8 +548,10 @@ irrlicht_download :
 		echo "irrlicht sources missing, downloading...";                       \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd deps;                                                               \
-		svn co ${IRRLICHT_URL_SVN} irrlicht || exit 1;                         \
+		#svn co ${IRRLICHT_URL_SVN} irrlicht || exit 1;                         \
+		git clone --recursive --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
 		cd irrlicht;                                                           \
+		mkdir -p lib/Android; \
 		patch -p1 < ../../irrlicht-touchcount.patch || exit 1;                 \
 		patch -p1 < ../../irrlicht-back_button.patch || exit 1;                \
 		patch -p1 < ../../irrlicht-texturehack.patch || exit 1;                \
@@ -626,6 +634,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-curl;                             \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -636,7 +645,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} -L${OPENSSL_DIR} ${TARGET_LDFLAGS_ADDON}";     \
 	./configure --host=${TARGET_HOST} --disable-shared --enable-static --with-ssl --enable-ipv6;  \
-	$(MAKE) -s || exit 1;                                                      \
+	$(MAKE) || exit 1; \
 	touch ${CURL_TIMESTAMP};                                                   \
 	touch ${CURL_TIMESTAMP_INT};                                               \
 	$(RM) -rf $${TOOLCHAIN};                                                   \
@@ -699,6 +708,7 @@ $(GMP_LIB): $(GMP_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-gmp;                              \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -855,6 +865,7 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-msgpack;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -864,7 +875,7 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
 	cmake -DMSGPACK_CXX11=ON .;                                                \
-	$(MAKE) -j${PARALLEL} -s || exit 1;                                        \
+	$(MAKE) -j${PARALLEL} || exit 1; \
 	touch ${MSGPACK_TIMESTAMP};                                                \
 	touch ${MSGPACK_TIMESTAMP_INT};                                            \
 	else                                                                       \
@@ -914,6 +925,7 @@ $(GETTEXT_LIB): $(GETTEXT_TIMESTAMP)
 	#export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-gettext;                            \
 	#${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	#--stl=${APP_STL} \
 	#--install-dir=$${TOOLCHAIN};                                               \
 	#export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	#export CXX=${CROSS_PREFIX}g++;                                             \
@@ -972,6 +984,7 @@ $(LUAJIT_LIB): $(LUAJIT_TIMESTAMP)
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-luajit; \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION} \
+	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN} --platform=${APP_PLATFORM}; \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}"; \
 	export CROSS=${CROSS_PREFIX}; \
