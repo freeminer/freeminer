@@ -38,7 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _MSC_VER
 void init_gettext(const char *path, const std::string &configured_language,
-		int argc, char** argv);
+		int argc, const char *argv[]);
 #else
 void init_gettext(const char *path, const std::string &configured_language);
 #endif
