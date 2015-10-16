@@ -56,7 +56,8 @@ BEGIN {
 
 our $root_path = $script_path . '../../';
 1 while $root_path =~ s{[^/\.]+/\.\./}{}g;
-my $logdir_add = (@ARGV == 1 and $ARGV[0] =~ /^\w+$/) ? '.' . $ARGV[0] : '';
+my @ar = grep {!/^-/} @ARGV;
+my $logdir_add = (@ar == 1 and $ar[0] =~ /^\w+$/) ? '.' . $ar[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 
