@@ -43,7 +43,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiPasswordChange.h"
 #include "guiVolumeChange.h"
 #include "hud.h"
-#include "logoutputbuffer.h"
 #include "mainmenumanager.h"
 #include "mapblock.h"
 #include "nodedef.h"         // Needed for determining pointing to nodes
@@ -1196,7 +1195,7 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 		ChatBackend &chat_backend, gui::IGUIStaticText *guitext_chat)
 {
 	// Add chat log output for errors to be shown in chat
-	static LogOutputBuffer chat_log_error_buf(LMT_ERROR);
+	static LogOutputBuffer chat_log_error_buf(g_logger, LL_ERROR);
 
 	// Get new messages from error log buffer
 	while (!chat_log_error_buf.empty()) {
@@ -2887,7 +2886,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 		// Print debug stacks
 		dstream << "-----------------------------------------"
 		        << std::endl;
-		dstream << DTIME << "Printing debug stacks:" << std::endl;
+		dstream << "Printing debug stacks:" << std::endl;
 		dstream << "-----------------------------------------"
 		        << std::endl;
 		debug_stacks_print();
