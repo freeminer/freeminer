@@ -3,7 +3,7 @@
 #include <porting.h>
 
 thread_pool::thread_pool(const std::string &name) :
-	name(name) {
+	m_name(name) {
 	requeststop = false;
 };
 
@@ -12,7 +12,7 @@ thread_pool::~thread_pool() {
 };
 
 void thread_pool::func() {
-	reg(name);
+	reg(m_name);
 	run();
 };
 

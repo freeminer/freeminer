@@ -37,7 +37,7 @@ public:
 	virtual void * run() = 0;
 	bool isCurrentThread();
 protected:
-	std::string name;
+	std::string m_name;
 };
 
 
