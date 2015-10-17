@@ -303,7 +303,7 @@ public:
 	{
 
 #ifndef SERVER
-		m_main_thread = get_current_thread_id();
+		m_main_thread = thr_get_current_thread_id();
 #endif
 		clear();
 	}
@@ -379,7 +379,7 @@ public:
 				<<name<<"\""<<std::endl;
 
 		// This is not thread-safe
-		sanity_check(get_current_thread_id() == m_main_thread);
+		sanity_check(thr_is_current_thread(m_main_thread));
 
 		// Skip if already in cache
 		ClientCached *cc = NULL;
@@ -534,7 +534,7 @@ public:
 		if(cc)
 			return cc;
 
-		if(get_current_thread_id() == m_main_thread)
+		if(thr_is_current_thread(m_main_thread))
 		{
 			return createClientCachedDirect(name, gamedef);
 		}
