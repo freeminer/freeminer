@@ -125,7 +125,7 @@ enable_local_map_saving (Saving map received by server) bool false
 enable_remote_media_server (Connect to external media server) bool true
 
 #    URL to the server list displayed in the Multiplayer Tab.
-serverlist_url (Serverlist URL) string servers.minetest.net
+serverlist_url (Serverlist URL) string servers.freeminer.org
 
 #    File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab.
 serverlist_file (Serverlist file) string favoriteservers.txt
@@ -431,23 +431,23 @@ show_debug (Show debug info) bool false
 [Server / Singleplayer]
 
 #    Name of the server.
-server_name (Server name) string Minetest server
+server_name (Server name) string freeminer server
 
 #    Description of server.
 server_description (Server description) string mine here
 
 #    Domain name of server.
-server_address (Server address) string game.minetest.net
+server_address (Server address) string game.freeminer.org
 
 #    Homepage of server.
-server_url (Server URL) string http://minetest.net
+server_url (Server URL) string http://freeminer.org
 
 #    Automaticaly report to masterserver.
 server_announce (Announce server) bool false
 
 #    Announce to this masterserver.
-#    If you want to announce your ipv6 address - use  serverlist_url = v6.servers.minetest.net.
-serverlist_url (Serverlist URL) string servers.minetest.net
+#    If you want to announce your ipv6 address - use  serverlist_url = v6.servers.freeminer.org.
+serverlist_url (Serverlist URL) string servers.freeminer.org
 
 [*Network]
 
@@ -491,10 +491,10 @@ max_packets_per_iteration (Max. packets per iteration) int 1024
 [*Game]
 
 #    Default game (default when creating a new world).
-default_game (Default game) string minetest
+default_game (Default game) string default
 
 #    Message of the Day.
-motd (Message of the day) string Welcome to this awesome Minetest server!
+motd (Message of the day) string Welcome to this awesome freeminer server!
 
 #    Maximum number of players connected simultaneously.
 max_users (Maximum users) int 15
@@ -650,7 +650,7 @@ liquid_update (Liquid update tick) float 1.0
 
 #    Name of map generator to be used when creating a new world.
 #    Currently supported: v5, v6, v7, singlenode.
-mg_name (Mapgen name) enum v6 v5,v6,v7,singlenode
+mg_name (Mapgen name) enum v6 v5,v6,indev,v7,math,singlenode
 
 #    Water surface level of map
 water_level (Water level) int 1
