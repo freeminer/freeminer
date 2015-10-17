@@ -66,7 +66,7 @@ void * thread_pool::run() {
 	return nullptr;
 };
 
-bool thread_pool::isSameThread() {
+bool thread_pool::isCurrentThread() {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	for (auto & worker : workers)
 		if (thread_me == std::hash<std::thread::id>()(worker.get_id()))
