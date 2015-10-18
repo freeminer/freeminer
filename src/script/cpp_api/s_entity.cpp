@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_converter.h"
 #include "common/c_content.h"
 
-bool ScriptApiEntity::luaentity_Add(u16 id, const char *name)
+bool ScriptApiEntity::luaentity_Add(u16 id, const char *name, bool force_usage)
 {
 	SCRIPTAPI_PRECHECKHEADER
 

@@ -129,6 +129,8 @@ NEXT_LIQUID:
 		content_t melt_kind = CONTENT_IGNORE;
 		content_t melt_kind_flowing = CONTENT_IGNORE;
 		//s8 viscosity = 0;
+
+		bool fall_down;
 		/*
 			Collect information about the environment, start from self
 		 */
@@ -341,6 +343,10 @@ NEXT_LIQUID:
 		if (neighbors[D_BOTTOM].liquid) {
 			liquid_levels_want[D_BOTTOM] = level_avg > level_max ? level_avg : total_level > level_max ? level_max : total_level;
 			total_level -= liquid_levels_want[D_BOTTOM];
+
+			if (!liquid_levels[D_BOTTOM]) {
+				fall_down = true;
+			}
 			//if (pressure && total_level && liquid_levels_want[D_BOTTOM] < level_max_compressed) {
 			//	++liquid_levels_want[D_BOTTOM];
 			//	--total_level;
@@ -689,6 +695,10 @@ NEXT_LIQUID:
 			if (total_level < level_max * can_liquid)
 				must_reflow.push_back(neighbors[i].pos);
 
+		}
+
+		if (fall_down) {
+			m_server->getEnv().nodeUpdate(neighbors[D_BOTTOM].pos, 2);
 		}
 
 #if LIQUID_DEBUG

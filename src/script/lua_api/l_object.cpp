@@ -99,7 +99,10 @@ LuaEntitySAO* ObjectRef::getluaobject(ObjectRef *ref)
 	ServerActiveObject *obj = getobject(ref);
 	if (obj == NULL)
 		return NULL;
-	if (obj->getType() != ACTIVEOBJECT_TYPE_LUAENTITY)
+	if (obj->getType() != ACTIVEOBJECT_TYPE_LUAENTITY &&
+		obj->getType() != ACTIVEOBJECT_TYPE_LUACREATURE &&
+		obj->getType() != ACTIVEOBJECT_TYPE_LUAITEM &&
+		obj->getType() != ACTIVEOBJECT_TYPE_LUAFALLING)
 		return NULL;
 	return (LuaEntitySAO*)obj;
 }

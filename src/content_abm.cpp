@@ -178,7 +178,7 @@ public:
 			}
 			n.freeze_melt(ndef, +1);
 			map->setNode(p, n);
-			//env->getScriptIface()->node_falling_update(p); //enable after making FAST nodeupdate
+			env->nodeUpdate(p, 2); //enable after making FAST nodeupdate
 		}
 	}
 };
@@ -213,7 +213,7 @@ public:
 		if (hot > melt) {
 			n.freeze_melt(ndef, +1);
 			map->setNode(p, n);
-			env->getScriptIface()->node_falling_update(p);
+			env->nodeUpdate(p, 2);
 		}
 	}
 };

@@ -1078,4 +1078,5 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
 	API_FCT(get_us_time);
+	API_FCT(spawn_falling_node);
 }

@@ -583,6 +583,7 @@ add_custom_target(GenerateVersion
 	-P "${CMAKE_SOURCE_DIR}/cmake/Modules/GenerateVersion.cmake"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
+add_subdirectory(contrib)
 
 add_subdirectory(threading)
 add_subdirectory(network)
@@ -687,6 +688,7 @@ set(common_SRCS
 	version.cpp
 	voxel.cpp
 	voxelalgorithms.cpp
+	${contrib_SRCS}
 	${common_network_SRCS}
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}

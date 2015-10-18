@@ -183,6 +183,9 @@ private:
 	// get us precision time
 	static int l_get_us_time(lua_State *L);
 
+	/* Nrz contrib */
+	static int l_spawn_falling_node(lua_State *L);
+
 public:
 	static void Initialize(lua_State *L, int top);
 };

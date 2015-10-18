@@ -1669,6 +1669,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 				m_script->node_on_dig(p_under, n, playersao);
 				stat.add("dig", player->getName());
 				stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
+					m_env->nodeUpdate(p_under);
 			}
 
 			v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_under, BS));
@@ -1708,7 +1709,11 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 
 			// Do stuff
 			pointed_object->rightClick(playersao);
+
+			m_env->nodeUpdate(p_under);
 		}
+
+
 		else if (m_script->item_OnPlace(
 				item, playersao, pointed)) {
 			// Placement was handled in lua

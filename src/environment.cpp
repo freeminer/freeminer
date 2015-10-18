@@ -43,6 +43,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "event.h"
 #endif
+
+#include "contrib/fallingsao.h"
+#include "contrib/itemsao.h"
+
 #include "server.h"
 #include "daynightratio.h"
 #include "map.h"
@@ -358,6 +362,15 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;
 	if (!m_players_storage.db)
 		errorstream << "Cant open players storage: "<< m_players_storage.error << std::endl;
+
+	// Init custom SAO
+	v3f nullpos;
+	//epixel::Creature* c = new epixel::Creature(NULL, nullpos, "", "");
+	epixel::ItemSAO* i = new epixel::ItemSAO(NULL, nullpos, "", "");
+	epixel::FallingSAO* f = new epixel::FallingSAO(NULL, nullpos, "", "");
+	//delete c;
+	delete i;
+	delete f;
 
 }
 
@@ -1764,7 +1777,7 @@ void ServerEnvironment::getRemovedActiveObjects(Player *player, s16 radius,
 			i != current_objects_vector.end(); ++i)
 	{
 		u16 id = *i;
-		ServerActiveObject *object = getActiveObject(id);
+		ServerActiveObject *object = getActiveObject(id, true);
 
 		if (object == NULL) {
 			//infostream<<"ServerEnvironment::getRemovedActiveObjects():"

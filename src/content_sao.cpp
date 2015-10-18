@@ -297,7 +297,8 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		}
 	}
 
-	if(m_registered){
+	if(m_registered && getType() < ACTIVEOBJECT_TYPE_LUACREATURE
+			&& getType() > ACTIVEOBJECT_TYPE_LUAFALLING) {
 		m_env->getScriptIface()->luaentity_Step(m_id, dtime);
 	}
 
