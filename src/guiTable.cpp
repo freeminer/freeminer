@@ -564,25 +564,47 @@ s32 GUITable::getSelected() const
 
 void GUITable::setSelected(s32 index)
 {
+	s32 old_selected = m_selected;
+
 	m_selected = -1;
 	m_sel_column = 0;
 	m_sel_doubleclick = false;
 
-	--index;
+	--index; // Switch from 1-based indexing to 0-based indexing
 
 	s32 rowcount = m_rows.size();
-
-	if (index >= rowcount)
+	if (rowcount == 0) {
+		return;
+	} else if (index < 0) {
+		index = 0;
+	} else if (index >= rowcount) {
 		index = rowcount - 1;
-	while (index >= 0 && m_rows[index].visible_index < 0)
-		--index;
+	}
+
+	// If the selected row is not visible, open its ancestors to make it visible
+	bool selection_invisible = m_rows[index].visible_index < 0;
+	if (selection_invisible) {
+		std::set<s32> opened_trees;
+		getOpenedTrees(opened_trees);
+		s32 indent = m_rows[index].indent;
+		for (s32 j = index - 1; j >= 0; --j) {
+			if (m_rows[j].indent < indent) {
+				opened_trees.insert(j);
+				indent = m_rows[j].indent;
+			}
+		}
+		setOpenedTrees(opened_trees);
+	}
+
 	if (index >= 0) {
 		m_selected = m_rows[index].visible_index;
 		if (!(m_selected >= 0 && m_selected < (s32) m_visible_rows.size()))
 			return;
 	}
 
-	autoScroll();
+	if (m_selected != old_selected || selection_invisible) {
+		autoScroll();
+	}
 }
 
 GUITable::DynamicData GUITable::getDynamicData() const
@@ -605,11 +627,11 @@ void GUITable::setDynamicData(const DynamicData &dyndata)
 	m_keynav_time = dyndata.keynav_time;
 	m_keynav_buffer = dyndata.keynav_buffer;
 
-	m_scrollbar->setPos(dyndata.scrollpos);
-
 	setSelected(dyndata.selected);
 	m_sel_column = 0;
 	m_sel_doubleclick = false;
+
+	m_scrollbar->setPos(dyndata.scrollpos);
 }
 
 const c8* GUITable::getTypeName() const
@@ -915,6 +937,11 @@ bool GUITable::OnEvent(const SEvent &event)
 						sel_doubleclick) {
 					sendTableEvent(sel_column, sel_doubleclick);
 				}
+
+				// Treeview: double click opens/closes trees
+				if (m_has_tree_column && sel_doubleclick) {
+					toggleVisibleTree(m_selected, 0, false);
+				}
 			}
 		}
 		return true;
@@ -1105,7 +1132,9 @@ void GUITable::getOpenedTrees(std::set<s32> &opened_trees) const
 
 void GUITable::setOpenedTrees(const std::set<s32> &opened_trees)
 {
-	s32 old_selected = getSelected();
+	s32 old_selected = -1;
+	if (m_selected >= 0)
+		old_selected = m_visible_rows[m_selected];
 
 	std::vector<s32> parents;
 	std::vector<s32> closed_parents;
@@ -1158,7 +1187,9 @@ void GUITable::setOpenedTrees(const std::set<s32> &opened_trees)
 
 	updateScrollBar();
 
-	setSelected(old_selected);
+	// m_selected must be updated since it is a visible row index
+	if (old_selected >= 0)
+		m_selected = m_rows[old_selected].visible_index;
 }
 
 void GUITable::openTree(s32 to_open)
