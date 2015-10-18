@@ -53,6 +53,7 @@ public:
 	{ return 20; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -89,6 +90,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -159,6 +161,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -200,6 +203,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 5; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -233,6 +237,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 4; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();

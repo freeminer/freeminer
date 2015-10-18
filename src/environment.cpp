@@ -234,6 +234,8 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	else if (neighbors_range > nr_max)
 		neighbors_range = nr_max;
 
+	simple_catchup = abm->getSimpleCatchUp();
+
 	// Initialize timer to random value to spread processing
 	float itv = MYMAX(0.001, interval); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
@@ -789,6 +791,10 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				continue;
 			}
 			float intervals = dtime / abm->abmws->interval;
+
+			if(!abm->abmws->simple_catchup)
+				intervals = 1;
+
 			if (!intervals) {
 				verbosestream << "abm: intervals=" << intervals << " dtime="<<dtime<< std::endl;
 				intervals = 1;

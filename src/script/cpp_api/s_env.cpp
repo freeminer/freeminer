@@ -149,8 +149,11 @@ void ScriptApiEnv::initializeEnvironment(ServerEnvironment *env)
 			int neighbors_range = 1;
 			getintfield(L, current_abm, "neighbors_range", neighbors_range);
 
+			bool simple_catch_up = true;
+			getboolfield(L, current_abm, "catch_up", simple_catch_up);
+
 			LuaABM *abm = new LuaABM(L, id, trigger_contents,
-					required_neighbors, neighbors_range, trigger_interval, trigger_chance);
+					required_neighbors, neighbors_range, trigger_interval, trigger_chance, simple_catch_up);
 
 			env->addActiveBlockModifier(abm);
 
