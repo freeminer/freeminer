@@ -566,31 +566,40 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, BlockEmergeData *bedata)
 }
 
 
+
+
 EmergeAction EmergeThread::getBlockOrStartGen(
 	v3s16 pos, bool allow_gen, MapBlock **block, BlockMakeData *bmdata)
 {
 	//MutexAutoLock envlock(m_server->m_env_mutex);
-#if !ENABLE_THREADS
-	auto lock = m_map->m_nothread_locker.lock_unique_rec();
-#endif
 
+	{
+	MAP_NOTHREAD_LOCK(m_map);
 	// 1). Attempt to fetch block from memory
 	*block = m_map->getBlockNoCreateNoEx(pos);
+	}
 	if (*block && !(*block)->isDummy() && (*block)->isGenerated())
 		return EMERGE_FROM_MEMORY;
 
+	{
+	MAP_NOTHREAD_LOCK(m_map);
 	// 2). Attempt to load block from disk
 	*block = m_map->loadBlock(pos);
+	}
+
 	if (*block && (*block)->isGenerated())
 	{
+		MAP_NOTHREAD_LOCK(m_map);
 		m_map->prepareBlock(*block);
 		return EMERGE_FROM_DISK;
 	}
 
+	{
+	MAP_NOTHREAD_LOCK(m_map);
 	// 3). Attempt to start generation
 	if (allow_gen && m_map->initBlockMake(pos, bmdata))
 		return EMERGE_GENERATED;
-
+	}
 	// All attempts failed; cancel this block emerge
 	return EMERGE_CANCELLED;
 }
@@ -633,9 +642,7 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 		Run Lua on_generated callbacks
 	*/
 	try {
-#if !ENABLE_THREADS
-		auto lock = m_map->m_nothread_locker.lock_unique_rec();
-#endif
+		MAP_NOTHREAD_LOCK(m_map);
 		m_server->getScriptIface()->environment_OnGenerated(
 			minp, maxp, m_mapgen->blockseed);
 	} catch (LuaError &e) {

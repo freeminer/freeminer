@@ -538,6 +538,11 @@ public:
 private:
 };
 
+#if !ENABLE_THREADS
+	#define MAP_NOTHREAD_LOCK(map) auto lock_map = map->m_nothread_locker.lock_unique_rec();
+#else
+	#define MAP_NOTHREAD_LOCK(map) ;
+#endif
 
 #define VMANIP_BLOCK_DATA_INEXIST     1
 #define VMANIP_BLOCK_CONTAINS_CIGNORE 2

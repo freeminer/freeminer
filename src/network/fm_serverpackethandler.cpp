@@ -921,10 +921,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 
-#if !ENABLE_THREADS
-		auto lock = m_env->getMap().m_nothread_locker.lock_unique_rec();
-#endif
-
+		MAP_NOTHREAD_LOCK((&m_env->getMap()));
 
 		v3f player_pos = playersao->getLastGoodPosition();
 

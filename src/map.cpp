@@ -692,9 +692,7 @@ u32 Map::updateLighting(enum LightBank bank,
 
 	//MutexAutoLock lock2(m_update_lighting_mutex);
 
-#if !ENABLE_THREADS
-	auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+	MAP_NOTHREAD_LOCK(this);
 
 	{
 	TimeTaker t("updateLighting: first stuff");
@@ -2476,9 +2474,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		NOTE: blitBackAll adds nearly everything to changed_blocks
 	*/
 	{
-#if !ENABLE_THREADS
-		auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+		MAP_NOTHREAD_LOCK(this);
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
 	data->vmanip->blitBackAll(changed_blocks, false);
@@ -2712,9 +2708,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 	//MapBlock *block = original_dummy;
 
-#if !ENABLE_THREADS
-	auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+	MAP_NOTHREAD_LOCK(this);
 
 	{
 		MapBlock *block = getBlockNoCreateNoEx(p, false, true);
@@ -2825,9 +2819,7 @@ s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
 	v3POS blockPosition = getNodeBlockPos(probePosition);
 	v3POS prevBlockPosition = blockPosition;
 
-#if !ENABLE_THREADS
-	auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+	MAP_NOTHREAD_LOCK(this);
 
 	// Cache the block to be inspected.
 	if(cacheBlocks) {
@@ -2903,9 +2895,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 	if (!breakable)
 		m_blocks_save_last = 0;
 
-#if !ENABLE_THREADS
-	auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+	MAP_NOTHREAD_LOCK(this);
 
 	{
 		auto lock = breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();

@@ -489,9 +489,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 
 	//MutexAutoLock lock2(m_update_lighting_mutex);
 
-#if !ENABLE_THREADS
-	auto lock = m_nothread_locker.lock_unique_rec();
-#endif
+	MAP_NOTHREAD_LOCK(this);
 
 	{
 		//TimeTaker t("updateLighting: first stuff");
