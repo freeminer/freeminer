@@ -317,7 +317,7 @@ private:
 	int m_wield_index;
 	std::atomic_bool m_position_not_sent;
 	ItemGroupList m_armor_groups;
-	bool m_armor_groups_sent;
+	std::atomic_bool m_armor_groups_sent;
 
 	std::atomic_bool m_properties_sent;
 	struct ObjectProperties m_prop;

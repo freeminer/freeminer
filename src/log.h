@@ -77,7 +77,9 @@ private:
 	// Works on all known architectures (x86, ARM, MIPS).
 	volatile bool m_silenced_levels[LL_MAX];
 	std::map<threadid_t, std::string> m_thread_names;
+protected:
 	mutable Mutex m_mutex;
+private:
 	bool m_trace_enabled;
 };
 

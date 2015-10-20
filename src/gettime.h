@@ -51,12 +51,14 @@ extern u32 getTime(TimePrecision prec);
 #include <time.h>
 #include <string>
 
+extern tm * localtime_safe(time_t * t);
+
 inline std::string getTimestamp()
 {
 	time_t t = time(NULL);
 	// This is not really thread-safe but it won't break anything
 	// except its own output, so just go with it.
-	struct tm *tm = localtime(&t);
+	struct tm *tm = localtime_safe(&t);
 	char cs[20]; //YYYY-MM-DD HH:MM:SS + '\0'
 	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", tm);
 	return cs;

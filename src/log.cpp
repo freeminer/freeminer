@@ -46,8 +46,8 @@ public:
 	std::streamsize xsputn(const char *s, std::streamsize n);
 	void push_back(char c);
 
-private:
 	Mutex m_log_mutex;
+private:
 	std::string buffer;
 };
 
@@ -220,9 +220,12 @@ const std::string Logger::getThreadName()
 	std::map<threadid_t, std::string>::const_iterator it;
 
 	threadid_t id = thr_get_current_thread_id();
+	{
+	MutexAutoLock lock(m_mutex);
 	it = m_thread_names.find(id);
 	if (it != m_thread_names.end())
 		return it->second;
+	}
 
 	std::ostringstream os;
 	os << "#0x" << std::hex << id;
@@ -307,7 +310,7 @@ std::streamsize StringBuffer::xsputn(const char *s, std::streamsize n)
 
 void StringBuffer::push_back(char c)
 {
-	//?MutexAutoLock lock(m_log_mutex);
+	//MutexAutoLock lock(buffer.m_log_mutex);
 	if (c == '\n' || c == '\r') {
 		if (!buffer.empty())
 			flush(buffer);
@@ -319,10 +322,17 @@ void StringBuffer::push_back(char c)
 
 void LogBuffer::flush(const std::string &buffer)
 {
+	MutexAutoLock lock(m_log_mutex);
 	logger.log(level, buffer);
 }
 
 void RawLogBuffer::flush(const std::string &buffer)
 {
 	g_logger.logRaw(LL_NONE, buffer);
+}
+
+std::mutex localtime_mutex;
+tm * localtime_safe(time_t * t) {
+	auto lock = std::unique_lock<std::mutex>(localtime_mutex);
+	return localtime(t);
 }

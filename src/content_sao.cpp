@@ -765,7 +765,6 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_nocheat_dig_pos(32767, 32767, 32767),
 	m_nocheat_dig_time(0),
 	m_wield_index(0),
-	m_armor_groups_sent(false),
 	m_privs(privs),
 	m_is_singleplayer(is_singleplayer),
 	m_animation_speed(0),
@@ -788,6 +787,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_ms_from_last_respawn = 10000; //more than ignore move time (1)
 	m_physics_override_sent = false;
 	m_animation_sent = false;
+	m_armor_groups_sent = false;
 
 	assert(m_player);	// pre-condition
 	assert(m_peer_id != 0);	// pre-condition

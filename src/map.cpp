@@ -3310,7 +3310,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		//MapSector *sector = emergeSector(p2d);
 
 		bool created_new = false;
-		block = sector->getBlockNoCreateNoEx(p3d);
+		block = sector->getBlockNoCreateNoEx(p3d, false, true);
 		if(block == NULL)
 		{
 			block = sector->createBlankBlockNoInsert(p3d);
