@@ -308,7 +308,9 @@ public:
 
 	virtual void setPlayerSAO(PlayerSAO *sao)
 	{
+		/*
 		FATAL_ERROR("FIXME");
+		*/
 	}
 
 	/*
