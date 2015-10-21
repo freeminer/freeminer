@@ -524,7 +524,7 @@
 # server_announce = false
 
 #    Announce to this masterserver.
-#    If you want to announce your ipv6 address - use  serverlist_url = v6.servers.freeminer.org
+#    If you want to announce your ipv6 address - use  serverlist_url = v6.servers.freeminer.org.
 #    type: string
 # serverlist_url = servers.freeminer.org
 
@@ -804,9 +804,8 @@
 
 #    Name of map generator to be used when creating a new world.
 #    Currently supported: v5, v6, v7, singlenode.
-#    type: enum values: v5, v6, v7, singlenode
-#    also freeminer mapgens: indev, math,
-# mg_name = v6
+#    type: enum values: v5, v6, indev, v7, math, singlenode
+# mg_name = indev
 
 #    Water surface level of map
 #    type: int
@@ -992,158 +991,6 @@
 
 ## Security
 
-#    Noise parameters for biome API temperature and humidity
-#mg_biome_np_heat = 50, 50, (500, 500, 500), 5349, 3, 0.5, 2.0
-#mg_biome_np_humidity = 50, 50, (500, 500, 500), 842, 3, 0.5, 2.0
-
-
-
-
-
-
-# freeminer stuff:
-#  client:
-
-#Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
-#farmesh = 0
-#farmesh_step = 2
-# Set to true to disable wield light (enabled by default, requires shaders)
-#disable_wieldlight = false
-# Increases performance on modern GPUs a lot
-# it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
-#enable_vbo = false
-# Greater FOV when running or flying
-#enable_movement_fov = true
-# FOV when using zoom, default 15
-#zoom_fov=15
-# [dev] Shadows from objects
-#shadows = 0
-# Increase performance of headless client ( video_driver = null )
-#headless_optimize = 0
-
-# Disable death screen, respawn automaticaly
-#respawn_auto = false
-#Save password for every server in favorites (in plaintext)
-#password_save = 1
-# Show cmd console on Windows
-#console_enabled = 0
-
-#    Path for screenshots
-#screenshot_path = "screenshots"
-#    In-game chat buffer size (number of messages to show)
-#chat_buffer_size = 6
-#    Selection box border color (R,G,B)
-#selectionbox_color = (0,0,0)
-
-
-#  server:
-
-# If true, blocks are cached (and generated if not before) before a player is spawned.
-#cache_block_before_spawn = true
-# Defines the maximum height a player can spawn in a map, above water level
-#max_spawn_height = 50
-# Allow players with any symbols in names
-#enable_any_name = 0 # WARNING!!! SECURITY RISK WITH SOME MODULES
-# Report broken recipes in mods
-#mod_debugging = false
-# if entities are allowed to force load the world
-#enable_force_load = true
-# Start profiler when the server starts. Profiler is only available when LuaJIT is used.
-# Use /profiler_start to start the profiler manually and /profiler_stop to stop it.
-# The log name profile.txt will only be generated when you manually execute /profiler_stop
-#profiler_autostart = false
-# Save freshly generated but not changed block, disable it for reducing map size on big servers
-#save_generated_block = 1
-# Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
-#time_taker_enabled = 0
-# Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
-#more_threads = 1
-# Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
-#abm_random = 0
-# Default privs in creative mode
-#default_privs_creative = interact, shout, fly, fast
-# Change falling direction in cost of speed. 10 - you are bird, 80 - good wingsuite, 200 - hammer
-#movement_fall_aerodynamics = 110
-
-# Constant volume liquids
-#liquid_real = false
-# Update liquids every .. recommend for finite: 0.2
-#liquid_update = 0.4
-# Send to client updated liquid every (increase on high loaded servers with liquid_real)
-#liquid_send = 1.0
-# Relax flowing blocks to source if level near max and N nearby
-#  source blocks, more realistic, but not true constant.
-#  values: 0,1,2,3,4 : 0 - disable, 1 - most aggresive
-#  (for finite liquids)
-#liquid_relax = 2
-# Optimization: faster cave flood (and not true constant)
-#  (for finite liquids)
-#liquid_fast_flood = 1
-
-# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
-#weather = false
-# Weather noise maps
-#mg_biome_np_heat                   = 15,   30,  (500, 500, 500), 5349, 2, 0.60);
-#mg_biome_np_humidity               = 50,   50,  (500, 500, 500), 842,  3, 0.45);
-# Season amplitude in celsius
-#weather_heat_season     = 30
-# Daily amplitude in celsius
-#weather_heat_daily      = 8
-# Period width on map (in nodes)
-#weather_heat_width      = 3000
-# Enable hot core (start at, nodes from bottom), 0 for disable
-#weather_hot_core        = 1000
-# Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
-#weather_heat_height     = -333
-# Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
-#year_days = 30
-# Same for humidity:
-#weather_humidity_season = 30
-#weather_humidity_daily  = -12
-#weather_humidity_width  = 300
-# Humidity change amplitude
-#weather_humidity_days   = 2
-
-# Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
-#mgindev_np_terrain_base   = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
-#mgindev_np_terrain_higher = 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
-#mgindev_np_steepness      = 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
-#mgindev_np_mud            = 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
-#mgindev_np_float_islands1 = 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
-#mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
-#mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
-#mgindev_np_biome          = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
-
-# Float islands starts from height, 0 to disable
-#mgindev_float_islands = 500
-
-# Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
-#mg_math = {"generator":"sphere"}
-#some possible params:
-#mg_math = {"generator":"mengersponge", "size":1000, "distance":0.01, "center":{"x":5,"y":-100,"z":42}, "invert":1, "scale":0.001, "iterations":10}
-
-
-
-# Player model animations (sent to client to be handled locally)
-# NOT USED!
-# Animation range for model when not walking, digging or doin both
-#animation_default_start = 0
-#animation_default_stop = 79
-# Animation range for model when walking
-#animation_walk_start = 168
-#animation_walk_stop = 187
-# Animation range for model when digging
-#animation_dig_start = 189
-#animation_dig_stop = 198
-# Animation range for model when walking and digging
-#animation_wd_start = 200
-#animation_wd_stop = 219
-
-# == end of freeminer
-
-
-
-
 #    Prevent mods from doing insecure things like running shell commands.
 #    type: bool
 # secure.enable_security = false
@@ -1222,4 +1069,225 @@
 
 #    type: string
 # modstore_details_url = https://forum.minetest.net/mmdb/mod/*/
+
+#
+# Freeminer
+#
+
+## Client
+
+#    Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#    type: int
+# farmesh = 0
+
+#    type: int
+# farmesh_step = 2
+
+#    Set to true to disable wield light (enabled by default, requires shaders)
+#    type: bool
+# disable_wieldlight = false
+
+#    Increases performance on modern GPUs a lot
+#    it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
+#    type: bool
+# enable_vbo = false
+
+#    Greater FOV when running or flying
+#    type: bool
+# enable_movement_fov = true
+
+#    FOV when using zoom, default 15
+#    type: int
+# zoom_fov = 15
+
+#    [dev] Shadows from objects
+#    type: bool
+# shadows = false
+
+#    Increase performance of headless client ( video_driver = null )
+#    type: bool
+# headless_optimize = false
+
+#    Disable death screen, respawn automaticaly
+#    type: bool
+# respawn_auto = false
+
+#    Save password for every server in favorites (in plaintext)
+#    type: bool
+# password_save = true
+
+#    Show cmd console on Windows
+#    type: bool
+# console_enabled = false
+
+#    Path for screenshots
+#    type: string
+# screenshot_path = screenshots
+
+#    In-game chat buffer size (number of messages to show)
+#    type: int
+# chat_buffer_size = 6
+
+#    Selection box border color (R,G,B)
+#    type: string
+# selectionbox_color = (0,0,0)
+
+## Server
+
+#    If true, blocks are cached (and generated if not before) before a player is spawned.
+#    type: bool
+# cache_block_before_spawn = true
+
+#    Defines the maximum height a player can spawn in a map, above water level
+#    type: int
+# max_spawn_height = 50
+
+#    Allow players with any symbols in names
+#    WARNING!!! SECURITY RISK WITH SOME MODULES
+#    type: bool
+# enable_any_name = false
+
+#    Report broken recipes in mods
+#    type: bool
+# mod_debugging = false
+
+#    if entities are allowed to force load the world
+#    type: bool
+# enable_force_load = true
+
+#    Start profiler when the server starts. Profiler is only available when LuaJIT is used.
+#    Use /profiler_start to start the profiler manually and /profiler_stop to stop it.
+#    The log name profile.txt will only be generated when you manually execute /profiler_stop
+#    type: bool
+# profiler_autostart = false
+
+#    Save freshly generated but not changed block, disable it for reducing map size on big servers
+#    type: bool
+# save_generated_block = true
+
+#    Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
+#    type: int
+# time_taker_enabled = 0
+
+#    Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
+#    type: bool
+# more_threads = true
+
+#    Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
+#    type: bool
+# abm_random = false
+
+#    Default privs in creative mode
+#    type: string
+# default_privs_creative = interact, shout, fly, fast
+
+#    Change falling direction in cost of speed. 10 - you are bird, 80 - good wingsuite, 200 - hammer
+#    type: int
+# movement_fall_aerodynamics = 110
+
+#    Constant volume liquids
+#    type: bool
+# liquid_real = false
+
+#    Update liquids every .. recommend for finite: 0.2
+#    type: float
+# liquid_update = 0.4
+
+#    Send to client updated liquid every (increase on high loaded servers with liquid_real)
+#    type: float
+# liquid_send = 1.0
+
+#    Relax flowing blocks to source if level near max and N nearby
+#    source blocks, more realistic, but not true constant.
+#    values: 0,1,2,3,4 : 0 - disable, 1 - most aggresive
+#    (for finite liquids)
+#    type: int
+# liquid_relax = 2
+
+#    Optimization: faster cave flood (and not true constant)
+#    (for finite liquids)
+#    type: bool
+# liquid_fast_flood = true
+
+#    Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
+#    type: bool
+# weather = true
+
+#    Weather noise maps
+#    type: string
+# mg_biome_np_heat = 15,   30,  (500, 500, 500), 5349, 2, 0.60)
+
+#    type: string
+# mg_biome_np_humidity = 50,   50,  (500, 500, 500), 842,  3, 0.45)
+
+#    Season amplitude in celsius
+#    type: float
+# weather_heat_season = 30
+
+#    Daily amplitude in celsius
+#    type: float
+# weather_heat_daily = 8
+
+#    Period width on map (in nodes)
+#    type: float
+# weather_heat_width = 3000
+
+#    Enable hot core (start at, nodes from bottom), 0 for disable
+#    type: float
+# weather_hot_core = 1000
+
+#    Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
+#    type: float
+# weather_heat_height = -333
+
+#    Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
+#    type: int
+# year_days = 30
+
+#    Same for humidity:
+#    type: float
+# weather_humidity_season = 30
+
+#    type: float
+# weather_humidity_daily = -12
+
+#    type: float
+# weather_humidity_width = 300
+
+#    Humidity change amplitude
+#    type: float
+# weather_humidity_days = 2
+
+#    Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
+#    type: string
+# mgindev_np_terrain_base = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
+
+#    type: string
+# mgindev_np_terrain_higher = 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
+
+#    type: string
+# mgindev_np_steepness = 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
+
+#    type: string
+# mgindev_np_mud = 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
+
+#    type: string
+# mgindev_np_float_islands1 = 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
+
+#    type: string
+# mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
+
+#    type: string
+# mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
+
+#    type: string
+# mgindev_np_biome = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
+
+#    Float islands starts from height, 0 to disable
+#    type: int
+# mgindev_float_islands = 500
+
+#    Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
+#    type: string
+# mg_math = {"generator":"sphere"}
 

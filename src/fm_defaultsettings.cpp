@@ -511,6 +511,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fall_bobbing_amount", "0.0");
 
 	// Player model animations (sent to client)
+/*
 	settings->setDefault("animation_default_start", "0");
 	settings->setDefault("animation_default_stop", "79");
 	settings->setDefault("animation_walk_start", "168");
@@ -519,6 +520,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("animation_dig_stop", "198");
 	settings->setDefault("animation_wd_start", "200");
 	settings->setDefault("animation_wd_stop", "219");
+*/
 
 	//
 	// Tweaks for windows

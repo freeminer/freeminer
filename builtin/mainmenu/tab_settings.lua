@@ -59,8 +59,9 @@ local function parse_setting_line(settings, line)
 			line:match("^(([%w%._-]+)[%s]+%(([^%)]*)%)[%s]+([%w_]+)[%s]*)")
 
 	if first_part then
+		readable_name = readable_name:gsub("^%s+", ""):gsub("%s+$", "")
 		if readable_name == "" then
-			readable_name = nil
+			readable_name = name
 		end
 		local remaining_line = line:sub(first_part:len() + 1)
 
@@ -101,6 +102,8 @@ local function parse_setting_line(settings, line)
 			end
 
 		elseif setting_type == "bool" then
+			if remaining_line == "0" then remaining_line = "false" end
+			if remaining_line == "1" then remaining_line = "true" end
 			if remaining_line == "false" or remaining_line == "true" then
 				table.insert(settings, {
 					name = name,
@@ -115,7 +118,7 @@ local function parse_setting_line(settings, line)
 
 		elseif setting_type == "float" then
 			local default, min, max
-					= remaining_line:match("^([%d%.]+)[%s]*([%d%.]*)[%s]*([%d%.]*)$")
+					= remaining_line:match("^(-?[%d%.]+)[%s]*(-?[%d%.]*)[%s]*(-?[%d%.]*)$")
 			if default and tonumber(default) then
 				if min == "" then
 					min = nil
@@ -432,16 +435,16 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 end
 
 local function create_minetest_conf_example()
-	local result = "#    This file contains a list of all available settings and their default value for minetest.conf\n" ..
+	local result = "#    This file contains a list of all available settings and their default value for freeminer.conf\n" ..
 			"\n" ..
 			"#    By default, all the settings are commented and not functional.\n" ..
 			"#    Uncomment settings by removing the preceding #.\n" ..
 			"\n" ..
-			"#    minetest.conf is read by default from:\n" ..
-			"#    ../minetest.conf\n" ..
-			"#    ../../minetest.conf\n" ..
+			"#    freeminer.conf is read by default from:\n" ..
+			"#    ../freeminer.conf\n" ..
+			"#    ../../freeminer.conf\n" ..
 			"#    Any other path can be chosen by passing the path as a parameter\n" ..
-			"#    to the program, eg. \"minetest.exe --config ../minetest.conf.example\".\n" ..
+			"#    to the program, eg. \"freeminer.exe --config ../freeminer.conf.example\".\n" ..
 			"\n" ..
 			"#    Further documentation:\n" ..
 			"#    http://wiki.minetest.net/\n" ..
@@ -502,8 +505,8 @@ local function create_translation_file()
 	return result
 end
 
-if false then
-	local file = io.open("minetest.conf.example", "w")
+if true then
+	local file = io.open("freeminer.conf.example", "w")
 	if file then
 		file:write(create_minetest_conf_example())
 		file:close()
