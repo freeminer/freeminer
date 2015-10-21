@@ -449,12 +449,25 @@ static bool create_userdata_path()
 	porting::initAndroid();
 
 	porting::setExternalStorageDir(porting::jnienv);
+	bool wait = false;
 	if (!fs::PathExists(porting::path_user)) {
 		success = fs::CreateDir(porting::path_user);
+		wait = true;
 	} else {
 		success = true;
 	}
+
 	porting::copyAssets();
+
+	for (int i = 0; i < 1000; ++i) {
+		porting::handleAndroidActivityEvents();
+		if (i || wait)
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		if (fs::PathExists(porting::path_share + DIR_DELIM + "builtin" DIR_DELIM + "init.lua"))
+			break;
+		infostream << "waiting assets i= " << i << " path="<< porting::path_share << std::endl;
+	}
+
 #else
 	// Create user data directory
 	success = fs::CreateDir(porting::path_user);
