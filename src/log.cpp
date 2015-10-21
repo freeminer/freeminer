@@ -266,7 +266,7 @@ void Logger::logToSystem(LogLevel lev, const std::string &text)
 
 void Logger::logToOutputs(LogLevel lev, const std::string &text)
 {
-	MutexAutoLock lock(m_mutex);
+	//MutexAutoLock lock(m_mutex);
 	for (size_t i = 0; i != m_outputs[lev].size(); i++)
 		m_outputs[lev][i]->log(text);
 }
@@ -310,7 +310,6 @@ std::streamsize StringBuffer::xsputn(const char *s, std::streamsize n)
 
 void StringBuffer::push_back(char c)
 {
-	//MutexAutoLock lock(buffer.m_log_mutex);
 	if (c == '\n' || c == '\r') {
 		if (!buffer.empty())
 			flush(buffer);
@@ -322,7 +321,7 @@ void StringBuffer::push_back(char c)
 
 void LogBuffer::flush(const std::string &buffer)
 {
-	MutexAutoLock lock(m_log_mutex);
+	//MutexAutoLock lock(m_log_mutex);
 	logger.log(level, buffer);
 }
 

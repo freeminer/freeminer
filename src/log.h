@@ -26,10 +26,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <queue>
 #include <string>
-//#include <iostream> // for std::endl
 #include <fstream>
 #include "threads.h"
 #include "threading/mutex.h"
+#include "threading/mutex_auto_lock.h"
 
 class ILogOutput;
 
@@ -132,11 +132,13 @@ public:
 
 	virtual void log(const std::string &line)
 	{
+		MutexAutoLock lock(m_mutex);
 		buffer.push(line);
 	}
 
 	bool empty()
 	{
+		MutexAutoLock lock(m_mutex);
 		return buffer.empty();
 	}
 
@@ -144,6 +146,7 @@ public:
 	{
 		if (empty())
 			return "";
+		MutexAutoLock lock(m_mutex);
 		std::string s = buffer.front();
 		buffer.pop();
 		return s;
@@ -152,6 +155,7 @@ public:
 private:
 	std::queue<std::string> buffer;
 	Logger &logger;
+	mutable Mutex m_mutex;
 };
 
 
