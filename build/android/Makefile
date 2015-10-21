@@ -34,7 +34,7 @@ VERSION_TWEAK := $(shell cat $(ROOT)/../../CMakeLists.txt | \
 ANDROID_VERSION_CODE = 13
 
 #and for freeminer for skip conflict:
-ANDROID_VERSION_CODE = 37
+ANDROID_VERSION_CODE = 40
 
 PROJECT_NAME_C = freeminer
 
