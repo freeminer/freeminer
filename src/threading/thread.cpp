@@ -72,7 +72,7 @@ DEALINGS IN THE SOFTWARE.
 
 // for bindToProcessor
 #if __FreeBSD_version >= 702106
-	typedef cpuset_t cpu_set_t;
+	typedef porting::cpuset_t cpu_set_t;
 #elif defined(__linux) || defined(linux)
 	#include <sched.h>
 #elif defined(__sun) || defined(sun)
@@ -298,7 +298,7 @@ void Thread::setName(const std::string &name)
 	
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
 
-	pthread_set_name_np(pthread_self(), name.c_str());
+	porting::pthread_set_name_np(pthread_self(), name.c_str());
 
 #elif defined(__NetBSD__)
 
