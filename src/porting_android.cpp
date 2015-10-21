@@ -88,15 +88,18 @@ android_app* app_global;
 JNIEnv*      jnienv;
 jclass       nativeActivity;
 
-void handleAndroidActivityEvents()
+void handleAndroidActivityEvents(int max)
 {
 	int ident;
 	int events;
 	struct android_poll_source *source;
 
-	while ( (ident = ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0)
+	while ( (ident = ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0) {
 		if (source)
 			source->process(porting::app_global, source);
+		if (--max < 0)
+			break;
+	}
 }
 
 int android_version_sdk_int = 0;
@@ -220,6 +223,7 @@ void setExternalStorageDir(JNIEnv* lJNIEnv)
 	path_storage             = userPath;
 	path_user                = userPath + DIR_DELIM + PROJECT_NAME;
 	path_share               = userPath + DIR_DELIM + PROJECT_NAME;
+	path_locale              = path_share + DIR_DELIM + "locale";
 }
 
 void showInputDialog(const std::string& acceptButton, const  std::string& hint,

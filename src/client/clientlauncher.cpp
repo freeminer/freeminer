@@ -195,7 +195,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		delete[] text;
 
 #ifdef __ANDROID__
-		porting::handleAndroidActivityEvents();
+		porting::handleAndroidActivityEvents(5);
 #endif
 
 		try {	// This is used for catching disconnects
