@@ -214,6 +214,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("fallback_font_shadow", "1");
 	settings->setDefault("fallback_font_shadow_alpha", "128");
 
+	{
 	std::stringstream fontsize;
 
 	fontsize << TTF_DEFAULT_FONT_SIZE;
@@ -221,6 +222,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
 	settings->setDefault("fallback_font_size", fontsize.str());
+	}
 
 
 	//
@@ -597,6 +599,19 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("android_keyboard", "0");
 	settings->setDefault("texture_min_size", "16");
 	settings->setDefault("cloud_radius", "6");
+
+
+	{
+	std::stringstream fontsize;
+	int font_size = TTF_DEFAULT_FONT_SIZE/3 * porting::getDisplayDensity();
+	fontsize << font_size;
+
+	settings->setDefault("font_size", fontsize.str());
+	settings->setDefault("mono_font_size", fontsize.str());
+	settings->setDefault("fallback_font_size", fontsize.str());
+
+	//errorstream<< " dispX="<<porting::getDisplaySize().X<< " dens="<<porting::getDisplayDensity() <<" x_inches="<<x_inches<<" font="<<font_size<< " lang="<<lang <<std::endl;
+	}
 
 #else
 	settings->setDefault("screen_dpi", "72");

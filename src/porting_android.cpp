@@ -218,8 +218,8 @@ void setExternalStorageDir(JNIEnv* lJNIEnv)
 	lJNIEnv->ReleaseStringUTFChars(StringPath, externalPath);
 
 	path_storage             = userPath;
-	path_user                = userPath + DIR_DELIM + PROJECT_NAME_C;
-	path_share               = userPath + DIR_DELIM + PROJECT_NAME_C;
+	path_user                = userPath + DIR_DELIM + PROJECT_NAME;
+	path_share               = userPath + DIR_DELIM + PROJECT_NAME;
 }
 
 void showInputDialog(const std::string& acceptButton, const  std::string& hint,
