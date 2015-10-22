@@ -296,6 +296,23 @@ float getDisplayDensity()
 	return value;
 }
 
+float get_dpi()
+{
+	static bool firstrun = true;
+	static float value = 0;
+
+	if (firstrun) {
+		auto method = jnienv->GetMethodID(nativeActivity, "get_ydpi", "()F");
+
+		if (!method)
+			return 160;
+
+		value = jnienv->CallFloatMethod(app_global->activity->clazz, method);
+		firstrun = false;
+	}
+	return value;
+}
+
 v2u32 getDisplaySize()
 {
 	static bool firstrun = true;

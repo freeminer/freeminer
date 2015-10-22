@@ -570,13 +570,14 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_minimap", "false");
 
 	//check for device with small screen
-	float x_inches = ((double) porting::getDisplaySize().X /
-	                  (160 * porting::getDisplayDensity()));
+	float x_inches = porting::getDisplaySize().X / porting::get_dpi();
+
 	if (x_inches  < 3.5) {
 		settings->setDefault("hud_scaling", "0.6");
 	} else if (x_inches < 4.5) {
 		settings->setDefault("hud_scaling", "0.7");
 	}
+
 	settings->setDefault("curl_verify_cert", "false");
 
 	settings->setDefault("chunksize", "3");
@@ -603,14 +604,18 @@ void set_default_settings(Settings *settings) {
 
 	{
 	std::stringstream fontsize;
-	int font_size = TTF_DEFAULT_FONT_SIZE/3 * porting::getDisplayDensity();
-	fontsize << font_size;
+	auto density = porting::getDisplayDensity();
+	if (density > 1.6 && porting::getDisplaySize().X > 1024)
+		density = 1.6;
+	float font_size = 10 * density;
+
+	fontsize << (int)font_size;
 
 	settings->setDefault("font_size", fontsize.str());
 	settings->setDefault("mono_font_size", fontsize.str());
 	settings->setDefault("fallback_font_size", fontsize.str());
 
-	//errorstream<< " dispX="<<porting::getDisplaySize().X<< " dens="<<porting::getDisplayDensity() <<" x_inches="<<x_inches<<" font="<<font_size<< " lang="<<lang <<std::endl;
+	actionstream << "Autoconfig: "" displayX=" << porting::getDisplaySize().X << " density="<<porting::getDisplayDensity()<< " dpi="<< porting::get_dpi() << " x_inches=" << x_inches << " font=" << font_size << " lang=" << lang <<std::endl;
 	}
 
 #else

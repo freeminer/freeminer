@@ -56,7 +56,19 @@ public class MtNativeActivity extends NativeActivity {
 	public float getDensity() {
 		return getResources().getDisplayMetrics().density;
 	}
-	
+
+	public float get_scaledDensity() {
+		return getResources().getDisplayMetrics().scaledDensity;
+	}
+
+	public float get_xdpi() {
+		return getResources().getDisplayMetrics().xdpi;
+	}
+
+	public float get_ydpi() {
+		return getResources().getDisplayMetrics().ydpi;
+	}
+
 	public int getDisplayWidth() {
 		return getResources().getDisplayMetrics().widthPixels;
 	}

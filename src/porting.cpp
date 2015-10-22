@@ -707,7 +707,7 @@ static float calcDisplayDensity()
 	}
 
 	/* return manually specified dpi */
-	return g_settings->getFloat("screen_dpi")/96.0;
+	return get_dpi()/96.0;
 }
 
 
@@ -717,11 +717,10 @@ float getDisplayDensity()
 	return cached_display_density;
 }
 
-
 #		else // XORG_USED
 float getDisplayDensity()
 {
-	return g_settings->getFloat("screen_dpi")/96.0;
+	return get_dpi()/96.0;
 }
 #		endif // XORG_USED
 
@@ -734,6 +733,11 @@ v2u32 getDisplaySize()
 
 	return deskres;
 }
+
+float get_dpi() {
+	return g_settings->getFloat("screen_dpi");
+}
+
 #	endif // __ANDROID__
 #endif // SERVER
 

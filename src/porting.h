@@ -364,6 +364,7 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 
 #ifndef SERVER
 float getDisplayDensity();
+float get_dpi();
 
 v2u32 getDisplaySize();
 v2u32 getWindowSize();
