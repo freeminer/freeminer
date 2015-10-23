@@ -133,7 +133,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("deprecated_lua_api_handling", debug ? "log" : "legacy");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 	settings->setDefault("profiler_print_interval", debug ? "10" : "0");
-	settings->setDefault("debug_log_level", "2");
+	settings->setDefault("debug_log_level", "action");
 	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
 
 	settings->setDefault("kick_msg_shutdown", "Server shutting down.");
@@ -234,7 +234,6 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "trees, caves, dungeons");
 	settings->setDefault("mgv6_spflags", "jungles, biome_blend, snowbiomes");
-	settings->setDefault("enable_floating_dungeons", "true");
 
 	settings->setDefault("mg_math", ""); // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct

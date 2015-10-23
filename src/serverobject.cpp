@@ -82,8 +82,9 @@ float ServerActiveObject::getMinimumSavedMovement()
 	return 2.0*BS;
 }
 
-ItemStack ServerActiveObject::getWieldedItem() const
+ItemStack ServerActiveObject::getWieldedItem()
 {
+	auto lock = lock_shared_rec();
 	const Inventory *inv = getInventory();
 	if(inv)
 	{
@@ -96,6 +97,7 @@ ItemStack ServerActiveObject::getWieldedItem() const
 
 bool ServerActiveObject::setWieldedItem(const ItemStack &item)
 {
+	auto lock = lock_unique_rec();
 	if(Inventory *inv = getInventory()) {
 		if (InventoryList *list = inv->getList(getWieldList())) {
 			list->changeItem(getWieldIndex(), item);

@@ -1617,6 +1617,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 
 ServerActiveObject* ServerEnvironment::getActiveObject(u16 id, bool removed)
 {
+	auto lock = m_active_objects.lock_shared_rec();
 	auto n = m_active_objects.find(id);
 	if(n == m_active_objects.end())
 		return NULL;

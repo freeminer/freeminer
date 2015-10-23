@@ -198,7 +198,7 @@ public:
 	{ return ""; }
 	virtual int getWieldIndex() const
 	{ return 0; }
-	virtual ItemStack getWieldedItem() const;
+	virtual ItemStack getWieldedItem();
 	virtual bool setWieldedItem(const ItemStack &item);
 
 	/*

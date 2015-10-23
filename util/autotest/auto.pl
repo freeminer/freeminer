@@ -33,6 +33,8 @@ $0 timelapse
 
 $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --options_add=headless
 
+$0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
+
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -56,14 +58,14 @@ BEGIN {
 
 our $root_path = $script_path . '../../';
 1 while $root_path =~ s{[^/\.]+/\.\./}{}g;
-my @ar = grep {!/^-/} @ARGV;
+my @ar = grep { !/^-/ } @ARGV;
 my $logdir_add = (@ar == 1 and $ar[0] =~ /^\w+$/) ? '.' . $ar[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 
 sub init_config () {
     $config = {
-        address           => '::1',
+        #address           => '::1',
         port              => 60001,
         clients_num       => 5,
         autoexit          => 600,
@@ -181,8 +183,9 @@ our $commands = {
 qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
+        my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world address port config autoexit);
         sy
-qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --world $config->{world} --port $config->{port} $config->{go} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminer $args $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.out.log };
         0;
@@ -203,16 +206,19 @@ qq{$config->{env} $config->{runner} @_ ./freeminer --gameid $config->{gameid} --
 qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server_auto => sub {
+        my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
         sy
-qq{$config->{env} $config->{runner} @_ ./freeminerserver --gameid $config->{gameid} --world $config->{world} --port $config->{port} --config $config->{config} --autoexit $config->{autoexit} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminerserver $args --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log &};
     },
     run_clients => sub {
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
+            local $config->{address} = '::1' if not $config->{address};
+            my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             sy
-qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --address $config->{address} --port $config->{port} --config $config->{config} --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+qq{$config->{env} $config->{runner} @_ ./freeminer $args --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
               . options_make()
               . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
               for 0 .. $config->{clients_num};
@@ -270,7 +276,7 @@ our $tasks = {
             $g->{build_name} .= '_asan';
             0;
         }, {
-            -cmake_asan      => 1,
+            -cmake_asan => 1,
             #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
         'prepare',
@@ -285,7 +291,7 @@ our $tasks = {
     ],
     bot_asannta => sub {
         $g->{build_name} .= '_nta';
-        local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_nothreads_a};
+        local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
         commands_run('bot_asan');
     },
     bot_msan => [
@@ -300,7 +306,7 @@ our $tasks = {
             'valgrind_' . $_ => [
                 {build_name => ''},
                 #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
-                \'build_debug',                                                    #'
+                \'build_debug',                                                           #'
                 ['valgrind', '--tool=' . $_],
               ],
         } @{$config->{valgrind_tools}}
@@ -327,25 +333,34 @@ our $tasks = {
         commands_run('bot_asan');
     },
     #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
-    stress => sub{commands_run($_[0] || 'build_normal'); for ('run_server_auto', 'run_clients') { my $r = commands_run($_); return $r if $r; } return 0; },
+    stress => sub {
+        commands_run($_[0] || 'build_normal');
+        for ('run_server_auto', 'run_clients') { my $r = commands_run($_); return $r if $r; }
+        return 0;
+    },
     #clients     => [{ZZbuild_name => 'normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make', 'run_clients'],
-    clients_build     => [{build_name => '_normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make'],
-    clients_run     => [{build_name => '_normal'}, 'run_clients'],
-    clients     => ['clients_build', 'clients_run'],
+    clients_build => [{build_name => '_normal'}, 'prepare', {-no_build_client => 0, -no_build_server => 1}, 'cmake', 'make'],
+    clients_run   => [{build_name => '_normal'}, 'run_clients'],
+    clients => ['clients_build', 'clients_run'],
 
     stress_tsan => [
-        { -no_build_client => 1, -no_build_server => 0}, 'build_tsan', 'cgroup',
+        {-no_build_client => 1, -no_build_server => 0}, 'build_tsan', 'cgroup',
         'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
     ],
     stress_asan => [
-        { -no_build_client => 1, -no_build_server => 0}, 'build_asan', 'cgroup',
+        {-no_build_client => 1, -no_build_server => 0}, 'build_asan', 'cgroup',
         'run_server_auto', ['sleep', 10], {build_name => '_normal', -cmake_asan => 0,}, 'clients',
     ],
 
-    stress_massif => ['clients_build', sub {
-        local $config->{run_task} = 'run_server_auto';
-        commands_run('valgrind_massif');
-    }, ['sleep', 10], 'clients_run'],
+    stress_massif => [
+        'clients_build',
+        sub {
+            local $config->{run_task} = 'run_server_auto';
+            commands_run('valgrind_massif');
+        },
+        ['sleep', 10],
+        'clients_run'
+    ],
 
     stress => ['build_normal', 'run_server_auto', ['sleep', 5], 'clients_run'],
 
@@ -378,7 +393,7 @@ our $tasks = {
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
-    timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],           #'
+    timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],                  #'
     up => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
@@ -423,6 +438,7 @@ sub options_make(@) {
 }
 
 sub command_run(@);
+
 sub command_run(@) {
     my $cmd = shift;
     #say "command_run $cmd ", @_;
@@ -450,6 +466,7 @@ sub command_run(@) {
 }
 
 sub commands_run(@);
+
 sub commands_run(@) {
     my $name = shift;
     #say "commands_run $name ", @_;

@@ -2441,8 +2441,12 @@ bool Game::connectToServer(const std::string &playername,
 			showOverlayMessage((wstrgettext("Connecting to server... ") + narrow_to_wide(itos(int(wait_time)))).c_str(), dtime, 20);
 		}
 
-#ifdef NDEBUG
+	} catch (con::ConnectionException &e) {
+		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
+		errorstream << "Connection error: "<< e.what() << std::endl;
+		return false;
 
+#ifdef NDEBUG
 	} catch (std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
 		errorstream << "Connection error: "<< e.what() << std::endl;
