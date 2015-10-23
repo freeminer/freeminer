@@ -674,8 +674,8 @@ void *EmergeThread::run()
 
 	reg("EmergeThread" + itos(id), 5);
 
-	try {
 	while (!stopRequested()) {
+	try {
 		std::map<v3s16, MapBlock *> modified_blocks;
 		BlockEmergeData bedata;
 		BlockMakeData bmdata;
@@ -725,7 +725,6 @@ void *EmergeThread::run()
 			m_mapgen->heat_cache.clear();
 			m_mapgen->humidity_cache.clear();
 		}
-	}
 	} catch (VersionMismatchException &e) {
 		std::ostringstream err;
 		err << "World data version mismatch in MapBlock " << PP(pos) << std::endl
@@ -734,6 +733,7 @@ void *EmergeThread::run()
 			<< "See debug.txt." << std::endl
 			<< "World probably saved by a newer version of " PROJECT_NAME_C "."
 			<< std::endl;
+		debug_stacks_print();
 		m_server->setAsyncFatalError(err.str());
 	} catch (SerializationError &e) {
 		std::ostringstream err;
@@ -743,9 +743,11 @@ void *EmergeThread::run()
 			<< "See debug.txt." << std::endl
 			<< "You can ignore this using [ignore_world_load_errors = true]."
 			<< std::endl;
+		debug_stacks_print();
 		m_server->setAsyncFatalError(err.str());
 	} catch (std::exception &e) {
 		errorstream << "emerge: exception at " << pos << " : " << e.what() << std::endl;
+	}
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER
