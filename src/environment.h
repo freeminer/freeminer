@@ -410,7 +410,7 @@ public:
 	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
-	void nodeUpdate(const v3s16 pos, int recurse = 10,  int fast = 2);
+	void nodeUpdate(const v3s16 pos, int recurse = 5,  int fast = 2);
 private:
 
 	/*

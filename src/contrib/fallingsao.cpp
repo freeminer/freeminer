@@ -47,7 +47,7 @@ FallingSAO::FallingSAO(ServerEnvironment *env, v3f pos,
 	m_prop.visual = "wielditem";
 	m_prop.textures = {};
 	m_prop.visual_size = v2f(0.667,0.667);
-	fast = fast;
+	fast = fast_;
 }
 
 FallingSAO::~FallingSAO()
@@ -157,7 +157,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 		}
 		m_env->setNode(p,m_node, fast);
 		m_removed = true;
-		m_env->nodeUpdate(p, fast);
+		m_env->nodeUpdate(p, 2, fast);
 		return;
 	}
 }
