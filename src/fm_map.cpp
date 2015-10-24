@@ -510,7 +510,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 				if (!lock->owns_lock())
 					break; // may cause dark areas
 				v3POS pos = block->getPos();
-				if (processed.count(pos) && processed[pos] <= i->first.Y ) {
+				if (processed.count(pos) && processed[pos] >= i->first.Y ) {
 					//verbosestream<<"Light: skipping pos" << pos << " pps="<<processed[pos] << " if="<< i->first.Y <<std::endl;
 					break;
 				}

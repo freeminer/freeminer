@@ -140,9 +140,9 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 
 
 epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
-		v3f pos, const MapNode n)
+		v3f pos, const MapNode n, int fast)
 {
-	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "");
+	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "", fast);
 	if (addActiveObject(obj)) {
 		ObjectProperties* objProps = obj->accessObjectProperties();
 		if (!objProps)
@@ -230,7 +230,7 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
 
 #endif
 
-void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse)
+void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast)
 {
 	if (recurse-- <= 0)
 		return;
@@ -255,9 +255,9 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse)
 						(f.name != f_under.name || (f_under.leveled &&
 							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
 						(!f_under.walkable || f_under.buildable_to)) {
-						removeNode(v3s16(x,y,z), 2);
-						spawnFallingActiveObject(f.name, intToFloat(v3s16(x,y,z),BS), n);
-						nodeUpdate(v3s16(x,y,z), recurse);
+						removeNode(v3s16(x,y,z), fast);
+						spawnFallingActiveObject(f.name, intToFloat(v3s16(x,y,z),BS), n, fast);
+						nodeUpdate(v3s16(x,y,z), recurse, fast);
 					}
 				}
 			}

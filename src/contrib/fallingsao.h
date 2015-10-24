@@ -28,7 +28,7 @@ namespace epixel
 class FallingSAO: public LuaEntitySAO {
 public:
 	FallingSAO(ServerEnvironment *env, v3f pos,
-			const std::string &name, const std::string &state);
+			const std::string &name, const std::string &state, int fast_ = 2);
 	~FallingSAO();
 
 	ActiveObjectType getType() const
@@ -44,6 +44,7 @@ public:
 	void attachNode(const MapNode m) { m_node = m; }
 private:
 	MapNode m_node;
+	int fast;
 };
 
 }

@@ -1199,7 +1199,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 				else {
 					client->ResendBlockIfOnWire(blockpos);
 				}
-				m_env->nodeUpdate(p_under);
+				m_env->nodeUpdate(p_under, 5, 0);
 			}
 		} // action == 2
 
@@ -1263,7 +1263,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 					client->ResendBlockIfOnWire(blockpos2);
 				}
 			}
-			m_env->nodeUpdate(p_under);
+			m_env->nodeUpdate(p_under, 5, 0);
 		} // action == 3
 
 		/*
@@ -1285,7 +1285,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 				}
 				stat.add("use", player->getName());
 				stat.add("use_" + item.name, player->getName());
-				m_env->nodeUpdate(p_under);
+				m_env->nodeUpdate(p_under, 5, 0);
 			}
 
 		} // action == 4

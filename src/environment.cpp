@@ -1704,6 +1704,7 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 		- discard objects that are found in current_objects.
 		- add remaining objects to added_objects
 	*/
+	int count = 0;
 	auto lock = m_active_objects.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
@@ -1736,6 +1737,8 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 			continue;
 		// Add to added_objects
 		added_objects.push(id);
+		if (++count > 20)
+			break;
 	}
 }
 
@@ -2360,6 +2363,8 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 				}
 			}
 
+			if(!obj->m_removed) {
+
 			// Add to the block where the object is located in
 			v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
 			// Get or generate the block
@@ -2416,6 +2421,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 							<<" statically (pos="<<PP(p)<<")"<<std::endl;
 					continue;
 				}
+			}
 			}
 		}
 

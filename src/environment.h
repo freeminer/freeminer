@@ -315,7 +315,7 @@ public:
 			const ItemStack& items);
 
 	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
-			const MapNode n);
+			const MapNode n, int fast = 2);
 
 	/*
 		Add an active object as a static object to the corresponding
@@ -410,7 +410,7 @@ public:
 	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
-	void nodeUpdate(const v3s16 pos, int recurse = 10);
+	void nodeUpdate(const v3s16 pos, int recurse = 10,  int fast = 2);
 private:
 
 	/*

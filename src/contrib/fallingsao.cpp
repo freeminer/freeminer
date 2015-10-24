@@ -32,7 +32,7 @@ namespace epixel
 {
 
 FallingSAO::FallingSAO(ServerEnvironment *env, v3f pos,
-		const std::string &name, const std::string &state):
+		const std::string &name, const std::string &state, int fast_):
 		LuaEntitySAO(env, pos, name, state)
 {
 	if(env == NULL) {
@@ -47,6 +47,7 @@ FallingSAO::FallingSAO(ServerEnvironment *env, v3f pos,
 	m_prop.visual = "wielditem";
 	m_prop.textures = {};
 	m_prop.visual_size = v2f(0.667,0.667);
+	fast = fast;
 }
 
 FallingSAO::~FallingSAO()
@@ -79,8 +80,10 @@ ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3f pos,
 		}
 	}
 	// create object
+/*
 	infostream << "FallingSAO::create(name=\"" << name << "\" state=\""
 			<< state << "\")" << std::endl;
+*/
 	epixel::FallingSAO *sao = new epixel::FallingSAO(env, pos, name, state);
 	sao->m_hp = hp;
 	sao->m_velocity = velocity;
@@ -138,13 +141,13 @@ void FallingSAO::step(float dtime, bool send_recommended)
 		else if (n && f_under.buildable_to &&
 				(itemgroup_get(f.groups,"float") == 0 ||
 				 f_under.liquid_type == LIQUID_NONE)) {
-			m_env->removeNode(floatToInt(p_under, BS));
+			m_env->removeNode(floatToInt(p_under, BS), fast);
 			return;
 		}
 
 		if (n.getContent() != CONTENT_AIR &&
 				(n.getContent() == CONTENT_IGNORE || f.liquid_type == LIQUID_NONE)) {
-			m_env->removeNode(p);
+			m_env->removeNode(p, fast);
 			if (!f.buildable_to) {
 				ItemStack stack;
 				std::string n_name = ndef->get(m_node).name;
@@ -152,9 +155,9 @@ void FallingSAO::step(float dtime, bool send_recommended)
 				m_env->spawnItemActiveObject(n_name, m_base_position, stack);
 			}
 		}
-		m_env->setNode(p,m_node, 2);
+		m_env->setNode(p,m_node, fast);
 		m_removed = true;
-		m_env->nodeUpdate(p, 2);
+		m_env->nodeUpdate(p, fast);
 		return;
 	}
 }
