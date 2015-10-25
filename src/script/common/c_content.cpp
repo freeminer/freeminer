@@ -200,6 +200,7 @@ void read_object_properties(lua_State *L, int index,
 		prop->automatic_face_movement_dir_offset = 0.0;
 	}
 	lua_pop(L, 1);
+	getboolfield(L, -1, "backface_culling", prop->backface_culling);
 }
 
 /******************************************************************************/
@@ -258,6 +259,8 @@ void push_object_properties(lua_State *L, ObjectProperties *prop)
 	else
 		lua_pushboolean(L, false);
 	lua_setfield(L, -2, "automatic_face_movement_dir");
+	lua_pushboolean(L, prop->backface_culling);
+	lua_setfield(L, -2, "backface_culling");
 }
 
 /******************************************************************************/
@@ -1321,4 +1324,3 @@ void read_json_value(lua_State *L, Json::Value &root, int index, u8 recursion)
 	}
 	lua_pop(L, 1); // Pop value
 }
-

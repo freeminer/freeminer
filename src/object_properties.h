@@ -51,6 +51,7 @@ struct ObjectProperties
 	bool automatic_face_movement_dir;
 	f32 automatic_face_movement_dir_offset;
 	bool force_load;
+	bool backface_culling;
 
 
 	ObjectProperties();
@@ -60,4 +61,3 @@ struct ObjectProperties
 };
 
 #endif
-
