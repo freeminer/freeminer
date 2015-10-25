@@ -154,6 +154,7 @@ public:
 	bool empty()
 	{
 		MutexAutoLock lock(m_mutex);
+		return m_buffer.empty();
 	}
 
 	std::string get()
