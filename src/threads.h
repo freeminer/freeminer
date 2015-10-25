@@ -62,11 +62,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // ThreadStartFunc
 //
 #if USE_CPP11_THREADS || USE_POSIX_THREADS
-	typedef void *(ThreadStartFunc)(void *param);
+	typedef void *ThreadStartFunc(void *param);
 #elif defined(_WIN32_WCE)
-	typedef DWORD (ThreadStartFunc)(LPVOID param);
+	typedef DWORD ThreadStartFunc(LPVOID param);
 #elif defined(_WIN32) || defined(WIN32)
-	typedef DWORD WINAPI (ThreadStartFunc)(LPVOID param);
+	typedef DWORD WINAPI ThreadStartFunc(LPVOID param);
 #endif
 
 

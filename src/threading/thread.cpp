@@ -91,15 +91,12 @@ DEALINGS IN THE SOFTWARE.
 Thread::Thread(const std::string &name) :
 	m_name(name),
 	m_retval(NULL),
+	m_joinable(false),
 	m_request_stop(false),
 	m_running(false)
 {
 #ifdef _AIX
 	m_kernel_thread_id = -1;
-#endif
-
-#if USE_CPP11_THREADS
-	m_thread_obj = NULL;
 #endif
 }
 
@@ -112,12 +109,12 @@ Thread::~Thread()
 
 bool Thread::start()
 {
-	MutexAutoLock lock(m_continue_mutex);
+	MutexAutoLock lock(m_mutex);
 
 	if (m_running)
 		return false;
 
-	cleanup();
+	m_request_stop = false;
 
 #if USE_CPP11_THREADS
 
@@ -148,6 +145,8 @@ bool Thread::start()
 	while (!m_running)
 		sleep_ms(1);
 
+	m_joinable = true;
+
 	return true;
 }
 
@@ -159,20 +158,29 @@ bool Thread::stop()
 }
 
 
-void Thread::wait()
+bool Thread::wait()
 {
-	if (!m_running)
-		return;
+	MutexAutoLock lock(m_mutex);
+
+	if (!m_joinable)
+		return false;
 
 #if USE_CPP11_THREADS
 
 	m_thread_obj->join();
+
+	delete m_thread_obj;
+	m_thread_obj = NULL;
 
 #elif USE_WIN_THREADS
 
 	int ret = WaitForSingleObject(m_thread_handle, INFINITE);
 	assert(ret == WAIT_OBJECT_0);
 	UNUSED(ret);
+
+	CloseHandle(m_thread_handle);
+	m_thread_handle = NULL;
+	m_thread_id = -1;
 
 #elif USE_POSIX_THREADS
 
@@ -183,8 +191,8 @@ void Thread::wait()
 #endif
 
 	assert(m_running == false);
-
-	return;
+	m_joinable = false;
+	return true;
 }
 
 
@@ -195,10 +203,12 @@ bool Thread::kill()
 		return false;
 	}
 
+	m_running = false;
+
 #ifdef _WIN32
 	TerminateThread(m_thread_handle, 0);
+	CloseHandle(m_thread_handle);
 #else
-
 	// We need to pthread_kill instead on Android since NDKv5's pthread
 	// implementation is incomplete.
 # ifdef __ANDROID__
@@ -206,39 +216,14 @@ bool Thread::kill()
 # else
 	pthread_cancel(m_thread_handle);
 # endif
-
 	wait();
 #endif
 
-	cleanup();
+	m_retval       = NULL;
+	m_joinable     = false;
+	m_request_stop = false;
 
 	return true;
-}
-
-
-void Thread::cleanup()
-{
-#if USE_CPP11_THREADS
-
-	delete m_thread_obj;
-	m_thread_obj = NULL;
-
-#elif USE_WIN_THREADS
-
-	CloseHandle(m_thread_handle);
-	m_thread_handle = NULL;
-	m_thread_id = -1;
-
-#elif USE_POSIX_THREADS
-
-	// Can't do any cleanup for pthreads
-
-#endif
-
-	m_name         = "";
-	m_retval       = NULL;
-	m_running      = false;
-	m_request_stop = false;
 }
 
 
@@ -259,11 +244,11 @@ bool Thread::isCurrentThread()
 
 
 #if USE_CPP11_THREADS || USE_POSIX_THREADS
-	void *(Thread::threadProc)(void *param)
+void *Thread::threadProc(void *param)
 #elif defined(_WIN32_WCE)
-	DWORD (Thread::threadProc)(LPVOID param)
+DWORD Thread::threadProc(LPVOID param)
 #elif defined(_WIN32)
-	DWORD WINAPI (Thread::threadProc)(LPVOID param)
+DWORD WINAPI Thread::threadProc(LPVOID param)
 #endif
 {
 	Thread *thr = (Thread *)param;
