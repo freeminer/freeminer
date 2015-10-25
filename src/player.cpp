@@ -126,7 +126,7 @@ void Player::accelerateHorizontal(v3f target_speed, f32 max_increase, float slip
 		return;
 	
 	v3f d_wanted = target_speed - m_speed;
-	if (slippery)
+	if (slippery && !free_move)
 	{
 		if (target_speed == v3f(0))
 			d_wanted = -m_speed*(1-slippery/100)/2;
