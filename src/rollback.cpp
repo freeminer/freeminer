@@ -109,6 +109,8 @@ RollbackManager::RollbackManager(const std::string & world_path,
 
 RollbackManager::~RollbackManager()
 {
+	flush();
+
 #if USE_SQLITE3
 	SQLOK(sqlite3_finalize(stmt_insert));
 	SQLOK(sqlite3_finalize(stmt_replace));
@@ -965,6 +967,7 @@ std::list<RollbackAction> RollbackManager::getEntriesSince(time_t first_time)
 std::list<RollbackAction> RollbackManager::getNodeActors(v3s16 pos, int range,
 		time_t seconds, int limit)
 {
+	flush();
 	time_t cur_time = time(0);
 	time_t first_time = cur_time - seconds;
 
