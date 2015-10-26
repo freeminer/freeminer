@@ -147,13 +147,13 @@ public:
 
 	void logRaw(LogLevel lev, const std::string &line)
 	{
-		MutexAutoLock lock(m_mutex);
+		//MutexAutoLock lock(m_mutex);
 		m_buffer.push(line);
 	}
 
 	bool empty()
 	{
-		MutexAutoLock lock(m_mutex);
+		//MutexAutoLock lock(m_mutex);
 		return m_buffer.empty();
 	}
 
@@ -161,7 +161,7 @@ public:
 	{
 		if (empty())
 			return "";
-		MutexAutoLock lock(m_mutex);
+		//MutexAutoLock lock(m_mutex);
 		std::string s = m_buffer.front();
 		m_buffer.pop();
 		return s;

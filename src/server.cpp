@@ -1322,7 +1322,7 @@ u16 Server::Receive(int ms)
 {
 	DSTACK(FUNCTION_NAME);
 	SharedBuffer<u8> data;
-	u16 peer_id;
+	u16 peer_id = 0;
 	u16 received = 0;
 	try {
 		NetworkPacket pkt;

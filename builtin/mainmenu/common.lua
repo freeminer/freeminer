@@ -303,7 +303,7 @@ end
 --------------------------------------------------------------------------------
 function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
 	if proto and core.setting_get("server_proto") ~= proto then return false end
-	return not ((min_supp_proto > (server_proto_max or 24)) or (max_supp_proto < (server_proto_min or 13)))
+	return not ((min_supp_proto > tonumber(server_proto_max or 24)) or (max_supp_proto < tonumber(server_proto_min or 13)))
 end
 --------------------------------------------------------------------------------
 function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, proto)

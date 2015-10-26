@@ -286,7 +286,7 @@ void Logger::logToOutputs(LogLevel lev, const std::string &combined,
 	const std::string &time, const std::string &thread_name,
 	const std::string &payload_text)
 {
-	//MutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(m_mutex);
 	for (size_t i = 0; i != m_outputs[lev].size(); i++)
 		m_outputs[lev][i]->log(lev, combined, time, thread_name, payload_text);
 }
@@ -323,7 +323,7 @@ int StringBuffer::overflow(int c)
 
 std::streamsize StringBuffer::xsputn(const char *s, std::streamsize n)
 {
-	MutexAutoLock lock(m_log_mutex);
+	//MutexAutoLock lock(m_log_mutex);
 	for (int i = 0; i < n; ++i)
 		push_back(s[i]);
 	return n;
@@ -343,7 +343,7 @@ void StringBuffer::push_back(char c)
 
 void LogBuffer::flush(const std::string &buffer)
 {
-	MutexAutoLock lock(m_log_mutex);
+	//MutexAutoLock lock(m_log_mutex);
 	logger.log(level, buffer);
 }
 
