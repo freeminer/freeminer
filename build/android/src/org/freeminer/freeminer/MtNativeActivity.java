@@ -103,7 +103,7 @@ public class MtNativeActivity extends NativeActivity {
 		System.loadLibrary("ssl");
 		System.loadLibrary("crypto");
 		System.loadLibrary("gmp");
-		System.loadLibrary("iconv");
+		//System.loadLibrary("iconv");
 
 		// We don't have to load libminetest.so ourselves,
 		// but if we do, we get nicer logcat errors when
