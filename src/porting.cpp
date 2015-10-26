@@ -738,6 +738,8 @@ float get_dpi() {
 	return g_settings->getFloat("screen_dpi");
 }
 
+int get_densityDpi() { return 0; }
+
 #	endif // __ANDROID__
 #endif // SERVER
 

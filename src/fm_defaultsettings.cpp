@@ -614,7 +614,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("mono_font_size", fontsize.str());
 	settings->setDefault("fallback_font_size", fontsize.str());
 
-	actionstream << "Autoconfig: "" displayX=" << porting::getDisplaySize().X << " density="<<porting::getDisplayDensity()<< " dpi="<< porting::get_dpi() << " x_inches=" << x_inches << " font=" << font_size << " lang=" << lang <<std::endl;
+	actionstream << "Autoconfig: "" displayX=" << porting::getDisplaySize().X << " density="<<porting::getDisplayDensity()<< " dpi="<< porting::get_dpi() << " densityDpi=" << porting::get_densityDpi()<< " x_inches=" << x_inches << " font=" << font_size << " lang=" << lang <<std::endl;
 	}
 
 #else

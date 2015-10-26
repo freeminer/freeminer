@@ -175,6 +175,11 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/log_types.cpp                     \
 		jni/src/mapgen_indev.cpp                  \
 		jni/src/mapgen_math.cpp                   \
+		jni/src/contrib/environment.cpp           \
+		jni/src/contrib/fallingsao.cpp            \
+		jni/src/contrib/itemsao.cpp               \
+		jni/src/contrib/l_env.cpp                 \
+                                                  \
 		jni/src/areastore.cpp                     \
 		jni/src/ban.cpp                           \
 		jni/src/camera.cpp                        \

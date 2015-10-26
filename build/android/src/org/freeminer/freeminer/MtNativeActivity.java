@@ -69,6 +69,10 @@ public class MtNativeActivity extends NativeActivity {
 		return getResources().getDisplayMetrics().ydpi;
 	}
 
+	public int get_densityDpi() {
+		return getResources().getDisplayMetrics().densityDpi;
+	}
+
 	public int getDisplayWidth() {
 		return getResources().getDisplayMetrics().widthPixels;
 	}

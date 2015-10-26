@@ -296,13 +296,28 @@ float getDisplayDensity()
 	return value;
 }
 
-float get_dpi()
-{
+float get_dpi() {
 	static bool firstrun = true;
 	static float value = 0;
 
 	if (firstrun) {
 		auto method = jnienv->GetMethodID(nativeActivity, "get_ydpi", "()F");
+
+		if (!method)
+			return 160;
+
+		value = jnienv->CallFloatMethod(app_global->activity->clazz, method);
+		firstrun = false;
+	}
+	return value;
+}
+
+int get_densityDpi() {
+	static bool firstrun = true;
+	static int value = 0;
+
+	if (firstrun) {
+		auto method = jnienv->GetMethodID(nativeActivity, "get_densityDpi", "()I");
 
 		if (!method)
 			return 160;
