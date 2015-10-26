@@ -73,8 +73,6 @@ static const char *modified_reason_strings[] = {
 */
 
 MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
-		heat_last_update(0),
-		humidity_last_update(0),
 		m_uptime_timer_last(0),
 		m_parent(parent),
 		m_pos(pos),
@@ -96,6 +94,8 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_lighting_expired = true;
 	m_refcount = 0;
 	data = NULL;
+	heat_last_update = 0;
+	humidity_last_update = 0;
 	//if(dummy == false)
 		reallocate();
 

@@ -37,6 +37,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cerrno>
 #include <cstring>
 
+#include <mutex>
+
 class StringBuffer : public std::streambuf {
 public:
 	StringBuffer() {}
