@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // request_shutdown()
 int ModApiServer::l_request_shutdown(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
 	const char *msg = lua_tolstring(L, 1, NULL);
 	bool reconnect = lua_toboolean(L, 2);
 	getServer(L)->requestShutdown(msg ? msg : "", reconnect);

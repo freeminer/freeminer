@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // texture = e.g."default_wood.png"
 int ModApiParticles::l_add_particle(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	// Get parameters
 	v3f pos, vel, acc;
 	pos = vel = acc = v3f(0, 0, 0);
@@ -122,6 +124,8 @@ int ModApiParticles::l_add_particle(lua_State *L)
 // texture = e.g."default_wood.png"
 int ModApiParticles::l_add_particlespawner(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	// Get parameters
 	u16 amount = 1;
 	v3f minpos, maxpos, minvel, maxvel, minacc, maxacc;
@@ -211,6 +215,8 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 // player (string) is optional
 int ModApiParticles::l_delete_particlespawner(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	// Get parameters
 	u32 id = luaL_checknumber(L, 1);
 	std::string playername = "";

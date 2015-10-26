@@ -218,8 +218,7 @@ int main(int argc, char *argv[])
 #if !defined(__ANDROID__) && !defined(_MSC_VER)
 	// Run unit tests
 	if (cmd_args.getFlag("run-unittests")) {
-		run_tests();
-		return 0;
+		return run_tests();
 	}
 #endif
 

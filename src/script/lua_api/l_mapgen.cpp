@@ -462,6 +462,8 @@ size_t get_biome_list(lua_State *L, int index,
 // returns the biome id used in biomemap
 int ModApiMapgen::l_get_biome_id(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	const char *biome_str = lua_tostring(L, 1);
 	if (!biome_str)
 		return 0;
@@ -471,7 +473,7 @@ int ModApiMapgen::l_get_biome_id(lua_State *L)
 	if (!bmgr)
 		return 0;
 
-	Biome *biome = (Biome *) bmgr->getByName(biome_str);
+	Biome *biome = (Biome *)bmgr->getByName(biome_str);
 
 	if (!biome || biome->index == OBJDEF_INVALID_INDEX)
 		return 0;
@@ -486,6 +488,8 @@ int ModApiMapgen::l_get_biome_id(lua_State *L)
 // returns the requested object used during map generation
 int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	const char *mgobjstr = lua_tostring(L, 1);
 
 	int mgobjint;
@@ -497,7 +501,7 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 	Mapgen *mg = emerge->getCurrentMapgen();
 	if (!mg)
-		return 0;
+		throw LuaError("Must only be called in a mapgen thread!");
 
 	size_t maplen = mg->csize.X * mg->csize.Z;
 
@@ -596,6 +600,8 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 
 int ModApiMapgen::l_get_mapgen_params(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	MapgenParams *params = &getServer(L)->getEmergeManager()->params;
 
 	lua_newtable(L);
@@ -627,6 +633,8 @@ int ModApiMapgen::l_get_mapgen_params(lua_State *L)
 // set mapgen parameters
 int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	if (!lua_istable(L, 1))
 		return 0;
 
@@ -679,6 +687,8 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 // set global config values for noise parameters
 int ModApiMapgen::l_set_noiseparams(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	const char *name = luaL_checkstring(L, 1);
 
 	NoiseParams np;
@@ -696,6 +706,8 @@ int ModApiMapgen::l_set_noiseparams(lua_State *L)
 // get_noiseparams(name)
 int ModApiMapgen::l_get_noiseparams(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	std::string name = luaL_checkstring(L, 1);
 
 	NoiseParams np;
@@ -710,6 +722,8 @@ int ModApiMapgen::l_get_noiseparams(lua_State *L)
 // set_gen_notify(flags, {deco_id_table})
 int ModApiMapgen::l_set_gen_notify(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	u32 flags = 0, flagmask = 0;
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 
@@ -734,6 +748,8 @@ int ModApiMapgen::l_set_gen_notify(lua_State *L)
 // get_gen_notify()
 int ModApiMapgen::l_get_gen_notify(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 	push_flags_string(L, flagdesc_gennotify, emerge->gen_notify_on,
 		emerge->gen_notify_on);
@@ -753,6 +769,8 @@ int ModApiMapgen::l_get_gen_notify(lua_State *L)
 // register_biome({lots of stuff})
 int ModApiMapgen::l_register_biome(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
@@ -777,6 +795,8 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 // register_decoration({lots of stuff})
 int ModApiMapgen::l_register_decoration(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
@@ -917,6 +937,8 @@ bool read_deco_schematic(lua_State *L, SchematicManager *schemmgr, DecoSchematic
 // register_ore({lots of stuff})
 int ModApiMapgen::l_register_ore(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
@@ -1045,6 +1067,8 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 // register_schematic({schematic}, replacements={})
 int ModApiMapgen::l_register_schematic(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	SchematicManager *schemmgr = getServer(L)->getEmergeManager()->schemmgr;
 
 	StringMap replace_names;
@@ -1070,6 +1094,8 @@ int ModApiMapgen::l_register_schematic(lua_State *L)
 // clear_registered_biomes()
 int ModApiMapgen::l_clear_registered_biomes(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	BiomeManager *bmgr = getServer(L)->getEmergeManager()->biomemgr;
 	bmgr->clear();
 	return 0;
@@ -1079,6 +1105,8 @@ int ModApiMapgen::l_clear_registered_biomes(lua_State *L)
 // clear_registered_decorations()
 int ModApiMapgen::l_clear_registered_decorations(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	DecorationManager *dmgr = getServer(L)->getEmergeManager()->decomgr;
 	dmgr->clear();
 	return 0;
@@ -1088,6 +1116,8 @@ int ModApiMapgen::l_clear_registered_decorations(lua_State *L)
 // clear_registered_ores()
 int ModApiMapgen::l_clear_registered_ores(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	OreManager *omgr = getServer(L)->getEmergeManager()->oremgr;
 	omgr->clear();
 	return 0;
@@ -1097,6 +1127,8 @@ int ModApiMapgen::l_clear_registered_ores(lua_State *L)
 // clear_registered_schematics()
 int ModApiMapgen::l_clear_registered_schematics(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	SchematicManager *smgr = getServer(L)->getEmergeManager()->schemmgr;
 	smgr->clear();
 	return 0;
@@ -1106,6 +1138,8 @@ int ModApiMapgen::l_clear_registered_schematics(lua_State *L)
 // generate_ores(vm, p1, p2, [ore_id])
 int ModApiMapgen::l_generate_ores(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 
 	Mapgen mg;
@@ -1130,6 +1164,8 @@ int ModApiMapgen::l_generate_ores(lua_State *L)
 // generate_decorations(vm, p1, p2, [deco_id])
 int ModApiMapgen::l_generate_decorations(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 
 	Mapgen mg;
@@ -1154,6 +1190,8 @@ int ModApiMapgen::l_generate_decorations(lua_State *L)
 // create_schematic(p1, p2, probability_list, filename, y_slice_prob_list)
 int ModApiMapgen::l_create_schematic(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	INodeDefManager *ndef = getServer(L)->getNodeDefManager();
 
 	const char *filename = luaL_checkstring(L, 4);
@@ -1217,6 +1255,8 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 // place_schematic(p, schematic, rotation, replacement)
 int ModApiMapgen::l_place_schematic(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	Map *map = &(getEnv(L)->getMap());
 	SchematicManager *schemmgr = getServer(L)->getEmergeManager()->schemmgr;
 
@@ -1255,6 +1295,8 @@ int ModApiMapgen::l_place_schematic(lua_State *L)
 // serialize_schematic(schematic, format, options={...})
 int ModApiMapgen::l_serialize_schematic(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	SchematicManager *schemmgr = getServer(L)->getEmergeManager()->schemmgr;
 
 	//// Read options
