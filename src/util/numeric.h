@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef UTIL_NUMERIC_HEADER
 #define UTIL_NUMERIC_HEADER
 
+#include "../basicmacros.h"
 #include "../irrlichttypes.h"
 #include "../irr_v2d.h"
 #include "../irr_v3d.h"
@@ -33,7 +34,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <map>
 #include <vector>
-#include <algorithm>
 
 
 /*
@@ -171,9 +171,6 @@ inline v3s16 arealim(v3s16 p, s16 d)
 	return p;
 }
 
-#define ARRLEN(x) (sizeof(x) / sizeof((x)[0]))
-#define CONTAINS(c, v) (std::find((c).begin(), (c).end(), (v)) != (c).end())
-
 // The naive swap performs better than the xor version
 #define SWAP(t, x, y) do { \
 	t temp = x;            \
@@ -282,12 +279,6 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed);
 
 bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr=NULL);
-
-/*
-	Some helper stuff
-*/
-#define MYMIN(a,b) ((a)<(b)?(a):(b))
-#define MYMAX(a,b) ((a)>(b)?(a):(b))
 
 /*
 	Returns nearest 32-bit integer for given floating point number.
