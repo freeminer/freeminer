@@ -383,6 +383,13 @@ ServerEnvironment::~ServerEnvironment()
 	// Convert all objects to static and delete the active objects
 	deactivateFarObjects(true);
 
+	for (auto o : objects_to_delete) {
+		if (!o)
+			continue;
+		delete o;
+	}
+	objects_to_delete.clear();
+
 	// Drop/delete map
 	m_map->drop();
 
@@ -1949,6 +1956,13 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	//std::list<u16> objects_to_remove;
 
+	for (auto o : objects_to_delete) {
+		if (!o)
+			continue;
+		delete o;
+	}
+	objects_to_delete.clear();
+
 	std::vector<ServerActiveObject*> objects;
 	{
 		auto lock = m_active_objects.try_lock_shared_rec();
@@ -2031,7 +2045,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 		// Delete
 		if(obj->environmentDeletes()) {
 			m_active_objects.set(id, nullptr);
-			delete obj;
+			objects_to_delete.push_back(obj);
 		}
 
 		// Id to be removed from m_active_objects
@@ -2046,7 +2060,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 	// Remove references from m_active_objects
 	for(auto i = objects_to_remove.begin();
 			i != objects_to_remove.end(); ++i) {
-		delete m_active_objects.get(*i);
+		objects_to_delete.push_back(m_active_objects.get(*i));
 		m_active_objects.erase(*i);
 	}
 	objects_to_remove.clear();
@@ -2455,7 +2469,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		if(obj->environmentDeletes())
 		{
 			m_active_objects.set(id, nullptr);
-			delete obj;
+			objects_to_delete.push_back(obj);
 		}
 
 		// Id to be removed from m_active_objects
@@ -2469,7 +2483,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 	// Remove references from m_active_objects
 		if (lock->owns_lock())
 			for(auto & i : objects_to_remove) {
-			delete m_active_objects.get(i);
+			objects_to_delete.push_back(m_active_objects.get(i));
 			m_active_objects.erase(i);
 		}
 		objects_to_remove.clear();

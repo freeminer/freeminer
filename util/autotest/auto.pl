@@ -83,7 +83,7 @@ sub init_config () {
         name              => 'bot',
         go                => '--go',
         gameid            => 'default',
-        tsan_opengl_fix   => 1,
+        #tsan_opengl_fix   => 1,
         options_display   => ($ENV{DISPLAY} ? '' : 'headless'),
         options_bot       => 'bot_random',
         cmake_minetest    => '-DMINETEST_PROTO=1',
