@@ -150,6 +150,8 @@ map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
 our $commands = {
     init => sub { init_config(); 0 },
     prepare => sub {
+        $config->{clang_version} = $config->{clang} if $config->{clang} and $config->{clang} ne '1';
+        $g->{build_name} .= $config->{clang_version};
         chdir $config->{root_path};
         rename qw(CMakeCache.txt CMakeCache.txt.backup);
         rename qw(src/cmake_config.h src/cmake_config.backup);
@@ -167,7 +169,6 @@ our $commands = {
 
         $D{ENABLE_LUAJIT} = 0, $D{DEBUG} = 1 if $config->{cmake_debug};
 
-        $config->{clang_version} = $config->{clang} if $config->{clang} and $config->{clang} ne '1';
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}

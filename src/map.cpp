@@ -2156,7 +2156,7 @@ void Map::removeNodeMetadata(v3s16 p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(block == NULL)
 	{
-		warningstream<<"Map::removeNodeMetadata(): Block not found"
+		verbosestream<<"Map::removeNodeMetadata(): Block not found"
 				<<std::endl;
 		return;
 	}
