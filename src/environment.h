@@ -123,6 +123,11 @@ public:
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	concurrent_vector<Player*> m_players;
+
+
+	/*
+	 *  Below: values under m_time_lock
+	 */
 	// Time of day in milli-hours (0-23999); determines day and night
 	std::atomic_int m_time_of_day;
 	// Time of day in 0...1
@@ -132,6 +137,9 @@ protected:
 	// Overriding the day-night ratio is useful for custom sky visuals
 	bool m_enable_day_night_ratio_override;
 	u32 m_day_night_ratio_override;
+	/*
+	 * Above: values under m_time_lock
+	 */
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -145,7 +153,6 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	Mutex m_timeofday_lock;
 	Mutex m_time_lock;
 
 };
