@@ -174,7 +174,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("autojump", "0");
 	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("hotbar_cycling", "false");
-	settings->setDefault("minimap_default_mode", itos(MINIMAP_MODE_SURFACEx1));
 
 // TODO: refactor and resolve client/server dependencies
 #ifndef SERVER // Only on client
