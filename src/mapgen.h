@@ -188,9 +188,14 @@ public:
 	virtual void makeChunk(BlockMakeData *data) {}
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
+	// freeminer:
 	s16 liquid_pressure;
 	unordered_map_v3POS<s16> heat_cache;
 	unordered_map_v3POS<s16> humidity_cache;
+
+
+private:
+	DISABLE_CLASS_COPY(Mapgen);
 };
 
 struct MapgenFactory {

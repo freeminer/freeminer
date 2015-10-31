@@ -390,6 +390,7 @@ private:
 	u32 m_inc_trending_up_start_time; // milliseconds
 	bool m_queue_size_timer_started;
 
+	// freminer:
 protected:
 	u32 m_blocks_update_last;
 	u32 m_blocks_save_last;
@@ -400,6 +401,10 @@ public:
 	UniqueQueue<v3POS> m_transforming_liquid;
 	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
 	std::atomic_uint time_life;
+
+private:
+
+	DISABLE_CLASS_COPY(Map);
 };
 
 /*

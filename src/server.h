@@ -716,6 +716,7 @@ public:
 
 
 private:
+	DISABLE_CLASS_COPY(Server);
 };
 
 /*
