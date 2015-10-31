@@ -3626,7 +3626,8 @@ v3f Server::findSpawnPos()
 	}
 
 	s16 water_level = map.getWaterLevel();
-
+	s16 vertical_spawn_range = g_settings->getS16("vertical_spawn_range");
+	auto cache_block_before_spawn = g_settings->getBool("cache_block_before_spawn");
 	bool is_good = false;
 
 	// Try to find a good place a few times
@@ -3638,10 +3639,10 @@ v3f Server::findSpawnPos()
 				-range + (myrand() % (range * 2)));
 
 		// Get ground height at point
-		s16 groundheight = map.findGroundLevel(nodepos2d, g_settings->getBool("cache_block_before_spawn"));
-		if (groundheight <= water_level) // Don't go underwater
-			continue;
-		if (groundheight > water_level + g_settings->getS16("max_spawn_height")) // Don't go to high places
+		s16 groundheight = map.findGroundLevel(nodepos2d, cache_block_before_spawn);
+		// Don't go underwater or to high places
+		if (groundheight <= water_level ||
+				groundheight > water_level + vertical_spawn_range)
 			continue;
 
 		v3s16 nodepos(nodepos2d.X, groundheight, nodepos2d.Y);

@@ -419,7 +419,7 @@ void set_default_settings(Settings *settings) {
 	settings->setDefault("enable_pvp", "true");
 	settings->setDefault("disable_anticheat", "false");
 	settings->setDefault("enable_rollback_recording", "false");
-	settings->setDefault("max_spawn_height", "50");
+	settings->setDefault("vertical_spawn_range", "50");
 	settings->setDefault("time_speed", "72");
 
 	settings->setDefault("kick_msg_shutdown", "Server shutting down.");
