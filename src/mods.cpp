@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "strfnd.h"
 #include "convert_json.h"
+#include "exceptions.h"
 
 static bool parseDependsLine(std::istream &is,
 		std::string &dep, std::set<char> &symbols)
