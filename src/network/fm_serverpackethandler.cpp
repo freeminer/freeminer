@@ -1304,7 +1304,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 	{
 		std::vector<s32> removed_ids;
 		packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(&removed_ids);
-		for (auto id : removed_ids) {
+		for (auto & id : removed_ids) {
 			std::map<s32, ServerPlayingSound>::iterator i =
 					m_playing_sounds.find(id);
 			if(i == m_playing_sounds.end())

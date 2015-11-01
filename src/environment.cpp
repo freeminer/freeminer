@@ -205,11 +205,13 @@ void Environment::stepTimeOfDay(float dtime)
 	m_time_counter += dtime;
 	f32 speed = m_time_of_day_speed * 24000. / (24. * 3600);
 	u32 units = (u32)(m_time_counter * speed);
-	bool sync_f = false;
+	//bool sync_f = false;
 	if (units > 0) {
 		// Sync at overflow
+/*
 		if (m_time_of_day + units >= 24000)
 			sync_f = true;
+*/
 		m_time_of_day = (m_time_of_day + units) % 24000;
 /*
 		if (sync_f)
@@ -401,7 +403,7 @@ ServerEnvironment::~ServerEnvironment()
 	// Convert all objects to static and delete the active objects
 	deactivateFarObjects(true);
 
-	for (auto o : objects_to_delete) {
+	for (auto & o : objects_to_delete) {
 		if (!o)
 			continue;
 		delete o;
@@ -1623,7 +1625,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 			{
 				auto lock = m_map->m_blocks.try_lock_shared_rec();
 				if (lock->owns_lock())
-				for (auto ir : m_map->m_blocks) {
+				for (auto & ir : m_map->m_blocks) {
 					if (!ir.second || !ir.second->abm_triggers)
 						continue;
 					m_abm_random_blocks.emplace_back(ir.first);
@@ -1974,7 +1976,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	//std::list<u16> objects_to_remove;
 
-	for (auto o : objects_to_delete) {
+	for (auto & o : objects_to_delete) {
 		if (!o)
 			continue;
 		delete o;

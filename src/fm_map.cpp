@@ -465,8 +465,18 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 }
 
 
-u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
-                        std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
+u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks, std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
+	Map::lighting_map_t lighting_mblocks;
+	for (auto & i : a_blocks)
+		lighting_mblocks[i.first] = 0;
+	unordered_map_v3POS<int> processed;
+	return updateLighting(lighting_mblocks, processed, max_cycle_ms);
+}
+
+u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms) {
+
+	std::map<v3POS, MapBlock*> modified_blocks;
+
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	int ret = 0;
@@ -482,7 +492,7 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 	//std::unordered_map<v3POS, u8, v3POSHash, v3POSEqual> unlight_from_day, unlight_from_night;
 	std::set<v3POS> light_sources;
 	std::map<v3POS, u8> unlight_from_day, unlight_from_night;
-	unordered_map_v3POS<int> processed;
+	//unordered_map_v3POS<int> processed;
 
 
 	int num_bottom_invalid = 0;
@@ -498,7 +508,8 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 		for(auto i = a_blocks.begin();
 		        i != a_blocks.end(); ++i) {
 
-			processed[i->first] = 1000000;
+			//processed[i->first] = //1000000;
+			//infostream<<"Light: start col if=" << i->first << std::endl;
 			auto block = getBlockNoCreateNoEx(i->first);
 
 			for(;;) {
@@ -510,8 +521,10 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 				if (!lock->owns_lock())
 					break; // may cause dark areas
 				v3POS pos = block->getPos();
+				//if (processed.count(pos)) infostream<<"Light: test pos" << pos << " pps="<<processed[pos] << " >= if="<< i->first.Y <<std::endl;
+
 				if (processed.count(pos) && processed[pos] >= i->first.Y ) {
-					//verbosestream<<"Light: skipping pos" << pos << " pps="<<processed[pos] << " if="<< i->first.Y <<std::endl;
+					//infostream<<"Light: skipping pos" << pos << " pps="<<processed[pos] << " >= if="<< i->first.Y <<std::endl;
 					break;
 				}
 				++loopcount;
@@ -596,6 +609,10 @@ u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
 	}
 
 	//infostream<<"light: processed="<<processed.size()<< " loopcount="<<loopcount<< " ablocks_bef="<<a_blocks.size();
+
+	for (auto & i : modified_blocks)
+		processed[i.first] = 1;
+
 	for (auto & i : processed) {
 		a_blocks.erase(i.first);
 		MapBlock *block = getBlockNoCreateNoEx(i.first);
@@ -722,4 +739,63 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 	}
 
 	return block_below_is_valid;
+}
+
+void Map::lighting_modified_add(v3POS pos, int range) {
+	MutexAutoLock lock(m_lighting_modified_mutex);
+	if (m_lighting_modified_blocks.count(pos)) {
+		auto old_range = m_lighting_modified_blocks[pos];
+		if (old_range <= range)
+			return;
+		m_lighting_modified_blocks_range[old_range].erase(pos);
+	}
+	m_lighting_modified_blocks[pos] = range;
+	m_lighting_modified_blocks_range[range][pos] = range;
+};
+
+
+unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
+	unsigned int ret = 0;
+	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+	unordered_map_v3POS<int> processed;
+	for (;;) {
+		lighting_map_t blocks;
+		int range = 5;
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			auto r = m_lighting_modified_blocks_range.begin();
+			if (r == m_lighting_modified_blocks_range.end())
+				break;
+			range = r->first;
+			blocks = r->second;
+			m_lighting_modified_blocks_range.erase(r);
+			for (auto & i : blocks)
+				m_lighting_modified_blocks.erase(i.first);
+			//infostream <<" go light range="<< r->first << " size="<<blocks.size()<< std::endl;
+		}
+		ret += updateLighting(blocks, processed, max_cycle_ms);
+
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			for (auto & i : blocks) {
+				m_lighting_modified_blocks_range[range][i.first] = i.second;
+				m_lighting_modified_blocks[i.first] = i.second;
+			}
+		}
+		//infostream <<" ok light range="<<range << " retbacksize="<<blocks.size() << " ret="<< ret << " processed="<<processed.size()<< std::endl;
+		if (porting::getTimeMs() > end_ms)
+			break;
+	}
+
+	{
+		MutexAutoLock lock(m_lighting_modified_mutex);
+		for (auto & i : processed) {
+			if (m_lighting_modified_blocks.count(i.first)) {
+				m_lighting_modified_blocks_range[m_lighting_modified_blocks[i.first]].erase(i.first);
+				m_lighting_modified_blocks.erase(i.first);
+			}
+		}
+	}
+
+	return ret;
 }

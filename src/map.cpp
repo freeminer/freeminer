@@ -251,7 +251,7 @@ void Map::unspreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 	// Cache this a bit, too
-	//bool block_checked_in_modified = false;
+	bool block_checked_in_modified = false;
 
 	for(std::map<v3s16, u8>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -265,7 +265,7 @@ void Map::unspreadLight(enum LightBank bank,
 				block = getBlockNoCreate(blockpos);
 				blockpos_last = blockpos;
 
-				//block_checked_in_modified = false;
+				block_checked_in_modified = false;
 				blockchangecount++;
 			}
 		}
@@ -296,22 +296,26 @@ void Map::unspreadLight(enum LightBank bank,
 			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed
+/*
 			try {
+*/
 				if(block == NULL || blockpos != blockpos_last){
-					block = getBlockNoCreate(blockpos);
+					block = getBlockNoCreateNoEx(blockpos);
 
 					if (!block || block->isDummy())
 						continue;
 
 					blockpos_last = blockpos;
 
-					//block_checked_in_modified = false;
+					block_checked_in_modified = false;
 					blockchangecount++;
 				}
+/*
 			}
 			catch(InvalidPositionException &e) {
 				continue;
 			}
+*/
 
 			// Get node straight from the block
 			bool is_valid_position;
@@ -319,7 +323,7 @@ void Map::unspreadLight(enum LightBank bank,
 			if (!is_valid_position)
 				continue;
 
-			//bool changed = false;
+			bool changed = false;
 
 			//TODO: Optimize output by optimizing light_sources?
 
@@ -344,7 +348,7 @@ void Map::unspreadLight(enum LightBank bank,
 					block->setNode(relpos, n2);
 
 					unlighted_nodes[n2pos] = current_light;
-					//changed = true;
+					changed = true;
 
 					/*
 						Remove from light_sources if it is there
@@ -366,17 +370,19 @@ void Map::unspreadLight(enum LightBank bank,
 			}
 
 			// Add to modified_blocks
-/*
 			if(changed == true && block_checked_in_modified == false)
 			{
 				// If the block is not found in modified_blocks, add.
+/*
 				if(modified_blocks.find(blockpos) == modified_blocks.end())
 				{
+*/
 					modified_blocks[blockpos] = block;
+/*
 				}
+*/
 				block_checked_in_modified = true;
 			}
-*/
 		}
 	}
 
@@ -435,7 +441,7 @@ void Map::spreadLight(enum LightBank bank,
 	v3s16 blockpos_last;
 	MapBlock *block = NULL;
 		// Cache this a bit, too
-	//bool block_checked_in_modified = false;
+	bool block_checked_in_modified = false;
 
 	for(std::set<v3s16>::iterator j = from_nodes.begin();
 		j != from_nodes.end(); ++j)
@@ -457,7 +463,7 @@ void Map::spreadLight(enum LightBank bank,
 					continue;
 				blockpos_last = blockpos;
 
-				//block_checked_in_modified = false;
+				block_checked_in_modified = false;
 				blockchangecount++;
 			}
 
@@ -487,25 +493,29 @@ void Map::spreadLight(enum LightBank bank,
 			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed
-			try {
+			//try {
 				if(block == NULL || blockpos != blockpos_last){
-					block = getBlockNoCreate(blockpos);
+					block = getBlockNoCreateNoEx(blockpos);
+					if (!block)
+						continue;
 					blockpos_last = blockpos;
 
-					//block_checked_in_modified = false;
+					block_checked_in_modified = false;
 					blockchangecount++;
 				}
+/*
 			}
 			catch(InvalidPositionException &e) {
 				continue;
 			}
+*/
 
 			// Get node straight from the block
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
 				continue;
 
-			//bool changed = false;
+			bool changed = false;
 			/*
 				If the neighbor is brighter than the current node,
 				add to list (it will light up this node on its turn)
@@ -513,7 +523,7 @@ void Map::spreadLight(enum LightBank bank,
 			if(n2.getLight(bank, nodemgr) > undiminish_light(oldlight))
 			{
 				lighted_nodes.insert(n2pos);
-				//changed = true;
+				changed = true;
 			}
 			/*
 				If the neighbor is dimmer than how much light this node
@@ -526,22 +536,24 @@ void Map::spreadLight(enum LightBank bank,
 					n2.setLight(bank, newlight, nodemgr);
 					block->setNode(relpos, n2);
 					lighted_nodes.insert(n2pos);
-					//changed = true;
+					changed = true;
 				}
 			}
 
-/*
 			// Add to modified_blocks
 			if(changed == true && block_checked_in_modified == false)
 			{
 				// If the block is not found in modified_blocks, add.
+/*
 				if(modified_blocks.find(blockpos) == modified_blocks.end())
 				{
+*/
 					modified_blocks[blockpos] = block;
+/*
 				}
+*/
 				block_checked_in_modified = true;
 			}
-*/
 		}
 	}
 
@@ -978,11 +990,14 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
 			}
 
-			if (ndef->get(from_node).light_propagates) {
+/*
+			const auto & f = ndef->get(from_node);
+			if (f.light_propagates || f.sunlight_propagates || f.light_source) {
 				MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 				if (block)
 					block->setLightingExpired(true);
 			}
+*/
 
 		}
 		if (remove_metadata)
@@ -1936,7 +1951,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		/*
 			update the current node
 		 */
-		MapNode n00 = n0;
+		//MapNode n00 = n0;
 		//bool flow_down_enabled = (flowing_down && ((n0.param2 & LIQUID_FLOW_DOWN_MASK) != LIQUID_FLOW_DOWN_MASK));
 		if (nodemgr->get(new_node_content).liquid_type == LIQUID_FLOWING) {
 			// set level to last 3 bits, flowing down bit to 4th bit
@@ -1975,6 +1990,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 			}
 		}
 
+/*
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
 		if(block != NULL) {
@@ -1984,6 +2000,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 					nodemgr->get(n00).light_source != 0)
 				lighting_modified_blocks.set(block->getPos(), block);
 		}
+*/
 
 		/*
 			enqueue neighbors for update if neccessary
@@ -3333,10 +3350,12 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
 
+/*
 		if (block->getLightingExpired()) {
 			verbosestream<<"Loaded block with exiried lighting. (maybe sloooow appear), try recalc " << p3d<<std::endl;
 			lighting_modified_blocks.set(p3d, nullptr);
 		}
+*/
 
 		return block;
 	}

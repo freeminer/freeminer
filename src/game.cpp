@@ -1022,7 +1022,7 @@ bool nodePlacementPrediction(Client &client,
 
 			if(player->canPlaceNode(p, n)) {
 				// This triggers the required mesh update too
-				client.addNode(p, n, nodedef->get(id).light_source ? 3 : 1); // add without liquids
+				client.addNode(p, n, true, nodedef->get(id).light_source ? 3 : 2); // add without liquids
 				return true;
 			}
 		} catch (InvalidPositionException &e) {

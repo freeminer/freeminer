@@ -475,7 +475,8 @@ int RemoteClient::GetNextBlocks (
 				block->resetUsageTimer();
 
 				if (block->getLightingExpired()) {
-					env->getServerMap().lighting_modified_blocks.set(p, nullptr);
+					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
+					env->getServerMap().lighting_modified_add(p, d);
 				}
 
 				if (block->lighting_broken && block_sent)

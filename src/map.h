@@ -399,8 +399,15 @@ public:
 	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
-	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
+	typedef unordered_map_v3POS<int> lighting_map_t;
+	Mutex m_lighting_modified_mutex;
+	std::map<v3POS, int> m_lighting_modified_blocks;
+	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
+	void lighting_modified_add(v3POS pos, int range = 5);
 	std::atomic_uint time_life;
+	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
+	unsigned int updateLightingQueue(unsigned int max_cycle_ms = 0);
+
 
 private:
 
