@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
 	package="org.freeminer.freeminer"
 	android:versionCode="###ANDROID_VERSION###"
-	android:versionName="###BASE_VERSION###.###ANDROID_VERSION###"
+	android:versionName="###BASE_VERSION###.###BUILD_NUMBER###"
 	android:installLocation="auto">
 	<uses-sdk android:minSdkVersion="15"/>
 	<uses-feature android:glEsVersion="0x00010000" android:required="true"/>
