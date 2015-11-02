@@ -590,7 +590,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		used_meshes.emplace_back(mapBlockMesh);
 
 		// Mesh animation
-		if (mesh_step <= 1)
+		//if (mesh_step <= 1)
 		{
 			//MutexAutoLock lock(block->mesh_mutex);
 
@@ -605,11 +605,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			//bool faraway = d >= m_control.wanted_range * BS;
 			if(mapBlockMesh->isAnimationForced() ||
 					!faraway ||
-#if __ANDROID__
-0)
-#else
 					mesh_animate_count_far < (m_control.range_all ? 200 : 50))
-#endif
 			{
 				bool animated = mapBlockMesh->animate(
 						faraway,
