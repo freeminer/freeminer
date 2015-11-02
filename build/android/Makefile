@@ -78,6 +78,7 @@ APP_STL = gnustl       # gnustl libcxx|libc++ stlport
 # toolchain config for little endian mips
 ################################################################################
 ifeq ($(TARGET_MIPS),1)
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 2 )))
 TARGET_HOST = mipsel-linux
 TARGET_ABI = mips
 TARGET_LIBDIR = mips
@@ -94,6 +95,7 @@ endif
 # toolchain config for x86
 ################################################################################
 ifeq ($(TARGET_x86),1)
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 1 )))
 TARGET_HOST = x86-linux
 TARGET_ABI = x86
 TARGET_LIBDIR = x86
