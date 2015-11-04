@@ -230,7 +230,7 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
 
 #endif
 
-void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast)
+void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast, bool destroy)
 {
 	if (recurse-- <= 0)
 		return;
@@ -247,7 +247,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast)
 				ItemGroupList groups = f.groups;
 
 				// Check is the node is considered valid to fall
-				if (itemgroup_get(groups, "falling_node")) {
+				if (destroy || itemgroup_get(groups, "falling_node")) {
 					MapNode n_bottom = m_map->getNode(v3s16(x, y - 1, z));
 					ContentFeatures f_under = ndef->get(n_bottom);
 
@@ -257,7 +257,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast)
 						(!f_under.walkable || f_under.buildable_to)) {
 						removeNode(v3s16(x,y,z), fast);
 						spawnFallingActiveObject(f.name, intToFloat(v3s16(x,y,z),BS), n, fast);
-						nodeUpdate(v3s16(x,y,z), recurse, fast);
+						nodeUpdate(v3s16(x,y,z), recurse, fast, destroy);
 					}
 				}
 			}
