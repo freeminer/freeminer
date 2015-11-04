@@ -32,6 +32,7 @@ extern "C" {
 }
 
 #include "irrlichttypes.h"
+#include "threads.h"
 #include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
 #include "common/c_types.h"
@@ -119,7 +120,8 @@ protected:
 	std::string     m_last_run_mod;
 	bool            m_secure;
 #ifdef SCRIPTAPI_LOCK_DEBUG
-	bool            m_locked;
+	int             m_lock_recursion_count;
+	threadid_t      m_owning_thread;
 #endif
 
 private:

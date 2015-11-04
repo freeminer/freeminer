@@ -44,12 +44,12 @@ DEALINGS IN THE SOFTWARE.
 	#include <pthread.h>
 #endif
 
-#include "basicmacros.h"
+#include "util/basic_macros.h"
 
 class Mutex
 {
 public:
-	Mutex();
+	Mutex(bool recursive=false);
 	~Mutex();
 	void lock();
 	void unlock();

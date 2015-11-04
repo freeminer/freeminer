@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <semaphore.h>
 #endif
 
-#include "basicmacros.h"
+#include "util/basic_macros.h"
 
 class Semaphore {
 public:

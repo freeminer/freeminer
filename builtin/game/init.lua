@@ -5,6 +5,7 @@ local gamepath = scriptpath.."game"..DIR_DELIM
 
 dofile(commonpath.."vector.lua")
 
+dofile(gamepath.."constants.lua")
 dofile(gamepath.."item.lua")
 dofile(gamepath.."register.lua")
 

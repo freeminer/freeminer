@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef UTIL_NUMERIC_HEADER
 #define UTIL_NUMERIC_HEADER
 
-#include "../basicmacros.h"
+#include "basic_macros.h"
 #include "../irrlichttypes.h"
 #include "../irr_v2d.h"
 #include "../irr_v3d.h"

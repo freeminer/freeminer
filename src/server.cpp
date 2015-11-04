@@ -1528,11 +1528,6 @@ void Server::setTimeOfDay(u32 time)
 	m_time_of_day_send_timer = 0;
 }
 
-u32 Server::getTimeOfDay()
-{
-	return m_env->getTimeOfDay();
-}
-
 void Server::onMapEditEvent(MapEditEvent *event)
 {
 	//infostream<<"Server::onMapEditEvent()"<<std::endl;

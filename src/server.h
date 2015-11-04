@@ -236,7 +236,6 @@ public:
 	// Both setter and getter need no envlock,
 	// can be called freely from threads
 	void setTimeOfDay(u32 time);
-	inline u32 getTimeOfDay();
 
 	/*
 		Shall be called with the environment locked.
@@ -400,6 +399,9 @@ public:
 	// Bind address
 	Address m_bind_addr;
 
+	// Environment mutex (envlock)
+	Mutex m_env_mutex;
+
 private:
 
 	friend class EmergeThread;
@@ -555,7 +557,6 @@ private:
 
 	// Environment
 	ServerEnvironment *m_env;
-	//Mutex m_env_mutex;
 
 	// server connection
 	con::Connection m_con;
