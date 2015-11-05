@@ -13,7 +13,7 @@ PATHCFGFILE = path.cfg
 
 ROOT = $(shell pwd)
 
-GAMES_TO_COPY = default pixture
+GAMES_TO_COPY = default
 MODS_TO_COPY =
 
 
@@ -814,6 +814,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	find . -name "timestamp" -exec rm {} \; ;                                  \
 	find . \( -name "favoriteservers.json" -o -name "servers_public.json" \) -exec rm {} \; ;                       \
 	find . -name "*.blend" -exec rm {} \; ;                                    \
+	find . -name "*.xcf" -exec rm {} \; ; \
 	find . -name "*~" -exec rm {} \; ;                                         \
 	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
 	find . -type d -path "*.svn" -exec rm -rf {} \; ;                          \
