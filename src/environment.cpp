@@ -84,6 +84,7 @@ Environment::~Environment()
 			i != m_players.end(); ++i) {
 		delete (*i);
 	}
+	m_players.clear();
 }
 
 void Environment::addPlayer(Player *player)
@@ -201,9 +202,9 @@ u32 Environment::getTimeOfDay()
 
 float Environment::getTimeOfDayF()
 {
+	MutexAutoLock lock(this->m_time_lock);
 	return (float)m_time_of_day / 24000.0;
 /*
-	MutexAutoLock lock(this->m_time_lock);
 	return m_time_of_day_f;
 */
 }
@@ -416,13 +417,16 @@ ServerEnvironment::~ServerEnvironment()
 
 	// Convert all objects to static and delete the active objects
 	deactivateFarObjects(true);
+	removeRemovedObjects(50000);
 
+/*
 	for (auto & o : objects_to_delete) {
 		if (!o)
 			continue;
 		delete o;
 	}
 	objects_to_delete.clear();
+*/
 
 	// Drop/delete map
 	m_map->drop();
@@ -432,6 +436,7 @@ ServerEnvironment::~ServerEnvironment()
 			i = m_abms.begin(); i != m_abms.end(); ++i){
 		delete i->abm;
 	}
+	m_abms.clear();
 }
 
 Map & ServerEnvironment::getMap()

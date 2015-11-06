@@ -74,11 +74,9 @@ ScriptApiBase::ScriptApiBase() /* :
 	m_luastackmutex(true)
 */
 {
-/*
 #ifdef SCRIPTAPI_LOCK_DEBUG
 	m_lock_recursion_count = 0;
 #endif
-*/
 	m_luastack = luaL_newstate();
 	FATAL_ERROR_IF(!m_luastack, "luaL_newstate() failed");
 

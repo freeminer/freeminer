@@ -38,7 +38,9 @@ extern "C" {
 #include "common/c_types.h"
 #include "common/c_internal.h"
 
+/*
 #define SCRIPTAPI_LOCK_DEBUG
+*/
 #define SCRIPTAPI_DEBUG
 
 // MUST be an invalid mod name so that mods can't
