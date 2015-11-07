@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threads.h"
 #include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
+#include "irrlichttypes.h"
 
 class ILogOutput;
 
@@ -43,12 +44,16 @@ enum LogLevel {
 	LL_MAX,
 };
 
+typedef u8 LogLevelMask;
+#define LOGLEVEL_TO_MASKLEVEL(x) (1 << x)
+
 class Logger {
 public:
 	void addOutput(ILogOutput *out);
 	void addOutput(ILogOutput *out, LogLevel lev);
+	void addOutputMasked(ILogOutput *out, LogLevelMask mask);
 	void addOutputMaxLevel(ILogOutput *out, LogLevel lev);
-	void removeOutput(ILogOutput *out);
+	LogLevelMask removeOutput(ILogOutput *out);
 	void setLevelSilenced(LogLevel lev, bool silenced);
 
 	void registerThread(const std::string &name);

@@ -76,7 +76,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("video_driver", "opengl");
 	settings->setDefault("enable_shaders", "1");
 #endif
-	settings->setDefault("chat_buffer_size", "6");
+//	settings->setDefault("chat_buffer_size", "6"); // todo re-enable
 	settings->setDefault("timelapse", "0");
 
 	// Paths

@@ -40,6 +40,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include "filesys.h"
 #endif
 
+#if USE_CURSES
+	#include "terminal_chat_console.h"
+#endif
+
 /*
 	Assert
 */
@@ -47,6 +51,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 void sanity_check_fn(const char *assertion, const char *file,
 		unsigned int line, const char *function)
 {
+#if USE_CURSES
+	g_term_console.stopAndWaitforThread();
+#endif
+
 	errorstream << std::endl << "In thread " << std::hex
 		<< thr_get_current_thread_id() << ":" << std::endl;
 	errorstream << file << ":" << line << ": " << function
@@ -60,6 +68,10 @@ void sanity_check_fn(const char *assertion, const char *file,
 void fatal_error_fn(const char *msg, const char *file,
 		unsigned int line, const char *function)
 {
+#if USE_CURSES
+	g_term_console.stopAndWaitforThread();
+#endif
+
 	errorstream << std::endl << "In thread " << std::hex
 		<< thr_get_current_thread_id() << ":" << std::endl;
 	errorstream << file << ":" << line << ": " << function

@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "util/thread.h"
 #include "environment.h"
+#include "chat_interface.h"
 #include "clientiface.h"
 #include "network/networkpacket.h"
 #include <string>
@@ -182,7 +183,8 @@ public:
 		const std::string &path_world,
 		const SubgameSpec &gamespec,
 		bool simple_singleplayer_mode,
-		bool ipv6
+		bool ipv6,
+		ChatInterface *iface = NULL
 	);
 	~Server();
 	void start(Address bind_addr);
@@ -391,6 +393,8 @@ public:
 			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
 			std::string* vers_string);
 
+	void printToConsoleOnly(const std::string &text);
+
 	void SendPlayerHPOrDie(PlayerSAO *player);
 	void SendPlayerBreath(u16 peer_id);
 	void SendInventory(PlayerSAO* playerSAO);
@@ -506,6 +510,12 @@ private:
 	};
 	void DeleteClient(u16 peer_id, ClientDeletionReason reason);
 	void UpdateCrafting(Player *player);
+
+	// This returns the answer to the sender of wmessage, or "" if there is none
+	std::wstring handleChat(const std::string &name, const std::wstring &wname,
+		const std::wstring &wmessage,
+		u16 peer_id_to_avoid_sending = PEER_ID_INEXISTENT);
+	void handleAdminChat(const ChatEventChat *evt);
 
 	v3f findSpawnPos();
 
@@ -649,6 +659,9 @@ private:
 	bool m_shutdown_requested;
 	std::string m_shutdown_msg;
 	bool m_shutdown_ask_reconnect;
+
+	ChatInterface *m_admin_chat;
+	std::string m_admin_nick;
 
 	/*
 		Map edit event queue. Automatically receives all map edits.

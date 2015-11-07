@@ -679,7 +679,8 @@ void ChatPrompt::clampView()
 
 ChatBackend::ChatBackend():
 	m_console_buffer(500),
-	m_recent_buffer(g_settings->getU16("chat_buffer_size")),
+	//m_recent_buffer(g_settings->getU16("chat_buffer_size")),
+	m_recent_buffer(6),
 	m_prompt(L"]", 500)
 {
 }
