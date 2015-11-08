@@ -1017,7 +1017,13 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			m_shadownode = m_animated_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
 		else if(m_meshnode)
 			m_shadownode = m_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
+		if (m_shadownode) {
+			m_shadownode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+			m_shadownode->setMaterialFlag(video::EMF_LIGHTING, false);
+			m_shadownode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
+		}
 	}
+
 #endif
 }
 
