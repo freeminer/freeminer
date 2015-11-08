@@ -3594,6 +3594,9 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 			TimeTaker timer1("emerge load");
 
 			block = m_map->getBlockNoCreate(p);
+if (block && block->isGenerated()) {
+//errorstream<<"copy notgen p=" << p << std::endl;
+}
 			if(!block || block->isDummy())
 				block_data_inexistent = true;
 			else
