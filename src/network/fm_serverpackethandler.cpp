@@ -794,9 +794,9 @@ void Server::ProcessData(NetworkPacket *pkt)
 		{
 			if(checkPriv(player->getName(), "shout")){
 				line += "<";
-				if (name.size() > 15) {
+				if (name.size() > 25) {
 					auto cutted = name;
-					cutted.resize(15);
+					cutted.resize(25);
 					line += cutted + ".";
 				} else {
 					line += name;
