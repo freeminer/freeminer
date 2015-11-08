@@ -514,7 +514,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 
 			for(;;) {
 				// Don't bother with dummy blocks.
-				if(!block || block->isDummy()) {
+				if(!block || block->isDummy() || !block->isGenerated()) {
 					break;
 				}
 				auto lock = block->try_lock_unique_rec();

@@ -410,20 +410,22 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	} else {
 		m_wieldnode->setVisible(true);
 	}
-	f32 fov_degrees = MYMAX(MYMIN(m_draw_control.fov, 170.0), 10.0);
+	f32 fov_degrees = m_draw_control.fov;
 
 	// Greater FOV if running
 	v3f speed = player->getSpeed();
 
 	if (m_cache_movement_fov) {
-		auto fog_was = m_draw_control.fov_add;
+		auto fov_was = m_draw_control.fov_add;
 		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
-		if (m_draw_control.fov_add > fog_was + 1)
-			m_draw_control.fov_add = fog_was + ( m_draw_control.fov_add - fog_was) / 3;
-		else if (m_draw_control.fov_add < fog_was - 1)
-			m_draw_control.fov_add = fog_was - (fog_was - m_draw_control.fov_add) / 3;
+		if (m_draw_control.fov_add > fov_was + 1)
+			m_draw_control.fov_add = fov_was + ( m_draw_control.fov_add - fov_was) / 3;
+		else if (m_draw_control.fov_add < fov_was - 1)
+			m_draw_control.fov_add = fov_was - (fov_was - m_draw_control.fov_add) / 3;
 		fov_degrees -= m_draw_control.fov_add;
 	}
+
+	fov_degrees = MYMAX(MYMIN(fov_degrees, 150.0), 10.0);
 
 	// FOV and aspect ratio
 	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
