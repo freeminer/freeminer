@@ -555,12 +555,6 @@ void Client::step(float dtime)
 						do_mapper_update = false;
 				}
 
-				if (r.mesh && r.mesh->getMesh()->getMeshBufferCount() == 0) {
-					//delete r.mesh;
-				} else {
-					// Replace with the new mesh
-					block->mesh = r.mesh;
-				}
 			} else {
 				//delete r.mesh;
 			}
