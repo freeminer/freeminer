@@ -38,7 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "itemgroup.h"
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
-#include "fmbitset.h"
+#include "fm_bitset.h"
 #include <unordered_set>
 
 
@@ -113,6 +113,8 @@ enum ContentParamType2
 	CPT2_WALLMOUNTED,
 	// Block level like FLOWINGLIQUID (also for snow)
 	CPT2_LEVELED,
+	// 2D rotation for things like plants
+	CPT2_DEGROTATE,
 };
 
 enum LiquidType

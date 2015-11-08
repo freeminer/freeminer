@@ -59,6 +59,7 @@ class Database;
 class Server;
 class Mapper;
 struct MinimapMapblock;
+class ChatBackend;
 
 /*
 struct QueuedMeshUpdate
@@ -545,6 +546,8 @@ public:
 	LocalClientState getState() { return m_state; }
 
 	void makeScreenshot(const std::string & name = "screenshot_", IrrlichtDevice *device = nullptr);
+	
+	ChatBackend *chat_backend;
 
 private:
 
@@ -699,6 +702,8 @@ private:
 	// TODO: Add callback to update these when g_settings changes
 	bool m_cache_smooth_lighting;
 	bool m_cache_enable_shaders;
+
+	DISABLE_CLASS_COPY(Client);
 };
 
 #endif // !CLIENT_HEADER

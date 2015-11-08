@@ -44,11 +44,12 @@ DEALINGS IN THE SOFTWARE.
 	#include <pthread.h>
 #endif
 
+#include "util/basic_macros.h"
 
 class Mutex
 {
 public:
-	Mutex();
+	Mutex(bool recursive=false);
 	~Mutex();
 	void lock();
 	void unlock();
@@ -59,6 +60,8 @@ private:
 #else // pthread
 	pthread_mutex_t mutex;
 #endif
+
+	DISABLE_CLASS_COPY(Mutex);
 };
 
 #endif  // C++11

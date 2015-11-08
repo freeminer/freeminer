@@ -1,295 +1,329 @@
-#    This file is read by default from:
+#    This file contains a list of all available settings and their default value for freeminer.conf
+
+#    By default, all the settings are commented and not functional.
+#    Uncomment settings by removing the preceding #.
+
+#    freeminer.conf is read by default from:
 #    ../freeminer.conf
 #    ../../freeminer.conf
 #    Any other path can be chosen by passing the path as a parameter
 #    to the program, eg. "freeminer.exe --config ../freeminer.conf.example".
 
-#    By default, all the settings are commented and not functional.
-#    Uncomment settings by removing the preceding #.
-
 #    Further documentation:
 #    http://wiki.minetest.net/
 
-#    NOTE: This file might not be up-to-date, refer to the
-#    defaultsettings.cpp file for an up-to-date list:
-#    https://github.com/freeminer/freeminer/blob/master/src/defaultsettings.cpp
-
-#    A vim command to convert most of defaultsettings.cpp to conf file format:
-#    :'<,'>s/\tsettings->setDefault("\([^"]*\)", "\([^"]*\)");.*/#\1 = \2/g
-#    Note: Some of the settings are implemented in Lua.
-
 #
-#    Client and server
+# Client
 #
 
-#    Name of player, on a server this is the main admin
-#name =
+## Controls
 
-#
-#    Client stuff
-#
+#    If enabled, you can place blocks at the position (feet + eye level) where you stand.
+#    This is helpful when working with nodeboxes in small areas.
+#    type: bool
+# enable_build_where_you_stand = false
 
-#    Port to connect to (UDP)
-#remote_port =
+#    Player is able to fly without being affected by gravity.
+#    This requires the "fly" privilege on the server.
+#    type: bool
+# free_move = false
 
-#    Key mappings.
+#    Fast movement (via use key).
+#    This requires the "fast" privilege on the server.
+#    type: bool
+# fast_move = false
+
+#    If enabled together with fly mode, player is able to fly through solid nodes.
+#    This requires the "noclip" privilege on the server.
+#    type: bool
+# noclip = false
+
+#    Smooths camera when moving and looking around.
+#    Useful for recording videos.
+#    type: bool
+# cinematic = false
+
+#    Smooths rotation of camera. 0 to disable.
+#    type: float min: 0 max: 0.99
+# camera_smoothing = 0.0
+
+#    Smooths rotation of camera in cinematic mode. 0 to disable.
+#    type: float min: 0 max: 0.99
+# cinematic_camera_smoothing = 0.7
+
+#    Invert vertical mouse movement.
+#    type: bool
+# invert_mouse = false
+
+#    Mouse sensitivity multiplier.
+#    type: float
+# mouse_sensitivity = 0.2
+
+#    If enabled, "use" key instead of "sneak" key is used for climbing down and descending.
+#    type: bool
+# aux1_descends = false
+
+#    Double-tapping the jump key toggles fly mode.
+#    type: bool
+# doubletap_jump = false
+
+#    If disabled "use" key is used to fly fast if both fly and fast mode are enabled.
+#    type: bool
+# always_fly_fast = true
+
+#    The time in seconds it takes between repeated right clicks when holding the right mouse button.
+#    type: float
+# repeat_rightclick_time = 0.25
+
+#    Enable random user input (only used for testing).
+#    type: bool
+# random_input = false
+
+#    Continuous forward movement (only used for testing).
+#    type: bool
+# continuous_forward = false
+
+#    Key for moving the player forward.
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
-#keymap_forward = KEY_KEY_W
-#keymap_backward = KEY_KEY_S
-#keymap_left = KEY_KEY_A
-#keymap_right = KEY_KEY_D
-#keymap_jump = KEY_SPACE
-#keymap_sneak = KEY_LSHIFT
-#keymap_inventory = KEY_KEY_I
-#keymap_zoom = KEY_KEY_Z
+#    type: key
+# keymap_forward = KEY_KEY_W
 
-#    Go down ladder / go down in fly mode / go fast in fast mode
-#keymap_special1 = KEY_KEY_E
-#keymap_chat = KEY_KEY_T
-#keymap_msg = @
-#keymap_cmd = /
-#keyman_console = KEY_F10
-#keymap_rangeselect = KEY_KEY_R
-#keymap_freemove = KEY_KEY_K
-#keymap_fastmove = KEY_KEY_J
-#keymap_cinematic = KEY_F8
-#keymap_screenshot = KEY_F12
+#    Key for moving the player backward.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_backward = KEY_KEY_S
 
-#    If true, keymap_special1 instead of keymap_sneak is used for climbing down and descending
-#aux1_descends = false
+#    Key for moving the player left.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_left = KEY_KEY_A
 
-#    Double-tapping the jump key toggles fly mode
-#doubletap_jump = false
+#    Key for moving the player right.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_right = KEY_KEY_D
 
-#    If false aux1 is used to fly fast
-#always_fly_fast = true
+#    Key for jumping.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_jump = KEY_SPACE
 
-#    Some (temporary) keys for debugging
-#keymap_print_debug_stacks = KEY_KEY_P
-#keymap_quicktune_prev = KEY_HOME
-#keymap_quicktune_next = KEY_END
-#keymap_quicktune_dec = KEY_NEXT
-#keymap_quicktune_inc = KEY_PRIOR
+#    Key for sneaking.
+#    Also used for climbing down and descending in water if aux1_descends is disabled.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_sneak = KEY_LSHIFT
 
-#    If set to true, you can place blocks at the position (feet + eye level) where you stand.
-#    This is helpful when working with nodeboxes.
-#enable_build_where_you_stand = false
+#    Key for opening the inventory.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_inventory = KEY_KEY_I
 
-#    Minimum FPS.
-#    The amount of rendered stuff is dynamically set according to this.
-#wanted_fps = 30
+#    Key for moving fast in fast mode.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_special1 = KEY_KEY_E
 
-#    If FPS would go higher than this, limit it by sleeping
-#    to not waste CPU power for no benefit.
-#fps_max = 60
+#    Key for opening the chat window.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_chat = KEY_KEY_T
 
-#    Maximum FPS when game is paused
-#pause_fps_max = 20
+#    Key for opening the chat window to type commands.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_cmd = /
 
-#    The allowed adjustment range for the automatic rendering range adjustment
-#viewing_range_nodes_max = 160
-#viewing_range_nodes_min = 35
+#    Key for opening the chat console.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keyman_console = KEY_F10
 
-#    Initial window size
-#screenW = 800
-#screenH = 600
-#fullscreen = false
-#fullscreen_bpp = 24
+#    Key for toggling unlimited view range.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_rangeselect = KEY_KEY_R
 
-#    Experimental option, might cause visible spaces between blocks
-#    when set to higher number than 0.
-#fsaa = 0
+#    Key for toggling flying.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_freemove = KEY_KEY_K
 
-#    Vertical synchronization
-#vsync = false
+#    Key for toggling fast mode.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_fastmove = KEY_KEY_J
 
-#    Field of view in degrees
-#fov = 72
+#    Key for toggling noclip mode.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_noclip = KEY_KEY_H
 
-#    Address to connect to (#blank = start local server)
-#address =
+#    Key for toggling cinematic mode.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_cinematic = KEY_F8
 
-#    Enable random user input, for testing
-#random_input = false
+#    Key for toggling display of minimap.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_minimap = KEY_F9
 
-#    Timeout for client to remove unused map data from memory
-#client_unload_unused_data_timeout = 600
+#    Key for taking screenshots.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_screenshot = KEY_F12
 
-#    Maximum number of mapblocks for client to be kept in memory
-#    Set to -1 for unlimited amount
-#client_mapblock_limit = 5000
+#    Key for dropping the currently selected item.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_drop = KEY_KEY_Q
 
-#    Whether to fog out the end of the visible area
-#enable_fog = true
+#    Key for toggling the display of the HUD.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_hud = KEY_F1
 
-#    Whether to show the client debug info (has the same effect as hitting F5)
-#show_debug = false
+#    Key for toggling the display of the chat.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_chat = KEY_F2
 
-#    Enable a bit lower water surface; disable for speed (not quite optimized)
-#new_style_water = false
+#    Key for toggling the display of the fog.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_force_fog_off = KEY_F3
 
-#    Max liquids processed per step
-#liquid_loop_max = 100000
+#    Key for toggling the camrea update. Only used for development
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_update_camera = 
 
-#    The time (in seconds) that the liquids queue may grow beyond processing
-#    capacity until an attempt is made to decrease its size by dumping old queue
-#    items.  A value of 0 disables the functionality.
-#liquid_queue_purge_time = 0
+#    Key for toggling the display of debug info.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_debug = KEY_F5
 
-#    Liquid update interval in seconds
-#liquid_update = 1.0
+#    Key for toggling the display of the profiler. Used for development.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_toggle_profiler = KEY_F6
+
+#    Key for switching between first- and third-person camera.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_camera_mode = KEY_F7
+
+#    Key for increasing the viewing range. Modifies the minimum viewing range.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_increase_viewing_range_min = +
+
+#    Key for decreasing the viewing range. Modifies the minimum viewing range.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_decrease_viewing_range_min = -
+
+#    Key for printing debug stacks. Used for development.
+#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
+#    type: key
+# keymap_print_debug_stacks = KEY_KEY_P
+
+## Network
+
+#    Address to connect to.
+#    Leave this blank to start a local server.
+#    Note that the address field in the main menu overrides this setting.
+#    type: string
+# address = 
+
+#    Port to connect to (UDP).
+#    Note that the port field in the main menu overrides this setting.
+#    type: int min: 1 max: 65535
+# remote_port = 30000
+
+#    Save the map received by the client on disk.
+#    type: bool
+# enable_local_map_saving = false
+
+#    Enable usage of remote media server (if provided by server).
+#    Remote servers offer a significantly faster way to download media (e.g. textures)
+#    when connecting to the server.
+#    type: bool
+# enable_remote_media_server = true
+
+#    URL to the server list displayed in the Multiplayer Tab.
+#    type: string
+# serverlist_url = servers.freeminer.org
+
+#    File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab.
+#    type: string
+# serverlist_file = favoriteservers.txt
+
+## Graphics
+
+### In-Game
+
+#### Basic
+
+#    Whether to fog out the end of the visible area.
+#    type: bool
+# enable_fog = true
+
+#    Enable a bit lower water surface, so it doesn't "fill" the node completely.
+#    Note that this is not quite optimized and that smooth lighting on the
+#    water surface doesn't work with this.
+#    type: bool
+# new_style_water = false
 
 #    Leaves style:
-#     fancy  - all faces visible
-#     simple - only outer faces, if defined special_tiles are used
-#     opaque - disable transparency
-#leaves_style = fancy
+#    -   Fancy:  all faces visible
+#    -   Simple: only outer faces, if defined special_tiles are used
+#    -   Opaque: disable transparency
+#    type: enum values: fancy, simple, opaque
+# leaves_style = fancy
 
-#    Connects glass if supported by node
-#connected_glass = false
+#    Connects glass if supported by node.
+#    type: bool
+# connected_glass = false
 
 #    Enable smooth lighting with simple ambient occlusion.
 #    Disable for speed or for different looks.
-#smooth_lighting = true
+#    type: bool
+# smooth_lighting = true
 
-#    Adjust the gamma encoding for the light tables. Valid values are in the range
-#    1.0 to 3.0 (inclusive); lower numbers are brighter.  This setting is for the
-#    client only and is ignored by the server
-#display_gamma = 1.8
+#    Clouds are a client side effect.
+#    type: bool
+# enable_clouds = true
 
-# Path to texture directory. All textures are first searched from here.
-#texture_path =
+#    Use 3D cloud look instead of flat.
+#    type: bool
+# enable_3d_clouds = true
 
-#    Video back-end.
-#    Possible values: null, software, burningsvideo, direct3d8, direct3d9, opengl.
-#video_driver = opengl
+#### Filtering
 
-#    Unobstructed movement without physics, downwards key is keymap_special1
-#free_move = false
+#    Use mip mapping to scale textures. May slightly increase performance.
+#    type: bool
+# mip_map = false
 
-#    Continuous forward movement (for testing)
-#continuous_forward = false
+#    Use anisotropic filtering when viewing at textures from an angle.
+#    type: bool
+# anisotropic_filter = false
 
-#    Enable cinematic mode
-#cinematic = false
+#    Use bilinear filtering when scaling textures.
+#    type: bool
+# bilinear_filter = false
 
-#    Camera smoothing - smooths rotation of camera. 0 is no smoothing.
-#    Must be equal to or greater than 0, and less than 1.
-#camera_smoothing = 0.0
-
-#    Camera smoothing when in cinematic mode
-#cinematic_camera_smoothing = 0.7
-
-#    Fast movement (keymap_special1)
-#fast_move = false
-
-#    Invert mouse
-#invert_mouse = false
-
-#    Enable/disable clouds
-#enable_clouds = true
-
-#    Height on which clouds are appearing
-#cloud_height = 120
-
-#    Radius of cloud area stated in number of 64 node cloud squares.
-#    Values larger than 26 will start to produce sharp cutoffs at cloud area corners.
-#cloud_radius = 12
-
-#    Use 3D cloud look instead of flat
-#enable_3d_clouds = true
-
-#    Use a cloud animation for the main menu background
-#menu_clouds = true
-
-#    Path for screenshots
-#screenshot_path = "screenshots"
-
-#    Amount of view bobbing (0 = no view bobbing, 1.0 = normal, 2.0 = double)
-#view_bobbing_amount = 1.0
-
-#    Amount of fall bobbing (0 = no fall bobbing, 1.0 = normal, 2.0 = double)
-#fall_bobbing_amount = 0.0
-
-#    3d support.
-#    Currently:
-#        "none"       = no 3d output.
-#        "anaglyph"   = cyan/magenta color 3d.
-#        "interlaced" = odd/even line based polarisation screen support.
-#        "topbottom"  = split screen top/bottom.
-#        "sidebyside" = split screen side by side.
-#3d_mode = none
-
-#    Strength of parallax
-#3d_parallax_strength = 0.025
-
-#    In-game chat console background color (R,G,B)
-#console_color = (0,0,0)
-
-#    In-game chat console background alpha (opaqueness, between 0 and 255)
-#console_alpha = 200
-
-#    Selection box border color (R,G,B)
-#selectionbox_color = (0,0,0)
-
-#    Crosshair color (R,G,B)
-#crosshair_color = (255,255,255)
-
-#    Cross alpha (opaqueness, between 0 and 255)
-#crosshair_alpha = 255
-
-#    Scale gui by a user specified value
-#    Use a nearest-neighbor-anti-alias filter to scale the GUI.
-#    This will smooth over some of the rough edges, and blend
-#    pixels when scaling down, at the cost of blurring some
-#    edge pixels when images are scaled by non-integer sizes.
-#gui_scaling = 1.0
-
-#    When gui_scaling_filter is true, all GUI images need to be
-#    filtered in software, but some images are generated directly
-#    to hardware (e.g. render-to-texture for nodes in inventory).
-#gui_scaling_filter = false
-
-#    When gui_scaling_filter_txr2img is true, copy those images
-#    from hardware to software for scaling.  When false, fall back
-#    to the old scaling method, for video drivers that don't
-#    propery support downloading textures back from hardware.
-#gui_scaling_filter_txr2img = true
-
-#    Sensitivity multiplier
-#mouse_sensitivity = 0.2
-
-#    Sound settings
-#enable_sound = true
-#sound_volume = 0.7
-
-#    Whether node texture animations should be desynchronized per mapblock
-#desynchronize_mapblock_texture_animation = true
-
-#    Width of the selectionbox's lines (Between 1 and 5)
-#selectionbox_width = 2
-
-#    Maximum proportion of current window to be used for hotbar.
-#    Useful if there's something to be displayed right or left of hotbar.
-#hud_hotbar_max_width = 1.0
-
-#    Save the map received by the client on disk
-#enable_local_map_saving = false
-
-#    Enable selection highlighting for nodes (disables selectionbox)
-#enable_node_highlighting = false
-
-#    Texture filtering settings
-#mip_map = false
-#anisotropic_filter = false
-#bilinear_filter = false
-#trilinear_filter = false
+#    Use trilinear filtering when scaling textures.
+#    type: bool
+# trilinear_filter = false
 
 #    Filtered textures can blend RGB values with fully-transparent neighbors,
 #    which PNG optimizers usually discard, sometimes resulting in a dark or
 #    light edge to transparent textures.  Apply this filter to clean that up
 #    at texture load time.
-#texture_clean_transparent = false
+#    type: bool
+# texture_clean_transparent = false
 
 #    When using bilinear/trilinear/anisotropic filters, low-resolution textures
 #    can be blurred, so automatically upscale them with nearest-neighbor
@@ -298,627 +332,1221 @@
 #    memory.  Powers of 2 are recommended.  Setting this higher than 1 may not
 #    have a visible effect unless bilinear/trilinear/anisotropic filtering is
 #    enabled.
-#texture_min_size = 64
+#    type: int
+# texture_min_size = 64
 
-#    Set to true to pre-generate all item visuals
-#preload_item_visuals = false
+#    Pre-generate all item visuals used in the inventory.
+#    This increases startup time, but runs smoother in-game.
+#    The generated textures can easily exceed your VRAM, causing artifacts in the inventory.
+#    type: bool
+# preload_item_visuals = false
 
-#    Set to true to enable shaders. Disable them if video_driver = direct3d9/8.
-#enable_shaders = true
+#    Experimental option, might cause visible spaces between blocks
+#    when set to higher number than 0.
+#    type: enum values: 0, 1, 2, 4, 8, 16
+# fsaa = 0
 
-#    Set to true to enable textures bumpmapping. Requires shaders enabled.
-#enable_bumpmapping = false
+#### Shaders
 
-#    Set to true enables on the fly normalmap generation (Emboss effect).
-#    Requires bumpmapping enabled.
-#generate_normalmaps = false
+#    Shaders allow advanced visul effects and may increase performance on some video cards.
+#    Thy only work with the OpenGL video backend.
+#    type: bool
+# enable_shaders = true
 
-#    Strength of generated normalmaps
-#normalmaps_strength = 0.6
+##### Bumpmapping
 
-#    Defines sampling step of texture (0 - 2).
+#    Enables bumpmapping for textures. Normalmaps need to be supplied by the texture pack
+#    or need to be auto-generated.
+#    Requires shaders to be enabled.
+#    type: bool
+# enable_bumpmapping = false
+
+#    Enables on the fly normalmap generation (Emboss effect).
+#    Requires bumpmapping to be enabled.
+#    type: bool
+# generate_normalmaps = false
+
+#    Strength of generated normalmaps.
+#    type: float
+# normalmaps_strength = 0.6
+
+#    Defines sampling step of texture.
 #    A higher value results in smoother normal maps.
-#normalmaps_smooth = 0
+#    type: int min: 0 max: 2
+# normalmaps_smooth = 0
 
-#    0 = parallax occlusion with slope information (faster)
-#    1 = relief mapping (slower, more accurate)
-#parallax_occlusion_mode = 1
+##### Parallax Occlusion
 
-#    Set to true enables parallax occlusion mapping. Requires shaders enabled.
-#enable_parallax_occlusion = false
+#    Enables parallax occlusion mapping.
+#    Requires shaders to be enabled.
+#    type: bool
+# enable_parallax_occlusion = false
 
-#    Number of parallax occlusion iterations
-#parallax_occlusion_iterations = 4
+#    0 = parallax occlusion with slope information (faster).
+#    1 = relief mapping (slower, more accurate).
+#    type: int min: 0 max: 1
+# parallax_occlusion_mode = 1
 
-#    Overall scale of parallax occlusion effect
-#parallax_occlusion_scale = 0.08
+#    Strength of parallax.
+#    type: float
+# 3d_parallax_strength = 0.025
 
-#    Overall bias of parallax occlusion effect, usually scale/2
-#parallax_occlusion_bias = 0.04
+#    Number of parallax occlusion iterations.
+#    type: int
+# parallax_occlusion_iterations = 4
 
-#    Set to true enables waving water. Requires shaders enabled.
-#enable_waving_water = false
+#    Overall scale of parallax occlusion effect.
+#    type: float
+# parallax_occlusion_scale = 0.08
 
-#    Parameters for waving water:
-#water_wave_height = 1.0
-#water_wave_length = 20.0
-#water_wave_speed = 5.0
+#    Overall bias of parallax occlusion effect, usually scale/2.
+#    type: float
+# parallax_occlusion_bias = 0.04
 
-#    Set to true enables waving leaves. Requires shaders enabled.
-#enable_waving_leaves = false
+##### Waving Nodes
 
-#    Set to true enables waving plants. Requires shaders enabled.
-#enable_waving_plants = false
+#    Set to true enables waving water.
+#    Requires shaders to be enabled.
+#    type: bool
+# enable_waving_water = false
+
+#    type: float
+# water_wave_height = 1.0
+
+#    type: float
+# water_wave_length = 20.0
+
+#    type: float
+# water_wave_speed = 5.0
+
+#    Set to true enables waving leaves.
+#    Requires shaders to be enabled.
+#    type: bool
+# enable_waving_leaves = false
+
+#    Set to true enables waving plants.
+#    Requires shaders to be enabled.
+#    type: bool
+# enable_waving_plants = false
+
+#### Advanced
+
+#    Minimum wanted FPS.
+#    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
+#    type: int
+# wanted_fps = 30
+
+#    If FPS would go higher than this, limit it by sleeping
+#    to not waste CPU power for no benefit.
+#    type: int
+# fps_max = 60
+
+#    Maximum FPS when game is paused.
+#    type: int
+# pause_fps_max = 20
+
+#    The allowed adjustment range for the automatic rendering range adjustment.
+#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+#    type: int
+# viewing_range_nodes_max = 160
+
+#    The allowed adjustment range for the automatic rendering range adjustment.
+#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+#    type: int
+# viewing_range_nodes_min = 35
+
+#    Vertical initial window size.
+#    type: int
+# screenW = 800
+
+#    Horizontal initial window size.
+#    type: int
+# screenH = 600
+
+#    Fullscreen mode.
+#    type: bool
+# fullscreen = false
+
+#    Bits per pixel (aka color depth) in fullscreen mode.
+#    type: int
+# fullscreen_bpp = 24
+
+#    Vertical screen synchronization.
+#    type: bool
+# vsync = false
+
+#    Field of view in degrees.
+#    type: int min: 30 max: 160
+# fov = 72
+
+#    Adjust the gamma encoding for the light tables. Lower numbers are brighter.
+#    This setting is for the client only and is ignored by the server.
+#    type: float min: 1 max: 3
+# display_gamma = 1.8
+
+#    Path to texture directory. All textures are first searched from here.
+#    type: path
+# texture_path = 
+
+#    The rendering back-end for Irrlicht.
+#    type: enum values: null, software, burningsvideo, direct3d8, direct3d9, opengl
+# video_driver = opengl
+
+#    Height on which clouds are appearing.
+#    type: int
+# cloud_height = 120
+
+#    Radius of cloud area stated in number of 64 node cloud squares.
+#    Values larger than 26 will start to produce sharp cutoffs at cloud area corners.
+#    type: int
+# cloud_radius = 12
+
+#    Multiplier for view bobbing.
+#    For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double.
+#    type: float
+# view_bobbing_amount = 1.0
+
+#    Multiplier for fall bobbing.
+#    For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double.
+#    type: float
+# fall_bobbing_amount = 0.0
+
+#    3D support.
+#    Currently supported:
+#    -    none: no 3d output.
+#    -    anaglyph: cyan/magenta color 3d.
+#    -    interlaced: odd/even line based polarisation screen support.
+#    -    topbottom: split screen top/bottom.
+#    -    sidebyside: split screen side by side.
+#    type: enum values: none, anaglyph, interlaced, topbottom, sidebyside
+# 3d_mode = none
+
+#    In-game chat console background color (R,G,B).
+#    type: string
+# console_color = (0,0,0)
+
+#    In-game chat console background alpha (opaqueness, between 0 and 255).
+#    type: int min: 0 max: 255
+# console_alpha = 200
+
+#    Selection box border color (R,G,B).
+#    type: string
+# selectionbox_color = (0,0,0)
+
+#    Width of the selectionbox's lines around nodes.
+#    type: int min: 1 max: 5
+# selectionbox_width = 2
+
+#    Crosshair color (R,G,B).
+#    type: string
+# crosshair_color = (255,255,255)
+
+#    Crosshair alpha (opaqueness, between 0 and 255).
+#    type: int min: 0 max: 255
+# crosshair_alpha = 255
+
+#    Whether node texture animations should be desynchronized per mapblock.
+#    type: bool
+# desynchronize_mapblock_texture_animation = true
+
+#    Maximum proportion of current window to be used for hotbar.
+#    Useful if there's something to be displayed right or left of hotbar.
+#    type: float
+# hud_hotbar_max_width = 1.0
+
+#    Enable selection highlighting for nodes (disables selectionbox).
+#    type: bool
+# enable_node_highlighting = false
+
+#    Enables caching of facedir rotated meshes.
+#    type: bool
+# enable_mesh_cache = false
+
+#    Enables minimap.
+#    type: bool
+# enable_minimap = true
+
+#    Shape of the minimap. Enabled = round, disabled = square.
+#    type: bool
+# minimap_shape_round = true
+
+#    True = 256
+#    False = 128
+#    Useable to make minimap smoother on slower machines.
+#    type: bool
+# minimap_double_scan_height = true
+
+#    Make fog and sky colors depend on daytime (dawn/sunset) and view direction.
+#    type: bool
+# directional_colored_fog = true
 
 #    The strength (darkness) of node ambient-occlusion shading.
 #    Lower is darker, Higher is lighter. The valid range of values for this
 #    setting is 0.25 to 4.0 inclusive. If the value is out of range it will be
 #    set to the nearest valid value.
-#ambient_occlusion_gamma = 2.2
+#    type: float min: 0.25 max: 4
+# ambient_occlusion_gamma = 2.2
 
-#    Enables caching of facedir rotated meshes
-#enable_mesh_cache = false
+### Menus
 
-#    Enables minimap
-#enable_minimap = true
+#    Use a cloud animation for the main menu background.
+#    type: bool
+# menu_clouds = true
 
-#    true - round shape, false - square
-#minimap_shape_round = true
+#    Scale gui by a user specified value.
+#    Use a nearest-neighbor-anti-alias filter to scale the GUI.
+#    This will smooth over some of the rough edges, and blend
+#    pixels when scaling down, at the cost of blurring some
+#    edge pixels when images are scaled by non-integer sizes.
+#    type: float
+# gui_scaling = 1.0
 
-#    true = 256, false = 128
-#    useable to make minimap smoother on slower machines
-#minimap_double_scan_height = true
+#    When gui_scaling_filter is true, all GUI images need to be
+#    filtered in software, but some images are generated directly
+#    to hardware (e.g. render-to-texture for nodes in inventory).
+#    type: bool
+# gui_scaling_filter = false
 
-#    The time in seconds it takes between repeated
-#    right clicks when holding the right mouse button.
-#repeat_rightclick_time = 0.25
+#    When gui_scaling_filter_txr2img is true, copy those images
+#    from hardware to software for scaling.  When false, fall back
+#    to the old scaling method, for video drivers that don't
+#    propery support downloading textures back from hardware.
+#    type: bool
+# gui_scaling_filter_txr2img = true
 
-#    Make fog and sky colors depend on daytime (dawn/sunset) and view direction
-#directional_colored_fog = true
+#    Delay showing tooltips, stated in milliseconds.
+#    type: int
+# tooltip_show_delay = 400
 
-#    Delay showing tooltips, stated in milliseconds
-#tooltip_show_delay = 400
+#    Whether freetype fonts are used, requires freetype support to be compiled in.
+#    type: bool
+# freetype = true
 
-#    Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k screens
-#screen_dpi = 72
+#    Path to TrueTypeFont or bitmap.
+#    type: path
+# font_path = fonts/liberationsans.ttf
 
-#    Default timeout for cURL, stated in milliseconds.
-#    Only has an effect if compiled with cURL.
-#curl_timeout = 5000
+#    type: int
+# font_size = 15
 
-#    Limits number of parallel HTTP requests. Affects:
-#        Media fetch if server uses remote_media setting.
-#        Serverlist download and server announcement.
-#        Downloads performed by main menu (e.g. mod manager).
-#    Only has an effect if compiled with cURL.
-#curl_parallel_limit = 8
+#    Font shadow offset, if 0 then shadow will not be drawn.
+#    type: int
+# font_shadow = 1
 
-#    Maximum time in ms a file download (e.g. a mod download) may take
-#curl_file_download_timeout = 300000
+#    Font shadow alpha (opaqueness, between 0 and 255).
+#    type: int min: 0 max: 255
+# font_shadow_alpha = 128
 
-#    Enable usage of remote media server (if provided by server)
-#enable_remote_media_server = true
+#    type: path
+# mono_font_path = fonts/liberationmono.ttf
 
-#    Url to the server list displayed in the Multiplayer Tab
-#serverlist_url = servers.freeminer.org
+#    type: int
+# mono_font_size = 15
 
-#    File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab
-#serverlist_file = favoriteservers.txt
+#    This font will be used for certain languages.
+#    type: path
+# fallback_font_path = fonts/DroidSansFallbackFull.ttf
 
-#    Whether freetype fonts are used, requires freetype support to be compiled in
-#freetype = true
+#    type: int
+# fallback_font_size = 15
 
-#    Path to TrueTypeFont or bitmap
-#font_path = fonts/liberationsans.ttf
-#font_size = 15
+#    type: int
+# fallback_font_shadow = 1
 
-#    Font shadow offset, if 0 then shadow will not be drawn
-#font_shadow = 1
+#    type: int min: 0 max: 255
+# fallback_font_shadow_alpha = 128
 
-#    Font shadow alpha (opaqueness, between 0 and 255)
-#font_shadow_alpha = 128
-#mono_font_path = fonts/liberationmono.ttf
-#mono_font_size = 15
+#    Path to save screenshots at.
+#    type: path
+# screenshot_path = 
 
-#    This font will be used for certain languages
-#fallback_font_path = fonts/DroidSansFallbackFull.ttf
-#fallback_font_size = 15
-#fallback_font_shadow = 1
-#fallback_font_shadow_alpha = 128
+### Advanced
+
+#    Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k screens.
+#    type: int
+# screen_dpi = 72
+
+## Sound
+
+#    type: bool
+# enable_sound = true
+
+#    type: float min: 0 max: 1
+# sound_volume = 0.7
+
+## Advanced
+
+#    Timeout for client to remove unused map data from memory.
+#    type: int
+# client_unload_unused_data_timeout = 600
+
+#    Maximum number of mapblocks for client to be kept in memory.
+#    Set to -1 for unlimited amount.
+#    type: int
+# client_mapblock_limit = 5000
+
+#    Whether to show the client debug info (has the same effect as hitting F5).
+#    type: bool
+# show_debug = false
 
 #
-#    Server stuff
+# Server / Singleplayer
 #
 
-#    Network port to listen (UDP)
-#port = 30000
+#    Name of the server, to be displayed when players join and in the serverlist.
+#    type: string
+# server_name = freeminer server
 
-#    Bind address
-#bind_address =
+#    Description of server, to be displayed when players join and in the serverlist.
+#    type: string
+# server_description = mine here
 
-#    Name of server
-#server_name = Freeminer server
+#    Domain name of server, to be displayed in the serverlist.
+#    type: string
+# server_address = game.freeminer.org
 
-#    Description of server
-#server_description = mine here
+#    Homepage of server, to be displayed in the serverlist.
+#    type: string
+# server_url = http://freeminer.org
 
-#    Domain name of server
-#server_address = game.freeminer.net
+#    Automaticaly report to the serverlist.
+#    type: bool
+# server_announce = false
 
-#    Homepage of server
-#server_url = http://freeminer.org
+#    Announce to this serverlist.
+#    If you want to announce your ipv6 address, use  serverlist_url = v6.servers.freeminer.org
+#    type: string
+# serverlist_url = servers.freeminer.org
 
-#    Automaticaly report to masterserver
-#server_announce = 0
+## Network
 
-#    Announce to this masterserver.
-#    if you want to announce your ipv6 address - use  serverlist_url = v6.servers.freeminer.org
-#serverlist_url = servers.minetest.net
+#    Network port to listen (UDP).
+#    This value will be overridden when starting from the main menu.
+#    type: int
+# port = 30000
 
-#    Default game (default when creating a new world)
-#default_game = default
+#    The network interface that the server listens on.
+#    type: string
+# bind_address = 
 
-#    World directory (everything in the world is stored here)
-#map-dir = /custom/world
-
-#    Message of the Day
-#motd = Welcome to this awesome Freeminer server!
-
-#    Maximum number of players connected simultaneously
-#max_users = 15
-
-#    Set to true to disallow old clients from connecting
-#strict_protocol_version_checking = false
-
-#    Time in seconds for item entity to live. Default value: 900s.
-#    Setting it to -1 disables the feature.
-#item_entity_ttl = 900
-
-#    Set to true to enable creative mode (unlimited inventory)
-#creative_mode = false
-
-#    Enable players getting damage and dying
-#enable_damage = false
-
-#    A chosen map seed for a new map, leave empty for random
-#fixed_map_seed =
-
-#    Gives some stuff to players at the beginning
-#give_initial_stuff = false
-
-#    New users need to input this password
-#default_password =
-
-#    Available privileges: interact, shout, teleport, settime, privs, ...
-#    See /privs in game for a full list on your server and mod configuration.
-#default_privs = interact, shout
-
-#    Whether players are shown to clients without any range limit.
-#    Deprecated, use the setting player_transfer_distance instead.
-#unlimited_player_transfer_distance = true
-
-#    Defines the maximal player transfer distance in blocks (0 = unlimited)
-#player_transfer_distance = 0
-
-#    Whether to enable players killing each other
-#enable_pvp = true
-
-#    If this is set, players will always (re)spawn at the given position
-#static_spawnpoint = 0, 10, 0
-
-#    If true, new players cannot join with an empty password
-#disallow_empty_password = false
-
-#    If true, disable cheat prevention in multiplayer
-#disable_anticheat = false
-
-#    If true, actions are recorded for rollback
-#    This option is only read when server starts
-#enable_rollback_recording = false
-
-#    Handling for deprecated lua api calls:
-#        "legacy" = (try to) mimic old behaviour (default for release).
-#        "log"    = mimic and log backtrace of deprecated call (default for debug).
-#        "error"  = abort on usage of deprecated call (suggested for mod developers).
-#deprecated_lua_api_handling = legacy
-
-#    A message to be displayed to all clients when the server shuts down
-#kick_msg_shutdown = Server shutting down.
-
-#    A message to be displayed to all clients when the server crashes
-#kick_msg_crash = This server has experienced an internal error. You will now be disconnected.
-
-#    Whether to ask clients to reconnect after a (lua) crash.
-#    Set this to true if your server is set up to restart automatically.
-#ask_reconnect_on_crash = false
-
-#    Mod profiler
-#mod_profiling = false
-
-#    Detailed mod profile data
-#detailed_profiling = false
-
-#    Profiler data print interval. #0 = disable.
-#profiler_print_interval = 0
-#enable_mapgen_debug_info = false
-
-#    From how far client knows about objects
-#active_object_send_range_blocks = 3
-
-#    How large area of blocks are subject to the active block stuff.
-#    Active = objects are loaded and ABMs run.
-#active_block_range = 2
-
-#    How many blocks are flying in the wire simultaneously per client
-#max_simultaneous_block_sends_per_client = 10
-
-#    How many blocks are flying in the wire simultaneously per server
-#max_simultaneous_block_sends_server_total = 40
-
-#    From how far blocks are sent to clients, stated in mapblocks (16 nodes)
-#max_block_send_distance = 10
-
-#    From how far blocks are generated for clients, stated in mapblocks (16 nodes)
-#max_block_generate_distance = 6
-
-#    Where the map generator stops.
-#    Please note:
-#      * Limited to 31000 (setting above has no effect)
-#      * The map generator works in groups of 80x80x80 nodes (5x5x5 MapBlocks).
-#      * Those groups have an offset of -32, -32 nodes from the origin.
-#      * Only groups which are within the map_generation_limit are generated
-#map_generation_limit = 31000
-
-#    Number of extra blocks that can be loaded by /clearobjects at once.
-#    This is a trade-off between sqlite transaction overhead and
-#    memory consumption (4096=100MB, as a rule of thumb).
-#max_clearobjects_extra_loaded_blocks = 4096
-
-#    Maximum number of forceloaded blocks
-#max_forceloaded_blocks = 16
-
-#    Interval of sending time of day to clients
-#time_send_interval = 5
-
-#    Controls length of day/night cycle.
-#    72=20min, 360=4min, 1=24hour, 0=day/night/whatever stays unchanged.
-#time_speed = 72
-
-#    How much the server will wait before unloading unused MapBlocks.
-#    Higher value is smoother, but will use more RAM.
-#server_unload_unused_data_timeout = 29
-
-#    Maximum number of statically stored objects in a block
-#max_objects_per_block = 49
-
-#    Interval of saving important changes in the world, stated in seconds
-#server_map_save_interval = 5.3
-
-#    http://www.sqlite.org/pragma.html#pragma_synchronous only numeric values: 0 1 2
-#sqlite_synchronous = 2
-
-#    To reduce lag, block transfers are slowed down when a player is building something.
-#    This determines how long they are slowed down after placing or removing a node.
-#full_block_send_enable_min_time_from_building = 2.0
-
-#    Length of a server tick and the interval at which objects are generally updated over network
-#dedicated_server_step = 0.1
-
-#    Can be set to true to disable shutting down on invalid world data
-#ignore_world_load_errors = false
+#    Enable to disallow old clients from connecting.
+#    Older clients are compatible in the sense that they will not crash when connecting
+#    to new servers, but they may not support all new features that you are expecting.
+#    type: bool
+# strict_protocol_version_checking = false
 
 #    Specifies URL from which client fetches media instead of using UDP.
 #    $filename should be accessible from $remote_media$filename via cURL
 #    (obviously, remote_media should end with a slash).
-#    Files that are not present would be fetched the usual way.
-#remote_media =
-
-#    Level of logging to be written to debug.txt:
-#    0 = none, 1 = errors and debug, 2 = action, 3 = info, 4 = verbose.
-#debug_log_level = 2
-
-#    Maximum number of blocks that can be queued for loading
-#emergequeue_limit_total = 256
-
-#    Maximum number of blocks to be queued that are to be loaded from file.
-#    Set to blank for an appropriate amount to be chosen automatically.
-#emergequeue_limit_diskonly = 32
-
-#    Maximum number of blocks to be queued that are to be generated.
-#    Set to blank for an appropriate amount to be chosen automatically.
-#emergequeue_limit_generate = 32
-
-#    Number of emerge threads to use. Make this field blank, or increase this number
-#    to use multiple threads. On multiprocessor systems, this will improve mapgen speed greatly
-#    at the cost of slightly buggy caves.
-#num_emerge_threads = 1
-
-#    Maximum number of packets sent per send step, if you have a slow connection
-#    try reducing it, but don't reduce it to a number below double of targeted
-#    client number.
-#max_packets_per_iteration = 1024
-
-#    Enable/disable IPv6
-#enable_ipv6 = true
+#    Files that are not present will be fetched the usual way.
+#    type: string
+# remote_media = 
 
 #    Enable/disable running an IPv6 server.  An IPv6 server may be restricted
 #    to IPv6 clients, depending on system configuration.
 #    Ignored if bind_address is set.
-#ipv6_server = false
+#    type: bool
+# ipv6_server = false
 
-#main_menu_script =
-#main_menu_game_mgr = 0
-#main_menu_mod_mgr = 1
-#modstore_download_url = https://forum.minetest.net/media/
-#modstore_listmods_url = https://forum.minetest.net/mmdb/mods/
-#modstore_details_url  = https://forum.minetest.net/mmdb/mod/*/
+### Advanced
 
-#    Makes DirectX work with LuaJIT. Disable if it causes troubles.
-#high_precision_fpu = true
+#    How many blocks are flying in the wire simultaneously per client.
+#    type: int
+# max_simultaneous_block_sends_per_client = 10
 
-#    Override language. When no value is provided (default) system language is used.
-#    Check "locale" directory for the list of available translations.
-#language =
+#    How many blocks are flying in the wire simultaneously for the whole server.
+#    type: int
+# max_simultaneous_block_sends_server_total = 40
 
-#
-#    Physics stuff
-#
+#    To reduce lag, block transfers are slowed down when a player is building something.
+#    This determines how long they are slowed down after placing or removing a node.
+#    type: float
+# full_block_send_enable_min_time_from_building = 2.0
 
-#movement_acceleration_default = 3
-#movement_acceleration_air = 2
-#movement_acceleration_fast = 10
-#movement_speed_walk = 4
-#movement_speed_crouch = 1.35
-#movement_speed_fast = 20
-#movement_speed_climb = 2
-#movement_speed_jump = 6.5
-#movement_speed_descend = 6
-#movement_liquid_fluidity = 1
-#movement_liquid_fluidity_smooth = 0.5
-#movement_liquid_sink = 10
-#movement_gravity = 9.81
+#    Maximum number of packets sent per send step, if you have a slow connection
+#    try reducing it, but don't reduce it to a number below double of targeted
+#    client number.
+#    type: int
+# max_packets_per_iteration = 1024
 
-#
+## Game
 
-#    Mapgen stuff
-#
+#    Default game when creating a new world.
+#    This will be overridden when creating a world from the main menu.
+#    type: string
+# default_game = default
 
-#    Name of map generator to be used.
-#    Currently supported: v5, v6, indev, v7, math, singlenode.
-#mg_name = v6
+#    Message of the day displayed to players connecting.
+#    type: string
+# motd = 
 
-#    Water surface level of map
-#water_level = 1
+#    Maximum number of players that can connect simultaneously.
+#    type: int
+# max_users = 15
 
-#    Size of chunks to be generated, stated in mapblocks (16 nodes)
-#chunksize = 5
+#    World directory (everything in the world is stored here).
+#    Not needed if starting from the main menu.
+#    type: path
+# map-dir = 
+
+#    Time in seconds for item entity (dropped items) to live.
+#    Setting it to -1 disables the feature.
+#    type: int
+# item_entity_ttl = 900
+
+#    Enable players getting damage and dying.
+#    type: bool
+# enable_damage = false
+
+#    A chosen map seed for a new map, leave empty for random.
+#    Will be overridden when creating a new world in the main menu.
+#    type: string
+# fixed_map_seed = 
+
+#    New users need to input this password.
+#    type: string
+# default_password = 
+
+#    The privileges that new users automatically get.
+#    See /privs in game for a full list on your server and mod configuration.
+#    type: string
+# default_privs = interact, shout
+
+#    Whether players are shown to clients without any range limit.
+#    Deprecated, use the setting player_transfer_distance instead.
+#    type: bool
+# unlimited_player_transfer_distance = true
+
+#    Defines the maximal player transfer distance in blocks (0 = unlimited).
+#    type: int
+# player_transfer_distance = 0
+
+#    Whether to allow players to damage and kill each other.
+#    type: bool
+# enable_pvp = true
+
+#    If this is set, players will always (re)spawn at the given position.
+#    type: string
+# static_spawnpoint = 
+
+#    Maximum distance above water level for player spawn.
+#    Larger values result in spawn points closer to (x = 0, z = 0).
+#    Smaller values may result in a suitable spawn point not being found,
+#    resulting in a spawn at (0, 0, 0) possibly buried underground.
+#    type: int
+# vertical_spawn_range = 16
+
+#    If enabled, new players cannot join with an empty password.
+#    type: bool
+# disallow_empty_password = false
+
+#    If enabled, disable cheat prevention in multiplayer.
+#    type: bool
+# disable_anticheat = false
+
+#    If enabled, actions are recorded for rollback.
+#    This option is only read when server starts.
+#    type: bool
+# enable_rollback_recording = false
+
+#    A message to be displayed to all clients when the server shuts down.
+#    type: string
+# kick_msg_shutdown = Server shutting down.
+
+#    A message to be displayed to all clients when the server crashes.
+#    type: string
+# kick_msg_crash = This server has experienced an internal error. You will now be disconnected.
+
+#    Whether to ask clients to reconnect after a (Lua) crash.
+#    Set this to true if your server is set up to restart automatically.
+#    type: bool
+# ask_reconnect_on_crash = false
+
+#    From how far clients know about objects, stated in mapblocks (16 nodes).
+#    type: int
+# active_object_send_range_blocks = 3
+
+#    How large area of blocks are subject to the active block stuff, stated in mapblocks (16 nodes).
+#    In active blocks objects are loaded and ABMs run.
+#    type: int
+# active_block_range = 2
+
+#    From how far blocks are sent to clients, stated in mapblocks (16 nodes).
+#    type: int
+# max_block_send_distance = 10
+
+#    Maximum number of forceloaded mapblocks.
+#    type: int
+# max_forceloaded_blocks = 16
+
+#    Interval of sending time of day to clients.
+#    type: int
+# time_send_interval = 5
+
+#    Controls length of day/night cycle.
+#    Examples: 72 = 20min, 360 = 4min, 1 = 24hour, 0 = day/night/whatever stays unchanged.
+#    type: int
+# time_speed = 72
+
+#    Interval of saving important changes in the world, stated in seconds.
+#    type: float
+# server_map_save_interval = 5.3
+
+### Physics
+
+#    type: float
+# movement_acceleration_default = 3
+
+#    type: float
+# movement_acceleration_air = 2
+
+#    type: float
+# movement_acceleration_fast = 10
+
+#    type: float
+# movement_speed_walk = 4
+
+#    type: float
+# movement_speed_crouch = 1.35
+
+#    type: float
+# movement_speed_fast = 20
+
+#    type: float
+# movement_speed_climb = 2
+
+#    type: float
+# movement_speed_jump = 6.5
+
+#    type: float
+# movement_speed_descend = 6
+
+#    type: float
+# movement_liquid_fluidity = 1
+
+#    type: float
+# movement_liquid_fluidity_smooth = 0.5
+
+#    type: float
+# movement_liquid_sink = 10
+
+#    type: float
+# movement_gravity = 9.81
+
+### Advanced
+
+#    Handling for deprecated lua api calls:
+#    -    legacy: (try to) mimic old behaviour (default for release).
+#    -    log: mimic and log backtrace of deprecated call (default for debug).
+#    -    error: abort on usage of deprecated call (suggested for mod developers).
+#    type: enum values: legacy, log, error
+# deprecated_lua_api_handling = legacy
+
+#    Useful for mod developers.
+#    type: bool
+# mod_profiling = false
+
+#    Detailed mod profile data. Useful for mod developers.
+#    type: bool
+# detailed_profiling = false
+
+#    Profiler data print interval. 0 = disable. Useful for developers.
+#    type: int
+# profiler_print_interval = 0
+
+#    Number of extra blocks that can be loaded by /clearobjects at once.
+#    This is a trade-off between sqlite transaction overhead and
+#    memory consumption (4096=100MB, as a rule of thumb).
+#    type: int
+# max_clearobjects_extra_loaded_blocks = 4096
+
+#    How much the server will wait before unloading unused mapblocks.
+#    Higher value is smoother, but will use more RAM.
+#    type: int
+# server_unload_unused_data_timeout = 29
+
+#    Maximum number of statically stored objects in a block.
+#    type: int
+# max_objects_per_block = 49
+
+#    See http://www.sqlite.org/pragma.html#pragma_synchronous
+#    type: enum values: 0, 1, 2
+# sqlite_synchronous = 2
+
+#    Length of a server tick and the interval at which objects are generally updated over network.
+#    type: float
+# dedicated_server_step = 0.1
+
+#    If enabled, invalid world data won't cause the server to shut down.
+#    Only enable this if you know what you are doing.
+#    type: bool
+# ignore_world_load_errors = false
+
+#    Max liquids processed per step.
+#    type: int
+# liquid_loop_max = 100000
+
+#    The time (in seconds) that the liquids queue may grow beyond processing
+#    capacity until an attempt is made to decrease its size by dumping old queue
+#    items.  A value of 0 disables the functionality.
+#    type: int
+# liquid_queue_purge_time = 0
+
+#    Liquid update interval in seconds.
+#    type: float
+# liquid_update = 1.0
+
+## Mapgen
+
+#    Name of map generator to be used when creating a new world.
+#    Creating a world in the main menu will override this.
+#    type: enum values: v5, v6, indev, v7, math, singlenode
+# mg_name = indev
+
+#    Water surface level of the world.
+#    type: int
+# water_level = 1
+
+#    From how far blocks are generated for clients, stated in mapblocks (16 nodes).
+#    type: int
+# max_block_generate_distance = 6
+
+#    Where the map generator stops.
+#    Please note:
+#    -    Limited to 31000 (setting above has no effect)
+#    -    The map generator works in groups of 80x80x80 nodes (5x5x5 MapBlocks).
+#    -    Those groups have an offset of -32, -32 nodes from the origin.
+#    -    Only groups which are within the map_generation_limit are generated
+#    type: int min: 0 max: 31000
+# map_generation_limit = 31000
 
 #    Global map generation attributes.
-#    Currently supported: trees, caves, flat, dungeons, light.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    To explicitly turn off a flag, prepend "no" to the beginning, e.g. nolight.
+#    Flags starting with "no" are used to explicitly disable them.
 #    'trees' and 'flat' flags only have effect in mgv6.
-#mg_flags = trees, caves, dungeons, light
+#    type: flags possible values: trees, caves, dungeons, light, flat, notrees, nocaves, nodungeons, nolight, noflat
+# mg_flags = trees,caves,dungeons,light
 
-#    Map generation attributes specific to Mapgen V6.
-#    Currently supported: jungles, biomeblend, mudflow, snowbiomes.
+### Advanced
+
+#    Size of chunks to be generated at once by mapgen, stated in mapblocks (16 nodes).
+#    type: int
+# chunksize = 5
+
+#    Dump the mapgen debug infos.
+#    type: bool
+# enable_mapgen_debug_info = false
+
+#    Maximum number of blocks that can be queued for loading.
+#    type: int
+# emergequeue_limit_total = 256
+
+#    Maximum number of blocks to be queued that are to be loaded from file.
+#    Set to blank for an appropriate amount to be chosen automatically.
+#    type: int
+# emergequeue_limit_diskonly = 32
+
+#    Maximum number of blocks to be queued that are to be generated.
+#    Set to blank for an appropriate amount to be chosen automatically.
+#    type: int
+# emergequeue_limit_generate = 32
+
+#    Number of emerge threads to use. Make this field blank, or increase this number
+#    to use multiple threads. On multiprocessor systems, this will improve mapgen speed greatly
+#    at the cost of slightly buggy caves.
+#    type: int
+# num_emerge_threads = 1
+
+#    Noise parameters for biome API temperature, humidity and biome blend.
+#    type: noise_params
+# mg_biome_np_heat = 50, 50, (750, 750, 750), 5349, 3, 0.5, 2.0
+
+#    type: noise_params
+# mg_biome_np_heat_blend = 0, 1.5, (8, 8, 8), 13, 2, 1.0, 2.0
+
+#    type: noise_params
+# mg_biome_np_humidity = 50, 50, (750, 750, 750), 842, 3, 0.5, 2.0
+
+#    type: noise_params
+# mg_biome_np_humidity_blend = 0, 1.5, (8, 8, 8), 90003, 2, 1.0, 2.0
+
+#### Mapgen v5
+
+#    type: noise_params
+# mgv5_np_filler_depth = 0, 1, (150, 150, 150), 261, 4, 0.7, 2.0
+
+#    type: noise_params
+# mgv5_np_factor = 0, 1, (250, 250, 250), 920381, 3, 0.45, 2.0
+
+#    type: noise_params
+# mgv5_np_height = 0, 10, (250, 250, 250), 84174, 4, 0.5, 2.0
+
+#    type: noise_params
+# mgv5_np_cave1 = 0, 12, (50, 50, 50), 52534, 4, 0.5, 2.0
+
+#    type: noise_params
+# mgv5_np_cave2 = 0, 12, (50, 50, 50), 10325, 4, 0.5, 2.0
+
+#### Mapgen v6
+
+#    Map generation attributes specific to Mapgen v6.
 #    When snowbiomes are enabled jungles are enabled and the jungles flag is ignored.
-#mgv6_spflags = jungles, biomeblend, mudflow, snowbiomes
+#    Flags that are not specified in the flag string are not modified from the default.
+#    Flags starting with "no" are used to explicitly disable them.
+#    type: flags possible values: jungles, biomeblend, mudflow, snowbiomes, nojungles, nobiomeblend, nomudflow, nosnowbiomes
+# mgv6_spflags = jungles,biomeblend,mudflow,snowbiomes
 
-#    Controls size of deserts and beaches in Mapgen V6
+#    Controls size of deserts and beaches in Mapgen V6.
 #    When snowbiomes are enabled 'mgv6_freq_desert' is ignored.
-#mgv6_freq_desert = 0.45
-#mgv6_freq_beach = 0.15
+#    type: float
+# mgv6_freq_desert = 0.45
 
-#    Map generation attributes specific to Mapgen V7.
-#    Currently supported: mountains, ridges.
+#    type: float
+# mgv6_freq_beach = 0.15
+
+#    type: noise_params
+# mgv6_np_terrain_base = -4, 20, (250, 250, 250), 82341, 5, 0.6, 2.0
+
+#    type: noise_params
+# mgv6_np_terrain_higher = 20, 16, (500, 500, 500), 85039, 5, 0.6, 2.0
+
+#    type: noise_params
+# mgv6_np_steepness = 0.85, 0.5, (125, 125, 125), -932, 5, 0.7, 2.0
+
+#    type: noise_params
+# mgv6_np_height_select = 0.5, 1, (250, 250, 250), 4213, 5, 0.69, 2.0
+
+#    type: noise_params
+# mgv6_np_mud = 4, 2, (200, 200, 200), 91013, 3, 0.55, 2.0
+
+#    type: noise_params
+# mgv6_np_beach = 0, 1, (250, 250, 250), 59420, 3, 0.50, 2.0
+
+#    type: noise_params
+# mgv6_np_biome = 0, 1, (500, 500, 500), 9130, 3, 0.50, 2.0
+
+#    type: noise_params
+# mgv6_np_cave = 6, 6, (250, 250, 250), 34329, 3, 0.50, 2.0
+
+#    type: noise_params
+# mgv6_np_humidity = 0.5, 0.5, (500, 500, 500), 72384, 3, 0.50, 2.0
+
+#    type: noise_params
+# mgv6_np_trees = 0, 1, (125, 125, 125), 2, 4, 0.66, 2.0
+
+#    type: noise_params
+# mgv6_np_apple_trees = 0, 1, (100, 100, 100), 342902, 3, 0.45, 2.0
+
+#### Mapgen v7
+
+#    Map generation attributes specific to Mapgen v7.
 #    'ridges' are the rivers.
-#mgv7_spflags = mountains, ridges
+#    Flags that are not specified in the flag string are not modified from the default.
+#    Flags starting with "no" are used to explicitly disable them.
+#    type: flags possible values: mountains, ridges, nomountains, noridges
+# mgv7_spflags = mountains,ridges
 
-#    Perlin noise attributes for different map generation parameters.
-#    Noise parameters can be specified as a set of positional values:
-#    Offset, scale, (spread factors), seed offset, number of octaves, persistence, lacunarity.
-#    For example:
-#mgv6_np_terrain_base = -4, 20, (250, 250, 250), 82341, 5, 0.6, 2.0
-#    Or the new group format can be used instead, for example:
-#mgv6_np_terrain_base = {
-#    offset      = -4
-#    scale       = 20
-#    spread      = (250, 250, 250)
-#    seed        = 82341
-#    octaves     = 5
-#    persistence = 0.6
-#    lacunarity  = 2.0
-#    flags       = "defaults"
-#}
-#    Only the group format supports noise flags which are needed for eased noise.
-#    Mgv5 uses eased noise for np_ground so this is shown in group format,
-#    other noise parameters are shown in positional format to save space.
+#    type: noise_params
+# mgv7_np_terrain_base = 4, 70, (600, 600, 600), 82341, 5, 0.6, 2.0
 
-#    Noise parameters for biome API temperature, humidity and biome blend
-#mg_biome_np_heat = 50, 50, (750, 750, 750), 5349, 3, 0.5, 2.0
-#mg_biome_np_heat_blend = 0, 1.5, (8, 8, 8), 13, 2, 1.0, 2.0
-#mg_biome_np_humidity = 50, 50, (750, 750, 750), 842, 3, 0.5, 2.0
-#mg_biome_np_humidity_blend = 0, 1.5, (8, 8, 8), 90003, 2, 1.0, 2.0
+#    type: noise_params
+# mgv7_np_terrain_alt = 4, 25, (600, 600, 600), 5934, 5, 0.6, 2.0
 
-#mgv5_np_filler_depth = 0, 1, (150, 150, 150), 261, 4, 0.7, 2.0
-#mgv5_np_factor = 0, 1, (250, 250, 250), 920381, 3, 0.45, 2.0
-#mgv5_np_height = 0, 10, (250, 250, 250), 84174, 4, 0.5, 2.0
-#mgv5_np_cave1 = 0, 12, (50, 50, 50), 52534, 4, 0.5, 2.0
-#mgv5_np_cave2 = 0, 12, (50, 50, 50), 10325, 4, 0.5, 2.0
-#mgv5_np_ground = {
-#    offset      = 0
-#    scale       = 40
-#    spread      = (80, 80, 80)
-#    seed        = 983240
-#    octaves     = 4
-#    persistence = 0.55
-#    lacunarity  = 2.0
-#    flags       = "eased"
-#}
+#    type: noise_params
+# mgv7_np_terrain_persist = 0.6, 0.1, (2000, 2000, 2000), 539, 3, 0.6, 2.0
 
-#mgv6_np_terrain_base = -4, 20, (250, 250, 250), 82341, 5, 0.6, 2.0
-#mgv6_np_terrain_higher = 20, 16, (500, 500, 500), 85039, 5, 0.6, 2.0
-#mgv6_np_steepness = 0.85, 0.5, (125, 125, 125), -932, 5, 0.7, 2.0
-#mgv6_np_height_select = 0.5, 1, (250, 250, 250), 4213, 5, 0.69, 2.0
-#mgv6_np_mud = 4, 2, (200, 200, 200), 91013, 3, 0.55, 2.0
-#mgv6_np_beach = 0, 1, (250, 250, 250), 59420, 3, 0.50, 2.0
-#mgv6_np_biome = 0, 1, (500, 500, 500), 9130, 3, 0.50, 2.0
-#mgv6_np_cave = 6, 6, (250, 250, 250), 34329, 3, 0.50, 2.0
-#mgv6_np_humidity = 0.5, 0.5, (500, 500, 500), 72384, 3, 0.50, 2.0
-#mgv6_np_trees = 0, 1, (125, 125, 125), 2, 4, 0.66, 2.0
-#mgv6_np_apple_trees = 0, 1, (100, 100, 100), 342902, 3, 0.45, 2.0
+#    type: noise_params
+# mgv7_np_height_select = -12, 24, (500, 500, 500), 4213, 6, 0.7, 2.0
 
-#mgv7_np_terrain_base = 4, 70, (600, 600, 600), 82341, 5, 0.6, 2.0
-#mgv7_np_terrain_alt = 4, 25, (600, 600, 600), 5934, 5, 0.6, 2.0
-#mgv7_np_terrain_persist = 0.6, 0.1, (2000, 2000, 2000), 539, 3, 0.6, 2.0
-#mgv7_np_height_select = -12, 24, (500, 500, 500), 4213, 6, 0.7, 2.0
-#mgv7_np_filler_depth = 0, 1.2, (150, 150, 150), 261, 3, 0.7, 2.0
-#mgv7_np_mount_height = 256, 112, (1000, 1000, 1000), 72449, 3, 0.6, 2.0
-#mgv7_np_ridge_uwater = 0, 1, (1000, 1000, 1000), 85039, 5, 0.6, 2.0
-#mgv7_np_mountain = -0.6, 1, (250, 350, 250), 5333, 5, 0.63, 2.0
-#mgv7_np_ridge = 0, 1, (100, 100, 100), 6467, 4, 0.75, 2.0
-#mgv7_np_cave1 = 0, 12, (100, 100, 100), 52534, 4, 0.5, 2.0
-#mgv7_np_cave2 = 0, 12, (100, 100, 100), 10325, 4, 0.5, 2.0
+#    type: noise_params
+# mgv7_np_filler_depth = 0, 1.2, (150, 150, 150), 261, 3, 0.7, 2.0
 
-#    Noise parameters for biome API temperature and humidity
-#mg_biome_np_heat = 50, 50, (500, 500, 500), 5349, 3, 0.5, 2.0
-#mg_biome_np_humidity = 50, 50, (500, 500, 500), 842, 3, 0.5, 2.0
+#    type: noise_params
+# mgv7_np_mount_height = 256, 112, (1000, 1000, 1000), 72449, 3, 0.6, 2.0
 
+#    type: noise_params
+# mgv7_np_ridge_uwater = 0, 1, (1000, 1000, 1000), 85039, 5, 0.6, 2.0
 
+#    type: noise_params
+# mgv7_np_mountain = -0.6, 1, (250, 350, 250), 5333, 5, 0.63, 2.0
 
-# freeminer stuff:
-#  client:
+#    type: noise_params
+# mgv7_np_ridge = 0, 1, (100, 100, 100), 6467, 4, 0.75, 2.0
 
-#Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
-#farmesh = 0
-#farmesh_step = 2
-# Set to true to disable wield light (enabled by default, requires shaders)
-#disable_wieldlight = false
-# Increases performance on modern GPUs a lot
-# it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
-#enable_vbo = false
-# Greater FOV when running or flying
-#enable_movement_fov = true
-# FOV when using zoom, default 15
-#zoom_fov=15
-# [dev] Shadows from objects
-#shadows = 0
-# Increase performance of headless client ( video_driver = null )
-#headless_optimize = 0
+#    type: noise_params
+# mgv7_np_cave1 = 0, 12, (100, 100, 100), 52534, 4, 0.5, 2.0
 
-# Disable death screen, respawn automaticaly
-#respawn_auto = false
-#Save password for every server in favorites (in plaintext)
-#password_save = 1
-# Show cmd console on Windows
-#console_enabled = 0
+#    type: noise_params
+# mgv7_np_cave2 = 0, 12, (100, 100, 100), 10325, 4, 0.5, 2.0
 
+#### Mapgen fractal
 
-#  server:
+#    Map generation attributes specific to Mapgen fractal.
+#    'julia' selects a julia set to be generated instead of a mandelbrot set.
+#    Flags that are not specified in the flag string are not modified from the default.
+#    Flags starting with "no" are used to explicitly disable them.
+#    type: flags possible values: julia, nojulia
+# mgfractal_spflags = nojulia
 
-# If true, blocks are cached (and generated if not before) before a player is spawned.
-#cache_block_before_spawn = true
-# Defines the maximum height a player can spawn in a map, above water level
-#max_spawn_height = 50
-# Allow players with any symbols in names
-#enable_any_name = 0 # WARNING!!! SECURITY RISK WITH SOME MODULES
-# Report broken recipes in mods
-#mod_debugging = false
-# if entities are allowed to force load the world
-#enable_force_load = true
-# Start profiler when the server starts. Profiler is only available when LuaJIT is used.
-# Use /profiler_start to start the profiler manually and /profiler_stop to stop it.
-# The log name profile.txt will only be generated when you manually execute /profiler_stop
-#profiler_autostart = false
-# Save freshly generated but not changed block, disable it for reducing map size on big servers
-#save_generated_block = 1
-# Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
-#time_taker_enabled = 0
-# Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
-#more_threads = 1
-# Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
-#abm_random = 0
-# Default privs in creative mode
-#default_privs_creative = interact, shout, fly, fast
+#    Mandelbrot set: Iterations of the recursive function.
+#    Controls scale of finest detail.
+#    type: int
+# mgfractal_m_iterations = 9
 
-# Constant volume liquids
-#liquid_real = false
-# Update liquids every .. recommend for finite: 0.2
-#liquid_update = 0.4
-# Send to client updated liquid every (increase on high loaded servers with liquid_real)
-#liquid_send = 1.0
-# Relax flowing blocks to source if level near max and N nearby
-#  source blocks, more realistic, but not true constant.
-#  values: 0,1,2,3,4 : 0 - disable, 1 - most aggresive
-#  (for finite liquids)
-#liquid_relax = 2
-# Optimization: faster cave flood (and not true constant)
-#  (for finite liquids)
-#liquid_fast_flood = 1
+#    Mandelbrot set: Approximate (X,Y,Z) scales in nodes.
+#    type: v3f
+# mgfractal_m_scale = (1024.0, 256.0, 1024.0)
 
-# Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
-#weather = false
-# Weather noise maps
-#mg_biome_np_heat                   = 15,   30,  (500, 500, 500), 5349, 2, 0.60);
-#mg_biome_np_humidity               = 50,   50,  (500, 500, 500), 842,  3, 0.45);
-# Season amplitude in celsius
-#weather_heat_season     = 30
-# Daily amplitude in celsius
-#weather_heat_daily      = 8
-# Period width on map (in nodes)
-#weather_heat_width      = 3000
-# Enable hot core (start at, nodes from bottom), 0 for disable
-#weather_hot_core        = 1000
-# Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
-#weather_heat_height     = -333
-# Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
-#year_days = 30
-# Same for humidity:
-#weather_humidity_season = 30
-#weather_humidity_daily  = -12
-#weather_humidity_width  = 300
-# Humidity change amplitude
-#weather_humidity_days   = 2
+#    Mandelbrot set: (X,Y,Z) offsets from world centre.
+#    Range roughly -2 to 2, multiply by m_scale for offsets in nodes.
+#    type: v3f
+# mgfractal_m_offset = (1.75, 0.0, 0.0)
 
-# Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
-#mgindev_np_terrain_base   = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
-#mgindev_np_terrain_higher = 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
-#mgindev_np_steepness      = 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
-#mgindev_np_mud            = 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
-#mgindev_np_float_islands1 = 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
-#mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
-#mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
-#mgindev_np_biome          = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
+#    Mandelbrot set: W co-ordinate of the generated 3D slice of the 4D shape.
+#    Range roughly -2 to 2.
+#    type: float
+# mgfractal_m_slice_w = 0.0
 
-# Float islands starts from height, 0 to disable
-#mgindev_float_islands = 500
+#    Julia set: Iterations of the recursive function.
+#    Controls scale of finest detail.
+#    type: int
+# mgfractal_j_iterations = 9
 
-# Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
-#mg_math = {"generator":"sphere"}
-#some possible params:
-#mg_math = {"generator":"mengersponge", "size":1000, "distance":0.01, "center":{"x":5,"y":-100,"z":42}, "invert":1, "scale":0.001, "iterations":10}
+#    Julia set: Approximate (X,Y,Z) scales in nodes.
+#    type: v3f
+# mgfractal_j_scale = (2048.0, 512.0, 2048.0)
 
+#    Julia set: (X,Y,Z) offsets from world centre.
+#    Range roughly -2 to 2, multiply by j_scale for offsets in nodes.
+#    type: v3f
+# mgfractal_j_offset = (0.0, 1.0, 0.0)
 
+#    Julia set: W co-ordinate of the generated 3D slice of the 4D shape.
+#    Range roughly -2 to 2.
+#    type: float
+# mgfractal_j_slice_w = 0.0
 
-# Player model animations (sent to client to be handled locally)
-# NOT USED!
-# Animation range for model when not walking, digging or doin both
-#animation_default_start = 0
-#animation_default_stop = 79
-# Animation range for model when walking
-#animation_walk_start = 168
-#animation_walk_stop = 187
-# Animation range for model when digging
-#animation_dig_start = 189
-#animation_dig_stop = 198
-# Animation range for model when walking and digging
-#animation_wd_start = 200
-#animation_wd_stop = 219
+#    Julia set: The following 4 values determine the 4D shape.
+#    Range roughly -2 to 2.
+#    type: float
+# mgfractal_julia_x = 0.33
+# mgfractal_julia_y = 0.33
+# mgfractal_julia_z = 0.33
+# mgfractal_julia_w = 0.33
+
+#    type: noise_params
+# mgfractal_np_seabed = -14, 9, (600, 600, 600), 41900, 5, 0.6, 2.0
+
+#    type: noise_params
+# mgfractal_np_filler_depth = 0, 1.2, (150, 150, 150), 261, 3, 0.7, 2.0
+
+#    type: noise_params
+# mgfractal_np_cave1 = 0, 12, (128, 128, 128), 52534, 4, 0.5, 2.0
+
+#    type: noise_params
+# mgfractal_np_cave2 = 0, 12, (128, 128, 128), 10325, 4, 0.5, 2.0
+
+## Security
 
 #    Prevent mods from doing insecure things like running shell commands.
-#secure.enable_security = false
+#    type: bool
+# secure.enable_security = false
 
 #    Comma-separated list of trusted mods that are allowed to access insecure
 #    functions even when mod security is on (via request_insecure_environment()).
-#secure.trusted_mods =
+#    type: string
+# secure.trusted_mods = 
+
+#
+# Client and Server
+#
+
+#    Name of the player.
+#    When running a server, clients connecting with this name are admins.
+#    When starting from the main menu, this is overridden.
+#    type: string
+# name = 
+
+#    Set the language. Leave empty to use the system language.
+#    A restart is required after changing this.
+#    type: enum values: , be, cs, da, de, eo, es, et, fr, hu, id, it, ja, jbo, ko, ky, lt, nb, nl, pl, pt, pt_BR, ro, ru, tr, uk, zh_CN, zh_TW
+# language =  
+
+#    Level of logging to be written to debug.txt:
+#    -    <nothing> (no logging)
+#    -    none (messages with no level)
+#    -    error
+#    -    warning
+#    -    action
+#    -    info
+#    -    verbose
+#    type: enum values: , warning, action, info, verbose
+# debug_log_level = action
+
+#    IPv6 support.
+#    type: bool
+# enable_ipv6 = true
+
+## Advanced
+
+#    Default timeout for cURL, stated in milliseconds.
+#    Only has an effect if compiled with cURL.
+#    type: int
+# curl_timeout = 5000
+
+#    Limits number of parallel HTTP requests. Affects:
+#    -    Media fetch if server uses remote_media setting.
+#    -    Serverlist download and server announcement.
+#    -    Downloads performed by main menu (e.g. mod manager).
+#    Only has an effect if compiled with cURL.
+#    type: int
+# curl_parallel_limit = 8
+
+#    Maximum time in ms a file download (e.g. a mod download) may take.
+#    type: int
+# curl_file_download_timeout = 300000
+
+#    Makes DirectX work with LuaJIT. Disable if it causes troubles.
+#    type: bool
+# high_precision_fpu = true
+
+#    Replaces the default main menu with a custom one.
+#    type: string
+# main_menu_script = 
+
+#    type: int
+# main_menu_game_mgr = 0
+
+#    type: int
+# main_menu_mod_mgr = 1
+
+#    type: string
+# modstore_download_url = https://forum.minetest.net/media/
+
+#    type: string
+# modstore_listmods_url = https://forum.minetest.net/mmdb/mods/
+
+#    type: string
+# modstore_details_url = https://forum.minetest.net/mmdb/mod/*/
+
+#
+# Freeminer
+#
+
+## Client
+
+#    Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#    type: int
+# farmesh = 0
+
+#    type: int
+# farmesh_step = 2
+
+#    Set to true to disable wield light (enabled by default, requires shaders)
+#    type: bool
+# disable_wieldlight = false
+
+#    Increases performance on modern GPUs a lot
+#    it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
+#    type: bool
+# enable_vbo = false
+
+#    Greater FOV when running or flying
+#    type: bool
+# enable_movement_fov = true
+
+#    FOV when using zoom, default 15
+#    type: int
+# zoom_fov = 15
+
+#    [dev] Shadows from objects
+#    type: bool
+# shadows = false
+
+#    Increase performance of headless client ( video_driver = null )
+#    type: bool
+# headless_optimize = false
+
+#    Disable death screen, respawn automaticaly
+#    type: bool
+# respawn_auto = false
+
+#    Save password for every server in favorites (in plaintext)
+#    type: bool
+# password_save = true
+
+#    Show cmd console on Windows
+#    type: bool
+# console_enabled = false
+
+#    Path for screenshots
+#    type: string
+# screenshot_path = screenshots
+
+#    In-game chat buffer size (number of messages to show)
+#    type: int
+# chat_buffer_size = 6
+
+#    Selection box border color (R,G,B)
+#    type: string
+# selectionbox_color = (0,0,0)
+
+## Server
+
+#    If true, blocks are cached (and generated if not before) before a player is spawned.
+#    type: bool
+# cache_block_before_spawn = true
+
+#    Defines the maximum height a player can spawn in a map, above water level
+#    type: int
+# max_spawn_height = 50
+
+#    Allow players with any symbols in names
+#    WARNING!!! SECURITY RISK WITH SOME MODULES
+#    type: bool
+# enable_any_name = false
+
+#    Report broken recipes in mods
+#    type: bool
+# mod_debugging = false
+
+#    if entities are allowed to force load the world
+#    type: bool
+# enable_force_load = true
+
+#    Start profiler when the server starts. Profiler is only available when LuaJIT is used.
+#    Use /profiler_start to start the profiler manually and /profiler_stop to stop it.
+#    The log name profile.txt will only be generated when you manually execute /profiler_stop
+#    type: bool
+# profiler_autostart = false
+
+#    Save freshly generated but not changed block, disable it for reducing map size on big servers
+#    type: bool
+# save_generated_block = true
+
+#    Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
+#    type: int
+# time_taker_enabled = 0
+
+#    Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
+#    type: bool
+# more_threads = true
+
+#    Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
+#    type: bool
+# abm_random = false
+
+#    Default privs in creative mode
+#    type: string
+# default_privs_creative = interact, shout, fly, fast
+
+#    Change falling direction in cost of speed. 10 - you are bird, 80 - good wingsuite, 200 - hammer
+#    type: int
+# movement_fall_aerodynamics = 110
+
+#    Constant volume liquids
+#    type: bool
+# liquid_real = false
+
+#    Update liquids every .. recommend for finite: 0.2
+#    type: float
+# liquid_update = 0.4
+
+#    Send to client updated liquid every (increase on high loaded servers with liquid_real)
+#    type: float
+# liquid_send = 1.0
+
+#    Relax flowing blocks to source if level near max and N nearby
+#    source blocks, more realistic, but not true constant.
+#    values: 0,1,2,3,4 : 0 - disable, 1 - most aggresive
+#    (for finite liquids)
+#    type: int
+# liquid_relax = 2
+
+#    Optimization: faster cave flood (and not true constant)
+#    (for finite liquids)
+#    type: bool
+# liquid_fast_flood = true
+
+#    Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
+#    type: bool
+# weather = true
+
+#    Weather noise maps
+#    type: string
+# mg_biome_np_heat = 15,   30,  (500, 500, 500), 5349, 2, 0.60)
+
+#    type: string
+# mg_biome_np_humidity = 50,   50,  (500, 500, 500), 842,  3, 0.45)
+
+#    Season amplitude in celsius
+#    type: float
+# weather_heat_season = 30
+
+#    Daily amplitude in celsius
+#    type: float
+# weather_heat_daily = 8
+
+#    Period width on map (in nodes)
+#    type: float
+# weather_heat_width = 3000
+
+#    Enable hot core (start at, nodes from bottom), 0 for disable
+#    type: float
+# weather_hot_core = 1000
+
+#    Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
+#    type: float
+# weather_heat_height = -333
+
+#    Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
+#    type: int
+# year_days = 30
+
+#    Same for humidity:
+#    type: float
+# weather_humidity_season = 30
+
+#    type: float
+# weather_humidity_daily = -12
+
+#    type: float
+# weather_humidity_width = 300
+
+#    Humidity change amplitude
+#    type: float
+# weather_humidity_days = 2
+
+#    Offset, scale, spread factor, seed offset, number of octaves, persistence, farscale, farspread
+#    type: string
+# mgindev_np_terrain_base = -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
+
+#    type: string
+# mgindev_np_terrain_higher = 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
+
+#    type: string
+# mgindev_np_steepness = 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
+
+#    type: string
+# mgindev_np_mud = 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
+
+#    type: string
+# mgindev_np_float_islands1 = 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
+
+#    type: string
+# mgindev_np_float_islands2 = 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
+
+#    type: string
+# mgindev_np_float_islands3 = 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
+
+#    type: string
+# mgindev_np_biome = 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
+
+#    Float islands starts from height, 0 to disable
+#    type: int
+# mgindev_float_islands = 500
+
+#    Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
+#    type: string
+# mg_math = {"generator":"sphere"}
+

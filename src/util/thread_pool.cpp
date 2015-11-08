@@ -3,7 +3,7 @@
 #include <porting.h>
 
 thread_pool::thread_pool(const std::string &name) :
-	name(name) {
+	m_name(name) {
 	requeststop = false;
 };
 
@@ -12,14 +12,14 @@ thread_pool::~thread_pool() {
 };
 
 void thread_pool::func() {
-	reg(name);
+	reg(m_name);
 	run();
 };
 
 void thread_pool::reg(const std::string &name, int priority) {
 	if (!name.empty()) {
 		porting::setThreadName(name.c_str());
-		log_register_thread(name);
+		g_logger.registerThread(name);
 	}
 	if (priority)
 		porting::setThreadPriority(priority);
@@ -66,7 +66,7 @@ void * thread_pool::run() {
 	return nullptr;
 };
 
-bool thread_pool::isSameThread() {
+bool thread_pool::isCurrentThread() {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	for (auto & worker : workers)
 		if (thread_me == std::hash<std::thread::id>()(worker.get_id()))

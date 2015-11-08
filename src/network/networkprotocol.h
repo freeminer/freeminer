@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "../irrlichttypes.h"
 #include "../msgpack_fix.h"
+#include "../config.h"
 
 #define MAX_PACKET_SIZE 1400
 
@@ -594,7 +595,8 @@ enum {
 	TOCLIENT_MOVEMENT_LIQUID_FLUIDITY,
 	TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH,
 	TOCLIENT_MOVEMENT_LIQUID_SINK,
-	TOCLIENT_MOVEMENT_GRAVITY
+	TOCLIENT_MOVEMENT_GRAVITY,
+	TOCLIENT_MOVEMENT_FALL_AERODYNAMICS
 };
 	/*
 		f1000 movement_acceleration_default

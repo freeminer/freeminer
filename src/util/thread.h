@@ -214,10 +214,9 @@ public:
 
 	void *run()
 	{
-
 		porting::setThreadPriority(30);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		while (!stopRequested()) {
@@ -230,7 +229,7 @@ public:
 			doUpdate();
 		}
 
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 
 		return NULL;
 	}

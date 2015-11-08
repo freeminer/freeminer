@@ -144,6 +144,13 @@ void GUIChatConsole::closeConsoleAtOnce()
 	m_open = false;
 	m_height = 0;
 	recalculateConsolePosition();
+
+	// Erase prompt if there's no text or save it to history
+	ChatPrompt& prompt = m_chat_backend->getPrompt();
+	std::wstring prompt_text = prompt.getVisiblePortion();
+	if(prompt_text.size() >= 3)
+		m_chat_backend->getPrompt().historyPush(prompt_text.substr(1,-1));
+	m_chat_backend->getPrompt().clear();
 }
 
 f32 GUIChatConsole::getDesiredHeight() const
@@ -423,7 +430,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		// Key input
 		if(KeyPress(event.KeyInput) == getKeySetting("keymap_console"))
 		{
-			closeConsole();
+			closeConsoleAtOnce();
 			Environment->removeFocus(this);
 
 			// inhibit open so the_game doesn't reopen immediately

@@ -575,8 +575,10 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
 	}
 
 	if (given_password != checkpwd) {
-		actionstream << "Server: " << playername << " supplied wrong password"
-				<< std::endl;
+		actionstream << "Server: User " << playername
+			<< " at " << addr_s
+			<< " supplied wrong password (auth mechanism: legacy)."
+			<< std::endl;
 		DenyAccess_Legacy(pkt->getPeerId(), L"Wrong password");
 		return;
 	}
@@ -1094,73 +1096,14 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
 		return;
 	}
 
-	// If something goes wrong, this player is to blame
-	RollbackScopeActor rollback_scope(m_rollback,
-			std::string("player:")+player->getName());
-
 	// Get player name of this client
-	std::wstring name = narrow_to_wide(player->getName());
+	std::string name = player->getName();
+	std::wstring wname = narrow_to_wide(name);
 
-	// Run script hook
-	bool ate = m_script->on_chat_message(player->getName(),
-			wide_to_narrow(message));
-	// If script ate the message, don't proceed
-	if (ate)
-		return;
-
-	// Line to send to players
-	std::wstring line;
-	// Whether to send to the player that sent the line
-	bool send_to_sender_only = false;
-
-	// Commands are implemented in Lua, so only catch invalid
-	// commands that were not "eaten" and send an error back
-	if (message[0] == L'/') {
-		message = message.substr(1);
-		send_to_sender_only = true;
-		if (message.length() == 0)
-			line += L"-!- Empty command";
-		else
-			line += L"-!- Invalid command: " + str_split(message, L' ')[0];
-	}
-	else {
-		if (checkPriv(player->getName(), "shout")) {
-			line += L"<";
-			line += name;
-			line += L"> ";
-			line += message;
-		} else {
-			line += L"-!- You don't have permission to shout.";
-			send_to_sender_only = true;
-		}
-	}
-
-	if (line != L"")
-	{
-		/*
-			Send the message to sender
-		*/
-		if (send_to_sender_only) {
-			SendChatMessage(pkt->getPeerId(), line);
-		}
-		/*
-			Send the message to others
-		*/
-		else {
-			stat.add("chat", player->getName());
-			actionstream << "CHAT: " << wide_to_narrow(line)<<std::endl;
-
-			std::vector<u16> clients = m_clients.getClientIDs();
-
-			//SendChatMessage(PEER_ID_INEXISTENT, line); //dupe with mt clients
-
-			for (std::vector<u16>::iterator i = clients.begin();
-				i != clients.end(); ++i) {
-				if (*i != pkt->getPeerId())
-					SendChatMessage(*i, line);
-			}
-
-		}
+	std::wstring answer_to_sender = handleChat(name, wname, message, pkt->getPeerId());
+	if (!answer_to_sender.empty()) {
+		// Send the answer to sender
+		SendChatMessage(pkt->getPeerId(), answer_to_sender);
 	}
 }
 
@@ -1667,6 +1610,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 				m_script->node_on_dig(p_under, n, playersao);
 				stat.add("dig", player->getName());
 				stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
+					m_env->nodeUpdate(p_under, 5, 0);
 			}
 
 			v3s16 blockpos = getNodeBlockPos(floatToInt(pointed_pos_under, BS));
@@ -1706,7 +1650,11 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 
 			// Do stuff
 			pointed_object->rightClick(playersao);
+
+			m_env->nodeUpdate(p_under, 5, 0);
 		}
+
+
 		else if (m_script->item_OnPlace(
 				item, playersao, pointed)) {
 			// Placement was handled in lua
@@ -1765,7 +1713,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		Catch invalid actions
 	*/
 	else {
-		infostream << "WARNING: Server: Invalid action "
+		warningstream << "Server: Invalid action "
 				<< action << std::endl;
 	}
 }
@@ -2116,9 +2064,8 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt)
 		} else {
 			actionstream << "Server: User " << client->getName()
 				<< " at " << getPeerAddress(pkt->getPeerId()).serializeString()
-				<< " supplied wrong (SRP) password from address "
-				<< getPeerAddress(pkt->getPeerId()).serializeString()
-				<< "." << std::endl;
+				<< " supplied wrong password (auth mechanism: SRP)."
+				<< std::endl;
 			DenyAccess(pkt->getPeerId(), SERVER_ACCESSDENIED_WRONG_PASSWORD);
 			return;
 		}

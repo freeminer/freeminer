@@ -46,7 +46,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	sender_peer_id given to this shall be quaranteed to be a valid peer
 */
 void Client::ProcessData(NetworkPacket *pkt) {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	ScopeProfiler sp(g_profiler, "Client::ProcessData");
 
@@ -307,6 +307,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		packet[TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH].convert(&player->movement_liquid_fluidity_smooth);
 		packet[TOCLIENT_MOVEMENT_LIQUID_SINK].convert(&player->movement_liquid_sink);
 		packet[TOCLIENT_MOVEMENT_GRAVITY].convert(&player->movement_gravity);
+		packet_convert_safe(packet, TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, &player->movement_fall_aerodynamics);
 	}
 	else if(command == TOCLIENT_HP)
 	{

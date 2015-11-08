@@ -1,17 +1,69 @@
 language: cpp
+
+cache: ccache
+
 compiler:
   - gcc
   - clang
-before_install:
-  - if [ $CC = "clang" ]; then export PATH="/usr/bin/:$PATH"; sudo sh -c 'echo "deb http://ppa.launchpad.net/eudoxos/llvm-3.1/ubuntu precise main" >> /etc/apt/sources.list'; sudo apt-key adv --keyserver pool.sks-keyservers.net --recv-keys 92DE8183; sudo apt-get update; sudo apt-get install llvm-3.1; sudo apt-get install clang; fi
-  - sudo apt-get install libirrlicht-dev cmake libbz2-dev libpng12-dev libjpeg8-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev gettext libleveldb-dev libsnappy-dev libgettextpo0 libmsgpack-dev
-script:
-  - mkdir -p travisbuild
-  - cd travisbuild
-  - cmake -DENABLE_GETTEXT=1 ..
-  - make -j2
-  - sudo make install
-notifications:
-  email: false
+
+os:
+  - linux
+  - osx
+
 matrix:
   fast_finish: true
+
+addons:
+  apt:
+    sources:
+      # NOTE gcc-4.9 breaks clang
+      - ubuntu-toolchain-r-test    # for gcc-4.8
+      - llvm-toolchain-precise-3.7 # for clang
+    packages:
+      - clang
+      - cmake
+      - doxygen
+      - g++-4.8
+      - gcc-4.8
+      - libirrlicht-dev
+      - libleveldb-dev
+      - libogg-dev
+      - libopenal-dev
+      - libsnappy-dev
+      - libsqlite3-dev
+      - libvorbis-dev
+      - libxxf86vm-dev
+      - llvm-3.7
+
+before_install:
+  - if [ $CC = 'gcc' ]; then
+      export CC='gcc-4.8';
+      export CXX='g++-4.8';
+      export LINK='gcc-4.8';
+      export LINKXX='g++-4.8';
+    else
+      export CC="clang";
+      export CXX="clang++";
+    fi
+  - if [ $TRAVIS_OS_NAME == 'osx' ]; then
+      brew update;
+      brew install gettext irrlicht libogg;
+    else
+      export PATH="/usr/lib/ccache/:$PATH";
+      ccache -s;
+    fi
+  - mkdir -p _build
+  - cd _build
+
+script:
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+      cmake -DRUN_IN_PLACE=0 -DENABLE_GETTEXT=1 ..;
+      sudo make -j3 install;
+      freeminer --go -reconnects=5 -video_driver=null -enable_sound=0 -enable_clouds=0 -enable_fog=0 -autojump=1 -respawn_auto=1 -disable_anticheat=1 -random_input=1 -continuous_forward=1 --address '' --autoexit 15;
+    else
+      cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETTEXT_INCLUDE_DIR=/usr/local/opt/gettext/include;
+      make -j3 package;
+    fi
+
+notifications:
+  email: false

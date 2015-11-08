@@ -17,9 +17,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 void Server::SendMovement(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 12);
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 13);
 
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT, g_settings->getFloat("movement_acceleration_default") * BS);
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_AIR, g_settings->getFloat("movement_acceleration_air") * BS);
@@ -33,6 +33,7 @@ void Server::SendMovement(u16 peer_id)
 	PACK(TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH, g_settings->getFloat("movement_liquid_fluidity_smooth") * BS);
 	PACK(TOCLIENT_MOVEMENT_LIQUID_SINK, g_settings->getFloat("movement_liquid_sink") * BS);
 	PACK(TOCLIENT_MOVEMENT_GRAVITY, g_settings->getFloat("movement_gravity") * BS);
+	PACK(TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, g_settings->getFloat("movement_fall_aerodynamics"));
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
@@ -40,7 +41,7 @@ void Server::SendMovement(u16 peer_id)
 
 void Server::SendHP(u16 peer_id, u8 hp)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	std::ostringstream os(std::ios_base::binary);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_HP, 1);
@@ -52,7 +53,7 @@ void Server::SendHP(u16 peer_id, u8 hp)
 
 void Server::SendBreath(u16 peer_id, u16 breath)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOCLIENT_BREATH, 1);
 	PACK(TOCLIENT_BREATH_BREATH, breath);
 	// Send as reliable
@@ -61,7 +62,7 @@ void Server::SendBreath(u16 peer_id, u16 breath)
 
 void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason, bool reconnect)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED_LEGACY, 3);
 	PACK(TOCLIENT_ACCESS_DENIED_CUSTOM_STRING, custom_reason);
 	PACK(TOCLIENT_ACCESS_DENIED_REASON, (int)reason);
@@ -74,7 +75,7 @@ void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::s
 void Server::SendDeathscreen(u16 peer_id,bool set_camera_point_target,
 		v3f camera_point_target)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_DEATHSCREEN, 2);
 	PACK(TOCLIENT_DEATHSCREEN_SET_CAMERA, set_camera_point_target);
@@ -87,7 +88,7 @@ void Server::SendDeathscreen(u16 peer_id,bool set_camera_point_target,
 void Server::SendItemDef(u16 peer_id,
 		IItemDefManager *itemdef, u16 protocol_version)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	MSGPACK_PACKET_INIT(TOCLIENT_ITEMDEF, 1);
 
 	auto client = m_clients.getClient(peer_id, CS_InitDone);
@@ -106,7 +107,7 @@ void Server::SendItemDef(u16 peer_id,
 void Server::SendNodeDef(u16 peer_id,
 		INodeDefManager *nodedef, u16 protocol_version)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_NODEDEF, 1);
 
@@ -126,7 +127,7 @@ void Server::SendNodeDef(u16 peer_id,
 /* not merged to mt
 void Server::SendAnimations(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_ANIMATIONS, 8);
 	PACK(TOCLIENT_ANIMATIONS_DEFAULT_START, g_settings->getFloat("animation_default_start"));
@@ -149,7 +150,7 @@ void Server::SendAnimations(u16 peer_id)
 
 void Server::SendInventory(PlayerSAO* playerSAO)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	UpdateCrafting(playerSAO->getPlayer());
 
@@ -171,7 +172,7 @@ void Server::SendInventory(PlayerSAO* playerSAO)
 
 void Server::SendChatMessage(u16 peer_id, const std::string &message)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_CHAT_MESSAGE, 1);
 	PACK(TOCLIENT_CHAT_MESSAGE_DATA, message);
@@ -190,7 +191,7 @@ void Server::SendChatMessage(u16 peer_id, const std::string &message)
 void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
                                      const std::string &formname)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_SHOW_FORMSPEC, 2);
 	PACK(TOCLIENT_SHOW_FORMSPEC_DATA, FORMSPEC_VERSION_STRING + formspec);
@@ -205,7 +206,7 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 				float expirationtime, float size, bool collisiondetection,
 				bool vertical, std::string texture)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_SPAWN_PARTICLE, 8);
 	PACK(TOCLIENT_SPAWN_PARTICLE_POS, pos);
@@ -233,7 +234,7 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 	v3f minvel, v3f maxvel, v3f minacc, v3f maxacc, float minexptime, float maxexptime,
 	float minsize, float maxsize, bool collisiondetection, bool vertical, std::string texture, u32 id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_ADD_PARTICLESPAWNER, 16);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT, amount);
@@ -265,7 +266,7 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 
 void Server::SendDeleteParticleSpawner(u16 peer_id, u32 id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MSGPACK_PACKET_INIT(TOCLIENT_DELETE_PARTICLESPAWNER, 1);
 	PACK(TOCLIENT_DELETE_PARTICLESPAWNER_ID, id);
@@ -393,7 +394,7 @@ void Server::SendOverrideDayNightRatio(u16 peer_id, bool do_override,
 
 void Server::SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	// Make packet
 	MSGPACK_PACKET_INIT(TOCLIENT_TIME_OF_DAY, 2);
@@ -411,7 +412,7 @@ void Server::SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed)
 
 void Server::SendPlayerHP(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	if (!playersao)
 		return;
@@ -426,7 +427,7 @@ void Server::SendPlayerHP(u16 peer_id)
 
 void Server::SendPlayerBreath(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
 	if (!playersao)
 		return;
@@ -436,7 +437,7 @@ void Server::SendPlayerBreath(u16 peer_id)
 
 void Server::SendMovePlayer(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	Player *player = m_env->getPlayer(peer_id);
 	if (!player)
 		return;
@@ -688,7 +689,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 
 void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	bool reliable = 1;
 
 	g_profiler->add("Connection: blocks sent", 1);
@@ -720,7 +721,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 void Server::sendMediaAnnouncement(u16 peer_id)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	MediaAnnounceList announce_list;
 
@@ -739,7 +740,7 @@ void Server::sendMediaAnnouncement(u16 peer_id)
 void Server::sendRequestedMedia(u16 peer_id,
 		const std::vector<std::string> &tosend)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	verbosestream<<"Server::sendRequestedMedia(): "
 			<<"Sending files to client"<<std::endl;
@@ -795,7 +796,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 void Server::sendDetachedInventory(const std::string &name, u16 peer_id)
 {
 	if(m_detached_inventories.count(name) == 0){
-		errorstream<<__FUNCTION_NAME<<": \""<<name<<"\" not found"<<std::endl;
+		errorstream<<FUNCTION_NAME<<": \""<<name<<"\" not found"<<std::endl;
 		return;
 	}
 	Inventory *inv = m_detached_inventories[name];

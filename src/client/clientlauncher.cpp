@@ -94,7 +94,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	if (list_video_modes)
 		return print_video_modes();
 
-	if (!init_engine(game_params.log_level)) {
+	if (!init_engine()) {
 		errorstream << "Could not initialize game engine." << std::endl;
 		return false;
 	}
@@ -195,7 +195,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 		delete[] text;
 
 #ifdef __ANDROID__
-		porting::handleAndroidActivityEvents();
+		porting::handleAndroidActivityEvents(5);
 #endif
 
 		try {	// This is used for catching disconnects
@@ -357,10 +357,10 @@ void ClientLauncher::init_args(GameParams &game_params, const Settings &cmd_args
 	autoexit = autoexit_;
 }
 
-bool ClientLauncher::init_engine(int log_level)
+bool ClientLauncher::init_engine()
 {
 	receiver = new MyEventReceiver();
-	create_engine_device(log_level);
+	create_engine_device();
 	return device != NULL;
 }
 
@@ -496,7 +496,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 
 		if (game_params.game_spec.isValid() &&
 				game_params.game_spec.id != worldspec.gameid) {
-			errorstream << "WARNING: Overriding gamespec from \""
+			warningstream << "Overriding gamespec from \""
 			            << worldspec.gameid << "\" to \""
 			            << game_params.game_spec.id << "\"" << std::endl;
 			gamespec = game_params.game_spec;
@@ -541,20 +541,8 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 	smgr->clear();	/* leave scene manager in a clean state */
 }
 
-bool ClientLauncher::create_engine_device(int log_level)
+bool ClientLauncher::create_engine_device()
 {
-	static const irr::ELOG_LEVEL irr_log_level[5] = {
-		ELL_NONE,
-		ELL_ERROR,
-		ELL_WARNING,
-		ELL_INFORMATION,
-#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
-		ELL_INFORMATION
-#else
-		ELL_DEBUG
-#endif
-	};
-
 	// Resolution selection
 	bool fullscreen = g_settings->getBool("fullscreen");
 	u16 screenW = g_settings->getU16("screenW");
@@ -602,10 +590,6 @@ bool ClientLauncher::create_engine_device(int log_level)
 	device = createDeviceEx(params);
 
 	if (device) {
-		// Map our log level to irrlicht engine one.
-		ILogger* irr_logger = device->getLogger();
-		irr_logger->setLogLevel(irr_log_level[log_level]);
-
 		porting::initIrrlicht(device);
 	}
 
@@ -737,7 +721,7 @@ bool ClientLauncher::print_video_modes()
 		return false;
 	}
 
-	dstream << _("Available video modes (WxHxD):") << std::endl;
+	std::cout << _("Available video modes (WxHxD):") << std::endl;
 
 	video::IVideoModeList *videomode_list = nulldevice->getVideoModeList();
 
@@ -748,14 +732,14 @@ bool ClientLauncher::print_video_modes()
 		for (s32 i = 0; i < videomode_count; ++i) {
 			videomode_res = videomode_list->getVideoModeResolution(i);
 			videomode_depth = videomode_list->getVideoModeDepth(i);
-			dstream << videomode_res.Width << "x" << videomode_res.Height
+			std::cout << videomode_res.Width << "x" << videomode_res.Height
 			        << "x" << videomode_depth << std::endl;
 		}
 
-		dstream << _("Active video mode (WxHxD):") << std::endl;
+		std::cout << _("Active video mode (WxHxD):") << std::endl;
 		videomode_res = videomode_list->getDesktopResolution();
 		videomode_depth = videomode_list->getDesktopDepth();
-		dstream << videomode_res.Width << "x" << videomode_res.Height
+		std::cout << videomode_res.Width << "x" << videomode_res.Height
 		        << "x" << videomode_depth << std::endl;
 
 	}

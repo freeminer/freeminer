@@ -198,10 +198,24 @@ void Connection::receive()
 		case ENET_EVENT_TYPE_CONNECT:
 			{
 				//MutexAutoLock peerlock(m_peers_mutex);
-				u16 peer_id = PEER_ID_SERVER + 1;
-				if (m_peers.size() > 0)
-					// TODO: fix this shit
-					peer_id = m_peers.rbegin()->first + 1;
+				u16 peer_id = 0;
+				static u16 last_try = PEER_ID_SERVER + 1;
+				if (m_peers.size() > 0) {
+					for (int i = 0; i < 1000; ++i) {
+						if (last_try > 30000)
+							last_try = PEER_ID_SERVER;
+						++last_try;
+						if (!m_peers.count(last_try)) {
+							peer_id = last_try;
+							break;
+						}
+					}
+				} else {
+					peer_id = last_try;
+				}
+				if (!peer_id)
+					last_try = peer_id = m_peers.rbegin()->first + 1;
+
 				m_peers.set(peer_id, event.peer);
 				m_peers_address.set(peer_id, Address(event.peer->address.host, event.peer->address.port));
 

@@ -36,12 +36,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define gettext_noop(String) (String)
 #define N_(String) gettext_noop((String))
 
-#ifdef _MSC_VER
 void init_gettext(const char *path, const std::string &configured_language,
-		int argc, char** argv);
-#else
-void init_gettext(const char *path, const std::string &configured_language);
-#endif
+	int argc, char *argv[]);
 
 extern wchar_t *utf8_to_wide_c(const char *str);
 

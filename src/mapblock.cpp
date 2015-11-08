@@ -73,8 +73,6 @@ static const char *modified_reason_strings[] = {
 */
 
 MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
-		heat_last_update(0),
-		humidity_last_update(0),
 		m_uptime_timer_last(0),
 		m_parent(parent),
 		m_pos(pos),
@@ -96,6 +94,8 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_lighting_expired = true;
 	m_refcount = 0;
 	data = NULL;
+	heat_last_update = 0;
+	humidity_last_update = 0;
 	//if(dummy == false)
 		reallocate();
 
@@ -117,6 +117,11 @@ MapBlock::~MapBlock()
 #ifndef SERVER
 	//delMesh();
 #endif
+
+	{
+		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
+		abm_triggers = nullptr;
+	}
 
 	if(data)
 		delete data;
@@ -751,7 +756,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 				&m_node_metadata, &m_node_timers,
 				m_gamedef->idef());
 	} catch(SerializationError &e) {
-		errorstream<<"WARNING: MapBlock::deSerialize(): Ignoring an error"
+		warningstream<<"MapBlock::deSerialize(): Ignoring an error"
 				<<" while deserializing node metadata at ("
 				<<PP(getPos())<<": "<<e.what()<<std::endl;
 	}
@@ -818,7 +823,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	}
 	catch(SerializationError &e)
 	{
-		errorstream<<"WARNING: MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
+		warningstream<<"MapBlock::deSerializeNetworkSpecific(): Ignoring an error"
 				<<": "<<e.what()<<std::endl;
 	}
 }
@@ -917,13 +922,13 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 		char tmp;
 		is.read(&tmp, 1);
 		if (is.gcount() != 1)
-			throw SerializationError(std::string(__FUNCTION_NAME)
-				+ ": no enough input data");
+			throw SerializationError(std::string(FUNCTION_NAME)
+				+ ": not enough input data");
 		is_underground = tmp;
 		is.read((char *)*databuf_nodelist, nodecount * ser_length);
 		if ((u32)is.gcount() != nodecount * ser_length)
-			throw SerializationError(std::string(__FUNCTION_NAME)
-				+ ": no enough input data");
+			throw SerializationError(std::string(FUNCTION_NAME)
+				+ ": not enough input data");
 	} else if (version <= 10) {
 		u8 t8;
 		is.read((char *)&t8, 1);
@@ -935,8 +940,8 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 			decompress(is, os, version);
 			std::string s = os.str();
 			if (s.size() != nodecount)
-				throw SerializationError(std::string(__FUNCTION_NAME)
-					+ ": no enough input data");
+				throw SerializationError(std::string(FUNCTION_NAME)
+					+ ": not enough input data");
 			for (u32 i = 0; i < s.size(); i++) {
 				databuf_nodelist[i*ser_length] = s[i];
 			}
@@ -947,8 +952,8 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 			decompress(is, os, version);
 			std::string s = os.str();
 			if (s.size() != nodecount)
-				throw SerializationError(std::string(__FUNCTION_NAME)
-					+ ": no enough input data");
+				throw SerializationError(std::string(FUNCTION_NAME)
+					+ ": not enough input data");
 			for (u32 i = 0; i < s.size(); i++) {
 				databuf_nodelist[i*ser_length + 1] = s[i];
 			}
@@ -960,8 +965,8 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 			decompress(is, os, version);
 			std::string s = os.str();
 			if (s.size() != nodecount)
-				throw SerializationError(std::string(__FUNCTION_NAME)
-					+ ": no enough input data");
+				throw SerializationError(std::string(FUNCTION_NAME)
+					+ ": not enough input data");
 			for (u32 i = 0; i < s.size(); i++) {
 				databuf_nodelist[i*ser_length + 2] = s[i];
 			}
@@ -980,7 +985,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 		decompress(is, os, version);
 		std::string s = os.str();
 		if (s.size() != nodecount * 3)
-			throw SerializationError(std::string(__FUNCTION_NAME)
+			throw SerializationError(std::string(FUNCTION_NAME)
 				+ ": decompress resulted in size other than nodecount*3");
 
 		// deserialize nodes from buffer
@@ -1012,7 +1017,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 						m_gamedef->idef());
 				}
 			} catch(SerializationError &e) {
-				errorstream<<"WARNING: MapBlock::deSerialize(): Ignoring an error"
+				warningstream<<"MapBlock::deSerialize(): Ignoring an error"
 						<<" while deserializing node metadata"<<std::endl;
 			}
 		}
@@ -1031,7 +1036,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 			u16 count = readU16(is);
 			// Not supported and length not known if count is not 0
 			if(count != 0){
-				errorstream<<"WARNING: MapBlock::deSerialize_pre22(): "
+				warningstream<<"MapBlock::deSerialize_pre22(): "
 						<<"Ignoring stuff coming at and after MBOs"<<std::endl;
 				return;
 			}

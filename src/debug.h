@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <exception>
 #include <assert.h>
 #include "gettime.h"
+#include "log.h"
 
 #if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 	#define WIN32_LEAN_AND_MEAN
@@ -37,11 +38,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#ifdef _MSC_VER
 		#include <eh.h>
 	#endif
-	#define __NORETURN __declspec(noreturn)
-	#define __FUNCTION_NAME __FUNCTION__
+	#define NORETURN __declspec(noreturn)
+	#define FUNCTION_NAME __FUNCTION__
 #else
-	#define __NORETURN __attribute__ ((__noreturn__))
-	#define __FUNCTION_NAME __PRETTY_FUNCTION__
+	#define NORETURN __attribute__ ((__noreturn__))
+	#define FUNCTION_NAME __PRETTY_FUNCTION__
 #endif
 
 // Whether to catch all std::exceptions.
@@ -53,42 +54,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#define CATCH_UNHANDLED_EXCEPTIONS 0
 #endif
 
-/*
-	Debug output
-*/
-
-#define DTIME (getTimestamp()+": ")
-
-extern void debugstreams_init(bool disable_stderr, const char *filename);
-extern void debugstreams_deinit();
-
-// This is used to redirect output to /dev/null
-class Nullstream : public std::ostream {
-public:
-	Nullstream():
-		std::ostream(0)
-	{
-	}
-private:
-};
-
-extern std::ostream dstream;
-extern std::ostream dstream_no_stderr;
-extern Nullstream dummyout;
-
-
 /* Abort program execution immediately
  */
-__NORETURN extern void fatal_error_fn(
+NORETURN extern void fatal_error_fn(
 		const char *msg, const char *file,
 		unsigned int line, const char *function);
 
 #define FATAL_ERROR(msg) \
-	fatal_error_fn((msg), __FILE__, __LINE__, __FUNCTION_NAME)
+	fatal_error_fn((msg), __FILE__, __LINE__, FUNCTION_NAME)
 
 #define FATAL_ERROR_IF(expr, msg) \
 	((expr) \
-	? fatal_error_fn((msg), __FILE__, __LINE__, __FUNCTION_NAME) \
+	? fatal_error_fn((msg), __FILE__, __LINE__, FUNCTION_NAME) \
 	: (void)(0))
 
 /*
@@ -97,14 +74,14 @@ __NORETURN extern void fatal_error_fn(
 	defined)
 */
 
-__NORETURN extern void sanity_check_fn(
+NORETURN extern void sanity_check_fn(
 		const char *assertion, const char *file,
 		unsigned int line, const char *function);
 
 #define SANITY_CHECK(expr) \
 	((expr) \
 	? (void)(0) \
-	: sanity_check_fn(#expr, __FILE__, __LINE__, __FUNCTION_NAME))
+	: sanity_check_fn(#expr, __FILE__, __LINE__, FUNCTION_NAME))
 
 #define sanity_check(expr) SANITY_CHECK(expr)
 
@@ -148,16 +125,16 @@ private:
 
 #if CATCH_UNHANDLED_EXCEPTIONS == 1
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER try {
-	#define END_DEBUG_EXCEPTION_HANDLER(logstream)           \
-		} catch (std::exception &e) {                        \
-			logstream << "An unhandled exception occurred: " \
-				<< e.what() << std::endl;                    \
-			FATAL_ERROR(e.what());                           \
+	#define END_DEBUG_EXCEPTION_HANDLER                        \
+		} catch (std::exception &e) {                          \
+			errorstream << "An unhandled exception occurred: " \
+				<< e.what() << std::endl;                      \
+			FATAL_ERROR(e.what());                             \
 		}
 #else
 	// Dummy ones
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER
-	#define END_DEBUG_EXCEPTION_HANDLER(logstream)
+	#define END_DEBUG_EXCEPTION_HANDLER
 #endif
 
 #endif // DEBUG_HEADER

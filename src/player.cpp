@@ -96,6 +96,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
+	movement_fall_aerodynamics      = 110;
 	local_animation_speed           = 0.0;
 
 	// Movement overrides are multipliers and must be 1 by default
@@ -125,7 +126,7 @@ void Player::accelerateHorizontal(v3f target_speed, f32 max_increase, float slip
 		return;
 	
 	v3f d_wanted = target_speed - m_speed;
-	if (slippery)
+	if (slippery && !free_move)
 	{
 		if (target_speed == v3f(0))
 			d_wanted = -m_speed*(1-slippery/100)/2;

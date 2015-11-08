@@ -609,7 +609,7 @@ public:
 	
 	std::atomic_short heat;
 	std::atomic_short humidity;
-	u32 heat_last_update;
+	std::atomic_ulong heat_last_update;
 	u32 humidity_last_update;
 	float m_uptime_timer_last;
 

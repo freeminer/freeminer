@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "util/string.h"
 #include "util/numeric.h"
+#include "settings.h"
 
 ChatBuffer::ChatBuffer(u32 scrollback):
 	m_scrollback(scrollback),
@@ -456,6 +457,13 @@ void ChatPrompt::replace(std::wstring line)
 	m_nick_completion_end = 0;
 }
 
+void ChatPrompt::historyPush(std::wstring line) {
+	m_history.push_back(line);
+	if (m_history.size() > m_history_limit)
+		m_history.erase(m_history.begin());
+	m_history_index = m_history.size();
+}
+
 void ChatPrompt::historyPrev()
 {
 	if (m_history_index != 0)
@@ -671,6 +679,7 @@ void ChatPrompt::clampView()
 
 ChatBackend::ChatBackend():
 	m_console_buffer(500),
+	//m_recent_buffer(g_settings->getU16("chat_buffer_size")),
 	m_recent_buffer(6),
 	m_prompt(L"]", 500)
 {

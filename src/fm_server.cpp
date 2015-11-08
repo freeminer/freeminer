@@ -10,14 +10,14 @@ public:
 	void * run() {
 		reg("Map", 15);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		auto time = porting::getTimeMs();
 		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
 			try {
-				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f))
+				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
 					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -34,7 +34,7 @@ public:
 			}
 			time = time_now;
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -50,7 +50,7 @@ public:
 	void * run() {
 		reg("SendBlocks", 30);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		auto time = porting::getTimeMs();
@@ -73,7 +73,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -90,7 +90,7 @@ public:
 	void * run() {
 		reg("Liquid", 4);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 1000;
@@ -111,7 +111,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -127,7 +127,7 @@ public:
 	void * run() {
 		reg("Env", 20);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 1000;
@@ -151,7 +151,7 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
@@ -167,7 +167,7 @@ public:
 	void * run() {
 		reg("Abm", 20);
 
-		DSTACK(__FUNCTION_NAME);
+		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 10000;
@@ -191,13 +191,13 @@ public:
 #endif
 			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER(errorstream)
+		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
 	}
 };
 
-int Server::AsyncRunMapStep(float dtime, bool async) {
-	DSTACK(__FUNCTION_NAME);
+int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async) {
+	DSTACK(FUNCTION_NAME);
 
 	TimeTaker timer_step("Server map step");
 	g_profiler->add("Server::AsyncRunMapStep (num)", 1);
@@ -264,9 +264,9 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 		if (m_liquid_send_timer > m_liquid_send_interval * 2)
 			m_liquid_send_timer = 0;
 
-		concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
-
-		if (m_env->getMap().updateLighting(m_env->getMap().lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
+		//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
+		//if (m_env->getMap().updateLighting(m_env->getMap().lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
+		if (m_env->getMap().updateLightingQueue(max_cycle_ms)) {
 			m_liquid_send_timer = m_liquid_send_interval;
 			++ret;
 			goto no_send;
@@ -274,7 +274,7 @@ int Server::AsyncRunMapStep(float dtime, bool async) {
 	}
 no_send:
 
-	ret += save(dtime, true);
+	ret += save(dtime, dedicated_server_step, true);
 
 	return ret;
 }

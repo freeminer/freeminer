@@ -1,0 +1,2 @@
+gameid = pixture
+backend = leveldb

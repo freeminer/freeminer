@@ -1,6 +1,6 @@
 /*
 mapgen_v6.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
 */
 
 /*
@@ -26,13 +26,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen.h"
 #include "noise.h"
 
-#define AVERAGE_MUD_AMOUNT 4
-#define DESERT_STONE_BASE -32
-#define ICE_BASE 0
-#define FREQ_HOT 0.4
-#define FREQ_SNOW -0.4
-#define FREQ_TAIGA 0.5
-#define FREQ_JUNGLE 0.5
+#define MGV6_AVERAGE_MUD_AMOUNT 4
+#define MGV6_DESERT_STONE_BASE -32
+#define MGV6_ICE_BASE 0
+#define MGV6_FREQ_HOT 0.4
+#define MGV6_FREQ_SNOW -0.4
+#define MGV6_FREQ_TAIGA 0.5
+#define MGV6_FREQ_JUNGLE 0.5
 
 //////////// Mapgen V6 flags
 #define MGV6_JUNGLES    0x01
@@ -161,6 +161,7 @@ public:
 	void growGrass();
 	void placeTreesAndJungleGrass();
 	virtual void generateCaves(int max_stone_y);
+	virtual void generateExperimental() {}
 };
 
 

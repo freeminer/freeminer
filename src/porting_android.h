@@ -78,7 +78,7 @@ int getInputDialogState();
  */
 std::string getInputDialogValue();
 
-void handleAndroidActivityEvents();
+void handleAndroidActivityEvents(int max = 1000);
 
 int canKeyboard();
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);

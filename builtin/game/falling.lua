@@ -111,9 +111,12 @@ core.register_entity(":__builtin:falling_node", {
 })
 
 function spawn_falling_node(p, node)
+	return core.spawn_falling_node(p, node)
+--[[
 	local obj = core.add_entity(p, "__builtin:falling_node")
 	if not obj then return end
 	obj:get_luaentity():set_node(node)
+]]
 end
 
 function drop_attached_node(p)

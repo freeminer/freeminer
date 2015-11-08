@@ -63,13 +63,13 @@ LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.1"
-curl = "curl-7.40.0"
+curl = "curl-7.45.0"
 openal = "openal-soft-1.16.0"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
-libvorbis = "libvorbis-1.3.4"
+libvorbis = "libvorbis-1.3.5"
 zlib = "zlib-1.2.8"
-freetype = "freetype-2.5.5"
-luajit = "LuaJIT-2.0.3"
+freetype = "freetype-2.6.1"
+luajit = "LuaJIT-2.0.4"
 gettext = "gettext-0.14.6"
 libiconv = "libiconv-1.9.2"
 #MSGPACK_VERSION = "cpp-1.1.0"
@@ -208,7 +208,7 @@ def main():
 	if not os.path.exists(freetype):
 		print("freetype not found, downloading.")
 		tar_path = "{}.tar.gz".format(freetype)
-		download("http://download.savannah.gnu.org/releases/freetype/{}.tar.gz".format(freetype), tar_path)
+		download("http://www.mirrorservice.org/sites/download.savannah.gnu.org/releases/freetype/{}.tar.gz".format(freetype), tar_path)
 		extract_tar(tar_path, ".")
 		print("building freetype")
 		os.chdir(os.path.join(freetype, "builds", "windows", "vc2010"))
@@ -356,7 +356,7 @@ def main():
 		-DENABLE_SQLITE3=1
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
-		freetype_lib="freetype255MT.lib" if build_type != "Debug" else "freetype255MT_D.lib",
+		freetype_lib="freetype261MT.lib" if build_type != "Debug" else "freetype261MT_D.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
 		zlib=zlib,

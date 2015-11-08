@@ -42,8 +42,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h"
 #include "mapnode.h"
 #include "mapblock.h"
+
+//fm:
 #include "network/connection.h"
-#include "fmbitset.h"
+#include "fm_bitset.h"
 #include "util/concurrent_unordered_map.h"
 #include "util/concurrent_vector.h"
 #include <unordered_set>
@@ -52,7 +54,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <unordered_set>
-//#include "threading/mutex.h"
+//--
+
+#include "threading/mutex.h"
+#include "threading/atomic.h"
 #include "network/networkprotocol.h" // for AccessDeniedCode
 
 class ServerEnvironment;
@@ -66,6 +71,14 @@ class ClientMap;
 class GameScripting;
 class Player;
 class RemotePlayer;
+
+struct ItemStack;
+
+namespace epixel
+{
+class ItemSAO;
+class FallingSAO;
+}
 
 class Environment
 {
@@ -103,11 +116,7 @@ public:
 	void setTimeOfDaySpeed(float speed);
 	float getTimeOfDaySpeed();
 
-	void setDayNightRatioOverride(bool enable, u32 value)
-	{
-		m_enable_day_night_ratio_override = enable;
-		m_day_night_ratio_override = value;
-	}
+	void setDayNightRatioOverride(bool enable, u32 value);
 
 	// counter used internally when triggering ABMs
 	std::atomic_uint m_added_objects;
@@ -115,15 +124,25 @@ public:
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	concurrent_vector<Player*> m_players;
+
+	GenericAtomic<float> m_time_of_day_speed;
+
+	/*
+	 * Below: values managed by m_time_lock
+	*/
 	// Time of day in milli-hours (0-23999); determines day and night
-	std::atomic_int m_time_of_day;
+	u32 m_time_of_day;
 	// Time of day in 0...1
-	float m_time_of_day_speed;
-	// Used to buffer dtime for adding to m_time_of_day
-	float m_time_counter;
+	float m_time_of_day_f;
+	// Stores the skew created by the float -> u32 conversion
+	// to be applied at next conversion, so that there is no real skew.
+	float m_time_conversion_skew;
 	// Overriding the day-night ratio is useful for custom sky visuals
 	bool m_enable_day_night_ratio_override;
 	u32 m_day_night_ratio_override;
+	/*
+	 * Above: values managed by m_time_lock
+	*/
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -137,9 +156,9 @@ protected:
 	bool m_cache_enable_shaders;
 
 private:
-	Mutex m_timeofday_lock;
 	Mutex m_time_lock;
 
+	DISABLE_CLASS_COPY(Environment);
 };
 
 /*
@@ -168,6 +187,8 @@ public:
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
 	virtual u32 getTriggerChance() = 0;
+	// Whether to modify chance to simulate time lost by an unnattended block
+	virtual bool getSimpleCatchUp() = 0;
 	// This is called usually at interval for 1/chance of the nodes
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
 	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n, MapNode neighbor){};
@@ -182,6 +203,7 @@ struct ABMWithState
 	float chance;
 	float timer;
 	int neighbors_range;
+	bool simple_catchup;
 	std::unordered_set<content_t> trigger_ids;
 	FMBitset required_neighbors, required_neighbors_activate;
 
@@ -288,7 +310,7 @@ public:
 		-------------------------------------------
 	*/
 
-	ServerActiveObject* getActiveObject(u16 id);
+	ServerActiveObject* getActiveObject(u16 id, bool removed = false);
 
 	/*
 		Add an active object to the environment.
@@ -299,6 +321,12 @@ public:
 		Returns 0 if not added and thus deleted.
 	*/
 	u16 addActiveObject(ServerActiveObject *object);
+
+	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
+			const ItemStack& items);
+
+	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
+			const MapNode n, int fast = 2);
 
 	/*
 		Add an active object as a static object to the corresponding
@@ -393,6 +421,7 @@ public:
 	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
+	void nodeUpdate(const v3s16 pos, int recurse = 5,  int fast = 2, bool destroy = false);
 private:
 
 	/*
@@ -457,6 +486,7 @@ private:
 	// Active object list
 	maybe_concurrent_map<u16, ServerActiveObject*> m_active_objects;
 	std::vector<u16> objects_to_remove;
+	std::vector<ServerActiveObject*> objects_to_delete;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;

@@ -53,6 +53,7 @@ public:
 	{ return 20; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -89,6 +90,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -101,7 +103,7 @@ public:
 		static int water_level = g_settings->getS16("water_level");
 		bool top_liquid = ndef->get(n).liquid_type > LIQUID_NONE && p.Y > water_level;
 		int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
-		if (heat <= freeze - 1 && ((!top_liquid && (activate || heat <= freeze - 50)) ||
+		if (heat <= freeze - 1 && ((!top_liquid && (activate || (heat <= freeze - 50))) || heat <= freeze - 50 ||
 		                           (myrand_range(freeze - 50, heat) <= (freeze + (top_liquid ? -42 : c == CONTENT_AIR ? -10 : -40))))) {
 			content_t c_self = n.getContent();
 			// making freeze not annoying, do not freeze random blocks in center of ocean
@@ -159,6 +161,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 10; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -175,7 +178,7 @@ public:
 			}
 			n.freeze_melt(ndef, +1);
 			map->setNode(p, n);
-			//env->getScriptIface()->node_falling_update(p); //enable after making FAST nodeupdate
+			env->nodeUpdate(p, 2); //enable after making FAST nodeupdate
 		}
 	}
 };
@@ -200,6 +203,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 5; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();
@@ -209,7 +213,7 @@ public:
 		if (hot > melt) {
 			n.freeze_melt(ndef, +1);
 			map->setNode(p, n);
-			env->getScriptIface()->node_falling_update(p);
+			env->nodeUpdate(p, 2);
 		}
 	}
 };
@@ -233,6 +237,7 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance()
 	{ return 4; }
+	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
 		ServerMap *map = &env->getServerMap();

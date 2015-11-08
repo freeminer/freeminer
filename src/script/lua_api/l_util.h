@@ -38,15 +38,14 @@ private:
 		GUIEngine instance should be in here.
 	*/
 
-	// debug(text)
-	// Writes a line to dstream
-	static int l_debug(lua_State *L);
-
 	// log([level,] text)
 	// Writes a line to the logger.
 	// The one-argument version logs to infostream.
-	// The two-argument version accept a log level: error, action, info, or verbose.
+	// The two-argument version accepts a log level.
 	static int l_log(lua_State *L);
+
+	// get us precision time
+	static int l_get_us_time(lua_State *L);
 
 	// setting_set(name, value)
 	static int l_setting_set(lua_State *L);

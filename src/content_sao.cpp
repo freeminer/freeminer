@@ -297,7 +297,9 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		}
 	}
 
-	if(m_registered){
+	if(m_registered && (getType() < ACTIVEOBJECT_TYPE_LUACREATURE
+			|| getType() > ACTIVEOBJECT_TYPE_LUAFALLING)) {
+
 		m_env->getScriptIface()->luaentity_Step(m_id, dtime);
 	}
 
@@ -411,7 +413,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 std::string LuaEntitySAO::getStaticData()
 {
 /*
-	verbosestream<<__FUNCTION_NAME<<std::endl;
+	verbosestream<<FUNCTION_NAME<<std::endl;
 */
 	std::ostringstream os(std::ios::binary);
 	// version
@@ -765,7 +767,6 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_nocheat_dig_pos(32767, 32767, 32767),
 	m_nocheat_dig_time(0),
 	m_wield_index(0),
-	m_armor_groups_sent(false),
 	m_privs(privs),
 	m_is_singleplayer(is_singleplayer),
 	m_animation_speed(0),
@@ -788,6 +789,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_ms_from_last_respawn = 10000; //more than ignore move time (1)
 	m_physics_override_sent = false;
 	m_animation_sent = false;
+	m_armor_groups_sent = false;
 
 	assert(m_player);	// pre-condition
 	assert(m_peer_id != 0);	// pre-condition
@@ -857,6 +859,7 @@ void PlayerSAO::removingFromEnvironment()
 		/*
 		m_env->removePlayer(m_player);
 		*/
+		--m_player->refs;
 		m_player = nullptr;
 	}
 }

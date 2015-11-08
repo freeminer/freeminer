@@ -88,7 +88,7 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 
 	m_camera_mode(CAMERA_MODE_FIRST)
 {
-	//dstream<<__FUNCTION_NAME<<std::endl;
+	//dstream<<FUNCTION_NAME<<std::endl;
 
 	// note: making the camera node a child of the player node
 	// would lead to unexpected behaviour, so we don't do that.
@@ -410,20 +410,22 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	} else {
 		m_wieldnode->setVisible(true);
 	}
-	f32 fov_degrees = MYMAX(MYMIN(m_draw_control.fov, 170.0), 10.0);
+	f32 fov_degrees = m_draw_control.fov;
 
 	// Greater FOV if running
 	v3f speed = player->getSpeed();
 
 	if (m_cache_movement_fov) {
-		auto fog_was = m_draw_control.fov_add;
+		auto fov_was = m_draw_control.fov_add;
 		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
-		if (m_draw_control.fov_add > fog_was + 1)
-			m_draw_control.fov_add = fog_was + ( m_draw_control.fov_add - fog_was) / 3;
-		else if (m_draw_control.fov_add < fog_was - 1)
-			m_draw_control.fov_add = fog_was - (fog_was - m_draw_control.fov_add) / 3;
+		if (m_draw_control.fov_add > fov_was + 1)
+			m_draw_control.fov_add = fov_was + ( m_draw_control.fov_add - fov_was) / 3;
+		else if (m_draw_control.fov_add < fov_was - 1)
+			m_draw_control.fov_add = fov_was - (fov_was - m_draw_control.fov_add) / 3;
 		fov_degrees -= m_draw_control.fov_add;
 	}
+
+	fov_degrees = MYMAX(MYMIN(fov_degrees, 150.0), 10.0);
 
 	// FOV and aspect ratio
 	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
@@ -487,7 +489,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
 	const bool movement_XZ = hypot(speed.X, speed.Z) > BS;
-	const bool movement_Y = std::abs(speed.Y) > BS;
+	const bool movement_Y = fabs(speed.Y) > BS;
 
 	const bool walking = movement_XZ && player->touching_ground;
 	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
@@ -521,7 +523,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 		return;
 	m_frametime_counter = 0.2; // Same as ClientMap::updateDrawList interval
 
-	/*dstream<<__FUNCTION_NAME
+	/*dstream<<FUNCTION_NAME
 			<<": Collected "<<m_added_frames<<" frames, total of "
 			<<m_added_busytime<<"s."<<std::endl;
 

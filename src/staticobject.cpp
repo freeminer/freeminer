@@ -64,7 +64,7 @@ void StaticObjectList::serialize(std::ostream &os)
 	// Make sure it fits into u16, else it would get truncated and cause e.g.
 	// issue #2610 (Invalid block data in database: unsupported NameIdMapping version).
 	if (count > U16_MAX) {
-		errorstream << "StaticObjectList::serialize(): "
+		warningstream << "StaticObjectList::serialize(): "
 			<< "too many objects (" << count << ") in list, "
 			<< "not writing them to disk." << std::endl;
 		writeU16(os, 0);  // count = 0
@@ -94,7 +94,7 @@ void StaticObjectList::deSerialize(std::istream &is)
 	u16 count = readU16(is);
 
 	if (count > 1000) {
-		errorstream << "StaticObjectList::deSerialize(): "
+		warningstream << "StaticObjectList::deSerialize(): "
 			<< "too many objects count=" << count << " version="<<(int)version<<" in list, "
 			<< "maybe corrupt block." << std::endl;
 	}

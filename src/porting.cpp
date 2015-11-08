@@ -96,12 +96,12 @@ void sigint_handler(int sig)
 	{
 		g_killed = true;
 
-		dstream<<DTIME<<"INFO: sigint_handler(): "
-				<<"Ctrl-C pressed, shutting down."<<std::endl;
+		dstream << " INFO: sigint_handler(): "
+			<< "Ctrl-C pressed, shutting down." << std::endl;
 
 		// Comment out for less clutter when testing scripts
-		/*dstream<<DTIME<<"INFO: sigint_handler(): "
-				<<"Printing debug stacks"<<std::endl;
+		/*dstream << "INFO: sigint_handler(): "
+				<< "Printing debug stacks" << std::endl;
 		debug_stacks_print();*/
 	}
 		break;
@@ -135,8 +135,8 @@ BOOL WINAPI event_handler(DWORD sig)
 	case CTRL_CLOSE_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
-		if (g_killed == false) {
-			dstream << DTIME << "INFO: event_handler(): "
+		if (!g_killed) {
+			dstream << "INFO: event_handler(): "
 				<< "Ctrl+C, Close Event, Logoff Event or Shutdown Event,"
 				" shutting down." << std::endl;
 			g_killed = true;
@@ -430,14 +430,14 @@ bool setSystemPaths()
 		const std::string &trypath = *i;
 		if (!fs::PathExists(trypath) ||
 			!fs::PathExists(trypath + DIR_DELIM + "builtin")) {
-			dstream << "WARNING: system-wide share not found at \""
+			warningstream << "system-wide share not found at \""
 					<< trypath << "\""<< std::endl;
 			continue;
 		}
 
 		// Warn if was not the first alternative
 		if (i != trylist.begin()) {
-			dstream << "WARNING: system-wide share found at \""
+			warningstream << "system-wide share found at \""
 					<< trypath << "\"" << std::endl;
 		}
 
@@ -466,7 +466,7 @@ bool setSystemPaths()
 			TRUE, (UInt8 *)path, PATH_MAX)) {
 		path_share = std::string(path);
 	} else {
-		dstream << "WARNING: Could not determine bundle resource path" << std::endl;
+		warningstream << "Could not determine bundle resource path" << std::endl;
 	}
 	CFRelease(resources_url);
 
@@ -707,7 +707,7 @@ static float calcDisplayDensity()
 	}
 
 	/* return manually specified dpi */
-	return g_settings->getFloat("screen_dpi")/96.0;
+	return get_dpi()/96.0;
 }
 
 
@@ -717,11 +717,10 @@ float getDisplayDensity()
 	return cached_display_density;
 }
 
-
 #		else // XORG_USED
 float getDisplayDensity()
 {
-	return g_settings->getFloat("screen_dpi")/96.0;
+	return get_dpi()/96.0;
 }
 #		endif // XORG_USED
 
@@ -734,6 +733,13 @@ v2u32 getDisplaySize()
 
 	return deskres;
 }
+
+float get_dpi() {
+	return g_settings->getFloat("screen_dpi");
+}
+
+int get_densityDpi() { return 0; }
+
 #	endif // __ANDROID__
 #endif // SERVER
 

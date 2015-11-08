@@ -243,18 +243,19 @@ void* AsyncWorkerThread::run()
 	lua_State *L = getStack();
 
 	std::string script = getServer()->getBuiltinLuaPath() + DIR_DELIM + "init.lua";
-	if (!loadScript(script)) {
-		errorstream << "execution of async base environment failed!"
-			<< std::endl;
-		abort();
+	try {
+		loadScript(script);
+	} catch (const ModError &e) {
+		errorstream << "Execution of async base environment failed: "
+			<< e.what() << std::endl;
+		FATAL_ERROR("Execution of async base environment failed");
 	}
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	lua_getglobal(L, "core");
 	if (lua_isnil(L, -1)) {
-		errorstream << "Unable to find core within async environment!";
-		abort();
+		FATAL_ERROR("Unable to find core within async environment!");
 	}
 
 	// Main loop
@@ -268,8 +269,7 @@ void* AsyncWorkerThread::run()
 
 		lua_getfield(L, -1, "job_processor");
 		if (lua_isnil(L, -1)) {
-			errorstream << "Unable to get async job processor!" << std::endl;
-			abort();
+			FATAL_ERROR("Unable to get async job processor!");
 		}
 
 		luaL_checktype(L, -1, LUA_TFUNCTION);

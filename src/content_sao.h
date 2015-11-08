@@ -86,19 +86,22 @@ public:
 	std::string getName();
 	bool getCollisionBox(aabb3f *toset);
 	bool collideWithObjects();
-private:
+protected:
 	std::string getPropertyPacket();
 	void sendPosition(bool do_interpolate, bool is_movement_end);
 
 	std::string m_init_name;
 	std::string m_init_state;
 	bool m_registered;
+
+public:
 	struct ObjectProperties m_prop;
 	
 	std::atomic_ushort m_hp;
 	v3f m_velocity;
 	v3f m_acceleration;
 	float m_yaw;
+private:
 	ItemGroupList m_armor_groups;
 	
 	std::atomic_bool m_properties_sent;
@@ -317,7 +320,7 @@ private:
 	int m_wield_index;
 	std::atomic_bool m_position_not_sent;
 	ItemGroupList m_armor_groups;
-	bool m_armor_groups_sent;
+	std::atomic_bool m_armor_groups_sent;
 
 	std::atomic_bool m_properties_sent;
 	struct ObjectProperties m_prop;

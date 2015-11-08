@@ -386,6 +386,20 @@ find_package(Lua REQUIRED)
 
 find_package(GMP REQUIRED)
 
+option(ENABLE_CURSES "Enable ncurses console" TRUE)
+set(USE_CURSES FALSE)
+
+if(ENABLE_CURSES)
+	find_package(Ncursesw)
+	if(CURSES_FOUND)
+		set(USE_CURSES TRUE)
+		message(STATUS "ncurses console enabled.")
+		include_directories(${CURSES_INCLUDE_DIRS})
+	else()
+		message(STATUS "ncurses not found!")
+	endif()
+endif(ENABLE_CURSES)
+
 option(ENABLE_LEVELDB "Enable LevelDB backend" TRUE)
 set(USE_LEVELDB FALSE)
 
@@ -398,7 +412,7 @@ if(ENABLE_LEVELDB)
 	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")   
 	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
 		set(USE_LEVELDB TRUE)
-		message(STATUS "LevelDB backend enabled.")
+		message(STATUS "LevelDB backend enabled. ${LEVELDB_INCLUDE_DIR}")
 		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
 	elseif (NOT FORCE_LEVELDB)
 		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
@@ -583,6 +597,7 @@ add_custom_target(GenerateVersion
 	-P "${CMAKE_SOURCE_DIR}/cmake/Modules/GenerateVersion.cmake"
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
+add_subdirectory(contrib)
 
 add_subdirectory(threading)
 add_subdirectory(network)
@@ -602,7 +617,8 @@ set(FMcommon_SRCS
 	circuit_element.cpp
 	circuit_element_virtual.cpp
 	key_value_storage.cpp
-	fmbitset.cpp
+	fm_bitset.cpp
+	FMColoredString.cpp
 	mapgen_v5.cpp
 	mapgen_indev.cpp
 	mapgen_math.cpp
@@ -617,6 +633,7 @@ set(common_SRCS
 	areastore.cpp
 	ban.cpp
 	cavegen.cpp
+	chat.cpp
 	clientiface.cpp
 	collision.cpp
 	content_abm.cpp
@@ -647,6 +664,7 @@ set(common_SRCS
 	map.cpp
 	mapblock.cpp
 	mapgen.cpp
+	mapgen_fractal.cpp
 	mapgen_singlenode.cpp
 	mapgen_v5.cpp
 	mapgen_v6.cpp
@@ -681,11 +699,13 @@ set(common_SRCS
 	sound.cpp
 	staticobject.cpp
 	subgame.cpp
+	terminal_chat_console.cpp
 	tool.cpp
 	treegen.cpp
 	version.cpp
 	voxel.cpp
 	voxelalgorithms.cpp
+	${contrib_SRCS}
 	${common_network_SRCS}
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
@@ -715,7 +735,6 @@ if(WIN32)
 endif()
 
 set(FMclient_SRCS
-	FMColoredString.cpp
 	guiTextInputMenu.cpp
 	intlGUIEditBox.cpp
 	FMStaticText.cpp
@@ -732,7 +751,6 @@ set(client_SRCS
 	${sound_SRCS}
 	${client_network_SRCS}
 	camera.cpp
-	chat.cpp
 	client.cpp
 	clientmap.cpp
 	clientmedia.cpp
@@ -865,6 +883,9 @@ if(BUILD_CLIENT)
 			${CGUITTFONT_LIBRARY}
 		)
 	endif()
+	if (USE_CURSES)
+		target_link_libraries(${PROJECT_NAME} ${CURSES_LIBRARIES})
+	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
@@ -900,6 +921,9 @@ if(BUILD_SERVER)
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
 			COMPILE_DEFINITIONS "SERVER")
+	if (USE_CURSES)
+		target_link_libraries(${PROJECT_NAME}server ${CURSES_LIBRARIES})
+	endif()
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()

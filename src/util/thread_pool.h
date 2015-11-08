@@ -35,9 +35,9 @@ public:
 	void wait();
 	void kill();
 	virtual void * run() = 0;
-	bool isSameThread();
+	bool isCurrentThread();
 protected:
-	std::string name;
+	std::string m_name;
 };
 
 

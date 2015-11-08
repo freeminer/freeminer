@@ -171,6 +171,7 @@ public:
 	static u32 getBlockSeed2(v3s16 p, int seed);
 	s16 findGroundLevelFull(v2s16 p2d);
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
+	s16 findLiquidSurface(v2s16 p2d, s16 ymin, s16 ymax);
 	void updateHeightmap(v3s16 nmin, v3s16 nmax);
 	void updateLiquid(v3s16 nmin, v3s16 nmax);
 
@@ -187,9 +188,14 @@ public:
 	virtual void makeChunk(BlockMakeData *data) {}
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
+	// freeminer:
 	s16 liquid_pressure;
 	unordered_map_v3POS<s16> heat_cache;
 	unordered_map_v3POS<s16> humidity_cache;
+
+
+private:
+	DISABLE_CLASS_COPY(Mapgen);
 };
 
 struct MapgenFactory {

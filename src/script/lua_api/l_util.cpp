@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "json/json.h"
 #include "cpp_api/s_security.h"
 #include "areastore.h"
-#include "debug.h"
 #include "porting.h"
 #include "log.h"
 #include "tool.h"
@@ -38,64 +37,43 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/auth.h"
 #include <algorithm>
 
-// debug(...)
-// Writes a line to dstream
-int ModApiUtil::l_debug(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	// Handle multiple parameters to behave like standard lua print()
-	int n = lua_gettop(L);
-	lua_getglobal(L, "tostring");
-	for (int i = 1; i <= n; i++) {
-		/*
-			Call tostring(i-th argument).
-			This is what print() does, and it behaves a bit
-			differently from directly calling lua_tostring.
-		*/
-		lua_pushvalue(L, -1);  /* function to be called */
-		lua_pushvalue(L, i);   /* value to print */
-		lua_call(L, 1, 1);
-		size_t len;
-		const char *s = lua_tolstring(L, -1, &len);
-		if (i > 1)
-			dstream << "\t";
-		if (s)
-			dstream << std::string(s, len);
-		lua_pop(L, 1);
-	}
-	dstream << std::endl;
-	return 0;
-}
-
 // log([level,] text)
 // Writes a line to the logger.
 // The one-argument version logs to infostream.
-// The two-argument version accept a log level: error, action, info, or verbose.
+// The two-argument version accepts a log level.
+// Either the special case "deprecated" for deprecation notices, or any specified in
+// Logger::stringToLevel(name).
 int ModApiUtil::l_log(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	std::string text;
-	LogMessageLevel level = LMT_INFO;
+	LogLevel level = LL_NONE;
 	if (lua_isnone(L, 2)) {
-		text = lua_tostring(L, 1);
-	}
-	else {
-		std::string levelname = luaL_checkstring(L, 1);
+		text = luaL_checkstring(L, 1);
+	} else {
+		std::string name = luaL_checkstring(L, 1);
 		text = luaL_checkstring(L, 2);
-		if(levelname == "error")
-			level = LMT_ERROR;
-		else if(levelname == "action")
-			level = LMT_ACTION;
-		else if(levelname == "verbose")
-			level = LMT_VERBOSE;
-		else if (levelname == "deprecated") {
-			log_deprecated(L,text);
+		if (name == "deprecated") {
+			log_deprecated(L, text);
 			return 0;
 		}
-
+		level = Logger::stringToLevel(name);
+		if (level == LL_MAX) {
+			warningstream << "Tried to log at unknown level '" << name
+				<< "'.  Defaulting to \"none\"." << std::endl;
+			level = LL_NONE;
+		}
 	}
-	log_printline(level, text);
+	g_logger.log(level, text);
 	return 0;
+}
+
+// get_us_time()
+int ModApiUtil::l_get_us_time(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	lua_pushnumber(L, porting::getTimeUs());
+	return 1;
 }
 
 #define CHECK_SECURE_SETTING(L, name) \
@@ -319,6 +297,8 @@ int ModApiUtil::l_is_yes(lua_State *L)
 
 int ModApiUtil::l_get_builtin_path(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	std::string path = porting::path_share + DIR_DELIM + "builtin";
 	lua_pushstring(L, path.c_str());
 	return 1;
@@ -327,6 +307,8 @@ int ModApiUtil::l_get_builtin_path(lua_State *L)
 // compress(data, method, level)
 int ModApiUtil::l_compress(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	size_t size;
 	const char *data = luaL_checklstring(L, 1, &size);
 
@@ -346,6 +328,8 @@ int ModApiUtil::l_compress(lua_State *L)
 // decompress(data, method)
 int ModApiUtil::l_decompress(lua_State *L)
 {
+	NO_MAP_LOCK_REQUIRED;
+
 	size_t size;
 	const char *data = luaL_checklstring(L, 1, &size);
 
@@ -419,8 +403,9 @@ int ModApiUtil::l_request_insecure_environment(lua_State *L)
 
 void ModApiUtil::Initialize(lua_State *L, int top)
 {
-	API_FCT(debug);
 	API_FCT(log);
+
+	API_FCT(get_us_time);
 
 	API_FCT(setting_set);
 	API_FCT(setting_get);
@@ -453,8 +438,9 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 void ModApiUtil::InitializeAsync(AsyncEngine& engine)
 {
-	ASYNC_API_FCT(debug);
 	ASYNC_API_FCT(log);
+
+	ASYNC_API_FCT(get_us_time);
 
 	//ASYNC_API_FCT(setting_set);
 	ASYNC_API_FCT(setting_get);

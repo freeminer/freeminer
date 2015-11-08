@@ -70,13 +70,13 @@ public:
 	ScriptApiBase
 */
 
-ScriptApiBase::ScriptApiBase()
-{
-/*
-#ifdef SCRIPTAPI_LOCK_DEBUG
-	m_locked = false;
-#endif
+ScriptApiBase::ScriptApiBase() /* :
+	m_luastackmutex(true)
 */
+{
+#ifdef SCRIPTAPI_LOCK_DEBUG
+	m_lock_recursion_count = 0;
+#endif
 	m_luastack = luaL_newstate();
 	FATAL_ERROR_IF(!m_luastack, "luaL_newstate() failed");
 
@@ -123,15 +123,15 @@ ScriptApiBase::~ScriptApiBase()
 	lua_close(m_luastack);
 }
 
-bool ScriptApiBase::loadMod(const std::string &script_path,
-		const std::string &mod_name, std::string *error)
+void ScriptApiBase::loadMod(const std::string &script_path,
+		const std::string &mod_name)
 {
 	ModNameStorer mod_name_storer(getStack(), mod_name);
 
-	return loadScript(script_path, error);
+	loadScript(script_path);
 }
 
-bool ScriptApiBase::loadScript(const std::string &script_path, std::string *error)
+void ScriptApiBase::loadScript(const std::string &script_path)
 {
 	verbosestream << "Loading and running script from " << script_path << std::endl;
 
@@ -148,17 +148,11 @@ bool ScriptApiBase::loadScript(const std::string &script_path, std::string *erro
 	ok = ok && !lua_pcall(L, 0, 0, error_handler);
 	if (!ok) {
 		std::string error_msg = lua_tostring(L, -1);
-		if (error)
-			*error = error_msg;
-		errorstream << "========== ERROR FROM LUA ===========" << std::endl
-			<< "Failed to load and run script from " << std::endl
-			<< script_path << ":" << std::endl << std::endl
-			<< error_msg << std::endl << std::endl
-			<< "======= END OF ERROR FROM LUA ========" << std::endl;
-		lua_pop(L, 1); // Pop error message from stack
+		lua_pop(L, 2); // Pop error message and error handler
+		throw ModError("Failed to load and run script from " +
+				script_path + ":\n" + error_msg);
 	}
 	lua_pop(L, 1); // Pop error handler
-	return ok;
 }
 
 // Push the list of callbacks (a lua table).
@@ -167,9 +161,14 @@ bool ScriptApiBase::loadScript(const std::string &script_path, std::string *erro
 // - runs the callbacks
 // - replaces the table and arguments with the return value,
 //     computed depending on mode
+// This function must only be called with scriptlock held (i.e. inside of a
+// code block with SCRIPTAPI_PRECHECKHEADER declared)
 void ScriptApiBase::runCallbacksRaw(int nargs,
 		RunCallbacksMode mode, const char *fxn)
 {
+#ifdef SCRIPTAPI_LOCK_DEBUG
+	assert(m_lock_recursion_count > 0);
+#endif
 	lua_State *L = getStack();
 	FATAL_ERROR_IF(lua_gettop(L) < nargs + 1, "Not enough arguments");
 

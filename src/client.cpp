@@ -67,6 +67,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
+#include "chat.h"
 
 
 extern gui::IGUIEnvironment* guienv;
@@ -87,7 +88,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 
 unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	auto lock = m_queue.lock_unique_rec();
 	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
@@ -309,7 +310,7 @@ void Client::connect(Address address,
 		const std::string &address_name,
 		bool is_local_server)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	initLocalMapSaving(address, address_name, is_local_server);
 
@@ -318,7 +319,7 @@ void Client::connect(Address address,
 
 void Client::step(float dtime)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	m_uptime += dtime;
 
@@ -849,7 +850,7 @@ void Client::initLocalMapSaving(const Address &address,
 
 void Client::ReceiveAll()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	auto end_ms = porting::getTimeMs() + 10;
 	for(;;)
 	{
@@ -880,7 +881,7 @@ void Client::ReceiveAll()
 
 bool Client::Receive()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	NetworkPacket pkt;
 	if (!m_con.Receive(&pkt))
 		return false;
@@ -903,7 +904,7 @@ inline void Client::handleCommand(NetworkPacket* pkt)
 */
 void Client::ProcessData(NetworkPacket *pkt)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	ToClientCommand command = (ToClientCommand) pkt->getCommand();
 	u32 sender_peer_id = pkt->getPeerId();
@@ -1274,7 +1275,7 @@ void Client::sendChangePassword(const std::string &oldpassword,
 
 void Client::sendDamage(u8 damage)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_DAMAGE, sizeof(u8));
 	pkt << damage;
@@ -1283,7 +1284,7 @@ void Client::sendDamage(u8 damage)
 
 void Client::sendBreath(u16 breath)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_BREATH, sizeof(u16));
 	pkt << breath;
@@ -1292,7 +1293,7 @@ void Client::sendBreath(u16 breath)
 
 void Client::sendRespawn()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_RESPAWN, 0);
 	Send(&pkt);
@@ -1300,7 +1301,7 @@ void Client::sendRespawn()
 
 void Client::sendReady()
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 
 	NetworkPacket pkt(TOSERVER_CLIENT_READY,
 			1 + 1 + 1 + 1 + 2 + sizeof(char) * strlen(g_version_hash));
@@ -1632,15 +1633,18 @@ void Client::typeChatMessage(const std::string &message)
 	if(message.empty())
 		return;
 
-	// Send to others
-	sendChatMessage(message);
-
-	// Show locally
-	if (message[0] == '/')
-	{
-		m_chat_queue.push("issued command: " + message);
+	if (message[0] == '/') {
+		// TODO register client commands in help
+		std::string command = message.substr(1,-1);
+		// Clears on-screen chat messages
+		if (command.compare("clear") == 0) {
+			chat_backend->clearRecentChat();
+			return;
+		// it's kinda self-evident when you run a local command
+		} else {
+			m_chat_queue.push("issued command: " + message);
+		}
 	}
-
 	//freeminer display self message after recieving from server
 #if MINETEST_PROTO
 	else
@@ -1651,6 +1655,9 @@ void Client::typeChatMessage(const std::string &message)
 		m_chat_queue.push(std::string() + "<" + name + "> " + message);
 	}
 #endif
+
+	// Send to others
+	sendChatMessage(message);
 }
 
 void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)

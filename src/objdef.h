@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef OBJDEF_HEADER
 #define OBJDEF_HEADER
 
+#include "util/basic_macros.h"
 #include "porting.h"
 
 class IGameDef;
@@ -90,6 +91,9 @@ protected:
 	INodeDefManager *m_ndef;
 	std::vector<ObjDef *> m_objects;
 	ObjDefType m_objtype;
+
+private:
+	DISABLE_CLASS_COPY(ObjDefManager);
 };
 
 #endif

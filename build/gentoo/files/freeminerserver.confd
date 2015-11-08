@@ -1,0 +1,16 @@
+# /etc/conf.d/freeminer-server: config file for /etc/init.d/freeminer-server
+
+# user
+USER="freeminer"
+
+# group
+GROUP="@GROUP@"
+
+# pidfile
+PIDFILE="/var/run/freeminer.pid"
+
+# executable
+FREEMINERBIN="@BINDIR@/freeminerserver"
+
+# additional arguments for the server
+ARGS="--logfile /var/lib/freeminer/server.log"

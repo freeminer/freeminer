@@ -85,6 +85,8 @@ int NodeMetaRef::gc_object(lua_State *L) {
 // get_string(self, name)
 int NodeMetaRef::l_get_string(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = luaL_checkstring(L, 2);
 
@@ -101,6 +103,8 @@ int NodeMetaRef::l_get_string(lua_State *L)
 // set_string(self, name, var)
 int NodeMetaRef::l_set_string(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = luaL_checkstring(L, 2);
 	size_t len = 0;
@@ -118,6 +122,8 @@ int NodeMetaRef::l_set_string(lua_State *L)
 // get_int(self, name)
 int NodeMetaRef::l_get_int(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = lua_tostring(L, 2);
 
@@ -134,6 +140,8 @@ int NodeMetaRef::l_get_int(lua_State *L)
 // set_int(self, name, var)
 int NodeMetaRef::l_set_int(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = lua_tostring(L, 2);
 	int a = lua_tointeger(L, 3);
@@ -150,6 +158,8 @@ int NodeMetaRef::l_set_int(lua_State *L)
 // get_float(self, name)
 int NodeMetaRef::l_get_float(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = lua_tostring(L, 2);
 
@@ -166,6 +176,8 @@ int NodeMetaRef::l_get_float(lua_State *L)
 // set_float(self, name, var)
 int NodeMetaRef::l_set_float(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	std::string name = lua_tostring(L, 2);
 	float a = lua_tonumber(L, 3);
@@ -182,6 +194,8 @@ int NodeMetaRef::l_set_float(lua_State *L)
 // get_inventory(self)
 int NodeMetaRef::l_get_inventory(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	getmeta(ref, true);  // try to ensure the metadata exists
 	InvRef::createNodeMeta(L, ref->m_p);
@@ -191,6 +205,8 @@ int NodeMetaRef::l_get_inventory(lua_State *L)
 // to_table(self)
 int NodeMetaRef::l_to_table(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 
 	NodeMetadata *meta = getmeta(ref, true);
@@ -233,6 +249,8 @@ int NodeMetaRef::l_to_table(lua_State *L)
 // from_table(self, table)
 int NodeMetaRef::l_from_table(lua_State *L)
 {
+	MAP_LOCK_REQUIRED;
+
 	NodeMetaRef *ref = checkobject(L, 1);
 	int base = 2;
 

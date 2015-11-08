@@ -470,7 +470,7 @@ void ItemCAO::updateTexture()
 	}
 	catch(SerializationError &e)
 	{
-		infostream<<"WARNING: "<<__FUNCTION_NAME
+		warningstream<<FUNCTION_NAME
 				<<": error deSerializing itemstring \""
 				<<m_itemstring<<std::endl;
 	}
@@ -946,10 +946,15 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			u8 li = m_last_light;
 			setMeshColor(m_animated_meshnode->getMesh(), video::SColor(255,li,li,li));
 
+			bool backface_culling = m_prop.backface_culling;
+			if (m_is_player)
+				backface_culling = false;
+
 			m_animated_meshnode->setMaterialFlag(video::EMF_LIGHTING, false);
 			m_animated_meshnode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 			m_animated_meshnode->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF);
 			m_animated_meshnode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+			m_animated_meshnode->setMaterialFlag(video::EMF_BACK_FACE_CULLING, backface_culling);
 		}
 		else
 			errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
@@ -991,6 +996,11 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 				wname.c_str(), m_nametag_color, node);
 		m_textnode->grab();
 		m_textnode->setPosition(v3f(0, BS*1.1, 0));
+
+		// Enforce hiding nametag,
+		// because if freetype is enabled, a grey
+		// shadow can remain.
+		m_textnode->setVisible(m_nametag_color.getAlpha() > 0);
 	}
 
 	updateNodePos();

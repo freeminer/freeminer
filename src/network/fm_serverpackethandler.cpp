@@ -49,7 +49,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 void Server::ProcessData(NetworkPacket *pkt)
 {
-	DSTACK(__FUNCTION_NAME);
+	DSTACK(FUNCTION_NAME);
 	// Environment is locked first.
 	//MutexAutoLock envlock(m_env_mutex);
 
@@ -337,7 +337,9 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 		if(given_password != checkpwd){
-			actionstream<<"Server: "<<playername<<" supplied wrong password" <<std::endl;
+			actionstream<<"Server: "<<playername<<" supplied wrong password"
+				<< " at " << addr_s
+				<< std::endl;
 			DenyAccess(peer_id, "Wrong password");
 			return;
 		}
@@ -919,10 +921,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 
-#if !ENABLE_THREADS
-		auto lock = m_env->getMap().m_nothread_locker.lock_unique_rec();
-#endif
-
+		MAP_NOTHREAD_LOCK((&m_env->getMap()));
 
 		v3f player_pos = playersao->getLastGoodPosition();
 
@@ -1200,6 +1199,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 				else {
 					client->ResendBlockIfOnWire(blockpos);
 				}
+				m_env->nodeUpdate(p_under, 5, 0);
 			}
 		} // action == 2
 
@@ -1263,6 +1263,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 					client->ResendBlockIfOnWire(blockpos2);
 				}
 			}
+			m_env->nodeUpdate(p_under, 5, 0);
 		} // action == 3
 
 		/*
@@ -1284,6 +1285,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 				}
 				stat.add("use", player->getName());
 				stat.add("use_" + item.name, player->getName());
+				m_env->nodeUpdate(p_under, 5, 0);
 			}
 
 		} // action == 4
@@ -1302,7 +1304,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 	{
 		std::vector<s32> removed_ids;
 		packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(&removed_ids);
-		for (auto id : removed_ids) {
+		for (auto & id : removed_ids) {
 			std::map<s32, ServerPlayingSound>::iterator i =
 					m_playing_sounds.find(id);
 			if(i == m_playing_sounds.end())

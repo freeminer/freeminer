@@ -107,8 +107,8 @@ public:
 	typedef recursive_lock<sharedlock, mutex> lock_rec_shared;
 	typedef recursive_lock<uniquelock, mutex> lock_rec_unique;
 
-	mutex mtx;
-	std::atomic<std::size_t> thread_id;
+	mutable mutex mtx;
+	mutable std::atomic<std::size_t> thread_id;
 
 	locker();
 	std::unique_ptr<uniquelock> lock_unique();

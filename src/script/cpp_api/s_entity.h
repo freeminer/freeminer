@@ -33,7 +33,7 @@ class ScriptApiEntity
 		: virtual public ScriptApiBase
 {
 public:
-	bool luaentity_Add(u16 id, const char *name);
+	bool luaentity_Add(u16 id, const char *name, bool force_usage = false);
 	void luaentity_Activate(u16 id,
 			const std::string &staticdata, u32 dtime_s);
 	void luaentity_Remove(u16 id);

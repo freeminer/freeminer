@@ -168,11 +168,18 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/guiTextInputMenu.cpp              \
 		jni/src/FMColoredString.cpp               \
 		jni/src/FMStaticText.cpp                  \
-		jni/src/fmbitset.cpp                      \
+		jni/src/fm_bitset.cpp                     \
 		jni/src/fm_liquid.cpp                     \
 		jni/src/fm_map.cpp                        \
 		jni/src/key_value_storage.cpp             \
 		jni/src/log_types.cpp                     \
+		jni/src/mapgen_indev.cpp                  \
+		jni/src/mapgen_math.cpp                   \
+		jni/src/contrib/environment.cpp           \
+		jni/src/contrib/fallingsao.cpp            \
+		jni/src/contrib/itemsao.cpp               \
+		jni/src/contrib/l_env.cpp                 \
+                                                  \
 		jni/src/areastore.cpp                     \
 		jni/src/ban.cpp                           \
 		jni/src/camera.cpp                        \
@@ -234,8 +241,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/mapblock.cpp                      \
 		jni/src/mapblock_mesh.cpp                 \
 		jni/src/mapgen.cpp                        \
-		jni/src/mapgen_indev.cpp                  \
-		jni/src/mapgen_math.cpp                   \
+		jni/src/mapgen_fractal.cpp                \
 		jni/src/mapgen_singlenode.cpp             \
 		jni/src/mapgen_v5.cpp                     \
 		jni/src/mapgen_v6.cpp                     \

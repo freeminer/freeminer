@@ -60,6 +60,7 @@ struct EnumString ScriptApiNode::es_ContentParamType2[] =
 		{CPT2_FACEDIR, "facedir"},
 		{CPT2_WALLMOUNTED, "wallmounted"},
 		{CPT2_LEVELED, "leveled"},
+		{CPT2_DEGROTATE, "degrotate"},
 		{0, NULL},
 	};
 
@@ -289,6 +290,7 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 	lua_pop(L, 1);  // Pop error handler
 }
 
+/*
 void ScriptApiNode::node_falling_update(v3s16 p)
 {
 	SCRIPTAPI_PRECHECKHEADER
@@ -312,6 +314,7 @@ void ScriptApiNode::node_falling_update_single(v3s16 p)
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
 }
+*/
 
 void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
 {

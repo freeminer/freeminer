@@ -65,8 +65,9 @@ FlagDesc flagdesc_gennotify[] = {
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-
+////
+//// Mapgen
+////
 
 Mapgen::Mapgen()
 {
@@ -160,6 +161,26 @@ s16 Mapgen::findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax)
 	for (y = ymax; y >= ymin; y--) {
 		MapNode &n = vm->m_data[i];
 		if (ndef->get(n).walkable)
+			break;
+
+		vm->m_area.add_y(em, i, -1);
+	}
+	return (y >= ymin) ? y : -MAX_MAP_GENERATION_LIMIT;
+}
+
+
+// Returns -MAX_MAP_GENERATION_LIMIT if not found or if ground is found first
+s16 Mapgen::findLiquidSurface(v2s16 p2d, s16 ymin, s16 ymax)
+{
+	v3s16 em = vm->m_area.getExtent();
+	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
+	s16 y;
+
+	for (y = ymax; y >= ymin; y--) {
+		MapNode &n = vm->m_data[i];
+		if (ndef->get(n).walkable)
+			return -MAX_MAP_GENERATION_LIMIT;
+		else if (ndef->get(n).isLiquid())
 			break;
 
 		vm->m_area.add_y(em, i, -1);
@@ -368,8 +389,9 @@ void Mapgen::spreadLight(v3s16 nmin, v3s16 nmax)
 }
 
 
-
-///////////////////////////////////////////////////////////////////////////////
+////
+//// GenerateNotifier
+////
 
 GenerateNotifier::GenerateNotifier()
 {
@@ -435,7 +457,10 @@ void GenerateNotifier::getEvents(
 		m_notify_events.clear();
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
+////
+//// MapgenParams
+////
 
 void MapgenParams::load(Settings &settings)
 {
@@ -458,9 +483,11 @@ void MapgenParams::load(Settings &settings)
 	settings.getNoiseParams("mg_biome_np_humidity_blend", np_biome_humidity_blend);
 
 	delete sparams;
-	sparams = EmergeManager::createMapgenParams(mg_name);
-	if (sparams)
+	MapgenFactory *mgfactory = EmergeManager::getMapgenFactory(mg_name);
+	if (mgfactory) {
+		sparams = mgfactory->createMapgenParams();
 		sparams->readParams(&settings);
+	}
 }
 
 
