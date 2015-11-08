@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-24 20:28+0200\n"
-"PO-Revision-Date: 2015-10-05 02:00+0200\n"
-"Last-Translator: est31 <MTest31@outlook.com>\n"
+"POT-Creation-Date: 2015-11-08 21:23+0100\n"
+"PO-Revision-Date: 2015-10-30 19:48+0200\n"
+"Last-Translator: hybriddog <ovvv@web.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/minetest/minetest/"
 "de/>\n"
 "Language: de\n"
@@ -21,7 +21,7 @@ msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
-msgstr "Es ist ein Fehler in einem Lua-Skript aufgetreten, z.b in einem Mod:"
+msgstr "Es ist ein Fehler in einem Lua-Skript aufgetreten, z.B. in einer Mod:"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured:"
@@ -48,31 +48,30 @@ msgid "Loading..."
 msgstr "Lädt…"
 
 #: builtin/mainmenu/common.lua
-#, fuzzy
 msgid "Protocol version mismatch. "
-msgstr "Serverprotokollversionsfehler "
+msgstr "Protokollversionsfehler. "
 
 #: builtin/mainmenu/common.lua
 msgid "Server enforces protocol version $1. "
-msgstr ""
+msgstr "Server erfordert Protokollversion $1. "
 
 #: builtin/mainmenu/common.lua
 msgid "Server supports protocol versions between $1 and $2. "
-msgstr ""
+msgstr "Server unterstützt Protokollversionen $1 bis $2. "
 
 #: builtin/mainmenu/common.lua
 msgid "Try reenabling public serverlist and check your internet connection."
 msgstr ""
-"Versuche die Öffentliche Serverliste neu zu laden bzw. prüfe deine "
+"Versuchen Sie, die öffentliche Serverliste neu zu laden und prüfen Sie Ihre "
 "Internetverbindung."
 
 #: builtin/mainmenu/common.lua
 msgid "We only support protocol version $1."
-msgstr ""
+msgstr "Wir unterstützen nur Protokollversion $1."
 
 #: builtin/mainmenu/common.lua
 msgid "We support protocol versions between version $1 and $2."
-msgstr ""
+msgstr "Wir unterstützen Protokollversionen zwischen $1 und $2."
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/dlg_create_world.lua
 #: builtin/mainmenu/dlg_rename_modpack.lua builtin/mainmenu/tab_settings.lua
@@ -101,7 +100,7 @@ msgid ""
 "Failed to enable mod \"$1\" as it contains disallowed characters. Only "
 "chararacters [a-z0-9_] are allowed."
 msgstr ""
-"Fehler beim aktivieren der Mod \"$1\": Ungültiger Name. Nur folgende Zeichen "
+"Fehler beim Aktivieren der Mod „$1“: Ungültiger Name. Nur folgende Zeichen "
 "sind erlaubt: [a-z0-9_]."
 
 #: builtin/mainmenu/dlg_config_world.lua
@@ -114,7 +113,7 @@ msgstr "Modpacks verstecken"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mod:"
-msgstr "Modifikation:"
+msgstr "Mod:"
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/tab_settings.lua
 #: src/guiKeyChangeMenu.cpp
@@ -153,7 +152,7 @@ msgstr "Spiel"
 
 #: builtin/mainmenu/dlg_create_world.lua src/settings_translation_file.cpp
 msgid "Mapgen"
-msgstr "Weltgenerator"
+msgstr "Kartengenerator"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "No worldname given or no game selected"
@@ -177,7 +176,7 @@ msgstr "Keine Spiele installiert."
 
 #: builtin/mainmenu/dlg_delete_mod.lua
 msgid "Are you sure you want to delete \"$1\"?"
-msgstr "Bist du sicher, dass du \"$1\" wirklich löschen möchtest?"
+msgstr "Sind Sie sich sicher, dass Sie „$1“ löschen wollen?"
 
 #: builtin/mainmenu/dlg_delete_mod.lua
 msgid "Modmgr: failed to delete \"$1\""
@@ -331,11 +330,11 @@ msgstr "Ausgewähltes Modpack deinstallieren"
 
 #: builtin/mainmenu/tab_multiplayer.lua
 msgid "Address / Port :"
-msgstr "Adresse/Port:"
+msgstr "Adresse / Port:"
 
 #: builtin/mainmenu/tab_multiplayer.lua src/settings_translation_file.cpp
 msgid "Client"
-msgstr "Client"
+msgstr "Klient"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Connect"
@@ -356,7 +355,7 @@ msgstr "Entfernen"
 
 #: builtin/mainmenu/tab_multiplayer.lua
 msgid "Name / Password :"
-msgstr "Name/Passwort:"
+msgstr "Name / Passwort:"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Public Serverlist"
@@ -394,7 +393,7 @@ msgstr "Neu"
 
 #: builtin/mainmenu/tab_server.lua builtin/mainmenu/tab_singleplayer.lua
 msgid "No world created or selected!"
-msgstr "Kein Weltname angegeben oder kein Spiel ausgewählt!"
+msgstr "Keine Welt angegeben oder ausgewählt!"
 
 #: builtin/mainmenu/tab_server.lua
 msgid "Port"
@@ -421,40 +420,45 @@ msgid "Start Game"
 msgstr "Spiel starten"
 
 #: builtin/mainmenu/tab_settings.lua
-msgid "\""
+msgid "\"$1\" is not a valid flag."
 msgstr ""
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "(No description of setting given)"
-msgstr ""
+msgstr "(Keine Beschreibung vorhanden)"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Browse"
-msgstr ""
+msgstr "Durchsuchen"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Change keys"
 msgstr "Tasten ändern"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Disabled"
-msgstr "MP deaktivieren"
+msgstr "Deaktiviert"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Edit"
-msgstr ""
+msgstr "Ändern"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Enabled"
 msgstr "Aktiviert"
+
+#: builtin/mainmenu/tab_settings.lua
+msgid "Format is 3 numbers separated by commas and inside brackets."
+msgstr ""
 
 #: builtin/mainmenu/tab_settings.lua
 msgid ""
 "Format: <offset>, <scale>, (<spreadX>, <spreadY>, <spreadZ>), <seed>, "
 "<octaves>, <persistence>"
 msgstr ""
+"Format: <Offset>, <Skalierung>, (<AusbreitungX>, <AusbreitungY>, "
+"<AusbreitungZ>), <Seed>,\n"
+"<Oktaven>, <Persistenz>"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Games"
@@ -463,31 +467,32 @@ msgstr "Spiele"
 #: builtin/mainmenu/tab_settings.lua
 msgid "Optionally the lacunarity can be appended with a leading comma."
 msgstr ""
+"Optional kann die Lacunarity, mit einem weiteren Komma abgetrennt, angehängt "
+"werden."
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Please enter a comma seperated list of flags."
-msgstr ""
+msgstr "Bitte geben Sie eine mit Kommata getrennte Liste von Flags an."
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Please enter a valid integer."
-msgstr ""
+msgstr "Bitte geben Sie eine gültige ganze Zahl ein."
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Please enter a valid number."
-msgstr ""
+msgstr "Bitte geben Sie eine gültige Zahl ein."
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Possible values are: "
-msgstr ""
+msgstr "Mögliche Werte sind: "
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Restore Default"
-msgstr ""
+msgstr "Standardwert"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Select path"
-msgstr "Auswählen"
+msgstr "Pfad auswählen"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Settings"
@@ -495,15 +500,15 @@ msgstr "Einstellungen"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Show technical names"
-msgstr ""
+msgstr "Technische Namen zeigen"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "The value must be greater than $1."
-msgstr ""
+msgstr "Der Wert muss größer als $1 sein."
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "The value must be lower than $1."
-msgstr ""
+msgstr "Der Wert muss kleiner als $1 sein."
 
 #: builtin/mainmenu/tab_simple_main.lua
 msgid "Config mods"
@@ -531,15 +536,15 @@ msgstr "Keine Informationen vorhanden"
 
 #: builtin/mainmenu/tab_texturepacks.lua
 msgid "None"
-msgstr "Keine"
+msgstr "Keines"
 
 #: builtin/mainmenu/tab_texturepacks.lua
 msgid "Select texture pack:"
-msgstr "Texturpaket auswählen:"
+msgstr "Texturenpaket auswählen:"
 
 #: builtin/mainmenu/tab_texturepacks.lua
 msgid "Texturepacks"
-msgstr "Texturpakete"
+msgstr "Texturenpakete"
 
 #: src/client.cpp
 msgid "Connection timed out."
@@ -551,11 +556,11 @@ msgstr "Fertig!"
 
 #: src/client.cpp
 msgid "Initializing nodes"
-msgstr "Blöcke initialisieren"
+msgstr "Initialisiere Blöcke"
 
 #: src/client.cpp
 msgid "Initializing nodes..."
-msgstr "Blöcke initialisieren ..."
+msgstr "Initialisiere Blöcke..."
 
 #: src/client.cpp
 msgid "Item textures..."
@@ -563,11 +568,11 @@ msgstr "Inventarbilder ..."
 
 #: src/client.cpp
 msgid "Loading textures..."
-msgstr "Texturen laden ..."
+msgstr "Lade Texturen..."
 
 #: src/client.cpp
 msgid "Rebuilding shaders..."
-msgstr "Shader wiederherstellen ..."
+msgstr "Shader wiederherstellen..."
 
 #: src/client/clientlauncher.cpp
 msgid "Connection error (timed out?)"
@@ -575,7 +580,7 @@ msgstr "Verbindungsfehler (Zeitüberschreitung?)"
 
 #: src/client/clientlauncher.cpp
 msgid "Could not find or load game \""
-msgstr "Kann Spiel nicht finden/laden \""
+msgstr "Kann Spiel nicht finden oder laden \""
 
 #: src/client/clientlauncher.cpp
 msgid "Invalid gamespec."
@@ -619,7 +624,7 @@ msgstr "Passwort ändern"
 
 #: src/game.cpp
 msgid "Connecting to server..."
-msgstr "Zum Server verbinden ..."
+msgstr "Verbinde mit Server..."
 
 #: src/game.cpp
 msgid "Continue"
@@ -627,11 +632,11 @@ msgstr "Weiter"
 
 #: src/game.cpp
 msgid "Creating client..."
-msgstr "Client erstellen ..."
+msgstr "Erstelle Klienten..."
 
 #: src/game.cpp
 msgid "Creating server..."
-msgstr "Server erstellen ..."
+msgstr "Erstelle Server..."
 
 #: src/game.cpp
 msgid ""
@@ -647,7 +652,7 @@ msgid ""
 "- Mouse wheel: select item\n"
 "- T: chat\n"
 msgstr ""
-"Standard-Tastenbelegung:\n"
+"Standardsteuerung:\n"
 "- WASD: bewegen\n"
 "- Leertaste: springen/klettern\n"
 "- Umschalt: kriechen/herunterklettern\n"
@@ -697,7 +702,7 @@ msgstr "Programm beenden"
 
 #: src/game.cpp
 msgid "Item definitions..."
-msgstr "Item-Definitionen ..."
+msgstr "Item-Definitionen..."
 
 #: src/game.cpp
 msgid "KiB/s"
@@ -705,7 +710,7 @@ msgstr "KiB/s"
 
 #: src/game.cpp
 msgid "Media..."
-msgstr "Medien ..."
+msgstr "Medien..."
 
 #: src/game.cpp
 msgid "MiB/s"
@@ -713,7 +718,7 @@ msgstr "MiB/s"
 
 #: src/game.cpp
 msgid "Node definitions..."
-msgstr "Node-Definitionen ..."
+msgstr "Blockdefinitionen..."
 
 #: src/game.cpp src/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -721,7 +726,7 @@ msgstr "Fortsetzen"
 
 #: src/game.cpp
 msgid "Resolving address..."
-msgstr "Adresse auflösen ..."
+msgstr "Löse Adresse auf..."
 
 #: src/game.cpp
 msgid "Respawn"
@@ -729,7 +734,7 @@ msgstr "Wiederbeleben"
 
 #: src/game.cpp
 msgid "Shutting down..."
-msgstr "Herunterfahren ..."
+msgstr "Herunterfahren..."
 
 #: src/game.cpp
 msgid "Sound Volume"
@@ -794,7 +799,8 @@ msgstr "Taste bereits in Benutzung"
 #: src/guiKeyChangeMenu.cpp
 msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
 msgstr ""
-"Steuerung (Falls dieses Menü versagt, entfernen Sie Sachen aus minetest.conf)"
+"Steuerung (Falls dieses Menü fehlerhaft formatiert ist, entfernen Sie "
+"Einstellungen aus minetest.conf)"
 
 #: src/guiKeyChangeMenu.cpp src/keycode.cpp
 msgid "Left"
@@ -818,7 +824,7 @@ msgstr "Schleichen"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Toggle Cinematic"
-msgstr "Kinomodus"
+msgstr "Filmmodus umschalten"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Toggle fast"
@@ -898,11 +904,11 @@ msgstr "Strg"
 
 #: src/keycode.cpp
 msgid "Convert"
-msgstr "Konvertierung"
+msgstr "Convert"
 
 #: src/keycode.cpp
 msgid "CrSel"
-msgstr "Cr Sel"
+msgstr "CrSel"
 
 #: src/keycode.cpp
 msgid "Down"
@@ -914,7 +920,7 @@ msgstr "Ende"
 
 #: src/keycode.cpp
 msgid "Erase OEF"
-msgstr "Verdecke OEF"
+msgstr "Erase OEF"
 
 #: src/keycode.cpp
 msgid "Escape"
@@ -930,7 +936,7 @@ msgstr "Ausführen"
 
 #: src/keycode.cpp
 msgid "Final"
-msgstr "Ziel"
+msgstr "Final"
 
 #: src/keycode.cpp
 msgid "Help"
@@ -966,7 +972,7 @@ msgstr "Strg links"
 
 #: src/keycode.cpp
 msgid "Left Menu"
-msgstr "Alt"
+msgstr "Menü links"
 
 #: src/keycode.cpp
 msgid "Left Shift"
@@ -998,7 +1004,7 @@ msgstr "Bild runter"
 
 #: src/keycode.cpp
 msgid "Nonconvert"
-msgstr "Keine konventierung"
+msgstr "Nonconvert"
 
 #: src/keycode.cpp
 msgid "Num Lock"
@@ -1062,7 +1068,7 @@ msgstr "Ziffernblock 9"
 
 #: src/keycode.cpp
 msgid "OEM Clear"
-msgstr "OEM Reinigen"
+msgstr "OEM Clear"
 
 #: src/keycode.cpp
 msgid "PA1"
@@ -1102,7 +1108,7 @@ msgstr "Strg rechts"
 
 #: src/keycode.cpp
 msgid "Right Menu"
-msgstr "Alt Gr"
+msgstr "Menü rechts"
 
 #: src/keycode.cpp
 msgid "Right Shift"
@@ -1122,7 +1128,7 @@ msgstr "Auswählen"
 
 #: src/keycode.cpp
 msgid "Shift"
-msgstr "L. Umsch"
+msgstr "Umsch."
 
 #: src/keycode.cpp
 msgid "Sleep"
@@ -1161,16 +1167,16 @@ msgid ""
 "0 = parallax occlusion with slope information (faster).\n"
 "1 = relief mapping (slower, more accurate)."
 msgstr ""
+"0 = Parallax-Mapping mit Stufeninformation (schneller).\n"
+"1 = Relief-Mapping (langsamer, genauer)."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "3D clouds"
 msgstr "3D-Wolken"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "3D mode"
-msgstr "Flugmodus"
+msgstr "3D-Modus"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1182,36 +1188,50 @@ msgid ""
 "-    topbottom: split screen top/bottom.\n"
 "-    sidebyside: split screen side by side."
 msgstr ""
+"3D-Unterstützung.\n"
+"Aktuell verfügbar:\n"
+"-    none: Keine 3D-Ausgabe.\n"
+"-    anaglyph: Türkises / magenta 3D.\n"
+"-    interlaced: Gerade / ungerade zeilenbasierte Polarisation.\n"
+"-    topbottom: Bildschirm horizontal teilen.\n"
+"-    sidebyside: Bildschirm vertikal teilen."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "A chosen map seed for a new map, leave empty for random.\n"
 "Will be overridden when creating a new world in the main menu."
 msgstr ""
+"Ein festgelegter Kartengenerator-Seed für neue Welten. Leer lassen für "
+"zufällige Erzeugung.\n"
+"Wird überschrieben, wenn die Welt im Menü erstellt wird."
 
 #: src/settings_translation_file.cpp
 msgid "A message to be displayed to all clients when the server crashes."
 msgstr ""
+"Eine Nachricht, die an alle verbundenen Klienten versendet wird, wenn der "
+"Server abstürzt."
 
 #: src/settings_translation_file.cpp
 msgid "A message to be displayed to all clients when the server shuts down."
 msgstr ""
+"Eine Nachricht, die an alle verbundene Klienten gesendet wird, wenn der "
+"Server herunterfährt."
 
 #: src/settings_translation_file.cpp
 msgid "Absolute limit of emerge queues"
-msgstr ""
+msgstr "Absolute Grenze der Erzeugungswarteschlangen"
 
 #: src/settings_translation_file.cpp
 msgid "Acceleration in air"
-msgstr ""
+msgstr "Beschleunigung in der Luft"
 
 #: src/settings_translation_file.cpp
 msgid "Active block range"
-msgstr ""
+msgstr "Reichweite aktiver Kartenblöcke"
 
 #: src/settings_translation_file.cpp
 msgid "Active object send range"
-msgstr ""
+msgstr "Reichweite aktiver Objekte"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1219,18 +1239,23 @@ msgid ""
 "Leave this blank to start a local server.\n"
 "Note that the address field in the main menu overrides this setting."
 msgstr ""
+"Adresse, mit der verbunden werden soll.\n"
+"Leer lassen, um einen lokalen Server zu starten.\n"
+"Die Adresse im Hauptmenü überschreibt diese Einstellung."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k "
 "screens."
-msgstr ""
+msgstr "DPI des Bildschirms (nicht für X11/Android) z.B. für 4K-Bildschirme."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Adjust the gamma encoding for the light tables. Lower numbers are brighter.\n"
 "This setting is for the client only and is ignored by the server."
 msgstr ""
+"Ändert die Gammakodierung der Lichttabellen. Kleinere Werte sind heller.\n"
+"Diese Einstellung ist klientenseitig und wird vom Server ignoriert."
 
 #: src/settings_translation_file.cpp
 msgid "Advanced"
@@ -1238,20 +1263,19 @@ msgstr "Erweitert"
 
 #: src/settings_translation_file.cpp
 msgid "Always fly and fast"
-msgstr ""
+msgstr "Immer schnell fliegen"
 
 #: src/settings_translation_file.cpp
 msgid "Ambient occlusion gamma"
-msgstr ""
+msgstr "Umgebungsverdeckungs-Gamma"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Anisotropic filtering"
 msgstr "Anisotroper Filter"
 
 #: src/settings_translation_file.cpp
 msgid "Announce server"
-msgstr ""
+msgstr "Server ankündigen"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1259,173 +1283,164 @@ msgid ""
 "If you want to announce your ipv6 address, use  serverlist_url = v6.servers."
 "minetest.net."
 msgstr ""
+"Meldet den Server in der Serverliste.\n"
+"Wenn ein IPv6-Server angemeldet werden soll, muss serverlist_url auf\n"
+"v6.servers.minetest.net gesetzt werden."
 
 #: src/settings_translation_file.cpp
 msgid "Ask to reconnect after crash"
-msgstr ""
+msgstr "Zum Neuverbinden nach Absturz auffordern"
 
 #: src/settings_translation_file.cpp
 msgid "Automaticaly report to the serverlist."
-msgstr ""
+msgstr "Automatisch bei der Serverliste melden."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Backward key"
-msgstr "Rückwärts"
+msgstr "Rückwärtstaste"
 
 #: src/settings_translation_file.cpp
 msgid "Basic"
-msgstr ""
+msgstr "Grundlegend"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Bilinear filtering"
 msgstr "Bilinearer Filter"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Bind address"
 msgstr "Bind-Adresse"
 
 #: src/settings_translation_file.cpp
 msgid "Bits per pixel (aka color depth) in fullscreen mode."
-msgstr ""
+msgstr "Bits pro Pixel (Farbtiefe) im Vollbildmodus."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Build inside player"
-msgstr "Mehrspieler"
+msgstr "Innerhalb des Spielers bauen"
 
 #: src/settings_translation_file.cpp
 msgid "Bumpmapping"
-msgstr "Bumpmappen"
+msgstr "Bumpmapping"
 
 #: src/settings_translation_file.cpp
 msgid "Camera smoothing"
-msgstr ""
+msgstr "Kameraglättung"
 
 #: src/settings_translation_file.cpp
 msgid "Camera smoothing in cinematic mode"
-msgstr ""
+msgstr "Kameraglättung im Filmmodus"
 
 #: src/settings_translation_file.cpp
 msgid "Camera update toggle key"
-msgstr ""
+msgstr "Taste zum Umschalten der Kameraaktualisierung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Chat key"
-msgstr "Tasten ändern"
+msgstr "Chattaste"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Chat toggle key"
-msgstr "Tasten ändern"
+msgstr "Taste zum Umschalten des Chatprotokolls"
 
 #: src/settings_translation_file.cpp
 msgid "Chunk size"
-msgstr ""
+msgstr "Chunk-Größe"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Cinematic mode"
-msgstr "Kreativmodus"
+msgstr "Filmmodus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Cinematic mode key"
-msgstr "Kreativmodus"
+msgstr "Filmmodustaste"
 
 #: src/settings_translation_file.cpp
 msgid "Clean transparent textures"
-msgstr ""
+msgstr "Transparente Texturen säubern"
 
 #: src/settings_translation_file.cpp
 msgid "Client and Server"
-msgstr ""
+msgstr "Klient und Server"
 
 #: src/settings_translation_file.cpp
 msgid "Climbing speed"
-msgstr ""
+msgstr "Klettergeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Cloud height"
-msgstr ""
+msgstr "Wolkenhöhe"
 
 #: src/settings_translation_file.cpp
 msgid "Cloud radius"
-msgstr ""
+msgstr "Wolkenradius"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Clouds"
-msgstr "3D-Wolken"
+msgstr "Wolken"
 
 #: src/settings_translation_file.cpp
 msgid "Clouds are a client side effect."
-msgstr ""
+msgstr "Wolken sind ein klientenseitiger Effekt."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Clouds in menu"
-msgstr "Hauptmenü"
+msgstr "Wolken im Menü"
 
 #: src/settings_translation_file.cpp
 msgid "Colored fog"
-msgstr ""
+msgstr "Gefärbter Nebel"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Comma-separated list of trusted mods that are allowed to access insecure\n"
 "functions even when mod security is on (via request_insecure_environment())."
 msgstr ""
+"Kommagetrennte Liste der Mods, denen Sie vertrauen. Vertrauten Mods ist es "
+"erlaubt,\n"
+"unsichere Funktionen zu verwenden, sogar dann, wenn Modsicherheit "
+"eingeschaltet ist\n"
+"(mit request_insecure_environment())."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Command key"
-msgstr "Befehl"
+msgstr "Befehlstaste"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Connect glass"
 msgstr "Verbundenes Glas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Connect to external media server"
-msgstr "Zum Server verbinden ..."
+msgstr "Zu externen Medienserver verbinden"
 
 #: src/settings_translation_file.cpp
 msgid "Connects glass if supported by node."
-msgstr ""
+msgstr "Verbindet Glas, wenn der Block dies unterstützt."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console alpha"
-msgstr "Konsole"
+msgstr "Konsolenundurchsichtigkeit"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console color"
-msgstr "Konsole"
+msgstr "Konsolenfarbe"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console key"
-msgstr "Konsole"
+msgstr "Konsolentaste"
 
 #: src/settings_translation_file.cpp
 msgid "Continuous forward"
-msgstr ""
+msgstr "Kontinuierliche Vorwärtsbewegung"
 
 #: src/settings_translation_file.cpp
 msgid "Continuous forward movement (only used for testing)."
-msgstr ""
+msgstr "Kontinuierliches Vorwärtsbewegen (nur zum Testen verwendet)."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Controls"
-msgstr "Strg"
+msgstr "Steuerung"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1433,185 +1448,201 @@ msgid ""
 "Examples: 72 = 20min, 360 = 4min, 1 = 24hour, 0 = day/night/whatever stays "
 "unchanged."
 msgstr ""
+"Verändert Länge des Tag-Nacht-Zyklus.\n"
+"Beispiele: 72 = 10 Minuten, 360 = 4 Minuten, 1 = 24 Stunden, 0 = Keine "
+"Veränderung."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"Controls size of deserts and beaches in Mapgen V6.\n"
+"Controls size of deserts and beaches in Mapgen v6.\n"
 "When snowbiomes are enabled 'mgv6_freq_desert' is ignored."
 msgstr ""
+"Verändert die Größe der Wüsten und Strände in Kartengenerator V6.\n"
+"Wenn Schneebiome aktiviert sind, wird diese Einstellung ignoriert."
 
 #: src/settings_translation_file.cpp
 msgid "Crash message"
-msgstr ""
+msgstr "Absturzmeldung"
 
 #: src/settings_translation_file.cpp
 msgid "Crosshair alpha"
-msgstr ""
+msgstr "Fadenkreuzundurchsichtigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Crosshair alpha (opaqueness, between 0 and 255)."
-msgstr ""
+msgstr "Fadenkreuzundurchsichtigkeit (Wert zwischen 0 und 255)."
 
 #: src/settings_translation_file.cpp
 msgid "Crosshair color"
-msgstr ""
+msgstr "Fadenkreuzfarbe"
 
 #: src/settings_translation_file.cpp
 msgid "Crosshair color (R,G,B)."
-msgstr ""
+msgstr "Fadenkreuzfarbe (R,G,B)."
 
 #: src/settings_translation_file.cpp
 msgid "Crouch speed"
-msgstr ""
+msgstr "Schleichgeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "DPI"
-msgstr ""
+msgstr "DPI"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Schaden einschalten"
+msgstr "Schaden"
 
 #: src/settings_translation_file.cpp
 msgid "Debug info toggle key"
-msgstr ""
+msgstr "Taste zum Umschalten der Debug-Info"
 
 #: src/settings_translation_file.cpp
 msgid "Debug log level"
-msgstr ""
+msgstr "Debugausgabelevel"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
-msgstr ""
+msgstr "Taktung dedizierter Server"
 
 #: src/settings_translation_file.cpp
 msgid "Default acceleration"
-msgstr ""
+msgstr "Standardbeschleunigung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Default game"
-msgstr "Spiel ändern"
+msgstr "Standardspiel"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Default game when creating a new world.\n"
 "This will be overridden when creating a world from the main menu."
 msgstr ""
+"Standardspiel beim Erstellen einer neuen Welt.\n"
+"Diese Einstellung wird nicht genutzt, wenn die Welt im Hauptmenü erstellt "
+"wird."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Default password"
-msgstr "Neues Passwort"
+msgstr "Standardpasswort"
 
 #: src/settings_translation_file.cpp
 msgid "Default privileges"
-msgstr ""
+msgstr "Standardprivilegien"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Default timeout for cURL, stated in milliseconds.\n"
 "Only has an effect if compiled with cURL."
 msgstr ""
+"Standardzeitlimit für cURL, in Millisekunden.\n"
+"Hat nur eine Wirkung, wenn mit cURL kompiliert wurde."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Defines sampling step of texture.\n"
 "A higher value results in smoother normal maps."
 msgstr ""
+"Definiert die Sampling-Schrittgröße der Textur.\n"
+"Ein höherer Wert resultiert in weichere Normal-Maps."
 
 #: src/settings_translation_file.cpp
 msgid "Defines the maximal player transfer distance in blocks (0 = unlimited)."
 msgstr ""
+"Setzt die maximale Distanz, in der die Spieler übertragen werden, in "
+"Kartenblöcken (0 = unbegrenzt)."
 
 #: src/settings_translation_file.cpp
 msgid "Delay showing tooltips, stated in milliseconds."
-msgstr ""
+msgstr "Verzögerung beim Zeigen von Tooltipps, in Millisekunden."
 
 #: src/settings_translation_file.cpp
 msgid "Deprecated Lua API handling"
-msgstr ""
+msgstr "Veraltete Lua-API-Handhabung"
 
 #: src/settings_translation_file.cpp
 msgid "Descending speed"
-msgstr ""
+msgstr "Abstiegsgeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Description of server, to be displayed when players join and in the "
 "serverlist."
 msgstr ""
+"Die Beschreibung des Servers. Wird neuen Klienten und in der Serverliste "
+"angezeigt."
 
 #: src/settings_translation_file.cpp
 msgid "Desynchronize block animation"
-msgstr ""
+msgstr "Blockanimationen desynchronisieren"
 
 #: src/settings_translation_file.cpp
 msgid "Detailed mod profile data. Useful for mod developers."
-msgstr ""
+msgstr "Detaillierte Mod-Profildaten. Nützlich für Mod-Entwickler."
 
 #: src/settings_translation_file.cpp
 msgid "Detailed mod profiling"
-msgstr ""
+msgstr "Detailliertes Mod-Profiling"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Disable anticheat"
-msgstr "Partikel aktivieren"
+msgstr "Anti-Cheat deaktivieren"
 
 #: src/settings_translation_file.cpp
 msgid "Disallow empty passwords"
-msgstr ""
+msgstr "Leere Passwörter verbieten"
 
 #: src/settings_translation_file.cpp
 msgid "Domain name of server, to be displayed in the serverlist."
-msgstr ""
+msgstr "Domainname des Servers. Wird in der Serverliste angezeigt."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Double tap jump for fly"
 msgstr "2×Sprungtaste zum Fliegen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Double-tapping the jump key toggles fly mode."
-msgstr "2×Sprungtaste zum Fliegen"
+msgstr "Doppelttippen der Sprungtaste schaltet Flugmodus um."
 
 #: src/settings_translation_file.cpp
 msgid "Drop item key"
-msgstr ""
+msgstr "Wegwerfen-Taste"
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug infos."
+msgstr "Die Kartengenerator-Debuginformationen auf Konsole ausgeben."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Enable a bit lower water surface, so it doesn't \"fill\" the node "
+"completely.\n"
+"Note that this is not quite optimized and that smooth lighting on the\n"
+"water surface doesn't work with this."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Enable a bit lower water surface, so it doesn't "
-msgstr ""
-
-#: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable mod security"
-msgstr "Online-Mod-Archiv"
+msgstr "Modsicherheit aktivieren"
 
 #: src/settings_translation_file.cpp
 msgid "Enable players getting damage and dying."
-msgstr ""
+msgstr "Spielerschaden und -tod aktivieren."
 
 #: src/settings_translation_file.cpp
 msgid "Enable random user input (only used for testing)."
-msgstr ""
+msgstr "Schaltet zufällige Steuerung ein (nur zum Testen verwendet)."
 
 #: src/settings_translation_file.cpp
 msgid "Enable selection highlighting for nodes (disables selectionbox)."
-msgstr ""
+msgstr "Blöcke bei Auswahl aufleuchten lassen (Deaktiviert die Auswahlbox)."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Enable smooth lighting with simple ambient occlusion.\n"
 "Disable for speed or for different looks."
 msgstr ""
+"Weiches Licht mit einfacher Ambient-Occlusion aktivieren.\n"
+"Für bessere Performanz oder anderes Aussehen deaktivieren."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1621,6 +1652,12 @@ msgid ""
 "to new servers, but they may not support all new features that you are "
 "expecting."
 msgstr ""
+"Aktivieren, um alten Klienten die Verbindung zu verwehren.\n"
+"Ältere Klienten sind kompatibel in der Hinsicht, dass sie beim Verbinden zu "
+"neuen\n"
+"Servern nicht abstürzen, aber sie könnten nicht alle neuen Funktionen, die "
+"Sie\n"
+"erwarten, unterstützen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1629,6 +1666,11 @@ msgid ""
 "textures)\n"
 "when connecting to the server."
 msgstr ""
+"Aktiviert die Benutzung eines entfernen Medienservers (falls vom Server "
+"angeboten).\n"
+"Entfernte Server bieten eine deutlich schnellere Methode, um Medien (z.B. "
+"Texturen)\n"
+"während des Verbindungsaufbaus zum Server herunterzuladen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1636,6 +1678,9 @@ msgid ""
 "to IPv6 clients, depending on system configuration.\n"
 "Ignored if bind_address is set."
 msgstr ""
+"Server als IPv6 laufen lassen. Ein IPv6-Server könnte,\n"
+"abhängig von der Systemkonfiguration, auf IPv6-Klienten eingeschränkt sein.\n"
+"Wird ignoriert, wenn bind_address gesetzt ist."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1644,98 +1689,114 @@ msgid ""
 "or need to be auto-generated.\n"
 "Requires shaders to be enabled."
 msgstr ""
+"Aktiviert das Bump-Mapping für Texturen. Normal-Maps müssen im "
+"Texturenpaket\n"
+"vorhanden sein oder müssen automatisch erzeugt werden.\n"
+"Shader müssen aktiviert werden, bevor diese Einstellung aktiviert werden "
+"kann."
 
 #: src/settings_translation_file.cpp
 msgid "Enables caching of facedir rotated meshes."
 msgstr ""
+"Aktiviert das Zwischenspeichern von 3D-Modellen, die mittels facedir rotiert "
+"werden."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enables minimap."
-msgstr "Schaden einschalten"
+msgstr "Aktiviert die Übersichtskarte."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Enables on the fly normalmap generation (Emboss effect).\n"
 "Requires bumpmapping to be enabled."
 msgstr ""
+"Aktiviert die spontane Normalmap-Erzeugung (Prägungseffekt).\n"
+"Für diese Einstellung muss außerdem Bump-Mapping aktiviert sein."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Enables parallax occlusion mapping.\n"
 "Requires shaders to be enabled."
 msgstr ""
+"Aktiviert Parralax-Occlusion-Mapping.\n"
+"Hierfür müssen Shader aktiviert sein."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Experimental option, might cause visible spaces between blocks\n"
 "when set to higher number than 0."
 msgstr ""
+"Experimentelle Einstellung, könnte sichtbare Leerräume zwischen\n"
+"Blöcken verursachen, wenn auf einen Wert größer 0 gesetzt."
 
 #: src/settings_translation_file.cpp
 msgid "FPS in pause menu"
-msgstr ""
+msgstr "Bildwiederholrate im Pausenmenü"
 
 #: src/settings_translation_file.cpp
 msgid "FSAA"
-msgstr ""
+msgstr "FSAA"
 
 #: src/settings_translation_file.cpp
 msgid "Fall bobbing"
-msgstr ""
+msgstr "Kameraschütteln beim Aufprallen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Fallback font"
-msgstr "no"
+msgstr "Ersatzschriftart"
 
 #: src/settings_translation_file.cpp
 msgid "Fallback font shadow"
-msgstr ""
+msgstr "Ersatzschriftschatten"
 
 #: src/settings_translation_file.cpp
 msgid "Fallback font shadow alpha"
-msgstr ""
+msgstr "Undurchsichtigkeit des Ersatzschriftschattens"
 
 #: src/settings_translation_file.cpp
 msgid "Fallback font size"
-msgstr ""
+msgstr "Ersatzschriftgröße"
 
 #: src/settings_translation_file.cpp
 msgid "Fast key"
-msgstr ""
+msgstr "Schnelltaste"
 
 #: src/settings_translation_file.cpp
 msgid "Fast mode acceleration"
-msgstr ""
+msgstr "Schnellmodusbeschleunigung"
 
 #: src/settings_translation_file.cpp
 msgid "Fast mode speed"
-msgstr ""
+msgstr "Schnellmodusgeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Fast movement"
-msgstr ""
+msgstr "Schnell bewegen"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Fast movement (via use key).\n"
-"This requires the "
+"This requires the \"fast\" privilege on the server."
 msgstr ""
+"Schnelles Laufen (aux1 Taste).\n"
+"Das benötigt das "
 
 #: src/settings_translation_file.cpp
 msgid "Field of view"
-msgstr ""
+msgstr "Gesichtsfeld"
 
 #: src/settings_translation_file.cpp
 msgid "Field of view in degrees."
-msgstr ""
+msgstr "Gesichtsfeld in Grad."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "File in client/serverlist/ that contains your favorite servers displayed in "
 "the Multiplayer Tab."
 msgstr ""
+"Datei in client/serverlist/, die Ihre Serverfavoriten aus dem "
+"Mehrspielermenü beinhaltet."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1744,135 +1805,151 @@ msgid ""
 "light edge to transparent textures.  Apply this filter to clean that up\n"
 "at texture load time."
 msgstr ""
+"Gefilterte Texturen können RGB-Werte mit transparenten Nachbarn,\n"
+"die PNG-Optimierer üblicherweise verwerfen, mischen. Manchmal\n"
+"resultiert dies in einer dunklen oder hellen Kante bei transparenten\n"
+"Texturen. Aktivieren Sie diesen Filter, um dies beim Laden der\n"
+"Texturen aufzuräumen."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Filtering"
-msgstr "Kein Filter"
+msgstr "Filter"
 
 #: src/settings_translation_file.cpp
 msgid "Fixed map seed"
-msgstr ""
+msgstr "Fester Karten-Seed"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Fly key"
-msgstr "Flugmodus"
+msgstr "Flugtaste"
 
 #: src/settings_translation_file.cpp
 msgid "Flying"
-msgstr ""
+msgstr "Fliegen"
 
 #: src/settings_translation_file.cpp
 msgid "Fog"
-msgstr ""
+msgstr "Nebel"
 
 #: src/settings_translation_file.cpp
 msgid "Fog toggle key"
-msgstr ""
+msgstr "Taste für Nebel umschalten"
 
 #: src/settings_translation_file.cpp
 msgid "Font path"
-msgstr ""
+msgstr "Schriftpfad"
 
 #: src/settings_translation_file.cpp
 msgid "Font shadow"
-msgstr ""
+msgstr "Schriftschatten"
 
 #: src/settings_translation_file.cpp
 msgid "Font shadow alpha"
-msgstr ""
+msgstr "Schriftschatten-Undurchsichtigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Font shadow alpha (opaqueness, between 0 and 255)."
 msgstr ""
+"Undurchsichtigkeit des Schattens der Schrift (Wert zwischen 0 und 255)."
 
 #: src/settings_translation_file.cpp
 msgid "Font shadow offset, if 0 then shadow will not be drawn."
 msgstr ""
+"Abstand des Schattens hinter der Schrift. Wenn 0, wird der Schatten nicht "
+"gezeichnet."
 
 #: src/settings_translation_file.cpp
 msgid "Font size"
-msgstr ""
+msgstr "Schriftgröße"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Forward key"
-msgstr "Vorwärts"
+msgstr "Vorwärtstaste"
 
 #: src/settings_translation_file.cpp
 msgid "Freetype fonts"
-msgstr ""
+msgstr "FreeType-Schriften"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "From how far blocks are generated for clients, stated in mapblocks (16 "
 "nodes)."
 msgstr ""
+"Von wie weit weg Kartenblöcke für Klienten erzeugt werden.\n"
+"1 Kartenblock = 16×16×16 Blöcke."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "From how far blocks are sent to clients, stated in mapblocks (16 nodes)."
 msgstr ""
+"Von wie weit weg Kartenblöcke zu Klienten gesendet werden.\n"
+"1 Kartenblock = 16×16×16 Blöcke."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "From how far clients know about objects, stated in mapblocks (16 nodes)."
 msgstr ""
+"Von wie weit weg Klienten über Objekte bescheid wissen,\n"
+"in Kartenblöcken (16 Blöcke)."
 
 #: src/settings_translation_file.cpp
 msgid "Full screen"
-msgstr ""
+msgstr "Vollbild"
 
 #: src/settings_translation_file.cpp
 msgid "Full screen BPP"
-msgstr ""
+msgstr "Vollbildfarbtiefe"
 
 #: src/settings_translation_file.cpp
 msgid "Fullscreen mode."
-msgstr ""
+msgstr "Vollbildmodus."
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling"
-msgstr ""
+msgstr "GUI-Skalierung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "GUI scaling filter"
-msgstr "GUI-Skalierfaktor"
+msgstr "GUI-Skalierfilter"
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling filter txr2img"
-msgstr ""
+msgstr "GUI-Skalierungsfilter txr2img"
 
 #: src/settings_translation_file.cpp
 msgid "Gamma"
-msgstr ""
+msgstr "Gamma"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Generate normalmaps"
 msgstr "Normalmaps generieren"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Global map generation attributes.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them.\n"
+"'trees' and 'flat' flags only have effect in mgv6."
 msgstr ""
+"Kartengenerierungsattribute speziell für Kartengenerator V7.\n"
+"'ridges' sind die Flüsse.\n"
+"Flags, die nicht im flag text angegeben wurden, werden ihre Standartwerte "
+"zugewiesen.\n"
+"Flags, die mit starten "
 
 #: src/settings_translation_file.cpp
 msgid "Graphics"
-msgstr ""
+msgstr "Grafik"
 
 #: src/settings_translation_file.cpp
 msgid "Gravity"
-msgstr ""
+msgstr "Gravitation"
 
 #: src/settings_translation_file.cpp
 msgid "HUD toggle key"
-msgstr ""
+msgstr "Taste zum Umschalten des HUD"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1881,22 +1958,29 @@ msgid ""
 "-    log: mimic and log backtrace of deprecated call (default for debug).\n"
 "-    error: abort on usage of deprecated call (suggested for mod developers)."
 msgstr ""
+"Handhabung für veraltete Lua-API-Aufrufe:\n"
+"-    legacy: Versuchen, altes Verhalten zu imitieren (Standard für "
+"Release).\n"
+"-    log: Imitieren, und den Backtrace des veralteten Funktionsaufrufs "
+"protokollieren (Standard für Debug).\n"
+"-    error: Bei Verwendung eines veralteten Funktionsaufrufs abbrechen "
+"(empfohlen für Mod-Entwickler)."
 
 #: src/settings_translation_file.cpp
 msgid "Height on which clouds are appearing."
-msgstr ""
+msgstr "Höhe, in der Wolken auftauchen."
 
 #: src/settings_translation_file.cpp
 msgid "High-precision FPU"
-msgstr ""
+msgstr "Hochpräzisions-FPU"
 
 #: src/settings_translation_file.cpp
 msgid "Homepage of server, to be displayed in the serverlist."
-msgstr ""
+msgstr "Homepage des Servers. Wird in der Serverliste angezeigt."
 
 #: src/settings_translation_file.cpp
 msgid "Horizontal initial window size."
-msgstr ""
+msgstr "Anfängliche Fensterbreite."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1904,76 +1988,104 @@ msgid ""
 "mapblocks (16 nodes).\n"
 "In active blocks objects are loaded and ABMs run."
 msgstr ""
+"Wie groß das Gebiet ist, in dem Kartenblöcke aktiv sind.\n"
+"In aktiven Blöcken werden Objekte geladen und ABMs ausgeführt.\n"
+"1 Kartenblock = 16×16×16 Blöcke."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "How many blocks are flying in the wire simultaneously for the whole server."
 msgstr ""
+"Wie viele Kartenblöcke gleichzeitig für den gesamten Server auf der Leitung "
+"unterwegs sind."
 
 #: src/settings_translation_file.cpp
 msgid "How many blocks are flying in the wire simultaneously per client."
 msgstr ""
+"Wie viele Kartenblöcke gleichzeitig pro Klient auf der Leitung unterwegs "
+"sind."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "How much the server will wait before unloading unused mapblocks.\n"
 "Higher value is smoother, but will use more RAM."
 msgstr ""
+"Wie lange der Server warten wird, bevor nicht mehr verwendete Kartenblöcke\n"
+"entladen werden. Ein höher Wert führt zu besserer Performanz, aber auch\n"
+"zur Benutzung von mehr Arbeitsspeicher."
 
 #: src/settings_translation_file.cpp
 msgid "IPv6"
-msgstr ""
+msgstr "IPv6"
 
 #: src/settings_translation_file.cpp
 msgid "IPv6 server"
-msgstr ""
+msgstr "IPv6-Server"
 
 #: src/settings_translation_file.cpp
 msgid "IPv6 support."
-msgstr ""
+msgstr "IPv6-Unterstützung."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If FPS would go higher than this, limit it by sleeping\n"
 "to not waste CPU power for no benefit."
 msgstr ""
-
-#: src/settings_translation_file.cpp
-#, fuzzy
-msgid "If disabled "
-msgstr "MP deaktivieren"
+"Falls die Bildwiederholrate diesen Wert überschreitet,\n"
+"wird sie durch Nichtstun begrenzt, um die CPU nicht\n"
+"unnötig zu belasten."
 
 #: src/settings_translation_file.cpp
 msgid ""
-"If enabled together with fly mode, player is able to fly through solid "
-"nodes.\n"
-"This requires the "
+"If disabled \"use\" key is used to fly fast if both fly and fast mode are "
+"enabled."
 msgstr ""
 
 #: src/settings_translation_file.cpp
 #, fuzzy
-msgid "If enabled, "
-msgstr "Aktiviert"
+msgid ""
+"If enabled together with fly mode, player is able to fly through solid "
+"nodes.\n"
+"This requires the \"noclip\" privilege on the server."
+msgstr ""
+"Falls es aktiviert ist, kann der Spieler im Flugmodus durch solide Blöcke "
+"fliegen.\n"
+"Es benötigt den "
+
+#: src/settings_translation_file.cpp
+msgid ""
+"If enabled, \"use\" key instead of \"sneak\" key is used for climbing down "
+"and descending."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled, actions are recorded for rollback.\n"
 "This option is only read when server starts."
 msgstr ""
+"Falls aktiviert, werden Aktionen für die Rollback-Funktion aufgezeichnet.\n"
+"Diese Einstellung wird nur beim Starten des Servers gelesen."
 
 #: src/settings_translation_file.cpp
 msgid "If enabled, disable cheat prevention in multiplayer."
 msgstr ""
+"Wenn diese Einstellung aktiviert ist, werden die Anti-Cheat-Maßnahmen "
+"deaktiviert."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled, invalid world data won't cause the server to shut down.\n"
 "Only enable this if you know what you are doing."
 msgstr ""
+"Falls aktiviert, werden ungültige Weltdaten den Server nicht dazu\n"
+"veranlassen, sich zu beenden.\n"
+"Aktivieren Sie dies nur, wenn Sie wissen, was sie tun."
 
 #: src/settings_translation_file.cpp
 msgid "If enabled, new players cannot join with an empty password."
 msgstr ""
+"Falls aktiviert, können neue Spieler nicht mit einem leeren Passwort\n"
+"beitreten."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1981,61 +2093,114 @@ msgid ""
 "you stand.\n"
 "This is helpful when working with nodeboxes in small areas."
 msgstr ""
+"Falls aktiviert, können Sie Blöcke an der Position (Füße u. Augenhöhe), auf "
+"der Sie\n"
+"stehen, platzieren. Dies ist hilfreich, wenn mit „Nodeboxen“ auf engen Raum\n"
+"gearbeitet wird."
 
 #: src/settings_translation_file.cpp
 msgid "If this is set, players will always (re)spawn at the given position."
 msgstr ""
+"Falls dies gesetzt ist, werden Spieler immer an der gegebenen\n"
+"Position im Spiel einsteigen bzw. nach dem Tod wieder einsteigen."
 
 #: src/settings_translation_file.cpp
 msgid "Ignore world errors"
-msgstr ""
+msgstr "Weltfehler ignorieren"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "In-Game"
 msgstr "Spiel"
 
 #: src/settings_translation_file.cpp
 msgid "In-game chat console background alpha (opaqueness, between 0 and 255)."
 msgstr ""
+"Undurchsichtigkeit des Hintergrundes der Chat-Konsole im Spiel\n"
+"(Wert zwischen 0 und 255)."
 
 #: src/settings_translation_file.cpp
 msgid "In-game chat console background color (R,G,B)."
-msgstr ""
+msgstr "Hintergrundfarbe (R,G,B) der Chat-Konsole im Spiel."
 
 #: src/settings_translation_file.cpp
 msgid "Interval of saving important changes in the world, stated in seconds."
 msgstr ""
+"Zeitintervall des Abspeicherns wichtiger Änderungen in der Welt,\n"
+"in Sekunden."
 
 #: src/settings_translation_file.cpp
 msgid "Interval of sending time of day to clients."
-msgstr ""
+msgstr "Zeitintervall, in dem die Tageszeit an Klienten gesendet wird."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Inventory key"
-msgstr "Inventar"
+msgstr "Inventartaste"
 
 #: src/settings_translation_file.cpp
 msgid "Invert mouse"
-msgstr ""
+msgstr "Maus umkehren"
 
 #: src/settings_translation_file.cpp
 msgid "Invert vertical mouse movement."
-msgstr ""
+msgstr "Kehrt die vertikale Mausbewegung um."
 
 #: src/settings_translation_file.cpp
 msgid "Item entity TTL"
+msgstr "Item-Entity-TTL"
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: (X,Y,Z) offsets from world centre.\n"
+"Range roughly -2 to 2, multiply by j_scale for offsets in nodes."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
+msgid "Julia set: Approximate (X,Y,Z) scales in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Iterations of the recursive function.\n"
+"Controls scale of finest detail."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: W co-ordinate of the generated 3D slice of the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: W value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: X value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Y value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Z value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Jump key"
-msgstr "Springen"
+msgstr "Sprungtaste"
 
 #: src/settings_translation_file.cpp
 msgid "Jumping speed"
-msgstr ""
+msgstr "Sprunggeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2043,6 +2208,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zur Reduzierung der Sichtweite. Verändert die minimale Sichtweite.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2050,6 +2218,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Fallenlassen des ausgewählten Gegenstandes.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2057,6 +2228,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zur Erhöhung der Sichtweite. Verändert die minimale Sichtweite.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2064,6 +2238,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Springen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2071,6 +2248,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um sich schnell im Schnellmodus zu bewegen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2078,6 +2258,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um den Spieler rückwärts zu bewegen.\n"
+"See http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2085,6 +2268,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um den Spieler vorwärts zu bewegen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2092,6 +2278,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um den Spieler nach links zu bewegen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2099,6 +2288,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um den Spieler nach rechts zu bewegen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2106,6 +2298,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um die Chat-Konsole im Spiel zu öffnen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2113,6 +2308,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um das Chat-Fenster zu öffnen, um Kommandos einzugeben.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2120,6 +2318,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Öffnen des Chat-Fensters.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2127,6 +2328,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Öffnen des Inventars.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2134,6 +2338,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um die Debug-Stacks auszugeben. Für die Entwicklung benutzt.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2143,6 +2350,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Schleichen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2150,6 +2360,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Wechseln der Kamera (Ego- oder Dritte-Person-Perspektive).\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2157,6 +2370,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zur Erzeugung von Bildschirmfotos.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2164,6 +2380,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten des Filmmodus.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2171,6 +2390,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Wechseln der Anzeige der Übersichtskarte.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2178,6 +2400,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten des Schnellmodus.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2185,6 +2410,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten des Flugmodus.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2192,6 +2420,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten des Geistmodus.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2199,6 +2430,10 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten der Kameraaktualisierung. Nur für die Entwicklung "
+"benutzt.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2206,6 +2441,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten der Anzeige der Debug-Informationen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2213,6 +2451,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um das HUD zu verbergen oder wieder anzuzeigen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2220,6 +2461,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um das Chatprotokoll zu verbergen oder wieder anzuzeigen.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2227,6 +2471,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten des Nebels.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2234,6 +2481,9 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste zum Umschalten der Profiler-Anzeige. Für die Entwicklung benutzt.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2241,18 +2491,21 @@ msgid ""
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
+"Taste, um die unbegrenzte Sichtweite ein- oder auszuschalten.\n"
+"Siehe http://irrlicht.sourceforge.net/docu/namespaceirr."
+"html#a54da2a0e231901735e3da1b0edf72e"
 
 #: src/settings_translation_file.cpp
 msgid "Key use for climbing/descending"
-msgstr ""
+msgstr "\"Benutzen\"-Taste zum runterklettern"
 
 #: src/settings_translation_file.cpp
 msgid "Language"
-msgstr ""
+msgstr "Sprache"
 
 #: src/settings_translation_file.cpp
 msgid "Leaves style"
-msgstr ""
+msgstr "Blätterstil"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2261,17 +2514,24 @@ msgid ""
 "-   Simple: only outer faces, if defined special_tiles are used\n"
 "-   Opaque: disable transparency"
 msgstr ""
+"Blätterstil:\n"
+"-   Fancy: Alle Seiten sind sichtbar\n"
+"-   Simple: Nur die äußeren Seiten sind sichtbar, oder special_tiles werden "
+"benutzt\n"
+"-   Opaque: Blätter sind undurchsichtig"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Left key"
-msgstr "Alt"
+msgstr "Linkstaste"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Length of a server tick and the interval at which objects are generally "
 "updated over network."
 msgstr ""
+"Länge eines Servertakts und dem Zeitintervall, in dem Objekte über das "
+"Netzwerk üblicherweise\n"
+"aktualisiert werden."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2284,14 +2544,23 @@ msgid ""
 "-    info\n"
 "-    verbose"
 msgstr ""
+"Bis zu welcher Dringlichkeitsstufe Protokollmeldungen\n"
+"in debug.txt geschrieben werden sollen:\n"
+"-    <nichts> (keine Protokollierung)\n"
+"-    none (Meldungen ohne Einstufung)\n"
+"-    error (Fehler)\n"
+"-    warning (Warnungen)\n"
+"-    action (Aktionen)\n"
+"-    info (Informationen)\n"
+"-    verbose (Ausführlich)"
 
 #: src/settings_translation_file.cpp
 msgid "Limit of emerge queues on disk"
-msgstr ""
+msgstr "Erzeugungswarteschlangengrenze auf Festspeicher"
 
 #: src/settings_translation_file.cpp
 msgid "Limit of emerge queues to generate"
-msgstr ""
+msgstr "Limit der Erzeugungswarteschlangen"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2301,328 +2570,476 @@ msgid ""
 "-    Downloads performed by main menu (e.g. mod manager).\n"
 "Only has an effect if compiled with cURL."
 msgstr ""
+"Begrenzt die Anzahl der parallelen HTTP-Anfragen. Betrifft:\n"
+"-    Medienabholung, falls der Server die remote_media-Einstellung "
+"verwendet.\n"
+"-    Herunterladen der Serverliste und Server-Ankündigungsdaten.\n"
+"-    Downloads, die vom Hauptmenü aus getätigt werden (z.B. Mod-Manager).\n"
+"Hat nur eine Wirkung, wenn mit cURL-Unterstützung kompiliert wurde."
 
 #: src/settings_translation_file.cpp
 msgid "Liquid fluidity"
-msgstr ""
+msgstr "Flüssigkeitswiederstand"
 
 #: src/settings_translation_file.cpp
 msgid "Liquid fluidity smoothing"
-msgstr ""
+msgstr "Flüssigkeitswiderstandsglättung"
 
 #: src/settings_translation_file.cpp
 msgid "Liquid loop max"
-msgstr ""
+msgstr "Max. Flüssigkeitsiterationen"
 
 #: src/settings_translation_file.cpp
 msgid "Liquid queue purge time"
-msgstr ""
+msgstr "Aufräumzeit für Flüssigkeitswarteschlange"
 
 #: src/settings_translation_file.cpp
 msgid "Liquid sink"
-msgstr ""
+msgstr "Sinkgeschwindigkeit in Flüssigkeiten"
 
 #: src/settings_translation_file.cpp
 msgid "Liquid update interval in seconds."
-msgstr ""
+msgstr "Flüssigkeitsaktualisierungsintervall in Sekunden."
 
 #: src/settings_translation_file.cpp
 msgid "Liquid update tick"
-msgstr ""
+msgstr "Flüssigkeitsaktualisierungstakt"
 
 #: src/settings_translation_file.cpp
 msgid "Main menu game manager"
-msgstr ""
+msgstr "Hauptmenü-Spiel-Manager"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Main menu mod manager"
-msgstr "Hauptmenü"
+msgstr "Hauptmenü-Mod-Manager"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Main menu script"
-msgstr "Hauptmenü"
+msgstr "Hauptmenü-Skript"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Make fog and sky colors depend on daytime (dawn/sunset) and view direction."
 msgstr ""
+"Nebel- und Himmelsfarben von der Tageszeit (Sonnenaufgang/Sonnenuntergang)\n"
+"und Blickrichtung abhängig machen."
 
 #: src/settings_translation_file.cpp
 msgid "Makes DirectX work with LuaJIT. Disable if it causes troubles."
 msgstr ""
+"DirectX mit LuaJIT zusammenarbeiten lassen. Deaktivieren Sie dies,\n"
+"falls es Probleme verursacht."
 
 #: src/settings_translation_file.cpp
-msgid "Map directory"
+msgid ""
+"Mandelbrot set: (X,Y,Z) offsets from world centre.\n"
+"Range roughly -2 to 2, multiply by m_scale for offsets in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mandelbrot set: Approximate (X,Y,Z) scales in nodes."
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Map generation attributes specific to Mapgen V6.\n"
+"Mandelbrot set: Iterations of the recursive function.\n"
+"Controls scale of finest detail."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Mandelbrot set: W co-ordinate of the generated 3D slice of the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Map directory"
+msgstr "Weltordner"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid ""
+"Map generation attributes specific to Mapgen fractal.\n"
+"'julia' selects a julia set to be generated instead of a mandelbrot set.\n"
+"Flags that are not specified in the flag string are not modified from the "
+"default.\n"
+"Flags starting with \"no\" are used to explicitly disable them."
+msgstr ""
+"Kartengenerierungsattribute speziell für Kartengenerator V7.\n"
+"'ridges' sind die Flüsse.\n"
+"Flags, die nicht im flag text angegeben wurden, werden ihre Standartwerte "
+"zugewiesen.\n"
+"Flags, die mit starten "
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid ""
+"Map generation attributes specific to Mapgen v6.\n"
 "When snowbiomes are enabled jungles are enabled and the jungles flag is "
 "ignored.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them."
 msgstr ""
+"Kartengenerierungsattribute speziell für Kartengenerator V7.\n"
+"'ridges' sind die Flüsse.\n"
+"Flags, die nicht im flag text angegeben wurden, werden ihre Standartwerte "
+"zugewiesen.\n"
+"Flags, die mit starten "
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"Map generation attributes specific to Mapgen V7.\n"
+"Map generation attributes specific to Mapgen v7.\n"
 "'ridges' are the rivers.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them."
 msgstr ""
+"Kartengenerierungsattribute speziell für Kartengenerator V7.\n"
+"'ridges' sind die Flüsse.\n"
+"Flags, die nicht im flag text angegeben wurden, werden ihre Standartwerte "
+"zugewiesen.\n"
+"Flags, die mit starten "
 
 #: src/settings_translation_file.cpp
 msgid "Map generation limit"
-msgstr ""
+msgstr "Kartenerzeugungsgrenze"
 
 #: src/settings_translation_file.cpp
 msgid "Map save interval"
-msgstr ""
+msgstr "Speicherintervall der Welt"
 
 #: src/settings_translation_file.cpp
 msgid "Mapblock limit"
-msgstr ""
+msgstr "Kartenblock-Grenze"
 
 #: src/settings_translation_file.cpp
 msgid "Mapblock unload timeout"
-msgstr ""
+msgstr "Timeout zum Entladen von Kartenblöcken"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen biome heat noise parameters"
-msgstr ""
+msgstr "Biomhitzen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen biome humidity blend noise parameters"
-msgstr ""
+msgstr "Biomluftfeuchtigkeitsübergangs-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen biome humidity noise parameters"
+msgstr "Biomluftfeuchtigkeits-Rauschparameter"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen debug"
+msgstr "Kartengenerator-Debugging"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen flags"
+msgstr "Kartengenerator-Flags"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal"
+msgstr "Kartengenerator-Flags"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal cave1 noise parameters"
+msgstr "Höhlen-Rauschparameter 1"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal cave2 noise parameters"
+msgstr "Höhlen-Rauschparameter 2"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal filler depth noise parameters"
+msgstr "Fülltiefen-Rauschparameter"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal flags"
+msgstr "Kartengenerator-Flags"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal julia iterations"
+msgstr "Parallax-Occlusion-Iterationen"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia offset"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia scale"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia slice w"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia w"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia x"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia y"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia z"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 #, fuzzy
-msgid "Mapgen debug"
-msgstr "Weltgenerator"
+msgid "Mapgen fractal mandelbrot iterations"
+msgstr "Max. Pakete pro Iteration"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot offset"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot scale"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot slice w"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 #, fuzzy
-msgid "Mapgen flags"
-msgstr "Weltgenerator"
+msgid "Mapgen fractal seabed noise parameters"
+msgstr "Hitzenübergangs-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen heat blend noise parameters"
-msgstr ""
+msgstr "Hitzenübergangs-Rauschparameter"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen name"
-msgstr "Weltgenerator"
+msgstr "Kartengeneratorname"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen v5"
-msgstr "Weltgenerator"
+msgstr "Kartengenerator v5"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v5 cave1 noise parameters"
-msgstr ""
+msgstr "Höhlen-Rauschparameter 1"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v5 cave2 noise parameters"
-msgstr ""
+msgstr "Höhlen-Rauschparameter 2"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v5 factor noise parameters"
-msgstr ""
+msgstr "Faktor-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v5 filler depth noise parameters"
-msgstr ""
+msgstr "Fülltiefen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v5 height noise parameters"
-msgstr ""
+msgstr "Höhen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen v6"
-msgstr "Weltgenerator"
+msgstr "Kartengenerator v6"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 apple trees noise parameters"
-msgstr ""
+msgstr "Apfelbaum-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 beach frequency"
-msgstr ""
+msgstr "Standhäufigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 beach noise parameters"
-msgstr ""
+msgstr "Strand-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 biome noise parameters"
-msgstr ""
+msgstr "Biom-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 cave noise parameters"
-msgstr ""
+msgstr "Höhlen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 desert frequency"
-msgstr ""
+msgstr "Wüsten-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 flags"
-msgstr ""
+msgstr "Flags"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 height select noise parameters"
-msgstr ""
+msgstr "Höhenauswahl-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 humidity noise parameters"
-msgstr ""
+msgstr "Luftfeuchtigkeits-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 mud noise parameters"
-msgstr ""
+msgstr "Schlamm-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 steepness noise parameters"
-msgstr ""
+msgstr "Steilheits-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 terrain altitude noise parameters"
-msgstr ""
+msgstr "Geländehöhen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 terrain base noise parameters"
-msgstr ""
+msgstr "Basisgelände-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v6 trees noise parameters"
-msgstr ""
+msgstr "Baum-Rauschparameter"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen v7"
-msgstr "Weltgenerator"
+msgstr "Kartengenerator v7"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 cave1 noise parameters"
-msgstr ""
+msgstr "Höhlen-Rauschparameter 1"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 cave2 noise parameters"
-msgstr ""
+msgstr "Höhlen-Rauschparameter 2"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 filler depth noise parameters"
-msgstr ""
+msgstr "Fülltiefen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 flags"
-msgstr ""
+msgstr "Flags"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 height select noise parameters"
-msgstr ""
+msgstr "Höhenauswahl-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 mount height noise parameters"
-msgstr ""
+msgstr "Berghöhen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 mountain noise parameters"
-msgstr ""
+msgstr "Berg-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 ridge noise parameters"
-msgstr ""
+msgstr "Fluss-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 ridge water noise parameters"
-msgstr ""
+msgstr "Flusswasser-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 terrain altitude noise parameters"
-msgstr ""
+msgstr "Geländehöhen-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 terrain base noise parameters"
-msgstr ""
+msgstr "Basisgelände-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen v7 terrain persistation noise parameters"
-msgstr ""
+msgstr "Geländepersistenz-Rauschparameter"
 
 #: src/settings_translation_file.cpp
 msgid "Max block generate distance"
-msgstr ""
+msgstr "Max. Distanz für Kartenblockerzeugung"
 
 #: src/settings_translation_file.cpp
 msgid "Max block send distance"
-msgstr ""
+msgstr "Max. Distanz für Kartenblockübertragung"
 
 #: src/settings_translation_file.cpp
 msgid "Max liquids processed per step."
-msgstr ""
+msgstr "Max. Flüssigkeitsblöcke, die pro Schritt verarbeitet werden."
 
 #: src/settings_translation_file.cpp
 msgid "Max. clearobjects extra blocks"
-msgstr ""
+msgstr "Max. clearobjects-Zusatz-Kartenblöcke"
 
 #: src/settings_translation_file.cpp
 msgid "Max. packets per iteration"
-msgstr ""
+msgstr "Max. Pakete pro Iteration"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS"
-msgstr ""
+msgstr "Maximale Bildwiederholrate"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS when game is paused."
+msgstr "Maximale Bildwiederholrate, wenn das Spiel pausiert ist."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Maximum distance above water level for player spawn.\n"
+"Larger values result in spawn points closer to (x = 0, z = 0).\n"
+"Smaller values may result in a suitable spawn point not being found,\n"
+"resulting in a spawn at (0, 0, 0) possibly buried underground."
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Maximum forceloaded blocks"
-msgstr ""
+msgstr "Maximal zwangsgeladene Kartenblöcke"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum hotbar width"
-msgstr ""
+msgstr "Max. Breite der Schnellzugriffsleiste"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum number of blocks that can be queued for loading."
-msgstr ""
+msgstr "Maximale Anzahl der Kartenblöcke in der Ladewarteschlange."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of blocks to be queued that are to be generated.\n"
 "Set to blank for an appropriate amount to be chosen automatically."
 msgstr ""
+"Maximale Anzahl der Kartenblöcke, die in die Erzeugungswarteschlage gesetzt "
+"werden.\n"
+"Feld frei lassen, um automatisch einen geeigneten Wert zu bestimmen."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of blocks to be queued that are to be loaded from file.\n"
 "Set to blank for an appropriate amount to be chosen automatically."
 msgstr ""
+"Maximale Anzahl der Kartenblöcke, die in die Warteschlange zum Laden aus\n"
+"einer Datei gesetzt werden können.\n"
+"Feld frei lassen, um automatisch einen geeigneten Wert zu bestimmen."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum number of forceloaded mapblocks."
-msgstr ""
+msgstr "Maximale Anzahl der zwangsgeladenen Kartenblöcke."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of mapblocks for client to be kept in memory.\n"
 "Set to -1 for unlimited amount."
 msgstr ""
+"Maximale Anzahl der Kartenblöcke, die der Klient im Speicher vorhalten "
+"soll.\n"
+"Auf -1 setzen, um keine Obergrenze zu verwenden."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2630,73 +3047,87 @@ msgid ""
 "try reducing it, but don't reduce it to a number below double of targeted\n"
 "client number."
 msgstr ""
+"Maximale Anzahl der Pakete, die pro Sende-Schritt gesendet werden. Falls Sie "
+"eine\n"
+"langsame Verbindung haben, probieren Sie, diesen Wert zu reduzieren,\n"
+"aber reduzieren Sie ihn nicht unter der doppelten Anzahl der Klienten, die "
+"Sie\n"
+"anstreben."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum number of players that can connect simultaneously."
-msgstr ""
+msgstr "Maximale Anzahl der Spieler, die sich simultan verbinden können."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum number of statically stored objects in a block."
 msgstr ""
+"Maximale Anzahl der statisch gespeicherten Objekte in einem Kartenblock."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum proportion of current window to be used for hotbar.\n"
 "Useful if there's something to be displayed right or left of hotbar."
 msgstr ""
+"Maximales Verhältnis zum aktuellen Fenster, das für die\n"
+"Schnellzugriffsleiste verwendet werden soll. Nützlich, wenn es\n"
+"etwas gibt, was links oder rechts von ihr angezeigt werden soll."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum simultaneously blocks send per client"
-msgstr ""
+msgstr "Max. gleichzeitig versendete Kartenblöcke pro Klient"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum simultaneously bocks send total"
-msgstr ""
+msgstr "Max. gleichzeitig versendete Kartenblöcke"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum time in ms a file download (e.g. a mod download) may take."
 msgstr ""
+"Maximale Zeit in ms, die das Herunterladen einer Datei (z.B. eine Mod) "
+"dauern darf."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum users"
-msgstr ""
+msgstr "Maximale Benutzerzahl"
 
 #: src/settings_translation_file.cpp
 msgid "Maxmimum objects per block"
-msgstr ""
+msgstr "Maximale Objekte pro Kartenblock"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Menus"
-msgstr "Menü"
+msgstr "Menüs"
 
 #: src/settings_translation_file.cpp
 msgid "Mesh cache"
-msgstr ""
+msgstr "3D-Modell-Zwischenspeicher"
 
 #: src/settings_translation_file.cpp
 msgid "Message of the day"
-msgstr ""
+msgstr "Meldung des Tages (message of the day)"
 
 #: src/settings_translation_file.cpp
 msgid "Message of the day displayed to players connecting."
 msgstr ""
+"Die Meldung des Tages, die frisch verbundenen Spielern angezeigt werden "
+"soll.\n"
+"Auf Englisch bekannt als „message of the day“ oder „MOTD“."
 
 #: src/settings_translation_file.cpp
 msgid "Minimap"
-msgstr ""
+msgstr "Übersichtskarte"
 
 #: src/settings_translation_file.cpp
 msgid "Minimap key"
-msgstr ""
+msgstr "Übersichtskartentaste"
 
 #: src/settings_translation_file.cpp
 msgid "Minimap scan height"
-msgstr ""
+msgstr "Abtasthöhe der Übersichtskarte"
 
 #: src/settings_translation_file.cpp
 msgid "Minimum texture size for filters"
-msgstr ""
+msgstr "Minimale Texturengröße für Filter"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2704,61 +3135,73 @@ msgid ""
 "The amount of rendered stuff is dynamically set according to this. and "
 "viewing range min and max."
 msgstr ""
+"Minimal gewünschte Bildwiederholrate.\n"
+"Die Anzahl der berechneten Dinge wird anhand dieses Werts dynamisch "
+"angepasst; auch\n"
+"die minimale und maximale Sichtweite werden angepasst."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mipmapping"
 msgstr "Mip-Mapping"
 
 #: src/settings_translation_file.cpp
 msgid "Mod profiling"
-msgstr ""
+msgstr "Mod-Profiling"
 
 #: src/settings_translation_file.cpp
 msgid "Modstore details URL"
-msgstr ""
+msgstr "Modspeicher: Details-URL"
 
 #: src/settings_translation_file.cpp
 msgid "Modstore download URL"
-msgstr ""
+msgstr "Modspeicher: Download-URL"
 
 #: src/settings_translation_file.cpp
 msgid "Modstore mods list URL"
-msgstr ""
+msgstr "Modspeicher: Listen-URL"
 
 #: src/settings_translation_file.cpp
 msgid "Monospace font path"
-msgstr ""
+msgstr "Pfad der Festbreitenschrift"
 
 #: src/settings_translation_file.cpp
 msgid "Monospace font size"
-msgstr ""
+msgstr "Größe der Festbreitenschrift"
 
 #: src/settings_translation_file.cpp
 msgid "Mouse sensitivity"
-msgstr ""
+msgstr "Mausempfindlichkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Mouse sensitivity multiplier."
-msgstr ""
+msgstr "Faktor für die Mausempfindlichkeit."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Multiplier for fall bobbing.\n"
 "For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
 msgstr ""
+"Faktor für Kameraschütteln beim Sturz.\n"
+"Zum Beispiel: 0 für kein Schütteln, 1.0 für den Standardwert, 2.0 für "
+"doppelte Geschwindigkeit."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Multiplier for view bobbing.\n"
 "For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
 msgstr ""
+"Faktor für Auf- und Abbewegung (grafischer Effekt).\n"
+"Zum Beispiel: 0 für keine Auf- und Abbewegung, 1.0 für den Standardwert, 2.0 "
+"für doppelte Geschwindigkeit."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Name of map generator to be used when creating a new world.\n"
 "Creating a world in the main menu will override this."
 msgstr ""
+"Name des Kartengenerators, der für die Erstellung neuer Welten\n"
+"verwendet werden soll. Mit der Erstellung einer Welt im Hauptmenü\n"
+"wird diese Einstellung überschrieben."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2766,58 +3209,69 @@ msgid ""
 "When running a server, clients connecting with this name are admins.\n"
 "When starting from the main menu, this is overridden."
 msgstr ""
+"Name des Spielers.\n"
+"Wenn ein Server gestartet wird, werden Klienten mit diesem Namen zu "
+"Administratoren.\n"
+"Wird vom Hauptmenü aus gestartet, wird diese Einstellung überschrieben."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Name of the server, to be displayed when players join and in the serverlist."
 msgstr ""
+"Name des Servers. Er wird in der Serverliste angezeigt und für frisch "
+"verbundene\n"
+"Spieler angezeigt."
 
 #: src/settings_translation_file.cpp
 msgid "Network"
-msgstr ""
+msgstr "Netzwerk"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Network port to listen (UDP).\n"
 "This value will be overridden when starting from the main menu."
 msgstr ""
+"Netzwerkport (UDP), auf dem gelauscht werden soll.\n"
+"Dieser Wert wird überschrieben, wenn vom Hauptmenü\n"
+"aus gestartet wird."
 
 #: src/settings_translation_file.cpp
 msgid "New style water"
-msgstr ""
+msgstr "Wasser im neuen Stil"
 
 #: src/settings_translation_file.cpp
 msgid "New users need to input this password."
-msgstr ""
+msgstr "Neue Benutzer müssen dieses Passwort eingeben."
 
 #: src/settings_translation_file.cpp
 msgid "Noclip"
-msgstr ""
+msgstr "Geistmodus"
 
 #: src/settings_translation_file.cpp
 msgid "Noclip key"
-msgstr ""
+msgstr "Geistmodustaste"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Node highlighting"
 msgstr "Blöcke hervorheben"
 
 #: src/settings_translation_file.cpp
 msgid "Noise parameters for biome API temperature, humidity and biome blend."
 msgstr ""
+"Rauschparameter für Temperatur-, Luftfeuchtigkeits- und Biomübergänge\n"
+"in der Biom-API."
 
 #: src/settings_translation_file.cpp
 msgid "Normalmaps sampling"
-msgstr ""
+msgstr "Normalmaps-Sampling"
 
 #: src/settings_translation_file.cpp
 msgid "Normalmaps strength"
-msgstr ""
+msgstr "Normalmaps-Stärke"
 
 #: src/settings_translation_file.cpp
 msgid "Number of emerge threads"
-msgstr ""
+msgstr "Anzahl der Erzeugerthreads"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2827,6 +3281,13 @@ msgid ""
 "speed greatly\n"
 "at the cost of slightly buggy caves."
 msgstr ""
+"Anzahl der zu benutzenden Erzeugerthreads. Lassen Sie dieses Feld frei, oder "
+"erhöhen Sie\n"
+"diese Zahl, um mehrere Threads zu verwenden. Auf Mehrprozessorsystemen wird "
+"dies die\n"
+"Geschwindigkeit der Kartenerzeugung stark erhöhen auf Kosten von leicht "
+"fehlerhaften\n"
+"Höhlen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2834,93 +3295,96 @@ msgid ""
 "This is a trade-off between sqlite transaction overhead and\n"
 "memory consumption (4096=100MB, as a rule of thumb)."
 msgstr ""
+"Anzahl der zusätzlichen Kartenblöcke, welche mit /clearobjects gleichzeitig\n"
+"geladen werden können. Dies ist ein Kompromiss zwischen SQLite-\n"
+"Transaktions-Overhead und Speicherverbrauch (Faustregel: 4096=100MB)."
 
 #: src/settings_translation_file.cpp
 msgid "Number of parallax occlusion iterations."
-msgstr ""
+msgstr "Anzahl der Parallax-Occlusion-Iterationen."
 
 #: src/settings_translation_file.cpp
 msgid "Overall bias of parallax occlusion effect, usually scale/2."
-msgstr ""
+msgstr "Startwert des Parallax-Occlusion-Effektes, üblicherweise Skalierung/2."
 
 #: src/settings_translation_file.cpp
 msgid "Overall scale of parallax occlusion effect."
-msgstr ""
+msgstr "Gesamtskalierung des Parallax-Occlusion-Effektes."
 
 #: src/settings_translation_file.cpp
 msgid "Parallax Occlusion"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion Scale"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion-Skalierung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion bias"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion-Startwert"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion iterations"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion-Iterationen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion mode"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion-Modus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Parallax occlusion strength"
-msgstr "Parallax Oklusion"
+msgstr "Parallax-Occlusion-Stärke"
 
 #: src/settings_translation_file.cpp
 msgid "Path to TrueTypeFont or bitmap."
-msgstr ""
+msgstr "Pfad zu einer TrueType- oder Bitmap-Schrift."
 
 #: src/settings_translation_file.cpp
 msgid "Path to save screenshots at."
-msgstr ""
+msgstr "Pfad, in dem Bildschirmfotos abgespeichert werden."
 
 #: src/settings_translation_file.cpp
 msgid "Path to texture directory. All textures are first searched from here."
 msgstr ""
+"Pfad der Texturenverzeichnisse. Alle Texturen werden von dort zuerst gesucht."
 
 #: src/settings_translation_file.cpp
 msgid "Physics"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Player is able to fly without being affected by gravity.\n"
-"This requires the "
-msgstr ""
+msgstr "Physik"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
+msgid ""
+"Player is able to fly without being affected by gravity.\n"
+"This requires the \"fly\" privilege on the server."
+msgstr ""
+"Der Spieler kann unabhängig von der Schwerkraft fliegen.\n"
+"Das benötigt die "
+
+#: src/settings_translation_file.cpp
 msgid "Player name"
-msgstr "Spielername zu lang."
+msgstr "Spielername"
 
 #: src/settings_translation_file.cpp
 msgid "Player transfer distance"
-msgstr ""
+msgstr "Spieler-Übertragungsdistanz"
 
 #: src/settings_translation_file.cpp
 msgid "Player versus Player"
-msgstr ""
+msgstr "Spielerkampf"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Port to connect to (UDP).\n"
 "Note that the port field in the main menu overrides this setting."
 msgstr ""
+"UDP-Port, zu dem sich verbunden werden soll.\n"
+"Beachten Sie, dass das Port-Feld im Hauptmenü diese Einstellung\n"
+"überschreibt."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2929,27 +3393,35 @@ msgid ""
 "The generated textures can easily exceed your VRAM, causing artifacts in the "
 "inventory."
 msgstr ""
+"Alle Itembilder im Inventar vor dem Spielstart erzeugen.\n"
+"Dies erhöht die Vorbereitungszeit, wird aber zu einem flüssigerem Spiel "
+"führen.\n"
+"Die erzeugten Texturen können Ihr VRAM leicht überlasten, was Artefakte im "
+"Inventar\n"
+"verursachen kann."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Preload inventory textures"
-msgstr "Texturen laden ..."
+msgstr "Texturen vorgenerieren"
 
 #: src/settings_translation_file.cpp
 msgid "Prevent mods from doing insecure things like running shell commands."
 msgstr ""
+"Verhindert, dass Mods unsichere Funktionen, wie das Ausführen von\n"
+"Shell-Kommandos, benutzen können."
 
 #: src/settings_translation_file.cpp
 msgid "Profiler data print interval. 0 = disable. Useful for developers."
 msgstr ""
+"Profiler-Datenausgabeintervall. 0 = deaktivieren. Nützlich für Entwickler."
 
 #: src/settings_translation_file.cpp
 msgid "Profiler toggle key"
-msgstr ""
+msgstr "Profiler-Umschalten-Taste"
 
 #: src/settings_translation_file.cpp
 msgid "Profiling print interval"
-msgstr ""
+msgstr "Profiler-Ausgabeintervall"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2957,52 +3429,53 @@ msgid ""
 "Values larger than 26 will start to produce sharp cutoffs at cloud area "
 "corners."
 msgstr ""
+"Radius des Wolkenbereichs; In Einheiten von 64 Blöcken.\n"
+"Werte größer als 26 werden scharfe Schnittkanten an den Ecken des Wolken-\n"
+"bereichs erzeugen."
 
 #: src/settings_translation_file.cpp
 msgid "Random input"
-msgstr ""
+msgstr "Zufällige Steuerung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Range select key"
-msgstr "Weite Sicht"
+msgstr "Sichtweitentaste"
 
 #: src/settings_translation_file.cpp
 msgid "Remote media"
-msgstr ""
+msgstr "Externer Medienserver"
 
 #: src/settings_translation_file.cpp
 msgid "Remote port"
-msgstr ""
+msgstr "Serverport"
 
 #: src/settings_translation_file.cpp
 msgid "Replaces the default main menu with a custom one."
-msgstr ""
+msgstr "Ersetzt das Standardhauptmenü mit einem benutzerdefinierten Hauptmenü."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Right key"
-msgstr "Alt Gr"
+msgstr "Rechtstaste"
 
 #: src/settings_translation_file.cpp
 msgid "Rightclick repetition interval"
-msgstr ""
+msgstr "Rechtsklick-Wiederholungsrate"
 
 #: src/settings_translation_file.cpp
 msgid "Rollback recording"
-msgstr ""
+msgstr "Rollback-Aufzeichnung"
 
 #: src/settings_translation_file.cpp
 msgid "Round minimap"
-msgstr ""
+msgstr "Runde Übersichtskarte"
 
 #: src/settings_translation_file.cpp
 msgid "Save the map received by the client on disk."
-msgstr ""
+msgstr "Speichert die Karte vom Server im lokalen Speicher."
 
 #: src/settings_translation_file.cpp
 msgid "Saving map received from server"
-msgstr ""
+msgstr "Karte vom Server speichern"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3012,107 +3485,112 @@ msgid ""
 "pixels when scaling down, at the cost of blurring some\n"
 "edge pixels when images are scaled by non-integer sizes."
 msgstr ""
+"GUI mit einem benutzerdefinierten Wert skalieren.\n"
+"Benutzt einen Pixelwiederholungs-Anti-Aliasing-Filter, um\n"
+"die GUI zu skalieren. Dies wird einige der harten Kanten\n"
+"abglätten und Pixel beim Verkleinern mischen, wobei einige\n"
+"Kantenpixel verschwommen werden, wenn sie mit nicht-\n"
+"ganzzahligen Größen skaliert werden."
 
 #: src/settings_translation_file.cpp
 msgid "Screen height"
-msgstr ""
+msgstr "Bildschirmhöhe"
 
 #: src/settings_translation_file.cpp
 msgid "Screen width"
-msgstr ""
+msgstr "Bildschirmbreite"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Screenshot"
-msgstr "Druck"
+msgstr "Bildschirmfoto"
 
 #: src/settings_translation_file.cpp
 msgid "Screenshot folder"
-msgstr ""
+msgstr "Bildschirmfotoordner"
 
 #: src/settings_translation_file.cpp
 msgid "Security"
-msgstr ""
+msgstr "Sicherheit"
 
 #: src/settings_translation_file.cpp
 msgid "See http://www.sqlite.org/pragma.html#pragma_synchronous"
-msgstr ""
+msgstr "Siehe http://www.sqlite.org/pragma.html#pragma_synchronous"
 
 #: src/settings_translation_file.cpp
 msgid "Selection box border color (R,G,B)."
-msgstr ""
+msgstr "Farbe der Auswahlbox (R,G,B)."
 
 #: src/settings_translation_file.cpp
 msgid "Selection box color"
-msgstr ""
+msgstr "Auswahlboxfarbe"
 
 #: src/settings_translation_file.cpp
 msgid "Selection box width"
-msgstr ""
+msgstr "Auswahlboxbreite"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server / Singleplayer"
-msgstr "Einzelspieler starten"
+msgstr "Server / Einzelspieler"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server URL"
-msgstr "Server"
+msgstr "Server-URL"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server address"
-msgstr "Serverport"
+msgstr "Serveradresse"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server description"
-msgstr "Serverport"
+msgstr "Serverbeschreibung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server name"
-msgstr "Server"
+msgstr "Servername"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server port"
 msgstr "Serverport"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Serverlist URL"
-msgstr "Öffentliche Serverliste"
+msgstr "Serverlisten-URL"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Serverlist file"
-msgstr "Öffentliche Serverliste"
+msgstr "Serverlistendatei"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Set the language. Leave empty to use the system language.\n"
 "A restart is required after changing this."
 msgstr ""
+"Setzt die Sprache. Leer lassen, um Systemsprache zu verwenden.\n"
+"Nach Änderung ist ein Neustart erforderlich."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Set to true enables waving leaves.\n"
 "Requires shaders to be enabled."
 msgstr ""
+"Auf „wahr“ setzen, um sich im Wind wehende Blätter zu aktivieren.\n"
+"Dafür müssen Shader aktiviert sein."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Set to true enables waving plants.\n"
 "Requires shaders to be enabled."
 msgstr ""
+"Auf „wahr“ setzen, um sich im Wind wehende Pflanzen zu aktivieren.\n"
+"Dafür müssen Shader aktiviert sein."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Set to true enables waving water.\n"
 "Requires shaders to be enabled."
 msgstr ""
+"Auf „wahr“ setzen, um Wasserwogen zu aktivieren.\n"
+"Dafür müssen Shader aktiviert sein."
 
 #: src/settings_translation_file.cpp
 msgid "Shaders"
@@ -3124,52 +3602,59 @@ msgid ""
 "video cards.\n"
 "Thy only work with the OpenGL video backend."
 msgstr ""
+"Shader werden für fortgeschrittene visuelle Effekte benötigt und können die "
+"Performanz\n"
+"auf einigen Grafikkarten erhöhen.\n"
+"Funktioniert nur mit dem OpenGL-Backend."
 
 #: src/settings_translation_file.cpp
 msgid "Shape of the minimap. Enabled = round, disabled = square."
-msgstr ""
+msgstr "Form der Übersichtskarte. Aktiviert = rund, Deaktiviert = rechteckig."
 
 #: src/settings_translation_file.cpp
 msgid "Show debug info"
-msgstr ""
+msgstr "Debug-Info zeigen"
 
 #: src/settings_translation_file.cpp
 msgid "Shutdown message"
-msgstr ""
+msgstr "Herunterfahrnachricht"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Size of chunks to be generated at once by mapgen, stated in mapblocks (16 "
 "nodes)."
 msgstr ""
+"Größe der Stücke, die gleichzeitig vom Kartengenerator erzeugt werden,\n"
+"in Kartenblöcken (16×16×16 Blöcke)."
+
+#: src/settings_translation_file.cpp
+msgid "Smooth lighting"
+msgstr "Geglättetes Licht"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
-msgid "Smooth lighting"
-msgstr "Besseres Licht"
-
-#: src/settings_translation_file.cpp
 msgid ""
-"Smooths camera when moving and looking arround.\n"
+"Smooths camera when moving and looking around.\n"
 "Useful for recording videos."
 msgstr ""
+"Glättet Kamerabewegungen beim Umsehen.\n"
+"Nützlich zum Aufnehmen von Videos."
 
 #: src/settings_translation_file.cpp
 msgid "Smooths rotation of camera in cinematic mode. 0 to disable."
-msgstr ""
+msgstr "Glättet die Rotation der Kamera im Filmmodus. 0 zum Ausschalten."
 
 #: src/settings_translation_file.cpp
 msgid "Smooths rotation of camera. 0 to disable."
-msgstr ""
+msgstr "Glättet die Rotation der Kamera. 0 zum Ausschalten."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Sneak key"
-msgstr "Schleichen"
+msgstr "Schleichtaste"
 
 #: src/settings_translation_file.cpp
 msgid "Sound"
-msgstr ""
+msgstr "Sound"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3178,32 +3663,37 @@ msgid ""
 "(obviously, remote_media should end with a slash).\n"
 "Files that are not present will be fetched the usual way."
 msgstr ""
+"Spezifiziert die URL, von der die Klienten die Medien (Texturen, Sounds, …) "
+"herunterladen.\n"
+"$Dateiname sollte von $remote_media$Dateiname mittels cURL erreichbar sein\n"
+"(diese Einstellung sollte also mit einem Schrägstrich enden).\n"
+"Dateien, die nicht über diesen Server erreichbar sind, werden auf dem "
+"üblichen\n"
+"Weg heruntergeladen (UDP)."
 
 #: src/settings_translation_file.cpp
 msgid "Static spawnpoint"
-msgstr ""
+msgstr "Statische Einstiegsposition"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Strength of generated normalmaps."
-msgstr "Normalmaps generieren"
+msgstr "Stärke der generierten Normalmaps."
 
 #: src/settings_translation_file.cpp
 msgid "Strength of parallax."
-msgstr ""
+msgstr "Stärke von Parallax."
 
 #: src/settings_translation_file.cpp
 msgid "Strict protocol checking"
-msgstr ""
+msgstr "Strikte Protokollversionsprüfung"
 
 #: src/settings_translation_file.cpp
 msgid "Synchronous SQLite"
-msgstr ""
+msgstr "Synchrones SQLite"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Texture path"
-msgstr "Texturpakete"
+msgstr "Texturpfad"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3211,20 +3701,29 @@ msgid ""
 "Set this to be equal to viewing range minimum to disable the auto-adjustment "
 "algorithm."
 msgstr ""
+"Die erlaubte Anpassungsreichweite für die automatische Render-"
+"Reichweitenanpassung.\n"
+"Setzen Sie den Wert auf den gleichen Wert wie die minimale Sichtweite, um "
+"den automatischen\n"
+"Anpassungsalgorithmus zu deaktivieren."
 
 #: src/settings_translation_file.cpp
 msgid "The network interface that the server listens on."
-msgstr ""
+msgstr "Die Netzwerkschnittstelle, auf die der Server lauscht."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "The privileges that new users automatically get.\n"
 "See /privs in game for a full list on your server and mod configuration."
 msgstr ""
+"Die Privilegien, die neue Benutzer automatisch erhalten.\n"
+"Siehe /privs im Spiel für eine vollständige Liste aller möglichen "
+"Privilegien\n"
+"auf Ihrem Server und die Modkonfiguration."
 
 #: src/settings_translation_file.cpp
 msgid "The rendering back-end for Irrlicht."
-msgstr ""
+msgstr "Das Render-Backend für Irrlicht."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3233,6 +3732,11 @@ msgid ""
 "setting is 0.25 to 4.0 inclusive. If the value is out of range it will be\n"
 "set to the nearest valid value."
 msgstr ""
+"Die Stärke (Dunkelheit) der blockweisen Ambient-Occlusion-Schattierung.\n"
+"Niedriger bedeutet dunkler, höher bedeutet heller. Gültige Werte liegen\n"
+"zwischen 0.25 und 4.0 inklusive. (Achtung: Punkt als Dezimaltrennzeichen\n"
+"verwenden!) Falls der Wert außerhalb liegt, wird er zum nächsten gültigen\n"
+"Wert gesetzt."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3240,34 +3744,47 @@ msgid ""
 "capacity until an attempt is made to decrease its size by dumping old queue\n"
 "items.  A value of 0 disables the functionality."
 msgstr ""
+"Die Zeit (in Sekunden), die die Flüssigkeitswarteschlange über die "
+"Verarbeitungs-\n"
+"kapazität hinauswachsen darf, bevor versucht wird, ihre Größe durch das\n"
+"Verwerfen alter Warteschlangeneinträge zu reduzieren. Der Wert 0 "
+"deaktiviert\n"
+"diese Funktion."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "The time in seconds it takes between repeated right clicks when holding the "
 "right mouse button."
 msgstr ""
+"Das Intervall in Sekunden, in dem Rechtsklicks wiederholt werden, wenn die "
+"rechte\n"
+"Maustaste gedrückt gehalten wird."
 
 #: src/settings_translation_file.cpp
 msgid "This font will be used for certain languages."
-msgstr ""
+msgstr "Diese Schrift wird von bestimmten Sprachen benutzt."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Time in seconds for item entity (dropped items) to live.\n"
 "Setting it to -1 disables the feature."
 msgstr ""
+"Zeit in Sekunden, die Item-Entitys (fallengelassene Gegenstände)\n"
+"existieren dürfen. Der Wert -1 deaktiviert diese Funktion."
 
 #: src/settings_translation_file.cpp
 msgid "Time send interval"
-msgstr ""
+msgstr "Zeit-Sendeintervall"
 
 #: src/settings_translation_file.cpp
 msgid "Time speed"
-msgstr ""
+msgstr "Zeitgeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Timeout for client to remove unused map data from memory."
 msgstr ""
+"Zeit, nach der der Klient nicht benutzte Kartendaten aus\n"
+"dem Speicher löscht."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3276,17 +3793,21 @@ msgid ""
 "This determines how long they are slowed down after placing or removing a "
 "node."
 msgstr ""
+"Um Verzögerungen zu reduzieren, werden Kartenblockübertragungen verlangsamt, "
+"während\n"
+"ein Spieler etwas baut. Diese Einstellung bestimmt, wie lange sie "
+"verlangsamt sind,\n"
+"nachdem ein Block platziert oder entfernt wurde."
 
 #: src/settings_translation_file.cpp
 msgid "Toggle camera mode key"
-msgstr ""
+msgstr "Kameraauswahltaste"
 
 #: src/settings_translation_file.cpp
 msgid "Tooltip delay"
-msgstr ""
+msgstr "Tooltip-Verzögerung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Trilinear filtering"
 msgstr "Trilinearer Filter"
 
@@ -3296,149 +3817,151 @@ msgid ""
 "False = 128\n"
 "Useable to make minimap smoother on slower machines."
 msgstr ""
+"Wahr = 256\n"
+"Falsch = 128\n"
+"Nützlich, um die Übersichtskarte performanter auf langsamen Maschinen zu "
+"machen."
 
 #: src/settings_translation_file.cpp
 msgid "Trusted mods"
-msgstr ""
+msgstr "Vertrauenswürdige Mods"
 
 #: src/settings_translation_file.cpp
 msgid "URL to the server list displayed in the Multiplayer Tab."
 msgstr ""
+"URL der Serverliste, die in der Mehrspieler-Registerkarte angezeigt wird."
 
 #: src/settings_translation_file.cpp
 msgid "Unlimited player transfer distance"
-msgstr ""
+msgstr "Unbegrenzte Spielerübertragungsdistanz"
 
 #: src/settings_translation_file.cpp
 msgid "Unload unused server data"
-msgstr ""
+msgstr "Nicht benutzte Serverdaten entladen"
 
 #: src/settings_translation_file.cpp
 msgid "Use 3D cloud look instead of flat."
-msgstr ""
+msgstr "Wolken blockförmig statt flach aussehen lassen."
 
 #: src/settings_translation_file.cpp
 msgid "Use a cloud animation for the main menu background."
-msgstr ""
+msgstr "Eine Wolkenanimation für den Hintergrund im Hauptmenü benutzen."
 
 #: src/settings_translation_file.cpp
 msgid "Use anisotropic filtering when viewing at textures from an angle."
 msgstr ""
+"Anisotrope Filterung verwenden, wenn auf Texturen aus einem\n"
+"gewissen Blickwinkel heraus geschaut wird."
 
 #: src/settings_translation_file.cpp
 msgid "Use bilinear filtering when scaling textures."
-msgstr ""
+msgstr "Bilineare Filterung bei der Skalierung von Texturen benutzen."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Use key"
-msgstr "Taste drücken"
+msgstr "Benutztaste"
 
 #: src/settings_translation_file.cpp
 msgid "Use mip mapping to scale textures. May slightly increase performance."
 msgstr ""
+"Map-Mapping benutzen, um Texturen zu skalieren. Kann die Performanz\n"
+"leicht erhöhen."
 
 #: src/settings_translation_file.cpp
 msgid "Use trilinear filtering when scaling textures."
-msgstr ""
+msgstr "Trilineare Filterung bei der Skalierung von Texturen benutzen."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Useful for mod developers."
-msgstr "Ehemalige Hauptentwickler"
+msgstr "Nützlich für Mod-Entwickler."
 
 #: src/settings_translation_file.cpp
 msgid "V-Sync"
-msgstr ""
+msgstr "Vertikale Synchronisation"
 
 #: src/settings_translation_file.cpp
 msgid "Vertical initial window size."
-msgstr ""
+msgstr "Anfängliche Fensterhöhe."
 
 #: src/settings_translation_file.cpp
 msgid "Vertical screen synchronization."
+msgstr "Vertikale Bildschirmsynchronisation."
+
+#: src/settings_translation_file.cpp
+msgid "Vertical spawn range"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Video driver"
-msgstr ""
+msgstr "Grafiktreiber"
 
 #: src/settings_translation_file.cpp
 msgid "View bobbing"
-msgstr ""
+msgstr "Auf- und Abbewegung der Ansicht"
 
 #: src/settings_translation_file.cpp
 msgid "View range decrease key"
-msgstr ""
+msgstr "Taste „Sichtweite reduzieren“"
 
 #: src/settings_translation_file.cpp
 msgid "View range increase key"
-msgstr ""
+msgstr "Taste „Sichtweite erhöhen“"
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range maximum"
-msgstr ""
+msgstr "Maximale Sichtweite"
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range minimum"
-msgstr ""
+msgstr "Minimale Sichtweite"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Volume"
 msgstr "Tonlautstärke"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Walking speed"
-msgstr "Wehende Blätter"
+msgstr "Gehgeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Wanted FPS"
-msgstr ""
+msgstr "Gewünschte Bildwiederholrate"
 
 #: src/settings_translation_file.cpp
 msgid "Water level"
-msgstr ""
+msgstr "Meeresspiegel"
 
 #: src/settings_translation_file.cpp
 msgid "Water surface level of the world."
-msgstr ""
+msgstr "Die Höhe des (Meer-)Wassers in der Welt."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving Nodes"
-msgstr "Wehende Blätter"
+msgstr "Wehende Blöcke"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving leaves"
 msgstr "Wehende Blätter"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving plants"
-msgstr "Wogende Pflanzen"
+msgstr "Wehende Pflanzen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving water"
 msgstr "Wasserwellen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving water height"
-msgstr "Wasserwellen"
+msgstr "Wasserwellenhöhe"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving water length"
-msgstr "Wasserwellen"
+msgstr "Wasserwellenlänge"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving water speed"
-msgstr "Wasserwellen"
+msgstr "Wasserwellengeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3446,6 +3969,10 @@ msgid ""
 "filtered in software, but some images are generated directly\n"
 "to hardware (e.g. render-to-texture for nodes in inventory)."
 msgstr ""
+"Falls gui_scaling_filter wahr ist, dann müssen alle GUI-Bilder\n"
+"von der Software gefiltert werden, aber einige Bilder werden\n"
+"direkt zur Hardware erzeugt (z.B. Rendern in die Textur für\n"
+"die Inventarbilder von Blöcken)."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3454,6 +3981,11 @@ msgid ""
 "to the old scaling method, for video drivers that don't\n"
 "propery support downloading textures back from hardware."
 msgstr ""
+"Falls gui_scaling_filter_txr2img auf „wahr“ gesetzt ist, werden\n"
+"diese Bilder von der Hardware zur Software für die Skalierung\n"
+"kopiert. Falls es auf „falsch“ gesetzt ist, wird für alte Videotreiber,\n"
+"die das Herunterladen von Texturen zurück von der Hardware\n"
+"nicht vernünftig unterstützen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3465,6 +3997,16 @@ msgid ""
 "have a visible effect unless bilinear/trilinear/anisotropic filtering is\n"
 "enabled."
 msgstr ""
+"Wenn bilineare, trilineare oder anisotrope Filter benutzt werden, können\n"
+"niedrigauflösende Texturen verschwommen sein, also werden sie automatisch\n"
+"mit Pixelwiederholung vergrößert, um scharfe Pixel zu behalten. Dies setzt "
+"die\n"
+"minimale Texturengröße für die vergrößerten Texturen; höhere Werte führen\n"
+"zu einem schärferen Aussehen, aber erfordern mehr Speicher. Zweierpotenzen\n"
+"werden empfohlen. Ein Wert größer als 1 könnte keinen sichtbaren Effekt\n"
+"hervorbringen, es sei denn, die bilineare, trilineare oder anisotropische "
+"Filterung\n"
+"ist aktiviert."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3475,116 +4017,230 @@ msgid ""
 "-    Those groups have an offset of -32, -32 nodes from the origin.\n"
 "-    Only groups which are within the map_generation_limit are generated"
 msgstr ""
+"Wo der Kartengenerator aufhört.\n"
+"Bitte beachten Sie:\n"
+"-    Begrenzt auf 31000 (größere Werte sind wirkungslos).\n"
+"-    Der Kartengenerator arbeitet in Gruppen von 80×80×80 Blöcken (5×5×5 "
+"Kartenblöcke).\n"
+"-    Diese Gruppen haben einen Abstand von [-32, -32] Blöcken vom Ursprung.\n"
+"-    Nur Gruppen, welche innerhalb der von map_generation_limit definierten "
+"Grenze liegen, werden erzeugt."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Whether freetype fonts are used, requires freetype support to be compiled in."
 msgstr ""
+"Ob FreeType-Schriften benutzt werden.\n"
+"Dafür muss Minetest mit FreeType-Unterstüzung kompiliert worden sein."
 
 #: src/settings_translation_file.cpp
 msgid "Whether node texture animations should be desynchronized per mapblock."
 msgstr ""
+"Ob Blocktexturanimationen pro Kartenblock desynchronisiert sein sollten."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Whether players are shown to clients without any range limit.\n"
 "Deprecated, use the setting player_transfer_distance instead."
 msgstr ""
+"Ob Spieler an Klienten ohne Distanzbegrenzung angezeit werden.\n"
+"Veraltet, benutzen Sie die Einstellung „player_transfer_distance“ "
+"stattdessen."
 
 #: src/settings_translation_file.cpp
 msgid "Whether to allow players to damage and kill each other."
-msgstr ""
+msgstr "Ob sich Spieler gegenseitig Schaden zufügen und töten können."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Whether to ask clients to reconnect after a (Lua) crash.\n"
 "Set this to true if your server is set up to restart automatically."
 msgstr ""
+"Ob Klienten gefragt werden sollen, sich nach einem (Lua-)Absturz\n"
+"neu zu verbinden. Auf „wahr“ setzen, falls Ihr Server für auto-\n"
+"matische Neustarts eingerichtet ist."
 
 #: src/settings_translation_file.cpp
 msgid "Whether to fog out the end of the visible area."
-msgstr ""
+msgstr "Ob das Ende des sichtbaren Gebietes im Nebel verschwinden soll."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Whether to show the client debug info (has the same effect as hitting F5)."
 msgstr ""
+"Ob der Klienten Debug-Informationen zeigen soll (hat die selbe Wirkung\n"
+"wie das Drücken von F5)."
 
 #: src/settings_translation_file.cpp
 msgid "Width of the selectionbox's lines around nodes."
-msgstr ""
+msgstr "Breite der Linien der Auswahlbox um Blöcke."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "World directory (everything in the world is stored here).\n"
 "Not needed if starting from the main menu."
 msgstr ""
+"Weltverzeichnis (alles in der Welt wird hier gespeichert).\n"
+"Nicht benötigt, wenn vom Hauptmenü aus gestartet wird."
 
 #: src/settings_translation_file.cpp
 msgid "cURL file download timeout"
-msgstr ""
+msgstr "cURL-Dateidownload-Zeitüberschreitung"
 
 #: src/settings_translation_file.cpp
 msgid "cURL parallel limit"
-msgstr ""
+msgstr "cURL-Parallel-Begrenzung"
 
 #: src/settings_translation_file.cpp
 msgid "cURL timeout"
-msgstr ""
+msgstr "cURL-Zeitüberschreitung"
 
-#~ msgid "Rendering:"
-#~ msgstr "Rendering:"
+#~ msgid "2x"
+#~ msgstr "2x"
 
-#~ msgid "Restart minetest for driver change to take effect"
-#~ msgstr "Neustart nach Ändern des Treibers erforderlich"
+#~ msgid "4x"
+#~ msgstr "4x"
 
-#~ msgid "Downloading"
-#~ msgstr "Lade herunter"
+#~ msgid "8x"
+#~ msgstr "8x"
 
-#~ msgid "Left click: Move all items, Right click: Move single item"
-#~ msgstr "Linksklick: Alle Items bewegen, Rechtsklick: Einzelnes Item bewegen"
+#~ msgid "Antialiasing:"
+#~ msgstr "Kantenglättung:"
 
-#~ msgid "is required by:"
-#~ msgstr "wird benötigt von:"
+#~ msgid "Are you sure to reset your singleplayer world?"
+#~ msgstr "Sind Sie sicher, dass Sie die Einzelspielerwelt löschen wollen?"
 
-#~ msgid "Configuration saved.  "
-#~ msgstr "Konfiguration gespeichert.  "
+#~ msgid "Fancy Leaves"
+#~ msgstr "Schöne Blätter"
 
-#~ msgid "Warning: Configuration not consistent.  "
-#~ msgstr "Warnung: Konfiguration nicht konsistent.  "
+#~ msgid "Mipmap"
+#~ msgstr "Mipmap"
 
-#~ msgid "Cannot create world: Name contains invalid characters"
-#~ msgstr "Kann Welt nicht erstellen: Name enthält ungültige Zeichen"
+#~ msgid "Mipmap + Aniso. Filter"
+#~ msgstr "Mipmap u. Aniso. Filter"
 
-#~ msgid "Show Public"
-#~ msgstr "Zeige öffentliche"
+#~ msgid "No Mipmap"
+#~ msgstr "Keine Mipmap"
 
-#~ msgid "Show Favorites"
-#~ msgstr "Zeige Favoriten"
+#~ msgid "No!!!"
+#~ msgstr "Nein!!!"
 
-#~ msgid "Leave address blank to start a local server."
-#~ msgstr "Lasse die Adresse frei um einen eigenen Server zu starten."
+#~ msgid "Opaque Leaves"
+#~ msgstr "Undurchs. Blätter"
 
-#~ msgid "Create world"
-#~ msgstr "Welt erstellen"
+#~ msgid "Opaque Water"
+#~ msgstr "Undurchs. Wasser"
 
-#~ msgid "Address required."
-#~ msgstr "Adresse benötigt."
+#~ msgid "Reset singleplayer world"
+#~ msgstr "Einzelspielerwelt zurücksetzen"
 
-#~ msgid "Cannot delete world: Nothing selected"
-#~ msgstr "Kann Welt nicht löchen: Nichts ausgewählt"
+#~ msgid "Scaling factor applied to menu elements: "
+#~ msgstr "Auf Menüelemente angewandter Skalierfaktor: "
 
-#~ msgid "Files to be deleted"
-#~ msgstr "Zu löschende Dateien"
+#~ msgid "Simple Leaves"
+#~ msgstr "Einfache Blätter"
 
-#~ msgid "Cannot create world: No games found"
-#~ msgstr "Kann Welt nicht erstellen: Keine Spiele gefunden"
+#~ msgid "Texturing:"
+#~ msgstr "Texturierung:"
 
-#~ msgid "Cannot configure world: Nothing selected"
-#~ msgstr "Kann Welt nicht konfigurieren: Nichts ausgewählt"
+#~ msgid "To enable shaders the OpenGL driver needs to be used."
+#~ msgstr "Um Shader zu benutzen, muss der OpenGL-Treiber benutzt werden."
 
-#~ msgid "Failed to delete all world files"
-#~ msgstr "Es konnten nicht alle Welt Dateien gelöscht werden"
+#~ msgid "Touch free target"
+#~ msgstr "Berührungsfreies Ziel"
+
+#~ msgid "Touchthreshold (px)"
+#~ msgstr "Berührungsempfindlichkeit (px)"
+
+#~ msgid " KB/s"
+#~ msgstr " KB/s"
+
+#~ msgid " MB/s"
+#~ msgstr " MB/s"
+
+#~ msgid "Game Name"
+#~ msgstr "Spielname"
+
+#~ msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
+#~ msgstr "Gamemgr: Kann mod \"$1\" nicht in Spiel \"$2\" kopieren"
+
+#~ msgid "GAMES"
+#~ msgstr "SPIELE"
+
+#~ msgid "Mods:"
+#~ msgstr "Mods:"
+
+#~ msgid "new game"
+#~ msgstr "neues Spiel"
+
+#~ msgid "EDIT GAME"
+#~ msgstr "SPIEL ÄNDERN"
+
+#~ msgid "Remove selected mod"
+#~ msgstr "Ausgewählte Mod löschen"
+
+#~ msgid "<<-- Add mod"
+#~ msgstr "<<-- Mod hinzufügen"
+
+#~ msgid "CLIENT"
+#~ msgstr "CLIENT"
+
+#~ msgid "Favorites:"
+#~ msgstr "Favoriten:"
+
+#~ msgid "START SERVER"
+#~ msgstr "SERVER STARTEN"
+
+#~ msgid "Name"
+#~ msgstr "Name"
+
+#~ msgid "Password"
+#~ msgstr "Passwort"
+
+#~ msgid "SETTINGS"
+#~ msgstr "EINSTELLUNGEN"
+
+#~ msgid "Preload item visuals"
+#~ msgstr "Lade Inventarbilder vor"
+
+#~ msgid "Finite Liquid"
+#~ msgstr "Endliches Wasser"
+
+#~ msgid "SINGLE PLAYER"
+#~ msgstr "EINZELSPIELER"
+
+#~ msgid "TEXTURE PACKS"
+#~ msgstr "TEXTUREN PAKETE"
+
+#~ msgid "MODS"
+#~ msgstr "MODS"
+
+#~ msgid "Add mod:"
+#~ msgstr "Modifikation hinzufügen:"
+
+#~ msgid "Local install"
+#~ msgstr "Lokale Install."
+
+#~ msgid ""
+#~ "Warning: Some mods are not configured yet.\n"
+#~ "They will be enabled by default when you save the configuration.  "
+#~ msgstr ""
+#~ "Warnung: Einige Mods sind noch nicht konfiguriert.\n"
+#~ "Sie werden aktiviert wenn die Konfiguration gespeichert wird.  "
+
+#~ msgid ""
+#~ "Warning: Some configured mods are missing.\n"
+#~ "Their setting will be removed when you save the configuration.  "
+#~ msgstr ""
+#~ "Warnung: Einige konfigurierte Mods fehlen.\n"
+#~ "Mod Einstellungen werden gelöscht wenn die Konfiguration gespeichert "
+#~ "wird.  "
+
+#~ msgid "KEYBINDINGS"
+#~ msgstr "TASTEN EINST."
+
+#~ msgid "Delete map"
+#~ msgstr "Karte löschen"
 
 #~ msgid ""
 #~ "Default Controls:\n"
@@ -3610,149 +4266,69 @@ msgstr ""
 #~ "- I: Inventar\n"
 #~ "- T: Chat\n"
 
-#~ msgid "Delete map"
-#~ msgstr "Karte löschen"
+#~ msgid "Failed to delete all world files"
+#~ msgstr "Es konnten nicht alle Welt Dateien gelöscht werden"
 
-#~ msgid "KEYBINDINGS"
-#~ msgstr "TASTEN EINST."
+#~ msgid "Cannot configure world: Nothing selected"
+#~ msgstr "Kann Welt nicht konfigurieren: Nichts ausgewählt"
 
-#~ msgid ""
-#~ "Warning: Some configured mods are missing.\n"
-#~ "Their setting will be removed when you save the configuration.  "
-#~ msgstr ""
-#~ "Warnung: Einige konfigurierte Mods fehlen.\n"
-#~ "Mod Einstellungen werden gelöscht wenn die Konfiguration gespeichert "
-#~ "wird.  "
+#~ msgid "Cannot create world: No games found"
+#~ msgstr "Kann Welt nicht erstellen: Keine Spiele gefunden"
 
-#~ msgid ""
-#~ "Warning: Some mods are not configured yet.\n"
-#~ "They will be enabled by default when you save the configuration.  "
-#~ msgstr ""
-#~ "Warnung: Einige Mods sind noch nicht konfiguriert.\n"
-#~ "Sie werden aktiviert wenn die Konfiguration gespeichert wird.  "
+#~ msgid "Files to be deleted"
+#~ msgstr "Zu löschende Dateien"
 
-#~ msgid "Local install"
-#~ msgstr "Lokale Install."
+#~ msgid "Cannot delete world: Nothing selected"
+#~ msgstr "Kann Welt nicht löchen: Nichts ausgewählt"
 
-#~ msgid "Add mod:"
-#~ msgstr "Modifikation hinzufügen:"
+#~ msgid "Address required."
+#~ msgstr "Adresse benötigt."
 
-#~ msgid "MODS"
-#~ msgstr "MODS"
+#~ msgid "Create world"
+#~ msgstr "Welt erstellen"
 
-#~ msgid "TEXTURE PACKS"
-#~ msgstr "TEXTUREN PAKETE"
+#~ msgid "Leave address blank to start a local server."
+#~ msgstr "Lasse die Adresse frei um einen eigenen Server zu starten."
 
-#~ msgid "SINGLE PLAYER"
-#~ msgstr "EINZELSPIELER"
+#~ msgid "Show Favorites"
+#~ msgstr "Zeige Favoriten"
 
-#~ msgid "Finite Liquid"
-#~ msgstr "Endliches Wasser"
+#~ msgid "Show Public"
+#~ msgstr "Zeige öffentliche"
 
-#~ msgid "Preload item visuals"
-#~ msgstr "Lade Inventarbilder vor"
+#~ msgid "Cannot create world: Name contains invalid characters"
+#~ msgstr "Kann Welt nicht erstellen: Name enthält ungültige Zeichen"
 
-#~ msgid "SETTINGS"
-#~ msgstr "EINSTELLUNGEN"
+#~ msgid "Warning: Configuration not consistent.  "
+#~ msgstr "Warnung: Konfiguration nicht konsistent.  "
 
-#~ msgid "Password"
-#~ msgstr "Passwort"
+#~ msgid "Configuration saved.  "
+#~ msgstr "Konfiguration gespeichert.  "
 
-#~ msgid "Name"
-#~ msgstr "Name"
+#~ msgid "is required by:"
+#~ msgstr "wird benötigt von:"
 
-#~ msgid "START SERVER"
-#~ msgstr "SERVER STARTEN"
+#~ msgid "Left click: Move all items, Right click: Move single item"
+#~ msgstr "Linksklick: Alle Items bewegen, Rechtsklick: Einzelnes Item bewegen"
 
-#~ msgid "Favorites:"
-#~ msgstr "Favoriten:"
+#~ msgid "Downloading"
+#~ msgstr "Lade herunter"
 
-#~ msgid "CLIENT"
-#~ msgstr "CLIENT"
+#~ msgid "Restart minetest for driver change to take effect"
+#~ msgstr "Neustart nach Ändern des Treibers erforderlich"
 
-#~ msgid "<<-- Add mod"
-#~ msgstr "<<-- Mod hinzufügen"
+#~ msgid "Rendering:"
+#~ msgstr "Rendering:"
 
-#~ msgid "Remove selected mod"
-#~ msgstr "Ausgewählte Mod löschen"
+#~ msgid "If enabled, "
+#~ msgstr "Wenn aktiviert, "
 
-#~ msgid "EDIT GAME"
-#~ msgstr "SPIEL ÄNDERN"
+#~ msgid "If disabled "
+#~ msgstr "Wenn deaktiviert "
 
-#~ msgid "new game"
-#~ msgstr "neues Spiel"
+#~ msgid "Enable a bit lower water surface, so it doesn't "
+#~ msgstr "Senkt ein bisschen den Wasserspiegel, so tut es nicht "
 
-#~ msgid "Mods:"
-#~ msgstr "Mods:"
-
-#~ msgid "GAMES"
-#~ msgstr "SPIELE"
-
-#~ msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
-#~ msgstr "Gamemgr: Kann mod \"$1\" nicht in Spiel \"$2\" kopieren"
-
-#~ msgid "Game Name"
-#~ msgstr "Spielname"
-
-#~ msgid " MB/s"
-#~ msgstr " MB/s"
-
-#~ msgid " KB/s"
-#~ msgstr " KB/s"
-
-#~ msgid "Touchthreshold (px)"
-#~ msgstr "Berührungsempfindlichkeit (px)"
-
-#~ msgid "Touch free target"
-#~ msgstr "Berührungsfreies Ziel"
-
-#~ msgid "To enable shaders the OpenGL driver needs to be used."
-#~ msgstr "Um Shader zu benutzen, muss der OpenGL-Treiber benutzt werden."
-
-#~ msgid "Texturing:"
-#~ msgstr "Texturierung:"
-
-#~ msgid "Simple Leaves"
-#~ msgstr "Einfache Blätter"
-
-#~ msgid "Scaling factor applied to menu elements: "
-#~ msgstr "Auf Menüelemente angewandter Skalierfaktor: "
-
-#~ msgid "Reset singleplayer world"
-#~ msgstr "Einzelspielerwelt zurücksetzen"
-
-#~ msgid "Opaque Water"
-#~ msgstr "Undurchs. Wasser"
-
-#~ msgid "Opaque Leaves"
-#~ msgstr "Undurchs. Blätter"
-
-#~ msgid "No!!!"
-#~ msgstr "Nein!!!"
-
-#~ msgid "No Mipmap"
-#~ msgstr "Keine Mipmap"
-
-#~ msgid "Mipmap + Aniso. Filter"
-#~ msgstr "Mipmap u. Aniso. Filter"
-
-#~ msgid "Mipmap"
-#~ msgstr "Mipmap"
-
-#~ msgid "Fancy Leaves"
-#~ msgstr "Schöne Blätter"
-
-#~ msgid "Are you sure to reset your singleplayer world?"
-#~ msgstr "Sind Sie sicher, dass Sie die Einzelspielerwelt löschen wollen?"
-
-#~ msgid "Antialiasing:"
-#~ msgstr "Kantenglättung:"
-
-#~ msgid "8x"
-#~ msgstr "8x"
-
-#~ msgid "4x"
-#~ msgstr "4x"
-
-#~ msgid "2x"
-#~ msgstr "2x"
+#, fuzzy
+#~ msgid "\""
+#~ msgstr "”"

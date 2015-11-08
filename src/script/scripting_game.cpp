@@ -103,6 +103,7 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 	LuaPerlinNoiseMap::Register(L);
 	LuaPseudoRandom::Register(L);
 	LuaPcgRandom::Register(L);
+	LuaSecureRandom::Register(L);
 	LuaVoxelManip::Register(L);
 	NodeMetaRef::Register(L);
 	NodeTimerRef::Register(L);
