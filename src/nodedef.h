@@ -38,7 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "itemgroup.h"
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
-#include "fmbitset.h"
+#include "fm_bitset.h"
 #include <unordered_set>
 
 

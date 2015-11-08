@@ -1,5 +1,5 @@
 /*
-fmbitset.cpp
+fm_bitset.cpp
 Copyright (C) 2013 xyz, Ilya Zhuravlev <whatever@xyz.is>
 */
 
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fmbitset.h>
+#include <fm_bitset.h>
 
 FMBitset::FMBitset(size_t capacity):
 	m_bits(capacity, 0),

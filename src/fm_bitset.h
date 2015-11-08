@@ -1,5 +1,5 @@
 /*
-fmbitset.h
+fm_bitset.h
 Copyright (C) 2013 xyz, Ilya Zhuravlev <whatever@xyz.is>
 */
 

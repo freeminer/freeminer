@@ -52,7 +52,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "emerge.h"
 #include "util/serialize.h"
-#include "fmbitset.h"
+#include "fm_bitset.h"
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <random>
