@@ -78,7 +78,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define BS (1.0)
 #define HBS (BS/2)
 
-#define BS_OLD (10.0)
+// if BS=10.0 set this to 1.0
+#define BS_COMPAT (10.0)
+#define BS_NET (10.0)
 
 // Dimension of a MapBlock
 #define MAP_BLOCKP 4

@@ -34,7 +34,7 @@ void StaticObject::serialize(std::ostream &os)
 	// type
 	writeU8(os, type);
 	// pos
-	writeV3F1000(os, pos * BS_OLD); // todo: remove old compat *10
+	writeV3F1000(os, pos * BS_COMPAT); // todo: remove old compat *10
 	// data
 	os<<serializeString(data);
 }
@@ -43,7 +43,7 @@ bool StaticObject::deSerialize(std::istream &is, u8 version)
 	// type
 	type = readU8(is);
 	// pos
-	pos = readV3F1000(is)/BS_OLD;
+	pos = readV3F1000(is)/BS_NET;
 	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
 		errorstream << "deSerialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
 		return true;
