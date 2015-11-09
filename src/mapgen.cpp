@@ -91,6 +91,7 @@ Mapgen::Mapgen()
 Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
 	gennotify(emerge->gen_notify_on, &emerge->gen_notify_on_deco_ids)
 {
+	this->m_emerge = emerge;
 	generating  = false;
 	id          = mapgenid;
 	seed        = (int)params->seed;

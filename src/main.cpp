@@ -22,11 +22,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifdef _MSC_VER
-#ifndef SERVER // Dedicated server isn't linked with Irrlicht
-	#pragma comment(lib, "Irrlicht.lib")
-	// This would get rid of the console window
-	//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
-#endif
+	#ifndef SERVER // Dedicated server isn't linked with Irrlicht
+		#pragma comment(lib, "Irrlicht.lib")
+		// This would get rid of the console window
+		//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
+	#endif
 	//#pragma comment(lib, "zlibwapi.lib")
 	#pragma comment(lib, "Shell32.lib")
 #endif
@@ -68,8 +68,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #ifdef HAVE_TOUCHSCREENGUI
-#include "touchscreengui.h"
+	#include "touchscreengui.h"
 #endif
+
+/*
+#if !defined(SERVER) && \
+	(IRRLICHT_VERSION_MAJOR == 1) && \
+	(IRRLICHT_VERSION_MINOR == 8) && \
+	(IRRLICHT_VERSION_REVISION == 2)
+	#error "Irrlicht 1.8.2 is known to be broken - please update Irrlicht to version >= 1.8.3"
+#endif
+*/
 
 #define DEBUGFILE "debug.txt"
 #define DEFAULT_SERVER_PORT 30000
