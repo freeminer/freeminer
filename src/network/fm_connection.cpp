@@ -357,10 +357,12 @@ void Connection::connect(Address addr)
 void Connection::disconnect()
 {
 	//MutexAutoLock peerlock(m_peers_mutex);
-	m_peers.lock_shared_rec();
+	auto lock = m_peers.lock_unique_rec();
 	for (auto i = m_peers.begin();
 			i != m_peers.end(); ++i)
 		enet_peer_disconnect(i->second, 0);
+	m_peers.clear();
+	m_peers_address.clear();
 }
 
 void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
