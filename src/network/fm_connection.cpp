@@ -133,6 +133,8 @@ void * Connection::run()
 		receive();
 	}
 
+	disconnect();
+
 	return nullptr;
 }
 
@@ -336,16 +338,14 @@ void Connection::connect(Address addr)
 	*((u16*)peer->data) = PEER_ID_SERVER;
 
 	ENetEvent event;
-	int ret = enet_host_service (m_enet_host, & event, 5000);
+	int ret = enet_host_service (m_enet_host, & event, /*CONNECTION_TIMEOUT*/ 10 * 1000);
 	if (ret > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 		m_peers.set(PEER_ID_SERVER, peer);
 		m_peers_address.set(PEER_ID_SERVER, addr);
 	} else {
-		errorstream<<"connect enet_host_service ret="<<ret<<std::endl;
-		if (ret == 0) {
-			ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-			putEvent(ev);
-		}
+		errorstream << "connect enet_host_service ret=" << ret << " event.type=" << event.type << std::endl;
+		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+		putEvent(ev);
 
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
