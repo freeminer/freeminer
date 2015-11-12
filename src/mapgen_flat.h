@@ -50,7 +50,7 @@ struct MapgenFlatParams : public MapgenSpecificParams {
 	MapgenFlatParams();
 	~MapgenFlatParams() {}
 
-	void readParams(const Settings *settings);
+	void readParams(Settings *settings);
 	void writeParams(Settings *settings) const;
 };
 

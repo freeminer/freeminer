@@ -153,7 +153,7 @@ MapgenFlatParams::MapgenFlatParams()
 }
 
 
-void MapgenFlatParams::readParams(const Settings *settings)
+void MapgenFlatParams::readParams(Settings *settings)
 {
 	settings->getFlagStrNoEx("mgflat_spflags", spflags, flagdesc_mapgen_flat);
 
