@@ -620,7 +620,7 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 	*/
 	m_map->finishBlockMake(bmdata, modified_blocks);
 
-	MapBlock *block = m_map->getBlockNoCreateNoEx(pos);
+	MapBlock *block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	if (!block) {
 		errorstream << "EmergeThread::finishGen: Couldn't grab block we "
 			"just generated: " << PP(pos) << std::endl;

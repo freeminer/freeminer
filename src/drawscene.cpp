@@ -501,6 +501,7 @@ void draw_scene(video::IVideoDriver *driver, scene::ISceneManager *smgr,
 	timer.stop(true);
 }
 
+static std::wstring text_old;
 /*
 	Draws a screen with a single text on it.
 	Text will be removed when the screen is drawn the next time.
@@ -512,7 +513,10 @@ void draw_load_screen(const std::wstring &text, IrrlichtDevice* device,
 	video::IVideoDriver* driver    = device->getVideoDriver();
 
 	if (device->getVideoDriver()->getDriverType() == video::EDT_NULL) {
-		actionstream<<" ... "<< text << std::endl;
+		if (text != text_old) {
+			actionstream<<" ... "<< text << std::endl;
+			text_old = text;
+		}
 		return;
 	}
 
