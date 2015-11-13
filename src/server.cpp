@@ -3125,7 +3125,8 @@ void Server::handleChatInterfaceEvent(ChatEvent *evt)
 }
 
 std::wstring Server::handleChat(const std::string &name, const std::wstring &wname,
-	const std::wstring &wmessage, u16 peer_id_to_avoid_sending)
+	const std::wstring &wmessage, bool check_shout_priv,
+	u16 peer_id_to_avoid_sending)
 {
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
@@ -3153,10 +3154,15 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 		else
 			line += L"-!- Invalid command: " + str_split(wcmd, L' ')[0];
 	} else {
-		line += L"<";
-		line += wname;
-		line += L"> ";
-		line += wmessage;
+		if (check_shout_priv && !checkPriv(name, "shout")) {
+			line += L"-!- You don't have permission to shout.";
+			broadcast_line = false;
+		} else {
+			line += L"<";
+			line += wname;
+			line += L"> ";
+			line += wmessage;
+		}
 	}
 
 	/*
