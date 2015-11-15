@@ -143,6 +143,8 @@ IRRLICHT_TIMESTAMP_INT = $(ROOT)/deps/irrlicht_timestamp
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
 IRRLICHT_URL_GIT = https://github.com/zaki/irrlicht.git
 IRRLICHT_GIT_BRANCH = ogl-es
+IRRLICHT_GIT_COMMIT = 58fa0cf
+#IRRLICHT_GIT_COMMIT = ogl-es
 
 OPENSSL_VERSION = 1.0.2d
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
@@ -560,6 +562,7 @@ irrlicht_download :
 		#svn co ${IRRLICHT_URL_SVN} irrlicht || exit 1;                         \
 		git clone --recursive --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
 		cd irrlicht;                                                           \
+		git checkout ${IRRLICHT_GIT_COMMIT}; \
 		mkdir -p lib/Android; \
 		patch -p1 < ../../irrlicht-touchcount.patch || exit 1;                 \
 		patch -p1 < ../../irrlicht-back_button.patch || exit 1;                \
