@@ -33,6 +33,7 @@ local function create_world_formspec(dialogdata)
 	end
 	mglist = mglist:sub(1, -2)
 	
+	gamemgr.update_gamelist()
 	local gameid = core.setting_get("menu_last_game")
 	
 	local game, gameidx = nil , 0
