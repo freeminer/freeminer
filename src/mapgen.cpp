@@ -45,11 +45,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 
 FlagDesc flagdesc_mapgen[] = {
-	{"trees",    MG_TREES},
-	{"caves",    MG_CAVES},
-	{"dungeons", MG_DUNGEONS},
-	{"flat",     MG_FLAT},
-	{"light",    MG_LIGHT},
+	{"trees",       MG_TREES},
+	{"caves",       MG_CAVES},
+	{"dungeons",    MG_DUNGEONS},
+	{"flat",        MG_FLAT},
+	{"light",       MG_LIGHT},
+	{"decorations", MG_DECORATIONS},
 	{NULL,       0}
 };
 
