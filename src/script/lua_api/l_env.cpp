@@ -1021,6 +1021,7 @@ int ModApiEnvMod::l_get_heat(lua_State *L)
 	GET_ENV_PTR;
 
 	auto pos = read_v3POS(L, 1);
+
 	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos));
 	return 1;
 }

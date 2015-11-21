@@ -260,19 +260,23 @@ void Map::unspreadLight(enum LightBank bank,
 		v3s16 blockpos = getNodeBlockPos(pos);
 
 		// Only fetch a new block if the block position has changed
+/*
 		try{
+*/
 			if(block == NULL || blockpos != blockpos_last){
-				block = getBlockNoCreate(blockpos);
+				block = getBlockNoCreateNoEx(blockpos);
 				blockpos_last = blockpos;
 
 				block_checked_in_modified = false;
 				blockchangecount++;
 			}
+/*
 		}
 		catch(InvalidPositionException &e)
 		{
 			continue;
 		}
+*/
 
 		if(!block || block->isDummy())
 			continue;
@@ -377,6 +381,7 @@ void Map::unspreadLight(enum LightBank bank,
 				if(modified_blocks.find(blockpos) == modified_blocks.end())
 				{
 */
+					++block->lighting_broken;
 					modified_blocks[blockpos] = block;
 /*
 				}

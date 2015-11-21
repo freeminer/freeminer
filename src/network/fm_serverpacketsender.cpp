@@ -705,8 +705,8 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 	block->serialize(os, ver, false, client->net_proto_version_fm >= 1);
 	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
 
-	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)block->heat);
-	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)block->humidity);
+	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)(block->heat + block->heat_add));
+	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)(block->humidity + block->humidity_add));
 	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);

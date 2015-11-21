@@ -162,7 +162,7 @@ our $commands = {
     },
     cmake => sub {
         my %D;
-        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
+        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`"; # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, if $config->{cmake_msan};

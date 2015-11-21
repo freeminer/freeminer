@@ -737,11 +737,16 @@ void ServerEnvironment::loadMeta()
 		u32 active_object_count = this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
 		m_env->m_added_objects = 0;
 
+		auto *ndef = m_env->getGameDef()->ndef();
+
 #if !ENABLE_THREADS
 		auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
 		if (!lock_map->owns_lock())
 			return;
 #endif
+
+		int heat_num = 0;
+		int heat_sum = 0;
 
 		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
@@ -758,6 +763,16 @@ void ServerEnvironment::loadMeta()
 			content_t c = n.getContent();
 			if (c == CONTENT_IGNORE)
 				continue;
+
+			{
+				int hot = ((ItemGroupList) ndef->get(n).groups)["hot"];
+				//todo: int cold = ((ItemGroupList) ndef->get(n).groups)["cold"];
+				//also humidity todo.
+				if (hot) {
+					++heat_num;
+					heat_sum += hot;
+				}
+			}
 
 			if (!m_aabms[c]) {
 				if (block->content_only != CONTENT_IGNORE)
@@ -802,6 +817,21 @@ neighbor_found:
 				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos, activate});
 			}
 		}
+		if (heat_num) {
+			float heat_avg = heat_sum/heat_num;
+			const int min = 32;
+			float magic = heat_avg >= 1 ? min+(1024-min)/(4096/heat_avg) : min;
+			float heat_add = heat_avg * (heat_num < magic ? heat_num/magic : 1);
+			if (block->heat > heat_add) {
+				block->heat_add = 0;
+			} else if (block->heat + heat_add > heat_avg)  {
+				block->heat_add = heat_avg - block->heat;
+			} else {
+				block->heat_add = heat_add;
+			}
+			//infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<" heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
+		}
+
 	//infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 
 	}
