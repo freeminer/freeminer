@@ -9,8 +9,9 @@ Freeminer is based on Minetest which is developed by a [number of contributors](
 It aims to make the game fun while trading off some bits of perfectionism.
 
 ## Installing
-- **Android**: Google Play - https://play.google.com/store/apps/details?id=org.freeminer.freeminer
-- **Android**: F-droid - https://f-droid.org/repository/browse/?fdid=org.freeminer.freeminer
+- **Android**:
+	* Google Play - https://play.google.com/store/apps/details?id=org.freeminer.freeminer
+	* F-droid - https://f-droid.org/repository/browse/?fdid=org.freeminer.freeminer
 - **Windows**: https://github.com/freeminer/freeminer/releases
 - **Ubuntu**: Install http://www.ubuntuupdates.org/ppa/getdeb_games and run:
 
@@ -59,7 +60,7 @@ It aims to make the game fun while trading off some bits of perfectionism.
 Install dependencies. Here's an example for
 
 Debian/Ubuntu:
-```bash
+```sh
 sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev \
 libpng12-dev libjpeg-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev \
 libsqlite3-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev \
@@ -80,7 +81,7 @@ gettext-devel msgpack msgpack-devel spatialindex-devel
 ___
 Arch Linux:
 ```sh
-sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake msgpack-c
+sudo pacman -S curl irrlicht leveldb libvorbis luajit openal sqlite cmake msgpack-c freetype2
 ```
 ___
 Gentoo/Funtoo:
