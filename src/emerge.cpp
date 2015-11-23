@@ -114,7 +114,7 @@ MapgenDesc g_reg_mapgens[] = {
 	{"v7",         new MapgenFactoryV7,         true},
 	{"math",       new MapgenFactoryMath,       true},
 	{"flat",       new MapgenFactoryFlat,       false},
-	{"fractal",    new MapgenFactoryFractal,    false},
+	{"fractal",    new MapgenFactoryFractal,    true},
 	{"singlenode", new MapgenFactorySinglenode, false},
 };
 
