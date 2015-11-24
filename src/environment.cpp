@@ -819,7 +819,7 @@ neighbor_found:
 		}
 		if (heat_num) {
 			float heat_avg = heat_sum/heat_num;
-			const int min = 32;
+			const int min = 2 * MAP_BLOCKSIZE;
 			float magic = heat_avg >= 1 ? min+(1024-min)/(4096/heat_avg) : min;
 			float heat_add = heat_avg * (heat_num < magic ? heat_num/magic : 1);
 			if (block->heat > heat_add) {
