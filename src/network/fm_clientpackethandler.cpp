@@ -211,18 +211,23 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			m_localserver->getMap().saveBlock(block);
 		}
 
-		if (new_block)
-			if (!m_env.getMap().insertBlock(block))
+		if (new_block) {
+			if (!m_env.getMap().insertBlock(block)) {
 				delete block;
+				block = nullptr;
+			}
+		}
 
 		/*
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		updateMeshTimestampWithEdge(p);
-		if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
-			if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
-				addUpdateMeshTaskWithEdge(p);
+		if (block) {
+			updateMeshTimestampWithEdge(p);
+			if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
+				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
+					addUpdateMeshTaskWithEdge(p);
+			}
 		}
 
 /*

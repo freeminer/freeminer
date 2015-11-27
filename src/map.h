@@ -184,7 +184,7 @@ public:
 	void getBlockCacheFlush();
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=true)
+	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=false)
 	{ return getBlockNoCreateNoEx(p); }
 
 	// Returns InvalidPositionException if not found
@@ -455,7 +455,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock *emergeBlock(v3s16 p, bool create_blank=true);
+	MapBlock *emergeBlock(v3s16 p, bool create_blank=false);
 
 	/*
 		Try to get a block.
