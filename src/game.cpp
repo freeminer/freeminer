@@ -3336,7 +3336,7 @@ void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 void Game::increaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
-	s16 range_new = range * 2;
+	s16 range_new = range * 1.5;
 
 	// it's < 0 if it's outside the range of s16
 	// and increase it directly from 1 to 5 for less key pressing
@@ -3353,7 +3353,7 @@ void Game::increaseViewRange(float *statustext_time)
 void Game::decreaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
-	s16 range_new = range / 2;
+	s16 range_new = range / 1.5;
 
 	if (range_new == 0)
 		range_new = 1;
