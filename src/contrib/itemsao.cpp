@@ -113,7 +113,7 @@ void ItemSAO::step(float dtime, bool send_recommended)
 	m_timer_before_loot -= dtime;
 	// When loot timer expire, stop object move
 	if (m_timer_before_loot <= 0.0f && m_velocity != v3f(0,0,0)) {
-		m_velocity = v3f(0,0,0);
+		m_velocity = v3f(0,m_velocity.Y,0);
 	}
 
 	m_life_timer -= dtime;
