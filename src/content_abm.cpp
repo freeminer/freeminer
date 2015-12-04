@@ -198,7 +198,7 @@ public:
 		return s;
 	}
 	virtual u32 getNeighborsRange()
-	{ return 3; }
+	{ return 2; }
 	virtual float getTriggerInterval()
 	{ return 10; }
 	virtual u32 getTriggerChance()
