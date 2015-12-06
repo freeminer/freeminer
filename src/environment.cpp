@@ -2879,7 +2879,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);
 		MapNode n = m_map->getNodeNoEx(p);
-		ContentFeatures c = m_gamedef->ndef()->get(n);
+		const ContentFeatures &c = m_gamedef->ndef()->get(n);
 		u8 drowning_damage = c.drowning;
 		if(drowning_damage > 0 && lplayer->hp > 0){
 			u16 breath = lplayer->getBreath();
@@ -2904,7 +2904,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);
 		MapNode n = m_map->getNodeNoEx(p);
-		ContentFeatures c = m_gamedef->ndef()->get(n);
+		const ContentFeatures &c = m_gamedef->ndef()->get(n);
 		if (!lplayer->hp){
 			lplayer->setBreath(11);
 		}

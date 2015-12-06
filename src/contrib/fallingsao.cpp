@@ -123,7 +123,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 	//bool exists = false;
 	MapNode n = m_env->getMap().getNode(p),
 			n_under = m_env->getMap().getNode(floatToInt(p_under, BS));
-	ContentFeatures f = ndef->get(n), f_under = ndef->get(n_under);
+	const ContentFeatures &f = ndef->get(n), f_under = ndef->get(n_under);
 
 	if (!n || (f_under.walkable || (itemgroup_get(f_under.groups, "float") &&
 			f_under.liquid_type == LIQUID_NONE))) {

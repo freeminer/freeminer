@@ -243,13 +243,13 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, int recurse, int fast, bool 
 		for (s32 y = pos.Y - 1; y <= pos.Y + 1; y++) {
 			for (s32 z = pos.Z - 1; z <= pos.Z + 1; z++) {
 				MapNode n = m_map->getNode(v3s16(x,y,z));
-				ContentFeatures f = ndef->get(n);
+				const ContentFeatures &f = ndef->get(n);
 				ItemGroupList groups = f.groups;
 
 				// Check is the node is considered valid to fall
 				if (destroy || itemgroup_get(groups, "falling_node")) {
 					MapNode n_bottom = m_map->getNode(v3s16(x, y - 1, z));
-					ContentFeatures f_under = ndef->get(n_bottom);
+					const ContentFeatures &f_under = ndef->get(n_bottom);
 
 					if ((itemgroup_get(groups, "float") == 0 || f_under.liquid_type == LIQUID_NONE) &&
 						(f.name != f_under.name || (f_under.leveled &&

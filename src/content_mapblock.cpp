@@ -305,7 +305,7 @@ class neighborRail {
 	if (recurse >= 2)
 		return self;
 
-	neighborRail neighbor_x_all[2], neighbor_z_all[2];
+	neighborRail neighbor_x_all[2] = {}, neighbor_z_all[2] = {};
 	if(is_rail_x_all[0]) {
 		if(is_rail_x_plus_y[0]) {
 			neighbor_x_all[0] = recurseRail(v3s16(x-1, y+1, z), data, collector, recurse+1);
@@ -1790,8 +1790,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 						continue;
 					MapNode n_xy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x + xz, y + y0, z));
 					MapNode n_zy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y + y0, z + xz));
-					ContentFeatures def_xy = nodedef->get(n_xy);
-					ContentFeatures def_zy = nodedef->get(n_zy);
+					const ContentFeatures &def_xy = nodedef->get(n_xy);
+					const ContentFeatures &def_zy = nodedef->get(n_zy);
 
 					// Check if current node would connect with the rail
 					is_rail_x[index] = ((def_xy.drawtype == NDT_RAILLIKE
