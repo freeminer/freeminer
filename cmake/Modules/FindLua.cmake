@@ -22,3 +22,4 @@ if(NOT USE_LUAJIT)
 	set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lua/src")
 	add_subdirectory(lua)
 endif()
+
