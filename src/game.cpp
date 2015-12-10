@@ -2380,9 +2380,9 @@ bool Game::connectToServer(const std::string &playername,
 	client->chat_backend = chat_backend;
 	gamedef = client;	// Client acts as our GameDef
 
-	infostream << "Connecting to server at ";
-	connect_address.print(&infostream);
-	infostream << std::endl;
+	actionstream << "Connecting to server at ";
+	connect_address.print(&actionstream);
+	actionstream << std::endl;
 
 	try {
 
