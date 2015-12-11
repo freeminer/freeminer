@@ -1090,17 +1090,19 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 
 void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius)
 {
+	int obj_null = 0, obj_count = 0;
 	auto lock = m_active_objects.lock_shared_rec();
 	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
+		++obj_count;
 		ServerActiveObject* obj = i->second;
-		u16 id = i->first;
 		if (!obj) {
-			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object "<<id<<" = "<<obj<<std::endl;
+			++obj_null;
 			continue;
 		}
+		u16 id = i->first;
 		if (obj->m_removed || obj->m_pending_deactivation)
 			continue;
 
@@ -1109,6 +1111,8 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 			continue;
 		objects.push_back(id);
 	}
+	if (obj_null)
+		infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null objects: "<<obj_null<<"/"<<obj_count<<std::endl;
 }
 
 void ServerEnvironment::clearAllObjects()
@@ -2515,9 +2519,11 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 		if(pending_delete && !force_delete)
 		{
+/*
 			verbosestream<<"ServerEnvironment::deactivateFarObjects(): "
 					<<"object id="<<id<<" is known by clients"
 					<<"; not deleting yet"<<std::endl;
+*/
 
 			obj->m_pending_deactivation = true;
 			continue;

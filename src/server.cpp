@@ -119,7 +119,7 @@ void *ServerThread::run()
 	auto time = porting::getTimeMs();
 	while (!stopRequested()) {
 		try {
-			//TimeTaker timer("AsyncRunStep() + Receive()");
+			TimeTaker timer("Server AsyncRunStep() + Receive()");
 			u32 time_now = porting::getTimeMs();
 			m_server->AsyncRunStep((time_now - time)/1000.0f);
 			time = time_now;
