@@ -128,13 +128,13 @@ void *ServerThread::run()
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs();
 			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
-			if (sleep < 10)
-				sleep = 10;
+			if (sleep < 50)
+				sleep = 50;
 			end_ms += sleep; //u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
 				if (!m_server->Receive(sleep))
 					break;
-				if (porting::getTimeMs() > end_ms)
+				if (i > 50 && porting::getTimeMs() > end_ms)
 					break;
 			}
 		} catch (con::NoIncomingDataException &e) {
