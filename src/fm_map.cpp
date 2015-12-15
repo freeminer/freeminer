@@ -428,7 +428,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 
 			} // block lock
 
-			if (porting::getTimeMs() > end_ms) {
+			if (calls > 100 && porting::getTimeMs() > end_ms) {
 				m_blocks_update_last = n;
 				break;
 			}
