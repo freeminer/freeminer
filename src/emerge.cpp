@@ -716,7 +716,7 @@ void *EmergeThread::run()
 		if (block) {
 			//modified_blocks[pos] = block;
 		} else if (allow_gen)
-			infostream<<"nothing generated at "<<pos<<std::endl;
+			infostream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
 
 
 
