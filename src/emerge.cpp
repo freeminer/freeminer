@@ -578,7 +578,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	{
 	MAP_NOTHREAD_LOCK(m_map);
 	// 1). Attempt to fetch block from memory
-	*block = m_map->getBlockNoCreateNoEx(pos);
+	*block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	}
 	if (*block && !(*block)->isDummy() && (*block)->isGenerated())
 		return EMERGE_FROM_MEMORY;
@@ -602,6 +602,14 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	if (allow_gen && m_map->initBlockMake(pos, bmdata))
 		return EMERGE_GENERATED;
 	}
+
+/*
+	verbosestream << "EmergeThread::getBlockOrStartGen : cancel pos=" << pos << " block="<< *block;
+	if (*block)
+		verbosestream << "dummy=" << (*block)->isDummy() << " generated="<< (*block)->isGenerated();
+	verbosestream << std::endl;
+*/
+
 	// All attempts failed; cancel this block emerge
 	return EMERGE_CANCELLED;
 }
@@ -716,9 +724,7 @@ void *EmergeThread::run()
 		if (block) {
 			//modified_blocks[pos] = block;
 		} else if (allow_gen)
-			infostream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
-
-
+			verbosestream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
 
 		if (modified_blocks.size() > 0)
 			m_server->SetBlocksNotSent(/*modified_blocks*/);
