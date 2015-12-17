@@ -180,8 +180,16 @@ private:
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
 
-	/* Nrz contrib */
+	/* Epixel contrib */
+/*
+	static int l_add_creature(lua_State *L);
+*/
+	static int l_spawn_item_activeobject(lua_State *L);
 	static int l_spawn_falling_node(lua_State *L);
+	static int l_nodeupdate(lua_State *L);
+/*
+	static int l_make_explosion(lua_State *L);
+*/
 
 public:
 	static void Initialize(lua_State *L, int top);

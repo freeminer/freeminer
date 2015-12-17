@@ -1104,5 +1104,12 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(get_surface);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
+
+//epixel:
+	API_FCT(spawn_item_activeobject);
 	API_FCT(spawn_falling_node);
+	API_FCT(nodeupdate);
+/*
+	API_FCT(make_explosion);
+*/
 }

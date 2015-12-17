@@ -239,6 +239,20 @@ enum NodeDrawType
 	NDT_MESH, // Uses static meshes
 };
 
+struct ContentFeatureSingleDrop
+{
+	std::string item;
+	u16 rarity;
+	u16 min_items;
+	u16 max_items;
+};
+
+struct ContentFeatureDrops
+{
+	u8 max_items;
+	std::vector<ContentFeatureSingleDrop> items;
+};
+
 #define CF_SPECIAL_COUNT 6
 
 struct ContentFeatures

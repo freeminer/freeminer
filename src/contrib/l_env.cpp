@@ -17,24 +17,22 @@
 **/
 
 #include "script/lua_api/l_env.h"
+#include "script/lua_api/l_internal.h"
 #include "script/lua_api/l_base.h"
 #include "script/common/c_converter.h"
 #include "script/common/c_content.h"
-/*
+#if 0
 #include "contrib/creature.h"
+#endif
 #include "contrib/itemsao.h"
+#if 0
 #include "contrib/playersao.h"
-*/
+#endif
 #include "scripting_game.h"
 #include "environment.h"
 #include "content_sao.h"
 #include "nodedef.h"
 #include "server.h"
-
-
-#define GET_ENV_PTR ServerEnvironment* env =                                   \
-				dynamic_cast<ServerEnvironment*>(getEnv(L));                   \
-				if (env == NULL) return 0
 
 #if 0
 int ModApiEnvMod::l_add_creature(lua_State *L)
@@ -55,6 +53,8 @@ int ModApiEnvMod::l_add_creature(lua_State *L)
 	getScriptApiBase(L)->objectrefGetOrCreate(L, obj);
 	return 1;
 }
+
+#endif
 
 int ModApiEnvMod::l_spawn_item_activeobject(lua_State *L)
 {
@@ -84,7 +84,6 @@ int ModApiEnvMod::l_spawn_item_activeobject(lua_State *L)
 	}
 	return 1;
 }
-#endif
 
 int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
 {
@@ -98,6 +97,25 @@ int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
 
 	// Drop item on the floor
 	env->spawnFallingActiveObject(ndef->get(n).name, pos, n);
+	return 1;
+}
+
+/**
+ * @brief ModApiEnvMod::l_nodeupdate
+ * @param L
+ * @return always 1
+ *
+ * Trigger a node update on selected position
+ */
+int ModApiEnvMod::l_nodeupdate(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	// pos
+	v3f pos = checkFloatPos(L, 1);
+
+	// Drop item on the floor
+	env->nodeUpdate(floatToInt(pos, BS));
 	return 1;
 }
 
@@ -140,6 +158,19 @@ int ModApiEnvMod::l_set_timeofday(lua_State *L)
 	sanity_check(timeofday_f >= 0.0 && timeofday_f <= 1.0);
 	int timeofday_mh = (int)(timeofday_f * 24000.0);
 	getServer(L)->setTimeOfDay(timeofday_mh);
+	return 1;
+}
+
+int ModApiEnvMod::l_make_explosion(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	// pos
+	v3f pos = checkFloatPos(L, 1);
+	float radius = luaL_checknumber(L, 2);
+
+	// Drop item on the floor
+	env->makeExplosion(floatToInt(pos, BS), radius, 0);
 	return 1;
 }
 

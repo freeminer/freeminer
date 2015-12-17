@@ -1533,6 +1533,10 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
+	{
+	TimeTaker timer("contrib_globalstep");
+	contrib_globalstep(dtime);
+	}
 	/*
 		Step script environment (run global on_step())
 	*/
