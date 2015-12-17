@@ -290,7 +290,8 @@ public:
 	//Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
 	//Player * getPlayer(const std::string &name);
 
-	KeyValueStorage *getKeyValueStorage();
+	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
+	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("player"); };
 
 	void kickAllPlayers(AccessDeniedCode reason,
 		const std::string &str_reason, bool reconnect);
@@ -477,8 +478,7 @@ private:
 	Circuit m_circuit;
 	// Key-value storage
 public:
-	KeyValueStorage m_key_value_storage;
-	KeyValueStorage m_players_storage;
+	std::unordered_map<std::string, KeyValueStorage> m_key_value_storage;
 private:
 
 	// World path

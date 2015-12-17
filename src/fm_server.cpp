@@ -294,8 +294,7 @@ void Server::maintenance_start() {
 	m_env->getServerMap().m_map_saving_enabled = false;
 	m_env->getServerMap().m_map_loading_enabled = false;
 	m_env->getServerMap().dbase->close();
-	m_env->m_key_value_storage.close();
-	m_env->m_players_storage.close();
+	m_env->m_key_value_storage.clear();
 	stat.close();
 	actionstream << "Server: Starting maintenance: bases closed now." << std::endl;
 
@@ -303,8 +302,6 @@ void Server::maintenance_start() {
 
 void Server::maintenance_end() {
 	m_env->getServerMap().dbase->open();
-	m_env->m_key_value_storage.open();
-	m_env->m_players_storage.open();
 	stat.open();
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;

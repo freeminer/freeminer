@@ -36,6 +36,7 @@ bool KeyValueStorage::open() {
 	options.create_if_missing = true;
 	std::lock_guard<std::mutex> lock(mutex);
 	auto status = leveldb::DB::Open(options, fullpath, &db);
+	//errorstream<<"KeyValueStorage::open() "<<db_name << " st="<< status.ok()<< " e="<<status.ToString()<<std::endl;
 	if (!status.ok()) {
 		error = status.ToString();
 		errorstream<< "Trying to repair database ["<<error<<"]"<<std::endl;
@@ -66,6 +67,7 @@ void KeyValueStorage::close()
 
 KeyValueStorage::~KeyValueStorage()
 {
+	//errorstream<<"KeyValueStorage::~KeyValueStorage() "<<db_name<<std::endl;
 	close();
 }
 

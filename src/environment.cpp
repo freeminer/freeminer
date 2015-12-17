@@ -374,8 +374,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_script(scriptIface),
 	m_gamedef(gamedef),
 	m_circuit(m_script, map, gamedef->ndef(), path_world),
-	m_key_value_storage(path_world, "key_value_storage"),
-	m_players_storage(path_world, "players"),
 	m_path_world(path_world),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
@@ -392,11 +390,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_game_time = 0;
 	m_use_weather = g_settings->getBool("weather");
 	m_use_weather_biome = g_settings->getBool("weather_biome");
-
-	if (!m_key_value_storage.db)
-		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;
-	if (!m_players_storage.db)
-		errorstream << "Cant open players storage: "<< m_players_storage.error << std::endl;
 
 	// Init custom SAO
 	v3f nullpos;
@@ -449,9 +442,15 @@ ServerMap & ServerEnvironment::getServerMap()
 	return *m_map;
 }
 
-KeyValueStorage *ServerEnvironment::getKeyValueStorage()
+KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 {
-	return &m_key_value_storage;
+	if (name.empty()) {
+		name = "key_value_storage";
+	}
+	if (!m_key_value_storage.count(name)) {
+		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(m_path_world, name));
+	}
+	return m_key_value_storage.at(name);
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -516,7 +515,7 @@ void ServerEnvironment::savePlayer(RemotePlayer *player)
 		return;
 	Json::Value player_json;
 	player_json << *player;
-	m_players_storage.put_json("p." + player->getName(), player_json);
+	getPlayerStorage().put_json("p." + player->getName(), player_json);
 }
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
@@ -532,7 +531,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	try {
 		Json::Value player_json;
-		m_players_storage.get_json("p." + playername, player_json);
+		getPlayerStorage().get_json("p." + playername, player_json);
 		verbosestream<<"Reading kv player "<<playername<<std::endl;
 		if (!player_json.empty()) {
 			player_json >> *player;

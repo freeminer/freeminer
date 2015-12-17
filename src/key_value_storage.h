@@ -54,7 +54,7 @@ public:
 #endif
 	std::string error;
 private:
-	const std::string &db_name;
+	const std::string db_name;
 	std::string fullpath;
 	Json::FastWriter json_writer;
 	Json::Reader json_reader;

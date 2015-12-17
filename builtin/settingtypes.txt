@@ -1143,6 +1143,9 @@ selectionbox_color () string (0,0,0)
 
 [*Server]
 
+# Save auth data to leveldb kv storage
+auth_kv () bool false
+
 # If true, blocks are cached (and generated if not before) before a player is spawned.
 cache_block_before_spawn () bool true
 
