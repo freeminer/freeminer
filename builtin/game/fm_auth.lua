@@ -81,6 +81,7 @@ local function auth_convert(force)
 	io.close(file)
 	os.rename(core.auth_file_path, core.auth_file_path..'.old')
 	core.auth_table = {}
+	core.log("action", "Converted " .. n .. " players. auth.txt renamed to auth.txt.old ")
 end
 
 local converted = nil
