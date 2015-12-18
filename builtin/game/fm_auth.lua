@@ -14,17 +14,18 @@ end
 
 core.auth_file_path = core.get_worldpath().."/auth.txt"
 core.auth_table = {}
+core.auth_db = "players_auth"
 core.auth_prefix = "auth_"
 
 local function read_auth(name)
-	core.auth_table[name] = core.kv_get(core.auth_prefix .. name, "player_auth")
+	core.auth_table[name] = core.kv_get(core.auth_prefix .. name, core.auth_db)
 	return core.auth_table[name]
 	--core.notify_authentication_modified(name)
 end
 
 local function save_auth(name, data)
 	if not data then data = core.auth_table[name] end
-	return core.kv_put(core.auth_prefix .. name, data, "player_auth")
+	return core.kv_put(core.auth_prefix .. name, data, core.auth_db)
 end
 
 
@@ -64,7 +65,7 @@ local function auth_convert(force)
 				print("Invalid line in auth.txt:" .. n .. " " .. dump(line))
 			else
 				name = uri_decode(name);
-				local old = read_auth(name) --core.kv_get(core.auth_prefix .. name, "player_auth")
+				local old = read_auth(name)
 				--print("readed " .. name .. " d=" .. core.serialize(old))
 				if old and not force then
 					print("Player [" ..  name .. "] already converted, skipping")
