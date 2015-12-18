@@ -292,7 +292,7 @@ public:
 	//Player * getPlayer(const std::string &name);
 
 	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
-	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("player"); };
+	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
 
 	void kickAllPlayers(AccessDeniedCode reason,
 		const std::string &str_reason, bool reconnect);
