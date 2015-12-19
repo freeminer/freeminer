@@ -802,7 +802,8 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
 	#cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
-	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer; \
+	mkdir ${ROOT}/assets/freeminer/fonts; \
+	cp -r ${ROOT}/../../fonts/*.ttf ${ROOT}/assets/freeminer/fonts/; \
 	mkdir ${ROOT}/assets/freeminer/games${GAMES_VERSION}; \
 	for game in ${GAMES_TO_COPY};                                              \
 	do                                                                         \
