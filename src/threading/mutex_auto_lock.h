@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #if __cplusplus >= 201103L
 	#include <mutex>
-	using MutexAutoLock = std::lock_guard<std::mutex>;
+	using MutexAutoLock = std::unique_lock<std::mutex>;
 #else
 
 #include "threading/mutex.h"

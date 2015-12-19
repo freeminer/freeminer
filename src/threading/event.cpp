@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "threading/event.h"
+#include "threading/mutex_auto_lock.h"
 
 #if __cplusplus < 201103L
 Event::Event()
