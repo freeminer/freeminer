@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 static std::string getMediaCacheDir()
 {
-	return porting::path_user + DIR_DELIM + "cache" + DIR_DELIM + "media";
+	return porting::path_cache + DIR_DELIM + "media";
 }
 
 /*
