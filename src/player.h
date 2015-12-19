@@ -436,10 +436,7 @@ private:
 class RemotePlayer : public Player
 {
 public:
-	RemotePlayer(IGameDef *gamedef, const std::string & name):
-		Player(gamedef, name),
-		m_sao(NULL)
-	{}
+	RemotePlayer(IGameDef *gamedef, const std::string & name);
 	virtual ~RemotePlayer() {}
 
 	PlayerSAO *getPlayerSAO()
