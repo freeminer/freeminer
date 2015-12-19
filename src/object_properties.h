@@ -52,6 +52,8 @@ struct ObjectProperties
 	f32 automatic_face_movement_dir_offset;
 	bool force_load;
 	bool backface_culling;
+	std::string nametag;
+	video::SColor nametag_color;
 
 
 	ObjectProperties();
