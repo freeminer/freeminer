@@ -41,12 +41,16 @@ MapgenSinglenode::MapgenSinglenode(int mapgenid,
 	c_node = ndef->getId("mapgen_singlenode");
 	if (c_node == CONTENT_IGNORE)
 		c_node = CONTENT_AIR;
+
+	MapNode n_node(c_node);
+	set_light = (ndef->get(n_node).sunlight_propagates) ? LIGHT_SUN : 0x00;
 }
 
 
 MapgenSinglenode::~MapgenSinglenode()
 {
 }
+
 
 //////////////////////// Map generator
 
@@ -56,11 +60,11 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data)
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
-		   data->blockpos_requested.Y >= data->blockpos_min.Y &&
-		   data->blockpos_requested.Z >= data->blockpos_min.Z);
+		data->blockpos_requested.Y >= data->blockpos_min.Y &&
+		data->blockpos_requested.Z >= data->blockpos_min.Z);
 	assert(data->blockpos_requested.X <= data->blockpos_max.X &&
-		   data->blockpos_requested.Y <= data->blockpos_max.Y &&
-		   data->blockpos_requested.Z <= data->blockpos_max.Z);
+		data->blockpos_requested.Y <= data->blockpos_max.Y &&
+		data->blockpos_requested.Z <= data->blockpos_max.Z);
 
 	this->generating = true;
 	this->vm   = data->vmanip;
@@ -70,8 +74,8 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data)
 	v3s16 blockpos_max = data->blockpos_max;
 
 	// Area of central chunk
-	v3s16 node_min = blockpos_min*MAP_BLOCKSIZE;
-	v3s16 node_max = (blockpos_max+v3s16(1,1,1))*MAP_BLOCKSIZE-v3s16(1,1,1);
+	v3s16 node_min = blockpos_min * MAP_BLOCKSIZE;
+	v3s16 node_max = (blockpos_max + v3s16(1, 1, 1)) * MAP_BLOCKSIZE - v3s16(1, 1, 1);
 
 	blockseed = getBlockSeed2(node_min, data->seed);
 
@@ -90,15 +94,15 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data)
 	// Add top and bottom side of water to transforming_liquid queue
 	updateLiquid(node_min, node_max);
 
-	// Calculate lighting
-	if (flags & MG_LIGHT)
-		calcLighting(node_min, node_max);
+	// Set lighting
+	if ((flags & MG_LIGHT) && set_light == LIGHT_SUN)
+		setLighting(LIGHT_SUN, node_min, node_max);
 
 	this->generating = false;
 }
+
 
 int MapgenSinglenode::getGroundLevelAtPoint(v2s16 p)
 {
 	return 0;
 }
-
