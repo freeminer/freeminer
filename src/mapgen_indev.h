@@ -47,6 +47,7 @@ public:
 	Mapgen_features(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~Mapgen_features();
 
+	int y_offset;
 	MapNode n_stone;
 	Noise *noise_layers;
 	float noise_layers_width;
@@ -63,16 +64,22 @@ public:
 	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
 	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm);
 
+	Noise *noise_cave_indev;
+	int cave_noise_threshold;
+	bool cave_noise_enabled;
+	void cave_prepare(const v3POS & node_min, const v3POS & node_max, int max_y);
+
 };
 
 
 struct MapgenIndevParams : public MapgenV6Params {
-	s16 float_islands, underground_filler;
-	
+	s16 float_islands;
+
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
 	NoiseParams np_layers;
+	NoiseParams np_cave_indev;
 
 	Json::Value paramsj;
 
@@ -87,8 +94,7 @@ class MapgenIndev : public MapgenV6, public Mapgen_features {
 public:
 	MapgenIndevParams *sp;
 
-	int ystride;
-	int zstride;
+	int xstride, ystride, zstride;
 
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();

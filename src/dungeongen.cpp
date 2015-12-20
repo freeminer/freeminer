@@ -77,7 +77,7 @@ DungeonGen::DungeonGen(Mapgen *mapgen, DungeonParams *dparams)
 void DungeonGen::generate(u32 bseed, v3s16 nmin, v3s16 nmax)
 {
 	//TimeTaker t("gen dungeons");
-	if (NoisePerlin3D(&dp.np_rarity, nmin.X, nmin.Y, nmin.Z, mg->seed) < 0.2)
+	if (NoisePerlin3D(&dp.np_rarity, nmin.X, nmin.Y, nmin.Z, mg->seed) < (0.2 / farscale(2, nmin.X, nmin.Y, nmin.Z)))
 		return;
 
 	this->blockseed = bseed;
@@ -130,6 +130,8 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 	v3s16 roomsize;
 	v3s16 roomplace;
 
+	float far_multi = farscale(5, vm->m_area.MinEdge.X, vm->m_area.MinEdge.Y, vm->m_area.MinEdge.Z);
+
 	/*
 		Find place for first room
 	*/
@@ -137,8 +139,8 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 	for (u32 i = 0; i < 100 && !fits; i++) {
 		bool is_large_room = ((random.next() & 3) == 1);
 		roomsize = is_large_room ?
-			v3s16(random.range(8, 16), random.range(8, 16), random.range(8, 16)) :
-			v3s16(random.range(4, 8), random.range(4, 6), random.range(4, 8));
+			v3s16(random.range(8, 16 * far_multi), random.range(8, 16 * far_multi), random.range(8, 16 * far_multi)) :
+			v3s16(random.range(4, 8 * far_multi), random.range(4, 6 * far_multi), random.range(4, 8 * far_multi));
 		roomsize += dp.roomsize;
 
 		// start_padding is used to disallow starting the generation of
@@ -176,7 +178,7 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 	*/
 	v3s16 last_room_center = roomplace + v3s16(roomsize.X / 2, 1, roomsize.Z / 2);
 
-	u32 room_count = random.range(2, 16);
+	u32 room_count = random.range(2, random.range(8, 16 * far_multi));
 	for (u32 i = 0; i < room_count; i++) {
 		// Make a room to the determined place
 		makeRoom(roomsize, roomplace);
@@ -228,7 +230,7 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 		makeCorridor(doorplace, doordir, corridor_end, corridor_end_dir);
 
 		// Find a place for a random sized room
-		roomsize = v3s16(random.range(4, 8), random.range(4, 6), random.range(4, 8));
+		roomsize = v3s16(random.range(4, 8 * far_multi), random.range(4, 6 * far_multi), random.range(4, 8 * far_multi));
 		roomsize += dp.roomsize;
 
 		m_pos = corridor_end;

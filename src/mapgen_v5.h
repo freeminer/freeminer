@@ -45,6 +45,7 @@ struct MapgenV5Params : public MapgenSpecificParams {
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
 	NoiseParams np_layers;
+	//NoiseParams np_cave_indev;
 	Json::Value paramsj;
 
 	MapgenV5Params();
