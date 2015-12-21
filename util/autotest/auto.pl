@@ -380,6 +380,8 @@ our $tasks = {
     server_gdb    => [{-no_build_client => 1,}, 'build_debug',  ['gdb', 'run_server']],
     server_gdb_nd => [{-no_build_client => 1,}, 'build_normal', ['gdb', 'run_server']],
 
+    bot_gdb    => [{-no_build_server => 1,}, 'build_debug',  ['gdb', 'run_single']],
+
     play_task => sub {
         return 1 if $config->{all_run};
         local $config->{no_build_server} = 1;
