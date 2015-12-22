@@ -788,9 +788,9 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp -r ${ROOT}/worlds ${ROOT}/assets/freeminer; \
 	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer; \
-	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
-	#cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
-	#rm -rf ${ROOT}/assets/freeminer/doc/html; \
+	mkdir ${ROOT}/assets/freeminer/client;                                      \
+	cp -r ${ROOT}/../../client/shaders ${ROOT}/assets/freeminer/client;         \
+	#cp ${ROOT}/../../doc/lgpl-2.1.txt ${ROOT}/assets/freeminer/LICENSE.txt;     \
 	mkdir ${ROOT}/assets/freeminer/fonts; \
 	cp -r ${ROOT}/../../fonts/*.ttf ${ROOT}/assets/freeminer/fonts/; \
 	mkdir ${ROOT}/assets/freeminer/games${GAMES_VERSION}; \
