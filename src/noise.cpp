@@ -365,7 +365,7 @@ float contour(float v)
 	std::ostream & operator<<(std::ostream & os, NoiseParams & np)
 	 {
 		os << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags
-		<<",farscale"<<np.farscale<<",farspread"<<np.farspread<<",farpersist"<<np.farpersist
+		<<",farscale"<<np.far_scale<<",farspread"<<np.far_spread<<",farpersist"<<np.far_persist<<",farlacunarity"<<np.far_lacunarity
 		<<"]";
 		return os;
 	}
@@ -711,12 +711,12 @@ void Noise::gradientMap3D(
 
 float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 {
-	auto scale = farscale(np.farscale, x, y);
+	auto spread_scale = farscale(np.far_spread, x, y);
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy;
 
-	x /= np.spread.X;
-	y /= np.spread.Y;
+	x /= np.spread.X * spread_scale;
+	y /= np.spread.Y * spread_scale;
 
 	memset(result, 0, sizeof(float) * bufsize);
 
@@ -729,18 +729,18 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 
 	for (size_t oct = 0; oct < np.octaves; oct++) {
 		gradientMap2D(x * f, y * f,
-			f / np.spread.X, f / np.spread.Y,
+			f / (np.spread.X * spread_scale), f / (np.spread.Y * spread_scale),
 			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np.lacunarity;
-		g *= np.persist * farscale(np.farpersist, x, y);
+		f *= np.lacunarity * farscale(np.far_lacunarity, x, y);
+		g *= np.persist * farscale(np.far_persist, x, y);
 	}
 
 	if (fabs(np.offset - 0.f) > 0.00001 || fabs(np.scale - 1.f) > 0.00001) {
 		for (size_t i = 0; i != bufsize; i++)
-			result[i] = result[i] * np.scale * scale + np.offset;
+			result[i] = result[i] * np.scale * farscale(np.far_scale, x, y) + np.offset;
 	}
 
 	return result;
@@ -749,10 +749,7 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 
 float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 {
-	auto scale_scale = farscale(np.farscale, x, y, z);
-	auto spread_scale = farscale(np.farspread, x, y, z);
-	auto persist_scale = farscale(np.farpersist, x, y, z);
-	//errorstream<<"pmap p=" << v3f(x,y,z) << " scale_scale="<<scale_scale<<" spread_scale=" << spread_scale <<  " persist_scale="<<persist_scale<< std::endl;
+	auto spread_scale = farscale(np.far_spread, x, y, z);
 
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy * sz;
@@ -777,13 +774,13 @@ float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np.lacunarity;
-		g *= np.persist * persist_scale;
+		f *= np.lacunarity * farscale(np.far_lacunarity, x, y, z);
+		g *= np.persist * farscale(np.far_persist, x, y, z);
 	}
 
 	if (fabs(np.offset - 0.f) > 0.00001 || fabs(np.scale - 1.f) > 0.00001) {
 		for (size_t i = 0; i != bufsize; i++)
-			result[i] = result[i] * np.scale * scale_scale + np.offset;
+			result[i] = result[i] * np.scale * farscale(np.far_scale, x, y, z) + np.offset;
 	}
 
 	return result;

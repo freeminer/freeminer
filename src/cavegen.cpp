@@ -548,7 +548,7 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 
 				u32 i = vm->m_area.index(p);
 				content_t c = vm->m_data[i].getContent();
-				if (!ndef->get(c).is_ground_content || c == CONTENT_AIR)
+				if (c == CONTENT_AIR || !ndef->get(c).is_ground_content)
 					continue;
 
 				if (large_cave) {
