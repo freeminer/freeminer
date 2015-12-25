@@ -1236,6 +1236,9 @@ weather_hot_core        () float 1000
 # Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
 weather_heat_height     () float -333
 
+# Bind biomes to weather map in mapgen v6 and indev
+weather_biome () bool 0
+
 # Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
 year_days () int 30
 

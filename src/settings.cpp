@@ -510,7 +510,7 @@ bool Settings::getStruct(const std::string &name, const std::string &format,
 }
 
 
-bool Settings::getNoiseParams(const std::string &name, NoiseParams &np) const
+bool Settings::getNoiseParams(const std::string &name, NoiseParams &np)
 {
 	return getNoiseParamsFromGroup(name, np) || getNoiseParamsFromValue(name, np);
 }
@@ -541,17 +541,31 @@ bool Settings::getNoiseParamsFromValue(const std::string &name,
 	if (optional_params != "")
 		np.lacunarity = stof(optional_params);
 
+	warningstream << " Noise params from string [" << name << "] deprecated. far* values ignored." << std::endl;
+
 	return true;
 }
 
 
 bool Settings::getNoiseParamsFromGroup(const std::string &name,
-	NoiseParams &np) const
+	NoiseParams &np)
 {
 	Settings *group = NULL;
+	bool created = false;
 
 	if (!getGroupNoEx(name, group))
-		return false;
+	{
+		try {
+			group = new Settings;
+			created = true;
+			group->fromJson(getJson(name));
+		} catch (std::exception e) {
+			//errorstream<<"fail " << e.what() << std::endl;
+			if (created)
+				delete group;
+			return false;
+		}
+	}
 
 	group->getFloatNoEx("offset",      np.offset);
 	group->getFloatNoEx("scale",       np.scale);
@@ -570,6 +584,8 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	group->getFloatNoEx("farpersist",    np.far_persist);
 	group->getFloatNoEx("farlacunarity", np.far_lacunarity);
 
+	if (created)
+		delete group;
 	return true;
 }
 
@@ -1146,8 +1162,7 @@ bool Settings::readJsonFile(const std::string &filename) {
 	return fromJson(json);
 }
 
-void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
-{
+void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 	Json::Value json;
 	toJson(json);
 	std::ostringstream os(std::ios_base::binary);
@@ -1155,8 +1170,7 @@ void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	pk.pack(os.str());
 }
 
-void Settings::msgpack_unpack(msgpack::object o)
-{
+void Settings::msgpack_unpack(msgpack::object o) {
 	std::string data;
 	o.convert(&data);
 	std::istringstream os(data, std::ios_base::binary);

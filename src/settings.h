@@ -153,9 +153,9 @@ public:
 	// the behavior is undefined.
 	bool getStruct(const std::string &name, const std::string &format,
 			void *out, size_t olen) const;
-	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
+	bool getNoiseParams(const std::string &name, NoiseParams &np);
 	bool getNoiseParamsFromValue(const std::string &name, NoiseParams &np) const;
-	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np) const;
+	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np);
 
 	// return all keys used
 	std::vector<std::string> getNames() const;
