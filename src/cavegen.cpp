@@ -555,11 +555,15 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
 					int full_ymax = node_max.Y + MAP_BLOCKSIZE;
 
+					bool protect_huge = vm->m_flags[i] & VOXELFLAG_CHECKED2;
+
 					if (flooded && full_ymin < water_level &&
 							full_ymax > water_level) {
+						if (!protect_huge)
 						vm->m_data[i] = (p.Y <= water_level) ?
 							waternode : airnode;
 					} else if (flooded && full_ymax < water_level) {
+						if (!protect_huge)
 						vm->m_data[i] = (p.Y < startp.Y - 2) ?
 							lavanode : airnode;
 					} else {
