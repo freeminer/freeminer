@@ -245,6 +245,8 @@ void CaveV5::carveRoute(v3f vec, float f, bool randomize_xz)
 
 			s16 si2 = rs / 2 - MYMAX(0, maxabsxz - rs / 7 - 1);
 
+			s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+
 			for (s16 y0 = -si2; y0 <= si2; y0++) {
 				if (large_cave_is_flat) {
 					// Make large caves not so tall
@@ -263,7 +265,6 @@ void CaveV5::carveRoute(v3f vec, float f, bool randomize_xz)
 				if (!ndef->get(c).is_ground_content)
 					continue;
 
-				s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, p, nullptr, &mg->heat_cache) : 0;
 				MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
 				MapNode liquidnode = (nval < 0.40 && node_max.Y < MGV5_LAVA_DEPTH ) ? lavanode : n_water_or_ice;
 
@@ -509,6 +510,7 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 	MapNode airnode(CONTENT_AIR);
 	MapNode waternode(c_water_source);
 	MapNode lavanode(c_lava_source);
+	MapNode n_ice(c_ice);
 
 	v3s16 startp(orp.X, orp.Y, orp.Z);
 	startp += of;
@@ -533,6 +535,9 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 
 			s16 maxabsxz = MYMAX(abs(x0), abs(z0));
 			s16 si2 = rs / 2 - MYMAX(0, maxabsxz - rs / 7 - 1);
+
+			s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+
 			for (s16 y0 = -si2; y0 <= si2; y0++) {
 				if (large_cave_is_flat) {
 					// Make large caves not so tall
@@ -559,9 +564,10 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 
 					if (flooded && full_ymin < water_level &&
 							full_ymax > water_level) {
-						if (!protect_huge)
-						vm->m_data[i] = (p.Y <= water_level) ?
-							waternode : airnode;
+						if (!protect_huge) {
+							MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
+							vm->m_data[i] = (p.Y <= water_level) ? n_water_or_ice : airnode;
+						}
 					} else if (flooded && full_ymax < water_level) {
 						if (!protect_huge)
 						vm->m_data[i] = (p.Y < startp.Y - 2) ?
@@ -796,6 +802,8 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz)
 
 			s16 si2 = rs / 2 - MYMAX(0, maxabsxz - rs / 7 - 1);
 
+			s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+
 			for (s16 y0 = -si2; y0 <= si2; y0++) {
 				if (large_cave_is_flat) {
 					// Make large caves not so tall
@@ -814,7 +822,6 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz)
 				if (!ndef->get(c).is_ground_content)
 					continue;
 
-				s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, p, nullptr, &mg->heat_cache) : 0;
 				MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
 				MapNode liquidnode = (nval < 0.40 && node_max.Y < MGV7_LAVA_DEPTH) ? lavanode : n_water_or_ice;
 
