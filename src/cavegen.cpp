@@ -548,7 +548,7 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 
 				u32 i = vm->m_area.index(p);
 				content_t c = vm->m_data[i].getContent();
-				if (c == CONTENT_AIR || !ndef->get(c).is_ground_content)
+				if (!c || c == CONTENT_AIR || !ndef->get(c).is_ground_content)
 					continue;
 
 				if (large_cave) {
@@ -566,8 +566,10 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz, bool tunnel_above_g
 						vm->m_data[i] = airnode;
 					}
 				} else {
+/*
 					if (c == CONTENT_IGNORE || c == CONTENT_AIR)
 						continue;
+*/
 
 					vm->m_data[i] = airnode;
 					vm->m_flags[i] |= VMANIP_FLAG_CAVE;
