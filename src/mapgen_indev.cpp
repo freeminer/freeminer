@@ -426,11 +426,17 @@ int MapgenIndev::generateGround() {
 					int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * ystride + (x - node_min.X) * xstride;
 					if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold) {
 						vm->m_data[i] = n_air;
-					} else if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold - 50) {
-						vm->m_data[i] = n_stone; //cave shell without layers
-						vm->m_flags[i] |= VOXELFLAG_CHECKED2; // no cave liquid
-					} else {
-						vm->m_data[i] = (y > water_level - surface_y && bt == BT_DESERT) ? n_desert_stone : layers_get(index3);
+					} else { 
+						auto n = (y > water_level - surface_y && bt == BT_DESERT) ? n_desert_stone : layers_get(index3);
+						bool protect = n.getContent() != CONTENT_AIR;
+						if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold - 50) {
+							vm->m_data[i] = protect ? n_stone : n; //cave shell without layers
+							protect = true;
+						} else {
+							vm->m_data[i] = n;
+						}
+						if (protect)
+							vm->m_flags[i] |= VOXELFLAG_CHECKED2; // no cave liquid
 					}
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat/3) ? n_ice : n_water_source;
