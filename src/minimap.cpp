@@ -35,7 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 MinimapUpdateThread::~MinimapUpdateThread()
 {
-	for (std::map<v3s16, MinimapMapblock *>::iterator
+	for (auto
 			it = m_blocks_cache.begin();
 			it != m_blocks_cache.end(); ++it) {
 		delete it->second;
@@ -102,15 +102,14 @@ void MinimapUpdateThread::doUpdate()
 	while (popBlockUpdate(&update)) {
 		if (update.data) {
 			// Swap two values in the map using single lookup
-			std::pair<std::map<v3s16, MinimapMapblock*>::iterator, bool>
+			auto
 			    result = m_blocks_cache.insert(std::make_pair(update.pos, update.data));
 			if (result.second == false) {
 				delete result.first->second;
 				result.first->second = update.data;
 			}
 		} else {
-			std::map<v3s16, MinimapMapblock *>::iterator it;
-			it = m_blocks_cache.find(update.pos);
+			auto it = m_blocks_cache.find(update.pos);
 			if (it != m_blocks_cache.end()) {
 				delete it->second;
 				m_blocks_cache.erase(it);
@@ -143,7 +142,7 @@ MinimapPixel *MinimapUpdateThread::getMinimapPixel(v3s16 pos,
 		blockpos_max, relpos);
 
 	for (s16 i = blockpos_max.Y; i > blockpos_min.Y - 1; i--) {
-		std::map<v3s16, MinimapMapblock *>::iterator it =
+		auto it =
 			m_blocks_cache.find(v3s16(blockpos_max.X, i, blockpos_max.Z));
 		if (it != m_blocks_cache.end()) {
 			MinimapMapblock *mmblock = it->second;
@@ -173,7 +172,7 @@ s16 MinimapUpdateThread::getAirCount(v3s16 pos, s16 height)
 		blockpos_max, relpos);
 
 	for (s16 i = blockpos_max.Y; i > blockpos_min.Y - 1; i--) {
-		std::map<v3s16, MinimapMapblock *>::iterator it =
+		auto it =
 			m_blocks_cache.find(v3s16(blockpos_max.X, i, blockpos_max.Z));
 		if (it != m_blocks_cache.end()) {
 			MinimapMapblock *mmblock = it->second;

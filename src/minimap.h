@@ -113,7 +113,7 @@ protected:
 private:
 	Mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
-	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
+	unordered_map_v3POS<MinimapMapblock *> m_blocks_cache;
 };
 
 class Mapper {
