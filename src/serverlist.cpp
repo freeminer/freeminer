@@ -260,8 +260,6 @@ void sendAnnounce(const std::string &action,
 #endif
 
 	httpfetch_async(fetch_request);
-	fetch_request.url = g_settings->get("serverlist_url2") + std::string("/announce");
-	httpfetch_async(fetch_request);
 #endif
 }
 
