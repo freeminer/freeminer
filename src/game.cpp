@@ -1921,7 +1921,7 @@ void Game::run()
 
 	while (device->run()
 			&& !(*kill || g_gamecallback->shutdown_requested
-			|| server->getShutdownRequested())) {
+			|| (server && server->getShutdownRequested()))) {
 
 		try {
 
