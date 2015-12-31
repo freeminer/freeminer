@@ -1919,12 +1919,15 @@ void Game::run()
 			&& client->checkPrivilege("fast");
 #endif
 
-	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
+	while (device->run()
+			&& !(*kill || g_gamecallback->shutdown_requested
+			|| server->getShutdownRequested())) {
+
+		try {
+
 #ifdef __ANDROID__
 		porting::handleAndroidActivityEvents(5);
 #endif
-
-		try {
 
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
