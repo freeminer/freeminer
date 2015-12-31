@@ -121,7 +121,8 @@ Mapgen_features::Mapgen_features(int mapgenid, MapgenParams *params, EmergeManag
 	layers_node_size(0),
 	noise_float_islands1(nullptr),
 	noise_float_islands2(nullptr),
-	noise_float_islands3(nullptr)
+	noise_float_islands3(nullptr),
+	noise_cave_indev(nullptr)
 {
 	y_offset = 0;
 
