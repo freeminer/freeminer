@@ -188,20 +188,27 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		v3f &accel_f,ActiveObject* self,
 		bool collideWithObjects)
 {
+	static bool time_notification_done = false;
 	Map *map = &env->getMap();
 	//TimeTaker tt("collisionMoveSimple");
-    //ScopeProfiler sp(g_profiler, "collisionMoveSimple avg", SPT_AVG);
+/*
+	ScopeProfiler sp(g_profiler, "collisionMoveSimple avg", SPT_AVG);
+*/
 
 	collisionMoveResult result;
 
 	/*
 		Calculate new velocity
 	*/
-	if( dtime > 1 ) {
-/*
-		warningstream<<"collisionMoveSimple: maximum step interval exceeded, lost movement details!"<<std::endl;
-*/
+	if (dtime > 1) {
+		if (!time_notification_done) {
+			time_notification_done = true;
+			infostream << "collisionMoveSimple: maximum step interval exceeded,"
+					" lost movement details!"<<std::endl;
+		}
 		dtime = 1;
+	} else {
+		time_notification_done = false;
 	}
 	speed_f += accel_f * dtime;
 
