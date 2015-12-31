@@ -35,6 +35,11 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
+#if you have installed Intel(R) VTune(TM) Amplifier
+$0 bot_vtune --autoexit=60 --vtune_gui=1
+$0 bot_vtune --autoexit=60
+$0 stress_vtune
+
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -66,28 +71,28 @@ our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 sub init_config () {
     $config = {
         #address           => '::1',
-        port              => 60001,
-        clients_num       => 5,
-        autoexit          => 600,
-        clang_version     => "",                                                                          # "-3.6",
-        autotest_dir_rel  => 'util/autotest/',
-        root_prefix       => $root_path . 'auto',
-        root_path         => $root_path,
-        date              => $g->{date},
-        world             => $script_path . 'world',
-        config            => $script_path . 'auto.json',
-        logdir            => $script_path . 'logs.' . $g->{date} . $logdir_add,
-        screenshot_dir    => 'screenshot.' . $g->{date},
-        env               => 'OPENSSL_armcap=0',
-        runner            => 'nice ',
-        name              => 'bot',
-        go                => '--go',
-        gameid            => 'default',
+        port             => 60001,
+        clients_num      => 5,
+        autoexit         => 600,
+        clang_version    => "",                                                  # "-3.6",
+        autotest_dir_rel => 'util/autotest/',
+        root_prefix      => $root_path . 'auto',
+        root_path        => $root_path,
+        date             => $g->{date},
+        world            => $script_path . 'world',
+        config           => $script_path . 'auto.json',
+        logdir           => $script_path . 'logs.' . $g->{date} . $logdir_add,
+        screenshot_dir   => 'screenshot.' . $g->{date},
+        env              => 'OPENSSL_armcap=0',
+        runner           => 'nice ',
+        name             => 'bot',
+        go               => '--go',
+        gameid           => 'default',
         #tsan_opengl_fix   => 1,
-        options_display   => ($ENV{DISPLAY} ? '' : 'headless'),
-        options_bot       => 'bot_random',
-        cmake_minetest    => '-DMINETEST_PROTO=1',
-        cmake_nothreads   => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
+        options_display => ($ENV{DISPLAY} ? '' : 'headless'),
+        options_bot     => 'bot_random',
+        cmake_minetest  => '-DMINETEST_PROTO=1',
+        cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
@@ -96,6 +101,7 @@ sub init_config () {
         #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
         #make_add     => '',
         #run_add       => '',
+        vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
     };
 
     map { /^--(\w+)(?:=(.*))/ and $config->{$1} = $2; } @ARGV;
@@ -162,13 +168,12 @@ our $commands = {
     },
     cmake => sub {
         my %D;
-        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`"; # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
+        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, if $config->{cmake_msan};
 
         $D{ENABLE_LUAJIT} = 0, $D{DEBUG} = 1 if $config->{cmake_debug};
-
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -208,8 +213,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
     },
     run_server_auto => sub {
         my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
-        sy
-qq{$config->{env} $config->{runner} @_ ./freeminerserver $args --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver $args --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make()
           . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log &};
     },
@@ -217,7 +221,8 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $args --logfile $config
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
-            my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
+            my $args = join ' ',
+              map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             sy
 qq{$config->{env} $config->{runner} @_ ./freeminer $args --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
               . options_make()
@@ -360,7 +365,7 @@ our $tasks = {
             commands_run('valgrind_massif');
         },
         ['sleep', 10],
-        'clients_run'
+        'clients_run',
     ],
 
     stress => ['build_normal', 'run_server_auto', ['sleep', 5], 'clients_run'],
@@ -380,7 +385,33 @@ our $tasks = {
     server_gdb    => [{-no_build_client => 1,}, 'build_debug',  ['gdb', 'run_server']],
     server_gdb_nd => [{-no_build_client => 1,}, 'build_normal', ['gdb', 'run_server']],
 
-    bot_gdb    => [{-no_build_server => 1,}, 'build_debug',  ['gdb', 'run_single']],
+    bot_gdb => [{-no_build_server => 1,}, 'build_debug', ['gdb', 'run_single']],
+
+    vtune => sub {
+        local $config->{runner} = $config->{runner} . qq{$config->{vtune_amplifier}amplxe-cl -collect hotspots -r $config->{logdir}/rh0};
+        @_ = ('debug') if !@_;
+        for (@_) { my $r = commands_run($_); return $r if $r; }
+    },
+    vtune_report => sub {
+        if ($config->{vtune_gui}) {
+            sy qq{$config->{vtune_amplifier}amplxe-gui $config->{logdir}/rh0};    # -limit=1000
+        } else {
+            for my $report (qw(hotspots top-down)) {                              # summary callstacks
+                sy
+qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report-output=$config->{logdir}/vtune.$report.log -r $config->{logdir}/rh0}
+                  ;                                                               # -limit=1000
+            }
+        }
+    },
+    bot_vtune => [{-no_build_server => 1,}, 'build_debug', ['vtune', 'run_single'], 'vtune_report'],
+    stress_vtune => [
+        'build_debug',
+        sub {
+            commands_run('vtune', 'run_server_auto');
+        },
+        ['sleep', 10],
+        'clients_run',
+    ],
 
     play_task => sub {
         return 1 if $config->{all_run};
@@ -410,10 +441,8 @@ our $tasks = {
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
 
 sub sy (@) {
-    my $cmd = join ' ', @_;
-    say 'running ', $cmd;
-    system $cmd;
-    #dmp 'system', @_;
+    say 'running ', join ' ', @_;
+    system @_;
     if ($? == -1) {
         say "failed to execute: $!";
         return $?;
