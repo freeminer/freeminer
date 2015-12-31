@@ -36,6 +36,7 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
 #if you have installed Intel(R) VTune(TM) Amplifier
+$0 play_vtune --vtune_gui=1
 $0 bot_vtune --autoexit=60 --vtune_gui=1
 $0 bot_vtune --autoexit=60
 $0 stress_vtune
@@ -423,7 +424,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     },
 
     (
-        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb tsan asan msan bot_asannta nothreads minetest),
+        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb tsan asan msan bot_asannta nothreads minetest vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}}
     ),    #'
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
