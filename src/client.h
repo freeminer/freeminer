@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/thread_pool.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
+#include "mapblock.h"
 
 #include "network/networkpacket.h"
 

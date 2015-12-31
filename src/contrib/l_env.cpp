@@ -113,9 +113,10 @@ int ModApiEnvMod::l_nodeupdate(lua_State *L)
 
 	// pos
 	v3f pos = checkFloatPos(L, 1);
+	int destroy = luaL_checknumber(L, 2);
 
 	// Drop item on the floor
-	env->nodeUpdate(floatToInt(pos, BS));
+	env->nodeUpdate(floatToInt(pos, BS), 5, 1, destroy);
 	return 1;
 }
 

@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh.h"
 #include "wieldmesh.h"
 //#include "mapblock.h"
+#include "clientmap.h"
 #include "client/tile.h"
 #endif
 #include "log.h"
@@ -45,7 +46,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <GLES/gl.h>
 #endif
 
-#include "clientmap.h"
 
 /*
 	ItemDefinition
