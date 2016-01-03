@@ -86,6 +86,10 @@ void NetworkPacket::putRawString(const char* src, u32 len)
 		m_datasize = m_read_offset + len;
 		m_data.resize(m_datasize);
 	}
+
+	if (m_datasize == 0)
+		return;
+
 	memcpy(&m_data[m_read_offset], src, len);
 	m_read_offset += len;
 }
