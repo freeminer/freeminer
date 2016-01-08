@@ -1756,10 +1756,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	loop_max *= m_transforming_liquid_loop_count_multiplier;
 #endif
 
-	while(transforming_liquid_size() != 0)
+	while (transforming_liquid_size() != 0)
 	{
 		// This should be done here so that it is done when continue is used
-		if(loopcount >= initial_size || loopcount >= loop_max || porting::getTimeMs() > end_ms)
+		if (loopcount >= initial_size || loopcount >= loop_max || porting::getTimeMs() > end_ms)
 			break;
 		loopcount++;
 
@@ -1775,21 +1775,24 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		 */
 		s8 liquid_level = -1;
 		content_t liquid_kind = CONTENT_IGNORE;
-		LiquidType liquid_type = nodemgr->get(n0).liquid_type;
+		content_t floodable_node = CONTENT_AIR;
+		ContentFeatures cf = nodemgr->get(n0);
+		LiquidType liquid_type = cf.liquid_type;
 		switch (liquid_type) {
 			case LIQUID_SOURCE:
 				liquid_level = LIQUID_LEVEL_SOURCE;
-				liquid_kind = nodemgr->getId(nodemgr->get(n0).liquid_alternative_flowing);
+				liquid_kind = nodemgr->getId(cf.liquid_alternative_flowing);
 				break;
 			case LIQUID_FLOWING:
 				liquid_level = (n0.param2 & LIQUID_LEVEL_MASK);
 				liquid_kind = n0.getContent();
 				break;
 			case LIQUID_NONE:
-				// if this is an air node, it *could* be transformed into a liquid. otherwise,
-				// continue with the next node.
-				if (n0.getContent() != CONTENT_AIR)
+				// if this node is 'floodable', it *could* be transformed
+				// into a liquid, otherwise, continue with the next node.
+				if (!cf.floodable)
 					continue;
+				floodable_node = n0.getContent();
 				liquid_kind = CONTENT_AIR;
 				break;
 		}
@@ -1819,9 +1822,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 			}
 			v3s16 npos = p0 + dirs[i];
 			NodeNeighbor nb(getNodeNoEx(npos), nt, npos);
+			ContentFeatures cfnb = nodemgr->get(nb.n);
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
-					if (nb.n.getContent() == CONTENT_AIR) {
+					if (cfnb.floodable) {
 						airs[num_airs++] = nb;
 						// if the current node is a water source the neighbor
 						// should be enqueded for transformation regardless of whether the
@@ -1839,8 +1843,8 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 				case LIQUID_SOURCE:
 					// if this node is not (yet) of a liquid type, choose the first liquid type we encounter
 					if (liquid_kind == CONTENT_AIR)
-						liquid_kind = nodemgr->getId(nodemgr->get(nb.n).liquid_alternative_flowing);
-					if (nodemgr->getId(nodemgr->get(nb.n).liquid_alternative_flowing) != liquid_kind) {
+						liquid_kind = nodemgr->getId(cfnb.liquid_alternative_flowing);
+					if (nodemgr->getId(cfnb.liquid_alternative_flowing) != liquid_kind) {
 						neutrals[num_neutrals++] = nb;
 					} else {
 						// Do not count bottom source, it will screw things up
@@ -1851,8 +1855,8 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 				case LIQUID_FLOWING:
 					// if this node is not (yet) of a liquid type, choose the first liquid type we encounter
 					if (liquid_kind == CONTENT_AIR)
-						liquid_kind = nodemgr->getId(nodemgr->get(nb.n).liquid_alternative_flowing);
-					if (nodemgr->getId(nodemgr->get(nb.n).liquid_alternative_flowing) != liquid_kind) {
+						liquid_kind = nodemgr->getId(cfnb.liquid_alternative_flowing);
+					if (nodemgr->getId(cfnb.liquid_alternative_flowing) != liquid_kind) {
 						neutrals[num_neutrals++] = nb;
 					} else {
 						flows[num_flows++] = nb;
@@ -1875,8 +1879,8 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		s8 max_node_level = -1;
 
 		u8 range = nodemgr->get(liquid_kind).liquid_range;
-		if (range > LIQUID_LEVEL_MAX+1)
-			range = LIQUID_LEVEL_MAX+1;
+		if (range > LIQUID_LEVEL_MAX + 1)
+			range = LIQUID_LEVEL_MAX + 1;
 
 		if ((num_sources >= 2 && nodemgr->get(liquid_kind).liquid_renewable) || liquid_type == LIQUID_SOURCE) {
 			// liquid_kind will be set to either the flowing alternative of the node (if it's a liquid)
@@ -1885,10 +1889,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 			new_node_content = nodemgr->getId(nodemgr->get(liquid_kind).liquid_alternative_source);
 		} else if (num_sources >= 1 && sources[0].t != NEIGHBOR_LOWER) {
 			// liquid_kind is set properly, see above
-			new_node_content = liquid_kind;
 			max_node_level = new_node_level = LIQUID_LEVEL_MAX;
-			if (new_node_level < (LIQUID_LEVEL_MAX+1-range))
-				new_node_content = CONTENT_AIR;
+			if (new_node_level >= (LIQUID_LEVEL_MAX + 1 - range))
+				new_node_content = liquid_kind;
+			else
+				new_node_content = floodable_node;
 		} else {
 			// no surrounding sources, so get the maximum level that can flow into this node
 			for (u16 i = 0; i < num_flows; i++) {
@@ -1899,16 +1904,16 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 							max_node_level = LIQUID_LEVEL_MAX;
 							if (nb_liquid_level + WATER_DROP_BOOST < LIQUID_LEVEL_MAX)
 								max_node_level = nb_liquid_level + WATER_DROP_BOOST;
-						} else if (nb_liquid_level > max_node_level)
+						} else if (nb_liquid_level > max_node_level) {
 							max_node_level = nb_liquid_level;
+						}
 						break;
 					case NEIGHBOR_LOWER:
 						break;
 					case NEIGHBOR_SAME_LEVEL:
 						if ((flows[i].n.param2 & LIQUID_FLOW_DOWN_MASK) != LIQUID_FLOW_DOWN_MASK &&
-							nb_liquid_level > 0 && nb_liquid_level - 1 > max_node_level) {
+								nb_liquid_level > 0 && nb_liquid_level - 1 > max_node_level)
 							max_node_level = nb_liquid_level - 1;
-						}
 						break;
 				}
 			}
@@ -1926,13 +1931,14 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 					new_node_level = liquid_level + 1;
 				if (new_node_level != max_node_level)
 					must_reflow.push_back(p0);
-			} else
+			} else {
 				new_node_level = max_node_level;
+			}
 
-			if (max_node_level >= (LIQUID_LEVEL_MAX+1-range))
+			if (max_node_level >= (LIQUID_LEVEL_MAX + 1 - range))
 				new_node_content = liquid_kind;
 			else
-				new_node_content = CONTENT_AIR;
+				new_node_content = floodable_node;
 
 		}
 
@@ -1945,10 +1951,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		/*
 			check if anything has changed. if not, just continue with the next node.
 		 */
-		if (new_node_content == n0.getContent() && (nodemgr->get(n0.getContent()).liquid_type != LIQUID_FLOWING ||
-										 ((n0.param2 & LIQUID_LEVEL_MASK) == (u8)new_node_level &&
-										 ((n0.param2 & LIQUID_FLOW_DOWN_MASK) == LIQUID_FLOW_DOWN_MASK)
-										 == flowing_down)))
+		if (new_node_content == n0.getContent() &&
+				(nodemgr->get(n0.getContent()).liquid_type != LIQUID_FLOWING ||
+				((n0.param2 & LIQUID_LEVEL_MASK) == (u8)new_node_level &&
+				((n0.param2 & LIQUID_FLOW_DOWN_MASK) == LIQUID_FLOW_DOWN_MASK)
+				== flowing_down)))
 			continue;
 
 		//errorstream << " was="<<(int)liquid_level<<" new="<< (int)new_node_level<< " ncon="<< (int)new_node_content << " flodo="<<(int)flowing_down<< " lmax="<<level_max<< " nameNE="<<nodemgr->get(new_node_content).name<<" nums="<<(int)num_sources<<" wasname="<<nodemgr->get(n0).name<<std::endl;
@@ -1969,11 +1976,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 
 		// Find out whether there is a suspect for this action
 		std::string suspect;
-		if(m_gamedef->rollback()) {
+		if (m_gamedef->rollback())
 			suspect = m_gamedef->rollback()->getSuspect(p0, 83, 1);
-		}
 
-		if(m_gamedef->rollback() && !suspect.empty()){
+		if (m_gamedef->rollback() && !suspect.empty()) {
 			// Blame suspect
 			RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
 			// Get old node for rollback
@@ -1998,10 +2004,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 /*
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
-		if(block != NULL) {
+		if (block != NULL) {
 			//modified_blocks[blockpos] =  block;
 			// If new or old node emits light, MapBlock requires lighting update
-			if(nodemgr->get(n0).light_source != 0 ||
+			if (nodemgr->get(n0).light_source != 0 ||
 					nodemgr->get(n00).light_source != 0)
 				lighting_modified_blocks.set(block->getPos(), block);
 		}
