@@ -1616,7 +1616,7 @@ examples.
 * types: `text`, `image`, `color`, `indent`, `tree`
     * `text`:   show cell contents as text
     * `image`:  cell contents are an image index, use column options to define images
-    * `colo`:   cell contents are a ColorString and define color of following cell
+    * `color`:   cell contents are a ColorString and define color of following cell
     * `indent`: cell contents are a number and define indentation of following cell
     * `tree`:   same as indent, but user can open and close subtrees (treeview-like)
 * column options:
@@ -1958,9 +1958,11 @@ and `minetest.auth_reload` call the authetification handler.
 * `minetest.remove_node(pos)`
     * Equivalent to `set_node(pos, "air")`
 * `minetest.get_node(pos)`
-    * Returns `{name="ignore", ...}` for unloaded area
+    * Returns the node at the given position as table in the format
+      `{name="node_name", param1=0, param2=0}`, returns `{name="ignore", param1=0, param2=0}`
+      for unloaded areas.
 * `minetest.get_node_or_nil(pos)`
-    * Returns `nil` for unloaded area
+    * Same as `get_node` but returns `nil` for unloaded areas.
 * `minetest.get_node_light(pos, timeofday)`
     * Gets the light value at the given position. Note that the light value
       "inside" the node at the given position is returned, so you usually want
@@ -2636,8 +2638,6 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `"regular"`: Uses 0 textures, `bgcolor` ignored
         * `"skybox"`: Uses 6 textures, `bgcolor` used
         * `"plain"`: Uses 0 textures, `bgcolor` used
-    * **Note**: currently does not work directly in `on_joinplayer`; use
-      `minetest.after(0)` in there.
 * `get_sky()`: returns bgcolor, type and a table with the textures
 * `override_day_night_ratio(ratio or nil)`
     * `0`...`1`: Overrides day-night ratio, controlling sunlight to a specific amount
