@@ -144,8 +144,8 @@ IRRLICHT_TIMESTAMP_INT = $(ROOT)/deps/irrlicht_timestamp
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
 IRRLICHT_URL_GIT = https://github.com/zaki/irrlicht.git
 IRRLICHT_GIT_BRANCH = ogl-es
-#IRRLICHT_GIT_COMMIT = 58fa0cf
-IRRLICHT_GIT_COMMIT = ogl-es
+IRRLICHT_GIT_COMMIT = 58fa0cf
+#IRRLICHT_GIT_COMMIT = ogl-es
 
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es@$(IRRLICHT_REVISION)
 
