@@ -422,7 +422,10 @@ void draw_pageflip_3d_mode(Camera& camera, bool show_hud,
 			+ camera.getCameraNode()->getAbsolutePosition();
 
 	//Left eye...
+// fmTODO: fixme:
+#if IRRLICHT_VERSION_10000 < 10900
 	driver->setRenderTarget(irr::video::ERT_STEREO_LEFT_BUFFER);
+#endif
 
 	irr::core::vector3df leftEye;
 	irr::core::matrix4 leftMove;
@@ -451,7 +454,10 @@ void draw_pageflip_3d_mode(Camera& camera, bool show_hud,
 	guienv->drawAll();
 
 	//Right eye...
+// fmTODO: fixme:
+#if IRRLICHT_VERSION_10000 < 10900
 	driver->setRenderTarget(irr::video::ERT_STEREO_RIGHT_BUFFER);
+#endif
 
 	irr::core::vector3df rightEye;
 	irr::core::matrix4 rightMove;
