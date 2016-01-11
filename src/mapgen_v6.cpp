@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -41,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v6.h"
 #include "environment.h"
 
+
 FlagDesc flagdesc_mapgen_v6[] = {
 	{"jungles",    MGV6_JUNGLES},
 	{"biomeblend", MGV6_BIOMEBLEND},
@@ -51,7 +53,8 @@ FlagDesc flagdesc_mapgen_v6[] = {
 	{NULL,         0}
 };
 
-///////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
@@ -206,7 +209,6 @@ void MapgenV6Params::writeParams(Settings *settings) const
 
 
 //////////////////////// Some helper functions for the map generator
-
 
 // Returns Y one under area minimum if not found
 s16 MapgenV6::find_stone_level(v2s16 p2d)
@@ -489,11 +491,11 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
-		   data->blockpos_requested.Y >= data->blockpos_min.Y &&
-		   data->blockpos_requested.Z >= data->blockpos_min.Z);
+		data->blockpos_requested.Y >= data->blockpos_min.Y &&
+		data->blockpos_requested.Z >= data->blockpos_min.Z);
 	assert(data->blockpos_requested.X <= data->blockpos_max.X &&
-		   data->blockpos_requested.Y <= data->blockpos_max.Y &&
-		   data->blockpos_requested.Z <= data->blockpos_max.Z);
+		data->blockpos_requested.Y <= data->blockpos_max.Y &&
+		data->blockpos_requested.Z <= data->blockpos_max.Z);
 
 	this->generating = true;
 	this->vm   = data->vmanip;
@@ -834,7 +836,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					continue;
 
 				// Drop mud on side
-				for(u32 di = 0; di < 4; di++) {
+				for (u32 di = 0; di < 4; di++) {
 					v3s16 dirp = dirs4[di];
 					u32 i2 = i;
 					// Move to side
@@ -859,7 +861,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 						vm->m_area.add_y(em, i2, -1);
 						n2 = &vm->m_data[i2];
 						// if out of known area
-						if(vm->m_area.contains(i2) == false ||
+						if (vm->m_area.contains(i2) == false ||
 								n2->getContent() == CONTENT_IGNORE) {
 							dropped_to_unknown = true;
 							break;
@@ -874,7 +876,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					if (!dropped_to_unknown) {
 						*n2 = *n;
 						// Set old place to be air (or water)
-						if(old_is_water)
+						if (old_is_water)
 							*n = MapNode(c_water_source);
 						else
 							*n = MapNode(CONTENT_AIR);
