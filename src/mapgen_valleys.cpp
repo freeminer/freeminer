@@ -213,7 +213,7 @@ MapgenValleysParams::MapgenValleysParams()
 	}
 
 
-void MapgenValleysParams::readParams(const Settings *settings)
+void MapgenValleysParams::readParams(Settings *settings)
 {
 	settings->getFlagStrNoEx("mg_valleys_spflags", spflags, flagdesc_mapgen_valleys);
 
@@ -371,7 +371,7 @@ void MapgenValleys::makeChunk(BlockMakeData *data)
 
 	//TimeTaker tll("liquid_lighting");
 
-	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
+	updateLiquid(full_node_min, full_node_max);
 
 	if (flags & MG_LIGHT)
 		calcLighting(

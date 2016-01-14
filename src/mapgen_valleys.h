@@ -76,7 +76,7 @@ struct MapgenValleysParams : public MapgenSpecificParams {
 	MapgenValleysParams();
 	~MapgenValleysParams() {}
 
-	void readParams(const Settings *settings);
+	void readParams(Settings *settings);
 	void writeParams(Settings *settings) const;
 };
 
