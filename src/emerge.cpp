@@ -41,10 +41,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v5.h"
 #include "mapgen_v6.h"
 #include "mapgen_v7.h"
-#include "mapgen_indev.h"
+#include "mapgen_valleys.h"
 #include "mapgen_singlenode.h"
-#include "mapgen_math.h"
-#include "util/thread_pool.h"
 #include "mg_biome.h"
 #include "mg_ore.h"
 #include "mg_decoration.h"
@@ -56,6 +54,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverobject.h"
 #include "settings.h"
 #include "voxel.h"
+
+#include "mapgen_math.h"
+#include "mapgen_indev.h"
+#include "util/thread_pool.h"
 
 
 struct MapgenDesc {
@@ -115,6 +117,7 @@ MapgenDesc g_reg_mapgens[] = {
 	{"math",       new MapgenFactoryMath,       true},
 	{"flat",       new MapgenFactoryFlat,       true},
 	{"fractal",    new MapgenFactoryFractal,    true},
+	{"valleys",    new MapgenFactoryValleys,    true},
 	{"singlenode", new MapgenFactorySinglenode, false},
 };
 
