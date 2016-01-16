@@ -476,6 +476,9 @@ bool Schematic::loadSchematicFromFile(const std::string &filename,
 	if (ndef)
 		ndef->pendNodeResolve(this);
 
+	if (!name.size())
+		name = filename;
+
 	return true;
 }
 
