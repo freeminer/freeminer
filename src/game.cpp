@@ -3579,6 +3579,7 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			cam->camera_yaw = event.player_force_move.yaw;
 			cam->camera_pitch = event.player_force_move.pitch;
 		} else if (event.type == CE_DEATHSCREEN) {
+			player->m_sneak_node_exists = false;
 			if (g_settings->getBool("respawn_auto")) {
 				client->sendRespawn();
 			} else {
