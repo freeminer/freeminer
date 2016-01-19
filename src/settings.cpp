@@ -915,11 +915,7 @@ bool Settings::remove(const std::string &name)
 {
 	MutexAutoLock lock(m_mutex);
 
-<<<<<<< HEAD
-	delete m_settings[name].group;
 	m_json.removeMember(name);
-	return m_settings.erase(name);
-=======
 	std::map<std::string, SettingsEntry>::iterator it = m_settings.find(name);
 	if (it != m_settings.end()) {
 		delete it->second.group;
@@ -928,7 +924,6 @@ bool Settings::remove(const std::string &name)
 	} else {
 		return false;
 	}
->>>>>>> minetest/master
 }
 
 
