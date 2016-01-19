@@ -5,7 +5,7 @@ cd ..
 git remote add minetest https://github.com/minetest/minetest.git
 git fetch --all
 git pull
-git merge --no-edit minetest/master && git push
+git merge --no-edit minetest/master | grep -v "Conflict" && git push
 #git submodule foreach --recursive "git pull||true"
 cd games
 
