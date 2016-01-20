@@ -369,6 +369,7 @@ function core.item_drop(itemstack, dropper, pos)
 			v.z = v.z*2
 			obj:setvelocity(v)
 			obj:get_luaentity().dropped_by = dropper:get_player_name()
+			obj:get_luaentity().ttl = 86400 * 365 * 10; -- huge time for player drops
 			return itemstack
 		end
 
