@@ -1094,12 +1094,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			assert(f->liquid_type == LIQUID_SOURCE);
 			if (opaque_water)
 				f->alpha = 255;
-			if (new_style_water){
-				f->solidness = 0;
-			} else {
-				f->solidness = 1;
-				f->backface_culling = false;
-			}
+			f->solidness = new_style_water ? 0 : 1;
 			is_liquid = true;
 			break;
 		case NDT_FLOWINGLIQUID:
@@ -1154,17 +1149,14 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			break;
 		case NDT_PLANTLIKE:
 			f->solidness = 0;
-			f->backface_culling = false;
 			if (f->waving == 1)
 				material_type = TILE_MATERIAL_WAVING_PLANTS;
 			break;
 		case NDT_FIRELIKE:
-			f->backface_culling = false;
 			f->solidness = 0;
 			break;
 		case NDT_MESH:
 			f->solidness = 0;
-			f->backface_culling = false;
 			break;
 		case NDT_TORCHLIKE:
 		case NDT_SIGNLIKE:
@@ -1200,7 +1192,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 		// Tiles (fill in f->tiles[])
 		for (u16 j = 0; j < 6; j++) {
 			fillTileAttribs(tsrc, &f->tiles[j], &tiledef[j], tile_shader[j],
-				use_normal_texture, f->backface_culling, f->alpha, material_type);
+				use_normal_texture, f->tiledef[j].backface_culling, f->alpha, material_type);
 		}
 
 		// Special tiles (fill in f->special_tiles[])
