@@ -423,9 +423,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_'.$_]] } qw(tsan asan msan asannta)),
+    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_'.$_]] } qw(tsan asan msan asannta minetest)),
     (
-        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb nothreads minetest vtune),
+        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
