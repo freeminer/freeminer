@@ -168,7 +168,11 @@ else()
 		endif()
 	endif()
 	if(SANITIZE_MEMORY)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+	endif()
+	if(SANITIZE_UNDEFINED)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 	endif()
 
 
