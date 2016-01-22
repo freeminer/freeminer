@@ -26,10 +26,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h" // BS
 #include "environment.h"
 
+Queue<ActiveObjectMessage> dummy_queue;
+
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	ActiveObject(0),
 	m_static_block(1337,1337,1337),
-	m_messages_out(env->m_active_object_messages),
+	m_messages_out(env ? env->m_active_object_messages : dummy_queue),
 	m_uptime_last(0),
 	m_env(env),
 	m_base_position(pos)
