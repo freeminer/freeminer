@@ -70,9 +70,8 @@ public:
 	ScriptApiBase
 */
 
-ScriptApiBase::ScriptApiBase() /* :
-	m_luastackmutex(true)
-*/
+ScriptApiBase::ScriptApiBase() :
+	m_luastackmutex()
 {
 #ifdef SCRIPTAPI_LOCK_DEBUG
 	m_lock_recursion_count = 0;

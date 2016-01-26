@@ -209,7 +209,8 @@ struct TileDef
 	}
 
 	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
+
+	void deSerialize(std::istream &is, bool culling_ignore);
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);

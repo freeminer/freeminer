@@ -144,9 +144,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		Rename GENERIC_CMD_SET_ATTACHMENT to GENERIC_CMD_ATTACH_TO
 	PROTOCOL_VERSION 26:
 		Add TileDef tileable_horizontal, tileable_vertical flags
+	PROTOCOL_VERSION 27:
+		backface_culling: backwards compatibility for playing with
+		newer client on pre-27 servers.
 */
 
-#define LATEST_PROTOCOL_VERSION 26
+#define LATEST_PROTOCOL_VERSION 27
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 13
