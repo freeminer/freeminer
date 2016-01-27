@@ -349,7 +349,7 @@ private:
 	u32 m_max_packet_size;
 	float m_timeout;
 	ENetHost *m_enet_host;
-	ENetPeer *m_peer;
+	//ENetPeer *m_peer;
 	u16 m_peer_id;
 
 	concurrent_map<u16, ENetPeer*> m_peers;

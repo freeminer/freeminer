@@ -172,10 +172,14 @@ our $commands = {
         $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, $D{ENABLE_LEVELDB} = 0, if $config->{cmake_msan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_UNDEFINED} = 1, $D{ENABLE_LEVELDB} = 0, if $config->{cmake_usan};
+        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY} = 1, $D{ENABLE_LEVELDB} = 0,
+          if $config->{cmake_msan};
+        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
+          $D{ENABLE_LEVELDB} = 0,
+          if $config->{cmake_usan};
 
-        $D{ENABLE_LUAJIT} = 0, $D{DEBUG} = 1 if $config->{cmake_debug};
+        $D{ENABLE_LUAJIT} = 0 if $config->{cmake_debug} and !$config->{keep_luajit};
+        $D{DEBUG} = 1 if $config->{cmake_debug};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -331,7 +335,7 @@ our $tasks = {
         'symbolize',
     ],
     bot_usan => [
-        {-no_build_server => 1, -env=>'UBSAN_OPTIONS=print_stacktrace=1',},
+        {-no_build_server => 1, -env => 'UBSAN_OPTIONS=print_stacktrace=1',},
         'build_usan',
         $config->{run_task},
         'symbolize',
@@ -350,25 +354,25 @@ our $tasks = {
     ),
 
     build_minetest => [{build_name => '_minetest',}, 'prepare', {-no_build_server => 1,}, ['cmake', $config->{cmake_minetest}], 'make',],
-    bot_minetest      => ['build_minetest', $config->{run_task},],
-    bot_minetest_tsan => sub {
+    #bot_minetest      => ['build_minetest', $config->{run_task},],
+
+    bot_minetest => sub {
+        my $name = shift;
         $g->{build_name} .= '_minetest';
         local $config->{no_build_server} = 1;
         local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
-        commands_run('bot_tsan');
-    },
-    bot_minetest_tsannt => sub {
-        $g->{build_name} .= '_minetest';
-        local $config->{no_build_server} = 1;
-        local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
-        commands_run('bot_tsannt');
-    },
-    bot_minetest_asan => sub {
-        $g->{build_name} .= '_minetest';
-        local $config->{no_build_server} = 1;
-        local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
-        commands_run('bot_asan');
-    },
+        if ($name) {
+            commands_run('bot_' . $name);
+        } else {
+            commands_run('build_minetest');
+            commands_run($config->{run_task});
+        }
+    }, (
+        map {
+            'bot_minetest_' . $_ => [['bot_minetest', $_,]]
+        } qw(tsan tsannt asan usan)
+    ),
+
     #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
     stress => sub {
         commands_run($_[0] || 'build_normal');
@@ -453,7 +457,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_'.$_]] } qw(tsan asan msan usan asannta minetest)),
+    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] } qw(tsan asan msan usan asannta minetest)),
     (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
@@ -564,7 +568,9 @@ sub task_start(@) {
 }
 
 my $task_run = [grep { !/^-/ } @ARGV];
-$task_run = [qw(bot_tsan bot_asan bot_tsannt bot_tsannta valgrind_memcheck bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan)]
+$task_run = [
+    qw(bot_tsan bot_asan bot_usan bot_tsannt bot_tsannta valgrind_memcheck bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan)
+  ]
   unless @$task_run;
 if ('all' ~~ $task_run) {
     $task_run = [sort keys %$tasks];

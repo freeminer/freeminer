@@ -1592,7 +1592,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			// Step object
 			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
 				obj->m_uptime_last = uptime - dtime;
-			obj->step(uptime - obj->m_uptime_last, send_recommended);
+			obj->step(uptime > obj->m_uptime_last ? uptime - obj->m_uptime_last : dtime, send_recommended);
 			obj->m_uptime_last = uptime;
 			// Read messages from object
 /*
