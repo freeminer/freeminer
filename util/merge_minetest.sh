@@ -21,12 +21,12 @@ git pull
 git remote add minetest_game https://github.com/minetest/minetest_game.git
 git fetch --all
 git submodule foreach --recursive "git checkout master; git pull||true"
-git commit -a -m "up"
+git commit -a -m "update submodules"
 ( git merge --no-edit minetest_game/master | grep -i "conflict" ) && exit
 git push
 
 cd ..
-git commit -a -m "up"
+git commit -a -m "update submodules"
 git push
 
 git status
