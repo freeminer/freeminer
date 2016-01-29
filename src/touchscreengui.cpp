@@ -39,7 +39,7 @@ using namespace irr::core;
 
 extern Settings *g_settings;
 
-const char** touchgui_button_imagenames = (const char*[]) {
+const char* touchgui_button_imagenames[] = {
 	"up_arrow.png",
 	"down_arrow.png",
 	"left_arrow.png",
@@ -103,7 +103,7 @@ static irr::EKEY_CODE id2keycode(touch_gui_button_id id)
 	return keyname_to_keycode(g_settings->get("keymap_" + key).c_str());
 }
 
-TouchScreenGUI *g_touchscreengui;
+TouchScreenGUI *g_touchscreengui = nullptr;
 
 static void load_button_texture(button_info* btn, const char* path,
 		rect<s32> button_rect, ISimpleTextureSource* tsrc, video::IVideoDriver *driver)
@@ -178,8 +178,10 @@ void AutoHideButtonBar::init(ISimpleTextureSource* tsrc,
 
 AutoHideButtonBar::~AutoHideButtonBar()
 {
+	if (m_starter.guibutton) {
 	m_starter.guibutton->setVisible(false);
 	m_starter.guibutton->drop();
+	}
 }
 
 void AutoHideButtonBar::addButton(touch_gui_button_id button_id,

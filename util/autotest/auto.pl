@@ -35,6 +35,9 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
+# debug touchscreen gui. use irrlicht branch ogl-es
+$0 -DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1 -DUSE_TOUCHSCREENGUI=1 play_asan
+
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 play_vtune --vtune_gui=1
 $0 bot_vtune --autoexit=60 --vtune_gui=1
@@ -172,10 +175,9 @@ our $commands = {
         $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY} = 1, $D{ENABLE_LEVELDB} = 0,
+        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY} = 1,
           if $config->{cmake_msan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
-          $D{ENABLE_LEVELDB} = 0,
           if $config->{cmake_usan};
 
         $D{ENABLE_LUAJIT} = 0 if $config->{cmake_debug} and !$config->{keep_luajit};

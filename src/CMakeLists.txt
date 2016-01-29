@@ -762,6 +762,11 @@ set(FMclient_SRCS
 	FMStaticText.cpp
 )
 
+if (USE_TOUCHSCREENGUI)
+	add_definitions(-DHAVE_TOUCHSCREENGUI)
+	set(FMclient_SRCS ${FMclient_SRCS} touchscreengui.cpp)
+endif()
+
 # Client sources
 if (BUILD_CLIENT)
 	add_subdirectory(client)

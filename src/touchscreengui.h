@@ -68,14 +68,14 @@ typedef enum {
 #define SETTINGS_BAR_Y_OFFSET 6.5
 #define RARE_CONTROLS_BAR_Y_OFFSET 4
 
-extern const char** touchgui_button_imagenames;
+extern const char* touchgui_button_imagenames[];
 
 struct button_info {
 	float            repeatcounter;
 	float            repeatdelay;
 	irr::EKEY_CODE   keycode;
 	std::vector<int> ids;
-	IGUIButton*      guibutton;
+	IGUIButton*      guibutton = nullptr;
 	bool             immediate_release;
 };
 
