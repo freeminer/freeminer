@@ -119,22 +119,26 @@ void *ServerThread::run()
 	auto time = porting::getTimeMs();
 	while (!stopRequested()) {
 		try {
-			//TimeTaker timer("AsyncRunStep() + Receive()");
 			u32 time_now = porting::getTimeMs();
+			{
+			TimeTaker timer("Server AsyncRunStep()");
 			m_server->AsyncRunStep((time_now - time)/1000.0f);
+			}
 			time = time_now;
 
+			TimeTaker timer("Server Receive()");
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 			u32 end_ms = porting::getTimeMs();
 			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
-			if (sleep < 10)
-				sleep = 10;
+			if (sleep < 50)
+				sleep = 50;
 			end_ms += sleep; //u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
 				if (!m_server->Receive(sleep))
 					break;
-				if (porting::getTimeMs() > end_ms)
+				if (i > 50 && porting::getTimeMs() > end_ms)
+					verbosestream<<"Server: Recieve queue overloaded: processed="  << i << " per="<<porting::getTimeMs()-(end_ms-sleep)<<" sleep="<<sleep<<std::endl;
 					break;
 			}
 		} catch (con::NoIncomingDataException &e) {
@@ -756,21 +760,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			MutexAutoLock lock(m_env_mutex);
 			while (!m_admin_chat->command_queue.empty()) {
 				ChatEvent *evt = m_admin_chat->command_queue.pop_frontNoEx();
-				if (evt->type == CET_NICK_ADD) {
-					// The terminal informed us of its nick choice
-					m_admin_nick = ((ChatEventNick *)evt)->nick;
-					if (!m_script->getAuth(m_admin_nick, NULL, NULL)) {
-						errorstream << "You haven't set up an account." << std::endl
-							<< "Please log in using the client as '"
-							<< m_admin_nick << "' with a secure password." << std::endl
-							<< "Until then, you can't execute admin tasks via the console," << std::endl
-							<< "and everybody can claim the user account instead of you," << std::endl
-							<< "giving them full control over this server." << std::endl;
-					}
-				} else {
-					assert(evt->type == CET_CHAT);
-					handleAdminChat((ChatEventChat *)evt);
-				}
+				handleChatInterfaceEvent(evt);
 				delete evt;
 			}
 		}
@@ -1786,7 +1776,7 @@ void Server::printToConsoleOnly(const std::string &text)
 		m_admin_chat->outgoing_queue.push_back(
 			new ChatEventChat("", utf8_to_wide(text)));
 	} else {
-		std::cout << text;
+		std::cout << text << std::endl;
 	}
 }
 
@@ -2919,6 +2909,7 @@ void Server::RespawnPlayer(u16 peer_id)
 	if(!repositioned){
 		v3f pos = findSpawnPos();
 		// setPos will send the new position to client
+		playersao->getPlayer()->setSpeed(v3f(0,0,0));
 		playersao->setPos(pos);
 	}
 
@@ -3119,8 +3110,28 @@ void Server::UpdateCrafting(Player* player)
 	plist->changeItem(0, preview);
 }
 
+void Server::handleChatInterfaceEvent(ChatEvent *evt)
+{
+	if (evt->type == CET_NICK_ADD) {
+		// The terminal informed us of its nick choice
+		m_admin_nick = ((ChatEventNick *)evt)->nick;
+		if (!m_script->getAuth(m_admin_nick, NULL, NULL)) {
+			errorstream << "You haven't set up an account." << std::endl
+				<< "Please log in using the client as '"
+				<< m_admin_nick << "' with a secure password." << std::endl
+				<< "Until then, you can't execute admin tasks via the console," << std::endl
+				<< "and everybody can claim the user account instead of you," << std::endl
+				<< "giving them full control over this server." << std::endl;
+		}
+	} else {
+		assert(evt->type == CET_CHAT);
+		handleAdminChat((ChatEventChat *)evt);
+	}
+}
+
 std::wstring Server::handleChat(const std::string &name, const std::wstring &wname,
-	const std::wstring &wmessage, u16 peer_id_to_avoid_sending)
+	const std::wstring &wmessage, bool check_shout_priv,
+	u16 peer_id_to_avoid_sending)
 {
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
@@ -3148,10 +3159,15 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 		else
 			line += L"-!- Invalid command: " + str_split(wcmd, L' ')[0];
 	} else {
-		line += L"<";
-		line += wname;
-		line += L"> ";
-		line += wmessage;
+		if (check_shout_priv && !checkPriv(name, "shout")) {
+			line += L"-!- You don't have permission to shout.";
+			broadcast_line = false;
+		} else {
+			line += L"<";
+			line += wname;
+			line += L"> ";
+			line += wmessage;
+		}
 	}
 
 	/*
@@ -3395,7 +3411,8 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask)
 		return false;
 
 	SendHUDSetFlags(player->peer_id, flags, mask);
-	player->hud_flags = flags;
+	player->hud_flags &= ~mask;
+	player->hud_flags |= flags;
 
 	PlayerSAO* playersao = player->getPlayerSAO();
 

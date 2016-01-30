@@ -1,6 +1,14 @@
 Engine
 ======
 
+### 0.4.13.8 ( )
+  * Stability and speed fixes
+  * kv lua api: now possible to use any custom db:  core.kv_put('mykey', 'mydata', 'mydb'); core.kv_get('mykey', 'mydb');    'mydb' is optional
+  * Optional store auth database to leveldb, no huge auth.txt. to enable: auth_kv=1
+  * Mapgen indev: huge noise based caves
+  * Auto delete old items by default. push items up from solid blocks.
+
+
 ### 0.4.13.7 (Aug 20, 2015)
   * Stability and speed fixes
   * liquid_pressure=1 (dev)

@@ -24,7 +24,7 @@ ENDIF ()
 
 FIND_PATH(MSGPACK_INCLUDE_DIR msgpack.hpp)
 
-FIND_LIBRARY(MSGPACK_LIBRARY NAMES msgpack PATHS)
+FIND_LIBRARY(MSGPACK_LIBRARY NAMES msgpack msgpackc PATHS)
 
 MARK_AS_ADVANCED(MSGPACK_INCLUDE_DIR MSGPACK_LIBRARY)
 
@@ -34,6 +34,8 @@ find_package_handle_standard_args(msgpack DEFAULT_MSG MSGPACK_LIBRARY MSGPACK_IN
 elseif(NOT MSGPACK_LIBRARY)
 	set(MSGPACK_CXX11 1)
 	set(MSGPACK_BUILD_EXAMPLES 0)
+	set(MSGPACK_BUILD_TESTS 0)
+	set(MSGPACK_ENABLE_SHARED 0)
 	add_subdirectory(msgpack-c)
 	#include_directories(${PROJECT_SOURCE_DIR}/msgpack-c/include)
 	set(MSGPACK_LIBRARY msgpack-static)

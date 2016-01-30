@@ -35,7 +35,7 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-BUILD_NUMBER = 54
+BUILD_NUMBER = 56
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
@@ -136,6 +136,7 @@ OGG_TIMESTAMP = $(OGG_DIR)timestamp
 OGG_TIMESTAMP_INT = $(ROOT)/deps/ogg_timestamp
 OGG_URL_GIT = https://github.com/vincentjames501/libvorbis-libogg-android
 
+IRRLICHT_REVISION = 5122
 IRRLICHT_DIR = $(ROOT)/deps/irrlicht/
 IRRLICHT_LIB = $(IRRLICHT_DIR)lib/Android/libIrrlicht.a
 IRRLICHT_TIMESTAMP = $(IRRLICHT_DIR)timestamp
@@ -143,8 +144,12 @@ IRRLICHT_TIMESTAMP_INT = $(ROOT)/deps/irrlicht_timestamp
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es/
 IRRLICHT_URL_GIT = https://github.com/zaki/irrlicht.git
 IRRLICHT_GIT_BRANCH = ogl-es
+IRRLICHT_GIT_COMMIT = 58fa0cf
+#IRRLICHT_GIT_COMMIT = ogl-es
 
-OPENSSL_VERSION = 1.0.2d
+#IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es@$(IRRLICHT_REVISION)
+
+OPENSSL_VERSION = 1.0.2f
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
 OPENSSL_DIR = $(ROOT)/deps/$(OPENSSL_BASEDIR)/
 OPENSSL_LIB = $(OPENSSL_DIR)/libssl.so.1.0.0
@@ -152,14 +157,14 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.45.0
+CURL_VERSION = 7.47.0
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
 CURL_TIMESTAMP_INT = $(ROOT)/deps/curl_timestamp
 CURL_URL_HTTP = http://curl.haxx.se/download/curl-${CURL_VERSION}.tar.bz2
 
-GMP_VERSION = 6.0.0
+GMP_VERSION = 6.1.0
 GMP_DIR = $(ROOT)/deps/gmp-$(GMP_VERSION)
 GMP_LIB = $(GMP_DIR)/usr/lib/libgmp.so
 GMP_TIMESTAMP = $(GMP_DIR)/timestamp
@@ -179,8 +184,8 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3081101
-SQLITE3_URL = http://www.sqlite.org/2015/$(SQLITE3_FOLDER).zip
+SQLITE3_FOLDER = sqlite-amalgamation-3100200
+SQLITE3_URL = http://www.sqlite.org/2016/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
 
@@ -201,7 +206,7 @@ endif
 	$(ASSETS_TIMESTAMP) $(LEVELDB_TIMESTAMP) \
 	$(OPENAL_TIMESTAMP) $(OGG_TIMESTAMP) \
 	$(IRRLICHT_TIMESTAMP) $(CURL_TIMESTAMP) \
-	$(OPENSSL_TIMESTAMP) curl_binary \
+	$(OPENSSL_TIMESTAMP) \
 	$(ROOT)/jni/src/android_version.h \
 	$(ROOT)/jni/src/android_version_githash.h
 
@@ -264,7 +269,7 @@ openal_download :
 openal : $(OPENAL_LIB)
 
 $(OPENAL_LIB): $(OPENAL_TIMESTAMP)
-	@REFRESH=0;                                                                \
+	+ @REFRESH=0;                                                                \
 	if [ ! -e ${OPENAL_TIMESTAMP_INT} ] ; then                                 \
 		REFRESH=1;                                                             \
 	fi;                                                                        \
@@ -309,7 +314,7 @@ ogg_download :
 ogg : $(OGG_LIB)
 
 $(OGG_LIB): $(OGG_TIMESTAMP)
-	@REFRESH=0;                                                                \
+	+ @REFRESH=0;                                                                \
 	if [ ! -e ${OGG_TIMESTAMP_INT} ] ; then                                    \
 		echo "${OGG_TIMESTAMP_INT} doesn't exist";                             \
 		REFRESH=1;                                                             \
@@ -373,7 +378,7 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
 	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	CC=${CROSS_PREFIX}gcc ./Configure android-${TARGET_ARCH} no-idea no-seed -no-sha0 -DL_ENDIAN;\
+	CC=${CROSS_PREFIX}gcc ./Configure android-${TARGET_ARCH} -no-sha0 -DL_ENDIAN;\
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
 	touch ${OPENSSL_TIMESTAMP};                                                \
 	touch ${OPENSSL_TIMESTAMP_INT};                                            \
@@ -456,7 +461,7 @@ freetype_download :
 freetype : $(FREETYPE_LIB)
 
 $(FREETYPE_LIB) : $(FREETYPE_TIMESTAMP)
-	@REFRESH=0;                                                                \
+	+ @REFRESH=0;                                                                \
 	if [ ! -e ${FREETYPE_TIMESTAMP_INT} ] ; then                               \
 		REFRESH=1;                                                             \
 	fi;                                                                        \
@@ -560,6 +565,7 @@ irrlicht_download :
 		#svn co ${IRRLICHT_URL_SVN} irrlicht || exit 1;                         \
 		git clone --recursive --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
 		cd irrlicht;                                                           \
+		git checkout ${IRRLICHT_GIT_COMMIT}; \
 		mkdir -p lib/Android; \
 		patch -p1 < ../../irrlicht-touchcount.patch || exit 1;                 \
 		patch -p1 < ../../irrlicht-back_button.patch || exit 1;                \
@@ -575,7 +581,7 @@ $(IRRLICHT_TIMESTAMP) : irrlicht_download
 irrlicht : $(IRRLICHT_LIB)
 
 $(IRRLICHT_LIB): $(IRRLICHT_TIMESTAMP) $(FREETYPE_LIB)
-	@REFRESH=0;                                                                \
+	+ @REFRESH=0;                                                                \
 	if [ ! -e ${IRRLICHT_TIMESTAMP_INT} ] ; then                               \
 		REFRESH=1;                                                             \
 	fi;                                                                        \
@@ -665,18 +671,6 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 clean_curl :
 	$(RM) -rf deps/curl-${CURL_VERSION}                                        \
 	$(RM) -f deps/curl
-
-
-curl_binary:
-	@if [ ! -d "deps/curl-${CURL_VERSION_BINARY}" ] ; then                     \
-		echo "curl binary missing, downloading...";                           \
-		mkdir -p ${ROOT}/deps;                                                 \
-		cd deps;                                                               \
-		wget http://curl.haxx.se/gknw.net/7.34.0/dist-android/curl-7.34.0-rtmp-ssh2-ssl-zlib-static-bin-android.tar.gz || exit 1;\
-		tar -xzf curl-7.34.0-rtmp-ssh2-ssl-zlib-static-bin-android.tar.gz || exit 1;\
-		mv curl-7.34.0-rtmp-ssh2-ssl-zlib-static-bin-android curl-${CURL_VERSION_BINARY};\
-		rm curl-7.34.0-rtmp-ssh2-ssl-zlib-static-bin-android.tar.gz;           \
-	fi
 
 $(GMP_TIMESTAMP) : gmp_download
 	@LAST_MODIF=$$(find ${GMP_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
@@ -794,9 +788,11 @@ assets : $(ASSETS_TIMESTAMP) locale
 	cp -r ${ROOT}/worlds ${ROOT}/assets/freeminer; \
 	cp ${ROOT}/../../README.md ${ROOT}/assets/freeminer; \
 	cp -r ${ROOT}/../../builtin ${ROOT}/assets/freeminer; \
-	cp -r ${ROOT}/../../client ${ROOT}/assets/freeminer; \
-	#cp -r ${ROOT}/../../doc ${ROOT}/assets/freeminer; \
-	cp -r ${ROOT}/../../fonts ${ROOT}/assets/freeminer; \
+	mkdir ${ROOT}/assets/freeminer/client;                                      \
+	cp -r ${ROOT}/../../client/shaders ${ROOT}/assets/freeminer/client;         \
+	#cp ${ROOT}/../../doc/lgpl-2.1.txt ${ROOT}/assets/freeminer/LICENSE.txt;     \
+	mkdir ${ROOT}/assets/freeminer/fonts; \
+	cp -r ${ROOT}/../../fonts/*.ttf ${ROOT}/assets/freeminer/fonts/; \
 	mkdir ${ROOT}/assets/freeminer/games${GAMES_VERSION}; \
 	for game in ${GAMES_TO_COPY};                                              \
 	do                                                                         \
@@ -1016,7 +1012,7 @@ endif
 
 
 locale:
-	mkdir -p cmake && cd cmake && cmake ../../.. && make translations
+	mkdir -p cmake && cd cmake && cmake ../../.. -DNO_BUILD=1 && make translations
 
 clean_locale:
 	rm -rf cmake
@@ -1027,7 +1023,7 @@ clean_locale:
 # $(ICONV_LIB)
 apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
-	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) \
+	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) $(FREETYPE_LIB) \
 	$(ROOT)/jni/src/android_version_githash.h sqlite3_download
 	@export NDEBUG=$$NDEBUG; $(MAKE) manifest;                                 \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \

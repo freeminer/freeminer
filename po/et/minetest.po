@@ -7,70 +7,71 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-24 20:28+0200\n"
-"PO-Revision-Date: 2013-12-18 21:28+0200\n"
-"Last-Translator: Jabo Babo <bb7b@gmx.de>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"POT-Creation-Date: 2015-11-08 21:23+0100\n"
+"PO-Revision-Date: 2015-11-19 16:52+0000\n"
+"Last-Translator: Kristjan Räts <kristjanrats@gmail.com>\n"
+"Language-Team: Estonian "
+"<https://hosted.weblate.org/projects/minetest/minetest/et/>\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 1.7-dev\n"
+"X-Generator: Weblate 2.5-dev\n"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
-msgstr ""
+msgstr "Lue skriptis ilmnes viga; nagu näiteks mod:"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured:"
-msgstr ""
+msgstr "Ilmnes viga:"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Main menu"
-msgstr "Menüü"
+msgstr "Peamenüü"
 
 #: builtin/fstk/ui.lua builtin/mainmenu/store.lua
 msgid "Ok"
 msgstr "kinnitama"
 
 #: builtin/fstk/ui.lua
-#, fuzzy
 msgid "Reconnect"
-msgstr "Liitu"
+msgstr "Taasta ühendus"
 
 #: builtin/fstk/ui.lua
 msgid "The server has requested a reconnect:"
-msgstr ""
+msgstr "Server taotles taasühendumist:"
 
 #: builtin/mainmenu/common.lua src/game.cpp
 msgid "Loading..."
-msgstr ""
+msgstr "Laadimine..."
 
 #: builtin/mainmenu/common.lua
 msgid "Protocol version mismatch. "
-msgstr ""
+msgstr "Protokolli versioon ei sobi. "
 
 #: builtin/mainmenu/common.lua
 msgid "Server enforces protocol version $1. "
-msgstr ""
+msgstr "Server jõustab protokolli versiooni $1. "
 
 #: builtin/mainmenu/common.lua
 msgid "Server supports protocol versions between $1 and $2. "
-msgstr ""
+msgstr "Server toetab protokolli versioone $1 kuni $2. "
 
 #: builtin/mainmenu/common.lua
 msgid "Try reenabling public serverlist and check your internet connection."
 msgstr ""
+"Proovi lubada uuesti avalik serverite loend ja kontrollo oma Interneti "
+"ühendust."
 
 #: builtin/mainmenu/common.lua
 msgid "We only support protocol version $1."
-msgstr ""
+msgstr "Meie toetame ainult protokolli versiooni $1."
 
 #: builtin/mainmenu/common.lua
 msgid "We support protocol versions between version $1 and $2."
-msgstr ""
+msgstr "Meie toetame protokolli versioone $1 kuni $2."
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/dlg_create_world.lua
 #: builtin/mainmenu/dlg_rename_modpack.lua builtin/mainmenu/tab_settings.lua
@@ -79,43 +80,40 @@ msgid "Cancel"
 msgstr "Tühista"
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/tab_mods.lua
-#, fuzzy
 msgid "Depends:"
-msgstr "Vajab:"
+msgstr "Sõltub:"
 
 #: builtin/mainmenu/dlg_config_world.lua
-#, fuzzy
 msgid "Disable MP"
-msgstr "Lülita kõik välja"
+msgstr "Keela MP"
 
 #: builtin/mainmenu/dlg_config_world.lua
-#, fuzzy
 msgid "Enable MP"
-msgstr "Lülita kõik sisse"
+msgstr "Luba MP"
 
 #: builtin/mainmenu/dlg_config_world.lua
-#, fuzzy
 msgid "Enable all"
-msgstr "Lülita kõik sisse"
+msgstr "Luba kõik"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid ""
 "Failed to enable mod \"$1\" as it contains disallowed characters. Only "
 "chararacters [a-z0-9_] are allowed."
 msgstr ""
+"Mod \"$1\" kasutamine nurjus, sest ka sisaldab keelatud sümboleid. Lubatud "
+"märgid on ainult [a-z0-9_]."
 
 #: builtin/mainmenu/dlg_config_world.lua
-#, fuzzy
 msgid "Hide Game"
-msgstr "Mäng"
+msgstr "Peida mäng"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Hide mp content"
-msgstr ""
+msgstr "Peida mod. pakkide sisu"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mod:"
-msgstr ""
+msgstr "Mod:"
 
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/tab_settings.lua
 #: src/guiKeyChangeMenu.cpp
@@ -123,18 +121,16 @@ msgid "Save"
 msgstr "Salvesta"
 
 #: builtin/mainmenu/dlg_config_world.lua
-#, fuzzy
 msgid "World:"
-msgstr "Vali maailm:"
+msgstr "Maailm:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "enabled"
 msgstr "Sisse lülitatud"
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "A world named \"$1\" already exists"
-msgstr "Maailma loomine ebaõnnestus: Samanimeline maailm on juba olemas"
+msgstr "Maailm nimega \"$1\" on juba olemas"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Create"
@@ -142,20 +138,19 @@ msgstr "Loo"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Download a subgame, such as minetest_game, from minetest.net"
-msgstr ""
+msgstr "Laadi alla alammäng, näiteks minetest_game, aadressilt minetest.net"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Download one from minetest.net"
-msgstr ""
+msgstr "Laadi minetest.net-st üks mäng alla"
 
 #: builtin/mainmenu/dlg_create_world.lua src/settings_translation_file.cpp
 msgid "Game"
 msgstr "Mäng"
 
 #: builtin/mainmenu/dlg_create_world.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen"
-msgstr "Põlvkonna kaardid"
+msgstr "Kaardi generaator"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "No worldname given or no game selected"
@@ -163,11 +158,11 @@ msgstr "No nimi või no mäng valitud"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Seed"
-msgstr ""
+msgstr "Seed"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Warning: The minimal development test is meant for developers."
-msgstr ""
+msgstr "Hoiatus: minimaalne arendustest on mõeldud arendajatele."
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "World name"
@@ -175,7 +170,7 @@ msgstr "Maailma nimi"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "You have no subgames installed."
-msgstr ""
+msgstr "Sa ei ole alammänge paigaldanud."
 
 #: builtin/mainmenu/dlg_delete_mod.lua
 msgid "Are you sure you want to delete \"$1\"?"
@@ -198,9 +193,8 @@ msgid "Yes"
 msgstr "Jah"
 
 #: builtin/mainmenu/dlg_delete_world.lua
-#, fuzzy
 msgid "Delete World \"$1\"?"
-msgstr "Kustuta maailm: \"$1\"?"
+msgstr "Kas kustutada maailm \"$1\"?"
 
 #: builtin/mainmenu/dlg_delete_world.lua
 msgid "No"
@@ -221,9 +215,8 @@ msgid ""
 msgstr ""
 
 #: builtin/mainmenu/modmgr.lua
-#, fuzzy
 msgid "Failed to install $1 to $2"
-msgstr "Maailma initsialiseerimine ebaõnnestus"
+msgstr "$1 paigaldamine $2 nurjus"
 
 #: builtin/mainmenu/modmgr.lua
 msgid "Install Mod: file: \"$1\""
@@ -262,9 +255,8 @@ msgid "Search"
 msgstr ""
 
 #: builtin/mainmenu/store.lua
-#, fuzzy
 msgid "Shortname:"
-msgstr "Maailma nimi"
+msgstr "Lühike nimi:"
 
 #: builtin/mainmenu/store.lua
 msgid "Successfully installed:"
@@ -295,9 +287,8 @@ msgid "Previous Contributors"
 msgstr "Early arendajad"
 
 #: builtin/mainmenu/tab_credits.lua
-#, fuzzy
 msgid "Previous Core Developers"
-msgstr "Põhiline arendaja"
+msgstr "Eelmised põhilised arendajad"
 
 #: builtin/mainmenu/tab_mods.lua
 msgid "Installed Mods:"
@@ -320,9 +311,8 @@ msgid "Rename"
 msgstr ""
 
 #: builtin/mainmenu/tab_mods.lua
-#, fuzzy
 msgid "Select Mod File:"
-msgstr "Vali maailm:"
+msgstr "Vali modifikatsiooni fail:"
 
 #: builtin/mainmenu/tab_mods.lua
 msgid "Uninstall selected mod"
@@ -333,9 +323,8 @@ msgid "Uninstall selected modpack"
 msgstr ""
 
 #: builtin/mainmenu/tab_multiplayer.lua
-#, fuzzy
 msgid "Address / Port :"
-msgstr "IP/Port"
+msgstr "Aadress / Port:"
 
 #: builtin/mainmenu/tab_multiplayer.lua src/settings_translation_file.cpp
 msgid "Client"
@@ -346,14 +335,12 @@ msgid "Connect"
 msgstr "Liitu"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
-#, fuzzy
 msgid "Creative mode"
-msgstr "Kujunduslik mängumood"
+msgstr "Loov režiim"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
-#, fuzzy
 msgid "Damage enabled"
-msgstr "Sisse lülitatud"
+msgstr "Kahjustamine lubatud"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_server.lua
 #: builtin/mainmenu/tab_singleplayer.lua src/keycode.cpp
@@ -361,14 +348,12 @@ msgid "Delete"
 msgstr "Kustuta"
 
 #: builtin/mainmenu/tab_multiplayer.lua
-#, fuzzy
 msgid "Name / Password :"
-msgstr "Nimi/Parool"
+msgstr "Nimi / Parool:"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
-#, fuzzy
 msgid "Public Serverlist"
-msgstr "Avatud serverite nimekiri:"
+msgstr "Avalikud serverid"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 #, fuzzy
@@ -431,7 +416,7 @@ msgid "Start Game"
 msgstr "Alusta mängu"
 
 #: builtin/mainmenu/tab_settings.lua
-msgid "\""
+msgid "\"$1\" is not a valid flag."
 msgstr ""
 
 #: builtin/mainmenu/tab_settings.lua
@@ -459,6 +444,10 @@ msgstr ""
 #, fuzzy
 msgid "Enabled"
 msgstr "Sisse lülitatud"
+
+#: builtin/mainmenu/tab_settings.lua
+msgid "Format is 3 numbers separated by commas and inside brackets."
+msgstr ""
 
 #: builtin/mainmenu/tab_settings.lua
 msgid ""
@@ -1429,7 +1418,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Controls size of deserts and beaches in Mapgen V6.\n"
+"Controls size of deserts and beaches in Mapgen v6.\n"
 "When snowbiomes are enabled 'mgv6_freq_desert' is ignored."
 msgstr ""
 
@@ -1580,7 +1569,11 @@ msgid "Dump the mapgen debug infos."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Enable a bit lower water surface, so it doesn't "
+msgid ""
+"Enable a bit lower water surface, so it doesn't \"fill\" the node "
+"completely.\n"
+"Note that this is not quite optimized and that smooth lighting on the\n"
+"water surface doesn't work with this."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -1711,7 +1704,7 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid ""
 "Fast movement (via use key).\n"
-"This requires the "
+"This requires the \"fast\" privilege on the server."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -1847,7 +1840,8 @@ msgid ""
 "Global map generation attributes.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them.\n"
+"'trees' and 'flat' flags only have effect in mgv6."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -1927,21 +1921,23 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
-msgid "If disabled "
-msgstr "Lülita kõik välja"
+msgid ""
+"If disabled \"use\" key is used to fly fast if both fly and fast mode are "
+"enabled."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled together with fly mode, player is able to fly through solid "
 "nodes.\n"
-"This requires the "
+"This requires the \"noclip\" privilege on the server."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
-msgid "If enabled, "
-msgstr "Sisse lülitatud"
+msgid ""
+"If enabled, \"use\" key instead of \"sneak\" key is used for climbing down "
+"and descending."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2014,6 +2010,52 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Item entity TTL"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: (X,Y,Z) offsets from world centre.\n"
+"Range roughly -2 to 2, multiply by j_scale for offsets in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Julia set: Approximate (X,Y,Z) scales in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Iterations of the recursive function.\n"
+"Controls scale of finest detail."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: W co-ordinate of the generated 3D slice of the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: W value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: X value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Y value determining the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Julia set: Z value determining the 4D shape.\n"
+"Range roughly -2 to 2."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -2342,26 +2384,57 @@ msgid "Makes DirectX work with LuaJIT. Disable if it causes troubles."
 msgstr ""
 
 #: src/settings_translation_file.cpp
+msgid ""
+"Mandelbrot set: (X,Y,Z) offsets from world centre.\n"
+"Range roughly -2 to 2, multiply by m_scale for offsets in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mandelbrot set: Approximate (X,Y,Z) scales in nodes."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Mandelbrot set: Iterations of the recursive function.\n"
+"Controls scale of finest detail."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Mandelbrot set: W co-ordinate of the generated 3D slice of the 4D shape.\n"
+"Range roughly -2 to 2."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Map directory"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Map generation attributes specific to Mapgen V6.\n"
-"When snowbiomes are enabled jungles are enabled and the jungles flag is "
-"ignored.\n"
+"Map generation attributes specific to Mapgen fractal.\n"
+"'julia' selects a julia set to be generated instead of a mandelbrot set.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them."
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Map generation attributes specific to Mapgen V7.\n"
+"Map generation attributes specific to Mapgen v6.\n"
+"When snowbiomes are enabled jungles are enabled and the jungles flag is "
+"ignored.\n"
+"Flags that are not specified in the flag string are not modified from the "
+"default.\n"
+"Flags starting with \"no\" are used to explicitly disable them."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Map generation attributes specific to Mapgen v7.\n"
 "'ridges' are the rivers.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
-"Flags starting with "
+"Flags starting with \"no\" are used to explicitly disable them."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -2401,6 +2474,80 @@ msgstr "Põlvkonna kaardid"
 #, fuzzy
 msgid "Mapgen flags"
 msgstr "Põlvkonna kaardid"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal"
+msgstr "Põlvkonna kaardid"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal cave1 noise parameters"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal cave2 noise parameters"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal filler depth noise parameters"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapgen fractal flags"
+msgstr "Põlvkonna kaardid"
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia iterations"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia offset"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia scale"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia slice w"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia w"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia x"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia y"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal julia z"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot iterations"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot offset"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot scale"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal mandelbrot slice w"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Mapgen fractal seabed noise parameters"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen heat blend noise parameters"
@@ -2576,6 +2723,14 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS when game is paused."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Maximum distance above water level for player spawn.\n"
+"Larger values result in spawn points closer to (x = 0, z = 0).\n"
+"Smaller values may result in a suitable spawn point not being found,\n"
+"resulting in a spawn at (0, 0, 0) possibly buried underground."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -2881,7 +3036,7 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid ""
 "Player is able to fly without being affected by gravity.\n"
-"This requires the "
+"This requires the \"fly\" privilege on the server."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -3124,7 +3279,7 @@ msgstr "Ilus valgustus"
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Smooths camera when moving and looking arround.\n"
+"Smooths camera when moving and looking around.\n"
 "Useful for recording videos."
 msgstr ""
 
@@ -3333,6 +3488,10 @@ msgid "Vertical screen synchronization."
 msgstr ""
 
 #: src/settings_translation_file.cpp
+msgid "Vertical spawn range"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Video driver"
 msgstr ""
 
@@ -3499,58 +3658,70 @@ msgid "cURL timeout"
 msgstr ""
 
 #, fuzzy
-#~ msgid "Game Name"
-#~ msgstr "Mäng"
-
-#~ msgid "GAMES"
-#~ msgstr "MÄNGUD"
-
-#~ msgid "new game"
-#~ msgstr "uus mängu"
-
-#~ msgid "EDIT GAME"
-#~ msgstr "MUUDA MÄNGU"
+#~ msgid "Opaque Leaves"
+#~ msgstr "Läbipaistmatu vesi"
 
 #, fuzzy
-#~ msgid "Remove selected mod"
-#~ msgstr "Eemalda valitud muutus"
+#~ msgid "Opaque Water"
+#~ msgstr "Läbipaistmatu vesi"
 
 #, fuzzy
-#~ msgid "<<-- Add mod"
-#~ msgstr "<<-- Lisama muutus"
+#~ msgid "Reset singleplayer world"
+#~ msgstr "Üksikmäng"
 
-#~ msgid "Favorites:"
-#~ msgstr "Lemmikud:"
-
-#~ msgid "Name"
-#~ msgstr "Nimi"
-
-#~ msgid "Password"
-#~ msgstr "Parool"
-
-#~ msgid "SETTINGS"
-#~ msgstr "Seaded"
-
-#~ msgid "Preload item visuals"
-#~ msgstr "Lae asjade visuaale"
+#~ msgid "To enable shaders the OpenGL driver needs to be used."
+#~ msgstr "Aktiveerimiseks varjud, nad vajavad OpenGL draiver."
 
 #, fuzzy
-#~ msgid "Finite Liquid"
-#~ msgstr "Löppev vedelik"
+#~ msgid "Downloading"
+#~ msgstr "Alla"
 
-#~ msgid ""
-#~ "Warning: Some mods are not configured yet.\n"
-#~ "They will be enabled by default when you save the configuration.  "
+#~ msgid "Left click: Move all items, Right click: Move single item"
 #~ msgstr ""
-#~ "Hoiatus: Mõned modifikatsioonid pole sätitud veel.\n"
-#~ "Need lülitatakse sisse kohe pärast sätete salvestamist."
+#~ "Vasak hiireklõps: Liiguta kõiki asju, Parem hiireklõps: Liiguta üksikut "
+#~ "asja"
 
-#~ msgid ""
-#~ "Warning: Some configured mods are missing.\n"
-#~ "Their setting will be removed when you save the configuration.  "
-#~ msgstr ""
-#~ "Hoiatus: Mõned konfigureeritud modifikatsioonid on kaotsi läinud.\n"
-#~ "Nende sätted kustutatakse kui salvestada konfiguratsioon."
+#~ msgid "is required by:"
+#~ msgstr "Seda vajavad:"
+
+#~ msgid "Configuration saved.  "
+#~ msgstr "Konfiguratsioon salvestatud. "
+
+#~ msgid "Warning: Configuration not consistent.  "
+#~ msgstr "Hoiatus: Konfiguratsioon pole kindel."
+
+#~ msgid "Cannot create world: Name contains invalid characters"
+#~ msgstr "Maailma loomine ebaõnnestus: Nimes esineb keelatud tähti"
+
+#~ msgid "Show Public"
+#~ msgstr "Näita avalikke"
+
+#~ msgid "Show Favorites"
+#~ msgstr "Näita lemmikuid"
+
+#~ msgid "Leave address blank to start a local server."
+#~ msgstr "Jäta IP lahter tühjaks et alustada LAN serverit."
+
+#~ msgid "Create world"
+#~ msgstr "Loo maailm"
+
+#~ msgid "Address required."
+#~ msgstr "IP on vajalkik."
+
+#~ msgid "Cannot delete world: Nothing selected"
+#~ msgstr "Maailma kustutamine ebaõnnestus: Maailma pole valitud"
+
+#~ msgid "Files to be deleted"
+#~ msgstr "Failid mida kustutada"
+
+#~ msgid "Cannot create world: No games found"
+#~ msgstr "Maailma loomine ebaõnnestus: Mängu ei leitud"
+
+#~ msgid "Cannot configure world: Nothing selected"
+#~ msgstr "Maailma konfigureerimine ebaõnnestus: Pole midagi valitud"
+
+#~ msgid "Failed to delete all world files"
+#~ msgstr "Kõigi maailma failide kustutamine ebaõnnestus"
 
 #~ msgid ""
 #~ "Default Controls:\n"
@@ -3577,68 +3748,64 @@ msgstr ""
 #~ "- ESC: Menüü\n"
 #~ "- T: Jututupa\n"
 
-#~ msgid "Failed to delete all world files"
-#~ msgstr "Kõigi maailma failide kustutamine ebaõnnestus"
-
-#~ msgid "Cannot configure world: Nothing selected"
-#~ msgstr "Maailma konfigureerimine ebaõnnestus: Pole midagi valitud"
-
-#~ msgid "Cannot create world: No games found"
-#~ msgstr "Maailma loomine ebaõnnestus: Mängu ei leitud"
-
-#~ msgid "Files to be deleted"
-#~ msgstr "Failid mida kustutada"
-
-#~ msgid "Cannot delete world: Nothing selected"
-#~ msgstr "Maailma kustutamine ebaõnnestus: Maailma pole valitud"
-
-#~ msgid "Address required."
-#~ msgstr "IP on vajalkik."
-
-#~ msgid "Create world"
-#~ msgstr "Loo maailm"
-
-#~ msgid "Leave address blank to start a local server."
-#~ msgstr "Jäta IP lahter tühjaks et alustada LAN serverit."
-
-#~ msgid "Show Favorites"
-#~ msgstr "Näita lemmikuid"
-
-#~ msgid "Show Public"
-#~ msgstr "Näita avalikke"
-
-#~ msgid "Cannot create world: Name contains invalid characters"
-#~ msgstr "Maailma loomine ebaõnnestus: Nimes esineb keelatud tähti"
-
-#~ msgid "Warning: Configuration not consistent.  "
-#~ msgstr "Hoiatus: Konfiguratsioon pole kindel."
-
-#~ msgid "Configuration saved.  "
-#~ msgstr "Konfiguratsioon salvestatud. "
-
-#~ msgid "is required by:"
-#~ msgstr "Seda vajavad:"
-
-#~ msgid "Left click: Move all items, Right click: Move single item"
+#~ msgid ""
+#~ "Warning: Some configured mods are missing.\n"
+#~ "Their setting will be removed when you save the configuration.  "
 #~ msgstr ""
-#~ "Vasak hiireklõps: Liiguta kõiki asju, Parem hiireklõps: Liiguta üksikut "
-#~ "asja"
+#~ "Hoiatus: Mõned konfigureeritud modifikatsioonid on kaotsi läinud.\n"
+#~ "Nende sätted kustutatakse kui salvestada konfiguratsioon."
+
+#~ msgid ""
+#~ "Warning: Some mods are not configured yet.\n"
+#~ "They will be enabled by default when you save the configuration.  "
+#~ msgstr ""
+#~ "Hoiatus: Mõned modifikatsioonid pole sätitud veel.\n"
+#~ "Need lülitatakse sisse kohe pärast sätete salvestamist."
 
 #, fuzzy
-#~ msgid "Downloading"
-#~ msgstr "Alla"
+#~ msgid "Finite Liquid"
+#~ msgstr "Löppev vedelik"
 
-#~ msgid "To enable shaders the OpenGL driver needs to be used."
-#~ msgstr "Aktiveerimiseks varjud, nad vajavad OpenGL draiver."
+#~ msgid "Preload item visuals"
+#~ msgstr "Lae asjade visuaale"
+
+#~ msgid "SETTINGS"
+#~ msgstr "Seaded"
+
+#~ msgid "Password"
+#~ msgstr "Parool"
+
+#~ msgid "Name"
+#~ msgstr "Nimi"
+
+#~ msgid "Favorites:"
+#~ msgstr "Lemmikud:"
 
 #, fuzzy
-#~ msgid "Reset singleplayer world"
-#~ msgstr "Üksikmäng"
+#~ msgid "<<-- Add mod"
+#~ msgstr "<<-- Lisama muutus"
 
 #, fuzzy
-#~ msgid "Opaque Water"
-#~ msgstr "Läbipaistmatu vesi"
+#~ msgid "Remove selected mod"
+#~ msgstr "Eemalda valitud muutus"
+
+#~ msgid "EDIT GAME"
+#~ msgstr "MUUDA MÄNGU"
+
+#~ msgid "new game"
+#~ msgstr "uus mängu"
+
+#~ msgid "GAMES"
+#~ msgstr "MÄNGUD"
 
 #, fuzzy
-#~ msgid "Opaque Leaves"
-#~ msgstr "Läbipaistmatu vesi"
+#~ msgid "Game Name"
+#~ msgstr "Mäng"
+
+#, fuzzy
+#~ msgid "If enabled, "
+#~ msgstr "Sisse lülitatud"
+
+#, fuzzy
+#~ msgid "If disabled "
+#~ msgstr "Lülita kõik välja"

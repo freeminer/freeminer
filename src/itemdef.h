@@ -30,7 +30,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include "itemgroup.h"
 #include "sound.h"
+
+//#include "util/container.h"
+//#include "util/thread.h"
+
+#ifndef SERVER
+//#include "client/tile.h"
+#endif
+
 #include "msgpack_fix.h"
+
 class IGameDef;
 struct ToolCapabilities;
 

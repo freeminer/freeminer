@@ -555,12 +555,6 @@ void Client::step(float dtime)
 						do_mapper_update = false;
 				}
 
-				if (r.mesh && r.mesh->getMesh()->getMeshBufferCount() == 0) {
-					//delete r.mesh;
-				} else {
-					// Replace with the new mesh
-					block->mesh = r.mesh;
-				}
 			} else {
 				//delete r.mesh;
 			}
@@ -1003,6 +997,7 @@ void Client::interact(u8 action, const PointedThing& pointed)
 		2: digging completed
 		3: place block or item (to abovesurface)
 		4: use item
+		5: perform secondary action of item
 	*/
 
 	NetworkPacket pkt(TOSERVER_INTERACT, 1 + 2 + 0);

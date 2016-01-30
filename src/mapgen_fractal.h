@@ -3,6 +3,9 @@ Minetest
 Copyright (C) 2010-2015 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 Copyright (C) 2010-2015 paramat, Matt Gregory
 
+Fractal formulas from http://www.bugman123.com/Hypercomplex/index.html
+by Paul Nylander, and from http://www.fractalforums.com, thank you.
+
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation; either version 2.1 of the License, or
@@ -23,10 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "mapgen.h"
 
-#define MGFRACTAL_LARGE_CAVE_DEPTH -32
-
-/////////////////// Mapgen Fractal flags
-#define MGFRACTAL_JULIA 0x01
+#define MGFRACTAL_LARGE_CAVE_DEPTH -33
 
 class BiomeManager;
 
@@ -36,15 +36,12 @@ extern FlagDesc flagdesc_mapgen_fractal[];
 struct MapgenFractalParams : public MapgenSpecificParams {
 	u32 spflags;
 
-	u16 m_iterations;
-	v3f m_scale;
-	v3f m_offset;
-	float m_slice_w;
+	u16 fractal;
+	u16 iterations;
+	v3f scale;
+	v3f offset;
+	float slice_w;
 
-	u16 j_iterations;
-	v3f j_scale;
-	v3f j_offset;
-	float j_slice_w;
 	float julia_x;
 	float julia_y;
 	float julia_z;
@@ -69,22 +66,22 @@ public:
 
 	int ystride;
 	int zstride;
-	u32 spflags;
+	u16 formula;
+	bool julia;
 
 	v3s16 node_min;
 	v3s16 node_max;
 	v3s16 full_node_min;
 	v3s16 full_node_max;
 
-	u16 m_iterations;
-	v3f m_scale;
-	v3f m_offset;
-	float m_slice_w;
+	u32 spflags;
 
-	u16 j_iterations;
-	v3f j_scale;
-	v3f j_offset;
-	float j_slice_w;
+	u16 fractal;
+	u16 iterations;
+	v3f scale;
+	v3f offset;
+	float slice_w;
+
 	float julia_x;
 	float julia_y;
 	float julia_z;

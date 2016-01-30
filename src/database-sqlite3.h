@@ -73,6 +73,10 @@ private:
 	sqlite3_stmt *m_stmt_end;
 
 	std::mutex mutex;
+
+	s64 m_busy_handler_data[2];
+
+	static int busyHandler(void *data, int count);
 };
 
 #endif

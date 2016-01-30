@@ -609,6 +609,8 @@ public:
 	
 	std::atomic_short heat;
 	std::atomic_short humidity;
+	std::atomic_short heat_add;
+	std::atomic_short humidity_add;
 	std::atomic_ulong heat_last_update;
 	u32 humidity_last_update;
 	float m_uptime_timer_last;
@@ -635,20 +637,8 @@ public:
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
 	content_t content_only;
 	u8 content_only_param1, content_only_param2;
-	content_t analyzeContent() {
-		auto lock = lock_shared_rec();
-		content_only = data[0].param0;
-		content_only_param1 = data[0].param1;
-		content_only_param2 = data[0].param2;
-		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {
-			if (data[i].param0 != content_only || data[i].param1 != content_only_param1 || data[i].param2 != content_only_param2) {
-				content_only = CONTENT_IGNORE;
-				break;
-			}
-		}
-		return content_only;
-	}
-	std::atomic_bool lighting_broken;
+	content_t analyzeContent();
+	std::atomic_short lighting_broken;
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;

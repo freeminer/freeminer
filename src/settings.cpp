@@ -510,7 +510,7 @@ bool Settings::getStruct(const std::string &name, const std::string &format,
 }
 
 
-bool Settings::getNoiseParams(const std::string &name, NoiseParams &np) const
+bool Settings::getNoiseParams(const std::string &name, NoiseParams &np)
 {
 	return getNoiseParamsFromGroup(name, np) || getNoiseParamsFromValue(name, np);
 }
@@ -541,17 +541,31 @@ bool Settings::getNoiseParamsFromValue(const std::string &name,
 	if (optional_params != "")
 		np.lacunarity = stof(optional_params);
 
+	warningstream << " Noise params from string [" << name << "] deprecated. far* values ignored." << std::endl;
+
 	return true;
 }
 
 
 bool Settings::getNoiseParamsFromGroup(const std::string &name,
-	NoiseParams &np) const
+	NoiseParams &np)
 {
 	Settings *group = NULL;
+	bool created = false;
 
 	if (!getGroupNoEx(name, group))
-		return false;
+	{
+		try {
+			group = new Settings;
+			created = true;
+			group->fromJson(getJson(name));
+		} catch (std::exception e) {
+			//errorstream<<"fail " << e.what() << std::endl;
+			if (created)
+				delete group;
+			return false;
+		}
+	}
 
 	group->getFloatNoEx("offset",      np.offset);
 	group->getFloatNoEx("scale",       np.scale);
@@ -565,10 +579,13 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	if (!group->getFlagStrNoEx("flags", np.flags, flagdesc_noiseparams))
 		np.flags = NOISE_FLAG_DEFAULTS;
 
-	group->getFloatNoEx("farscale",    np.farscale);
-	group->getFloatNoEx("farspread",   np.farspread);
-	group->getFloatNoEx("farpersist",  np.farpersist);
+	group->getFloatNoEx("farscale",      np.far_scale);
+	group->getFloatNoEx("farspread",     np.far_spread);
+	group->getFloatNoEx("farpersist",    np.far_persist);
+	group->getFloatNoEx("farlacunarity", np.far_lacunarity);
 
+	if (created)
+		delete group;
 	return true;
 }
 
@@ -885,9 +902,10 @@ bool Settings::setNoiseParams(const std::string &name,
 	group->setFloat("lacunarity",  np.lacunarity);
 	group->setFlagStr("flags",     np.flags, flagdesc_noiseparams, np.flags);
 
-	group->setFloat("farscale",    np.farscale);
-	group->setFloat("farspread",   np.farspread);
-	group->setFloat("farpersist",  np.farpersist);
+	group->setFloat("farscale",    np.far_scale);
+	group->setFloat("farspread",   np.far_spread);
+	group->setFloat("farpersist",  np.far_persist);
+	group->setFloat("farlacunarity",  np.far_lacunarity);
 
 	return setEntry(name, &group, true, set_default);
 }
@@ -897,9 +915,15 @@ bool Settings::remove(const std::string &name)
 {
 	MutexAutoLock lock(m_mutex);
 
-	delete m_settings[name].group;
 	m_json.removeMember(name);
-	return m_settings.erase(name);
+	std::map<std::string, SettingsEntry>::iterator it = m_settings.find(name);
+	if (it != m_settings.end()) {
+		delete it->second.group;
+		m_settings.erase(it);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 
@@ -1144,8 +1168,7 @@ bool Settings::readJsonFile(const std::string &filename) {
 	return fromJson(json);
 }
 
-void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
-{
+void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 	Json::Value json;
 	toJson(json);
 	std::ostringstream os(std::ios_base::binary);
@@ -1153,8 +1176,7 @@ void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	pk.pack(os.str());
 }
 
-void Settings::msgpack_unpack(msgpack::object o)
-{
+void Settings::msgpack_unpack(msgpack::object o) {
 	std::string data;
 	o.convert(&data);
 	std::istringstream os(data, std::ios_base::binary);

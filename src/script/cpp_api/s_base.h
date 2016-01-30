@@ -115,10 +115,7 @@ protected:
 	void objectrefGetOrCreate(lua_State *L, ServerActiveObject *cobj);
 	void objectrefGet(lua_State *L, u16 id);
 
-	std::recursive_mutex m_luastackmutex;
-/*
-	Mutex          m_luastackmutex;
-*/
+	RecursiveMutex  m_luastackmutex;
 	std::string     m_last_run_mod;
 	bool            m_secure;
 #ifdef SCRIPTAPI_LOCK_DEBUG

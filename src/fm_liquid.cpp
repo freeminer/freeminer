@@ -177,7 +177,7 @@ NEXT_LIQUID:
 				            !(loopcount % 2)) {
 					u8 melt_max_level = nb.node.getMaxLevel(nodemgr);
 					u8 my_max_level = MapNode(liquid_kind_flowing).getMaxLevel(nodemgr);
-					liquid_levels[i] = (float)my_max_level / melt_max_level * nb.node.getLevel(nodemgr);
+					liquid_levels[i] = ((float)my_max_level / (melt_max_level ? melt_max_level : my_max_level)) * nb.node.getLevel(nodemgr);
 					if (liquid_levels[i])
 						nb.liquid = 1;
 				} else if (	melt_kind != CONTENT_IGNORE &&

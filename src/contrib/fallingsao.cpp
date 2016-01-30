@@ -80,10 +80,7 @@ ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3f pos,
 		}
 	}
 	// create object
-/*
-	infostream << "FallingSAO::create(name=\"" << name << "\" state=\""
-			<< state << "\")" << std::endl;
-*/
+	//infostream<<"FallingSAO::create(name='%s' state='%s')", name.c_str(), state.c_str();
 	epixel::FallingSAO *sao = new epixel::FallingSAO(env, pos, name, state);
 	sao->m_hp = hp;
 	sao->m_velocity = velocity;
@@ -95,7 +92,7 @@ void FallingSAO::addedToEnvironment(u32 dtime_s)
 {
 	ServerActiveObject::addedToEnvironment(dtime_s);
 	m_env->getScriptIface()->
-		luaentity_Add(m_id, m_init_name.c_str());
+		luaentity_Add(m_id, m_init_name.c_str(), true);
 	m_registered = true;
 
 	// And make it immortal
@@ -106,8 +103,13 @@ void FallingSAO::addedToEnvironment(u32 dtime_s)
 
 void FallingSAO::step(float dtime, bool send_recommended)
 {
+	// Object pending removal, skip
+	if (m_removed || !m_env) {
+		return;
+	}
+
 	// If no texture, remove it
-	if (m_prop.textures.size() == 0) {
+	if (m_prop.textures.empty()) {
 		m_removed = true;
 		return;
 	}
@@ -120,14 +122,23 @@ void FallingSAO::step(float dtime, bool send_recommended)
 	// Under node, center
 	v3f p_under(m_base_position.X, m_base_position.Y - 7, m_base_position.Z);
 	v3s16 p = floatToInt(m_base_position, BS);
-	//bool exists = false;
+/*
+	bool cur_exists = false, under_exists = false;
+*/
 	MapNode n = m_env->getMap().getNode(p),
 			n_under = m_env->getMap().getNode(floatToInt(p_under, BS));
-	ContentFeatures f = ndef->get(n), f_under = ndef->get(n_under);
+	const ContentFeatures &f = ndef->get(n), &f_under = ndef->get(n_under);
 
-	if (!n || (f_under.walkable || (itemgroup_get(f_under.groups, "float") &&
+	bool cur_exists = n, under_exists = n_under;
+
+	// Mapblock current or under is not loaded, stop there
+	if (!n || !cur_exists || !under_exists) {
+		return;
+	}
+
+	if ((f_under.walkable || (itemgroup_get(f_under.groups, "float") &&
 			f_under.liquid_type == LIQUID_NONE))) {
-		if (n && f_under.leveled && f_under.name.compare(f.name) == 0) {
+		if (f_under.leveled && f_under.name.compare(f.name) == 0) {
 			u8 addLevel = n.getLevel(ndef);
 			if (addLevel == 0) {
 				addLevel = n_under.getLevel(ndef);
@@ -138,7 +149,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 				return;
 			}
 		}
-		else if (n && f_under.buildable_to &&
+		else if (f_under.buildable_to &&
 				(itemgroup_get(f.groups,"float") == 0 ||
 				 f_under.liquid_type == LIQUID_NONE)) {
 			m_env->removeNode(floatToInt(p_under, BS), fast);
@@ -146,8 +157,8 @@ void FallingSAO::step(float dtime, bool send_recommended)
 		}
 
 		if (n.getContent() != CONTENT_AIR &&
-				(n.getContent() == CONTENT_IGNORE || f.liquid_type == LIQUID_NONE)) {
-			m_env->removeNode(p, fast);
+				(f.liquid_type == LIQUID_NONE)) {
+			m_env->removeNode(p);
 			if (!f.buildable_to) {
 				ItemStack stack;
 				std::string n_name = ndef->get(m_node).name;
@@ -155,7 +166,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 				m_env->spawnItemActiveObject(n_name, m_base_position, stack);
 			}
 		}
-		m_env->setNode(p,m_node, fast);
+		m_env->setNode(p, m_node, fast);
 		m_removed = true;
 		m_env->nodeUpdate(p, 2, fast);
 		return;

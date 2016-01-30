@@ -14,7 +14,9 @@ sudo apt-get install -y libopenal-dev libcurl4-openssl-dev libluajit-5.1-dev lib
 
 #svn checkout svn://svn.code.sf.net/p/irrlicht/code/branches/ogl-es irrlicht
 #OR using git:
-git clone -b ogl-es --recursive https://github.com/zaki/irrlicht.git irrlicht
+git clone --recursive -b ogl-es  https://github.com/zaki/irrlicht.git irrlicht 
+#TODO FIXME REMOVEME: (latest working revision)
+#git --git-dir=irrlicht/.git --work-tree=irrlicht/ checkout 58fa0cf
 
 #compile irrlicht:
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2) -C irrlicht/source/Irrlicht
@@ -29,6 +31,9 @@ git pull
 #compile
 cmake . -DENABLE_GLES=1 -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
+
+# link dir with /Shaders/
+ln -s ../irrlicht/media ./
 
 #run!
 bin/freeminer

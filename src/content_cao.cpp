@@ -556,7 +556,6 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		m_animated_meshnode(NULL),
 		m_wield_meshnode(NULL),
 		m_spritenode(NULL),
-		m_nametag_color(video::SColor(255, 255, 255, 255)),
 		m_textnode(NULL),
 		m_shadownode(nullptr),
 		m_position(v3f(0,10*BS,0)),
@@ -984,23 +983,24 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 	updateTextures("");
 
 	scene::ISceneNode *node = getSceneNode();
-	if (node && m_is_player && !m_is_local_player) {
+	if (node && m_prop.nametag != "" && !m_is_local_player) {
 		// Add a text node for showing the name
 		gui::IGUIEnvironment* gui = irr->getGUIEnvironment();
-		std::wstring wname = utf8_to_wide(m_name);
-		if (m_name.size() > 15) {
-			wname.resize(15);
-			wname+=L".";
+		std::wstring nametag_text = utf8_to_wide(m_prop.nametag);
+
+		if (nametag_text.size() > 15) {
+			nametag_text.resize(15);
+			nametag_text += L".";
 		}
 		m_textnode = smgr->addTextSceneNode(gui->getSkin()->getFont(),
-				wname.c_str(), m_nametag_color, node);
+				nametag_text.c_str(), m_prop.nametag_color, node);
 		m_textnode->grab();
 		m_textnode->setPosition(v3f(0, BS*1.1, 0));
 
 		// Enforce hiding nametag,
 		// because if freetype is enabled, a grey
 		// shadow can remain.
-		m_textnode->setVisible(m_nametag_color.getAlpha() > 0);
+		m_textnode->setVisible(m_prop.nametag_color.getAlpha() > 0);
 	}
 
 	updateNodePos();
@@ -1017,7 +1017,13 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 			m_shadownode = m_animated_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
 		else if(m_meshnode)
 			m_shadownode = m_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
+		if (m_shadownode) {
+			m_shadownode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+			m_shadownode->setMaterialFlag(video::EMF_LIGHTING, false);
+			m_shadownode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
+		}
 	}
+
 #endif
 }
 
@@ -1221,15 +1227,13 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			f32 pos_max_d = BS*0.125; // Distance per iteration
 			v3f p_pos = m_position;
 			v3f p_velocity = m_velocity;
-			v3f p_acceleration = m_acceleration;
 			moveresult = collisionMoveSimple(env,env->getGameDef(),
 					pos_max_d, box, m_prop.stepheight, dtime,
-					p_pos, p_velocity, p_acceleration,
+					&p_pos, &p_velocity, m_acceleration,
 					this, m_prop.collideWithObjects);
 			// Apply results
 			m_position = p_pos;
 			m_velocity = p_velocity;
-			m_acceleration = p_acceleration;
 
 			bool is_end_position = moveresult.collides;
 			pos_translator.update(m_position, is_end_position, dtime);
@@ -1289,8 +1293,18 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 	if (getParent() == NULL && m_prop.automatic_face_movement_dir &&
 			(fabs(m_velocity.Z) > 0.001 || fabs(m_velocity.X) > 0.001))
 	{
-		m_yaw = atan2(m_velocity.Z,m_velocity.X) * 180 / M_PI
+		float optimal_yaw = atan2(m_velocity.Z,m_velocity.X) * 180 / M_PI
 				+ m_prop.automatic_face_movement_dir_offset;
+		float max_rotation_delta =
+				dtime * m_prop.automatic_face_movement_max_rotation_per_sec;
+
+		if ((m_prop.automatic_face_movement_max_rotation_per_sec > 0) &&
+			(fabs(m_yaw - optimal_yaw) > max_rotation_delta)) {
+
+			m_yaw = optimal_yaw < m_yaw ? m_yaw - max_rotation_delta : m_yaw + max_rotation_delta;
+		} else {
+			m_yaw = optimal_yaw;
+		}
 		updateNodePos();
 	}
 
@@ -1629,6 +1643,9 @@ void GenericCAO::processMessage(const std::string &data)
 			m_tx_basepos = m_prop.initial_sprite_basepos;
 		}
 
+		if ((m_is_player && !m_is_local_player) && m_prop.nametag == "")
+			m_prop.nametag = m_name;
+
 		expireVisuals();
 	}
 	else if(cmd == GENERIC_CMD_UPDATE_POSITION)
@@ -1807,15 +1824,15 @@ void GenericCAO::processMessage(const std::string &data)
 			m_armor_groups[name] = rating;
 		}
 	} else if (cmd == GENERIC_CMD_UPDATE_NAMETAG_ATTRIBUTES) {
+		// Deprecated, for backwards compatibility only.
 		readU8(is); // version
-		m_nametag_color = readARGB8(is);
+		m_prop.nametag_color = readARGB8(is);
 		if (m_textnode != NULL) {
-			m_textnode->setTextColor(m_nametag_color);
+			m_textnode->setTextColor(m_prop.nametag_color);
 
 			// Enforce hiding nametag,
-			// because if freetype is enabled, a grey
-			// shadow can remain.
-			m_textnode->setVisible(m_nametag_color.getAlpha() > 0);
+			// because if freetype is enabled, a grey shadow can remain.
+			m_textnode->setVisible(m_prop.nametag_color.getAlpha() > 0);
 		}
 	}
 }

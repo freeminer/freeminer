@@ -48,7 +48,7 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate)
 {
 	GameScripting *scriptIface = env->getScriptIface();
-	auto _script_lock = std::unique_lock<std::recursive_mutex> (scriptIface->m_luastackmutex);
+	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex);
 	scriptIface->realityCheck();
 
 	lua_State *L = scriptIface->getStack();
@@ -1021,6 +1021,7 @@ int ModApiEnvMod::l_get_heat(lua_State *L)
 	GET_ENV_PTR;
 
 	auto pos = read_v3POS(L, 1);
+
 	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos));
 	return 1;
 }
@@ -1103,5 +1104,12 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(get_surface);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
+
+//epixel:
+	API_FCT(spawn_item_activeobject);
 	API_FCT(spawn_falling_node);
+	API_FCT(nodeupdate);
+/*
+	API_FCT(make_explosion);
+*/
 }

@@ -73,6 +73,7 @@ class Player;
 class RemotePlayer;
 
 struct ItemStack;
+class PlayerSAO;
 
 namespace epixel
 {
@@ -290,7 +291,8 @@ public:
 	//Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
 	//Player * getPlayer(const std::string &name);
 
-	KeyValueStorage *getKeyValueStorage();
+	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
+	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
 
 	void kickAllPlayers(AccessDeniedCode reason,
 		const std::string &str_reason, bool reconnect);
@@ -421,7 +423,8 @@ public:
 	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
-	void nodeUpdate(const v3s16 pos, int recurse = 5,  int fast = 2, bool destroy = false);
+	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 private:
 
 	/*
@@ -462,6 +465,20 @@ private:
 	*/
 	void deactivateFarObjects(bool force_delete);
 
+
+/*
+	void contrib_player_globalstep(RemotePlayer *player, float dtime);
+	void contrib_lookupitemtogather(RemotePlayer* player, v3f playerPos,
+			Inventory* inv, ServerActiveObject* obj);
+*/
+	void contrib_globalstep(const float dtime);
+	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
+/*
+	void explodeNode(const v3s16 pos);
+*/
+
+	std::deque<v3s16> m_nodeupdate_queue;
+
 	/*
 		Member variables
 	*/
@@ -477,8 +494,7 @@ private:
 	Circuit m_circuit;
 	// Key-value storage
 public:
-	KeyValueStorage m_key_value_storage;
-	KeyValueStorage m_players_storage;
+	std::unordered_map<std::string, KeyValueStorage> m_key_value_storage;
 private:
 
 	// World path

@@ -99,17 +99,17 @@ u32 PcgRandom::range(u32 bound)
 	Using rand() % 3, the number 0 would be twice as likely to appear.
 	With a very large RNG range, the effect becomes less prevalent but
 	still present.  This can be solved by modifying the range of the RNG
-	to become a multiple of bound by dropping values above the a threshhold.
-	In our example, threshhold == 4 - 3 = 1 % 3 == 1, so reject 0, thus
+	to become a multiple of bound by dropping values above the a threshold.
+	In our example, threshold == 4 - 3 = 1 % 3 == 1, so reject 0, thus
 	making the range 3 with no bias.
 
 	This loop looks dangerous, but will always terminate due to the
 	RNG's property of uniformity.
 	*/
-	u32 threshhold = -bound % bound;
+	u32 threshold = -bound % bound;
 	u32 r;
 
-	while ((r = next()) < threshhold)
+	while ((r = next()) < threshold)
 		;
 
 	return r % bound;
@@ -365,7 +365,7 @@ float contour(float v)
 	std::ostream & operator<<(std::ostream & os, NoiseParams & np)
 	 {
 		os << "noiseprms[offset="<<np.offset<<",scale="<<np.scale<<",spread="<<np.spread<<",seed="<<np.seed<<",octaves="<<np.octaves<<",persist="<<np.persist<<",lacunarity="<<np.lacunarity<<",flags="<<np.flags
-		<<",farscale"<<np.farscale<<",farspread"<<np.farspread<<",farpersist"<<np.farpersist
+		<<",farscale="<<np.far_scale<<",farspread="<<np.far_spread<<",farpersist="<<np.far_persist<<",farlacunarity="<<np.far_lacunarity
 		<<"]";
 		return os;
 	}
@@ -374,12 +374,17 @@ float contour(float v)
 
 float NoisePerlin2D(NoiseParams *np, float x, float y, int seed)
 {
+	auto far_scale = farscale(np->far_scale, x, y);
+	auto far_spread = farscale(np->far_spread, x, y);
+	auto far_lacunarity = farscale(np->far_lacunarity, x, y);
+	auto far_persist = farscale(np->far_persist, x, y);
+
 	float a = 0;
 	float f = 1.0;
 	float g = 1.0;
 
-	x /= np->spread.X;
-	y /= np->spread.Y;
+	x /= np->spread.X * far_spread;
+	y /= np->spread.Y * far_spread;
 	seed += np->seed;
 
 	for (size_t i = 0; i < np->octaves; i++) {
@@ -390,23 +395,28 @@ float NoisePerlin2D(NoiseParams *np, float x, float y, int seed)
 			noiseval = fabs(noiseval);
 
 		a += g * noiseval;
-		f *= np->lacunarity;
-		g *= np->persist;
+		f *= np->lacunarity * far_lacunarity;
+		g *= np->persist * far_persist;
 	}
 
-	return np->offset + a * np->scale;
+	return np->offset + a * np->scale * far_scale;
 }
 
 
 float NoisePerlin3D(NoiseParams *np, float x, float y, float z, int seed)
 {
+	auto far_scale = farscale(np->far_scale, x, y, z);
+	auto far_spread = farscale(np->far_spread, x, y, z);
+	auto far_lacunarity = farscale(np->far_lacunarity, x, y, z);
+	auto far_persist = farscale(np->far_persist, x, y, z);
+
 	float a = 0;
 	float f = 1.0;
 	float g = 1.0;
 
-	x /= np->spread.X;
-	y /= np->spread.Y;
-	z /= np->spread.Z;
+	x /= np->spread.X * far_spread;
+	y /= np->spread.Y * far_spread;
+	z /= np->spread.Z * far_spread;
 	seed += np->seed;
 
 	for (size_t i = 0; i < np->octaves; i++) {
@@ -417,11 +427,11 @@ float NoisePerlin3D(NoiseParams *np, float x, float y, float z, int seed)
 			noiseval = fabs(noiseval);
 
 		a += g * noiseval;
-		f *= np->lacunarity;
-		g *= np->persist;
+		f *= np->lacunarity * far_lacunarity;
+		g *= np->persist * far_persist;
 	}
 
-	return np->offset + a * np->scale;
+	return np->offset + a * np->scale * far_scale;
 }
 
 
@@ -447,6 +457,11 @@ Noise::~Noise()
 	delete[] persist_buf;
 	delete[] noise_buf;
 	delete[] result;
+
+	gradient_buf = nullptr;
+	persist_buf = nullptr;
+	noise_buf = nullptr;
+	result = nullptr;
 }
 
 
@@ -706,12 +721,16 @@ void Noise::gradientMap3D(
 
 float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 {
-	auto scale = farscale(np.farscale, x, y);
+	auto far_scale = farscale(np.far_scale, x, y);
+	auto far_spread = farscale(np.far_spread, x, y);
+	auto far_lacunarity = farscale(np.far_lacunarity, x, y);
+	auto far_persist = farscale(np.far_persist, x, y);
+
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy;
 
-	x /= np.spread.X;
-	y /= np.spread.Y;
+	x /= np.spread.X * far_spread;
+	y /= np.spread.Y * far_spread;
 
 	memset(result, 0, sizeof(float) * bufsize);
 
@@ -724,18 +743,18 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 
 	for (size_t oct = 0; oct < np.octaves; oct++) {
 		gradientMap2D(x * f, y * f,
-			f / np.spread.X, f / np.spread.Y,
+			f / (np.spread.X * far_spread), f / (np.spread.Y * far_spread),
 			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np.lacunarity;
-		g *= np.persist * farscale(np.farpersist, x, y);
+		f *= np.lacunarity * far_lacunarity;
+		g *= np.persist * far_persist;
 	}
 
 	if (fabs(np.offset - 0.f) > 0.00001 || fabs(np.scale - 1.f) > 0.00001) {
 		for (size_t i = 0; i != bufsize; i++)
-			result[i] = result[i] * np.scale * scale + np.offset;
+			result[i] = result[i] * np.scale * far_scale + np.offset;
 	}
 
 	return result;
@@ -744,14 +763,17 @@ float *Noise::perlinMap2D(float x, float y, float *persistence_map)
 
 float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 {
-	auto scale = farscale(np.farscale, x, y, z);
+	auto far_scale = farscale(np.far_scale, x, y, z);
+	auto far_spread = farscale(np.far_spread, x, y, z);
+	auto far_lacunarity = farscale(np.far_lacunarity, x, y, z);
+	auto far_persist = farscale(np.far_persist, x, y, z);
 
 	float f = 1.0, g = 1.0;
 	size_t bufsize = sx * sy * sz;
 
-	x /= np.spread.X;
-	y /= np.spread.Y;
-	z /= np.spread.Z;
+	x /= np.spread.X * far_spread;
+	y /= np.spread.Y * far_spread;
+	z /= np.spread.Z * far_spread;
 
 	memset(result, 0, sizeof(float) * bufsize);
 
@@ -764,18 +786,18 @@ float *Noise::perlinMap3D(float x, float y, float z, float *persistence_map)
 
 	for (size_t oct = 0; oct < np.octaves; oct++) {
 		gradientMap3D(x * f, y * f, z * f,
-			f / np.spread.X, f / np.spread.Y, f / np.spread.Z,
+			f / (np.spread.X * far_spread), f / (np.spread.Y * far_spread), f / (np.spread.Z * far_spread),
 			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
 
-		f *= np.lacunarity;
-		g *= np.persist* farscale(np.farpersist, x, y, z);
+		f *= np.lacunarity * far_lacunarity;
+		g *= np.persist * far_persist;
 	}
 
 	if (fabs(np.offset - 0.f) > 0.00001 || fabs(np.scale - 1.f) > 0.00001) {
 		for (size_t i = 0; i != bufsize; i++)
-			result[i] = result[i] * np.scale * scale + np.offset;
+			result[i] = result[i] * np.scale * far_scale + np.offset;
 	}
 
 	return result;

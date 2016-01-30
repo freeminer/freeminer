@@ -79,7 +79,8 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	weather_humidity_days = g_settings->getS16("weather_humidity_days");
 	weather_hot_core = g_settings->getS16("weather_hot_core");
 
-	add(b);
+	if (add(b) == OBJDEF_INVALID_HANDLE)
+		delete b;
 }
 
 

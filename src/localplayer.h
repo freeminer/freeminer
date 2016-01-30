@@ -90,8 +90,10 @@ private:
 	// This is used for determining the sneaking range
 	v3s16 m_sneak_node;
 	// Whether the player is allowed to sneak
+public:
 	bool m_sneak_node_exists;
 	// Whether recalculation of the sneak node is needed
+private:
 	bool m_need_to_get_new_sneak_node;
 	// Stores the max player uplift by m_sneak_node and is updated
 	// when m_need_to_get_new_sneak_node == true

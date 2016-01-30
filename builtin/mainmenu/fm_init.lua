@@ -301,6 +301,8 @@ function tabbuilder.dialog_create_world()
 	end
 	mglist = mglist:sub(1, -2)
 
+	gamemgr.update_gamelist()
+
 	local retval =
 		"label[6.5,0;" .. fgettext("World name") .. "]"..
 		"field[9,0.4;6,0.5;te_world_name;;]" ..

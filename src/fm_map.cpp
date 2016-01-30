@@ -120,8 +120,7 @@ bool Map::insertBlock(MapBlock *block) {
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
 	if(block2) {
-		//throw AlreadyExistsException("Block already exists");
-		infostream << "Block already exists " << block_p << std::endl;
+		verbosestream << "Block already exists " << block_p << std::endl;
 		return false;
 	}
 
@@ -189,7 +188,7 @@ v3POS Map::transforming_liquid_pop() {
 s16 Map::getHeat(v3POS p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
-		s16 value = block->heat;
+		s16 value = block->heat + block->heat_add;
 		return value + (no_random ? 0 : myrand_range(0, 1));
 	}
 	//errorstream << "No heat for " << p.X<<"," << p.Z << std::endl;
@@ -199,7 +198,7 @@ s16 Map::getHeat(v3POS p, bool no_random) {
 s16 Map::getHumidity(v3POS p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if(block != NULL) {
-		s16 value = block->humidity;
+		s16 value = block->humidity + block->humidity_add;
 		return value + (no_random ? 0 : myrand_range(0, 1));
 	}
 	//errorstream << "No humidity for " << p.X<<"," << p.Z << std::endl;
@@ -214,7 +213,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->heat_last_update)
-			return block->heat + myrand_range(0, 1);
+			return block->heat + block->heat_add + myrand_range(0, 1);
 	} else if (!cache) {
 		block = getBlockNoCreateNoEx(bp, true);
 	}
@@ -227,6 +226,8 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 	if(block) {
 		block->heat = value;
 		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
+
+		value += block->heat_add; // in cache stored total value
 	}
 	if (cache)
 		(*cache)[bp] = value;
@@ -238,7 +239,7 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 	auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->humidity_last_update)
-			return block->humidity + myrand_range(0, 1);
+			return block->humidity + block->humidity_add + myrand_range(0, 1);
 	} else if (!cache) {
 		block = getBlockNoCreateNoEx(bp, true);
 	}
@@ -251,6 +252,8 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 	if(block) {
 		block->humidity = value;
 		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
+
+		value += block->humidity_add;
 	}
 	if (cache)
 		(*cache)[bp] = value;
@@ -424,7 +427,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 
 			} // block lock
 
-			if (porting::getTimeMs() > end_ms) {
+			if (calls > 100 && porting::getTimeMs() > end_ms) {
 				m_blocks_update_last = n;
 				break;
 			}
@@ -533,7 +536,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 				//modified_blocks[pos] = block;
 
 				block->setLightingExpired(true);
-				block->lighting_broken = true;
+				++block->lighting_broken;
 
 				/*
 					Clear all light from block
@@ -610,16 +613,17 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 
 	//infostream<<"light: processed="<<processed.size()<< " loopcount="<<loopcount<< " ablocks_bef="<<a_blocks.size();
 
-	for (auto & i : modified_blocks)
+	for (auto & i : modified_blocks) {
+		//a_blocks.erase(i.first);
 		processed[i.first] = 1;
-
+	}
 	for (auto & i : processed) {
 		a_blocks.erase(i.first);
 		MapBlock *block = getBlockNoCreateNoEx(i.first);
 		if(!block)
 			continue;
 		block->setLightingExpired(false);
-		block->lighting_broken = false;
+		block->lighting_broken = 0;
 	}
 	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
 

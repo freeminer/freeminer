@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util/base64.h"
 #include "clientmedia.h"
-#include "log.h"
+#include "log_types.h"
 #include "map.h"
 #include "mapsector.h"
 #include "nodedef.h"
@@ -211,18 +211,23 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			m_localserver->getMap().saveBlock(block);
 		}
 
-		if (new_block)
-			if (!m_env.getMap().insertBlock(block))
+		if (new_block) {
+			if (!m_env.getMap().insertBlock(block)) {
 				delete block;
+				block = nullptr;
+			}
+		}
 
 		/*
 			//Add it to mesh update queue and set it to be acknowledged after update.
 		*/
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		updateMeshTimestampWithEdge(p);
-		if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
-			if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
-				addUpdateMeshTaskWithEdge(p);
+		if (block) {
+			updateMeshTimestampWithEdge(p);
+			if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
+				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
+					addUpdateMeshTaskWithEdge(p);
+			}
 		}
 
 /*
@@ -344,10 +349,17 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		f32 yaw = packet[TOCLIENT_MOVE_PLAYER_YAW].as<f32>();
 		player->setPosition(pos);
 
+		v3f speed;
+		if (packet.count(TOCLIENT_MOVE_PLAYER_SPEED)) {
+			speed = packet[TOCLIENT_MOVE_PLAYER_SPEED].as<v3f>();
+			player->setSpeed(speed);
+		}
+
 		infostream<<"Client got TOCLIENT_MOVE_PLAYER"
 				<<" pos=("<<pos.X<<","<<pos.Y<<","<<pos.Z<<")"
 				<<" pitch="<<pitch
 				<<" yaw="<<yaw
+				<<" speed="<<speed
 				<<std::endl;
 
 		/*

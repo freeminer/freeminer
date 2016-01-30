@@ -38,7 +38,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mg_ore.h"
 #include "mg_decoration.h"
 #include "mapgen_v5.h"
-#include "util/directiontables.h"
 
 
 FlagDesc flagdesc_mapgen_v5[] = {
@@ -106,13 +105,16 @@ MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 		c_stair_cobble = c_cobble;
 
 	//freeminer:
+	y_offset = 1;
 	float_islands = sp->float_islands;
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + 2, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + 2, csize.Z);
+	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + 2, csize.Z);
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	layers_init(emerge, sp->paramsj);
+
+	//noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	//===
 
 	if (c_sandstonebrick == CONTENT_IGNORE)
@@ -251,9 +253,9 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 		data->blockpos_requested.Y <= data->blockpos_max.Y &&
 		data->blockpos_requested.Z <= data->blockpos_max.Z);
 
-	generating = true;
-	vm   = data->vmanip;
-	ndef = data->nodedef;
+	this->generating = true;
+	this->vm   = data->vmanip;
+	this->ndef = data->nodedef;
 	//TimeTaker t("makeChunk");
 
 	v3s16 blockpos_min = data->blockpos_min;
@@ -337,7 +339,8 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	}
 
 	// Generate the registered decorations
-	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	if (flags & MG_DECORATIONS)
+		m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
 	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
@@ -561,7 +564,7 @@ void MapgenV5::generateCaves(int max_stone_y)
 			for (s16 x = node_min.X; x <= node_max.X; x++, i++, index++) {
 				float d1 = contour(noise_cave1->result[index]);
 				float d2 = contour(noise_cave2->result[index]);
-				if (d1*d2 > 0.125) {
+				if (d1 * d2 > 0.125f) {
 					content_t c = vm->m_data[i].getContent();
 					if (!ndef->get(c).is_ground_content || c == CONTENT_AIR)
 						continue;
@@ -576,7 +579,7 @@ void MapgenV5::generateCaves(int max_stone_y)
 		return;
 
 	PseudoRandom ps(blockseed + 21343);
-	u32 bruises_count = (ps.range(1, 4) == 1) ? ps.range(1, 2) : 0;
+	u32 bruises_count = ps.range(0, 2);
 	for (u32 i = 0; i < bruises_count; i++) {
 		CaveV5 cave(this, &ps);
 		cave.makeCave(node_min, node_max, max_stone_y);

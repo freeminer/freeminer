@@ -97,7 +97,7 @@ int LuaItemStack::l_set_count(lua_State *L)
 
 	bool status;
 	lua_Integer count = luaL_checkinteger(L, 2);
-	if (count <= 65535) {
+	if (count > 0 && count <= 65535) {
 		item.count = count;
 		status = true;
 	} else {
@@ -515,7 +515,7 @@ int ModApiItemMod::l_register_item_raw(lua_State *L)
 
 	// Read the node definition (content features) and register it
 	if(def.type == ITEM_NODE){
-		ContentFeatures f = read_content_features(L, table);
+		const ContentFeatures &f = read_content_features(L, table);
 		content_t id = ndef->set(f.name, f);
 
 		if(id > MAX_REGISTERED_CONTENT){

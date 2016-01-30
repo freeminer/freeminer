@@ -87,7 +87,7 @@ void Decoration::resolveNodeNames()
 
 size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 {
-	PseudoRandom ps(blockseed + 53);
+	PcgRandom ps(blockseed + 53);
 	int carea_size = nmax.X - nmin.X + 1;
 
 	// Divide area into parts
@@ -117,7 +117,15 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 		float nval = (flags & DECO_USE_NOISE) ?
 			NoisePerlin2D(&np, p2d_center.X, p2d_center.Y, mapseed) :
 			fill_ratio;
-		u32 deco_count = area * MYMAX(nval, 0.f);
+		u32 deco_count = 0;
+		float deco_count_f = (float)area * nval;
+		if (deco_count_f >= 1.f) {
+			deco_count = deco_count_f;
+		} else if (deco_count_f > 0.f) {
+			// For low density decorations calculate a chance for 1 decoration
+			if (ps.range(1000) <= deco_count_f * 1000.f)
+				deco_count = 1;
+		}
 
 		for (u32 i = 0; i < deco_count; i++) {
 			s16 x = ps.range(p2d_min.X, p2d_max.X);
@@ -170,7 +178,7 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 #if 0
 void Decoration::placeCutoffs(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 {
-	PseudoRandom pr(blockseed + 53);
+	PcgRandom pr(blockseed + 53);
 	std::vector<CutoffData> handled_cutoffs;
 
 	// Copy over the cutoffs we're interested in so we don't needlessly hold a lock
@@ -286,7 +294,7 @@ bool DecoSimple::canPlaceDecoration(MMVManip *vm, v3s16 p)
 }
 
 
-size_t DecoSimple::generate(MMVManip *vm, PseudoRandom *pr, v3s16 p)
+size_t DecoSimple::generate(MMVManip *vm, PcgRandom *pr, v3s16 p)
 {
 	if (!canPlaceDecoration(vm, p))
 		return 0;
@@ -326,7 +334,7 @@ DecoSchematic::DecoSchematic()
 }
 
 
-size_t DecoSchematic::generate(MMVManip *vm, PseudoRandom *pr, v3s16 p)
+size_t DecoSchematic::generate(MMVManip *vm, PcgRandom *pr, v3s16 p)
 {
 	// Schematic could have been unloaded but not the decoration
 	// In this case generate() does nothing (but doesn't *fail*)

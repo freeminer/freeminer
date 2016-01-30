@@ -26,32 +26,47 @@ DEALINGS IN THE SOFTWARE.
 #ifndef THREADING_EVENT_H
 #define THREADING_EVENT_H
 
-#ifdef _WIN32
+#if __cplusplus >= 201103L
+	#include <condition_variable>
+	#include "threading/mutex.h"
+	#include "threading/mutex_auto_lock.h"
+#elif defined(_WIN32)
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
 	#include <windows.h>
 #else
-	#include "threading/semaphore.h"
+	#include <pthread.h>
 #endif
 
 
+/** A syncronization primitive that will wake up one waiting thread when signaled.
+ * Calling @c signal() multiple times before a waiting thread has had a chance
+ * to notice the signal will wake only one thread.  Additionally, if no threads
+ * are waiting on the event when it is signaled, the next call to @c wait()
+ * will return (almost) immediately.
+ */
 class Event {
 public:
-#ifdef _WIN32
-	Event() { event = CreateEvent(NULL, false, false, NULL); }
-	~Event() { CloseHandle(event); }
-	void wait() { WaitForSingleObject(event, INFINITE); }
-	void signal() { SetEvent(event); }
-#else
-	void wait() { sem.wait(); }
-	void signal() { sem.post(); }
+#if __cplusplus < 201103L
+	Event();
+	~Event();
 #endif
+	void wait();
+	void signal();
 
 private:
-#ifdef _WIN32
+#if __cplusplus >= 201103L
+	std::condition_variable cv;
+	Mutex mutex;
+	bool notified;
+#elif defined(_WIN32)
 	HANDLE event;
 #else
-	Semaphore sem;
+	pthread_cond_t cv;
+	pthread_mutex_t mutex;
+	bool notified;
 #endif
 };
 
 #endif
-

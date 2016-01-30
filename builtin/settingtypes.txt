@@ -401,13 +401,13 @@ pause_fps_max (FPS in pause menu) int 20
 viewing_range_nodes_max (Viewing range maximum) int 160
 
 #    The allowed adjustment range for the automatic rendering range adjustment.
-#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+#    Set this to be equal to viewing range maximum to disable the auto-adjustment algorithm.
 viewing_range_nodes_min (Viewing range minimum) int 35
 
-#    Vertical initial window size.
+#    Width component of the initial window size.
 screenW (Screen width) int 800
 
-#    Horizontal initial window size.
+#    Height component of the initial window size.
 screenH (Screen height) int 600
 
 #    Fullscreen mode.
@@ -454,7 +454,8 @@ fall_bobbing_amount (Fall bobbing) float 0.0
 #    -    interlaced: odd/even line based polarisation screen support.
 #    -    topbottom: split screen top/bottom.
 #    -    sidebyside: split screen side by side.
-3d_mode (3D mode) enum none none,anaglyph,interlaced,topbottom,sidebyside
+#    -    pageflip: quadbuffer based 3d.
+3d_mode (3D mode) enum none none,anaglyph,interlaced,topbottom,sidebyside,pageflip
 
 #    In-game chat console background color (R,G,B).
 console_color (Console color) string (0,0,0)
@@ -812,7 +813,7 @@ liquid_update (Liquid update tick) float 1.0
 
 #    Name of map generator to be used when creating a new world.
 #    Creating a world in the main menu will override this.
-mg_name (Mapgen name) enum indev v5,v6,indev,v7,math,fractal,singlenode
+mg_name (Mapgen name) enum indev v5,v6,indev,v7,math,fractal,flat,singlenode
 
 #    Water surface level of the world.
 water_level (Water level) int 1
@@ -829,10 +830,11 @@ max_block_generate_distance (Max block generate distance) int 6
 map_generation_limit (Map generation limit) int 31000 0 31000
 
 #    Global map generation attributes.
+#    In Mapgen v6 the 'decorations' flag controls all decorations except trees
+#    and junglegrass, in all other mapgens this flag controls all decorations.
 #    Flags that are not specified in the flag string are not modified from the default.
 #    Flags starting with "no" are used to explicitly disable them.
-#    'trees' and 'flat' flags only have effect in mgv6.
-mg_flags (Mapgen flags) flags trees,caves,dungeons,light trees,caves,dungeons,light,flat,notrees,nocaves,nodungeons,nolight,noflat
+mg_flags (Mapgen flags) flags caves,dungeons,light,decorations caves,dungeons,light,decorations,nocaves,nodungeons,nolight,nodecorations
 
 [**Advanced]
 
@@ -889,7 +891,7 @@ mgv5_np_cave2 (Mapgen v5 cave2 noise parameters) noise_params 0, 12, (50, 50, 50
 #    When snowbiomes are enabled jungles are enabled and the jungles flag is ignored.
 #    Flags that are not specified in the flag string are not modified from the default.
 #    Flags starting with "no" are used to explicitly disable them.
-mgv6_spflags (Mapgen v6 flags) flags jungles,biomeblend,mudflow,snowbiomes jungles,biomeblend,mudflow,snowbiomes,nojungles,nobiomeblend,nomudflow,nosnowbiomes
+mgv6_spflags (Mapgen v6 flags) flags jungles,biomeblend,mudflow,snowbiomes,trees jungles,biomeblend,mudflow,snowbiomes,flat,trees,nojungles,nobiomeblend,nomudflow,nosnowbiomes,noflat,notrees
 
 #    Controls size of deserts and beaches in Mapgen v6.
 #    When snowbiomes are enabled 'mgv6_freq_desert' is ignored.
@@ -928,65 +930,101 @@ mgv7_np_ridge (Mapgen v7 ridge noise parameters) noise_params 0, 1, (100, 100, 1
 mgv7_np_cave1 (Mapgen v7 cave1 noise parameters) noise_params 0, 12, (100, 100, 100), 52534, 4, 0.5, 2.0
 mgv7_np_cave2 (Mapgen v7 cave2 noise parameters) noise_params 0, 12, (100, 100, 100), 10325, 4, 0.5, 2.0
 
-[***Mapgen fractal]
+[***Mapgen flat]
 
-#    Map generation attributes specific to Mapgen fractal.
-#    'julia' selects a julia set to be generated instead of a mandelbrot set.
+#    Map generation attributes specific to Mapgen flat.
+#    Occasional lakes and hills added to the flat world.
 #    Flags that are not specified in the flag string are not modified from the default.
 #    Flags starting with "no" are used to explicitly disable them.
-mgfractal_spflags (Mapgen fractal flags) flags nojulia julia,nojulia
+mgflat_spflags (Mapgen flat flags) flags  lakes,hills,,nolakes,nohills
 
-#    Mandelbrot set: Iterations of the recursive function.
-#    Controls scale of finest detail.
-mgfractal_m_iterations (Mapgen fractal mandelbrot iterations) int 9
+#    Y of flat ground.
+mgflat_ground_level (Mapgen flat ground level) int 8
 
-#    Mandelbrot set: Approximate (X,Y,Z) scales in nodes.
-#    Format is 3 numbers separated by commas and inside brackets.
-mgfractal_m_scale (Mapgen fractal mandelbrot scale) string (1024.0, 256.0, 1024.0)
-#    Type 'string' is currently used for a v3f.
+#    Y of upper limit of large pseudorandom caves.
+mgflat_large_cave_depth (Mapgen flat large cave depth) int -33
 
-#    Mandelbrot set: (X,Y,Z) offsets from world centre.
-#    Format is 3 numbers separated by commas and inside brackets.
-#    Range roughly -2 to 2, multiply by m_scale for offsets in nodes.
-mgfractal_m_offset (Mapgen fractal mandelbrot offset) string (1.75, 0.0, 0.0)
-#    Type 'string' is currently used for a v3f.
+#    Terrain noise threshold for lakes.
+#    Controls proportion of world area covered by lakes.
+#    Adjust towards 0.0 for a larger proportion.
+mgflat_lake_threshold (Mapgen flat lake threshold) float -0.45
 
-#    Mandelbrot set: W co-ordinate of the generated 3D slice of the 4D shape.
+#    Controls steepness/depth of lake depressions.
+mgflat_lake_steepness (Mapgen flat lake steepness) float 48.0
+
+#    Terrain noise threshold for hills.
+#    Controls proportion of world area covered by hills.
+#    Adjust towards 0.0 for a larger proportion.
+mgflat_hill_threshold (Mapgen flat hill threshold) float 0.45
+
+#    Controls steepness/height of hills.
+mgflat_hill_steepness (Mapgen flat hill steepness) float 64.0
+
+#    Determines terrain shape.
+#    The 3 numbers in brackets control the scale of the
+#    terrain, the 3 numbers should be identical.
+mgflat_np_terrain (Mapgen flat terrain noise parameters) noise_params 0, 1, (600, 600, 600), 7244, 5, 0.6, 2.0
+
+mgflat_np_filler_depth (Mapgen flat filler depth noise parameters) noise_params 0, 1.2, (150, 150, 150), 261, 3, 0.7, 2.0
+mgflat_np_cave1 (Mapgen flat cave1 noise parameters) noise_params 0, 12, (128, 128, 128), 52534, 4, 0.5, 2.0
+mgflat_np_cave2 (Mapgen flat cave2 noise parameters) noise_params 0, 12, (128, 128, 128), 10325, 4, 0.5, 2.0
+
+[***Mapgen fractal]
+
+#    Choice of 18 fractals from 9 formulas.
+#    1 = 4D "Roundy" mandelbrot set.
+#    2 = 4D "Roundy" julia set.
+#    3 = 4D "Squarry" mandelbrot set.
+#    4 = 4D "Squarry" julia set.
+#    5 = 4D "Mandy Cousin" mandelbrot set.
+#    6 = 4D "Mandy Cousin" julia set.
+#    7 = 4D "Variation" mandelbrot set.
+#    8 = 4D "Variation" julia set.
+#    9 = 3D "Mandelbrot/Mandelbar" mandelbrot set.
+#    10 = 3D "Mandelbrot/Mandelbar" julia set.
+#    11 = 3D "Christmas Tree" mandelbrot set.
+#    12 = 3D "Christmas Tree" julia set.
+#    13 = 3D "Mandelbulb" mandelbrot set.
+#    14 = 3D "Mandelbulb" julia set.
+#    15 = 3D "Cosine Mandelbulb" mandelbrot set.
+#    16 = 3D "Cosine Mandelbulb" julia set.
+#    17 = 4D "Mandelbulb" mandelbrot set.
+#    18 = 4D "Mandelbulb" julia set.
+mgfractal_fractal (Mapgen fractal fractal) int 1 1 18
+
+#    Iterations of the recursive function.
+#    Controls the amount of fine detail.
+mgfractal_iterations (Mapgen fractal iterations) int 11
+
+#    Approximate (X,Y,Z) scale of fractal in nodes.
+mgfractal_scale (Mapgen fractal scale) v3f (4096.0, 1024.0, 4096.0)
+
+#    (X,Y,Z) offset of fractal from world centre in units of 'scale'.
+#    Used to move a suitable spawn area of low land close to (0, 0).
+#    The default is suitable for mandelbrot sets, it needs to be edited for julia sets.
+#    Range roughly -2 to 2. Multiply by 'scale' for offset in nodes.
+mgfractal_offset (Mapgen fractal offset) v3f (1.79, 0.0, 0.0)
+
+#    W co-ordinate of the generated 3D slice of a 4D fractal.
+#    Determines which 3D slice of the 4D shape is generated.
+#    Has no effect on 3D fractals.
 #    Range roughly -2 to 2.
-mgfractal_m_slice_w (Mapgen fractal mandelbrot slice w) float 0.0
+mgfractal_slice_w (Mapgen fractal slice w) float 0.0
 
-#    Julia set: Iterations of the recursive function.
-#    Controls scale of finest detail.
-mgfractal_j_iterations (Mapgen fractal julia iterations) int 9
-
-#    Julia set: Approximate (X,Y,Z) scales in nodes.
-#    Format is 3 numbers separated by commas and inside brackets.
-mgfractal_j_scale (Mapgen fractal julia scale) string (2048.0, 512.0, 2048.0)
-#    Type 'string' is currently used for a v3f.
-
-#    Julia set: (X,Y,Z) offsets from world centre.
-#    Format is 3 numbers separated by commas and inside brackets.
-#    Range roughly -2 to 2, multiply by j_scale for offsets in nodes.
-mgfractal_j_offset (Mapgen fractal julia offset) string (0.0, 1.0, 0.0)
-#    Type 'string' is currently used for a v3f.
-
-#    Julia set: W co-ordinate of the generated 3D slice of the 4D shape.
-#    Range roughly -2 to 2.
-mgfractal_j_slice_w (Mapgen fractal julia slice w) float 0.0
-
-#    Julia set: X value determining the 4D shape.
+#    Julia set only: X component of hypercomplex constant determining julia shape.
 #    Range roughly -2 to 2.
 mgfractal_julia_x (Mapgen fractal julia x) float 0.33
 
-#    Julia set: Y value determining the 4D shape.
+#    Julia set only: Y component of hypercomplex constant determining julia shape.
 #    Range roughly -2 to 2.
 mgfractal_julia_y (Mapgen fractal julia y) float 0.33
 
-#    Julia set: Z value determining the 4D shape.
+#    Julia set only: Z component of hypercomplex constant determining julia shape.
 #    Range roughly -2 to 2.
 mgfractal_julia_z (Mapgen fractal julia z) float 0.33
 
-#    Julia set: W value determining the 4D shape.
+#    Julia set only: W component of hypercomplex constant determining julia shape.
+#    Has no effect on 3D fractals.
 #    Range roughly -2 to 2.
 mgfractal_julia_w (Mapgen fractal julia w) float 0.33
 
@@ -994,6 +1032,84 @@ mgfractal_np_seabed (Mapgen fractal seabed noise parameters) noise_params -14, 9
 mgfractal_np_filler_depth (Mapgen fractal filler depth noise parameters) noise_params 0, 1.2, (150, 150, 150), 261, 3, 0.7, 2.0
 mgfractal_np_cave1 (Mapgen fractal cave1 noise parameters) noise_params 0, 12, (128, 128, 128), 52534, 4, 0.5, 2.0
 mgfractal_np_cave2 (Mapgen fractal cave2 noise parameters) noise_params 0, 12, (128, 128, 128), 10325, 4, 0.5, 2.0
+
+# Mapgen Valleys parameters
+[***Mapgen Valleys]
+
+# General parameters
+[****General]
+
+#    Map generation attributes specific to Mapgen Valleys.
+#    Flags that are not specified in the flag string are not modified from the default.
+#    Flags starting with "no" are used to explicitly disable them.
+#    "altitude_chill" makes higher elevations colder, which may cause biome issues.
+#    "fast" produces softer terrain, more quickly
+#    "humid_rivers" modifies the humidity around rivers and in areas where water would tend to pool. It may interfere with delicately adjusted biomes.
+#    "rugged" and "cliffs" do nothing unless "fast" is enabled
+mg_valleys_spflags (Valleys C Flags) flags altitude_chill,cliffs,humid_rivers,nofast,rugged altitude_chill,noaltitude_chill,cliffs,nocliffs,fast,nofast,humid_rivers,nohumid_rivers,rugged,norugged
+
+# The altitude at which temperature drops by 20C
+mg_valleys_altitude_chill (Altitude Chill) int 90
+
+# Average humidity
+mg_valleys_humidity (Humidity) int 50
+
+# The highest humidity around rivers in otherwise dry areas
+mg_valleys_humidity_break_point (Humidity Break) int 65
+
+# Maximum altitude where lava can emerge
+mg_valleys_lava_max_height (Lava Height) int 0
+
+# Maximum altitude where water occurs in caves (and tends to fall out)
+mg_valleys_cave_water_max_height (Cave Water Height) int 31000
+
+# How deep to make rivers
+mg_valleys_river_depth (River Depth) int 4
+
+# How wide to make rivers
+mg_valleys_river_size (River Size) int 5
+
+# Average temperature
+mg_valleys_temperature (Temperature) int 50
+
+# How often water occurs in caves (0-10)
+mg_valleys_water_features (Water Features) int 3
+
+# Noise parameters
+[****Noises]
+
+# Cliff noise
+mg_valleys_np_cliffs (Cliffs) noise_params 0, 1, (750, 750, 750), 8445, 5, 1.0, 2.0
+
+# Mountain corrugation
+mg_valleys_np_corr (Corrugation) noise_params 0, 1, (40, 40, 40), -3536, 4, 1.0, 2.0
+
+# The depth of dirt or other filler
+mg_valleys_np_filler_depth (Filler Depth) noise_params 0, 1.2, (256, 256, 256), 1605, 3, 0.5, 2.0
+
+# River noise -- rivers occur close to zero
+mg_valleys_np_rivers (River Noise) noise_params 0, 1, (256, 256, 256), -6050, 5, 0.6, 2.0
+
+# Caves and tunnels form at the intersection of the two noises
+mg_valleys_np_simple_caves_1 (Simple Caves #1) noise_params 0, 1, v3f(64, 64, 64), -8402, 3, 0.5, 2.0
+
+# Caves and tunnels form at the intersection of the two noises
+mg_valleys_np_simple_caves_2 (Simple Caves #2) noise_params 0, 1, v3f(64, 64, 64), 3944, 3, 0.5, 2.0
+
+# Base terrain height
+mg_valleys_np_terrain_height (Terrain Height) noise_params -10, 50, (1024, 1024, 1024), 5202, 6, 0.4, 2.0
+
+# Raises terrain to make valleys around the rivers
+mg_valleys_np_valley_depth (Valley Depth) noise_params 5, 4, (512, 512, 512), -1914, 1, 1.0, 2.0
+
+# Slope and fill work together to modify the heights
+mg_valleys_np_inter_valley_fill (Valley Fill) noise_params 0, 1, (256, 512, 256), 1993, 6, 0.8, 2.0
+
+# Amplifies the valleys
+mg_valleys_np_valley_profile (Valley Profile) noise_params 0.6, 0.5, (512, 512, 512), 777, 1, 1.0, 2.0
+
+# Slope and fill work together to modify the heights
+mg_valleys_np_inter_valley_slope (Valley Slope) noise_params 0.5, 0.5, (128, 128, 128), 746, 1, 1.0, 2.0
 
 [*Security]
 
@@ -1117,6 +1233,9 @@ selectionbox_color () string (0,0,0)
 
 [*Server]
 
+# Save auth data to leveldb kv storage
+auth_kv () bool false
+
 # If true, blocks are cached (and generated if not before) before a player is spawned.
 cache_block_before_spawn () bool true
 
@@ -1195,6 +1314,9 @@ weather_hot_core        () float 1000
 
 # Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
 weather_heat_height     () float -333
+
+# Bind biomes to weather map in mapgen v6 and indev
+weather_biome () bool 0
 
 # Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
 year_days () int 30

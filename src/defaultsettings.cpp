@@ -327,6 +327,10 @@ void fm_set_default_settings(Settings *settings) {
 
 #endif
 
+#ifdef HAVE_TOUCHSCREENGUI
+	settings->setDefault("touchtarget", "true");
+#endif
+
 }
 
 
@@ -622,7 +626,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("water_level", "1");
 	settings->setDefault("chunksize", "5");
 	settings->setDefault("mg_flags", "dungeons");
-	settings->setDefault("mgv6_spflags", "jungles, snowbiomes");
+	settings->setDefault("mgv6_spflags", "jungles, snowbiomes, trees");
 
 	// IPv6
 	settings->setDefault("enable_ipv6", "true");

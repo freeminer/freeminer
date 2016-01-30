@@ -778,6 +778,59 @@ int ObjectRef::l_is_player(lua_State *L)
 	return 1;
 }
 
+// set_nametag_attributes(self, attributes)
+int ObjectRef::l_set_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	ServerActiveObject *co = getobject(ref);
+
+	if (co == NULL)
+		return 0;
+	ObjectProperties *prop = co->accessObjectProperties();
+	if (!prop)
+		return 0;
+
+	lua_getfield(L, 2, "color");
+	if (!lua_isnil(L, -1)) {
+		video::SColor color = prop->nametag_color;
+		read_color(L, -1, &color);
+		prop->nametag_color = color;
+	}
+	lua_pop(L, 1);
+
+	std::string nametag = getstringfield_default(L, 2, "text", "");
+	if (nametag != "")
+		prop->nametag = nametag;
+
+	co->notifyObjectPropertiesModified();
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// get_nametag_attributes(self)
+int ObjectRef::l_get_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	ServerActiveObject *co = getobject(ref);
+
+	if (co == NULL)
+		return 0;
+	ObjectProperties *prop = co->accessObjectProperties();
+	if (!prop)
+		return 0;
+
+	video::SColor color = prop->nametag_color;
+
+	lua_newtable(L);
+	push_ARGB8(L, color);
+	lua_setfield(L, -2, "color");
+	lua_pushstring(L, prop->nametag.c_str());
+	lua_setfield(L, -2, "text");
+	return 1;
+}
+
 /* LuaEntitySAO-only */
 
 // setvelocity(self, {x=num, y=num, z=num})
@@ -785,9 +838,17 @@ int ObjectRef::l_setvelocity(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkobject(L, 1);
+
+	v3f pos = checkFloatPos(L, 2);
+
+	PlayerSAO* ps = getplayersao(ref);
+	if (ps) {
+		ps->addSpeed(pos);
+		return 0;
+	}
+
 	LuaEntitySAO *co = getluaobject(ref);
 	if (co == NULL) return 0;
-	v3f pos = checkFloatPos(L, 2);
 	// Do it
 	co->setVelocity(pos);
 	return 0;
@@ -798,6 +859,16 @@ int ObjectRef::l_getvelocity(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkobject(L, 1);
+
+	{
+		PlayerSAO* co = getplayersao(ref);
+		if (co) {
+			v3f v = co->getPlayer()->getSpeed();
+			pushFloatPos(L, v);
+			return 1;
+		}
+	}
+
 	LuaEntitySAO *co = getluaobject(ref);
 	if (co == NULL) return 0;
 	// Do it
@@ -1604,45 +1675,6 @@ int ObjectRef::l_get_day_night_ratio(lua_State *L)
 	return 1;
 }
 
-// set_nametag_attributes(self, attributes)
-int ObjectRef::l_set_nametag_attributes(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkobject(L, 1);
-	PlayerSAO *playersao = getplayersao(ref);
-	if (playersao == NULL)
-		return 0;
-
-	lua_getfield(L, 2, "color");
-	if (!lua_isnil(L, -1)) {
-		video::SColor color = playersao->getNametagColor();
-		if (!read_color(L, -1, &color))
-			return 0;
-		playersao->setNametagColor(color);
-	}
-
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-// get_nametag_attributes(self)
-int ObjectRef::l_get_nametag_attributes(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkobject(L, 1);
-	PlayerSAO *playersao = getplayersao(ref);
-	if (playersao == NULL)
-		return 0;
-
-	video::SColor color = playersao->getNametagColor();
-
-	lua_newtable(L);
-	push_ARGB8(L, color);
-	lua_setfield(L, -2, "color");
-
-	return 1;
-}
-
 ObjectRef::ObjectRef(ServerActiveObject *object):
 	m_object(object)
 {
@@ -1730,6 +1762,8 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, set_detach),
 	luamethod(ObjectRef, set_properties),
 	luamethod(ObjectRef, get_properties),
+	luamethod(ObjectRef, set_nametag_attributes),
+	luamethod(ObjectRef, get_nametag_attributes),
 	// LuaEntitySAO-only
 	luamethod(ObjectRef, setvelocity),
 	luamethod(ObjectRef, getvelocity),
@@ -1779,7 +1813,5 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, get_local_animation),
 	luamethod(ObjectRef, set_eye_offset),
 	luamethod(ObjectRef, get_eye_offset),
-	luamethod(ObjectRef, set_nametag_attributes),
-	luamethod(ObjectRef, get_nametag_attributes),
 	{0,0}
 };

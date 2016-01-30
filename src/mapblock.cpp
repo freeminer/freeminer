@@ -88,6 +88,8 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 {
 	heat = 0;
 	humidity = 0;
+	heat_add = 0;
+	humidity_add = 0;
 	m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 	m_changed_timestamp = 0;
 	m_day_night_differs_expired = true;
@@ -108,7 +110,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	m_abm_timestamp = 0;
 	content_only = CONTENT_IGNORE;
 	content_only_param1 = content_only_param2 = 0;
-	lighting_broken = false;
+	lighting_broken = 0;
 }
 
 MapBlock::~MapBlock()
@@ -684,8 +686,8 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os, u16 net_proto_version)
 	if(net_proto_version >= 21){
 		int version = 1;
 		writeU8(os, version);
-		writeF1000(os, heat); // deprecated heat
-		writeF1000(os, humidity); // deprecated humidity
+		writeF1000(os, heat + heat_add); // deprecated heat
+		writeF1000(os, humidity + humidity_add); // deprecated humidity
 	}
 }
 
@@ -864,6 +866,21 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 void MapBlock::pushElementsToCircuit(Circuit* circuit)
 {
 }
+
+	content_t MapBlock::analyzeContent() {
+		auto lock = lock_shared_rec();
+		content_only = data[0].param0;
+		content_only_param1 = data[0].param1;
+		content_only_param2 = data[0].param2;
+		for (int i = 1; i<MAP_BLOCKSIZE*MAP_BLOCKSIZE*MAP_BLOCKSIZE; ++i) {
+			if (data[i].param0 != content_only || data[i].param1 != content_only_param1 || data[i].param2 != content_only_param2) {
+				content_only = CONTENT_IGNORE;
+				break;
+			}
+		}
+		return content_only;
+	}
+
 
 #ifndef SERVER
 MapBlock::mesh_type MapBlock::getMesh(int step) {

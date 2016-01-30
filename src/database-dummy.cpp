@@ -50,6 +50,7 @@ bool Database_Dummy::deleteBlock(const v3s16 &pos)
 
 void Database_Dummy::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
+	dst.reserve(m_database.size());
 	for(auto &x : m_database) {
 		dst.push_back(getStringAsBlock(x.first));
 	}

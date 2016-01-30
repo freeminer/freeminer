@@ -115,9 +115,10 @@ struct NoiseParams {
 	float lacunarity;
 	u32 flags;
 
-	float farscale;
-	float farspread;
-	float farpersist;
+	float far_scale;
+	float far_spread;
+	float far_persist;
+	float far_lacunarity;
 
 	NoiseParams()
 	{
@@ -130,15 +131,16 @@ struct NoiseParams {
 		lacunarity = 2.0f;
 		flags      = NOISE_FLAG_DEFAULTS;
 
-		farscale  = 1;
-		farspread = 1;
-		farpersist = 1;
+		far_scale  = 1;
+		far_spread = 1;
+		far_persist = 1;
+		far_lacunarity = 1;
 	}
 
 	NoiseParams(float offset_, float scale_, v3f spread_, s32 seed_,
 		u16 octaves_, float persist_, float lacunarity_,
 		u32 flags_=NOISE_FLAG_DEFAULTS,
-		float farscale_ = 1, float farspread_ = 1, float farpersist_ = 1
+		float far_scale_ = 1, float far_spread_ = 1, float far_persist_ = 1, float far_lacunarity_ = 1
 		)
 	{
 		offset     = offset_;
@@ -150,9 +152,10 @@ struct NoiseParams {
 		lacunarity = lacunarity_;
 		flags      = flags_;
 
-		farscale  = farscale_;
-		farspread = farspread_;
-		farpersist = farpersist_;
+		far_scale  = far_scale_;
+		far_spread = far_spread_;
+		far_persist = far_persist_;
+		far_lacunarity = far_lacunarity_;
 	}
 
 	friend std::ostream & operator<<(std::ostream & os, NoiseParams & np);
@@ -201,8 +204,8 @@ public:
 		float *persistence_map=NULL)
 	{
 		return perlinMap2D(
-			x + xoff * np.spread.X * farscale(np.farspread, x, y),
-			y + yoff * np.spread.Y * farscale(np.farspread, x, y),
+			x + xoff * np.spread.X * farscale(np.far_spread, x, y),
+			y + yoff * np.spread.Y * farscale(np.far_spread, x, y),
 			persistence_map);
 	}
 
@@ -210,9 +213,9 @@ public:
 		float z, float zoff, float *persistence_map=NULL)
 	{
 		return perlinMap3D(
-			x + xoff * np.spread.X * farscale(np.farspread, x, y, z),
-			y + yoff * np.spread.Y * farscale(np.farspread, x, y, z),
-			z + zoff * np.spread.Z * farscale(np.farspread, x, y, z),
+			x + xoff * np.spread.X * farscale(np.far_spread, x, y, z),
+			y + yoff * np.spread.Y * farscale(np.far_spread, x, y, z),
+			z + zoff * np.spread.Z * farscale(np.far_spread, x, y, z),
 			persistence_map);
 	}
 

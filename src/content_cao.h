@@ -73,7 +73,6 @@ private:
 	scene::IAnimatedMeshSceneNode *m_animated_meshnode;
 	WieldMeshSceneNode *m_wield_meshnode;
 	scene::IBillboardSceneNode *m_spritenode;
-	video::SColor m_nametag_color;
 	scene::ITextSceneNode* m_textnode;
 	scene::IShadowVolumeSceneNode* m_shadownode;
 	v3f m_position;
@@ -206,6 +205,11 @@ public:
 			float time_from_last_punch=1000000);
 
 	std::string debugInfoText();
+	
+	std::string infoText()
+	{
+		return m_prop.infotext;
+	}
 };
 
 

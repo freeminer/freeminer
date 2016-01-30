@@ -86,9 +86,8 @@ private:
 
 
 #define SCRIPTAPI_PRECHECKHEADER                                               \
-		SCRIPTAPI_LOCK; \
-		/*MutexAutoLock scriptlock(this->m_luastackmutex);                       \
-		SCRIPTAPI_LOCK_CHECK;*/                                                  \
+		RecursiveMutexAutoLock scriptlock(this->m_luastackmutex);              \
+		SCRIPTAPI_LOCK_CHECK;                                                  \
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \
 		StackUnroller stack_unroller(L);

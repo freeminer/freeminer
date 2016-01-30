@@ -1559,6 +1559,7 @@ protected:
 	void toggleCinematic(float *statustext_time);
 	void enableCinematic();
 	void disableCinematic();
+	void toggleAutorun(float *statustext_time);
 
 	void toggleChat(float *statustext_time, bool *flag);
 	void toggleHud(float *statustext_time, bool *flag);
@@ -1588,6 +1589,7 @@ protected:
 	void processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 			GameRunData *runData, f32 dtime, bool show_hud,
 			bool show_debug);
+	void handlePointingAtNothing(GameRunData *runData, const ItemStack &playerItem);
 	void handlePointingAtNode(GameRunData *runData,
 			const PointedThing &pointed, const ItemDefinition &playeritem_def,
 			const ToolCapabilities &playeritem_toolcap, f32 dtime);
@@ -1917,12 +1919,15 @@ void Game::run()
 			&& client->checkPrivilege("fast");
 #endif
 
-	while (device->run() && !(*kill || g_gamecallback->shutdown_requested)) {
+	while (device->run()
+			&& !(*kill || g_gamecallback->shutdown_requested
+			|| (server && server->getShutdownRequested()))) {
+
+		try {
+
 #ifdef __ANDROID__
 		porting::handleAndroidActivityEvents(5);
 #endif
-
-		try {
 
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
@@ -1988,6 +1993,13 @@ void Game::shutdown()
 	if (runData.autoexit) {
 		actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
 		g_profiler->print(actionstream);
+	}
+
+	if (g_settings->get("3d_mode") == "pageflip") {
+// fmTODO: fixme:
+#if IRRLICHT_VERSION_10000 < 10900
+		driver->setRenderTarget(irr::video::ERT_STEREO_BOTH_BUFFERS);
+#endif
 	}
 
 	showOverlayMessage(wstrgettext("Shutting down..."), 0, 0, false);
@@ -2314,7 +2326,7 @@ bool Game::initGui()
 #ifdef HAVE_TOUCHSCREENGUI
 
 	if (g_touchscreengui)
-		g_touchscreengui->init(texture_src, porting::getDisplayDensity());
+		g_touchscreengui->init(texture_src);
 
 #endif
 
@@ -2378,9 +2390,9 @@ bool Game::connectToServer(const std::string &playername,
 	client->chat_backend = chat_backend;
 	gamedef = client;	// Client acts as our GameDef
 
-	infostream << "Connecting to server at ";
-	connect_address.print(&infostream);
-	infostream << std::endl;
+	actionstream << "Connecting to server at ";
+	connect_address.print(&actionstream);
+	actionstream << std::endl;
 
 	try {
 
@@ -2764,7 +2776,17 @@ void Game::processUserInput(VolatileRunFlags *flags,
 			|| noMenuActive() == false
 			|| guienv->hasFocus(gui_chat_console)) {
 		input->clear();
+#ifdef HAVE_TOUCHSCREENGUI
+		g_touchscreengui->hide();
+#endif
 	}
+#ifdef HAVE_TOUCHSCREENGUI
+	else if (g_touchscreengui) {
+		/* on touchscreengui step may generate own input events which ain't
+		 * what we want in case we just did clear them */
+		g_touchscreengui->step(dtime);
+	}
+#endif
 
 #ifdef __ANDROID__
 	if (gui_chat_console->isOpen()) {
@@ -2781,13 +2803,6 @@ void Game::processUserInput(VolatileRunFlags *flags,
 	// Input handler step() (used by the random input generator)
 	input->step(dtime);
 
-#ifdef HAVE_TOUCHSCREENGUI
-
-	if (g_touchscreengui) {
-		g_touchscreengui->step(dtime);
-	}
-
-#endif
 #ifdef __ANDROID__
 
 	if (current_formspec != 0)
@@ -2833,8 +2848,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 #endif
 	// Add WoW-style autorun by toggling continuous forward.
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_AUTORUN])) {
-		bool autorun_setting = g_settings->getBool("continuous_forward");
-		g_settings->setBool("continuous_forward", !autorun_setting);
+		toggleAutorun(statustext_time);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_INVENTORY])) {
 		openInventory();
 	} else if (input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
@@ -3169,6 +3183,17 @@ void Game::disableCinematic()
 	m_cinematic = false;
 }
 
+// Add WoW-style autorun by toggling continuous forward.
+void Game::toggleAutorun(float *statustext_time)
+{
+	static const wchar_t *msg[] = { L"autorun disabled", L"autorun enabled" };
+	bool autorun_enabled = !g_settings->getBool("continuous_forward");
+	g_settings->set("continuous_forward", bool_to_cstr(autorun_enabled));
+
+	*statustext_time = 0;
+	statustext = msg[autorun_enabled ? 1 : 0];
+}
+
 void Game::toggleChat(float *statustext_time, bool *flag)
 {
 	static const wchar_t *msg[] = { L"Chat hidden", L"Chat shown" };
@@ -3325,7 +3350,13 @@ void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 void Game::increaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
-	s16 range_new = range + 10;
+	s16 range_new = range * 1.5;
+
+	// it's < 0 if it's outside the range of s16
+	// and increase it directly from 1 to 5 for less key pressing
+	if (range_new < 5)
+		range_new = 5;
+
 	g_settings->set("viewing_range_nodes_min", itos(range_new));
 	statustext = utf8_to_wide("Minimum viewing range changed to "
 			+ itos(range_new));
@@ -3336,10 +3367,10 @@ void Game::increaseViewRange(float *statustext_time)
 void Game::decreaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range_nodes_min");
-	s16 range_new = range - 10;
+	s16 range_new = range / 1.5;
 
-	if (range_new < 0)
-		range_new = range;
+	if (range_new == 0)
+		range_new = 1;
 
 	g_settings->set("viewing_range_nodes_min", itos(range_new));
 	statustext = utf8_to_wide("Minimum viewing range changed to "
@@ -3548,6 +3579,7 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			cam->camera_yaw = event.player_force_move.yaw;
 			cam->camera_pitch = event.player_force_move.pitch;
 		} else if (event.type == CE_DEATHSCREEN) {
+			player->m_sneak_node_exists = false;
 			if (g_settings->getBool("respawn_auto")) {
 				client->sendRespawn();
 			} else {
@@ -3970,6 +4002,8 @@ void Game::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 	} else if (input->getLeftState()) {
 		// When button is held down in air, show continuous animation
 		runData->left_punch = true;
+	} else if (input->getRightClicked()) {
+		handlePointingAtNothing(runData, playeritem);
 	}
 
 	runData->pointed_old = pointed;
@@ -3982,6 +4016,15 @@ void Game::processPlayerInteraction(std::vector<aabb3f> &highlight_boxes,
 
 	input->resetLeftReleased();
 	input->resetRightReleased();
+}
+
+
+void Game::handlePointingAtNothing(GameRunData *runData, const ItemStack &playerItem)
+{
+	infostream << "Right Clicked in Air" << std::endl;
+	PointedThing fauxPointed;
+	fauxPointed.type = POINTEDTHING_NOTHING;
+	client->interact(5, fauxPointed);
 }
 
 
@@ -4101,8 +4144,11 @@ void Game::handlePointingAtObject(GameRunData *runData,
 {
 	infotext = utf8_to_wide(runData->selected_object->infoText());
 
-	if (infotext == L"" && show_debug) {
-		infotext = utf8_to_wide(runData->selected_object->debugInfoText());
+	if (show_debug) {
+		if (infotext != L"") {
+			infotext += L"\n";
+		}
+		infotext += utf8_to_wide(runData->selected_object->debugInfoText());
 	}
 
 	if (input->getLeftState()) {

@@ -1100,7 +1100,8 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt)
 	std::string name = player->getName();
 	std::wstring wname = narrow_to_wide(name);
 
-	std::wstring answer_to_sender = handleChat(name, wname, message, pkt->getPeerId());
+	std::wstring answer_to_sender = handleChat(name, wname, message,
+		true, pkt->getPeerId());
 	if (!answer_to_sender.empty()) {
 		// Send the answer to sender
 		SendChatMessage(pkt->getPeerId(), answer_to_sender);
@@ -1396,7 +1397,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		Check that target is reasonably close
 		(only when digging or placing things)
 	*/
-	if (action == 0 || action == 2 || action == 3) {
+	static const bool enable_anticheat = !g_settings->getBool("disable_anticheat");
+	if ((action == 0 || action == 2 || action == 3) &&
+			(enable_anticheat && !isSingleplayer())) {
 		float d = player_pos.getDistanceFrom(pointed_pos_under);
 		float max_d = BS * 14; // Just some large enough value
 		if (d > max_d) {
@@ -1536,7 +1539,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 
 			/* Cheat prevention */
 			bool is_valid_dig = true;
-			if (!isSingleplayer() && !g_settings->getBool("disable_anticheat")) {
+			if (enable_anticheat && !isSingleplayer()) {
 				v3s16 nocheat_p = playersao->getNoCheatDigPos();
 				float nocheat_t = playersao->getNoCheatDigTime();
 				playersao->noCheatDigEnd();
@@ -1707,6 +1710,23 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 		}
 
 	} // action == 4
+	
+	/*
+		5: rightclick air
+	*/
+	else if (action == 5) {
+		ItemStack item = playersao->getWieldedItem();
+		
+		actionstream << player->getName() << " activates " 
+				<< item.name << std::endl;
+		
+		if (m_script->item_OnSecondaryUse(
+				item, playersao)) {
+			if( playersao->setWieldedItem(item)) {
+				SendInventory(playersao);
+			}
+		}
+	}
 
 
 	/*

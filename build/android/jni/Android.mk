@@ -241,11 +241,13 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/mapblock.cpp                      \
 		jni/src/mapblock_mesh.cpp                 \
 		jni/src/mapgen.cpp                        \
+		jni/src/mapgen_flat.cpp                   \
 		jni/src/mapgen_fractal.cpp                \
 		jni/src/mapgen_singlenode.cpp             \
 		jni/src/mapgen_v5.cpp                     \
 		jni/src/mapgen_v6.cpp                     \
 		jni/src/mapgen_v7.cpp                     \
+		jni/src/mapgen_valleys.cpp                \
 		jni/src/mapnode.cpp                       \
 		jni/src/mapsector.cpp                     \
 		jni/src/mesh.cpp                          \
@@ -425,6 +427,7 @@ LOCAL_SRC_FILES += deps/sqlite/sqlite3.c
 
 # Threading
 LOCAL_SRC_FILES += \
+		jni/src/threading/event.cpp \
 		jni/src/threading/mutex.cpp \
 		jni/src/threading/semaphore.cpp \
 		jni/src/threading/thread.cpp

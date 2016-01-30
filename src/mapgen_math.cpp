@@ -540,7 +540,7 @@ int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 void MapgenMath::calculateNoise() {
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
 	int x = node_min.X;
-	int y = node_min.Y - 1;
+	int y = node_min.Y - y_offset;
 	int z = node_min.Z;
 
 	if (flags & MG_CAVES) {

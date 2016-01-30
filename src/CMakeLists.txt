@@ -168,7 +168,11 @@ else()
 		endif()
 	endif()
 	if(SANITIZE_MEMORY)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+	endif()
+	if(SANITIZE_UNDEFINED)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 	endif()
 
 
@@ -378,11 +382,27 @@ set(USE_FREETYPE FALSE)
 		set(CGUITTFONT_LIBRARY cguittfont)
 	endif()
 
-if(NOT FREETYPE_FOUND)
+if(NOT FREETYPE_FOUND AND NOT NO_BUILD)
 	message(FATAL_ERROR "FreeType was not found.")
 endif()
 
-find_package(Lua REQUIRED)
+# LuaJIT
+option(ENABLE_LUAJIT "Enable LuaJIT support" TRUE)
+set(USE_LUAJIT FALSE)
+if(ENABLE_LUAJIT)
+	find_package(LuaJIT)
+	if(LUAJIT_FOUND)
+		set(USE_LUAJIT TRUE)
+	endif(LUAJIT_FOUND)
+else()
+	message (STATUS "LuaJIT detection disabled! (ENABLE_LUAJIT=0)")
+endif()
+if(NOT USE_LUAJIT)
+	message(STATUS "LuaJIT not found, using bundled Lua.")
+	set(LUA_LIBRARY "lua")
+	set(LUA_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/lua/src")
+	add_subdirectory(lua)
+endif()
 
 find_package(GMP REQUIRED)
 
@@ -664,11 +684,13 @@ set(common_SRCS
 	map.cpp
 	mapblock.cpp
 	mapgen.cpp
+	mapgen_flat.cpp
 	mapgen_fractal.cpp
 	mapgen_singlenode.cpp
 	mapgen_v5.cpp
 	mapgen_v6.cpp
 	mapgen_v7.cpp
+	mapgen_valleys.cpp
 	mapnode.cpp
 	mapsector.cpp
 	mg_biome.cpp
@@ -739,6 +761,11 @@ set(FMclient_SRCS
 	intlGUIEditBox.cpp
 	FMStaticText.cpp
 )
+
+if (USE_TOUCHSCREENGUI)
+	add_definitions(-DHAVE_TOUCHSCREENGUI)
+	set(FMclient_SRCS ${FMclient_SRCS} touchscreengui.cpp)
+endif()
 
 # Client sources
 if (BUILD_CLIENT)

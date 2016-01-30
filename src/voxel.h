@@ -132,7 +132,8 @@ public:
 
 	v3s16 getExtent() const
 	{
-		return MaxEdge - MinEdge + v3s16(1,1,1);
+		static const auto v3POS1 = v3s16(1,1,1);
+		return MaxEdge - MinEdge + v3POS1;
 	}
 
 	/* Because MaxEdge and MinEdge are included in the voxel area an empty extent

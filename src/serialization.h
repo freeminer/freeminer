@@ -87,8 +87,8 @@ inline bool ser_ver_supported(s32 v) {
 	Misc. serialization functions
 */
 
-void compressZlib(SharedBuffer<u8> data, std::ostream &os, int level = -1);
-void compressZlib(const std::string &data, std::ostream &os, int level = -1);
+void compressZlib(SharedBuffer<u8> data, std::ostream &os, int level = 2);
+void compressZlib(const std::string &data, std::ostream &os, int level = 2);
 void decompressZlib(std::istream &is, std::ostream &os);
 
 // These choose between zlib and a self-made one according to version
@@ -97,7 +97,7 @@ void compress(SharedBuffer<u8> data, std::ostream &os, u8 version);
 void decompress(std::istream &is, std::ostream &os, u8 version);
 
 //freeminer:
-void compressZlib(const std::string &data, std::string &os, int level = -1);
+void compressZlib(const std::string &data, std::string &os, int level = 2);
 void decompressZlib(const std::string &is, std::string &os);
 
 #endif

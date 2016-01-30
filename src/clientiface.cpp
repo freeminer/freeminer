@@ -479,7 +479,7 @@ int RemoteClient::GetNextBlocks (
 					env->getServerMap().lighting_modified_add(p, d);
 				}
 
-				if (block->lighting_broken && block_sent)
+				if (block->lighting_broken > 0 && (block_sent || d > 0))
 					continue;
 
 				// Block is valid if lighting is up-to-date and data exists

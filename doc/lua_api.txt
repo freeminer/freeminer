@@ -264,15 +264,15 @@ Example:
 
     default_cobble.png^[crack:10:1
 
-#### `[combine:<w>x<h>:<x1>,<y1>=<file1>:<x2>,<y2>=<file2>`
+#### `[combine:<w>x<h>:<x1>,<y1>=<file1>:<x2>,<y2>=<file2>:...`
 * `<w>` = width
 * `<h>` = height
-* `<x1>`/`<x2>` = x positions
-* `<y1>`/`<y1>` = y positions
-* `<file1>`/`<file2>` = textures to combine
+* `<x>` = x position
+* `<y>` = y position
+* `<file>` = texture to combine
 
-Create a texture of size `<w>` times `<h>` and blit `<file1>` to (`<x1>`,`<y1>`)
-and blit `<file2>` to (`<x2>`,`<y2>`).
+Creates a texture of size `<w>` times `<h>` and blits the listed files to their
+specified coordinates.
 
 Example:
 
@@ -763,7 +763,7 @@ Creates veins of ore varying in density by according to the intersection of two
 instances of 3d perlin noise with diffferent seeds, both described by
 `noise_params`.  `random_factor` varies the influence random chance has on
 placement of an ore inside the vein, which is `1` by default. Note that
-modifying this parameter may require adjusting `noise_threshhold`.
+modifying this parameter may require adjusting `noise_threshold`.
 The parameters `clust_scarcity`, `clust_num_ores`, and `clust_size` are ignored
 by this ore type.  This ore type is difficult to control since it is sensitive
 to small changes.  The following is a decent set of parameters to work from:
@@ -777,7 +777,7 @@ to small changes.  The following is a decent set of parameters to work from:
 	    persist = 0.5,
 	    flags = "eased",
 	},
-	noise_threshhold = 1.6
+	noise_threshold = 1.6
 
 WARNING:  Use this ore type *very* sparingly since it is ~200x more
 computationally expensive than any other ore.
@@ -1305,10 +1305,12 @@ mentioned in "Nodes". However, it is possible to insert extra data into a
 node. It is called "node metadata"; See "`NodeMetaRef`".
 
 Metadata contains two things:
+
 * A key-value store
 * An inventory
 
 Some of the values in the key-value store are handled specially:
+
 * `formspec`: Defines a right-click inventory menu. See "Formspec".
 * `infotext`: Text shown on the screen when the node is pointed at
 
@@ -1614,7 +1616,7 @@ examples.
 * types: `text`, `image`, `color`, `indent`, `tree`
     * `text`:   show cell contents as text
     * `image`:  cell contents are an image index, use column options to define images
-    * `colo`:   cell contents are a ColorString and define color of following cell
+    * `color`:   cell contents are a ColorString and define color of following cell
     * `indent`: cell contents are a number and define indentation of following cell
     * `tree`:   same as indent, but user can open and close subtrees (treeview-like)
 * column options:
@@ -1713,8 +1715,9 @@ Helper functions
     * e.g. `string:split("a,b", ",") == {"a","b"}`
 * `string:trim()`
     * e.g. `string.trim("\n \t\tfoo bar\t ") == "foo bar"`
-* `minetest.pos_to_string({x=X,y=Y,z=Z})`: returns `"(X,Y,Z)"`
+* `minetest.pos_to_string({x=X,y=Y,z=Z}, decimal_places))`: returns `"(X,Y,Z)"`
     * Convert position to a printable string
+      Optional: 'decimal_places' will round the x, y and z of the pos to the given decimal place.
 * `minetest.string_to_pos(string)`: returns a position
     * Same but in reverse. Returns `nil` if the string can't be parsed to a position.
 * `minetest.string_to_area("(X1, Y1, Z1) (X2, Y2, Z2)")`: returns two positions
@@ -1724,7 +1727,7 @@ Helper functions
 * `minetest.is_yes(arg)`
     * returns whether `arg` can be interpreted as yes
 * `minetest.get_us_time()`
-    * returns time with microsecond precision
+    * returns time with microsecond precision. May not return wall time.
 * `table.copy(table)`: returns a table
     * returns a deep copy of `table`
 
@@ -1921,7 +1924,11 @@ Call these functions only at load time!
     * Should be called by the authentication handler if privileges changes.
     * To report everybody, set `name=nil`.
 * `minetest.get_password_hash(name, raw_password)`
-    * Convert a name-password pair to a password hash that Minetest can use
+    * Convert a name-password pair to a password hash that Minetest can use.
+    * The returned value alone is not a good basis for password checks based
+    * on comparing the password hash in the database with the password hash
+    * from the function, with an externally provided password, as the hash
+    * in the db might use the new SRP verifier format.
 * `minetest.string_to_privs(str)`: returns `{priv1=true,...}`
 * `minetest.privs_to_string(privs)`: returns `"priv1,priv2,..."`
     * Convert between two privilege representations
@@ -1952,9 +1959,11 @@ and `minetest.auth_reload` call the authetification handler.
 * `minetest.remove_node(pos)`
     * Equivalent to `set_node(pos, "air")`
 * `minetest.get_node(pos)`
-    * Returns `{name="ignore", ...}` for unloaded area
+    * Returns the node at the given position as table in the format
+      `{name="node_name", param1=0, param2=0}`, returns `{name="ignore", param1=0, param2=0}`
+      for unloaded areas.
 * `minetest.get_node_or_nil(pos)`
-    * Returns `nil` for unloaded area
+    * Same as `get_node` but returns `nil` for unloaded areas.
 * `minetest.get_node_light(pos, timeofday)`
     * Gets the light value at the given position. Note that the light value
       "inside" the node at the given position is returned, so you usually want
@@ -2233,7 +2242,7 @@ These functions return the leftover itemstack.
 
 ### Timing
 * `minetest.after(time, func, ...)`
-    * Call the function `func` after `time` seconds
+    * Call the function `func` after `time` seconds, may be fractional
     * Optional: Variable number of arguments that are passed to `func`
 
 ### Server
@@ -2453,6 +2462,8 @@ These functions return the leftover itemstack.
     * Map of Lua entities, indexed by active object id
 * `minetest.registered_ores`
     * List of registered ore definitions.
+* `minetest.registered_biomes`
+    * List of registered biome definitions.
 * `minetest.registered_decorations`
     * List of registered decoration definitions.
 
@@ -2538,6 +2549,19 @@ This is basically a reference to a C++ `ServerActiveObject`
 * `set_properties(object property table)`
 * `get_properties()`: returns object property table
 * `is_player()`: returns true for players, false otherwise
+* `get_nametag_attributes()`
+    * returns a table with the attributes of the nametag of an object
+    * {
+        color = {a=0..255, r=0..255, g=0..255, b=0..255},
+        text = "",
+      }
+* `set_nametag_attributes(attributes)`
+    * sets the attributes of the nametag of an object
+    * `attributes`:
+      {
+        color = ColorSpec,
+        text = "My Nametag",
+      }
 
 ##### LuaEntitySAO-only (no-op for other objects)
 * `setvelocity({x=num, y=num, z=num})`
@@ -2617,8 +2641,6 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `"regular"`: Uses 0 textures, `bgcolor` ignored
         * `"skybox"`: Uses 6 textures, `bgcolor` used
         * `"plain"`: Uses 0 textures, `bgcolor` used
-    * **Note**: currently does not work directly in `on_joinplayer`; use
-      `minetest.after(0)` in there.
 * `get_sky()`: returns bgcolor, type and a table with the textures
 * `override_day_night_ratio(ratio or nil)`
     * `0`...`1`: Overrides day-night ratio, controlling sunlight to a specific amount
@@ -2638,17 +2660,6 @@ This is basically a reference to a C++ `ServerActiveObject`
     * in first person view
     * in third person view (max. values `{x=-10/10,y=-10,15,z=-5/5}`)
 * `get_eye_offset()`: returns offset_first and offset_third
-* `get_nametag_attributes()`
-    * returns a table with the attributes of the nametag of the player
-    * {
-        color = {a=0..255, r=0..255, g=0..255, b=0..255},
-      }
-* `set_nametag_attributes(attributes)`
-    * sets the attributes of the nametag of the player
-    * `attributes`:
-      {
-        color = ColorSpec,
-      }
 
 ### `InvRef`
 An `InvRef` is a reference to an inventory.
@@ -2764,6 +2775,15 @@ It can be created via `PcgRandom(seed)` or `PcgRandom(seed, sequence)`.
 * `rand_normal_dist(min, max, num_trials=6)`: return normally distributed random number [`min`...`max`]
     * This is only a rough approximation of a normal distribution with mean=(max-min)/2 and variance=1
     * Increasing num_trials improves accuracy of the approximation
+
+### `SecureRandom`
+Interface for the operating system's crypto-secure PRNG.
+
+It can be created via `SecureRandom()`.  The constructor returns nil if a secure random device cannot be
+be found on the system.
+
+#### Methods
+* `next_bytes([count])`: return next `count` (default 1, capped at 2048) many random bytes, as a string.
 
 ### `PerlinNoise`
 A perlin noise generator.
@@ -2925,6 +2945,7 @@ core.CONTENT_IGNORE  (ID for "ignore" nodes)
 Inside of `on_generated()` callbacks, it is possible to retrieve the same VoxelManip object used by the
 core's Map Generator (commonly abbreviated Mapgen).  Most of the rules previously described still apply
 but with a few differences:
+
 * The Mapgen VoxelManip object is retrieved using: `minetest.get_mapgen_object("voxelmanip")`
 * This VoxelManip object already has the region of map just generated loaded into it; it's not necessary
   to call `VoxelManip:read_from_map()` before using a Mapgen VoxelManip.
@@ -2983,7 +3004,7 @@ will place the schematic inside of the VoxelManip.
 * `update_map()`: Update map after writing chunk back to map.
     * To be used only by `VoxelManip` objects created by the mod itself;
       not a `VoxelManip` that was retrieved from `minetest.get_mapgen_object`
-* `set_lighting(light, p1, p2)`: Set the lighting within the `VoxelManip` to a uniform value
+* `set_lighting(light, [p1, p2])`: Set the lighting within the `VoxelManip` to a uniform value
     * `light` is a table, `{day=<0...15>, night=<0...15>}`
     * To be used only by a `VoxelManip` object from `minetest.get_mapgen_object`
     * (`p1`, `p2`) is the area in which lighting is set;
@@ -2997,10 +3018,12 @@ will place the schematic inside of the VoxelManip.
     * expects lighting data in the same format that `get_light_data()` returns
 * `get_param2_data()`: Gets the raw `param2` data read into the `VoxelManip` object
 * `set_param2_data(param2_data)`: Sets the `param2` contents of each node in the `VoxelManip`
-* `calc_lighting(p1, p2)`:  Calculate lighting within the `VoxelManip`
+* `calc_lighting([p1, p2], [propagate_shadow])`:  Calculate lighting within the `VoxelManip`
     * To be used only by a `VoxelManip` object from `minetest.get_mapgen_object`
     * (`p1`, `p2`) is the area in which lighting is set; defaults to the whole area
-      if left out
+      if left out or nil
+    * `propagate_shadow` is an optional boolean deciding whether shadows in a generated
+      mapchunk above are propagated down into the mapchunk; defaults to `true` if left out
 * `update_liquids()`: Update liquid flow
 * `was_modified()`: Returns `true` or `false` if the data in the voxel manipulator
   had been modified since the last read from map, due to a call to
@@ -3213,7 +3236,12 @@ Definition tables
         stepheight = 0,
         automatic_face_movement_dir = 0.0,
     --  ^ automatically set yaw to movement direction; offset in degrees; false to disable
+        automatic_face_movement_max_rotation_per_sec = -1,
+    --  ^ limit automatic rotation to this value in degrees per second. values < 0 no limit
         backface_culling = true, -- false to disable backface_culling for model
+        nametag = "", -- by default empty, for players their name is shown if empty
+        nametag_color = <color>, -- sets color of nametag as ColorSpec
+        infotext = "", -- by default empty, text to be shown when pointed at object
     }
 
 ### Entity definition (`register_entity`)
@@ -3294,6 +3322,11 @@ Definition tables
         --[[
         ^ Shall place item and return the leftover itemstack
         ^ default: minetest.item_place ]]
+        on_secondary_use = func(itemstack, user, pointed_thing),
+        --[[
+        ^ Same as on_place but called when pointing at nothing.
+        ^ pointed_thing : always { type = "nothing" }
+        ]]
         on_drop = func(itemstack, dropper, pos),
         --[[
         ^ Shall drop item and return the leftover itemstack
@@ -3325,7 +3358,7 @@ Definition tables
 * `{name="image.png", animation={Tile Animation definition}}`
 * `{name="image.png", backface_culling=bool, tileable_vertical=bool,
     tileable_horizontal=bool}`
-    * backface culling only supported in special tiles.
+    * backface culling enabled by default for most nodes
     * tileable flags are info for shaders, how they should treat texture
 	  when displacement mapping is used
 	  Directions are from the point of view of the tile texture,
@@ -3367,6 +3400,7 @@ Definition tables
         diggable = true, -- If false, can never be dug
         climbable = false, -- If true, can be climbed on (ladder)
         buildable_to = false, -- If true, placed nodes can replace this node
+        floodable = false, -- If true, liquids flow into and replace this node
         liquidtype = "none", -- "none"/"source"/"flowing"
         liquid_alternative_flowing = "", -- Flowing version of source liquid
         liquid_alternative_source = "", -- Source version of flowing liquid
@@ -3554,7 +3588,7 @@ Definition tables
         y_max = 64,
         flags = "",
     --  ^ Attributes for this ore generation
-        noise_threshhold = 0.5,
+        noise_threshold = 0.5,
     --  ^ If noise is above this threshold, ore is placed.  Not needed for a uniform distribution
         noise_params = {offset=0, scale=1, spread={x=100, y=100, z=100}, seed=23, octaves=3, persist=0.70}
     --  ^ NoiseParams structure describing the perlin noise used for ore distribution.
@@ -3567,6 +3601,51 @@ Definition tables
     --  ^ List of biomes in which this decoration occurs.  Occurs in all biomes if this is omitted,
     --  ^ and ignored if the Mapgen being used does not support biomes.
     --  ^ Can be a list of (or a single) biome names, IDs, or definitions.
+    }
+
+### Biome definition (`register_biome`)
+
+    {
+        name = "tundra",
+        node_dust = "default:snow",
+    --  ^ Node dropped onto upper surface after all else is generated.
+        node_top = "default:dirt_with_snow",
+        depth_top = 1,
+    --  ^ Node forming surface layer of biome and thickness of this layer.
+        node_filler = "default:permafrost",
+        depth_filler = 3,
+    --  ^ Node forming lower layer of biome and thickness of this layer.
+        node_stone = "default:bluestone",
+    --  ^ Node that replaces all stone nodes between roughly y_min and y_max.
+        node_water_top = "default:ice",
+        depth_water_top = 10,
+    --  ^ Node forming a surface layer in seawater with the defined thickness.
+        node_water = "",
+    --  ^ Node that replaces all seawater nodes not in the defined surface layer.
+        node_river_water = "default:ice",
+    --  ^ Node that replaces river water in mapgens that use default:river_water.
+        y_min = 1,
+        y_max = 31000,
+    --  ^ Lower and upper limits for biome.
+    --  ^ Because biome is not recalculated for every node in a node column
+    --  ^ some biome materials can exceed their limits, especially stone.
+    --  ^ For each node column in a mapchunk, biome is only recalculated at column
+    --  ^ top and at each of these surfaces:
+    --  ^ Ground below air, water below air, ground below water.
+    --  ^ The selected biome then stays in effect for all nodes below until
+    --  ^ column base or the next biome recalculation.
+        heat_point = 0,
+        humidity_point = 50,
+    --  ^ Characteristic average temperature and humidity for the biome.
+    --  ^ These values create 'biome points' on a voronoi diagram that has heat
+    --  ^ and humidity as axes. The resulting voronoi cells determine which
+    --  ^ heat/humidity points belong to which biome, and therefore determine
+    --  ^ the area and location of each biome in the world.
+    --  ^ The biome points need to be carefully and evenly spaced on the voronoi
+    --  ^ diagram to result in roughly equal size biomes.
+    --  ^ Heat and humidity have average values of 50, vary mostly between
+    --  ^ 0 and 100 but also often exceed these values.
+    --  ^ Heat is not in degrees celcius, both values are abstract.
     }
 
 ### Decoration definition (`register_decoration`)

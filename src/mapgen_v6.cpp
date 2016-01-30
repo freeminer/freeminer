@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -41,15 +42,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v6.h"
 #include "environment.h"
 
+
 FlagDesc flagdesc_mapgen_v6[] = {
 	{"jungles",    MGV6_JUNGLES},
 	{"biomeblend", MGV6_BIOMEBLEND},
 	{"mudflow",    MGV6_MUDFLOW},
 	{"snowbiomes", MGV6_SNOWBIOMES},
+	{"flat",       MGV6_FLAT},
+	{"trees",      MGV6_TREES},
 	{NULL,         0}
 };
 
-///////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge)
@@ -205,7 +210,6 @@ void MapgenV6Params::writeParams(Settings *settings) const
 
 //////////////////////// Some helper functions for the map generator
 
-
 // Returns Y one under area minimum if not found
 s16 MapgenV6::find_stone_level(v2s16 p2d)
 {
@@ -273,7 +277,7 @@ float MapgenV6::baseTerrainLevel(float terrain_base, float terrain_higher,
 
 float MapgenV6::baseTerrainLevelFromNoise(v2s16 p)
 {
-	if (flags & MG_FLAT)
+	if ((spflags & MGV6_FLAT) || (flags & MG_FLAT))
 		return water_level;
 
 	float terrain_base   = NoisePerlin2D_PO(&noise_terrain_base->np,
@@ -299,7 +303,7 @@ float MapgenV6::baseTerrainLevelFromMap(v2s16 p)
 
 float MapgenV6::baseTerrainLevelFromMap(int index)
 {
-	if (flags & MG_FLAT)
+	if ((spflags & MGV6_FLAT) || (flags & MG_FLAT))
 		return water_level;
 
 	float terrain_base   = noise_terrain_base->result[index];
@@ -400,7 +404,7 @@ bool MapgenV6::getHaveAppleTree(v2s16 p)
 
 float MapgenV6::getMudAmount(int index)
 {
-	if (flags & MG_FLAT)
+	if ((spflags & MGV6_FLAT) || (flags & MG_FLAT))
 		return MGV6_AVERAGE_MUD_AMOUNT;
 
 	/*return ((float)AVERAGE_MUD_AMOUNT + 2.0 * noise2d_perlin(
@@ -487,11 +491,11 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	assert(data->vmanip);
 	assert(data->nodedef);
 	assert(data->blockpos_requested.X >= data->blockpos_min.X &&
-		   data->blockpos_requested.Y >= data->blockpos_min.Y &&
-		   data->blockpos_requested.Z >= data->blockpos_min.Z);
+		data->blockpos_requested.Y >= data->blockpos_min.Y &&
+		data->blockpos_requested.Z >= data->blockpos_min.Z);
 	assert(data->blockpos_requested.X <= data->blockpos_max.X &&
-		   data->blockpos_requested.Y <= data->blockpos_max.Y &&
-		   data->blockpos_requested.Z <= data->blockpos_max.Z);
+		data->blockpos_requested.Y <= data->blockpos_max.Y &&
+		data->blockpos_requested.Z <= data->blockpos_max.Z);
 
 	this->generating = true;
 	this->vm   = data->vmanip;
@@ -602,18 +606,21 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	growGrass();
 
 	// Generate some trees, and add grass, if a jungle
-	if (flags & MG_TREES)
+	if ((spflags & MGV6_TREES) || (flags & MG_TREES))
 		placeTreesAndJungleGrass();
 
 	// Generate the registered decorations
-	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	if (flags & MG_DECORATIONS)
+		m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
 	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)
-		calcLighting(node_min, node_max);
+		calcLighting(node_min - v3s16(1, 1, 1) * MAP_BLOCKSIZE,
+			node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE,
+			full_node_min, full_node_max);
 
 	this->generating = false;
 }
@@ -626,7 +633,7 @@ void MapgenV6::calculateNoise()
 	int fx = full_node_min.X;
 	int fz = full_node_min.Z;
 
-	if (!(flags & MG_FLAT)) {
+	if (!((spflags & MGV6_FLAT) || (flags & MG_FLAT))) {
 		noise_terrain_base->perlinMap2D_PO(x, 0.5, z, 0.5);
 		noise_terrain_higher->perlinMap2D_PO(x, 0.5, z, 0.5);
 		noise_steepness->perlinMap2D_PO(x, 0.5, z, 0.5);
@@ -829,7 +836,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					continue;
 
 				// Drop mud on side
-				for(u32 di = 0; di < 4; di++) {
+				for (u32 di = 0; di < 4; di++) {
 					v3s16 dirp = dirs4[di];
 					u32 i2 = i;
 					// Move to side
@@ -854,7 +861,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 						vm->m_area.add_y(em, i2, -1);
 						n2 = &vm->m_data[i2];
 						// if out of known area
-						if(vm->m_area.contains(i2) == false ||
+						if (vm->m_area.contains(i2) == false ||
 								n2->getContent() == CONTENT_IGNORE) {
 							dropped_to_unknown = true;
 							break;
@@ -869,7 +876,7 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					if (!dropped_to_unknown) {
 						*n2 = *n;
 						// Set old place to be air (or water)
-						if(old_is_water)
+						if (old_is_water)
 							*n = MapNode(c_water_source);
 						else
 							*n = MapNode(CONTENT_AIR);

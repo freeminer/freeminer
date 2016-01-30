@@ -16,7 +16,8 @@ end
 
 local time_to_live = tonumber(core.setting_get("item_entity_ttl"))
 if not time_to_live then
-	time_to_live = -1
+	--time_to_live = -1
+	time_to_live = 86400
 end
 
 core.register_entity(":__builtin:item", {
@@ -31,6 +32,7 @@ core.register_entity(":__builtin:item", {
 		spritediv = {x = 1, y = 1},
 		initial_sprite_basepos = {x = 0, y = 0},
 		is_visible = false,
+		infotext = "",
 	},
 
 	itemstring = '',
@@ -50,6 +52,7 @@ core.register_entity(":__builtin:item", {
 		local c = s
 		local itemtable = stack:to_table()
 		local itemname = nil
+		local description = ""
 		if itemtable then
 			itemname = stack:to_table().name
 		end
@@ -58,6 +61,7 @@ core.register_entity(":__builtin:item", {
 		if core.registered_items[itemname] then
 			item_texture = core.registered_items[itemname].inventory_image
 			item_type = core.registered_items[itemname].type
+			description = core.registered_items[itemname].description
 		end
 		local prop = {
 			is_visible = true,
@@ -66,6 +70,7 @@ core.register_entity(":__builtin:item", {
 			visual_size = {x = s, y = s},
 			collisionbox = {-c, -c, -c, c, c, c},
 			automatic_rotate = math.pi * 0.5,
+			infotext = description,
 		}
 		self.object:set_properties(prop)
 	end,
@@ -74,7 +79,9 @@ core.register_entity(":__builtin:item", {
 		return core.serialize({
 			itemstring = self.itemstring,
 			always_collect = self.always_collect,
-			age = self.age
+			age = self.age,
+			ttl = self.ttl,
+			dropped_by = self.dropped_by
 		})
 	end,
 
@@ -89,6 +96,8 @@ core.register_entity(":__builtin:item", {
 				else
 					self.age = dtime_s
 				end
+				self.dropped_by = data.dropped_by
+				self.ttl = data.ttl
 			end
 		else
 			self.itemstring = staticdata
@@ -151,12 +160,15 @@ core.register_entity(":__builtin:item", {
 
 	on_step = function(self, dtime)
 		self.age = self.age + dtime
-		if time_to_live > 0 and self.age > time_to_live then
+		local ttl = self.object:get_luaentity().ttl
+		if not ttl then ttl = time_to_live end
+		if ttl > 0 and self.age > ttl then
 			self.itemstring = ''
 			self.object:remove()
 			return
 		end
 		local p = self.object:getpos()
+		local node_in = core.get_node_or_nil(p)
 		p.y = p.y - 0.5
 		local node = core.get_node_or_nil(p)
 		local in_unloaded = (node == nil)
@@ -208,6 +220,12 @@ core.register_entity(":__builtin:item", {
 				end
 			end
 		end
+
+		-- push item up from ground
+		if node_in and not core.registered_nodes[node_in.name].buildable_to and not core.registered_nodes[node_in.name].sunlight_propagates then
+			self.object:setvelocity({x=0,y=2,z=0})
+		end
+
 	end,
 
 	on_punch = function(self, hitter)

@@ -28,7 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content_sao.h"
 #include "nodedef.h"
 #include "voxelalgorithms.h"
-#include "profiler.h" // For TimeTaker
+//#include "profiler.h" // For TimeTaker
 #include "settings.h" // For g_settings
 #include "emerge.h"
 #include "dungeongen.h"
@@ -41,7 +41,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 
 FlagDesc flagdesc_mapgen_fractal[] = {
-	{"julia", MGFRACTAL_JULIA},
 	{NULL,    0}
 };
 
@@ -59,27 +58,27 @@ MapgenFractal::MapgenFractal(int mapgenid, MapgenParams *params, EmergeManager *
 	this->ystride = csize.X;
 	this->zstride = csize.X * (csize.Y + 2);
 
-	this->biomemap        = new u8[csize.X * csize.Z];
-	this->heightmap       = new s16[csize.X * csize.Z];
-	this->heatmap         = NULL;
-	this->humidmap        = NULL;
+	this->biomemap  = new u8[csize.X * csize.Z];
+	this->heightmap = new s16[csize.X * csize.Z];
+	this->heatmap   = NULL;
+	this->humidmap  = NULL;
 
 	MapgenFractalParams *sp = (MapgenFractalParams *)params->sparams;
 	this->spflags = sp->spflags;
 
-	this->m_iterations = sp->m_iterations;
-	this->m_scale = sp->m_scale;
-	this->m_offset = sp->m_offset;
-	this->m_slice_w = sp->m_slice_w;
+	this->fractal    = sp->fractal;
+	this->iterations = sp->iterations;
+	this->scale      = sp->scale;
+	this->offset     = sp->offset;
+	this->slice_w    = sp->slice_w;
 
-	this->j_iterations = sp->j_iterations;
-	this->j_scale = sp->j_scale;
-	this->j_offset = sp->j_offset;
-	this->j_slice_w = sp->j_slice_w;
 	this->julia_x = sp->julia_x;
 	this->julia_y = sp->julia_y;
 	this->julia_z = sp->julia_z;
 	this->julia_w = sp->julia_w;
+
+	this->formula = fractal / 2 + fractal % 2;
+	this->julia   = fractal % 2 == 0;
 
 	//// 2D terrain noise
 	noise_seabed       = new Noise(&sp->np_seabed, seed, csize.X, csize.Z);
@@ -145,15 +144,12 @@ MapgenFractalParams::MapgenFractalParams()
 {
 	spflags = 0;
 
-	m_iterations = 9;  // Mandelbrot set only
-	m_scale = v3f(1024.0, 256.0, 1024.0);
-	m_offset = v3f(1.75, 0.0, 0.0);
-	m_slice_w = 0.0;
+	fractal = 1;
+	iterations = 11;
+	scale = v3f(4096.0, 1024.0, 4096.0);
+	offset = v3f(1.79, 0.0, 0.0);
+	slice_w = 0.0;
 
-	j_iterations = 9;  // Julia set only
-	j_scale = v3f(2048.0, 512.0, 2048.0);
-	j_offset = v3f(0.0, 1.0, 0.0);
-	j_slice_w = 0.0;
 	julia_x = 0.33;
 	julia_y = 0.33;
 	julia_z = 0.33;
@@ -161,8 +157,8 @@ MapgenFractalParams::MapgenFractalParams()
 
 	np_seabed       = NoiseParams(-14, 9,   v3f(600, 600, 600), 41900, 5, 0.6, 2.0);
 	np_filler_depth = NoiseParams(0,   1.2, v3f(150, 150, 150), 261,   3, 0.7, 2.0);
-	np_cave1        = NoiseParams(0,   12,  v3f(128, 128, 128), 52534, 4, 0.5, 2.0);
-	np_cave2        = NoiseParams(0,   12,  v3f(128, 128, 128), 10325, 4, 0.5, 2.0);
+	np_cave1        = NoiseParams(0,   12,  v3f(96,  96,  96),  52534, 4, 0.5, 2.0);
+	np_cave2        = NoiseParams(0,   12,  v3f(96,  96,  96),  10325, 4, 0.5, 2.0);
 }
 
 
@@ -170,15 +166,12 @@ void MapgenFractalParams::readParams(Settings *settings)
 {
 	settings->getFlagStrNoEx("mgfractal_spflags", spflags, flagdesc_mapgen_fractal);
 
-	settings->getU16NoEx("mgfractal_m_iterations", m_iterations);
-	settings->getV3FNoEx("mgfractal_m_scale", m_scale);
-	settings->getV3FNoEx("mgfractal_m_offset", m_offset);
-	settings->getFloatNoEx("mgfractal_m_slice_w", m_slice_w);
+	settings->getU16NoEx("mgfractal_fractal", fractal);
+	settings->getU16NoEx("mgfractal_iterations", iterations);
+	settings->getV3FNoEx("mgfractal_scale", scale);
+	settings->getV3FNoEx("mgfractal_offset", offset);
+	settings->getFloatNoEx("mgfractal_slice_w", slice_w);
 
-	settings->getU16NoEx("mgfractal_j_iterations", j_iterations);
-	settings->getV3FNoEx("mgfractal_j_scale", j_scale);
-	settings->getV3FNoEx("mgfractal_j_offset", j_offset);
-	settings->getFloatNoEx("mgfractal_j_slice_w", j_slice_w);
 	settings->getFloatNoEx("mgfractal_julia_x", julia_x);
 	settings->getFloatNoEx("mgfractal_julia_y", julia_y);
 	settings->getFloatNoEx("mgfractal_julia_z", julia_z);
@@ -195,15 +188,12 @@ void MapgenFractalParams::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgfractal_spflags", spflags, flagdesc_mapgen_fractal, U32_MAX);
 
-	settings->setU16("mgfractal_m_iterations", m_iterations);
-	settings->setV3F("mgfractal_m_scale", m_scale);
-	settings->setV3F("mgfractal_m_offset", m_offset);
-	settings->setFloat("mgfractal_m_slice_w", m_slice_w);
+	settings->setU16("mgfractal_fractal", fractal);
+	settings->setU16("mgfractal_iterations", iterations);
+	settings->setV3F("mgfractal_scale", scale);
+	settings->setV3F("mgfractal_offset", offset);
+	settings->setFloat("mgfractal_slice_w", slice_w);
 
-	settings->setU16("mgfractal_j_iterations", j_iterations);
-	settings->setV3F("mgfractal_j_scale", j_scale);
-	settings->setV3F("mgfractal_j_offset", j_offset);
-	settings->setFloat("mgfractal_j_slice_w", j_slice_w);
 	settings->setFloat("mgfractal_julia_x", julia_x);
 	settings->setFloat("mgfractal_julia_y", julia_y);
 	settings->setFloat("mgfractal_julia_z", julia_z);
@@ -248,7 +238,7 @@ void MapgenFractal::makeChunk(BlockMakeData *data)
 	this->generating = true;
 	this->vm   = data->vmanip;
 	this->ndef = data->nodedef;
-	TimeTaker t("makeChunk");
+	//TimeTaker t("makeChunk");
 
 	v3s16 blockpos_min = data->blockpos_min;
 	v3s16 blockpos_max = data->blockpos_max;
@@ -322,7 +312,8 @@ void MapgenFractal::makeChunk(BlockMakeData *data)
 	}
 
 	// Generate the registered decorations
-	m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
+	if (flags & MG_DECORATIONS)
+		m_emerge->decomgr->placeAllDecos(this, blockseed, node_min, node_max);
 
 	// Generate the registered ores
 	m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
@@ -330,7 +321,7 @@ void MapgenFractal::makeChunk(BlockMakeData *data)
 	// Sprinkle some dust on top after everything else was generated
 	dustTopNodes();
 
-	printf("makeChunk: %dms\n", t.stop());
+	//printf("makeChunk: %dms\n", t.stop());
 
 	updateLiquid(full_node_min, full_node_max);
 
@@ -380,34 +371,108 @@ bool MapgenFractal::getFractalAtPoint(s16 x, s16 y, s16 z)
 {
 	float cx, cy, cz, cw, ox, oy, oz, ow;
 
-	if (spflags & MGFRACTAL_JULIA) {  // Julia set
+	if (julia) {  // Julia set
 		cx = julia_x;
 		cy = julia_y;
 		cz = julia_z;
 		cw = julia_w;
-		ox = (float)x / j_scale.X - j_offset.X;
-		oy = (float)y / j_scale.Y - j_offset.Y;
-		oz = (float)z / j_scale.Z - j_offset.Z;
-		ow = j_slice_w;
+		ox = (float)x / scale.X - offset.X;
+		oy = (float)y / scale.Y - offset.Y;
+		oz = (float)z / scale.Z - offset.Z;
+		ow = slice_w;
 	} else {  // Mandelbrot set
-		cx = (float)x / m_scale.X - m_offset.X;
-		cy = (float)y / m_scale.Y - m_offset.Y;
-		cz = (float)z / m_scale.Z - m_offset.Z;
-		cw = m_slice_w;
+		cx = (float)x / scale.X - offset.X;
+		cy = (float)y / scale.Y - offset.Y;
+		cz = (float)z / scale.Z - offset.Z;
+		cw = slice_w;
 		ox = 0.0f;
 		oy = 0.0f;
 		oz = 0.0f;
 		ow = 0.0f;
 	}
 
-	u16 iterations = spflags & MGFRACTAL_JULIA ? j_iterations : m_iterations;
+	float nx = 0.0f;
+	float ny = 0.0f;
+	float nz = 0.0f;
+	float nw = 0.0f;
 
 	for (u16 iter = 0; iter < iterations; iter++) {
-		// 4D "Roundy" Mandelbrot set
-		float nx = ox * ox - oy * oy - oz * oz - ow * ow + cx;
-		float ny = 2.0f * (ox * oy + oz * ow) + cy;
-		float nz = 2.0f * (ox * oz + oy * ow) + cz;
-		float nw = 2.0f * (ox * ow + oy * oz) + cw;
+
+		if (formula == 1) {  // 4D "Roundy"
+			nx = ox * ox - oy * oy - oz * oz - ow * ow + cx;
+			ny = 2.0f * (ox * oy + oz * ow) + cy;
+			nz = 2.0f * (ox * oz + oy * ow) + cz;
+			nw = 2.0f * (ox * ow + oy * oz) + cw;
+		} else if (formula == 2) {  // 4D "Squarry"
+			nx = ox * ox - oy * oy - oz * oz - ow * ow + cx;
+			ny = 2.0f * (ox * oy + oz * ow) + cy;
+			nz = 2.0f * (ox * oz + oy * ow) + cz;
+			nw = 2.0f * (ox * ow - oy * oz) + cw;
+		} else if (formula == 3) {  // 4D "Mandy Cousin"
+			nx = ox * ox - oy * oy - oz * oz + ow * ow + cx;
+			ny = 2.0f * (ox * oy + oz * ow) + cy;
+			nz = 2.0f * (ox * oz + oy * ow) + cz;
+			nw = 2.0f * (ox * ow + oy * oz) + cw;
+		} else if (formula == 4) {  // 4D "Variation"
+			nx = ox * ox - oy * oy - oz * oz - ow * ow + cx;
+			ny = 2.0f * (ox * oy + oz * ow) + cy;
+			nz = 2.0f * (ox * oz - oy * ow) + cz;
+			nw = 2.0f * (ox * ow + oy * oz) + cw;
+		} else if (formula == 5) {  // 3D "Mandelbrot/Mandelbar"
+			nx = ox * ox - oy * oy - oz * oz + cx;
+			ny = 2.0f * ox * oy + cy;
+			nz = -2.0f * ox * oz + cz;
+		} else if (formula == 6) {  // 3D "Christmas Tree"
+			// Altering the formula here is necessary to avoid division by zero
+			if (fabs(oz) < 0.000000001f) {
+				nx = ox * ox - oy * oy - oz * oz + cx;
+				ny = 2.0f * oy * ox + cy;
+				nz = 4.0f * oz * ox + cz;
+			} else {
+				float a = (2.0f * ox) / (sqrt(oy * oy + oz * oz));
+				nx = ox * ox - oy * oy - oz * oz + cx;
+				ny = a * (oy * oy - oz * oz) + cy;
+				nz = a * 2.0f * oy * oz + cz;
+			}
+		} else if (formula == 7) {  // 3D "Mandelbulb"
+			if (fabs(oy) < 0.000000001f) {
+				nx = ox * ox - oz * oz + cx;
+				ny = cy;
+				nz = -2.0f * oz * sqrt(ox * ox) + cz;
+			} else {
+				float a = 1.0f - (oz * oz) / (ox * ox + oy * oy);
+				nx = (ox * ox - oy * oy) * a + cx;
+				ny = 2.0f * ox * oy * a + cy;
+				nz = -2.0f * oz * sqrt(ox * ox + oy * oy) + cz;
+			}
+		} else if (formula == 8) {  // 3D "Cosine Mandelbulb"
+			if (fabs(oy) < 0.000000001f) {
+				nx = 2.0f * ox * oz + cx;
+				ny = 4.0f * oy * oz + cy;
+				nz = oz * oz - ox * ox - oy * oy + cz;
+			} else {
+				float a = (2.0f * oz) / sqrt(ox * ox + oy * oy);
+				nx = (ox * ox - oy * oy) * a + cx;
+				ny = 2.0f * ox * oy * a + cy;
+				nz = oz * oz - ox * ox - oy * oy + cz;
+			}
+		} else if (formula == 9) {  // 4D "Mandelbulb"
+			float rxy = sqrt(ox * ox + oy * oy);
+			float rxyz = sqrt(ox * ox + oy * oy + oz * oz);
+			if (fabs(ow) < 0.000000001f && fabs(oz) < 0.000000001f) {
+				nx = (ox * ox - oy * oy) + cx;
+				ny = 2.0f * ox * oy + cy;
+				nz = -2.0f * rxy * oz + cz;
+				nw = 2.0f * rxyz * ow + cw;
+			} else {
+				float a = 1.0f - (ow * ow) / (rxyz * rxyz);
+				float b = a * (1.0f - (oz * oz) / (rxy * rxy));
+				nx = (ox * ox - oy * oy) * b + cx;
+				ny = 2.0f * ox * oy * b + cy;
+				nz = -2.0f * rxy * oz * a + cz;
+				nw = 2.0f * rxyz * ow + cw;
+			}
+		}
 
 		if (nx * nx + ny * ny + nz * nz + nw * nw > 4.0f)
 			return false;
@@ -609,20 +674,39 @@ void MapgenFractal::dustTopNodes()
 void MapgenFractal::generateCaves(s16 max_stone_y)
 {
 	if (max_stone_y >= node_min.Y) {
-		u32 index = 0;
+		v3s16 em = vm->m_area.getExtent();
+		u32 index2d = 0;
+		u32 index3d;
 
 		for (s16 z = node_min.Z; z <= node_max.Z; z++)
-		for (s16 y = node_min.Y - 1; y <= node_max.Y + 1; y++) {
-			u32 vi = vm->m_area.index(node_min.X, y, z);
-			for (s16 x = node_min.X; x <= node_max.X; x++, vi++, index++) {
-				float d1 = contour(noise_cave1->result[index]);
-				float d2 = contour(noise_cave2->result[index]);
-				if (d1 * d2 > 0.4f) {
-					content_t c = vm->m_data[vi].getContent();
-					if (!ndef->get(c).is_ground_content || c == CONTENT_AIR)
-						continue;
+		for (s16 x = node_min.X; x <= node_max.X; x++, index2d++) {
+			bool open = false;  // Is column open to overground
+			u32 vi = vm->m_area.index(x, node_max.Y + 1, z);
+			index3d = (z - node_min.Z) * zstride + (csize.Y + 1) * ystride +
+				(x - node_min.X);
+			// Biome of column
+			Biome *biome = (Biome *)bmgr->getRaw(biomemap[index2d]);
 
+			for (s16 y = node_max.Y + 1; y >= node_min.Y - 1;
+					y--, index3d -= ystride, vm->m_area.add_y(em, vi, -1)) {
+				content_t c = vm->m_data[vi].getContent();
+				if (c == CONTENT_AIR || c == biome->c_water_top ||
+						c == biome->c_water) {
+					open = true;
+					continue;
+				}
+				// Ground
+				float d1 = contour(noise_cave1->result[index3d]);
+				float d2 = contour(noise_cave2->result[index3d]);
+				if (d1 * d2 > 0.3f && ndef->get(c).is_ground_content) {
+					// In tunnel and ground content, excavate
 					vm->m_data[vi] = MapNode(CONTENT_AIR);
+				} else if (open && (c == biome->c_filler || c == biome->c_stone)) {
+					// Tunnel entrance floor
+					vm->m_data[vi] = MapNode(biome->c_top);
+					open = false;
+				} else {
+					open = false;
 				}
 			}
 		}
@@ -632,9 +716,9 @@ void MapgenFractal::generateCaves(s16 max_stone_y)
 		return;
 
 	PseudoRandom ps(blockseed + 21343);
-	u32 bruises_count = (ps.range(1, 4) == 1) ? ps.range(1, 2) : 0;
+	u32 bruises_count = ps.range(0, 2);
 	for (u32 i = 0; i < bruises_count; i++) {
-		CaveFractal cave(this, &ps);
+		CaveV5 cave(this, &ps);
 		cave.makeCave(node_min, node_max, max_stone_y);
 	}
 }

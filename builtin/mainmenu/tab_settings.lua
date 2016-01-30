@@ -20,8 +20,8 @@ local FILENAME = "settingtypes.txt"
 local CHAR_CLASSES = {
 	SPACE = "[%s]",
 	VARIABLE = "[%w_%-%.]",
-	INTEGER = "[-]?[%d]",
-	FLOAT = "[-]?[%d%.]",
+	INTEGER = "[+-]?[%d]",
+	FLOAT = "[+-]?[%d%.]",
 	FLAGS = "[%w_%-%.,]",
 }
 
@@ -65,13 +65,11 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 			--  so we can later strip it from the rest of the line
 			.. "("
 				.. "([" .. CHAR_CLASSES.VARIABLE .. "+)" -- variable name
-				.. CHAR_CLASSES.SPACE
-				.. "+"
+				.. CHAR_CLASSES.SPACE .. "*"
 				.. "%(([^%)]*)%)"  -- readable name
-				.. CHAR_CLASSES.SPACE
-				.. "+"
+				.. CHAR_CLASSES.SPACE .. "*"
 				.. "(" .. CHAR_CLASSES.VARIABLE .. "+)" -- type
-				.. CHAR_CLASSES.SPACE .. "?"
+				.. CHAR_CLASSES.SPACE .. "*"
 			.. ")")
 
 	if not first_part then
@@ -90,8 +88,8 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 	if setting_type == "int" then
 		local default, min, max = remaining_line:match("^"
 				-- first int is required, the last 2 are optional
-				.. "(" .. CHAR_CLASSES.INTEGER .. "+)" .. CHAR_CLASSES.SPACE .. "?"
-				.. "(" .. CHAR_CLASSES.INTEGER .. "*)" .. CHAR_CLASSES.SPACE .. "?"
+				.. "(" .. CHAR_CLASSES.INTEGER .. "+)" .. CHAR_CLASSES.SPACE .. "*"
+				.. "(" .. CHAR_CLASSES.INTEGER .. "*)" .. CHAR_CLASSES.SPACE .. "*"
 				.. "(" .. CHAR_CLASSES.INTEGER .. "*)"
 				.. "$")
 
@@ -114,7 +112,7 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 	end
 
 	if setting_type == "string" or setting_type == "noise_params"
-			or setting_type == "key" then
+			or setting_type == "key" or setting_type == "v3f" then
 		local default = remaining_line:match("^(.*)$")
 
 		if not default then
@@ -155,8 +153,8 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 	if setting_type == "float" then
 		local default, min, max = remaining_line:match("^"
 				-- first float is required, the last 2 are optional
-				.. "(" .. CHAR_CLASSES.FLOAT .. "+)" .. CHAR_CLASSES.SPACE .. "?"
-				.. "(" .. CHAR_CLASSES.FLOAT .. "*)" .. CHAR_CLASSES.SPACE .. "?"
+				.. "(" .. CHAR_CLASSES.FLOAT .. "+)" .. CHAR_CLASSES.SPACE .. "*"
+				.. "(" .. CHAR_CLASSES.FLOAT .. "*)" .. CHAR_CLASSES.SPACE .. "*"
 				.. "(" .. CHAR_CLASSES.FLOAT .. "*)"
 				.."$")
 
@@ -179,7 +177,11 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 	end
 
 	if setting_type == "enum" then
-		local default, values = remaining_line:match("^(.+)" .. CHAR_CLASSES.SPACE .. "(.+)$")
+		local default, values = remaining_line:match("^"
+				-- first value (default) may be empty (i.e. is optional)
+				.. "(" .. CHAR_CLASSES.VARIABLE .. "*)" .. CHAR_CLASSES.SPACE .. "*"
+				.. "(" .. CHAR_CLASSES.FLAGS .. "+)"
+				.. "$")
 
 		if not default or values == "" then
 			return "Invalid enum setting"
@@ -215,12 +217,20 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 
 	if setting_type == "flags" then
 		local default, possible = remaining_line:match("^"
-				.. "(" .. CHAR_CLASSES.FLAGS .. "+)" .. CHAR_CLASSES.SPACE .. ""
-				.. "(" .. CHAR_CLASSES.FLAGS .. "+)"
+				-- first value (default) may be empty (i.e. is optional)
+				-- this is implemented by making the last value optional, and
+				-- swapping them around if it turns out empty.
+				.. "(" .. CHAR_CLASSES.FLAGS .. "+)" .. CHAR_CLASSES.SPACE .. "*"
+				.. "(" .. CHAR_CLASSES.FLAGS .. "*)"
 				.. "$")
 
 		if not default or not possible then
 			return "Invalid flags setting"
+		end
+
+		if possible == "" then
+			possible = default
+			default = ""
 		end
 
 		table.insert(settings, {
@@ -385,6 +395,9 @@ local function create_change_setting_formspec(dialogdata)
 		formspec = formspec .. ",,"
 				.. "," .. fgettext("Format: <offset>, <scale>, (<spreadX>, <spreadY>, <spreadZ>), <seed>, <octaves>, <persistence>") .. ","
 				.. "," .. fgettext("Optionally the lacunarity can be appended with a leading comma.") .. ","
+	elseif setting.type == "v3f" then
+		formspec = formspec .. ",,"
+				.. "," .. fgettext_ne("Format is 3 numbers separated by commas and inside brackets.") .. ","
 	end
 
 	formspec = formspec:sub(1, -2) -- remove trailing comma
@@ -428,13 +441,13 @@ local function create_change_setting_formspec(dialogdata)
 				.. "button[8,3.75;2,1;btn_browser_path;" .. fgettext("Browse") .. "]"
 
 	else
-		-- TODO: fancy input for float, int, flags, noise_params
+		-- TODO: fancy input for float, int, flags, noise_params, v3f
 		local width = 10
 		local text = get_current_value(setting)
 		if dialogdata.error_message then
 			formspec = formspec .. "tablecolumns[color;text]" ..
 			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[5,4;5,1;error_message;#FF0000,"
+			"table[5,3.9;5,0.6;error_message;#FF0000,"
 					.. core.formspec_escape(dialogdata.error_message) .. ";0]"
 			width = 5
 			if dialogdata.entered_text then
@@ -495,8 +508,8 @@ local function handle_change_setting_buttons(this, fields)
 			local new_value = fields["te_setting_value"]
 			for _,value in ipairs(new_value:split(",", true)) do
 				value = value:trim()
-				if not value:match(CHAR_CLASSES.FLAGS .. "+")
-						or not setting.possible:match("[,]?" .. value .. "[,]?") then
+				local possible = "," .. setting.possible .. ","
+				if not possible:find("," .. value .. ",", 0, true) then
 					this.data.error_message = fgettext_ne("\"$1\" is not a valid flag.", value)
 					this.data.entered_text = fields["te_setting_value"]
 					core.update_formspec(this:get_formspec())

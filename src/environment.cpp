@@ -374,8 +374,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_script(scriptIface),
 	m_gamedef(gamedef),
 	m_circuit(m_script, map, gamedef->ndef(), path_world),
-	m_key_value_storage(path_world, "key_value_storage"),
-	m_players_storage(path_world, "players"),
 	m_path_world(path_world),
 	m_send_recommended_timer(0),
 	m_active_objects_last(0),
@@ -392,11 +390,6 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_game_time = 0;
 	m_use_weather = g_settings->getBool("weather");
 	m_use_weather_biome = g_settings->getBool("weather_biome");
-
-	if (!m_key_value_storage.db)
-		errorstream << "Cant open KV storage: "<< m_key_value_storage.error << std::endl;
-	if (!m_players_storage.db)
-		errorstream << "Cant open players storage: "<< m_players_storage.error << std::endl;
 
 	// Init custom SAO
 	v3f nullpos;
@@ -449,9 +442,15 @@ ServerMap & ServerEnvironment::getServerMap()
 	return *m_map;
 }
 
-KeyValueStorage *ServerEnvironment::getKeyValueStorage()
+KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 {
-	return &m_key_value_storage;
+	if (name.empty()) {
+		name = "key_value_storage";
+	}
+	if (!m_key_value_storage.count(name)) {
+		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(m_path_world, name));
+	}
+	return m_key_value_storage.at(name);
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -516,7 +515,7 @@ void ServerEnvironment::savePlayer(RemotePlayer *player)
 		return;
 	Json::Value player_json;
 	player_json << *player;
-	m_players_storage.put_json("p." + player->getName(), player_json);
+	getPlayerStorage().put_json("p." + player->getName(), player_json);
 }
 
 Player * ServerEnvironment::loadPlayer(const std::string &playername)
@@ -532,7 +531,7 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	try {
 		Json::Value player_json;
-		m_players_storage.get_json("p." + playername, player_json);
+		getPlayerStorage().get_json("p." + playername, player_json);
 		verbosestream<<"Reading kv player "<<playername<<std::endl;
 		if (!player_json.empty()) {
 			player_json >> *player;
@@ -737,11 +736,16 @@ void ServerEnvironment::loadMeta()
 		u32 active_object_count = this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
 		m_env->m_added_objects = 0;
 
+		auto *ndef = m_env->getGameDef()->ndef();
+
 #if !ENABLE_THREADS
 		auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
 		if (!lock_map->owns_lock())
 			return;
 #endif
+
+		int heat_num = 0;
+		int heat_sum = 0;
 
 		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
@@ -758,6 +762,16 @@ void ServerEnvironment::loadMeta()
 			content_t c = n.getContent();
 			if (c == CONTENT_IGNORE)
 				continue;
+
+			{
+				int hot = ((ItemGroupList) ndef->get(n).groups)["hot"];
+				//todo: int cold = ((ItemGroupList) ndef->get(n).groups)["cold"];
+				//also humidity todo.
+				if (hot) {
+					++heat_num;
+					heat_sum += hot;
+				}
+			}
 
 			if (!m_aabms[c]) {
 				if (block->content_only != CONTENT_IGNORE)
@@ -802,6 +816,21 @@ neighbor_found:
 				block->abm_triggers->emplace_back(abm_trigger_one{i, p, c, active_object_count, active_object_count_wider, neighbor_pos, activate});
 			}
 		}
+		if (heat_num) {
+			float heat_avg = heat_sum/heat_num;
+			const int min = 2 * MAP_BLOCKSIZE;
+			float magic = heat_avg >= 1 ? min+(1024-min)/(4096/heat_avg) : min;
+			float heat_add = ((block->heat < 0 ? -block->heat : 0) + heat_avg) * (heat_num < magic ? heat_num/magic : 1);
+			if (block->heat > heat_add) {
+				block->heat_add = 0;
+			} else if (block->heat + heat_add > heat_avg)  {
+				block->heat_add = heat_avg - block->heat;
+			} else {
+				block->heat_add = heat_add;
+			}
+			//infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<" heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
+		}
+
 	//infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 
 	}
@@ -1060,17 +1089,19 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 
 void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius)
 {
+	int obj_null = 0, obj_count = 0;
 	auto lock = m_active_objects.lock_shared_rec();
 	for(auto
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
+		++obj_count;
 		ServerActiveObject* obj = i->second;
-		u16 id = i->first;
 		if (!obj) {
-			infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null object "<<id<<" = "<<obj<<std::endl;
+			++obj_null;
 			continue;
 		}
+		u16 id = i->first;
 		if (obj->m_removed || obj->m_pending_deactivation)
 			continue;
 
@@ -1079,6 +1110,8 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 			continue;
 		objects.push_back(id);
 	}
+	if (obj_null)
+		infostream<<"ServerEnvironment::getObjectsInsideRadius(): "<<"got null objects: "<<obj_null<<"/"<<obj_count<<std::endl;
 }
 
 void ServerEnvironment::clearAllObjects()
@@ -1500,6 +1533,10 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
+	{
+	TimeTaker timer("contrib_globalstep");
+	contrib_globalstep(dtime);
+	}
 	/*
 		Step script environment (run global on_step())
 	*/
@@ -1555,7 +1592,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			// Step object
 			if (!obj->m_uptime_last)  // not very good place, but minimum modifications
 				obj->m_uptime_last = uptime - dtime;
-			obj->step(uptime - obj->m_uptime_last, send_recommended);
+			obj->step(uptime > obj->m_uptime_last ? uptime - obj->m_uptime_last : dtime, send_recommended);
 			obj->m_uptime_last = uptime;
 			// Read messages from object
 /*
@@ -2485,9 +2522,11 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 		if(pending_delete && !force_delete)
 		{
+/*
 			verbosestream<<"ServerEnvironment::deactivateFarObjects(): "
 					<<"object id="<<id<<" is known by clients"
 					<<"; not deleting yet"<<std::endl;
+*/
 
 			obj->m_pending_deactivation = true;
 			continue;
@@ -2849,7 +2888,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);
 		MapNode n = m_map->getNodeNoEx(p);
-		ContentFeatures c = m_gamedef->ndef()->get(n);
+		const ContentFeatures &c = m_gamedef->ndef()->get(n);
 		u8 drowning_damage = c.drowning;
 		if(drowning_damage > 0 && lplayer->hp > 0){
 			u16 breath = lplayer->getBreath();
@@ -2874,7 +2913,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		// head
 		v3s16 p = floatToInt(pf + v3f(0, BS*1.6, 0), BS);
 		MapNode n = m_map->getNodeNoEx(p);
-		ContentFeatures c = m_gamedef->ndef()->get(n);
+		const ContentFeatures &c = m_gamedef->ndef()->get(n);
 		if (!lplayer->hp){
 			lplayer->setBreath(11);
 		}

@@ -499,6 +499,7 @@ static void calculate_H_AMK(SRP_HashAlgorithm alg, unsigned char *dest, const mp
 	hash_final(alg, &ctx, dest);
 }
 
+#ifndef WIN32
 
 struct srp_pcgrandom {
 	unsigned long long int m_state;
@@ -524,7 +525,7 @@ static void srp_pcgrandom_seed(srp_pcgrandom *r, unsigned long long int state,
 	r->m_state += state;
 	srp_pcgrandom_next(r);
 }
-
+#endif
 
 static SRP_Result fill_buff()
 {

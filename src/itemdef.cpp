@@ -30,8 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "wieldmesh.h"
+//#include "mapblock.h"
 #include "clientmap.h"
-#include "mapblock.h"
 #include "client/tile.h"
 #endif
 #include "log.h"
@@ -45,6 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __ANDROID__
 #include <GLES/gl.h>
 #endif
+
 
 /*
 	ItemDefinition
@@ -434,6 +435,8 @@ public:
 				/*
 					Make a mesh from the node
 				*/
+
+//fm:
 				Map map(gamedef);
 				MapDrawControl map_draw_control;
 				MeshMakeData mesh_make_data(gamedef, false, map, map_draw_control);
@@ -454,8 +457,9 @@ public:
 				block->setNode(v3s16(1,1,1), mesh_make_node);
 				map.insertBlock(block);
 				MapBlockMesh mapblock_mesh(&mesh_make_data, bp*MAP_BLOCKSIZE);
+//==
 
-/* MT
+/*MT
 				MeshMakeData mesh_make_data(gamedef, false);
 				u8 param2 = 0;
 				if (f.param_type_2 == CPT2_WALLMOUNTED)
@@ -464,7 +468,6 @@ public:
 				mesh_make_data.fillSingleNode(&mesh_make_node);
 				MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
 */
-
 				node_mesh = mapblock_mesh.getMesh();
 				node_mesh->grab();
 				video::SColor c(255, 255, 255, 255);
@@ -680,6 +683,33 @@ public:
 			os << serializeString(it->second);
 		}
 	}
+
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
+		pk.pack_map(2);
+		pk.pack((int)ITEMDEFMANAGER_ITEMDEFS);
+		pk.pack_map(m_item_definitions.size());
+		for (std::map<std::string, ItemDefinition*>::const_iterator i = m_item_definitions.begin();
+				i != m_item_definitions.end(); ++i) {
+			pk.pack(i->first);
+			pk.pack(*(i->second));
+		}
+		PACK(ITEMDEFMANAGER_ALIASES, m_aliases);
+	}
+	void msgpack_unpack(msgpack::object o) {
+		clear();
+		MsgpackPacket packet = o.as<MsgpackPacket>();
+
+		std::map<std::string, ItemDefinition> itemdefs_tmp;
+		packet[ITEMDEFMANAGER_ITEMDEFS].convert(&itemdefs_tmp);
+		for (std::map<std::string, ItemDefinition>::iterator i = itemdefs_tmp.begin();
+				i != itemdefs_tmp.end(); ++i) {
+			registerItem(i->second);
+		}
+		packet[ITEMDEFMANAGER_ALIASES].convert(&m_aliases);
+	}
+
+
 	void deSerialize(std::istream &is)
 	{
 		// Clear everything
@@ -705,29 +735,6 @@ public:
 			std::string convert_to = deSerializeString(is);
 			registerAlias(name, convert_to);
 		}
-	}
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
-		pk.pack_map(2);
-		pk.pack((int)ITEMDEFMANAGER_ITEMDEFS);
-		pk.pack_map(m_item_definitions.size());
-		for (std::map<std::string, ItemDefinition*>::const_iterator i = m_item_definitions.begin();
-				i != m_item_definitions.end(); ++i) {
-			pk.pack(i->first);
-			pk.pack(*(i->second));
-		}
-		PACK(ITEMDEFMANAGER_ALIASES, m_aliases);
-	}
-	void msgpack_unpack(msgpack::object o) {
-		clear();
-		MsgpackPacket packet = o.as<MsgpackPacket>();
-
-		std::map<std::string, ItemDefinition> itemdefs_tmp;
-		packet[ITEMDEFMANAGER_ITEMDEFS].convert(&itemdefs_tmp);
-		for (std::map<std::string, ItemDefinition>::iterator i = itemdefs_tmp.begin();
-				i != itemdefs_tmp.end(); ++i) {
-			registerItem(i->second);
-		}
-		packet[ITEMDEFMANAGER_ALIASES].convert(&m_aliases);
 	}
 	void processQueue(IGameDef *gamedef)
 	{

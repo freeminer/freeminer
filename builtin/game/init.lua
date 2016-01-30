@@ -17,7 +17,11 @@ dofile(gamepath.."item_entity.lua")
 dofile(gamepath.."deprecated.lua")
 dofile(gamepath.."misc.lua")
 dofile(gamepath.."privileges.lua")
-dofile(gamepath.."auth.lua")
+if core.setting_getbool("auth_kv") then
+	dofile(gamepath.."fm_auth.lua")
+else
+	dofile(gamepath.."auth.lua")
+end
 dofile(gamepath.."stat.lua")
 dofile(gamepath.."chatcommands.lua")
 dofile(gamepath.."static_spawn.lua")
