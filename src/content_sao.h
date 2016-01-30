@@ -191,7 +191,7 @@ public:
 	void moveTo(v3f pos, bool continuous);
 	void setYaw(float);
 	void setPitch(float);
-
+	void addSpeed(v3f);
 	/*
 		Interaction interface
 	*/

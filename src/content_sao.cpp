@@ -1009,15 +1009,18 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	{
 		m_position_not_sent = false;
 		float update_interval = m_env->getSendRecommendedInterval();
-		v3f pos;
+		v3f pos, vel, acc;
 		if(isAttached()) // Just in case we ever do send attachment position too
 			pos = m_env->getActiveObject(m_attachment_parent_id)->getBasePosition();
 		else
+		{
 			pos = m_player->getPosition() + v3f(0,BS*1,0);
+			vel = m_player->getSpeed();
+		}
 		std::string str = gob_cmd_update_position(
 			pos,
-			v3f(0,0,0),
-			v3f(0,0,0),
+			vel,
+			acc,
 			m_player->getYaw(),
 			true,
 			false,
@@ -1131,6 +1134,16 @@ void PlayerSAO::setPitch(float pitch)
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
+
+void PlayerSAO::addSpeed(v3f speed)
+{
+	if (!m_player)
+		return;
+	m_player->setSpeed(m_player->getSpeed() + speed * BS);
+
+	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
+}
+
 int PlayerSAO::punch(v3f dir,
 	const ToolCapabilities *toolcap,
 	ServerActiveObject *puncher,
@@ -1182,6 +1195,7 @@ int PlayerSAO::punch(v3f dir,
 		}
 	}
 
+	addSpeed(dir*hitparams.hp);
 
 	actionstream << "Player " << m_player->getName() << " punched by "
 			<< punchername;

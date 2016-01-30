@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util/base64.h"
 #include "clientmedia.h"
-#include "log.h"
+#include "log_types.h"
 #include "map.h"
 #include "mapsector.h"
 #include "nodedef.h"
@@ -349,10 +349,17 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		f32 yaw = packet[TOCLIENT_MOVE_PLAYER_YAW].as<f32>();
 		player->setPosition(pos);
 
+		v3f speed;
+		if (packet.count(TOCLIENT_MOVE_PLAYER_SPEED)) {
+			speed = packet[TOCLIENT_MOVE_PLAYER_SPEED].as<v3f>();
+			player->setSpeed(speed);
+		}
+
 		infostream<<"Client got TOCLIENT_MOVE_PLAYER"
 				<<" pos=("<<pos.X<<","<<pos.Y<<","<<pos.Z<<")"
 				<<" pitch="<<pitch
 				<<" yaw="<<yaw
+				<<" speed="<<speed
 				<<std::endl;
 
 		/*

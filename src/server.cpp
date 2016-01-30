@@ -2909,6 +2909,7 @@ void Server::RespawnPlayer(u16 peer_id)
 	if(!repositioned){
 		v3f pos = findSpawnPos();
 		// setPos will send the new position to client
+		playersao->getPlayer()->setSpeed(v3f(0,0,0));
 		playersao->setPos(pos);
 	}
 

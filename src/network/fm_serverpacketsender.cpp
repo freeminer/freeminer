@@ -442,11 +442,11 @@ void Server::SendMovePlayer(u16 peer_id)
 	if (!player)
 		return;
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 4);
 	PACK(TOCLIENT_MOVE_PLAYER_POS, player->getPosition());
 	PACK(TOCLIENT_MOVE_PLAYER_PITCH, player->getPitch());
 	PACK(TOCLIENT_MOVE_PLAYER_YAW, player->getYaw());
-
+	PACK(TOCLIENT_MOVE_PLAYER_SPEED, player->getSpeed());
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
 }
