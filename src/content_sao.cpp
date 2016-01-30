@@ -1139,7 +1139,7 @@ void PlayerSAO::addSpeed(v3f speed)
 {
 	if (!m_player)
 		return;
-	m_player->setSpeed(m_player->getSpeed() + speed * BS);
+	m_player->setSpeed(m_player->getSpeed() + speed);
 
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
