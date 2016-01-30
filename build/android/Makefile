@@ -118,7 +118,7 @@ endif
 ASSETS_TIMESTAMP = deps/assets_timestamp
 
 LEVELDB_DIR = $(ROOT)/deps/leveldb/
-LEVELDB_LIB = $(LEVELDB_DIR)libleveldb.a
+LEVELDB_LIB = $(LEVELDB_DIR)/out-static/libleveldb.a
 LEVELDB_TIMESTAMP = $(LEVELDB_DIR)/timestamp
 LEVELDB_TIMESTAMP_INT = $(ROOT)/deps/leveldb_timestamp
 LEVELDB_URL_GIT = https://github.com/google/leveldb

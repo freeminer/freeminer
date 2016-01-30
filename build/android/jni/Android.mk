@@ -10,7 +10,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 ifeq ($(HAVE_LEVELDB), 1)
 	include $(CLEAR_VARS)
 	LOCAL_MODULE := LevelDB
-	LOCAL_SRC_FILES := deps/leveldb/libleveldb.a
+	LOCAL_SRC_FILES := deps/leveldb/out-static/libleveldb.a
 	include $(PREBUILT_STATIC_LIBRARY)
 endif
 
