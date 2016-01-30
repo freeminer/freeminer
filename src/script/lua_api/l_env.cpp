@@ -48,7 +48,7 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate)
 {
 	GameScripting *scriptIface = env->getScriptIface();
-	auto _script_lock = std::unique_lock<std::recursive_mutex> (scriptIface->m_luastackmutex);
+	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex);
 	scriptIface->realityCheck();
 
 	lua_State *L = scriptIface->getStack();
