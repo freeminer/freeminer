@@ -708,7 +708,7 @@ void ServerEnvironment::loadMeta()
 
 		//infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
 		{
-			std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+			std::lock_guard<Mutex> lock(block->abm_triggers_mutex);
 			if (block->abm_triggers)
 				block->abm_triggers->clear();
 		}
@@ -808,7 +808,7 @@ void ServerEnvironment::loadMeta()
 				}
 neighbor_found:
 
-				std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+				std::lock_guard<Mutex> lock(block->abm_triggers_mutex);
 
 				if (!block->abm_triggers)
 					block->abm_triggers = std::unique_ptr<MapBlock::abm_triggers_type>(new MapBlock::abm_triggers_type); // c++14: make_unique here
@@ -838,7 +838,7 @@ neighbor_found:
 void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate) {
 		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
-		std::unique_lock<std::mutex> lock(abm_triggers_mutex, std::try_to_lock);
+		std::unique_lock<Mutex> lock(abm_triggers_mutex, std::try_to_lock);
 		if (!lock.owns_lock())
 			return;
 

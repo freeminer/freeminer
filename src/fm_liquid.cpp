@@ -741,7 +741,7 @@ NEXT_LIQUID:
 	{
 		//TimeTaker timer13("transformLiquidsReal() reflow");
 		//auto lock = m_transforming_liquid.lock_unique_rec();
-		std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+		std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 
 		//m_transforming_liquid.insert(must_reflow.begin(), must_reflow.end());
 		for (const auto & p : must_reflow)

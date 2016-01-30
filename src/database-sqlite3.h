@@ -23,13 +23,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef DATABASE_SQLITE3_HEADER
 #define DATABASE_SQLITE3_HEADER
 
-#include <mutex>
 #include "database.h"
 #include <string>
 
 #include "config.h"
 
 #if USE_SQLITE3
+
+#include "threading/mutex.h"
 
 extern "C" {
 	#include "sqlite3.h"
@@ -72,7 +73,7 @@ private:
 	sqlite3_stmt *m_stmt_begin;
 	sqlite3_stmt *m_stmt_end;
 
-	std::mutex mutex;
+	Mutex mutex;
 
 	s64 m_busy_handler_data[2];
 

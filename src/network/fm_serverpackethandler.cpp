@@ -563,7 +563,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
 		player->keyPressed = keyPressed;
 		{
-		std::lock_guard<std::mutex> lock(player->control_mutex);
+		std::lock_guard<Mutex> lock(player->control_mutex);
 		player->control.up = (bool)(keyPressed&1);
 		player->control.down = (bool)(keyPressed&2);
 		player->control.left = (bool)(keyPressed&4);

@@ -40,7 +40,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "circuit.h"
 #include "profiler.h"
-#include <mutex>
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -121,7 +120,7 @@ MapBlock::~MapBlock()
 #endif
 
 	{
-		std::unique_lock<std::mutex> lock(abm_triggers_mutex);
+		std::unique_lock<Mutex> lock(abm_triggers_mutex);
 		abm_triggers = nullptr;
 	}
 
@@ -534,7 +533,7 @@ static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 // Correct ids in the block to match nodedef based on names.
 // Unknown ones are added to nodedef.
 // Will not update itself to match id-name pairs in nodedef.
-static std::mutex correctBlockNodeIds_mutex;
+static Mutex correctBlockNodeIds_mutex;
 static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 		IGameDef *gamedef)
 {
@@ -545,7 +544,7 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 	// correct ids.
 	std::set<content_t> unnamed_contents;
 	std::set<std::string> unallocatable_contents;
-	std::lock_guard<std::mutex> lock(correctBlockNodeIds_mutex);
+	std::lock_guard<Mutex> lock(correctBlockNodeIds_mutex);
 	for (u32 i = 0; i < MapBlock::nodecount; i++) {
 		content_t local_id = nodes[i].getContent();
 		std::string name;
@@ -1133,7 +1132,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 void MapBlock::incrementUsageTimer(float dtime)
 {
-	std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
+	std::lock_guard<Mutex> lock(m_usage_timer_mutex);
 	m_usage_timer += dtime;
 /*
 #ifndef SERVER

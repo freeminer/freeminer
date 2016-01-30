@@ -18,7 +18,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef UTIL_LOCK_HEADER
 #define UTIL_LOCK_HEADER
 
-#include <mutex>
 #include <atomic>
 #include <thread>
 #include <memory>
@@ -30,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #ifdef _WIN32
+
 #include "../threading/mutex.h"
 using use_mutex = Mutex;
 using try_shared_mutex = use_mutex;
@@ -38,6 +38,8 @@ using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 
 #else
+
+#include <mutex>
 
 typedef std::mutex use_mutex;
 

@@ -1699,13 +1699,13 @@ struct NodeNeighbor {
 };
 
 void Map::transforming_liquid_push_back(v3POS p) {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 	//m_transforming_liquid.set(p, 1);
 	m_transforming_liquid.push_back(p);
 }
 
 u32 Map::transforming_liquid_size() {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 	return m_transforming_liquid.size();
 }
 

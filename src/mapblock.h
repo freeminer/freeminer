@@ -489,7 +489,7 @@ public:
 
 	inline void resetUsageTimer()
 	{
-		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
+		std::lock_guard<Mutex> lock(m_usage_timer_mutex);
 		m_usage_timer = 0;
 	}
 
@@ -497,7 +497,7 @@ public:
 
 	inline float getUsageTimer()
 	{
-		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
+		std::lock_guard<Mutex> lock(m_usage_timer_mutex);
 		return m_usage_timer;
 	}
 
@@ -620,7 +620,7 @@ public:
 	u32 m_next_analyze_timestamp;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
-	std::mutex abm_triggers_mutex;
+	Mutex abm_triggers_mutex;
 	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
 
@@ -717,7 +717,7 @@ private:
 		Map will unload the block when this reaches a timeout.
 	*/
 	float m_usage_timer;
-	std::mutex m_usage_timer_mutex;
+	Mutex m_usage_timer_mutex;
 
 	/*
 		Reference count; currently used for determining if this block is in

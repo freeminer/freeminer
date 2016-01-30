@@ -19,7 +19,7 @@
 #define KEY_VALUE_STORAGE_H
 
 #include <string>
-#include <mutex>
+#include "threading/mutex.h"
 
 #include "config.h"
 #if USE_LEVELDB
@@ -58,7 +58,7 @@ private:
 	std::string fullpath;
 	Json::FastWriter json_writer;
 	Json::Reader json_reader;
-	std::mutex mutex;
+	Mutex mutex;
 };
 
 #endif

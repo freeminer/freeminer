@@ -380,10 +380,10 @@ public:
 	std::string inventory_formspec;
 
 	PlayerControl control;
-	std::mutex control_mutex;
+	Mutex control_mutex;
 	PlayerControl getPlayerControl()
 	{
-		std::lock_guard<std::mutex> lock(control_mutex);
+		std::lock_guard<Mutex> lock(control_mutex);
 		return control;
 	}
 

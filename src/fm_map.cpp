@@ -173,7 +173,7 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 }
 */
 v3POS Map::transforming_liquid_pop() {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 	auto front = m_transforming_liquid.front();
 	m_transforming_liquid.pop_front();
 	return front;
