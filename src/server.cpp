@@ -72,7 +72,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iomanip>
 #include "msgpack_fix.h"
 #include <chrono>
-#include "util/thread_pool.h"
+#include "threading/thread_pool.h"
 #include "key_value_storage.h"
 #include "database.h"
 

@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
-#include "util/lock.h"
+#include "threading/lock.h"
 #include "settings.h"
 
 class Map;

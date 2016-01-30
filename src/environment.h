@@ -46,8 +46,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //fm:
 #include "network/connection.h"
 #include "fm_bitset.h"
-#include "util/concurrent_unordered_map.h"
-#include "util/concurrent_vector.h"
+#include "threading/concurrent_unordered_map.h"
+#include "threading/concurrent_vector.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>

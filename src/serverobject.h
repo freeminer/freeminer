@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "itemgroup.h"
 #include "util/container.h"
-#include "util/lock.h"
+#include "threading/lock.h"
 
 /*
 

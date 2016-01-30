@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "database.h"
 #include "irrlichttypes.h"
-#include "util/concurrent_map.h"
+#include "threading/concurrent_map.h"
 
 class Database_Dummy : public Database
 {

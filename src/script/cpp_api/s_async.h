@@ -30,7 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "debug.h"
 #include "lua.h"
 #include "cpp_api/s_base.h"
-#include "util/thread_pool.h"
+//#include "threading/thread_pool.h"
 
 // Forward declarations
 class AsyncEngine;

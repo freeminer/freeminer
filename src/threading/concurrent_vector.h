@@ -18,7 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef UTIL_CONCURENT_VECTOR_HEADER
 #define UTIL_CONCURENT_VECTOR_HEADER
 
-#include "util/lock.h"
+#include "lock.h"
 
 #include <vector>
 

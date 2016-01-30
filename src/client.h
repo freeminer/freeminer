@@ -38,7 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "particles.h"
 
-#include "util/thread_pool.h"
+#include "threading/thread_pool.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
 

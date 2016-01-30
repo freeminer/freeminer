@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h" // BS
 #include "threading/mutex.h"
 #include <list>
-#include "util/lock.h"
+#include "threading/lock.h"
 #include "json/json.h"
 
 #define PLAYERNAME_SIZE 20

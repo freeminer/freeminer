@@ -25,7 +25,7 @@
 #include "circuit_element.h"
 #include "circuit_element_virtual.h"
 #include "irrlichttypes.h"
-#include "util/lock.h"
+#include "threading/lock.h"
 
 
 class INodeDefManager;

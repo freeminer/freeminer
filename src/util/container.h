@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <vector>
 #include <map>
-#include "lock.h"
+#include "../threading/lock.h"
 #include "unordered_map_hash.h"
 #include <unordered_set>
 #include <queue>

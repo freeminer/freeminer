@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../threading/mutex_auto_lock.h"
 #include "porting.h"
 #include "log.h"
-#include "thread_pool.h"
+#include "../threading/thread_pool.h"
 
 template<typename T>
 class MutexedVariable {
