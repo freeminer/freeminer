@@ -46,7 +46,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = try_shared_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		auto lock = try_shared_lock(m_block_cache_mutex, try_to_lock);
 		if(lock.owns_lock())
 #endif
 			if(m_block_cache && p == m_block_cache_p) {
@@ -70,7 +70,7 @@ MapBlock* Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache) {
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = unique_lock(m_block_cache_mutex, TRY_TO_LOCK);
+		auto lock = unique_lock(m_block_cache_mutex, try_to_lock);
 		if(lock.owns_lock())
 #endif
 		{
