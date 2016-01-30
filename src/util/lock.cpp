@@ -121,7 +121,7 @@ std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, s
 }
 
 
-template class recursive_lock<std::unique_lock<std::mutex>>;
+template class recursive_lock<std::unique_lock<use_mutex>>;
 template class locker<>;
 #if LOCK_TWO
 template class recursive_lock<try_shared_lock, try_shared_mutex>;
