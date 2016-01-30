@@ -15,6 +15,8 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <mutex>
+
 #include "exceptions.h"
 #include "filesys.h"
 #include "key_value_storage.h"
