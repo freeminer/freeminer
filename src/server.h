@@ -730,6 +730,7 @@ public:
 	void maintenance_start();
 	void maintenance_end();
 	int maintenance_status;
+	void SendPunchPlayer(u16 peer_id, v3f speed);
 
 
 private:

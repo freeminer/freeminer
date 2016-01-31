@@ -349,17 +349,19 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		f32 yaw = packet[TOCLIENT_MOVE_PLAYER_YAW].as<f32>();
 		player->setPosition(pos);
 
+/*
 		v3f speed;
 		if (packet.count(TOCLIENT_MOVE_PLAYER_SPEED)) {
 			speed = packet[TOCLIENT_MOVE_PLAYER_SPEED].as<v3f>();
 			player->setSpeed(speed);
 		}
+*/
 
 		infostream<<"Client got TOCLIENT_MOVE_PLAYER"
 				<<" pos=("<<pos.X<<","<<pos.Y<<","<<pos.Z<<")"
 				<<" pitch="<<pitch
 				<<" yaw="<<yaw
-				<<" speed="<<speed
+				//<<" speed="<<speed
 				<<std::endl;
 
 		/*
@@ -377,6 +379,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// Ignore damage for a few seconds, so that the player doesn't
 		// get damage from falling on ground
 		m_ignore_damage_timer = 3.0;
+	}
+
+	else if(command == TOCLIENT_PUNCH_PLAYER)
+	{
+		Player *player = m_env.getLocalPlayer();
+		if(!player)
+			return;
+
+		v3f speed = packet[TOCLIENT_PUNCH_PLAYER_SPEED].as<v3f>();
+		player->addSpeed(speed);
 	}
 	else if(command == TOCLIENT_DEATHSCREEN)
 	{

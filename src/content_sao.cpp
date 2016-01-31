@@ -1134,14 +1134,11 @@ void PlayerSAO::setPitch(float pitch)
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
-
 void PlayerSAO::addSpeed(v3f speed)
 {
 	if (!m_player)
 		return;
-	m_player->setSpeed(m_player->getSpeed() + speed);
-
-	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
+	((Server*)m_env->getGameDef())->SendPunchPlayer(m_peer_id, speed);
 }
 
 int PlayerSAO::punch(v3f dir,
