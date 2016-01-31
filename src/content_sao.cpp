@@ -1138,6 +1138,7 @@ void PlayerSAO::addSpeed(v3f speed)
 {
 	if (!m_player)
 		return;
+	m_player->addSpeed(speed);
 	((Server*)m_env->getGameDef())->SendPunchPlayer(m_peer_id, speed);
 }
 
@@ -1192,7 +1193,8 @@ int PlayerSAO::punch(v3f dir,
 		}
 	}
 
-	addSpeed(dir*hitparams.hp);
+	v3f punch = dir * 5 * BS;
+	addSpeed(punch);
 
 	actionstream << "Player " << m_player->getName() << " punched by "
 			<< punchername;

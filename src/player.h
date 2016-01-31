@@ -127,11 +127,7 @@ public:
 		m_speed = speed;
 	}
 
-	void addSpeed(v3f speed)
-	{
-		auto lock = lock_unique();
-		m_speed += speed;
-	}
+	void addSpeed(v3f speed);
 
 	void accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery=0);
 	void accelerateVertical(v3f target_speed, f32 max_increase);

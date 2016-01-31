@@ -1842,7 +1842,7 @@ void GenericCAO::processMessage(const std::string &data)
 bool GenericCAO::directReportPunch(v3f dir, const ItemStack *punchitem,
 		float time_from_last_punch)
 {
-	assert(punchitem);	// pre-condition
+	if(!punchitem) return true;	// pre-condition
 	const ToolCapabilities *toolcap =
 			&punchitem->getToolCapabilities(m_gamedef->idef());
 	PunchDamageResult result = getPunchDamage(
