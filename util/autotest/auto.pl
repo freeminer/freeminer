@@ -36,7 +36,10 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
 # debug touchscreen gui. use irrlicht branch ogl-es
-$0 -DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1 -DUSE_TOUCHSCREENGUI=1 play_asan
+$0 --cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1 -DUSE_TOUCHSCREENGUI=1" play_asan
+
+# sometimes *san + debug doesnt work with leveldb
+$0 --cmake_add="-DENABLE_LEVELDB=0"
 
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 play_vtune --vtune_gui=1

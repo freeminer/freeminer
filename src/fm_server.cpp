@@ -308,3 +308,9 @@ void Server::maintenance_end() {
 	m_emerge->startThreads();
 	actionstream << "Server: Starting maintenance: ended." << std::endl;
 };
+
+
+#if MINETEST_PROTO
+void Server::SendPunchPlayer(u16 peer_id, v3f speed) { }
+#endif
+
