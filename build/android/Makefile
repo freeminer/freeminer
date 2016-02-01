@@ -1012,7 +1012,7 @@ endif
 
 
 locale:
-	mkdir -p cmake && cd cmake && cmake ../../.. -DNO_BUILD=1 && make translations
+	-mkdir -p cmake && cd cmake && cmake ../../.. -DBUILD_SERVER=0 -DNO_BUILD=1 && make translations
 
 clean_locale:
 	rm -rf cmake
