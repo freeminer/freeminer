@@ -549,6 +549,8 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	if(!string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) || !playername.size()) {
 		infostream<<"Not loading player with invalid name: "<<playername<<std::endl;
+		if (newplayer)
+			delete player;
 		return nullptr;
 	}
 
@@ -558,12 +560,16 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
 		if (!is.good()) {
+			if (newplayer)
+				delete player;
 			return NULL;
 		}
 		try {
 		player->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
+			if (newplayer)
+				delete player;
 			return nullptr;
 		}
 		is.close();
