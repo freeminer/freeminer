@@ -182,6 +182,13 @@ AutoHideButtonBar::~AutoHideButtonBar()
 	m_starter.guibutton->setVisible(false);
 	m_starter.guibutton->drop();
 	}
+
+	for (auto i : m_buttons) {
+		i->guibutton->drop();
+		delete i;
+	}
+	m_buttons.clear();
+
 }
 
 void AutoHideButtonBar::addButton(touch_gui_button_id button_id,
