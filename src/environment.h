@@ -478,6 +478,7 @@ private:
 */
 
 	std::deque<v3s16> m_nodeupdate_queue;
+	Mutex m_nodeupdate_queue_mutex;
 
 	/*
 		Member variables

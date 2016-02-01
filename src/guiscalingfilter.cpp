@@ -111,6 +111,8 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 	video::IImage *destimg = driver->createImage(src->getColorFormat(),
 			core::dimension2d<u32>((u32)destrect.getWidth(),
 			(u32)destrect.getHeight()));
+	if (!destimg)
+		return src;
 	imageScaleNNAA(srcimg, srcrect, destimg);
 
 #ifdef __ANDROID__
@@ -120,6 +122,8 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 	video::IImage *po2img = driver->createImage(src->getColorFormat(),
 			core::dimension2d<u32>(npot2((u32)destrect.getWidth()),
 			npot2((u32)destrect.getHeight())));
+	if (!po2img)
+		return src;
 	po2img->fill(video::SColor(0, 0, 0, 0));
 	destimg->copyTo(po2img);
 	destimg->drop();

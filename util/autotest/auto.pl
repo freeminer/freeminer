@@ -91,6 +91,7 @@ sub init_config () {
         logdir           => $script_path . 'logs.' . $g->{date} . $logdir_add,
         screenshot_dir   => 'screenshot.' . $g->{date},
         env              => 'OPENSSL_armcap=0',
+        gdb_stay         => 0,                                                   # dont exit from gdb
         runner           => 'nice ',
         name             => 'bot',
         go               => '--go',
@@ -178,7 +179,7 @@ our $commands = {
         $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY} = 1,
+        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
           if $config->{cmake_msan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
           if $config->{cmake_usan};
@@ -418,7 +419,8 @@ our $tasks = {
           }
     ],
     gdb => sub {
-        local $config->{runner} = $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' -ex 'cont' -ex 'quit' --args };
+        local $config->{runner} =
+          $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' } . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' }) . q{ --args };
         @_ = ('debug') if !@_;
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },

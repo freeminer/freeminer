@@ -411,6 +411,8 @@ ServerEnvironment::~ServerEnvironment()
 	// Convert all objects to static and delete the active objects
 	deactivateFarObjects(true);
 	removeRemovedObjects(50000);
+	if (!objects_to_delete.empty())
+		removeRemovedObjects(50000);
 
 /*
 	for (auto & o : objects_to_delete) {
@@ -2328,7 +2330,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		u16 id = obj->getId();
 		v3f objectpos = obj->getBasePosition();
 
-		if (obj->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		if (!force_delete && obj->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			//infostream<<"deactivating far object player id=" <<id<< std::endl;
 			continue;
 		}

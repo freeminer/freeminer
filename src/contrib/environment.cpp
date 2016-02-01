@@ -120,7 +120,10 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 	//if (m_nodeupdate_queue.size() > 0) {
 		std::deque<v3s16> nuqueue; 
 		int i = 0;
+		{
+			std::lock_guard<Mutex> lock(m_nodeupdate_queue_mutex);
 		while(++i < 1000 && !m_nodeupdate_queue.empty()) {nuqueue.emplace_back(m_nodeupdate_queue.front()); m_nodeupdate_queue.pop_front();}
+		}
 		//m_nodeupdate_queue.clear();
 		std::sort(nuqueue.begin(), nuqueue.end());
 		nuqueue.erase(std::unique(nuqueue.begin(), nuqueue.end()), nuqueue.end());
@@ -334,6 +337,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 {
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
+		std::lock_guard<Mutex> lock(m_nodeupdate_queue_mutex);
 		m_nodeupdate_queue.push_back(pos);
 		return;
 	}
