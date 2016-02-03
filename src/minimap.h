@@ -29,7 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <vector>
 
-#include "util/map_hash.h"
+#include "util/unordered_map_hash.h"
 
 #define MINIMAP_MAX_SX 512
 #define MINIMAP_MAX_SY 512
