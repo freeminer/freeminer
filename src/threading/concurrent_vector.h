@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_CONCURENT_VECTOR_HEADER
-#define UTIL_CONCURENT_VECTOR_HEADER
+#ifndef THREADING_CONCURENT_VECTOR_HEADER
+#define THREADING_CONCURENT_VECTOR_HEADER
 
 #include "lock.h"
 
@@ -86,8 +86,7 @@ public:
 #if ENABLE_THREADS
 
 template <class T, class Allocator = std::allocator<T> >
-class maybe_concurrent_vector : public concurrent_vector<T, Allocator>
-{};
+using maybe_concurrent_vector = concurrent_vector<T, Allocator>;
 
 #else
 
@@ -112,8 +111,7 @@ public:
 };
 
 template <class T, class Allocator = std::allocator<T> >
-class maybe_concurrent_vector: public not_concurrent_vector<T, Allocator>
-{};
+using maybe_concurrent_vector = not_concurrent_vector<T, Allocator>;
 
 #endif
 

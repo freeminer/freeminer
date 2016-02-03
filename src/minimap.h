@@ -29,6 +29,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <vector>
 
+#include "util/map_hash.h"
+
 #define MINIMAP_MAX_SX 512
 #define MINIMAP_MAX_SY 512
 
@@ -92,7 +94,9 @@ struct QueuedMinimapUpdate {
 
 class MinimapUpdateThread : public UpdateThread {
 public:
-	MinimapUpdateThread() : UpdateThread("Minimap") {}
+	MinimapUpdateThread() : UpdateThread("Minimap") {
+		getmap_cache_time = 0;
+	}
 	virtual ~MinimapUpdateThread();
 
 	void getMap(v3s16 pos, s16 size, s16 height, bool radar);
@@ -114,6 +118,8 @@ private:
 	Mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
 	unordered_map_v3POS<MinimapMapblock *> m_blocks_cache;
+	unordered_map_v2POS<std::vector<MinimapMapblock*>> getmap_cache;
+	unsigned int getmap_cache_time;
 };
 
 class Mapper {

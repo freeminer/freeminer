@@ -22,7 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "camera.h"
 #include "hud.h"
-#include "minimap.h"
+//#include "minimap.h"
 #include "irrlichttypes_extrabloated.h"
 
 

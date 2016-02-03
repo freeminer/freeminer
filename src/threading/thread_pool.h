@@ -1,5 +1,5 @@
-#ifndef UTIL_THREAD_POOL_HEADER
-#define UTIL_THREAD_POOL_HEADER
+#ifndef THREADING_THREAD_POOL_HEADER
+#define THREADING_THREAD_POOL_HEADER
 
 #include <atomic>
 #include <thread>

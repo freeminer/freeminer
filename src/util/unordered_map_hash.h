@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include "../irr_v2d.h"
 #include "../irr_v3d.h"
 
 /*
@@ -21,11 +22,22 @@ struct v3s16Equal {
 };
 */
 
+struct v2POSHash {
+	std::size_t operator()(const v2POS& k) const {
+		return ( (std::hash<int>()(k.X) ^ (std::hash<int>()(k.Y) << 1)) >> 1);
+	}
+};
+
 struct v3POSHash {
 	std::size_t operator()(const v3POS& k) const {
-		return (  (std::hash<int>()(k.X)
-		           ^ (std::hash<int>()(k.Y) << 1)) >> 1)
-		       ^ (std::hash<int>()(k.X) << 1);
+		return ( (std::hash<int>()(k.X) ^ (std::hash<int>()(k.Y) << 1)) >> 1) ^ (std::hash<int>()(k.Z) << 1);
+	}
+};
+
+
+struct v2POSEqual {
+	bool operator()(const v2POS& lhs, const v2POS& rhs) const {
+		return lhs.X == rhs.X && lhs.Y == rhs.Y;
 	}
 };
 
@@ -35,10 +47,14 @@ struct v3POSEqual {
 	}
 };
 
-template <typename T>
-class unordered_map_v3POS : public std::unordered_map<v3POS, T, v3POSHash, v3POSEqual> { };
 
-//template <typename T>
-class unordered_set_v3POS : public std::unordered_set<v3POS, v3POSHash, v3POSEqual> { };
+template <typename T>
+using unordered_map_v2POS = std::unordered_map<v2POS, T, v2POSHash, v2POSEqual>;
+using unordered_set_v2POS = std::unordered_set<v2POS, v2POSHash, v2POSEqual>;
+
+template <typename T>
+using unordered_map_v3POS = std::unordered_map<v3POS, T, v3POSHash, v3POSEqual>;
+using unordered_set_v3POS = std::unordered_set<v3POS, v3POSHash, v3POSEqual>;
+
 
 #endif

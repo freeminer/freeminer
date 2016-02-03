@@ -200,9 +200,10 @@ public:
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
-	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position = NULL);
+	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position);
 	MapNode getNode(v3POS p) { return getNodeNoEx(p); };
 	//MapNode getNodeLog(v3POS p);
+	MapNode getNodeNoEx(v3POS p);
 
 	void unspreadLight(enum LightBank bank,
 			std::map<v3s16, u8> & from_nodes,

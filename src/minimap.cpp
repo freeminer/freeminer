@@ -28,6 +28,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include <math.h>
 
+#include "log_types.h"
+
 
 ////
 //// MinimapUpdateThread
@@ -184,6 +186,7 @@ s16 MinimapUpdateThread::getAirCount(v3s16 pos, s16 height)
 	return air_count;
 }
 
+#if 0
 void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height, bool is_radar)
 {
 	v3s16 p = v3s16(pos.X - size / 2, pos.Y, pos.Z - size / 2);
@@ -208,6 +211,8 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height, bool is_radar)
 		mmpixel->id = id;
 	}
 }
+#endif
+
 
 ////
 //// Mapper
@@ -574,3 +579,64 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, v3s16 pos)
 		mmpixel->air_count = air_count;
 	}
 }
+
+
+///freeminer:
+
+void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
+	v3POS p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
+
+	// todo: longer cache
+	//auto now = porting::getTimeMs();
+	//if (now > getmap_cache_time) {
+		getmap_cache.clear();
+	//	getmap_cache_time = now + 1000;
+	//}
+
+	for (s16 x = 0; x < size; x++)
+		for (s16 z = 0; z < size; z++) {
+			auto mmpixel = &data->minimap_scan[x + z * size];
+			mmpixel->air_count = 0;
+			mmpixel->id = CONTENT_AIR;
+
+			v3POS pos(p.X + x, p.Y, p.Z + z);
+			v3POS blockpos_max, blockpos_min, relpos;
+			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y - scan_height / 2, pos.Z), blockpos_min, relpos);
+			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y + scan_height / 2, pos.Z), blockpos_max, relpos);
+
+			s16 pixel_height = 0;
+			s16 height = scan_height - MAP_BLOCKSIZE;
+
+			v2POS top_block_xy(blockpos_max.X, blockpos_max.Z);
+
+			if (!getmap_cache.count(top_block_xy)) {
+				getmap_cache.emplace(std::piecewise_construct,  std::forward_as_tuple(top_block_xy), std::forward_as_tuple());
+				auto & vec = getmap_cache[top_block_xy];
+
+				for (auto i = blockpos_max.Y; i > blockpos_min.Y - 1; --i) {
+					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
+					if (it == m_blocks_cache.end())
+						continue;
+					vec.emplace_back(it->second);
+				}
+			}
+
+			for (auto & mmblock : getmap_cache[top_block_xy]) {
+				auto pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
+				if (!is_radar) {
+					if (pixel->id != CONTENT_AIR) {
+						pixel_height = height + pixel->height;
+						mmpixel->id = pixel->id;
+						mmpixel->height = pixel_height;
+						break;
+					}
+				} else {
+					mmpixel->air_count += pixel->air_count;
+				}
+				height -= MAP_BLOCKSIZE;
+			}
+		}
+}
+
+
+

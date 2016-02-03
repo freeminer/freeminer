@@ -17,7 +17,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log_types.h"
 
-std::ostream & operator<<(std::ostream & s, v3s16 p) {
+std::ostream & operator<<(std::ostream & s, v2POS p) {
+	s << "(" << p.X << "," << p.Y << ")";
+	return s;
+}
+
+std::ostream & operator<<(std::ostream & s, v3POS p) {
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
 }
@@ -27,7 +32,7 @@ std::ostream & operator<<(std::ostream & s, v3f p) {
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p) {
+std::ostream & operator<<(std::ostream & s, std::map<v3POS, unsigned int> & p) {
 	for (auto & i: p)
 		s << i.first << "=" << i.second<<" ";
 	return s;

@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_LOCK_HEADER
-#define UTIL_LOCK_HEADER
+#ifndef THREADING_LOCK_HEADER
+#define THREADING_LOCK_HEADER
 
 #include <mutex>
 #include <atomic>
@@ -132,7 +132,7 @@ public:
 	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
 };
 
-class shared_locker : public locker<try_shared_mutex, unique_lock, try_shared_lock> { };
+using shared_locker = locker<try_shared_mutex, unique_lock, try_shared_lock>;
 
 class dummy_lock {
 public:
@@ -158,13 +158,13 @@ public:
 
 #if ENABLE_THREADS
 
-class maybe_locker : public locker<> { };
-class maybe_shared_locker : public shared_locker {};
+using maybe_locker = locker<>;
+using maybe_shared_locker = shared_locker;
 
 #else
 
-class maybe_locker : public dummy_locker { };
-class maybe_shared_locker : public dummy_locker {};
+using maybe_locker = dummy_locker;
+using maybe_shared_locker = dummy_locker;
 
 #endif
 

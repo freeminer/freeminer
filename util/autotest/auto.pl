@@ -47,12 +47,19 @@ $0 bot_vtune --autoexit=60 --vtune_gui=1
 $0 bot_vtune --autoexit=60
 $0 stress_vtune
 
+# stress test of flowing liquid
+$0 --options_add=world_water
+
+# stress test of falling sand
+$0 --options_add=world_sand
+
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
 use feature qw(say);
 use Data::Dumper;
+use JSON;
 use Cwd;
 use POSIX ();
 
@@ -157,6 +164,18 @@ our $options = {
         weather_biome               => 1,
         screenshot_path             => $config->{autotest_dir_rel} . $config->{screenshot_dir},
     },
+    world_water => {
+        -world    => $script_path . 'world_water',
+        mg_name   => 'math',
+        mg_params => {"layers" => [{"name" => "default:water_source"}]},
+        mg_math => {"generator" => "mengersponge"},
+    },
+    world_sand => {
+        -world    => $script_path . 'world_sand',
+        mg_name   => 'math',
+        mg_params => {"layers" => [{"name" => "default:sand"}]},
+        mg_math => {"generator" => "mengersponge"},
+    },
 };
 
 map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
@@ -201,10 +220,9 @@ our $commands = {
 qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
-        my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world address port config autoexit);
-        sy
-qq{$config->{env} $config->{runner} @_ ./freeminer $args $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make()
+        #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world address port config autoexit);
+        sy qq{$config->{env} $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+          . options_make([qw(gameid world address port config autoexit)])
           . qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.out.log };
         0;
     },
@@ -224,20 +242,20 @@ qq{$config->{env} $config->{runner} @_ ./freeminer $args $config->{go} --logfile
 qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server_auto => sub {
-        my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
-        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver $args --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make()
+        #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
+        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+          . options_make([qw(gameid world port config autoexit)])
           . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log &};
     },
     run_clients => sub {
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
-            my $args = join ' ',
-              map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
+            #my $args = join ' ',
+            #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             sy
-qq{$config->{env} $config->{runner} @_ ./freeminer $args --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-              . options_make()
+qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+              . options_make([qw( address gameid world address port config)])
               . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
               for 0 .. $config->{clients_num};
             sleep $config->{clients_sleep} || 1;
@@ -430,7 +448,9 @@ our $tasks = {
     bot_gdb => [{-no_build_server => 1,}, 'build_debug', ['gdb', 'run_single']],
 
     vtune => sub {
+        sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
         local $config->{runner} = $config->{runner} . qq{$config->{vtune_amplifier}amplxe-cl -collect hotspots -r $config->{logdir}/rh0};
+        local $config->{run_escape} = '\\\\';
         @_ = ('debug') if !@_;
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
@@ -466,7 +486,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] } qw(tsan asan msan usan asannta minetest)),
     (
-        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(gdb nothreads vtune),
+        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
@@ -503,13 +523,27 @@ sub array (@) {
     wantarray ? @_ : \@_;
 }
 
-sub options_make(@) {
-    my $r;
-    @_ = ('default', $config->{options_display}, $config->{options_bot}, $config->{options_add}, 'opt') unless @_;
-    for my $name (array @_) {
-        $r->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
+sub options_make(;$$) {
+    my ($mm, $m) = @_;
+    my ($rm, $rmm);
+
+    $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
+
+    $m ||= ['default', $config->{options_display}, $config->{options_bot}, (split /,;/, $config->{options_add}), 'opt'];
+    for my $name (array(@$m)) {
+        $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
+        for my $k (keys %$rm) {
+            if ($k =~ /^-/) {
+                $rmm->{$'} = $rm->{$k};
+                delete $rm->{$k};
+                next;
+            }
+            next if !ref $rm->{$k};
+            ($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
+        }
     }
-    return join ' ', map {"-$_=$r->{$_}"} sort keys %$r;
+
+    return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_=$rm->{$_}"} sort keys %$rm);
 }
 
 sub command_run(@);
@@ -587,7 +621,7 @@ if ('all' ~~ $task_run) {
 unless (@ARGV) {
     say $help;
     say "possible tasks:";
-    say for sort keys %$tasks;
+    print "$_ " for sort keys %$tasks;
     say "\n but running default list: ", join ' ', @$task_run;
     say '';
     sleep 1;

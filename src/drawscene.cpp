@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "drawscene.h"
 #include "log_types.h"
+#include "minimap.h"
 #include "settings.h"
 #include "clouds.h"
 #include "clientmap.h"

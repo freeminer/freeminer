@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_CONCURENT_UNORDERED_MAP_HEADER
-#define UTIL_CONCURENT_UNORDERED_MAP_HEADER
+#ifndef THREADING_CONCURENT_UNORDERED_MAP_HEADER
+#define THREADING_CONCURENT_UNORDERED_MAP_HEADER
 
 #include <unordered_map>
 
@@ -132,15 +132,13 @@ public:
 
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
           class Alloc = std::allocator<std::pair<const Key, T> > >
-class concurrent_unordered_map: public concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>
-{ };
+using concurrent_unordered_map = concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>;
 
 #if ENABLE_THREADS
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
            class Alloc = std::allocator<std::pair<const Key, T> >>
-class maybe_concurrent_unordered_map: public concurrent_unordered_map<Key, T, Hash, Pred, Alloc>
-{};
+using maybe_concurrent_unordered_map = concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
 
 #else
 
@@ -164,8 +162,7 @@ public:
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
            class Alloc = std::allocator<std::pair<const Key, T> >>
-class maybe_concurrent_unordered_map: public not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>
-{};
+using maybe_concurrent_unordered_map = not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
 
 #endif
 

@@ -20,10 +20,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log.h" //for replacing log.h to log_types.h in includes
 
+#include "irr_v2d.h"
 #include "irr_v3d.h"
 
 #include <ostream>
-std::ostream & operator<<(std::ostream & s, v3s16 p);
+std::ostream & operator<<(std::ostream & s, v3POS p);
+std::ostream & operator<<(std::ostream & s, v2POS p);
 std::ostream & operator<<(std::ostream & s, v3f p);
 
 #include <SColor.h>
@@ -31,7 +33,7 @@ std::ostream & operator<<(std::ostream & s, irr::video::SColor c);
 std::ostream & operator<<(std::ostream & s, irr::video::SColorf c);
 
 #include <map>
-std::ostream & operator<<(std::ostream & s, std::map<v3s16, unsigned int> & p);
+std::ostream & operator<<(std::ostream & s, std::map<v3POS, unsigned int> & p);
 
 std::ostream & operator<<(std::ostream & s, const std::wstring & w);
 
