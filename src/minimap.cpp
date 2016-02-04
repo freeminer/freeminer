@@ -122,6 +122,13 @@ void MinimapUpdateThread::doUpdate()
 		}
 	}
 
+	auto now = porting::getTimeMs();
+	if (next_update < now) {
+		next_update = now + 333;
+	} else {
+		return;
+	}
+
 	bool do_update;
 	{
 		MutexAutoLock lock(data->m_mutex);
@@ -315,6 +322,7 @@ void Mapper::toggleMinimapShape()
 {
 	MutexAutoLock lock(data->m_mutex);
 
+	m_minimap_update_thread->next_update = 0;
 	data->minimap_shape_round = !data->minimap_shape_round;
 	g_settings->setBool("minimap_shape_round", data->minimap_shape_round);
 	m_minimap_update_thread->deferUpdate();
@@ -341,6 +349,8 @@ void Mapper::setMinimapMode(MinimapMode mode)
 	data->scan_height = modedefs[mode].scan_height;
 	data->map_size    = modedefs[mode].map_size;
 	data->mode        = mode;
+
+	m_minimap_update_thread->next_update = 0;
 
 	m_minimap_update_thread->deferUpdate();
 }
@@ -619,15 +629,13 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 
 			for (auto & mmblock : getmap_cache[top_block_xz]) {
 				auto pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
-				if (!is_radar) {
-					if (pixel->id != CONTENT_AIR) {
-						pixel_height = height + pixel->height;
-						mmpixel->id = pixel->id;
-						mmpixel->height = pixel_height;
+				mmpixel->air_count += pixel->air_count;
+				if (pixel->id != CONTENT_AIR) {
+					pixel_height = height + pixel->height;
+					mmpixel->id = pixel->id;
+					mmpixel->height = pixel_height;
+					if (!is_radar)
 						break;
-					}
-				} else {
-					mmpixel->air_count += pixel->air_count;
 				}
 				height -= MAP_BLOCKSIZE;
 			}

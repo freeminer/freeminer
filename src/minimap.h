@@ -94,7 +94,7 @@ struct QueuedMinimapUpdate {
 
 class MinimapUpdateThread : public UpdateThread {
 public:
-	MinimapUpdateThread() : UpdateThread("Minimap") { }
+	MinimapUpdateThread() : UpdateThread("Minimap") { next_update = 0; }
 	virtual ~MinimapUpdateThread();
 
 	void getMap(v3s16 pos, s16 size, s16 height, bool radar);
@@ -108,6 +108,7 @@ public:
 	bool popBlockUpdate(QueuedMinimapUpdate *update);
 
 	MinimapData *data;
+	u32 next_update;
 
 protected:
 	virtual void doUpdate();
