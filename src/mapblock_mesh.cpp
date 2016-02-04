@@ -1120,7 +1120,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	if (!data->fill_data())
 		return;
-	if (step == 1)
+	if (step == 1 || !data->block->getMesh())
 	if (g_settings->getBool("enable_minimap")) {
 		m_minimap_mapblock = new MinimapMapblock;
 		m_minimap_mapblock->getMinimapNodes(

@@ -94,9 +94,7 @@ struct QueuedMinimapUpdate {
 
 class MinimapUpdateThread : public UpdateThread {
 public:
-	MinimapUpdateThread() : UpdateThread("Minimap") {
-		getmap_cache_time = 0;
-	}
+	MinimapUpdateThread() : UpdateThread("Minimap") { }
 	virtual ~MinimapUpdateThread();
 
 	void getMap(v3s16 pos, s16 size, s16 height, bool radar);
@@ -119,7 +117,6 @@ private:
 	std::deque<QueuedMinimapUpdate> m_update_queue;
 	unordered_map_v3POS<MinimapMapblock *> m_blocks_cache;
 	unordered_map_v2POS<std::vector<MinimapMapblock*>> getmap_cache;
-	unsigned int getmap_cache_time;
 };
 
 class Mapper {

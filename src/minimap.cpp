@@ -28,6 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include <math.h>
 
+#include "profiler.h"
 #include "log_types.h"
 
 
@@ -99,9 +100,11 @@ void MinimapUpdateThread::enqueueBlock(v3s16 pos, MinimapMapblock *data)
 
 void MinimapUpdateThread::doUpdate()
 {
+	ScopeProfiler sp(g_profiler, "Client minimap");
 	QueuedMinimapUpdate update;
 
 	while (popBlockUpdate(&update)) {
+		getmap_cache.erase(v2POS(update.pos.X, update.pos.Z));
 		if (update.data) {
 			// Swap two values in the map using single lookup
 			auto
@@ -586,13 +589,6 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, v3s16 pos)
 void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3POS p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 
-	// todo: longer cache
-	//auto now = porting::getTimeMs();
-	//if (now > getmap_cache_time) {
-		getmap_cache.clear();
-	//	getmap_cache_time = now + 1000;
-	//}
-
 	for (s16 x = 0; x < size; x++)
 		for (s16 z = 0; z < size; z++) {
 			auto mmpixel = &data->minimap_scan[x + z * size];
@@ -607,11 +603,11 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 			s16 pixel_height = 0;
 			s16 height = scan_height - MAP_BLOCKSIZE;
 
-			v2POS top_block_xy(blockpos_max.X, blockpos_max.Z);
+			v2POS top_block_xz(blockpos_max.X, blockpos_max.Z);
 
-			if (!getmap_cache.count(top_block_xy)) {
-				getmap_cache.emplace(std::piecewise_construct,  std::forward_as_tuple(top_block_xy), std::forward_as_tuple());
-				auto & vec = getmap_cache[top_block_xy];
+			if (!getmap_cache.count(top_block_xz)) {
+				getmap_cache.emplace(std::piecewise_construct,  std::forward_as_tuple(top_block_xz), std::forward_as_tuple());
+				auto & vec = getmap_cache[top_block_xz];
 
 				for (auto i = blockpos_max.Y; i > blockpos_min.Y - 1; --i) {
 					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
@@ -621,7 +617,7 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 				}
 			}
 
-			for (auto & mmblock : getmap_cache[top_block_xy]) {
+			for (auto & mmblock : getmap_cache[top_block_xz]) {
 				auto pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
 				if (!is_radar) {
 					if (pixel->id != CONTENT_AIR) {
@@ -637,6 +633,4 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 			}
 		}
 }
-
-
 
