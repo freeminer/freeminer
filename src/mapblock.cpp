@@ -121,7 +121,7 @@ MapBlock::~MapBlock()
 
 	{
 		std::unique_lock<Mutex> lock(abm_triggers_mutex);
-		abm_triggers = nullptr;
+		abm_triggers.reset(nullptr);
 	}
 
 	if(data)

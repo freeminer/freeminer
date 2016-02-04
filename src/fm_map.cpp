@@ -639,6 +639,8 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
                             bool remove_light) {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
+	auto lock = block->lock_unique_rec();
+
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
 	// Whether the sunlight at the top of the bottom block is valid
