@@ -1248,6 +1248,8 @@ void PlayerSAO::setHP(s16 hp)
 		return;
 	}
 
+	if (!m_player)
+		return;
 	m_player->hp = hp;
 
 	if (oldhp > hp)
