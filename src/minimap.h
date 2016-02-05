@@ -117,7 +117,8 @@ private:
 	Mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
 	unordered_map_v3POS<MinimapMapblock *> m_blocks_cache;
-	unordered_map_v2POS<std::vector<MinimapMapblock*>> getmap_cache;
+	//simple: unordered_map_v2POS<std::vector<MinimapMapblock*>> getmap_cache
+	unordered_map_v2POS<std::map<POS, MinimapMapblock*>> getmap_cache;
 };
 
 class Mapper {

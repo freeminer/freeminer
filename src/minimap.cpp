@@ -599,6 +599,9 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, v3s16 pos)
 void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3POS p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 
+	v3POS blockpos_player, relpos;
+	getNodeBlockPosWithOffset(pos, blockpos_player, relpos);
+
 	for (s16 x = 0; x < size; x++)
 		for (s16 z = 0; z < size; z++) {
 			auto mmpixel = &data->minimap_scan[x + z * size];
@@ -606,7 +609,7 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 			mmpixel->id = CONTENT_AIR;
 
 			v3POS pos(p.X + x, p.Y, p.Z + z);
-			v3POS blockpos_max, blockpos_min, relpos;
+			v3POS blockpos_max, blockpos_min;
 			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y - scan_height / 2, pos.Z), blockpos_min, relpos);
 			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y + scan_height / 2, pos.Z), blockpos_max, relpos);
 
@@ -616,18 +619,35 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 			v2POS top_block_xz(blockpos_max.X, blockpos_max.Z);
 
 			if (!getmap_cache.count(top_block_xz)) {
-				getmap_cache.emplace(std::piecewise_construct,  std::forward_as_tuple(top_block_xz), std::forward_as_tuple());
+				getmap_cache.emplace(std::piecewise_construct, std::forward_as_tuple(top_block_xz), std::forward_as_tuple());
 				auto & vec = getmap_cache[top_block_xz];
 
+/* simple:
 				for (auto i = blockpos_max.Y; i > blockpos_min.Y - 1; --i) {
 					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
-					vec.emplace_back(it->second);
+					vec.emplace(i, it->second);
+				}
+*/
+				int c = 0;
+				for (auto i = blockpos_player.Y; i > blockpos_min.Y - 1; --i) {
+					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
+					if (it == m_blocks_cache.end())
+						continue;
+					vec.emplace(c++, it->second);
+				}
+				for (auto i = blockpos_max.Y; i > blockpos_player.Y; --i) {
+					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
+					if (it == m_blocks_cache.end())
+						continue;
+					vec.emplace(c++, it->second);
 				}
 			}
 
-			for (auto & mmblock : getmap_cache[top_block_xz]) {
+			//simple: for (auto & mmblock : getmap_cache[top_block_xz]) {
+			for (auto & it : getmap_cache[top_block_xz]) {
+				auto & mmblock = it.second;
 				auto pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
 				mmpixel->air_count += pixel->air_count;
 				if (pixel->id != CONTENT_AIR) {
@@ -641,4 +661,3 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 			}
 		}
 }
-
