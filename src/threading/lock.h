@@ -25,10 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../config.h"
 
-#ifdef _MSC_VER
-#define noexcept
-#endif
-
 #ifdef _WIN32
 
 #include "../threading/mutex.h"

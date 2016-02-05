@@ -79,22 +79,22 @@ public:
 		return full_type::find(k);
 	};
 
-	iterator begin() noexcept {
+	iterator begin() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	const_iterator begin()   const noexcept {
+	const_iterator begin()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	iterator end() noexcept {
+	iterator end() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
-	const_iterator end()   const noexcept {
+	const_iterator end()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
