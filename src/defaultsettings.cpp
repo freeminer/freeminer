@@ -253,9 +253,14 @@ void fm_set_default_settings(Settings *settings) {
 		settings->setDefault("server_unload_unused_data_timeout", "65");
 	}
 
+	settings->setDefault("minimap_shape_round", "false");
+
 
 
 #ifdef __ANDROID__
+	//check for device with small screen
+	float x_inches = porting::getDisplaySize().X / porting::get_dpi();
+
 	settings->setDefault("smooth_lighting", "false");
 	settings->setDefault("enable_3d_clouds", "false");
 
@@ -272,10 +277,9 @@ void fm_set_default_settings(Settings *settings) {
 	*/
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
-	settings->setDefault("enable_minimap", "false");
-
-	//check for device with small screen
-	float x_inches = porting::getDisplaySize().X / porting::get_dpi();
+	if (x_inches  < 7) {
+		settings->setDefault("enable_minimap", "false");
+	}
 
 	if (x_inches  < 3.5) {
 		settings->setDefault("hud_scaling", "0.6");
