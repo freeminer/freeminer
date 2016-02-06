@@ -5,6 +5,7 @@ import tarfile
 import shutil
 import subprocess
 import sys
+import ssl
 
 # http://stackoverflow.com/a/377028/2606891
 def which(program):
@@ -63,7 +64,7 @@ LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.1"
-curl = "curl-7.45.0"
+curl = "curl-7.47.0"
 openal = "openal-soft-1.16.0"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
@@ -82,6 +83,8 @@ sqlite = "sqlite-{}".format(SQLITE_VERSION)
 #somtimes vs becomes mad
 #error MSB8020: The build tools for Visual Studio 2012 (Platform Toolset = 'v110') cannot be found.
 patch_toolset = 1
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def main():
 	build_type = "Release"
@@ -124,7 +127,7 @@ def main():
 		print("curl not found, downloading.")
 		os.mkdir(curl)
 		tar_path = "{}.tar.gz".format(curl)
-		urllib.request.urlretrieve("http://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
+		urllib.request.urlretrieve("https://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
 		extract_tar(tar_path, ".")
 		os.chdir(os.path.join(curl, "winbuild"))
 		os.system("nmake /f Makefile.vc mode=static RTLIBCFG=static USE_IDN=no DEBUG={}".format("yes" if build_type=="Debug" else "no"))
