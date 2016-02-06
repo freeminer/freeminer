@@ -1516,8 +1516,8 @@ int ObjectRef::l_hud_set_hotbar_image(lua_State *L)
 		return 0;
 
 	std::string name = lua_tostring(L, 2);
-
-	getServer(L)->hudSetHotbarImage(player, name);
+	auto items = lua_tonumber(L, 3);
+	getServer(L)->hudSetHotbarImage(player, name, items);
 	return 1;
 }
 

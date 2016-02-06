@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define HUD_PARAM_HOTBAR_ITEMCOUNT 1
 #define HUD_PARAM_HOTBAR_IMAGE 2
+static const int  HUD_PARAM_HOTBAR_IMAGE_ITEMS = 104;
 #define HUD_PARAM_HOTBAR_SELECTED_IMAGE 3
 
 #define HUD_HOTBAR_ITEMCOUNT_DEFAULT 8
@@ -119,6 +120,7 @@ public:
 	video::SColor selectionbox_argb;
 	bool use_crosshair_image;
 	std::string hotbar_image;
+	int hotbar_image_items;
 	bool use_hotbar_image;
 	std::string hotbar_selected_image;
 	bool use_hotbar_selected_image;

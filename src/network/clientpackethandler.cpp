@@ -1131,8 +1131,8 @@ void Client::handleCommand_HudSetParam(NetworkPacket* pkt)
 
 	*pkt >> param >> value;
 
-	Player *player = m_env.getLocalPlayer();
-	assert(player != NULL);
+	auto *player = m_env.getLocalPlayer();
+	//assert(player != NULL);
 
 	if (param == HUD_PARAM_HOTBAR_ITEMCOUNT && value.size() == 4) {
 		s32 hotbar_itemcount = readS32((u8*) value.c_str());
@@ -1140,10 +1140,13 @@ void Client::handleCommand_HudSetParam(NetworkPacket* pkt)
 			player->hud_hotbar_itemcount = hotbar_itemcount;
 	}
 	else if (param == HUD_PARAM_HOTBAR_IMAGE) {
-		((LocalPlayer *) player)->hotbar_image = value;
+		player->hotbar_image = value;
+	}
+	else if (param == HUD_PARAM_HOTBAR_IMAGE_ITEMS) {
+		player->hotbar_image_items = stoi(value);
 	}
 	else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
-		((LocalPlayer *) player)->hotbar_selected_image = value;
+		player->hotbar_selected_image = value;
 	}
 }
 

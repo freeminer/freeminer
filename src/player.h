@@ -240,21 +240,21 @@ public:
 
 	void setHotbarImage(const std::string &name)
 	{
-		hud_hotbar_image = name;
+		hotbar_image = name;
 	}
 
 	std::string getHotbarImage()
 	{
-		return hud_hotbar_image;
+		return hotbar_image;
 	}
 
 	void setHotbarSelectedImage(const std::string &name)
 	{
-		hud_hotbar_selected_image = name;
+		hotbar_selected_image = name;
 	}
 
 	std::string getHotbarSelectedImage() {
-		return hud_hotbar_selected_image;
+		return hotbar_selected_image;
 	}
 
 	void setSky(const video::SColor &bgcolor, const std::string &type,
@@ -402,8 +402,9 @@ public:
 
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
-	std::string hud_hotbar_image;
-	std::string hud_hotbar_selected_image;
+	std::string hotbar_image;
+	int hotbar_image_items;
+	std::string hotbar_selected_image;
 protected:
 	IGameDef *m_gamedef;
 

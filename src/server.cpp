@@ -3444,13 +3444,14 @@ s32 Server::hudGetHotbarItemcount(Player *player)
 	return player->getHotbarItemcount();
 }
 
-void Server::hudSetHotbarImage(Player *player, std::string name)
+void Server::hudSetHotbarImage(Player *player, std::string name, int items)
 {
 	if (!player)
 		return;
 
 	player->setHotbarImage(name);
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE, name);
+	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE_ITEMS, std::to_string(items));
 }
 
 std::string Server::hudGetHotbarImage(Player *player)

@@ -162,7 +162,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	*/
 	// there's no sane reason why we shouldn't have a player and
 	// almost everyone needs a player reference
-	Player *player = m_env.getLocalPlayer();
+	auto *player = m_env.getLocalPlayer();
 	if(!player)
 		return;
 
@@ -756,9 +756,11 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			if(hotbar_itemcount > 0 && hotbar_itemcount <= HUD_HOTBAR_ITEMCOUNT_MAX)
 				player->hud_hotbar_itemcount = hotbar_itemcount;
 		} else if (param == HUD_PARAM_HOTBAR_IMAGE) {
-			((LocalPlayer *) player)->hotbar_image = value;
+			player->hotbar_image = value;
+		} else if (param == HUD_PARAM_HOTBAR_IMAGE_ITEMS) {
+			player->hotbar_image_items = stoi(value);
 		} else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
-			((LocalPlayer *) player)->hotbar_selected_image = value;
+			player->hotbar_selected_image = value;
 		}
 	}
 /*

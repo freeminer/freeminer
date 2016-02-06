@@ -65,6 +65,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 
 	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
+	hotbar_image_items = 0;
 
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);

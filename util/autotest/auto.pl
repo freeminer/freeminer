@@ -394,7 +394,7 @@ our $tasks = {
     }, (
         map {
             'bot_minetest_' . $_ => [['bot_minetest', $_,]]
-        } qw(tsan tsannt asan usan)
+        } qw(tsan tsannt asan usan gdb)
     ),
 
     #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server_auto', 'run_clients',],
