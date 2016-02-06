@@ -113,6 +113,11 @@ cmake ..
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
 
+or for debian based:
+```sh
+curl https://raw.githubusercontent.com/freeminer/freeminer/master/build/debian_ogles.sh | sh
+```
+
 Build it (OS X):
 ```sh
 mkdir _build && cd _build
@@ -120,6 +125,13 @@ cmake .. -DGETTEXT_LIBRARY=/usr/local/opt/gettext/lib/libgettextlib.dylib -DGETT
 make -j8 package
 ```
 (if the make command doesn't work on OS X install bsdmake)
+
+Build it (windows):
+
+[vs2013](build/windows_vs2015)
+
+[vs2015](build/windows)
+
 
 Play it!
 ```
