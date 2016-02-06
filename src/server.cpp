@@ -3451,7 +3451,7 @@ void Server::hudSetHotbarImage(Player *player, std::string name, int items)
 
 	player->setHotbarImage(name);
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE, name);
-	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE_ITEMS, std::to_string(items));
+	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE_ITEMS, std::string() + to_string(items));
 }
 
 std::string Server::hudGetHotbarImage(Player *player)
