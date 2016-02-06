@@ -530,6 +530,10 @@ if(WIN32)
 	endif()
 	set(PLATFORM_LIBS ws2_32.lib shlwapi.lib ${PLATFORM_LIBS})
 
+	if(MSVC) # vs2015
+		set(PLATFORM_LIBS winmm.lib ${PLATFORM_LIBS})
+	endif()
+
 	# Zlib stuff
 	set(ZLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../zlib/zlib-1.2.5"
 			CACHE PATH "Zlib include directory")
