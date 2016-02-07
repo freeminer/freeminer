@@ -130,7 +130,7 @@ public:
 	// Returns true if anything has been changed.
 	bool animate(bool faraway, float time, int crack, u32 daynight_ratio);
 
-	scene::SMesh *getMesh()
+	scene::IMesh *getMesh()
 	{
 		return m_mesh;
 	}
@@ -176,7 +176,7 @@ public:
 	unsigned int timestamp;
 
 private:
-	scene::SMesh *m_mesh;
+	scene::IMesh *m_mesh;
 public:
 	MinimapMapblock *m_minimap_mapblock;
 private:
@@ -227,7 +227,7 @@ struct PreMeshBuffer
 {
 	TileSpec tile;
 	std::vector<u16> indices;
-	std::vector<video::S3DVertexTangents> vertices;
+	std::vector<video::S3DVertex> vertices;
 };
 
 struct MeshCollector
