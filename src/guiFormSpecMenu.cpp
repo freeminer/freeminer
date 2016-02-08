@@ -2374,8 +2374,8 @@ void GUIFormSpecMenu::drawMenu()
 	/*
 		Call base class
 	*/
+	if (m_itemimages.size())
 	gui::IGUIElement::draw();
-
 	/*
 		Draw images
 	*/
@@ -2445,6 +2445,9 @@ void GUIFormSpecMenu::drawMenu()
 			core::rect<s32>(v2s32(0, 0), v2s32(0, 0)),
 			NULL, m_gamedef, false, true, false);
 	}
+
+	if (!m_itemimages.size())
+		gui::IGUIElement::draw();
 
 /* TODO find way to show tooltips on touchscreen */
 #ifndef HAVE_TOUCHSCREENGUI
