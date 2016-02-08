@@ -123,7 +123,7 @@ void CircuitElement::update() {
 }
 
 bool CircuitElement::updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef) {
-	MapNode node = map->getNodeNoEx(m_pos);
+	MapNode node = map->getNode(m_pos);
 	// Map not yet loaded
 	if(!node) {
 		dstream << "Circuit simulator: Waiting for map blocks loading..." << std::endl;
@@ -242,13 +242,13 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 	u8 face_id = FACE_TO_SHIFT(face);
 	connected_faces[face_id] = true;
 	used[pos] = face;
-	current_node = map->getNodeNoEx(pos);
+	current_node = map->getNode(pos);
 	const ContentFeatures& first_node_features = ndef->get(current_node);
 	face = rotateFace(current_node, first_node_features, face);
 	face_id = FACE_TO_SHIFT(face);
 
 	current_pos = pos + directions[face_id];
-	current_node = map->getNodeNoEx(current_pos);
+	current_node = map->getNode(current_pos);
 	const ContentFeatures& current_node_features = ndef->get(current_node);
 	u8 real_face = revRotateFace(current_node, current_node_features, face);
 	u8 real_face_id = FACE_TO_SHIFT(real_face);
@@ -260,7 +260,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 			current_pos = q.front().first;
 			u8 acceptable_faces = q.front().second;
 			q.pop();
-			current_node = map->getNodeNoEx(current_pos);
+			current_node = map->getNode(current_pos);
 			const ContentFeatures& current_node_features = ndef->get(current_node);
 
 			for(int i = 0; i < 6; ++i) {
@@ -268,7 +268,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 				if(acceptable_faces & real_face) {
 					used[current_pos] |= real_face;
 					next_pos = current_pos + directions[i];
-					next_node = map->getNodeNoEx(next_pos);
+					next_node = map->getNode(next_pos);
 					const ContentFeatures& node_features = ndef->get(next_node);
 					u8 next_real_face = revRotateFace(next_node, node_features, OPPOSITE_FACE(SHIFT_TO_FACE(i)));
 					u8 next_real_shift = FACE_TO_SHIFT(next_real_face);

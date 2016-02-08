@@ -931,7 +931,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				}
 		}
 		if (abm_triggers->empty())
-			abm_triggers.release();
+			abm_triggers.reset();
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {

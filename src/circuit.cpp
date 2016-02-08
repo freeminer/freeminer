@@ -98,7 +98,7 @@ void Circuit::addBlock(MapBlock* block) {
 }
 
 void Circuit::addNode(v3POS pos) {
-	MapNode n = m_map->getNodeNoEx(pos);
+	MapNode n = m_map->getNode(pos);
 	const ContentFeatures& node_f = m_ndef->get(n);
 	if(node_f.is_wire || node_f.is_wire_connector) {
 		addWire(pos);
@@ -149,7 +149,7 @@ void Circuit::addElement(v3POS pos) {
 	bool connected_faces[6] = {0};
 
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > connected;
-	MapNode node = m_map->getNodeNoEx(pos);
+	MapNode node = m_map->getNode(pos);
 
 	auto current_element_iterator = m_elements.insert(m_elements.begin(),
 	                                CircuitElement(pos, m_max_id++, m_ndef->get(node).circuit_element_delay));

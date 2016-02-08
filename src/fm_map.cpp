@@ -265,7 +265,7 @@ int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only) {
 
 	s16 max = MYMIN(searchup + basepos.Y, 0x7FFF);
 
-	MapNode last_node = getNodeNoEx(basepos);
+	MapNode last_node = getNode(basepos);
 	MapNode node = last_node;
 	v3POS runpos = basepos;
 	INodeDefManager *nodemgr = m_gamedef->ndef();
@@ -275,7 +275,7 @@ int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only) {
 	while ((runpos.Y < max) && (node.param0 != CONTENT_AIR)) {
 		runpos.Y += 1;
 		last_node = node;
-		node = getNodeNoEx(runpos);
+		node = getNode(runpos);
 
 		if (!walkable_only) {
 			if ((last_node.param0 != CONTENT_AIR) &&

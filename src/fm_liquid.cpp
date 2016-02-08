@@ -139,7 +139,7 @@ NEXT_LIQUID:
 			u8 i = liquid_explore_map[e];
 			NodeNeighbor & nb = neighbors[i];
 			nb.pos = p0 + liquid_flow_dirs[i];
-			nb.node = getNodeNoEx(neighbors[i].pos);
+			nb.node = getNode(neighbors[i].pos);
 			nb.content = nb.node.getContent();
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {

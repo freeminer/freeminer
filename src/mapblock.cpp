@@ -119,13 +119,17 @@ MapBlock::~MapBlock()
 	//delMesh();
 #endif
 
-	{
-		std::unique_lock<Mutex> lock(abm_triggers_mutex);
-		abm_triggers.reset(nullptr);
+	for (int i = 0; i <= 100; ++i) {
+		std::unique_lock<Mutex> lock(abm_triggers_mutex, std::try_to_lock);
+		if (!lock.owns_lock()) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			continue;
+		}
+		abm_triggers.reset();
+		break;
 	}
 
-	if(data)
-		delete data;
+	delete data;
 	data = nullptr;
 }
 
