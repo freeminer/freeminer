@@ -84,8 +84,8 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 		error = status.ToString();
 		return false;
 	}
-	return true;
 #endif
+	return true;
 }
 
 bool KeyValueStorage::put(const std::string &key, const float &data)
@@ -110,8 +110,8 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 		error = status.ToString();
 		return false;
 	}
-	return true;
 #endif
+	return true;
 }
 
 bool KeyValueStorage::get(const std::string &key, float &data)
@@ -146,6 +146,8 @@ bool KeyValueStorage::del(const std::string &key)
 	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
 	return status.ok();
+#else
+	return true;
 #endif
 }
 
