@@ -2184,6 +2184,8 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int phase,
 			&& m_selected_item->listname == s.listname
 			&& m_selected_item->i == item_i;
 		bool hovering = rect.isPointInside(m_pointer);
+		ItemRotationKind rotation_kind = selected ? IT_ROT_SELECTED :
+			(hovering ? IT_ROT_HOVERED : IT_ROT_NONE);
 
 		if (phase == 0) {
 			if (hovering) {
@@ -2226,7 +2228,7 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int phase,
 			{
 				drawItemStack(driver, m_font, item,
 					rect, &AbsoluteClippingRect, m_gamedef,
-					selected, hovering, false);
+					rotation_kind);
 			}
 
 			// Draw tooltip
@@ -2272,7 +2274,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 	if (!m_selected_item) {
 		drawItemStack(driver, m_font, ItemStack(),
 			core::rect<s32>(v2s32(0, 0), v2s32(0, 0)),
-			NULL, m_gamedef, false, false, true);
+			NULL, m_gamedef, IT_ROT_DRAGGED);
 		return;
 	}
 
@@ -2287,7 +2289,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 
 	core::rect<s32> imgrect(0,0,imgsize.X,imgsize.Y);
 	core::rect<s32> rect = imgrect + (m_pointer - imgrect.getCenter());
-	drawItemStack(driver, m_font, stack, rect, NULL, m_gamedef, false, false, true);
+	drawItemStack(driver, m_font, stack, rect, NULL, m_gamedef, IT_ROT_DRAGGED);
 }
 
 void GUIFormSpecMenu::drawMenu()
@@ -2425,7 +2427,7 @@ void GUIFormSpecMenu::drawMenu()
 		// Viewport rectangle on screen
 		core::rect<s32> rect = imgrect + spec.pos;
 		drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
-				m_gamedef, false, false, false);
+				m_gamedef, IT_ROT_NONE);
 	}
 
 	/*
@@ -2443,7 +2445,7 @@ void GUIFormSpecMenu::drawMenu()
 	if (!item_hovered) {
 		drawItemStack(driver, m_font, ItemStack(),
 			core::rect<s32>(v2s32(0, 0), v2s32(0, 0)),
-			NULL, m_gamedef, false, true, false);
+			NULL, m_gamedef, IT_ROT_HOVERED);
 	}
 
 	if (!m_itemimages.size())
