@@ -639,7 +639,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
                             bool remove_light) {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
-	auto lock = block->lock_unique_rec();
+	//auto lock = block->lock_unique_rec(); //no: in block_below_is_valid getnode outside block
 
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
