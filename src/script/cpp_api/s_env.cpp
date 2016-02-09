@@ -46,6 +46,11 @@ void ScriptApiEnv::environment_OnGenerated(v3s16 minp, v3s16 maxp,
 
 void ScriptApiEnv::environment_Step(float dtime)
 {
+
+	RecursiveMutexAutoLock testscriptlock(m_luastackmutex, std::try_to_lock);
+	if (!testscriptlock.owns_lock())
+		return;
+
 	SCRIPTAPI_PRECHECKHEADER
 	//infostream<<"scriptapi_environment_step"<<std::endl;
 
