@@ -760,7 +760,7 @@ bool MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 			content_nodemeta_deserialize_legacy(iss,
 				&m_node_metadata, &m_node_timers,
 				m_gamedef->idef());
-	} catch(SerializationError &e) {
+	} catch(std::exception &e) {
 		warningstream<<"MapBlock::deSerialize(): Ignoring an error"
 				<<" while deserializing node metadata at ("
 				<<PP(getPos())<<": "<<e.what()<<std::endl;
@@ -1036,7 +1036,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 						&m_node_metadata, &m_node_timers,
 						m_gamedef->idef());
 				}
-			} catch(SerializationError &e) {
+			} catch(std::exception &e) {
 				warningstream<<"MapBlock::deSerialize(): Ignoring an error"
 						<<" while deserializing node metadata"<<std::endl;
 			}

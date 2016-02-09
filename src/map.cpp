@@ -3373,7 +3373,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 
 		return block;
 	}
-	catch(SerializationError &e)
+	catch(std::exception &e)
 	{
 		if (block)
 			delete block;
