@@ -1358,7 +1358,9 @@ u16 Server::Receive(int ms)
 	} catch (msgpack::v1::type_error &e) {
 		verbosestream<<"Server: recieve: msgpack:"<< e.what() <<std::endl;
 	} catch (std::exception &e) {
+#if !MINETEST_PROTO
 		infostream<<"Server: recieve: exception:"<< e.what() <<std::endl;
+#endif
 	}
 	return received;
 }
