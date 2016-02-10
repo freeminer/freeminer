@@ -533,9 +533,15 @@ int MapgenMath::generateTerrain() {
 	return 0;
 }
 
+/*
 int MapgenMath::getGroundLevelAtPoint(v2POS p) {
 	return 0;
 }
+
+int MapgenMath::getSpawnLevelAtPoint(v2POS p) {
+	return 0;
+}
+*/
 
 void MapgenMath::calculateNoise() {
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
