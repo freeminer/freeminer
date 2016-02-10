@@ -442,11 +442,24 @@ void Server::SendMovePlayer(u16 peer_id)
 	if (!player)
 		return;
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 4);
+	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
 	PACK(TOCLIENT_MOVE_PLAYER_POS, player->getPosition());
 	PACK(TOCLIENT_MOVE_PLAYER_PITCH, player->getPitch());
 	PACK(TOCLIENT_MOVE_PLAYER_YAW, player->getYaw());
-	PACK(TOCLIENT_MOVE_PLAYER_SPEED, player->getSpeed());
+	//PACK(TOCLIENT_MOVE_PLAYER_SPEED, player->getSpeed());
+	// Send as reliable
+	m_clients.send(peer_id, 0, buffer, true);
+}
+
+void Server::SendPunchPlayer(u16 peer_id, v3f speed)
+{
+	DSTACK(FUNCTION_NAME);
+	Player *player = m_env->getPlayer(peer_id);
+	if (!player)
+		return;
+
+	MSGPACK_PACKET_INIT(TOCLIENT_PUNCH_PLAYER, 1);
+	PACK(TOCLIENT_PUNCH_PLAYER_SPEED, speed);
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
 }

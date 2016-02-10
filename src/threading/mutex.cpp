@@ -104,5 +104,15 @@ RecursiveMutex::RecursiveMutex()
 	: Mutex(true)
 {}
 
+
+bool Mutex::try_lock()
+{
+#ifdef _WIN32
+	return TryEnterCriticalSection(&mutex);
+#else
+	return !pthread_mutex_trylock(&mutex);
+#endif
+}
+
 #endif
 

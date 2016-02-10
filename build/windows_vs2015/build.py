@@ -5,6 +5,7 @@ import tarfile
 import shutil
 import subprocess
 import sys
+import ssl
 
 # http://stackoverflow.com/a/377028/2606891
 def which(program):
@@ -63,8 +64,8 @@ LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.1"
-curl = "curl-7.45.0"
-openal = "openal-soft-1.16.0"
+curl = "curl-7.47.0"
+openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
 zlib = "zlib-1.2.8"
@@ -82,6 +83,8 @@ sqlite = "sqlite-{}".format(SQLITE_VERSION)
 #somtimes vs becomes mad
 #error MSB8020: The build tools for Visual Studio 2012 (Platform Toolset = 'v110') cannot be found.
 patch_toolset = 1
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def main():
 	build_type = "Release"
@@ -108,23 +111,24 @@ def main():
 	if not os.path.exists(irrlicht):
 		print("Irrlicht not found, downloading.")
 		zip_path = "{}.zip".format(irrlicht)
-		urllib.request.urlretrieve("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
+		#urllib.request.urlretrieve("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
+		urllib.request.urlretrieve("http://pkgs.fedoraproject.org/repo/pkgs/irrlicht/irrlicht-1.8.1.zip/db97cce5e92da9b053f4546c652e9bd5/irrlicht-1.8.1.zip".format(irrlicht), zip_path)
 		extract_zip(zip_path, ".")
 		os.chdir(os.path.join(irrlicht, "source", "Irrlicht"))
 		# sorry but this breaks the build
 		patch(os.path.join("zlib", "deflate.c"), "const char deflate_copyright[] =", "static const char deflate_copyright[] =")
-		os.system("devenv /upgrade Irrlicht12.0.vcxproj")
-		#patch("Irrlicht12.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
-		#if patch_toolset:
-		#	patch("Irrlicht12.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
-		os.system('MSBuild Irrlicht12.0.vcxproj /p:Configuration="Static lib - {}"'.format(build_type))
+		os.system("devenv /upgrade Irrlicht11.0.vcxproj")
+		#patch("Irrlicht11.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
+		if patch_toolset:
+			patch("Irrlicht11.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
+		os.system('MSBuild Irrlicht11.0.vcxproj /p:Configuration="Static lib - {}"'.format(build_type))
 		os.chdir(os.path.join("..", "..", ".."))
 
 	if not os.path.exists(curl):
 		print("curl not found, downloading.")
 		os.mkdir(curl)
 		tar_path = "{}.tar.gz".format(curl)
-		urllib.request.urlretrieve("http://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
+		urllib.request.urlretrieve("https://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
 		extract_tar(tar_path, ".")
 		os.chdir(os.path.join(curl, "winbuild"))
 		os.system("nmake /f Makefile.vc mode=static RTLIBCFG=static USE_IDN=no DEBUG={}".format("yes" if build_type=="Debug" else "no"))
@@ -174,6 +178,9 @@ def main():
 		if patch_toolset:
 			patch(os.path.join("libvorbis", "libvorbis_static.vcxproj"), '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
 			patch(os.path.join("libvorbisfile", "libvorbisfile_static.vcxproj"), '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
+			# not needed, but avoid error:
+			patch(os.path.join("vorbisenc", "vorbisenc_static.vcxproj"), '<ConfigurationType>Application</ConfigurationType>', '<ConfigurationType>Application</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
+			patch(os.path.join("vorbisdec", "vorbisdec_static.vcxproj"), '<ConfigurationType>Application</ConfigurationType>', '<ConfigurationType>Application</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
 
 		os.system("devenv /upgrade vorbis_static.sln")
 		os.system("MSBuild vorbis_static.sln /p:Configuration={}".format(build_type))
@@ -182,7 +189,9 @@ def main():
 	if not os.path.exists(zlib):
 		print("zlib not found, downloading.")
 		tar_path = "{}.tar.gz".format(zlib)
-		download("http://prdownloads.sourceforge.net/libpng/{}.tar.gz?download".format(zlib), tar_path)
+		#download("http://prdownloads.sourceforge.net/libpng/{}.tar.gz?download".format(zlib), tar_path)
+		download("http://zlib.net/{}.tar.gz".format(zlib), tar_path)
+
 		extract_tar(tar_path, ".")
 		print("building zlib")
 		os.chdir(zlib)
@@ -244,6 +253,8 @@ def main():
 		mflags = "-MT" if build_type != "Debug" else "-MTd"
 		# we don't want 'typedef enum { false = 0, true = 1 } _Bool;'
 		patch(os.path.join("windows", "stdbool.h"), "# if !0", "# if 0")
+		patch(os.path.join("lib", "loop_wchar.h"), "typedef int mbstate_t;", "//typedef int mbstate_t;")
+
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={}".format(mflags))
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={} install".format(mflags))
 		os.system("nmake -f Makefile.msvc NO_NLS=1 MFLAGS={} distclean".format(mflags))

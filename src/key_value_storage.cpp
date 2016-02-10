@@ -15,6 +15,8 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <mutex>
+
 #include "exceptions.h"
 #include "filesys.h"
 #include "key_value_storage.h"
@@ -34,7 +36,7 @@ bool KeyValueStorage::open() {
 #if USE_LEVELDB
 	leveldb::Options options;
 	options.create_if_missing = true;
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 	auto status = leveldb::DB::Open(options, fullpath, &db);
 	verbosestream<<"KeyValueStorage::open() db_name="<<db_name << " status="<< status.ok()<< " error="<<status.ToString()<<std::endl;
 	if (!status.ok()) {
@@ -76,14 +78,14 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Put(write_options, key, data);
 	if (!status.ok()) {
 		error = status.ToString();
 		return false;
 	}
-	return true;
 #endif
+	return true;
 }
 
 bool KeyValueStorage::put(const std::string &key, const float &data)
@@ -102,14 +104,14 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Get(read_options, key, &data);
 	if (!status.ok()) {
 		error = status.ToString();
 		return false;
 	}
-	return true;
 #endif
+	return true;
 }
 
 bool KeyValueStorage::get(const std::string &key, float &data)
@@ -132,7 +134,7 @@ bool KeyValueStorage::get_json(const std::string &key, Json::Value & data)
 }
 
 std::string KeyValueStorage::get_error() {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 	return error;
 }
 
@@ -141,9 +143,11 @@ bool KeyValueStorage::del(const std::string &key)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
 	return status.ok();
+#else
+	return true;
 #endif
 }
 

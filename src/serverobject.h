@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "itemgroup.h"
 #include "util/container.h"
-#include "util/lock.h"
+#include "threading/lock.h"
 
 /*
 
@@ -84,11 +84,11 @@ public:
 		Some simple getters/setters
 	*/
 	v3f getBasePosition() {
-		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		std::lock_guard<Mutex> lock(m_base_position_mutex);
 		return m_base_position;
 	}
 	void setBasePosition(v3f pos) {
-		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		std::lock_guard<Mutex> lock(m_base_position_mutex);
 		m_base_position = pos;
 	}
 	ServerEnvironment* getEnv(){ return m_env; }
@@ -255,7 +255,7 @@ protected:
 
 	ServerEnvironment *m_env;
 	v3f m_base_position;
-	std::mutex m_base_position_mutex;
+	Mutex m_base_position_mutex;
 
 private:
 	// Used for creating objects based on type

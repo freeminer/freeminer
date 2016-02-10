@@ -15,20 +15,29 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_LOCK_HEADER
-#define UTIL_LOCK_HEADER
+#ifndef THREADING_LOCK_HEADER
+#define THREADING_LOCK_HEADER
 
 #include <mutex>
 #include <atomic>
 #include <thread>
-//#include <chrono>
 #include <memory>
 
 #include "../config.h"
 
-#ifdef _MSC_VER
-#define noexcept
-#endif
+#ifdef _WIN32
+
+#include "../threading/mutex.h"
+using use_mutex = Mutex;
+using try_shared_mutex = use_mutex;
+using try_shared_lock = std::unique_lock<try_shared_mutex>;
+using unique_lock = std::unique_lock<try_shared_mutex>;
+const auto try_to_lock = std::try_to_lock;
+
+#else
+
+typedef std::mutex use_mutex;
+
 
 #if USE_BOOST // not finished
 
@@ -38,29 +47,27 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 typedef boost::shared_mutex try_shared_mutex;
 typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
-#define DEFER_LOCK boost::defer_lock
-#define TRY_TO_LOCK boost::try_to_lock
+const auto try_to_lock = boost::try_to_lock;
 #define LOCK_TWO 1
 
 #elif HAVE_SHARED_MUTEX
 //#elif __cplusplus >= 201305L
 
 #include <shared_mutex>
-typedef std::shared_timed_mutex try_shared_mutex;
-typedef std::shared_lock<try_shared_mutex> try_shared_lock;
-typedef std::unique_lock<try_shared_mutex> unique_lock;
-#define DEFER_LOCK	std::defer_lock
-#define TRY_TO_LOCK	std::try_to_lock
+using try_shared_mutex = std::shared_timed_mutex;
+using try_shared_lock = std::shared_lock<try_shared_mutex>;
+using unique_lock = std::unique_lock<try_shared_mutex>;
+const auto try_to_lock = std::try_to_lock;
 #define LOCK_TWO 1
 
 #else
 
-//typedef std::timed_mutex try_shared_mutex;
-typedef std::mutex try_shared_mutex;
-typedef std::unique_lock<try_shared_mutex> try_shared_lock;
-typedef std::unique_lock<try_shared_mutex> unique_lock;
-#define DEFER_LOCK std::defer_lock
-#define TRY_TO_LOCK	std::try_to_lock
+using try_shared_mutex = use_mutex;
+using try_shared_lock = std::unique_lock<try_shared_mutex> ;
+using unique_lock = std::unique_lock<try_shared_mutex> ;
+const auto try_to_lock = std::try_to_lock;
+#endif
+
 #endif
 
 
@@ -90,7 +97,7 @@ public:
 };
 */
 
-template<class GUARD, class MUTEX = std::mutex>
+template<class GUARD, class MUTEX = use_mutex>
 class recursive_lock {
 public:
 	GUARD * lock;
@@ -101,7 +108,7 @@ public:
 	void unlock();
 };
 
-template<class mutex = std::mutex, class uniquelock = std::unique_lock<mutex> , class sharedlock = std::unique_lock<mutex> >
+template<class mutex = use_mutex, class uniquelock = std::unique_lock<mutex> , class sharedlock = std::unique_lock<mutex> >
 class locker {
 public:
 	typedef recursive_lock<sharedlock, mutex> lock_rec_shared;
@@ -121,7 +128,7 @@ public:
 	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
 };
 
-class shared_locker : public locker<try_shared_mutex, unique_lock, try_shared_lock> { };
+using shared_locker = locker<try_shared_mutex, unique_lock, try_shared_lock>;
 
 class dummy_lock {
 public:
@@ -147,13 +154,13 @@ public:
 
 #if ENABLE_THREADS
 
-class maybe_locker : public locker<> { };
-class maybe_shared_locker : public shared_locker {};
+using maybe_locker = locker<>;
+using maybe_shared_locker = shared_locker;
 
 #else
 
-class maybe_locker : public dummy_locker { };
-class maybe_shared_locker : public dummy_locker {};
+using maybe_locker = dummy_locker;
+using maybe_shared_locker = dummy_locker;
 
 #endif
 

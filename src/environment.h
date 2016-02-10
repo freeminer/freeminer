@@ -46,8 +46,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //fm:
 #include "network/connection.h"
 #include "fm_bitset.h"
-#include "util/concurrent_unordered_map.h"
-#include "util/concurrent_vector.h"
+#include "threading/concurrent_unordered_map.h"
+#include "threading/concurrent_vector.h"
 #include <unordered_set>
 #include "util/container.h" // Queue
 #include <array>
@@ -400,8 +400,8 @@ public:
 
 	u32 getGameTime() { return m_game_time; }
 
-	void reportMaxLagEstimate(float f) { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); m_max_lag_estimate = f; }
-	float getMaxLagEstimate() { std::unique_lock<std::mutex> lock(m_max_lag_estimate_mutex); return m_max_lag_estimate; }
+	void reportMaxLagEstimate(float f) { std::unique_lock<Mutex> lock(m_max_lag_estimate_mutex); m_max_lag_estimate = f; }
+	float getMaxLagEstimate() { std::unique_lock<Mutex> lock(m_max_lag_estimate_mutex); return m_max_lag_estimate; }
 
 	// is weather active in this environment?
 	bool m_use_weather;
@@ -478,6 +478,7 @@ private:
 */
 
 	std::deque<v3s16> m_nodeupdate_queue;
+	Mutex m_nodeupdate_queue_mutex;
 
 	/*
 		Member variables
@@ -527,7 +528,7 @@ private:
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
 	std::atomic_uint m_game_time;
-	std::mutex m_max_lag_estimate_mutex;
+	Mutex m_max_lag_estimate_mutex;
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
 public:

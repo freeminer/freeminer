@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_CONCURENT_MAP_HEADER
-#define UTIL_CONCURENT_MAP_HEADER
+#ifndef THREADING_CONCURENT_MAP_HEADER
+#define THREADING_CONCURENT_MAP_HEADER
 
 #include <map>
 
@@ -81,42 +81,42 @@ public:
 		return full_type::find(k);
 	};
 
-	iterator begin() noexcept {
+	iterator begin() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	const_iterator begin()   const noexcept {
+	const_iterator begin()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	reverse_iterator rbegin() noexcept {
+	reverse_iterator rbegin() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::rbegin();
 	};
 
-	const_reverse_iterator rbegin()   const noexcept {
+	const_reverse_iterator rbegin()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::rbegin();
 	};
 
-	iterator end() noexcept {
+	iterator end() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
-	const_iterator end()   const noexcept {
+	const_iterator end()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
-	reverse_iterator rend() noexcept {
+	reverse_iterator rend() {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::rend();
 	};
 
-	const_reverse_iterator rend()   const noexcept {
+	const_reverse_iterator rend()   const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::rend();
 	};
@@ -153,16 +153,14 @@ public:
 
 template <class Key, class T, class Compare = std::less<Key>,
           class Allocator = std::allocator<std::pair<const Key, T> >>
-class concurrent_map: public concurrent_map_<locker<>, Key, T, Compare, Allocator>
-{ };
+using concurrent_map  = concurrent_map_<locker<>, Key, T, Compare, Allocator>;
 
 
 #if ENABLE_THREADS
 
 template < class Key, class T, class Compare = std::less<Key>,
            class Allocator = std::allocator<std::pair<const Key, T> >>
-class maybe_concurrent_map: public concurrent_map<Key, T, Compare, Allocator>
-{ };
+using maybe_concurrent_map = concurrent_map<Key, T, Compare, Allocator>;
 
 #else
 
@@ -191,8 +189,7 @@ public:
 
 template < class Key, class T, class Compare = std::less<Key>,
            class Allocator = std::allocator<std::pair<const Key, T> >>
-class maybe_concurrent_map: public not_concurrent_map<Key, T, Compare, Allocator>
-{ };
+using maybe_concurrent_map = not_concurrent_map<Key, T, Compare, Allocator>;
 
 #endif
 

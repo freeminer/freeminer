@@ -57,7 +57,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mapgen_math.h"
 #include "mapgen_indev.h"
-#include "util/thread_pool.h"
+#include "threading/thread_pool.h"
 
 
 struct MapgenDesc {
@@ -348,6 +348,18 @@ v3s16 EmergeManager::getContainingChunk(v3s16 blockpos, s16 chunksize)
 
 	return getContainerPos(blockpos - chunk_offset, chunksize)
 		* chunksize + chunk_offset;
+}
+
+
+int EmergeManager::getSpawnLevelAtPoint(v2s16 p)
+{
+	if (m_mapgens.size() == 0 || !m_mapgens[0]) {
+		errorstream << "EmergeManager: getSpawnLevelAtPoint() called"
+			" before mapgen init" << std::endl;
+		return 0;
+	}
+
+	return m_mapgens[0]->getSpawnLevelAtPoint(p);
 }
 
 

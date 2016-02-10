@@ -1,4 +1,13 @@
-Engine
+Freeminer version X.Y.Z.F based on minetest version X.Y.Z , minetest details at http://dev.minetest.net/Changelog
+
+Key differences from minetest:
+
+Gameplay: Real liquids, weather, seasons http://www.youtube.com/channel/UCIRUqUD0bJ2wpxTQ01gbG3g
+
+Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, built in /stat command
+
+
+Changelog
 ======
 
 ### 0.4.13.8 ( )

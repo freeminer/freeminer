@@ -65,10 +65,8 @@ MeshMakeData::MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapD
 #endif
 	m_blockpos(-1337,-1337,-1337),
 	m_crack_pos_relative(-1337, -1337, -1337),
-	m_highlighted_pos_relative(-1337, -1337, -1337),
 	m_smooth_lighting(false),
 	m_show_hud(false),
-	m_highlight_mesh_color(255, 255, 255, 255),
 	m_gamedef(gamedef),
 	m_use_shaders(use_shaders)
 	,step(1),
@@ -197,12 +195,6 @@ void MeshMakeData::setCrack(int crack_level, v3s16 crack_pos)
 {
 	if(crack_level >= 0)
 		m_crack_pos_relative = crack_pos - m_blockpos*MAP_BLOCKSIZE;
-}
-
-void MeshMakeData::setHighlighted(v3s16 highlighted_pos, bool show_hud)
-{
-	m_show_hud = show_hud;
-	m_highlighted_pos_relative = highlighted_pos - m_blockpos*MAP_BLOCKSIZE;
 }
 
 void MeshMakeData::setSmoothLighting(bool smooth_lighting)
@@ -1108,7 +1100,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_crack_materials(),
-	m_highlighted_materials(),
 	m_last_daynight_ratio((u32) -1),
 	m_daynight_diffs(),
 	m_usage_timer(0)
@@ -1116,11 +1107,10 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_mesh = new scene::SMesh();
 
 	m_enable_shaders = data->m_use_shaders;
-	m_enable_highlighting = g_settings->getBool("enable_node_highlighting");
 
 	if (!data->fill_data())
 		return;
-	if (step == 1)
+	if (step == 1 || !data->block->getMesh())
 	if (g_settings->getBool("enable_minimap")) {
 		m_minimap_mapblock = new MinimapMapblock;
 		m_minimap_mapblock->getMinimapNodes(
@@ -1200,8 +1190,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	if(step <= 1)
 	mapblock_mesh_generate_special(data, collector);
 
-	m_highlight_mesh_color = data->m_highlight_mesh_color;
-
 	/*
 		Convert MeshCollector to SMesh
 	*/
@@ -1248,12 +1236,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 			p.tile.texture = animation_frame.texture;
 		}
 
-		if(m_enable_highlighting && p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED)
-			m_highlighted_materials.push_back(i);
-
 		for(u32 j = 0; j < p.vertices.size(); j++)
 		{
-			video::S3DVertexTangents *vertex = &p.vertices[j];
+			video::S3DVertex *vertex = &p.vertices[j];
 			// Note applyFacesShading second parameter is precalculated sqrt
 			// value for speed improvement
 			// Skip it for lightsources and top faces.
@@ -1293,27 +1278,24 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 		material.setTexture(0, p.tile.texture);
 
-		if (p.tile.material_flags & MATERIAL_FLAG_HIGHLIGHTED) {
-			material.MaterialType = video::EMT_TRANSPARENT_ADD_COLOR;
-		} else {
-			if (m_enable_shaders) {
-				material.MaterialType = m_shdrsrc->getShaderInfo(p.tile.shader_id).material;
-				p.tile.applyMaterialOptionsWithShaders(material);
-				if (p.tile.normal_texture) {
-					material.setTexture(1, p.tile.normal_texture);
-				}
-				material.setTexture(2, p.tile.flags_texture);
-			} else {
-				p.tile.applyMaterialOptions(material);
+		if (m_enable_shaders) {
+			material.MaterialType = m_shdrsrc->getShaderInfo(p.tile.shader_id).material;
+			p.tile.applyMaterialOptionsWithShaders(material);
+			if (p.tile.normal_texture) {
+				material.setTexture(1, p.tile.normal_texture);
 			}
+			material.setTexture(2, p.tile.flags_texture);
+		} else {
+			p.tile.applyMaterialOptions(material);
 		}
 
 	// Create meshbuffer
-	scene::SMeshBufferTangents *buf = new scene::SMeshBufferTangents();
+	scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 	// Set material
 	buf->Material = material;
 	// Add to mesh
-	m_mesh->addMeshBuffer(buf);
+	scene::SMesh *mesh = (scene::SMesh *)m_mesh;
+	mesh->addMeshBuffer(buf);
 	// Mesh grabbed it
 	buf->drop();
 	buf->append(&p.vertices[0], p.vertices.size(),
@@ -1335,7 +1317,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	if (m_enable_shaders) {
 		scene::IMeshManipulator* meshmanip = m_gamedef->getSceneManager()->getMeshManipulator();
-		meshmanip->recalculateTangents(m_mesh, true, false, false);
+		scene::IMesh* tangentMesh = meshmanip->createMeshWithTangents(m_mesh);
+		m_mesh->drop();
+		m_mesh = tangentMesh;
 	}
 
 	if(m_mesh)
@@ -1354,8 +1338,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_has_animation =
 		!m_crack_materials.empty() ||
 		!m_daynight_diffs.empty() ||
-		!m_animation_tiles.empty() ||
-		!m_highlighted_materials.empty();
+		!m_animation_tiles.empty();
 }
 
 MapBlockMesh::~MapBlockMesh()
@@ -1470,7 +1453,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		{
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i->first);
 			buf->setDirty(irr::scene::EBT_VERTEX);
-			video::S3DVertexTangents *vertices = (video::S3DVertexTangents *)buf->getVertices();
+			video::S3DVertex *vertices = (video::S3DVertex *)buf->getVertices();
 			for(std::map<u32, std::pair<u8, u8 > >::iterator
 					j = i->second.begin();
 					j != i->second.end(); ++j)
@@ -1481,31 +1464,6 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 			}
 		}
 		m_last_daynight_ratio = daynight_ratio;
-	}
-
-	// Node highlighting
-	if (step <= 1)
-	if (m_enable_highlighting) {
-		u8 day = m_highlight_mesh_color.getRed();
-		u8 night = m_highlight_mesh_color.getGreen();
-		video::SColor hc;
-		finalColorBlend(hc, day, night, daynight_ratio);
-		float sin_r = 0.07 * sin(1.5 * time);
-		float sin_g = 0.07 * sin(1.5 * time + irr::core::PI * 0.5);
-		float sin_b = 0.07 * sin(1.5 * time + irr::core::PI);
-		hc.setRed(core::clamp(core::round32(hc.getRed() * (0.8 + sin_r)), 0, 255));
-		hc.setGreen(core::clamp(core::round32(hc.getGreen() * (0.8 + sin_g)), 0, 255));
-		hc.setBlue(core::clamp(core::round32(hc.getBlue() * (0.8 + sin_b)), 0, 255));
-
-		for(std::list<u32>::iterator
-			i = m_highlighted_materials.begin();
-			i != m_highlighted_materials.end(); ++i)
-		{
-			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(*i);
-			video::S3DVertexTangents *vertices = (video::S3DVertexTangents*)buf->getVertices();
-			for (u32 j = 0; j < buf->getVertexCount() ;j++)
-				vertices[j].Color = hc;
-		}
 	}
 
 	return true;
@@ -1560,7 +1518,7 @@ void MeshCollector::append(const TileSpec &tile,
 	}
 
 	for (u32 i = 0; i < numVertices; i++) {
-		video::S3DVertexTangents vert(vertices[i].Pos, vertices[i].Normal,
+		video::S3DVertex vert(vertices[i].Pos, vertices[i].Normal,
 			vertices[i].Color, vertices[i].TCoords);
 		p->vertices.push_back(vert);
 	}
@@ -1606,7 +1564,7 @@ void MeshCollector::append(const TileSpec &tile,
 	}
 
 	for (u32 i = 0; i < numVertices; i++) {
-		video::S3DVertexTangents vert(vertices[i].Pos + pos, vertices[i].Normal,
+		video::S3DVertex vert(vertices[i].Pos + pos, vertices[i].Normal,
 			c, vertices[i].TCoords);
 		p->vertices.push_back(vert);
 	}

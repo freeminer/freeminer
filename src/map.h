@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "util/unordered_map_hash.h"
-#include "util/concurrent_unordered_map.h"
+#include "threading/concurrent_unordered_map.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -200,9 +200,10 @@ public:
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
-	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position = NULL);
+	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position);
 	MapNode getNode(v3POS p) { return getNodeNoEx(p); };
 	//MapNode getNodeLog(v3POS p);
+	MapNode getNodeNoEx(v3POS p);
 
 	void unspreadLight(enum LightBank bank,
 			std::map<v3s16, u8> & from_nodes,
@@ -397,7 +398,7 @@ protected:
 
 public:
 	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
-	std::mutex m_transforming_liquid_mutex;
+	Mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
 	typedef unordered_map_v3POS<int> lighting_map_t;
 	Mutex m_lighting_modified_mutex;

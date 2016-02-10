@@ -215,7 +215,7 @@ bool Database_SQLite3::deleteBlock(const v3s16 &pos)
 
 bool Database_SQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 
 	verifyDatabase();
 
@@ -244,7 +244,7 @@ bool Database_SQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 
 std::string Database_SQLite3::loadBlock(const v3s16 &pos)
 {
-	std::lock_guard<std::mutex> lock(mutex);
+	std::lock_guard<Mutex> lock(mutex);
 
 	verifyDatabase();
 

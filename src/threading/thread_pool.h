@@ -1,19 +1,17 @@
-#ifndef UTIL_THREAD_POOL_HEADER
-#define UTIL_THREAD_POOL_HEADER
+#ifndef THREADING_THREAD_POOL_HEADER
+#define THREADING_THREAD_POOL_HEADER
 
-#include <mutex>
 #include <atomic>
 #include <thread>
 #include <chrono>
 #include <vector>
-#include <condition_variable>
 #include <string>
 
 class thread_pool {
 public:
 
-	std::mutex queue_mutex;
-	std::condition_variable condition;
+	//std::mutex queue_mutex;
+	//std::condition_variable condition;
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 

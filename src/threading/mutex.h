@@ -54,6 +54,7 @@ public:
 	~Mutex();
 	void lock();
 	void unlock();
+	bool try_lock();
 
 protected:
 	Mutex(bool recursive);

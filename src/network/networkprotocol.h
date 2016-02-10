@@ -388,8 +388,8 @@ enum {
 	// f32 pitch
 	TOCLIENT_MOVE_PLAYER_PITCH,
 	// f32 yaw
-	TOCLIENT_MOVE_PLAYER_YAW,
-	TOCLIENT_MOVE_PLAYER_SPEED
+	TOCLIENT_MOVE_PLAYER_YAW
+	//TOCLIENT_MOVE_PLAYER_SPEED
 
 };
 	/*
@@ -422,6 +422,13 @@ enum {
 			string serialized item
 		}
 	*/
+
+#define TOCLIENT_PUNCH_PLAYER 0x36
+enum {
+	// v3f player speed add
+	TOCLIENT_PUNCH_PLAYER_SPEED,
+};
+
 
 #define TOCLIENT_DEATHSCREEN 0x37
 enum {

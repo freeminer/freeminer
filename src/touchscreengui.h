@@ -89,6 +89,7 @@ public:
 			int button_id, v2s32 UpperLeft, v2s32 LowerRight,
 			autohide_button_bar_dir dir, float timeout);
 
+	void clear();
 	~AutoHideButtonBar();
 
 	/* add button to be shown */

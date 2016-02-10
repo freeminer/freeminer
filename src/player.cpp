@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "content_sao.h"
 #include "filesys.h"
-#include "log.h"
+#include "log_types.h"
 #include "porting.h"  // strlcpy
 
 
@@ -65,6 +65,7 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 
 	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
+	hotbar_image_items = 0;
 
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);
@@ -352,6 +353,13 @@ void RemotePlayer::setPosition(const v3f &position)
 	Player::setPosition(position);
 	if(m_sao)
 		m_sao->setBasePosition(position);
+}
+
+
+
+void Player::addSpeed(v3f speed) {
+		auto lock = lock_unique();
+		m_speed += speed;
 }
 
 Json::Value operator<<(Json::Value &json, v3f &v) {

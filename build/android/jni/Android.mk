@@ -10,7 +10,7 @@ include $(PREBUILT_STATIC_LIBRARY)
 ifeq ($(HAVE_LEVELDB), 1)
 	include $(CLEAR_VARS)
 	LOCAL_MODULE := LevelDB
-	LOCAL_SRC_FILES := deps/leveldb/libleveldb.a
+	LOCAL_SRC_FILES := deps/leveldb/out-static/libleveldb.a
 	include $(PREBUILT_STATIC_LIBRARY)
 endif
 
@@ -175,6 +175,12 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/log_types.cpp                     \
 		jni/src/mapgen_indev.cpp                  \
 		jni/src/mapgen_math.cpp                   \
+		jni/src/threading/lock.cpp                \
+		jni/src/threading/thread_pool.cpp         \
+		jni/src/circuit.cpp                       \
+		jni/src/circuit_element_virtual.cpp       \
+		jni/src/circuit_element.cpp               \
+		jni/src/stat.cpp                          \
 		jni/src/contrib/environment.cpp           \
 		jni/src/contrib/fallingsao.cpp            \
 		jni/src/contrib/itemsao.cpp               \
@@ -320,12 +326,6 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/unittest/test_voxelalgorithms.cpp \
 		jni/src/unittest/test_voxelmanipulator.cpp \
 		jni/src/touchscreengui.cpp                \
-		jni/src/util/lock.cpp                     \
-		jni/src/util/thread_pool.cpp              \
-		jni/src/circuit.cpp                       \
-		jni/src/circuit_element_virtual.cpp       \
-		jni/src/circuit_element.cpp               \
-		jni/src/stat.cpp               \
 		jni/src/database-leveldb.cpp              \
 		jni/src/settings.cpp                      \
 		jni/src/wieldmesh.cpp                     \

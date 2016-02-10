@@ -96,9 +96,11 @@ public:
 		unsigned int max_cycle_ms = 1000;
 		while(!stopRequested()) {
 			try {
-				//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
-				int res = m_server->getEnv().getMap().transformLiquids(m_server, max_cycle_ms);
-				std::this_thread::sleep_for(std::chrono::milliseconds(std::max(300 - res, 1)));
+				auto time_start = porting::getTimeMs();
+				m_server->getEnv().getMap().transformLiquids(m_server, max_cycle_ms);
+				auto time_spend = porting::getTimeMs() - time_start;
+				std::this_thread::sleep_for(std::chrono::milliseconds(time_spend > 300 ? 1 : 300 - time_spend));
+
 #ifdef NDEBUG
 			} catch (BaseException &e) {
 				errorstream << "Liquid: exception: " << e.what() << std::endl;
@@ -308,3 +310,9 @@ void Server::maintenance_end() {
 	m_emerge->startThreads();
 	actionstream << "Server: Starting maintenance: ended." << std::endl;
 };
+
+
+#if MINETEST_PROTO
+void Server::SendPunchPlayer(u16 peer_id, v3f speed) { }
+#endif
+

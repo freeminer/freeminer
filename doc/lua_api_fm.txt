@@ -129,3 +129,9 @@ core.stat_add(key, playername, value=1)
 	^ If defined, node becomes element of circuit
 	^ Called when block changes it's input state from non zero to zero
 
+
+### Functions additions:
+
+core.hud_set_hotbar_image(self, name, items)
+added optional param: items=1 mean gui_hotbar.png contains only one cell
+

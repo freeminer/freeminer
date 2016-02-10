@@ -296,7 +296,7 @@ void Connection::serve(Address bind_addr)
 	address.port = bind_addr.getPort(); // fmtodo
 
 	m_enet_host = enet_host_create(&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
-	if (m_enet_host == NULL) {
+	if (!m_enet_host) {
 		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
 		putEvent(ev);
 	}
@@ -316,6 +316,11 @@ void Connection::connect(Address addr)
 	}
 
 	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
+	if (!m_enet_host) {
+		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
+		putEvent(ev);
+		return;
+	}
 	ENetAddress address;
 #if defined(ENET_IPV6)
 	if (!addr.isIPv6())

@@ -32,7 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "noise.h"
 #include <cctype>
 #include <algorithm>
-#include <mutex>
 
 static Settings main_settings;
 Settings *g_settings = &main_settings;

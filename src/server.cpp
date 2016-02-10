@@ -72,7 +72,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iomanip>
 #include "msgpack_fix.h"
 #include <chrono>
-#include "util/thread_pool.h"
+#include "threading/thread_pool.h"
 #include "key_value_storage.h"
 #include "database.h"
 
@@ -1358,7 +1358,9 @@ u16 Server::Receive(int ms)
 	} catch (msgpack::v1::type_error &e) {
 		verbosestream<<"Server: recieve: msgpack:"<< e.what() <<std::endl;
 	} catch (std::exception &e) {
+#if !MINETEST_PROTO
 		infostream<<"Server: recieve: exception:"<< e.what() <<std::endl;
+#endif
 	}
 	return received;
 }
@@ -3444,13 +3446,14 @@ s32 Server::hudGetHotbarItemcount(Player *player)
 	return player->getHotbarItemcount();
 }
 
-void Server::hudSetHotbarImage(Player *player, std::string name)
+void Server::hudSetHotbarImage(Player *player, std::string name, int items)
 {
 	if (!player)
 		return;
 
 	player->setHotbarImage(name);
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE, name);
+	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_IMAGE_ITEMS, std::string() + to_string(items));
 }
 
 std::string Server::hudGetHotbarImage(Player *player)
@@ -3760,27 +3763,39 @@ v3f Server::findSpawnPos()
 		return nodeposf * BS;
 	}
 
+//todo: remove
 	s16 water_level = map.getWaterLevel();
 	s16 vertical_spawn_range = g_settings->getS16("vertical_spawn_range");
+//============
 	auto cache_block_before_spawn = g_settings->getBool("cache_block_before_spawn");
+
 	bool is_good = false;
 
 	// Try to find a good place a few times
-	for(s32 i = 0; i < 1000 && !is_good; i++) {
+	for(s32 i = 0; i < 4000 && !is_good; i++) {
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(
 				-range + (myrand() % (range * 2)),
 				-range + (myrand() % (range * 2)));
 
+// FM version:
 		// Get ground height at point
-		s16 groundheight = map.findGroundLevel(nodepos2d, cache_block_before_spawn);
+		s16 spawn_level = map.findGroundLevel(nodepos2d, cache_block_before_spawn);
 		// Don't go underwater or to high places
-		if (groundheight <= water_level ||
-				groundheight > water_level + vertical_spawn_range)
+		if (spawn_level <= water_level ||
+				spawn_level > water_level + vertical_spawn_range)
+
+/*MT :
+		// Get spawn level at point
+		s16 spawn_level = m_emerge->getSpawnLevelAtPoint(nodepos2d);
+		// Continue if MAX_MAP_GENERATION_LIMIT was returned by
+		// the mapgen to signify an unsuitable spawn position
+		if (spawn_level == MAX_MAP_GENERATION_LIMIT)
+*/
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, groundheight, nodepos2d.Y);
+		v3s16 nodepos(nodepos2d.X, spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
 		for (s32 i = 0; i < 10; i++) {

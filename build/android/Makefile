@@ -118,7 +118,7 @@ endif
 ASSETS_TIMESTAMP = deps/assets_timestamp
 
 LEVELDB_DIR = $(ROOT)/deps/leveldb/
-LEVELDB_LIB = $(LEVELDB_DIR)libleveldb.a
+LEVELDB_LIB = $(LEVELDB_DIR)/out-static/libleveldb.a
 LEVELDB_TIMESTAMP = $(LEVELDB_DIR)/timestamp
 LEVELDB_TIMESTAMP_INT = $(ROOT)/deps/leveldb_timestamp
 LEVELDB_URL_GIT = https://github.com/google/leveldb
@@ -404,7 +404,9 @@ leveldb_download :
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
 		git clone ${LEVELDB_URL_GIT} || exit 1;                                \
+		curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
 	fi
+
 
 leveldb : $(LEVELDB_LIB)
 
@@ -995,7 +997,7 @@ $(LUAJIT_LIB): $(LUAJIT_TIMESTAMP)
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}"; \
 	export CROSS=${CROSS_PREFIX}; \
 	export TARGET_FLAGS="${TARGET_CFLAGS_ADDON}"; \
-	export TARGET_LDFLAGS="-lm_hard ${TARGET_LDFLAGS_ADDON}"; \
+	export TARGET_LDFLAGS="${TARGET_LDFLAGS_ADDON}"; \
 	$(MAKE) -j${PARALLEL} HOST_CC="gcc -m32" BUILDMODE=static; \
 	touch ${LUAJIT_TIMESTAMP}; \
 	touch ${LUAJIT_TIMESTAMP_INT}; \
@@ -1012,7 +1014,7 @@ endif
 
 
 locale:
-	mkdir -p cmake && cd cmake && cmake ../../.. -DNO_BUILD=1 && make translations
+	-mkdir -p cmake && cd cmake && cmake ../../.. -DBUILD_SERVER=0 -DNO_BUILD=1 && make translations
 
 clean_locale:
 	rm -rf cmake

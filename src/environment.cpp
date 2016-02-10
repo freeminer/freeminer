@@ -411,6 +411,8 @@ ServerEnvironment::~ServerEnvironment()
 	// Convert all objects to static and delete the active objects
 	deactivateFarObjects(true);
 	removeRemovedObjects(50000);
+	if (!objects_to_delete.empty())
+		removeRemovedObjects(50000);
 
 /*
 	for (auto & o : objects_to_delete) {
@@ -547,6 +549,8 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 
 	if(!string_allowed(playername, PLAYERNAME_ALLOWED_CHARS) || !playername.size()) {
 		infostream<<"Not loading player with invalid name: "<<playername<<std::endl;
+		if (newplayer)
+			delete player;
 		return nullptr;
 	}
 
@@ -556,12 +560,16 @@ Player * ServerEnvironment::loadPlayer(const std::string &playername)
 		// Open file and deserialize
 		std::ifstream is(path.c_str(), std::ios_base::binary);
 		if (!is.good()) {
+			if (newplayer)
+				delete player;
 			return NULL;
 		}
 		try {
 		player->deSerialize(is, path);
 		} catch (SerializationError e) {
 			errorstream<<e.what()<<std::endl;
+			if (newplayer)
+				delete player;
 			return nullptr;
 		}
 		is.close();
@@ -708,7 +716,7 @@ void ServerEnvironment::loadMeta()
 
 		//infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
 		{
-			std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+			std::lock_guard<Mutex> lock(block->abm_triggers_mutex);
 			if (block->abm_triggers)
 				block->abm_triggers->clear();
 		}
@@ -808,7 +816,7 @@ void ServerEnvironment::loadMeta()
 				}
 neighbor_found:
 
-				std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+				std::lock_guard<Mutex> lock(block->abm_triggers_mutex);
 
 				if (!block->abm_triggers)
 					block->abm_triggers = std::unique_ptr<MapBlock::abm_triggers_type>(new MapBlock::abm_triggers_type); // c++14: make_unique here
@@ -838,7 +846,7 @@ neighbor_found:
 void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate) {
 		ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
-		std::unique_lock<std::mutex> lock(abm_triggers_mutex, std::try_to_lock);
+		std::unique_lock<Mutex> lock(abm_triggers_mutex, std::try_to_lock);
 		if (!lock.owns_lock())
 			return;
 
@@ -923,7 +931,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				}
 		}
 		if (abm_triggers->empty())
-			abm_triggers.release();
+			abm_triggers.reset();
 }
 
 void ServerEnvironment::analyzeBlock(MapBlock * block) {
@@ -2328,7 +2336,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		u16 id = obj->getId();
 		v3f objectpos = obj->getBasePosition();
 
-		if (obj->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		if (!force_delete && obj->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
 			//infostream<<"deactivating far object player id=" <<id<< std::endl;
 			continue;
 		}

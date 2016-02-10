@@ -139,7 +139,7 @@ NEXT_LIQUID:
 			u8 i = liquid_explore_map[e];
 			NodeNeighbor & nb = neighbors[i];
 			nb.pos = p0 + liquid_flow_dirs[i];
-			nb.node = getNodeNoEx(neighbors[i].pos);
+			nb.node = getNode(neighbors[i].pos);
 			nb.content = nb.node.getContent();
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
@@ -741,7 +741,7 @@ NEXT_LIQUID:
 	{
 		//TimeTaker timer13("transformLiquidsReal() reflow");
 		//auto lock = m_transforming_liquid.lock_unique_rec();
-		std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+		std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 
 		//m_transforming_liquid.insert(must_reflow.begin(), must_reflow.end());
 		for (const auto & p : must_reflow)

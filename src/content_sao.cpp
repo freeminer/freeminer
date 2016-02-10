@@ -1134,14 +1134,12 @@ void PlayerSAO::setPitch(float pitch)
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
-
 void PlayerSAO::addSpeed(v3f speed)
 {
 	if (!m_player)
 		return;
-	m_player->setSpeed(m_player->getSpeed() + speed);
-
-	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
+	m_player->addSpeed(speed);
+	((Server*)m_env->getGameDef())->SendPunchPlayer(m_peer_id, speed);
 }
 
 int PlayerSAO::punch(v3f dir,
@@ -1195,7 +1193,8 @@ int PlayerSAO::punch(v3f dir,
 		}
 	}
 
-	addSpeed(dir*hitparams.hp);
+	v3f punch = dir * 5 * BS;
+	addSpeed(punch);
 
 	actionstream << "Player " << m_player->getName() << " punched by "
 			<< punchername;
@@ -1249,6 +1248,8 @@ void PlayerSAO::setHP(s16 hp)
 		return;
 	}
 
+	if (!m_player)
+		return;
 	m_player->hp = hp;
 
 	if (oldhp > hp)

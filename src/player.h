@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h" // BS
 #include "threading/mutex.h"
 #include <list>
-#include "util/lock.h"
+#include "threading/lock.h"
 #include "json/json.h"
 
 #define PLAYERNAME_SIZE 20
@@ -126,6 +126,8 @@ public:
 		auto lock = lock_unique();
 		m_speed = speed;
 	}
+
+	void addSpeed(v3f speed);
 
 	void accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery=0);
 	void accelerateVertical(v3f target_speed, f32 max_increase);
@@ -238,21 +240,21 @@ public:
 
 	void setHotbarImage(const std::string &name)
 	{
-		hud_hotbar_image = name;
+		hotbar_image = name;
 	}
 
 	std::string getHotbarImage()
 	{
-		return hud_hotbar_image;
+		return hotbar_image;
 	}
 
 	void setHotbarSelectedImage(const std::string &name)
 	{
-		hud_hotbar_selected_image = name;
+		hotbar_selected_image = name;
 	}
 
 	std::string getHotbarSelectedImage() {
-		return hud_hotbar_selected_image;
+		return hotbar_selected_image;
 	}
 
 	void setSky(const video::SColor &bgcolor, const std::string &type,
@@ -380,10 +382,10 @@ public:
 	std::string inventory_formspec;
 
 	PlayerControl control;
-	std::mutex control_mutex;
+	Mutex control_mutex;
 	PlayerControl getPlayerControl()
 	{
-		std::lock_guard<std::mutex> lock(control_mutex);
+		std::lock_guard<Mutex> lock(control_mutex);
 		return control;
 	}
 
@@ -400,8 +402,9 @@ public:
 
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
-	std::string hud_hotbar_image;
-	std::string hud_hotbar_selected_image;
+	std::string hotbar_image;
+	int hotbar_image_items;
+	std::string hotbar_selected_image;
 protected:
 	IGameDef *m_gamedef;
 

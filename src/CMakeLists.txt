@@ -77,7 +77,7 @@ endif()
 set(CMAKE_REQUIRED_FLAGS "")
 
 if(MSVC)
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 0)
+	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
 else()
 	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
 endif()
@@ -225,7 +225,7 @@ mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
 find_package(MsgPack REQUIRED)
 
-if(NOT (BUILD_CLIENT OR BUILD_SERVER))
+if(NOT (BUILD_CLIENT OR BUILD_SERVER OR NO_BUILD))
 	message(WARNING "Neither BUILD_CLIENT nor BUILD_SERVER is set! Setting BUILD_SERVER=true")
 	set(BUILD_SERVER TRUE)
 endif()
@@ -529,6 +529,10 @@ if(WIN32)
 		set(PLATFORM_LIBS winmm.lib ${PLATFORM_LIBS})
 	endif()
 	set(PLATFORM_LIBS ws2_32.lib shlwapi.lib ${PLATFORM_LIBS})
+
+	if(MSVC) # vs2015
+		set(PLATFORM_LIBS winmm.lib ${PLATFORM_LIBS})
+	endif()
 
 	# Zlib stuff
 	set(ZLIB_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/../../zlib/zlib-1.2.5"

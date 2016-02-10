@@ -19,7 +19,7 @@ recursive_lock<GUARD, MUTEX>::recursive_lock(MUTEX & mtx, std::atomic<std::size_
 	if(thread_me != thread_id) {
 		if (try_lock) {
 			SCOPE_PROFILE("try_lock");
-			lock = new GUARD(mtx, TRY_TO_LOCK);
+			lock = new GUARD(mtx, try_to_lock);
 			if (lock->owns_lock()) {
 				thread_id = thread_me;
 				return;
@@ -121,7 +121,7 @@ std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, s
 }
 
 
-template class recursive_lock<std::unique_lock<std::mutex>>;
+template class recursive_lock<std::unique_lock<use_mutex>>;
 template class locker<>;
 #if LOCK_TWO
 template class recursive_lock<try_shared_lock, try_shared_mutex>;

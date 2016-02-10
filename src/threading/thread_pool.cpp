@@ -1,6 +1,6 @@
-#include <util/thread_pool.h>
-#include <log.h>
-#include <porting.h>
+#include "thread_pool.h"
+#include "log.h"
+#include "porting.h"
 
 thread_pool::thread_pool(const std::string &name) :
 	m_name(name) {

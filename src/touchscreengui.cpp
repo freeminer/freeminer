@@ -156,6 +156,7 @@ void AutoHideButtonBar::init(ISimpleTextureSource* tsrc,
 	m_lower_right = LowerRight;
 
 	/* init settings bar */
+	clear();
 
 	irr::core::rect<int> current_button = rect<s32>(UpperLeft.X, UpperLeft.Y,
 			LowerRight.X, LowerRight.Y);
@@ -176,12 +177,24 @@ void AutoHideButtonBar::init(ISimpleTextureSource* tsrc,
 	m_initialized = true;
 }
 
-AutoHideButtonBar::~AutoHideButtonBar()
+void AutoHideButtonBar::clear()
 {
 	if (m_starter.guibutton) {
 	m_starter.guibutton->setVisible(false);
 	m_starter.guibutton->drop();
 	}
+
+	for (auto i : m_buttons) {
+		i->guibutton->drop();
+		delete i;
+	}
+	m_buttons.clear();
+
+}
+
+AutoHideButtonBar::~AutoHideButtonBar()
+{
+	clear();
 }
 
 void AutoHideButtonBar::addButton(touch_gui_button_id button_id,
