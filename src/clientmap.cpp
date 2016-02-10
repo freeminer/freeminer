@@ -531,7 +531,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	v3f camera_position = m_camera_position;
 	f32 camera_fov = m_camera_fov * 1.1;
-	v3f camera_direction = m_camera_direction;
+	//v3f camera_direction = m_camera_direction;
 
 	/*
 		Get all blocks and draw all visible ones
