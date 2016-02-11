@@ -1,0 +1,14 @@
+diff --git a/source/Irrlicht/os.cpp b/source/Irrlicht/os.cpp
+index e0db8d8..54a88de 100644
+--- a/source/Irrlicht/os.cpp
++++ b/source/Irrlicht/os.cpp
+@@ -143,6 +143,9 @@ namespace os
+ // ----------------------------------------------------------------
+ 
+ #include <android/log.h>
++#include <sys/time.h>
++#include <time.h>
++
+ 
+ namespace irr
+ {
