@@ -358,7 +358,7 @@ void RemotePlayer::setPosition(const v3f &position)
 
 
 void Player::addSpeed(v3f speed) {
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_speed += speed;
 }
 
