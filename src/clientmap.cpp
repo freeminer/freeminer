@@ -80,7 +80,7 @@ ClientMap::ClientMap(
 	m_drawlist_current(0)
 {
 	m_drawlist_last = 0;
-	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
+	m_box = aabb3f(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
 
 	/* TODO: Add a callback function so these can be updated when a setting

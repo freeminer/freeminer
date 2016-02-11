@@ -214,7 +214,7 @@ public:
 		return m_name;
 	}
 
-	core::aabbox3d<f32> getCollisionbox()
+	aabb3f getCollisionbox()
 	{
 		return m_collisionbox;
 	}
@@ -415,7 +415,7 @@ public:
 	f32 m_yaw;
 	v3f m_speed;
 	v3f m_position;
-	core::aabbox3d<f32> m_collisionbox;
+	aabb3f m_collisionbox;
 
 	std::vector<HudElement *> hud;
 
