@@ -3318,12 +3318,12 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	DSTACK(FUNCTION_NAME);
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
+	MapBlock *block = nullptr;
+	try {
 	auto blob = dbase->loadBlock(p3d);
 	if(!blob.length())
 		return nullptr;
 
-	MapBlock *block = nullptr;
-	try {
 		std::istringstream is(blob, std::ios_base::binary);
 
 		u8 version = SER_FMT_VER_INVALID;
