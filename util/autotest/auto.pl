@@ -293,6 +293,7 @@ our $tasks = {
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1,}, 'build_normal',],
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
+    bot => [{-no_build_server => 1,}, 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
     build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],

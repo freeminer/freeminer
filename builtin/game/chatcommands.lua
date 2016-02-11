@@ -850,14 +850,25 @@ core.register_chatcommand("kick", {
 })
 
 core.register_chatcommand("clearobjects", {
+	params = "[full|quick]",
 	description = "clear all objects in world",
 	privs = {server=true},
 	func = function(name, param)
-		core.log("action", name .. " clears all objects.")
+		options = {}
+		if param == "" or param == "full" then
+			options.mode = "full"
+		elseif param == "quick" then
+			options.mode = "quick"
+		else
+			return false, "Invalid usage, see /help clearobjects."
+		end
+
+		core.log("action", name .. " clears all objects ("
+				.. options.mode .. " mode).")
 		core.chat_send_all("Clearing all objects.  This may take long."
 				.. "  You may experience a timeout.  (by "
 				.. name .. ")")
-		core.clear_objects()
+		core.clear_objects(options)
 		core.log("action", "Object clearing done.")
 		core.chat_send_all("*** Cleared all objects.")
 	end,
