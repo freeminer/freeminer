@@ -59,7 +59,7 @@ no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
 use feature qw(say);
 use Data::Dumper;
-use JSON;
+#use JSON;
 use Cwd;
 use POSIX ();
 
@@ -533,6 +533,14 @@ sub array (@) {
     wantarray ? @_ : \@_;
 }
 
+sub json (@){
+    local *Data::Dumper::qquote = sub {
+        $_[0] =~ s/\\/\\\\/g, s/"/\\"/g for $_[0];
+        return ( '"' . $_[0] . '"' );
+    };
+    return \( Data::Dumper->new( \@_ )->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump() );
+}
+
 sub options_make(;$$) {
     my ($mm, $m) = @_;
     my ($rm, $rmm);
@@ -549,7 +557,8 @@ sub options_make(;$$) {
                 next;
             }
             next if !ref $rm->{$k};
-            ($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
+            #($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
+            ($rm->{$k} = ${json($rm->{$k})}) =~ s/"/$config->{run_escape}\\"/g;    #"
         }
     }
 
