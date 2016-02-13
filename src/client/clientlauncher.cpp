@@ -81,6 +81,7 @@ ClientLauncher::~ClientLauncher()
 
 	if (device) {
 		device->closeDevice();
+		device->run();
 		device->drop();
 	}
 }
