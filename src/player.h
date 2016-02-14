@@ -129,9 +129,6 @@ public:
 
 	void addSpeed(v3f speed);
 
-	void accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery=0);
-	void accelerateVertical(v3f target_speed, f32 max_increase);
-
 	v3f getPosition()
 	{
 		auto lock = lock_shared_rec();
