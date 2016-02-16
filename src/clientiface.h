@@ -347,7 +347,6 @@ public:
 
 	/*
 		List of active objects that the client knows of.
-		Value is dummy.
 	*/
 	maybe_concurrent_unordered_map<u16, bool> m_known_objects;
 
@@ -402,7 +401,7 @@ private:
 		- A block is cleared from here when client says it has
 		  deleted it from it's memory
 
-		Key is position, value is dummy.
+		List of block positions.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
