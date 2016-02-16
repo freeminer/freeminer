@@ -253,6 +253,9 @@ Client::Client(
 
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_shaders  = g_settings->getBool("enable_shaders");
+	m_cache_use_tangent_vertices = m_cache_enable_shaders && (
+		g_settings->getBool("enable_bumpmapping") || 
+		g_settings->getBool("enable_parallax_occlusion"));
 }
 
 void Client::Stop()
@@ -1655,7 +1658,9 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 		Create a task to update the mesh of the block
 	*/
 	auto & draw_control = m_env.getClientMap().getControl();
-	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders, m_env.getMap(), draw_control));
+	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders,
+		m_cache_use_tangent_vertices,
+		m_env.getMap(), draw_control));
 
 	{
 		//TimeTaker timer("data fill");
