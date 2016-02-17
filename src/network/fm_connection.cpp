@@ -93,6 +93,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 		bool ipv6, PeerHandler *peerhandler):
+	thread_pool("Connection", 90),
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
@@ -122,15 +123,15 @@ Connection::~Connection()
 
 void * Connection::run()
 {
-	reg("Connection");
-
 	while(!stopRequested())
 	{
+		EXCEPTION_HANDLER_BEGIN;
 		while(!m_command_queue.empty()){
 			ConnectionCommand c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
 		receive();
+		EXCEPTION_HANDLER_END;
 	}
 
 	disconnect();

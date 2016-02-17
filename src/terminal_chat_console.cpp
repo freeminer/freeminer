@@ -103,12 +103,13 @@ void *TerminalChatConsole::run()
 		CursesInitHelper helper(this);
 
 		while (!stopRequested()) {
-
+			EXCEPTION_HANDLER_BEGIN;
 			int ch = getch();
 			if (stopRequested())
 				break;
 
 			step(ch);
+			EXCEPTION_HANDLER_END;
 		}
 	}
 

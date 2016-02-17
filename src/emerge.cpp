@@ -774,7 +774,7 @@ void *EmergeThread::run()
 		debug_stacks_print();
 		m_server->setAsyncFatalError(err.str());
 	} catch (std::exception &e) {
-		errorstream << "emerge: exception at " << pos << " : " << e.what() << std::endl;
+		errorstream << m_name << ": exception at " << pos << " : " << e.what() << std::endl;
 	}
 	}
 

@@ -159,7 +159,7 @@ void MeshUpdateThread::doUpdate()
 		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
 #endif
 
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 		} catch (BaseException &e) {
 			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
 		} catch(std::exception &e) {

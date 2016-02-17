@@ -2492,7 +2492,7 @@ bool Game::connectToServer(const std::string &playername,
 		errorstream << "Connection error: "<< e.what() << std::endl;
 		return false;
 
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 	} catch (std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
 		errorstream << "Connection error: "<< e.what() << std::endl;

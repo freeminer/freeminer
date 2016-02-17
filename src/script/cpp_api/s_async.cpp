@@ -260,6 +260,7 @@ void* AsyncWorkerThread::run()
 
 	// Main loop
 	while (!stopRequested()) {
+		EXCEPTION_HANDLER_BEGIN;
 		// Wait for job
 		LuaJobInfo toProcess = jobDispatcher->getJob();
 
@@ -297,6 +298,7 @@ void* AsyncWorkerThread::run()
 
 		// Put job result
 		jobDispatcher->putJobResult(toProcess);
+		EXCEPTION_HANDLER_END;
 	}
 
 	lua_pop(L, 2);  // Pop core and error handler

@@ -646,7 +646,8 @@ protected:
 		FATAL_ERROR_IF(!m_all_ongoing.empty(), "Expected empty");
 
 		while (!stopRequested()) {
-			BEGIN_DEBUG_EXCEPTION_HANDLER
+			//BEGIN_DEBUG_EXCEPTION_HANDLER
+			EXCEPTION_HANDLER_BEGIN;
 
 			/*
 				Handle new async requests
@@ -694,7 +695,8 @@ protected:
 			else
 				waitForIO(100);
 
-			END_DEBUG_EXCEPTION_HANDLER
+			//END_DEBUG_EXCEPTION_HANDLER
+			EXCEPTION_HANDLER_END;
 		}
 
 		// Call curl_multi_remove_handle and cleanup easy handles

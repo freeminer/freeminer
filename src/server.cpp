@@ -97,6 +97,7 @@ class ServerThread : public thread_pool
 public:
 
 	ServerThread(Server *server):
+		thread_pool("Server", 40),
 		m_server(server)
 	{}
 
@@ -108,8 +109,6 @@ private:
 
 void *ServerThread::run()
 {
-	reg("Server", 40);
-
 	DSTACK(FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
@@ -148,13 +147,13 @@ void *ServerThread::run()
 		} catch (ClientNotFoundException &e) {
 		} catch (con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 		} catch (LuaError &e) {
 			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
 		} catch (std::exception &e) {
-			errorstream<<"ServerThread: exception: "<<e.what()<<std::endl;
+			errorstream << m_name << ": exception: "<<e.what()<<std::endl;
 		} catch (...) {
-			errorstream<<"ServerThread: Ooops..."<<std::endl;
+			errorstream << m_name << ": Ooops..."<<std::endl;
 #endif
 		}
 	}
