@@ -567,7 +567,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(!lighted_nodes.empty() && porting::getTimeMs() <= end_ms) { // maybe 32 too small
+	if(!lighted_nodes.empty() && (!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
 /*
 		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()
