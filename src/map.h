@@ -361,6 +361,7 @@ public:
 	void deleteBlock(MapBlockP block);
 	std::map<MapBlockP, int> * m_blocks_delete;
 	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
+	unsigned int m_blocks_delete_time = 0;
 	//void getBlocks(std::list<MapBlock*> &dest);
 
 #if !ENABLE_THREADS
