@@ -504,8 +504,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     up => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
-        sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop}
-          and sy qq{git submodule update --init --recursive};
+        sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop};
+        sy qq{git submodule update --init --recursive};
         chdir $cwd;
         return 0;
     },

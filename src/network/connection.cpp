@@ -1339,7 +1339,7 @@ void * ConnectionSendThread::run()
 		/* send non reliable packets */
 		sendPackets(dtime);
 
-		EXCEPTION_HANDLER_BEGIN;
+		EXCEPTION_HANDLER_END;
 	}
 
 	PROFILE(g_profiler->remove(ThreadIdentifier.str()));
