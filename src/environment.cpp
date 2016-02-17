@@ -2067,12 +2067,14 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 	TimeTaker timer("ServerEnvironment::removeRemovedObjects()");
 	//std::list<u16> objects_to_remove;
 
-	for (auto & o : objects_to_delete) {
-		if (!o)
-			continue;
-		delete o;
+	{
+		RecursiveMutexAutoLock testscriptlock(getScriptIface()->m_luastackmutex, std::try_to_lock);
+		if (testscriptlock.owns_lock()) {
+			for (auto & o : objects_to_delete)
+				delete o;
+			objects_to_delete.clear();
+		}
 	}
-	objects_to_delete.clear();
 
 	std::vector<ServerActiveObject*> objects;
 	{
