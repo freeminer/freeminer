@@ -787,6 +787,14 @@ void Camera::drawNametags()
 Nametag *Camera::addNametag(scene::ISceneNode *parent_node,
 		std::string nametag_text, video::SColor nametag_color)
 {
+
+	auto nametag_text_wide = utf8_to_wide(nametag_text);
+	if (nametag_text_wide.size() > 15) {
+		nametag_text_wide.resize(15);
+		nametag_text_wide += L".";
+		nametag_text = wide_to_utf8(nametag_text_wide);
+	}
+
 	Nametag *nametag = new Nametag(parent_node, nametag_text, nametag_color);
 	m_nametags.push_back(nametag);
 	return nametag;
