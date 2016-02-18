@@ -29,6 +29,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "object_properties.h"
 #include "itemgroup.h"
 
+class Camera;
+struct Nametag;
+
 /*
 	SmoothTranslator
 */
@@ -68,13 +71,15 @@ private:
 	//
 	scene::ISceneManager *m_smgr;
 	IrrlichtDevice *m_irr;
+	Camera* m_camera;
+	IGameDef *m_gamedef;
 	aabb3f m_selection_box;
 	scene::IMeshSceneNode *m_meshnode;
 	scene::IAnimatedMeshSceneNode *m_animated_meshnode;
 	WieldMeshSceneNode *m_wield_meshnode;
 	scene::IBillboardSceneNode *m_spritenode;
-	scene::ITextSceneNode* m_textnode;
 	scene::IShadowVolumeSceneNode* m_shadownode;
+	Nametag* m_nametag;
 	v3f m_position;
 	v3f m_velocity;
 	v3f m_acceleration;

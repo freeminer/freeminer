@@ -60,6 +60,7 @@ class Server;
 class Mapper;
 struct MinimapMapblock;
 class ChatBackend;
+class Camera;
 
 /*
 struct QueuedMeshUpdate
@@ -514,6 +515,12 @@ public:
 	Mapper* getMapper ()
 	{ return m_mapper; }
 
+	void setCamera(Camera* camera)
+	{ m_camera = camera; }
+
+	Camera* getCamera ()
+	{ return m_camera; }
+
 	bool isMinimapDisabledByServer()
 	{ return m_minimap_disabled_by_server; }
 
@@ -600,6 +607,7 @@ public:
 	con::Connection m_con;
 private:
 	IrrlichtDevice *m_device;
+	Camera *m_camera;
 	Mapper *m_mapper;
 	bool m_minimap_disabled_by_server;
 	// Server serialization version
