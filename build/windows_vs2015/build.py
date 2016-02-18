@@ -329,11 +329,12 @@ def main():
 	print("=> Building Freeminer")
 	# multi-process build
 	os.environ["CL"] = "/MP"
-	if os.path.exists("project"):
-		shutil.rmtree("project")
+	#if os.path.exists("project"):
+	#	shutil.rmtree("project")
 	if os.path.exists("install_tmp"):
 		shutil.rmtree("install_tmp")
-	os.mkdir("project")
+	if not os.path.exists("project"):
+		os.mkdir("project")
 	os.chdir("project")
 	cmake_string = r"""
 		-DCMAKE_BUILD_TYPE={build_type}
