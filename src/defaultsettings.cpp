@@ -255,7 +255,7 @@ void fm_set_default_settings(Settings *settings) {
 	}
 
 	settings->setDefault("minimap_shape_round", "false");
-
+	settings->setDefault("mainmenu_last_selected_world", "1");
 
 
 #ifdef __ANDROID__

@@ -1223,6 +1223,8 @@ chat_buffer_size () int 6
 #    Selection box border color (R,G,B)
 selectionbox_color () string (0,0,0)
 
+#Android only: use better keyboard. glitchy on <4.4 versions
+android_keyboard () enum 0 0,1,2
 
 [*Server]
 

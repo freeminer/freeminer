@@ -35,7 +35,7 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-BUILD_NUMBER = 58
+BUILD_NUMBER = 60
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
@@ -822,7 +822,9 @@ assets : $(ASSETS_TIMESTAMP) locale
 	find . -type f -path "*.gitignore" -exec rm -rf {} \; ;                    \
 	find . \( -name "lucida_sans_*" -o -name "mono_dejavu_sans_*" -o -name "README.txt" -o -name "game_api.txt" -o -name ".git*" \) -exec rm {} \; ; \
 	ls -R | grep ":$$" | sed -e 's/:$$//' -e 's/\.//' -e 's/^\///' > "index.txt"; \
-	find freeminer >"filelist.txt"; \
+	#find freeminer >"filelist.txt"; \
+	find freeminer ! -path '*/games/*' > filelist.txt; \
+	find freeminer -path '*/games/*' >> filelist.txt; \
 	cp ${ROOT}/${ASSETS_TIMESTAMP} ${ROOT}/${ASSETS_TIMESTAMP}.old;            \
 	else                                                                       \
 		echo "nothing to be done for assets";                                  \

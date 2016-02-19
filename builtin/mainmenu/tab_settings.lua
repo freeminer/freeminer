@@ -359,7 +359,7 @@ end
 
 local function create_change_setting_formspec(dialogdata)
 	local setting = settings[selected_setting]
-	local formspec = "size[10,5.2,true]" ..
+	local formspec = "size[9,5,true]" ..
 			"button[5,4.5;2,1;btn_done;" .. fgettext("Save") .. "]" ..
 			"button[3,4.5;2,1;btn_cancel;" .. fgettext("Cancel") .. "]" ..
 			"tablecolumns[color;text]" ..
@@ -442,7 +442,7 @@ local function create_change_setting_formspec(dialogdata)
 
 	else
 		-- TODO: fancy input for float, int, flags, noise_params, v3f
-		local width = 10
+		local width = 8.5
 		local text = get_current_value(setting)
 		if dialogdata.error_message then
 			formspec = formspec .. "tablecolumns[color;text]" ..
