@@ -86,86 +86,87 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	*/
 	removeChildren();
 
+	const static double gui_scaling = g_settings->getFloat("hud_scaling"); // gui_scaling here or get from pixel ratio
 	/*
 		Calculate new sizes and positions
 	*/
 	core::rect<s32> rect(
-			screensize.X/2 - 580/2,
-			screensize.Y/2 - 300/2,
-			screensize.X/2 + 580/2,
-			screensize.Y/2 + 300/2
+			screensize.X/2 - 580/2/gui_scaling,
+			screensize.Y/2 - 300/2/gui_scaling,
+			screensize.X/2 + 580/2/gui_scaling,
+			screensize.Y/2 + 300/2/gui_scaling
 	);
 
 	DesiredRect = rect;
 	recalculateAbsolutePosition(false);
 
 	v2s32 size = rect.getSize();
-	v2s32 topleft_client(40, 0);
+	v2s32 topleft_client(40/gui_scaling, 0);
 
 	const wchar_t *text;
 
 	/*
 		Add stuff
 	*/
-	s32 ypos = 50;
+	s32 ypos = 50/gui_scaling;
 	{
-		core::rect<s32> rect(0, 0, 150, 20);
+		core::rect<s32> rect(0, 0, 150/gui_scaling, 20/gui_scaling);
 		rect += topleft_client + v2s32(25, ypos+6);
 		text = wgettext("Old Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
-		core::rect<s32> rect(0, 0, 230, 30);
+		core::rect<s32> rect(0, 0, 230/gui_scaling, 30/gui_scaling);
 		rect += topleft_client + v2s32(160, ypos);
 		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_oldPassword);
 		Environment->setFocus(e);
 		e->setPasswordBox(true);
 	}
-	ypos += 50;
+	ypos += 50/gui_scaling;
 	{
-		core::rect<s32> rect(0, 0, 150, 20);
+		core::rect<s32> rect(0, 0, 150/gui_scaling, 20/gui_scaling);
 		rect += topleft_client + v2s32(25, ypos+6);
 		text = wgettext("New Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
-		core::rect<s32> rect(0, 0, 230, 30);
+		core::rect<s32> rect(0, 0, 230/gui_scaling, 30/gui_scaling);
 		rect += topleft_client + v2s32(160, ypos);
 		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword1);
 		e->setPasswordBox(true);
 	}
-	ypos += 50;
+	ypos += 50/gui_scaling;
 	{
-		core::rect<s32> rect(0, 0, 150, 20);
+		core::rect<s32> rect(0, 0, 150/gui_scaling, 20/gui_scaling);
 		rect += topleft_client + v2s32(25, ypos+6);
 		text = wgettext("Confirm Password");
 		Environment->addStaticText(text, rect, false, true, this, -1);
 		delete[] text;
 	}
 	{
-		core::rect<s32> rect(0, 0, 230, 30);
+		core::rect<s32> rect(0, 0, 230/gui_scaling, 30/gui_scaling);
 		rect += topleft_client + v2s32(160, ypos);
 		gui::IGUIEditBox *e =
 		Environment->addEditBox(L"", rect, true, this, ID_newPassword2);
 		e->setPasswordBox(true);
 	}
 
-	ypos += 50;
+	ypos += 50/gui_scaling;
 	{
-		core::rect<s32> rect(0, 0, 140, 30);
+		core::rect<s32> rect(0, 0, 140/gui_scaling, 30/gui_scaling);
 		rect = rect + v2s32(size.X/2-140/2, ypos);
 		text = wgettext("Change");
 		Environment->addButton(rect, this, ID_change, text);
 		delete[] text;
 	}
 
-	ypos += 50;
+	ypos += 50/gui_scaling;
 	{
-		core::rect<s32> rect(0, 0, 300, 20);
+		core::rect<s32> rect(0, 0, 300/gui_scaling, 20/gui_scaling);
 		rect += topleft_client + v2s32(35, ypos);
 		text = wgettext("Passwords do not match!");
 		IGUIElement *e =
