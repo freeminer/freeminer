@@ -35,7 +35,7 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-BUILD_NUMBER = 60
+BUILD_NUMBER = 62
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
