@@ -343,7 +343,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 			delete ir.first;
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
-		m_blocks_delete_time = porting::getTimeMs() + 30000;
+		m_blocks_delete_time = porting::getTimeMs() + 60000;
 	}
 
 	u32 deleted_blocks_count = 0;
