@@ -102,7 +102,6 @@ struct TextureInfo
 {
 	std::string name;
 	video::ITexture *texture;
-	video::SColor color;
 
 	TextureInfo(
 			const std::string &name_,
@@ -112,11 +111,6 @@ struct TextureInfo
 		name(name_),
 		texture(texture_)
 	{
-		if(img!=NULL){
-			color = img->getPixel(0,0); // TODO: avg here
-		} else {
-			color = video::SColor(0,0,0,0);
-		}
 	}
 };
 
