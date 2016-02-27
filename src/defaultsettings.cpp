@@ -337,6 +337,7 @@ void fm_set_default_settings(Settings *settings) {
 
 #ifdef HAVE_TOUCHSCREENGUI
 	settings->setDefault("touchtarget", "true");
+	settings->setDefault("touchscreen_threshold","20");
 #endif
 
 }

@@ -497,10 +497,8 @@ void draw_scene(video::IVideoDriver *driver, scene::ISceneManager *smgr,
 			(camera.getCameraMode() != CAMERA_MODE_THIRD_FRONT));
 
 #ifdef HAVE_TOUCHSCREENGUI
-	try {
-		draw_crosshair = !g_settings->getBool("touchtarget");
-	}
-	catch(SettingNotFoundException) {}
+	static const auto touchtarget = g_settings->getBool("touchtarget");
+	draw_crosshair = !touchtarget;
 #endif
 
 	std::string draw_mode = g_settings->get("3d_mode");

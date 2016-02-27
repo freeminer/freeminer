@@ -953,7 +953,7 @@ public:
 			}
 		}
 		irr::f32 wieldLight = 0;
-		if (g_settings->getBool("disable_wieldlight") == false)
+		if (!g_settings->getBool("disable_wieldlight"))
 			wieldLight = (irr::f32)((ItemGroupList)m_client->idef()->get(playeritem.name).groups)["wield_light"];
 		services->setPixelShaderConstant("wieldLight", &wieldLight, 1);
 	}
@@ -3941,7 +3941,8 @@ void Game::processPlayerInteraction(GameRunData *runData,
 
 #ifdef HAVE_TOUCHSCREENGUI
 
-	if ((g_settings->getBool("touchtarget")) && (g_touchscreengui)) {
+	static const auto touchtarget = g_settings->getBool("touchtarget");
+	if (touchtarget && g_touchscreengui) {
 		shootline = g_touchscreengui->getShootline();
 		shootline.start += intToFloat(camera_offset, BS);
 		shootline.end += intToFloat(camera_offset, BS);
