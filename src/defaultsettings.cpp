@@ -174,7 +174,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("autojump", "0");
-	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
@@ -499,7 +498,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("enable_mesh_cache", "false");
-
+	settings->setDefault("enable_vbo", "true");
+	
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
 	settings->setDefault("minimap_double_scan_height", "true");

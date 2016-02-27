@@ -159,13 +159,7 @@ public:
 	void incrementUsageTimer(float dtime)
 	{
 		m_usage_timer += dtime;
-		if(m_usage_timer > 10)
-			setStatic();
 	}
-
-	void setStatic();
-
-	bool clearHardwareBuffer;
 
 	int step;
 	bool no_draw;
@@ -177,11 +171,13 @@ public:
 	MinimapMapblock *m_minimap_mapblock;
 private:
 	IGameDef *m_gamedef;
+	video::IVideoDriver *m_driver;
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 
 	bool m_enable_shaders;
 	bool m_use_tangent_vertices;
+	bool m_enable_vbo;
 
 	// Must animate() be called before rendering?
 	bool m_has_animation;

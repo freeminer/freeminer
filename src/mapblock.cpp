@@ -1138,16 +1138,6 @@ void MapBlock::incrementUsageTimer(float dtime)
 {
 	std::lock_guard<Mutex> lock(m_usage_timer_mutex);
 	m_usage_timer += dtime;
-/*
-#ifndef SERVER
-	if(mesh){
-		if(mesh->getUsageTimer() > 10)
-			mesh->setStatic();
-		else
-			mesh->incrementUsageTimer(dtime);
-	}
-#endif
-*/
 }
 
 /* here for errorstream
