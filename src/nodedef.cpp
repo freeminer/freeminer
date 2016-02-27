@@ -1101,14 +1101,14 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			f->solidness = 0;
 			break;
 		case NDT_LIQUID:
-			assert(f->liquid_type == LIQUID_SOURCE);
+			//assert(f->liquid_type == LIQUID_SOURCE);
 			if (opaque_water)
 				f->alpha = 255;
-			f->solidness = 0;
+			f->solidness = 1;
 			is_liquid = true;
 			break;
 		case NDT_FLOWINGLIQUID:
-			assert(f->liquid_type == LIQUID_FLOWING);
+			//assert(f->liquid_type == LIQUID_FLOWING);
 			f->solidness = 0;
 			if (opaque_water)
 				f->alpha = 255;

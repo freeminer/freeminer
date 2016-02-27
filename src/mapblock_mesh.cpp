@@ -681,7 +681,7 @@ static void makeFastFace(TileSpec tile, u16 li0, u16 li1, u16 li2, u16 li3,
 	TODO: Add 3: Both faces drawn with backface culling, remove equivalent
 */
 static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
-		INodeDefManager *ndef)
+		INodeDefManager *ndef, int step)
 {
 	*equivalent = false;
 
@@ -697,8 +697,8 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 	if(f1.sameLiquid(f2))
 		contents_differ = false;
 
-	u8 c1 = f1.solidness;
-	u8 c2 = f2.solidness;
+	u8 c1 = (step > 1 && f1.isLiquid()) ? 1 : f1.solidness;
+	u8 c2 = (step > 1 && f2.isLiquid()) ? 1 : f2.solidness;
 
 	bool solidness_differs = (c1 != c2);
 	bool makes_face = contents_differ && solidness_differs;
@@ -843,7 +843,7 @@ static void getTileInfo(
 	// This is hackish
 	bool equivalent = false;
 	u8 mf = face_contents(n0.getContent(), n1.getContent(),
-			&equivalent, ndef);
+			&equivalent, ndef, step);
 
 	if(mf == 0)
 	{
