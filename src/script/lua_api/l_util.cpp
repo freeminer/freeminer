@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_security.h"
 #include "areastore.h"
 #include "porting.h"
+#include "debug.h"
 #include "log.h"
 #include "tool.h"
 #include "filesys.h"
@@ -401,8 +402,8 @@ int ModApiUtil::l_request_insecure_environment(lua_State *L)
 	if (lua_getstack(L, 2, &info)) {
 		return 0;
 	}
-	assert(lua_getstack(L, 1, &info));
-	assert(lua_getinfo(L, "S", &info));
+	FATAL_ERROR_IF(!lua_getstack(L, 1, &info), "lua_getstack() failed");
+	FATAL_ERROR_IF(!lua_getinfo(L, "S", &info), "lua_getinfo() failed");
 	// ...and that that item is the main file scope.
 	if (strcmp(info.what, "main") != 0) {
 		return 0;
