@@ -3384,7 +3384,7 @@ void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 
 void Game::increaseViewRange(float *statustext_time)
 {
-	s16 range = g_settings->getS16("viewing_range_nodes_min");
+	s16 range = g_settings->getS16("viewing_range");
 	s16 range_new = range * 1.5;
 
 	// it's < 0 if it's outside the range of s16
@@ -3392,8 +3392,8 @@ void Game::increaseViewRange(float *statustext_time)
 	if (range_new < 5)
 		range_new = 5;
 
-	g_settings->set("viewing_range_nodes_min", itos(range_new));
-	statustext = utf8_to_wide("Minimum viewing range changed to "
+	g_settings->set("viewing_range", itos(range_new));
+	statustext = utf8_to_wide("Viewing range changed to "
 			+ itos(range_new));
 	*statustext_time = 0;
 }
@@ -3401,14 +3401,14 @@ void Game::increaseViewRange(float *statustext_time)
 
 void Game::decreaseViewRange(float *statustext_time)
 {
-	s16 range = g_settings->getS16("viewing_range_nodes_min");
+	s16 range = g_settings->getS16("viewing_range");
 	s16 range_new = range / 1.5;
 
-	if (range_new == 0)
-		range_new = 1;
+	if (range_new < 20)
+		range_new = 20;
 
-	g_settings->set("viewing_range_nodes_min", itos(range_new));
-	statustext = utf8_to_wide("Minimum viewing range changed to "
+	g_settings->set("viewing_range", itos(range_new));
+	statustext = utf8_to_wide("Viewing range changed to "
 			+ itos(range_new));
 	*statustext_time = 0;
 }
@@ -4375,6 +4375,11 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 		runData->fog_range *= 0.9;
 
 		runData->fog_range = fog_was + (runData->fog_range-fog_was)/50;
+
+/*
+	} else {
+		runData->fog_range = 0.9 * draw_control->wanted_range * BS;
+*/
 	}
 
 	/*
@@ -4564,7 +4569,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 
 	video::SColor skycolor = sky->getSkyColor();
 
-	TimeTaker tt_draw("mainloop: draw");
+	//TimeTaker tt_draw("mainloop: draw");
+	auto start_ms = porting::getTimeMs();
 	if (!flags.headless_optimize)
 	{
 		TimeTaker timer("beginScene");
@@ -4635,7 +4641,11 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 		stats->endscenetime = timer.stop(true);
 	}
 
+	/*
 	stats->drawtime = tt_draw.stop(true);
+	*/
+	stats->drawtime = (porting::getTimeMs() - start_ms);
+
 	g_profiler->graphAdd("mainloop_draw", stats->drawtime / 1000.0f);
 }
 
@@ -4688,6 +4698,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 		   << PROJECT_NAME_C " " << g_version_hash
 		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
+//		   << "/" << draw_control->fps_avg
 /*
 		   << " (R: range_all=" << draw_control->range_all << ")"
 */

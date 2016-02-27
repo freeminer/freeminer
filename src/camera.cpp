@@ -69,13 +69,6 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_fov_x(1.0),
 	m_fov_y(1.0),
 
-	m_added_busytime(0),
-	m_added_frames(0),
-	m_range_old(0),
-	m_busytime_old(0),
-	m_frametime_counter(0),
-	m_time_per_range(30. / 50), // a sane default of 30ms per 50 nodes of range
-
 	m_view_bobbing_anim(0),
 	m_view_bobbing_state(0),
 	m_view_bobbing_speed(0),
@@ -486,8 +479,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	m_wieldnode->setColor(player->light_color);
 
-	// Render distance feedback loop
-	updateViewingRange(frametime, busytime);
+	// Set render distance
+	updateViewingRange();
 
 	// If the player is walking, swimming, or climbing,
 	// view bobbing is enabled and free_move is off,
@@ -514,11 +507,15 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	}
 }
 
-void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
+void Camera::updateViewingRange()
 {
-	if (m_draw_control.range_all)
+	if (m_draw_control.range_all) {
+		m_cameranode->setFarValue(100000.0);
 		return;
+	}
 
+//fm dynamic range:
+/*
 	m_added_busytime += busytime_in;
 	m_added_frames += 1;
 
@@ -526,7 +523,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	if (m_frametime_counter > 0)
 		return;
 	m_frametime_counter = 0.2; // Same as ClientMap::updateDrawList interval
-
+*/
 	/*dstream<<FUNCTION_NAME
 			<<": Collected "<<m_added_frames<<" frames, total of "
 			<<m_added_busytime<<"s."<<std::endl;
@@ -538,13 +535,27 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 			<<std::endl;*/
 
 	// Get current viewing range and FPS settings
-	f32 viewing_range_min = g_settings->getFloat("viewing_range_nodes_min");
+	f32 viewing_range_min = g_settings->getFloat("viewing_range");
 	viewing_range_min = MYMAX(15.0, viewing_range_min);
 
-	f32 viewing_range_max = g_settings->getFloat("viewing_range_nodes_max");
+	f32 viewing_range_max = g_settings->getFloat("viewing_range_max");
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
 	// vrange+position must be smaller than 32767
 	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(std::abs(m_camera_position.X/BS), std::abs(m_camera_position.Y/BS)), std::abs(m_camera_position.Z/BS)));
+
+	f32 wanted_fps = m_cache_wanted_fps;
+	wanted_fps = MYMAX(wanted_fps, 1.0);
+
+	// todo: remake
+	if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg > wanted_fps * 1.1) {
+		m_draw_control.wanted_range += 1;
+	} else if (m_draw_control.fps_avg < wanted_fps) {
+		if (m_draw_control.fps < wanted_fps * 0.7) {
+			m_draw_control.wanted_range *= 0.9;
+		} else if (m_draw_control.fps < wanted_fps) {
+			m_draw_control.wanted_range -= 1;
+		}
+	}
 
 	// Immediately apply hard limits
 	if(m_draw_control.wanted_range < viewing_range_min)
@@ -552,26 +563,17 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	if(m_draw_control.wanted_range > viewing_range_max)
 		m_draw_control.wanted_range = viewing_range_max;
 
-	// Just so big a value that everything rendered is visible
-	// Some more allowance than viewing_range_max * BS because of clouds,
-	// active objects, etc.
-	if(viewing_range_max < 200*BS)
-		m_cameranode->setFarValue(200 * BS * 10);
-	else
-		m_cameranode->setFarValue(viewing_range_max * BS * 10);
-
 	int farmesh = g_settings->getS32("farmesh");
 	int farmesh_step = g_settings->getS32("farmesh_step");
 	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
 
-	f32 wanted_fps = m_cache_wanted_fps;
-	wanted_fps = MYMAX(wanted_fps, 1.0);
+#if OOOOOOOOOOOOOOOld
 	f32 wanted_frametime = 1.0 / wanted_fps;
 
-	m_draw_control.wanted_min_range = viewing_range_min;
-	m_draw_control.wanted_max_blocks = (2.0*m_draw_control.blocks_would_have_drawn)+1;
-	if (m_draw_control.wanted_max_blocks < 10)
-		m_draw_control.wanted_max_blocks = 10;
+	//m_draw_control.wanted_min_range = viewing_range_min;
+	//m_draw_control.wanted_max_blocks = (2.0*m_draw_control.blocks_would_have_drawn)+1;
+	//if (m_draw_control.wanted_max_blocks < 10)
+		//m_draw_control.wanted_max_blocks = 10;
 
 /*
 	f32 block_draw_ratio = 1.0;
@@ -592,6 +594,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	f32 wanted_frametime_change = wanted_frametime - frametime;
 	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
 	//g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
+#endif
 
 	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
@@ -620,6 +623,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 			}
 	}
 
+#if OOOOOOOOOOOOOOOld
 	// If needed frametime change is small, just return
 	// This value was 0.4 for many months until 2011-10-18 by c55;
 	//if (fabs(wanted_frametime_change) < wanted_frametime*0.33)
@@ -684,15 +688,23 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	//f32 new_range_unclamped = new_range;
 	new_range = MYMAX(new_range, viewing_range_min);
 	new_range = MYMIN(new_range, viewing_range_max);
-	/*dstream<<"new_range="<<new_range_unclamped
-			<<", clamped to "<<new_range<<std::endl;*/
+	/ * dstream<<"new_range="<<new_range_unclamped
+			<<", clamped to "<<new_range<<std::endl;* /
 
 	m_range_old = m_draw_control.wanted_range;
 	m_busytime_old = busytime_in;
 
 	m_draw_control.wanted_range = new_range;
+#endif
 
 	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
+
+	const auto viewing_range = m_draw_control.wanted_range;
+/* mt static range:
+	f32 viewing_range = g_settings->getFloat("viewing_range");
+	m_draw_control.wanted_range = viewing_range;
+*/
+	m_cameranode->setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
 }
 
 void Camera::setDigging(s32 button)

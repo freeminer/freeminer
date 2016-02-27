@@ -34,14 +34,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 struct MapDrawControl
 {
 	MapDrawControl();
+/*
+		range_all(false),
+		wanted_range(0),
+		wanted_max_blocks(0),
+		blocks_drawn(0),
+		blocks_would_have_drawn(0),
+		farthest_drawn(0)
+	{
+	}
+*/
 	// Overrides limits by drawing everything
 	bool range_all;
 	// Wanted drawing range
 	float wanted_range;
 	// Maximum number of blocks to draw
-	u32 wanted_max_blocks;
-	// Blocks in this range are drawn regardless of number of blocks drawn
-	float wanted_min_range;
+	//u32 wanted_max_blocks;
 	// Number of blocks rendered is written here by the renderer
 	u32 blocks_drawn;
 	// Number of blocks that would have been drawn in wanted_range

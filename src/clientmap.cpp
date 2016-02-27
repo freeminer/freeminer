@@ -41,8 +41,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 MapDrawControl::MapDrawControl():
 		range_all(false),
 		wanted_range(500),
-		wanted_max_blocks(0),
-		wanted_min_range(0),
+		//wanted_max_blocks(0),
+		//wanted_min_range(0),
 		blocks_drawn(0),
 		blocks_would_have_drawn(0),
 		farthest_drawn(0)
@@ -406,7 +406,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 /*
 			if (blocks_drawn >= m_control.wanted_max_blocks &&
 					!m_control.range_all &&
-					d > m_control.wanted_min_range * BS)
+					d > m_control.wanted_range * BS)
 				continue;
 */
 
@@ -468,7 +468,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 				(float)blocks_in_range_without_mesh / blocks_in_range);
 	g_profiler->avg("CM: blocks drawn", blocks_drawn);
 	g_profiler->avg("CM: farthest drawn", farthest_drawn);
-	g_profiler->avg("CM: wanted max blocks", m_control.wanted_max_blocks);
+	//g_profiler->avg("CM: wanted max blocks", m_control.wanted_max_blocks);
 }
 
 struct MeshBufList
