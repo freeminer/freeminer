@@ -197,7 +197,7 @@
 #    Key for toggling the camrea update. Only used for development
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
 #    type: key
-# keymap_toggle_update_camera = 
+# keymap_toggle_update_camera =
 
 #    Key for toggling the display of debug info.
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
@@ -235,7 +235,7 @@
 #    Leave this blank to start a local server.
 #    Note that the address field in the main menu overrides this setting.
 #    type: string
-# address = 
+# address =
 
 #    Port to connect to (UDP).
 #    Note that the port field in the main menu overrides this setting.
@@ -265,6 +265,10 @@
 ### In-Game
 
 #### Basic
+
+#    Enable VBO
+#    type: bool
+# enable_vbo = true
 
 #    Whether to fog out the end of the visible area.
 #    type: bool
@@ -438,8 +442,8 @@
 #    type: int
 # pause_fps_max = 20
 
-#    View range in nodes.
-#    Min = 20.
+#    View distance in nodes.
+#    Min = 20
 #    type: int
 # viewing_range = 100
 
@@ -474,7 +478,7 @@
 
 #    Path to texture directory. All textures are first searched from here.
 #    type: path
-# texture_path = 
+# texture_path =
 
 #    The rendering back-end for Irrlicht.
 #    type: enum values: null, software, burningsvideo, direct3d8, direct3d9, opengl
@@ -647,7 +651,7 @@
 
 #    Path to save screenshots at.
 #    type: path
-# screenshot_path = 
+# screenshot_path =
 
 ### Advanced
 
@@ -716,7 +720,7 @@
 
 #    The network interface that the server listens on.
 #    type: string
-# bind_address = 
+# bind_address =
 
 #    Enable to disallow old clients from connecting.
 #    Older clients are compatible in the sense that they will not crash when connecting
@@ -729,7 +733,7 @@
 #    (obviously, remote_media should end with a slash).
 #    Files that are not present will be fetched the usual way.
 #    type: string
-# remote_media = 
+# remote_media =
 
 #    Enable/disable running an IPv6 server.  An IPv6 server may be restricted
 #    to IPv6 clients, depending on system configuration.
@@ -767,7 +771,7 @@
 
 #    Message of the day displayed to players connecting.
 #    type: string
-# motd = 
+# motd =
 
 #    Maximum number of players that can connect simultaneously.
 #    type: int
@@ -776,7 +780,7 @@
 #    World directory (everything in the world is stored here).
 #    Not needed if starting from the main menu.
 #    type: path
-# map-dir = 
+# map-dir =
 
 #    Time in seconds for item entity (dropped items) to live.
 #    Setting it to -1 disables the feature.
@@ -790,11 +794,11 @@
 #    A chosen map seed for a new map, leave empty for random.
 #    Will be overridden when creating a new world in the main menu.
 #    type: string
-# fixed_map_seed = 
+# fixed_map_seed =
 
 #    New users need to input this password.
 #    type: string
-# default_password = 
+# default_password =
 
 #    The privileges that new users automatically get.
 #    See /privs in game for a full list on your server and mod configuration.
@@ -816,7 +820,7 @@
 
 #    If this is set, players will always (re)spawn at the given position.
 #    type: string
-# static_spawnpoint = 
+# static_spawnpoint =
 
 #    If enabled, new players cannot join with an empty password.
 #    type: bool
@@ -1169,7 +1173,7 @@
 #    Flags that are not specified in the flag string are not modified from the default.
 #    Flags starting with "no" are used to explicitly disable them.
 #    type: flags possible values: lakes, hills, , nolakes, nohills
-# mgflat_spflags = 
+# mgflat_spflags =
 
 #    Y of flat ground.
 #    type: int
@@ -1387,7 +1391,12 @@
 #    Comma-separated list of trusted mods that are allowed to access insecure
 #    functions even when mod security is on (via request_insecure_environment()).
 #    type: string
-# secure.trusted_mods = 
+# secure.trusted_mods =
+
+#    Comma-seperated list of mods that are allowed to access HTTP APIs, which
+#    allow them to upload and download data to/from the internet.
+#    type: string
+# secure.http_mods =
 
 #
 # Client and Server
@@ -1397,12 +1406,12 @@
 #    When running a server, clients connecting with this name are admins.
 #    When starting from the main menu, this is overridden.
 #    type: string
-# name = 
+# name =
 
 #    Set the language. Leave empty to use the system language.
 #    A restart is required after changing this.
 #    type: enum values: , be, cs, da, de, eo, es, et, fr, hu, id, it, ja, jbo, ko, ky, lt, nb, nl, pl, pt, pt_BR, ro, ru, tr, uk, zh_CN, zh_TW
-# language = 
+# language =
 
 #    Level of logging to be written to debug.txt:
 #    -    <nothing> (no logging)
@@ -1444,7 +1453,7 @@
 
 #    Replaces the default main menu with a custom one.
 #    type: string
-# main_menu_script = 
+# main_menu_script =
 
 #    type: int
 # main_menu_game_mgr = 0
