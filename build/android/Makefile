@@ -124,6 +124,7 @@ LEVELDB_LIB = $(LEVELDB_DIR)/out-static/libleveldb.a
 LEVELDB_TIMESTAMP = $(LEVELDB_DIR)/timestamp
 LEVELDB_TIMESTAMP_INT = $(ROOT)/deps/leveldb_timestamp
 LEVELDB_URL_GIT = https://github.com/google/leveldb
+LEVELDB_COMMIT = 2d0320a458d0e6a20fff46d5f80b18bfdcce7018
 
 OPENAL_DIR = $(ROOT)/deps/openal-soft/
 OPENAL_LIB = $(OPENAL_DIR)libs/$(TARGET_ABI)/libopenal.so
@@ -407,6 +408,8 @@ leveldb_download :
 		cd ${ROOT}/deps ;                                                      \
 		${GIT_CLONE} ${LEVELDB_URL_GIT} || exit 1; \
 		curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
+		#cd ${LEVELDB_DIR} || exit 1;                                           \
+		#git checkout ${LEVELDB_COMMIT} || exit 1;                              \
 	fi
 
 
