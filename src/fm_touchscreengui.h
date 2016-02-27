@@ -166,6 +166,13 @@ private:
 
 	/* array for doubletap detection */
 	key_event m_key_events[2];
+
+	//freeminer:
+public:
+	void reset_pressed();
+private:
+	u16 touchscreen_threshold;
+	float mouse_sensitivity;
 };
 extern TouchScreenGUI *g_touchscreengui;
 #endif

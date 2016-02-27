@@ -130,6 +130,9 @@ TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device, IEventReceiver* receiver)
 	}
 
 	m_screensize = m_device->getVideoDriver()->getScreenSize();
+
+	touchscreen_threshold = g_settings->getU16("touchscreen_threshold");
+	mouse_sensitivity = g_settings->getFloat("mouse_sensitivity");
 }
 
 void TouchScreenGUI::loadButtonTexture(button_info* btn, const char* path, rect<s32> button_rect)
@@ -549,7 +552,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 						(m_pointerpos[event.TouchInput.ID].Y - event.TouchInput.Y) *
 						(m_pointerpos[event.TouchInput.ID].Y - event.TouchInput.Y));
 
-				if ((distance > g_settings->getU16("touchscreen_threshold")) ||
+				if ((distance > touchscreen_threshold) ||
 						(m_move_has_really_moved)) {
 					m_move_has_really_moved = true;
 					s32 X = event.TouchInput.X;
@@ -560,7 +563,7 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 					s32 dy = Y - m_pointerpos[event.TouchInput.ID].Y;
 
 					/* adapt to similar behaviour as pc screen */
-					double d         = g_settings->getFloat("mouse_sensitivity") *4;
+					double d         = mouse_sensitivity *4;
 					double old_yaw   = m_camera_yaw;
 					double old_pitch = m_camera_pitch;
 
@@ -659,7 +662,7 @@ bool TouchScreenGUI::doubleTapDetection()
 			(m_key_events[0].y - m_key_events[1].y) * (m_key_events[0].y - m_key_events[1].y));
 
 
-	if (distance >(20 + g_settings->getU16("touchscreen_threshold")))
+	if (distance >(20 + touchscreen_threshold))
 		return false;
 
 	SEvent* translated = new SEvent();
@@ -786,4 +789,23 @@ void TouchScreenGUI::hide()
 void TouchScreenGUI::show()
 {
 	Toggle(true);
+}
+
+void TouchScreenGUI::reset_pressed() {
+	for (unsigned int i=0; i < after_last_element_id; i++) {
+		button_info* btn = &m_buttons[i];
+
+		if (!btn->ids.size())
+			continue;
+
+		{
+			btn->repeatcounter              = 0;
+			SEvent translated = { };
+			translated.EventType            = irr::EET_KEY_INPUT_EVENT;
+			translated.KeyInput.Key         = btn->keycode;
+			translated.KeyInput.PressedDown = false;
+			m_receiver->OnEvent(translated);
+			btn->ids.clear();
+		}
+	}
 }

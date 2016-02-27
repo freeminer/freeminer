@@ -1082,6 +1082,11 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 		IFormSource *fs_src, TextDest *txt_dest, Client *client)
 {
 
+#ifdef HAVE_TOUCHSCREENGUI
+	if (g_touchscreengui)
+		g_touchscreengui->reset_pressed();
+#endif
+
 	if (*cur_formspec == 0) {
 		*cur_formspec = new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr,
 						    invmgr, gamedef, tsrc, fs_src, txt_dest, client);
