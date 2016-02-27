@@ -2845,6 +2845,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			gui::IGUIElement *focused = Environment->getFocus();
 			if (focused && isMyChild(focused) &&
 					(focused->getType() == gui::EGUIET_LIST_BOX ||
+					 focused->getType() == gui::EGUIET_EDIT_BOX ||
 					 focused->getType() == gui::EGUIET_CHECK_BOX)) {
 				OnEvent(event);
 				return true;
