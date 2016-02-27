@@ -1297,7 +1297,10 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	// Update this one
 	// NOTE: This is kind of funny on a singleplayer game, but doesn't
 	// really matter that much.
-	//m_recommended_send_interval = g_settings->getFloat("dedicated_server_step");
+/*
+	static const float server_step = g_settings->getFloat("dedicated_server_step");
+	m_recommended_send_interval = server_step;
+*/
 
 	/*
 		Increment game time
@@ -1395,7 +1398,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		/*
 			Update list of active blocks, collecting changes
 		*/
-		const s16 active_block_range = g_settings->getS16("active_block_range");
+		static const s16 active_block_range = g_settings->getS16("active_block_range");
 		std::set<v3s16> blocks_removed;
 		m_active_blocks.update(players_blockpos, active_block_range,
 				blocks_removed, m_blocks_added);
@@ -1408,6 +1411,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		deactivateFarObjects(false);
 
 		} // if (!m_blocks_added_last)
+
 		/*
 			Handle added blocks
 		*/
