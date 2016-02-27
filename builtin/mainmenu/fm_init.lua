@@ -986,7 +986,6 @@ function tabbuilder.tab_settings()
 	add_checkbox( "cb_opaque_water",              "opaque_water",               "Opaque Water"          )
 	add_checkbox( "cb_connected_glass",           "connected_glass",            "Connected glass"       )
 	add_checkbox( "cb_3d_clouds",                 "enable_3d_clouds",           "3D Clouds"             )
-	add_checkbox( "cb_pre_ivis",                  "preload_item_visuals",       "Preload item visuals"  )
 	add_checkbox( "cb_farmesh",                   "farmesh",                    "Farmesh (dev)"         )
 
 	-- Effects settings
@@ -1066,9 +1065,6 @@ function tabbuilder.handle_settings_buttons(fields)
 		else
 			core.setting_set("enable_shaders", fields["cb_shaders"])
 		end
-	end
-	if fields["cb_pre_ivis"] then
-		core.setting_set("preload_item_visuals", fields["cb_pre_ivis"])
 	end
 	if fields["cb_particles"] then
 		core.setting_set("enable_particles", fields["cb_particles"])

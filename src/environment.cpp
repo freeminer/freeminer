@@ -3023,6 +3023,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 1);
 	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + u32(500/g_settings->getFloat("wanted_fps"));
 	int skipped = 0;
+	static unsigned int cnt = 0;
 	for(std::map<u16, ClientActiveObject*>::iterator
 			i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
@@ -3037,10 +3038,13 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		ClientActiveObject* obj = i->second;
 
 		auto & draw_control = getClientMap().getControl();
-		if ((pf.getDistanceFrom(obj->getPosition()) / BS) * 1.2 > draw_control.wanted_range && end_ms % 300) {
-			//errorstream<<"skip "<<obj->getId() << " p="<<pf<< " o=" << obj->getPosition() << " r=" << pf.getDistanceFrom(obj->getPosition()) / BS << " wr=" << draw_control.wanted_range<< std::endl;
-			++skipped;
-			continue;
+		if ((pf.getDistanceFrom(obj->getPosition()) / BS) * 1.2 > draw_control.wanted_range ) {
+			if (++cnt % int((draw_control.fps_avg+1)*5.0)) {
+				//errorstream<<"skip "<<obj->getId() << " p="<<pf<< " o=" << obj->getPosition() << " r=" << pf.getDistanceFrom(obj->getPosition()) / BS << " wr=" << draw_control.wanted_range<< std::endl;
+				++skipped;
+				continue;
+			}
+			//errorstream<<"step "<<obj->getId() <<" cnt="<< cnt << " m="<<m<< " p="<<pf<< " o=" << obj->getPosition() << " r=" << pf.getDistanceFrom(obj->getPosition()) / BS << " wr=" << draw_control.wanted_range<< std::endl;
 		}
 
 		// Step object
