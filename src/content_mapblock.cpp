@@ -533,11 +533,6 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		Some settings
 	*/
 	bool enable_mesh_cache	= g_settings->getBool("enable_mesh_cache");
-	bool new_style_water = g_settings->getBool("new_style_water");
-
-	float node_liquid_level = 1.0;
-	if (new_style_water)
-		node_liquid_level = 0.85;
 
 	v3s16 blockpos_nodes = data->m_blockpos*MAP_BLOCKSIZE;
 
@@ -639,35 +634,29 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					If our topside is liquid, set upper border of face
 					at upper border of node
 				*/
-				if(top_is_same_liquid)
-				{
-					vertices[2].Pos.Y = 0.5*BS;
-					vertices[3].Pos.Y = 0.5*BS;
-				}
+				if (top_is_same_liquid) {
+					vertices[2].Pos.Y = 0.5 * BS;
+					vertices[3].Pos.Y = 0.5 * BS;
+				} else {
 				/*
 					Otherwise upper position of face is liquid level
 				*/
-				else
-				{
-					vertices[2].Pos.Y = (node_liquid_level-0.5)*BS;
-					vertices[3].Pos.Y = (node_liquid_level-0.5)*BS;
+					vertices[2].Pos.Y = 0.5 * BS;
+					vertices[3].Pos.Y = 0.5 * BS;
 				}
 				/*
 					If neighbor is liquid, lower border of face is liquid level
 				*/
-				if(neighbor_is_same_liquid)
-				{
-					vertices[0].Pos.Y = (node_liquid_level-0.5)*BS;
-					vertices[1].Pos.Y = (node_liquid_level-0.5)*BS;
-				}
+				if (neighbor_is_same_liquid) {
+					vertices[0].Pos.Y = 0.5 * BS;
+					vertices[1].Pos.Y = 0.5 * BS;
+				} else {
 				/*
 					If neighbor is not liquid, lower border of face is
 					lower border of node
 				*/
-				else
-				{
-					vertices[0].Pos.Y = -0.5*BS;
-					vertices[1].Pos.Y = -0.5*BS;
+					vertices[0].Pos.Y = -0.5 * BS;
+					vertices[1].Pos.Y = -0.5 * BS;
 				}
 
 				for(s32 j=0; j<4; j++)
@@ -710,7 +699,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				video::S3DVertex(-BS/2,0,-BS/2, 0,0,0, c, 0,0),
 			};
 
-			v3f offset(p.X*BS, p.Y*BS + (-0.5+node_liquid_level)*BS, p.Z*BS);
+			v3f offset(p.X * BS, (p.Y + 0.5) * BS, p.Z * BS);
 			for(s32 i=0; i<4; i++)
 			{
 				vertices[i].Pos += offset;
@@ -787,10 +776,17 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					content = n2.getContent();
 
 					if(n2.getContent() == c_source)
-						level = (-0.5+node_liquid_level) * BS;
+						level = 0.5 * BS;
 					else if(n2.getContent() == c_flowing){
-						level = (-0.5 + ((float)n2.getLevel(nodedef)
-							 + 0.5) / n2.getMaxLevel(nodedef) * node_liquid_level) * BS;
+/*
+						u8 liquid_level = (n2.param2&LIQUID_LEVEL_MASK);
+						if (liquid_level <= LIQUID_LEVEL_MAX+1-range)
+							liquid_level = 0;
+						else
+							liquid_level -= (LIQUID_LEVEL_MAX+1-range);
+						level = (-0.5 + ((float)liquid_level + 0.5) / (float)range) * BS;
+*/
+						level = (-0.5 + ((float)n2.getLevel(nodedef) + 0.5) / n2.getMaxLevel(nodedef)) * BS;
 					}
 
 					// Check node above neighbor.
@@ -838,7 +834,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					// Source is always the same height
 					else if(content == c_source)
 					{
-						cornerlevel = (-0.5+node_liquid_level)*BS;
+						cornerlevel = 0.5 * BS;
 						valid_count = 1;
 						break;
 					}
