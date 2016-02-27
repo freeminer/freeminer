@@ -240,7 +240,8 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// this shouldn't be hardcoded but transmitted from server
 	float player_stepheight = touching_ground ? (BS*0.6) : (BS*0.2);
 
-	if (control.aux1 || g_settings->getBool("autojump")) {
+	static const auto autojump = g_settings->getBool("autojump");
+	if (control.aux1 || autojump) {
 		player_stepheight += (0.5 * BS);
 	}
 

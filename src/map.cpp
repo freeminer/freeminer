@@ -2525,6 +2525,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	}
 */
 
+	auto save_generated_block = g_settings->getBool("save_generated_block");
 	for (std::map<v3s16, MapBlock *>::iterator
 			it = changed_blocks->begin();
 			it != changed_blocks->end(); ++it) {
@@ -2539,7 +2540,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 			Set block as modified
 		*/
 
-		if (g_settings->getBool("save_generated_block"))
+		if (save_generated_block)
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
 	}

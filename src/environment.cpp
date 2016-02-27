@@ -2348,6 +2348,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 		}
 	}
 
+	static const auto max_objects_per_block = g_settings->getU16("max_objects_per_block");
 	if (objects.size())
 	for (auto & obj : objects)
 	{
@@ -2506,7 +2507,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 			if(block)
 			{
-				if(block->m_static_objects.m_stored.size() >= g_settings->getU16("max_objects_per_block")){
+				if(block->m_static_objects.m_stored.size() >= max_objects_per_block){
 					infostream<<"ServerEnv: Trying to store id="<<obj->getId()
 							<<" statically but block "<<PP(blockpos)
 							<<" already contains "
