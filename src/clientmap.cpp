@@ -261,9 +261,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 
 	bool free_move = g_settings->getBool("free_move");
 
-	float range_max = 100000 * BS;
-	if (m_control.range_all == false)
-		range_max = m_control.wanted_range * BS;
+	float range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range * (m_control.wanted_range > 200 ? 1.2 : 1.5);
 
 	if (draw_nearest.empty()) {
 		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
@@ -278,6 +276,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 		for(auto & ir : m_blocks) {
 			auto bp = ir.first;
 
+/*
 		if (m_control.range_all == false) {
 			if (bp.X < p_blocks_min.X || bp.X > p_blocks_max.X
 			|| bp.Z > p_blocks_max.Z || bp.Z < p_blocks_min.Z
@@ -292,11 +291,12 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 				((float)blockpos_nodes.Y + MAP_BLOCKSIZE/2) * BS,
 				((float)blockpos_nodes.Z + MAP_BLOCKSIZE/2) * BS
 			);
+*/
 
-			f32 d = radius_box(blockpos, camera_position); //blockpos_relative.getLength();
-			if (d> range_max)
+			f32 d = radius_box(bp*MAP_BLOCKSIZE, cam_pos_nodes); //blockpos_relative.getLength();
+			if (d > range_max)
 				continue;
-			int range = d / (MAP_BLOCKSIZE * BS);
+			int range = d / MAP_BLOCKSIZE;
 			draw_nearest.emplace_back(std::make_pair(bp, range));
 		}
 	}
@@ -542,6 +542,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	v3f camera_position = m_camera_position;
 	f32 camera_fov = m_camera_fov * 1.1;
 	//v3f camera_direction = m_camera_direction;
+	float range_max_bs = (m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range) * BS;
 
 	/*
 		Get all blocks and draw all visible ones
@@ -596,9 +597,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 		float d = 0.0;
 		if (!isBlockInSight(block->getPos(), camera_position,
-				m_camera_direction, camera_fov, 100000 * BS, &d))
+				m_camera_direction, camera_fov, range_max_bs, &d))
 			continue;
-
 		used_meshes.emplace_back(mapBlockMesh);
 
 		// Mesh animation

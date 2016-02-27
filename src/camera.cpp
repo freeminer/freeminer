@@ -547,7 +547,7 @@ void Camera::updateViewingRange()
 	wanted_fps = MYMAX(wanted_fps, 1.0);
 
 	// todo: remake
-	if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg > wanted_fps * 1.1) {
+	if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg > wanted_fps * 1.2) {
 		m_draw_control.wanted_range += 1;
 	} else if (m_draw_control.fps_avg < wanted_fps) {
 		if (m_draw_control.fps < wanted_fps * 0.7) {
@@ -596,14 +596,21 @@ void Camera::updateViewingRange()
 	//g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
 #endif
 
+	static int framecnt = 0;
 	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
 			//infostream<<" m_draw_control.fps="<<m_draw_control.fps<< " wanted_fps="<< wanted_fps << " m_draw_control.fps_avg="<< m_draw_control.fps_avg <<" wanted_fps*1.4="<< wanted_fps*1.4 /*<<" block_draw_ratio="<<block_draw_ratio */<< " wanted_frametime="<< wanted_frametime <<" .blocks_would_have_drawn=" <<m_draw_control.blocks_would_have_drawn <<" .blocks_drawn=" <<m_draw_control.blocks_drawn <<std::endl;
-			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.4) {
-				if (m_draw_control.wanted_range >= farmesh_wanted)
-					m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
-				if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step)
-					++m_draw_control.farmesh_step;
+			if (m_draw_control.fps > wanted_fps && m_draw_control.fps_avg >= wanted_fps*1.3) {
+				if (++framecnt > m_draw_control.fps_avg/2) {
+					if (m_draw_control.wanted_range >= farmesh_wanted) {
+						m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
+						framecnt = 0;
+					}
+					if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step) {
+						++m_draw_control.farmesh_step;
+						framecnt = 0;
+					}
+				}
 			} else if (m_draw_control.fps <= wanted_fps*0.8){
 				float farmesh_was = m_draw_control.farmesh;
 				if (m_draw_control.fps <= wanted_fps*0.6)
