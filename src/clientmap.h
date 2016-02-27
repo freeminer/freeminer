@@ -125,6 +125,8 @@ public:
 		return m_box;
 	}
 	
+	void getBlocksInViewRange(v3s16 cam_pos_nodes, 
+		v3s16 *p_blocks_min, v3s16 *p_blocks_max);
 	void updateDrawList(video::IVideoDriver* driver, float dtime, unsigned int max_cycle_ms = 0);
 	void renderMap(video::IVideoDriver* driver, s32 pass);
 
