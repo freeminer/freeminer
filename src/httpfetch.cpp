@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Mutex g_httpfetch_mutex;
 std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
-PcgRandom g_callerid_randomness;
+std::unique_ptr<PcgRandom> g_callerid_randomness;
 
 HTTPFetchRequest::HTTPFetchRequest()
 {
@@ -100,8 +100,8 @@ unsigned long httpfetch_caller_alloc_secure()
 	unsigned long caller;
 
 	do {
-		caller = (((u64) g_callerid_randomness.next()) << 32) |
-				g_callerid_randomness.next();
+		caller = (((u64) g_callerid_randomness->next()) << 32) |
+				g_callerid_randomness->next();
 
 		if (--tries < 1) {
 			FATAL_ERROR("httpfetch_caller_alloc_secure: ran out of caller IDs");
@@ -768,7 +768,7 @@ void httpfetch_init(int parallel_limit)
 	// Initialize g_callerid_randomness for httpfetch_caller_alloc_secure
 	u64 randbuf[2];
 	porting::secure_rand_fill_buf(randbuf, sizeof(u64) * 2);
-	g_callerid_randomness = PcgRandom(randbuf[0], randbuf[1]);
+	g_callerid_randomness.reset(new PcgRandom(randbuf[0], randbuf[1]));
 }
 
 void httpfetch_cleanup()
