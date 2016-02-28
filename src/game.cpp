@@ -4699,8 +4699,9 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 	v3f player_position = player->getPosition();
 
 	draw_control->drawtime_avg = draw_control->drawtime_avg * 0.95 + (float)stats.drawtime*0.05;
-	draw_control->fps_avg = 1000/draw_control->drawtime_avg;
+	//draw_control->fps_avg = 1000/draw_control->drawtime_avg;
 	draw_control->fps = (1.0/stats.dtime_jitter.avg);
+	draw_control->fps_avg = draw_control->fps_avg * 0.95 + draw_control->fps*0.05;
 
 	if (flags.show_debug) {
 /*
