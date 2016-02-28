@@ -266,7 +266,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 	else
 	{
 		if(m_prop.physical){
-			core::aabbox3d<f32> box = m_prop.collisionbox;
+			aabb3f box = m_prop.collisionbox;
 			box.MinEdge *= BS;
 			box.MaxEdge *= BS;
 			collisionMoveResult moveresult;
@@ -801,17 +801,22 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 	m_animation_sent = false;
 	m_armor_groups_sent = false;
 
-	assert(m_player);	// pre-condition
-	assert(m_peer_id != 0);	// pre-condition
+	//assert(m_player);	// pre-condition
+	//assert(m_peer_id != 0);	// pre-condition
 	++m_player->refs;
-	setBasePosition(m_player->getPosition());
+	//setBasePosition(m_player->getPosition()); // deadlock?
+	if (m_player)
+		//m_base_position = m_player->getPosition();
+		m_base_position = m_player->m_position;
+	m_position_not_sent = true;
+	if (m_player)
 	m_inventory = &m_player->inventory;
 	m_armor_groups["fleshy"] = 100;
 
 	m_prop.hp_max = PLAYER_MAX_HP;
 	m_prop.physical = false;
 	m_prop.weight = 75;
-	m_prop.collisionbox = core::aabbox3d<f32>(-1/3.,-1.0,-1/3., 1/3.,1.0,1/3.);
+	m_prop.collisionbox = aabb3f(-1/3.,-1.0,-1/3., 1/3.,1.0,1/3.);
 	// start of default appearance, this should be overwritten by LUA
 	m_prop.visual = "upright_sprite";
 	m_prop.visual_size = v2f(1, 2);
@@ -895,7 +900,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 		writeF1000(os, m_player->getYaw());
 		writeS16(os, getHP());
 
-		auto lock = lock_shared();
+		auto lock = lock_shared_rec();
 
 		writeU8(os, 6 + m_bone_position.size()); // number of messages stuffed in here
 		os<<serializeLongString(getPropertyPacket()); // message 1
@@ -963,7 +968,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	if(m_attachment_parent_id && !isAttached())
 	{
 	  {
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_attachment_parent_id = 0;
 		m_attachment_bone = "";
 		m_attachment_position = v3f(0,0,0);
@@ -987,7 +992,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	m_dig_pool.add(dtime);
 	m_move_pool.add(dtime);
 	{
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 	m_time_from_last_punch += dtime;
 	m_nocheat_dig_time += dtime;
 	m_ms_from_last_respawn += dtime*1000;
@@ -1041,7 +1046,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	}
 
 	if(m_physics_override_sent == false){
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_physics_override_sent = true;
 		std::string str = gob_cmd_update_physics_override(m_physics_override_speed,
 				m_physics_override_jump, m_physics_override_gravity,
@@ -1052,7 +1057,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	}
 
 	if(m_animation_sent == false){
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_animation_sent = true;
 		std::string str = gob_cmd_update_animation(
 			m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop);
@@ -1096,7 +1101,7 @@ void PlayerSAO::setPos(v3f pos)
 		return;
 	m_player->setPosition(pos);
 	{
-	auto lock = lock_unique();
+	auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	}
@@ -1112,7 +1117,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 		return;
 	m_player->setPosition(pos);
 	{
-	auto lock = lock_unique();
+	auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = pos;
 	}
@@ -1276,7 +1281,7 @@ void PlayerSAO::setBreath(u16 breath)
 
 void PlayerSAO::setArmorGroups(const ItemGroupList &armor_groups)
 {
-	auto lock = lock_unique();
+	auto lock = lock_unique_rec();
 	m_armor_groups = armor_groups;
 	m_armor_groups_sent = false;
 }
@@ -1288,7 +1293,7 @@ ItemGroupList PlayerSAO::getArmorGroups()
 
 void PlayerSAO::setAnimation(v2f frame_range, float frame_speed, float frame_blend, bool frame_loop)
 {
-	auto lock = lock_unique();
+	auto lock = lock_unique_rec();
 	// store these so they can be updated to clients
 	m_animation_range = frame_range;
 	m_animation_speed = frame_speed;
@@ -1320,7 +1325,7 @@ void PlayerSAO::getBonePosition(const std::string &bone, v3f *position, v3f *rot
 
 void PlayerSAO::setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation)
 {
-	auto lock = lock_unique();
+	auto lock = lock_unique_rec();
 	// Attachments need to be handled on both the server and client.
 	// If we just attach on the server, we can only copy the position of the parent. Attachments
 	// are still sent to clients at an interval so players might see them lagging, plus we can't

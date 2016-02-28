@@ -193,6 +193,8 @@ private:
 
 public:
 	static void Initialize(lua_State *L, int top);
+
+	static struct EnumString es_ClearObjectsMode[];
 };
 
 class LuaABM : public ActiveBlockModifier {

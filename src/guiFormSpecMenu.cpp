@@ -1491,10 +1491,6 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 			Environment->setFocus(e);
 		}
 
-		e->setUseAlphaChannel(true);
-		e->setImage(guiScalingImageButton(Environment->getVideoDriver(), NULL, geom.X, geom.Y));
-		e->setPressedImage(guiScalingImageButton(Environment->getVideoDriver(), NULL, geom.X, geom.Y));
-		e->setScaleImage(true);
 		spec.ftype = f_Button;
 		rect+=data->basepos-padding;
 		spec.rect=rect;
@@ -1502,13 +1498,8 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 		pos = padding + AbsoluteRect.UpperLeftCorner;
 		pos.X += stof(v_pos[0]) * (float) spacing.X;
 		pos.Y += stof(v_pos[1]) * (float) spacing.Y;
-		m_itemimages.push_back(ImageDrawSpec("", item_name, pos, geom));
-
-		StaticTextSpec label_spec(
-			utf8_to_wide(label),
-			rect
-		);
-		m_static_texts.push_back(label_spec);
+		m_itemimages.push_back(ImageDrawSpec("", item_name, e, pos, geom));
+		m_static_texts.push_back(StaticTextSpec(utf8_to_wide(label), rect, e));
 		return;
 	}
 	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
@@ -2433,6 +2424,16 @@ void GUIFormSpecMenu::drawMenu()
 		core::rect<s32> imgrect(0, 0, spec.geom.X, spec.geom.Y);
 		// Viewport rectangle on screen
 		core::rect<s32> rect = imgrect + spec.pos;
+		if (spec.parent_button && spec.parent_button->isPressed()) {
+#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
+			rect += core::dimension2d<s32>(
+				0.05 * (float)rect.getWidth(), 0.05 * (float)rect.getHeight());
+#else
+			rect += core::dimension2d<s32>(
+				skin->getSize(irr::gui::EGDS_BUTTON_PRESSED_IMAGE_OFFSET_X),
+				skin->getSize(irr::gui::EGDS_BUTTON_PRESSED_IMAGE_OFFSET_Y));
+#endif
+		}
 		drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
 				m_gamedef, IT_ROT_NONE);
 	}
@@ -2468,8 +2469,21 @@ void GUIFormSpecMenu::drawMenu()
 	*/
 	for (u32 i = 0; i < m_static_texts.size(); i++) {
 		const StaticTextSpec &spec = m_static_texts[i];	
+		core::rect<s32> rect = spec.rect;
+		if (spec.parent_button && spec.parent_button->isPressed()) {
+#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
+			rect += core::dimension2d<s32>(
+				0.05 * (float)rect.getWidth(), 0.05 * (float)rect.getHeight());
+#else
+			// Use image offset instead of text's because its a bit smaller
+			// and fits better, also TEXT_OFFSET_X is always 0
+			rect += core::dimension2d<s32>(
+				skin->getSize(irr::gui::EGDS_BUTTON_PRESSED_IMAGE_OFFSET_X),
+				skin->getSize(irr::gui::EGDS_BUTTON_PRESSED_IMAGE_OFFSET_Y));
+#endif
+		}
 		video::SColor color(255, 255, 255, 255);
-		m_font->draw(spec.text.c_str(), spec.rect, color, true, true, &spec.rect);
+		m_font->draw(spec.text.c_str(), rect, color, true, true, &rect);
 	}
 
 	/*
@@ -2831,6 +2845,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			gui::IGUIElement *focused = Environment->getFocus();
 			if (focused && isMyChild(focused) &&
 					(focused->getType() == gui::EGUIET_LIST_BOX ||
+					 focused->getType() == gui::EGUIET_EDIT_BOX ||
 					 focused->getType() == gui::EGUIET_CHECK_BOX)) {
 				OnEvent(event);
 				return true;

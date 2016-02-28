@@ -97,6 +97,7 @@ class ServerThread : public thread_pool
 public:
 
 	ServerThread(Server *server):
+		thread_pool("Server", 40),
 		m_server(server)
 	{}
 
@@ -108,8 +109,6 @@ private:
 
 void *ServerThread::run()
 {
-	reg("Server", 40);
-
 	DSTACK(FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
@@ -148,13 +147,13 @@ void *ServerThread::run()
 		} catch (ClientNotFoundException &e) {
 		} catch (con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 		} catch (LuaError &e) {
 			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
 		} catch (std::exception &e) {
-			errorstream<<"ServerThread: exception: "<<e.what()<<std::endl;
+			errorstream << m_name << ": exception: "<<e.what()<<std::endl;
 		} catch (...) {
-			errorstream<<"ServerThread: Ooops..."<<std::endl;
+			errorstream << m_name << ": Ooops..."<<std::endl;
 #endif
 		}
 	}
@@ -810,19 +809,21 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: checking added and deleted objs");
 
 		// Radius inside which objects are active
-		s16 radius = g_settings->getS16("active_object_send_range_blocks");
-		s16 player_radius = g_settings->getS16("player_transfer_distance");
+		static const s16 radius =
+			g_settings->getS16("active_object_send_range_blocks") * MAP_BLOCKSIZE;
 
-		if (player_radius == 0 && g_settings->exists("unlimited_player_transfer_distance") &&
-				!g_settings->getBool("unlimited_player_transfer_distance"))
+		static const s16 radius_deactivate = radius * 2;
+
+		// Radius inside which players are active
+		static const bool is_transfer_limited =
+			g_settings->exists("unlimited_player_transfer_distance") &&
+			!g_settings->getBool("unlimited_player_transfer_distance");
+		static const s16 player_transfer_dist = g_settings->getS16("player_transfer_distance") * MAP_BLOCKSIZE;
+		s16 player_radius = player_transfer_dist;
+		if (player_radius == 0 && is_transfer_limited)
 			player_radius = radius;
 
-		radius *= MAP_BLOCKSIZE;
-		s16 radius_deactivate = radius * 2;
-		player_radius *= MAP_BLOCKSIZE;
-
 		for(auto & client : clients) {
-
 			// If definitions and textures have not been sent, don't
 			// send objects either
 			if (client->getState() < CS_DefinitionsSent)
@@ -1248,8 +1249,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		TimeTaker timer_step("Server step: Trigger emergethread");
 		float &counter = m_emergethread_trigger_timer;
 		counter += dtime;
-		if(counter >= 2.0)
-		{
+		if (counter >= 2.0) {
 			counter = 0.0;
 
 			m_emerge->startThreads();
@@ -1286,8 +1286,9 @@ int Server::save(float dtime, float dedicated_server_step, bool breakable) {
 	int ret = 0;
 		float &counter = m_savemap_timer;
 		counter += dtime;
-		if(counter >= g_settings->getFloat("server_map_save_interval"))
-		{
+		static const float save_interval =
+			g_settings->getFloat("server_map_save_interval");
+		if (counter >= save_interval) {
 			counter = 0.0;
 			TimeTaker timer_step("Server step: Save map, players and auth stuff");
 			//MutexAutoLock lock(m_env_mutex);
@@ -3910,9 +3911,11 @@ void dedicated_server_loop(Server &server, bool &kill)
 
 	int errors = 0;
 	double run_time = 0;
-	float steplen = g_settings->getFloat("dedicated_server_step");
-	for(;;)
-	{
+	static const float steplen = g_settings->getFloat("dedicated_server_step");
+	static const float profiler_print_interval =
+			g_settings->getFloat("profiler_print_interval");
+
+	for(;;) {
 		// This is kind of a hack but can be done like this
 		// because server.step() is very light
 		{
@@ -3949,10 +3952,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 		/*
 			Profiler
 		*/
-		float profiler_print_interval =
-				g_settings->getFloat("profiler_print_interval");
-		if(server.m_clients.getClientList().size() && profiler_print_interval != 0)
-		{
+		if (server.m_clients.getClientList().size() && profiler_print_interval) {
 			if(m_profiler_interval.step(steplen, profiler_print_interval))
 			{
 				infostream<<"Profiler:"<<std::endl;

@@ -262,6 +262,18 @@ public:
 };
 
 /*
+	Operation mode for ServerEnvironment::clearObjects()
+*/
+enum ClearObjectsMode {
+	// Load and go through every mapblock, clearing objects
+	CLEAR_OBJECTS_MODE_FULL,
+
+	// Clear objects immediately in loaded mapblocks;
+	// clear objects in unloaded mapblocks only when the mapblocks are next activated.
+	CLEAR_OBJECTS_MODE_QUICK,
+};
+
+/*
 	The server-side environment.
 
 	This is not thread-safe. Server uses an environment mutex.
@@ -389,8 +401,8 @@ public:
 	// Find all active objects inside a radius around a point
 	void getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius);
 
-	// Clear all objects, loading and going through every MapBlock
-	void clearAllObjects();
+	// Clear objects, loading and going through every MapBlock
+	void clearObjects(ClearObjectsMode mode);
 
 	// This makes stuff happen
 	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
@@ -531,6 +543,10 @@ private:
 	Mutex m_max_lag_estimate_mutex;
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter;
+	// Time of last clearObjects call (game time).
+	// When a mapblock older than this is loaded, its objects are cleared.
+	u32 m_last_clear_objects_time;
+	// Active block modifiers
 public:
 	std::vector<ABMWithState> m_abms;
 private:

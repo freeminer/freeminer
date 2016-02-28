@@ -35,13 +35,15 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-BUILD_NUMBER = 56
+BUILD_NUMBER = 64
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
 PROJECT_NAME_C = freeminer
 
 GAMES_VERSION = ""
+
+GIT_CLONE = git clone --recursive --depth 1
 
 ################################################################################
 # toolchain config for arm old processors
@@ -65,7 +67,7 @@ TARGET_ABI = armeabi-v7a-hard
 TARGET_LIBDIR = armeabi-v7a
 TARGET_TOOLCHAIN = arm-linux-androideabi-
 #TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfpv3
-TARGET_CFLAGS_ADDON =  -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 -mfloat-abi=hard -march=armv7-a
+TARGET_CFLAGS_ADDON = -O3 -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 -mfloat-abi=hard -march=armv7-a
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
 TARGET_ARCH = armv7
@@ -88,8 +90,8 @@ TARGET_HOST = mipsel-linux
 TARGET_ABI = mips
 TARGET_LIBDIR = mips
 TARGET_TOOLCHAIN = mipsel-linux-android-
-TARGET_CFLAGS_ADDON =
-TARGET_CXXFLAGS_ADDON =
+TARGET_CFLAGS_ADDON = -O3
+TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
 TARGET_ARCH = mips32
 CROSS_PREFIX = mipsel-linux-android-
@@ -107,8 +109,8 @@ TARGET_HOST = x86-linux
 TARGET_ABI = x86
 TARGET_LIBDIR = x86
 TARGET_TOOLCHAIN = x86-
-TARGET_CFLAGS_ADDON =
-TARGET_CXXFLAGS_ADDON =
+TARGET_CFLAGS_ADDON = -O3
+TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
 CROSS_PREFIX = i686-linux-android-
 TARGET_ARCH = x86
@@ -122,6 +124,7 @@ LEVELDB_LIB = $(LEVELDB_DIR)/out-static/libleveldb.a
 LEVELDB_TIMESTAMP = $(LEVELDB_DIR)/timestamp
 LEVELDB_TIMESTAMP_INT = $(ROOT)/deps/leveldb_timestamp
 LEVELDB_URL_GIT = https://github.com/google/leveldb
+LEVELDB_COMMIT = 2d0320a458d0e6a20fff46d5f80b18bfdcce7018
 
 OPENAL_DIR = $(ROOT)/deps/openal-soft/
 OPENAL_LIB = $(OPENAL_DIR)libs/$(TARGET_ABI)/libopenal.so
@@ -157,12 +160,12 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.47.0
+CURL_VERSION = 7.47.1
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
 CURL_TIMESTAMP_INT = $(ROOT)/deps/curl_timestamp
-CURL_URL_HTTP = http://curl.haxx.se/download/curl-${CURL_VERSION}.tar.bz2
+CURL_URL_HTTP = https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.bz2
 
 GMP_VERSION = 6.1.0
 GMP_DIR = $(ROOT)/deps/gmp-$(GMP_VERSION)
@@ -263,7 +266,7 @@ openal_download :
 		echo "openal sources missing, downloading...";                         \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${OPENAL_URL_GIT} || exit 1;                                 \
+		${GIT_CLONE} ${OPENAL_URL_GIT} || exit 1;                                 \
 	fi
 
 openal : $(OPENAL_LIB)
@@ -305,7 +308,7 @@ ogg_download :
 		echo "ogg sources missing, downloading...";                            \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${OGG_URL_GIT}|| exit 1;                                     \
+		${GIT_CLONE} ${OGG_URL_GIT}|| exit 1;                                     \
 		cd libvorbis-libogg-android ;                                          \
 		patch -p1 < ../../libvorbis-libogg-fpu.patch || exit 1;                \
 		sed -i 's-:-?-' jni/Application.mk;                                    \
@@ -403,8 +406,10 @@ leveldb_download :
 		echo "leveldb sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${LEVELDB_URL_GIT} || exit 1;                                \
+		${GIT_CLONE} ${LEVELDB_URL_GIT} || exit 1; \
 		curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
+		#cd ${LEVELDB_DIR} || exit 1;                                           \
+		#git checkout ${LEVELDB_COMMIT} || exit 1;                              \
 	fi
 
 
@@ -457,7 +462,7 @@ freetype_download :
 		echo "freetype sources missing, downloading...";                       \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd deps;                                                               \
-		git clone ${FREETYPE_URL_GIT} || exit 1;                               \
+		${GIT_CLONE} ${FREETYPE_URL_GIT} || exit 1; \
 	fi
 
 freetype : $(FREETYPE_LIB)
@@ -565,10 +570,11 @@ irrlicht_download :
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd deps;                                                               \
 		#svn co ${IRRLICHT_URL_SVN} irrlicht || exit 1;                         \
-		git clone --recursive --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
+		${GIT_CLONE} --depth 200 --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
 		cd irrlicht;                                                           \
 		git checkout ${IRRLICHT_GIT_COMMIT}; \
 		mkdir -p lib/Android; \
+		patch -p1 < ../../irrlicht-crystax.patch; \
 		patch -p1 < ../../irrlicht-touchcount.patch || exit 1;                 \
 		patch -p1 < ../../irrlicht-back_button.patch || exit 1;                \
 		patch -p1 < ../../irrlicht-texturehack.patch || exit 1;                \
@@ -819,7 +825,9 @@ assets : $(ASSETS_TIMESTAMP) locale
 	find . -type f -path "*.gitignore" -exec rm -rf {} \; ;                    \
 	find . \( -name "lucida_sans_*" -o -name "mono_dejavu_sans_*" -o -name "README.txt" -o -name "game_api.txt" -o -name ".git*" \) -exec rm {} \; ; \
 	ls -R | grep ":$$" | sed -e 's/:$$//' -e 's/\.//' -e 's/^\///' > "index.txt"; \
-	find freeminer >"filelist.txt"; \
+	#find freeminer >"filelist.txt"; \
+	find freeminer ! -path '*/games/*' > filelist.txt; \
+	find freeminer -path '*/games/*' >> filelist.txt; \
 	cp ${ROOT}/${ASSETS_TIMESTAMP} ${ROOT}/${ASSETS_TIMESTAMP}.old;            \
 	else                                                                       \
 		echo "nothing to be done for assets";                                  \
@@ -835,10 +843,11 @@ clean_assets :
 		$(LUAJIT_TIMESTAMP) luajit luajit_download clean_luajit
 
 MSGPACK_DIR = $(ROOT)/deps/msgpack/
-MSGPACK_LIB = $(MSGPACK_DIR)lib/Android/libmsgpack.a
+MSGPACK_LIB = $(MSGPACK_DIR)libmsgpackc.a
 MSGPACK_TIMESTAMP = $(MSGPACK_DIR)timestamp
 MSGPACK_TIMESTAMP_INT = $(ROOT)/deps/msgpack_timestamp
-MSGPACK_URL_GIT = https://github.com/msgpack/msgpack-c
+MSGPACK_GIT_URL = https://github.com/msgpack/msgpack-c
+MSGPACK_GIT_BRANCH = cpp-1.4.0
 MSGPACK_TARGET = $(MSGPACK_DIR)/include/msgpack.hpp
 
 $(MSGPACK_TIMESTAMP) : msgpack_download
@@ -852,7 +861,7 @@ msgpack_download :
 		echo "msgpack sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone -b cpp-1.1.0 ${MSGPACK_URL_GIT} ${MSGPACK_DIR} || exit 1;    \
+		${GIT_CLONE} --branch ${MSGPACK_GIT_BRANCH} ${MSGPACK_GIT_URL} ${MSGPACK_DIR} || exit 1; \
 	fi
 	
 msgpack : $(MSGPACK_LIB)
@@ -882,7 +891,7 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
-	cmake -DMSGPACK_CXX11=ON .;                                                \
+	cmake -DMSGPACK_CXX11=1 -DMSGPACK_BUILD_EXAMPLES=0 .; \
 	$(MAKE) -j${PARALLEL} || exit 1; \
 	touch ${MSGPACK_TIMESTAMP};                                                \
 	touch ${MSGPACK_TIMESTAMP_INT};                                            \
@@ -910,7 +919,7 @@ gettext_download :
 		echo "gettext sources missing, downloading...";                          \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${GETTEXT_URL_GIT} || exit 1;                                 \
+		${GIT_CLONE} ${GETTEXT_URL_GIT} || exit 1; \
 		mv libintl-lite ${GETTEXT_DIR};                            \
 		cd ${GETTEXT_DIR};                                                       \
 	fi
@@ -970,7 +979,7 @@ luajit_download :
 		echo "luajit sources missing, downloading...";                            \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone ${LUAJIT_URL_GIT} ${LUAJIT_DIR} || exit 1;                                     \
+		git clone --recursive ${LUAJIT_URL_GIT} ${LUAJIT_DIR} || exit 1; \
 	fi
 
 luajit : $(LUAJIT_LIB)

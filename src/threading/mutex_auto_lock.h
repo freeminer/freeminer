@@ -26,6 +26,15 @@ DEALINGS IN THE SOFTWARE.
 #ifndef THREADING_MUTEX_AUTO_LOCK_H
 #define THREADING_MUTEX_AUTO_LOCK_H
 
+
+#include <mutex>
+#include "threading/mutex.h"
+
+using MutexAutoLock = std::unique_lock<Mutex>;
+using RecursiveMutexAutoLock = std::unique_lock<RecursiveMutex>;
+
+#if WTF
+
 #if __cplusplus >= 201103L
 	#include <mutex>
 	using MutexAutoLock = std::unique_lock<std::mutex>;
@@ -33,7 +42,6 @@ DEALINGS IN THE SOFTWARE.
 #else
 
 #include "threading/mutex.h"
-
 
 class MutexAutoLock
 {
@@ -58,3 +66,4 @@ private:
 
 #endif
 
+#endif

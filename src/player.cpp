@@ -120,48 +120,6 @@ Player::~Player()
 	clearHud();
 }
 
-// Horizontal acceleration (X and Z), Y direction is ignored
-void Player::accelerateHorizontal(v3f target_speed, f32 max_increase, float slippery)
-{
-	if(max_increase == 0)
-		return;
-	
-	v3f d_wanted = target_speed - m_speed;
-	if (slippery && !free_move)
-	{
-		if (target_speed == v3f(0))
-			d_wanted = -m_speed*(1-slippery/100)/2;
-		else
-			d_wanted = target_speed*(1-slippery/100) - m_speed*(1-slippery/100);
-	}
-	d_wanted.Y = 0;
-	f32 dl = d_wanted.getLength();
-	if(dl > max_increase)
-		dl = max_increase;
-
-	v3f d = d_wanted.normalize() * dl;
-
-	m_speed.X += d.X;
-	m_speed.Z += d.Z;
-
-}
-
-// Vertical acceleration (Y), X and Z directions are ignored
-void Player::accelerateVertical(v3f target_speed, f32 max_increase)
-{
-	if(max_increase == 0)
-		return;
-
-	f32 d_wanted = target_speed.Y - m_speed.Y;
-	if(d_wanted > max_increase)
-		d_wanted = max_increase;
-	else if(d_wanted < -max_increase)
-		d_wanted = -max_increase;
-
-	m_speed.Y += d_wanted;
-
-}
-
 v3s16 Player::getLightPosition() const
 {
 	return floatToInt(m_position + v3f(0,BS+BS/2,0), BS);
@@ -358,7 +316,7 @@ void RemotePlayer::setPosition(const v3f &position)
 
 
 void Player::addSpeed(v3f speed) {
-		auto lock = lock_unique();
+		auto lock = lock_unique_rec();
 		m_speed += speed;
 }
 

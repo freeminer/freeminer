@@ -59,7 +59,7 @@ no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
 use feature qw(say);
 use Data::Dumper;
-use JSON;
+#use JSON;
 use Cwd;
 use POSIX ();
 
@@ -293,6 +293,7 @@ our $tasks = {
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1,}, 'build_normal',],
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
+    bot => [{-no_build_server => 1,}, 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
     build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
@@ -503,8 +504,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     up => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
-        sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop}
-          and sy qq{git submodule update --init --recursive};
+        sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop};
+        sy qq{git submodule update --init --recursive};
         chdir $cwd;
         return 0;
     },
@@ -532,6 +533,14 @@ sub array (@) {
     wantarray ? @_ : \@_;
 }
 
+sub json (@){
+    local *Data::Dumper::qquote = sub {
+        $_[0] =~ s/\\/\\\\/g, s/"/\\"/g for $_[0];
+        return ( '"' . $_[0] . '"' );
+    };
+    return \( Data::Dumper->new( \@_ )->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump() );
+}
+
 sub options_make(;$$) {
     my ($mm, $m) = @_;
     my ($rm, $rmm);
@@ -548,7 +557,8 @@ sub options_make(;$$) {
                 next;
             }
             next if !ref $rm->{$k};
-            ($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
+            #($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
+            ($rm->{$k} = ${json($rm->{$k})}) =~ s/"/$config->{run_escape}\\"/g;    #"
         }
     }
 

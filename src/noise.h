@@ -94,6 +94,7 @@ public:
 
 private:
 	std::atomic_ullong m_state;
+	//u64 m_state;
 	u64 m_inc;
 };
 

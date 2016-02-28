@@ -772,14 +772,14 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 
 	RemoteClient *client = getClient(pkt->getPeerId());
 
-	for (u16 i = 0; i < count; i++) {
-		if ((s16)pkt->getSize() < 1 + (i + 1) * 6)
-			throw con::InvalidIncomingDataException
+	if ((s16)pkt->getSize() < 1 + (int)count * 6) {
+		throw con::InvalidIncomingDataException
 				("GOTBLOCKS length is too short");
+	}
+
+	for (u16 i = 0; i < count; i++) {
 		v3s16 p;
-
 		*pkt >> p;
-
 		client->GotBlock(p);
 	}
 #endif
@@ -900,13 +900,14 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
 
 	RemoteClient *client = getClient(pkt->getPeerId());
 
-	for (u16 i = 0; i < count; i++) {
-		if ((s16)pkt->getSize() < 1 + (i + 1) * 6)
-			throw con::InvalidIncomingDataException
+	if ((s16)pkt->getSize() < 1 + (int)count * 6) {
+		throw con::InvalidIncomingDataException
 				("DELETEDBLOCKS length is too short");
+	}
+
+	for (u16 i = 0; i < count; i++) {
 		v3s16 p;
 		*pkt >> p;
-
 		client->SetBlockDeleted(p);
 	}
 }

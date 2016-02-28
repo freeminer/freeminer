@@ -152,7 +152,7 @@ vec4 base = texture2D(baseTexture, uv).rgba;
 #endif
 
 	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
-	vec4 col = vec4(color.rgb * (gl_Color.rgb + light), 1.0);
+	vec4 col = vec4(color.rgb * min(gl_Color.rgb + light, 1.0), 1.0);
 
 #if MATERIAL_TYPE == TILE_MATERIAL_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_LIQUID_OPAQUE
 	float alpha = gl_Color.a;

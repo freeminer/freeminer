@@ -2,8 +2,9 @@
 #include "log.h"
 #include "porting.h"
 
-thread_pool::thread_pool(const std::string &name) :
-	m_name(name) {
+thread_pool::thread_pool(const std::string &name, int priority) :
+	m_name(name),
+	m_priority(priority) {
 	requeststop = false;
 };
 
@@ -12,17 +13,21 @@ thread_pool::~thread_pool() {
 };
 
 void thread_pool::func() {
-	reg(m_name);
+	reg();
 	run();
 };
 
 void thread_pool::reg(const std::string &name, int priority) {
-	if (!name.empty()) {
-		porting::setThreadName(name.c_str());
-		g_logger.registerThread(name);
-	}
+	if (!name.empty())
+		m_name = name;
+
+	porting::setThreadName(m_name.c_str());
+	g_logger.registerThread(m_name);
+
 	if (priority)
-		porting::setThreadPriority(priority);
+		m_priority = priority;
+	if (m_priority)
+		porting::setThreadPriority(m_priority);
 };
 
 void thread_pool::start (int n) {

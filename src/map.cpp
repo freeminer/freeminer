@@ -78,14 +78,6 @@ Map::Map(IGameDef *gamedef):
 Map::~Map()
 {
 	auto lock = m_blocks.lock_unique_rec();
-#ifndef SERVER
-	if(g_settings->getBool("enable_vbo"))
-	for(auto &i : m_blocks) {
-		// We dont have gamedef here anymore, so we cant remove the hardwarebuffers
-		if(i.second && i.second->mesh)
-			i.second->mesh->clearHardwareBuffer = false;
-	}
-#endif
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;
 	for (auto & ir : m_blocks_delete_2)
@@ -567,7 +559,7 @@ void Map::spreadLight(enum LightBank bank,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if(!lighted_nodes.empty() && porting::getTimeMs() <= end_ms) { // maybe 32 too small
+	if(!lighted_nodes.empty() && (!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
 /*
 		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
 			<<" from="<<from_nodes.size()
@@ -2525,6 +2517,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	}
 */
 
+	auto save_generated_block = g_settings->getBool("save_generated_block");
 	for (std::map<v3s16, MapBlock *>::iterator
 			it = changed_blocks->begin();
 			it != changed_blocks->end(); ++it) {
@@ -2539,7 +2532,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 			Set block as modified
 		*/
 
-		if (g_settings->getBool("save_generated_block"))
+		if (save_generated_block)
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
 	}
@@ -3318,12 +3311,12 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	DSTACK(FUNCTION_NAME);
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
+	MapBlock *block = nullptr;
+	try {
 	auto blob = dbase->loadBlock(p3d);
 	if(!blob.length())
 		return nullptr;
 
-	MapBlock *block = nullptr;
-	try {
 		std::istringstream is(blob, std::ios_base::binary);
 
 		u8 version = SER_FMT_VER_INVALID;

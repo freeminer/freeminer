@@ -56,7 +56,7 @@ public:
 
 	virtual void render();
 	
-	virtual const core::aabbox3d<f32>& getBoundingBox() const
+	virtual const aabb3f &getBoundingBox() const
 	{
 		return m_box;
 	}
@@ -82,7 +82,7 @@ public:
 	void updateCameraOffset(v3s16 camera_offset)
 	{
 		m_camera_offset = camera_offset;
-		m_box = core::aabbox3d<f32>(-BS * 1000000, m_cloud_y - BS - BS * camera_offset.Y, -BS * 1000000,
+		m_box = aabb3f(-BS * 1000000, m_cloud_y - BS - BS * camera_offset.Y, -BS * 1000000,
 			BS * 1000000, m_cloud_y + BS - BS * camera_offset.Y, BS * 1000000);
 	}
 
@@ -90,7 +90,7 @@ public:
 
 private:
 	video::SMaterial m_material;
-	core::aabbox3d<f32> m_box;
+	aabb3f m_box;
 	s16 m_passed_cloud_y;
 public:
 	float m_cloud_y;

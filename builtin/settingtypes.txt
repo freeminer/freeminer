@@ -209,11 +209,11 @@ keymap_toggle_profiler (Profiler toggle key) key KEY_F6
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
 keymap_camera_mode (Toggle camera mode key) key KEY_F7
 
-#    Key for increasing the viewing range. Modifies the minimum viewing range.
+#    Key for increasing the viewing range.
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
 keymap_increase_viewing_range_min (View range increase key) key +
 
-#    Key for decreasing the viewing range. Modifies the minimum viewing range.
+#    Key for decreasing the viewing range.
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
 keymap_decrease_viewing_range_min (View range decrease key) key -
 
@@ -252,13 +252,11 @@ serverlist_file (Serverlist file) string favoriteservers.txt
 
 [***Basic]
 
+#    Enable VBO
+enable_vbo (VBO) bool true
+
 #    Whether to fog out the end of the visible area.
 enable_fog (Fog) bool true
-
-#    Enable a bit lower water surface, so it doesn't "fill" the node completely.
-#    Note that this is not quite optimized and that smooth lighting on the
-#    water surface doesn't work with this.
-new_style_water (New style water) bool false
 
 #    Leaves style:
 #    -   Fancy:  all faces visible
@@ -310,11 +308,6 @@ texture_clean_transparent (Clean transparent textures) bool false
 #    have a visible effect unless bilinear/trilinear/anisotropic filtering is
 #    enabled.
 texture_min_size (Minimum texture size for filters) int 64
-
-#    Pre-generate all item visuals used in the inventory.
-#    This increases startup time, but runs smoother in-game.
-#    The generated textures can easily exceed your VRAM, causing artifacts in the inventory.
-preload_item_visuals (Preload inventory textures) bool false
 
 #    Experimental option, might cause visible spaces between blocks
 #    when set to higher number than 0.
@@ -393,10 +386,6 @@ enable_waving_plants (Waving plants) bool false
 
 [***Advanced]
 
-#    Minimum wanted FPS.
-#    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
-wanted_fps (Wanted FPS) int 30
-
 #    If FPS would go higher than this, limit it by sleeping
 #    to not waste CPU power for no benefit.
 fps_max (Maximum FPS) int 60
@@ -404,13 +393,9 @@ fps_max (Maximum FPS) int 60
 #    Maximum FPS when game is paused.
 pause_fps_max (FPS in pause menu) int 20
 
-#    The allowed adjustment range for the automatic rendering range adjustment.
-#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
-viewing_range_nodes_max (Viewing range maximum) int 160
-
-#    The allowed adjustment range for the automatic rendering range adjustment.
-#    Set this to be equal to viewing range maximum to disable the auto-adjustment algorithm.
-viewing_range_nodes_min (Viewing range minimum) int 35
+#    View distance in nodes.
+#    Min = 20
+viewing_range (Viewing range) int 100
 
 #    Width component of the initial window size.
 screenW (Screen width) int 800
@@ -701,12 +686,6 @@ enable_pvp (Player versus Player) bool true
 
 #    If this is set, players will always (re)spawn at the given position.
 static_spawnpoint (Static spawnpoint) string
-
-#    Maximum distance above water level for player spawn.
-#    Larger values result in spawn points closer to (x = 0, z = 0).
-#    Smaller values may result in a suitable spawn point not being found,
-#    resulting in a spawn at (0, 0, 0) possibly buried underground.
-vertical_spawn_range (Vertical spawn range) int 16
 
 #    If enabled, new players cannot join with an empty password.
 disallow_empty_password (Disallow empty passwords) bool false
@@ -1119,6 +1098,10 @@ secure.enable_security (Enable mod security) bool false
 #    functions even when mod security is on (via request_insecure_environment()).
 secure.trusted_mods (Trusted mods) string
 
+#	Comma-seperated list of mods that are allowed to access HTTP APIs, which
+#	allow them to upload and download data to/from the internet.
+secure.http_mods (HTTP Mods) string
+
 [Client and Server]
 
 #    Name of the player.
@@ -1189,7 +1172,15 @@ modstore_details_url (Modstore details URL) string https://forum.minetest.net/mm
 [Freeminer]
 [*Client]
 
-#Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#    Minimum wanted FPS.
+#    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
+wanted_fps (Wanted FPS) int 30
+
+#    The allowed adjustment range for the automatic rendering range adjustment.
+#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+viewing_range_max (Viewing range maximum) int 10000
+
+#Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
 farmesh () int 0
 farmesh_step () int 2
 
@@ -1229,6 +1220,8 @@ chat_buffer_size () int 6
 #    Selection box border color (R,G,B)
 selectionbox_color () string (0,0,0)
 
+#Android only: use better keyboard. glitchy on <4.4 versions
+android_keyboard () enum 0 0,1,2
 
 [*Server]
 

@@ -159,7 +159,7 @@ void MeshUpdateThread::doUpdate()
 		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
 #endif
 
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 		} catch (BaseException &e) {
 			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
 		} catch(std::exception &e) {
@@ -214,6 +214,7 @@ Client::Client(
 	m_particle_manager(&m_env),
 	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
 	m_device(device),
+	m_camera(NULL),
 	m_minimap_disabled_by_server(false),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_proto_ver(0),
@@ -253,6 +254,9 @@ Client::Client(
 
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_shaders  = g_settings->getBool("enable_shaders");
+	m_cache_use_tangent_vertices = m_cache_enable_shaders && (
+		g_settings->getBool("enable_bumpmapping") || 
+		g_settings->getBool("enable_parallax_occlusion"));
 }
 
 void Client::Stop()
@@ -1534,13 +1538,13 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	{
 		ClientActiveObject *obj = objects[i].obj;
 
-		core::aabbox3d<f32> *selection_box = obj->getSelectionBox();
+		aabb3f *selection_box = obj->getSelectionBox();
 		if(selection_box == NULL)
 			continue;
 
 		v3f pos = obj->getPosition();
 
-		core::aabbox3d<f32> offsetted_box(
+		aabb3f offsetted_box(
 				selection_box->MinEdge + pos,
 				selection_box->MaxEdge + pos
 		);
@@ -1655,7 +1659,9 @@ void Client::addUpdateMeshTask(v3s16 p, bool urgent, int step)
 		Create a task to update the mesh of the block
 	*/
 	auto & draw_control = m_env.getClientMap().getControl();
-	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders, m_env.getMap(), draw_control));
+	std::shared_ptr<MeshMakeData> data(new MeshMakeData(this, m_cache_enable_shaders,
+		m_cache_use_tangent_vertices,
+		m_env.getMap(), draw_control));
 
 	{
 		//TimeTaker timer("data fill");
@@ -1852,29 +1858,6 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 	tu_args.text_base =  wgettext("Initializing nodes");
 	m_nodedef->updateTextures(this, texture_update_progress, &tu_args);
 	delete[] tu_args.text_base;
-	}
-
-	// Preload item textures and meshes if configured to
-	if(!headless_optimize && g_settings->getBool("preload_item_visuals"))
-	{
-		verbosestream<<"Updating item textures and meshes"<<std::endl;
-		text = wgettext("Item textures...");
-		draw_load_screen(text, device, guienv, 0, 0);
-		std::set<std::string> names = m_itemdef->getAll();
-		size_t size = names.size();
-		size_t count = 0;
-		int percent = 0;
-		for(std::set<std::string>::const_iterator
-				i = names.begin(); i != names.end(); ++i)
-		{
-			// Asking for these caches the result
-			m_itemdef->getInventoryTexture(*i, this);
-			m_itemdef->getWieldMesh(*i, this);
-			count++;
-			percent = (count * 100 / size * 0.2) + 80;
-			draw_load_screen(text, device, guienv, 0, percent);
-		}
-		delete[] text;
 	}
 
 	if (!headless_optimize) {

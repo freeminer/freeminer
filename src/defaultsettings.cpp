@@ -141,13 +141,15 @@ void fm_set_default_settings(Settings *settings) {
 	// Clouds, water, glass, leaves, fog
 	settings->setDefault("cloud_height", "300"); // "120"
 	settings->setDefault("enable_zoom_cinematic", "true");
-	settings->setDefault("viewing_range_nodes_max", itos(MAX_MAP_GENERATION_LIMIT)); // "240"
+	settings->setDefault("wanted_fps", "30");
+	settings->setDefault("viewing_range_max", "10000" /*itos(MAX_MAP_GENERATION_LIMIT)*/); // "240"
 	settings->setDefault("shadows", "0");
 	settings->setDefault("zoom_fov", "15");
 	settings->setDefault("farmesh", "0");
 	settings->setDefault("farmesh_step", "2");
 	settings->setDefault("farmesh_wanted", "500");
 	settings->setDefault("headless_optimize", "false");
+	//settings->setDefault("node_highlighting", "halo");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
@@ -172,7 +174,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("autojump", "0");
-	settings->setDefault("enable_vbo", "false");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
@@ -254,7 +255,7 @@ void fm_set_default_settings(Settings *settings) {
 	}
 
 	settings->setDefault("minimap_shape_round", "false");
-
+	settings->setDefault("mainmenu_last_selected_world", "1");
 
 
 #ifdef __ANDROID__
@@ -264,17 +265,20 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("smooth_lighting", "false");
 	settings->setDefault("enable_3d_clouds", "false");
 
-	settings->setDefault("wanted_fps", "20");
+	settings->setDefault("wanted_fps", "25");
 	settings->setDefault("fps_max", "30");
-	settings->setDefault("mouse_sensitivity", "0.05");
+	settings->setDefault("mouse_sensitivity", "0.1");
+
+	settings->setDefault("sound_volume", "1");
+	settings->setDefault("doubletap_jump", "1");
 
 	/*
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
 	settings->setDefault("emergequeue_limit_diskonly", "8");
 	settings->setDefault("emergequeue_limit_generate", "8");
-	settings->setDefault("viewing_range_nodes_max", "50");
-	settings->setDefault("viewing_range_nodes_min", "20");
 	*/
+	settings->setDefault("viewing_range", "25");
+	settings->setDefault("viewing_range_max", "500");
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
 	if (x_inches  < 7) {
@@ -333,6 +337,7 @@ void fm_set_default_settings(Settings *settings) {
 
 #ifdef HAVE_TOUCHSCREENGUI
 	settings->setDefault("touchtarget", "true");
+	settings->setDefault("touchscreen_threshold","20");
 #endif
 
 }
@@ -406,12 +411,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("show_debug", "true");
 	#endif
 
-	settings->setDefault("wanted_fps", "30");
 	settings->setDefault("fps_max", "60");
 	settings->setDefault("pause_fps_max", "20");
-	// A bit more than the server will send around the player, to make fog blend well
-	settings->setDefault("viewing_range_nodes_max", "240");
-	settings->setDefault("viewing_range_nodes_min", "35");
+	settings->setDefault("viewing_range", "100");
 	settings->setDefault("map_generation_limit", "31000");
 	settings->setDefault("screenW", "800");
 	settings->setDefault("screenH", "600");
@@ -426,7 +428,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fov", "72");
 	settings->setDefault("view_bobbing", "true");
-	settings->setDefault("new_style_water", "false");
 	settings->setDefault("leaves_style", "fancy");
 	settings->setDefault("connected_glass", "false");
 	settings->setDefault("smooth_lighting", "true");
@@ -476,7 +477,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("trilinear_filter", "false");
 	settings->setDefault("texture_clean_transparent", "false");
 	settings->setDefault("texture_min_size", "64");
-	settings->setDefault("preload_item_visuals", "false");
 	settings->setDefault("tone_mapping", "false");
 	settings->setDefault("enable_bumpmapping", "false");
 	settings->setDefault("enable_parallax_occlusion", "false");
@@ -498,7 +498,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("enable_mesh_cache", "false");
-
+	settings->setDefault("enable_vbo", "true");
+	
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
 	settings->setDefault("minimap_double_scan_height", "true");
@@ -606,6 +607,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("num_emerge_threads", "1");
 	settings->setDefault("secure.enable_security", "false");
 	settings->setDefault("secure.trusted_mods", "");
+	settings->setDefault("secure.http_mods", "");
 
 	// physics stuff
 	settings->setDefault("movement_acceleration_default", "3");
@@ -662,10 +664,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
 	settings->setDefault("emergequeue_limit_diskonly", "8");
 	settings->setDefault("emergequeue_limit_generate", "8");
-	settings->setDefault("preload_item_visuals", "false");
 
-	settings->setDefault("viewing_range_nodes_max", "50");
-	settings->setDefault("viewing_range_nodes_min", "20");
+	settings->setDefault("viewing_range", "50");
 	settings->setDefault("inventory_image_hack", "false");
 
 	//check for device with small screen

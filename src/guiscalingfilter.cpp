@@ -39,7 +39,8 @@ std::map<io::path, video::ITexture *> g_txrCache;
  */
 void guiScalingCache(io::path key, video::IVideoDriver *driver, video::IImage *value)
 {
-	if (!g_settings->getBool("gui_scaling_filter"))
+	static const auto gui_scaling_filter = g_settings->getBool("gui_scaling_filter");
+	if (!gui_scaling_filter)
 		return;
 	video::IImage *copied = driver->createImage(value->getColorFormat(),
 			value->getDimension());
@@ -74,7 +75,8 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 {
 	if (src == NULL)
 		return src;
-	if (!g_settings->getBool("gui_scaling_filter"))
+	static const auto gui_scaling_filter = g_settings->getBool("gui_scaling_filter");
+	if (!gui_scaling_filter)
 		return src;
 
 	// Calculate scaled texture name.

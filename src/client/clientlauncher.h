@@ -125,6 +125,8 @@ protected:
 	std::string current_address;
 	int current_port;
 
+	//freminer:
+	void wait_data();
 	unsigned int autoexit;
 };
 

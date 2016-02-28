@@ -60,6 +60,7 @@ struct MeshMakeData
 	IGameDef *m_gamedef;
 
 	bool m_use_shaders;
+	bool m_use_tangent_vertices;
 
 	int step;
 	int range;
@@ -71,7 +72,9 @@ struct MeshMakeData
 	bool debug;
 	bool filled;
 
-	MeshMakeData(IGameDef *gamedef, bool use_shaders, Map & map_, MapDrawControl& draw_control_);
+	MeshMakeData(IGameDef *gamedef, bool use_shaders,
+			bool use_tangent_vertices,
+			Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
 
 	/*
@@ -156,13 +159,7 @@ public:
 	void incrementUsageTimer(float dtime)
 	{
 		m_usage_timer += dtime;
-		if(m_usage_timer > 10)
-			setStatic();
 	}
-
-	void setStatic();
-
-	bool clearHardwareBuffer;
 
 	int step;
 	bool no_draw;
@@ -174,10 +171,13 @@ public:
 	MinimapMapblock *m_minimap_mapblock;
 private:
 	IGameDef *m_gamedef;
+	video::IVideoDriver *m_driver;
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 
 	bool m_enable_shaders;
+	bool m_use_tangent_vertices;
+	bool m_enable_vbo;
 
 	// Must animate() be called before rendering?
 	bool m_has_animation;
@@ -217,11 +217,19 @@ struct PreMeshBuffer
 	TileSpec tile;
 	std::vector<u16> indices;
 	std::vector<video::S3DVertex> vertices;
+	std::vector<video::S3DVertexTangents> tangent_vertices;
 };
 
 struct MeshCollector
 {
 	std::vector<PreMeshBuffer> prebuffers;
+	bool m_use_tangent_vertices;
+
+	MeshCollector(bool use_tangent_vertices):
+		m_use_tangent_vertices(use_tangent_vertices)
+	{
+	}
+
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);

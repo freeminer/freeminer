@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define TILE_HEADER
 
 #include "irrlichttypes.h"
-#include "irr_v2d.h"
 #include "irr_v3d.h"
 #include <ITexture.h>
 #include <IrrlichtDevice.h>
@@ -103,7 +102,6 @@ struct TextureInfo
 {
 	std::string name;
 	video::ITexture *texture;
-	video::SColor color;
 
 	TextureInfo(
 			const std::string &name_,
@@ -113,11 +111,6 @@ struct TextureInfo
 		name(name_),
 		texture(texture_)
 	{
-		if(img!=NULL){
-			color = img->getPixel(0,0); // TODO: avg here
-		} else {
-			color = video::SColor(0,0,0,0);
-		}
 	}
 };
 

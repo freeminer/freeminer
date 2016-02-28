@@ -81,6 +81,7 @@ ClientLauncher::~ClientLauncher()
 
 	if (device) {
 		device->closeDevice();
+		device->run();
 		device->drop();
 	}
 }
@@ -147,8 +148,6 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 56, 121, 65));
 	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255, 255, 255, 255));
 
-	g_fontengine = new FontEngine(g_settings, guienv);
-	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
 
 #if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
 	// Irrlicht 1.8 input colours
@@ -165,8 +164,15 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	g_menuclouds->update(v2f(0, 0), video::SColor(255, 200, 200, 255));
 	scene::ICameraSceneNode* camera;
 	camera = g_menucloudsmgr->addCameraSceneNode(0,
-				v3f(0, 0, 0), v3f(0, 60, 100));
+				v3f(0, 0, 0), v3f(0, 120, 100));
 	camera->setFarValue(10000);
+
+#ifdef __ANDROID__
+	wait_data();
+#endif
+
+	g_fontengine = new FontEngine(g_settings, guienv);
+	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
 
 	/*
 		GUI stuff
@@ -755,4 +761,45 @@ bool ClientLauncher::print_video_modes()
 	delete receiver;
 
 	return videomode_list != NULL;
+}
+
+
+//freeminer:
+void ClientLauncher::wait_data() {
+	bool wait = false;
+	std::vector<std::string> check_path { porting::path_share + DIR_DELIM + "builtin" + DIR_DELIM + "init.lua", g_settings->get("font_path") };
+	for (auto p : check_path)
+		if (!fs::PathExists(p)) {
+			wait = true;
+			break;
+		}
+	bool &kill = *porting::signal_handler_killstatus();
+	for (int i = 0; i < 1000; ++i) {
+#ifdef __ANDROID__
+		porting::handleAndroidActivityEvents();
+#endif
+
+		if (i || wait) {
+			auto driver = device->getVideoDriver();
+			g_menuclouds->step(50);
+			driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
+			g_menucloudsmgr->drawAll();
+			guienv->drawAll();
+			driver->endScene();
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+		int no = 0;
+		for (auto p : check_path)
+			if (!fs::PathExists(p)) {
+				no++;
+				break;
+			}
+		if (!no || kill || !device->run())
+			break;
+		infostream << "waiting assets i= " << i << " path="<< porting::path_share << std::endl;
+	}
+
+	if (wait)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
