@@ -113,6 +113,7 @@ sub init_config () {
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
         tee               => '2>&1 | tee -a ',
         run_task          => 'run_single',
+        cache_clear       => 0, # remove cache dir before start client
         #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
         #make_add     => '',
         #run_add       => '',
@@ -221,6 +222,7 @@ our $commands = {
 qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
+        sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world address port config autoexit);
         sy qq{$config->{env} $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world address port config autoexit)])
@@ -250,6 +252,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
           . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log $fork};
     },
     run_clients => sub {
+        sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
