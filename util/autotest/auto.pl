@@ -296,6 +296,8 @@ our $tasks = {
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1,}, 'build_normal',],
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
+    build_client       => [{-no_build_server => 1,}, 'build_normal',],
+    build_client_debug => [{-no_build_server => 1,}, 'build_debug',],
     bot => [{-no_build_server => 1,}, 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
@@ -370,7 +372,7 @@ our $tasks = {
         $config->{run_task},
         'symbolize',
     ],
-    debug     => [{-no_build_server => 1,}, 'build_debug',      $config->{run_task},],
+    debug     => ['build_client_debug',      $config->{run_task},],
     nothreads => [{-no_build_server => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
@@ -449,11 +451,12 @@ our $tasks = {
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    server => [{-no_build_client => 1,}, 'build_debug', 'run_server'],
-    server_gdb => [['gdb', 'server']],
-    server_gdb_nd => [{-no_build_client => 1,}, 'build_normal', ['gdb', 'run_server']],
+    server => ['build_server', 'run_server'],
+    server_debug => ['build_server_debug', 'run_server'],
+    server_gdb => [['gdb', 'server_debug']],
+    server_gdb_nd => ['build_server', ['gdb', 'run_server']],
 
-    bot_gdb => [{-no_build_server => 1,}, 'build_debug', ['gdb', 'run_single']],
+    bot_gdb => ['build_client_debug', ['gdb', 'run_single']],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -474,7 +477,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             }
         }
     },
-    bot_vtune => [{-no_build_server => 1,}, 'build_debug', ['vtune', 'run_single'], 'vtune_report'],
+    bot_vtune => ['build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
     stress_vtune => [
         'build_debug',
         sub {
