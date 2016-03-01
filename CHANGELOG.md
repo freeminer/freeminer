@@ -16,6 +16,7 @@ Changelog
   * Optional store auth database to leveldb, no huge auth.txt. to enable: auth_kv=1
   * Mapgen indev: huge noise based caves
   * Auto delete old items by default. push items up from solid blocks.
+  * Announce servers on lan via broadcast udp. And show them in clients online server list
 
 
 ### 0.4.13.7 (Aug 20, 2015)

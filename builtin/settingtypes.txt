@@ -1170,6 +1170,7 @@ modstore_details_url (Modstore details URL) string https://forum.minetest.net/mm
 
 
 [Freeminer]
+
 [*Client]
 
 #    Minimum wanted FPS.
@@ -1224,6 +1225,8 @@ selectionbox_color () string (0,0,0)
 android_keyboard () enum 0 0,1,2
 
 [*Server]
+# Lan udp announce
+serverlist_lan () bool 1
 
 # Save auth data to leveldb kv storage
 auth_kv () bool false

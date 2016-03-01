@@ -51,6 +51,11 @@ void thread_pool::restart (int n) {
 	join();
 	start(n);
 }
+void thread_pool::reanimate(int n) {
+	if (workers.empty())
+		start(n);
+}
+
 
 // JThread compat:
 bool thread_pool::stopRequested() {

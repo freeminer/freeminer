@@ -263,4 +263,28 @@ void sendAnnounce(const std::string &action,
 #endif
 }
 
+
+lan_adv lan_adv_client;
+
+void getLan() {
+	if (!g_settings->getBool("serverlist_lan"))
+		return;
+	ServerList::lan_adv_client.ask();
+}
+
+void applyLan(std::vector<ServerListSpec> & servers) {
+	auto lock = lan_adv_client.collected.lock_unique_rec();
+	if (lan_adv_client.collected.size()) {
+		if (servers.size()) {
+			Json::Value separator;
+			separator["name"] = "-----lan-servers-end-----";
+			servers.insert(servers.begin(), separator);
+		}
+		for (auto & i : lan_adv_client.collected) {
+			servers.insert(servers.begin(), i.second);
+		}
+	}
+}
+
+
 } //namespace ServerList

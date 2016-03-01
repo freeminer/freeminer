@@ -64,6 +64,7 @@ end
 --------------------------------------------------------------------------------
 function order_favorite_list(list)
 	local res = {}
+	if not list then list = {} end
 	--orders the favorite list after support
 	for i=1,#list,1 do
 		local fav = list[i]
@@ -95,7 +96,7 @@ function render_favorite(spec,render_details)
 		if spec.address ~= nil then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= nil then
+			if spec.port ~= nil and spec.port ~= "30000" then
 				text = text .. ":" .. spec.port
 			end
 		end

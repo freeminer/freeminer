@@ -185,6 +185,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/contrib/fallingsao.cpp            \
 		jni/src/contrib/itemsao.cpp               \
 		jni/src/contrib/l_env.cpp                 \
+		jni/src/network/fm_lan.cpp                \
                                                   \
 		jni/src/areastore.cpp                     \
 		jni/src/ban.cpp                           \

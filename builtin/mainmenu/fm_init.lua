@@ -117,7 +117,7 @@ function menu.render_favorite(spec,render_details)
 		if spec.address ~= "" then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= "" then
+			if spec.port ~= "" and spec.port ~= "30000" then
 				text = text .. ":" .. spec.port
 			end
 		end

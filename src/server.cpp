@@ -440,9 +440,6 @@ Server::Server(
 	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
 
-	if (!simple_singleplayer_mode)
-		m_nodedef->updateTextures(this);
-
 	m_emerge->startThreads();
 }
 
@@ -575,6 +572,9 @@ void Server::start(Address bind_addr)
 			<<"\" mapgen=\""<<m_emerge->params.mg_name
 			<<"\" listening on "<<bind_addr.serializeString()<<":"
 			<<bind_addr.getPort() << "."<<std::endl;
+
+	if (!m_simple_singleplayer_mode && g_settings->getBool("serverlist_lan"))
+		lan_adv_server.serve(m_bind_addr.getPort());
 }
 
 void Server::stop()

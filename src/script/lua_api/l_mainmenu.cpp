@@ -467,7 +467,9 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 	std::vector<ServerListSpec> servers;
 
 	if(listtype == "online") {
+		ServerList::getLan();
 		servers = ServerList::getOnline();
+		ServerList::applyLan(servers);
 	} else {
 		servers = ServerList::getLocal();
 	}

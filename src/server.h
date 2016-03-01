@@ -43,6 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <vector>
 #include "stat.h"
+#include "network/fm_lan.h"
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -722,6 +723,7 @@ private:
 
 	// freeminer:
 public:
+	lan_adv lan_adv_server;
 	int m_autoexit;
 	//concurrent_map<v3POS, MapBlock*> m_modified_blocks;
 	//concurrent_map<v3POS, MapBlock*> m_lighting_modified_blocks;

@@ -303,6 +303,7 @@ void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 void Address::setPort(u16 port)
 {
 	m_port = port;
+	m_address.ipv6.sin6_port = m_port;
 }
 
 void Address::print(std::ostream *s) const
@@ -490,10 +491,13 @@ int UDPSocket::Receive(Address & sender, void *data, int size)
 		if(received < 0)
 			return -1;
 
+/*
 		u16 address_port = ntohs(address.sin6_port);
 		IPv6AddressBytes bytes;
 		memcpy(bytes.bytes, address.sin6_addr.s6_addr, 16);
 		sender = Address(&bytes, address_port);
+*/
+		sender = Address(address);
 	} else {
 		struct sockaddr_in address;
 		memset(&address, 0, sizeof(address));

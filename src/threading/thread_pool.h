@@ -23,6 +23,7 @@ public:
 	void reg (const std::string &name = "", int priority = 0);
 	void start (int n = 1);
 	void restart (int n = 1);
+	void reanimate (int n = 1);
 	void stop ();
 	void join ();
 

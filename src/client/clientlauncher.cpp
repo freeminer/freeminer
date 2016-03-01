@@ -521,6 +521,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 
 void ClientLauncher::main_menu(MainMenuData *menudata)
 {
+	ServerList::getLan();
 	bool *kill = porting::signal_handler_killstatus();
 	video::IVideoDriver *driver = device->getVideoDriver();
 
@@ -545,6 +546,8 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 	GUIEngine mymenu(device, guiroot, &g_menumgr, smgr, menudata, *kill);
 
 	smgr->clear();	/* leave scene manager in a clean state */
+
+	ServerList::lan_adv_client.stop();
 }
 
 bool ClientLauncher::create_engine_device()

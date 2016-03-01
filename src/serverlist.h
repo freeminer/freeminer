@@ -28,10 +28,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SERVERLIST_HEADER
 #define SERVERLIST_HEADER
 
+#include "network/fm_lan.h"
+
 typedef Json::Value ServerListSpec;
 
 namespace ServerList
 {
+	extern lan_adv lan_adv_client;
+	void getLan();
+	void applyLan(std::vector<ServerListSpec> & servers);
+
 	std::vector<ServerListSpec> getLocal();
 	std::vector<ServerListSpec> getOnline();
 	bool deleteEntry(const ServerListSpec &server);
