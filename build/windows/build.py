@@ -100,6 +100,10 @@ def main():
 
 	print("Build type: {}".format(build_type))
 	
+	nuget = "NuGet.exe"
+	if not os.path.exists(libvorbis):
+		urllib.request.urlretrieve("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", nuget)
+
 	if not os.path.exists("deps"):
 		print("Creating `deps` directory.")
 		os.mkdir("deps")
