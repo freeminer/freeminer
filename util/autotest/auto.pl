@@ -106,6 +106,7 @@ sub init_config () {
         #tsan_opengl_fix   => 1,
         options_display => ($ENV{DISPLAY} ? '' : 'headless'),
         options_bot     => 'bot_random',
+        makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
         cmake_minetest  => '-DMINETEST_PROTO=1',
         cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
@@ -219,7 +220,7 @@ our $commands = {
     },
     make => sub {
         sy
-qq{nice make -j \$(nproc || sysctl -n hw.ncpu || echo 2) $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
+qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
@@ -392,7 +393,7 @@ our $tasks = {
         my $name = shift;
         $g->{build_name} .= '_minetest';
         local $config->{no_build_server} = 1;
-        local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
+        #local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
         if ($name) {
             commands_run('bot_' . $name);
         } else {
