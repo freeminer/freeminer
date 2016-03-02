@@ -122,12 +122,13 @@ void * lan_adv::run() {
 	reg("LanAdv" + (server_port ? std::string("Server") : std::string("Client")));
 
 	UDPSocket socket_recv(true);
-	int set_option_on = 1;
+	int set_option_off = 0, set_option_on = 1;
 	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEADDR, (const char*) &set_option_on, sizeof(set_option_on));
 #ifdef SO_REUSEPORT
 	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEPORT, (const char*) &set_option_on, sizeof(set_option_on));
 #endif
 	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
+	setsockopt(socket_recv.GetHandle(), IPPROTO_IPV6, IPV6_V6ONLY, (const char*) &set_option_off, sizeof(set_option_off));
 	socket_recv.setTimeoutMs(200);
 	Address addr_bind(in6addr_any, adv_port);
 	socket_recv.Bind(addr_bind);
