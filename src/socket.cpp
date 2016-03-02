@@ -352,6 +352,9 @@ bool UDPSocket::init(bool ipv6, bool noExceptions)
 
 	setTimeoutMs(0);
 
+	int set_option_off = 0;
+	setsockopt(m_handle, IPPROTO_IPV6, IPV6_V6ONLY, (const char*) &set_option_off, sizeof(set_option_off));
+
 	return true;
 }
 
