@@ -118,6 +118,9 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			m_localserver->getEmergeManager()->params.load(settings);
 		}
 
+		if (packet.count(TOCLIENT_INIT_WEATHER))
+			packet[TOCLIENT_INIT_WEATHER].convert(&use_weather);
+
 		//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
 		//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 

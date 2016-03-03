@@ -1524,7 +1524,6 @@ struct VolatileRunFlags {
 	//freeminer:
 	bool headless_optimize;
 	bool no_output;
-	bool use_weather;
 	float dedicated_server_step;
 	int errors;
 	bool show_block_boundaries;
@@ -1944,7 +1943,6 @@ void Game::run()
 	// freeminer:
 	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	flags.use_weather = g_settings->getBool("weather");
 	flags.headless_optimize = g_settings->getBool("headless_optimize");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	flags.connected = false;
@@ -4382,7 +4380,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		if (flags.use_weather) {
+		if (client->use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
 			runData->fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}

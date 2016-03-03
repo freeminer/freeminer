@@ -369,7 +369,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			Answer with a TOCLIENT_INIT
 		*/
 		{
-			MSGPACK_PACKET_INIT(TOCLIENT_INIT_LEGACY, 5);
+			MSGPACK_PACKET_INIT(TOCLIENT_INIT_LEGACY, 6);
 			PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 			PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 			PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
@@ -382,6 +382,8 @@ void Server::ProcessData(NetworkPacket *pkt)
 			PACK(TOCLIENT_INIT_MAP_PARAMS, params);
 
 			PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
+
+			PACK(TOCLIENT_INIT_WEATHER, g_settings->getBool("weather"));
 
 			// Send as reliable
 			m_clients.send(peer_id, 0, buffer, true);

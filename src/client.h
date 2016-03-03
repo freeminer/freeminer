@@ -687,6 +687,7 @@ private:
 	bool m_simple_singleplayer_mode;
 	float m_timelapse_timer;
 public:
+	bool use_weather = false;
 	void sendDrawControl();
 private:
 
