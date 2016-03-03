@@ -59,6 +59,14 @@ const bool android =
 #endif
     ;
 
+const bool threads =
+#if ENABLE_THREADS
+    true
+#else
+    false
+#endif
+    ;
+
 
 void fm_set_default_settings(Settings *settings) {
 
@@ -142,13 +150,13 @@ void fm_set_default_settings(Settings *settings) {
 	// Clouds, water, glass, leaves, fog
 	settings->setDefault("cloud_height", "300"); // "120"
 	settings->setDefault("enable_zoom_cinematic", "true");
-	settings->setDefault("wanted_fps", "30");
-	settings->setDefault("viewing_range_max", "10000" /*itos(MAX_MAP_GENERATION_LIMIT)*/); // "240"
+	settings->setDefault("wanted_fps", android ? "25" : "30");
+	settings->setDefault("viewing_range_max", android ? "500" : "10000" /*itos(MAX_MAP_GENERATION_LIMIT)*/); // "240"
 	settings->setDefault("shadows", "0");
 	settings->setDefault("zoom_fov", "15");
-	settings->setDefault("farmesh", "0");
-	settings->setDefault("farmesh_step", "2");
-	settings->setDefault("farmesh_wanted", "500");
+	settings->setDefault("farmesh", android ? "2" : "0");
+	settings->setDefault("farmesh_step", android ? "1" : "2");
+	settings->setDefault("farmesh_wanted", android ? "100" :"500");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 
@@ -159,7 +167,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("liquid_fast_flood", "1");
 
 	// Weather
-	settings->setDefault("weather", "true");
+	settings->setDefault("weather", threads ? "true" : "false");
 	settings->setDefault("weather_biome", "false");
 	settings->setDefault("weather_heat_season", "30");
 	settings->setDefault("weather_heat_daily", "8");
@@ -174,7 +182,7 @@ void fm_set_default_settings(Settings *settings) {
 
 	settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("respawn_auto", "false");
-	settings->setDefault("autojump", "0");
+	settings->setDefault("autojump", android ? "1" : "0");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
@@ -195,14 +203,9 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("default_privs_creative", "interact, shout, fly, fast");
 	settings->setDefault("vertical_spawn_range", "50"); // "16"
 	settings->setDefault("cache_block_before_spawn", "true");
-	settings->setDefault("abm_random", "true");
-#if ENABLE_THREADS
-	settings->setDefault("active_block_range", "4");
-	settings->setDefault("abm_neighbors_range_max", win32 ? "1" : "16");
-#else
-	settings->setDefault("active_block_range", "2");
-	settings->setDefault("abm_neighbors_range_max", "1");
-#endif
+	settings->setDefault("abm_random", android ? "false" : "true");
+	settings->setDefault("active_block_range", android ? "1" : threads ? "4" : "2");
+	settings->setDefault("abm_neighbors_range_max", (threads && !win32 && !android) ? "16" : "1");
 	settings->setDefault("enable_force_load", "true");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50"); // "10"
 	settings->setDefault("max_block_send_distance", "30"); // "9"
@@ -266,7 +269,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("smooth_lighting", "false");
 	settings->setDefault("enable_3d_clouds", "false");
 
-	settings->setDefault("wanted_fps", "25");
 	settings->setDefault("fps_max", "30");
 	settings->setDefault("mouse_sensitivity", "0.1");
 
@@ -279,7 +281,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("emergequeue_limit_generate", "8");
 	*/
 	settings->setDefault("viewing_range", "25");
-	settings->setDefault("viewing_range_max", "500");
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
 	if (x_inches  < 7) {
@@ -300,14 +301,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("client_unload_unused_data_timeout", "60");
 	settings->setDefault("max_objects_per_block", "20");
 
-	settings->setDefault("active_block_range", "1");
-	settings->setDefault("abm_neighbors_range_max", "1");
-	settings->setDefault("abm_random", "0");
-
-	settings->setDefault("farmesh", "2");
-	settings->setDefault("farmesh_step", "1");
 	settings->setDefault("leaves_style", "opaque");
-	settings->setDefault("autojump", "1");
 	settings->setDefault("mg_name", "v7");
 
 	char lang[3] = {};
