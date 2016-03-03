@@ -96,7 +96,7 @@ function render_favorite(spec,render_details)
 		if spec.address ~= nil then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= nil and spec.port ~= "30000" then
+			if spec.port ~= nil and tostring(spec.port) ~= "30000" then
 				text = text .. ":" .. spec.port
 			end
 		end
@@ -275,6 +275,21 @@ function asyncOnlineFavourites()
 			end
 		end
 	)
+end
+
+function updater_init()
+	local updater_req =  function(param) return core.get_favorites("sleep_cache") end
+	local updater_res;
+	updater_res = function(result)
+			if core.setting_getbool("public_serverlist") and result[1] then
+				local favs = order_favorite_list(result)
+					menudata.public_known = favs
+					menudata.favorites = menudata.public_known
+				core.event_handler("Refresh")
+			end
+	core.handle_async(updater_req, nil, updater_res)
+	end
+	core.handle_async(updater_req, nil, updater_res)
 end
 
 --------------------------------------------------------------------------------

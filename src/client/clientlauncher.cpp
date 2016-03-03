@@ -521,7 +521,7 @@ bool ClientLauncher::launch_game(std::string &error_message,
 
 void ClientLauncher::main_menu(MainMenuData *menudata)
 {
-	ServerList::getLan();
+	//ServerList::lan_get();
 	bool *kill = porting::signal_handler_killstatus();
 	video::IVideoDriver *driver = device->getVideoDriver();
 

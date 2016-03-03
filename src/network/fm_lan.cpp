@@ -194,10 +194,12 @@ void * lan_adv::run() {
 					if (p["cmd"].asString() == "shutdown") {
 						//infostream << "server shutdown " << key << "\n";
 						collected.erase(key);
+						fresh = true;
 					} else if (p["proto"] == proto) {
 						if (!collected.count(key))
 							actionstream << "lan server start " << key << "\n";
 						collected.set(key, p);
+						fresh = true;
 					}
 				}
 

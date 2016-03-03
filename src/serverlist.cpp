@@ -70,6 +70,8 @@ std::vector<ServerListSpec> getLocal()
 }
 
 
+std::vector<ServerListSpec> cached_online;
+
 std::vector<ServerListSpec> getOnline()
 {
 	std::ostringstream geturl;
@@ -95,6 +97,7 @@ std::vector<ServerListSpec> getOnline()
 		}
 	}
 
+	cached_online = server_list; 
 	return server_list;
 }
 
@@ -266,13 +269,13 @@ void sendAnnounce(const std::string &action,
 
 lan_adv lan_adv_client;
 
-void getLan() {
+void lan_get() {
 	if (!g_settings->getBool("serverlist_lan"))
 		return;
 	ServerList::lan_adv_client.ask();
 }
 
-void applyLan(std::vector<ServerListSpec> & servers) {
+void lan_apply(std::vector<ServerListSpec> & servers) {
 	auto lock = lan_adv_client.collected.lock_unique_rec();
 	if (lan_adv_client.collected.size()) {
 		if (servers.size()) {
@@ -284,6 +287,12 @@ void applyLan(std::vector<ServerListSpec> & servers) {
 			servers.insert(servers.begin(), i.second);
 		}
 	}
+}
+
+bool lan_fresh() {
+	auto result = lan_adv_client.fresh.load();
+	lan_adv_client.fresh = false;
+	return result;
 }
 
 

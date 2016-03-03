@@ -35,8 +35,9 @@ typedef Json::Value ServerListSpec;
 namespace ServerList
 {
 	extern lan_adv lan_adv_client;
-	void getLan();
-	void applyLan(std::vector<ServerListSpec> & servers);
+	void lan_get();
+	void lan_apply(std::vector<ServerListSpec> & servers);
+	bool lan_fresh();
 
 	std::vector<ServerListSpec> getLocal();
 	std::vector<ServerListSpec> getOnline();

@@ -164,6 +164,8 @@ local function init_globals()
 
 	ui.update()
 
+	updater_init()
+
 	core.sound_play("main_menu", true)
 end
 

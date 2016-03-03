@@ -21,9 +21,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define FM_LAN_HEADER
 
 #include <string>
+#include <atomic>
 #include "json/json.h"
 #include "../threading/thread_pool.h"
 #include "../threading/concurrent_map.h"
+
 
 class lan_adv : public thread_pool {
 public:
@@ -36,6 +38,7 @@ public:
 	void serve(unsigned short port);
 
 	concurrent_map<std::string, Json::Value> collected;
+	std::atomic_bool fresh;
 
 private:
 	unsigned short server_port = 0;
