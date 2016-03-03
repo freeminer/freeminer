@@ -1225,6 +1225,11 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			pos_translator.translate(dtime);
 			updateNodePos();
 		} else {
+
+		if (m_position_recd && m_velocity.getLength() > 0.01 && (porting::getTimeMs() - m_position_recd)/1000.0 > m_update_interval) {
+			m_velocity *= 0.7;
+		}
+
 			m_position += dtime * m_velocity + 0.5 * dtime * dtime * m_acceleration;
 			m_velocity += dtime * m_acceleration;
 			pos_translator.update(m_position, pos_translator.aim_is_end,
@@ -1646,12 +1651,14 @@ void GenericCAO::processMessage(const std::string &data)
 			readF1000(is);
 		bool do_interpolate = readU8(is);
 		bool is_end_position = readU8(is);
-		float update_interval = readF1000(is);
+		m_update_interval = readF1000(is);
 
 		// Place us a bit higher if we're physical, to not sink into
 		// the ground due to sucky collision detection...
 		if(m_prop.physical)
 			m_position += v3f(0,0.002,0);
+
+		m_position_recd = porting::getTimeMs();
 
 		if(getParent() != NULL) // Just in case
 			return;
@@ -1659,7 +1666,7 @@ void GenericCAO::processMessage(const std::string &data)
 		if(do_interpolate)
 		{
 			if(!m_prop.physical)
-				pos_translator.update(m_position, is_end_position, update_interval);
+				pos_translator.update(m_position, is_end_position, m_update_interval);
 		} else {
 			pos_translator.init(m_position);
 		}

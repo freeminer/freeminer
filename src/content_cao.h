@@ -113,6 +113,9 @@ private:
 
 	std::vector<u16> m_children;
 
+	unsigned int m_position_recd = 0;
+	float m_update_interval = 0.1;
+
 public:
 	GenericCAO(IGameDef *gamedef, ClientEnvironment *env);
 
