@@ -37,6 +37,10 @@ static Settings main_settings;
 Settings *g_settings = &main_settings;
 std::string g_settings_path;
 
+Json::Reader json_reader;
+Json::StyledWriter json_writer;
+
+
 Settings::~Settings()
 {
 	clear();
@@ -1008,6 +1012,9 @@ void Settings::clearNoLock()
 		delete it->second.group;
 	m_settings.clear();
 
+	if (m_json.isObject() || m_json.isArray())
+		m_json.clear();
+
 	clearDefaultsNoLock();
 }
 
@@ -1017,7 +1024,6 @@ void Settings::clearDefaultsNoLock()
 	for (it = m_defaults.begin(); it != m_defaults.end(); ++it)
 		delete it->second.group;
 	m_defaults.clear();
-	m_json.clear();
 }
 
 

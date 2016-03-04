@@ -15,8 +15,9 @@ Changelog
   * kv lua api: now possible to use any custom db:  core.kv_put('mykey', 'mydata', 'mydb'); core.kv_get('mykey', 'mydb');    'mydb' is optional
   * Optional store auth database to leveldb, no huge auth.txt. to enable: auth_kv=1
   * Mapgen indev: huge noise based caves
-  * Auto delete old items by default. push items up from solid blocks.
-  * Announce servers on lan via broadcast udp. And show them in clients online server list
+  * Auto delete old items by default. push items up from solid blocks
+  * Player punch move (small move on pvp hit or jump on tnt explode)
+  * Show servers from local network in online server list.
 
 
 ### 0.4.13.7 (Aug 20, 2015)

@@ -107,7 +107,7 @@ sub init_config () {
         options_display => ($ENV{DISPLAY} ? '' : 'headless'),
         options_bot     => 'bot_random',
         makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
-        cmake_minetest  => '-DMINETEST_PROTO=1',
+        cmake_minetest  => 0,
         cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
@@ -208,6 +208,7 @@ our $commands = {
 
         $D{ENABLE_LUAJIT} = 0 if $config->{cmake_debug} and !$config->{keep_luajit};
         $D{DEBUG} = 1 if $config->{cmake_debug};
+        $D{MINETEST_PROTO} = 1 if $config->{cmake_minetest};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -292,7 +293,7 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
 };
 
 our $tasks = {
-    build_normal => [{build_name => '_normal'}, 'prepare', 'cmake', 'make',],
+    build_normal => [sub { $g->{build_name} ||= '_normal'; 0 }, 'prepare', 'cmake', 'make',],
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1,}, 'build_normal',],
@@ -374,6 +375,8 @@ our $tasks = {
         'symbolize',
     ],
     debug     => ['build_client_debug',      $config->{run_task},],
+    bot_debug => ['build_client_debug',      $config->{run_task},],
+
     nothreads => [{-no_build_server => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
@@ -386,15 +389,16 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    build_minetest => [{build_name => '_minetest',}, 'prepare', {-no_build_server => 1,}, ['cmake', $config->{cmake_minetest}], 'make',],
-    #bot_minetest      => ['build_minetest', $config->{run_task},],
+    build_minetest => [sub { $g->{build_name} .= '_minetest'; 0 }, { -cmake_minetest => 1,}, 'build_client'],
+    build_minetest_debug => [sub { $g->{build_name} .= '_minetest'; 0 }, { -cmake_minetest => 1,}, 'build_client_debug'],
 
     bot_minetest => sub {
         my $name = shift;
-        $g->{build_name} .= '_minetest';
         local $config->{no_build_server} = 1;
+        local $config->{cmake_minetest} = 1;
         #local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
         if ($name) {
+            $g->{build_name} .= '_minetest';
             commands_run('bot_' . $name);
         } else {
             commands_run('build_minetest');
@@ -403,7 +407,7 @@ our $tasks = {
     }, (
         map {
             'bot_minetest_' . $_ => [['bot_minetest', $_,]]
-        } qw(tsan tsannt asan usan gdb)
+        } qw(tsan tsannt asan usan gdb debug)
     ),
 
     #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server', 'run_clients',],
@@ -497,13 +501,13 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] } qw(tsan asan msan usan asannta minetest)),
+    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] } qw(tsan asan msan usan asannta minetest minetest_debug)),
     (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
 
-    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan asannta minetest)),
+    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan asannta minetest minetest_debug)),
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
