@@ -90,8 +90,8 @@ public:
 	Address(u8 a, u8 b, u8 c, u8 d, u16 port);
 	Address(const IPv6AddressBytes *ipv6_bytes, u16 port);
 	Address(const in6_addr & addr, u16 port) { setAddress(addr); setPort(port); };
-	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = sai.sin6_port; };
-	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = sai.sin_port; };
+	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
+	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
 	bool operator==(const Address &address);
 	bool operator!=(const Address &address);
 	// Resolve() may throw ResolveError (address is unchanged in this case)

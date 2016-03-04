@@ -82,7 +82,6 @@ void lan_adv::send_string(std::string str) {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(adv_port);
-		addr.sin_port = adv_port;
 		addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		UDPSocket socket_send(false);
 		int set_option_on = 1;
@@ -93,13 +92,15 @@ void lan_adv::send_string(std::string str) {
 	}
 
 	struct addrinfo hints { };
+	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
 	struct addrinfo *result;
 	if (!getaddrinfo("ff02::1", nullptr, &hints, &result)) {
 		for (auto info = result; info; info = info->ai_next) {
 			try {
 				sockaddr_in6 addr = *((struct sockaddr_in6*)info->ai_addr);
-				addr.sin6_port = adv_port;
+				addr.sin6_port = htons(adv_port);
 				UDPSocket socket_send(true);
 				int set_option_on = 1;
 				setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
