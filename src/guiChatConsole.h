@@ -46,7 +46,7 @@ public:
 	// Open the console (height = desired fraction of screen size)
 	// This doesn't open immediately but initiates an animation.
 	// You should call isOpenInhibited() before this.
-	void openConsole(float height, bool close_on_return = false);
+	void openConsole(float height);
 
 	bool isOpen() const;
 

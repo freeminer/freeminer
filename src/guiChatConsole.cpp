@@ -117,10 +117,9 @@ GUIChatConsole::~GUIChatConsole()
 		m_font->drop();
 }
 
-void GUIChatConsole::openConsole(float height, bool close_on_return)
+void GUIChatConsole::openConsole(float height)
 {
 	m_open = true;
-	m_close_on_enter = close_on_return;
 	m_desired_height_fraction = height;
 	m_desired_height = height * m_screensize.Y;
 	reformatConsole();
@@ -417,6 +416,7 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 	}
 }
 
+
 bool GUIChatConsole::getAndroidUIInput() {
 #ifdef __ANDROID__
 	if (porting::getInputDialogState() == 0) {
@@ -424,12 +424,15 @@ bool GUIChatConsole::getAndroidUIInput() {
 		std::wstring wtext = narrow_to_wide(text);
 		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=["<<text<<"] "<<std::endl;
 		m_chat_backend->getPrompt().input(wtext);
-		std::wstring wrtext = m_chat_backend->getPrompt().submit();
-		m_client->typeChatMessage(wide_to_narrow(wrtext));
+		//std::wstring wrtext = .submit();
+		//m_client->typeChatMessage(wide_to_narrow(wrtext));
+		auto & prompt = m_chat_backend->getPrompt();
+		prompt.addToHistory(prompt.getLine());
+		m_client->typeChatMessage(wide_to_utf8(prompt.replace(L"")));
 
 		if (m_close_on_enter) {
 			closeConsole();
-			Environment->removeFocus(this);
+			//Environment->removeFocus(this);
 		}
 
 		return true;
