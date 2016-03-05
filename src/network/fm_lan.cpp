@@ -137,7 +137,7 @@ void * lan_adv::run() {
 		warningstream << m_name << ": cant bind ipv6 address ["<<e.what()<<"], trying ipv4. " << std::endl;
 		try {
 			socket_recv.Bind(Address((u32)INADDR_ANY, adv_port));
-		} catch (std::exception e) {
+		} catch (std::exception &e) {
 			warningstream << m_name << ": cant bind ipv4 too [" << e.what() <<"]"<< std::endl;
 			return nullptr;
 		}

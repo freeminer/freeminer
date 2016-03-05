@@ -2161,10 +2161,22 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 		return false;
 	}
 
+	try {
+
 	server = new Server(map_dir, gamespec, simple_singleplayer_mode,
 			    bind_addr.isIPv6());
 
 	server->start(bind_addr);
+
+#if !EXEPTION_DEBUG
+	} catch (std::exception &e) {
+		*error_message = std::string("Unable to create server: ") + e.what();
+		errorstream << *error_message << std::endl;
+		return false;
+#else
+	} catch (int) {
+#endif
+	}
 
 	return true;
 }

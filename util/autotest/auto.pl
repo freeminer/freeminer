@@ -39,7 +39,7 @@ $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 $0 --cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1 -DUSE_TOUCHSCREENGUI=1" play_asan
 
 # sometimes *san + debug doesnt work with leveldb
-$0 --cmake_add="-DENABLE_LEVELDB=0"
+$0 --cmake_leveldb=0
 
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 play_vtune --vtune_gui=1
@@ -107,7 +107,8 @@ sub init_config () {
         options_display => ($ENV{DISPLAY} ? '' : 'headless'),
         options_bot     => 'bot_random',
         makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
-        cmake_minetest  => 0,
+        cmake_minetest  => undef,
+        cmake_leveldb   => undef,
         cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
@@ -207,8 +208,10 @@ our $commands = {
           if $config->{cmake_usan};
 
         $D{ENABLE_LUAJIT} = 0 if $config->{cmake_debug} and !$config->{keep_luajit};
+        $D{ENABLE_LUAJIT} = $config->{cmake_luajit} if defined $config->{cmake_luajit};
         $D{DEBUG} = 1 if $config->{cmake_debug};
-        $D{MINETEST_PROTO} = 1 if $config->{cmake_minetest};
+        $D{MINETEST_PROTO} = $config->{cmake_minetest} if defined $config->{cmake_minetest};
+        $D{ENABLE_LEVELDB} = $config->{cmake_leveldb} if defined $config->{cmake_leveldb};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}

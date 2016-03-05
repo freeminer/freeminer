@@ -1068,20 +1068,18 @@ void Settings::doCallbacks(const std::string name)
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
 	{
 		MutexAutoLock lock(m_mutex);
-		if (!m_json[name].empty())
+		if (!m_json[name].empty() || m_json[name].isObject() || m_json[name].isArray())
 			return m_json.get(name, def);
 	}
 
 	//todo: remove later:
 
 	Json::Value root;
-	Settings * group = new Settings;
+	Settings * group = nullptr;
 	if (getGroupNoEx(name, group)) {
 		group->toJson(root);
-		delete group;
 		return root;
 	}
-	delete group;
 
 	std::string value;
 	getNoEx(name, value);
@@ -1139,7 +1137,7 @@ bool Settings::fromJson(const Json::Value &json) {
 			//setJson(key, json[key]);
 		} else {
 			set(key, json[key].asString());
-			m_json.removeMember(key); // todo: remove
+			m_json.removeMember(key); // todo: remove. json comments drops here
 		}
 	}
 	return true;
