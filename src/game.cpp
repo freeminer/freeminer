@@ -1642,6 +1642,10 @@ protected:
 	static void settingChangedCallback(const std::string &setting_name, void *data);
 	void readSettings();
 
+#ifdef __ANDROID__
+	void handleAndroidChatInput();
+#endif
+
 private:
 	InputHandler *input;
 
@@ -1742,8 +1746,8 @@ private:
 
 #ifdef __ANDROID__
 	bool m_cache_hold_aux1;
+	bool m_android_chat_open;
 #endif
-
 };
 
 Game::Game() :
@@ -2821,10 +2825,10 @@ void Game::processUserInput(VolatileRunFlags *flags,
 	input->step(dtime);
 
 #ifdef __ANDROID__
-
-	if (current_formspec != 0)
+	if (current_formspec != NULL)
 		current_formspec->getAndroidUIInput();
-
+	else
+		handleAndroidChatInput();
 #endif
 
 	// Increase timer for double tap of "keymap_jump"
@@ -2880,7 +2884,7 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	//} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_MSG])) {
 	//	openConsole(0.1, L"/msg ", true);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CONSOLE])) {
-		openConsole(1);
+		openConsole(0.5);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_FREEMOVE])) {
 		toggleFreeMove(statustext_time);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_JUMP])) {
@@ -3106,34 +3110,37 @@ void Game::openInventory()
 
 void Game::openConsole(float height, const wchar_t *line, bool close_on_return)
 {
-	if (!gui_chat_console->isOpenInhibited()) {
-
-/* old fm
-		if (!input.empty()) {
-			gui_chat_console->setPrompt(input);
-		}
-		gui_chat_console->openConsole(height, close_on_return);
-*/
-
-		gui_chat_console->openConsole(height, close_on_return);
-		if (line) {
-			gui_chat_console->setCloseOnEnter(close_on_return);
-			gui_chat_console->replaceAndAddToHistory(line);
-		}
-//olf fm 		guienv->setFocus(gui_chat_console);
-
 #ifdef __ANDROID__
 		if (porting::canKeyboard() >= 2) {
 			// fmtodo: invisible input text before pressing enter
 			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 		} else {
-			int type = 1;
-			porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
-		}
-#endif
+			//int type = 1;
+			//porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
 
+	porting::showInputDialog(_("ok"), "", "", 2);
+		}
+	m_android_chat_open = true;
+#else
+	if (gui_chat_console->isOpenInhibited())
+		return;
+	gui_chat_console->openConsole(height);
+	if (line) {
+		gui_chat_console->setCloseOnEnter(true);
+		gui_chat_console->replaceAndAddToHistory(line);
+	}
+#endif
+}
+
+#ifdef __ANDROID__
+void Game::handleAndroidChatInput()
+{
+	if (m_android_chat_open && porting::getInputDialogState() == 0) {
+		std::string text = porting::getInputDialogValue();
+		client->typeChatMessage(utf8_to_wide(text));
 	}
 }
+#endif
 
 
 void Game::toggleFreeMove(float *statustext_time)
