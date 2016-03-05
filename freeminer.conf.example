@@ -986,7 +986,7 @@
 
 #    Name of map generator to be used when creating a new world.
 #    Creating a world in the main menu will override this.
-#    type: enum values: v5, v6, indev, v7, math, fractal, flat, singlenode
+#    type: enum values: indev, v7, valleys, v5, math, fractal, flat, singlenode, v6
 # mg_name = indev
 
 #    Water surface level of the world.
@@ -1476,7 +1476,17 @@
 
 ## Client
 
-#    Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#    Minimum wanted FPS.
+#    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
+#    type: int
+# wanted_fps = 30
+
+#    The allowed adjustment range for the automatic rendering range adjustment.
+#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+#    type: int
+# viewing_range_max = 10000
+
+#    Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
 #    type: int
 # farmesh = 0
 
@@ -1537,6 +1547,10 @@
 # android_keyboard = 0
 
 ## Server
+
+#    Lan udp announce
+#    type: bool
+# serverlist_lan = true
 
 #    Save auth data to leveldb kv storage
 #    type: bool

@@ -671,7 +671,7 @@ local function create_minetest_conf_example()
 			"#    ../freeminer.conf\n" ..
 			"#    ../../freeminer.conf\n" ..
 			"#    Any other path can be chosen by passing the path as a parameter\n" ..
-			"#    to the program, eg. \"minetest.exe --config ../freeminer.conf.example\".\n" ..
+			"#    to the program, eg. \"freeminer.exe --config ../freeminer.conf.example\".\n" ..
 			"\n" ..
 			"#    Further documentation:\n" ..
 			"#    http://wiki.minetest.net/\n" ..
