@@ -46,19 +46,6 @@ GAMES_VERSION = ""
 GIT_CLONE = git clone --recursive --depth 1
 
 ################################################################################
-# toolchain config for arm old processors
-################################################################################
-#TARGET_HOST = arm-linux
-#TARGET_ABI = armeabi
-#TARGET_LIBDIR = armeabi
-#TARGET_TOOLCHAIN = arm-linux-androideabi-
-#TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfp
-#TARGET_ARCH = arm
-#CROSS_PREFIX = arm-linux-androideabi-
-#COMPILER_VERSION = 4.8
-#HAVE_LEVELDB = 1
-
-################################################################################
 # toolchain config for arm new processors
 ################################################################################
 TARGET_HOST = arm-linux
@@ -66,8 +53,8 @@ TARGET_HOST = arm-linux
 TARGET_ABI = armeabi-v7a-hard
 TARGET_LIBDIR = armeabi-v7a
 TARGET_TOOLCHAIN = arm-linux-androideabi-
-#TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfpv3
-TARGET_CFLAGS_ADDON = -Ofast -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 -mfloat-abi=hard -march=armv7-a
+TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfpv3 -O3
+TARGET_CFLAGS_ADDON = -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 -mfloat-abi=hard -march=armv7-a -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
 TARGET_ARCH = armv7
@@ -152,7 +139,7 @@ IRRLICHT_GIT_COMMIT = 58fa0cf
 
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es@$(IRRLICHT_REVISION)
 
-OPENSSL_VERSION = 1.0.2f
+OPENSSL_VERSION = 1.0.2g
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
 OPENSSL_DIR = $(ROOT)/deps/$(OPENSSL_BASEDIR)/
 OPENSSL_LIB = $(OPENSSL_DIR)/libssl.so.1.0.0
@@ -381,7 +368,8 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
 	--stl=${APP_STL} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	CC=${CROSS_PREFIX}gcc ./Configure android-${TARGET_ARCH} -no-sha0 -DL_ENDIAN;\
+	CC=${CROSS_PREFIX}gcc ./Configure enable-gmp -DL_ENDIAN -I${GMP_DIR} -L${GMP_DIR}/usr/lib android-${TARGET_ARCH};\
+	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make depend;     \
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
 	touch ${OPENSSL_TIMESTAMP};                                                \
 	touch ${OPENSSL_TIMESTAMP_INT};                                            \
@@ -664,7 +652,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	export CXX=${CROSS_PREFIX}g++;                                             \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
 	export CPPFLAGS="$${CPPFLAGS} -I${OPENSSL_DIR}/include                     \
-	-L${OPENSSL_DIR} ${TARGET_CFLAGS_ADDON}";                                  \
+	${TARGET_CFLAGS_ADDON}";                                                   \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} -L${OPENSSL_DIR} ${TARGET_LDFLAGS_ADDON}";     \
 	./configure --host=${TARGET_HOST} --disable-shared --enable-static --with-ssl --enable-ipv6;  \
