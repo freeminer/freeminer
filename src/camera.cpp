@@ -555,6 +555,8 @@ void Camera::updateViewingRange()
 		} else if (m_draw_control.fps < wanted_fps) {
 			m_draw_control.wanted_range -= 1;
 		}
+	} else if (m_draw_control.fps < wanted_fps * 0.7) {
+		m_draw_control.wanted_range *= 0.9;
 	}
 
 	// Immediately apply hard limits
