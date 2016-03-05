@@ -2324,7 +2324,7 @@ bool Game::initGui()
 
 	// Chat backend and console
 	gui_chat_console = new GUIChatConsole(guienv, guienv->getRootGUIElement(),
-			-1, chat_backend, client);
+			-1, chat_backend, client, &g_menumgr);
 	if (!gui_chat_console) {
 		*error_message = "Could not allocate memory for chat console";
 		errorstream << *error_message << std::endl;
@@ -3120,7 +3120,7 @@ void Game::openConsole(float height, const wchar_t *line, bool close_on_return)
 			gui_chat_console->setCloseOnEnter(close_on_return);
 			gui_chat_console->replaceAndAddToHistory(line);
 		}
-		guienv->setFocus(gui_chat_console);
+//olf fm 		guienv->setFocus(gui_chat_console);
 
 #ifdef __ANDROID__
 		if (porting::canKeyboard() >= 2) {

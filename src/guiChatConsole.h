@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define GUICHATCONSOLE_HEADER
 
 #include "irrlichttypes_extrabloated.h"
+#include "modalMenu.h"
 #include "chat.h"
 #include "config.h"
 
@@ -38,7 +39,8 @@ public:
 			gui::IGUIElement* parent,
 			s32 id,
 			ChatBackend* backend,
-			Client* client);
+			Client* client,
+			IMenuManager* menumgr);
 	virtual ~GUIChatConsole();
 
 	// Open the console (height = desired fraction of screen size)
@@ -95,11 +97,9 @@ private:
 	void drawPrompt();
 
 private:
-	// pointer to the chat backend
 	ChatBackend* m_chat_backend;
-
-	// pointer to the client
 	Client* m_client;
+	IMenuManager* m_menumgr;
 
 	// current screen size
 	v2u32 m_screensize;
