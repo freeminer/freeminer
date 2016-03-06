@@ -132,7 +132,6 @@ int RemoteClient::GetNextBlocks (
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
 		m_nothing_to_send_pause_timer = 0;
-		m_time_from_building = 999;
 	}
 
 	if(m_nothing_to_send_pause_timer >= 0)
@@ -215,6 +214,9 @@ int RemoteClient::GetNextBlocks (
 		*/
 		if(d_start<=1)
 			d_start=2;
+		++m_nearest_unsent_reset_want;
+	} else if (m_nearest_unsent_reset_want) {
+		m_nearest_unsent_reset_want = 0;
 		m_nearest_unsent_reset_timer = 999; //magical number more than ^ other number 120 - need to reset d on next iteration
 	}
 
@@ -289,7 +291,7 @@ int RemoteClient::GetNextBlocks (
 		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
 		std::vector<v3POS> list;
-		if (d > 2 && d == d_start && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
+		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
 			list.push_back(v3POS(0,0,0));
 		}
 

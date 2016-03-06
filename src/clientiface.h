@@ -405,6 +405,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+	unsigned int m_nearest_unsent_reset_want = 0;
 
 public:
 	std::atomic_int m_nearest_unsent_d;
