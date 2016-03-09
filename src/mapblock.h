@@ -179,14 +179,15 @@ public:
 		Flags
 	*/
 
-	void raiseModified(u32 mod);
+	enum modified_light {modified_light_no = 0, modified_light_yes};
+	void raiseModified(u32 mod, modified_light light = modified_light_no);
 
 	////
 	//// Modification tracking methods
 	////
 	void raiseModified(u32 mod, u32 reason)
 	{
-		raiseModified(mod);
+		raiseModified(mod, modified_light_no);
 #ifdef WTFdebug
 		if (mod > m_modified) {
 			m_modified = mod;

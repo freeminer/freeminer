@@ -193,7 +193,7 @@ public:
 	bool isValidPosition(v3s16 p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3s16 p, MapNode & n);
+	void setNode(v3s16 p, MapNode & n, bool no_light_check = 0);
 
 	// Returns a CONTENT_IGNORE node if not found
 	MapNode getNodeTry(v3s16 p);

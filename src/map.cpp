@@ -178,7 +178,7 @@ MapNode Map::getNode(v3s16 p)
 #endif
 
 // throws InvalidPositionException if not found
-void Map::setNode(v3s16 p, MapNode & n)
+void Map::setNode(v3s16 p, MapNode & n, bool no_light_check)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
@@ -193,7 +193,10 @@ void Map::setNode(v3s16 p, MapNode & n)
 		debug_stacks_print_to(infostream);
 		return;
 	}
+	if (no_light_check)
 	block->setNodeNoCheck(relpos, n);
+	else
+		block->setNode(relpos, n);
 }
 
 

@@ -262,7 +262,6 @@ int RemoteClient::GetNextBlocks (
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
-
 	int blocks_occlusion_culled = 0;
 	static const bool server_occlusion = g_settings->getBool("server_occlusion");
 	bool occlusion_culling_enabled = server_occlusion;
@@ -282,7 +281,6 @@ int RemoteClient::GetNextBlocks (
 		occlusion_culling_enabled = false;
 
 	unordered_map_v3POS<bool> occlude_cache;
-
 
 	s16 d;
 	for(d = d_start; d <= d_max; d++) {
@@ -479,6 +477,8 @@ int RemoteClient::GetNextBlocks (
 				if (block->getLightingExpired()) {
 					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
 					env->getServerMap().lighting_modified_add(p, d);
+					if (block_sent && d > 1)
+						continue;
 				}
 
 				if (block->lighting_broken > 0 && (block_sent || d > 0))

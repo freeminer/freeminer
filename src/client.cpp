@@ -847,7 +847,7 @@ void Client::initLocalMapSaving(const Address &address,
 void Client::ReceiveAll()
 {
 	DSTACK(FUNCTION_NAME);
-	auto end_ms = porting::getTimeMs() + 10;
+	auto end_ms = porting::getTimeMs() + 20;
 	for(;;)
 	{
 #if MINETEST_PROTO
