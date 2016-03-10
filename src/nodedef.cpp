@@ -629,8 +629,8 @@ public:
 	inline virtual const ContentFeatures& get(const MapNode &n) const;
 	virtual bool getId(const std::string &name, content_t &result) const;
 	virtual content_t getId(const std::string &name) const;
-	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result) const;
-	virtual void getIds(const std::string &name, FMBitset &result) const;
+	virtual bool getIds(const std::string &name, FMBitset &result) const;
+	virtual bool getIds(const std::string &name, std::unordered_set<content_t> &result) const;
 	virtual const ContentFeatures& get(const std::string &name) const;
 	content_t allocateId();
 	virtual content_t set(const std::string &name, const ContentFeatures &def);
@@ -825,22 +825,23 @@ content_t CNodeDefManager::getId(const std::string &name) const
 }
 
 
-void CNodeDefManager::getIds(const std::string &name,
+bool CNodeDefManager::getIds(const std::string &name,
 		std::unordered_set<content_t> &result) const
 {
 	//TimeTaker t("getIds", NULL, PRECISION_MICRO);
 	if (name.substr(0,6) != "group:") {
 		content_t id = CONTENT_IGNORE;
-		if(getId(name, id))
+		bool exists = getId(name, id);
+		if (exists)
 			result.insert(id);
-		return;
+		return exists;
 	}
 	std::string group = name.substr(6);
 
 	std::map<std::string, GroupItems>::const_iterator
 		i = m_group_to_items.find(group);
 	if (i == m_group_to_items.end())
-		return;
+		return true;
 
 	const GroupItems &items = i->second;
 	for (GroupItems::const_iterator j = items.begin();
@@ -849,21 +850,23 @@ void CNodeDefManager::getIds(const std::string &name,
 			result.insert((*j).first);
 	}
 	//printf("getIds: %dus\n", t.stop());
+	return true;
 }
 
-	void CNodeDefManager::getIds(const std::string &name, FMBitset &result) const {
+	bool CNodeDefManager::getIds(const std::string &name, FMBitset &result) const {
 		if(name.substr(0,6) != "group:"){
 			content_t id = CONTENT_IGNORE;
-			if(getId(name, id))
+			bool exists = getId(name, id);
+			if (exists)
 				result.set(id, true);
-			return;
+			return exists;
 		}
 		std::string group = name.substr(6);
 
 		std::map<std::string, GroupItems>::const_iterator
 			i = m_group_to_items.find(group);
 		if (i == m_group_to_items.end())
-			return;
+			return true;
 
 		const GroupItems &items = i->second;
 		for (GroupItems::const_iterator j = items.begin();
@@ -871,6 +874,7 @@ void CNodeDefManager::getIds(const std::string &name,
 			if ((*j).second != 0)
 				result.set((*j).first, true);
 		}
+		return true;
 	}
 
 
