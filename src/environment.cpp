@@ -193,6 +193,8 @@ void Environment::setDayNightRatioOverride(bool enable, u32 value)
 void Environment::setTimeOfDay(u32 time)
 {
 	MutexAutoLock lock(this->m_time_lock);
+	if (m_time_of_day > time)
+		m_day_count++;
 	m_time_of_day = time;
 }
 
@@ -226,10 +228,12 @@ void Environment::stepTimeOfDay(float dtime)
 	if (units > 0) {
 		// Sync at overflow
 /*
-		if (m_time_of_day + units >= 24000)
+		if (m_time_of_day + units >= 24000) {
 			sync_f = true;
+			m_day_count++;
+		}
 */
-		m_time_of_day = (m_time_of_day + units) /*% 24000*/;
+		m_time_of_day = (m_time_of_day + units); // % 24000;
 /*
 		if (sync_f)
 			m_time_of_day_f = (float)m_time_of_day / 24000.0;
@@ -248,6 +252,13 @@ void Environment::stepTimeOfDay(float dtime)
 	}
 */
 }
+
+u32 Environment::getDayCount()
+{
+	// Atomic<u32> counter
+	return m_day_count;
+}
+
 
 /*
 	ABMWithState
@@ -823,6 +834,7 @@ void ServerEnvironment::saveMeta()
 	args.setU64("lbm_introduction_times_version", 1);
 	args.set("lbm_introduction_times",
 		m_lbm_mgr.createIntroductionTimesString());
+	args.setU64("day_count", m_day_count);
 	args.writeLines(ss);
 	ss<<"EnvArgsEnd\n";
 
@@ -891,6 +903,12 @@ void ServerEnvironment::loadMeta()
 	}
 	m_lbm_mgr.loadIntroductionTimes(lbm_introduction_times, m_gamedef, m_game_time);
 
+	try {
+		m_day_count = args.getU64("day_count");
+	} catch (SettingNotFoundException &e) {
+		// If missing, start the day counter
+		m_day_count = 0;
+	}
 }
 
 void ServerEnvironment::loadDefaultMeta()
