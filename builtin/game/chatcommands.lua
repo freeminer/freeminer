@@ -117,7 +117,7 @@ core.register_chatcommand("help", {
 			local cmds = {}
 			for cmd, def in pairs(core.chatcommands) do
 				if core.check_player_privs(name, def.privs) then
-					table.insert(cmds, cmd)
+					cmds[#cmds + 1] = cmd
 				end
 			end
 			table.sort(cmds)
@@ -128,7 +128,7 @@ core.register_chatcommand("help", {
 			local cmds = {}
 			for cmd, def in pairs(core.chatcommands) do
 				if core.check_player_privs(name, def.privs) then
-					table.insert(cmds, format_help_line(cmd, def))
+					cmds[#cmds + 1] = format_help_line(cmd, def)
 				end
 			end
 			table.sort(cmds)
@@ -136,7 +136,7 @@ core.register_chatcommand("help", {
 		elseif param == "privs" then
 			local privs = {}
 			for priv, def in pairs(core.registered_privileges) do
-				table.insert(privs, priv .. ": " .. def.description)
+				privs[#privs + 1] = priv .. ": " .. def.description
 			end
 			table.sort(privs)
 			return true, "Available privileges:\n"..table.concat(privs, "\n")
