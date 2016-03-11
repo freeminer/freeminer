@@ -234,7 +234,7 @@ std::string Address::serializeString() const
 	if (inet_ntop(m_addr_family, (m_addr_family == AF_INET) ? (void*)&(m_address.ipv4.sin_addr) : (void*)&(m_address.ipv6.sin6_addr), str, INET6_ADDRSTRLEN) == NULL) {
 		return std::string("");
 	}
-	return std::string(str);
+	return std::string(str) + ((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "");
 #endif
 }
 

@@ -288,9 +288,10 @@ void Connection::receive()
 // host
 void Connection::serve(Address bind_addr)
 {
-	ENetAddress address;
+	ENetAddress address = { };
 #if defined(ENET_IPV6)
 	address.host = bind_addr.getAddress6().sin6_addr; // in6addr_any;
+	address.sin6_scope_id = bind_addr.getAddress6().sin6_scope_id;
 #else
 	address.host = bind_addr.getAddress().sin_addr.s_addr; // ENET_HOST_ANY;
 #endif
@@ -322,12 +323,14 @@ void Connection::connect(Address addr)
 		putEvent(ev);
 		return;
 	}
-	ENetAddress address;
+	ENetAddress address = { };
 #if defined(ENET_IPV6)
-	if (!addr.isIPv6())
+	if (!addr.isIPv6()) {
 		inet_pton (AF_INET6, ("::ffff:"+addr.serializeString()).c_str(), &address.host);
-	else
+	} else {
 		address.host = addr.getAddress6().sin6_addr;
+		address.sin6_scope_id = addr.getAddress6().sin6_scope_id;
+	}
 #else
 	if (addr.isIPv6()) {
 		//throw ConnectionException("Cant connect to ipv6 address");
