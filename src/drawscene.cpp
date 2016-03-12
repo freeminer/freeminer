@@ -27,6 +27,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "fontengine.h"
 #include "guiscalingfilter.h"
 
+#include "touchscreengui.h"
+
 typedef enum {
 	LEFT = -1,
 	RIGHT = 1,
@@ -497,8 +499,10 @@ void draw_scene(video::IVideoDriver *driver, scene::ISceneManager *smgr,
 			(camera.getCameraMode() != CAMERA_MODE_THIRD_FRONT));
 
 #ifdef HAVE_TOUCHSCREENGUI
+	if (g_touchscreengui) {
 	static const auto touchtarget = g_settings->getBool("touchtarget");
 	draw_crosshair = !touchtarget;
+	}
 #endif
 
 	std::string draw_mode = g_settings->get("3d_mode");

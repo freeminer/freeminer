@@ -2813,6 +2813,7 @@ void Game::processUserInput(VolatileRunFlags *flags,
 			|| guienv->hasFocus(gui_chat_console)) {
 		input->clear();
 #ifdef HAVE_TOUCHSCREENGUI
+		if (g_touchscreengui)
 		g_touchscreengui->hide();
 #endif
 	}

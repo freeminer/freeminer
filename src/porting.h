@@ -46,8 +46,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threads.h"
 #include <atomic>
 
-#define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
-
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
 #else

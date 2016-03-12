@@ -1235,6 +1235,9 @@ selectionbox_color () string (0,0,0)
 #Android only: use better keyboard. glitchy on <4.4 versions
 android_keyboard () enum 0 0,1,2
 
+#Androud: use touchscreen gui
+touchscreen () bool 1
+
 [*Server]
 # Lan udp announce
 serverlist_lan () bool 1

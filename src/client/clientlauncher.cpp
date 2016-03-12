@@ -252,8 +252,10 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 					video::ETCF_CREATE_MIP_MAPS, g_settings->getBool("mip_map"));
 
 #ifdef HAVE_TOUCHSCREENGUI
+		if (g_settings->getBool("touchscreen")) {
 			receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
 			g_touchscreengui = receiver->m_touchscreengui;
+		}
 #endif
 			int tries = simple_singleplayer_mode ? 1 : g_settings->getU16("reconnects");
 			int n = 0;

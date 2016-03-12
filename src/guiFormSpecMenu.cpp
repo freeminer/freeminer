@@ -2883,7 +2883,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		}
 	}
 
-	#ifdef __ANDROID__
+#ifdef HAVE_TOUCHSCREENGUI
 	// display software keyboard when clicking edit boxes
 	if (event.EventType == EET_MOUSE_INPUT_EVENT
 			&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
@@ -2895,6 +2895,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
+#ifdef __ANDROID__
 		if (porting::canKeyboard()) {
 			// keyboard shown in GUIModalMenu::preprocessEvent
 			//porting::displayKeyboard(true, porting::app_global, porting::jnienv);
@@ -2924,6 +2925,8 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 					wide_to_utf8(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
 		}
+#endif
+
 			return retval;
 		}
 	}

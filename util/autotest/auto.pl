@@ -35,8 +35,8 @@ $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --opti
 
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
-# debug touchscreen gui. use irrlicht branch ogl-es
-$0 --cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1 -DUSE_TOUCHSCREENGUI=1" play_asan
+# debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
+$0 --build_name="_touch_asan" --cmake_touchscreen=1 --cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1" -touchscreen=0 play_asan
 
 # sometimes *san + debug doesnt work with leveldb
 $0 --cmake_leveldb=0
@@ -90,6 +90,7 @@ sub init_config () {
         autoexit         => 600,
         clang_version    => "",                                                  # "-3.6",
         autotest_dir_rel => 'util/autotest/',
+        build_name       => '',
         root_prefix      => $root_path . 'auto',
         root_path        => $root_path,
         date             => $g->{date},
@@ -212,6 +213,7 @@ our $commands = {
         $D{DEBUG} = 1 if $config->{cmake_debug};
         $D{MINETEST_PROTO} = $config->{cmake_minetest} if defined $config->{cmake_minetest};
         $D{ENABLE_LEVELDB} = $config->{cmake_leveldb} if defined $config->{cmake_leveldb};
+        $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -636,7 +638,7 @@ sub task_start(@) {
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name}  = $name;
-    $g->{build_name} = '';
+    $g->{build_name} = $config->{build_name};
     #task_run($name, @_);
     commands_run($name, @_);
 }
