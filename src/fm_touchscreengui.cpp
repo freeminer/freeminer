@@ -808,4 +808,7 @@ void TouchScreenGUI::reset_pressed() {
 			btn->ids.clear();
 		}
 	}
+	m_move_id = -1;
+	m_move_has_really_moved = false;
+	m_move_sent_as_mouse_event = false;
 }
