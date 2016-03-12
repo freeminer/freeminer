@@ -48,6 +48,12 @@ typedef int socklen_t;
 #include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+
+#ifndef __ANDROID__
+#include <ifaddrs.h>
+#define HAVE_IFADDRS 1
+#endif
+
 #define LAST_SOCKET_ERR() (errno)
 typedef int socket_t;
 #endif
@@ -73,11 +79,6 @@ void lan_adv::ask() {
 }
 
 void lan_adv::send_string(std::string str) {
-
-	/*
-		TODO:
-		send from all interfaces
-	*/
 	try {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
@@ -90,6 +91,33 @@ void lan_adv::send_string(std::string str) {
 	} catch(std::exception e) {
 		// errorstream << "udp broadcast send4 fail " << e.what() << "\n";
 	}
+
+	std::vector<uint32_t> scopes;
+// todo: windows and android
+#if HAVE_IFADDRS
+	struct ifaddrs *ifaddr, *ifa;
+	if (getifaddrs(&ifaddr) < 0) {
+	} else {
+		for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+			if (!ifa->ifa_addr)
+				continue;
+			if (ifa->ifa_addr->sa_family != AF_INET6)
+				continue;
+
+			auto sa = *((struct sockaddr_in6*)ifa->ifa_addr);
+			if (sa.sin6_scope_id)
+				scopes.push_back(sa.sin6_scope_id);
+
+			/*errorstream<<"in=" << ifa->ifa_name << " a="<<Address(*((struct sockaddr_in6*)ifa->ifa_addr)).serializeString()<<" ba=" << ifa->ifa_broadaddr <<" sc=" << sa.sin6_scope_id <<" fl=" <<  ifa->ifa_flags
+			//<< " bn=" << Address(*((struct sockaddr_in6*)ifa->ifa_broadaddr)).serializeString()
+			<<"\n"; */
+		}
+	}
+	freeifaddrs(ifaddr);
+#endif
+
+	if (scopes.empty())
+		scopes.push_back(0);
 
 	struct addrinfo hints { };
 	hints.ai_family = AF_INET6;
@@ -104,7 +132,15 @@ void lan_adv::send_string(std::string str) {
 				UDPSocket socket_send(true);
 				int set_option_on = 1;
 				setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
-				socket_send.Send(Address(addr), str.c_str(), str.size());
+				auto use_scopes = scopes;
+				if (addr.sin6_scope_id) {
+					use_scopes.clear();
+					use_scopes.push_back(addr.sin6_scope_id);
+				}
+				for (auto & scope : use_scopes) {
+					addr.sin6_scope_id = scope;
+					socket_send.Send(Address(addr), str.c_str(), str.size());
+				}
 			} catch(std::exception e) {
 				// errorstream << "udp broadcast send6 fail " << e.what() << "\n";
 			}
