@@ -86,6 +86,8 @@ public:
 
 	virtual bool OnEvent(const SEvent& event);
 
+	virtual void setVisible(bool visible);
+
 private:
 	void reformatConsole();
 	void recalculateConsolePosition();
