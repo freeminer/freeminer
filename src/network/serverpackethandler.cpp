@@ -2109,4 +2109,6 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt)
 	acceptAuth(pkt->getPeerId(), wantSudo);
 }
 
+void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) { }
+
 #endif

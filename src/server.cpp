@@ -1513,8 +1513,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 	}
 
 	try {
+#if !MINETEST_PROTO
 		if (!pkt->packet_unpack())
 			return;
+#endif
 
 		ToServerCommand command = (ToServerCommand) pkt->getCommand();
 
