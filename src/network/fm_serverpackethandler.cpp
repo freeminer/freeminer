@@ -44,67 +44,43 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../util/auth.h"
 
-
-//todo: split as in serverpackethandler.cpp
-
-void Server::ProcessData(NetworkPacket *pkt)
+void Server::handleCommand_Deprecated(NetworkPacket* pkt)
 {
-	DSTACK(FUNCTION_NAME);
-	// Environment is locked first.
-	//MutexAutoLock envlock(m_env_mutex);
+	infostream << "Server: " << toServerCommandTable[pkt->getCommand()].name
+		<< " not supported anymore" << std::endl;
+}
 
-	ScopeProfiler sp(g_profiler, "Server::ProcessData");
+void Server::handleCommand_Init(NetworkPacket* pkt)
+{
+	//const auto peer_id = pkt->getPeerId();
+	//auto & packet = *(pkt->packet);
 
-	auto peer_id = pkt->getPeerId();
+// TODO
+
+}
+
+void Server::handleCommand_Init_Legacy(NetworkPacket* pkt)
+{
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+
+	RemoteClient* client = getClient(pkt->getPeerId(), CS_Created);
 
 	std::string addr_s;
-	try{
-		Address address = getPeerAddress(peer_id);
-		addr_s = address.serializeString();
-
-		// drop player if is ip is banned
-		if(m_banmanager->isIpBanned(addr_s)){
-			std::string ban_name = m_banmanager->getBanName(addr_s);
-			infostream<<"Server: A banned client tried to connect from "
-					<<addr_s<<"; banned name was "
-					<<ban_name<<std::endl;
-			// This actually doesn't seem to transfer to the client
-			DenyAccess(peer_id, std::string("Your ip is banned. Banned name was ") + ban_name);
-			return;
-		}
+	try {
+		addr_s = getPeerAddress(pkt->getPeerId()).serializeString();
 	}
-	catch(con::PeerNotFoundException &e)
-	{
+	catch (std::exception &e) {
 		/*
 		 * no peer for this packet found
 		 * most common reason is peer timeout, e.g. peer didn't
 		 * respond for some time, your server was overloaded or
 		 * things like that.
 		 */
-		verbosestream<<"Server::ProcessData(): Canceling: peer "
-				<<peer_id<<" not found"<<std::endl;
+		infostream << "Server::ProcessData(): Canceling: peer "
+				<< pkt->getPeerId() << " not found : "<< e.what() << std::endl;
 		return;
 	}
-
-	try
-	{
-
-	auto datasize = pkt->getSize();
-
-	if(datasize < 2)
-		return;
-
-	int command;
-	MsgpackPacketSafe packet;
-	msgpack::unpacked msg;
-	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
-		verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
-		return;
-	}
-
-	if(command == TOSERVER_INIT_LEGACY)
-	{
-		RemoteClient* client = getClient(peer_id, CS_Created);
 
 		// If net_proto_version is set, this client has already been handled
 		if(client->getState() > CS_Created)
@@ -393,8 +369,10 @@ void Server::ProcessData(NetworkPacket *pkt)
 		return;
 	}
 
-	if(command == TOSERVER_INIT2)
-	{
+void Server::handleCommand_Init2(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	//auto & packet = *(pkt->packet);
+
 		verbosestream<<"Server: Got TOSERVER_INIT2 from "
 				<<peer_id<<std::endl;
 
@@ -458,35 +436,31 @@ void Server::ProcessData(NetworkPacket *pkt)
 			SendChatMessage(peer_id, "# Server: WARNING: YOUR CLIENT'S "
 					"VERSION MAY NOT BE FULLY COMPATIBLE WITH THIS SERVER!");
 		}
+}
 
-		return;
-	}
 
-	u8 peer_ser_ver = getClient(peer_id, CS_InitDone)->serialization_version;
-	u16 peer_proto_ver = getClient(peer_id, CS_InitDone)->net_proto_version;
+void Server::handleCommand_RequestMedia(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
 
-	if(peer_ser_ver == SER_FMT_VER_INVALID)
-	{
-		errorstream<<"Server::ProcessData(): Canceling: Peer"
-				" serialization format invalid or not initialized."
-				" Skipping incoming command="<<command<<std::endl;
-		return;
-	}
-
-	/* Handle commands relate to client startup */
-	if(command == TOSERVER_REQUEST_MEDIA) {
 		std::vector<std::string> tosend;
 		packet[TOSERVER_REQUEST_MEDIA_FILES].convert(&tosend);
 
 		sendRequestedMedia(peer_id, tosend);
-		return;
-	}
-	else if(command == TOSERVER_RECEIVED_MEDIA) {
-		return;
-	}
-	else if(command == TOSERVER_CLIENT_READY) {
+}
+
+void Server::handleCommand_ReceivedMedia(NetworkPacket* pkt)
+{
+}
+
+void Server::handleCommand_ClientReady(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+
+	u16 peer_proto_ver = getClient(peer_id, CS_InitDone)->net_proto_version;
 		// clients <= protocol version 22 did not send ready message,
 		// they're already initialized
+
 		if (peer_proto_ver <= 22) {
 			infostream << "Client sent message not expected by a "
 				<< "client using protocol version <= 22,"
@@ -521,40 +495,26 @@ void Server::ProcessData(NetworkPacket *pkt)
 		m_script->on_joinplayer(playersao);
 
 		stat.add("join", playersao->getPlayer()->getName());
+
+}
+
+void Server::handleCommand_GotBlocks(NetworkPacket* pkt) {
+}
+
+void Server::handleCommand_PlayerPos(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-
-	if (m_clients.getClientState(peer_id) < CS_Active)
-	{
-		if (command == TOSERVER_PLAYERPOS) return;
-
-		errorstream<<"Got packet command: " << command << " for peer id "
-				<< peer_id << " but client isn't active yet. Dropping packet "
-				<<std::endl;
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
 	}
 
-	Player *player = m_env->getPlayer(peer_id);
-	if(player == NULL) {
-/*
-		verbosestream<<"Server::ProcessData(): Canceling: "
-				"No player for peer_id="<<peer_id
-				<< " disconnecting peer!" <<std::endl;
-*/
-		m_con.DisconnectPeer(peer_id);
-		return;
-	}
-
-	PlayerSAO *playersao = player->getPlayerSAO();
-	if(playersao == NULL) {
-		errorstream<<"Server::ProcessData(): Canceling: "
-				"No player object for peer_id="<<peer_id
-				<< " disconnecting peer!" <<std::endl;
-		m_con.DisconnectPeer(peer_id);
-		return;
-	}
-
-	if(command == TOSERVER_PLAYERPOS)
-	{
 	// If player is dead we don't care of this packet
 
 		if (player->hp != 0 && playersao->m_ms_from_last_respawn > 1000)
@@ -602,17 +562,33 @@ void Server::ProcessData(NetworkPacket *pkt)
 		/*infostream<<"Server::ProcessData(): Moved player "<<peer_id<<" to "
 															<<"("<<position.X<<","<<position.Y<<","<<position.Z<<")"
 															<<" pitch="<<pitch<<" yaw="<<yaw<<std::endl;*/
-	}
-	else if(command == TOSERVER_DELETEDBLOCKS)
-	{
+}
+
+void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+
 		std::vector<v3s16> deleted_blocks;
 		packet[TOSERVER_DELETEDBLOCKS_DATA].convert(&deleted_blocks);
 		RemoteClient *client = getClient(peer_id);
 		for (auto &block : deleted_blocks)
 			client->SetBlockDeleted(block);
+}
+
+void Server::handleCommand_InventoryAction(NetworkPacket* pkt) {
+	//const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_INVENTORY_ACTION)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		std::string datastring;
 		packet[TOSERVER_INVENTORY_ACTION_DATA].convert(&datastring);
 		std::istringstream is(datastring, std::ios_base::binary);
@@ -758,9 +734,22 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 		SendInventory(playersao);
 
+}
+
+void Server::handleCommand_ChatMessage(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_CHAT_MESSAGE)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		std::string message = packet[TOSERVER_CHAT_MESSAGE_DATA].as<std::string>();
 
 		// If something goes wrong, this player is to blame
@@ -819,9 +808,21 @@ void Server::ProcessData(NetworkPacket *pkt)
 			} else
 				SendChatMessage(peer_id, line);
 		}
+}
+
+void Server::handleCommand_Damage(NetworkPacket* pkt) {
+	//const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_DAMAGE)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
 		u8 damage = packet[TOSERVER_DAMAGE_VALUE].as<u8>();
 
 		if(g_settings->getBool("enable_damage"))
@@ -836,9 +837,21 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 			stat.add("damage", player->getName(), damage);
 		}
+}
+
+void Server::handleCommand_Breath(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_BREATH)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
 
 	/*
 	 * If player is dead, we don't need to update the breath
@@ -848,9 +861,17 @@ void Server::ProcessData(NetworkPacket *pkt)
 		playersao->setBreath(packet[TOSERVER_BREATH_VALUE].as<u16>());
 		SendPlayerBreath(peer_id);
 	}
+
+}
+
+void Server::handleCommand_Password(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_CHANGE_PASSWORD)
-	{
 		std::string oldpwd, newpwd;
 		packet[TOSERVER_CHANGE_PASSWORD_OLD].convert(&oldpwd);
 		packet[TOSERVER_CHANGE_PASSWORD_NEW].convert(&newpwd);
@@ -887,14 +908,39 @@ void Server::ProcessData(NetworkPacket *pkt)
 					<<"it fails"<<std::endl;
 			SendChatMessage(peer_id, "Password change failed or inavailable.");
 		}
+
+}
+
+void Server::handleCommand_PlayerItem(NetworkPacket* pkt) {
+	//const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_PLAYERITEM)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
 		u16 item = packet[TOSERVER_PLAYERITEM_VALUE].as<u16>();
 		playersao->setWieldIndex(item);
+}
+
+void Server::handleCommand_Respawn(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	//auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_RESPAWN)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
 		if(!player->isDead())
 			return;
 
@@ -905,9 +951,22 @@ void Server::ProcessData(NetworkPacket *pkt)
 
 		// ActiveObject is added to environment in AsyncRunStep after
 		// the previous addition has been successfully removed
+}
+
+void Server::handleCommand_Interact(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_INTERACT)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		u8 action;
 		u16 item_i;
 		PointedThing pointed;
@@ -1313,9 +1372,23 @@ void Server::ProcessData(NetworkPacket *pkt)
 			infostream<<"WARNING: Server: Invalid action "
 					<<action<<std::endl;
 		}
+
+}
+
+void Server::handleCommand_RemovedSounds(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_REMOVED_SOUNDS)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		std::vector<s32> removed_ids;
 		packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(&removed_ids);
 		for (auto & id : removed_ids) {
@@ -1328,9 +1401,22 @@ void Server::ProcessData(NetworkPacket *pkt)
 			if(psound.clients.empty())
 				m_playing_sounds.erase(i);
 		}
+}
+
+void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt) {
+	//const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_NODEMETA_FIELDS)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		v3s16 p = packet[TOSERVER_NODEMETA_FIELDS_POS].as<v3s16>();
 		std::string formname = packet[TOSERVER_NODEMETA_FIELDS_FORMNAME].as<std::string>();
 		std::map<std::string, std::string> fields;
@@ -1352,9 +1438,22 @@ void Server::ProcessData(NetworkPacket *pkt)
 			action.setSetNode(p, rn_old, rn_new);
 			rollback()->reportAction(action);
 		}
+}
+
+void Server::handleCommand_InventoryFields(NetworkPacket* pkt) {
+	//const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_INVENTORY_FIELDS)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+
 		std::string formname;
 		std::map<std::string, std::string> fields;
 
@@ -1362,9 +1461,73 @@ void Server::ProcessData(NetworkPacket *pkt)
 		packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(&fields);
 
 		m_script->on_playerReceiveFields(playersao, formname, fields);
+}
+
+void Server::handleCommand_FirstSrp(NetworkPacket* pkt) {
+/*
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
 	}
-	else if(command == TOSERVER_DRAWCONTROL)
-	{
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+*/
+}
+
+void Server::handleCommand_SrpBytesA(NetworkPacket* pkt) {
+/*
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+*/
+}
+
+void Server::handleCommand_SrpBytesM(NetworkPacket* pkt) {
+/*
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+*/
+}
+
+
+void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) {
+	const auto peer_id = pkt->getPeerId();
+	auto & packet = *(pkt->packet);
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+	auto playersao = player->getPlayerSAO();
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}
 		auto client = getClient(peer_id);
 		auto lock = client->lock_unique_rec();
 		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
@@ -1372,18 +1535,4 @@ void Server::ProcessData(NetworkPacket *pkt)
 		client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
 		client->fov  = packet[TOSERVER_DRAWCONTROL_FOV].as<f32>();
 		//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
-	}
-	else
-	{
-		infostream<<"Server::ProcessData(): Ignoring "
-				"unknown command "<<command<<std::endl;
-	}
-
-	} //try
-	catch(SendFailedException &e)
-	{
-		errorstream<<"Server::ProcessData(): SendFailedException: "
-				<<"what="<<e.what()
-				<<std::endl;
-	}
 }

@@ -57,7 +57,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 	MsgpackPacketSafe packet;
 	msgpack::unpacked msg;
 
-	if (!con::parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
+	if (!parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
 		// invalid packet
 		return;
 	}

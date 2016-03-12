@@ -234,6 +234,8 @@ public:
 
 	void ProcessData(NetworkPacket *pkt);
 
+	void handleCommand_Drawcontrol(NetworkPacket* pkt);
+
 	void Send(NetworkPacket* pkt);
 
 	// Both setter and getter need no envlock,

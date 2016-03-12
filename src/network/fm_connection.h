@@ -340,8 +340,6 @@ private:
 	unsigned int timeout_mul;
 };
 
-
-bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg);
 } // namespace
 
 #endif

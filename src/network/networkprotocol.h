@@ -1246,11 +1246,7 @@ enum {
 		std::string bytes_M
 	*/
 
-#if !MINETEST_PROTO
-#define TOSERVER_NUM_MSG_TYPES 1
-#else
 #define TOSERVER_NUM_MSG_TYPES 0x53
-#endif
 
 /*
 };
