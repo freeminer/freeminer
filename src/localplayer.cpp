@@ -344,7 +344,8 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		if (sneak_node_found) {
 			f32 cb_max = 0;
 			MapNode n = map->getNodeNoEx(m_sneak_node);
-			std::vector<aabb3f> nodeboxes = n.getCollisionBoxes(nodemgr);
+			std::vector<aabb3f> nodeboxes;
+			n.getCollisionBoxes(nodemgr, &nodeboxes);
 			for (std::vector<aabb3f>::iterator it = nodeboxes.begin();
 					it != nodeboxes.end(); ++it) {
 				aabb3f box = *it;
@@ -440,7 +441,8 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 	// NOTE: This is to be eventually implemented by a mod as client-side Lua
 
 	if (m_gamedef->ndef()->get(n).walkable && !noclip && !g_settings->getBool("enable_build_where_you_stand")) {
-		auto nodeboxes = n.getNodeBoxes(m_gamedef->ndef());
+		std::vector<aabb3f> nodeboxes;
+		n.getNodeBoxes(m_gamedef->ndef(), &nodeboxes);
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());
 		v3f node_pos(p.X, p.Y, p.Z);

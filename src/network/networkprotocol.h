@@ -147,6 +147,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	PROTOCOL_VERSION 27:
 		backface_culling: backwards compatibility for playing with
 		newer client on pre-27 servers.
+		Add nodedef v3 - connected nodeboxes
 */
 
 #define LATEST_PROTOCOL_VERSION 27
