@@ -692,9 +692,9 @@ NEXT_LIQUID:
 				MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 				if(block) {
 					block->setLightingExpired(true);
-				//modified_blocks[blockpos] = block;
-				//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
-				//	lighting_modified_blocks.set_try(block->getPos(), block);
+					//modified_blocks[blockpos] = block;
+					//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
+					//	lighting_modified_blocks.set_try(block->getPos(), block);
 				}
 			}
 			// fmtodo: make here random %2 or..

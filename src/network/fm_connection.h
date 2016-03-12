@@ -49,38 +49,33 @@ extern std::ostream *derr_con_ptr;
 #define dout_con (*dout_con_ptr)
 #define derr_con (*derr_con_ptr)
 
-namespace con
-{
+namespace con {
 
 /*
 	Exceptions
 */
-class NotFoundException : public BaseException
-{
+class NotFoundException : public BaseException {
 public:
 	NotFoundException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class PeerNotFoundException : public BaseException
-{
+class PeerNotFoundException : public BaseException {
 public:
 	PeerNotFoundException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class ConnectionException : public BaseException
-{
+class ConnectionException : public BaseException {
 public:
 	ConnectionException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class ConnectionBindFailed : public BaseException
-{
+class ConnectionBindFailed : public BaseException {
 public:
 	ConnectionBindFailed(const char *s):
 		BaseException(s)
@@ -95,32 +90,28 @@ public:
 	{}
 };*/
 
-class InvalidIncomingDataException : public BaseException
-{
+class InvalidIncomingDataException : public BaseException {
 public:
 	InvalidIncomingDataException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class InvalidOutgoingDataException : public BaseException
-{
+class InvalidOutgoingDataException : public BaseException {
 public:
 	InvalidOutgoingDataException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class NoIncomingDataException : public BaseException
-{
+class NoIncomingDataException : public BaseException {
 public:
 	NoIncomingDataException(const char *s):
 		BaseException(s)
 	{}
 };
 
-class ProcessedSilentlyException : public BaseException
-{
+class ProcessedSilentlyException : public BaseException {
 public:
 	ProcessedSilentlyException(const char *s):
 		BaseException(s)
@@ -129,28 +120,23 @@ public:
 
 class Connection;
 
-enum PeerChangeType
-{
+enum PeerChangeType {
 	PEER_ADDED,
 	PEER_REMOVED
 };
-struct PeerChange
-{
+struct PeerChange {
 	PeerChangeType type;
 	u16 peer_id;
 	bool timeout;
 };
 
-class PeerHandler
-{
+class PeerHandler {
 public:
-	PeerHandler()
-	{
+	PeerHandler() {
 	}
-	virtual ~PeerHandler()
-	{
+	virtual ~PeerHandler() {
 	}
-	
+
 	/*
 		This is called after the Peer has been inserted into the
 		Connection's peer container.
@@ -173,7 +159,7 @@ typedef enum rtt_stat_type {
 	AVG_JITTER
 } rtt_stat_type;
 
-enum ConnectionEventType{
+enum ConnectionEventType {
 	CONNEVENT_NONE,
 	CONNEVENT_DATA_RECEIVED,
 	CONNEVENT_PEER_ADDED,
@@ -182,19 +168,17 @@ enum ConnectionEventType{
 	CONNEVENT_CONNECT_FAILED,
 };
 
-struct ConnectionEvent
-{
+struct ConnectionEvent {
 	enum ConnectionEventType type;
 	u16 peer_id;
 	Buffer<u8> data;
 	bool timeout;
 	Address address;
 
-	ConnectionEvent(ConnectionEventType type_=CONNEVENT_NONE): type(type_) {}
+	ConnectionEvent(ConnectionEventType type_ = CONNEVENT_NONE): type(type_) {}
 
-	std::string describe()
-	{
-		switch(type){
+	std::string describe() {
+		switch(type) {
 		case CONNEVENT_NONE:
 			return "CONNEVENT_NONE";
 		case CONNEVENT_DATA_RECEIVED:
@@ -210,33 +194,29 @@ struct ConnectionEvent
 		}
 		return "Invalid ConnectionEvent";
 	}
-	
-	void dataReceived(u16 peer_id_, SharedBuffer<u8> data_)
-	{
+
+	void dataReceived(u16 peer_id_, SharedBuffer<u8> data_) {
 		type = CONNEVENT_DATA_RECEIVED;
 		peer_id = peer_id_;
 		data = data_;
 	}
-	void peerAdded(u16 peer_id_)
-	{
+	void peerAdded(u16 peer_id_) {
 		type = CONNEVENT_PEER_ADDED;
 		peer_id = peer_id_;
 		// address = address_;
 	}
-	void peerRemoved(u16 peer_id_, bool timeout_)
-	{
+	void peerRemoved(u16 peer_id_, bool timeout_) {
 		type = CONNEVENT_PEER_REMOVED;
 		peer_id = peer_id_;
 		timeout = timeout_;
 		// address = address_;
 	}
-	void bindFailed()
-	{
+	void bindFailed() {
 		type = CONNEVENT_BIND_FAILED;
 	}
 };
 
-enum ConnectionCommandType{
+enum ConnectionCommandType {
 	CONNCMD_NONE,
 	CONNCMD_SERVE,
 	CONNCMD_CONNECT,
@@ -247,64 +227,55 @@ enum ConnectionCommandType{
 	CONNCMD_DELETE_PEER,
 };
 
-struct ConnectionCommand
-{
+struct ConnectionCommand {
 	enum ConnectionCommandType type;
 	Address address;
 	u16 peer_id;
 	u8 channelnum;
 	Buffer<u8> data;
 	bool reliable;
-	
+
 	ConnectionCommand(): type(CONNCMD_NONE) {}
 
-	void serve(Address address_)
-	{
+	void serve(Address address_) {
 		type = CONNCMD_SERVE;
 		address = address_;
 	}
-	void connect(Address address_)
-	{
+	void connect(Address address_) {
 		type = CONNCMD_CONNECT;
 		address = address_;
 	}
-	void disconnect()
-	{
+	void disconnect() {
 		type = CONNCMD_DISCONNECT;
 	}
 	void send(u16 peer_id_, u8 channelnum_,
-			SharedBuffer<u8> data_, bool reliable_)
-	{
+	          SharedBuffer<u8> data_, bool reliable_) {
 		type = CONNCMD_SEND;
 		peer_id = peer_id_;
 		channelnum = channelnum_;
 		data = data_;
 		reliable = reliable_;
 	}
-	void sendToAll(u8 channelnum_, SharedBuffer<u8> data_, bool reliable_)
-	{
+	void sendToAll(u8 channelnum_, SharedBuffer<u8> data_, bool reliable_) {
 		type = CONNCMD_SEND_TO_ALL;
 		channelnum = channelnum_;
 		data = data_;
 		reliable = reliable_;
 	}
-	void deletePeer(u16 peer_id_)
-	{
+	void deletePeer(u16 peer_id_) {
 		type = CONNCMD_DELETE_PEER;
 		peer_id = peer_id_;
 	}
-	void disconnect_peer(u16 peer_id_)
-	{
+	void disconnect_peer(u16 peer_id_) {
 		type = CONNCMD_DISCONNECT_PEER;
 		peer_id = peer_id_;
 	}
 };
 
-class Connection: public thread_pool
-{
+class Connection: public thread_pool {
 public:
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-			PeerHandler *peerhandler = nullptr);
+	           PeerHandler *peerhandler = nullptr);
 	~Connection();
 	void * run();
 
@@ -322,7 +293,7 @@ public:
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
-	u16 GetPeerID(){ return m_peer_id; }
+	u16 GetPeerID() { return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
 	float getPeerStat(u16 peer_id, rtt_stat_type type);
@@ -361,8 +332,8 @@ private:
 	unsigned int m_last_recieved;
 	unsigned int m_last_recieved_warn;
 
-	void SetPeerID(u16 id){ m_peer_id = id; }
-	u32 GetProtocolID(){ return m_protocol_id; }
+	void SetPeerID(u16 id) { m_peer_id = id; }
+	u32 GetProtocolID() { return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 	std::string getDesc();

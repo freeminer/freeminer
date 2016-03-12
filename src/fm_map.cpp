@@ -807,8 +807,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
 	return ret;
 }
 
-MapNode Map::getNodeNoEx(v3s16 p)
-{
+MapNode Map::getNodeNoEx(v3s16 p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
@@ -818,6 +817,6 @@ MapNode Map::getNodeNoEx(v3s16 p)
 	if (!block)
 		return ignoreNode;
 
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNode(relpos);
 }
