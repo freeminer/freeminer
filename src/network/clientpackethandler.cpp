@@ -592,10 +592,7 @@ void Client::handleCommand_MovePlayer(NetworkPacket* pkt)
 	m_ignore_damage_timer = 3.0;
 }
 
-void Client::handleCommand_PlayerItem(NetworkPacket* pkt)
-{
-	warningstream << "Client: Ignoring TOCLIENT_PLAYERITEM" << std::endl;
-}
+void Client::handleCommand_PunchPlayer(NetworkPacket* pkt) { }
 
 void Client::handleCommand_DeathScreen(NetworkPacket* pkt)
 {

@@ -39,50 +39,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 
 
-// TODO! split to packethandlers
+void Client::handleCommand_Deprecated(NetworkPacket* pkt) {
+}
 
+void Client::handleCommand_Hello(NetworkPacket* pkt) {
+	//auto & packet = *(pkt->packet);
+}
 
-/*
-	sender_peer_id given to this shall be quaranteed to be a valid peer
-*/
-void Client::ProcessData(NetworkPacket *pkt) {
-	DSTACK(FUNCTION_NAME);
+void Client::handleCommand_AuthAccept(NetworkPacket* pkt) {
+	//auto & packet = *(pkt->packet);
+}
 
-	ScopeProfiler sp(g_profiler, "Client::ProcessData");
+void Client::handleCommand_AcceptSudoMode(NetworkPacket* pkt) {
+	//auto & packet = *(pkt->packet);
+}
 
-	auto datasize = pkt->getSize();
-	auto sender_peer_id = pkt->getPeerId();
+void Client::handleCommand_DenySudoMode(NetworkPacket* pkt) {
+}
 
-	int command;
-	MsgpackPacketSafe packet;
-	msgpack::unpacked msg;
-
-	if (!parse_msgpack_packet(pkt->getString(0), datasize, &packet, &command, &msg)) {
-		// invalid packet
-		return;
-	}
-
-	//infostream<<"Client: received command="<<command << " size=" << datasize<<std::endl;
-	m_packetcounter.add((u16)command);
-
-	/*
-		If this check is removed, be sure to change the queue
-		system to know the ids
-	*/
-	if(sender_peer_id != PEER_ID_SERVER)
-	{
-		infostream<<"Client::ProcessData(): Discarding data not "
-				"coming from server: peer_id="<<sender_peer_id
-				<<std::endl;
-		return;
-	}
-
-	u8 ser_version = m_server_ser_ver;
-
-	//infostream<<"Client received command="<<(int)command<<std::endl;
-
-	if(command == TOCLIENT_INIT_LEGACY)
-	{
+void Client::handleCommand_InitLegacy(NetworkPacket* pkt)   {
+	auto & packet = *(pkt->packet);
 		u8 deployed;
 		packet[TOCLIENT_INIT_DEPLOYED].convert(&deployed);
 
@@ -129,12 +105,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		m_con.Send(PEER_ID_SERVER, 1, buffer, true);
 
 		m_state = LC_Init;
+}
 
-		return;
-	}
-
-	if(command == TOCLIENT_ACCESS_DENIED_LEGACY)
-	{
+void Client::handleCommand_AccessDenied(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		// The server didn't like our password. Note, this needs
 		// to be processed even if the serialisation format has
 		// not been agreed yet, the same as TOCLIENT_INIT.
@@ -148,42 +122,25 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		if (m_access_denied_reason.empty())
 			m_access_denied_reason = accessDeniedStrings[denyCode];
+}
 
-		return;
-	}
-
-	if(ser_version == SER_FMT_VER_INVALID)
-	{
-		infostream<<"Client: Server serialization"
-				" format invalid or not initialized."
-				" Skipping incoming command="<<command<<std::endl;
-		return;
-	}
-
-	/*
-	  Handle runtime commands
-	*/
-	// there's no sane reason why we shouldn't have a player and
-	// almost everyone needs a player reference
-	auto *player = m_env.getLocalPlayer();
-	if(!player)
-		return;
-
-	if(command == TOCLIENT_REMOVENODE)
-	{
+void Client::handleCommand_RemoveNode(NetworkPacket* pkt)   {
+	auto & packet = *(pkt->packet);
 		v3s16 p = packet[TOCLIENT_REMOVENODE_POS].as<v3s16>();
 		removeNode(p, 2); //use light from top node
-	}
-	else if(command == TOCLIENT_ADDNODE)
-	{
+}
+
+void Client::handleCommand_AddNode(NetworkPacket* pkt)      {
+	auto & packet = *(pkt->packet);
 		v3s16 p = packet[TOCLIENT_ADDNODE_POS].as<v3s16>();
 		MapNode n = packet[TOCLIENT_ADDNODE_NODE].as<MapNode>();
 		bool remove_metadata = packet[TOCLIENT_ADDNODE_REMOVE_METADATA].as<bool>();
 
 		addNode(p, n, remove_metadata, 2); //fast add
-	}
-	else if(command == TOCLIENT_BLOCKDATA)
-	{
+}
+
+void Client::handleCommand_BlockData(NetworkPacket* pkt)    {
+	auto & packet = *(pkt->packet);
 		v3s16 p = packet[TOCLIENT_BLOCKDATA_POS].as<v3s16>();
 		s8 step = 1;
 		packet[TOCLIENT_BLOCKDATA_STEP].convert(&step);
@@ -203,7 +160,7 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, &block->content_only_param1);
 		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, &block->content_only_param2);
 
-		block->deSerialize(istr, ser_version, false);
+		block->deSerialize(istr, m_server_ser_ver, false);
 		s32 h; // for convert to atomic
 		packet[TOCLIENT_BLOCKDATA_HEAT].convert(&h);
 		block->heat = h;
@@ -243,9 +200,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		}//step
 
-	}
-	else if(command == TOCLIENT_INVENTORY)
-	{
+}
+
+void Client::handleCommand_Inventory(NetworkPacket* pkt)    {
+	auto & packet = *(pkt->packet);
 		std::string datastring = packet[TOCLIENT_INVENTORY_DATA].as<std::string>();
 		std::istringstream is(datastring, std::ios_base::binary);
 		Player *player = m_env.getLocalPlayer();
@@ -259,9 +217,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		delete m_inventory_from_server;
 		m_inventory_from_server = new Inventory(player->inventory);
 		m_inventory_from_server_age = 0.0;
-	}
-	else if(command == TOCLIENT_TIME_OF_DAY)
-	{
+}
+
+void Client::handleCommand_TimeOfDay(NetworkPacket* pkt)    {
+	auto & packet = *(pkt->packet);
 		u16 time_of_day = packet[TOCLIENT_TIME_OF_DAY_TIME].as<u16>();
 		time_of_day = time_of_day % 24000;
 		f32 time_speed = packet[TOCLIENT_TIME_OF_DAY_TIME_SPEED].as<f32>();
@@ -275,14 +234,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		verbosestream<<"Client: time_of_day="<<time_of_day
 				<<" time_speed="<<time_speed
 				<<" dr="<<dr<<std::endl;
-	}
-	else if(command == TOCLIENT_CHAT_MESSAGE)
-	{
+}
+
+void Client::handleCommand_ChatMessage(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		std::string message = packet[TOCLIENT_CHAT_MESSAGE_DATA].as<std::string>();
 		m_chat_queue.push(message);
-	}
-	else if(command == TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD)
-	{
+}
+
+void Client::handleCommand_ActiveObjectRemoveAdd(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		std::vector<u16> removed_objects;
 		packet[TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE].convert(&removed_objects);
 		for (size_t i = 0; i < removed_objects.size(); ++i)
@@ -292,17 +253,21 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		packet[TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD].convert(&added_objects);
 		for (size_t i = 0; i < added_objects.size(); ++i)
 			m_env.addActiveObject(added_objects[i].id, added_objects[i].type, added_objects[i].data);
-	}
-	else if(command == TOCLIENT_ACTIVE_OBJECT_MESSAGES)
-	{
+}
+
+void Client::handleCommand_ActiveObjectMessages(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		ActiveObjectMessages messages;
 		packet[TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES].convert(&messages);
 		for (size_t i = 0; i < messages.size(); ++i)
 			m_env.processActiveObjectMessage(messages[i].first, messages[i].second);
-	}
-	else if(command == TOCLIENT_MOVEMENT)
-	{
+}
+
+void Client::handleCommand_Movement(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		Player *player = m_env.getLocalPlayer();
+		if (!player)
+			return;
 		packet[TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT].convert(&player->movement_acceleration_default);
 		packet[TOCLIENT_MOVEMENT_ACCELERATION_AIR].convert(&player->movement_acceleration_air);
 		packet[TOCLIENT_MOVEMENT_ACCELERATION_FAST].convert(&player->movement_acceleration_fast);
@@ -316,9 +281,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		packet[TOCLIENT_MOVEMENT_LIQUID_SINK].convert(&player->movement_liquid_sink);
 		packet[TOCLIENT_MOVEMENT_GRAVITY].convert(&player->movement_gravity);
 		packet_convert_safe(packet, TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, &player->movement_fall_aerodynamics);
-	}
-	else if(command == TOCLIENT_HP)
-	{
+}
+
+void Client::handleCommand_HP(NetworkPacket* pkt)   {
+	auto & packet = *(pkt->packet);
 		Player *player = m_env.getLocalPlayer();
 		if(!player)
 			return;
@@ -335,14 +301,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			event.player_damage.amount = oldhp - hp;
 			m_client_event_queue.push(event);
 		}
-	}
-	else if(command == TOCLIENT_BREATH)
-	{
+}
+
+void Client::handleCommand_Breath(NetworkPacket* pkt)   {
+	auto & packet = *(pkt->packet);
 		Player *player = m_env.getLocalPlayer();
 		player->setBreath(packet[TOCLIENT_BREATH_BREATH].as<u16>()) ;
-	}
-	else if(command == TOCLIENT_MOVE_PLAYER)
-	{
+}
+
+void Client::handleCommand_MovePlayer(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		Player *player = m_env.getLocalPlayer();
 		if(!player)
 			return;
@@ -382,19 +350,20 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		// Ignore damage for a few seconds, so that the player doesn't
 		// get damage from falling on ground
 		m_ignore_damage_timer = 3.0;
-	}
+}
 
-	else if(command == TOCLIENT_PUNCH_PLAYER)
-	{
-		Player *player = m_env.getLocalPlayer();
+void Client::handleCommand_PunchPlayer(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
+		auto player = m_env.getLocalPlayer();
 		if(!player)
 			return;
 
 		v3f speed = packet[TOCLIENT_PUNCH_PLAYER_SPEED].as<v3f>();
 		player->addSpeed(speed);
-	}
-	else if(command == TOCLIENT_DEATHSCREEN)
-	{
+}
+
+void Client::handleCommand_DeathScreen(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		bool set_camera_point_target = packet[TOCLIENT_DEATHSCREEN_SET_CAMERA].as<bool>();
 		v3f camera_point_target = packet[TOCLIENT_DEATHSCREEN_CAMERA_POINT].as<v3f>();
 
@@ -405,9 +374,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.deathscreen.camera_point_target_y = camera_point_target.Y;
 		event.deathscreen.camera_point_target_z = camera_point_target.Z;
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_ANNOUNCE_MEDIA)
-	{
+}
+
+void Client::handleCommand_AnnounceMedia(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		if (m_media_downloader == NULL ||
 				m_media_downloader->isStarted()) {
 			const char *problem = m_media_downloader ?
@@ -438,9 +408,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		}
 
 		m_media_downloader->step(this);
-	}
-	else if(command == TOCLIENT_MEDIA)
-	{
+}
+
+void Client::handleCommand_Media(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		MediaData media_data;
 		packet[TOCLIENT_MEDIA_MEDIA].convert(&media_data);
 
@@ -451,11 +422,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		for(size_t i = 0; i < media_data.size(); ++i)
 			m_media_downloader->conventionalTransferDone(
 					media_data[i].first, media_data[i].second, this);
-	}
-	else if(command == TOCLIENT_NODEDEF)
-	{
+}
+
+void Client::handleCommand_ToolDef(NetworkPacket* pkt) {
+	//auto & packet = *(pkt->packet);
+}
+
+void Client::handleCommand_NodeDef(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		infostream<<"Client: Received node definitions: packet size: "
-				<<datasize<<std::endl;
+				<<pkt->getSize()<<std::endl;
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
@@ -466,11 +442,16 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		} else if (packet_convert_safe(packet, TOCLIENT_NODEDEF_DEFINITIONS, m_nodedef)) {
 			m_nodedef_received = true;
 		}
-	}
-	else if(command == TOCLIENT_ITEMDEF)
-	{
+}
+
+void Client::handleCommand_CraftItemDef(NetworkPacket* pkt) {
+	//auto & packet = *(pkt->packet);
+}
+
+void Client::handleCommand_ItemDef(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		infostream<<"Client: Received item definitions: packet size: "
-				<<datasize<<std::endl;
+				<<pkt->getSize()<<std::endl;
 
 		// Mesh update thread must be stopped while
 		// updating content definitions
@@ -481,9 +462,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		} else if (packet_convert_safe(packet, TOCLIENT_ITEMDEF_DEFINITIONS, m_itemdef)) {
 			m_itemdef_received = true;
 		}
-	}
-	else if(command == TOCLIENT_PLAY_SOUND)
-	{
+}
+
+void Client::handleCommand_PlaySound(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		s32 server_id = packet[TOCLIENT_PLAY_SOUND_ID].as<s32>();
 		std::string name = packet[TOCLIENT_PLAY_SOUND_NAME].as<std::string>();
 		float gain = packet[TOCLIENT_PLAY_SOUND_GAIN].as<f32>();
@@ -516,9 +498,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			if(object_id != 0)
 				m_sounds_to_objects[client_id] = object_id;
 		}
-	}
-	else if(command == TOCLIENT_STOP_SOUND)
-	{
+}
+
+void Client::handleCommand_StopSound(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		s32 server_id = packet[TOCLIENT_STOP_SOUND_ID].as<s32>();
 		std::map<s32, int>::iterator i =
 				m_sounds_server_to_client.find(server_id);
@@ -526,18 +509,24 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			int client_id = i->second;
 			m_sound->stopSound(client_id);
 		}
-	}
-	else if(command == TOCLIENT_PRIVILEGES)
-	{
+}
+
+void Client::handleCommand_Privileges(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		packet[TOCLIENT_PRIVILEGES_PRIVILEGES].convert(&m_privileges);
-	}
-	else if(command == TOCLIENT_INVENTORY_FORMSPEC)
-	{
+}
+
+void Client::handleCommand_InventoryFormSpec(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
+		auto player = m_env.getLocalPlayer();
+		if(!player)
+			return;
 		// Store formspec in LocalPlayer
 		player->inventory_formspec = packet[TOCLIENT_INVENTORY_FORMSPEC_DATA].as<std::string>();
-	}
-	else if(command == TOCLIENT_DETACHED_INVENTORY)
-	{
+}
+
+void Client::handleCommand_DetachedInventory(NetworkPacket* pkt) {
+	auto & packet = *(pkt->packet);
 		std::string name = packet[TOCLIENT_DETACHED_INVENTORY_NAME].as<std::string>();
 		std::string datastring = packet[TOCLIENT_DETACHED_INVENTORY_DATA].as<std::string>();
 		std::istringstream is(datastring, std::ios_base::binary);
@@ -552,9 +541,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 			m_detached_inventories[name] = inv;
 		}
 		inv->deSerialize(is);
-	}
-	else if(command == TOCLIENT_SHOW_FORMSPEC)
-	{
+}
+
+void Client::handleCommand_ShowFormSpec(NetworkPacket* pkt)           {
+	auto & packet = *(pkt->packet);
 		std::string formspec = packet[TOCLIENT_SHOW_FORMSPEC_DATA].as<std::string>();
 		std::string formname = packet[TOCLIENT_SHOW_FORMSPEC_NAME].as<std::string>();
 
@@ -565,9 +555,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.show_formspec.formspec = new std::string(formspec);
 		event.show_formspec.formname = new std::string(formname);
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_SPAWN_PARTICLE)
-	{
+}
+
+void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)          {
+	auto & packet = *(pkt->packet);
 		v3f pos = packet[TOCLIENT_SPAWN_PARTICLE_POS].as<v3f>();
 		v3f vel = packet[TOCLIENT_SPAWN_PARTICLE_VELOCITY].as<v3f>();
 		v3f acc = packet[TOCLIENT_SPAWN_PARTICLE_ACCELERATION].as<v3f>();
@@ -591,9 +582,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.spawn_particle.texture = new std::string(texture);
 
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_ADD_PARTICLESPAWNER)
-	{
+}
+
+void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)     {
+	auto & packet = *(pkt->packet);
 		u16 amount;
 		float spawntime, minexptime, maxexptime, minsize, maxsize;
 		v3f minpos, maxpos, minvel, maxvel, minacc, maxacc;
@@ -640,9 +632,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.add_particlespawner.id = id;
 
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_DELETE_PARTICLESPAWNER)
-	{
+}
+
+void Client::handleCommand_DeleteParticleSpawner(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		u32 id = packet[TOCLIENT_DELETE_PARTICLESPAWNER_ID].as<u32>();
 
 		ClientEvent event;
@@ -650,9 +643,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.delete_particlespawner.id = id;
 
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_HUDADD)
-	{
+}
+
+void Client::handleCommand_HudAdd(NetworkPacket* pkt)                 {
+	auto & packet = *(pkt->packet);
 		//std::string datastring((char *)&data[2], datasize - 2);
 		//std::istringstream is(datastring, std::ios_base::binary);
 
@@ -693,18 +687,20 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.hudadd.world_pos = new v3f(world_pos);
 		event.hudadd.size      = new v2s32(size);
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_HUDRM)
-	{
+}
+
+void Client::handleCommand_HudRemove(NetworkPacket* pkt)              {
+	auto & packet = *(pkt->packet);
 		u32 id = packet[TOCLIENT_HUDRM_ID].as<u32>();
 
 		ClientEvent event;
 		event.type = CE_HUDRM;
 		event.hudrm.id = id;
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_HUDCHANGE)
-	{
+}
+
+void Client::handleCommand_HudChange(NetworkPacket* pkt)              {
+	auto & packet = *(pkt->packet);
 		std::string sdata;
 		v2f v2fdata;
 		v3f v3fdata;
@@ -736,9 +732,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.hudchange.data    = intdata;
 		event.hudchange.v2s32data = new v2s32(v2s32data);
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_HUD_SET_FLAGS)
-	{
+}
+
+void Client::handleCommand_HudSetFlags(NetworkPacket* pkt)            {
+	auto & packet = *(pkt->packet);
 		Player *player = m_env.getLocalPlayer();
 		if(!player)
 			return;
@@ -748,9 +745,13 @@ void Client::ProcessData(NetworkPacket *pkt) {
 
 		player->hud_flags &= ~mask;
 		player->hud_flags |= flags;
-	}
-	else if(command == TOCLIENT_HUD_SET_PARAM)
-	{
+}
+
+void Client::handleCommand_HudSetParam(NetworkPacket* pkt)            {
+	auto & packet = *(pkt->packet);
+		auto player = m_env.getLocalPlayer();
+		if(!player)
+			return;
 		u16 param = packet[TOCLIENT_HUD_SET_PARAM_ID].as<u16>();
 		std::string value = packet[TOCLIENT_HUD_SET_PARAM_VALUE].as<std::string>();
 
@@ -765,23 +766,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		} else if (param == HUD_PARAM_HOTBAR_SELECTED_IMAGE) {
 			player->hotbar_selected_image = value;
 		}
-	}
-/*
-	else if(command == TOCLIENT_ANIMATIONS)
-	{
-		LocalPlayer *player = m_env.getLocalPlayer();
-		packet[TOCLIENT_ANIMATIONS_DEFAULT_START].convert(&player->animation_default_start);
-		packet[TOCLIENT_ANIMATIONS_DEFAULT_STOP].convert(&player->animation_default_stop);
-		packet[TOCLIENT_ANIMATIONS_WALK_START].convert(&player->animation_walk_start);
-		packet[TOCLIENT_ANIMATIONS_WALK_STOP].convert(&player->animation_walk_stop);
-		packet[TOCLIENT_ANIMATIONS_DIG_START].convert(&player->animation_dig_start);
-		packet[TOCLIENT_ANIMATIONS_DIG_STOP].convert(&player->animation_dig_stop);
-		packet[TOCLIENT_ANIMATIONS_WD_START].convert(&player->animation_wd_start);
-		packet[TOCLIENT_ANIMATIONS_WD_STOP].convert(&player->animation_wd_stop);
-	}
-*/
-	else if(command == TOCLIENT_SET_SKY)
-	{
+}
+
+void Client::handleCommand_HudSetSky(NetworkPacket* pkt)              {
+	auto & packet = *(pkt->packet);
 		video::SColor *bgcolor = new video::SColor(packet[TOCLIENT_SET_SKY_COLOR].as<video::SColor>());
 		std::string *type = new std::string(packet[TOCLIENT_SET_SKY_TYPE].as<std::string>());
 		std::vector<std::string> *params = new std::vector<std::string>;
@@ -793,9 +781,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.set_sky.type    = type;
 		event.set_sky.params  = params;
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO)
-	{
+}
+
+void Client::handleCommand_OverrideDayNightRatio(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		bool do_override;
 		float day_night_ratio_f;
 		packet[TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO].convert(&do_override);
@@ -806,9 +795,10 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		event.override_day_night_ratio.do_override = do_override;
 		event.override_day_night_ratio.ratio_f     = day_night_ratio_f;
 		m_client_event_queue.push(event);
-	}
-	else if(command == TOCLIENT_LOCAL_PLAYER_ANIMATIONS)
-	{
+}
+
+void Client::handleCommand_LocalPlayerAnimations(NetworkPacket* pkt)  {
+	auto & packet = *(pkt->packet);
 		LocalPlayer *player = m_env.getLocalPlayer();
 		if(!player)
 			return;
@@ -818,19 +808,18 @@ void Client::ProcessData(NetworkPacket *pkt) {
 		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_DIG].convert(&player->local_animations[2]);
 		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALKDIG].convert(&player->local_animations[3]);
 		packet[TOCLIENT_LOCAL_PLAYER_ANIMATIONS_FRAME_SPEED].convert(&player->local_animation_speed);
-	}
-	else if(command == TOCLIENT_EYE_OFFSET)
-	{
+}
+
+void Client::handleCommand_EyeOffset(NetworkPacket* pkt)              {
+	auto & packet = *(pkt->packet);
 		LocalPlayer *player = m_env.getLocalPlayer();
 		if(!player)
 			return;
 
 		packet[TOCLIENT_EYE_OFFSET_FIRST].convert(&player->eye_offset_first);
 		packet[TOCLIENT_EYE_OFFSET_THIRD].convert(&player->eye_offset_third);
-	}
-	else
-	{
-		infostream<<"Client: Ignoring unknown command "
-				<<command<<std::endl;
-	}
+}
+
+void Client::handleCommand_SrpBytesSandB(NetworkPacket* pkt)          {
+	//auto & packet = *(pkt->packet);
 }
