@@ -206,7 +206,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	if (control.sneak && m_sneak_node_exists &&
 			!(fly_allowed && g_settings->getBool("free_move")) && !in_liquid &&
-			physics_override_sneak) {
+			physics_override_sneak && !got_teleported) {
 		f32 maxd = 0.5 * BS + sneak_max;
 		v3f lwn_f = intToFloat(m_sneak_node, BS);
 		auto old_pos = position;
@@ -236,6 +236,9 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 
 		}
 	}
+
+	if (got_teleported)
+		got_teleported = false;
 
 	// this shouldn't be hardcoded but transmitted from server
 	float player_stepheight = touching_ground ? (BS*0.6) : (BS*0.2);
