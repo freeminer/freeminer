@@ -567,7 +567,7 @@ queue_full_break:
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
-	if(nearest_emerged_d != -1){
+	if(nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d){
 		new_nearest_unsent_d = nearest_emerged_d;
 	} else if(nearest_emergefull_d != -1){
 		new_nearest_unsent_d = nearest_emergefull_d;
