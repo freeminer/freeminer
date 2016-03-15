@@ -262,6 +262,7 @@ int RemoteClient::GetNextBlocks (
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
+	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;
 	static const bool server_occlusion = g_settings->getBool("server_occlusion");
 	bool occlusion_culling_enabled = server_occlusion;
@@ -392,6 +393,7 @@ int RemoteClient::GetNextBlocks (
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
+
 			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
 				continue;
 			}
@@ -409,14 +411,14 @@ int RemoteClient::GetNextBlocks (
 			block = env->getMap().getBlockNoCreateNoEx(p);
 			}
 
-			bool surely_not_found_on_disk = false;
+			//bool surely_not_found_on_disk = false;
 			bool block_is_invalid = false;
 			if(block != NULL)
 			{
 
-				if (d > 3 && block->content_only == CONTENT_AIR) {
+				/*if (d > 3 && block->content_only == CONTENT_AIR) {
 					continue;
-				}
+				}*/
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					continue;
@@ -515,18 +517,21 @@ int RemoteClient::GetNextBlocks (
 				If block has been marked to not exist on disk (dummy)
 				and generating new ones is not wanted, skip block.
 			*/
+			/*
 			if(generate == false && surely_not_found_on_disk == true)
 			{
 				// get next one.
 				continue;
 			}
+			*/
 
 			/*
 				Add inexistent block to emerge queue.
 			*/
-			if(block == NULL || surely_not_found_on_disk || block_is_invalid)
+			if(!block || /*surely_not_found_on_disk ||*/ block_is_invalid)
 			{
 				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
+				if (generate || !env->getServerMap().m_db_miss.count(p)) {
 
 				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 					if (nearest_emerged_d == -1)
@@ -535,6 +540,9 @@ int RemoteClient::GetNextBlocks (
 					if (nearest_emergefull_d == -1)
 						nearest_emergefull_d = d;
 					goto queue_full_break;
+				}
+				} else {
+					//infostream << "skip tryload " << p << "\n";
 				}
 
 				// get next one.
@@ -552,14 +560,17 @@ int RemoteClient::GetNextBlocks (
 
 			dest.push_back(q);
 
+			if (block->content_only == CONTENT_AIR)
+				++num_blocks_air;
+			else
 			num_blocks_selected += 1;
 		}
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
 	num_blocks_selected += num_blocks_sending;
-	if(!num_blocks_selected && d_start <= d) {
+	if(!num_blocks_selected && !num_blocks_air && d_start <= d) {
 		//new_nearest_unsent_d = 0;
 		m_nothing_to_send_pause_timer = 1.0;
 	}
@@ -574,7 +585,7 @@ queue_full_break:
 	} else {
 		if(d > full_d_max){
 			new_nearest_unsent_d = 0;
-			m_nothing_to_send_pause_timer = 1.0;
+			m_nothing_to_send_pause_timer = 10.0;
 		} else {
 			if(nearest_sent_d != -1)
 				new_nearest_unsent_d = nearest_sent_d;
@@ -583,8 +594,10 @@ queue_full_break:
 		}
 	}
 
-	if(new_nearest_unsent_d != -1)
+	if(new_nearest_unsent_d != -1) {
 		m_nearest_unsent_d = new_nearest_unsent_d;
+	}
+
 	return num_blocks_selected - num_blocks_sending;
 }
 

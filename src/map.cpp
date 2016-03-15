@@ -3317,8 +3317,10 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 	MapBlock *block = nullptr;
 	try {
 	auto blob = dbase->loadBlock(p3d);
-	if(!blob.length())
+	if(!blob.length()) {
+		m_db_miss.set(p3d, 1);
 		return nullptr;
+	}
 
 		std::istringstream is(blob, std::ios_base::binary);
 

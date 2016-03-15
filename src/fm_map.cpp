@@ -116,6 +116,8 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
+	m_db_miss.erase(block_p);
+
 	auto lock = m_blocks.lock_unique_rec();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);

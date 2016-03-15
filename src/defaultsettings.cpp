@@ -280,7 +280,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("emergequeue_limit_diskonly", "8");
 	settings->setDefault("emergequeue_limit_generate", "8");
 	*/
-	settings->setDefault("viewing_range", "25");
+	//settings->setDefault("viewing_range", "25");
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
 	if (x_inches  < 7) {

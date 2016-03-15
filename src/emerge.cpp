@@ -423,7 +423,6 @@ bool EmergeManager::pushBlockEmergeData(
 	if ((flags & BLOCK_EMERGE_FORCE_QUEUE) == 0) {
 		if (m_blocks_enqueued.size() >= m_qlimit_total)
 			return false;
-
 		if (peer_requested != PEER_ID_INEXISTENT) {
 			u16 qlimit_peer = (flags & BLOCK_EMERGE_ALLOW_GEN) ?
 				m_qlimit_generate : m_qlimit_diskonly;
@@ -743,8 +742,9 @@ void *EmergeThread::run()
 
 		if (block) {
 			//modified_blocks[pos] = block;
-		} else if (allow_gen)
+		} else if (allow_gen) {
 			verbosestream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
+		}
 
 		if (modified_blocks.size() > 0)
 			m_server->SetBlocksNotSent(/*modified_blocks*/);
