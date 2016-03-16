@@ -18,6 +18,7 @@ Changelog
   * Auto delete old items by default. push items up from solid blocks
   * Player punch move (small move on pvp hit or jump on tnt explode)
   * Show servers from local network in online server list.
+  * Android: allow disable touch interface: touchscreen=0 (from config or settings menu: advanced - freeminer - client)
 
 
 ### 0.4.13.7 (Aug 20, 2015)

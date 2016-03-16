@@ -11,7 +11,7 @@ NDK_DIR=$NDK_V
 SDK_FILE=android-sdk_r24.3.4-linux.tgz
 SDK_DIR=android-sdk-linux
 
-TEST_PLATFORM=android-15
+TEST_PLATFORM=android-16
 
 WGET="wget --continue"
 
@@ -42,16 +42,15 @@ if [ ! -d $SDK_DIR ] ; then
 fi
 
 if [ ! -d $SDK_DIR/platforms/$TEST_PLATFORM ] ; then
-	#echo "yyyyyy" | $SDK_DIR/tools/android update sdk --no-ui
-	echo y | $SDK_DIR/tools/android update sdk --no-ui --filter platform-tool,$TEST_PLATFORM,android-21,build-tools-23.0.2
+	#( sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | $SDK_DIR/tools/android update sdk --no-ui
+	( sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | $SDK_DIR/tools/android update sdk --no-ui --filter platform-tool,$TEST_PLATFORM,android-15,android-21,build-tools-23.0.2
+	echo autoinstall build-tools-23.0.2 now maybe broken, install manually: $NDK_SDK_ROOT/$SDK_DIR/tools/android
 fi
 
 cd $DIR_SAVE
 MAKE="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
-$MAKE TARGET_arm64=1 && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-arm64.apk
-$MAKE TARGET_x86=1   && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-x86.apk
-$MAKE                && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-armv7.apk
-
-#$MAKE TARGET_mips=1  && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-mips.apk
-
+$MAKE                arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-armv7.apk
+$MAKE TARGET_x86=1   arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-x86.apk
+$MAKE TARGET_arm64=1 arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-arm64.apk
+#$MAKE TARGET_mips=1  arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-mips.apk

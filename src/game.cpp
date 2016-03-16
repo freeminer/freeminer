@@ -1949,10 +1949,6 @@ void Game::run()
 
 		try {
 
-#ifdef __ANDROID__
-		porting::handleAndroidActivityEvents(5);
-#endif
-
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
 		 */
@@ -2532,7 +2528,6 @@ bool Game::getServerContent(bool *aborted)
 	fps_control.last_time = device->getTimer()->getTime();
 
 	while (device->run()) {
-
 		limitFps(&fps_control, &dtime);
 
 		// Update client and server

@@ -62,11 +62,15 @@ TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
 TARGET_ARCH = armv7
 CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
-#COMPILER_VERSION = clang3.6
+
 HAVE_LEVELDB = 1
 USE_LUAJIT = 1
 USE_ENET = 1
 APP_STL = gnustl       # gnustl libcxx|libc++ stlport
+
+#COMPILER_VERSION = clang
+#TARGET_CFLAGS_ADDON = -D_NDK_MATH_NO_SOFTFP=1 -Ofast
+#STANDALONE_ADDON = --use-llvm
 
 ifeq ($(TARGET_arm64),1)
 ifneq ($(NO_AUTO_VERSION),1)
@@ -123,6 +127,8 @@ TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
 CROSS_PREFIX = i686-linux-android-
 TARGET_ARCH = x86
+SDK_VERSION = 16
+OPENSSL_CONFIGURE_ADDON = no-asm
 endif
 
 APP_PLATFORM = android-$(SDK_VERSION)
@@ -391,9 +397,11 @@ $(OPENSSL_LIB): $(GMP_LIB) $(OPENSSL_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	CC=${CROSS_PREFIX}gcc ./Configure enable-gmp -DL_ENDIAN -I${GMP_DIR} -L${GMP_DIR}/usr/lib android-${TARGET_ARCH};\
+	CC=${CROSS_PREFIX}gcc ./Configure enable-gmp -DL_ENDIAN -I${GMP_DIR} -L${GMP_DIR}/usr/lib ${OPENSSL_CONFIGURE_ADDON} android-${TARGET_ARCH};\
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make depend;     \
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
 	touch ${OPENSSL_TIMESTAMP};                                                \
@@ -445,6 +453,8 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -553,6 +563,8 @@ $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -577,7 +589,7 @@ clean_iconv :
 #      -geforce on emulator
 #      -Vivante Corporation GC1000 core (e.g. Galaxy Tab 3)
 
-irrlicht_download :
+irrlicht_download : arch_dirs
 	@if [ ! -d "deps/irrlicht" ] ; then                                        \
 		echo "irrlicht sources missing, downloading...";                       \
 		mkdir -p ${ROOT}/deps;                                                 \
@@ -671,6 +683,8 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -733,6 +747,8 @@ $(GMP_LIB): $(GMP_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -896,6 +912,8 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}gcc;                                              \
@@ -956,6 +974,8 @@ $(GETTEXT_LIB): $(GETTEXT_TIMESTAMP)
 	#${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	#--stl=${APP_STL} \
+	#--platform=${APP_PLATFORM} \
+	#${STANDALONE_ADDON} \
 	#--install-dir=$${TOOLCHAIN};                                               \
 	#export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	#export CXX=${CROSS_PREFIX}g++;                                             \
@@ -1017,7 +1037,9 @@ $(LUAJIT_LIB): $(LUAJIT_TIMESTAMP)
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION} \
 	--stl=${APP_STL} \
-	--install-dir=$${TOOLCHAIN} --platform=${APP_PLATFORM}; \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
+	--install-dir=$${TOOLCHAIN}; \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}"; \
 	export CROSS=${CROSS_PREFIX}; \
 	export TARGET_FLAGS="${TARGET_CFLAGS_ADDON}"; \
@@ -1045,8 +1067,10 @@ clean_locale:
 
 arch_dirs:
 	mkdir -p deps-$(TARGET_ABI)
+#	-rm -fr deps
 	ln -sfn deps-$(TARGET_ABI) deps
-
+# here is bad place
+	echo "target=${APP_PLATFORM}" > project.properties
 #==== end of freeminer libs
 
 

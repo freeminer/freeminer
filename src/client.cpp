@@ -665,6 +665,11 @@ void Client::step(float dtime)
 
 bool Client::loadMedia(const std::string &data, const std::string &filename)
 {
+
+#ifdef __ANDROID__
+	m_device->run();
+#endif
+
 	// Silly irrlicht's const-incorrectness
 	Buffer<char> data_rw(data.c_str(), data.size());
 
@@ -1805,6 +1810,12 @@ void texture_update_progress(void *args, u32 progress, u32 max_progress)
 			draw_load_screen(strm.str(), targs->device, targs->guienv, 0,
 				72 + (u16) ((18. / 100.) * (double) targs->last_percent));
 		}
+
+#ifdef __ANDROID__
+		else {
+			targs->device->run();
+		}
+#endif
 }
 
 void Client::afterContentReceived(IrrlichtDevice *device)
