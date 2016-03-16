@@ -8,23 +8,14 @@ run Android SDK Manager
  and install
   Android SDK build-tools 23.0.1
   API 15 - SDK platform
+  API 21 - SDK platform
 
 
-##or semi-aumomatic way: (todo: make .sh)
+##or automatic way:
 
 
 ```bash
-cd ~
-
-sudo apt-get install -y default-jdk android-tools-adb ant m4 gcc-multilib lib32z1
-wget https://dl.google.com/android/ndk/android-ndk-r10e-linux-x86_64.bin
-chmod +x android-ndk-r10e-linux-x86_64.bin
-./android-ndk-r10e-linux-x86_64.bin
-wget https://dl.google.com/android/android-sdk_r24.3.4-linux.tgz
-tar xf android-sdk_r24.3.4-linux.tgz
-echo "yyyyyy" | ~/android-sdk-linux/tools/android update sdk --no-ui
-echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-tool,android-15,build-tools-23.0.1
-
+build.sh
 ```
 
 
@@ -32,8 +23,8 @@ echo y | ~/android-sdk-linux/tools/android update sdk --no-ui --filter platform-
 
 run make in freeminer/build/android , answer to questions, it will create path.cfg with
 ```
-ANDROID_NDK = /home/user/android-ndk-r10e
-NDK_MODULE_PATH = /home/user/android-ndk-r10e/toolchains
+ANDROID_NDK = /home/user/android-ndk-r11
+NDK_MODULE_PATH = /home/user/android-ndk-r11/toolchains
 SDKFOLDER = /home/user/android-sdk-linux/
 ```
 

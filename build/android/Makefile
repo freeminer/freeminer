@@ -35,10 +35,12 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-BUILD_NUMBER = 68
+#increase by 4
+BUILD_NUMBER = 70
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
+SDK_VERSION = 15
 PROJECT_NAME_C = freeminer
 
 GAMES_VERSION = ""
@@ -66,10 +68,30 @@ USE_LUAJIT = 1
 USE_ENET = 1
 APP_STL = gnustl       # gnustl libcxx|libc++ stlport
 
+ifeq ($(TARGET_arm64),1)
+ifneq ($(NO_AUTO_VERSION),1)
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 3 )))
+endif
+TARGET_HOST = aarch64-linux
+TARGET_ABI = arm64-v8a
+TARGET_LIBDIR = arm64-v8a
+TARGET_TOOLCHAIN = aarch64-linux-android-
+TARGET_CFLAGS_ADDON = -Ofast
+TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
+TARGET_LDFLAGS_ADDON =
+CROSS_PREFIX = aarch64-linux-android-
+TARGET_ARCH = aarch64
+SDK_VERSION = 21
+
+#TODO:
+USE_LUAJIT = 0
+endif
+
+
 ################################################################################
 # toolchain config for little endian mips
 ################################################################################
-ifeq ($(TARGET_MIPS),1)
+ifeq ($(TARGET_mips),1)
 ifneq ($(NO_AUTO_VERSION),1)
 ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 2 )))
 endif
@@ -102,6 +124,9 @@ TARGET_LDFLAGS_ADDON =
 CROSS_PREFIX = i686-linux-android-
 TARGET_ARCH = x86
 endif
+
+APP_PLATFORM = android-$(SDK_VERSION)
+
 
 ################################################################################
 ASSETS_TIMESTAMP = deps/assets_timestamp
@@ -349,7 +374,7 @@ openssl_download :
 
 openssl : $(OPENSSL_LIB)
 
-$(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
+$(OPENSSL_LIB): $(GMP_LIB) $(OPENSSL_TIMESTAMP)
 	@REFRESH=0;                                                                \
 	if [ ! -e ${OPENSSL_TIMESTAMP_INT} ] ; then                                \
 		echo "${OPENSSL_TIMESTAMP_INT} doesn't exist";                         \
@@ -361,7 +386,7 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP)
 	if [ $$REFRESH -ne 0 ] ; then                                              \
 	echo "changed timestamp for openssl detected building...";                 \
 	cd ${OPENSSL_DIR};                                                         \
-	ln -s ${OPENSSL_DIR} ../openssl;                                           \
+	ln -fs ${OPENSSL_DIR} ../openssl; \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-openssl;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
@@ -826,7 +851,7 @@ clean_assets :
 
 
 #=== freeminer libs:
-.PHONY : default $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
+.PHONY : arch_dirs default $(MSGPACK_TIMESTAMP) msgpack_download msgpack clean_msgpack \
 		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv \
 		$(LUAJIT_TIMESTAMP) luajit luajit_download clean_luajit
 
@@ -954,6 +979,8 @@ LUAJIT_LIB = $(LUAJIT_DIR)src/libluajit.a
 LUAJIT_TIMESTAMP = $(LUAJIT_DIR)timestamp
 LUAJIT_TIMESTAMP_INT = $(ROOT)/deps/luajit_timestamp
 LUAJIT_URL_GIT = http://luajit.org/git/luajit-2.0.git
+#LUAJIT_GIT_BRANCH = v2.1
+LUAJIT_GIT_BRANCH = master
 
 
 $(LUAJIT_TIMESTAMP) : luajit_download
@@ -967,7 +994,7 @@ luajit_download :
 		echo "luajit sources missing, downloading...";                            \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		git clone --recursive ${LUAJIT_URL_GIT} ${LUAJIT_DIR} || exit 1; \
+		git clone --recursive --branch ${LUAJIT_GIT_BRANCH} ${LUAJIT_URL_GIT} ${LUAJIT_DIR} || exit 1; \
 	fi
 
 luajit : $(LUAJIT_LIB)
@@ -1016,11 +1043,15 @@ locale:
 clean_locale:
 	rm -rf cmake
 
+arch_dirs:
+	mkdir -p deps-$(TARGET_ABI)
+	ln -sfn deps-$(TARGET_ABI) deps
+
 #==== end of freeminer libs
 
 
 # $(ICONV_LIB)
-apk: $(PATHCFGFILE) assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
+apk: $(PATHCFGFILE) arch_dirs assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
 	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) $(FREETYPE_LIB) \
 	$(ROOT)/jni/src/android_version_githash.h sqlite3_download
@@ -1124,6 +1155,7 @@ manifest :
 		DBG_FLAG="android:debuggable=\"true\"";                                \
 	fi;                                                                        \
 	cat ${ROOT}/AndroidManifest.xml.template |                                 \
+	sed "s/###SDK_VERSION###/${SDK_VERSION}/g" | \
 	sed "s/###ANDROID_VERSION###/${ANDROID_VERSION_CODE}/g" |                  \
 	sed "s/###BUILD_NUMBER###/${BUILD_NUMBER}/g" | \
 	sed "s/###BASE_VERSION###/$$BASE_VERSION/g" |                              \
