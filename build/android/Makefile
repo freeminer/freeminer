@@ -392,7 +392,7 @@ $(OPENSSL_LIB): $(GMP_LIB) $(OPENSSL_TIMESTAMP)
 	if [ $$REFRESH -ne 0 ] ; then                                              \
 	echo "changed timestamp for openssl detected building...";                 \
 	cd ${OPENSSL_DIR};                                                         \
-	ln -fs ${OPENSSL_DIR} ../openssl; \
+	ln -fsn ${OPENSSL_DIR} ../openssl; \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-openssl;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
@@ -534,7 +534,7 @@ iconv_download :
 		wget -O libiconv-${ICONV_VERSION}.tar.gz ${ICONV_URL_HTTP} || exit 1; \
 		tar -xzf libiconv-${ICONV_VERSION}.tar.gz || exit 1;               \
 		rm libiconv-${ICONV_VERSION}.tar.gz;                               \
-		ln -s libiconv-${ICONV_VERSION} libiconv;                          \
+		ln -fsn libiconv-${ICONV_VERSION} libiconv;                          \
 		cd ${ICONV_DIR};                                                   \
 		patch -p1 < ${ROOT}/libiconv_android.patch;                        \
 		patch -p1 < ${ROOT}/libiconv_stdio.patch;                          \
@@ -657,7 +657,7 @@ curl_download :
 		wget ${CURL_URL_HTTP} -O curl-${CURL_VERSION}.tar.bz2 || exit 1;                                       \
 		tar -xjf curl-${CURL_VERSION}.tar.bz2 || exit 1;                       \
 		rm curl-${CURL_VERSION}.tar.bz2;                                       \
-		ln -s curl-${CURL_VERSION} curl;                                       \
+		ln -fsn curl-${CURL_VERSION} curl;                                       \
 	fi
 
 curl : $(CURL_LIB)
@@ -721,7 +721,7 @@ gmp_download :
 		wget ${GMP_URL_HTTP} -O gmp-${GMP_VERSION}.tar.bz2 || exit 1;                                    \
 		tar -xjf gmp-${GMP_VERSION}.tar.bz2 || exit 1;                     \
 		rm gmp-${GMP_VERSION}.tar.bz2;                                     \
-		ln -s gmp-${GMP_VERSION} gmp;                                      \
+		ln -fsn gmp-${GMP_VERSION} gmp;                                      \
 	fi
 
 gmp : $(GMP_LIB)
@@ -774,7 +774,7 @@ deps/${SQLITE3_FOLDER}/sqlite3.c :
 	cd deps;                                                                    \
 	wget ${SQLITE3_URL} -O ${SQLITE3_FOLDER}.zip;                               \
 	unzip ${SQLITE3_FOLDER}.zip;                                                \
-	ln -s ${SQLITE3_FOLDER} sqlite
+	ln -fsn ${SQLITE3_FOLDER} sqlite
 
 clean_sqlite3:
 	cd deps && $(RM) -rf ${SQLITE3_FOLDER} && $(RM) -f ${SQLITE3_FOLDER}.zip && \
@@ -1101,7 +1101,7 @@ apk: $(PATHCFGFILE) arch_dirs assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LE
 
 prep_srcdir :
 	@if [ ! -e ${ROOT}/jni/src ]; then                                         \
-		ln -s ${ROOT}/../../src ${ROOT}/jni/src;                           \
+		ln -fsn ${ROOT}/../../src ${ROOT}/jni/src;                           \
 	fi
 
 clean_apk : manifest
