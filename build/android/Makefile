@@ -392,7 +392,7 @@ $(OPENSSL_LIB): $(GMP_LIB) $(OPENSSL_TIMESTAMP)
 	if [ $$REFRESH -ne 0 ] ; then                                              \
 	echo "changed timestamp for openssl detected building...";                 \
 	cd ${OPENSSL_DIR};                                                         \
-	ln -fsn ${OPENSSL_DIR} ../openssl; \
+	ln -fsn ${OPENSSL_BASEDIR} ../openssl; \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-openssl;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
