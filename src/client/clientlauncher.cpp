@@ -34,6 +34,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "fontengine.h"
 #include "clientlauncher.h"
 
+#include "debug.h"
+
 /* mainmenumanager.h
  */
 gui::IGUIEnvironment *guienv = NULL;
@@ -292,7 +294,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 			errorstream << error_message << std::endl;
 		}
 
-#ifdef NDEBUG
+#if !EXEPTION_DEBUG
 		catch (std::exception &e) {
 			std::string error_message = "Some exception: \"";
 			error_message += e.what();
@@ -776,31 +778,32 @@ void ClientLauncher::wait_data() {
 			break;
 		}
 	bool &kill = *porting::signal_handler_killstatus();
-	for (int i = 0; i < 10000; ++i) {
-
+	for (int i = 0; i < 1000; ++i) { // 100s max
 		if (i || wait) {
 			auto driver = device->getVideoDriver();
-			g_menuclouds->step(5);
+			g_menuclouds->step(4);
 			driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
 			g_menucloudsmgr->drawAll();
 			guienv->drawAll();
 			driver->endScene();
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			device->run();
+			device->sleep(100);
 		}
 		int no = 0;
-		if (! (i % 10) )
-		for (auto p : check_path)
-			if (!fs::PathExists(p)) {
-				no++;
+		if (! (i % 10) ) { //every second
+			for (auto p : check_path)
+				if (!fs::PathExists(p)) {
+					++no;
+					break;
+				}
+			if (!no || kill || !device->run())
 				break;
-			}
-		if (!no || kill || !device->run())
-			break;
-		if (! (i % 10) )
 			infostream << "waiting assets i= " << i << " path="<< porting::path_share << std::endl;
+		}
 	}
 
-	if (wait)
-		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	if (wait) {
+		device->run();
+		device->sleep(300);
+	}
 }

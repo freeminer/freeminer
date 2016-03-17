@@ -619,8 +619,13 @@ static void init_log_streams(const Settings &cmd_args)
 
 	verbosestream << "log_filename = " << log_filename << std::endl;
 
+	try {
 	file_log_output.open(log_filename.c_str());
 	g_logger.addOutputMaxLevel(&file_log_output, log_level);
+	} catch (std::exception &e) {
+		errorstream << ": log open exception: " << log_filename << " err: " << e.what() << std::endl;
+		g_logger.removeOutput(&file_log_output);
+	}
 
 	g_time_taker_enabled = g_settings->getU16("time_taker_enabled") ? g_settings->getU16("time_taker_enabled") : ((g_settings->getFloat("profiler_print_interval") || log_level >= LL_INFO) ? 100 : 0);
 }

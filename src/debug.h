@@ -138,6 +138,8 @@ private:
 #endif
 
 
+//#define EXEPTION_DEBUG 1
+
 #if EXEPTION_DEBUG
 	#define EXCEPTION_HANDLER_BEGIN
 	#define EXCEPTION_HANDLER_END

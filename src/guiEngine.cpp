@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <GLES/gl.h>
 #endif
 
+#include <thread>
 
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */
@@ -315,7 +316,11 @@ GUIEngine::~GUIEngine()
 	}
 
 	infostream<<"GUIEngine: Deinitializing scripting"<<std::endl;
+
+	/*
 	delete m_script;
+	*/
+	std::thread([=] { delete m_script; }).detach();
 
 	m_irr_toplefttext->setText(L"");
 
@@ -329,6 +334,7 @@ GUIEngine::~GUIEngine()
 
 	if (m_cloud.clouds)
 		m_cloud.clouds->drop();
+
 }
 
 /******************************************************************************/
