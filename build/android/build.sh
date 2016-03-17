@@ -2,6 +2,8 @@
 
 NDK_SDK_ROOT=~
 
+NAME=freeminer
+
 NDK_VER=11
 NDK_V=android-ndk-r$NDK_VER
 NDK=$NDK_V-linux-x86_64
@@ -50,7 +52,7 @@ fi
 cd $DIR_SAVE
 MAKE="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
-$MAKE                arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-armv7.apk
-$MAKE TARGET_x86=1   arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-x86.apk
-$MAKE TARGET_arm64=1 arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-arm64.apk
-#$MAKE TARGET_mips=1  arch_dirs release && cp bin/freeminer-release-unsigned.apk bin/freeminer-release-unsigned-mips.apk
+$MAKE                arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-armv7.apk
+$MAKE TARGET_x86=1   arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-x86.apk
+$MAKE TARGET_arm64=1 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-arm64.apk
+#$MAKE TARGET_mips=1  arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-mips.apk
