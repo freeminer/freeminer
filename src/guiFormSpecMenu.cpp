@@ -1813,6 +1813,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		return;
 	}
 
+	porting::irr_device_wait_egl(m_device);
+
 	parserData mydata;
 
 	//preserve tables

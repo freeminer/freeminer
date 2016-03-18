@@ -791,6 +791,25 @@ extern "C" unsigned int get_time_us() {
 	return porting::getTimeUs();
 }
 
+void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
+#ifndef __ANDROID__
+	if (!dev)
+		dev = device;
+	if (!dev)
+		return;
+	int i = 0;
+	while (!dev->getContextManager()->generateContext()) {
+		dev->sleep(100);
+		if (++i > 100) {
+			errorstream << "Cant generate egl context >10s, something can crash now.." << std::endl;
+			break;
+		}
+	}
+	dev->getContextManager()->activateContext(dev->getContextManager()->getContext());
+#endif
+}
+
+
 ////
 //// OS-specific Secure Random
 ////

@@ -754,7 +754,11 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 		return nullptr;
 
 #ifdef __ANDROID__
+	porting::irr_device_wait_egl(m_device);
+
 	const GLubyte* renderstr = glGetString(GL_RENDERER);
+	if (!renderstr)
+		return nullptr;
 	std::string renderer((char*) renderstr);
 
 	// use no render to texture hack
@@ -1084,7 +1088,13 @@ video::IImage * Align2Npot2(video::IImage * image,
 
 	core::dimension2d<u32> dim = image->getDimension();
 
-	std::string extensions = (char*) glGetString(GL_EXTENSIONS);
+	porting::irr_device_wait_egl();
+
+	auto ext = (char*) glGetString(GL_EXTENSIONS);
+	if (!ext)
+		return image;
+
+	std::string extensions = ext;
 	if (extensions.find("GL_OES_texture_npot") != std::string::npos) {
 		return image;
 	}
