@@ -317,10 +317,7 @@ GUIEngine::~GUIEngine()
 
 	infostream<<"GUIEngine: Deinitializing scripting"<<std::endl;
 
-	/*
 	delete m_script;
-	*/
-	std::thread([=] { delete m_script; }).detach();
 
 	m_irr_toplefttext->setText(L"");
 
