@@ -279,7 +279,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 		}
 		std::string raw_default_password = g_settings->get("default_password");
 		std::string initial_password =
-		    translatePassword(playername, raw_default_password);
+		    translate_password(playername, raw_default_password);
 
 		// If default_password is empty, allow any initial password
 		if (raw_default_password.length() == 0)
