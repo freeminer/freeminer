@@ -74,7 +74,7 @@ APP_STL = gnustl       # gnustl libcxx|libc++ stlport
 
 ifeq ($(TARGET_arm64),1)
 ifneq ($(NO_AUTO_VERSION),1)
-ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 3 )))
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 2 )))
 endif
 TARGET_HOST = aarch64-linux
 TARGET_ABI = arm64-v8a
@@ -97,7 +97,7 @@ endif
 ################################################################################
 ifeq ($(TARGET_mips),1)
 ifneq ($(NO_AUTO_VERSION),1)
-ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 2 )))
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 4 )))
 endif
 TARGET_HOST = mipsel-linux
 TARGET_ABI = mips
@@ -116,7 +116,7 @@ endif
 ################################################################################
 ifeq ($(TARGET_x86),1)
 ifneq ($(NO_AUTO_VERSION),1)
-ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 1 )))
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 3 )))
 endif
 TARGET_HOST = x86-linux
 TARGET_ABI = x86
