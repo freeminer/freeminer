@@ -862,6 +862,9 @@ static bool parseNamedColorString(const std::string &value, video::SColor &color
 	return true;
 }
 
+
+//freeminer:
+
 std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color) {
 	std::wstring output;
 	colors.clear();
@@ -905,6 +908,35 @@ bool char_icompare(char c1, char c2)
 bool string_icompare(const std::string& a, const std::string& b)
 {
 	return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), char_icompare);
+}
+//== eofreeminer
+
+
+std::wstring removeChatEscapes(const std::wstring &s) {
+	std::wstring output;
+	size_t i = 0;
+	while (i < s.length()) {
+		if (s[i] == L'\v') {
+			++i;
+			if (i == s.length()) continue;
+			if (s[i] == L'(') {
+				++i;
+				while (i < s.length() && s[i] != L')') {
+					if (s[i] == L'\\') {
+						++i;
+					}
+					++i;
+				}
+				++i;
+			} else {
+				++i;
+			}
+			continue;
+		}
+		output += s[i];
+		++i;
+	}
+	return output;
 }
 
 void str_replace(std::string &str, char from, char to)
