@@ -792,7 +792,7 @@ extern "C" unsigned int get_time_us() {
 }
 
 void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
-#ifndef __ANDROID__
+#ifdef __ANDROID__
 	if (!dev)
 		dev = device;
 	if (!dev)

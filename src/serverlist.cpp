@@ -75,8 +75,12 @@ std::vector<ServerListSpec> cached_online;
 std::vector<ServerListSpec> getOnline()
 {
 	std::ostringstream geturl;
+
+	u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
+		CLIENT_PROTOCOL_VERSION_MIN_LEGACY : CLIENT_PROTOCOL_VERSION_MIN;
+
 	geturl << g_settings->get("serverlist_url") <<
-		"/list?proto_version_min=" << CLIENT_PROTOCOL_VERSION_MIN <<
+		"/list?proto_version_min=" << proto_version_min <<
 		"&proto_version_max=" << CLIENT_PROTOCOL_VERSION_MAX;
 	Json::Value root = fetchJsonValue(geturl.str(), NULL);
 

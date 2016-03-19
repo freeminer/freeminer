@@ -157,7 +157,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define SERVER_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
 // Client's supported network protocol range
-#define CLIENT_PROTOCOL_VERSION_MIN 13
+// The minimal version depends on whether
+// send_pre_v25_init is enabled or not
+#define CLIENT_PROTOCOL_VERSION_MIN 25
+#define CLIENT_PROTOCOL_VERSION_MIN_LEGACY 13
 #define CLIENT_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
 #define CLIENT_PROTOCOL_VERSION_FM 2
