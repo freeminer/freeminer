@@ -52,7 +52,7 @@ fi
 cd $DIR_SAVE
 MAKE="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
-$MAKE                arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-armv7.apk
+$MAKE                arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-armeabi-v7a-hard.apk
 $MAKE TARGET_x86=1   arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-x86.apk
-$MAKE TARGET_arm64=1 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-arm64.apk
+$MAKE TARGET_arm64=1 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-arm64-v8a.apk
 #$MAKE TARGET_mips=1  arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-mips.apk
