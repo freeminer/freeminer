@@ -17,7 +17,7 @@ TEST_PLATFORM=android-16
 
 WGET="wget --continue"
 
-sudo apt-get install -y default-jdk android-tools-adb ant m4 gcc-multilib lib32z1 libgettextpo0
+sudo apt-get install -y wget default-jdk android-tools-adb ant m4 gcc-multilib lib32z1 libgettextpo0
 
 if [ ! -s path.cfg ] ; then
 	echo ANDROID_NDK = $NDK_SDK_ROOT/$NDK_DIR >> path.cfg
