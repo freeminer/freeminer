@@ -159,6 +159,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_wanted", android ? "100" :"500");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
+	settings->setDefault("enable_vbo", win32 ? "false" : "true");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");

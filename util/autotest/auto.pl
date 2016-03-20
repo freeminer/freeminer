@@ -59,6 +59,7 @@ no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
 use feature qw(say);
 use Data::Dumper;
+$Data::Dumper::Sortkeys = $Data::Dumper::Useqq = $Data::Dumper::Indent = $Data::Dumper::Terse = 1;
 #use JSON;
 use Cwd;
 use POSIX ();
@@ -116,10 +117,10 @@ sub init_config () {
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
         tee               => '2>&1 | tee -a ',
         run_task          => 'run_single',
-        cache_clear       => 0, # remove cache dir before start client
-        #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
-        #make_add     => '',
-        #run_add       => '',
+        cache_clear => 0,    # remove cache dir before start client
+             #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
+             #make_add     => '',
+             #run_add       => '',
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
     };
@@ -208,11 +209,11 @@ our $commands = {
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
           if $config->{cmake_usan};
 
-        $D{ENABLE_LUAJIT} = 0 if $config->{cmake_debug} and !$config->{keep_luajit};
-        $D{ENABLE_LUAJIT} = $config->{cmake_luajit} if defined $config->{cmake_luajit};
-        $D{DEBUG} = 1 if $config->{cmake_debug};
-        $D{MINETEST_PROTO} = $config->{cmake_minetest} if defined $config->{cmake_minetest};
-        $D{ENABLE_LEVELDB} = $config->{cmake_leveldb} if defined $config->{cmake_leveldb};
+        $D{ENABLE_LUAJIT}      = 0                            if $config->{cmake_debug} and !$config->{keep_luajit};
+        $D{ENABLE_LUAJIT}      = $config->{cmake_luajit}      if defined $config->{cmake_luajit};
+        $D{DEBUG}              = 1                            if $config->{cmake_debug};
+        $D{MINETEST_PROTO}     = $config->{cmake_minetest}    if defined $config->{cmake_minetest};
+        $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}     if defined $config->{cmake_leveldb};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
@@ -225,8 +226,7 @@ our $commands = {
         sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
-        sy
-qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
+        sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
@@ -305,7 +305,7 @@ our $tasks = {
     build_server_debug => [{-no_build_client => 1,}, 'build_debug',],
     build_client       => [{-no_build_server => 1,}, 'build_normal',],
     build_client_debug => [{-no_build_server => 1,}, 'build_debug',],
-    bot => [{-no_build_server => 1,}, 'build_normal', 'run_single'],
+    bot                => [{-no_build_server => 1,}, 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
     build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
@@ -379,8 +379,8 @@ our $tasks = {
         $config->{run_task},
         'symbolize',
     ],
-    debug     => ['build_client_debug',      $config->{run_task},],
-    bot_debug => ['build_client_debug',      $config->{run_task},],
+    debug     => ['build_client_debug', $config->{run_task},],
+    bot_debug => ['build_client_debug', $config->{run_task},],
 
     nothreads => [{-no_build_server => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
@@ -394,13 +394,13 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    build_minetest => [sub { $g->{build_name} .= '_minetest'; 0 }, { -cmake_minetest => 1,}, 'build_client'],
-    build_minetest_debug => [sub { $g->{build_name} .= '_minetest'; 0 }, { -cmake_minetest => 1,}, 'build_client_debug'],
+    build_minetest       => [sub { $g->{build_name} .= '_minetest'; 0 }, {-cmake_minetest => 1,}, 'build_client'],
+    build_minetest_debug => [sub { $g->{build_name} .= '_minetest'; 0 }, {-cmake_minetest => 1,}, 'build_client_debug'],
 
     bot_minetest => sub {
         my $name = shift;
         local $config->{no_build_server} = 1;
-        local $config->{cmake_minetest} = 1;
+        local $config->{cmake_minetest}  = 1;
         #local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
         if ($name) {
             $g->{build_name} .= '_minetest';
@@ -461,9 +461,9 @@ our $tasks = {
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    server => ['build_server', 'run_server'],
+    server       => ['build_server',       'run_server'],
     server_debug => ['build_server_debug', 'run_server'],
-    server_gdb => [['gdb', 'server_debug']],
+    server_gdb   => [['gdb',               'server_debug']],
     server_gdb_nd => ['build_server', ['gdb', 'run_server']],
 
     bot_gdb => ['build_client_debug', ['gdb', 'run_single']],
@@ -506,8 +506,10 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    (map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] } qw(tsan asan msan usan asannta minetest minetest_debug)),
     (
+        map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] }
+          qw(tsan asan msan usan asannta minetest minetest_debug)
+    ), (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
@@ -549,12 +551,12 @@ sub array (@) {
     wantarray ? @_ : \@_;
 }
 
-sub json (@){
+sub json (@) {
     local *Data::Dumper::qquote = sub {
         $_[0] =~ s/\\/\\\\/g, s/"/\\"/g for $_[0];
-        return ( '"' . $_[0] . '"' );
+        return ('"' . $_[0] . '"');
     };
-    return \( Data::Dumper->new( \@_ )->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump() );
+    return \(Data::Dumper->new(\@_)->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump());
 }
 
 sub options_make(;$$) {
@@ -645,9 +647,10 @@ sub task_start(@) {
 
 my $task_run = [grep { !/^-/ } @ARGV];
 $task_run = [
+    @$task_run,
     qw(bot_tsan bot_asan bot_usan bot_tsannt bot_tsannta valgrind_memcheck bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan)
   ]
-  unless @$task_run;
+  if !@$task_run or 'default' ~~ $task_run;
 if ('all' ~~ $task_run) {
     $task_run = [sort keys %$tasks];
     $config->{all_run} = 1;

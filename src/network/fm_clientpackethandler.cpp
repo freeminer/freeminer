@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "serialization.h"
 #include "server.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "network/clientopcodes.h"
 #include "util/serialize.h"
 
@@ -399,7 +399,7 @@ void Client::handleCommand_AnnounceMedia(NetworkPacket* pkt) {
 	std::vector<std::string> remote_media;
 	std::string remote_media_string = packet[TOCLIENT_ANNOUNCE_MEDIA_REMOTE_SERVER].as<std::string>();
 	Strfnd sf(remote_media_string);
-	while(!sf.atend()) {
+	while(!sf.at_end()) {
 		std::string baseurl = trim(sf.next(","));
 		if(baseurl != "")
 			m_media_downloader->addRemoteServer(baseurl);

@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/pointedthing.h"
 #include "util/serialize.h"
 #include "util/string.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "util/srp.h"
 #include "client.h"
 #include "network/clientopcodes.h"
