@@ -77,6 +77,9 @@ Environment::Environment():
 {
 	m_time_of_day = 9000;
 	m_cache_enable_shaders = g_settings->getBool("enable_shaders");
+	m_cache_active_block_mgmt_interval = g_settings->getFloat("active_block_mgmt_interval");
+	m_cache_abm_interval = g_settings->getFloat("abm_interval");
+	m_cache_nodetimer_interval = g_settings->getFloat("nodetimer_interval");
 }
 
 Environment::~Environment()
@@ -1610,9 +1613,9 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 		Manage active block list
 	*/
-	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, 2.0)) {
+	if(m_blocks_added_last || m_active_blocks_management_interval.step(dtime, m_cache_active_block_mgmt_interval)) {
 		//TimeTaker timer_s1("Manage active block list");
-		ScopeProfiler sp(g_profiler, "SEnv: manage act. block list avg /2s", SPT_AVG);
+		ScopeProfiler sp(g_profiler, "SEnv: manage act. block list avg per interval", SPT_AVG);
 		if (!m_blocks_added_last) {
 		/*
 			Get player block positions
@@ -1703,12 +1706,12 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	/*
 		Mess around in active blocks
 	*/
-	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, 1.0)) {
+	if(m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, m_cache_nodetimer_interval)) {
 		//if (!m_active_block_timer_last) infostream<<"Start ABM timer cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		//TimeTaker timer_s1("Mess around in active blocks");
-		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg /1s", SPT_AVG);
+		//ScopeProfiler sp(g_profiler, "SEnv: mess in act. blocks avg per interval", SPT_AVG);
 
-		//float dtime = 1.0;
+		//float dtime = m_cache_nodetimer_interval;
 
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		auto lock = m_active_blocks.m_list.lock_shared_rec();
@@ -1774,11 +1777,22 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime_counter += dtime;
 
-	const float abm_interval = 1.0;
-	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, abm_interval)) {
-		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg /1s", SPT_AVG);
-		TimeTaker timer("modify in active blocks");
+	if(m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
+		/*
+	do{ // breakable
+		if(m_active_block_interval_overload_skip > 0){
+			ScopeProfiler sp(g_profiler, "SEnv: ABM overload skips");
+			m_active_block_interval_overload_skip--;
+			break;
+		}
+		*/
+		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg per interval", SPT_AVG);
+		TimeTaker timer("modify in active blocks per interval");
 
+		/*
+		// Initialize handling of ActiveBlockModifiers
+		ABMHandler abmhandler(m_abms, m_cache_abm_interval, this, true);
+		*/
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		auto lock = m_active_blocks.m_list.lock_shared_rec();
 		for(auto
