@@ -25,11 +25,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mods.h"
 //#include <fstream>
 #include "filesys.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "log.h"
 #include "subgame.h"
 #include "settings.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "convert_json.h"
 #include "exceptions.h"
 

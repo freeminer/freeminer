@@ -39,7 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "EShaderTypes.h"
 #include "log.h"
 #include "gamedef.h"
-#include "strfnd.h" // trim()
 #include "client/tile.h"
 
 /*

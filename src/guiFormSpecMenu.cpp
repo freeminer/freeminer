@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "gamedef.h"
 #include "keycode.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include <IGUICheckBox.h>
 #include <IGUIEditBox.h>
 #include <IGUIButton.h>

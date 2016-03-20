@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "settings.h"
 #include "log.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "defaultsettings.h"  // for override_default_settings
 #include "mapgen.h"  // for MapgenParams
 #include "util/string.h"
@@ -84,7 +84,7 @@ SubgameSpec findSubgame(const std::string &id)
 
 	Strfnd search_paths(getSubgamePathEnv());
 
-	while (!search_paths.atend()) {
+	while (!search_paths.at_end()) {
 		std::string path = search_paths.next(PATH_DELIM);
 		find_paths.push_back(GameFindPath(
 				path + DIR_DELIM + id, false));
@@ -158,7 +158,7 @@ std::set<std::string> getAvailableGameIds()
 
 	Strfnd search_paths(getSubgamePathEnv());
 
-	while (!search_paths.atend())
+	while (!search_paths.at_end())
 		gamespaths.insert(search_paths.next(PATH_DELIM));
 
 	for (std::set<std::string>::const_iterator i = gamespaths.begin();
@@ -235,7 +235,7 @@ std::vector<WorldSpec> getAvailableWorlds()
 
 	Strfnd search_paths(getWorldPathEnv());
 
-	while (!search_paths.atend())
+	while (!search_paths.at_end())
 		worldspaths.insert(search_paths.next(PATH_DELIM));
 
 	worldspaths.insert(porting::path_user + DIR_DELIM + "worlds");
