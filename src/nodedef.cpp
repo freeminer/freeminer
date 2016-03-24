@@ -192,19 +192,31 @@ void NodeBox::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	int map_size = 1;
 	if (type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-		map_size = 2;
+		map_size += 1;
 	else if (type == NODEBOX_WALLMOUNTED)
-		map_size = 4;
+		map_size += 3;
+	else if (type == NODEBOX_CONNECTED)
+		map_size += 7;
 
 	pk.pack_map(map_size);
 	PACK(NODEBOX_S_TYPE, (int)type);
 
-	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-		PACK(NODEBOX_S_FIXED, fixed)
-	else if(type == NODEBOX_WALLMOUNTED) {
+	if (type == NODEBOX_FIXED || type == NODEBOX_LEVELED || type == NODEBOX_CONNECTED)
+		PACK(NODEBOX_S_FIXED, fixed);
+
+	if (type == NODEBOX_WALLMOUNTED) {
 		PACK(NODEBOX_S_WALL_TOP, wall_top);
 		PACK(NODEBOX_S_WALL_BOTTOM, wall_bottom);
 		PACK(NODEBOX_S_WALL_SIDE, wall_side);
+	} else if (type == NODEBOX_CONNECTED) {
+		PACK(NODEBOX_S_CONNECTED_TOP, connect_top);       // 2
+		PACK(NODEBOX_S_CONNECTED_BOTTOM, connect_bottom); // 3
+		PACK(NODEBOX_S_CONNECTED_FRONT, connect_front);   // 4
+		PACK(NODEBOX_S_CONNECTED_LEFT, connect_left);     // 5
+		PACK(NODEBOX_S_CONNECTED_BACK, connect_back);     // 6
+		PACK(NODEBOX_S_CONNECTED_RIGHT, connect_right);   // 7
+	} else if (type != NODEBOX_REGULAR && type != NODEBOX_FIXED){
+		warningstream<< "Unknown nodebox type = "<< (int)type << std::endl;
 	}
 }
 
@@ -217,13 +229,25 @@ void NodeBox::msgpack_unpack(msgpack::object o)
 	int type_tmp = packet[NODEBOX_S_TYPE].as<int>();
 	type = (NodeBoxType)type_tmp;
 
-	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+	//if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+	if (packet.count(NODEBOX_S_FIXED))
 		packet[NODEBOX_S_FIXED].convert(&fixed);
-	else if(type == NODEBOX_WALLMOUNTED) {
+
+	if (type == NODEBOX_WALLMOUNTED) {
 		packet[NODEBOX_S_WALL_TOP].convert(&wall_top);
 		packet[NODEBOX_S_WALL_BOTTOM].convert(&wall_bottom);
 		packet[NODEBOX_S_WALL_SIDE].convert(&wall_side);
+	} else if(type == NODEBOX_CONNECTED) {
+		if (packet.count(NODEBOX_S_CONNECTED_TOP) && packet.count(NODEBOX_S_CONNECTED_RIGHT)) { //lite check
+			packet[NODEBOX_S_CONNECTED_TOP].convert(&connect_top);       // 2
+			packet[NODEBOX_S_CONNECTED_BOTTOM].convert(&connect_bottom); // 3
+			packet[NODEBOX_S_CONNECTED_FRONT].convert(&connect_front);   // 4
+			packet[NODEBOX_S_CONNECTED_LEFT].convert(&connect_left);     // 5
+			packet[NODEBOX_S_CONNECTED_BACK].convert(&connect_back);     // 6
+			packet[NODEBOX_S_CONNECTED_RIGHT].convert(&connect_right);   // 7
+		}
 	}
+
 }
 
 /*

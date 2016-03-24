@@ -338,6 +338,8 @@ int StringBuffer::overflow(int c)
 
 std::streamsize StringBuffer::xsputn(const char *s, std::streamsize n)
 {
+	if (!s)
+		return 0;
 	//MutexAutoLock lock(m_log_mutex);
 	for (int i = 0; i < n; ++i)
 		push_back(s[i]);
