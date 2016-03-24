@@ -226,6 +226,8 @@ our $commands = {
         sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
+        local $config->{make_add} = $config->{make_add};
+        $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
