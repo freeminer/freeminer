@@ -1651,7 +1651,7 @@ void Server::setInventoryModified(const InventoryLocation &loc, bool playerSend)
 	{
 		v3s16 blockpos = getNodeBlockPos(loc.p);
 
-		MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
+		MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos, false, true);
 		if(block)
 			block->raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REPORT_META_CHANGE);
 
