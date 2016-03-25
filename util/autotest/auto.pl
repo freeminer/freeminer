@@ -182,6 +182,13 @@ our $options = {
         mg_params => {"layers" => [{"name" => "default:sand"}]},
         mg_math => {"generator" => "mengersponge"},
     },
+    fly_forward => {
+        random_input => 0, static_spawnpoint => '0,50,0', creative_mode=>1, free_move=>1, enable_damage=>0, continuous_forward => 1,
+    },
+    fast => {
+       fast_move=>1, movement_speed_fast => 100,
+    },
+    bench1 => { fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance=>100, max_block_send_distance=>100, },
 };
 
 map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
@@ -520,7 +527,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
-    timelapse => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],                  #'
+    timelapse_play => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],                  #'
+    timelapse_fly => [{-options_add => 'timelapse,fly_forward', -options_bot=>'',}, \'bot', 'timelapse_video'],                  #'
+    bench1 => [{-options_add => 'bench1,fly_forward,fast',}, \'bot'], #'
     up => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
@@ -567,7 +576,7 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
 
-    $m ||= ['default', $config->{options_display}, $config->{options_bot}, (split /,;/, $config->{options_add}), 'opt'];
+    $m ||= ['default', $config->{options_display}, $config->{options_bot}, (split /[,;]+/, $config->{options_add}), 'opt'];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
         for my $k (keys %$rm) {
@@ -630,6 +639,10 @@ sub commands_run(@) {
         return command_run $c, @_;
     } elsif (ref $name) {
         return command_run $name, @_;
+    #} elsif ($options->{$name}) {
+    #    $config->{options_add} .= ',' . $name;
+    #    #command_run({-options_add => $name});
+    #    return 0;
     } else {
         say 'msg ', $name;
         return 0;
