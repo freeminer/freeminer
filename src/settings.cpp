@@ -1181,7 +1181,7 @@ void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 
 void Settings::msgpack_unpack(msgpack::object o) {
 	std::string data;
-	o.convert(&data);
+	o.convert(data);
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
 	fromJson(m_json);

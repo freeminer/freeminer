@@ -597,7 +597,7 @@ void MapNode::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 void MapNode::msgpack_unpack(msgpack::object o)
 {
 	std::vector<int> data;
-	o.convert(&data);
+	o.convert(data);
 	if (data.size() < 3)
 		throw msgpack::type_error();
 

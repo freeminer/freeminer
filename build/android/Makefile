@@ -876,7 +876,7 @@ MSGPACK_LIB = $(MSGPACK_DIR)libmsgpackc.a
 MSGPACK_TIMESTAMP = $(MSGPACK_DIR)timestamp
 MSGPACK_TIMESTAMP_INT = $(ROOT)/deps/msgpack_timestamp
 MSGPACK_GIT_URL = https://github.com/msgpack/msgpack-c
-MSGPACK_GIT_BRANCH = cpp-1.4.0
+#MSGPACK_GIT_BRANCH = 72c7feb2c4eb3a837e88733cece4a928f0a3808a
 MSGPACK_TARGET = $(MSGPACK_DIR)/include/msgpack.hpp
 
 $(MSGPACK_TIMESTAMP) : msgpack_download
@@ -890,7 +890,8 @@ msgpack_download :
 		echo "msgpack sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		${GIT_CLONE} --branch ${MSGPACK_GIT_BRANCH} ${MSGPACK_GIT_URL} ${MSGPACK_DIR} || exit 1; \
+		${GIT_CLONE} ${MSGPACK_GIT_URL} ${MSGPACK_DIR} || exit 1; \
+		# git checkout ${MSGPACK_GIT_BRANCH} || exit 1; \
 	fi
 	
 msgpack : $(MSGPACK_LIB)
@@ -922,7 +923,7 @@ $(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
-	cmake -DMSGPACK_CXX11=1 -DMSGPACK_BUILD_EXAMPLES=0 .; \
+	cmake -DMSGPACK_CXX11=1 -DMSGPACK_BUILD_EXAMPLES=0 -DMSGPACK_BUILD_TESTS=0 .; \
 	$(MAKE) -j${PARALLEL} || exit 1; \
 	touch ${MSGPACK_TIMESTAMP};                                                \
 	touch ${MSGPACK_TIMESTAMP_INT};                                            \

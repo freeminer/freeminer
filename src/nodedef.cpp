@@ -231,20 +231,20 @@ void NodeBox::msgpack_unpack(msgpack::object o)
 
 	//if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
 	if (packet.count(NODEBOX_S_FIXED))
-		packet[NODEBOX_S_FIXED].convert(&fixed);
+		packet[NODEBOX_S_FIXED].convert(fixed);
 
 	if (type == NODEBOX_WALLMOUNTED) {
-		packet[NODEBOX_S_WALL_TOP].convert(&wall_top);
-		packet[NODEBOX_S_WALL_BOTTOM].convert(&wall_bottom);
-		packet[NODEBOX_S_WALL_SIDE].convert(&wall_side);
+		packet[NODEBOX_S_WALL_TOP].convert(wall_top);
+		packet[NODEBOX_S_WALL_BOTTOM].convert(wall_bottom);
+		packet[NODEBOX_S_WALL_SIDE].convert(wall_side);
 	} else if(type == NODEBOX_CONNECTED) {
 		if (packet.count(NODEBOX_S_CONNECTED_TOP) && packet.count(NODEBOX_S_CONNECTED_RIGHT)) { //lite check
-			packet[NODEBOX_S_CONNECTED_TOP].convert(&connect_top);       // 2
-			packet[NODEBOX_S_CONNECTED_BOTTOM].convert(&connect_bottom); // 3
-			packet[NODEBOX_S_CONNECTED_FRONT].convert(&connect_front);   // 4
-			packet[NODEBOX_S_CONNECTED_LEFT].convert(&connect_left);     // 5
-			packet[NODEBOX_S_CONNECTED_BACK].convert(&connect_back);     // 6
-			packet[NODEBOX_S_CONNECTED_RIGHT].convert(&connect_right);   // 7
+			packet[NODEBOX_S_CONNECTED_TOP].convert(connect_top);       // 2
+			packet[NODEBOX_S_CONNECTED_BOTTOM].convert(connect_bottom); // 3
+			packet[NODEBOX_S_CONNECTED_FRONT].convert(connect_front);   // 4
+			packet[NODEBOX_S_CONNECTED_LEFT].convert(connect_left);     // 5
+			packet[NODEBOX_S_CONNECTED_BACK].convert(connect_back);     // 6
+			packet[NODEBOX_S_CONNECTED_RIGHT].convert(connect_right);   // 7
 		}
 	}
 
@@ -314,18 +314,18 @@ void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 void TileDef::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[TILEDEF_NAME].convert(&name);
+	packet[TILEDEF_NAME].convert(name);
 
 	int type_tmp;
-	packet[TILEDEF_ANIMATION_TYPE].convert(&type_tmp);
+	packet[TILEDEF_ANIMATION_TYPE].convert(type_tmp);
 	animation.type = (TileAnimationType)type_tmp;
 
-	packet[TILEDEF_ANIMATION_ASPECT_W].convert(&animation.aspect_w);
-	packet[TILEDEF_ANIMATION_ASPECT_H].convert(&animation.aspect_h);
-	packet[TILEDEF_ANIMATION_LENGTH].convert(&animation.length);
-	packet[TILEDEF_BACKFACE_CULLING].convert(&backface_culling);
-	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, &tileable_vertical);
-	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, &tileable_horizontal);
+	packet[TILEDEF_ANIMATION_ASPECT_W].convert(animation.aspect_w);
+	packet[TILEDEF_ANIMATION_ASPECT_H].convert(animation.aspect_h);
+	packet[TILEDEF_ANIMATION_LENGTH].convert(animation.length);
+	packet[TILEDEF_BACKFACE_CULLING].convert(backface_culling);
+	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, tileable_vertical);
+	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, tileable_horizontal);
 }
 
 /*
@@ -663,75 +663,75 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 void ContentFeatures::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[CONTENTFEATURES_NAME].convert(&name);
+	packet[CONTENTFEATURES_NAME].convert(name);
 	groups.clear();
-	packet[CONTENTFEATURES_GROUPS].convert(&groups);
+	packet[CONTENTFEATURES_GROUPS].convert(groups);
 
 	int drawtype_tmp;
-	packet[CONTENTFEATURES_DRAWTYPE].convert(&drawtype_tmp);
+	packet[CONTENTFEATURES_DRAWTYPE].convert(drawtype_tmp);
 	drawtype = (NodeDrawType)drawtype_tmp;
 
-	packet[CONTENTFEATURES_VISUAL_SCALE].convert(&visual_scale);
+	packet[CONTENTFEATURES_VISUAL_SCALE].convert(visual_scale);
 
 	std::vector<TileDef> tiledef_received;
-	packet[CONTENTFEATURES_TILEDEF].convert(&tiledef_received);
+	packet[CONTENTFEATURES_TILEDEF].convert(tiledef_received);
 	if (tiledef_received.size() != 6)
 		throw SerializationError("unsupported tile count");
 	for(size_t i = 0; i < 6; ++i)
 		tiledef[i] = tiledef_received[i];
 
 	std::vector<TileDef> tiledef_special_received;
-	packet[CONTENTFEATURES_TILEDEF_SPECIAL].convert(&tiledef_special_received);
+	packet[CONTENTFEATURES_TILEDEF_SPECIAL].convert(tiledef_special_received);
 	if(tiledef_special_received.size() != CF_SPECIAL_COUNT)
 		throw SerializationError("unsupported CF_SPECIAL_COUNT");
 	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
 		tiledef_special[i] = tiledef_special_received[i];
 
-	packet[CONTENTFEATURES_ALPHA].convert(&alpha);
-	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(&post_effect_color);
+	packet[CONTENTFEATURES_ALPHA].convert(alpha);
+	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(post_effect_color);
 
 	int param_type_tmp;
-	packet[CONTENTFEATURES_PARAM_TYPE].convert(&param_type_tmp);
+	packet[CONTENTFEATURES_PARAM_TYPE].convert(param_type_tmp);
 	param_type = (ContentParamType)param_type_tmp;
-	packet[CONTENTFEATURES_PARAM_TYPE_2].convert(&param_type_tmp);
+	packet[CONTENTFEATURES_PARAM_TYPE_2].convert(param_type_tmp);
 	param_type_2 = (ContentParamType2)param_type_tmp;
 
-	packet[CONTENTFEATURES_IS_GROUND_CONTENT].convert(&is_ground_content);
-	packet[CONTENTFEATURES_LIGHT_PROPAGATES].convert(&light_propagates);
-	packet[CONTENTFEATURES_SUNLIGHT_PROPAGATES].convert(&sunlight_propagates);
-	packet[CONTENTFEATURES_WALKABLE].convert(&walkable);
-	packet[CONTENTFEATURES_POINTABLE].convert(&pointable);
-	packet[CONTENTFEATURES_DIGGABLE].convert(&diggable);
-	packet[CONTENTFEATURES_CLIMBABLE].convert(&climbable);
-	packet[CONTENTFEATURES_BUILDABLE_TO].convert(&buildable_to);
+	packet[CONTENTFEATURES_IS_GROUND_CONTENT].convert(is_ground_content);
+	packet[CONTENTFEATURES_LIGHT_PROPAGATES].convert(light_propagates);
+	packet[CONTENTFEATURES_SUNLIGHT_PROPAGATES].convert(sunlight_propagates);
+	packet[CONTENTFEATURES_WALKABLE].convert(walkable);
+	packet[CONTENTFEATURES_POINTABLE].convert(pointable);
+	packet[CONTENTFEATURES_DIGGABLE].convert(diggable);
+	packet[CONTENTFEATURES_CLIMBABLE].convert(climbable);
+	packet[CONTENTFEATURES_BUILDABLE_TO].convert(buildable_to);
 
 	int liquid_type_tmp;
-	packet[CONTENTFEATURES_LIQUID_TYPE].convert(&liquid_type_tmp);
+	packet[CONTENTFEATURES_LIQUID_TYPE].convert(liquid_type_tmp);
 	liquid_type = (LiquidType)liquid_type_tmp;
 
-	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING].convert(&liquid_alternative_flowing);
-	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE].convert(&liquid_alternative_source);
-	packet[CONTENTFEATURES_LIQUID_VISCOSITY].convert(&liquid_viscosity);
-	packet[CONTENTFEATURES_LIGHT_SOURCE].convert(&light_source);
-	packet[CONTENTFEATURES_DAMAGE_PER_SECOND].convert(&damage_per_second);
-	packet[CONTENTFEATURES_NODE_BOX].convert(&node_box);
-	packet[CONTENTFEATURES_SELECTION_BOX].convert(&selection_box);
-	packet[CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE].convert(&legacy_facedir_simple);
-	packet[CONTENTFEATURES_LEGACY_WALLMOUNTED].convert(&legacy_wallmounted);
-	packet[CONTENTFEATURES_SOUND_FOOTSTEP].convert(&sound_footstep);
-	packet[CONTENTFEATURES_SOUND_DIG].convert(&sound_dig);
-	packet[CONTENTFEATURES_SOUND_DUG].convert(&sound_dug);
-	packet[CONTENTFEATURES_RIGHTCLICKABLE].convert(&rightclickable);
-	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
-	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
-	packet[CONTENTFEATURES_WAVING].convert(&waving);
-	packet[CONTENTFEATURES_MESH].convert(&mesh);
-	packet[CONTENTFEATURES_COLLISION_BOX].convert(&collision_box);
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING].convert(liquid_alternative_flowing);
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE].convert(liquid_alternative_source);
+	packet[CONTENTFEATURES_LIQUID_VISCOSITY].convert(liquid_viscosity);
+	packet[CONTENTFEATURES_LIGHT_SOURCE].convert(light_source);
+	packet[CONTENTFEATURES_DAMAGE_PER_SECOND].convert(damage_per_second);
+	packet[CONTENTFEATURES_NODE_BOX].convert(node_box);
+	packet[CONTENTFEATURES_SELECTION_BOX].convert(selection_box);
+	packet[CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE].convert(legacy_facedir_simple);
+	packet[CONTENTFEATURES_LEGACY_WALLMOUNTED].convert(legacy_wallmounted);
+	packet[CONTENTFEATURES_SOUND_FOOTSTEP].convert(sound_footstep);
+	packet[CONTENTFEATURES_SOUND_DIG].convert(sound_dig);
+	packet[CONTENTFEATURES_SOUND_DUG].convert(sound_dug);
+	packet[CONTENTFEATURES_RIGHTCLICKABLE].convert(rightclickable);
+	packet[CONTENTFEATURES_DROWNING].convert(drowning);
+	packet[CONTENTFEATURES_LEVELED].convert(leveled);
+	packet[CONTENTFEATURES_WAVING].convert(waving);
+	packet[CONTENTFEATURES_MESH].convert(mesh);
+	packet[CONTENTFEATURES_COLLISION_BOX].convert(collision_box);
 
 	if(packet.count(CONTENTFEATURES_CONNECT_TO_IDS))
-		packet[CONTENTFEATURES_CONNECT_TO_IDS].convert(&connects_to_ids);
+		packet[CONTENTFEATURES_CONNECT_TO_IDS].convert(connects_to_ids);
 	if(packet.count(CONTENTFEATURES_CONNECT_SIDES))
-		packet[CONTENTFEATURES_CONNECT_SIDES].convert(&connect_sides);
+		packet[CONTENTFEATURES_CONNECT_SIDES].convert(connect_sides);
 
 }
 
@@ -1550,7 +1550,7 @@ void CNodeDefManager::msgpack_unpack(msgpack::object o)
 	clear();
 
 	std::map<int, ContentFeatures> unpacked_features;
-	o.convert(&unpacked_features);
+	o.convert(unpacked_features);
 
 	for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
 			it != unpacked_features.end(); ++it) {

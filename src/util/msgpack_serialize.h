@@ -53,7 +53,7 @@ typedef std::unordered_map<int, msgpack::object> MsgpackPacket;
 #endif
 
 template<typename T>
-bool packet_convert_safe(MsgpackPacket & packet, int field, T * to) {
+bool packet_convert_safe(MsgpackPacket & packet, int field, T & to) {
 	if (!packet.count(field))
 		return false;
 	packet[field].convert(to);
@@ -61,7 +61,7 @@ bool packet_convert_safe(MsgpackPacket & packet, int field, T * to) {
 }
 
 template<typename T>
-bool packet_convert_safe_zip(MsgpackPacket & packet, int field, T * to) {
+bool packet_convert_safe_zip(MsgpackPacket & packet, int field, T & to) {
 	if (!packet.count(field))
 		return false;
 	try {
@@ -79,7 +79,7 @@ bool packet_convert_safe_zip(MsgpackPacket & packet, int field, T * to) {
 class MsgpackPacketSafe : public MsgpackPacket {
 public:
 	template<typename T>
-	bool convert_safe(int field, T * to) {
+	bool convert_safe(int field, T & to) {
 		return packet_convert_safe(*this, field, to);
 	}
 };

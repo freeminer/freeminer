@@ -71,11 +71,11 @@ struct ToolGroupCap
 	void msgpack_unpack(msgpack::object o)
 	{
 		MsgpackPacket packet;
-		o.convert(&packet);
+		o.convert(packet);
 
-		packet[TOOLGROUPCAP_USES].convert(&uses);
-		packet[TOOLGROUPCAP_MAXLEVEL].convert(&maxlevel);
-		packet[TOOLGROUPCAP_TIMES].convert(&times);
+		packet[TOOLGROUPCAP_USES].convert(uses);
+		packet[TOOLGROUPCAP_MAXLEVEL].convert(maxlevel);
+		packet[TOOLGROUPCAP_TIMES].convert(times);
 	}
 };
 

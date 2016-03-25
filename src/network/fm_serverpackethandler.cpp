@@ -100,7 +100,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	// First byte after command is maximum supported
 	// serialization version
 	u8 client_max;
-	packet[TOSERVER_INIT_LEGACY_FMT].convert(&client_max);
+	packet[TOSERVER_INIT_LEGACY_FMT].convert(client_max);
 	u8 our_max = SER_FMT_VER_HIGHEST_READ;
 	// Use the highest version supported by both
 	int deployed = std::min(client_max, our_max);
@@ -128,11 +128,11 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	*/
 
 	u16 min_net_proto_version = 0;
-	packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MIN].convert(&min_net_proto_version);
+	packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MIN].convert(min_net_proto_version);
 	u16 max_net_proto_version = min_net_proto_version;
-	packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX].convert(&max_net_proto_version);
+	packet[TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_MAX].convert(max_net_proto_version);
 
-	packet.convert_safe(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM, &client->net_proto_version_fm);
+	packet.convert_safe(TOSERVER_INIT_LEGACY_PROTOCOL_VERSION_FM, client->net_proto_version_fm);
 
 	// Start with client's maximum version
 	u16 net_proto_version = max_net_proto_version;
@@ -199,7 +199,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 
 	// Get player name
 	std::string playername;
-	packet[TOSERVER_INIT_LEGACY_NAME].convert(&playername);
+	packet[TOSERVER_INIT_LEGACY_NAME].convert(playername);
 
 	if(playername.empty()) {
 		actionstream << "Server: Player with an empty name "
@@ -239,7 +239,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 
 	// Get password
 	std::string given_password;
-	packet[TOSERVER_INIT_LEGACY_PASSWORD].convert(&given_password);
+	packet[TOSERVER_INIT_LEGACY_PASSWORD].convert(given_password);
 
 	if(!base64_is_valid(given_password.c_str())) {
 		actionstream << "Server: " << playername
@@ -428,7 +428,7 @@ void Server::handleCommand_RequestMedia(NetworkPacket* pkt) {
 	auto & packet = *(pkt->packet);
 
 	std::vector<std::string> tosend;
-	packet[TOSERVER_REQUEST_MEDIA_FILES].convert(&tosend);
+	packet[TOSERVER_REQUEST_MEDIA_FILES].convert(tosend);
 
 	sendRequestedMedia(peer_id, tosend);
 }
@@ -463,8 +463,8 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt) {
 		return;
 	}
 	int version_patch = 0, version_tweak = 0;
-	packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_PATCH, &version_patch);
-	packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_TWEAK, &version_tweak);
+	packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_PATCH, version_patch);
+	packet.convert_safe(TOSERVER_CLIENT_READY_VERSION_TWEAK, version_tweak);
 	if (version_tweak) {} //no warn todo remove
 	m_clients.setClientVersion(
 	    peer_id,
@@ -551,7 +551,7 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt) {
 	auto & packet = *(pkt->packet);
 
 	std::vector<v3s16> deleted_blocks;
-	packet[TOSERVER_DELETEDBLOCKS_DATA].convert(&deleted_blocks);
+	packet[TOSERVER_DELETEDBLOCKS_DATA].convert(deleted_blocks);
 	RemoteClient *client = getClient(peer_id);
 	for (auto &block : deleted_blocks)
 		client->SetBlockDeleted(block);
@@ -572,7 +572,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt) {
 	}
 
 	std::string datastring;
-	packet[TOSERVER_INVENTORY_ACTION_DATA].convert(&datastring);
+	packet[TOSERVER_INVENTORY_ACTION_DATA].convert(datastring);
 	std::istringstream is(datastring, std::ios_base::binary);
 	// Create an action
 	InventoryAction *a = InventoryAction::deSerialize(is);
@@ -840,8 +840,8 @@ void Server::handleCommand_Password(NetworkPacket* pkt) {
 		return;
 	}
 	std::string oldpwd, newpwd;
-	packet[TOSERVER_CHANGE_PASSWORD_OLD].convert(&oldpwd);
-	packet[TOSERVER_CHANGE_PASSWORD_NEW].convert(&newpwd);
+	packet[TOSERVER_CHANGE_PASSWORD_OLD].convert(oldpwd);
+	packet[TOSERVER_CHANGE_PASSWORD_NEW].convert(newpwd);
 
 	if(!base64_is_valid(newpwd)) {
 		infostream << "Server: " << player->getName() << " supplied invalid password hash" << std::endl;
@@ -937,9 +937,9 @@ void Server::handleCommand_Interact(NetworkPacket* pkt) {
 	u16 item_i;
 	PointedThing pointed;
 
-	packet[TOSERVER_INTERACT_ACTION].convert(&action);
-	packet[TOSERVER_INTERACT_ITEM].convert(&item_i);
-	packet[TOSERVER_INTERACT_POINTED_THING].convert(&pointed);
+	packet[TOSERVER_INTERACT_ACTION].convert(action);
+	packet[TOSERVER_INTERACT_ITEM].convert(item_i);
+	packet[TOSERVER_INTERACT_POINTED_THING].convert(pointed);
 
 	if(player->hp == 0) {
 		verbosestream << "TOSERVER_INTERACT: " << player->getName()
@@ -1331,7 +1331,7 @@ void Server::handleCommand_RemovedSounds(NetworkPacket* pkt) {
 	}
 
 	std::vector<s32> removed_ids;
-	packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(&removed_ids);
+	packet[TOSERVER_REMOVED_SOUNDS_IDS].convert(removed_ids);
 	for (auto & id : removed_ids) {
 		std::map<s32, ServerPlayingSound>::iterator i =
 		    m_playing_sounds.find(id);
@@ -1361,7 +1361,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt) {
 	v3s16 p = packet[TOSERVER_NODEMETA_FIELDS_POS].as<v3s16>();
 	std::string formname = packet[TOSERVER_NODEMETA_FIELDS_FORMNAME].as<std::string>();
 	std::map<std::string, std::string> fields;
-	packet[TOSERVER_NODEMETA_FIELDS_DATA].convert(&fields);
+	packet[TOSERVER_NODEMETA_FIELDS_DATA].convert(fields);
 
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
@@ -1398,8 +1398,8 @@ void Server::handleCommand_InventoryFields(NetworkPacket* pkt) {
 	std::string formname;
 	std::map<std::string, std::string> fields;
 
-	packet[TOSERVER_INVENTORY_FIELDS_FORMNAME].convert(&formname);
-	packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(&fields);
+	packet[TOSERVER_INVENTORY_FIELDS_FORMNAME].convert(formname);
+	packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(fields);
 
 	m_script->on_playerReceiveFields(playersao, formname, fields);
 }

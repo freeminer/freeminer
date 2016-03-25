@@ -60,8 +60,8 @@ struct SimpleSoundSpec
 	}
 	void msgpack_unpack(msgpack::object o) {
 		MsgpackPacket packet = o.as<MsgpackPacket>();
-		packet[SOUNDSPEC_NAME].convert(&name);
-		packet[SOUNDSPEC_GAIN].convert(&gain);
+		packet[SOUNDSPEC_NAME].convert(name);
+		packet[SOUNDSPEC_GAIN].convert(gain);
 	}
 };
 

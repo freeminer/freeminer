@@ -106,10 +106,10 @@ void ToolCapabilities::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 void ToolCapabilities::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[TOOLCAP_FULL_PUNCH_INTERVAL].convert(&full_punch_interval);
-	packet[TOOLCAP_MAX_DROP_LEVEL].convert(&max_drop_level);
-	packet[TOOLCAP_GROUPCAPS].convert(&groupcaps);
-	packet[TOOLCAP_DAMAGEGROUPS].convert(&damageGroups);
+	packet[TOOLCAP_FULL_PUNCH_INTERVAL].convert(full_punch_interval);
+	packet[TOOLCAP_MAX_DROP_LEVEL].convert(max_drop_level);
+	packet[TOOLCAP_GROUPCAPS].convert(groupcaps);
+	packet[TOOLCAP_DAMAGEGROUPS].convert(damageGroups);
 }
 
 DigParams getDigParams(const ItemGroupList &groups,
