@@ -215,7 +215,7 @@ void NodeBox::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 		PACK(NODEBOX_S_CONNECTED_LEFT, connect_left);     // 5
 		PACK(NODEBOX_S_CONNECTED_BACK, connect_back);     // 6
 		PACK(NODEBOX_S_CONNECTED_RIGHT, connect_right);   // 7
-	} else if (type != NODEBOX_REGULAR && type != NODEBOX_FIXED){
+	} else if (type != NODEBOX_REGULAR && type != NODEBOX_FIXED && type != NODEBOX_LEVELED){
 		warningstream<< "Unknown nodebox type = "<< (int)type << std::endl;
 	}
 }
