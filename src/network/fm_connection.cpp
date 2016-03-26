@@ -207,7 +207,13 @@ void Connection::receive() {
 				last_try = peer_id = m_peers.rbegin()->first + 1;
 
 			m_peers.set(peer_id, event.peer);
-			m_peers_address.set(peer_id, Address(event.peer->address.host, event.peer->address.port));
+			auto addr = Address(event.peer->address.host, event.peer->address.port);
+#if defined(ENET_IPV6)
+			auto sai = addr.getAddress6();
+			sai.sin6_scope_id = event.peer->address.sin6_scope_id;
+			addr = sai;
+#endif
+			m_peers_address.set(peer_id, addr);
 
 			event.peer->data = new u16;
 			*((u16*)event.peer->data) = peer_id;
