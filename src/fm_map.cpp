@@ -116,6 +116,8 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 bool Map::insertBlock(MapBlock *block) {
 	auto block_p = block->getPos();
 
+	m_db_miss.erase(block_p);
+
 	auto lock = m_blocks.lock_unique_rec();
 
 	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
@@ -339,8 +341,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 	if (porting::getTimeMs() > m_blocks_delete_time) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
 		verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
-		for (auto & ir : *m_blocks_delete)
+		for (auto & ir : *m_blocks_delete) {
 			delete ir.first;
+		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
 		m_blocks_delete_time = porting::getTimeMs() + 60000;
@@ -356,14 +359,17 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 	int save_started = 0;
 	{
 		auto lock = m_blocks.try_lock_shared_rec();
-		if (!lock->owns_lock())
+		if (!lock->owns_lock()) {
 			return m_blocks_update_last;
+		}
 
 #if !ENABLE_THREADS
 		auto lock_map = m_nothread_locker.try_lock_unique_rec();
 		if (!lock_map->owns_lock())
 			return m_blocks_update_last;
 #endif
+
+		auto m_blocks_size = m_blocks.size();
 
 		for(auto ir : m_blocks) {
 			if (n++ < m_blocks_update_last) {
@@ -374,13 +380,15 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 			++calls;
 
 			auto block = ir.second;
-			if (!block)
+			if (!block) {
 				continue;
+			}
 
 			{
 				auto lock = block->try_lock_unique_rec();
-				if (!lock->owns_lock())
+				if (!lock->owns_lock()) {
 					continue;
+				}
 				if(block->getUsageTimer() > unload_timeout) { // block->refGet() <= 0 &&
 					v3POS p = block->getPos();
 					//infostream<<" deleting block p="<<p<<" ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<" inc="<<(uptime - block->m_uptime_timer_last)<<" state="<<block->getModified()<<std::endl;
@@ -389,8 +397,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 						//modprofiler.add(block->getModifiedReasonString(), 1);
 						if(!save_started++)
 							beginSave();
-						if (!saveBlock(block))
+						if (!saveBlock(block)) {
 							continue;
+						}
 						saved_blocks_count++;
 					}
 
@@ -428,7 +437,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 
 			} // block lock
 
-			if (calls > 100 && porting::getTimeMs() > end_ms) {
+			if (calls > std::max(size_t(100), m_blocks_size/10) && porting::getTimeMs() > end_ms) {
 				m_blocks_update_last = n;
 				break;
 			}
@@ -807,8 +816,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
 	return ret;
 }
 
-MapNode Map::getNodeNoEx(v3s16 p)
-{
+MapNode Map::getNodeNoEx(v3s16 p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
@@ -818,6 +826,6 @@ MapNode Map::getNodeNoEx(v3s16 p)
 	if (!block)
 		return ignoreNode;
 
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNode(relpos);
 }

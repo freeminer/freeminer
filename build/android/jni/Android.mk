@@ -125,7 +125,7 @@ LOCAL_CFLAGS := -D_IRR_ANDROID_PLATFORM_      \
 ifndef NDEBUG
 LOCAL_CFLAGS += -g -D_DEBUG -O0 -fno-omit-frame-pointer
 else
-LOCAL_CFLAGS += -fexpensive-optimizations -O3
+LOCAL_CFLAGS += -O3
 endif
 
 ifdef GPROF
@@ -185,8 +185,10 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/contrib/fallingsao.cpp            \
 		jni/src/contrib/itemsao.cpp               \
 		jni/src/contrib/l_env.cpp                 \
-                                                  \
-		jni/src/areastore.cpp                     \
+		jni/src/network/fm_lan.cpp                \
+
+
+LOCAL_SRC_FILES +=                                \
 		jni/src/ban.cpp                           \
 		jni/src/camera.cpp                        \
 		jni/src/cavegen.cpp                       \
@@ -295,6 +297,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/version.cpp                       \
 		jni/src/voxel.cpp                         \
 		jni/src/voxelalgorithms.cpp               \
+		jni/src/util/areastore.cpp                \
 		jni/src/util/auth.cpp                     \
 		jni/src/util/base64.cpp                   \
 		jni/src/util/directiontables.cpp          \

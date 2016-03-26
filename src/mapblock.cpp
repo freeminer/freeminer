@@ -846,14 +846,26 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 #ifndef NDEBUG
 		g_profiler->add("Map: setNode", 1);
 #endif
-		if (!isValidPosition(p.X, p.Y, p.Z))
-			return;
+		//if (!isValidPosition(p.X, p.Y, p.Z))
+		//	return;
+
+		auto nodedef = m_gamedef->ndef();
+		auto index = p.Z*zstride + p.Y*ystride + p.X;
+		const auto &f1 = nodedef->get(n.getContent());
+
 		auto lock = lock_unique_rec();
-		data[p.Z*zstride + p.Y*ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED);
+
+		const auto &f0 = nodedef->get(data[index].getContent());
+
+		data[index] = n;
+
+		modified_light light = modified_light_no;
+		if (f0.light_propagates != f1.light_propagates || f0.solidness != f1.solidness || f0.light_source != f1.light_source) /*|| f0.drawtype != f1.drawtype*/
+			light = modified_light_yes;
+		raiseModified(MOD_STATE_WRITE_NEEDED, light);
 	}
 
-	void MapBlock::raiseModified(u32 mod)
+	void MapBlock::raiseModified(u32 mod, modified_light light)
 	{
 		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
 			m_changed_timestamp = (unsigned int)m_parent->time_life;
@@ -863,7 +875,8 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
 				m_disk_timestamp = m_timestamp;
 		}
-		setLightingExpired(true);
+		if (light == modified_light_yes)
+			setLightingExpired(true);
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)

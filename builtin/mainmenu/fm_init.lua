@@ -117,7 +117,7 @@ function menu.render_favorite(spec,render_details)
 		if spec.address ~= "" then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= "" then
+			if spec.port ~= "" and tostring(spec.port) ~= "30000" then
 				text = text .. ":" .. spec.port
 			end
 		end
@@ -1228,6 +1228,9 @@ function menu.init()
 
 	menu.defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
 					DIR_DELIM .. "pack" .. DIR_DELIM
+
+	updater_init()
+
 end
 
 --------------------------------------------------------------------------------

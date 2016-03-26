@@ -24,6 +24,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "networkprotocol.h"
 
+class MsgpackPacketSafe;
+
 class NetworkPacket
 {
 
@@ -126,6 +128,18 @@ private:
 		u32 m_read_offset;
 		u16 m_command;
 		u16 m_peer_id;
+
+//freeminer:
+public:
+		MsgpackPacketSafe * packet = nullptr;
+		msgpack::unpacked * packet_unpacked = nullptr;
+		int packet_unpack();
+private:
+
+
 };
+
+#include "../util/msgpack_serialize.h"
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg);
 
 #endif

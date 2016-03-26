@@ -70,11 +70,17 @@ std::vector<ServerListSpec> getLocal()
 }
 
 
+std::vector<ServerListSpec> cached_online;
+
 std::vector<ServerListSpec> getOnline()
 {
 	std::ostringstream geturl;
+
+	u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
+		CLIENT_PROTOCOL_VERSION_MIN_LEGACY : CLIENT_PROTOCOL_VERSION_MIN;
+
 	geturl << g_settings->get("serverlist_url") <<
-		"/list?proto_version_min=" << CLIENT_PROTOCOL_VERSION_MIN <<
+		"/list?proto_version_min=" << proto_version_min <<
 		"&proto_version_max=" << CLIENT_PROTOCOL_VERSION_MAX;
 	Json::Value root = fetchJsonValue(geturl.str(), NULL);
 
@@ -95,6 +101,7 @@ std::vector<ServerListSpec> getOnline()
 		}
 	}
 
+	cached_online = server_list; 
 	return server_list;
 }
 
@@ -262,5 +269,35 @@ void sendAnnounce(const std::string &action,
 	httpfetch_async(fetch_request);
 #endif
 }
+
+
+lan_adv lan_adv_client;
+
+void lan_get() {
+	if (!g_settings->getBool("serverlist_lan"))
+		return;
+	ServerList::lan_adv_client.ask();
+}
+
+void lan_apply(std::vector<ServerListSpec> & servers) {
+	auto lock = lan_adv_client.collected.lock_unique_rec();
+	if (lan_adv_client.collected.size()) {
+		if (servers.size()) {
+			Json::Value separator;
+			separator["name"] = "-----lan-servers-end-----";
+			servers.insert(servers.begin(), separator);
+		}
+		for (auto & i : lan_adv_client.collected) {
+			servers.insert(servers.begin(), i.second);
+		}
+	}
+}
+
+bool lan_fresh() {
+	auto result = lan_adv_client.fresh.load();
+	lan_adv_client.fresh = false;
+	return result;
+}
+
 
 } //namespace ServerList

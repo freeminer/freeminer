@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "gamedef.h"
 #include "keycode.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include <IGUICheckBox.h>
 #include <IGUIEditBox.h>
 #include <IGUIButton.h>
@@ -1813,6 +1813,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		return;
 	}
 
+	porting::irr_device_wait_egl(m_device);
+
 	parserData mydata;
 
 	//preserve tables
@@ -2845,7 +2847,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			gui::IGUIElement *focused = Environment->getFocus();
 			if (focused && isMyChild(focused) &&
 					(focused->getType() == gui::EGUIET_LIST_BOX ||
-					 focused->getType() == gui::EGUIET_EDIT_BOX ||
+					 (focused->getType() == gui::EGUIET_EDIT_BOX && !(kp == getKeySetting("keymap_inventory"))) ||
 					 focused->getType() == gui::EGUIET_CHECK_BOX)) {
 				OnEvent(event);
 				return true;
@@ -2883,7 +2885,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		}
 	}
 
-	#ifdef __ANDROID__
+#ifdef HAVE_TOUCHSCREENGUI
 	// display software keyboard when clicking edit boxes
 	if (event.EventType == EET_MOUSE_INPUT_EVENT
 			&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
@@ -2895,6 +2897,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			if (retval) {
 				Environment->setFocus(hovered);
 			}
+#ifdef __ANDROID__
 		if (porting::canKeyboard()) {
 			// keyboard shown in GUIModalMenu::preprocessEvent
 			//porting::displayKeyboard(true, porting::app_global, porting::jnienv);
@@ -2924,6 +2927,8 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 					wide_to_utf8(((gui::IGUIEditBox*) hovered)->getText()),
 					type);
 		}
+#endif
+
 			return retval;
 		}
 	}

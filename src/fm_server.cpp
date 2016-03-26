@@ -198,7 +198,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		}
 	*/
 
-	u32 max_cycle_ms = dedicated_server_step; //async ? 500 : 200;
+	u32 max_cycle_ms = 1000 * dedicated_server_step; //async ? 500 : 200;
 
 	static const float map_timer_and_unload_dtime = 10.92;
 	if(!maintenance_status && m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {

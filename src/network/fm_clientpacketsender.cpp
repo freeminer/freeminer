@@ -182,8 +182,8 @@ void Client::sendChangePassword(const std::string &oldpassword,
 		return;
 
 	std::string playername = player->getName();
-	std::string oldpwd = translatePassword(playername, oldpassword);
-	std::string newpwd = translatePassword(playername, newpassword);
+	std::string oldpwd = translate_password(playername, oldpassword);
+	std::string newpwd = translate_password(playername, newpassword);
 
 	MSGPACK_PACKET_INIT(TOSERVER_CHANGE_PASSWORD, 2);
 	PACK(TOSERVER_CHANGE_PASSWORD_OLD, oldpwd);

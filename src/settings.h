@@ -248,9 +248,6 @@ private:
 	std::map<std::string, SettingsEntry> m_settings;
 	std::map<std::string, SettingsEntry> m_defaults;
 
-	Json::Reader json_reader;
-	Json::StyledWriter json_writer;
-
 	std::map<std::string, std::vector<std::pair<setting_changed_callback,void*> > > m_callbacks;
 
 	mutable Mutex m_callbackMutex;

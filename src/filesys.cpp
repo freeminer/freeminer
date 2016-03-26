@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "log.h"
 #include "config.h"
+#include "porting.h"
 
 namespace fs
 {
@@ -383,7 +384,7 @@ std::string TempPath()
 		configuration hardcodes mkstemp("/tmp/lua_XXXXXX").
 	*/
 #ifdef __ANDROID__
-	return DIR_DELIM "sdcard" DIR_DELIM PROJECT_NAME DIR_DELIM "tmp";
+	return porting::path_user + "/tmp/";
 #else
 	return DIR_DELIM "tmp";
 #endif

@@ -680,20 +680,22 @@ NEXT_LIQUID:
 			neighbors[i].node.setLevel(nodemgr, liquid_levels_want[i], 1);
 
 			try {
-				setNode(neighbors[i].pos, neighbors[i].node);
+				setNode(neighbors[i].pos, neighbors[i].node, true);
 			} catch(InvalidPositionException &e) {
 				verbosestream << "transformLiquidsReal: setNode() failed:" << neighbors[i].pos << ":" << e.what() << std::endl;
 			}
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
-			MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
-			if(block) {
-				block->setLightingExpired(true);
-				//modified_blocks[blockpos] = block;
-				//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
-				//	lighting_modified_blocks.set_try(block->getPos(), block);
+			if (!liquid_levels[i] != !liquid_levels_want[i]) {
+				v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
+				MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
+				if(block) {
+					block->setLightingExpired(true);
+					//modified_blocks[blockpos] = block;
+					//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
+					//	lighting_modified_blocks.set_try(block->getPos(), block);
+				}
 			}
 			// fmtodo: make here random %2 or..
 			if (total_level < level_max * can_liquid)

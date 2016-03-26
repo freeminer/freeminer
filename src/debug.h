@@ -138,6 +138,8 @@ private:
 #endif
 
 
+//#define EXEPTION_DEBUG 1 // Disable almost all catch() to get good system stacktraces
+
 #if EXEPTION_DEBUG
 	#define EXCEPTION_HANDLER_BEGIN
 	#define EXCEPTION_HANDLER_END

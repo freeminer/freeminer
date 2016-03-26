@@ -234,7 +234,7 @@ std::string Address::serializeString() const
 	if (inet_ntop(m_addr_family, (m_addr_family == AF_INET) ? (void*)&(m_address.ipv4.sin_addr) : (void*)&(m_address.ipv6.sin6_addr), str, INET6_ADDRSTRLEN) == NULL) {
 		return std::string("");
 	}
-	return std::string(str);
+	return std::string(str) + ((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "");
 #endif
 }
 
@@ -303,6 +303,7 @@ void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 void Address::setPort(u16 port)
 {
 	m_port = port;
+	m_address.ipv6.sin6_port = ntohs(m_port);
 }
 
 void Address::print(std::ostream *s) const
@@ -350,6 +351,9 @@ bool UDPSocket::init(bool ipv6, bool noExceptions)
 	}
 
 	setTimeoutMs(0);
+
+	int set_option_off = 0;
+	setsockopt(m_handle, IPPROTO_IPV6, IPV6_V6ONLY, (const char*) &set_option_off, sizeof(set_option_off));
 
 	return true;
 }
@@ -490,10 +494,13 @@ int UDPSocket::Receive(Address & sender, void *data, int size)
 		if(received < 0)
 			return -1;
 
+/*
 		u16 address_port = ntohs(address.sin6_port);
 		IPv6AddressBytes bytes;
 		memcpy(bytes.bytes, address.sin6_addr.s6_addr, 16);
 		sender = Address(&bytes, address_port);
+*/
+		sender = address;
 	} else {
 		struct sockaddr_in address;
 		memset(&address, 0, sizeof(address));
@@ -506,10 +513,14 @@ int UDPSocket::Receive(Address & sender, void *data, int size)
 		if(received < 0)
 			return -1;
 
+/*
 		u32 address_ip = ntohl(address.sin_addr.s_addr);
 		u16 address_port = ntohs(address.sin_port);
 
 		sender = Address(address_ip, address_port);
+*/
+
+		sender = address;
 	}
 
 	if (socket_enable_debug_output) {

@@ -455,6 +455,8 @@ int ModApiMainMenu::l_get_modstore_list(lua_State *L)
 	return 1;
 }
 
+	std::vector<ServerListSpec> servers_cache;
+
 /******************************************************************************/
 int ModApiMainMenu::l_get_favorites(lua_State *L)
 {
@@ -467,7 +469,16 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 	std::vector<ServerListSpec> servers;
 
 	if(listtype == "online") {
+		ServerList::lan_get();
+		servers_cache =
 		servers = ServerList::getOnline();
+		ServerList::lan_apply(servers);
+	} else if (listtype == "sleep_cache") {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		if (ServerList::lan_fresh()) {
+			servers = servers_cache;
+			ServerList::lan_apply(servers);
+		}
 	} else {
 		servers = ServerList::getLocal();
 	}
@@ -484,6 +495,16 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 
 	return 1;
 }
+
+/*
+int ModApiMainMenu::l_favorites_refresh(lua_State *L)
+{
+	ServerList::getLocal();
+	lua_pushboolean(L, ServerList::want_reftesh());
+
+	return 1;
+}
+*/
 
 /******************************************************************************/
 int ModApiMainMenu::l_delete_favorite(lua_State *L)
@@ -997,7 +1018,9 @@ int ModApiMainMenu::l_get_screen_info(lua_State *L)
 /******************************************************************************/
 int ModApiMainMenu::l_get_min_supp_proto(lua_State *L)
 {
-	lua_pushinteger(L, CLIENT_PROTOCOL_VERSION_MIN);
+	u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
+		CLIENT_PROTOCOL_VERSION_MIN_LEGACY : CLIENT_PROTOCOL_VERSION_MIN;
+	lua_pushinteger(L, proto_version_min);
 	return 1;
 }
 

@@ -256,27 +256,28 @@ void ItemDefinition::msgpack_unpack(msgpack::object o)
 
 	MsgpackPacket packet = o.as<MsgpackPacket>();
 	int type_tmp;
-	packet[ITEMDEF_TYPE].convert(&type_tmp);
+	packet[ITEMDEF_TYPE].convert(type_tmp);
 	type = (ItemType)type_tmp;
-	packet[ITEMDEF_NAME].convert(&name);
-	packet[ITEMDEF_DESCRIPTION].convert(&description);
-	packet[ITEMDEF_INVENTORY_IMAGE].convert(&inventory_image);
-	packet[ITEMDEF_WIELD_IMAGE].convert(&wield_image);
-	packet[ITEMDEF_WIELD_SCALE].convert(&wield_scale);
-	packet[ITEMDEF_STACK_MAX].convert(&stack_max);
-	packet[ITEMDEF_USABLE].convert(&usable);
-	packet[ITEMDEF_LIQUIDS_POINTABLE].convert(&liquids_pointable);
+	packet[ITEMDEF_NAME].convert(name);
+	packet[ITEMDEF_DESCRIPTION].convert(description);
+	packet[ITEMDEF_INVENTORY_IMAGE].convert(inventory_image);
+	packet[ITEMDEF_WIELD_IMAGE].convert(wield_image);
+	packet[ITEMDEF_WIELD_SCALE].convert(wield_scale);
+	packet[ITEMDEF_STACK_MAX].convert(stack_max);
+	packet[ITEMDEF_USABLE].convert(usable);
+	packet[ITEMDEF_LIQUIDS_POINTABLE].convert(liquids_pointable);
 
 	if (packet.find(ITEMDEF_TOOL_CAPABILITIES) != packet.end()) {
+		delete tool_capabilities;
 		tool_capabilities = new ToolCapabilities;
-		packet[ITEMDEF_TOOL_CAPABILITIES].convert(tool_capabilities);
+		packet[ITEMDEF_TOOL_CAPABILITIES].convert(*tool_capabilities);
 	}
 
-	packet[ITEMDEF_GROUPS].convert(&groups);
-	packet[ITEMDEF_NODE_PLACEMENT_PREDICTION].convert(&node_placement_prediction);
-	packet[ITEMDEF_SOUND_PLACE_NAME].convert(&sound_place.name);
-	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(&sound_place.gain);
-	packet[ITEMDEF_RANGE].convert(&range);
+	packet[ITEMDEF_GROUPS].convert(groups);
+	packet[ITEMDEF_NODE_PLACEMENT_PREDICTION].convert(node_placement_prediction);
+	packet[ITEMDEF_SOUND_PLACE_NAME].convert(sound_place.name);
+	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(sound_place.gain);
+	packet[ITEMDEF_RANGE].convert(range);
 }
 
 /*
@@ -582,12 +583,12 @@ public:
 		MsgpackPacket packet = o.as<MsgpackPacket>();
 
 		std::map<std::string, ItemDefinition> itemdefs_tmp;
-		packet[ITEMDEFMANAGER_ITEMDEFS].convert(&itemdefs_tmp);
+		packet[ITEMDEFMANAGER_ITEMDEFS].convert(itemdefs_tmp);
 		for (std::map<std::string, ItemDefinition>::iterator i = itemdefs_tmp.begin();
 				i != itemdefs_tmp.end(); ++i) {
 			registerItem(i->second);
 		}
-		packet[ITEMDEFMANAGER_ALIASES].convert(&m_aliases);
+		packet[ITEMDEFMANAGER_ALIASES].convert(m_aliases);
 	}
 
 

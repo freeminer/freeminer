@@ -1382,12 +1382,12 @@ MapBlockMesh::~MapBlockMesh()
 	if (!m_mesh)
 		return;
 
-	if (m_enable_vbo && m_mesh) {
+	//if (m_enable_vbo && m_mesh) {
 		for (u32 i = 0; i < m_mesh->getMeshBufferCount(); i++) {
 			scene::IMeshBuffer *buf = m_mesh->getMeshBuffer(i);
 			m_driver->removeHardwareBuffer(buf);
 		}
-	}
+	//}
 	m_mesh->drop();
 	m_mesh = NULL;
 	delete m_minimap_mapblock;

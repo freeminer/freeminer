@@ -46,8 +46,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threads.h"
 #include <atomic>
 
-#define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
-
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
 #else
@@ -390,6 +388,7 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 float getDisplayDensity();
 float get_dpi();
 int get_densityDpi();
+void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
 
 v2u32 getDisplaySize();
 v2u32 getWindowSize();

@@ -183,19 +183,6 @@ struct LocalFormspecHandler : public TextDest {
 			}
 		}
 
-		if (m_formname == "MT_CHAT_MENU") {
-			assert(m_client != 0);
-
-			if ((fields.find("btn_send") != fields.end()) ||
-					(fields.find("quit") != fields.end())) {
-				StringMap::const_iterator it = fields.find("f_text");
-				if (it != fields.end())
-					m_client->typeChatMessage(it->second);
-
-				return;
-			}
-		}
-
 		if (m_formname == "MT_DEATH_SCREEN") {
 			assert(m_client != 0);
 
@@ -293,6 +280,49 @@ inline bool isPointableNode(const MapNode &n,
 	       (liquids_pointable && features.isLiquid());
 }
 
+static inline void getNeighborConnectingFace(v3s16 p, INodeDefManager *nodedef,
+		ClientMap *map, MapNode n, u8 bitmask, u8 *neighbors)
+{
+	MapNode n2 = map->getNodeNoEx(p);
+	if (nodedef->nodeboxConnects(n, n2, bitmask))
+		*neighbors |= bitmask;
+}
+
+static inline u8 getNeighbors(v3s16 p, INodeDefManager *nodedef, ClientMap *map, MapNode n)
+{
+	u8 neighbors = 0;
+	const ContentFeatures &f = nodedef->get(n);
+	// locate possible neighboring nodes to connect to
+	if (f.drawtype == NDT_NODEBOX && f.node_box.type == NODEBOX_CONNECTED) {
+		v3s16 p2 = p;
+
+		p2.Y++;
+		getNeighborConnectingFace(p2, nodedef, map, n, 1, &neighbors);
+
+		p2 = p;
+		p2.Y--;
+		getNeighborConnectingFace(p2, nodedef, map, n, 2, &neighbors);
+
+		p2 = p;
+		p2.Z--;
+		getNeighborConnectingFace(p2, nodedef, map, n, 4, &neighbors);
+
+		p2 = p;
+		p2.X--;
+		getNeighborConnectingFace(p2, nodedef, map, n, 8, &neighbors);
+
+		p2 = p;
+		p2.Z++;
+		getNeighborConnectingFace(p2, nodedef, map, n, 16, &neighbors);
+
+		p2 = p;
+		p2.X++;
+		getNeighborConnectingFace(p2, nodedef, map, n, 32, &neighbors);
+	}
+
+	return neighbors;
+}
+
 /*
 	Find what the player is pointing at
 */
@@ -370,15 +400,18 @@ PointedThing getPointedThing(Client *client, Hud *hud, const v3f &player_positio
 			for (s16 x = xstart; x <= xend; x++) {
 				MapNode n;
 				bool is_valid_position;
+				v3s16 p(x, y, z);
 
-				n = map.getNodeNoEx(v3s16(x, y, z), &is_valid_position);
+				n = map.getNodeNoEx(p, &is_valid_position);
 				if (!is_valid_position) {
 					continue;
 				}
 				if (!isPointableNode(n, client, liquids_pointable)) {
 					continue;
 				}
-				std::vector<aabb3f> boxes = n.getSelectionBoxes(nodedef);
+
+				std::vector<aabb3f> boxes;
+				n.getSelectionBoxes(nodedef, &boxes, getNeighbors(p, nodedef, &map, n));
 
 				v3s16 np(x, y, z);
 				v3f npf = intToFloat(np, BS);
@@ -409,7 +442,8 @@ PointedThing getPointedThing(Client *client, Hud *hud, const v3f &player_positio
 		f32 d = 0.001 * BS;
 		MapNode n = map.getNodeNoEx(pointed_pos);
 		v3f npf = intToFloat(pointed_pos, BS);
-		std::vector<aabb3f> boxes = n.getSelectionBoxes(nodedef);
+		std::vector<aabb3f> boxes;
+		n.getSelectionBoxes(nodedef, &boxes, getNeighbors(pointed_pos, nodedef, &map, n));
 		f32 face_min_distance = 1000 * BS;
 		for (std::vector<aabb3f>::const_iterator
 				i = boxes.begin();
@@ -1130,29 +1164,6 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #define SIZE_TAG "size[11,5.5,true]" // Fixed size on desktop
 #endif
 
-#if 0
-static void show_chat_menu(GUIFormSpecMenu **cur_formspec,
-		InventoryManager *invmgr, IGameDef *gamedef,
-		IWritableTextureSource *tsrc, IrrlichtDevice *device,
-		Client *client, std::string text)
-{
-	std::string formspec =
-		FORMSPEC_VERSION_STRING
-		SIZE_TAG
-		"field[3,2.35;6,0.5;f_text;;" + text + "]"
-		"button_exit[4,3;3,0.5;btn_send;" + strgettext("Proceed") + "]"
-		;
-
-	/* Create menu */
-	/* Note: FormspecFormSource and LocalFormspecHandler
-	 * are deleted by guiFormSpecMenu                     */
-	FormspecFormSource *fs_src = new FormspecFormSource(formspec);
-	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_CHAT_MENU", client);
-
-	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device, fs_src, txt_dst, NULL);
-}
-#endif
-
 static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device, Client *client)
@@ -1524,7 +1535,6 @@ struct VolatileRunFlags {
 	//freeminer:
 	bool headless_optimize;
 	bool no_output;
-	bool use_weather;
 	float dedicated_server_step;
 	int errors;
 	bool show_block_boundaries;
@@ -1614,7 +1624,7 @@ protected:
 	void dropSelectedItem();
 	void dropSelectedStack();
 	void openInventory();
-	void openConsole(float height = 0.6, bool close_on_return = false, const std::wstring& input = L"");
+	void openConsole(float height, const wchar_t *line=NULL);
 	void toggleFreeMove(float *statustext_time);
 	void toggleFreeMoveAlt(float *statustext_time, float *jump_timer);
 	void toggleFast(float *statustext_time);
@@ -1678,6 +1688,10 @@ protected:
 
 	static void settingChangedCallback(const std::string &setting_name, void *data);
 	void readSettings();
+
+#ifdef __ANDROID__
+	void handleAndroidChatInput();
+#endif
 
 private:
 	InputHandler *input;
@@ -1779,8 +1793,8 @@ private:
 
 #ifdef __ANDROID__
 	bool m_cache_hold_aux1;
+	bool m_android_chat_open = false;
 #endif
-
 };
 
 Game::Game() :
@@ -1944,7 +1958,6 @@ void Game::run()
 	// freeminer:
 	runData.update_draw_list_timer = 5;
 	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	flags.use_weather = g_settings->getBool("weather");
 	flags.headless_optimize = g_settings->getBool("headless_optimize");
 	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	flags.connected = false;
@@ -1979,10 +1992,6 @@ void Game::run()
 			|| (server && server->getShutdownRequested()))) {
 
 		try {
-
-#ifdef __ANDROID__
-		porting::handleAndroidActivityEvents(5);
-#endif
 
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
@@ -2195,10 +2204,22 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 		return false;
 	}
 
+	try {
+
 	server = new Server(map_dir, gamespec, simple_singleplayer_mode,
 			    bind_addr.isIPv6());
 
 	server->start(bind_addr);
+
+#if !EXEPTION_DEBUG
+	} catch (std::exception &e) {
+		*error_message = std::string("Unable to create server: ") + e.what();
+		errorstream << *error_message << std::endl;
+		return false;
+#else
+	} catch (int) {
+#endif
+	}
 
 	return true;
 }
@@ -2362,7 +2383,7 @@ bool Game::initGui()
 
 	// Chat backend and console
 	gui_chat_console = new GUIChatConsole(guienv, guienv->getRootGUIElement(),
-			-1, chat_backend, client);
+			-1, chat_backend, client, &g_menumgr);
 	if (!gui_chat_console) {
 		*error_message = "Could not allocate memory for chat console";
 		errorstream << *error_message << std::endl;
@@ -2551,7 +2572,6 @@ bool Game::getServerContent(bool *aborted)
 	fps_control.last_time = device->getTimer()->getTime();
 
 	while (device->run()) {
-
 		limitFps(&fps_control, &dtime);
 
 		// Update client and server
@@ -2832,6 +2852,7 @@ void Game::processUserInput(VolatileRunFlags *flags,
 			|| guienv->hasFocus(gui_chat_console)) {
 		input->clear();
 #ifdef HAVE_TOUCHSCREENGUI
+		if (g_touchscreengui)
 		g_touchscreengui->hide();
 #endif
 	}
@@ -2847,6 +2868,7 @@ void Game::processUserInput(VolatileRunFlags *flags,
 	if (gui_chat_console->isOpen()) {
 		if (gui_chat_console->getAndroidUIInput()) {
 			//gui_chat_console->closeConsoleAtOnce();
+			//gui_chat_console->closeConsole();
 		}
 	}
 #endif
@@ -2859,10 +2881,10 @@ void Game::processUserInput(VolatileRunFlags *flags,
 	input->step(dtime);
 
 #ifdef __ANDROID__
-
-	if (current_formspec != 0)
+	if (current_formspec != NULL)
 		current_formspec->getAndroidUIInput();
-
+	else
+		handleAndroidChatInput();
 #endif
 
 	// Increase timer for double tap of "keymap_jump"
@@ -2907,16 +2929,18 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_INVENTORY])) {
 		openInventory();
 	} else if (input->wasKeyDown(EscapeKey) || input->wasKeyDown(CancelKey)) {
-		show_pause_menu(&current_formspec, client, gamedef, texture_src, device,
-				simple_singleplayer_mode);
+		if (!gui_chat_console->isOpenInhibited()) {
+			show_pause_menu(&current_formspec, client, gamedef,
+					texture_src, device, simple_singleplayer_mode);
+		}
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CHAT])) {
-		openConsole(0.1, true);
+		openConsole(0.1, L"");
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CMD])) {
-		openConsole(0.1, true, L"/");
+		openConsole(0.1, L"/");
 	//} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_MSG])) {
-	//	openConsole(0.1, true, L"/msg ");
+	//	openConsole(0.1, L"/msg ");
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_CONSOLE])) {
-		openConsole();
+		openConsole(0.5);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_FREEMOVE])) {
 		toggleFreeMove(statustext_time);
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_JUMP])) {
@@ -2954,15 +2978,15 @@ void Game::processKeyboardInput(VolatileRunFlags *flags,
 	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_RANGESELECT])) {
 		toggleFullViewRange(statustext_time);
 		client->sendDrawControl();
-	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_NEXT]))
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_NEXT])) {
 		quicktune->next();
-	else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_PREV]))
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_PREV])) {
 		quicktune->prev();
-	else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_INC]))
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_INC])) {
 		quicktune->inc();
-	else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_DEC]))
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_QUICKTUNE_DEC])) {
 		quicktune->dec();
-	else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_DEBUG_STACKS])) {
+	} else if (input->wasKeyDown(keycache.key[KeyCache::KEYMAP_ID_DEBUG_STACKS])) {
 		// Print debug stacks
 		dstream << "-----------------------------------------"
 		        << std::endl;
@@ -3140,28 +3164,47 @@ void Game::openInventory()
 }
 
 
-void Game::openConsole(float height, bool close_on_return, const std::wstring& input)
+void Game::openConsole(float height, const wchar_t *line)
 {
-	if (!gui_chat_console->isOpenInhibited()) {
-		// Set initial console prompt
-		if (!input.empty()) {
-			gui_chat_console->setPrompt(input);
-		}
-		gui_chat_console->openConsole(height, close_on_return);
-		guienv->setFocus(gui_chat_console);
+	if (gui_chat_console->isOpenInhibited())
+		return;
 
 #ifdef __ANDROID__
-		if (porting::canKeyboard() >= 2) {
-			// fmtodo: invisible input text before pressing enter
-			porting::displayKeyboard(true, porting::app_global, porting::jnienv);
-		} else {
-			int type = 1;
-			porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
-		}
+	if (porting::canKeyboard() >= 2) {
+		// fmtodo: invisible input text before pressing enter
+		porting::displayKeyboard(true, porting::app_global, porting::jnienv);
 #endif
 
+	gui_chat_console->openConsole(height);
+	if (line) {
+		gui_chat_console->setCloseOnEnter(true);
+		gui_chat_console->replaceAndAddToHistory(line);
+	}
+
+#ifdef __ANDROID__
+	} else {
+		int type = 2;
+		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+
+/*
+	porting::showInputDialog(_("ok"), "", "", 2);
+*/
+	m_android_chat_open = true;
+	}
+#endif
+
+}
+
+#ifdef __ANDROID__
+void Game::handleAndroidChatInput()
+{
+	if (m_android_chat_open && porting::getInputDialogState() == 0) {
+		std::string text = porting::getInputDialogValue();
+		client->typeChatMessage(text);
+		m_android_chat_open = false;
 	}
 }
+#endif
 
 
 void Game::toggleFreeMove(float *statustext_time)
@@ -4382,7 +4425,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 		runData->fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		if (flags.use_weather) {
+		if (client->use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
 			runData->fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}

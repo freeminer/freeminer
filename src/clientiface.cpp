@@ -132,7 +132,6 @@ int RemoteClient::GetNextBlocks (
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
 		m_nothing_to_send_pause_timer = 0;
-		m_time_from_building = 999;
 	}
 
 	if(m_nothing_to_send_pause_timer >= 0)
@@ -215,6 +214,9 @@ int RemoteClient::GetNextBlocks (
 		*/
 		if(d_start<=1)
 			d_start=2;
+		++m_nearest_unsent_reset_want;
+	} else if (m_nearest_unsent_reset_want) {
+		m_nearest_unsent_reset_want = 0;
 		m_nearest_unsent_reset_timer = 999; //magical number more than ^ other number 120 - need to reset d on next iteration
 	}
 
@@ -260,7 +262,7 @@ int RemoteClient::GetNextBlocks (
 
 	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
 
-
+	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;
 	static const bool server_occlusion = g_settings->getBool("server_occlusion");
 	bool occlusion_culling_enabled = server_occlusion;
@@ -281,7 +283,6 @@ int RemoteClient::GetNextBlocks (
 
 	unordered_map_v3POS<bool> occlude_cache;
 
-
 	s16 d;
 	for(d = d_start; d <= d_max; d++) {
 		/*errorstream<<"checking d="<<d<<" for "
@@ -289,7 +290,7 @@ int RemoteClient::GetNextBlocks (
 		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
 		std::vector<v3POS> list;
-		if (d > 2 && d == d_start && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
+		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
 			list.push_back(v3POS(0,0,0));
 		}
 
@@ -392,6 +393,7 @@ int RemoteClient::GetNextBlocks (
 				auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
 			}
+
 			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
 				continue;
 			}
@@ -409,14 +411,14 @@ int RemoteClient::GetNextBlocks (
 			block = env->getMap().getBlockNoCreateNoEx(p);
 			}
 
-			bool surely_not_found_on_disk = false;
+			//bool surely_not_found_on_disk = false;
 			bool block_is_invalid = false;
 			if(block != NULL)
 			{
 
-				if (d > 3 && block->content_only == CONTENT_AIR) {
+				/*if (d > 3 && block->content_only == CONTENT_AIR) {
 					continue;
-				}
+				}*/
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					continue;
@@ -442,7 +444,7 @@ int RemoteClient::GetNextBlocks (
 			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
 #endif
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
-			if( d >= 1 &&
+			if( can_skip &&
 				occlusion_culling_enabled &&
 				isOccluded(&env->getMap(), spn, cpn + v3POS(0,0,0),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
@@ -477,9 +479,11 @@ int RemoteClient::GetNextBlocks (
 				if (block->getLightingExpired()) {
 					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
 					env->getServerMap().lighting_modified_add(p, d);
+					if (block_sent && can_skip)
+						continue;
 				}
 
-				if (block->lighting_broken > 0 && (block_sent || d > 0))
+				if (block->lighting_broken > 0 && (block_sent || can_skip))
 					continue;
 
 				// Block is valid if lighting is up-to-date and data exists
@@ -513,18 +517,21 @@ int RemoteClient::GetNextBlocks (
 				If block has been marked to not exist on disk (dummy)
 				and generating new ones is not wanted, skip block.
 			*/
+			/*
 			if(generate == false && surely_not_found_on_disk == true)
 			{
 				// get next one.
 				continue;
 			}
+			*/
 
 			/*
 				Add inexistent block to emerge queue.
 			*/
-			if(block == NULL || surely_not_found_on_disk || block_is_invalid)
+			if(!block || /*surely_not_found_on_disk ||*/ block_is_invalid)
 			{
 				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
+				if (generate || !env->getServerMap().m_db_miss.count(p)) {
 
 				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 					if (nearest_emerged_d == -1)
@@ -533,6 +540,9 @@ int RemoteClient::GetNextBlocks (
 					if (nearest_emergefull_d == -1)
 						nearest_emergefull_d = d;
 					goto queue_full_break;
+				}
+				} else {
+					//infostream << "skip tryload " << p << "\n";
 				}
 
 				// get next one.
@@ -550,14 +560,17 @@ int RemoteClient::GetNextBlocks (
 
 			dest.push_back(q);
 
+			if (block->content_only == CONTENT_AIR)
+				++num_blocks_air;
+			else
 			num_blocks_selected += 1;
 		}
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
+	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
 	num_blocks_selected += num_blocks_sending;
-	if(!num_blocks_selected && d_start <= d) {
+	if(!num_blocks_selected && !num_blocks_air && d_start <= d) {
 		//new_nearest_unsent_d = 0;
 		m_nothing_to_send_pause_timer = 1.0;
 	}
@@ -565,14 +578,14 @@ queue_full_break:
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
-	if(nearest_emerged_d != -1){
+	if(nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d){
 		new_nearest_unsent_d = nearest_emerged_d;
 	} else if(nearest_emergefull_d != -1){
 		new_nearest_unsent_d = nearest_emergefull_d;
 	} else {
 		if(d > full_d_max){
 			new_nearest_unsent_d = 0;
-			m_nothing_to_send_pause_timer = 1.0;
+			m_nothing_to_send_pause_timer = 10.0;
 		} else {
 			if(nearest_sent_d != -1)
 				new_nearest_unsent_d = nearest_sent_d;
@@ -581,17 +594,62 @@ queue_full_break:
 		}
 	}
 
-	if(new_nearest_unsent_d != -1)
+	if(new_nearest_unsent_d != -1) {
 		m_nearest_unsent_d = new_nearest_unsent_d;
+	}
+
 	return num_blocks_selected - num_blocks_sending;
 }
+
+/*
+void RemoteClient::GotBlock(v3s16 p)
+{
+	if (m_blocks_modified.find(p) == m_blocks_modified.end()) {
+		if (m_blocks_sending.find(p) != m_blocks_sending.end())
+			m_blocks_sending.erase(p);
+		else
+			m_excess_gotblocks++;
+
+		m_blocks_sent.insert(p);
+	}
+}
+*/
 
 void RemoteClient::SentBlock(v3s16 p, double time)
 {
 	m_blocks_sent.set(p, time);
 }
 
+/*
+void RemoteClient::SentBlock(v3s16 p)
+{
+	if (m_blocks_modified.find(p) != m_blocks_modified.end())
+		m_blocks_modified.erase(p);
+
+	if(m_blocks_sending.find(p) == m_blocks_sending.end())
+		m_blocks_sending[p] = 0.0;
+	else
+		infostream<<"RemoteClient::SentBlock(): Sent block"
+				" already in m_blocks_sending"<<std::endl;
+}
+*/
+
 void RemoteClient::SetBlockNotSent(v3s16 p)
+{
+	++m_nearest_unsent_reset;
+/*
+	m_nearest_unsent_d = 0;
+	m_nothing_to_send_pause_timer = 0;
+
+	if(m_blocks_sending.find(p) != m_blocks_sending.end())
+		m_blocks_sending.erase(p);
+	if(m_blocks_sent.find(p) != m_blocks_sent.end())
+		m_blocks_sent.erase(p);
+	m_blocks_modified.insert(p);
+*/
+}
+
+void RemoteClient::SetBlocksNotSent()
 {
 	++m_nearest_unsent_reset;
 }
@@ -599,11 +657,15 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
 	++m_nearest_unsent_reset;
-}
-
-void RemoteClient::SetBlocksNotSent()
-{
-	++m_nearest_unsent_reset;
+/*
+	for(std::map<v3s16, MapBlock*>::iterator
+			i = blocks.begin();
+			i != blocks.end(); ++i)
+	{
+		v3s16 p = i->first;
+		m_blocks_modified.insert(p);
+	}
+*/
 }
 
 void RemoteClient::SetBlockDeleted(v3s16 p) {

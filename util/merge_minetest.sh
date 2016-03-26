@@ -26,7 +26,7 @@ git commit -a -m "update submodules"
 git push
 
 cd ..
-git commit -a -m "update submodules"
+git commit . -m "update submodules"
 git push
 
 git status

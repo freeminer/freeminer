@@ -15,7 +15,7 @@ public:
 	std::vector<std::thread> workers;
 	std::atomic_bool requeststop;
 
-	thread_pool(const std::string &name="Unnamed", int priority = 0);
+	thread_pool(const std::string &name = "Unnamed", int priority = 0);
 	virtual ~thread_pool();
 
 	virtual void func();
@@ -23,6 +23,7 @@ public:
 	void reg (const std::string &name = "", int priority = 0);
 	void start (int n = 1);
 	void restart (int n = 1);
+	void reanimate (int n = 1);
 	void stop ();
 	void join ();
 

@@ -147,6 +147,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	PROTOCOL_VERSION 27:
 		backface_culling: backwards compatibility for playing with
 		newer client on pre-27 servers.
+		Add nodedef v3 - connected nodeboxes
 */
 
 #define LATEST_PROTOCOL_VERSION 27
@@ -156,7 +157,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define SERVER_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
 // Client's supported network protocol range
-#define CLIENT_PROTOCOL_VERSION_MIN 13
+// The minimal version depends on whether
+// send_pre_v25_init is enabled or not
+#define CLIENT_PROTOCOL_VERSION_MIN 25
+#define CLIENT_PROTOCOL_VERSION_MIN_LEGACY 13
 #define CLIENT_PROTOCOL_VERSION_MAX LATEST_PROTOCOL_VERSION
 
 #define CLIENT_PROTOCOL_VERSION_FM 2
@@ -220,7 +224,8 @@ enum {
 	TOCLIENT_INIT_POS,
 	// json map params
 	TOCLIENT_INIT_MAP_PARAMS,
-	TOCLIENT_INIT_PROTOCOL_VERSION_FM
+	TOCLIENT_INIT_PROTOCOL_VERSION_FM,
+	TOCLIENT_INIT_WEATHER
 };
 
 	/*
@@ -695,20 +700,6 @@ enum {
 	/*
 		u16 id
 	*/
-
-/*
-#define TOCLIENT_ANIMATIONS 0x4f
-enum {
-	TOCLIENT_ANIMATIONS_DEFAULT_START,
-	TOCLIENT_ANIMATIONS_DEFAULT_STOP,
-	TOCLIENT_ANIMATIONS_WALK_START,
-	TOCLIENT_ANIMATIONS_WALK_STOP,
-	TOCLIENT_ANIMATIONS_DIG_START,
-	TOCLIENT_ANIMATIONS_DIG_STOP,
-	TOCLIENT_ANIMATIONS_WD_START,
-	TOCLIENT_ANIMATIONS_WD_STOP
-};
-*/
 
 #define TOCLIENT_HUDADD 0x49
 enum {
@@ -1245,11 +1236,7 @@ enum {
 		std::string bytes_M
 	*/
 
-#if !MINETEST_PROTO
-#define TOSERVER_NUM_MSG_TYPES 1
-#else
 #define TOSERVER_NUM_MSG_TYPES 0x53
-#endif
 
 /*
 };

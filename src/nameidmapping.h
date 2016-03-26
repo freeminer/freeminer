@@ -25,8 +25,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include <iostream>
-#include <set>
-#include <map>
+//#include <set>
+#include <unordered_map>
 #include "irrlichttypes_bloated.h"
 
 class NameIdMapping
@@ -58,16 +58,14 @@ public:
 		m_name_to_id.erase(name);
 	}
 	bool getName(u16 id, std::string &result) const{
-		std::map<u16, std::string>::const_iterator i;
-		i = m_id_to_name.find(id);
+		auto i = m_id_to_name.find(id);
 		if(i == m_id_to_name.end())
 			return false;
 		result = i->second;
 		return true;
 	}
 	bool getId(const std::string &name, u16 &result) const{
-		std::map<std::string, u16>::const_iterator i;
-		i = m_name_to_id.find(name);
+		auto i = m_name_to_id.find(name);
 		if(i == m_name_to_id.end())
 			return false;
 		result = i->second;
@@ -77,8 +75,8 @@ public:
 		return m_id_to_name.size();
 	}
 private:
-	std::map<u16, std::string> m_id_to_name;
-	std::map<std::string, u16> m_name_to_id;
+	std::unordered_map<u16, std::string> m_id_to_name;
+	std::unordered_map<std::string, u16> m_name_to_id;
 };
 
 #endif

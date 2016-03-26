@@ -26,7 +26,6 @@ const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TO
 const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
 	null_command_handler, // 0x00 (never use this)
-#if MINETEST_PROTO
 	null_command_handler, // 0x01
 	{ "TOSERVER_INIT",                     TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Init }, // 0x02
 	null_command_handler, // 0x03
@@ -94,7 +93,9 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_RECEIVED_MEDIA",           TOSERVER_STATE_STARTUP, &Server::handleCommand_ReceivedMedia }, // 0x41
 	{ "TOSERVER_BREATH",                   TOSERVER_STATE_INGAME, &Server::handleCommand_Breath }, // 0x42
 	{ "TOSERVER_CLIENT_READY",             TOSERVER_STATE_STARTUP, &Server::handleCommand_ClientReady }, // 0x43
-	null_command_handler, // 0x44
+
+	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x44
+
 	null_command_handler, // 0x45
 	null_command_handler, // 0x46
 	null_command_handler, // 0x47
@@ -109,7 +110,6 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_FIRST_SRP",          TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_FirstSrp }, // 0x50
 	{ "TOSERVER_SRP_BYTES_A",        TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_SrpBytesA }, // 0x51
 	{ "TOSERVER_SRP_BYTES_M",        TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_SrpBytesM }, // 0x52
-#endif
 };
 
 const static ClientCommandFactory null_command_factory = { "TOCLIENT_NULL", 0, false };

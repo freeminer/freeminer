@@ -37,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Player::Player(IGameDef *gamedef, const std::string & name):
 	refs(0),
+	got_teleported(false),
 	touching_ground(false),
 	in_liquid(false),
 	in_liquid_stable(false),

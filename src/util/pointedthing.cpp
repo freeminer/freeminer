@@ -124,17 +124,17 @@ void PointedThing::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 void PointedThing::msgpack_unpack(msgpack::object o) {
 	int t;
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[POINTEDTHING_TYPE].convert(&t);
+	packet[POINTEDTHING_TYPE].convert(t);
 	type = static_cast<PointedThingType>(t);
 	switch (type) {
 	case POINTEDTHING_NOTHING:
 		break;
 	case POINTEDTHING_NODE:
-		packet[POINTEDTHING_UNDER].convert(&node_undersurface);
-		packet[POINTEDTHING_ABOVE].convert(&node_abovesurface);
+		packet[POINTEDTHING_UNDER].convert(node_undersurface);
+		packet[POINTEDTHING_ABOVE].convert(node_abovesurface);
 		break;
 	case POINTEDTHING_OBJECT:
-		packet[POINTEDTHING_OBJECT_ID].convert(&object_id);
+		packet[POINTEDTHING_OBJECT_ID].convert(object_id);
 		break;
 	default:
 		throw SerializationError("unsupported PointedThingType");

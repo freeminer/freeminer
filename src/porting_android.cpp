@@ -53,12 +53,16 @@ void android_main(android_app *app)
 		char *argv[] = {strdup(PROJECT_NAME), NULL};
 		main(ARRLEN(argv) - 1, argv);
 		free(argv[0]);
+#if !EXEPTION_DEBUG
 	} catch (std::exception &e) {
 		errorstream << "Uncaught exception in main thread: " << e.what() << std::endl;
 		retval = -1;
 	} catch (...) {
 		errorstream << "Uncaught exception in main thread!" << std::endl;
 		retval = -1;
+#else
+	} catch (int) { // impossible
+#endif
 	}
 
 	porting::cleanupAndroid();
@@ -87,20 +91,6 @@ std::string path_storage = DIR_DELIM "sdcard" DIR_DELIM;
 android_app* app_global;
 JNIEnv*      jnienv;
 jclass       nativeActivity;
-
-void handleAndroidActivityEvents(int max)
-{
-	int ident;
-	int events;
-	struct android_poll_source *source;
-
-	while ( (ident = ALooper_pollOnce(0, NULL, &events, (void**)&source)) >= 0) {
-		if (source)
-			source->process(porting::app_global, source);
-		if (--max < 0)
-			break;
-	}
-}
 
 int android_version_sdk_int = 0;
 

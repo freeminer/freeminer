@@ -22,9 +22,14 @@ menudata = {}
 --------------------------------------------------------------------------------
 -- Local cached values
 --------------------------------------------------------------------------------
-local min_supp_proto = core.get_min_supp_proto()
-local max_supp_proto = core.get_max_supp_proto()
+local min_supp_proto
+local max_supp_proto
 
+function common_update_cached_supp_proto()
+	min_supp_proto = core.get_min_supp_proto()
+	max_supp_proto = core.get_max_supp_proto()
+end
+common_update_cached_supp_proto()
 --------------------------------------------------------------------------------
 -- Menu helper functions
 --------------------------------------------------------------------------------
@@ -64,17 +69,18 @@ end
 --------------------------------------------------------------------------------
 function order_favorite_list(list)
 	local res = {}
+	if not list then list = {} end
 	--orders the favorite list after support
 	for i=1,#list,1 do
 		local fav = list[i]
 		if is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
-			table.insert(res, fav)
+			res[#res + 1] = fav
 		end
 	end
 	for i=1,#list,1 do
 		local fav = list[i]
 		if not is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
-			table.insert(res, fav)
+			res[#res + 1] = fav
 		end
 	end
 	return res
@@ -95,7 +101,7 @@ function render_favorite(spec,render_details)
 		if spec.address ~= nil then
 			text = text .. spec.address:trim()
 
-			if spec.port ~= nil then
+			if spec.port ~= nil and tostring(spec.port) ~= "30000" then
 				text = text .. ":" .. spec.port
 			end
 		end
@@ -106,7 +112,7 @@ function render_favorite(spec,render_details)
 	end
 
 	local details = ""
-	local grey_out = not is_server_protocol_compat(spec.proto_max, spec.proto_min, spec.proto)
+	local grey_out = not is_server_protocol_compat(spec.proto_min, spec.proto_max, spec.proto)
 
 	if spec.clients ~= nil and spec.clients_max ~= nil then
 		local clients_color = ''
@@ -276,6 +282,21 @@ function asyncOnlineFavourites()
 	)
 end
 
+function updater_init()
+	local updater_req =  function(param) return core.get_favorites("sleep_cache") end
+	local updater_res;
+	updater_res = function(result)
+			if core.setting_getbool("public_serverlist") and result[1] then
+				local favs = order_favorite_list(result)
+					menudata.public_known = favs
+					menudata.favorites = menudata.public_known
+				core.event_handler("Refresh")
+			end
+	core.handle_async(updater_req, nil, updater_res)
+	end
+	core.handle_async(updater_req, nil, updater_res)
+end
+
 --------------------------------------------------------------------------------
 function text2textlist(xpos,ypos,width,height,tl_name,textlen,text,transparency)
 	local textlines = core.splittext(text,textlen)
@@ -310,6 +331,12 @@ function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, 
 	if not is_server_protocol_compat(server_proto_min, server_proto_max, proto) then
 		local server_prot_ver_info
 		local client_prot_ver_info
+
+		if proto and core.setting_get("server_proto") ~= proto then 
+			server_prot_ver_info = fgettext_ne("Server supports protocol $1, but we can connect only to $2 ",
+				proto or '?', core.setting_get("server_proto") )
+		end
+
 		if server_proto_min ~= server_proto_max then
 			server_prot_ver_info = fgettext_ne("Server supports protocol versions between $1 and $2. ",
 				server_proto_min or 13, server_proto_max or 24)

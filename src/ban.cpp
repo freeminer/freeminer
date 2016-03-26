@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/mutex_auto_lock.h"
 #include <sstream>
 #include <set>
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "util/string.h"
 #include "log.h"
 #include "filesys.h"

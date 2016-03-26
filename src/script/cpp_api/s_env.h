@@ -29,7 +29,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class ServerEnvironment;
 struct ScriptCallbackState;
 
-class ScriptApiEnv : virtual public ScriptApiBase {
+class ScriptApiEnv : virtual public ScriptApiBase
+{
 public:
 	// Called on environment step
 	void environment_Step(float dtime);
@@ -38,7 +39,7 @@ public:
 	void environment_OnGenerated(v3s16 minp, v3s16 maxp, u32 blockseed);
 
 	// Called on player event
-	void player_event(ServerActiveObject *player, std::string type);
+	void player_event(ServerActiveObject *player, const std::string &type);
 
 	// Called after emerge of a block queued from core.emerge_area()
 	void on_emerge_area_completion(v3s16 blockpos, int action,

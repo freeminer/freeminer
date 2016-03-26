@@ -47,6 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <GLES/gl.h>
 #endif
 
+#include <thread>
 
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */
@@ -97,6 +98,7 @@ video::ITexture* MenuTextureSource::getTexture(const std::string &name, u32 *id)
 	m_to_delete.insert(name);
 
 #ifdef __ANDROID__
+	porting::irr_device_wait_egl();
 	video::IImage *image = m_driver->createImageFromFile(name.c_str());
 	if (image) {
 		image = Align2Npot2(image, m_driver);
@@ -315,6 +317,7 @@ GUIEngine::~GUIEngine()
 	}
 
 	infostream<<"GUIEngine: Deinitializing scripting"<<std::endl;
+
 	delete m_script;
 
 	m_irr_toplefttext->setText(L"");
@@ -329,6 +332,7 @@ GUIEngine::~GUIEngine()
 
 	if (m_cloud.clouds)
 		m_cloud.clouds->drop();
+
 }
 
 /******************************************************************************/

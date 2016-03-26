@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "exceptions.h"
 #include "debug.h"
 #include "gamedef.h"
+#include "mapnode.h"
 #include <fstream> // Used in applyTextureOverrides()
 
 /*
@@ -54,44 +55,91 @@ void NodeBox::reset()
 	wall_top = aabb3f(-BS/2, BS/2-BS/16., -BS/2, BS/2, BS/2, BS/2);
 	wall_bottom = aabb3f(-BS/2, -BS/2, -BS/2, BS/2, -BS/2+BS/16., BS/2);
 	wall_side = aabb3f(-BS/2, -BS/2, -BS/2, -BS/2+BS/16., BS/2, BS/2);
+	// no default for other parts
+	connect_top.clear();
+	connect_bottom.clear();
+	connect_front.clear();
+	connect_left.clear();
+	connect_back.clear();
+	connect_right.clear();
 }
 
 void NodeBox::serialize(std::ostream &os, u16 protocol_version) const
 {
-	int version = protocol_version >= 21 ? 2 : 1;
+	int version = 1;
+	if (protocol_version >= 27)
+		version = 3;
+	else if (protocol_version >= 21)
+		version = 2;
 	writeU8(os, version);
 
-	if (version == 1 && type == NODEBOX_LEVELED)
-		writeU8(os, NODEBOX_FIXED);
-	else
-		writeU8(os, type);
+	switch (type) {
+	case NODEBOX_LEVELED:
+	case NODEBOX_FIXED:
+		if (version == 1)
+			writeU8(os, NODEBOX_FIXED);
+		else
+			writeU8(os, type);
 
-	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-	{
 		writeU16(os, fixed.size());
-		for(std::vector<aabb3f>::const_iterator
+		for (std::vector<aabb3f>::const_iterator
 				i = fixed.begin();
 				i != fixed.end(); ++i)
 		{
 			writeV3F1000(os, i->MinEdge);
 			writeV3F1000(os, i->MaxEdge);
 		}
-	}
-	else if(type == NODEBOX_WALLMOUNTED)
-	{
+		break;
+	case NODEBOX_WALLMOUNTED:
+		writeU8(os, type);
+
 		writeV3F1000(os, wall_top.MinEdge);
 		writeV3F1000(os, wall_top.MaxEdge);
 		writeV3F1000(os, wall_bottom.MinEdge);
 		writeV3F1000(os, wall_bottom.MaxEdge);
 		writeV3F1000(os, wall_side.MinEdge);
 		writeV3F1000(os, wall_side.MaxEdge);
+		break;
+	case NODEBOX_CONNECTED:
+		if (version <= 2) {
+			// send old clients nodes that can't be walked through
+			// to prevent abuse
+			writeU8(os, NODEBOX_FIXED);
+
+			writeU16(os, 1);
+			writeV3F1000(os, v3f(-BS/2, -BS/2, -BS/2));
+			writeV3F1000(os, v3f(BS/2, BS/2, BS/2));
+		} else {
+			writeU8(os, type);
+
+#define WRITEBOX(box) do { \
+		writeU16(os, (box).size()); \
+		for (std::vector<aabb3f>::const_iterator \
+				i = (box).begin(); \
+				i != (box).end(); ++i) { \
+			writeV3F1000(os, i->MinEdge); \
+			writeV3F1000(os, i->MaxEdge); \
+		}; } while (0)
+
+			WRITEBOX(fixed);
+			WRITEBOX(connect_top);
+			WRITEBOX(connect_bottom);
+			WRITEBOX(connect_front);
+			WRITEBOX(connect_left);
+			WRITEBOX(connect_back);
+			WRITEBOX(connect_right);
+		}
+		break;
+	default:
+		writeU8(os, type);
+		break;
 	}
 }
 
 void NodeBox::deSerialize(std::istream &is)
 {
 	int version = readU8(is);
-	if(version < 1 || version > 2)
+	if (version < 1 || version > 3)
 		throw SerializationError("unsupported NodeBox version");
 
 	reset();
@@ -118,25 +166,57 @@ void NodeBox::deSerialize(std::istream &is)
 		wall_side.MinEdge = readV3F1000(is);
 		wall_side.MaxEdge = readV3F1000(is);
 	}
+	else if (type == NODEBOX_CONNECTED)
+	{
+#define READBOXES(box) do { \
+		count = readU16(is); \
+		(box).reserve(count); \
+		while (count--) { \
+			v3f min = readV3F1000(is); \
+			v3f max = readV3F1000(is); \
+			(box).push_back(aabb3f(min, max)); }; } while (0)
+
+		u16 count;
+
+		READBOXES(fixed);
+		READBOXES(connect_top);
+		READBOXES(connect_bottom);
+		READBOXES(connect_front);
+		READBOXES(connect_left);
+		READBOXES(connect_back);
+		READBOXES(connect_right);
+	}
 }
 
 void NodeBox::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	int map_size = 1;
 	if (type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-		map_size = 2;
+		map_size += 1;
 	else if (type == NODEBOX_WALLMOUNTED)
-		map_size = 4;
+		map_size += 3;
+	else if (type == NODEBOX_CONNECTED)
+		map_size += 7;
 
 	pk.pack_map(map_size);
 	PACK(NODEBOX_S_TYPE, (int)type);
 
-	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-		PACK(NODEBOX_S_FIXED, fixed)
-	else if(type == NODEBOX_WALLMOUNTED) {
+	if (type == NODEBOX_FIXED || type == NODEBOX_LEVELED || type == NODEBOX_CONNECTED)
+		PACK(NODEBOX_S_FIXED, fixed);
+
+	if (type == NODEBOX_WALLMOUNTED) {
 		PACK(NODEBOX_S_WALL_TOP, wall_top);
 		PACK(NODEBOX_S_WALL_BOTTOM, wall_bottom);
 		PACK(NODEBOX_S_WALL_SIDE, wall_side);
+	} else if (type == NODEBOX_CONNECTED) {
+		PACK(NODEBOX_S_CONNECTED_TOP, connect_top);       // 2
+		PACK(NODEBOX_S_CONNECTED_BOTTOM, connect_bottom); // 3
+		PACK(NODEBOX_S_CONNECTED_FRONT, connect_front);   // 4
+		PACK(NODEBOX_S_CONNECTED_LEFT, connect_left);     // 5
+		PACK(NODEBOX_S_CONNECTED_BACK, connect_back);     // 6
+		PACK(NODEBOX_S_CONNECTED_RIGHT, connect_right);   // 7
+	} else if (type != NODEBOX_REGULAR && type != NODEBOX_FIXED && type != NODEBOX_LEVELED){
+		warningstream<< "Unknown nodebox type = "<< (int)type << std::endl;
 	}
 }
 
@@ -149,13 +229,25 @@ void NodeBox::msgpack_unpack(msgpack::object o)
 	int type_tmp = packet[NODEBOX_S_TYPE].as<int>();
 	type = (NodeBoxType)type_tmp;
 
-	if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
-		packet[NODEBOX_S_FIXED].convert(&fixed);
-	else if(type == NODEBOX_WALLMOUNTED) {
-		packet[NODEBOX_S_WALL_TOP].convert(&wall_top);
-		packet[NODEBOX_S_WALL_BOTTOM].convert(&wall_bottom);
-		packet[NODEBOX_S_WALL_SIDE].convert(&wall_side);
+	//if(type == NODEBOX_FIXED || type == NODEBOX_LEVELED)
+	if (packet.count(NODEBOX_S_FIXED))
+		packet[NODEBOX_S_FIXED].convert(fixed);
+
+	if (type == NODEBOX_WALLMOUNTED) {
+		packet[NODEBOX_S_WALL_TOP].convert(wall_top);
+		packet[NODEBOX_S_WALL_BOTTOM].convert(wall_bottom);
+		packet[NODEBOX_S_WALL_SIDE].convert(wall_side);
+	} else if(type == NODEBOX_CONNECTED) {
+		if (packet.count(NODEBOX_S_CONNECTED_TOP) && packet.count(NODEBOX_S_CONNECTED_RIGHT)) { //lite check
+			packet[NODEBOX_S_CONNECTED_TOP].convert(connect_top);       // 2
+			packet[NODEBOX_S_CONNECTED_BOTTOM].convert(connect_bottom); // 3
+			packet[NODEBOX_S_CONNECTED_FRONT].convert(connect_front);   // 4
+			packet[NODEBOX_S_CONNECTED_LEFT].convert(connect_left);     // 5
+			packet[NODEBOX_S_CONNECTED_BACK].convert(connect_back);     // 6
+			packet[NODEBOX_S_CONNECTED_RIGHT].convert(connect_right);   // 7
+		}
 	}
+
 }
 
 /*
@@ -222,18 +314,18 @@ void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 void TileDef::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[TILEDEF_NAME].convert(&name);
+	packet[TILEDEF_NAME].convert(name);
 
 	int type_tmp;
-	packet[TILEDEF_ANIMATION_TYPE].convert(&type_tmp);
+	packet[TILEDEF_ANIMATION_TYPE].convert(type_tmp);
 	animation.type = (TileAnimationType)type_tmp;
 
-	packet[TILEDEF_ANIMATION_ASPECT_W].convert(&animation.aspect_w);
-	packet[TILEDEF_ANIMATION_ASPECT_H].convert(&animation.aspect_h);
-	packet[TILEDEF_ANIMATION_LENGTH].convert(&animation.length);
-	packet[TILEDEF_BACKFACE_CULLING].convert(&backface_culling);
-	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, &tileable_vertical);
-	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, &tileable_horizontal);
+	packet[TILEDEF_ANIMATION_ASPECT_W].convert(animation.aspect_w);
+	packet[TILEDEF_ANIMATION_ASPECT_H].convert(animation.aspect_h);
+	packet[TILEDEF_ANIMATION_LENGTH].convert(animation.length);
+	packet[TILEDEF_BACKFACE_CULLING].convert(backface_culling);
+	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, tileable_vertical);
+	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, tileable_horizontal);
 }
 
 /*
@@ -337,6 +429,8 @@ void ContentFeatures::reset()
 	sound_dig = SimpleSoundSpec("__group");
 	sound_dug = SimpleSoundSpec();
 
+
+//freeminer:
 	freeze = "";
 	melt = "";
 	is_circuit_element = false;
@@ -351,6 +445,11 @@ void ContentFeatures::reset()
 		circuit_element_func[i] = 0;
 	}
 	circuit_element_delay = 0;
+
+
+	connects_to.clear();
+	connects_to_ids.clear();
+	connect_sides = 0;
 }
 
 void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
@@ -418,6 +517,11 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	os<<serializeString(mesh);
 	collision_box.serialize(os, protocol_version);
 	writeU8(os, floodable);
+	writeU16(os, connects_to_ids.size());
+	for (auto i = connects_to_ids.begin();
+			i != connects_to_ids.end(); ++i)
+		writeU16(os, *i);
+	writeU8(os, connect_sides);
 }
 
 void ContentFeatures::deSerialize(std::istream &is)
@@ -491,12 +595,17 @@ void ContentFeatures::deSerialize(std::istream &is)
 	mesh = deSerializeString(is);
 	collision_box.deSerialize(is);
 	floodable = readU8(is);
+	u16 connects_to_size = readU16(is);
+	connects_to_ids.clear();
+	for (u16 i = 0; i < connects_to_size; i++)
+		connects_to_ids.insert(readU16(is));
+	connect_sides = readU8(is);
 	}catch(SerializationError &e) {};
 }
 
 void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
-	pk.pack_map(38);
+	pk.pack_map(40);
 	PACK(CONTENTFEATURES_NAME, name);
 	PACK(CONTENTFEATURES_GROUPS, groups);
 	PACK(CONTENTFEATURES_DRAWTYPE, (int)drawtype);
@@ -544,75 +653,86 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	PACK(CONTENTFEATURES_WAVING, waving);
 	PACK(CONTENTFEATURES_MESH, mesh);
 	PACK(CONTENTFEATURES_COLLISION_BOX, collision_box);
+
+	// PACK(CONTENTFEATURES_FLOODABLE, floodable); //not used on client
+
+	PACK(CONTENTFEATURES_CONNECT_TO_IDS, connects_to_ids);
+	PACK(CONTENTFEATURES_CONNECT_SIDES, connect_sides);
 }
 
 void ContentFeatures::msgpack_unpack(msgpack::object o)
 {
 	MsgpackPacket packet = o.as<MsgpackPacket>();
-	packet[CONTENTFEATURES_NAME].convert(&name);
+	packet[CONTENTFEATURES_NAME].convert(name);
 	groups.clear();
-	packet[CONTENTFEATURES_GROUPS].convert(&groups);
+	packet[CONTENTFEATURES_GROUPS].convert(groups);
 
 	int drawtype_tmp;
-	packet[CONTENTFEATURES_DRAWTYPE].convert(&drawtype_tmp);
+	packet[CONTENTFEATURES_DRAWTYPE].convert(drawtype_tmp);
 	drawtype = (NodeDrawType)drawtype_tmp;
 
-	packet[CONTENTFEATURES_VISUAL_SCALE].convert(&visual_scale);
+	packet[CONTENTFEATURES_VISUAL_SCALE].convert(visual_scale);
 
 	std::vector<TileDef> tiledef_received;
-	packet[CONTENTFEATURES_TILEDEF].convert(&tiledef_received);
+	packet[CONTENTFEATURES_TILEDEF].convert(tiledef_received);
 	if (tiledef_received.size() != 6)
 		throw SerializationError("unsupported tile count");
 	for(size_t i = 0; i < 6; ++i)
 		tiledef[i] = tiledef_received[i];
 
 	std::vector<TileDef> tiledef_special_received;
-	packet[CONTENTFEATURES_TILEDEF_SPECIAL].convert(&tiledef_special_received);
+	packet[CONTENTFEATURES_TILEDEF_SPECIAL].convert(tiledef_special_received);
 	if(tiledef_special_received.size() != CF_SPECIAL_COUNT)
 		throw SerializationError("unsupported CF_SPECIAL_COUNT");
 	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
 		tiledef_special[i] = tiledef_special_received[i];
 
-	packet[CONTENTFEATURES_ALPHA].convert(&alpha);
-	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(&post_effect_color);
+	packet[CONTENTFEATURES_ALPHA].convert(alpha);
+	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(post_effect_color);
 
 	int param_type_tmp;
-	packet[CONTENTFEATURES_PARAM_TYPE].convert(&param_type_tmp);
+	packet[CONTENTFEATURES_PARAM_TYPE].convert(param_type_tmp);
 	param_type = (ContentParamType)param_type_tmp;
-	packet[CONTENTFEATURES_PARAM_TYPE_2].convert(&param_type_tmp);
+	packet[CONTENTFEATURES_PARAM_TYPE_2].convert(param_type_tmp);
 	param_type_2 = (ContentParamType2)param_type_tmp;
 
-	packet[CONTENTFEATURES_IS_GROUND_CONTENT].convert(&is_ground_content);
-	packet[CONTENTFEATURES_LIGHT_PROPAGATES].convert(&light_propagates);
-	packet[CONTENTFEATURES_SUNLIGHT_PROPAGATES].convert(&sunlight_propagates);
-	packet[CONTENTFEATURES_WALKABLE].convert(&walkable);
-	packet[CONTENTFEATURES_POINTABLE].convert(&pointable);
-	packet[CONTENTFEATURES_DIGGABLE].convert(&diggable);
-	packet[CONTENTFEATURES_CLIMBABLE].convert(&climbable);
-	packet[CONTENTFEATURES_BUILDABLE_TO].convert(&buildable_to);
+	packet[CONTENTFEATURES_IS_GROUND_CONTENT].convert(is_ground_content);
+	packet[CONTENTFEATURES_LIGHT_PROPAGATES].convert(light_propagates);
+	packet[CONTENTFEATURES_SUNLIGHT_PROPAGATES].convert(sunlight_propagates);
+	packet[CONTENTFEATURES_WALKABLE].convert(walkable);
+	packet[CONTENTFEATURES_POINTABLE].convert(pointable);
+	packet[CONTENTFEATURES_DIGGABLE].convert(diggable);
+	packet[CONTENTFEATURES_CLIMBABLE].convert(climbable);
+	packet[CONTENTFEATURES_BUILDABLE_TO].convert(buildable_to);
 
 	int liquid_type_tmp;
-	packet[CONTENTFEATURES_LIQUID_TYPE].convert(&liquid_type_tmp);
+	packet[CONTENTFEATURES_LIQUID_TYPE].convert(liquid_type_tmp);
 	liquid_type = (LiquidType)liquid_type_tmp;
 
-	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING].convert(&liquid_alternative_flowing);
-	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE].convert(&liquid_alternative_source);
-	packet[CONTENTFEATURES_LIQUID_VISCOSITY].convert(&liquid_viscosity);
-	packet[CONTENTFEATURES_LIGHT_SOURCE].convert(&light_source);
-	packet[CONTENTFEATURES_DAMAGE_PER_SECOND].convert(&damage_per_second);
-	packet[CONTENTFEATURES_NODE_BOX].convert(&node_box);
-	packet[CONTENTFEATURES_SELECTION_BOX].convert(&selection_box);
-	packet[CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE].convert(&legacy_facedir_simple);
-	packet[CONTENTFEATURES_LEGACY_WALLMOUNTED].convert(&legacy_wallmounted);
-	packet[CONTENTFEATURES_SOUND_FOOTSTEP].convert(&sound_footstep);
-	packet[CONTENTFEATURES_SOUND_DIG].convert(&sound_dig);
-	packet[CONTENTFEATURES_SOUND_DUG].convert(&sound_dug);
-	packet[CONTENTFEATURES_RIGHTCLICKABLE].convert(&rightclickable);
-	packet[CONTENTFEATURES_DROWNING].convert(&drowning);
-	packet[CONTENTFEATURES_LEVELED].convert(&leveled);
-	packet[CONTENTFEATURES_WAVING].convert(&waving);
-	packet[CONTENTFEATURES_MESH].convert(&mesh);
-	packet[CONTENTFEATURES_COLLISION_BOX].convert(&collision_box);
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_FLOWING].convert(liquid_alternative_flowing);
+	packet[CONTENTFEATURES_LIQUID_ALTERNATIVE_SOURCE].convert(liquid_alternative_source);
+	packet[CONTENTFEATURES_LIQUID_VISCOSITY].convert(liquid_viscosity);
+	packet[CONTENTFEATURES_LIGHT_SOURCE].convert(light_source);
+	packet[CONTENTFEATURES_DAMAGE_PER_SECOND].convert(damage_per_second);
+	packet[CONTENTFEATURES_NODE_BOX].convert(node_box);
+	packet[CONTENTFEATURES_SELECTION_BOX].convert(selection_box);
+	packet[CONTENTFEATURES_LEGACY_FACEDIR_SIMPLE].convert(legacy_facedir_simple);
+	packet[CONTENTFEATURES_LEGACY_WALLMOUNTED].convert(legacy_wallmounted);
+	packet[CONTENTFEATURES_SOUND_FOOTSTEP].convert(sound_footstep);
+	packet[CONTENTFEATURES_SOUND_DIG].convert(sound_dig);
+	packet[CONTENTFEATURES_SOUND_DUG].convert(sound_dug);
+	packet[CONTENTFEATURES_RIGHTCLICKABLE].convert(rightclickable);
+	packet[CONTENTFEATURES_DROWNING].convert(drowning);
+	packet[CONTENTFEATURES_LEVELED].convert(leveled);
+	packet[CONTENTFEATURES_WAVING].convert(waving);
+	packet[CONTENTFEATURES_MESH].convert(mesh);
+	packet[CONTENTFEATURES_COLLISION_BOX].convert(collision_box);
+
+	if(packet.count(CONTENTFEATURES_CONNECT_TO_IDS))
+		packet[CONTENTFEATURES_CONNECT_TO_IDS].convert(connects_to_ids);
+	if(packet.count(CONTENTFEATURES_CONNECT_SIDES))
+		packet[CONTENTFEATURES_CONNECT_SIDES].convert(connect_sides);
+
 }
 
 /*
@@ -629,8 +749,8 @@ public:
 	inline virtual const ContentFeatures& get(const MapNode &n) const;
 	virtual bool getId(const std::string &name, content_t &result) const;
 	virtual content_t getId(const std::string &name) const;
-	virtual void getIds(const std::string &name, std::unordered_set<content_t> &result) const;
-	virtual void getIds(const std::string &name, FMBitset &result) const;
+	virtual bool getIds(const std::string &name, FMBitset &result) const;
+	virtual bool getIds(const std::string &name, std::unordered_set<content_t> &result) const;
 	virtual const ContentFeatures& get(const std::string &name) const;
 	content_t allocateId();
 	virtual content_t set(const std::string &name, const ContentFeatures &def);
@@ -652,6 +772,8 @@ public:
 	virtual bool cancelNodeResolveCallback(NodeResolver *nr);
 	virtual void runNodeResolveCallbacks();
 	virtual void resetNodeResolveState();
+	virtual void mapNodeboxConnections();
+	virtual bool nodeboxConnects(MapNode from, MapNode to, u8 connect_face);
 
 private:
 	void addNameIdMapping(content_t i, std::string name);
@@ -825,22 +947,23 @@ content_t CNodeDefManager::getId(const std::string &name) const
 }
 
 
-void CNodeDefManager::getIds(const std::string &name,
+bool CNodeDefManager::getIds(const std::string &name,
 		std::unordered_set<content_t> &result) const
 {
 	//TimeTaker t("getIds", NULL, PRECISION_MICRO);
 	if (name.substr(0,6) != "group:") {
 		content_t id = CONTENT_IGNORE;
-		if(getId(name, id))
+		bool exists = getId(name, id);
+		if (exists)
 			result.insert(id);
-		return;
+		return exists;
 	}
 	std::string group = name.substr(6);
 
 	std::map<std::string, GroupItems>::const_iterator
 		i = m_group_to_items.find(group);
 	if (i == m_group_to_items.end())
-		return;
+		return true;
 
 	const GroupItems &items = i->second;
 	for (GroupItems::const_iterator j = items.begin();
@@ -849,21 +972,23 @@ void CNodeDefManager::getIds(const std::string &name,
 			result.insert((*j).first);
 	}
 	//printf("getIds: %dus\n", t.stop());
+	return true;
 }
 
-	void CNodeDefManager::getIds(const std::string &name, FMBitset &result) const {
+	bool CNodeDefManager::getIds(const std::string &name, FMBitset &result) const {
 		if(name.substr(0,6) != "group:"){
 			content_t id = CONTENT_IGNORE;
-			if(getId(name, id))
+			bool exists = getId(name, id);
+			if (exists)
 				result.set(id, true);
-			return;
+			return exists;
 		}
 		std::string group = name.substr(6);
 
 		std::map<std::string, GroupItems>::const_iterator
 			i = m_group_to_items.find(group);
 		if (i == m_group_to_items.end())
-			return;
+			return true;
 
 		const GroupItems &items = i->second;
 		for (GroupItems::const_iterator j = items.begin();
@@ -871,6 +996,7 @@ void CNodeDefManager::getIds(const std::string &name,
 			if ((*j).second != 0)
 				result.set((*j).first, true);
 		}
+		return true;
 	}
 
 
@@ -1424,7 +1550,7 @@ void CNodeDefManager::msgpack_unpack(msgpack::object o)
 	clear();
 
 	std::map<int, ContentFeatures> unpacked_features;
-	o.convert(&unpacked_features);
+	o.convert(unpacked_features);
 
 	for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
 			it != unpacked_features.end(); ++it) {
@@ -1642,6 +1768,57 @@ void CNodeDefManager::resetNodeResolveState()
 	m_pending_resolve_callbacks.clear();
 }
 
+void CNodeDefManager::mapNodeboxConnections()
+{
+	for (u32 i = 0; i < m_content_features.size(); i++) {
+		ContentFeatures *f = &m_content_features[i];
+		if ((f->drawtype != NDT_NODEBOX) || (f->node_box.type != NODEBOX_CONNECTED))
+			continue;
+		for (std::vector<std::string>::iterator it = f->connects_to.begin();
+				it != f->connects_to.end(); ++it) {
+			getIds(*it, f->connects_to_ids);
+		}
+	}
+}
+
+bool CNodeDefManager::nodeboxConnects(MapNode from, MapNode to, u8 connect_face)
+{
+	const ContentFeatures &f1 = get(from);
+
+	if ((f1.drawtype != NDT_NODEBOX) || (f1.node_box.type != NODEBOX_CONNECTED))
+		return false;
+
+	// lookup target in connected set
+	if (f1.connects_to_ids.find(to.param0) == f1.connects_to_ids.end())
+		return false;
+
+	const ContentFeatures &f2 = get(to);
+
+	if ((f2.drawtype == NDT_NODEBOX) && (f2.node_box.type == NODEBOX_CONNECTED))
+		// ignores actually looking if back connection exists
+		return (f2.connects_to_ids.find(from.param0) != f2.connects_to_ids.end());
+
+	// does to node declare usable faces?
+	if (f2.connect_sides > 0) {
+		if ((f2.param_type_2 == CPT2_FACEDIR) && (connect_face >= 4)) {
+			static const u8 rot[33 * 4] = {
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				4, 32, 16, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 4 - back
+				8, 4, 32, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8 - right
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				16, 8, 4, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 16 - front
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				32, 16, 8, 4 // 32 - left
+			};
+			return (f2.connect_sides & rot[(connect_face * 4) + to.param2]);
+		}
+		return (f2.connect_sides & connect_face);
+	}
+	// the target is just a regular node, so connect no matter back connection
+	return true;
+}
 
 ////
 //// NodeResolver

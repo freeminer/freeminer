@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "log.h"
 #include "itemdef.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "content_mapnode.h" // For loading legacy MaterialItems
 #include "nameidmapping.h" // For loading legacy MaterialItems
 #include "util/serialize.h"
@@ -221,7 +221,7 @@ void ItemStack::deSerialize(std::istream &is, IItemDefManager *itemdef)
 		Strfnd fnd(all);
 		fnd.next("\"");
 		// If didn't skip to end, we have ""s
-		if(!fnd.atend()){
+		if(!fnd.at_end()){
 			name = fnd.next("\"");
 		} else { // No luck, just read a word then
 			fnd.start(all);
@@ -249,7 +249,7 @@ void ItemStack::deSerialize(std::istream &is, IItemDefManager *itemdef)
 		Strfnd fnd(all);
 		fnd.next("\"");
 		// If didn't skip to end, we have ""s
-		if(!fnd.atend()){
+		if(!fnd.at_end()){
 			name = fnd.next("\"");
 		} else { // No luck, just read a word then
 			fnd.start(all);

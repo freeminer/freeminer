@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define GUICHATCONSOLE_HEADER
 
 #include "irrlichttypes_extrabloated.h"
+#include "modalMenu.h"
 #include "chat.h"
 #include "config.h"
 
@@ -38,13 +39,14 @@ public:
 			gui::IGUIElement* parent,
 			s32 id,
 			ChatBackend* backend,
-			Client* client);
+			Client* client,
+			IMenuManager* menumgr);
 	virtual ~GUIChatConsole();
 
 	// Open the console (height = desired fraction of screen size)
 	// This doesn't open immediately but initiates an animation.
 	// You should call isOpenInhibited() before this.
-	void openConsole(float height, bool close_on_return = false);
+	void openConsole(float height);
 
 	bool isOpen() const;
 
@@ -56,10 +58,15 @@ public:
 	void closeConsole();
 	// Close the console immediately, without animation.
 	void closeConsoleAtOnce();
+	// Set whether to close the console after the user presses enter.
+	void setCloseOnEnter(bool close) { m_close_on_enter = close; }
 
 	// Return the desired height (fraction of screen size)
 	// Zero if the console is closed or getting closed
 	f32 getDesiredHeight() const;
+
+	// Replace actual line when adding the actual to the history (if there is any)
+	void replaceAndAddToHistory(std::wstring line);
 
 	// Change how the cursor looks
 	void setCursor(
@@ -79,6 +86,8 @@ public:
 
 	virtual bool OnEvent(const SEvent& event);
 
+	virtual void setVisible(bool visible);
+
 private:
 	void reformatConsole();
 	void recalculateConsolePosition();
@@ -90,11 +99,9 @@ private:
 	void drawPrompt();
 
 private:
-	// pointer to the chat backend
 	ChatBackend* m_chat_backend;
-
-	// pointer to the client
 	Client* m_client;
+	IMenuManager* m_menumgr;
 
 	// current screen size
 	v2u32 m_screensize;
@@ -104,8 +111,8 @@ private:
 
 	// should the console be opened or closed?
 	bool m_open;
-	// close console on return or not
-	bool m_close_on_return;
+	// should it close after you press enter?
+	bool m_close_on_enter;
 	// current console height [pixels]
 	s32 m_height;
 	// desired height [pixels]

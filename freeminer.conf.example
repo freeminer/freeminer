@@ -242,6 +242,13 @@
 #    type: int min: 1 max: 65535
 # remote_port = 30000
 
+#    Whether to support older servers before protocol version 25.
+#    Enable if you want to connect to 0.4.12 servers and before.
+#    Servers starting with 0.4.13 will work, 0.4.12-dev servers may work.
+#    Disabling this option will protect your password better.
+#    type: bool
+# send_pre_v25_init = true
+
 #    Save the map received by the client on disk.
 #    type: bool
 # enable_local_map_saving = false
@@ -653,6 +660,16 @@
 #    type: path
 # screenshot_path =
 
+#    Format of screenshots.
+#    type: enum values: png, jpg, bmp, pcx, ppm, tga
+# screenshot_format = png
+
+#    Screenshot quality. Only used for JPEG format.
+#    1 means worst quality; 100 means best quality.
+#    Use 0 for default quality.
+#    type: int min: 0 max: 100
+# screenshot_quality = 0
+
 ### Advanced
 
 #    Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k screens.
@@ -963,6 +980,18 @@
 #    type: float
 # dedicated_server_step = 0.1
 
+#    Length of time between Active Block Management execution cycles
+#    type: float
+# active_block_mgmt_interval = 2.0
+
+#    Length of time between ABM execution cycles
+#    type: float
+# abm_interval = 1.0
+
+#    Length of time between NodeTimer execution cycles
+#    type: float
+# nodetimer_interval = 1.0
+
 #    If enabled, invalid world data won't cause the server to shut down.
 #    Only enable this if you know what you are doing.
 #    type: bool
@@ -986,7 +1015,7 @@
 
 #    Name of map generator to be used when creating a new world.
 #    Creating a world in the main menu will override this.
-#    type: enum values: v5, v6, indev, v7, math, fractal, flat, singlenode
+#    type: enum values: indev, v7, valleys, v5, math, fractal, flat, singlenode, v6
 # mg_name = indev
 
 #    Water surface level of the world.
@@ -1009,8 +1038,10 @@
 #    Global map generation attributes.
 #    In Mapgen v6 the 'decorations' flag controls all decorations except trees
 #    and junglegrass, in all other mapgens this flag controls all decorations.
+#    The default flags set in the engine are: caves, light, decorations
+#    The flags string modifies the engine defaults.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with "no" are used to explicitly disable them.
+#    Flags starting with 'no' are used to explicitly disable them.
 #    type: flags possible values: caves, dungeons, light, decorations, nocaves, nodungeons, nolight, nodecorations
 # mg_flags = caves,dungeons,light,decorations
 
@@ -1077,9 +1108,11 @@
 #### Mapgen v6
 
 #    Map generation attributes specific to Mapgen v6.
-#    When snowbiomes are enabled jungles are enabled and the jungles flag is ignored.
+#    When snowbiomes are enabled jungles are automatically enabled, the 'jungles' flag is ignored.
+#    The default flags set in the engine are: biomeblend, mudflow
+#    The flags string modifies the engine defaults.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with "no" are used to explicitly disable them.
+#    Flags starting with 'no' are used to explicitly disable them.
 #    type: flags possible values: jungles, biomeblend, mudflow, snowbiomes, flat, trees, nojungles, nobiomeblend, nomudflow, nosnowbiomes, noflat, notrees
 # mgv6_spflags = jungles,biomeblend,mudflow,snowbiomes,trees
 
@@ -1127,9 +1160,11 @@
 #### Mapgen v7
 
 #    Map generation attributes specific to Mapgen v7.
-#    'ridges' are the rivers.
+#    The 'ridges' flag controls the rivers.
+#    The default flags set in the engine are: mountains, ridges
+#    The flags string modifies the engine defaults.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with "no" are used to explicitly disable them.
+#    Flags starting with 'no' are used to explicitly disable them.
 #    type: flags possible values: mountains, ridges, nomountains, noridges
 # mgv7_spflags = mountains,ridges
 
@@ -1169,9 +1204,11 @@
 #### Mapgen flat
 
 #    Map generation attributes specific to Mapgen flat.
-#    Occasional lakes and hills added to the flat world.
+#    Occasional lakes and hills can be added to the flat world.
+#    The default flags set in the engine are: none
+#    The flags string modifies the engine defaults.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with "no" are used to explicitly disable them.
+#    Flags starting with 'no' are used to explicitly disable them.
 #    type: flags possible values: lakes, hills, , nolakes, nohills
 # mgflat_spflags =
 
@@ -1303,10 +1340,13 @@
 ##### General
 
 #    Map generation attributes specific to Mapgen Valleys.
+#    'altitude_chill' makes higher elevations colder, which may cause biome issues.
+#    'humid_rivers' modifies the humidity around rivers and in areas where water would tend to pool,
+#    it may interfere with delicately adjusted biomes.
+#    The default flags set in the engine are: altitude_chill, humid_rivers
+#    The flags string modifies the engine defaults.
 #    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with "no" are used to explicitly disable them.
-#    "altitude_chill" makes higher elevations colder, which may cause biome issues.
-#    "humid_rivers" modifies the humidity around rivers and in areas where water would tend to pool. It may interfere with delicately adjusted biomes.
+#    Flags starting with 'no' are used to explicitly disable them.
 #    type: flags possible values: altitude_chill, noaltitude_chill, humid_rivers, nohumid_rivers
 # mg_valleys_spflags = altitude_chill,humid_rivers
 
@@ -1476,7 +1516,17 @@
 
 ## Client
 
-#    Start optimizing far blocks, in blocks. good values 2 - 5 . 0 = disable
+#    Minimum wanted FPS.
+#    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
+#    type: int
+# wanted_fps = 30
+
+#    The allowed adjustment range for the automatic rendering range adjustment.
+#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
+#    type: int
+# viewing_range_max = 10000
+
+#    Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
 #    type: int
 # farmesh = 0
 
@@ -1537,6 +1587,10 @@
 # android_keyboard = 0
 
 ## Server
+
+#    Lan udp announce
+#    type: bool
+# serverlist_lan = true
 
 #    Save auth data to leveldb kv storage
 #    type: bool

@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "config.h"
 
+
 NetworkPacket::NetworkPacket(u16 command, u32 datasize, u16 peer_id):
 m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(peer_id)
 {
@@ -39,6 +40,11 @@ m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(0)
 NetworkPacket::~NetworkPacket()
 {
 	m_data.clear();
+
+	delete packet;
+	packet = nullptr;
+	delete packet_unpacked;
+	packet_unpacked = nullptr;
 }
 
 void NetworkPacket::checkReadOffset(u32 from_offset, u32 field_size)
@@ -530,4 +536,51 @@ Buffer<u8> NetworkPacket::oldForgePacket()
 	if (datas != NULL)
 		memcpy(&sb[2], datas, m_datasize);
 	return sb;
+}
+
+//freeminer:
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg) {
+	try {
+		//msgpack::unpacked msg;
+		msgpack::unpack(msg, data, datasize);
+		msgpack::object obj = msg->get();
+		*packet = obj.as<MsgpackPacket>();
+
+		*command = (*packet)[MSGPACK_COMMAND].as<int>();
+	} catch (msgpack::type_error e) {
+		verbosestream << "parse_msgpack_packet: msgpack::type_error : " << e.what() << " datasize=" << datasize << std::endl;
+		return false;
+	} catch (msgpack::unpack_error e) {
+		verbosestream << "parse_msgpack_packet: msgpack::unpack_error : " << e.what() << " datasize=" << datasize << std::endl;
+		//verbosestream<<"bad data:["<< std::string(data, datasize) <<"]"<<std::endl;
+		return false;
+	} catch (std::exception &e) {
+		errorstream << "parse_msgpack_packet: exception: " << e.what() << " datasize=" << datasize << std::endl;
+		return false;
+	} catch (...) {
+		errorstream << "parse_msgpack_packet: Ooops..." << std::endl;
+		return false;
+	}
+
+	return true;
+}
+
+int NetworkPacket::packet_unpack() {
+	auto datasize = getSize();
+
+	if(datasize < 2)
+		return 0;
+
+	int command;
+	if (!packet)
+		packet = new MsgpackPacketSafe;
+	if (!packet_unpacked)
+		packet_unpacked = new msgpack::unpacked;
+	if (!parse_msgpack_packet(getString(0), datasize, packet, &command, packet_unpacked)) {
+		//verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
+		return 0;
+	}
+	m_command = command;
+	return 1;
+
 }

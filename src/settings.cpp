@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -36,6 +36,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 static Settings main_settings;
 Settings *g_settings = &main_settings;
 std::string g_settings_path;
+
+Json::Reader json_reader;
+Json::StyledWriter json_writer;
+
 
 Settings::~Settings()
 {
@@ -1008,6 +1012,9 @@ void Settings::clearNoLock()
 		delete it->second.group;
 	m_settings.clear();
 
+	if (m_json.isObject() || m_json.isArray())
+		m_json.clear();
+
 	clearDefaultsNoLock();
 }
 
@@ -1017,7 +1024,6 @@ void Settings::clearDefaultsNoLock()
 	for (it = m_defaults.begin(); it != m_defaults.end(); ++it)
 		delete it->second.group;
 	m_defaults.clear();
-	m_json.clear();
 }
 
 
@@ -1062,20 +1068,18 @@ void Settings::doCallbacks(const std::string name)
 Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
 	{
 		MutexAutoLock lock(m_mutex);
-		if (!m_json[name].empty())
+		if (!m_json[name].empty() || m_json[name].isObject() || m_json[name].isArray())
 			return m_json.get(name, def);
 	}
 
 	//todo: remove later:
 
 	Json::Value root;
-	Settings * group = new Settings;
+	Settings * group = nullptr;
 	if (getGroupNoEx(name, group)) {
 		group->toJson(root);
-		delete group;
 		return root;
 	}
-	delete group;
 
 	std::string value;
 	getNoEx(name, value);
@@ -1133,7 +1137,7 @@ bool Settings::fromJson(const Json::Value &json) {
 			//setJson(key, json[key]);
 		} else {
 			set(key, json[key].asString());
-			m_json.removeMember(key); // todo: remove
+			m_json.removeMember(key); // todo: remove. json comments drops here
 		}
 	}
 	return true;
@@ -1177,7 +1181,7 @@ void Settings::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
 
 void Settings::msgpack_unpack(msgpack::object o) {
 	std::string data;
-	o.convert(&data);
+	o.convert(data);
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
 	fromJson(m_json);

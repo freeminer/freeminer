@@ -124,26 +124,6 @@ void Server::SendNodeDef(u16 peer_id,
 	m_clients.send(peer_id, 0, buffer, true);
 }
 
-/* not merged to mt
-void Server::SendAnimations(u16 peer_id)
-{
-	DSTACK(FUNCTION_NAME);
-
-	MSGPACK_PACKET_INIT(TOCLIENT_ANIMATIONS, 8);
-	PACK(TOCLIENT_ANIMATIONS_DEFAULT_START, g_settings->getFloat("animation_default_start"));
-	PACK(TOCLIENT_ANIMATIONS_DEFAULT_STOP, g_settings->getFloat("animation_default_stop"));
-	PACK(TOCLIENT_ANIMATIONS_WALK_START, g_settings->getFloat("animation_walk_start"));
-	PACK(TOCLIENT_ANIMATIONS_WALK_STOP, g_settings->getFloat("animation_walk_stop"));
-	PACK(TOCLIENT_ANIMATIONS_DIG_START, g_settings->getFloat("animation_dig_start"));
-	PACK(TOCLIENT_ANIMATIONS_DIG_STOP, g_settings->getFloat("animation_dig_stop"));
-	PACK(TOCLIENT_ANIMATIONS_WD_START, g_settings->getFloat("animation_walk_start"));
-	PACK(TOCLIENT_ANIMATIONS_WD_STOP, g_settings->getFloat("animation_walk_stop"));
-
-	// Send as reliable
-	m_clients.send(peer_id, 0, buffer, true);
-}
-*/
-
 /*
 	Non-static send methods
 */

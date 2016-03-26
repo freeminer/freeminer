@@ -62,6 +62,7 @@ void main(void)
 	disp = (smoothTriangleWave(animationTimer * 31.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 29.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 13.0 + tOffset)) - 0.9;
+	disp /= 10/BS;
 #endif
 
 

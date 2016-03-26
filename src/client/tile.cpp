@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh.h"
 #include "log.h"
 #include "gamedef.h"
-#include "strfnd.h"
+#include "util/strfnd.h"
 #include "util/string.h" // for parseColorString()
 #include "imagefilters.h"
 #include "guiscalingfilter.h"
@@ -754,7 +754,11 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 		return nullptr;
 
 #ifdef __ANDROID__
+	porting::irr_device_wait_egl(m_device);
+
 	const GLubyte* renderstr = glGetString(GL_RENDERER);
+	if (!renderstr)
+		return nullptr;
 	std::string renderer((char*) renderstr);
 
 	// use no render to texture hack
@@ -1084,7 +1088,13 @@ video::IImage * Align2Npot2(video::IImage * image,
 
 	core::dimension2d<u32> dim = image->getDimension();
 
-	std::string extensions = (char*) glGetString(GL_EXTENSIONS);
+	porting::irr_device_wait_egl();
+
+	auto ext = (char*) glGetString(GL_EXTENSIONS);
+	if (!ext)
+		return image;
+
+	std::string extensions = ext;
 	if (extensions.find("GL_OES_texture_npot") != std::string::npos) {
 		return image;
 	}
@@ -1265,7 +1275,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 				baseimg = driver->createImage(video::ECF_A8R8G8B8, dim);
 				baseimg->fill(video::SColor(0,0,0,0));
 			}
-			while (sf.atend() == false) {
+			while (sf.at_end() == false) {
 				u32 x = stoi(sf.next(","));
 				u32 y = stoi(sf.next("="));
 				std::string filename = sf.next(":");

@@ -368,7 +368,7 @@ public:
 	void handleCommand_HP(NetworkPacket* pkt);
 	void handleCommand_Breath(NetworkPacket* pkt);
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
-	void handleCommand_PlayerItem(NetworkPacket* pkt);
+	void handleCommand_PunchPlayer(NetworkPacket* pkt);
 	void handleCommand_DeathScreen(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
@@ -687,6 +687,7 @@ private:
 	bool m_simple_singleplayer_mode;
 	float m_timelapse_timer;
 public:
+	bool use_weather = false;
 	void sendDrawControl();
 private:
 

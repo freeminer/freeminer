@@ -193,7 +193,7 @@ public:
 	bool isValidPosition(v3s16 p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3s16 p, MapNode & n);
+	void setNode(v3s16 p, MapNode & n, bool no_light_check = 0);
 
 	// Returns a CONTENT_IGNORE node if not found
 	MapNode getNodeTry(v3s16 p);
@@ -359,10 +359,11 @@ public:
 	MapBlock * createBlankBlock(v3s16 & p);
 	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
-	std::map<MapBlockP, int> * m_blocks_delete;
-	std::map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
+	std::unordered_map<MapBlockP, int> * m_blocks_delete;
+	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	unsigned int m_blocks_delete_time = 0;
 	//void getBlocks(std::list<MapBlock*> &dest);
+	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
