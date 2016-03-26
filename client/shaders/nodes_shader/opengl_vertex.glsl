@@ -19,7 +19,7 @@ varying float area_enable_parallax;
 varying float disp;
 
 const float e = 2.718281828459;
-const float BS = 10.0;
+const float BS = 1.0;
 
 
 float smoothCurve(float x)
@@ -62,6 +62,7 @@ void main(void)
 	disp = (smoothTriangleWave(animationTimer * 31.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 29.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 13.0 + tOffset)) - 0.9;
+	disp /= 10/BS;
 #endif
 
 

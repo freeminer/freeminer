@@ -672,9 +672,9 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 	{
 		// Jumping and falling
 		if(superspeed || (fast_move && control.aux1))
-			incH = movement_acceleration_fast * BS * dtime;
+			incH = movement_acceleration_fast * BS_COMPAT * dtime;
 		else
-			incH = movement_acceleration_air * BS * dtime;
+			incH = movement_acceleration_air * BS_COMPAT * dtime;
 		incV = 0; // No vertical acceleration in air
 
 		// better air control when falling fast
@@ -694,9 +694,9 @@ void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
 		}
 	}
 	else if (superspeed || (is_climbing && fast_climb) || ((in_liquid || in_liquid_stable) && fast_climb))
-		incH = incV = movement_acceleration_fast * BS * dtime;
+		incH = incV = movement_acceleration_fast * BS_COMPAT * dtime;
 	else
-		incH = incV = movement_acceleration_default * BS * dtime;
+		incH = incV = movement_acceleration_default * BS_COMPAT * dtime;
 
 	// Accelerate to target speed with maximum increment
 	INodeDefManager *nodemgr = m_gamedef->ndef();

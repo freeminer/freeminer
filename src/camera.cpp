@@ -756,7 +756,7 @@ void Camera::drawWieldedTool(irr::core::matrix4* translation)
 	scene::ICameraSceneNode* cam = m_wieldmgr->getActiveCamera();
 	cam->setAspectRatio(m_cameranode->getAspectRatio());
 	cam->setFOV(72.0*M_PI/180.0);
-	cam->setNearValue(10);
+	cam->setNearValue(0.01);
 	cam->setFarValue(1000);
 	if (translation != NULL)
 	{

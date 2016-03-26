@@ -21,7 +21,7 @@ varying vec3 tsLightVec;
 bool normalTexturePresent = false;
 
 const float e = 2.718281828459;
-const float BS = 10.0;
+const float BS = 1.0;
 
 #ifdef ENABLE_TONE_MAPPING
 

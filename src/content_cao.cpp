@@ -940,7 +940,7 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr,
 			m_animated_meshnode->animateJoints(); // Needed for some animations
 			m_animated_meshnode->setScale(v3f(m_prop.visual_size.X,
 					m_prop.visual_size.Y,
-					m_prop.visual_size.X));
+					m_prop.visual_size.X) / BS_COMPAT);
 			u8 li = m_last_light;
 			setMeshColor(m_animated_meshnode->getMesh(), video::SColor(255,li,li,li));
 
@@ -969,9 +969,9 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr,
 					smgr->getRootSceneNode(), smgr, -1);
 			m_wield_meshnode->setItem(item, m_gamedef);
 
-			m_wield_meshnode->setScale(v3f(m_prop.visual_size.X/2,
-					m_prop.visual_size.Y/2,
-					m_prop.visual_size.X/2));
+			m_wield_meshnode->setScale(v3f(m_prop.visual_size.X/(2 * BS_COMPAT),
+					m_prop.visual_size.Y/(2 * BS_COMPAT),
+					m_prop.visual_size.X/(2 * BS_COMPAT)));
 			u8 li = m_last_light;
 			m_wield_meshnode->setColor(video::SColor(255,li,li,li));
 		}
