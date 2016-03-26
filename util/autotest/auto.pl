@@ -28,9 +28,6 @@ $0 server_gdb
 # run server without debug in gdb
 $0 server_gdb_nd
 
-# timelapse video
-$0 timelapse
-
 $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --options_add=headless
 
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
@@ -53,6 +50,13 @@ $0 --options_add=world_water
 # stress test of falling sand
 $0 --options_add=world_sand
 
+
+# timelapse video
+$0 timelapse
+
+#fly
+$0 --options_add=server_optimize,far fly
+$0 -farmesh=1 --options_add=mg_math_tglag,server_optimize,far -static_spawnpoint=10000,30030,-22700 fly
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -182,13 +186,43 @@ our $options = {
         mg_params => {"layers" => [{"name" => "default:sand"}]},
         mg_math => {"generator" => "mengersponge"},
     },
+    mg_math_tglag => {
+        -world            => $script_path . 'world_math_tglad',
+        mg_name           => 'math',
+        mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
+        static_spawnpoint => '30010,30010,-30010',
+        mg_float_islands  => 0,
+        mg_flags          => '',                                                                                          # "trees",
+    },
+
+    far => {
+        max_block_generate_distance => 50,
+        max_block_send_distance     => 50,
+    },
+    server_optimize => {
+        active_block_range         => 1,
+        weather                    => 0,
+        abm_interval               => 20,
+        nodetimer_interval         => 20,
+        active_block_mgmt_interval => 20,
+        server_occlusion           => 0,
+    },
+
     fly_forward => {
-        random_input => 0, static_spawnpoint => '0,50,0', creative_mode=>1, free_move=>1, enable_damage=>0, continuous_forward => 1,
+        crosshair_alpha    => 0,
+        time_speed         => 0,
+        enable_minimap     => 0,
+        random_input       => 0,
+        static_spawnpoint  => '0,50,0',
+        creative_mode      => 1,
+        free_move          => 1,
+        enable_damage      => 0,
+        continuous_forward => 1,
     },
     fast => {
-       fast_move=>1, movement_speed_fast => 100,
+        fast_move => 1, movement_speed_fast => 30,
     },
-    bench1 => { fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance=>100, max_block_send_distance=>100, },
+    bench1 => {fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance => 100, max_block_send_distance => 100,},
 };
 
 map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
@@ -527,9 +561,10 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
-    timelapse_play => [{-options_add => 'timelapse',}, \'play', 'timelapse_video'],                  #'
-    timelapse_fly => [{-options_add => 'timelapse,fly_forward', -options_bot=>'',}, \'bot', 'timelapse_video'],                  #'
-    bench1 => [{-options_add => 'bench1,fly_forward,fast',}, \'bot'], #'
+    timelapse_play => [{-options_int => 'timelapse',}, \'play', 'timelapse_video'],             #'
+    fly => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                          #'
+    timelapse_fly => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
+    bench1 => [{-options_int => 'bench1,fly_forward,fast',}, \'bot'],                                                #'
     up => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
@@ -565,7 +600,7 @@ sub array (@) {
 sub json (@) {
     local *Data::Dumper::qquote = sub {
         $_[0] =~ s/\\/\\\\/g, s/"/\\"/g for $_[0];
-        return ('"' . $_[0] . '"');
+        return $_[0] + 0 eq $_[0] ? $_[0] : '"' . $_[0] . '"';
     };
     return \(Data::Dumper->new(\@_)->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump());
 }
@@ -576,7 +611,10 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
 
-    $m ||= ['default', $config->{options_display}, $config->{options_bot}, (split /[,;]+/, $config->{options_add}), 'opt'];
+    $m ||= [
+        'default', $config->{options_display}, $config->{options_bot},
+        (map { split /[,;]+/ } $config->{options_int}, $config->{options_add},), 'opt'
+    ];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
         for my $k (keys %$rm) {
@@ -639,10 +677,10 @@ sub commands_run(@) {
         return command_run $c, @_;
     } elsif (ref $name) {
         return command_run $name, @_;
-    #} elsif ($options->{$name}) {
-    #    $config->{options_add} .= ',' . $name;
-    #    #command_run({-options_add => $name});
-    #    return 0;
+        #} elsif ($options->{$name}) {
+        #    $config->{options_add} .= ',' . $name;
+        #    #command_run({-options_add => $name});
+        #    return 0;
     } else {
         say 'msg ', $name;
         return 0;
