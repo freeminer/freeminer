@@ -16,8 +16,6 @@ function string.number_to_si(value, precision)
 	return math.ceil(value)
 end
 
--- returns formspec with table of stats
-function core.stat_formspec(name)
 	local stat_table = {
 		chat = "Messages",
 		craft = "Crafted",
@@ -31,6 +29,9 @@ function core.stat_formspec(name)
 		punch = "Punches",
 		use = "Uses",
 	}
+
+-- returns formspec with table of stats
+function core.stat_formspec(name)
 
 	local formspec
 	local y = -.1
@@ -73,3 +74,16 @@ function core.stat_formspec(name)
 	end
 	return formspec
 end
+
+
+core.register_on_leaveplayer(function(player)
+	local name = player:get_player_name()
+	local log_to = "info"
+	if core.is_singleplayer() then log_to = "action" end
+	for key, eng_name in pairs(stat_table) do
+		local value = core.stat_get("player|"..key.."|"..name)
+		if value > 1 then
+			core.log(log_to, "leave stat: " .. name .. " : " .. key .. " = " .. value)
+		end
+	end
+end)
