@@ -100,6 +100,8 @@ ClientMap::ClientMap(
 
 ClientMap::~ClientMap()
 {
+	SceneManager->getVideoDriver()->removeAllHardwareBuffers();
+
 	/*MutexAutoLock lock(mesh_mutex);
 
 	if(mesh != NULL)
@@ -107,6 +109,7 @@ ClientMap::~ClientMap()
 		mesh->drop();
 		mesh = NULL;
 	}*/
+
 }
 
 #if WTF

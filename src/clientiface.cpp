@@ -444,7 +444,7 @@ int RemoteClient::GetNextBlocks (
 			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
 #endif
 			//VERY BAD COPYPASTE FROM clientmap.cpp!
-			if( d >= 1 &&
+			if( can_skip &&
 				occlusion_culling_enabled &&
 				isOccluded(&env->getMap(), spn, cpn + v3POS(0,0,0),
 					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
@@ -479,11 +479,11 @@ int RemoteClient::GetNextBlocks (
 				if (block->getLightingExpired()) {
 					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
 					env->getServerMap().lighting_modified_add(p, d);
-					if (block_sent && d > 1)
+					if (block_sent && can_skip)
 						continue;
 				}
 
-				if (block->lighting_broken > 0 && (block_sent || d > 0))
+				if (block->lighting_broken > 0 && (block_sent || can_skip))
 					continue;
 
 				// Block is valid if lighting is up-to-date and data exists

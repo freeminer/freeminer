@@ -57,6 +57,7 @@ $0 timelapse
 #fly
 $0 --options_add=server_optimize,far fly
 $0 -farmesh=1 --options_add=mg_math_tglag,server_optimize,far -static_spawnpoint=10000,30030,-22700 fly
+$0 --options_bot=fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -141,7 +142,7 @@ our $options = {
         respawn_auto             => 1,
         disable_anticheat        => 1,
         reconnects               => 10000,
-        debug_log_level          => 4,
+        debug_log_level          => 'verbose',
         enable_mapgen_debug_info => 1,
         profiler_print_interval  => 100000,
         default_game             => $config->{gameid},
@@ -191,6 +192,14 @@ our $options = {
         mg_name           => 'math',
         mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
         static_spawnpoint => '30010,30010,-30010',
+        mg_float_islands  => 0,
+        mg_flags          => '',                                                                                          # "trees",
+    },
+    fall1 => {
+        -world            => $script_path . 'world_fall1',
+        mg_name           => 'math',
+        mg_math           => {"generator" => "menger_sponge"},
+        static_spawnpoint => '0,20020,0',
         mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
