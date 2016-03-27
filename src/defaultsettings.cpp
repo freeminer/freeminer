@@ -51,8 +51,24 @@ const bool win32 =
 #endif
     ;
 
+const bool win64 =
+#if defined(_WIN64)
+    true
+#else
+    false
+#endif
+    ;
+
 const bool android =
 #if defined(__ANDROID__)
+    true
+#else
+    false
+#endif
+    ;
+
+const bool arm =
+#if defined(__arm__)
     true
 #else
     false
@@ -159,7 +175,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_wanted", android ? "100" :"500");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
-	settings->setDefault("enable_vbo", win32 ? "false" : "true");
+	//settings->setDefault("enable_vbo", win32 ? "false" : "true");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
@@ -181,7 +197,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_width", "300");
 	settings->setDefault("weather_humidity_days", "2");
 
-	settings->setDefault("unload_unused_meshes_timeout", "120");
 	settings->setDefault("respawn_auto", "false");
 	settings->setDefault("autojump", android ? "1" : "0");
 	settings->setDefault("hotbar_cycling", "false");
@@ -221,6 +236,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("server_map_save_interval", "300"); // "5.3"
 	settings->setDefault("sqlite_synchronous", "1"); // "2"
 	settings->setDefault("save_generated_block", "true");
+	settings->setDefault("block_delete_time", threads && arm ? "60" : "10");
 
 #if (ENET_IPV6 || MINETEST_PROTO)
 	//settings->setDefault("enable_ipv6", "true");
@@ -254,9 +270,9 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("more_threads", "true");
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 
-	if (win32) {
-		settings->setDefault("client_unload_unused_data_timeout", "60");
-		settings->setDefault("server_unload_unused_data_timeout", "65");
+	if (!win64 && win32) {
+		settings->setDefault("client_unload_unused_data_timeout", "30");
+		settings->setDefault("server_unload_unused_data_timeout", "45");
 	}
 
 	settings->setDefault("minimap_shape_round", "false");

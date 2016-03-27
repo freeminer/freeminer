@@ -346,7 +346,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
-		m_blocks_delete_time = porting::getTimeMs() + 60000;
+		static int block_delete_time = g_settings->getS16("block_delete_time");
+		m_blocks_delete_time = porting::getTimeMs() + block_delete_time * 1000;
 	}
 
 	u32 deleted_blocks_count = 0;
@@ -422,17 +423,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 					block->m_uptime_timer_last = uptime;
 
 					block_count_all++;
-
-					/*#ifndef SERVER
-									if(block->refGet() == 0 && block->getUsageTimer() >
-											g_settings->getFloat("unload_unused_meshes_timeout"))
-									{
-										if(block->mesh){
-											delete block->mesh;
-											block->mesh = NULL;
-										}
-									}
-					#endif*/
 				}
 
 			} // block lock
