@@ -2,6 +2,7 @@
 
 # install:
 # sudo apt-get install valgrind clang
+# sudo apt-get install google-perftools libgoogle-perftools-dev
 
 our $help = qq{
 #simple task
@@ -43,6 +44,10 @@ $0 play_vtune --vtune_gui=1
 $0 bot_vtune --autoexit=60 --vtune_gui=1
 $0 bot_vtune --autoexit=60
 $0 stress_vtune
+
+# google-perftools https://github.com/gperftools/gperftools
+$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 bot_gperf
+
 
 # stress test of flowing liquid
 $0 --options_add=world_water
@@ -209,6 +214,7 @@ our $options = {
         max_block_send_distance     => 50,
     },
     server_optimize => {
+        chunksize                  => 3,
         active_block_range         => 1,
         weather                    => 0,
         abm_interval               => 20,
@@ -216,7 +222,9 @@ our $options = {
         active_block_mgmt_interval => 20,
         server_occlusion           => 0,
     },
-
+    client_optimize => {
+        viewing_range              => 15,
+    },
     fly_forward => {
         crosshair_alpha    => 0,
         time_speed         => 0,
@@ -265,6 +273,7 @@ our $commands = {
         $D{MINETEST_PROTO}     = $config->{cmake_minetest}    if defined $config->{cmake_minetest};
         $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}     if defined $config->{cmake_leveldb};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
+        $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -403,6 +412,17 @@ our $tasks = {
             0;
         }, {
             -cmake_usan => 1,
+        },
+        'prepare',
+        'cmake',
+        'make',
+    ],
+    build_gperf => [
+        sub {
+            $g->{build_name} .= '_gperf';
+            0;
+        }, {
+            -cmake_gperf => 1,
         },
         'prepare',
         'cmake',
@@ -548,6 +568,19 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         ['sleep', 10],
         'clients_run',
     ],
+
+    gperf => sub {
+        my $flags;
+        $flags .= " MALLOCSTATS=9 ";
+        $flags .= " HEAPCHECK=normal " if $config->{gperf_heapcheck};
+        $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
+        $flags .= " CPUPROFILE=$config->{logdir}/cpu.out " if $config->{gperf_cpuprofile};
+        local $config->{runner} = $flags . ' ' . $config->{runner};
+        @_ = ('debug') if !@_;
+        for (@_) { my $r = commands_run($_); return $r if $r; }
+    },
+    bot_gperf => [{-no_build_server => 1,}, 'build_gperf', ['gperf', 'run_single'], 'gperf_report'],
+    play_gperf => [{-no_build_server => 1,}, [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'gperf_report']],
 
     play_task => sub {
         return 1 if $config->{all_run};
