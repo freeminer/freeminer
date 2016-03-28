@@ -133,7 +133,6 @@ if(MSVC)
 	# Flags for C files (sqlite)
 	# /MT = Link statically with standard library stuff
 	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-
 else()
 	# Probably GCC
 	if(APPLE)

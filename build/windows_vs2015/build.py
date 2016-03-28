@@ -64,7 +64,7 @@ LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.1"
-curl = "curl-7.47.0"
+curl = "curl-7.48.0"
 openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
@@ -90,6 +90,22 @@ def main():
 	build_type = "Release"
 	if len(sys.argv) > 1 and sys.argv[1] == "debug":
 		build_type = "Debug"
+	build_arch = "x86"
+	msbuild_platform = build_arch
+
+	if len(sys.argv) > 2 and sys.argv[2] == "amd64":
+		build_arch = "amd64"
+		msbuild_platform = "x64"
+
+	msbuild_platform_zlib = "win32"
+	if build_arch == "amd64":
+		msbuild_platform_zlib = "x64"
+
+
+	cmake_add = ""
+	if build_arch == "amd64":
+		cmake_add = " -A X64 "
+
 	msbuild = which("MSBuild.exe")
 	cmake = which("cmake.exe")
 	vcbuild = which("vcbuild.exe")
@@ -115,8 +131,8 @@ def main():
 	if not os.path.exists(irrlicht):
 		print("Irrlicht not found, downloading.")
 		zip_path = "{}.zip".format(irrlicht)
-		#urllib.request.urlretrieve("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
-		urllib.request.urlretrieve("http://pkgs.fedoraproject.org/repo/pkgs/irrlicht/irrlicht-1.8.1.zip/db97cce5e92da9b053f4546c652e9bd5/irrlicht-1.8.1.zip".format(irrlicht), zip_path)
+		urllib.request.urlretrieve("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
+		#urllib.request.urlretrieve("http://pkgs.fedoraproject.org/repo/pkgs/irrlicht/irrlicht-1.8.1.zip/db97cce5e92da9b053f4546c652e9bd5/irrlicht-1.8.1.zip".format(irrlicht), zip_path)
 		extract_zip(zip_path, ".")
 		os.chdir(os.path.join(irrlicht, "source", "Irrlicht"))
 		# sorry but this breaks the build
@@ -125,7 +141,7 @@ def main():
 		#patch("Irrlicht11.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
 		if patch_toolset:
 			patch("Irrlicht11.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
-		os.system('MSBuild Irrlicht11.0.vcxproj /p:Configuration="Static lib - {}"'.format(build_type))
+		os.system('MSBuild Irrlicht11.0.vcxproj /p:Configuration="Static lib - {build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", "..", ".."))
 
 	if not os.path.exists(curl):
@@ -145,8 +161,8 @@ def main():
 		extract_tar(tar_path, ".")
 		print("building openal")
 		os.chdir(os.path.join(openal, "build"))
-		os.system("cmake .. -DFORCE_STATIC_VCRT=1 -DLIBTYPE=STATIC")
-		os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
+		os.system("cmake .. -DFORCE_STATIC_VCRT=1 -DLIBTYPE=STATIC {cmake_add}".format(cmake_add=cmake_add))
+		os.system('MSBuild ALL_BUILD.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", ".."))
 	
 	if not os.path.exists(libogg):
@@ -161,7 +177,7 @@ def main():
 			patch("libogg_static.vcxproj", '<ConfigurationType>StaticLibrary</ConfigurationType>', '<ConfigurationType>StaticLibrary</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
 
 		os.system("devenv /upgrade libogg_static.vcxproj")
-		os.system("MSBuild libogg_static.vcxproj /p:Configuration={}".format(build_type))
+		os.system('MSBuild libogg_static.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", "..", ".."))
 	
 	if not os.path.exists(libvorbis):
@@ -187,7 +203,7 @@ def main():
 			patch(os.path.join("vorbisdec", "vorbisdec_static.vcxproj"), '<ConfigurationType>Application</ConfigurationType>', '<ConfigurationType>Application</ConfigurationType><PlatformToolset>v140</PlatformToolset>')
 
 		os.system("devenv /upgrade vorbis_static.sln")
-		os.system("MSBuild vorbis_static.sln /p:Configuration={}".format(build_type))
+		os.system('MSBuild vorbis_static.sln /p:Configuration="{build_type}" /p:Platform="{msbuild_platform_zlib}"'.format(build_type=build_type, msbuild_platform_zlib=msbuild_platform_zlib))
 		os.chdir(os.path.join("..", "..", ".."))
 		
 	if not os.path.exists(zlib):
@@ -215,7 +231,7 @@ def main():
 			patch("testzlib.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
 			patch("miniunz.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
 		
-		os.system("MSBuild zlibvc.sln /p:Configuration={} /p:Platform=win32".format(build_type))
+		os.system('MSBuild zlibvc.sln /p:Configuration={build_type} /p:Platform="{msbuild_platform_zlib}"'.format(build_type=build_type, msbuild_platform_zlib=msbuild_platform_zlib))
 		os.chdir(os.path.join("..", "..", "..", ".."))
 
 	if not os.path.exists(freetype):
@@ -230,7 +246,7 @@ def main():
 			patch("freetype.vcxproj", "<PlatformToolset>v100</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
 
 		os.system("devenv /upgrade freetype.vcxproj")
-		os.system('MSBuild freetype.vcxproj /p:Configuration="{} Multithreaded"'.format(build_type))
+		os.system('MSBuild freetype.vcxproj /p:Configuration="{build_type} Multithreaded" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", "..", "..", ".."))
 	
 	if not os.path.exists(luajit):
@@ -293,7 +309,7 @@ def main():
 	#	patch("msgpack_vc8.vcproj", 'RuntimeLibrary="3"', 'RuntimeLibrary="1"')
 	#	# use newer compiler, won't link otherwise
 	#	os.system("vcupgrade msgpack_vc8.vcproj")
-	#	os.system("MSBuild msgpack_vc8.vcxproj /p:Configuration={}".format(build_type))
+	#	os.system('MSBuild msgpack_vc8.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 	#	os.chdir("..")
 
 	if not os.path.exists("leveldb.nupkg"):
@@ -324,7 +340,7 @@ def main():
 
 		#os.chdir(sqlite)
 		#os.system("cmake . -DFORCE_STATIC_VCRT=1 -DLIBTYPE=STATIC")
-		#os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
+		#os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		#os.chdir("..")
 
 	
@@ -340,6 +356,7 @@ def main():
 	if not os.path.exists("project"):
 		os.mkdir("project")
 	os.chdir("project")
+
 	cmake_string = r"""
 		-DCMAKE_BUILD_TYPE={build_type}
 		-DRUN_IN_PLACE=1
@@ -351,20 +368,20 @@ def main():
 		-DOPENAL_INCLUDE_DIR=..\deps\{openal}\include\AL\
 		-DOPENAL_LIBRARY=..\deps\{openal}\build\{build_type}\OpenAL32.lib;..\deps\{openal}\build\{build_type}\common.lib
 		-DOGG_INCLUDE_DIR=..\deps\{libogg}\include\
-		-DOGG_LIBRARY=..\deps\{libogg}\win32\VS2010\Win32\{build_type}\libogg_static.lib
+		-DOGG_LIBRARY=..\deps\{libogg}\win32\VS2010\{ogg_arch}\{build_type}\libogg_static.lib
 		-DVORBIS_INCLUDE_DIR=..\deps\{libvorbis}\include\
-		-DVORBIS_LIBRARY=..\deps\{libvorbis}\win32\VS2010\Win32\{build_type}\libvorbis_static.lib
-		-DVORBISFILE_LIBRARY=..\deps\{libvorbis}\win32\VS2010\Win32\{build_type}\libvorbisfile_static.lib
+		-DVORBIS_LIBRARY=..\deps\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbis_static.lib
+		-DVORBISFILE_LIBRARY=..\deps\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbisfile_static.lib
 		-DZLIB_INCLUDE_DIR=..\deps\{zlib}\
-		-DZLIB_LIBRARIES=..\deps\{zlib}\contrib\vstudio\vc11\x86\ZlibStat{build_type}\zlibstat.lib
+		-DZLIB_LIBRARIES=..\deps\{zlib}\contrib\vstudio\vc11\{curl_arch}\ZlibStat{build_type}\zlibstat.lib
 		-DFREETYPE_INCLUDE_DIR_freetype2=..\deps\{freetype}\include\
 		-DFREETYPE_INCLUDE_DIR_ft2build=..\deps\{freetype}\include\
-		-DFREETYPE_LIBRARY=..\deps\{freetype}\objs\vc2010\win32\{freetype_lib}
+		-DFREETYPE_LIBRARY=..\deps\{freetype}\objs\vc2010\{freetype_arch}\{freetype_lib}
 		-DLUA_LIBRARY=..\deps\{luajit}\src\lua51.lib
 		-DLUA_INCLUDE_DIR=..\deps\{luajit}\src\
 		-DENABLE_CURL=1
-		-DCURL_LIBRARY=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-winssl\lib\{curl_lib}
-		-DCURL_INCLUDE_DIR=..\deps\{curl}\builds\libcurl-vc-x86-{build_type}-static-ipv6-sspi-winssl\include
+		-DCURL_LIBRARY=..\deps\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\lib\{curl_lib}
+		-DCURL_INCLUDE_DIR=..\deps\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\include
 		-DGETTEXT_INCLUDE_DIR=C:\usr\include\
 		-DGETTEXT_LIBRARY=C:\usr\lib\intl.lib
 		-DICONV_LIBRARY=C:\usr\lib\iconv.lib
@@ -373,8 +390,13 @@ def main():
 		-DENABLE_LEVELDB=1
 		-DFORCE_LEVELDB=1
 		-DENABLE_SQLITE3=1
+		{cmake_add}
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
+		curl_arch="x86" if build_arch == "x86" else "x64",
+		vorbis_arch="Win32" if build_arch == "x86" else "x64",
+		ogg_arch="Win32" if build_arch == "x86" else "X64",
+		freetype_arch="win32" if build_arch == "x86" else "X64",
 		freetype_lib="freetype261MT.lib" if build_type != "Debug" else "freetype261MT_D.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
@@ -385,6 +407,7 @@ def main():
 		libogg=libogg,
 		libvorbis=libvorbis,
 		curl=curl,
+		cmake_add=cmake_add,
 		#msgpack=msgpack,
 		#msgpack_suffix="d" if build_type == "Debug" else "",
 	).replace("\n", "")
@@ -393,9 +416,8 @@ def main():
 #		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
 #		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
 
-	
 	os.system(r"cmake ..\..\.. " + cmake_string)
-	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")
+	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\{}</AdditionalLibraryDirectories>".format(msbuild_platform))
 	#patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
 	# wtf, cmake?
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
