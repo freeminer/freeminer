@@ -63,7 +63,7 @@ LIBOGG_VERSION = "1.3.2"
 LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.0.4"
 SNAPPY_VERSION = "1.1.1.7"
-irrlicht = "irrlicht-1.8.1"
+irrlicht = "irrlicht-1.8.3"
 curl = "curl-7.48.0"
 openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
@@ -137,11 +137,13 @@ def main():
 		os.chdir(os.path.join(irrlicht, "source", "Irrlicht"))
 		# sorry but this breaks the build
 		patch(os.path.join("zlib", "deflate.c"), "const char deflate_copyright[] =", "static const char deflate_copyright[] =")
-		os.system("devenv /upgrade Irrlicht11.0.vcxproj")
+		os.system("devenv /upgrade Irrlicht12.0.vcxproj")
 		#patch("Irrlicht11.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
 		if patch_toolset:
-			patch("Irrlicht11.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
-		os.system('MSBuild Irrlicht11.0.vcxproj /p:Configuration="Static lib - {build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
+			patch("Irrlicht12.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
+		patch("Irrlicht12.0.vcxproj", "<PlatformToolset>Windows7.1SDK</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
+
+		os.system('MSBuild Irrlicht12.0.vcxproj /p:Configuration="Static lib - {build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", "..", ".."))
 
 	if not os.path.exists(curl):
