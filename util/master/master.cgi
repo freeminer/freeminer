@@ -276,7 +276,7 @@ sub request (;$) {
         #printlog 'recv', Dumper $param;
         if (%$param) {
             s/^false$// for values %$param;
-            $param->{ip} = $r->{REMOTE_ADDR};
+            $param->{ip} = $r->{HTTP_X_FORWARDED_FOR} || $r->{REMOTE_ADDR};
             $param->{ip} =~ s/^::ffff://;
             for (@{$config{blacklist}}) {
                 #printlog("blacklist", $param->{ip} ~~ $_) if $config{debug};
