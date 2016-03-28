@@ -1183,7 +1183,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		if(is_valid_position
 				&& (ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR))
 		{
-			transforming_liquid_push_back(p2);
+			transforming_liquid_add(p2);
 		}
 	}
 }
@@ -1380,7 +1380,7 @@ void Map::removeNodeAndUpdate(v3s16 p,
 		if (is_position_valid
 				&& (ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR))
 		{
-			transforming_liquid_push_back(p2);
+			transforming_liquid_add(p2);
 		}
 	}
 }
@@ -1693,7 +1693,7 @@ struct NodeNeighbor {
 	{ }
 };
 
-void Map::transforming_liquid_push_back(v3POS p) {
+void Map::transforming_liquid_add(v3POS p) {
 	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
 	//m_transforming_liquid.set(p, 1);
 	m_transforming_liquid.push_back(p);
@@ -1739,7 +1739,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	/* If liquid_loop_max is not keeping up with the queue size increase
 	 * loop_max up to a maximum of liquid_loop_max * dedicated_server_step.
 	 */
-	if (m_transforming_liquid.size() > loop_max * 2) {
+	if (transforming_liquid_size() > loop_max * 2) {
 		// "Burst" mode
 		float server_step = g_settings->getFloat("dedicated_server_step");
 		if (m_transforming_liquid_loop_count_multiplier - 1.0 < server_step)
@@ -1826,7 +1826,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 						// should be enqueded for transformation regardless of whether the
 						// current node changes or not.
 						if (nb.t != NEIGHBOR_UPPER && liquid_type != LIQUID_NONE)
-							transforming_liquid_push_back(npos);
+							transforming_liquid_add(npos);
 						// if the current node happens to be a flowing node, it will start to flow down here.
 						if (nb.t == NEIGHBOR_LOWER)
 							flowing_down = true;
@@ -2020,15 +2020,15 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 				// make sure source flows into all neighboring nodes
 				for (u16 i = 0; i < num_flows; i++)
 					if (flows[i].t != NEIGHBOR_UPPER)
-						transforming_liquid_push_back(flows[i].p);
+						transforming_liquid_add(flows[i].p);
 				for (u16 i = 0; i < num_airs; i++)
 					if (airs[i].t != NEIGHBOR_UPPER)
-						transforming_liquid_push_back(airs[i].p);
+						transforming_liquid_add(airs[i].p);
 				break;
 			case LIQUID_NONE:
 				// this flow has turned to air; neighboring flows might need to do the same
 				for (u16 i = 0; i < num_flows; i++)
-					transforming_liquid_push_back(flows[i].p);
+					transforming_liquid_add(flows[i].p);
 				break;
 		}
 	}
@@ -2038,7 +2038,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
 	for (std::deque<v3s16>::iterator iter = must_reflow.begin(); iter != must_reflow.end(); ++iter)
-		m_transforming_liquid.push_back(*iter);
+		transforming_liquid_add(*iter);
 
 	//updateLighting(lighting_modified_blocks, modified_blocks);
 
@@ -2055,7 +2055,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 
 	u32 curr_time = getTime(PRECISION_MILLI);
 	u32 prev_unprocessed = m_unprocessed_count;
-	m_unprocessed_count = m_transforming_liquid.size();
+	m_unprocessed_count = transforming_liquid_size();
 
 	// if unprocessed block count is decreasing or stable
 	if (m_unprocessed_count <= prev_unprocessed) {
@@ -2085,10 +2085,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		           << " blocks from the queue" << std::endl;
 
 		while (dump_qty--)
-			m_transforming_liquid.pop_front();
+			transforming_liquid_pop();
 
 		m_queue_size_timer_started = false; // optimistically assume we can keep up now
-		m_unprocessed_count = m_transforming_liquid.size();
+		m_unprocessed_count = transforming_liquid_size();
 	}
 
 	g_profiler->add("Server: liquids processed", loopcount);
@@ -2515,7 +2515,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
 /*
 	while (data->transforming_liquid.size()) {
-		m_transforming_liquid.push_back(data->transforming_liquid.front());
+		transforming_liquid_add(data->transforming_liquid.front());
 		data->transforming_liquid.pop_front();
 	}
 */

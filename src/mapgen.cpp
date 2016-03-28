@@ -227,7 +227,7 @@ void Mapgen::updateLiquid(v3POS nmin, v3POS nmax)
 				// there was a change between liquid and nonliquid, add to queue. no need to add every with liquid_real
 				if (isliquid != wasliquid && (!rare || !(rarecnt++ % 36))) {
 						auto p = v3s16(x, y, z);
-						vm->m_map->transforming_liquid_push_back(p);
+						vm->m_map->transforming_liquid_add(p);
 					}
 
 				wasliquid = isliquid;

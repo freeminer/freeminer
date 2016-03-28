@@ -336,7 +336,7 @@ public:
 		Variables
 	*/
 
-	void transforming_liquid_push_back(v3s16 p);
+	void transforming_liquid_add(v3s16 p);
 	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
 	std::atomic_uint m_liquid_step_flow;

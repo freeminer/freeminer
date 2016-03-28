@@ -1076,7 +1076,7 @@ int ModApiEnvMod::l_transforming_liquid_add(lua_State *L)
 	GET_ENV_PTR;
 
 	auto pos = read_v3POS(L, 1);
-	env->getMap().transforming_liquid_push_back(pos);
+	env->getMap().transforming_liquid_add(pos);
 	return 1;
 }
 

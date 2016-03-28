@@ -66,7 +66,7 @@ public:
 		        && map->getNodeTry(p - v3POS(0,  0, -1)).getContent() != CONTENT_AIR  // front
 		   )
 			return;
-		map->transforming_liquid_push_back(p);
+		map->transforming_liquid_add(p);
 	}
 };
 
