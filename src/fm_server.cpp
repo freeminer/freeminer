@@ -16,7 +16,7 @@ public:
 			auto time_now = porting::getTimeMs();
 			try {
 				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
-					std::this_thread::sleep_for(std::chrono::milliseconds(100));
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #if !EXEPTION_DEBUG
@@ -220,6 +220,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		if (lockmapl->owns_lock())
 #endif
 			if(!m_more_threads && m_liquid_transform_timer >= m_liquid_transform_interval) {
+
 				TimeTaker timer_step("Server step: liquid transform");
 				m_liquid_transform_timer -= m_liquid_transform_interval;
 				if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
@@ -250,9 +251,8 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 		//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
 		//if (m_env->getMap().updateLighting(m_env->getMap().lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
-		if (m_env->getMap().updateLightingQueue(max_cycle_ms)) {
+		if (m_env->getMap().updateLightingQueue(max_cycle_ms, ret)) {
 			m_liquid_send_timer = m_liquid_send_interval;
-			++ret;
 			goto no_send;
 		}
 	}

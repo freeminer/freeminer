@@ -509,7 +509,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 
 		u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(auto i = a_blocks.begin();
-		        i != a_blocks.end(); ++i) {
+		        i != a_blocks.end();) {
 
 			//processed[i->first] = //1000000;
 			//infostream<<"Light: start col if=" << i->first << std::endl;
@@ -518,11 +518,13 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 			for(;;) {
 				// Don't bother with dummy blocks.
 				if(!block || block->isDummy() || !block->isGenerated()) {
-					break;
+					i = a_blocks.erase(i);
+					goto ablocks_end;
 				}
 				auto lock = block->try_lock_unique_rec();
-				if (!lock->owns_lock())
+				if (!lock->owns_lock()) {
 					break; // may cause dark areas
+				}
 				v3POS pos = block->getPos();
 				//if (processed.count(pos)) infostream<<"Light: test pos" << pos << " pps="<<processed[pos] << " >= if="<< i->first.Y <<std::endl;
 
@@ -591,6 +593,12 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 				block = getBlockNoCreateNoEx(pos);
 			}
 
+
+			// magic for erase:
+			++i; 
+			ablocks_end:
+
+
 			if (porting::getTimeMs() > end_ms) {
 				++ret;
 				break;
@@ -627,11 +635,9 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 	}
 	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
 
-
 	g_profiler->add("Server: light blocks", loopcount);
 
 	return ret;
-
 }
 
 
@@ -760,7 +766,7 @@ void Map::lighting_modified_add(v3POS pos, int range) {
 };
 
 
-unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
+unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount) {
 	unsigned int ret = 0;
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3POS<int> processed;
@@ -772,12 +778,13 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
 			auto r = m_lighting_modified_blocks_range.begin();
 			if (r == m_lighting_modified_blocks_range.end())
 				break;
+			++loopcount;
 			range = r->first;
 			blocks = r->second;
 			m_lighting_modified_blocks_range.erase(r);
 			for (auto & i : blocks)
 				m_lighting_modified_blocks.erase(i.first);
-			//infostream <<" go light range="<< r->first << " size="<<blocks.size()<< std::endl;
+			infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 		}
 		ret += updateLighting(blocks, processed, max_cycle_ms);
 
@@ -788,7 +795,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
 				m_lighting_modified_blocks[i.first] = i.second;
 			}
 		}
-		//infostream <<" ok light range="<<range << " retbacksize="<<blocks.size() << " ret="<< ret << " processed="<<processed.size()<< std::endl;
+		infostream << " ok light range=" << range << " retbacksize=" << blocks.size() << " ret="<< ret << " processed="<<processed.size()<< std::endl;
 		if (porting::getTimeMs() > end_ms)
 			break;
 	}
@@ -802,6 +809,8 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms) {
 			}
 		}
 	}
+
+infostream << "light ret=" << ret << " " << loopcount << std::endl;
 
 	return ret;
 }

@@ -409,7 +409,7 @@ public:
 	void lighting_modified_add(v3POS pos, int range = 5);
 	std::atomic_uint time_life;
 	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms = 0);
+	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
 
 
 private:
