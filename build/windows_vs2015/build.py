@@ -42,7 +42,8 @@ def extract_tar(what, where):
 
 	
 def download(url, path):
-	urllib.request.urlretrieve(url, path)
+	if not os.path.exists(path):
+		urllib.request.urlretrieve(url, path)
 	
 
 def patch(path, source, target):
@@ -120,8 +121,7 @@ def main():
 	print("Build type: {}".format(build_type))
 	
 	nuget = "NuGet.exe"
-	if not os.path.exists(libvorbis):
-		urllib.request.urlretrieve("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", nuget)
+	download("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", nuget)
 
 	if not os.path.exists("deps"):
 		print("Creating `deps` directory.")
@@ -131,7 +131,7 @@ def main():
 	if not os.path.exists(irrlicht):
 		print("Irrlicht not found, downloading.")
 		zip_path = "{}.zip".format(irrlicht)
-		urllib.request.urlretrieve("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
+		download("http://downloads.sourceforge.net/irrlicht/{}.zip".format(irrlicht), zip_path)
 		#urllib.request.urlretrieve("http://pkgs.fedoraproject.org/repo/pkgs/irrlicht/irrlicht-1.8.1.zip/db97cce5e92da9b053f4546c652e9bd5/irrlicht-1.8.1.zip".format(irrlicht), zip_path)
 		extract_zip(zip_path, ".")
 		os.chdir(os.path.join(irrlicht, "source", "Irrlicht"))
@@ -150,7 +150,7 @@ def main():
 		print("curl not found, downloading.")
 		os.mkdir(curl)
 		tar_path = "{}.tar.gz".format(curl)
-		urllib.request.urlretrieve("https://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
+		download("https://curl.haxx.se/download/{}.tar.gz".format(curl), tar_path)
 		extract_tar(tar_path, ".")
 		os.chdir(os.path.join(curl, "winbuild"))
 		os.system("nmake /f Makefile.vc mode=static RTLIBCFG=static USE_IDN=no DEBUG={}".format("yes" if build_type=="Debug" else "no"))
@@ -333,11 +333,11 @@ def main():
 		#os.mkdir(sqlite)
 
 		#zip_path = "sqlite-amalgamation-{}.zip".format(SQLITE_VERSION)
-		#urllib.request.urlretrieve("http://www.sqlite.org/snapshot/{}".format(zip_path), zip_path)
+		#download("http://www.sqlite.org/snapshot/{}".format(zip_path), zip_path)
 		#extract_zip(zip_path, sqlite)
 
 		#tar_path = "{}.tar.gz".format(sqlite)
-		#urllib.request.urlretrieve("http://www.sqlite.org/2014/{}".format(tar_path), tar_path)
+		#download("http://www.sqlite.org/2014/{}".format(tar_path), tar_path)
 		#extract_tar(tar_path, ".")
 
 		#os.chdir(sqlite)
