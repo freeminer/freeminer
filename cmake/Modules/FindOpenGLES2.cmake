@@ -50,6 +50,7 @@ else()
 			/usr/openwin/lib
 			/usr/shlib /usr/X11R6/lib
 			/opt/vc/lib
+			/usr/lib/aarch64-linux-gnu
 			/usr/lib/arm-linux-gnueabihf
 			/usr/lib
 	)
@@ -60,6 +61,7 @@ else()
 			/usr/openwin/lib
 			/usr/shlib /usr/X11R6/lib
 			/opt/vc/lib
+			/usr/lib/aarch64-linux-gnu
 			/usr/lib/arm-linux-gnueabihf
 			/usr/lib
 	)
@@ -80,6 +82,7 @@ else()
 				/usr/shlib
 				/usr/X11R6/lib
 				/opt/vc/lib
+				/usr/lib/aarch64-linux-gnu
 				/usr/lib/arm-linux-gnueabihf
 				/usr/lib
 		)
