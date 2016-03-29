@@ -204,7 +204,7 @@ our $options = {
         -world            => $script_path . 'world_fall1',
         mg_name           => 'math',
         mg_math           => {"generator" => "menger_sponge"},
-        static_spawnpoint => '0,20020,0',
+        static_spawnpoint => '-70,20020,-190',
         mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
