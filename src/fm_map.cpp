@@ -781,10 +781,10 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount
 			++loopcount;
 			range = r->first;
 			blocks = r->second;
+			//infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 			m_lighting_modified_blocks_range.erase(r);
 			for (auto & i : blocks)
 				m_lighting_modified_blocks.erase(i.first);
-			infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 		}
 		ret += updateLighting(blocks, processed, max_cycle_ms);
 
@@ -795,7 +795,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount
 				m_lighting_modified_blocks[i.first] = i.second;
 			}
 		}
-		infostream << " ok light range=" << range << " retbacksize=" << blocks.size() << " ret="<< ret << " processed="<<processed.size()<< std::endl;
+		//infostream << " ok light range=" << range << " retbacksize=" << blocks.size() << " ret="<< ret << " processed="<<processed.size()<< std::endl;
 		if (porting::getTimeMs() > end_ms)
 			break;
 	}
@@ -810,7 +810,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount
 		}
 	}
 
-infostream << "light ret=" << ret << " " << loopcount << std::endl;
+	//infostream << "light ret=" << ret << " " << loopcount << std::endl;
 
 	return ret;
 }
