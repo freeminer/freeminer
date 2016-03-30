@@ -1729,7 +1729,9 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	std::deque<v3s16> must_reflow;
 
 	// List of MapBlocks that will require a lighting update (due to lava)
-	//std::map<v3s16, MapBlock*> lighting_modified_blocks;
+/*
+	std::map<v3s16, MapBlock *> lighting_modified_blocks;
+*/
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
@@ -1771,7 +1773,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		s8 liquid_level = -1;
 		content_t liquid_kind = CONTENT_IGNORE;
 		content_t floodable_node = CONTENT_AIR;
-		ContentFeatures cf = nodemgr->get(n0);
+		const ContentFeatures &cf = nodemgr->get(n0);
 		LiquidType liquid_type = cf.liquid_type;
 		switch (liquid_type) {
 			case LIQUID_SOURCE:
@@ -1817,7 +1819,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 			}
 			v3s16 npos = p0 + dirs[i];
 			NodeNeighbor nb(getNodeNoEx(npos), nt, npos);
-			ContentFeatures cfnb = nodemgr->get(nb.n);
+			const ContentFeatures &cfnb = nodemgr->get(nb.n);
 			switch (nodemgr->get(nb.n.getContent()).liquid_type) {
 				case LIQUID_NONE:
 					if (cfnb.floodable) {
