@@ -344,7 +344,9 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 
 	INodeDefManager* ndef = m_gamedef->getNodeDefManager();
 	MapNode n, n_bottom;
+#if 0
 	ContentFeatures f;
+#endif
 	ItemGroupList groups;
 
 	// update nodes around
@@ -364,7 +366,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 					continue;
 				}
 
-				f = ndef->get(n);
+				const ContentFeatures &f = ndef->get(n);
 				groups = f.groups;
 				n_bottom = m_map->getNode(v3s16(x, y - 1, z));
 
