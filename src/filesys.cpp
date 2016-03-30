@@ -20,6 +20,16 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+// fix strange bug:
+// /usr/include/aarch64-linux-gnu/asm/sigcontext.h:26:2: error: ‘__u64’ does not name a type
+// include before anything:
+#ifndef _WIN32 // WINDOWS
+#include <sys/wait.h>
+#endif
+
+
+
 #include "filesys.h"
 #include "util/string.h"
 #include <iostream>
