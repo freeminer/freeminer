@@ -103,7 +103,9 @@ core.register_entity(":__builtin:falling_node", {
 			-- it's drops
 				node_drop(np, remove_fast)
 			-- Create node and remove entity
-			core.add_node(np, self.node)
+			if core.registered_nodes[self.node.name] then
+				core.add_node(np, self.node)
+			end
 			self.object:remove()
 			nodeupdate(np)
 			return
