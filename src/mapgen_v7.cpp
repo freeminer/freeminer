@@ -176,7 +176,7 @@ MapgenV7Params::MapgenV7Params()
 	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   5,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5);
 //----------
 
 	np_terrain_base    = NoiseParams(4,    70,  v3f(600,  600,  600),  82341, 5, 0.6,  2.0);

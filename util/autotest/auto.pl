@@ -68,10 +68,10 @@ $0 --options_bot=fall1 -continuous_forward=1 bot
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
 use strict;
 use feature qw(say);
-use Data::Dumper;
+use Data::Dumper ();
 $Data::Dumper::Sortkeys = $Data::Dumper::Useqq = $Data::Dumper::Indent = $Data::Dumper::Terse = 1;
 #use JSON;
-use Cwd;
+use Cwd   ();
 use POSIX ();
 
 sub sy (@);
@@ -96,32 +96,33 @@ our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 sub init_config () {
     $config = {
         #address           => '::1',
-        port             => 60001,
-        clients_num      => 5,
-        autoexit         => 600,
-        clang_version    => "",                                                  # "-3.6",
-        autotest_dir_rel => 'util/autotest/',
-        build_name       => '',
-        root_prefix      => $root_path . 'auto',
-        root_path        => $root_path,
-        date             => $g->{date},
-        world            => $script_path . 'world',
-        config           => $script_path . 'auto.json',
-        logdir           => $script_path . 'logs.' . $g->{date} . $logdir_add,
-        screenshot_dir   => 'screenshot.' . $g->{date},
-        env              => 'OPENSSL_armcap=0',
-        gdb_stay         => 0,                                                   # dont exit from gdb
-        runner           => 'nice ',
-        name             => 'bot',
-        go               => '--go',
-        gameid           => 'default',
-        #tsan_opengl_fix   => 1,
-        options_display => ($ENV{DISPLAY} ? '' : 'headless'),
-        options_bot     => 'bot_random',
-        makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
-        cmake_minetest  => undef,
-        cmake_leveldb   => undef,
-        cmake_nothreads => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
+        port              => 60001,
+        clients_num       => 5,
+        autoexit          => 600,
+        clang_version     => "",                                                                          # "-3.6",
+        autotest_dir_rel  => 'util/autotest/',
+        build_name        => '',
+        root_prefix       => $root_path . 'auto',
+        root_path         => $root_path,
+        date              => $g->{date},
+        world             => $script_path . 'world',
+        config            => $script_path . 'auto.json',
+        logdir            => $script_path . 'logs.' . $g->{date} . $logdir_add,
+        screenshot_dir    => 'screenshot.' . $g->{date},
+        env               => 'OPENSSL_armcap=0',
+        gdb_stay          => 0,                                                                           # dont exit from gdb
+        runner            => 'nice ',
+        name              => 'bot',
+        go                => '--go',
+        gameid            => 'default',
+        tsan_opengl_fix   => 1,
+        tsan_leveldb_fix  => 1,
+        options_display   => ($ENV{DISPLAY} ? '' : 'headless'),
+        options_bot       => 'bot,bot_random',
+        makej             => '$(nproc || sysctl -n hw.ncpu || echo 2)',
+        cmake_minetest    => undef,
+        cmake_leveldb     => undef,
+        cmake_nothreads   => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
@@ -141,20 +142,24 @@ init_config();
 
 our $options = {
     default => {
-        name                     => 'autotest',
-        enable_sound             => 0,
-        autojump                 => 1,
-        respawn_auto             => 1,
-        disable_anticheat        => 1,
-        reconnects               => 10000,
-        profiler_print_interval  => 100000,
-        default_game             => $config->{gameid},
+        name                    => 'autotest',
+        enable_sound            => 0,
+        autojump                => 1,
+        respawn_auto            => 1,
+        disable_anticheat       => 1,
+        reconnects              => 10000,
+        profiler_print_interval => 100000,
+        default_game            => $config->{gameid},
+    },
+    no_exit => {
+        autoexit => 0,
     },
     verbose => {
         #debug_log_level          => 'verbose',
         -verbose                 => 1,
         enable_mapgen_debug_info => 1,
     },
+    bot        => {},
     bot_random => {
         random_input       => 1,
         continuous_forward => 1,
@@ -226,7 +231,7 @@ our $options = {
         server_occlusion           => 0,
     },
     client_optimize => {
-        viewing_range              => 15,
+        viewing_range => 15,
     },
     fly_forward => {
         crosshair_alpha    => 0,
@@ -301,9 +306,10 @@ our $commands = {
         0;
     },
     run_single_tsan => sub {
-        local $config->{options_display}      = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-        local $config->{runner}               = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
-        local $options->{opt}{enable_minimap} = 0;                                                                          # too unsafe
+        local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+        local $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
+        local $config->{runner} = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
+        local $options->{opt}{enable_minimap} = 0;    # too unsafe
         commands_run($config->{run_task});
     },
 
@@ -316,7 +322,7 @@ our $commands = {
 qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
-        my $fork = $config->{server_fg} ? '' : '&';
+        my $fork = $config->{server_bg} ? '&' : '';
         #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
         sy qq{$config->{env} $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world port config autoexit verbose)])
@@ -493,6 +499,7 @@ our $tasks = {
     #stress => [{ZZbuild_name => 'normal'}, 'prepare', 'cmake', 'make', 'run_server', 'run_clients',],
     stress => sub {
         commands_run($_[0] || 'build_normal');
+        local $config->{server_bg} = 1;
         for ('run_server', 'run_clients') { my $r = commands_run($_); return $r if $r; }
         return 0;
     },
@@ -502,11 +509,11 @@ our $tasks = {
     clients => ['clients_build', 'clients_run'],
 
     stress_tsan => [
-        {-no_build_client => 1, -no_build_server => 0}, 'build_tsan', 'cgroup',
+        {-no_build_client => 1, -no_build_server => 0, server_bg => 1,}, 'build_tsan', 'cgroup',
         'run_server', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
     ],
     stress_asan => [
-        {-no_build_client => 1, -no_build_server => 0}, 'build_asan', 'cgroup',
+        {-no_build_client => 1, -no_build_server => 0, server_bg => 1,}, 'build_asan', 'cgroup',
         'run_server', ['sleep', 10], {build_name => '_normal', -cmake_asan => 0,}, 'clients',
     ],
 
@@ -536,10 +543,10 @@ our $tasks = {
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    server       => ['build_server',       'run_server'],
-    server_debug => ['build_server_debug', 'run_server'],
-    server_gdb   => [['gdb',               'server_debug']],
-    server_gdb_nd => ['build_server', ['gdb', 'run_server']],
+    server       => [{-options_add => 'no_exit'}, 'build_server',       'run_server'],
+    server_debug => [{-options_add => 'no_exit'}, 'build_server_debug', 'run_server'],
+    server_gdb => [{-options_add => 'no_exit'}, ['gdb', 'server_debug']],
+    server_gdb_nd => [{-options_add => 'no_exit'}, 'build_server', ['gdb', 'run_server']],
 
     bot_gdb => ['build_client_debug', ['gdb', 'run_single']],
 
