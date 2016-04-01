@@ -56,7 +56,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Abort program execution immediately
  */
-NORETURN extern void fatal_error_fn(
+#ifndef __ANDROID__
+NORETURN
+#endif
+extern void fatal_error_fn(
 		const char *msg, const char *file,
 		unsigned int line, const char *function);
 
@@ -74,7 +77,10 @@ NORETURN extern void fatal_error_fn(
 	defined)
 */
 
-NORETURN extern void sanity_check_fn(
+#ifndef __ANDROID__
+NORETURN
+#endif
+extern void sanity_check_fn(
 		const char *assertion, const char *file,
 		unsigned int line, const char *function);
 
