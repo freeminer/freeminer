@@ -62,7 +62,9 @@ void sanity_check_fn(const char *assertion, const char *file,
 
 	debug_stacks_print_to(errorstream);
 
+#ifndef __ANDROID__
 	abort();
+#endif
 }
 
 void fatal_error_fn(const char *msg, const char *file,
@@ -79,7 +81,9 @@ void fatal_error_fn(const char *msg, const char *file,
 
 	debug_stacks_print_to(errorstream);
 
+#ifndef __ANDROID__
 	abort();
+#endif
 }
 
 /*
