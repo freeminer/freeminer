@@ -35,8 +35,8 @@ ANDROID_VERSION_CODE = 13
 
 
 #and for freeminer for skip conflict:
-#increase by 4
-BUILD_NUMBER = 78
+#increase by 10
+BUILD_NUMBER = 90
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
@@ -45,7 +45,7 @@ PROJECT_NAME_C = freeminer
 
 GAMES_VERSION = ""
 
-GIT_CLONE = git clone --recursive --depth 1
+GIT_CLONE = git clone --recursive --depth 10
 
 ################################################################################
 # toolchain config for arm new processors
@@ -97,7 +97,7 @@ endif
 ################################################################################
 ifeq ($(TARGET_mips),1)
 ifneq ($(NO_AUTO_VERSION),1)
-ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 3 )))
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 4 )))
 endif
 TARGET_HOST = mipsel-linux
 TARGET_ABI = mips
@@ -131,6 +131,26 @@ SDK_VERSION = 16
 OPENSSL_CONFIGURE_ADDON = no-asm
 endif
 
+ifeq ($(TARGET_x86_64),1)
+ifneq ($(NO_AUTO_VERSION),1)
+ANDROID_VERSION_CODE := $(shell echo $$(( $(ANDROID_VERSION_CODE) + 3 )))
+endif
+TARGET_HOST = x86_64-linux
+TARGET_ABI = x86_64
+TARGET_LIBDIR = x86_64
+TARGET_TOOLCHAIN = x86_64-
+TARGET_CFLAGS_ADDON = -Ofast
+TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
+TARGET_LDFLAGS_ADDON =
+CROSS_PREFIX = x86_64-linux-android-
+TARGET_ARCH = x86_64
+SDK_VERSION = 21
+#OPENSSL_CONFIGURE_ADDON = no-asm
+
+#TODO:
+USE_LUAJIT = 0
+endif
+
 APP_PLATFORM = android-$(SDK_VERSION)
 
 
@@ -148,7 +168,10 @@ OPENAL_DIR = $(ROOT)/deps/openal-soft/
 OPENAL_LIB = $(OPENAL_DIR)libs/$(TARGET_ABI)/libopenal.so
 OPENAL_TIMESTAMP = $(OPENAL_DIR)/timestamp
 OPENAL_TIMESTAMP_INT = $(ROOT)/deps/openal_timestamp
-OPENAL_URL_GIT = https://github.com/apportable/openal-soft
+#OPENAL_URL_GIT = https://github.com/apportable/openal-soft
+OPENAL_URL_GIT = https://github.com/zhuowei/openal-soft
+
+
 
 OGG_DIR = $(ROOT)/deps/libvorbis-libogg-android/
 OGG_LIB = $(OGG_DIR)libs/$(TARGET_ABI)/libogg.so
@@ -205,7 +228,7 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3110100
+SQLITE3_FOLDER = sqlite-amalgamation-3120000
 SQLITE3_URL = http://www.sqlite.org/2016/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
@@ -744,6 +767,12 @@ $(GMP_LIB): $(GMP_TIMESTAMP)
 	cd deps/gmp-${GMP_VERSION};                                                \
 	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-gmp;                              \
+	echo ${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
+	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	--stl=${APP_STL} \
+	--platform=${APP_PLATFORM} \
+	${STANDALONE_ADDON} \
+	--install-dir=$${TOOLCHAIN};                                               \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
 	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
@@ -871,13 +900,13 @@ clean_assets :
 		$(ICONV_TIMESTAMP) iconv_download iconv clean_iconv \
 		$(LUAJIT_TIMESTAMP) luajit luajit_download clean_luajit
 
-MSGPACK_DIR = $(ROOT)/deps/msgpack/
-MSGPACK_LIB = $(MSGPACK_DIR)libmsgpackc.a
-MSGPACK_TIMESTAMP = $(MSGPACK_DIR)timestamp
+MSGPACK_DIR = $(ROOT)/deps/msgpack
+MSGPACK_LIB = $(MSGPACK_DIR)/libmsgpackc.a
+MSGPACK_TIMESTAMP = $(MSGPACK_DIR)/timestamp
 MSGPACK_TIMESTAMP_INT = $(ROOT)/deps/msgpack_timestamp
 MSGPACK_GIT_URL = https://github.com/msgpack/msgpack-c
-#MSGPACK_GIT_BRANCH = 72c7feb2c4eb3a837e88733cece4a928f0a3808a
-MSGPACK_TARGET = $(MSGPACK_DIR)/include/msgpack.hpp
+MSGPACK_GIT_BRANCH = 72c7feb2c4eb3a837e88733cece4a928f0a3808a
+#MSGPACK_TARGET = $(MSGPACK_DIR)/include/msgpack.hpp
 
 $(MSGPACK_TIMESTAMP) : msgpack_download
 	@LAST_MODIF=$$(find ${MSGPACK_DIR} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" "); \
@@ -886,17 +915,22 @@ $(MSGPACK_TIMESTAMP) : msgpack_download
 	fi
 
 msgpack_download :
+	@if [ ! -d ${MSGPACK_DIR} ] ; then \
+		cp -r ${ROOT}/../../src/msgpack-c ${MSGPACK_DIR}; \
+	fi
+
+msgpack_download_old :
 	@if [ ! -d ${MSGPACK_DIR} ] ; then                                         \
 		echo "msgpack sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		${GIT_CLONE} ${MSGPACK_GIT_URL} ${MSGPACK_DIR} || exit 1; \
-		# git checkout ${MSGPACK_GIT_BRANCH} || exit 1; \
+		git clone --recursive --depth 100 ${MSGPACK_GIT_URL} ${MSGPACK_DIR} || exit 1; \
+		git checkout ${MSGPACK_GIT_BRANCH} || exit 1; \
 	fi
-	
+
 msgpack : $(MSGPACK_LIB)
 
-$(MSGPACK_TARGET): $(MSGPACK_TIMESTAMP)
+$(MSGPACK_LIB): $(MSGPACK_TIMESTAMP)
 	@REFRESH=0;                                                                \
 	if [ ! -e ${MSGPACK_TIMESTAMP_INT} ] ; then                                \
 		REFRESH=1;                                                             \
@@ -1078,7 +1112,7 @@ arch_dirs:
 # $(ICONV_LIB)
 apk: $(PATHCFGFILE) arch_dirs assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LEVELDB_TARGET)       \
 	$(OPENAL_LIB) $(OGG_LIB) prep_srcdir $(ROOT)/jni/src/android_version.h     \
-	$(MSGPACK_TARGET) $(GETTEXT_LIB) $(LUAJIT_TARGET) $(FREETYPE_LIB) \
+	$(MSGPACK_LIB) $(GETTEXT_LIB) $(LUAJIT_TARGET) $(FREETYPE_LIB) \
 	$(ROOT)/jni/src/android_version_githash.h sqlite3_download
 	@export NDEBUG=$$NDEBUG; $(MAKE) manifest;                                 \
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \
