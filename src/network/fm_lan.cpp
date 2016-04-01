@@ -156,6 +156,8 @@ void lan_adv::serve(unsigned short port) {
 
 void * lan_adv::run() {
 
+	EXCEPTION_HANDLER_BEGIN;
+
 	reg("LanAdv" + (server_port ? std::string("Server") : std::string("Client")));
 
 	UDPSocket socket_recv(true);
@@ -209,7 +211,7 @@ void * lan_adv::run() {
 		send_string(answer_str);
 	}
 	while(!stopRequested()) {
-		try {
+		EXCEPTION_HANDLER_BEGIN;
 			Address addr;
 			int rlen = socket_recv.Receive(addr, buffer, packet_maxsize);
 			if (rlen <= 0)
@@ -252,15 +254,7 @@ void * lan_adv::run() {
 				//errorstream<<" current list: ";for (auto & i : collected) {errorstream<< i.first <<" ; ";}errorstream<<std::endl;
 			}
 
-#if !EXEPTION_DEBUG
-		} catch(std::exception &e) {
-			errorstream << m_name << ": exception: " << e.what() << std::endl;
-		} catch (...) {
-			errorstream << m_name << ": Ooops..." << std::endl;
-#else
-		} catch (int) { //nothing
-#endif
-		}
+		EXCEPTION_HANDLER_END;
 	}
 
 	if (server_port) {
@@ -269,6 +263,8 @@ void * lan_adv::run() {
 		answer_json["cmd"] = "shutdown";
 		send_string(writer.write(answer_json));
 	}
+
+	EXCEPTION_HANDLER_END;
 
 	return nullptr;
 }
