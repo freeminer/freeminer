@@ -2820,7 +2820,7 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 			else{
 				if(!force_delete){
 					v3s16 p = floatToInt(objectpos, BS);
-					errorstream<<"ServerEnv: Could not find or generate "
+					infostream<<"ServerEnv: Could not find or generate "
 							<<"a block for storing id="<<obj->getId()
 							<<" statically (pos="<<PP(p)<<")"<<std::endl;
 					continue;
