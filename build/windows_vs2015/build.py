@@ -94,17 +94,22 @@ def main():
 	build_arch = "x86"
 	msbuild_platform = build_arch
 
-	if len(sys.argv) > 2 and sys.argv[2] == "amd64":
-		build_arch = "amd64"
+	if len(sys.argv) > 2 and sys.argv[2] == "x64":
+		build_arch = "x64"
 		msbuild_platform = "x64"
 
+	if len(sys.argv) > 2 and sys.argv[2] == "arm":
+		build_arch = "arm"
+		msbuild_platform = "arm"
+
+
 	msbuild_platform_zlib = "win32"
-	if build_arch == "amd64":
+	if build_arch == "x64":
 		msbuild_platform_zlib = "x64"
 
 
 	cmake_add = ""
-	if build_arch == "amd64":
+	if build_arch == "x64":
 		cmake_add = " -A X64 "
 
 	msbuild = which("MSBuild.exe")
@@ -395,7 +400,7 @@ def main():
 		{cmake_add}
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
-		curl_arch="x86" if build_arch == "x86" else "x64",
+		curl_arch=build_arch,
 		vorbis_arch="Win32" if build_arch == "x86" else "x64",
 		ogg_arch="Win32" if build_arch == "x86" else "X64",
 		freetype_arch="win32" if build_arch == "x86" else "X64",
