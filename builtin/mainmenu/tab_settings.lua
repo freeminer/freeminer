@@ -204,7 +204,15 @@ local function formspec(tabview, name, tabdata)
 				.. dump(core.setting_getbool("enable_shaders")) .. "]"
 
 	tab_string = tab_string ..
+
+		""
+		if PLATFORM ~= "Android" then
+		tab_string = tab_string ..
 		"button[8,4.75;3.75,0.5;btn_change_keys;" .. fgettext("Change keys") .. "]" ..
+		""
+		end
+		tab_string = tab_string ..
+
 		"button[0,4.75;3.75,0.5;btn_advanced_settings;" .. fgettext("Advanced Settings") .. "]"
 
 

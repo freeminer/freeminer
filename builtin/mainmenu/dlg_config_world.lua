@@ -24,7 +24,7 @@ local function get_formspec(data)
 	local mod = data.list:get_list()[data.selected_mod]
 
 	local retval =
-		"size[11,6.5,true]" ..
+		"size[11,6.5,false]" ..
 		"label[0.5,-0.25;" .. fgettext("World:") .. "]" ..
 		"label[1.75,-0.25;" .. data.worldspec.name .. "]" ..
 		"checkbox[0,5.75;cb_hide_gamemods;" .. fgettext("Hide Game") .. ";" .. tostring(data.hide_gamemods) .. "]" ..
