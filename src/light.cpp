@@ -74,9 +74,14 @@ void set_light_table(float gamma)
 	 * hardcoded in the initalizer list for the declaration of light_LUT.
 	 */
 	static const int adjustments[LIGHT_MAX + 1] = {
+		 15,
+		 10,
+		 9,
+/*
 		 7,
 		 7,
 		 7,
+*/
 		 5,
 		 2,
 		 0,
