@@ -94,19 +94,13 @@ def main():
 	build_arch = "x86"
 	msbuild_platform = build_arch
 
-	if len(sys.argv) > 2 and sys.argv[2] == "x64":
-		build_arch = "x64"
-		msbuild_platform = "x64"
-
-	if len(sys.argv) > 2 and sys.argv[2] == "arm":
-		build_arch = "arm"
-		msbuild_platform = "arm"
-
+	if len(sys.argv) > 2:
+		build_arch = sys.argv[2]
+		msbuild_platform = build_arch
 
 	msbuild_platform_zlib = "win32"
 	if build_arch == "x64":
-		msbuild_platform_zlib = "x64"
-
+		msbuild_platform_zlib = build_arch
 
 	cmake_add = ""
 	if build_arch == "x64":
@@ -123,7 +117,7 @@ def main():
 		return
 	print("Found msbuild: {}\nFound cmake: {}".format(msbuild, cmake))
 
-	print("Build type: {}".format(build_type))
+	print("Build type: {build_type} arch: {build_arch} msbuildarch:{msbuild_platform}".format(build_type=build_type, build_arch=build_arch,msbuild_platform=msbuild_platform))
 	
 	nuget = "NuGet.exe"
 	download("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", nuget)
