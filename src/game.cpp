@@ -4757,7 +4757,9 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
+#if !defined(__ANDROID__)
 		   << PROJECT_NAME_C " " << g_version_hash
+#endif
 		   << std::setprecision(0)
 		   << " FPS = " << draw_control->fps
 //		   << "/" << draw_control->fps_avg
