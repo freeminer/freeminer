@@ -189,9 +189,8 @@ void * lan_adv::run() {
 	Json::Reader reader;
 	Json::FastWriter writer;
 	std::string answer_str;
+	Json::Value server;
 	if (server_port) {
-		Json::Value server;
-
 		server["name"]         = g_settings->get("server_name");
 		server["description"]  = g_settings->get("server_description");
 		server["version"]      = g_version_string;
@@ -203,12 +202,12 @@ void * lan_adv::run() {
 		server["damage"]       = g_settings->getBool("enable_damage");
 		server["password"]     = g_settings->getBool("disallow_empty_password");
 		server["pvp"]          = g_settings->getBool("enable_pvp");
-		server["port"] = server_port;
-		server["proto"] = g_settings->get("server_proto");
+		server["port"]         = server_port;
+		server["clients"]      = clients_num.load();
+		server["clients_max"]  = g_settings->getU16("max_users");
+		server["proto"]        = g_settings->get("server_proto");
 
-		answer_str = writer.write(server);
-
-		send_string(answer_str);
+		send_string(writer.write(server));
 	}
 	while(!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
@@ -226,11 +225,15 @@ void * lan_adv::run() {
 			//errorstream << " a=" << addr.serializeString() << " : " << addr.getPort() << " l=" << rlen << " b=" << p << " ;  server=" << server_port << "\n";
 			if (server_port) {
 				if (p["cmd"] == "ask" && limiter[addr_str] < now) {
+					(clients_num.load() ? infostream : actionstream) << "lan: want play " << addr_str << " " << p["proto"] << std::endl;
+
+					server["clients"] = clients_num.load();
+					answer_str = writer.write(server);
+
 					limiter[addr_str] = now + 3000;
 					UDPSocket socket_send(true);
 					addr.setPort(adv_port);
 					socket_send.Send(addr, answer_str.c_str(), answer_str.size());
-					infostream << "lan: want play " << addr_str << std::endl;
 				}
 			} else {
 				if (p["cmd"] == "ask") {

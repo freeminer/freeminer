@@ -39,6 +39,7 @@ public:
 
 	concurrent_map<std::string, Json::Value> collected;
 	std::atomic_bool fresh;
+	std::atomic_int clients_num;
 
 private:
 	unsigned short server_port = 0;

@@ -663,9 +663,9 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
 
-    $m ||= [
+    $m ||= [ map { split /[,;]+/ } map { array($_) }
         'default', $config->{options_display}, $config->{options_bot},
-        (map { split /[,;]+/ } $config->{options_int}, $config->{options_add},), 'opt'
+         $config->{options_int}, $config->{options_add}, 'opt'
     ];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};

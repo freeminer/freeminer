@@ -720,6 +720,9 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			u16 time = m_env->getTimeOfDay();
 			float time_speed = g_settings->getFloat("time_speed");
 			SendTimeOfDay(PEER_ID_INEXISTENT, time, time_speed);
+
+			// bad place, but every 5s ok
+			lan_adv_server.clients_num = m_clients.getPlayerNames().size();
 		}
 	}
 
