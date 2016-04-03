@@ -4601,9 +4601,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 						allow = false;
 				}
 				if (allow) {
-					updateDrawList_future = std::async(std::launch::async, [&]{
-						client->getEnv().getClientMap().updateDrawList(driver, runData->update_draw_list_timer, 1000);
-					});
+					updateDrawList_future = std::async(std::launch::async, [=](float dtime) {
+							client->getEnv().getClientMap().updateDrawList(driver, dtime, 1000);
+						}, runData->update_draw_list_timer);
+
 				}
 			}
 			else

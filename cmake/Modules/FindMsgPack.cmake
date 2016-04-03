@@ -50,7 +50,7 @@ elseif(NOT MSGPACK_LIBRARY)
 	endif()
 	set(MSGPACK_BUILD_EXAMPLES OFF)
 	set(MSGPACK_BUILD_TESTS OFF)
-	#set(MSGPACK_ENABLE_SHARED OFF) # broken disable, todo
+	set(MSGPACK_ENABLE_SHARED OFF)
 	add_subdirectory(msgpack-c)
 	#include_directories(${PROJECT_SOURCE_DIR}/msgpack-c/include)
 	set(MSGPACK_LIBRARY msgpackc-static) # before 1.4.0 was msgpack-static

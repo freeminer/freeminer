@@ -110,7 +110,7 @@ public:
 	bool popBlockUpdate(QueuedMinimapUpdate *update);
 
 	MinimapData *data;
-	u32 next_update;
+	std::atomic_uint next_update;
 
 protected:
 	virtual void doUpdate();

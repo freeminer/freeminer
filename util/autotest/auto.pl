@@ -549,6 +549,7 @@ our $tasks = {
     server_gdb_nd => [{-options_add => 'no_exit'}, 'build_server', ['gdb', 'run_server']],
 
     bot_gdb => ['build_client_debug', ['gdb', 'run_single']],
+    bot_gdb_nd => ['build_client', ['gdb', 'run_single']],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
