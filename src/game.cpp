@@ -2067,6 +2067,11 @@ void Game::shutdown()
 
 	showOverlayMessage(wstrgettext("Shutting down..."), 0, 0, false);
 
+#if ENABLE_THREADS && HAVE_FUTURE
+	if (updateDrawList_future.valid())
+		updateDrawList_future.wait_for(std::chrono::seconds(10));
+#endif
+
 	if (clouds)
 		clouds->drop();
 
@@ -4596,7 +4601,9 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 						allow = false;
 				}
 				if (allow) {
-					updateDrawList_future = std::async(std::launch::async, [](Client * client, video::IVideoDriver* driver, float dtime){ client->getEnv().getClientMap().updateDrawList(driver, dtime, 1000); }, client, driver, runData->update_draw_list_timer);
+					updateDrawList_future = std::async(std::launch::async, [&]{
+						client->getEnv().getClientMap().updateDrawList(driver, runData->update_draw_list_timer, 1000);
+					});
 				}
 			}
 			else
