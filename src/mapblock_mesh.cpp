@@ -685,7 +685,7 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 {
 	*equivalent = false;
 
-	if(m1 == CONTENT_IGNORE || m2 == CONTENT_IGNORE)
+	if(step <= 1 && (m1 == CONTENT_IGNORE || m2 == CONTENT_IGNORE))
 		return 0;
 
 	bool contents_differ = (m1 != m2);
@@ -827,7 +827,7 @@ static void getTileInfo(
 	MapNode &n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step);
 
 	// Don't even try to get n1 if n0 is already CONTENT_IGNORE
-	if (n0.getContent() == CONTENT_IGNORE) {
+	if (step <= 1 && n0.getContent() == CONTENT_IGNORE) {
 		makes_face = false;
 		return;
 	}
@@ -835,7 +835,7 @@ static void getTileInfo(
 	const MapNode &n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step);
 	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
 
-	if (n1.getContent() == CONTENT_IGNORE) {
+	if (step <= 1 && n1.getContent() == CONTENT_IGNORE) {
 		makes_face = false;
 		return;
 	}
@@ -874,6 +874,9 @@ static void getTileInfo(
 
 	if(data->m_smooth_lighting == false || step > 1)
 	{
+		if (step > 1 && (!n0.getContent() || !n1.getContent()))
+			lights[0] = lights[1] = lights[2] = lights[3] = decode_light(LIGHT_MAX-2);
+		else
 		lights[0] = lights[1] = lights[2] = lights[3] =
 				getFaceLight(n0, n1, face_dir, ndef);
 	}

@@ -566,7 +566,7 @@ void Camera::updateViewingRange()
 		m_draw_control.wanted_range = viewing_range_max;
 
 	int farmesh = g_settings->getS32("farmesh");
-	int farmesh_step = g_settings->getS32("farmesh_step");
+	//int farmesh_step = g_settings->getS32("farmesh_step");
 	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
 
 #if OOOOOOOOOOOOOOOld
@@ -608,10 +608,10 @@ void Camera::updateViewingRange()
 						m_draw_control.farmesh = (int)m_draw_control.farmesh + 1;
 						framecnt = 0;
 					}
-					if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step) {
-						++m_draw_control.farmesh_step;
-						framecnt = 0;
-					}
+					//if (m_draw_control.farmesh >= farmesh*1.3 && m_draw_control.farmesh_step < farmesh_step) {
+					//	++m_draw_control.farmesh_step;
+					//	framecnt = 0;
+					//}
 				}
 			} else if (m_draw_control.fps <= wanted_fps*0.8){
 				float farmesh_was = m_draw_control.farmesh;
@@ -625,8 +625,8 @@ void Camera::updateViewingRange()
 					m_draw_control.farmesh -= 1;
 				if (m_draw_control.farmesh < farmesh)
 					m_draw_control.farmesh = farmesh;
-				if (m_draw_control.farmesh <= farmesh && m_draw_control.farmesh_step > 1 && m_draw_control.fps <= wanted_fps*0.3)
-					--m_draw_control.farmesh_step;
+				//if (m_draw_control.farmesh <= farmesh && m_draw_control.farmesh_step > 1 && m_draw_control.fps <= wanted_fps*0.3)
+				//	--m_draw_control.farmesh_step;
 				if (farmesh_was != m_draw_control.farmesh)
 					return;
 			}

@@ -174,7 +174,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("shadows", "0");
 	settings->setDefault("zoom_fov", "15");
 	settings->setDefault("farmesh", android ? "2" : "0");
-	settings->setDefault("farmesh_step", android ? "1" : "2");
+	settings->setDefault("farmesh_step", android ? "2" : "3");
 	settings->setDefault("farmesh_wanted", android ? "100" :"500");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
