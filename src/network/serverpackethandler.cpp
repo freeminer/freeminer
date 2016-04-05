@@ -1794,6 +1794,9 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 		return;
 	}
 
+	if (!m_enable_rollback_recording) {
+		m_script->node_on_receive_fields(p, formname, fields, playersao);
+	} else {
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
 			std::string("player:")+player->getName());
@@ -1809,6 +1812,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 		RollbackAction action;
 		action.setSetNode(p, rn_old, rn_new);
 		rollback()->reportAction(action);
+	}
 	}
 }
 
