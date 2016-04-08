@@ -57,7 +57,7 @@ tabs.credits = dofile(menupath .. DIR_DELIM .. "tab_credits.lua")
 --[[
 if PLATFORM == "Android" then
 ]]
-if false
+if false then
 	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
 else
 	tabs.singleplayer = dofile(menupath .. DIR_DELIM .. "tab_singleplayer.lua")
@@ -81,7 +81,7 @@ local function init_globals()
 --[[
 	if PLATFORM == "Android" then
 ]]
-	if false
+	if false then
 		local world_list = core.get_worlds()
 		local world_index = table.indexof(world_list, "singleplayerworld")
 
