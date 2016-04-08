@@ -510,7 +510,7 @@ int MapgenMath::generateTerrain() {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert) {
-							int index3 = (z - node_min.Z) * zstride +
+							int index3 = (z - node_min.Z) * zstride_1d +
 								(y - node_min.Y) * ystride +
 								(x - node_min.X);
 							vm->m_data[i] = Mapgen_features::layers_get(index3);
