@@ -3950,7 +3950,7 @@ void dedicated_server_loop(Server &server, bool &kill)
 		}
 
 		run_time += steplen; // wrong not real time
-		if (server.m_autoexit && run_time > server.m_autoexit) {
+		if (server.m_autoexit && run_time > server.m_autoexit && !server.lan_adv_server.clients_num) {
 			actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
 			g_profiler->print(actionstream);
 			server.requestShutdown();
