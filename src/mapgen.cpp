@@ -252,6 +252,7 @@ void Mapgen::setLighting(u8 light, v3s16 nmin, v3s16 nmax)
 	}
 }
 
+#if ENABLE_SHITCODE
 
 void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
 {
@@ -293,6 +294,32 @@ void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
 	lightSpread(a, p - v3s16(1, 0, 0), light);
 }
 
+#else
+
+void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
+{
+	if (light <= 1 || !a.contains(p))
+		return;
+
+	u32 vi = vm->m_area.index(p);
+	MapNode &nn = vm->m_data[vi];
+
+	light--;
+	// should probably compare masked, but doesn't seem to make a difference
+	if (light <= nn.param1 || !ndef->get(nn).light_propagates)
+		return;
+
+	nn.param1 = light;
+
+	lightSpread(a, p + v3s16(0, 0, 1), light);
+	lightSpread(a, p + v3s16(0, 1, 0), light);
+	lightSpread(a, p + v3s16(1, 0, 0), light);
+	lightSpread(a, p - v3s16(0, 0, 1), light);
+	lightSpread(a, p - v3s16(0, 1, 0), light);
+	lightSpread(a, p - v3s16(1, 0, 0), light);
+}
+
+#endif
 
 void Mapgen::calcLighting(v3s16 nmin, v3s16 nmax, v3s16 full_nmin, v3s16 full_nmax,
 	bool propagate_shadow)

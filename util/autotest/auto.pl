@@ -200,6 +200,10 @@ our $options = {
         mg_params => {"layers" => [{"name" => "default:sand"}]},
         mg_math => {"generator" => "mengersponge"},
     },
+    world_torch => {
+        -world    => $script_path . 'world_torch',
+        mg_params => {"layers" => [{"name" => "default:torch"}, {"name" => "default:glass"}]},
+    },
     mg_math_tglag => {
         -world            => $script_path . 'world_math_tglad',
         mg_name           => 'math',
