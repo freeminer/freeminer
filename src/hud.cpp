@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "settings.h"
 #include "util/numeric.h"
-#include "log.h"
+#include "log_types.h"
 #include "gamedef.h"
 #include "itemdef.h"
 #include "inventory.h"
@@ -221,7 +221,11 @@ void Hud::drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
 
 	// Position of upper left corner of bar
 	v2s32 pos = upperleftpos + screen_offset;
-	pos *= m_hud_scaling * porting::getDisplayDensity();
+
+	// fmtodo: correct division when 0 < scale < 1
+	auto scale = m_hud_scaling * porting::getDisplayDensity();
+	if (scale > 1)
+		pos *= scale;
 
 	if (hotbar_image != player->hotbar_image) {
 		hotbar_image = player->hotbar_image;
@@ -262,7 +266,7 @@ void Hud::drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
 		core::position2d<s32> step(0, 0);
 		(direction == HUD_DIR_TOP_BOTTOM || direction == HUD_DIR_BOTTOM_TOP ?
 			step.Y : step.X) = m_hotbar_imagesize + m_padding * 2;
-		for (int i = 0; i < itemcount - offset; i++) {
+		for (int i = 0; i < itemcount - inv_offset; i++) {
 			draw2DImageFilterScaled(driver,texture, rect,
 				core::rect<s32>(core::position2d<s32>(0, 0), imgsize),
 				NULL, hbar_colors, true);

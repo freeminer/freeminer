@@ -22,6 +22,16 @@ std::ostream & operator<<(std::ostream & s, v2POS p) {
 	return s;
 }
 
+std::ostream & operator<<(std::ostream & s, v2s32 p) {
+	s << "(" << p.X << "," << p.Y << ")";
+	return s;
+}
+
+std::ostream & operator<<(std::ostream & s, v2f p) {
+	s << "(" << p.X << "," << p.Y << ")";
+	return s;
+}
+
 std::ostream & operator<<(std::ostream & s, v3POS p) {
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;

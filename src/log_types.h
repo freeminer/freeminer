@@ -24,8 +24,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 
 #include <ostream>
-std::ostream & operator<<(std::ostream & s, v3POS p);
 std::ostream & operator<<(std::ostream & s, v2POS p);
+std::ostream & operator<<(std::ostream & s, v2s32 p);
+std::ostream & operator<<(std::ostream & s, v2f p);
+std::ostream & operator<<(std::ostream & s, v3POS p);
 std::ostream & operator<<(std::ostream & s, v3f p);
 
 #include <SColor.h>
