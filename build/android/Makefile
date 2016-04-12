@@ -451,7 +451,7 @@ leveldb_download :
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
 		${GIT_CLONE} ${LEVELDB_URL_GIT} || exit 1; \
-		curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
+		#curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
 		#cd ${LEVELDB_DIR} || exit 1;                                           \
 		#git checkout ${LEVELDB_COMMIT} || exit 1;                              \
 	fi
