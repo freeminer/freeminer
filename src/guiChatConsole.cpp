@@ -457,7 +457,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 	{
 		KeyPress kp(event.KeyInput);
 		// Key input
-		if(KeyPress(event.KeyInput) == getKeySetting("keymap_console"))
+		if(kp == getKeySetting("keymap_console"))
 		{
 /* old fm
 			closeConsoleAtOnce();
@@ -470,7 +470,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_close_on_enter = false;
 			return true;
 		}
-		else if (kp == EscapeKey || kp == CancelKey)
+		else if ( (kp == EscapeKey || kp == CancelKey) && event.KeyInput.Char == 0 )
 		{
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
@@ -522,7 +522,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			prompt.historyNext();
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_LEFT || event.KeyInput.Key == KEY_RIGHT)
+		else if((event.KeyInput.Key == KEY_LEFT || event.KeyInput.Key == KEY_RIGHT) && event.KeyInput.Char == 0)
 		{
 			// Left/right pressed
 			// Move/select character/word to the left depending on control and shift keys
@@ -558,7 +558,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_BACK)
+		else if(event.KeyInput.Key == KEY_BACK && event.KeyInput.Char == 0)
 		{
 			// Backspace or Ctrl-Backspace pressed
 			// delete character / word to the left
@@ -661,7 +661,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_TAB)
+		else if(event.KeyInput.Key == KEY_TAB && event.KeyInput.Char == 0)
 		{
 			// Tab or Shift-Tab pressed
 			// Nick completion
