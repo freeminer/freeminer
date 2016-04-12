@@ -558,7 +558,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_BACK && event.KeyInput.Char == 0)
+		else if(event.KeyInput.Key == KEY_BACK)
 		{
 			// Backspace or Ctrl-Backspace pressed
 			// delete character / word to the left
