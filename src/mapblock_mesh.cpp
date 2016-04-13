@@ -700,6 +700,13 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 	u8 c1 = (step > 1 && f1.isLiquid()) ? 1 : f1.solidness;
 	u8 c2 = (step > 1 && f2.isLiquid()) ? 1 : f2.solidness;
 
+	if (step > 1) {
+		if (!c1)
+			c1 = f1.solidness_far;
+		if (!c2)
+			c2 = f2.solidness_far;
+	}
+
 	bool solidness_differs = (c1 != c2);
 	bool makes_face = contents_differ && solidness_differs;
 

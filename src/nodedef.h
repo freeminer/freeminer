@@ -379,6 +379,7 @@ struct ContentFeatures
 	bool legacy_wallmounted;
 
 //freeminer:
+	u8 solidness_far = 0;
 	bool is_wire;
 	bool is_wire_connector;
 	bool is_circuit_element;

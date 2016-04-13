@@ -431,6 +431,8 @@ void ContentFeatures::reset()
 
 
 //freeminer:
+	solidness_far = 0;
+
 	freeze = "";
 	melt = "";
 	is_circuit_element = false;
@@ -1282,6 +1284,7 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			}
 			if (f->waving == 1)
 				material_type = TILE_MATERIAL_WAVING_LEAVES;
+			f->solidness_far = 1;
 			break;
 		case NDT_PLANTLIKE:
 			f->solidness = 0;
@@ -1302,6 +1305,9 @@ void CNodeDefManager::updateTextures(IGameDef *gamedef,
 			f->solidness = 0;
 			break;
 		}
+
+		if (f->drawtype == NDT_NODEBOX)
+			f->solidness_far = 1;
 
 #ifndef SERVER
 

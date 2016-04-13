@@ -345,7 +345,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 
 			blocks_in_range++;
 
-			auto smesh_size = block->mesh_size;
+			unsigned int smesh_size = block->mesh_size;
 			/*
 				Ignore if mesh doesn't exist
 			*/

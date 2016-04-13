@@ -601,7 +601,7 @@ public:
 #ifndef SERVER // Only on client
 	mesh_type mesh, mesh_old;
 	mesh_type mesh2, mesh4, mesh8, mesh16;
-	unsigned int mesh_size;
+	std::atomic_uint mesh_size;
 #endif
 
 	NodeMetadataList m_node_metadata;
