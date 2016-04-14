@@ -739,6 +739,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			max_lag = dtime;
 		}
 		m_env->reportMaxLagEstimate(max_lag);
+		g_profiler->add("Server: dtime max_lag", max_lag);
+		g_profiler->add("Server: dtime", dtime);
 		// Step environment
 		ScopeProfiler sp(g_profiler, "SEnv step");
 		if (!m_more_threads)
@@ -3951,8 +3953,6 @@ void dedicated_server_loop(Server &server, bool &kill)
 
 		run_time += steplen; // wrong not real time
 		if (server.m_autoexit && run_time > server.m_autoexit && !server.lan_adv_server.clients_num) {
-			actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
-			g_profiler->print(actionstream);
 			server.requestShutdown();
 		}
 
@@ -3968,4 +3968,10 @@ void dedicated_server_loop(Server &server, bool &kill)
 			}
 		}
 	}
+
+	if (server.m_autoexit || g_profiler_enabled) {
+		actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
+		g_profiler->print(actionstream);
+	}
+
 }

@@ -5,6 +5,8 @@
 # sudo apt-get install google-perftools libgoogle-perftools-dev
 
 our $help = qq{
+$0 [--this_script_params] [-freeminer_params] [cmd]
+
 #simple task
 $0 valgrind_massif
 
@@ -28,6 +30,9 @@ $0 server_gdb
 
 # run server without debug in gdb
 $0 server_gdb_nd
+
+# with periodic profiler
+$0 stress --options_add=headless,headless_optimize,info --clients_num=10 -profiler_print_interval=5
 
 $0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --options_add=headless
 
@@ -153,6 +158,9 @@ our $options = {
     },
     no_exit => {
         autoexit => 0,
+    },
+    info => {
+        -info                 => 1,
     },
     verbose => {
         #debug_log_level          => 'verbose',
