@@ -1551,7 +1551,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	DSTACK(FUNCTION_NAME);
 
 	//TimeTaker timer("ServerEnv step");
-	ScopeProfiler sp(g_profiler, "SEnv: step");
+	ScopeProfiler sp(g_profiler, "SEnv: step", SPT_AVG);
 
 	/* Step time of day */
 	stepTimeOfDay(dtime);

@@ -52,7 +52,7 @@ $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
 $0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 bot_gperf
-
+$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 --options_add=headless,headless_optimize,info --clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
 $0 --options_add=world_water
@@ -167,7 +167,9 @@ our $options = {
         -verbose                 => 1,
         enable_mapgen_debug_info => 1,
     },
-    bot        => {},
+    bot        => {
+        fps_max => 30,
+    },
     bot_random => {
         random_input       => 1,
         continuous_forward => 1,
@@ -184,6 +186,7 @@ our $options = {
         enable_shaders   => 0,
     },
     headless_optimize => {
+        fps_max => 10,
         headless_optimize => 1,
     },
     software => {
@@ -605,6 +608,12 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     },
     bot_gperf => [{-no_build_server => 1,}, 'build_gperf', ['gperf', 'run_single'], 'gperf_report'],
     play_gperf => [{-no_build_server => 1,}, [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'gperf_report']],
+
+    stress_gperf => [
+        {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_gperf',
+        ['gperf', 'run_server'], ['sleep', 10], {build_name => '_normal', -cmake_gperf => 0,}, 'clients',
+    ],
+
 
     play_task => sub {
         return 1 if $config->{all_run};
