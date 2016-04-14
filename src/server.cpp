@@ -743,7 +743,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		g_profiler->add("Server: dtime max_lag", max_lag);
 		g_profiler->add("Server: dtime", dtime);
 		// Step environment
-		ScopeProfiler sp(g_profiler, "SEnv step");
+		//ScopeProfiler sp(g_profiler, "SEnv step");
 		if (!m_more_threads)
 		m_env->step(dtime, m_uptime.get(), max_cycle_ms);
 	}
