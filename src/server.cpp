@@ -136,9 +136,10 @@ void *ServerThread::run()
 			for (u16 i = 0; i < 1000; ++i) {
 				if (!m_server->Receive(sleep))
 					break;
-				if (i > 50 && porting::getTimeMs() > end_ms)
+				if (i > 50 && porting::getTimeMs() > end_ms) {
 					verbosestream<<"Server: Recieve queue overloaded: processed="  << i << " per="<<porting::getTimeMs()-(end_ms-sleep)<<" sleep="<<sleep<<std::endl;
 					break;
+				}
 			}
 		} catch (con::NoIncomingDataException &e) {
 			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
