@@ -470,7 +470,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_close_on_enter = false;
 			return true;
 		}
-		else if ( (kp == EscapeKey || kp == CancelKey) && event.KeyInput.Char == 0 )
+		else if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) )
 		{
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
