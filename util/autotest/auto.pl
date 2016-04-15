@@ -155,6 +155,7 @@ our $options = {
         reconnects              => 10000,
         profiler_print_interval => 100000,
         default_game            => $config->{gameid},
+        max_users               => 4000,
     },
     no_exit => {
         autoexit => 0,
