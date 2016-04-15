@@ -217,7 +217,9 @@ ModConfiguration::ModConfiguration(std::string worldpath)
 			s += std::string("\"") + (*it) + "\"";
 		}
 		s += ".";
+		/*
 		throw ModError(s);
+		*/
 	}
 
 	// get the mods in order
@@ -275,7 +277,7 @@ void ModConfiguration::addMods(std::vector<ModSpec> new_mods)
 				// VERY BAD CASE: name conflict in the same level.
 				u32 oldindex = existing_mods[mod.name];
 				const ModSpec &oldmod = m_unsatisfied_mods[oldindex];
-				warningstream<<"Mod name conflict detected: \""
+				errorstream<<"Mod name conflict detected: \""
 					<<mod.name<<"\""<<std::endl
 					<<"Will not load: "<<oldmod.path<<std::endl
 					<<"Will not load: "<<mod.path<<std::endl;
