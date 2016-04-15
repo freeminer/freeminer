@@ -389,6 +389,7 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
 
 our $tasks = {
     build_normal => [sub { $g->{build_name} ||= '_normal'; 0 }, 'prepare', 'cmake', 'make',],
+    build => [\'build_normal'],
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1, -no_build_server => 0,}, 'build_normal',],
@@ -495,8 +496,15 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    build_minetest       => [sub { $g->{build_name} .= '_minetest'; 0 }, {-cmake_minetest => 1,}, 'build_client'],
-    build_minetest_debug => [sub { $g->{build_name} .= '_minetest'; 0 }, {-cmake_minetest => 1,}, 'build_client_debug'],
+    minetest => sub {
+        return 1 if $config->{all_run};
+        local $g->{build_name} = $g->{build_name} . '_minetest';
+        local $config->{cmake_minetest} = 1;
+        @_ = ('build') if !@_;
+        for (@_) { my $r = commands_run($_); return $r if $r; }
+    },
+
+    (map { 'minetest_' . $_ => [[\'minetest', $_]] } qw(build build_client build_client_debug build_server build_server_debug stress)), # '
 
     bot_minetest => sub {
         my $name = shift;
@@ -507,7 +515,7 @@ our $tasks = {
             $g->{build_name} .= '_minetest';
             commands_run('bot_' . $name);
         } else {
-            commands_run('build_minetest');
+            commands_run('build_client_minetest');
             commands_run($config->{run_task});
         }
     }, (
