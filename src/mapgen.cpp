@@ -252,7 +252,8 @@ void Mapgen::setLighting(u8 light, v3s16 nmin, v3s16 nmax)
 	}
 }
 
-void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
+void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light,
+		unordered_map_v3POS<u8> & skip, int r)
 {
 	if (light <= 1 || !a.contains(p))
 		return;
@@ -266,7 +267,7 @@ void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
 		light_day -= 0x01;
 
 	u8 light_night = light & 0xF0;
-	if (light_night > 0)
+	if (light_night > 0x10)
 		light_night -= 0x10;
 
 	// Bail out only if we have no more light from either bank to propogate, or
@@ -284,12 +285,21 @@ void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light)
 
 	n.param1 = light;
 
-	lightSpread(a, p + v3s16(0, 0, 1), light);
-	lightSpread(a, p + v3s16(0, 1, 0), light);
-	lightSpread(a, p + v3s16(1, 0, 0), light);
-	lightSpread(a, p - v3s16(0, 0, 1), light);
-	lightSpread(a, p - v3s16(0, 1, 0), light);
-	lightSpread(a, p - v3s16(1, 0, 0), light);
+	if (++r > 100) {
+		//errorstream<<"mapgen light recursion stop r="<<r << " p=" << p << " lwas=" << (int)n.param1 << " lnow="<< (int )light << " day="<<(int)light_day << " ni="<<(int)light_night<<" skip="<<skip.size() << "\n";
+		return;
+	}
+
+	if (skip.count(p))
+		return;
+	skip.emplace(p, 1);
+
+	lightSpread(a, p + v3s16(0, 0, 1), light, skip, r);
+	lightSpread(a, p + v3s16(0, 1, 0), light, skip, r);
+	lightSpread(a, p + v3s16(1, 0, 0), light, skip, r);
+	lightSpread(a, p - v3s16(0, 0, 1), light, skip, r);
+	lightSpread(a, p - v3s16(0, 1, 0), light, skip, r);
+	lightSpread(a, p - v3s16(1, 0, 0), light, skip, r);
 }
 
 void Mapgen::calcLighting(v3s16 nmin, v3s16 nmax, v3s16 full_nmin, v3s16 full_nmax,
@@ -383,12 +393,13 @@ void Mapgen::spreadLight(v3s16 nmin, v3s16 nmax)
 
 				u8 light = n.param1;
 				if (light) {
-					lightSpread(a, v3s16(x,     y,     z + 1), light);
-					lightSpread(a, v3s16(x,     y + 1, z    ), light);
-					lightSpread(a, v3s16(x + 1, y,     z    ), light);
-					lightSpread(a, v3s16(x,     y,     z - 1), light);
-					lightSpread(a, v3s16(x,     y - 1, z    ), light);
-					lightSpread(a, v3s16(x - 1, y,     z    ), light);
+					unordered_map_v3POS<u8> skip;
+					lightSpread(a, v3s16(x,     y,     z + 1), light, skip);
+					lightSpread(a, v3s16(x,     y + 1, z    ), light, skip);
+					lightSpread(a, v3s16(x + 1, y,     z    ), light, skip);
+					lightSpread(a, v3s16(x,     y,     z - 1), light, skip);
+					lightSpread(a, v3s16(x,     y - 1, z    ), light, skip);
+					lightSpread(a, v3s16(x - 1, y,     z    ), light, skip);
 				}
 			}
 		}
