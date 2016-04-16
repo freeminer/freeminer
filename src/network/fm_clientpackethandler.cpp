@@ -183,7 +183,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)    {
 		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
 		if (block) {
 			updateMeshTimestampWithEdge(p);
-			if (block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
+			if (!overload && block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
 				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
 					addUpdateMeshTaskWithEdge(p);
 			}

@@ -51,7 +51,9 @@ void *ServerThread::run()
 				}
 			}
 			auto events = m_server->m_con.events_size();
-			g_profiler->add("Server: Queue", events);
+			if (events) {
+				g_profiler->add("Server: Queue", events);
+			}
 			if (events > 500) {
 				if (!m_server->overload)
 					errorstream<<"Server: Enabling overload mode queue=" << events << "\n";

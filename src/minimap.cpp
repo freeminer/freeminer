@@ -100,7 +100,7 @@ void MinimapUpdateThread::enqueueBlock(v3s16 pos, MinimapMapblock *data)
 
 void MinimapUpdateThread::doUpdate()
 {
-	ScopeProfiler sp(g_profiler, "Client minimap");
+	ScopeProfiler sp(g_profiler, "Client: minimap");
 	QueuedMinimapUpdate update;
 
 	while (popBlockUpdate(&update)) {

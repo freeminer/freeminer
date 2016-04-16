@@ -688,6 +688,7 @@ private:
 	float m_timelapse_timer;
 public:
 	bool use_weather = false;
+	unsigned int overload = 0;
 	void sendDrawControl();
 private:
 

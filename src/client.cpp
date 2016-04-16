@@ -857,7 +857,7 @@ void Client::initLocalMapSaving(const Address &address,
 void Client::ReceiveAll()
 {
 	DSTACK(FUNCTION_NAME);
-	auto end_ms = porting::getTimeMs() + 20;
+	auto end_ms = porting::getTimeMs() + 20 + (overload ? 30 : 0);
 	for(;;)
 	{
 #if MINETEST_PROTO
@@ -883,6 +883,25 @@ void Client::ReceiveAll()
 		if(porting::getTimeMs() > end_ms)
 			break;
 	}
+
+
+	auto events = m_con.events_size();
+	if (events) {
+		g_profiler->add("Client: Queue", events);
+		//errorstream<<"Client: queue=" << events << "\n";
+	}
+	if (m_state == LC_Ready && events > 100) {
+		if (!overload)
+			infostream<<"Client: Enabling overload mode queue=" << events << "\n";
+		if (overload < events)
+			overload = events;
+	} else {
+		if (overload)
+			infostream<<"Client: Disabling overload mode queue=" << events << "\n";
+		overload = 0;
+	}
+
+
 }
 
 bool Client::Receive()
@@ -936,6 +955,13 @@ void Client::ProcessData(NetworkPacket *pkt)
 		infostream << "Client: Ignoring unknown command "
 			<< command << std::endl;
 		return;
+	}
+
+	if (overload) {
+		if (command == TOCLIENT_ACTIVE_OBJECT_MESSAGES || command == TOCLIENT_ADD_PARTICLESPAWNER || command == TOCLIENT_ADDNODE
+			|| command == TOCLIENT_REMOVENODE || command == TOCLIENT_PLAY_SOUND)
+			return;
+		//errorstream << "overload cmd=" << command << " n="<< toClientCommandTable[command].name << "\n";
 	}
 
 	/*
