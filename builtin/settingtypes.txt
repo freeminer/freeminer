@@ -1325,9 +1325,10 @@ liquid_send () float 1.0
 #  (for finite liquids)
 liquid_relax () int 2
 
-# Optimization: faster cave flood (and not true constant)
-#  (for finite liquids)
-liquid_fast_flood () bool 1
+# Optimization: faster cave flood (and not true constant) (for finite liquids)
+# values: 0 = disable, any height : lower height
+# by default works only at y= -100 .. 0 (water_level = 0) for preserving deep caves from flooding
+liquid_fast_flood () bool -200
 
 # Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 weather () bool true

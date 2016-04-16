@@ -85,7 +85,7 @@ u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 #endif
 
 	u8 relax = g_settings->getS16("liquid_relax");
-	static bool fast_flood = g_settings->getS16("liquid_fast_flood");
+	static int fast_flood = g_settings->getS16("liquid_fast_flood");
 	static int water_level = g_settings->getS16("water_level");
 	s16 liquid_pressure = m_server->m_emerge->params.liquid_pressure;
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
@@ -361,7 +361,7 @@ NEXT_LIQUID:
 		u16 relax_want = level_max * can_liquid_same_level;
 		if (	liquid_renewable &&
 		        relax &&
-		        ((p0.Y == water_level) || (fast_flood && p0.Y <= water_level)) &&
+		        ((p0.Y == water_level) || (fast_flood && p0.Y <= water_level && p0.Y > fast_flood)) &&
 		        level_max > 1 &&
 		        liquid_levels[D_TOP] == 0 &&
 		        liquid_levels[D_BOTTOM] >= level_max &&
@@ -595,6 +595,7 @@ NEXT_LIQUID:
 			            level_max > 1					&&
 			            fast_flood					&&
 			            p0.Y < water_level			&&
+			            p0.Y > fast_flood			&&
 			            initial_size >= 1000			&&
 			            ii != D_TOP					&&
 			            want_level >= level_max / 4	&&
