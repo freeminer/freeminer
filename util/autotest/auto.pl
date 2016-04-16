@@ -60,6 +60,7 @@ $0 --options_add=world_water
 # stress test of falling sand
 $0 --options_add=world_sand
 
+$0 --cmake_minetest=1 --build_name=_minetest --options_add=headless,headless_optimize --address=cool.server.org --port=30001 --clients_num=25 clients
 
 # timelapse video
 $0 timelapse
@@ -78,6 +79,7 @@ $Data::Dumper::Sortkeys = $Data::Dumper::Useqq = $Data::Dumper::Indent = $Data::
 #use JSON;
 use Cwd   ();
 use POSIX ();
+use Time::HiRes qw(sleep);
 
 sub sy (@);
 sub dmp (@);
@@ -166,7 +168,7 @@ our $options = {
     verbose => {
         #debug_log_level          => 'verbose',
         -verbose                 => 1,
-        enable_mapgen_debug_info => 1,
+        #enable_mapgen_debug_info => 1,
     },
     bot        => {
         fps_max => 30,
@@ -355,12 +357,14 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
             local $config->{address} = '::1' if not $config->{address};
             #my $args = join ' ',
             #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
+            for (0 .. $config->{clients_num}) {
             sy
 qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
               . options_make([qw( address gameid world address port config verbose)])
-              . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & }
-              for 0 .. $config->{clients_num};
-            sleep $config->{clients_sleep} || 1;
+              . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & };
+               sleep $config->{clients_spawn_sleep} // 0.2;
+            }
+            sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
         }
     },
     symbolize => sub {
@@ -389,7 +393,7 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
 
 our $tasks = {
     build_normal => [sub { $g->{build_name} ||= '_normal'; 0 }, 'prepare', 'cmake', 'make',],
-    build => [\'build_normal'],
+    build => [\'build_normal'], #'
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1, -no_build_server => 0,}, 'build_normal',],
@@ -658,10 +662,15 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         return 0;
     },
 
-    kill => sub {
-        sy qq{killall freeminer freeminerserver};
+    kill_client => sub {
+        sy qq{killall freeminer};
         return 0;
     },
+    kill_server => sub {
+        sy qq{killall freeminerserver};
+        return 0;
+    },
+    kill => ['kill_client', 'kill_server'],
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }

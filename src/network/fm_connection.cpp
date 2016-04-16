@@ -430,6 +430,10 @@ ConnectionEvent Connection::getEvent() {
 	return m_event_queue.pop_frontNoEx();
 }
 
+size_t Connection::events_size() {
+	return m_event_queue.size();
+}
+
 ConnectionEvent Connection::waitEvent(u32 timeout_ms) {
 	try {
 		return m_event_queue.pop_front(timeout_ms);

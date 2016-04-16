@@ -247,7 +247,7 @@ public:
 		//	return 1;
 		return m_queue.empty();
 	}
-	unsigned int size() {
+	size_t size() {
 		MutexAutoLock lock(m_mutex);
 		return m_queue.size();
 	}

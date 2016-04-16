@@ -922,6 +922,20 @@ void Server::handleCommand_Respawn(NetworkPacket* pkt) {
 void Server::handleCommand_Interact(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
+
+	u8 action;
+	u16 item_i;
+	PointedThing pointed;
+
+	packet[TOSERVER_INTERACT_ACTION].convert(action);
+	packet[TOSERVER_INTERACT_ITEM].convert(item_i);
+	packet[TOSERVER_INTERACT_POINTED_THING].convert(pointed);
+
+	if (overload) {
+		if (pointed.type == POINTEDTHING_NOTHING || action == 1) return;
+		//errorstream<<"overload pointed peer_id=" << peer_id << " action=" << (int)action  << " pointed.type="<<pointed.type<< "\n";
+	}
+
 	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
@@ -932,14 +946,6 @@ void Server::handleCommand_Interact(NetworkPacket* pkt) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
 	}
-
-	u8 action;
-	u16 item_i;
-	PointedThing pointed;
-
-	packet[TOSERVER_INTERACT_ACTION].convert(action);
-	packet[TOSERVER_INTERACT_ITEM].convert(item_i);
-	packet[TOSERVER_INTERACT_POINTED_THING].convert(pointed);
 
 	if(player->hp == 0) {
 		verbosestream << "TOSERVER_INTERACT: " << player->getName()

@@ -298,6 +298,7 @@ public:
 	Address GetPeerAddress(u16 peer_id);
 	float getPeerStat(u16 peer_id, rtt_stat_type type);
 	void DisconnectPeer(u16 peer_id);
+	size_t events_size();
 
 private:
 	void putEvent(ConnectionEvent &e);

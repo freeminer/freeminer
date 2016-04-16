@@ -890,8 +890,13 @@ void ClientInterface::UpdatePlayerList()
 		std::vector<u16> clients = getClientIDs();
 		m_clients_names.clear();
 
+		auto now = porting::getTimeMs();
+		static auto last_print = now;
+		bool print = now >= last_print;
+		if (print)
+			last_print = now + 5000;
 
-		if(!clients.empty())
+		if (print && !clients.empty())
 			infostream<<"Players ["<<clients.size()<<"]:"<<std::endl;
 
 		for(auto
@@ -902,6 +907,7 @@ void ClientInterface::UpdatePlayerList()
 			if (player == NULL)
 				continue;
 
+		  if (print) {
 			infostream << "* " << player->getName() << "\t";
 
 			{
@@ -910,6 +916,7 @@ void ClientInterface::UpdatePlayerList()
 				if(client != NULL)
 					client->PrintInfo(infostream);
 			}
+		  }
 
 			m_clients_names.push_back(player->getName());
 		}

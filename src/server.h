@@ -574,8 +574,10 @@ private:
 	// Environment
 	ServerEnvironment *m_env;
 
+public:
 	// server connection
 	con::Connection m_con;
+private:
 
 	// Ban checking
 	BanManager *m_banmanager;
@@ -726,14 +728,15 @@ private:
 	// freeminer:
 public:
 	lan_adv lan_adv_server;
-	int m_autoexit;
+	int m_autoexit = 0;
 	//concurrent_map<v3POS, MapBlock*> m_modified_blocks;
 	//concurrent_map<v3POS, MapBlock*> m_lighting_modified_blocks;
-	bool m_more_threads;
+	bool m_more_threads = false;
+	unsigned int overload = 0;
 	void deleteDetachedInventory(const std::string &name);
 	void maintenance_start();
 	void maintenance_end();
-	int maintenance_status;
+	int maintenance_status = 0;
 	void SendPunchPlayer(u16 peer_id, v3f speed);
 
 

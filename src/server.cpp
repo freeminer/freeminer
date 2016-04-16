@@ -77,8 +77,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database.h"
 
 
-#include "fm_server.cpp"
-
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
@@ -92,12 +90,16 @@ public:
 	{}
 };
 
-class ServerThread : public thread_pool
+#include "fm_server.cpp"
+
+#if 0
+
+class ServerThread : public Thread
 {
 public:
 
 	ServerThread(Server *server):
-		thread_pool("Server", 40),
+		Thread("Server"),
 		m_server(server)
 	{}
 
@@ -112,50 +114,24 @@ void *ServerThread::run()
 	DSTACK(FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	m_server->AsyncRunStep(0.1, true);
+	m_server->AsyncRunStep(true);
 
-	auto time = porting::getTimeMs();
 	while (!stopRequested()) {
 		try {
-			u32 time_now = porting::getTimeMs();
-			{
-			TimeTaker timer("Server AsyncRunStep()");
-			m_server->AsyncRunStep((time_now - time)/1000.0f);
-			}
-			time = time_now;
+			//TimeTaker timer("AsyncRunStep() + Receive()");
 
-			TimeTaker timer("Server Receive()");
-			// Loop used only when 100% cpu load or on old slow hardware.
-			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs();
-			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
-			if (sleep < 50)
-				sleep = 50;
-			end_ms += sleep; //u32(1000 * dedicated_server_step/2);
-			for (u16 i = 0; i < 1000; ++i) {
-				if (!m_server->Receive(sleep))
-					break;
-				if (i > 50 && porting::getTimeMs() > end_ms) {
-					verbosestream<<"Server: Recieve queue overloaded: processed="  << i << " per="<<porting::getTimeMs()-(end_ms-sleep)<<" sleep="<<sleep<<std::endl;
-					break;
-				}
-			}
+			m_server->AsyncRunStep();
+
+			m_server->Receive();
+
 		} catch (con::NoIncomingDataException &e) {
-			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		} catch (con::PeerNotFoundException &e) {
 			infostream<<"Server: PeerNotFoundException"<<std::endl;
 		} catch (ClientNotFoundException &e) {
 		} catch (con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
-#if !EXEPTION_DEBUG
 		} catch (LuaError &e) {
 			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
-		} catch (std::exception &e) {
-			errorstream << m_name << ": exception: "<<e.what()<<std::endl;
-		} catch (...) {
-			errorstream << m_name << ": Ooops..."<<std::endl;
-#endif
 		}
 	}
 
@@ -163,6 +139,8 @@ void *ServerThread::run()
 
 	return NULL;
 }
+
+#endif
 
 v3f ServerSoundParams::getPos(ServerEnvironment *env, bool *pos_exists) const
 {
@@ -237,8 +215,6 @@ Server::Server(
 	m_liquid_transform_interval = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
-	m_autoexit = 0;
-	maintenance_status = 0;
 	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
 	m_objectdata_timer = 0.0;
@@ -249,8 +225,6 @@ Server::Server(
 	m_lag = g_settings->getFloat("dedicated_server_step");
 #if ENABLE_THREADS
 	m_more_threads = g_settings->getBool("more_threads");
-#else
-	m_more_threads = 0;
 #endif
 
 	if(path_world == "")
@@ -1339,6 +1313,8 @@ u16 Server::Receive(int ms)
 	u16 peer_id = 0;
 	u16 received = 0;
 	try {
+		TimeTaker timer_step("Server recieve one packet");
+
 		NetworkPacket pkt;
 		auto size = m_con.Receive(&pkt, ms);
 		peer_id = pkt.getPeerId();
@@ -1534,6 +1510,16 @@ void Server::ProcessData(NetworkPacket *pkt)
 			infostream << "Server: Ignoring unknown command "
 					 << command << std::endl;
 			return;
+		}
+
+		if (overload) {
+			if (command == TOSERVER_PLAYERPOS || command == TOSERVER_DRAWCONTROL)
+				return;
+			if (overload > 2000 && command == TOSERVER_BREATH)
+				return;
+			if (overload > 30000 && command == TOSERVER_INTERACT) // FMTODO queue here for post-process
+				return;
+			//errorstream << "overload cmd=" << command << " n="<< toServerCommandTable[command].name << "\n";
 		}
 
 		if (toServerCommandTable[command].state == TOSERVER_STATE_NOT_CONNECTED) {
@@ -2601,12 +2587,12 @@ void Server::fillMediaCache()
 	{
 		std::string mediapath = *i;
 		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(mediapath);
-		for(u32 j=0; j<dirlist.size(); j++){
-			if(dirlist[j].dir) // Ignode dirs
+		for (u32 j = 0; j < dirlist.size(); j++) {
+			if (dirlist[j].dir) // Ignode dirs
 				continue;
 			std::string filename = dirlist[j].name;
 			// If name contains illegal characters, ignore the file
-			if(!string_allowed(filename, TEXTURENAME_ALLOWED_CHARS)){
+			if (!string_allowed(filename, TEXTURENAME_ALLOWED_CHARS)) {
 				infostream<<"Server: ignoring illegal file name: \""
 						<<filename<<"\""<<std::endl;
 				continue;
@@ -2619,7 +2605,7 @@ void Server::fillMediaCache()
 				".x", ".b3d", ".md2", ".obj",
 				NULL
 			};
-			if(removeStringEnd(filename, supported_ext) == ""){
+			if (removeStringEnd(filename, supported_ext) == "") {
 				infostream<<"Server: ignoring unsupported file extension: \""
 						<<filename<<"\""<<std::endl;
 				continue;
@@ -2628,31 +2614,31 @@ void Server::fillMediaCache()
 			std::string filepath = mediapath + DIR_DELIM + filename;
 			// Read data
 			std::ifstream fis(filepath.c_str(), std::ios_base::binary);
-			if(fis.good() == false){
+			if (!fis.good()) {
 				errorstream<<"Server::fillMediaCache(): Could not open \""
 						<<filename<<"\" for reading"<<std::endl;
 				continue;
 			}
 			std::ostringstream tmp_os(std::ios_base::binary);
 			bool bad = false;
-			for(;;){
+			for (;;) {
 				char buf[1024];
 				fis.read(buf, 1024);
 				std::streamsize len = fis.gcount();
 				tmp_os.write(buf, len);
-				if(fis.eof())
+				if (fis.eof())
 					break;
-				if(!fis.good()){
+				if (!fis.good()) {
 					bad = true;
 					break;
 				}
 			}
-			if(bad){
+			if (bad) {
 				errorstream<<"Server::fillMediaCache(): Failed to read \""
 						<<filename<<"\""<<std::endl;
 				continue;
 			}
-			if(tmp_os.str().length() == 0){
+			if (tmp_os.str().length() == 0) {
 				errorstream<<"Server::fillMediaCache(): Empty file \""
 						<<filepath<<"\""<<std::endl;
 				continue;
@@ -2737,11 +2723,11 @@ void Server::sendRequestedMedia(u16 peer_id,
 
 	u32 file_size_bunch_total = 0;
 
-	for(std::vector<std::string>::const_iterator i = tosend.begin();
+	for (std::vector<std::string>::const_iterator i = tosend.begin();
 			i != tosend.end(); ++i) {
 		const std::string &name = *i;
 
-		if(m_media.find(name) == m_media.end()) {
+		if (m_media.find(name) == m_media.end()) {
 			errorstream<<"Server::sendRequestedMedia(): Client asked for "
 					<<"unknown file \""<<(name)<<"\""<<std::endl;
 			continue;
@@ -2752,27 +2738,27 @@ void Server::sendRequestedMedia(u16 peer_id,
 
 		// Read data
 		std::ifstream fis(tpath.c_str(), std::ios_base::binary);
-		if(fis.good() == false){
+		if (!fis.good()) {
 			errorstream<<"Server::sendRequestedMedia(): Could not open \""
 					<<tpath<<"\" for reading"<<std::endl;
 			continue;
 		}
 		std::ostringstream tmp_os(std::ios_base::binary);
 		bool bad = false;
-		for(;;) {
+		for (;;) {
 			char buf[1024];
 			fis.read(buf, 1024);
 			std::streamsize len = fis.gcount();
 			tmp_os.write(buf, len);
 			file_size_bunch_total += len;
-			if(fis.eof())
+			if (fis.eof())
 				break;
-			if(!fis.good()) {
+			if (!fis.good()) {
 				bad = true;
 				break;
 			}
 		}
-		if(bad) {
+		if (bad) {
 			errorstream<<"Server::sendRequestedMedia(): Failed to read \""
 					<<name<<"\""<<std::endl;
 			continue;
@@ -2784,7 +2770,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 				SendableMedia(name, tpath, tmp_os.str()));
 
 		// Start next bunch if got enough data
-		if(file_size_bunch_total >= bytes_per_bunch) {
+		if (file_size_bunch_total >= bytes_per_bunch) {
 			file_bunches.push_back(std::vector<SendableMedia>());
 			file_size_bunch_total = 0;
 		}
@@ -2794,7 +2780,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 	/* Create and send packets */
 
 	u16 num_bunches = file_bunches.size();
-	for(u16 i = 0; i < num_bunches; i++) {
+	for (u16 i = 0; i < num_bunches; i++) {
 		/*
 			u16 command
 			u16 total number of texture bunches
@@ -2811,7 +2797,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 		NetworkPacket pkt(TOCLIENT_MEDIA, 4 + 0, peer_id);
 		pkt << num_bunches << i << (u32) file_bunches[i].size();
 
-		for(std::vector<SendableMedia>::iterator
+		for (std::vector<SendableMedia>::iterator
 				j = file_bunches[i].begin();
 				j != file_bunches[i].end(); ++j) {
 			pkt << j->name;
@@ -3081,7 +3067,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 					if(!player)
 						continue;
 					// Get name of player
-					os<<player->getName()<<" ";
+					os << player->getName() << " ";
 				}
 
 				std::string name = player->getName();

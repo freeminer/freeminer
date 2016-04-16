@@ -1335,6 +1335,11 @@ void Server::handleCommand_Interact(NetworkPacket* pkt)
 	PointedThing pointed;
 	pointed.deSerialize(tmp_is);
 
+	if (overload) {
+		if (pointed.type == POINTEDTHING_NOTHING || action == 1) return;
+		//errorstream<<"overload pointed peer_id=" << peer_id << " action=" << (int)action  << " pointed.type="<<pointed.type<< "\n";
+	}
+
 	verbosestream << "TOSERVER_INTERACT: action=" << (int)action << ", item="
 			<< item_i << ", pointed=" << pointed.dump() << std::endl;
 
