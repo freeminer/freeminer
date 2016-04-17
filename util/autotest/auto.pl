@@ -601,12 +601,13 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     },
     bot_vtune => ['build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
     stress_vtune => [
-        'build_debug',
-        sub {
-            commands_run('vtune', 'run_server');
-        },
-        ['sleep', 10],
-        'clients_run',
+        #'build_debug',sub { commands_run('vtune', 'run_server');}, ['sleep', 10], 'clients_run',
+         {#-no_build_client => 1, -no_build_server => 0, 
+         -server_bg => 1,}, 'build_debug',
+        [\'vtune', 'run_server'], ['sleep', 10], 
+        #{build_name => '_normal'}, 
+        'clients',
+
     ],
 
     gperf => sub {

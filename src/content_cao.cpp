@@ -818,6 +818,8 @@ void GenericCAO::removeFromScene(bool permanent)
 void GenericCAO::addToScene(scene::ISceneManager *smgr, 
 		ITextureSource *tsrc, IrrlichtDevice *irr)
 {
+	static auto headless_optimize = g_settings->getBool("headless_optimize");
+
 	m_smgr = smgr;
 	m_irr = irr;
 
@@ -954,7 +956,7 @@ void GenericCAO::addToScene(scene::ISceneManager *smgr,
 			m_animated_meshnode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
 			m_animated_meshnode->setMaterialFlag(video::EMF_BACK_FACE_CULLING, backface_culling);
 		}
-		else
+		else if (!headless_optimize)
 			errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
 	}
 	else if(m_prop.visual == "wielditem") {

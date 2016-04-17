@@ -1856,7 +1856,7 @@ void Client::afterContentReceived(IrrlichtDevice *device)
 {
 	//infostream<<"Client::afterContentReceived() started"<<std::endl;
 
-	bool headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	static auto headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	//bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
 	const wchar_t* text = wgettext("Loading textures...");
@@ -2068,8 +2068,10 @@ ParticleManager* Client::getParticleManager()
 
 scene::IAnimatedMesh* Client::getMesh(const std::string &filename)
 {
+	static auto headless_optimize = g_settings->getBool("headless_optimize");
 	StringMap::const_iterator it = m_mesh_data.find(filename);
 	if (it == m_mesh_data.end()) {
+	  if (!headless_optimize)
 		errorstream << "Client::getMesh(): Mesh not found: \"" << filename
 			<< "\"" << std::endl;
 		return NULL;
