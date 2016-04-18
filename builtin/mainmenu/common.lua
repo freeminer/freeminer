@@ -257,6 +257,7 @@ function asyncOnlineFavourites()
 		}}
 	end
 	menudata.favorites = menudata.public_known
+	menudata.favorites_is_public = true
 	core.handle_async(
 		function(param)
 			return core.get_favorites("online")
@@ -275,6 +276,7 @@ function asyncOnlineFavourites()
 						file:close()
 					end
 
+					menudata.favorites_is_public = true
 				end
 				core.event_handler("Refresh")
 			end
@@ -337,12 +339,14 @@ function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, 
 				proto or '?', core.setting_get("server_proto") )
 		end
 
-		if server_proto_min ~= server_proto_max then
+		local s_p_min = server_proto_min or 13
+		local s_p_max = server_proto_max or 24
+		if s_p_min ~= s_p_max then
 			server_prot_ver_info = fgettext_ne("Server supports protocol versions between $1 and $2. ",
-				server_proto_min or 13, server_proto_max or 24)
+				s_p_min, s_p_max)
 		else
 			server_prot_ver_info = fgettext_ne("Server enforces protocol version $1. ",
-				server_proto_min or 13)
+				s_p_min)
 		end
 		if min_supp_proto ~= max_supp_proto then
 			client_prot_ver_info= fgettext_ne("We support protocol versions between version $1 and $2.",
