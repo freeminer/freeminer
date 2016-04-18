@@ -32,6 +32,7 @@ Stat::~Stat() {
 };
 
 void Stat::save() {
+	std::lock_guard<Mutex> lock(mutex);
 	for(const auto & ir : stats) {
 		//errorstream<<"stat saving: "<<ir.first<< " = "<< ir.second<<std::endl;
 		if (ir.second)
@@ -42,6 +43,7 @@ void Stat::save() {
 
 void Stat::unload() {
 	save();
+	std::lock_guard<Mutex> lock(mutex);
 	stats.clear();
 }
 
@@ -55,6 +57,7 @@ void Stat::close() {
 }
 
 stat_value Stat::get(const std::string & key) {
+	std::lock_guard<Mutex> lock(mutex);
 	if (!stats.count(key))
 		database.get(key, stats[key]);
 	//errorstream<<"stat get: "<<key<<" = "<< stats[key]<<std::endl;
@@ -64,6 +67,7 @@ stat_value Stat::get(const std::string & key) {
 stat_value Stat::write_one(const std::string & key, const stat_value & value) {
 	//errorstream<<"stat one: "<<key<< " = "<< value<<std::endl;
 	get(key);
+	std::lock_guard<Mutex> lock(mutex);
 	return stats[key] += value;
 }
 

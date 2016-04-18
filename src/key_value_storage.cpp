@@ -36,10 +36,10 @@ bool KeyValueStorage::open() {
 #if USE_LEVELDB
 	leveldb::Options options;
 	options.create_if_missing = true;
-	std::lock_guard<Mutex> lock(mutex);
 	auto status = leveldb::DB::Open(options, fullpath, &db);
 	verbosestream<<"KeyValueStorage::open() db_name="<<db_name << " status="<< status.ok()<< " error="<<status.ToString()<<std::endl;
 	if (!status.ok()) {
+		std::lock_guard<Mutex> lock(mutex);
 		error = status.ToString();
 		errorstream<< "Trying to repair database ["<<error<<"]"<<std::endl;
 		status = leveldb::RepairDB(fullpath, options);
@@ -78,9 +78,9 @@ bool KeyValueStorage::put(const std::string &key, const std::string &data)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Put(write_options, key, data);
 	if (!status.ok()) {
+		std::lock_guard<Mutex> lock(mutex);
 		error = status.ToString();
 		return false;
 	}
@@ -104,9 +104,9 @@ bool KeyValueStorage::get(const std::string &key, std::string &data)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Get(read_options, key, &data);
 	if (!status.ok()) {
+		std::lock_guard<Mutex> lock(mutex);
 		error = status.ToString();
 		return false;
 	}
@@ -143,7 +143,7 @@ bool KeyValueStorage::del(const std::string &key)
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	std::lock_guard<Mutex> lock(mutex);
+	//std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
 	return status.ok();
 #else

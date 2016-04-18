@@ -46,6 +46,8 @@ public:
 	stat_value add(const std::string & key, const std::string & player = "", stat_value value = 1);
 
 	void update_time();
+private:
+	Mutex mutex;
 };
 
 #endif
