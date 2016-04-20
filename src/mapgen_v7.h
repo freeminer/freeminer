@@ -71,6 +71,7 @@ public:
 	BiomeManager *bmgr;
 
 	int ystride;
+	int zstride_1u1d;
 	int zstride_1d;
 	u32 spflags;
 
@@ -128,15 +129,11 @@ public:
 
 	virtual void calculateNoise();
 
-	virtual int generateTerrain();
-	void generateBaseTerrain(s16 *stone_surface_min_y, s16 *stone_surface_max_y);
-	int generateMountainTerrain(s16 ymax);
+	int generateTerrain();
 	void generateRidgeTerrain();
 
 	MgStoneType generateBiomes(float *heat_map, float *humidity_map);
 	void dustTopNodes();
-
-	//void addTopNodes();
 
 	virtual void generateExperimental();
 
