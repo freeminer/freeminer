@@ -77,7 +77,8 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 	lua_pushnumber(L, m_id);
 	lua_gettable(L, -2);
 	if(lua_isnil(L, -1))
-		FATAL_ERROR("");
+		//FATAL_ERROR("");
+		return;
 	lua_remove(L, -2); // Remove registered_abms
 
 	scriptIface->setOriginFromTable(-1);
@@ -121,7 +122,11 @@ void LuaLBM::trigger(ServerEnvironment *env, v3s16 p, MapNode n)
 	// Get registered_lbms[m_id]
 	lua_pushnumber(L, m_id);
 	lua_gettable(L, -2);
-	FATAL_ERROR_IF(lua_isnil(L, -1), "Entry with given id not found in registered_lbms table");
+	//FATAL_ERROR_IF(lua_isnil(L, -1), "Entry with given id not found in registered_lbms table");
+	if (lua_isnil(L, -1)) {
+		errorstream << "Entry with given id " << m_id << " not found in registered_lbms table" << std::endl;
+		return;
+	}
 	lua_remove(L, -2); // Remove registered_lbms
 
 	scriptIface->setOriginFromTable(-1);

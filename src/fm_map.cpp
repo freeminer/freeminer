@@ -340,7 +340,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 
 	if (porting::getTimeMs() > m_blocks_delete_time) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2 : &m_blocks_delete_1);
-		verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
+		if (m_blocks_delete->size())
+			verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
 		for (auto & ir : *m_blocks_delete) {
 			delete ir.first;
 		}

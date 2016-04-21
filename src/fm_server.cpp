@@ -24,6 +24,7 @@ void *ServerThread::run()
 	auto time = porting::getTimeMs();
 	while (!stopRequested()) {
 		try {
+			m_server->getEnv().getMap().getBlockCacheFlush();
 			u32 time_now = porting::getTimeMs();
 			{
 			TimeTaker timer("Server AsyncRunStep()");
@@ -105,6 +106,7 @@ public:
 		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
 			try {
+				m_server->getEnv().getMap().getBlockCacheFlush();
 				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				else
@@ -142,6 +144,7 @@ public:
 		while(!stopRequested()) {
 			//infostream<<"S run d="<<m_server->m_step_dtime<< " myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
 			try {
+				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto time_now = porting::getTimeMs();
 				auto sent = m_server->SendBlocks((time_now - time) / 1000.0f);
 				time = time_now;
@@ -178,7 +181,9 @@ public:
 		unsigned int max_cycle_ms = 1000;
 		while(!stopRequested()) {
 			try {
+				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto time_start = porting::getTimeMs();
+				m_server->getEnv().getMap().getBlockCacheFlush();
 				m_server->getEnv().getMap().transformLiquids(m_server, max_cycle_ms);
 				auto time_spend = porting::getTimeMs() - time_start;
 				std::this_thread::sleep_for(std::chrono::milliseconds(time_spend > 300 ? 1 : 300 - time_spend));
@@ -214,6 +219,7 @@ public:
 		unsigned int time = porting::getTimeMs();
 		while(!stopRequested()) {
 			try {
+				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto ctime = porting::getTimeMs();
 				unsigned int dtimems = ctime - time;
 				time = ctime;
