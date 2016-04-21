@@ -60,12 +60,12 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->m_nodenames.push_back("mapgen_water_source");
 	b->m_nodenames.push_back("mapgen_water_source");
 	b->m_nodenames.push_back("mapgen_river_water_source");
-	b->m_nodenames.push_back("air");
 
 	//freeminer
 	b->m_nodenames.push_back("mapgen_ice");
 	b->m_nodenames.push_back("mapgen_dirt_with_snow");
 
+	b->m_nodenames.push_back("ignore");
 	m_ndef->pendNodeResolve(b);
 
 	year_days = g_settings->getS16("year_days");
@@ -209,10 +209,10 @@ void Biome::resolveNodeNames()
 	getIdFromNrBacklog(&c_water_top,   "mapgen_water_source",       CONTENT_AIR);
 	getIdFromNrBacklog(&c_water,       "mapgen_water_source",       CONTENT_AIR);
 	getIdFromNrBacklog(&c_river_water, "mapgen_river_water_source", CONTENT_AIR);
-	getIdFromNrBacklog(&c_dust,        "air",                       CONTENT_IGNORE);
-
 
 	//freeminer:
-	getIdFromNrBacklog(&c_ice,       "mapgen_ice",             c_water);
-	getIdFromNrBacklog(&c_top_cold,  "mapgen_dirt_with_snow",  c_top);
+	getIdFromNrBacklog(&c_ice,         "mapgen_ice",                c_water);
+	getIdFromNrBacklog(&c_top_cold,    "mapgen_dirt_with_snow",     c_top);
+
+	getIdFromNrBacklog(&c_dust,        "ignore",                    CONTENT_IGNORE);
 }

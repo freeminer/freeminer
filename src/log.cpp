@@ -38,9 +38,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstring>
 #include <mutex>
 
+const int BUFFER_LENGTH = 256;
+
 class StringBuffer : public std::streambuf {
 public:
-	StringBuffer() {}
+	StringBuffer() {
+		buffer_index = 0;
+	}
 
 	int overflow(int c);
 	virtual void flush(const std::string &buf) = 0;
@@ -49,7 +53,8 @@ public:
 
 	Mutex m_log_mutex;
 private:
-	std::string buffer;
+	char buffer[BUFFER_LENGTH];
+	int buffer_index;
 };
 
 
@@ -349,11 +354,18 @@ std::streamsize StringBuffer::xsputn(const char *s, std::streamsize n)
 void StringBuffer::push_back(char c)
 {
 	if (c == '\n' || c == '\r') {
-		if (!buffer.empty())
-			flush(buffer);
-		buffer.clear();
+		if (buffer_index)
+			flush(std::string(buffer, buffer_index));
+		buffer_index = 0;
 	} else {
-		buffer.push_back(c);
+		int index = buffer_index;
+		buffer[index++] = c;
+		if (index >= BUFFER_LENGTH) {
+			flush(std::string(buffer, buffer_index));
+			buffer_index = 0;
+		} else {
+			buffer_index = index;
+		}
 	}
 }
 
