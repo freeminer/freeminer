@@ -612,8 +612,6 @@ void GUIFormSpecMenu::parseButton(parserData* data,std::string element,
 		if(!data->explicit_size)
 			warningstream<<"invalid use of button without a size[] element"<<std::endl;
 
-		label = unescape_string(label);
-
 		std::wstring wlabel = utf8_to_wide(label);
 
 		FieldSpec spec(
@@ -736,7 +734,6 @@ void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
 		geom.X = stof(v_geom[0]) * (float)spacing.X;
 		geom.Y = stof(v_geom[1]) * (float)spacing.Y;
 
-
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
 		FieldSpec spec(
@@ -749,7 +746,7 @@ void GUIFormSpecMenu::parseTable(parserData* data,std::string element)
 		spec.ftype = f_Table;
 
 		for (unsigned int i = 0; i < items.size(); ++i) {
-			items[i] = unescape_string(items[i]);
+			items[i] = unescape_string(unescape_enriched(items[i]));
 		}
 
 		//now really show table
@@ -820,7 +817,7 @@ void GUIFormSpecMenu::parseTextList(parserData* data,std::string element)
 		spec.ftype = f_Table;
 
 		for (unsigned int i = 0; i < items.size(); ++i) {
-			items[i] = unescape_string(items[i]);
+			items[i] = unescape_string(unescape_enriched(items[i]));
 		}
 
 		//now really show list
@@ -890,7 +887,8 @@ void GUIFormSpecMenu::parseDropDown(parserData* data,std::string element)
 		}
 
 		for (unsigned int i=0; i < items.size(); i++) {
-			e->addItem(utf8_to_wide(items[i]).c_str());
+			e->addItem(unescape_string(unescape_enriched(
+				utf8_to_wide(items[i]))).c_str());
 		}
 
 		if (str_initial_selection != "")
@@ -935,9 +933,6 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 
 		if(m_form_src && default_val.size())
 			default_val = m_form_src->resolveText(default_val);
-
-		default_val = unescape_string(default_val);
-		label = unescape_string(label);
 
 		std::wstring wlabel = utf8_to_wide(label);
 
@@ -1002,8 +997,6 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 	if(m_form_src)
 		default_val = m_form_src->resolveText(default_val);
 
-	default_val = unescape_string(default_val);
-	label = unescape_string(label);
 
 	std::wstring wlabel = utf8_to_wide(label);
 
@@ -1091,9 +1084,6 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	if(m_form_src)
 		default_val = m_form_src->resolveText(default_val);
 
-
-	default_val = unescape_string(default_val);
-	label = unescape_string(label);
 
 	std::wstring wlabel = utf8_to_wide(label);
 
@@ -1184,7 +1174,6 @@ void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
 		if(!data->explicit_size)
 			warningstream<<"invalid use of label without a size[] element"<<std::endl;
 
-		text = unescape_string(text);
 		std::vector<std::string> lines = split(text, '\n');
 
 		for (unsigned int i = 0; i != lines.size(); i++) {
@@ -1230,7 +1219,8 @@ void GUIFormSpecMenu::parseVertLabel(parserData* data,std::string element)
 		((parts.size() > 2) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
-		std::wstring text = utf8_to_wide(unescape_string(parts[1]));
+		std::wstring text = unescape_string(
+			unescape_enriched(utf8_to_wide(parts[1])));
 
 		MY_CHECKPOS("vertlabel",1);
 
@@ -1317,7 +1307,6 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 
 		image_name = unescape_string(image_name);
 		pressed_image_name = unescape_string(pressed_image_name);
-		label = unescape_string(label);
 
 		std::wstring wlabel = utf8_to_wide(label);
 
@@ -1417,7 +1406,7 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data,std::string element)
 		e->setNotClipped(true);
 
 		for (unsigned int i = 0; i < buttons.size(); i++) {
-			std::wstring wlabel = utf8_to_wide(buttons[i]);
+			auto wlabel = unescape_string(unescape_enriched(utf8_to_wide(buttons[i])));
 			e->addTab(wlabel.c_str(), -1);
 		}
 
@@ -1477,7 +1466,6 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data,std::string element)
 						m_default_tooltip_bgcolor,
 						m_default_tooltip_color);
 
-		label = unescape_string(label);
 		FieldSpec spec(
 			name,
 			utf8_to_wide(label),
@@ -1592,14 +1580,14 @@ void GUIFormSpecMenu::parseTooltip(parserData* data, std::string element)
 	std::vector<std::string> parts = split(element,';');
 	if (parts.size() == 2) {
 		std::string name = parts[0];
-		m_tooltips[name] = TooltipSpec(unescape_string(parts[1]),
+		m_tooltips[name] = TooltipSpec(parts[1],
 			m_default_tooltip_bgcolor, m_default_tooltip_color);
 		return;
 	} else if (parts.size() == 4) {
 		std::string name = parts[0];
 		video::SColor tmp_color1, tmp_color2;
 		if ( parseColorString(parts[2], tmp_color1, false) && parseColorString(parts[3], tmp_color2, false) ) {
-			m_tooltips[name] = TooltipSpec(unescape_string(parts[1]),
+			m_tooltips[name] = TooltipSpec(parts[1],
 				tmp_color1, tmp_color2);
 			return;
 		}
@@ -2232,16 +2220,18 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int phase,
 			}
 
 			// Draw tooltip
-			std::string tooltip_text = "";
-			if (hovering && !m_selected_item)
-				tooltip_text = item.getDefinition(m_gamedef->idef()).description;
-			if (tooltip_text != "") {
-				std::vector<std::string> tt_rows = str_split(tooltip_text, '\n');
+			std::wstring tooltip_text = L"";
+			if (hovering && !m_selected_item) {
+				tooltip_text = utf8_to_wide(item.getDefinition(m_gamedef->idef()).description);
+				tooltip_text = unescape_enriched(tooltip_text);
+			}
+			if (tooltip_text != L"") {
+				std::vector<std::wstring> tt_rows = str_split(tooltip_text, L'\n');
 				m_tooltip_element->setBackgroundColor(m_default_tooltip_bgcolor);
 				m_tooltip_element->setOverrideColor(m_default_tooltip_color);
 				m_tooltip_element->setVisible(true);
 				this->bringToFront(m_tooltip_element);
-				m_tooltip_element->setText(utf8_to_wide(tooltip_text).c_str());
+				m_tooltip_element->setText(tooltip_text.c_str());
 				s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 				s32 tooltip_height = m_tooltip_element->getTextHeight() + 5;
 				v2u32 screenSize = driver->getScreenSize();
@@ -2500,7 +2490,7 @@ void GUIFormSpecMenu::drawMenu()
 		u32 delta = 0;
 		if (id == -1) {
 			m_old_tooltip_id = id;
-			m_old_tooltip = "";
+			m_old_tooltip = L"";
 		} else {
 			if (id == m_old_tooltip_id) {
 				delta = porting::getDeltaMs(m_hovered_time, getTimeMs());
@@ -2513,11 +2503,11 @@ void GUIFormSpecMenu::drawMenu()
 		if (id != -1 && delta >= m_tooltip_show_delay) {
 			for(std::vector<FieldSpec>::iterator iter =  m_fields.begin();
 					iter != m_fields.end(); ++iter) {
-				if ( (iter->fid == id) && (m_tooltips[iter->fname].tooltip != "") ){
+				if (iter->fid == id && m_tooltips[iter->fname].tooltip != L"") {
 					if (m_old_tooltip != m_tooltips[iter->fname].tooltip) {
 						m_old_tooltip = m_tooltips[iter->fname].tooltip;
-						m_tooltip_element->setText(utf8_to_wide(m_tooltips[iter->fname].tooltip).c_str());
-						std::vector<std::string> tt_rows = str_split(m_tooltips[iter->fname].tooltip, '\n');
+						m_tooltip_element->setText(m_tooltips[iter->fname].tooltip.c_str());
+						std::vector<std::wstring> tt_rows = str_split(m_tooltips[iter->fname].tooltip, L'\n');
 						s32 tooltip_width = m_tooltip_element->getTextWidth() + m_btn_height;
 						s32 tooltip_height = m_tooltip_element->getTextHeight() * tt_rows.size() + 5;
 						int tooltip_offset_x = m_btn_height;
@@ -2876,7 +2866,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				core::position2d<s32>(x, y));
 		if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			m_old_tooltip_id = -1;
-			m_old_tooltip = "";
+			m_old_tooltip = L"";
 		}
 		if (!isChild(hovered,this)) {
 			if (DoubleClickDetection(event)) {
