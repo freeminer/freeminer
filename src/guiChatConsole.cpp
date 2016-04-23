@@ -603,7 +603,11 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			if (prompt.getCursorLength() <= 0)
 				return true;
 			std::wstring wselected = prompt.getSelection();
+/*
 			std::string selected(wselected.begin(), wselected.end());
+*/
+			auto selected = wide_to_utf8(wselected);
+
 			Environment->getOSOperator()->copyToClipboard(selected.c_str());
 			return true;
 		}
@@ -622,8 +626,13 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			const c8 *text = os_operator->getTextFromClipboard();
 			if (!text)
 				return true;
+
+			prompt.input(utf8_to_wide(std::string(text)));
+
+/*
 			std::basic_string<unsigned char> str((const unsigned char*)text);
 			prompt.input(std::wstring(str.begin(), str.end()));
+*/
 			return true;
 		}
 		else if(event.KeyInput.Key == KEY_KEY_X && event.KeyInput.Control)
