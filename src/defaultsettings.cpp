@@ -118,7 +118,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("password_save", "1");
 
 	// Game Speed
-	settings->setDefault("pause_fps_max", "5"); // "20"
+	settings->setDefault("pause_fps_max", "10"); // "20"
 
 	// Debugging stuff
 	settings->setDefault("show_debug", debug ? "true" : "false"); // "true"
