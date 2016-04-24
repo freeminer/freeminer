@@ -129,8 +129,8 @@ public:
 
 	virtual void calculateNoise();
 
-	int generateTerrain();
-	void generateRidgeTerrain();
+	virtual int generateTerrain();
+	virtual void generateRidgeTerrain();
 
 	MgStoneType generateBiomes(float *heat_map, float *humidity_map);
 	void dustTopNodes();

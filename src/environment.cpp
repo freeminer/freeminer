@@ -80,6 +80,7 @@ Environment::Environment():
 	m_cache_active_block_mgmt_interval = g_settings->getFloat("active_block_mgmt_interval");
 	m_cache_abm_interval = g_settings->getFloat("abm_interval");
 	m_cache_nodetimer_interval = g_settings->getFloat("nodetimer_interval");
+	m_day_count = 0;
 }
 
 Environment::~Environment()

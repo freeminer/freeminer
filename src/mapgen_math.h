@@ -59,6 +59,7 @@ public:
 
 	virtual void calculateNoise();
 	virtual int generateTerrain();
+	virtual void generateRidgeTerrain();
 	//int getGroundLevelAtPoint(v2POS p);
 
 	bool internal;
