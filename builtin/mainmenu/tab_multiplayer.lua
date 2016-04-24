@@ -70,7 +70,7 @@ local function get_formspec(tabview, name, tabdata)
 					table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
 				end
 			end
-				if favs[i].address ~= menudata.favorites[i].address then
+				if menudata.favorites[i] and favs[i].address ~= menudata.favorites[i].address then
 					table.insert(menudata.favorites, i, favs[i])
 				end
 			end
