@@ -228,16 +228,19 @@ void Environment::stepTimeOfDay(float dtime)
 	f32 speed = cached_time_of_day_speed * 24000. / (24. * 3600);
 	m_time_conversion_skew += dtime;
 	u32 units = (u32)(m_time_conversion_skew * speed);
-	//bool sync_f = false;
+	bool sync_f = false;
 	if (units > 0) {
 		// Sync at overflow
-/*
+
 		if (m_time_of_day + units >= 24000) {
 			sync_f = true;
 			m_day_count++;
 		}
-*/
+
 		m_time_of_day = (m_time_of_day + units); // % 24000;
+		if (sync_f)
+			m_time_of_day %= 24000;
+
 /*
 		if (sync_f)
 			m_time_of_day_f = (float)m_time_of_day / 24000.0;
