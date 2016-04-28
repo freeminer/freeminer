@@ -69,7 +69,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 
 # This is done here so that relative search paths are more reasonable
+if(NOT NO_BUILD)
 find_package(Irrlicht)
+endif()
 
 
 # Installation
