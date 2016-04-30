@@ -48,6 +48,7 @@ local function create_world_formspec(dialogdata)
 	current_seed = core.formspec_escape(current_seed)
 	local retval =
 		"size[12,5,false]" ..
+		--"size[11.5,6.5,true]" ..
 		"label[2,0;" .. fgettext("World name") .. "]"..
 		"field[4.5,0.4;6,0.5;te_world_name;;]" ..
 
@@ -63,7 +64,9 @@ local function create_world_formspec(dialogdata)
 
 		"button[7.7,4.5;2.6,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
 		"button[4.2,4.5;2.8,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
-		
+		--"button[3.25,6;2.5,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
+		--"button[5.75,6;2.5,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
+
 	if #gamemgr.games == 0 then
 		retval = retval .. "box[2,4;8,1;#ff8800]label[2.25,4;" ..
 				fgettext("You have no subgames installed.") .. "]label[2.25,4.4;" ..
