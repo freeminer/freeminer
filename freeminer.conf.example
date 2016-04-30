@@ -826,6 +826,10 @@
 #    type: string
 # default_privs = interact, shout
 
+#    Privileges that players with basic_privs can grant
+#    type: string
+# basic_privs = interact, shout
+
 #    Whether players are shown to clients without any range limit.
 #    Deprecated, use the setting player_transfer_distance instead.
 #    type: bool
@@ -1760,4 +1764,3 @@
 #    Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
 #    type: string
 # mg_math = {"generator":"sphere"}
-
