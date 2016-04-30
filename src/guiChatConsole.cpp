@@ -453,6 +453,8 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 
 	ChatPrompt &prompt = m_chat_backend->getPrompt();
 
+	//errorstream << "cgc:event eventtype=" << (int)event.EventType << " pd=" << event.KeyInput.PressedDown << " key="<<(int)event.KeyInput.Key << " char=" <<  (int)event.KeyInput.Char<<std::endl;
+
 	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
 	{
 		KeyPress kp(event.KeyInput);
@@ -670,7 +672,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				ChatPrompt::CURSOROP_SCOPE_LINE);
 			return true;
 		}
-		else if(event.KeyInput.Key == KEY_TAB && event.KeyInput.Char == 0)
+		else if(event.KeyInput.Key == KEY_TAB)
 		{
 			// Tab or Shift-Tab pressed
 			// Nick completion
