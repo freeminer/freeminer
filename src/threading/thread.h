@@ -162,11 +162,11 @@ private:
 	Atomic<bool> m_running;
 	Mutex m_mutex;
 
-#if !USE_CPP11_THREADS
+#ifndef USE_CPP11_THREADS
 	threadhandle_t m_thread_handle;
-#if _WIN32
-	threadid_t m_thread_id;
-#endif
+#   if _WIN32
+        threadid_t m_thread_id;
+#   endif
 #endif
 
 	static ThreadStartFunc threadProc;
