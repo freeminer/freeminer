@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "exceptions.h"
 #include "util/numeric.h"
-#include "log.h"
 
 #include <sstream>
 #include <iostream>
@@ -90,11 +89,17 @@ std::ostream null_stream(NULL);
 
 RawLogBuffer raw_buf;
 
+THREAD_LOCAL
 LogBuffer none_buf(g_logger, LL_NONE);
+THREAD_LOCAL
 LogBuffer error_buf(g_logger, LL_ERROR);
+THREAD_LOCAL
 LogBuffer warning_buf(g_logger, LL_WARNING);
+THREAD_LOCAL
 LogBuffer action_buf(g_logger, LL_ACTION);
+THREAD_LOCAL
 LogBuffer info_buf(g_logger, LL_INFO);
+THREAD_LOCAL
 LogBuffer verbose_buf(g_logger, LL_VERBOSE);
 
 // Connection
@@ -111,12 +116,19 @@ std::ostream *dout_client_ptr = &infostream;
 std::ostream *derr_client_ptr = &errorstream;
 #endif
 
+THREAD_LOCAL
 std::ostream rawstream(&raw_buf);
+THREAD_LOCAL
 std::ostream dstream(&none_buf);
+THREAD_LOCAL
 std::ostream errorstream(&error_buf);
+THREAD_LOCAL
 std::ostream warningstream(&warning_buf);
+THREAD_LOCAL
 std::ostream actionstream(&action_buf);
+THREAD_LOCAL
 std::ostream infostream(&info_buf);
+THREAD_LOCAL
 std::ostream verbosestream(&verbose_buf);
 
 // Android

@@ -294,7 +294,7 @@ void VoxelManipulator::copyTo(MapNode *dst, const VoxelArea& dst_area,
 void VoxelManipulator::clearFlag(u8 flags)
 {
 	// 0-1ms on moderate area
-	TimeTaker timer("clearFlag", &clearflag_time);
+	//TimeTaker timer("clearFlag", &clearflag_time);
 
 	//v3s16 s = m_area.getExtent();
 

@@ -32,6 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/mutex_auto_lock.h"
 #include "irrlichttypes.h"
 
+#include "threading/thread_local.h"
+
 class ILogOutput;
 
 enum LogLevel {
@@ -173,7 +175,7 @@ public:
 	}
 
 private:
-	mutable Mutex m_mutex;
+	//mutable Mutex m_mutex;
 
 	std::queue<std::string> m_buffer;
 	Logger &m_logger;
@@ -197,14 +199,15 @@ extern std::ostream *derr_client_ptr;
 extern Logger g_logger;
 
 // Writes directly to all LL_NONE log outputs for g_logger with no prefix.
-extern std::ostream rawstream;
 
-extern std::ostream errorstream;
-extern std::ostream warningstream;
-extern std::ostream actionstream;
-extern std::ostream infostream;
-extern std::ostream verbosestream;
-extern std::ostream dstream;
+extern THREAD_LOCAL std::ostream rawstream;
+
+extern THREAD_LOCAL std::ostream errorstream;
+extern THREAD_LOCAL std::ostream warningstream;
+extern THREAD_LOCAL std::ostream actionstream;
+extern THREAD_LOCAL std::ostream infostream;
+extern THREAD_LOCAL std::ostream verbosestream;
+extern THREAD_LOCAL std::ostream dstream;
 
 #define TRACEDO(x) do {               \
 	if (g_logger.getTraceEnabled()) { \
