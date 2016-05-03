@@ -969,14 +969,19 @@ int ModApiEnvMod::l_find_path(lua_State *L)
 	unsigned int searchdistance = luaL_checkint(L, 3);
 	unsigned int max_jump       = luaL_checkint(L, 4);
 	unsigned int max_drop       = luaL_checkint(L, 5);
-	Algorithm algo              = A_STAR;
+	PathAlgorithm algo          = PA_PLAIN_NP;
 	if (!lua_isnil(L, 6)) {
 		std::string algorithm = luaL_checkstring(L,6);
+
+		if (algorithm == "A*")
+			algo = PA_PLAIN;
+
+		if (algorithm == "Dijkstra")
+			algo = PA_DIJKSTRA;
 	}
 
-	std::vector<v3s16> path =
-		getPath(env, pos1, pos2, searchdistance,
-		        max_jump, max_drop, algo, ADJACENCY_4);
+	std::vector<v3s16> path = get_path(env, pos1, pos2,
+		searchdistance, max_jump, max_drop, algo);
 
 	if (path.size() > 0)
 	{

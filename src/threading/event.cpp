@@ -27,7 +27,6 @@ DEALINGS IN THE SOFTWARE.
 #include "threading/mutex_auto_lock.h"
 
 Event::Event()
-    : notified(false)
 {
 #if __cplusplus < 201103L
 #	ifdef _WIN32
@@ -35,6 +34,7 @@ Event::Event()
 #	else
 	pthread_cond_init(&cv, NULL);
 	pthread_mutex_init(&mutex, NULL);
+	notified = false;
 #	endif
 #endif
 }
