@@ -25,6 +25,11 @@ $0 play_gdb
 #normal play
 $0 play
 
+#build with latests installed clang and play
+$0 --cmake_clang=1 play
+#build with clang-3.8 and play
+$0 --cmake_clang=-3.8 play
+
 # run server with debug in gdb
 $0 server_gdb
 
@@ -100,13 +105,15 @@ my $logdir_add = (@ar == 1 and $ar[0] =~ /^\w+$/) ? '.' . $ar[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 
+
 sub init_config () {
+    (my $clang_version = `bash -c "compgen -c clang | grep 'clang-[[:digit:]]' | sort --version-sort --reverse | head -n1"`) =~ s/^clang//;
     $config = {
         #address           => '::1',
         port              => 60001,
         clients_num       => 5,
         autoexit          => 600,
-        clang_version     => "",                                                                          # "-3.6",
+        clang_version     => $clang_version, #"", # "-3.6",
         autotest_dir_rel  => 'util/autotest/',
         build_name        => '',
         root_prefix       => $root_path . 'auto',
@@ -144,6 +151,7 @@ sub init_config () {
     };
 
     map { /^--(\w+)(?:=(.*))/ and $config->{$1} = $2; } @ARGV;
+    $config->{clang_version} =~ s/\s+$//;
 }
 init_config();
 
@@ -276,8 +284,8 @@ map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
 our $commands = {
     init => sub { init_config(); 0 },
     prepare => sub {
-        $config->{clang_version} = $config->{clang} if $config->{clang} and $config->{clang} ne '1';
-        $g->{build_name} .= $config->{clang_version};
+        $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
+        $g->{build_name} .= $config->{clang_version} if $config->{cmake_clang};
         chdir $config->{root_path};
         rename qw(CMakeCache.txt CMakeCache.txt.backup);
         rename qw(src/cmake_config.h src/cmake_config.backup);
@@ -306,7 +314,7 @@ our $commands = {
 
         $D{CMAKE_C_COMPILER}     = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
-          if $config->{cmake_clang} || $config->{clang};
+          if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
         #warn 'D=', Data::Dumper::Dumper \%D;
