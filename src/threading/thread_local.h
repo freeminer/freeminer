@@ -20,7 +20,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../config.h"
 
-#if defined(HAVE_THREAD_LOCAL)
+#if HAVE_THREAD_LOCAL
 #define THREAD_LOCAL thread_local
 #else
 #define THREAD_LOCAL
