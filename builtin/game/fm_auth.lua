@@ -12,6 +12,18 @@ function core.string_to_privs(str, delim)
 	return privs
 end
 
+function core.privs_to_string(privs, delim)
+	assert(type(privs) == "table")
+	delim = delim or ','
+	local list = {}
+	for priv, bool in pairs(privs) do
+		if bool then
+			list[#list + 1] = priv
+		end
+	end
+	return table.concat(list, delim)
+end
+
 core.auth_file_path = core.get_worldpath().."/auth.txt"
 core.auth_table = {}
 core.auth_db = "players_auth"
