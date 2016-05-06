@@ -245,7 +245,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 
 	static const auto autojump = g_settings->getBool("autojump");
 	if (control.aux1 || autojump) {
-		player_stepheight += (0.5 * BS);
+		player_stepheight += (0.6 * BS);
 	}
 
 	v3f accel_f = v3f(0,0,0);
