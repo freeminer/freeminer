@@ -297,8 +297,13 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 */
 
 			f32 d = radius_box(bp*MAP_BLOCKSIZE, cam_pos_nodes); //blockpos_relative.getLength();
-			if (d > range_max)
+			if (d > range_max) {
+				if (d > range_max * 4 && ir.second) {
+					int mul = d / range_max;
+					ir.second->usage_timer_multiplier = mul;
+				}
 				continue;
+			}
 			int range = d / MAP_BLOCKSIZE;
 			draw_nearest.emplace_back(std::make_pair(bp, range));
 		}
@@ -432,7 +437,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 
 			// Add to set
 			//block->refGrab();
-			block->resetUsageTimer();
+			//block->resetUsageTimer();
 			drawlist.set(bp, block);
 
 			blocks_drawn++;

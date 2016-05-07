@@ -492,6 +492,7 @@ public:
 	{
 		std::lock_guard<Mutex> lock(m_usage_timer_mutex);
 		m_usage_timer = 0;
+		usage_timer_multiplier = 1;
 	}
 
 	void incrementUsageTimer(float dtime);
@@ -615,6 +616,7 @@ public:
 	std::atomic_ulong heat_last_update;
 	u32 humidity_last_update;
 	float m_uptime_timer_last;
+	std::atomic_short usage_timer_multiplier;
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp;

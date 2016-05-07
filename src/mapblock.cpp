@@ -110,6 +110,7 @@ MapBlock::MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy):
 	content_only = CONTENT_IGNORE;
 	content_only_param1 = content_only_param2 = 0;
 	lighting_broken = 0;
+	usage_timer_multiplier = 1;
 }
 
 MapBlock::~MapBlock()
@@ -1150,7 +1151,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 void MapBlock::incrementUsageTimer(float dtime)
 {
 	std::lock_guard<Mutex> lock(m_usage_timer_mutex);
-	m_usage_timer += dtime;
+	m_usage_timer += dtime * usage_timer_multiplier;
 }
 
 /* here for errorstream
