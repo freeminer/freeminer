@@ -289,7 +289,7 @@ void fm_set_default_settings(Settings *settings) {
 	float x_inches = porting::getDisplaySize().X / porting::get_dpi();
 
 	settings->setDefault("smooth_lighting", "false");
-	settings->setDefault("enable_3d_clouds", "false");
+	//settings->setDefault("enable_3d_clouds", "false");
 
 	settings->setDefault("fps_max", "30");
 	settings->setDefault("mouse_sensitivity", "0.1");
@@ -321,7 +321,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("server_map_save_interval", "60");
 	settings->setDefault("server_unload_unused_data_timeout", "65");
 	settings->setDefault("client_unload_unused_data_timeout", "60");
-	settings->setDefault("max_objects_per_block", "20");
+	//settings->setDefault("max_objects_per_block", "20");
 
 	settings->setDefault("leaves_style", "opaque");
 	//settings->setDefault("mg_name", "v7");
