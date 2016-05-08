@@ -2162,7 +2162,7 @@ void Server::SendPlayerHP(u16 peer_id)
 {
 	DSTACK(FUNCTION_NAME);
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
-	// In some rare case, if the player is disconnected
+	// In some rare case if the player is disconnected
 	// while Lua call l_punch, for example, this can be NULL
 	if (!playersao)
 		return;
@@ -2860,8 +2860,10 @@ void Server::sendDetachedInventories(u16 peer_id)
 void Server::DiePlayer(u16 peer_id)
 {
 	DSTACK(FUNCTION_NAME);
-
 	PlayerSAO *playersao = getPlayerSAO(peer_id);
+
+	// In some rare cases this can be NULL -- if the player is disconnected
+	// when a Lua function modifies l_punch, for example
 	if (!playersao)
 		return;
 
