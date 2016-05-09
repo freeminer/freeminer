@@ -55,7 +55,7 @@ def patch(path, source, target):
 	if ord(text[0]) == 239:
 		text = text[3:]
 	text = text.replace(source, target)
-	fout = open(path, "w", encoding="utf-8")
+	fout = open(path, "w")  # , encoding="utf-8")
 	fout.write(text)
 	fout.close()
 
@@ -358,6 +358,9 @@ def main():
 		os.mkdir("project")
 	os.chdir("project")
 
+	# install LevelDB package
+	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
+
 	cmake_string = r"""
 		-DCMAKE_BUILD_TYPE={build_type}
 		-DRUN_IN_PLACE=1
@@ -424,8 +427,6 @@ def main():
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 
-	# install LevelDB package
-	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
 	# patch project file to use these packages
 	patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
 		r"""<Import Project="..\LevelDB.1.16.0.5\build\native\LevelDB.props" Condition="Exists('..\LevelDB.1.16.0.5\build\native\LevelDB.props')" />
