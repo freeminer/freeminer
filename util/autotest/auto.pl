@@ -138,6 +138,7 @@ sub init_config () {
         cmake_leveldb     => undef,
         cmake_nothreads   => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
+        cmake_opts        => [qw(CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER)],
         valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         cgroup            => ($^O ~~ 'linux' ? 1 : undef),
         tee               => '2>&1 | tee -a ',
@@ -317,8 +318,9 @@ our $commands = {
           if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
+        $D{uc($_)} = $config->{lc($_)} for grep {length $config->{lc($_)}} @{$config->{cmake_opts}}; 
         #warn 'D=', Data::Dumper::Dumper \%D;
-        my $D = join ' ', map { '-D' . $_ . '=' . $D{$_} } sort keys %D;
+        my $D = join ' ', map { '-D' . $_ . '=' . ($D{$_} =~ /\s/ ? qq{"$D{$_}"} : $D{$_}) } sort keys %D;
         sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
