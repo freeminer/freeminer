@@ -3,10 +3,10 @@ msgstr ""
 "Project-Id-Version: freeminer\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-05-05 16:13+0200\n"
-"PO-Revision-Date: 2016-04-30 05:38+0000\n"
-"Last-Translator: Rui <rui914t@gmail.com>\n"
-"Language-Team: Japanese <https://hosted.weblate.org/projects/minetest/"
-"minetest/ja/>\n"
+"PO-Revision-Date: 2016-05-07 16:10+0000\n"
+"Last-Translator: BreadW <toshiharu.uno@gmail.com>\n"
+"Language-Team: Japanese "
+"<https://hosted.weblate.org/projects/minetest/minetest/ja/>\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -393,9 +393,8 @@ msgid "Uninstall selected modpack"
 msgstr "選択したModパックを削除"
 
 #: builtin/mainmenu/tab_multiplayer.lua
-#, fuzzy
 msgid "Address / Port"
-msgstr "アドレスとポート:"
+msgstr "アドレスとポート"
 
 #: builtin/mainmenu/tab_multiplayer.lua src/settings_translation_file.cpp
 msgid "Client"
@@ -415,16 +414,15 @@ msgstr "ダメージ有効"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Del. Favorite"
-msgstr ""
+msgstr "お気に入りを削除"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Favorite"
-msgstr ""
+msgstr "お気に入り"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
-#, fuzzy
 msgid "Name / Password"
-msgstr "名前とパスワード:"
+msgstr "名前とパスワード"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "PvP enabled"
@@ -528,7 +526,6 @@ msgid "Bilinear Filter"
 msgstr "バイリニアフィルタ"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Bump Mapping"
 msgstr "バンプマッピング"
 
@@ -569,18 +566,16 @@ msgid "Node Highlighting"
 msgstr "ノードのハイライト"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Node Outlining"
-msgstr "ノードのハイライト"
+msgstr "ノードの輪郭線描画"
 
 #: builtin/mainmenu/tab_settings.lua builtin/mainmenu/tab_texturepacks.lua
 msgid "None"
 msgstr "無し"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Normal Mapping"
-msgstr "ミップマッピング"
+msgstr "法線マッピング"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Opaque Leaves"
@@ -595,7 +590,6 @@ msgid "Parallax Occlusion"
 msgstr "視差遮蔽マッピング"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Particles"
 msgstr "パーティクル有効化"
 
@@ -2282,7 +2276,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Full screen"
-msgstr ""
+msgstr "全画面表示"
 
 #: src/settings_translation_file.cpp
 msgid "Full screen BPP"
@@ -3705,11 +3699,11 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Screen height"
-msgstr ""
+msgstr "画面高"
 
 #: src/settings_translation_file.cpp
 msgid "Screen width"
-msgstr ""
+msgstr "画面幅"
 
 #: src/settings_translation_file.cpp
 msgid "Screenshot"
@@ -3750,11 +3744,11 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Selection box color"
-msgstr ""
+msgstr "ノード選択線の色"
 
 #: src/settings_translation_file.cpp
 msgid "Selection box width"
-msgstr ""
+msgstr "ノード選択線の幅"
 
 #: src/settings_translation_file.cpp
 msgid "Server / Singleplayer"
@@ -4103,7 +4097,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Video driver"
-msgstr ""
+msgstr "ビデオドライバ"
 
 #: src/settings_translation_file.cpp
 msgid "View bobbing"
@@ -4149,11 +4143,11 @@ msgstr "テクスチャを設定中..."
 
 #: src/settings_translation_file.cpp
 msgid "Water level"
-msgstr ""
+msgstr "水位"
 
 #: src/settings_translation_file.cpp
 msgid "Water surface level of the world."
-msgstr ""
+msgstr "ワールドの水面の高さです。"
 
 #: src/settings_translation_file.cpp
 msgid "Waving Nodes"
