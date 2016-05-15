@@ -10,7 +10,7 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 Changelog
 ======
 
-### 0.4.13.8 ( )
+### 0.4.14.8 (May 16, 2016)
   * Stability and speed fixes
   * kv lua api: now possible to use any custom db:  core.kv_put('mykey', 'mydata', 'mydb'); core.kv_get('mykey', 'mydb');    'mydb' is optional
   * Optional store auth database to leveldb, no huge auth.txt. to enable: auth_kv=1
