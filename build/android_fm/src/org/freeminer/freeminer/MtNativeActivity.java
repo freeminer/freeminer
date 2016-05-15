@@ -20,6 +20,9 @@ public class MtNativeActivity extends NativeActivity {
 		super.onDestroy();
 	}
 
+	@Override
+	public void onBackPressed() {
+	}
 
 	public void copyAssets() {
 		Intent intent = new Intent(this, freeminerAssetCopy.class);

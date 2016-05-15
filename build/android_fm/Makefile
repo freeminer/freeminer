@@ -351,7 +351,7 @@ ogg_download :
 		cd ${ROOT}/deps ;                                                      \
 		${GIT_CLONE} ${OGG_URL_GIT}|| exit 1;                                     \
 		cd libvorbis-libogg-android ;                                          \
-		patch -p1 < ../../libvorbis-libogg-fpu.patch || exit 1;                \
+		patch -p1 < ../../patches/libvorbis-libogg-fpu.patch || exit 1; \
 		sed -i 's-:-?-' jni/Application.mk;                                    \
 	fi
 
@@ -398,7 +398,7 @@ openssl_download :
 		wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1;                                         \
 		tar -xzf ${OPENSSL_BASEDIR}.tar.gz;                                    \
 		cd ${OPENSSL_BASEDIR};                                                 \
-		patch -p1 < ../../openssl_arch.patch || true; \
+		patch -p1 < ../../patches/openssl_arch.patch || true; \
 	fi
 
 openssl : $(OPENSSL_LIB)
@@ -559,8 +559,8 @@ iconv_download :
 		rm libiconv-${ICONV_VERSION}.tar.gz;                               \
 		ln -fsn libiconv-${ICONV_VERSION} libiconv;                          \
 		cd ${ICONV_DIR};                                                   \
-		patch -p1 < ${ROOT}/libiconv_android.patch;                        \
-		patch -p1 < ${ROOT}/libiconv_stdio.patch;                          \
+		patch -p1 < ${ROOT}/patches/libiconv_android.patch; \
+		patch -p1 < ${ROOT}/patches/libiconv_stdio.patch; \
 	fi
 
 iconv : $(ICONV_LIB)
@@ -622,10 +622,10 @@ irrlicht_download : arch_dirs
 		cd irrlicht;                                                           \
 		git checkout ${IRRLICHT_GIT_COMMIT}; \
 		mkdir -p lib/Android; \
-		patch -p1 < ../../irrlicht-crystax.patch; \
-		patch -p1 < ../../irrlicht-touchcount.patch || exit 1;                 \
-		patch -p1 < ../../irrlicht-back_button.patch || exit 1;                \
-		patch -p1 < ../../irrlicht-texturehack.patch || exit 1;                \
+		patch -p1 < ../../patches/irrlicht-crystax.patch; \
+		patch -p1 < ../../patches/irrlicht-touchcount.patch || exit 1; \
+		patch -p1 < ../../patches/irrlicht-back_button.patch || exit 1; \
+		patch -p1 < ../../patches/irrlicht-texturehack.patch || exit 1; \
 	fi
 
 $(IRRLICHT_TIMESTAMP) : irrlicht_download
