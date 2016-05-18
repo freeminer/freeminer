@@ -66,6 +66,11 @@ public:
 	FileNotGoodException(const std::string &s): BaseException(s) {}
 };
 
+class DatabaseException : public BaseException {
+public:
+	DatabaseException(const std::string &s): BaseException(s) {}
+};
+
 class SerializationError : public BaseException {
 public:
 	SerializationError(const std::string &s): BaseException(s) {}

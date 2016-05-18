@@ -32,14 +32,15 @@ bool Database_Dummy::saveBlock(const v3s16 &pos, const std::string &data)
 	return true;
 }
 
-std::string Database_Dummy::loadBlock(const v3s16 &pos)
+void Database_Dummy::loadBlock(const v3s16 &pos, std::string *block)
 {
 	auto i = getBlockAsString(pos);
 	auto lock = m_database.lock_shared_rec();
 	auto it = m_database.find(i);
 	if (it == m_database.end())
-		return "";
-	return it->second;
+		*block = "";
+		return;
+	*block = it->second;
 }
 
 bool Database_Dummy::deleteBlock(const v3s16 &pos)
