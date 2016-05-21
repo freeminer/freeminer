@@ -71,7 +71,7 @@ const bool android =
     ;
 
 const bool arm =
-#if defined(__arm__)
+#if defined(__ARM_ARCH)
     true
 #else
     false
@@ -90,7 +90,7 @@ const bool threads =
 void fm_set_default_settings(Settings *settings) {
 
 	// Screen
-#if __ANDROID__ || __arm__
+#if __ANDROID__ || __ARM_ARCH
 	settings->setDefault("enable_shaders", "0");
 #if defined(_IRR_COMPILE_WITH_OGLES1_)
 	settings->setDefault("video_driver", "ogles1");
