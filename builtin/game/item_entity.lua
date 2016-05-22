@@ -32,7 +32,6 @@ core.register_entity(":__builtin:item", {
 		spritediv = {x = 1, y = 1},
 		initial_sprite_basepos = {x = 0, y = 0},
 		is_visible = false,
-		infotext = "",
 	},
 
 	itemstring = '',
@@ -52,7 +51,6 @@ core.register_entity(":__builtin:item", {
 		local c = s
 		local itemtable = stack:to_table()
 		local itemname = nil
-		local description = ""
 		if itemtable then
 			itemname = stack:to_table().name
 		end
@@ -61,7 +59,6 @@ core.register_entity(":__builtin:item", {
 		if core.registered_items[itemname] then
 			item_texture = core.registered_items[itemname].inventory_image
 			item_type = core.registered_items[itemname].type
-			description = core.registered_items[itemname].description
 		end
 		local prop = {
 			is_visible = true,
@@ -70,7 +67,6 @@ core.register_entity(":__builtin:item", {
 			visual_size = {x = s, y = s},
 			collisionbox = {-c, -c, -c, c, c, c},
 			automatic_rotate = math.pi * 0.5,
-			infotext = description,
 		}
 		self.object:set_properties(prop)
 	end,

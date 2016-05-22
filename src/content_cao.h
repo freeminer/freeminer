@@ -71,7 +71,6 @@ private:
 	//
 	scene::ISceneManager *m_smgr;
 	IrrlichtDevice *m_irr;
-	Camera* m_camera;
 	IGameDef *m_gamedef;
 	aabb3f m_selection_box;
 	scene::IMeshSceneNode *m_meshnode;
@@ -213,7 +212,7 @@ public:
 			float time_from_last_punch=1000000);
 
 	std::string debugInfoText();
-	
+
 	std::string infoText()
 	{
 		return m_prop.infotext;

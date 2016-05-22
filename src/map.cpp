@@ -51,7 +51,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <queue>
 #include "database-leveldb.h"
 #include "database-redis.h"
-#include <deque>
+#if USE_POSTGRESQL
+#include "database-postgresql.h"
+#endif
+
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
@@ -3261,6 +3264,10 @@ Database *ServerMap::createDatabase(
 	#if USE_REDIS
 	else if (name == "redis")
 		return new Database_Redis(conf);
+	#endif
+	#if USE_POSTGRESQL
+	else if (name == "postgresql")
+		return new Database_PostgreSQL(conf);
 	#endif
 	else
 		throw BaseException(std::string("Database backend ") + name + " not supported.");
