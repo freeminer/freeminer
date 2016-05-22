@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CONTENT_NODEMETA_HEADER
 
 #include <iostream>
+#include "irr_v3d.h" // For v3s16
 
 class NodeMetadataList;
 class NodeTimerList;
@@ -35,7 +36,7 @@ class IItemDefManager;
 
 void content_nodemeta_deserialize_legacy(std::istream &is,
 		NodeMetadataList *meta, NodeTimerList *timers,
-		IItemDefManager *item_def_mgr);
+		IItemDefManager *item_def_mgr, v3s16 relative_mapblock_pos);
 
 void content_nodemeta_serialize_legacy(std::ostream &os, NodeMetadataList *meta);
 

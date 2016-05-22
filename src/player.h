@@ -97,17 +97,21 @@ struct CollisionInfo;
 class PlayerSAO;
 struct HudElement;
 class Environment;
+class GameScripting;
 
 // IMPORTANT:
 // Do *not* perform an assignment or copy operation on a Player or
 // RemotePlayer object!  This will copy the lock held for HUD synchronization
-class Player
-: public locker<>
+class Player: public InventoryChangeReceiver, public locker<>
 {
 public:
 
 	Player(IGameDef *gamedef, const std::string & name);
 	virtual ~Player() = 0;
+
+	void on_remove_item(GameScripting *script_interface, const InventoryList *inventory_list, const ItemStack &deleted_item);
+	void on_change_item(GameScripting *script_interface, const InventoryList *inventory_list, u32 query_slot, const ItemStack &old_item,const ItemStack &new_item);
+	void on_add_item(GameScripting *script_interface, const InventoryList *inventory_list, u32 query_slot, const ItemStack &added_item);
 
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
 	{}
