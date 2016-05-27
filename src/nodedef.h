@@ -184,6 +184,26 @@ struct NodeBox
 struct MapNode;
 class NodeMetadata;
 
+enum LeavesStyle {
+	LEAVES_FANCY,
+	LEAVES_SIMPLE,
+	LEAVES_OPAQUE,
+};
+
+class TextureSettings {
+public:
+	LeavesStyle leaves_style;
+	bool opaque_water;
+	bool connected_glass;
+	bool use_normal_texture;
+	bool enable_mesh_cache;
+	bool enable_minimap;
+
+	TextureSettings() {}
+
+	void readSettings();
+};
+
 enum NodeDrawType
 {
 	NDT_NORMAL, // A basic solid block
@@ -433,6 +453,16 @@ struct ContentFeatures
 		return 0;
 	}
 
+
+#ifndef SERVER
+	void fillTileAttribs(ITextureSource *tsrc, TileSpec *tile, TileDef *tiledef,
+		u32 shader_id, bool use_normal_texture, bool backface_culling,
+		u8 alpha, u8 material_type);
+	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
+		scene::ISceneManager *smgr, scene::IMeshManipulator *meshmanip,
+		IGameDef *gamedef, const TextureSettings &tsettings,
+		bool server = false);
+#endif
 };
 
 class INodeDefManager {
