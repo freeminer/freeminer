@@ -68,7 +68,7 @@ private:
 	const char * getActorName(const int id);
 	const char * getNodeName(const int id);
 	bool createTables();
-	void initDatabase();
+	bool initDatabase();
 	bool registerRow(const ActionRow & row);
 #if USE_SQLITE3
 	const std::list<ActionRow> actionRowsFromSelect(sqlite3_stmt * stmt);

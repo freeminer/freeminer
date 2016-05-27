@@ -1333,7 +1333,11 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
  */
 struct KeyCache {
 
-	KeyCache() { populate(); }
+	KeyCache()
+	{
+		handler = NULL;
+		populate();
+	}
 
 	enum {
 		// Player movement
@@ -1389,6 +1393,7 @@ struct KeyCache {
 	void populate();
 
 	KeyPress key[KEYMAP_INTERNAL_ENUM_COUNT];
+	InputHandler *handler;
 };
 
 void KeyCache::populate()
@@ -1447,6 +1452,18 @@ void KeyCache::populate()
 	key[KEYMAP_ID_ZOOM]           = getKeySetting("keymap_zoom");
 	key[KEYMAP_ID_PLAYERLIST]     = getKeySetting("keymap_playerlist");
 
+	if (handler) {
+		// First clear all keys, then re-add the ones we listen for
+		handler->dontListenForKeys();
+		for (size_t i = 0; i < KEYMAP_INTERNAL_ENUM_COUNT; i++) {
+			handler->listenForKey(key[i]);
+		}
+		handler->listenForKey(EscapeKey);
+		handler->listenForKey(CancelKey);
+		for (size_t i = 0; i < 10; i++) {
+			handler->listenForKey(NumberKey[i]);
+		}
+	}
 }
 
 
@@ -1912,6 +1929,9 @@ bool Game::startup(bool *kill,
 	this->input               = input;
 	this->chat_backend        = chat_backend;
 	this->simple_singleplayer_mode = simple_singleplayer_mode;
+
+	keycache.handler = input;
+	keycache.populate();
 
 	driver              = device->getVideoDriver();
 	smgr                = device->getSceneManager();
