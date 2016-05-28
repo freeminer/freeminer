@@ -454,7 +454,7 @@ struct ContentFeatures
 	}
 
 
-#ifndef SERVER
+//#ifndef SERVER
 	void fillTileAttribs(ITextureSource *tsrc, TileSpec *tile, TileDef *tiledef,
 		u32 shader_id, bool use_normal_texture, bool backface_culling,
 		u8 alpha, u8 material_type);
@@ -462,7 +462,7 @@ struct ContentFeatures
 		scene::ISceneManager *smgr, scene::IMeshManipulator *meshmanip,
 		IGameDef *gamedef, const TextureSettings &tsettings,
 		bool server = false);
-#endif
+//#endif
 };
 
 class INodeDefManager {
