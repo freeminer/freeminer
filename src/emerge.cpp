@@ -194,8 +194,6 @@ EmergeManager::~EmergeManager()
 	delete oremgr;
 	delete decomgr;
 	delete schemmgr;
-
-	delete params.sparams;
 }
 
 

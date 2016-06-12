@@ -96,13 +96,9 @@ public:
 	Noise *noise_cave1;
 	Noise *noise_cave2;
 
-	Noise *noise_heat;
-	Noise *noise_humidity;
-	Noise *noise_heat_blend;
-	Noise *noise_humidity_blend;
-
 	//freeminer:
 	s16 float_islands;
+	//=========
 
 	content_t c_stone;
 	content_t c_water_source;
@@ -122,7 +118,6 @@ public:
 
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
-	Biome *getBiomeAtPoint(v3s16 p);
 
 	float baseTerrainLevelAtPoint(s16 x, s16 z);
 	float baseTerrainLevelFromMap(int index);
@@ -134,7 +129,7 @@ public:
 	virtual int generateTerrain();
 	virtual void generateRidgeTerrain();
 
-	MgStoneType generateBiomes(float *heat_map, float *humidity_map);
+	MgStoneType generateBiomes();
 	void dustTopNodes();
 
 	virtual void generateExperimental();

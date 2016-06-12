@@ -548,7 +548,7 @@ void MapgenMath::calculateNoise() {
 
 	noise_filler_depth->perlinMap2D(x, z);
 
-	noise_heat->perlinMap2D(x, z);
-	noise_humidity->perlinMap2D(x, z);
+	//noise_heat->perlinMap2D(x, z);
+	//noise_humidity->perlinMap2D(x, z);
 
 }
