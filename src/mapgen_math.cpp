@@ -461,7 +461,7 @@ int MapgenMath::generateTerrain() {
 	MapNode n_ice(c_ice);
 	u32 index = 0;
 	v3POS em = vm->m_area.getExtent();
-
+	auto zstride_1d = csize.X * (csize.Y + 1);
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
 	errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
@@ -536,6 +536,8 @@ int MapgenMath::generateTerrain() {
 void MapgenMath::generateRidgeTerrain() { }
 
 void MapgenMath::calculateNoise() {
+//delete after merge?
+#if 0
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
 	int x = node_min.X;
 	int y = node_min.Y - y_offset;
@@ -550,5 +552,5 @@ void MapgenMath::calculateNoise() {
 
 	//noise_heat->perlinMap2D(x, z);
 	//noise_humidity->perlinMap2D(x, z);
-
+#endif
 }

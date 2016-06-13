@@ -357,7 +357,6 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 
 	float nval = NoisePerlin3D(np_caveliquids, startp.X,
 		startp.Y, startp.Z, seed);
-<<<<<<< HEAD
 /*
 	MapNode liquidnode = (nval < 0.40f && node_max.Y < lava_depth) ?
 		lavanode : waternode;

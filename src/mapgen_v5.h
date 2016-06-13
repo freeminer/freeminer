@@ -82,7 +82,6 @@ public:
 
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
-	void calculateNoise();
 	int generateBaseTerrain();
 };
 
