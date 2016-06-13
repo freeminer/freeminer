@@ -224,31 +224,90 @@ void Mapgen::updateHeightmap(v3s16 nmin, v3s16 nmax)
 	//printf("updateHeightmap: %dus\n", t.stop());
 }
 
+inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
+{
+	u32 vi_neg_x = vi;
+	vm->m_area.add_x(em, vi_neg_x, -1);
+	if (vm->m_data[vi_neg_x].getContent() != CONTENT_IGNORE) {
+		const ContentFeatures &c_nx = ndef->get(vm->m_data[vi_neg_x]);
+		if (c_nx.floodable && !c_nx.isLiquid())
+			return true;
+	}
+	u32 vi_pos_x = vi;
+	vm->m_area.add_x(em, vi_pos_x, +1);
+	if (vm->m_data[vi_pos_x].getContent() != CONTENT_IGNORE) {
+		const ContentFeatures &c_px = ndef->get(vm->m_data[vi_pos_x]);
+		if (c_px.floodable && !c_px.isLiquid())
+			return true;
+	}
+	u32 vi_neg_z = vi;
+	vm->m_area.add_z(em, vi_neg_z, -1);
+	if (vm->m_data[vi_neg_z].getContent() != CONTENT_IGNORE) {
+		const ContentFeatures &c_nz = ndef->get(vm->m_data[vi_neg_z]);
+		if (c_nz.floodable && !c_nz.isLiquid())
+			return true;
+	}
+	u32 vi_pos_z = vi;
+	vm->m_area.add_z(em, vi_pos_z, +1);
+	if (vm->m_data[vi_pos_z].getContent() != CONTENT_IGNORE) {
+		const ContentFeatures &c_pz = ndef->get(vm->m_data[vi_pos_z]);
+		if (c_pz.floodable && !c_pz.isLiquid())
+			return true;
+	}
+	return false;
+}
 
 void Mapgen::updateLiquid(v3POS nmin, v3POS nmax)
 {
-	bool isliquid, wasliquid, rare;
+	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 	v3s16 em  = vm->m_area.getExtent();
-	rare = g_settings->getBool("liquid_real");
+	bool rare = g_settings->getBool("liquid_real");
 	int rarecnt = 0;
 
-	for (s16 z = nmin.Z; z <= nmax.Z; z++) {
-		for (s16 x = nmin.X; x <= nmax.X; x++) {
-			wasliquid = true;
+	for (s16 z = nmin.Z + 1; z <= nmax.Z - 1; z++)
+	for (s16 x = nmin.X + 1; x <= nmax.X - 1; x++) {
+		wasignored = true;
+		wasliquid = false;
+		waschecked = false;
+		waspushed = false;
 
-			u32 i = vm->m_area.index(x, nmax.Y, z);
-			for (s16 y = nmax.Y; y >= nmin.Y; y--) {
-				isliquid = ndef->get(vm->m_data[i]).isLiquid();
+		u32 vi = vm->m_area.index(x, nmax.Y, z);
+		for (s16 y = nmax.Y; y >= nmin.Y; y--) {
+			isignored = vm->m_data[vi].getContent() == CONTENT_IGNORE;
+			isliquid = ndef->get(vm->m_data[vi]).isLiquid();
 
-				// there was a change between liquid and nonliquid, add to queue. no need to add every with liquid_real
-				if (isliquid != wasliquid && (!rare || !(rarecnt++ % 36))) {
-						auto p = v3s16(x, y, z);
-						vm->m_map->transforming_liquid_add(p);
-					}
-
-				wasliquid = isliquid;
-				vm->m_area.add_y(em, i, -1);
+			if (isignored || wasignored || isliquid == wasliquid) {
+				// Neither topmost node of liquid column nor topmost node below column
+				waschecked = false;
+				waspushed = false;
+			} else if (isliquid) {
+				// This is the topmost node in the column
+				bool ispushed = false;
+				if ((!rare || !(rarecnt++ % 36)) && isLiquidHorizontallyFlowable(vi, em)) {
+					//trans_liquid->push_back(v3s16(x, y, z));
+					vm->m_map->transforming_liquid_add(v3POS(x, y, z));
+					ispushed = true;
+				}
+				// Remember waschecked and waspushed to avoid repeated
+				// checks/pushes in case the column consists of only this node
+				waschecked = true;
+				waspushed = ispushed;
+			} else {
+				// This is the topmost node below a liquid column
+				u32 vi_above = vi;
+				vm->m_area.add_y(em, vi_above, 1);
+				if ((!rare || !(rarecnt++ % 36)) && !waspushed && (ndef->get(vm->m_data[vi]).floodable ||
+						(!waschecked && isLiquidHorizontallyFlowable(vi_above, em)))) {
+					// Push back the lowest node in the column which is one
+					// node above this one
+					//trans_liquid->push_back(v3s16(x, y + 1, z));
+					vm->m_map->transforming_liquid_add(v3POS(x, y + 1, z));
+				}
 			}
+
+			wasliquid = isliquid;
+			wasignored = isignored;
+			vm->m_area.add_y(em, vi, -1);
 		}
 	}
 }
