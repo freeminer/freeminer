@@ -82,7 +82,7 @@ class LuaPerlinNoiseMap : public ModApiBase {
 	static int l_getMapSlice(lua_State *L);
 
 public:
-	LuaPerlinNoiseMap(NoiseParams *np, int seed, v3s16 size);
+	LuaPerlinNoiseMap(NoiseParams *np, s32 seed, v3s16 size);
 
 	~LuaPerlinNoiseMap();
 
@@ -114,7 +114,7 @@ private:
 	static int l_next(lua_State *L);
 
 public:
-	LuaPseudoRandom(int seed) :
+	LuaPseudoRandom(s32 seed) :
 		m_pseudo(seed) {}
 
 	// LuaPseudoRandom(seed)

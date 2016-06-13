@@ -58,19 +58,19 @@ namespace treegen {
 		bool thin_branches;
 		MapNode fruitnode;
 		int fruit_chance;
-		int seed;
+		s32 seed;
 		bool explicit_seed;
 	};
 
 	// Add default tree
 	void make_tree(MMVManip &vmanip, v3s16 p0,
-		bool is_apple_tree, INodeDefManager *ndef, int seed);
+		bool is_apple_tree, INodeDefManager *ndef, s32 seed);
 	// Add jungle tree
 	void make_jungletree(MMVManip &vmanip, v3s16 p0,
-		INodeDefManager *ndef, int seed);
+		INodeDefManager *ndef, s32 seed);
 	// Add pine tree
 	void make_pine_tree(MMVManip &vmanip, v3s16 p0,
-		INodeDefManager *ndef, int seed);
+		INodeDefManager *ndef, s32 seed);
 	void make_cavetree(MMVManip &vmanip, v3POS p0,
 		bool is_jungle_tree, INodeDefManager *ndef, int seed);
 

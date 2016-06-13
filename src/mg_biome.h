@@ -92,7 +92,7 @@ struct BiomeParams {
 	virtual void writeParams(Settings *settings) const = 0;
 	virtual ~BiomeParams() {}
 
-	int seed;
+	s32 seed;
 };
 
 class BiomeGen {
