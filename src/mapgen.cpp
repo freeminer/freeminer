@@ -760,7 +760,7 @@ void MapgenParams::load(Settings &settings)
 	settings.getFlagStrNoEx("mg_flags", flags, flagdesc_mapgen);
 
 	delete bparams;
-	bparams = BiomeManager::createBiomeParams(BIOMEGEN_ORIGINAL);
+	bparams = (BiomeParamsOriginal*)BiomeManager::createBiomeParams(BIOMEGEN_ORIGINAL);
 	if (bparams) {
 		bparams->readParams(&settings);
 		bparams->seed = seed;

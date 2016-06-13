@@ -232,8 +232,8 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, s16 y) c
 		b = (Biome *)m_bmgr->getRaw(i);
 		if (!b || y > b->y_max || y < b->y_min)
 			continue;
-		float heat_point = (b->heat_point - 50) * (( mapgen_params->bparams->np_biome_heat.offset + mapgen_params->bparams->np_biome_heat.scale ) / 100)
-			 + mapgen_params->np_biome_heat.offset;
+		float heat_point = (b->heat_point - 50) * (( m_params->np_heat.offset + m_params->np_heat.scale ) / 100)
+			 + m_params->np_heat.offset;
 
 		float d_heat     = heat     - heat_point;
 
@@ -255,7 +255,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_biome_heat), p.X, p.Z, seed); // -30..20..70
+	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -279,7 +279,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 
 s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_biome_humidity), p.X, p.Z, seed);
+	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	humidity *= 1.0 - ((float)p.Y / MAX_MAP_GENERATION_LIMIT);
 
 	if (use_weather) {

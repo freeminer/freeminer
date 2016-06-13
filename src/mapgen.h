@@ -49,6 +49,7 @@ extern FlagDesc flagdesc_gennotify[];
 class Biome;
 class BiomeGen;
 struct BiomeParams;
+struct BiomeParamsOriginal;
 class BiomeManager;
 class EmergeManager;
 class MapBlock;
@@ -122,7 +123,7 @@ struct MapgenParams {
 	s16 liquid_pressure;
 	u32 flags;
 
-	BiomeParams *bparams;
+	BiomeParamsOriginal *bparams;
 	MapgenSpecificParams *sparams;
 
 	MapgenParams() :

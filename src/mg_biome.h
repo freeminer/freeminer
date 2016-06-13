@@ -29,6 +29,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //#include "mapgen.h"
 
+struct MapgenParams;
+
 class Settings;
 class BiomeManager;
 

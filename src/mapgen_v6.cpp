@@ -42,6 +42,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v6.h"
 #include "environment.h"
 
+#include "mg_biome.h"
+
 
 FlagDesc flagdesc_mapgen_v6[] = {
 	{"jungles",    MGV6_JUNGLES},
@@ -373,7 +375,7 @@ float MapgenV6::getHumidity(v3POS p)
 	noise = (noise + 1.0)/2.0;*/
 
 	if (m_emerge->env->m_use_weather_biome) {
-		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.bparams->np_biome_humidity.offset) / m_emerge->params.bparams->np_biome_humidity.scale;
+		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.bparams->np_humidity.offset) / m_emerge->params.bparams->np_humidity.scale;
 	}
 
 	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
@@ -450,8 +452,8 @@ BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 	float d, h;
 
 	if (m_emerge->env->m_use_weather_biome) {
-		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->params.np_biome_heat.offset) / m_emerge->params.np_biome_heat.scale;
-		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.np_biome_humidity.offset) / m_emerge->params.np_biome_humidity.scale;
+		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->params.bparams->np_heat.offset) / m_emerge->params.bparams->np_heat.scale;
+		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->params.bparams->np_humidity.offset) / m_emerge->params.bparams->np_humidity.scale;
 	} else {
 		d = noise_biome->result[index];
 		h = noise_humidity->result[index];
