@@ -104,7 +104,7 @@ core.register_chatcommand("help", {
 		local function format_help_line(cmd, def)
 			local msg = core.colorize("#00ffff", "/"..cmd)
 			if def.params and def.params ~= "" then
-				msg = msg .. " " .. freeminer.colorize("eeeeee", def.params)
+				msg = msg .. " " .. core.colorize("#eeeeee", def.params)
 			end
 			if def.description and def.description ~= "" then
 				msg = msg .. ": " .. def.description

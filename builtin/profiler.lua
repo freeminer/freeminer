@@ -31,8 +31,8 @@ end
 if freeminer.setting_getbool("profiler_autostart") then
     start_profiler()
     freeminer.after(3, function()
-        freeminer.chat_send_all("The profiler was started. If you don't want this, set " .. freeminer.colorize("61ad6d", "profiler_autostart")
-            .. " to false in " .. freeminer.colorize("61ad6d", "freeminer.conf"))
+        freeminer.chat_send_all("The profiler was started. If you don't want this, set " .. core.colorize("#61ad6d", "profiler_autostart")
+            .. " to false in " .. core.colorize("#61ad6d", "freeminer.conf"))
     end)
 end
 
@@ -41,7 +41,7 @@ freeminer.register_chatcommand("profiler_stop", {
     privs = {server=true},
     func = function(name)
         if not started then
-            freeminer.chat_send_player(name, "Profiler has not been started. You can start it using " .. freeminer.colorize("00ffff", "/profiler_start"))
+            freeminer.chat_send_player(name, "Profiler has not been started. You can start it using " .. core.colorize("#00ffff", "/profiler_start"))
             return
         end
 

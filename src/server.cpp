@@ -3355,7 +3355,8 @@ void Server::notifyPlayer(const char *name, const std::string &msg)
 	if (player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
-	SendChatMessage(player->peer_id, std::string("\v#ffffff") + msg);
+	//fmold: SendChatMessage(player->peer_id, std::string("\v#ffffff") + msg);
+	SendChatMessage(player->peer_id, msg);
 }
 
 bool Server::showFormspec(const char *playername, const std::string &formspec,

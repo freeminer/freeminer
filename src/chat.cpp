@@ -747,7 +747,8 @@ EnrichedString ChatBackend::getRecentChat()
 	{
 		const ChatLine& line = m_recent_buffer.getLine(i);
 		if (i != 0)
-			result += L"\n\v#ffffff";
+			result += L"\n";
+			//fmold: \v#ffffff
 		if (!line.name.empty()) {
 			result += L"<";
 			result += line.name;
