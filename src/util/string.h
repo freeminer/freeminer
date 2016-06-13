@@ -91,8 +91,8 @@ std::string wide_to_narrow_real(const std::wstring& wcs);
 std::wstring narrow_to_wide(const std::string &mbs);
 std::string wide_to_narrow(const std::wstring &wcs);
 
-std::string urlencode(std::string str);
-std::string urldecode(std::string str);
+std::string urlencode(const std::string &str);
+std::string urldecode(const std::string &str);
 u32 readFlagString(std::string str, const FlagDesc *flagdesc, u32 *flagmask);
 std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
