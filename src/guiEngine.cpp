@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "fontengine.h"
 #include "guiscalingfilter.h"
+#include "irrlicht_changes/static_text.h"
 
 #ifdef __ANDROID__
 #include "client/tile.h"
@@ -178,15 +179,16 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 		m_sound_manager = &dummySoundManager;
 
 	//create topleft header
-	std::string t = (std::string(PROJECT_NAME_C " ") +
+	m_toplefttext = utf8_to_wide(std::string(PROJECT_NAME_C " ") +
 			g_version_hash);
 
-	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(t), g_fontengine->getTextHeight());
+	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
+		g_fontengine->getTextHeight());
 	rect += v2s32(4, 0);
 
 	m_irr_toplefttext =
-		m_device->getGUIEnvironment()->addStaticText(narrow_to_wide(t).c_str(),
-		rect,false,true,0,-1);
+		addStaticText(m_device->getGUIEnvironment(), m_toplefttext,
+			rect, false, true, 0, -1);
 
 	//create formspecsource
 	m_formspecgui = new FormspecFormSource("");
@@ -586,7 +588,7 @@ void GUIEngine::setTopleftText(std::string append)
 		toset += append;
 	}
 
-	m_irr_toplefttext->setText(narrow_to_wide(toset).c_str());
+	m_toplefttext = toset;
 
 	updateTopLeftTextSize();
 }
@@ -594,15 +596,14 @@ void GUIEngine::setTopleftText(std::string append)
 /******************************************************************************/
 void GUIEngine::updateTopLeftTextSize()
 {
-	std::wstring text = m_irr_toplefttext->getText();
-
-	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
-		rect += v2s32(4, 0);
+	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(m_toplefttext.c_str()),
+		g_fontengine->getTextHeight());
+	rect += v2s32(4, 0);
 
 	m_irr_toplefttext->remove();
 	m_irr_toplefttext =
-		m_device->getGUIEnvironment()->addStaticText(text.c_str(),
-		rect,false,true,0,-1);
+		addStaticText(m_device->getGUIEnvironment(), m_toplefttext,
+			rect, false, true, 0, -1);
 }
 
 /******************************************************************************/
