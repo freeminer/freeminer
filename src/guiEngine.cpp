@@ -579,13 +579,13 @@ bool GUIEngine::downloadFile(std::string url, std::string target)
 /******************************************************************************/
 void GUIEngine::setTopleftText(std::string append)
 {
-	std::string toset = (std::string(PROJECT_NAME_C " ") +
+	std::wstring toset = utf8_to_wide(std::string(PROJECT_NAME_C " ") +
 			g_version_hash);
 
 	if (append != "")
 	{
-		toset += " / ";
-		toset += append;
+		toset += L" / ";
+		toset += utf8_to_wide(append);
 	}
 
 	m_toplefttext = toset;
