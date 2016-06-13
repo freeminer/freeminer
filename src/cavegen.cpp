@@ -270,7 +270,7 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 					continue;
 
 				MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
-				MapNode liquidnode = (nval < 0.40 && node_max.Y < MGV5_LAVA_DEPTH ) ? lavanode : n_water_or_ice;
+				MapNode liquidnode = (nval < 0.40 && node_max.Y < lava_depth ) ? lavanode : n_water_or_ice;
 
 				int full_ymin = node_min.Y - MAP_BLOCKSIZE;
 				int full_ymax = node_max.Y + MAP_BLOCKSIZE;
