@@ -479,6 +479,11 @@ MapgenBasic::MapgenBasic(int mapgenid, MapgenParams *params, EmergeManager *emer
 		c_sandstonebrick = c_sandstone;
 	if (c_stair_sandstonebrick == CONTENT_IGNORE)
 		c_stair_sandstonebrick = c_sandstone;
+
+	//freeminer:
+	c_ice                = ndef->getId("mapgen_ice");
+	//=========
+
 }
 
 

@@ -567,6 +567,7 @@ void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)          {
 	std::string texture = packet[TOCLIENT_SPAWN_PARTICLE_TEXTURE].as<std::string>();
 	bool vertical = packet[TOCLIENT_SPAWN_PARTICLE_VERTICAL].as<bool>();
 
+
 	ClientEvent event;
 	event.type = CE_SPAWN_PARTICLE;
 	event.spawn_particle.pos = new v3f (pos);
@@ -575,10 +576,13 @@ void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)          {
 
 	event.spawn_particle.expirationtime = expirationtime;
 	event.spawn_particle.size = size;
-	event.spawn_particle.collisiondetection =
-	    collisiondetection;
+	event.spawn_particle.collisiondetection = collisiondetection;
 	event.spawn_particle.vertical = vertical;
 	event.spawn_particle.texture = new std::string(texture);
+
+	if (packet.count(TOCLIENT_SPAWN_PARTICLE_COLLISION_REMOVAL)) {
+		event.spawn_particle.collision_removal = packet[TOCLIENT_SPAWN_PARTICLE_COLLISION_REMOVAL].as<bool>();
+	}
 
 	m_client_event_queue.push(event);
 }

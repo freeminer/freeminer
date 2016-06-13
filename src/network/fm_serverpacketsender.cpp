@@ -184,11 +184,12 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
 // Spawns a particle on peer with peer_id
 void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f acceleration,
 				float expirationtime, float size, bool collisiondetection,
-				bool vertical, std::string texture)
+				bool collision_removal,
+				bool vertical, const std::string &texture)
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_SPAWN_PARTICLE, 8);
+	MSGPACK_PACKET_INIT(TOCLIENT_SPAWN_PARTICLE, 9);
 	PACK(TOCLIENT_SPAWN_PARTICLE_POS, pos);
 	PACK(TOCLIENT_SPAWN_PARTICLE_VELOCITY, velocity);
 	PACK(TOCLIENT_SPAWN_PARTICLE_ACCELERATION, acceleration);
@@ -197,6 +198,7 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 	PACK(TOCLIENT_SPAWN_PARTICLE_COLLISIONDETECTION, collisiondetection);
 	PACK(TOCLIENT_SPAWN_PARTICLE_VERTICAL, vertical);
 	PACK(TOCLIENT_SPAWN_PARTICLE_TEXTURE, texture);
+	PACK(TOCLIENT_SPAWN_PARTICLE_COLLISION_REMOVAL, collision_removal);
 
 	if (peer_id != PEER_ID_INEXISTENT)
 	{
@@ -212,7 +214,8 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 // Adds a ParticleSpawner on peer with peer_id
 void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3f minpos, v3f maxpos,
 	v3f minvel, v3f maxvel, v3f minacc, v3f maxacc, float minexptime, float maxexptime,
-	float minsize, float maxsize, bool collisiondetection, bool vertical, std::string texture, u32 id)
+	float minsize, float maxsize, bool collisiondetection, bool collision_removal,
+	bool vertical, const std::string &texture, u32 id)
 {
 	DSTACK(FUNCTION_NAME);
 
