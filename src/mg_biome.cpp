@@ -49,6 +49,7 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	b->depth_top       = 0;
 	b->depth_filler    = -MAX_MAP_GENERATION_LIMIT;
 	b->depth_water_top = 0;
+	b->depth_riverbed  = 0;
 	b->y_min           = -MAX_MAP_GENERATION_LIMIT;
 	b->y_max           = MAX_MAP_GENERATION_LIMIT;
 	b->heat_point      = 0.0;
@@ -64,7 +65,9 @@ BiomeManager::BiomeManager(IGameDef *gamedef) :
 	//freeminer
 	b->m_nodenames.push_back("mapgen_ice");
 	b->m_nodenames.push_back("mapgen_dirt_with_snow");
+	//========
 
+	b->m_nodenames.push_back("mapgen_stone");
 	b->m_nodenames.push_back("ignore");
 	m_ndef->pendNodeResolve(b);
 
@@ -311,6 +314,8 @@ void Biome::resolveNodeNames()
 	//freeminer:
 	getIdFromNrBacklog(&c_ice,         "mapgen_ice",                c_water);
 	getIdFromNrBacklog(&c_top_cold,    "mapgen_dirt_with_snow",     c_top);
+	//==========
 
+	getIdFromNrBacklog(&c_riverbed,    "mapgen_stone",              CONTENT_AIR);
 	getIdFromNrBacklog(&c_dust,        "ignore",                    CONTENT_IGNORE);
 }
