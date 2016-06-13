@@ -1260,17 +1260,17 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	m_lbm_mgr.applyLBMs(this, block, stamp);
 
 	// Run node timers
-	std::map<v3s16, NodeTimer> elapsed_timers =
+	std::vector<NodeTimer> elapsed_timers =
 		block->m_node_timers.step((float)dtime_s);
-	if(!elapsed_timers.empty()){
+	if (!elapsed_timers.empty()) {
 		MapNode n;
-		for(std::map<v3s16, NodeTimer>::iterator
+		for (std::vector<NodeTimer>::iterator
 				i = elapsed_timers.begin();
 				i != elapsed_timers.end(); ++i){
-			n = block->getNodeNoEx(i->first);
-			v3s16 p = i->first + block->getPosRelative();
-			if(m_script->node_on_timer(p,n,i->second.elapsed))
-				block->setNodeTimer(i->first,NodeTimer(i->second.timeout,0));
+			n = block->getNodeNoEx(i->position);
+			v3s16 p = i->position + block->getPosRelative();
+			if (m_script->node_on_timer(p, n, i->elapsed))
+				block->setNodeTimer(NodeTimer(i->timeout, 0, i->position));
 		}
 	}
 }
@@ -1758,18 +1758,21 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			// Run node timers
 			if (!block->m_node_timers.m_uptime_last)  // not very good place, but minimum modifications
 				block->m_node_timers.m_uptime_last = uptime - dtime;
-			std::map<v3s16, NodeTimer> elapsed_timers =
+			std::vector<NodeTimer> elapsed_timers =
+				//block->m_node_timers.step((float)dtime);
 				block->m_node_timers.step(uptime - block->m_node_timers.m_uptime_last);
 			block->m_node_timers.m_uptime_last = uptime;
-			if(!elapsed_timers.empty()){
+			if (!elapsed_timers.empty()) {
 				MapNode n;
-				for(std::map<v3s16, NodeTimer>::iterator
+				for (std::vector<NodeTimer>::iterator
 						i = elapsed_timers.begin();
-						i != elapsed_timers.end(); ++i){
-					n = block->getNodeNoEx(i->first);
-					p = i->first + block->getPosRelative();
-					if(m_script->node_on_timer(p,n,i->second.elapsed))
-						block->setNodeTimer(i->first,NodeTimer(i->second.timeout,0));
+						i != elapsed_timers.end(); ++i) {
+					n = block->getNodeNoEx(i->position);
+					p = i->position + block->getPosRelative();
+					if (m_script->node_on_timer(p, n, i->elapsed)) {
+						block->setNodeTimer(NodeTimer(
+							i->timeout, 0, i->position));
+					}
 				}
 			}
 

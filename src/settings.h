@@ -245,8 +245,6 @@ public:
 	}
 	//=========
 
-private:
-
 	void registerChangedCallback(const std::string &name,
 		SettingsChangedCallback cbf, void *userdata = NULL);
 	void deregisterChangedCallback(const std::string &name,
