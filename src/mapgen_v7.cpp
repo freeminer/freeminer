@@ -70,8 +70,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge)
 	// 1-up 1-down overgeneration
 	this->zstride_1u1d = csize.X * (csize.Y + 2);
 
-	this->heightmap       = new s16[csize.X * csize.Z];
-	this->ridge_heightmap = new s16[csize.X * csize.Z];
+	this->heightmap = new s16[csize.X * csize.Z];
 
 	MapgenV7Params *sp = (MapgenV7Params *)params->sparams;
 
@@ -156,7 +155,6 @@ MapgenV7::~MapgenV7()
 
 	delete biomegen;
 
-	delete[] ridge_heightmap;
 	delete[] heightmap;
 }
 
@@ -503,8 +501,7 @@ int MapgenV7::generateTerrain()
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index2d++) {
 		s16 surface_y = baseTerrainLevelFromMap(index2d);
-		heightmap[index2d]       = surface_y;  // Create base terrain heightmap
-		ridge_heightmap[index2d] = surface_y;
+		heightmap[index2d] = surface_y;  // Create base terrain heightmap
 
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
@@ -572,9 +569,6 @@ void MapgenV7::generateRidgeTerrain()
 
 			if (nridge + width_mod * height_mod < 0.6)
 				continue;
-
-			if (y < ridge_heightmap[j])
-				ridge_heightmap[j] = y - 1;
 
 			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), NULL, &heat_cache) : 0;
 			MapNode n_water_or_ice = (heat < 0 && y > water_level + heat/4) ? n_ice : n_water;

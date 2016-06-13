@@ -70,8 +70,6 @@ class MapgenV7 : public MapgenBasic, public Mapgen_features {
 public:
 	int zstride_1u1d;
 
-	s16 *ridge_heightmap;
-
 	u32 spflags;
 	Noise *noise_terrain_base;
 	Noise *noise_terrain_alt;
