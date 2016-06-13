@@ -3049,8 +3049,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 				PlayerSAO *playersao = player->getPlayerSAO();
 				assert(playersao);
 
-				//MutexAutoLock env_lock(m_env_mutex);
-				m_script->on_leaveplayer(playersao);
+				m_script->on_leaveplayer(playersao, reason == CDR_TIMEOUT);
 
 				playersao->disconnected();
 			}

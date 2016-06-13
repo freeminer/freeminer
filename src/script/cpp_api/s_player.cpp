@@ -138,7 +138,8 @@ void ScriptApiPlayer::on_joinplayer(ServerActiveObject *player)
 	runCallbacks(1, RUN_CALLBACKS_MODE_FIRST);
 }
 
-void ScriptApiPlayer::on_leaveplayer(ServerActiveObject *player)
+void ScriptApiPlayer::on_leaveplayer(ServerActiveObject *player,
+		bool timeout)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -147,7 +148,8 @@ void ScriptApiPlayer::on_leaveplayer(ServerActiveObject *player)
 	lua_getfield(L, -1, "registered_on_leaveplayers");
 	// Call callbacks
 	objectrefGetOrCreate(L, player);
-	runCallbacks(1, RUN_CALLBACKS_MODE_FIRST);
+	lua_pushboolean(L, timeout);
+	runCallbacks(2, RUN_CALLBACKS_MODE_FIRST);
 }
 
 void ScriptApiPlayer::on_cheat(ServerActiveObject *player,
