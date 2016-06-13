@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes_extrabloated.h"
 #include <string>
+#include "client/keys.h"
 #include "keycode.h"
 #include <list>
 
