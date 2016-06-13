@@ -269,7 +269,9 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 */
 }
 
+
 //not used
+#if 0
 CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 				v3POS node_min, bool is_large_cave) {
 	this->mg = mg;
@@ -306,6 +308,7 @@ CaveIndev::CaveIndev(MapgenIndev *mg, PseudoRandom *ps, PseudoRandom *ps2,
 	}
 	large_cave_is_flat = (ps->range(0,1) == 0);
 }
+#endif
 
 /*
 // version with one perlin3d. use with good params like

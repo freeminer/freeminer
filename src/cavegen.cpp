@@ -294,7 +294,8 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 
 			s16 si2 = rs / 2 - MYMAX(0, maxabsxz - rs / 7 - 1);
 
-			s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+			//fmtodomerge: s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+			s16 heat = 10;
 
 			for (s16 y0 = -si2; y0 <= si2; y0++) {
 				// Make better floors in small caves
@@ -591,6 +592,7 @@ void CavesV6::carveRoute(v3f vec, float f, bool randomize_xz,
 	MapNode waternode(c_water_source);
 	MapNode lavanode(c_lava_source);
 	MapNode n_ice(c_ice);
+	bool flooded = ps->range(1, 2) == 2;
 
 	v3s16 startp(orp.X, orp.Y, orp.Z);
 	startp += of;
@@ -616,7 +618,8 @@ void CavesV6::carveRoute(v3f vec, float f, bool randomize_xz,
 			s16 maxabsxz = MYMAX(abs(x0), abs(z0));
 			s16 si2 = rs / 2 - MYMAX(0, maxabsxz - rs / 7 - 1);
 
-			s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+			//fmtodomerge: s16 heat = mg->m_emerge->env->m_use_weather ? mg->m_emerge->env->getServerMap().updateBlockHeat(mg->m_emerge->env, v3POS(cp.X + x0, cp.Y + -si2, cp.Z + z0), nullptr, &mg->heat_cache) : 0;
+			s16 heat = 10;
 
 			for (s16 y0 = -si2; y0 <= si2; y0++) {
 				if (large_cave_is_flat) {
@@ -642,8 +645,7 @@ void CavesV6::carveRoute(v3f vec, float f, bool randomize_xz,
 
 					bool protect_huge = vm->m_flags[i] & VOXELFLAG_CHECKED2;
 
-					if (flooded && full_ymin < water_level &&
-							full_ymax > water_level) {
+					if (flooded && full_ymin < water_level && full_ymax > water_level) {
 						if (!protect_huge) {
 							MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
 							vm->m_data[i] = (p.Y <= water_level) ? n_water_or_ice : airnode;
