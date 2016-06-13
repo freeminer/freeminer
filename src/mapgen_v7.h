@@ -68,9 +68,20 @@ struct MapgenV7Params : public MapgenSpecificParams {
 
 class MapgenV7 : public MapgenBasic, public Mapgen_features {
 public:
-	int zstride_1u1d;
+	MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge);
+	~MapgenV7();
 
-	u32 spflags;
+	virtual void makeChunk(BlockMakeData *data);
+	int getSpawnLevelAtPoint(v2s16 p);
+
+	float baseTerrainLevelAtPoint(s16 x, s16 z);
+	float baseTerrainLevelFromMap(int index);
+	bool getMountainTerrainAtPoint(s16 x, s16 y, s16 z);
+	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, s16 y);
+	virtual int generateTerrain();
+	virtual void generateRidgeTerrain();
+
+private:
 	Noise *noise_terrain_base;
 	Noise *noise_terrain_alt;
 	Noise *noise_terrain_persist;
@@ -85,30 +96,11 @@ public:
 	virtual void generateExperimental();
 	//=========
 
-	content_t c_lava_source;
-	content_t c_ice;
-
 	content_t c_cobble;
 	content_t c_stair_cobble;
 	content_t c_mossycobble;
 	content_t c_sandstonebrick;
 	content_t c_stair_sandstonebrick;
-
-	MapgenV7(int mapgenid, MapgenParams *params, EmergeManager *emerge);
-	~MapgenV7();
-
-	virtual void makeChunk(BlockMakeData *data);
-	int getSpawnLevelAtPoint(v2s16 p);
-
-	float baseTerrainLevelAtPoint(s16 x, s16 z);
-	float baseTerrainLevelFromMap(int index);
-	bool getMountainTerrainAtPoint(s16 x, s16 y, s16 z);
-	bool getMountainTerrainFromMap(int idx_xyz, int idx_xz, s16 y);
-
-	//fm? virtual void calculateNoise();
-
-	virtual int generateTerrain();
-	virtual void generateRidgeTerrain();
 };
 
 struct MapgenFactoryV7 : public MapgenFactory {

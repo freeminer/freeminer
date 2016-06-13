@@ -59,13 +59,17 @@ struct MapgenV5Params : public MapgenSpecificParams {
 
 class MapgenV5 : public MapgenBasic, public Mapgen_features {
 public:
-	u32 spflags;
+	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge);
+	~MapgenV5();
+
+	virtual void makeChunk(BlockMakeData *data);
+	int getSpawnLevelAtPoint(v2s16 p);
+	int generateBaseTerrain();
+
+private:
 	Noise *noise_factor;
 	Noise *noise_height;
 	Noise *noise_ground;
-
-	content_t c_lava_source;
-	content_t c_ice;
 
 	content_t c_cobble;
 	content_t c_stair_cobble;
@@ -76,13 +80,6 @@ public:
 	//freeminer:
 	s16 float_islands;
 
-	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge);
-
-	~MapgenV5();
-
-	virtual void makeChunk(BlockMakeData *data);
-	int getSpawnLevelAtPoint(v2s16 p);
-	int generateBaseTerrain();
 };
 
 
