@@ -1989,7 +1989,8 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
 // Spawns a particle on peer with peer_id
 void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f acceleration,
 				float expirationtime, float size, bool collisiondetection,
-				bool vertical, std::string texture)
+				bool collision_removal,
+				bool vertical, const std::string &texture)
 {
 	DSTACK(FUNCTION_NAME);
 
@@ -1999,6 +2000,7 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 			<< size << collisiondetection;
 	pkt.putLongString(texture);
 	pkt << vertical;
+	pkt << collision_removal;
 
 	if (peer_id != PEER_ID_INEXISTENT) {
 		Send(&pkt);
@@ -2011,7 +2013,8 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 // Adds a ParticleSpawner on peer with peer_id
 void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3f minpos, v3f maxpos,
 	v3f minvel, v3f maxvel, v3f minacc, v3f maxacc, float minexptime, float maxexptime,
-	float minsize, float maxsize, bool collisiondetection, bool vertical, std::string texture, u32 id)
+	float minsize, float maxsize, bool collisiondetection, bool collision_removal,
+	bool vertical, const std::string &texture, u32 id)
 {
 	DSTACK(FUNCTION_NAME);
 
@@ -2024,6 +2027,7 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 	pkt.putLongString(texture);
 
 	pkt << id << vertical;
+	pkt << collision_removal;
 
 	if (peer_id != PEER_ID_INEXISTENT) {
 		Send(&pkt);
@@ -3531,7 +3535,8 @@ void Server::notifyPlayers(const std::string &msg)
 void Server::spawnParticle(const std::string &playername, v3f pos,
 	v3f velocity, v3f acceleration,
 	float expirationtime, float size, bool
-	collisiondetection, bool vertical, const std::string &texture)
+	collisiondetection, bool collision_removal,
+	bool vertical, const std::string &texture)
 {
 	// m_env will be NULL if the server is initializing
 	if (!m_env)
@@ -3546,13 +3551,15 @@ void Server::spawnParticle(const std::string &playername, v3f pos,
 	}
 
 	SendSpawnParticle(peer_id, pos, velocity, acceleration,
-			expirationtime, size, collisiondetection, vertical, texture);
+			expirationtime, size, collisiondetection,
+			collision_removal, vertical, texture);
 }
 
 u32 Server::addParticleSpawner(u16 amount, float spawntime,
 	v3f minpos, v3f maxpos, v3f minvel, v3f maxvel, v3f minacc, v3f maxacc,
 	float minexptime, float maxexptime, float minsize, float maxsize,
-	bool collisiondetection, bool vertical, const std::string &texture,
+	bool collisiondetection, bool collision_removal,
+	bool vertical, const std::string &texture,
 	const std::string &playername)
 {
 	// m_env will be NULL if the server is initializing
@@ -3571,7 +3578,7 @@ u32 Server::addParticleSpawner(u16 amount, float spawntime,
 	SendAddParticleSpawner(peer_id, amount, spawntime,
 		minpos, maxpos, minvel, maxvel, minacc, maxacc,
 		minexptime, maxexptime, minsize, maxsize,
-		collisiondetection, vertical, texture, id);
+		collisiondetection, collision_removal, vertical, texture, id);
 
 	return id;
 }

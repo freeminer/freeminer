@@ -910,8 +910,10 @@ void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)
 	bool collisiondetection = readU8(is);
 	std::string texture     = deSerializeLongString(is);
 	bool vertical           = false;
+	bool collision_removal  = false;
 	try {
 		vertical = readU8(is);
+		collision_removal = readU8(is);
 	} catch (...) {}
 
 	ClientEvent event;
@@ -922,6 +924,7 @@ void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)
 	event.spawn_particle.expirationtime     = expirationtime;
 	event.spawn_particle.size               = size;
 	event.spawn_particle.collisiondetection = collisiondetection;
+	event.spawn_particle.collision_removal  = collision_removal;
 	event.spawn_particle.vertical           = vertical;
 	event.spawn_particle.texture            = new std::string(texture);
 
@@ -954,8 +957,11 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)
 	*pkt >> id;
 
 	bool vertical = false;
+	bool collision_removal = false;
 	try {
 		*pkt >> vertical;
+		*pkt >> collision_removal;
+
 	} catch (...) {}
 
 	ClientEvent event;
@@ -973,6 +979,7 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)
 	event.add_particlespawner.minsize            = minsize;
 	event.add_particlespawner.maxsize            = maxsize;
 	event.add_particlespawner.collisiondetection = collisiondetection;
+	event.add_particlespawner.collision_removal  = collision_removal;
 	event.add_particlespawner.vertical           = vertical;
 	event.add_particlespawner.texture            = new std::string(texture);
 	event.add_particlespawner.id                 = id;

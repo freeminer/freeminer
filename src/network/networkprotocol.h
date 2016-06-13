@@ -651,6 +651,7 @@ enum {
 		u8 bool vertical
 		u32 len
 		u8[len] texture
+		u8 collision_removal
 	*/
 
 #define TOCLIENT_ADD_PARTICLESPAWNER 0x47
@@ -690,6 +691,7 @@ enum {
 		u32 len
 		u8[len] texture
 		u32 id
+		u8 collision_removal
 	*/
 
 #define TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY 0x48
