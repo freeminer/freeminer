@@ -797,8 +797,8 @@ endif()
 set(FMclient_SRCS
 	guiTextInputMenu.cpp
 	intlGUIEditBox.cpp
-	FMStaticText.cpp
 )
+	#FMStaticText.cpp
 
 if (USE_TOUCHSCREENGUI)
 	add_definitions(-DHAVE_TOUCHSCREENGUI)

@@ -74,7 +74,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 //freeminer:
-#include "FMStaticText.h"
+//#include "FMStaticText.h"
 #include <future>
 
 //extern Settings *g_settings;
