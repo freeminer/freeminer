@@ -145,13 +145,13 @@ void StaticText::draw()
 							font->getDimension(BrokenText[i].c_str()).Width;
 					}
 
-					//std::vector<irr::video::SColor> colors;
+					std::vector<irr::video::SColor> colors;
 					//std::wstring str;
 					EnrichedString str = BrokenText[i];
 
-					//str = colorizeText(BrokenText[i].c_str(), colors, previous_color);
-					//if (!colors.empty())
-					//	previous_color = colors[colors.size() - 1];
+					str = colorizeText(BrokenText[i].c_str(), colors, previous_color);
+					if (!colors.empty())
+						previous_color = colors[colors.size() - 1];
 
 					irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(font);
 					tmp->draw(str, r,
