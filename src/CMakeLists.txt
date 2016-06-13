@@ -828,7 +828,6 @@ set(client_SRCS
 	filecache.cpp
 	fontengine.cpp
 	game.cpp
-	guiChatConsole.cpp
 	guiEngine.cpp
 	guiFileSelectMenu.cpp
 	guiFormSpecMenu.cpp

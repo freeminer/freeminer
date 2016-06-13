@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "filesys.h"
 #include "gettext.h"
-#include "guiChatConsole.h"
+#include "client/guiChatConsole.h"
 #include "guiFormSpecMenu.h"
 #include "guiKeyChangeMenu.h"
 #include "guiPasswordChange.h"
@@ -61,6 +61,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "minimap.h"
 #include "mapblock_mesh.h"
+
+#if USE_FREETYPE
+	#include "util/statictext.h"
+#endif
 
 #include "sound.h"
 
@@ -2389,22 +2393,21 @@ bool Game::initGui()
 			false, false, guiroot);
 	guitext_status->setVisible(false);
 
+#if USE_FREETYPE
+	// Colored chat support when using FreeType
+	//fmold: guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
+	guitext_chat = new gui::StaticText(L"", false, guienv, guiroot, -1, core::rect<s32>(0, 0, 0, 0), false);
+	guitext_chat->setWordWrap(true);
+	guitext_chat->drop();
+#else
+	// Standard chat when FreeType is disabled
 	// Chat text
-	guitext_chat = nullptr;
-
-	{
-		guitext_chat = new gui::FMStaticText(L"", false, guienv, guienv->getRootGUIElement(), -1, core::rect<s32>(0, 0, 0, 0), false);
-		guitext_chat->setWordWrap(true);
-		guitext_chat->drop();
-	}
-
-	if (!guitext_chat) {
 	guitext_chat = guienv->addStaticText(
 			L"",
 			core::rect<s32>(0, 0, 0, 0),
 			//false, false); // Disable word wrap as of now
 			false, true, guiroot);
-	}
+#endif
 
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend->clearRecentChat();
