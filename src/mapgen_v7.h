@@ -96,11 +96,6 @@ private:
 	virtual void generateExperimental();
 	//=========
 
-	content_t c_cobble;
-	content_t c_stair_cobble;
-	content_t c_mossycobble;
-	content_t c_sandstonebrick;
-	content_t c_stair_sandstonebrick;
 };
 
 struct MapgenFactoryV7 : public MapgenFactory {
