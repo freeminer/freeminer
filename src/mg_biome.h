@@ -27,6 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "noise.h"
 
+//#include "mapgen.h"
+
 class Settings;
 class BiomeManager;
 
@@ -36,15 +38,13 @@ class BiomeManager;
 
 #define BIOME_NONE ((u8)0)
 
-#include "mapgen.h"
-
-enum BiomeType
-{
-	BIOME_NORMAL,
-	BIOME_LIQUID,
-	BIOME_NETHER,
-	BIOME_AETHER,
-	BIOME_FLAT
+// TODO(hmmmm): Decide whether this is obsolete or will be used in the future
+enum BiomeType {
+	BIOMETYPE_NORMAL,
+	BIOMETYPE_LIQUID,
+	BIOMETYPE_NETHER,
+	BIOMETYPE_AETHER,
+	BIOMETYPE_FLAT,
 };
 
 class Biome : public ObjDef, public NodeResolver {

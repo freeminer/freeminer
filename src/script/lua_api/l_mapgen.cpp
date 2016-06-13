@@ -42,11 +42,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 struct EnumString ModApiMapgen::es_BiomeTerrainType[] =
 {
-	{BIOME_NORMAL, "normal"},
-	{BIOME_LIQUID, "liquid"},
-	{BIOME_NETHER, "nether"},
-	{BIOME_AETHER, "aether"},
-	{BIOME_FLAT,   "flat"},
+	{BIOMETYPE_NORMAL, "normal"},
+	{BIOMETYPE_LIQUID, "liquid"},
+	{BIOMETYPE_NETHER, "nether"},
+	{BIOMETYPE_AETHER, "aether"},
+	{BIOMETYPE_FLAT,   "flat"},
 	{0, NULL},
 };
 
@@ -374,7 +374,7 @@ Biome *read_biome_def(lua_State *L, int index, INodeDefManager *ndef)
 		return NULL;
 
 	BiomeType biometype = (BiomeType)getenumfield(L, index, "type",
-		ModApiMapgen::es_BiomeTerrainType, BIOME_NORMAL);
+		ModApiMapgen::es_BiomeTerrainType, BIOMETYPE_NORMAL);
 	Biome *b = BiomeManager::create(biometype);
 
 	b->name            = getstringfield_default(L, index, "name", "");

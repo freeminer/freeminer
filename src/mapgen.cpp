@@ -424,7 +424,7 @@ MgStoneType MapgenBasic::generateBiomes()
 {
 	v3s16 em = vm->m_area.getExtent();
 	u32 index = 0;
-	MgStoneType stone_type = STONE;
+	MgStoneType stone_type = MGSTONE_STONE;
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++)
 	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
@@ -473,9 +473,9 @@ MgStoneType MapgenBasic::generateBiomes()
 				// This is more efficient than detecting per-node and will not
 				// miss any desert stone or sandstone biomes.
 				if (biome->c_stone == c_desert_stone)
-					stone_type = DESERT_STONE;
+					stone_type = MGSTONE_DESERT_STONE;
 				else if (biome->c_stone == c_sandstone)
-					stone_type = SANDSTONE;
+					stone_type = MGSTONE_SANDSTONE;
 			}
 
 			if (cc_stone && biome && (c == biome->c_ice || c == biome->c_water || c == biome->c_water_top))
