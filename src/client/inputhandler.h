@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define INPUT_HANDLER_H
 
 #include "irrlichttypes_extrabloated.h"
+#include "joystick_controller.h"
 
 class MyEventReceiver : public IEventReceiver
 {
@@ -63,6 +64,14 @@ public:
 			return true;
 		}
 #endif
+
+		if (event.EventType == irr::EET_JOYSTICK_INPUT_EVENT) {
+			/* TODO add a check like:
+			if (event.JoystickEvent != joystick_we_listen_for)
+				return false;
+			*/
+			return joystick->handleEvent(event.JoystickEvent);
+		}
 		// handle mouse events
 		if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
 			if (noMenuActive() == false) {
@@ -176,6 +185,8 @@ public:
 
 	s32 mouse_wheel;
 
+	JoystickController *joystick;
+
 #ifdef HAVE_TOUCHSCREENGUI
 	TouchScreenGUI* m_touchscreengui;
 #endif
@@ -206,6 +217,7 @@ public:
 		m_receiver(receiver),
 		m_mousepos(0,0)
 	{
+		m_receiver->joystick = &joystick;
 	}
 	virtual bool isKeyDown(const KeyPress &keyCode)
 	{
@@ -292,6 +304,7 @@ public:
 
 	void clear()
 	{
+		joystick.clear();
 		m_receiver->clearInput();
 	}
 private:

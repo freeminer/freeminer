@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client.h"
 #include "client/tile.h"     // For TextureSource
 #include "client/keys.h"
+#include "client/joystick_controller.h"
 #include "clientmap.h"
 #include "clouds.h"
 #include "config.h"
@@ -1136,6 +1137,7 @@ bool nodePlacementPrediction(Client &client,
 static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device,
+		JoystickController *joystick,
 		IFormSource *fs_src, TextDest *txt_dest, Client *client)
 {
 
@@ -1145,8 +1147,9 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #endif
 
 	if (*cur_formspec == 0) {
-		*cur_formspec = new GUIFormSpecMenu(device, guiroot, -1, &g_menumgr,
-						    invmgr, gamedef, tsrc, fs_src, txt_dest, client);
+		*cur_formspec = new GUIFormSpecMenu(device, joystick,
+			guiroot, -1, &g_menumgr, invmgr, gamedef, tsrc,
+			fs_src, txt_dest, client);
 		(*cur_formspec)->doPause = false;
 
 		/*
@@ -1171,7 +1174,8 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 
 static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
-		IWritableTextureSource *tsrc, IrrlichtDevice *device, Client *client)
+		IWritableTextureSource *tsrc, IrrlichtDevice *device,
+		JoystickController *joystick, Client *client)
 {
 	std::string formspec =
 		std::string(FORMSPEC_VERSION_STRING) +
@@ -1187,14 +1191,15 @@ static void show_deathscreen(GUIFormSpecMenu **cur_formspec,
 	FormspecFormSource *fs_src = new FormspecFormSource(formspec);
 	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_DEATH_SCREEN", client);
 
-	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,  fs_src, txt_dst, NULL);
+	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,
+		joystick, fs_src, txt_dst, NULL);
 }
 
 /******************************************************************************/
 static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 		InventoryManager *invmgr, IGameDef *gamedef,
 		IWritableTextureSource *tsrc, IrrlichtDevice *device,
-		bool singleplayermode)
+		JoystickController *joystick, bool singleplayermode)
 {
 #ifdef __ANDROID__
 	std::string control_text = strgettext("Default Controls:\n"
@@ -1262,7 +1267,8 @@ static void show_pause_menu(GUIFormSpecMenu **cur_formspec,
 	FormspecFormSource *fs_src = new FormspecFormSource(os.str());
 	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
 
-	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,  fs_src, txt_dst, NULL);
+	create_formspec_menu(cur_formspec, invmgr, gamedef, tsrc, device,
+		joystick, fs_src, txt_dst, NULL);
 	std::string con("btn_continue");
 	(*cur_formspec)->setFocus(con);
 	(*cur_formspec)->doPause = true;
@@ -1635,9 +1641,10 @@ protected:
 	void decreaseViewRange(float *statustext_time);
 	void toggleFullViewRange(float *statustext_time);
 
-	void updateCameraDirection(CameraOrientation *cam, VolatileRunFlags *flags);
+	void updateCameraDirection(CameraOrientation *cam, VolatileRunFlags *flags,
+		float dtime);
 	void updateCameraOrientation(CameraOrientation *cam,
-			const VolatileRunFlags &flags);
+		const VolatileRunFlags &flags, float dtime);
 	void updatePlayerControl(const CameraOrientation &cam);
 	void step(f32 *dtime);
 	void processClientEvents(CameraOrientation *cam, float *damage_flash);
@@ -1674,34 +1681,39 @@ protected:
 	static void settingChangedCallback(const std::string &setting_name, void *data);
 	void readSettings();
 
-	bool getLeftClicked()
+	inline bool getLeftClicked()
 	{
-		return input->getLeftClicked();
+		return input->getLeftClicked() ||
+			input->joystick.getWasKeyDown(KeyType::MOUSE_L);
 	}
-	bool getRightClicked()
+	inline bool getRightClicked()
 	{
-		return input->getRightClicked();
+		return input->getRightClicked() ||
+			input->joystick.getWasKeyDown(KeyType::MOUSE_R);
 	}
-	bool isLeftPressed()
+	inline bool isLeftPressed()
 	{
-		return input->getLeftState();
+		return input->getLeftState() ||
+			input->joystick.isKeyDown(KeyType::MOUSE_L);
 	}
-	bool isRightPressed()
+	inline bool isRightPressed()
 	{
-		return input->getRightState();
+		return input->getRightState() ||
+			input->joystick.isKeyDown(KeyType::MOUSE_R);
 	}
-	bool getLeftReleased()
+	inline bool getLeftReleased()
 	{
-		return input->getLeftReleased();
+		return input->getLeftReleased() ||
+			input->joystick.wasKeyReleased(KeyType::MOUSE_L);
 	}
 
-	bool isKeyDown(GameKeyType k)
+	inline bool isKeyDown(GameKeyType k)
 	{
-		return input->isKeyDown(keycache.key[k]);
+		return input->isKeyDown(keycache.key[k]) || input->joystick.isKeyDown(k);
 	}
-	bool wasKeyDown(GameKeyType k)
+	inline bool wasKeyDown(GameKeyType k)
 	{
-		return input->wasKeyDown(keycache.key[k]);
+		return input->wasKeyDown(keycache.key[k]) || input->joystick.wasKeyDown(k);
 	}
 
 #ifdef __ANDROID__
@@ -1799,9 +1811,11 @@ private:
 	 */
 	bool m_cache_doubletap_jump;
 	bool m_cache_enable_clouds;
+	bool m_cache_enable_joysticks;
 	bool m_cache_enable_particles;
 	bool m_cache_enable_fog;
 	f32  m_cache_mouse_sensitivity;
+	f32  m_cache_joystick_frustum_sensitivity;
 	f32  m_repeat_right_click_time;
 
 	bool m_cinematic;
@@ -1841,11 +1855,15 @@ Game::Game() :
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("enable_clouds",
 		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("doubletap_joysticks",
+		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("enable_particles",
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("enable_fog",
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("mouse_sensitivity",
+		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("joystick_frustum_sensitivity",
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("repeat_rightclick_time",
 		&settingChangedCallback, this);
@@ -2035,7 +2053,7 @@ void Game::run()
 		updateProfilers(runData, stats, draw_times, dtime);
 		processUserInput(&flags, &runData, dtime);
 		// Update camera before player movement to avoid camera lag of one frame
-		updateCameraDirection(&cam_view_target, &flags);
+		updateCameraDirection(&cam_view_target, &flags, dtime);
 		float cam_smoothing = 0;
 		if (m_cinematic)
 			cam_smoothing = 1 - g_settings->getFloat("cinematic_camera_smoothing");
@@ -2944,7 +2962,8 @@ void Game::processKeyInput(VolatileRunFlags *flags,
 	} else if (wasKeyDown(KeyType::ESC) || input->wasKeyDown(CancelKey)) {
 		if (!gui_chat_console->isOpenInhibited()) {
 			show_pause_menu(&current_formspec, client, gamedef,
-					texture_src, device, simple_singleplayer_mode);
+				texture_src, device, &input->joystick,
+				simple_singleplayer_mode);
 		}
 	} else if (wasKeyDown(KeyType::CHAT)) {
 		openConsole(0.1, L"");
@@ -3101,12 +3120,21 @@ void Game::processItemSelection(u16 *new_playeritem)
 	u16 max_item = MYMIN(PLAYER_INVENTORY_SIZE - 1,
 		                 player->hud_hotbar_itemcount - 1);
 
-	if (wheel < 0)
-		*new_playeritem = *new_playeritem < max_item ? *new_playeritem + 1 : 0;
-	else if (wheel > 0)
-		*new_playeritem = *new_playeritem > 0 ? *new_playeritem - 1 : max_item;
-	// else wheel == 0
+	s32 dir = wheel;
 
+	if (input->joystick.wasKeyDown(KeyType::SCROLL_DOWN)) {
+		dir = -1;
+	}
+
+	if (input->joystick.wasKeyDown(KeyType::SCROLL_UP)) {
+		dir = 1;
+	}
+
+	if (dir < 0)
+		*new_playeritem = *new_playeritem < max_item ? *new_playeritem + 1 : 0;
+	else if (dir > 0)
+		*new_playeritem = *new_playeritem > 0 ? *new_playeritem - 1 : max_item;
+	// else dir == 0
 
 	/* Item selection using keyboard
 	 */
@@ -3168,7 +3196,7 @@ void Game::openInventory()
 	TextDest *txt_dst = new TextDestPlayerInventory(client);
 
 	create_formspec_menu(&current_formspec, client, gamedef, texture_src,
-			device, fs_src, txt_dst, client);
+			device, &input->joystick, fs_src, txt_dst, client);
 
 	InventoryLocation inventoryloc;
 	inventoryloc.setCurrentPlayer();
@@ -3502,7 +3530,7 @@ void Game::toggleFullViewRange(float *statustext_time)
 
 
 void Game::updateCameraDirection(CameraOrientation *cam,
-		VolatileRunFlags *flags)
+		VolatileRunFlags *flags, float dtime)
 {
 	if ((device->isWindowActive() && noMenuActive()) || random_input) {
 
@@ -3517,7 +3545,7 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 		if (flags->first_loop_after_window_activation)
 			flags->first_loop_after_window_activation = false;
 		else
-			updateCameraOrientation(cam, *flags);
+			updateCameraOrientation(cam, *flags, dtime);
 
 		input->setMousePos((driver->getScreenSize().Width / 2),
 				(driver->getScreenSize().Height / 2));
@@ -3535,9 +3563,8 @@ void Game::updateCameraDirection(CameraOrientation *cam,
 	}
 }
 
-
 void Game::updateCameraOrientation(CameraOrientation *cam,
-		const VolatileRunFlags &flags)
+		const VolatileRunFlags &flags, float dtime)
 {
 #ifdef HAVE_TOUCHSCREENGUI
 	if (g_touchscreengui) {
@@ -3545,6 +3572,7 @@ void Game::updateCameraOrientation(CameraOrientation *cam,
 		cam->camera_pitch = g_touchscreengui->getPitch();
 	} else {
 #endif
+
 		s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
 		s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
 
@@ -3560,6 +3588,14 @@ void Game::updateCameraOrientation(CameraOrientation *cam,
 	}
 #endif
 
+	if (m_cache_enable_joysticks) {
+		f32 c = m_cache_joystick_frustum_sensitivity * (1.f / 32767.f) * dtime;
+		cam->camera_yaw -= input->joystick.getAxisWithoutDead(JA_FRUSTUM_HORIZONTAL) *
+			c;
+		cam->camera_pitch += input->joystick.getAxisWithoutDead(JA_FRUSTUM_VERTICAL) *
+			c;
+	}
+
 	cam->camera_pitch = rangelim(cam->camera_pitch, -89.5, 89.5);
 }
 
@@ -3568,30 +3604,36 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 {
 	//TimeTaker tt("update player control", NULL, PRECISION_NANO);
 
+	// DO NOT use the isKeyDown method for the forward, backward, left, right
+	// buttons, as the code that uses the controls needs to be able to
+	// distinguish between the two in order to know when to use joysticks.
+
 	PlayerControl control(
 		input->isKeyDown(keycache.key[KeyType::FORWARD]),
 		input->isKeyDown(keycache.key[KeyType::BACKWARD]),
 		input->isKeyDown(keycache.key[KeyType::LEFT]),
 		input->isKeyDown(keycache.key[KeyType::RIGHT]),
-		input->isKeyDown(keycache.key[KeyType::JUMP]),
-		input->isKeyDown(keycache.key[KeyType::SPECIAL1]),
-		input->isKeyDown(keycache.key[KeyType::SNEAK]),
-		input->getLeftState(),
-		input->getRightState(),
+		isKeyDown(KeyType::JUMP),
+		isKeyDown(KeyType::SPECIAL1),
+		isKeyDown(KeyType::SNEAK),
+		isLeftPressed(),
+		isRightPressed(),
 		cam.camera_pitch,
-		cam.camera_yaw
+		cam.camera_yaw,
+		input->joystick.getAxisWithoutDead(JA_SIDEWARD_MOVE),
+		input->joystick.getAxisWithoutDead(JA_FORWARD_MOVE)
 	);
 
 	u32 keypress_bits =
-			( (u32)(input->isKeyDown(keycache.key[KeyType::FORWARD])  & 0x1) << 0) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::BACKWARD]) & 0x1) << 1) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::LEFT])     & 0x1) << 2) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::RIGHT])    & 0x1) << 3) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::JUMP])     & 0x1) << 4) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::SPECIAL1]) & 0x1) << 5) |
-			( (u32)(input->isKeyDown(keycache.key[KeyType::SNEAK])    & 0x1) << 6) |
-			( (u32)(input->getLeftState()                                        & 0x1) << 7) |
-			( (u32)(input->getRightState()                                       & 0x1) << 8
+			( (u32)(isKeyDown(KeyType::FORWARD)                       & 0x1) << 0) |
+			( (u32)(isKeyDown(KeyType::BACKWARD)                      & 0x1) << 1) |
+			( (u32)(isKeyDown(KeyType::LEFT)                          & 0x1) << 2) |
+			( (u32)(isKeyDown(KeyType::RIGHT)                         & 0x1) << 3) |
+			( (u32)(isKeyDown(KeyType::JUMP)                          & 0x1) << 4) |
+			( (u32)(isKeyDown(KeyType::SPECIAL1)                      & 0x1) << 5) |
+			( (u32)(isKeyDown(KeyType::SNEAK)                         & 0x1) << 6) |
+			( (u32)(isLeftPressed()                                   & 0x1) << 7) |
+			( (u32)(isRightPressed()                                  & 0x1) << 8
 		);
 
 #ifdef ANDROID
@@ -3693,7 +3735,8 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			} else {
 
 			show_deathscreen(&current_formspec, client, gamedef, texture_src,
-					 device, client);
+					 device, &input->joystick, client);
+
 			}
 
 			/* Handle visualization */
@@ -3708,7 +3751,8 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 				new TextDestPlayerInventory(client, *(event.show_formspec.formname));
 
 			create_formspec_menu(&current_formspec, client, gamedef,
-					     texture_src, device, fs_src, txt_dst, client);
+				texture_src, device, &input->joystick,
+				fs_src, txt_dst, client);
 
 			delete(event.show_formspec.formspec);
 			delete(event.show_formspec.formname);
@@ -4118,8 +4162,14 @@ void Game::processPlayerInteraction(GameRunData *runData,
 	input->resetLeftClicked();
 	input->resetRightClicked();
 
+	input->joystick.clearWasKeyDown(KeyType::MOUSE_L);
+	input->joystick.clearWasKeyDown(KeyType::MOUSE_R);
+
 	input->resetLeftReleased();
 	input->resetRightReleased();
+
+	input->joystick.clearWasKeyReleased(KeyType::MOUSE_L);
+	input->joystick.clearWasKeyReleased(KeyType::MOUSE_R);
 }
 
 
@@ -4203,7 +4253,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 			TextDest *txt_dst = new TextDestNodeMetadata(nodepos, client);
 
 			create_formspec_menu(&current_formspec, client, gamedef,
-					     texture_src, device, fs_src, txt_dst, client);
+				texture_src, device, &input->joystick, fs_src, txt_dst, client);
 
 			current_formspec->setFormSpec(meta->getString("formspec"), inventoryloc);
 		} else {
@@ -4990,12 +5040,14 @@ void Game::settingChangedCallback(const std::string &setting_name, void *data)
 
 void Game::readSettings()
 {
-	m_cache_doubletap_jump            = g_settings->getBool("doubletap_jump");
-	m_cache_enable_clouds             = g_settings->getBool("enable_clouds");
-	m_cache_enable_particles          = g_settings->getBool("enable_particles");
-	m_cache_enable_fog                = g_settings->getBool("enable_fog");
-	m_cache_mouse_sensitivity         = g_settings->getFloat("mouse_sensitivity");
-	m_repeat_right_click_time         = g_settings->getFloat("repeat_rightclick_time");
+	m_cache_doubletap_jump               = g_settings->getBool("doubletap_jump");
+	m_cache_enable_clouds                = g_settings->getBool("enable_clouds");
+	m_cache_enable_joysticks             = g_settings->getBool("enable_joysticks");
+	m_cache_enable_particles             = g_settings->getBool("enable_particles");
+	m_cache_enable_fog                   = g_settings->getBool("enable_fog");
+	m_cache_mouse_sensitivity            = g_settings->getFloat("mouse_sensitivity");
+	m_cache_joystick_frustum_sensitivity = g_settings->getFloat("joystick_frustum_sensitivity");
+	m_repeat_right_click_time            = g_settings->getFloat("repeat_rightclick_time");
 
 	m_cinematic                       = g_settings->getBool("cinematic");
 

@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include <string>
 #include "client/keys.h"
+#include "client/joystick_controller.h"
 #include "keycode.h"
 #include <list>
 
@@ -138,6 +139,8 @@ public:
 	virtual void step(float dtime) {}
 
 	virtual void clear() {}
+
+	JoystickController joystick;
 };
 
 class ChatBackend;  /* to avoid having to include chat.h */
