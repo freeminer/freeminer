@@ -116,7 +116,7 @@ MapgenV7::~MapgenV7()
 MapgenV7Params::MapgenV7Params()
 {
 	spflags    = MGV7_MOUNTAINS | MGV7_RIDGES;
-	cave_width = 0.3;
+	cave_width = 0.2;
 
 //freeminer:
 	float_islands = 500;
@@ -135,8 +135,8 @@ MapgenV7Params::MapgenV7Params()
 	np_ridge_uwater    = NoiseParams(0,    1,   v3f(1000, 1000, 1000), 85039, 5, 0.6,  2.0);
 	np_mountain        = NoiseParams(-0.6, 1,   v3f(250,  350,  250),  5333,  5, 0.63, 2.0);
 	np_ridge           = NoiseParams(0,    1,   v3f(100,  100,  100),  6467,  4, 0.75, 2.0);
-	np_cave1           = NoiseParams(0,    12,  v3f(96,   96,   96),   52534, 4, 0.5,  2.0);
-	np_cave2           = NoiseParams(0,    12,  v3f(96,   96,   96),   10325, 4, 0.5,  2.0);
+	np_cave1           = NoiseParams(0,    12,  v3f(61,   61,   61),   52534, 3, 0.5,  2.0);
+	np_cave2           = NoiseParams(0,    12,  v3f(67,   67,   67),   10325, 3, 0.5,  2.0);
 }
 
 
