@@ -80,7 +80,7 @@ std::atomic_bool g_sighup, g_siginfo;
 #if !defined(_WIN32) // POSIX
 	#include <signal.h>
 
-void sigint_handler(int sig)
+void signal_handler(int sig)
 {
 	switch(sig) {
 #if defined(SIGINFO)
@@ -94,12 +94,15 @@ void sigint_handler(int sig)
 		case SIGINT:
 		case SIGTERM:
 
-	if(!g_killed)
-	{
+	if (!g_killed) {
 		g_killed = true;
-
-		dstream << " INFO: sigint_handler(): "
-			<< "Ctrl-C pressed, shutting down." << std::endl;
+		if (sig == SIGINT) {
+			dstream << "INFO: signal_handler(): "
+				<< "Ctrl-C pressed, shutting down." << std::endl;
+		} else if (sig == SIGTERM) {
+			dstream << "INFO: signal_handler(): "
+				<< "got SIGTERM, shutting down." << std::endl;
+		}
 
 		// Comment out for less clutter when testing scripts
 		/*dstream << "INFO: sigint_handler(): "
@@ -119,11 +122,11 @@ void signal_handler_init(void)
 	g_sighup = false;
 	g_siginfo = false;
 
-	signal(SIGINT, sigint_handler);
-	signal(SIGTERM, sigint_handler);
-	signal(SIGHUP, sigint_handler);
+	(void)signal(SIGINT, signal_handler);
+	(void)signal(SIGTERM, signal_handler);
+	(void)signal(SIGHUP, signal_handler);
 #if defined(SIGINFO)
-	signal(SIGINFO, sigint_handler);
+	(void)signal(SIGINFO, signal_handler);
 #endif
 }
 
