@@ -140,6 +140,6 @@ private:
 };
 
 #include "../util/msgpack_serialize.h"
-bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked *msg);
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
 
 #endif
