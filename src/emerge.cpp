@@ -36,13 +36,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log_types.h"
 #include "map.h"
 #include "mapblock.h"
-#include "mapgen_flat.h"
-#include "mapgen_fractal.h"
-#include "mapgen_v5.h"
-#include "mapgen_v6.h"
-#include "mapgen_v7.h"
-#include "mapgen_valleys.h"
-#include "mapgen_singlenode.h"
 #include "mg_biome.h"
 #include "mg_ore.h"
 #include "mg_decoration.h"
@@ -55,16 +48,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "voxel.h"
 
-#include "mapgen_math.h"
-#include "mapgen_indev.h"
 #include "threading/thread_pool.h"
-
-
-struct MapgenDesc {
-	const char *name;
-	MapgenFactory *factory;
-	bool is_user_visible;
-};
 
 class EmergeThread : public thread_pool {
 public:
@@ -103,22 +87,6 @@ private:
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
 	friend class EmergeManager;
-};
-
-////
-//// Built-in mapgens
-////
-
-MapgenDesc g_reg_mapgens[] = {
-	{"indev",      new MapgenFactoryIndev,      true},
-	{"v5",         new MapgenFactoryV5,         true},
-	{"v6",         new MapgenFactoryV6,         true},
-	{"v7",         new MapgenFactoryV7,         true},
-	{"math",       new MapgenFactoryMath,       true},
-	{"flat",       new MapgenFactoryFlat,       true},
-	{"fractal",    new MapgenFactoryFractal,    true},
-	{"valleys",    new MapgenFactoryValleys,    true},
-	{"singlenode", new MapgenFactorySinglenode, false},
 };
 
 ////
@@ -210,26 +178,26 @@ void EmergeManager::initMapgens()
 	if (m_mapgens.size())
 		return;
 
-	MapgenFactory *mgfactory = getMapgenFactory(params.mg_name);
-	if (!mgfactory) {
+	MapgenType mgtype = Mapgen::getMapgenType(params.mg_name);
+	if (mgtype == MAPGEN_INVALID) {
+		const char *default_mapgen_name = Mapgen::getMapgenName(MAPGEN_DEFAULT);
 		errorstream << "EmergeManager: mapgen " << params.mg_name <<
-			" not registered; falling back to " << DEFAULT_MAPGEN << std::endl;
+			" not registered; falling back to " <<
+			default_mapgen_name << std::endl;
 
-		params.mg_name = DEFAULT_MAPGEN;
-
-		mgfactory = getMapgenFactory(params.mg_name);
-		FATAL_ERROR_IF(mgfactory == NULL, "Couldn't use any mapgen!");
+		params.mg_name = default_mapgen_name;
+		mgtype = MAPGEN_DEFAULT;
 	}
 
 	if (!params.sparams) {
-		params.sparams = mgfactory->createMapgenParams();
+		params.sparams = Mapgen::createMapgenParams(mgtype);
 		params.sparams->readParams(g_settings);
 	}
 
 	for (u32 i = 0; i != m_threads.size(); i++) {
-		Mapgen *mg = mgfactory->createMapgen(i, &params, this);
-		if (!mg)
-			continue;
+		Mapgen *mg = Mapgen::createMapgen(mgtype, i, &params, this);
+			if (!mg)
+				continue;
 		m_mapgens.push_back(mg);
 	}
 }
@@ -385,28 +353,6 @@ bool EmergeManager::isBlockUnderground(v3s16 blockpos)
 	// Use a simple heuristic; the above method is wildly inaccurate anyway.
 	return blockpos.Y * (MAP_BLOCKSIZE + 1) <= params.water_level;
 }
-
-
-void EmergeManager::getMapgenNames(
-	std::vector<const char *> *mgnames, bool include_hidden)
-{
-	for (u32 i = 0; i != ARRLEN(g_reg_mapgens); i++) {
-		if (include_hidden || g_reg_mapgens[i].is_user_visible)
-			mgnames->push_back(g_reg_mapgens[i].name);
-	}
-}
-
-
-MapgenFactory *EmergeManager::getMapgenFactory(const std::string &mgname)
-{
-	for (u32 i = 0; i != ARRLEN(g_reg_mapgens); i++) {
-		if (mgname == g_reg_mapgens[i].name)
-			return g_reg_mapgens[i].factory;
-	}
-
-	return NULL;
-}
-
 
 bool EmergeManager::pushBlockEmergeData(
 	v3s16 pos,

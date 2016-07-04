@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "convert_json.h"
 #include "serverlist.h"
-#include "emerge.h"
+#include "mapgen.h"
 #include "sound.h"
 #include "settings.h"
 #include "log.h"
@@ -630,7 +630,7 @@ int ModApiMainMenu::l_set_topleft_text(lua_State *L)
 int ModApiMainMenu::l_get_mapgen_names(lua_State *L)
 {
 	std::vector<const char *> names;
-	EmergeManager::getMapgenNames(&names, lua_toboolean(L, 1));
+	Mapgen::getMapgenNames(&names, lua_toboolean(L, 1));
 
 	lua_newtable(L);
 	for (size_t i = 0; i != names.size(); i++) {

@@ -617,7 +617,10 @@ else()
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
 	else()
-		set(PLATFORM_LIBS -lrt ${PLATFORM_LIBS})
+		check_library_exists(rt clock_gettime "" HAVE_LIBRT)
+		if (HAVE_LIBRT)
+			set(PLATFORM_LIBS -lrt ${PLATFORM_LIBS})
+		endif(HAVE_LIBRT)
 	endif(APPLE)
 
 	# This way Xxf86vm is found on OpenBSD too
@@ -876,8 +879,13 @@ include_directories(
 	${LUA_INCLUDE_DIR}
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
-	${MSGPACK_INCLUDE_DIR}
+	${X11_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/script
+)
+
+#freeminer includes:
+include_directories(
+	${MSGPACK_INCLUDE_DIR}
 )
 
 if(USE_FREETYPE)

@@ -62,6 +62,8 @@ public:
 	MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenV5();
 
+	virtual MapgenType getType() const { return MAPGEN_V5; }
+
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
 	int generateBaseTerrain();
@@ -74,19 +76,6 @@ private:
 	//freeminer:
 	s16 float_islands;
 
-};
-
-
-struct MapgenFactoryV5 : public MapgenFactory {
-	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge)
-	{
-		return new MapgenV5(mgid, params, emerge);
-	};
-
-	MapgenSpecificParams *createMapgenParams()
-	{
-		return new MapgenV5Params();
-	};
 };
 
 #endif

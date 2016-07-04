@@ -26,10 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen.h"
 
 struct MapgenSinglenodeParams : public MapgenSpecificParams {
-	
 	MapgenSinglenodeParams() {}
 	~MapgenSinglenodeParams() {}
-	
+
 	void readParams(Settings *settings) {}
 	void writeParams(Settings *settings) const {}
 };
@@ -42,19 +41,11 @@ public:
 
 	MapgenSinglenode(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenSinglenode();
-	
+
+	virtual MapgenType getType() const { return MAPGEN_SINGLENODE; }
+
 	void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
-};
-
-struct MapgenFactorySinglenode : public MapgenFactory {
-	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenSinglenode(mgid, params, emerge);
-	};
-	
-	MapgenSpecificParams *createMapgenParams() {
-		return new MapgenSinglenodeParams();
-	};
 };
 
 #endif

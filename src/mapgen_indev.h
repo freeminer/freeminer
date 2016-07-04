@@ -96,6 +96,7 @@ public:
 
 	int xstride, ystride, zstride;
 
+	virtual MapgenType getType() const { return MAPGEN_INDEV; }
 	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
 	~MapgenIndev();
 
@@ -103,16 +104,6 @@ public:
 	int generateGround();
 	void generateCaves(int max_stone_y);
 	void generateExperimental();
-};
-
-struct MapgenFactoryIndev : public MapgenFactoryV6 {
-	Mapgen *createMapgen(int mgid, MapgenParams *params, EmergeManager *emerge) {
-		return new MapgenIndev(mgid, params, emerge);
-	};
-
-	MapgenSpecificParams *createMapgenParams() {
-		return new MapgenIndevParams();
-	};
 };
 
 /*
