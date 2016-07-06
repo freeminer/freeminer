@@ -538,7 +538,8 @@ minetest.register_on_dieplayer(function(player)
 		minetest.chat_send_all(player_name .. " burned up.")
 	--Death by something else
 	else
-		minetest.chat_send_all(player_name .. core.colorize("#bb0000", " died."))
+		--minetest.chat_send_all(player_name .. core.colorize("#bb0000", " died."))
+		minetest.chat_send_all(player_name .. " died.")
 	end
 
 end)
