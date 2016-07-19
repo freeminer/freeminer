@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mapgen.h"
 
-struct MapgenSinglenodeParams : public MapgenSpecificParams {
+struct MapgenSinglenodeParams : public MapgenParams {
 	MapgenSinglenodeParams() {}
 	~MapgenSinglenodeParams() {}
 

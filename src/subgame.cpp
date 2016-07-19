@@ -323,9 +323,14 @@ bool loadGameConfAndInitWorld(const std::string &path, const SubgameSpec &gamesp
 		Settings conf;
 		MapgenParams params;
 
-		params.load(*g_settings);
-		params.save(conf);
+		params.readParams(g_settings);
+		params.writeParams(&conf);
 		conf.writeJsonFile(map_meta_path);
+/ *
+		conf.writeLines(oss);
+		oss << "[end_of_params]\n";
+* /
+		fs::safeWriteToFile(map_meta_path, oss.str());
 	}
 */
 	return true;

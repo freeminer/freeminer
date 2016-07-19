@@ -55,7 +55,7 @@ public:
 	MapgenMathParams * mg_params;
 
 	virtual MapgenType getType() const { return MAPGEN_MATH; }
-	MapgenMath(int mapgenid, MapgenParams *mg_params, EmergeManager *emerge);
+	MapgenMath(int mapgenid, MapgenMathParams *mg_params, EmergeManager *emerge);
 	~MapgenMath();
 
 	virtual void calculateNoise();

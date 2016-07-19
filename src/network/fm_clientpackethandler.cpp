@@ -90,7 +90,7 @@ void Client::handleCommand_InitLegacy(NetworkPacket* pkt)   {
 	if (m_localserver) {
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
-		m_localserver->getEmergeManager()->params.load(settings);
+		m_localserver->getEmergeManager()->mgparams->readParams(&settings);
 	}
 
 	if (packet.count(TOCLIENT_INIT_WEATHER))

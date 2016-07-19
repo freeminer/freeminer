@@ -315,9 +315,6 @@ Server::Server(
 	//lock environment
 	//MutexAutoLock envlock(m_env_mutex);
 
-	// Load mapgen params from Settings
-	m_emerge->loadMapgenParams();
-
 	// Create the Map (loads map_meta.txt, overriding configured mapgen params)
 	ServerMap *servermap = new ServerMap(path_world, this, m_emerge);
 
@@ -386,8 +383,11 @@ Server::Server(
 
 	m_clients.setEnv(m_env);
 
+	if (!servermap->settings_mgr.makeMapgenParams())
+		FATAL_ERROR("Couldn't create any mapgen type");
+
 	// Initialize mapgens
-	m_emerge->initMapgens();
+	m_emerge->initMapgens(servermap->getMapgenParams());
 
 #if USE_SQLITE
 	m_enable_rollback_recording = g_settings->getBool("enable_rollback_recording");
@@ -473,11 +473,8 @@ Server::~Server()
 	m_emerge->stopThreads();
 
 	// Delete things in the reverse order of creation
-	delete m_env;
-
-	// N.B. the EmergeManager should be deleted after the Environment since Map
-	// depends on EmergeManager to write its current params to the map meta
 	delete m_emerge;
+	delete m_env;
 	delete m_rollback;
 	delete m_banmanager;
 	delete m_event;
@@ -548,7 +545,7 @@ void Server::start(Address bind_addr)
 			<< std::endl;
 	actionstream<<"World at ["<<m_path_world<<"]"<<std::endl;
 	actionstream<<"Server for gameid=\""<<m_gamespec.id
-			<<"\" mapgen=\""<<m_emerge->params.mg_name
+			<< "\" mapgen=\"" << Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
 			<<"\" listening on "<<bind_addr.serializeString()<<":"
 			<<bind_addr.getPort() << "."<<std::endl;
 
@@ -774,7 +771,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 					m_env->getGameTime(),
 					m_lag,
 					m_gamespec.id,
-					m_emerge->params.mg_name,
+					Mapgen::getMapgenName(m_emerge->mgparams->mgtype),
 					m_mods);
 			counter = 0.01;
 		}

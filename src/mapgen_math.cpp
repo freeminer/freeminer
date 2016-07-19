@@ -158,9 +158,12 @@ void MapgenMathParams::writeParams(Settings *settings) const {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MapgenMath::MapgenMath(int mapgenid, MapgenParams *params_, EmergeManager *emerge) : MapgenV7(mapgenid, params_, emerge) {
+MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *emerge) :
+		MapgenV7(mapgenid, (MapgenV7Params *)params_, emerge)
+	{
 	ndef = emerge->ndef;
-	mg_params = (MapgenMathParams *)params_->sparams;
+	//mg_params = (MapgenMathParams *)params_->sparams;
+	mg_params = params_;
 
 	Json::Value & params = mg_params->params;
 

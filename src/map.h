@@ -38,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "modifiedstate.h"
 #include "util/container.h"
 #include "nodetimer.h"
+#include "map_settings_manager.h"
 
 #include "mapblock.h"
 #include <unordered_set>
@@ -55,9 +56,7 @@ class IRollbackManager;
 class EmergeManager;
 class ServerEnvironment;
 struct BlockMakeData;
-struct MapgenParams;
 class Server;
-
 
 /*
 	MapEditEvent
@@ -495,9 +494,8 @@ public:
 	s32 save(ModifiedState save_level, float dedicated_server_step = 0.1, bool breakable = 0);
 	void listAllLoadableBlocks(std::vector<v3s16> &dst);
 	void listAllLoadedBlocks(std::vector<v3s16> &dst);
-	// Saves map seed and possibly other stuff
-	void saveMapMeta();
-	void loadMapMeta();
+
+	MapgenParams *getMapgenParams();
 
 	bool saveBlock(MapBlock *block);
 	static bool saveBlock(MapBlock *block, Database *db);
@@ -515,6 +513,7 @@ public:
 	u64 getSeed();
 	s16 getWaterLevel();
 
+//freeminer:
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 
@@ -523,6 +522,9 @@ public:
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	int getSurface(v3s16 basepos, int searchup, bool walkable_only);
+//end of freeminer
+
+	MapSettingsManager settings_mgr;
 
 private:
 	// Emerge manager

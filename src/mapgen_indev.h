@@ -97,7 +97,7 @@ public:
 	int xstride, ystride, zstride;
 
 	virtual MapgenType getType() const { return MAPGEN_INDEV; }
-	MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge);
+	MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge);
 	~MapgenIndev();
 
 	virtual void calculateNoise();

@@ -147,11 +147,12 @@ Mapgen_features::~Mapgen_features() {
 }
 
 
-MapgenIndev::MapgenIndev(int mapgenid, MapgenParams *params, EmergeManager *emerge)
+MapgenIndev::MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge)
 	: MapgenV6(mapgenid, params, emerge)
 	, Mapgen_features(mapgenid, params, emerge)
 {
-	sp = (MapgenIndevParams *)params->sparams;
+	//sp = (MapgenIndevParams *)params->sparams;
+	sp = params;
 
 	xstride = 1;
 	ystride = csize.X * xstride;

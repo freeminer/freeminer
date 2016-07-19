@@ -45,39 +45,37 @@ FlagDesc flagdesc_mapgen_v5[] = {
 };
 
 
-MapgenV5::MapgenV5(int mapgenid, MapgenParams *params, EmergeManager *emerge)
+MapgenV5::MapgenV5(int mapgenid, MapgenV5Params *params, EmergeManager *emerge)
 	: MapgenBasic(mapgenid, params, emerge)
 	, Mapgen_features(mapgenid, params, emerge)
 {
-	MapgenV5Params *sp = (MapgenV5Params *)params->sparams;
-
-	this->spflags    = sp->spflags;
-	this->cave_width = sp->cave_width;
+	this->spflags    = params->spflags;
+	this->cave_width = params->cave_width;
 
 	// Terrain noise
-	noise_filler_depth = new Noise(&sp->np_filler_depth, seed, csize.X, csize.Z);
-	noise_factor       = new Noise(&sp->np_factor,       seed, csize.X, csize.Z);
-	noise_height       = new Noise(&sp->np_height,       seed, csize.X, csize.Z);
+	noise_filler_depth = new Noise(&params->np_filler_depth, seed, csize.X, csize.Z);
+	noise_factor       = new Noise(&params->np_factor,       seed, csize.X, csize.Z);
+	noise_height       = new Noise(&params->np_height,       seed, csize.X, csize.Z);
 
 	// 3D terrain noise
 	// 1-up 1-down overgeneration
-	noise_ground = new Noise(&sp->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
-
-	MapgenBasic::np_cave1 = sp->np_cave1;
-	MapgenBasic::np_cave2 = sp->np_cave2;
+	noise_ground = new Noise(&params->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
 
 	//freeminer:
 	y_offset = 1;
-	float_islands = sp->float_islands;
-	noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands3  = new Noise(&sp->np_float_islands3, seed, csize.X, csize.Z);
+	float_islands = params->float_islands;
+	noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	layers_init(emerge, sp->paramsj);
+	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	layers_init(emerge, params->paramsj);
 
 	//noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	//=========
+
+	MapgenBasic::np_cave1 = params->np_cave1;
+	MapgenBasic::np_cave2 = params->np_cave2;
 }
 
 
