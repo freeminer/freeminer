@@ -42,8 +42,12 @@ void thread_pool::stop () {
 
 void thread_pool::join () {
 	stop();
-	for (auto & worker : workers)
-		worker.join();
+	for (auto & worker : workers) {
+		try {
+			if (worker.joinable())
+				worker.join();
+		} catch (...) { }
+	}
 	workers.clear();
 }
 
