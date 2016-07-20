@@ -780,9 +780,9 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, s32 seed)
 	MapNode snownode(c_snow);
 
 	PseudoRandom pr(seed);
-	s16 trunk_h = pr.range(9, 13);
+	u16 trunk_h = pr.range(9, 13);
 	v3s16 p1 = p0;
-	for (s16 ii = 0; ii < trunk_h; ii++) {
+	for (u16 ii = 0; ii < trunk_h; ii++) {
 		if (vmanip.m_area.contains(p1)) {
 			u32 vi = vmanip.m_area.index(p1);
 			vmanip.m_data[vi] = treenode;
@@ -793,7 +793,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, s32 seed)
 	// Make p1 the top node of the trunk
 	p1.Y -= 1;
 
-	s16 size = pr.range(2, 4);
+	u16 size = pr.range(2, 4);
 	VoxelArea leaves_a(v3s16(-4, -4*2, -4), v3s16(4, 4, 4));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
@@ -801,7 +801,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, INodeDefManager *ndef, s32 seed)
 		leaves_d[i] = 0;
 
 	// Upper branches
-	s16 dev = size;
+	u16 dev = size;
 	for (s16 yy = -1; yy <= 1; yy++) {
 		for (s16 zz = -dev; zz <= dev; zz++) {
 			u32 i = leaves_a.index(v3s16(-dev, yy, zz));
