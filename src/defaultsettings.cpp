@@ -396,7 +396,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_freemove", "KEY_KEY_K");
 	settings->setDefault("keymap_fastmove", "KEY_KEY_J");
 	settings->setDefault("keymap_noclip", "KEY_KEY_H");
-	settings->setDefault("keymap_cinematic", "KEY_F8");
+	settings->setDefault("keymap_cinematic", "");
 	settings->setDefault("keymap_screenshot", "KEY_F12");
 	settings->setDefault("keymap_toggle_hud", "KEY_F1");
 	settings->setDefault("keymap_toggle_chat", "KEY_F2");
@@ -462,7 +462,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("free_move", "false");
 	settings->setDefault("noclip", "false");
 	settings->setDefault("continuous_forward", "false");
-	settings->setDefault("enable_joysticks", "true");
+	settings->setDefault("enable_joysticks", "false");
 	settings->setDefault("repeat_joystick_button_time", "0.17");
 	settings->setDefault("joystick_frustum_sensitivity", "170");
 	settings->setDefault("cinematic", "false");
