@@ -2253,7 +2253,7 @@ void Map::removeNodeTimer(v3s16 p)
 */
 ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
 	Map(gamedef),
-	settings_mgr(g_settings, savedir + DIR_DELIM + "map_meta.txt"),
+	settings_mgr(g_settings, savedir + DIR_DELIM + "map_meta"),
 	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
@@ -3017,60 +3017,6 @@ void ServerMap::listAllLoadedBlocks(std::vector<v3s16> &dst)
 	for(auto & i : m_blocks)
 		dst.push_back(i.second->getPos());
 }
-
-#if TODO_MOVE_MERGE
-void ServerMap::saveMapMeta()
-{
-	DSTACK(FUNCTION_NAME);
-
-	createDirs(m_savedir);
-
-	std::string fullpath = m_savedir + DIR_DELIM + "map_meta.txt";
-	std::ostringstream oss(std::ios_base::binary);
-	Settings conf;
-
-	m_emerge->mgparams->writeParams(&conf);
-
-	if (!conf.writeJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
-		errorstream<<"cant write "<<m_savedir + DIR_DELIM + "map_meta.json"<<std::endl;
-	}
-
-	m_map_metadata_changed = false;
-
-}
-
-void ServerMap::loadMapMeta()
-{
-	DSTACK(FUNCTION_NAME);
-
-	Settings conf;
-
-	if (!conf.readJsonFile(m_savedir + DIR_DELIM + "map_meta.json")) {
-
-	std::string fullpath = m_savedir + DIR_DELIM "map_meta.txt";
-
-	infostream<<"Cant read map_meta.json , fallback to " << fullpath << std::endl;
-
-	std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-	if (!is.good()) {
-		infostream << "ServerMap::loadMapMeta(): "
-			"could not open " << fullpath << std::endl;
-		throw FileNotGoodException("Cannot open map metadata");
-	}
-
-	if (!conf.parseConfigLines(is, "[end_of_params]")) {
-		throw SerializationError("ServerMap::loadMapMeta(): "
-				"[end_of_params] not found!");
-	}
-
-	}
-
-	m_emerge->mgparams->readParams(&conf);
-
-	verbosestream << "ServerMap::loadMapMeta(): seed="
-		<< m_emerge->mgparams->seed << std::endl;
-}
-#endif
 
 #if WTF
 void ServerMap::saveSectorMeta(ServerMapSector *sector)

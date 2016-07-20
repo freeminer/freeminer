@@ -94,11 +94,17 @@ bool MapSettingsManager::setMapSettingNoiseParams(
 
 bool MapSettingsManager::loadMapMeta()
 {
-	std::ifstream is(m_map_meta_path.c_str(), std::ios_base::binary);
+
+	if (m_map_settings->readJsonFile(m_map_meta_path + ".json")) {
+		return true;
+	}
+	auto map_meta_path = m_map_meta_path + ".txt";
+
+	std::ifstream is(map_meta_path.c_str(), std::ios_base::binary);
 
 	if (!is.good()) {
 		errorstream << "loadMapMeta: could not open "
-			<< m_map_meta_path << std::endl;
+			<< map_meta_path << std::endl;
 		return false;
 	}
 
@@ -128,6 +134,13 @@ bool MapSettingsManager::saveMapMeta()
 
 	mapgen_params->MapgenParams::writeParams(&conf);
 	mapgen_params->writeParams(&conf);
+
+	if (conf.writeJsonFile(m_map_meta_path + ".json")) {
+		return true;
+	}
+	errorstream << "cant write " << m_map_meta_path + ".json" << std::endl;
+	auto map_meta_path = m_map_meta_path + ".txt";
+
 	conf.writeLines(oss);
 
 	// NOTE: If there are ever types of map settings other than
@@ -135,9 +148,9 @@ bool MapSettingsManager::saveMapMeta()
 
 	oss << "[end_of_params]\n";
 
-	if (!fs::safeWriteToFile(m_map_meta_path, oss.str())) {
+	if (!fs::safeWriteToFile(map_meta_path, oss.str())) {
 		errorstream << "saveMapMeta: could not write "
-			<< m_map_meta_path << std::endl;
+			<< map_meta_path << std::endl;
 		return false;
 	}
 
