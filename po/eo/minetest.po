@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-05 16:13+0200\n"
-"PO-Revision-Date: 2015-09-13 12:36+0200\n"
+"POT-Creation-Date: 2016-07-12 20:49+0200\n"
+"PO-Revision-Date: 2016-06-04 13:18+0000\n"
 "Last-Translator: Tim <t4im@openmailbox.org>\n"
 "Language-Team: Esperanto <https://hosted.weblate.org/projects/minetest/"
 "minetest/eo/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2.4-dev\n"
+"X-Generator: Weblate 2.7-dev\n"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
@@ -220,18 +220,16 @@ msgid "Browse"
 msgstr ""
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
-#, fuzzy
 msgid "Disabled"
-msgstr "Malŝaltu modifaron"
+msgstr "Malŝaltita"
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
 msgid "Edit"
-msgstr ""
+msgstr "Redakti"
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
-#, fuzzy
 msgid "Enabled"
-msgstr "ŝaltita"
+msgstr "Ŝaltita"
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
 msgid "Format is 3 numbers separated by commas and inside brackets."
@@ -244,9 +242,8 @@ msgid ""
 msgstr ""
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
-#, fuzzy
 msgid "Games"
-msgstr "Ludo"
+msgstr "Ludoj"
 
 #: builtin/mainmenu/dlg_settings_advanced.lua builtin/mainmenu/tab_mods.lua
 msgid "Mods"
@@ -407,9 +404,8 @@ msgid "Uninstall selected modpack"
 msgstr "Malinstali selektan modifaron"
 
 #: builtin/mainmenu/tab_multiplayer.lua
-#, fuzzy
 msgid "Address / Port"
-msgstr "Adreso / Pordo:"
+msgstr "Adreso / Pordo"
 
 #: builtin/mainmenu/tab_multiplayer.lua src/settings_translation_file.cpp
 msgid "Client"
@@ -436,9 +432,8 @@ msgid "Favorite"
 msgstr ""
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
-#, fuzzy
 msgid "Name / Password"
-msgstr "Nomo / Pasvorto:"
+msgstr "Nomo / Pasvorto"
 
 #: builtin/mainmenu/tab_multiplayer.lua builtin/mainmenu/tab_simple_main.lua
 msgid "PvP enabled"
@@ -503,7 +498,6 @@ msgid "2x"
 msgstr "2x"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "3D Clouds"
 msgstr "3D nuboj"
 
@@ -516,9 +510,8 @@ msgid "8x"
 msgstr "8x"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Advanced Settings"
-msgstr "Agordoj"
+msgstr "Pliaj Agordoj"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Antialiasing:"
@@ -529,12 +522,10 @@ msgid "Are you sure to reset your singleplayer world?"
 msgstr "Ĉu vi certas, ke vi volas nuligi vian solludantan mondon?"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Bilinear Filter"
 msgstr "Bilineara filtrilo"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Bump Mapping"
 msgstr "Protuberancmapado"
 
@@ -543,7 +534,6 @@ msgid "Change keys"
 msgstr "Ŝanĝi klavojn"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Connected Glass"
 msgstr "Ligata glaco"
 
@@ -564,7 +554,6 @@ msgid "No"
 msgstr "Ne"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "No Filter"
 msgstr "Neniu filtrilo"
 
@@ -573,23 +562,20 @@ msgid "No Mipmap"
 msgstr "Neniu Mipmapo"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Node Highlighting"
-msgstr "Marki nodaĵojn"
+msgstr "Nodaĵa emfazado"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Node Outlining"
-msgstr "Marki nodaĵojn"
+msgstr "Nodaĵa kadrado"
 
 #: builtin/mainmenu/tab_settings.lua builtin/mainmenu/tab_texturepacks.lua
 msgid "None"
-msgstr ""
+msgstr "Neniu"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Normal Mapping"
-msgstr "Protuberancmapado"
+msgstr "Normalmapado"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Opaque Leaves"
@@ -607,6 +593,10 @@ msgstr "Paralaksa Okludo"
 #, fuzzy
 msgid "Particles"
 msgstr "Ŝaltu ĉiujn"
+
+#: builtin/mainmenu/tab_settings.lua
+msgid "Reset singleplayer world"
+msgstr "Nuligi solludantan mondon"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Settings"
@@ -643,22 +633,18 @@ msgid "Touchthreshold (px)"
 msgstr "Tuŝa sojlo (px)"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Trilinear Filter"
-msgstr "Triineara filtrilo"
+msgstr "Trilineara filtrilo"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Waving Leaves"
 msgstr "Ondantaj foliaĵoj"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Waving Plants"
 msgstr "Ondantaj plantoj"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Waving Water"
 msgstr "Ondanta akvo"
 
@@ -1325,7 +1311,6 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "3D clouds"
 msgstr "3D nuboj"
 
@@ -1468,7 +1453,6 @@ msgid "Basic Privileges"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Bilinear filtering"
 msgstr "Bilineara filtrilo"
 
@@ -1585,9 +1569,8 @@ msgid "Cloud radius"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Clouds"
-msgstr "3D nuboj"
+msgstr "Nuboj"
 
 #: src/settings_translation_file.cpp
 msgid "Clouds are a client side effect."
@@ -1639,14 +1622,12 @@ msgid "Console alpha"
 msgstr "Konzolo"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console color"
-msgstr "Konzolo"
+msgstr "Konzola koloro"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console key"
-msgstr "Konzolo"
+msgstr "Konzola klavo"
 
 #: src/settings_translation_file.cpp
 msgid "Continuous forward"
@@ -1657,9 +1638,8 @@ msgid "Continuous forward movement (only used for testing)."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Controls"
-msgstr "Stiro"
+msgstr "Stirado"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1727,9 +1707,8 @@ msgid "DPI"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Ŝalti damaĝon"
+msgstr "Damaĝon"
 
 #: src/settings_translation_file.cpp
 msgid "Debug info toggle key"
@@ -1758,9 +1737,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Default password"
-msgstr "Nova pasvorto"
+msgstr "Defaŭlta pasvorto"
 
 #: src/settings_translation_file.cpp
 msgid "Default privileges"
@@ -1833,6 +1811,18 @@ msgid "Disable anticheat"
 msgstr "Ŝalti partiklojn"
 
 #: src/settings_translation_file.cpp
+msgid "Disable escape sequences"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Disable escape sequences, e.g. chat coloring.\n"
+"Use this if you want to run a server with pre-0.4.14 clients and you want to "
+"disable\n"
+"the escape sequences generated by mods."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Disallow empty passwords"
 msgstr ""
 
@@ -1856,6 +1846,10 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug infos."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Enable Joysticks"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -2152,8 +2146,6 @@ msgid ""
 "Global map generation attributes.\n"
 "In Mapgen v6 the 'decorations' flag controls all decorations except trees\n"
 "and junglegrass, in all other mapgens this flag controls all decorations.\n"
-"The default flags set in the engine are: caves, light, decorations\n"
-"The flags string modifies the engine defaults.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
 "Flags starting with 'no' are used to explicitly disable them."
@@ -2348,6 +2340,14 @@ msgstr ""
 msgid ""
 "Iterations of the recursive function.\n"
 "Controls the amount of fine detail."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Joystick button repetition invterval"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Joystick frustum sensitivity"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -2732,8 +2732,6 @@ msgid ""
 "'humid_rivers' modifies the humidity around rivers and in areas where water "
 "would tend to pool,\n"
 "it may interfere with delicately adjusted biomes.\n"
-"The default flags set in the engine are: altitude_chill, humid_rivers\n"
-"The flags string modifies the engine defaults.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
 "Flags starting with 'no' are used to explicitly disable them."
@@ -2743,8 +2741,6 @@ msgstr ""
 msgid ""
 "Map generation attributes specific to Mapgen flat.\n"
 "Occasional lakes and hills can be added to the flat world.\n"
-"The default flags set in the engine are: none\n"
-"The flags string modifies the engine defaults.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
 "Flags starting with 'no' are used to explicitly disable them."
@@ -2755,8 +2751,6 @@ msgid ""
 "Map generation attributes specific to Mapgen v6.\n"
 "When snowbiomes are enabled jungles are automatically enabled, the 'jungles' "
 "flag is ignored.\n"
-"The default flags set in the engine are: biomeblend, mudflow\n"
-"The flags string modifies the engine defaults.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
 "Flags starting with 'no' are used to explicitly disable them."
@@ -2766,8 +2760,6 @@ msgstr ""
 msgid ""
 "Map generation attributes specific to Mapgen v7.\n"
 "The 'ridges' flag controls the rivers.\n"
-"The default flags set in the engine are: mountains, ridges\n"
-"The flags string modifies the engine defaults.\n"
 "Flags that are not specified in the flag string are not modified from the "
 "default.\n"
 "Flags starting with 'no' are used to explicitly disable them."
@@ -3728,7 +3720,7 @@ msgstr "Glatiga lumo"
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Smooths camera when moving and looking around.\n"
+"Smooths camera when looking around. Also called look or mouse smoothing.\n"
 "Useful for recording videos."
 msgstr ""
 
@@ -3829,6 +3821,12 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
+"The sensitivity of the joystick axes for moving the\n"
+"ingame view frustum around."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
 "The strength (darkness) of node ambient-occlusion shading.\n"
 "Lower is darker, Higher is lighter. The valid range of values for this\n"
 "setting is 0.25 to 4.0 inclusive. If the value is out of range it will be\n"
@@ -3840,6 +3838,12 @@ msgid ""
 "The time (in seconds) that the liquids queue may grow beyond processing\n"
 "capacity until an attempt is made to decrease its size by dumping old queue\n"
 "items.  A value of 0 disables the functionality."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"The time in seconds it takes between repeated events\n"
+"when holding down a joystick button combination."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4042,22 +4046,18 @@ msgid "Water surface level of the world."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving Nodes"
-msgstr "Ondantaj foliaĵoj"
+msgstr "Ondantaj nodaĵoj"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving leaves"
 msgstr "Ondantaj foliaĵoj"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving plants"
 msgstr "Ondantaj plantoj"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Waving water"
 msgstr "Ondanta akvo"
 
@@ -4188,42 +4188,39 @@ msgstr ""
 msgid "cURL timeout"
 msgstr ""
 
-#, fuzzy
-#~ msgid "Preload inventory textures"
-#~ msgstr "Ŝargi teksturojn…"
+#~ msgid "No of course not!"
+#~ msgstr "Ne, memkompreneble!"
 
-#~ msgid "Reset singleplayer world"
-#~ msgstr "Nuligi solludantan mondon"
-
-#~ msgid "Scaling factor applied to menu elements: "
-#~ msgstr "Skala faktoro por menuoj "
-
-#~ msgid "Touch free target"
-#~ msgstr "Sentuŝa celo"
-
-#~ msgid "Restart minetest for driver change to take effect"
-#~ msgstr "Restartigu Minetest-on por efikigi pelilan ŝanĝon"
-
-#~ msgid "Rendering:"
-#~ msgstr "Bildigo:"
-
-#, fuzzy
-#~ msgid "If enabled, "
-#~ msgstr "ŝaltita"
-
-#, fuzzy
-#~ msgid "If disabled "
-#~ msgstr "Malŝaltu modifaron"
-
-#~ msgid "No!!!"
-#~ msgstr "Ne!!!"
+#~ msgid "Public Serverlist"
+#~ msgstr "Publika servilolisto"
 
 #, fuzzy
 #~ msgid "Generate Normalmaps"
 #~ msgstr "Generi Normalmapojn"
 
-#~ msgid "Public Serverlist"
-#~ msgstr "Publika servilolisto"
+#~ msgid "No!!!"
+#~ msgstr "Ne!!!"
 
-#~ msgid "No of course not!"
-#~ msgstr "Ne, memkompreneble!"
+#, fuzzy
+#~ msgid "If disabled "
+#~ msgstr "Malŝaltu modifaron"
+
+#, fuzzy
+#~ msgid "If enabled, "
+#~ msgstr "ŝaltita"
+
+#~ msgid "Rendering:"
+#~ msgstr "Bildigo:"
+
+#~ msgid "Restart minetest for driver change to take effect"
+#~ msgstr "Restartigu Minetest-on por efikigi pelilan ŝanĝon"
+
+#~ msgid "Touch free target"
+#~ msgstr "Sentuŝa celo"
+
+#~ msgid "Scaling factor applied to menu elements: "
+#~ msgstr "Skala faktoro por menuoj "
+
+#, fuzzy
+#~ msgid "Preload inventory textures"
+#~ msgstr "Ŝargi teksturojn…"
