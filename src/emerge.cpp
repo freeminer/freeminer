@@ -179,6 +179,8 @@ bool EmergeManager::initMapgens(MapgenParams *params)
 		m_mapgens.push_back(mg);
 	}
 
+	biomemgr->mapgen_params = params;
+
 	return true;
 }
 
