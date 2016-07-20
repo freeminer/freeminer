@@ -59,8 +59,14 @@ SQLite format specification:
 	SQLOK(sqlite3_prepare_v2(m_database, query, -1, &m_stmt_##name, NULL),\
 		"Failed to prepare query '" query "'")
 
-#define FINALIZE_STATEMENT(statement) \
-	SQLOK(sqlite3_finalize(statement), "Failed to finalize " #statement)
+#define SQLOK_ERRSTREAM(s, m)                           \
+	if ((s) != SQLITE_OK) {                             \
+		errorstream << (m) << ": "                      \
+			<< sqlite3_errmsg(m_database) << std::endl; \
+	}
+
+#define FINALIZE_STATEMENT(statement) SQLOK_ERRSTREAM(sqlite3_finalize(statement), \
+	"Failed to finalize " #statement)
 
 #if USE_SQLITE3
 int Database_SQLite3::busyHandler(void *data, int count)
@@ -296,7 +302,7 @@ Database_SQLite3::~Database_SQLite3()
 	FINALIZE_STATEMENT(m_stmt_end)
 	FINALIZE_STATEMENT(m_stmt_delete)
 
-	SQLOK(sqlite3_close(m_database), "Failed to close database");
+	SQLOK_ERRSTREAM(sqlite3_close(m_database), "Failed to close database");
 }
 
 #endif

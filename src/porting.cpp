@@ -728,8 +728,8 @@ bool setXorgWindowIcon(IrrlichtDevice *device,
 
 	delete [] icon_buffer;
 
-	return true;
 #endif
+	return true;
 }
 
 ////

@@ -44,6 +44,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	}
 #define SQLOK(f) SQLRES(f, SQLITE_OK)
 
+#define SQLOK_ERRSTREAM(s, m)                             \
+	if ((s) != SQLITE_OK) {                               \
+		errorstream << "RollbackManager: " << (m) << ": " \
+			<< sqlite3_errmsg(db) << std::endl;           \
+	}
+
+#define FINALIZE_STATEMENT(statement) \
+	SQLOK_ERRSTREAM(sqlite3_finalize(statement), "Failed to finalize " #statement)
 
 class ItemStackRow : public ItemStack {
 public:
@@ -112,17 +120,17 @@ RollbackManager::~RollbackManager()
 	flush();
 
 #if USE_SQLITE3
-	SQLOK(sqlite3_finalize(stmt_insert));
-	SQLOK(sqlite3_finalize(stmt_replace));
-	SQLOK(sqlite3_finalize(stmt_select));
-	SQLOK(sqlite3_finalize(stmt_select_range));
-	SQLOK(sqlite3_finalize(stmt_select_withActor));
-	SQLOK(sqlite3_finalize(stmt_knownActor_select));
-	SQLOK(sqlite3_finalize(stmt_knownActor_insert));
-	SQLOK(sqlite3_finalize(stmt_knownNode_select));
-	SQLOK(sqlite3_finalize(stmt_knownNode_insert));
+	FINALIZE_STATEMENT(stmt_insert);
+	FINALIZE_STATEMENT(stmt_replace);
+	FINALIZE_STATEMENT(stmt_select);
+	FINALIZE_STATEMENT(stmt_select_range);
+	FINALIZE_STATEMENT(stmt_select_withActor);
+	FINALIZE_STATEMENT(stmt_knownActor_select);
+	FINALIZE_STATEMENT(stmt_knownActor_insert);
+	FINALIZE_STATEMENT(stmt_knownNode_select);
+	FINALIZE_STATEMENT(stmt_knownNode_insert);
 
-	SQLOK(sqlite3_close(db));
+	SQLOK_ERRSTREAM(sqlite3_close(db), "Could not close db");
 #endif
 }
 
