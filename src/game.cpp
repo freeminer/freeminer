@@ -1309,10 +1309,10 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 	setStaticText(guitext_chat, recent_chat);
 
 	// Update gui element size and position
-	s32 chat_y = 5 + line_height;
+	s32 chat_y = 5;
 
 	if (show_debug)
-		chat_y += line_height;
+		chat_y += 2 * line_height;
 
 	// first pass to calculate height of text to be set
 	s32 width = std::min(g_fontengine->getTextWidth(recent_chat.c_str()) + 10,
@@ -2351,6 +2351,8 @@ bool Game::createClient(const std::string &playername,
 	/* Set window caption
 	 */
 	std::wstring str = utf8_to_wide(PROJECT_NAME_C);
+	str += L" ";
+	str += utf8_to_wide(g_version_hash);
 	str += L" [";
 	str += driver->getName();
 	str += L"]";
@@ -4852,13 +4854,6 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 */
 		setStaticText(guitext, utf8_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
-#if !defined(NDEBUG)
-	} else if (flags.show_hud || flags.show_chat) {
-		std::ostringstream os(std::ios_base::binary);
-		os << PROJECT_NAME_C " " << g_version_hash;
-		setStaticText(guitext, utf8_to_wide(os.str()).c_str());
-		guitext->setVisible(true);
-#endif
 	} else {
 		guitext->setVisible(false);
 	}
