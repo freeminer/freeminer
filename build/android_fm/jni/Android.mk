@@ -166,8 +166,6 @@ endif
 
 LOCAL_SRC_FILES +=                                \
 		jni/src/guiTextInputMenu.cpp              \
-		jni/src/FMColoredString.cpp               \
-		jni/src/FMStaticText.cpp                  \
 		jni/src/fm_bitset.cpp                     \
 		jni/src/fm_liquid.cpp                     \
 		jni/src/fm_map.cpp                        \
@@ -186,6 +184,9 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/contrib/itemsao.cpp               \
 		jni/src/contrib/l_env.cpp                 \
 		jni/src/network/fm_lan.cpp                \
+
+#		jni/src/FMColoredString.cpp               \
+#		jni/src/FMStaticText.cpp                  \
 
 
 LOCAL_SRC_FILES +=                                \
@@ -246,6 +247,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/log.cpp                           \
 		jni/src/main.cpp                          \
 		jni/src/map.cpp                           \
+		jni/src/map_settings_manager.cpp          \
 		jni/src/mapblock.cpp                      \
 		jni/src/mapblock_mesh.cpp                 \
 		jni/src/mapgen.cpp                        \
@@ -301,6 +303,7 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/util/auth.cpp                     \
 		jni/src/util/base64.cpp                   \
 		jni/src/util/directiontables.cpp          \
+		jni/src/util/enriched_string.cpp          \
 		jni/src/util/numeric.cpp                  \
 		jni/src/util/pointedthing.cpp             \
 		jni/src/util/serialize.cpp                \
@@ -333,7 +336,9 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/settings.cpp                      \
 		jni/src/wieldmesh.cpp                     \
 		jni/src/client/clientlauncher.cpp         \
-		jni/src/client/tile.cpp
+		jni/src/client/tile.cpp                   \
+		jni/src/client/joystick_controller.cpp    \
+		jni/src/irrlicht_changes/static_text.cpp
 
 # intentionally kept out (we already build openssl itself): jni/src/util/sha256.c
 
