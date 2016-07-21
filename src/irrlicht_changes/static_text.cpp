@@ -237,7 +237,7 @@ video::SColor StaticText::getBackgroundColor() const
 //! Checks if background drawing is enabled
 bool StaticText::isDrawBackgroundEnabled() const
 {
-#if _IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX
+#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
 	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 #endif
 	return Background;
@@ -254,7 +254,7 @@ void StaticText::setDrawBorder(bool draw)
 //! Checks if border drawing is enabled
 bool StaticText::isDrawBorderEnabled() const
 {
-#if _IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX
+#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
 	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 #endif
 	return Border;
@@ -301,7 +301,7 @@ void StaticText::enableOverrideColor(bool enable)
 bool StaticText::isOverrideColorEnabled() const
 {
 
-#if _IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX
+#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
 	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 #endif
 	return OverrideColorEnabled;
@@ -319,7 +319,7 @@ void StaticText::setWordWrap(bool enable)
 
 bool StaticText::isWordWrapEnabled() const
 {
-#if _IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX
+#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
 	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 #endif
 	return WordWrap;
