@@ -25,6 +25,8 @@ import android.graphics.Rect;
 import android.graphics.Paint;
 import android.text.TextPaint;
 
+import org.freeminer.freeminer.R;
+
 public class freeminerAssetCopy extends Activity
 {
 	@Override
