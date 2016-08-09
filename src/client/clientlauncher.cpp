@@ -806,7 +806,7 @@ void ClientLauncher::wait_data() {
 			break;
 		}
 	bool &kill = *porting::signal_handler_killstatus();
-	for (int i = 0; i < 1000; ++i) { // 100s max
+	for (int i = 0; i < 150; ++i) { // 15s max
 		if (i || wait) {
 			auto driver = device->getVideoDriver();
 			g_menuclouds->step(4);
