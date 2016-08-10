@@ -1409,6 +1409,7 @@ void KeyCache::populate()
 			= getKeySetting("keymap_decrease_viewing_range_min");
 	key[KeyType::RANGESELECT]
 			= getKeySetting("keymap_rangeselect");
+	key[KeyType::ZOOM] = getKeySetting("keymap_zoom");
 
 	key[KeyType::QUICKTUNE_NEXT] = getKeySetting("keymap_quicktune_next");
 	key[KeyType::QUICKTUNE_PREV] = getKeySetting("keymap_quicktune_prev");
@@ -3618,6 +3619,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		isKeyDown(KeyType::JUMP),
 		isKeyDown(KeyType::SPECIAL1),
 		isKeyDown(KeyType::SNEAK),
+		isKeyDown(KeyType::ZOOM),
 		isLeftPressed(),
 		isRightPressed(),
 		cam.camera_pitch,

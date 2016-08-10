@@ -116,6 +116,7 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
 	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
 	m_cache_fov                 = g_settings->getFloat("fov");
+	m_cache_zoom_fov            = g_settings->getFloat("zoom_fov");
 	m_cache_view_bobbing        = g_settings->getBool("view_bobbing");
 	m_nametags.clear();
 }
@@ -402,7 +403,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		m_camera_position = my_cp;
 
 	// Get FOV
-	if (player->zoom) {
+	if (player->getPlayerControl().zoom) {
 		m_wieldnode->setVisible(false);
 	} else {
 		m_wieldnode->setVisible(true);
@@ -422,7 +423,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		fov_degrees -= m_draw_control.fov_add;
 	}
 
-	fov_degrees = MYMAX(MYMIN(fov_degrees, 150.0), 10.0);
+	fov_degrees = MYMAX(fov_degrees, 10.0);
+	fov_degrees = MYMIN(fov_degrees, 170.0);
 
 	// FOV and aspect ratio
 	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;

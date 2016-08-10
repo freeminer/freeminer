@@ -54,6 +54,7 @@ struct PlayerControl
 		sidew_move_joystick_axis = .0f;
 		forw_move_joystick_axis = .0f;
 	}
+
 	PlayerControl(
 		bool a_up,
 		bool a_down,
@@ -62,6 +63,7 @@ struct PlayerControl
 		bool a_jump,
 		bool a_aux1,
 		bool a_sneak,
+		bool a_zoom,
 		bool a_LMB,
 		bool a_RMB,
 		float a_pitch,
@@ -77,6 +79,7 @@ struct PlayerControl
 		jump = a_jump;
 		aux1 = a_aux1;
 		sneak = a_sneak;
+		zoom = a_zoom;
 		LMB = a_LMB;
 		RMB = a_RMB;
 		pitch = a_pitch;
@@ -91,6 +94,7 @@ struct PlayerControl
 	bool jump;
 	bool aux1;
 	bool sneak;
+	bool zoom;
 	bool LMB;
 	bool RMB;
 	float pitch;
