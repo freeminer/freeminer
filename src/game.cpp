@@ -3656,27 +3656,26 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 	player->keyPressed = keypress_bits;
 
 	auto & draw_control = client->getEnv().getClientMap().getControl();
+	bool zoom_changed = false;
 	if (isKeyDown(KeyType::ZOOM)) {
-		bool changed = player->zoom == false;
+		zoom_changed = player->zoom == false;
 		player->zoom = true;
-		if (changed) {
-			if(g_settings->getBool("enable_zoom_cinematic") && !g_settings->getBool("cinematic")) {
-				enableCinematic();
-			}
-			draw_control.fov = g_settings->getFloat("zoom_fov");
-			client->sendDrawControl();
-		}
 	} else {
-		bool changed = player->zoom == true;
+		zoom_changed = player->zoom == true;
 		player->zoom = false;
-		if (changed) {
-			if(g_settings->getBool("enable_zoom_cinematic") && !g_settings->getBool("cinematic")) {
-				disableCinematic();
-			}
-			draw_control.fov = g_settings->getFloat("fov");
-			client->sendDrawControl();
-		}
 	}
+
+	if (zoom_changed) {
+		if(g_settings->getBool("enable_zoom_cinematic") && !g_settings->getBool("cinematic")) {
+			if (player->zoom)
+				enableCinematic();
+			else
+				disableCinematic();
+		}
+		draw_control.fov_want = player->zoom ? g_settings->getFloat("zoom_fov") : g_settings->getFloat("fov");
+		client->sendDrawControl();
+	}
+	draw_control.fov -= (draw_control.fov - draw_control.fov_want)/7;
 
 	//tt.stop();
 }

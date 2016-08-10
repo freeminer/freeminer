@@ -66,7 +66,8 @@ struct MapDrawControl
 	float drawtime_avg;
 
 	float fov;
-	float fov_add;
+	float fov_add = 0;
+	float fov_want; // smooth change
 	//bool block_overflow;
 };
 

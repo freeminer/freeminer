@@ -52,12 +52,12 @@ MapDrawControl::MapDrawControl():
 		fps(30),
 		fps_avg(30),
 		fps_wanted(30),
-		drawtime_avg(30),
-		fov_add(0)
+		drawtime_avg(30)
 		//,block_overflow(false)
 	{
 		farmesh = g_settings->getS32("farmesh");
 		farmesh_step = g_settings->getS32("farmesh_step");
+		fov_want =
 		fov = g_settings->getFloat("fov");
 	}
 
