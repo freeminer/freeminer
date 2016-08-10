@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "log.h"
 #include "network/networkprotocol.h"
-#include "json/json.h"
+#include <json/json.h>
 #include "convert_json.h"
 #include "httpfetch.h"
 #include "util/string.h"

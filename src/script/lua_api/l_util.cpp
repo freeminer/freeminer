@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_content.h"
 #include "cpp_api/s_async.h"
 #include "serialization.h"
-#include "json/json.h"
+#include <json/json.h>
 #include "cpp_api/s_security.h"
 #include "porting.h"
 #include "debug.h"

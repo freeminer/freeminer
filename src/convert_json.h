@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __CONVERT_JSON_H__
 #define __CONVERT_JSON_H__
 
-#include "json/json.h"
+#include <json/json.h>
 
 struct ModStoreMod;
 struct ModStoreModDetails;

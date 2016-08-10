@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include "config.h"
 #include "mods.h"
-#include "json/json.h"
+#include <json/json.h>
 
 #ifndef SERVERLIST_HEADER
 #define SERVERLIST_HEADER
