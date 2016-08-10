@@ -12,6 +12,6 @@ Exec=freeminer
 Icon=freeminer
 Terminal=false
 Type=Application
-Categories=Game;
+Categories=Game;Simulation;
 StartupNotify=false
 Keywords=sandbox;world;mining;crafting;blocks;nodes;multiplayer;roleplaying;
