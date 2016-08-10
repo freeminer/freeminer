@@ -151,7 +151,7 @@ void OreScatter::generate(MMVManip *vm, int mapseed, u32 blockseed,
 
 		if (biomemap && !biomes.empty()) {
 			u32 index = sizex * (z0 - nmin.Z) + (x0 - nmin.X);
-			std::set<u8>::iterator it = biomes.find(biomemap[index]);
+			UNORDERED_SET<u8>::iterator it = biomes.find(biomemap[index]);
 			if (it == biomes.end())
 				continue;
 		}
@@ -205,7 +205,7 @@ void OreSheet::generate(MMVManip *vm, int mapseed, u32 blockseed,
 			continue;
 
 		if (biomemap && !biomes.empty()) {
-			std::set<u8>::iterator it = biomes.find(biomemap[index]);
+			UNORDERED_SET<u8>::iterator it = biomes.find(biomemap[index]);
 			if (it == biomes.end())
 				continue;
 		}
@@ -273,7 +273,7 @@ void OrePuff::generate(MMVManip *vm, int mapseed, u32 blockseed,
 			continue;
 
 		if (biomemap && !biomes.empty()) {
-			std::set<u8>::iterator it = biomes.find(biomemap[index]);
+			UNORDERED_SET<u8>::iterator it = biomes.find(biomemap[index]);
 			if (it == biomes.end())
 				continue;
 		}
@@ -341,7 +341,7 @@ void OreBlob::generate(MMVManip *vm, int mapseed, u32 blockseed,
 
 		if (biomemap && !biomes.empty()) {
 			u32 bmapidx = sizex * (z0 - nmin.Z) + (x0 - nmin.X);
-			std::set<u8>::iterator it = biomes.find(biomemap[bmapidx]);
+			UNORDERED_SET<u8>::iterator it = biomes.find(biomemap[bmapidx]);
 			if (it == biomes.end())
 				continue;
 		}
@@ -425,7 +425,7 @@ void OreVein::generate(MMVManip *vm, int mapseed, u32 blockseed,
 
 		if (biomemap && !biomes.empty()) {
 			u32 bmapidx = sizex * (z - nmin.Z) + (x - nmin.X);
-			std::set<u8>::iterator it = biomes.find(biomemap[bmapidx]);
+			UNORDERED_SET<u8>::iterator it = biomes.find(biomemap[bmapidx]);
 			if (it == biomes.end())
 				continue;
 		}
