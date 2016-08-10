@@ -172,7 +172,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("wanted_fps", android ? "25" : "30");
 	settings->setDefault("viewing_range_max", (win32 || android) ? "300" : "10000" /*itos(MAX_MAP_GENERATION_LIMIT)*/); // "240"
 	settings->setDefault("shadows", "0");
-	settings->setDefault("zoom_fov", "15");
 	settings->setDefault("farmesh", android ? "2" : "0");
 	settings->setDefault("farmesh_step", android ? "2" : "3");
 	settings->setDefault("farmesh_wanted", android ? "100" :"500");

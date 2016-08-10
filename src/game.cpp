@@ -1420,7 +1420,6 @@ void KeyCache::populate()
 
 	//freeminer:
 	//key[KeyType::MSG]            = getKeySetting("keymap_msg");
-	key[KeyType::ZOOM]           = getKeySetting("keymap_zoom");
 	key[KeyType::PLAYERLIST]     = getKeySetting("keymap_playerlist");
 
 	if (handler) {

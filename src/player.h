@@ -394,7 +394,7 @@ public:
 	float hurt_tilt_timer;
 	float hurt_tilt_strength;
 
-	bool zoom;
+	bool zoom = false;
 	bool superspeed;
 	bool free_move;
 
@@ -405,7 +405,7 @@ public:
 
 	PlayerControl control;
 	Mutex control_mutex;
-	PlayerControl getPlayerControl()
+	PlayerControl & getPlayerControl()
 	{
 		std::lock_guard<Mutex> lock(control_mutex);
 		return control;

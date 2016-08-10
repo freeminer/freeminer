@@ -70,7 +70,6 @@ public:
 
 		//freeminer
 		//MSG,
-		ZOOM,
 		PLAYERLIST,
 		//=========
 

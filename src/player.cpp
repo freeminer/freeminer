@@ -48,7 +48,6 @@ Player::Player(IGameDef *gamedef, const std::string & name):
 	inventory(gamedef->idef()),
 	hurt_tilt_timer(0),
 	hurt_tilt_strength(0),
-	zoom(false),
 	superspeed(false),
 	free_move(false),
 	protocol_version(0),
