@@ -403,12 +403,12 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		m_camera_position = my_cp;
 
 	// Get FOV
-	if (player->getPlayerControl().zoom) {
+	f32 fov_degrees = m_draw_control.fov;
+	if (player->getPlayerControl().zoom && m_gamedef->checkLocalPrivilege("zoom")) {
 		m_wieldnode->setVisible(false);
 	} else {
 		m_wieldnode->setVisible(true);
 	}
-	f32 fov_degrees = m_draw_control.fov;
 
 	// Greater FOV if running
 	v3f speed = player->getSpeed();
