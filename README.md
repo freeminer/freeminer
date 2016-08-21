@@ -36,6 +36,8 @@ It aims to make the game fun while trading off some bits of perfectionism.
 	cd /usr/ports/games/freeminer-default && sudo make install clean
 	```
 
+- **openSUSE**: https://software.opensuse.org/package/freeminer
+
 ## Further documentation
 - Website: http://freeminer.org/
 - Forums: http://forum.freeminer.org/
