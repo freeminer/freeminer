@@ -1485,7 +1485,7 @@
 # profiler.default_report_format = txt
 
 #    The file path relative to your worldpath in which profiles will be saved to.
-#    
+#
 #    type: string
 # profiler.report_path = ""
 
@@ -1635,9 +1635,9 @@
 #    type: bool
 # enable_vbo = false
 
-#    Greater FOV when running or flying
+#    Reduce FOV when speed increases
 #    type: bool
-# enable_movement_fov = true
+# movement_fov = true
 
 #    FOV when using zoom, default 15
 #    type: int
