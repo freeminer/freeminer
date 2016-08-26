@@ -192,6 +192,9 @@ if(UNIX AND NOT APPLE)
 	install(FILES "misc/freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
 	install(FILES "misc/freeminer.appdata.xml" DESTINATION "${APPDATADIR}")
 	install(FILES "misc/freeminer.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
+	install(FILES "misc/freeminer-xorg-icon-128.png"
+		DESTINATION "${ICONDIR}/hicolor/128x128/apps"
+		RENAME "freeminer.png")
 endif()
 
 if(APPLE)
