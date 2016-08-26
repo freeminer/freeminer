@@ -32,6 +32,14 @@
 		<screenshot width="1920" height="1080">http://www.minetest.net/media/gallery/3.jpg</screenshot>
 		<screenshot width="1920" height="1080">http://www.minetest.net/media/gallery/5.jpg</screenshot>
 	</screenshots>
+	<keywords>
+		<keyword>sandbox</keyword>
+		<keyword>world</keyword>
+		<keyword>mining</keyword>
+		<keyword>multiplayer</keyword>
+	</keywords>
 	<url type="homepage">http://freeminer.org</url>
+	<url type="bugtracker">https://github.com/freeminer/freeminer/issues</url>
+	<url type="translate">http://dev.minetest.net/Translation</url>
 	<updatecontact></updatecontact>
 </application>
