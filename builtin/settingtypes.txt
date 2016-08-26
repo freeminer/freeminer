@@ -1295,8 +1295,8 @@ disable_wieldlight () bool false
 # it may be needed to decrease client_unload_unused_data_timeout to limit the RAM usage
 enable_vbo () bool false
 
-# Greater FOV when running or flying
-enable_movement_fov () bool true
+# Reduce FOV when speed increases
+movement_fov () bool true
 
 # FOV when using zoom, default 15
 zoom_fov () int 15
