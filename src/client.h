@@ -506,6 +506,9 @@ public:
 	u8 getProtoVersion()
 	{ return m_proto_ver; }
 
+	bool connectedToServer()
+	{ return m_con.Connected(); }
+
 	float mediaReceiveProgress();
 
 	void afterContentReceived(IrrlichtDevice *device);
