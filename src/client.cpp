@@ -824,7 +824,7 @@ void Client::initLocalMapSaving(const Address &address,
 		return;
 	}
 
-	std::string address_replaced = hostname + "_" + to_string(address.getPort());
+	std::string address_replaced = hostname + "_" + std::to_string(address.getPort());
 	replace( address_replaced.begin(), address_replaced.end(), ':', '_' );
 
 	const std::string world_path = porting::path_user
