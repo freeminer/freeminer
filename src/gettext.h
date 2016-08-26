@@ -29,6 +29,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <libintl.h>
 	#define mygettext(String) gettext(String)
 #else
+	// In certain environments, some standard headers like <iomanip>
+	// and <locale> include libintl.h. If libintl.h is included after
+	// we define our gettext macro below, this causes a syntax error
+	// at the declaration of the gettext function in libintl.h.
+	// Fix this by including such a header before defining the macro.
+	// See issue #4446.
+	// Note that we can't include libintl.h directly since we're in
+	// the USE_GETTEXT=0 case and can't assume that gettext is installed.
+	#include <locale>
+
+	#define gettext(String) String
 	#define mygettext(String) String
 #endif
 
