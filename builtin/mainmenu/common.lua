@@ -280,7 +280,6 @@ function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transp
 end
 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD
 function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
 	if proto and core.setting_get("server_proto") ~= proto then return false end
 	if (not server_proto_min) or (not server_proto_max) then
