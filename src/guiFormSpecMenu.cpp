@@ -108,6 +108,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 	m_formspec_version(0),
 	m_focused_element(""),
 	m_joystick(joystick),
+	current_field_enter_pending(""),
 	m_font(NULL),
 	m_remap_dbl_click(remap_dbl_click)
 #ifdef __ANDROID__
@@ -894,15 +895,17 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 4 || parts.size() == 5) ||
-		((parts.size() > 4) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if ((parts.size() == 4) || (parts.size() == 5) ||
+		(parts.size() == 6) ||
+		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
 		std::string default_val;
-		if (parts.size() == 5) default_val = parts[4];
+		if (parts.size() == 6)
+			default_val = parts[5];
 
 		MY_CHECKPOS("pwdfield",0);
 		MY_CHECKGEOM("pwdfield",1);
@@ -957,6 +960,11 @@ void GUIFormSpecMenu::parsePwdField(parserData* data,std::string element)
 		evt.KeyInput.Shift       = 0;
 		evt.KeyInput.PressedDown = true;
 		e->OnEvent(evt);
+
+		if (parts.size() >= 5 && !is_yes(parts[4])) {
+			spec.close_on_enter = false;
+		}
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -1027,6 +1035,10 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 			rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + font_height;
 			addStaticText(Environment, spec.flabel.c_str(), rect, false, true, this, 0);
 		}
+	}
+
+	if (parts.size() >= 4 && !is_yes(parts[3])) {
+		spec.close_on_enter = false;
 	}
 
 	m_fields.push_back(spec);
@@ -1122,6 +1134,11 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 			addStaticText(Environment, spec.flabel.c_str(), rect, false, true, this, 0);
 		}
 	}
+
+	if (parts.size() >= 6 && !is_yes(parts[5])) {
+		spec.close_on_enter = false;
+	}
+
 	m_fields.push_back(spec);
 }
 
@@ -1135,8 +1152,8 @@ void GUIFormSpecMenu::parseField(parserData* data,std::string element,
 		return;
 	}
 
-	if ((parts.size() == 5) ||
-		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if ((parts.size() == 5) || (parts.size() == 6) ||
+		((parts.size() > 6) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		parseTextArea(data,parts,type);
 		return;
@@ -2689,6 +2706,11 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode=quit_mode_no)
 			current_keys_pending.key_enter = false;
 		}
 
+		if (!current_field_enter_pending.empty()) {
+			fields["key_enter_field"] = current_field_enter_pending;
+			current_field_enter_pending = "";
+		}
+
 		if (current_keys_pending.key_escape) {
 			fields["key_escape"] = "true";
 			current_keys_pending.key_escape = false;
@@ -3711,8 +3733,19 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
 			if (event.GUIEvent.Caller->getID() > 257) {
+				bool close_on_enter = true;
+				for (u32 i = 0; i < m_fields.size(); i++) {
+					FieldSpec &s = m_fields[i];
+					if (s.ftype == f_Unknown &&
+							s.fid == event.GUIEvent.Caller->getID()) {
+						current_field_enter_pending = s.fname;
+						close_on_enter = s.close_on_enter;
+						break;
+					}
+				}
 
-				if (m_allowclose) {
+				if (m_allowclose && close_on_enter) {
+					current_keys_pending.key_enter = true;
 					acceptInput(quit_mode_accept);
 					quitMenu();
 				} else {
