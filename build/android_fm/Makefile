@@ -194,6 +194,7 @@ IRRLICHT_GIT_COMMIT = 58fa0cf
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es@$(IRRLICHT_REVISION)
 
 OPENSSL_VERSION = 1.0.2g
+# TODO: OPENSSL_VERSION = 1.1.0
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
 OPENSSL_DIR = $(ROOT)/deps/$(OPENSSL_BASEDIR)/
 OPENSSL_LIB = $(OPENSSL_DIR)/libssl.so.1.0.0
@@ -201,14 +202,14 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.48.0
+CURL_VERSION = 7.50.1
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
 CURL_TIMESTAMP_INT = $(ROOT)/deps/curl_timestamp
 CURL_URL_HTTP = https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.bz2
 
-GMP_VERSION = 6.1.0
+GMP_VERSION = 6.1.1
 GMP_DIR = $(ROOT)/deps/gmp-$(GMP_VERSION)
 GMP_LIB = $(GMP_DIR)/usr/lib/libgmp.so
 GMP_TIMESTAMP = $(GMP_DIR)/timestamp
@@ -228,7 +229,7 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3120200
+SQLITE3_FOLDER = sqlite-amalgamation-3140100
 SQLITE3_URL = http://www.sqlite.org/2016/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
@@ -424,7 +425,7 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP) $(GMP_LIB)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	CC=${CROSS_PREFIX}gcc ./Configure enable-gmp -DL_ENDIAN -I${GMP_DIR} -L${GMP_DIR}/usr/lib ${OPENSSL_CONFIGURE_ADDON} android-${TARGET_ARCH};\
+	CC=${CROSS_PREFIX}gcc ./Configure -DL_ENDIAN ${OPENSSL_CONFIGURE_ADDON} android-${TARGET_ARCH};\
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make depend;     \
 	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
 	touch ${OPENSSL_TIMESTAMP};                                                \
