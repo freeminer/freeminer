@@ -646,6 +646,8 @@ void setXorgClassHint(const video::SExposedVideoData &video_data,
 
 bool setXorgWindowIcon(IrrlichtDevice *device)
 {
+#ifdef XORG_USED
+
 #if RUN_IN_PLACE
 	return setXorgWindowIconFromPath(device,
 			path_share + "/misc/" PROJECT_NAME "-xorg-icon-128.png");
@@ -658,6 +660,10 @@ bool setXorgWindowIcon(IrrlichtDevice *device)
 			ICON_DIR "/hicolor/128x128/apps/" PROJECT_NAME ".png") ||
 		setXorgWindowIconFromPath(device,
 			path_share + "/misc/" PROJECT_NAME "-xorg-icon-128.png");
+#endif
+
+#else
+	return false;
 #endif
 }
 
