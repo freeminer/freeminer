@@ -477,11 +477,11 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-leveldb;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
-	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
 	--platform=${APP_PLATFORM} \
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
+	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}${CC}; \
 	export CXX=${CROSS_PREFIX}${CXX}; \
