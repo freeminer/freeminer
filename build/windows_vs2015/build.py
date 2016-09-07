@@ -62,7 +62,7 @@ def patch(path, source, target):
 	
 LIBOGG_VERSION = "1.3.2"
 LEVELDB_VERSION = "1.16.0.5"
-CRC32C_VERSION = "1.0.4"
+CRC32C_VERSION = "1.1.0"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.3"
 curl = "curl-7.48.0"
@@ -429,10 +429,10 @@ def main():
 
 	# patch project file to use these packages
 	patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
-		r"""<Import Project="..\LevelDB.1.16.0.5\build\native\LevelDB.props" Condition="Exists('..\LevelDB.1.16.0.5\build\native\LevelDB.props')" />
-  		<Import Project="..\Snappy.1.1.1.7\build\native\Snappy.props" Condition="Exists('..\Snappy.1.1.1.7\build\native\Snappy.props')" />
-  		<Import Project="..\Crc32C.1.0.4\build\native\Crc32C.props" Condition="Exists('..\Crc32C.1.0.4\build\native\Crc32C.props')" />
-  		<ItemGroup Label="ProjectConfigurations">""")
+		r"""<Import Project="..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props" Condition="Exists('..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props')" />
+  		<Import Project="..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props" Condition="Exists('..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props')" />
+  		<Import Project="..\Crc32C.{CRC32C_VERSION}\build\native\Crc32C.props" Condition="Exists('..\Crc32C.{CRC32C_VERSION}\build\native\Crc32C.props')" />
+  		<ItemGroup Label="ProjectConfigurations">""".format(CRC32C_VERSION=CRC32C_VERSION, SNAPPY_VERSION=SNAPPY_VERSION, LEVELDB_VERSION=LEVELDB_VERSION))
 
 	## install sqlite package
 	#os.system(r"..\NuGet.exe install sqlite -source {}\..\deps".format(os.getcwd()))
