@@ -52,7 +52,7 @@ GIT_CLONE = git clone --recursive --depth 10
 ################################################################################
 TARGET_HOST = arm-linux
 #TARGET_ABI = armeabi-v7a
-TARGET_ABI = armeabi-v7a-hard
+TARGET_ABI = armeabi-v7a
 TARGET_LIBDIR = armeabi-v7a
 TARGET_TOOLCHAIN = arm-linux-androideabi-
 TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfpv3 -O3
@@ -67,10 +67,12 @@ HAVE_LEVELDB = 1
 USE_LUAJIT = 1
 USE_ENET = 1
 APP_STL = gnustl       # gnustl libcxx|libc++ stlport
+CC = clang
+CXX = clang++
 
 #COMPILER_VERSION = clang
 #TARGET_CFLAGS_ADDON = -D_NDK_MATH_NO_SOFTFP=1 -Ofast
-#STANDALONE_ADDON = --use-llvm
+STANDALONE_ADDON = --use-llvm
 
 ifeq ($(TARGET_arm64),1)
 ifneq ($(NO_AUTO_VERSION),1)
@@ -475,14 +477,14 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-leveldb;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
-	--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
+	#--toolchain=${TARGET_TOOLCHAIN}${COMPILER_VERSION}                         \
 	--stl=${APP_STL} \
 	--platform=${APP_PLATFORM} \
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	export CC=${CROSS_PREFIX}gcc;                                              \
-	export CXX=${CROSS_PREFIX}g++;                                             \
+	export CC=${CROSS_PREFIX}${CC}; \
+	export CXX=${CROSS_PREFIX}${CXX}; \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
@@ -591,8 +593,8 @@ $(ICONV_LIB) : $(ICONV_TIMESTAMP)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	export CC=${CROSS_PREFIX}gcc;                                              \
-	export CXX=${CROSS_PREFIX}g++;                                             \
+	export CC=${CROSS_PREFIX}${CC}; \
+	export CXX=${CROSS_PREFIX}${CXX}; \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
 	./configure --host=${TARGET_HOST} || exit 1;                               \
 	sed -i 's/LIBICONV_VERSION_INFO) /LIBICONV_VERSION_INFO) -avoid-version /g' lib/Makefile; \
@@ -711,8 +713,8 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	export CC=${CROSS_PREFIX}gcc;                                              \
-	export CXX=${CROSS_PREFIX}g++;                                             \
+	export CC=${CROSS_PREFIX}${CC}; \
+	export CXX=${CROSS_PREFIX}${CXX}; \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
 	export CPPFLAGS="$${CPPFLAGS} -I${OPENSSL_DIR}/include                     \
 	${TARGET_CFLAGS_ADDON}";                                                   \
@@ -781,8 +783,8 @@ $(GMP_LIB): $(GMP_TIMESTAMP)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	export CC=${CROSS_PREFIX}gcc;                                              \
-	export CXX=${CROSS_PREFIX}g++;                                             \
+	export CC=${CROSS_PREFIX}${CC}; \
+	export CXX=${CROSS_PREFIX}${CXX}; \
 	export LIBGMP_LDFLAGS="-avoid-version";                                    \
 	export LIBGMPXX_LDFLAGS="-avoid-version";                                  \
 	./configure --disable-static --host=${TARGET_HOST} --prefix=/usr;          \
@@ -952,8 +954,8 @@ $(MSGPACK_LIB): $(MSGPACK_TIMESTAMP)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	export CC=${CROSS_PREFIX}gcc;                                              \
-	export CXX=${CROSS_PREFIX}g++;                                             \
+	export CC=${CROSS_PREFIX}${CC}; \
+	export CXX=${CROSS_PREFIX}${CXX}; \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
@@ -1014,7 +1016,7 @@ $(GETTEXT_LIB): $(GETTEXT_TIMESTAMP)
 	#${STANDALONE_ADDON} \
 	#--install-dir=$${TOOLCHAIN};                                               \
 	#export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	#export CXX=${CROSS_PREFIX}g++;                                             \
+	#export CXX=${CROSS_PREFIX}${CXX}; \
 	#export AR=${CROSS_PREFIX}ar;                                             \
 	#export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
 	#export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \

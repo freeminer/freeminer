@@ -4,13 +4,13 @@ NDK_SDK_ROOT=~
 
 NAME=freeminer
 
-NDK_VER=11
+NDK_VER=12b
 NDK_V=android-ndk-r$NDK_VER
 NDK=$NDK_V-linux-x86_64
 NDK_FILE=$NDK.zip
 NDK_DIR=$NDK_V
 
-SDK_FILE=android-sdk_r24.3.4-linux.tgz
+SDK_FILE=android-sdk_r24.4.1-linux.tgz
 SDK_DIR=android-sdk-linux
 
 TEST_PLATFORM=android-16
@@ -52,7 +52,7 @@ fi
 cd $DIR_SAVE
 MAKE="nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)"
 
-$MAKE                 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-armeabi-v7a-hard.apk
+$MAKE                 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-armeabi-v7a.apk
 $MAKE TARGET_x86=1    arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-x86.apk
 $MAKE TARGET_x86_64=1 arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-x86_64.apk
 $MAKE TARGET_arm64=1  arch_dirs release && cp bin/$NAME-release-unsigned.apk bin/$NAME-release-unsigned-arm64-v8a.apk
