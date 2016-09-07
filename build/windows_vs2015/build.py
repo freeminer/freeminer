@@ -64,13 +64,13 @@ LIBOGG_VERSION = "1.3.2"
 LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.1.0"
 SNAPPY_VERSION = "1.1.1.7"
-irrlicht = "irrlicht-1.8.3"
-curl = "curl-7.48.0"
+irrlicht = "irrlicht-1.8.4"
+curl = "curl-7.50.1"
 openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
 zlib = "zlib-1.2.8"
-freetype = "freetype-2.6.1"
+freetype = "freetype-2.6.5"
 luajit = "LuaJIT-2.0.4"
 gettext = "gettext-0.14.6"
 libiconv = "libiconv-1.9.2"
@@ -78,7 +78,7 @@ libiconv = "libiconv-1.9.2"
 #msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 #SQLITE_VERSION="3080704"
 #sqlite = "sqlite-autoconf-{}".format(SQLITE_VERSION)
-SQLITE_VERSION="3.8.4.2"
+SQLITE_VERSION="3.14.1"
 sqlite = "sqlite-{}".format(SQLITE_VERSION)
 
 #somtimes vs becomes mad
@@ -401,7 +401,7 @@ def main():
 		vorbis_arch="Win32" if build_arch == "x86" else "x64",
 		ogg_arch="Win32" if build_arch == "x86" else "X64",
 		freetype_arch="win32" if build_arch == "x86" else "X64",
-		freetype_lib="freetype261MT.lib" if build_type != "Debug" else "freetype261MT_D.lib",
+		freetype_lib="freetype265MT.lib" if build_type != "Debug" else "freetype265MT_D.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
 		zlib=zlib,
