@@ -221,7 +221,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("default_privs_creative", "interact, shout, fly, fast");
 	settings->setDefault("vertical_spawn_range", "50"); // "16"
 	settings->setDefault("cache_block_before_spawn", "true");
-	settings->setDefault("abm_random", android ? "false" : "true");
+	settings->setDefault("abm_random", (android || win) ? "false" : "true");
 	settings->setDefault("active_block_range", android ? "1" : threads ? "4" : "2");
 	settings->setDefault("abm_neighbors_range_max", (threads && !win32 && !android) ? "16" : "1");
 	settings->setDefault("enable_force_load", "true");
