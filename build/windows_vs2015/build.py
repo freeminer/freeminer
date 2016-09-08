@@ -64,7 +64,7 @@ LIBOGG_VERSION = "1.3.2"
 LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.1.0"
 SNAPPY_VERSION = "1.1.1.7"
-irrlicht = "irrlicht-1.8.3"
+irrlicht = "irrlicht-1.8.4"
 curl = "curl-7.50.1"
 openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
@@ -141,6 +141,8 @@ def main():
 		if patch_toolset:
 			patch("Irrlicht12.0.vcxproj", "<PlatformToolset>v110</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
 		patch("Irrlicht12.0.vcxproj", "<PlatformToolset>Windows7.1SDK</PlatformToolset>", "<PlatformToolset>v140</PlatformToolset>")
+		if build_type == "Debug":
+			patch("Irrlicht12.0.vcxproj", "; _ITERATOR_DEBUG_LEVEL=0", "")
 
 		os.system('MSBuild Irrlicht12.0.vcxproj /p:Configuration="Static lib - {build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		os.chdir(os.path.join("..", "..", ".."))
@@ -391,8 +393,8 @@ def main():
 		-DICONV_LIBRARY=C:\usr\lib\iconv.lib
 		-DGETTEXT_MSGFMT=C:\usr\bin\msgfmt.exe
 		-DENABLE_GETTEXT=1
-		-DENABLE_LEVELDB=1
-		-DFORCE_LEVELDB=1
+		-DENABLE_LEVELDB={enable_leveldb}
+		-DFORCE_LEVELDB={enable_leveldb}
 		-DENABLE_SQLITE3=1
 		{cmake_add}
 	""".format(
@@ -401,7 +403,7 @@ def main():
 		vorbis_arch="Win32" if build_arch == "x86" else "x64",
 		ogg_arch="Win32" if build_arch == "x86" else "X64",
 		freetype_arch="win32" if build_arch == "x86" else "X64",
-		freetype_lib="freetype265MT.lib" if build_type != "Debug" else "freetype265MT_D.lib",
+		freetype_lib="freetype265MT.lib" if build_type != "Debug" else "freetype265MTd.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
 		zlib=zlib,
@@ -412,6 +414,7 @@ def main():
 		libvorbis=libvorbis,
 		curl=curl,
 		cmake_add=cmake_add,
+		enable_leveldb="1" if build_type != "Debug" else "0",
 		#msgpack=msgpack,
 		#msgpack_suffix="d" if build_type == "Debug" else "",
 	).replace("\n", "")
@@ -428,11 +431,14 @@ def main():
 	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 
 	# patch project file to use these packages
-	patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
+
+	if build_type == "Release":
+		patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
 		r"""<Import Project="..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props" Condition="Exists('..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props')" />
   		<Import Project="..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props" Condition="Exists('..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props')" />
   		<Import Project="..\Crc32C.{CRC32C_VERSION}\build\native\Crc32C.props" Condition="Exists('..\Crc32C.{CRC32C_VERSION}\build\native\Crc32C.props')" />
   		<ItemGroup Label="ProjectConfigurations">""".format(CRC32C_VERSION=CRC32C_VERSION, SNAPPY_VERSION=SNAPPY_VERSION, LEVELDB_VERSION=LEVELDB_VERSION))
+
 
 	## install sqlite package
 	#os.system(r"..\NuGet.exe install sqlite -source {}\..\deps".format(os.getcwd()))
@@ -441,6 +447,10 @@ def main():
 	#	r"""<Import Project="..\sqlite.{}\build\native\sqlite.targets" Condition="Exists('..\sqlite.{}\build\native\sqlite.targets')" />
 	#	<ItemGroup Label="ProjectConfigurations">""".format(SQLITE_VERSION,SQLITE_VERSION))
 
+	if build_type == "Debug":
+		patch(os.path.join("src", "freeminer.vcxproj"), '<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>', '<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>')
+		patch(os.path.join("src", "jsoncpp", "src","lib_json","jsoncpp_lib_static.vcxproj"), '<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>', '<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>')
+		patch(os.path.join("src","cguittfont","cguittfont.vcxproj"), '<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>', '<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>')
 
 	os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration={}".format(build_type))
 	os.system("MSBuild INSTALL.vcxproj /p:Configuration={}".format(build_type))
