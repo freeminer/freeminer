@@ -317,6 +317,8 @@ void fm_set_default_settings(Settings *settings) {
 		settings->setDefault("hud_scaling", "0.6");
 	} else if (x_inches < 4.5) {
 		settings->setDefault("hud_scaling", "0.7");
+	} else if (x_inches < 7) {
+		settings->setDefault("hud_scaling", "0.8");
 	}
 
 	settings->setDefault("curl_verify_cert", "false");
