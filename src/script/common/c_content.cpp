@@ -67,10 +67,9 @@ ItemDefinition read_item_definition(lua_State* L,int index,
 		def.wield_scale = check_v3f(L, -1);
 	}
 	lua_pop(L, 1);
-	
-	def.stack_max = getintfield_default(L, index, "stack_max", def.stack_max);
-	if(def.stack_max == 0)
-		def.stack_max = 1;
+
+	int stack_max = getintfield_default(L, index, "stack_max", def.stack_max);
+	def.stack_max = rangelim(stack_max, 1, U16_MAX);
 
 	lua_getfield(L, index, "on_use");
 	def.usable = lua_isfunction(L, -1);
