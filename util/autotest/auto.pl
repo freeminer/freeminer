@@ -105,7 +105,6 @@ my $logdir_add = (@ar == 1 and $ar[0] =~ /^\w+$/) ? '.' . $ar[0] : '';
 our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 
-
 sub init_config () {
     (my $clang_version = `bash -c "compgen -c clang | grep 'clang-[[:digit:]]' | sort --version-sort --reverse | head -n1"`) =~ s/^clang//;
     $config = {
@@ -113,7 +112,7 @@ sub init_config () {
         port              => 60001,
         clients_num       => 5,
         autoexit          => 600,
-        clang_version     => $clang_version, #"", # "-3.6",
+        clang_version     => $clang_version,                                               #"", # "-3.6",
         autotest_dir_rel  => 'util/autotest/',
         build_name        => '',
         root_prefix       => $root_path . 'auto',
@@ -124,7 +123,7 @@ sub init_config () {
         logdir            => $script_path . 'logs.' . $g->{date} . $logdir_add,
         screenshot_dir    => 'screenshot.' . $g->{date},
         env               => 'OPENSSL_armcap=0',
-        gdb_stay          => 0,                                                                           # dont exit from gdb
+        gdb_stay          => 0,                                                            # dont exit from gdb
         runner            => 'nice ',
         name              => 'bot',
         go                => '--go',
@@ -138,11 +137,11 @@ sub init_config () {
         cmake_leveldb     => undef,
         cmake_nothreads   => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
-        cmake_opts        => [qw(CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER)],
-        valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
-        cgroup            => ($^O ~~ 'linux' ? 1 : undef),
-        tee               => '2>&1 | tee -a ',
-        run_task          => 'run_single',
+        cmake_opts     => [qw(CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER)],
+        valgrind_tools => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
+        cgroup         => ($^O ~~ 'linux' ? 1 : undef),
+        tee            => '2>&1 | tee -a ',
+        run_task       => 'run_single',
         cache_clear => 0,    # remove cache dir before start client
              #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
              #make_add     => '',
@@ -172,14 +171,14 @@ our $options = {
         autoexit => 0,
     },
     info => {
-        -info                 => 1,
+        -info => 1,
     },
     verbose => {
         #debug_log_level          => 'verbose',
-        -verbose                 => 1,
+        -verbose => 1,
         #enable_mapgen_debug_info => 1,
     },
-    bot        => {
+    bot => {
         fps_max => 30,
     },
     bot_random => {
@@ -198,7 +197,7 @@ our $options = {
         enable_shaders   => 0,
     },
     headless_optimize => {
-        fps_max => 10,
+        fps_max           => 10,
         headless_optimize => 1,
     },
     software => {
@@ -310,6 +309,7 @@ our $commands = {
         $D{DEBUG}              = 1                            if $config->{cmake_debug};
         $D{MINETEST_PROTO}     = $config->{cmake_minetest}    if defined $config->{cmake_minetest};
         $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}     if defined $config->{cmake_leveldb};
+        $D{ENABLE_SCTP}        = $config->{cmake_sctp}        if defined $config->{cmake_sctp};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
 
@@ -318,7 +318,7 @@ our $commands = {
           if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
-        $D{uc($_)} = $config->{lc($_)} for grep {length $config->{lc($_)}} @{$config->{cmake_opts}}; 
+        $D{uc($_)} = $config->{lc($_)} for grep { length $config->{lc($_)} } @{$config->{cmake_opts}};
         #warn 'D=', Data::Dumper::Dumper \%D;
         my $D = join ' ', map { '-D' . $_ . '=' . ($D{$_} =~ /\s/ ? qq{"$D{$_}"} : $D{$_}) } sort keys %D;
         sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
@@ -368,11 +368,11 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
             #my $args = join ' ',
             #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             for (0 .. $config->{clients_num}) {
-            sy
+                sy
 qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-              . options_make([qw( address gameid world address port config verbose)])
-              . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & };
-               sleep $config->{clients_spawn_sleep} // 0.2;
+                  . options_make([qw( address gameid world address port config verbose)])
+                  . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & };
+                sleep $config->{clients_spawn_sleep} // 0.2;
             }
             sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
         }
@@ -403,7 +403,7 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
 
 our $tasks = {
     build_normal => [sub { $g->{build_name} ||= '_normal'; 0 }, 'prepare', 'cmake', 'make',],
-    build => [\'build_normal'], #'
+    build       => [\'build_normal'],                                                                              #'
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server       => [{-no_build_client => 1, -no_build_server => 0,}, 'build_normal',],
@@ -510,34 +510,43 @@ our $tasks = {
         } @{$config->{valgrind_tools}}
     ),
 
-    minetest => sub {
-        return 1 if $config->{all_run};
-        local $g->{build_name} = $g->{build_name} . '_minetest';
-        local $config->{cmake_minetest} = 1;
-        @_ = ('build') if !@_;
-        for (@_) { my $r = commands_run($_); return $r if $r; }
-    },
-
-    (map { 'minetest_' . $_ => [[\'minetest', $_]] } qw(build build_client build_client_debug build_server build_server_debug stress)), # '
-
-    bot_minetest => sub {
-        my $name = shift;
-        local $config->{no_build_server} = 1;
-        local $config->{cmake_minetest}  = 1;
-        #local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_minetest};
-        if ($name) {
-            $g->{build_name} .= '_minetest';
-            commands_run('bot_' . $name);
-        } else {
-            commands_run('build_client_minetest');
-            commands_run($config->{run_task});
-        }
-    }, (
+    (
         map {
-            'bot_minetest_' . $_ => [['bot_minetest', $_,]]
-        } qw(tsan tsannt asan usan gdb debug)
-    ),
+            my $buildname = $_;
+            (
+                $buildname => sub {
+                    return 1 if $config->{all_run};
+                    local $g->{build_name} = $g->{build_name} . '_' . $buildname;
+                    local $config->{'cmake_' . $buildname} = 1;
+                    @_ = ('build') if !@_;
+                    for (@_) { my $r = commands_run($_); return $r if $r; }
+                },
 
+                (
+                    map { $buildname . '_' . $_ => [[\$buildname, $_]] }
+                      qw(build build_client build_client_debug build_server build_server_debug stress)
+                ),    # '
+
+                'bot_' . $buildname => sub {
+                    my $name = shift;
+                    local $config->{no_build_server} = 1;
+                    local $config->{'cmake_' . $buildname} = 1;
+                    #local $config->{cmake_int}       = $config->{cmake_int} . $config->{'cmake_' . $buildname};
+                    if ($name) {
+                        $g->{build_name} .= '_' . $buildname;
+                        commands_run('bot_' . $name);
+                    } else {
+                        commands_run('build_client_' . $buildname);
+                        commands_run($config->{run_task});
+                    }
+                }, (
+                    map {
+                        "bot_${buildname}_" . $_ => [['bot_' . $buildname, $_,]]
+                    } qw(tsan tsannt asan usan gdb debug)
+                ),
+              )
+        } qw(minetest sctp)
+    ),
     stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run',],
 
     clients_run => [{build_name => '_normal'}, 'run_clients'],
@@ -612,10 +621,13 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     bot_vtune => ['build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
     stress_vtune => [
         #'build_debug',sub { commands_run('vtune', 'run_server');}, ['sleep', 10], 'clients_run',
-         {#-no_build_client => 1, -no_build_server => 0, 
-         -server_bg => 1,}, 'build_debug',
-        [\'vtune', 'run_server'], ['sleep', 10], 
-        #{build_name => '_normal'}, 
+        {                                                                         #-no_build_client => 1, -no_build_server => 0,
+            -server_bg => 1,
+        },
+        'build_debug',
+        [\'vtune', 'run_server'],
+        ['sleep',  10],
+        #{build_name => '_normal'},
         'clients',
 
     ],
@@ -637,7 +649,6 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_gperf',
         ['gperf', 'run_server'], ['sleep', 10], {build_name => '_normal', -cmake_gperf => 0,}, 'clients',
     ],
-
 
     play_task => sub {
         return 1 if $config->{all_run};
