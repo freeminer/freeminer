@@ -22,7 +22,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 
-#if !MINETEST_PROTO
+#if USE_SCTP
+#include "network/fm_connection_sctp.cpp"
+#elif !MINETEST_PROTO
 #include "network/fm_connection.cpp"
 #else
 //Not used, keep for reduce MT merge conflicts

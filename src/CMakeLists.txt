@@ -666,6 +666,38 @@ add_subdirectory(unittest)
 add_subdirectory(util)
 add_subdirectory(irrlicht_changes)
 
+if(MINETEST_PROTO)
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+else()
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+endif()
+
+if(ENABLE_SCTP)
+	set(USE_SCTP 1)
+	add_subdirectory(network/usrsctp/usrsctplib)
+	#add_definitions(-DINET -DINET6)
+	#add_definitions(-DSCTP_WITH_NO_CSUM)
+# from network/usrsctp/usrsctplib/CMakeLists.txt :
+if(SCTP_DEBUG)
+	add_definitions(-DSCTP_DEBUG)
+endif()
+if (INET)
+	add_definitions(-DINET)
+endif()
+if (INET6)
+	add_definitions(-DINET6)
+endif()
+if (SCTP_WITH_NO_CSUM)
+	add_definitions(-DSCTP_WITH_NO_CSUM)
+endif()
+
+	include_directories(${PROJECT_SOURCE_DIR}/network/usrsctp/usrsctplib)
+	set(SCTP_LIBRARY usrsctp-static)
+
+	set(USE_ENET 0)
+else()
+	set(USE_SCTP 0)
+endif()
 
 if(USE_ENET)
 	add_subdirectory(enet)
@@ -923,9 +955,11 @@ if(BUILD_CLIENT)
 		${JSON_LIBRARY}
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
+		${SCTP_LIBRARY}
 		${PLATFORM_LIBS}
 		${CLIENT_PLATFORM_LIBS}
 	)
+
 	if(STATIC_BUILD AND USE_GETTEXT)
 		target_link_libraries(
 			${PROJECT_NAME}
@@ -995,6 +1029,7 @@ if(BUILD_SERVER)
 		${LUA_LIBRARY}
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
+		${SCTP_LIBRARY}
 		${GMP_LIBRARY}
 		${PLATFORM_LIBS}
 	)

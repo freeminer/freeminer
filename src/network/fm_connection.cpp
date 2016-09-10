@@ -388,8 +388,10 @@ void Connection::send(u16 peer_id, u8 channelnum,
 	}
 	if (enet_peer_send(peer, channelnum, packet) < 0) {
 		infostream << "enet_peer_send failed peer=" << peer_id << " reliable=" << reliable << " size=" << data.getSize() << std::endl;
+/*
 		if (reliable)
 			deletePeer(peer_id, false);
+*/
 		return;
 	}
 }

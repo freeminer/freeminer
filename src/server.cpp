@@ -531,6 +531,9 @@ void Server::start(Address bind_addr)
 #if MINETEST_PROTO
 			<< " MINETEST_PROTO \t"
 #endif
+#if USE_SCTP
+			<< " SCTP \t"
+#endif
 			<< " cpp=" <<__cplusplus << " \t"
 
 			<< " cores=";

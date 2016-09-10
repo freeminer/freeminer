@@ -417,9 +417,9 @@ void Client::handleCommand_Media(NetworkPacket* pkt) {
 	// updating content definitions
 	//assert(!m_mesh_update_thread.isRunning());
 
-	for(size_t i = 0; i < media_data.size(); ++i)
+	for(auto & i : media_data)
 		m_media_downloader->conventionalTransferDone(
-		    media_data[i].first, media_data[i].second, this);
+		    i.first, i.second, this);
 }
 
 void Client::handleCommand_ToolDef(NetworkPacket* pkt) {

@@ -155,6 +155,8 @@ endif
 
 APP_PLATFORM = android-$(SDK_VERSION)
 
+#USE_SCTP = 1
+
 
 ################################################################################
 ASSETS_TIMESTAMP = deps/assets_timestamp
@@ -1125,6 +1127,7 @@ apk: $(PATHCFGFILE) arch_dirs assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LE
 	GPROF=${GPROF} APP_ABI=${TARGET_ABI} HAVE_LEVELDB=${HAVE_LEVELDB}          \
 	USE_LUAJIT=${USE_LUAJIT} \
 	USE_ENET=${USE_ENET} \
+	USE_SCTP=${USE_SCTP} \
 	GAMES_VERSION=${GAMES_VERSION} \
 	PROJECT_NAME_C=${PROJECT_NAME_C} \
 	APP_PLATFORM=${APP_PLATFORM}                                               \

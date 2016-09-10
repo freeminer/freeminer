@@ -47,6 +47,7 @@
 #cmakedefine01 USE_ENET
 #cmakedefine01 STATIC_BUILD
 #cmakedefine01 USE_ICONV
+#cmakedefine01 USE_SCTP
 #cmakedefine01 LOCK_PROFILE
 
 #endif

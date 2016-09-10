@@ -358,6 +358,7 @@ def main():
 		-DENABLE_LEVELDB=1
 		-DFORCE_LEVELDB=1
 		-DENABLE_SQLITE3=1
+		-DENABLE_SCTP={enable_sctp}
 	""".format(
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		freetype_lib="freetype261MT.lib" if build_type != "Debug" else "freetype261MT_D.lib",
@@ -370,6 +371,7 @@ def main():
 		libogg=libogg,
 		libvorbis=libvorbis,
 		curl=curl,
+		enable_sctp="0",
 		#msgpack=msgpack,
 		#msgpack_suffix="d" if build_type == "Debug" else "",
 	).replace("\n", "")
@@ -383,8 +385,13 @@ def main():
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")
 	#patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
 	# wtf, cmake?
-	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
-	patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+	if os.path.exists(os.path.join("src", "enet", "enet.vcxproj")):
+		patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+		patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+
+	if os.path.exists(os.path.join("src", "network", "usrsctp", "usrsctplib", "usrsctp.vcxproj")):
+		patch(os.path.join("src", "network", "usrsctp", "usrsctplib", "usrsctp.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+		patch(os.path.join("src", "network", "usrsctp", "usrsctplib", "usrsctp.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 
 	# install LevelDB package
 	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
