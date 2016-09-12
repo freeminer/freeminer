@@ -42,8 +42,21 @@ bool KeyValueStorage::open() {
 		std::lock_guard<Mutex> lock(mutex);
 		error = status.ToString();
 		errorstream<< "Trying to repair database ["<<error<<"]"<<std::endl;
-		status = leveldb::RepairDB(fullpath, options);
+		try {
+			status = leveldb::RepairDB(fullpath, options);
+		} catch (std::exception &e) {
+			errorstream<< "First repair exception ["<<e.what()<<"]"<<std::endl;
+			auto options_repair = options;
+			options_repair.paranoid_checks = true;
+			try {
+				status = leveldb::RepairDB(fullpath, options_repair);
+			} catch (std::exception &e) {
+				errorstream<< "Second repair exception ["<<e.what()<<"]"<<std::endl;
+			}
+		}
 		if (!status.ok()) {
+			error = status.ToString();
+			errorstream<< "Repair fail ["<<error<<"]"<<std::endl;
 			db = nullptr;
 			return true;
 		}

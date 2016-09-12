@@ -48,6 +48,8 @@ $0 --build_name="_touch_asan" --cmake_touchscreen=1 --cmake_add="-DIRRLICHT_INCL
 
 # sometimes *san + debug doesnt work with leveldb
 $0 --cmake_leveldb=0
+#or buid and use custom leveldb
+$0 --cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
 
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 play_vtune --vtune_gui=1
