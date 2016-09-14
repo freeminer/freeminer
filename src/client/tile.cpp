@@ -972,11 +972,10 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 
 video::IImage* TextureSource::generateImage(const std::string &name)
 {
-	/*
-		Get the base image
-	*/
+	// Get the base image
 
 	const char separator = '^';
+	const char escape = '\\';
 	const char paren_open = '(';
 	const char paren_close = ')';
 
@@ -984,7 +983,9 @@ video::IImage* TextureSource::generateImage(const std::string &name)
 	s32 last_separator_pos = -1;
 	u8 paren_bal = 0;
 	for (s32 i = name.size() - 1; i >= 0; i--) {
-		switch(name[i]) {
+		if (i > 0 && name[i-1] == escape)
+			continue;
+		switch (name[i]) {
 		case separator:
 			if (paren_bal == 0) {
 				last_separator_pos = i;
@@ -1053,10 +1054,12 @@ video::IImage* TextureSource::generateImage(const std::string &name)
 			return NULL;
 		}
 		core::dimension2d<u32> dim = tmp->getDimension();
-		if (!baseimg)
-			baseimg = driver->createImage(video::ECF_A8R8G8B8, dim);
-		blit_with_alpha(tmp, baseimg, v2s32(0, 0), v2s32(0, 0), dim);
-		tmp->drop();
+		if (baseimg) {
+			blit_with_alpha(tmp, baseimg, v2s32(0, 0), v2s32(0, 0), dim);
+			tmp->drop();
+		} else {
+			baseimg = tmp;
+		}
 	} else if (!generateImagePart(last_part_of_name, baseimg)) {
 		// Generate image according to part of name
 		errorstream << "generateImage(): "
@@ -1130,9 +1133,27 @@ video::IImage * Align2Npot2(video::IImage * image,
 
 #endif
 
+static std::string unescape_string(const std::string &str, const char esc = '\\')
+{
+	std::string out;
+	size_t pos = 0, cpos;
+	out.reserve(str.size());
+	while (1) {
+		cpos = str.find_first_of(esc, pos);
+		if (cpos == std::string::npos) {
+			out += str.substr(pos);
+			break;
+		}
+		out += str.substr(pos, cpos - pos) + str[cpos + 1];
+		pos = cpos + 2;
+	}
+	return out;
+}
+
 bool TextureSource::generateImagePart(std::string part_of_name,
 		video::IImage *& baseimg)
 {
+	const char escape = '\\'; // same as in generateImage()
 	video::IVideoDriver* driver = m_device->getVideoDriver();
 	if (!driver)
 		return false;
@@ -1284,7 +1305,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 		}
 		/*
 			[combine:WxH:X,Y=filename:X,Y=filename2
-			Creates a bigger texture from an amount of smaller ones
+			Creates a bigger texture from any amount of smaller ones
 		*/
 		else if (str_starts_with(part_of_name, "[combine"))
 		{
@@ -1292,7 +1313,6 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			sf.next(":");
 			u32 w0 = stoi(sf.next("x"));
 			u32 h0 = stoi(sf.next(":"));
-			//infostream<<"combined w="<<w0<<" h="<<h0<<std::endl;
 			core::dimension2d<u32> dim(w0,h0);
 			if (baseimg == NULL) {
 				baseimg = driver->createImage(video::ECF_A8R8G8B8, dim);
@@ -1301,11 +1321,11 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			while (sf.at_end() == false) {
 				u32 x = stoi(sf.next(","));
 				u32 y = stoi(sf.next("="));
-				std::string filename = sf.next(":");
+				std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 				infostream<<"Adding \""<<filename
 						<<"\" to combined ("<<x<<","<<y<<")"
 						<<std::endl;
-				video::IImage *img = m_sourcecache.getOrLoad(filename, m_device);
+				video::IImage *img = generateImage(filename);
 				if (img) {
 					core::dimension2d<u32> dim = img->getDimension();
 					infostream<<"Size "<<dim.Width
@@ -1328,7 +1348,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			}
 		}
 		/*
-			"[brighten"
+			[brighten
 		*/
 		else if (str_starts_with(part_of_name, "[brighten"))
 		{
@@ -1342,7 +1362,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			brighten(baseimg);
 		}
 		/*
-			"[noalpha"
+			[noalpha
 			Make image completely opaque.
 			Used for the leaves texture when in old leaves mode, so
 			that the transparent parts don't look completely black
@@ -1369,7 +1389,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			}
 		}
 		/*
-			"[makealpha:R,G,B"
+			[makealpha:R,G,B
 			Convert one color to transparent.
 		*/
 		else if (str_starts_with(part_of_name, "[makealpha:"))
@@ -1408,7 +1428,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			}
 		}
 		/*
-			"[transformN"
+			[transformN
 			Rotates and/or flips the image.
 
 			N can be a number (between 0 and 7) or a transform name.
@@ -1577,12 +1597,11 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			Strfnd sf(part_of_name);
 			sf.next(":");
 			u32 percent = stoi(sf.next(":"));
-			std::string filename = sf.next(":");
-			//infostream<<"power part "<<percent<<"%% of "<<filename<<std::endl;
+			std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 
 			if (baseimg == NULL)
 				baseimg = driver->createImage(video::ECF_A8R8G8B8, v2u32(16,16));
-			video::IImage *img = m_sourcecache.getOrLoad(filename, m_device);
+			video::IImage *img = generateImage(filename);
 			if (img)
 			{
 				core::dimension2d<u32> dim = img->getDimension();
@@ -1663,9 +1682,9 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			}
 			Strfnd sf(part_of_name);
 			sf.next(":");
-			std::string filename = sf.next(":");
+			std::string filename = unescape_string(sf.next_esc(":", escape), escape);
 
-			video::IImage *img = m_sourcecache.getOrLoad(filename, m_device);
+			video::IImage *img = generateImage(filename);
 			if (img) {
 				apply_mask(img, baseimg, v2s32(0, 0), v2s32(0, 0),
 						img->getDimension());
@@ -1708,6 +1727,10 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 
 			apply_colorize(baseimg, v2u32(0, 0), baseimg->getDimension(), color, ratio, keep_alpha);
 		}
+		/*
+			[applyfiltersformesh
+			Internal modifier
+		*/
 		else if (str_starts_with(part_of_name, "[applyfiltersformesh"))
 		{
 			// Apply the "clean transparent" filter, if configured.

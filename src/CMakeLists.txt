@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 project(freeminer)
 
 INCLUDE(CheckIncludeFiles)
+INCLUDE(CheckLibraryExists)
 INCLUDE(CheckCXXSourceRuns)
 
 
