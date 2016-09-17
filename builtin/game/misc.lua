@@ -58,7 +58,9 @@ function core.check_player_privs(name, ...)
 	elseif arg_type ~= "string" then
 		error("Invalid core.check_player_privs argument type: " .. arg_type, 2)
 	end
-	
+
+	if name == "" then return true, "" end
+
 	local requested_privs = {...}
 	local player_privs = core.get_player_privs(name)
 	local missing_privileges = {}
