@@ -93,6 +93,9 @@ local player_list = {}
 core.register_on_joinplayer(function(player)
 	local player_name = player:get_player_name()
 	player_list[player_name] = player
+	if core.is_singleplayer() then
+		return
+	end
 	core.chat_send_all("*** " .. player_name .. " joined the game.")
 end)
 

@@ -552,14 +552,6 @@ core.registered_on_protection_violation, core.register_on_protection_violation =
 core.registered_on_item_eats, core.register_on_item_eat = make_registration()
 core.registered_on_punchplayers, core.register_on_punchplayer = make_registration()
 
-minetest.register_on_joinplayer(function(player)
-	if minetest.is_singleplayer() then
-		return
-	end
-	local player_name =  player:get_player_name()
-	minetest.chat_send_all("*** " .. player_name .. " joined the game.")
-end)
-
 minetest.register_on_dieplayer(function(player)
 	local player_name =  player:get_player_name()
 	if minetest.is_singleplayer() then
