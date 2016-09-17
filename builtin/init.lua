@@ -34,9 +34,7 @@ local asyncpath = scriptdir .. "async" .. DIR_DELIM
 
 --dofile(scriptdir .. "profiler.lua") --TODO: repair me
 
---[[ too buggy
 dofile(commonpath .. "strict.lua")
-]]
 
 dofile(commonpath .. "serialize.lua")
 dofile(commonpath .. "misc_helpers.lua")
