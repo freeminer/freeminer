@@ -31,7 +31,7 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 	open();
 }
 
-bool KeyValueStorage::process_status(leveldb::Status & status) {
+bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen) {
 	if (status.ok()) {
 		return true;
 	}
@@ -43,14 +43,15 @@ bool KeyValueStorage::process_status(leveldb::Status & status) {
 		errorstream << "Trying to repair database [" << db_name << "] try=" << repairs << " [" << error << "]" << std::endl;
 		leveldb::Options options;
 		options.create_if_missing = true;
+		leveldb::Status status_repair;
 		try {
-			status = leveldb::RepairDB(fullpath, options);
+			status_repair = leveldb::RepairDB(fullpath, options);
 		} catch (std::exception &e) {
 			errorstream << "First repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			auto options_repair = options;
 			options_repair.paranoid_checks = true;
 			try {
-				status = leveldb::RepairDB(fullpath, options_repair);
+				status_repair = leveldb::RepairDB(fullpath, options_repair);
 			} catch (std::exception &e) {
 				errorstream << "Second repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			}
@@ -58,15 +59,19 @@ bool KeyValueStorage::process_status(leveldb::Status & status) {
 		if (!status.ok()) {
 			error = status.ToString();
 			errorstream << "Repair [" << db_name << "] fail [" << error << "]" << std::endl;
+			delete db;
 			db = nullptr;
 			return false;
 		}
-		status = leveldb::DB::Open(options, fullpath, &db);
-		if (!status.ok()) {
-			error = status.ToString();
-			errorstream << "Trying to reopen database [" << db_name << "] fail [" << error << "]" << std::endl;
-			db = nullptr;
-			return false;
+		if (reopen) {
+			auto status_open = leveldb::DB::Open(options, fullpath, &db);
+			if (!status_open.ok()) {
+				error = status_open.ToString();
+				errorstream << "Trying to reopen database [" << db_name << "] fail [" << error << "]" << std::endl;
+				delete db;
+				db = nullptr;
+				return false;
+			}
 		}
 	}
 	return status.ok();
@@ -78,7 +83,7 @@ bool KeyValueStorage::open() {
 	options.create_if_missing = true;
 	auto status = leveldb::DB::Open(options, fullpath, &db);
 	verbosestream << "KeyValueStorage::open() db_name=" << db_name << " status=" << status.ok() << " error=" << status.ToString() << std::endl;
-	return process_status(status);
+	return process_status(status, true);
 #else
 	return true;
 #endif

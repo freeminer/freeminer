@@ -48,7 +48,7 @@ public:
 	leveldb::DB *db;
 	leveldb::ReadOptions read_options;
 	leveldb::WriteOptions write_options;
-	bool process_status(leveldb::Status & status);
+	bool process_status(const leveldb::Status & status, bool reopen = false);
 	unsigned int repairs = 0;
 #else
 	char *db;
