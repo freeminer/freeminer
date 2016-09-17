@@ -26,10 +26,50 @@
 
 KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &name) :
 	db(nullptr),
-	db_name(name)
-{
+	db_name(name) {
 	fullpath = savedir + DIR_DELIM + db_name + ".db";
 	open();
+}
+
+bool KeyValueStorage::process_status(leveldb::Status & status) {
+	if (status.ok()) {
+		return true;
+	}
+	std::lock_guard<Mutex> lock(mutex);
+	error = status.ToString();
+	if (status.IsCorruption()) {
+		if (++repairs > 2)
+			return false;
+		errorstream << "Trying to repair database [" << db_name << "] try=" << repairs << " [" << error << "]" << std::endl;
+		leveldb::Options options;
+		options.create_if_missing = true;
+		try {
+			status = leveldb::RepairDB(fullpath, options);
+		} catch (std::exception &e) {
+			errorstream << "First repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
+			auto options_repair = options;
+			options_repair.paranoid_checks = true;
+			try {
+				status = leveldb::RepairDB(fullpath, options_repair);
+			} catch (std::exception &e) {
+				errorstream << "Second repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
+			}
+		}
+		if (!status.ok()) {
+			error = status.ToString();
+			errorstream << "Repair [" << db_name << "] fail [" << error << "]" << std::endl;
+			db = nullptr;
+			return false;
+		}
+		status = leveldb::DB::Open(options, fullpath, &db);
+		if (!status.ok()) {
+			error = status.ToString();
+			errorstream << "Trying to reopen database [" << db_name << "] fail [" << error << "]" << std::endl;
+			db = nullptr;
+			return false;
+		}
+	}
+	return status.ok();
 }
 
 bool KeyValueStorage::open() {
@@ -37,98 +77,58 @@ bool KeyValueStorage::open() {
 	leveldb::Options options;
 	options.create_if_missing = true;
 	auto status = leveldb::DB::Open(options, fullpath, &db);
-	verbosestream<<"KeyValueStorage::open() db_name="<<db_name << " status="<< status.ok()<< " error="<<status.ToString()<<std::endl;
-	if (!status.ok()) {
-		std::lock_guard<Mutex> lock(mutex);
-		error = status.ToString();
-		errorstream<< "Trying to repair database ["<<error<<"]"<<std::endl;
-		try {
-			status = leveldb::RepairDB(fullpath, options);
-		} catch (std::exception &e) {
-			errorstream<< "First repair exception ["<<e.what()<<"]"<<std::endl;
-			auto options_repair = options;
-			options_repair.paranoid_checks = true;
-			try {
-				status = leveldb::RepairDB(fullpath, options_repair);
-			} catch (std::exception &e) {
-				errorstream<< "Second repair exception ["<<e.what()<<"]"<<std::endl;
-			}
-		}
-		if (!status.ok()) {
-			error = status.ToString();
-			errorstream<< "Repair fail ["<<error<<"]"<<std::endl;
-			db = nullptr;
-			return true;
-		}
-		status = leveldb::DB::Open(options, fullpath, &db);
-		if (!status.ok()) {
-			error = status.ToString();
-			errorstream<< "Trying to reopen database ["<<error<<"]"<<std::endl;
-			db = nullptr;
-			return true;
-		}
-	}
+	verbosestream << "KeyValueStorage::open() db_name=" << db_name << " status=" << status.ok() << " error=" << status.ToString() << std::endl;
+	return process_status(status);
+#else
+	return true;
 #endif
-	return false;
 }
 
-void KeyValueStorage::close()
-{
+void KeyValueStorage::close() {
+	repairs = 0;
 	if (!db)
 		return;
 	delete db;
 	db = nullptr;
 }
 
-KeyValueStorage::~KeyValueStorage()
-{
+KeyValueStorage::~KeyValueStorage() {
 	//errorstream<<"KeyValueStorage::~KeyValueStorage() "<<db_name<<std::endl;
 	close();
 }
 
-bool KeyValueStorage::put(const std::string &key, const std::string &data)
-{
+bool KeyValueStorage::put(const std::string &key, const std::string &data) {
 	if (!db)
 		return false;
 #if USE_LEVELDB
 	auto status = db->Put(write_options, key, data);
-	if (!status.ok()) {
-		std::lock_guard<Mutex> lock(mutex);
-		error = status.ToString();
-		return false;
-	}
-#endif
+	return process_status(status);
+#else
 	return true;
+#endif
 }
 
-bool KeyValueStorage::put(const std::string &key, const float &data)
-{
+bool KeyValueStorage::put(const std::string &key, const float &data) {
 	return put(key, ftos(data));
 }
 
 
-bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data)
-{
+bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data) {
 	return put(key, json_writer.write(data).c_str());
 }
 
-bool KeyValueStorage::get(const std::string &key, std::string &data)
-{
+bool KeyValueStorage::get(const std::string &key, std::string &data) {
 	if (!db)
 		return false;
 #if USE_LEVELDB
 	auto status = db->Get(read_options, key, &data);
-	if (!status.ok()) {
-		std::lock_guard<Mutex> lock(mutex);
-		error = status.ToString();
-		return false;
-	}
-#endif
+	return process_status(status);
+#else
 	return true;
+#endif
 }
 
-bool KeyValueStorage::get(const std::string &key, float &data)
-{
+bool KeyValueStorage::get(const std::string &key, float &data) {
 	std::string tmpstring;
 	if (get(key, tmpstring) && !tmpstring.empty()) {
 		data = stof(tmpstring);
@@ -137,8 +137,7 @@ bool KeyValueStorage::get(const std::string &key, float &data)
 	return false;
 }
 
-bool KeyValueStorage::get_json(const std::string &key, Json::Value & data)
-{
+bool KeyValueStorage::get_json(const std::string &key, Json::Value & data) {
 	std::string value;
 	get(key, value);
 	if (value.empty())
@@ -151,14 +150,13 @@ std::string KeyValueStorage::get_error() {
 	return error;
 }
 
-bool KeyValueStorage::del(const std::string &key)
-{
+bool KeyValueStorage::del(const std::string &key) {
 	if (!db)
 		return false;
 #if USE_LEVELDB
 	//std::lock_guard<Mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
-	return status.ok();
+	return process_status(status);
 #else
 	return true;
 #endif

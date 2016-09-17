@@ -28,8 +28,7 @@
 #include "exceptions.h"
 #include "json/json.h"
 
-class KeyValueStorage
-{
+class KeyValueStorage {
 public:
 	KeyValueStorage(const std::string &savedir, const std::string &name);
 	~KeyValueStorage();
@@ -49,6 +48,8 @@ public:
 	leveldb::DB *db;
 	leveldb::ReadOptions read_options;
 	leveldb::WriteOptions write_options;
+	bool process_status(leveldb::Status & status);
+	unsigned int repairs = 0;
 #else
 	char *db;
 #endif

@@ -30,6 +30,7 @@ core.auth_db = "players_auth"
 core.auth_prefix = "auth_"
 
 local function read_auth(name)
+	if core.auth_table[name] then return core.auth_table[name] end
 	core.auth_table[name] = core.kv_get(core.auth_prefix .. name, core.auth_db)
 	return core.auth_table[name]
 	--core.notify_authentication_modified(name)
@@ -37,6 +38,7 @@ end
 
 local function save_auth(name, data)
 	if not data then data = core.auth_table[name] end
+	core.auth_table[name] = nil
 	return core.kv_put(core.auth_prefix .. name, data, core.auth_db)
 end
 
@@ -101,8 +103,9 @@ local converted = nil
 
 core.builtin_auth_handler = {
 	get_auth = function(name)
-		if not conveeted then auth_convert(); converted = 1 end -- here because env needed
+		if not converted then auth_convert(); converted = 1 end -- here because env needed
 		assert(type(name) == "string")
+		if name == "" then return nil end
 		read_auth(name)
 
 		-- Figure out what password to use for a new player (singleplayer
