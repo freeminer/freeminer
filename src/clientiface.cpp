@@ -119,7 +119,7 @@ int RemoteClient::GetNextBlocks (
 {
 	DSTACK(FUNCTION_NAME);
 
-	auto lock = lock_unique_rec();
+	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
 
