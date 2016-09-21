@@ -50,6 +50,7 @@ public:
 	void deSerialize(std::istream &is);
 
 	void clear();
+	bool empty() const;
 
 	// Generic key/value store
 	std::string getString(const std::string &name, unsigned short recursion = 0) const;
@@ -97,6 +98,8 @@ public:
 	void clear();
 
 private:
+	int countNonEmpty() const;
+
 	std::map<v3s16, NodeMetadata *> m_data;
 };
 

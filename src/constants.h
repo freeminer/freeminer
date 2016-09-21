@@ -116,7 +116,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#elif defined(__ANDROID__)
 //	#define TTF_DEFAULT_FONT_SIZE   (17)
 #else
-	#define TTF_DEFAULT_FONT_SIZE	(17)
+	#define TTF_DEFAULT_FONT_SIZE	(16)
 #endif
 #define DEFAULT_FONT_SIZE       (10)
 
