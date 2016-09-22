@@ -82,8 +82,8 @@ LOCAL_MODULE := usrsctplib
 LOCAL_CFLAGS += -DUSE_SCTP=1 -DINET -DINET6
 #-DSCTP_WITH_NO_CSUM
 LOCAL_CFLAGS += -DSCTP_SIMPLE_ALLOCATOR -DSCTP_PROCESS_LEVEL_LOCKS -D__Userspace__ -D__Userspace_os_Linux
-LOCAL_C_INCLUDES := jni/src/network/usrsctp/usrsctplib
-LOCAL_SRC_FILES += $(wildcard $(LOCAL_PATH)/jni/src/network/usrsctp/usrsctplib/*.c) $(wildcard $(LOCAL_PATH)/jni/src/network/usrsctp/usrsctplib/netinet/*.c) $(wildcard $(LOCAL_PATH)/jni/src/network/usrsctp/usrsctplib/netinet6/*.c)
+LOCAL_C_INCLUDES := jni/src/network/external/usrsctplib
+LOCAL_SRC_FILES += $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/*.c) $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/netinet/*.c) $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/netinet6/*.c)
 LOCAL_C_INCLUDES += jni/android-ifaddrs
 LOCAL_SRC_FILES += jni/android-ifaddrs/ifaddrs.c
 include $(BUILD_STATIC_LIBRARY)
@@ -92,16 +92,16 @@ ifeq ($(USE_ENET), 1)
 include $(CLEAR_VARS)
 LOCAL_CFLAGS := -DHAS_INET_PTON=1 -DHAS_INET_NTOP=1 -DHAS_GETHOSTBYNAME_R=1 -DHAS_GETADDRINFO=1 -DHAS_GETNAMEINFO=1 -DHAS_FCNTL=1 -DHAS_POLL=1 -DHAS_MSGHDR_FLAGS=1 -DHAS_SOCKLEN_T=1
 LOCAL_MODULE := enet
-LOCAL_C_INCLUDES := jni/src/enet/include
-LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/enet/*.c)
+LOCAL_C_INCLUDES := jni/src/external/enet/include
+LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/external/enet/*.c)
 include $(BUILD_STATIC_LIBRARY)
 endif
 endif
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := jsoncpp
-LOCAL_C_INCLUDES := jni/src/jsoncpp/include
-LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/jsoncpp/src/lib_json/*.cpp)
+LOCAL_C_INCLUDES := jni/src/external/jsoncpp/include
+LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/external/jsoncpp/src/lib_json/*.cpp)
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
@@ -465,11 +465,11 @@ LOCAL_STATIC_LIBRARIES += msgpack jsoncpp gettext
 ifeq ($(USE_SCTP), 1)
 LOCAL_CFLAGS += -DUSE_SCTP=1 -DINET -DINET6 -DSCTP_WITH_NO_CSUM
 LOCAL_CFLAGS += -DSCTP_SIMPLE_ALLOCATOR -DSCTP_PROCESS_LEVEL_LOCKS -D__Userspace__ -D__Userspace_os_Linux
-LOCAL_C_INCLUDES += jni/src/network/usrsctp/usrsctplib
+LOCAL_C_INCLUDES += jni/src/external/usrsctp/usrsctplib
 LOCAL_STATIC_LIBRARIES += usrsctplib
 else
 ifeq ($(USE_ENET), 1)
-LOCAL_C_INCLUDES += jni/src/enet/include
+LOCAL_C_INCLUDES += jni/src/external/enet/include
 LOCAL_STATIC_LIBRARIES += enet
 else
 LOCAL_CFLAGS += -DMINETEST_PROTO=1

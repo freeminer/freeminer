@@ -708,8 +708,8 @@ else()
 endif()
 
 if(USE_ENET)
-	add_subdirectory(enet)
-	include_directories(${PROJECT_SOURCE_DIR}/enet/include)
+	add_subdirectory(external/enet)
+	include_directories(${PROJECT_SOURCE_DIR}/external/enet/include)
 	set(ENET_LIBRARY enet)
 endif()
 

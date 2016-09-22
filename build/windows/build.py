@@ -385,9 +385,9 @@ def main():
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\x86</AdditionalLibraryDirectories>")
 	#patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
 	# wtf, cmake?
-	if os.path.exists(os.path.join("src", "enet", "enet.vcxproj")):
-		patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
-		patch(os.path.join("src", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+	if os.path.exists(os.path.join("src", "external", "enet", "enet.vcxproj")):
+		patch(os.path.join("src", "external", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+		patch(os.path.join("src", "external", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
 
 	if os.path.exists(os.path.join("src", "network", "usrsctp", "usrsctplib", "usrsctp.vcxproj")):
 		patch(os.path.join("src", "network", "usrsctp", "usrsctplib", "usrsctp.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")

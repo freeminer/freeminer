@@ -921,7 +921,7 @@ $(MSGPACK_TIMESTAMP) : msgpack_download
 
 msgpack_download :
 	@if [ ! -d ${MSGPACK_DIR} ] ; then \
-		cp -r ${ROOT}/../../src/msgpack-c ${MSGPACK_DIR}; \
+		cp -r ${ROOT}/../../src/external/msgpack-c ${MSGPACK_DIR}; \
 	fi
 
 msgpack_download_old :
