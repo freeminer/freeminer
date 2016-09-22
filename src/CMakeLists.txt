@@ -682,10 +682,10 @@ endif()
 
 if(ENABLE_SCTP)
 	set(USE_SCTP 1)
-	add_subdirectory(network/usrsctp/usrsctplib)
+	add_subdirectory(external/usrsctp/usrsctplib)
 	#add_definitions(-DINET -DINET6)
 	#add_definitions(-DSCTP_WITH_NO_CSUM)
-# from network/usrsctp/usrsctplib/CMakeLists.txt :
+# from external/usrsctp/usrsctplib/CMakeLists.txt :
 if(SCTP_DEBUG)
 	add_definitions(-DSCTP_DEBUG)
 endif()
@@ -699,7 +699,7 @@ if (SCTP_WITH_NO_CSUM)
 	add_definitions(-DSCTP_WITH_NO_CSUM)
 endif()
 
-	include_directories(${PROJECT_SOURCE_DIR}/network/usrsctp/usrsctplib)
+	include_directories(${PROJECT_SOURCE_DIR}/external/usrsctp/usrsctplib)
 	set(SCTP_LIBRARY usrsctp-static)
 
 	set(USE_ENET 0)

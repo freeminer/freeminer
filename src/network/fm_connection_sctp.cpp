@@ -25,7 +25,7 @@ Very experimental sctp networking
 
 to build:
 add submodules:
-git submodule add https://github.com/sctplab/usrsctp.git src/network/usrsctp
+git submodule add https://github.com/sctplab/usrsctp.git src/external/usrsctp
 git submodule add https://github.com/proller/android-ifaddrs.git build/android/jni/android-ifaddrs
 
 and make with:
@@ -39,7 +39,7 @@ https://chromium.googlesource.com/external/webrtc/+/master/talk/media/sctp/sctpd
 */
 
 #include "network/fm_connection_sctp.h"
-#include "network/usrsctp/usrsctplib/usrsctp.h"
+#include "external/usrsctp/usrsctplib/usrsctp.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
