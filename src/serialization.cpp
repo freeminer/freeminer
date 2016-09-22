@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"
 
 #include "util/serialize.h"
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(WIN32_NO_ZLIB_WINAPI)
 	#define ZLIB_WINAPI
 #endif
 #include "zlib.h"
