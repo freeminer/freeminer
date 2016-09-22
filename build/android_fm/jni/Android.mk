@@ -82,7 +82,7 @@ LOCAL_MODULE := usrsctplib
 LOCAL_CFLAGS += -DUSE_SCTP=1 -DINET -DINET6
 #-DSCTP_WITH_NO_CSUM
 LOCAL_CFLAGS += -DSCTP_SIMPLE_ALLOCATOR -DSCTP_PROCESS_LEVEL_LOCKS -D__Userspace__ -D__Userspace_os_Linux
-LOCAL_C_INCLUDES := jni/src/network/external/usrsctplib
+LOCAL_C_INCLUDES := jni/src/external/usrsctp/usrsctplib
 LOCAL_SRC_FILES += $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/*.c) $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/netinet/*.c) $(wildcard $(LOCAL_PATH)/jni/src/external/usrsctp/usrsctplib/netinet6/*.c)
 LOCAL_C_INCLUDES += jni/android-ifaddrs
 LOCAL_SRC_FILES += jni/android-ifaddrs/ifaddrs.c
