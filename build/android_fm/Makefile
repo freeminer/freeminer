@@ -626,6 +626,7 @@ irrlicht_download : arch_dirs
 		${GIT_CLONE} --depth 200 --branch ${IRRLICHT_GIT_BRANCH} ${IRRLICHT_URL_GIT} irrlicht || exit 1; \
 		cd irrlicht;                                                           \
 		git checkout ${IRRLICHT_GIT_COMMIT}; \
+		git cherry-pick 47ccb75; \
 		mkdir -p lib/Android; \
 		patch -p1 < ../../patches/irrlicht-crystax.patch; \
 		patch -p1 < ../../patches/irrlicht-touchcount.patch || exit 1; \
