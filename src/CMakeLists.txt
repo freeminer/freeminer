@@ -899,6 +899,7 @@ set(client_SRCS
 	wieldmesh.cpp
 	${client_SCRIPT_SRCS}
 	${FMclient_SRCS}
+	${UNITTEST_CLIENT_SRCS}
 )
 list(SORT client_SRCS)
 
