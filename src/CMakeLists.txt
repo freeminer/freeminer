@@ -392,7 +392,7 @@ set(USE_FREETYPE FALSE)
 		set(CGUITTFONT_LIBRARY cguittfont)
 	endif()
 
-if(NOT FREETYPE_FOUND AND NOT NO_BUILD)
+if(NOT FREETYPE_FOUND AND NOT NO_BUILD AND BUILD_CLIENT)
 	message(FATAL_ERROR "FreeType was not found.")
 endif()
 
