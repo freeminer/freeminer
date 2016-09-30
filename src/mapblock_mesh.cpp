@@ -685,7 +685,8 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 {
 	*equivalent = false;
 
-	if(step <= 1 && (m1 == CONTENT_IGNORE || m2 == CONTENT_IGNORE))
+	bool have_ignore = (m1 == CONTENT_IGNORE || m2 == CONTENT_IGNORE);
+	if(step <= 1 && have_ignore)
 		return 0;
 
 	bool contents_differ = (m1 != m2);
@@ -702,9 +703,9 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 
 	if (step > 1) {
 		//no liquid/transparent borders
-		if (c1 == 1)
+		if (have_ignore && c1 == 1)
 			c1 = 0;
-		if (c2 == 1)
+		if (have_ignore && c2 == 1)
 			c2 = 0;
 		if (!c1)
 			c1 = f1.solidness_far;
