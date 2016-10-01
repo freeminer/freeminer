@@ -61,12 +61,13 @@ LEVELDB_VERSION = "1.16.0.5"
 CRC32C_VERSION = "1.1.0"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.4"
-curl = "curl-7.50.1"
+curl = "curl-7.50.3"
 openal = "openal-soft-1.17.2"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
 zlib = "zlib-1.2.8"
-freetype = "freetype-2.6.5"
+freetype = "freetype-2.7"
+freetype_lib = "27"
 luajit = "LuaJIT-2.0.4"
 gettext = "gettext-0.14.6"
 libiconv = "libiconv-1.9.2"
@@ -74,8 +75,9 @@ libiconv = "libiconv-1.9.2"
 #msgpack = "msgpack-c-{}".format(MSGPACK_VERSION)
 #SQLITE_VERSION="3080704"
 #sqlite = "sqlite-autoconf-{}".format(SQLITE_VERSION)
-SQLITE_VERSION="3.14.1"
-sqlite = "sqlite-{}".format(SQLITE_VERSION)
+#SQLITE_VERSION="3.14.1"
+SQLITE_VERSION="3140200"
+sqlite = "sqlite-amalgamation-{}".format(SQLITE_VERSION)
 
 #somtimes vs becomes mad
 #error MSB8020: The build tools for Visual Studio 2012 (Platform Toolset = 'v110') cannot be found.
@@ -104,6 +106,8 @@ def main():
 	if build_arch == "x64":
 		cmake_add = " -A X64 "
 
+	path_add = "_" + build_type + "_" + build_arch
+
 	msbuild = which("MSBuild.exe")
 	cmake = which("cmake.exe")
 	vcbuild = which("vcbuild.exe")
@@ -120,11 +124,11 @@ def main():
 	nuget = "NuGet.exe"
 	download("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", nuget)
 
-	if not os.path.exists("deps"):
-		print("Creating `deps` directory.")
-		os.mkdir("deps")
+	deps = "deps" + path_add
+	if not os.path.exists(deps):
+		os.mkdir(deps)
 
-	os.chdir("deps")
+	os.chdir(deps)
 	if not os.path.exists(irrlicht):
 		print("Irrlicht not found, downloading.")
 		zip_path = "{}.zip".format(irrlicht)
@@ -327,13 +331,13 @@ def main():
 	#if not os.path.exists("sqlite.redist.nupkg"):
 	#	download("http://www.nuget.org/api/v2/package/sqlite.redist/{}".format(SQLITE_VERSION), "sqlite.redist.nupkg")		
 
-	#if not os.path.exists(sqlite):
-		#print("sqlite not found, downloading.")
-		#os.mkdir(sqlite)
+	if not os.path.exists(sqlite):
+		print("sqlite not found, downloading.")
+		os.mkdir(sqlite)
 
-		#zip_path = "sqlite-amalgamation-{}.zip".format(SQLITE_VERSION)
-		#download("http://www.sqlite.org/snapshot/{}".format(zip_path), zip_path)
-		#extract_zip(zip_path, sqlite)
+		zip_path = "sqlite-amalgamation-{}.zip".format(SQLITE_VERSION)
+		download("http://www.sqlite.org/2016/{}".format(zip_path), zip_path)
+		extract_zip(zip_path, ".")
 
 		#tar_path = "{}.tar.gz".format(sqlite)
 		#download("http://www.sqlite.org/2014/{}".format(tar_path), tar_path)
@@ -344,6 +348,12 @@ def main():
 		#os.system("MSBuild ALL_BUILD.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 		#os.chdir("..")
 
+	sqlite_external = os.path.join("..", "..", "..", "src", "external", "sqlite3")
+	if not os.path.exists(os.path.join(sqlite_external, "sqlite3.h")):
+	        shutil.copyfile(os.path.join(sqlite, "sqlite3.h"), os.path.join(sqlite_external, "sqlite3.h"))    
+	if not os.path.exists(os.path.join(sqlite_external, "sqlite3.c")):
+	        shutil.copyfile(os.path.join(sqlite, "sqlite3.c"), os.path.join(sqlite_external, "sqlite3.c"))    
+
 	
 	os.chdir("..")
 	
@@ -352,40 +362,42 @@ def main():
 	os.environ["CL"] = "/MP"
 	#if os.path.exists("project"):
 	#	shutil.rmtree("project")
-	if os.path.exists("install_tmp"):
-		shutil.rmtree("install_tmp")
-	if not os.path.exists("project"):
-		os.mkdir("project")
-	os.chdir("project")
+	install_tmp = "install_tmp" + path_add
+	if os.path.exists(install_tmp):
+		shutil.rmtree(install_tmp)
+	project = "project" + path_add
+	if not os.path.exists(project):
+		os.mkdir(project)
+	os.chdir(project)
 
 	# install LevelDB package
-	os.system(r"..\NuGet.exe install LevelDB -source {}\..\deps".format(os.getcwd()))
+	os.system(r"..\NuGet.exe install LevelDB -source {cwd}\..\{deps}".format(cwd=os.getcwd(), deps=deps))
 
 	cmake_string = r"""
 		-DCMAKE_BUILD_TYPE={build_type}
 		-DRUN_IN_PLACE=1
 		-DCUSTOM_BINDIR=.
-		-DCMAKE_INSTALL_PREFIX=..\install_tmp\
+		-DCMAKE_INSTALL_PREFIX=..\{install_tmp}\
 		-DSTATIC_BUILD=1
-		-DIRRLICHT_SOURCE_DIR=..\deps\{irrlicht}\
+		-DIRRLICHT_SOURCE_DIR=..\{deps}\{irrlicht}\
 		-DENABLE_SOUND=1
-		-DOPENAL_INCLUDE_DIR=..\deps\{openal}\include\AL\
-		-DOPENAL_LIBRARY=..\deps\{openal}\build\{build_type}\OpenAL32.lib;..\deps\{openal}\build\{build_type}\common.lib
-		-DOGG_INCLUDE_DIR=..\deps\{libogg}\include\
-		-DOGG_LIBRARY=..\deps\{libogg}\win32\VS2010\{ogg_arch}\{build_type}\libogg_static.lib
-		-DVORBIS_INCLUDE_DIR=..\deps\{libvorbis}\include\
-		-DVORBIS_LIBRARY=..\deps\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbis_static.lib
-		-DVORBISFILE_LIBRARY=..\deps\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbisfile_static.lib
-		-DZLIB_INCLUDE_DIR=..\deps\{zlib}\
-		-DZLIB_LIBRARIES=..\deps\{zlib}\contrib\vstudio\vc11\{curl_arch}\ZlibStat{build_type}\zlibstat.lib
-		-DFREETYPE_INCLUDE_DIR_freetype2=..\deps\{freetype}\include\
-		-DFREETYPE_INCLUDE_DIR_ft2build=..\deps\{freetype}\include\
-		-DFREETYPE_LIBRARY=..\deps\{freetype}\objs\vc2010\{freetype_arch}\{freetype_lib}
-		-DLUA_LIBRARY=..\deps\{luajit}\src\lua51.lib
-		-DLUA_INCLUDE_DIR=..\deps\{luajit}\src\
+		-DOPENAL_INCLUDE_DIR=..\{deps}\{openal}\include\AL\
+		-DOPENAL_LIBRARY=..\{deps}\{openal}\build\{build_type}\OpenAL32.lib;..\{deps}\{openal}\build\{build_type}\common.lib
+		-DOGG_INCLUDE_DIR=..\{deps}\{libogg}\include\
+		-DOGG_LIBRARY=..\{deps}\{libogg}\win32\VS2010\{ogg_arch}\{build_type}\libogg_static.lib
+		-DVORBIS_INCLUDE_DIR=..\{deps}\{libvorbis}\include\
+		-DVORBIS_LIBRARY=..\{deps}\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbis_static.lib
+		-DVORBISFILE_LIBRARY=..\{deps}\{libvorbis}\win32\VS2010\{vorbis_arch}\{build_type}\libvorbisfile_static.lib
+		-DZLIB_INCLUDE_DIR=..\{deps}\{zlib}\
+		-DZLIB_LIBRARIES=..\{deps}\{zlib}\contrib\vstudio\vc11\{curl_arch}\ZlibStat{build_type}\zlibstat.lib
+		-DFREETYPE_INCLUDE_DIR_freetype2=..\{deps}\{freetype}\include\
+		-DFREETYPE_INCLUDE_DIR_ft2build=..\{deps}\{freetype}\include\
+		-DFREETYPE_LIBRARY=..\{deps}\{freetype}\objs\vc2010\{freetype_arch}\{freetype_lib}
+		-DLUA_LIBRARY=..\{deps}\{luajit}\src\lua51.lib
+		-DLUA_INCLUDE_DIR=..\{deps}\{luajit}\src\
 		-DENABLE_CURL=1
-		-DCURL_LIBRARY=..\deps\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\lib\{curl_lib}
-		-DCURL_INCLUDE_DIR=..\deps\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\include
+		-DCURL_LIBRARY=..\{deps}\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\lib\{curl_lib}
+		-DCURL_INCLUDE_DIR=..\{deps}\{curl}\builds\libcurl-vc-{curl_arch}-{build_type}-static-ipv6-sspi-winssl\include
 		-DGETTEXT_INCLUDE_DIR=C:\usr\include\
 		-DGETTEXT_LIBRARY=C:\usr\lib\intl.lib
 		-DICONV_LIBRARY=C:\usr\lib\iconv.lib
@@ -397,12 +409,14 @@ def main():
 		-DENABLE_SCTP={enable_sctp}
 		{cmake_add}
 	""".format(
+                deps=deps,
+                install_tmp=install_tmp,
 		curl_lib="libcurl_a.lib" if build_type != "Debug" else "libcurl_a_debug.lib",
 		curl_arch=build_arch,
 		vorbis_arch="Win32" if build_arch == "x86" else "x64",
 		ogg_arch="Win32" if build_arch == "x86" else "X64",
 		freetype_arch="win32" if build_arch == "x86" else "X64",
-		freetype_lib="freetype265MT.lib" if build_type != "Debug" else "freetype265MTd.lib",
+		freetype_lib="freetype"+freetype_lib+"MT.lib" if build_type != "Debug" else "freetype"+freetype_lib+"MTd.lib",
 		build_type=build_type,
 		irrlicht=irrlicht,
 		zlib=zlib,
@@ -420,12 +434,16 @@ def main():
 	).replace("\n", "")
 
 # now in cmake
-#		-DMSGPACK_INCLUDE_DIR=..\deps\{msgpack}\include\
-#		-DMSGPACK_LIBRARY=..\deps\{msgpack}\lib\msgpack{msgpack_suffix}.lib
+#		-DMSGPACK_INCLUDE_DIR=..\{deps}\{msgpack}\include\
+#		-DMSGPACK_LIBRARY=..\{deps}\{msgpack}\lib\msgpack{msgpack_suffix}.lib
 
 	os.system(r"cmake ..\..\.. " + cmake_string)
 	patch(os.path.join("src", "freeminer.vcxproj"), "</AdditionalLibraryDirectories>", r";$(DXSDK_DIR)\Lib\{}</AdditionalLibraryDirectories>".format(msbuild_platform))
 	#patch(os.path.join("src", "sqlite", "sqlite3.vcxproj"), "MultiThreadedDebugDLL", "MultiThreadedDebug")
+	if os.path.exists(os.path.join("src", "external", "sqlite3", "sqlite3.vcxproj")):
+		patch(os.path.join("src", "external", "sqlite3", "sqlite3.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
+		patch(os.path.join("src", "external", "sqlite3", "sqlite3.vcxproj"), "<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>")
+
 	# wtf, cmake?
 	if os.path.exists(os.path.join("src", "external", "enet", "enet.vcxproj")):
 		patch(os.path.join("src", "external", "enet", "enet.vcxproj"), "<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>", "<RuntimeLibrary>MultiThreaded</RuntimeLibrary>")
@@ -445,7 +463,7 @@ def main():
 		<ItemGroup Label="ProjectConfigurations">""".format(CRC32C_VERSION=CRC32C_VERSION, SNAPPY_VERSION=SNAPPY_VERSION, LEVELDB_VERSION=LEVELDB_VERSION))
 
 	## install sqlite package
-	#os.system(r"..\NuGet.exe install sqlite -source {}\..\deps".format(os.getcwd()))
+	#os.system(r"..\NuGet.exe install sqlite -source {cwd}\..\{deps}".format(cwd=os.getcwd(), deps=deps))
 	## patch project file to use these packages
 	#patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
 	#	r"""<Import Project="..\sqlite.{}\build\native\sqlite.targets" Condition="Exists('..\sqlite.{}\build\native\sqlite.targets')" />

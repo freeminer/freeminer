@@ -1,13 +1,13 @@
 To build Freeminer using Visual Studio for Windows you'll need:
-  virtualbox, ~25GB space
-  - [windows 10] http://www.microsoft.com/en-us/software-download/windows10
+  virtualbox, ~25GB space (if you have no native windows installed)
+  - [windows 10](http://www.microsoft.com/en-us/software-download/windows10)
 - [CMake](http://www.cmake.org/cmake/resources/software.html) and [Git](http://msysgit.github.io/), both should be in your PATH
 - [Python 3.x](https://www.python.org/downloads/)
 - [Visual Studio 2015 Community](http://www.visualstudio.com/downloads/download-visual-studio-vs)
 - [DirectX SDK](http://www.microsoft.com/en-us/download/details.aspx?id=6812)
 
 Automated build:
-build.bat
+build_64.bat
 
 
 Manual build (with debug support):
