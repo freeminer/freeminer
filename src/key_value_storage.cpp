@@ -31,6 +31,7 @@ KeyValueStorage::KeyValueStorage(const std::string &savedir, const std::string &
 	open();
 }
 
+#if USE_LEVELDB
 bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen) {
 	if (status.ok()) {
 		return true;
@@ -76,6 +77,7 @@ bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen
 	}
 	return status.ok();
 }
+#endif
 
 bool KeyValueStorage::open() {
 #if USE_LEVELDB

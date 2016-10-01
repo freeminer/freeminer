@@ -106,6 +106,8 @@ def main():
 	if build_arch == "x64":
 		cmake_add = " -A X64 "
 
+	enable_leveldb = 1 if build_type != "Debug" else 0
+
 	path_add = "_" + build_type + "_" + build_arch
 
 	msbuild = which("MSBuild.exe")
@@ -317,7 +319,7 @@ def main():
 	#	os.system('MSBuild msgpack_vc8.vcxproj /p:Configuration="{build_type}" /p:Platform="{msbuild_platform}"'.format(build_type=build_type, msbuild_platform=msbuild_platform))
 	#	os.chdir("..")
 
-	if not os.path.exists("leveldb.nupkg"):
+	if enable_leveldb and not os.path.exists("leveldb.nupkg"):
 		print("Downloading LevelDB + dependencies from NuGet")
 		#download("http://www.nuget.org/api/v2/package/LevelDB/{}".format(LEVELDB_VERSION), "leveldb.nupkg")
 		#download("http://www.nuget.org/api/v2/package/Crc32C/{}".format(CRC32C_VERSION), "crc32c.nupkg")
@@ -371,7 +373,8 @@ def main():
 	os.chdir(project)
 
 	# install LevelDB package
-	os.system(r"..\NuGet.exe install LevelDB -source {cwd}\..\{deps}".format(cwd=os.getcwd(), deps=deps))
+	if enable_leveldb:
+		os.system(r"..\NuGet.exe install LevelDB -source {cwd}\..\{deps}".format(cwd=os.getcwd(), deps=deps))
 
 	cmake_string = r"""
 		-DCMAKE_BUILD_TYPE={build_type}
@@ -427,7 +430,7 @@ def main():
 		libvorbis=libvorbis,
 		curl=curl,
 		cmake_add=cmake_add,
-		enable_leveldb="1" if build_type != "Debug" else "0",
+		enable_leveldb="1" if enable_leveldb else "0",
 		enable_sctp=enable_sctp,
 		#msgpack=msgpack,
 		#msgpack_suffix="d" if build_type == "Debug" else "",
@@ -455,7 +458,7 @@ def main():
 
 	# patch project file to use these packages
 
-	if build_type == "Release":
+	if enable_leveldb and build_type == "Release":
 		patch(os.path.join("src", "freeminer.vcxproj"), '<ItemGroup Label="ProjectConfigurations">',
 		r"""<Import Project="..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props" Condition="Exists('..\LevelDB.{LEVELDB_VERSION}\build\native\LevelDB.props')" />
 		<Import Project="..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props" Condition="Exists('..\Snappy.{SNAPPY_VERSION}\build\native\Snappy.props')" />
