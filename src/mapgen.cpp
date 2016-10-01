@@ -884,6 +884,8 @@ void MapgenBasic::dustTopNodes()
 		}
 
 		content_t c = vm->m_data[vi].getContent();
+
+		if (c == c_stone || c == biome->c_stone || c == c_desert_stone || c == c_sandstone || c == c_mossycobble || c == c_sandstonebrick)
 		if (!ndef->get(c).buildable_to && c != CONTENT_IGNORE && c != biome->c_dust) {
 			vm->m_area.add_y(em, vi, 1);
 			vm->m_data[vi] = MapNode(biome->c_dust);
