@@ -200,8 +200,15 @@ local function formspec(tabview, name, tabdata)
 		"dropdown[3.85,2.6;3.85;dd_antialiasing;" .. dd_options.antialiasing[1] .. ";"
 				.. getSettingIndex.Antialiasing() .. "]" ..
 		"box[7.75,0;4,4.4;#999999]" ..
+
+		""
+		if PLATFORM ~= "Android" or core.setting_getbool("enable_shaders") then
+			tab_string = tab_string ..
+
 		"checkbox[8,0;cb_shaders;" .. fgettext("Shaders") .. ";"
 				.. dump(core.setting_getbool("enable_shaders")) .. "]"
+
+		end
 
 	if PLATFORM == "Android" then
 		tab_string = tab_string ..
