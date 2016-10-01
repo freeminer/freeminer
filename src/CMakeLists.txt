@@ -501,7 +501,6 @@ if(ENABLE_SQLITE3)
 endif()
 
 if(FORCE_SQLITE3)
-
 	set(USE_SQLITE3 1)
 endif()
 
