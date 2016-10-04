@@ -43,7 +43,7 @@ ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 SDK_VERSION = 15
 PROJECT_NAME_C = freeminer
 
-GAMES_VERSION = ""
+GAMES_VERSION = "5"
 
 GIT_CLONE = git clone --recursive --depth 10
 
