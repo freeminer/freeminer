@@ -201,7 +201,9 @@ MapgenIndevParams::MapgenIndevParams() {
 void MapgenIndevParams::readParams(Settings *settings) {
 	MapgenV6Params::readParams(settings);
 
-	paramsj = settings->getJson("mg_params", paramsj);
+	auto mg_params = settings->getJson("mg_params", paramsj);
+	if (!mg_params.isNull())
+		paramsj = mg_params;
 	settings->getS16NoEx("mg_float_islands", float_islands);
 
 	settings->getNoiseParamsFromGroup("mgindev_np_terrain_base",   np_terrain_base);

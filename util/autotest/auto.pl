@@ -145,6 +145,7 @@ sub init_config () {
         tee            => '2>&1 | tee -a ',
         run_task       => 'run_single',
         cache_clear => 0,    # remove cache dir before start client
+        world_clear => 0,    # remove old world before start client
              #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
              #make_add     => '',
              #run_add       => '',
@@ -231,6 +232,11 @@ our $options = {
         -world    => $script_path . 'world_torch',
         mg_params => {"layers" => [{"name" => "default:torch"}, {"name" => "default:glass"}]},
     },
+    world_rooms => {
+        #-world    => $script_path . 'world_rooms',
+        mg_name   => 'math',
+        mg_math => {"generator" => "rooms"},
+    },
     mg_math_tglag => {
         -world            => $script_path . 'world_math_tglad',
         mg_name           => 'math',
@@ -263,6 +269,14 @@ our $options = {
     },
     client_optimize => {
         viewing_range => 15,
+    },
+    creative => {
+        default_privs_creative => 'interact,shout,fly,fast,noclip',
+        #default_privs => 'interact,shout,fly,fast,noclip',
+        creative_mode      => 1,
+        free_move          => 1,
+        noclip             => 1,
+        enable_damage      => 0,
     },
     fly_forward => {
         crosshair_alpha    => 0,
@@ -297,6 +311,7 @@ our $commands = {
         return 0;
     },
     cmake => sub {
+        return if $config->{no_cmake};
         my %D;
         $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
@@ -332,6 +347,7 @@ our $commands = {
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
+        sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
         #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world address port config autoexit);
         sy qq{$config->{env} $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world address port config autoexit verbose)])

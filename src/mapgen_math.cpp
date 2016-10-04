@@ -20,6 +20,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <cmath>
+#include <functional>
+
 #include "mapgen_math.h"
 #include "voxel.h"
 #include "mapblock.h"
@@ -40,7 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mandelbulber/fractal.cpp"
 #endif
 
-double mandelbox(double x, double y, double z, double d, int nn = 10) {
+inline double mandelbox(double x, double y, double z, double d, int nn = 10) {
 	int s = 7;
 	x *= s;
 	y *= s;
@@ -99,7 +101,7 @@ double mandelbox(double x, double y, double z, double d, int nn = 10) {
 
 }
 
-double mengersponge(double x, double y, double z, double d, int MI = 10) {
+inline double mengersponge(double x, double y, double z, double d, int MI = 10) {
 	double r = x * x + y * y + z * z;
 	double scale = 3;
 	int i = 0;
@@ -136,8 +138,51 @@ double mengersponge(double x, double y, double z, double d, int MI = 10) {
 	return ((sqrt(r)) * pow(scale, (-i)) < d);
 }
 
-double sphere(double x, double y, double z, double d, int ITR = 1) {
+inline double sphere(double x, double y, double z, double d, int ITR = 1) {
 	return v3f(x, y, z).getLength() < d;
+}
+
+
+inline double rooms(double dx, double dy, double dz, double d, int ITR = 1) {
+	int x = dx, y = dy, z = dz;
+	//if (x < y && x < z) return 0; // debug slice
+	auto rooms_pow_min = 2, rooms_pow_max = 10;
+	auto rooms_pow_cut_max = 8;
+	for (int pw = rooms_pow_min; pw <= rooms_pow_max; ++pw) {
+		int every = 2 << pw;
+		//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " tx="<<((int)x%every)<<"\n";
+		auto xhit = !(x%every), yhit = !(y%every), zhit = !(z%every);
+		if (xhit || yhit || zhit) {
+			//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
+			int cx = 0, cy = 0, cz = 0;
+			int room_n = 0;
+			for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
+				//int every2 = 2 << pw2;
+				int lv = 1;
+				lv += x < cx;
+				lv += (y < cy)<<1;
+				lv += (z < cz)<<2;
+				//value = lv + value * pow(10, tens);
+				//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
+				room_n = lv + room_n * 10;
+				if (pw2 <= rooms_pow_cut_max && !( std::hash<double>()(room_n + 0) % 13)) { 
+					//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
+					//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
+					int pw3 = pw2+1;
+					if ((x>>pw3) == (x-1)>>pw3 && (y>>pw3) == (y-1)>>pw3 && (z>>pw3) == (z-1)>>pw3) {
+						return 0;
+					}
+				}
+				//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
+				int room_size = 2 << (pw2-1);
+				cx+= ((x < cx) ? -1 : 1) * room_size;
+				cy+= ((y < cy) ? -1 : 1) * room_size;
+				cz+= ((z < cz) ? -1 : 1) * room_size;
+			}
+			return pw;
+		}
+	}
+	return 0;
 }
 
 //////////////////////// Mapgen Math parameter read/write
@@ -146,7 +191,9 @@ void MapgenMathParams::readParams(Settings *settings) {
 	try {
 		MapgenV7Params::readParams(settings);
 	} catch (...) {}
-	params = settings->getJson("mg_math");
+	auto mg_math = settings->getJson("mg_math");
+	if (!mg_math.isNull())
+		params = mg_math;
 }
 
 void MapgenMathParams::writeParams(Settings *settings) const {
@@ -215,6 +262,12 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 		invert = params.get("invert", 0).asBool();
 		size = params.get("size", 100).asDouble();
 		//scale = params.get("scale", 1.0 / size).asDouble();
+	} else if (params["generator"].asString() == "rooms") {
+		internal = 1;
+		func = &rooms;
+		invert = params.get("invert", 0).asBool();
+		//result_max = 10;
+		size = params.get("size", 1).asDouble();
 	}
 
 
@@ -455,7 +508,8 @@ MapgenMath::~MapgenMath() {
 //////////////////////// Map generator
 
 MapNode MapgenMath::layers_get(float value, float max) {
-	auto layer_index = rangelim((unsigned int)myround((value/max) * layers_node.size()), 0, layers_node.size()-1);
+	auto layer_index = rangelim((unsigned int)myround((value/max) * layers_node_size), 0, layers_node_size-1);
+	//errorstream<<"lsM: "<< " layer_index="<<layer_index<< " value="<<value<<" max="<< max<<" noise_layers_width="<<noise_layers_width<<" layers_node_size="<<layers_node_size<<std::endl;
 	return layers_node[layer_index];
 }
 
@@ -512,7 +566,7 @@ int MapgenMath::generateTerrain() {
 					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
-						if (invert) {
+						if (invert || !no_layers) {
 							int index3 = (z - node_min.Z) * zstride_1d +
 								(y - node_min.Y) * ystride +
 								(x - node_min.X);

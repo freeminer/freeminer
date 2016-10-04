@@ -73,6 +73,7 @@ public:
 	int iterations;
 	double distance;
 	double result_max;
+	bool no_layers = false;
 
 	MapNode n_air, n_water, n_stone;
 
