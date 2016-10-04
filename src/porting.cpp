@@ -662,10 +662,6 @@ bool setXorgWindowIcon(IrrlichtDevice *device)
 #	endif
 #else
 	return false;
-
-#else
-	return false;
-
 #endif
 }
 

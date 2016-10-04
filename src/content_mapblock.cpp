@@ -1031,10 +1031,12 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				{
 					//vertices[i].Pos.Y += liquid_level;
 					//vertices[i].Pos.Y += neighbor_levels[v3s16(0,0,0)];
+					auto & neighbor_data = neighbor_data_matrix[NeighborToIndex(neighbor_dirs[0])];
+
 					s32 j = corner_resolve[i];
 					vertices[i].Pos.Y += corner_levels[j];
-					if (neighbor_levels[neighbor_dirs[0]] > corner_levels[j] + 0.25 ||
-					    neighbor_levels[neighbor_dirs[0]] < corner_levels[j] - 0.25)
+					if (neighbor_data.level > corner_levels[j] + 0.25 ||
+					    neighbor_data.level < corner_levels[j] - 0.25)
 						current_tile = &tile_liquid;
 					vertices[i].Pos += intToFloat(p, BS);
 				}
