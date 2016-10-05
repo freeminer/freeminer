@@ -1382,8 +1382,7 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 {
 	int obj_null = 0, obj_count = 0;
 	auto lock = m_active_objects.lock_shared_rec();
-	for(auto
-			i = m_active_objects.begin();
+	for(auto i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i)
 	{
 		++obj_count;
@@ -1397,7 +1396,7 @@ void ServerEnvironment::getObjectsInsideRadius(std::vector<u16> &objects, v3f po
 			continue;
 
 		v3f objectpos = obj->getBasePosition();
-		if(objectpos.getDistanceFrom(pos) > radius)
+		if (objectpos.getDistanceFrom(pos) > radius)
 			continue;
 		objects.push_back(id);
 	}
@@ -1412,8 +1411,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 	std::vector<u16> objects_to_remove;
 	auto lock = m_active_objects.lock_unique_rec();
 
-	for( auto
-			i = m_active_objects.begin();
+	for( auto i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i) {
 		ServerActiveObject* obj = i->second;
 		if (obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
@@ -1953,7 +1951,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		Manage particle spawner expiration
 	*/
 	if (m_particle_management_interval.step(dtime, 1.0)) {
-		for (std::map<u32, float>::iterator i = m_particle_spawners.begin();
+		for (UNORDERED_MAP<u32, float>::iterator i = m_particle_spawners.begin();
 				i != m_particle_spawners.end(); ) {
 			//non expiring spawners
 			if (i->second == PARTICLE_SPAWNER_NO_EXPIRY) {
@@ -1978,19 +1976,13 @@ u32 ServerEnvironment::addParticleSpawner(float exptime)
 	u32 id = 0;
 	for (;;) { // look for unused particlespawner id
 		id++;
-		std::map<u32, float>::iterator f;
-		f = m_particle_spawners.find(id);
+		UNORDERED_MAP<u32, float>::iterator f = m_particle_spawners.find(id);
 		if (f == m_particle_spawners.end()) {
 			m_particle_spawners[id] = time;
 			break;
 		}
 	}
 	return id;
-}
-
-void ServerEnvironment::deleteParticleSpawner(u32 id)
-{
-	m_particle_spawners.erase(id);
 }
 
 int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
@@ -2087,17 +2079,15 @@ ServerActiveObject* ServerEnvironment::getActiveObject(u16 id, bool removed)
 	return n->second;
 }
 
-bool isFreeServerActiveObjectId(u16 id,
-		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
+bool isFreeServerActiveObjectId(u16 id, ActiveObjectMap &objects)
 {
-	if(id == 0)
+	if (id == 0)
 		return false;
 
 	return objects.find(id) == objects.end();
 }
 
-u16 getFreeServerActiveObjectId(
-		maybe_concurrent_map<u16, ServerActiveObject*> &objects)
+u16 getFreeServerActiveObjectId(ActiveObjectMap &objects)
 {
 	auto lock = objects.lock_unique_rec();
 	//try to reuse id's as late as possible
@@ -2157,8 +2147,7 @@ void ServerEnvironment::getAddedActiveObjects(Player *player, s16 radius,
 	if (!lock->owns_lock())
 		return;
 	auto player_position = player->getPosition();
-	for(auto
-			i = m_active_objects.begin();
+	for(auto i = m_active_objects.begin();
 			i != m_active_objects.end(); ++i) {
 		u16 id = i->first;
 
@@ -2265,8 +2254,7 @@ void ServerEnvironment::setStaticForActiveObjectsInBlock(
 			so_it = block->m_static_objects.m_active.begin();
 			so_it != block->m_static_objects.m_active.end(); ++so_it) {
 		// Get the ServerActiveObject counterpart to this StaticObject
-		std::map<u16, ServerActiveObject *>::iterator ao_it;
-		ao_it = m_active_objects.find(so_it->first);
+		ActiveObjectMap::iterator ao_it = m_active_objects.find(so_it->first);
 		if (ao_it == m_active_objects.end()) {
 			// If this ever happens, there must be some kind of nasty bug.
 			errorstream << "ServerEnvironment::setStaticForObjectsInBlock(): "
@@ -2319,8 +2307,8 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		verbosestream<<"ServerEnvironment::addActiveObjectRaw(): "
 				<<"supplied with id "<<object->getId()<<std::endl;
 	}
-	if(isFreeServerActiveObjectId(object->getId(), m_active_objects) == false)
-	{
+
+	if(!isFreeServerActiveObjectId(object->getId(), m_active_objects)) {
 		errorstream<<"ServerEnvironment::addActiveObjectRaw(): "
 				<<"id is not free ("<<object->getId()<<")"<<std::endl;
 		if(object->environmentDeletes())
@@ -2435,7 +2423,7 @@ void ServerEnvironment::removeRemovedObjects(unsigned int max_cycle_ms)
 			We will delete objects that are marked as removed or thatare
 			waiting for deletion after deactivation
 		*/
-		if(obj->m_removed == false && obj->m_pending_deactivation == false)
+		if (!obj->m_removed && !obj->m_pending_deactivation)
 			continue;
 
 		/*

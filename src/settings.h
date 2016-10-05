@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "threading/mutex.h"
 #include <string>
-#include <map>
+#include "util/cpp11_container.h"
 #include <list>
 #include <set>
 
@@ -53,7 +53,7 @@ typedef std::vector<
 	>
 > SettingsCallbackList;
 
-typedef std::map<std::string, SettingsCallbackList> SettingsCallbackMap;
+typedef UNORDERED_MAP<std::string, SettingsCallbackList> SettingsCallbackMap;
 
 enum ValueType {
 	VALUETYPE_STRING,
@@ -105,6 +105,8 @@ struct SettingsEntry {
 	Settings *group;
 	bool is_group;
 };
+
+typedef UNORDERED_MAP<std::string, SettingsEntry> SettingEntries;
 
 class Settings {
 public:
@@ -257,8 +259,8 @@ private:
 
 	void doCallbacks(const std::string &name) const;
 
-	std::map<std::string, SettingsEntry> m_settings;
-	std::map<std::string, SettingsEntry> m_defaults;
+	SettingEntries m_settings;
+	SettingEntries m_defaults;
 
 	SettingsCallbackMap m_callbacks;
 

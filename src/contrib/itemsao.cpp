@@ -101,7 +101,7 @@ void ItemSAO::addedToEnvironment(u32 dtime_s)
 	m_acceleration = v3f(0, -10 * BS, 0);
 
 	// And make it immortal
-	std::map<std::string, int> armor_groups;
+	ItemGroupList armor_groups;
 	armor_groups["immortal"] = 1;
 	setArmorGroups(armor_groups);
 }

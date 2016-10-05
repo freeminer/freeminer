@@ -24,14 +24,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define ITEMGROUP_HEADER
 
 #include <string>
-#include <map>
+#include "util/cpp11_container.h"
 
-typedef std::map<std::string, int> ItemGroupList;
+typedef UNORDERED_MAP<std::string, int> ItemGroupList;
 
 static inline int itemgroup_get(const ItemGroupList &groups,
 		const std::string &name)
 {
-	std::map<std::string, int>::const_iterator i = groups.find(name);
+	ItemGroupList::const_iterator i = groups.find(name);
 	if(i == groups.end())
 		return 0;
 	return i->second;

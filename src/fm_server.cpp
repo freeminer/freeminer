@@ -315,11 +315,11 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		auto lockmapl = m_env->getMap().m_nothread_locker.try_lock_unique_rec();
 		if (lockmapl->owns_lock())
 #endif
-			if(!m_more_threads && m_liquid_transform_timer >= m_liquid_transform_interval) {
+			if(!m_more_threads && m_liquid_transform_timer >= m_liquid_transform_every) {
 
 				TimeTaker timer_step("Server step: liquid transform");
-				m_liquid_transform_timer -= m_liquid_transform_interval;
-				if (m_liquid_transform_timer > m_liquid_transform_interval * 2)
+				m_liquid_transform_timer -= m_liquid_transform_every;
+				if (m_liquid_transform_timer > m_liquid_transform_every * 2)
 					m_liquid_transform_timer = 0;
 
 				//MutexAutoLock lock(m_env_mutex);
@@ -329,7 +329,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 				// not all liquid was processed per step, forcing on next step
 				//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
 				if (m_env->getMap().transformLiquids(this, max_cycle_ms) > 0) {
-					m_liquid_transform_timer = m_liquid_transform_interval /*  *0.8  */;
+					m_liquid_transform_timer = m_liquid_transform_every /*  *0.8  */;
 					++ret;
 				}
 			}

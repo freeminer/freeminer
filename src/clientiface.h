@@ -31,10 +31,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
 #include "network/networkpacket.h"
+#include "util/cpp11_container.h"
 
 #include <list>
 #include <vector>
-#include <map>
 #include <set>
 
 #include "msgpack_fix.h"

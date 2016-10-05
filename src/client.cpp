@@ -289,7 +289,7 @@ Client::~Client()
 	delete m_inventory_from_server;
 
 	// Delete detached inventories
-	for (std::map<std::string, Inventory*>::iterator
+	for (UNORDERED_MAP<std::string, Inventory*>::iterator
 			i = m_detached_inventories.begin();
 			i != m_detached_inventories.end(); ++i) {
 		delete i->second;
@@ -1532,7 +1532,7 @@ Inventory* Client::getInventory(const InventoryLocation &loc)
 	break;
 	case InventoryLocation::DETACHED:
 	{
-		if(m_detached_inventories.count(loc.name) == 0)
+		if (m_detached_inventories.count(loc.name) == 0)
 			return NULL;
 		return m_detached_inventories[loc.name];
 	}

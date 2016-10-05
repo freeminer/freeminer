@@ -212,7 +212,7 @@ Server::Server(
 
 {
 	m_liquid_transform_timer = 0.0;
-	m_liquid_transform_interval = 1.0;
+	m_liquid_transform_every = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
 	m_print_info_timer = 0.0;
@@ -415,9 +415,10 @@ Server::Server(
 	add_legacy_abms(m_env, m_nodedef);
 
 	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
-
-	m_liquid_transform_interval = g_settings->getFloat("liquid_update");
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
+
+	m_liquid_transform_every = g_settings->getFloat("liquid_update");
+	m_max_chatmessage_length = g_settings->getU16("chat_message_max_size");
 
 	m_emerge->startThreads();
 }
@@ -808,13 +809,14 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			player_radius = radius;
 
 		for(auto & client : clients) {
+
 			// If definitions and textures have not been sent, don't
 			// send objects either
 			if (client->getState() < CS_DefinitionsSent)
 				continue;
 
 			Player *player = m_env->getPlayer(client->peer_id);
-			if(player == NULL) {
+			if (player == NULL) {
 				// This can happen if the client timeouts somehow
 				/*warningstream<<FUNCTION_NAME<<": Client "
 						<<client->peer_id
@@ -3102,8 +3104,7 @@ void Server::handleChatInterfaceEvent(ChatEvent *evt)
 }
 
 std::wstring Server::handleChat(const std::string &name, const std::wstring &wname,
-	const std::wstring &wmessage, bool check_shout_priv,
-	u16 peer_id_to_avoid_sending)
+	const std::wstring &wmessage, bool check_shout_priv, RemotePlayer *player)
 {
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
@@ -3120,6 +3121,26 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 	// If script ate the message, don't proceed
 	if (ate)
 		return L"";
+
+	switch (player->canSendChatMessage()) {
+		case RPLAYER_CHATRESULT_FLOODING: {
+			std::wstringstream ws;
+			ws << L"You cannot send more messages. You are limited to "
+			   << g_settings->getFloat("chat_message_limit_per_10sec")
+			   << " messages per 10 seconds.";
+			return ws.str();
+		}
+		case RPLAYER_CHATRESULT_KICK:
+			DenyAccess_Legacy(player->peer_id, L"You have been kicked due to message flooding.");
+			return L"";
+		case RPLAYER_CHATRESULT_OK: break;
+		default: FATAL_ERROR("Unhandled chat filtering result found.");
+	}
+
+	if (m_max_chatmessage_length > 0 && wmessage.length() > m_max_chatmessage_length) {
+		return L"Your message exceed the maximum chat message limit set on the server. "
+			"It was refused. Send a shorter message";
+	}
 
 	// Commands are implemented in Lua, so only catch invalid
 	// commands that were not "eaten" and send an error back
@@ -3155,6 +3176,7 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 
 		std::vector<u16> clients = m_clients.getClientIDs();
 
+		u16 peer_id_to_avoid_sending = (player ? (u16)player->peer_id : PEER_ID_INEXISTENT);
 		for (u16 i = 0; i < clients.size(); i++) {
 			u16 cid = clients[i];
 			if (cid != peer_id_to_avoid_sending)

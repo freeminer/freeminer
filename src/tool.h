@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include <string>
 #include <iostream>
-#include <map>
+#include "util/cpp11_container.h"
 #include "itemgroup.h"
 
 #include "network/connection.h"
@@ -40,7 +40,7 @@ enum {
 
 struct ToolGroupCap
 {
-	std::map<int, float> times;
+	UNORDERED_MAP<int, float> times;
 	int maxlevel;
 	int uses;
 
@@ -51,8 +51,8 @@ struct ToolGroupCap
 
 	bool getTime(int rating, float *time) const
 	{
-		std::map<int, float>::const_iterator i = times.find(rating);
-		if(i == times.end()){
+		UNORDERED_MAP<int, float>::const_iterator i = times.find(rating);
+		if (i == times.end()) {
 			*time = 0;
 			return false;
 		}
@@ -80,9 +80,8 @@ struct ToolGroupCap
 };
 
 
-// CLANG SUCKS DONKEY BALLS
-typedef std::map<std::string, struct ToolGroupCap> ToolGCMap;
-typedef std::map<std::string, s16> DamageGroup;
+typedef UNORDERED_MAP<std::string, struct ToolGroupCap> ToolGCMap;
+typedef UNORDERED_MAP<std::string, s16> DamageGroup;
 
 enum {
 	TOOLCAP_FULL_PUNCH_INTERVAL,
@@ -95,14 +94,12 @@ struct ToolCapabilities
 {
 	float full_punch_interval;
 	int max_drop_level;
-	// CLANG SUCKS DONKEY BALLS
 	ToolGCMap groupcaps;
 	DamageGroup damageGroups;
 
 	ToolCapabilities(
 			float full_punch_interval_=1.4,
 			int max_drop_level_=1,
-			// CLANG SUCKS DONKEY BALLS
 			ToolGCMap groupcaps_=ToolGCMap(),
 			DamageGroup damageGroups_=DamageGroup()
 	):

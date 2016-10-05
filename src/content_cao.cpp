@@ -572,7 +572,7 @@ GenericCAO::GenericCAO(IGameDef *gamedef, ClientEnvironment *env):
 		m_animation_speed(15),
 		m_animation_blend(0),
 		m_animation_loop(true),
-		m_bone_position(std::map<std::string, core::vector2d<v3f> >()),
+		m_bone_position(UNORDERED_MAP<std::string, core::vector2d<v3f> >()),
 		m_attachment_bone(""),
 		m_attachment_position(v3f(0,0,0)),
 		m_attachment_rotation(v3f(0,0,0)),
@@ -1552,10 +1552,8 @@ void GenericCAO::updateBonePosition()
 		return;
 
 	m_animated_meshnode->setJointMode(irr::scene::EJUOR_CONTROL); // To write positions to the mesh on render
-	for(std::map<std::string,
-			core::vector2d<v3f> >::const_iterator ii = m_bone_position.begin();
-			ii != m_bone_position.end(); ++ii)
-	{
+	for(UNORDERED_MAP<std::string, core::vector2d<v3f> >::const_iterator
+			ii = m_bone_position.begin(); ii != m_bone_position.end(); ++ii) {
 		std::string bone_name = (*ii).first;
 		v3f bone_pos = (*ii).second.X;
 		v3f bone_rot = (*ii).second.Y;

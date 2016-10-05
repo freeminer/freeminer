@@ -467,7 +467,7 @@ public:
 	u16 getHP();
 	u16 getBreath();
 
-	bool checkPrivilege(const std::string &priv)
+	bool checkPrivilege(const std::string &priv) const
 	{ return (m_privileges.count(priv) != 0); }
 
 	bool getChatMessage(std::string &message);
@@ -683,11 +683,11 @@ private:
 	std::map<int, u16> m_sounds_to_objects;
 
 	// Privileges
-	std::set<std::string> m_privileges;
+	UNORDERED_SET<std::string> m_privileges;
 
 	// Detached inventories
 	// key = name
-	std::map<std::string, Inventory*> m_detached_inventories;
+	UNORDERED_MAP<std::string, Inventory*> m_detached_inventories;
 	double m_uptime;
 	bool m_simple_singleplayer_mode;
 	float m_timelapse_timer;
