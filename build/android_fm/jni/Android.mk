@@ -102,6 +102,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := jsoncpp
 LOCAL_C_INCLUDES := jni/src/external/jsoncpp/include
 LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/jni/src/external/jsoncpp/src/lib_json/*.cpp)
+LOCAL_CFLAGS += -DNO_LOCALE_SUPPORT
 include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
