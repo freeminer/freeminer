@@ -979,7 +979,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		// Key = object id
 		// Value = data sent by object
-		std::map<u16, std::vector<ActiveObjectMessage>* > buffered_messages;
+		UNORDERED_MAP<u16, std::vector<ActiveObjectMessage>* > buffered_messages;
 
 		// Get active object messages from environment
 		for(;;) {
@@ -988,7 +988,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				break;
 
 			std::vector<ActiveObjectMessage>* message_list = NULL;
-			std::map<u16, std::vector<ActiveObjectMessage>* >::iterator n;
+			UNORDERED_MAP<u16, std::vector<ActiveObjectMessage>* >::iterator n;
 			n = buffered_messages.find(aom.id);
 			if (n == buffered_messages.end()) {
 				message_list = new std::vector<ActiveObjectMessage>;
@@ -1008,7 +1008,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			std::string reliable_data;
 			std::string unreliable_data;
 			// Go through all objects in message buffer
-			for (std::map<u16, std::vector<ActiveObjectMessage>* >::iterator
+			for (UNORDERED_MAP<u16, std::vector<ActiveObjectMessage>* >::iterator
 					j = buffered_messages.begin();
 					j != buffered_messages.end(); ++j) {
 				// If object is not known by client, skip it
@@ -3122,19 +3122,21 @@ std::wstring Server::handleChat(const std::string &name, const std::wstring &wna
 	if (ate)
 		return L"";
 
-	switch (player->canSendChatMessage()) {
-		case RPLAYER_CHATRESULT_FLOODING: {
-			std::wstringstream ws;
-			ws << L"You cannot send more messages. You are limited to "
-			   << g_settings->getFloat("chat_message_limit_per_10sec")
-			   << " messages per 10 seconds.";
-			return ws.str();
+	if (player) {
+		switch (player->canSendChatMessage()) {
+			case RPLAYER_CHATRESULT_FLOODING: {
+				std::wstringstream ws;
+				ws << L"You cannot send more messages. You are limited to "
+				<< g_settings->getFloat("chat_message_limit_per_10sec")
+				<< " messages per 10 seconds.";
+				return ws.str();
+			}
+			case RPLAYER_CHATRESULT_KICK:
+				DenyAccess_Legacy(player->peer_id, L"You have been kicked due to message flooding.");
+				return L"";
+			case RPLAYER_CHATRESULT_OK: break;
+			default: FATAL_ERROR("Unhandled chat filtering result found.");
 		}
-		case RPLAYER_CHATRESULT_KICK:
-			DenyAccess_Legacy(player->peer_id, L"You have been kicked due to message flooding.");
-			return L"";
-		case RPLAYER_CHATRESULT_OK: break;
-		default: FATAL_ERROR("Unhandled chat filtering result found.");
 	}
 
 	if (m_max_chatmessage_length > 0 && wmessage.length() > m_max_chatmessage_length) {

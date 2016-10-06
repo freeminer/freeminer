@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "activeobject.h"
 #include <map>
+#include "util/cpp11_container.h"
 
 /*
 
@@ -106,7 +107,7 @@ protected:
 	ClientEnvironment *m_env;
 private:
 	// Used for creating objects based on type
-	static std::map<u16, Factory> m_types;
+	static UNORDERED_MAP<u16, Factory> m_types;
 };
 
 struct DistanceSortedActiveObject

@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define UTIL_STRING_HEADER
 
 #include "irrlichttypes_bloated.h"
+#include "cpp11_container.h"
 #include <stdlib.h>
 #include <string>
 #include <cstring>
@@ -58,7 +59,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	(((unsigned char)(x) < 0xe0) ? 2 :     \
 	(((unsigned char)(x) < 0xf0) ? 3 : 4))
 
-typedef std::map<std::string, std::string> StringMap;
+typedef UNORDERED_MAP<std::string, std::string> StringMap;
 
 struct FlagDesc {
 	const char *name;
