@@ -201,7 +201,7 @@ bool Thread::kill()
 
 	m_running = false;
 
-#ifdef _WIN32
+#if USE_WIN_THREADS
 	TerminateThread(getThreadHandle(), 0);
 	CloseHandle(getThreadHandle());
 #else
@@ -318,9 +318,15 @@ unsigned int Thread::getNumberOfProcessors()
 
 	return sysconf(_SC_NPROCESSORS_CONF);
 
-#elif __cplusplus >= 201103L
+#elif USE_CPP11_THREADS
 
 	return std::thread::hardware_concurrency();
+
+#elif USE_WIN_THREADS
+
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	return sysinfo.dwNumberOfProcessors;
 
 #elif defined(_SC_NPROCESSORS_ONLN)
 
@@ -343,12 +349,6 @@ unsigned int Thread::getNumberOfProcessors()
 
 	return get_nprocs_conf();
 
-#elif defined(_WIN32)
-
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo(&sysinfo);
-	return sysinfo.dwNumberOfProcessors;
-
 #elif defined(PTW32_VERSION) || defined(__hpux)
 
 	return pthread_num_processors_np();
@@ -367,7 +367,7 @@ bool Thread::bindToProcessor(unsigned int proc_number)
 
 	return false;
 
-#elif defined(_WIN32)
+#elif USE_WIN_THREADS
 
 	return SetThreadAffinityMask(getThreadHandle(), 1 << proc_number);
 
@@ -415,7 +415,7 @@ bool Thread::bindToProcessor(unsigned int proc_number)
 
 bool Thread::setPriority(int prio)
 {
-#if defined(_WIN32)
+#if USE_WIN_THREADS
 
 	return SetThreadPriority(getThreadHandle(), prio);
 

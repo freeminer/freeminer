@@ -35,7 +35,9 @@ using RecursiveMutexAutoLock = std::unique_lock<RecursiveMutex>;
 
 #if WTF
 
-#if __cplusplus >= 201103L
+#include "threads.h"
+
+#if USE_CPP11_MUTEX
 	#include <mutex>
 	using MutexAutoLock = std::unique_lock<std::mutex>;
 	using RecursiveMutexAutoLock = std::unique_lock<std::recursive_mutex>;
