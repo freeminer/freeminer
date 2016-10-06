@@ -502,7 +502,7 @@ void Client::handleCommand_PlaySound(NetworkPacket* pkt)  {
 void Client::handleCommand_StopSound(NetworkPacket* pkt)  {
 	auto & packet = *(pkt->packet);
 	s32 server_id = packet[TOCLIENT_STOP_SOUND_ID].as<s32>();
-	std::map<s32, int>::iterator i =
+	auto i =
 	    m_sounds_server_to_client.find(server_id);
 	if(i != m_sounds_server_to_client.end()) {
 		int client_id = i->second;

@@ -1366,7 +1366,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt) {
 
 	v3s16 p = packet[TOSERVER_NODEMETA_FIELDS_POS].as<v3s16>();
 	std::string formname = packet[TOSERVER_NODEMETA_FIELDS_FORMNAME].as<std::string>();
-	std::map<std::string, std::string> fields;
+	std::unordered_map<std::string, std::string> fields;
 	packet[TOSERVER_NODEMETA_FIELDS_DATA].convert(fields);
 
 
@@ -1407,7 +1407,7 @@ void Server::handleCommand_InventoryFields(NetworkPacket* pkt) {
 	}
 
 	std::string formname;
-	std::map<std::string, std::string> fields;
+	std::unordered_map<std::string, std::string> fields;
 
 	packet[TOSERVER_INVENTORY_FIELDS_FORMNAME].convert(formname);
 	packet[TOSERVER_INVENTORY_FIELDS_DATA].convert(fields);

@@ -133,7 +133,7 @@ void Client::sendRemovedSounds(std::vector<s32> &soundList)
 }
 
 void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
-		const std::map<std::string, std::string> &fields)
+		const std::unordered_map<std::string, std::string> &fields)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_NODEMETA_FIELDS, 3);
 	PACK(TOSERVER_NODEMETA_FIELDS_POS, p);
@@ -144,7 +144,7 @@ void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 }
 
 void Client::sendInventoryFields(const std::string &formname,
-		const std::map<std::string, std::string> &fields)
+		const std::unordered_map<std::string, std::string> &fields)
 {
 	MSGPACK_PACKET_INIT(TOSERVER_INVENTORY_FIELDS, 2);
 	PACK(TOSERVER_INVENTORY_FIELDS_FORMNAME, formname);
