@@ -37,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxel.h"
 #include "modifiedstate.h"
 #include "util/container.h"
+#include "util/cpp11_container.h"
 #include "nodetimer.h"
 #include "map_settings_manager.h"
 

@@ -169,7 +169,7 @@ struct ServerSoundParams
 struct ServerPlayingSound
 {
 	ServerSoundParams params;
-	std::set<u16> clients; // peer ids
+	UNORDERED_SET<u16> clients; // peer ids
 };
 
 class Server : public con::PeerHandler, public MapEventReceiver,
@@ -259,11 +259,9 @@ public:
 	std::string getStatusString();
 
 	// read shutdown state
-	inline bool getShutdownRequested()
-			{ return m_shutdown_requested; }
+	inline bool getShutdownRequested() const { return m_shutdown_requested; }
 
 	// request server to shutdown
-	inline void requestShutdown() { m_shutdown_requested = true; }
 	void requestShutdown(const std::string &msg, bool reconnect)
 	{
 		m_shutdown_requested = true;
@@ -341,8 +339,7 @@ public:
 	const ModSpec* getModSpec(const std::string &modname) const;
 	void getModNames(std::vector<std::string> &modlist);
 	std::string getBuiltinLuaPath();
-	inline std::string getWorldPath() const
-			{ return m_path_world; }
+	inline std::string getWorldPath() const { return m_path_world; }
 
 	inline bool isSingleplayer()
 			{ return m_simple_singleplayer_mode; }
@@ -374,8 +371,7 @@ public:
 	bool setSky(Player *player, const video::SColor &bgcolor,
 			const std::string &type, const std::vector<std::string> &params);
 
-	bool overrideDayNightRatio(Player *player, bool do_override,
-			float brightness);
+	bool overrideDayNightRatio(Player *player, bool do_override, float brightness);
 
 	// con::PeerHandler implementation.
 	// These queue stuff to be processed by handlePeerChanges().
@@ -712,12 +708,12 @@ private:
 	u16 m_ignore_map_edit_events_peer_id;
 
 	// media files known to server
-	std::map<std::string,MediaInfo> m_media;
+	UNORDERED_MAP<std::string, MediaInfo> m_media;
 
 	/*
 		Sounds
 	*/
-	std::map<s32, ServerPlayingSound> m_playing_sounds;
+	UNORDERED_MAP<s32, ServerPlayingSound> m_playing_sounds;
 	s32 m_next_sound_id;
 
 	/*

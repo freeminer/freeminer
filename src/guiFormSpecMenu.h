@@ -412,8 +412,6 @@ protected:
 	std::vector<std::pair<FieldSpec, std::vector<std::string> > > m_dropdowns;
 
 	ItemSpec *m_selected_item;
-	f32 m_timer1;
-	f32 m_timer2;
 	u32 m_selected_amount;
 	bool m_selected_dragging;
 
@@ -465,7 +463,7 @@ private:
 		GUITable::TableOptions table_options;
 		GUITable::TableColumns table_columns;
 		// used to restore table selection/scroll/treeview state
-		std::map<std::string, GUITable::DynamicData> table_dyndata;
+		UNORDERED_MAP<std::string, GUITable::DynamicData> table_dyndata;
 	} parserData;
 
 	typedef struct {

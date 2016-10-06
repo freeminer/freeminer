@@ -48,6 +48,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_CPP11_THREADS
 	#include <thread>
+#elif USE_POSIX_THREADS
+	#include <pthread.h>
+#else
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
 #endif
 
 #include "threading/mutex.h"

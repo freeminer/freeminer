@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "client/tile.h"
 #include "voxel.h"
+#include "util/cpp11_container.h"
 #include <map>
 
 //#define MESH_ZEROCOPY //Exprimental, slower, needed for next farmesh
@@ -148,16 +149,14 @@ public:
 		if(m_animation_force_timer > 0)
 			m_animation_force_timer--;
 	}
-	
+
 	bool updateCameraOffset(v3s16 camera_offset);
 
 
-	u32 getUsageTimer()
-	{
+	u32 getUsageTimer() {
 		return m_usage_timer;
 	}
-	void incrementUsageTimer(float dtime)
-	{
+	void incrementUsageTimer(float dtime) {
 		m_usage_timer += dtime;
 	}
 
@@ -187,14 +186,14 @@ private:
 	// Last crack value passed to animate()
 	int m_last_crack;
 	// Maps mesh buffer (i.e. material) indices to base texture names
-	std::map<u32, std::string> m_crack_materials;
+	UNORDERED_MAP<u32, std::string> m_crack_materials;
 
 	// Animation info: texture animationi
 	// Maps meshbuffers to TileSpecs
-	std::map<u32, TileSpec> m_animation_tiles;
-	std::map<u32, int> m_animation_frames; // last animation frame
-	std::map<u32, int> m_animation_frame_offsets;
-	
+	UNORDERED_MAP<u32, TileSpec> m_animation_tiles;
+	UNORDERED_MAP<u32, int> m_animation_frames; // last animation frame
+	UNORDERED_MAP<u32, int> m_animation_frame_offsets;
+
 	// Animation info: day/night transitions
 	// Last daynight_ratio value passed to animate()
 	u32 m_last_daynight_ratio;
@@ -202,7 +201,7 @@ private:
 	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
 
 	u32 m_usage_timer;
-	
+
 	// Camera offset info -> do we have to translate the mesh?
 	v3s16 m_camera_offset;
 };

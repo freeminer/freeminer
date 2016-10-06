@@ -202,8 +202,8 @@ bool Thread::kill()
 	m_running = false;
 
 #if USE_WIN_THREADS
-	TerminateThread(getThreadHandle(), 0);
-	CloseHandle(getThreadHandle());
+	TerminateThread(m_thread_handle, 0);
+	CloseHandle(m_thread_handle);
 #else
 	// We need to pthread_kill instead on Android since NDKv5's pthread
 	// implementation is incomplete.

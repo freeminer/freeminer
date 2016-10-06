@@ -145,17 +145,18 @@ inline double sphere(double x, double y, double z, double d, int ITR = 1) {
 
 inline double rooms(double dx, double dy, double dz, double d, int ITR = 1) {
 	int x = dx, y = dy, z = dz;
-	//if (x < y && x < z) return 0; // debug slice
-	auto rooms_pow_min = 2, rooms_pow_max = 10;
-	auto rooms_pow_cut_max = 8;
+	if (x < y && x < z) return 0; // debug slice
+	const auto rooms_pow_min = 2, rooms_pow_max = 10;
+	const auto rooms_pow_cut_max = 8;
+	const auto rooms_pow_fill_max = 4;
 	for (int pw = rooms_pow_min; pw <= rooms_pow_max; ++pw) {
 		int every = 2 << pw;
 		//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " tx="<<((int)x%every)<<"\n";
 		auto xhit = !(x%every), yhit = !(y%every), zhit = !(z%every);
-		if (xhit || yhit || zhit) {
 			//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
 			int cx = 0, cy = 0, cz = 0;
 			int room_n = 0;
+			int wall = 0;
 			for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
 				//int every2 = 2 << pw2;
 				int lv = 1;
@@ -165,22 +166,42 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1) {
 				//value = lv + value * pow(10, tens);
 				//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
 				room_n = lv + room_n * 10;
-				if (pw2 <= rooms_pow_cut_max && !( std::hash<double>()(room_n + 0) % 13)) { 
+
+				bool room_filled = !( std::hash<double>()(room_n + 1) % 13);
+
+				errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
+
+				if (!(xhit || yhit || zhit)) {
+					wall = 0;
+					if (
+					//pw2 < rooms_pow_fill_max &&
+						room_filled
+					)
+						return pw;
+					else
+						continue;
+				} else {
+					wall = pw;
+				}
+
+
+				if (pw2 <= rooms_pow_cut_max && !( std::hash<double>()(room_n + 0) % 13)) {
 					//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
 					//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
 					int pw3 = pw2+1;
 					if ((x>>pw3) == (x-1)>>pw3 && (y>>pw3) == (y-1)>>pw3 && (z>>pw3) == (z-1)>>pw3) {
-						return 0;
+						return room_filled;
 					}
 				}
+
+
 				//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
 				int room_size = 2 << (pw2-1);
 				cx+= ((x < cx) ? -1 : 1) * room_size;
 				cy+= ((y < cy) ? -1 : 1) * room_size;
 				cz+= ((z < cz) ? -1 : 1) * room_size;
 			}
-			return pw;
-		}
+			return wall;
 	}
 	return 0;
 }

@@ -32,9 +32,6 @@ DEALINGS IN THE SOFTWARE.
 #include "threads.h"
 
 #include <string>
-#if USE_CPP11_THREADS
-	#include <thread> // for std::thread
-#endif
 #ifdef _AIX
 	#include <sys/thread.h> // for tid_t
 #endif

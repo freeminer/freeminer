@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <atomic>
 
-std::map<u16, std::vector<v3s16> > FacePositionCache::m_cache;
+UNORDERED_MAP<u16, std::vector<v3s16> > FacePositionCache::m_cache;
 Mutex FacePositionCache::m_cache_mutex;
 // Calculate the borders of a "d-radius" cube
 // TODO: Make it work without mutex and data races, probably thread-local
