@@ -26,11 +26,13 @@ DEALINGS IN THE SOFTWARE.
 #ifndef THREADING_EVENT_H
 #define THREADING_EVENT_H
 
-#if __cplusplus >= 201103L
+#include "threads.h"
+
+#if USE_CPP11_MUTEX
 	#include <condition_variable>
 	#include "threading/mutex.h"
 	#include "threading/mutex_auto_lock.h"
-#elif defined(_WIN32)
+#elif USE_WIN_MUTEX
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
 	#endif
@@ -49,18 +51,18 @@ DEALINGS IN THE SOFTWARE.
 class Event {
 public:
 	Event();
-#if __cplusplus < 201103L
+#ifndef USE_CPP11_MUTEX
 	~Event();
 #endif
 	void wait();
 	void signal();
 
 private:
-#if __cplusplus >= 201103L
+#if USE_CPP11_MUTEX
 	std::condition_variable cv;
 	Mutex mutex;
 	bool notified;
-#elif defined(_WIN32)
+#elif USE_WIN_MUTEX
 	HANDLE event;
 #else
 	pthread_cond_t cv;
