@@ -888,12 +888,6 @@ std::vector<u16> ClientInterface::getClientIDs(ClientState min_state)
 	return reply;
 }
 
-std::vector<std::string> ClientInterface::getPlayerNames()
-{
-	return m_clients_names;
-}
-
-
 void ClientInterface::step(float dtime)
 {
 	g_profiler->add("Server: Clients", m_clients.size());
