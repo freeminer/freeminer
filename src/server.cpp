@@ -215,9 +215,7 @@ Server::Server(
 	m_liquid_transform_every = 1.0;
 	m_liquid_send_timer = 0.0;
 	m_liquid_send_interval = 1.0;
-	m_print_info_timer = 0.0;
 	m_masterserver_timer = 0.0;
-	m_objectdata_timer = 0.0;
 	//m_emergethread_trigger_timer = 5.0; // to start emerge threads instantly
 	m_savemap_timer = 0.0;
 
@@ -3584,12 +3582,6 @@ void Server::deleteParticleSpawner(const std::string &playername, u32 id)
 
 	m_env->deleteParticleSpawner(id);
 	SendDeleteParticleSpawner(peer_id, id);
-}
-
-void Server::deleteParticleSpawnerAll(u32 id)
-{
-	m_env->deleteParticleSpawner(id);
-	SendDeleteParticleSpawner(PEER_ID_INEXISTENT, id);
 }
 
 Inventory* Server::createDetachedInventory(const std::string &name)
