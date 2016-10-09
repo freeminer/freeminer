@@ -102,6 +102,8 @@ public:
 	void removePlayer(Player *player);
 	Player * getPlayer(u16 peer_id);
 	Player * getPlayer(const std::string &name);
+	RemotePlayer * getRemotePlayer(u16 peer_id);
+	RemotePlayer * getRemotePlayer(const std::string &name);
 	std::vector<Player*> getPlayers();
 	std::vector<Player*> getPlayers(bool ignore_disconnected);
 

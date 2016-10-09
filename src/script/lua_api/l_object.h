@@ -30,6 +30,7 @@ class ServerActiveObject;
 class LuaEntitySAO;
 class PlayerSAO;
 class Player;
+class RemotePlayer;
 
 /*
 	ObjectRef
@@ -50,7 +51,7 @@ private:
 
 	static PlayerSAO* getplayersao(ObjectRef *ref);
 
-	static Player* getplayer(ObjectRef *ref);
+	static RemotePlayer* getplayer(ObjectRef *ref);
 
 	// Exported functions
 

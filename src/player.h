@@ -249,16 +249,6 @@ public:
 		return size;
 	}
 
-	void setHotbarItemcount(s32 hotbar_itemcount)
-	{
-		hud_hotbar_itemcount = hotbar_itemcount;
-	}
-
-	s32 getHotbarItemcount()
-	{
-		return hud_hotbar_itemcount;
-	}
-
 	void setHotbarImage(const std::string &name)
 	{
 		hotbar_image = name;
@@ -294,18 +284,6 @@ public:
 		*params = m_sky_params;
 	}
 
-	void overrideDayNightRatio(bool do_override, float ratio)
-	{
-		m_day_night_ratio_do_override = do_override;
-		m_day_night_ratio = ratio;
-	}
-
-	void getDayNightRatio(bool *do_override, float *ratio)
-	{
-		*do_override = m_day_night_ratio_do_override;
-		*ratio = m_day_night_ratio;
-	}
-
 	void setLocalAnimations(v2s32 frames[4], float frame_speed)
 	{
 		for (int i = 0; i < 4; i++)
@@ -323,11 +301,6 @@ public:
 	virtual bool isLocal() const
 	{
 		return false;
-	}
-
-	virtual PlayerSAO *getPlayerSAO()
-	{
-		return NULL;
 	}
 
 	virtual void setPlayerSAO(PlayerSAO *sao)
@@ -405,8 +378,7 @@ public:
 
 	PlayerControl control;
 	Mutex control_mutex;
-	PlayerControl & getPlayerControl()
-	{
+	const PlayerControl& getPlayerControl() {
 		std::lock_guard<Mutex> lock(control_mutex);
 		return control;
 	}
@@ -418,9 +390,6 @@ public:
 	u32         addHud(HudElement* hud);
 	HudElement* removeHud(u32 id);
 	void        clearHud();
-	u32         maxHudId() {
-		return hud.size();
-	}
 
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
@@ -444,9 +413,6 @@ public:
 	std::string m_sky_type;
 	video::SColor m_sky_bgcolor;
 	std::vector<std::string> m_sky_params;
-
-	bool m_day_night_ratio_do_override;
-	float m_day_night_ratio;
 private:
 	// Protect some critical areas
 	// hud for example can be modified by EmergeThread
@@ -476,6 +442,25 @@ public:
 
 	const RemotePlayerChatResult canSendChatMessage();
 
+	void setHotbarItemcount(s32 hotbar_itemcount)
+	{
+		hud_hotbar_itemcount = hotbar_itemcount;
+	}
+
+	s32 getHotbarItemcount() const { return hud_hotbar_itemcount; }
+
+	void overrideDayNightRatio(bool do_override, float ratio)
+	{
+		m_day_night_ratio_do_override = do_override;
+		m_day_night_ratio = ratio;
+	}
+
+	void getDayNightRatio(bool *do_override, float *ratio)
+	{
+		*do_override = m_day_night_ratio_do_override;
+		*ratio = m_day_night_ratio;
+	}
+
 private:
 	PlayerSAO *m_sao;
 
@@ -486,6 +471,9 @@ private:
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance;
 	u16 m_message_rate_overhead;
+
+	bool m_day_night_ratio_do_override;
+	float m_day_night_ratio;
 };
 
 Json::Value operator<<(Json::Value &json, Player &player);

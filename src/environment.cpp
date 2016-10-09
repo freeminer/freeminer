@@ -148,6 +148,15 @@ Player * Environment::getPlayer(const std::string &name)
 	return NULL;
 }
 
+
+RemotePlayer * Environment::getRemotePlayer(u16 peer_id) {
+	return dynamic_cast<RemotePlayer *>(getPlayer(peer_id));
+}
+
+RemotePlayer * Environment::getRemotePlayer(const std::string &name) {
+	return dynamic_cast<RemotePlayer *>(getPlayer(name));
+}
+
 std::vector<Player*> Environment::getPlayers()
 {
 	return m_players;
@@ -738,16 +747,16 @@ void ServerEnvironment::kickAllPlayers(AccessDeniedCode reason,
 void ServerEnvironment::saveLoadedPlayers()
 {
 	auto lock = m_players.lock_unique_rec();
-	auto i = m_players.begin();
-	while (i != m_players.end())
+	auto it = m_players.begin();
+	while (it != m_players.end())
 	{
-		auto *player = *i;
+		auto *player = static_cast<RemotePlayer*>(*it);
 		savePlayer((RemotePlayer*)player);
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
-			i = m_players.erase(i);
+			it = m_players.erase(it);
 		} else {
-			++i;
+			++it;
 		}
 	}
 }

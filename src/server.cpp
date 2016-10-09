@@ -1572,7 +1572,7 @@ Inventory* Server::getInventory(const InventoryLocation &loc)
 		break;
 	case InventoryLocation::PLAYER:
 	{
-		Player *player = m_env->getPlayer(loc.name.c_str());
+		RemotePlayer *player = dynamic_cast<RemotePlayer *>(m_env->getPlayer(loc.name.c_str()));
 		if(!player)
 			return NULL;
 		PlayerSAO *playersao = player->getPlayerSAO();
@@ -1611,9 +1611,12 @@ void Server::setInventoryModified(const InventoryLocation &loc, bool playerSend)
 		if (!playerSend)
 			return;
 
-		Player *player = m_env->getPlayer(loc.name.c_str());
-		if(!player)
+		RemotePlayer *player =
+			dynamic_cast<RemotePlayer *>(m_env->getPlayer(loc.name.c_str()));
+
+		if (!player)
 			return;
+
 		PlayerSAO *playersao = player->getPlayerSAO();
 		if(!playersao)
 			return;
@@ -3007,19 +3010,16 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 				++i;
 		}
 
-		Player *player = m_env->getPlayer(peer_id);
+		RemotePlayer *player = dynamic_cast<RemotePlayer *>(m_env->getPlayer(peer_id));
 
 		/* Run scripts and remove from environment */
-		{
-			if(player != NULL)
-			{
-				PlayerSAO *playersao = player->getPlayerSAO();
-				assert(playersao);
+		if(player != NULL) {
+			PlayerSAO *playersao = player->getPlayerSAO();
+			assert(playersao);
 
-				m_script->on_leaveplayer(playersao, reason == CDR_TIMEOUT);
+			m_script->on_leaveplayer(playersao, reason == CDR_TIMEOUT);
 
-				playersao->disconnected();
-			}
+			playersao->disconnected();
 		}
 
 		/*
@@ -3062,7 +3062,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		SendChatMessage(PEER_ID_INEXISTENT,message);
 }
 
-void Server::UpdateCrafting(Player* player)
+void Server::UpdateCrafting(RemotePlayer* player)
 {
 	DSTACK(FUNCTION_NAME);
 
@@ -3072,7 +3072,8 @@ void Server::UpdateCrafting(Player* player)
 	loc.setPlayer(player->getName());
 	std::vector<ItemStack> output_replacements;
 	getCraftingResult(&player->inventory, preview, output_replacements, false, this);
-	m_env->getScriptIface()->item_CraftPredict(preview, player->getPlayerSAO(), (&player->inventory)->getList("craft"), loc);
+	m_env->getScriptIface()->item_CraftPredict(preview, player->getPlayerSAO(),
+			(&player->inventory)->getList("craft"), loc);
 
 	// Put the new preview in
 	InventoryList *plist = player->inventory.getList("craftpreview");
@@ -3222,8 +3223,8 @@ std::string Server::getPlayerName(u16 peer_id)
 
 PlayerSAO* Server::getPlayerSAO(u16 peer_id)
 {
-	Player *player = m_env->getPlayer(peer_id);
-	if(player == NULL)
+	RemotePlayer *player = dynamic_cast<RemotePlayer *>(m_env->getPlayer(peer_id));
+	if (player == NULL)
 		return NULL;
 	return player->getPlayerSAO();
 }
@@ -3290,8 +3291,9 @@ void Server::reportPrivsModified(const std::string &name)
 			reportPrivsModified(player->getName());
 		}
 	} else {
-		Player *player = m_env->getPlayer(name.c_str());
-		if(!player)
+		RemotePlayer *player =
+			dynamic_cast<RemotePlayer *>(m_env->getPlayer(name.c_str()));
+		if (!player)
 			return;
 		SendPlayerPrivileges(player->peer_id);
 		PlayerSAO *sao = player->getPlayerSAO();
@@ -3399,7 +3401,7 @@ bool Server::hudChange(Player *player, u32 id, HudElementStat stat, void *data)
 	return true;
 }
 
-bool Server::hudSetFlags(Player *player, u32 flags, u32 mask)
+bool Server::hudSetFlags(RemotePlayer *player, u32 flags, u32 mask)
 {
 	if (!player)
 		return false;
@@ -3417,10 +3419,11 @@ bool Server::hudSetFlags(Player *player, u32 flags, u32 mask)
 	return true;
 }
 
-bool Server::hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount)
+bool Server::hudSetHotbarItemcount(RemotePlayer *player, s32 hotbar_itemcount)
 {
 	if (!player)
 		return false;
+
 	if (hotbar_itemcount <= 0 || hotbar_itemcount > HUD_HOTBAR_ITEMCOUNT_MAX)
 		return false;
 
@@ -3429,13 +3432,6 @@ bool Server::hudSetHotbarItemcount(Player *player, s32 hotbar_itemcount)
 	writeS32(os, hotbar_itemcount);
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_ITEMCOUNT, os.str());
 	return true;
-}
-
-s32 Server::hudGetHotbarItemcount(Player *player)
-{
-	if (!player)
-		return 0;
-	return player->getHotbarItemcount();
 }
 
 void Server::hudSetHotbarImage(Player *player, std::string name, int items)
@@ -3505,7 +3501,7 @@ bool Server::setSky(Player *player, const video::SColor &bgcolor,
 	return true;
 }
 
-bool Server::overrideDayNightRatio(Player *player, bool do_override,
+bool Server::overrideDayNightRatio(RemotePlayer *player, bool do_override,
 	float ratio)
 {
 	if (!player)

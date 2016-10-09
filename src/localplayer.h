@@ -89,6 +89,8 @@ public:
 		m_cao = toset;
 	}
 
+	u32 maxHudId() const { return hud.size(); }
+
 private:
 	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery = 0);
 	void accelerateVertical(const v3f &target_speed, const f32 max_increase);
