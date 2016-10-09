@@ -813,7 +813,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			if (client->getState() < CS_DefinitionsSent)
 				continue;
 
-			Player *player = m_env->getPlayer(client->peer_id);
+			RemotePlayer *player = m_env->getPlayer(client->peer_id);
 			if (player == NULL) {
 				// This can happen if the client timeouts somehow
 				/*warningstream<<FUNCTION_NAME<<": Client "
@@ -2176,7 +2176,7 @@ void Server::SendPlayerBreath(u16 peer_id)
 void Server::SendMovePlayer(u16 peer_id)
 {
 	DSTACK(FUNCTION_NAME);
-	Player *player = m_env->getPlayer(peer_id);
+	RemotePlayer *player = m_env->getPlayer(peer_id);
 	assert(player);
 
 	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof(v3f) + sizeof(f32) * 2, peer_id);
@@ -2215,7 +2215,7 @@ void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)
 }
 void Server::SendPlayerPrivileges(u16 peer_id)
 {
-	Player *player = m_env->getPlayer(peer_id);
+	RemotePlayer *player = m_env->getPlayer(peer_id);
 	assert(player);
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
@@ -2236,7 +2236,7 @@ void Server::SendPlayerPrivileges(u16 peer_id)
 
 void Server::SendPlayerInventoryFormspec(u16 peer_id)
 {
-	Player *player = m_env->getPlayer(peer_id);
+	RemotePlayer *player = m_env->getPlayer(peer_id);
 	assert(player);
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
@@ -2281,7 +2281,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	std::vector<u16> dst_clients;
 	if(params.to_player != "")
 	{
-		Player *player = m_env->getPlayer(params.to_player.c_str());
+		RemotePlayer *player = m_env->getPlayer(params.to_player.c_str());
 		if(!player){
 			infostream<<"Server::playSound: Player \""<<params.to_player
 					<<"\" not found"<<std::endl;
@@ -2297,13 +2297,12 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 	else {
 		std::vector<u16> clients = m_clients.getClientIDs();
 
-		for(std::vector<u16>::iterator
-				i = clients.begin(); i != clients.end(); ++i) {
-			Player *player = m_env->getPlayer(*i);
-			if(!player)
+		for (std::vector<u16>::iterator i = clients.begin(); i != clients.end(); ++i) {
+			RemotePlayer *player = m_env->getPlayer(*i);
+			if (!player)
 				continue;
 
-			if(pos_exists) {
+			if (pos_exists) {
 				if(player->getPosition().getDistanceFrom(pos) >
 						params.max_hear_distance)
 					continue;
@@ -2367,7 +2366,7 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 		i != clients.end(); ++i) {
 		if (far_players) {
 			// Get player
-			if(Player *player = m_env->getPlayer(*i)) {
+			if (RemotePlayer *player = m_env->getPlayer(*i)) {
 				// If player is far away, only set modified blocks not sent
 				v3f player_pos = player->getPosition();
 				if(player_pos.getDistanceFrom(p_f) > maxd) {
@@ -2395,7 +2394,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 
 		if(far_players) {
 			// Get player
-			if(Player *player = m_env->getPlayer(*i)) {
+			if (RemotePlayer *player = m_env->getPlayer(*i)) {
 				// If player is far away, only set modified blocks not sent
 				v3f player_pos = player->getPosition();
 				if(player_pos.getDistanceFrom(p_f) > maxd) {
@@ -3033,8 +3032,8 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 					i != clients.end(); ++i)
 				{
 					// Get player
-					Player *player = m_env->getPlayer(*i);
-					if(!player)
+					RemotePlayer *player = m_env->getPlayer(*i);
+					if (!player)
 						continue;
 					// Get name of player
 					os << player->getName() << " ";
@@ -3213,8 +3212,8 @@ RemoteClient* Server::getClientNoEx(u16 peer_id, ClientState state_min)
 
 std::string Server::getPlayerName(u16 peer_id)
 {
-	Player *player = m_env->getPlayer(peer_id);
-	if(player == NULL)
+	RemotePlayer *player = m_env->getPlayer(peer_id);
+	if (player == NULL)
 		return "[id="+itos(peer_id)+"]";
 	return player->getName();
 }
@@ -3241,11 +3240,9 @@ std::string Server::getStatusString()
 	bool first = true;
 	os<<", clients={";
 	std::vector<u16> clients = m_clients.getClientIDs();
-	for(auto i = clients.begin();
-		i != clients.end(); ++i)
-	{
+	for(auto i = clients.begin(); i != clients.end(); ++i) {
 		// Get player
-		Player *player = m_env->getPlayer(*i);
+		RemotePlayer *player = m_env->getPlayer(*i);
 		// Get name of player
 		std::string name = "unknown";
 		if(player != NULL)
@@ -3285,12 +3282,11 @@ void Server::reportPrivsModified(const std::string &name)
 		for(auto
 				i = clients.begin();
 				i != clients.end(); ++i){
-			Player *player = m_env->getPlayer(*i);
+			RemotePlayer *player = m_env->getPlayer(*i);
 			reportPrivsModified(player->getName());
 		}
 	} else {
-		RemotePlayer *player =
-			dynamic_cast<RemotePlayer *>(m_env->getPlayer(name.c_str()));
+		RemotePlayer *player = m_env->getPlayer(name.c_str());
 		if (!player)
 			return;
 		SendPlayerPrivileges(player->peer_id);
@@ -3305,8 +3301,8 @@ void Server::reportPrivsModified(const std::string &name)
 
 void Server::reportInventoryFormspecModified(const std::string &name)
 {
-	Player *player = m_env->getPlayer(name.c_str());
-	if(!player)
+	RemotePlayer *player = m_env->getPlayer(name.c_str());
+	if (!player)
 		return;
 	SendPlayerInventoryFormspec(player->peer_id);
 }
@@ -3336,7 +3332,7 @@ void Server::notifyPlayer(const char *name, const std::string &msg)
 		m_admin_chat->outgoing_queue.push_back(new ChatEventChat("", utf8_to_wide(msg)));
 	}
 
-	Player *player = m_env->getPlayer(name);
+	RemotePlayer *player = m_env->getPlayer(name);
 	if (!player) {
 		return;
 	}
@@ -3355,7 +3351,7 @@ bool Server::showFormspec(const char *playername, const std::string &formspec,
 	if (!m_env)
 		return false;
 
-	Player *player = m_env->getPlayer(playername);
+	RemotePlayer *player = m_env->getPlayer(playername);
 	if (!player)
 		return false;
 
@@ -3527,7 +3523,7 @@ void Server::spawnParticle(const std::string &playername, v3f pos,
 
 	u16 peer_id = PEER_ID_INEXISTENT;
 	if (playername != "") {
-		Player* player = m_env->getPlayer(playername.c_str());
+		RemotePlayer* player = m_env->getPlayer(playername.c_str());
 		if (!player)
 			return;
 		peer_id = player->peer_id;
@@ -3551,7 +3547,7 @@ u32 Server::addParticleSpawner(u16 amount, float spawntime,
 
 	u16 peer_id = PEER_ID_INEXISTENT;
 	if (playername != "") {
-		Player* player = m_env->getPlayer(playername.c_str());
+		RemotePlayer* player = m_env->getPlayer(playername.c_str());
 		if (!player)
 			return -1;
 		peer_id = player->peer_id;
@@ -3574,7 +3570,7 @@ void Server::deleteParticleSpawner(const std::string &playername, u32 id)
 
 	u16 peer_id = PEER_ID_INEXISTENT;
 	if (playername != "") {
-		Player* player = m_env->getPlayer(playername.c_str());
+		RemotePlayer* player = m_env->getPlayer(playername.c_str());
 		if (!player)
 			return;
 		peer_id = player->peer_id;

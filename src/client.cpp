@@ -371,7 +371,7 @@ void Client::step(float dtime)
 		if(counter <= 0.0) {
 			counter = 2.0;
 
-			Player *myplayer = m_env.getLocalPlayer();
+			LocalPlayer *myplayer = m_env.getLocalPlayer();
 			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
 
 			u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
@@ -604,7 +604,7 @@ void Client::step(float dtime)
 		if(count_after != count_before) {
 			// Do this every <interval> seconds after TOCLIENT_INVENTORY
 			// Reset the locally changed inventory to the authoritative inventory
-			Player *player = m_env.getLocalPlayer();
+			LocalPlayer *player = m_env.getLocalPlayer();
 			player->inventory = *m_inventory_from_server;
 			m_inventory_updated = true;
 		}
@@ -1278,7 +1278,7 @@ void Client::sendChatMessage(const std::string &message)
 void Client::sendChangePassword(const std::string &oldpassword,
         const std::string &newpassword)
 {
-	Player *player = m_env.getLocalPlayer();
+	LocalPlayer *player = m_env.getLocalPlayer();
 	if (player == NULL)
 		return;
 
@@ -1404,7 +1404,7 @@ void Client::sendPlayerPos()
 
 void Client::sendPlayerItem(u16 item)
 {
-	Player *myplayer = m_env.getLocalPlayer();
+	LocalPlayer *myplayer = m_env.getLocalPlayer();
 	if(myplayer == NULL)
 		return;
 
@@ -1492,7 +1492,7 @@ bool Client::getLocalInventoryUpdated()
 // Copies the inventory of the local player to parameter
 void Client::getLocalInventory(Inventory &dst)
 {
-	Player *player = m_env.getLocalPlayer();
+	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
 	dst = player->inventory;
 }
@@ -1505,7 +1505,7 @@ Inventory* Client::getInventory(const InventoryLocation &loc)
 	break;
 	case InventoryLocation::CURRENT_PLAYER:
 	{
-		Player *player = m_env.getLocalPlayer();
+		LocalPlayer *player = m_env.getLocalPlayer();
 		assert(player != NULL);
 		return &player->inventory;
 	}
@@ -1631,16 +1631,9 @@ void Client::setCrack(int level, v3s16 pos)
 
 u16 Client::getHP()
 {
-	Player *player = m_env.getLocalPlayer();
+	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
 	return player->hp;
-}
-
-u16 Client::getBreath()
-{
-	Player *player = m_env.getLocalPlayer();
-	assert(player != NULL);
-	return player->getBreath();
 }
 
 bool Client::getChatMessage(std::string &message)

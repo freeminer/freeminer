@@ -137,10 +137,20 @@ int RemoteClient::GetNextBlocks (
 	if(m_nothing_to_send_pause_timer >= 0)
 		return 0;
 
-	Player *player = env->getPlayer(peer_id);
+	RemotePlayer *player = env->getPlayer(peer_id);
 	// This can happen sometimes; clients and players are not in perfect sync.
-	if(player == NULL)
+	if (player == NULL)
 		return 0;
+
+/*
+	// Won't send anything if already sending
+	if(m_blocks_sending.size() >= g_settings->getU16
+			("max_simultaneous_block_sends_per_client"))
+	{
+		//infostream<<"Not sending any blocks, Queue full."<<std::endl;
+		return;
+	}
+*/
 
 	v3f playerpos = player->getPosition();
 	v3f playerspeed = player->getSpeed();
@@ -897,8 +907,7 @@ void ClientInterface::step(float dtime)
 
 void ClientInterface::UpdatePlayerList()
 {
-	if (m_env != NULL)
-		{
+	if (m_env != NULL) {
 		std::vector<u16> clients = getClientIDs();
 		m_clients_names.clear();
 
@@ -911,10 +920,8 @@ void ClientInterface::UpdatePlayerList()
 		if (print && !clients.empty())
 			infostream<<"Players ["<<clients.size()<<"]:"<<std::endl;
 
-		for(auto
-			i = clients.begin();
-			i != clients.end(); ++i) {
-			Player *player = m_env->getPlayer(*i);
+		for(auto i = clients.begin(); i != clients.end(); ++i) {
+			RemotePlayer *player = m_env->getPlayer(*i);
 
 			if (player == NULL)
 				continue;
