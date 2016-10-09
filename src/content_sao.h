@@ -70,7 +70,7 @@ public:
 	void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation);
 	void addAttachmentChild(int child_id);
 	void removeAttachmentChild(int child_id);
-	std::set<int> getAttachmentChildIds();
+	UNORDERED_SET<int> getAttachmentChildIds();
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
 	/* LuaEntitySAO-specific */
@@ -122,7 +122,7 @@ private:
 	bool m_bone_position_sent;
 
 	int m_attachment_parent_id;
-	std::set<int> m_attachment_child_ids;
+	UNORDERED_SET<int> m_attachment_child_ids;
 	std::string m_attachment_bone;
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
@@ -216,7 +216,7 @@ public:
 	void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation);
 	void addAttachmentChild(int child_id);
 	void removeAttachmentChild(int child_id);
-	std::set<int> getAttachmentChildIds();
+	UNORDERED_SET<int> getAttachmentChildIds();
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
 
@@ -331,7 +331,7 @@ private:
 	bool m_bone_position_sent;
 
 	int m_attachment_parent_id;
-	std::set<int> m_attachment_child_ids;
+	UNORDERED_SET<int> m_attachment_child_ids;
 	std::string m_attachment_bone;
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
