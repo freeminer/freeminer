@@ -48,7 +48,6 @@ Some planning
 
 class ServerEnvironment;
 struct ItemStack;
-class Player;
 struct ToolCapabilities;
 struct ObjectProperties;
 
@@ -74,12 +73,12 @@ public:
 	// environment
 	virtual bool environmentDeletes() const
 	{ return true; }
-	
+
 	// Create a certain type of ServerActiveObject
 	static ServerActiveObject* create(ActiveObjectType type,
 			ServerEnvironment *env, u16 id, v3f pos,
 			const std::string &data);
-	
+
 	/*
 		Some simple getters/setters
 	*/
@@ -92,11 +91,11 @@ public:
 		m_base_position = pos;
 	}
 	ServerEnvironment* getEnv(){ return m_env; }
-	
+
 	/*
 		Some more dynamic interface
 	*/
-	
+
 	virtual void setPos(v3f pos)
 		{ setBasePosition(pos); }
 	// continuous: if true, object does not stop immediately at pos
@@ -107,7 +106,7 @@ public:
 	virtual float getMinimumSavedMovement();
 
 	virtual std::string getDescription(){return "SAO";}
-	
+
 	/*
 		Step object in time.
 		Messages added to messages are sent to client over network.
@@ -119,13 +118,13 @@ public:
 			packet.
 	*/
 	virtual void step(float dtime, bool send_recommended){}
-	
+
 	/*
 		The return value of this is passed to the client-side object
 		when it is created
 	*/
 	virtual std::string getClientInitializationData(u16 protocol_version){return "";}
-	
+
 	/*
 		The return value of this is passed to the server-side object
 		when it is created (converted from static to active - actually
@@ -142,7 +141,7 @@ public:
 	*/
 	virtual bool isStaticAllowed() const
 	{return true;}
-	
+
 	// Returns tool wear
 	virtual int punch(v3f dir,
 			const ToolCapabilities *toolcap=NULL,
@@ -218,7 +217,7 @@ public:
 		- This can be set to true by anything else too.
 	*/
 	std::atomic_bool m_removed;
-	
+
 	/*
 		This is set to true when an object should be removed from the active
 		object list but couldn't be removed because the id has to be
@@ -229,7 +228,7 @@ public:
 		list.
 	*/
 	std::atomic_bool m_pending_deactivation;
-	
+
 	/*
 		Whether the object's static data has been stored to a block
 	*/
@@ -239,13 +238,13 @@ public:
 		a copy of the static data resides.
 	*/
 	v3s16 m_static_block;
-	
+
 	/*
 		Queue of messages to be sent to the client
 	*/
 	Queue<ActiveObjectMessage> & m_messages_out;
 	float m_uptime_last;
-	
+
 protected:
 	// Used for creating objects based on type
 	typedef ServerActiveObject* (*Factory)

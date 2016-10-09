@@ -148,37 +148,13 @@ Player * Environment::getPlayer(const std::string &name)
 	return NULL;
 }
 
-
+//TODO DEL
 RemotePlayer * Environment::getRemotePlayer(u16 peer_id) {
 	return dynamic_cast<RemotePlayer *>(getPlayer(peer_id));
 }
 
 RemotePlayer * Environment::getRemotePlayer(const std::string &name) {
 	return dynamic_cast<RemotePlayer *>(getPlayer(name));
-}
-
-std::vector<Player*> Environment::getPlayers()
-{
-	return m_players;
-}
-
-std::vector<Player*> Environment::getPlayers(bool ignore_disconnected)
-{
-	std::vector<Player*> newlist;
-	for(std::vector<Player*>::iterator
-			i = m_players.begin();
-			i != m_players.end(); ++i) {
-		Player *player = *i;
-
-		if(ignore_disconnected) {
-			// Ignore disconnected players
-			if(player->peer_id == 0)
-				continue;
-		}
-
-		newlist.push_back(player);
-	}
-	return newlist;
 }
 
 u32 Environment::getDayNightRatio()
@@ -192,11 +168,6 @@ u32 Environment::getDayNightRatio()
 void Environment::setTimeOfDaySpeed(float speed)
 {
 	m_time_of_day_speed = speed;
-}
-
-float Environment::getTimeOfDaySpeed()
-{
-	return m_time_of_day_speed;
 }
 
 void Environment::setDayNightRatioOverride(bool enable, u32 value)
@@ -694,8 +665,7 @@ ServerMap & ServerEnvironment::getServerMap()
 	return *m_map;
 }
 
-KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
-{
+KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name) {
 	if (name.empty()) {
 		name = "key_value_storage";
 	}
@@ -703,6 +673,16 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(m_path_world, name));
 	}
 	return m_key_value_storage.at(name);
+}
+
+RemotePlayer *ServerEnvironment::getPlayer(const u16 peer_id)
+{
+	return dynamic_cast<RemotePlayer *>(Environment::getPlayer(peer_id));
+}
+
+RemotePlayer *ServerEnvironment::getPlayer(const std::string &name)
+{
+	return dynamic_cast<RemotePlayer *>(Environment::getPlayer(name));
 }
 
 bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 *p)
@@ -2984,6 +2964,16 @@ Map & ClientEnvironment::getMap()
 ClientMap & ClientEnvironment::getClientMap()
 {
 	return *m_map;
+}
+
+LocalPlayer *ClientEnvironment::getPlayer(const u16 peer_id)
+{
+	return dynamic_cast<LocalPlayer *>(Environment::getPlayer(peer_id));
+}
+
+LocalPlayer *ClientEnvironment::getPlayer(const char* name)
+{
+	return dynamic_cast<LocalPlayer *>(Environment::getPlayer(name));
 }
 
 void ClientEnvironment::addPlayer(Player *player)

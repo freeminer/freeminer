@@ -223,7 +223,7 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 		return cache->at(bp) + myrand_range(0, 1);
 
 	auto value = m_emerge->biomemgr->calcBlockHeat(p, getSeed(),
-	             env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	             env->getTimeOfDayF(), gametime * env->m_time_of_day_speed, env->m_use_weather);
 
 	if(block) {
 		block->heat = value;
@@ -249,7 +249,7 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *bl
 		return cache->at(bp) + myrand_range(0, 1);
 
 	auto value = m_emerge->biomemgr->calcBlockHumidity(p, getSeed(),
-	             env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed(), env->m_use_weather);
+	             env->getTimeOfDayF(), gametime * env->m_time_of_day_speed, env->m_use_weather);
 
 	if(block) {
 		block->humidity = value;

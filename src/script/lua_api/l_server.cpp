@@ -109,7 +109,7 @@ int ModApiServer::l_get_player_ip(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char * name = luaL_checkstring(L, 1);
-	Player *player = getEnv(L)->getPlayer(name);
+	RemotePlayer *player = dynamic_cast<ServerEnvironment *>(getEnv(L))->getPlayer(name);
 	if(player == NULL)
 	{
 		lua_pushnil(L); // no such player
@@ -136,9 +136,8 @@ int ModApiServer::l_get_player_information(lua_State *L)
 
 	NO_MAP_LOCK_REQUIRED;
 	const char * name = luaL_checkstring(L, 1);
-	Player *player = getEnv(L)->getPlayer(name);
-	if(player == NULL)
-	{
+	RemotePlayer *player = dynamic_cast<ServerEnvironment *>(getEnv(L))->getPlayer(name);
+	if (player == NULL) {
 		lua_pushnil(L); // no such player
 		return 1;
 	}
@@ -281,15 +280,15 @@ int ModApiServer::l_ban_player(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char * name = luaL_checkstring(L, 1);
-	Player *player = getEnv(L)->getPlayer(name);
-	if(player == NULL)
-	{
+	RemotePlayer *player = dynamic_cast<ServerEnvironment *>(getEnv(L))->getPlayer(name);
+	if (player == NULL) {
 		lua_pushboolean(L, false); // no such player
 		return 1;
 	}
 	try
 	{
-		Address addr = getServer(L)->getPeerAddress(getEnv(L)->getPlayer(name)->peer_id);
+		Address addr = getServer(L)->getPeerAddress(
+			dynamic_cast<ServerEnvironment *>(getEnv(L))->getPlayer(name)->peer_id);
 		std::string ip_str = addr.serializeString();
 		getServer(L)->setIpBanned(ip_str, name);
 	}
@@ -317,9 +316,9 @@ int ModApiServer::l_kick_player(lua_State *L)
 	{
 		message = "Kicked.";
 	}
-	Player *player = getEnv(L)->getPlayer(name);
-	if (player == NULL)
-	{
+
+	RemotePlayer *player = dynamic_cast<ServerEnvironment *>(getEnv(L))->getPlayer(name);
+	if (player == NULL) {
 		lua_pushboolean(L, false); // No such player
 		return 1;
 	}

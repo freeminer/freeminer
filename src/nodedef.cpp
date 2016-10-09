@@ -1282,7 +1282,7 @@ bool CNodeDefManager::getIds(const std::string &name,
 		}
 		std::string group = name.substr(6);
 
-		std::map<std::string, GroupItems>::const_iterator
+		auto
 			i = m_group_to_items.find(group);
 		if (i == m_group_to_items.end())
 			return true;

@@ -100,12 +100,6 @@ public:
 
 	virtual void addPlayer(Player *player);
 	void removePlayer(Player *player);
-	Player * getPlayer(u16 peer_id);
-	Player * getPlayer(const std::string &name);
-	RemotePlayer * getRemotePlayer(u16 peer_id);
-	RemotePlayer * getRemotePlayer(const std::string &name);
-	std::vector<Player*> getPlayers();
-	std::vector<Player*> getPlayers(bool ignore_disconnected);
 
 	u32 getDayNightRatio();
 
@@ -117,7 +111,6 @@ public:
 	void stepTimeOfDay(float dtime);
 
 	void setTimeOfDaySpeed(float speed);
-	float getTimeOfDaySpeed();
 
 	void setDayNightRatioOverride(bool enable, u32 value);
 
@@ -126,11 +119,19 @@ public:
 	// counter used internally when triggering ABMs
 	std::atomic_uint m_added_objects;
 
+	RemotePlayer * getRemotePlayer(u16 peer_id);
+	RemotePlayer * getRemotePlayer(const std::string &name);
+
 protected:
+	Player * getPlayer(u16 peer_id);
+	Player * getPlayer(const std::string &name);
+
 	// peer_ids in here should be unique, except that there may be many 0s
 	concurrent_vector<Player*> m_players;
 
+public:
 	GenericAtomic<float> m_time_of_day_speed;
+protected:
 
 	/*
 	 * Below: values managed by m_time_lock
@@ -531,6 +532,9 @@ public:
 
 	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
+
+	RemotePlayer *getPlayer(const u16 peer_id);
+	RemotePlayer *getPlayer(const std::string &name);
 private:
 
 	/*
@@ -771,8 +775,10 @@ public:
 	{ m_player_names.remove(name); }
 	void updateCameraOffset(v3s16 camera_offset)
 	{ m_camera_offset = camera_offset; }
-	v3s16 getCameraOffset()
-	{ return m_camera_offset; }
+	v3s16 getCameraOffset() const { return m_camera_offset; }
+
+	LocalPlayer *getPlayer(const u16 peer_id);
+	LocalPlayer *getPlayer(const char* name);
 
 private:
 	ClientMap *m_map;

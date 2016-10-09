@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class ServerActiveObject;
 class LuaEntitySAO;
 class PlayerSAO;
-class Player;
 class RemotePlayer;
 
 /*
