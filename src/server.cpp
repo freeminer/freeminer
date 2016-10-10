@@ -1402,7 +1402,7 @@ PlayerSAO* Server::StageTwoClientInit(u16 peer_id)
 	SendPlayerBreath(peer_id);
 
 	// Show death screen if necessary
-	if(player->isDead())
+	if (player->isDead())
 		SendDeathscreen(peer_id, false, v3f(0,0,0));
 
 	// Note things in chat if not in simple singleplayer mode
@@ -3454,14 +3454,6 @@ void Server::hudSetHotbarSelectedImage(RemotePlayer *player, std::string name)
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_SELECTED_IMAGE, name);
 }
 
-std::string Server::hudGetHotbarSelectedImage(RemotePlayer *player)
-{
-	if (!player)
-		return "";
-
-	return player->getHotbarSelectedImage();
-}
-
 bool Server::setLocalPlayerAnimations(RemotePlayer *player,
 		v2s32 animation_frames[4], f32 frame_speed)
 {
@@ -3792,17 +3784,15 @@ v3f Server::findSpawnPos()
 
 PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id, u16 proto_version)
 {
-	RemotePlayer *player = NULL;
 	bool newplayer = false;
 
 	/*
 		Try to get an existing player
 	*/
-	player = static_cast<RemotePlayer*>(m_env->getPlayer(name));
+	RemotePlayer *player = m_env->getPlayer(name);
 
 	// If player is already connected, cancel
-	if(player != NULL && player->peer_id != 0)
-	{
+	if (player != NULL && player->peer_id != 0) {
 		infostream<<"emergePlayer(): Player already connected"<<std::endl;
 		return NULL;
 	}
@@ -3810,8 +3800,7 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id, u16 proto_version
 	/*
 		If player with the wanted peer_id already exists, cancel.
 	*/
-	if(m_env->getPlayer(peer_id) != NULL)
-	{
+	if (m_env->getPlayer(peer_id) != NULL) {
 		infostream<<"emergePlayer(): Player with wrong name but same"
 				" peer_id already exists"<<std::endl;
 		return NULL;
@@ -3824,13 +3813,13 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id, u16 proto_version
 
 	// Load player if it isn't already loaded
 	if (!player) {
-		player = static_cast<RemotePlayer*>(m_env->loadPlayer(name));
+		player = m_env->loadPlayer(name);
 	}
 
 	// Create player if it doesn't exist
 	if (!player) {
 		newplayer = true;
-		player = new RemotePlayer(this, name);
+		player = new RemotePlayer(name, this->idef());
 		// Set player position
 		infostream<<"Server: Finding spawn place for player \""
 				<<name<<"\""<<std::endl;

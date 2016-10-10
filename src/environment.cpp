@@ -717,8 +717,9 @@ void ServerEnvironment::kickAllPlayers(AccessDeniedCode reason,
 {
 	for (std::vector<Player*>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
-		((Server*)m_gamedef)->DenyAccessVerCompliant((*it)->peer_id,
-			(*it)->protocol_version, reason, str_reason, reconnect);
+		RemotePlayer *player = dynamic_cast<RemotePlayer *>(*it);
+		((Server*)m_gamedef)->DenyAccessVerCompliant(player->peer_id,
+				player->protocol_version, reason, str_reason, reconnect);
 	}
 }
 
@@ -726,9 +727,9 @@ void ServerEnvironment::saveLoadedPlayers()
 {
 	auto lock = m_players.lock_unique_rec();
 	auto it = m_players.begin();
-	while (it != m_players.end())
-	{
+	while (it != m_players.end()) {
 		auto *player = static_cast<RemotePlayer*>(*it);
+		//if (player->checkModified())
 		savePlayer((RemotePlayer*)player);
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
 			delete player;
@@ -737,6 +738,18 @@ void ServerEnvironment::saveLoadedPlayers()
 			++it;
 		}
 	}
+/*
+	std::string players_path = m_path_world + DIR_DELIM "players";
+	fs::CreateDir(players_path);
+	for (std::vector<Player*>::iterator it = m_players.begin();
+			it != m_players.end();
+			++it) {
+		RemotePlayer *player = static_cast<RemotePlayer*>(*it);
+		if (player->checkModified()) {
+			player->save(players_path, m_gamedef);
+		}
+	}
+*/
 }
 
 void ServerEnvironment::savePlayer(RemotePlayer *player)
@@ -746,6 +759,12 @@ void ServerEnvironment::savePlayer(RemotePlayer *player)
 	Json::Value player_json;
 	player_json << *player;
 	getPlayerStorage().put_json("p." + player->getName(), player_json);
+/*
+	std::string players_path = m_path_world + DIR_DELIM "players";
+	fs::CreateDir(players_path);
+
+	player->save(players_path, m_gamedef);
+*/
 }
 
 RemotePlayer *ServerEnvironment::loadPlayer(const std::string &playername)
@@ -754,7 +773,7 @@ RemotePlayer *ServerEnvironment::loadPlayer(const std::string &playername)
 	bool found = false;
 	RemotePlayer *player = getPlayer(playername);
 	if (!player) {
-		player = new RemotePlayer(m_gamedef, "");
+		player = new RemotePlayer("", m_gamedef->idef());
 		newplayer = true;
 	}
 
@@ -2969,15 +2988,14 @@ LocalPlayer *ClientEnvironment::getPlayer(const char* name)
 	return dynamic_cast<LocalPlayer *>(Environment::getPlayer(name));
 }
 
-void ClientEnvironment::addPlayer(Player *player)
+void ClientEnvironment::addPlayer(LocalPlayer *player)
 {
 	DSTACK(FUNCTION_NAME);
 	/*
-		It is a failure if player is local and there already is a local
-		player
+		It is a failure if already is a local player
 	*/
-	FATAL_ERROR_IF(player->isLocal() && getLocalPlayer() != NULL,
-				   "Player is local but there is already a local player");
+	FATAL_ERROR_IF(getLocalPlayer() != NULL,
+			"Player is local but there is already a local player");
 
 	Environment::addPlayer(player);
 }
@@ -3282,7 +3300,7 @@ void ClientEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	*/
 	for (std::vector<Player*>::iterator i = m_players.begin();
 			i != m_players.end(); ++i) {
-		LocalPlayer *player = dynamic_cast<LocalPlayer *>(*i);
+		Player *player = *i;
 		assert(player);
 
 		/*

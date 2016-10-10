@@ -118,7 +118,7 @@ class Player
 {
 public:
 
-	Player(IGameDef *gamedef, const std::string & name);
+	Player(const std::string & name, IItemDefManager *idef);
 	virtual ~Player() = 0;
 
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
@@ -149,7 +149,7 @@ public:
 
 	v3s16 getLightPosition() const;
 
-	v3f getEyeOffset()
+ 	v3f getEyeOffset()
 	{
 		float eye_height = camera_barely_in_ceiling ? 1.5f : 1.625f;
 		return v3f(0, BS * eye_height, 0);
@@ -167,7 +167,7 @@ public:
 		m_position = position;
 	}
 
-	void setPitch(f32 pitch)
+	virtual void setPitch(f32 pitch)
 	{
 		auto lock = lock_unique_rec();
 		m_pitch = pitch;
@@ -179,109 +179,25 @@ public:
 		m_yaw = yaw;
 	}
 
-	f32 getPitch()
-	{
-		auto lock = lock_shared_rec();
-		return m_pitch;
-	}
+	f32 getPitch() { auto lock = lock_shared_rec(); return m_pitch; }
+	f32 getYaw() { auto lock = lock_shared_rec(); return m_yaw; }
+	u16 getBreath() { auto lock = lock_shared_rec(); return m_breath; }
 
-	f32 getYaw()
-	{
-		auto lock = lock_shared_rec();
-		return m_yaw;
-	}
+	virtual void setBreath(u16 breath) { m_breath = breath; }
 
-	u16 getBreath()
-	{
-		auto lock = lock_shared_rec();
-		return m_breath;
-	}
+	f32 getRadPitch() const { return m_pitch * core::DEGTORAD; }
+	f32 getRadYaw() const { return m_yaw * core::DEGTORAD; }
+	const std::string &getName() const { return m_name; }
+	aabb3f getCollisionbox() const { return m_collisionbox; }
 
-	virtual void setBreath(u16 breath)
+	u32 getFreeHudID()
 	{
-		auto lock = lock_unique_rec();
-		m_breath = breath;
-	}
-
-	// Deprecated
-	f32 getRadPitchDep()
-	{
-		return -1.0 * m_pitch * core::DEGTORAD;
-	}
-
-	// Deprecated
-	f32 getRadYawDep()
-	{
-		return (m_yaw + 90.) * core::DEGTORAD;
-	}
-
-	void updateName(const std::string &name)
-	{
-		m_name = name;
-	}
-
-	f32 getRadPitch()
-	{
-		return m_pitch * core::DEGTORAD;
-	}
-
-	f32 getRadYaw()
-	{
-		return m_yaw * core::DEGTORAD;
-	}
-
-	const std::string & getName() const
-	{
-		return m_name;
-	}
-
-	aabb3f getCollisionbox()
-	{
-		return m_collisionbox;
-	}
-
-	u32 getFreeHudID() {
 		size_t size = hud.size();
 		for (size_t i = 0; i != size; i++) {
 			if (!hud[i])
 				return i;
 		}
 		return size;
-	}
-
-	void setHotbarImage(const std::string &name)
-	{
-		hotbar_image = name;
-	}
-
-	std::string getHotbarImage()
-	{
-		return hotbar_image;
-	}
-
-	void setHotbarSelectedImage(const std::string &name)
-	{
-		hotbar_selected_image = name;
-	}
-
-	std::string getHotbarSelectedImage() {
-		return hotbar_selected_image;
-	}
-
-	void setSky(const video::SColor &bgcolor, const std::string &type,
-		const std::vector<std::string> &params)
-	{
-		m_sky_bgcolor = bgcolor;
-		m_sky_type = type;
-		m_sky_params = params;
-	}
-
-	void getSky(video::SColor *bgcolor, std::string *type,
-		std::vector<std::string> *params)
-	{
-		*bgcolor = m_sky_bgcolor;
-		*type = m_sky_type;
-		*params = m_sky_params;
 	}
 
 	void setLocalAnimations(v2s32 frames[4], float frame_speed)
@@ -298,41 +214,10 @@ public:
 		*frame_speed = local_animation_speed;
 	}
 
-	virtual bool isLocal() const
-	{
-		return false;
-	}
-
-	virtual void setPlayerSAO(PlayerSAO *sao)
-	{
-		/*
-		FATAL_ERROR("FIXME");
-		*/
-	}
-
-	/*
-		serialize() writes a bunch of text that can contain
-		any characters except a '\0', and such an ending that
-		deSerialize stops reading exactly at the right point.
-	*/
-	void serialize(std::ostream &os);
-	void deSerialize(std::istream &is, std::string playername);
+	virtual bool isLocal() const { return false; }
 
 	s16 refs;
 
-	// Use a function, if isDead can be defined by other conditions
-	bool isDead() { return hp == 0; }
-
-	bool got_teleported;
-	bool touching_ground;
-	// This oscillates so that the player jumps a bit above the surface
-	bool in_liquid;
-	// This is more stable and defines the maximum speed of the player
-	bool in_liquid_stable;
-	// Gets the viscosity of water to calculate friction
-	float liquid_viscosity;
-	bool is_climbing;
-	bool swimming_vertical;
 	bool camera_barely_in_ceiling;
 	v3f eye_offset_first;
 	v3f eye_offset_third;
@@ -353,25 +238,11 @@ public:
 	f32 movement_gravity;
 	f32 movement_fall_aerodynamics;
 
-	float physics_override_speed;
-	float physics_override_jump;
-	float physics_override_gravity;
-	bool physics_override_sneak;
-	bool physics_override_sneak_glitch;
-
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
 	std::atomic_ushort hp;
 
-	float hurt_tilt_timer;
-	float hurt_tilt_strength;
-
-	bool zoom = false;
-	bool superspeed;
-	bool free_move;
-
-	u16 protocol_version;
 	std::atomic_short peer_id;
 
 	std::string inventory_formspec;
@@ -385,7 +256,6 @@ public:
 
 	u32 keyPressed;
 
-
 	HudElement* getHud(u32 id);
 	u32         addHud(HudElement* hud);
 	HudElement* removeHud(u32 id);
@@ -393,26 +263,24 @@ public:
 
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
+
 	std::string hotbar_image;
 	int hotbar_image_items;
 	std::string hotbar_selected_image;
-protected:
-	IGameDef *m_gamedef;
 
 public:
 	std::string m_name;
+protected:
 	u16 m_breath;
 	f32 m_pitch;
 	f32 m_yaw;
 	v3f m_speed;
+public:
 	v3f m_position;
+protected:
 	aabb3f m_collisionbox;
 
 	std::vector<HudElement *> hud;
-
-	std::string m_sky_type;
-	video::SColor m_sky_bgcolor;
-	std::vector<std::string> m_sky_params;
 private:
 	// Protect some critical areas
 	// hud for example can be modified by EmergeThread
@@ -431,13 +299,14 @@ enum RemotePlayerChatResult {
 class RemotePlayer : public Player
 {
 public:
-	RemotePlayer(IGameDef *gamedef, const std::string & name);
+	RemotePlayer(const std::string & name, IItemDefManager *idef);
 	virtual ~RemotePlayer() {}
 
-	PlayerSAO *getPlayerSAO()
-	{ return m_sao; }
-	void setPlayerSAO(PlayerSAO *sao)
-	{ m_sao = sao; }
+	void save(std::string savedir, IGameDef *gamedef);
+	void deSerialize(std::istream &is, const std::string &playername);
+
+	PlayerSAO *getPlayerSAO() { return m_sao; }
+	void setPlayerSAO(PlayerSAO *sao) { m_sao = sao; }
 	void setPosition(const v3f &position);
 
 	const RemotePlayerChatResult canSendChatMessage();
@@ -461,8 +330,94 @@ public:
 		*ratio = m_day_night_ratio;
 	}
 
+	// Use a function, if isDead can be defined by other conditions
+	bool isDead() const { return hp == 0; }
+
+	void setHotbarImage(const std::string &name)
+	{
+		hud_hotbar_image = name;
+	}
+
+	std::string getHotbarImage() const
+	{
+		return hud_hotbar_image;
+	}
+
+	void setHotbarSelectedImage(const std::string &name)
+	{
+		hud_hotbar_selected_image = name;
+	}
+
+	const std::string &getHotbarSelectedImage() const
+	{
+		return hud_hotbar_selected_image;
+	}
+
+	// Deprecated
+	f32 getRadPitchDep() const { return -1.0 * m_pitch * core::DEGTORAD; }
+
+	// Deprecated
+	f32 getRadYawDep() const { return (m_yaw + 90.) * core::DEGTORAD; }
+
+	void setSky(const video::SColor &bgcolor, const std::string &type,
+				const std::vector<std::string> &params)
+	{
+		m_sky_bgcolor = bgcolor;
+		m_sky_type = type;
+		m_sky_params = params;
+	}
+
+	void getSky(video::SColor *bgcolor, std::string *type,
+				std::vector<std::string> *params)
+	{
+		*bgcolor = m_sky_bgcolor;
+		*type = m_sky_type;
+		*params = m_sky_params;
+	}
+
+	bool checkModified() const { return m_dirty || inventory.checkModified(); }
+
+	void setModified(const bool x)
+	{
+		m_dirty = x;
+		if (!x)
+			inventory.setModified(x);
+	}
+
+	virtual void setBreath(u16 breath)
+	{
+		if (breath != m_breath)
+			m_dirty = true;
+		Player::setBreath(breath);
+	}
+
+	virtual void setPitch(f32 pitch)
+	{
+		if (pitch != m_pitch)
+			m_dirty = true;
+		Player::setPitch(pitch);
+	}
+
+	virtual void setYaw(f32 yaw)
+	{
+		if (yaw != m_yaw)
+			m_dirty = true;
+		Player::setYaw(yaw);
+	}
+
+	s16 refs = 0;
+
+	u16 protocol_version;
 private:
+	/*
+		serialize() writes a bunch of text that can contain
+		any characters except a '\0', and such an ending that
+		deSerialize stops reading exactly at the right point.
+	*/
+	void serialize(std::ostream &os);
+
 	PlayerSAO *m_sao;
+	bool m_dirty;
 
 	static bool m_setting_cache_loaded;
 	static float m_setting_chat_message_limit_per_10sec;
@@ -474,6 +429,12 @@ private:
 
 	bool m_day_night_ratio_do_override;
 	float m_day_night_ratio;
+	std::string hud_hotbar_image;
+	std::string hud_hotbar_selected_image;
+
+	std::string m_sky_type;
+	video::SColor m_sky_bgcolor;
+	std::vector<std::string> m_sky_params;
 };
 
 Json::Value operator<<(Json::Value &json, Player &player);

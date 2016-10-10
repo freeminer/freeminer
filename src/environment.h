@@ -716,7 +716,7 @@ public:
 
 	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
 
-	virtual void addPlayer(Player *player);
+	virtual void addPlayer(LocalPlayer *player);
 	LocalPlayer * getLocalPlayer();
 
 	/*

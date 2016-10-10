@@ -815,11 +815,12 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, u16 peer_id
 
 	//assert(m_player);	// pre-condition
 	//assert(m_peer_id != 0);	// pre-condition
-	++m_player->refs;
+	if (m_player) {
+		++m_player->refs;
 	//setBasePosition(m_player->getPosition()); // deadlock?
-	if (m_player)
 		//m_base_position = m_player->getPosition();
 		m_base_position = m_player->m_position;
+	}
 	m_position_not_sent = true;
 	if (m_player)
 	m_inventory = &m_player->inventory;

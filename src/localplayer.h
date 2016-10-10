@@ -24,8 +24,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LOCALPLAYER_HEADER
 
 #include "player.h"
+#include "environment.h"
 #include <list>
 
+class Client;
 class Environment;
 class ClientEnvironment;
 struct MapNode;
@@ -37,7 +39,7 @@ enum LocalPlayerAnimations {NO_ANIM, WALK_ANIM, DIG_ANIM, WD_ANIM};  // no local
 class LocalPlayer : public Player
 {
 public:
-	LocalPlayer(IGameDef *gamedef, const char *name);
+	LocalPlayer(Client *gamedef, const char *name);
 	virtual ~LocalPlayer();
 
 	bool isLocal() const
@@ -47,7 +49,23 @@ public:
 
 	ClientActiveObject *parent;
 
+	bool got_teleported;
 	bool isAttached;
+	bool touching_ground;
+	// This oscillates so that the player jumps a bit above the surface
+	bool in_liquid;
+	// This is more stable and defines the maximum speed of the player
+	bool in_liquid_stable;
+	// Gets the viscosity of water to calculate friction
+	float liquid_viscosity;
+	bool is_climbing;
+	bool swimming_vertical;
+
+	float physics_override_speed;
+	float physics_override_jump;
+	float physics_override_gravity;
+	bool physics_override_sneak;
+	bool physics_override_sneak_glitch;
 
 	v3f overridePosition;
 
@@ -80,6 +98,9 @@ public:
 
 	video::SColor light_color;
 
+	float hurt_tilt_timer;
+	float hurt_tilt_strength;
+
 	GenericCAO* getCAO() const {
 		return m_cao;
 	}
@@ -90,6 +111,11 @@ public:
 	}
 
 	u32 maxHudId() const { return hud.size(); }
+
+	bool zoom = false;
+	bool superspeed = false;
+	bool free_move = false;
+
 
 private:
 	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery = 0);
@@ -113,6 +139,7 @@ private:
 	bool m_can_jump;
 
 	GenericCAO* m_cao;
+	Client *m_gamedef;
 };
 
 #endif
