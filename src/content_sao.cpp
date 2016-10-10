@@ -975,7 +975,9 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	if(m_attachment_parent_id && !isAttached())
 	{
 	  {
-		auto lock = lock_unique_rec();
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			goto NOLOCK1;
 		m_attachment_parent_id = 0;
 		m_attachment_bone = "";
 		m_attachment_position = v3f(0,0,0);
@@ -984,6 +986,8 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	  }
 		((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 	}
+
+	NOLOCK1:;
 
 	//dstream<<"PlayerSAO::step: dtime: "<<dtime<<std::endl;
 
@@ -999,11 +1003,16 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	m_dig_pool.add(dtime);
 	m_move_pool.add(dtime);
 	{
-		auto lock = lock_unique_rec();
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			goto NOLOCK2;
 	m_time_from_last_punch += dtime;
 	m_nocheat_dig_time += dtime;
 	m_ms_from_last_respawn += dtime*1000;
 	}
+
+	NOLOCK2:;
+
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin
 	if(isAttached())
@@ -1053,7 +1062,9 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	}
 
 	if(m_physics_override_sent == false){
-		auto lock = lock_unique_rec();
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			goto NOLOCK3;
 		m_physics_override_sent = true;
 		std::string str = gob_cmd_update_physics_override(m_physics_override_speed,
 				m_physics_override_jump, m_physics_override_gravity,
@@ -1063,8 +1074,13 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		m_messages_out.push(aom);
 	}
 
+	NOLOCK3:;
+
 	if(m_animation_sent == false){
-		auto lock = lock_unique_rec();
+		auto lock = try_lock_unique_rec();
+		if (!lock->owns_lock())
+			goto NOLOCK4;
+
 		m_animation_sent = true;
 		std::string str = gob_cmd_update_animation(
 			m_animation_range, m_animation_speed, m_animation_blend, m_animation_loop);
@@ -1072,6 +1088,8 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		ActiveObjectMessage aom(getId(), true, str);
 		m_messages_out.push(aom);
 	}
+
+	NOLOCK4:;
 
 	if (!m_bone_position_sent) {
 		m_bone_position_sent = true;
