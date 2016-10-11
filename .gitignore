@@ -93,5 +93,19 @@ build/android/src/main/jniLibs
 build/android/obj
 build/android/local.properties
 build/android/.gradle
+
+build/android_fm/assets
+build/android_fm/AndroidManifest.xml
+build/android_fm/bin
+build/android_fm/cmake
+build/android_fm/deps*
+build/android_fm/libs
+build/android_fm/jni/src
+build/android_fm/src/main/jniLibs
+build/android_fm/obj
+build/android_fm/project.properties
+build/android_fm/gen
+build/android_fm/path.cfg
+
 timestamp
 
