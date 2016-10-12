@@ -42,7 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mandelbulber/fractal.cpp"
 #endif
 
-inline double mandelbox(double x, double y, double z, double d, int nn = 10) {
+inline double mandelbox(double x, double y, double z, double d, int nn = 10, int seed = 1) {
 	int s = 7;
 	x *= s;
 	y *= s;
@@ -101,7 +101,7 @@ inline double mandelbox(double x, double y, double z, double d, int nn = 10) {
 
 }
 
-inline double mengersponge(double x, double y, double z, double d, int MI = 10) {
+inline double mengersponge(double x, double y, double z, double d, int MI = 10, int seed = 1) {
 	double r = x * x + y * y + z * z;
 	double scale = 3;
 	int i = 0;
@@ -138,10 +138,9 @@ inline double mengersponge(double x, double y, double z, double d, int MI = 10) 
 	return ((sqrt(r)) * pow(scale, (-i)) < d);
 }
 
-inline double sphere(double x, double y, double z, double d, int ITR = 1) {
+inline double sphere(double x, double y, double z, double d, int ITR = 1, int seed = 1) {
 	return v3f(x, y, z).getLength() < d;
 }
-
 
 
 typedef u_int32_t Fnv32_t;
@@ -157,66 +156,60 @@ inline Fnv32_t fnv_32_buf(const void *buf, size_t len, Fnv32_t hval = FNV1_32_IN
 }
 
 
-inline double rooms(double dx, double dy, double dz, double d, int ITR = 1) {
+inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int seed = 1) {
 	int x = dx, y = dy, z = dz;
 	//if (x < y && x < z) return 0; // debug slice
-	const auto seed = 1;
+	//const auto seed = 1; //params->seed;
 	const auto rooms_pow_min = 2, rooms_pow_max = 9;
 	const auto rooms_pow_cut_max = 8;
 	const auto rooms_pow_fill_max = 4;
-	for (int pw = rooms_pow_min; pw <= rooms_pow_max; ++pw) {
-		int every = 2 << pw;
+	const auto room_fill_every = 10;
+	const auto room_big_every = 13;
+	//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
+	int cx = 0, cy = 0, cz = 0;
+	int room_n = 0;
+	int wall = 0;
+	for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
+		int every = 2 << pw2;
 		//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " tx="<<((int)x%every)<<"\n";
 		auto xhit = !(x % every), yhit = !(y % every), zhit = !(z % every);
-		//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
-		int cx = 0, cy = 0, cz = 0;
-		int room_n = 0;
-		int wall = 0;
-		for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
-			//int every2 = 2 << pw2;
-			int lv = 1;
-			lv += x < cx;
-			lv += (y < cy) << 1;
-			lv += (z < cz) << 2;
-			//value = lv + value * pow(10, tens);
-			//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
-			room_n = lv + room_n * 10;
+		int lv = 1;
+		lv += x < cx;
+		lv += (y < cy) << 1;
+		lv += (z < cz) << 2;
+		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
+		room_n = lv + room_n * 10;
 
-			auto room_n_hash_1 = room_n + seed + 1;
-			if (
-			    pw < rooms_pow_fill_max &&
-			    pw2 < rooms_pow_fill_max &&
-			    !( fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1)) % 10)
-			) {
-				//errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
-				return pw;
-			}
-			//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
-
-			//if (pw2 <= rooms_pow_cut_max && !( std::hash<double>()(room_n + 0) % 13)) {
-			auto room_n_hash_2 = room_n + seed + 2;
-			if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(&room_n_hash_2, sizeof(room_n_hash_2)) % 13)) {
-				//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
-				//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
-				int pw3 = pw2 + 1;
-				if ((x >> pw3) == (x - 1) >> pw3 && (y >> pw3) == (y - 1) >> pw3 && (z >> pw3) == (z - 1) >> pw3) {
-					return 0;
-				}
-			}
-
-			if (xhit || yhit || zhit) {
-				wall = pw;
-			}
-
-			//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
-			int room_size = 2 << (pw2 - 1);
-			cx += ((x < cx) ? -1 : 1) * room_size;
-			cy += ((y < cy) ? -1 : 1) * room_size;
-			cz += ((z < cz) ? -1 : 1) * room_size;
+		auto room_n_hash_1 = room_n + seed + 1;
+		if ( pw2 < rooms_pow_fill_max &&
+		        !( fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1)) % room_fill_every)
+		   ) {
+			//errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
+			return pw2;
 		}
-		return wall;
+		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
+
+		auto room_n_hash_2 = room_n + seed + 2;
+		if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(&room_n_hash_2, sizeof(room_n_hash_2)) % room_big_every)) {
+			//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
+			//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
+			int pw3 = pw2 + 1;
+			if ((x >> pw3) == (x - 1) >> pw3 && (y >> pw3) == (y - 1) >> pw3 && (z >> pw3) == (z - 1) >> pw3) {
+				return 0;
+			}
+		}
+
+		if (xhit || yhit || zhit) {
+			wall = pw2;
+		}
+
+		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
+		int room_size = 2 << (pw2 - 1);
+		cx += ((x < cx) ? -1 : 1) * room_size;
+		cy += ((y < cy) ? -1 : 1) * room_size;
+		cz += ((z < cz) ? -1 : 1) * room_size;
 	}
-	return 0;
+	return wall;
 }
 
 //////////////////////// Mapgen Math parameter read/write
@@ -593,7 +586,7 @@ int MapgenMath::generateTerrain() {
 				else
 #endif
 					if (internal)
-						d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations);
+						d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations, mg_params->seed);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
 					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
