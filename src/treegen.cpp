@@ -896,10 +896,9 @@ void make_cavetree(MMVManip &vmanip, v3POS p0,
 	PseudoRandom pr(seed);
 	POS trunk_h = pr.range(2, pr.range(2, 5));
 	v3POS p1 = p0;
-	for(POS ii=0; ii<trunk_h; ii++)
-	{
-		if(vmanip.m_area.contains(p1)) {
-			if(vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
+	for (POS ii=0; ii<trunk_h; ii++) {
+		if (vmanip.m_area.contains(p1)) {
+			if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
 				return;
 			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN)
 				return;
@@ -907,10 +906,11 @@ void make_cavetree(MMVManip &vmanip, v3POS p0,
 		}
 		p1.Y++;
 	}
-	if(vmanip.m_area.contains(p1))
-		if(vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
+	if (vmanip.m_area.contains(p1)) {
+		if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
 			return;
 		vmanip.m_data[vmanip.m_area.index(p1)] = leavesnode;
+	}
 }
 
 }; // namespace treegen
