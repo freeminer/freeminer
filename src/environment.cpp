@@ -620,6 +620,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name) {
 
 RemotePlayer *ServerEnvironment::getPlayer(const u16 peer_id)
 {
+	auto lock = m_players.lock_shared_rec();
 	for (std::vector<RemotePlayer *>::iterator i = m_players.begin();
 			i != m_players.end(); ++i) {
 		RemotePlayer *player = *i;
@@ -631,6 +632,7 @@ RemotePlayer *ServerEnvironment::getPlayer(const u16 peer_id)
 
 RemotePlayer *ServerEnvironment::getPlayer(const std::string &name)
 {
+	auto lock = m_players.lock_shared_rec();
 	for (std::vector<RemotePlayer *>::iterator i = m_players.begin();
 			i != m_players.end(); ++i) {
 		RemotePlayer *player = *i;
@@ -659,6 +661,7 @@ void ServerEnvironment::addPlayer(RemotePlayer *player)
 
 void ServerEnvironment::removePlayer(RemotePlayer *player)
 {
+	auto lock = m_players.lock_unique_rec();
 	for (std::vector<RemotePlayer *>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
 		if ((*it) == player) {
@@ -699,6 +702,7 @@ bool ServerEnvironment::line_of_sight(v3f pos1, v3f pos2, float stepsize, v3s16 
 void ServerEnvironment::kickAllPlayers(AccessDeniedCode reason,
 		const std::string &str_reason, bool reconnect)
 {
+	auto lock = m_players.lock_shared_rec();
 	for (std::vector<RemotePlayer *>::iterator it = m_players.begin();
 			it != m_players.end(); ++it) {
 		RemotePlayer *player = dynamic_cast<RemotePlayer *>(*it);
@@ -1616,10 +1620,12 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			Get player block positions
 		*/
 		std::vector<v3s16> players_blockpos;
+		{
+		auto lock = m_players.lock_shared_rec();
 		for (std::vector<RemotePlayer *>::iterator i = m_players.begin();
 				i != m_players.end(); ++i) {
 			RemotePlayer *player = dynamic_cast<RemotePlayer *>(*i);
-			assert(player);
+			//assert(player);
 			// Ignore disconnected players
 			if (!player || player->peer_id == 0)
 				continue;
@@ -1627,6 +1633,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			v3s16 blockpos = getNodeBlockPos(
 					floatToInt(player->getPosition(), BS));
 			players_blockpos.push_back(blockpos);
+		}
 		}
 		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
 			//TimeTaker timer_s2("force load");
