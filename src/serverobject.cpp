@@ -108,4 +108,3 @@ bool ServerActiveObject::setWieldedItem(const ItemStack &item)
 	}
 	return false;
 }
-

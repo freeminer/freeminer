@@ -199,6 +199,15 @@ public:
 	{ return 0; }
 	virtual ItemStack getWieldedItem();
 	virtual bool setWieldedItem(const ItemStack &item);
+	inline void attachParticleSpawner(u32 id)
+	{
+		m_attached_particle_spawners.insert(id);
+	}
+	inline void detachParticleSpawner(u32 id)
+	{
+		m_attached_particle_spawners.erase(id);
+	}
+
 
 	/*
 		Number of players which know about this object. Object won't be
@@ -255,6 +264,7 @@ protected:
 	ServerEnvironment *m_env;
 	v3f m_base_position;
 	Mutex m_base_position_mutex;
+	UNORDERED_SET<u32> m_attached_particle_spawners;
 
 private:
 	// Used for creating objects based on type
