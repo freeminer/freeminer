@@ -487,7 +487,7 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt) {
 void Server::handleCommand_PlayerPos(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -560,7 +560,7 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt) {
 void Server::handleCommand_InventoryAction(NetworkPacket* pkt) {
 	//const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -711,7 +711,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt) {
 void Server::handleCommand_ChatMessage(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -781,7 +781,7 @@ void Server::handleCommand_ChatMessage(NetworkPacket* pkt) {
 void Server::handleCommand_Damage(NetworkPacket* pkt) {
 	//const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -809,7 +809,7 @@ void Server::handleCommand_Damage(NetworkPacket* pkt) {
 void Server::handleCommand_Breath(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -834,7 +834,7 @@ void Server::handleCommand_Breath(NetworkPacket* pkt) {
 void Server::handleCommand_Password(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -880,7 +880,7 @@ void Server::handleCommand_Password(NetworkPacket* pkt) {
 void Server::handleCommand_PlayerItem(NetworkPacket* pkt) {
 	//const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -938,7 +938,7 @@ void Server::handleCommand_Interact(NetworkPacket* pkt) {
 		//errorstream<<"overload pointed peer_id=" << peer_id << " action=" << (int)action  << " pointed.type="<<pointed.type<< "\n";
 	}
 
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -1357,7 +1357,7 @@ void Server::handleCommand_RemovedSounds(NetworkPacket* pkt) {
 void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt) {
 	//const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
@@ -1399,7 +1399,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt) {
 void Server::handleCommand_InventoryFields(NetworkPacket* pkt) {
 	//const auto peer_id = pkt->getPeerId();
 	auto & packet = *(pkt->packet);
-	auto player = m_env->getRemotePlayer(pkt->getPeerId());
+	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;

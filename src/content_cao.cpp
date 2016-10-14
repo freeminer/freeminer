@@ -659,10 +659,10 @@ void GenericCAO::initialize(const std::string &data)
 	pos_translator.init(m_position);
 	updateNodePos();
 
-	if(m_is_player)
-	{
-		LocalPlayer *player = m_env->getPlayer(m_name.c_str());
-		if (player && player->isLocal()) {
+	if (m_is_player) {
+		// Check if it's the current player
+		LocalPlayer *player = m_env->getLocalPlayer();
+		if (player && player->getName() == m_name) {
 			m_is_local_player = true;
 			m_is_visible = false;
 			LocalPlayer* localplayer = player;

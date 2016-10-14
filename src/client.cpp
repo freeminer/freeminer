@@ -247,7 +247,7 @@ Client::Client(
 	m_localdb(NULL)
 {
 	// Add local player
-	m_env.addPlayer(new LocalPlayer(this, playername));
+	m_env.setLocalPlayer(new LocalPlayer(this, playername));
 
 	m_mapper = new Mapper(device, this);
 	//m_cache_save_interval = g_settings->getU16("server_map_save_interval");
@@ -1512,8 +1512,9 @@ Inventory* Client::getInventory(const InventoryLocation &loc)
 	break;
 	case InventoryLocation::PLAYER:
 	{
-		LocalPlayer *player = m_env.getPlayer(loc.name.c_str());
-		if(!player)
+		// Check if we are working with local player inventory
+		LocalPlayer *player = m_env.getLocalPlayer();
+		if (!player || player->getName() != loc.name)
 			return NULL;
 		return &player->inventory;
 	}
@@ -1592,11 +1593,6 @@ ClientActiveObject * Client::getSelectedActiveObject(
 	}
 
 	return NULL;
-}
-
-std::list<std::string> Client::getConnectedPlayerNames()
-{
-	return m_env.getPlayerNames();
 }
 
 float Client::getAnimationTime()
@@ -1786,8 +1782,7 @@ void Client::updateMeshTimestampWithEdge(v3s16 blockpos) {
 
 ClientEvent Client::getClientEvent()
 {
-	if(m_client_event_queue.size() == 0)
-	{
+	if (m_client_event_queue.empty()) {
 		ClientEvent event;
 		event.type = CE_NONE;
 		return event;
