@@ -2765,7 +2765,7 @@ inline bool Game::handleCallbacks()
 
 	if (g_gamecallback->changevolume_requested) {
 		(new GUIVolumeChange(guienv, guiroot, -1,
-				     &g_menumgr, client))->drop();
+				     &g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
