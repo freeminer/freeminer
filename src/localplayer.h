@@ -33,6 +33,7 @@ class ClientEnvironment;
 struct MapNode;
 class GenericCAO;
 class ClientActiveObject;
+class IGameDef;
 
 enum LocalPlayerAnimations {NO_ANIM, WALK_ANIM, DIG_ANIM, WD_ANIM};  // no local animation, walking, digging, both
 

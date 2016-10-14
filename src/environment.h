@@ -458,7 +458,7 @@ public:
 		Find out what new objects have been removed from
 		inside a radius around a position
 	*/
-	void getRemovedActiveObjects(RemotePlayer* player, s16 radius,
+	void getRemovedActiveObjects(RemotePlayer *player, s16 radius,
 			s16 player_radius,
 			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::queue<u16> &removed_objects);

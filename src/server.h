@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "chat_interface.h"
 #include "clientiface.h"
-#include "player.h"
+#include "remoteplayer.h"
 #include "network/networkpacket.h"
 #include <string>
 #include <list>

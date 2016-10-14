@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "clientiface.h"
 #include "util/numeric.h"
 #include "util/mathconstants.h"
-#include "player.h"
+#include "remoteplayer.h"
 #include "settings.h"
 #include "mapblock.h"
 #include "network/connection.h"

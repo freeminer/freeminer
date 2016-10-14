@@ -50,7 +50,7 @@ private:
 
 	static PlayerSAO* getplayersao(ObjectRef *ref);
 
-	static RemotePlayer* getplayer(ObjectRef *ref);
+	static RemotePlayer *getplayer(ObjectRef *ref);
 
 	// Exported functions
 

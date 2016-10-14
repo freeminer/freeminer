@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "serverobject.h"
 #include "itemgroup.h"
-#include "player.h"
 #include "object_properties.h"
 
 /*
@@ -163,6 +162,8 @@ public:
 	}
 };
 
+class RemotePlayer;
+
 class PlayerSAO : public ServerActiveObject
 {
 public:
@@ -237,7 +238,7 @@ public:
 
 	void disconnected();
 
-	RemotePlayer* getPlayer() { return m_player; }
+	RemotePlayer *getPlayer() { return m_player; }
 	u16 getPeerID() const { return m_peer_id; }
 
 	// Cheat prevention
