@@ -215,11 +215,11 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3f minpos, v3f maxpos,
 	v3f minvel, v3f maxvel, v3f minacc, v3f maxacc, float minexptime, float maxexptime,
 	float minsize, float maxsize, bool collisiondetection, bool collision_removal,
-	bool vertical, const std::string &texture, u32 id)
+	u16 attached_id, bool vertical, const std::string &texture, u32 id)
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_ADD_PARTICLESPAWNER, 16);
+	MSGPACK_PACKET_INIT(TOCLIENT_ADD_PARTICLESPAWNER, 18);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT, amount);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_SPAWNTIME, spawntime);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINPOS, minpos);
@@ -236,6 +236,8 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_TEXTURE, texture);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_VERTICAL, vertical);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_ID, id);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_COLLISION_REMOVAL, collision_removal);
+	PACK(TOCLIENT_ADD_PARTICLESPAWNER_ATTACHED_ID, attached_id);
 
 	if (peer_id != PEER_ID_INEXISTENT)
 	{

@@ -567,7 +567,6 @@ void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)          {
 	std::string texture = packet[TOCLIENT_SPAWN_PARTICLE_TEXTURE].as<std::string>();
 	bool vertical = packet[TOCLIENT_SPAWN_PARTICLE_VERTICAL].as<bool>();
 
-
 	ClientEvent event;
 	event.type = CE_SPAWN_PARTICLE;
 	event.spawn_particle.pos = new v3f (pos);
@@ -596,6 +595,8 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)     {
 	u32 id;
 	std::string texture;
 
+	ClientEvent event = {};
+
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT].convert(amount);
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_SPAWNTIME].convert(spawntime);
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_MINPOS].convert(minpos);
@@ -612,8 +613,11 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)     {
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_TEXTURE].convert(texture);
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_VERTICAL].convert(vertical);
 	packet[TOCLIENT_ADD_PARTICLESPAWNER_ID].convert(id);
+	if (packet.count(TOCLIENT_ADD_PARTICLESPAWNER_COLLISION_REMOVAL))
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_COLLISION_REMOVAL].convert(event.add_particlespawner.collision_removal);
+	if (packet.count(TOCLIENT_ADD_PARTICLESPAWNER_ATTACHED_ID))
+		packet[TOCLIENT_ADD_PARTICLESPAWNER_ATTACHED_ID].convert(event.add_particlespawner.attached_id);
 
-	ClientEvent event;
 	event.type = CE_ADD_PARTICLESPAWNER;
 	event.add_particlespawner.amount = amount;
 	event.add_particlespawner.spawntime = spawntime;
