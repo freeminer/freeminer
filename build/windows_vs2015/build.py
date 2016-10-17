@@ -76,7 +76,7 @@ libiconv = "libiconv-1.9.2"
 #SQLITE_VERSION="3080704"
 #sqlite = "sqlite-autoconf-{}".format(SQLITE_VERSION)
 #SQLITE_VERSION="3.14.1"
-SQLITE_VERSION="3140200"
+SQLITE_VERSION="3150000"
 sqlite = "sqlite-amalgamation-{}".format(SQLITE_VERSION)
 
 #somtimes vs becomes mad
