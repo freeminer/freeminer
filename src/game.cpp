@@ -1815,6 +1815,8 @@ private:
 	bool m_cache_enable_joysticks;
 	bool m_cache_enable_particles;
 	bool m_cache_enable_fog;
+	bool m_cache_enable_noclip;
+	bool m_cache_enable_free_move;
 	f32  m_cache_mouse_sensitivity;
 	f32  m_cache_joystick_frustum_sensitivity;
 	f32  m_repeat_right_click_time;
@@ -1868,6 +1870,10 @@ Game::Game() :
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("repeat_rightclick_time",
 		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("noclip",
+		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("free_move",
+		&settingChangedCallback, this);
 
 	readSettings();
 
@@ -1916,6 +1922,10 @@ Game::~Game()
 	g_settings->deregisterChangedCallback("mouse_sensitivity",
 		&settingChangedCallback, this);
 	g_settings->deregisterChangedCallback("repeat_rightclick_time",
+		&settingChangedCallback, this);
+	g_settings->deregisterChangedCallback("noclip",
+		&settingChangedCallback, this);
+	g_settings->deregisterChangedCallback("free_move",
 		&settingChangedCallback, this);
 }
 
@@ -4537,8 +4547,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 	float direct_brightness = time_brightness;
 	bool sunlight_seen = false;
 
-	if (g_settings->getBool("free_move")) {
-		//direct_brightness = time_brightness;
+	if (m_cache_enable_noclip && m_cache_enable_free_move) {
+		direct_brightness = time_brightness;
 		sunlight_seen = true;
 	} else if (!flags.headless_optimize) {
 		//ScopeProfiler sp(g_profiler, "Detecting background light", SPT_AVG);
@@ -5044,6 +5054,7 @@ void Game::settingChangedCallback(const std::string &setting_name, void *data)
 
 void Game::readSettings()
 {
+	m_cinematic                          = g_settings->getBool("cinematic");
 	m_cache_doubletap_jump               = g_settings->getBool("doubletap_jump");
 	m_cache_enable_clouds                = g_settings->getBool("enable_clouds");
 	m_cache_enable_joysticks             = g_settings->getBool("enable_joysticks");
@@ -5053,7 +5064,8 @@ void Game::readSettings()
 	m_cache_joystick_frustum_sensitivity = g_settings->getFloat("joystick_frustum_sensitivity");
 	m_repeat_right_click_time            = g_settings->getFloat("repeat_rightclick_time");
 
-	m_cinematic                       = g_settings->getBool("cinematic");
+	m_cache_enable_noclip                = g_settings->getBool("noclip");
+	m_cache_enable_free_move             = g_settings->getBool("free_move");
 
 	m_cache_mouse_sensitivity = rangelim(m_cache_mouse_sensitivity, 0.001, 100.0);
 }
