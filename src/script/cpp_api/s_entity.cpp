@@ -27,6 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_converter.h"
 #include "common/c_content.h"
 
+std::unordered_map<std::string, bool> reported_not_defined;
+
 bool ScriptApiEntity::luaentity_Add(u16 id, const char *name, bool force_usage)
 {
 	SCRIPTAPI_PRECHECKHEADER
@@ -45,7 +47,9 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name, bool force_usage)
 	// Should be a table, which we will use as a prototype
 	//luaL_checktype(L, -1, LUA_TTABLE);
 	if (lua_type(L, -1) != LUA_TTABLE){
+		if (!reported_not_defined[name])
 		infostream<<"LuaEntity name \""<<name<<"\" not defined"<<std::endl;
+		reported_not_defined[name] = true;
 		return false;
 	}
 	int prototype_table = lua_gettop(L);
