@@ -544,6 +544,10 @@ void Client::step(float dtime)
 		*/
 		{
 
+		auto qsize = m_mesh_update_thread.m_queue_out.size();
+		if (qsize > 1000)
+			end_ms += 200;
+
 		while (!m_mesh_update_thread.m_queue_out.empty_try()) {
 			num_processed_meshes++;
 
