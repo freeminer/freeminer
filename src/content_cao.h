@@ -132,6 +132,8 @@ public:
 
 	void initialize(const std::string &data);
 
+	void processInitData(const std::string &data);
+
 	ClientActiveObject *getParent();
 
 	bool getCollisionBox(aabb3f *toset);
