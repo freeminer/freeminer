@@ -2844,13 +2844,13 @@ void ServerEnvironment::deactivateFarObjects(bool force_delete)
 
 			if(block)
 			{
-				if(block->m_static_objects.m_stored.size() >= max_objects_per_block){
-					infostream<<"ServerEnv: Trying to store id="<<obj->getId()
-							<<" statically but block "<<PP(blockpos)
-							<<" already contains "
-							<<block->m_static_objects.m_stored.size()
-							<<" objects."
-							<<" Forcing delete."<<std::endl;
+				if (block->m_static_objects.m_stored.size() >= max_objects_per_block){
+					infostream <<"ServerEnv: Trying to store id="<<obj->getId()
+							<< " statically but block " << PP(blockpos)
+							<< " already contains "
+							<< block->m_static_objects.m_stored.size()
+							<< " objects."
+							<< " Forcing delete." << std::endl;
 					force_delete = true;
 				} else {
 					// If static counterpart already exists in target block,
