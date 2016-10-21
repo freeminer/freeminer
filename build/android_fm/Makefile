@@ -1179,7 +1179,7 @@ $(ROOT)/jni/src/android_version_githash.h : prep_srcdir
 	echo "#define ANDROID_MT_VERSION_GITHASH_H";                               \
 	export GITHASH=$$(git rev-parse --short=8 HEAD);                           \
 	export VERSION_STR="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}"; \
-	echo "#define VERSION_GITHASH \"$$VERSION_STR-$$GITHASH-Android\"";        \
+	echo "#define VERSION_GITHASH \"$$VERSION_STR-$$GITHASH-Android-${TARGET_ABI}\"";        \
 	echo "#endif";                                                             \
 	} > "$${VERSION_FILE_NEW}";                                                \
 	if ! cmp -s $${VERSION_FILE} $${VERSION_FILE_NEW}; then                    \
