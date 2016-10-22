@@ -3513,7 +3513,7 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 	}
 	catch(SerializationError &e)
 	{
-		errorstream<<"ClientEnvironment::addActiveObject():"
+		infostream<<"ClientEnvironment::addActiveObject():"
 				<<" id="<<id<<" type="<<type
 				<<": SerializationError in initialize(): "
 				<<e.what()
