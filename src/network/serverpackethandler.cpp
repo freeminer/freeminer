@@ -1135,7 +1135,7 @@ void Server::handleCommand_Damage(NetworkPacket* pkt)
 		return;
 	}
 
-	if (g_settings->getBool("enable_damage")) {
+	if (playersao->getHP() && g_settings->getBool("enable_damage")) {
 		actionstream << player->getName() << " damaged by "
 				<< (int)damage << " hp at " << PP(player->getPosition() / BS)
 				<< std::endl;

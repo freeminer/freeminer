@@ -793,7 +793,7 @@ void Server::handleCommand_Damage(NetworkPacket* pkt) {
 	}
 	u8 damage = packet[TOSERVER_DAMAGE_VALUE].as<u8>();
 
-	if(g_settings->getBool("enable_damage")) {
+	if(playersao->getHP() && g_settings->getBool("enable_damage")) {
 		actionstream << player->getName() << " damaged by "
 		             << (int)damage << " hp at " << PP(player->getPosition() / BS)
 		             << std::endl;
