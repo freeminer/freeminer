@@ -469,11 +469,38 @@ if(ENABLE_LEVELDB)
 	find_library(SNAPPY_LIBRARY snappy)
 	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
 	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
-	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")   
-	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR AND SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
+	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")
+
+	if (NOT LEVELDB_INCLUDE_DIR)
+		find_path(LEVELDB_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
+	  if (LEVELDB_INCLUDE_DIR)
+		# bad try direct make build 
+		#find_path(LEVELDB_MAKEFILE_DIR Makefile ${PROJECT_SOURCE_DIR}/external/leveldb NO_DEFAULT_PATH)
+		#if (LEVELDB_MAKEFILE_DIR)
+		#	execute_process(COMMAND "make -f ${LEVELDB_MAKEFILE_DIR}/Makefile" WORKING_DIRECTORY LEVELDB_MAKEFILE_DIR OUTPUT_VARIABLE LMKE ERROR_VARIABLE LMKE)
+		#message(STATUS "leveldb mk=${LMKE}")
+		#endif()
+		#
+		# good cmake try
+		# Leveldb have no cmake by default,
+		# git clone --recursive --depth 1 https://github.com/google/leveldb src/external/leveldb
+		# But we can collect something from pulls
+		# wget -O src/external/leveldb/CMakeLists.txt https://raw.githubusercontent.com/proller/leveldb/patch-2/CMakeLists.txt
+		# wget -O src/external/leveldb/leveldbConfig.cmake.in https://raw.githubusercontent.com/tamaskenez/leveldb-cmake-win/native_windows_port_1_18/leveldbConfig.cmake.in
+		add_subdirectory(${PROJECT_SOURCE_DIR}/external/leveldb)
+		set(LEVELDB_LIBRARY leveldb)
+		message(STATUS "Using bundled leveldb ${LEVELDB_INCLUDE_DIR} ${LEVELDB_LIBRARY}")
+	  endif()
+	endif()
+
+	if(SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
+		include_directories(${SNAPPY_INCLUDE_DIR})
+	endif()
+
+	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
 		set(USE_LEVELDB TRUE)
 		message(STATUS "LevelDB backend enabled. ${LEVELDB_INCLUDE_DIR}")
-		include_directories(${LEVELDB_INCLUDE_DIR} ${SNAPPY_INCLUDE_DIR})
+		include_directories(${LEVELDB_INCLUDE_DIR})
 	elseif (NOT FORCE_LEVELDB)
 		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
 	endif()
