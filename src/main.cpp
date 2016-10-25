@@ -21,15 +21,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef _MSC_VER
-	#ifndef SERVER // Dedicated server isn't linked with Irrlicht
-		#pragma comment(lib, "Irrlicht.lib")
-		// This would get rid of the console window
-		//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
-	#endif
-	//#pragma comment(lib, "zlibwapi.lib")
-	#pragma comment(lib, "Shell32.lib")
-#endif
+// This would get rid of the console window
+//#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
 
 #include "irrlicht.h" // createDevice
 
