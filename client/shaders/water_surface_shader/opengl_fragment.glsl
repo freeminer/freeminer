@@ -154,6 +154,10 @@ vec4 base = texture2D(baseTexture, uv).rgba;
 	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
 	vec4 col = vec4(color.rgb * min(gl_Color.rgb + light, 1.0), 1.0);
 
+#ifdef ENABLE_TONE_MAPPING
+	col = applyToneMapping(col);
+#endif
+
 #if MATERIAL_TYPE == TILE_MATERIAL_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_LIQUID_OPAQUE
 	float alpha = gl_Color.a;
 	if (fogDistance != 0.0) {
@@ -169,9 +173,5 @@ vec4 base = texture2D(baseTexture, uv).rgba;
 	col = vec4(col.rgb, base.a);
 #endif
 
-#ifdef ENABLE_TONE_MAPPING
-	gl_FragColor = applyToneMapping(col);
-#else
 	gl_FragColor = col;
-#endif
 }
