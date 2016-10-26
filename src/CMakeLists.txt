@@ -471,6 +471,19 @@ if(ENABLE_LEVELDB)
 	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
 	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")
 
+	if (NOT SNAPPY_INCLUDE_DIR)
+		find_path(SNAPPY_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
+	  if (SNAPPY_INCLUDE_DIR)
+		# Snappy have no cmake by default,
+		# git clone --recursive --depth 1 https://github.com/google/snappy src/external/snappy
+		# But we can collect something from pulls
+		# wget -O src/external/snappy/CMakeLists.txt https://raw.githubusercontent.com/adasworks/snappy-cmake/master/CMakeLists.txt
+		add_subdirectory(${PROJECT_SOURCE_DIR}/external/snappy)
+		set(SNAPPY_LIBRARY snappy)
+		message(STATUS "Using bundled snappy ${SNAPPY_INCLUDE_DIR} ${SNAPPY_LIBRARY}")
+	  endif()
+	endif()
+
 	if (NOT LEVELDB_INCLUDE_DIR)
 		find_path(LEVELDB_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
 	  if (LEVELDB_INCLUDE_DIR)
