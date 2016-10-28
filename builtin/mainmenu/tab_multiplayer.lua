@@ -65,7 +65,7 @@ local function get_formspec(tabview, name, tabdata)
 		if #favs > 0 then
 			for i = 1, #favs do
 			for j = 1, #menudata.favorites do
-				if menudata.favorites[j].address == favs[i].address and
+				if menudata.favorites[j] and menudata.favorites[j].address == favs[i].address and
 						menudata.favorites[j].port == favs[i].port then
 					table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
 				end
@@ -100,6 +100,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 	if fields.favourites then
 		local event = core.explode_table_event(fields.favourites)
 		local fav = menudata.favorites[event.row]
+
+		if not fav then return end
 
 		if event.type == "DCL" then
 			if event.row <= #menudata.favorites then
