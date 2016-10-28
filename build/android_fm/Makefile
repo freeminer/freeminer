@@ -887,7 +887,7 @@ assets : $(ASSETS_TIMESTAMP) locale
 	find . -type d -path "*.git" -exec rm -rf {} \; ;                          \
 	find . -type d -path "*.svn" -exec rm -rf {} \; ;                          \
 	find . -type f -path "*.gitignore" -exec rm -rf {} \; ;                    \
-	find . \( -name "lucida_sans_*" -o -name "mono_dejavu_sans_*" -o -name "README.txt" -o -name "game_api.txt" -o -name ".git*" \) -exec rm {} \; ; \
+	find . \( -name "lucida_sans_*" -o -name "mono_dejavu_sans_*" -o -name "README.txt" -o -name "*.md"  -o -name "game_api.txt" -o -name ".git*" \) -exec rm {} \; ; \
 	ls -R | grep ":$$" | sed -e 's/:$$//' -e 's/\.//' -e 's/^\///' > "index.txt"; \
 	#find freeminer >"filelist.txt"; \
 	find freeminer ! -path '*/games/*' > filelist.txt; \
