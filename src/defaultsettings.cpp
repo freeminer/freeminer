@@ -112,8 +112,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("serverlist_cache", porting::path_user + DIR_DELIM + "client" + DIR_DELIM + "servers_public.json");
 	settings->setDefault("serverlist_lan", "1");
 
-	settings->setDefault("serverlist_lan", "0");
-
 	// Main menu
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("public_serverlist", "1");
