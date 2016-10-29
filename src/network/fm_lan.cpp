@@ -65,7 +65,7 @@ static std::string ask_str;
 lan_adv::lan_adv() { }
 
 void lan_adv::ask() {
-	restart();
+	reanimate();
 
 	if (ask_str.empty()) {
 		Json::FastWriter writer;
@@ -95,7 +95,7 @@ void lan_adv::send_string(std::string str) {
 	std::vector<uint32_t> scopes;
 // todo: windows and android
 #if HAVE_IFADDRS
-	struct ifaddrs *ifaddr, *ifa;
+	struct ifaddrs *ifaddr = nullptr, *ifa = nullptr;
 	if (getifaddrs(&ifaddr) < 0) {
 	} else {
 		for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
@@ -123,7 +123,7 @@ void lan_adv::send_string(std::string str) {
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
-	struct addrinfo *result;
+	struct addrinfo *result = nullptr;
 	if (!getaddrinfo("ff02::1", nullptr, &hints, &result)) {
 		for (auto info = result; info; info = info->ai_next) {
 			try {

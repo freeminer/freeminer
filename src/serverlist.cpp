@@ -276,7 +276,7 @@ lan_adv lan_adv_client;
 void lan_get() {
 	if (!g_settings->getBool("serverlist_lan"))
 		return;
-	ServerList::lan_adv_client.ask();
+	lan_adv_client.ask();
 }
 
 void lan_apply(std::vector<ServerListSpec> & servers) {

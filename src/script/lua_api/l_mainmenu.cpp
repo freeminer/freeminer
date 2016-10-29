@@ -456,6 +456,7 @@ int ModApiMainMenu::l_get_modstore_list(lua_State *L)
 }
 
 	std::vector<ServerListSpec> servers_cache;
+	Mutex servers_cache_mutex;
 
 /******************************************************************************/
 int ModApiMainMenu::l_get_favorites(lua_State *L)
@@ -470,13 +471,19 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 
 	if(listtype == "online") {
 		ServerList::lan_get();
+		{
+		MutexAutoLock lock(servers_cache_mutex);
 		servers_cache =
 		servers = ServerList::getOnline();
+		}
 		ServerList::lan_apply(servers);
 	} else if (listtype == "sleep_cache") {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		if (ServerList::lan_fresh()) {
+			{
+			MutexAutoLock lock(servers_cache_mutex);
 			servers = servers_cache;
+			}
 			ServerList::lan_apply(servers);
 		}
 	} else {

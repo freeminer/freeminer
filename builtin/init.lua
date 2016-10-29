@@ -53,7 +53,7 @@ elseif INIT == "mainmenu" then
 	  if PLATFORM == "Android" then
 		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  else
-		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
+		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  end
 	end
 elseif INIT == "async" then
