@@ -55,10 +55,9 @@ TARGET_HOST = arm-linux
 TARGET_ABI = armeabi-v7a
 TARGET_LIBDIR = armeabi-v7a
 TARGET_TOOLCHAIN = arm-linux-androideabi-
-TARGET_CFLAGS_ADDON = -mfloat-abi=softfp -mfpu=vfpv3 -O3
-TARGET_CFLAGS_ADDON = -mfpu=vfpv3-d16 -D_NDK_MATH_NO_SOFTFP=1 -mfloat-abi=hard -march=armv7-a -Ofast
+TARGET_CFLAGS_ADDON = -mfpu=vfpv3-d16 -march=armv7-a -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
-TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch -lm_hard
+TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch,--gc-sections
 TARGET_ARCH = armv7
 CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
