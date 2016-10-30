@@ -161,7 +161,7 @@ LOCAL_C_INCLUDES :=                               \
 		deps/gettext                              \
 		jni/src jni/src/sqlite                    \
 		jni/src/script                            \
-		jni/src/jsoncpp/include                   \
+		jni/src/external/jsoncpp/include          \
 		jni/src/cguittfont                        \
 		deps/irrlicht/include                     \
 		deps/libiconv/include                     \
