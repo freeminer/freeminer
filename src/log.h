@@ -200,14 +200,14 @@ extern Logger g_logger;
 
 // Writes directly to all LL_NONE log outputs for g_logger with no prefix.
 
-extern THREAD_LOCAL std::ostream rawstream;
+extern THREAD_LOCAL_LOG std::ostream rawstream;
 
-extern THREAD_LOCAL std::ostream errorstream;
-extern THREAD_LOCAL std::ostream warningstream;
-extern THREAD_LOCAL std::ostream actionstream;
-extern THREAD_LOCAL std::ostream infostream;
-extern THREAD_LOCAL std::ostream verbosestream;
-extern THREAD_LOCAL std::ostream dstream;
+extern THREAD_LOCAL_LOG std::ostream errorstream;
+extern THREAD_LOCAL_LOG std::ostream warningstream;
+extern THREAD_LOCAL_LOG std::ostream actionstream;
+extern THREAD_LOCAL_LOG std::ostream infostream;
+extern THREAD_LOCAL_LOG std::ostream verbosestream;
+extern THREAD_LOCAL_LOG std::ostream dstream;
 
 #define TRACEDO(x) do {               \
 	if (g_logger.getTraceEnabled()) { \

@@ -21,10 +21,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../config.h"
 
 #if HAVE_THREAD_LOCAL
-#define THREAD_LOCAL thread_local
+# define THREAD_LOCAL thread_local
 #else
-#define THREAD_LOCAL
+# define THREAD_LOCAL
 #endif
 
+#if ANDROID
+# define THREAD_LOCAL_LOG
+#else
+# define THREAD_LOCAL_LOG THREAD_LOCAL
+#endif
 
 #endif

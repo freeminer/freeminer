@@ -89,17 +89,17 @@ std::ostream null_stream(NULL);
 
 RawLogBuffer raw_buf;
 
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer none_buf(g_logger, LL_NONE);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer error_buf(g_logger, LL_ERROR);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer warning_buf(g_logger, LL_WARNING);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer action_buf(g_logger, LL_ACTION);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer info_buf(g_logger, LL_INFO);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 LogBuffer verbose_buf(g_logger, LL_VERBOSE);
 
 // Connection
@@ -116,19 +116,19 @@ std::ostream *dout_client_ptr = &infostream;
 std::ostream *derr_client_ptr = &errorstream;
 #endif
 
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream rawstream(&raw_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream dstream(&none_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream errorstream(&error_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream warningstream(&warning_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream actionstream(&action_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream infostream(&info_buf);
-THREAD_LOCAL
+THREAD_LOCAL_LOG
 std::ostream verbosestream(&verbose_buf);
 
 // Android
