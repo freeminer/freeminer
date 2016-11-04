@@ -903,10 +903,15 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	}
 
 	// Set the node on the map
+	// Ignore light (because calling voxalgo::update_lighting_nodes)
+	n.setLight(LIGHTBANK_DAY, 0, ndef);
+	n.setLight(LIGHTBANK_NIGHT, 0, ndef);
 	setNode(p, n);
 
 	// Update lighting
-	voxalgo::update_lighting_node(this, ndef, p, oldnode, modified_blocks);
+	std::vector<std::pair<v3s16, MapNode> > oldnodes;
+	oldnodes.push_back(std::pair<v3s16, MapNode>(p, oldnode));
+	voxalgo::update_lighting_nodes(this, ndef, oldnodes, modified_blocks);
 
 	for(std::map<v3s16, MapBlock*>::iterator
 			i = modified_blocks.begin();
@@ -1302,9 +1307,8 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	// list of nodes that due to viscosity have not reached their max level height
 	std::deque<v3s16> must_reflow;
 
-	// List of MapBlocks that will require a lighting update (due to lava)
 /*
-	std::map<v3s16, MapBlock *> lighting_modified_blocks;
+	std::vector<std::pair<v3s16, MapNode> > changed_nodes;
 */
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
@@ -1345,7 +1349,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 			Collect information about current node
 		 */
 		s8 liquid_level = -1;
+		// The liquid node which will be placed there if
+		// the liquid flows into this node.
 		content_t liquid_kind = CONTENT_IGNORE;
+		// The node which will be placed there if liquid
+		// can't flow into this node.
 		content_t floodable_node = CONTENT_AIR;
 		const ContentFeatures &cf = nodemgr->get(n0);
 		LiquidType liquid_type = cf.liquid_type;
@@ -1548,6 +1556,10 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		}
 		n0.setContent(new_node_content);
 
+		// Ignore light (because calling voxalgo::update_lighting_nodes)
+		n0.setLight(LIGHTBANK_DAY, 0, nodemgr);
+		n0.setLight(LIGHTBANK_NIGHT, 0, nodemgr);
+
 		// Find out whether there is a suspect for this action
 		std::string suspect;
 		if (m_gamedef->rollback())
@@ -1579,11 +1591,8 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		v3s16 blockpos = getNodeBlockPos(p0);
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
 		if (block != NULL) {
-			//modified_blocks[blockpos] =  block;
-			// If new or old node emits light, MapBlock requires lighting update
-			if (nodemgr->get(n0).light_source != 0 ||
-					nodemgr->get(n00).light_source != 0)
-				lighting_modified_blocks.set(block->getPos(), block);
+			modified_blocks[blockpos] =  block;
+			changed_nodes.push_back(std::pair<v3s16, MapNode>(p0, n00));
 		}
 */
 
@@ -1616,7 +1625,9 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 	for (std::deque<v3s16>::iterator iter = must_reflow.begin(); iter != must_reflow.end(); ++iter)
 		transforming_liquid_add(*iter);
 
-	//updateLighting(lighting_modified_blocks, modified_blocks);
+/*
+	voxalgo::update_lighting_nodes(this, nodemgr, changed_nodes, modified_blocks);
+*/
 
 
 	/* ----------------------------------------------------------------------

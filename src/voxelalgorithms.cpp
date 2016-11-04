@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "mapblock.h"
 #include "map.h"
-#include "util/timetaker.h"
 
 namespace voxalgo
 {
@@ -168,7 +167,7 @@ SunlightPropagateResult propagateSunlight(VoxelManipulator &v, VoxelArea a,
  * 4=Y-
  * 5=X-
  * 6=no direction
- * Two directions ate opposite only if their sum is 5.
+ * Two directions are opposite only if their sum is 5.
  */
 typedef u8 direction;
 /*!
@@ -178,7 +177,7 @@ typedef u8 direction;
  */
 typedef v3s16 relative_v3;
 /*!
- * Position of a map block.
+ * Position of a map block (block coordinates).
  * One block_pos unit is as long as 16 node position units.
  */
 typedef v3s16 mapblock_v3;
@@ -189,7 +188,7 @@ struct ChangingLight {
 	relative_v3 rel_position;
 	//! Position of the node's block.
 	mapblock_v3 block_position;
-	//! Reference to the node's block.
+	//! Pointer to the node's block.
 	MapBlock *block;
 	/*!
 	 * Direction from the node that caused this node's changing
@@ -264,8 +263,9 @@ struct LightQueue {
 	 * The parameters are the same as in ChangingLight's constructor.
 	 * \param light light level of the ChangingLight
 	 */
-	inline void push(u8 light, relative_v3 &rel_pos, mapblock_v3 &block_pos,
-		MapBlock *block, direction source_dir)
+	inline void push(u8 light, const relative_v3 &rel_pos,
+		const mapblock_v3 &block_pos, MapBlock *block,
+		direction source_dir)
 	{
 		lights[light].push_back(
 			ChangingLight(rel_pos, block_pos, block, source_dir));
@@ -312,7 +312,7 @@ const static v3s16 neighbor_dirs[6] = {
  * \param rel_pos the node's relative position in its map block
  * \param block_pos position of the node's block
  */
-bool stepRelBlockPos(direction dir, relative_v3 &rel_pos,
+bool step_rel_block_pos(direction dir, relative_v3 &rel_pos,
 	mapblock_v3 &block_pos)
 {
 	switch (dir) {
@@ -384,9 +384,9 @@ bool stepRelBlockPos(direction dir, relative_v3 &rel_pos,
  * \param light_sources nodes that should be re-lighted
  * \param modified_blocks output, all modified map blocks are added to this
  */
-void unspreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
+void unspread_light(Map *map, INodeDefManager *nodemgr, LightBank bank,
 	UnlightQueue &from_nodes, ReLightQueue &light_sources,
-	std::map<v3s16, MapBlock*> & modified_blocks)
+	std::map<v3s16, MapBlock*> &modified_blocks)
 {
 	// Stores data popped from from_nodes
 	u8 current_light;
@@ -422,7 +422,7 @@ void unspreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
 			neighbor_rel_pos = current.rel_position;
 			neighbor_block_pos = current.block_position;
 			MapBlock *neighbor_block;
-			if (stepRelBlockPos(i, neighbor_rel_pos, neighbor_block_pos)) {
+			if (step_rel_block_pos(i, neighbor_rel_pos, neighbor_block_pos)) {
 				neighbor_block = map->getBlockNoCreateNoEx(neighbor_block_pos);
 				if (neighbor_block == NULL) {
 					continue;
@@ -487,8 +487,8 @@ void unspreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
  * \param light_sources starting nodes
  * \param modified_blocks output, all modified map blocks are added to this
  */
-void spreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
-	LightQueue & light_sources, std::map<v3s16, MapBlock*> & modified_blocks)
+void spread_light(Map *map, INodeDefManager *nodemgr, LightBank bank,
+	LightQueue &light_sources, std::map<v3s16, MapBlock*> &modified_blocks)
 {
 	// The light the current node can provide to its neighbors.
 	u8 spreading_light;
@@ -510,7 +510,7 @@ void spreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
 			neighbor_rel_pos = current.rel_position;
 			neighbor_block_pos = current.block_position;
 			MapBlock *neighbor_block;
-			if (stepRelBlockPos(i, neighbor_rel_pos, neighbor_block_pos)) {
+			if (step_rel_block_pos(i, neighbor_rel_pos, neighbor_block_pos)) {
 				neighbor_block = map->getBlockNoCreateNoEx(neighbor_block_pos);
 				if (neighbor_block == NULL) {
 					continue;
@@ -547,7 +547,7 @@ void spreadLight(Map *map, INodeDefManager *nodemgr, LightBank bank,
  *
  * \param pos position of the node.
  */
-bool isSunlightAbove(Map *map, v3s16 pos, INodeDefManager *ndef)
+bool is_sunlight_above(Map *map, v3s16 pos, INodeDefManager *ndef)
 {
 	bool sunlight = true;
 	mapblock_v3 source_block_pos;
@@ -586,144 +586,153 @@ bool isSunlightAbove(Map *map, v3s16 pos, INodeDefManager *ndef)
 
 static const LightBank banks[] = { LIGHTBANK_DAY, LIGHTBANK_NIGHT };
 
-void update_lighting_node(Map *map, INodeDefManager *ndef, v3s16 p,
-	MapNode oldnode, std::map<v3s16, MapBlock*> & modified_blocks)
+void update_lighting_nodes(Map *map, INodeDefManager *ndef,
+	std::vector<std::pair<v3s16, MapNode> > &oldnodes,
+	std::map<v3s16, MapBlock*> &modified_blocks)
 {
 	// For node getter functions
 	bool is_valid_position;
 
-	// Get position and block of the changed node
-	relative_v3 rel_pos;
-	mapblock_v3 block_pos;
-	getNodeBlockPosWithOffset(p, block_pos, rel_pos);
-	MapBlock *block = map->getBlockNoCreateNoEx(block_pos);
-	if (block == NULL || block->isDummy()) {
-		return;
-	}
-
 	// Process each light bank separately
 	for (s32 i = 0; i < 2; i++) {
-		// Get the new node
-		MapNode n = block->getNodeNoCheck(rel_pos, &is_valid_position);
-		if (!is_valid_position) {
-			break;
-		}
 		LightBank bank = banks[i];
+		UnlightQueue disappearing_lights(256);
+		ReLightQueue light_sources(256);
+		// For each changed node process sunlight and initialize
+		for (std::vector<std::pair<v3s16, MapNode> >::iterator it =
+				oldnodes.begin(); it < oldnodes.end(); ++it) {
+			// Get position and block of the changed node
+			v3s16 p = it->first;
+			relative_v3 rel_pos;
+			mapblock_v3 block_pos;
+			getNodeBlockPosWithOffset(p, block_pos, rel_pos);
+			MapBlock *block = map->getBlockNoCreateNoEx(block_pos);
+			if (block == NULL || block->isDummy()) {
+				continue;
+			}
+			// Get the new node
+			MapNode n = block->getNodeNoCheck(rel_pos, &is_valid_position);
+			if (!is_valid_position) {
+				break;
+			}
 
-		// Light of the old node
-		u8 old_light = oldnode.getLight(bank, ndef);
+			// Light of the old node
+			u8 old_light = it->second.getLight(bank, ndef);
 
-		// Add the block of the added node to modified_blocks
-		modified_blocks[block_pos] = block;
+			// Add the block of the added node to modified_blocks
+			modified_blocks[block_pos] = block;
 
-		// Get new light level of the node
-		u8 new_light = 0;
-		if (ndef->get(n).light_propagates) {
-			if (bank == LIGHTBANK_DAY && ndef->get(n).sunlight_propagates
-					&& isSunlightAbove(map, p, ndef)) {
-				new_light = LIGHT_SUN;
-			} else {
-				new_light = ndef->get(n).light_source;
-				for (int i = 0; i < 6; i++) {
-					v3s16 p2 = p + neighbor_dirs[i];
-					bool is_valid;
-					MapNode n2 = map->getNodeNoEx(p2, &is_valid);
-					if (is_valid) {
-						u8 spread = n2.getLight(bank, ndef);
-						// If the neighbor is at least as bright as
-						// this node then its light is not from
-						// this node.
-						// Its light can spread to this node.
-						if (spread > new_light && spread >= old_light) {
-							new_light = spread - 1;
+			// Get new light level of the node
+			u8 new_light = 0;
+			if (ndef->get(n).light_propagates) {
+				if (bank == LIGHTBANK_DAY && ndef->get(n).sunlight_propagates
+					&& is_sunlight_above(map, p, ndef)) {
+					new_light = LIGHT_SUN;
+				} else {
+					new_light = ndef->get(n).light_source;
+					for (int i = 0; i < 6; i++) {
+						v3s16 p2 = p + neighbor_dirs[i];
+						bool is_valid;
+						MapNode n2 = map->getNodeNoEx(p2, &is_valid);
+						if (is_valid) {
+							u8 spread = n2.getLight(bank, ndef);
+							// If the neighbor is at least as bright as
+							// this node then its light is not from
+							// this node.
+							// Its light can spread to this node.
+							if (spread > new_light && spread >= old_light) {
+								new_light = spread - 1;
+							}
 						}
 					}
 				}
+			} else {
+				// If this is an opaque node, it still can emit light.
+				new_light = ndef->get(n).light_source;
 			}
-		} else {
-			// If this is an opaque node, it still can emit light.
-			new_light = ndef->get(n).light_source;
-		}
 
-		ReLightQueue light_sources(256);
+			if (new_light > 0) {
+				light_sources.push(new_light, rel_pos, block_pos, block, 6);
+			}
 
-		if (new_light > 0) {
-			light_sources.push(new_light, rel_pos, block_pos, block, 6);
-		}
+			if (new_light < old_light) {
+				// The node became opaque or doesn't provide as much
+				// light as the previous one, so it must be unlighted.
 
-		if (new_light < old_light) {
-			// The node became opaque or doesn't provide as much
-			// light as the previous one, so it must be unlighted.
-			LightQueue disappearing_lights(256);
+				// Add to unlight queue
+				n.setLight(bank, 0, ndef);
+				block->setNodeNoCheck(rel_pos, n);
+				disappearing_lights.push(old_light, rel_pos, block_pos, block,
+					6);
 
-			// Add to unlight queue
-			n.setLight(bank, 0, ndef);
-			block->setNodeNoCheck(rel_pos, n);
-			disappearing_lights.push(old_light, rel_pos, block_pos, block, 6);
+				// Remove sunlight, if there was any
+				if (bank == LIGHTBANK_DAY && old_light == LIGHT_SUN) {
+					for (s16 y = p.Y - 1;; y--) {
+						v3s16 n2pos(p.X, y, p.Z);
 
-			// Remove sunlight, if there was any
-			if (bank == LIGHTBANK_DAY && old_light == LIGHT_SUN) {
-				for (s16 y = p.Y - 1;; y--) {
-					v3s16 n2pos(p.X, y, p.Z);
+						MapNode n2;
 
-					MapNode n2;
+						n2 = map->getNodeNoEx(n2pos, &is_valid_position);
+						if (!is_valid_position)
+							break;
 
-					n2 = map->getNodeNoEx(n2pos, &is_valid_position);
-					if (!is_valid_position)
-						break;
-
-					// If this node doesn't have sunlight, the nodes below
-					// it don't have too.
-					if (n2.getLight(LIGHTBANK_DAY, ndef) != LIGHT_SUN) {
-						break;
+						// If this node doesn't have sunlight, the nodes below
+						// it don't have too.
+						if (n2.getLight(LIGHTBANK_DAY, ndef) != LIGHT_SUN) {
+							break;
+						}
+						// Remove sunlight and add to unlight queue.
+						n2.setLight(LIGHTBANK_DAY, 0, ndef);
+						map->setNode(n2pos, n2);
+						relative_v3 rel_pos2;
+						mapblock_v3 block_pos2;
+						getNodeBlockPosWithOffset(n2pos, block_pos2, rel_pos2);
+						MapBlock *block2 = map->getBlockNoCreateNoEx(
+							block_pos2);
+						disappearing_lights.push(LIGHT_SUN, rel_pos2,
+							block_pos2, block2,
+							4 /* The node above caused the change */);
 					}
-					// Remove sunlight and add to unlight queue.
-					n2.setLight(LIGHTBANK_DAY, 0, ndef);
-					map->setNode(n2pos, n2);
-					relative_v3 rel_pos2;
-					mapblock_v3 block_pos2;
-					getNodeBlockPosWithOffset(n2pos, block_pos2, rel_pos2);
-					MapBlock *block2 = map->getBlockNoCreateNoEx(block_pos2);
-					disappearing_lights.push(LIGHT_SUN, rel_pos2, block_pos2,
-						block2, 4 /* The node above caused the change */);
+				}
+			} else if (new_light > old_light) {
+				// It is sure that the node provides more light than the previous
+				// one, unlighting is not necessary.
+				// Propagate sunlight
+				if (bank == LIGHTBANK_DAY && new_light == LIGHT_SUN) {
+					for (s16 y = p.Y - 1;; y--) {
+						v3s16 n2pos(p.X, y, p.Z);
+
+						MapNode n2;
+
+						n2 = map->getNodeNoEx(n2pos, &is_valid_position);
+						if (!is_valid_position)
+							break;
+
+						// This should not happen, but if the node has sunlight
+						// then the iteration should stop.
+						if (n2.getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN) {
+							break;
+						}
+						// If the node terminates sunlight, stop.
+						if (!ndef->get(n2).sunlight_propagates) {
+							break;
+						}
+						relative_v3 rel_pos2;
+						mapblock_v3 block_pos2;
+						getNodeBlockPosWithOffset(n2pos, block_pos2, rel_pos2);
+						MapBlock *block2 = map->getBlockNoCreateNoEx(
+							block_pos2);
+						// Mark node for lighting.
+						light_sources.push(LIGHT_SUN, rel_pos2, block_pos2,
+							block2, 4);
+					}
 				}
 			}
-			// Remove lights
-			unspreadLight(map, ndef, bank, disappearing_lights, light_sources,
-				modified_blocks);
-		} else if (new_light > old_light) {
-			// It is sure that the node provides more light than the previous
-			// one, unlighting is not necessary.
-			// Propagate sunlight
-			if (bank == LIGHTBANK_DAY && new_light == LIGHT_SUN) {
-				for (s16 y = p.Y - 1;; y--) {
-					v3s16 n2pos(p.X, y, p.Z);
 
-					MapNode n2;
-
-					n2 = map->getNodeNoEx(n2pos, &is_valid_position);
-					if (!is_valid_position)
-						break;
-
-					// This should not happen, but if the node has sunlight
-					// then the iteration should stop.
-					if (n2.getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN) {
-						break;
-					}
-					// If the node terminates sunlight, stop.
-					if (!ndef->get(n2).sunlight_propagates) {
-						break;
-					}
-					relative_v3 rel_pos2;
-					mapblock_v3 block_pos2;
-					getNodeBlockPosWithOffset(n2pos, block_pos2, rel_pos2);
-					MapBlock *block2 = map->getBlockNoCreateNoEx(block_pos2);
-					// Mark node for lighting.
-					light_sources.push(LIGHT_SUN, rel_pos2, block_pos2, block2,
-						4);
-				}
-			}
 		}
+		// Remove lights
+		unspread_light(map, ndef, bank, disappearing_lights, light_sources,
+			modified_blocks);
 		// Initialize light values for light spreading.
 		for (u8 i = 0; i <= LIGHT_SUN; i++) {
 			const std::vector<ChangingLight> &lights = light_sources.lights[i];
@@ -736,7 +745,7 @@ void update_lighting_node(Map *map, INodeDefManager *ndef, v3s16 p,
 			}
 		}
 		// Spread lights.
-		spreadLight(map, ndef, bank, light_sources, modified_blocks);
+		spread_light(map, ndef, bank, light_sources, modified_blocks);
 	}
 }
 
