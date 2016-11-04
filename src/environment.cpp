@@ -770,6 +770,7 @@ RemotePlayer *ServerEnvironment::loadPlayer(const std::string &playername, Playe
 		getPlayerStorage().get_json("p." + playername, player_json);
 		verbosestream<<"Reading kv player "<<playername<<std::endl;
 		if (!player_json.empty()) {
+			player->setPlayerSAO(sao);
 			player_json >> *player;
 			if (newplayer) {
 				addPlayer(player);
