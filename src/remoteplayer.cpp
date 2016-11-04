@@ -261,10 +261,10 @@ Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
 		json["yaw"] = playersao->getYaw();
 		auto pos = playersao->getBasePosition();
 		json["position"] << pos;
-	}
 
-	json["hp"] = playersao->getHP();
-	json["breath"] = playersao->getBreath();
+		json["hp"] = playersao->getHP();
+		json["breath"] = playersao->getBreath();
+	}
 	return json;
 }
 
@@ -278,8 +278,8 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 		json["position"]>>position;
 		playersao->setBasePosition(position);
 		playersao->setHP(json["hp"].asInt());
+		playersao->setBreath(json["breath"].asInt());
 	}
-	playersao->setBreath(json["breath"].asInt());
 
 	//todo
 	std::istringstream ss(json["inventory_old"].asString());
