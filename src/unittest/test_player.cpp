@@ -72,7 +72,7 @@ void TestPlayer::testLoad(IGameDef *gamedef)
 	rplayer_load.deSerialize(is, "testplayer_load");
 	is.close();
 
-	UASSERT(strcmp(rplayer_load.getName(), "testplayer_load") == 0);
+	UASSERT(rplayer_load.getName() == "testplayer_load");
 	UASSERT(rplayer.getBreath() == 10);
 	UASSERT(rplayer.hp == 8);
 	UASSERT(rplayer.getYaw() == 0.1f);
