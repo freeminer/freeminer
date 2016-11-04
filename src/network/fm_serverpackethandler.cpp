@@ -509,8 +509,8 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt) {
 	if (playersao->m_ms_from_last_respawn > 1000)
 		playersao->setBasePosition(packet[TOSERVER_PLAYERPOS_POSITION].as<v3f>());
 	player->setSpeed(packet[TOSERVER_PLAYERPOS_SPEED].as<v3f>());
-	playersao->setPitch(modulo360f(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()), false);
-	playersao->setYaw(modulo360f(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()), false);
+	playersao->setPitch(modulo360f(packet[TOSERVER_PLAYERPOS_PITCH].as<f32>()));
+	playersao->setYaw(modulo360f(packet[TOSERVER_PLAYERPOS_YAW].as<f32>()));
 	u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
 	player->keyPressed = keyPressed;
 	{

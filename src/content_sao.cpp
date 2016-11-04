@@ -529,7 +529,7 @@ void LuaEntitySAO::rightClick(ServerActiveObject *clicker)
 	m_env->getScriptIface()->luaentity_Rightclick(m_id, clicker);
 }
 
-void LuaEntitySAO::setPos(v3f pos)
+void LuaEntitySAO::setPos(const v3f &pos)
 {
 	if(isAttached())
 		return;
@@ -1163,27 +1163,32 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
-void PlayerSAO::setYaw(const float yaw, bool send_data)
+void PlayerSAO::setYaw(const float yaw)
 {
 	if (m_player && yaw != m_yaw)
 		m_player->setDirty(true);
 
 	UnitSAO::setYaw(yaw);
-
-	// Datas should not be sent at player initialization
-	if (send_data)
-		((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
-void PlayerSAO::setPitch(const float pitch, bool send_data)
+void PlayerSAO::setYawAndSend(const float yaw)
+{
+	setYaw(yaw);
+	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
+}
+
+void PlayerSAO::setPitch(const float pitch)
 {
 	if (m_player && pitch != m_pitch)
 		m_player->setDirty(true);
 
 	m_pitch = pitch;
+}
 
-	if (send_data)
-		((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
+void PlayerSAO::setPitchAndSend(const float pitch)
+{
+	setPitch(pitch);
+	((Server*)m_env->getGameDef())->SendMovePlayer(m_peer_id);
 }
 
 void PlayerSAO::addSpeed(v3f speed)
@@ -1271,13 +1276,8 @@ s16 PlayerSAO::readDamage()
 	return damage;
 }
 
-void PlayerSAO::setHP(s16 hp, bool direct)
+void PlayerSAO::setHP(s16 hp)
 {
-	if (direct) {
-		m_hp = hp;
-		return;
-	}
-
 	s16 oldhp = m_hp;
 
 	s16 hp_change = m_env->getScriptIface()->on_player_hpchange(this, hp - oldhp);

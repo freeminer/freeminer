@@ -1119,7 +1119,7 @@ int ObjectRef::l_set_look_vertical(lua_State *L)
 	if (co == NULL) return 0;
 	float pitch = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setPitch(pitch);
+	co->setPitchAndSend(pitch);
 	return 1;
 }
 
@@ -1132,7 +1132,7 @@ int ObjectRef::l_set_look_horizontal(lua_State *L)
 	if (co == NULL) return 0;
 	float yaw = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setYaw(yaw);
+	co->setYawAndSend(yaw);
 	return 1;
 }
 
@@ -1150,7 +1150,7 @@ int ObjectRef::l_set_look_pitch(lua_State *L)
 	if (co == NULL) return 0;
 	float pitch = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setPitch(pitch);
+	co->setPitchAndSend(pitch);
 	return 1;
 }
 
@@ -1168,7 +1168,7 @@ int ObjectRef::l_set_look_yaw(lua_State *L)
 	if (co == NULL) return 0;
 	float yaw = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setYaw(yaw);
+	co->setYawAndSend(yaw);
 	return 1;
 }
 

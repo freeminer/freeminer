@@ -133,9 +133,9 @@ void RemotePlayer::deSerialize(std::istream &is, const std::string &playername,
 
 	if (sao) {
 		try {
-			sao->setHP(args.getS32("hp"), true);
+			sao->setHPRaw(args.getS32("hp"));
 		} catch(SettingNotFoundException &e) {
-			sao->setHP(PLAYER_MAX_HP, true);
+			sao->setHPRaw(PLAYER_MAX_HP);
 		}
 
 		try {
@@ -143,10 +143,10 @@ void RemotePlayer::deSerialize(std::istream &is, const std::string &playername,
 		} catch (SettingNotFoundException &e) {}
 
 		try {
-			sao->setPitch(args.getFloat("pitch"), false);
+			sao->setPitch(args.getFloat("pitch"));
 		} catch (SettingNotFoundException &e) {}
 		try {
-			sao->setYaw(args.getFloat("yaw"), false);
+			sao->setYaw(args.getFloat("yaw"));
 		} catch (SettingNotFoundException &e) {}
 
 		try {
