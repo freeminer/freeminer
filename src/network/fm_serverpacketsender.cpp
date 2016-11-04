@@ -423,14 +423,17 @@ void Server::SendPlayerBreath(u16 peer_id)
 void Server::SendMovePlayer(u16 peer_id)
 {
 	DSTACK(FUNCTION_NAME);
-	Player *player = m_env->getPlayer(peer_id);
+	auto player = m_env->getPlayer(peer_id);
 	if (!player)
+		return;
+	auto playersao = player->getPlayerSAO();
+	if (!playersao)
 		return;
 
 	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
-	PACK(TOCLIENT_MOVE_PLAYER_POS, player->getPosition());
-	PACK(TOCLIENT_MOVE_PLAYER_PITCH, player->getPitch());
-	PACK(TOCLIENT_MOVE_PLAYER_YAW, player->getYaw());
+	PACK(TOCLIENT_MOVE_PLAYER_POS, playersao->getBasePosition());
+	PACK(TOCLIENT_MOVE_PLAYER_PITCH, playersao->getPitch());
+	PACK(TOCLIENT_MOVE_PLAYER_YAW, playersao->getYaw());
 	//PACK(TOCLIENT_MOVE_PLAYER_SPEED, player->getSpeed());
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
@@ -549,11 +552,16 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 		for(auto
 				i = clients.begin(); i != clients.end(); ++i)
 		{
-			Player *player = m_env->getPlayer(*i);
+			auto player = m_env->getPlayer(*i);
 			if(!player)
 				continue;
+			auto sao = player->getPlayerSAO();
+			if (!sao)
+				continue;
+
+
 			if(pos_exists) {
-				if(player->getPosition().getDistanceFrom(pos) >
+				if(sao->getBasePosition().getDistanceFrom(pos) >
 						params.max_hear_distance)
 					continue;
 			}
@@ -628,10 +636,13 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 	{
 		if(far_players) {
 			// Get player
-			Player *player = m_env->getPlayer(*i);
+			auto player = m_env->getPlayer(*i);
 			if(player) {
+				PlayerSAO *sao = player->getPlayerSAO();
+				if (!sao)
+					continue;
 				// If player is far away, only set modified blocks not sent
-				v3f player_pos = player->getPosition();
+				v3f player_pos = sao->getBasePosition();
 				if(player_pos.getDistanceFrom(p_f) > maxd) {
 					far_players->push_back(*i);
 					continue;
@@ -659,11 +670,14 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 
 		if(far_players) {
 			// Get player
-			Player *player = m_env->getPlayer(*i);
+			auto player = m_env->getPlayer(*i);
 			if(player)
 			{
+				PlayerSAO *sao = player->getPlayerSAO();
+				if (!sao)
+					continue;
 				// If player is far away, only set modified blocks not sent
-				v3f player_pos = player->getPosition();
+				v3f player_pos = sao->getBasePosition();
 				if(player_pos.getDistanceFrom(p_f) > maxd) {
 					far_players->push_back(*i);
 					continue;

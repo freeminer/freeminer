@@ -97,7 +97,7 @@ void RemotePlayer::save(std::string savedir, IGameDef *gamedef)
 			infostream << "Failed to open " << path << std::endl;
 			return;
 		}
-		testplayer.deSerialize(is, path);
+		testplayer.deSerialize(is, path, NULL);
 		is.close();
 		if (strcmp(testplayer.getName(), m_name) == 0) {
 			// Open file and serialize
@@ -117,37 +117,46 @@ void RemotePlayer::save(std::string savedir, IGameDef *gamedef)
 }
 #endif
 
-void RemotePlayer::deSerialize(std::istream &is, const std::string &playername)
+void RemotePlayer::deSerialize(std::istream &is, const std::string &playername,
+		PlayerSAO *sao)
 {
 	Settings args;
 
 	if (!args.parseConfigLines(is, "PlayerArgsEnd")) {
-		throw SerializationError("PlayerArgsEnd of player " +
-								 playername + " not found!");
+		throw SerializationError("PlayerArgsEnd of player " + playername + " not found!");
 	}
 
 	m_dirty = true;
 	//args.getS32("version"); // Version field value not used
 	std::string name = args.get("name");
 	m_name = name;
-	setPitch(args.getFloat("pitch"));
-	setYaw(args.getFloat("yaw"));
-	setPosition(args.getV3F("position"));
-	try {
-		hp = args.getS32("hp");
-	} catch(SettingNotFoundException &e) {
-		hp = PLAYER_MAX_HP;
-	}
 
-	try {
-		m_breath = args.getS32("breath");
-	} catch(SettingNotFoundException &e) {
-		m_breath = PLAYER_MAX_BREATH;
+	if (sao) {
+		try {
+			sao->setHP(args.getS32("hp"), true);
+		} catch(SettingNotFoundException &e) {
+			sao->setHP(PLAYER_MAX_HP, true);
+		}
+
+		try {
+			sao->setBasePosition(args.getV3F("position"));
+		} catch (SettingNotFoundException &e) {}
+
+		try {
+			sao->setPitch(args.getFloat("pitch"), false);
+		} catch (SettingNotFoundException &e) {}
+		try {
+			sao->setYaw(args.getFloat("yaw"), false);
+		} catch (SettingNotFoundException &e) {}
+
+		try {
+			sao->setBreath(args.getS32("breath"));
+		} catch (SettingNotFoundException &e) {}
 	}
 
 	inventory.deSerialize(is);
 
-	if(inventory.getList("craftpreview") == NULL) {
+	if (inventory.getList("craftpreview") == NULL) {
 		// Convert players without craftpreview
 		inventory.addList("craftpreview", 1);
 
@@ -169,27 +178,20 @@ void RemotePlayer::serialize(std::ostream &os)
 	args.setS32("version", 1);
 	args.set("name", m_name);
 	//args.set("password", m_password);
-	args.setFloat("pitch", m_pitch);
-	args.setFloat("yaw", m_yaw);
-	args.setV3F("position", m_position);
-	args.setS32("hp", hp);
-	args.setS32("breath", m_breath);
+
+	if (m_sao) {
+		args.setS32("hp", m_sao->getHP());
+		args.setV3F("position", m_sao->getBasePosition());
+		args.setFloat("pitch", m_sao->getPitch());
+		args.setFloat("yaw", m_sao->getYaw());
+		args.setS32("breath", m_sao->getBreath());
+	}
 
 	args.writeLines(os);
 
 	os<<"PlayerArgsEnd\n";
 
 	inventory.serialize(os);
-}
-
-void RemotePlayer::setPosition(const v3f &position)
-{
-	if (position != m_position)
-		m_dirty = true;
-
-	Player::setPosition(position);
-	if(m_sao)
-		m_sao->setBasePosition(position);
 }
 
 const RemotePlayerChatResult RemotePlayer::canSendChatMessage()
@@ -229,4 +231,75 @@ const RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 
 	m_chat_message_allowance -= 1.0f;
 	return RPLAYER_CHATRESULT_OK;
+}
+
+
+Json::Value operator<<(Json::Value &json, v3f &v) {
+	json["X"] = v.X;
+	json["Y"] = v.Y;
+	json["Z"] = v.Z;
+	return json;
+}
+
+Json::Value operator>>(Json::Value &json, v3f &v) {
+	v.X = json["X"].asFloat();
+	v.Y = json["Y"].asFloat();
+	v.Z = json["Z"].asFloat();
+	return json;
+}
+
+Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
+	auto playersao = player.getPlayerSAO();
+	std::ostringstream ss(std::ios_base::binary);
+	//todo
+	player.inventory.serialize(ss);
+	json["inventory_old"] = ss.str();
+
+	json["name"] = player.m_name;
+	if (playersao) {
+		json["pitch"] = playersao->getPitch();
+		json["yaw"] = playersao->getYaw();
+		auto pos = playersao->getBasePosition();
+		json["position"] << pos;
+	}
+
+	json["hp"] = playersao->getHP();
+	json["breath"] = playersao->getBreath();
+	return json;
+}
+
+Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
+	auto playersao = player.getPlayerSAO();
+	player.m_name = json["name"].asString();
+	if (playersao) {
+		playersao->setPitch(json["pitch"].asFloat());
+		playersao->setYaw(json["yaw"].asFloat());
+		v3f position;
+		json["position"]>>position;
+		playersao->setBasePosition(position);
+		playersao->setHP(json["hp"].asInt());
+	}
+	playersao->setBreath(json["breath"].asInt());
+
+	//todo
+	std::istringstream ss(json["inventory_old"].asString());
+	auto & inventory = player.inventory;
+	inventory.deSerialize(ss);
+
+	if(inventory.getList("craftpreview") == NULL)
+	{
+		// Convert players without craftpreview
+		inventory.addList("craftpreview", 1);
+
+		bool craftresult_is_preview = true;
+		//if(args.exists("craftresult_is_preview"))
+		//	craftresult_is_preview = args.getBool("craftresult_is_preview");
+		if(craftresult_is_preview)
+		{
+			// Clear craftresult
+			inventory.getList("craftresult")->changeItem(0, ItemStack());
+		}
+	}
+
+	return json;
 }

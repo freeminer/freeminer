@@ -284,9 +284,12 @@ void Client::handleCommand_Movement(NetworkPacket* pkt) {
 
 void Client::handleCommand_HP(NetworkPacket* pkt)   {
 	auto & packet = *(pkt->packet);
-	Player *player = m_env.getLocalPlayer();
+	auto player = m_env.getLocalPlayer();
 	if(!player)
 		return;
+	//auto playersao = player->getPlayerSAO();
+	//if (!playersao)
+	//	return;
 
 	u8 oldhp = player->hp;
 	u8 hp = packet[TOCLIENT_HP_HP].as<u8>();
@@ -303,13 +306,13 @@ void Client::handleCommand_HP(NetworkPacket* pkt)   {
 
 void Client::handleCommand_Breath(NetworkPacket* pkt)   {
 	auto & packet = *(pkt->packet);
-	Player *player = m_env.getLocalPlayer();
+	auto player = m_env.getLocalPlayer();
 	player->setBreath(packet[TOCLIENT_BREATH_BREATH].as<u16>()) ;
 }
 
 void Client::handleCommand_MovePlayer(NetworkPacket* pkt)  {
 	auto & packet = *(pkt->packet);
-	Player *player = m_env.getLocalPlayer();
+	auto player = m_env.getLocalPlayer();
 	if(!player)
 		return;
 

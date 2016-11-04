@@ -139,6 +139,7 @@ public:
 
 	void addSpeed(v3f speed);
 
+/* DELETE! merge...
 	v3f getPosition()
 	{
 		auto lock = lock_shared_rec();
@@ -185,8 +186,12 @@ public:
 
 	f32 getRadPitch() const { return m_pitch * core::DEGTORAD; }
 	f32 getRadYaw() const { return m_yaw * core::DEGTORAD; }
-	const std::string &getName() const { return m_name; }
 	aabb3f getCollisionbox() const { return m_collisionbox; }
+*/
+/*
+	const char *getName() const { return m_name; }
+*/
+	const std::string &getName() const { return m_name; }
 
 	u32 getFreeHudID()
 	{
@@ -198,7 +203,6 @@ public:
 		return size;
 	}
 
-	bool camera_barely_in_ceiling;
 	v3f eye_offset_first;
 	v3f eye_offset_third;
 
@@ -221,7 +225,7 @@ public:
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
-	std::atomic_ushort hp;
+	//std::atomic_ushort hp;
 
 	std::atomic_short peer_id;
 
@@ -248,17 +252,10 @@ public:
 	int hotbar_image_items;
 	std::string hotbar_selected_image;
 
-public:
 	std::string m_name;
 protected:
-	u16 m_breath;
-	f32 m_pitch;
-	f32 m_yaw;
+	//char m_name[PLAYERNAME_SIZE];
 	v3f m_speed;
-public:
-	v3f m_position;
-protected:
-	aabb3f m_collisionbox;
 
 	std::vector<HudElement *> hud;
 private:
@@ -268,9 +265,6 @@ private:
 	Mutex m_mutex;
 };
 
-
-Json::Value operator<<(Json::Value &json, Player &player);
-Json::Value operator>>(Json::Value &json, Player &player);
 
 #endif
 

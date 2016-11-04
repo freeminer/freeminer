@@ -35,21 +35,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 Player::Player(const std::string & name, IItemDefManager *idef):
-	camera_barely_in_ceiling(false),
 	inventory(idef),
-	hp(PLAYER_MAX_HP),
 	peer_id(PEER_ID_INEXISTENT),
 	keyPressed(0),
 // protected
-	m_breath(PLAYER_MAX_BREATH),
-	m_pitch(0),
-	m_yaw(0),
-	m_speed(0,0,0),
-	m_position(0,0,0),
-	m_collisionbox(-BS*0.30,0.0,-BS*0.30,BS*0.30,BS*1.75,BS*0.30)
+	m_speed(0,0,0)
 {
-	hp = PLAYER_MAX_HP;
-
 	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 	hotbar_image_items = 0;
@@ -98,11 +89,6 @@ Player::Player(const std::string & name, IItemDefManager *idef):
 Player::~Player()
 {
 	clearHud();
-}
-
-v3s16 Player::getLightPosition() const
-{
-	return floatToInt(m_position + v3f(0,BS+BS/2,0), BS);
 }
 
 u32 Player::addHud(HudElement *toadd)
@@ -157,66 +143,4 @@ void Player::addSpeed(v3f speed) {
 		m_speed += speed;
 }
 
-Json::Value operator<<(Json::Value &json, v3f &v) {
-	json["X"] = v.X;
-	json["Y"] = v.Y;
-	json["Z"] = v.Z;
-	return json;
-}
-
-Json::Value operator>>(Json::Value &json, v3f &v) {
-	v.X = json["X"].asFloat();
-	v.Y = json["Y"].asFloat();
-	v.Z = json["Z"].asFloat();
-	return json;
-}
-
-Json::Value operator<<(Json::Value &json, Player &player) {
-	std::ostringstream ss(std::ios_base::binary);
-	//todo
-	player.inventory.serialize(ss);
-	json["inventory_old"] = ss.str();
-
-	json["name"] = player.m_name;
-	json["pitch"] = player.getPitch();
-	json["yaw"] = player.getYaw();
-	auto pos = player.getPosition();
-	json["position"] << pos;
-	json["hp"] = player.hp.load();
-	json["breath"] = player.getBreath();
-	return json;
-}
-
-Json::Value operator>>(Json::Value &json, Player &player) {
-	player.m_name = json["name"].asCString();
-	player.setPitch(json["pitch"].asFloat());
-	player.setYaw(json["yaw"].asFloat());
-	v3f position;
-	json["position"]>>position;
-	player.setPosition(position);
-	player.hp = json["hp"].asInt();
-	player.setBreath(json["breath"].asInt());
-
-	//todo
-	std::istringstream ss(json["inventory_old"].asString());
-	auto & inventory = player.inventory;
-	inventory.deSerialize(ss);
-
-	if(inventory.getList("craftpreview") == NULL)
-	{
-		// Convert players without craftpreview
-		inventory.addList("craftpreview", 1);
-
-		bool craftresult_is_preview = true;
-		//if(args.exists("craftresult_is_preview"))
-		//	craftresult_is_preview = args.getBool("craftresult_is_preview");
-		if(craftresult_is_preview)
-		{
-			// Clear craftresult
-			inventory.getList("craftresult")->changeItem(0, ItemStack());
-		}
-	}
-
-	return json;
-}
 // end of freeminer

@@ -45,6 +45,7 @@ public:
 
 	ClientActiveObject *parent;
 
+	u16 hp;
 	bool got_teleported;
 	bool isAttached;
 	bool touching_ground;
@@ -108,15 +109,57 @@ public:
 
 	u32 maxHudId() const { return hud.size(); }
 
+//freeminer:
 	bool zoom = false;
 	bool superspeed = false;
 	bool free_move = false;
 
+	//void addSpeed(v3f speed);
+//=========
+
+	u16 getBreath() { auto lock = lock_shared_rec(); return m_breath; }
+	void setBreath(u16 breath) { auto lock = lock_unique_rec(); m_breath = breath; }
+
+	v3s16 getLightPosition() const
+	{
+		return floatToInt(m_position + v3f(0,BS+BS/2,0), BS);
+	}
+
+	void setYaw(f32 yaw)
+	{
+		auto lock = lock_unique_rec();
+		m_yaw = yaw;
+	}
+
+	f32 getYaw() { auto lock = lock_shared_rec(); return m_yaw; }
+
+	void setPitch(f32 pitch)
+	{
+		auto lock = lock_unique_rec();
+		m_pitch = pitch;
+	}
+
+	f32 getPitch() { auto lock = lock_shared_rec(); return m_pitch; }
+
+	void setPosition(const v3f &position)
+	{
+		auto lock = lock_unique_rec();
+		m_position = position;
+	}
+
+	v3f getPosition() { auto lock = lock_shared_rec(); return m_position; }
+	v3f getEyePosition() { auto lock = lock_shared_rec(); return m_position + getEyeOffset(); }
+	v3f getEyeOffset() const
+	{
+		float eye_height = camera_barely_in_ceiling ? 1.5f : 1.625f;
+		return v3f(0, BS * eye_height, 0);
+	}
 
 private:
 	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery = 0);
 	void accelerateVertical(const v3f &target_speed, const f32 max_increase);
 
+	v3f m_position;
 	// This is used for determining the sneaking range
 	v3s16 m_sneak_node;
 	// Whether the player is allowed to sneak
@@ -133,6 +176,11 @@ private:
 	v3s16 m_old_node_below;
 	std::string m_old_node_below_type;
 	bool m_can_jump;
+	u16 m_breath;
+	f32 m_yaw;
+	f32 m_pitch;
+	bool camera_barely_in_ceiling;
+	aabb3f m_collisionbox;
 
 	GenericCAO* m_cao;
 	Client *m_gamedef;

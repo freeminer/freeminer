@@ -71,6 +71,7 @@ class ClientMap;
 class GameScripting;
 class Player;
 class RemotePlayer;
+class PlayerSAO;
 
 struct ItemStack;
 class PlayerSAO;
@@ -386,7 +387,7 @@ public:
 	// Save players
 	void saveLoadedPlayers();
 	void savePlayer(RemotePlayer *player);
-	RemotePlayer *loadPlayer(const std::string &playername);
+	RemotePlayer *loadPlayer(const std::string &playername, PlayerSAO *sao);
 	void addPlayer(RemotePlayer *player);
 	void removePlayer(RemotePlayer *player);
 
@@ -439,7 +440,7 @@ public:
 		Find out what new objects have been added to
 		inside a radius around a position
 	*/
-	void getAddedActiveObjects(RemotePlayer *player, s16 radius,
+	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 			s16 player_radius,
 			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::queue<u16> &added_objects);
@@ -448,7 +449,7 @@ public:
 		Find out what new objects have been removed from
 		inside a radius around a position
 	*/
-	void getRemovedActiveObjects(RemotePlayer *player, s16 radius,
+	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 			s16 player_radius,
 			maybe_concurrent_unordered_map<u16, bool> &current_objects,
 			std::queue<u16> &removed_objects);

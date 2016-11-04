@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "map.h"
 #include "emerge.h"
-#include "serverobject.h"              // TODO this is used for cleanup of only
+#include "content_sao.h"              // TODO this is used for cleanup of only
 #include "log_types.h"
 #include "util/srp.h"
 
@@ -142,6 +142,10 @@ int RemoteClient::GetNextBlocks (
 	if (player == NULL)
 		return 0;
 
+	PlayerSAO *sao = player->getPlayerSAO();
+	if (sao == NULL)
+		return 0;
+
 /*
 	// Won't send anything if already sending
 	if(m_blocks_sending.size() >= g_settings->getU16
@@ -152,7 +156,7 @@ int RemoteClient::GetNextBlocks (
 	}
 */
 
-	v3f playerpos = player->getPosition();
+	v3f playerpos = sao->getBasePosition();
 	v3f playerspeed = player->getSpeed();
 	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
 		return 0;
@@ -167,10 +171,10 @@ int RemoteClient::GetNextBlocks (
 	v3s16 center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	v3f camera_pos = player->getEyePosition();
+	v3f camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0,0,1);
-	camera_dir.rotateYZBy(player->getPitch());
-	camera_dir.rotateXZBy(player->getYaw());
+	camera_dir.rotateYZBy(sao->getPitch());
+	camera_dir.rotateXZBy(sao->getYaw());
 
 	//infostream<<"camera_dir=("<<camera_dir<<")"<< " camera_pos="<<camera_pos<<std::endl;
 
