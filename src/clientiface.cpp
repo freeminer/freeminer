@@ -256,6 +256,7 @@ int RemoteClient::GetNextBlocks (
 		if (wanted_blocks < full_d_max)
 			full_d_max = wanted_blocks;
 	}
+	static const s16 d_opt = g_settings->getS16("block_send_optimize_distance");
 
 	s16 d_max = full_d_max;
 	static const s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
@@ -519,7 +520,7 @@ int RemoteClient::GetNextBlocks (
 					differs from day-time mesh.
 				*/
 /*
-				if(d >= 4)
+				if(d >= d_opt)
 				{
 					if(block->getDayNightDiff() == false)
 						continue;
