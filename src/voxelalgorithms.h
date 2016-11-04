@@ -28,6 +28,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 
+class Map;
+class MapBlock;
+
 namespace voxalgo
 {
 
@@ -54,6 +57,23 @@ SunlightPropagateResult propagateSunlight(VoxelManipulator &v, VoxelArea a,
 		bool inexistent_top_provides_sunlight,
 		std::set<v3s16> & light_sources,
 		INodeDefManager *ndef);
+
+/*!
+ * Updates the lighting on the map.
+ * The result will be correct only if
+ * no nodes were changed except the given one.
+ *
+ * \param p position of the changed node
+ * \param oldnode this node was overwritten on the map
+ * \param modified_blocks output, contains all map blocks that
+ * the function modified
+ */
+void update_lighting_node(
+	Map *map,
+	INodeDefManager *ndef,
+	v3s16 p,
+	MapNode oldnode,
+	std::map<v3s16, MapBlock*> &modified_blocks);
 
 } // namespace voxalgo
 
