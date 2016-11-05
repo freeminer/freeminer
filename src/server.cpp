@@ -3024,7 +3024,7 @@ void Server::DeleteClient(u16 peer_id, ClientDeletionReason reason)
 		RemotePlayer *player = m_env->getPlayer(peer_id);
 
 		/* Run scripts and remove from environment */
-		if(player != NULL) {
+		if (player != NULL) {
 			PlayerSAO *playersao = player->getPlayerSAO();
 			assert(playersao);
 

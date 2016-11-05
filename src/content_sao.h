@@ -328,6 +328,7 @@ public:
 
 private:
 	std::string getPropertyPacket();
+	void unlinkPlayerSessionAndSave();
 
 	RemotePlayer *m_player;
 	u16 m_peer_id;
