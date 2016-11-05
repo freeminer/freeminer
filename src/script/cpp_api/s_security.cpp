@@ -332,7 +332,6 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path)
 	if (path) {
 		delete [] chunk_name;
 	}
-	delete [] code;
 	return true;
 }
 
