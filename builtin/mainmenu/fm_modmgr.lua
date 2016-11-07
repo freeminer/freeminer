@@ -299,7 +299,7 @@ function modmgr.tab()
 
 			retval = retval .. ",Depends:,"
 
-			toadd = modmgr.get_dependencies(selected_mod.path)
+			toadd = modmgr.fm_get_dependencies(selected_mod.path)
 
 			retval = retval .. toadd .. ";0]"
 
@@ -438,7 +438,7 @@ function modmgr.dialog_configure_world()
 		"label[0.75,0.45;" .. mod.name .. "]" ..
 		"label[0,1;" .. fgettext("Depends:") .. "]" ..
 		"textlist[0,1.5;5,4.25;world_config_depends;" ..
-		modmgr.get_dependencies(mod.path) .. ";0]" ..
+		modmgr.fm_get_dependencies(mod.path) .. ";0]" ..
 		"button[9.25,6.35;2,0.5;btn_config_world_save;" .. fgettext("Save") .. "]" ..
 		"button[7.4,6.35;2,0.5;btn_config_world_cancel;" .. fgettext("Cancel") .. "]"
 
@@ -505,7 +505,7 @@ function modmgr.handle_buttons(tab,fields)
 end
 
 --------------------------------------------------------------------------------
-function modmgr.get_dependencies(modfolder)
+function modmgr.fm_get_dependencies(modfolder)
 	local toadd = ""
 	if modfolder ~= nil then
 		local filename = modfolder ..

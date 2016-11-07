@@ -283,6 +283,37 @@ function modmgr.render_modlist(render_list)
 end
 
 --------------------------------------------------------------------------------
+
+function modmgr.get_dependencies(modfolder)
+	local toadd_hard = ""
+	local toadd_soft = ""
+	if modfolder ~= nil then
+		local filename = modfolder ..
+					DIR_DELIM .. "depends.txt"
+
+		local hard_dependencies = {}
+		local soft_dependencies = {}
+		local dependencyfile = io.open(filename,"r")
+		if dependencyfile then
+			local dependency = dependencyfile:read("*l")
+			while dependency do
+				if string.sub(dependency, -1, -1) == "?" then
+					table.insert(soft_dependencies, string.sub(dependency, 1, -2))
+				else
+					table.insert(hard_dependencies, dependency)
+				end
+				dependency = dependencyfile:read()
+			end
+			dependencyfile:close()
+		end
+		toadd_hard = table.concat(hard_dependencies, ",")
+		toadd_soft = table.concat(soft_dependencies, ",")
+	end
+
+	return toadd_hard, toadd_soft
+end
+
+--freeminer:
 local function get_dependencies_list(modfolder)
 	if not modfolder then
 		return
@@ -309,7 +340,7 @@ local function get_dependencies_list(modfolder)
 	return depends
 end
 
-function modmgr.get_dependencies(modfolder, get_table)
+function modmgr.fm_get_dependencies(modfolder, get_table)
 	local depends = get_dependencies_list(modfolder)
 	if get_table then
 		return depends
@@ -319,6 +350,7 @@ function modmgr.get_dependencies(modfolder, get_table)
 	end
 	return table.concat(depends, ",")
 end
+--end of freeminer
 
 --------------------------------------------------------------------------------
 function modmgr.get_worldconfig(worldpath)
