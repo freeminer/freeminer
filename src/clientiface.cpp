@@ -376,20 +376,8 @@ int RemoteClient::GetNextBlocks (
 			// If this is true, inexistent block will be made from scratch
 			bool generate = d <= d_max_gen;
 
-			{
-				/*// Limit the generating area vertically to 2/3
-				if(abs(p.Y - center.Y) > d_max_gen - d_max_gen / 3)
-					generate = false;*/
-
-				/* maybe good idea (if not use block culling) but brokes far (25+) area generate by flooding emergequeue with no generate blocks
-				// Limit the send area vertically to 1/2
-				if(can_skip && abs(p.Y - center.Y) > full_d_max / 2)
-					generate = false;
-				*/
-			}
-
-
 			//infostream<<"d="<<d<<std::endl;
+
 			/*
 				Don't generate or send if not in sight
 				FIXME This only works if the client uses a small enough
