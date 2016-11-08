@@ -257,8 +257,10 @@ int RemoteClient::GetNextBlocks (
 			full_d_max = wanted_blocks;
 	}
 /*
-	static const s16 d_opt = g_settings->getS16("block_send_optimize_distance");
+	const s16 full_d_max = g_settings->getS16("max_block_send_distance");
+	const s16 d_opt = g_settings->getS16("block_send_optimize_distance");
 */
+	const s16 d_blocks_in_sight = (full_d_max + 1) * BS * MAP_BLOCKSIZE;
 
 	s16 d_max = full_d_max;
 	static const s16 d_max_gen = g_settings->getS16("max_block_generate_distance");
@@ -385,7 +387,7 @@ int RemoteClient::GetNextBlocks (
 			*/
 
 			float camera_fov = ((fov+5)*M_PI/180) * 4./3.;
-			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, 10000*BS) == false)
+			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, d_blocks_in_sight) == false)
 			{
 				continue;
 			}
