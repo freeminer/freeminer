@@ -1210,7 +1210,8 @@ void ServerEnvironment::analyzeBlock(MapBlock * block) {
 		return;
 	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
-	block->analyzeContent();
+	if (block->analyzeContent() == CONTENT_IGNORE)
+		return;
 	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
 	m_abmhandler.apply(block, activate);
 	//infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
