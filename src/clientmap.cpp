@@ -378,15 +378,20 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 			float step = BS * 1;
 			float stepfac = 1.2;
 			float startoff = BS * 1;
-			// - Length of the diagonal of a mapblock.
+			// The occlusion search of 'isOccluded()' must stop short of the target
+			// point by distance 'endoff' (end offset) to not enter the target mapblock.
+			// For the 8 mapblock corners 'endoff' must therefore be the maximum diagonal
+			// of a mapblock, because we must consider all view angles.
+			// sqrt(1^2 + 1^2 + 1^2) = 1.732
 			float endoff = -BS * MAP_BLOCKSIZE * 1.732050807569;
-			v3s16 spn = cam_pos_nodes + v3s16(0, 0, 0);
-			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
+			v3s16 spn = cam_pos_nodes;
+			s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
 			u32 needed_count = 1;
 			if (occlusion_culling_enabled &&
 				range > 1 && smesh_size &&
-					isOccluded(this, spn, cpn + v3s16(0,0,0),
-						step, stepfac, startoff, endoff / 2, needed_count, nodemgr, occlude_cache) &&
+					// For the central point of the mapblock 'endoff' can be halved
+					isOccluded(this, spn, cpn,
+						step, stepfac, startoff, endoff / 2.0f, needed_count, nodemgr, occlude_cache) &&
 					isOccluded(this, spn, cpn + v3s16(bs2,bs2,bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
 					isOccluded(this, spn, cpn + v3s16(bs2,bs2,-bs2),
