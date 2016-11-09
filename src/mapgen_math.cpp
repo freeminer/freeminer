@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <functional>
+#include <cstdint>
 
 #include "mapgen_math.h"
 #include "voxel.h"
@@ -143,11 +144,11 @@ inline double sphere(double x, double y, double z, double d, int ITR = 1, int se
 }
 
 
-typedef u_int32_t Fnv32_t;
+typedef uint32_t Fnv32_t;
 #define FNV1_32_INIT ((Fnv32_t) 33554467UL)
 #define FNV_32_PRIME ((Fnv32_t) 0x01000193UL)
 inline Fnv32_t fnv_32_buf(const void *buf, size_t len, Fnv32_t hval = FNV1_32_INIT) {
-	const u_int8_t *s = (const u_int8_t *)buf;
+	const uint32_t *s = (const uint32_t *)buf;
 	while (len-- != 0) {
 		hval *= FNV_32_PRIME;
 		hval ^= *s++;
