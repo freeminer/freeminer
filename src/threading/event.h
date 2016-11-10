@@ -54,13 +54,13 @@ private:
 #if USE_CPP11_MUTEX
 	std::condition_variable cv;
 	Mutex mutex;
-	bool notified;
+	bool notified = false;
 #elif USE_WIN_MUTEX
 	HANDLE event;
 #else
 	pthread_cond_t cv;
 	pthread_mutex_t mutex;
-	bool notified;
+	bool notified = false;
 #endif
 };
 
