@@ -33,18 +33,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 struct MapDrawControl
 {
-	MapDrawControl();
-/*
+	void fm_init();
+	MapDrawControl():
 		range_all(false),
 		wanted_range(0),
+/*
 		wanted_max_blocks(0),
+*/
 		show_wireframe(false),
 		blocks_drawn(0),
 		blocks_would_have_drawn(0),
 		farthest_drawn(0)
 	{
+		fm_init();
 	}
-*/
 	// Overrides limits by drawing everything
 	bool range_all;
 	// Wanted drawing range
@@ -62,18 +64,21 @@ struct MapDrawControl
 	// Distance to the farthest block drawn
 	float farthest_drawn;
 
-	float farmesh;
-	int farmesh_step;
 
-	float fps;
-	float fps_avg;
-	float fps_wanted;
-	float drawtime_avg;
+// freeminer:
+	float farmesh = 0;
+	int farmesh_step = 1;
 
-	float fov;
+	float fps = 30;
+	float fps_avg =30;
+	float fps_wanted = 30;
+	float drawtime_avg = 30;
+
+	float fov = 180;
 	float fov_add = 0;
-	float fov_want; // smooth change
+	float fov_want = 180; // smooth change
 	//bool block_overflow;
+
 };
 
 class Client;

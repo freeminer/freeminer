@@ -204,11 +204,13 @@ public:
 	{
 		m_size = size;
 		if(m_size != 0)
+		{
 			data = new T[m_size];
+			memset(data,0,sizeof(T)*m_size);
+		}
 		else
 			data = NULL;
 		refcount = new unsigned int;
-		memset(data,0,sizeof(T)*m_size);
 		(*refcount) = 1;
 	}
 	SharedBuffer(const SharedBuffer &buffer)

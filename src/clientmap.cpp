@@ -38,28 +38,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
-MapDrawControl::MapDrawControl():
-		range_all(false),
-		wanted_range(500),
-		//wanted_max_blocks(0),
-		//wanted_min_range(0),
-		blocks_drawn(0),
-		blocks_would_have_drawn(0),
-		farthest_drawn(0)
-		,
-		farmesh(0),
-		farmesh_step(1),
-		fps(30),
-		fps_avg(30),
-		fps_wanted(30),
-		drawtime_avg(30)
-		//,block_overflow(false)
-	{
-		farmesh = g_settings->getS32("farmesh");
-		farmesh_step = g_settings->getS32("farmesh_step");
-		fov_want =
-		fov = g_settings->getFloat("fov");
-	}
+void MapDrawControl::fm_init() {
+	farmesh = g_settings->getS32("farmesh");
+	farmesh_step = g_settings->getS32("farmesh_step");
+	fov_want = fov = g_settings->getFloat("fov");
+}
 
 ClientMap::ClientMap(
 		Client *client,
