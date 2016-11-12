@@ -876,7 +876,7 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, game_params.socket_port);
 
-	if (g_settings->getBool("ipv6_server")) {
+	if (g_settings->getBool("ipv6_server") && g_settings->getBool("enable_ipv6")) {
 		bind_addr.setAddress(in6addr_any);
 	}
 	try {
