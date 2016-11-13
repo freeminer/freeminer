@@ -339,6 +339,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 		//	PACK(TOCLIENT_INIT_POS, player->getPosition());
 
 		Settings params;
+		m_emerge->mgparams->MapgenParams::writeParams(&params);
 		m_emerge->mgparams->writeParams(&params);
 		PACK(TOCLIENT_INIT_MAP_PARAMS, params);
 
