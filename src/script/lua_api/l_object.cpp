@@ -146,9 +146,9 @@ int ObjectRef::l_remove(lua_State *L)
 	UNORDERED_SET<int> child_ids = co->getAttachmentChildIds();
 	UNORDERED_SET<int>::iterator it;
 	for (it = child_ids.begin(); it != child_ids.end(); ++it) {
-		ServerActiveObject *child = env->getActiveObject(*it);
-		if (child)
-		child->setAttachment(0, "", v3f(0, 0, 0), v3f(0, 0, 0));
+		// Child can be NULL if it was deleted earlier
+		if (ServerActiveObject *child = env->getActiveObject(*it))
+			child->setAttachment(0, "", v3f(0, 0, 0), v3f(0, 0, 0));
 	}
 
 /*
