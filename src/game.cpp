@@ -2235,7 +2235,7 @@ bool Game::createSingleplayerServer(const std::string map_dir,
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
 
-	if (g_settings->getBool("ipv6_server")) {
+	if (g_settings->getBool("ipv6_server") && g_settings->getBool("enable_ipv6")) {
 		bind_addr.setAddress(in6addr_any);
 	}
 
@@ -2477,7 +2477,7 @@ bool Game::connectToServer(const std::string &playername,
 
 		if (connect_address.isZero()) { // i.e. INADDR_ANY, IN6ADDR_ANY
 			//connect_address.Resolve("localhost");
-			if (connect_address.isIPv6() || g_settings->getBool("ipv6_server")) {
+			if (connect_address.isIPv6() || (g_settings->getBool("ipv6_server") && g_settings->getBool("enable_ipv6"))) {
 				connect_address.setAddress(in6addr_loopback);
 			} else {
 				connect_address.setAddress(127, 0, 0, 1);

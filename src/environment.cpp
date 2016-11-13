@@ -715,11 +715,17 @@ void ServerEnvironment::saveLoadedPlayers()
 {
 	auto lock = m_players.lock_unique_rec();
 	auto it = m_players.begin();
+errorstream<< "ServerEnvironment::saveLoadedPlayers() \n";
 	while (it != m_players.end()) {
 		auto *player = *it;
 		//if (player->checkModified())
+errorstream << "save id=" << player->peer_id << "refs="<< player->refs << " SAO="<<player->getPlayerSAO()<< "\n";
 		savePlayer(player);
 		if(!player->peer_id && !player->getPlayerSAO() && player->refs <= 0) {
+Json::Value t;
+t << *player;
+errorstream << "remove player = " << player->peer_id  << " j="<< t<<"\n";
+
 			delete player;
 			it = m_players.erase(it);
 		} else {
@@ -742,6 +748,7 @@ void ServerEnvironment::saveLoadedPlayers()
 
 void ServerEnvironment::savePlayer(RemotePlayer *player)
 {
+errorstream<<"ServerEnvironment::savePlayer " << player << "SAO=" << player->getPlayerSAO() << "\n";
 	if (!player || !player->getPlayerSAO())
 		return;
 	Json::Value player_json;
