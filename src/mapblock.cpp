@@ -884,10 +884,10 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 {
 }
 
-	content_t MapBlock::analyzeContent() {
+	bool MapBlock::analyzeContent() {
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
-			return CONTENT_IGNORE;
+			return false;
 		content_only = data[0].param0;
 		content_only_param1 = data[0].param1;
 		content_only_param2 = data[0].param2;
@@ -897,7 +897,7 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 				break;
 			}
 		}
-		return content_only;
+		return true;
 	}
 
 

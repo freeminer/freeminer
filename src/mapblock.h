@@ -640,7 +640,7 @@ public:
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
 	content_t content_only;
 	u8 content_only_param1, content_only_param2;
-	content_t analyzeContent();
+	bool analyzeContent();
 	std::atomic_short lighting_broken;
 
 	static const u32 ystride = MAP_BLOCKSIZE;
