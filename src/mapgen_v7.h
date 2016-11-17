@@ -59,13 +59,15 @@ struct MapgenV7Params : public MapgenParams {
 	NoiseParams np_cave1;
 	NoiseParams np_cave2;
 
-	s16 float_islands;
-	NoiseParams np_float_islands1;
-	NoiseParams np_float_islands2;
-	NoiseParams np_float_islands3;
+	//freeminer: ===
+	//s16 float_islands;
+	//NoiseParams np_float_islands1;
+	//NoiseParams np_float_islands2;
+	//NoiseParams np_float_islands3;
 	NoiseParams np_layers;
 	//NoiseParams np_cave_indev;
 	Json::Value paramsj;
+	// =============
 
 	MapgenV7Params();
 	~MapgenV7Params() {}
@@ -112,8 +114,8 @@ private:
 	Noise *noise_ridge;
 
 	//freeminer:
-	s16 float_islands;
-	virtual void generateExperimental();
+	//s16 float_islands;
+	//virtual void generateExperimental();
 	//=========
 
 };

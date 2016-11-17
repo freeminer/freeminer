@@ -88,10 +88,10 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge)
 	//freeminer:
 	y_offset = 1;
 
-	float_islands = params->float_islands;
-	noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
+	//float_islands = params->float_islands;
+	//noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	//noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	//noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
 
 	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	layers_init(emerge, params->paramsj);
@@ -129,7 +129,7 @@ MapgenV7Params::MapgenV7Params()
 	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5);
 //----------
 
-	spflags             = MGV7_MOUNTAINS | MGV7_RIDGES;
+	spflags             = MGV7_MOUNTAINS | MGV7_RIDGES | MGV7_FLOATLANDS;
 	cave_width          = 0.2;
 	float_mount_density = 0.6;
 	float_mount_height  = 128.0;
@@ -289,9 +289,9 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	blockseed = getBlockSeed2(full_node_min, seed);
 
 	//freeminer:
-	if (float_islands && node_max.Y >= float_islands) {
-		float_islands_prepare(node_min, node_max, float_islands);
-	}
+	//if (float_islands && node_max.Y >= float_islands) {
+	//	float_islands_prepare(node_min, node_max, float_islands);
+	//}
 
 	layers_prepare(node_min, node_max);
 	//==========
@@ -311,7 +311,7 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	biomegen->calcBiomeNoise(node_min);
 	MgStoneType stone_type = generateBiomes();
 
-	generateExperimental();
+	//generateExperimental();
 
 	if (flags & MG_CAVES)
 		generateCaves(stone_surface_max_y, water_level);
@@ -743,9 +743,10 @@ void MapgenV7::addTopNodes()
 #endif
 
 
+/*
 void MapgenV7::generateExperimental() {
 	if (float_islands)
 		if (float_islands_generate(node_min, node_max, float_islands, vm))
 			dustTopNodes();
 }
-
+*/
