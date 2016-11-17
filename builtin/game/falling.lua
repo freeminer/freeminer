@@ -1,5 +1,7 @@
 -- Minetest: builtin/item.lua
 
+local builtin_shared = ...
+
 --
 -- Falling stuff
 --
@@ -108,7 +110,7 @@ core.register_entity(":__builtin:falling_node", {
 				core.add_node(np, self.node)
 			end
 			self.object:remove()
-			nodeupdate(np)
+			core.check_for_falling(np)
 			return
 		end
 		local vel = self.object:getvelocity()
@@ -119,16 +121,17 @@ core.register_entity(":__builtin:falling_node", {
 	end
 })
 
-function spawn_falling_node(p, node)
+local function spawn_falling_node(p, node)
 	return core.spawn_falling_node(p, node)
 --[[
+local function spawn_falling_node(p, node)
 	local obj = core.add_entity(p, "__builtin:falling_node")
 	if not obj then return end
 	obj:get_luaentity():set_node(node)
 ]]
 end
 
-function drop_attached_node(p)
+local function drop_attached_node(p)
 	local nn = core.get_node(p).name
 	core.remove_node(p, remove_fast)
 	for _, item in pairs(core.get_node_drops(nn, "")) do
@@ -141,7 +144,7 @@ function drop_attached_node(p)
 	end
 end
 
-function check_attached_node(p, n)
+function builtin_shared.check_attached_node(p, n)
 	local def = core.registered_nodes[n.name]
 	local d = {x = 0, y = 0, z = 0}
 	if def.paramtype2 == "wallmounted" then
@@ -166,7 +169,7 @@ end
 -- Some common functions
 --
 
-function nodeupdate_single(p)
+function core.check_single_for_falling(p)
 	local n = core.get_node(p)
 	if core.get_item_group(n.name, "falling_node") ~= 0 then
 		local p_bottom = {x = p.x, y = p.y - 1, z = p.z}
@@ -191,7 +194,7 @@ function nodeupdate_single(p)
 	end
 
 	if core.get_item_group(n.name, "attached_node") ~= 0 then
-		if not check_attached_node(p, n) then
+		if not builtin_shared.check_attached_node(p, n) then
 			drop_attached_node(p)
 			return true
 		end
@@ -204,7 +207,7 @@ end
 -- We don't walk diagonals, only our direct neighbors, and self.
 -- Down first as likely case, but always before self. The same with sides.
 -- Up must come last, so that things above self will also fall all at once.
-local nodeupdate_neighbors = {
+local check_for_falling_neighbors = {
 	{x = -1, y = -1, z = 0},
 	{x = 1, y = -1, z = 0},
 	{x = 0, y = -1, z = -1},
@@ -218,7 +221,7 @@ local nodeupdate_neighbors = {
 	{x = 0, y = 1, z = 0},
 }
 
-function nodeupdate(p)
+function core.check_for_falling(p)
 	-- Round p to prevent falling entities to get stuck.
 	p = vector.round(p)
 
@@ -237,10 +240,10 @@ function nodeupdate(p)
 		n = n + 1
 		s[n] = {p = p, v = v}
 		-- Select next node from neighbor list.
-		p = vector.add(p, nodeupdate_neighbors[v])
+		p = vector.add(p, check_for_falling_neighbors[v])
 		-- Now we check out the node. If it is in need of an update,
 		-- it will let us know in the return value (true = updated).
-		if not nodeupdate_single(p) then
+		if not core.check_single_for_falling(p) then
 			-- If we don't need to "recurse" (walk) to it then pop
 			-- our previous pos off the stack and continue from there,
 			-- with the v value we were at when we last were at that
@@ -272,17 +275,33 @@ end
 -- Global callbacks
 --
 
-function on_placenode(p, node)
-	nodeupdate(p)
+local function on_placenode(p, node)
+	core.check_for_falling(p)
 end
 core.register_on_placenode(on_placenode)
 
-function on_dignode(p, node)
-	nodeupdate(p)
+local function on_dignode(p, node)
+	core.check_for_falling(p)
 end
 core.register_on_dignode(on_dignode)
 
-function on_punchnode(p, node)
-	nodeupdate(p)
+local function on_punchnode(p, node)
+	core.check_for_falling(p)
 end
 core.register_on_punchnode(on_punchnode)
+
+--
+-- Globally exported functions
+--
+
+-- TODO remove this function after the 0.4.15 release
+function nodeupdate(p)
+	core.log("deprecated", "nodeupdate: deprecated, please use core.check_for_falling instead")
+	core.check_for_falling(p)
+end
+
+-- TODO remove this function after the 0.4.15 release
+function nodeupdate_single(p)
+	core.log("deprecated", "nodeupdate_single: deprecated, please use core.check_single_for_falling instead")
+	core.check_single_for_falling(p)
+end
