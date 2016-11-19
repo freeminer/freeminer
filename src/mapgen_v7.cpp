@@ -86,6 +86,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge)
 	noise_ridge    = new Noise(&params->np_ridge,    seed, csize.X, csize.Y + 2, csize.Z);
 
 	//freeminer:
+	sp = params;
 	y_offset = 1;
 
 	//float_islands = params->float_islands;
@@ -95,7 +96,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge)
 
 	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	layers_init(emerge, params->paramsj);
-	//noise_cave_indev      = new Noise(&params->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_cave_indev      = new Noise(&params->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	//==========
 
 	MapgenBasic::np_cave1 = params->np_cave1;
@@ -126,7 +127,8 @@ MapgenV7Params::MapgenV7Params()
 	//np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	//np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
 	//np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5);
+	np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6,  2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5);
+	np_cave_indev      = NoiseParams(0,   1000, v3f(500, 500, 500), 3664,  4, 0.8,  2.0, NOISE_FLAG_DEFAULTS, 4,   1,   1);
 //----------
 
 	spflags             = MGV7_MOUNTAINS | MGV7_RIDGES | MGV7_FLOATLANDS;
@@ -294,6 +296,7 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	//}
 
 	layers_prepare(node_min, node_max);
+	cave_prepare(node_min, node_max, sp->paramsj.get("cave_indev", -100).asInt());
 	//==========
 
 	// Generate base and mountain terrain
@@ -500,7 +503,28 @@ int MapgenV7::generateTerrain()
 		for (s16 y = node_min.Y - 1; y <= node_max.Y + 1; y++) {
 			if (vm->m_data[vi].getContent() == CONTENT_IGNORE) {
 				if (y <= surface_y) {
-					vm->m_data[vi] = layers_get(index3d);  // Base terrain
+					//vm->m_data[vi] = layers_get(index3d);  // Base terrain
+
+					// freeminer huge caves
+					const auto & i = vi;
+					//int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * ystride + (x - node_min.X) * 1;
+					const auto & index3 = index3d;
+					if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold) {
+						vm->m_data[i] = n_air;
+					} else {
+						auto n = /* (y > water_level - surface_y && bt == BT_DESERT) ? n_desert_stone :*/ layers_get(index3);
+						bool protect = n.getContent() != CONTENT_AIR;
+						if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold - 50) {
+							vm->m_data[i] = protect ? n_stone : n; //cave shell without layers
+							protect = true;
+						} else {
+							vm->m_data[i] = n;
+						}
+						if (protect)
+							vm->m_flags[i] |= VOXELFLAG_CHECKED2; // no cave liquid
+					}
+					// =====
+
 				} else if ((spflags & MGV7_MOUNTAINS) &&
 						getMountainTerrainFromMap(index3d, index2d, y)) {
 					vm->m_data[vi] = layers_get(index3d);  // Mountain terrain

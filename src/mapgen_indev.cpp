@@ -430,7 +430,7 @@ int MapgenIndev::generateGround() {
 			if (!vm->m_data[i]) {
 
 				if (y <= surface_y) {
-					int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * ystride + (x - node_min.X) * xstride;
+					int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * csize.X + (x - node_min.X) * 1;
 					if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold) {
 						vm->m_data[i] = n_air;
 					} else { 
