@@ -160,8 +160,16 @@ public:
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
 	
-	MapDrawControl & getControl() { return m_control; }
+/*
+	// Check if sector was drawn on last render()
+	bool sectorWasDrawn(v2s16 p)
+	{
+		return (m_last_drawn_sectors.find(p) != m_last_drawn_sectors.end());
+	}
+*/
 
+	MapDrawControl & getControl() const { return m_control; }
+	f32 getCameraFov() const { return m_camera_fov; }
 private:
 	Client *m_client;
 	

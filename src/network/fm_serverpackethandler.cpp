@@ -1482,13 +1482,14 @@ void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
 	}
-/*
+
 	auto playersao = player->getPlayerSAO();
+	/*
 	if (!playersao) {
 		m_con.DisconnectPeer(pkt->getPeerId());
 		return;
-	}
-*/
+	}*/
+
 	auto client = getClient(peer_id);
 	auto lock = client->lock_unique_rec();
 	client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
@@ -1496,4 +1497,10 @@ void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) {
 	client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
 	client->fov  = packet[TOSERVER_DRAWCONTROL_FOV].as<f32>();
 	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
+
+	// minetest compat, fmtodo: make one place
+	if (playersao) {
+		playersao->setFov(client->fov);
+		playersao->setWantedRange(client->wanted_range);
+	}
 }

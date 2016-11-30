@@ -511,6 +511,12 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 void Camera::updateViewingRange()
 {
+
+	const f32 viewing_range = g_settings->getFloat("viewing_range");
+/* mt static range:
+	m_draw_control.wanted_range = viewing_range;
+*/
+
 	if (m_draw_control.range_all) {
 		m_cameranode->setFarValue(100000.0);
 		return;
@@ -537,7 +543,7 @@ void Camera::updateViewingRange()
 			<<std::endl;*/
 
 	// Get current viewing range and FPS settings
-	f32 viewing_range_min = g_settings->getFloat("viewing_range");
+	f32 viewing_range_min = viewing_range;
 	viewing_range_min = MYMAX(15.0, viewing_range_min);
 
 	f32 viewing_range_max = g_settings->getFloat("viewing_range_max");
@@ -710,12 +716,9 @@ void Camera::updateViewingRange()
 
 	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
 
-	const auto viewing_range = m_draw_control.wanted_range;
-/* mt static range:
-	f32 viewing_range = g_settings->getFloat("viewing_range");
-	m_draw_control.wanted_range = viewing_range;
-*/
-	m_cameranode->setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
+	const auto viewing_range_new = m_draw_control.wanted_range;
+
+	m_cameranode->setFarValue((viewing_range_new < 2000) ? 2000 * BS : viewing_range_new * BS);
 }
 
 void Camera::setDigging(s32 button)
