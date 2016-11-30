@@ -259,6 +259,8 @@ public:
 	const Inventory* getInventory() const;
 	InventoryLocation getInventoryLocation() const;
 	std::string getWieldList() const;
+	ItemStack getWieldedItem() const;
+	bool setWieldedItem(const ItemStack &item);
 	int getWieldIndex() const;
 	void setWieldIndex(int i);
 
