@@ -267,7 +267,8 @@ struct LightQueue {
 		const mapblock_v3 &block_pos, MapBlock *block,
 		direction source_dir)
 	{
-		assert(light <= LIGHT_SUN);
+		if (light > LIGHT_SUN)
+			return;
 		lights[light].push_back(
 			ChangingLight(rel_pos, block_pos, block, source_dir));
 	}
