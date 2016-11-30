@@ -525,14 +525,19 @@ int ScriptApiSecurity::sl_g_require(lua_State *L)
 
 int ScriptApiSecurity::sl_io_open(lua_State *L)
 {
+	bool with_mode = lua_gettop(L) > 1;
+
 	luaL_checktype(L, 1, LUA_TSTRING);
 	const char *path = lua_tostring(L, 1);
 	CHECK_SECURE_PATH(L, path);
 
 	push_original(L, "io", "open");
 	lua_pushvalue(L, 1);
-	lua_pushvalue(L, 2);
-	lua_call(L, 2, 2);
+	if (with_mode) {
+		lua_pushvalue(L, 2);
+	}
+
+	lua_call(L, with_mode ? 2 : 1, 2);
 	return 2;
 }
 
@@ -572,13 +577,13 @@ int ScriptApiSecurity::sl_io_lines(lua_State *L)
 		CHECK_SECURE_PATH(L, path);
 	}
 
+	int top_precall = lua_gettop(L);
 	push_original(L, "io", "lines");
 	lua_pushvalue(L, 1);
-	int top_precall = lua_gettop(L);
 	lua_call(L, 1, LUA_MULTRET);
 	// Return number of arguments returned by the function,
 	// adjusting for the function being poped.
-	return lua_gettop(L) - (top_precall - 1);
+	return lua_gettop(L) - top_precall;
 }
 
 
