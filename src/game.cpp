@@ -1255,6 +1255,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 		(*cur_formspec)->setFormSource(fs_src);
 		(*cur_formspec)->setTextDest(txt_dest);
 	}
+	
 }
 
 #ifdef __ANDROID__
@@ -1832,6 +1833,8 @@ private:
 	ChatBackend *chat_backend;
 
 	GUIFormSpecMenu *current_formspec;
+	//default: "". If other than "", empty show_formspec packets will only close the formspec when the formname matches
+	std::string cur_formname;
 
 	EventManager *eventmgr;
 	QuicktuneShortcutter *quicktune;
@@ -1933,6 +1936,7 @@ Game::Game() :
 	soundmaker(NULL),
 	chat_backend(NULL),
 	current_formspec(NULL),
+	cur_formname(""),
 	eventmgr(NULL),
 	quicktune(NULL),
 	gui_chat_console(NULL),
@@ -3327,6 +3331,7 @@ void Game::openInventory()
 
 	create_formspec_menu(&current_formspec, client, gamedef, texture_src,
 			device, &input->joystick, fs_src, txt_dst, client);
+	cur_formname = "";
 
 	InventoryLocation inventoryloc;
 	inventoryloc.setCurrentPlayer();
@@ -3886,14 +3891,21 @@ void Game::processClientEvents(CameraOrientation *cam, float *damage_flash)
 			player->hurt_tilt_strength = 0;
 
 		} else if (event.type == CE_SHOW_FORMSPEC) {
-			FormspecFormSource *fs_src =
-				new FormspecFormSource(*(event.show_formspec.formspec));
-			TextDestPlayerInventory *txt_dst =
-				new TextDestPlayerInventory(client, *(event.show_formspec.formname));
+			if (*(event.show_formspec.formspec) == "") {
+				if (current_formspec && ( *(event.show_formspec.formname) == "" || *(event.show_formspec.formname) == cur_formname) ){
+					current_formspec->quitMenu();
+				}
+			} else {
+				FormspecFormSource *fs_src =
+					new FormspecFormSource(*(event.show_formspec.formspec));
+				TextDestPlayerInventory *txt_dst =
+					new TextDestPlayerInventory(client, *(event.show_formspec.formname));
 
-			create_formspec_menu(&current_formspec, client, gamedef,
-				texture_src, device, &input->joystick,
-				fs_src, txt_dst, client);
+				create_formspec_menu(&current_formspec, client, gamedef,
+					texture_src, device, &input->joystick,
+					fs_src, txt_dst, client);
+				cur_formname = *(event.show_formspec.formname);
+			}
 
 			delete(event.show_formspec.formspec);
 			delete(event.show_formspec.formname);
@@ -4395,6 +4407,7 @@ void Game::handlePointingAtNode(GameRunData *runData,
 
 			create_formspec_menu(&current_formspec, client, gamedef,
 				texture_src, device, &input->joystick, fs_src, txt_dst, client);
+			cur_formname = "";
 
 			current_formspec->setFormSpec(meta->getString("formspec"), inventoryloc);
 		} else {
