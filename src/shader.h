@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef SHADER_HEADER
 #define SHADER_HEADER
 
+#include <IMaterialRendererServices.h>
 #include "irrlichttypes_extrabloated.h"
 #include "threads.h"
 #include <string>
@@ -46,8 +47,7 @@ class IGameDef;
 std::string getShaderPath(const std::string &name_of_shader,
 		const std::string &filename);
 
-struct ShaderInfo
-{
+struct ShaderInfo {
 	std::string name;
 	video::E_MATERIAL_TYPE base_material;
 	video::E_MATERIAL_TYPE material;
@@ -69,20 +69,66 @@ namespace irr { namespace video {
 	class IMaterialRendererServices;
 } }
 
-class IShaderConstantSetter
-{
+
+class IShaderConstantSetter {
 public:
 	virtual ~IShaderConstantSetter(){};
 	virtual void onSetConstants(video::IMaterialRendererServices *services,
 			bool is_highlevel) = 0;
 };
 
+
+class IShaderConstantSetterFactory {
+public:
+	virtual ~IShaderConstantSetterFactory() {};
+	virtual IShaderConstantSetter* create() = 0;
+};
+
+
+template <typename T, std::size_t count=1>
+class CachedShaderSetting {
+	const char *m_name;
+	T m_sent[count];
+	bool has_been_set;
+	bool is_pixel;
+protected:
+	CachedShaderSetting(const char *name, bool is_pixel) :
+		m_name(name), has_been_set(false), is_pixel(is_pixel)
+	{}
+public:
+	void set(const T value[count], video::IMaterialRendererServices *services)
+	{
+		if (has_been_set && std::equal(m_sent, m_sent + count, value))
+			return;
+		if (is_pixel)
+			services->setPixelShaderConstant(m_name, value, count);
+		else
+			services->setVertexShaderConstant(m_name, value, count);
+		std::copy(value, value + count, m_sent);
+		has_been_set = true;
+	}
+};
+
+template <typename T, std::size_t count = 1>
+class CachedPixelShaderSetting : public CachedShaderSetting<T, count> {
+public:
+	CachedPixelShaderSetting(const char *name) :
+		CachedShaderSetting<T, count>(name, true){}
+};
+
+template <typename T, std::size_t count = 1>
+class CachedVertexShaderSetting : public CachedShaderSetting<T, count> {
+public:
+	CachedVertexShaderSetting(const char *name) :
+		CachedShaderSetting<T, count>(name, false){}
+};
+
+
 /*
 	ShaderSource creates and caches shaders.
 */
 
-class IShaderSource
-{
+class IShaderSource {
 public:
 	IShaderSource(){}
 	virtual ~IShaderSource(){}
@@ -93,8 +139,7 @@ public:
 		const u8 material_type, const u8 drawtype){return 0;}
 };
 
-class IWritableShaderSource : public IShaderSource
-{
+class IWritableShaderSource : public IShaderSource {
 public:
 	IWritableShaderSource(){}
 	virtual ~IWritableShaderSource(){}
@@ -108,7 +153,7 @@ public:
 	virtual void insertSourceShader(const std::string &name_of_shader,
 		const std::string &filename, const std::string &program)=0;
 	virtual void rebuildShaders()=0;
-	virtual void addGlobalConstantSetter(IShaderConstantSetter *setter)=0;
+	virtual void addShaderConstantSetterFactory(IShaderConstantSetterFactory *setter) = 0;
 };
 
 IWritableShaderSource* createShaderSource(IrrlichtDevice *device);

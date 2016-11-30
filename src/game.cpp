@@ -898,42 +898,75 @@ public:
 	}
 };
 
+
+// before 1.8 there isn't a "integer interface", only float
+#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
+typedef f32 SamplerLayer_t;
+#else
+typedef s32 SamplerLayer_t;
+#endif
+
+
 class GameGlobalShaderConstantSetter : public IShaderConstantSetter
 {
 	Sky *m_sky;
 	bool *m_force_fog_off;
 	f32 *m_fog_range;
+	bool m_fog_enabled;
+	CachedPixelShaderSetting<float, 4> m_sky_bg_color;
+	CachedPixelShaderSetting<float> m_fog_distance;
+	CachedVertexShaderSetting<float> m_animation_timer_vertex;
+	CachedPixelShaderSetting<float> m_animation_timer_pixel;
+	CachedPixelShaderSetting<float> m_day_night_ratio;
+	CachedPixelShaderSetting<float, 3> m_eye_position_pixel;
+	CachedVertexShaderSetting<float, 3> m_eye_position_vertex;
+	CachedPixelShaderSetting<float, 3> m_minimap_yaw;
+	CachedPixelShaderSetting<SamplerLayer_t> m_base_texture;
+	CachedPixelShaderSetting<SamplerLayer_t> m_normal_texture;
+	CachedPixelShaderSetting<SamplerLayer_t> m_texture_flags;
 	Client *m_client;
 	Inventory *m_local_inventory;
-	bool m_fogEnabled;
 
 public:
 	void onSettingsChange(const std::string &name)
 	{
 		if (name == "enable_fog")
-			m_fogEnabled = g_settings->getBool("enable_fog");
+			m_fog_enabled = g_settings->getBool("enable_fog");
 	}
 
-	static void SettingsCallback(const std::string &name, void *userdata)
+	static void settingsCallback(const std::string &name, void *userdata)
 	{
 		reinterpret_cast<GameGlobalShaderConstantSetter*>(userdata)->onSettingsChange(name);
 	}
+
+	void setSky(Sky *sky) { m_sky = sky; }
 
 	GameGlobalShaderConstantSetter(Sky *sky, bool *force_fog_off,
 			f32 *fog_range, Client *client, Inventory *local_inventory) :
 		m_sky(sky),
 		m_force_fog_off(force_fog_off),
 		m_fog_range(fog_range),
+		m_sky_bg_color("skyBgColor"),
+		m_fog_distance("fogDistance"),
+		m_animation_timer_vertex("animationTimer"),
+		m_animation_timer_pixel("animationTimer"),
+		m_day_night_ratio("dayNightRatio"),
+		m_eye_position_pixel("eyePosition"),
+		m_eye_position_vertex("eyePosition"),
+		m_minimap_yaw("yawVec"),
+		m_base_texture("baseTexture"),
+		m_normal_texture("normalTexture"),
+		m_texture_flags("textureFlags"),
 		m_client(client)
 		,m_local_inventory(local_inventory)
 	{
-		g_settings->registerChangedCallback("enable_fog", SettingsCallback, this);
-		m_fogEnabled = g_settings->getBool("enable_fog");
+		g_settings->registerChangedCallback("enable_fog", settingsCallback, this);
+		m_fog_enabled = g_settings->getBool("enable_fog");
 	}
 
 	~GameGlobalShaderConstantSetter()
 	{
-		g_settings->deregisterChangedCallback("enable_fog", SettingsCallback, this);
+		g_settings->deregisterChangedCallback("enable_fog", settingsCallback, this);
 	}
 
 	virtual void onSetConstants(video::IMaterialRendererServices *services,
@@ -951,60 +984,62 @@ public:
 			bgcolorf.b,
 			bgcolorf.a,
 		};
-		services->setPixelShaderConstant("skyBgColor", bgcolorfa, 4);
+		m_sky_bg_color.set(bgcolorfa, services);
 
 		// Fog distance
 		float fog_distance = 10000 * BS;
 
-		if (m_fogEnabled && !*m_force_fog_off)
+		if (m_fog_enabled && !*m_force_fog_off)
 			fog_distance = *m_fog_range;
 
-		services->setPixelShaderConstant("fogDistance", &fog_distance, 1);
+		m_fog_distance.set(&fog_distance, services);
 
-		// Day-night ratio
-		u32 daynight_ratio = m_client->getEnv().getDayNightRatio();
-		float daynight_ratio_f = (float)daynight_ratio / 1000.0;
-		services->setPixelShaderConstant("dayNightRatio", &daynight_ratio_f, 1);
+		float daynight_ratio = (float)m_client->getEnv().getDayNightRatio() / 1000.f;
+		m_day_night_ratio.set(&daynight_ratio, services);
 
 		u32 animation_timer = porting::getTimeMs() % 100000;
-		float animation_timer_f = (float)animation_timer / 100000.0;
-		services->setPixelShaderConstant("animationTimer", &animation_timer_f, 1);
-		services->setVertexShaderConstant("animationTimer", &animation_timer_f, 1);
+		float animation_timer_f = (float)animation_timer / 100000.f;
+		m_animation_timer_vertex.set(&animation_timer_f, services);
+		m_animation_timer_pixel.set(&animation_timer_f, services);
 
-		LocalPlayer *player = m_client->getEnv().getLocalPlayer();
-		v3f eye_position = player->getEyePosition();
-		services->setPixelShaderConstant("eyePosition", (irr::f32 *)&eye_position, 3);
-		services->setVertexShaderConstant("eyePosition", (irr::f32 *)&eye_position, 3);
+		float eye_position_array[3];
+		v3f epos = m_client->getEnv().getLocalPlayer()->getEyePosition();
+#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
+		eye_position_array[0] = epos.X;
+		eye_position_array[1] = epos.Y;
+		eye_position_array[2] = epos.Z;
+#else
+		epos.getAs3Values(eye_position_array);
+#endif
+		m_eye_position_pixel.set(eye_position_array, services);
+		m_eye_position_vertex.set(eye_position_array, services);
 
+
+		// FMTODO!!
 		v3f sun_moon_position;
 		if (m_sky->sun_moon_light) {
 			sun_moon_position = m_sky->sun_moon_light->getPosition();
 		} else {
-			sun_moon_position = v3f(0.0, eye_position.Y*BS+900.0, 0.0);
+			sun_moon_position = v3f(0.0, epos.Y*BS+900.0, 0.0);
 		}
 		services->setPixelShaderConstant("sunPosition", (irr::f32 *)&sun_moon_position, 3);
 		services->setVertexShaderConstant("sunPosition", (irr::f32 *)&sun_moon_position, 3);
 
-		v3f minimap_yaw_vec = m_client->getMapper()->getYawVec();
-		services->setPixelShaderConstant("yawVec", (irr::f32 *)&minimap_yaw_vec, 3);
 
-		// Uniform sampler layers
-		// before 1.8 there isn't a "integer interface", only float
+
+		float minimap_yaw_array[3];
+		v3f minimap_yaw = m_client->getMapper()->getYawVec();
 #if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
-		f32 layer0 = 0;
-		f32 layer1 = 1;
-		f32 layer2 = 2;
-		services->setPixelShaderConstant("baseTexture" , (irr::f32 *)&layer0, 1);
-		services->setPixelShaderConstant("normalTexture" , (irr::f32 *)&layer1, 1);
-		services->setPixelShaderConstant("textureFlags" , (irr::f32 *)&layer2, 1);
+		minimap_yaw_array[0] = minimap_yaw.X;
+		minimap_yaw_array[1] = minimap_yaw.Y;
+		minimap_yaw_array[2] = minimap_yaw.Z;
 #else
-		s32 layer0 = 0;
-		s32 layer1 = 1;
-		s32 layer2 = 2;
-		services->setPixelShaderConstant("baseTexture" , (irr::s32 *)&layer0, 1);
-		services->setPixelShaderConstant("normalTexture" , (irr::s32 *)&layer1, 1);
-		services->setPixelShaderConstant("textureFlags" , (irr::s32 *)&layer2, 1);
+		minimap_yaw.getAs3Values(minimap_yaw_array);
 #endif
+
+
+		//FMTODO!!
+		if (m_local_inventory) {
 		ItemStack playeritem;
 		{
 			InventoryList *mlist = m_local_inventory->getList("main");
@@ -1017,8 +1052,61 @@ public:
 		if (!g_settings->getBool("disable_wieldlight"))
 			wieldLight = (irr::f32)((ItemGroupList)m_client->idef()->get(playeritem.name).groups)["wield_light"];
 		services->setPixelShaderConstant("wieldLight", &wieldLight, 1);
+		}
+
+
+		m_minimap_yaw.set(minimap_yaw_array, services);
+
+		SamplerLayer_t base_tex = 0,
+				normal_tex = 1,
+				flags_tex = 2;
+		m_base_texture.set(&base_tex, services);
+		m_normal_texture.set(&normal_tex, services);
+		m_texture_flags.set(&flags_tex, services);
 	}
 };
+
+
+class GameGlobalShaderConstantSetterFactory : public IShaderConstantSetterFactory
+{
+	Sky *m_sky;
+	bool *m_force_fog_off;
+	f32 *m_fog_range;
+	Client *m_client;
+
+	// freeminer:
+	Inventory * m_local_inventory;
+	// =========
+
+	std::vector<GameGlobalShaderConstantSetter *> created_nosky;
+public:
+	GameGlobalShaderConstantSetterFactory(bool *force_fog_off,
+			f32 *fog_range, Client *client, Inventory * local_inventory) :
+		m_sky(NULL),
+		m_force_fog_off(force_fog_off),
+		m_fog_range(fog_range),
+		m_client(client)
+		, m_local_inventory(local_inventory)
+	{}
+
+	void setSky(Sky *sky) {
+		m_sky = sky;
+		for (size_t i = 0; i < created_nosky.size(); ++i) {
+			created_nosky[i]->setSky(m_sky);
+		}
+		created_nosky.clear();
+	}
+
+	virtual IShaderConstantSetter* create()
+	{
+		GameGlobalShaderConstantSetter *scs = new GameGlobalShaderConstantSetter(
+				m_sky, m_force_fog_off, m_fog_range, m_client, m_local_inventory);
+		if (!m_sky)
+			created_nosky.push_back(scs);
+		return scs;
+	}
+};
+
 
 bool nodePlacementPrediction(Client &client,
 		const ItemDefinition &playeritem_def, v3s16 nodepos, v3s16 neighbourpos)
@@ -1757,6 +1845,11 @@ private:
 	Hud *hud;
 	Mapper *mapper;
 
+public:
+	GameRunData runData;
+	VolatileRunFlags flags;
+private:
+
 	/* 'cache'
 	   This class does take ownership/responsibily for cleaning up etc of any of
 	   these items (e.g. device)
@@ -1796,9 +1889,6 @@ private:
 #if ENABLE_THREADS && HAVE_FUTURE
 	std::future<void> updateDrawList_future;
 #endif
-public:
-	VolatileRunFlags flags;
-	GameRunData runData;
 private:
 	// minetest:
 
@@ -1964,6 +2054,28 @@ bool Game::startup(bool *kill,
 
 	smgr->getParameters()->setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
 
+	//?memset(&runData, 0, sizeof(runData));
+	runData.time_from_last_punch = 10.0;
+	runData.profiler_max_page = 2;
+	runData.update_wielded_item_trigger = true;
+
+	memset(&flags, 0, sizeof(flags));
+	flags.show_chat = true;
+	flags.show_hud = true;
+	flags.show_debug = g_settings->getBool("show_debug");
+	flags.invert_mouse = g_settings->getBool("invert_mouse");
+	flags.first_loop_after_window_activation = true;
+
+	// freeminer:
+	runData.update_draw_list_timer = 5;
+	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
+	flags.headless_optimize = g_settings->getBool("headless_optimize");
+	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
+	flags.connected = false;
+	flags.reconnect = false;
+
+	//=========
+
 	if (!init(map_dir, address, port, gamespec))
 		return false;
 
@@ -1980,52 +2092,15 @@ void Game::run()
 	RunStats stats              = { 0 };
 	CameraOrientation cam_view_target  = { 0 };
 	CameraOrientation cam_view  = { 0 };
-	//runData         = { 0 };
+
 	FpsControl draw_times       = { 0 };
-	flags      = { 0 };
 	f32 dtime; // in seconds
-
-	runData.time_from_last_punch  = 10.0;
-	runData.profiler_max_page = 2;
-	runData.update_wielded_item_trigger = true;
-
-	flags.show_chat = true;
-	flags.show_hud = true;
-	flags.show_minimap = g_settings->getBool("enable_minimap");
-	flags.show_debug = g_settings->getBool("show_debug");
-	flags.invert_mouse = g_settings->getBool("invert_mouse");
-	flags.first_loop_after_window_activation = true;
-
-	mapper->setMinimapMode(MINIMAP_MODE_OFF);
-	if(flags.show_minimap) {
-		u16 minimapMode = g_settings->getU16("minimap_default_mode");
-		if( minimapMode>0 && minimapMode<MINIMAP_MODE_COUNT ) {
-			mapper->setMinimapMode(MinimapMode(minimapMode));
-		}
-	}
-
-	// freeminer:
-	runData.update_draw_list_timer = 5;
-	flags.dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	flags.headless_optimize = g_settings->getBool("headless_optimize");
-	flags.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
-	flags.connected = false;
-	flags.reconnect = false;
-
 
 	/* Clear the profiler */
 	Profiler::GraphValues dummyvalues;
 	g_profiler->graphGet(dummyvalues);
 
 	draw_times.last_time = device->getTimer()->getTime();
-
-	shader_src->addGlobalConstantSetter(new GameGlobalShaderConstantSetter(
-			sky,
-			&flags.force_fog_off,
-			&runData.fog_range,
-			client,
-			local_inventory
-			));
 
 	double run_time = 0;
 
@@ -2313,6 +2388,13 @@ bool Game::createClient(const std::string &playername,
 		return false;
 	}
 
+	//freeminer moved:
+	local_inventory = new Inventory(itemdef_manager);
+
+	GameGlobalShaderConstantSetterFactory *scsf = new GameGlobalShaderConstantSetterFactory(
+			&flags.force_fog_off, &runData.fog_range, client, local_inventory);
+	shader_src->addShaderConstantSetterFactory(scsf);
+
 	// Update cached textures, meshes and materials
 	client->afterContentReceived(device);
 
@@ -2337,9 +2419,12 @@ bool Game::createClient(const std::string &playername,
 	/* Skybox
 	 */
 	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, texture_src);
+	scsf->setSky(sky);
 	skybox = NULL;	// This is used/set later on in the main run loop
 
+	/* freeminer: look up ^
 	local_inventory = new Inventory(itemdef_manager);
+	*/
 
 	if (!(sky && local_inventory)) {
 		*error_message = "Memory allocation error (sky or local inventory)";
@@ -2385,6 +2470,16 @@ bool Game::createClient(const std::string &playername,
 
 	mapper = client->getMapper();
 	mapper->setMinimapMode(MINIMAP_MODE_OFF);
+
+
+	//freeminer:
+	if (flags.show_minimap) {
+		u16 minimapMode = g_settings->getU16("minimap_default_mode");
+		if( minimapMode>0 && minimapMode<MINIMAP_MODE_COUNT ) {
+			mapper->setMinimapMode(MinimapMode(minimapMode));
+		}
+	}
+	//=========
 
 	return true;
 }
