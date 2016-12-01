@@ -45,8 +45,8 @@ fi
 
 if [ ! -d $SDK_DIR/platforms/$TEST_PLATFORM ] ; then
 	#( sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | $SDK_DIR/tools/android update sdk --no-ui
-	( sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | $SDK_DIR/tools/android update sdk --no-ui --filter platform-tool,$TEST_PLATFORM,android-15,android-21,build-tools-23.0.2
-	echo autoinstall build-tools-23.0.2 now maybe broken, install manually: $NDK_SDK_ROOT/$SDK_DIR/tools/android
+	( sleep 2 && while [ 1 ]; do sleep 1; echo y; done ) | $SDK_DIR/tools/android update sdk --no-ui --filter platform-tool,$TEST_PLATFORM,android-15,android-21,build-tools-25.0.1
+	echo autoinstall build-tools-25.0.1 now maybe broken, install manually: $NDK_SDK_ROOT/$SDK_DIR/tools/android
 fi
 
 cd $DIR_SAVE

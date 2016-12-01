@@ -6,7 +6,7 @@ http://developer.android.com/sdk/index.html
 run Android SDK Manager
 ~/android-sdk-linux/tools/android
  and install
-  Android SDK build-tools 23.0.1
+  Android SDK build-tools 25.0.1
   API 15 - SDK platform
   API 21 - SDK platform
 
