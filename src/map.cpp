@@ -40,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/mathconstants.h"
 #include "rollback_interface.h"
 #include "environment.h"
+#include "reflowscan.h"
 #include "emerge.h"
 #include "mapgen_v6.h"
 #include "mg_biome.h"
@@ -135,7 +136,7 @@ bool Map::isNodeUnderground(v3s16 p)
 bool Map::isValidPosition(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
-	MapBlock *block = getBlockNoCreate(blockpos);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	return (block != NULL);
 }
 
@@ -1389,6 +1390,7 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 		NodeNeighbor neutrals[6]; // nodes that are solid or another kind of liquid
 		int num_neutrals = 0;
 		bool flowing_down = false;
+		bool ignored_sources = false;
 		for (u16 i = 0; i < 6; i++) {
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
@@ -1416,10 +1418,15 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 							flowing_down = true;
 					} else {
 						neutrals[num_neutrals++] = nb;
-						// If neutral below is ignore prevent water spreading outwards
-						if (nb.t == NEIGHBOR_LOWER &&
-								nb.n.getContent() == CONTENT_IGNORE)
-							flowing_down = true;
+						if (nb.n.getContent() == CONTENT_IGNORE) {
+							// If node below is ignore prevent water from
+							// spreading outwards and otherwise prevent from
+							// flowing away as ignore node might be the source
+							if (nb.t == NEIGHBOR_LOWER)
+								flowing_down = true;
+							else
+								ignored_sources = true;
+						}
 					}
 					break;
 				case LIQUID_SOURCE:
@@ -1476,6 +1483,11 @@ u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
 				new_node_content = liquid_kind;
 			else
 				new_node_content = floodable_node;
+		} else if (ignored_sources && liquid_level >= 0) {
+			// Maybe there are neighbouring sources that aren't loaded yet
+			// so prevent flowing away.
+			new_node_level = liquid_level;
+			new_node_content = liquid_kind;
 		} else {
 			// no surrounding sources, so get the maximum level that can flow into this node
 			for (u16 i = 0; i < num_flows; i++) {
@@ -2942,8 +2954,11 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		block->deSerialize(is, version, true);
 
 		// If it's a new block, insert it to the map
-		if(created_new)
+		if (created_new) {
 			sector->insertBlock(block);
+			ReflowScan scanner(this, m_emerge->ndef);
+			scanner.scan(block, &m_transforming_liquid);
+		}
 
 		/*
 			Save blocks loaded in old format in new format
@@ -3004,6 +3019,43 @@ void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool 
 			block = sector->createBlankBlockNoInsert(p3d.Y);
 			created_new = true;
 
+		// If it's a new block, insert it to the map
+		if (created_new) {
+			sector->insertBlock(block);
+			ReflowScan scanner(this, m_emerge->ndef);
+			scanner.scan(block, &m_transforming_liquid);
+		}
+
+		/*
+			Save blocks loaded in old format in new format
+		*/
+
+		//if(version < SER_FMT_VER_HIGHEST_READ || save_after_load)
+		// Only save if asked to; no need to update version
+		if(save_after_load)
+			saveBlock(block);
+
+		// We just loaded it from, so it's up-to-date.
+		block->resetModified();
+
+	}
+	catch(SerializationError &e)
+	{
+		errorstream<<"Invalid block data in database"
+				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
+				<<" (SerializationError): "<<e.what()<<std::endl;
+
+		// TODO: Block should be marked as invalid in memory so that it is
+		// not touched but the game can run
+
+		if(g_settings->getBool("ignore_world_load_errors")){
+			errorstream<<"Ignoring block load error. Duck and cover! "
+					<<"(ignore_world_load_errors)"<<std::endl;
+		} else {
+			throw SerializationError("Invalid block data in database");
+		}
+	}
+}
 
 MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 {
