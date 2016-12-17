@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-08-30 06:18+0200\n"
-"PO-Revision-Date: 2016-07-13 08:25+0000\n"
+"PO-Revision-Date: 2016-10-15 08:04+0000\n"
 "Last-Translator: Jeff Huang <s8321414@gmail.com>\n"
 "Language-Team: Chinese (Taiwan) <https://hosted.weblate.org/projects/"
 "minetest/minetest/zh_TW/>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2.8-dev\n"
+"X-Generator: Weblate 2.9-dev\n"
 
 #: builtin/fstk/ui.lua
 msgid "An error occured in a Lua script, such as a mod:"
@@ -1369,12 +1369,11 @@ msgstr "活動區塊管理間隔"
 
 #: src/settings_translation_file.cpp
 msgid "Active Block Modifier interval"
-msgstr "活動區塊調整間隔"
+msgstr "活動方塊調整間隔"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Active Block Modifiers"
-msgstr "活動區塊調整間隔"
+msgstr "活動區塊調整器"
 
 #: src/settings_translation_file.cpp
 msgid "Active block range"
@@ -1459,7 +1458,7 @@ msgstr "自動回報到伺服器列表。"
 
 #: src/settings_translation_file.cpp
 msgid "Autorun key"
-msgstr ""
+msgstr "自動奔跑按鍵"
 
 #: src/settings_translation_file.cpp
 msgid "Backward key"
@@ -1495,7 +1494,7 @@ msgstr "在玩家內構建"
 
 #: src/settings_translation_file.cpp
 msgid "Builtin"
-msgstr ""
+msgstr "內建"
 
 #: src/settings_translation_file.cpp
 msgid "Bumpmapping"
@@ -1538,9 +1537,8 @@ msgid "Chat toggle key"
 msgstr "聊天切換按鍵"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Chatcommands"
-msgstr "指令"
+msgstr "聊天指令"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1633,13 +1631,12 @@ msgid "Colored fog"
 msgstr "彩色迷霧"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Comma-separated list of mods that are allowed to access HTTP APIs, which\n"
 "allow them to upload and download data to/from the internet."
 msgstr ""
-"以逗號分隔的 mod 清單，讓您可以存取 HTTP API，\n"
-"其可從網際網路上傳及下載資料。"
+"以逗號分隔的 mod 清單，允許其存取 HTTP API，\n"
+"從而網際網路上傳及下載資料。"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1804,7 +1801,7 @@ msgstr "預設特權"
 
 #: src/settings_translation_file.cpp
 msgid "Default report format"
-msgstr ""
+msgstr "缺省報告格式"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -1828,7 +1825,7 @@ msgstr "定義玩家最大可傳送的距離，以方塊計（0 = 不限制）�
 
 #: src/settings_translation_file.cpp
 msgid "Delay in sending blocks after building"
-msgstr ""
+msgstr "建造后發送區塊前延遲的時間"
 
 #: src/settings_translation_file.cpp
 msgid "Delay showing tooltips, stated in milliseconds."
@@ -2018,13 +2015,12 @@ msgstr ""
 "必須啟用著色器。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Engine profiling data print interval"
-msgstr "分析列印間隔"
+msgstr "引擎性能資料印出間隔"
 
 #: src/settings_translation_file.cpp
 msgid "Entity methods"
-msgstr ""
+msgstr "主體方法"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2091,22 +2087,20 @@ msgid "Field of view"
 msgstr "視野"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Field of view for zoom"
-msgstr "視野"
+msgstr "放大后的視野"
 
 #: src/settings_translation_file.cpp
 msgid "Field of view in degrees."
 msgstr "以度計算的視野。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Field of view while zooming in degrees.\n"
 "This requires the \"zoom\" privilege on the server."
 msgstr ""
-"快速移動（透過使用鍵）。\n"
-"這需要伺服器上的「快速」特權。"
+"縮放視野。\n"
+"這需要伺服器上的「縮放」特權。"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2249,7 +2243,7 @@ msgstr "生成一般地圖"
 
 #: src/settings_translation_file.cpp
 msgid "Global callbacks"
-msgstr ""
+msgstr "全域回呼"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2302,6 +2296,10 @@ msgid ""
 "call).\n"
 "* Instrument the sampler being used to update the statistics."
 msgstr ""
+"使用分析器工具本身：\n"
+"* 分析空函數。\n"
+"這會讓消耗增加，儀表增加（+1 函式呼叫）。\n"
+"* 採樣工具會被用於更新統計。"
 
 #: src/settings_translation_file.cpp
 msgid "Height component of the initial window size."
@@ -2443,34 +2441,38 @@ msgid ""
 "Instrument builtin.\n"
 "This is usually only needed by core/builtin contributors"
 msgstr ""
+"內建工具。\n"
+"這通常僅被核心／內建貢獻者需要"
 
 #: src/settings_translation_file.cpp
 msgid "Instrument chatcommands on registration."
-msgstr ""
+msgstr "分析登錄的聊天指令。"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Instrument global callback functions on registration.\n"
 "(anything you pass to a minetest.register_*() function)"
 msgstr ""
+"在登錄上分析全域回呼。\n"
+"（任何您想要傳遞給 minetest.register_*() 函數的東西）"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Instrument the action function of Active Block Modifiers on registration."
-msgstr ""
+msgstr "分析登錄的活躍區塊修飾器的動作函數。"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Instrument the action function of Loading Block Modifiers on registration."
-msgstr ""
+msgstr "分析登錄的載入中區塊修飾器的動作函數。"
 
 #: src/settings_translation_file.cpp
 msgid "Instrument the methods of entities on registration."
-msgstr ""
+msgstr "分析登錄的實體方法。"
 
 #: src/settings_translation_file.cpp
 msgid "Instrumentation"
-msgstr ""
+msgstr "儀表"
 
 #: src/settings_translation_file.cpp
 msgid "Interval of saving important changes in the world, stated in seconds."
@@ -2509,7 +2511,6 @@ msgstr ""
 "控制細節的品質。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Joystick button repetition interval"
 msgstr "搖桿按鈕重覆間隔"
 
@@ -2740,13 +2741,12 @@ msgstr ""
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for toggling autorun.\n"
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 msgstr ""
-"切換快速模式的按鍵。\n"
+"切換自動奔跑的按鍵。\n"
 "請見 http://irrlicht.sourceforge.net/docu/namespaceirr."
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 
@@ -2801,7 +2801,6 @@ msgstr ""
 "html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for toggling the camera update. Only used for development\n"
 "See http://irrlicht.sourceforge.net/docu/namespaceirr."
@@ -2993,7 +2992,7 @@ msgstr "液體更新 tick"
 
 #: src/settings_translation_file.cpp
 msgid "Load the game profiler"
-msgstr ""
+msgstr "載入遊戲分析器"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3001,11 +3000,13 @@ msgid ""
 "Provides a /profiler command to access the compiled profile.\n"
 "Useful for mod developers and server operators."
 msgstr ""
+"載入遊戲分析器以收集遊戲分析資料。\n"
+"提供一個 /profiler 指令以存取已編譯的設定檔。\n"
+"對 mod 開發者與伺服器提供者有用。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Loading Block Modifiers"
-msgstr "活動區塊調整間隔"
+msgstr "正在載入方塊調整器"
 
 #: src/settings_translation_file.cpp
 msgid "Main menu game manager"
@@ -3444,14 +3445,12 @@ msgid "Maximum hotbar width"
 msgstr "快捷列最大寬度"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum number of blocks that are simultaneously sent in total."
-msgstr "最大可同時連線的玩家數。"
+msgstr "最大同時總傳送的區塊數量。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum number of blocks that are simultaneously sent per client."
-msgstr "可被放進佇列內等待載入的最大區塊數。"
+msgstr "每個客戶端可同時傳送的最大區塊數量。"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum number of blocks that can be queued for loading."
@@ -3504,7 +3503,6 @@ msgid "Maximum number of statically stored objects in a block."
 msgstr "最大靜態儲存於一個區塊中的物件數量。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum objects per block"
 msgstr "每個區塊最大物件數"
 
@@ -3517,12 +3515,10 @@ msgstr ""
 "如果有東西要顯示在快捷列左邊或右邊時很有用。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum simultaneous block sends per client"
 msgstr "每個客戶端最大同時傳送區塊數"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum simultaneous block sends total"
 msgstr "總和最大同時傳送區塊數"
 
@@ -3800,29 +3796,26 @@ msgid "Prevent mods from doing insecure things like running shell commands."
 msgstr "避免 mod 做出不安全的舉動，像是執行 shell 指令等。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Print the engine's profiling data in regular intervals (in seconds). 0 = "
 "disable. Useful for developers."
-msgstr "分析器資料印出間隔。0 = 停用。對開發者有用。"
+msgstr "引擎性能資料印出間隔的秒數。0 = 停用。對開發者有用。"
 
 #: src/settings_translation_file.cpp
 msgid "Privileges that players with basic_privs can grant"
 msgstr "有 basic_privs 的玩家可以提升特權"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Profiler"
-msgstr "山谷分析"
+msgstr "分析器"
 
 #: src/settings_translation_file.cpp
 msgid "Profiler toggle key"
 msgstr "分析器切換鍵"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Profiling"
-msgstr "Mod 分析器"
+msgstr "分析"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3858,9 +3851,8 @@ msgid "Replaces the default main menu with a custom one."
 msgstr "以自訂選單取代預設主選單。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Report path"
-msgstr "字型路徑"
+msgstr "報告路徑"
 
 #: src/settings_translation_file.cpp
 msgid "Right key"
@@ -4035,7 +4027,6 @@ msgstr ""
 "必須同時啟用著色器。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Shaders allow advanced visual effects and may increase performance on some "
 "video cards.\n"
@@ -4171,6 +4162,8 @@ msgid ""
 "The default format in which profiles are being saved,\n"
 "when calling `/profiler save [format]` without format."
 msgstr ""
+"設定被儲存為預設格式。\n"
+"當呼叫「/profiler save [格式]」但不包含格式時。"
 
 #: src/settings_translation_file.cpp
 msgid "The depth of dirt or other filler"
@@ -4180,7 +4173,7 @@ msgstr "塵土或其他填充物的深度"
 msgid ""
 "The file path relative to your worldpath in which profiles will be saved "
 "to.\n"
-msgstr ""
+msgstr "設定檔將會被儲存到的，相對於您的全域路徑的檔案路徑。\n"
 
 #: src/settings_translation_file.cpp
 msgid "The network interface that the server listens on."
@@ -4255,7 +4248,7 @@ msgid ""
 "Time in seconds for item entity (dropped items) to live.\n"
 "Setting it to -1 disables the feature."
 msgstr ""
-"物品（丟棄的物品）可以存活多久，以秒計。\n"
+"物品物體（丟棄的物品）可以存活多久，以秒計。\n"
 "設定其為 -1 以停用這個功能。"
 
 #: src/settings_translation_file.cpp
@@ -4477,7 +4470,6 @@ msgstr ""
 "硬體（例如在物品欄中節點的繪圖至材質）。"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "When gui_scaling_filter_txr2img is true, copy those images\n"
 "from hardware to software for scaling.  When false, fall back\n"
@@ -4609,69 +4601,34 @@ msgstr "cURL 並行限制"
 msgid "cURL timeout"
 msgstr "cURL 逾時"
 
-#, fuzzy
-#~ msgid ""
-#~ "Map generation attributes specific to Mapgen flat.\n"
-#~ "Occasional lakes and hills can be added to the flat world.\n"
-#~ "The default flags set in the engine are: none\n"
-#~ "The flags string modifies the engine defaults.\n"
-#~ "Flags that are not specified in the flag string are not modified from the "
-#~ "default.\n"
-#~ "Flags starting with 'no' are used to explicitly disable them."
-#~ msgstr ""
-#~ "專用於 Mapgen flat 的地圖生成屬性。\n"
-#~ "偶而會在平坦的世界中加入湖泊與山丘。\n"
-#~ "未在旗標字串中指定的旗標將不會自預設值修改。\n"
-#~ "以「no」開頭的旗標字串將會用於明確的停用它們。"
+#~ msgid "Detailed mod profile data. Useful for mod developers."
+#~ msgstr "詳細的 mod 檔案資料。對 mod 開發者很有用。"
 
-#, fuzzy
-#~ msgid ""
-#~ "Map generation attributes specific to Mapgen v7.\n"
-#~ "The 'ridges' flag controls the rivers.\n"
-#~ "The default flags set in the engine are: mountains, ridges\n"
-#~ "The flags string modifies the engine defaults.\n"
-#~ "Flags that are not specified in the flag string are not modified from the "
-#~ "default.\n"
-#~ "Flags starting with 'no' are used to explicitly disable them."
-#~ msgstr ""
-#~ "專用於 Mapgen v6 的地圖生成屬性。\n"
-#~ "當 snowbiomes 與叢林都啟用時，叢林旗標會被忽略。\n"
-#~ "未在旗標字串中指定的旗標將不會自預設值修改。\n"
-#~ "以「no」開頭的旗標字串將會用於明確的停用它們。"
+#~ msgid "Detailed mod profiling"
+#~ msgstr "詳細的 mod 檔案"
 
 #~ msgid ""
-#~ "Enable a bit lower water surface, so it doesn't \"fill\" the node "
-#~ "completely.\n"
-#~ "Note that this is not quite optimized and that smooth lighting on the\n"
-#~ "water surface doesn't work with this."
-#~ msgstr ""
-#~ "啟用略低的的水面，所以它就不會完全「填滿」節點。\n"
-#~ "注意，這個功能並未最佳化完成，水面的\n"
-#~ "柔和光功能無法與此功能一同運作。"
+#~ "How many blocks are flying in the wire simultaneously for the whole "
+#~ "server."
+#~ msgstr "整個伺服器有多少個區塊同時以線性方式飛行。"
 
-#~ msgid "Enable selection highlighting for nodes (disables selectionbox)."
-#~ msgstr "啟用節點選擇突顯（停用選取框）。"
+#~ msgid "How many blocks are flying in the wire simultaneously per client."
+#~ msgstr "每個客戶端有多少個區塊同時以線性方式飛行。"
 
-#~ msgid "Preload inventory textures"
-#~ msgstr "預先載入物品欄材質"
+#~ msgid "Useful for mod developers."
+#~ msgstr "對 mod 開發者很有用。"
 
-#~ msgid "Scaling factor applied to menu elements: "
-#~ msgstr "套用在選單元素的縮放係數： "
+#~ msgid "No of course not!"
+#~ msgstr "不，絕對不是！"
 
-#~ msgid "Touch free target"
-#~ msgstr "碰觸自由目標"
+#~ msgid "Public Serverlist"
+#~ msgstr "公共伺服器清單"
 
-#~ msgid "If enabled, "
-#~ msgstr "若啟用， "
+#~ msgid "Generate Normalmaps"
+#~ msgstr "生成一般地圖"
 
-#~ msgid "If disabled "
-#~ msgstr "若停用 "
-
-#~ msgid "Enable a bit lower water surface, so it doesn't "
-#~ msgstr "啟用較低的水面，所以它不會 "
-
-#~ msgid "\""
-#~ msgstr "\""
+#~ msgid "No!!!"
+#~ msgstr "否！！！"
 
 #~ msgid ""
 #~ "Map generation attributes specific to Mapgen Valleys.\n"
@@ -4691,31 +4648,66 @@ msgstr "cURL 逾時"
 #~ "「humid_rivers」會修改在河流附近的濕度，在那些區域附近水將會傾向變為一池。"
 #~ "這可能會對微妙調整過的生物群落造成干擾。"
 
-#~ msgid "No!!!"
-#~ msgstr "否！！！"
+#~ msgid "\""
+#~ msgstr "\""
 
-#~ msgid "Generate Normalmaps"
-#~ msgstr "生成一般地圖"
+#~ msgid "Enable a bit lower water surface, so it doesn't "
+#~ msgstr "啟用較低的水面，所以它不會 "
 
-#~ msgid "Public Serverlist"
-#~ msgstr "公共伺服器清單"
+#~ msgid "If disabled "
+#~ msgstr "若停用 "
 
-#~ msgid "No of course not!"
-#~ msgstr "不，絕對不是！"
+#~ msgid "If enabled, "
+#~ msgstr "若啟用， "
 
-#~ msgid "Useful for mod developers."
-#~ msgstr "對 mod 開發者很有用。"
+#~ msgid "Touch free target"
+#~ msgstr "碰觸自由目標"
 
-#~ msgid "How many blocks are flying in the wire simultaneously per client."
-#~ msgstr "每個客戶端有多少個區塊同時以線性方式飛行。"
+#~ msgid "Scaling factor applied to menu elements: "
+#~ msgstr "套用在選單元素的縮放係數： "
+
+#~ msgid "Preload inventory textures"
+#~ msgstr "預先載入物品欄材質"
+
+#~ msgid "Enable selection highlighting for nodes (disables selectionbox)."
+#~ msgstr "啟用節點選擇突顯（停用選取框）。"
 
 #~ msgid ""
-#~ "How many blocks are flying in the wire simultaneously for the whole "
-#~ "server."
-#~ msgstr "整個伺服器有多少個區塊同時以線性方式飛行。"
+#~ "Enable a bit lower water surface, so it doesn't \"fill\" the node "
+#~ "completely.\n"
+#~ "Note that this is not quite optimized and that smooth lighting on the\n"
+#~ "water surface doesn't work with this."
+#~ msgstr ""
+#~ "啟用略低的的水面，所以它就不會完全「填滿」節點。\n"
+#~ "注意，這個功能並未最佳化完成，水面的\n"
+#~ "柔和光功能無法與此功能一同運作。"
 
-#~ msgid "Detailed mod profiling"
-#~ msgstr "詳細的 mod 檔案"
+#, fuzzy
+#~ msgid ""
+#~ "Map generation attributes specific to Mapgen v7.\n"
+#~ "The 'ridges' flag controls the rivers.\n"
+#~ "The default flags set in the engine are: mountains, ridges\n"
+#~ "The flags string modifies the engine defaults.\n"
+#~ "Flags that are not specified in the flag string are not modified from the "
+#~ "default.\n"
+#~ "Flags starting with 'no' are used to explicitly disable them."
+#~ msgstr ""
+#~ "專用於 Mapgen v6 的地圖生成屬性。\n"
+#~ "當 snowbiomes 與叢林都啟用時，叢林旗標會被忽略。\n"
+#~ "未在旗標字串中指定的旗標將不會自預設值修改。\n"
+#~ "以「no」開頭的旗標字串將會用於明確的停用它們。"
 
-#~ msgid "Detailed mod profile data. Useful for mod developers."
-#~ msgstr "詳細的 mod 檔案資料。對 mod 開發者很有用。"
+#, fuzzy
+#~ msgid ""
+#~ "Map generation attributes specific to Mapgen flat.\n"
+#~ "Occasional lakes and hills can be added to the flat world.\n"
+#~ "The default flags set in the engine are: none\n"
+#~ "The flags string modifies the engine defaults.\n"
+#~ "Flags that are not specified in the flag string are not modified from the "
+#~ "default.\n"
+#~ "Flags starting with 'no' are used to explicitly disable them."
+#~ msgstr ""
+#~ "專用於 Mapgen flat 的地圖生成屬性。\n"
+#~ "偶而會在平坦的世界中加入湖泊與山丘。\n"
+#~ "未在旗標字串中指定的旗標將不會自預設值修改。\n"
+#~ "以「no」開頭的旗標字串將會用於明確的停用它們。"

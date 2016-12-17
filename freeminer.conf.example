@@ -473,8 +473,7 @@
 # pause_fps_max = 20
 
 #    View distance in nodes.
-#    Min = 20
-#    type: int
+#    type: int min: 20 max: 4000
 # viewing_range = 100
 
 #    Width component of the initial window size.
@@ -616,7 +615,7 @@
 # inventory_items_animations = false
 
 #    Fraction of the visible distance at which fog starts to be rendered
-#    Range 0 - 0.99
+#    type: float min: 0 max: 0.99
 # fog_start = 0.4
 
 ### Menus
@@ -937,26 +936,6 @@
 #    type: float
 # server_map_save_interval = 5.3
 
-#    Set the maximum character length of a chat message sent by clients. (0 to disable)
-#    type: integer
-# chat_message_max_size = 500
-
-#    Limit a single player to send X messages per 10 seconds. (0 to disable)
-#    type: float
-# chat_message_limit_per_10sec = 8.0
-
-#    Kick player if send more than X messages per 10 seconds. (0 to disable)
-#    type: integer
-# chat_message_limit_trigger_kick = 50
-
-#    At this distance the server will aggressively optimize which blocks are sent to clients.
-#    Small values potentially improve performance a lot, at the expense of visible rendering glitches.
-#    (some blocks will not be rendered under water and in caves, as well as sometimes on land)
-#    Setting this to a value greater than max_block_send_distance disables this optimization.
-#    Stated in mapblocks (16 nodes)
-#    type: int
-# block_send_optimize_distance = 4
-
 ### Physics
 
 #    type: float
@@ -1061,12 +1040,20 @@
 #    type: float
 # liquid_update = 1.0
 
+#    At this distance the server will aggressively optimize which blocks are sent to clients.
+#    Small values potentially improve performance a lot, at the expense of visible rendering glitches.
+#    (some blocks will not be rendered under water and in caves, as well as sometimes on land)
+#    Setting this to a value greater than max_block_send_distance disables this optimization.
+#    Stated in mapblocks (16 nodes)
+#    type: int min: 2
+# block_send_optimize_distance = 4
+
 ## Mapgen
 
 #    Name of map generator to be used when creating a new world.
 #    Creating a world in the main menu will override this.
 #    type: enum values: indev, v7, valleys, v5, math, fractal, flat, singlenode, v6
-# mg_name = indev
+# mg_name = v7
 
 #    Water surface level of the world.
 #    type: int
@@ -1247,13 +1234,12 @@
 #    Floatlands are currently experimental and subject to change.
 #    Flags that are not specified in the flag string are not modified from the default.
 #    Flags starting with 'no' are used to explicitly disable them.
-#    type: flags possible values: mountains, ridges, floatlands,
-#    nomountains, noridges, nofloatlands
+#    type: flags possible values: mountains, ridges, floatlands, nomountains, noridges, nofloatlands
 # mgv7_spflags = mountains,ridges
 
 #    Controls width of tunnels, a smaller value creates wider tunnels.
 #    type: float
-# mgv7_cave_width = 0.2
+# mgv7_cave_width = 0.09
 
 #    Controls the density of floatland mountain terrain.
 #    Is an offset added to the 'np_mountain' noise value.
@@ -1330,7 +1316,7 @@
 
 #    Controls width of tunnels, a smaller value creates wider tunnels.
 #    type: float
-# mgflat_cave_width = 0.2
+# mgflat_cave_width = 0.09
 
 #    Terrain noise threshold for lakes.
 #    Controls proportion of world area covered by lakes.
@@ -1371,7 +1357,7 @@
 
 #    Controls width of tunnels, a smaller value creates wider tunnels.
 #    type: float
-# mgfractal_cave_width = 0.2
+# mgfractal_cave_width = 0.09
 
 #    Choice of 18 fractals from 9 formulas.
 #    1 = 4D "Roundy" mandelbrot set.
@@ -1496,7 +1482,7 @@
 
 #    Controls width of tunnels, a smaller value creates wider tunnels.
 #    type: float
-# mgvalleys_cave_width = 0.2
+# mgvalleys_cave_width = 0.09
 
 ##### Noises
 
@@ -1572,7 +1558,7 @@
 # profiler.default_report_format = txt
 
 #    The file path relative to your worldpath in which profiles will be saved to.
-#
+#    
 #    type: string
 # profiler.report_path = ""
 

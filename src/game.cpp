@@ -1255,7 +1255,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 		(*cur_formspec)->setFormSource(fs_src);
 		(*cur_formspec)->setTextDest(txt_dest);
 	}
-	
+
 }
 
 #ifdef __ANDROID__
@@ -3644,12 +3644,18 @@ void Game::increaseViewRange(float *statustext_time)
 
 	// it's < 0 if it's outside the range of s16
 	// and increase it directly from 1 to 5 for less key pressing
-	if (range_new < 5)
-		range_new = 5;
+	if (range_new < 20)
+		range_new = 20;
 
+	if (range_new > 31000) {
+		range_new = 31000;
+		statustext = utf8_to_wide("Viewing range is at maximum: "
+				+ itos(range_new));
+	} else {
+		statustext = utf8_to_wide("Viewing range changed to "
+				+ itos(range_new));
+	}
 	g_settings->set("viewing_range", itos(range_new));
-	statustext = utf8_to_wide("Viewing range changed to "
-			+ itos(range_new));
 	*statustext_time = 0;
 }
 
@@ -3659,12 +3665,15 @@ void Game::decreaseViewRange(float *statustext_time)
 	s16 range = g_settings->getS16("viewing_range");
 	s16 range_new = range / 1.5;
 
-	if (range_new < 20)
+	if (range_new < 20) {
 		range_new = 20;
-
+		statustext = utf8_to_wide("Viewing range is at minimum: "
+				+ itos(range_new));
+	} else {
+		statustext = utf8_to_wide("Viewing range changed to "
+				+ itos(range_new));
+	}
 	g_settings->set("viewing_range", itos(range_new));
-	statustext = utf8_to_wide("Viewing range changed to "
-			+ itos(range_new));
 	*statustext_time = 0;
 }
 
@@ -3722,8 +3731,8 @@ void Game::updateCameraOrientation(CameraOrientation *cam,
 {
 #ifdef HAVE_TOUCHSCREENGUI
 	if (g_touchscreengui) {
-		cam->camera_yaw   = g_touchscreengui->getYaw();
-		cam->camera_pitch = g_touchscreengui->getPitch();
+		cam->camera_yaw   += g_touchscreengui->getYawChange();
+		cam->camera_pitch  = g_touchscreengui->getPitch();
 	} else {
 #endif
 
@@ -4676,7 +4685,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats,
 
 /*
 	} else {
-		runData->fog_range = 0.9 * draw_control->wanted_range * BS;
+		runData->fog_range = draw_control->wanted_range * BS;
 */
 	}
 

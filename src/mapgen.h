@@ -29,8 +29,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "util/container.h"
 
-#define MAPGEN_DEFAULT MAPGEN_INDEV
-#define MAPGEN_DEFAULT_NAME "indev"
+#define MAPGEN_DEFAULT MAPGEN_V7
+#define MAPGEN_DEFAULT_NAME "v7"
 
 /////////////////// Mapgen flags
 #define MG_TREES       0x01  // Deprecated. Moved into mgv6 flags

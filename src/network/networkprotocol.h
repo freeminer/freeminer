@@ -949,7 +949,7 @@ enum {
 		[2+12+12+4] s32 yaw*100
 		[2+12+12+4+4] u32 keyPressed
 		[2+12+12+4+4+1] u8 fov*80
-		[2+12+12+4+4+4+1] u8 wanted_range / MAP_BLOCKSIZE
+		[2+12+12+4+4+4+1] u8 ceil(wanted_range / MAP_BLOCKSIZE)
 	*/
 
 #define TOSERVER_GOTBLOCKS 0x24 // mt compat only
