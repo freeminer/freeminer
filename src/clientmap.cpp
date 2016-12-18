@@ -162,9 +162,9 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		if (cache)
 			occlude_cache[p] = is_transparent;
 		if(!is_transparent){
-			if(count == needed_count)
-				return true;
 			count++;
+			if(count >= needed_count)
+				return true;
 		}
 		step *= stepfac;
 	}

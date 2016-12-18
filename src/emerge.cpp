@@ -525,21 +525,23 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	// 1). Attempt to fetch block from memory
 	*block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	}
-	if (*block && !(*block)->isDummy() && (*block)->isGenerated())
-		return EMERGE_FROM_MEMORY;
-
-	{
-	MAP_NOTHREAD_LOCK(m_map);
-	// 2). Attempt to load block from disk
-	*block = m_map->loadBlock(pos);
+	if (*block && !(*block)->isDummy()) {
+		if ((*block)->isGenerated())
+			return EMERGE_FROM_MEMORY;
 	}
 
-	if (*block && (*block)->isGenerated())
 	{
 		MAP_NOTHREAD_LOCK(m_map);
-		m_map->prepareBlock(*block);
-		return EMERGE_FROM_DISK;
+		// 2). Attempt to load block from disk if it was not in the memory
+		*block = m_map->loadBlock(pos);
 	}
+
+		if (*block && (*block)->isGenerated())
+		{
+		 	MAP_NOTHREAD_LOCK(m_map);
+			m_map->prepareBlock(*block);
+			return EMERGE_FROM_DISK;
+		}
 
 	{
 	MAP_NOTHREAD_LOCK(m_map);
