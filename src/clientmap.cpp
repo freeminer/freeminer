@@ -369,7 +369,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver, float dtime, unsigne
 			float endoff = -BS * MAP_BLOCKSIZE * 1.732050807569;
 			v3s16 spn = cam_pos_nodes;
 			s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
-			u32 needed_count = 1;
+			// to reduce the likelihood of falsely occluded blocks
+			// require at least two solid blocks
+			// this is a HACK, we should think of a more precise algorithm
+			u32 needed_count = 2;
 			if (occlusion_culling_enabled &&
 				range > 1 && smesh_size &&
 					// For the central point of the mapblock 'endoff' can be halved
