@@ -38,10 +38,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #include "util/string.h"
 #include "util/serialize.h"
+#include "util/basic_macros.h"
+
 #include "circuit.h"
 #include "profiler.h"
 
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 static const char *modified_reason_strings[] = {
 	"initial",

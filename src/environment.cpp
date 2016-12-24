@@ -56,9 +56,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <random>
+#include "util/basic_macros.h"
 #include "threading/mutex_auto_lock.h"
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 std::random_device random_device; // todo: move me to random.h
 std::mt19937 random_gen(random_device());
@@ -455,8 +454,11 @@ void fillRadiusBlock(v3s16 p0, s16 r, std::set<v3s16> &list)
 	for(p.Y=p0.Y-r; p.Y<=p0.Y+r; p.Y++)
 	for(p.Z=p0.Z-r; p.Z<=p0.Z+r; p.Z++)
 	{
-		// Set in list
-		list.insert(p);
+		// limit to a sphere
+		if (p.getDistanceFrom(p0) <= r) {
+			// Set in list
+			list.insert(p);
+		}
 	}
 }
 

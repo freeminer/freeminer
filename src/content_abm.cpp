@@ -32,7 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "scripting_game.h"
 #include "log.h"
 
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 class LiquidDropABM : public ActiveBlockModifier {
 private:

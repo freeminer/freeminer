@@ -126,6 +126,8 @@ protected:
 #endif
 
 private:
+	static int luaPanic(lua_State *L);
+
 	lua_State*      m_luastack;
 
 	Server*         m_server;

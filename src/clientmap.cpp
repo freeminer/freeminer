@@ -32,11 +32,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "camera.h"               // CameraModes
 #include "util/mathconstants.h"
+#include "util/basic_macros.h"
 #include <algorithm>
 #include <unordered_map>
 #include <utility>
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 void MapDrawControl::fm_init() {
 	farmesh = g_settings->getS32("farmesh");

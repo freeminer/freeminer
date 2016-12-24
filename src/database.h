@@ -28,10 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include <string>
-
-#ifndef PP
-	#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
-#endif
+#include "util/basic_macros.h"
 
 class Database
 {

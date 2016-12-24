@@ -38,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gamedef.h"
 #include "util/directiontables.h"
 #include "util/mathconstants.h"
+#include "util/basic_macros.h"
 #include "rollback_interface.h"
 #include "environment.h"
 #include "reflowscan.h"
@@ -56,9 +57,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_POSTGRESQL
 #include "database-postgresql.h"
 #endif
-
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 
 /*

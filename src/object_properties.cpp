@@ -24,10 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "util/serialize.h"
+#include "util/basic_macros.h"
 #include <sstream>
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
-#define PP2(x) "("<<(x).X<<","<<(x).Y<<")"
 
 ObjectProperties::ObjectProperties():
 	hp_max(1),

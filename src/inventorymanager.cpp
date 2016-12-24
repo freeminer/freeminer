@@ -29,8 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "craftdef.h"
 #include "rollback_interface.h"
 #include "util/strfnd.h"
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
+#include "util/basic_macros.h"
 
 #define PLAYER_TO_SA(p)   p->getEnv()->getScriptIface()
 

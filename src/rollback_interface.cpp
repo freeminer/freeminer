@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "util/string.h"
 #include "util/numeric.h"
+#include "util/basic_macros.h"
 #include "map.h"
 #include "gamedef.h"
 #include "nodedef.h"
@@ -34,8 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventorymanager.h"
 #include "inventory.h"
 #include "mapblock.h"
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 
 RollbackNode::RollbackNode(Map *map, v3s16 p, IGameDef *gamedef)

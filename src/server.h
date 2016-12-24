@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "subgame.h"
 #include "util/numeric.h"
 #include "util/thread.h"
+#include "util/basic_macros.h"
 #include "environment.h"
 #include "chat_interface.h"
 #include "clientiface.h"
@@ -45,8 +46,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include "stat.h"
 #include "network/fm_lan.h"
-
-#define PP(x) "("<<(x).X<<","<<(x).Y<<","<<(x).Z<<")"
 
 class IWritableItemDefManager;
 class IWritableNodeDefManager;
