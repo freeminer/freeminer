@@ -2914,11 +2914,8 @@ void Server::RespawnPlayer(u16 peer_id)
 	playersao->setHP(PLAYER_MAX_HP);
 	playersao->setBreath(PLAYER_MAX_BREATH);
 
-	SendPlayerHP(peer_id);
-	SendPlayerBreath(peer_id);
-
 	bool repositioned = m_script->on_respawnplayer(playersao);
-	if(!repositioned){
+	if (!repositioned) {
 		v3f pos = findSpawnPos();
 		// setPos will send the new position to client
 		playersao->getPlayer()->setSpeed(v3f(0,0,0));
@@ -2928,6 +2925,9 @@ void Server::RespawnPlayer(u16 peer_id)
 	playersao->m_ms_from_last_respawn = 0;
 
 	stat.add("respawn", playersao->getPlayer()->getName());
+
+	SendPlayerHP(peer_id);
+	SendPlayerBreath(peer_id);
 }
 
 

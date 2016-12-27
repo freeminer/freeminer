@@ -27,8 +27,6 @@
 #include <cassert>
 #include <map>
 
-#define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
-
 u8 CircuitElement::face_to_shift[] = {
 	0, 0, 1, 0, 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0,
 	4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5

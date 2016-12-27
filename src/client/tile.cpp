@@ -962,7 +962,7 @@ video::ITexture* TextureSource::generateTextureFromMesh(
 	smgr->drop();
 
 	// Unset render target
-	driver->setRenderTarget(0, false, true);
+	driver->setRenderTarget(0, false, true, video::SColor(0,0,0,0));
 
 	if (params.delete_texture_on_shutdown)
 		m_texture_trash.push_back(rtt);

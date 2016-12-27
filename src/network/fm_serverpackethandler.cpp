@@ -680,6 +680,16 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt) {
 			delete a;
 			return;
 		}
+
+		// Disallow dropping items if dead
+		if (playersao->isDead()) {
+			infostream << "Ignoring IDropAction from "
+					<< (da->from_inv.dump()) << ":" << da->from_list
+					<< " because player is dead." << std::endl;
+			delete a;
+			return;
+		}
+
 		stat.add("drop", player->getName());
 	}
 	/*

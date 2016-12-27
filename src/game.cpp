@@ -2194,12 +2194,11 @@ void Game::shutdown()
 		g_profiler->print(actionstream);
 	}
 
+#if IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR <= 8
 	if (g_settings->get("3d_mode") == "pageflip") {
-// fmTODO: fixme:
-#if IRRLICHT_VERSION_10000 < 10900
 		driver->setRenderTarget(irr::video::ERT_STEREO_BOTH_BUFFERS);
-#endif
 	}
+#endif
 
 	showOverlayMessage(wstrgettext("Shutting down..."), 0, 0, false);
 
