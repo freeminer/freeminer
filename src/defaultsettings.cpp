@@ -230,7 +230,9 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("active_block_range", android ? "1" : threads ? "4" : "2");
 	settings->setDefault("abm_neighbors_range_max", (threads && !win32 && !android) ? "16" : "1");
 	settings->setDefault("enable_force_load", "true");
+#if !MINETEST_PROTO
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50"); // "10"
+#endif
 	settings->setDefault("max_block_send_distance", "30"); // "9"
 	settings->setDefault("server_unload_unused_data_timeout", "65"); // "29"
 	settings->setDefault("max_objects_per_block", "100"); // "49"
