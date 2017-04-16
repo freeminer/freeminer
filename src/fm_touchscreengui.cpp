@@ -117,7 +117,7 @@ TouchScreenGUI *g_touchscreengui;
 TouchScreenGUI::TouchScreenGUI(IrrlichtDevice *device, IEventReceiver* receiver):
 	m_device(device),
 	m_guienv(device->getGUIEnvironment()),
-	m_camera_yaw(0.0),
+	m_camera_yaw_change(0.0),
 	m_camera_pitch(0.0),
 	m_visible(false),
 	m_move_id(-1),
@@ -564,17 +564,11 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 
 					/* adapt to similar behaviour as pc screen */
 					double d         = mouse_sensitivity *4;
-					double old_yaw   = m_camera_yaw;
+					double old_yaw   = m_camera_yaw_change;
 					double old_pitch = m_camera_pitch;
 
-					m_camera_yaw   -= dx * d;
-					m_camera_pitch  = MYMIN(MYMAX( m_camera_pitch + (dy * d),-180),180);
-
-					while (m_camera_yaw < 0)
-						m_camera_yaw += 360;
-
-					while (m_camera_yaw > 360)
-						m_camera_yaw -= 360;
+					m_camera_yaw_change -= dx * d;
+					m_camera_pitch = MYMIN(MYMAX(m_camera_pitch + (dy * d), -180), 180);
 
 					// update shootline
 					m_shootline = m_device

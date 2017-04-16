@@ -457,11 +457,13 @@ LOCAL_SRC_FILES += \
 		jni/src/threading/semaphore.cpp \
 		jni/src/threading/thread.cpp
 
-LOCAL_SHARED_LIBRARIES := iconv openal ogg vorbis gmp
+LOCAL_SHARED_LIBRARIES := openal ogg vorbis gmp
 LOCAL_STATIC_LIBRARIES := Irrlicht freetype curl ssl crypto android_native_app_glue $(PROFILER_LIBS)
 
 #freeminer:
 LOCAL_STATIC_LIBRARIES += msgpack jsoncpp gettext
+
+#LOCAL_SHARED_LIBRARIES += iconv
 
 
 ifeq ($(USE_SCTP), 1)

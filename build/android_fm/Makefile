@@ -6,7 +6,7 @@ OS := $(shell uname)
 # GPROF = 1
 
 # build for build platform
-APP_PLATFORM = android-15
+APP_PLATFORM = android-20
 
 # paths used for timestaps, dependencys, tree config and libs
 PATHCFGFILE = path.cfg
@@ -40,7 +40,7 @@ BUILD_NUMBER = 120
 
 ANDROID_VERSION_CODE = $(BUILD_NUMBER)
 
-SDK_VERSION = 15
+SDK_VERSION = 24
 PROJECT_NAME_C = freeminer
 
 GAMES_VERSION = "5"
@@ -51,27 +51,31 @@ GIT_CLONE = git clone --recursive --depth 10
 # toolchain config for arm new processors
 ################################################################################
 TARGET_HOST = arm-linux
+CROSS_NAME = arm-linux-androideabi
 #TARGET_ABI = armeabi-v7a
 TARGET_ABI = armeabi-v7a
+OPENSSL_TARGET_ARCH = android-armeabi # android android-armeabi android-mips android-x86 android64 android64-aarch64
 TARGET_LIBDIR = armeabi-v7a
-TARGET_TOOLCHAIN = arm-linux-androideabi-
 TARGET_CFLAGS_ADDON = -mfpu=vfpv3-d16 -march=armv7-a -Ofast
+#clang: TARGET_CFLAGS_ADDON = -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON = -Wl,--no-warn-mismatch,--gc-sections
 TARGET_ARCH = armv7
-CROSS_PREFIX = arm-linux-androideabi-
 COMPILER_VERSION = 4.9
 
 HAVE_LEVELDB = 1
 USE_LUAJIT = 1
 USE_ENET = 1
 APP_STL = gnustl       # gnustl libcxx|libc++ stlport
-CC = clang
-CXX = clang++
+#CC = clang
+#CXX = clang++
+CC = gcc
+CXX = g++
 
 #COMPILER_VERSION = clang
 #TARGET_CFLAGS_ADDON = -D_NDK_MATH_NO_SOFTFP=1 -Ofast
-STANDALONE_ADDON = --use-llvm
+#STANDALONE_ADDON = --use-llvm --force
+STANDALONE_ADDON = --force
 
 ifeq ($(TARGET_arm64),1)
 ifneq ($(NO_AUTO_VERSION),1)
@@ -84,7 +88,7 @@ TARGET_TOOLCHAIN = aarch64-linux-android-
 TARGET_CFLAGS_ADDON = -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
-CROSS_PREFIX = aarch64-linux-android-
+CROSS_NAME = aarch64-linux-android
 TARGET_ARCH = aarch64
 SDK_VERSION = 21
 
@@ -103,12 +107,11 @@ endif
 TARGET_HOST = mipsel-linux
 TARGET_ABI = mips
 TARGET_LIBDIR = mips
-TARGET_TOOLCHAIN = mipsel-linux-android-
 TARGET_CFLAGS_ADDON = -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
 TARGET_ARCH = mips32
-CROSS_PREFIX = mipsel-linux-android-
+CROSS_NAME = mipsel-linux-android
 HAVE_LEVELDB = 0
 endif
 
@@ -126,7 +129,7 @@ TARGET_TOOLCHAIN = x86-
 TARGET_CFLAGS_ADDON = -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
-CROSS_PREFIX = i686-linux-android-
+CROSS_NAME = i686-linux-android
 TARGET_ARCH = x86
 SDK_VERSION = 16
 OPENSSL_CONFIGURE_ADDON = no-asm
@@ -143,7 +146,7 @@ TARGET_TOOLCHAIN = x86_64-
 TARGET_CFLAGS_ADDON = -Ofast
 TARGET_CXXFLAGS_ADDON = $(TARGET_CFLAGS_ADDON)
 TARGET_LDFLAGS_ADDON =
-CROSS_PREFIX = x86_64-linux-android-
+CROSS_NAME = x86_64-linux-android
 TARGET_ARCH = x86_64
 SDK_VERSION = 21
 #OPENSSL_CONFIGURE_ADDON = no-asm
@@ -151,6 +154,9 @@ SDK_VERSION = 21
 #TODO:
 USE_LUAJIT = 0
 endif
+
+TARGET_TOOLCHAIN ?= $(CROSS_NAME)-
+CROSS_PREFIX ?= $(CROSS_NAME)-
 
 APP_PLATFORM = android-$(SDK_VERSION)
 
@@ -165,7 +171,7 @@ LEVELDB_LIB = $(LEVELDB_DIR)/out-static/libleveldb.a
 LEVELDB_TIMESTAMP = $(LEVELDB_DIR)/timestamp
 LEVELDB_TIMESTAMP_INT = $(ROOT)/deps/leveldb_timestamp
 LEVELDB_URL_GIT = https://github.com/google/leveldb
-LEVELDB_COMMIT = 2d0320a458d0e6a20fff46d5f80b18bfdcce7018
+#LEVELDB_COMMIT = 2d0320a458d0e6a20fff46d5f80b18bfdcce7018
 
 OPENAL_DIR = $(ROOT)/deps/openal-soft/
 OPENAL_LIB = $(OPENAL_DIR)libs/$(TARGET_ABI)/libopenal.so
@@ -196,8 +202,8 @@ IRRLICHT_GIT_COMMIT = 58fa0cf
 
 #IRRLICHT_URL_SVN = http://svn.code.sf.net/p/irrlicht/code/branches/ogl-es@$(IRRLICHT_REVISION)
 
-OPENSSL_VERSION = 1.0.2g
-# TODO: OPENSSL_VERSION = 1.1.0b
+OPENSSL_VERSION = 1.0.2k
+#OPENSSL_VERSION = 1.1.0e
 OPENSSL_BASEDIR = openssl-$(OPENSSL_VERSION)
 OPENSSL_DIR = $(ROOT)/deps/$(OPENSSL_BASEDIR)/
 OPENSSL_LIB = $(OPENSSL_DIR)/libssl.so.1.0.0
@@ -205,14 +211,14 @@ OPENSSL_TIMESTAMP = $(OPENSSL_DIR)timestamp
 OPENSSL_TIMESTAMP_INT = $(ROOT)/deps/openssl_timestamp
 OPENSSL_URL = http://www.openssl.org/source/openssl-$(OPENSSL_VERSION).tar.gz
 
-CURL_VERSION = 7.50.3
+CURL_VERSION = 7.53.1
 CURL_DIR = $(ROOT)/deps/curl-$(CURL_VERSION)
 CURL_LIB = $(CURL_DIR)/lib/.libs/libcurl.a
 CURL_TIMESTAMP = $(CURL_DIR)/timestamp
 CURL_TIMESTAMP_INT = $(ROOT)/deps/curl_timestamp
 CURL_URL_HTTP = https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.bz2
 
-GMP_VERSION = 6.1.1
+GMP_VERSION = 6.1.2
 GMP_DIR = $(ROOT)/deps/gmp-$(GMP_VERSION)
 GMP_LIB = $(GMP_DIR)/usr/lib/libgmp.so
 GMP_TIMESTAMP = $(GMP_DIR)/timestamp
@@ -232,8 +238,8 @@ ICONV_TIMESTAMP = $(ICONV_DIR)timestamp
 ICONV_TIMESTAMP_INT = $(ROOT)/deps/iconv_timestamp
 ICONV_URL_HTTP = http://ftp.gnu.org/pub/gnu/libiconv/libiconv-$(ICONV_VERSION).tar.gz
 
-SQLITE3_FOLDER = sqlite-amalgamation-3150000
-SQLITE3_URL = http://www.sqlite.org/2016/$(SQLITE3_FOLDER).zip
+SQLITE3_FOLDER = sqlite-amalgamation-3180000
+SQLITE3_URL = http://www.sqlite.org/2017/$(SQLITE3_FOLDER).zip
 
 -include $(PATHCFGFILE)
 
@@ -331,6 +337,8 @@ $(OPENAL_LIB): $(OPENAL_TIMESTAMP)
 	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH}              \
 	APP_ABI=${TARGET_ABI} TARGET_ARCH_ABI=${TARGET_ABI}                        \
 	APP_PLATFORM=${APP_PLATFORM} TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"       \
+	PRIVATE_CC=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
+	PRIVATE_CXX=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CXX} \
 	TARGET_LDFLAGS+="${TARGET_LDFLAGS_ADDON}"                                  \
 	TARGET_CXXFLAGS+="${TARGET_CXXFLAGS_ADDON}" || exit 1;                     \
 	touch ${OPENAL_TIMESTAMP};                                                 \
@@ -356,6 +364,7 @@ ogg_download :
 		${GIT_CLONE} ${OGG_URL_GIT}|| exit 1;                                     \
 		cd libvorbis-libogg-android ;                                          \
 		patch -p1 < ../../patches/libvorbis-libogg-fpu.patch || exit 1; \
+		patch -p1 < ../../patches/libvorbis-libogg-compile.patch || true; \
 		sed -i 's-:-?-' jni/Application.mk;                                    \
 	fi
 
@@ -374,9 +383,9 @@ $(OGG_LIB): $(OGG_TIMESTAMP)
 	export PATH=$$PATH:${SDKFOLDER}/platform-tools:${ANDROID_NDK};             \
 	echo "changed timestamp for ogg detected building...";                     \
 	cd ${OGG_DIR};                                                             \
-	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH}              \
-	APP_ABI=${TARGET_ABI} APP_PLATFORM=${APP_PLATFORM}                         \
-	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
+	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH} APP_ABI=${TARGET_ABI} APP_PLATFORM=${APP_PLATFORM} TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
+	PRIVATE_CC=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
+	PRIVATE_CXX=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
 	TARGET_LDFLAGS+="${TARGET_LDFLAGS_ADDON}"                                  \
 	TARGET_CXXFLAGS+="${TARGET_CXXFLAGS_ADDON}" || exit 1;                     \
 	touch ${OGG_TIMESTAMP};                                                    \
@@ -399,10 +408,12 @@ openssl_download :
 		echo "openssl sources missing, downloading...";                        \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd ${ROOT}/deps ;                                                      \
-		wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1;                                         \
+		if [ ! -s ${OPENSSL_BASEDIR}.tar.gz ] ; then \
+			wget ${OPENSSL_URL} -O ${OPENSSL_BASEDIR}.tar.gz || exit 1; \
+		fi; \
 		tar -xzf ${OPENSSL_BASEDIR}.tar.gz;                                    \
 		cd ${OPENSSL_BASEDIR};                                                 \
-		patch -p1 < ../../patches/openssl_arch.patch || true; \
+		#patch -p1 < ../../patches/openssl_arch.patch || true; \
 	fi
 
 openssl : $(OPENSSL_LIB)
@@ -428,9 +439,11 @@ $(OPENSSL_LIB): $(OPENSSL_TIMESTAMP) $(GMP_LIB)
 	${STANDALONE_ADDON} \
 	--install-dir=$${TOOLCHAIN};                                               \
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
-	CC=${CROSS_PREFIX}gcc ./Configure -DL_ENDIAN ${OPENSSL_CONFIGURE_ADDON} android-${TARGET_ARCH};\
-	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make depend;     \
-	CC=${CROSS_PREFIX}gcc ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
+	export CC=${CC}; \
+	export CXX=${CXX}; \
+	./Configure -DL_ENDIAN ${OPENSSL_CONFIGURE_ADDON} --cross-compile-prefix=${CROSS_PREFIX} android;\
+	ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make depend;     \
+	ANDROID_DEV=/tmp/ndk-${TARGET_HOST} make build_libs; \
 	touch ${OPENSSL_TIMESTAMP};                                                \
 	touch ${OPENSSL_TIMESTAMP_INT};                                            \
 	$(RM) -rf $${TOOLCHAIN};                                                   \
@@ -458,6 +471,7 @@ leveldb_download :
 		#curl https://patch-diff.githubusercontent.com/raw/google/leveldb/pull/341.diff | patch -d ${LEVELDB_DIR} --forward -p1 || true; \
 		#cd ${LEVELDB_DIR} || exit 1;                                           \
 		#git checkout ${LEVELDB_COMMIT} || exit 1;                              \
+		mkdir -p ${LEVELDB_DIR}/out-shared/db; \
 	fi
 
 
@@ -475,6 +489,7 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export PATH=$${PATH}:${SDKFOLDER}/platform-tools:${ANDROID_NDK};           \
 	echo "changed timestamp for leveldb detected building...";                 \
 	cd deps/leveldb;                                                           \
+	mkdir -p out-static; \
 	export CROSS_PREFIX=${CROSS_PREFIX};                                       \
 	export TOOLCHAIN=/tmp/ndk-${TARGET_HOST}-leveldb;                          \
 	${ANDROID_NDK}/build/tools/make-standalone-toolchain.sh                    \
@@ -486,11 +501,12 @@ $(LEVELDB_LIB): $(LEVELDB_TIMESTAMP)
 	export PATH="$${TOOLCHAIN}/bin:$${PATH}";                                  \
 	export CC=${CROSS_PREFIX}${CC}; \
 	export CXX=${CROSS_PREFIX}${CXX}; \
+	export AR=${CROSS_PREFIX}ar; \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
 	export TARGET_OS=OS_ANDROID_CROSSCOMPILE;                                  \
-	$(MAKE) || exit 1; \
+	$(MAKE) out-static/libleveldb.a || exit 1; \
 	touch ${LEVELDB_TIMESTAMP};                                                \
 	touch ${LEVELDB_TIMESTAMP_INT};                                            \
 	$(RM) -rf $${TOOLCHAIN};                                                   \
@@ -534,6 +550,8 @@ $(FREETYPE_LIB) : $(FREETYPE_TIMESTAMP)
 	echo "changed timestamp for freetype detected building...";                \
 	cd ${FREETYPE_DIR}/Android/jni;                                            \
 	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH}              \
+	PRIVATE_CC=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
+	PRIVATE_CXX=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
 	APP_PLATFORM=${APP_PLATFORM} APP_ABI=${TARGET_ABI}                         \
 	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
 	TARGET_LDFLAGS+="${TARGET_LDFLAGS_ADDON}"                                  \
@@ -659,6 +677,8 @@ $(IRRLICHT_LIB): $(IRRLICHT_TIMESTAMP) $(FREETYPE_LIB)
 	cd deps/irrlicht/source/Irrlicht/Android;                                  \
 	ndk-build NDEBUG=${NDEBUG} NDK_MODULE_PATH=${NDK_MODULE_PATH}              \
 	APP_ABI=${TARGET_ABI} APP_PLATFORM=${APP_PLATFORM}                         \
+	PRIVATE_CC=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
+	PRIVATE_CXX=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
 	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \
 	TARGET_LDFLAGS+="${TARGET_LDFLAGS_ADDON}"                                  \
 	TARGET_CXXFLAGS+="${TARGET_CXXFLAGS_ADDON}" || exit 1;                     \
@@ -682,7 +702,9 @@ curl_download :
 		echo "curl sources missing, downloading...";                           \
 		mkdir -p ${ROOT}/deps;                                                 \
 		cd deps;                                                               \
-		wget ${CURL_URL_HTTP} -O curl-${CURL_VERSION}.tar.bz2 || exit 1;                                       \
+		if [ ! -s curl-${CURL_VERSION}.tar.bz2 ] ; then \
+			wget ${CURL_URL_HTTP} -O curl-${CURL_VERSION}.tar.bz2 || exit 1;                                       \
+		fi; \
 		tar -xjf curl-${CURL_VERSION}.tar.bz2 || exit 1;                       \
 		rm curl-${CURL_VERSION}.tar.bz2;                                       \
 		ln -fsn curl-${CURL_VERSION} curl;                                       \
@@ -722,7 +744,7 @@ $(CURL_LIB): $(CURL_TIMESTAMP) $(OPENSSL_LIB)
 	${TARGET_CFLAGS_ADDON}";                                                   \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} -L${OPENSSL_DIR} ${TARGET_LDFLAGS_ADDON}";     \
-	./configure --host=${TARGET_HOST} --disable-shared --enable-static --with-ssl --enable-ipv6;  \
+	./configure --host=${CROSS_NAME} --disable-shared --enable-static --with-ssl --enable-ipv6;  \
 	$(MAKE) || exit 1; \
 	touch ${CURL_TIMESTAMP};                                                   \
 	touch ${CURL_TIMESTAMP_INT};                                               \
@@ -962,7 +984,7 @@ $(MSGPACK_LIB): $(MSGPACK_TIMESTAMP)
 	export CPPFLAGS="$${CPPFLAGS} ${TARGET_CFLAGS_ADDON}";                     \
 	export CFLAGS="$${CFLAGS} ${TARGET_CFLAGS_ADDON}";                         \
 	export LDFLAGS="$${LDFLAGS} ${TARGET_LDFLAGS_ADDON}";                      \
-	cmake -DMSGPACK_CXX11=1 -DMSGPACK_BUILD_EXAMPLES=0 -DMSGPACK_BUILD_TESTS=0 .; \
+	cmake -DMSGPACK_CXX11=1 -DMSGPACK_BUILD_EXAMPLES=0 -DMSGPACK_BUILD_TESTS=0 -DCMAKE_FIND_ROOT_PATH=$${TOOLCHAIN}/bin -DCMAKE_AR=$${TOOLCHAIN}/bin/${CROSS_PREFIX}ar -DCMAKE_RANLIB=$${TOOLCHAIN}/bin/${CROSS_PREFIX}ranlib .; \
 	$(MAKE) -j${PARALLEL} || exit 1; \
 	touch ${MSGPACK_TIMESTAMP};                                                \
 	touch ${MSGPACK_TIMESTAMP_INT};                                            \
@@ -1130,6 +1152,8 @@ apk: $(PATHCFGFILE) arch_dirs assets $(IRRLICHT_LIB) $(CURL_LIB) $(GMP_LIB) $(LE
 	USE_SCTP=${USE_SCTP} \
 	GAMES_VERSION=${GAMES_VERSION} \
 	PROJECT_NAME_C=${PROJECT_NAME_C} \
+	PRIVATE_CC=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
+	PRIVATE_CXX=${NDK_MODULE_PATH}/${TARGET_TOOLCHAIN}${COMPILER_VERSION}/prebuilt/linux-x86_64/bin/${CROSS_PREFIX}${CC} \
 	APP_PLATFORM=${APP_PLATFORM}                                               \
 	TARGET_LIBDIR=${TARGET_LIBDIR}                                             \
 	TARGET_CFLAGS+="${TARGET_CFLAGS_ADDON}"                                    \

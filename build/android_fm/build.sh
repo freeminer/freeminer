@@ -4,7 +4,7 @@ NDK_SDK_ROOT=~
 
 NAME=freeminer
 
-NDK_VER=12b
+NDK_VER=14b
 NDK_V=android-ndk-r$NDK_VER
 NDK=$NDK_V-linux-x86_64
 NDK_FILE=$NDK.zip
