@@ -153,6 +153,14 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -Wsign-compare")
 	endif()
 
+	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
+        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
+        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
+        endif ()
+	endif ()
+
 	if(WIN32 AND NOT ZLIBWAPI_DLL AND CMAKE_SIZEOF_VOID_P EQUAL 4)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -DWIN32_NO_ZLIB_WINAPI")
 		message(WARNING "Defaulting to cdecl for zlib on win32 because ZLIBWAPI_DLL"
