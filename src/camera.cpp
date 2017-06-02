@@ -119,6 +119,8 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	m_cache_zoom_fov            = g_settings->getFloat("zoom_fov");
 	m_cache_view_bobbing        = g_settings->getBool("view_bobbing");
 	m_nametags.clear();
+
+	m_draw_control.wanted_range = g_settings->getFloat("viewing_range");
 }
 
 Camera::~Camera()
@@ -519,6 +521,9 @@ void Camera::updateViewingRange()
 		return;
 	}
 
+	if (g_settings->getBool("static_viewing_range")) {
+		m_draw_control.wanted_range = viewing_range;
+	} else {
 
 	// Get current viewing range and FPS settings
 	f32 viewing_range_min = viewing_range;
@@ -588,6 +593,8 @@ void Camera::updateViewingRange()
 					return;
 			}
 	}
+
+	} // static_viewing_range
 
 	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
 

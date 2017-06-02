@@ -3639,20 +3639,28 @@ void Game::toggleProfiler(float *statustext_time, u32 *profiler_current_page,
 void Game::increaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range");
-	s16 range_new = range * 1.5;
+	s16 range_new;
+
+	int farmesh = g_settings->getS32("farmesh");
+	if (farmesh) {
+		range_new = range * 1.5;
+	} else {
+		range_new = range + 16;
+	}
 
 	// it's < 0 if it's outside the range of s16
-	// and increase it directly from 1 to 5 for less key pressing
-	if (range_new < 20)
-		range_new = 20;
+	// and increase it directly from 1 to 16 for less key pressing
+	if (range_new < 16)
+		range_new = 16;
 
+	// FMTODO: Add translations for this messages
 	if (range_new > 31000) {
 		range_new = 31000;
-		statustext = utf8_to_wide("Viewing range is at maximum: "
-				+ itos(range_new));
+		statustext = utf8_to_wide("Viewing range is at maximum: +"
+				+ itos(range_new/16) + " chunks");
 	} else {
-		statustext = utf8_to_wide("Viewing range changed to "
-				+ itos(range_new));
+		statustext = utf8_to_wide("Viewing range changed to +"
+				+ itos(range_new/16) + " chunks");
 	}
 	g_settings->set("viewing_range", itos(range_new));
 	*statustext_time = 0;
@@ -3662,15 +3670,23 @@ void Game::increaseViewRange(float *statustext_time)
 void Game::decreaseViewRange(float *statustext_time)
 {
 	s16 range = g_settings->getS16("viewing_range");
-	s16 range_new = range / 1.5;
+	s16 range_new;
 
-	if (range_new < 20) {
-		range_new = 20;
-		statustext = utf8_to_wide("Viewing range is at minimum: "
-				+ itos(range_new));
+	int farmesh = g_settings->getS32("farmesh");
+	if (farmesh) {
+		range_new = range / 1.5;
 	} else {
-		statustext = utf8_to_wide("Viewing range changed to "
-				+ itos(range_new));
+		range_new = range - 16;
+	}
+
+	// FMTODO: Add translations for this messages
+	if (range_new < 16) {
+		range_new = 16;
+		statustext = utf8_to_wide("Viewing range is at minimum: +"
+				+ itos(range_new/16) + " chunks");
+	} else {
+		statustext = utf8_to_wide("Viewing range changed to +"
+				+ itos(range_new/16) + " chunks");
 	}
 	g_settings->set("viewing_range", itos(range_new));
 	*statustext_time = 0;
