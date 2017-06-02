@@ -513,34 +513,12 @@ void Camera::updateViewingRange()
 {
 
 	const f32 viewing_range = g_settings->getFloat("viewing_range");
-/* mt static range:
-	m_draw_control.wanted_range = viewing_range;
-*/
 
 	if (m_draw_control.range_all) {
 		m_cameranode->setFarValue(100000.0);
 		return;
 	}
 
-//fm dynamic range:
-/*
-	m_added_busytime += busytime_in;
-	m_added_frames += 1;
-
-	m_frametime_counter -= frametime_in;
-	if (m_frametime_counter > 0)
-		return;
-	m_frametime_counter = 0.2; // Same as ClientMap::updateDrawList interval
-*/
-	/*dstream<<FUNCTION_NAME
-			<<": Collected "<<m_added_frames<<" frames, total of "
-			<<m_added_busytime<<"s."<<std::endl;
-
-	dstream<<"m_draw_control.blocks_drawn="
-			<<m_draw_control.blocks_drawn
-			<<", m_draw_control.blocks_would_have_drawn="
-			<<m_draw_control.blocks_would_have_drawn
-			<<std::endl;*/
 
 	// Get current viewing range and FPS settings
 	f32 viewing_range_min = viewing_range;
@@ -577,35 +555,6 @@ void Camera::updateViewingRange()
 	//int farmesh_step = g_settings->getS32("farmesh_step");
 	int farmesh_wanted = g_settings->getS32("farmesh_wanted");
 
-#if OOOOOOOOOOOOOOOld
-	f32 wanted_frametime = 1.0 / wanted_fps;
-
-	//m_draw_control.wanted_min_range = viewing_range_min;
-	//m_draw_control.wanted_max_blocks = (2.0*m_draw_control.blocks_would_have_drawn)+1;
-	//if (m_draw_control.wanted_max_blocks < 10)
-		//m_draw_control.wanted_max_blocks = 10;
-
-/*
-	f32 block_draw_ratio = 1.0;
-	if (m_draw_control.blocks_would_have_drawn != 0)
-	{
-		block_draw_ratio = (f32)m_draw_control.blocks_drawn
-			/ (f32)m_draw_control.blocks_would_have_drawn;
-	}
-*/
-
-	// Calculate the average frametime in the case that all wanted
-	// blocks had been drawn
-	f32 frametime = m_added_busytime / m_added_frames /* / block_draw_ratio */ ;
-
-	m_added_busytime = 0.0;
-	m_added_frames = 0;
-
-	f32 wanted_frametime_change = wanted_frametime - frametime;
-	//dstream<<"wanted_frametime_change="<<wanted_frametime_change<<std::endl;
-	//g_profiler->avg("wanted_frametime_change", wanted_frametime_change);
-#endif
-
 	static int framecnt = 0;
 	m_draw_control.fps_wanted = wanted_fps;
 	if (farmesh) {
@@ -639,80 +588,6 @@ void Camera::updateViewingRange()
 					return;
 			}
 	}
-
-#if OOOOOOOOOOOOOOOld
-	// If needed frametime change is small, just return
-	// This value was 0.4 for many months until 2011-10-18 by c55;
-	//if (fabs(wanted_frametime_change) < wanted_frametime*0.33)
-	if (wanted_frametime_change > -wanted_frametime*0.33 && wanted_frametime_change < wanted_frametime*0.15)
-	{
-		//dstream<<"ignoring small wanted_frametime_change"<<std::endl;
-		return;
-	}
-
-	f32 range = m_draw_control.wanted_range;
-	f32 new_range = range;
-
-	f32 d_range = range - m_range_old;
-	f32 d_busytime = busytime_in - m_busytime_old;
-	if (d_range != 0)
-	{
-		m_time_per_range = d_busytime / d_range;
-	}
-	//dstream<<"time_per_range="<<m_time_per_range<<std::endl;
-	//g_profiler->avg("time_per_range", m_time_per_range);
-
-	// The minimum allowed calculated frametime-range derivative:
-	// Practically this sets the maximum speed of changing the range.
-	// The lower this value, the higher the maximum changing speed.
-	// A low value here results in wobbly range (0.001)
-	// A low value can cause oscillation in very nonlinear time/range curves.
-	// A high value here results in slow changing range (0.0025)
-	// SUGG: This could be dynamically adjusted so that when
-	//       the camera is turning, this is lower
-	//f32 min_time_per_range = 0.0010; // Up to 0.4.7
-	f32 min_time_per_range = 0.0005;
-	if(m_time_per_range < min_time_per_range)
-	{
-		m_time_per_range = min_time_per_range;
-		//dstream<<"m_time_per_range="<<m_time_per_range<<" (min)"<<std::endl;
-	}
-	else
-	{
-		//dstream<<"m_time_per_range="<<m_time_per_range<<std::endl;
-	}
-
-	f32 wanted_range_change = wanted_frametime_change / m_time_per_range;
-	// Dampen the change a bit to kill oscillations
-	//wanted_range_change *= 0.9;
-	//wanted_range_change *= 0.75;
-	wanted_range_change *= 0.5;
-	if (wanted_range_change > 1)
-		wanted_range_change *= 0.4;
-	//dstream<<"wanted_range_change="<<wanted_range_change<<std::endl;
-
-	//infostream<< " wanted_range_change=" << wanted_range_change <<" m_time_per_range="<<m_time_per_range << " wanted_frametime_change="<<wanted_frametime_change<< std::endl;
-
-	// If needed range change is very small, just return
-	if(fabs(wanted_range_change) < 0.001)
-	{
-		//dstream<<"ignoring small wanted_range_change"<<std::endl;
-		return;
-	}
-
-	new_range += wanted_range_change;
-
-	//f32 new_range_unclamped = new_range;
-	new_range = MYMAX(new_range, viewing_range_min);
-	new_range = MYMIN(new_range, viewing_range_max);
-	/ * dstream<<"new_range="<<new_range_unclamped
-			<<", clamped to "<<new_range<<std::endl;* /
-
-	m_range_old = m_draw_control.wanted_range;
-	m_busytime_old = busytime_in;
-
-	m_draw_control.wanted_range = new_range;
-#endif
 
 	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
 
