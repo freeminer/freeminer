@@ -1682,6 +1682,11 @@
 
 ## Client
 
+#    Static viewing range.
+#    Set this to true to disable automatic rendering range adjustment.
+#    type: bool
+# static_viewing_range = false
+
 #    Minimum wanted FPS.
 #    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
 #    type: int
