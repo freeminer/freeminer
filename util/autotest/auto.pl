@@ -112,6 +112,7 @@ sub init_config () {
     $config = {
         #address           => '::1',
         port              => 60001,
+        clients_start     => 0,
         clients_num       => 5,
         autoexit          => 600,
         clang_version     => $clang_version,                                               #"", # "-3.6",
@@ -385,7 +386,7 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
             local $config->{address} = '::1' if not $config->{address};
             #my $args = join ' ',
             #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
-            for (0 .. $config->{clients_num}) {
+            for ($config->{clients_start} .. $config->{clients_num}) {
                 sy
 qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
                   . options_make([qw( address gameid world address port config verbose)])
