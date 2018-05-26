@@ -124,7 +124,8 @@ public:
 	std::unique_ptr<sharedlock> try_lock_shared();
 	std::unique_ptr<lock_rec_unique> lock_unique_rec();
 	std::unique_ptr<lock_rec_unique> try_lock_unique_rec();
-	std::unique_ptr<lock_rec_shared> lock_shared_rec();
+	//std::unique_ptr<lock_rec_shared> lock_shared_rec();
+	std::unique_ptr<lock_rec_shared> lock_shared_rec() const;
 	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
 };
 

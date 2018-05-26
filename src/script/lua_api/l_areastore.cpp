@@ -380,7 +380,7 @@ void LuaAreaStore::Register(lua_State *L)
 }
 
 const char LuaAreaStore::className[] = "AreaStore";
-const luaL_reg LuaAreaStore::methods[] = {
+const luaL_Reg LuaAreaStore::methods[] = {
 	luamethod(LuaAreaStore, get_area),
 	luamethod(LuaAreaStore, get_areas_for_pos),
 	luamethod(LuaAreaStore, get_areas_in_area),

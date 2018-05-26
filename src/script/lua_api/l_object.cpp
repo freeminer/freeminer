@@ -1806,7 +1806,7 @@ void ObjectRef::Register(lua_State *L)
 }
 
 const char ObjectRef::className[] = "ObjectRef";
-const luaL_reg ObjectRef::methods[] = {
+const luaL_Reg ObjectRef::methods[] = {
 	// ServerActiveObject
 	luamethod(ObjectRef, remove),
 	luamethod(ObjectRef, getpos),

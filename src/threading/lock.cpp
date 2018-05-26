@@ -108,8 +108,14 @@ std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, s
 	return std::unique_ptr<lock_rec_unique>(new lock_rec_unique (mtx, thread_id, true));
 }
 
-template<class mutex, class unique_lock, class shared_lock>
+/*template<class mutex, class unique_lock, class shared_lock>
 std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_shared_rec() {
+	SCOPE_PROFILE("locker::lock_shared_rec");
+	return std::unique_ptr<lock_rec_shared>(new lock_rec_shared (mtx, thread_id));
+}*/
+
+template<class mutex, class unique_lock, class shared_lock>
+std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::lock_shared_rec() const {
 	SCOPE_PROFILE("locker::lock_shared_rec");
 	return std::unique_ptr<lock_rec_shared>(new lock_rec_shared (mtx, thread_id));
 }
