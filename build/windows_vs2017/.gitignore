@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+settings.py
+project
+deps
+install_tmp
+*.log
