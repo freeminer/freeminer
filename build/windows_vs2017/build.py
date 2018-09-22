@@ -62,7 +62,7 @@ CRC32C_VERSION = "1.1.0"
 SNAPPY_VERSION = "1.1.1.7"
 irrlicht = "irrlicht-1.8.4"
 curl = "curl-7.53.1"
-openal = "openal-soft-1.17.2"
+openal = "openal-soft-1.19.0"
 libogg = "libogg-{}".format(LIBOGG_VERSION)
 libvorbis = "libvorbis-1.3.5"
 zlib = "zlib-1.2.11"
@@ -361,13 +361,15 @@ def main():
 		snappy_external = os.path.join("..", "..", "..", "src", "external", "snappy")
 		if not os.path.exists(snappy_external):
 			os.system("git clone --recursive --depth 1 https://github.com/google/snappy {snappy_external}".format(snappy_external=snappy_external))
-			download("https://raw.githubusercontent.com/adasworks/snappy-cmake/master/CMakeLists.txt", os.path.join(snappy_external, "CMakeLists.txt"))
+			#download("https://raw.githubusercontent.com/adasworks/snappy-cmake/master/CMakeLists.txt", os.path.join(snappy_external, "CMakeLists.txt"))
 
 		leveldb_external = os.path.join("..", "..", "..", "src", "external", "leveldb")
 		if not os.path.exists(leveldb_external):
 			os.system("git clone --recursive --depth 1 https://github.com/google/leveldb {leveldb_external}".format(leveldb_external=leveldb_external))
 			download("https://raw.githubusercontent.com/proller/leveldb/patch-2/CMakeLists.txt", os.path.join(leveldb_external, "CMakeLists.txt"))
-			download("https://raw.githubusercontent.com/tamaskenez/leveldb-cmake-win/native_windows_port_1_18/leveldbConfig.cmake.in", os.path.join(leveldb_external, "leveldbConfig.cmake.in"))
+			#download("https://raw.githubusercontent.com/tamaskenez/leveldb-cmake-win/native_windows_port_1_18/leveldbConfig.cmake.in", os.path.join(leveldb_external, "leveldbConfig.cmake.in"))
+		if not os.path.exists(os.path.join(leveldb_external, "include", "dirent.h")):
+	                download("https://github.com/tronkko/dirent/raw/master/include/dirent.h", os.path.join(leveldb_external, "include", "dirent.h"))
 
 	os.chdir("..")
 

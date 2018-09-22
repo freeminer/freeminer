@@ -480,11 +480,11 @@ set(USE_LEVELDB FALSE)
 
 if(ENABLE_LEVELDB)
 	find_library(LEVELDB_LIBRARY leveldb)
-	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
+	find_path(LEVELDB_INCLUDE_DIR leveldb/db.h)
 	find_library(SNAPPY_LIBRARY snappy)
 	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
-	message (STATUS "Snappy library: ${SNAPPY_LIBRARY}")
-	message (STATUS "Snappy headers: ${SNAPPY_INCLUDE_DIR}")
+	message (STATUS "Snappy library: ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
+	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
 
 	if (NOT SNAPPY_INCLUDE_DIR)
 		find_path(SNAPPY_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
@@ -495,7 +495,7 @@ if(ENABLE_LEVELDB)
 		# wget -O src/external/snappy/CMakeLists.txt https://raw.githubusercontent.com/adasworks/snappy-cmake/master/CMakeLists.txt
 		add_subdirectory(${PROJECT_SOURCE_DIR}/external/snappy)
 		set(SNAPPY_LIBRARY snappy)
-		message(STATUS "Using bundled snappy ${SNAPPY_INCLUDE_DIR} ${SNAPPY_LIBRARY}")
+		message(STATUS "Using bundled snappy ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
 	  endif()
 	endif()
 
@@ -515,6 +515,9 @@ if(ENABLE_LEVELDB)
 		# But we can collect something from pulls
 		# wget -O src/external/leveldb/CMakeLists.txt https://raw.githubusercontent.com/proller/leveldb/patch-2/CMakeLists.txt
 		# wget -O src/external/leveldb/leveldbConfig.cmake.in https://raw.githubusercontent.com/tamaskenez/leveldb-cmake-win/native_windows_port_1_18/leveldbConfig.cmake.in
+		set(LEVELDB_BUILD_TESTS 0 CACHE INTERNAL "")
+		set(LEVELDB_BUILD_BENCHMARKS 0 CACHE INTERNAL "")
+		set(LEVELDB_INSTALL 0 CACHE INTERNAL "")
 		add_subdirectory(${PROJECT_SOURCE_DIR}/external/leveldb)
 		set(LEVELDB_LIBRARY leveldb)
 		message(STATUS "Using bundled leveldb ${LEVELDB_INCLUDE_DIR} ${LEVELDB_LIBRARY}")
@@ -527,7 +530,7 @@ if(ENABLE_LEVELDB)
 
 	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
 		set(USE_LEVELDB TRUE)
-		message(STATUS "LevelDB backend enabled. ${LEVELDB_INCLUDE_DIR}")
+		message(STATUS "LevelDB backend enabled. ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
 		include_directories(${LEVELDB_INCLUDE_DIR})
 	elseif (NOT FORCE_LEVELDB)
 		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
