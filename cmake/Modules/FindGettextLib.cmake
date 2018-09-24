@@ -5,11 +5,13 @@ set(CUSTOM_GETTEXT_PATH "${PROJECT_SOURCE_DIR}/../../gettext"
 find_path(GETTEXT_INCLUDE_DIR
 	NAMES libintl.h
 	PATHS "${CUSTOM_GETTEXT_PATH}/include"
+				/usr/local/opt/gettext/include
 	DOC "GetText include directory")
 
 find_program(GETTEXT_MSGFMT
 	NAMES msgfmt
 	PATHS "${CUSTOM_GETTEXT_PATH}/bin"
+			/usr/local/opt/gettext/bin
 	DOC "Path to msgfmt")
 
 set(GETTEXT_REQUIRED_VARS GETTEXT_INCLUDE_DIR GETTEXT_MSGFMT)
@@ -18,6 +20,7 @@ if(APPLE)
 	find_library(GETTEXT_LIBRARY
 		NAMES libintl.a
 		PATHS "${CUSTOM_GETTEXT_PATH}/lib"
+				/usr/local/opt/gettext/lib
 		DOC "GetText library")
 
 	find_library(ICONV_LIBRARY
