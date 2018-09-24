@@ -107,7 +107,7 @@ def main():
 		cmake_add = " -A X64 "
 
 	enable_leveldb = 1 if build_type != "Debug" else 0
-	leveldb_fetch = 1
+	leveldb_fetch = 0
 
 	path_add = "_" + build_type + "_" + build_arch
 
@@ -387,7 +387,7 @@ def main():
 	os.chdir(project)
 
 	# install LevelDB package
-	if enable_leveldb:
+	if enable_leveldb and not leveldb_fetch:
 		os.system(r"..\NuGet.exe install LevelDB -source {cwd}\..\{deps}".format(cwd=os.getcwd(), deps=deps))
 
 	cmake_string = r"""
