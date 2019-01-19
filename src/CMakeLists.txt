@@ -767,7 +767,7 @@ else()
 endif()
 
 if(USE_ENET)
-	if(NOT ENABLE_SYSTEM_JSONCPP AND EXISTS ${PROJECT_SOURCE_DIR}/external/enet/include/enet/enet.h)
+	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${PROJECT_SOURCE_DIR}/external/enet/include/enet/enet.h)
 		add_subdirectory(external/enet)
 		set(ENET_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/enet/include)
 		set(ENET_LIBRARY enet)

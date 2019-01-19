@@ -561,7 +561,7 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 			group = new Settings;
 			created = true;
 			group->fromJson(getJson(name));
-		} catch (std::exception e) {
+		} catch (std::exception &e) {
 			//errorstream<<"fail " << e.what() << std::endl;
 			if (created)
 				delete group;

@@ -88,7 +88,7 @@ void lan_adv::send_string(std::string str) {
 		int set_option_on = 1;
 		setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
 		socket_send.Send(Address(addr), str.c_str(), str.size());
-	} catch(std::exception e) {
+	} catch(std::exception &e) {
 		// errorstream << "udp broadcast send4 fail " << e.what() << "\n";
 	}
 
@@ -141,7 +141,7 @@ void lan_adv::send_string(std::string str) {
 					addr.sin6_scope_id = scope;
 					socket_send.Send(Address(addr), str.c_str(), str.size());
 				}
-			} catch(std::exception e) {
+			} catch(std::exception &e) {
 				// errorstream << "udp broadcast send6 fail " << e.what() << "\n";
 			}
 		}
@@ -171,7 +171,7 @@ void * lan_adv::run() {
 	socket_recv.setTimeoutMs(200);
 	try {
 		socket_recv.Bind(Address(in6addr_any, adv_port));
-	} catch (std::exception e) {
+	} catch (std::exception &e) {
 		warningstream << m_name << ": cant bind ipv6 address [" << e.what() << "], trying ipv4. " << std::endl;
 		try {
 			socket_recv.Bind(Address((u32)INADDR_ANY, adv_port));

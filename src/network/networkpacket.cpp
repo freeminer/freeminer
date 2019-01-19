@@ -552,10 +552,10 @@ bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *
 		*packet = obj.as<MsgpackPacket>();
 
 		*command = (*packet)[MSGPACK_COMMAND].as<int>();
-	} catch (msgpack::type_error e) {
+	} catch (msgpack::type_error &e) {
 		verbosestream << "parse_msgpack_packet: msgpack::type_error : " << e.what() << " datasize=" << datasize << std::endl;
 		return false;
-	} catch (msgpack::unpack_error e) {
+	} catch (msgpack::unpack_error &e) {
 		verbosestream << "parse_msgpack_packet: msgpack::unpack_error : " << e.what() << " datasize=" << datasize << std::endl;
 		//verbosestream<<"bad data:["<< std::string(data, datasize) <<"]"<<std::endl;
 		return false;
