@@ -290,6 +290,15 @@ our $options = {
         enable_damage      => 0,
         continuous_forward => 1,
     },
+    fps1 => {
+        fps_max => 2,
+        viewing_range => 1000,
+        #viewing_range_max => 1000,
+        wanted_fps => 1,
+    },
+    stay => {
+        continuous_forward => 0,
+    },
     fast => {
         fast_move => 1, movement_speed_fast => 30,
     },
@@ -694,6 +703,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     timelapse_play => [{-options_int => 'timelapse',}, \'play', 'timelapse_video'],             #'
     fly => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                          #'
     timelapse_fly => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
+    timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
     bench1 => [{-options_int => 'bench1,fly_forward,fast',}, \'bot'],                                                #'
     up => sub {
         my $cwd = Cwd::cwd();
