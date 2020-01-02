@@ -144,16 +144,17 @@ inline double sphere(double x, double y, double z, double d, int ITR = 1, int se
 }
 
 
-typedef uint32_t Fnv32_t;
-#define FNV1_32_INIT ((Fnv32_t) 33554467UL)
-#define FNV_32_PRIME ((Fnv32_t) 0x01000193UL)
-inline Fnv32_t fnv_32_buf(const void *buf, size_t len, Fnv32_t hval = FNV1_32_INIT) {
-	const uint32_t *s = (const uint32_t *)buf;
-	while (len-- != 0) {
-		hval *= FNV_32_PRIME;
-		hval ^= *s++;
-	}
-	return hval;
+const unsigned FNV_32_PRIME = 0x01000193;
+unsigned int fnv_32_buf(char *buf, size_t len = 0)
+{
+    unsigned int hval = 0x811c9dc5;
+
+    while (len-- != 0) {
+        hval *= FNV_32_PRIME;
+        hval ^= (unsigned int)*buf++;
+    }
+
+  return hval;
 }
 
 
@@ -183,7 +184,7 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 		auto room_n_hash_1 = room_n + seed + 1;
 		if ( pw2 < rooms_pow_fill_max &&
-		        !( fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1)) % room_fill_every)
+		        !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_1), sizeof(room_n_hash_1)) % room_fill_every)
 		   ) {
 			//errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
 			return pw2;
@@ -191,7 +192,7 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
 
 		auto room_n_hash_2 = room_n + seed + 2;
-		if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(&room_n_hash_2, sizeof(room_n_hash_2)) % room_big_every)) {
+		if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_2), sizeof(room_n_hash_2)) % room_big_every)) {
 			//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
 			//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
 			int pw3 = pw2 + 1;
