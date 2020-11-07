@@ -703,7 +703,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     timelapse_play => [{-options_int => 'timelapse',}, \'play', 'timelapse_video'],             #'
     fly => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                          #'
     timelapse_fly => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
-    timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
+    timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1,no_exit', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
     bench1 => [{-options_int => 'bench1,fly_forward,fast',}, \'bot'],                                                #'
     up => sub {
         my $cwd = Cwd::cwd();

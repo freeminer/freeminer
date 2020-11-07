@@ -129,6 +129,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#endif
 #endif
 
+#if defined(linux) || defined(__linux)
+	#include <sys/prctl.h>
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+	#include <pthread.h>
+	#include <pthread_np.h>
+#elif defined(__NetBSD__)
+	#include <pthread.h>
+#elif defined(__APPLE__)
+	#include <pthread.h>
+#endif
+
+#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+	#define PORTING_USE_PTHREAD 1
+	#include <pthread.h>
+#endif
+
 namespace porting
 {
 
@@ -317,8 +333,6 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 }
 
 #if defined(linux) || defined(__linux)
-	#include <sys/prctl.h>
-
 	inline void setThreadName(const char *name) {
 		/* It would be cleaner to do this with pthread_setname_np,
 		 * which was added to glibc in version 2.12, but some major
@@ -327,15 +341,10 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 		prctl(PR_SET_NAME, name);
 	}
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	#include <pthread.h>
-	#include <pthread_np.h>
-
 	inline void setThreadName(const char *name) {
 		pthread_set_name_np(pthread_self(), name);
 	}
 #elif defined(__NetBSD__)
-	#include <pthread.h>
-
 	inline void setThreadName(const char *name) {
 		pthread_setname_np(pthread_self(), name);
 	}
@@ -358,8 +367,6 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 		} __except (EXCEPTION_CONTINUE_EXECUTION) {}
 	}
 #elif defined(__APPLE__)
-	#include <pthread.h>
-
 	inline void setThreadName(const char *name) {
 		pthread_setname_np(name);
 	}
@@ -370,11 +377,6 @@ inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
 	inline void setThreadName(const char* name) {}
 #endif
 
-
-#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-	#define PORTING_USE_PTHREAD 1
-	#include <pthread.h>
-#endif
 	inline void setThreadPriority(int priority) {
 #if PORTING_USE_PTHREAD
 	// http://en.cppreference.com/w/cpp/thread/thread/native_handle
