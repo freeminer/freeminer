@@ -295,6 +295,15 @@ function cleanup_path(temppath)
 	return temppath
 end
 
+
+function math.round(x)
+	if x >= 0 then
+		return math.floor(x + 0.5)
+	end
+	return math.ceil(x - 0.5)
+end
+
+
 function core.formspec_escape(text)
 	if text ~= nil then
 		text = string.gsub(text,"\\","\\\\")
