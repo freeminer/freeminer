@@ -1025,6 +1025,7 @@ void ServerEnvironment::loadDefaultMeta()
 
 		int heat_num = 0;
 		int heat_sum = 0;
+		int humidity_num = 0;
 
 		v3POS bpr = block->getPosRelative();
 		v3s16 p0;
@@ -1045,10 +1046,14 @@ void ServerEnvironment::loadDefaultMeta()
 			{
 				int hot = ((ItemGroupList) ndef->get(n).groups)["hot"];
 				//todo: int cold = ((ItemGroupList) ndef->get(n).groups)["cold"];
-				//also humidity todo.
 				if (hot) {
 					++heat_num;
 					heat_sum += hot;
+				}
+
+				int humidity = ((ItemGroupList) ndef->get(n).groups)["water"];
+				if (humidity) {
+					++humidity_num;
 				}
 			}
 
@@ -1108,6 +1113,18 @@ neighbor_found:
 				block->heat_add = heat_add;
 			}
 			//infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<" heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
+		}
+
+		const float max_effect = 70;
+		if (humidity_num && block->humidity < max_effect) {
+			const float max_nodes = 4 * MAP_BLOCKSIZE;
+			float humidity_add = (max_effect - block->humidity) * (std::min<int>(humidity_num, max_nodes) / max_nodes);
+			if (block->humidity + humidity_add > max_effect)  {
+				block->humidity_add = block->humidity - humidity_add;
+			} else {
+				block->humidity_add = humidity_add;
+			}
+			//infostream<<"humidity_num=" << humidity_num <<" humidity_add="<<humidity_add << " bhumidity_add"<<block->humidity_add<< " humiditynow="<<block->humidity<< std::endl;
 		}
 
 	//infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
