@@ -43,6 +43,42 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mandelbulber/fractal.cpp"
 #endif
 
+/* TODO:
+http://k3dsurf.s4.bizhat.com/k3dsurf-ftopic119-0-asc-15.html
+
+(cos(x / (0.02 * (x^2+y^2+z^2))) * sin(y / (0.02 * (x^2+y^2+z^2)))
++cos(y / (0.02 * (x^2+y^2+z^2))) * sin(z / (0.02 * (x^2+y^2+z^2)))
++cos(z / (0.02 * (x^2+y^2+z^2))) * sin(x / (0.02 * (x^2+y^2+z^2)))+1.0)
+-0.1*(1-0.016*((x^2+y^2+z^2)- 10/((0.35* x)^2+(0.35* y)^2+(0.35* z)^2)))
+-0.03
+
+
+
+F(): cos(x/(0.02*(x^4+y^4+z^4))) * sin(y/(0.02*(x^4+y^4+z^4)))
+   + cos(y/(0.02*(x^4+y^4+z^4))) * sin(z/(0.02*(x^4+y^4+z^4)))
+   + cos(z/(0.02*(x^4+y^4+z^4))) * sin(x/(0.02*(x^4+y^4+z^4)))
+   + 1.2*(x*x+y*y+z*z)
+   - 4.5
+[x]: -2.2 , 2.2
+[y]: -2.2 , 2.2
+[z]: -2.2 , 2.2
+
+rho(x,y,z)=3+50/(1+(sqrt(x*x+y*y+z*z)+1)^2)
+
+F(x,y,z)=
+ cos(x*rho(x,y,z))*sin(y*rho(x,y,z))
++cos(y*rho(x,y,z))*sin(z*rho(x,y,z))
++cos(z*rho(x,y,z))*sin(x*rho(x,y,z))
++2-16/(16+x^4+y^4+z^4)=0
+
+x: [-2.0 , 2.0]
+y: [-2.0 , 2.0]
+z: [-2.0 , 2.0]
+
+
+*/
+
+
 inline double mandelbox(double x, double y, double z, double d, int nn = 10, int seed = 1) {
 	int s = 7;
 	x *= s;
@@ -160,42 +196,54 @@ unsigned int fnv_32_buf(char *buf, size_t len = 0)
 
 inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int seed = 1) {
 	int x = dx, y = dy, z = dz;
-	//if (x < y && x < z) return 0; // debug slice
-	//const auto seed = 1; //params->seed;
+	// if (x < y && x < z) return 0; // debug slice
 	const auto rooms_pow_min = 2, rooms_pow_max = 9;
-	const auto rooms_pow_cut_max = 8;
+	const auto rooms_pow_cut_max = 8; // 7?
 	const auto rooms_pow_fill_max = 4;
 	const auto room_fill_every = 10;
-	const auto room_big_every = 13;
-	//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
-	int cx = 0, cy = 0, cz = 0;
-	int room_n = 0;
+	const auto room_big_every = 13; //14 ?
+	const auto rooms_limit = 13; // 16384. next larger than map limit
+	// errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
+	const int cxi = (x >> rooms_pow_max), cyi = (y >> rooms_pow_max), czi = (z >> rooms_pow_max);
+	int cx = cxi << rooms_pow_max, cy = cyi << rooms_pow_max, cz = czi << rooms_pow_max;
+	int room_n = cxi + (cyi * MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) + (czi * (MAX_MAP_GENERATION_LIMIT >> (rooms_pow_max - 1)));
 	int wall = 0;
+
+	const auto limit_pow = 2 << rooms_limit;
+	if (x > limit_pow || y > limit_pow || z > limit_pow || x < -limit_pow || y < -limit_pow || z < -limit_pow)
+		return 0;
+
 	for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
 		int every = 2 << pw2;
-		//errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " tx="<<((int)x%every)<<"\n";
+		// errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw2="<<pw2<< " every="<<every<< " tx="<<((int)x%every)<<"\n";
 		auto xhit = !(x % every), yhit = !(y % every), zhit = !(z % every);
 		int lv = 1;
 		lv += x < cx;
 		lv += (y < cy) << 1;
 		lv += (z < cz) << 2;
-		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
+		// errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw2="<<pw2<< " hash=" << std::hash<int>()(room_n)<<" test="<<(!( std::hash<int>()(room_n) % 7))<< "\n";
 		room_n = lv + room_n * 10;
 
 		auto room_n_hash_1 = room_n + seed + 1;
+
+		// errorstream << " fill "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " cx=" << cx << " cy=" << cy << " cz=" << cz << " lv=" << lv << " pw2="<<pw2<< " seed=" << seed << " room_n_hash_1=" << room_n_hash_1 << " fnv=" << fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_1), sizeof(room_n_hash_1)) << " sz=" << sizeof(room_n_hash_1) << "\n";
+
 		if ( pw2 < rooms_pow_fill_max &&
 		        !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_1), sizeof(room_n_hash_1)) % room_fill_every)
 		   ) {
-			//errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
+			// errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
 			return pw2;
 		}
-		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
+		// errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " pw="<<pw<< " hash=" << std::hash<double>()(room_n + 1)<<" test="<<(!( std::hash<double>()(room_n + 1) % 13))<< " rf="<<room_filled<<"\n";
 
 		auto room_n_hash_2 = room_n + seed + 2;
+
+		// errorstream << " space "<<" x=" << x << " y=" << y << " z="<< z << " pw2=" << pw2 << " room_n=" << room_n << " seed=" << seed << " room_n_hash_2=" << room_n_hash_2 << " fnv=" << fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_2), sizeof(room_n_hash_2))<< " sz=" << sizeof(room_n_hash_2) << "\n";
+
 		if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_2), sizeof(room_n_hash_2)) % room_big_every)) {
-			//errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n << " pw="<<pw << " pw2="<<pw2<< "\n";
-			//errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
 			int pw3 = pw2 + 1;
+			// errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n  << " pw2="<<pw2<< " pw3" << pw3 << "(x >> pw3)="<<(x >> pw3)  << " == " << "((x - 1) >> pw3)=" <<  ((x - 1) >> pw3) << "\n";
+			// errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
 			if ((x >> pw3) == (x - 1) >> pw3 && (y >> pw3) == (y - 1) >> pw3 && (z >> pw3) == (z - 1) >> pw3) {
 				return 0;
 			}
@@ -205,8 +253,8 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 			wall = pw2;
 		}
 
-		//errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
-		int room_size = 2 << (pw2 - 1);
+		// errorstream << " t "<<" x=" << x << " y="<< y << " z="<<z   <<" cx=" << cx << " cy="<< cy << " cz="<<cz<< "pw="<<pw<< " every="<<every<< " lv="<< lv << " room_n="<<room_n<< room_size="<<room_size <<"\n";
+		const int room_size = 2 << (pw2 - 1);
 		cx += ((x < cx) ? -1 : 1) * room_size;
 		cy += ((y < cy) ? -1 : 1) * room_size;
 		cz += ((z < cz) ? -1 : 1) * room_size;
