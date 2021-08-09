@@ -653,6 +653,8 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;
 
+	const bool light_ambient = g_settings->getBool("light_ambient");
+
 	v3POS pos_relative = block->getPosRelative();
 
 	for(s16 x = 0; x < MAP_BLOCKSIZE; ++x) {
@@ -663,7 +665,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 
 			MapNode n = getNode(pos_relative + v3POS(x, MAP_BLOCKSIZE, z));
 			if (n) {
-				if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN) {
+				if(n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN && !light_ambient) {
 					no_sunlight = true;
 				}
 			} else {

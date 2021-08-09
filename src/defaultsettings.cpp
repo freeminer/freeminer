@@ -178,6 +178,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
+	settings->setDefault("light_ambient", "false");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");

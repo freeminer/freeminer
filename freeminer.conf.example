@@ -1927,3 +1927,7 @@
 #    Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
 #    type: string
 # mg_math = {"generator":"sphere"}
+
+#    Do not propagate dark shadows everywhere. Useful for math mapgen.
+#    type: bool
+# light_ambient = false
