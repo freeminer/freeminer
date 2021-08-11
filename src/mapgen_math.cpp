@@ -202,15 +202,14 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 	const auto rooms_pow_fill_max = 4;
 	const auto room_fill_every = 10;
 	const auto room_big_every = 14;
-	const auto rooms_limit = 13; // 16384. next larger than map limit
+	const auto rooms_limit = (MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) << rooms_pow_max;
 	// errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
 	const int cxi = (x >> rooms_pow_max), cyi = (y >> rooms_pow_max), czi = (z >> rooms_pow_max);
 	int cx = cxi << rooms_pow_max, cy = cyi << rooms_pow_max, cz = czi << rooms_pow_max;
 	int room_n = cxi + (cyi * MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) + (czi * (MAX_MAP_GENERATION_LIMIT >> (rooms_pow_max - 1)));
 	int wall = 0;
 
-	const auto limit_pow = 2 << rooms_limit;
-	if (x > limit_pow || y > limit_pow || z > limit_pow || x < -limit_pow || y < -limit_pow || z < -limit_pow)
+	if (x > rooms_limit || y > rooms_limit || z > rooms_limit || x < -rooms_limit || y < -rooms_limit || z < -rooms_limit)
 		return 0;
 
 	for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
