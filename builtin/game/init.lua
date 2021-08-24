@@ -28,7 +28,8 @@ else
 end
 dofile(gamepath.."stat.lua")
 dofile(gamepath.."chatcommands.lua")
-dofile(gamepath.."static_spawn.lua")
+-- internal is better
+-- dofile(gamepath.."static_spawn.lua")
 dofile(gamepath.."detached_inventory.lua")
 assert(loadfile(gamepath.."falling.lua"))(builtin_shared)
 dofile(gamepath.."features.lua")

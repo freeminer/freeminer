@@ -3756,7 +3756,7 @@ v3f Server::findSpawnPos()
 {
 	ServerMap &map = m_env->getServerMap();
 	v3f nodeposf;
-	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf)) {
+	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !g_settings->getBool("static_spawnpoint_find")) {
 		return nodeposf * BS;
 	}
 
@@ -3773,8 +3773,8 @@ v3f Server::findSpawnPos()
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(
-				-range + (myrand() % (range * 2)),
-				-range + (myrand() % (range * 2)));
+			nodeposf.X -range + (myrand() % (range * 2)),
+			nodeposf.Z -range + (myrand() % (range * 2)));
 
 // FM version:
 		// Get ground height at point
@@ -3792,7 +3792,7 @@ v3f Server::findSpawnPos()
 */
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, spawn_level, nodepos2d.Y);
+		v3s16 nodepos(nodepos2d.X, nodeposf.Y + spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
 		for (s32 i = 0; i < 10; i++) {
