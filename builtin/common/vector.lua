@@ -35,7 +35,7 @@ function vector.equals(a, b)
 end
 
 function vector.length(v)
-	return math.hypot(v.x, math.hypot(v.y, v.z))
+	return math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
 end
 
 function vector.normalize(v)
@@ -75,7 +75,7 @@ function vector.distance(a, b)
 	local x = a.x - b.x
 	local y = a.y - b.y
 	local z = a.z - b.z
-	return math.hypot(x, math.hypot(y, z))
+	return math.sqrt(x * x + y * y + z * z)
 end
 
 function vector.direction(pos1, pos2)
