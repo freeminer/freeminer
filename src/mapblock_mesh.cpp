@@ -47,10 +47,11 @@ static void applyFacesShading(video::SColor &color, const float factor)
 int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const v3POS & blockpos) {
 	int range = radius_box(playerpos, blockpos);
 	if (draw_control.farmesh) {
-		if		(range >= draw_control.farmesh+draw_control.farmesh_step*3)	return 16;
-		else if (range >= draw_control.farmesh+draw_control.farmesh_step*2)	return 8;
-		else if (range >= draw_control.farmesh+draw_control.farmesh_step)	return 4;
-		else if (range >= draw_control.farmesh)								return 2;
+		const POS nearest = 256/MAP_BLOCKSIZE;
+		if		(range >= std::min<POS>(nearest*8, draw_control.farmesh+draw_control.farmesh_step*4))	return 16;
+		else if (range >= std::min<POS>(nearest*4, draw_control.farmesh+draw_control.farmesh_step*2))	return 8;
+		else if (range >= std::min<POS>(nearest*2, draw_control.farmesh+draw_control.farmesh_step))	return 4;
+		else if (range >= std::min<POS>(nearest, draw_control.farmesh))								return 2;
 	}
 	return 1;
 };
