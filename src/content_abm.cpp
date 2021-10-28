@@ -134,7 +134,7 @@ public:
 			}
 			if (allow) {
 				n.freeze_melt(ndef, -1);
-				map->setNode(p, n);
+				map->setNode(p, n, 2);
 			}
 		}
 	}
@@ -176,7 +176,7 @@ public:
 					return; // do not melt when falling (dirt->dirt_with_grass on air)
 			}
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n);
+			map->setNode(p, n, 2);
 			env->nodeUpdate(p, 2); //enable after making FAST nodeupdate
 		}
 	}
@@ -211,7 +211,7 @@ public:
 		int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 		if (hot > melt) {
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n);
+			map->setNode(p, n, 2);
 			env->nodeUpdate(p, 2);
 		}
 	}
@@ -245,7 +245,7 @@ public:
 		int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
 		if (cold < freeze) {
 			n.freeze_melt(ndef, -1);
-			map->setNode(p, n);
+			map->setNode(p, n, 2);
 		}
 	}
 };

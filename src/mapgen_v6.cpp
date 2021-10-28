@@ -889,13 +889,13 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					vm->m_area.add_y(em, i2, 1);
 					n2 = &vm->m_data[i2];
 
-					bool old_is_water = (n->getContent() == c_water_source);
+					bool old_is_water = n->getContent() == c_water_source || n->getContent() == c_ice;
 					// Move mud to new place
 					if (!dropped_to_unknown) {
 						*n2 = *n;
 						// Set old place to be air (or water)
 						if (old_is_water)
-							*n = MapNode(c_water_source);
+							*n = MapNode(n->getContent());
 						else
 							*n = MapNode(CONTENT_AIR);
 					}

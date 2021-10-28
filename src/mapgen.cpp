@@ -716,7 +716,7 @@ MgStoneType MapgenBasic::generateBiomes()
 		content_t c_above = vm->m_data[vi + em.X].getContent();
 		bool air_above = c_above == CONTENT_AIR;
 		bool river_water_above = c_above == c_river_water_source;
-		bool water_above = c_above == c_water_source || river_water_above;
+		bool water_above = c_above == c_water_source || c_above == c_ice || river_water_above;
 
 		biomemap[index] = BIOME_NONE;
 
@@ -729,7 +729,7 @@ MgStoneType MapgenBasic::generateBiomes()
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();
 
-			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != CONTENT_IGNORE);
+			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != c_ice && c != CONTENT_IGNORE);
 
 			// Biome is recalculated each time an upper surface is detected while
 			// working down a column. The selected biome then remains in effect for
