@@ -838,7 +838,12 @@ static void getTileInfo(
 	INodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
-	MapNode &n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step);
+	MapNode n0;
+	for(int find = 0; find < step; ++find) {
+		n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step + find);
+		if (step <= 1 || n0.getContent() != CONTENT_IGNORE && n0.getContent() != CONTENT_AIR)
+			break;
+	}
 
 	// Don't even try to get n1 if n0 is already CONTENT_IGNORE
 	if (step <= 1 && n0.getContent() == CONTENT_IGNORE) {
@@ -846,7 +851,12 @@ static void getTileInfo(
 		return;
 	}
 
-	const MapNode &n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step);
+	MapNode n1;
+	for(int find = 0; find < step; ++find) {
+		n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step + find);
+		if (step <= 1 || (n1.getContent() != CONTENT_IGNORE && n1.getContent() != CONTENT_AIR))
+			break;
+	}
 	// if(data->debug) infostream<<" GN "<<n0<< n1<< blockpos_nodes<<blockpos_nodes + p*step<<blockpos_nodes + p*step + face_dir*step<<std::endl;
 
 	if (step <= 1 && n1.getContent() == CONTENT_IGNORE) {
