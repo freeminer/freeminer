@@ -10,6 +10,7 @@ endif()
 project(freeminer)
 set(PROJECT_NAME_CAPITALIZED "freeminer")
 
+set(CMAKE_CXX_STANDARD 17)
 
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
 set(VERSION_MAJOR 0)
@@ -31,6 +32,7 @@ endif()
 
 message(STATUS "*** Will build version ${VERSION_STRING} ***")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # Configuration options
 set(DEFAULT_RUN_IN_PLACE TRUE)

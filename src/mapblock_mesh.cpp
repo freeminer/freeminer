@@ -841,7 +841,7 @@ static void getTileInfo(
 	MapNode n0;
 	for(int find = 0; find < step; ++find) {
 		n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step + find);
-		if (step <= 1 || n0.getContent() != CONTENT_IGNORE && n0.getContent() != CONTENT_AIR)
+		if (step <= 1 || (n0.getContent() != CONTENT_IGNORE && n0.getContent() != CONTENT_AIR))
 			break;
 	}
 

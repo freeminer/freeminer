@@ -37,15 +37,13 @@ else()
 			HAVE_SHARED_MUTEX)
 	else()
 		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
-			set(STD_FLAGS "-std=gnu++0x")
+			#set(STD_FLAGS "-std=gnu++0x")
 		else()
-			set(STD_FLAGS "-std=c++0x")
+			#set(STD_FLAGS "-std=c++0x")
 		endif()
 	endif()
 endif()
 
-set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
-set(CMAKE_REQUIRED_LIBRARIES "-lstdc++")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 CHECK_CXX_SOURCE_RUNS("
@@ -61,7 +59,9 @@ if(NOT HAVE_THREAD_LOCAL)
 	set(HAVE_THREAD_LOCAL 0)
 endif()
 
-set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS} -pthread")
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 CHECK_CXX_SOURCE_RUNS("
 	#include <future>
 	int main(int argc, char *argv[]) {
@@ -196,7 +196,7 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 	endif()
 	if(USE_GPERF)
-		SET(PLATFORM_LIBS "-ltcmalloc -lprofiler")
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} -ltcmalloc -lprofiler)
 		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 	endif()
 
@@ -678,7 +678,7 @@ else()
 		endif(APPLE)
 	endif()
 	find_package(ZLIB REQUIRED)
-	set(PLATFORM_LIBS ${PLATFORM_LIBS} -lpthread ${CMAKE_DL_LIBS})
+	set(PLATFORM_LIBS ${PLATFORM_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
 	else()

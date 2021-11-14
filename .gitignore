@@ -22,6 +22,7 @@ tags
 !tags/
 gtags.files
 .idea/*
+.cache
 
 ## Files related to minetest development cycle
 /*.patch
