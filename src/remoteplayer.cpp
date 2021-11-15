@@ -296,6 +296,10 @@ Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
 
 		json["hp"] = playersao->getHP();
 		json["breath"] = playersao->getBreath();
+
+		for (const auto &attr : playersao->getExtendedAttributes()) {
+			json["extended_attributes"][attr.first] = attr.second;
+		}
 	}
 	return json;
 }
@@ -311,6 +315,14 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 		playersao->setBasePosition(position);
 		playersao->setHP(json["hp"].asInt());
 		playersao->setBreath(json["breath"].asInt());
+
+		const auto attr_root = json["extended_attributes"];
+		const Json::Value::Members attr_list =
+		attr_root.getMemberNames();
+		for (Json::Value::Members::const_iterator it = attr_list.begin(); it != attr_list.end(); ++it) {
+			Json::Value attr_value = attr_root[*it];
+			playersao->setExtendedAttribute(*it, attr_value.asString());
+        }
 	}
 
 	//todo
