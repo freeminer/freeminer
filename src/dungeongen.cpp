@@ -57,6 +57,7 @@ DungeonGen::DungeonGen(INodeDefManager *ndef,
 	} else {
 		dp.seed = 0;
 
+		dp.c_ice         = ndef->getId("mapgen_ice");
 		dp.c_water       = ndef->getId("mapgen_water_source");
 		dp.c_river_water = ndef->getId("mapgen_river_water_source");
 		dp.c_wall        = ndef->getId("mapgen_cobble");
@@ -107,7 +108,7 @@ void DungeonGen::generate(MMVManip *vm, u32 bseed, v3s16 nmin, v3s16 nmax)
 			u32 i = vm->m_area.index(nmin.X, y, z);
 			for (s16 x = nmin.X; x <= nmax.X; x++) {
 				content_t c = vm->m_data[i].getContent();
-				if (c == CONTENT_AIR || c == dp.c_water || c == dp.c_river_water)
+				if (c == CONTENT_AIR || c == dp.c_water || c == dp.c_river_water || c == dp.c_ice)
 					vm->m_flags[i] |= VMANIP_FLAG_DUNGEON_PRESERVE;
 				i++;
 			}
