@@ -138,16 +138,17 @@ void FallingSAO::step(float dtime, bool send_recommended)
 
 	if ((f_under.walkable || (itemgroup_get(f_under.groups, "float") &&
 			f_under.liquid_type == LIQUID_NONE))) {
-		if (f_under.leveled && f_under.name.compare(f.name) == 0) {
-			u8 addLevel = n.getLevel(ndef);
-			if (addLevel == 0) {
-				addLevel = n_under.getLevel(ndef);
+		const std::string & n_name = ndef->get(m_node).name;
+		if (f_under.leveled && f_under.name.compare(n_name) == 0) {
+			u8 addLevel = m_node.getLevel(ndef);
+			addLevel = n_under.addLevel(ndef, addLevel);
+			if (addLevel) {
+				m_node.setLevel(ndef, addLevel);
+				m_env->setNode(p, m_node, fast);
 			}
-
-			if (n_under.addLevel(ndef, addLevel)) {
-				m_removed = true;
-				return;
-			}
+			m_env->setNode(floatToInt(p_under, BS), n_under, fast);
+			m_removed = true;
+			return;
 		}
 		else if (f_under.buildable_to &&
 				(itemgroup_get(f.groups,"float") == 0 ||
@@ -161,7 +162,6 @@ void FallingSAO::step(float dtime, bool send_recommended)
 			m_env->removeNode(p);
 			if (!f.buildable_to) {
 				ItemStack stack;
-				std::string n_name = ndef->get(m_node).name;
 				stack.deSerialize(n_name);
 				m_env->spawnItemActiveObject(n_name, m_base_position, stack);
 			}
