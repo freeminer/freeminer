@@ -22,7 +22,6 @@ tags
 !tags/
 gtags.files
 .idea/*
-.cache
 
 ## Files related to minetest development cycle
 /*.patch
@@ -39,7 +38,6 @@ gtags.files
 /screenshots
 /sounds
 /mods/*
-/screenshots/
 !/mods/minetest/
 /mods/minetest/*
 !/mods/minetest/mods_here.txt
@@ -47,14 +45,8 @@ gtags.files
 /world/
 
 ## Configuration/log files
-freeminer.conf
-auto_*
-util/autotest/logs.*
-util/autotest/auto.json
-util/autotest/world
+minetest.conf
 debug.txt
-client/favoriteservers.json
-client/servers_public.json
 
 ## Doxygen files
 doc/Doxyfile
@@ -79,7 +71,6 @@ locale/
 *.cbp
 *.layout
 *.o
-_build
 *.a
 *.ninja
 .ninja*
@@ -95,18 +86,30 @@ build/android/obj
 build/android/local.properties
 build/android/.gradle
 
-build/android_fm/assets
-build/android_fm/AndroidManifest.xml
-build/android_fm/bin
-build/android_fm/cmake
-build/android_fm/deps*
-build/android_fm/libs
-build/android_fm/jni/src
-build/android_fm/src/main/jniLibs
-build/android_fm/obj
-build/android_fm/project.properties
-build/android_fm/gen
-build/android_fm/path.cfg
+freeminer.conf
+auto_*
+util/autotest/logs.*
+util/autotest/auto.json
+util/autotest/world
+client/favoriteservers.json
+client/servers_public.json
+
+_build
+/screenshots
+.cache
+
+build_tools/android_fm/assets
+build_tools/android_fm/AndroidManifest.xml
+build_tools/android_fm/bin
+build_tools/android_fm/cmake
+build_tools/android_fm/deps*
+build_tools/android_fm/libs
+build_tools/android_fm/jni/src
+build_tools/android_fm/src/main/jniLibs
+build_tools/android_fm/obj
+build_tools/android_fm/project.properties
+build_tools/android_fm/gen
+build_tools/android_fm/path.cfg
 
 timestamp
 
