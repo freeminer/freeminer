@@ -20,17 +20,20 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef DEBUG_HEADER
-#define DEBUG_HEADER
+#pragma once
 
 #include <iostream>
 #include <exception>
-#include <assert.h>
+#include <cassert>
 #include "gettime.h"
 #include "log.h"
 
+<<<<<<< HEAD
 #if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 	#define WIN32_LEAN_AND_MEAN
+=======
+#ifdef _WIN32
+>>>>>>> 5.5.0
 	#ifndef _WIN32_WINNT
 		#define _WIN32_WINNT 0x0501
 	#endif
@@ -95,37 +98,6 @@ extern void sanity_check_fn(
 void debug_set_exception_handler();
 
 /*
-	DebugStack
-*/
-
-#define DEBUG_STACK_SIZE 50
-#define DEBUG_STACK_TEXT_SIZE 300
-
-extern void debug_stacks_init();
-extern void debug_stacks_print_to(std::ostream &os);
-extern void debug_stacks_print();
-
-struct DebugStack;
-class DebugStacker
-{
-public:
-	DebugStacker(const char *text);
-	~DebugStacker();
-
-private:
-	DebugStack *m_stack;
-	bool m_overflowed;
-};
-
-#define DSTACK(msg) \
-	DebugStacker __debug_stacker(msg);
-
-#define DSTACKF(...) \
-	char __buf[DEBUG_STACK_TEXT_SIZE];                   \
-	snprintf(__buf, DEBUG_STACK_TEXT_SIZE, __VA_ARGS__); \
-	DebugStacker __debug_stacker(__buf);
-
-/*
 	These should be put into every thread
 */
 
@@ -142,6 +114,7 @@ private:
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER
 	#define END_DEBUG_EXCEPTION_HANDLER
 #endif
+<<<<<<< HEAD
 
 
 //#define EXEPTION_DEBUG 1 // Disable almost all catch() to get good system stacktraces
@@ -158,3 +131,5 @@ private:
 #endif // DEBUG_HEADER
 
 
+=======
+>>>>>>> 5.5.0

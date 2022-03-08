@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_CRAFT_H_
-#define L_CRAFT_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -50,5 +49,3 @@ private:
 public:
 	static void Initialize(lua_State *L, int top);
 };
-
-#endif /* L_CRAFT_H_ */

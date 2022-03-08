@@ -8,6 +8,9 @@ local blocks_forceloaded
 local blocks_temploaded = {}
 local total_forceloaded = 0
 
+-- true, if the forceloaded blocks got changed (flag for persistence on-disk)
+local forceload_blocks_changed = false
+
 local BLOCKSIZE = core.MAP_BLOCKSIZE
 local function get_blockpos(pos)
 	return {
@@ -31,6 +34,9 @@ local function get_relevant_tables(transient)
 end
 
 function core.forceload_block(pos, transient)
+	-- set changed flag
+	forceload_blocks_changed = true
+
 	local blockpos = get_blockpos(pos)
 	local hash = core.hash_node_position(blockpos)
 	local relevant_table, other_table = get_relevant_tables(transient)
@@ -51,6 +57,9 @@ function core.forceload_block(pos, transient)
 end
 
 function core.forceload_free_block(pos, transient)
+	-- set changed flag
+	forceload_blocks_changed = true
+
 	local blockpos = get_blockpos(pos)
 	local hash = core.hash_node_position(blockpos)
 	local relevant_table, other_table = get_relevant_tables(transient)
@@ -77,12 +86,6 @@ local function read_file(filename)
 	return core.deserialize(t) or {}
 end
 
-local function write_file(filename, table)
-	local f = io.open(filename, "w")
-	f:write(core.serialize(table))
-	f:close()
-end
-
 blocks_forceloaded = read_file(wpath.."/force_loaded.txt")
 for _, __ in pairs(blocks_forceloaded) do
 	total_forceloaded = total_forceloaded + 1
@@ -95,6 +98,29 @@ core.after(5, function()
 	end
 end)
 
-core.register_on_shutdown(function()
-	write_file(wpath.."/force_loaded.txt", blocks_forceloaded)
-end)
+-- persists the currently forceloaded blocks to disk
+local function persist_forceloaded_blocks()
+	local data = core.serialize(blocks_forceloaded)
+	core.safe_file_write(wpath.."/force_loaded.txt", data)
+end
+
+-- periodical forceload persistence
+local function periodically_persist_forceloaded_blocks()
+
+	-- only persist if the blocks actually changed
+	if forceload_blocks_changed then
+		persist_forceloaded_blocks()
+
+		-- reset changed flag
+		forceload_blocks_changed = false
+	end
+
+	-- recheck after some time
+	core.after(10, periodically_persist_forceloaded_blocks)
+end
+
+-- persist periodically
+core.after(5, periodically_persist_forceloaded_blocks)
+
+-- persist on shutdown
+core.register_on_shutdown(persist_forceloaded_blocks)

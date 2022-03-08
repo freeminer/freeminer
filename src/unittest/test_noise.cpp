@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "test.h"
 
+#include <cmath>
 #include "exceptions.h"
 #include "noise.h"
 
@@ -61,7 +62,7 @@ void TestNoise::testNoise2dPoint()
 	for (u32 x = 0; x != 10; x++, i++) {
 		float actual   = NoisePerlin2D(&np_normal, x, y, 1337);
 		float expected = expected_2d_results[i];
-		UASSERT(fabs(actual - expected) <= 0.00001);
+		UASSERT(std::fabs(actual - expected) <= 0.00001);
 	}
 }
 
@@ -74,7 +75,7 @@ void TestNoise::testNoise2dBulk()
 	for (u32 i = 0; i != 10 * 10; i++) {
 		float actual   = noisevals[i];
 		float expected = expected_2d_results[i];
-		UASSERT(fabs(actual - expected) <= 0.00001);
+		UASSERT(std::fabs(actual - expected) <= 0.00001);
 	}
 }
 
@@ -88,7 +89,7 @@ void TestNoise::testNoise3dPoint()
 	for (u32 x = 0; x != 10; x++, i++) {
 		float actual   = NoisePerlin3D(&np_normal, x, y, z, 1337);
 		float expected = expected_3d_results[i];
-		UASSERT(fabs(actual - expected) <= 0.00001);
+		UASSERT(std::fabs(actual - expected) <= 0.00001);
 	}
 }
 
@@ -101,7 +102,7 @@ void TestNoise::testNoise3dBulk()
 	for (u32 i = 0; i != 10 * 10 * 10; i++) {
 		float actual   = noisevals[i];
 		float expected = expected_3d_results[i];
-		UASSERT(fabs(actual - expected) <= 0.00001);
+		UASSERT(std::fabs(actual - expected) <= 0.00001);
 	}
 }
 
@@ -113,7 +114,7 @@ void TestNoise::testNoiseInvalidParams()
 		NoiseParams np_highmem(4, 70, v3f(1, 1, 1), 5, 60, 0.7, 10.0);
 		Noise noise_highmem_3d(&np_highmem, 1337, 200, 200, 200);
 		noise_highmem_3d.perlinMap3D(0, 0, 0, NULL);
-	} catch (InvalidNoiseParamsException) {
+	} catch (InvalidNoiseParamsException &) {
 		exception_thrown = true;
 	}
 

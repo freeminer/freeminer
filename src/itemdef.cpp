@@ -22,17 +22,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "itemdef.h"
+<<<<<<< HEAD
 #include "gamedef.h"
+=======
+
+>>>>>>> 5.5.0
 #include "nodedef.h"
 #include "tool.h"
 #include "inventory.h"
 #ifndef SERVER
+<<<<<<< HEAD
 #include "mapblock_mesh.h"
 #include "mesh.h"
 #include "wieldmesh.h"
 //#include "mapblock.h"
 #include "clientmap.h"
+=======
+#include "client/mapblock_mesh.h"
+#include "client/mesh.h"
+#include "client/wieldmesh.h"
+>>>>>>> 5.5.0
 #include "client/tile.h"
+#include "client/client.h"
 #endif
 #include "log.h"
 #include "settings.h"
@@ -42,11 +53,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 
+<<<<<<< HEAD
 #ifdef __ANDROID__
 #include <GLES/gl.h>
 #endif
 
 
+=======
+>>>>>>> 5.5.0
 /*
 	ItemDefinition
 */
@@ -71,22 +85,25 @@ ItemDefinition& ItemDefinition::operator=(const ItemDefinition &def)
 	type = def.type;
 	name = def.name;
 	description = def.description;
+	short_description = def.short_description;
 	inventory_image = def.inventory_image;
+	inventory_overlay = def.inventory_overlay;
 	wield_image = def.wield_image;
+	wield_overlay = def.wield_overlay;
 	wield_scale = def.wield_scale;
 	stack_max = def.stack_max;
 	usable = def.usable;
 	liquids_pointable = def.liquids_pointable;
-	if(def.tool_capabilities)
-	{
-		tool_capabilities = new ToolCapabilities(
-				*def.tool_capabilities);
-	}
+	if (def.tool_capabilities)
+		tool_capabilities = new ToolCapabilities(*def.tool_capabilities);
 	groups = def.groups;
 	node_placement_prediction = def.node_placement_prediction;
+	place_param2 = def.place_param2;
 	sound_place = def.sound_place;
 	sound_place_failed = def.sound_place_failed;
 	range = def.range;
+	palette_image = def.palette_image;
+	color = def.color;
 	return *this;
 }
 
@@ -107,66 +124,71 @@ void ItemDefinition::reset()
 	type = ITEM_NONE;
 	name = "";
 	description = "";
+	short_description = "";
 	inventory_image = "";
+	inventory_overlay = "";
 	wield_image = "";
+	wield_overlay = "";
+	palette_image = "";
+	color = video::SColor(0xFFFFFFFF);
 	wield_scale = v3f(1.0, 1.0, 1.0);
 	stack_max = 99;
 	usable = false;
 	liquids_pointable = false;
-	if(tool_capabilities)
-	{
-		delete tool_capabilities;
-		tool_capabilities = NULL;
-	}
+	delete tool_capabilities;
+	tool_capabilities = NULL;
 	groups.clear();
 	sound_place = SimpleSoundSpec();
 	sound_place_failed = SimpleSoundSpec();
 	range = -1;
-
 	node_placement_prediction = "";
+	place_param2 = 0;
 }
 
 void ItemDefinition::serialize(std::ostream &os, u16 protocol_version) const
 {
-	if(protocol_version <= 17)
-		writeU8(os, 1); // version
-	else if(protocol_version <= 20)
-		writeU8(os, 2); // version
-	else
-		writeU8(os, 3); // version
+	// protocol_version >= 37
+	u8 version = 6;
+	writeU8(os, version);
 	writeU8(os, type);
-	os<<serializeString(name);
-	os<<serializeString(description);
-	os<<serializeString(inventory_image);
-	os<<serializeString(wield_image);
-	writeV3F1000(os, wield_scale);
+	os << serializeString16(name);
+	os << serializeString16(description);
+	os << serializeString16(inventory_image);
+	os << serializeString16(wield_image);
+	writeV3F32(os, wield_scale);
 	writeS16(os, stack_max);
 	writeU8(os, usable);
 	writeU8(os, liquids_pointable);
-	std::string tool_capabilities_s = "";
-	if(tool_capabilities){
+
+	std::string tool_capabilities_s;
+	if (tool_capabilities) {
 		std::ostringstream tmp_os(std::ios::binary);
 		tool_capabilities->serialize(tmp_os, protocol_version);
 		tool_capabilities_s = tmp_os.str();
 	}
-	os<<serializeString(tool_capabilities_s);
+	os << serializeString16(tool_capabilities_s);
+
 	writeU16(os, groups.size());
-	for (ItemGroupList::const_iterator
-			i = groups.begin(); i != groups.end(); ++i){
-		os << serializeString(i->first);
-		writeS16(os, i->second);
+	for (const auto &group : groups) {
+		os << serializeString16(group.first);
+		writeS16(os, group.second);
 	}
-	os<<serializeString(node_placement_prediction);
-	if(protocol_version > 17){
-		//serializeSimpleSoundSpec(sound_place, os);
-		os<<serializeString(sound_place.name);
-		writeF1000(os, sound_place.gain);
-	}
-	if (protocol_version > 20) {
-		writeF1000(os, range);
-		os << serializeString(sound_place_failed.name);
-		writeF1000(os, sound_place_failed.gain);
-	}
+
+	os << serializeString16(node_placement_prediction);
+
+	// Version from ContentFeatures::serialize to keep in sync
+	sound_place.serialize(os, CONTENTFEATURES_VERSION);
+	sound_place_failed.serialize(os, CONTENTFEATURES_VERSION);
+
+	writeF32(os, range);
+	os << serializeString16(palette_image);
+	writeARGB8(os, color);
+	os << serializeString16(inventory_overlay);
+	os << serializeString16(wield_overlay);
+
+	os << serializeString16(short_description);
+
+	os << place_param2;
 }
 
 void ItemDefinition::deSerialize(std::istream &is)
@@ -176,56 +198,56 @@ void ItemDefinition::deSerialize(std::istream &is)
 
 	// Deserialize
 	int version = readU8(is);
-	if(version < 1 || version > 3)
+	if (version < 6)
 		throw SerializationError("unsupported ItemDefinition version");
+
 	type = (enum ItemType)readU8(is);
-	name = deSerializeString(is);
-	description = deSerializeString(is);
-	inventory_image = deSerializeString(is);
-	wield_image = deSerializeString(is);
-	wield_scale = readV3F1000(is);
+	name = deSerializeString16(is);
+	description = deSerializeString16(is);
+	inventory_image = deSerializeString16(is);
+	wield_image = deSerializeString16(is);
+	wield_scale = readV3F32(is);
 	stack_max = readS16(is);
 	usable = readU8(is);
 	liquids_pointable = readU8(is);
-	std::string tool_capabilities_s = deSerializeString(is);
-	if(!tool_capabilities_s.empty())
-	{
+
+	std::string tool_capabilities_s = deSerializeString16(is);
+	if (!tool_capabilities_s.empty()) {
 		std::istringstream tmp_is(tool_capabilities_s, std::ios::binary);
 		tool_capabilities = new ToolCapabilities;
 		tool_capabilities->deSerialize(tmp_is);
 	}
+
 	groups.clear();
 	u32 groups_size = readU16(is);
 	for(u32 i=0; i<groups_size; i++){
-		std::string name = deSerializeString(is);
+		std::string name = deSerializeString16(is);
 		int value = readS16(is);
 		groups[name] = value;
 	}
-	if(version == 1){
-		// We cant be sure that node_placement_prediction is send in version 1
-		try{
-			node_placement_prediction = deSerializeString(is);
-		}catch(SerializationError &e) {};
-		// Set the old default sound
-		sound_place.name = "default_place_node";
-		sound_place.gain = 0.5;
-	} else if(version >= 2) {
-		node_placement_prediction = deSerializeString(is);
-		//deserializeSimpleSoundSpec(sound_place, is);
-		sound_place.name = deSerializeString(is);
-		sound_place.gain = readF1000(is);
-	}
-	if(version == 3) {
-		range = readF1000(is);
-	}
+
+	node_placement_prediction = deSerializeString16(is);
+
+	// Version from ContentFeatures::serialize to keep in sync
+	sound_place.deSerialize(is, CONTENTFEATURES_VERSION);
+	sound_place_failed.deSerialize(is, CONTENTFEATURES_VERSION);
+
+	range = readF32(is);
+	palette_image = deSerializeString16(is);
+	color = readARGB8(is);
+	inventory_overlay = deSerializeString16(is);
+	wield_overlay = deSerializeString16(is);
+
 	// If you add anything here, insert it primarily inside the try-catch
 	// block to not need to increase the version.
 	try {
-		sound_place_failed.name = deSerializeString(is);
-		sound_place_failed.gain = readF1000(is);
+		short_description = deSerializeString16(is);
+
+		place_param2 = readU8(is); // 0 if missing
 	} catch(SerializationError &e) {};
 }
 
+<<<<<<< HEAD
 void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(tool_capabilities ? 15 : 14);
@@ -279,6 +301,8 @@ void ItemDefinition::msgpack_unpack(msgpack::object o)
 	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(sound_place.gain);
 	packet[ITEMDEF_RANGE].convert(range);
 }
+=======
+>>>>>>> 5.5.0
 
 /*
 	CItemDefManager
@@ -297,11 +321,12 @@ class CItemDefManager: public IWritableItemDefManager
 	struct ClientCached
 	{
 		video::ITexture *inventory_texture;
-		scene::IMesh *wield_mesh;
+		ItemMesh wield_mesh;
+		Palette *palette;
 
 		ClientCached():
 			inventory_texture(NULL),
-			wield_mesh(NULL)
+			palette(NULL)
 		{}
 	};
 #endif
@@ -311,7 +336,7 @@ public:
 	{
 
 #ifndef SERVER
-		m_main_thread = thr_get_current_thread_id();
+		m_main_thread = std::this_thread::get_id();
 #endif
 		clear();
 	}
@@ -319,20 +344,15 @@ public:
 	{
 #ifndef SERVER
 		const std::vector<ClientCached*> &values = m_clientcached.getValues();
-		for(std::vector<ClientCached*>::const_iterator
-				i = values.begin(); i != values.end(); ++i)
-		{
-			ClientCached *cc = *i;
-			if (cc->wield_mesh)
-				cc->wield_mesh->drop();
+		for (ClientCached *cc : values) {
+			if (cc->wield_mesh.mesh)
+				cc->wield_mesh.mesh->drop();
 			delete cc;
 		}
 
 #endif
-		for (std::map<std::string, ItemDefinition*>::iterator iter =
-				m_item_definitions.begin(); iter != m_item_definitions.end();
-				++iter) {
-			delete iter->second;
+		for (auto &item_definition : m_item_definitions) {
+			delete item_definition.second;
 		}
 		m_item_definitions.clear();
 	}
@@ -341,53 +361,47 @@ public:
 		// Convert name according to possible alias
 		std::string name = getAlias(name_);
 		// Get the definition
-		std::map<std::string, ItemDefinition*>::const_iterator i;
-		i = m_item_definitions.find(name);
-		if(i == m_item_definitions.end())
+		auto i = m_item_definitions.find(name);
+		if (i == m_item_definitions.cend())
 			i = m_item_definitions.find("unknown");
-		assert(i != m_item_definitions.end());
+		assert(i != m_item_definitions.cend());
 		return *(i->second);
 	}
-	virtual std::string getAlias(const std::string &name) const
+	virtual const std::string &getAlias(const std::string &name) const
 	{
-		StringMap::const_iterator it = m_aliases.find(name);
-		if (it != m_aliases.end())
+		auto it = m_aliases.find(name);
+		if (it != m_aliases.cend())
 			return it->second;
 		return name;
 	}
-	virtual std::set<std::string> getAll() const
+	virtual void getAll(std::set<std::string> &result) const
 	{
-		std::set<std::string> result;
-		for(std::map<std::string, ItemDefinition *>::const_iterator
-				it = m_item_definitions.begin();
-				it != m_item_definitions.end(); ++it) {
-			result.insert(it->first);
+		result.clear();
+		for (const auto &item_definition : m_item_definitions) {
+			result.insert(item_definition.first);
 		}
-		for (StringMap::const_iterator
-				it = m_aliases.begin();
-				it != m_aliases.end(); ++it) {
-			result.insert(it->first);
+
+		for (const auto &alias : m_aliases) {
+			result.insert(alias.first);
 		}
-		return result;
 	}
 	virtual bool isKnown(const std::string &name_) const
 	{
 		// Convert name according to possible alias
 		std::string name = getAlias(name_);
 		// Get the definition
-		std::map<std::string, ItemDefinition*>::const_iterator i;
-		return m_item_definitions.find(name) != m_item_definitions.end();
+		return m_item_definitions.find(name) != m_item_definitions.cend();
 	}
 #ifndef SERVER
 public:
 	ClientCached* createClientCachedDirect(const std::string &name,
-			IGameDef *gamedef) const
+			Client *client) const
 	{
 		infostream<<"Lazily creating item texture and mesh for \""
 				<<name<<"\""<<std::endl;
 
 		// This is not thread-safe
-		sanity_check(thr_is_current_thread(m_main_thread));
+		sanity_check(std::this_thread::get_id() == m_main_thread);
 
 		// Skip if already in cache
 		ClientCached *cc = NULL;
@@ -395,7 +409,7 @@ public:
 		if(cc)
 			return cc;
 
-		ITextureSource *tsrc = gamedef->getTextureSource();
+		ITextureSource *tsrc = client->getTextureSource();
 		const ItemDefinition &def = get(name);
 
 		// Create new ClientCached
@@ -403,14 +417,15 @@ public:
 
 		// Create an inventory texture
 		cc->inventory_texture = NULL;
-		if(def.inventory_image != "")
+		if (!def.inventory_image.empty())
 			cc->inventory_texture = tsrc->getTexture(def.inventory_image);
 
 		ItemStack item = ItemStack();
 		item.name = def.name;
 
-		scene::IMesh *mesh = getItemMesh(gamedef, item);
-		cc->wield_mesh = mesh;
+		getItemMesh(client, item, &(cc->wield_mesh));
+
+		cc->palette = tsrc->getPalette(def.palette_image);
 
 		// Put in cache
 		m_clientcached.set(name, cc);
@@ -418,68 +433,108 @@ public:
 		return cc;
 	}
 	ClientCached* getClientCached(const std::string &name,
-			IGameDef *gamedef) const
+			Client *client) const
 	{
 		ClientCached *cc = NULL;
 		m_clientcached.get(name, &cc);
-		if(cc)
+		if (cc)
 			return cc;
 
-		if(thr_is_current_thread(m_main_thread))
-		{
-			return createClientCachedDirect(name, gamedef);
+		if (std::this_thread::get_id() == m_main_thread) {
+			return createClientCachedDirect(name, client);
 		}
-		else
-		{
-			// We're gonna ask the result to be put into here
-			static ResultQueue<std::string, ClientCached*, u8, u8> result_queue;
 
-			// Throw a request in
-			m_get_clientcached_queue.add(name, 0, 0, &result_queue);
-			try{
-				while(true) {
-					// Wait result for a second
-					GetResult<std::string, ClientCached*, u8, u8>
-						result = result_queue.pop_front(1000);
+		// We're gonna ask the result to be put into here
+		static ResultQueue<std::string, ClientCached*, u8, u8> result_queue;
 
-					if (result.key == name) {
-						return result.item;
-					}
+		// Throw a request in
+		m_get_clientcached_queue.add(name, 0, 0, &result_queue);
+		try {
+			while(true) {
+				// Wait result for a second
+				GetResult<std::string, ClientCached*, u8, u8>
+					result = result_queue.pop_front(1000);
+
+				if (result.key == name) {
+					return result.item;
 				}
 			}
-			catch(ItemNotFoundException &e)
-			{
-				errorstream<<"Waiting for clientcached " << name << " timed out."<<std::endl;
-				return &m_dummy_clientcached;
-			}
+		} catch(ItemNotFoundException &e) {
+			errorstream << "Waiting for clientcached " << name
+				<< " timed out." << std::endl;
+			return &m_dummy_clientcached;
 		}
 	}
 	// Get item inventory texture
 	virtual video::ITexture* getInventoryTexture(const std::string &name,
-			IGameDef *gamedef) const
+			Client *client) const
 	{
-		ClientCached *cc = getClientCached(name, gamedef);
+		ClientCached *cc = getClientCached(name, client);
 		if(!cc)
 			return NULL;
 		return cc->inventory_texture;
 	}
 	// Get item wield mesh
-	virtual scene::IMesh* getWieldMesh(const std::string &name,
-			IGameDef *gamedef) const
+	virtual ItemMesh* getWieldMesh(const std::string &name,
+			Client *client) const
 	{
-		ClientCached *cc = getClientCached(name, gamedef);
+		ClientCached *cc = getClientCached(name, client);
 		if(!cc)
 			return NULL;
-		return cc->wield_mesh;
+		return &(cc->wield_mesh);
+	}
+
+	// Get item palette
+	virtual Palette* getPalette(const std::string &name,
+			Client *client) const
+	{
+		ClientCached *cc = getClientCached(name, client);
+		if(!cc)
+			return NULL;
+		return cc->palette;
+	}
+
+	virtual video::SColor getItemstackColor(const ItemStack &stack,
+		Client *client) const
+	{
+		// Look for direct color definition
+		const std::string &colorstring = stack.metadata.getString("color", 0);
+		video::SColor directcolor;
+		if (!colorstring.empty() && parseColorString(colorstring, directcolor, true))
+			return directcolor;
+		// See if there is a palette
+		Palette *palette = getPalette(stack.name, client);
+		const std::string &index = stack.metadata.getString("palette_index", 0);
+		if (palette && !index.empty())
+			return (*palette)[mystoi(index, 0, 255)];
+		// Fallback color
+		return get(stack.name).color;
 	}
 #endif
+	void applyTextureOverrides(const std::vector<TextureOverride> &overrides)
+	{
+		infostream << "ItemDefManager::applyTextureOverrides(): Applying "
+			"overrides to textures" << std::endl;
+
+		for (const TextureOverride& texture_override : overrides) {
+			if (m_item_definitions.find(texture_override.id) == m_item_definitions.end()) {
+				continue; // Ignore unknown item
+			}
+
+			ItemDefinition* itemdef = m_item_definitions[texture_override.id];
+
+			if (texture_override.hasTarget(OverrideTarget::INVENTORY))
+				itemdef->inventory_image = texture_override.texture;
+
+			if (texture_override.hasTarget(OverrideTarget::WIELD))
+				itemdef->wield_image = texture_override.texture;
+		}
+	}
 	void clear()
 	{
-		for(std::map<std::string, ItemDefinition*>::const_iterator
-				i = m_item_definitions.begin();
-				i != m_item_definitions.end(); ++i)
+		for (auto &i : m_item_definitions)
 		{
-			delete i->second;
+			delete i.second;
 		}
 		m_item_definitions.clear();
 		m_aliases.clear();
@@ -514,9 +569,9 @@ public:
 	}
 	virtual void registerItem(const ItemDefinition &def)
 	{
-		verbosestream<<"ItemDefManager: registering \""<<def.name<<"\""<<std::endl;
+		TRACESTREAM(<< "ItemDefManager: registering " << def.name << std::endl);
 		// Ensure that the "" item (the hand) always has ToolCapabilities
-		if(def.name == "")
+		if (def.name.empty())
 			FATAL_ERROR_IF(!def.tool_capabilities, "Hand does not have ToolCapabilities");
 
 		if(m_item_definitions.count(def.name) == 0)
@@ -541,8 +596,8 @@ public:
 			const std::string &convert_to)
 	{
 		if (m_item_definitions.find(name) == m_item_definitions.end()) {
-			verbosestream<<"ItemDefManager: setting alias "<<name
-				<<" -> "<<convert_to<<std::endl;
+			TRACESTREAM(<< "ItemDefManager: setting alias " << name
+				<< " -> " << convert_to << std::endl);
 			m_aliases[name] = convert_to;
 		}
 	}
@@ -552,23 +607,19 @@ public:
 		u16 count = m_item_definitions.size();
 		writeU16(os, count);
 
-		for (std::map<std::string, ItemDefinition *>::const_iterator
-				it = m_item_definitions.begin();
-				it != m_item_definitions.end(); ++it) {
-			ItemDefinition *def = it->second;
+		for (const auto &it : m_item_definitions) {
+			ItemDefinition *def = it.second;
 			// Serialize ItemDefinition and write wrapped in a string
 			std::ostringstream tmp_os(std::ios::binary);
 			def->serialize(tmp_os, protocol_version);
-			os << serializeString(tmp_os.str());
+			os << serializeString16(tmp_os.str());
 		}
 
 		writeU16(os, m_aliases.size());
 
-		for (StringMap::const_iterator
-				it = m_aliases.begin();
-				it != m_aliases.end(); ++it) {
-			os << serializeString(it->first);
-			os << serializeString(it->second);
+		for (const auto &it : m_aliases) {
+			os << serializeString16(it.first);
+			os << serializeString16(it.second);
 		}
 	}
 
@@ -610,7 +661,7 @@ public:
 		for(u16 i=0; i<count; i++)
 		{
 			// Deserialize a string and grab an ItemDefinition from it
-			std::istringstream tmp_is(deSerializeString(is), std::ios::binary);
+			std::istringstream tmp_is(deSerializeString16(is), std::ios::binary);
 			ItemDefinition def;
 			def.deSerialize(tmp_is);
 			// Register
@@ -619,8 +670,8 @@ public:
 		u16 num_aliases = readU16(is);
 		for(u16 i=0; i<num_aliases; i++)
 		{
-			std::string name = deSerializeString(is);
-			std::string convert_to = deSerializeString(is);
+			std::string name = deSerializeString16(is);
+			std::string convert_to = deSerializeString16(is);
 			registerAlias(name, convert_to);
 		}
 	}
@@ -634,7 +685,7 @@ public:
 					request = m_get_clientcached_queue.pop();
 
 			m_get_clientcached_queue.pushResult(request,
-					createClientCachedDirect(request.key, gamedef));
+					createClientCachedDirect(request.key, (Client *)gamedef));
 		}
 #endif
 	}
@@ -645,7 +696,7 @@ private:
 	StringMap m_aliases;
 #ifndef SERVER
 	// The id of the thread that is allowed to use irrlicht directly
-	threadid_t m_main_thread;
+	std::thread::id m_main_thread;
 	// A reference to this can be returned when nothing is found, to avoid NULLs
 	mutable ClientCached m_dummy_clientcached;
 	// Cached textures and meshes

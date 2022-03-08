@@ -1,7 +1,12 @@
 /*
+<<<<<<< HEAD
 particles.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 */
+=======
+Minetest
+Copyright (C) 2020 sfan5 <sfan5@live.de>
+>>>>>>> 5.5.0
 
 /*
 This file is part of Freeminer.
@@ -21,50 +26,30 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "particles.h"
-#include "constants.h"
-#include "debug.h"
-#include "settings.h"
-#include "client/tile.h"
-#include "gamedef.h"
-#include "collision.h"
-#include <stdlib.h>
-#include "util/numeric.h"
-#include "light.h"
-#include "environment.h"
-#include "clientmap.h"
-#include "mapnode.h"
-#include "client.h"
+#include "util/serialize.h"
 
-/*
-	Utility
-*/
-
-v3f random_v3f(v3f min, v3f max)
+void ParticleParameters::serialize(std::ostream &os, u16 protocol_ver) const
 {
-	return v3f( rand()/(float)RAND_MAX*(max.X-min.X)+min.X,
-			rand()/(float)RAND_MAX*(max.Y-min.Y)+min.Y,
-			rand()/(float)RAND_MAX*(max.Z-min.Z)+min.Z);
+	writeV3F32(os, pos);
+	writeV3F32(os, vel);
+	writeV3F32(os, acc);
+	writeF32(os, expirationtime);
+	writeF32(os, size);
+	writeU8(os, collisiondetection);
+	os << serializeString32(texture);
+	writeU8(os, vertical);
+	writeU8(os, collision_removal);
+	animation.serialize(os, 6); /* NOT the protocol ver */
+	writeU8(os, glow);
+	writeU8(os, object_collision);
+	writeU16(os, node.param0);
+	writeU8(os, node.param2);
+	writeU8(os, node_tile);
 }
 
-Particle::Particle(
-	IGameDef *gamedef,
-	scene::ISceneManager* smgr,
-	LocalPlayer *player,
-	ClientEnvironment *env,
-	v3f pos,
-	v3f velocity,
-	v3f acceleration,
-	float expirationtime,
-	float size,
-	bool collisiondetection,
-	bool collision_removal,
-	bool vertical,
-	video::ITexture *texture,
-	v2f texpos,
-	v2f texsize
-):
-	scene::ISceneNode(smgr->getRootSceneNode(), smgr)
+void ParticleParameters::deSerialize(std::istream &is, u16 protocol_ver)
 {
+<<<<<<< HEAD
 	// Misc
 	m_gamedef = gamedef;
 	m_env = env;
@@ -623,4 +608,25 @@ void ParticleManager::addParticle(Particle* toadd)
 {
 	MutexAutoLock lock(m_particle_list_lock);
 	m_particles.push_back(toadd);
+=======
+	pos                = readV3F32(is);
+	vel                = readV3F32(is);
+	acc                = readV3F32(is);
+	expirationtime     = readF32(is);
+	size               = readF32(is);
+	collisiondetection = readU8(is);
+	texture            = deSerializeString32(is);
+	vertical           = readU8(is);
+	collision_removal  = readU8(is);
+	animation.deSerialize(is, 6); /* NOT the protocol ver */
+	glow               = readU8(is);
+	object_collision   = readU8(is);
+	// This is kinda awful
+	u16 tmp_param0 = readU16(is);
+	if (is.eof())
+		return;
+	node.param0 = tmp_param0;
+	node.param2 = readU8(is);
+	node_tile   = readU8(is);
+>>>>>>> 5.5.0
 }

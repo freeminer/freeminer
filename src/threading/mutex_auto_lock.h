@@ -23,6 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+<<<<<<< HEAD
 #ifndef THREADING_MUTEX_AUTO_LOCK_H
 #define THREADING_MUTEX_AUTO_LOCK_H
 
@@ -69,3 +70,10 @@ private:
 #endif
 
 #endif
+=======
+#pragma once
+
+#include <mutex>
+using MutexAutoLock = std::unique_lock<std::mutex>;
+using RecursiveMutexAutoLock = std::unique_lock<std::recursive_mutex>;
+>>>>>>> 5.5.0

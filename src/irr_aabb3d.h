@@ -20,14 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IRR_AABB3D_HEADER
-#define IRR_AABB3D_HEADER
+#pragma once
 
 #include "irrlichttypes.h"
 
 #include <aabbox3d.h>
 
 typedef core::aabbox3d<f32> aabb3f;
-
-#endif
-

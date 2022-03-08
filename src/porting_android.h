@@ -16,8 +16,8 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-#ifndef __PORTING_ANDROID_H__
-#define __PORTING_ANDROID_H__
+
+#pragma once
 
 #ifndef __ANDROID__
 #error this include has to be included on android port only!
@@ -30,18 +30,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 
 namespace porting {
-/** java app **/
+// java app
 extern android_app *app_global;
 
-/** java <-> c++ interaction interface **/
+// java <-> c++ interaction interface
 extern JNIEnv *jnienv;
 
+<<<<<<< HEAD
 extern int android_version_sdk_int;
 
 /**
  * do initialization required on android only
  */
+=======
+// do initialization required on android only
+>>>>>>> 5.5.0
 void initAndroid();
+
 void cleanupAndroid();
 
 /**
@@ -51,11 +56,6 @@ void cleanupAndroid();
 void initializePathsAndroid();
 
 /**
- * use java function to copy media from assets to external storage
- */
-void copyAssets();
-
-/**
  * show text input dialog in java
  * @param acceptButton text to display on accept button
  * @param hint hint to show
@@ -63,8 +63,10 @@ void copyAssets();
  * @param editType type of texfield
  * (1==multiline text input; 2==single line text input; 3=password field)
  */
-void showInputDialog(const std::string& acceptButton,
-		const  std::string& hint, const std::string& current, int editType);
+void showInputDialog(const std::string &acceptButton,
+					const std::string &hint, const std::string &current, int editType);
+
+void openURIAndroid(const std::string &url);
 
 /**
  * WORKAROUND for not working callbacks from java -> c++
@@ -78,9 +80,16 @@ int getInputDialogState();
  */
 std::string getInputDialogValue();
 
+<<<<<<< HEAD
 int canKeyboard();
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
 
 }
 
+=======
+#ifndef SERVER
+float getDisplayDensity();
+v2u32 getDisplaySize();
+>>>>>>> 5.5.0
 #endif
+}

@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ENVIRONMENT_HEADER
-#define ENVIRONMENT_HEADER
+#pragma once
 
 /*
 	This class is the game's environment.
@@ -33,11 +32,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	- etc.
 */
 
-#include <set>
 #include <list>
 #include <queue>
 #include <map>
+#include <atomic>
+#include <mutex>
 #include "irr_v3d.h"
+<<<<<<< HEAD
 #include "activeobject.h"
 #include "util/numeric.h"
 #include "mapnode.h"
@@ -58,20 +59,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "threading/mutex.h"
 #include "threading/atomic.h"
+=======
+>>>>>>> 5.5.0
 #include "network/networkprotocol.h" // for AccessDeniedCode
+#include "util/basic_macros.h"
 
-class ServerEnvironment;
-class ActiveBlockModifier;
-class ServerActiveObject;
-class ITextureSource;
 class IGameDef;
 class Map;
-class ServerMap;
-class ClientMap;
-class GameScripting;
-class Player;
-class RemotePlayer;
-class PlayerSAO;
+struct PointedThing;
+class RaycastState;
 
 struct ItemStack;
 class PlayerSAO;
@@ -86,8 +82,9 @@ class Environment
 {
 public:
 	// Environment will delete the map passed to the constructor
-	Environment();
-	virtual ~Environment();
+	Environment(IGameDef *gamedef);
+	virtual ~Environment() = default;
+	DISABLE_CLASS_COPY(Environment);
 
 	/*
 		Step everything in environment.
@@ -97,7 +94,7 @@ public:
 	*/
 	virtual void step(f32 dtime, float uptime, unsigned int max_cycle_ms) = 0;
 
-	virtual Map & getMap() = 0;
+	virtual Map &getMap() = 0;
 
 	u32 getDayNightRatio();
 
@@ -114,32 +111,69 @@ public:
 
 	u32 getDayCount();
 
+	/*!
+	 * Returns false if the given line intersects with a
+	 * non-air node, true otherwise.
+	 * \param pos1 start of the line
+	 * \param pos2 end of the line
+	 * \param p output, position of the first non-air node
+	 * the line intersects
+	 */
+	bool line_of_sight(v3f pos1, v3f pos2, v3s16 *p = nullptr);
+
+	/*!
+	 * Gets the objects pointed by the shootline as
+	 * pointed things.
+	 * If this is a client environment, the local player
+	 * won't be returned.
+	 * @param[in]  shootline_on_map the shootline for
+	 * the test in world coordinates
+	 *
+	 * @param[out] objects          found objects
+	 */
+	virtual void getSelectedActiveObjects(const core::line3d<f32> &shootline_on_map,
+			std::vector<PointedThing> &objects) = 0;
+
+	/*!
+	 * Returns the next node or object the shootline meets.
+	 * @param state current state of the raycast
+	 * @result output, will contain the next pointed thing
+	 */
+	void continueRaycast(RaycastState *state, PointedThing *result);
+
 	// counter used internally when triggering ABMs
 	std::atomic_uint m_added_objects;
 
+<<<<<<< HEAD
 public:
 	GenericAtomic<float> m_time_of_day_speed;
 protected:
+=======
+	IGameDef *getGameDef() { return m_gamedef; }
+
+protected:
+	std::atomic<float> m_time_of_day_speed;
+>>>>>>> 5.5.0
 
 	/*
 	 * Below: values managed by m_time_lock
-	*/
-	// Time of day in milli-hours (0-23999); determines day and night
+	 */
+	// Time of day in milli-hours (0-23999), determines day and night
 	u32 m_time_of_day;
 	// Time of day in 0...1
 	float m_time_of_day_f;
 	// Stores the skew created by the float -> u32 conversion
 	// to be applied at next conversion, so that there is no real skew.
-	float m_time_conversion_skew;
+	float m_time_conversion_skew = 0.0f;
 	// Overriding the day-night ratio is useful for custom sky visuals
-	bool m_enable_day_night_ratio_override;
-	u32 m_day_night_ratio_override;
+	bool m_enable_day_night_ratio_override = false;
+	u32 m_day_night_ratio_override = 0.0f;
 	// Days from the server start, accounts for time shift
 	// in game (e.g. /time or bed usage)
-	Atomic<u32> m_day_count;
+	std::atomic<u32> m_day_count;
 	/*
 	 * Above: values managed by m_time_lock
-	*/
+	 */
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -154,7 +188,9 @@ protected:
 	float m_cache_active_block_mgmt_interval;
 	float m_cache_abm_interval;
 	float m_cache_nodetimer_interval;
+	float m_cache_abm_time_budget;
 
+<<<<<<< HEAD
 private:
 	Mutex m_time_lock;
 
@@ -788,9 +824,10 @@ private:
 	IntervalLimiter m_breathing_interval;
 	std::list<std::string> m_player_names;
 	v3s16 m_camera_offset;
+=======
+	IGameDef *m_gamedef;
+
+private:
+	std::mutex m_time_lock;
+>>>>>>> 5.5.0
 };
-
-#endif
-
-#endif
-

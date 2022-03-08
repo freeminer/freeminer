@@ -20,11 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_TIMETAKER_HEADER
-#define UTIL_TIMETAKER_HEADER
+#pragma once
 
-#include "../irrlichttypes.h"
-#include "../gettime.h"
+#include "irrlichttypes.h"
+#include "gettime.h"
 
 /*
 	TimeTaker
@@ -34,25 +33,32 @@ extern unsigned int g_time_taker_enabled;
 class TimeTaker
 {
 public:
+<<<<<<< HEAD
 	TimeTaker(const std::string &name, u32 *result=NULL,
 		TimePrecision=PRECISION_MILLI);
+=======
+	TimeTaker(const std::string &name, u64 *result=nullptr,
+		TimePrecision prec=PRECISION_MILLI);
+>>>>>>> 5.5.0
 
 	~TimeTaker()
 	{
 		stop();
 	}
 
-	u32 stop(bool quiet=false);
+	u64 stop(bool quiet=false);
 
-	u32 getTimerTime();
+	u64 getTimerTime();
 
 private:
 	std::string m_name;
+<<<<<<< HEAD
 	u32 m_time1;
 	bool m_running;
+=======
+	u64 m_time1;
+	bool m_running = true;
+>>>>>>> 5.5.0
 	TimePrecision m_precision;
-	u32 *m_result;
+	u64 *m_result = nullptr;
 };
-
-#endif
-

@@ -19,23 +19,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _CLIENTIFACE_H_
-#define _CLIENTIFACE_H_
+
+#pragma once
 
 #include "irr_v3d.h"                   // for irrlicht datatypes
 
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
+<<<<<<< HEAD
 #include "threading/mutex.h"
 #include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
+=======
+>>>>>>> 5.5.0
 #include "network/networkpacket.h"
-#include "util/cpp11_container.h"
+#include "network/networkprotocol.h"
+#include "network/address.h"
+#include "porting.h"
 
 #include <list>
 #include <vector>
 #include <set>
+#include <memory>
+#include <mutex>
 
 #include "msgpack_fix.h"
 
@@ -56,30 +63,30 @@ class EmergeManager;
       |                 |
       \-----------------/
                |                  depending of the incoming packet
-               +---------------------------------------
-               v                                      v
-+-----------------------------+        +-----------------------------+
-|IN:                          |        |IN:                          |
-| TOSERVER_INIT_LEGACY        |-----   | TOSERVER_INIT               |      invalid playername,
-+-----------------------------+    |   +-----------------------------+  password (for _LEGACY),
-               |                   |                  |                       or denied by mod
-               | Auth ok           -------------------+---------------------------------
-               v                                      v                                |
-+-----------------------------+        +-----------------------------+                 |
-|OUT:                         |        |OUT:                         |                 |
-| TOCLIENT_INIT_LEGACY        |        | TOCLIENT_HELLO              |                 |
-+-----------------------------+        +-----------------------------+                 |
-               |                                      |                                |
-               |                                      |                                |
-               v                                      v                                |
-      /-----------------\                    /-----------------\                       |
-      |                 |                    |                 |                       |
-      |  AwaitingInit2  |<---------          |    HelloSent    |                       |
-      |                 |         |          |                 |                       |
-      \-----------------/         |          \-----------------/                       |
-               |                  |                   |                                |
-+-----------------------------+   |    *-----------------------------*     Auth fails  |
-|IN:                          |   |    |Authentication, depending on |-----------------+
+               ----------------------------------------
+                                                      v
+                                       +-----------------------------+
+                                       |IN:                          |
+                                       | TOSERVER_INIT               |
+                                       +-----------------------------+
+                                                      | invalid playername
+                                                      | or denied by mod
+                                                      v
+                                       +-----------------------------+
+                                       |OUT:                         |
+                                       | TOCLIENT_HELLO              |
+                                       +-----------------------------+
+                                                      |
+                                                      |
+                                                      v
+      /-----------------\                    /-----------------\
+      |                 |                    |                 |
+      |  AwaitingInit2  |<---------          |    HelloSent    |
+      |                 |         |          |                 |
+      \-----------------/         |          \-----------------/
+               |                  |                   |
++-----------------------------+   |    *-----------------------------*     Auth fails
+|IN:                          |   |    |Authentication, depending on |------------------
 | TOSERVER_INIT2              |   |    | packet sent by client       |                 |
 +-----------------------------+   |    *-----------------------------*                 |
                |                  |                   |                                |
@@ -108,18 +115,18 @@ class EmergeManager;
       |                 |             +-----------------------------+                  |
       | DefinitionsSent |             |IN:                          |                  |
       |                 |             | TOSERVER_REQUEST_MEDIA      |                  |
-      \-----------------/             | TOSERVER_RECEIVED_MEDIA     |                  |
+      \-----------------/             |                             |                  |
                |                      +-----------------------------+                  |
                |      ^                           |                                    |
                |      -----------------------------                                    |
-               v                                                                       |
+               v                                                                       v
 +-----------------------------+                        --------------------------------+
-|IN:                          |                        |                               |
+|IN:                          |                        |                               ^
 | TOSERVER_CLIENT_READY       |                        v                               |
-+-----------------------------+        +-------------------------------+               |
-               |                       |OUT:                           |               |
-               v                       | TOCLIENT_ACCESS_DENIED_LEGAGY |               |
-+-----------------------------+        +-------------------------------+               |
++-----------------------------+            +------------------------+                  |
+               |                           |OUT:                    |                  |
+               v                           | TOCLIENT_ACCESS_DENIED |                  |
++-----------------------------+            +------------------------+                  |
 |OUT:                         |                        |                               |
 | TOCLIENT_MOVE_PLAYER        |                        v                               |
 | TOCLIENT_PRIVILEGES         |                /-----------------\                     |
@@ -173,7 +180,6 @@ namespace con {
 	class Connection;
 }
 
-#define CI_ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 // Also make sure to update the ClientInterface::statenames
 // array when modifying these enums
@@ -196,7 +202,6 @@ enum ClientStateEvent
 {
 	CSE_Hello,
 	CSE_AuthAccept,
-	CSE_InitLegacy,
 	CSE_GotInit2,
 	CSE_SetDenied,
 	CSE_SetDefinitionsSent,
@@ -213,7 +218,7 @@ enum ClientStateEvent
 */
 struct PrioritySortedBlockTransfer
 {
-	PrioritySortedBlockTransfer(float a_priority, v3s16 a_pos, u16 a_peer_id)
+	PrioritySortedBlockTransfer(float a_priority, const v3s16 &a_pos, session_t a_peer_id)
 	{
 		priority = a_priority;
 		pos = a_pos;
@@ -225,7 +230,7 @@ struct PrioritySortedBlockTransfer
 	}
 	float priority;
 	v3s16 pos;
-	u16 peer_id;
+	session_t peer_id;
 };
 
 class RemoteClient
@@ -236,10 +241,11 @@ public:
 	// NOTE: If client is made allowed to exist while peer doesn't,
 	//       this has to be set to 0 when there is no peer.
 	//       Also, the client must be moved to some other container.
-	u16 peer_id;
+	session_t peer_id = PEER_ID_INEXISTENT;
 	// The serialization version to use with the client
-	u8 serialization_version;
+	u8 serialization_version = SER_FMT_VER_INVALID;
 	//
+<<<<<<< HEAD
 	std::atomic_ushort net_proto_version;
 	u16 net_proto_version_fm;
 
@@ -251,20 +257,24 @@ public:
 	//bool block_overflow;
 
 	ServerEnvironment *m_env;
+=======
+	u16 net_proto_version = 0;
+>>>>>>> 5.5.0
 
 	/* Authentication information */
-	std::string enc_pwd;
-	bool create_player_on_auth_success;
-	AuthMechanism chosen_mech;
-	void * auth_data;
-	u32 allowed_auth_mechs;
-	u32 allowed_sudo_mechs;
+	std::string enc_pwd = "";
+	bool create_player_on_auth_success = false;
+	AuthMechanism chosen_mech  = AUTH_MECHANISM_NONE;
+	void *auth_data = nullptr;
+	u32 allowed_auth_mechs = 0;
+	u32 allowed_sudo_mechs = 0;
 
 	bool isSudoMechAllowed(AuthMechanism mech)
 	{ return allowed_sudo_mechs & mech; }
 	bool isMechAllowed(AuthMechanism mech)
 	{ return allowed_auth_mechs & mech; }
 
+<<<<<<< HEAD
 	RemoteClient(ServerEnvironment *env):
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
@@ -299,6 +309,10 @@ public:
 	~RemoteClient()
 	{
 	}
+=======
+	RemoteClient();
+	~RemoteClient() = default;
+>>>>>>> 5.5.0
 
 	/*
 		Finds block that should be sent next to the client.
@@ -323,9 +337,15 @@ public:
 	 */
 	void ResendBlockIfOnWire(v3s16 p);
 
-	s32 SendingCount()
+	u32 getSendingCount() const { return m_blocks_sending.size(); }
+
+	bool isBlockSent(v3s16 p) const
 	{
+<<<<<<< HEAD
 		return 0; //return m_blocks_sending.size();
+=======
+		return m_blocks_sent.find(p) != m_blocks_sent.end();
+>>>>>>> 5.5.0
 	}
 
 	// Increments timeouts and removes timed-out blocks from list
@@ -343,21 +363,18 @@ public:
 	}
 
 	// Time from last placing or removing blocks
-	float m_time_from_building;
+	float m_time_from_building = 9999;
 
 	/*
 		List of active objects that the client knows of.
 	*/
 	maybe_concurrent_unordered_map<u16, bool> m_known_objects;
 
-	ClientState getState()
-		{ return m_state; }
+	ClientState getState() const { return m_state; }
 
-	std::string getName()
-		{ return m_name; }
+	std::string getName() const { return m_name; }
 
-	void setName(std::string name)
-		{ m_name = name; }
+	void setName(const std::string &name) { m_name = name; }
 
 	/* update internal client state */
 	void notifyEvent(ClientStateEvent event);
@@ -373,10 +390,11 @@ public:
 		{ serialization_version = m_pending_serialization_version; }
 
 	/* get uptime */
-	u32 uptime();
+	u64 uptime() const;
 
 	/* set version information */
-	void setVersionInfo(u8 major, u8 minor, u8 patch, std::string full) {
+	void setVersionInfo(u8 major, u8 minor, u8 patch, const std::string &full)
+	{
 		m_version_major = major;
 		m_version_minor = minor;
 		m_version_patch = patch;
@@ -384,16 +402,29 @@ public:
 	}
 
 	/* read version information */
-	u8 getMajor() { return m_version_major; }
-	u8 getMinor() { return m_version_minor; }
-	u8 getPatch() { return m_version_patch; }
-	std::string getVersion() { return m_full_version; }
+	u8 getMajor() const { return m_version_major; }
+	u8 getMinor() const { return m_version_minor; }
+	u8 getPatch() const { return m_version_patch; }
+	const std::string &getFullVer() const { return m_full_version; }
+	
+	void setLangCode(const std::string &code) { m_lang_code = code; }
+	const std::string &getLangCode() const { return m_lang_code; }
+
+	void setCachedAddress(const Address &addr) { m_addr = addr; }
+	const Address &getAddress() const { return m_addr; }
+
 private:
 	// Version is stored in here after INIT before INIT2
-	u8 m_pending_serialization_version;
+	u8 m_pending_serialization_version = SER_FMT_VER_INVALID;
 
 	/* current state of client */
-	ClientState m_state;
+	ClientState m_state = CS_Created;
+
+	// Cached here so retrieval doesn't have to go to connection API
+	Address m_addr;
+
+	// Client sent language code
+	std::string m_lang_code;
 
 	/*
 		Blocks that have been sent to client.
@@ -404,8 +435,22 @@ private:
 		List of block positions.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
+<<<<<<< HEAD
 	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 	unsigned int m_nearest_unsent_reset_want = 0;
+=======
+	std::set<v3s16> m_blocks_sent;
+	s16 m_nearest_unsent_d = 0;
+	v3s16 m_last_center;
+	v3f m_last_camera_dir;
+
+	const u16 m_max_simul_sends;
+	const float m_min_time_from_building;
+	const s16 m_max_send_distance;
+	const s16 m_block_optimize_distance;
+	const s16 m_max_gen_distance;
+	const bool m_occ_cull;
+>>>>>>> 5.5.0
 
 public:
 	std::atomic_int m_nearest_unsent_d;
@@ -416,10 +461,10 @@ private:
 	float m_nearest_unsent_reset_timer;
 
 	/*
-		Blocks that have been modified since last sending them.
-		These blocks will not be marked as sent, even if the
-		client reports it has received them to account for blocks
-		that are being modified while on the line.
+		Blocks that have been modified since blocks were
+		sent to the client last (getNextBlocks()).
+		This is used to reset the unsent distance, so that
+		modified blocks are resent to the client.
 
 		List of block positions.
 	*/
@@ -432,52 +477,64 @@ private:
 		and the client then sends two GOTBLOCKs.
 		This is resetted by PrintInfo()
 	*/
+<<<<<<< HEAD
 	//u32 m_excess_gotblocks;
+=======
+	u32 m_excess_gotblocks = 0;
+>>>>>>> 5.5.0
 
 	// CPU usage optimization
-	float m_nothing_to_send_pause_timer;
+	float m_nothing_to_send_pause_timer = 0.0f;
 
 	/*
 		name of player using this client
 	*/
-	std::string m_name;
+	std::string m_name = "";
 
 	/*
 		client information
-	 */
-	u8 m_version_major;
-	u8 m_version_minor;
-	u8 m_version_patch;
+	*/
+	u8 m_version_major = 0;
+	u8 m_version_minor = 0;
+	u8 m_version_patch = 0;
 
-	std::string m_full_version;
+	std::string m_full_version = "unknown";
 
-	u16 m_deployed_compression;
+	u16 m_deployed_compression = 0;
 
 	/*
 		time this client was created
 	 */
-	const u32 m_connection_time;
+	const u64 m_connection_time = porting::getTimeS();
 };
+
+typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
 
 class ClientInterface {
 public:
 
 	friend class Server;
 
-	ClientInterface(con::Connection* con);
+	ClientInterface(const std::shared_ptr<con::Connection> &con);
 	~ClientInterface();
 
 	/* run sync step */
 	void step(float dtime);
 
 	/* get list of active client id's */
-	std::vector<u16> getClientIDs(ClientState min_state=CS_Active);
+	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
+
+	/* mark block as not sent to active client sessions */
+	void markBlockposAsNotSent(const v3s16 &pos);
+
+	/* verify is server user limit was reached */
+	bool isUserLimitReached();
 
 	/* get list of client player names */
 	const std::vector<std::string> &getPlayerNames() const { return m_clients_names; }
 
 	/* send message to client */
-	void send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
+	void send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 
 	/* send message to client */
 	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
@@ -485,38 +542,43 @@ public:
 	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable); //todo: delete
 
 	/* send to all clients */
+<<<<<<< HEAD
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
 	void sendToAll(u16 channelnum, NetworkPacket* pkt, bool reliable);
+=======
+	void sendToAll(NetworkPacket *pkt);
+>>>>>>> 5.5.0
 
 	/* delete a client */
-	void DeleteClient(u16 peer_id);
+	void DeleteClient(session_t peer_id);
 
 	/* create client */
-	void CreateClient(u16 peer_id);
+	void CreateClient(session_t peer_id);
 
 	std::shared_ptr<RemoteClient> getClient(u16 peer_id,  ClientState state_min=CS_Active);
 
 	/* get a client by peer_id */
-	RemoteClient* getClientNoEx(u16 peer_id,  ClientState state_min=CS_Active);
+	RemoteClient *getClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
 
 	/* get client by peer_id (make sure you have list lock before!*/
-	RemoteClient* lockedGetClientNoEx(u16 peer_id,  ClientState state_min=CS_Active);
+	RemoteClient *lockedGetClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
 
 	/* get state of client by id*/
-	ClientState getClientState(u16 peer_id);
+	ClientState getClientState(session_t peer_id);
 
 	/* set client playername */
-	void setPlayerName(u16 peer_id,std::string name);
+	void setPlayerName(session_t peer_id, const std::string &name);
 
 	/* get protocol version of client */
-	u16 getProtocolVersion(u16 peer_id);
+	u16 getProtocolVersion(session_t peer_id);
 
 	/* set client version */
-	void setClientVersion(u16 peer_id, u8 major, u8 minor, u8 patch, std::string full);
+	void setClientVersion(session_t peer_id, u8 major, u8 minor, u8 patch,
+			const std::string &full);
 
 	/* event to update client state */
-	void event(u16 peer_id, ClientStateEvent event);
+	void event(session_t peer_id, ClientStateEvent event);
 
 	/* Set environment. Do not call this function if environment is already set */
 	void setEnv(ServerEnvironment *env)
@@ -526,12 +588,12 @@ public:
 	}
 
 	static std::string state2Name(ClientState state);
-
 protected:
 	//TODO find way to avoid this functions
 	void lock() { /*m_clients_mutex.lock();*/ }
 	void unlock() { /*m_clients_mutex.unlock();*/ }
 
+<<<<<<< HEAD
 
 public:
 	std::vector<std::shared_ptr<RemoteClient>> getClientList() {
@@ -544,25 +606,36 @@ public:
 		}
 		return clients;
 	}
+=======
+	RemoteClientMap& getClientList() { return m_clients; }
+>>>>>>> 5.5.0
 
 private:
 	/* update internal player list */
 	void UpdatePlayerList();
 
 	// Connection
+<<<<<<< HEAD
 	con::Connection* m_con;
 	//Mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	concurrent_map<u16, std::shared_ptr<RemoteClient>> m_clients;
+=======
+	std::shared_ptr<con::Connection> m_con;
+	std::recursive_mutex m_clients_mutex;
+	// Connected clients (behind the con mutex)
+	RemoteClientMap m_clients;
+>>>>>>> 5.5.0
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
 	ServerEnvironment *m_env;
+<<<<<<< HEAD
 	//Mutex m_env_mutex;
+=======
+>>>>>>> 5.5.0
 
 	float m_print_info_timer;
 
 	static const char *statenames[];
 };
-
-#endif

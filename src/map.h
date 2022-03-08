@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MAP_HEADER
-#define MAP_HEADER
+#pragma once
 
 #include <iostream>
 #include <sstream>
@@ -37,16 +36,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxel.h"
 #include "modifiedstate.h"
 #include "util/container.h"
-#include "util/cpp11_container.h"
+#include "util/metricsbackend.h"
 #include "nodetimer.h"
 #include "map_settings_manager.h"
+#include "debug.h"
 
 #include "mapblock.h"
 #include <unordered_set>
 #include "config.h"
 
 class Settings;
-class Database;
+class MapDatabase;
 class ClientMap;
 class MapSector;
 class ServerMapSector;
@@ -55,6 +55,7 @@ class NodeMetadata;
 class IGameDef;
 class IRollbackManager;
 class EmergeManager;
+class MetricsBackend;
 class ServerEnvironment;
 struct BlockMakeData;
 class Server;
@@ -74,8 +75,7 @@ enum MapEditEventType{
 	MEET_REMOVENODE,
 	// Node swapped (changed without metadata change)
 	MEET_SWAPNODE,
-	// Node metadata of block changed (not knowing which node exactly)
-	// p stores block coordinate
+	// Node metadata changed
 	MEET_BLOCK_NODE_METADATA_CHANGED,
 	// Anything else (modified_blocks are set unsent)
 	MEET_OTHER
@@ -83,29 +83,15 @@ enum MapEditEventType{
 
 struct MapEditEvent
 {
-	MapEditEventType type;
+	MapEditEventType type = MEET_OTHER;
 	v3s16 p;
-	MapNode n;
+	MapNode n = CONTENT_AIR;
 	std::set<v3s16> modified_blocks;
-	u16 already_known_by_peer;
+	bool is_private_change = false;
 
-	MapEditEvent():
-		type(MEET_OTHER),
-		n(CONTENT_AIR),
-		already_known_by_peer(0)
-	{ }
+	MapEditEvent() = default;
 
-	MapEditEvent * clone()
-	{
-		MapEditEvent *event = new MapEditEvent();
-		event->type = type;
-		event->p = p;
-		event->n = n;
-		event->modified_blocks = modified_blocks;
-		return event;
-	}
-
-	VoxelArea getArea()
+	VoxelArea getArea() const
 	{
 		switch(type){
 		case MEET_ADDNODE:
@@ -123,11 +109,7 @@ struct MapEditEvent
 		case MEET_OTHER:
 		{
 			VoxelArea a;
-			for(std::set<v3s16>::iterator
-					i = modified_blocks.begin();
-					i != modified_blocks.end(); ++i)
-			{
-				v3s16 p = *i;
+			for (v3s16 p : modified_blocks) {
 				v3s16 np1 = p*MAP_BLOCKSIZE;
 				v3s16 np2 = np1 + v3s16(1,1,1)*MAP_BLOCKSIZE - v3s16(1,1,1);
 				a.addPoint(np1);
@@ -144,19 +126,19 @@ class MapEventReceiver
 {
 public:
 	// event shall be deleted by caller after the call.
-	virtual void onMapEditEvent(MapEditEvent *event) = 0;
+	virtual void onMapEditEvent(const MapEditEvent &event) = 0;
 };
 
 class Map /*: public NodeContainer*/
 {
 public:
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5.5.0
 	Map(IGameDef *gamedef);
 	virtual ~Map();
-
-	/*virtual u16 nodeContainerId() const
-	{
-		return NODECONTAINER_ID_MAP;
-	}*/
+	DISABLE_CLASS_COPY(Map);
 
 	virtual s32 mapType() const
 	{
@@ -174,8 +156,22 @@ public:
 	void addEventReceiver(MapEventReceiver *event_receiver);
 	void removeEventReceiver(MapEventReceiver *event_receiver);
 	// event shall be deleted by caller after the call.
-	void dispatchEvent(MapEditEvent *event);
+	void dispatchEvent(const MapEditEvent &event);
 
+<<<<<<< HEAD
+=======
+	// On failure returns NULL
+	MapSector * getSectorNoGenerateNoLock(v2s16 p2d);
+	// Same as the above (there exists no lock anymore)
+	MapSector * getSectorNoGenerate(v2s16 p2d);
+
+	/*
+		This is overloaded by ClientMap and ServerMap to allow
+		their differing fetch methods.
+	*/
+	virtual MapSector * emergeSector(v2s16 p){ return NULL; }
+
+>>>>>>> 5.5.0
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
@@ -187,8 +183,7 @@ public:
 	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=false)
 	{ return getBlockNoCreateNoEx(p); }
 
-	// Returns InvalidPositionException if not found
-	bool isNodeUnderground(v3s16 p);
+	inline const NodeDefManager * getNodeDefManager() { return m_nodedef; }
 
 	bool isValidPosition(v3s16 p);
 
@@ -200,6 +195,7 @@ public:
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
+<<<<<<< HEAD
 	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position);
 	MapNode getNode(v3POS p) { return getNodeNoEx(p); };
 	//MapNode getNodeLog(v3POS p);
@@ -222,6 +218,9 @@ public:
 
 	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
 			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
+=======
+	MapNode getNode(v3s16 p, bool *is_valid_position = NULL);
+>>>>>>> 5.5.0
 
 	/*
 		These handle lighting but not faces.
@@ -242,18 +241,9 @@ public:
 	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true);
 	bool removeNodeWithEvent(v3s16 p);
 
-	/*
-		Takes the blocks at the edges into account
-	*/
-	bool getDayNightDiff(v3s16 blockpos);
-
-	//core::aabbox3d<s16> getDisplayedBlockArea();
-
-	//bool updateChangedVisibleArea();
-
 	// Call these before and after saving of many blocks
-	virtual void beginSave() { return; }
-	virtual void endSave() { return; }
+	virtual void beginSave() {}
+	virtual void endSave() {}
 
 	virtual s32 save(ModifiedState save_level, float dedicated_server_step, bool breakable){ FATAL_ERROR("FIXME"); return 0;};
 
@@ -278,8 +268,14 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
+<<<<<<< HEAD
 	u32 transformLiquids(Server *m_server, unsigned int max_cycle_ms);
 	u32 transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
+=======
+	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+			ServerEnvironment *env);
+
+>>>>>>> 5.5.0
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -315,14 +311,18 @@ public:
 	void removeNodeTimer(v3s16 p);
 
 	/*
+<<<<<<< HEAD
 		Misc.
 	*/
 
 	/*
+=======
+>>>>>>> 5.5.0
 		Variables
 	*/
 
 	void transforming_liquid_add(v3s16 p);
+<<<<<<< HEAD
 	v3s16 transforming_liquid_pop();
 	u32 transforming_liquid_size();
 	std::atomic_uint m_liquid_step_flow;
@@ -364,21 +364,31 @@ public:
 	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
 
 	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
+=======
+>>>>>>> 5.5.0
 
+	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 protected:
 	friend class LuaVoxelManip;
 
 	IGameDef *m_gamedef;
 	std::set<MapEventReceiver*> m_event_receivers;
 
+<<<<<<< HEAD
+=======
+	std::map<v2s16, MapSector*> m_sectors;
+
+	// Be sure to set this to NULL when the cached sector is deleted
+	MapSector *m_sector_cache = nullptr;
+	v2s16 m_sector_cache_p;
+
+>>>>>>> 5.5.0
 	// Queued transforming water nodes
 
-private:
-	f32 m_transforming_liquid_loop_count_multiplier;
-	u32 m_unprocessed_count;
-	u32 m_inc_trending_up_start_time; // milliseconds
-	bool m_queue_size_timer_started;
+	// This stores the properties of the nodes on the map.
+	const NodeDefManager *m_nodedef;
 
+<<<<<<< HEAD
 	// freminer:
 protected:
 	u32 m_blocks_update_last;
@@ -401,6 +411,19 @@ public:
 private:
 
 	DISABLE_CLASS_COPY(Map);
+=======
+	bool determineAdditionalOcclusionCheck(const v3s16 &pos_camera,
+		const core::aabbox3d<s16> &block_bounds, v3s16 &check);
+	bool isOccluded(const v3s16 &pos_camera, const v3s16 &pos_target,
+		float step, float stepfac, float start_offset, float end_offset,
+		u32 needed_count);
+
+private:
+	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
+	u32 m_unprocessed_count = 0;
+	u64 m_inc_trending_up_start_time = 0; // milliseconds
+	bool m_queue_size_timer_started = false;
+>>>>>>> 5.5.0
 };
 
 /*
@@ -415,7 +438,7 @@ public:
 	/*
 		savedir: directory to which map data should be saved
 	*/
-	ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge);
+	ServerMap(const std::string &savedir, IGameDef *gamedef, EmergeManager *emerge, MetricsBackend *mb);
 	~ServerMap();
 
 	s32 mapType() const
@@ -424,8 +447,20 @@ public:
 	}
 
 	/*
+<<<<<<< HEAD
+=======
+		Get a sector from somewhere.
+		- Check memory
+		- Check disk (doesn't load blocks)
+		- Create blank one
+	*/
+	MapSector *createSector(v2s16 p);
+
+	/*
+>>>>>>> 5.5.0
 		Blocks are generated by using these and makeBlock().
 	*/
+	bool blockpos_over_mapgen_limit(v3s16 p);
 	bool initBlockMake(v3s16 blockpos, BlockMakeData *data);
 	void finishBlockMake(BlockMakeData *data,
 		std::map<v3s16, MapBlock*> *changed_blocks);
@@ -454,6 +489,7 @@ public:
 	*/
 	MapBlock *getBlockOrEmerge(v3s16 p3d);
 
+<<<<<<< HEAD
 	// Carries out any initialization necessary before block is sent
 	void prepareBlock(MapBlock *block);
 
@@ -466,13 +502,20 @@ public:
 	*/
 	void createDirs(std::string path);
 	// dirname: final directory name
+=======
+	bool isBlockInQueue(v3s16 pos);
+>>>>>>> 5.5.0
 
 	/*
 		Database functions
 	*/
+<<<<<<< HEAD
 	static Database *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
 	// Verify we can read/write to the database
 	void verifyDatabase();
+=======
+	static MapDatabase *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
+>>>>>>> 5.5.0
 
 	// Call these before and after saving of blocks
 	void beginSave();
@@ -485,7 +528,11 @@ public:
 	MapgenParams *getMapgenParams();
 
 	bool saveBlock(MapBlock *block);
+<<<<<<< HEAD
 	static bool saveBlock(MapBlock *block, Database *db);
+=======
+	static bool saveBlock(MapBlock *block, MapDatabase *db, int compression_level = -1);
+>>>>>>> 5.5.0
 	MapBlock* loadBlock(v3s16 p);
 
 	bool deleteBlock(v3s16 blockpos);
@@ -498,7 +545,16 @@ public:
 	bool isSavingEnabled(){ return m_map_saving_enabled; }
 
 	u64 getSeed();
-	s16 getWaterLevel();
+
+	/*!
+	 * Fixes lighting in one map block.
+	 * May modify other blocks as well, as light can spread
+	 * out of the specified block.
+	 * Returns false if the block is not generated (so nothing
+	 * changed), true otherwise.
+	 */
+	bool repairBlockLight(v3s16 blockpos,
+		std::map<v3s16, MapBlock *> *modified_blocks);
 
 //freeminer:
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
@@ -524,22 +580,26 @@ public:
 	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
 private:
 
-#if 0
-	// Chunk size in MapSectors
-	// If 0, chunks are disabled.
-	s16 m_chunksize;
-	// Chunks
-	core::map<v2s16, MapChunk*> m_chunks;
-#endif
+	int m_map_compression_level;
+
+	std::set<v3s16> m_chunks_in_progress;
 
 	/*
 		Metadata is re-written on disk only if this is true.
 		This is reset to false when written on disk.
 	*/
+<<<<<<< HEAD
 	bool m_map_metadata_changed;
 public:
 	Database *dbase;
 private:
+=======
+	bool m_map_metadata_changed = true;
+	MapDatabase *dbase = nullptr;
+	MapDatabase *dbase_ro = nullptr;
+
+	MetricCounterPtr m_save_time_counter;
+>>>>>>> 5.5.0
 };
 
 #if !ENABLE_THREADS
@@ -555,16 +615,13 @@ class MMVManip : public VoxelManipulator
 {
 public:
 	MMVManip(Map *map);
-	virtual ~MMVManip();
+	virtual ~MMVManip() = default;
 
 	virtual void clear()
 	{
 		VoxelManipulator::clear();
 		m_loaded_blocks.clear();
 	}
-
-	void setMap(Map *map)
-	{m_map = map;}
 
 	void initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		bool load_if_inexistent = true);
@@ -573,11 +630,14 @@ public:
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
 		bool overwrite_generated = true);
 
-	bool m_is_dirty;
+	bool m_is_dirty = false;
 
 protected:
+<<<<<<< HEAD
 	bool m_create_area;
 public:
+=======
+>>>>>>> 5.5.0
 	Map *m_map;
 protected:
 	/*
@@ -586,5 +646,3 @@ protected:
 	*/
 	std::map<v3s16, u8> m_loaded_blocks;
 };
-
-#endif

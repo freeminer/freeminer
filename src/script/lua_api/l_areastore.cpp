@@ -74,7 +74,7 @@ static inline void push_areas(lua_State *L, const std::vector<Area *> &areas,
 static int deserialization_helper(lua_State *L, AreaStore *as,
 		std::istream &is)
 {
-	try {	
+	try {
 		as->deserialize(is);
 	} catch (const SerializationError &e) {
 		lua_pushboolean(L, false);
@@ -156,7 +156,7 @@ int LuaAreaStore::l_get_areas_in_area(lua_State *L)
 	bool include_data = false;
 	bool accept_overlap = false;
 	if (lua_isboolean(L, 4)) {
-		accept_overlap = lua_toboolean(L, 4);
+		accept_overlap = readParam<bool>(L, 4);
 		get_data_and_border_flags(L, 5, &include_borders, &include_data);
 	}
 	std::vector<Area *> res;
@@ -185,6 +185,7 @@ int LuaAreaStore::l_insert_area(lua_State *L)
 	if (lua_isnumber(L, 5))
 		a.id = lua_tonumber(L, 5);
 
+	// Insert & assign a new ID if necessary
 	if (!ast->insertArea(&a))
 		return 0;
 
@@ -300,20 +301,19 @@ int LuaAreaStore::l_from_file(lua_State *L)
 	return deserialization_helper(L, o->as, is);
 }
 
-LuaAreaStore::LuaAreaStore()
+LuaAreaStore::LuaAreaStore() : as(AreaStore::getOptimalImplementation())
 {
-	this->as = AreaStore::getOptimalImplementation();
 }
 
 LuaAreaStore::LuaAreaStore(const std::string &type)
 {
 #if USE_SPATIAL
 	if (type == "LibSpatial") {
-		this->as = new SpatialAreaStore();
+		as = new SpatialAreaStore();
 	} else
 #endif
 	{
-		this->as = new VectorAreaStore();
+		as = new VectorAreaStore();
 	}
 }
 
@@ -329,7 +329,7 @@ int LuaAreaStore::create_object(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 
 	LuaAreaStore *o = (lua_isstring(L, 1)) ?
-		new LuaAreaStore(lua_tostring(L, 1)) :
+		new LuaAreaStore(readParam<std::string>(L, 1)) :
 		new LuaAreaStore();
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
@@ -372,7 +372,7 @@ void LuaAreaStore::Register(lua_State *L)
 
 	lua_pop(L, 1);  // drop metatable
 
-	luaL_openlib(L, 0, methods, 0);  // fill methodtable
+	luaL_register(L, nullptr, methods);  // fill methodtable
 	lua_pop(L, 1);  // drop methodtable
 
 	// Can be created from Lua (AreaStore())

@@ -22,13 +22,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "timetaker.h"
 
-#include "../gettime.h"
-#include "../log.h"
+#include "porting.h"
+#include "log.h"
 #include <ostream>
 
+<<<<<<< HEAD
 unsigned int g_time_taker_enabled = 0;
 
 TimeTaker::TimeTaker(const std::string &name, u32 *result, TimePrecision prec)
+=======
+TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
+>>>>>>> 5.5.0
 {
 	if (!g_time_taker_enabled) {
 		m_running = false;
@@ -36,24 +40,25 @@ TimeTaker::TimeTaker(const std::string &name, u32 *result, TimePrecision prec)
 	}
 	m_name = name;
 	m_result = result;
-	m_running = true;
 	m_precision = prec;
-	m_time1 = getTime(prec);
+	m_time1 = porting::getTime(prec);
 }
 
-u32 TimeTaker::stop(bool quiet)
+u64 TimeTaker::stop(bool quiet)
 {
-	if(m_running)
-	{
-		u32 time2 = getTime(m_precision);
-		u32 dtime = time2 - m_time1;
-		if(m_result != NULL)
-		{
+	if (m_running) {
+		u64 dtime = porting::getTime(m_precision) - m_time1;
+		if (m_result != nullptr) {
 			(*m_result) += dtime;
+<<<<<<< HEAD
 		}
 		else
 		{
 			if (!quiet && dtime >= g_time_taker_enabled) {
+=======
+		} else {
+			if (!quiet) {
+>>>>>>> 5.5.0
 				static const char* const units[] = {
 					"s"  /* PRECISION_SECONDS */,
 					"ms" /* PRECISION_MILLI */,
@@ -71,10 +76,8 @@ u32 TimeTaker::stop(bool quiet)
 	return 0;
 }
 
-u32 TimeTaker::getTimerTime()
+u64 TimeTaker::getTimerTime()
 {
-	u32 time2 = getTime(m_precision);
-	u32 dtime = time2 - m_time1;
-	return dtime;
+	return porting::getTime(m_precision) - m_time1;
 }
 

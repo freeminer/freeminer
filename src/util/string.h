@@ -20,12 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_STRING_HEADER
-#define UTIL_STRING_HEADER
+#pragma once
 
 #include "irrlichttypes_bloated.h"
-#include "cpp11_container.h"
-#include <stdlib.h>
+#include "irrString.h"
+#include <cstdlib>
 #include <string>
 #include <cstring>
 #include <vector>
@@ -34,6 +33,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "SColor.h"
 #include <iomanip>
 #include <cctype>
+#include <unordered_map>
+
+class Translations;
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -59,25 +61,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	(((unsigned char)(x) < 0xe0) ? 2 :     \
 	(((unsigned char)(x) < 0xf0) ? 3 : 4))
 
-typedef UNORDERED_MAP<std::string, std::string> StringMap;
+typedef std::unordered_map<std::string, std::string> StringMap;
 
 struct FlagDesc {
 	const char *name;
 	u32 flag;
 };
 
-// try not to convert between wide/utf8 encodings; this can result in data loss
-// try to only convert between them when you need to input/output stuff via Irrlicht
+// Try to avoid converting between wide and UTF-8 unless you need to
+// input/output stuff via Irrlicht
 std::wstring utf8_to_wide(const std::string &input);
 std::string wide_to_utf8(const std::wstring &input);
 
-wchar_t *utf8_to_wide_c(const char *str);
-
-// NEVER use those two functions unless you have a VERY GOOD reason to
-// they just convert between wide and multibyte encoding
-// multibyte encoding depends on current locale, this is no good, especially on Windows
-
 // You must free the returned string!
+<<<<<<< HEAD
 // The returned string is allocated using new
 wchar_t *narrow_to_wide_c(const char *str);
 
@@ -92,6 +89,10 @@ std::string wide_to_narrow_real(const std::wstring& wcs);
 // TODO: must be named utf8_to_wide and wide_to_utf8
 std::wstring narrow_to_wide(const std::string &mbs);
 std::string wide_to_narrow(const std::wstring &wcs);
+=======
+// The returned string is allocated using new[]
+wchar_t *utf8_to_wide_c(const char *str);
+>>>>>>> 5.5.0
 
 std::string urlencode(const std::string &str);
 std::string urldecode(const std::string &str);
@@ -100,7 +101,12 @@ std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
+<<<<<<< HEAD
 bool parseColorString(const std::string &value, video::SColor &color, bool quiet = true);
+=======
+bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
+		unsigned char default_alpha = 0xff);
+>>>>>>> 5.5.0
 
 
 /**
@@ -218,6 +224,56 @@ inline bool str_starts_with(const std::basic_string<T> &str,
 			case_insensitive);
 }
 
+
+/**
+ * Check whether \p str ends with the string suffix. If \p case_insensitive
+ * is true then the check is case insensitve (default is false; i.e. case is
+ * significant).
+ *
+ * @param str
+ * @param suffix
+ * @param case_insensitive
+ * @return true if the str begins with suffix
+ */
+template <typename T>
+inline bool str_ends_with(const std::basic_string<T> &str,
+		const std::basic_string<T> &suffix,
+		bool case_insensitive = false)
+{
+	if (str.size() < suffix.size())
+		return false;
+
+	size_t start = str.size() - suffix.size();
+	if (!case_insensitive)
+		return str.compare(start, suffix.size(), suffix) == 0;
+
+	for (size_t i = 0; i < suffix.size(); ++i)
+		if (tolower(str[start + i]) != tolower(suffix[i]))
+			return false;
+	return true;
+}
+
+
+/**
+ * Check whether \p str ends with the string suffix. If \p case_insensitive
+ * is true then the check is case insensitve (default is false; i.e. case is
+ * significant).
+ *
+ * @param str
+ * @param suffix
+ * @param case_insensitive
+ * @return true if the str begins with suffix
+ */
+template <typename T>
+inline bool str_ends_with(const std::basic_string<T> &str,
+		const T *suffix,
+		bool case_insensitive = false)
+{
+	return str_ends_with(str, std::basic_string<T>(suffix),
+			case_insensitive);
+}
+
+
 /**
  * Splits a string into its component parts separated by the character
  * \p delimiter.
@@ -250,8 +306,8 @@ inline std::string lowercase(const std::string &str)
 
 	s2.reserve(str.size());
 
-	for (size_t i = 0; i < str.size(); i++)
-		s2 += tolower(str[i]);
+	for (char i : str)
+		s2 += tolower(i);
 
 	return s2;
 }
@@ -314,11 +370,6 @@ inline s32 mystoi(const std::string &str, s32 min, s32 max)
 	return i;
 }
 
-
-// MSVC2010 includes it's own versions of these
-//#if !defined(_MSC_VER) || _MSC_VER < 1600
-
-
 /**
  * Returns a 32-bit value reprensented by the string \p str (decimal).
  * @see atoi(3) for further limitations
@@ -328,6 +379,7 @@ inline s32 mystoi(const std::string &str)
 	return atoi(str.c_str());
 }
 
+<<<<<<< HEAD
 
 /**
  * Returns s 32-bit value represented by the wide string \p str (decimal).
@@ -339,6 +391,8 @@ inline s32 mystoi(const std::wstring &str)
 }
 
 
+=======
+>>>>>>> 5.5.0
 /**
  * Returns a float reprensented by the string \p str (decimal).
  * @see atof(3)
@@ -347,8 +401,6 @@ inline float mystof(const std::string &str)
 {
 	return atof(str.c_str());
 }
-
-//#endif
 
 #define stoi mystoi
 #define stof mystof
@@ -434,6 +486,18 @@ inline void str_replace(std::string &str, const std::string &pattern,
 		str.replace(start, pattern.size(), replacement);
 		start = str.find(pattern, start + replacement.size());
 	}
+}
+
+/**
+ * Escapes characters [ ] \ , ; that can not be used in formspecs
+ */
+inline void str_formspec_escape(std::string &str)
+{
+	str_replace(str, "\\", "\\\\");
+	str_replace(str, "]", "\\]");
+	str_replace(str, "[", "\\[");
+	str_replace(str, ";", "\\;");
+	str_replace(str, ",", "\\,");
 }
 
 /**
@@ -601,6 +665,14 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 	return tokens;
 }
 
+std::wstring translate_string(const std::wstring &s, Translations *translations);
+
+std::wstring translate_string(const std::wstring &s);
+
+inline std::wstring unescape_translate(const std::wstring &s) {
+	return unescape_enriched(translate_string(s));
+}
+
 /**
  * Checks that all characters in \p to_check are a decimal digits.
  *
@@ -610,8 +682,8 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
  */
 inline bool is_number(const std::string &to_check)
 {
-	for (size_t i = 0; i < to_check.size(); i++)
-		if (!std::isdigit(to_check[i]))
+	for (char i : to_check)
+		if (!std::isdigit(i))
 			return false;
 
 	return !to_check.empty();
@@ -627,8 +699,111 @@ inline const char *bool_to_cstr(bool val)
 	return val ? "true" : "false";
 }
 
+<<<<<<< HEAD
 std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color);
 std::wstring sanitizeChatString(const std::wstring &s);
 bool char_icompare(char c1, char c2);
 bool string_icompare(const std::string& a, const std::string& b);
 #endif
+=======
+/**
+ * Converts a duration in seconds to a pretty-printed duration in
+ * days, hours, minutes and seconds.
+ *
+ * @param sec duration in seconds
+ * @return pretty-printed duration
+ */
+inline const std::string duration_to_string(int sec)
+{
+	std::ostringstream ss;
+	const char *neg = "";
+	if (sec < 0) {
+		sec = -sec;
+		neg = "-";
+	}
+	int total_sec = sec;
+	int min = sec / 60;
+	sec %= 60;
+	int hour = min / 60;
+	min %= 60;
+	int day = hour / 24;
+	hour %= 24;
+
+	if (day > 0) {
+		ss << neg << day << "d";
+		if (hour > 0 || min > 0 || sec > 0)
+			ss << " ";
+	}
+
+	if (hour > 0) {
+		ss << neg << hour << "h";
+		if (min > 0 || sec > 0)
+			ss << " ";
+	}
+
+	if (min > 0) {
+		ss << neg << min << "min";
+		if (sec > 0)
+			ss << " ";
+	}
+
+	if (sec > 0 || total_sec == 0) {
+		ss << neg << sec << "s";
+	}
+
+	return ss.str();
+}
+
+/**
+ * Joins a vector of strings by the string \p delimiter.
+ *
+ * @return A std::string
+ */
+inline std::string str_join(const std::vector<std::string> &list,
+		const std::string &delimiter)
+{
+	std::ostringstream oss;
+	bool first = true;
+	for (const auto &part : list) {
+		if (!first)
+			oss << delimiter;
+		oss << part;
+		first = false;
+	}
+	return oss.str();
+}
+
+/**
+ * Create a UTF8 std::string from a irr::core::stringw.
+ */
+inline std::string stringw_to_utf8(const irr::core::stringw &input)
+{
+	std::wstring str(input.c_str());
+	return wide_to_utf8(str);
+}
+
+ /**
+  * Create a irr::core:stringw from a UTF8 std::string.
+  */
+inline irr::core::stringw utf8_to_stringw(const std::string &input)
+{
+	std::wstring str = utf8_to_wide(input);
+	return irr::core::stringw(str.c_str());
+}
+
+/**
+ * Sanitize the name of a new directory. This consists of two stages:
+ * 1. Check for 'reserved filenames' that can't be used on some filesystems
+ *    and prefix them
+ * 2. Remove 'unsafe' characters from the name by replacing them with '_'
+ */
+std::string sanitizeDirName(const std::string &str, const std::string &optional_prefix);
+
+/**
+ * Prints a sanitized version of a string without control characters.
+ * '\t' and '\n' are allowed, as are UTF-8 control characters (e.g. RTL).
+ * ASCII control characters are replaced with their hex encoding in angle
+ * brackets (e.g. "a\x1eb" -> "a<1e>b").
+ */
+void safe_print_string(std::ostream &os, const std::string &str);
+>>>>>>> 5.5.0

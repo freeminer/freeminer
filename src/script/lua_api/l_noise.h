@@ -20,33 +20,37 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_NOISE_H_
-#define L_NOISE_H_
+#pragma once
 
-#include "lua_api/l_base.h"
 #include "irr_v3d.h"
+#include "lua_api/l_base.h"
 #include "noise.h"
 
 /*
 	LuaPerlinNoise
 */
-class LuaPerlinNoise : public ModApiBase {
+class LuaPerlinNoise : public ModApiBase
+{
 private:
 	NoiseParams np;
 	static const char className[];
+<<<<<<< HEAD
 	static const luaL_Reg methods[];
+=======
+	static luaL_Reg methods[];
+>>>>>>> 5.5.0
 
 	// Exported functions
 
 	// garbage collector
 	static int gc_object(lua_State *L);
 
-	static int l_get2d(lua_State *L);
-	static int l_get3d(lua_State *L);
+	static int l_get_2d(lua_State *L);
+	static int l_get_3d(lua_State *L);
 
 public:
 	LuaPerlinNoise(NoiseParams *params);
-	~LuaPerlinNoise();
+	~LuaPerlinNoise() = default;
 
 	// LuaPerlinNoise(seed, octaves, persistence, scale)
 	// Creates an LuaPerlinNoise and leaves it on top of stack
@@ -60,26 +64,31 @@ public:
 /*
 	LuaPerlinNoiseMap
 */
-class LuaPerlinNoiseMap : public ModApiBase {
+class LuaPerlinNoiseMap : public ModApiBase
+{
 	NoiseParams np;
 	Noise *noise;
 	bool m_is3d;
 	static const char className[];
+<<<<<<< HEAD
 	static const luaL_Reg methods[];
+=======
+	static luaL_Reg methods[];
+>>>>>>> 5.5.0
 
 	// Exported functions
 
 	// garbage collector
 	static int gc_object(lua_State *L);
 
-	static int l_get2dMap(lua_State *L);
-	static int l_get2dMap_flat(lua_State *L);
-	static int l_get3dMap(lua_State *L);
-	static int l_get3dMap_flat(lua_State *L);
+	static int l_get_2d_map(lua_State *L);
+	static int l_get_2d_map_flat(lua_State *L);
+	static int l_get_3d_map(lua_State *L);
+	static int l_get_3d_map_flat(lua_State *L);
 
-	static int l_calc2dMap(lua_State *L);
-	static int l_calc3dMap(lua_State *L);
-	static int l_getMapSlice(lua_State *L);
+	static int l_calc_2d_map(lua_State *L);
+	static int l_calc_3d_map(lua_State *L);
+	static int l_get_map_slice(lua_State *L);
 
 public:
 	LuaPerlinNoiseMap(NoiseParams *np, s32 seed, v3s16 size);
@@ -98,7 +107,8 @@ public:
 /*
 	LuaPseudoRandom
 */
-class LuaPseudoRandom : public ModApiBase {
+class LuaPseudoRandom : public ModApiBase
+{
 private:
 	PseudoRandom m_pseudo;
 
@@ -114,8 +124,7 @@ private:
 	static int l_next(lua_State *L);
 
 public:
-	LuaPseudoRandom(s32 seed) :
-		m_pseudo(seed) {}
+	LuaPseudoRandom(s32 seed) : m_pseudo(seed) {}
 
 	// LuaPseudoRandom(seed)
 	// Creates an LuaPseudoRandom and leaves it on top of stack
@@ -129,7 +138,8 @@ public:
 /*
 	LuaPcgRandom
 */
-class LuaPcgRandom : public ModApiBase {
+class LuaPcgRandom : public ModApiBase
+{
 private:
 	PcgRandom m_rnd;
 
@@ -149,10 +159,8 @@ private:
 	static int l_rand_normal_dist(lua_State *L);
 
 public:
-	LuaPcgRandom(u64 seed) :
-		m_rnd(seed) {}
-	LuaPcgRandom(u64 seed, u64 seq) :
-		m_rnd(seed, seq) {}
+	LuaPcgRandom(u64 seed) : m_rnd(seed) {}
+	LuaPcgRandom(u64 seed, u64 seq) : m_rnd(seed, seq) {}
 
 	// LuaPcgRandom(seed)
 	// Creates an LuaPcgRandom and leaves it on top of stack
@@ -163,11 +171,11 @@ public:
 	static void Register(lua_State *L);
 };
 
-
 /*
 	LuaSecureRandom
 */
-class LuaSecureRandom : public ModApiBase {
+class LuaSecureRandom : public ModApiBase
+{
 private:
 	static const size_t RAND_BUF_SIZE = 2048;
 	static const char className[];
@@ -195,5 +203,3 @@ public:
 
 	static void Register(lua_State *L);
 };
-
-#endif /* L_NOISE_H_ */

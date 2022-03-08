@@ -20,25 +20,30 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "debug.h"
 #include "filesys.h"
 #include "log.h"
-#include "mapgen.h"
+#include "mapgen/mapgen.h"
 #include "settings.h"
 
 #include "map_settings_manager.h"
 
-MapSettingsManager::MapSettingsManager(
-	Settings *user_settings, const std::string &map_meta_path)
+MapSettingsManager::MapSettingsManager(const std::string &map_meta_path):
+	m_map_meta_path(map_meta_path),
+	m_hierarchy(g_settings)
 {
-	m_map_meta_path = map_meta_path;
-	m_user_settings = user_settings;
-	m_map_settings  = new Settings;
-	mapgen_params   = NULL;
-
-	assert(m_user_settings != NULL);
+	/*
+	 * We build our own hierarchy which falls back to the global one.
+	 * It looks as follows: (lowest prio first)
+	 * 0: whatever is picked up from g_settings (incl. engine defaults)
+	 * 1: defaults set by scripts (override_meta = false)
+	 * 2: settings present in map_meta.txt or overriden by scripts
+	 */
+	m_defaults = new Settings("", &m_hierarchy, 1);
+	m_map_settings = new Settings("[end_of_params]", &m_hierarchy, 2);
 }
 
 
 MapSettingsManager::~MapSettingsManager()
 {
+	delete m_defaults;
 	delete m_map_settings;
 	delete mapgen_params;
 }
@@ -47,22 +52,15 @@ MapSettingsManager::~MapSettingsManager()
 bool MapSettingsManager::getMapSetting(
 	const std::string &name, std::string *value_out)
 {
-	if (m_map_settings->getNoEx(name, *value_out))
-		return true;
-
-	// Compatibility kludge
-	if (m_user_settings == g_settings && name == "seed")
-		return m_user_settings->getNoEx("fixed_map_seed", *value_out);
-
-	return m_user_settings->getNoEx(name, *value_out);
+	return m_map_settings->getNoEx(name, *value_out);
 }
 
 
 bool MapSettingsManager::getMapSettingNoiseParams(
 	const std::string &name, NoiseParams *value_out)
 {
-	return m_map_settings->getNoiseParams(name, *value_out) ||
-		m_user_settings->getNoiseParams(name, *value_out);
+	// TODO: Rename to "getNoiseParams"
+	return m_map_settings->getNoiseParams(name, *value_out);
 }
 
 
@@ -75,7 +73,7 @@ bool MapSettingsManager::setMapSetting(
 	if (override_meta)
 		m_map_settings->set(name, value);
 	else
-		m_map_settings->setDefault(name, value);
+		m_defaults->set(name, value);
 
 	return true;
 }
@@ -87,7 +85,11 @@ bool MapSettingsManager::setMapSettingNoiseParams(
 	if (mapgen_params)
 		return false;
 
-	m_map_settings->setNoiseParams(name, *value, !override_meta);
+	if (override_meta)
+		m_map_settings->setNoiseParams(name, *value);
+	else
+		m_defaults->setNoiseParams(name, *value);
+
 	return true;
 }
 
@@ -108,8 +110,8 @@ bool MapSettingsManager::loadMapMeta()
 		return false;
 	}
 
-	if (!m_map_settings->parseConfigLines(is, "[end_of_params]")) {
-		errorstream << "loadMapMeta: [end_of_params] not found!" << std::endl;
+	if (!m_map_settings->parseConfigLines(is)) {
+		errorstream << "loadMapMeta: Format error. '[end_of_params]' missing?" << std::endl;
 		return false;
 	}
 
@@ -120,18 +122,23 @@ bool MapSettingsManager::loadMapMeta()
 bool MapSettingsManager::saveMapMeta()
 {
 	// If mapgen params haven't been created yet; abort
-	if (!mapgen_params)
+	if (!mapgen_params) {
+		infostream << "saveMapMeta: mapgen_params not present! "
+			<< "Server startup was probably interrupted." << std::endl;
 		return false;
+	}
 
+	// Paths set up by subgames.cpp, but not in unittests
 	if (!fs::CreateAllDirs(fs::RemoveLastPathComponent(m_map_meta_path))) {
 		errorstream << "saveMapMeta: could not create dirs to "
 			<< m_map_meta_path;
 		return false;
 	}
 
-	std::ostringstream oss(std::ios_base::binary);
-	Settings conf;
+	mapgen_params->MapgenParams::writeParams(m_map_settings);
+	mapgen_params->writeParams(m_map_settings);
 
+<<<<<<< HEAD
 	mapgen_params->MapgenParams::writeParams(&conf);
 	mapgen_params->writeParams(&conf);
 
@@ -149,6 +156,9 @@ bool MapSettingsManager::saveMapMeta()
 	oss << "[end_of_params]\n";
 
 	if (!fs::safeWriteToFile(map_meta_path, oss.str())) {
+=======
+	if (!m_map_settings->updateConfigFile(m_map_meta_path.c_str())) {
+>>>>>>> 5.5.0
 		errorstream << "saveMapMeta: could not write "
 			<< map_meta_path << std::endl;
 		return false;
@@ -163,23 +173,14 @@ MapgenParams *MapSettingsManager::makeMapgenParams()
 	if (mapgen_params)
 		return mapgen_params;
 
-	assert(m_user_settings != NULL);
-	assert(m_map_settings != NULL);
-
-	// At this point, we have (in order of precedence):
-	// 1). m_mapgen_settings->m_settings containing map_meta.txt settings or
-	//     explicit overrides from scripts
-	// 2). m_mapgen_settings->m_defaults containing script-set mgparams without
-	//     overrides
-	// 3). g_settings->m_settings containing all user-specified config file
-	//     settings
-	// 4). g_settings->m_defaults containing any low-priority settings from
-	//     scripts, e.g. mods using Lua as an enhanced config file)
+	assert(m_map_settings);
+	assert(m_defaults);
 
 	// Now, get the mapgen type so we can create the appropriate MapgenParams
 	std::string mg_name;
 	MapgenType mgtype = getMapSetting("mg_name", &mg_name) ?
 		Mapgen::getMapgenType(mg_name) : MAPGEN_DEFAULT;
+
 	if (mgtype == MAPGEN_INVALID) {
 		errorstream << "EmergeManager: mapgen '" << mg_name <<
 			"' not valid; falling back to " <<
@@ -189,15 +190,13 @@ MapgenParams *MapSettingsManager::makeMapgenParams()
 
 	// Create our MapgenParams
 	MapgenParams *params = Mapgen::createMapgenParams(mgtype);
-	if (params == NULL)
-		return NULL;
+	if (!params)
+		return nullptr;
 
 	params->mgtype = mgtype;
 
 	// Load the rest of the mapgen params from our active settings
-	params->MapgenParams::readParams(m_user_settings);
 	params->MapgenParams::readParams(m_map_settings);
-	params->readParams(m_user_settings);
 	params->readParams(m_map_settings);
 
 	// Hold onto our params

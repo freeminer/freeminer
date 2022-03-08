@@ -20,24 +20,19 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IRRLICHTTYPES_HEADER
-#define IRRLICHTTYPES_HEADER
+#pragma once
 
-/* Ensure that <stdint.h> is included before <irrTypes.h>, unless building on
- * MSVC, to address an irrlicht issue: https://sourceforge.net/p/irrlicht/bugs/433/
- *
- * TODO: Decide whether or not we support non-compliant C++ compilers like old
- *       versions of MSCV.  If we do not then <stdint.h> can always be included
- *       regardless of the compiler.
+/*
+ * IrrlichtMt already includes stdint.h in irrTypes.h. This works everywhere
+ * we need it to (including recent MSVC), so should be fine here too.
  */
-#ifndef _MSC_VER
-#	include <stdint.h>
-#endif
+#include <cstdint>
 
 #include <irrTypes.h>
 
 using namespace irr;
 
+<<<<<<< HEAD
 #define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
 
 typedef s16 POS;
@@ -54,7 +49,24 @@ typedef s16 POS;
 	typedef int64_t s64;
 	typedef uint64_t u64;
 #endif
+=======
+namespace irr {
+
+#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
+namespace core {
+	template <typename T>
+	inline T roundingError();
+
+	template <>
+	inline s16 roundingError()
+	{
+		return 0;
+	}
+}
+>>>>>>> 5.5.0
 #endif
+
+}
 
 #define S8_MIN  (-0x7F - 1)
 #define S16_MIN (-0x7FFF - 1)
@@ -70,5 +82,3 @@ typedef s16 POS;
 #define U16_MAX 0xFFFF
 #define U32_MAX 0xFFFFFFFF
 #define U64_MAX 0xFFFFFFFFFFFFFFFF
-
-#endif

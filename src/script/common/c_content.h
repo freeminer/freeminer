@@ -28,8 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /******************************************************************************/
 /******************************************************************************/
 
-#ifndef C_CONTENT_H_
-#define C_CONTENT_H_
+#pragma once
 
 extern "C" {
 #include <lua.h>
@@ -41,11 +40,16 @@ extern "C" {
 #include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include "itemgroup.h"
+#include "itemdef.h"
+#include "c_types.h"
+// We do a explicit path include because by default c_content.h include src/client/hud.h
+// prior to the src/hud.h, which is not good on server only build
+#include "../../hud.h"
 
 namespace Json { class Value; }
 
 struct MapNode;
-class INodeDefManager;
+class NodeDefManager;
 struct PointedThing;
 struct ItemStack;
 struct ItemDefinition;
@@ -63,11 +67,27 @@ struct HitParams;
 struct EnumString;
 struct NoiseParams;
 class Schematic;
+class ServerActiveObject;
+struct collisionMoveResult;
 
+extern struct EnumString es_TileAnimationType[];
 
-ContentFeatures    read_content_features     (lua_State *L, int index);
+void               read_content_features     (lua_State *L, ContentFeatures &f,
+                                              int index);
+void               push_content_features     (lua_State *L,
+                                              const ContentFeatures &c);
+
+void               push_nodebox              (lua_State *L,
+                                              const NodeBox &box);
+void               push_box                  (lua_State *L,
+                                              const std::vector<aabb3f> &box);
+
+void               push_palette              (lua_State *L,
+                                              const std::vector<video::SColor> *palette);
+
 TileDef            read_tiledef              (lua_State *L, int index,
                                               u8 drawtype);
+
 void               read_soundspec            (lua_State *L, int index,
                                               SimpleSoundSpec &spec);
 NodeBox            read_nodebox              (lua_State *L, int index);
@@ -80,17 +100,25 @@ void               push_dig_params           (lua_State *L,
 void               push_hit_params           (lua_State *L,
                                               const HitParams &params);
 
-ItemStack          read_item                 (lua_State *L, int index, Server *srv);
+ItemStack          read_item                 (lua_State *L, int index, IItemDefManager *idef);
 
+struct TileAnimationParams read_animation_definition(lua_State *L, int index);
 
 ToolCapabilities   read_tool_capabilities    (lua_State *L, int table);
 void               push_tool_capabilities    (lua_State *L,
                                               const ToolCapabilities &prop);
 
-ItemDefinition     read_item_definition      (lua_State *L, int index,
-                                              ItemDefinition default_def);
+void read_item_definition (lua_State *L, int index, const ItemDefinition &default_def,
+		ItemDefinition &def);
+void               push_item_definition      (lua_State *L,
+                                              const ItemDefinition &i);
+void               push_item_definition_full (lua_State *L,
+                                              const ItemDefinition &i);
+
 void               read_object_properties    (lua_State *L, int index,
-                                              ObjectProperties *prop);
+                                              ServerActiveObject *sao,
+                                              ObjectProperties *prop,
+                                              IItemDefManager *idef);
 void               push_object_properties    (lua_State *L,
                                               ObjectProperties *prop);
 
@@ -102,11 +130,10 @@ void               read_inventory_list       (lua_State *L, int tableindex,
                                               Server *srv, int forcesize=-1);
 
 MapNode            readnode                  (lua_State *L, int index,
-                                              INodeDefManager *ndef);
+                                              const NodeDefManager *ndef);
 void               pushnode                  (lua_State *L, const MapNode &n,
-                                              INodeDefManager *ndef);
+                                              const NodeDefManager *ndef);
 
-NodeBox            read_nodebox              (lua_State *L, int index);
 
 void               read_groups               (lua_State *L, int index,
                                               ItemGroupList &result);
@@ -142,9 +169,8 @@ std::vector<ItemStack> read_items            (lua_State *L,
                                               int index,
                                               Server* srv);
 
-void               read_soundspec            (lua_State *L,
-                                              int index,
-                                              SimpleSoundSpec &spec);
+void               push_soundspec            (lua_State *L,
+                                              const SimpleSoundSpec &spec);
 
 bool               string_to_enum            (const EnumString *spec,
                                               int &result,
@@ -162,6 +188,20 @@ bool               push_json_value           (lua_State *L,
 void               read_json_value           (lua_State *L, Json::Value &root,
                                               int index, u8 recursion = 0);
 
-extern struct EnumString es_TileAnimationType[];
+/*!
+ * Pushes a Lua `pointed_thing` to the given Lua stack.
+ * \param csm If true, a client side pointed thing is pushed
+ * \param hitpoint If true, the exact pointing location is also pushed
+ */
+void push_pointed_thing(lua_State *L, const PointedThing &pointed, bool csm =
+	false, bool hitpoint = false);
 
-#endif /* C_CONTENT_H_ */
+void push_objectRef            (lua_State *L, const u16 id);
+
+void read_hud_element          (lua_State *L, HudElement *elem);
+
+void push_hud_element          (lua_State *L, HudElement *elem);
+
+bool read_hud_change           (lua_State *L, HudElementStat &stat, HudElement *elem, void **value);
+
+void push_collision_move_result(lua_State *L, const collisionMoveResult &res);

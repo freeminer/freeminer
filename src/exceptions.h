@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef EXCEPTIONS_HEADER
-#define EXCEPTIONS_HEADER
+#pragma once
 
 #include <exception>
 #include <string>
@@ -30,25 +29,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class BaseException : public std::exception
 {
 public:
+<<<<<<< HEAD
 BaseException(const std::string &s) throw() : m_s(s) 
 	{}
 	~BaseException() throw() {}
+=======
+	BaseException(const std::string &s) throw(): m_s(s) {}
+	~BaseException() throw() = default;
+
+>>>>>>> 5.5.0
 	virtual const char * what() const throw()
 	{
 		return m_s.c_str();
 	}
 protected:
 	std::string m_s;
-};
-
-class AsyncQueuedException : public BaseException {
-public:
-	AsyncQueuedException(const std::string &s): BaseException(s) {}
-};
-
-class NotImplementedException : public BaseException {
-public:
-	NotImplementedException(const std::string &s): BaseException(s) {}
 };
 
 class AlreadyExistsException : public BaseException {
@@ -81,34 +76,9 @@ public:
 	PacketError(const std::string &s): BaseException(s) {}
 };
 
-class LoadError : public BaseException {
-public:
-	LoadError(const std::string &s): BaseException(s) {}
-};
-
-class ContainerFullException : public BaseException {
-public:
-	ContainerFullException(const std::string &s): BaseException(s) {}
-};
-
 class SettingNotFoundException : public BaseException {
 public:
 	SettingNotFoundException(const std::string &s): BaseException(s) {}
-};
-
-class InvalidFilenameException : public BaseException {
-public:
-	InvalidFilenameException(const std::string &s): BaseException(s) {}
-};
-
-class ProcessingLimitException : public BaseException {
-public:
-	ProcessingLimitException(const std::string &s): BaseException(s) {}
-};
-
-class CommandLineError : public BaseException {
-public:
-	CommandLineError(const std::string &s): BaseException(s) {}
 };
 
 class ItemNotFoundException : public BaseException {
@@ -130,12 +100,12 @@ public:
 
 class ClientStateError : public BaseException {
 public:
-	ClientStateError(std::string s): BaseException(s) {}
+	ClientStateError(const std::string &s): BaseException(s) {}
 };
 
 class PrngException : public BaseException {
 public:
-	PrngException(std::string s): BaseException(s) {}
+	PrngException(const std::string &s): BaseException(s) {}
 };
 
 class ModError : public BaseException {
@@ -170,6 +140,7 @@ public:
 		BaseException(s)
 	{}
 };
+<<<<<<< HEAD
 
 class TargetInexistentException : public std::exception
 {
@@ -188,3 +159,5 @@ class NullPointerException : public std::exception
 };
 
 #endif
+=======
+>>>>>>> 5.5.0

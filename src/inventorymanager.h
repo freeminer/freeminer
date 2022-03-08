@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef INVENTORYMANAGER_HEADER
-#define INVENTORYMANAGER_HEADER
+#pragma once
 
 #include "inventory.h"
 #include <iostream>
@@ -58,7 +57,7 @@ struct InventoryLocation
 		type = PLAYER;
 		name = name_;
 	}
-	void setNodeMeta(v3s16 p_)
+	void setNodeMeta(const v3s16 &p_)
 	{
 		type = NODEMETA;
 		p = p_;
@@ -101,7 +100,7 @@ struct InventoryLocation
 	std::string dump() const;
 	void serialize(std::ostream &os) const;
 	void deSerialize(std::istream &is);
-	void deSerialize(std::string s);
+	void deSerialize(const std::string &s);
 };
 
 struct InventoryAction;
@@ -109,65 +108,63 @@ struct InventoryAction;
 class InventoryManager
 {
 public:
-	InventoryManager(){}
-	virtual ~InventoryManager(){}
+	InventoryManager() = default;
+	virtual ~InventoryManager() = default;
 
 	// Get an inventory (server and client)
 	virtual Inventory* getInventory(const InventoryLocation &loc){return NULL;}
     // Set modified (will be saved and sent over network; only on server)
-	virtual void setInventoryModified(const InventoryLocation &loc, bool playerSend = true){}
+	virtual void setInventoryModified(const InventoryLocation &loc) {}
     // Send inventory action to server (only on client)
 	virtual void inventoryAction(InventoryAction *a){}
 };
 
-#define IACTION_MOVE 0
-#define IACTION_DROP 1
-#define IACTION_CRAFT 2
+enum class IAction : u16 {
+	Move,
+	Drop,
+	Craft
+};
 
 struct InventoryAction
 {
-	static InventoryAction * deSerialize(std::istream &is);
+	static InventoryAction *deSerialize(std::istream &is);
 
-	virtual u16 getType() const = 0;
+	virtual IAction getType() const = 0;
 	virtual void serialize(std::ostream &os) const = 0;
 	virtual void apply(InventoryManager *mgr, ServerActiveObject *player,
 			IGameDef *gamedef) = 0;
 	virtual void clientApply(InventoryManager *mgr, IGameDef *gamedef) = 0;
-	virtual ~InventoryAction() {};
+	virtual ~InventoryAction() = default;;
 };
 
-struct IMoveAction : public InventoryAction
+struct MoveAction
 {
-	// count=0 means "everything"
-	u16 count;
 	InventoryLocation from_inv;
 	std::string from_list;
-	s16 from_i;
+	s16 from_i = -1;
 	InventoryLocation to_inv;
 	std::string to_list;
-	s16 to_i;
-	bool move_somewhere;
+	s16 to_i = -1;
+};
+
+struct IMoveAction : public InventoryAction, public MoveAction
+{
+	// count=0 means "everything"
+	u16 count = 0;
+	bool move_somewhere = false;
 
 	// treat these as private
 	// related to movement to somewhere
-	bool caused_by_move_somewhere;
-	u32 move_count;
+	bool caused_by_move_somewhere = false;
+	u32 move_count = 0;
 
-	IMoveAction()
-	{
-		count = 0;
-		from_i = -1;
-		to_i = -1;
-		move_somewhere = false;
-		caused_by_move_somewhere = false;
-		move_count = 0;
-	}
+	IMoveAction() = default;
 
 	IMoveAction(std::istream &is, bool somewhere);
 
-	u16 getType() const
+	IAction getType() const
 	{
-		return IACTION_MOVE;
+		return IAction::Move;
 	}
 
 	void serialize(std::ostream &os) const
@@ -189,27 +186,32 @@ struct IMoveAction : public InventoryAction
 	void apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef);
 
 	void clientApply(InventoryManager *mgr, IGameDef *gamedef);
+
+	void swapDirections();
+
+	void onPutAndOnTake(const ItemStack &src_item, ServerActiveObject *player) const;
+
+	void onMove(int count, ServerActiveObject *player) const;
+
+	int allowPut(const ItemStack &dst_item, ServerActiveObject *player) const;
+
+	int allowTake(const ItemStack &src_item, ServerActiveObject *player) const;
+
+	int allowMove(int try_take_count, ServerActiveObject *player) const;
 };
 
-struct IDropAction : public InventoryAction
+struct IDropAction : public InventoryAction, public MoveAction
 {
 	// count=0 means "everything"
-	u16 count;
-	InventoryLocation from_inv;
-	std::string from_list;
-	s16 from_i;
+	u16 count = 0;
 
-	IDropAction()
-	{
-		count = 0;
-		from_i = -1;
-	}
+	IDropAction() = default;
 
 	IDropAction(std::istream &is);
 
-	u16 getType() const
+	IAction getType() const
 	{
-		return IACTION_DROP;
+		return IAction::Drop;
 	}
 
 	void serialize(std::ostream &os) const
@@ -229,19 +231,16 @@ struct IDropAction : public InventoryAction
 struct ICraftAction : public InventoryAction
 {
 	// count=0 means "everything"
-	u16 count;
+	u16 count = 0;
 	InventoryLocation craft_inv;
 
-	ICraftAction()
-	{
-		count = 0;
-	}
+	ICraftAction() = default;
 
 	ICraftAction(std::istream &is);
 
-	u16 getType() const
+	IAction getType() const
 	{
-		return IACTION_CRAFT;
+		return IAction::Craft;
 	}
 
 	void serialize(std::ostream &os) const
@@ -257,9 +256,6 @@ struct ICraftAction : public InventoryAction
 };
 
 // Crafting helper
-bool getCraftingResult(Inventory *inv, ItemStack& result,
+bool getCraftingResult(Inventory *inv, ItemStack &result,
 		std::vector<ItemStack> &output_replacements,
 		bool decrementInput, IGameDef *gamedef);
-
-#endif
-

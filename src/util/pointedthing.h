@@ -20,11 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_POINTEDTHING_HEADER
-#define UTIL_POINTEDTHING_HEADER
+#pragma once
 
-#include "../irrlichttypes.h"
-#include "../irr_v3d.h"
+#include "irrlichttypes.h"
+#include "irr_v3d.h"
 #include <iostream>
 #include <string>
 #include "util/msgpack_serialize.h"
@@ -36,6 +35,7 @@ enum PointedThingType
 	POINTEDTHING_OBJECT
 };
 
+<<<<<<< HEAD
 enum PointedThingSerialization {
 	POINTEDTHING_TYPE,
 	POINTEDTHING_UNDER,
@@ -43,15 +43,84 @@ enum PointedThingSerialization {
 	POINTEDTHING_OBJECT_ID
 };
 
+=======
+//! An active object or node which is selected by a ray on the map.
+>>>>>>> 5.5.0
 struct PointedThing
 {
-	PointedThingType type;
+	//! The type of the pointed object.
+	PointedThingType type = POINTEDTHING_NOTHING;
+	/*!
+	 * Only valid if type is POINTEDTHING_NODE.
+	 * The coordinates of the node which owns the
+	 * nodebox that the ray hits first.
+	 * This may differ from node_real_undersurface if
+	 * a nodebox exceeds the limits of its node.
+	 */
 	v3s16 node_undersurface;
+	/*!
+	 * Only valid if type is POINTEDTHING_NODE.
+	 * The coordinates of the last node the ray intersects
+	 * before node_undersurface. Same as node_undersurface
+	 * if the ray starts in a nodebox.
+	 */
 	v3s16 node_abovesurface;
+<<<<<<< HEAD
 	u16 object_id;
+=======
+	/*!
+	 * Only valid if type is POINTEDTHING_NODE.
+	 * The coordinates of the node which contains the
+	 * point of the collision and the nodebox of the node.
+	 */
+	v3s16 node_real_undersurface;
+	/*!
+	 * Only valid if type is POINTEDTHING_OBJECT.
+	 * The ID of the object the ray hit.
+	 */
+	s16 object_id = -1;
+	/*!
+	 * Only valid if type isn't POINTEDTHING_NONE.
+	 * First intersection point of the ray and the nodebox in irrlicht
+	 * coordinates.
+	 */
+	v3f intersection_point;
+	/*!
+	 * Only valid if type isn't POINTEDTHING_NONE.
+	 * Normal vector of the intersection.
+	 * This is perpendicular to the face the ray hits,
+	 * points outside of the box and it's length is 1.
+	 */
+	v3s16 intersection_normal;
+	/*!
+	 * Only valid if type isn't POINTEDTHING_NONE.
+	 * Indicates which selection box is selected, if there are more of them.
+	 */
+	u16 box_id = 0;
+	/*!
+	 * Square of the distance between the pointing
+	 * ray's start point and the intersection point in irrlicht coordinates.
+	 */
+	f32 distanceSq = 0;
+>>>>>>> 5.5.0
 
-	PointedThing();
+	//! Constructor for POINTEDTHING_NOTHING
+	PointedThing() = default;
+	//! Constructor for POINTEDTHING_NODE
+	PointedThing(const v3s16 &under, const v3s16 &above,
+		const v3s16 &real_under, const v3f &point, const v3s16 &normal,
+		u16 box_id, f32 distSq);
+	//! Constructor for POINTEDTHING_OBJECT
+	PointedThing(s16 id, const v3f &point, const v3s16 &normal, f32 distSq);
 	std::string dump() const;
+<<<<<<< HEAD
+=======
+	void serialize(std::ostream &os) const;
+	void deSerialize(std::istream &is);
+	/*!
+	 * This function ignores the intersection point and normal.
+	 */
+>>>>>>> 5.5.0
 	bool operator==(const PointedThing &pt2) const;
 	bool operator!=(const PointedThing &pt2) const;
 	void serialize(std::ostream &os) const;
@@ -59,6 +128,3 @@ struct PointedThing
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };
-
-#endif
-

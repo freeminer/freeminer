@@ -18,21 +18,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "networkpacket.h"
-#include "debug.h"
-#include "exceptions.h"
+#include <sstream>
+#include "networkexceptions.h"
 #include "util/serialize.h"
+#include "networkprotocol.h"
 
+<<<<<<< HEAD
 #include "config.h"
 
 
 NetworkPacket::NetworkPacket(u16 command, u32 datasize, u16 peer_id):
 m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(peer_id)
+=======
+NetworkPacket::NetworkPacket(u16 command, u32 datasize, session_t peer_id):
+m_datasize(datasize), m_command(command), m_peer_id(peer_id)
+>>>>>>> 5.5.0
 {
 	m_data.resize(m_datasize);
 }
 
 NetworkPacket::NetworkPacket(u16 command, u32 datasize):
-m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(0)
+m_datasize(datasize), m_command(command)
 {
 	m_data.resize(m_datasize);
 }
@@ -57,7 +63,7 @@ void NetworkPacket::checkReadOffset(u32 from_offset, u32 field_size)
 	}
 }
 
-void NetworkPacket::putRawPacket(u8 *data, u32 datasize, u16 peer_id)
+void NetworkPacket::putRawPacket(const u8 *data, u32 datasize, session_t peer_id)
 {
 	// If a m_command is already set, we are rewriting on same packet
 	// This is not permitted
@@ -70,16 +76,31 @@ void NetworkPacket::putRawPacket(u8 *data, u32 datasize, u16 peer_id)
 #endif
 	m_peer_id = peer_id;
 
+	m_data.resize(m_datasize);
+
 	// split command and datas
 	m_command = readU16(&data[0]);
+<<<<<<< HEAD
 #if MINETEST_PROTO
 	m_data = std::vector<u8>(&data[2], &data[2 + m_datasize]);
 #else
 	m_data = std::vector<u8>(&data[0], &data[m_datasize]);
 #endif
+=======
+	memcpy(m_data.data(), &data[2], m_datasize);
+>>>>>>> 5.5.0
 }
 
-char* NetworkPacket::getString(u32 from_offset)
+void NetworkPacket::clear()
+{
+	m_data.clear();
+	m_datasize = 0;
+	m_read_offset = 0;
+	m_command = 0;
+	m_peer_id = 0;
+}
+
+const char* NetworkPacket::getString(u32 from_offset)
 {
 	checkReadOffset(from_offset, 0);
 
@@ -121,12 +142,13 @@ NetworkPacket& NetworkPacket::operator>>(std::string& dst)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(std::string src)
+NetworkPacket& NetworkPacket::operator<<(const std::string &src)
 {
-	u16 msgsize = src.size();
-	if (msgsize > STRING_MAX_LEN) {
+	if (src.size() > STRING_MAX_LEN) {
 		throw PacketError("String too long");
 	}
+
+	u16 msgsize = src.size();
 
 	*this << msgsize;
 
@@ -135,17 +157,20 @@ NetworkPacket& NetworkPacket::operator<<(std::string src)
 	return *this;
 }
 
-void NetworkPacket::putLongString(std::string src)
+void NetworkPacket::putLongString(const std::string &src)
 {
-	u32 msgsize = src.size();
-	if (msgsize > LONG_STRING_MAX_LEN) {
+	if (src.size() > LONG_STRING_MAX_LEN) {
 		throw PacketError("String too long");
 	}
+
+	u32 msgsize = src.size();
 
 	*this << msgsize;
 
 	putRawString(src.c_str(), msgsize);
 }
+
+static constexpr bool NEED_SURROGATE_CODING = sizeof(wchar_t) > 2;
 
 NetworkPacket& NetworkPacket::operator>>(std::wstring& dst)
 {
@@ -162,28 +187,58 @@ NetworkPacket& NetworkPacket::operator>>(std::wstring& dst)
 	checkReadOffset(m_read_offset, strLen * 2);
 
 	dst.reserve(strLen);
-	for(u16 i=0; i<strLen; i++) {
-		wchar_t c16 = readU16(&m_data[m_read_offset]);
-		dst.append(&c16, 1);
+	for (u16 i = 0; i < strLen; i++) {
+		wchar_t c = readU16(&m_data[m_read_offset]);
+		if (NEED_SURROGATE_CODING && c >= 0xD800 && c < 0xDC00 && i+1 < strLen) {
+			i++;
+			m_read_offset += sizeof(u16);
+
+			wchar_t c2 = readU16(&m_data[m_read_offset]);
+			c = 0x10000 + ( ((c & 0x3ff) << 10) | (c2 & 0x3ff) );
+		}
+		dst.push_back(c);
 		m_read_offset += sizeof(u16);
 	}
 
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(std::wstring src)
+NetworkPacket& NetworkPacket::operator<<(const std::wstring &src)
 {
-	u16 msgsize = src.size();
-	if (msgsize > WIDE_STRING_MAX_LEN) {
+	if (src.size() > WIDE_STRING_MAX_LEN) {
 		throw PacketError("String too long");
 	}
 
-	*this << msgsize;
+	if (!NEED_SURROGATE_CODING || src.size() == 0) {
+		*this << static_cast<u16>(src.size());
+		for (u16 i = 0; i < src.size(); i++)
+			*this << static_cast<u16>(src[i]);
 
-	// Write string
-	for (u16 i=0; i<msgsize; i++) {
-		*this << (u16) src[i];
+		return *this;
 	}
+
+	// write dummy value, to be overwritten later
+	const u32 len_offset = m_read_offset;
+	u32 written = 0;
+	*this << static_cast<u16>(0xfff0);
+
+	for (u16 i = 0; i < src.size(); i++) {
+		wchar_t c = src[i];
+		if (c > 0xffff) {
+			// Encode high code-points as surrogate pairs
+			u32 n = c - 0x10000;
+			*this << static_cast<u16>(0xD800 | (n >> 10))
+				<< static_cast<u16>(0xDC00 | (n & 0x3ff));
+			written += 2;
+		} else {
+			*this << static_cast<u16>(c);
+			written++;
+		}
+	}
+
+	if (written > WIDE_STRING_MAX_LEN)
+		throw PacketError("String too long");
+	writeU16(&m_data[len_offset], written);
 
 	return *this;
 }
@@ -222,13 +277,6 @@ NetworkPacket& NetworkPacket::operator>>(char& dst)
 
 	m_read_offset += 1;
 	return *this;
-}
-
-char NetworkPacket::getChar(u32 offset)
-{
-	checkReadOffset(offset, 1);
-
-	return readU8(&m_data[offset]);
 }
 
 NetworkPacket& NetworkPacket::operator<<(char src)
@@ -295,7 +343,7 @@ NetworkPacket& NetworkPacket::operator<<(float src)
 {
 	checkDataSize(4);
 
-	writeF1000(&m_data[m_read_offset], src);
+	writeF32(&m_data[m_read_offset], src);
 
 	m_read_offset += 4;
 	return *this;
@@ -380,7 +428,7 @@ NetworkPacket& NetworkPacket::operator>>(float& dst)
 {
 	checkReadOffset(m_read_offset, 4);
 
-	dst = readF1000(&m_data[m_read_offset]);
+	dst = readF32(&m_data[m_read_offset]);
 
 	m_read_offset += 4;
 	return *this;
@@ -390,7 +438,7 @@ NetworkPacket& NetworkPacket::operator>>(v2f& dst)
 {
 	checkReadOffset(m_read_offset, 8);
 
-	dst = readV2F1000(&m_data[m_read_offset]);
+	dst = readV2F32(&m_data[m_read_offset]);
 
 	m_read_offset += 8;
 	return *this;
@@ -400,7 +448,7 @@ NetworkPacket& NetworkPacket::operator>>(v3f& dst)
 {
 	checkReadOffset(m_read_offset, 12);
 
-	dst = readV3F1000(&m_data[m_read_offset]);
+	dst = readV3F32(&m_data[m_read_offset]);
 
 	m_read_offset += 12;
 	return *this;
@@ -530,11 +578,8 @@ Buffer<u8> NetworkPacket::oldForgePacket()
 {
 	Buffer<u8> sb(m_datasize + 2);
 	writeU16(&sb[0], m_command);
+	memcpy(&sb[2], m_data.data(), m_datasize);
 
-	u8* datas = getU8Ptr(0);
-
-	if (datas != NULL)
-		memcpy(&sb[2], datas, m_datasize);
 	return sb;
 }
 

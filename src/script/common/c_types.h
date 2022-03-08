@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef C_TYPES_H_
-#define C_TYPES_H_
+#pragma once
 
 extern "C" {
 #include "lua.h"
@@ -63,5 +62,3 @@ public:
 
 
 extern EnumString es_ItemType[];
-
-#endif /* C_TYPES_H_ */

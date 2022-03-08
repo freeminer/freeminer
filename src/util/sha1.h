@@ -24,28 +24,31 @@ SOFTWARE.
 
 */
 
-#ifndef SHA1_HEADER
+#pragma once
+
 typedef unsigned int Uint32;
 
 class SHA1
 {
-	private:
-		// fields
-		Uint32 H0, H1, H2, H3, H4;
-		unsigned char bytes[64];
-		int unprocessedBytes;
-		Uint32 size;
-		void process();
-	public:
-		SHA1();
-		~SHA1();
-		void addBytes( const char* data, int num );
-		unsigned char* getDigest();
-		// utility methods
-		static Uint32 lrot( Uint32 x, int bits );
-		static void storeBigEndianUint32( unsigned char* byte, Uint32 num );
-		static void hexPrinter( unsigned char* c, int l );
-};
+private:
+	// fields
+	Uint32 H0 = 0x67452301;
+	Uint32 H1 = 0xefcdab89;
+	Uint32 H2 = 0x98badcfe;
+	Uint32 H3 = 0x10325476;
+	Uint32 H4 = 0xc3d2e1f0;
+	unsigned char bytes[64];
+	int unprocessedBytes = 0;
+	Uint32 size = 0;
+	void process();
 
-#define SHA1_HEADER
-#endif
+public:
+	SHA1();
+	~SHA1();
+	void addBytes(const char *data, int num);
+	unsigned char *getDigest();
+	// utility methods
+	static Uint32 lrot(Uint32 x, int bits);
+	static void storeBigEndianUint32(unsigned char *byte, Uint32 num);
+	static void hexPrinter(unsigned char *c, int l);
+};

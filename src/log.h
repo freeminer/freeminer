@@ -20,16 +20,23 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef LOG_HEADER
-#define LOG_HEADER
+#pragma once
 
 #include <map>
 #include <queue>
 #include <string>
 #include <fstream>
+<<<<<<< HEAD
 #include "threads.h"
 #include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
+=======
+#include <thread>
+#include <mutex>
+#if !defined(_WIN32)  // POSIX
+	#include <unistd.h>
+#endif
+>>>>>>> 5.5.0
 #include "irrlichttypes.h"
 
 #include "threading/thread_local.h"
@@ -44,6 +51,12 @@ enum LogLevel {
 	LL_INFO,
 	LL_VERBOSE,
 	LL_MAX,
+};
+
+enum LogColor {
+	LOG_COLOR_NEVER,
+	LOG_COLOR_ALWAYS,
+	LOG_COLOR_AUTO,
 };
 
 typedef u8 LogLevelMask;
@@ -71,6 +84,8 @@ public:
 	static LogLevel stringToLevel(const std::string &name);
 	static const std::string getLevelLabel(LogLevel lev);
 
+	static LogColor color_mode;
+
 private:
 	void logToOutputsRaw(LogLevel, const std::string &line);
 	void logToOutputs(LogLevel, const std::string &combined,
@@ -85,10 +100,15 @@ private:
 	// written to when one thread has access currently).
 	// Works on all known architectures (x86, ARM, MIPS).
 	volatile bool m_silenced_levels[LL_MAX];
+<<<<<<< HEAD
 	std::map<threadid_t, std::string> m_thread_names;
 protected:
 	mutable Mutex m_mutex;
 private:
+=======
+	std::map<std::thread::id, std::string> m_thread_names;
+	mutable std::mutex m_mutex;
+>>>>>>> 5.5.0
 	bool m_trace_enabled;
 };
 
@@ -115,20 +135,23 @@ public:
 	StreamLogOutput(std::ostream &stream) :
 		m_stream(stream)
 	{
+#if !defined(_WIN32)
+		is_tty = isatty(fileno(stdout));
+#else
+		is_tty = false;
+#endif
 	}
 
-	void logRaw(LogLevel lev, const std::string &line)
-	{
-		m_stream << line << std::endl;
-	}
+	void logRaw(LogLevel lev, const std::string &line);
 
 private:
 	std::ostream &m_stream;
+	bool is_tty;
 };
 
 class FileLogOutput : public ICombinedLogOutput {
 public:
-	void open(const std::string &filename);
+	void setFile(const std::string &filename, s64 file_size_max);
 
 	void logRaw(LogLevel lev, const std::string &line)
 	{
@@ -141,24 +164,32 @@ private:
 
 class LogOutputBuffer : public ICombinedLogOutput {
 public:
-	LogOutputBuffer(Logger &logger, LogLevel lev) :
+	LogOutputBuffer(Logger &logger) :
 		m_logger(logger)
 	{
-		m_logger.addOutput(this, lev);
-	}
+		updateLogLevel();
+	};
 
-	~LogOutputBuffer()
+	virtual ~LogOutputBuffer()
 	{
 		m_logger.removeOutput(this);
 	}
 
-	void logRaw(LogLevel lev, const std::string &line)
+	void updateLogLevel();
+
+	void logRaw(LogLevel lev, const std::string &line);
+
+	void clear()
 	{
+<<<<<<< HEAD
 		//MutexAutoLock lock(m_mutex);
 		m_buffer.push(line);
+=======
+		m_buffer = std::queue<std::string>();
+>>>>>>> 5.5.0
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		//MutexAutoLock lock(m_mutex);
 		return m_buffer.empty();
@@ -188,13 +219,7 @@ extern std::ostream null_stream;
 
 extern std::ostream *dout_con_ptr;
 extern std::ostream *derr_con_ptr;
-extern std::ostream *dout_server_ptr;
 extern std::ostream *derr_server_ptr;
-
-#ifndef SERVER
-extern std::ostream *dout_client_ptr;
-extern std::ostream *derr_client_ptr;
-#endif
 
 extern Logger g_logger;
 
@@ -219,13 +244,4 @@ extern THREAD_LOCAL_LOG std::ostream dstream;
 
 #define dout_con (*dout_con_ptr)
 #define derr_con (*derr_con_ptr)
-#define dout_server (*dout_server_ptr)
-#define derr_server (*derr_server_ptr)
 
-#ifndef SERVER
-	#define dout_client (*dout_client_ptr)
-	#define derr_client (*derr_client_ptr)
-#endif
-
-
-#endif

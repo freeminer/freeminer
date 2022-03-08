@@ -17,17 +17,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CPP_API_ASYNC_EVENTS_HEADER
-#define CPP_API_ASYNC_EVENTS_HEADER
+#pragma once
 
 #include <vector>
 #include <deque>
-#include <map>
 
-#include "threading/thread.h"
-#include "threading/mutex.h"
 #include "threading/semaphore.h"
-#include "debug.h"
+#include "threading/thread.h"
 #include "lua.h"
 #include "cpp_api/s_base.h"
 //#include "threading/thread_pool.h"
@@ -39,29 +35,35 @@ class AsyncEngine;
 // Declarations
 
 // Data required to queue a job
-struct LuaJobInfo {
-	// Function to be called in async environment
-	std::string serializedFunction;
-	// Parameter to be passed to function
-	std::string serializedParams;
-	// Result of function call
-	std::string serializedResult;
-	// JobID used to identify a job and match it to callback
-	unsigned int id;
+struct LuaJobInfo
+{
+	LuaJobInfo() = default;
 
-	bool valid;
+	// Function to be called in async environment (from string.dump)
+	std::string function;
+	// Parameter to be passed to function (serialized)
+	std::string params;
+	// Result of function call (serialized)
+	std::string result;
+	// Name of the mod who invoked this call
+	std::string mod_origin;
+	// JobID used to identify a job and match it to callback
+	u32 id;
 };
 
 // Asynchronous working environment
-class AsyncWorkerThread : public Thread, public ScriptApiBase {
+class AsyncWorkerThread : public Thread, virtual public ScriptApiBase {
+	friend class AsyncEngine;
 public:
-	AsyncWorkerThread(AsyncEngine* jobDispatcher, const std::string &name);
 	virtual ~AsyncWorkerThread();
 
 	void *run();
 
+protected:
+	AsyncWorkerThread(AsyncEngine* jobDispatcher, const std::string &name);
+
 private:
-	AsyncEngine *jobDispatcher;
+	AsyncEngine *jobDispatcher = nullptr;
 };
 
 // Asynchornous thread and job management
@@ -69,7 +71,7 @@ class AsyncEngine {
 	friend class AsyncWorkerThread;
 	typedef void (*StateInitializer)(lua_State *L, int top);
 public:
-	AsyncEngine();
+	AsyncEngine() = default;
 	~AsyncEngine();
 
 	/**
@@ -90,7 +92,8 @@ public:
 	 * @param params Serialized parameters
 	 * @return jobid The job is queued
 	 */
-	unsigned int queueAsyncJob(std::string func, std::string params);
+	u32 queueAsyncJob(std::string &&func, std::string &&params,
+			const std::string &mod_origin = "");
 
 	/**
 	 * Engine step to process finished jobs
@@ -99,25 +102,20 @@ public:
 	 */
 	void step(lua_State *L);
 
-	/**
-	 * Push a list of finished jobs onto the stack
-	 * @param L The Lua stack
-	 */
-	void pushFinishedJobs(lua_State *L);
-
 protected:
 	/**
 	 * Get a Job from queue to be processed
 	 *  this function blocks until a job is ready
-	 * @return a job to be processed
+	 * @param job a job to be processed
+	 * @return whether a job was available
 	 */
-	LuaJobInfo getJob();
+	bool getJob(LuaJobInfo *job);
 
 	/**
 	 * Put a Job result back to result queue
 	 * @param result result of completed job
 	 */
-	void putJobResult(LuaJobInfo result);
+	void putJobResult(LuaJobInfo &&result);
 
 	/**
 	 * Initialize environment with current registred functions
@@ -130,22 +128,21 @@ protected:
 
 private:
 	// Variable locking the engine against further modification
-	bool initDone;
+	bool initDone = false;
 
 	// Internal store for registred state initializers
 	std::vector<StateInitializer> stateInitializers;
 
 	// Internal counter to create job IDs
-	unsigned int jobIdCounter;
+	u32 jobIdCounter = 0;
 
 	// Mutex to protect job queue
-	Mutex jobQueueMutex;
-
+	std::mutex jobQueueMutex;
 	// Job queue
 	std::deque<LuaJobInfo> jobQueue;
 
 	// Mutex to protect result queue
-	Mutex resultQueueMutex;
+	std::mutex resultQueueMutex;
 	// Result queue
 	std::deque<LuaJobInfo> resultQueue;
 
@@ -155,5 +152,3 @@ private:
 	// Counter semaphore for job dispatching
 	Semaphore jobQueueCounter;
 };
-
-#endif // CPP_API_ASYNC_EVENTS_HEADER

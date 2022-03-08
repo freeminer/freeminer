@@ -1,7 +1,11 @@
 /*
 hud.h
 Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+<<<<<<< HEAD
 */
+=======
+Copyright (C) 2017 red-001 <red-001@outlook.ie>
+>>>>>>> 5.5.0
 
 /*
 This file is part of Freeminer.
@@ -20,11 +24,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef HUD_HEADER
-#define HUD_HEADER
+#pragma once
 
 #include "irrlichttypes_extrabloated.h"
 #include <string>
+#include "common/c_types.h"
 
 #define HUD_DIR_LEFT_RIGHT 0
 #define HUD_DIR_RIGHT_LEFT 1
@@ -35,15 +39,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define HUD_CORNER_LOWER  1
 #define HUD_CORNER_CENTER 2
 
+#define HUD_STYLE_BOLD   1
+#define HUD_STYLE_ITALIC 2
+#define HUD_STYLE_MONO   4
+
 // Note that these visibility flags do not determine if the hud items are
 // actually drawn, but rather, whether to draw the item should the rest
 // of the game state permit it.
-#define HUD_FLAG_HOTBAR_VISIBLE    (1 << 0)
-#define HUD_FLAG_HEALTHBAR_VISIBLE (1 << 1)
-#define HUD_FLAG_CROSSHAIR_VISIBLE (1 << 2)
-#define HUD_FLAG_WIELDITEM_VISIBLE (1 << 3)
-#define HUD_FLAG_BREATHBAR_VISIBLE (1 << 4)
-#define HUD_FLAG_MINIMAP_VISIBLE   (1 << 5)
+#define HUD_FLAG_HOTBAR_VISIBLE        (1 << 0)
+#define HUD_FLAG_HEALTHBAR_VISIBLE     (1 << 1)
+#define HUD_FLAG_CROSSHAIR_VISIBLE     (1 << 2)
+#define HUD_FLAG_WIELDITEM_VISIBLE     (1 << 3)
+#define HUD_FLAG_BREATHBAR_VISIBLE     (1 << 4)
+#define HUD_FLAG_MINIMAP_VISIBLE       (1 << 5)
+#define HUD_FLAG_MINIMAP_RADAR_VISIBLE (1 << 6)
 
 #define HUD_PARAM_HOTBAR_ITEMCOUNT 1
 #define HUD_PARAM_HOTBAR_IMAGE 2
@@ -51,8 +60,7 @@ static const int  HUD_PARAM_HOTBAR_IMAGE_ITEMS = 104;
 #define HUD_PARAM_HOTBAR_SELECTED_IMAGE 3
 
 #define HUD_HOTBAR_ITEMCOUNT_DEFAULT 8
-#define HUD_HOTBAR_ITEMCOUNT_MAX     23
-
+#define HUD_HOTBAR_ITEMCOUNT_MAX     32
 
 #define HOTBAR_IMAGE_SIZE 48
 
@@ -62,6 +70,9 @@ enum HudElementType {
 	HUD_ELEM_STATBAR   = 2,
 	HUD_ELEM_INVENTORY = 3,
 	HUD_ELEM_WAYPOINT  = 4,
+	HUD_ELEM_IMAGE_WAYPOINT = 5,
+	HUD_ELEM_COMPASS   = 6,
+	HUD_ELEM_MINIMAP   = 7
 };
 
 enum HudElementStat {
@@ -75,7 +86,17 @@ enum HudElementStat {
 	HUD_STAT_ALIGN,
 	HUD_STAT_OFFSET,
 	HUD_STAT_WORLD_POS,
-	HUD_STAT_SIZE
+	HUD_STAT_SIZE,
+	HUD_STAT_Z_INDEX,
+	HUD_STAT_TEXT2,
+	HUD_STAT_STYLE,
+};
+
+enum HudCompassDir {
+	HUD_COMPASS_ROTATE = 0,
+	HUD_COMPASS_ROTATE_REVERSE,
+	HUD_COMPASS_TRANSLATE,
+	HUD_COMPASS_TRANSLATE_REVERSE,
 };
 
 struct HudElement {
@@ -91,14 +112,18 @@ struct HudElement {
 	v2f offset;
 	v3f world_pos;
 	v2s32 size;
+	s16 z_index = 0;
+	std::string text2;
+	u32 style;
 };
 
-#ifndef SERVER
+extern const EnumString es_HudElementType[];
+extern const EnumString es_HudElementStat[];
+extern const EnumString es_HudBuiltinElement[];
 
-#include <vector>
-#include <IGUIFont.h>
-#include "irr_aabb3d.h"
+// Minimap stuff
 
+<<<<<<< HEAD
 class IGameDef;
 class ITextureSource;
 class Inventory;
@@ -181,23 +206,12 @@ private:
 
 	video::SMaterial m_selection_material;
 	bool m_use_selection_mesh;
+=======
+enum MinimapType {
+	MINIMAP_TYPE_OFF,
+	MINIMAP_TYPE_SURFACE,
+	MINIMAP_TYPE_RADAR,
+	MINIMAP_TYPE_TEXTURE,
+>>>>>>> 5.5.0
 };
 
-enum ItemRotationKind {
-	IT_ROT_SELECTED,
-	IT_ROT_HOVERED,
-	IT_ROT_DRAGGED,
-	IT_ROT_NONE, // Must be last, also serves as number
-};
-
-void drawItemStack(video::IVideoDriver *driver,
-		gui::IGUIFont *font,
-		const ItemStack &item,
-		const core::rect<s32> &rect,
-		const core::rect<s32> *clip,
-		IGameDef *gamedef,
-		ItemRotationKind rotation_kind);
-
-#endif
-
-#endif

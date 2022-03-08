@@ -20,14 +20,15 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "socket.h" // for select()
-#include "porting.h" // for sleep_ms(), get_sysinfo(), secure_rand_fill_buf()
 #include "httpfetch.h"
+#include "porting.h" // for sleep_ms(), get_sysinfo(), secure_rand_fill_buf()
 #include <iostream>
 #include <sstream>
 #include <list>
-#include <map>
-#include <errno.h>
+#include <unordered_map>
+#include <cerrno>
+#include <mutex>
+#include "network/socket.h" // for select()
 #include "threading/event.h"
 #include "config.h"
 #include "exceptions.h"
@@ -39,43 +40,43 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "noise.h"
 
+<<<<<<< HEAD
 Mutex g_httpfetch_mutex;
 std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
 std::unique_ptr<PcgRandom> g_callerid_randomness;
+=======
+static std::mutex g_httpfetch_mutex;
+static std::unordered_map<u64, std::queue<HTTPFetchResult>>
+	g_httpfetch_results;
+static PcgRandom g_callerid_randomness;
+>>>>>>> 5.5.0
 
-HTTPFetchRequest::HTTPFetchRequest()
+HTTPFetchRequest::HTTPFetchRequest() :
+	timeout(g_settings->getS32("curl_timeout")),
+	connect_timeout(10 * 1000),
+	useragent(std::string(PROJECT_NAME_C "/") + g_version_hash + " (" + porting::get_sysinfo() + ")")
 {
-	url = "";
-	caller = HTTPFETCH_DISCARD;
-	request_id = 0;
-	timeout = g_settings->getS32("curl_timeout");
-	connect_timeout = timeout;
-	multipart = false;
-
-	useragent = std::string(PROJECT_NAME_C "/") + g_version_hash + " (" + porting::get_sysinfo() + ")";
 }
 
 
 static void httpfetch_deliver_result(const HTTPFetchResult &fetch_result)
 {
-	unsigned long caller = fetch_result.caller;
+	u64 caller = fetch_result.caller;
 	if (caller != HTTPFETCH_DISCARD) {
 		MutexAutoLock lock(g_httpfetch_mutex);
-		g_httpfetch_results[caller].push(fetch_result);
+		g_httpfetch_results[caller].emplace(fetch_result);
 	}
 }
 
-static void httpfetch_request_clear(unsigned long caller);
+static void httpfetch_request_clear(u64 caller);
 
-unsigned long httpfetch_caller_alloc()
+u64 httpfetch_caller_alloc()
 {
 	MutexAutoLock lock(g_httpfetch_mutex);
 
-	// Check each caller ID except HTTPFETCH_DISCARD
-	const unsigned long discard = HTTPFETCH_DISCARD;
-	for (unsigned long caller = discard + 1; caller != discard; ++caller) {
-		std::map<unsigned long, std::queue<HTTPFetchResult> >::iterator
-			it = g_httpfetch_results.find(caller);
+	// Check each caller ID except reserved ones
+	for (u64 caller = HTTPFETCH_CID_START; caller != 0; ++caller) {
+		auto it = g_httpfetch_results.find(caller);
 		if (it == g_httpfetch_results.end()) {
 			verbosestream << "httpfetch_caller_alloc: allocating "
 					<< caller << std::endl;
@@ -86,18 +87,17 @@ unsigned long httpfetch_caller_alloc()
 	}
 
 	FATAL_ERROR("httpfetch_caller_alloc: ran out of caller IDs");
-	return discard;
 }
 
-unsigned long httpfetch_caller_alloc_secure()
+u64 httpfetch_caller_alloc_secure()
 {
 	MutexAutoLock lock(g_httpfetch_mutex);
 
 	// Generate random caller IDs and make sure they're not
-	// already used or equal to HTTPFETCH_DISCARD
+	// already used or reserved.
 	// Give up after 100 tries to prevent infinite loop
-	u8 tries = 100;
-	unsigned long caller;
+	size_t tries = 100;
+	u64 caller;
 
 	do {
 		caller = (((u64) g_callerid_randomness->next()) << 32) |
@@ -107,7 +107,8 @@ unsigned long httpfetch_caller_alloc_secure()
 			FATAL_ERROR("httpfetch_caller_alloc_secure: ran out of caller IDs");
 			return HTTPFETCH_DISCARD;
 		}
-	} while (g_httpfetch_results.find(caller) != g_httpfetch_results.end());
+	} while (caller >= HTTPFETCH_CID_START &&
+		g_httpfetch_results.find(caller) != g_httpfetch_results.end());
 
 	verbosestream << "httpfetch_caller_alloc_secure: allocating "
 		<< caller << std::endl;
@@ -117,7 +118,7 @@ unsigned long httpfetch_caller_alloc_secure()
 	return caller;
 }
 
-void httpfetch_caller_free(unsigned long caller)
+void httpfetch_caller_free(u64 caller)
 {
 	verbosestream<<"httpfetch_caller_free: freeing "
 			<<caller<<std::endl;
@@ -129,13 +130,12 @@ void httpfetch_caller_free(unsigned long caller)
 	}
 }
 
-bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result)
+bool httpfetch_async_get(u64 caller, HTTPFetchResult &fetch_result)
 {
 	MutexAutoLock lock(g_httpfetch_mutex);
 
 	// Check that caller exists
-	std::map<unsigned long, std::queue<HTTPFetchResult> >::iterator
-		it = g_httpfetch_results.find(caller);
+	auto it = g_httpfetch_results.find(caller);
 	if (it == g_httpfetch_results.end())
 		return false;
 
@@ -145,7 +145,7 @@ bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result)
 		return false;
 
 	// Pop first result
-	fetch_result = caller_results.front();
+	fetch_result = std::move(caller_results.front());
 	caller_results.pop();
 	return true;
 }
@@ -180,7 +180,8 @@ class CurlHandlePool
 	std::list<CURL*> handles;
 
 public:
-	CurlHandlePool() {}
+	CurlHandlePool() = default;
+
 	~CurlHandlePool()
 	{
 		for (std::list<CURL*>::iterator it = handles.begin();
@@ -213,7 +214,7 @@ public:
 class HTTPFetchOngoing
 {
 public:
-	HTTPFetchOngoing(HTTPFetchRequest request, CurlHandlePool *pool);
+	HTTPFetchOngoing(const HTTPFetchRequest &request, CurlHandlePool *pool);
 	~HTTPFetchOngoing();
 
 	CURLcode start(CURLM *multi);
@@ -234,7 +235,8 @@ private:
 };
 
 
-HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *pool_):
+HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
+		CurlHandlePool *pool_):
 	pool(pool_),
 	curl(NULL),
 	multi(NULL),
@@ -251,13 +253,17 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 
 	// Set static cURL options
 	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 1);
+	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3);
+	curl_easy_setopt(curl, CURLOPT_ENCODING, "gzip");
 
 	std::string bind_address = g_settings->get("bind_address");
 	if (!bind_address.empty()) {
 		curl_easy_setopt(curl, CURLOPT_INTERFACE, bind_address.c_str());
+	}
+
+	if (!g_settings->getBool("enable_ipv6")) {
+		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 	}
 
 #if LIBCURL_VERSION_NUM >= 0x071304
@@ -281,7 +287,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS,
 			request.connect_timeout);
 
-	if (request.useragent != "")
+	if (!request.useragent.empty())
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
 	else {
 		std::string useragent = std::string("Freeminer ") + g_version_hash;
@@ -308,16 +314,20 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &oss);
 	}
 
+<<<<<<< HEAD
 	// Set POST (or GET) data
 /*
 	if (request.post_fields.empty() && request.post_data.empty()) {
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
 	} else if (request.multipart) {
 */
+=======
+	// Set data from fields or raw_data
+>>>>>>> 5.5.0
 	if (request.multipart) {
 		curl_httppost *last = NULL;
-		for (StringMap::iterator it = request.post_fields.begin();
-				it != request.post_fields.end(); ++it) {
+		for (StringMap::iterator it = request.fields.begin();
+				it != request.fields.end(); ++it) {
 			curl_formadd(&post, &last,
 					CURLFORM_NAMELENGTH, it->first.size(),
 					CURLFORM_PTRNAME, it->first.c_str(),
@@ -328,6 +338,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 		curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
 		// request.post_fields must now *never* be
 		// modified until CURLOPT_HTTPPOST is cleared
+<<<<<<< HEAD
 	} else if (!request.post_fields.empty()) {
 		curl_easy_setopt(curl, CURLOPT_POST, 1);
 		std::string str;
@@ -353,11 +364,48 @@ HTTPFetchOngoing::HTTPFetchOngoing(HTTPFetchRequest request_, CurlHandlePool *po
 		// modified until CURLOPT_POSTFIELDS is cleared
 	} else {
 		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+=======
+	} else {
+		switch (request.method) {
+		case HTTP_GET:
+			curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+			break;
+		case HTTP_POST:
+			curl_easy_setopt(curl, CURLOPT_POST, 1);
+			break;
+		case HTTP_PUT:
+			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+			break;
+		case HTTP_DELETE:
+			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+			break;
+		}
+		if (request.method != HTTP_GET) {
+			if (!request.raw_data.empty()) {
+				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
+						request.raw_data.size());
+				curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
+						request.raw_data.c_str());
+			} else if (!request.fields.empty()) {
+				std::string str;
+				for (auto &field : request.fields) {
+					if (!str.empty())
+						str += "&";
+					str += urlencode(field.first);
+					str += "=";
+					str += urlencode(field.second);
+				}
+				curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
+						str.size());
+				curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS,
+						str.c_str());
+			}
+		}
+>>>>>>> 5.5.0
 	}
 	// Set additional HTTP headers
-	for (std::vector<std::string>::iterator it = request.extra_headers.begin();
-			it != request.extra_headers.end(); ++it) {
-		http_header = curl_slist_append(http_header, it->c_str());
+	for (const std::string &extra_header : request.extra_headers) {
+		http_header = curl_slist_append(http_header, extra_header.c_str());
 	}
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_header);
 
@@ -403,10 +451,17 @@ const HTTPFetchResult * HTTPFetchOngoing::complete(CURLcode res)
 	}
 
 	if (res != CURLE_OK) {
-		errorstream << request.url << " not found ("
-			<< curl_easy_strerror(res) << ")"
-			<< " (response code " << result.response_code << ")"
+		errorstream << "HTTPFetch for " << request.url << " failed ("
+			<< curl_easy_strerror(res) << ")" << std::endl;
+	} else if (result.response_code >= 400) {
+		errorstream << "HTTPFetch for " << request.url
+			<< " returned response code " << result.response_code
 			<< std::endl;
+		if (result.caller == HTTPFETCH_PRINT_ERR && !result.data.empty()) {
+			errorstream << "Response body:" << std::endl;
+			safe_print_string(errorstream, result.data);
+			errorstream << std::endl;
+		}
 	}
 
 	return &result;
@@ -484,7 +539,7 @@ public:
 		m_requests.push_back(req);
 	}
 
-	void requestClear(unsigned long caller, Event *event)
+	void requestClear(u64 caller, Event *event)
 	{
 		Request req;
 		req.type = RT_CLEAR;
@@ -515,7 +570,7 @@ protected:
 
 		}
 		else if (req.type == RT_CLEAR) {
-			unsigned long caller = req.fetch_request.caller;
+			u64 caller = req.fetch_request.caller;
 
 			// Abort all ongoing fetches for the caller
 			for (std::vector<HTTPFetchOngoing*>::iterator
@@ -668,8 +723,6 @@ protected:
 
 	void *run()
 	{
-		DSTACK(FUNCTION_NAME);
-
 		CurlHandlePool pool;
 
 		m_multi = curl_multi_init();
@@ -735,8 +788,8 @@ protected:
 		}
 
 		// Call curl_multi_remove_handle and cleanup easy handles
-		for (size_t i = 0; i < m_all_ongoing.size(); ++i) {
-			delete m_all_ongoing[i];
+		for (HTTPFetchOngoing *i : m_all_ongoing) {
+			delete i;
 		}
 		m_all_ongoing.clear();
 
@@ -775,10 +828,12 @@ void httpfetch_cleanup()
 {
 	verbosestream<<"httpfetch_cleanup: cleaning up"<<std::endl;
 
-	g_httpfetch_thread->stop();
-	g_httpfetch_thread->requestWakeUp();
-	g_httpfetch_thread->wait();
-	delete g_httpfetch_thread;
+	if (g_httpfetch_thread) {
+		g_httpfetch_thread->stop();
+		g_httpfetch_thread->requestWakeUp();
+		g_httpfetch_thread->wait();
+		delete g_httpfetch_thread;
+	}
 
 	curl_global_cleanup();
 }
@@ -790,7 +845,7 @@ void httpfetch_async(const HTTPFetchRequest &fetch_request)
 		g_httpfetch_thread->start();
 }
 
-static void httpfetch_request_clear(unsigned long caller)
+static void httpfetch_request_clear(u64 caller)
 {
 	if (g_httpfetch_thread->isRunning()) {
 		Event event;
@@ -839,7 +894,7 @@ void httpfetch_async(const HTTPFetchRequest &fetch_request)
 	httpfetch_deliver_result(fetch_result);
 }
 
-static void httpfetch_request_clear(unsigned long caller)
+static void httpfetch_request_clear(u64 caller)
 {
 }
 

@@ -20,22 +20,18 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fstream>
 #include <iostream>
-#include <sstream>
-#include <algorithm>
-
 #include "version.h"
 //#include <fstream>
 #include "settings.h"
 #include "serverlist.h"
 #include "filesys.h"
-#include "porting.h"
 #include "log.h"
 #include "network/networkprotocol.h"
 #include <json/json.h>
 #include "convert_json.h"
 #include "httpfetch.h"
+<<<<<<< HEAD
 #include "util/string.h"
 #include "config.h"
 
@@ -185,6 +181,13 @@ const std::string serialize(const std::vector<ServerListSpec> &serverlist)
 
 
 void sendAnnounce(const std::string &action,
+=======
+
+namespace ServerList
+{
+#if USE_CURL
+void sendAnnounce(AnnounceAction action,
+>>>>>>> 5.5.0
 		const u16 port,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
@@ -192,16 +195,21 @@ void sendAnnounce(const std::string &action,
 		const float lag,
 		const std::string &gameid,
 		const std::string &mg_name,
-		const std::vector<ModSpec> &mods)
+		const std::vector<ModSpec> &mods,
+		bool dedicated)
 {
+<<<<<<< HEAD
 #if USE_CURL
+=======
+	static const char *aa_names[] = {"start", "update", "delete"};
+>>>>>>> 5.5.0
 	Json::Value server;
-	server["action"] = action;
+	server["action"] = aa_names[action];
 	server["port"] = port;
 	if (g_settings->exists("server_address")) {
 		server["address"] = g_settings->get("server_address");
 	}
-	if (action != "delete") {
+	if (action != AA_DELETE) {
 		bool strict_checking = g_settings->getBool("strict_protocol_version_checking");
 		server["name"]         = g_settings->get("server_name");
 		server["description"]  = g_settings->get("server_description");
@@ -220,17 +228,20 @@ void sendAnnounce(const std::string &action,
 		server["clients"]      = (int) clients_names.size();
 		server["clients_max"]  = g_settings->getU16("max_users");
 		server["clients_list"] = Json::Value(Json::arrayValue);
-		for (std::vector<std::string>::const_iterator it = clients_names.begin();
-				it != clients_names.end();
-				++it) {
-			server["clients_list"].append(*it);
+		for (const std::string &clients_name : clients_names) {
+			server["clients_list"].append(clients_name);
 		}
+<<<<<<< HEAD
 		if (gameid != "") server["gameid"] = gameid;
 		server["proto"]        = g_settings->get("server_proto");
+=======
+		if (!gameid.empty())
+			server["gameid"] = gameid;
+>>>>>>> 5.5.0
 	}
 
-	if (action == "start") {
-		server["dedicated"]         = g_settings->getBool("server_dedicated");
+	if (action == AA_START) {
+		server["dedicated"]         = dedicated;
 		server["rollback"]          = g_settings->getBool("enable_rollback_recording");
 		server["mapgen"]            = mg_name;
 		server["privs"]             = g_settings->getBool("creative_mode") ? g_settings->get("default_privs_creative") : g_settings->get("default_privs");
@@ -238,19 +249,24 @@ void sendAnnounce(const std::string &action,
 		server["liquid_real"]       = g_settings->getBool("liquid_real");
 		server["version_hash"]      = g_version_hash;
 		server["mods"]              = Json::Value(Json::arrayValue);
-		for (std::vector<ModSpec>::const_iterator it = mods.begin();
-				it != mods.end();
-				++it) {
-			server["mods"].append(it->name);
+		for (const ModSpec &mod : mods) {
+			server["mods"].append(mod.name);
 		}
-		actionstream << "Announcing to " << g_settings->get("serverlist_url") << std::endl;
-	} else {
+	} else if (action == AA_UPDATE) {
 		if (lag)
 			server["lag"] = lag;
 	}
 
-	Json::FastWriter writer;
+	if (action == AA_START) {
+		actionstream << "Announcing " << aa_names[action] << " to " <<
+			g_settings->get("serverlist_url") << std::endl;
+	} else {
+		infostream << "Announcing " << aa_names[action] << " to " <<
+			g_settings->get("serverlist_url") << std::endl;
+	}
+
 	HTTPFetchRequest fetch_request;
+<<<<<<< HEAD
 	fetch_request.timeout = fetch_request.connect_timeout = 59000;
 	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
 
@@ -263,9 +279,16 @@ void sendAnnounce(const std::string &action,
 		fetch_request.post_data = query;
 #else
 	fetch_request.post_fields["json"] = writer.write(server);
+=======
+	fetch_request.caller = HTTPFETCH_PRINT_ERR;
+	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
+	fetch_request.method = HTTP_POST;
+	fetch_request.fields["json"] = fastWriteJson(server);
+>>>>>>> 5.5.0
 	fetch_request.multipart = true;
 #endif
 
+<<<<<<< HEAD
 	httpfetch_async(fetch_request);
 #endif
 }
@@ -301,3 +324,6 @@ bool lan_fresh() {
 
 
 } //namespace ServerList
+=======
+} // namespace ServerList
+>>>>>>> 5.5.0

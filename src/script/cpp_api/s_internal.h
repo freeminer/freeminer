@@ -27,11 +27,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /******************************************************************************/
 /******************************************************************************/
 
-#ifndef S_INTERNAL_H_
-#define S_INTERNAL_H_
+#pragma once
 
+#include <thread>
 #include "common/c_internal.h"
 #include "cpp_api/s_base.h"
+<<<<<<< HEAD
 #include "config.h"
 
 #if ENABLE_THREADS
@@ -39,29 +40,33 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #define SCRIPTAPI_LOCK
 #endif
+=======
+#include "threading/mutex_auto_lock.h"
+>>>>>>> 5.5.0
 
 #ifdef SCRIPTAPI_LOCK_DEBUG
-#include "debug.h" // assert()
+#include <cassert>
 
 class LockChecker {
 public:
-	LockChecker(int *recursion_counter, threadid_t *owning_thread)
+	LockChecker(int *recursion_counter, std::thread::id *owning_thread)
 	{
 		m_lock_recursion_counter = recursion_counter;
 		m_owning_thread          = owning_thread;
 		m_original_level         = *recursion_counter;
 
-		if (*m_lock_recursion_counter > 0)
-			assert(thr_is_current_thread(*m_owning_thread));
-		else
-			*m_owning_thread = thr_get_current_thread_id();
+		if (*m_lock_recursion_counter > 0) {
+			assert(*m_owning_thread == std::this_thread::get_id());
+		} else {
+			*m_owning_thread = std::this_thread::get_id();
+		}
 
 		(*m_lock_recursion_counter)++;
 	}
 
 	~LockChecker()
 	{
-		assert(thr_is_current_thread(*m_owning_thread));
+		assert(*m_owning_thread == std::this_thread::get_id());
 		assert(*m_lock_recursion_counter > 0);
 
 		(*m_lock_recursion_counter)--;
@@ -72,7 +77,7 @@ public:
 private:
 	int *m_lock_recursion_counter;
 	int m_original_level;
-	threadid_t *m_owning_thread;
+	std::thread::id *m_owning_thread;
 };
 
 #define SCRIPTAPI_LOCK_CHECK           \
@@ -91,6 +96,3 @@ private:
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \
 		StackUnroller stack_unroller(L);
-
-#endif /* S_INTERNAL_H_ */
-

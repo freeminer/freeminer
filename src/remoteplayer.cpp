@@ -20,21 +20,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "remoteplayer.h"
 #include <json/json.h>
+<<<<<<< HEAD
 #include "content_sao.h"
+=======
+>>>>>>> 5.5.0
 #include "filesys.h"
 #include "gamedef.h"
 #include "porting.h"  // strlcpy
 #include "server.h"
 #include "settings.h"
+<<<<<<< HEAD
+=======
+#include "convert_json.h"
+#include "server/player_sao.h"
+>>>>>>> 5.5.0
 
 /*
 	RemotePlayer
 */
+
 // static config cache for remoteplayer
 bool RemotePlayer::m_setting_cache_loaded = false;
 float RemotePlayer::m_setting_chat_message_limit_per_10sec = 0.0f;
 u16 RemotePlayer::m_setting_chat_message_limit_trigger_kick = 0;
 
+<<<<<<< HEAD
 RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 	Player(name, idef),
 	protocol_version(0),
@@ -45,6 +55,10 @@ RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 	m_message_rate_overhead(0),
 	hud_hotbar_image(""),
 	hud_hotbar_selected_image("")
+=======
+RemotePlayer::RemotePlayer(const char *name, IItemDefManager *idef):
+	Player(name, idef)
+>>>>>>> 5.5.0
 {
 	if (!RemotePlayer::m_setting_cache_loaded) {
 		RemotePlayer::m_setting_chat_message_limit_per_10sec =
@@ -53,6 +67,7 @@ RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 			g_settings->getU16("chat_message_limit_trigger_kick");
 		RemotePlayer::m_setting_cache_loaded = true;
 	}
+
 	movement_acceleration_default   = g_settings->getFloat("movement_acceleration_default")   * BS;
 	movement_acceleration_air       = g_settings->getFloat("movement_acceleration_air")       * BS;
 	movement_acceleration_fast      = g_settings->getFloat("movement_acceleration_fast")      * BS;
@@ -65,8 +80,16 @@ RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 	movement_liquid_fluidity_smooth = g_settings->getFloat("movement_liquid_fluidity_smooth") * BS;
 	movement_liquid_sink            = g_settings->getFloat("movement_liquid_sink")            * BS;
 	movement_gravity                = g_settings->getFloat("movement_gravity")                * BS;
+
+	// Skybox defaults:
+	m_cloud_params  = SkyboxDefaults::getCloudDefaults();
+	m_skybox_params = SkyboxDefaults::getSkyDefaults();
+	m_sun_params    = SkyboxDefaults::getSunDefaults();
+	m_moon_params   = SkyboxDefaults::getMoonDefaults();
+	m_star_params   = SkyboxDefaults::getStarDefaults();
 }
 
+<<<<<<< HEAD
 #if WTF
 void RemotePlayer::save(std::string savedir, IGameDef *gamedef)
 {
@@ -227,6 +250,10 @@ void RemotePlayer::serialize(std::ostream &os)
 }
 
 const RemotePlayerChatResult RemotePlayer::canSendChatMessage()
+=======
+
+RemotePlayerChatResult RemotePlayer::canSendChatMessage()
+>>>>>>> 5.5.0
 {
 	// Rate limit messages
 	u32 now = time(NULL);
@@ -265,6 +292,7 @@ const RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 	return RPLAYER_CHATRESULT_OK;
 }
 
+<<<<<<< HEAD
 
 Json::Value operator<<(Json::Value &json, v3f &v) {
 	json["X"] = v.X;
@@ -346,4 +374,11 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 	}
 
 	return json;
+=======
+void RemotePlayer::onSuccessfulSave()
+{
+	setModified(false);
+	if (m_sao)
+		m_sao->getMeta().setModified(false);
+>>>>>>> 5.5.0
 }

@@ -27,36 +27,68 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /******************************************************************************/
 /******************************************************************************/
 
-#ifndef L_INTERNAL_H_
-#define L_INTERNAL_H_
+#pragma once
 
 #include "common/c_internal.h"
 
 #define luamethod(class, name) {#name, class::l_##name}
+<<<<<<< HEAD
 #define luamethod_aliased(class, name, alias) {#name, class::l_##name}, {#alias, class::l_##name}
 #define API_FCT(name) registerFunction(L, #name, l_##name,top)
 #define ASYNC_API_FCT(name) engine.registerFunction(#name, l_##name)
+=======
+>>>>>>> 5.5.0
 
-#define MAP_LOCK_REQUIRED
-#define NO_MAP_LOCK_REQUIRED
+#define luamethod_dep(class, good, bad)                                     \
+		{#bad, [](lua_State *L) -> int {                                    \
+			return l_deprecated_function(L, #good, #bad, &class::l_##good); \
+		}}
 
+<<<<<<< HEAD
 /*
 #if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
 	#define NO_MAP_LOCK_REQUIRED
-#else
-	#include "profiler.h"
-	#define NO_MAP_LOCK_REQUIRED \
-		ScopeProfiler nolocktime(g_profiler,"Scriptapi: unlockable time",SPT_ADD)
-#endif
-*/
+=======
+#define luamethod_aliased(class, good, bad) \
+		luamethod(class, good),               \
+		luamethod_dep(class, good, bad)
 
+#define API_FCT(name) registerFunction(L, #name, l_##name, top)
+
+// For future use
+#define MAP_LOCK_REQUIRED ((void)0)
+#define NO_MAP_LOCK_REQUIRED ((void)0)
+
+/* In debug mode ensure no code tries to retrieve the server env when it isn't
+ * actually available (in CSM) */
+#if !defined(SERVER) && !defined(NDEBUG)
+#define DEBUG_ASSERT_NO_CLIENTAPI                    \
+	FATAL_ERROR_IF(getClient(L) != nullptr, "Tried " \
+		"to retrieve ServerEnvironment on client")
+>>>>>>> 5.5.0
+#else
+#define DEBUG_ASSERT_NO_CLIENTAPI ((void)0)
+#endif
+
+// Retrieve ServerEnvironment pointer as `env` (no map lock)
 #define GET_ENV_PTR_NO_MAP_LOCK                              \
+	DEBUG_ASSERT_NO_CLIENTAPI;                               \
 	ServerEnvironment *env = (ServerEnvironment *)getEnv(L); \
 	if (env == NULL)                                         \
 		return 0
 
+// Retrieve ServerEnvironment pointer as `env`
 #define GET_ENV_PTR         \
 	MAP_LOCK_REQUIRED;      \
 	GET_ENV_PTR_NO_MAP_LOCK
 
-#endif /* L_INTERNAL_H_ */
+// Retrieve Environment pointer as `env` (no map lock)
+#define GET_PLAIN_ENV_PTR_NO_MAP_LOCK            \
+	Environment *env = (Environment *)getEnv(L); \
+	if (env == NULL)                             \
+		return 0
+
+// Retrieve Environment pointer as `env`
+#define GET_PLAIN_ENV_PTR         \
+	MAP_LOCK_REQUIRED;            \
+	GET_PLAIN_ENV_PTR_NO_MAP_LOCK

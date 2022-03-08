@@ -20,12 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef S_MAINMENU_H_
-#define S_MAINMENU_H_
+#pragma once
 
 #include "cpp_api/s_base.h"
 #include "util/string.h"
-#include "../guiMainMenu.h"
+#include "gui/guiMainMenu.h"
 
 class ScriptApiMainMenu : virtual public ScriptApiBase {
 public:
@@ -47,5 +46,3 @@ public:
 	 */
 	void handleMainMenuButtons(const StringMap &fields);
 };
-
-#endif /* S_MAINMENU_H_ */

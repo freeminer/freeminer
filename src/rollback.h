@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ROLLBACK_HEADER
-#define ROLLBACK_HEADER
+#pragma once
 
 #include <string>
 #include "irr_v3d.h"
@@ -54,7 +53,6 @@ public:
 	void flush();
 
 	void addAction(const RollbackAction & action);
-	std::list<RollbackAction> getEntriesSince(time_t first_time);
 	std::list<RollbackAction> getNodeActors(v3s16 pos, int range,
 			time_t seconds, int limit);
 	std::list<RollbackAction> getRevertActions(
@@ -89,10 +87,10 @@ private:
 		time_t suspect_t, v3s16 action_p, time_t action_t);
 
 
-	IGameDef * gamedef;
+	IGameDef *gamedef = nullptr;
 
 	std::string current_actor;
-	bool current_actor_is_guess;
+	bool current_actor_is_guess = false;
 
 	std::list<RollbackAction> action_todisk_buffer;
 	std::list<RollbackAction> action_latest_buffer;
@@ -113,5 +111,3 @@ private:
 	std::vector<Entity> knownActors;
 	std::vector<Entity> knownNodes;
 };
-
-#endif

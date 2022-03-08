@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MODIFIEDSTATE_HEADER
-#define MODIFIEDSTATE_HEADER
+#pragma once
 
 enum ModifiedState
 {
@@ -35,6 +34,3 @@ enum ModifiedState
 	MOD_STATE_WRITE_NEEDED = 4,
 	MOD_RESERVED5 = 5,
 };
-
-#endif
-

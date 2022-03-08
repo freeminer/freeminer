@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "gettime.h"
 #include "porting.h"
+#include "settings.h"
 #include "config.h"
 #include "exceptions.h"
 #include "util/numeric.h"
@@ -106,6 +107,7 @@ LogBuffer verbose_buf(g_logger, LL_VERBOSE);
 std::ostream *dout_con_ptr = &null_stream;
 std::ostream *derr_con_ptr = &verbosestream;
 
+<<<<<<< HEAD
 // Server
 std::ostream *dout_server_ptr = &infostream;
 std::ostream *derr_server_ptr = &errorstream;
@@ -117,6 +119,9 @@ std::ostream *derr_client_ptr = &errorstream;
 #endif
 
 THREAD_LOCAL_LOG
+=======
+// Common streams
+>>>>>>> 5.5.0
 std::ostream rawstream(&raw_buf);
 THREAD_LOCAL_LOG
 std::ostream dstream(&none_buf);
@@ -240,14 +245,14 @@ void Logger::setLevelSilenced(LogLevel lev, bool silenced)
 
 void Logger::registerThread(const std::string &name)
 {
-	threadid_t id = thr_get_current_thread_id();
+	std::thread::id id = std::this_thread::get_id();
 	MutexAutoLock lock(m_mutex);
 	m_thread_names[id] = name;
 }
 
 void Logger::deregisterThread()
 {
-	threadid_t id = thr_get_current_thread_id();
+	std::thread::id id = std::this_thread::get_id();
 	MutexAutoLock lock(m_mutex);
 	m_thread_names.erase(id);
 }
@@ -268,13 +273,19 @@ const std::string Logger::getLevelLabel(LogLevel lev)
 	return names[lev];
 }
 
+LogColor Logger::color_mode = LOG_COLOR_AUTO;
+
 const std::string Logger::getThreadName()
 {
-	std::map<threadid_t, std::string>::const_iterator it;
+	std::map<std::thread::id, std::string>::const_iterator it;
 
+<<<<<<< HEAD
 	threadid_t id = thr_get_current_thread_id();
 	{
 	MutexAutoLock lock(m_mutex);
+=======
+	std::thread::id id = std::this_thread::get_id();
+>>>>>>> 5.5.0
 	it = m_thread_names.find(id);
 	if (it != m_thread_names.end())
 		return it->second;
@@ -328,19 +339,108 @@ void Logger::logToOutputs(LogLevel lev, const std::string &combined,
 //// *LogOutput methods
 ////
 
-void FileLogOutput::open(const std::string &filename)
+void FileLogOutput::setFile(const std::string &filename, s64 file_size_max)
 {
-	m_stream.open(filename.c_str(), std::ios::app | std::ios::ate);
+	// Only move debug.txt if there is a valid maximum file size
+	bool is_too_large = false;
+	if (file_size_max > 0) {
+		std::ifstream ifile(filename, std::ios::binary | std::ios::ate);
+		is_too_large = ifile.tellg() > file_size_max;
+		ifile.close();
+	}
+
+	if (is_too_large) {
+		std::string filename_secondary = filename + ".1";
+		actionstream << "The log file grew too big; it is moved to " <<
+			filename_secondary << std::endl;
+		remove(filename_secondary.c_str());
+		rename(filename.c_str(), filename_secondary.c_str());
+	}
+	m_stream.open(filename, std::ios::app | std::ios::ate);
+
 	if (!m_stream.good())
 		throw FileNotGoodException("Failed to open log file " +
 			filename + ": " + strerror(errno));
 	m_stream << "\n\n"
-		   "-------------" << std::endl
-		<< "  Separator" << std::endl
-		<< "-------------\n" << std::endl;
+		"-------------" << std::endl <<
+		"  Separator" << std::endl <<
+		"-------------\n" << std::endl;
 }
 
+void StreamLogOutput::logRaw(LogLevel lev, const std::string &line)
+{
+	bool colored_message = (Logger::color_mode == LOG_COLOR_ALWAYS) ||
+		(Logger::color_mode == LOG_COLOR_AUTO && is_tty);
+	if (colored_message) {
+		switch (lev) {
+		case LL_ERROR:
+			// error is red
+			m_stream << "\033[91m";
+			break;
+		case LL_WARNING:
+			// warning is yellow
+			m_stream << "\033[93m";
+			break;
+		case LL_INFO:
+			// info is a bit dark
+			m_stream << "\033[37m";
+			break;
+		case LL_VERBOSE:
+			// verbose is darker than info
+			m_stream << "\033[2m";
+			break;
+		default:
+			// action is white
+			colored_message = false;
+		}
+	}
 
+	m_stream << line << std::endl;
+
+	if (colored_message) {
+		// reset to white color
+		m_stream << "\033[0m";
+	}
+}
+
+void LogOutputBuffer::updateLogLevel()
+{
+	const std::string &conf_loglev = g_settings->get("chat_log_level");
+	LogLevel log_level = Logger::stringToLevel(conf_loglev);
+	if (log_level == LL_MAX) {
+		warningstream << "Supplied unrecognized chat_log_level; "
+			"showing none." << std::endl;
+		log_level = LL_NONE;
+	}
+
+	m_logger.removeOutput(this);
+	m_logger.addOutputMaxLevel(this, log_level);
+}
+
+void LogOutputBuffer::logRaw(LogLevel lev, const std::string &line)
+{
+	std::string color;
+
+	if (!g_settings->getBool("disable_escape_sequences")) {
+		switch (lev) {
+		case LL_ERROR: // red
+			color = "\x1b(c@#F00)";
+			break;
+		case LL_WARNING: // yellow
+			color = "\x1b(c@#EE0)";
+			break;
+		case LL_INFO: // grey
+			color = "\x1b(c@#BBB)";
+			break;
+		case LL_VERBOSE: // dark grey
+			color = "\x1b(c@#888)";
+			break;
+		default: break;
+		}
+	}
+
+	m_buffer.push(color.append(line));
+}
 
 ////
 //// *Buffer methods
@@ -370,13 +470,10 @@ void StringBuffer::push_back(char c)
 			flush(std::string(buffer, buffer_index));
 		buffer_index = 0;
 	} else {
-		int index = buffer_index;
-		buffer[index++] = c;
-		if (index >= BUFFER_LENGTH) {
+		buffer[buffer_index++] = c;
+		if (buffer_index >= BUFFER_LENGTH) {
 			flush(std::string(buffer, buffer_index));
 			buffer_index = 0;
-		} else {
-			buffer_index = index;
 		}
 	}
 }

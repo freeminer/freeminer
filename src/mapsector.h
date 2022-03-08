@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MAPSECTOR_HEADER
-#define MAPSECTOR_HEADER
+#pragma once
 
 #if WTF
 
@@ -49,8 +48,6 @@ public:
 	MapSector(Map *parent, v2s16 pos, IGameDef *gamedef);
 	virtual ~MapSector();
 
-	virtual u32 getId() const = 0;
-
 	void deleteBlocks();
 
 	v2s16 getPos()
@@ -70,13 +67,11 @@ public:
 
 	bool empty() const { return m_blocks.empty(); }
 
-	// Always false at the moment, because sector contains no metadata.
-	bool differs_from_disk;
-
+	int size() const { return m_blocks.size(); }
 protected:
 
 	// The pile of MapBlocks
-	UNORDERED_MAP<s16, MapBlock*> m_blocks;
+	std::unordered_map<s16, MapBlock*> m_blocks;
 
 	Map *m_parent;
 	// Position on parent (in MapBlock widths)
@@ -85,8 +80,8 @@ protected:
 	IGameDef *m_gamedef;
 
 	// Last-used block is cached here for quicker access.
-	// Be sure to set this to NULL when the cached block is deleted
-	MapBlock *m_block_cache;
+	// Be sure to set this to nullptr when the cached block is deleted
+	MapBlock *m_block_cache = nullptr;
 	s16 m_block_cache_y;
 
 	/*
@@ -95,6 +90,7 @@ protected:
 	MapBlock *getBlockBuffered(s16 y);
 
 };
+<<<<<<< HEAD
 
 class ServerMapSector : public MapSector
 {
@@ -145,3 +141,5 @@ private:
 
 #endif
 
+=======
+>>>>>>> 5.5.0

@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IRRLICHTTYPES_EXTRABLOATED_HEADER
-#define IRRLICHTTYPES_EXTRABLOATED_HEADER
+#pragma once
 
 #include "irrlichttypes_bloated.h"
 
@@ -30,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IImage.h>
 #include <IrrlichtDevice.h>
 #include <IMeshSceneNode.h>
+#include <IDummyTransformationSceneNode.h>
 #include <SMesh.h>
 #include <ISceneManager.h>
 #include <IMeshBuffer.h>
@@ -37,6 +37,3 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIElement.h>
 #include <IGUIEnvironment.h>
 #endif
-
-#endif
-

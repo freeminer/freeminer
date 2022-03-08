@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include "threading/event.h"
 #include "threading/mutex_auto_lock.h"
+<<<<<<< HEAD
 
 Event::Event()
 {
@@ -51,40 +52,22 @@ Event::~Event()
 }
 #endif
 
+=======
+>>>>>>> 5.5.0
 
 void Event::wait()
 {
-#if USE_CPP11_MUTEX
 	MutexAutoLock lock(mutex);
 	while (!notified) {
 		cv.wait(lock);
 	}
 	notified = false;
-#elif USE_WIN_MUTEX
-	WaitForSingleObject(event, INFINITE);
-#else
-	pthread_mutex_lock(&mutex);
-	while (!notified) {
-		pthread_cond_wait(&cv, &mutex);
-	}
-	notified = false;
-	pthread_mutex_unlock(&mutex);
-#endif
 }
 
 
 void Event::signal()
 {
-#if USE_CPP11_MUTEX
 	MutexAutoLock lock(mutex);
 	notified = true;
 	cv.notify_one();
-#elif USE_WIN_MUTEX
-	SetEvent(event);
-#else
-	pthread_mutex_lock(&mutex);
-	notified = true;
-	pthread_cond_signal(&cv);
-	pthread_mutex_unlock(&mutex);
-#endif
 }

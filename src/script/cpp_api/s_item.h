@@ -20,11 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef S_ITEM_H_
-#define S_ITEM_H_
+#pragma once
 
 #include "cpp_api/s_base.h"
 #include "irr_v3d.h"
+#include "util/Optional.h"
 
 struct PointedThing;
 struct ItemStack;
@@ -39,14 +39,21 @@ class ScriptApiItem
 : virtual public ScriptApiBase
 {
 public:
+	/*
+	 * Functions with Optional<ItemStack> are for callbacks where Lua may
+	 * want to prevent the engine from modifying the inventory after it's done.
+	 * This has a longer backstory where on_use may need to empty the player's
+	 * inventory without the engine interfering (see issue #6546).
+	 */
+
 	bool item_OnDrop(ItemStack &item,
 			ServerActiveObject *dropper, v3f pos);
-	bool item_OnPlace(ItemStack &item,
+	bool item_OnPlace(Optional<ItemStack> &item,
 			ServerActiveObject *placer, const PointedThing &pointed);
-	bool item_OnUse(ItemStack &item,
+	bool item_OnUse(Optional<ItemStack> &item,
 			ServerActiveObject *user, const PointedThing &pointed);
-	bool item_OnSecondaryUse(ItemStack &item,
-			ServerActiveObject *user);
+	bool item_OnSecondaryUse(Optional<ItemStack> &item,
+			ServerActiveObject *user, const PointedThing &pointed);
 	bool item_OnCraft(ItemStack &item, ServerActiveObject *user,
 			const InventoryList *old_craft_grid, const InventoryLocation &craft_inv);
 	bool item_CraftPredict(ItemStack &item, ServerActiveObject *user,
@@ -56,10 +63,11 @@ protected:
 	friend class LuaItemStack;
 	friend class ModApiItemMod;
 
-	bool getItemCallback(const char *name, const char *callbackname);
-	void pushPointedThing(const PointedThing& pointed);
+	bool getItemCallback(const char *name, const char *callbackname, const v3s16 *p = nullptr);
+	/*!
+	 * Pushes a `pointed_thing` tabe to the stack.
+	 * \param hitpoint If true, the exact pointing location is also pushed
+	 */
+	void pushPointedThing(const PointedThing &pointed, bool hitpoint = false);
 
 };
-
-
-#endif /* S_ITEM_H_ */

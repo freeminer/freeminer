@@ -20,21 +20,18 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PROFILER_HEADER
-#define PROFILER_HEADER
+#pragma once
 
 #include <algorithm>
 #include "irrlichttypes.h"
+#include <cassert>
 #include <string>
 #include <map>
+#include <ostream>
 
-#include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/timetaker.h"
 #include "util/numeric.h"      // paging()
-#include "debug.h"             // assert()
-
-#define MAX_PROFILER_TEXT_ROWS 20
 
 // Global profiler
 class Profiler;
@@ -65,10 +62,9 @@ struct ProfValue {
 class Profiler
 {
 public:
-	Profiler()
-	{
-	}
+	Profiler();
 
+<<<<<<< HEAD
 	void add(const std::string &name, float value)
 	{
 		if(!g_profiler_enabled)
@@ -145,8 +141,22 @@ public:
 			o<<std::endl;
 		}
 	}
+=======
+	void add(const std::string &name, float value);
+	void avg(const std::string &name, float value);
+	void clear();
+
+	float getValue(const std::string &name) const;
+	int getAvgCount(const std::string &name) const;
+	u64 getElapsedMs() const;
+>>>>>>> 5.5.0
 
 	typedef std::map<std::string, float> GraphValues;
+
+	// Returns the line count
+	int print(std::ostream &o, u32 page = 1, u32 pagecount = 1);
+	void getPage(GraphValues &o, u32 page, u32 pagecount);
+
 
 	void graphAdd(const std::string &id, float value)
 	{
@@ -172,9 +182,17 @@ public:
 	}
 
 private:
+<<<<<<< HEAD
 	Mutex m_mutex;
 	GraphValues m_graphvalues;
 	std::map<std::string, ProfValue> m_data;
+=======
+	std::mutex m_mutex;
+	std::map<std::string, float> m_data;
+	std::map<std::string, int> m_avgcounts;
+	std::map<std::string, float> m_graphvalues;
+	u64 m_start_time;
+>>>>>>> 5.5.0
 };
 
 enum ScopeProfilerType{
@@ -187,6 +205,7 @@ class ScopeProfiler
 {
 public:
 	ScopeProfiler(Profiler *profiler, const std::string &name,
+<<<<<<< HEAD
 			enum ScopeProfilerType type = SPT_ADD):
 		m_profiler(profiler),
 		m_name(name),
@@ -210,12 +229,17 @@ public:
 			delete m_timer;
 		}
 	}
+=======
+			ScopeProfilerType type = SPT_ADD);
+	~ScopeProfiler();
+>>>>>>> 5.5.0
 private:
-	Profiler *m_profiler;
+	Profiler *m_profiler = nullptr;
 	std::string m_name;
-	TimeTaker *m_timer;
+	TimeTaker *m_timer = nullptr;
 	enum ScopeProfilerType m_type;
 };
+<<<<<<< HEAD
 
 
 // Global profiler
@@ -224,3 +248,5 @@ extern Profiler *g_profiler;
 
 #endif
 
+=======
+>>>>>>> 5.5.0

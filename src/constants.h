@@ -20,15 +20,14 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONSTANTS_HEADER
-#define CONSTANTS_HEADER
+#pragma once
 
 /*
 	All kinds of constants.
 
-	Cross-platform compatibility crap should go in porting.h.
+	Cross-platform compatibility stuff should go in porting.h.
 
-    Some things here are legacy crap.
+    Some things here are legacy.
 */
 
 /*
@@ -68,15 +67,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // I really don't want to make every algorithm to check if it's going near
 // the limit or not, so this is lower.
 // This is the maximum value the setting map_generation_limit can be
-#define MAX_MAP_GENERATION_LIMIT (31000)
+#define MAX_MAP_GENERATION_LIMIT (31007)
 
 // Size of node in floating-point units
 // The original idea behind this is to disallow plain casts between
 // floating-point and integer positions, which potentially give wrong
 // results. (negative coordinates, values between nodes, ...)
 // Use floatToInt(p, BS) and intToFloat(p, BS).
+<<<<<<< HEAD
 #define BS (10.0)
 #define HBS (BS/2)
+=======
+#define BS 10.0f
+>>>>>>> 5.5.0
 
 // Dimension of a MapBlock
 #define MAP_BLOCKP 4
@@ -85,20 +88,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // the main loop (related to TempMods and day/night)
 //#define MAP_BLOCKSIZE 32
 
+// Player step height in nodes
+#define PLAYER_DEFAULT_STEPHEIGHT 0.6f
+
 /*
     Old stuff that shouldn't be hardcoded
 */
 
 // Size of player's main inventory
-#define PLAYER_INVENTORY_SIZE (8*4)
+#define PLAYER_INVENTORY_SIZE (8 * 4)
 
-// Maximum hit points of a player
-#define PLAYER_MAX_HP 20
+// Default maximum health points of a player
+#define PLAYER_MAX_HP_DEFAULT 20
 
+<<<<<<< HEAD
 #define PLAYER_FALL_TOLERANCE_SPEED (BS*14)
 
 // Maximal breath of a player
 #define PLAYER_MAX_BREATH 11
+=======
+// Default maximal breath of a player
+#define PLAYER_MAX_BREATH_DEFAULT 10
+>>>>>>> 5.5.0
 
 // For screenshots a serial number is appended to the filename + datetimestamp
 // if filename + datetimestamp is not unique.
@@ -110,6 +121,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
     GUI related things
 */
 
+<<<<<<< HEAD
 // TODO: implement dpi-based scaling for windows and remove this hack
 #if defined(_WIN32)
 	#define TTF_DEFAULT_FONT_SIZE   (18)
@@ -121,3 +133,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_FONT_SIZE       (10)
 
 #endif
+=======
+#define TTF_DEFAULT_FONT_SIZE (16)
+>>>>>>> 5.5.0

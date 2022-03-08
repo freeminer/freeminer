@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IRR_V2D_HEADER
-#define IRR_V2D_HEADER
+#pragma once
 
 #include "irrlichttypes.h"
 
@@ -33,6 +32,3 @@ typedef core::vector2d<s32> v2s32;
 typedef core::vector2d<POS> v2POS;
 typedef core::vector2d<u32> v2u32;
 typedef core::vector2d<f32> v2f32;
-
-#endif
-

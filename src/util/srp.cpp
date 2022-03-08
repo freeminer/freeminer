@@ -27,26 +27,35 @@
  */
 
 // clang-format off
+
+#include <cstddef>
+
 #ifdef WIN32
 	#include <windows.h>
 	#include <wincrypt.h>
 #else
-	#include <time.h>
+	#include <ctime>
+
 #endif
 // clang-format on
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <cstdint>
 
 #include <config.h>
 
+<<<<<<< HEAD
 #include <cstddef> // fix gmp: error: ‘::max_align_t’ has not been declared
 
 #if USE_SYSTEM_GMP || defined (__ANDROID__) || defined (ANDROID)
+=======
+#if USE_SYSTEM_GMP
+>>>>>>> 5.5.0
 	#include <gmp.h>
 #else
-	#include <gmp/mini-gmp.h>
+	#include <mini-gmp.h>
 #endif
 
 #include <util/sha2.h>
@@ -419,7 +428,7 @@ static SRP_Result H_nn(
 }
 
 static SRP_Result H_ns(mpz_t result, SRP_HashAlgorithm alg, const unsigned char *n,
-	size_t len_n, const unsigned char *bytes, size_t len_bytes)
+	size_t len_n, const unsigned char *bytes, uint32_t len_bytes)
 {
 	unsigned char buff[SHA512_DIGEST_LENGTH];
 	size_t nbytes = len_n + len_bytes;
@@ -613,7 +622,11 @@ SRP_Result srp_create_salted_verification_key( SRP_HashAlgorithm alg,
 			if (fill_buff() != SRP_OK) goto error_and_exit;
 		*bytes_s = (unsigned char *)srp_alloc(size_to_fill);
 		if (!*bytes_s) goto error_and_exit;
+<<<<<<< HEAD
 		memcpy(*bytes_s, g_rand_buff + g_rand_idx, size_to_fill);
+=======
+		memcpy(*bytes_s, &g_rand_buff[g_rand_idx], size_to_fill);
+>>>>>>> 5.5.0
 		g_rand_idx += size_to_fill;
 	}
 
@@ -698,7 +711,7 @@ struct SRPVerifier *srp_verifier_new(SRP_HashAlgorithm alg,
 		goto cleanup_and_exit;
 	}
 
-	memcpy((char *)ver->username, username, ulen);
+	memcpy(ver->username, username, ulen);
 
 	ver->authenticated = 0;
 
@@ -863,7 +876,7 @@ err_exit:
 		mpz_clear(usr->a);
 		mpz_clear(usr->A);
 		mpz_clear(usr->S);
-		if (usr->ng) delete_ng(usr->ng);
+		delete_ng(usr->ng);
 		srp_free(usr->username);
 		srp_free(usr->username_verifier);
 		if (usr->password) {
@@ -1013,10 +1026,10 @@ void  srp_user_process_challenge(struct SRPUser *usr,
 			goto cleanup_and_exit;
 
 		*bytes_M = usr->M;
-		if (len_M) *len_M = hash_length(usr->hash_alg);
+		*len_M = hash_length(usr->hash_alg);
 	} else {
 		*bytes_M = NULL;
-		if (len_M) *len_M = 0;
+		*len_M = 0;
 	}
 
 cleanup_and_exit:

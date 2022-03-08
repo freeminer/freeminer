@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IRRLICHTTYPES_BLOATED_HEADER
-#define IRRLICHTTYPES_BLOATED_HEADER
+#pragma once
 
 #include "irrlichttypes.h"
 
@@ -30,6 +29,3 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_aabb3d.h"
 
 #include <SColor.h>
-
-#endif
-

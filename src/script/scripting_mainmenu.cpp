@@ -21,23 +21,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "scripting_mainmenu.h"
-#include "mods.h"
-#include "porting.h"
-#include "log.h"
+#include "content/mods.h"
 #include "cpp_api/s_internal.h"
 #include "lua_api/l_base.h"
+#include "lua_api/l_http.h"
 #include "lua_api/l_mainmenu.h"
+#include "lua_api/l_sound.h"
 #include "lua_api/l_util.h"
 #include "lua_api/l_settings.h"
+#include "log.h"
 
 extern "C" {
 #include "lualib.h"
 }
-
 #define MAINMENU_NUM_ASYNC_THREADS 4
 
 
-MainMenuScripting::MainMenuScripting(GUIEngine* guiengine)
+MainMenuScripting::MainMenuScripting(GUIEngine* guiengine):
+		ScriptApiBase(ScriptingType::MainMenu)
 {
 	setGuiEngine(guiengine);
 
@@ -68,10 +69,16 @@ void MainMenuScripting::initializeModApi(lua_State *L, int top)
 	// Initialize mod API modules
 	ModApiMainMenu::Initialize(L, top);
 	ModApiUtil::Initialize(L, top);
+	ModApiSound::Initialize(L, top);
+	ModApiHttp::Initialize(L, top);
 
 	asyncEngine.registerStateInitializer(registerLuaClasses);
 	asyncEngine.registerStateInitializer(ModApiMainMenu::InitializeAsync);
 	asyncEngine.registerStateInitializer(ModApiUtil::InitializeAsync);
+<<<<<<< HEAD
+=======
+	asyncEngine.registerStateInitializer(ModApiHttp::InitializeAsync);
+>>>>>>> 5.5.0
 
 	// Initialize async environment
 	//TODO possibly make number of async threads configurable
@@ -91,8 +98,9 @@ void MainMenuScripting::step()
 }
 
 /******************************************************************************/
-unsigned int MainMenuScripting::queueAsync(std::string serialized_func,
-		std::string serialized_param) {
-	return asyncEngine.queueAsyncJob(serialized_func, serialized_param);
+u32 MainMenuScripting::queueAsync(std::string &&serialized_func,
+		std::string &&serialized_param)
+{
+	return asyncEngine.queueAsyncJob(std::move(serialized_func), std::move(serialized_param));
 }
 

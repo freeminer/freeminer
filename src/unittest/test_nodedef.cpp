@@ -25,7 +25,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodedef.h"
 #include "network/networkprotocol.h"
 
-class TestNodeDef : public TestBase {
+class TestNodeDef : public TestBase
+{
 public:
 	TestNodeDef() { TestManager::registerTestModule(this); }
 	const char *getName() { return "TestNodeDef"; }
@@ -49,13 +50,13 @@ void TestNodeDef::testContentFeaturesSerialization()
 	ContentFeatures f;
 
 	f.name = "default:stone";
-	for (int i = 0; i < 6; i++)
-		f.tiledef[i].name = "default_stone.png";
+	for (TileDef &tiledef : f.tiledef)
+		tiledef.name = "default_stone.png";
 	f.is_ground_content = true;
 
 	std::ostringstream os(std::ios::binary);
 	f.serialize(os, LATEST_PROTOCOL_VERSION);
-	//verbosestream<<"Test ContentFeatures size: "<<os.str().size()<<std::endl;
+	// verbosestream<<"Test ContentFeatures size: "<<os.str().size()<<std::endl;
 
 	std::istringstream is(os.str(), std::ios::binary);
 	ContentFeatures f2;

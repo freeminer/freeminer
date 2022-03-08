@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_ITEM_H_
-#define L_ITEM_H_
+#pragma once
 
 #include "lua_api/l_base.h"
 #include "inventory.h"  // ItemStack
@@ -37,6 +36,9 @@ private:
 
 	// garbage collector
 	static int gc_object(lua_State *L);
+
+	// __tostring metamethod
+	static int mt_tostring(lua_State *L);
 
 	// is_empty(self) -> true/false
 	static int l_is_empty(lua_State *L);
@@ -59,11 +61,22 @@ private:
 	// set_wear(self, number)
 	static int l_set_wear(lua_State *L);
 
+	// get_meta(self) -> string
+	static int l_get_meta(lua_State *L);
+
+	// DEPRECATED
 	// get_metadata(self) -> string
 	static int l_get_metadata(lua_State *L);
 
+	// DEPRECATED
 	// set_metadata(self, string)
 	static int l_set_metadata(lua_State *L);
+
+	// get_description(self)
+	static int l_get_description(lua_State *L);
+
+	// get_short_description(self)
+	static int l_get_short_description(lua_State *L);
 
 	// clear(self) -> true
 	static int l_clear(lua_State *L);
@@ -120,7 +133,7 @@ private:
 
 public:
 	LuaItemStack(const ItemStack &item);
-	~LuaItemStack();
+	~LuaItemStack() = default;
 
 	const ItemStack& getItem() const;
 	ItemStack& getItem();
@@ -145,7 +158,3 @@ private:
 public:
 	static void Initialize(lua_State *L, int top);
 };
-
-
-
-#endif /* L_ITEM_H_ */

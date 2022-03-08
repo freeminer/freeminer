@@ -20,25 +20,26 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef EMERGE_HEADER
-#define EMERGE_HEADER
+#pragma once
 
 #include <map>
+#include <mutex>
+#include "network/networkprotocol.h"
 #include "irr_v3d.h"
 #include "util/container.h"
-#include "mapgen.h" // for MapgenParams
+#include "mapgen/mapgen.h" // for MapgenParams
 #include "map.h"
 
 #define BLOCK_EMERGE_ALLOW_GEN   (1 << 0)
 #define BLOCK_EMERGE_FORCE_QUEUE (1 << 1)
 
-#define EMERGE_DBG_OUT(x) do {                         \
+#define EMERGE_DBG_OUT(x) {                            \
 	if (enable_mapgen_debug_info)                      \
 		infostream << "EmergeThread: " x << std::endl; \
-} while (0)
+}
 
 class EmergeThread;
-class INodeDefManager;
+class NodeDefManager;
 class Settings;
 //class ServerEnvironment;
 
@@ -46,21 +47,24 @@ class BiomeManager;
 class OreManager;
 class DecorationManager;
 class SchematicManager;
+class Server;
+class ModApiMapgen;
 
 // Structure containing inputs/outputs for chunk generation
 struct BlockMakeData {
-	MMVManip *vmanip;
-	u64 seed;
+	MMVManip *vmanip = nullptr;
+	u64 seed = 0;
 	v3s16 blockpos_min;
 	v3s16 blockpos_max;
+<<<<<<< HEAD
 	v3s16 blockpos_requested;
 	INodeDefManager *nodedef;
+=======
+	UniqueQueue<v3s16> transforming_liquid;
+	const NodeDefManager *nodedef = nullptr;
+>>>>>>> 5.5.0
 
-	BlockMakeData():
-		vmanip(NULL),
-		seed(0),
-		nodedef(NULL)
-	{}
+	BlockMakeData() = default;
 
 	~BlockMakeData() { delete vmanip; }
 };
@@ -91,15 +95,50 @@ struct BlockEmergeData {
 	EmergeCallbackList callbacks;
 };
 
-class EmergeManager {
+class EmergeParams {
+	friend class EmergeManager;
 public:
+<<<<<<< HEAD
 	ServerEnvironment *env;
 
 	INodeDefManager *ndef;
+=======
+	EmergeParams() = delete;
+	~EmergeParams();
+	DISABLE_CLASS_COPY(EmergeParams);
+
+	const NodeDefManager *ndef; // shared
+	bool enable_mapgen_debug_info;
+
+	u32 gen_notify_on;
+	const std::set<u32> *gen_notify_on_deco_ids; // shared
+
+	BiomeGen *biomegen;
+	BiomeManager *biomemgr;
+	OreManager *oremgr;
+	DecorationManager *decomgr;
+	SchematicManager *schemmgr;
+
+private:
+	EmergeParams(EmergeManager *parent, const BiomeGen *biomegen,
+		const BiomeManager *biomemgr,
+		const OreManager *oremgr, const DecorationManager *decomgr,
+		const SchematicManager *schemmgr);
+};
+
+class EmergeManager {
+	/* The mod API needs unchecked access to allow:
+	 * - using decomgr or oremgr to place decos/ores
+	 * - using schemmgr to load and place schematics
+	 */
+	friend class ModApiMapgen;
+public:
+	const NodeDefManager *ndef;
+>>>>>>> 5.5.0
 	bool enable_mapgen_debug_info;
 
 	// Generation Notify
-	u32 gen_notify_on;
+	u32 gen_notify_on = 0;
 	std::set<u32> gen_notify_on_deco_ids;
 
 	// Parameters passed to mapgens owned by ServerMap
@@ -113,43 +152,49 @@ public:
 	// Environment is not created until after script initialization.
 	MapSettingsManager *map_settings_mgr;
 
-	// Managers of various map generation-related components
-	BiomeManager *biomemgr;
-	OreManager *oremgr;
-	DecorationManager *decomgr;
-	SchematicManager *schemmgr;
-
 	// Methods
-	EmergeManager(IGameDef *gamedef);
+	EmergeManager(Server *server);
 	~EmergeManager();
+	DISABLE_CLASS_COPY(EmergeManager);
 
-	bool initMapgens(MapgenParams *mgparams);
+	const BiomeGen *getBiomeGen() const { return biomegen; }
+
+	// no usage restrictions
+	const BiomeManager *getBiomeManager() const { return biomemgr; }
+	const OreManager *getOreManager() const { return oremgr; }
+	const DecorationManager *getDecorationManager() const { return decomgr; }
+	const SchematicManager *getSchematicManager() const { return schemmgr; }
+	// only usable before mapgen init
+	BiomeManager *getWritableBiomeManager();
+	OreManager *getWritableOreManager();
+	DecorationManager *getWritableDecorationManager();
+	SchematicManager *getWritableSchematicManager();
+
+	void initMapgens(MapgenParams *mgparams);
 
 	void startThreads();
 	void stopThreads();
 	bool isRunning();
 
 	bool enqueueBlockEmerge(
-		u16 peer_id,
+		session_t peer_id,
 		v3s16 blockpos,
 		bool allow_generate,
 		bool ignore_queue_limits=false);
 
 	bool enqueueBlockEmergeEx(
 		v3s16 blockpos,
-		u16 peer_id,
+		session_t peer_id,
 		u16 flags,
 		EmergeCompletionCallback callback,
 		void *callback_param);
 
-	v3s16 getContainingChunk(v3s16 blockpos);
+	bool isBlockInQueue(v3s16 pos);
 
 	Mapgen *getCurrentMapgen();
 
 	// Mapgen helpers methods
-	Biome *getBiomeAtPoint(v3s16 p);
 	int getSpawnLevelAtPoint(v2s16 p);
-	int getGroundLevelAtPoint(v2s16 p);
 	bool isBlockUnderground(v3s16 blockpos);
 
 	static v3s16 getContainingChunk(v3s16 blockpos, s16 chunksize);
@@ -157,15 +202,23 @@ public:
 private:
 	std::vector<Mapgen *> m_mapgens;
 	std::vector<EmergeThread *> m_threads;
-	bool m_threads_active;
+	bool m_threads_active = false;
 
-	Mutex m_queue_mutex;
+	std::mutex m_queue_mutex;
 	std::map<v3s16, BlockEmergeData> m_blocks_enqueued;
-	UNORDERED_MAP<u16, u16> m_peer_queue_count;
+	std::unordered_map<u16, u32> m_peer_queue_count;
 
-	u16 m_qlimit_total;
-	u16 m_qlimit_diskonly;
-	u16 m_qlimit_generate;
+	u32 m_qlimit_total;
+	u32 m_qlimit_diskonly;
+	u32 m_qlimit_generate;
+
+	// Managers of various map generation-related components
+	// Note that each Mapgen gets a copy(!) of these to work with
+	BiomeGen *biomegen;
+	BiomeManager *biomemgr;
+	OreManager *oremgr;
+	DecorationManager *decomgr;
+	SchematicManager *schemmgr;
 
 	// Requires m_queue_mutex held
 	EmergeThread *getOptimalThread();
@@ -181,8 +234,4 @@ private:
 	bool popBlockEmergeData(v3s16 pos, BlockEmergeData *bedata);
 
 	friend class EmergeThread;
-
-	DISABLE_CLASS_COPY(EmergeManager);
 };
-
-#endif
