@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/pointer.h"
 #include "util/numeric.h"
 #include "networkprotocol.h"
+#include "../msgpack_fix.h"
 
 class MsgpackPacketSafe;
 
@@ -140,6 +141,7 @@ private:
 
 };
 
+#include "fm_networkprotocol.h"
 #include "../util/msgpack_serialize.h"
 bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
 

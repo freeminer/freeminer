@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.12)
 
 project(freeminer)
 
@@ -685,7 +685,6 @@ set(FMcommon_SRCS
 	circuit_element_virtual.cpp
 	key_value_storage.cpp
 	fm_bitset.cpp
-	mapgen_v5.cpp
 	mapgen_indev.cpp
 	mapgen_math.cpp
 	log_types.cpp
