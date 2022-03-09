@@ -131,32 +131,24 @@ private:
 		}
 	}
 
-<<<<<<< HEAD
-		std::vector<u8> m_data;
-		u32 m_datasize;
-		u32 m_read_offset;
-		u16 m_command;
-		u16 m_peer_id;
-
-//freeminer:
-public:
-		MsgpackPacketSafe * packet = nullptr;
-		msgpack::unpacked * packet_unpacked = nullptr;
-		int packet_unpack();
-private:
-
-
-};
-
-#include "../util/msgpack_serialize.h"
-bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
-
-#endif
-=======
 	std::vector<u8> m_data;
 	u32 m_datasize = 0;
 	u32 m_read_offset = 0;
 	u16 m_command = 0;
 	session_t m_peer_id = 0;
+
+
+// freeminer:
+public:
+	MsgpackPacketSafe * packet = nullptr;
+	msgpack::unpacked * packet_unpacked = nullptr;
+	int packet_unpack();
+private:
+
 };
->>>>>>> 5.5.0
+
+
+#include "fm_networkprotocol.h"
+#include "../util/msgpack_serialize.h"
+bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
+
