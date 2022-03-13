@@ -77,20 +77,11 @@ public:
 		QUICKTUNE_INC,
 		QUICKTUNE_DEC,
 
-<<<<<<< HEAD
-		DEBUG_STACKS,
-
 		//freeminer
 		//MSG,
 		PLAYERLIST,
 		//=========
 
-		// joystick specific keys
-		MOUSE_L,
-		MOUSE_R,
-		SCROLL_UP,
-		SCROLL_DOWN,
-=======
 		// hotbar
 		SLOT_1,
 		SLOT_2,
@@ -124,7 +115,6 @@ public:
 		SLOT_30,
 		SLOT_31,
 		SLOT_32,
->>>>>>> 5.5.0
 
 		// Fake keycode for array size and internal checks
 		INTERNAL_ENUM_COUNT

@@ -165,7 +165,7 @@ public:
 	}
 
 private:
-	Mutex m_mutex;
+	std::mutex m_mutex;
 	// Values are stored here at id-1 position (id 1 = [0])
 	std::vector<T> m_id_to_value;
 	std::map<T, u32> m_value_to_id;

@@ -18,14 +18,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-<<<<<<< HEAD
-#if defined(WIN32) || defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
-=======
 #if defined(_WIN32)
 #include <windows.h>
->>>>>>> 5.5.0
 #elif defined(__MACH__) && defined(__APPLE__)
 #include <mach/semaphore.h>
 #else

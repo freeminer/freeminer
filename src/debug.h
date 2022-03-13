@@ -28,12 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettime.h"
 #include "log.h"
 
-<<<<<<< HEAD
-#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
-	#define WIN32_LEAN_AND_MEAN
-=======
 #ifdef _WIN32
->>>>>>> 5.5.0
 	#ifndef _WIN32_WINNT
 		#define _WIN32_WINNT 0x0501
 	#endif
@@ -114,8 +109,6 @@ void debug_set_exception_handler();
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER
 	#define END_DEBUG_EXCEPTION_HANDLER
 #endif
-<<<<<<< HEAD
-
 
 //#define EXEPTION_DEBUG 1 // Disable almost all catch() to get good system stacktraces
 
@@ -127,9 +120,3 @@ void debug_set_exception_handler();
 	#define EXCEPTION_HANDLER_END } catch (std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl; } \
 									catch (...)               { errorstream << m_name << ": Ooops..." << std::endl; }
 #endif
-
-#endif // DEBUG_HEADER
-
-
-=======
->>>>>>> 5.5.0

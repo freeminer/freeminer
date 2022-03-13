@@ -35,7 +35,6 @@ enum PointedThingType
 	POINTEDTHING_OBJECT
 };
 
-<<<<<<< HEAD
 enum PointedThingSerialization {
 	POINTEDTHING_TYPE,
 	POINTEDTHING_UNDER,
@@ -43,9 +42,7 @@ enum PointedThingSerialization {
 	POINTEDTHING_OBJECT_ID
 };
 
-=======
 //! An active object or node which is selected by a ray on the map.
->>>>>>> 5.5.0
 struct PointedThing
 {
 	//! The type of the pointed object.
@@ -65,9 +62,6 @@ struct PointedThing
 	 * if the ray starts in a nodebox.
 	 */
 	v3s16 node_abovesurface;
-<<<<<<< HEAD
-	u16 object_id;
-=======
 	/*!
 	 * Only valid if type is POINTEDTHING_NODE.
 	 * The coordinates of the node which contains the
@@ -102,7 +96,6 @@ struct PointedThing
 	 * ray's start point and the intersection point in irrlicht coordinates.
 	 */
 	f32 distanceSq = 0;
->>>>>>> 5.5.0
 
 	//! Constructor for POINTEDTHING_NOTHING
 	PointedThing() = default;
@@ -113,18 +106,15 @@ struct PointedThing
 	//! Constructor for POINTEDTHING_OBJECT
 	PointedThing(s16 id, const v3f &point, const v3s16 &normal, f32 distSq);
 	std::string dump() const;
-<<<<<<< HEAD
-=======
 	void serialize(std::ostream &os) const;
 	void deSerialize(std::istream &is);
 	/*!
 	 * This function ignores the intersection point and normal.
 	 */
->>>>>>> 5.5.0
 	bool operator==(const PointedThing &pt2) const;
 	bool operator!=(const PointedThing &pt2) const;
-	void serialize(std::ostream &os) const;
-	void deSerialize(std::istream &is);
+
+	// fm:
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
 };

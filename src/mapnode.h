@@ -122,13 +122,8 @@ enum Rotation {
 #define LIQUID_INFINITY_MASK 0x80 // 0b10000000 // only for _source liquid
 #define LIQUID_STABLE_MASK   0x40 // 0b01000000
 
-<<<<<<< HEAD
-// mask for param2, now as for liquid
-#define LEVELED_MASK 0x1F         // 0b00011111 // was: 0x3F
-=======
 // mask for leveled nodebox param2
-#define LEVELED_MASK 0x7F
->>>>>>> 5.5.0
+#define LEVELED_MASK 0x1F         // 0b00011111 // was: 0x7F
 #define LEVELED_MAX LEVELED_MASK
 
 
@@ -162,23 +157,9 @@ struct MapNode
 	*/
 	u8 param2;
 
-<<<<<<< HEAD
-	/*
-	MapNode()
-	{ }
-	*/
-
-	MapNode(const MapNode & n)
-	{
-		*this = n;
-	}
-
-	MapNode(content_t content = CONTENT_AIR, u8 a_param1=0, u8 a_param2=0)
-=======
 	MapNode() = default;
 
-	MapNode(content_t content, u8 a_param1=0, u8 a_param2=0) noexcept
->>>>>>> 5.5.0
+	MapNode(content_t content = CONTENT_AIR, u8 a_param1=0, u8 a_param2=0) noexcept
 		: param0(content),
 		  param1(a_param1),
 		  param2(a_param2)
@@ -294,12 +275,8 @@ struct MapNode
 	/*
 		Gets list of node boxes (used for rendering (NDT_NODEBOX))
 	*/
-<<<<<<< HEAD
-	void getNodeBoxes(INodeDefManager *nodemgr, std::vector<aabb3f> *boxes, u8 neighbors = 0) const;
-=======
 	void getNodeBoxes(const NodeDefManager *nodemgr, std::vector<aabb3f> *boxes,
 		u8 neighbors = 0) const;
->>>>>>> 5.5.0
 
 	/*
 		Gets list of selection boxes
@@ -316,20 +293,10 @@ struct MapNode
 	/*
 		Liquid/leveled helpers
 	*/
-<<<<<<< HEAD
-	u8 getMaxLevel(INodeDefManager *nodemgr, bool compress = 0) const;
-	u8 getLevel(INodeDefManager *nodemgr) const;
-	u16 setLevel(INodeDefManager *nodemgr, s16 level = 1, bool compress = 0);
-	u16 addLevel(INodeDefManager *nodemgr, s16 add = 1, bool compress = 0);
-	int freeze_melt(INodeDefManager *nodemgr, int direction = 0);
-
-	operator bool() const { return param0 != CONTENT_IGNORE; }
-=======
-	u8 getMaxLevel(const NodeDefManager *nodemgr) const;
+	u8 getMaxLevel(const NodeDefManager *nodemgr, bool compress = 0) const;
 	u8 getLevel(const NodeDefManager *nodemgr) const;
-	s8 setLevel(const NodeDefManager *nodemgr, s16 level = 1);
-	s8 addLevel(const NodeDefManager *nodemgr, s16 add = 1);
->>>>>>> 5.5.0
+	s16 setLevel(const NodeDefManager *nodemgr, s16 level = 1, bool compress = 0);
+	s16 addLevel(const NodeDefManager *nodemgr, s16 add = 1, bool compress = 0);
 
 	/*
 		Serialization functions
@@ -361,6 +328,9 @@ struct MapNode
 		return os;
 	}
 
+//fm:
+	int freeze_melt(const NodeDefManager *nodemgr, int direction = 0);
+	operator bool() const { return param0 != CONTENT_IGNORE; }
 
 private:
 	// Deprecated serialization methods

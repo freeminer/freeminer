@@ -24,8 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define GUITEXTINPUTMENU_HEADER
 
 #include "irrlichttypes_extrabloated.h"
-#include "modalMenu.h"
-#include "guiFormSpecMenu.h"
+#include "gui/guiFormSpecMenu.h"
 #include <string>
 
 class GUITextInputMenu : public GUIModalMenu

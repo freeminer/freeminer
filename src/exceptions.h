@@ -29,15 +29,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class BaseException : public std::exception
 {
 public:
-<<<<<<< HEAD
-BaseException(const std::string &s) throw() : m_s(s) 
-	{}
-	~BaseException() throw() {}
-=======
 	BaseException(const std::string &s) throw(): m_s(s) {}
 	~BaseException() throw() = default;
 
->>>>>>> 5.5.0
 	virtual const char * what() const throw()
 	{
 		return m_s.c_str();
@@ -140,24 +134,3 @@ public:
 		BaseException(s)
 	{}
 };
-<<<<<<< HEAD
-
-class TargetInexistentException : public std::exception
-{
-	virtual const char * what() const throw()
-	{
-		return "Somebody tried to refer to something that doesn't exist.";
-	}
-};
-
-class NullPointerException : public std::exception
-{
-	virtual const char * what() const throw()
-	{
-		return "NullPointerException";
-	}
-};
-
-#endif
-=======
->>>>>>> 5.5.0

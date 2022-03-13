@@ -115,13 +115,6 @@ public:
 	virtual void exitToOS()
 	{
 		shutdown_requested = true;
-<<<<<<< HEAD:src/mainmenumanager.h
-#ifndef __ANDROID__
-		device->closeDevice();
-		device->run();
-#endif
-=======
->>>>>>> 5.5.0:src/gui/mainmenumanager.h
 	}
 
 	virtual void disconnect()

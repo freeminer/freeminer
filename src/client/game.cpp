@@ -181,6 +181,7 @@ struct LocalFormspecHandler : public TextDest
 				g_gamecallback->exitToOS();
 #ifndef __ANDROID__
 				RenderingEngine::get_raw_device()->closeDevice();
+				RenderingEngine::get_raw_device()->run();
 #endif
 				return;
 			}

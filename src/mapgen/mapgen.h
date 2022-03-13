@@ -1,14 +1,8 @@
 /*
-<<<<<<< HEAD:src/mapgen.h
-mapgen.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015-2020 paramat
 Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/mapgen.h
 
 /*
 This file is part of Freeminer.

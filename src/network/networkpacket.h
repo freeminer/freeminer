@@ -24,6 +24,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "networkprotocol.h"
 #include <SColor.h>
 
+// fm:
+#include "fm_networkprotocol.h"
+#include "../util/msgpack_serialize.h"
+
+
 class MsgpackPacketSafe;
 
 class NetworkPacket
@@ -41,7 +46,7 @@ public:
 
 	// Getters
 	u32 getSize() const { return m_datasize; }
-	session_t getPeerId() const { return m_peer_id; }
+	session_t getPeerId() const { return m_peer_id.load(); }
 	u16 getCommand() { return m_command; }
 	u32 getRemainingBytes() const { return m_datasize - m_read_offset; }
 	const char *getRemainingString() { return getString(m_read_offset); }
@@ -147,8 +152,4 @@ private:
 
 };
 
-
-#include "fm_networkprotocol.h"
-#include "../util/msgpack_serialize.h"
 bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
-

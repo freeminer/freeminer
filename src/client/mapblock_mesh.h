@@ -28,16 +28,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <map>
 
-<<<<<<< HEAD:src/mapblock_mesh.h
+
+// fm:
 //#define MESH_ZEROCOPY //Exprimental, slower, needed for next farmesh
-
-
-class IGameDef;
 struct MapDrawControl;
 class Map;
-=======
+
+
 class Client;
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 class IShaderSource;
 
 /*
@@ -55,25 +53,15 @@ struct MeshMakeData
 	Map & m_vmanip;
 #else
 	VoxelManipulator m_vmanip;
-<<<<<<< HEAD:src/mapblock_mesh.h
 #endif
-	v3s16 m_blockpos;
-	v3s16 m_crack_pos_relative;
-	bool m_smooth_lighting;
-	bool m_show_hud;
-
-	IGameDef *m_gamedef;
-
-=======
 	v3s16 m_blockpos = v3s16(-1337,-1337,-1337);
 	v3s16 m_crack_pos_relative = v3s16(-1337,-1337,-1337);
 	bool m_smooth_lighting = false;
 
 	Client *m_client;
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 	bool m_use_shaders;
 
-<<<<<<< HEAD:src/mapblock_mesh.h
+    // fm:
 	int step;
 	int range;
 	bool no_draw;
@@ -84,19 +72,16 @@ struct MeshMakeData
 	bool debug;
 	bool filled;
 
-	MeshMakeData(IGameDef *gamedef, bool use_shaders,
+	MeshMakeData(Client *client, bool use_shaders,
 			bool use_tangent_vertices,
 			Map & map_, MapDrawControl& draw_control_);
 	~MeshMakeData();
-=======
-	MeshMakeData(Client *client, bool use_shaders);
 
 	/*
 		Copy block data manually (to allow optimizations by the caller)
 	*/
 	void fillBlockDataBegin(const v3s16 &blockpos);
 	void fillBlockData(const v3s16 &block_offset, MapNode *data);
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 
 	/*
 		Copy central data directly from block, and other data from
@@ -106,14 +91,6 @@ struct MeshMakeData
 	bool fill_data();
 
 	/*
-<<<<<<< HEAD:src/mapblock_mesh.h
-		Set up with only a single node at (1,1,1)
-	*/
-	void fillSingleNode(MapNode *node, v3POS blockpos = v3POS(0,0,0));
-
-	/*
-=======
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 		Set the (node) position of a crack
 	*/
 	void setCrack(int crack_level, v3s16 crack_pos);
@@ -178,10 +155,8 @@ public:
 			m_animation_force_timer--;
 	}
 
-<<<<<<< HEAD:src/mapblock_mesh.h
-	bool updateCameraOffset(v3s16 camera_offset);
 
-
+// fm:
 	u32 getUsageTimer() {
 		return m_usage_timer;
 	}
@@ -192,19 +167,14 @@ public:
 	int step;
 	bool no_draw;
 	unsigned int timestamp;
+	u32 m_usage_timer;
+
 
 private:
-	scene::IMesh *m_mesh;
+	scene::IMesh *m_mesh[MAX_TILE_LAYERS];
 public:
 	MinimapMapblock *m_minimap_mapblock;
 private:
-	IGameDef *m_gamedef;
-	video::IVideoDriver *m_driver;
-=======
-private:
-	scene::IMesh *m_mesh[MAX_TILE_LAYERS];
-	MinimapMapblock *m_minimap_mapblock;
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 
@@ -231,20 +201,10 @@ private:
 	// Animation info: day/night transitions
 	// Last daynight_ratio value passed to animate()
 	u32 m_last_daynight_ratio;
-<<<<<<< HEAD:src/mapblock_mesh.h
-	// For each meshbuffer, maps vertex indices to (day,night) pairs
-	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
-
-	u32 m_usage_timer;
-
-	// Camera offset info -> do we have to translate the mesh?
-	v3s16 m_camera_offset;
-=======
 	// For each mesh and mesh buffer, stores pre-baked colors
 	// of sunlit vertices
 	// Keys are pairs of (mesh index, buffer index in the mesh)
 	std::map<std::pair<u8, u32>, std::map<u32, video::SColor > > m_daynight_diffs;
->>>>>>> 5.5.0:src/client/mapblock_mesh.h
 };
 
 /*!

@@ -28,38 +28,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "networkexceptions.h"
 
-<<<<<<< HEAD:src/database-dummy.cpp
-bool Database_Dummy::saveBlock(const v3s16 &pos, const std::string &data)
-{
-	m_database.set(getBlockAsString(pos), data);
-	return true;
-}
-
-void Database_Dummy::loadBlock(const v3s16 &pos, std::string *block)
-{
-	auto i = getBlockAsString(pos);
-	auto lock = m_database.lock_shared_rec();
-	auto it = m_database.find(i);
-	if (it == m_database.end())
-		*block = "";
-		return;
-	*block = it->second;
-}
-
-bool Database_Dummy::deleteBlock(const v3s16 &pos)
-{
-	m_database.erase(getBlockAsString(pos));
-	return true;
-}
-
-void Database_Dummy::listAllLoadableBlocks(std::vector<v3s16> &dst)
-{
-	dst.reserve(m_database.size());
-	for(auto &x : m_database) {
-		dst.push_back(getStringAsBlock(x.first));
-	}
-}
-=======
 extern bool socket_enable_debug_output;
 
 void sockets_init();
@@ -83,7 +51,6 @@ public:
 	void setTimeoutMs(int timeout_ms);
 	// Returns true if there is data, false if timeout occurred
 	bool WaitData(int timeout_ms);
->>>>>>> 5.5.0:src/network/socket.h
 
 private:
 	int m_handle;

@@ -29,20 +29,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include "itemgroup.h"
 #include "sound.h"
-<<<<<<< HEAD
 
-//#include "util/container.h"
-//#include "util/thread.h"
-
-#ifndef SERVER
-//#include "client/tile.h"
-#endif
-
+// fm:
 #include "msgpack_fix.h"
 
-=======
 #include "texture_override.h" // TextureOverride
->>>>>>> 5.5.0
 class IGameDef;
 class Client;
 struct ToolCapabilities;

@@ -19,6 +19,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <string>
+#include <vector>
+#include <SColor.h>
+#include "irr_v2d.h"
+using namespace irr;
+
 struct SkyColor
 {
 	video::SColor day_sky;

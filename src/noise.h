@@ -122,31 +122,13 @@ struct NoiseParams {
 	float lacunarity = 2.0f;
 	u32 flags = NOISE_FLAG_DEFAULTS;
 
-<<<<<<< HEAD
-	float far_scale;
-	float far_spread;
-	float far_persist;
-	float far_lacunarity;
+// fm:
+	float far_scale = 1;
+	float far_spread = 1;
+	float far_persist = 1;
+	float far_lacunarity = 1;
 
-	NoiseParams()
-	{
-		offset     = 0.0f;
-		scale      = 1.0f;
-		spread     = v3f(250, 250, 250);
-		seed       = 12345;
-		octaves    = 3;
-		persist    = 0.6f;
-		lacunarity = 2.0f;
-		flags      = NOISE_FLAG_DEFAULTS;
-
-		far_scale  = 1;
-		far_spread = 1;
-		far_persist = 1;
-		far_lacunarity = 1;
-	}
-=======
 	NoiseParams() = default;
->>>>>>> 5.5.0
 
 	NoiseParams(float offset_, float scale_, const v3f &spread_, s32 seed_,
 		u16 octaves_, float persist_, float lacunarity_,

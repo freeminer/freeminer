@@ -23,19 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "basic_macros.h"
-<<<<<<< HEAD
-#include "../irrlichttypes.h"
-#include "../irr_v2d.h"
-#include "../irr_v3d.h"
-#include "../irr_aabb3d.h"
-#include <algorithm>
-#include "../threading/mutex.h"
-#include "cpp11_container.h"
-#include <list>
-#include <cmath>
-#include <map>
-#include <vector>
-=======
 #include "constants.h"
 #include "irrlichttypes.h"
 #include "irr_v2d.h"
@@ -43,7 +30,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_aabb3d.h"
 #include "SColor.h"
 #include <matrix4.h>
->>>>>>> 5.5.0
+
+//fm:
+#include <algorithm>
+#include <cmath>
+#include <map>
+
 
 #define rangelim(d, min, max) ((d) < (min) ? (min) : ((d) > (max) ? (max) : (d)))
 #define myfloor(x) ((x) < 0.0 ? (int)(x) - 1 : (int)(x))
@@ -358,17 +350,12 @@ public:
 			m_accumulator = 0;
 		return true;
 	}
-<<<<<<< HEAD
 	void run_next(float wanted_interval) {
 		m_accumulator = wanted_interval;
 	}
-protected:
-	float m_accumulator;
-=======
 
 private:
 	float m_accumulator = 0.0f;
->>>>>>> 5.5.0
 };
 
 

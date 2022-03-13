@@ -27,11 +27,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/mutex_auto_lock.h"
 #include "porting.h"
 #include "log.h"
-<<<<<<< HEAD
-#include "../threading/thread_pool.h"
-=======
 #include "container.h"
->>>>>>> 5.5.0
+
+//fm:
+#include "../threading/thread_pool.h"
+#include "../fm_porting.h"
+
 
 template<typename T>
 class MutexedVariable
@@ -195,13 +196,8 @@ private:
 class UpdateThread : public thread_pool
 {
 public:
-<<<<<<< HEAD
 	UpdateThread(const std::string &name) : thread_pool(name + "Update") {}
-	~UpdateThread() {}
-=======
-	UpdateThread(const std::string &name) : Thread(name + "Update") {}
 	~UpdateThread() = default;
->>>>>>> 5.5.0
 
 	void deferUpdate() { m_update_sem.post(); }
 
@@ -215,12 +211,8 @@ public:
 
 	void *run()
 	{
-<<<<<<< HEAD
 		porting::setThreadPriority(30);
 
-		DSTACK(FUNCTION_NAME);
-=======
->>>>>>> 5.5.0
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		while (!stopRequested()) {

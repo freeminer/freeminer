@@ -262,13 +262,6 @@ private:
 	unsigned int m_size;
 	unsigned int *refcount;
 };
-<<<<<<< HEAD
-
-inline SharedBuffer<u8> SharedBufferFromString(const char *string)
-{
-	SharedBuffer<u8> b((u8*)string, strlen(string)+1);
-	return b;
-}
 
 template<class T>
 class sloppy {}; 
@@ -285,8 +278,3 @@ class sloppy<T**>
     operator T** () const { return t; }
     operator const T** () const { return const_cast<const T**>(t); }
 };
-
-#endif
-
-=======
->>>>>>> 5.5.0

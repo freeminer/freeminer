@@ -133,13 +133,6 @@ private:
 
 	video::SMaterial m_material;
 	aabb3f m_box;
-<<<<<<< HEAD:src/clouds.h
-	s16 m_passed_cloud_y;
-public:
-	float m_cloud_y;
-private:
-=======
->>>>>>> 5.5.0:src/client/clouds.h
 	u16 m_cloud_radius_i;
 	bool m_enable_3d;
 	u32 m_seed;
@@ -151,13 +144,7 @@ private:
 	bool m_camera_inside_cloud = false;
 
 };
-<<<<<<< HEAD:src/clouds.h
 
+// fm:
 extern Clouds *g_menuclouds;
-
 extern irr::scene::ISceneManager *g_menucloudsmgr;
-
-#endif
-
-=======
->>>>>>> 5.5.0:src/client/clouds.h

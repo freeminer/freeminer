@@ -26,30 +26,23 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <iostream>
 #include <map>
-<<<<<<< HEAD
-#include <list>
-#include <bitset>
-#include "util/numeric.h"
-#include "mapnode.h"
-#include "client/tile.h"
-#ifndef SERVER
-#include "shader.h"
-=======
 #include "mapnode.h"
 #include "nameidmapping.h"
-#ifndef SERVER
 #include "client/tile.h"
+#ifndef SERVER
 #include <IMeshManipulator.h>
 class Client;
->>>>>>> 5.5.0
 #endif
 #include "itemgroup.h"
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
-<<<<<<< HEAD
+
+#include "texture_override.h" // TextureOverride
+#include "tileanimation.h"
+
+//fm:
 #include "fm_bitset.h"
 #include <unordered_set>
-
 
 #include "msgpack_fix.h"
 
@@ -94,15 +87,12 @@ enum {
 	CONTENTFEATURES_COLLISION_BOX,
 	CONTENTFEATURES_CONNECT_TO_IDS,
 	CONTENTFEATURES_CONNECT_SIDES,
+  };
 
-};
-=======
-#include "texture_override.h" // TextureOverride
-#include "tileanimation.h"
+
 
 // PROTOCOL_VERSION >= 37
 static const u8 CONTENTFEATURES_VERSION = 13;
->>>>>>> 5.5.0
 
 class IItemDefManager;
 class ITextureSource;
@@ -331,7 +321,6 @@ enum AlphaMode : u8 {
 /*
 	Stand-alone definition of a TileSpec (basically a server-side TileSpec)
 */
-<<<<<<< HEAD
 enum {
 	TILEDEF_NAME,
 	TILEDEF_ANIMATION_TYPE,
@@ -342,13 +331,7 @@ enum {
 	TILEDEF_TILEABLE_HORIZONTAL,
 	TILEDEF_TILEABLE_VERTICAL
 };
-enum TileAnimationType{
-	TAT_NONE=0,
-	TAT_VERTICAL_FRAMES=1,
-};
-=======
 
->>>>>>> 5.5.0
 struct TileDef
 {
 	std::string name = "";
@@ -377,7 +360,6 @@ struct TileDef
 		NodeDrawType drawtype);
 };
 
-<<<<<<< HEAD
 struct ContentFeatureSingleDrop
 {
 	std::string item;
@@ -392,13 +374,11 @@ struct ContentFeatureDrops
 	std::vector<ContentFeatureSingleDrop> items;
 };
 
-=======
 // Defines the number of special tiles per nodedef
 //
 // NOTE: When changing this value, the enum entries of OverrideTarget and
 //       parser in TextureOverrideSource must be updated so that all special
 //       tiles can be overridden.
->>>>>>> 5.5.0
 #define CF_SPECIAL_COUNT 6
 
 struct ContentFeatures
@@ -550,9 +530,8 @@ struct ContentFeatures
 	bool legacy_facedir_simple;
 	// Set to true if wall_mounted used to be set to true
 	bool legacy_wallmounted;
-<<<<<<< HEAD
 
-//freeminer:
+// fm:
 	u8 solidness_far = 0;
 	bool is_wire;
 	bool is_wire_connector;
@@ -560,20 +539,6 @@ struct ContentFeatures
 	u8 wire_connections[6];
 	u8 circuit_element_func[64];
 	u8 circuit_element_delay;
-
-
-	// for NDT_CONNECTED pairing
-	u8 connect_sides;
-
-	// Sound properties
-	SimpleSoundSpec sound_footstep;
-	SimpleSoundSpec sound_dig;
-	SimpleSoundSpec sound_dug;
-
-	std::vector<std::string> connects_to;
-	std::unordered_set<content_t> connects_to_ids;
-=======
->>>>>>> 5.5.0
 
 	/*
 		Methods
@@ -585,12 +550,9 @@ struct ContentFeatures
 
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
-<<<<<<< HEAD
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
-=======
->>>>>>> 5.5.0
 
 	/*
 		Some handy methods
@@ -651,22 +613,11 @@ struct ContentFeatures
 		return 0;
 	}
 
-<<<<<<< HEAD
-
 //#ifndef SERVER
-	void fillTileAttribs(ITextureSource *tsrc, TileSpec *tile, TileDef *tiledef,
-		u32 shader_id, bool use_normal_texture, bool backface_culling,
-		u8 alpha, u8 material_type);
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-		scene::ISceneManager *smgr, scene::IMeshManipulator *meshmanip,
-		IGameDef *gamedef, const TextureSettings &tsettings,
+		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings,
 		bool server = false);
 //#endif
-=======
-#ifndef SERVER
-	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings);
-#endif
 
 private:
 #ifndef SERVER
@@ -682,7 +633,6 @@ private:
 	void setAlphaFromLegacy(u8 legacy_alpha);
 
 	u8 getAlphaForLegacy() const;
->>>>>>> 5.5.0
 };
 
 /*!
@@ -699,28 +649,12 @@ private:
  */
 class NodeDefManager {
 public:
-<<<<<<< HEAD
-	INodeDefManager(){}
-	virtual ~INodeDefManager(){}
-	// Get node definition
-	virtual const ContentFeatures &get(content_t c) const=0;
-	virtual const ContentFeatures &get(const MapNode &n) const=0;
-	virtual bool getId(const std::string &name, content_t &result) const=0;
-	virtual content_t getId(const std::string &name) const=0;
-	// Allows "group:name" in addition to regular node names
-	virtual bool getIds(const std::string &name, FMBitset &result) const=0;
-	// returns false if node name not found, true otherwise
-	virtual bool getIds(const std::string &name, std::unordered_set<content_t> &result)
-			const=0;
-	virtual const ContentFeatures &get(const std::string &name) const=0;
-=======
 	/*!
 	 * Creates a NodeDefManager, and registers three ContentFeatures:
 	 * \ref CONTENT_AIR, \ref CONTENT_UNKNOWN and \ref CONTENT_IGNORE.
 	 */
 	NodeDefManager();
 	~NodeDefManager();
->>>>>>> 5.5.0
 
 	/*!
 	 * Returns the properties for the given content type.
@@ -734,12 +668,9 @@ public:
 				m_content_features[c] : m_content_features[CONTENT_UNKNOWN];
 	}
 
-<<<<<<< HEAD
 	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
 	virtual void msgpack_unpack(msgpack::object o)=0;
 
-	virtual bool getNodeRegistrationStatus() const=0;
-=======
 	/*!
 	 * Returns the properties of the given node.
 	 * @param n a map node
@@ -749,7 +680,6 @@ public:
 	inline const ContentFeatures& get(const MapNode &n) const {
 		return get(n.getContent());
 	}
->>>>>>> 5.5.0
 
 	/*!
 	 * Returns the node properties for a node name.
@@ -998,71 +928,7 @@ private:
 	mutable std::vector<NodeResolver *> m_pending_resolve_callbacks;
 };
 
-<<<<<<< HEAD
-class IWritableNodeDefManager : public INodeDefManager {
-public:
-	IWritableNodeDefManager(){}
-	virtual ~IWritableNodeDefManager(){}
-	virtual IWritableNodeDefManager* clone()=0;
-	// Get node definition
-	virtual const ContentFeatures &get(content_t c) const=0;
-	virtual const ContentFeatures &get(const MapNode &n) const=0;
-	virtual bool getId(const std::string &name, content_t &result) const=0;
-	// If not found, returns CONTENT_IGNORE
-	virtual content_t getId(const std::string &name) const=0;
-	// Allows "group:name" in addition to regular node names
-	virtual bool getIds(const std::string &name, std::unordered_set<content_t> &result)
-		const=0;
-	// If not found, returns the features of CONTENT_UNKNOWN
-	virtual const ContentFeatures &get(const std::string &name) const=0;
-
-	// Register node definition by name (allocate an id)
-	// If returns CONTENT_IGNORE, could not allocate id
-	virtual content_t set(const std::string &name,
-			const ContentFeatures &def)=0;
-	// If returns CONTENT_IGNORE, could not allocate id
-	virtual content_t allocateDummy(const std::string &name)=0;
-	// Remove a node
-	virtual void removeNode(const std::string &name)=0;
-
-	/*
-		Update item alias mapping.
-		Call after updating item definitions.
-	*/
-	virtual void updateAliases(IItemDefManager *idef)=0;
-
-	/*
-		Override textures from servers with ones specified in texturepack/override.txt
-	*/
-	virtual void applyTextureOverrides(const std::string &override_filepath)=0;
-
-	/*
-		Update tile textures to latest return values of TextueSource.
-	*/
-	virtual void updateTextures(IGameDef *gamedef,
-		void (*progress_cbk)(void *progress_args, u32 progress, u32 max_progress) = nullptr,
-		void *progress_cbk_args = nullptr)=0;
-
-	virtual void serialize(std::ostream &os, u16 protocol_version) const=0;
-	virtual void deSerialize(std::istream &is)=0;
-
-	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
-	virtual void msgpack_unpack(msgpack::object o)=0;
-
-	virtual bool getNodeRegistrationStatus() const=0;
-	virtual void setNodeRegistrationStatus(bool completed)=0;
-
-	virtual void pendNodeResolve(NodeResolver *nr)=0;
-	virtual bool cancelNodeResolveCallback(NodeResolver *nr)=0;
-	virtual void runNodeResolveCallbacks()=0;
-	virtual void resetNodeResolveState()=0;
-	virtual void mapNodeboxConnections()=0;
-};
-
-IWritableNodeDefManager *createNodeDefManager();
-=======
 NodeDefManager *createNodeDefManager();
->>>>>>> 5.5.0
 
 // NodeResolver: Queue for node names which are then translated
 // to content_t after the NodeDefManager was initialized

@@ -1,14 +1,4 @@
 /*
-<<<<<<< HEAD:src/genericobject.h
-genericobject.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
-Minetest
-Copyright (C) 2021 Liso <anlismon@gmail.com>
->>>>>>> 5.5.0:src/client/shadows/dynamicshadows.h
-
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

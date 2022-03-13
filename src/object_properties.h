@@ -47,32 +47,19 @@ struct ObjectProperties
 	std::vector<video::SColor> colors;
 	v2s16 spritediv = v2s16(1, 1);
 	v2s16 initial_sprite_basepos;
-<<<<<<< HEAD
-	bool is_visible;
-	bool makes_footstep_sound;
-	float automatic_rotate;
-	f32 stepheight;
-	bool automatic_face_movement_dir;
-	f32 automatic_face_movement_dir_offset;
-	bool force_load;
-	bool backface_culling;
-	std::string nametag;
-	video::SColor nametag_color;
-	f32 automatic_face_movement_max_rotation_per_sec;
-=======
 	bool is_visible = true;
 	bool makes_footstep_sound = false;
 	f32 stepheight = 0.0f;
 	float automatic_rotate = 0.0f;
 	bool automatic_face_movement_dir = false;
 	f32 automatic_face_movement_dir_offset = 0.0f;
+	bool force_load = false;
 	bool backface_culling = true;
 	s8 glow = 0;
 	std::string nametag = "";
 	video::SColor nametag_color = video::SColor(255, 255, 255, 255);
 	Optional<video::SColor> nametag_bgcolor = nullopt;
 	f32 automatic_face_movement_max_rotation_per_sec = -1.0f;
->>>>>>> 5.5.0
 	std::string infotext;
 	//! For dropped items, this contains item information.
 	std::string wield_item;

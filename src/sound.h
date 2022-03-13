@@ -23,27 +23,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <set>
-<<<<<<< HEAD
+#include <string>
+#include "util/serialize.h"
+#include "irrlichttypes_bloated.h"
+
+// fm:
 #include "msgpack_fix.h"
 #include "network/connection.h"
 #include "util/msgpack_serialize.h"
 
-class OnDemandSoundFetcher
-{
-public:
-	virtual void fetchSounds(const std::string &name,
-			std::set<std::string> &dst_paths,
-			std::set<std::string> &dst_datas) = 0;
-};
-=======
-#include <string>
-#include "util/serialize.h"
-#include "irrlichttypes_bloated.h"
->>>>>>> 5.5.0
 
 enum {
 	SOUNDSPEC_NAME,
-	SOUNDSPEC_GAIN
+	SOUNDSPEC_GAIN,
+	SOUNDSPEC_PITCH,
+	SOUNDSPEC_FADE
 };
 
 struct SimpleSoundSpec
@@ -78,27 +72,24 @@ struct SimpleSoundSpec
 	}
 
 	std::string name;
-<<<<<<< HEAD
-	float gain;
-	SimpleSoundSpec(std::string name="", float gain=1.0):
-		name(name),
-		gain(gain)
-	{}
-	bool exists() {return name != "";}
+	float gain = 1.0f;
+	float fade = 0.0f;
+	float pitch = 1.0f;
 
+//fm:
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
-		pk.pack_map(2);
+		pk.pack_map(4);
 		PACK(SOUNDSPEC_NAME, name);
 		PACK(SOUNDSPEC_GAIN, gain);
+		PACK(SOUNDSPEC_PITCH, pitch);
+		PACK(SOUNDSPEC_FADE, fade);
 	}
 	void msgpack_unpack(msgpack::object o) {
 		MsgpackPacket packet = o.as<MsgpackPacket>();
 		packet[SOUNDSPEC_NAME].convert(name);
 		packet[SOUNDSPEC_GAIN].convert(gain);
+		packet[SOUNDSPEC_PITCH].convert(pitch);
+		packet[SOUNDSPEC_FADE].convert(fade);
 	}
-=======
-	float gain = 1.0f;
-	float fade = 0.0f;
-	float pitch = 1.0f;
->>>>>>> 5.5.0
+
 };

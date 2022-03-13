@@ -58,7 +58,6 @@ struct ToolGroupCap
 		return true;
 	}
 
-<<<<<<< HEAD
 	template<typename Packer>
 	void msgpack_pack(Packer& pk) const
 	{
@@ -76,10 +75,8 @@ struct ToolGroupCap
 		packet[TOOLGROUPCAP_MAXLEVEL].convert(maxlevel);
 		packet[TOOLGROUPCAP_TIMES].convert(times);
 	}
-=======
 	void toJson(Json::Value &object) const;
 	void fromJson(const Json::Value &json);
->>>>>>> 5.5.0
 };
 
 
@@ -117,14 +114,11 @@ struct ToolCapabilities
 
 	void serialize(std::ostream &os, u16 version) const;
 	void deSerialize(std::istream &is);
-<<<<<<< HEAD
 
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
 	void msgpack_unpack(msgpack::object o);
-=======
 	void serializeJson(std::ostream &os) const;
 	void deserializeJson(std::istream &is);
->>>>>>> 5.5.0
 };
 
 struct DigParams

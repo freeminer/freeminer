@@ -1,13 +1,8 @@
 /*
 hud.h
 Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-<<<<<<< HEAD
-*/
-=======
 Copyright (C) 2017 red-001 <red-001@outlook.ie>
->>>>>>> 5.5.0
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -123,95 +118,10 @@ extern const EnumString es_HudBuiltinElement[];
 
 // Minimap stuff
 
-<<<<<<< HEAD
-class IGameDef;
-class ITextureSource;
-class Inventory;
-class InventoryList;
-class LocalPlayer;
-struct ItemStack;
-
-class Hud {
-public:
-	video::IVideoDriver *driver;
-	scene::ISceneManager* smgr;
-	gui::IGUIEnvironment *guienv;
-	IGameDef *gamedef;
-	LocalPlayer *player;
-	Inventory *inventory;
-	ITextureSource *tsrc;
-
-	video::SColor crosshair_argb;
-	video::SColor selectionbox_argb;
-	bool use_crosshair_image;
-	std::string hotbar_image;
-	int hotbar_image_items;
-	bool use_hotbar_image;
-	std::string hotbar_selected_image;
-	bool use_hotbar_selected_image;
-
-	Hud(video::IVideoDriver *driver,scene::ISceneManager* smgr,
-		gui::IGUIEnvironment* guienv, IGameDef *gamedef, LocalPlayer *player,
-		Inventory *inventory);
-	~Hud();
-
-	void drawHotbar(u16 playeritem);
-	void resizeHotbar();
-	void drawCrosshair();
-	void drawSelectionMesh();
-	void updateSelectionMesh(const v3s16 &camera_offset);
-
-	std::vector<aabb3f> *getSelectionBoxes()
-	{ return &m_selection_boxes; }
-
-	void setSelectionPos(const v3f &pos, const v3s16 &camera_offset);
-
-	v3f getSelectionPos() const
-	{ return m_selection_pos; }
-
-	void setSelectionMeshColor(const video::SColor &color)
-	{ m_selection_mesh_color = color; }
-
-	void setSelectedFaceNormal(const v3f &face_normal)
-	{ m_selected_face_normal = face_normal; }
-
-	void drawLuaElements(const v3s16 &camera_offset);
-
-private:
-	void drawStatbar(v2s32 pos, u16 corner, u16 drawdir, std::string texture,
-			s32 count, v2s32 offset, v2s32 size=v2s32());
-
-	void drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
-		s32 inv_offset, InventoryList *mainlist, u16 selectitem, u16 direction);
-
-	void drawItem(const ItemStack &item, const core::rect<s32>& rect,
-		bool selected);
-
-	float m_hud_scaling; // cached minetest setting
-	v3s16 m_camera_offset;
-	v2u32 m_screensize;
-	v2s32 m_displaycenter;
-	s32 m_hotbar_imagesize; // Takes hud_scaling into account, updated by resizeHotbar()
-	s32 m_padding;  // Takes hud_scaling into account, updated by resizeHotbar()
-	video::SColor hbar_colors[4];
-
-	std::vector<aabb3f> m_selection_boxes;
-	std::vector<aabb3f> m_halo_boxes;
-	v3f m_selection_pos;
-	v3f m_selection_pos_with_offset;
-
-	scene::IMesh* m_selection_mesh;
-	video::SColor m_selection_mesh_color;
-	v3f m_selected_face_normal;
-
-	video::SMaterial m_selection_material;
-	bool m_use_selection_mesh;
-=======
 enum MinimapType {
 	MINIMAP_TYPE_OFF,
 	MINIMAP_TYPE_SURFACE,
 	MINIMAP_TYPE_RADAR,
 	MINIMAP_TYPE_TEXTURE,
->>>>>>> 5.5.0
 };
 

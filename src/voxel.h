@@ -132,12 +132,7 @@ public:
 
 	const v3s16 &getExtent() const
 	{
-<<<<<<< HEAD
-		static const auto v3POS1 = v3s16(1,1,1);
-		return MaxEdge - MinEdge + v3POS1;
-=======
 		return m_cache_extent;
->>>>>>> 5.5.0
 	}
 
 	/* Because MaxEdge and MinEdge are included in the voxel area an empty extent
@@ -516,17 +511,6 @@ public:
 	u8 *m_flags = nullptr;
 
 	static const MapNode ContentIgnoreNode;
-<<<<<<< HEAD
-
-	//TODO: Use these or remove them
-	//TODO: Would these make any speed improvement?
-	//bool m_pressure_route_valid;
-	//v3s16 m_pressure_route_surface;
-
-	/*
-		Some settings
-	*/
-	//bool m_disable_water_climb;
 
 	//freeminer:
 	// for Map compatibility:
@@ -536,8 +520,4 @@ public:
 		return ContentIgnoreNode;
 	}
 
-
-private:
-=======
->>>>>>> 5.5.0
 };

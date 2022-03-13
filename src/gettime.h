@@ -33,33 +33,15 @@ enum TimePrecision
 	PRECISION_NANO
 };
 
-<<<<<<< HEAD
-extern u32 getTimeMs();
-extern u32 getTime(TimePrecision prec);
-
-/*
-	Timestamp stuff
-*/
-
-#include <time.h>
-#include <string>
-
 extern tm * localtime_safe(time_t * t);
 
-=======
->>>>>>> 5.5.0
 inline std::string getTimestamp()
 {
 	time_t t = time(NULL);
 	// This is not really thread-safe but it won't break anything
 	// except its own output, so just go with it.
-<<<<<<< HEAD
 	struct tm *tm = localtime_safe(&t);
-	char cs[20]; //YYYY-MM-DD HH:MM:SS + '\0'
-=======
-	struct tm *tm = localtime(&t);
 	char cs[20]; // YYYY-MM-DD HH:MM:SS + '\0'
->>>>>>> 5.5.0
 	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", tm);
 	return cs;
 }

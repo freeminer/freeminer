@@ -24,10 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include <iostream>
-<<<<<<< HEAD
-=======
 #include <set>
->>>>>>> 5.5.0
 #include <unordered_map>
 #include "irrlichttypes_bloated.h"
 
@@ -71,28 +68,18 @@ public:
 		m_id_to_name.erase(id);
 		m_name_to_id.erase(name);
 	}
-<<<<<<< HEAD
-	bool getName(u16 id, std::string &result) const{
-		auto
-=======
 	bool getName(u16 id, std::string &result) const
 	{
 		IdToNameMap::const_iterator i;
->>>>>>> 5.5.0
 		i = m_id_to_name.find(id);
 		if (i == m_id_to_name.end())
 			return false;
 		result = i->second;
 		return true;
 	}
-<<<<<<< HEAD
-	bool getId(const std::string &name, u16 &result) const{
-		auto
-=======
 	bool getId(const std::string &name, u16 &result) const
 	{
 		NameToIdMap::const_iterator i;
->>>>>>> 5.5.0
 		i = m_name_to_id.find(name);
 		if (i == m_name_to_id.end())
 			return false;

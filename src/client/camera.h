@@ -198,17 +198,11 @@ private:
 	scene::ISceneNode *m_headnode = nullptr;
 	scene::ICameraSceneNode *m_cameranode = nullptr;
 
-<<<<<<< HEAD:src/camera.h
-	scene::ISceneManager* m_wieldmgr;
-
 	u8 m_wieldlight;
 	u8 m_wieldlight_add;
 
-	WieldMeshSceneNode* m_wieldnode;
-=======
 	scene::ISceneManager *m_wieldmgr = nullptr;
 	WieldMeshSceneNode *m_wieldnode = nullptr;
->>>>>>> 5.5.0:src/client/camera.h
 
 	// draw control
 	MapDrawControl& m_draw_control;
@@ -270,18 +264,13 @@ private:
 
 	CameraMode m_camera_mode = CAMERA_MODE_FIRST;
 
+// fm:
 	bool m_cache_movement_fov;
+	f32 m_cache_wanted_fps;
 
 	f32 m_cache_fall_bobbing_amount;
 	f32 m_cache_view_bobbing_amount;
-<<<<<<< HEAD:src/camera.h
-	f32 m_cache_wanted_fps;
-	f32 m_cache_fov;
-	f32 m_cache_zoom_fov;
-	bool m_cache_view_bobbing;
-=======
 	bool m_arm_inertia;
->>>>>>> 5.5.0:src/client/camera.h
 
 	std::list<Nametag *> m_nametags;
 	bool m_show_nametag_backgrounds;

@@ -120,15 +120,8 @@ public:
 		m_next_trigger_time = -1.;
 	}
 
-<<<<<<< HEAD
-	inline double getNextTriggerTime() {
-		return m_next_trigger_time;
-	}
-
 	float m_uptime_last = 0;
 
-=======
->>>>>>> 5.5.0
 	// Move forward in time, returns elapsed timers
 	std::vector<NodeTimer> step(float dtime);
 

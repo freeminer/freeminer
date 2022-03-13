@@ -98,6 +98,8 @@ void KeyCache::populate()
 
 bool MyEventReceiver::OnEvent(const SEvent &event)
 {
+  try {
+
 	/*
 		React to nothing here if a menu is active
 	*/
@@ -195,6 +197,11 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 				std::string("Irrlicht: ") + event.LogEvent.Text);
 		return true;
 	}
+
+	} catch(std::exception &e) {
+		errorstream<<"input exception: " << e.what() << std::endl;
+	}
+
 	/* always return false in order to continue processing events */
 	return false;
 }

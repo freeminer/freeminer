@@ -26,17 +26,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <queue>
 #include <string>
 #include <fstream>
-<<<<<<< HEAD
-#include "threads.h"
-#include "threading/mutex.h"
 #include "threading/mutex_auto_lock.h"
-=======
 #include <thread>
 #include <mutex>
 #if !defined(_WIN32)  // POSIX
 	#include <unistd.h>
 #endif
->>>>>>> 5.5.0
 #include "irrlichttypes.h"
 
 #include "threading/thread_local.h"
@@ -100,15 +95,10 @@ private:
 	// written to when one thread has access currently).
 	// Works on all known architectures (x86, ARM, MIPS).
 	volatile bool m_silenced_levels[LL_MAX];
-<<<<<<< HEAD
-	std::map<threadid_t, std::string> m_thread_names;
-protected:
-	mutable Mutex m_mutex;
-private:
-=======
 	std::map<std::thread::id, std::string> m_thread_names;
+protected:
 	mutable std::mutex m_mutex;
->>>>>>> 5.5.0
+private:
 	bool m_trace_enabled;
 };
 
@@ -181,12 +171,7 @@ public:
 
 	void clear()
 	{
-<<<<<<< HEAD
-		//MutexAutoLock lock(m_mutex);
-		m_buffer.push(line);
-=======
 		m_buffer = std::queue<std::string>();
->>>>>>> 5.5.0
 	}
 
 	bool empty() const

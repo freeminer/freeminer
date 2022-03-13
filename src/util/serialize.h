@@ -468,7 +468,6 @@ std::string serializeJsonString(const std::string &plain);
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
 
-<<<<<<< HEAD
 MSGPACK_DEFINE_EXTERNAL(v2f, X, Y);
 MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
 //MSGPACK_DEFINE_EXTERNAL(v2s16, X, Y);
@@ -478,13 +477,9 @@ MSGPACK_DEFINE_EXTERNAL(v3s32, X, Y, Z);
 MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
 MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 
-// Creates a string consisting of the hexadecimal representation of `data`
-std::string serializeHexString(const std::string &data, bool insert_spaces=false);
-=======
 // If the string contains spaces, quotes or control characters, encodes as JSON.
 // Else returns the string unmodified.
 std::string serializeJsonStringIfNeeded(const std::string &s);
->>>>>>> 5.5.0
 
 // Parses a string serialized by serializeJsonStringIfNeeded.
 std::string deSerializeJsonStringIfNeeded(std::istream &is);

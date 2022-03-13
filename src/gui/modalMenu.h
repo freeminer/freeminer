@@ -23,19 +23,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "irrlichttypes_extrabloated.h"
-<<<<<<< HEAD:src/modalMenu.h
-#ifdef HAVE_TOUCHSCREENGUI
-#include "touchscreengui.h"
-#endif
-#include "keycode.h"
+#include "irr_ptr.h"
+#include "util/string.h"
 
+// fm:
+#include "client/keycode.h"
 #ifdef __ANDROID__
 #include "porting_android.h"
 #endif
-=======
-#include "irr_ptr.h"
-#include "util/string.h"
->>>>>>> 5.5.0:src/gui/modalMenu.h
 
 class GUIModalMenu;
 
@@ -65,7 +60,6 @@ public:
 
 	virtual void regenerateGui(v2u32 screensize) = 0;
 	virtual void drawMenu() = 0;
-<<<<<<< HEAD:src/modalMenu.h
 	virtual bool preprocessEvent(const SEvent& event) {
 		#ifdef __ANDROID__
 		if (porting::canKeyboard()) {
@@ -93,27 +87,11 @@ public:
 
 		return false;
 	};
-	virtual bool pausesGame(){ return false; } // Used for pause menu
 
-protected:
-	//bool m_force_regenerate_gui;
-	v2u32 m_screensize_old;
-private:
-	IMenuManager *m_menumgr;
-	// This might be necessary to expose to the implementation if it
-	// wants to launch other menus
-	bool m_allow_focus_removal;
-};
-
-
-=======
-	virtual bool preprocessEvent(const SEvent &event);
-	virtual bool OnEvent(const SEvent &event) { return false; };
 	virtual bool pausesGame() { return false; } // Used for pause menu
 #ifdef __ANDROID__
 	virtual bool getAndroidUIInput() { return false; }
 	bool hasAndroidUIInput();
->>>>>>> 5.5.0:src/gui/modalMenu.h
 #endif
 
 protected:

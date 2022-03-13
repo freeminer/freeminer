@@ -27,8 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "chat.h"
 #include "config.h"
 
-#include "xCGUITTFont.h"
-
 class Client;
 
 class GUIChatConsole : public gui::IGUIElement
@@ -45,11 +43,7 @@ public:
 	// Open the console (height = desired fraction of screen size)
 	// This doesn't open immediately but initiates an animation.
 	// You should call isOpenInhibited() before this.
-<<<<<<< HEAD:src/guiChatConsole.h
-	void openConsole(float height);
-=======
 	void openConsole(f32 scale);
->>>>>>> 5.5.0:src/gui/guiChatConsole.h
 
 	bool isOpen() const;
 
@@ -79,13 +73,8 @@ public:
 	// Irrlicht draw method
 	virtual void draw();
 
-<<<<<<< HEAD:src/guiChatConsole.h
-	bool canTakeFocus(gui::IGUIElement* element) { return false; }
-
 	bool getAndroidUIInput();
 
-=======
->>>>>>> 5.5.0:src/gui/guiChatConsole.h
 	virtual bool OnEvent(const SEvent& event);
 
 	virtual void setVisible(bool visible);

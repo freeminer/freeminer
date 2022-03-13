@@ -74,25 +74,8 @@ std::wstring utf8_to_wide(const std::string &input);
 std::string wide_to_utf8(const std::wstring &input);
 
 // You must free the returned string!
-<<<<<<< HEAD
-// The returned string is allocated using new
-wchar_t *narrow_to_wide_c(const char *str);
-
-// NEVER use those two functions unless you have a VERY GOOD reason to
-// they just convert between wide and multibyte encoding
-// multibyte encoding depends on current locale, this is no good, especially on Windows
-std::wstring narrow_to_wide_real(const std::string& mbs);
-std::string wide_to_narrow_real(const std::wstring& wcs);
-
-// try not to convert between wide/utf8 encodings; this can result in data loss
-// try to only convert between them when you need to input/output stuff via Irrlicht
-// TODO: must be named utf8_to_wide and wide_to_utf8
-std::wstring narrow_to_wide(const std::string &mbs);
-std::string wide_to_narrow(const std::wstring &wcs);
-=======
 // The returned string is allocated using new[]
 wchar_t *utf8_to_wide_c(const char *str);
->>>>>>> 5.5.0
 
 std::string urlencode(const std::string &str);
 std::string urldecode(const std::string &str);
@@ -101,12 +84,8 @@ std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
-<<<<<<< HEAD
-bool parseColorString(const std::string &value, video::SColor &color, bool quiet = true);
-=======
-bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
+bool parseColorString(const std::string &value, video::SColor &color, bool quiet = true,
 		unsigned char default_alpha = 0xff);
->>>>>>> 5.5.0
 
 
 /**
@@ -379,20 +358,6 @@ inline s32 mystoi(const std::string &str)
 	return atoi(str.c_str());
 }
 
-<<<<<<< HEAD
-
-/**
- * Returns s 32-bit value represented by the wide string \p str (decimal).
- * @see atoi(3) for further limitations
- */
-inline s32 mystoi(const std::wstring &str)
-{
-	return atoi(wide_to_narrow(str).c_str());
-}
-
-
-=======
->>>>>>> 5.5.0
 /**
  * Returns a float reprensented by the string \p str (decimal).
  * @see atof(3)
@@ -699,13 +664,13 @@ inline const char *bool_to_cstr(bool val)
 	return val ? "true" : "false";
 }
 
-<<<<<<< HEAD
+// fm:
 std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color);
 std::wstring sanitizeChatString(const std::wstring &s);
 bool char_icompare(char c1, char c2);
 bool string_icompare(const std::string& a, const std::string& b);
-#endif
-=======
+
+
 /**
  * Converts a duration in seconds to a pretty-printed duration in
  * days, hours, minutes and seconds.
@@ -806,4 +771,3 @@ std::string sanitizeDirName(const std::string &str, const std::string &optional_
  * brackets (e.g. "a\x1eb" -> "a<1e>b").
  */
 void safe_print_string(std::ostream &os, const std::string &str);
->>>>>>> 5.5.0

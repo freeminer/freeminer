@@ -176,15 +176,7 @@ public:
 	v3f getV3F(const std::string &name) const;
 	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 			u32 *flagmask) const;
-<<<<<<< HEAD
-	// N.B. if getStruct() is used to read a non-POD aggregate type,
-	// the behavior is undefined.
-	bool getStruct(const std::string &name, const std::string &format,
-			void *out, size_t olen) const;
 	bool getNoiseParams(const std::string &name, NoiseParams &np);
-=======
-	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
->>>>>>> 5.5.0
 	bool getNoiseParamsFromValue(const std::string &name, NoiseParams &np) const;
 	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np);
 
@@ -239,18 +231,9 @@ public:
 	bool setV2F(const std::string &name, v2f value);
 	bool setV3F(const std::string &name, v3f value);
 	bool setFlagStr(const std::string &name, u32 flags,
-<<<<<<< HEAD
-		const FlagDesc *flagdesc, u32 flagmask);
-	bool setNoiseParams(const std::string &name, const NoiseParams &np,
-		bool set_default=false);
-	// N.B. if setStruct() is used to write a non-POD aggregate type,
-	// the behavior is undefined.
-	bool setStruct(const std::string &name, const std::string &format, void *value);
-=======
 		const FlagDesc *flagdesc = nullptr, u32 flagmask = U32_MAX);
 	bool setNoiseParams(const std::string &name, const NoiseParams &np);
 
->>>>>>> 5.5.0
 	// remove a setting
 	bool remove(const std::string &name);
 
@@ -339,11 +322,6 @@ private:
 
 	static std::unordered_map<std::string, const FlagDesc *> s_flags;
 };
-<<<<<<< HEAD
 
 extern Settings *g_settings;
 extern std::string g_settings_path;
-
-#endif
-=======
->>>>>>> 5.5.0

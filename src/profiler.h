@@ -64,84 +64,6 @@ class Profiler
 public:
 	Profiler();
 
-<<<<<<< HEAD
-	void add(const std::string &name, float value)
-	{
-		if(!g_profiler_enabled)
-			return;
-		MutexAutoLock lock(m_mutex);
-		{
-			auto n = m_data.find(name);
-			if(n == m_data.end())
-				m_data[name] = ProfValue(value);
-			else
-				n->second.add(value);
-		}
-	}
-	void avg(const std::string &name, float value)
-	{
-		add(name, value);
-	}
-
-	void clear()
-	{
-		MutexAutoLock lock(m_mutex);
-		m_data.clear();
-	}
-
-	void print(std::ostream &o)
-	{
-		printPage(o, 1, 1);
-	}
-
-	float getValue(const std::string &name) const
-	{
-		auto data = m_data.find(name);
-		if (data == m_data.end())
-			return 0.f;
-		return data->second.avg;
-	}
-
-	void printPage(std::ostream &o, u32 page, u32 pagecount)
-	{
-		MutexAutoLock lock(m_mutex);
-
-		u32 minindex, maxindex;
-		paging(m_data.size(), page, pagecount, minindex, maxindex);
-
-		for(auto & i : m_data)
-		{
-			if(maxindex == 0)
-				break;
-			maxindex--;
-
-			if(minindex != 0)
-			{
-				minindex--;
-				continue;
-			}
-
-			const std::string & name = i.first;
-			o<<"  "<<name<<": ";
-			s32 clampsize = 40;
-			s32 space = clampsize - name.size();
-			for(s32 j=0; j<space; j++)
-			{
-				if(j%2 == 0 && j < space - 1)
-					o<<"-";
-				else
-					o<<" ";
-			}
-
-			if (i.second.sum == i.second.calls || !i.second.sum)
-				o<<i.second.calls;
-			else
-				o<<i.second.calls<<" * "<<i.second.avg<<" = "<<i.second.sum;
-			//o<<(i->second / avgcount);
-			o<<std::endl;
-		}
-	}
-=======
 	void add(const std::string &name, float value);
 	void avg(const std::string &name, float value);
 	void clear();
@@ -149,7 +71,6 @@ public:
 	float getValue(const std::string &name) const;
 	int getAvgCount(const std::string &name) const;
 	u64 getElapsedMs() const;
->>>>>>> 5.5.0
 
 	typedef std::map<std::string, float> GraphValues;
 
@@ -182,17 +103,11 @@ public:
 	}
 
 private:
-<<<<<<< HEAD
-	Mutex m_mutex;
-	GraphValues m_graphvalues;
-	std::map<std::string, ProfValue> m_data;
-=======
 	std::mutex m_mutex;
 	std::map<std::string, float> m_data;
 	std::map<std::string, int> m_avgcounts;
 	std::map<std::string, float> m_graphvalues;
 	u64 m_start_time;
->>>>>>> 5.5.0
 };
 
 enum ScopeProfilerType{
@@ -205,48 +120,16 @@ class ScopeProfiler
 {
 public:
 	ScopeProfiler(Profiler *profiler, const std::string &name,
-<<<<<<< HEAD
-			enum ScopeProfilerType type = SPT_ADD):
-		m_profiler(profiler),
-		m_name(name),
-		m_timer(NULL),
-		m_type(type)
-	{
-		if(m_profiler)
-			m_timer = new TimeTaker(m_name.c_str());
-	}
-	~ScopeProfiler()
-	{
-		if(m_timer)
-		{
-			float duration_ms = m_timer->stop(true);
-			float duration = duration_ms / 1000.0;
-			if(m_profiler){
-				m_profiler->add(m_name, duration);
-				if (m_type == SPT_GRAPH_ADD)
-					m_profiler->graphAdd(m_name, duration);
-			}
-			delete m_timer;
-		}
-	}
-=======
 			ScopeProfilerType type = SPT_ADD);
 	~ScopeProfiler();
->>>>>>> 5.5.0
 private:
 	Profiler *m_profiler = nullptr;
 	std::string m_name;
 	TimeTaker *m_timer = nullptr;
 	enum ScopeProfilerType m_type;
 };
-<<<<<<< HEAD
 
 
 // Global profiler
 class Profiler;
 extern Profiler *g_profiler;
-
-#endif
-
-=======
->>>>>>> 5.5.0

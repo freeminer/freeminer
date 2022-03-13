@@ -28,12 +28,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/networkprotocol.h"
 #include "util/basic_macros.h"
 #include <list>
-<<<<<<< HEAD
 #include "threading/lock.h"
 #include "json/json.h"
-=======
 #include <mutex>
->>>>>>> 5.5.0
 
 #define PLAYERNAME_SIZE 20
 
@@ -143,7 +140,7 @@ public:
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	const v3f &getSpeed() const
+	const v3f &getSpeed() //const
 	{
 		auto lock = lock_shared_rec();
 		return m_speed;
@@ -243,28 +240,17 @@ public:
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
-<<<<<<< HEAD
-	//std::atomic_ushort hp;
-
-	std::atomic_short peer_id;
-
-=======
->>>>>>> 5.5.0
 	std::string inventory_formspec;
 	std::string formspec_prepend;
 
 	PlayerControl control;
-<<<<<<< HEAD
-	Mutex control_mutex;
-	const PlayerControl& getPlayerControl() {
-		std::lock_guard<Mutex> lock(control_mutex);
+	std::mutex control_mutex;
+	const PlayerControl& getPlayerControl() { 
+				std::lock_guard<std::mutex> lock(control_mutex);
 		return control;
 	}
-=======
-	const PlayerControl& getPlayerControl() { return control; }
 	PlayerSettings &getPlayerSettings() { return m_player_settings; }
 	static void settingsChangedCallback(const std::string &name, void *data);
->>>>>>> 5.5.0
 
 	// Returns non-empty `selected` ItemStack. `hand` is a fallback, if specified
 	ItemStack &getWieldedItem(ItemStack *selected, ItemStack *hand) const;
@@ -289,14 +275,13 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
-<<<<<<< HEAD
+    // fm:
 	std::string hotbar_image;
 	int hotbar_image_items;
 	std::string hotbar_selected_image;
 
 	std::string m_name;
-=======
->>>>>>> 5.5.0
+
 protected:
 	//char m_name[PLAYERNAME_SIZE];
 	v3f m_speed;
@@ -311,10 +296,3 @@ private:
 	std::mutex m_mutex;
 	PlayerSettings m_player_settings;
 };
-<<<<<<< HEAD
-
-
-#endif
-
-=======
->>>>>>> 5.5.0

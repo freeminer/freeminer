@@ -42,11 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "constants.h"
 #include "gettime.h"
-<<<<<<< HEAD
-#include "threads.h"
 #include <atomic>
-=======
->>>>>>> 5.5.0
 
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
@@ -132,22 +128,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#endif
 #endif
 
-#if defined(linux) || defined(__linux)
-	#include <sys/prctl.h>
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	#include <pthread.h>
-	#include <pthread_np.h>
-#elif defined(__NetBSD__)
-	#include <pthread.h>
-#elif defined(__APPLE__)
-	#include <pthread.h>
-#endif
-
-#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-	#define PORTING_USE_PTHREAD 1
-	#include <pthread.h>
-#endif
-
 namespace porting
 {
 
@@ -160,7 +140,6 @@ void signal_handler_init();
 // When the bool is true, program should quit.
 bool * signal_handler_killstatus();
 
-extern std::atomic_bool g_sighup, g_siginfo;
 /*
 	Path of static data directory.
 */
@@ -308,82 +287,6 @@ inline u64 getDeltaMs(u64 old_time_ms, u64 new_time_ms)
 	return (old_time_ms - new_time_ms);
 }
 
-<<<<<<< HEAD
-#if defined(linux) || defined(__linux)
-	inline void setThreadName(const char *name) {
-		/* It would be cleaner to do this with pthread_setname_np,
-		 * which was added to glibc in version 2.12, but some major
-		 * distributions are still runing 2.11 and previous versions.
-		 */
-		prctl(PR_SET_NAME, name);
-	}
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	inline void setThreadName(const char *name) {
-		pthread_set_name_np(pthread_self(), name);
-	}
-#elif defined(__NetBSD__)
-	inline void setThreadName(const char *name) {
-		pthread_setname_np(pthread_self(), name);
-	}
-#elif defined(_MSC_VER)
-	typedef struct tagTHREADNAME_INFO {
-		DWORD dwType; // must be 0x1000
-		LPCSTR szName; // pointer to name (in user addr space)
-		DWORD dwThreadID; // thread ID (-1=caller thread)
-		DWORD dwFlags; // reserved for future use, must be zero
-	} THREADNAME_INFO;
-
-	inline void setThreadName(const char *name) {
-		THREADNAME_INFO info;
-		info.dwType = 0x1000;
-		info.szName = name;
-		info.dwThreadID = -1;
-		info.dwFlags = 0;
-		__try {
-			RaiseException(0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR *) &info);
-		} __except (EXCEPTION_CONTINUE_EXECUTION) {}
-	}
-#elif defined(__APPLE__)
-	inline void setThreadName(const char *name) {
-		pthread_setname_np(name);
-	}
-#elif defined(_WIN32) || defined(__GNU__)
-	inline void setThreadName(const char* name) {}
-#else
-	#warning "Unrecognized platform, thread names will not be available."
-	inline void setThreadName(const char* name) {}
-#endif
-
-	inline void setThreadPriority(int priority) {
-#if PORTING_USE_PTHREAD
-	// http://en.cppreference.com/w/cpp/thread/thread/native_handle
-		sched_param sch;
-		//int policy;
-		//pthread_getschedparam(pthread_self(), &policy, &sch);
-		sch.sched_priority = priority;
-		if(pthread_setschedparam(pthread_self(), SCHED_FIFO /*SCHED_RR*/, &sch)) {
-			//std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-		}
-#endif
-	}
-
-#ifndef SERVER
-float getDisplayDensity();
-float get_dpi();
-int get_densityDpi();
-void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
-
-v2u32 getDisplaySize();
-v2u32 getWindowSize();
-
-std::vector<core::vector3d<u32> > getSupportedVideoModes();
-std::vector<irr::video::E_DRIVER_TYPE> getSupportedVideoDrivers();
-const char *getVideoDriverName(irr::video::E_DRIVER_TYPE type);
-const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type);
-#endif
-
-=======
->>>>>>> 5.5.0
 inline const char *getPlatformName()
 {
 	return
@@ -462,9 +365,3 @@ bool open_directory(const std::string &path);
 #ifdef __ANDROID__
 #include "porting_android.h"
 #endif
-<<<<<<< HEAD
-
-
-#endif // PORTING_HEADER
-=======
->>>>>>> 5.5.0

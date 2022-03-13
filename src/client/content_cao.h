@@ -79,19 +79,6 @@ private:
 	// Property-ish things
 	ObjectProperties m_prop;
 	//
-<<<<<<< HEAD:src/content_cao.h
-	scene::ISceneManager *m_smgr;
-	IrrlichtDevice *m_irr;
-	IGameDef *m_gamedef;
-	aabb3f m_selection_box;
-	scene::IMeshSceneNode *m_meshnode;
-	scene::IAnimatedMeshSceneNode *m_animated_meshnode;
-	WieldMeshSceneNode *m_wield_meshnode;
-	scene::IBillboardSceneNode *m_spritenode;
-	scene::IShadowVolumeSceneNode* m_shadownode;
-	Nametag* m_nametag;
-	v3f m_position;
-=======
 	scene::ISceneManager *m_smgr = nullptr;
 	Client *m_client = nullptr;
 	aabb3f m_selection_box = aabb3f(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
@@ -100,10 +87,10 @@ private:
 	WieldMeshSceneNode *m_wield_meshnode = nullptr;
 	scene::IBillboardSceneNode *m_spritenode = nullptr;
 	scene::IDummyTransformationSceneNode *m_matrixnode = nullptr;
+	//fm merge? scene::IShadowVolumeSceneNode* m_shadownode = nullptr;
 	Nametag *m_nametag = nullptr;
 	MinimapMarker *m_marker = nullptr;
 	v3f m_position = v3f(0.0f, 10.0f * BS, 0);
->>>>>>> 5.5.0:src/client/content_cao.h
 	v3f m_velocity;
 	v3f m_acceleration;
 	v3f m_rotation;

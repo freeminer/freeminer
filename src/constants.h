@@ -74,12 +74,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // floating-point and integer positions, which potentially give wrong
 // results. (negative coordinates, values between nodes, ...)
 // Use floatToInt(p, BS) and intToFloat(p, BS).
-<<<<<<< HEAD
-#define BS (10.0)
-#define HBS (BS/2)
-=======
 #define BS 10.0f
->>>>>>> 5.5.0
+#define HBS (BS/2)
 
 // Dimension of a MapBlock
 #define MAP_BLOCKP 4
@@ -101,15 +97,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Default maximum health points of a player
 #define PLAYER_MAX_HP_DEFAULT 20
 
-<<<<<<< HEAD
 #define PLAYER_FALL_TOLERANCE_SPEED (BS*14)
 
-// Maximal breath of a player
-#define PLAYER_MAX_BREATH 11
-=======
 // Default maximal breath of a player
 #define PLAYER_MAX_BREATH_DEFAULT 10
->>>>>>> 5.5.0
 
 // For screenshots a serial number is appended to the filename + datetimestamp
 // if filename + datetimestamp is not unique.
@@ -121,18 +112,4 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
     GUI related things
 */
 
-<<<<<<< HEAD
-// TODO: implement dpi-based scaling for windows and remove this hack
-#if defined(_WIN32)
-	#define TTF_DEFAULT_FONT_SIZE   (18)
-//#elif defined(__ANDROID__)
-//	#define TTF_DEFAULT_FONT_SIZE   (17)
-#else
-	#define TTF_DEFAULT_FONT_SIZE	(16)
-#endif
-#define DEFAULT_FONT_SIZE       (10)
-
-#endif
-=======
 #define TTF_DEFAULT_FONT_SIZE (16)
->>>>>>> 5.5.0

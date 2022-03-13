@@ -152,6 +152,7 @@ RenderingEngine::~RenderingEngine()
 {
 	core.reset();
 	m_device->closeDevice();
+	m_device->run();
 	s_singleton = nullptr;
 }
 

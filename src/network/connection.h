@@ -20,7 +20,6 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-<<<<<<< HEAD
 #include "config.h"
 
 #if USE_SCTP
@@ -31,11 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //Not used, keep for reduce MT merge conflicts
 
 
-#ifndef CONNECTION_HEADER
-#define CONNECTION_HEADER
-=======
 #pragma once
->>>>>>> 5.5.0
 
 #include "irrlichttypes.h"
 #include "peerhandler.h"
@@ -50,7 +45,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 
-<<<<<<< HEAD
 #include <fstream>
 
 extern std::ostream *dout_con_ptr;
@@ -58,202 +52,7 @@ extern std::ostream *derr_con_ptr;
 #define dout_con (*dout_con_ptr)
 #define derr_con (*derr_con_ptr)
 
-
-class NetworkPacket;
-
-namespace con
-{
-
-/*
-	Exceptions
-*/
-class NotFoundException : public BaseException
-{
-public:
-	NotFoundException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class PeerNotFoundException : public BaseException
-{
-public:
-	PeerNotFoundException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ConnectionException : public BaseException
-{
-public:
-	ConnectionException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ConnectionBindFailed : public BaseException
-{
-public:
-	ConnectionBindFailed(const char *s):
-		BaseException(s)
-	{}
-};
-
-class InvalidIncomingDataException : public BaseException
-{
-public:
-	InvalidIncomingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class InvalidOutgoingDataException : public BaseException
-{
-public:
-	InvalidOutgoingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class NoIncomingDataException : public BaseException
-{
-public:
-	NoIncomingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ProcessedSilentlyException : public BaseException
-{
-public:
-	ProcessedSilentlyException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ProcessedQueued : public BaseException
-{
-public:
-	ProcessedQueued(const char *s):
-		BaseException(s)
-	{}
-};
-
-class IncomingDataCorruption : public BaseException
-{
-public:
-	IncomingDataCorruption(const char *s):
-		BaseException(s)
-	{}
-};
-
-typedef enum MTProtocols {
-	MTP_PRIMARY,
-	MTP_UDP,
-	MTP_MINETEST_RELIABLE_UDP
-} MTProtocols;
-
-#define SEQNUM_MAX 65535
-inline bool seqnum_higher(u16 totest, u16 base)
-{
-	if (totest > base)
-	{
-		if ((totest - base) > (SEQNUM_MAX/2))
-			return false;
-		else
-			return true;
-	}
-	else
-	{
-		if ((base - totest) > (SEQNUM_MAX/2))
-			return true;
-		else
-			return false;
-	}
-}
-
-inline bool seqnum_in_window(u16 seqnum, u16 next,u16 window_size)
-{
-	u16 window_start = next;
-	u16 window_end   = ( next + window_size ) % (SEQNUM_MAX+1);
-
-	if (window_start < window_end)
-	{
-		return ((seqnum >= window_start) && (seqnum < window_end));
-	}
-	else
-	{
-		return ((seqnum < window_end) || (seqnum >= window_start));
-	}
-}
-
-struct BufferedPacket
-{
-	BufferedPacket(u8 *a_data, u32 a_size):
-		data(a_data, a_size), time(0.0), totaltime(0.0), absolute_send_time(-1),
-		resend_count(0)
-	{}
-	BufferedPacket(u32 a_size):
-		data(a_size), time(0.0), totaltime(0.0), absolute_send_time(-1),
-		resend_count(0)
-	{}
-	Buffer<u8> data; // Data of the packet, including headers
-	float time; // Seconds from buffering the packet or re-sending
-	float totaltime; // Seconds from buffering the packet
-	unsigned int absolute_send_time;
-	Address address; // Sender or destination
-	unsigned int resend_count;
-};
-
-// This adds the base headers to the data and makes a packet out of it
-BufferedPacket makePacket(Address &address, u8 *data, u32 datasize,
-		u32 protocol_id, u16 sender_peer_id, u8 channel);
-BufferedPacket makePacket(Address &address, SharedBuffer<u8> &data,
-		u32 protocol_id, u16 sender_peer_id, u8 channel);
-
-// Add the TYPE_ORIGINAL header to the data
-SharedBuffer<u8> makeOriginalPacket(
-		SharedBuffer<u8> data);
-
-// Split data in chunks and add TYPE_SPLIT headers to them
-std::list<SharedBuffer<u8> > makeSplitPacket(
-		SharedBuffer<u8> data,
-		u32 chunksize_max,
-		u16 seqnum);
-
-// Depending on size, make a TYPE_ORIGINAL or TYPE_SPLIT packet
-// Increments split_seqnum if a split packet is made
-std::list<SharedBuffer<u8> > makeAutoSplitPacket(
-		SharedBuffer<u8> data,
-		u32 chunksize_max,
-		u16 &split_seqnum);
-
-// Add the TYPE_RELIABLE header to the data
-SharedBuffer<u8> makeReliablePacket(
-		SharedBuffer<u8> data,
-		u16 seqnum);
-
-struct IncomingSplitPacket
-{
-	IncomingSplitPacket()
-	{
-		time = 0.0;
-		reliable = false;
-	}
-	// Key is chunk number, value is data without headers
-	std::map<u16, SharedBuffer<u8> > chunks;
-	u32 chunk_count;
-	float time; // Seconds from adding
-	bool reliable; // If true, isn't deleted on timeout
-
-	bool allReceived()
-	{
-		return (chunks.size() == chunk_count);
-	}
-};
-=======
 #define MAX_UDP_PEERS 65535
->>>>>>> 5.5.0
 
 /*
 === NOTES ===
@@ -495,12 +294,7 @@ public:
 private:
 	RPBSearchResult findPacketNoLock(u16 seqnum);
 
-<<<<<<< HEAD
-	std::list<BufferedPacket> m_list;
-	std::atomic_uint m_list_size;
-=======
 	std::list<BufferedPacketPtr> m_list;
->>>>>>> 5.5.0
 
 	u16 m_oldest_non_answered_ack;
 
@@ -685,44 +479,6 @@ private:
 
 class Peer;
 
-<<<<<<< HEAD
-enum PeerChangeType
-{
-	PEER_ADDED,
-	PEER_REMOVED
-};
-struct PeerChange
-{
-	PeerChangeType type;
-	u16 peer_id;
-	bool timeout;
-};
-
-class PeerHandler
-{
-public:
-
-	PeerHandler()
-	{
-	}
-	virtual ~PeerHandler()
-	{
-	}
-
-	/*
-		This is called after the Peer has been inserted into the
-		Connection's peer container.
-	*/
-	virtual void peerAdded(u16 peer_id) = 0;
-	/*
-		This is called before the Peer has been removed from the
-		Connection's peer container.
-	*/
-	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
-};
-
-=======
->>>>>>> 5.5.0
 class PeerHelper
 {
 public:
@@ -978,20 +734,12 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-<<<<<<< HEAD
 	u32 Receive(NetworkPacket* pkt, int timeout = 0);
-	void Send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
-	u16 GetPeerID() { return m_peer_id; }
-	Address GetPeerAddress(u16 peer_id);
-	float getPeerStat(u16 peer_id, rtt_stat_type type);
-=======
-	void Receive(NetworkPacket* pkt);
 	bool TryReceive(NetworkPacket *pkt);
 	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 	session_t GetPeerID() const { return m_peer_id; }
 	Address GetPeerAddress(session_t peer_id);
 	float getPeerStat(session_t peer_id, rtt_stat_type type);
->>>>>>> 5.5.0
 	float getLocalStat(rate_stat_type type);
 	u32 GetProtocolID() const { return m_protocol_id; };
 	const std::string getDesc();
@@ -1033,13 +781,7 @@ private:
 	// Event queue: ReceiveThread -> user
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 
-<<<<<<< HEAD
-	MutexedQueue<ConnectionEvent> m_event_queue;
-
-	std::atomic_ushort m_peer_id;
-=======
 	session_t m_peer_id = 0;
->>>>>>> 5.5.0
 	u32 m_protocol_id;
 
 	std::map<session_t, Peer *> m_peers;
@@ -1057,22 +799,14 @@ private:
 
 	bool m_shutting_down = false;
 
-<<<<<<< HEAD
-	u16 m_next_remote_peer_id;
+	session_t m_next_remote_peer_id = 2;
 
 //freeminer:
 public:
 	size_t events_size() { return m_event_queue.size(); }
+
 };
 
 } // namespace
 
 #endif
-
-#endif
-=======
-	session_t m_next_remote_peer_id = 2;
-};
-
-} // namespace
->>>>>>> 5.5.0

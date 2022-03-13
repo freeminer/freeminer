@@ -38,11 +38,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <atomic>
 #include <mutex>
 #include "irr_v3d.h"
-<<<<<<< HEAD
-#include "activeobject.h"
-#include "util/numeric.h"
-#include "mapnode.h"
-#include "mapblock.h"
 
 //fm:
 #include "network/connection.h"
@@ -57,10 +52,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 //--
 
-#include "threading/mutex.h"
-#include "threading/atomic.h"
-=======
->>>>>>> 5.5.0
 #include "network/networkprotocol.h" // for AccessDeniedCode
 #include "util/basic_macros.h"
 

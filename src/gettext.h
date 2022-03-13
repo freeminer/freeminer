@@ -56,9 +56,10 @@ extern wchar_t *utf8_to_wide_c(const char *str);
 // The returned string must be freed using delete[]
 inline const wchar_t *wgettext(const char *str)
 {
-<<<<<<< HEAD
-	return utf8_to_wide_c(mygettext(str));
+	// We must check here that is not an empty string to avoid trying to translate it
+	return str[0] ? utf8_to_wide_c(mygettext(str)) : utf8_to_wide_c("");
 }
+
 
 inline std::wstring wstrgettext(const std::string &text)
 {
@@ -67,19 +68,11 @@ inline std::wstring wstrgettext(const std::string &text)
 	std::wstring retval = (std::wstring)tmp;
 	delete[] tmp;
 	return retval;
-=======
-	// We must check here that is not an empty string to avoid trying to translate it
-	return str[0] ? utf8_to_wide_c(gettext(str)) : utf8_to_wide_c("");
->>>>>>> 5.5.0
 }
 
 inline std::string strgettext(const std::string &text)
 {
-<<<<<<< HEAD
-	return mygettext(text.c_str());
-=======
-	return text.empty() ? "" : gettext(text.c_str());
->>>>>>> 5.5.0
+	return text.empty() ? "" : mygettext(text.c_str());
 }
 
 /**

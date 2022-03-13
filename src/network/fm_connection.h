@@ -54,6 +54,7 @@ namespace con {
 /*
 	Exceptions
 */
+#if MERGE_DELETE
 class NotFoundException : public BaseException {
 public:
 	NotFoundException(const char *s):
@@ -117,6 +118,8 @@ public:
 		BaseException(s)
 	{}
 };
+
+#endif
 
 class Connection;
 

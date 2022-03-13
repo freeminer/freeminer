@@ -233,7 +233,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
-typedef u16 session_t;
+//typedef u16 session_t;
+
+#include <atomic>
+using session_t = std::atomic_ushort;
 
 enum ToClientCommand
 {

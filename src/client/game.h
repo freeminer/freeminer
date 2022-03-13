@@ -24,10 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes.h"
 #include <string>
-<<<<<<< HEAD:src/database.h
-#include "util/basic_macros.h"
-=======
->>>>>>> 5.5.0:src/client/game.h
 
 class InputHandler;
 class ChatBackend;
@@ -35,30 +31,8 @@ class RenderingEngine;
 struct SubgameSpec;
 struct GameStartData;
 
-<<<<<<< HEAD:src/database.h
-	virtual void beginSave() {}
-	virtual void endSave() {}
-
-	virtual bool saveBlock(const v3s16 &pos, const std::string &data) = 0;
-	virtual void loadBlock(const v3s16 &pos, std::string *block) = 0;
-	virtual bool deleteBlock(const v3s16 &pos) = 0;
-
-	static s64 getBlockAsInteger(const v3s16 &pos);
-	static v3s16 getIntegerAsBlock(s64 i);
-
-	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
-
-	virtual bool initialized() const { return true; }
-
-
-	std::string getBlockAsString(const v3POS &pos) const;
-	v3POS getStringAsBlock(const std::string &i) const;
-	virtual void open() {};
-	virtual void close() {};
-=======
 struct Jitter {
 	f32 max, min, avg, counter, max_sample, min_sample, max_fraction;
->>>>>>> 5.5.0:src/client/game.h
 };
 
 struct RunStats {

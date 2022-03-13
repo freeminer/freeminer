@@ -58,13 +58,10 @@ public:
 	Address(u32 address, u16 port);
 	Address(u8 a, u8 b, u8 c, u8 d, u16 port);
 	Address(const IPv6AddressBytes *ipv6_bytes, u16 port);
-<<<<<<< HEAD:src/socket.h
 	Address(const in6_addr & addr, u16 port) { setAddress(addr); setPort(port); };
-	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
-	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
-=======
+	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai.sin6_addr; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
+	Address(const sockaddr_in & sai) { m_address.ipv4 = sai.sin_addr; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
 
->>>>>>> 5.5.0:src/network/address.h
 	bool operator==(const Address &address);
 	bool operator!=(const Address &address) { return !(*this == address); }
 
@@ -84,19 +81,9 @@ public:
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
 	void setAddress(const IPv6AddressBytes *ipv6_bytes);
-<<<<<<< HEAD:src/socket.h
-	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_addr_family = AF_INET6; m_address.ipv6.sin6_family = AF_INET6; }
-	struct sockaddr_in6 getAddress6() const;
-	int getFamily() const;
-	bool isIPv6() const;
-	bool isZero() const;
-	void setPort(unsigned short port);
-	void print(std::ostream *s) const;
-	std::string serializeString() const;
-=======
+	void setAddress(const in6_addr & addr) { m_address.ipv6 = addr; m_addr_family = AF_INET6; }
 	void setPort(u16 port);
 
->>>>>>> 5.5.0:src/network/address.h
 private:
 	unsigned short m_addr_family = 0;
 	union

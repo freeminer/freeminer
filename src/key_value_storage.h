@@ -19,7 +19,6 @@
 #define KEY_VALUE_STORAGE_H
 
 #include <string>
-#include "threading/mutex.h"
 
 #include "config.h"
 #if USE_LEVELDB

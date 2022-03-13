@@ -35,7 +35,7 @@ Clouds *g_menuclouds = NULL;
 scene::ISceneManager *g_menucloudsmgr = NULL;
 
 // Constant for now
-static constexpr const float cloud_size = BS * 64.0f;
+float cloud_size = 0;
 
 static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 {
@@ -101,15 +101,10 @@ void Clouds::render()
 	//if(SceneManager->getSceneNodeRenderPass() != scene::ESNRP_SOLID)
 		return;
 
-<<<<<<< HEAD:src/clouds.cpp
 /*
-	ScopeProfiler sp(g_profiler, "Rendering of clouds, avg", SPT_AVG);
-*/
-	
-=======
 	ScopeProfiler sp(g_profiler, "Clouds::render()", SPT_AVG);
+*/
 
->>>>>>> 5.5.0:src/client/clouds.cpp
 	int num_faces_to_draw = m_enable_3d ? 6 : 1;
 
 	m_material.setFlag(video::EMF_BACK_FACE_CULLING, m_enable_3d);
@@ -121,13 +116,9 @@ void Clouds::render()
 		Clouds move from Z+ towards Z-
 	*/
 
-<<<<<<< HEAD:src/clouds.cpp
-	const float cloud_mul = m_cloud_y/BS/300; // fmtodo: remake
-	const float cloud_size = BS * 64 * cloud_mul;
-	const v2f cloud_speed(0, -BS * 2 * cloud_mul);
-	
-=======
->>>>>>> 5.5.0:src/client/clouds.cpp
+	const float cloud_mul = m_params.height/BS/300; // fmtodo: remake
+	cloud_size = BS * 64.0f * cloud_mul;
+
 	const float cloud_full_radius = cloud_size * m_cloud_radius_i;
 
 	v2f camera_pos_2d(m_camera_pos.X, m_camera_pos.Z);
@@ -232,23 +223,10 @@ void Clouds::render()
 			video::S3DVertex(0,0,0, 0,0,0, c_top, 0, 0)
 		};
 
-<<<<<<< HEAD:src/clouds.cpp
-		/*if(zi <= 0 && xi <= 0){
-			v[0].Color.setBlue(255);
-			v[1].Color.setBlue(255);
-			v[2].Color.setBlue(255);
-			v[3].Color.setBlue(255);
-		}*/
-
-		f32 rx = cloud_size/2;
-		f32 ry = 8 * BS * cloud_mul;
-		f32 rz = cloud_size / 2;
-=======
 		const f32 rx = cloud_size / 2.0f;
 		// if clouds are flat, the top layer should be at the given height
-		const f32 ry = m_enable_3d ? m_params.thickness * BS : 0.0f;
+		const f32 ry = m_enable_3d ? m_params.thickness * BS * cloud_mul : 0.0f;
 		const f32 rz = cloud_size / 2;
->>>>>>> 5.5.0:src/client/clouds.cpp
 
 		for(int i=0; i<num_faces_to_draw; i++)
 		{

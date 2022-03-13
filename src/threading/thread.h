@@ -92,24 +92,9 @@ public:
 	bool isRunning() { return m_running; }
 	bool stopRequested() { return m_request_stop; }
 
-<<<<<<< HEAD
-#if USE_CPP11_THREADS
-/*
-	inline threadid_t getThreadId() { return m_thread_obj->get_id(); }
-*/
-	inline threadid_t getThreadId() { return std::hash<std::thread::id>()(m_thread_obj->get_id()); }
-	inline threadhandle_t getThreadHandle() { return m_thread_obj->native_handle(); }
-#else
-#  if USE_WIN_THREADS
-	inline threadid_t getThreadId() { return m_thread_id; }
-#  else
-	inline threadid_t getThreadId() { return m_thread_handle; }
-#  endif
-	inline threadhandle_t getThreadHandle() { return m_thread_handle; }
-#endif
-=======
 	std::thread::id getThreadId() { return m_thread_obj->get_id(); }
->>>>>>> 5.5.0
+
+	//fm? std::thread::id getThreadId() { return std::hash<std::thread::id>()(m_thread_obj->get_id()); }
 
 	/*
 	 * Gets the thread return value.

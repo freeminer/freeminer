@@ -32,24 +32,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace irr;
 
-<<<<<<< HEAD
 #define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
 
 typedef s16 POS;
 // typedef s32 POS; far future
 
-// Irrlicht 1.8+ defines 64bit unsigned symbol in irrTypes.h
-#if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8)
-#ifdef _MSC_VER
-	// Windows
-	typedef long long s64;
-	typedef unsigned long long u64;
-#else
-	// Posix
-	typedef int64_t s64;
-	typedef uint64_t u64;
-#endif
-=======
 namespace irr {
 
 #if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
@@ -63,7 +50,6 @@ namespace core {
 		return 0;
 	}
 }
->>>>>>> 5.5.0
 #endif
 
 }
