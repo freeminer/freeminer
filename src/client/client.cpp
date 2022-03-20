@@ -1133,7 +1133,7 @@ void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 
 void Client::sendDeletedBlocks(std::vector<v3bpos_t> &blocks)
 {
-	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof(v3pos_t) * blocks.size());
+	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof_v3pos(m_proto_ver) * blocks.size(), m_proto_ver);
 
 	pkt << (u8) blocks.size();
 
