@@ -439,7 +439,7 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 	u8 count;
 	*pkt >> count;
 
-	if ((s16)pkt->getSize() < 1 + (int)count * (int)sizeof(v3bpos_t)) {
+	if ((s16)pkt->getSize() < 1 + (int)count * (int)sizeof_v3pos(pkt->getProtoVer())) {
 		throw con::InvalidIncomingDataException
 				("GOTBLOCKS length is too short");
 	}
