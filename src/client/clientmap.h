@@ -77,9 +77,9 @@ public:
 
 	virtual ~ClientMap() = default;
 
-	s32 mapType() const
+	bool maySaveBlocks() override
 	{
-		return MAPTYPE_CLIENT;
+		return false;
 	}
 
 	void drop()
@@ -117,7 +117,7 @@ public:
 	void getBlocksInViewRange(v3pos_t cam_pos_nodes,
 		v3pos_t *p_blocks_min, v3pos_t *p_blocks_max, float range=-1.0f);
 	void updateDrawList();
-	void updateDrawListShadow(const v3f &shadow_light_pos, const v3f &shadow_light_dir, float shadow_range);
+	void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
 	// Returns true if draw list needs updating before drawing the next frame.
 	bool needsUpdateDrawList() { return m_needs_update_drawlist; }
 	void renderMap(video::IVideoDriver* driver, s32 pass);
