@@ -203,17 +203,6 @@ protected:
 	core::stringw m_keynav_buffer = L"";
 
 	// Drawing and geometry information
-<<<<<<< HEAD:src/guiTable.h
-	bool m_border;
-	video::SColor m_color;
-	video::SColor m_background;
-	video::SColor m_highlight;
-	video::SColor m_highlight_text;
-	s32 m_rowheight;
-	gui::IGUIFont *m_font;
-	gui::IGUIScrollBar *m_scrollbar;
-	bool m_scrollbar_enabled;
-=======
 	bool m_border = true;
 	video::SColor m_color = video::SColor(255, 255, 255, 255);
 	video::SColor m_background = video::SColor(255, 0, 0, 0);
@@ -222,7 +211,7 @@ protected:
 	s32 m_rowheight = 1;
 	gui::IGUIFont *m_font = nullptr;
 	GUIScrollBar *m_scrollbar = nullptr;
->>>>>>> 5.5.0:src/gui/guiTable.h
+	bool m_scrollbar_enabled = true;
 
 	// Allocated strings and images
 	std::vector<core::stringw> m_strings;

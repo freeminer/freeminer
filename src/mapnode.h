@@ -157,7 +157,7 @@ struct MapNode
 	*/
 	u8 param2;
 
-	MapNode() = default;
+	//MapNode() = default;
 
 	MapNode(content_t content = CONTENT_AIR, u8 a_param1=0, u8 a_param2=0) noexcept
 		: param0(content),

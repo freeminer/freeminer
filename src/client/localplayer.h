@@ -59,20 +59,12 @@ public:
 	// This oscillates so that the player jumps a bit above the surface
 	bool in_liquid = false;
 	// This is more stable and defines the maximum speed of the player
-<<<<<<< HEAD:src/localplayer.h
-	bool in_liquid_stable;
-	// Gets the viscosity of water to calculate friction
-	float liquid_viscosity;
-	bool is_climbing;
-	bool swimming_vertical;
-=======
 	bool in_liquid_stable = false;
 	// Slows down the player when moving through
 	u8 move_resistance = 0;
 	bool is_climbing = false;
 	bool swimming_vertical = false;
 	bool swimming_pitch = false;
->>>>>>> 5.5.0:src/client/localplayer.h
 
 	float physics_override_speed = 1.0f;
 	float physics_override_jump = 1.0f;
@@ -85,17 +77,15 @@ public:
 	void move(f32 dtime, Environment *env, f32 pos_max_d);
 	void move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::vector<CollisionInfo> *collision_info);
-<<<<<<< HEAD:src/localplayer.h
+
+	// fm:
 	bool canPlaceNode(const v3s16& p, const MapNode& node);
 
-	void applyControl(float dtime, ClientEnvironment *env);
-=======
 	// Temporary option for old move code
 	void old_move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::vector<CollisionInfo> *collision_info);
 
 	void applyControl(float dtime, Environment *env);
->>>>>>> 5.5.0:src/client/localplayer.h
 
 	v3s16 getStandingNodePos();
 	v3s16 getFootstepNodePos();
@@ -113,16 +103,8 @@ public:
 
 	bool makes_footstep_sound = true;
 
-<<<<<<< HEAD:src/localplayer.h
-	/*
-	std::string hotbar_image;
-	int hotbar_image_items;
-	std::string hotbar_selected_image;
-	*/
-=======
 	int last_animation = NO_ANIM;
 	float last_animation_speed = 0.0f;
->>>>>>> 5.5.0:src/client/localplayer.h
 
 	std::string hotbar_image = "";
 	std::string hotbar_selected_image = "";
@@ -155,36 +137,13 @@ public:
 	u16 getBreath() { auto lock = lock_shared_rec(); return m_breath; }
 	void setBreath(u16 breath) { auto lock = lock_unique_rec(); m_breath = breath; }
 
-<<<<<<< HEAD:src/localplayer.h
-	v3s16 getLightPosition() const
-	{
-		return floatToInt(m_position + v3f(0,BS+BS/2,0), BS);
-	}
-
-	void setYaw(f32 yaw)
-	{
-		auto lock = lock_unique_rec();
-		m_yaw = yaw;
-	}
-
-	f32 getYaw() { auto lock = lock_shared_rec(); return m_yaw; }
-
-	void setPitch(f32 pitch)
-	{
-		auto lock = lock_unique_rec();
-		m_pitch = pitch;
-	}
-
-	f32 getPitch() { auto lock = lock_shared_rec(); return m_pitch; }
-=======
 	v3s16 getLightPosition() const;
 
-	void setYaw(f32 yaw) { m_yaw = yaw; }
-	f32 getYaw() const { return m_yaw; }
+	void setYaw(f32 yaw) { auto lock = lock_unique_rec(); m_yaw = yaw; }
+	f32 getYaw() const { auto lock = lock_shared_rec(); return m_yaw; }
 
-	void setPitch(f32 pitch) { m_pitch = pitch; }
-	f32 getPitch() const { return m_pitch; }
->>>>>>> 5.5.0:src/client/localplayer.h
+	void setPitch(f32 pitch) { auto lock = lock_unique_rec(); m_pitch = pitch; }
+	f32 getPitch() const { auto lock = lock_shared_rec(); return m_pitch; }
 
 	inline void setPosition(const v3f &position)
 	{
@@ -193,16 +152,11 @@ public:
 		m_sneak_node_exists = false;
 	}
 
-<<<<<<< HEAD:src/localplayer.h
-	v3f getPosition() { auto lock = lock_shared_rec(); return m_position; }
-	v3f getEyePosition() { auto lock = lock_shared_rec(); return m_position + getEyeOffset(); }
-	v3f getEyeOffset() const
-=======
-	v3f getPosition() const { return m_position; }
+	v3f getPosition() const { auto lock = lock_shared_rec(); return m_position; }
 
 	// Non-transformed eye offset getters
 	// For accurate positions, use the Camera functions
-	v3f getEyePosition() const { return m_position + getEyeOffset(); }
+	v3f getEyePosition() const { auto lock = lock_shared_rec(); return m_position + getEyeOffset(); }
 	v3f getEyeOffset() const;
 	void setEyeHeight(float eye_height) { m_eye_height = eye_height; }
 
@@ -218,18 +172,10 @@ public:
 	bool isDead() const;
 
 	inline void addVelocity(const v3f &vel)
->>>>>>> 5.5.0:src/client/localplayer.h
 	{
 		added_velocity += vel;
 	}
 
-<<<<<<< HEAD:src/localplayer.h
-	void setCollisionbox(const aabb3f &box) { m_collisionbox = box; }
-
-private:
-	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery = 0);
-	void accelerateVertical(const v3f &target_speed, const f32 max_increase);
-=======
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
 		const f32 max_increase_V, const bool use_pitch);
@@ -239,7 +185,6 @@ private:
 		const collisionMoveResult &result,
 		const v3f &position_before_move, const v3f &speed_before_move,
 		f32 pos_max_d);
->>>>>>> 5.5.0:src/client/localplayer.h
 
 	v3f m_position;
 	v3s16 m_standing_node;
@@ -248,16 +193,6 @@ private:
 	// Stores the top bounding box of m_sneak_node
 	aabb3f m_sneak_node_bb_top = aabb3f(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	// Whether the player is allowed to sneak
-<<<<<<< HEAD:src/localplayer.h
-public:
-	bool m_sneak_node_exists;
-	// Whether recalculation of the sneak node is needed
-private:
-	bool m_need_to_get_new_sneak_node;
-	// Stores the max player uplift by m_sneak_node and is updated
-	// when m_need_to_get_new_sneak_node == true
-	f32 m_sneak_node_bb_ymax;
-=======
 	bool m_sneak_node_exists = false;
 	// Whether a "sneak ladder" structure is detected at the players pos
 	// see detectSneakLadder() in the .cpp for more info (always false if disabled)
@@ -268,7 +203,6 @@ private:
 	f32 m_sneak_node_bb_ymax = 0.0f;
 	// Whether recalculation of m_sneak_node and its top bbox is needed
 	bool m_need_to_get_new_sneak_node = true;
->>>>>>> 5.5.0:src/client/localplayer.h
 	// Node below player, used to determine whether it has been removed,
 	// and its old type
 	v3s16 m_old_node_below = v3s16(32767, 32767, 32767);

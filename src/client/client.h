@@ -35,21 +35,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "localplayer.h"
 #include "client/hud.h"
 #include "particles.h"
-<<<<<<< HEAD:src/client.h
 
+//fm:
 #include "threading/thread_pool.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
 
-#include "network/networkpacket.h"
-=======
 #include "mapnode.h"
 #include "tileanimation.h"
 #include "mesh_generator_thread.h"
 #include "network/address.h"
 #include "network/peerhandler.h"
 #include <fstream>
->>>>>>> 5.5.0:src/client/client.h
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
@@ -70,36 +67,16 @@ struct MapDrawControl;
 class ModChannelMgr;
 class MtEventManager;
 struct PointedThing;
-<<<<<<< HEAD:src/client.h
-class Database;
-class Server;
-class Mapper;
-=======
 class MapDatabase;
 class Minimap;
->>>>>>> 5.5.0:src/client/client.h
 struct MinimapMapblock;
+class Server;
 class ChatBackend;
 class Camera;
-<<<<<<< HEAD:src/client.h
-
-/*
-struct QueuedMeshUpdate
-{
-	v3s16 p;
-	MeshMakeData *data;
-	bool ack_block_to_server;
-
-	QueuedMeshUpdate();
-	~QueuedMeshUpdate();
-};
-*/
-=======
 class NetworkPacket;
 namespace con {
 class Connection;
 }
->>>>>>> 5.5.0:src/client/client.h
 
 enum LocalClientState {
 	LC_Created,
@@ -108,177 +85,6 @@ enum LocalClientState {
 };
 
 /*
-<<<<<<< HEAD:src/client.h
-	A thread-safe queue of mesh update tasks
-*/
-class MeshUpdateQueue
-{
-public:
-	MeshUpdateQueue();
-
-	~MeshUpdateQueue();
-
-	unsigned int addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent);
-	std::shared_ptr<MeshMakeData> pop();
-
-	concurrent_unordered_map<v3s16, bool, v3POSHash, v3POSEqual> m_process;
-
-private:
-	concurrent_map<unsigned int, unordered_map_v3POS<std::shared_ptr<MeshMakeData>>> m_queue;
-	unordered_map_v3POS<unsigned int> m_ranges;
-};
-
-struct MeshUpdateResult
-{
-	v3s16 p;
-	MapBlock::mesh_type mesh;
-
-	MeshUpdateResult(v3POS & p_, MapBlock::mesh_type mesh_):
-		p(p_),
-		mesh(mesh_)
-	{
-	}
-};
-
-class MeshUpdateThread : public UpdateThread
-{
-private:
-	MeshUpdateQueue m_queue_in;
- 
-protected:
-	virtual void doUpdate();
-
-public:
-
-	MeshUpdateThread() : UpdateThread("Mesh") {}
-
-	void enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
-			bool urgent);
-
-	MutexedQueue<MeshUpdateResult> m_queue_out;
-
-	v3s16 m_camera_offset;
-	int id;
-};
-
-enum ClientEventType
-{
-	CE_NONE,
-	CE_PLAYER_DAMAGE,
-	CE_PLAYER_FORCE_MOVE,
-	CE_DEATHSCREEN,
-	CE_SHOW_FORMSPEC,
-	CE_SPAWN_PARTICLE,
-	CE_ADD_PARTICLESPAWNER,
-	CE_DELETE_PARTICLESPAWNER,
-	CE_HUDADD,
-	CE_HUDRM,
-	CE_HUDCHANGE,
-	CE_SET_SKY,
-	CE_OVERRIDE_DAY_NIGHT_RATIO,
-};
-
-struct ClientEvent
-{
-	ClientEventType type;
-	union{
-		//struct{
-		//} none;
-		struct{
-			u8 amount;
-		} player_damage;
-		struct{
-			f32 pitch;
-			f32 yaw;
-		} player_force_move;
-		struct{
-			bool set_camera_point_target;
-			f32 camera_point_target_x;
-			f32 camera_point_target_y;
-			f32 camera_point_target_z;
-		} deathscreen;
-		struct{
-			std::string *formspec;
-			std::string *formname;
-		} show_formspec;
-		//struct{
-		//} textures_updated;
-		struct{
-			v3f *pos;
-			v3f *vel;
-			v3f *acc;
-			f32 expirationtime;
-			f32 size;
-			bool collisiondetection;
-			bool collision_removal;
-			bool vertical;
-			std::string *texture;
-		} spawn_particle;
-		struct{
-			u16 amount;
-			f32 spawntime;
-			v3f *minpos;
-			v3f *maxpos;
-			v3f *minvel;
-			v3f *maxvel;
-			v3f *minacc;
-			v3f *maxacc;
-			f32 minexptime;
-			f32 maxexptime;
-			f32 minsize;
-			f32 maxsize;
-			bool collisiondetection;
-			bool collision_removal;
-			u16 attached_id;
-			bool vertical;
-			std::string *texture;
-			u32 id;
-		} add_particlespawner;
-		struct{
-			u32 id;
-		} delete_particlespawner;
-		struct{
-			u32 id;
-			u8 type;
-			v2f *pos;
-			std::string *name;
-			v2f *scale;
-			std::string *text;
-			u32 number;
-			u32 item;
-			u32 dir;
-			v2f *align;
-			v2f *offset;
-			v3f *world_pos;
-			v2s32 * size;
-		} hudadd;
-		struct{
-			u32 id;
-		} hudrm;
-		struct{
-			u32 id;
-			HudElementStat stat;
-			v2f *v2fdata;
-			std::string *sdata;
-			u32 data;
-			v3f *v3fdata;
-			v2s32 * v2s32data;
-		} hudchange;
-		struct{
-			video::SColor *bgcolor;
-			std::string *type;
-			std::vector<std::string> *params;
-		} set_sky;
-		struct{
-			bool do_override;
-			float ratio_f;
-		} override_day_night_ratio;
-	};
-};
-
-/*
-=======
->>>>>>> 5.5.0:src/client/client.h
 	Packet counter
 */
 
@@ -301,23 +107,8 @@ public:
 		m_packets.clear();
 	}
 
-<<<<<<< HEAD:src/client.h
-	void print(std::ostream &o)
-	{
-		for(std::map<u16, u16>::iterator
-				i = m_packets.begin();
-				i != m_packets.end(); ++i)
-		{
-			if (i->second)
-			o<<"cmd "<<i->first
-					<<" count "<<i->second
-					<<std::endl;
-		}
-	}
-=======
 	u32 sum() const;
 	void print(std::ostream &o) const;
->>>>>>> 5.5.0:src/client/client.h
 
 private:
 	// command, count
@@ -335,14 +126,10 @@ public:
 	*/
 
 	Client(
-			const char *playername,
-<<<<<<< HEAD:src/client.h
-			std::string password,
 			bool is_simple_singleplayer_game,
-=======
+			const char *playername,
 			const std::string &password,
 			const std::string &address_name,
->>>>>>> 5.5.0:src/client/client.h
 			MapDrawControl &control,
 			IWritableTextureSource *tsrc,
 			IWritableShaderSource *shsrc,
@@ -412,10 +199,7 @@ public:
 	void handleCommand_HP(NetworkPacket* pkt);
 	void handleCommand_Breath(NetworkPacket* pkt);
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
-<<<<<<< HEAD:src/client.h
 	void handleCommand_PunchPlayer(NetworkPacket* pkt);
-=======
->>>>>>> 5.5.0:src/client/client.h
 	void handleCommand_DeathScreen(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
@@ -456,16 +240,7 @@ public:
 
 	void ProcessData(NetworkPacket *pkt);
 
-<<<<<<< HEAD:src/client.h
-	// Returns true if something was received
-	bool AsyncProcessPacket();
-	bool AsyncProcessData();
-/*
-	void Send(u16 channelnum, SharedBuffer<u8> data, bool reliable);
-*/
 	void Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable);
-=======
->>>>>>> 5.5.0:src/client/client.h
 	void Send(NetworkPacket* pkt);
 
 	void interact(InteractAction action, const PointedThing &pointed);
@@ -475,12 +250,8 @@ public:
 	void sendInventoryFields(const std::string &formname,
 		const StringMap &fields);
 	void sendInventoryAction(InventoryAction *a);
-<<<<<<< HEAD:src/client.h
 	void sendChatMessage(const std::string &message);
-=======
-	void sendChatMessage(const std::wstring &message);
 	void clearOutChatQueue();
->>>>>>> 5.5.0:src/client/client.h
 	void sendChangePassword(const std::string &oldpassword,
 		const std::string &newpassword);
 	void sendDamage(u16 damage);
@@ -498,31 +269,17 @@ public:
 	const ModSpec* getModSpec(const std::string &modname) const override;
 
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
-<<<<<<< HEAD:src/client.h
 	void removeNode(v3s16 p, int fast = 0);
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
-
-	void setPlayerControl(PlayerControl &control);
-
-	void selectPlayerItem(u16 item);
-	u16 getPlayerItem() const
-	{ return m_playeritem; }
-	u16 getPreviousPlayerItem() const
-	{ return m_previous_playeritem; }
-
-=======
-	void removeNode(v3s16 p);
 
 	// helpers to enforce CSM restrictions
 	MapNode CSMGetNode(v3s16 p, bool *is_valid_position);
 	int CSMClampRadius(v3s16 pos, int radius);
 	v3s16 CSMClampPos(v3s16 pos);
 
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true);
+	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
 
 	void setPlayerControl(PlayerControl &control);
 
->>>>>>> 5.5.0:src/client/client.h
 	// Returns true if the inventory of the local player has been
 	// updated from the server. If it is true, it is set to false.
 	bool updateWieldedItem();
@@ -550,16 +307,11 @@ public:
 	bool checkPrivilege(const std::string &priv) const
 	{ return (m_privileges.count(priv) != 0); }
 
-<<<<<<< HEAD:src/client.h
-	bool getChatMessage(std::string &message);
-	void typeChatMessage(const std::string& message);
-=======
 	const std::unordered_set<std::string> &getPrivilegeList() const
 	{ return m_privileges; }
 
-	bool getChatMessage(std::wstring &message);
-	void typeChatMessage(const std::wstring& message);
->>>>>>> 5.5.0:src/client/client.h
+	bool getChatMessage(std::string &message);
+	void typeChatMessage(const std::string& message);
 
 	u64 getMapSeed(){ return m_map_seed; }
 
@@ -659,13 +411,9 @@ public:
 
 	LocalClientState getState() { return m_state; }
 
-<<<<<<< HEAD:src/client.h
-	void makeScreenshot(const std::string & name = "screenshot_", IrrlichtDevice *device = nullptr);
-	
+	void makeScreenshot(const std::string & name = "screenshot_");
+
 	ChatBackend *chat_backend;
-=======
-	void makeScreenshot();
->>>>>>> 5.5.0:src/client/client.h
 
 	inline void pushToChatQueue(ChatMessage *cec)
 	{
@@ -710,23 +458,14 @@ private:
 	void loadMods();
 
 	// Virtual methods from con::PeerHandler
-<<<<<<< HEAD:src/client.h
-	void peerAdded(u16 peer_id);
-	void deletingPeer(u16 peer_id, bool timeout);
-=======
-	void peerAdded(con::Peer *peer) override;
-	void deletingPeer(con::Peer *peer, bool timeout) override;
->>>>>>> 5.5.0:src/client/client.h
+	void peerAdded(u16 peer_id) override;
+	void deletingPeer(u16 peer_id, bool timeout) override;
 
 	void initLocalMapSaving(const Address &address,
 			const std::string &hostname,
 			bool is_local_server);
 
 	void ReceiveAll();
-<<<<<<< HEAD:src/client.h
-	bool Receive();
-=======
->>>>>>> 5.5.0:src/client/client.h
 
 	void sendPlayerPos();
 
@@ -734,10 +473,6 @@ private:
 	// helper method shared with clientpackethandler
 	static AuthMechanism choseAuthMech(const u32 mechs);
 
-<<<<<<< HEAD:src/client.h
-	void sendLegacyInit(const std::string &playerName, const std::string &playerPassword);
-=======
->>>>>>> 5.5.0:src/client/client.h
 	void sendInit(const std::string &playerName);
 	void promptConfirmRegistration(AuthMechanism chosen_auth_mechanism);
 	void startAuth(AuthMechanism chosen_auth_mechanism);
@@ -766,25 +501,16 @@ private:
 	RenderingEngine *m_rendering_engine;
 
 	MeshUpdateThread m_mesh_update_thread;
-private:
 	ClientEnvironment m_env;
 	ParticleManager m_particle_manager;
-<<<<<<< HEAD:src/client.h
 public:
-	con::Connection m_con;
-private:
-	IrrlichtDevice *m_device;
-	Camera *m_camera;
-	Mapper *m_mapper;
-	bool m_minimap_disabled_by_server;
-=======
 	std::unique_ptr<con::Connection> m_con;
+private:
 	std::string m_address_name;
 	Camera *m_camera = nullptr;
 	Minimap *m_minimap = nullptr;
 	bool m_minimap_disabled_by_server = false;
 
->>>>>>> 5.5.0:src/client/client.h
 	// Server serialization version
 	u8 m_server_ser_ver;
 
@@ -795,37 +521,21 @@ private:
 	// If 0, server init hasn't been received yet.
 	u16 m_proto_ver = 0;
 
-<<<<<<< HEAD:src/client.h
-	u16 m_playeritem;
-	u16 m_previous_playeritem;
-	bool m_inventory_updated;
-	Inventory *m_inventory_from_server;
-	float m_inventory_from_server_age;
-	PacketCounter m_packetcounter;
-	// Block mesh animation parameters
-	float m_animation_time;
-	std::atomic_int m_crack_level;
-=======
 	bool m_update_wielded_item = false;
 	Inventory *m_inventory_from_server = nullptr;
 	float m_inventory_from_server_age = 0.0f;
 	PacketCounter m_packetcounter;
 	// Block mesh animation parameters
 	float m_animation_time = 0.0f;
-	int m_crack_level = -1;
->>>>>>> 5.5.0:src/client/client.h
+	std::atomic_int m_crack_level = -1;
 	v3s16 m_crack_pos;
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-<<<<<<< HEAD:src/client.h
-	Queue<std::string> m_chat_queue; // todo: convert to std::queue
-=======
 	std::queue<std::wstring> m_out_chat_queue;
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;
-	std::queue<ChatMessage *> m_chat_queue;
->>>>>>> 5.5.0:src/client/client.h
+	Queue<ChatMessage *> m_chat_queue;
 
 	// The authentication methods we can use to enter sudo mode (=change password)
 	u32 m_sudo_auth_methods;
@@ -836,26 +546,16 @@ private:
 	// Auth data
 	std::string m_playername;
 	std::string m_password;
-	bool is_simple_singleplayer_game;
 	// If set, this will be sent (and cleared) upon a TOCLIENT_ACCEPT_SUDO_MODE
 	std::string m_new_password;
 	// Usable by auth mechanisms.
 	AuthMechanism m_chosen_auth_mech;
 	void *m_auth_data = nullptr;
 
-<<<<<<< HEAD:src/client.h
-	bool m_access_denied;
-	bool m_access_denied_reconnect;
-	std::string m_access_denied_reason;
-	Queue<ClientEvent> m_client_event_queue;
-	//std::queue<ClientEvent> m_client_event_queue;
-	bool m_itemdef_received;
-	bool m_nodedef_received;
-=======
 	bool m_access_denied = false;
 	bool m_access_denied_reconnect = false;
 	std::string m_access_denied_reason = "";
-	std::queue<ClientEvent *> m_client_event_queue;
+	Queue<ClientEvent *> m_client_event_queue;
 	bool m_itemdef_received = false;
 	bool m_nodedef_received = false;
 	bool m_activeobjects_received = false;
@@ -863,7 +563,6 @@ private:
 
 	std::vector<std::string> m_remote_media_servers;
 	// Media downloader, only exists during init
->>>>>>> 5.5.0:src/client/client.h
 	ClientMediaDownloader *m_media_downloader;
 	// Set of media filenames pushed by server at runtime
 	std::unordered_set<std::string> m_media_pushed_files;
@@ -892,19 +591,20 @@ private:
 
 	// Detached inventories
 	// key = name
-<<<<<<< HEAD:src/client.h
-	UNORDERED_MAP<std::string, Inventory*> m_detached_inventories;
-	double m_uptime;
-	bool m_simple_singleplayer_mode;
-	float m_timelapse_timer;
+	std::unordered_map<std::string, Inventory*> m_detached_inventories;
+
+
+//fm:
+	double m_uptime = 0;
+	bool is_simple_singleplayer_game = 0;
+	float m_timelapse_timer = -1;
 public:
 	bool use_weather = false;
 	unsigned int overload = 0;
 	void sendDrawControl();
 private:
-=======
-	std::unordered_map<std::string, Inventory*> m_detached_inventories;
->>>>>>> 5.5.0:src/client/client.h
+	Server *m_localserver;
+
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	StringMap m_mesh_data;
@@ -918,7 +618,6 @@ private:
 	MapDatabase *m_localdb = nullptr;
 	IntervalLimiter m_localdb_save_interval;
 	u16 m_cache_save_interval;
-	Server *m_localserver;
 
 	// Client modding
 	ClientScripting *m_script = nullptr;

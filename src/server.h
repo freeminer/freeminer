@@ -46,12 +46,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <map>
 #include <vector>
-<<<<<<< HEAD
+
+
+//fm:
 #include "stat.h"
 #include "network/fm_lan.h"
-=======
 #include <unordered_set>
->>>>>>> 5.5.0
+class Circuit;
+class Stat;
+class MapThread;
+class SendBlocksThread;
+class LiquidThread;
+class EnvThread;
+class AbmThread;
+
 
 class ChatEvent;
 struct ChatEventChat;
@@ -72,16 +80,6 @@ class EmergeManager;
 class ServerScripting;
 class ServerEnvironment;
 struct SimpleSoundSpec;
-<<<<<<< HEAD
-class Circuit;
-class Stat;
-class ServerThread;
-class MapThread;
-class SendBlocksThread;
-class LiquidThread;
-class EnvThread;
-class AbmThread;
-=======
 struct CloudParams;
 struct SkyboxParams;
 struct SunParams;
@@ -90,7 +88,6 @@ struct StarParams;
 class ServerThread;
 class ServerModManager;
 class ServerInventoryManager;
->>>>>>> 5.5.0
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -185,17 +182,14 @@ public:
 	// Actual processing is done in an another thread.
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
-<<<<<<< HEAD
-	void AsyncRunStep(float dtime, bool initial_step=false);
+
+//fm:
 	int AsyncRunMapStep(float dtime, float dedicated_server_step = 0.1, bool async=true);
 	int save(float dtime, float dedicated_server_step = 0.1, bool breakable = false);
+
+	void AsyncRunStep( float dtime, bool initial_step=false);
 	u16 Receive(int ms = 10);
-	PlayerSAO* StageTwoClientInit(u16 peer_id);
-=======
-	void AsyncRunStep(bool initial_step=false);
-	void Receive();
 	PlayerSAO* StageTwoClientInit(session_t peer_id);
->>>>>>> 5.5.0
 
 	/*
 	 * Command Handlers
@@ -231,14 +225,11 @@ public:
 
 	void ProcessData(NetworkPacket *pkt);
 
-<<<<<<< HEAD
+//fm:
 	void handleCommand_Drawcontrol(NetworkPacket* pkt);
 
-	void Send(NetworkPacket* pkt);
-=======
 	void Send(NetworkPacket *pkt);
 	void Send(session_t peer_id, NetworkPacket *pkt);
->>>>>>> 5.5.0
 
 	// Helper for handleCommand_PlayerPos and handleCommand_Interact
 	void process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
@@ -257,11 +248,7 @@ public:
 
 	// Connection must be locked when called
 	std::string getStatusString();
-<<<<<<< HEAD
-	inline double getUptime() const { return m_uptime.m_value; }
-=======
 	inline double getUptime() const { return m_uptime_counter->get(); }
->>>>>>> 5.5.0
 
 	// read shutdown state
 	inline bool isShutdownRequested() const { return m_shutdown_state.is_requested; }
@@ -287,19 +274,9 @@ public:
 	void unsetIpBanned(const std::string &ip_or_name);
 	std::string getBanDescription(const std::string &ip_or_name);
 
-<<<<<<< HEAD
 	// Envlock and conlock should be locked when calling this
 	void notifyPlayer(const char *name, const std::string &msg);
 	void notifyPlayers(const std::string &msg);
-	void spawnParticle(const std::string &playername,
-		v3f pos, v3f velocity, v3f acceleration,
-		float expirationtime, float size,
-		bool collisiondetection, bool collision_removal,
-		bool vertical, const std::string &texture);
-=======
-	void notifyPlayer(const char *name, const std::wstring &msg);
-	void notifyPlayers(const std::wstring &msg);
->>>>>>> 5.5.0
 
 	void spawnParticle(const std::string &playername,
 		const ParticleParameters &p);
@@ -329,15 +306,7 @@ public:
 	virtual const NodeDefManager* getNodeDefManager();
 	virtual ICraftDefManager* getCraftDefManager();
 	virtual u16 allocateUnknownNodeId(const std::string &name);
-<<<<<<< HEAD
-	virtual ISoundManager* getSoundManager();
-	virtual MtEventManager* getEventManager();
-	virtual scene::ISceneManager* getSceneManager();
-	virtual IRollbackManager *getRollbackManager() { return m_enable_rollback_recording ? m_rollback : nullptr; }
-
-=======
-	IRollbackManager *getRollbackManager() { return m_rollback; }
->>>>>>> 5.5.0
+	IRollbackManager *getRollbackManager() { return m_enable_rollback_recording ? m_rollback : nullptr; }
 	virtual EmergeManager *getEmergeManager() { return m_emerge; }
 	virtual ModMetadataDatabase *getModStorageDatabase() { return m_mod_storage_database; }
 
@@ -371,24 +340,8 @@ public:
 	bool hudChange(RemotePlayer *player, u32 id, HudElementStat stat, void *value);
 	bool hudSetFlags(RemotePlayer *player, u32 flags, u32 mask);
 	bool hudSetHotbarItemcount(RemotePlayer *player, s32 hotbar_itemcount);
-<<<<<<< HEAD
-	s32 hudGetHotbarItemcount(RemotePlayer *player) const
-	{
-		if (!player) return 0;
-		return player->getHotbarItemcount();
-	}
-
-	void hudSetHotbarImage(RemotePlayer *player, std::string name, int items = 0);
-	std::string hudGetHotbarImage(RemotePlayer *player);
-	void hudSetHotbarSelectedImage(RemotePlayer *player, std::string name);
-	const std::string &hudGetHotbarSelectedImage(RemotePlayer *player) const
-	{
-		return player->getHotbarSelectedImage();
-	}
-=======
 	void hudSetHotbarImage(RemotePlayer *player, const std::string &name);
-	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name);
->>>>>>> 5.5.0
+	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name, int items = 0);
 
 	Address getPeerAddress(session_t peer_id);
 
@@ -414,20 +367,10 @@ public:
 	void DenySudoAccess(session_t peer_id);
 	void DenyAccessVerCompliant(session_t peer_id, u16 proto_ver, AccessDeniedCode reason,
 		const std::string &str_reason = "", bool reconnect = false);
-<<<<<<< HEAD
-	void DenyAccess(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason="");
 
 	//fmtodo: remove:
 	void DenyAccess(u16 peer_id, const std::string &reason);
 
-	void acceptAuth(u16 peer_id, bool forSudoMode);
-	void DenyAccess_Legacy(u16 peer_id, const std::wstring &reason);
-
-	bool getClientConInfo(u16 peer_id, con::rtt_stat_type type,float* retval);
-	bool getClientInfo(u16 peer_id,ClientState* state, u32* uptime,
-			u8* ser_vers, u16* prot_vers, u8* major, u8* minor, u8* patch,
-			std::string* vers_string);
-=======
 	void DenyAccess(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason = "");
 	void acceptAuth(session_t peer_id, bool forSudoMode);
@@ -435,7 +378,6 @@ public:
 	void DisconnectPeer(session_t peer_id);
 	bool getClientConInfo(session_t peer_id, con::rtt_stat_type type, float *retval);
 	bool getClientInfo(session_t peer_id, ClientInfo &ret);
->>>>>>> 5.5.0
 
 	void printToConsoleOnly(const std::string &text);
 
@@ -515,35 +457,20 @@ private:
 	void SendBreath(session_t peer_id, u16 breath);
 	void SendAccessDenied(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason, bool reconnect = false);
-<<<<<<< HEAD
-	void SendAccessDenied_Legacy(u16 peer_id, const std::string &reason);
-	void SendDeathscreen(u16 peer_id,bool set_camera_point_target, v3f camera_point_target);
-	void SendItemDef(u16 peer_id,IItemDefManager *itemdef, u16 protocol_version);
-	void SendNodeDef(u16 peer_id,INodeDefManager *nodedef, u16 protocol_version);
-=======
-	void SendAccessDenied_Legacy(session_t peer_id, const std::wstring &reason);
+	void SendAccessDenied_Legacy(session_t peer_id, const std::string &reason);
 	void SendDeathscreen(session_t peer_id, bool set_camera_point_target,
 		v3f camera_point_target);
 	void SendItemDef(session_t peer_id, IItemDefManager *itemdef, u16 protocol_version);
 	void SendNodeDef(session_t peer_id, const NodeDefManager *nodedef,
 		u16 protocol_version);
->>>>>>> 5.5.0
 
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
 	void SetBlocksNotSent();
 
-<<<<<<< HEAD
-	void SendChatMessage(u16 peer_id, const std::string &message);
-	void SendChatMessage(u16 peer_id, const std::wstring &message);
-
-	void SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed);
-	void SendPlayerHP(u16 peer_id);
-=======
 
 	virtual void SendChatMessage(session_t peer_id, const ChatMessage &message);
 	void SendTimeOfDay(session_t peer_id, u16 time, f32 time_speed);
->>>>>>> 5.5.0
 
 	void SendLocalPlayerAnimations(session_t peer_id, v2s32 animation_frames[4],
 		f32 animation_speed);
@@ -609,37 +536,28 @@ private:
 		const ParticleParameters &p);
 
 	void SendActiveObjectRemoveAdd(RemoteClient *client, PlayerSAO *playersao);
+//mt compat:
 	void SendActiveObjectMessages(session_t peer_id, const std::string &datas,
 		bool reliable = true);
+
+//fm:
+	void SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+	
 	void SendCSMRestrictionFlags(session_t peer_id);
 
-<<<<<<< HEAD
-	u32 SendActiveObjectRemoveAdd(u16 peer_id, const std::string &datas);
-//mt compat:
-	void SendActiveObjectMessages(u16 peer_id, const std::string &datas, bool reliable = true);
-	void SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable = true);
-
-=======
->>>>>>> 5.5.0
 	/*
 		Something random
 	*/
-
-<<<<<<< HEAD
-	void DiePlayer(u16 peer_id);
-	void RespawnPlayer(u16 peer_id);
 
 	enum ClientDeletionReason {
 		CDR_LEAVE,
 		CDR_TIMEOUT,
 		CDR_DENY
 	};
-	void DeleteClient(u16 peer_id, ClientDeletionReason reason);
-=======
+
 	void HandlePlayerDeath(PlayerSAO* sao, const PlayerHPChangeReason &reason);
 	void RespawnPlayer(session_t peer_id);
 	void DeleteClient(session_t peer_id, ClientDeletionReason reason);
->>>>>>> 5.5.0
 	void UpdateCrafting(RemotePlayer *player);
 	bool checkInteractDistance(RemotePlayer *player, const f32 d, const std::string &what);
 
@@ -688,21 +606,14 @@ private:
 	MutexedVariable<std::string> m_async_fatal_error;
 
 	// Some timers
-<<<<<<< HEAD
-	float m_liquid_transform_timer;
-	float m_liquid_transform_every;
-	float m_liquid_send_timer;
-	float m_liquid_send_interval;
-	float m_masterserver_timer;
-	//float m_emergethread_trigger_timer;
-	float m_savemap_timer;
-=======
+//fm:
+	float m_liquid_send_timer = 0 ;
+	float m_liquid_send_interval = 1;
 	float m_liquid_transform_timer = 0.0f;
 	float m_liquid_transform_every = 1.0f;
 	float m_masterserver_timer = 0.0f;
-	float m_emergethread_trigger_timer = 0.0f;
+	//float m_emergethread_trigger_timer = 0.0f;
 	float m_savemap_timer = 0.0f;
->>>>>>> 5.5.0
 	IntervalLimiter m_map_timer_and_unload_interval;
 
 	// Environment
@@ -714,12 +625,8 @@ private:
 
 public:
 	// server connection
-<<<<<<< HEAD
-	con::Connection m_con;
-private:
-=======
 	std::shared_ptr<con::Connection> m_con;
->>>>>>> 5.5.0
+private:
 
 	// Ban checking
 	BanManager *m_banmanager = nullptr;
@@ -727,25 +634,19 @@ private:
 	// Rollback manager (behind m_env_mutex)
 	IRollbackManager *m_rollback = nullptr;
 
-public:
-	// Emerge manager
-<<<<<<< HEAD
-	EmergeManager *m_emerge;
-private:
-
-	// Scripting
-	// Envlock and conlock should be locked when using Lua
-	GameScripting *m_script;
+//fm:
 public:
 	Stat stat;
 private:
-=======
+
+public:
+	// Emerge manager
 	EmergeManager *m_emerge = nullptr;
+private:
 
 	// Scripting
 	// Envlock and conlock should be locked when using Lua
 	ServerScripting *m_script = nullptr;
->>>>>>> 5.5.0
 
 	// Item definition manager
 	IWritableItemDefManager *m_itemdef;
@@ -766,18 +667,10 @@ private:
 	*/
 	// A buffer for time steps
 	// step() increments and AsyncRunStep() run by m_thread reads it.
-<<<<<<< HEAD
 public:
-	float m_step_dtime;
-private:
-	Mutex m_step_dtime_mutex;
-
-	// current server step lag counter
-	float m_lag;
-=======
 	float m_step_dtime = 0.0f;
+private:
 	std::mutex m_step_dtime_mutex;
->>>>>>> 5.5.0
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
@@ -792,14 +685,7 @@ private:
 		Time related stuff
 	*/
 	// Timer for sending time of day over network
-<<<<<<< HEAD
-	float m_time_of_day_send_timer;
-	// Uptime of server in seconds
-public:
-	MutexedVariable<double> m_uptime;
-=======
 	float m_time_of_day_send_timer = 0.0f;
->>>>>>> 5.5.0
 
 public:
 	/*
@@ -870,7 +756,6 @@ private:
 	ModMetadataDatabase *m_mod_storage_database = nullptr;
 	float m_mod_storage_save_timer = 10.0f;
 
-<<<<<<< HEAD
 	// freeminer:
 public:
 	lan_adv lan_adv_server;
@@ -886,9 +771,6 @@ public:
 	void SendPunchPlayer(u16 peer_id, v3f speed);
 
 
-private:
-	DISABLE_CLASS_COPY(Server);
-=======
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;
 	u32 m_csm_restriction_noderange = 8;
@@ -911,7 +793,6 @@ private:
 	MetricCounterPtr m_aom_buffer_counter;
 	MetricCounterPtr m_packet_recv_counter;
 	MetricCounterPtr m_packet_recv_processed_counter;
->>>>>>> 5.5.0
 };
 
 /*

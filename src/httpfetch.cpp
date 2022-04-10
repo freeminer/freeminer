@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "noise.h"
 
 <<<<<<< HEAD
-Mutex g_httpfetch_mutex;
+std::mutex g_httpfetch_mutex;
 std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
 std::unique_ptr<PcgRandom> g_callerid_randomness;
 =======

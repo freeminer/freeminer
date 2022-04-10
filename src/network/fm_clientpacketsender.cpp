@@ -17,7 +17,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include "../util/auth.h"
-#include "client.h"
+#include "client/client.h"
 #include "networkprotocol.h"
 
 void Client::request_media(const std::vector<std::string> &file_requests)

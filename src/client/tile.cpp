@@ -413,14 +413,7 @@ IWritableTextureSource *createTextureSource()
 
 TextureSource::TextureSource()
 {
-<<<<<<< HEAD
-	if (!m_device)
-		return;
-
-	m_main_thread = thr_get_current_thread_id();
-=======
 	m_main_thread = std::this_thread::get_id();
->>>>>>> 5.5.0
 
 	// Add a NULL TextureInfo as the first index, named ""
 	m_textureinfo_cache.emplace_back("");
@@ -499,17 +492,9 @@ u32 TextureSource::getTextureId(const std::string &name)
 				return result.item;
 			}
 		}
-<<<<<<< HEAD
-		catch(ItemNotFoundException &e)
-		{
-			infostream<<"Waiting for texture " << name << " timed out."<<std::endl;
-			return 0;
-		}
-=======
 	} catch(ItemNotFoundException &e) {
-		errorstream << "Waiting for texture " << name << " timed out." << std::endl;
+		infostream << "Waiting for texture " << name << " timed out." << std::endl;
 		return 0;
->>>>>>> 5.5.0
 	}
 
 	infostream << "getTextureId(): Failed" << std::endl;
@@ -590,14 +575,10 @@ u32 TextureSource::generateTexture(const std::string &name)
 		return 0;
 	}
 
-<<<<<<< HEAD
-	video::IVideoDriver *driver = m_device->getVideoDriver();
+	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
 	if (!driver)
 		return 0;
-=======
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-	sanity_check(driver);
->>>>>>> 5.5.0
+	//sanity_check(driver);
 
 	video::IImage *img = generateImage(name);
 
@@ -764,12 +745,9 @@ void TextureSource::insertSourceImage(const std::string &name, video::IImage *im
 {
 	//infostream<<"TextureSource::insertSourceImage(): name="<<name<<std::endl;
 
-<<<<<<< HEAD
-	if (!thr_is_current_thread(m_main_thread))
+	if (!(std::this_thread::get_id() == m_main_thread))
 		return;
-=======
-	sanity_check(std::this_thread::get_id() == m_main_thread);
->>>>>>> 5.5.0
+	//sanity_check(std::this_thread::get_id() == m_main_thread);
 
 	m_sourcecache.insert(name, img, true);
 	m_source_image_existence.set(name, true);
@@ -779,14 +757,10 @@ void TextureSource::rebuildImagesAndTextures()
 {
 	MutexAutoLock lock(m_textureinfo_cache_mutex);
 
-<<<<<<< HEAD
-	video::IVideoDriver* driver = m_device->getVideoDriver();
+	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
 	if (!driver)
 		return;
-=======
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-	sanity_check(driver);
->>>>>>> 5.5.0
+	//sanity_check(driver);
 
 	infostream << "TextureSource: recreating " << m_textureinfo_cache.size()
 		<< " textures" << std::endl;
@@ -799,13 +773,6 @@ void TextureSource::rebuildImagesAndTextures()
 		video::IImage *img = generateImage(ti.name);
 #if ENABLE_GLES
 		img = Align2Npot2(img, driver);
-<<<<<<< HEAD
-/* wtf
-		sanity_check(img->getDimension().Height == npot2(img->getDimension().Height));
-		sanity_check(img->getDimension().Width == npot2(img->getDimension().Width));
-*/
-=======
->>>>>>> 5.5.0
 #endif
 		// Create texture from resulting image
 		video::ITexture *t = NULL;
@@ -825,35 +792,6 @@ void TextureSource::rebuildImagesAndTextures()
 
 inline static void applyShadeFactor(video::SColor &color, u32 factor)
 {
-<<<<<<< HEAD
-	video::IVideoDriver *driver = m_device->getVideoDriver();
-	if (!driver)
-		return nullptr;
-
-#ifdef __ANDROID__
-	porting::irr_device_wait_egl(m_device);
-
-	const GLubyte* renderstr = glGetString(GL_RENDERER);
-	if (!renderstr)
-		return nullptr;
-	std::string renderer((char*) renderstr);
-
-	// use no render to texture hack
-	if (
-		(renderer.find("Adreno") != std::string::npos) ||
-		(renderer.find("Mali") != std::string::npos) ||
-		(renderer.find("Immersion") != std::string::npos) ||
-		(renderer.find("Tegra") != std::string::npos) ||
-		g_settings->getBool("inventory_image_hack")
-		) {
-		// Get a scene manager
-		scene::ISceneManager *smgr_main = m_device->getSceneManager();
-		if (!smgr_main)
-			return nullptr;
-		scene::ISceneManager *smgr = smgr_main->createNewSceneManager();
-		if(!smgr)
-			return nullptr;
-=======
 	u32 f = core::clamp<u32>(factor, 0, 256);
 	color.setRed(color.getRed() * f / 256);
 	color.setGreen(color.getGreen() * f / 256);
@@ -872,7 +810,6 @@ static video::IImage *createInventoryCubeImage(
 			size_left.Width, size_left.Height,
 			size_right.Width, size_right.Height,
 	}));
->>>>>>> 5.5.0
 
 	// It must be divisible by 4, to let everything work correctly.
 	// But it is a power of 2, so being at least 4 is the same.
@@ -904,42 +841,10 @@ static video::IImage *createInventoryCubeImage(
 	};
 
 	video::IImage *result = driver->createImage(video::ECF_A8R8G8B8, {cube_size, cube_size});
-	sanity_check(result->getPitch() == 4 * cube_size);
+	//sanity_check(result->getPitch() == 4 * cube_size);
 	result->fill(video::SColor(0x00000000u));
 	u32 *target = reinterpret_cast<u32 *>(result->getData());
 
-<<<<<<< HEAD
-		glReadPixels(source.UpperLeftCorner.X, source.UpperLeftCorner.Y,
-				partsize.Width, partsize.Height, GL_RGBA,
-				GL_UNSIGNED_BYTE, pixels);
-
-#ifndef __ANDROID__
-		driver->endScene();
-#endif
-
-		// Drop scene manager
-		smgr->drop();
-
-		unsigned int pixelcount = partsize.Width*partsize.Height;
-
-		u8* runptr = pixels;
-		for (unsigned int i=0; i < pixelcount; i++) {
-
-			u8 B = *runptr;
-			u8 G = *(runptr+1);
-			u8 R = *(runptr+2);
-			u8 A = *(runptr+3);
-
-			//BGRA -> RGBA
-			*runptr = R;
-			runptr ++;
-			*runptr = G;
-			runptr ++;
-			*runptr = B;
-			runptr ++;
-			*runptr = A;
-			runptr ++;
-=======
 	// Draws single cube face
 	// `shade_factor` is face brightness, in range [0.0, 1.0]
 	// (xu, xv, x1; yu, yv, y1) form coordinate transformation matrix
@@ -960,7 +865,6 @@ static video::IImage *createInventoryCubeImage(
 					target[(y + off.Y) * cube_size + (x + off.X) + offset] = pixel.color;
 				source++;
 			}
->>>>>>> 5.5.0
 		}
 		free_image(image);
 	};
@@ -998,110 +902,7 @@ static video::IImage *createInventoryCubeImage(
 				{0, 5}, {1, 5},
 			});
 
-<<<<<<< HEAD
-		video::ITexture *rtt = driver->addTexture(params.rtt_texture_name.c_str(), inventory_image);
-		inventory_image->drop();
-
-		if (rtt == NULL) {
-			errorstream << "TextureSource::generateTextureFromMesh(): failed to recreate texture from image: " << params.rtt_texture_name << std::endl;
-			return NULL;
-		}
-
-		driver->makeColorKeyTexture(rtt, v2s32(0,0));
-
-		if (params.delete_texture_on_shutdown)
-			m_texture_trash.push_back(rtt);
-
-		return rtt;
-	}
-#endif
-
-	if (driver->queryFeature(video::EVDF_RENDER_TO_TARGET) == false)
-	{
-		static bool warned = false;
-		if (!warned)
-		{
-			errorstream<<"TextureSource::generateTextureFromMesh(): "
-				<<"EVDF_RENDER_TO_TARGET not supported."<<std::endl;
-			warned = true;
-		}
-		return NULL;
-	}
-
-	// Create render target texture
-	video::ITexture *rtt = driver->addRenderTargetTexture(
-			params.dim, params.rtt_texture_name.c_str(),
-			video::ECF_A8R8G8B8);
-	if (rtt == NULL)
-	{
-		errorstream<<"TextureSource::generateTextureFromMesh(): "
-			<<"addRenderTargetTexture returned NULL."<<std::endl;
-		return NULL;
-	}
-
-	// Set render target
-	if (!driver->setRenderTarget(rtt, false, true, video::SColor(0,0,0,0))) {
-		driver->removeTexture(rtt);
-		errorstream<<"TextureSource::generateTextureFromMesh(): "
-			<<"failed to set render target"<<std::endl;
-		return NULL;
-	}
-
-	// Get a scene manager
-	scene::ISceneManager *smgr_main = m_device->getSceneManager();
-	if (!smgr_main)
-		return nullptr;
-	scene::ISceneManager *smgr = smgr_main->createNewSceneManager();
-	if(!smgr)
-		return nullptr;
-
-	scene::IMeshSceneNode* meshnode =
-			smgr->addMeshSceneNode(params.mesh, NULL,
-					-1, v3f(0,0,0), v3f(0,0,0), v3f(1,1,1), true);
-	meshnode->setMaterialFlag(video::EMF_LIGHTING, true);
-	meshnode->setMaterialFlag(video::EMF_ANTI_ALIASING, true);
-	meshnode->setMaterialFlag(video::EMF_TRILINEAR_FILTER, m_setting_trilinear_filter);
-	meshnode->setMaterialFlag(video::EMF_BILINEAR_FILTER, m_setting_bilinear_filter);
-	meshnode->setMaterialFlag(video::EMF_ANISOTROPIC_FILTER, m_setting_anisotropic_filter);
-
-	scene::ICameraSceneNode* camera = smgr->addCameraSceneNode(0,
-			params.camera_position, params.camera_lookat);
-	// second parameter of setProjectionMatrix (isOrthogonal) is ignored
-	camera->setProjectionMatrix(params.camera_projection_matrix, false);
-
-	smgr->setAmbientLight(params.ambient_light);
-	smgr->addLightSceneNode(0,
-			params.light_position,
-			params.light_color,
-			params.light_radius);
-
-	// Wield light shouldn't be used here
-	bool disable_wieldlight = g_settings->getBool("disable_wieldlight");
-	g_settings->setBool("disable_wieldlight", true);
-
-	// Render scene
-	driver->beginScene(true, true, video::SColor(0,0,0,0));
-	smgr->drawAll();
-
-#ifndef __ANDROID__
-	driver->endScene();
-#endif
-	
-	g_settings->setBool("disable_wieldlight", disable_wieldlight);
-
-	// Drop scene manager
-	smgr->drop();
-
-	// Unset render target
-	driver->setRenderTarget(0, false, true, video::SColor(0,0,0,0));
-
-	if (params.delete_texture_on_shutdown)
-		m_texture_trash.push_back(rtt);
-
-	return rtt;
-=======
 	return result;
->>>>>>> 5.5.0
 }
 
 video::IImage* TextureSource::generateImage(const std::string &name)
@@ -1160,14 +961,6 @@ video::IImage* TextureSource::generateImage(const std::string &name)
 		baseimg = generateImage(name.substr(0, last_separator_pos));
 	}
 
-<<<<<<< HEAD
-
-	video::IVideoDriver* driver = m_device->getVideoDriver();
-	if (!driver)
-		return nullptr;
-
-=======
->>>>>>> 5.5.0
 	/*
 		Parse out the last part of the name of the image and act
 		according to it
@@ -1231,21 +1024,6 @@ video::IImage *Align2Npot2(video::IImage *image,
 		return image;
 
 	core::dimension2d<u32> dim = image->getDimension();
-<<<<<<< HEAD
-
-	porting::irr_device_wait_egl();
-
-	auto ext = (char*) glGetString(GL_EXTENSIONS);
-	if (!ext)
-		return image;
-
-	std::string extensions = ext;
-	if (extensions.find("GL_OES_texture_npot") != std::string::npos) {
-		return image;
-	}
-
-=======
->>>>>>> 5.5.0
 	unsigned int height = npot2(dim.Height);
 	unsigned int width  = npot2(dim.Width);
 
@@ -1329,14 +1107,10 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 		video::IImage *& baseimg)
 {
 	const char escape = '\\'; // same as in generateImage()
-<<<<<<< HEAD
-	video::IVideoDriver* driver = m_device->getVideoDriver();
+	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
 	if (!driver)
 		return false;
-=======
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-	sanity_check(driver);
->>>>>>> 5.5.0
+	//sanity_check(driver);
 
 	// Stuff starting with [ are special commands
 	if (part_of_name.empty() || part_of_name[0] != '[') {
@@ -1345,27 +1119,13 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 		image = Align2Npot2(image, driver);
 #endif
 		if (image == NULL) {
-<<<<<<< HEAD
-			if (part_of_name != "") {
-				if (part_of_name.find("_normal.png") == std::string::npos){
-					infostream<<"generateImage(): Could not load image \""
-						<<part_of_name<<"\""<<" while building texture"<<std::endl;
-					infostream<<"generateImage(): Creating a dummy"
-						<<" image for \""<<part_of_name<<"\""<<std::endl;
-				} else {
-					infostream<<"generateImage(): Could not load normal map \""
-						<<part_of_name<<"\""<<std::endl;
-					infostream<<"generateImage(): Creating a dummy"
-						<<" normal map for \""<<part_of_name<<"\""<<std::endl;
-=======
 			if (!part_of_name.empty()) {
 
 				// Do not create normalmap dummies
 				if (part_of_name.find("_normal.png") != std::string::npos) {
-					warningstream << "generateImage(): Could not load normal map \""
+					infostream << "generateImage(): Could not load normal map \""
 						<< part_of_name << "\"" << std::endl;
 					return true;
->>>>>>> 5.5.0
 				}
 
 				errorstream << "generateImage(): Could not load image \""
@@ -1672,13 +1432,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 				return true;
 			}
 
-<<<<<<< HEAD
-#ifdef WTF__ANDROID__
-			assert(img_top->getDimension().Height == npot2(img_top->getDimension().Height));
-			assert(img_top->getDimension().Width == npot2(img_top->getDimension().Width));
-=======
 			baseimg = createInventoryCubeImage(img_top, img_left, img_right);
->>>>>>> 5.5.0
 
 			// Face images are not needed anymore
 			img_top->drop();

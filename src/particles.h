@@ -27,18 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "tileanimation.h"
 #include "mapnode.h"
 
-<<<<<<< HEAD
-#include <iostream>
-#include "irrlichttypes_extrabloated.h"
-#include "client/tile.h"
-#include "localplayer.h"
-#include "environment.h"
-#include <unordered_map>
-
-=======
 // This file defines the particle-related structures that both the server and
 // client need. The ParticleManager and rendering is in client/particles.h
->>>>>>> 5.5.0
 
 struct CommonParticleParams {
 	bool collisiondetection = false;
@@ -88,38 +78,5 @@ struct ParticleSpawnerParameters : CommonParticleParams {
 	f32 time = 1;
 	f32 minexptime = 1, maxexptime = 1, minsize = 1, maxsize = 1;
 
-<<<<<<< HEAD
-	void step (float dtime);
-
-	void handleParticleEvent(ClientEvent *event,IGameDef *gamedef,
-			scene::ISceneManager* smgr, LocalPlayer *player);
-
-	void addDiggingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
-		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
-
-	void addPunchingParticles(IGameDef* gamedef, scene::ISceneManager* smgr,
-		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
-
-	void addNodeParticle(IGameDef* gamedef, scene::ISceneManager* smgr,
-		LocalPlayer *player, v3s16 pos, const TileSpec tiles[]);
-
-protected:
-	void addParticle(Particle* toadd);
-
-private:
-
-	void stepParticles (float dtime);
-	void stepSpawners (float dtime);
-
-	void clearAll ();
-
-	std::vector<Particle*> m_particles;
-	std::unordered_map<u32, ParticleSpawner*> m_particle_spawners;
-
-	ClientEnvironment* m_env;
-	Mutex m_particle_list_lock;
-	Mutex m_spawner_list_lock;
-=======
 	// For historical reasons no (de-)serialization methods here
->>>>>>> 5.5.0
 };

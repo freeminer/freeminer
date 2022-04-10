@@ -76,10 +76,6 @@ public:
 			const char* name,
 			lua_CFunction func,
 			int top);
-<<<<<<< HEAD
-};
-=======
->>>>>>> 5.5.0
 
 	/**
 	 * A wrapper for deprecated functions.

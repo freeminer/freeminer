@@ -268,7 +268,7 @@ bool MapDatabaseSQLite3::deleteBlock(const v3s16 &pos)
 
 bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 
 	verifyDatabase();
 
@@ -284,7 +284,7 @@ bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 
 void MapDatabaseSQLite3::loadBlock(const v3s16 &pos, std::string *block)
 {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 
 	verifyDatabase();
 

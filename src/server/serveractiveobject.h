@@ -87,19 +87,14 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-<<<<<<< HEAD:src/serverobject.h
-	v3f getBasePosition() {
-		std::lock_guard<Mutex> lock(m_base_position_mutex);
-		return m_base_position;
-	}
-	void setBasePosition(v3f pos) {
-		std::lock_guard<Mutex> lock(m_base_position_mutex);
-		m_base_position = pos;
-	}
-=======
-	v3f getBasePosition() const { return m_base_position; }
-	void setBasePosition(v3f pos){ m_base_position = pos; }
->>>>>>> 5.5.0:src/server/serveractiveobject.h
+	v3f getBasePosition() const {
+             std::lock_guard<std::mutex> lock(m_base_position_mutex);
+	     return m_base_position;
+        }
+	void setBasePosition(v3f pos){
+             std::lock_guard<std::mutex> lock(m_base_position_mutex);
+             m_base_position = pos;
+        }
 	ServerEnvironment* getEnv(){ return m_env; }
 
 	/*
@@ -208,12 +203,8 @@ public:
 	{ return ""; }
 	virtual u16 getWieldIndex() const
 	{ return 0; }
-<<<<<<< HEAD:src/serverobject.h
-	virtual ItemStack getWieldedItem();
-=======
 	virtual ItemStack getWieldedItem(ItemStack *selected,
 			ItemStack *hand = nullptr) const;
->>>>>>> 5.5.0:src/server/serveractiveobject.h
 	virtual bool setWieldedItem(const ItemStack &item);
 	inline void attachParticleSpawner(u32 id)
 	{
@@ -233,10 +224,7 @@ public:
 		deleted until this is 0 to keep the id preserved for the right
 		object.
 	*/
-<<<<<<< HEAD:src/serverobject.h
-	std::atomic_ushort m_known_by_count;
-=======
-	u16 m_known_by_count = 0;
+	std::atomic_ushort m_known_by_count = 0;
 
 	/*
 		A getter that unifies the above to answer the question:
@@ -267,6 +255,7 @@ protected:
 
 	ServerEnvironment *m_env;
 	v3f m_base_position;
+	mutable std::mutex m_base_position_mutex;
 	std::unordered_set<u32> m_attached_particle_spawners;
 
 	/*
@@ -278,7 +267,6 @@ protected:
 		Note: Do not assign this directly, use markForDeactivation() instead.
 	*/
 	bool m_pending_deactivation = false;
->>>>>>> 5.5.0:src/server/serveractiveobject.h
 
 	/*
 		- Whether this object is to be removed when nobody knows about
@@ -289,56 +277,14 @@ protected:
 		  to be deleted but can be set by anything else too.
 		Note: Do not assign this directly, use markForRemoval() instead.
 	*/
-<<<<<<< HEAD:src/serverobject.h
-	std::atomic_bool m_removed;
-
-	/*
-		This is set to true when an object should be removed from the active
-		object list but couldn't be removed because the id has to be
-		reserved for some client.
-
-		The environment checks this periodically. If this is true and also
-		m_known_by_count is true, object is deleted from the active object
-		list.
-	*/
-	std::atomic_bool m_pending_deactivation;
-
-	/*
-		Whether the object's static data has been stored to a block
-	*/
-	std::atomic_bool m_static_exists;
-	/*
-		The block from which the object was loaded from, and in which
-		a copy of the static data resides.
-	*/
-	v3s16 m_static_block;
-=======
 	bool m_pending_removal = false;
->>>>>>> 5.5.0:src/server/serveractiveobject.h
+
+//fm:
+	float m_uptime_last = 0;
+
 
 	/*
 		Queue of messages to be sent to the client
 	*/
-<<<<<<< HEAD:src/serverobject.h
-	Queue<ActiveObjectMessage> & m_messages_out;
-	float m_uptime_last;
-
-protected:
-	// Used for creating objects based on type
-	typedef ServerActiveObject* (*Factory)
-			(ServerEnvironment *env, v3f pos,
-			const std::string &data);
-	static void registerType(u16 type, Factory f);
-
-	ServerEnvironment *m_env;
-	v3f m_base_position;
-	Mutex m_base_position_mutex;
-	UNORDERED_SET<u32> m_attached_particle_spawners;
-
-private:
-	// Used for creating objects based on type
-	static std::map<u16, Factory> m_types;
-=======
-	std::queue<ActiveObjectMessage> m_messages_out;
->>>>>>> 5.5.0:src/server/serveractiveobject.h
+	Queue<ActiveObjectMessage> m_messages_out;
 };

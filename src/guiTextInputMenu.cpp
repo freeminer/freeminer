@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIFont.h>
 
 #include "gettext.h"
-#include "intlGUIEditBox.h"
+#include "gui/guiEditBox.h"
 
 GUITextInputMenu::GUITextInputMenu(gui::IGUIEnvironment* env,
 		gui::IGUIElement* parent, s32 id,

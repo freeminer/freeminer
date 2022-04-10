@@ -86,7 +86,7 @@ private:
 	sqlite3_stmt *m_stmt_begin;
 	sqlite3_stmt *m_stmt_end;
 
-	Mutex mutex;
+	std::mutex mutex;
 
 	s64 m_busy_handler_data[2];
 

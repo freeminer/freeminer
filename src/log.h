@@ -191,8 +191,6 @@ public:
 	}
 
 private:
-	//mutable Mutex m_mutex;
-
 	std::queue<std::string> m_buffer;
 	Logger &m_logger;
 };

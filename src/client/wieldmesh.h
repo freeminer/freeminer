@@ -100,13 +100,9 @@ private:
 	void changeToMesh(scene::IMesh *mesh);
 
 	// Child scene node with the current wield mesh
-<<<<<<< HEAD:src/wieldmesh.h
 public:
-	scene::IMeshSceneNode *m_meshnode;
-private:
-=======
 	scene::IMeshSceneNode *m_meshnode = nullptr;
->>>>>>> 5.5.0:src/client/wieldmesh.h
+private:
 	video::E_MATERIAL_TYPE m_material_type;
 
 	// True if EMF_LIGHTING should be enabled.

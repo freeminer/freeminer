@@ -77,19 +77,6 @@ struct MinimapData {
 	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
 	std::atomic_bool map_invalidated;
 	bool minimap_shape_round;
-<<<<<<< HEAD:src/minimap.h
-	video::IImage *minimap_image;
-	video::IImage *heightmap_image;
-	video::IImage *minimap_mask_round;
-	video::IImage *minimap_mask_square;
-	video::ITexture *texture;
-	video::ITexture *heightmap_texture;
-	video::ITexture *minimap_overlay_round;
-	video::ITexture *minimap_overlay_square;
-	video::ITexture *player_marker;
-	Mutex m_mutex;
-	video::ITexture *object_marker_red;
-=======
 	video::IImage *minimap_mask_round = nullptr;
 	video::IImage *minimap_mask_square = nullptr;
 	video::ITexture *texture = nullptr;
@@ -98,7 +85,7 @@ struct MinimapData {
 	video::ITexture *minimap_overlay_square = nullptr;
 	video::ITexture *player_marker = nullptr;
 	video::ITexture *object_marker_red = nullptr;
->>>>>>> 5.5.0:src/client/minimap.h
+	std::mutex m_mutex;
 };
 
 struct QueuedMinimapUpdate {
@@ -116,12 +103,8 @@ public:
 	bool pushBlockUpdate(v3s16 pos, MinimapMapblock *data);
 	bool popBlockUpdate(QueuedMinimapUpdate *update);
 
-<<<<<<< HEAD:src/minimap.h
-	MinimapData *data;
-	std::atomic_uint next_update;
-=======
 	MinimapData *data = nullptr;
->>>>>>> 5.5.0:src/client/minimap.h
+	std::atomic_uint next_update;
 
 protected:
 	virtual void doUpdate();
@@ -193,13 +176,9 @@ private:
 	size_t m_current_mode_index;
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
-<<<<<<< HEAD:src/minimap.h
 /*
-	Mutex m_mutex;
-*/
-=======
 	std::mutex m_mutex;
+*/
 	std::list<MinimapMarker*> m_markers;
->>>>>>> 5.5.0:src/client/minimap.h
 	std::list<v2f> m_active_markers;
 };

@@ -371,7 +371,7 @@ int ModApiMainMenu::l_get_content_info(lua_State *L)
 
 <<<<<<< HEAD
 	std::vector<ServerListSpec> servers_cache;
-	Mutex servers_cache_mutex;
+	std::mutex servers_cache_mutex;
 
 /******************************************************************************/
 int ModApiMainMenu::l_get_favorites(lua_State *L)

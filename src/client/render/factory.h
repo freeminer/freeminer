@@ -1,13 +1,9 @@
 /*
 content_mapblock.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-<<<<<<< HEAD:src/content_mapblock.h
-*/
-=======
 Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
->>>>>>> 5.5.0:src/client/render/factory.h
 
-/*
+
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

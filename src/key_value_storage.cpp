@@ -36,7 +36,7 @@ bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen
 	if (status.ok()) {
 		return true;
 	}
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	error = status.ToString();
 	if (status.IsCorruption()) {
 		if (++repairs > 2)
@@ -153,7 +153,7 @@ bool KeyValueStorage::get_json(const std::string &key, Json::Value & data) {
 }
 
 std::string KeyValueStorage::get_error() {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	return error;
 }
 
@@ -161,7 +161,7 @@ bool KeyValueStorage::del(const std::string &key) {
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	//std::lock_guard<Mutex> lock(mutex);
+	//std::lock_guard<std::mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
 	return process_status(status);
 #else

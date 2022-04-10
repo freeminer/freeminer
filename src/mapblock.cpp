@@ -131,7 +131,7 @@ MapBlock::~MapBlock()
 #endif
 
 	for (int i = 0; i <= 100; ++i) {
-		std::unique_lock<Mutex> lock(abm_triggers_mutex, std::try_to_lock);
+		std::unique_lock<std::mutex> lock(abm_triggers_mutex, std::try_to_lock);
 		if (!lock.owns_lock()) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 			continue;
@@ -572,7 +572,7 @@ static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 // Correct ids in the block to match nodedef based on names.
 // Unknown ones are added to nodedef.
 // Will not update itself to match id-name pairs in nodedef.
-static Mutex correctBlockNodeIds_mutex;
+static std::mutex correctBlockNodeIds_mutex;
 static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 		IGameDef *gamedef)
 {
@@ -584,7 +584,7 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 <<<<<<< HEAD
 	std::set<content_t> unnamed_contents;
 	std::set<std::string> unallocatable_contents;
-	std::lock_guard<Mutex> lock(correctBlockNodeIds_mutex);
+	std::lock_guard<std::mutex> lock(correctBlockNodeIds_mutex);
 =======
 	std::unordered_set<content_t> unnamed_contents;
 	std::unordered_set<std::string> unallocatable_contents;
@@ -1331,7 +1331,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 void MapBlock::incrementUsageTimer(float dtime)
 {
-	std::lock_guard<Mutex> lock(m_usage_timer_mutex);
+	std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 	m_usage_timer += dtime * usage_timer_multiplier;
 }
 

@@ -42,12 +42,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/string.h"
 #include "util/strfnd.h"
 #include "util/srp.h"
-<<<<<<< HEAD:src/client.cpp
-#include "client.h"
-#include "network/clientopcodes.h"
-#include "network/networkprotocol.h"
-=======
->>>>>>> 5.5.0:src/client/client.cpp
 #include "filesys.h"
 #include "mapblock_mesh.h"
 #include "mapblock.h"
@@ -55,25 +49,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "modchannels.h"
 #include "content/mods.h"
 #include "profiler.h"
-<<<<<<< HEAD:src/client.cpp
-#include "gettext.h"
-#include "log_types.h"
-#include "nodemetadata.h"
-#include "nodedef.h"
-#include "itemdef.h"
-#include "shader.h"
-#include "util/base64.h"
-#include "clientmap.h"
-#include "clientmedia.h"
-#include "sound.h"
-#include "IMeshCache.h"
-#include "serialization.h"
-#include "config.h"
-#include "version.h"
-#include "drawscene.h"
-#include "database-sqlite3.h"
-//#include "serialization.h"
-=======
 #include "shader.h"
 #include "gettext.h"
 #include "clientmap.h"
@@ -82,14 +57,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database-files.h"
 #include "database/database-sqlite3.h"
 #include "serialization.h"
->>>>>>> 5.5.0:src/client/client.cpp
 #include "guiscalingfilter.h"
 #include "script/scripting_client.h"
 #include "game.h"
 #include "chatmessage.h"
 #include "translation.h"
 
-#include "database.h"
+#include "database/database.h"
 #include "server.h"
 #include "emerge.h"
 #if !MINETEST_PROTO
@@ -100,107 +74,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern gui::IGUIEnvironment* guienv;
 
-<<<<<<< HEAD:src/client.cpp
-#include "msgpack_fix.h"
-
-/*
-	MeshUpdateQueue
-*/
-
-MeshUpdateQueue::MeshUpdateQueue()
-{
-}
-
-MeshUpdateQueue::~MeshUpdateQueue()
-{
-}
-
-unsigned int MeshUpdateQueue::addBlock(v3POS p, std::shared_ptr<MeshMakeData> data, bool urgent)
-{
-	DSTACK(FUNCTION_NAME);
-
-	auto lock = m_queue.lock_unique_rec();
-	unsigned int range = urgent ? 0 : 1 + data->range + data->step * 10;
-	if (m_process.count(p)) {
-		if (!urgent)
-			range += 3;
-	} else if (m_ranges.count(p)) {
-		auto range_old = m_ranges[p];
-		auto & rmap = m_queue.get(range_old);
-		if (range_old > 0 && range != range_old)  {
-			m_ranges.erase(p);
-			rmap.erase(p);
-			if (rmap.empty())
-				m_queue.erase(range_old);
-		} else {
-			rmap[p] = data;
-			return m_ranges.size();
-		}
-	}
-	auto & rmap = m_queue.get(range);
-	rmap[p] = data;
-	m_ranges[p] = range;
-	g_profiler->avg("Client: mesh make queue", m_ranges.size());
-	return m_ranges.size();
-}
-
-std::shared_ptr<MeshMakeData> MeshUpdateQueue::pop()
-{
-	auto lock = m_queue.lock_unique_rec();
-	for (auto & it : m_queue) {
-		auto & rmap = it.second;
-		auto begin = rmap.begin();
-		auto data = begin->second;
-		m_ranges.erase(begin->first);
-		rmap.erase(begin->first);
-		if (rmap.empty())
-			m_queue.erase(it.first);
-		return data;
-	}
-	return nullptr;
-}
-
-/*
-	MeshUpdateThread
-*/
-
-void MeshUpdateThread::enqueueUpdate(v3s16 p, std::shared_ptr<MeshMakeData> data,
-		bool urgent)
-{
-	m_queue_in.addBlock(p, data, urgent);
-	deferUpdate();
-}
-
-void MeshUpdateThread::doUpdate()
-{
-	std::shared_ptr<MeshMakeData> q;
-	while ((q = m_queue_in.pop())) {
-		try {
-		m_queue_in.m_process.set(q->m_blockpos, 1);
-
-		ScopeProfiler sp(g_profiler, "Client: Mesh making " + itos(q->step));
-
-		m_queue_out.push_back(MeshUpdateResult(q->m_blockpos, MapBlock::mesh_type(new MapBlockMesh(q.get(), m_camera_offset))));
-
-		m_queue_in.m_process.erase(q->m_blockpos);
-
-#if _MSC_VER
-		sleep_ms(1); // dont overflow gpu, fix lag and spikes on drawtime
-#endif
-
-#if !EXEPTION_DEBUG
-		} catch (BaseException &e) {
-			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
-		} catch(std::exception &e) {
-			errorstream<<"MeshUpdateThread: exception: "<<e.what()<<std::endl;
-		} catch (...) {
-			errorstream<<"MeshUpdateThread: Ooops..."<<std::endl;
-#else
-		} catch (int) { //nothing
-#endif
-		}
-
-=======
 /*
 	Utility classes
 */
@@ -218,9 +91,9 @@ void PacketCounter::print(std::ostream &o) const
 	for (const auto &it : m_packets) {
 		auto name = it.first >= TOCLIENT_NUM_MSG_TYPES ? "?"
 			: toClientCommandTable[it.first].name;
+      if (it.second)
 		o << "cmd " << it.first << " (" << name << ") count "
 			<< it.second << std::endl;
->>>>>>> 5.5.0:src/client/client.cpp
 	}
 }
 
@@ -229,14 +102,10 @@ void PacketCounter::print(std::ostream &o) const
 */
 
 Client::Client(
-		const char *playername,
-<<<<<<< HEAD:src/client.cpp
-		std::string password,
 		bool is_simple_singleplayer_game,
-=======
+		const char *playername,
 		const std::string &password,
 		const std::string &address_name,
->>>>>>> 5.5.0:src/client/client.cpp
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
 		IWritableShaderSource *shsrc,
@@ -248,6 +117,7 @@ Client::Client(
 		bool ipv6,
 		GameUI *game_ui
 ):
+	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
 	m_shsrc(shsrc),
 	m_itemdef(itemdef),
@@ -261,42 +131,13 @@ Client::Client(
 		tsrc, this
 	),
 	m_particle_manager(&m_env),
-<<<<<<< HEAD:src/client.cpp
-	m_con(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this),
-	m_device(device),
-	m_camera(NULL),
-	m_minimap_disabled_by_server(false),
-	m_server_ser_ver(SER_FMT_VER_INVALID),
-	m_proto_ver(0),
-	m_playeritem(0),
-	m_previous_playeritem(0),
-	m_inventory_updated(false),
-	m_inventory_from_server(NULL),
-	m_inventory_from_server_age(0.0),
-	m_animation_time(0),
-	m_crack_level(-1),
-	m_crack_pos(0,0,0),
-	m_map_seed(0),
-=======
-	m_con(new con::Connection(PROTOCOL_ID, 512, CONNECTION_TIMEOUT, ipv6, this)),
+	m_con(new con::Connection(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this)),
 	m_address_name(address_name),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
->>>>>>> 5.5.0:src/client/client.cpp
 	m_password(password),
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
 	m_media_downloader(new ClientMediaDownloader()),
-<<<<<<< HEAD:src/client.cpp
-	m_time_of_day_set(false),
-	m_last_time_of_day_f(-1),
-	m_time_of_day_update_timer(0),
-	m_recommended_send_interval(0.1),
-	m_removed_sounds_check_timer(0),
-	m_uptime(0),
-	m_simple_singleplayer_mode(is_simple_singleplayer_game),
-	m_timelapse_timer(-1),
-=======
->>>>>>> 5.5.0:src/client/client.cpp
 	m_state(LC_Created),
 	m_game_ui(game_ui),
 	m_modchannel_mgr(new ModChannelMgr())

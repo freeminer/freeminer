@@ -205,13 +205,13 @@ public:
 		return val;
 	}
 
-	u32 size()
+	u32 size() const
 	{
 		auto lock = lock_shared();
 		return std::queue<T>::size();
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		auto lock = lock_shared();
 		return std::queue<T>::empty();

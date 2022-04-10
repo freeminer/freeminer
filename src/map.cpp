@@ -52,17 +52,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "script/scripting_server.h"
 #include <deque>
 #include <queue>
-<<<<<<< HEAD
-#include "database-leveldb.h"
-#include "database-redis.h"
-=======
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
 #if USE_REDIS
 #include "database/database-redis.h"
 #endif
->>>>>>> 5.5.0
 #if USE_POSTGRESQL
 #include "database/database-postgresql.h"
 #endif
@@ -132,45 +127,6 @@ void Map::dispatchEvent(const MapEditEvent &event)
 	}
 }
 
-<<<<<<< HEAD
-=======
-MapSector * Map::getSectorNoGenerateNoLock(v2s16 p)
-{
-	if(m_sector_cache != NULL && p == m_sector_cache_p){
-		MapSector * sector = m_sector_cache;
-		return sector;
-	}
-
-	std::map<v2s16, MapSector*>::iterator n = m_sectors.find(p);
-
-	if (n == m_sectors.end())
-		return NULL;
-
-	MapSector *sector = n->second;
-
-	// Cache the last result
-	m_sector_cache_p = p;
-	m_sector_cache = sector;
-
-	return sector;
-}
-
-MapSector * Map::getSectorNoGenerate(v2s16 p)
-{
-	return getSectorNoGenerateNoLock(p);
-}
-
-MapBlock * Map::getBlockNoCreateNoEx(v3s16 p3d)
-{
-	v2s16 p2d(p3d.X, p3d.Z);
-	MapSector * sector = getSectorNoGenerate(p2d);
-	if(sector == NULL)
-		return NULL;
-	MapBlock *block = sector->getBlockNoCreateNoEx(p3d.Y);
-	return block;
-}
-
->>>>>>> 5.5.0
 MapBlock * Map::getBlockNoCreate(v3s16 p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
@@ -209,28 +165,6 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 	return node;
 }
 
-<<<<<<< HEAD
-#if 0
-// Deprecated
-// throws InvalidPositionException if not found
-// TODO: Now this is deprecated, getNodeNoEx should be renamed
-MapNode Map::getNode(v3s16 p)
-{
-	v3s16 blockpos = getNodeBlockPos(p);
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
-	if (block == NULL)
-		throw InvalidPositionException("getNode block=NULL");
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
-	bool is_valid_position;
-	MapNode node = block->getNodeNoCheck(relpos, &is_valid_position);
-	if (!is_valid_position)
-		throw InvalidPositionException();
-	return node;
-}
-#endif
-
-=======
->>>>>>> 5.5.0
 // throws InvalidPositionException if not found
 void Map::setNode(v3s16 p, MapNode & n, bool no_light_check)
 {
@@ -1297,14 +1231,14 @@ struct NodeNeighbor {
 };
 
 void Map::transforming_liquid_add(v3POS p) {
-	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
+	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	//m_transforming_liquid.set(p, 1);
 	m_transforming_liquid.push_back(p);
 }
 
 <<<<<<< HEAD
 u32 Map::transforming_liquid_size() {
-	std::lock_guard<Mutex> lock(m_transforming_liquid_mutex);
+	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	return m_transforming_liquid.size();
 }
 

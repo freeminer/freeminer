@@ -51,7 +51,7 @@ public:
 	std::streamsize xsputn(const char *s, std::streamsize n);
 	void push_back(char c);
 
-	Mutex m_log_mutex;
+	std::mutex m_log_mutex;
 private:
 	char buffer[BUFFER_LENGTH];
 	int buffer_index;
@@ -490,8 +490,8 @@ void RawLogBuffer::flush(const std::string &buffer)
 	g_logger.logRaw(LL_NONE, buffer);
 }
 
-Mutex localtime_mutex;
+std::mutex localtime_mutex;
 tm * localtime_safe(time_t * t) {
-	auto lock = std::unique_lock<Mutex>(localtime_mutex);
+	auto lock = std::unique_lock<std::mutex>(localtime_mutex);
 	return localtime(t);
 }

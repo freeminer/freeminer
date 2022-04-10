@@ -472,27 +472,7 @@ private:
 	void legacySortElements(core::list<IGUIElement *>::Iterator from);
 
 	int m_btn_height;
-<<<<<<< HEAD:src/guiFormSpecMenu.h
-	gui::IGUIFont *m_font;
-
-	std::wstring getLabelByID(s32 id);
-	std::string getNameByID(s32 id);
-	v2s32 m_down_pos;
-#ifdef __ANDROID__
-	std::string m_JavaDialogFieldName;
-#endif
-
-	/* If true, remap a double-click (or double-tap) action to ESC. This is so
-	 * that, for example, Android users can double-tap to close a formspec.
-	*
-	 * This value can (currently) only be set by the class constructor
-	 * and the default value for the setting is true.
-	 */
-	bool m_remap_dbl_click;
-
-=======
 	gui::IGUIFont *m_font = nullptr;
->>>>>>> 5.5.0:src/gui/guiFormSpecMenu.h
 };
 
 class FormspecFormSource: public IFormSource

@@ -46,40 +46,14 @@ private:
 
 	void speed_tests();
 
-<<<<<<< HEAD
-	bool list_video_modes;
-	bool skip_main_menu;
-	bool use_freetype;
-	bool random_input;
-	std::string address;
-	std::string playername;
-	std::string password;
-	IrrlichtDevice *device;
-	InputHandler *input;
-	MyEventReceiver *receiver;
-	gui::IGUISkin *skin;
-	gui::IGUIFont *font;
-	scene::ISceneManager *smgr;
-	SubgameSpec gamespec;
-	WorldSpec worldspec;
-	bool simple_singleplayer_mode;
-
-	// These are set up based on the menu and other things
-	// TODO: Are these required since there's already playername, password, etc
-	std::string current_playername;
-	std::string current_password;
-	std::string current_address;
-	int current_port;
-
-	//freminer:
-	void wait_data();
-	unsigned int autoexit;
-=======
 	bool skip_main_menu = false;
 	bool random_input = false;
 	RenderingEngine *m_rendering_engine = nullptr;
 	InputHandler *input = nullptr;
 	MyEventReceiver *receiver = nullptr;
 	gui::IGUISkin *skin = nullptr;
->>>>>>> 5.5.0
+
+	//freminer:
+	void wait_data();
+	unsigned int autoexit;
 };

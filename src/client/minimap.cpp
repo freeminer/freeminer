@@ -198,7 +198,7 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 	for (blockpos.Z = blockpos_min.Z; blockpos.Z <= blockpos_max.Z; ++blockpos.Z)
 	for (blockpos.Y = blockpos_min.Y; blockpos.Y <= blockpos_max.Y; ++blockpos.Y)
 	for (blockpos.X = blockpos_min.X; blockpos.X <= blockpos_max.X; ++blockpos.X) {
-		std::map<v3s16, MinimapMapblock *>::const_iterator pblock =
+		const auto pblock =
 			m_blocks_cache.find(blockpos);
 		if (pblock == m_blocks_cache.end())
 			continue;

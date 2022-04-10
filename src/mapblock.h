@@ -461,7 +461,7 @@ public:
 
 	inline void resetUsageTimer()
 	{
-		std::lock_guard<Mutex> lock(m_usage_timer_mutex);
+		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 		m_usage_timer = 0;
 		usage_timer_multiplier = 1;
 	}
@@ -470,7 +470,7 @@ public:
 
 	inline float getUsageTimer()
 	{
-		std::lock_guard<Mutex> lock(m_usage_timer_mutex);
+		std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
 		return m_usage_timer;
 	}
 
@@ -597,7 +597,7 @@ public:
 	u32 m_next_analyze_timestamp;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
-	Mutex abm_triggers_mutex;
+	std::mutex abm_triggers_mutex;
 	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
 	u32 m_abm_timestamp;
 

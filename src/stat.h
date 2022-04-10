@@ -47,7 +47,7 @@ public:
 
 	void update_time();
 private:
-	Mutex mutex;
+	std::mutex mutex;
 };
 
 #endif

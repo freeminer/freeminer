@@ -856,7 +856,7 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	player->keyPressed = keyPressed;
 
 	{
-	std::lock_guard<Mutex> lock(player->control_mutex);
+	std::lock_guard<std::mutex> lock(player->control_mutex);
 
 	player->control.up = (keyPressed & 1);
 	player->control.down = (keyPressed & 2);

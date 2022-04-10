@@ -43,11 +43,8 @@ extern "C" {
 
 /*
 #define SCRIPTAPI_LOCK_DEBUG
-<<<<<<< HEAD
 */
 #define SCRIPTAPI_DEBUG
-=======
->>>>>>> 5.5.0
 
 // MUST be an invalid mod name so that mods can't
 // use that name to bypass security!
@@ -148,11 +145,7 @@ protected:
 
 	// Checks that stack size is sane
 	void realityCheck();
-<<<<<<< HEAD
-
-=======
 	// Takes an error from lua_pcall and throws it as a LuaError
->>>>>>> 5.5.0
 	void scriptError(int result, const char *fxn);
 	// Dumps stack contents for debugging
 	void stackDump(std::ostream &o);
@@ -169,15 +162,11 @@ protected:
 
 	void objectrefGetOrCreate(lua_State *L, ServerActiveObject *cobj);
 
-<<<<<<< HEAD
-public:
-	RecursiveMutex  m_luastackmutex;
-protected:
-=======
 	void pushPlayerHPChangeReason(lua_State *L, const PlayerHPChangeReason& reason);
 
+public:
 	std::recursive_mutex m_luastackmutex;
->>>>>>> 5.5.0
+protected:
 	std::string     m_last_run_mod;
 	bool            m_secure = false;
 #ifdef SCRIPTAPI_LOCK_DEBUG

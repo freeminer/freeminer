@@ -134,29 +134,3 @@ private:
 	// we do not want to write a warning on every draw
 	bool m_already_warned;
 };
-<<<<<<< HEAD:src/game.h
-
-class ChatBackend;  /* to avoid having to include chat.h */
-struct SubgameSpec;
-
-bool the_game(bool *kill,
-		bool random_input,
-		InputHandler *input,
-		IrrlichtDevice *device,
-		const std::string &map_dir,
-		const std::string &playername,
-		const std::string &password,
-		const std::string &address, // If "", local server is used
-		u16 port,
-		std::string &error_message,
-		ChatBackend &chat_backend,
-		bool *reconnect_requested,
-		const SubgameSpec &gamespec, // Used for local game
-		bool simple_singleplayer_mode,
-		unsigned int autoexit
-	);
-
-#endif
-
-=======
->>>>>>> 5.5.0:src/gui/guiInventoryList.h

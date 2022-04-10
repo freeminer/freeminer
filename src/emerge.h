@@ -56,13 +56,7 @@ struct BlockMakeData {
 	u64 seed = 0;
 	v3s16 blockpos_min;
 	v3s16 blockpos_max;
-<<<<<<< HEAD
-	v3s16 blockpos_requested;
-	INodeDefManager *nodedef;
-=======
-	UniqueQueue<v3s16> transforming_liquid;
 	const NodeDefManager *nodedef = nullptr;
->>>>>>> 5.5.0
 
 	BlockMakeData() = default;
 
@@ -98,11 +92,7 @@ struct BlockEmergeData {
 class EmergeParams {
 	friend class EmergeManager;
 public:
-<<<<<<< HEAD
 	ServerEnvironment *env;
-
-	INodeDefManager *ndef;
-=======
 	EmergeParams() = delete;
 	~EmergeParams();
 	DISABLE_CLASS_COPY(EmergeParams);
@@ -134,7 +124,6 @@ class EmergeManager {
 	friend class ModApiMapgen;
 public:
 	const NodeDefManager *ndef;
->>>>>>> 5.5.0
 	bool enable_mapgen_debug_info;
 
 	// Generation Notify

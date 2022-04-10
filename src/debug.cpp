@@ -59,12 +59,7 @@ void sanity_check_fn(const char *assertion, const char *file,
 	errorstream << file << ":" << line << ": " << function
 		<< ": An engine assumption '" << assertion << "' failed." << std::endl;
 
-<<<<<<< HEAD
-	debug_stacks_print_to(errorstream);
-
 #ifndef __ANDROID__
-=======
->>>>>>> 5.5.0
 	abort();
 #endif
 }

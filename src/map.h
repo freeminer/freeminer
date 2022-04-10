@@ -132,10 +132,6 @@ public:
 class Map /*: public NodeContainer*/
 {
 public:
-<<<<<<< HEAD
-=======
-
->>>>>>> 5.5.0
 	Map(IGameDef *gamedef);
 	virtual ~Map();
 	DISABLE_CLASS_COPY(Map);
@@ -158,20 +154,6 @@ public:
 	// event shall be deleted by caller after the call.
 	void dispatchEvent(const MapEditEvent &event);
 
-<<<<<<< HEAD
-=======
-	// On failure returns NULL
-	MapSector * getSectorNoGenerateNoLock(v2s16 p2d);
-	// Same as the above (there exists no lock anymore)
-	MapSector * getSectorNoGenerate(v2s16 p2d);
-
-	/*
-		This is overloaded by ClientMap and ServerMap to allow
-		their differing fetch methods.
-	*/
-	virtual MapSector * emergeSector(v2s16 p){ return NULL; }
-
->>>>>>> 5.5.0
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
@@ -195,32 +177,7 @@ public:
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
-<<<<<<< HEAD
-	MapNode getNodeNoEx(v3s16 p, bool *is_valid_position);
-	MapNode getNode(v3POS p) { return getNodeNoEx(p); };
-	//MapNode getNodeLog(v3POS p);
-	MapNode getNodeNoEx(v3POS p);
-
-	void unspreadLight(enum LightBank bank,
-			std::map<v3s16, u8> & from_nodes,
-			std::set<v3s16> & light_sources,
-			std::map<v3s16, MapBlock*> & modified_blocks);
-
-	void spreadLight(enum LightBank bank,
-			std::set<v3s16> & from_nodes,
-			std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms = 0);
-
-/*
-	void updateLighting(enum LightBank bank,
-			std::map<v3s16, MapBlock*>  & a_blocks,
-			std::map<v3s16, MapBlock*> & modified_blocks);
-*/
-
-	u32 updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks,
-			std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms = 0);
-=======
 	MapNode getNode(v3s16 p, bool *is_valid_position = NULL);
->>>>>>> 5.5.0
 
 	/*
 		These handle lighting but not faces.
@@ -268,14 +225,12 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-<<<<<<< HEAD
 	u32 transformLiquids(Server *m_server, unsigned int max_cycle_ms);
 	u32 transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
-=======
+/*
 	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
 			ServerEnvironment *env);
-
->>>>>>> 5.5.0
+*/
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock
@@ -311,62 +266,14 @@ public:
 	void removeNodeTimer(v3s16 p);
 
 	/*
-<<<<<<< HEAD
-		Misc.
-	*/
-
-	/*
-=======
->>>>>>> 5.5.0
 		Variables
 	*/
 
 	void transforming_liquid_add(v3s16 p);
-<<<<<<< HEAD
-	v3s16 transforming_liquid_pop();
-	u32 transforming_liquid_size();
-	std::atomic_uint m_liquid_step_flow;
-
-	virtual s16 getHeat(v3s16 p, bool no_random = 0);
-	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
-
-	virtual int getSurface(v3s16 basepos, int searchup, bool walkable_only) {
-		return basepos.Y -1;
-	}
-
-	INodeDefManager* getNodeDefManager();
 
 
-// from old mapsector:
-	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
-	m_blocks_type m_blocks;
-	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
-	MapBlock * createBlankBlockNoInsert(v3s16 & p);
-	MapBlock * createBlankBlock(v3s16 & p);
-	bool insertBlock(MapBlock *block);
-	void deleteBlock(MapBlockP block);
-	std::unordered_map<MapBlockP, int> * m_blocks_delete;
-	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
-	unsigned int m_blocks_delete_time = 0;
-	//void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
 
-#if !ENABLE_THREADS
-	locker<> m_nothread_locker;
-#endif
-#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-	try_shared_mutex m_block_cache_mutex;
-#endif
-#if !HAVE_THREAD_LOCAL
-	MapBlockP m_block_cache;
-	v3POS m_block_cache_p;
-#endif
-	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
-
-	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
-=======
->>>>>>> 5.5.0
-
+// freeminer:
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 protected:
 	friend class LuaVoxelManip;
@@ -374,21 +281,12 @@ protected:
 	IGameDef *m_gamedef;
 	std::set<MapEventReceiver*> m_event_receivers;
 
-<<<<<<< HEAD
-=======
-	std::map<v2s16, MapSector*> m_sectors;
-
-	// Be sure to set this to NULL when the cached sector is deleted
-	MapSector *m_sector_cache = nullptr;
-	v2s16 m_sector_cache_p;
-
->>>>>>> 5.5.0
 	// Queued transforming water nodes
 
 	// This stores the properties of the nodes on the map.
 	const NodeDefManager *m_nodedef;
 
-<<<<<<< HEAD
+
 	// freminer:
 protected:
 	u32 m_blocks_update_last;
@@ -396,22 +294,21 @@ protected:
 
 public:
 	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
-	Mutex m_transforming_liquid_mutex;
+	std::mutex m_transforming_liquid_mutex;
 	UniqueQueue<v3POS> m_transforming_liquid;
 	typedef unordered_map_v3POS<int> lighting_map_t;
-	Mutex m_lighting_modified_mutex;
+	std::mutex m_lighting_modified_mutex;
 	std::map<v3POS, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
 	void lighting_modified_add(v3POS pos, int range = 5);
 	std::atomic_uint time_life;
 	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
 	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
-
-
 private:
 
-	DISABLE_CLASS_COPY(Map);
-=======
+
+
+
 	bool determineAdditionalOcclusionCheck(const v3s16 &pos_camera,
 		const core::aabbox3d<s16> &block_bounds, v3s16 &check);
 	bool isOccluded(const v3s16 &pos_camera, const v3s16 &pos_target,
@@ -423,7 +320,6 @@ private:
 	u32 m_unprocessed_count = 0;
 	u64 m_inc_trending_up_start_time = 0; // milliseconds
 	bool m_queue_size_timer_started = false;
->>>>>>> 5.5.0
 };
 
 /*
@@ -447,17 +343,6 @@ public:
 	}
 
 	/*
-<<<<<<< HEAD
-=======
-		Get a sector from somewhere.
-		- Check memory
-		- Check disk (doesn't load blocks)
-		- Create blank one
-	*/
-	MapSector *createSector(v2s16 p);
-
-	/*
->>>>>>> 5.5.0
 		Blocks are generated by using these and makeBlock().
 	*/
 	bool blockpos_over_mapgen_limit(v3s16 p);
@@ -489,33 +374,18 @@ public:
 	*/
 	MapBlock *getBlockOrEmerge(v3s16 p3d);
 
-<<<<<<< HEAD
 	// Carries out any initialization necessary before block is sent
 	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
 	s16 findGroundLevel(v2POS p2d, bool cacheBlocks);
 
-	/*
-		Misc. helper functions for fiddling with directory and file
-		names when saving
-	*/
-	void createDirs(std::string path);
-	// dirname: final directory name
-=======
 	bool isBlockInQueue(v3s16 pos);
->>>>>>> 5.5.0
 
 	/*
 		Database functions
 	*/
-<<<<<<< HEAD
-	static Database *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
-	// Verify we can read/write to the database
-	void verifyDatabase();
-=======
 	static MapDatabase *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
->>>>>>> 5.5.0
 
 	// Call these before and after saving of blocks
 	void beginSave();
@@ -528,11 +398,7 @@ public:
 	MapgenParams *getMapgenParams();
 
 	bool saveBlock(MapBlock *block);
-<<<<<<< HEAD
-	static bool saveBlock(MapBlock *block, Database *db);
-=======
 	static bool saveBlock(MapBlock *block, MapDatabase *db, int compression_level = -1);
->>>>>>> 5.5.0
 	MapBlock* loadBlock(v3s16 p);
 
 	bool deleteBlock(v3s16 blockpos);
@@ -588,18 +454,13 @@ private:
 		Metadata is re-written on disk only if this is true.
 		This is reset to false when written on disk.
 	*/
-<<<<<<< HEAD
-	bool m_map_metadata_changed;
-public:
-	Database *dbase;
-private:
-=======
 	bool m_map_metadata_changed = true;
+public:
 	MapDatabase *dbase = nullptr;
+private:
 	MapDatabase *dbase_ro = nullptr;
 
 	MetricCounterPtr m_save_time_counter;
->>>>>>> 5.5.0
 };
 
 #if !ENABLE_THREADS
@@ -633,11 +494,7 @@ public:
 	bool m_is_dirty = false;
 
 protected:
-<<<<<<< HEAD
-	bool m_create_area;
 public:
-=======
->>>>>>> 5.5.0
 	Map *m_map;
 protected:
 	/*

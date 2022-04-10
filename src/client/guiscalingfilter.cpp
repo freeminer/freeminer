@@ -117,21 +117,6 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 		return src;
 	imageScaleNNAA(srcimg, srcrect, destimg);
 
-<<<<<<< HEAD:src/guiscalingfilter.cpp
-#ifdef __ANDROID__
-	// Android is very picky about textures being powers of 2, so expand
-	// the image dimensions to the next power of 2, if necessary, for
-	// that platform.
-	video::IImage *po2img = driver->createImage(src->getColorFormat(),
-			core::dimension2d<u32>(npot2((u32)destrect.getWidth()),
-			npot2((u32)destrect.getHeight())));
-	if (!po2img)
-		return src;
-	po2img->fill(video::SColor(0, 0, 0, 0));
-	destimg->copyTo(po2img);
-	destimg->drop();
-	destimg = po2img;
-=======
 #if ENABLE_GLES
 	// Some platforms are picky about textures being powers of 2, so expand
 	// the image dimensions to the next power of 2, if necessary.
@@ -139,12 +124,13 @@ video::ITexture *guiScalingResizeCached(video::IVideoDriver *driver,
 		video::IImage *po2img = driver->createImage(src->getColorFormat(),
 				core::dimension2d<u32>(npot2((u32)destrect.getWidth()),
 				npot2((u32)destrect.getHeight())));
+		if (!po2img)
+			return src;
 		po2img->fill(video::SColor(0, 0, 0, 0));
 		destimg->copyTo(po2img);
 		destimg->drop();
 		destimg = po2img;
 	}
->>>>>>> 5.5.0:src/client/guiscalingfilter.cpp
 #endif
 
 	// Convert the scaled image back into a texture.

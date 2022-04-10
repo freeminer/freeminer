@@ -4,7 +4,6 @@ Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015-2020 paramat
 Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -105,14 +104,6 @@ private:
 
 // Order must match the order of 'static MapgenDesc g_reg_mapgens[]' in mapgen.cpp
 enum MapgenType {
-<<<<<<< HEAD:src/mapgen.h
-	MAPGEN_INDEV,
-	MAPGEN_MATH,
-
-	MAPGEN_V5,
-	MAPGEN_V6,
-=======
->>>>>>> 5.5.0:src/mapgen/mapgen.h
 	MAPGEN_V7,
 	MAPGEN_VALLEYS,
 	MAPGEN_CARPATHIAN,
@@ -121,36 +112,14 @@ enum MapgenType {
 	MAPGEN_FRACTAL,
 	MAPGEN_SINGLENODE,
 	MAPGEN_V6,
+
+	MAPGEN_INDEV,
+	MAPGEN_MATH,
+
 	MAPGEN_INVALID,
 };
 
 struct MapgenParams {
-<<<<<<< HEAD:src/mapgen.h
-	MapgenType mgtype;
-	s16 chunksize;
-	u64 seed;
-	s16 water_level;
-	s16 liquid_pressure;
-	u32 flags;
-
-	BiomeParamsOriginal *bparams;
-	//MapgenSpecificParams *sparams;
-
-	MapgenParams() :
-		mgtype(MAPGEN_DEFAULT),
-		chunksize(5),
-		seed(0),
-		water_level(1),
-		liquid_pressure(0),
-		flags(MG_CAVES | MG_LIGHT | MG_DECORATIONS),
-		bparams(NULL)
-	{
-	}
-
-	virtual ~MapgenParams();
-
-	virtual void readParams(Settings *settings);
-=======
 	MapgenParams() = default;
 	virtual ~MapgenParams();
 
@@ -158,18 +127,18 @@ struct MapgenParams {
 	s16 chunksize = 5;
 	u64 seed = 0;
 	s16 water_level = 1;
+	s16 liquid_pressure = 0;
 	s16 mapgen_limit = MAX_MAP_GENERATION_LIMIT;
 	// Flags set in readParams
 	u32 flags = 0;
 	u32 spflags = 0;
 
-	BiomeParams *bparams = nullptr;
+	BiomeParamsOriginal *bparams = nullptr;
 
 	s16 mapgen_edge_min = -MAX_MAP_GENERATION_LIMIT;
 	s16 mapgen_edge_max = MAX_MAP_GENERATION_LIMIT;
 
 	virtual void readParams(const Settings *settings);
->>>>>>> 5.5.0:src/mapgen/mapgen.h
 	virtual void writeParams(Settings *settings) const;
 	// Default settings for g_settings such as flags
 	virtual void setDefaultSettings(Settings *settings) {};
@@ -223,12 +192,6 @@ public:
 	s16 findGroundLevel(v2s16 p2d, s16 ymin, s16 ymax);
 	s16 findLiquidSurface(v2s16 p2d, s16 ymin, s16 ymax);
 	void updateHeightmap(v3s16 nmin, v3s16 nmax);
-<<<<<<< HEAD:src/mapgen.h
-	void updateLiquid(v3s16 nmin, v3s16 nmax);
-
-	void setLighting(u8 light, v3s16 nmin, v3s16 nmax);
-	void lightSpread(VoxelArea &a, v3s16 p, u8 light, unordered_map_v3POS<u8> & skip, int r = 0);
-=======
 	void getSurfaces(v2s16 p2d, s16 ymin, s16 ymax,
 		std::vector<s16> &floors, std::vector<s16> &ceilings);
 
@@ -236,8 +199,8 @@ public:
 
 	void setLighting(u8 light, v3s16 nmin, v3s16 nmax);
 	void lightSpread(VoxelArea &a, std::queue<std::pair<v3s16, u8>> &queue,
-		const v3s16 &p, u8 light);
->>>>>>> 5.5.0:src/mapgen/mapgen.h
+		const v3s16 &p, u8 light
+		, unordered_map_v3POS<u8> & skip, int r = 0);
 	void calcLighting(v3s16 nmin, v3s16 nmax, v3s16 full_nmin, v3s16 full_nmax,
 		bool propagate_shadow = true);
 	void propagateSunlight(v3s16 nmin, v3s16 nmax, bool propagate_shadow);

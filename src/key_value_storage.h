@@ -26,6 +26,7 @@
 #endif
 #include "exceptions.h"
 #include "json/json.h"
+#include <mutex>
 
 class KeyValueStorage {
 public:
@@ -58,7 +59,7 @@ private:
 	std::string fullpath;
 	Json::FastWriter json_writer;
 	Json::Reader json_reader;
-	Mutex mutex;
+	std::mutex mutex;
 };
 
 #endif

@@ -183,21 +183,6 @@ private:
 	video::SColor m_bgcolor;
 	video::SColor m_skycolor;
 	video::SColorf m_cloudcolor_f;
-<<<<<<< HEAD:src/sky.h
-	v3f m_stars[SKY_STAR_COUNT];
-	video::S3DVertex m_star_vertices[SKY_STAR_COUNT*4];
-	video::ITexture* m_sun_texture;
-	video::ITexture* m_moon_texture;
-	video::ITexture* m_sun_tonemap;
-	video::ITexture* m_moon_tonemap;
-
-public:
-	irr::scene::ILightSceneNode * sun_moon_light;
-	v3POS camera_offset;
-	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
-private:
-
-=======
 
 	// pure white: becomes "diffuse light component" for clouds
 	video::SColorf m_cloudcolor_day_f = video::SColorf(1, 1, 1, 1);
@@ -235,7 +220,12 @@ private:
 	void draw_stars(video::IVideoDriver *driver, float wicked_time_of_day);
 	void place_sky_body(std::array<video::S3DVertex, 4> &vertices,
 		float horizon_position,	float day_position);
->>>>>>> 5.5.0:src/client/sky.h
+
+public:
+	irr::scene::ISceneNode * sun_moon_light;
+	v3POS camera_offset;
+	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
+private:
 };
 
 // calculates value for sky body positions for the given observed time of day

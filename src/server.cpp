@@ -40,13 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/serveractiveobject.h"
 #include "settings.h"
 #include "profiler.h"
-<<<<<<< HEAD
-#include "log_types.h"
-#include "scripting_game.h"
-=======
-#include "log.h"
+#include "log_types.h.h"
 #include "scripting_server.h"
->>>>>>> 5.5.0
 #include "nodedef.h"
 #include "itemdef.h"
 #include "craftdef.h"

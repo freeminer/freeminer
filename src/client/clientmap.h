@@ -32,41 +32,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 struct MapDrawControl
 {
-<<<<<<< HEAD:src/clientmap.h
-	void fm_init();
-	MapDrawControl():
-		range_all(false),
-		wanted_range(0),
-/*
-		wanted_max_blocks(0),
-*/
-		show_wireframe(false),
-		blocks_drawn(0),
-		blocks_would_have_drawn(0),
-		farthest_drawn(0)
-	{
-		fm_init();
-	}
-=======
->>>>>>> 5.5.0:src/client/clientmap.h
-	// Overrides limits by drawing everything
-	bool range_all = false;
-	// Wanted drawing range
-<<<<<<< HEAD:src/clientmap.h
-	float wanted_range;
-	// Maximum number of blocks to draw
-/*
-	u32 wanted_max_blocks;
-*/
-	// show a wire frame for debugging
-	bool show_wireframe;
-	// Number of blocks rendered is written here by the renderer
-	u32 blocks_drawn;
-	// Number of blocks that would have been drawn in wanted_range
-	u32 blocks_would_have_drawn;
-	// Distance to the farthest block drawn
-	float farthest_drawn;
-
 
 // freeminer:
 	float farmesh = 0;
@@ -81,8 +46,14 @@ struct MapDrawControl
 	float fov_add = 0;
 	float fov_want = 180; // smooth change
 	//bool block_overflow;
+	void fm_init();
+	MapDrawControl() {
+		fm_init();
+	}
 
-=======
+	// Overrides limits by drawing everything
+	bool range_all = false;
+	// Wanted drawing range
 	float wanted_range = 0.0f;
 	// show a wire frame for debugging
 	bool show_wireframe = false;
@@ -105,7 +76,6 @@ struct MeshBufListList
 
 	void clear();
 	void add(scene::IMeshBuffer *buf, v3s16 position, u8 layer);
->>>>>>> 5.5.0:src/client/clientmap.h
 };
 
 class Client;
@@ -176,20 +146,13 @@ public:
 	{
 		return m_box;
 	}
-<<<<<<< HEAD:src/clientmap.h
-	
-	void getBlocksInViewRange(v3s16 cam_pos_nodes, 
-		v3s16 *p_blocks_min, v3s16 *p_blocks_max);
-	void updateDrawList(video::IVideoDriver* driver, float dtime, unsigned int max_cycle_ms = 0);
-=======
 
 	void getBlocksInViewRange(v3s16 cam_pos_nodes,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
-	void updateDrawList();
+	void updateDrawList(float dtime, unsigned int max_cycle_ms = 0);
 	void updateDrawListShadow(const v3f &shadow_light_pos, const v3f &shadow_light_dir, float shadow_range);
 	// Returns true if draw list needs updating before drawing the next frame.
 	bool needsUpdateDrawList() { return m_needs_update_drawlist; }
->>>>>>> 5.5.0:src/client/clientmap.h
 	void renderMap(video::IVideoDriver* driver, s32 pass);
 
 	void renderMapShadows(video::IVideoDriver *driver,
@@ -205,22 +168,9 @@ public:
 
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
-<<<<<<< HEAD:src/clientmap.h
-	
-/*
-	// Check if sector was drawn on last render()
-	bool sectorWasDrawn(v2s16 p)
-	{
-		return (m_last_drawn_sectors.find(p) != m_last_drawn_sectors.end());
-	}
-*/
-
-	MapDrawControl & getControl() const { return m_control; }
-=======
 
 	const MapDrawControl & getControl() const { return m_control; }
 	f32 getWantedRange() const { return m_control.wanted_range; }
->>>>>>> 5.5.0:src/client/clientmap.h
 	f32 getCameraFov() const { return m_camera_fov; }
 
 private:
@@ -254,7 +204,6 @@ private:
 	f32 m_camera_fov = M_PI;
 	v3s16 m_camera_offset;
 
-<<<<<<< HEAD:src/clientmap.h
 	std::atomic<concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist;
 	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_0;
 	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_1;
@@ -264,13 +213,14 @@ public:
 	std::atomic_uint m_drawlist_last;
 	std::map<v3POS, MapBlock*> m_block_boundary;
 private:
-=======
+#if 0
 	std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::map<v3s16, MapBlock*> m_drawlist_shadow;
+#endif
 	bool m_needs_update_drawlist;
-
+#if 0
 	std::set<v2s16> m_last_drawn_sectors;
->>>>>>> 5.5.0:src/client/clientmap.h
+#endif
 
 	bool m_cache_trilinear_filter;
 	bool m_cache_bilinear_filter;

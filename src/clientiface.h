@@ -26,13 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
-<<<<<<< HEAD
-#include "threading/mutex.h"
 #include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
-=======
->>>>>>> 5.5.0
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/address.h"
@@ -245,21 +241,18 @@ public:
 	// The serialization version to use with the client
 	u8 serialization_version = SER_FMT_VER_INVALID;
 	//
-<<<<<<< HEAD
-	std::atomic_ushort net_proto_version;
-	u16 net_proto_version_fm;
 
-	std::atomic_int m_nearest_unsent_reset;
-	std::atomic_int wanted_range;
-	std::atomic_int range_all;
-	std::atomic_int farmesh;
-	float fov;
+	//fm:
+	u16 net_proto_version_fm = 0;
+	std::atomic_int m_nearest_unsent_reset = 0;
+	std::atomic_int wanted_range = 9 * MAP_BLOCKSIZE;
+	std::atomic_int range_all = 0;
+	std::atomic_int farmesh = 0;
+	float fov = 72;
 	//bool block_overflow;
+	ServerEnvironment *m_env = nullptr;
 
-	ServerEnvironment *m_env;
-=======
-	u16 net_proto_version = 0;
->>>>>>> 5.5.0
+	std::atomic_ushort net_proto_version = 0;
 
 	/* Authentication information */
 	std::string enc_pwd = "";
@@ -274,45 +267,8 @@ public:
 	bool isMechAllowed(AuthMechanism mech)
 	{ return allowed_auth_mechs & mech; }
 
-<<<<<<< HEAD
-	RemoteClient(ServerEnvironment *env):
-		peer_id(PEER_ID_INEXISTENT),
-		serialization_version(SER_FMT_VER_INVALID),
-		m_env(env),
-		create_player_on_auth_success(false),
-		chosen_mech(AUTH_MECHANISM_NONE),
-		auth_data(NULL),
-		m_time_from_building(9999),
-		m_pending_serialization_version(SER_FMT_VER_INVALID),
-		m_state(CS_Created),
-		m_nearest_unsent_reset_timer(0.0),
-		m_nothing_to_send_pause_timer(0.0),
-		m_name(""),
-		m_version_major(0),
-		m_version_minor(0),
-		m_version_patch(0),
-		m_full_version("unknown"),
-		m_deployed_compression(0),
-		m_connection_time(getTime(PRECISION_SECONDS))
-	{
-		net_proto_version = 0;
-		net_proto_version_fm = 0;
-		m_nearest_unsent_d = 0;
-		m_nearest_unsent_reset = 0;
-
-		wanted_range = 9 * MAP_BLOCKSIZE;
-		range_all = 0;
-		farmesh = 0;
-		fov = 72; // g_settings->getFloat("fov");
-		//block_overflow = 0;
-	}
-	~RemoteClient()
-	{
-	}
-=======
 	RemoteClient();
 	~RemoteClient() = default;
->>>>>>> 5.5.0
 
 	/*
 		Finds block that should be sent next to the client.
@@ -337,15 +293,15 @@ public:
 	 */
 	void ResendBlockIfOnWire(v3s16 p);
 
+/*
 	u32 getSendingCount() const { return m_blocks_sending.size(); }
+*/
+//fm:
+	u32 getSendingCount() const { return 0; }
 
 	bool isBlockSent(v3s16 p) const
 	{
-<<<<<<< HEAD
-		return 0; //return m_blocks_sending.size();
-=======
 		return m_blocks_sent.find(p) != m_blocks_sent.end();
->>>>>>> 5.5.0
 	}
 
 	// Increments timeouts and removes timed-out blocks from list
@@ -435,12 +391,13 @@ private:
 		List of block positions.
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
-<<<<<<< HEAD
-	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 	unsigned int m_nearest_unsent_reset_want = 0;
-=======
-	std::set<v3s16> m_blocks_sent;
-	s16 m_nearest_unsent_d = 0;
+	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+
+	//std::set<v3s16> m_blocks_sent;
+public:
+	std::atomic_int m_nearest_unsent_d = 0;
+private:
 	v3s16 m_last_center;
 	v3f m_last_camera_dir;
 
@@ -450,13 +407,7 @@ private:
 	const s16 m_block_optimize_distance;
 	const s16 m_max_gen_distance;
 	const bool m_occ_cull;
->>>>>>> 5.5.0
 
-public:
-	std::atomic_int m_nearest_unsent_d;
-private:
-
-	v3s16 m_last_center;
 	v3f   m_last_direction;
 	float m_nearest_unsent_reset_timer;
 
@@ -477,11 +428,7 @@ private:
 		and the client then sends two GOTBLOCKs.
 		This is resetted by PrintInfo()
 	*/
-<<<<<<< HEAD
-	//u32 m_excess_gotblocks;
-=======
-	u32 m_excess_gotblocks = 0;
->>>>>>> 5.5.0
+	//u32 m_excess_gotblocks = 0;
 
 	// CPU usage optimization
 	float m_nothing_to_send_pause_timer = 0.0f;
@@ -508,7 +455,9 @@ private:
 	const u64 m_connection_time = porting::getTimeS();
 };
 
-typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
+//typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
+using RemoteClientMap = concurrent_map<u16, std::shared_ptr<RemoteClient>>;
+using RemoteClientVector = std::vector<std::shared_ptr<RemoteClient>>;
 
 class ClientInterface {
 public:
@@ -542,13 +491,9 @@ public:
 	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable); //todo: delete
 
 	/* send to all clients */
-<<<<<<< HEAD
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
-	void sendToAll(u16 channelnum, NetworkPacket* pkt, bool reliable);
-=======
 	void sendToAll(NetworkPacket *pkt);
->>>>>>> 5.5.0
 
 	/* delete a client */
 	void DeleteClient(session_t peer_id);
@@ -593,11 +538,13 @@ protected:
 	void lock() { /*m_clients_mutex.lock();*/ }
 	void unlock() { /*m_clients_mutex.unlock();*/ }
 
-<<<<<<< HEAD
+/*
+	RemoteClientMap& getClientList() { return m_clients; }
+*/
 
 public:
-	std::vector<std::shared_ptr<RemoteClient>> getClientList() {
-		std::vector<std::shared_ptr<RemoteClient>> clients;
+	RemoteClientVector getClientList() {
+		RemoteClientVector clients;
 		auto lock = m_clients.lock_shared_rec();
 		for(auto & ir : m_clients) {
 			auto c = ir.second;
@@ -606,34 +553,20 @@ public:
 		}
 		return clients;
 	}
-=======
-	RemoteClientMap& getClientList() { return m_clients; }
->>>>>>> 5.5.0
 
 private:
 	/* update internal player list */
 	void UpdatePlayerList();
 
 	// Connection
-<<<<<<< HEAD
-	con::Connection* m_con;
-	//Mutex m_clients_mutex;
-	// Connected clients (behind the con mutex)
-	concurrent_map<u16, std::shared_ptr<RemoteClient>> m_clients;
-=======
 	std::shared_ptr<con::Connection> m_con;
-	std::recursive_mutex m_clients_mutex;
+	//std::recursive_mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	RemoteClientMap m_clients;
->>>>>>> 5.5.0
 	std::vector<std::string> m_clients_names; //for announcing masterserver
 
 	// Environment
 	ServerEnvironment *m_env;
-<<<<<<< HEAD
-	//Mutex m_env_mutex;
-=======
->>>>>>> 5.5.0
 
 	float m_print_info_timer;
 

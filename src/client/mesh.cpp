@@ -28,11 +28,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <IAnimatedMesh.h>
 #include <SAnimatedMesh.h>
-<<<<<<< HEAD:src/mesh.cpp
 #include "client/tile.h"
-=======
 #include <IAnimatedMeshSceneNode.h>
->>>>>>> 5.5.0:src/client/mesh.cpp
 
 inline static void applyShadeFactor(video::SColor& color, float factor)
 {
