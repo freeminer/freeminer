@@ -74,7 +74,7 @@ void Database_LevelDB::loadBlock(const v3bpos_t &pos, std::string *block)
 		getBlockAsStringCompatible(pos), block);
 
 	if (!status.ok())
-		block->clear();	
+		block->clear();
 }
 
 bool Database_LevelDB::deleteBlock(const v3bpos_t &pos)
