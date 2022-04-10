@@ -120,7 +120,7 @@ void TestVoxelArea::test_extent()
 	VoxelArea v1(v3pos_t(-1337, -547, -789), v3pos_t(-147, 447, 669));
 	UASSERT(v1.getExtent() == v3pos_t(1191, 995, 1459));
 
-	VoxelArea v2(v3pos_t(32493, -32507, 32753), v3pos_t(32508, -32492, 32768));
+	VoxelArea v2(v3pos_t(32493, -32507, 32752), v3pos_t(32508, -32492, 32767));
 	UASSERT(v2.getExtent() == v3pos_t(16, 16, 16));
 }
 
@@ -129,7 +129,7 @@ void TestVoxelArea::test_volume()
 	VoxelArea v1(v3pos_t(-1337, -547, -789), v3pos_t(-147, 447, 669));
 	UASSERTEQ(s32, v1.getVolume(), 1728980655);
 
-	VoxelArea v2(v3pos_t(32493, -32507, 32753), v3pos_t(32508, -32492, 32768));
+	VoxelArea v2(v3pos_t(32493, -32507, 32752), v3pos_t(32508, -32492, 32767));
 	UASSERTEQ(s32, v2.getVolume(), 4096);
 }
 

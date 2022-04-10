@@ -757,7 +757,7 @@ int ModApiEnvMod::l_get_objects_in_area(lua_State *L)
 {
 	GET_ENV_PTR;
 	ScriptApiBase *script = getScriptApiBase(L);
-	
+
 	auto minp = read_v3o(L, 1) * BS;
 	auto maxp = read_v3o(L, 2) * BS;
 	aabb3o box(minp, maxp);
@@ -1386,7 +1386,7 @@ int ModApiEnvMod::l_transforming_liquid_add(lua_State *L)
 	GET_ENV_PTR;
 
 	v3pos_t p0 = read_v3pos(L, 1);
-	env->getMap().transforming_liquid_add(p0);
+	env->getServerMap().transforming_liquid_add(p0);
 	return 1;
 }
 
@@ -1409,7 +1409,7 @@ int ModApiEnvMod::l_compare_block_status(lua_State *L)
 	v3pos_t nodepos = check_v3pos(L, 1);
 	std::string condition_s = luaL_checkstring(L, 2);
 	auto status = env->getBlockStatus(getNodeBlockPos(nodepos));
-	
+
 	int condition_i = -1;
 	if (!string_to_enum(es_BlockStatusType, condition_i, condition_s))
 		return 0; // Unsupported
