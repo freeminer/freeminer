@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "client/renderingengine.h"
 #include "client/content_cao.h"
+#include "profiler.h"
 #include "settings.h"
 #include "wieldmesh.h"
 #include "noise.h"         // easeCurve
@@ -42,35 +43,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "script/scripting_client.h"
 #include "gettext.h"
 
-<<<<<<< HEAD:src/camera.cpp
-#define CAMERA_OFFSET_STEP 1000
-
-#include "nodedef.h"
+#include "log_types.h"
 #include "game.h" // CameraModes
 
-#include "nodedef.h"
-#include "log_types.h"
-
-Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
-		IGameDef *gamedef):
-	m_playernode(NULL),
-	m_headnode(NULL),
-	m_cameranode(NULL),
-
-	m_wieldmgr(NULL),
-	m_wieldlight(0),
-	m_wieldlight_add(0),
-	m_wieldnode(NULL),
-
-=======
-#define CAMERA_OFFSET_STEP 200
+#define CAMERA_OFFSET_STEP 1000
 #define WIELDMESH_OFFSET_X 55.0f
 #define WIELDMESH_OFFSET_Y -35.0f
 #define WIELDMESH_AMPLITUDE_X 7.0f
 #define WIELDMESH_AMPLITUDE_Y 10.0f
 
 Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
->>>>>>> 5.5.0:src/client/camera.cpp
 	m_draw_control(draw_control),
 	m_client(client)
 {
@@ -100,26 +82,19 @@ Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *re
 	 *       a later release.
 	 */
 
+    //fm:
 	m_cache_movement_fov        = g_settings->getBool("movement_fov");
-
+	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
+	m_draw_control.wanted_range = g_settings->getFloat("viewing_range");
+	
 	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
 	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
-<<<<<<< HEAD:src/camera.cpp
-	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
-	m_cache_fov                 = g_settings->getFloat("fov");
-	m_cache_zoom_fov            = g_settings->getFloat("zoom_fov");
-	m_cache_view_bobbing        = g_settings->getBool("view_bobbing");
-	m_nametags.clear();
-
-	m_draw_control.wanted_range = g_settings->getFloat("viewing_range");
-=======
 	// 45 degrees is the lowest FOV that doesn't cause the server to treat this
 	// as a zoom FOV and load world beyond the set server limits.
 	m_cache_fov                 = std::fmax(g_settings->getFloat("fov"), 45.0f);
 	m_arm_inertia               = g_settings->getBool("arm_inertia");
 	m_nametags.clear();
 	m_show_nametag_backgrounds  = g_settings->getBool("show_nametag_backgrounds");
->>>>>>> 5.5.0:src/client/camera.cpp
 }
 
 Camera::~Camera()
@@ -397,13 +372,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 		// Smoothen and invert the above
 		fall_bobbing = sin(fall_bobbing * 0.5 * M_PI) * -1;
 		// Amplify according to the intensity of the impact
-<<<<<<< HEAD:src/camera.cpp
-		if (player->camera_impact)
-		fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
-=======
 		if (player->camera_impact > 0.0f)
 			fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
->>>>>>> 5.5.0:src/client/camera.cpp
 
 		fall_bobbing *= m_cache_fall_bobbing_amount;
 	}
@@ -512,31 +482,6 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	if (m_camera_mode != CAMERA_MODE_FIRST)
 		m_camera_position = my_cp;
 
-<<<<<<< HEAD:src/camera.cpp
-	// Get FOV
-	f32 fov_degrees = m_draw_control.fov;
-	if (player->getPlayerControl().zoom && m_gamedef->checkLocalPrivilege("zoom")) {
-		m_wieldnode->setVisible(false);
-	} else {
-		m_wieldnode->setVisible(true);
-	}
-
-	// Greater FOV if running
-	v3f speed = player->getSpeed();
-
-	if (m_cache_movement_fov) {
-		auto fov_was = m_draw_control.fov_add;
-		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
-		if (m_draw_control.fov_add > fov_was + 1)
-			m_draw_control.fov_add = fov_was + ( m_draw_control.fov_add - fov_was) / 3;
-		else if (m_draw_control.fov_add < fov_was - 1)
-			m_draw_control.fov_add = fov_was - (fov_was - m_draw_control.fov_add) / 3;
-		fov_degrees -= m_draw_control.fov_add;
-	}
-
-	fov_degrees = MYMAX(fov_degrees, 10.0);
-	fov_degrees = MYMIN(fov_degrees, 170.0);
-=======
 	/*
 	 * Apply server-sent FOV, instantaneous or smooth transition.
 	 * If not, check for zoom and set to zoom FOV.
@@ -560,12 +505,27 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	} else if (player->getPlayerControl().zoom && player->getZoomFOV() > 0.001f) {
 		// Player requests zoom, apply zoom FOV
 		m_curr_fov_degrees = player->getZoomFOV();
+
+		//fmdoto? also enable? m_wieldnode->setVisible(false);
+
 	} else {
 		// Set to client's selected FOV
 		m_curr_fov_degrees = m_cache_fov;
 	}
+	
+	const v3f &speed = player->getSpeed();
+
+	if (m_cache_movement_fov) {
+		auto fov_was = m_draw_control.fov_add;
+		m_draw_control.fov_add = speed.dotProduct(m_camera_direction)/(BS*4);
+		if (m_draw_control.fov_add > fov_was + 1)
+			m_draw_control.fov_add = fov_was + ( m_draw_control.fov_add - fov_was) / 3;
+		else if (m_draw_control.fov_add < fov_was - 1)
+			m_draw_control.fov_add = fov_was - (fov_was - m_draw_control.fov_add) / 3;
+		m_curr_fov_degrees -= m_draw_control.fov_add;
+	}
+
 	m_curr_fov_degrees = rangelim(m_curr_fov_degrees, 1.0f, 160.0f);
->>>>>>> 5.5.0:src/client/camera.cpp
 
 	// FOV and aspect ratio
 	const v2u32 &window_size = RenderingEngine::getWindowSize();
@@ -632,10 +592,6 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// If the player is walking, swimming, or climbing,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
-<<<<<<< HEAD:src/camera.cpp
-=======
-	const v3f &speed = player->getSpeed();
->>>>>>> 5.5.0:src/client/camera.cpp
 	const bool movement_XZ = hypot(speed.X, speed.Z) > BS;
 	const bool movement_Y = fabs(speed.Y) > BS;
 
@@ -657,12 +613,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 
 void Camera::updateViewingRange()
 {
-<<<<<<< HEAD:src/camera.cpp
-
 	const f32 viewing_range = g_settings->getFloat("viewing_range");
-
-=======
-	f32 viewing_range = g_settings->getFloat("viewing_range");
 
 	// Ignore near_plane setting on all other platforms to prevent abuse
 #if ENABLE_GLES
@@ -673,7 +624,6 @@ void Camera::updateViewingRange()
 #endif
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
->>>>>>> 5.5.0:src/client/camera.cpp
 	if (m_draw_control.range_all) {
 		m_cameranode->setFarValue(100000.0);
 		return;
@@ -777,14 +727,15 @@ void Camera::wield(const ItemStack &item)
 		else if (m_wield_change_timer == 0)
 			m_wield_change_timer = -0.001;
 	}
-	IItemDefManager *idef = m_gamedef->idef();
+	IItemDefManager *idef = m_client->idef();
 	std::string itemname = item.getDefinition(idef).name;
 	m_wieldlight_add = ((ItemGroupList)idef->get(itemname).groups)["wield_light"]*200/14;
 }
 
 void Camera::drawWieldedTool(irr::core::matrix4* translation)
 {
-<<<<<<< HEAD:src/camera.cpp
+    //fm?:
+	/*
 	// Set vertex colors of wield mesh according to light level
 	u8 li = m_wieldlight;
 	if (g_settings->getBool("enable_shaders"))
@@ -795,13 +746,10 @@ void Camera::drawWieldedTool(irr::core::matrix4* translation)
 			li = 200;
 	}
 	video::SColor color(255,li,li,li);
+	*/
 
-	// Clear Z buffer so that the wielded tool stay in front of world geometry
-	m_wieldmgr->getVideoDriver()->clearZBuffer();
-=======
 	// Clear Z buffer so that the wielded tool stays in front of world geometry
 	m_wieldmgr->getVideoDriver()->clearBuffers(video::ECBF_DEPTH);
->>>>>>> 5.5.0:src/client/camera.cpp
 
 	// Draw the wielded node (in a separate scene manager)
 	scene::ICameraSceneNode* cam = m_wieldmgr->getActiveCamera();
@@ -869,19 +817,18 @@ Nametag *Camera::addNametag(scene::ISceneNode *parent_node,
 		const std::string &text, video::SColor textcolor,
 		Optional<video::SColor> bgcolor, const v3f &pos)
 {
-<<<<<<< HEAD:src/camera.cpp
 
-	auto nametag_text_wide = utf8_to_wide(nametag_text);
+    std::string new_text;
+	auto nametag_text_wide = utf8_to_wide(text);
 	if (nametag_text_wide.size() > 15) {
 		nametag_text_wide.resize(15);
 		nametag_text_wide += L".";
-		nametag_text = wide_to_utf8(nametag_text_wide);
+		new_text = wide_to_utf8(nametag_text_wide);
+	} else {
+		new_text = text;
 	}
 
-	Nametag *nametag = new Nametag(parent_node, nametag_text, nametag_color);
-=======
-	Nametag *nametag = new Nametag(parent_node, text, textcolor, bgcolor, pos);
->>>>>>> 5.5.0:src/client/camera.cpp
+	Nametag *nametag = new Nametag(parent_node, new_text, textcolor, bgcolor, pos);
 	m_nametags.push_back(nametag);
 	return nametag;
 }

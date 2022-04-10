@@ -198,9 +198,6 @@ private:
 	scene::ISceneNode *m_headnode = nullptr;
 	scene::ICameraSceneNode *m_cameranode = nullptr;
 
-	u8 m_wieldlight;
-	u8 m_wieldlight_add;
-
 	scene::ISceneManager *m_wieldmgr = nullptr;
 	WieldMeshSceneNode *m_wieldnode = nullptr;
 
@@ -264,9 +261,13 @@ private:
 
 	CameraMode m_camera_mode = CAMERA_MODE_FIRST;
 
+
 // fm:
-	bool m_cache_movement_fov;
-	f32 m_cache_wanted_fps;
+	u8 m_wieldlight = 0;
+	u8 m_wieldlight_add = 0;
+	bool m_cache_movement_fov = false;
+	f32 m_cache_wanted_fps = 30;
+
 
 	f32 m_cache_fall_bobbing_amount;
 	f32 m_cache_view_bobbing_amount;

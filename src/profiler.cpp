@@ -22,10 +22,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 static Profiler main_profiler;
 Profiler *g_profiler = &main_profiler;
-<<<<<<< HEAD
 
-bool g_profiler_enabled;
-=======
+bool g_profiler_enabled = 0;
+
 ScopeProfiler::ScopeProfiler(
 		Profiler *profiler, const std::string &name, ScopeProfilerType type) :
 		m_profiler(profiler),
@@ -184,4 +183,3 @@ void Profiler::getPage(GraphValues &o, u32 page, u32 pagecount)
 		o[i.first] = i.second / getAvgCount(i.first);
 	}
 }
->>>>>>> 5.5.0
