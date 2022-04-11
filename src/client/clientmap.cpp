@@ -25,29 +25,25 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
-<<<<<<< HEAD:src/clientmap.cpp
-#include "log_types.h"
-#include "nodedef.h"
-=======
-#include "mapsector.h"
->>>>>>> 5.5.0:src/client/clientmap.cpp
 #include "mapblock.h"
 #include "profiler.h"
 #include "settings.h"
 #include "camera.h"               // CameraModes
 #include "util/basic_macros.h"
 #include <algorithm>
-<<<<<<< HEAD:src/clientmap.cpp
+#include "log_types.h"
 #include <unordered_map>
 #include <utility>
+#include "client/renderingengine.h"
 
+
+//fm:
 void MapDrawControl::fm_init() {
 	farmesh = g_settings->getS32("farmesh");
 	farmesh_step = g_settings->getS32("farmesh_step");
 	fov_want = fov = g_settings->getFloat("fov");
 }
-=======
-#include "client/renderingengine.h"
+
 
 // struct MeshBufListList
 void MeshBufListList::clear()
@@ -79,7 +75,6 @@ void MeshBufListList::add(scene::IMeshBuffer *buf, v3s16 position, u8 layer)
 }
 
 // ClientMap
->>>>>>> 5.5.0:src/client/clientmap.cpp
 
 ClientMap::ClientMap(
 		Client *client,
@@ -283,7 +278,7 @@ void ClientMap::updateDrawList()
 		MapBlock *block = i.second;
 		block->refDrop();
 	}
-	m_drawlist.clear();
+	m_drawlist.clear();cd
 
 	const v3f camera_position = m_camera_position;
 	const v3f camera_direction = m_camera_direction;

@@ -19,6 +19,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <string>
+#include "content/subgames.h"
 #include "irrlichttypes.h"
 
 struct SubgameSpec;

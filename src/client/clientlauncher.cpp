@@ -72,34 +72,18 @@ static void dump_start_data(const GameStartData &data)
 
 ClientLauncher::~ClientLauncher()
 {
-<<<<<<< HEAD
-	if (receiver) {
-		if (device)
-			device->setEventReceiver(NULL);
-		delete receiver;
-	}
-=======
 	delete input;
->>>>>>> 5.5.0
 
 	delete receiver;
 
 	delete g_fontengine;
 	delete g_gamecallback;
 
-<<<<<<< HEAD
-	if (device) {
-		device->closeDevice();
-		device->run();
-		device->drop();
-	}
-=======
 	delete m_rendering_engine;
 
 #if USE_SOUND
 	g_sound_manager_singleton.reset();
 #endif
->>>>>>> 5.5.0
 }
 
 
@@ -143,7 +127,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 		Default is 500.
 	*/
 	//driver->setMinHardwareBufferVertexCount(50);
-	video_driver->setMinHardwareBufferVertexCount(100);
+	m_rendering_engine->getVideoDriver()->setMinHardwareBufferVertexCount(100);
 
 	// Create game callback for menus
 	g_gamecallback = new MainGameCallback();
@@ -164,9 +148,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	skin->setColor(gui::EGDC_3D_SHADOW, video::SColor(255, 0, 0, 0));
 	skin->setColor(gui::EGDC_HIGH_LIGHT, video::SColor(255, 56, 121, 65));
 	skin->setColor(gui::EGDC_HIGH_LIGHT_TEXT, video::SColor(255, 255, 255, 255));
-<<<<<<< HEAD
-
-=======
 #ifdef HAVE_TOUCHSCREENGUI
 	float density = RenderingEngine::getDisplayDensity();
 	skin->setSize(gui::EGDS_CHECK_BOX_WIDTH, (s32)(17.0f * density));
@@ -191,18 +172,10 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 		}
 	}
 #endif
-	g_fontengine = new FontEngine(guienv);
-	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
->>>>>>> 5.5.0
 
 	// Irrlicht 1.8 input colours
 	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255, 128, 128, 128));
-<<<<<<< HEAD
 	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255, 97, 173, 109));
-#endif
-=======
-	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255, 96, 134, 49));
->>>>>>> 5.5.0
 
 	// Create the menu clouds
 	if (!g_menucloudsmgr)
@@ -212,19 +185,14 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	g_menuclouds->setHeight(100.0f);
 	g_menuclouds->update(v3f(0, 0, 0), video::SColor(255, 240, 240, 255));
 	scene::ICameraSceneNode* camera;
-<<<<<<< HEAD
-	camera = g_menucloudsmgr->addCameraSceneNode(0,
-				v3f(0, 0, 0), v3f(0, 120, 100));
-=======
-	camera = g_menucloudsmgr->addCameraSceneNode(NULL, v3f(0, 0, 0), v3f(0, 60, 100));
->>>>>>> 5.5.0
+	camera = g_menucloudsmgr->addCameraSceneNode(NULL, v3f(0, 0, 0), v3f(0, 120, 100));
 	camera->setFarValue(10000);
 
 #ifdef __ANDROID__
 	wait_data();
 #endif
 
-	g_fontengine = new FontEngine(g_settings, guienv);
+	g_fontengine = new FontEngine(guienv);
 	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
 
 	/*
@@ -287,31 +255,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 				continue;
 			}
 
-			if (g_settings_path != "")
-				g_settings->updateConfigFile(g_settings_path.c_str());
-
 			// Break out of menu-game loop to shut down cleanly
-<<<<<<< HEAD
-			if (!device->run() || *kill) {
-				break;
-			}
-
-/*
-			if (current_playername.length() > PLAYERNAME_SIZE-1) {
-				error_message = gettext("Player name too long.");
-				playername = current_playername.substr(0, PLAYERNAME_SIZE-1);
-				g_settings->set("name", playername);
-				continue;
-			}
-*/
-
-			device->getVideoDriver()->setTextureCreationFlag(
-					video::ETCF_CREATE_MIP_MAPS, g_settings->getBool("mip_map"));
-
-#ifdef HAVE_TOUCHSCREENGUI
-		if (g_settings->getBool("touchscreen")) {
-			receiver->m_touchscreengui = new TouchScreenGUI(device, receiver);
-=======
 			if (!m_rendering_engine->run() || *kill) {
 				if (!g_settings_path.empty())
 					g_settings->updateConfigFile(g_settings_path.c_str());
@@ -323,11 +267,10 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 
 #ifdef HAVE_TOUCHSCREENGUI
 			receiver->m_touchscreengui = new TouchScreenGUI(m_rendering_engine->get_raw_device(), receiver);
->>>>>>> 5.5.0
 			g_touchscreengui = receiver->m_touchscreengui;
 		}
 #endif
-			int tries = simple_singleplayer_mode ? 1 : g_settings->getU16("reconnects");
+			int tries = start_data.isSinglePlayer() ? 1 : g_settings->getU16("reconnects");
 			int n = 0;
 
 			while(!*kill && ++n <= tries &&
@@ -338,28 +281,14 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 				start_data,
 				error_message,
 				chat_backend,
-<<<<<<< HEAD
-				&reconnect_requested,
-				gamespec,
-				simple_singleplayer_mode
+				&reconnect_requested
 				, autoexit
 			)
 			){
-				smgr->clear();
+				m_rendering_engine->get_scene_manager()->clear();
 				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << std::endl;
 			}
-			smgr->clear();
 
-#ifdef HAVE_TOUCHSCREENGUI
-			delete g_touchscreengui;
-			g_touchscreengui = NULL;
-			receiver->m_touchscreengui = NULL;
-#endif
-
-=======
-				&reconnect_requested
-			);
->>>>>>> 5.5.0
 		} //try
 		catch (con::PeerNotFoundException &e) {
 			error_message = _("Connection error (timed out?)");
@@ -551,11 +480,11 @@ bool ClientLauncher::launch_game(std::string &error_message,
 					worldspecs[world_index].path);
 			start_data.world_spec = worldspecs[world_index];
 		}
-<<<<<<< HEAD
-	} else {
-		if (address.empty())
-			simple_singleplayer_mode = 1;
-=======
+
+		//fm: 
+        if (menudata.name.empty()) {
+        	menudata.name = std::string("Guest") + itos(myrand_range(100000, 999999));
+		}
 
 		start_data.name = menudata.name;
 		start_data.password = menudata.password;
@@ -568,7 +497,6 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	} else {
 		start_data.local_server = !start_data.world_path.empty() &&
 			start_data.address.empty() && !start_data.name.empty();
->>>>>>> 5.5.0
 	}
 
 	if (!m_rendering_engine->run())
@@ -580,36 +508,6 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		return false;
 	}
 
-<<<<<<< HEAD
-	if (menudata.name.empty())
-		playername = menudata.name = std::string("Guest") + itos(myrand_range(100000, 999999));
-	else
-		playername = menudata.name;
-
-	password = menudata.password;
-
-	g_settings->set("name", playername);
-
-	current_playername = playername;
-	current_password   = password;
-	current_address    = address;
-	current_port       = game_params.socket_port;
-
-	// If using simple singleplayer mode, override
-	if (simple_singleplayer_mode) {
-		//assert(skip_main_menu == false);
-		current_playername = "singleplayer";
-		current_password = "";
-		current_address = "";
-		current_port = myrand_range(49152, 65535);
-	} else if (address != "") {
-		ServerListSpec server;
-		server["name"] = menudata.servername;
-		server["address"] = menudata.address;
-		server["port"] = menudata.port;
-		server["description"] = menudata.serverdescription;
-		ServerList::insert(server);
-=======
 	// If using simple singleplayer mode, override
 	if (start_data.isSinglePlayer()) {
 		start_data.name = "singleplayer";
@@ -617,7 +515,6 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		start_data.socket_port = myrand_range(49152, 65535);
 	} else {
 		g_settings->set("name", start_data.name);
->>>>>>> 5.5.0
 	}
 
 	if (start_data.name.length() > PLAYERNAME_SIZE - 1) {
@@ -631,23 +528,20 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	infostream << "Selected world: " << worldspec.name
 	           << " [" << worldspec.path << "]" << std::endl;
 
-<<<<<<< HEAD
-	if (current_address == "") { // If local game
-		if (worldspec.path == "") {
-			error_message = _("No world selected and no address "
-=======
 	if (start_data.address.empty()) {
 		// For singleplayer and local server
 		if (worldspec.path.empty()) {
-			error_message = gettext("No world selected and no address "
->>>>>>> 5.5.0
+			error_message = _("No world selected and no address "
 					"provided. Nothing to do.");
 			errorstream << error_message << std::endl;
 			return false;
 		}
 
 		if (!fs::PathExists(worldspec.path)) {
-			if (!loadGameConfAndInitWorld(worldspec.path, game_params.game_spec)) {
+			try {
+				loadGameConfAndInitWorld(worldspec.path, fs::GetFilenameFromPath(worldspec.path.c_str()), start_data.game_spec, true);
+			} catch ( const std::exception & e) {
+				errorstream << "Create world error: " << e.what() << std::endl;
 			error_message = _("Provided world path doesn't exist: ")
 					+ worldspec.path;
 			errorstream << error_message << std::endl;
@@ -656,17 +550,10 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		}
 
 		// Load gamespec for required game
-<<<<<<< HEAD
-		gamespec = findWorldSubgame(worldspec.path);
-		if (!gamespec.isValid() && !game_params.game_spec.isValid()) {
-			error_message = _("Could not find or load game \"")
-					+ worldspec.gameid + "\"";
-=======
 		start_data.game_spec = findWorldSubgame(worldspec.path);
 		if (!start_data.game_spec.isValid()) {
-			error_message = gettext("Could not find or load game: ")
+			error_message = _("Could not find or load game: ")
 					+ worldspec.gameid;
->>>>>>> 5.5.0
 			errorstream << error_message << std::endl;
 			return false;
 		}
@@ -674,21 +561,8 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		if (porting::signal_handler_killstatus())
 			return true;
 
-<<<<<<< HEAD
-		if (game_params.game_spec.isValid() &&
-				game_params.game_spec.id != worldspec.gameid) {
-			warningstream << "Overriding gamespec from \""
-			            << worldspec.gameid << "\" to \""
-			            << game_params.game_spec.id << "\"" << std::endl;
-			gamespec = game_params.game_spec;
-		}
-
-		if (!gamespec.isValid()) {
-			error_message = _("Invalid gamespec.");
-=======
 		if (!start_data.game_spec.isValid()) {
-			error_message = gettext("Invalid gamespec.");
->>>>>>> 5.5.0
+			error_message = _("Invalid gamespec.");
 			error_message += " (world.gameid=" + worldspec.gameid + ")";
 			errorstream << error_message << std::endl;
 			return false;
@@ -725,92 +599,10 @@ void ClientLauncher::main_menu(MainMenuData *menudata)
 	/* show main menu */
 	GUIEngine mymenu(&input->joystick, guiroot, m_rendering_engine, &g_menumgr, menudata, *kill);
 
-<<<<<<< HEAD
-	smgr->clear();	/* leave scene manager in a clean state */
-
-	ServerList::lan_adv_client.stop();
-}
-
-bool ClientLauncher::create_engine_device()
-{
-	// Resolution selection
-	bool fullscreen = g_settings->getBool("fullscreen");
-	u16 screenW = g_settings->getU16("screenW");
-	u16 screenH = g_settings->getU16("screenH");
-
-	// bpp, fsaa, vsync
-	bool vsync = g_settings->getBool("vsync");
-	u16 bits = g_settings->getU16("fullscreen_bpp");
-	u16 fsaa = g_settings->getU16("fsaa");
-
-	// stereo buffer required for pageflip stereo
-	bool stereo_buffer = g_settings->get("3d_mode") == "pageflip";
-
-	// Determine driver
-	video::E_DRIVER_TYPE driverType = video::EDT_OPENGL;
-	std::string driverstring = g_settings->get("video_driver");
-	std::vector<video::E_DRIVER_TYPE> drivers
-		= porting::getSupportedVideoDrivers();
-	u32 i;
-	for (i = 0; i != drivers.size(); i++) {
-		if (!strcasecmp(driverstring.c_str(),
-			porting::getVideoDriverName(drivers[i]))) {
-			driverType = drivers[i];
-			break;
-		}
-	}
-	if (i == drivers.size()) {
-		errorstream << "Invalid video_driver specified; "
-			"defaulting to opengl" << std::endl;
-	}
-
-	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
-	params.DriverType    = driverType;
-	params.WindowSize    = core::dimension2d<u32>(screenW, screenH);
-	params.Bits          = bits;
-	params.AntiAlias     = fsaa;
-	params.Fullscreen    = fullscreen;
-	params.Stencilbuffer = g_settings->getBool("shadows");
-	params.Stereobuffer  = stereo_buffer;
-	params.Vsync         = vsync;
-	params.EventReceiver = receiver;
-	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
-	params.ZBufferBits   = 24;
-#ifdef __ANDROID__
-	params.PrivateData = porting::app_global;
-#endif
-#if defined(_IRR_COMPILE_WITH_OGLES2_)
-	params.OGLES2ShaderPath = std::string(porting::path_user + DIR_DELIM +
-			"media" + DIR_DELIM + "Shaders" + DIR_DELIM).c_str();
-#endif
-
-	device = createDeviceEx(params);
-
-	if (device) {
-		if (g_settings->getBool("enable_joysticks")) {
-			irr::core::array<irr::SJoystickInfo> infos;
-			std::vector<irr::SJoystickInfo> joystick_infos;
-			// Make sure this is called maximum once per
-			// irrlicht device, otherwise it will give you
-			// multiple events for the same joystick.
-			if (device->activateJoysticks(infos)) {
-				infostream << "Joystick support enabled" << std::endl;
-				joystick_infos.reserve(infos.size());
-				for (u32 i = 0; i < infos.size(); i++) {
-					joystick_infos.push_back(infos[i]);
-				}
-			} else {
-				errorstream << "Could not activate joystick support." << std::endl;
-			}
-		}
-		porting::initIrrlicht(device);
-	}
-
-	return device != NULL;
-=======
 	/* leave scene manager in a clean state */
 	m_rendering_engine->get_scene_manager()->clear();
->>>>>>> 5.5.0
+
+	ServerList::lan_adv_client.stop();
 }
 
 void ClientLauncher::speed_tests()
@@ -911,70 +703,14 @@ void ClientLauncher::speed_tests()
 		infostream << "Done. " << dtime << "ms, " << per_ms << "/ms" << std::endl;
 	}
 }
-<<<<<<< HEAD
-
-bool ClientLauncher::print_video_modes()
-{
-	IrrlichtDevice *nulldevice;
-
-	bool vsync = g_settings->getBool("vsync");
-	u16 fsaa = g_settings->getU16("fsaa");
-	MyEventReceiver* receiver = new MyEventReceiver();
-
-	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
-	params.DriverType    = video::EDT_NULL;
-	params.WindowSize    = core::dimension2d<u32>(640, 480);
-	params.Bits          = 24;
-	params.AntiAlias     = fsaa;
-	params.Fullscreen    = false;
-	params.Stencilbuffer = false;
-	params.Vsync         = vsync;
-	params.EventReceiver = receiver;
-	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
-
-	nulldevice = createDeviceEx(params);
-
-	if (nulldevice == NULL) {
-		delete receiver;
-		return false;
-	}
-
-	std::cout << _("Available video modes (WxHxD):") << std::endl;
-
-	video::IVideoModeList *videomode_list = nulldevice->getVideoModeList();
-
-	if (videomode_list != NULL) {
-		s32 videomode_count = videomode_list->getVideoModeCount();
-		core::dimension2d<u32> videomode_res;
-		s32 videomode_depth;
-		for (s32 i = 0; i < videomode_count; ++i) {
-			videomode_res = videomode_list->getVideoModeResolution(i);
-			videomode_depth = videomode_list->getVideoModeDepth(i);
-			std::cout << videomode_res.Width << "x" << videomode_res.Height
-			        << "x" << videomode_depth << std::endl;
-		}
-
-		std::cout << _("Active video mode (WxHxD):") << std::endl;
-		videomode_res = videomode_list->getDesktopResolution();
-		videomode_depth = videomode_list->getDesktopDepth();
-		std::cout << videomode_res.Width << "x" << videomode_res.Height
-		        << "x" << videomode_depth << std::endl;
-
-	}
-
-	nulldevice->drop();
-	delete receiver;
-
-	return videomode_list != NULL;
-}
-
 
 //freeminer:
 void ClientLauncher::wait_data() {
+	const auto device = m_rendering_engine->get_raw_device();
 	device->run();
 	bool wait = false;
 	std::vector<std::string> check_path { porting::path_share + DIR_DELIM + "builtin" + DIR_DELIM + "init.lua", g_settings->get("font_path") };
-	for (auto p : check_path)
+	for (const auto & p : check_path)
 		if (!fs::PathExists(p)) {
 			wait = true;
 			break;
@@ -993,7 +729,7 @@ void ClientLauncher::wait_data() {
 		}
 		int no = 0;
 		if (! (i % 10) ) { //every second
-			for (auto p : check_path)
+			for (const auto & p : check_path)
 				if (!fs::PathExists(p)) {
 					++no;
 					break;
@@ -1009,5 +745,3 @@ void ClientLauncher::wait_data() {
 		device->sleep(300);
 	}
 }
-=======
->>>>>>> 5.5.0

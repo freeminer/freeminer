@@ -47,7 +47,7 @@ struct CameraOrientation {
 };
 
 
-void the_game(bool *kill,
+bool the_game(bool *kill,
 		InputHandler *input,
 		RenderingEngine *rendering_engine,
 		const GameStartData &start_data,
