@@ -204,23 +204,19 @@ private:
 	f32 m_camera_fov = M_PI;
 	v3s16 m_camera_offset;
 
-	std::atomic<concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist;
+	std::atomic<concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist_fm;
 	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_0;
 	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_1;
-	int m_drawlist_current;
+	int m_drawlist_current = 0;
 	std::vector<std::pair<v3POS, int>> draw_nearest;
 public:
-	std::atomic_uint m_drawlist_last;
+	std::atomic_uint m_drawlist_last = 0;
 	std::map<v3POS, MapBlock*> m_block_boundary;
 private:
-#if 0
 	std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::map<v3s16, MapBlock*> m_drawlist_shadow;
-#endif
 	bool m_needs_update_drawlist;
-#if 0
 	std::set<v2s16> m_last_drawn_sectors;
-#endif
 
 	bool m_cache_trilinear_filter;
 	bool m_cache_bilinear_filter;

@@ -270,6 +270,40 @@ public:
 	*/
 
 	void transforming_liquid_add(v3s16 p);
+	v3s16 transforming_liquid_pop();
+	u32 transforming_liquid_size();
+	std::atomic_uint m_liquid_step_flow;
+
+	virtual s16 getHeat(v3s16 p, bool no_random = 0);
+	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
+
+// from old mapsector:
+	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
+	m_blocks_type m_blocks;
+	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
+	MapBlock * createBlankBlockNoInsert(v3s16 & p);
+	MapBlock * createBlankBlock(v3s16 & p);
+	bool insertBlock(MapBlock *block);
+	void deleteBlock(MapBlockP block);
+	std::unordered_map<MapBlockP, int> * m_blocks_delete;
+	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
+	unsigned int m_blocks_delete_time = 0;
+	//void getBlocks(std::list<MapBlock*> &dest);
+	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
+
+#if !ENABLE_THREADS
+	locker<> m_nothread_locker;
+#endif
+#if ENABLE_THREADS && !HAVE_THREAD_LOCAL
+	try_shared_mutex m_block_cache_mutex;
+#endif
+#if !HAVE_THREAD_LOCAL
+	MapBlockP m_block_cache;
+	v3POS m_block_cache_p;
+#endif
+	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
+
+	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
 
 
 

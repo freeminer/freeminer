@@ -1459,15 +1459,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 #endif
 		}
 		// Clear buffered_messages
-<<<<<<< HEAD
-		for (auto
-				i = buffered_messages.begin();
-				i != buffered_messages.end(); ++i) {
-			delete i->second;
-=======
 		for (auto &buffered_message : buffered_messages) {
 			delete buffered_message.second;
->>>>>>> 5.5.0
 		}
 	}
 
